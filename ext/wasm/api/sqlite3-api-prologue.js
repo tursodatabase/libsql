@@ -602,7 +602,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        If the callback is not a JS function then this binding performs
        no translation of the callback, but the sql argument is still
        converted to a WASM string for the call using the
-       "flexible-string" argument converter.
+       "string:flexible" argument converter.
     */
     sqlite3_exec: (pDb, sql, callback, pVoid, pErrMsg)=>{}/*installed later*/,
 
@@ -910,7 +910,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
     ["sqlite3_compileoption_get", "string", "int"],
     ["sqlite3_compileoption_used", "int", "string"],
-    ["sqlite3_complete", "int", "flexible-string"],
+    ["sqlite3_complete", "int", "string:flexible"],
     /* sqlite3_create_function(), sqlite3_create_function_v2(), and
        sqlite3_create_window_function() use hand-written bindings to
        simplify handling of their function-type arguments. */
@@ -1012,7 +1012,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      ["sqlite3*","string","sqlite3_module*","*"]],
     ["sqlite3_create_module_v2", "int",
      ["sqlite3*","string","sqlite3_module*","*","*"]],
-    ["sqlite3_declare_vtab", "int", ["sqlite3*", "flexible-string"]],
+    ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
     ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
     ["sqlite3_malloc64", "*","i64"],
     ["sqlite3_msize", "i64", "*"],
@@ -1023,7 +1023,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
     ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
     ["sqlite3_value_int64","i64", "sqlite3_value*"],
-    //EXPERIMENTAL const char *sqlite3_vtab_collation(sqlite3_index_info*,int)
+    ["sqlite3_vtab_collation","string","sqlite3_index_info*","int"],
     ["sqlite3_vtab_distinct","int", "sqlite3_index_info*"],
     ["sqlite3_vtab_in","int", "sqlite3_index_info*", "int", "int"],
     ["sqlite3_vtab_in_first", "int", "sqlite3_value*", "**"],

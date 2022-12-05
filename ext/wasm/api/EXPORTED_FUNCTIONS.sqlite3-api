@@ -103,6 +103,7 @@ _sqlite3_value_type
 _sqlite3_vfs_find
 _sqlite3_vfs_register
 _sqlite3_vfs_unregister
+_sqlite3_vtab_collation
 _sqlite3_vtab_distinct
 _sqlite3_vtab_in
 _sqlite3_vtab_in_first

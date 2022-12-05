@@ -192,13 +192,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /**
      Sets SQL which should be exec()'d on a DB instance after it is
      opened with the given VFS pointer. The SQL may be any type
-     supported by the "flexible-string" function argument
-     conversion. Alternately, the 2nd argument may be a function, in
-     which case it is called with (theOo1DbObject,sqlite3Namespace) at
-     the end of the DB() constructor. The function must throw on
-     error, in which case the db is closed and the exception is
-     propagated.  This function is intended only for use by DB
-     subclasses or sqlite3_vfs implementations.
+     supported by the "string:flexible" function argument conversion.
+     Alternately, the 2nd argument may be a function, in which case it
+     is called with (theOo1DbObject,sqlite3Namespace) at the end of
+     the DB() constructor. The function must throw on error, in which
+     case the db is closed and the exception is propagated.  This
+     function is intended only for use by DB subclasses or sqlite3_vfs
+     implementations.
   */
   dbCtorHelper.setVfsPostOpenSql = function(pVfs, sql){
     __vfsPostOpenSql[pVfs] = sql;

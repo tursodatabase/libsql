@@ -38,10 +38,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   delete self.Jaccwabyt;
 
   {/* Convert Arrays and certain TypedArrays to strings for
-      'flexible-string'-type arguments */
+      'string:flexible'-type arguments */
     const xString = wasm.xWrap.argAdapter('string');
     wasm.xWrap.argAdapter(
-      'flexible-string', (v)=>xString(util.flexibleString(v))
+      'string:flexible', (v)=>xString(util.flexibleString(v))
     );
 
     /**
@@ -176,29 +176,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                               (1===n?"":'s')+".");
   };
 
-  /**
-     Helper for flexible-string conversions which require a
-     byte-length counterpart argument. Passed a value and its
-     ostensible length, this function returns [V,N], where V
-     is either v or a transformed copy of v and N is either n,
-     -1, or the byte length of v (if it's a byte array).
-  */
-  const __flexiString = function(v,n){
-    if('string'===typeof v){
-      n = -1;
-    }else if(util.isSQLableTypedArray(v)){
-      n = v.byteLength;
-      v = util.typedArrayToString(v);
-    }else if(Array.isArray(v)){
-      v = v.join("");
-      n = -1;
-    }
-    return [v, n];
-  };
-
   if(1){/* Special-case handling of sqlite3_exec() */
     const __exec = wasm.xWrap("sqlite3_exec", "int",
-                              ["sqlite3*", "flexible-string", "*", "*", "**"]);
+                              ["sqlite3*", "string:flexible", "*", "*", "**"]);
     /* Documented in the api object's initializer. */
     capi.sqlite3_exec = function f(pDb, sql, callback, pVoid, pErrMsg){
       if(f.length!==arguments.length){
@@ -549,6 +529,26 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   if(1){/* Special-case handling of sqlite3_prepare_v2() and
            sqlite3_prepare_v3() */
+    /**
+       Helper for string:flexible conversions which require a
+       byte-length counterpart argument. Passed a value and its
+       ostensible length, this function returns [V,N], where V
+       is either v or a transformed copy of v and N is either n,
+       -1, or the byte length of v (if it's a byte array).
+    */
+    const __flexiString = (v,n)=>{
+      if('string'===typeof v){
+        n = -1;
+      }else if(util.isSQLableTypedArray(v)){
+        n = v.byteLength;
+        v = util.typedArrayToString(v);
+      }else if(Array.isArray(v)){
+        v = v.join("");
+        n = -1;
+      }
+      return [v, n];
+    };
+
     /**
        Scope-local holder of the two impls of sqlite3_prepare_v2/v3().
     */

@@ -671,9 +671,9 @@ self.sqlite3InitModule = sqlite3InitModule;
             .assert(p1 === argAd('bar'));
         }
 
-        // 'flexible-string' argAdapter() sanity checks...
+        // 'string:flexible' argAdapter() sanity checks...
         w.scopedAllocCall(()=>{
-          const argAd = w.xWrap.argAdapter('flexible-string');
+          const argAd = w.xWrap.argAdapter('string:flexible');
           const cj = (v)=>w.cstringToJs(argAd(v));
           T.assert('Hi' === cj('Hi'))
             .assert('hi' === cj(['h','i']))
