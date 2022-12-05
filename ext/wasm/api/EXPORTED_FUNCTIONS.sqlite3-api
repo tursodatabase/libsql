@@ -6,6 +6,7 @@ _sqlite3_bind_int64
 _sqlite3_bind_null
 _sqlite3_bind_parameter_count
 _sqlite3_bind_parameter_index
+_sqlite3_bind_pointer
 _sqlite3_bind_text
 _sqlite3_busy_handler
 _sqlite3_busy_timeout
@@ -72,6 +73,7 @@ _sqlite3_result_error_toobig
 _sqlite3_result_int
 _sqlite3_result_int64
 _sqlite3_result_null
+_sqlite3_result_pointer
 _sqlite3_result_text
 _sqlite3_result_zeroblob
 _sqlite3_result_zeroblob64
@@ -95,6 +97,7 @@ _sqlite3_value_bytes
 _sqlite3_value_double
 _sqlite3_value_int
 _sqlite3_value_int64
+_sqlite3_value_pointer
 _sqlite3_value_text
 _sqlite3_value_type
 _sqlite3_vfs_find

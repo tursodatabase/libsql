@@ -725,11 +725,12 @@ self.WhWasmUtilInstaller = function(target){
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8.
      Returns the length, in bytes, of the string, as for `strlen(3)`.
-     As a special case, if !ptr then it it returns `null`. Throws if
-     ptr is out of range for target.heap8u().
+     As a special case, if !ptr or if it's not a pointer then it
+     returns `null`. Throws if ptr is out of range for
+     target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr) return null;
+    if(!ptr || !target.isPtr(ptr)) return null;
     const h = heapWrappers().HEAP8U;
     let pos = ptr;
     for( ; h[pos] !== 0; ++pos ){}
@@ -753,7 +754,7 @@ self.WhWasmUtilInstaller = function(target){
      refers to a NUL-terminated C-style string encoded as UTF-8. This
      function counts its byte length using cstrlen() then returns a
      JS-format string representing its contents. As a special case, if
-     ptr is falsy, `null` is returned.
+     ptr is falsy or not a pointer, `null` is returned.
   */
   target.cstringToJs = function(ptr){
     const n = target.cstrlen(ptr);

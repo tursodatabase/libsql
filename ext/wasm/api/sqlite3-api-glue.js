@@ -43,7 +43,38 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     wasm.xWrap.argAdapter(
       'flexible-string', (v)=>xString(util.flexibleString(v))
     );
-  }
+
+    /**
+       The 'static-string' argument adapter treats its argument as
+       either...
+
+       - WASM pointer: assumed to be a long-lived C-string which gets
+         returned as-is.
+
+       - Anything else: gets coerced to a JS string for use as a map
+         key. If a matching entry is found (as described next), it is
+         returned, else wasm.allocCString() is used to create a a new
+         string, map its pointer to (''+v) for the remainder of the
+         application's life, and returns that pointer value for this
+         call and all future calls which are passed a
+         string-equivalent argument.
+
+       Use case: sqlite3_bind_pointer() and sqlite3_result_pointer()
+       call for "a static string and preferably a string
+       literal". This converter is used to ensure that the string
+       value seen by those functions is long-lived and behaves as they
+       need it to.
+    */
+    wasm.xWrap.argAdapter(
+      'static-string',
+      function(v){
+        if(wasm.isPtr(v)) return v;
+        v = ''+v;
+        let rc = this[v];
+        return rc || (rc = this[v] = wasm.allocCString(v));
+      }.bind(Object.create(null))
+    );
+  }/* special-case string-type argument conversions */
   
   if(1){// WhWasmUtil.xWrap() bindings...
     /**
