@@ -270,6 +270,8 @@ int sqlite3WhereExplainBloomFilter(
   zMsg = sqlite3StrAccumFinish(&str);
   ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
                           pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
+
+  sqlite3VdbeScanStatus(v, sqlite3VdbeCurrentAddr(v)-1, 0, 0, 0, 0);
   return ret;
 }
 #endif /* SQLITE_OMIT_EXPLAIN */
@@ -300,6 +302,9 @@ void sqlite3WhereAddScanStatus(
   sqlite3VdbeScanStatus(
       v, addrExplain, pLvl->addrBody, pLvl->addrVisit, pLoop->nOut, zObj
   );
+  if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
+    sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iTabCur);
+  }
 }
 #endif
 
