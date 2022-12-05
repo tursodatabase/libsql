@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\smemdb\svfs\sxLock()\sfunction\sallowing\sclients\sto\supgrade\sto\sEXCLUSIVE\slocks\swhen\sother\sconnections\sare\sholding\sSHARED.
-D 2022-12-05T14:12:14.522
+C Add\stest\scase\sthat\sshould\shave\sbeen\spart\sof\sprevious\scommit.
+D 2022-12-05T14:20:54.124
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1317,6 +1317,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test c1f2a343ad14398d5d6debda6ea33e80d0dafcc7
 F test/memdb1.test 2c4e9cc10d21c6bf4e217d72b7f6b8ba9b2605971bb2c5e6df76018e189f98f5
+F test/memdb2.test d1dc6058ee59f78c7f46f85e069bb974a981920f8c499f0167690d16c0b079f6
 F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d5740c6c
 F test/memjournal2.test 6b9083cfaab9a3281ec545c3da2487999e8025fb7501bbae10f713f80c56454c
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
@@ -2065,8 +2066,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35d670b3593a46e13ded541ef477fa35dac6bcb9c31e6cf4b90bd7fa550a8ee2
-R ce00ca3fa8b85afb0cb81cb19f7a317f
+P 15f0be8a640e7bfa4130edd4650a745337bd96083b119a1553f9abf9ff066806
+R 0d5d7f5190e8e855ad343ae2d8e33bd7
 U dan
-Z 91e55fba552fdd00d9614ef94c1303dc
+Z 56bab95316a0c053d879db2cb26ee05d
 # Remove this line to create a well-formed Fossil manifest.
