@@ -64,14 +64,21 @@ impl LibSqlDb {
                         | OpenFlags::SQLITE_OPEN_NO_MUTEX,
                 ) {
                     Ok(conn) => break conn,
-                    // Maybe db is locked because someone is currently opening it, let's try again a few times.
+                    // > When the last connection to a particular database is closing, that
+                    // > connection will acquire an exclusive lock for a short time while it cleans
+                    // > up the WAL and shared-memory files. If a second database tries to open and
+                    // > query the database while the first connection is still in the middle of its
+                    // > cleanup process, the second connection might get an SQLITE_BUSY error.
+                    //
+                    // For this reason we may not be able to open the database right away, so we
+                    // retry a couple of times before giving up.
                     Err(rusqlite::Error::SqliteFailure(e, _))
                         if e.code == rusqlite::ffi::ErrorCode::DatabaseBusy && retries < 10 =>
                     {
                         std::thread::sleep(Duration::from_millis(10));
                         retries += 1;
                     }
-                    _ => panic!("unhandled error opening sqlite"),
+                    _ => panic!("unhandled error opening libsql"),
                 }
             };
 
