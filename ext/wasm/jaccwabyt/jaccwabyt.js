@@ -598,10 +598,13 @@ self.Jaccwabyt = function StructBinderFactory(config){
         new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
       )[f._.getters[sigGlyph]](0, isLittleEndian);
       if(dbg.getter) log("debug.getter:",xPropName,"result =",rc);
-      if(rc && isAutoPtrSig(descr.signature)){
+      /* // Removed: it is legal for multiple StructType instances to
+         // proxy the same pointer, and instanceForPointer() cannot account
+         // for that.
+        if(rc && isAutoPtrSig(descr.signature)){
         rc = StructType.instanceForPointer(rc) || rc;
         if(dbg.getter) log("debug.getter:",xPropName,"resolved =",rc);
-      }                
+      }*/               
       return rc;
     };
     if(descr.readOnly){

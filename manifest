@@ -1,5 +1,5 @@
-C Expose\ssqlite3_get/set_auxdata()\sto\swasm.\sMinor\stest\sapp\sCSS\stweaks.
-D 2022-12-05T14:13:55.858
+C Jaccwabyt\s(JS)\sdoc\supdates.
+D 2022-12-05T14:32:35.107
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,8 +539,8 @@ F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html c806b6005145b71d64240606e9c6e0bf56878ee8829c66fe7486cebf34b0e6b1
 F ext/wasm/index.html f151b7c7b5cfdc066567d556acd168e769efd4e982286dc5f849a5ee69ecd0ff
-F ext/wasm/jaccwabyt/jaccwabyt.js 292d37ad3b5fcef420db7b449813c38f1656f490f43e214ea4895793158e7fce
-F ext/wasm/jaccwabyt/jaccwabyt.md 50df3ccb7a773634000496a2ccb805dd25cf8cd963696a7deec3209a68c6093b
+F ext/wasm/jaccwabyt/jaccwabyt.js 199f3a0a7513692dac8e843fed210d4e7da12b1e3f168aff6b796e941424e8da
+F ext/wasm/jaccwabyt/jaccwabyt.md c0172c0795522a137a5591ccc63703e5fc0410d7d7677884edfa8d6a9ab093f4
 F ext/wasm/module-symbols.html 980680c8acfa3c8ae6a5aa223512d1b8e78040ced20f8ba2c382129bc73ec028
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 4c140457f4d6da9d646a49addd91edb6e9ad1643c6c48e3258b5bce24725dc18
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c3c56d9b944fd0d806d8dad9f0c7be3d7a5441765310908872cc525d82ab6a33
-R 585ea2dfb36f1f8d84b5d643e3dc1f7a
+P 44659ad32a9fe6363badfc5dbb0bd51d6fb2ee1c8aa47b71e9cf3dbd631fde9e
+R b435a2d94f66e49b4a6802642705f112
 U stephan
-Z 583c0236badf6d39ab9de3ab68428681
+Z 58b6d11303c3251b731643b22a0a2877
 # Remove this line to create a well-formed Fossil manifest.
