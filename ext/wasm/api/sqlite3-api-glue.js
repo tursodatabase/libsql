@@ -632,10 +632,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     capi.sqlite3_js_rc_str = (rc)=>__rcMap[rc];
     /* Bind all registered C-side structs... */
     const notThese = Object.assign(Object.create(null),{
-      // For each struct to NOT register, map its name to false:
+      // For each struct to NOT register, map its name to true:
       WasmTestStruct: true,
-      /* We remove the kvvfs VFS from Worker threads below. */
+      /* We unregister the kvvfs VFS from Worker threads below. */
       sqlite3_kvvfs_methods: !util.isUIThread(),
+      /* sqlite3_index_info and friends require int64: */
       sqlite3_index_info: !wasm.bigIntEnabled,
       sqlite3_index_constraint: !wasm.bigIntEnabled,
       sqlite3_index_orderby: !wasm.bigIntEnabled,

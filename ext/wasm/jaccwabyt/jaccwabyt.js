@@ -130,34 +130,9 @@ self.Jaccwabyt = function StructBinderFactory(config){
     }
     toss("Unhandled signature IR:",s);
   };
-  /** Returns the sizeof value for the given SIG. Throws for an
-      unknown SIG. */
-  const sigSizeof = function(s){
-    switch(sigLetter(s)){
-        case 'c': case 'C': return 1;
-        case 'i': return 4;
-        case 'p': case 'P': case 's': return ptrSizeof;
-        case 'j': return 8;
-        case 'f': return 4 /* C-side floats, not JS-side */;
-        case 'd': return 8;
-    }
-    toss("Unhandled signature sizeof:",s);
-  };
+
   const affirmBigIntArray = BigInt64Array
         ? ()=>true : ()=>toss('BigInt64Array is not available.');
-  /** Returns the (signed) TypedArray associated with the type
-      described by the given SIG. Throws for an unknown SIG. */
-  /**********
-  const sigTypedArray = function(s){
-    switch(sigIR(s)) {
-        case 'i32': return Int32Array;
-        case 'i64': return affirmBigIntArray() && BigInt64Array;
-        case 'float': return Float32Array;
-        case 'double': return Float64Array;
-    }
-    toss("Unhandled signature TypedArray:",s);
-  };
-  **************/
   /** Returns the name of a DataView getter method corresponding
       to the given SIG. */
   const sigDVGetter = function(s){
@@ -217,6 +192,8 @@ self.Jaccwabyt = function StructBinderFactory(config){
     toss("Unhandled DataView set wrapper for signature:",s);
   };
 
+  /** Returns the given struct and member name in a form suitable for
+      debugging and error output. */
   const sPropName = (s,k)=>s+'::'+k;
 
   const __propThrowOnSet = function(structName,propName){
@@ -673,13 +650,20 @@ self.Jaccwabyt = function StructBinderFactory(config){
       // Sanity checks of sizeof/offset info...
       const m = structInfo.members[k];
       if(!m.sizeof) toss(structName,"member",k,"is missing sizeof.");
-      else if(m.sizeof>1){ // offsets of size-1 members may be odd values.
+      else if(m.sizeof===1){
+        (m.signature === 'c' || m.signature === 'C') ||
+          toss("Unexpected sizeof==1 member",
+               sPropName(structInfo.name,k),
+               "with signature",m.signature);
+      }else{
+        // sizes and offsets of size-1 members may be odd values, but
+        // others may not.
         if(0!==(m.sizeof%4)){
-          console.warn("Invalid struct description =",m,"from",structInfo.members);
+          console.warn("Invalid struct member description =",m,"from",structInfo);
           toss(structName,"member",k,"sizeof is not aligned. sizeof="+m.sizeof);
         }
         if(0!==(m.offset%4)){
-          console.warn("Invalid struct description =",m,"from",structInfo.members);
+          console.warn("Invalid struct member description =",m,"from",structInfo);
           toss(structName,"member",k,"offset is not aligned. offset="+m.offset);
         }
       }
