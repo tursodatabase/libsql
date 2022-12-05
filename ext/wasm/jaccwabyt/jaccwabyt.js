@@ -201,30 +201,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
   };
 
   /**
-     When C code passes a pointer of a bound struct to back into
-     a JS function via a function pointer struct member, it
-     arrives in JS as a number (pointer).
-     StructType.instanceForPointer(ptr) can be used to get the
-     instance associated with that pointer, and __ptrBacklinks
-     holds that mapping. WeakMap keys must be objects, so we
-     cannot use a weak map to map pointers to instances. We use
-     the StructType constructor as the WeakMap key, mapped to a
-     plain, prototype-less Object which maps the pointers to
-     struct instances. That arrangement gives us a
-     per-StructType type-safe way to resolve pointers.
-  */
-  const __ptrBacklinks = new WeakMap();
-  /**
-     Similar to __ptrBacklinks but is scoped at the StructBinder
-     level and holds pointer-to-object mappings for all struct
-     instances created by any struct from any StructFactory
-     which this specific StructBinder has created. The intention
-     of this is to help implement more transparent handling of
-     pointer-type property resolution.
-  */
-  const __ptrBacklinksGlobal = Object.create(null);
-
-  /**
      In order to completely hide StructBinder-bound struct
      pointers from JS code, we store them in a scope-local
      WeakMap which maps the struct-bound objects to their WASM
@@ -265,8 +241,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
         });
       }
       delete obj.ondispose;
-      delete __ptrBacklinks.get(ctor)[m];
-      delete __ptrBacklinksGlobal[m];
       __instancePointerMap.delete(obj);
       if(ctor.debugFlags.__flags.dealloc){
         log("debug.dealloc:",(obj[xPtrPropName]?"EXTERNAL":""),
@@ -299,8 +273,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
       }
       if(fill) heap().fill(0, m, m + ctor.structInfo.sizeof);
       __instancePointerMap.set(obj, m);
-      __ptrBacklinks.get(ctor)[m] = obj;
-      __ptrBacklinksGlobal[m] = obj;
     }catch(e){
       __freeStruct(ctor, obj, m);
       throw e;
@@ -347,16 +319,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
     if(!f._) f._ = (x)=>x.replace(/[^vipPsjrdcC]/g,"").replace(/[pPscC]/g,'i');
     const m = __lookupMember(obj.structInfo, memberName, true);
     return emscriptenFormat ? f._(m.signature) : m.signature;
-  };
-
-  /**
-     Returns the instanceForPointer() impl for the given
-     StructType constructor.
-  */
-  const __instanceBacklinkFactory = function(ctor){
-    const b = Object.create(null);
-    __ptrBacklinks.set(ctor, b);
-    return (ptr)=>b[ptr];
   };
 
   const __ptrPropDescriptor = {
@@ -533,7 +495,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
   */
   Object.defineProperties(StructType, {
     allocCString: rop(__allocCString),
-    instanceForPointer: rop((ptr)=>__ptrBacklinksGlobal[ptr]),
     isA: rop((v)=>v instanceof StructType),
     hasExternalPointer: rop((v)=>(v instanceof StructType) && !!v[xPtrPropName]),
     memberKey: __memberKeyProp
@@ -598,13 +559,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
         new DataView(heap().buffer, this.pointer + descr.offset, descr.sizeof)
       )[f._.getters[sigGlyph]](0, isLittleEndian);
       if(dbg.getter) log("debug.getter:",xPropName,"result =",rc);
-      /* // Removed: it is legal for multiple StructType instances to
-         // proxy the same pointer, and instanceForPointer() cannot account
-         // for that.
-        if(rc && isAutoPtrSig(descr.signature)){
-        rc = StructType.instanceForPointer(rc) || rc;
-        if(dbg.getter) log("debug.getter:",xPropName,"resolved =",rc);
-      }*/               
       return rc;
     };
     if(descr.readOnly){
@@ -694,27 +648,9 @@ self.Jaccwabyt = function StructBinderFactory(config){
     };
     Object.defineProperties(StructCtor,{
       debugFlags: debugFlags,
-      disposeAll: rop(function(){
-        const map = __ptrBacklinks.get(StructCtor);
-        Object.keys(map).forEach(function(ptr){
-          const b = map[ptr];
-          if(b) __freeStruct(StructCtor, b, ptr);
-        });
-        __ptrBacklinks.set(StructCtor, Object.create(null));
-        return StructCtor;
-      }),
-      instanceForPointer: rop(__instanceBacklinkFactory(StructCtor)),
       isA: rop((v)=>v instanceof StructCtor),
       memberKey: __memberKeyProp,
       memberKeys: __structMemberKeys,
-      resolveToInstance: rop(function(v, throwIfNot=false){
-        if(!(v instanceof StructCtor)){
-          v = Number.isSafeInteger(v)
-            ? StructCtor.instanceForPointer(v) : undefined;
-        }
-        if(!v && throwIfNot) toss("Value is-not-a",StructCtor.structName);
-        return v;
-      }),
       methodInfoForKey: rop(function(mKey){
       }),
       structInfo: rop(structInfo),
@@ -732,7 +668,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
     );
     return StructCtor;
   };
-  StructBinder.instanceForPointer = StructType.instanceForPointer;
   StructBinder.StructType = StructType;
   StructBinder.config = config;
   StructBinder.allocCString = __allocCString;
