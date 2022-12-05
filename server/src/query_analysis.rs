@@ -22,6 +22,8 @@ enum StmtKind {
     TxnBegin,
     /// The end of a transaction
     TxnEnd,
+    Read,
+    Write,
     Other,
 }
 
@@ -32,6 +34,13 @@ impl StmtKind {
             Statement::SetTransaction { .. } => todo!("handle set txn"),
             Statement::Rollback { .. } | Statement::Commit { .. } => Self::TxnEnd,
             Statement::Savepoint { .. } => todo!("handle savepoint"),
+
+            Statement::Query(_) => Self::Read,
+
+            Statement::Insert { .. } | Statement::Update { .. } | Statement::Delete { .. } => {
+                Self::Write
+            }
+            Statement::Prepare { .. } => todo!(),
             // FIXME: this contains lots of dialect specific nodes, when porting to Postges, check what's
             // in there.
             _ => Self::Other,
@@ -40,6 +49,7 @@ impl StmtKind {
 }
 
 /// The state of a transaction for a series of statement
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum State {
     /// The txn in an opened state
     TxnOpened,
@@ -71,7 +81,7 @@ impl Statements {
                 }
                 (State::TxnOpened, StmtKind::TxnEnd) => State::TxnClosed,
                 (State::TxnClosed, StmtKind::TxnBegin) => State::TxnOpened,
-                (state, StmtKind::Other) => state,
+                (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
                 (State::Invalid, _) => State::Invalid,
                 (State::Start, StmtKind::TxnBegin) => State::TxnOpened,
                 (State::Start, StmtKind::TxnEnd) => State::TxnClosed,
