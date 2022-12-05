@@ -1,5 +1,5 @@
-C Remove\sobsolete\s"experimental"\scomments\son\sthe\svirtual-table\sinterface\ndocumentation\sin\ssqlite.h.in.
-D 2022-12-05T10:50:06.702
+C Remove\sSQLITE_EXPERIMENTAL\stag\sfrom\ssqlite3_vtab_collation()\sand\sfix\sa\srelated\sdoc\stypo.
+D 2022-12-05T13:07:06.892
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -647,7 +647,7 @@ F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 6983de0e6b8b68c97f82f9fca27ffb8f17161cff4d0d48fdf9eb40b213da0cc6
 F src/shell.c.in f6ab148f150dc0c8460be74a61566d37c65d43311e84963cc1a58df3fc277511
-F src/sqlite.h.in 319be18909674dbab5d0c5372aec098671a35f8ab611cdfc41108df86ab8472b
+F src/sqlite.h.in 14d1273e84a8a4d7cbfc044592c4f97ea04ecf59b2a684f3c7c1b2ab9e48ae0e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
 F src/sqliteInt.h 4ddd98e423276714479f9f22dbbda050e8ef99aa97e7e26bf0bdf58acef0ca42
@@ -2065,8 +2065,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b779afa3ed2f35a110e460fc6ed13cba744db85b9924149ab028b100d1e1e12
-R 76fd9f81f55a4334f31e568ee103dfee
-U drh
-Z 3d486c52105de074dd9d6853e636a4e9
+P 28fc32abdcb1c6af19f0926a3a7317e15930a0ba89645d5ffbf6ce99d8463273
+R fd4f685ed0d35736bb0b09c84b60e02d
+U stephan
+Z 52cef66f712e32342d30b9b660ac21ec
 # Remove this line to create a well-formed Fossil manifest.
