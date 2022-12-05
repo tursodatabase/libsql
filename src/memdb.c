@@ -371,9 +371,22 @@ static int memdbLock(sqlite3_file *pFile, int eLock){
   if( eLock==pThis->eLock ) return SQLITE_OK;
   memdbEnter(p);
   if( eLock>SQLITE_LOCK_SHARED ){
+    assert( pThis->eLock>=SQLITE_LOCK_SHARED );
     if( p->mFlags & SQLITE_DESERIALIZE_READONLY ){
       rc = SQLITE_READONLY;
+    }else if( eLock==SQLITE_LOCK_EXCLUSIVE ){
+      /* Taking an EXCLUSIVE lock. Fail if we only have SHARED and any
+      ** other client has any kind of write-lock. Also fail if any other
+      ** client is holding read-lock. */
+      if( pThis->eLock<=SQLITE_LOCK_SHARED && p->nWrLock ){
+        rc = SQLITE_BUSY;
+      }else if( p->nRdLock>1 ){
+        rc = SQLITE_BUSY;
+      }
+      p->nWrLock = 1;
     }else if( pThis->eLock<=SQLITE_LOCK_SHARED ){
+      /* Upgrading to RESERVED or PENDING from SHARED. Fail if any other
+      ** client has a write-lock of any kind.  */
       if( p->nWrLock ){
         rc = SQLITE_BUSY;
       }else{
