@@ -82,6 +82,8 @@ do_faultsim_test 1 -prep {
   multiplex_restore_db
   sqlite3 db file:test.db?8_3_names=1
   sqlite3_multiplex_control db main chunk_size [expr 256*1024]
+  execsql { PRAGMA journal_mode = truncate }
+  execsql { PRAGMA synchronous = off }
 } -body {
   execsql {
     UPDATE t1 SET a=randomblob(12), b=randomblob(1500) WHERE (rowid%32)=0

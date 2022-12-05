@@ -6,7 +6,13 @@
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     <link rel="stylesheet" href="common/emscripten.css"/>
     <link rel="stylesheet" href="common/testing.css"/>
-    <title>sqlite3 tester #1 (UI thread)</title>
+    <title>sqlite3 tester #1:
+//#if target=es6-module
+ES6 Module in UI thread
+//#else
+UI thread
+//#endif
+    </title>
     <style>
       body {
           font-family: monospace;
@@ -14,7 +20,7 @@
     </style>
   </head>
   <body>
-    <h1 id='color-target'>sqlite3 WASM/JS tester #1 (UI thread)</h1>
+    <h1 id='color-target'></h1>
     <div>See <a href='tester1-worker.html' target='tester1-worker.html'>tester1-worker.html</a>
       for the Worker-thread variant.</div>
     <div class='input-wrapper'>
@@ -22,7 +28,15 @@
       <label for='cb-log-reverse'>Reverse log order?</label>
     </div>
     <div id='test-output'></div>
+    <script>(function(){
+      document.querySelector('h1').innerHTML =
+        document.querySelector('title').innerHTML;
+    })();</script>
+//#if target=es6-module
+    <script src="tester1.mjs" type="module"></script>
+//#else
     <script src="jswasm/sqlite3.js"></script>
     <script src="tester1.js"></script>
+//#endif
   </body>
 </html>

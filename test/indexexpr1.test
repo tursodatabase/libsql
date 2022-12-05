@@ -420,7 +420,7 @@ do_execsql_test indexexpr1-1500 {
 # 2018-01-03 OSSFuzz discovers another test case for the same problem
 # above.
 #
-do_execsql_test indexexpr-1510 {
+do_execsql_test indexexpr1-1510 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(a PRIMARY KEY,b UNIQUE);
   REPLACE INTO t1 VALUES(2, 1);
@@ -434,18 +434,18 @@ do_execsql_test indexexpr-1510 {
 # a numeric table column, trouble can arise since there are multiple
 # string that can map to the same numeric value.  (Ex: 123, 0123, 000123).
 #
-do_execsql_test indexexpr-1600 {
+do_execsql_test indexexpr1-1600 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1 (a INTEGER, b);
   CREATE INDEX idx1 ON t1 (lower(a));
   INSERT INTO t1 VALUES('0001234',3);
   PRAGMA integrity_check;
 } {ok}
-do_execsql_test indexexpr-1610 {
+do_execsql_test indexexpr1-1610 {
   INSERT INTO t1 VALUES('1234',0),('001234',2),('01234',1);
   SELECT b FROM t1 WHERE lower(a)='1234' ORDER BY +b;
 } {0 1 2 3}
-do_execsql_test indexexpr-1620 {
+do_execsql_test indexexpr1-1620 {
   SELECT b FROM t1 WHERE lower(a)='01234' ORDER BY +b;
 } {}
 
@@ -453,7 +453,7 @@ do_execsql_test indexexpr-1620 {
 # ExprImpliesExpr theorem prover bug:
 # "(NULL IS FALSE) IS FALSE" does not imply "NULL IS NULL"
 #
-do_execsql_test indexexpr-1700 {
+do_execsql_test indexexpr1-1700 {
   DROP TABLE IF EXISTS t0;
   CREATE TABLE t0(c0);
   INSERT INTO t0(c0) VALUES (0);
@@ -468,17 +468,17 @@ do_execsql_test indexexpr-1700 {
 # computing the expression.
 #
 ifcapable like_match_blobs {
-  do_execsql_test indexexpr-1800 {
+  do_execsql_test indexexpr1-1800 {
     DROP TABLE IF EXISTS t0;
     CREATE TABLE t0(c0 REAL, c1 TEXT);
     CREATE INDEX i0 ON t0(+c0, c0);
     INSERT INTO t0(c0) VALUES(0);
     SELECT CAST(+ t0.c0 AS BLOB) LIKE 0 FROM t0; 
   } {0}
-  do_execsql_test indexexpr-1810 {
+  do_execsql_test indexexpr1-1810 {
     SELECT CAST(+ t0.c0 AS BLOB) LIKE '0.0' FROM t0; 
   } {1}
-  do_execsql_test indexexpr-1820 {
+  do_execsql_test indexexpr1-1820 {
     DROP TABLE IF EXISTS t1;
     CREATE TABLE t1(x REAL);
     CREATE INDEX t1x ON t1(x, +x);
@@ -491,19 +491,80 @@ ifcapable like_match_blobs {
 # Assertion fault during a DELETE INDEXED BY.
 #
 reset_db
-do_execsql_test indexexpr-1900 {
+do_execsql_test indexexpr1-1900 {
   CREATE TABLE t1(x TEXT PRIMARY KEY, y TEXT, z INT);
   INSERT INTO t1(x,y,z) VALUES('alpha','ALPHA',1),('bravo','charlie',1);
   CREATE INDEX i1 ON t1(+y COLLATE NOCASE);
   SELECT * FROM t1;
 } {alpha ALPHA 1 bravo charlie 1}
-do_execsql_test indexexpr-1910 {
+do_execsql_test indexexpr1-1910 {
   DELETE FROM t1 INDEXED BY i1 
    WHERE x IS +y COLLATE NOCASE IN (SELECT z FROM t1)
   RETURNING *;
 } {alpha ALPHA 1}
-do_execsql_test indexexpr-1920 {
+do_execsql_test indexexpr1-1920 {
   SELECT * FROM t1;
 } {bravo charlie 1}
+
+# 2022-11-28 Ticket 695a1a53de
+# Improved ability to recognize that an index on an expression is a
+# covering index.
+#
+reset_db
+do_execsql_test indexexpr1-2000 {
+  CREATE TABLE t1(a INT, b TEXT);
+  INSERT INTO t1(a,b) VALUES
+    (10, '{"one":5,"two":6}'),
+    (10, '{"one":50,"two":60}'),
+    (10, '{"three":99}'),
+    (11, '{"one":100,"two":200}');
+  CREATE INDEX t1_one ON t1(a, b->>'one');
+  CREATE INDEX t1_two ON t1(a, b->>'two');
+}
+do_execsql_test indexexpr1-2010 {
+  EXPLAIN QUERY PLAN
+  SELECT sum(b->>'one') FROM t1 WHERE a=10; /* Query AA */
+} {/.* t1_one .*/}
+do_execsql_test indexexpr1-2011 {
+  SELECT sum(b->>'one') FROM t1 WHERE a=10; /* Query AA */
+} {55}
+do_execsql_test indexexpr1-2020 {
+  EXPLAIN QUERY PLAN
+  SELECT sum(b->>'two') FROM t1 WHERE a=10; /* Query BB */
+} {/.* t1_two .*/}
+do_execsql_test indexexpr1-2021 {
+  SELECT sum(b->>'two') FROM t1 WHERE a=10; /* Query BB */
+} {66}
+do_execsql_test indexexpr1-2030 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INT, b TEXT, c INT, d INT);
+  INSERT INTO t1(a,b,c,d) VALUES
+    (1, '{"x":1}', 12,  3),
+    (1, '{"x":2}',  4,  5),
+    (1, '{"x":1}',  6, 11),
+    (2, '{"x":1}', 22,  3),
+    (2, '{"x":2}',  4,  5),
+    (3, '{"x":1}',  6,  7);
+  CREATE INDEX t1x ON t1(d, a, b->>'x', c);
+}
+do_execsql_test indexexpr1-2030 {
+  SELECT a,
+       SUM(1)                              AS t1,
+       SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+       SUM(c)                              AS t3,
+       SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1;
+} {1 6 4 54 46}
+do_execsql_test indexexpr1-2030 {
+  explain query plan
+  SELECT a,
+       SUM(1)                              AS t1,
+       SUM(CASE WHEN b->>'x'=1 THEN 1 END) AS t2,
+       SUM(c)                              AS t3,
+       SUM(CASE WHEN b->>'x'=1 THEN c END) AS t4
+    FROM t1;
+} {/.*SCAN t1 USING INDEX t1x.*/}
+
+
 
 finish_test

@@ -6676,7 +6676,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
 ** than the argument.
 */
 static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
-#if OS_VXWORKS
+#if OS_VXWORKS || _POSIX_C_SOURCE >= 199309L
   struct timespec sp;
 
   sp.tv_sec = microseconds / 1000000;

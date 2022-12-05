@@ -705,7 +705,7 @@ static void translateColumnToCopy(
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(WHERETRACE_ENABLED)
 static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
   int i;
-  if( !sqlite3WhereTrace ) return;
+  if( (sqlite3WhereTrace & 0x10)==0 ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf(
        "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
@@ -725,7 +725,7 @@ static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
 }
 static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
   int i;
-  if( !sqlite3WhereTrace ) return;
+  if( (sqlite3WhereTrace & 0x10)==0 ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf("  usage[%d]: argvIdx=%d omit=%d\n",
        i,
@@ -1742,7 +1742,7 @@ static int whereRangeSkipScanEst(
       int nAdjust = (sqlite3LogEst(p->nSample) - sqlite3LogEst(nDiff));
       pLoop->nOut -= nAdjust;
       *pbDone = 1;
-      WHERETRACE(0x10, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
+      WHERETRACE(0x20, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
                            nLower, nUpper, nAdjust*-1, pLoop->nOut));
     }
 
@@ -1920,7 +1920,7 @@ static int whereRangeScanEst(
         if( nNew<nOut ){
           nOut = nNew;
         }
-        WHERETRACE(0x10, ("STAT4 range scan: %u..%u  est=%d\n",
+        WHERETRACE(0x20, ("STAT4 range scan: %u..%u  est=%d\n",
                            (u32)iLower, (u32)iUpper, nOut));
       }
     }else{
@@ -1953,7 +1953,7 @@ static int whereRangeScanEst(
   if( nNew<nOut ) nOut = nNew;
 #if defined(WHERETRACE_ENABLED)
   if( pLoop->nOut>nOut ){
-    WHERETRACE(0x10,("Range scan lowers nOut from %d to %d\n",
+    WHERETRACE(0x20,("Range scan lowers nOut from %d to %d\n",
                     pLoop->nOut, nOut));
   }
 #endif
@@ -2018,7 +2018,7 @@ static int whereEqualScanEst(
   pBuilder->nRecValid = nEq;
 
   whereKeyStats(pParse, p, pRec, 0, a);
-  WHERETRACE(0x10,("equality scan regions %s(%d): %d\n",
+  WHERETRACE(0x20,("equality scan regions %s(%d): %d\n",
                    p->zName, nEq-1, (int)a[1]));
   *pnRow = a[1];
   
@@ -2068,7 +2068,7 @@ static int whereInScanEst(
   if( rc==SQLITE_OK ){
     if( nRowEst > nRow0 ) nRowEst = nRow0;
     *pnRow = nRowEst;
-    WHERETRACE(0x10,("IN row estimate: est=%d\n", nRowEst));
+    WHERETRACE(0x20,("IN row estimate: est=%d\n", nRowEst));
   }
   assert( pBuilder->nRecValid==nRecValid );
   return rc;
@@ -2177,7 +2177,7 @@ void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" f %06x N %d", p->wsFlags, p->nLTerm);
   }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
-  if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){
+  if( p->nLTerm && (sqlite3WhereTrace & 0x4000)!=0 ){
     int i;
     for(i=0; i<p->nLTerm; i++){
       sqlite3WhereTermPrint(p->aLTerm[i], i);
@@ -3055,7 +3055,7 @@ static int whereLoopAddBtreeIndex(
              && pNew->nOut+10 > pProbe->aiRowLogEst[0]
             ){
 #if WHERETRACE_ENABLED /* 0x01 */
-              if( sqlite3WhereTrace & 0x01 ){
+              if( sqlite3WhereTrace & 0x20 ){
                 sqlite3DebugPrintf(
                    "STAT4 determines term has low selectivity:\n");
                 sqlite3WhereTermPrint(pTerm, 999);
@@ -3094,7 +3094,7 @@ static int whereLoopAddBtreeIndex(
     assert( pSrc->pTab->szTabRow>0 );
     rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
     pNew->rRun = sqlite3LogEstAdd(rLogSize, rCostIdx);
-    if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
+    if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK|WHERE_EXPRIDX))==0 ){
       pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
     }
     ApplyCostMultiplier(pNew->rRun, pProbe->pTable->costMult);
@@ -3248,15 +3248,38 @@ static int whereUsablePartialIndex(
 }
 
 /*
+** pIdx is an index containing expressions.  Check it see if any of the
+** expressions in the index match the pExpr expression.
+*/
+static int exprIsCoveredByIndex(
+  const Expr *pExpr,
+  const Index *pIdx,
+  int iTabCur
+){
+  int i;
+  for(i=0; i<pIdx->nColumn; i++){
+    if( pIdx->aiColumn[i]==XN_EXPR
+     && sqlite3ExprCompare(0, pExpr, pIdx->aColExpr->a[i].pExpr, iTabCur)==0
+    ){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
 ** Structure passed to the whereIsCoveringIndex Walker callback.
 */
+typedef struct CoveringIndexCheck CoveringIndexCheck;
 struct CoveringIndexCheck {
   Index *pIdx;       /* The index */
   int iTabCur;       /* Cursor number for the corresponding table */
+  u8 bExpr;          /* Uses an indexed expression */
+  u8 bUnidx;         /* Uses an unindexed column not within an indexed expr */
 };
 
 /*
-** Information passed in is pWalk->u.pCovIdxCk.  Call is pCk.
+** Information passed in is pWalk->u.pCovIdxCk.  Call it pCk.
 **
 ** If the Expr node references the table with cursor pCk->iTabCur, then
 ** make sure that column is covered by the index pCk->pIdx.  We know that
@@ -3268,71 +3291,103 @@ struct CoveringIndexCheck {
 **
 ** If this node does not disprove that the index can be a covering index,
 ** then just return WRC_Continue, to continue the search.
+**
+** If pCk->pIdx contains indexed expressions and one of those expressions
+** matches pExpr, then prune the search.
 */
 static int whereIsCoveringIndexWalkCallback(Walker *pWalk, Expr *pExpr){
-  int i;                  /* Loop counter */
-  const Index *pIdx;      /* The index of interest */
-  const i16 *aiColumn;    /* Columns contained in the index */
-  u16 nColumn;            /* Number of columns in the index */
-  if( pExpr->op!=TK_COLUMN && pExpr->op!=TK_AGG_COLUMN ) return WRC_Continue;
-  if( pExpr->iColumn<(BMS-1) ) return WRC_Continue;
-  if( pExpr->iTable!=pWalk->u.pCovIdxCk->iTabCur ) return WRC_Continue;
-  pIdx = pWalk->u.pCovIdxCk->pIdx;
-  aiColumn = pIdx->aiColumn;
-  nColumn = pIdx->nColumn;
-  for(i=0; i<nColumn; i++){
-    if( aiColumn[i]==pExpr->iColumn ) return WRC_Continue;
+  int i;                    /* Loop counter */
+  const Index *pIdx;        /* The index of interest */
+  const i16 *aiColumn;      /* Columns contained in the index */
+  u16 nColumn;              /* Number of columns in the index */
+  CoveringIndexCheck *pCk;  /* Info about this search */
+
+  pCk = pWalk->u.pCovIdxCk;
+  pIdx = pCk->pIdx;
+  if( (pExpr->op==TK_COLUMN || pExpr->op==TK_AGG_COLUMN) ){
+    /* if( pExpr->iColumn<(BMS-1) && pIdx->bHasExpr==0 ) return WRC_Continue;*/
+    if( pExpr->iTable!=pCk->iTabCur ) return WRC_Continue;
+    pIdx = pWalk->u.pCovIdxCk->pIdx;
+    aiColumn = pIdx->aiColumn;
+    nColumn = pIdx->nColumn;
+    for(i=0; i<nColumn; i++){
+      if( aiColumn[i]==pExpr->iColumn ) return WRC_Continue;
+    }
+    pCk->bUnidx = 1;
+    return WRC_Abort;
+  }else if( pIdx->bHasExpr
+         && exprIsCoveredByIndex(pExpr, pIdx, pWalk->u.pCovIdxCk->iTabCur) ){
+    pCk->bExpr = 1;
+    return WRC_Prune;
   }
-  pWalk->eCode = 1;
-  return WRC_Abort;
+  return WRC_Continue;
 }
 
 
 /*
 ** pIdx is an index that covers all of the low-number columns used by
-** pWInfo->pSelect (columns from 0 through 62).  But there are columns
-** in pWInfo->pSelect beyond 62.  This routine tries to answer the question
-** of whether pIdx covers *all* columns in the query.
+** pWInfo->pSelect (columns from 0 through 62) or an index that has
+** expressions terms.  Hence, we cannot determine whether or not it is
+** a covering index by using the colUsed bitmasks.  We have to do a search
+** to see if the index is covering.  This routine does that search.
 **
-** Return 0 if pIdx is a covering index.   Return non-zero if pIdx is
-** not a covering index or if we are unable to determine if pIdx is a
-** covering index.
+** The return value is one of these:
 **
-** This routine is an optimization.  It is always safe to return non-zero.
-** But returning zero when non-zero should have been returned can lead to
-** incorrect bytecode and assertion faults.
+**      0                The index is definitely not a covering index
+**
+**      WHERE_IDX_ONLY   The index is definitely a covering index
+**
+**      WHERE_EXPRIDX    The index is likely a covering index, but it is
+**                       difficult to determine precisely because of the
+**                       expressions that are indexed.  Score it as a
+**                       covering index, but still keep the main table open
+**                       just in case we need it.
+**
+** This routine is an optimization.  It is always safe to return zero.
+** But returning one of the other two values when zero should have been
+** returned can lead to incorrect bytecode and assertion faults.
 */
 static SQLITE_NOINLINE u32 whereIsCoveringIndex(
   WhereInfo *pWInfo,     /* The WHERE clause context */
   Index *pIdx,           /* Index that is being tested */
   int iTabCur            /* Cursor for the table being indexed */
 ){
-  int i;
+  int i, rc;
   struct CoveringIndexCheck ck;
   Walker w;
   if( pWInfo->pSelect==0 ){
     /* We don't have access to the full query, so we cannot check to see
     ** if pIdx is covering.  Assume it is not. */
-    return 1;
+    return 0;
   }
-  for(i=0; i<pIdx->nColumn; i++){
-    if( pIdx->aiColumn[i]>=BMS-1 ) break;
-  }
-  if( i>=pIdx->nColumn ){
-    /* pIdx does not index any columns greater than 62, but we know from
-    ** colMask that columns greater than 62 are used, so this is not a
-    ** covering index */
-    return 1;
+  if( pIdx->bHasExpr==0 ){
+    for(i=0; i<pIdx->nColumn; i++){
+      if( pIdx->aiColumn[i]>=BMS-1 ) break;
+    }
+    if( i>=pIdx->nColumn ){
+      /* pIdx does not index any columns greater than 62, but we know from
+      ** colMask that columns greater than 62 are used, so this is not a
+      ** covering index */
+      return 0;
+    }
   }
   ck.pIdx = pIdx;
   ck.iTabCur = iTabCur;
+  ck.bExpr = 0;
+  ck.bUnidx = 0;
   memset(&w, 0, sizeof(w));
   w.xExprCallback = whereIsCoveringIndexWalkCallback;
   w.xSelectCallback = sqlite3SelectWalkNoop;
   w.u.pCovIdxCk = &ck;
-  w.eCode = 0;
   sqlite3WalkSelect(&w, pWInfo->pSelect);
-  return w.eCode;
+  if( ck.bUnidx ){
+    rc = 0;
+  }else if( ck.bExpr ){
+    rc = WHERE_EXPRIDX;
+  }else{
+    rc = WHERE_IDX_ONLY;
+  }
+  return rc;
 }
 
 /*
@@ -3548,14 +3603,38 @@ static int whereLoopAddBtree(
     }else{
       Bitmask m;
       if( pProbe->isCovering ){
-        pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         m = 0;
+        pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
       }else{
         m = pSrc->colUsed & pProbe->colNotIdxed;
-        if( m==TOPBIT ){
-          m = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
+        pNew->wsFlags = WHERE_INDEXED;
+        if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0) ){
+          u32 isCov = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
+          if( isCov==0 ){
+            WHERETRACE(0x200,
+               ("-> %s is not a covering index"
+                " according to whereIsCoveringIndex()\n", pProbe->zName));
+            assert( m!=0 );
+          }else{
+            m = 0;
+            pNew->wsFlags |= isCov;
+            if( isCov & WHERE_IDX_ONLY ){
+              WHERETRACE(0x200,
+                 ("-> %s is a covering expression index"
+                  " according to whereIsCoveringIndex()\n", pProbe->zName));
+            }else{
+              assert( isCov==WHERE_EXPRIDX );
+              WHERETRACE(0x200,
+                 ("-> %s might be a covering expression index"
+                  " according to whereIsCoveringIndex()\n", pProbe->zName));
+            }
+          }
+        }else if( m==0 ){
+          WHERETRACE(0x200,
+             ("-> %s a covering index according to bitmasks\n",
+             pProbe->zName, m==0 ? "is" : "is not"));
+          pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
         }
-        pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
       }
 
       /* Full scan via index */
@@ -3728,7 +3807,7 @@ static int whereLoopAddVirtualOne(
       ** that the particular combination of parameters provided is unusable.
       ** Make no entries in the loop table.
       */
-      WHERETRACE(0xffff, ("  ^^^^--- non-viable plan rejected!\n"));
+      WHERETRACE(0xffffffff, ("  ^^^^--- non-viable plan rejected!\n"));
       return SQLITE_OK;
     }
     return rc;
@@ -3839,7 +3918,7 @@ static int whereLoopAddVirtualOne(
     sqlite3_free(pNew->u.vtab.idxStr);
     pNew->u.vtab.needFree = 0;
   }
-  WHERETRACE(0xffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
+  WHERETRACE(0xffffffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
                       *pbIn, (sqlite3_uint64)mPrereq,
                       (sqlite3_uint64)(pNew->prereq & ~mPrereq)));
 
@@ -4031,7 +4110,7 @@ static int whereLoopAddVirtual(
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x800, ("BEGIN %s.addVirtual()\n", pSrc->pTab->zName));
-  WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
+  WHERETRACE(0x800, ("  VirtualOne: all usable\n"));
   rc = whereLoopAddVirtualOne(
       pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn, &bRetry
   );
@@ -4056,7 +4135,7 @@ static int whereLoopAddVirtual(
     /* If the plan produced by the earlier call uses an IN(...) term, call
     ** xBestIndex again, this time with IN(...) terms disabled. */
     if( bIn ){
-      WHERETRACE(0x40, ("  VirtualOne: all usable w/o IN\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all usable w/o IN\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, ALLBITS, WO_IN, p, mNoOmit, &bIn, 0);
       assert( bIn==0 );
@@ -4082,7 +4161,7 @@ static int whereLoopAddVirtual(
       mPrev = mNext;
       if( mNext==ALLBITS ) break;
       if( mNext==mBest || mNext==mBestNoIn ) continue;
-      WHERETRACE(0x40, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
+      WHERETRACE(0x800, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
                        (sqlite3_uint64)mPrev, (sqlite3_uint64)mNext));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mNext|mPrereq, 0, p, mNoOmit, &bIn, 0);
@@ -4096,7 +4175,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all (i.e. one guaranteed to be
     ** usable), make a call here with all source tables disabled */
     if( rc==SQLITE_OK && seenZero==0 ){
-      WHERETRACE(0x40, ("  VirtualOne: all disabled\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all disabled\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mPrereq, 0, p, mNoOmit, &bIn, 0);
       if( bIn==0 ) seenZeroNoIN = 1;
@@ -4106,7 +4185,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all and does not use an IN(...)
     ** operator, make a final call to obtain one here.  */
     if( rc==SQLITE_OK && seenZeroNoIN==0 ){
-      WHERETRACE(0x40, ("  VirtualOne: all disabled and w/o IN\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all disabled and w/o IN\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mPrereq, WO_IN, p, mNoOmit, &bIn, 0);
     }
@@ -4162,7 +4241,7 @@ static int whereLoopAddOr(
       sSubBuild = *pBuilder;
       sSubBuild.pOrSet = &sCur;
 
-      WHERETRACE(0x200, ("Begin processing OR-clause %p\n", pTerm));
+      WHERETRACE(0x400, ("Begin processing OR-clause %p\n", pTerm));
       for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
         if( (pOrTerm->eOperator & WO_AND)!=0 ){
           sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
@@ -4179,9 +4258,9 @@ static int whereLoopAddOr(
         }
         sCur.n = 0;
 #ifdef WHERETRACE_ENABLED
-        WHERETRACE(0x200, ("OR-term %d of %p has %d subterms:\n", 
+        WHERETRACE(0x400, ("OR-term %d of %p has %d subterms:\n", 
                    (int)(pOrTerm-pOrWC->a), pTerm, sSubBuild.pWC->nTerm));
-        if( sqlite3WhereTrace & 0x400 ){
+        if( sqlite3WhereTrace & 0x20000 ){
           sqlite3WhereClausePrint(sSubBuild.pWC);
         }
 #endif
@@ -4243,7 +4322,7 @@ static int whereLoopAddOr(
         pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
       }
-      WHERETRACE(0x200, ("End processing OR-clause %p\n", pTerm));
+      WHERETRACE(0x400, ("End processing OR-clause %p\n", pTerm));
     }
   }
   return rc;
@@ -4591,8 +4670,8 @@ static i8 wherePathSatisfiesOrderBy(
             if( pOBExpr->iTable!=iCur ) continue;
             if( pOBExpr->iColumn!=iColumn ) continue;
           }else{
-            Expr *pIdxExpr = pIndex->aColExpr->a[j].pExpr;
-            if( sqlite3ExprCompareSkip(pOBExpr, pIdxExpr, iCur) ){
+            Expr *pIxExpr = pIndex->aColExpr->a[j].pExpr;
+            if( sqlite3ExprCompareSkip(pOBExpr, pIxExpr, iCur) ){
               continue;
             }
           }
@@ -5258,7 +5337,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->cId = '0';
 #endif
 #ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace ){
+    if( sqlite3WhereTrace & 0x02 ){
       sqlite3DebugPrintf("whereShortCut() used to compute solution\n");
     }
 #endif
@@ -5388,7 +5467,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
       }
     }
     if( pTerm<pEnd ) continue;
-    WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+    WHERETRACE(0xffffffff, ("-> drop loop %c not used\n", pLoop->cId));
     notReady &= ~pLoop->maskSelf;
     for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
       if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
@@ -5448,7 +5527,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
         testcase( pItem->fg.jointype & JT_LEFT );
         pLoop->wsFlags |= WHERE_BLOOMFILTER;
         pLoop->wsFlags &= ~WHERE_IDX_ONLY;
-        WHERETRACE(0xffff, (
+        WHERETRACE(0xffffffff, (
            "-> use Bloom-filter on loop %c because there are ~%.1e "
            "lookups into %s which has only ~%.1e rows\n",
            pLoop->cId, (double)sqlite3LogEstToInt(nSearch), pTab->zName,
@@ -5461,13 +5540,13 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
 
 /*
 ** This is an sqlite3ParserAddCleanup() callback that is invoked to
-** free the Parse->pIdxExpr list when the Parse object is destroyed.
+** free the Parse->pIdxEpr list when the Parse object is destroyed.
 */
 static void whereIndexedExprCleanup(sqlite3 *db, void *pObject){
   Parse *pParse = (Parse*)pObject;
-  while( pParse->pIdxExpr!=0 ){
-    IndexedExpr *p = pParse->pIdxExpr;
-    pParse->pIdxExpr = p->pIENext;
+  while( pParse->pIdxEpr!=0 ){
+    IndexedExpr *p = pParse->pIdxEpr;
+    pParse->pIdxEpr = p->pIENext;
     sqlite3ExprDelete(db, p->pExpr);
     sqlite3DbFreeNN(db, p);
   }
@@ -5479,13 +5558,13 @@ static void whereIndexedExprCleanup(sqlite3 *db, void *pObject){
 ** number for the index and iDataCur is the cursor number for the corresponding
 ** table.
 **
-** This routine adds IndexedExpr entries to the Parse->pIdxExpr field for
+** This routine adds IndexedExpr entries to the Parse->pIdxEpr field for
 ** each of the expressions in the index so that the expression code generator
 ** will know to replace occurrences of the indexed expression with
 ** references to the corresponding column of the index.
 */
 static SQLITE_NOINLINE void whereAddIndexedExpr(
-  Parse *pParse,     /* Add IndexedExpr entries to pParse->pIdxExpr */
+  Parse *pParse,     /* Add IndexedExpr entries to pParse->pIdxEpr */
   Index *pIdx,       /* The index-on-expression that contains the expressions */
   int iIdxCur,       /* Cursor number for pIdx */
   SrcItem *pTabItem  /* The FROM clause entry for the table */
@@ -5514,7 +5593,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     if( sqlite3ExprIsConstant(pExpr) ) continue;
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
-    p->pIENext = pParse->pIdxExpr;
+    p->pIENext = pParse->pIdxEpr;
     p->pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
     p->iDataCur = pTabItem->iCursor;
     p->iIdxCur = iIdxCur;
@@ -5523,7 +5602,7 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
     p->zIdxName = pIdx->zName;
 #endif
-    pParse->pIdxExpr = p;
+    pParse->pIdxEpr = p;
     if( p->pIENext==0 ){
       sqlite3ParserAddCleanup(pParse, whereIndexedExprCleanup, pParse);
     }
@@ -5815,13 +5894,13 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
 #if defined(WHERETRACE_ENABLED)
-  if( sqlite3WhereTrace & 0xffff ){
+  if( sqlite3WhereTrace & 0xffffffff ){
     sqlite3DebugPrintf("*** Optimizer Start *** (wctrlFlags: 0x%x",wctrlFlags);
     if( wctrlFlags & WHERE_USE_LIMIT ){
       sqlite3DebugPrintf(", limit: %d", iAuxArg);
     }
     sqlite3DebugPrintf(")\n");
-    if( sqlite3WhereTrace & 0x100 ){
+    if( sqlite3WhereTrace & 0x8000 ){
       Select sSelect;
       memset(&sSelect, 0, sizeof(sSelect));
       sSelect.selFlags = SF_WhereBegin;
@@ -5831,10 +5910,10 @@ WhereInfo *sqlite3WhereBegin(
       sSelect.pEList = pResultSet;
       sqlite3TreeViewSelect(0, &sSelect, 0);
     }
-  }
-  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
-    sqlite3DebugPrintf("---- WHERE clause at start of analysis:\n");
-    sqlite3WhereClausePrint(sWLB.pWC);
+    if( sqlite3WhereTrace & 0x4000 ){ /* Display all WHERE clause terms */
+      sqlite3DebugPrintf("---- WHERE clause at start of analysis:\n");
+      sqlite3WhereClausePrint(sWLB.pWC);
+    }
   }
 #endif
 
@@ -5850,7 +5929,7 @@ WhereInfo *sqlite3WhereBegin(
     ** loops will be built using the revised truthProb values. */
     if( sWLB.bldFlags2 & SQLITE_BLDF2_2NDPASS ){
       WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
-      WHERETRACE(0xffff, 
+      WHERETRACE(0xffffffff, 
            ("**** Redo all loop computations due to"
             " TERM_HIGHTRUTH changes ****\n"));
       while( pWInfo->pLoops ){
@@ -5936,11 +6015,11 @@ WhereInfo *sqlite3WhereBegin(
   }
 
 #if defined(WHERETRACE_ENABLED)
-  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
+  if( sqlite3WhereTrace & 0x4000 ){ /* Display all terms of the WHERE clause */
     sqlite3DebugPrintf("---- WHERE clause at end of analysis:\n");
     sqlite3WhereClausePrint(sWLB.pWC);
   }
-  WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));
+  WHERETRACE(0xffffffff,("*** Optimizer Finished ***\n"));
 #endif
   pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 
@@ -6474,7 +6553,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         last = pWInfo->iEndWhere;
       }
       if( pIdx->bHasExpr ){
-        IndexedExpr *p = pParse->pIdxExpr;
+        IndexedExpr *p = pParse->pIdxEpr;
         while( p ){
           if( p->iIdxCur==pLevel->iIdxCur ){
             p->iDataCur = -1;
