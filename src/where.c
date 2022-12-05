@@ -3092,7 +3092,15 @@ static int whereLoopAddBtreeIndex(
     ** seek only. Then, if this is a non-covering index, add the cost of
     ** visiting the rows in the main table.  */
     assert( pSrc->pTab->szTabRow>0 );
-    rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
+    if( pProbe->idxType==SQLITE_IDXTYPE_IPK ){
+      /* The pProbe->szIdxRow is low for an IPK table since the interior
+      ** pages are small.  Thuse szIdxRow gives a good estimate of seek cost.
+      ** But the leaf pages are full-size, so pProbe->szIdxRow would badly
+      ** under-estimate the scanning cost. */
+      rCostIdx = pNew->nOut + 16;
+    }else{
+      rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
+    }
     pNew->rRun = sqlite3LogEstAdd(rLogSize, rCostIdx);
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK|WHERE_EXPRIDX))==0 ){
       pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
