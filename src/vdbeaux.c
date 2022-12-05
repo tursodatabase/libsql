@@ -1128,6 +1128,13 @@ void sqlite3VdbeScanStatus(
   }
 }
 
+/*
+** Add the range of instructions from addrStart to addrEnd (inclusive) to
+** the set of those corresponding to the sqlite3_stmt_scanstatus() counters
+** associated with the OP_Explain instruction at addrExplain. The
+** sum of the sqlite3Hwtime() values for each of these instructions 
+** will be returned for SQLITE_SCANSTAT_NCYCLE requests.
+*/
 void sqlite3VdbeScanStatusRange(
   Vdbe *p, 
   int addrExplain, 
@@ -1153,6 +1160,11 @@ void sqlite3VdbeScanStatusRange(
   }
 }
 
+/*
+** Set the addresses for the SQLITE_SCANSTAT_NLOOP and SQLITE_SCANSTAT_NROW
+** counters for the query element associated with the OP_Explain at
+** addrExplain.
+*/
 void sqlite3VdbeScanStatusCounters(
   Vdbe *p, 
   int addrExplain, 

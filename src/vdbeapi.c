@@ -2258,7 +2258,6 @@ int sqlite3_stmt_scanstatus(
   return sqlite3_stmt_scanstatus_v2(pStmt, iScan, iScanStatusOp, 0, pOut);
 }
 
-
 /*
 ** Zero all counters associated with the sqlite3_stmt_scanstatus() data.
 */
