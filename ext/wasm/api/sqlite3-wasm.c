@@ -410,13 +410,11 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
   } _DefGroup;
 
-#if 0
   /* TODO? Authorizer... */
   DefGroup(authorizer){
     DefInt(SQLITE_DENY);
     DefInt(SQLITE_IGNORE);
   } _DefGroup;
-#endif
 
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
@@ -709,6 +707,14 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_INDEX_CONSTRAINT_LIMIT);
     DefInt(SQLITE_INDEX_CONSTRAINT_OFFSET);
     DefInt(SQLITE_INDEX_CONSTRAINT_FUNCTION);
+    DefInt(SQLITE_VTAB_CONSTRAINT_SUPPORT);
+    DefInt(SQLITE_VTAB_INNOCUOUS);
+    DefInt(SQLITE_VTAB_DIRECTONLY);
+    DefInt(SQLITE_ROLLBACK);
+    //DefInt(SQLITE_IGNORE); // Also used by sqlite3_authorizer() callback
+    DefInt(SQLITE_FAIL);
+    //DefInt(SQLITE_ABORT); // Also an error code
+    DefInt(SQLITE_REPLACE);
   } _DefGroup;
 
 #undef DefGroup
@@ -867,15 +873,6 @@ const char * sqlite3_wasm_enum_json(void){
       M(xShadowName,    "i(s)");
     } _StructBinder;
 #undef CurrentStruct
-    /*
-      module/vtab todos:
-
-      - sqlite3_create_module()
-      - sqlite3_create_module_v2()
-      - sqlite3_drop_modules()
-      - sqlite3_declare_vtab()
-      - sqlite3_overload_function()
-     */
     
     /**
      ** Workaround: in order to map the various inner structs from
@@ -1268,6 +1265,31 @@ SQLITE_WASM_KEEP
 sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
   return &sqlite3KvvfsMethods;
 }
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** This is a proxy for the variadic sqlite3_vtab_config() which passes
+** its argument on, or not, to sqlite3_vtab_config(), depending on the
+** value of its 2nd argument. Returns the result of
+** sqlite3_vtab_config(), or SQLITE_MISUSE if the 2nd arg is not a
+** valid value.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_vtab_config(sqlite3 *pDb, int op, int arg){
+  switch(op){
+  case SQLITE_VTAB_DIRECTONLY:
+  case SQLITE_VTAB_INNOCUOUS:
+    return sqlite3_vtab_config(pDb, op);
+  case SQLITE_VTAB_CONSTRAINT_SUPPORT:
+    return sqlite3_vtab_config(pDb, op, arg);
+  default:
+    return SQLITE_MISUSE;
+  }
+
+}
+
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/wasmfs.h>
