@@ -52,6 +52,7 @@ _sqlite3_extended_result_codes
 _sqlite3_file_control
 _sqlite3_finalize
 _sqlite3_free
+_sqlite3_get_auxdata
 _sqlite3_initialize
 _sqlite3_libversion
 _sqlite3_libversion_number
@@ -81,6 +82,7 @@ _sqlite3_result_text
 _sqlite3_result_zeroblob
 _sqlite3_result_zeroblob64
 _sqlite3_serialize
+_sqlite3_set_auxdata
 _sqlite3_shutdown
 _sqlite3_sourceid
 _sqlite3_sql

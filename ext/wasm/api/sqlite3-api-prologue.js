@@ -942,6 +942,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_file_control", "int", "sqlite3*", "string", "int", "*"],
     ["sqlite3_finalize", "int", "sqlite3_stmt*"],
     ["sqlite3_free", undefined,"*"],
+    ["sqlite3_get_auxdata", "*", "sqlite3_context*", "int"],
     ["sqlite3_initialize", undefined],
     /*["sqlite3_interrupt", undefined, "sqlite3*"
        ^^^ we cannot actually currently support this because JS is
@@ -959,19 +960,20 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        the range of supported argument types. */
     ["sqlite3_realloc", "*","*","int"],
     ["sqlite3_reset", "int", "sqlite3_stmt*"],
-    ["sqlite3_result_blob",undefined, "sqlite3_context*", "*", "int", "*"],
-    ["sqlite3_result_double",undefined, "sqlite3_context*", "f64"],
-    ["sqlite3_result_error",undefined, "sqlite3_context*", "string", "int"],
+    ["sqlite3_result_blob", undefined, "sqlite3_context*", "*", "int", "*"],
+    ["sqlite3_result_double", undefined, "sqlite3_context*", "f64"],
+    ["sqlite3_result_error", undefined, "sqlite3_context*", "string", "int"],
     ["sqlite3_result_error_code", undefined, "sqlite3_context*", "int"],
     ["sqlite3_result_error_nomem", undefined, "sqlite3_context*"],
     ["sqlite3_result_error_toobig", undefined, "sqlite3_context*"],
-    ["sqlite3_result_int",undefined, "sqlite3_context*", "int"],
-    ["sqlite3_result_null",undefined, "sqlite3_context*"],
-    ["sqlite3_result_pointer",undefined,
+    ["sqlite3_result_int", undefined, "sqlite3_context*", "int"],
+    ["sqlite3_result_null", undefined, "sqlite3_context*"],
+    ["sqlite3_result_pointer", undefined,
      "sqlite3_context*", "*", "string:static", "*"],
-    ["sqlite3_result_text",undefined, "sqlite3_context*", "string", "int", "*"],
+    ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
     ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
     ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
+    ["sqlite3_set_auxdata", undefined, "sqlite3_context*", "int", "*", "*"/* => v(*) */],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
@@ -1012,6 +1014,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Functions which require BigInt (int64) support are separated from
      the others because we need to conditionally bind them or apply
      dummy impls, depending on the capabilities of the environment.
+
+     Note that not all of these functions directly require int64
+     but are only for use with APIs which require int64. For example,
+     the vtab-related functions.
   */
   wasm.bindingSignatures.int64 = [
     ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
@@ -1027,7 +1033,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
     ["sqlite3_realloc64", "*","*", "i64"],
-    ["sqlite3_result_int64",undefined, "*", "i64"],
+    ["sqlite3_result_int64", undefined, "*", "i64"],
     ["sqlite3_result_zeroblob64", "int", "*", "i64"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
     ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],

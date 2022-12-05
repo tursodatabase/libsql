@@ -61,3 +61,9 @@ span.labeled-input {
   flex-direction: column-reverse;
 }
 label[for] { cursor: pointer }
+
+h1 {
+  border-radius: 0.25em;
+  padding: 0.15em 0.25em;
+}
+h1:first-of-type {margin: 0 0 0.5em 0;}
