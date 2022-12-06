@@ -231,6 +231,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
         obj.ondispose.forEach(function(x){
           try{
             if(x instanceof Function) x.call(obj);
+            else if(x instanceof StructType) x.dispose();
             else if('number' === typeof x) dealloc(x);
             // else ignore. Strings are permitted to annotate entries
             // to assist in debugging.

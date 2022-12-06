@@ -474,6 +474,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
+     Internal impl of the DB.selectArrays() and
+     selectObjects() methods.
+  */
+  const __selectAll =
+        (db, sql, bind, rowMode)=>db.exec({
+          sql, bind, rowMode, returnValue: 'resultRows'
+        });
+
+  /**
      Expects to be given a DB instance or an `sqlite3*` pointer (may
      be null) and an sqlite3 API result code. If the result code is
      not falsy, this function throws an SQLite3Error with an error
@@ -1096,6 +1105,26 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     selectObject: function(sql,bind){
       return __selectFirstRow(this, sql, bind, {});
+    },
+
+    /**
+       Runs the given SQL and returns an array of all results, with
+       each row represented as an array, as per the 'array' `rowMode`
+       option to `exec()`. An empty result set resolves
+       to an empty array. The second argument, if any, is treated as
+       the 'bind' option to a call to exec().
+    */
+    selectArrays: function(sql,bind){
+      return __selectAll(this, sql, bind, 'array');
+    },
+
+    /**
+       Works identically to selectArrays() except that each value
+       in the returned array is an object, as per the 'object' `rowMode`
+       option to `exec()`.
+    */
+    selectObjects: function(sql,bind){
+      return __selectAll(this, sql, bind, 'object');
     },
 
     /**

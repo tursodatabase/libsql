@@ -1642,7 +1642,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
              some initializers. Retain them when running in test mode
              so that we can add tests for them. */
           delete sqlite3.util;
-          delete sqlite3.VfsHelper;
           delete sqlite3.StructBinder;
         }
         return sqlite3;

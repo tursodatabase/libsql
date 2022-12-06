@@ -426,7 +426,8 @@ simply passing a pointer to the constructor. For example:
 
 ```js
 const m = new MyStruct( functionReturningASharedPtr() );
-// calling m.dispose() will _not_ free the wrapped C-side instance.
+// calling m.dispose() will _not_ free the wrapped C-side instance
+// but will trigger any ondispose handler.
 ```
 
 Now that we have struct instances, there are a number of things we
