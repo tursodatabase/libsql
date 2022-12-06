@@ -10262,12 +10262,12 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }
     if( bSchema ){
-      zSql = "SELECT lower(name) FROM sqlite_schema"
+      zSql = "SELECT lower(name) as tname FROM sqlite_schema"
              " WHERE type='table' AND coalesce(rootpage,0)>1"
              " UNION ALL SELECT 'sqlite_schema'"
              " ORDER BY 1 collate nocase";
     }else{
-      zSql = "SELECT lower(name) FROM sqlite_schema"
+      zSql = "SELECT lower(name) as tname FROM sqlite_schema"
              " WHERE type='table' AND coalesce(rootpage,0)>1"
              " AND name NOT LIKE 'sqlite_%'"
              " ORDER BY 1 collate nocase";
@@ -10327,6 +10327,56 @@ static int do_meta_command(char *zLine, ShellState *p){
       utf8_printf(p->out, "%s\n", zSql);
     }else{
       shell_exec(p, zSql, 0);
+    }
+    {
+      int lrc;
+      char *zRevText = /* Query for reversible to-blob-to-text check */
+	"SELECT lower(name) as tname FROM sqlite_schema\n"
+	"WHERE type='table' AND coalesce(rootpage,0)>1\n"
+	"AND name NOT LIKE 'sqlite_%%'%s\n"
+	"ORDER BY 1 collate nocase";
+      zRevText = sqlite3_mprintf(zRevText, zLike? " AND name LIKE $tspec" : "");
+      zRevText = sqlite3_mprintf(
+	  /* lower-case query is first run, producing upper-case query. */
+	  "with tabcols as materialized(\n"
+	  "select tname, cname\n"
+	  "from ("
+	  " select ss.tname as tname, ti.name as cname\n"
+	  " from (%z) ss\n inner join pragma_table_info(tname) ti))\n"
+	  "select 'SELECT total(bad_text_count) AS bad_text_count\n"
+	  "FROM ('||group_concat(query, ' UNION ALL ')||')' as btc_query\n"
+	  " from (select 'SELECT COUNT(*) AS bad_text_count\n"
+	  "FROM '||tname||' WHERE '\n"
+	  "||group_concat('CAST(CAST('||cname||' AS BLOB) AS TEXT)<>'||cname\n"
+	  "|| ' AND typeof('||cname||')=''text'' ',\n"
+	  "' OR ') as query, tname from tabcols group by tname)"
+	  , zRevText);
+      shell_check_oom(zRevText);
+      if( bDebug ) utf8_printf(p->out, "%s\n", zRevText);
+      lrc = sqlite3_prepare_v2(p->db, zRevText, -1, &pStmt, 0);
+      assert(lrc==SQLITE_OK);
+      if( zLike ) sqlite3_bind_text(pStmt,1,zLike,-1,SQLITE_STATIC);
+      lrc = SQLITE_ROW==sqlite3_step(pStmt);
+      if( lrc ){
+        const char *zGenQuery = (char*)sqlite3_column_text(pStmt,0);
+        sqlite3_stmt *pCheckStmt;
+        lrc = sqlite3_prepare_v2(p->db, zGenQuery, -1, &pCheckStmt, 0);
+        if( bDebug ) utf8_printf(p->out, "%s\n", zGenQuery);
+        if( SQLITE_OK==lrc ){
+	  if( SQLITE_ROW==sqlite3_step(pCheckStmt) ){
+	    double countIrreversible = sqlite3_column_double(pCheckStmt, 0);
+	    if( countIrreversible>0 ){
+	      int n = (int)(countIrreversible + 0.5);
+	      utf8_printf(stderr,
+		 "Digest includes %d invalidly encoded text field%s.\n",
+		 n, (n>1)? "s": "");
+	    }
+	  }
+	  sqlite3_finalize(pCheckStmt);
+        }
+        sqlite3_finalize(pStmt);
+      }
+      sqlite3_free(zRevText);
     }
     sqlite3_free(zSql);
   }else
@@ -11119,6 +11169,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
           goto PlainScan;
         case '`': case '\'': case '"':
           if(*zLine==cWait){
+	    /* Swallow doubled end-delimiter.*/
             ++zLine;
             continue;
           }
