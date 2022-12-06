@@ -6855,6 +6855,52 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 }
 
 /*
+** Return TRUE (non-zero) if the i-th entry in the pTabList SrcList can
+** be implemented as a co-routine.  The i-th entry is guaranteed to be
+** a subquery.
+**
+** The subquery is implemented as a co-routine if all of the following are
+** true:
+**
+**    (1)  Either of the following are true:
+**         (1a)  The subquery must be the outer loop because it is either
+**               (i) the only term in the FROM clause, or because (ii) it
+**               is the left-most term and a CROSS JOIN or similar requires
+**               it to be the outer loop. subquery and there is nothing
+**         (1b)  There is nothing that would prevent the subquery from
+**               being an outer loop and the SQLITE_PREPARE_SAFESQL flag
+**               is not set.
+**    (2)  The subquery is not a CTE that should be materialized
+**    (3)  The subquery is not part of a left operand for a RIGHT JOIN
+**    (4)  The SQLITE_Coroutine optimization disable flag is not set
+*/
+static int fromClauseTermCanBeCoroutine(
+  Parse *pParse,            /* Parsing context */
+  SrcList *pTabList,        /* FROM clause */
+  int i                     /* Which term of the FROM clause */
+){
+  SrcItem *pItem = &pTabList->a[i];
+  if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ) return 0;/* (2) */
+  if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;                /* (3) */
+  if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0;  /* (4) */
+  if( i==0 ){
+    if( pTabList->nSrc==1 ) return 1;                              /* (1a-i) */
+    if( pTabList->a[1].fg.jointype & JT_CROSS ) return 1;          /* (1a-ii) */
+    if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;     
+    return 1;
+  }
+  if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;
+  while( 1 /*exit-by-break*/ ){
+    if( pItem->fg.jointype & (JT_OUTER|JT_CROSS)  ) return 0;
+    if( i==0 ) break;
+    i--;
+    pItem--;
+    if( pItem->pSelect!=0 ) return 0;
+  }
+  return 1;
+}
+
+/*
 ** Generate code for the SELECT statement given in the p argument.  
 **
 ** The results are returned according to the SelectDest structure.
@@ -7241,35 +7287,19 @@ int sqlite3Select(
     pParse->zAuthContext = pItem->zName;
 
     /* Generate code to implement the subquery
-    **
-    ** The subquery is implemented as a co-routine if all of the following are
-    ** true:
-    **
-    **    (1)  the subquery is guaranteed to be the outer loop (so that
-    **         it does not need to be computed more than once), and
-    **    (2)  the subquery is not a CTE that should be materialized
-    **    (3)  the subquery is not part of a left operand for a RIGHT JOIN
     */
-    if( i==0
-     && (pTabList->nSrc==1
-            || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)  /* (1) */
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)   /* (2) */
-     && (pTabList->a[0].fg.jointype & JT_LTORJ)==0                   /* (3) */
-    ){
+    if( fromClauseTermCanBeCoroutine(pParse, pTabList, i) ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
       */
       int addrTop = sqlite3VdbeCurrentAddr(v)+1;
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-      int addrExplain;
-#endif
      
       pItem->regReturn = ++pParse->nMem;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
       VdbeComment((v, "%!S", pItem));
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
-      ExplainQueryPlan2(addrExplain, (pParse, 1, "CO-ROUTINE %!S", pItem));
+      ExplainQueryPlan((pParse, 1, "CO-ROUTINE %!S", pItem));
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
@@ -7277,10 +7307,6 @@ int sqlite3Select(
       sqlite3VdbeEndCoroutine(v, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
-      /* For SQLITE_SCANSTAT_NCYCLE, all instructions from the 
-      ** OP_InitCoroutine coded above until this point are attributed to 
-      ** the CO-ROUTINE query element.  */
-      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain-1, -1);
     }else if( pItem->fg.isCte && pItem->u2.pCteUse->addrM9e>0 ){
       /* This is a CTE for which materialization code has already been
       ** generated.  Invoke the subroutine to compute the materialization,
@@ -7335,6 +7361,7 @@ int sqlite3Select(
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
       VdbeComment((v, "end %!S", pItem));
+      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
       sqlite3VdbeJumpHere(v, topAddr);
       sqlite3ClearTempRegCache(pParse);
       if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
@@ -7344,9 +7371,6 @@ int sqlite3Select(
         pCteUse->iCur = pItem->iCursor;
         pCteUse->nRowEst = pSub->nSelectRow;
       }
-      /* For SQLITE_SCANSTAT_NCYCLE, all instructions from the 
-      ** OP_Explain to here are attibuted to the MATERIALIZE element. */
-      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
     }
     if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);

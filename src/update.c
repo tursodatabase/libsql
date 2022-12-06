@@ -268,6 +268,7 @@ static void updateFromSelect(
   if( pSelect ) pSelect->selFlags |= SF_OrderByReqd;
   sqlite3SelectDestInit(&dest, eDest, iEph);
   dest.iSDParm2 = (pPk ? pPk->nKeyCol : -1);
+  pParse->prepFlags |= SQLITE_PREPARE_SAFEOPT;
   sqlite3Select(pParse, pSelect, &dest);
   sqlite3SelectDelete(db, pSelect);
 }

@@ -1844,6 +1844,7 @@ struct sqlite3 {
 #define SQLITE_FlttnUnionAll  0x00800000 /* Disable the UNION ALL flattener */
    /* TH3 expects this value  ^^^^^^^^^^ See flatten04.test */
 #define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
+#define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
