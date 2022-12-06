@@ -1544,6 +1544,11 @@ self.sqlite3InitModule = sqlite3InitModule;
         const tmplMethods = {
           xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
             try{
+              const args = wasm.cArgvToJs(argc, argv);
+              T.assert(args.length>=3)
+                .assert(args[0] === 'testvtab')
+                .assert(args[1] === 'main')
+                .assert(args[2] === 'testvtab');
               const rc = capi.sqlite3_declare_vtab(
                 pDb, "CREATE TABLE ignored(a,b)"
               );

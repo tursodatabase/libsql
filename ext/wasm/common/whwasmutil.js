@@ -1132,6 +1132,27 @@ self.WhWasmUtilInstaller = function(target){
   target.allocMainArgv = (list)=>__allocMainArgv(false, list);
 
   /**
+     Expects to be given a C-style string array and its length. It
+     returns a JS array of strings and/or nulls: any entry in the
+     pArgv array which is NULL results in a null entry in the result
+     array. If argc is 0 then an empty array is returned.
+
+     Results are undefined if any entry in the first argc entries of
+     pArgv are neither 0 (NULL) nor legal UTF-format C strings.
+
+     To be clear, the expected C-style arguments to be passed to this
+     function are `(int, char **)` (optionally const-qualified).
+  */
+  target.cArgvToJs = (argc, pArgv)=>{
+    const list = [];
+    for(let i = 0; i < argc; ++i){
+      const arg = target.getPtrValue(pArgv + (target.ptrSizeof * i));
+      list.push( arg ? target.cstringToJs(arg) : null );
+    }
+    return list;
+  };
+
+  /**
      Wraps function call func() in a scopedAllocPush() and
      scopedAllocPop() block, such that all calls to scopedAlloc() and
      friends from within that call will have their memory freed
