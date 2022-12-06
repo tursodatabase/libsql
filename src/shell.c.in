@@ -499,7 +499,7 @@ static char continuePrompt[PROMPT_LEN_MAX];
 # define CONTINUE_PAREN_INCR(p,n) \
   if(p && stdin_is_interactive) (trackParenLevel(p,n))
 # define SCAN_TRACKER_REFTYPE struct DynaPrompt *
-# define CONTINUE_PROMPT_STATE ((SCAN_TRACKER_REFTYPE)&dynPrompt)
+# define CONTINUE_PROMPT_STATE (pDynPrompt)
 
 static struct DynaPrompt {
   char dynamicPrompt[PROMPT_LEN_MAX];
@@ -507,6 +507,7 @@ static struct DynaPrompt {
   int inParenLevel;
   char *zScannerAwaits;
 } dynPrompt = { {0}, {0}, 0, 0 };
+static struct DynaPrompt *pDynPrompt = &dynPrompt;
 
 /* Record parenthesis nesting level change, or force level to 0. */
 static void trackParenLevel(struct DynaPrompt *p, int ni){
