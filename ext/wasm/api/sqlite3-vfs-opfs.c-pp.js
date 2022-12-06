@@ -1156,11 +1156,8 @@ const installOpfsVfs = function callee(options){
         opt.vfs = opfsVfs.$zName;
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
-      sqlite3.oo1.OpfsDb =
-        opfsUtil.OpfsDb /* sqlite3.opfs.OpfsDb => deprecated name -
-                           will be phased out Real Soon */ =
-        OpfsDb;
       OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+      sqlite3.oo1.OpfsDb = OpfsDb;
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         function(oo1Db, sqlite3){
@@ -1185,7 +1182,7 @@ const installOpfsVfs = function callee(options){
           ], 0, 0, 0);
         }
       );
-    }
+    }/*extend sqlite3.oo1*/
 
     const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
