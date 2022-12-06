@@ -1656,16 +1656,16 @@ self.sqlite3InitModule = sqlite3InitModule;
           }
         };
         /**
-           Problem to resolve: the vtab API places relevance on
-           whether xCreate and xConnect are exactly the same function
-           (same pointer address). Two JS-side references to the same
-           method will end up, without acrobatics to counter it, being
-           compiled as two different WASM-side bindings, i.e. two
-           different pointers.
+           The vtab API places relevance on whether xCreate and
+           xConnect are exactly the same function (same pointer
+           address). Two JS-side references to the same method will
+           end up, without acrobatics to counter it, being compiled as
+           two different WASM-side bindings, i.e. two different
+           pointers.
 
            In order to account for this, VtabHelper.installMethods()
            checks for duplicate function entries and maps them to the
-           same WASM-compiled instance
+           same WASM-compiled instance.
         */
         if(1){
           tmplMethods.xCreate = tmplMethods.xConnect;
@@ -1676,8 +1676,9 @@ self.sqlite3InitModule = sqlite3InitModule;
         tmplMod.$iVersion = 0;
         vth.installMethods(tmplMod, tmplMethods, true);
         if(tmplMethods.xCreate){
-          T.assert(tmplMod.$xCreate === tmplMod.$xConnect,
-                   "installMethods() must avoid re-compiling identical functions");
+          T.assert(tmplMod.$xCreate)
+            .assert(tmplMod.$xCreate === tmplMod.$xConnect,
+                    "installMethods() must avoid re-compiling identical functions");
           tmplMod.$xCreate = 0;
         }
         let rc = capi.sqlite3_create_module(
@@ -1696,8 +1697,8 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////
     .t({
-      name: 'C-side WASM tests (if compiled in)',
-      predicate: haveWasmCTests,
+      name: 'C-side WASM tests',
+      predicate: ()=>(haveWasmCTests() || "Not compiled in."),
       test: function(){
         const w = wasm, db = this.db;
         const stack = w.scopedAllocPush();
