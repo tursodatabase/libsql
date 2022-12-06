@@ -467,8 +467,93 @@ static char *Argv0;
 ** Prompt strings. Initialized in main. Settable with
 **   .prompt main continue
 */
-static char mainPrompt[20];     /* First line prompt. default: "sqlite> "*/
-static char continuePrompt[20]; /* Continuation prompt. default: "   ...> " */
+#define PROMPT_LEN_MAX 20
+/* First line prompt.   default: "sqlite> " */
+static char mainPrompt[PROMPT_LEN_MAX];
+/* Continuation prompt. default: "   ...> " */
+static char continuePrompt[PROMPT_LEN_MAX];
+
+/*
+** Optionally disable dynamic continuation prompt.
+** Unless disabled, the continuation prompt shows open SQL lexemes if any,
+** or open parentheses level if non-zero, or continuation prompt as set.
+** This facility interacts with the scanner and process_input() where the
+** below 5 macros are used.
+*/
+#ifdef SQLITE_OMIT_DYNAPROMPT
+# define CONTINUATION_PROMPT continuePrompt
+# define CONTINUE_PROMPT_RESET(p)
+# define CONTINUE_PROMPT_AWAITS(p,s)
+# define CONTINUE_PROMPT_AWAITC(p,c)
+# define CONTINUE_PAREN_INCR(p,n)
+# define CONTINUE_PROMPT_STATE 0
+# define SCAN_TRACKER_REFTYPE void*
+#else
+# define CONTINUATION_PROMPT dynamicContinuePrompt()
+# define CONTINUE_PROMPT_RESET(p) \
+  if(p) (setLexemeOpen(p,0,0), trackParenLevel(p,0))
+# define CONTINUE_PROMPT_AWAITS(p,s) \
+  if(p && stdin_is_interactive) setLexemeOpen(p, s, 0)
+# define CONTINUE_PROMPT_AWAITC(p,c) \
+  if(p && stdin_is_interactive) setLexemeOpen(p, 0, c)
+# define CONTINUE_PAREN_INCR(p,n) \
+  if(p && stdin_is_interactive) (trackParenLevel(p,n))
+# define SCAN_TRACKER_REFTYPE struct DynaPrompt *
+# define CONTINUE_PROMPT_STATE ((SCAN_TRACKER_REFTYPE)&dynPrompt)
+
+static struct DynaPrompt {
+  char dynamicPrompt[PROMPT_LEN_MAX];
+  char acAwait[2];
+  int inParenLevel;
+  char *zScannerAwaits;
+} dynPrompt = { {0}, {0}, 0, 0 };
+
+/* Record parenthesis nesting level change, or force level to 0. */
+static void trackParenLevel(struct DynaPrompt *p, int ni){
+  p->inParenLevel += ni;
+  if( ni==0 ) p->inParenLevel = 0;
+  p->zScannerAwaits = 0;
+}
+
+/* Record that a lexeme is opened, or closed with args==0. */
+static void setLexemeOpen(struct DynaPrompt *p, char *s, char c){
+  if( s!=0 || c==0 ){
+    p->zScannerAwaits = s;
+    p->acAwait[0] = 0;
+  }else{
+    p->acAwait[0] = c;
+    p->zScannerAwaits = p->acAwait;
+  }
+}
+
+/* Upon demand, derive the continuation prompt to display. */
+static char *dynamicContinuePrompt(void){
+  if( continuePrompt[0]==0
+      || (dynPrompt.zScannerAwaits==0 && dynPrompt.inParenLevel == 0) ){
+    return continuePrompt;
+  }else{
+    if( dynPrompt.zScannerAwaits ){
+      int ncp = strlen(continuePrompt), ndp = strlen(dynPrompt.zScannerAwaits);
+      if( ndp > ncp-3 ) return continuePrompt;
+      strncpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits, ndp);
+      while( ndp<3 ) dynPrompt.dynamicPrompt[ndp++] = ' ';
+      strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
+	      PROMPT_LEN_MAX-4);
+    }else{
+      if( dynPrompt.inParenLevel>9 ){
+	strncpy(dynPrompt.dynamicPrompt, "(..", 3);
+      }else if( dynPrompt.inParenLevel<0 ){
+	strncpy(dynPrompt.dynamicPrompt, ")x!", 3);
+      }else{
+	strncpy(dynPrompt.dynamicPrompt, "(x.", 3);
+	dynPrompt.dynamicPrompt[2] = (char)('0'+dynPrompt.inParenLevel);
+      }
+      strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3, PROMPT_LEN_MAX-4);
+    }
+  }
+  return dynPrompt.dynamicPrompt;
+}
+#endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
 
 /*
 ** Render output like fprintf().  Except, if the output is going to the
@@ -729,7 +814,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   if( in!=0 ){
     zResult = local_getline(zPrior, in);
   }else{
-    zPrompt = isContinuation ? continuePrompt : mainPrompt;
+    zPrompt = isContinuation ? CONTINUATION_PROMPT : mainPrompt;
 #if SHELL_USE_LOCAL_GETLINE
     printf("%s", zPrompt);
     fflush(stdout);
@@ -10968,7 +11053,8 @@ typedef enum {
 ** The scan is resumable for subsequent lines when prior
 ** return values are passed as the 2nd argument.
 */
-static QuickScanState quickscan(char *zLine, QuickScanState qss){
+static QuickScanState quickscan(char *zLine, QuickScanState qss,
+				SCAN_TRACKER_REFTYPE pst){
   char cin;
   char cWait = (char)qss; /* intentional narrowing loss */
   if( cWait==0 ){
@@ -10992,6 +11078,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
         if( *zLine=='*' ){
           ++zLine;
           cWait = '*';
+	  CONTINUE_PROMPT_AWAITS(pst, "/*");
           qss = QSS_SETV(qss, cWait);
           goto TermScan;
         }
@@ -11002,7 +11089,14 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
       case '`': case '\'': case '"':
         cWait = cin;
         qss = QSS_HasDark | cWait;
+	CONTINUE_PROMPT_AWAITC(pst, cin);
         goto TermScan;
+      case '(':
+	CONTINUE_PAREN_INCR(pst, 1);
+	break;
+      case ')':
+	CONTINUE_PAREN_INCR(pst, -1);
+	break;
       default:
         break;
       }
@@ -11018,6 +11112,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
             continue;
           ++zLine;
           cWait = 0;
+	  CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
         case '`': case '\'': case '"':
@@ -11028,6 +11123,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss){
           /* fall thru */
         case ']':
           cWait = 0;
+	  CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
         default: assert(0);
@@ -11051,7 +11147,7 @@ static int line_is_command_terminator(char *zLine){
     zLine += 2; /* SQL Server */
   else
     return 0;
-  return quickscan(zLine, QSS_Start)==QSS_Start;
+  return quickscan(zLine, QSS_Start, 0)==QSS_Start;
 }
 
 /*
@@ -11191,6 +11287,7 @@ static int process_input(ShellState *p){
   }
   ++p->inputNesting;
   p->lineno = 0;
+  CONTINUE_PROMPT_RESET(CONTINUE_PROMPT_STATE);
   while( errCnt==0 || !bail_on_error || (p->in==0 && stdin_is_interactive) ){
     fflush(p->out);
     zLine = one_input_line(p->in, zLine, nSql>0);
@@ -11209,7 +11306,7 @@ static int process_input(ShellState *p){
         && line_is_complete(zSql, nSql) ){
       memcpy(zLine,";",2);
     }
-    qss = quickscan(zLine, qss);
+    qss = quickscan(zLine, qss, CONTINUE_PROMPT_STATE);
     if( QSS_PLAINWHITE(qss) && nSql==0 ){
       /* Just swallow single-line whitespace */
       echo_group_input(p, zLine);
@@ -11217,6 +11314,7 @@ static int process_input(ShellState *p){
       continue;
     }
     if( zLine && (zLine[0]=='.' || zLine[0]=='#') && nSql==0 ){
+      CONTINUE_PROMPT_RESET(CONTINUE_PROMPT_STATE);
       echo_group_input(p, zLine);
       if( zLine[0]=='.' ){
         rc = do_meta_command(zLine, p);
@@ -11252,6 +11350,7 @@ static int process_input(ShellState *p){
     if( nSql && QSS_SEMITERM(qss) && sqlite3_complete(zSql) ){
       echo_group_input(p, zSql);
       errCnt += runOneSqlLine(p, zSql, p->in, startline);
+      CONTINUE_PROMPT_RESET(CONTINUE_PROMPT_STATE);
       nSql = 0;
       if( p->outCount ){
         output_reset(p);
@@ -11271,6 +11370,7 @@ static int process_input(ShellState *p){
     /* This may be incomplete. Let the SQL parser deal with that. */
     echo_group_input(p, zSql);
     errCnt += runOneSqlLine(p, zSql, p->in, startline);
+    CONTINUE_PROMPT_RESET(CONTINUE_PROMPT_STATE);
   }
   free(zSql);
   free(zLine);
