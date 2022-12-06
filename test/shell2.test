@@ -191,4 +191,16 @@ do_test shell2-1.4.7 {
   SELECT 'unclosed;
          ^--- error here}}
 
+# Verify that safe mode rejects certain UDFs
+# Reported at https://sqlite.org/forum/forumpost/07beac8056151b2f
+do_test shell2-1.4.8 {
+  catchcmd "-safe :memory:" {
+ SELECT edit('DoNotCare');}
+} {1 {line 2: cannot use the edit() function in safe mode}}
+do_test shell2-1.4.9 {
+  catchcmd "-safe :memory:" {
+ SELECT writefile('DoNotCare', x'');}
+} {1 {line 2: cannot use the writefile() function in safe mode}}
+
+
 finish_test

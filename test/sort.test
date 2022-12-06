@@ -595,4 +595,36 @@ do_execsql_test 17.1 {
   SELECT * FROM sqlite_master ORDER BY sql;
 } {}
 
+# 2022-12-03 Ticket e8b674241947eb3b
+# Improve estimates for the cost of sorting relative
+# to the cost of doing an index lookup, so as to get
+# a better query plan.  See the ticket for a deetailed
+# example.
+#
+reset_db
+do_execsql_test 18.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<50)
+                           -- increase to 5000 for actual test data ----^^
+    INSERT INTO t1(a,b,c) SELECT x, random()%5000, random()%5000 FROM c;
+  CREATE TABLE t2(d,e,f);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<500)
+                         -- increase to 50000 for actual test data -----^^^
+    INSERT INTO t2(d,e,f) SELECT
+       NULLIF(0, random()%2), random()%5000, random()%5000
+       FROM c;
+  ANALYZE;
+  UPDATE sqlite_stat1 SET stat='50000' WHERE tbl='t2';
+  UPDATE sqlite_stat1 SET stat='5000' WHERE tbl='t1';
+  ANALYZE sqlite_schema;
+} {}
+do_execsql_test 18.2 {
+  EXPLAIN QUERY PLAN
+  SELECT a FROM t1 JOIN t2
+   WHERE a IN (1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
+     AND a=CASE WHEN d IS NOT NULL THEN e ELSE f END
+   ORDER BY a;
+} {/.*SCAN t2.*SEARCH t1.*/}
+#     ^^^^^^^--^^^^^^^^^---  t2 should be the outer loop.
+
 finish_test

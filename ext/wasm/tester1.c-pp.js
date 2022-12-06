@@ -348,7 +348,9 @@ self.sqlite3InitModule = sqlite3InitModule;
       name: "JS wasm-side allocator",
       test: function(sqlite3){
         if(sqlite3.config.useStdAlloc){
-          warn("Using system allocator. This violates the docs.");
+          warn("Using system allocator. This violates the docs and",
+               "may cause grief with certain APIs",
+               "(e.g. sqlite3_deserialize()).");
           T.assert(wasm.alloc.impl === wasm.exports.malloc)
             .assert(wasm.dealloc === wasm.exports.free)
             .assert(wasm.realloc.impl === wasm.exports.realloc);
@@ -458,6 +460,12 @@ self.sqlite3InitModule = sqlite3InitModule;
         const byteList = [11,22,33]
         const u = new Uint8Array(byteList);
         m = w.allocFromTypedArray(u);
+        for(let i = 0; i < u.length; ++i){
+          T.assert(u[i] === byteList[i])
+            .assert(u[i] === w.getMemValue(m + i, 'i8'));
+        }
+        w.dealloc(m);
+        m = w.allocFromTypedArray(u.buffer);
         for(let i = 0; i < u.length; ++i){
           T.assert(u[i] === byteList[i])
             .assert(u[i] === w.getMemValue(m + i, 'i8'));
@@ -1463,7 +1471,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           const n = db.selectValue(sql);
           T.assert(n>0 && db2.selectValue(sql) === n);
         }finally{
-          if(db2) db2.close();
+          db2.close();
           wasm.sqlite3_wasm_vfs_unlink(pVfs, filename);
         }
       }
@@ -1502,8 +1510,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         assert(T.eqApprox(3.1,db.selectValue("select 3.0 + 0.1"))).
         assert(T.eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")));
 
-      let blobArg = new Uint8Array(2);
-      blobArg.set([0x68, 0x69], 0);
+      let blobArg = new Uint8Array([0x68, 0x69]);
       let blobRc = db.selectValue("select asis(?1)", blobArg);
       T.assert(blobRc instanceof Uint8Array).
         assert(2 === blobRc.length).
@@ -1513,8 +1520,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         assert(2 === blobRc.length).
         assert(0x68==blobRc[0] && 0x69==blobRc[1]);
 
-      blobArg = new Int8Array(2);
-      blobArg.set([0x68, 0x69]);
+      blobArg = new Int8Array([0x68, 0x69]);
       //debug("blobArg=",blobArg);
       blobRc = db.selectValue("select asis(?1)", blobArg);
       T.assert(blobRc instanceof Uint8Array).

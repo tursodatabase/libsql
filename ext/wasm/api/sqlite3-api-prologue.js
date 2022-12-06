@@ -748,18 +748,20 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      returned pointer must eventually be passed to
      wasm.dealloc() to clean it up.
 
+     The argument may be a Uint8Array, Int8Array, or ArrayBuffer,
+     and it throws if passed any other type.
+
      As a special case, to avoid further special cases where
      this is used, if srcTypedArray.byteLength is 0, it
      allocates a single byte and sets it to the value
      0. Even in such cases, calls must behave as if the
      allocated memory has exactly srcTypedArray.byteLength
      bytes.
-
-     ACHTUNG: this currently only works for Uint8Array and
-     Int8Array types and will throw if srcTypedArray is of
-     any other type.
   */
   wasm.allocFromTypedArray = function(srcTypedArray){
+    if(srcTypedArray instanceof ArrayBuffer){
+      srcTypedArray = new Uint8Array(srcTypedArray);
+    }
     affirmBindableTypedArray(srcTypedArray);
     const pRet = wasm.alloc(srcTypedArray.byteLength || 1);
     wasm.heapForSize(srcTypedArray.constructor).set(
@@ -943,15 +945,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        the range of supported argument types. */
     ["sqlite3_realloc", "*","*","int"],
     ["sqlite3_reset", "int", "sqlite3_stmt*"],
-    ["sqlite3_result_blob",undefined, "*", "*", "int", "*"],
-    ["sqlite3_result_double",undefined, "*", "f64"],
-    ["sqlite3_result_error",undefined, "*", "string", "int"],
-    ["sqlite3_result_error_code", undefined, "*", "int"],
-    ["sqlite3_result_error_nomem", undefined, "*"],
-    ["sqlite3_result_error_toobig", undefined, "*"],
-    ["sqlite3_result_int",undefined, "*", "int"],
-    ["sqlite3_result_null",undefined, "*"],
-    ["sqlite3_result_text",undefined, "*", "string", "int", "*"],
+    ["sqlite3_result_blob",undefined, "sqlite3_context*", "*", "int", "*"],
+    ["sqlite3_result_double",undefined, "sqlite3_context*", "f64"],
+    ["sqlite3_result_error",undefined, "sqlite3_context*", "string", "int"],
+    ["sqlite3_result_error_code", undefined, "sqlite3_context*", "int"],
+    ["sqlite3_result_error_nomem", undefined, "sqlite3_context*"],
+    ["sqlite3_result_error_toobig", undefined, "sqlite3_context*"],
+    ["sqlite3_result_int",undefined, "sqlite3_context*", "int"],
+    ["sqlite3_result_null",undefined, "sqlite3_context*"],
+    ["sqlite3_result_text",undefined, "sqlite3_context*", "string", "int", "*"],
+    ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
     ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
@@ -999,6 +1002,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64",undefined, "*", "i64"],
+    ["sqlite3_result_zeroblob64", "int", "*", "i64"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
     ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
     ["sqlite3_value_int64","i64", "sqlite3_value*"],

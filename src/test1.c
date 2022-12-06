@@ -2188,7 +2188,7 @@ static int SQLITE_TCLAPI test_stmt_status(
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 /*
-** Usage:  sqlite3_stmt_scanstatus STMT IDX
+** Usage:  sqlite3_stmt_scanstatus ?-flags FLAGS? STMT IDX
 */
 static int SQLITE_TCLAPI test_stmt_scanstatus(
   void * clientData,
@@ -2203,36 +2203,99 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
   const char *zExplain;
   sqlite3_int64 nLoop;
   sqlite3_int64 nVisit;
+  sqlite3_int64 nCycle;
   double rEst;
   int res;
+  int flags = 0;
+  int iSelectId = 0;
+  int iParentId = 0;
 
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "STMT IDX");
+  if( objc==5 ){
+    struct Flag {
+      const char *zFlag;
+      int flag;
+    } aTbl[] = {
+      {"complex", SQLITE_SCANSTAT_COMPLEX},
+      {0, 0}
+    };
+
+    Tcl_Obj **aFlag = 0;
+    int nFlag = 0;
+    int ii;
+
+    if( Tcl_ListObjGetElements(interp, objv[2], &nFlag, &aFlag) ){
+      return TCL_ERROR;
+    }
+    for(ii=0; ii<nFlag; ii++){
+      int iVal = 0;
+      int res = Tcl_GetIndexFromObjStruct(
+          interp, aFlag[ii], aTbl, sizeof(aTbl[0]), "flag", 0, &iVal
+      );
+      if( res ) return TCL_ERROR;
+      flags |= aTbl[iVal].flag;
+    }
+  }
+
+  if( objc!=3 && objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "-flags FLAGS STMT IDX");
     return TCL_ERROR;
   }
-  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &idx) ) return TCL_ERROR;
+  if( getStmtPointer(interp, Tcl_GetString(objv[objc-2]), &pStmt) 
+   || Tcl_GetIntFromObj(interp, objv[objc-1], &idx)
+  ){
+    return TCL_ERROR;
+  }
 
-  res = sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NLOOP, (void*)&nLoop);
-  if( res==0 ){
+  if( idx<0 ){
     Tcl_Obj *pRet = Tcl_NewObj();
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nLoop", -1));
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nLoop));
-    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NVISIT, (void*)&nVisit);
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nVisit", -1));
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nVisit));
-    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_EST, (void*)&rEst);
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nEst", -1));
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewDoubleObj(rEst));
-    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_NAME, (void*)&zName);
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zName", -1));
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zName, -1));
-    sqlite3_stmt_scanstatus(pStmt, idx, SQLITE_SCANSTAT_EXPLAIN, (void*)&zExplain);
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zExplain", -1));
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zExplain, -1));
+    res = sqlite3_stmt_scanstatus_v2(
+        pStmt, -1, SQLITE_SCANSTAT_NCYCLE, flags, (void*)&nCycle
+    );
+    sqlite3_stmt_scanstatus_v2(
+        pStmt, idx, SQLITE_SCANSTAT_NCYCLE, flags, (void*)&nCycle);
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nCycle", -1));
+    Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nCycle));
     Tcl_SetObjResult(interp, pRet);
   }else{
-    Tcl_ResetResult(interp);
+    res = sqlite3_stmt_scanstatus_v2(
+        pStmt, idx, SQLITE_SCANSTAT_NLOOP, flags, (void*)&nLoop
+    );
+    if( res==0 ){
+      Tcl_Obj *pRet = Tcl_NewObj();
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nLoop", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nLoop));
+      sqlite3_stmt_scanstatus_v2(
+          pStmt, idx, SQLITE_SCANSTAT_NVISIT, flags, (void*)&nVisit);
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nVisit", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nVisit));
+      sqlite3_stmt_scanstatus_v2(
+          pStmt, idx, SQLITE_SCANSTAT_EST, flags, (void*)&rEst);
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nEst", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewDoubleObj(rEst));
+      sqlite3_stmt_scanstatus_v2(
+          pStmt, idx, SQLITE_SCANSTAT_NAME, flags, (void*)&zName);
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zName", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zName, -1));
+      sqlite3_stmt_scanstatus_v2(
+          pStmt, idx, SQLITE_SCANSTAT_EXPLAIN, flags, (void*)&zExplain);
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("zExplain", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zExplain, -1));
+      sqlite3_stmt_scanstatus_v2(
+          pStmt, idx, SQLITE_SCANSTAT_SELECTID, flags, (void*)&iSelectId);
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("iSelectId", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iSelectId));
+      sqlite3_stmt_scanstatus_v2(
+          pStmt, idx, SQLITE_SCANSTAT_PARENTID, flags, (void*)&iParentId);
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("iParentId", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(iParentId));
+      sqlite3_stmt_scanstatus_v2(
+          pStmt, idx, SQLITE_SCANSTAT_NCYCLE, flags, (void*)&nCycle);
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nCycle", -1));
+      Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nCycle));
+      Tcl_SetObjResult(interp, pRet);
+    }else{
+      Tcl_ResetResult(interp);
+    }
   }
   return TCL_OK;
 }

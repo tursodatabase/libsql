@@ -270,6 +270,8 @@ int sqlite3WhereExplainBloomFilter(
   zMsg = sqlite3StrAccumFinish(&str);
   ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
                           pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
+
+  sqlite3VdbeScanStatus(v, sqlite3VdbeCurrentAddr(v)-1, 0, 0, 0, 0);
   return ret;
 }
 #endif /* SQLITE_OMIT_EXPLAIN */
@@ -292,14 +294,27 @@ void sqlite3WhereAddScanStatus(
 ){
   const char *zObj = 0;
   WhereLoop *pLoop = pLvl->pWLoop;
-  if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0  &&  pLoop->u.btree.pIndex!=0 ){
+  int wsFlags = pLoop->wsFlags;
+  int viaCoroutine = 0;
+
+  if( (wsFlags & WHERE_VIRTUALTABLE)==0  &&  pLoop->u.btree.pIndex!=0 ){
     zObj = pLoop->u.btree.pIndex->zName;
   }else{
     zObj = pSrclist->a[pLvl->iFrom].zName;
+    viaCoroutine = pSrclist->a[pLvl->iFrom].fg.viaCoroutine;
   }
   sqlite3VdbeScanStatus(
       v, addrExplain, pLvl->addrBody, pLvl->addrVisit, pLoop->nOut, zObj
   );
+
+  if( viaCoroutine==0 ){
+    if( (wsFlags & (WHERE_MULTI_OR|WHERE_AUTO_INDEX))==0 ){
+      sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iTabCur);
+    }
+    if( wsFlags & WHERE_INDEXED ){
+      sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iIdxCur);
+    }
+  }
 }
 #endif
 

@@ -686,6 +686,9 @@ static int robust_open(const char *z, int f, mode_t m){
       break;
     }
     if( fd>=SQLITE_MINIMUM_FILE_DESCRIPTOR ) break;
+    if( (f & (O_EXCL|O_CREAT))==(O_EXCL|O_CREAT) ){
+      (void)osUnlink(z);
+    }
     osClose(fd);
     sqlite3_log(SQLITE_WARNING, 
                 "attempt to open \"%s\" as file descriptor %d", z, fd);
