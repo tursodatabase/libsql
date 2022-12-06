@@ -7260,13 +7260,16 @@ int sqlite3Select(
       ** set on each invocation.
       */
       int addrTop = sqlite3VdbeCurrentAddr(v)+1;
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+      int addrExplain;
+#endif
      
       pItem->regReturn = ++pParse->nMem;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
       VdbeComment((v, "%!S", pItem));
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
-      ExplainQueryPlan((pParse, 1, "CO-ROUTINE %!S", pItem));
+      ExplainQueryPlan2(addrExplain, (pParse, 1, "CO-ROUTINE %!S", pItem));
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
@@ -7274,6 +7277,10 @@ int sqlite3Select(
       sqlite3VdbeEndCoroutine(v, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
+      /* For SQLITE_SCANSTAT_NCYCLE, all instructions from the 
+      ** OP_InitCoroutine coded above until this point are attributed to 
+      ** the CO-ROUTINE query element.  */
+      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain-1, -1);
     }else if( pItem->fg.isCte && pItem->u2.pCteUse->addrM9e>0 ){
       /* This is a CTE for which materialization code has already been
       ** generated.  Invoke the subroutine to compute the materialization,
@@ -7328,7 +7335,6 @@ int sqlite3Select(
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
       VdbeComment((v, "end %!S", pItem));
-      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
       sqlite3VdbeJumpHere(v, topAddr);
       sqlite3ClearTempRegCache(pParse);
       if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
@@ -7338,6 +7344,9 @@ int sqlite3Select(
         pCteUse->iCur = pItem->iCursor;
         pCteUse->nRowEst = pSub->nSelectRow;
       }
+      /* For SQLITE_SCANSTAT_NCYCLE, all instructions from the 
+      ** OP_Explain to here are attibuted to the MATERIALIZE element. */
+      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
     }
     if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);
