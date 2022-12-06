@@ -15,6 +15,7 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#include "opcodes.h"
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
@@ -2225,10 +2226,7 @@ int sqlite3_stmt_scanstatus_v2(
             for(iOp=0; iOp<p->nOp; iOp++){
               Op *pOp = &p->aOp[iOp];
               if( pOp->p1!=iEnd ) continue;
-              if( pOp->opcode!=OP_VFilter && pOp->opcode!=OP_VColumn
-               && pOp->opcode!=OP_Rowid   && pOp->opcode!=OP_VOpen
-               && pOp->opcode!=OP_VNext
-              ){
+              if( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_NCYCLE)==0 ){
                 continue;
               }
               res += p->anCycle[iOp];

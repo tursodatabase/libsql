@@ -1,5 +1,5 @@
-C Clear\sa\sfew\smore\s-Wall\swarnings\sand\ssimplify\sdynaprompt\sfeature\skeep/omit\smacros.
-D 2022-12-06T17:59:05.853
+C Have\ssqlite3_stmt_scanstatus_v2()\sreturn\san\sNCYCLE\svalue\sfor\sall\sloops,\snot\sjust\svirtual\stables\sones.\sThe\svalue\sreturned\sis\sthe\ssum\sof\sthe\sNCYCLE\scounts\sfor\sthe\svarious\sopcodes\sthat\smove\sor\sread\sdata\sfrom\sthe\stable\sor\sindex\scursor\sassociated\swith\sthe\sloop.
+D 2022-12-06T18:48:06.154
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -717,10 +717,10 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 313f3154e2b85a447326f5dd15de8d31a4df6ab0c3579bd58f426ff634ec9050
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c e744259050ec9bbcd47acf9a03a66fe3305d7429c823995de11ed524ca06d16f
+F src/vdbe.c 8fdef91d3c9bfa363e8eb381d362e2f0cadec456975ec5595c0bfdf65da84e53
 F src/vdbe.h 6d921884cf8ec6a53efba99f8b68e32e955367631743e29039840e781aaf547c
 F src/vdbeInt.h e83be1eea422758d42302941e96e59d93193c373da655a87befdc03a851e0f95
-F src/vdbeapi.c 959cef4c1e5cb6589e67b3295fe9d3e45cbd109ae6618d57b74c900dbd6be0cd
+F src/vdbeapi.c 5e265ab5165b0dfeac55e6a2ad3929d64584c4e7ca106b438137d7596da91348
 F src/vdbeaux.c 0b81f317c86ed9f4ba822af66a52777fed6e8180edc79d4fc62ffe75c8e52d80
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 6cfed43758d57b6e3b99d9cdedfeccd86e45a07e427b22d8487cbdbebb6c522a
@@ -734,7 +734,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 20f4f51d2d5fb19b984e6ea381b26cf627cc93e64dd9b2ce6a94531aec2f5916
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
-F src/wherecode.c d3146e215f3a716c0e153ded68bfcc747aad550e114a79729bda887cf4ea6f00
+F src/wherecode.c 76bca3379219880d2527493b71a3be49e696f75396d3481e4de5d4ceec7886b2
 F src/whereexpr.c 05295b44b54eea76d1ba766f0908928d0e20e990c249344c9521454d3d09c7ae
 F src/window.c 14836767adb26573b50f528eb37f8b1336f2c430ab38de7cead1e5c546bb4d8c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1458,7 +1458,7 @@ F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test 7dbcfd6adc6a8df6abc59f83d6da5a27e1bce0b2f6fa55147c8176d7c44e0450
-F test/scanstatus2.test cc0be2f645c32ede50affa7d4ecfaffd2b4572a4fd7f723082397c65a910a2b5
+F test/scanstatus2.test 3f45ec1d8b45dcb0df7f98daf3364fc2e03bf89a8c3dd2428251a5e0a34de7af
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
@@ -1996,7 +1996,7 @@ F tool/mkctimec.tcl c185cf1bdcd3d9bd3c06f77a2fd2df8a4a0d07266f992ecda75286965ba3
 F tool/mkkeywordhash.c 35bfc41adacc4aa6ef6fca7fd0c63e0ec0534b78daf4d0cfdebe398216bbffc3
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
-F tool/mkopcodeh.tcl bcb2bd5affb545fd219ef0304c7978e2a356407ab723f45ec8569235892c1c3f
+F tool/mkopcodeh.tcl 769d9e6a8b462323150dc13a8539d6064664b72974f7894befe2491cc73e05cd
 F tool/mkopts.tcl 680f785fdb09729fd9ac50632413da4eadbdf9071535e3f26d03795828ab07fa
 F tool/mkpragmatab.tcl bd07bd59d45d0f3448e123d6937e9811195f9908a51e09d774609883055bfd3d
 F tool/mkshellc.tcl 02d0de8349ef830c0fb20d29680320bde2466e2ec422e5bd94c4317a7a7e8cc9
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d80500d358fa1c9b5867c2c8250d278ba813bf2ad81bb0bc3f820a71489b374
-R d2096b6607984433a4c4474baae68bae
-U larrybr
-Z 397638802057e8cab20b3ed1dff696d1
+P 540e895d877fab1ea138786e56923a202018f68c78199a89adfc296c75735b30
+R e347a9226ee206cfe1e680e2e5e722d0
+U dan
+Z eaf9f5c14b0f034256d24205aa5d85c9
 # Remove this line to create a well-formed Fossil manifest.
