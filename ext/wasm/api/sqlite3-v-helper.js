@@ -22,6 +22,53 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   sqlite3.VfsHelper = vh;
   sqlite3.VtabHelper = vt;
 
+  const sii = capi.sqlite3_index_info;
+  /**
+     If n is >=0 and less than this.$nConstraint, this function
+     returns either a WASM pointer to the 0-based nth entry of
+     this.$aConstraint (if passed a truthy 2nd argument) or an
+     sqlite3_index_info.sqlite3_index_constraint object wrapping that
+     address (if passed a falsy value or no 2nd argument). Returns a
+     falsy value if n is out of range.
+  */
+  sii.prototype.nthConstraint = function(n, asPtr=false){
+    if(n<0 || n>=this.$nConstraint) return false;
+    const ptr = this.$aConstraint + (
+      sii.sqlite3_index_constraint.structInfo.sizeof * n
+    );
+    return asPtr ? ptr : new sii.sqlite3_index_constraint(ptr);
+  };
+
+  /**
+     Works identically to nthConstraint() but returns state from
+     this.$aConstraintUsage, so returns an
+     sqlite3_index_info.sqlite3_index_constraint_usage instance
+     if passed no 2nd argument or a falsy 2nd argument.
+  */
+  sii.prototype.nthConstraintUsage = function(n, asPtr=false){
+    if(n<0 || n>=this.$nConstraint) return false;
+    const ptr = this.$aConstraintUsage + (
+      sii.sqlite3_index_constraint_usage.structInfo.sizeof * n
+    );
+    return asPtr ? ptr : new sii.sqlite3_index_constraint_usage(ptr);
+  };
+
+  /**
+     If n is >=0 and less than this.$nOrderBy, this function
+     returns either a WASM pointer to the 0-based nth entry of
+     this.$aOrderBy (if passed a truthy 2nd argument) or an
+     sqlite3_index_info.sqlite3_index_orderby object wrapping that
+     address (if passed a falsy value or no 2nd argument). Returns a
+     falsy value if n is out of range.
+  */
+  sii.prototype.nthOrderBy = function(n, asPtr=false){
+    if(n<0 || n>=this.$nOrderBy) return false;
+    const ptr = this.$aOrderBy + (
+      sii.sqlite3_index_orderby.structInfo.sizeof * n
+    );
+    return asPtr ? ptr : new sii.sqlite3_index_orderby(ptr);
+  };
+
   /**
      Installs a StructBinder-bound function pointer member of the
      given name and function in the given StructType target object.
@@ -109,6 +156,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
     tgt[memKey] = pFunc;
     if(!tgt.ondispose) tgt.ondispose = [];
+    else if(!Array.isArray(tgt.ondispose)) tgt.ondispose = [tgt.ondispose];
     if(!tgt.ondispose.__removeFuncList){
       tgt.ondispose.push('ondispose.__removeFuncList handler',
                          callee.removeFuncList);
@@ -244,9 +292,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   vt.sqlite3ValuesToJs = capi.sqlite3_create_function_v2.udfConvertArgs;
 
   /**
-     Factory function for xyz2js() impls.
+     Factory function for wrapXyz() impls.
   */
-  const __v2jsFactory = function(structType){
+  const __xWrapFactory = function(structType){
     return function(ptr,remove=false){
       if(0===arguments.length) ptr = new structType;
       if(ptr instanceof structType){
@@ -254,7 +302,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         this.set(ptr.pointer, ptr);
         return ptr;
       }else if(!wasm.isPtr(ptr)){
-        sqlite3.SQLite3Error.toss("Invalid argument to v2jsFactory");
+        sqlite3.SQLite3Error.toss("Invalid argument to xWrapFactory");
       }
       let rc = this.get(ptr);
       if(remove) this.delete(ptr);
@@ -270,45 +318,45 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      Has 3 distinct uses:
 
-     - vtab2js() instantiates a new capi.sqlite3_vtab instance, maps
+     - wrapVtab() instantiates a new capi.sqlite3_vtab instance, maps
        its pointer for later by-pointer lookup, and returns that
        object. This is intended to be called from
        sqlite3_module::xConnect() or xCreate() implementations.
 
-     - vtab2js(pVtab) accepts a WASM pointer to a C-level
+     - wrapVtab(pVtab) accepts a WASM pointer to a C-level
        (sqlite3_vtab*) instance and returns the capi.sqlite3_vtab
        object created by the first form of this function, or undefined
        if that form has not been used. This is intended to be called
        from sqlite3_module methods which take a (sqlite3_vtab*) pointer
        _except_ for xDisconnect(), in which case use...
 
-     - vtab2js(pVtab,true) as for the previous form, but removes the
+     - wrapVtab(pVtab,true) as for the previous form, but removes the
        pointer-to-object mapping before returning.  The caller must
        call dispose() on the returned object. This is intended to be
        called from sqlite3_module::xDisconnect() implementations or
        in error handling of a failed xCreate() or xConnect().
  */
-  vt.vtab2js = __v2jsFactory(capi.sqlite3_vtab);
+  vt.xWrapVtab = __xWrapFactory(capi.sqlite3_vtab);
 
   /**
      EXPERIMENTAL. DO NOT USE IN CLIENT CODE.
 
-     Works identically to vtab2js() except that it deals with
+     Works identically to wrapVtab() except that it deals with
      sqlite3_cursor objects and pointers instead of sqlite3_vtab.
 
-     - vcur2js() is intended to be called from sqlite3_module::xOpen()
+     - wrapCursor() is intended to be called from sqlite3_module::xOpen()
 
-     - vcur2js(pCursor) is intended to be called from all sqlite3_module
+     - wrapCursor(pCursor) is intended to be called from all sqlite3_module
        methods which take a (sqlite3_vtab_cursor*) _except_ for
        xClose(), in which case use...
 
-     - vcur2js(pCursor, true) will remove the m apping of pCursor to a
+     - wrapCursor(pCursor, true) will remove the m apping of pCursor to a
        capi.sqlite3_vtab_cursor object and return that object.  The
        caller must call dispose() on the returned object. This is
        intended to be called form xClose() or in error handling of a
        failed xOpen().
  */
-  vt.vcur2js = __v2jsFactory(capi.sqlite3_vtab_cursor);
+  vt.xWrapCursor = __xWrapFactory(capi.sqlite3_vtab_cursor);
 
   /**
      Given an error object, this function returns

@@ -1553,9 +1553,9 @@ self.sqlite3InitModule = sqlite3InitModule;
                 pDb, "CREATE TABLE ignored(a,b)"
               );
               if(0===rc){
-                const t = vth.vtab2js();
+                const t = vth.xWrapVtab();
                 wasm.setPtrValue(ppVtab, t.pointer);
-                T.assert(t === vth.vtab2js(wasm.getPtrValue(ppVtab)));
+                T.assert(t === vth.xWrapVtab(wasm.getPtrValue(ppVtab)));
               }
               return rc;
             }catch(e){
@@ -1567,7 +1567,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xDisconnect: function(pVtab){
             try {
-              const t = vth.vtab2js(pVtab, true);
+              const t = vth.xWrapVtab(pVtab, true);
               t.dispose();
               return 0;
             }catch(e){
@@ -1576,7 +1576,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xOpen: function(pVtab, ppCursor){
             try{
-              const t = vth.vtab2js(pVtab), c = vth.vcur2js();
+              const t = vth.xWrapVtab(pVtab), c = vth.xWrapCursor();
               T.assert(t instanceof capi.sqlite3_vtab);
               T.assert(c instanceof capi.sqlite3_vtab_cursor);
               wasm.setPtrValue(ppCursor, c.pointer);
@@ -1588,9 +1588,9 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xClose: function(pCursor){
             try{
-              const c = vth.vcur2js(pCursor,true);
+              const c = vth.xWrapCursor(pCursor,true);
               T.assert(c instanceof capi.sqlite3_vtab_cursor)
-                .assert(!vth.vcur2js(pCursor));
+                .assert(!vth.xWrapCursor(pCursor));
               c.dispose();
               return 0;
             }catch(e){
@@ -1599,7 +1599,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xNext: function(pCursor){
             try{
-              const c = vth.vcur2js(pCursor);
+              const c = vth.xWrapCursor(pCursor);
               ++c._rowId;
               return 0;
             }catch(e){
@@ -1609,7 +1609,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xColumn: function(pCursor, pCtx, iCol){
             try{
-              const c = vth.vcur2js(pCursor);
+              const c = vth.xWrapCursor(pCursor);
               switch(iCol){
                   case tmplCols.A:
                     capi.sqlite3_result_int(pCtx, 1000 + c._rowId);
@@ -1626,7 +1626,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xRowid: function(pCursor, ppRowid64){
             try{
-              const c = vth.vcur2js(pCursor);
+              const c = vth.xWrapCursor(pCursor);
               vth.setRowId(ppRowid64, c._rowId);
               return 0;
             }catch(e){
@@ -1634,14 +1634,17 @@ self.sqlite3InitModule = sqlite3InitModule;
             }
           },
           xEof: function(pCursor){
-            const c = vth.vcur2js(pCursor);
+            const c = vth.xWrapCursor(pCursor);
             return c._rowId>=10;
           },
           xFilter: function(pCursor, idxNum, idxCStr,
                             argc, argv/* [sqlite3_value* ...] */){
             try{
-              const c = vth.vcur2js(pCursor);
+              const c = vth.xWrapCursor(pCursor);
               c._rowId = 0;
+              const list = vth.sqlite3ValuesToJs(argc, argv);
+              T.assert(argc === list.length);
+              //log(argc,"xFilter value(s):",list);
               return 0;
             }catch(e){
               return vth.xMethodError('xFilter',e);
@@ -1649,10 +1652,44 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xBestIndex: function(pVtab, pIdxInfo){
             try{
-              const t = vth.vtab2js(pVtab);
-              const pii = new capi.sqlite3_index_info(pIdxInfo);
+              //const t = vth.xWrapVtab(pVtab);
+              const sii = capi.sqlite3_index_info;
+              const pii = new sii(pIdxInfo);
               pii.$estimatedRows = 10;
               pii.$estimatedCost = 10.0;
+              //log("xBestIndex $nConstraint =",pii.$nConstraint);
+              if(pii.$nConstraint>0){
+                // Validate nthConstraint() and nthConstraintUsage()
+                const max = pii.$nConstraint;
+                for(let i=0; i < max; ++i ){
+                  let v = pii.nthConstraint(i,true);
+                  T.assert(wasm.isPtr(v));
+                  v = pii.nthConstraint(i);
+                  T.assert(v instanceof sii.sqlite3_index_constraint)
+                    .assert(v.pointer >= pii.$aConstraint);
+                  v.dispose();
+                  v = pii.nthConstraintUsage(i,true);
+                  T.assert(wasm.isPtr(v));
+                  v = pii.nthConstraintUsage(i);
+                  T.assert(v instanceof sii.sqlite3_index_constraint_usage)
+                    .assert(v.pointer >= pii.$aConstraintUsage);
+                  v.$argvIndex = i;//just to get some values into xFilter
+                  v.dispose();
+                }
+              }
+              //log("xBestIndex $nOrderBy =",pii.$nOrderBy);
+              if(pii.$nOrderBy>0){
+                // Validate nthOrderBy()
+                const max = pii.$nOrderBy;
+                for(let i=0; i < max; ++i ){
+                  let v = pii.nthOrderBy(i,true);
+                  T.assert(wasm.isPtr(v));
+                  v = pii.nthOrderBy(i);
+                  T.assert(v instanceof sii.sqlite3_index_orderby)
+                    .assert(v.pointer >= pii.$aOrderBy);
+                  v.dispose();
+                }
+              }
               pii.dispose();
               return 0;
             }catch(e){
@@ -1692,7 +1729,9 @@ self.sqlite3InitModule = sqlite3InitModule;
         this.db.checkRc(rc);
 
         const list = this.db.selectArrays(
-          "SELECT a,b FROM testvtab order by a"
+          "SELECT a,b FROM testvtab where a<9999 and b>1 order by a, b"
+          /* Query is shaped so that it will ensure that some constraints
+             end up in xBestIndex(). */
         );
         T.assert(10===list.length)
           .assert(1000===list[0][0])
