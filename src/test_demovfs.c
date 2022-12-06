@@ -461,7 +461,6 @@ static int demoDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 
   if( rc==0 && dirSync ){
     int dfd;                      /* File descriptor open on directory */
-    int i;                        /* Iterator variable */
     char *zSlash;
     char zDir[MAXPATHNAME+1];     /* Name of directory containing file zPath */
 
