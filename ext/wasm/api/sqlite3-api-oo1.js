@@ -73,7 +73,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if(capi.SQLITE_TRACE_STMT===t){
             // x == SQL, p == sqlite3_stmt*
             console.log("SQL TRACE #"+(++this.counter),
-                        wasm.cstringToJs(x));
+                        wasm.cstrToJs(x));
           }
         }.bind({counter: 0}));
 
@@ -139,7 +139,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       console.error("Invalid DB ctor args",opt,arguments);
       toss3("Invalid arguments for DB constructor.");
     }
-    let fnJs = ('number'===typeof fn) ? wasm.cstringToJs(fn) : fn;
+    let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
     const vfsCheck = ctor._name2vfs[fnJs];
     if(vfsCheck){
       vfsName = vfsCheck.vfs;
@@ -600,7 +600,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       );
       if(pVfs){
         const v = new capi.sqlite3_vfs(pVfs);
-        try{ rc = wasm.cstringToJs(v.$zName) }
+        try{ rc = wasm.cstrToJs(v.$zName) }
         finally { v.dispose() }
       }
       return rc;        

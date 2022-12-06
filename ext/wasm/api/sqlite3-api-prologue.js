@@ -348,13 +348,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      If v is-a Array, its join("") result is returned.  If
      isSQLableTypedArray(v) is true then typedArrayToString(v) is
-     returned. If it looks like a WASM pointer, wasm.cstringToJs(v) is
+     returned. If it looks like a WASM pointer, wasm.cstrToJs(v) is
      returned. Else v is returned as-is.
   */
   const flexibleString = function(v){
     if(isSQLableTypedArray(v)) return typedArrayToString(v);
     else if(Array.isArray(v)) return v.join("");
-    else if(wasm.isPtr(v)) v = wasm.cstringToJs(v);
+    else if(wasm.isPtr(v)) v = wasm.cstrToJs(v);
     return v;
   };
 
@@ -1339,7 +1339,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     let pVfs = capi.sqlite3_vfs_find(0);
     while(pVfs){
       const oVfs = new capi.sqlite3_vfs(pVfs);
-      rc.push(wasm.cstringToJs(oVfs.$zName));
+      rc.push(wasm.cstrToJs(oVfs.$zName));
       pVfs = oVfs.$pNext;
       oVfs.dispose();
     }

@@ -547,13 +547,13 @@ self.sqlite3InitModule = sqlite3InitModule;
           let cpy = w.scopedAlloc(n+10);
           let rc = w.cstrncpy(cpy, cStr, n+10);
           T.assert(n+1 === rc).
-            assert("hello" === w.cstringToJs(cpy)).
+            assert("hello" === w.cstrToJs(cpy)).
             assert(chr('o') === w.getMemValue(cpy+n-1)).
             assert(0 === w.getMemValue(cpy+n));
           let cStr2 = w.scopedAllocCString("HI!!!");
           rc = w.cstrncpy(cpy, cStr2, 3);
           T.assert(3===rc).
-            assert("HI!lo" === w.cstringToJs(cpy)).
+            assert("HI!lo" === w.cstrToJs(cpy)).
             assert(chr('!') === w.getMemValue(cpy+2)).
             assert(chr('l') === w.getMemValue(cpy+3));
         }finally{
@@ -675,7 +675,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         // 'string:flexible' argAdapter() sanity checks...
         w.scopedAllocCall(()=>{
           const argAd = w.xWrap.argAdapter('string:flexible');
-          const cj = (v)=>w.cstringToJs(argAd(v));
+          const cj = (v)=>w.cstrToJs(argAd(v));
           T.assert('Hi' === cj('Hi'))
             .assert('hi' === cj(['h','i']))
             .assert('HI' === cj(new Uint8Array([72, 73])));

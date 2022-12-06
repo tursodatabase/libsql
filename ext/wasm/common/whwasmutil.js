@@ -756,7 +756,7 @@ self.WhWasmUtilInstaller = function(target){
      JS-format string representing its contents. As a special case, if
      ptr is falsy or not a pointer, `null` is returned.
   */
-  target.cstringToJs = function(ptr){
+  target.cstrToJs = function(ptr){
     const n = target.cstrlen(ptr);
     return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
   };
@@ -1147,7 +1147,7 @@ self.WhWasmUtilInstaller = function(target){
     const list = [];
     for(let i = 0; i < argc; ++i){
       const arg = target.getPtrValue(pArgv + (target.ptrSizeof * i));
-      list.push( arg ? target.cstringToJs(arg) : null );
+      list.push( arg ? target.cstrToJs(arg) : null );
     }
     return list;
   };
@@ -1315,14 +1315,14 @@ self.WhWasmUtilInstaller = function(target){
       if('string'===typeof v) return target.scopedAllocCString(v);
       return v ? xcv.arg[ptrIR](v) : null;
     };
-  xcv.result.string = xcv.result.utf8 = (i)=>target.cstringToJs(i);
+  xcv.result.string = xcv.result.utf8 = (i)=>target.cstrToJs(i);
   xcv.result['string:dealloc'] = xcv.result['utf8:dealloc'] = (i)=>{
-    try { return i ? target.cstringToJs(i) : null }
+    try { return i ? target.cstrToJs(i) : null }
     finally{ target.dealloc(i) }
   };
-  xcv.result.json = (i)=>JSON.parse(target.cstringToJs(i));
+  xcv.result.json = (i)=>JSON.parse(target.cstrToJs(i));
   xcv.result['json:dealloc'] = (i)=>{
-    try{ return i ? JSON.parse(target.cstringToJs(i)) : null }
+    try{ return i ? JSON.parse(target.cstrToJs(i)) : null }
     finally{ target.dealloc(i) }
   }
   xcv.result['void'] = (v)=>undefined;
@@ -1460,7 +1460,7 @@ self.WhWasmUtilInstaller = function(target){
 
 ```js
    target.xWrap.resultAdapter('string:my_free',(i)=>{
-      try { return i ? target.cstringToJs(i) : null }
+      try { return i ? target.cstrToJs(i) : null }
       finally{ target.exports.my_free(i) }
    };
 ```

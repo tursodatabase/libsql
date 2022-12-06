@@ -193,8 +193,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try {
           let aVals = [], aNames = [], i = 0, offset = 0;
           for( ; i < nCols; offset += (wasm.ptrSizeof * ++i) ){
-            aVals.push( wasm.cstringToJs(wasm.getPtrValue(pColVals + offset)) );
-            aNames.push( wasm.cstringToJs(wasm.getPtrValue(pColNames + offset)) );
+            aVals.push( wasm.cstrToJs(wasm.getPtrValue(pColVals + offset)) );
+            aNames.push( wasm.cstrToJs(wasm.getPtrValue(pColNames + offset)) );
           }
           rc = callback(pVoid, nCols, aVals, aNames) | 0;
           /* The first 2 args of the callback are useless for JS but
@@ -610,7 +610,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toss("Maintenance required: increase sqlite3_wasm_enum_json()'s",
            "static buffer size!");
     }
-    wasm.ctype = JSON.parse(wasm.cstringToJs(cJson));
+    wasm.ctype = JSON.parse(wasm.cstrToJs(cJson));
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
     const defineGroups = ['access', 'authorizer',
                           'blobFinalizers', 'dataTypes',
@@ -702,7 +702,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           try {
             const zXKey = kvvfsMakeKey(zClass,zKey);
             if(!zXKey) return -3/*OOM*/;
-            const jKey = wasm.cstringToJs(zXKey);
+            const jKey = wasm.cstrToJs(zXKey);
             const jV = kvvfsStorage(zClass).getItem(jKey);
             if(!jV) return -1;
             const nV = jV.length /* Note that we are relying 100% on v being
@@ -731,8 +731,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           try {
             const zXKey = kvvfsMakeKey(zClass,zKey);
             if(!zXKey) return 1/*OOM*/;
-            const jKey = wasm.cstringToJs(zXKey);
-            kvvfsStorage(zClass).setItem(jKey, wasm.cstringToJs(zData));
+            const jKey = wasm.cstrToJs(zXKey);
+            kvvfsStorage(zClass).setItem(jKey, wasm.cstrToJs(zData));
             return 0;
           }catch(e){
             console.error("kvstorageWrite()",e);
@@ -746,7 +746,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           try {
             const zXKey = kvvfsMakeKey(zClass,zKey);
             if(!zXKey) return 1/*OOM*/;
-            kvvfsStorage(zClass).removeItem(wasm.cstringToJs(zXKey));
+            kvvfsStorage(zClass).removeItem(wasm.cstrToJs(zXKey));
             return 0;
           }catch(e){
             console.error("kvstorageDelete()",e);
