@@ -3257,6 +3257,9 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   SelectDest dest;            /* How to deal with SELECT result */
   int nReg;                   /* Registers to allocate */
   Expr *pLimit;               /* New limit expression */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int addrExplain;            /* Address of OP_Explain instruction */
+#endif
 
   Vdbe *v = pParse->pVdbe;
   assert( v!=0 );
@@ -3309,8 +3312,9 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   ** In both cases, the query is augmented with "LIMIT 1".  Any 
   ** preexisting limit is discarded in place of the new LIMIT 1.
   */
-  ExplainQueryPlan((pParse, 1, "%sSCALAR SUBQUERY %d",
+  ExplainQueryPlan2(addrExplain, (pParse, 1, "%sSCALAR SUBQUERY %d",
         addrOnce?"":"CORRELATED ", pSel->selId));
+  sqlite3VdbeScanStatusCounters(v, addrExplain, addrExplain, -1);
   nReg = pExpr->op==TK_SELECT ? pSel->pEList->nExpr : 1;
   sqlite3SelectDestInit(&dest, 0, pParse->nMem+1);
   pParse->nMem += nReg;
@@ -3353,6 +3357,7 @@ int sqlite3CodeSubselect(Parse *pParse, Expr *pExpr){
   if( addrOnce ){
     sqlite3VdbeJumpHere(v, addrOnce);
   }
+  sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
 
   /* Subroutine return */
   assert( ExprUseYSub(pExpr) );
