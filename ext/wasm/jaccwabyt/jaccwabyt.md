@@ -205,7 +205,6 @@ simply look like:
 The StructBinder factory function returns a function which can then be
 used to create bindings for our structs.
 
-
 <a name='step-2'></a>
 Step 2: Create a Struct Description
 ------------------------------------------------------------
@@ -606,14 +605,15 @@ legally be called on concrete struct instances unless noted otherwise:
   - If it is a function, it is called with the struct object as its `this`.
   That method must not throw - if it does, the exception will be
   ignored.
-  - If it is an array, it may contain functions, pointers, and/or JS
-    strings. If an entry is a function, it is called as described
-    above. If it's a number, it's assumed to be a pointer and is
-    passed to the `dealloc()` function configured for the parent
-    [StructBinder][].  If it's a JS string, it's assumed to be a
-    helpful description of the next entry in the list and is simply
-    ignored. Strings are supported primarily for use as debugging
-    information.
+  - If it is an array, it may contain functions, pointers, other
+    [StructType] instances, and/or JS strings. If an entry is a
+    function, it is called as described above. If it's a number, it's
+    assumed to be a pointer and is passed to the `dealloc()` function
+    configured for the parent [StructBinder][]. If it's a
+    [StructType][] instance then its `dispose()` method is called. If
+    it's a JS string, it's assumed to be a helpful description of the
+    next entry in the list and is simply ignored. Strings are
+    supported primarily for use as debugging information.
   - Some struct APIs will manipulate the `ondispose` member, creating
     it as an array or converting it from a function to array as
     needed.

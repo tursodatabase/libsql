@@ -61,7 +61,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
         BigInt = self['BigInt'],
         BigInt64Array = self['BigInt64Array'],
         /* Undocumented (on purpose) config options: */
-        functionTable = config.functionTable/*EXPERIMENTAL, undocumented*/,
         ptrSizeof = config.ptrSizeof || 4,
         ptrIR = config.ptrIR || 'i32'
   ;
@@ -258,7 +257,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
                             iterable: false, value: v}};
 
   /** Allocates obj's memory buffer based on the size defined in
-      DEF.sizeof. */
+      ctor.structInfo.sizeof. */
   const __allocStruct = function(ctor, obj, m){
     let fill = !m;
     if(m) Object.defineProperty(obj, xPtrPropName, rop(m));
@@ -295,7 +294,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
      if tossIfNotFound is true, else returns undefined if not
      found. The given name may be either the name of the
      structInfo.members key (faster) or the key as modified by the
-     memberPrefix/memberSuffix settings.
+     memberPrefix and memberSuffix settings.
   */
   const __lookupMember = function(structInfo, memberName, tossIfNotFound=true){
     let m = structInfo.members[memberName];
@@ -423,8 +422,9 @@ self.Jaccwabyt = function StructBinderFactory(config){
     const mem = alloc(u.length+1);
     if(!mem) toss("Allocation error while duplicating string:",str);
     const h = heap();
-    let i = 0;
-    for( ; i < u.length; ++i ) h[mem + i] = u[i];
+    //let i = 0;
+    //for( ; i < u.length; ++i ) h[mem + i] = u[i];
+    h.set(u, mem);
     h[mem + u.length] = 0;
     //log("allocCString @",mem," =",u);
     return mem;
@@ -436,6 +436,10 @@ self.Jaccwabyt = function StructBinderFactory(config){
      to free any prior memory, if appropriate. The newly-allocated
      string is added to obj.ondispose so will be freed when the object
      is disposed.
+
+     The given name may be either the name of the structInfo.members
+     key (faster) or the key as modified by the memberPrefix and
+     memberSuffix settings.
   */
   const __setMemberCString = function(obj, memberName, str){
     const m = __lookupMember(obj.structInfo, memberName, true);

@@ -943,10 +943,19 @@ self.WhWasmUtilInstaller = function(target){
   const __allocCStr = function(jstr, returnWithLength, allocator, funcName){
     __affirmAlloc(target, funcName);
     if('string'!==typeof jstr) return null;
-    const n = target.jstrlen(jstr),
-          ptr = allocator(n+1);
-    target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
-    return returnWithLength ? [ptr, n] : ptr;
+    if(0){/* older impl, possibly more widely compatible? */
+      const n = target.jstrlen(jstr),
+            ptr = allocator(n+1);
+      target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
+      return returnWithLength ? [ptr, n] : ptr;
+    }else{/* newer, (probably) faster and (certainly) simpler impl */
+      const u = cache.utf8Encoder.encode(jstr),
+            ptr = allocator(u.length+1),
+            heap = heapWrappers().HEAP8U;
+      heap.set(u, ptr);
+      heap[ptr + u.length] = 0;
+      return returnWithLength ? [ptr, u.length] : ptr;
+    }
   };
 
   /**

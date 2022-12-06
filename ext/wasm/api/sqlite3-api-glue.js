@@ -31,9 +31,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     heap: 0 ? wasm.memory : wasm.heap8u,
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
-    functionTable: wasm.functionTable,
     bigIntEnabled: wasm.bigIntEnabled,
-    memberPrefix: '$'
+    memberPrefix: /* Never change this: this prefix is baked into any
+                     amount of code and client-facing docs. */ '$'
   });
   delete self.Jaccwabyt;
 
