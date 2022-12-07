@@ -10328,6 +10328,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }else{
       shell_exec(p, zSql, 0);
     }
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS) && !defined(SQLITE_OMIT_VIRTUALTABLE)
     {
       int lrc;
       char *zRevText = /* Query for reversible to-blob-to-text check */
@@ -10378,6 +10379,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
       sqlite3_free(zRevText);
     }
+#endif /* !defined(*_OMIT_SCHEMA_PRAGMAS) && !defined(*_OMIT_VIRTUALTABLE) */
     sqlite3_free(zSql);
   }else
 
