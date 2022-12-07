@@ -67,7 +67,7 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 ** block sorting is required.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
-  return pWInfo->nOBSat;
+  return pWInfo->nOBSat<0 ? 0 : pWInfo->nOBSat;
 }
 
 /*
