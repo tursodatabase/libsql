@@ -262,6 +262,10 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   pOp->zComment = 0;
 #endif
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
+  pOp->nExec = 0;
+  pOp->nCycle = 0;
+#endif
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
@@ -2508,8 +2512,10 @@ void sqlite3VdbeRewind(Vdbe *p){
   p->iStatement = 0;
   p->nFkConstraint = 0;
 #ifdef VDBE_PROFILE
-  memset(p->anExec, 0, sizeof(i64)*p->nOp);
-  memset(p->anCycle, 0, sizeof(u64)*p->nOp);
+  for(i=0; i<p->nOp; i++){
+    p->aOp[i].nExec = 0;
+    p->aOp[i].nCycle = 0;
+  }
 #endif
 }
 
@@ -2617,10 +2623,6 @@ void sqlite3VdbeMakeReady(
   p->aVar = allocSpace(&x, 0, nVar*sizeof(Mem));
   p->apArg = allocSpace(&x, 0, nArg*sizeof(Mem*));
   p->apCsr = allocSpace(&x, 0, nCursor*sizeof(VdbeCursor*));
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
-  p->anExec = allocSpace(&x, 0, p->nOp*sizeof(i64));
-  p->anCycle = allocSpace(&x, 0, p->nOp*sizeof(u64));
-#endif
   if( x.nNeeded ){
     x.pSpace = p->pFree = sqlite3DbMallocRawNN(db, x.nNeeded);
     x.nFree = x.nNeeded;
@@ -2629,10 +2631,6 @@ void sqlite3VdbeMakeReady(
       p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
       p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
       p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
-      p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
-      p->anCycle = allocSpace(&x, p->anCycle, p->nOp*sizeof(u64));
-#endif
     }
   }
 
@@ -2647,10 +2645,6 @@ void sqlite3VdbeMakeReady(
     p->nMem = nMem;
     initMemArray(p->aMem, nMem, db, MEM_Undefined);
     memset(p->apCsr, 0, nCursor*sizeof(VdbeCursor*));
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
-    memset(p->anExec, 0, p->nOp*sizeof(i64));
-    memset(p->anCycle, 0, p->nOp*sizeof(u64));
-#endif
   }
   sqlite3VdbeRewind(p);
 }
@@ -2708,10 +2702,6 @@ static void closeCursorsInFrame(Vdbe *p){
 int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   Vdbe *v = pFrame->v;
   closeCursorsInFrame(v);
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
-  v->anExec = pFrame->anExec;
-  v->anCycle = pFrame->anCycle;
-#endif
   v->aOp = pFrame->aOp;
   v->nOp = pFrame->nOp;
   v->aMem = pFrame->aMem;
@@ -3543,8 +3533,8 @@ int sqlite3VdbeReset(Vdbe *p){
       }
       for(i=0; i<p->nOp; i++){
         char zHdr[100];
-        i64 cnt = p->anExec[i];
-        i64 cycles = p->anCycle[i];
+        i64 cnt = p->aOp[i].nExec;
+        i64 cycles = p->aOp[i].nCycle;
         sqlite3_snprintf(sizeof(zHdr), zHdr, "%6u %12llu %8llu ",
            cnt,
            cycles,

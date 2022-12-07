@@ -67,7 +67,7 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 ** block sorting is required.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
-  return pWInfo->nOBSat;
+  return pWInfo->nOBSat<0 ? 0 : pWInfo->nOBSat;
 }
 
 /*
@@ -812,6 +812,51 @@ static int termCanDriveIndex(
 
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+/*
+** Argument pIdx represents an automatic index that the current statement
+** will create and populate. Add an OP_Explain with text of the form:
+**
+**     CREATE AUTOMATIC INDEX ON <table>(<cols>) [WHERE <expr>]
+**
+** This is only required if sqlite3_stmt_scanstatus() is enabled, to
+** associate an SQLITE_SCANSTAT_NCYCLE and SQLITE_SCANSTAT_NLOOP
+** values with. In order to avoid breaking legacy code and test cases, 
+** the OP_Explain is not added if this is an EXPLAIN QUERY PLAN command.
+*/
+static void explainAutomaticIndex(
+  Parse *pParse,
+  Index *pIdx,                    /* Automatic index to explain */
+  int bPartial,                   /* True if pIdx is a partial index */
+  int *pAddrExplain               /* OUT: Address of OP_Explain */
+){
+  if( pParse->explain!=2 ){
+    Table *pTab = pIdx->pTable;
+    const char *zSep = "";
+    char *zText = 0;
+    int ii = 0;
+    zText = sqlite3_mprintf("CREATE AUTOMATIC INDEX ON %s(", pTab->zName);
+    assert( pIdx->nColumn>1 );
+    assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID );
+    for(ii=0; ii<(pIdx->nColumn-1); ii++){
+      const char *zName = 0;
+      int iCol = pIdx->aiColumn[ii];
+
+      zName = pTab->aCol[iCol].zCnName;
+      zText = sqlite3_mprintf("%z%s%s", zText, zSep, zName);
+      zSep = ", ";
+    }
+    *pAddrExplain = sqlite3VdbeExplain(
+        pParse, 0, "%s)%s", zText, (bPartial ? " WHERE <expr>" : "")
+    );
+    sqlite3_free(zText);
+  }
+}
+#else
+# define explainAutomaticIndex(a,b,c,d)
+#endif
+
 /*
 ** Generate code to construct the Index object for an automatic index
 ** and to set up the WhereLevel object pLevel so that the code generator
@@ -847,6 +892,9 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   SrcItem *pTabItem;          /* FROM clause term being indexed */
   int addrCounter = 0;        /* Address where integer counter is initialized */
   int regBase;                /* Array of registers where record is assembled */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int addrExp = 0;            /* Address of OP_Explain */
+#endif
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -970,6 +1018,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   pIdx->azColl[n] = sqlite3StrBINARY;
 
   /* Create the automatic index */
+  explainAutomaticIndex(pParse, pIdx, pPartial!=0, &addrExp);
   assert( pLevel->iIdxCur>=0 );
   pLevel->iIdxCur = pParse->nTab++;
   sqlite3VdbeAddOp2(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1);
@@ -1005,6 +1054,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0,
                          regBase, pLoop->u.btree.nEq);
   }
+  sqlite3VdbeScanStatusCounters(v, addrExp, addrExp, sqlite3VdbeCurrentAddr(v));
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
@@ -1025,6 +1075,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
+  sqlite3VdbeScanStatusRange(v, addrExp, addrExp, -1);
 
 end_auto_index_create:
   sqlite3ExprDelete(pParse->db, pPartial);
