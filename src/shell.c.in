@@ -537,7 +537,7 @@ static char *dynamicContinuePrompt(void){
     if( dynPrompt.zScannerAwaits ){
       int ncp = strlen(continuePrompt), ndp = strlen(dynPrompt.zScannerAwaits);
       if( ndp > ncp-3 ) return continuePrompt;
-      strncpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits, ndp);
+      strcpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits);
       while( ndp<3 ) dynPrompt.dynamicPrompt[ndp++] = ' ';
       strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
 	      PROMPT_LEN_MAX-4);
