@@ -2123,14 +2123,12 @@ int sqlite3_stmt_scanstatus_v2(
   ScanStatus *pScan;
   int idx;
 
-  /* If the v2 flag is clear, then this function must ignore any ScanStatus
-  ** structures with ScanStatus.addrLoop set to 0. */
   if( iScan<0 ){
     int ii;
     if( iScanStatusOp==SQLITE_SCANSTAT_NCYCLE ){
       i64 res = 0;
       for(ii=0; ii<p->nOp; ii++){
-        res += p->anCycle[ii];
+        res += p->aOp[ii].nCycle;
       }
       *(i64*)pOut = res;
       return 0;
@@ -2141,6 +2139,8 @@ int sqlite3_stmt_scanstatus_v2(
     idx = iScan;
     pScan = &p->aScan[idx];
   }else{
+    /* If the COMPLEX flag is clear, then this function must ignore any 
+    ** ScanStatus structures with ScanStatus.addrLoop set to 0. */
     for(idx=0; idx<p->nScan; idx++){
       pScan = &p->aScan[idx];
       if( pScan->zName ){
@@ -2154,7 +2154,7 @@ int sqlite3_stmt_scanstatus_v2(
   switch( iScanStatusOp ){
     case SQLITE_SCANSTAT_NLOOP: {
       if( pScan->addrLoop>0 ){
-        *(sqlite3_int64*)pOut = p->anExec[pScan->addrLoop];
+        *(sqlite3_int64*)pOut = p->aOp[pScan->addrLoop].nExec;
       }else{
         *(sqlite3_int64*)pOut = -1;
       }
@@ -2162,7 +2162,7 @@ int sqlite3_stmt_scanstatus_v2(
     }
     case SQLITE_SCANSTAT_NVISIT: {
       if( pScan->addrVisit>0 ){
-        *(sqlite3_int64*)pOut = p->anExec[pScan->addrVisit];
+        *(sqlite3_int64*)pOut = p->aOp[pScan->addrVisit].nExec;
       }else{
         *(sqlite3_int64*)pOut = -1;
       }
@@ -2218,7 +2218,7 @@ int sqlite3_stmt_scanstatus_v2(
           if( iIns==0 ) break;
           if( iIns>0 ){
             while( iIns<=iEnd ){
-              res += p->anCycle[iIns];
+              res += p->aOp[iIns].nCycle;
               iIns++;
             }
           }else{
@@ -2229,7 +2229,7 @@ int sqlite3_stmt_scanstatus_v2(
               if( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_NCYCLE)==0 ){
                 continue;
               }
-              res += p->anCycle[iOp];
+              res += p->aOp[iOp].nCycle;
             }
           }
         }
@@ -2261,7 +2261,11 @@ int sqlite3_stmt_scanstatus(
 */
 void sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
-  memset(p->anExec, 0, p->nOp * sizeof(i64));
-  memset(p->anCycle, 0, p->nOp * sizeof(u64));
+  int ii;
+  for(ii=0; ii<p->nOp; ii++){
+    Op *pOp = &p->aOp[ii];
+    pOp->nExec = 0;
+    pOp->nCycle = 0;
+  }
 }
 #endif /* SQLITE_ENABLE_STMT_SCANSTATUS */

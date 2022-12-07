@@ -790,15 +790,12 @@ int sqlite3VdbeExec(
     assert( pOp>=aOp && pOp<&aOp[p->nOp]);
     nVmStep++;
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
-    if( p->anExec ){
-      assert( p->anExec && p->anCycle );
-      p->anExec[(int)(pOp-aOp)]++;
-      pnCycle = &p->anCycle[pOp-aOp];
+    pOp->nExec++;
+    pnCycle = &pOp->nCycle;
 # ifdef VDBE_PROFILE
-      if( sqlite3NProfileCnt==0 )
+    if( sqlite3NProfileCnt==0 )
 # endif
-        *pnCycle -= sqlite3Hwtime();
-    }
+      *pnCycle -= sqlite3Hwtime();
 #endif
 
     /* Only allow tracing if SQLITE_DEBUG is defined.
@@ -7152,10 +7149,6 @@ case OP_Program: {        /* jump */
     pFrame->aOp = p->aOp;
     pFrame->nOp = p->nOp;
     pFrame->token = pProgram->token;
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
-    pFrame->anExec = p->anExec;
-    pFrame->anCycle = p->anCycle;
-#endif
 #ifdef SQLITE_DEBUG
     pFrame->iFrameMagic = SQLITE_FRAME_MAGIC;
 #endif
@@ -7192,10 +7185,6 @@ case OP_Program: {        /* jump */
   memset(pFrame->aOnce, 0, (pProgram->nOp + 7)/8);
   p->aOp = aOp = pProgram->aOp;
   p->nOp = pProgram->nOp;
-#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
-  p->anExec = 0;
-  p->anCycle = 0;
-#endif
 #ifdef SQLITE_DEBUG
   /* Verify that second and subsequent executions of the same trigger do not
   ** try to reuse register values from the first use. */
@@ -8732,17 +8721,11 @@ default: {          /* This is really OP_Noop, OP_Explain */
     }
 
 #if defined(VDBE_PROFILE)
-    assert( pnCycle );
-    if( pnCycle ){
-      *pnCycle += sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
-      assert( *pnCycle < (((u64)1) << 48) );
-      pnCycle = 0;
-    }
+    *pnCycle += sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
+    pnCycle = 0;
 #elif defined(SQLITE_ENABLE_STMT_SCANSTATUS)
-    if( pnCycle ){
-      *pnCycle += sqlite3Hwtime();
-      pnCycle = 0;
-    }
+    *pnCycle += sqlite3Hwtime();
+    pnCycle = 0;
 #endif
 
     /* The following code adds nothing to the actual functionality
@@ -8819,11 +8802,10 @@ abort_due_to_error:
   ** top. */
 vdbe_return:
 #if defined(VDBE_PROFILE)
-    if( pnCycle ){
-      *pnCycle += sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
-      assert( *pnCycle < (((u64)1) << 48) );
-      pnCycle = 0;
-    }
+  if( pnCycle ){
+    *pnCycle += sqlite3NProfileCnt ? sqlite3NProfileCnt : sqlite3Hwtime();
+    pnCycle = 0;
+  }
 #elif defined(SQLITE_ENABLE_STMT_SCANSTATUS)
   if( pnCycle ){
     *pnCycle += sqlite3Hwtime();

@@ -71,6 +71,10 @@ struct VdbeOp {
   u32 iSrcLine;            /* Source-code line that generated this opcode
                            ** with flags in the upper 8 bits */
 #endif
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
+  u64 nExec;
+  u64 nCycle;
+#endif
 };
 typedef struct VdbeOp VdbeOp;
 
