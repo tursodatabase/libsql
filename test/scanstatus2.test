@@ -170,7 +170,64 @@ do_graph_test 2.1 {
 } {
 QUERY (nCycle=nnn)
 --SCAN x1 (nCycle=nnn)
+--CREATE AUTOMATIC INDEX ON x2(c, d) (nCycle=nnn)
 --SEARCH x2 USING AUTOMATIC COVERING INDEX (c=?) (nCycle=nnn)
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE rt1 (id INTEGER PRIMARY KEY, x1, x2);
+  CREATE TABLE rt2 (id, x1, x2);
+}
+
+do_graph_test 4.1 {
+  SELECT * FROM rt1, rt2 WHERE rt1.id%2 AND rt2.x1=rt1.x1;
+} {
+QUERY (nCycle=nnn)
+--SCAN rt1 (nCycle=nnn)
+--CREATE AUTOMATIC INDEX ON rt2(x1, id, x2) (nCycle=nnn)
+--SEARCH rt2 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
+}
+
+do_graph_test 4.2 {
+  SELECT rt2.id FROM rt1, rt2 WHERE rt1.id%2 AND rt2.x1=rt1.x1;
+} {
+QUERY (nCycle=nnn)
+--SCAN rt1 (nCycle=nnn)
+--CREATE AUTOMATIC INDEX ON rt2(x1, id) (nCycle=nnn)
+--SEARCH rt2 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
+}
+
+do_graph_test 4.3 {
+  SELECT rt2.id FROM rt1, rt2 WHERE rt1.id%2 AND (rt2.x1+1)=(rt1.x1+1);
+} {
+QUERY (nCycle=nnn)
+--SCAN rt1 (nCycle=nnn)
+--SCAN rt2 (nCycle=nnn)
+}
+
+do_graph_test 4.4 {
+  SELECT rt2.id FROM rt1, rt2 WHERE rt1.id%2 AND rt2.x1=(rt1.x1+1) AND rt2.id>5;
+} {
+QUERY (nCycle=nnn)
+--SCAN rt1 (nCycle=nnn)
+--CREATE AUTOMATIC INDEX ON rt2(x1, id) WHERE <expr> (nCycle=nnn)
+--SEARCH rt2 USING AUTOMATIC PARTIAL COVERING INDEX (x1=?) (nCycle=nnn)
+}
+
+do_graph_test 4.5 {
+  SELECT v1.cnt FROM rt1, (
+    SELECT count(*) AS cnt, rt2.x1 AS x1 FROM rt2 GROUP BY x1
+  ) AS v1 WHERE rt1.x1=v1.x1
+} {
+QUERY (nCycle=nnn)
+--MATERIALIZE v1 (nCycle=nnn)
+----SCAN rt2 (nCycle=nnn)
+----USE TEMP B-TREE FOR GROUP BY
+--SCAN rt1 (nCycle=nnn)
+--CREATE AUTOMATIC INDEX ON v1(x1, cnt) (nCycle=nnn)
+--SEARCH v1 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
 }
 
 finish_test
