@@ -10,9 +10,12 @@
 
   ***********************************************************************
 
-  The Jaccwabyt API is documented in detail in an external file.
+  The Jaccwabyt API is documented in detail in an external file,
+  _possibly_ called jaccwabyt.md in the same directory as this file.
 
-  Project home: https://fossil.wanderinghorse.net/r/jaccwabyt
+  Project homes:
+  - https://fossil.wanderinghorse.net/r/jaccwabyt
+  - https://sqlite.org/src/dir/ext/wasm/jaccwabyt
 
 */
 'use strict';
@@ -219,15 +222,9 @@ self.Jaccwabyt = function StructBinderFactory(config){
   const __freeStruct = function(ctor, obj, m){
     if(!m) m = __instancePointerMap.get(obj);
     if(m) {
-      if(obj.ondispose instanceof Function){
-        try{obj.ondispose()}
-        catch(e){
-          /*do not rethrow: destructors must not throw*/
-          console.warn("ondispose() for",ctor.structName,'@',
-                       m,'threw. NOT propagating it.',e);
-        }
-      }else if(Array.isArray(obj.ondispose)){
-        obj.ondispose.forEach(function(x){
+      if(Array.isArray(obj.ondispose)){
+        let x;
+        while((x = obj.ondispose.shift())){
           try{
             if(x instanceof Function) x.call(obj);
             else if(x instanceof StructType) x.dispose();
@@ -238,7 +235,14 @@ self.Jaccwabyt = function StructBinderFactory(config){
             console.warn("ondispose() for",ctor.structName,'@',
                          m,'threw. NOT propagating it.',e);
           }
-        });
+        }
+      }else if(obj.ondispose instanceof Function){
+        try{obj.ondispose()}
+        catch(e){
+          /*do not rethrow: destructors must not throw*/
+          console.warn("ondispose() for",ctor.structName,'@',
+                       m,'threw. NOT propagating it.',e);
+        }
       }
       delete obj.ondispose;
       __instancePointerMap.delete(obj);
@@ -333,7 +337,9 @@ self.Jaccwabyt = function StructBinderFactory(config){
   /** Impl of X.memberKeys() for StructType and struct ctors. */
   const __structMemberKeys = rop(function(){
     const a = [];
-    Object.keys(this.structInfo.members).forEach((k)=>a.push(this.memberKey(k)));
+    for(const k of Object.keys(this.structInfo.members)){
+      a.push(this.memberKey(k));
+    }
     return a;
   });
 
@@ -399,15 +405,15 @@ self.Jaccwabyt = function StructBinderFactory(config){
      Adds value v to obj.ondispose, creating ondispose,
      or converting it to an array, if needed.
   */
-  const __addOnDispose = function(obj, v){
+  const __addOnDispose = function(obj, ...v){
     if(obj.ondispose){
-      if(obj.ondispose instanceof Function){
+      if(!Array.isArray(obj.ondispose)){
         obj.ondispose = [obj.ondispose];
-      }/*else assume it's an array*/
+      }
     }else{
       obj.ondispose = [];
     }
-    obj.ondispose.push(v);
+    obj.ondispose.push(...v);
   };
 
   /**
@@ -493,6 +499,13 @@ self.Jaccwabyt = function StructBinderFactory(config){
     setMemberCString: rop(function(memberName, str){
       return __setMemberCString(this, memberName, str);
     })
+  });
+  // Function-type non-Property inherited members 
+  Object.assign(StructType.prototype,{
+    addOnDispose: function(...v){
+      __addOnDispose(this,...v);
+      return this;
+    }
   });
 
   /**

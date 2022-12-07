@@ -4,7 +4,6 @@ Jaccwabyt 🐇
 **Jaccwabyt**: _JavaScript ⇄ C Struct Communication via WASM Byte
 Arrays_
 
-
 Welcome to Jaccwabyt, a JavaScript API which creates bindings for
 WASM-compiled C structs, defining them in such a way that changes to
 their state in JS are visible in C/WASM, and vice versa, permitting
@@ -27,8 +26,28 @@ are based solely on feature compatibility tables provided at
 **Formalities:**
 
 - Author: [Stephan Beal][sgb]
-- License: Public Domain
-- Project Home: <https://fossil.wanderinghorse.net/r/jaccwabyt>
+- Project Homes:
+  - <https://fossil.wanderinghorse.net/r/jaccwabyt>\  
+    Is the primary home but...
+  - <https://sqlite.org/src/dir/ext/wasm/jaccwabyt>\  
+    ... most development happens here.
+
+The license for both this documentation and the software it documents
+is the same as [sqlite3][], the project from which this spinoff
+project was spawned:
+
+-----
+
+> 2022-06-30:
+>
+> The author disclaims copyright to this source code.  In place of a
+> legal notice, here is a blessing:
+>
+>    May you do good and not evil.
+>    May you find forgiveness for yourself and forgive others.
+>    May you share freely, never taking more than you give.
+
+-----
 
 <a name='overview'></a>
 Table of Contents
@@ -570,6 +589,14 @@ only called by the [StructBinder][]-generated
 [constructors][StructCtors]. The `StructBinder.StructType` object
 has the following "static" properties (^Which are accessible from
 individual instances via `theInstance.constructor`.):
+
+- `addOnDispose(...value)`\  
+  If this object has no `ondispose` property, this function creates it
+  as an array and pushes the given value(s) onto it. If the object has
+  a function-typed `ondispose` property, this call replaces it with an
+  array and moves that function into the array. In all other cases,
+  `ondispose` is assumed to be an array and the argument(s) is/are
+  appended to it. Returns `this`.
 
 - `allocCString(str)`  
   Identical to the [StructBinder][] method of the same name.

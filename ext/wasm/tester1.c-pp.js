@@ -710,7 +710,7 @@ self.sqlite3InitModule = sqlite3InitModule;
     }/*WhWasmUtil*/)
 
   ////////////////////////////////////////////////////////////////////
-    .t('sqlite3.StructBinder (jaccwabyt)', function(sqlite3){
+    .t('sqlite3.StructBinder (jaccwabyt🐇)', function(sqlite3){
       const S = sqlite3, W = S.wasm;
       const MyStructDef = {
         sizeof: 16,
@@ -863,6 +863,18 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(ptr).assert(undefined === wts.pointer);
       }finally{
         wts.dispose();
+      }
+
+      if(1){ // ondispose of other struct instances
+        const s1 = new WTStruct, s2 = new WTStruct, s3 = new WTStruct;
+        T.assert(s1.lookupMember instanceof Function)
+          .assert(s1.addOnDispose instanceof Function);
+        s1.addOnDispose(s2,"testing variadic args");
+        T.assert(2===s1.ondispose.length);
+        s2.addOnDispose(s3);
+        s1.dispose();
+        T.assert(!s2.pointer,"Expecting s2 to be ondispose'd by s1.");
+        T.assert(!s3.pointer,"Expecting s3 to be ondispose'd by s2.");
       }
     }/*StructBinder*/)
 
@@ -1549,6 +1561,7 @@ self.sqlite3InitModule = sqlite3InitModule;
                 .assert(args[0] === 'testvtab')
                 .assert(args[1] === 'main')
                 .assert(args[2] === 'testvtab');
+              console.debug("xConnect() args =",args);
               const rc = capi.sqlite3_declare_vtab(
                 pDb, "CREATE TABLE ignored(a,b)"
               );
@@ -1577,8 +1590,8 @@ self.sqlite3InitModule = sqlite3InitModule;
           xOpen: function(pVtab, ppCursor){
             try{
               const t = vth.xWrapVtab(pVtab), c = vth.xWrapCursor();
-              T.assert(t instanceof capi.sqlite3_vtab);
-              T.assert(c instanceof capi.sqlite3_vtab_cursor);
+              T.assert(t instanceof capi.sqlite3_vtab)
+                .assert(c instanceof capi.sqlite3_vtab_cursor);
               wasm.setPtrValue(ppCursor, c.pointer);
               c._rowId = 0;
               return 0;

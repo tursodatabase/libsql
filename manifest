@@ -1,5 +1,5 @@
-C JS\svtables:\sadd\sinfrastructure\srelated\sto\saccessing\sand\smodifying\ssqlite3_index_info.
-D 2022-12-06T11:21:46.303
+C Add\saddOnDispose()\smethod\sto\sJaccwabyt\sand\scode-adjacent\sminor\sinternal\scleanups.
+D 2022-12-07T03:42:39.134
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -509,7 +509,7 @@ F ext/wasm/api/sqlite3-api-prologue.js a7596c30392d9ca8f5b7c14feb4e6788107d1159f
 F ext/wasm/api/sqlite3-api-worker1.js e94ba98e44afccfa482874cd9acb325883ade50ed1f9f9526beb9de1711f182f
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
 F ext/wasm/api/sqlite3-opfs-async-proxy.js f79dd8d98ef3e0b55c10bb2bee7a3840fa967318e1f577c156aafc34664271d1
-F ext/wasm/api/sqlite3-v-helper.js 6b408ee4e926cb0f7fe41a63a1205049283af301fe3f5de3c038845ccf9106df
+F ext/wasm/api/sqlite3-v-helper.js 2125255f102ab07a2653d74d4931d716b0d27c5a89bebc188ad828de0dd1dcef
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 8ec510fee735c646fb18a3b99f0ca5ca461f9e066c43cdc404d7144f12ae6ed6
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 723522a6c2a2463884a83fa1cc7ae5770deaaf0856a1058cc1023b2bfa1c898b
@@ -539,8 +539,8 @@ F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html c806b6005145b71d64240606e9c6e0bf56878ee8829c66fe7486cebf34b0e6b1
 F ext/wasm/index.html f151b7c7b5cfdc066567d556acd168e769efd4e982286dc5f849a5ee69ecd0ff
-F ext/wasm/jaccwabyt/jaccwabyt.js 35c7eaa61ba4b875cd49da5a06a35d9935fd19121de65dd5f467cbe376359782
-F ext/wasm/jaccwabyt/jaccwabyt.md 888aff20e486abb6c955d432f9a3af271e2cdd2cd99a92c6f87077116ca57091
+F ext/wasm/jaccwabyt/jaccwabyt.js b7efd07ea3927e9d0bc75b3819c6d40bdfb0a03cbc8d93331be16799f35261c3
+F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
 F ext/wasm/module-symbols.html 980680c8acfa3c8ae6a5aa223512d1b8e78040ced20f8ba2c382129bc73ec028
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 4c140457f4d6da9d646a49addd91edb6e9ad1643c6c48e3258b5bce24725dc18
@@ -555,7 +555,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 44363db07b2a20e73b0eb1808de4400ca71b703af718d0fa6d962f15e73bf2ac
 F ext/wasm/tester1-worker.html d43f3c131d88f10d00aff3e328fed13c858d674ea2ff1ff90225506137f85aa9
 F ext/wasm/tester1.c-pp.html d34bef3d48e5cbc1c7c06882ad240fec49bf88f5f65696cc2c72c416933aa406
-F ext/wasm/tester1.c-pp.js c5679da7895377df03e6075fc0e9dff8b5f570bd4edb63f714154d3030279fce
+F ext/wasm/tester1.c-pp.js 8144e0e0f76b14fcd5223fad190bd94a50caf19b2419848b782448cda3ccbc78
 F ext/wasm/tests/opfs/concurrency/index.html 86d8ac435074d1e7007b91105f4897f368c165e8cecb6a9aa3d81f5cf5dcbe70
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0ce51bed65d5e430364f74bf959fb76c42ac5eec0769490231d8c8110a1f388c
-R a1b37a98bcb406acaf386e5a65bbf6e3
+P 0d77c348039926c24e0fb50a7dc7e4b62895cd201c021f8e29832917e4b8b09f
+R c60d510be7a6225cada64eb18dd4b778
 U stephan
-Z 3e0a3245949f854c4eed760afd40e3ce
+Z 9a43ff51fca7fb341935fe3d300c9a6e
 # Remove this line to create a well-formed Fossil manifest.

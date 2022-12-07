@@ -350,10 +350,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        methods which take a (sqlite3_vtab_cursor*) _except_ for
        xClose(), in which case use...
 
-     - wrapCursor(pCursor, true) will remove the m apping of pCursor to a
+     - wrapCursor(pCursor, true) will remove the mapping of pCursor to a
        capi.sqlite3_vtab_cursor object and return that object.  The
        caller must call dispose() on the returned object. This is
-       intended to be called form xClose() or in error handling of a
+       intended to be called from xClose() or in error handling of a
        failed xOpen().
  */
   vt.xWrapCursor = __xWrapFactory(capi.sqlite3_vtab_cursor);
