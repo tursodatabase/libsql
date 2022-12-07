@@ -301,14 +301,12 @@ self.sqlite3InitModule = sqlite3InitModule;
     addTest: function(name, callback){
       let predicate;
       if(1===arguments.length){
-        const opt = arguments[0];
-        predicate = opt.predicate;
-        name = opt.name;
-        callback = opt.test;
+        this.currentTestGroup.addTest(arguments[0]);
+      }else{
+        this.currentTestGroup.addTest({
+          name, predicate, test: callback
+        });
       }
-      this.currentTestGroup.addTest({
-        name, predicate, test: callback
-      });
       return this;
     },
     runTests: async function(sqlite3){
@@ -399,11 +397,20 @@ self.sqlite3InitModule = sqlite3InitModule;
       catch(e){T.assert("test ing ." === e.message)}
 
       try{ throw new sqlite3.SQLite3Error(capi.SQLITE_SCHEMA) }
-      catch(e){ T.assert('SQLITE_SCHEMA' === e.message) }
+      catch(e){
+        T.assert('SQLITE_SCHEMA' === e.message)
+          .assert(capi.SQLITE_SCHEMA === e.resultCode);
+      }
       try{ sqlite3.SQLite3Error.toss(capi.SQLITE_CORRUPT,{cause: true}) }
       catch(e){
-        T.assert('SQLITE_CORRUPT'===e.message)
+        T.assert('SQLITE_CORRUPT' === e.message)
+          .assert(capi.SQLITE_CORRUPT === e.resultCode)
           .assert(true===e.cause);
+      }
+      try{ sqlite3.SQLite3Error.toss("resultCode check") }
+      catch(e){
+        T.assert(capi.SQLITE_ERROR === e.resultCode)
+          .assert('resultCode check' === e.message);        
       }
     })
   ////////////////////////////////////////////////////////////////////
@@ -988,6 +995,20 @@ self.sqlite3InitModule = sqlite3InitModule;
       const dbFile = '/tester1.db';
       wasm.sqlite3_wasm_vfs_unlink(0, dbFile);
       const db = this.db = new sqlite3.oo1.DB(dbFile, 0 ? 'ct' : 'c');
+      db.onclose = {
+        disposeThese: [],
+        after: function(){
+          while(this.disposeThese.length){
+            const v = this.disposeThese.shift();
+            console.debug("db.onclose cleaning up:",v);
+            if(wasm.isPtr(v)) wasm.dealloc(v);
+            else if(v instanceof sqlite3.StructBinder.StructType){
+              v.dispose();
+            }
+          }
+        }
+      };
+      
       T.assert(Number.isInteger(db.pointer))
         .mustThrowMatching(()=>db.pointer=1, /read-only/)
         .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
@@ -1539,219 +1560,6 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.mustThrow(()=>db.exec("select * from foo.bar"));
     })
 
-  ////////////////////////////////////////////////////////////////////////
-    .t({
-      name: 'Custom virtual tables',
-      predicate: ()=>wasm.bigIntEnabled,
-      test: function(sqlite3){
-        warn("The vtab/module JS bindings are experimental and subject to change.");
-        const vth = sqlite3.VtabHelper;
-        const tmplCols = Object.assign(Object.create(null),{
-          A: 0, B: 1
-        });
-        /**
-           The vtab demonstrated here is a JS-ification of
-           ext/misc/templatevtab.c.
-        */
-        const tmplMethods = {
-          xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
-            try{
-              const args = wasm.cArgvToJs(argc, argv);
-              T.assert(args.length>=3)
-                .assert(args[0] === 'testvtab')
-                .assert(args[1] === 'main')
-                .assert(args[2] === 'testvtab');
-              console.debug("xConnect() args =",args);
-              const rc = capi.sqlite3_declare_vtab(
-                pDb, "CREATE TABLE ignored(a,b)"
-              );
-              if(0===rc){
-                const t = vth.xWrapVtab();
-                wasm.setPtrValue(ppVtab, t.pointer);
-                T.assert(t === vth.xWrapVtab(wasm.getPtrValue(ppVtab)));
-              }
-              return rc;
-            }catch(e){
-              if(!(e instanceof sqlite3.WasmAllocError)){
-                wasm.setPtrValue(pzErr, wasm.allocCString(e.message));
-              }
-              return vth.xMethodError('xConnect',e);
-            }
-          },
-          xDisconnect: function(pVtab){
-            try {
-              const t = vth.xWrapVtab(pVtab, true);
-              t.dispose();
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xDisconnect',e);
-            }
-          },
-          xOpen: function(pVtab, ppCursor){
-            try{
-              const t = vth.xWrapVtab(pVtab), c = vth.xWrapCursor();
-              T.assert(t instanceof capi.sqlite3_vtab)
-                .assert(c instanceof capi.sqlite3_vtab_cursor);
-              wasm.setPtrValue(ppCursor, c.pointer);
-              c._rowId = 0;
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xOpen',e);
-            }
-          },
-          xClose: function(pCursor){
-            try{
-              const c = vth.xWrapCursor(pCursor,true);
-              T.assert(c instanceof capi.sqlite3_vtab_cursor)
-                .assert(!vth.xWrapCursor(pCursor));
-              c.dispose();
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xClose',e);
-            }
-          },
-          xNext: function(pCursor){
-            try{
-              const c = vth.xWrapCursor(pCursor);
-              ++c._rowId;
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xNext',e);
-            }
-
-          },
-          xColumn: function(pCursor, pCtx, iCol){
-            try{
-              const c = vth.xWrapCursor(pCursor);
-              switch(iCol){
-                  case tmplCols.A:
-                    capi.sqlite3_result_int(pCtx, 1000 + c._rowId);
-                    break;
-                  case tmplCols.B:
-                    capi.sqlite3_result_int(pCtx, 2000 + c._rowId);
-                    break;
-                  default: sqlite3.SQLite3Error.toss("Invalid column id",iCol);
-              }
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xColumn',e);
-            }
-          },
-          xRowid: function(pCursor, ppRowid64){
-            try{
-              const c = vth.xWrapCursor(pCursor);
-              vth.setRowId(ppRowid64, c._rowId);
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xRowid',e);
-            }
-          },
-          xEof: function(pCursor){
-            const c = vth.xWrapCursor(pCursor);
-            return c._rowId>=10;
-          },
-          xFilter: function(pCursor, idxNum, idxCStr,
-                            argc, argv/* [sqlite3_value* ...] */){
-            try{
-              const c = vth.xWrapCursor(pCursor);
-              c._rowId = 0;
-              const list = vth.sqlite3ValuesToJs(argc, argv);
-              T.assert(argc === list.length);
-              //log(argc,"xFilter value(s):",list);
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xFilter',e);
-            }
-          },
-          xBestIndex: function(pVtab, pIdxInfo){
-            try{
-              //const t = vth.xWrapVtab(pVtab);
-              const sii = capi.sqlite3_index_info;
-              const pii = new sii(pIdxInfo);
-              pii.$estimatedRows = 10;
-              pii.$estimatedCost = 10.0;
-              //log("xBestIndex $nConstraint =",pii.$nConstraint);
-              if(pii.$nConstraint>0){
-                // Validate nthConstraint() and nthConstraintUsage()
-                const max = pii.$nConstraint;
-                for(let i=0; i < max; ++i ){
-                  let v = pii.nthConstraint(i,true);
-                  T.assert(wasm.isPtr(v));
-                  v = pii.nthConstraint(i);
-                  T.assert(v instanceof sii.sqlite3_index_constraint)
-                    .assert(v.pointer >= pii.$aConstraint);
-                  v.dispose();
-                  v = pii.nthConstraintUsage(i,true);
-                  T.assert(wasm.isPtr(v));
-                  v = pii.nthConstraintUsage(i);
-                  T.assert(v instanceof sii.sqlite3_index_constraint_usage)
-                    .assert(v.pointer >= pii.$aConstraintUsage);
-                  v.$argvIndex = i;//just to get some values into xFilter
-                  v.dispose();
-                }
-              }
-              //log("xBestIndex $nOrderBy =",pii.$nOrderBy);
-              if(pii.$nOrderBy>0){
-                // Validate nthOrderBy()
-                const max = pii.$nOrderBy;
-                for(let i=0; i < max; ++i ){
-                  let v = pii.nthOrderBy(i,true);
-                  T.assert(wasm.isPtr(v));
-                  v = pii.nthOrderBy(i);
-                  T.assert(v instanceof sii.sqlite3_index_orderby)
-                    .assert(v.pointer >= pii.$aOrderBy);
-                  v.dispose();
-                }
-              }
-              pii.dispose();
-              return 0;
-            }catch(e){
-              return vth.xMethodError('xBestIndex',e);
-            }
-          }
-        };
-        /**
-           The vtab API places relevance on whether xCreate and
-           xConnect are exactly the same function (same pointer
-           address). Two JS-side references to the same method will
-           end up, without acrobatics to counter it, being compiled as
-           two different WASM-side bindings, i.e. two different
-           pointers.
-
-           In order to account for this, VtabHelper.installMethods()
-           checks for duplicate function entries and maps them to the
-           same WASM-compiled instance.
-        */
-        if(1){
-          tmplMethods.xCreate = tmplMethods.xConnect;
-        }
-
-        const tmplMod = new sqlite3.capi.sqlite3_module();
-        tmplMod.ondispose = [];
-        tmplMod.$iVersion = 0;
-        vth.installMethods(tmplMod, tmplMethods, true);
-        if(tmplMethods.xCreate){
-          T.assert(tmplMod.$xCreate)
-            .assert(tmplMod.$xCreate === tmplMod.$xConnect,
-                    "installMethods() must avoid re-compiling identical functions");
-          tmplMod.$xCreate = 0;
-        }
-        let rc = capi.sqlite3_create_module(
-          this.db, "testvtab", tmplMod, 0
-        );
-        this.db.checkRc(rc);
-
-        const list = this.db.selectArrays(
-          "SELECT a,b FROM testvtab where a<9999 and b>1 order by a, b"
-          /* Query is shaped so that it will ensure that some constraints
-             end up in xBestIndex(). */
-        );
-        T.assert(10===list.length)
-          .assert(1000===list[0][0])
-          .assert(2009===list[list.length-1][1])
-      }
-    })/*vtab sanity checks*/
-
   ////////////////////////////////////////////////////////////////////
     .t({
       name: 'C-side WASM tests',
@@ -1838,6 +1646,379 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
     }/* jaccwabyt-specific tests */)
 
+  ////////////////////////////////////////////////////////////////////////
+    .t({
+      name: 'virtual table #1',
+      predicate: ()=>!!capi.sqlite3_index_info,
+      test: function(sqlite3){
+        warn("The vtab/module JS bindings are experimental and subject to change.");
+        const vth = sqlite3.VtabHelper;
+        const tmplCols = Object.assign(Object.create(null),{
+          A: 0, B: 1
+        });
+        /**
+           The vtab demonstrated here is a JS-ification of
+           ext/misc/templatevtab.c.
+        */
+        const tmplMethods = {
+          xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
+            try{
+              const args = wasm.cArgvToJs(argc, argv);
+              T.assert(args.length>=3)
+                .assert(args[0] === 'testvtab')
+                .assert(args[1] === 'main')
+                .assert(args[2] === 'testvtab');
+              console.debug("xConnect() args =",args);
+              const rc = capi.sqlite3_declare_vtab(
+                pDb, "CREATE TABLE ignored(a,b)"
+              );
+              if(0===rc){
+                const t = vth.xVtab();
+                wasm.setPtrValue(ppVtab, t.pointer);
+                T.assert(t === vth.xVtab(wasm.getPtrValue(ppVtab)));
+              }
+              return rc;
+            }catch(e){
+              if(!(e instanceof sqlite3.WasmAllocError)){
+                wasm.setPtrValue(pzErr, wasm.allocCString(e.message));
+              }
+              return vth.xError('xConnect',e);
+            }
+          },
+          xDisconnect: function(pVtab){
+            try {
+              const t = vth.xVtab(pVtab, true);
+              t.dispose();
+              return 0;
+            }catch(e){
+              return vth.xError('xDisconnect',e);
+            }
+          },
+          xOpen: function(pVtab, ppCursor){
+            try{
+              const t = vth.xVtab(pVtab), c = vth.xCursor();
+              T.assert(t instanceof capi.sqlite3_vtab)
+                .assert(c instanceof capi.sqlite3_vtab_cursor);
+              wasm.setPtrValue(ppCursor, c.pointer);
+              c._rowId = 0;
+              return 0;
+            }catch(e){
+              return vth.xError('xOpen',e);
+            }
+          },
+          xClose: function(pCursor){
+            try{
+              const c = vth.xCursor(pCursor,true);
+              T.assert(c instanceof capi.sqlite3_vtab_cursor)
+                .assert(!vth.xCursor(pCursor));
+              c.dispose();
+              return 0;
+            }catch(e){
+              return vth.xError('xClose',e);
+            }
+          },
+          xNext: function(pCursor){
+            try{
+              const c = vth.xCursor(pCursor);
+              ++c._rowId;
+              return 0;
+            }catch(e){
+              return vth.xError('xNext',e);
+            }
+
+          },
+          xColumn: function(pCursor, pCtx, iCol){
+            try{
+              const c = vth.xCursor(pCursor);
+              switch(iCol){
+                  case tmplCols.A:
+                    capi.sqlite3_result_int(pCtx, 1000 + c._rowId);
+                    break;
+                  case tmplCols.B:
+                    capi.sqlite3_result_int(pCtx, 2000 + c._rowId);
+                    break;
+                  default: sqlite3.SQLite3Error.toss("Invalid column id",iCol);
+              }
+              return 0;
+            }catch(e){
+              return vth.xError('xColumn',e);
+            }
+          },
+          xRowid: function(pCursor, ppRowid64){
+            try{
+              const c = vth.xCursor(pCursor);
+              vth.xRowid(ppRowid64, c._rowId);
+              return 0;
+            }catch(e){
+              return vth.xError('xRowid',e);
+            }
+          },
+          xEof: function(pCursor){
+            const c = vth.xCursor(pCursor),
+                  rc = c._rowId>=10;
+            c.dispose();
+            return rc;
+          },
+          xFilter: function(pCursor, idxNum, idxCStr,
+                            argc, argv/* [sqlite3_value* ...] */){
+            try{
+              const c = vth.xCursor(pCursor);
+              c._rowId = 0;
+              const list = vth.sqlite3ValuesToJs(argc, argv);
+              T.assert(argc === list.length);
+              //log(argc,"xFilter value(s):",list);
+              c.dispose();
+              return 0;
+            }catch(e){
+              return vth.xError('xFilter',e);
+            }
+          },
+          xBestIndex: function(pVtab, pIdxInfo){
+            try{
+              //const t = vth.xVtab(pVtab);
+              const sii = capi.sqlite3_index_info;
+              const pii = new sii(pIdxInfo);
+              pii.$estimatedRows = 10;
+              pii.$estimatedCost = 10.0;
+              //log("xBestIndex $nConstraint =",pii.$nConstraint);
+              if(pii.$nConstraint>0){
+                // Validate nthConstraint() and nthConstraintUsage()
+                const max = pii.$nConstraint;
+                for(let i=0; i < max; ++i ){
+                  let v = pii.nthConstraint(i,true);
+                  T.assert(wasm.isPtr(v));
+                  v = pii.nthConstraint(i);
+                  T.assert(v instanceof sii.sqlite3_index_constraint)
+                    .assert(v.pointer >= pii.$aConstraint);
+                  v.dispose();
+                  v = pii.nthConstraintUsage(i,true);
+                  T.assert(wasm.isPtr(v));
+                  v = pii.nthConstraintUsage(i);
+                  T.assert(v instanceof sii.sqlite3_index_constraint_usage)
+                    .assert(v.pointer >= pii.$aConstraintUsage);
+                  v.$argvIndex = i;//just to get some values into xFilter
+                  v.dispose();
+                }
+              }
+              //log("xBestIndex $nOrderBy =",pii.$nOrderBy);
+              if(pii.$nOrderBy>0){
+                // Validate nthOrderBy()
+                const max = pii.$nOrderBy;
+                for(let i=0; i < max; ++i ){
+                  let v = pii.nthOrderBy(i,true);
+                  T.assert(wasm.isPtr(v));
+                  v = pii.nthOrderBy(i);
+                  T.assert(v instanceof sii.sqlite3_index_orderby)
+                    .assert(v.pointer >= pii.$aOrderBy);
+                  v.dispose();
+                }
+              }
+              pii.dispose();
+              return 0;
+            }catch(e){
+              return vth.xError('xBestIndex',e);
+            }
+          }
+        };
+        /**
+           The vtab API places relevance on whether xCreate and
+           xConnect are exactly the same function (same pointer
+           address). Two JS-side references to the same method will
+           end up, without acrobatics to counter it, being compiled as
+           two different WASM-side bindings, i.e. two different
+           pointers.
+
+           In order to account for this, VtabHelper.installMethods()
+           checks for duplicate function entries and maps them to the
+           same WASM-compiled instance.
+        */
+        if(1){
+          tmplMethods.xCreate = tmplMethods.xConnect;
+        }
+
+        const tmplMod = new sqlite3.capi.sqlite3_module();
+        tmplMod.$iVersion = 0;
+        this.db.onclose.disposeThese.push(tmplMod);
+        vth.installMethods(tmplMod, tmplMethods, true);
+        if(tmplMethods.xCreate){
+          T.assert(tmplMod.$xCreate)
+            .assert(tmplMod.$xCreate === tmplMod.$xConnect,
+                    "installMethods() must avoid re-compiling identical functions");
+          tmplMod.$xCreate = 0;
+        }
+        let rc = capi.sqlite3_create_module(
+          this.db, "testvtab", tmplMod, 0
+        );
+        this.db.checkRc(rc);
+
+        const list = this.db.selectArrays(
+          "SELECT a,b FROM testvtab where a<9999 and b>1 order by a, b"
+          /* Query is shaped so that it will ensure that some constraints
+             end up in xBestIndex(). */
+        );
+        T.assert(10===list.length)
+          .assert(1000===list[0][0])
+          .assert(2009===list[list.length-1][1])
+      }
+    })/*custom vtab #1*/
+
+  ////////////////////////////////////////////////////////////////////////
+    .t({
+      name: 'virtual table #2 (w/ automated exception wrapping)',
+      predicate: ()=>!!capi.sqlite3_index_info,
+      test: function(sqlite3){
+        warn("The vtab/module JS bindings are experimental and subject to change.");
+        const vth = sqlite3.VtabHelper;
+        const tmplCols = Object.assign(Object.create(null),{
+          A: 0, B: 1
+        });
+        /**
+           The vtab demonstrated here is a JS-ification of
+           ext/misc/templatevtab.c.
+        */
+        let throwOnConnect = 1 ? 0 : capi.SQLITE_CANTOPEN
+        /* ^^^ just for testing exception wrapping. Note that sqlite
+           always translates errors from a vtable to a generic
+           SQLITE_ERROR unless it's from xConnect()/xCreate() and that
+           callback sets an error string. */;
+        const modConfig = {
+          /* catchExceptions changes how the methods are wrapped */
+          catchExceptions: false,
+          name: "vtab2test",
+          methods:{
+            xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
+              if(throwOnConnect){
+                sqlite3.SQLite3Error.toss(
+                  throwOnConnect,
+                  "Throwing a test exception."
+                );
+              }
+              const args = wasm.cArgvToJs(argc, argv);
+              console.debug("xCreate/xConnect args:",args);
+              T.assert(args.length>=3);
+              const rc = capi.sqlite3_declare_vtab(
+                pDb, "CREATE TABLE ignored(a,b)"
+              );
+              if(0===rc){
+                const t = vth.xVtab();
+                wasm.setPtrValue(ppVtab, t.pointer);
+                T.assert(t === vth.xVtab(wasm.getPtrValue(ppVtab)));
+              }
+              return rc;
+            },
+            xDisconnect: function(pVtab){
+              const t = vth.xVtab(pVtab, true);
+              t.dispose();
+            },
+            xOpen: function(pVtab, ppCursor){
+              const t = vth.xVtab(pVtab), c = vth.xCursor();
+              T.assert(t instanceof capi.sqlite3_vtab)
+                .assert(c instanceof capi.sqlite3_vtab_cursor);
+              wasm.setPtrValue(ppCursor, c.pointer);
+              c._rowId = 0;
+            },
+            xClose: function(pCursor){
+              const c = vth.xCursor(pCursor,true);
+              T.assert(c instanceof capi.sqlite3_vtab_cursor)
+                .assert(!vth.xCursor(pCursor));
+              c.dispose();
+            },
+            xNext: function(pCursor){
+              const c = vth.xCursor(pCursor);
+              ++c._rowId;
+            },
+            xColumn: function(pCursor, pCtx, iCol){
+              const c = vth.xCursor(pCursor);
+              switch(iCol){
+                  case tmplCols.A:
+                    capi.sqlite3_result_int(pCtx, 1000 + c._rowId);
+                    break;
+                  case tmplCols.B:
+                    capi.sqlite3_result_int(pCtx, 2000 + c._rowId);
+                    break;
+                  default: sqlite3.SQLite3Error.toss("Invalid column id",iCol);
+              }
+            },
+            xRowid: function(pCursor, ppRowid64){
+              const c = vth.xCursor(pCursor);
+              vth.xRowid(ppRowid64, c._rowId);
+              c.dispose();
+            },
+            xEof: function(pCursor){
+              const c = vth.xCursor(pCursor),
+                    rc = c._rowId>=10;
+              c.dispose();
+              return rc;
+            },
+            xFilter: function(pCursor, idxNum, idxCStr,
+                              argc, argv/* [sqlite3_value* ...] */){
+              const c = vth.xCursor(pCursor);
+              c._rowId = 0;
+              const list = vth.sqlite3ValuesToJs(argc, argv);
+              T.assert(argc === list.length);
+              c.dispose();
+            },
+            xBestIndex: function(pVtab, pIdxInfo){
+              //const t = vth.xVtab(pVtab);
+              const pii = vth.xIndexInfo(pIdxInfo);
+              pii.$estimatedRows = 10;
+              pii.$estimatedCost = 10.0;
+              pii.dispose();
+            }
+          }/*methods*/
+        };
+        const doEponymous =
+        /* Bug (somewhere): non-eponymous is behaving as is
+           the call to sqlite3_create_module() is missing
+           or failed: 
+
+           SQL TRACE #63 create virtual table testvtab2 using vtab2test(arg1, arg2)
+
+           => sqlite3 result code 1: no such module: vtab2test
+        */ true;
+        if(doEponymous){
+          warn("Reminder: non-eponymous mode is still not working here.",
+              "Details are in the code comments.");
+          modConfig.methods.xCreate = 0;
+        }else{
+          modConfig.methods.xCreate = (...args)=>0;
+        }
+        const tmplMod = vth.setupModule(modConfig);
+        T.assert(tmplMod instanceof capi.sqlite3_module)
+          .assert(1===tmplMod.$iVersion);
+        if(doEponymous){
+          if(modConfig.methods.xCreate !== 0){
+            T.assert(modConfig.methods.xCreate === modConfig.methods.xConnect)
+              .assert(tmplMod.$xCreate === tmplMod.$xConnect);
+          }else{
+            T.assert(0 === tmplMod.$xCreate);
+          }
+        }
+        this.db.onclose.disposeThese.push(tmplMod);
+        this.db.checkRc(capi.sqlite3_create_module(
+          this.db, modConfig.name, tmplMod, 0
+        ));
+        if(!doEponymous){
+          this.db.exec([
+            "create virtual table testvtab2 using ",
+            modConfig.name,
+            "(arg1, arg2)"
+          ]);
+        }
+        const list = this.db.selectArrays(
+          ["SELECT a,b FROM ",
+           (doEponymous ? modConfig.name : "testvtab2"),
+           " where a<9999 and b>1 order by a, b"
+          ]/* Query is shaped so that it will ensure that some
+              constraints end up in xBestIndex(). */
+        );
+        T.assert(10===list.length)
+          .assert(1000===list[0][0])
+          .assert(2009===list[list.length-1][1])
+      }
+    })/*custom vtab #2*/
+
+  ////////////////////////////////////////////////////////////////////////
     .t('Close db', function(){
       T.assert(this.db).assert(wasm.isPtr(this.db.pointer));
       wasm.sqlite3_wasm_db_reset(this.db);

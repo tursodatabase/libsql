@@ -222,6 +222,7 @@ self.Jaccwabyt = function StructBinderFactory(config){
   const __freeStruct = function(ctor, obj, m){
     if(!m) m = __instancePointerMap.get(obj);
     if(m) {
+      __instancePointerMap.delete(obj);
       if(Array.isArray(obj.ondispose)){
         let x;
         while((x = obj.ondispose.shift())){
@@ -245,7 +246,6 @@ self.Jaccwabyt = function StructBinderFactory(config){
         }
       }
       delete obj.ondispose;
-      __instancePointerMap.delete(obj);
       if(ctor.debugFlags.__flags.dealloc){
         log("debug.dealloc:",(obj[xPtrPropName]?"EXTERNAL":""),
             ctor.structName,"instance:",

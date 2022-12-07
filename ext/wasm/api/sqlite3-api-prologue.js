@@ -185,28 +185,49 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /**
        Constructs this object with a message depending on its arguments:
 
-       - If it's passed only a single integer argument, it is assumed
-       to be an sqlite3 C API result code. The message becomes the
-       result of sqlite3.capi.sqlite3_js_rc_str() or (if that returns
-       falsy) a synthesized string which contains that integer.
+       If its first argument is an integer, it is assumed to be
+       an SQLITE_... result code and it is passed to
+       sqlite3.capi.sqlite3_js_rc_str() to stringify it.
 
-       - If passed 2 arguments and the 2nd is a object, it behaves
-       like the Error(string,object) constructor except that the first
-       argument is subject to the is-integer semantics from the
-       previous point.
+       If called with exactly 2 arguments and the 2nd is an object,
+       that object is treated as the 2nd argument to the parent
+       constructor.
 
-       - Else all arguments are concatenated with a space between each
-       one, using args.join(' '), to create the error message.
+       The exception's message is created by concatenating its
+       arguments with a space between each, except for the
+       two-args-with-an-objec form and that the first argument will
+       get coerced to a string, as described above, if it's an
+       integer.
+
+       If passed an integer first argument, the error object's
+       `resultCode` member will be set to the given integer value,
+       else it will be set to capi.SQLITE_ERROR.
     */
     constructor(...args){
-      if(1===args.length && __isInt(args[0])){
-        super(__rcStr(args[0]));
-      }else if(2===args.length && 'object'===typeof args[1]){
-        if(__isInt(args[0])) super(__rcStr(args[0]), args[1]);
-        else super(...args);
-      }else{
-        super(args.join(' '));
+      let rc;
+      if(args.length){
+        if(__isInt(args[0])){
+          rc = args[0];
+          if(1===args.length){
+            super(__rcStr(args[0]));
+          }else{
+            const rcStr = __rcStr(rc);
+            if('object'===typeof args[1]){
+              super(rcStr,args[1]);
+            }else{
+              args[0] = rcStr+':';
+              super(args.join(' '));
+            }
+          }
+        }else{
+          if(2===args.length && 'object'===typeof args[1]){
+            super(...args);
+          }else{
+            super(args.join(' '));
+          }
+        }
       }
+      this.resultCode = rc || capi.SQLITE_ERROR;
       this.name = 'SQLite3Error';
     }
   };
