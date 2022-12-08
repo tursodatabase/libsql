@@ -999,7 +999,12 @@ self.sqlite3InitModule = sqlite3InitModule;
       const db = this.db = new sqlite3.oo1.DB(dbFile, 0 ? 'ct' : 'c');
       db.onclose = {
         disposeAfter: [],
-        disposeBefore: [],
+        disposeBefore: [
+          (db)=>{
+            //console.debug("db.onclose.before dropping modules");
+            //sqlite3.capi.sqlite3_drop_modules(db.pointer, 0);
+          }
+        ],
         before: function(db){
           while(this.disposeBefore.length){
             const v = this.disposeBefore.shift();
@@ -1013,8 +1018,6 @@ self.sqlite3InitModule = sqlite3InitModule;
               }
             }
           }
-          console.debug("db.onclose.before dropping modules");
-          sqlite3.capi.sqlite3_drop_modules(db.pointer, 0);
         },
         after: function(){
           while(this.disposeAfter.length){
@@ -1669,7 +1672,7 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
     .t({
-      name: 'virtual table #1',
+      name: 'virtual table #1: eponymous w/ manual exception handling',
       predicate: ()=>!!capi.sqlite3_index_info,
       test: function(sqlite3){
         warn("The vtab/module JS bindings are experimental and subject to change.");
@@ -1694,9 +1697,8 @@ self.sqlite3InitModule = sqlite3InitModule;
                 pDb, "CREATE TABLE ignored(a,b)"
               );
               if(0===rc){
-                const t = vth.xVtab();
-                wasm.setPtrValue(ppVtab, t.pointer);
-                T.assert(t === vth.xVtab(wasm.getPtrValue(ppVtab)));
+                const t = vth.xVtab.create(ppVtab);
+                T.assert(t === vth.xVtab.get(wasm.getPtrValue(ppVtab)));
               }
               return rc;
             }catch(e){
@@ -1709,8 +1711,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xDisconnect: function(pVtab){
             try {
-              const t = vth.xVtab(pVtab, true);
-              t.dispose();
+              vth.xVtab.unget(pVtab).dispose();
               return 0;
             }catch(e){
               return vth.xError('xDisconnect',e);
@@ -1718,10 +1719,10 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xOpen: function(pVtab, ppCursor){
             try{
-              const t = vth.xVtab(pVtab), c = vth.xCursor();
+              const t = vth.xVtab.get(pVtab),
+                    c = vth.xCursor.create(ppCursor);
               T.assert(t instanceof capi.sqlite3_vtab)
                 .assert(c instanceof capi.sqlite3_vtab_cursor);
-              wasm.setPtrValue(ppCursor, c.pointer);
               c._rowId = 0;
               return 0;
             }catch(e){
@@ -1730,9 +1731,9 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xClose: function(pCursor){
             try{
-              const c = vth.xCursor(pCursor,true);
+              const c = vth.xCursor.unget(pCursor);
               T.assert(c instanceof capi.sqlite3_vtab_cursor)
-                .assert(!vth.xCursor(pCursor));
+                .assert(!vth.xCursor.get(pCursor));
               c.dispose();
               return 0;
             }catch(e){
@@ -1741,17 +1742,16 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xNext: function(pCursor){
             try{
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               ++c._rowId;
               return 0;
             }catch(e){
               return vth.xError('xNext',e);
             }
-
           },
           xColumn: function(pCursor, pCtx, iCol){
             try{
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               switch(iCol){
                   case tmplCols.A:
                     capi.sqlite3_result_int(pCtx, 1000 + c._rowId);
@@ -1768,7 +1768,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xRowid: function(pCursor, ppRowid64){
             try{
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               vth.xRowid(ppRowid64, c._rowId);
               return 0;
             }catch(e){
@@ -1776,7 +1776,7 @@ self.sqlite3InitModule = sqlite3InitModule;
             }
           },
           xEof: function(pCursor){
-            const c = vth.xCursor(pCursor),
+            const c = vth.xCursor.get(pCursor),
                   rc = c._rowId>=10;
             c.dispose();
             return rc;
@@ -1784,7 +1784,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           xFilter: function(pCursor, idxNum, idxCStr,
                             argc, argv/* [sqlite3_value* ...] */){
             try{
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               c._rowId = 0;
               const list = vth.sqlite3ValuesToJs(argc, argv);
               T.assert(argc === list.length);
@@ -1797,7 +1797,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           },
           xBestIndex: function(pVtab, pIdxInfo){
             try{
-              //const t = vth.xVtab(pVtab);
+              //const t = vth.xVtab.get(pVtab);
               const sii = capi.sqlite3_index_info;
               const pii = new sii(pIdxInfo);
               pii.$estimatedRows = 10;
@@ -1886,7 +1886,7 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
     .t({
-      name: 'virtual table #2 (non-eponymous w/ automated exception wrapping)',
+      name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
       predicate: ()=>!!capi.sqlite3_index_info,
       test: function(sqlite3){
         warn("The vtab/module JS bindings are experimental and subject to change.");
@@ -1926,55 +1926,41 @@ self.sqlite3InitModule = sqlite3InitModule;
                 pDb, "CREATE TABLE ignored(a,b)"
               );
               if(0===rc){
-                const t = vth.xVtab();
-                wasm.setPtrValue(ppVtab, t.pointer);
-                T.assert(t === vth.xVtab(wasm.getPtrValue(ppVtab)));
+                const t = vth.xVtab.create(ppVtab);
+                T.assert(t === vth.xVtab.get(wasm.getPtrValue(ppVtab)));
                 vtabTrace("xCreate",...arguments," ppVtab =",t.pointer);
               }
               return rc;
             },
+            xConnect: true,
             xDestroy: function(pVtab){
-              vtabTrace("sqlite3_xDestroy",pVtab);
-              const t = vth.xVtab(pVtab, true);
-              T.assert(t);
-              t.dispose();
+              vtabTrace("xDestroy/xDisconnect",pVtab);
+              vth.xVtab.dispose(pVtab);
             },
-            /*xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
-              vtabTrace("xConnect",...arguments);
-              const t = vth.xVtab();
-              wasm.setPtrValue(ppVtab, t.pointer);
-              T.assert(t === vth.xVtab(wasm.getPtrValue(ppVtab)));
-              vtabTrace("xConnect",...arguments,"ppVtab =",t.pointer);
-            },
-            xDisconnect: function(pVtab){
-              vtabTrace("xDisconnect",pVtab);
-              const t = vth.xVtab(pVtab, true);
-              T.assert(t);
-              t.dispose();
-            },*/
+            xDisconnect: true,
             xOpen: function(pVtab, ppCursor){
-              const t = vth.xVtab(pVtab), c = vth.xCursor();
+              const t = vth.xVtab.get(pVtab),
+                    c = vth.xCursor.create(ppCursor);
               T.assert(t instanceof capi.sqlite3_vtab)
                 .assert(c instanceof capi.sqlite3_vtab_cursor);
-              wasm.setPtrValue(ppCursor, c.pointer);
               vtabTrace("xOpen",...arguments," cursor =",c.pointer);
               c._rowId = 0;
             },
             xClose: function(pCursor){
               vtabTrace("xClose",...arguments);
-              const c = vth.xCursor(pCursor,true);
+              const c = vth.xCursor.unget(pCursor);
               T.assert(c instanceof capi.sqlite3_vtab_cursor)
-                .assert(!vth.xCursor(pCursor));
+                .assert(!vth.xCursor.get(pCursor));
               c.dispose();
             },
             xNext: function(pCursor){
               vtabTrace("xNext",...arguments);
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               ++c._rowId;
             },
             xColumn: function(pCursor, pCtx, iCol){
               vtabTrace("xColumn",...arguments);
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               switch(iCol){
                   case tmplCols.A:
                     capi.sqlite3_result_int(pCtx, 1000 + c._rowId);
@@ -1987,24 +1973,24 @@ self.sqlite3InitModule = sqlite3InitModule;
             },
             xRowid: function(pCursor, ppRowid64){
               vtabTrace("xRowid",...arguments);
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               vth.xRowid(ppRowid64, c._rowId);
             },
             xEof: function(pCursor){
               vtabTrace("xEof",...arguments);
-              return vth.xCursor(pCursor)._rowId>=10;
+              return vth.xCursor.get(pCursor)._rowId>=10;
             },
             xFilter: function(pCursor, idxNum, idxCStr,
                               argc, argv/* [sqlite3_value* ...] */){
               vtabTrace("xFilter",...arguments);
-              const c = vth.xCursor(pCursor);
+              const c = vth.xCursor.get(pCursor);
               c._rowId = 0;
               const list = vth.sqlite3ValuesToJs(argc, argv);
               T.assert(argc === list.length);
             },
             xBestIndex: function(pVtab, pIdxInfo){
               vtabTrace("xBestIndex",...arguments);
-              //const t = vth.xVtab(pVtab);
+              //const t = vth.xVtab.get(pVtab);
               const pii = vth.xIndexInfo(pIdxInfo);
               pii.$estimatedRows = 10;
               pii.$estimatedCost = 10.0;
@@ -2024,19 +2010,18 @@ self.sqlite3InitModule = sqlite3InitModule;
           modConfig.name,
           "(arg1 blah, arg2 bloop)"
         ]);
-        this.db.onclose.disposeBefore.push(function(db){
-          console.debug("testvtab2 disposeBefore handler...");
-          db.exec(
-            /**
-               DROP TABLE is the only way to get xDestroy() to be called.
-               If we DROP TABLE at the end of the containing
-               test function, xDestroy() is called. If we instead
-               delay it until db.onclose.before(), we're getting
-               "no such table"?
-            */
-            "DROP TABLE testvtab2"
-          );
-        });
+        if(0){
+          /* If we DROP TABLE then xDestroy() is called. If the
+             vtab is instead destroyed when the db is closed,
+             xDisconnect() is called. */
+          this.db.onclose.disposeBefore.push(function(db){
+            console.debug("Explicitly dropping testvtab2 via disposeBefore handler...");
+            db.exec(
+              /** DROP TABLE is the only way to get xDestroy() to be called. */
+              "DROP TABLE testvtab2"
+            );
+          });
+        }
         let list = this.db.selectArrays(
           "SELECT a,b FROM testvtab2 where a<9999 and b>1 order by a, b"
           /* Query is shaped so that it will ensure that some
@@ -2052,6 +2037,15 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(5===list.length)
           .assert(1000===list[0][0])
           .assert(2004===list[list.length-1][1]);
+
+        // Call it as a table-valued function...
+        list = this.db.selectArrays([
+          "SELECT a,b FROM ", modConfig.name,
+          " where a<9999 and b>1 order by b, a limit 1"
+        ]);
+        T.assert(1===list.length)
+          .assert(1000===list[0][0])
+          .assert(2000===list[0][1]);
       }
     })/*custom vtab #2*/
 

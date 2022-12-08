@@ -308,12 +308,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   vt.sqlite3ValuesToJs = capi.sqlite3_create_function_v2.udfConvertArgs;
 
   /**
-     Factory function for xAbc() impls.
+     Internal factory function for xVtab and xCursor impls.
   */
-  const __xWrapFactory = function(methodName,structType){
+  const __xWrapFactory = function(methodName,StructType){
     return function(ptr,removeMapping=false){
-      if(0===arguments.length) ptr = new structType;
-      if(ptr instanceof structType){
+      if(0===arguments.length) ptr = new StructType;
+      if(ptr instanceof StructType){
         //T.assert(!this.has(ptr.pointer));
         this.set(ptr.pointer, ptr);
         return ptr;
@@ -325,52 +325,99 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return rc;
     }.bind(new Map);
   };
-  /**
-     EXPERIMENTAL. DO NOT USE IN CLIENT CODE.
-
-     Has 3 distinct uses:
-
-     - wrapVtab() instantiates a new capi.sqlite3_vtab instance, maps
-       its pointer for later by-pointer lookup, and returns that
-       object. This is intended to be called from
-       sqlite3_module::xConnect() or xCreate() implementations.
-
-     - wrapVtab(pVtab) accepts a WASM pointer to a C-level
-       (sqlite3_vtab*) instance and returns the capi.sqlite3_vtab
-       object created by the first form of this function, or undefined
-       if that form has not been used. This is intended to be called
-       from sqlite3_module methods which take a (sqlite3_vtab*)
-       pointer _except_ for xDestroy() (if there is a distinct
-       xCreate()) or xDisconnect() (if xCreate() is 0 or is the same
-       as xConnect()), in which case use...
-
-     - wrapVtab(pVtab,true) as for the previous form, but removes the
-       pointer-to-object mapping before returning.  The caller must
-       call dispose() on the returned object. This is intended to be
-       called from sqlite3_module::xDisconnect() implementations or
-       in error handling of a failed xCreate() or xConnect().
- */
-  vt.xVtab = __xWrapFactory('xVtab',capi.sqlite3_vtab);
 
   /**
-     EXPERIMENTAL. DO NOT USE IN CLIENT CODE.
+     Internal helper for implementing xVtab and xCursor.
+     The first argument must be the logical name of the
+     handler ('xVtab' or 'xCursor') and the second must be
+     the capi.XYZ struct-type value, e.g. capi.sqlite3_vtab
+     or capi.sqlite3_vtab_cursor.
+  */
+  const __xLifetimeManager = function(name, StructType){
+    const __xWrap = __xWrapFactory(name,StructType);
+    /**
+       This object houses a small API for managing mappings of (`T*`)
+       to StructType<T> objects, specifically within the lifetime
+       requirements of sqlite3_module methods.
+    */
+    return Object.assign(Object.create(null),{
+      /** The StructType object for this object's API. */
+      StructType,
+      /**
+         Creates a new StructType object, writes its `pointer`
+         value to the given output pointer, and returns that
+         object. Its intended usage depends on StructType:
 
-     Works identically to wrapVtab() except that it deals with
-     sqlite3_cursor objects and pointers instead of sqlite3_vtab.
+         sqlite3_vtab: to be called from sqlite3_module::xConnect()
+         or xCreate() implementations.
 
-     - wrapCursor() is intended to be called from sqlite3_module::xOpen()
+         sqlite3_vtab_cursor: to be called from xOpen().
 
-     - wrapCursor(pCursor) is intended to be called from all sqlite3_module
-       methods which take a (sqlite3_vtab_cursor*) _except_ for
-       xClose(), in which case use...
+         This will throw if allocation of the StructType instance
+         fails or if ppOut is not a pointer-type value.
+      */
+      create: (ppOut)=>{
+        const rc = __xWrap();
+        wasm.setPtrValue(ppOut, rc.pointer);
+        return rc;
+      },
+      /**
+         Returns the StructType object previously mapped to the
+         given pointer using create(). Its intended usage depends
+         on StructType:
 
-     - wrapCursor(pCursor, true) will remove the mapping of pCursor to a
-       capi.sqlite3_vtab_cursor object and return that object.  The
-       caller must call dispose() on the returned object. This is
-       intended to be called from xClose() or in error handling of a
-       failed xOpen().
- */
-  vt.xCursor = __xWrapFactory('xCursor',capi.sqlite3_vtab_cursor);
+         sqlite3_vtab: to be called from sqlite3_module methods which
+         take a (sqlite3_vtab*) pointer _except_ for
+         xDestroy()/xDisconnect(), in which case unget() or dispose().
+
+         sqlite3_vtab_cursor: to be called from any sqlite3_module methods
+         which take a `sqlite3_vtab_cursor*` argument except xClose(),
+         in which case use unget() or dispose().
+      */
+      get: (pCObj)=>__xWrap(pCObj),
+      /**
+         Identical to get() but also disconnects the mapping between the
+         given pointer and the returned StructType object, such that
+         future calls to this function or get() with the same pointer
+         will return the undefined value. Its intended usage depends
+         on StructType:
+
+         sqlite3_vtab: to be called from sqlite3_module::xDisconnect() or
+         xDestroy() implementations or in error handling of a failed
+         xCreate() or xConnect().
+
+         sqlite3_vtab_cursor: to be called from xClose() or during
+         cleanup in a failed xOpen().
+      */
+      unget: (pCObj)=>__xWrap(pCObj,true),
+      /**
+         Works like unget() plus it calls dispose() on the
+         StructType object.
+      */
+      dispose: (pCObj)=>{
+        const o = __xWrap(pCObj,true);
+        if(o) o.dispose();
+      }
+    });
+  };
+
+  /**
+     A lifetime-management object for mapping `sqlite3_vtab*`
+     instances in sqlite3_module methods to capi.sqlite3_vtab
+     objects.
+
+     The API docs are in the API-internal __xLifetimeManager().
+  */
+  vt.xVtab = __xLifetimeManager('xVtab', capi.sqlite3_vtab);
+
+  /**
+     A lifetime-management object for mapping `sqlite3_vtab_cursor*`
+     instances in sqlite3_module methods to capi.sqlite3_vtab_cursor
+     objects.
+
+     The API docs are in the API-internal __xLifetimeManager().
+  */
+  vt.xCursor = __xLifetimeManager('xCursor', capi.sqlite3_vtab_cursor);
 
   /**
      Convenience form of creating an sqlite3_index_info wrapper,
@@ -466,16 +513,28 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /**
      A helper for sqlite3_vtab::xRowid() implementations. It must be
-     passed that function's 2nd argument and the value for that
-     pointer.  Returns the same as wasm.setMemValue() and will throw
+     passed that function's 2nd argument (an output pointer to an
+     int64 row ID) and the value to store at the output pointer's
+     address. Returns the same as wasm.setMemValue() and will throw
      if the 1st or 2nd arguments are invalid for that function.
+
+     Example xRowid impl:
+
+     ```
+     const xRowid = (pCursor, ppRowid64)=>{
+       const c = VtabHelper.xCursor(pCursor);
+       VtabHelper.xRowid(ppRowid64, c.myRowId);
+       return 0;
+     };
+     ```
   */
   vt.xRowid = (ppRowid64, value)=>wasm.setMemValue(ppRowid64, value, 'i64');
 
   /**
-     Sets up an sqlite3_module() object for later installation into
-     individual databases using sqlite3_create_module(). Requires an
-     object with the following properties:
+     A helper to initialize and set up an sqlite3_module() object for
+     later installation into individual databases using
+     sqlite3_create_module(). Requires an object with the following
+     properties:
 
      - `methods`: an object containing a mapping of properties with
        the C-side names of the sqlite3_module methods, e.g. xCreate,
@@ -506,16 +565,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      behavior. (VtabHelper.xError() is intended to assist in reporting
      such exceptions.)
 
-     If `methods.xConnect` is `true` then the value of
-     `methods.xCreate` is used in its place, and vice versa. This is
-     to facilitate creation of those methods inline in the passed-in
-     object without requiring the client to explicitly get a reference
-     to one of them in order to assign it to the other one. Note that
-     sqlite treats those two functions specially if they are exactly
-     the same function (same pointer value).  The
-     `catchExceptions`-installed handlers will account for identical
-     references to those two functions and will install the same
-     wrapper function for both.
+     Certain methods may refer to the same implementation. To simplify
+     the definition of such methods:
+
+     - If `methods.xConnect` is `true` then the value of
+       `methods.xCreate` is used in its place, and vice versa. sqlite
+       treats xConnect/xCreate functions specially if they are exactly
+       the same function (same pointer value).
+
+     - If `methods.xDisconnect` is true then the value of
+       `methods.xDestroy` is used in its place, and vice versa.
+
+     This is to facilitate creation of those methods inline in the
+     passed-in object without requiring the client to explicitly get a
+     reference to one of them in order to assign it to the other
+     one. 
+
+     The `catchExceptions`-installed handlers will account for
+     identical references to the above functions and will install the
+     same wrapper function for both.
 
      The given methods are expected to return integer values, as
      expected by the C API. If `catchExceptions` is truthy, the return
@@ -525,7 +593,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      active, the method implementations must explicitly return integer
      values.
 
-     Throws on error. Returns the sqlite3_module object on success.
+     Throws on error. Returns the opt.struct sqlite3_module object on
+     success.
   */
   vt.setupModule = function(opt){
     const mod = opt.struct || new capi.sqlite3_module();
@@ -533,6 +602,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const methods = opt.methods || toss("Missing 'methods' object.");
       if(true===methods.xConnect) methods.xConnect = methods.xCreate;
       else if(true===methods.xCreate) methods.xCreate = methods.xConnect;
+      if(true===methods.xDisconnect) methods.xDisconnect = methods.xDestroy;
+      else if(true===methods.xDestroy) methods.xDestroy = methods.xDisconnect;
       if(opt.catchExceptions){
         const fwrap = function(methodName, func){
           if(['xConnect','xCreate'].indexOf(methodName) >= 0){
@@ -577,6 +648,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         this.installMethods(mod, remethods, false);
       }else{
+        // No automatic exception handling. Trust the client
+        // to not throw.
         this.installMethods(
           mod, methods, !!opt.applyArgcCheck/*undocumented option*/
         );
