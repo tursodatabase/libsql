@@ -327,13 +327,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Internal helper for implementing xVtab and xCursor.
-     The first argument must be the logical name of the
-     handler ('xVtab' or 'xCursor') and the second must be
-     the capi.XYZ struct-type value, e.g. capi.sqlite3_vtab
-     or capi.sqlite3_vtab_cursor.
+     A factory function which implements a simple lifetime manager for
+     mappings between C struct pointers and their JS-level wrappers.
+     The first argument must be the logical name of the manager
+     (e.g. 'xVtab' or 'xCursor'), which is only used for error
+     reporting. The second must be the capi.XYZ struct-type value,
+     e.g. capi.sqlite3_vtab or capi.sqlite3_vtab_cursor.
+
+     Returns an object with 4 methods: create(), get(), unget(), and
+     dispose(), plus a StructType member with the value of the 2nd
+     argument. The methods are documented in the body of this
+     function.
   */
-  const __xLifetimeManager = function(name, StructType){
+  const StructPtrMapper = function(name, StructType){
     const __xWrap = __xWrapFactory(name,StructType);
     /**
        This object houses a small API for managing mappings of (`T*`)
@@ -406,18 +412,18 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      instances in sqlite3_module methods to capi.sqlite3_vtab
      objects.
 
-     The API docs are in the API-internal __xLifetimeManager().
+     The API docs are in the API-internal StructPtrMapper().
   */
-  vt.xVtab = __xLifetimeManager('xVtab', capi.sqlite3_vtab);
+  vt.xVtab = StructPtrMapper('xVtab', capi.sqlite3_vtab);
 
   /**
      A lifetime-management object for mapping `sqlite3_vtab_cursor*`
      instances in sqlite3_module methods to capi.sqlite3_vtab_cursor
      objects.
 
-     The API docs are in the API-internal __xLifetimeManager().
+     The API docs are in the API-internal StructPtrMapper().
   */
-  vt.xCursor = __xLifetimeManager('xCursor', capi.sqlite3_vtab_cursor);
+  vt.xCursor = StructPtrMapper('xCursor', capi.sqlite3_vtab_cursor);
 
   /**
      Convenience form of creating an sqlite3_index_info wrapper,

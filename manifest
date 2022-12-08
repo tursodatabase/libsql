@@ -1,5 +1,5 @@
-C Ease-of-use/legibility\simprovements\sin\sthe\svirtual\stable\sJS\shelpers.
-D 2022-12-08T17:07:27.475
+C Further\sdocs\sand\sminor\scleanups\sin\sthe\sJS\svirtual\stable\shelper.
+D 2022-12-08T18:18:37.994
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -509,7 +509,7 @@ F ext/wasm/api/sqlite3-api-prologue.js 1380e933325c11786b2afc93fc8ff88c2fd1ffeac
 F ext/wasm/api/sqlite3-api-worker1.js e94ba98e44afccfa482874cd9acb325883ade50ed1f9f9526beb9de1711f182f
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 7795b84b66a7a8dedc791340709b310bb497c3c72a80bef364fa2a58e2ddae3f
-F ext/wasm/api/sqlite3-v-helper.js d0d647110f8595d26836951cfc5a47f15282f20e72584decc0b00e2a3f0d169c
+F ext/wasm/api/sqlite3-v-helper.js 3f0ef738f5c44943f05ec5bd86976d617e8ae229a0127a1efe81bbb4763293a7
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 8ec510fee735c646fb18a3b99f0ca5ca461f9e066c43cdc404d7144f12ae6ed6
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 97034ab4f40ec1fac71ccfaf3afffdca6b1ea2dcd95b7871527bad0f34e152b0
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1454744c770a30a32a6d7b7fc59ef7be48cf67348b238540592850d7c2c7757
-R 17cb094a6db22f136920052decf90bf5
+P 54c7ad7e08bdb87579398ade366605bfa2e2538a94aabcc6e4cda8e173649760
+R 4c50a667470c9bbb57a953933f0b79e2
 U stephan
-Z fce05bcff7bc40d31cdbdf756e15ecfc
+Z df7927342245d4323b165b2786a2dc10
 # Remove this line to create a well-formed Fossil manifest.
