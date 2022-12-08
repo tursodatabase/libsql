@@ -359,6 +359,10 @@ struct sqlite3_api_routines {
   const char *(*db_name)(sqlite3*,int);
   /* Version 3.40.0 and later */
   int (*value_encoding)(sqlite3_value*);
+
+  /* libSQL 0.1.1 */
+  struct libsql_wal_methods *(*wal_methods_find)(const char *);
+  int (*wal_methods_register)(struct libsql_wal_methods*);
 };
 
 /*
@@ -685,6 +689,9 @@ typedef int (*sqlite3_loadext_entry)(
 #define sqlite3_db_name                sqlite3_api->db_name
 /* Version 3.40.0 and later */
 #define sqlite3_value_encoding         sqlite3_api->value_encoding
+/* libSQL 0.1.1 */
+#define libsql_wal_methods_find        sqlite3_api->wal_methods_find
+#define libsql_wal_methods_register    sqlite3_api->wal_methods_register
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
