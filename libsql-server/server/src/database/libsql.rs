@@ -161,7 +161,7 @@ impl LibSqlDb {
     }
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl Database for LibSqlDb {
     async fn execute(&self, query: Statements) -> QueryResult {
         let (sender, receiver) = oneshot::channel();
