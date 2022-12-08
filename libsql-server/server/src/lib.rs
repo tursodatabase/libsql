@@ -1,5 +1,7 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
+
+#[cfg(feature = "fdb")]
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
@@ -30,9 +32,12 @@ pub async fn run_server(
     }
 
     let vwal_methods = match &fdb_config_path {
+        #[cfg(feature = "fdb")]
         Some(_path) => Some(Arc::new(Mutex::new(wal::WalMethods::new(
             fdb_config_path.clone(),
         )?))),
+        #[cfg(not(feature = "fdb"))]
+        Some(_path) => panic!("not compiled with fdb"),
         None => None,
     };
 
