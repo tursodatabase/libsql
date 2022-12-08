@@ -69,7 +69,9 @@ where
 
                     poll_fn(|c| self.service.poll_ready(c)).await.unwrap();
                     let resp = self.service.call(query).await;
-                    SimpleHandler(resp).on_query(&mut self.socket, &q).await?;
+                    SimpleHandler::new(resp)
+                        .on_query(&mut self.socket, &q)
+                        .await?;
                 }
                 // TODO: handle extended queries.
                 PgWireFrontendMessage::Parse(_) => todo!(),
