@@ -289,7 +289,7 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.js
 sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.js
+sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 

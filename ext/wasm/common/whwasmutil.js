@@ -725,11 +725,12 @@ self.WhWasmUtilInstaller = function(target){
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8.
      Returns the length, in bytes, of the string, as for `strlen(3)`.
-     As a special case, if !ptr then it it returns `null`. Throws if
-     ptr is out of range for target.heap8u().
+     As a special case, if !ptr or if it's not a pointer then it
+     returns `null`. Throws if ptr is out of range for
+     target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr) return null;
+    if(!ptr || !target.isPtr(ptr)) return null;
     const h = heapWrappers().HEAP8U;
     let pos = ptr;
     for( ; h[pos] !== 0; ++pos ){}
@@ -753,9 +754,9 @@ self.WhWasmUtilInstaller = function(target){
      refers to a NUL-terminated C-style string encoded as UTF-8. This
      function counts its byte length using cstrlen() then returns a
      JS-format string representing its contents. As a special case, if
-     ptr is falsy, `null` is returned.
+     ptr is falsy or not a pointer, `null` is returned.
   */
-  target.cstringToJs = function(ptr){
+  target.cstrToJs = function(ptr){
     const n = target.cstrlen(ptr);
     return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
   };
@@ -942,10 +943,19 @@ self.WhWasmUtilInstaller = function(target){
   const __allocCStr = function(jstr, returnWithLength, allocator, funcName){
     __affirmAlloc(target, funcName);
     if('string'!==typeof jstr) return null;
-    const n = target.jstrlen(jstr),
-          ptr = allocator(n+1);
-    target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
-    return returnWithLength ? [ptr, n] : ptr;
+    if(0){/* older impl, possibly more widely compatible? */
+      const n = target.jstrlen(jstr),
+            ptr = allocator(n+1);
+      target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
+      return returnWithLength ? [ptr, n] : ptr;
+    }else{/* newer, (probably) faster and (certainly) simpler impl */
+      const u = cache.utf8Encoder.encode(jstr),
+            ptr = allocator(u.length+1),
+            heap = heapWrappers().HEAP8U;
+      heap.set(u, ptr);
+      heap[ptr + u.length] = 0;
+      return returnWithLength ? [ptr, u.length] : ptr;
+    }
   };
 
   /**
@@ -1081,10 +1091,9 @@ self.WhWasmUtilInstaller = function(target){
 
   // impl for allocMainArgv() and scopedAllocMainArgv().
   const __allocMainArgv = function(isScoped, list){
-    if(!list.length) toss("Cannot allocate empty array.");
     const pList = target[
       isScoped ? 'scopedAlloc' : 'alloc'
-    ](list.length * target.ptrSizeof);
+    ]((list.length + 1) * target.ptrSizeof);
     let i = 0;
     list.forEach((e)=>{
       target.setPtrValue(pList + (target.ptrSizeof * i++),
@@ -1092,28 +1101,56 @@ self.WhWasmUtilInstaller = function(target){
                            isScoped ? 'scopedAllocCString' : 'allocCString'
                          ](""+e));
     });
+    target.setPtrValue(pList + (target.ptrSizeof * i), 0);
     return pList;
   };
 
   /**
      Creates an array, using scopedAlloc(), suitable for passing to a
      C-level main() routine. The input is a collection with a length
-     property and a forEach() method. A block of memory list.length
-     entries long is allocated and each pointer-sized block of that
-     memory is populated with a scopedAllocCString() conversion of the
-     (""+value) of each element. Returns a pointer to the start of the
-     list, suitable for passing as the 2nd argument to a C-style
-     main() function.
+     property and a forEach() method. A block of memory
+     (list.length+1) entries long is allocated and each pointer-sized
+     block of that memory is populated with a scopedAllocCString()
+     conversion of the (""+value) of each element, with the exception
+     that the final entry is a NULL pointer. Returns a pointer to the
+     start of the list, suitable for passing as the 2nd argument to a
+     C-style main() function.
 
-     Throws if list.length is falsy or scopedAllocPush() is not active.
+     Throws if scopedAllocPush() is not active.
+
+     Design note: the returned array is allocated with an extra NULL
+     pointer entry to accommodate certain APIs, but client code which
+     does not need that functionality should treat the returned array
+     as list.length entries long.
   */
   target.scopedAllocMainArgv = (list)=>__allocMainArgv(true, list);
 
   /**
      Identical to scopedAllocMainArgv() but uses alloc() instead of
-     scopedAllocMainArgv
+     scopedAlloc().
   */
   target.allocMainArgv = (list)=>__allocMainArgv(false, list);
+
+  /**
+     Expects to be given a C-style string array and its length. It
+     returns a JS array of strings and/or nulls: any entry in the
+     pArgv array which is NULL results in a null entry in the result
+     array. If argc is 0 then an empty array is returned.
+
+     Results are undefined if any entry in the first argc entries of
+     pArgv are neither 0 (NULL) nor legal UTF-format C strings.
+
+     To be clear, the expected C-style arguments to be passed to this
+     function are `(int, char **)` (optionally const-qualified).
+  */
+  target.cArgvToJs = (argc, pArgv)=>{
+    const list = [];
+    for(let i = 0; i < argc; ++i){
+      const arg = target.getPtrValue(pArgv + (target.ptrSizeof * i));
+      list.push( arg ? target.cstrToJs(arg) : null );
+    }
+    return list;
+  };
 
   /**
      Wraps function call func() in a scopedAllocPush() and
@@ -1278,14 +1315,14 @@ self.WhWasmUtilInstaller = function(target){
       if('string'===typeof v) return target.scopedAllocCString(v);
       return v ? xcv.arg[ptrIR](v) : null;
     };
-  xcv.result.string = xcv.result.utf8 = (i)=>target.cstringToJs(i);
+  xcv.result.string = xcv.result.utf8 = (i)=>target.cstrToJs(i);
   xcv.result['string:dealloc'] = xcv.result['utf8:dealloc'] = (i)=>{
-    try { return i ? target.cstringToJs(i) : null }
+    try { return i ? target.cstrToJs(i) : null }
     finally{ target.dealloc(i) }
   };
-  xcv.result.json = (i)=>JSON.parse(target.cstringToJs(i));
+  xcv.result.json = (i)=>JSON.parse(target.cstrToJs(i));
   xcv.result['json:dealloc'] = (i)=>{
-    try{ return i ? JSON.parse(target.cstringToJs(i)) : null }
+    try{ return i ? JSON.parse(target.cstrToJs(i)) : null }
     finally{ target.dealloc(i) }
   }
   xcv.result['void'] = (v)=>undefined;
@@ -1423,7 +1460,7 @@ self.WhWasmUtilInstaller = function(target){
 
 ```js
    target.xWrap.resultAdapter('string:my_free',(i)=>{
-      try { return i ? target.cstringToJs(i) : null }
+      try { return i ? target.cstrToJs(i) : null }
       finally{ target.exports.my_free(i) }
    };
 ```

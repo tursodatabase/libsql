@@ -803,7 +803,7 @@ const installOpfsVfs = function callee(options){
     const vfsSyncWrappers = {
       xAccess: function(pVfs,zName,flags,pOut){
         mTimeStart('xAccess');
-        const rc = opRun('xAccess', wasm.cstringToJs(zName));
+        const rc = opRun('xAccess', wasm.cstrToJs(zName));
         wasm.setMemValue( pOut, (rc ? 0 : 1), 'i32' );
         mTimeEnd();
         return 0;
@@ -823,7 +823,7 @@ const installOpfsVfs = function callee(options){
       },
       xDelete: function(pVfs, zName, doSyncDir){
         mTimeStart('xDelete');
-        opRun('xDelete', wasm.cstringToJs(zName), doSyncDir, false);
+        opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
         /* We're ignoring errors because we cannot yet differentiate
            between harmless and non-harmless failures. */
         mTimeEnd();
@@ -855,7 +855,7 @@ const installOpfsVfs = function callee(options){
                C-string here. */
             opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
           }
-          zName = wasm.cstringToJs(zName);
+          zName = wasm.cstrToJs(zName);
         }
         const fh = Object.create(null);
         fh.fid = pFile;
@@ -1156,11 +1156,8 @@ const installOpfsVfs = function callee(options){
         opt.vfs = opfsVfs.$zName;
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
-      sqlite3.oo1.OpfsDb =
-        opfsUtil.OpfsDb /* sqlite3.opfs.OpfsDb => deprecated name -
-                           will be phased out Real Soon */ =
-        OpfsDb;
       OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+      sqlite3.oo1.OpfsDb = OpfsDb;
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         function(oo1Db, sqlite3){
@@ -1185,7 +1182,7 @@ const installOpfsVfs = function callee(options){
           ], 0, 0, 0);
         }
       );
-    }
+    }/*extend sqlite3.oo1*/
 
     const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
@@ -1231,7 +1228,7 @@ const installOpfsVfs = function callee(options){
         const readBuf = wasm.scopedAlloc(16);
         rc = ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 2);
         wasm.setMemValue(readBuf+6,0);
-        let jRead = wasm.cstringToJs(readBuf);
+        let jRead = wasm.cstrToJs(readBuf);
         log("xRead() got:",jRead);
         if("sanity"!==jRead) toss("Unexpected xRead() value.");
         if(vfsSyncWrappers.xSleep){

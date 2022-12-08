@@ -78,11 +78,10 @@ browser client:
       a Promise-based interface into the Worker #1 API. This is
       a far user-friendlier way to interface with databases running
       in a Worker thread.
-- **`sqlite3-vfs-helper.js`**\  
-  This internal-use-only file installs `sqlite3.VfsHelper` for use by
-  `sqlite3-*.js` files which create `sqlite3_vfs` implementations.
-  `sqlite3.VfsHelper` gets removed from the the `sqlite3` object after
-  the library is finished initializing.
+- **`sqlite3-v-helper.js`**\  
+  Installs `sqlite3.VfsHelper` and `sqlite3.VtabHelper` for use by
+  downstream code which creates `sqlite3_vfs` and `sqlite3_module`
+  implementations.
 - **`sqlite3-vfs-opfs.c-pp.js`**\  
   is an sqlite3 VFS implementation which supports Google Chrome's
   Origin-Private FileSystem (OPFS) as a storage layer to provide
