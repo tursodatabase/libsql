@@ -520,10 +520,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        db is closed but before auxiliary state like this.filename is
        cleared.
 
-       Both onclose handlers are passed this object. If this db is not
-       opened, neither of the handlers are called. Any exceptions the
-       handlers throw are ignored because "destructors must not
-       throw."
+       Both onclose handlers are passed this object, with the onclose
+       object as their "this," noting that the db will have been
+       closed when onclose.after is called. If this db is not opened
+       when close() is called, neither of the handlers are called. Any
+       exceptions the handlers throw are ignored because "destructors
+       must not throw."
 
        Note that garbage collection of a db handle, if it happens at
        all, will never trigger close(), so onclose handlers are not a

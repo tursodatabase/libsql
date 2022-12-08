@@ -339,8 +339,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        (sqlite3_vtab*) instance and returns the capi.sqlite3_vtab
        object created by the first form of this function, or undefined
        if that form has not been used. This is intended to be called
-       from sqlite3_module methods which take a (sqlite3_vtab*) pointer
-       _except_ for xDisconnect(), in which case use...
+       from sqlite3_module methods which take a (sqlite3_vtab*)
+       pointer _except_ for xDestroy() (if there is a distinct
+       xCreate()) or xDisconnect() (if xCreate() is 0 or is the same
+       as xConnect()), in which case use...
 
      - wrapVtab(pVtab,true) as for the previous form, but removes the
        pointer-to-object mapping before returning.  The caller must

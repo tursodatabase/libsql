@@ -999,13 +999,19 @@ self.sqlite3InitModule = sqlite3InitModule;
       const db = this.db = new sqlite3.oo1.DB(dbFile, 0 ? 'ct' : 'c');
       db.onclose = {
         disposeThese: [],
+        before: (db)=>{
+          console.debug("db.onclose.before dropping modules");
+          sqlite3.capi.sqlite3_drop_modules(db, 0);
+        },
         after: function(){
           while(this.disposeThese.length){
             const v = this.disposeThese.shift();
-            console.debug("db.onclose cleaning up:",v);
+            console.debug("db.onclose.after cleaning up:",v);
             if(wasm.isPtr(v)) wasm.dealloc(v);
             else if(v instanceof sqlite3.StructBinder.StructType){
               v.dispose();
+            }else if(v instanceof Function){
+              try{v()} catch(e){/*ignored*/}
             }
           }
         }
@@ -1867,7 +1873,7 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
     .t({
-      name: 'virtual table #2 (w/ automated exception wrapping)',
+      name: 'virtual table #2 (non-eponymous w/ automated exception wrapping)',
       predicate: ()=>!!capi.sqlite3_index_info,
       test: function(sqlite3){
         warn("The vtab/module JS bindings are experimental and subject to change.");
@@ -1879,7 +1885,7 @@ self.sqlite3InitModule = sqlite3InitModule;
            The vtab demonstrated here is a JS-ification of
            ext/misc/templatevtab.c.
         */
-        let throwOnConnect = 1 ? 0 : capi.SQLITE_CANTOPEN
+        let throwOnCreate = 1 ? 0 : capi.SQLITE_CANTOPEN
         /* ^^^ just for testing exception wrapping. Note that sqlite
            always translates errors from a vtable to a generic
            SQLITE_ERROR unless it's from xConnect()/xCreate() and that
@@ -1889,10 +1895,18 @@ self.sqlite3InitModule = sqlite3InitModule;
           catchExceptions: true,
           name: "vtab2test",
           methods:{
+            xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
+              console.debug("xConnect(",...arguments,")");
+              const t = vth.xVtab();
+              wasm.setPtrValue(ppVtab, t.pointer);
+              T.assert(t === vth.xVtab(wasm.getPtrValue(ppVtab)));
+              console.debug("xConnect(",...arguments,") ppVtab =",t.pointer);
+            },
             xCreate: function(pDb, pAux, argc, argv, ppVtab, pzErr){
-              if(throwOnConnect){
+              console.debug("xCreate(",...arguments,")");
+              if(throwOnCreate){
                 sqlite3.SQLite3Error.toss(
-                  throwOnConnect,
+                  throwOnCreate,
                   "Throwing a test exception."
                 );
               }
@@ -1906,11 +1920,20 @@ self.sqlite3InitModule = sqlite3InitModule;
                 const t = vth.xVtab();
                 wasm.setPtrValue(ppVtab, t.pointer);
                 T.assert(t === vth.xVtab(wasm.getPtrValue(ppVtab)));
+                console.debug("xCreate(",...arguments,") ppVtab =",t.pointer);
               }
               return rc;
             },
             xDisconnect: function(pVtab){
+              console.debug("sqlite3_module::xDisconnect(",pVtab,")");
               const t = vth.xVtab(pVtab, true);
+              T.assert(t);
+              t.dispose();
+            },
+            xDestroy: function(pVtab){
+              console.debug("sqlite3_module::xDestroy(",pVtab,")");
+              const t = vth.xVtab(pVtab, true);
+              T.assert(t);
               t.dispose();
             },
             xOpen: function(pVtab, ppCursor){
@@ -1945,12 +1968,10 @@ self.sqlite3InitModule = sqlite3InitModule;
             xRowid: function(pCursor, ppRowid64){
               const c = vth.xCursor(pCursor);
               vth.xRowid(ppRowid64, c._rowId);
-              c.dispose();
             },
             xEof: function(pCursor){
               const c = vth.xCursor(pCursor),
                     rc = c._rowId>=10;
-              c.dispose();
               return rc;
             },
             xFilter: function(pCursor, idxNum, idxCStr,
@@ -1959,7 +1980,6 @@ self.sqlite3InitModule = sqlite3InitModule;
               c._rowId = 0;
               const list = vth.sqlite3ValuesToJs(argc, argv);
               T.assert(argc === list.length);
-              c.dispose();
             },
             xBestIndex: function(pVtab, pIdxInfo){
               //const t = vth.xVtab(pVtab);
@@ -1970,54 +1990,21 @@ self.sqlite3InitModule = sqlite3InitModule;
             }
           }/*methods*/
         };
-        const doEponymousOnly =
-        /* Bug (somewhere): non-eponymous is behaving as is
-           the call to sqlite3_create_module() is missing
-           or failed: 
-
-           SQL TRACE #63 create virtual table testvtab2 using vtab2test(arg1, arg2)
-
-           => sqlite3 result code 1: no such module: vtab2test
-        */ true;
-        modConfig.methods.xConnect =
-            modConfig.methods.xCreate;
-        if(doEponymousOnly){
-          warn("Reminder: non-eponymous mode is still not working here.",
-               "Details are in the code comments.");
-          modConfig.methods.xCreate = 0;
-        }else{
-          /*(...args)=>{
-            try{return modConfig.methods.xConnect(...args)}
-            catch(e){return vth.xError('xConnect',e)}
-          };*/
-        }
         const tmplMod = vth.setupModule(modConfig);
         T.assert(tmplMod instanceof capi.sqlite3_module)
           .assert(1===tmplMod.$iVersion);
-        if(doEponymousOnly){
-          if(modConfig.methods.xCreate !== 0){
-            T.assert(modConfig.methods.xCreate === modConfig.methods.xConnect)
-              .assert(tmplMod.$xCreate === tmplMod.$xConnect);
-          }else{
-            T.assert(0 === tmplMod.$xCreate);
-          }
-        }else{
-          //T.assert(tmplMod.$xCreate !== tmplMod.$xConnect);
-        }
         this.db.onclose.disposeThese.push(tmplMod);
         this.db.checkRc(capi.sqlite3_create_module(
           this.db.pointer, modConfig.name, tmplMod.pointer, 0
         ));
-        if(!doEponymousOnly){
-          this.db.exec([
-            "create virtual table testvtab2 using ",
-            modConfig.name,
-            "(arg1, arg2)"
-          ]);
-        }
+        this.db.exec([
+          "create virtual table testvtab2 using ",
+          modConfig.name,
+          "(arg1, arg2)"
+        ]);
         const list = this.db.selectArrays(
-          ["SELECT a,b FROM ",
-           (doEponymousOnly ? modConfig.name : "testvtab2"),
+          ["SELECT a,b FROM",
+           " testvtab2",
            " where a<9999 and b>1 order by a, b"
           ]/* Query is shaped so that it will ensure that some
               constraints end up in xBestIndex(). */
