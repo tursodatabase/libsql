@@ -538,6 +538,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               try{return func(...arguments) || 0;}
               catch(e){
                 if(!(e instanceof sqlite3.WasmAllocError)){
+                  wasm.dealloc(wasm.getPtrValue(pzErr));
                   wasm.setPtrValue(pzErr, wasm.allocCString(e.message));
                 }
                 return vt.xError(methodName, e);

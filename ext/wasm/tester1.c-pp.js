@@ -22,12 +22,14 @@
   groups and individual tests can be assigned a predicate function
   which determines whether to run them or not, and this is
   specifically intended to be used to toggle certain tests on or off
-  for the main/worker threads.
+  for the main/worker threads or the availability (or not) of
+  optional features such as int64 support.
 
-  Each test group defines a state object which gets applied as each
-  test function's `this`. Test functions can use that to, e.g., set up
-  a db in an early test and close it in a later test. Each test gets
-  passed the sqlite3 namespace object as its only argument.
+  Each test group defines a single state object which gets applied as
+  the test functions' `this` for all tests in that group. Test
+  functions can use that to, e.g., set up a db in an early test and
+  close it in a later test. Each test gets passed the sqlite3
+  namespace object as its only argument.
 */
 /*
    This file is intended to be processed by c-pp to inject (or not)
@@ -1680,6 +1682,7 @@ self.sqlite3InitModule = sqlite3InitModule;
               return rc;
             }catch(e){
               if(!(e instanceof sqlite3.WasmAllocError)){
+                wasm.dealloc(wasm.getPtrValue, pzErr);
                 wasm.setPtrValue(pzErr, wasm.allocCString(e.message));
               }
               return vth.xError('xConnect',e);
@@ -1883,10 +1886,10 @@ self.sqlite3InitModule = sqlite3InitModule;
            callback sets an error string. */;
         const modConfig = {
           /* catchExceptions changes how the methods are wrapped */
-          catchExceptions: false,
+          catchExceptions: true,
           name: "vtab2test",
           methods:{
-            xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
+            xCreate: function(pDb, pAux, argc, argv, ppVtab, pzErr){
               if(throwOnConnect){
                 sqlite3.SQLite3Error.toss(
                   throwOnConnect,
@@ -1967,7 +1970,7 @@ self.sqlite3InitModule = sqlite3InitModule;
             }
           }/*methods*/
         };
-        const doEponymous =
+        const doEponymousOnly =
         /* Bug (somewhere): non-eponymous is behaving as is
            the call to sqlite3_create_module() is missing
            or failed: 
@@ -1976,29 +1979,36 @@ self.sqlite3InitModule = sqlite3InitModule;
 
            => sqlite3 result code 1: no such module: vtab2test
         */ true;
-        if(doEponymous){
+        modConfig.methods.xConnect =
+            modConfig.methods.xCreate;
+        if(doEponymousOnly){
           warn("Reminder: non-eponymous mode is still not working here.",
-              "Details are in the code comments.");
+               "Details are in the code comments.");
           modConfig.methods.xCreate = 0;
         }else{
-          modConfig.methods.xCreate = (...args)=>0;
+          /*(...args)=>{
+            try{return modConfig.methods.xConnect(...args)}
+            catch(e){return vth.xError('xConnect',e)}
+          };*/
         }
         const tmplMod = vth.setupModule(modConfig);
         T.assert(tmplMod instanceof capi.sqlite3_module)
           .assert(1===tmplMod.$iVersion);
-        if(doEponymous){
+        if(doEponymousOnly){
           if(modConfig.methods.xCreate !== 0){
             T.assert(modConfig.methods.xCreate === modConfig.methods.xConnect)
               .assert(tmplMod.$xCreate === tmplMod.$xConnect);
           }else{
             T.assert(0 === tmplMod.$xCreate);
           }
+        }else{
+          //T.assert(tmplMod.$xCreate !== tmplMod.$xConnect);
         }
         this.db.onclose.disposeThese.push(tmplMod);
         this.db.checkRc(capi.sqlite3_create_module(
-          this.db, modConfig.name, tmplMod, 0
+          this.db.pointer, modConfig.name, tmplMod.pointer, 0
         ));
-        if(!doEponymous){
+        if(!doEponymousOnly){
           this.db.exec([
             "create virtual table testvtab2 using ",
             modConfig.name,
@@ -2007,7 +2017,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         }
         const list = this.db.selectArrays(
           ["SELECT a,b FROM ",
-           (doEponymous ? modConfig.name : "testvtab2"),
+           (doEponymousOnly ? modConfig.name : "testvtab2"),
            " where a<9999 and b>1 order by a, b"
           ]/* Query is shaped so that it will ensure that some
               constraints end up in xBestIndex(). */
@@ -2041,7 +2051,8 @@ self.sqlite3InitModule = sqlite3InitModule;
     })
     .t({
       name: 'kvvfs in main thread',
-      predicate: ()=>(isUIThread() ? true : "No local/sessionStorage in Worker"),
+      predicate: ()=>(isUIThread()
+                      || "local/sessionStorage are unavailable in a Worker"),
       test: function(sqlite3){
         const filename = this.kvvfsDbFile = 'session';
         const pVfs = capi.sqlite3_vfs_find('kvvfs');
@@ -2086,7 +2097,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         delete this.kvvfsUnlink;
         delete this.JDb;
       }
-    }/*kvvfs sqlite3_js_vfs_create_file()*/)
+   }/*kvvfs sqlite3_js_vfs_create_file()*/)
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////
