@@ -3125,6 +3125,7 @@ static void display_scanstats(
     int iId = 0;
     int iPid = 0;
     const char *z = 0;
+    const char *zName = 0;
     char *zText = 0;
     double rEst = 0.0;
 
@@ -3137,6 +3138,7 @@ static void display_scanstats(
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NCYCLE,f,(void*)&nCycle);
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_SELECTID,f,(void*)&iId);
     sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_PARENTID,f,(void*)&iPid);
+    sqlite3_stmt_scanstatus_v2(p, ii, SQLITE_SCANSTAT_NAME,f,(void*)&zName);
 
     zText = sqlite3_mprintf("%s", z);
     if( nCycle>=0 || nLoop>=0 || nRow>=0 ){
@@ -3151,6 +3153,11 @@ static void display_scanstats(
       }
       if( nRow>=0 ){
         z = sqlite3_mprintf("%z%srows=%lld", z, z ? " " : "", nRow);
+      }
+
+      if( zName && pArg->scanstatsOn>1 ){
+        double rpl = (double)nRow / (double)nLoop;
+        z = sqlite3_mprintf("%z rpl=%.1f est=%.1f", z, rpl, rEst);
       }
 
       zText = sqlite3_mprintf(
@@ -4678,7 +4685,7 @@ static const char *(azHelp[]) = {
   ".restore ?DB? FILE       Restore content of DB (default \"main\") from FILE",
   ".save ?OPTIONS? FILE     Write database to FILE (an alias for .backup ...)",
 #endif
-  ".scanstats on|off        Turn sqlite3_stmt_scanstatus() metrics on or off",
+  ".scanstats on|off|est    Turn sqlite3_stmt_scanstatus() metrics on or off",
   ".schema ?PATTERN?        Show the CREATE statements matching PATTERN",
   "   Options:",
   "      --indent             Try to pretty-print the schema",
@@ -9707,12 +9714,16 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && cli_strncmp(azArg[0], "scanstats", n)==0 ){
     if( nArg==2 ){
-      p->scanstatsOn = (u8)booleanValue(azArg[1]);
+      if( cli_strcmp(azArg[1], "est")==0 ){
+        p->scanstatsOn = 2;
+      }else{
+        p->scanstatsOn = (u8)booleanValue(azArg[1]);
+      }
 #ifndef SQLITE_ENABLE_STMT_SCANSTATUS
       raw_printf(stderr, "Warning: .scanstats not available in this build.\n");
 #endif
     }else{
-      raw_printf(stderr, "Usage: .scanstats on|off\n");
+      raw_printf(stderr, "Usage: .scanstats on|off|est\n");
       rc = 1;
     }
   }else
