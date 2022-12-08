@@ -11,23 +11,23 @@ use crate::query_analysis::Statements;
 
 use super::Database;
 
-pub trait DbFactory {
-    type Future: Future<Output = anyhow::Result<Self::Db>>;
-    type Db: Database;
+pub trait DbFactory: Send + Sync + 'static {
+    type Future: Future<Output = anyhow::Result<Self::Db>> + Sync + Send;
+    type Db: Database + Send + Sync;
 
-    fn create(&mut self) -> Self::Future;
+    fn create(&self) -> Self::Future;
 }
 
 impl<F, DB, Fut> DbFactory for F
 where
-    F: FnMut() -> Fut,
-    Fut: Future<Output = anyhow::Result<DB>>,
-    DB: Database,
+    F: Fn() -> Fut + Send + Sync + 'static,
+    Fut: Future<Output = anyhow::Result<DB>> + Sync + Send,
+    DB: Database + Sync + Send,
 {
     type Db = DB;
     type Future = Fut;
 
-    fn create(&mut self) -> Self::Future {
+    fn create(&self) -> Self::Future {
         (self)()
     }
 }
