@@ -10,7 +10,7 @@ byteorder = "1.4.3"
 bytes = "1.2.1"
 clap = { version = "4.0.23", features = [ "derive" ] }
 crossbeam = "0.8.2"
-foundationdb = { version = "0.7.0", features = ["embedded-fdb-include"] }
+foundationdb = { version = "0.7.0", features = ["embedded-fdb-include"], optional = true }
 futures = "0.3.25"
 hex = "0.4.3"
 parking_lot = "0.12.1"
@@ -30,3 +30,6 @@ tracing-subscriber = "0.3.16"
 [dev-dependencies]
 proptest = "1.0.0"
 rand = "0.8.5"
+
+[features]
+fdb = ["foundationdb"]

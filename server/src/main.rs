@@ -34,6 +34,7 @@ async fn main() -> Result<()> {
     // This is how foundationdb crate recommends its initialization,
     // along with dropping `network` manually before the program ends:
     // https://docs.rs/foundationdb/0.7.0/foundationdb/fn.boot.html
+    #[cfg(feature = "fdb")]
     let network = unsafe { foundationdb::boot() };
 
     match args.command {
@@ -47,6 +48,7 @@ async fn main() -> Result<()> {
         }
     }
 
+    #[cfg(feature = "fdb")]
     drop(network);
     Ok(())
 }

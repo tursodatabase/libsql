@@ -60,7 +60,8 @@ impl LibSqlDb {
             let mut retries = 0;
             let conn = loop {
                 let conn_result = match vwal_methods {
-                    Some(ref vwal_methods) => crate::wal::open_with_virtual_wal(
+                    #[cfg(feature = "fdb")]
+                    Some(ref vwal_methods) => crate::wal::fdb::open_with_virtual_wal(
                         &path,
                         OpenFlags::SQLITE_OPEN_READ_WRITE
                             | OpenFlags::SQLITE_OPEN_CREATE
@@ -68,6 +69,8 @@ impl LibSqlDb {
                             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
                         vwal_methods.clone(),
                     ),
+                    #[cfg(not(feature = "fdb"))]
+                    Some(_) => panic!("not compiled with fdb support"),
                     None => crate::wal::open_with_regular_wal(
                         &path,
                         OpenFlags::SQLITE_OPEN_READ_WRITE
