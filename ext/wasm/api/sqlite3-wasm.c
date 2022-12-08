@@ -1021,7 +1021,11 @@ sqlite3_vfs * sqlite3_wasm_db_vfs(sqlite3 *pDb, const char *zDbName){
 **
 ** This function resets the given db pointer's database as described at
 **
-** https://www.sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigresetdatabase
+** https://sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigresetdatabase
+**
+** But beware: virtual tables destroyed that way do not have their
+** xDestroy() called, so will leak if they require that function for
+** proper cleanup.
 **
 ** Returns 0 on success, an SQLITE_xxx code on error. Returns
 ** SQLITE_MISUSE if pDb is NULL.
@@ -1030,6 +1034,7 @@ SQLITE_WASM_KEEP
 int sqlite3_wasm_db_reset(sqlite3 *pDb){
   int rc = SQLITE_MISUSE;
   if( pDb ){
+    sqlite3_table_column_metadata(pDb, "main", 0, 0, 0, 0, 0, 0, 0);
     rc = sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
     if( 0==rc ){
       rc = sqlite3_exec(pDb, "VACUUM", 0, 0, 0);
