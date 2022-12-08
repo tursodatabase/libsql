@@ -6697,18 +6697,23 @@ static void havingToWhere(Parse *pParse, Select *p){
 }
 
 /*
-** Check to see if the pThis entry of pTabList is a self-join of a prior view.
-** If it is, then return the SrcItem for the prior view.  If it is not,
-** then return 0.
+** Check to see if the pThis entry of pTabList is a self-join of another view.
+** Search FROM-clause entries in the range of iFirst..iEnd, including iFirst
+** but stopping before iEnd.
+**
+** If pThis is a self-join, then return the SrcItem for the first other
+** instance of that view found.  If pThis is not a self-join then return 0.
 */
 static SrcItem *isSelfJoinView(
   SrcList *pTabList,           /* Search for self-joins in this FROM clause */
-  SrcItem *pThis               /* Search for prior reference to this subquery */
+  SrcItem *pThis,              /* Search for prior reference to this subquery */
+  int iFirst, int iEnd        /* Range of FROM-clause entries to search. */
 ){
   SrcItem *pItem;
   assert( pThis->pSelect!=0 );
   if( pThis->pSelect->selFlags & SF_PushDown ) return 0;
-  for(pItem = pTabList->a; pItem<pThis; pItem++){
+  while( iFirst<iEnd ){
+    pItem = &pTabList->a[iFirst++];
     Select *pS1;
     if( pItem->pSelect==0 ) continue;
     if( pItem->fg.viaCoroutine ) continue;
@@ -6873,6 +6878,7 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 **    (2)  The subquery is not a CTE that should be materialized
 **    (3)  The subquery is not part of a left operand for a RIGHT JOIN
 **    (4)  The SQLITE_Coroutine optimization disable flag is not set
+**    (5)  The subquery is not self-joined
 */
 static int fromClauseTermCanBeCoroutine(
   Parse *pParse,            /* Parsing context */
@@ -6883,6 +6889,9 @@ static int fromClauseTermCanBeCoroutine(
   if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ) return 0;/* (2) */
   if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;                /* (3) */
   if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0;  /* (4) */
+  if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
+    return 0;  /* (5) */
+  }
   if( i==0 ){
     if( pTabList->nSrc==1 ) return 1;                              /* (1a-i) */
     if( pTabList->a[1].fg.jointype & JT_CROSS ) return 1;          /* (1a-ii) */
@@ -7319,7 +7328,7 @@ int sqlite3Select(
         VdbeComment((v, "%!S", pItem));
       }
       pSub->nSelectRow = pCteUse->nRowEst;
-    }else if( (pPrior = isSelfJoinView(pTabList, pItem))!=0 ){
+    }else if( (pPrior = isSelfJoinView(pTabList, pItem, 0, i))!=0 ){
       /* This view has already been materialized by a prior entry in
       ** this same FROM clause.  Reuse it. */
       if( pPrior->addrFillSub ){
