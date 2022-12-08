@@ -1,5 +1,5 @@
-C Reduce\sthe\soverhead\sof\sSQLITE_ENABLE_STMT_SCANSTATUS\ssome.
-D 2022-12-07T20:09:54.641
+C Describe\sthe\sSQLITE_DBCONFIG_RESET_DATABASE\sflag's\spolicy\sregarding\svirtual\stables,\sper\s/chat\sdiscussion.
+D 2022-12-08T12:51:11.019
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -647,7 +647,7 @@ F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 56162cde2f71314826f831618eae853205628080afa25cd90faef7a9b761dee4
 F src/shell.c.in bcf8552c82f2c84650e39a6d638373569c2035942c0497b83eef197169e0305a
-F src/sqlite.h.in 1fe1836879ecbb2e28f00f44eb6092db09a2a06bf072af351c6c2466bd515496
+F src/sqlite.h.in d79b45e95a211376ee7911fe5edd2a8a7f85b14c2383248945bbd1f3203153de
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
 F src/sqliteInt.h 0c9934acd88e0fa14f0d4743233b4cd7bd7bbc84099ba3cad50d8e69676ce2b9
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 68947b0a1147365a29e335d5e4dc55fe5d9afe3562a0709b111067d6017c5a42
-R 4a013de93da29e8129599899cb5c1b54
-U dan
-Z 4aecefd86ed6f42fbe2469d178e09d33
+P 212927e97e7be7d237de08359dce0dfb9211ac406b32009a6e15afd79c006475
+R fada471bb8a33625833c6790242167a1
+U stephan
+Z f05b54503032cba875652db3d0ee8337
 # Remove this line to create a well-formed Fossil manifest.
