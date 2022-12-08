@@ -6713,8 +6713,8 @@ static SrcItem *isSelfJoinView(
   assert( pThis->pSelect!=0 );
   if( pThis->pSelect->selFlags & SF_PushDown ) return 0;
   while( iFirst<iEnd ){
-    pItem = &pTabList->a[iFirst++];
     Select *pS1;
+    pItem = &pTabList->a[iFirst++];
     if( pItem->pSelect==0 ) continue;
     if( pItem->fg.viaCoroutine ) continue;
     if( pItem->zName==0 ) continue;
@@ -6867,44 +6867,49 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 ** The subquery is implemented as a co-routine if all of the following are
 ** true:
 **
-**    (1)  Either of the following are true:
-**         (1a)  The subquery must be the outer loop because it is either
-**               (i) the only term in the FROM clause, or because (ii) it
-**               is the left-most term and a CROSS JOIN or similar requires
-**               it to be the outer loop. subquery and there is nothing
-**         (1b)  There is nothing that would prevent the subquery from
-**               being an outer loop and the SQLITE_PREPARE_SAFESQL flag
-**               is not set.
-**    (2)  The subquery is not a CTE that should be materialized
+**    (1)  The subquery will likely be implemented in the outer loop of
+**         the query.  This will be the case if any one of the following
+**         conditions hold:
+**         (a)  The subquery is the only term in the FROM clause
+**         (b)  The subquery is the left-most term and a CROSS JOIN or similar
+**              requires it to be the outer loop
+**         (c)  All of the following are true:
+**                (i) The subquery is the left-most subquery in the FROM clause
+**               (ii) There is nothing that would prevent the subquery from
+**                    being used as the outer loop if the sqlite3WhereBegin()
+**                    routine nominates it to that position.
+**              (iii) The SQLITE_PREPARE_SAFEOPT flag is not set
+**    (2)  The subquery is not a CTE that should be materialized because of
+**         the AS MATERIALIZED keywords
 **    (3)  The subquery is not part of a left operand for a RIGHT JOIN
 **    (4)  The SQLITE_Coroutine optimization disable flag is not set
 **    (5)  The subquery is not self-joined
 */
 static int fromClauseTermCanBeCoroutine(
-  Parse *pParse,            /* Parsing context */
-  SrcList *pTabList,        /* FROM clause */
-  int i                     /* Which term of the FROM clause */
+  Parse *pParse,          /* Parsing context */
+  SrcList *pTabList,      /* FROM clause */
+  int i                   /* Which term of the FROM clause holds the subquery */
 ){
   SrcItem *pItem = &pTabList->a[i];
   if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ) return 0;/* (2) */
   if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;                /* (3) */
   if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0;  /* (4) */
   if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
-    return 0;  /* (5) */
+    return 0;                                                          /* (5) */
   }
   if( i==0 ){
-    if( pTabList->nSrc==1 ) return 1;                              /* (1a-i) */
-    if( pTabList->a[1].fg.jointype & JT_CROSS ) return 1;          /* (1a-ii) */
-    if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;     
+    if( pTabList->nSrc==1 ) return 1;                             /* (1a) */
+    if( pTabList->a[1].fg.jointype & JT_CROSS ) return 1;         /* (1b) */
+    if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;    /* (1c-iii) */
     return 1;
   }
-  if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;
+  if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;      /* (1c-iii) */
   while( 1 /*exit-by-break*/ ){
-    if( pItem->fg.jointype & (JT_OUTER|JT_CROSS)  ) return 0;
+    if( pItem->fg.jointype & (JT_OUTER|JT_CROSS)  ) return 0;     /* (1c-ii) */
     if( i==0 ) break;
     i--;
     pItem--;
-    if( pItem->pSelect!=0 ) return 0;
+    if( pItem->pSelect!=0 ) return 0;                             /* (1c-i) */
   }
   return 1;
 }
