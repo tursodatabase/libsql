@@ -80,9 +80,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        Add some descriptive xWrap() aliases for '*' intended to (A)
        initially improve readability/correctness of capi.signatures
-       and (B) eventually perhaps provide automatic conversion from
-       higher-level representations, e.g. capi.sqlite3_vfs to
-       `sqlite3_vfs*` via capi.sqlite3_vfs.pointer.
+       and (B) provide automatic conversion from higher-level
+       representations, e.g. capi.sqlite3_vfs to `sqlite3_vfs*` via
+       capi.sqlite3_vfs.pointer.
     */
     const aPtr = wasm.xWrap.argAdapter('*');
     const nilType = function(){};
@@ -116,14 +116,16 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return capi.sqlite3_vfs_find(v)
           || sqlite3.SQLite3Error.toss("Unknown sqlite3_vfs name:",v);
       }
-      return aPtr((v instanceof capi.sqlite3_vfs) ? v.pointer : v);
+      return aPtr((v instanceof (capi.sqlite3_vfs || nilType))
+                  ? v.pointer : v);
     });
 
-    wasm.xWrap.resultAdapter('sqlite3*', aPtr)
-    ('sqlite3_context*', aPtr)
-    ('sqlite3_stmt*', aPtr)
-    ('sqlite3_vfs*', aPtr)
-    ('void*', aPtr);
+    const rPtr = wasm.xWrap.resultAdapter('*');
+    wasm.xWrap.resultAdapter('sqlite3*', rPtr)
+    ('sqlite3_context*', rPtr)
+    ('sqlite3_stmt*', rPtr)
+    ('sqlite3_vfs*', rPtr)
+    ('void*', rPtr);
 
     /**
        Populate api object with sqlite3_...() by binding the "raw" wasm

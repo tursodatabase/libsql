@@ -1266,6 +1266,27 @@ self.sqlite3InitModule = sqlite3InitModule;
     })
 
   ////////////////////////////////////////////////////////////////////////
+    .t("sqlite3_table_column_metadata()", function(sqlite3){
+      const stack = wasm.pstack.pointer;
+      try{
+        const [pzDT, pzColl, pNotNull, pPK, pAuto] =
+              wasm.pstack.allocPtr(5);
+        const rc = capi.sqlite3_table_column_metadata(
+          this.db, "main", "t", "rowid",
+          pzDT, pzColl, pNotNull, pPK, pAuto
+        );
+        T.assert(0===rc)
+          .assert("INTEGER"===wasm.cstrToJs(wasm.getPtrValue(pzDT)))
+          .assert("BINARY"===wasm.cstrToJs(wasm.getPtrValue(pzColl)))
+          .assert(0===wasm.getMemValue(pNotNull,'i32'))
+          .assert(1===wasm.getMemValue(pPK,'i32'))
+          .assert(0===wasm.getMemValue(pAuto,'i32'))
+      }finally{
+        wasm.pstack.restore(stack);
+      }
+    })
+
+  ////////////////////////////////////////////////////////////////////////
     .t('selectArray/Object()', function(sqlite3){
       const db = this.db;
       let rc = db.selectArray('select a, b from t where a=?', 5);
@@ -1710,7 +1731,9 @@ self.sqlite3InitModule = sqlite3InitModule;
            The vtab demonstrated here is a JS-ification of
            ext/misc/templatevtab.c.
         */
-        const tmplMod = (new sqlite3.capi.sqlite3_module()).setupModule({
+        const tmplMod = new sqlite3.capi.sqlite3_module();
+        T.assert(0===tmplMod.$xUpdate);
+        tmplMod.setupModule({
           catchExceptions: false,
           methods: {
             xConnect: function(pDb, pAux, argc, argv, ppVtab, pzErr){
@@ -1873,7 +1896,8 @@ self.sqlite3InitModule = sqlite3InitModule;
           }
         });
         this.db.onclose.disposeAfter.push(tmplMod);
-        T.assert(tmplMod.$xCreate)
+        T.assert(0===tmplMod.$xUpdate)
+          .assert(tmplMod.$xCreate)
           .assert(tmplMod.$xCreate === tmplMod.$xConnect,
                   "setup() must make these equivalent and "+
                   "installMethods() must avoid re-compiling identical functions");

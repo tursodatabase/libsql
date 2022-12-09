@@ -1004,11 +1004,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_stricmp", "int", "string", "string"],
     ["sqlite3_strlike", "int", "string", "string","int"],
     ["sqlite3_strnicmp", "int", "string", "string", "int"],
-    ["sqlite3_trace_v2", "int", "sqlite3*", "int", "*", "*"],
+    ["sqlite3_table_column_metadata", "int",
+     "sqlite3*", "string", "string", "string",
+     "**", "**", "*", "*", "*"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
-    /* Note sqlite3_uri_...() has very specific requirements
-       for their first C-string arguments, so we cannot perform
-       any type conversion on those. */
+    ["sqlite3_trace_v2", "int", "sqlite3*", "int", "*", "*"],
+    /* Note that sqlite3_uri_...() have very specific requirements for
+       their first C-string arguments, so we cannot perform any value
+       conversion on those. */
     ["sqlite3_uri_boolean", "int", "sqlite3_filename", "string", "int"],
     ["sqlite3_uri_key", "string", "sqlite3_filename", "int"],
     ["sqlite3_uri_parameter", "string", "sqlite3_filename", "string"],
