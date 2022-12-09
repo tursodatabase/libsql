@@ -158,9 +158,35 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     delete wasm.bindingSignatures;
 
     if(wasm.exports.sqlite3_wasm_db_error){
-      util.sqlite3_wasm_db_error = wasm.xWrap(
+      const __db_err = wasm.xWrap(
         'sqlite3_wasm_db_error', 'int', 'sqlite3*', 'int', 'string'
       );
+      /**
+         Sets the given db's error state. Accepts:
+
+         - (sqlite3*, int code, string msg)
+         - (sqlite3*, Error [,string msg])
+
+         If passed a WasmAllocError, the message is ingored and the
+         result code is SQLITE_NOMEM. If passed any other Error type,
+         the result code defaults to SQLITE_ERROR unless the Error
+         object has a resultCode property, in which case that is used
+         (e.g. SQLite3Error has that). If passed a non-WasmAllocError
+         exception, the message string defaults to theError.message.
+
+         Returns the resulting code. Pass (pDb,0,0) to clear the error
+         state.
+       */
+      util.sqlite3_wasm_db_error = function(pDb, resultCode, message){
+        if(resultCode instanceof sqlite3.WasmAllocError){
+          resultCode = capi.SQLITE_NOMEM;
+          message = 0 /*avoid allocating message string*/;
+        }else if(resultCode instanceof Error){
+          message = message || resultCode.message;
+          resultCode = (resultCode.resultCode || capi.SQLITE_ERROR);
+        }
+        return __db_err(pDb, resultCode, message);
+      };
     }else{
       util.sqlite3_wasm_db_error = function(pDb,errCode,msg){
         console.warn("sqlite3_wasm_db_error() is not exported.",arguments);
@@ -179,6 +205,61 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                               f+"() requires "+n+" argument"+
                                               (1===n?"":'s')+".");
   };
+
+  if(1){/* Bindings for sqlite3_create_collation() */
+
+    const __ccv2 = wasm.xWrap(
+      'sqlite3_create_collation_v2', 'int',
+      'sqlite3*','string','int','*','*','*'
+      /* int(*xCompare)(void*,int,const void*,int,const void*) */
+      /* void(*xDestroy(void*) */);
+
+    /**
+       Works exactly like C's sqlite3_create_collation_v2() except that:
+
+       1) It permits its two function arguments to be JS functions,
+          for which it will install WASM-bound proxies.
+
+       2) It returns capi.SQLITE_FORMAT if the 3rd argument is not
+          capi.SQLITE_UTF8. No other encodings are supported.
+
+       Returns 0 on success, non-0 on error, in which case the error
+       state of pDb (of type `sqlite3*` or argument-convertible to it)
+       may contain more information.
+    */
+    capi.sqlite3_create_collation_v2 = function(pDb,zName,eTextRep,pArg,xCompare,xDestroy){
+      if(6!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_create_collation_v2', 6);
+      else if(capi.SQLITE_UTF8!==eTextRep){
+        return util.sqlite3_wasm_db_error(
+          pDb, capi.SQLITE_FORMAT, "SQLITE_UTF8 is the only supported encoding."
+        );
+      }
+      let rc, pfCompare, pfDestroy;
+      try{
+        if(xCompare instanceof Function){
+          pfCompare = wasm.installFunction(xCompare, 'i(pipip)');
+        }
+        if(xDestroy instanceof Function){
+          pfDestroy = wasm.installFunction(xDestroy, 'v(p)');
+        }
+        rc = __ccv2(pDb, zName, eTextRep, pArg,
+                    pfCompare || xCompare, pfDestroy || xDestroy);
+      }catch(e){
+        if(pfCompare) wasm.uninstallFunction(pfCompare);
+        if(pfDestroy) wasm.uninstallFunction(pfDestroy);
+        rc = util.sqlite3_wasm_db_error(pDb, e);
+      }
+      return rc;
+    };
+
+    capi.sqlite3_create_collation = (pDb,zName,eTextRep,pArg,xCompare)=>{
+      return (5===arguments.length)
+        ? capi.sqlite3_create_collation_v2(pDb,zName,eTextRep,pArg,xCompare,0)
+        : __dbArgcMismatch(pDb, 'sqlite3_create_collation', 5);
+    }
+
+
+  }/*sqlite3_create_collation() and friends*/
 
   if(1){/* Special-case handling of sqlite3_exec() */
     const __exec = wasm.xWrap("sqlite3_exec", "int",

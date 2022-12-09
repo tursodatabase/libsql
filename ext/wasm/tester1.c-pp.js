@@ -2106,6 +2106,29 @@ self.sqlite3InitModule = sqlite3InitModule;
           .assert(2000===list[0][1]);
       }
     })/*custom vtab #2*/
+  ////////////////////////////////////////////////////////////////////////
+    .t('Custom collation', function(sqlite3){
+      let myCmp = function(pArg,n1,p1,n2,p2){
+        //int (*)(void*,int,const void*,int,const void*)
+        const rc = wasm.exports.sqlite3_strnicmp(p1,p2,(n1<n2?n1:n2));
+        return rc ? rc : (n1 - n2);
+      };
+      let rc = capi.sqlite3_create_collation_v2(this.db, "mycollation", capi.SQLITE_UTF8,
+                                                0, myCmp, 0);
+      this.db.checkRc(rc);
+      rc = this.db.selectValue("select 'hi' = 'HI' collate mycollation");
+      T.assert(1===rc);
+      rc = this.db.selectValue("select 'hii' = 'HI' collate mycollation");
+      T.assert(0===rc);
+      rc = this.db.selectValue("select 'hi' = 'HIi' collate mycollation");
+      T.assert(0===rc);
+      rc = capi.sqlite3_create_collation(this.db,"hi",capi.SQLITE_UTF8/*not enough args*/);
+      T.assert(capi.SQLITE_MISUSE === rc);
+      rc = capi.sqlite3_create_collation_v2(this.db,"hi",0/*wrong encoding*/,0,0,0);
+      T.assert(capi.SQLITE_FORMAT === rc)
+        .mustThrowMatching(()=>this.db.checkRc(rc),
+                           /SQLITE_UTF8 is the only supported encoding./);
+    })
 
   ////////////////////////////////////////////////////////////////////////
     .t('Close db', function(){

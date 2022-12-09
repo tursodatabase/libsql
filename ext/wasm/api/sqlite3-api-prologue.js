@@ -936,12 +936,16 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     /* sqlite3_create_function(), sqlite3_create_function_v2(), and
        sqlite3_create_window_function() use hand-written bindings to
        simplify handling of their function-type arguments. */
-    ["sqlite3_create_collation", "int",
-     "sqlite3*", "string", "int"/*SQLITE_UTF8 is the only legal value*/,
+    /* sqlite3_create_collation() and sqlite3_create_collation_v2()
+       use hand-written bindings to simplify passing of the callback
+       function.
+      ["sqlite3_create_collation", "int",
+     "sqlite3*", "string", "int",//SQLITE_UTF8 is the only legal value
      "*", "*"],
     ["sqlite3_create_collation_v2", "int",
-     "sqlite3*", "string", "int"/*SQLITE_UTF8 is the only legal value*/,
+     "sqlite3*", "string", "int",//SQLITE_UTF8 is the only legal value
      "*", "*", "*"],
+    */
     ["sqlite3_data_count", "int", "sqlite3_stmt*"],
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
