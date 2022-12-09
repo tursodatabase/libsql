@@ -316,13 +316,11 @@ self.WhWasmUtilInstaller = function(target){
 
      Throws if passed an invalid n.
 
-     Pedantic side note: the name "heap" is a bit of a misnomer. In an
-     Emscripten environment, the memory managed via the stack
-     allocation API is in the same Memory object as the heap (which
-     makes sense because otherwise arbitrary pointer X would be
-     ambiguous: is it in the heap or the stack?).
+     Pedantic side note: the name "heap" is a bit of a misnomer. In a
+     WASM environment, the stack and heap memory are all accessed via
+     the same view(s) of the memory.
   */
-  target.heapForSize = function(n,unsigned = false){
+  target.heapForSize = function(n,unsigned = true){
     let ctor;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();

@@ -212,8 +212,8 @@
     const renderFunc = function(name){
         let lbl = name+'()';
         const e = eLi(lbl, eFuncs);;
-        if(name.startsWith('sqlite3_js')
-           || name.startsWith('sqlite3_wasm')){
+        if(name.indexOf('_js')>0
+           || name.indexOf('_wasm')>0){
             e.classList.add('func-wasm');
         }
     };

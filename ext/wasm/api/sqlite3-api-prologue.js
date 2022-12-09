@@ -1658,6 +1658,48 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }
   }.bind(Object.create(null));
 
+  /**
+     Given a (sqlite3_value*), this function attempts to convert it
+     to an equivalent JS value with as much fidelity as feasible and
+     return it. Throws if it cannot determine any sensible
+     conversion, but that would be indicative of a serious error.
+  */
+  capi.sqlite3_value_to_js = function(pVal){
+    let arg;
+    const valType = capi.sqlite3_value_type(pVal);
+    switch(valType){
+        case capi.SQLITE_INTEGER:
+          if(wasm.bigIntEnabled){
+            arg = capi.sqlite3_value_int64(pVal);
+            if(util.bigIntFitsDouble(arg)) arg = Number(arg);
+          }
+          else arg = capi.sqlite3_value_double(pVal)/*yes, double, for larger integers*/;
+          break;
+        case capi.SQLITE_FLOAT:
+          arg = capi.sqlite3_value_double(pVal);
+          break;
+        case capi.SQLITE_TEXT:
+          arg = capi.sqlite3_value_text(pVal);
+          break;
+        case capi.SQLITE_BLOB:{
+          const n = capi.sqlite3_value_bytes(pVal);
+          const pBlob = capi.sqlite3_value_blob(pVal);
+          if(n && !pBlob) sqlite3.WasmAllocError.toss(
+            "Cannot allocate memory for blob argument of",n,"byte(s)"
+          );
+          arg = n ? wasm.heap8u().slice(pBlob, pBlob + Number(n)) : null;
+          break;
+        }
+        case capi.SQLITE_NULL:
+          arg = null; break;
+        default:
+          toss3("Unhandled sqlite3_value_type()",valType,
+                "is possibly indicative of incorrect",
+                "pointer size assumption.");
+    }
+    return arg;
+  };
+
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
     WasmAllocError: WasmAllocError,

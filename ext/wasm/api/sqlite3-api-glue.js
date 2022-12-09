@@ -372,49 +372,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }/*__udfSetResult()*/;
 
     const __udfConvertArgs = function(argc, pArgv){
-      let i, pVal, valType, arg;
+      let i;
       const tgt = [];
       for(i = 0; i < argc; ++i){
-        pVal = wasm.peekPtr(pArgv + (wasm.ptrSizeof * i));
         /**
            Curiously: despite ostensibly requiring 8-byte
            alignment, the pArgv array is parcelled into chunks of
            4 bytes (1 pointer each). The values those point to
            have 8-byte alignment but the individual argv entries
            do not.
-        */            
-        valType = capi.sqlite3_value_type(pVal);
-        switch(valType){
-            case capi.SQLITE_INTEGER:
-              if(wasm.bigIntEnabled){
-                arg = capi.sqlite3_value_int64(pVal);
-                if(util.bigIntFitsDouble(arg)) arg = Number(arg);
-              }
-              else arg = capi.sqlite3_value_double(pVal)/*yes, double, for larger integers*/;
-              break;
-            case capi.SQLITE_FLOAT:
-              arg = capi.sqlite3_value_double(pVal);
-              break;
-            case capi.SQLITE_TEXT:
-              arg = capi.sqlite3_value_text(pVal);
-              break;
-            case capi.SQLITE_BLOB:{
-              const n = capi.sqlite3_value_bytes(pVal);
-              const pBlob = capi.sqlite3_value_blob(pVal);
-              if(n && !pBlob) sqlite3.WasmAllocError.toss(
-                "Cannot allocate memory for blob argument of",n,"byte(s)"
-              );
-              arg = n ? wasm.heap8u().slice(pBlob, pBlob + Number(n)) : null;
-              break;
-            }
-            case capi.SQLITE_NULL:
-              arg = null; break;
-            default:
-              toss3("Unhandled sqlite3_value_type()",valType,
-                    "is possibly indicative of incorrect",
-                    "pointer size assumption.");
-        }
-        tgt.push(arg);
+        */
+        tgt.push(capi.sqlite3_value_to_js(
+          wasm.peekPtr(pArgv + (wasm.ptrSizeof * i))
+        ));
       }
       return tgt;
     }/*__udfConvertArgs()*/;
