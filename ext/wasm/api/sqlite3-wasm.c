@@ -430,6 +430,45 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_NULL);
   } _DefGroup;
 
+  DefGroup(dbConfig){
+    DefInt(SQLITE_DBCONFIG_MAINDBNAME);
+    DefInt(SQLITE_DBCONFIG_LOOKASIDE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_FKEY);
+    DefInt(SQLITE_DBCONFIG_ENABLE_TRIGGER);
+    DefInt(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER);
+    DefInt(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION);
+    DefInt(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_QPSG);
+    DefInt(SQLITE_DBCONFIG_TRIGGER_EQP);
+    DefInt(SQLITE_DBCONFIG_RESET_DATABASE);
+    DefInt(SQLITE_DBCONFIG_DEFENSIVE);
+    DefInt(SQLITE_DBCONFIG_WRITABLE_SCHEMA);
+    DefInt(SQLITE_DBCONFIG_LEGACY_ALTER_TABLE);
+    DefInt(SQLITE_DBCONFIG_DQS_DML);
+    DefInt(SQLITE_DBCONFIG_DQS_DDL);
+    DefInt(SQLITE_DBCONFIG_ENABLE_VIEW);
+    DefInt(SQLITE_DBCONFIG_LEGACY_FILE_FORMAT);
+    DefInt(SQLITE_DBCONFIG_TRUSTED_SCHEMA);
+    DefInt(SQLITE_DBCONFIG_MAX);
+  } _DefGroup;
+
+  DefGroup(dbStatus){
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_USED);
+    DefInt(SQLITE_DBSTATUS_CACHE_USED);
+    DefInt(SQLITE_DBSTATUS_SCHEMA_USED);
+    DefInt(SQLITE_DBSTATUS_STMT_USED);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_HIT);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL);
+    DefInt(SQLITE_DBSTATUS_CACHE_HIT);
+    DefInt(SQLITE_DBSTATUS_CACHE_MISS);
+    DefInt(SQLITE_DBSTATUS_CACHE_WRITE);
+    DefInt(SQLITE_DBSTATUS_DEFERRED_FKS);
+    DefInt(SQLITE_DBSTATUS_CACHE_USED_SHARED);
+    DefInt(SQLITE_DBSTATUS_CACHE_SPILL);
+    DefInt(SQLITE_DBSTATUS_MAX);
+  } _DefGroup;
+
   DefGroup(encodings) {
     /* Noting that the wasm binding only aims to support UTF-8. */
     DefInt(SQLITE_UTF8);
@@ -1292,7 +1331,69 @@ int sqlite3_wasm_vtab_config(sqlite3 *pDb, int op, int arg){
   default:
     return SQLITE_MISUSE;
   }
+}
 
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (int,int*) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_ip(sqlite3 *pDb, int op, int arg1, int* pArg2){
+  switch(op){
+    case SQLITE_DBCONFIG_ENABLE_FKEY:
+    case SQLITE_DBCONFIG_ENABLE_TRIGGER:
+    case SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+    case SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+    case SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+    case SQLITE_DBCONFIG_ENABLE_QPSG:
+    case SQLITE_DBCONFIG_TRIGGER_EQP:
+    case SQLITE_DBCONFIG_RESET_DATABASE:
+    case SQLITE_DBCONFIG_DEFENSIVE:
+    case SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+    case SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+    case SQLITE_DBCONFIG_DQS_DML:
+    case SQLITE_DBCONFIG_DQS_DDL:
+    case SQLITE_DBCONFIG_ENABLE_VIEW:
+    case SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+    case SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+      return sqlite3_db_config(pDb, op, arg1, pArg2);
+    default: return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (void*,int,int) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_pii(sqlite3 *pDb, int op, void * pArg1, int arg2, int arg3){
+  switch(op){
+    case SQLITE_DBCONFIG_LOOKASIDE:
+      return sqlite3_db_config(pDb, op, pArg1, arg2, arg3);
+    default: return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (const char *) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_s(sqlite3 *pDb, int op, const char *zArg){
+  switch(op){
+    case SQLITE_DBCONFIG_MAINDBNAME:
+      return sqlite3_db_config(pDb, op, zArg);
+    default: return SQLITE_MISUSE;
+  }
 }
 
 

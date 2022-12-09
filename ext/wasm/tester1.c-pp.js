@@ -1056,6 +1056,32 @@ self.sqlite3InitModule = sqlite3InitModule;
         .assert(db === sqlite3.oo1.DB.checkRc(db,0))
         .assert(null === sqlite3.oo1.DB.checkRc(null,0))
     })
+  ////////////////////////////////////////////////////////////////////
+    .t('sqlite3_db_config() and sqlite3_db_status()', function(sqlite3){
+      let rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE, 0, 0);
+      T.assert(0===rc);
+      rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_MAX+1, 0);
+      T.assert(capi.SQLITE_MISUSE === rc);
+      rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_MAINDBNAME, "main");
+      T.assert(0 === rc);
+      const stack = wasm.pstack.pointer;
+      try {
+        const [pCur, pHi] = wasm.pstack.allocPtr(2);
+        rc = capi.sqlite3_db_status(this.db, capi.SQLITE_DBSTATUS_LOOKASIDE_USED,
+                                    pCur, pHi, 0);
+        T.assert(0===rc);
+        if(wasm.getMemValue(pCur, 'i32')){
+          warn("Cannot test db_config(SQLITE_DBCONFIG_LOOKASIDE)",
+               "while lookaside memory is in use.");
+        }else{
+          rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_LOOKASIDE,
+                                      0, 4096, 12);
+          T.assert(0 === rc);
+        }
+        }finally{
+        wasm.pstack.restore(stack);
+      }
+    })
 
   ////////////////////////////////////////////////////////////////////
     .t('DB.Stmt', function(S){

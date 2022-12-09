@@ -946,6 +946,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_db_filename", "string", "sqlite3*", "string"],
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
     ["sqlite3_db_name", "string", "sqlite3*", "int"],
+    ["sqlite3_db_status", "int", "sqlite3*", "int", "*", "*", "int"],
     ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
     /* Careful! Short version: de/serialize() are problematic because they
        might use a different allocator than the user for managing the
@@ -1601,6 +1602,51 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   }/* main-window-only bits */
 
+  /**
+     Wraps all known variants of the C-side variadic
+     sqlite3_db_config().
+
+     Full docs: https://sqlite.org/c3ref/db_config.html
+
+     Returns capi.SQLITE_MISUSE if op is not a valid operation ID.
+  */
+  capi.sqlite3_db_config = function f(pDb, op, ...args){
+    if(!this.s){
+      this.s = wasm.xWrap('sqlite3_wasm_db_config_s','int',
+                          ['sqlite3*', 'int', 'string:static']
+                          /* MAINDBNAME requires a static string */);
+      this.pii = wasm.xWrap('sqlite3_wasm_db_config_pii', 'int',
+                            ['sqlite3*', 'int', '*','int', 'int']);
+      this.ip = wasm.xWrap('sqlite3_wasm_db_config_ip','int',
+                           ['sqlite3*', 'int', 'int','*']);
+    }
+    const c = capi;
+    switch(op){
+        case c.SQLITE_DBCONFIG_ENABLE_FKEY:
+        case c.SQLITE_DBCONFIG_ENABLE_TRIGGER:
+        case c.SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+        case c.SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+        case c.SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+        case c.SQLITE_DBCONFIG_ENABLE_QPSG:
+        case c.SQLITE_DBCONFIG_TRIGGER_EQP:
+        case c.SQLITE_DBCONFIG_RESET_DATABASE:
+        case c.SQLITE_DBCONFIG_DEFENSIVE:
+        case c.SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+        case c.SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+        case c.SQLITE_DBCONFIG_DQS_DML:
+        case c.SQLITE_DBCONFIG_DQS_DDL:
+        case c.SQLITE_DBCONFIG_ENABLE_VIEW:
+        case c.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+        case c.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+          return this.ip(pDb, op, args[0], args[1] || 0);
+        case c.SQLITE_DBCONFIG_LOOKASIDE:
+          return this.pii(pDb, op, args[0], args[1], args[2]);
+        case c.SQLITE_DBCONFIG_MAINDBNAME:
+          return this.s(pDb, op, args[0]);
+        default:
+          return c.SQLITE_MISUSE;
+    }
+  }.bind(Object.create(null));
 
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {

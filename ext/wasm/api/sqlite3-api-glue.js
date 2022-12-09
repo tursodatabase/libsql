@@ -614,6 +614,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
     const defineGroups = ['access', 'authorizer',
                           'blobFinalizers', 'dataTypes',
+                          'dbConfig', 'dbStatus',
                           'encodings', 'fcntl', 'flock', 'ioCap',
                           'limits', 'openFlags',
                           'prepareFlags', 'resultCodes',
