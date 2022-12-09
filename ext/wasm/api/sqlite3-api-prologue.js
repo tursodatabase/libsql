@@ -1025,7 +1025,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_value_blob", "*", "sqlite3_value*"],
     ["sqlite3_value_bytes","int", "sqlite3_value*"],
     ["sqlite3_value_double","f64", "sqlite3_value*"],
+    ["sqlite3_value_frombind", "int", "sqlite3_value*"],
     ["sqlite3_value_int","int", "sqlite3_value*"],
+    ["sqlite3_value_nochange", "int", "sqlite3_value*"],
+    ["sqlite3_value_numeric_type", "int", "sqlite3_value*"],
     ["sqlite3_value_pointer", "*", "sqlite3_value*", "string:static"],
     ["sqlite3_value_text", "string", "sqlite3_value*"],
     ["sqlite3_value_type", "int", "sqlite3_value*"],
@@ -1661,10 +1664,24 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /**
      Given a (sqlite3_value*), this function attempts to convert it
      to an equivalent JS value with as much fidelity as feasible and
-     return it. Throws if it cannot determine any sensible
-     conversion, but that would be indicative of a serious error.
+     return it.
+
+     By default it throws if it cannot determine any sensible
+     conversion. If passed a falsy second argument, it instead returns
+     `undefined` if no suitable conversion is found. Note that there
+     is no conversion from SQL to JS which results in the `undefined`
+     value, so `undefined` has an unambiguous meaning here.
+
+     Caveats:
+
+     - It does not support sqlite3_value_to_pointer() conversions
+       because those require a type name string which this function
+       does not have and cannot sensibly be given at the level of the
+       API where this is used (e.g. automatically converting UDF
+       arguments). Clients using sqlite3_value_to_pointer(), and its
+       related APIs, will need to manage those themselves.
   */
-  capi.sqlite3_value_to_js = function(pVal){
+  capi.sqlite3_value_to_js = function(pVal,throwIfCannotConvert=true){
     let arg;
     const valType = capi.sqlite3_value_type(pVal);
     switch(valType){
@@ -1693,9 +1710,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         case capi.SQLITE_NULL:
           arg = null; break;
         default:
-          toss3("Unhandled sqlite3_value_type()",valType,
-                "is possibly indicative of incorrect",
-                "pointer size assumption.");
+          if(throwIfCannotConvert){
+            toss3(capi.SQLITE_MISMATCH,
+                  "Unhandled sqlite3_value_type():",valType);
+          }
+          arg = undefined;
     }
     return arg;
   };
