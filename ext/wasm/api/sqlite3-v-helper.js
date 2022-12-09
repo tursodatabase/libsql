@@ -10,9 +10,9 @@
 */
 
 /**
-   This file installs sqlite3.VfsHelper, and object which exists to
-   assist in the creation of JavaScript implementations of sqlite3_vfs,
-   along with its virtual table counterpart, sqlite3.VtabHelper.
+   This file installs sqlite3.vfs, and object which exists to assist
+   in the creation of JavaScript implementations of sqlite3_vfs, along
+   with its virtual table counterpart, sqlite3.vtab.
 */
 'use strict';
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
@@ -468,7 +468,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       let rc = ...
       return rc;
      }catch(e){
-       return sqlite3.VtabHelper.exceptionToRc(e, sqlite3.capi.SQLITE_XYZ);
+       return sqlite3.vtab.exceptionToRc(e, sqlite3.capi.SQLITE_XYZ);
        // where SQLITE_XYZ is some call-appropriate result code.
      }
      ```
@@ -492,7 +492,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       let rc = ...
       return rc;
      }catch(e){
-       return sqlite3.VtabHelper.xError(
+       return sqlite3.vtab.xError(
                 'xColumn', e, sqlite3.capi.SQLITE_XYZ);
        // where SQLITE_XYZ is some call-appropriate result code.
      }
@@ -540,18 +540,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
 
   /**
-     A helper for sqlite3_vtab::xRowid() implementations. It must be
-     passed that function's 2nd argument (an output pointer to an
-     int64 row ID) and the value to store at the output pointer's
-     address. Returns the same as wasm.setMemValue() and will throw
-     if the 1st or 2nd arguments are invalid for that function.
+     A helper for sqlite3_vtab::xRowid() and xUpdate()
+     implementations. It must be passed the final argument to one of
+     those methods (an output pointer to an int64 row ID) and the
+     value to store at the output pointer's address. Returns the same
+     as wasm.setMemValue() and will throw if the 1st or 2nd arguments
+     are invalid for that function.
 
      Example xRowid impl:
 
      ```
      const xRowid = (pCursor, ppRowid64)=>{
-       const c = VtabHelper.xCursor(pCursor);
-       VtabHelper.xRowid(ppRowid64, c.myRowId);
+       const c = vtab.xCursor(pCursor);
+       vtab.xRowid(ppRowid64, c.myRowId);
        return 0;
      };
      ```
@@ -591,7 +592,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      If `catchExceptions` is false, it is up to the client to ensure
      that no exceptions escape the methods, as doing so would move
      them through the C API, leading to undefined
-     behavior. (VtabHelper.xError() is intended to assist in reporting
+     behavior. (vtab.xError() is intended to assist in reporting
      such exceptions.)
 
      Certain methods may refer to the same implementation. To simplify
