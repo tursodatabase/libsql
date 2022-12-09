@@ -87,7 +87,10 @@ _sqlite3_set_auxdata
 _sqlite3_shutdown
 _sqlite3_sourceid
 _sqlite3_sql
+_sqlite3_status
+_sqlite3_status64
 _sqlite3_step
+_sqlite3_stmt_status
 _sqlite3_strglob
 _sqlite3_stricmp
 _sqlite3_strlike

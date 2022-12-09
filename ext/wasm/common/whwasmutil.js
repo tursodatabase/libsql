@@ -599,6 +599,11 @@ self.WhWasmUtilInstaller = function(target){
      type triggers an exception if this.bigIntEnabled is
      falsy). Throws if given an invalid type.
 
+     If the first argument is an array, it is treated as an array of
+     addresses and the result is an array of the values from each of
+     those address, using the same 2nd argument for determining the
+     value type to fetch.
+
      As a special case, if type ends with a `*`, it is considered to
      be a pointer type and is treated as the WASM numeric type
      appropriate for the pointer size (`i32`).
@@ -641,23 +646,33 @@ self.WhWasmUtilInstaller = function(target){
 
      See: setMemValue()
   */
-  target.getMemValue = function(ptr, type='i8'){
+  target.getMemValue = function f(ptr, type='i8'){
     if(type.endsWith('*')) type = ptrIR;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
-    switch(type){
-        case 'i1':
-        case 'i8': return c.HEAP8[ptr>>0];
-        case 'i16': return c.HEAP16[ptr>>1];
-        case 'i32': return c.HEAP32[ptr>>2];
-        case 'i64':
-          if(target.bigIntEnabled) return BigInt(c.HEAP64[ptr>>3]);
-          break;
-        case 'float': case 'f32': return c.HEAP32F[ptr>>2];
-        case 'double': case 'f64': return Number(c.HEAP64F[ptr>>3]);
-        default: break;
-    }
-    toss('Invalid type for getMemValue():',type);
+    const list = Array.isArray(ptr) ? [] : undefined;
+    let rc;
+    do{
+      if(list) ptr = arguments[0].shift();
+      switch(type){
+          case 'i1':
+          case 'i8': rc = c.HEAP8[ptr>>0]; break;
+          case 'i16': rc = c.HEAP16[ptr>>1]; break;
+          case 'i32': rc = c.HEAP32[ptr>>2]; break;
+          case 'float': case 'f32': rc = c.HEAP32F[ptr>>2]; break;
+          case 'double': case 'f64': rc = Number(c.HEAP64F[ptr>>3]); break;
+          case 'i64':
+            if(target.bigIntEnabled){
+              rc = BigInt(c.HEAP64[ptr>>3]);
+              break;
+            }
+            /* fallthru */
+          default:
+            toss('Invalid type for getMemValue():',type);
+      }
+      if(list) list.push(rc);
+    }while(list && arguments[0].length);
+    return list || rc;
   };
 
   /**
@@ -668,41 +683,59 @@ self.WhWasmUtilInstaller = function(target){
      argument ends with `*` then it is treated as a pointer type and
      this function behaves as if the 3rd argument were `i32`.
 
-     This function returns itself.
+     If the first argument is an array, it is treated like a list
+     of pointers and the given value is written to each one.
+
+     Returns `this`. (Prior to 2022-12-09 it returns this function.)
 
      ACHTUNG: calling this often, e.g. in a loop, can have a noticably
      painful impact on performance. Rather than doing so, use
-     heapForSize() to fetch the heap object and assign directly to it.
+     heapForSize() to fetch the heap object and assign directly to it
+     or use the heap's set() method.
   */
-  target.setMemValue = function f(ptr, value, type='i8'){
+  target.setMemValue = function(ptr, value, type='i8'){
     if (type.endsWith('*')) type = ptrIR;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
-    switch (type) {
-        case 'i1': 
-        case 'i8': c.HEAP8[ptr>>0] = value; return f;
-        case 'i16': c.HEAP16[ptr>>1] = value; return f;
-        case 'i32': c.HEAP32[ptr>>2] = value; return f;
-        case 'i64':
-          if(c.HEAP64){
-            c.HEAP64[ptr>>3] = BigInt(value);
-            return f;
-          }
-          break;
-        case 'float': case 'f32': c.HEAP32F[ptr>>2] = value; return f;
-        case 'double': case 'f64': c.HEAP64F[ptr>>3] = value; return f;
+    for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
+      switch (type) {
+          case 'i1': 
+          case 'i8': c.HEAP8[p>>0] = value; continue;
+          case 'i16': c.HEAP16[p>>1] = value; continue;
+          case 'i32': c.HEAP32[p>>2] = value; continue;
+          case 'float': case 'f32': c.HEAP32F[p>>2] = value; continue;
+          case 'double': case 'f64': c.HEAP64F[p>>3] = value; continue;
+          case 'i64':
+            if(c.HEAP64){
+              c.HEAP64[p>>3] = BigInt(value);
+              continue;
+            }
+            /* fallthru */
+          default:
+            toss('Invalid type for setMemValue(): ' + type);
+      }
     }
-    toss('Invalid type for setMemValue(): ' + type);
+    return this;
   };
 
+  /**
+     Convenience form of getMemValue() intended for fetching
+     pointer-to-pointer values. If passed a single non-array argument
+     it returns the value of that one pointer address. If passed
+     multiple arguments, or a single array of arguments, it returns an
+     array of their values.
+  */
+  target.getPtrValue = function(...ptr){
+    return target.getMemValue( (1===ptr.length ? ptr[0] : ptr), ptrIR );
+  };
 
-  /** Convenience form of getMemValue() intended for fetching
-      pointer-to-pointer values. */
-  target.getPtrValue = (ptr)=>target.getMemValue(ptr, ptrIR);
-
-  /** Convenience form of setMemValue() intended for setting
-      pointer-to-pointer values. */
-  target.setPtrValue = (ptr, value)=>target.setMemValue(ptr, value, ptrIR);
+  /**
+     A variant of setMemValue() intended for setting
+     pointer-to-pointer values. Its differences from setMemValue() are
+     that (1) it defaults to a value of 0, (2) it always writes
+     to the pointer-sized heap view, and (3) it returns `this`.
+  */
+  target.setPtrValue = (ptr, value=0)=>target.setMemValue(ptr, value, ptrIR);
 
   /**
      Returns true if the given value appears to be legal for use as

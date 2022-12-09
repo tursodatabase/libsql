@@ -87,10 +87,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const aPtr = wasm.xWrap.argAdapter('*');
     const nilType = function(){};
     wasm.xWrap.argAdapter('sqlite3_filename', aPtr)
-    ('sqlite3_stmt*', aPtr)
     ('sqlite3_context*', aPtr)
     ('sqlite3_value*', aPtr)
     ('void*', aPtr)
+    ('sqlite3_stmt*', (v)=>
+      aPtr((v instanceof (sqlite3?.oo1?.Stmt || nilType))
+           ? v.pointer : v))
     ('sqlite3*', (v)=>
       aPtr((v instanceof (sqlite3?.oo1?.DB || nilType))
            ? v.pointer : v))
@@ -620,7 +622,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                           'encodings', 'fcntl', 'flock', 'ioCap',
                           'limits', 'openFlags',
                           'prepareFlags', 'resultCodes',
-                          'serialize', 'syncFlags', 'trace', 'udfFlags',
+                          'serialize', 'sqlite3Status',
+                          'stmtStatus', 'syncFlags',
+                          'trace', 'udfFlags',
                           'version' ];
     if(wasm.bigIntEnabled){
       defineGroups.push('vtab');

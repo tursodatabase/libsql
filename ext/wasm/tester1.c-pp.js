@@ -707,10 +707,10 @@ self.sqlite3InitModule = sqlite3InitModule;
             T.assert(12n===rc);
 
             w.scopedAllocCall(function(){
-              let pI1 = w.scopedAlloc(8), pI2 = pI1+4;
-              w.setMemValue(pI1, 0,'*')(pI2, 0, '*');
-              let f = w.xWrap('sqlite3_wasm_test_int64_minmax',undefined,['i64*','i64*']);
-              let r1 = w.getMemValue(pI1, 'i64'), r2 = w.getMemValue(pI2, 'i64');
+              const pI1 = w.scopedAlloc(8), pI2 = pI1+4;
+              w.setPtrValue([pI1, pI2], 0);
+              const f = w.xWrap('sqlite3_wasm_test_int64_minmax',undefined,['i64*','i64*']);
+              const [r1, r2] = w.getMemValue([pI1, pI2], 'i64');
               T.assert(!Number.isSafeInteger(r1)).assert(!Number.isSafeInteger(r2));
             });
           }
@@ -1033,7 +1033,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         }
       };
       
-      T.assert(Number.isInteger(db.pointer))
+      T.assert(wasm.isPtr(db.pointer))
         .mustThrowMatching(()=>db.pointer=1, /read-only/)
         .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
         .assert('main'===db.dbName(0))
@@ -1078,7 +1078,28 @@ self.sqlite3InitModule = sqlite3InitModule;
                                       0, 4096, 12);
           T.assert(0 === rc);
         }
-        }finally{
+        wasm.setPtrValue([pCur, pHi], 0);
+        let [vCur, vHi] = wasm.getPtrValue(pCur, pHi);
+        T.assert(0===vCur).assert(0===vHi);
+        rc = capi.sqlite3_status(capi.SQLITE_STATUS_MEMORY_USED,
+                                 pCur, pHi, 0);
+        [vCur, vHi] = wasm.getPtrValue([pCur, pHi]);
+        T.assert(vCur!==0).assert(vHi!==0);
+        [vCur, vHi] = wasm.getMemValue([vCur, vHi], 'i32');
+        T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
+        if(wasm.bigIntEnabled){
+          // Again in 64-bit. Recall that pCur and pHi are allocated
+          // large enough to account for this re-use.
+          wasm.setPtrValue([pCur, pHi], 0)
+            .setMemValue([vCur, vHi], 0, 'i64');
+          rc = capi.sqlite3_status64(capi.SQLITE_STATUS_MEMORY_USED,
+                                     pCur, pHi, 0);
+          [vCur, vHi] = wasm.getPtrValue([pCur, pHi]);
+          T.assert(vCur!==0).assert(vHi!==0);
+          [vCur, vHi] = wasm.getMemValue([vCur, vHi], 'i64');
+          T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
+        }
+      }finally{
         wasm.pstack.restore(stack);
       }
     })
@@ -1090,9 +1111,13 @@ self.sqlite3InitModule = sqlite3InitModule;
       );
       //debug("statement =",st);
       try {
-        T.assert(Number.isInteger(st.pointer))
+        T.assert(wasm.isPtr(st.pointer))
           .mustThrowMatching(()=>st.pointer=1, /read-only/)
           .assert(1===this.db.openStatementCount())
+          .assert(
+            capi.sqlite3_stmt_status(
+              st, capi.SQLITE_STMTSTATUS_RUN, 0
+            ) === 0)
           .assert(!st._mayGet)
           .assert('a' === st.getColumnName(0))
           .assert(1===st.columnCount)
@@ -1118,7 +1143,11 @@ self.sqlite3InitModule = sqlite3InitModule;
           .assert(st._mayGet)
           .assert(false===st.step())
           .assert(!st._mayGet)
-        ;
+          .assert(
+            capi.sqlite3_stmt_status(
+              st, capi.SQLITE_STMTSTATUS_RUN, 0
+            ) > 0);
+
         T.assert(0===capi.sqlite3_strglob("*.txt", "foo.txt")).
           assert(0!==capi.sqlite3_strglob("*.txt", "foo.xtx")).
           assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).
@@ -1681,8 +1710,7 @@ self.sqlite3InitModule = sqlite3InitModule;
             const pMin = w.scopedAlloc(16);
             const pMax = pMin + 8;
             const g64 = (p)=>w.getMemValue(p,ptrType64);
-            w.setMemValue(pMin, 0, ptrType64);
-            w.setMemValue(pMax, 0, ptrType64);
+            w.setMemValue([pMin, pMax], 0, ptrType64);
             const minMaxI64 = [
               w.xCall('sqlite3_wasm_test_int64_min'),
               w.xCall('sqlite3_wasm_test_int64_max')
