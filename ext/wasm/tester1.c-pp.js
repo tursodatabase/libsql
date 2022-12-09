@@ -1084,8 +1084,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         rc = capi.sqlite3_status(capi.SQLITE_STATUS_MEMORY_USED,
                                  pCur, pHi, 0);
         [vCur, vHi] = wasm.getPtrValue([pCur, pHi]);
-        T.assert(vCur!==0).assert(vHi!==0);
-        [vCur, vHi] = wasm.getMemValue([vCur, vHi], 'i32');
+        //console.warn("i32 vCur,vHi",vCur,vHi);
         T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
         if(wasm.bigIntEnabled){
           // Again in 64-bit. Recall that pCur and pHi are allocated
@@ -1094,9 +1093,8 @@ self.sqlite3InitModule = sqlite3InitModule;
             .setMemValue([vCur, vHi], 0, 'i64');
           rc = capi.sqlite3_status64(capi.SQLITE_STATUS_MEMORY_USED,
                                      pCur, pHi, 0);
-          [vCur, vHi] = wasm.getPtrValue([pCur, pHi]);
-          T.assert(vCur!==0).assert(vHi!==0);
-          [vCur, vHi] = wasm.getMemValue([vCur, vHi], 'i64');
+          [vCur, vHi] = wasm.getMemValue([pCur, pHi], 'i64');
+          //console.warn("i64 vCur,vHi",vCur,vHi);
           T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
         }
       }finally{
