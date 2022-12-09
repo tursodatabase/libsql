@@ -169,7 +169,6 @@ typedef struct VdbeOpList VdbeOpList;
 ** Additional non-public SQLITE_PREPARE_* flags
 */
 #define SQLITE_PREPARE_SAVESQL  0x80  /* Preserve SQL text */
-#define SQLITE_PREPARE_SAFEOPT  0x40  /* Use only safe optimizations */
 #define SQLITE_PREPARE_MASK     0x0f  /* Mask of public flags */
 
 /*

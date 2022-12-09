@@ -3466,6 +3466,7 @@ struct Select {
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
 #define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
+#define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
 
 /* True if S exists and has SF_NestedFrom */
 #define IsNestedFrom(S) ((S)!=0 && ((S)->selFlags&SF_NestedFrom)!=0)

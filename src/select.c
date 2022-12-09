@@ -6878,7 +6878,7 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 **               (ii) There is nothing that would prevent the subquery from
 **                    being used as the outer loop if the sqlite3WhereBegin()
 **                    routine nominates it to that position.
-**              (iii) The SQLITE_PREPARE_SAFEOPT flag is not set
+**              (iii) The query is not a UPDATE ... FROM
 **    (2)  The subquery is not a CTE that should be materialized because of
 **         the AS MATERIALIZED keywords
 **    (3)  The subquery is not part of a left operand for a RIGHT JOIN
@@ -6888,7 +6888,8 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
 static int fromClauseTermCanBeCoroutine(
   Parse *pParse,          /* Parsing context */
   SrcList *pTabList,      /* FROM clause */
-  int i                   /* Which term of the FROM clause holds the subquery */
+  int i,                  /* Which term of the FROM clause holds the subquery */
+  int selFlags            /* Flags on the SELECT statement */
 ){
   SrcItem *pItem = &pTabList->a[i];
   if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ) return 0;/* (2) */
@@ -6900,10 +6901,10 @@ static int fromClauseTermCanBeCoroutine(
   if( i==0 ){
     if( pTabList->nSrc==1 ) return 1;                             /* (1a) */
     if( pTabList->a[1].fg.jointype & JT_CROSS ) return 1;         /* (1b) */
-    if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;    /* (1c-iii) */
+    if( selFlags & SF_UpdateFrom )              return 0;         /* (1c-iii) */
     return 1;
   }
-  if( pParse->prepFlags & SQLITE_PREPARE_SAFEOPT ) return 0;      /* (1c-iii) */
+  if( selFlags & SF_UpdateFrom ) return 0;                        /* (1c-iii) */
   while( 1 /*exit-by-break*/ ){
     if( pItem->fg.jointype & (JT_OUTER|JT_CROSS)  ) return 0;     /* (1c-ii) */
     if( i==0 ) break;
@@ -7302,7 +7303,7 @@ int sqlite3Select(
 
     /* Generate code to implement the subquery
     */
-    if( fromClauseTermCanBeCoroutine(pParse, pTabList, i) ){
+    if( fromClauseTermCanBeCoroutine(pParse, pTabList, i, p->selFlags) ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
       */
