@@ -197,8 +197,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try {
           let aVals = [], aNames = [], i = 0, offset = 0;
           for( ; i < nCols; offset += (wasm.ptrSizeof * ++i) ){
-            aVals.push( wasm.cstrToJs(wasm.getPtrValue(pColVals + offset)) );
-            aNames.push( wasm.cstrToJs(wasm.getPtrValue(pColNames + offset)) );
+            aVals.push( wasm.cstrToJs(wasm.peekPtr(pColVals + offset)) );
+            aNames.push( wasm.cstrToJs(wasm.peekPtr(pColNames + offset)) );
           }
           rc = callback(pVoid, nCols, aVals, aNames) | 0;
           /* The first 2 args of the callback are useless for JS but
@@ -294,7 +294,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       let i, pVal, valType, arg;
       const tgt = [];
       for(i = 0; i < argc; ++i){
-        pVal = wasm.getPtrValue(pArgv + (wasm.ptrSizeof * i));
+        pVal = wasm.peekPtr(pArgv + (wasm.ptrSizeof * i));
         /**
            Curiously: despite ostensibly requiring 8-byte
            alignment, the pArgv array is parcelled into chunks of
@@ -693,7 +693,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             pstack = wasm.pstack;
 
       const kvvfsStorage = (zClass)=>
-            ((115/*=='s'*/===wasm.getMemValue(zClass))
+            ((115/*=='s'*/===wasm.peek(zClass))
              ? sessionStorage : localStorage);
 
       /**
@@ -717,13 +717,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                     C-string's byte length. */;
             if(nBuf<=0) return nV;
             else if(1===nBuf){
-              wasm.setMemValue(zBuf, 0);
+              wasm.poke(zBuf, 0);
               return nV;
             }
             const zV = wasm.scopedAllocCString(jV);
             if(nBuf > nV + 1) nBuf = nV + 1;
             wasm.heap8u().copyWithin(zBuf, zV, zV + nBuf - 1);
-            wasm.setMemValue(zBuf + nBuf - 1, 0);
+            wasm.poke(zBuf + nBuf - 1, 0);
             return nBuf - 1;
           }catch(e){
             console.error("kvstorageRead()",e);

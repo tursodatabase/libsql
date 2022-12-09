@@ -586,7 +586,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        It returns its result and compiled statement as documented in
        the C API. Fetching the output pointers (5th and 6th
-       parameters) requires using `capi.wasm.getMemValue()` (or
+       parameters) requires using `capi.wasm.peek()` (or
        equivalent) and the `pzTail` will point to an address relative to
        the `sqlAsPointer` value.
 
@@ -1121,7 +1121,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      space managed by Emscripten's stack-management, so does not
      collide with Emscripten-provided stack allocation APIs. The
      memory lives in the WASM heap and can be used with routines such
-     as wasm.setMemValue() and any wasm.heap8u().slice().
+     as wasm.poke() and any wasm.heap8u().slice().
   */
   wasm.pstack = Object.assign(Object.create(null),{
     /**
@@ -1180,7 +1180,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
        When a returned pointers will refer to a 64-bit value, e.g. a
        double or int64, and that value must be written or fetched,
-       e.g. using wasm.setMemValue() or wasm.getMemValue(), it is
+       e.g. using wasm.poke() or wasm.peek(), it is
        important that the pointer in question be aligned to an 8-byte
        boundary or else it will not be fetched or written properly and
        will corrupt or read neighboring memory.
@@ -1413,8 +1413,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         toss3("Database serialization failed with code",
              sqlite3.capi.sqlite3_js_rc_str(rc));
       }
-      pOut = wasm.getPtrValue(ppOut);
-      const nOut = wasm.getMemValue(pSize, 'i64');
+      pOut = wasm.peekPtr(ppOut);
+      const nOut = wasm.peek(pSize, 'i64');
       rc = nOut
         ? wasm.heap8u().slice(pOut, pOut + Number(nOut))
         : new Uint8Array();

@@ -386,7 +386,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       */
       create: (ppOut)=>{
         const rc = __xWrap();
-        wasm.setPtrValue(ppOut, rc.pointer);
+        wasm.pokePtr(ppOut, rc.pointer);
         return rc;
       },
       /**
@@ -544,7 +544,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      implementations. It must be passed the final argument to one of
      those methods (an output pointer to an int64 row ID) and the
      value to store at the output pointer's address. Returns the same
-     as wasm.setMemValue() and will throw if the 1st or 2nd arguments
+     as wasm.poke() and will throw if the 1st or 2nd arguments
      are invalid for that function.
 
      Example xRowid impl:
@@ -557,7 +557,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      };
      ```
   */
-  vtab.xRowid = (ppRowid64, value)=>wasm.setMemValue(ppRowid64, value, 'i64');
+  vtab.xRowid = (ppRowid64, value)=>wasm.poke(ppRowid64, value, 'i64');
 
   /**
      A helper to initialize and set up an sqlite3_module object for
@@ -650,8 +650,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               try{return func(...arguments) || 0}
               catch(e){
                 if(!(e instanceof sqlite3.WasmAllocError)){
-                  wasm.dealloc(wasm.getPtrValue(pzErr));
-                  wasm.setPtrValue(pzErr, wasm.allocCString(e.message));
+                  wasm.dealloc(wasm.peekPtr(pzErr));
+                  wasm.pokePtr(pzErr, wasm.allocCString(e.message));
                 }
                 return vtab.xError(methodName, e);
               }

@@ -156,7 +156,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     try {
       const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
       let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
-      pDb = wasm.getPtrValue(pPtr);
+      pDb = wasm.peekPtr(pPtr);
       checkSqlite3Rc(pDb, rc);
       if(flagsStr.indexOf('t')>=0){
         capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
@@ -636,7 +636,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try{
         ppStmt = wasm.pstack.alloc(8)/* output (sqlite3_stmt**) arg */;
         DB.checkRc(this, capi.sqlite3_prepare_v2(this.pointer, sql, -1, ppStmt, null));
-        pStmt = wasm.getPtrValue(ppStmt);
+        pStmt = wasm.peekPtr(ppStmt);
       }
       finally {
         wasm.pstack.restore(stack);
@@ -816,8 +816,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const pSqlEnd = pSql + sqlByteLen;
         if(isTA) wasm.heap8().set(arg.sql, pSql);
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
-        wasm.setMemValue(pSql + sqlByteLen, 0/*NUL terminator*/);
-        while(pSql && wasm.getMemValue(pSql, 'i8')
+        wasm.poke(pSql + sqlByteLen, 0/*NUL terminator*/);
+        while(pSql && wasm.peek(pSql, 'i8')
               /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
                  doing is checking for a terminating NUL byte. If we
@@ -825,12 +825,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  around the NUL terminator, and get stuck in and
                  endless loop at the end of the SQL, endlessly
                  re-preparing an empty statement. */ ){
-          wasm.setPtrValue([ppStmt, pzTail], 0);
+          wasm.pokePtr([ppStmt, pzTail], 0);
           DB.checkRc(this, capi.sqlite3_prepare_v3(
             this.pointer, pSql, sqlByteLen, 0, ppStmt, pzTail
           ));
-          const pStmt = wasm.getPtrValue(ppStmt);
-          pSql = wasm.getPtrValue(pzTail);
+          const pStmt = wasm.peekPtr(ppStmt);
+          pSql = wasm.peekPtr(pzTail);
           sqlByteLen = pSqlEnd - pSql;
           if(!pStmt) continue;
           if(Array.isArray(opt.saveSql)){
