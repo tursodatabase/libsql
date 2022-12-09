@@ -1268,7 +1268,7 @@ const installOpfsVfs = function callee(options){
               and has finished initializing, so the real work can
               begin...*/
             try {
-              sqlite3.VfsHelper.installVfs({
+              sqlite3.vfs.installVfs({
                 io: {struct: opfsIoMethods, methods: ioSyncWrappers},
                 vfs: {struct: opfsVfs, methods: vfsSyncWrappers}
               });

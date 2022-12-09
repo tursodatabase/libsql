@@ -17,10 +17,10 @@
 'use strict';
 self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
-  const vh = Object.create(null), vt = Object.create(null);
+  const vfs = Object.create(null), vtab = Object.create(null);
 
-  sqlite3.VfsHelper = vh;
-  sqlite3.VtabHelper = vt;
+  sqlite3.vfs = vfs;
+  sqlite3.vtab = vtab;
 
   const sii = capi.sqlite3_index_info;
   /**
@@ -78,15 +78,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      on the slightest hint of error, e.g. tgt is-not-a StructType,
      name does not map to a struct-bound member, etc.
 
-     As a special case, if the given function is a pointer, it is
-     assumed to be an existing WASM-bound function pointer and is used
-     as-is with no extra level of proxying or cleanup. Results are
-     undefined if it's a pointer and it's _not_ a function pointer.
-     It is legal to pass a value of 0, indicating a NULL pointer, with
-     the caveat that 0 _is_ a legal function pointer in WASM but it
-     will not be accepted as such _here_. (Justification: the function
-     at address zero must be one which initially came from the WASM
-     module, not a method we want to bind to a virtual table or VFS.)
+     As a special case, if the given function is a pointer, then
+     `wasm.functionEntry()` is used to validate that it is a known
+     function. If so, it is used as-is with no extra level of proxying
+     or cleanup, else an exception is thrown. It is legal to pass a
+     value of 0, indicating a NULL pointer, with the caveat that 0
+     _is_ a legal function pointer in WASM but it will not be accepted
+     as such _here_. (Justification: the function at address zero must
+     be one which initially came from the WASM module, not a method we
+     want to bind to a virtual table or VFS.)
 
      This function returns a proxy for itself which is bound to tgt
      and takes 2 args (name,func). That function returns the same
@@ -109,7 +109,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      for dev-time usage for sanity checking, and will leave the C
      environment in an undefined state.
   */
-  vh.installMethod = vt.installMethod = function callee(
+  const installMethod = function callee(
     tgt, name, func, applyArgcCheck = callee.installMethodArgcCheck
   ){
     if(!(tgt instanceof sqlite3.StructBinder.StructType)){
@@ -169,8 +169,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }else{
       const pFunc = wasm.installFunction(fProxy, tgt.memberSignature(name, true));
       tgt[memKey] = pFunc;
-      if(!tgt.ondispose) tgt.ondispose = [];
-      else if(!Array.isArray(tgt.ondispose)) tgt.ondispose = [tgt.ondispose];
       if(!tgt.ondispose || !tgt.ondispose.__removeFuncList){
         tgt.addOnDispose('ondispose.__removeFuncList handler',
                          callee.removeFuncList);
@@ -180,7 +178,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     return (n,f)=>callee(tgt, n, f, applyArgcCheck);
   }/*installMethod*/;
-  vh.installMethod.installMethodArgcCheck = false;
+  installMethod.installMethodArgcCheck = false;
 
   /**
      Installs methods into the given StructType-type instance. Each
@@ -197,45 +195,69 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      accommodate special handling of sqlite3_module::xConnect and
      xCreate methods.
 
-     On success, returns this object. Throws on error.
+     On success, returns its first argument. Throws on error.
   */
-  vh.installMethods = vt.installMethods = function(
-    structType, methods, applyArgcCheck = vh.installMethod.installMethodArgcCheck
+  const installMethods = function(
+    structInstance, methods, applyArgcCheck = installMethod.installMethodArgcCheck
   ){
     const seen = new Map /* map of <Function, memberName> */;
     for(const k of Object.keys(methods)){
       const m = methods[k];
       const prior = seen.get(m);
       if(prior){
-        const mkey = structType.memberKey(k);
-        structType[mkey] = structType[structType.memberKey(prior)];
+        const mkey = structInstance.memberKey(k);
+        structInstance[mkey] = structInstance[structInstance.memberKey(prior)];
       }else{
-        vh.installMethod(structType, k, m, applyArgcCheck);
+        installMethod(structInstance, k, m, applyArgcCheck);
         seen.set(m, k);
       }
     }
-    return this;
+    return structInstance;
   };
 
   /**
-     Uses sqlite3_vfs_register() to register the
-     sqlite3.capi.sqlite3_vfs-type vfs, which must have already been
-     filled out properly. If the 2nd argument is truthy, the VFS is
+     Equivalent to calling installMethod(this,...arguments) with a
+     first argument of this object. If called with 1 or 2 arguments
+     and the first is an object, it's instead equivalent to calling
+     installMethods(this,...arguments).
+  */
+  sqlite3.StructBinder.StructType.prototype.installMethod = function callee(
+    name, func, applyArgcCheck = installMethod.installMethodArgcCheck
+  ){
+    return (arguments.length < 3 && name && 'object'===typeof name)
+      ? installMethods(this, ...arguments)
+      : installMethod(this, ...arguments);
+  };
+
+  /**
+     Equivalent to calling installMethods() with a first argument
+     of this object.
+  */
+  sqlite3.StructBinder.StructType.prototype.installMethods = function(
+    methods, applyArgcCheck = installMethod.installMethodArgcCheck
+  ){
+    return installMethods(this, methods, applyArgcCheck);
+  };
+
+  /**
+     Uses sqlite3_vfs_register() to register this
+     sqlite3.capi.sqlite3_vfs. This object must have already been
+     filled out properly. If the first argument is truthy, the VFS is
      registered as the default VFS, else it is not.
 
      On success, returns this object. Throws on error.
   */
-  vh.registerVfs = function(vfs, asDefault=false){
-    if(!(vfs instanceof sqlite3.capi.sqlite3_vfs)){
+  capi.sqlite3_vfs.prototype.registerVfs = function(asDefault=false){
+    if(!(this instanceof sqlite3.capi.sqlite3_vfs)){
       toss("Expecting a sqlite3_vfs-type argument.");
     }
-    const rc = capi.sqlite3_vfs_register(vfs.pointer, asDefault ? 1 : 0);
+    const rc = capi.sqlite3_vfs_register(this, asDefault ? 1 : 0);
     if(rc){
-      toss("sqlite3_vfs_register(",vfs,") failed with rc",rc);
+      toss("sqlite3_vfs_register(",this,") failed with rc",rc);
     }
-    if(vfs.pointer !== capi.sqlite3_vfs_find(vfs.$zName)){
+    if(this.pointer !== capi.sqlite3_vfs_find(this.$zName)){
       toss("BUG: sqlite3_vfs_find(vfs.$zName) failed for just-installed VFS",
-           vfs);
+           this);
     }
     return this;
   };
@@ -260,13 +282,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      For each of those object, this function passes its (`struct`,
      `methods`, (optional) `applyArgcCheck`) properties to
-     this.installMethods().
+     installMethods().
 
      If the `vfs` entry is set then:
 
-     - Its `struct` property is passed to this.registerVfs(). The
+     - Its `struct` property's registerVfs() is called. The
        `vfs` entry may optionally have an `asDefault` property, which
-       gets passed as the 2nd argument to registerVfs().
+       gets passed as the argument to registerVfs().
 
      - If `struct.$zName` is falsy and the entry has a string-type
        `name` property, `struct.$zName` is set to the C-string form of
@@ -274,21 +296,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      On success returns this object. Throws on error.
   */
-  vh.installVfs = function(opt){
+  vfs.installVfs = function(opt){
     let count = 0;
     const propList = ['io','vfs'];
     for(const key of propList){
       const o = opt[key];
       if(o){
         ++count;
-        this.installMethods(o.struct, o.methods, !!o.applyArgcCheck);
+        installMethods(o.struct, o.methods, !!o.applyArgcCheck);
         if('vfs'===key){
           if(!o.struct.$zName && 'string'===typeof o.name){
             o.struct.addOnDispose(
               o.struct.$zName = wasm.allocCString(o.name)
             );
           }
-          this.registerVfs(o.struct, !!o.asDefault);
+          o.struct.registerVfs(!!o.asDefault);
         }
       }
     }
@@ -305,7 +327,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      as sqlite3_create_function_v2() and friends. Throws on error,
      e.g. if it cannot figure out a sensible data conversion.
   */
-  vt.sqlite3ValuesToJs = capi.sqlite3_create_function_v2.udfConvertArgs;
+  vtab.sqlite3ValuesToJs = capi.sqlite3_create_function_v2.udfConvertArgs;
 
   /**
      Internal factory function for xVtab and xCursor impls.
@@ -414,7 +436,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      The API docs are in the API-internal StructPtrMapper().
   */
-  vt.xVtab = StructPtrMapper('xVtab', capi.sqlite3_vtab);
+  vtab.xVtab = StructPtrMapper('xVtab', capi.sqlite3_vtab);
 
   /**
      A lifetime-management object for mapping `sqlite3_vtab_cursor*`
@@ -423,7 +445,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      The API docs are in the API-internal StructPtrMapper().
   */
-  vt.xCursor = StructPtrMapper('xCursor', capi.sqlite3_vtab_cursor);
+  vtab.xCursor = StructPtrMapper('xCursor', capi.sqlite3_vtab_cursor);
 
   /**
      Convenience form of creating an sqlite3_index_info wrapper,
@@ -432,7 +454,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      before returning. Though not _strictly_ required, as that object
      does not own the pIdxInfo memory, it is nonetheless good form.
   */
-  vt.xIndexInfo = (pIdxInfo)=>new capi.sqlite3_index_info(pIdxInfo);
+  vtab.xIndexInfo = (pIdxInfo)=>new capi.sqlite3_index_info(pIdxInfo);
 
   /**
      Given an error object, this function returns
@@ -451,7 +473,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      }
      ```
   */
-  /**vh.exceptionToRc = vt.exceptionToRc =
+  /**vfs.exceptionToRc = vtab.exceptionToRc =
     (e, defaultRc=capi.SQLITE_ERROR)=>(
       (e instanceof sqlite3.WasmAllocError)
         ? capi.SQLITE_NOMEM
@@ -490,7 +512,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      order to report the error, else the error is not reported.
      If that function throws, that exception is ignored.
   */
-  vt.xError = function f(methodName, err, defaultRc){
+  vtab.xError = function f(methodName, err, defaultRc){
     if(f.errorReporter instanceof Function){
       try{f.errorReporter("sqlite3_module::"+methodName+"(): "+err.message);}
       catch(e){/*ignored*/}
@@ -501,7 +523,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     else if(err instanceof sqlite3.SQLite3Error) rc = err.resultCode;
     return rc || capi.SQLITE_ERROR;
   };
-  vt.xError.errorReporter = 1 ? console.error.bind(console) : false;
+  vtab.xError.errorReporter = 1 ? console.error.bind(console) : false;
 
   /**
      "The problem" with this is that it introduces an outer function with
@@ -510,10 +532,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      xConnect) may have call-specific error handling. It would be a shame to
      hard-coded that per-method support in this function.
   */
-  /** vt.methodCatcher = function(methodName, method, defaultErrRc=capi.SQLITE_ERROR){
+  /** vtab.methodCatcher = function(methodName, method, defaultErrRc=capi.SQLITE_ERROR){
     return function(...args){
       try { method(...args); }
-      }catch(e){ return vt.xError(methodName, e, defaultRc) }
+      }catch(e){ return vtab.xError(methodName, e, defaultRc) }
   };
   */
 
@@ -534,10 +556,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      };
      ```
   */
-  vt.xRowid = (ppRowid64, value)=>wasm.setMemValue(ppRowid64, value, 'i64');
+  vtab.xRowid = (ppRowid64, value)=>wasm.setMemValue(ppRowid64, value, 'i64');
 
   /**
-     A helper to initialize and set up an sqlite3_module() object for
+     A helper to initialize and set up an sqlite3_module object for
      later installation into individual databases using
      sqlite3_create_module(). Requires an object with the following
      properties:
@@ -556,8 +578,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        string to the exception's error string.
 
      - OPTIONAL `struct`: a sqlite3.capi.sqlite3_module() instance. If
-       not set, one will be created automatically and (on success)
-       added to the object.
+       not set, one will be created automatically. If the current
+       "this" is-a sqlite3_module then it is unconditionally used in
+       place of `struct`.
 
      - OPTIONAL `iVersion`: if set, it must be an integer value and it
        gets assigned to the `$iVersion` member of the struct object.
@@ -599,35 +622,44 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      active, the method implementations must explicitly return integer
      values.
 
-     Throws on error. Returns the opt.struct sqlite3_module object on
-     success.
+     Throws on error. On success, returns the sqlite3_module object
+     (`this` or `opt.struct` or a new sqlite3_module instance,
+     depending on how it's called).
   */
-  vt.setupModule = function(opt){
-    const mod = opt.struct || new capi.sqlite3_module();
+  vtab.setupModule = function(opt){
+    let createdMod = false;
+    const mod = (this instanceof capi.sqlite3_module)
+          ? this : (opt.struct || (createdMod = new capi.sqlite3_module()));
     try{
       const methods = opt.methods || toss("Missing 'methods' object.");
-      if(true===methods.xConnect) methods.xConnect = methods.xCreate;
-      else if(true===methods.xCreate) methods.xCreate = methods.xConnect;
-      if(true===methods.xDisconnect) methods.xDisconnect = methods.xDestroy;
-      else if(true===methods.xDestroy) methods.xDestroy = methods.xDisconnect;
+      for(const e of Object.entries({
+        // -----^ ==> [k,v] triggers a broken code transformation in
+        // some versions of the emsdk toolchain.
+        xConnect: 'xCreate', xDisconnect: 'xDestroy'
+      })){
+        // Remap X=true to X=Y for certain X/Y combinations
+        const k = e[0], v = e[1];
+        if(true === methods[k]) methods[k] = methods[v];
+        else if(true === methods[v]) methods[v] = methods[k];
+      }
       if(opt.catchExceptions){
         const fwrap = function(methodName, func){
           if(['xConnect','xCreate'].indexOf(methodName) >= 0){
             return function(pDb, pAux, argc, argv, ppVtab, pzErr){
-              try{return func(...arguments) || 0;}
+              try{return func(...arguments) || 0}
               catch(e){
                 if(!(e instanceof sqlite3.WasmAllocError)){
                   wasm.dealloc(wasm.getPtrValue(pzErr));
                   wasm.setPtrValue(pzErr, wasm.allocCString(e.message));
                 }
-                return vt.xError(methodName, e);
+                return vtab.xError(methodName, e);
               }
             };
           }else{
             return function(...args){
-              try{return func(...args) || 0;}
+              try{return func(...args) || 0}
               catch(e){
-                return vt.xError(methodName, e);
+                return vtab.xError(methodName, e);
               }
             };
           }
@@ -652,11 +684,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             remethods[k] = fwrap(k, m);
           }
         }
-        this.installMethods(mod, remethods, false);
+        installMethods(mod, remethods, false);
       }else{
         // No automatic exception handling. Trust the client
         // to not throw.
-        this.installMethods(
+        installMethods(
           mod, methods, !!opt.applyArgcCheck/*undocumented option*/
         );
       }
@@ -669,10 +701,17 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         mod.$iVersion = v;
       }
     }catch(e){
-      if(!opt.struct) mod.dispose();
+      if(createdMod) createdMod.dispose();
       throw e;
     }
-    if(!opt.struct) opt.struct = mod;
     return mod;
   }/*setupModule()*/;
+
+  /**
+     Equivalent to calling vtab.setupModule() with this sqlite3_module
+     object as the call's `this`.
+  */
+  capi.sqlite3_module.prototype.setupModule = function(opt){
+    return vtab.setupModule.call(this, opt);
+  };
 }/*sqlite3ApiBootstrap.initializers.push()*/);
