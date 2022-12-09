@@ -1549,18 +1549,19 @@ self.WhWasmUtilInstaller = function(target){
     /*Verify the arg type conversions are valid...*/;
     if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
     argTypes.forEach(__xArgAdapterCheck);
+    const cxw = cache.xWrap;
     if(0===xf.length){
       // No args to convert, so we can create a simpler wrapper...
       return (...args)=>(args.length
                          ? __argcMismatch(fname, xf.length)
-                         : cache.xWrap.convertResult(resultType, xf.call(null)));
+                         : cxw.convertResult(resultType, xf.call(null)));
     }
     return function(...args){
       if(args.length!==xf.length) __argcMismatch(fname, xf.length);
       const scope = target.scopedAllocPush();
       try{
-        const rc = xf.apply(null,args.map((v,i)=>cache.xWrap.convertArg(argTypes[i], v)));
-        return cache.xWrap.convertResult(resultType, rc);
+        for(const i in args) args[i] = cxw.convertArg(argTypes[i], args[i]);
+        return cxw.convertResult(resultType, xf.apply(null,args));
       }finally{
         target.scopedAllocPop(scope);
       }
