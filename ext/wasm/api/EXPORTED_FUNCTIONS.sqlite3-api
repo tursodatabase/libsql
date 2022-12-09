@@ -79,6 +79,7 @@ _sqlite3_result_int
 _sqlite3_result_int64
 _sqlite3_result_null
 _sqlite3_result_pointer
+_sqlite3_result_subtype
 _sqlite3_result_text
 _sqlite3_result_zeroblob
 _sqlite3_result_zeroblob64
@@ -107,12 +108,15 @@ _sqlite3_user_data
 _sqlite3_value_blob
 _sqlite3_value_bytes
 _sqlite3_value_double
+_sqlite3_value_dup
+_sqlite3_value_free
 _sqlite3_value_frombind
 _sqlite3_value_int
 _sqlite3_value_int64
 _sqlite3_value_nochange
 _sqlite3_value_numeric_type
 _sqlite3_value_pointer
+_sqlite3_value_subtype
 _sqlite3_value_text
 _sqlite3_value_type
 _sqlite3_vfs_find

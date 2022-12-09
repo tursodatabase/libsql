@@ -126,6 +126,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     wasm.xWrap.resultAdapter('sqlite3*', rPtr)
     ('sqlite3_context*', rPtr)
     ('sqlite3_stmt*', rPtr)
+    ('sqlite3_value*', rPtr)
     ('sqlite3_vfs*', rPtr)
     ('void*', rPtr);
 
