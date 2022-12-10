@@ -320,16 +320,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Expects to be passed the (argc,argv) arguments of
-     sqlite3_module::xFilter(), or an equivalent API.  This function
-     transforms the arguments (an array of (sqlite3_value*)) into a JS
-     array of equivalent JS values. It uses the same type conversions
-     as sqlite3_create_function_v2() and friends. Throws on error,
-     e.g. if it cannot figure out a sensible data conversion.
-  */
-  vtab.sqlite3ValuesToJs = capi.sqlite3_create_function_v2.udfConvertArgs;
-
-  /**
      Internal factory function for xVtab and xCursor impls.
   */
   const __xWrapFactory = function(methodName,StructType){
@@ -401,6 +391,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          sqlite3_vtab_cursor: to be called from any sqlite3_module methods
          which take a `sqlite3_vtab_cursor*` argument except xClose(),
          in which case use unget() or dispose().
+
+         Rule to remember: _never_ call dispose() on an instance
+         returned by this function.
       */
       get: (pCObj)=>__xWrap(pCObj),
       /**
@@ -416,6 +409,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
          sqlite3_vtab_cursor: to be called from xClose() or during
          cleanup in a failed xOpen().
+
+         Calling this method obligates the caller to call dispose() on
+         the returned object when they're done with it.
       */
       unget: (pCObj)=>__xWrap(pCObj,true),
       /**

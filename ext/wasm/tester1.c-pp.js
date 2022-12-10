@@ -1388,60 +1388,65 @@ self.sqlite3InitModule = sqlite3InitModule;
     }/*sqlite3_js_vfs_create_file()*/)
 
   ////////////////////////////////////////////////////////////////////
-    .t('Scalar UDFs', function(sqlite3){
-      const db = this.db;
-      db.createFunction("foo",(pCx,a,b)=>a+b);
-      T.assert(7===db.selectValue("select foo(3,4)")).
-        assert(5===db.selectValue("select foo(3,?)",2)).
-        assert(5===db.selectValue("select foo(?,?2)",[1,4])).
-        assert(5===db.selectValue("select foo($a,$b)",{$a:0,$b:5}));
-      db.createFunction("bar", {
-        arity: -1,
-        xFunc: (pCx,...args)=>{
-          let rc = 0;
-          for(const v of args) rc += v;
-          return rc;
-        }
-      }).createFunction({
-        name: "asis",
-        xFunc: (pCx,arg)=>arg
-      });
-      T.assert(0===db.selectValue("select bar()")).
-        assert(1===db.selectValue("select bar(1)")).
-        assert(3===db.selectValue("select bar(1,2)")).
-        assert(-1===db.selectValue("select bar(1,2,-4)")).
-        assert('hi' === db.selectValue("select asis('hi')")).
-        assert('hi' === db.selectValue("select ?",'hi')).
-        assert(null === db.selectValue("select null")).
-        assert(null === db.selectValue("select asis(null)")).
-        assert(1 === db.selectValue("select ?",1)).
-        assert(2 === db.selectValue("select ?",[2])).
-        assert(3 === db.selectValue("select $a",{$a:3})).
-        assert(T.eqApprox(3.1,db.selectValue("select 3.0 + 0.1"))).
-        assert(T.eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")));
+    .t({
+      name:'Scalar UDFs',
+      //predicate: ()=>false,
+      test: function(sqlite3){
+        const db = this.db;
+        db.createFunction("foo",(pCx,a,b)=>a+b);
+        T.assert(7===db.selectValue("select foo(3,4)")).
+          assert(5===db.selectValue("select foo(3,?)",2)).
+          assert(5===db.selectValue("select foo(?,?2)",[1,4])).
+          assert(5===db.selectValue("select foo($a,$b)",{$a:0,$b:5}));
+        db.createFunction("bar", {
+          arity: -1,
+          xFunc: (pCx,...args)=>{
+            let rc = 0;
+            for(const v of args) rc += v;
+            return rc;
+          }
+        }).createFunction({
+          name: "asis",
+          xFunc: (pCx,arg)=>arg
+        });
+        T.assert(0===db.selectValue("select bar()")).
+          assert(1===db.selectValue("select bar(1)")).
+          assert(3===db.selectValue("select bar(1,2)")).
+          assert(-1===db.selectValue("select bar(1,2,-4)")).
+          assert('hi' === db.selectValue("select asis('hi')")).
+          assert('hi' === db.selectValue("select ?",'hi')).
+          assert(null === db.selectValue("select null")).
+          assert(null === db.selectValue("select asis(null)")).
+          assert(1 === db.selectValue("select ?",1)).
+          assert(2 === db.selectValue("select ?",[2])).
+          assert(3 === db.selectValue("select $a",{$a:3})).
+          assert(T.eqApprox(3.1,db.selectValue("select 3.0 + 0.1"))).
+          assert(T.eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")));
 
-      let blobArg = new Uint8Array([0x68, 0x69]);
-      let blobRc = db.selectValue("select asis(?1)", blobArg);
-      T.assert(blobRc instanceof Uint8Array).
-        assert(2 === blobRc.length).
-        assert(0x68==blobRc[0] && 0x69==blobRc[1]);
-      blobRc = db.selectValue("select asis(X'6869')");
-      T.assert(blobRc instanceof Uint8Array).
-        assert(2 === blobRc.length).
-        assert(0x68==blobRc[0] && 0x69==blobRc[1]);
+        let blobArg = new Uint8Array([0x68, 0x69]);
+        let blobRc = db.selectValue("select asis(?1)", blobArg);
+        T.assert(blobRc instanceof Uint8Array).
+          assert(2 === blobRc.length).
+          assert(0x68==blobRc[0] && 0x69==blobRc[1]);
+        blobRc = db.selectValue("select asis(X'6869')");
+        T.assert(blobRc instanceof Uint8Array).
+          assert(2 === blobRc.length).
+          assert(0x68==blobRc[0] && 0x69==blobRc[1]);
 
-      blobArg = new Int8Array([0x68, 0x69]);
-      //debug("blobArg=",blobArg);
-      blobRc = db.selectValue("select asis(?1)", blobArg);
-      T.assert(blobRc instanceof Uint8Array).
-        assert(2 === blobRc.length);
-      //debug("blobRc=",blobRc);
-      T.assert(0x68==blobRc[0] && 0x69==blobRc[1]);
+        blobArg = new Int8Array([0x68, 0x69]);
+        //debug("blobArg=",blobArg);
+        blobRc = db.selectValue("select asis(?1)", blobArg);
+        T.assert(blobRc instanceof Uint8Array).
+          assert(2 === blobRc.length);
+        //debug("blobRc=",blobRc);
+        T.assert(0x68==blobRc[0] && 0x69==blobRc[1]);
+      }
     })
 
   ////////////////////////////////////////////////////////////////////
     .t({
       name: 'Aggregate UDFs',
+      //predicate: ()=>false,
       test: function(sqlite3){
         const db = this.db;
         const sjac = capi.sqlite3_js_aggregate_context;
@@ -1512,6 +1517,7 @@ self.sqlite3InitModule = sqlite3InitModule;
     .t({
       name: 'Aggregate UDFs (64-bit)',
       predicate: ()=>wasm.bigIntEnabled,
+      //predicate: ()=>false,
       test: function(sqlite3){
         const db = this.db;
         const sjac = capi.sqlite3_js_aggregate_context;
@@ -1538,6 +1544,7 @@ self.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name: 'Window UDFs',
+      //predicate: ()=>false,
       test: function(){
         /* Example window function, table, and results taken from:
            https://sqlite.org/windowfunctions.html#udfwinfunc */
@@ -1856,7 +1863,6 @@ self.sqlite3InitModule = sqlite3InitModule;
             xEof: function(pCursor){
               const c = VT.xCursor.get(pCursor),
                     rc = c._rowId>=10;
-              c.dispose();
               return rc;
             },
             xFilter: function(pCursor, idxNum, idxCStr,
@@ -1864,10 +1870,9 @@ self.sqlite3InitModule = sqlite3InitModule;
               try{
                 const c = VT.xCursor.get(pCursor);
                 c._rowId = 0;
-                const list = VT.sqlite3ValuesToJs(argc, argv);
+                const list = capi.sqlite3_values_to_js(argc, argv);
                 T.assert(argc === list.length);
                 //log(argc,"xFilter value(s):",list);
-                c.dispose();
                 return 0;
               }catch(e){
                 return VT.xError('xFilter',e);
@@ -2044,7 +2049,7 @@ self.sqlite3InitModule = sqlite3InitModule;
               vtabTrace("xFilter",...arguments);
               const c = VT.xCursor.get(pCursor);
               c._rowId = 0;
-              const list = VT.sqlite3ValuesToJs(argc, argv);
+              const list = capi.sqlite3_values_to_js(argc, argv);
               T.assert(argc === list.length);
             },
             xBestIndex: function(pVtab, pIdxInfo){
