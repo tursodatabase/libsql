@@ -1066,7 +1066,7 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(0 === rc);
       const stack = wasm.pstack.pointer;
       try {
-        const [pCur, pHi] = wasm.pstack.allocPtr(2);
+        const [pCur, pHi] = wasm.pstack.allocChunks(2,8);
         rc = capi.sqlite3_db_status(this.db, capi.SQLITE_DBSTATUS_LOOKASIDE_USED,
                                     pCur, pHi, 0);
         T.assert(0===rc);
@@ -1078,19 +1078,18 @@ self.sqlite3InitModule = sqlite3InitModule;
                                       0, 4096, 12);
           T.assert(0 === rc);
         }
-        wasm.pokePtr([pCur, pHi], 0);
-        let [vCur, vHi] = wasm.peekPtr(pCur, pHi);
+        wasm.poke([pCur, pHi], 0, 'i32');
+        let [vCur, vHi] = wasm.peek([pCur, pHi], 'i32');
         T.assert(0===vCur).assert(0===vHi);
         rc = capi.sqlite3_status(capi.SQLITE_STATUS_MEMORY_USED,
                                  pCur, pHi, 0);
-        [vCur, vHi] = wasm.peekPtr([pCur, pHi]);
+        [vCur, vHi] = wasm.peek([pCur, pHi], 'i32');
         //console.warn("i32 vCur,vHi",vCur,vHi);
         T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
         if(wasm.bigIntEnabled){
           // Again in 64-bit. Recall that pCur and pHi are allocated
           // large enough to account for this re-use.
-          wasm.pokePtr([pCur, pHi], 0)
-            .poke([vCur, vHi], 0, 'i64');
+          wasm.poke([pCur, pHi], 0, 'i64');
           rc = capi.sqlite3_status64(capi.SQLITE_STATUS_MEMORY_USED,
                                      pCur, pHi, 0);
           [vCur, vHi] = wasm.peek([pCur, pHi], 'i64');

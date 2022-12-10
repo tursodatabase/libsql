@@ -1,5 +1,5 @@
-C Remove\stwo\sincorrect\scalls\sto\sstructType.dipose()\swhich\sprematurely\sfreed\sobjects\sin\suse\sby\sthe\svirtual\stable\stest/demo\scode.
-D 2022-12-10T15:41:47.936
+C Correct\swasm\sheap\scorruption\sintroduced\sin\stest\scode\sadded\sin\s[e144fd5c88fa4]\swhich\sled\sto\sunpredictable\sfailures.
+D 2022-12-10T17:20:29.850
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -555,7 +555,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js 44363db07b2a20e73b0eb1808de4400ca71b703af718d0fa6d962f15e73bf2ac
 F ext/wasm/tester1-worker.html d43f3c131d88f10d00aff3e328fed13c858d674ea2ff1ff90225506137f85aa9
 F ext/wasm/tester1.c-pp.html d34bef3d48e5cbc1c7c06882ad240fec49bf88f5f65696cc2c72c416933aa406
-F ext/wasm/tester1.c-pp.js 3e9f1d92d9f3464954553d0aa918cba8294451e32a38c229ce5964818f707702
+F ext/wasm/tester1.c-pp.js 49bee1aafa597ab1ac518a0d7cbe93b734867d6f48371b87a3346709de0069c2
 F ext/wasm/tests/opfs/concurrency/index.html 86d8ac435074d1e7007b91105f4897f368c165e8cecb6a9aa3d81f5cf5dcbe70
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7783aa4af1331190fd1f42a71bb724041e2e82b51745f9740926e4ead83a97ed
-R 665d2c5db7dd22191a3e1edf86f2deb6
+P 060eb2848975a24ff6683a8a9c4d7546ae36147323b0edae01fb42f52d9bb2d6
+R 595f86d1245b7efd3b4433715d78a1f2
 U stephan
-Z 3ceb2605e22c9be9046cc21f4a5a89d8
+Z 1291d47356f9b720a19689498dd91e52
 # Remove this line to create a well-formed Fossil manifest.
