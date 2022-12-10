@@ -649,10 +649,17 @@ FUZZCHECK_SRC += $(TOP)/test/vt02.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
+
+# In wasi-sdk builds, disable the CLI shell build in the "all" target.
+SQLITE3_SHELL_TARGET_  = sqlite3$(TEXE)
+SQLITE3_SHELL_TARGET_1 =
+SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
+all:	sqlite3.h libsqlite3.la $(SQLITE3_SHELL_TARGET) \
+  $(HAVE_TCL:1=libtclsqlite3.la)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status

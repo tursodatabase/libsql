@@ -158,6 +158,50 @@ RELEASE=`cat $srcdir/VERSION`
 AC_MSG_NOTICE(Release set to $RELEASE)
 AC_SUBST(RELEASE)
 
+##########
+# Handle --with-wasi-sdk=DIR
+#
+# This must be early because it changes the toolchain.
+#
+AC_ARG_WITH(wasi-sdk,
+AS_HELP_STRING([--with-wasi-sdk=DIR],
+       [directory containing the WASI SDK. Triggers cross-compile to WASM.]), with_wasisdk=${withval})
+AC_MSG_CHECKING([for WASI SDK directory])
+AC_CACHE_VAL(ac_cv_c_wasi_sdk,[
+  # First check to see if --with-tcl was specified.
+  if test x"${with_wasi_sdk}" != x ; then
+    if ! test -d "${with_wasi_sdk}" ; then
+      AC_MSG_ERROR([${with_wasi_sdk} directory doesn't exist])
+    fi
+    AC_MSG_RESULT([${with_wasi_sdk}: using wasi-sdk clang, disabling tcl, disabling sqlite3 CLI app])
+    use_wasi_sdk=yes
+  else
+    use_wasi_sdk=no
+  fi
+])
+if test "${use_wasi_sdk}" = "no" ; then
+  HAVE_WASI_SDK=""
+else
+  HAVE_WASI_SDK=1
+# Changing --host and --target have no effect here except to possibly
+# cause confusion. autoconf has finished processing them by this
+# point.
+#
+#  host_alias=wasm32-wasi
+#  target=wasm32-wasi
+#
+# Merely changing CC and LD to the wasi-sdk's is enough to get
+# sqlite3.o building in WASM format.
+  CC="${with_wasi_sdk}/bin/clang"
+  LD="${with_wasi_sdk}/bin/wasm-ld"
+  cross_compiling=yes
+  enable_threadsafe=no
+  use_tcl=no
+  enable_tcl=no
+fi
+AC_SUBST(HAVE_WASI_SDK)
+
+
 #########
 # Locate a compiler for the build machine.  This compiler should
 # generate command-line programs that run on the build machine.
