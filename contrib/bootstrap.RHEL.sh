@@ -15,12 +15,9 @@ OS=`cat /etc/redhat-release`
 [ -e /usr/bin/autoconf ]   || (echo "sudo dnf install -y autoconf";exit 1)
 [ -e /usr/bin/automake ]   || (echo "sudo dnf install -y automake";exit 1)
 [ -e /usr/lib64/tclConfig.sh ] || (echo "sudo dnf install -y tcl-devel";exit 1)
+[ -e /usr/include/readline/chardefs.h ] || (echo "sudo dnf install -y readline-devel";exit 1)
+[ -e /usr/include/unctrl.h ] || (echo "sudo dnf install -y ncurses-devel";exit 1)
 echo "compiling environment on ${OS}is OK now."
-# Only if you want to build rpm locally.
-#[ -e /usr/bin/rpmbuild ]   || (echo "sudo dnf install -y rpm-build  redhat-rpm-config";exit 1)
-#[ -e ~/rpmbuild/BUILD  ]   || (echo "mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}"   ;exit 1)
-#[ -e ~/.rpmmacros      ]   || (echo "echo '%_topdir %(echo $HOME)/rpmbuild' > ~/.rpmmacros" ;exit 1)
-echo "rpmbuild environment on ${OS}is OK now."
 
 # Create the m4/ directory if it doesn't exist.
 [ -d m4 ] || mkdir m4
