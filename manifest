@@ -1,5 +1,5 @@
-C Imply\sconfigure\sflag\s--disable-shared\swhen\s--with-wasi-sdk\sis\sactive\sbecause\slibtool\sis\srunning\sgcc\sfor\slinking\sthe\sshared\slib,\swhich\scannot\swork\sin\sa\swasi\sbuild.
-D 2022-12-10T07:02:46.438
+C Rerun\sautoconf\susing\sversion\s2.69\sto\sminimize\sconfigure\sscript\sdifferences\nwith\strunk.
+D 2022-12-10T12:06:31.110
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -33,7 +33,7 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure bf4eb4211407d4583eec9d66c44712b781838fe64dc44ce361680522bf08555c x
+F configure 8a95051058f6b314fe3becdd8a3735cba2e0b5ebd0b8ab1a7c2be741cdd1589d x
 F configure.ac e184f2215aa933c691a41140d286baf28f0c9be24e1d53a97a40851ca26724b2
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 39c9f441519d3b3c365c52293a73cdf4af86de639e0009170c27725aad6653f6
-R 8e096ab9ce7a7de4c50eadef054f9ac5
-U stephan
-Z c27f23eb0fdf959a8de40976e5f5fb98
+P 9253ba43c0c7657ecf4c3d32df4084577e7188e6151b883a5fa92a43aa4c3e30
+R 58a80b6621eaa4dac8225acd0777cb7b
+U drh
+Z 8ff784f967134425b21915359f92c074
 # Remove this line to create a well-formed Fossil manifest.
