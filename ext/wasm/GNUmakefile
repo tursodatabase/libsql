@@ -757,7 +757,8 @@ all: tester1
 # painful.
 
 .PHONY: o0 o1 o2 o3 os oz
-o-xtra := -flto
+o-xtra :=
+#o-xtra ?= -flto
 # ^^^^ -flto can have a considerably performance boost at -O0 but
 # doubles the build time and seems to have negligible, if any, effect
 # on higher optimization levels.
