@@ -25,6 +25,7 @@ _sqlite3_column_int64
 _sqlite3_column_name
 _sqlite3_column_text
 _sqlite3_column_type
+_sqlite3_column_value
 _sqlite3_compileoption_get
 _sqlite3_compileoption_used
 _sqlite3_complete

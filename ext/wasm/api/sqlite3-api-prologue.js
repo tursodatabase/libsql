@@ -930,6 +930,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
     ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
     ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
+    ["sqlite3_column_value","sqlite3_value*", "sqlite3_stmt*", "int"],
     ["sqlite3_compileoption_get", "string", "int"],
     ["sqlite3_compileoption_used", "int", "string"],
     ["sqlite3_complete", "int", "string:flexible"],
@@ -1858,6 +1859,25 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     }catch(e){
       capi.sqlite3_result_error_js(pCtx, e);
     }
+  };
+
+  /**
+     Returns the result sqlite3_column_value(pStmt,iCol) passed to
+     sqlite3_value_to_js(). The 3rd argument of this function is
+     ignored by this function except to pass it on as the second
+     argument of sqlite3_value_to_js(). If the sqlite3_column_value()
+     returns NULL (e.g. because the column index is out of range),
+     this function returns `undefined`, regardless of the 3rd
+     argument. 3rd argument is falsy and conversion fails, `undefined`
+     will be returned.
+
+     Note that sqlite3_column_value() returns an "unprotected" value
+     object, but in a single-threaded environment (like this one)
+     there is no distinction between protected and unprotected values.
+  */
+  capi.sqlite3_column_js = function(pStmt, iCol, throwIfCannotConvert=true){
+    const v = capi.sqlite3_column_value(pStmt, iCol);
+    return (0===v) ? undefined : capi.sqlite3_value_to_js(v, throwIfCannotConvert);
   };
 
   /* The remainder of the API will be set up in later steps. */
