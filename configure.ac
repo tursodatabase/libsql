@@ -173,7 +173,7 @@ AC_CACHE_VAL(ac_cv_c_wasi_sdk,[
     if ! test -d "${with_wasi_sdk}" ; then
       AC_MSG_ERROR([${with_wasi_sdk} directory doesn't exist])
     fi
-    AC_MSG_RESULT([${with_wasi_sdk}: using wasi-sdk clang, disabling tcl, disabling sqlite3 CLI app])
+    AC_MSG_RESULT([${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL])
     use_wasi_sdk=yes
   else
     use_wasi_sdk=no
@@ -198,6 +198,9 @@ else
   enable_threadsafe=no
   use_tcl=no
   enable_tcl=no
+  # libtool is apparently hard-coded to use gcc for linking DLLs, so
+  # we disable the DLL build...
+  enable_shared=no
 fi
 AC_SUBST(HAVE_WASI_SDK)
 

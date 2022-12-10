@@ -10907,8 +10907,8 @@ else $as_nop
     if ! test -d "${with_wasi_sdk}" ; then
       as_fn_error $? "${with_wasi_sdk} directory doesn't exist" "$LINENO" 5
     fi
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${with_wasi_sdk}: using wasi-sdk clang, disabling tcl, disabling sqlite3 CLI app" >&5
-printf "%s\n" "${with_wasi_sdk}: using wasi-sdk clang, disabling tcl, disabling sqlite3 CLI app" >&6; }
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL" >&5
+printf "%s\n" "${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL" >&6; }
     use_wasi_sdk=yes
   else
     use_wasi_sdk=no
@@ -10935,6 +10935,9 @@ else
   enable_threadsafe=no
   use_tcl=no
   enable_tcl=no
+  # libtool is apparently hard-coded to use gcc for linking DLLs, so
+  # we disable the DLL build...
+  enable_shared=no
 fi
 
 
