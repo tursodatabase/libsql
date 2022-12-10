@@ -5,20 +5,21 @@
 # Abort the script and exit with failure if any command below exits with
 # a non-zero exit status.
 set -e
+OS=`cat /etc/redhat-release`
 
-# Check needed software for building pnp4nagios on RL8
 [ -e /etc/redhat-release ] || (echo "Not on RRHEL System";exit 1)
-[ -e /usr/bin/autoconf ]   || (echo "sudo dnf install -y autoconf";exit 1)
-[ -e /usr/bin/automake ]   || (echo "sudo dnf install -y automake";exit 1)
-[ -e /usr/bin/rpmbuild ]   || (echo "sudo dnf install -y rpm-build  redhat-rpm-config";exit 1)
-[ -e ~/rpmbuild/BUILD  ]   || (echo "mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}"   ;exit 1)
-[ -e ~/.rpmmacros      ]   || (echo "echo '%_topdir %(echo $HOME)/rpmbuild' > ~/.rpmmacros" ;exit 1)
+# Check needed software for building libsql on RL8
 [ -e /usr/bin/gcc      ]   || (echo "sudo dnf install -y gcc ";exit 1)
 [ -e /usr/bin/make     ]   || (echo "sudo dnf install -y make ";exit 1)
 [ -e /usr/bin/libtool  ]   || (echo "sudo dnf install -y libtool ";exit 1)
+[ -e /usr/bin/autoconf ]   || (echo "sudo dnf install -y autoconf";exit 1)
+[ -e /usr/bin/automake ]   || (echo "sudo dnf install -y automake";exit 1)
 [ -e /usr/lib64/tclConfig.sh ] || (echo "sudo dnf install -y tcl-devel";exit 1)
-
-OS=`cat /etc/redhat-release`
+echo "compiling environment on ${OS}is OK now."
+# Only if you want to build rpm locally.
+#[ -e /usr/bin/rpmbuild ]   || (echo "sudo dnf install -y rpm-build  redhat-rpm-config";exit 1)
+#[ -e ~/rpmbuild/BUILD  ]   || (echo "mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}"   ;exit 1)
+#[ -e ~/.rpmmacros      ]   || (echo "echo '%_topdir %(echo $HOME)/rpmbuild' > ~/.rpmmacros" ;exit 1)
 echo "rpmbuild environment on ${OS}is OK now."
 
 # Create the m4/ directory if it doesn't exist.
