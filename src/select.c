@@ -2318,6 +2318,7 @@ void sqlite3SelectAddColumnTypeAndCollation(
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
   assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
   if( db->mallocFailed ) return;
+  while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   memset(&sNC, 0, sizeof(sNC));
   sNC.pSrcList = pSelect->pSrc;
   a = pSelect->pEList->a;
