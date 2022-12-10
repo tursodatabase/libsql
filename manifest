@@ -1,5 +1,5 @@
-C Export\ssqlite3_result_subtype()\sand\ssqlite3_value_dup/free/subtype()\sto\sWASM.
-D 2022-12-09T15:26:58.074
+C Refactor\sthe\sinternal\sJS\sroutines\sfor\sconverting\sUDF\sresults\sand\serrors\sto\sJS\sinto\spublic\sAPIs.
+D 2022-12-10T10:24:46.478
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,9 +503,9 @@ F ext/wasm/api/post-js-footer.js cd0a8ec768501d9bd45d325ab0442037fb0e33d1f3b4f08
 F ext/wasm/api/post-js-header.js 47b6b281f39ad59fa6e8b658308cd98ea292c286a68407b35ff3ed9cfd281a62
 F ext/wasm/api/pre-js.c-pp.js b88499dc303c21fc3f55f2c364a0f814f587b60a95784303881169f9e91c1d5f
 F ext/wasm/api/sqlite3-api-cleanup.js 680d5ccfff54459db136a49b2199d9f879c8405d9c99af1dda0cc5e7c29056f4
-F ext/wasm/api/sqlite3-api-glue.js 88e62a380b39a924728d9ed4f74f5424f0ea36e8d124df7da9268cc01ad0b191
+F ext/wasm/api/sqlite3-api-glue.js fc2b58b3309fa404d3e58499609e5c5b17177687f53f1a6703c50067904d7f72
 F ext/wasm/api/sqlite3-api-oo1.js 6d10849609231ccd46fa11b1d3fbbe0f45d9fe84c66a0b054601036540844300
-F ext/wasm/api/sqlite3-api-prologue.js 2582c5a983e6213687153125a12e7f7496a1cd474ee24d777675b104028b0a61
+F ext/wasm/api/sqlite3-api-prologue.js 5173cf1f434410c40fa7c6c6c77aca2a969ef7750f9e099175439d6f9c381407
 F ext/wasm/api/sqlite3-api-worker1.js e94ba98e44afccfa482874cd9acb325883ade50ed1f9f9526beb9de1711f182f
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 7795b84b66a7a8dedc791340709b310bb497c3c72a80bef364fa2a58e2ddae3f
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de8fc4bf34f80f320012a0e506ed8e3e24806daf67845d5dabb00b916108f6ef
-R cd32a70b8175f1ae6d43525e76cb6794
+P 4600a7bbdc4cbe14591d48ea19fe5f7de3a0c10a14cdd97fd51e263a13163d10
+R 87bf3540e42b9fcd39b8a805ab39f0fe
 U stephan
-Z 75119f06284b4ae77a74934eba10a318
+Z e910f830b2b784709a3d3c5d3fc7fb9d
 # Remove this line to create a well-formed Fossil manifest.

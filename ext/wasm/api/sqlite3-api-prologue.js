@@ -1672,9 +1672,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
      By default it throws if it cannot determine any sensible
      conversion. If passed a falsy second argument, it instead returns
-     `undefined` if no suitable conversion is found. Note that there
+     `undefined` if no suitable conversion is found.  Note that there
      is no conversion from SQL to JS which results in the `undefined`
-     value, so `undefined` has an unambiguous meaning here.
+     value, so `undefined` has an unambiguous meaning here.  It will
+     always throw a WasmAllocError if allocating memory for a
+     conversion fails.
 
      Caveats:
 
@@ -1721,6 +1723,141 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           arg = undefined;
     }
     return arg;
+  };
+
+  /**
+     Requires a C-style array of `sqlite3_value*` objects and the
+     number of entries in that array. Returns a JS array containing
+     the results of passing each C array entry to
+     sqlite3_value_to_js(). The 3rd argument to this function is
+     passed on as the 2nd argument to that one.
+  */
+  capi.sqlite3_values_to_js = function(argc,pArgv,throwIfCannotConvert=true){
+    let i;
+    const tgt = [];
+    for(i = 0; i < argc; ++i){
+      /**
+         Curiously: despite ostensibly requiring 8-byte
+         alignment, the pArgv array is parcelled into chunks of
+         4 bytes (1 pointer each). The values those point to
+         have 8-byte alignment but the individual argv entries
+         do not.
+      */
+      tgt.push(capi.sqlite3_value_to_js(
+        wasm.peekPtr(pArgv + (wasm.ptrSizeof * i))
+      ));
+    }
+    return tgt;
+  };
+
+  /**
+     Calls either sqlite3_result_error_nomem(), if e is-a
+     WasmAllocError, or sqlite3_result_error(). In the latter case,
+     the second arugment is coerced to a string to create the error
+     message.
+
+     The first argument is a (sqlite3_context*). Returns void.
+     Does not throw.
+  */
+  capi.sqlite3_result_error_js = function(pCtx,e){
+    if(e instanceof WasmAllocError){
+      capi.sqlite3_result_error_nomem(pCtx);
+    }else{
+      /* Maintenance reminder: ''+e, rather than e.message,
+         will prefix e.message with e.name, so it includes
+         the exception's type name in the result. */;
+      capi.sqlite3_result_error(pCtx, ''+e, -1);
+    }
+  };
+  
+  /**
+     This function passes its 2nd argument to one of the
+     sqlite3_result_xyz() routines, depending on the type of that
+     argument:
+
+     - If (val instanceof Error), this function passes it to
+       sqlite3_result_error_js().
+     - `null`: `sqlite3_result_null()`
+     - `boolean`: `sqlite3_result_int()` with a value of 0 or 1.
+     - `number`: `sqlite3_result_int()`, `sqlite3_result_int64()`, or
+       `sqlite3_result_double()`, depending on the range of the number
+       and whether or not int64 support is enabled.
+     - `bigint`: similar to `number` but will trigger an error if the
+       value is too big to store in an int64.
+     - `string`: `sqlite3_result_text()`
+     - Uint8Array or Int8Array: `sqlite3_result_blob()`
+     - `undefined`: is a no-op provided to simplify certain use cases.
+
+     Anything else triggers `sqlite3_result_error()` with a
+     description of the problem.
+
+     The first argument to this function is a `(sqlite3_context*)`.
+     Returns void. Does not throw.
+  */
+  capi.sqlite3_result_js = function(pCtx,val){
+    if(val instanceof Error){
+      capi.sqlite3_result_error_js(pCtx, val);
+      return;
+    }
+    try{
+      switch(typeof val) {
+          case 'undefined':
+            /* This is a no-op. This routine originated in the create_function()
+               family of APIs and in that context, passing in undefined indicated
+               that the caller was responsible for calling sqlite3_result_xxx()
+               (if needed). */
+            break;
+          case 'boolean':
+            capi.sqlite3_result_int(pCtx, val ? 1 : 0);
+            break;
+          case 'bigint':
+            if(util.bigIntFits32(val)){
+              capi.sqlite3_result_int(pCtx, Number(val));
+            }else if(util.bigIntFitsDouble(val)){
+              capi.sqlite3_result_double(pCtx, Number(val));
+            }else if(wasm.bigIntEnabled){
+              if(util.bigIntFits64(val)) capi.sqlite3_result_int64(pCtx, val);
+              else toss3("BigInt value",val.toString(),"is too BigInt for int64.");
+            }else{
+              toss3("BigInt value",val.toString(),"is too BigInt.");
+            }
+            break;
+          case 'number': {
+            let f;
+            if(util.isInt32(val)){
+              f = capi.sqlite3_result_int;
+            }else if(wasm.bigIntEnabled
+                     && Number.isInteger(val)
+                     && util.bigIntFits64(BigInt(val))){
+              f = capi.sqlite3_result_int64;
+            }else{
+              f = capi.sqlite3_result_double;
+            }
+            f(pCtx, val);
+            break;
+          }
+          case 'string':
+            capi.sqlite3_result_text(pCtx, val, -1, capi.SQLITE_TRANSIENT);
+            break;
+          case 'object':
+            if(null===val/*yes, typeof null === 'object'*/) {
+              capi.sqlite3_result_null(pCtx);
+              break;
+            }else if(util.isBindableTypedArray(val)){
+              const pBlob = wasm.allocFromTypedArray(val);
+              capi.sqlite3_result_blob(
+                pCtx, pBlob, val.byteLength,
+                wasm.exports[sqlite3.config.deallocExportName]
+              );
+              break;
+            }
+            // else fall through
+          default:
+            toss3("Don't not how to handle this UDF result value:",(typeof val), val);
+      }
+    }catch(e){
+      capi.sqlite3_result_error_js(pCtx, e);
+    }
   };
 
   /* The remainder of the API will be set up in later steps. */
