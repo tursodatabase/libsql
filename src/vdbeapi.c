@@ -15,6 +15,7 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#include "opcodes.h"
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
@@ -505,7 +506,10 @@ void sqlite3_result_text64(
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   assert( xDel!=SQLITE_DYNAMIC );
-  if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
+  if( enc!=SQLITE_UTF8 ){
+    if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
+    n &= ~(u64)1;
+  }
   if( n>0x7fffffff ){
     (void)invokeValueDestructor(z, xDel, pCtx);
   }else{
@@ -520,7 +524,7 @@ void sqlite3_result_text16(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, SQLITE_UTF16NATIVE, xDel);
+  setResultStrOrError(pCtx, z, n & ~(u64)1, SQLITE_UTF16NATIVE, xDel);
 }
 void sqlite3_result_text16be(
   sqlite3_context *pCtx, 
@@ -529,7 +533,7 @@ void sqlite3_result_text16be(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, SQLITE_UTF16BE, xDel);
+  setResultStrOrError(pCtx, z, n & ~(u64)1, SQLITE_UTF16BE, xDel);
 }
 void sqlite3_result_text16le(
   sqlite3_context *pCtx, 
@@ -538,7 +542,7 @@ void sqlite3_result_text16le(
   void (*xDel)(void *)
 ){
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
-  setResultStrOrError(pCtx, z, n, SQLITE_UTF16LE, xDel);
+  setResultStrOrError(pCtx, z, n & ~(u64)1, SQLITE_UTF16LE, xDel);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 void sqlite3_result_value(sqlite3_context *pCtx, sqlite3_value *pValue){
@@ -1603,7 +1607,10 @@ int sqlite3_bind_text64(
   unsigned char enc
 ){
   assert( xDel!=SQLITE_DYNAMIC );
-  if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
+  if( enc!=SQLITE_UTF8 ){
+    if( enc==SQLITE_UTF16 ) enc = SQLITE_UTF16NATIVE;
+    nData &= ~(u16)1;
+  }
   return bindText(pStmt, i, zData, nData, xDel, enc);
 }
 #ifndef SQLITE_OMIT_UTF16
@@ -1611,10 +1618,10 @@ int sqlite3_bind_text16(
   sqlite3_stmt *pStmt, 
   int i, 
   const void *zData, 
-  int nData, 
+  int n, 
   void (*xDel)(void*)
 ){
-  return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF16NATIVE);
+  return bindText(pStmt, i, zData, n & ~(u64)1, xDel, SQLITE_UTF16NATIVE);
 }
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
@@ -2105,23 +2112,60 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
 /*
 ** Return status data for a single loop within query pStmt.
 */
-int sqlite3_stmt_scanstatus(
+int sqlite3_stmt_scanstatus_v2(
   sqlite3_stmt *pStmt,            /* Prepared statement being queried */
-  int idx,                        /* Index of loop to report on */
+  int iScan,                      /* Index of loop to report on */
   int iScanStatusOp,              /* Which metric to return */
+  int flags,
   void *pOut                      /* OUT: Write the answer here */
 ){
   Vdbe *p = (Vdbe*)pStmt;
   ScanStatus *pScan;
-  if( idx<0 || idx>=p->nScan ) return 1;
-  pScan = &p->aScan[idx];
+  int idx;
+
+  if( iScan<0 ){
+    int ii;
+    if( iScanStatusOp==SQLITE_SCANSTAT_NCYCLE ){
+      i64 res = 0;
+      for(ii=0; ii<p->nOp; ii++){
+        res += p->aOp[ii].nCycle;
+      }
+      *(i64*)pOut = res;
+      return 0;
+    }
+    return 1;
+  }
+  if( flags & SQLITE_SCANSTAT_COMPLEX ){
+    idx = iScan;
+    pScan = &p->aScan[idx];
+  }else{
+    /* If the COMPLEX flag is clear, then this function must ignore any 
+    ** ScanStatus structures with ScanStatus.addrLoop set to 0. */
+    for(idx=0; idx<p->nScan; idx++){
+      pScan = &p->aScan[idx];
+      if( pScan->zName ){
+        iScan--;
+        if( iScan<0 ) break;
+      }
+    }
+  }
+  if( idx>=p->nScan ) return 1;
+
   switch( iScanStatusOp ){
     case SQLITE_SCANSTAT_NLOOP: {
-      *(sqlite3_int64*)pOut = p->anExec[pScan->addrLoop];
+      if( pScan->addrLoop>0 ){
+        *(sqlite3_int64*)pOut = p->aOp[pScan->addrLoop].nExec;
+      }else{
+        *(sqlite3_int64*)pOut = -1;
+      }
       break;
     }
     case SQLITE_SCANSTAT_NVISIT: {
-      *(sqlite3_int64*)pOut = p->anExec[pScan->addrVisit];
+      if( pScan->addrVisit>0 ){
+        *(sqlite3_int64*)pOut = p->aOp[pScan->addrVisit].nExec;
+      }else{
+        *(sqlite3_int64*)pOut = -1;
+      }
       break;
     }
     case SQLITE_SCANSTAT_EST: {
@@ -2154,6 +2198,45 @@ int sqlite3_stmt_scanstatus(
       }
       break;
     }
+    case SQLITE_SCANSTAT_PARENTID: {
+      if( pScan->addrExplain ){
+        *(int*)pOut = p->aOp[ pScan->addrExplain ].p2;
+      }else{
+        *(int*)pOut = -1;
+      }
+      break;
+    }
+    case SQLITE_SCANSTAT_NCYCLE: {
+      i64 res = 0;
+      if( pScan->aAddrRange[0]==0 ){
+        res = -1;
+      }else{
+        int ii;
+        for(ii=0; ii<ArraySize(pScan->aAddrRange); ii+=2){
+          int iIns = pScan->aAddrRange[ii];
+          int iEnd = pScan->aAddrRange[ii+1];
+          if( iIns==0 ) break;
+          if( iIns>0 ){
+            while( iIns<=iEnd ){
+              res += p->aOp[iIns].nCycle;
+              iIns++;
+            }
+          }else{
+            int iOp;
+            for(iOp=0; iOp<p->nOp; iOp++){
+              Op *pOp = &p->aOp[iOp];
+              if( pOp->p1!=iEnd ) continue;
+              if( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_NCYCLE)==0 ){
+                continue;
+              }
+              res += p->aOp[iOp].nCycle;
+            }
+          }
+        }
+      }
+      *(i64*)pOut = res;
+      break;
+    }
     default: {
       return 1;
     }
@@ -2162,10 +2245,27 @@ int sqlite3_stmt_scanstatus(
 }
 
 /*
+** Return status data for a single loop within query pStmt.
+*/
+int sqlite3_stmt_scanstatus(
+  sqlite3_stmt *pStmt,            /* Prepared statement being queried */
+  int iScan,                      /* Index of loop to report on */
+  int iScanStatusOp,              /* Which metric to return */
+  void *pOut                      /* OUT: Write the answer here */
+){
+  return sqlite3_stmt_scanstatus_v2(pStmt, iScan, iScanStatusOp, 0, pOut);
+}
+
+/*
 ** Zero all counters associated with the sqlite3_stmt_scanstatus() data.
 */
 void sqlite3_stmt_scanstatus_reset(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
-  memset(p->anExec, 0, p->nOp * sizeof(i64));
+  int ii;
+  for(ii=0; ii<p->nOp; ii++){
+    Op *pOp = &p->aOp[ii];
+    pOp->nExec = 0;
+    pOp->nCycle = 0;
+  }
 }
 #endif /* SQLITE_ENABLE_STMT_SCANSTATUS */

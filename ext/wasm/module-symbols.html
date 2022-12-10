@@ -92,9 +92,8 @@
     <li>This page runs in the main UI thread so cannot see features
       which are only available in a Worker thread. If this page were
       to function via a Worker, it would not be able to see
-      functionality only available in the main thread. Starting a
-      Worker here to fetch those symbols requires loading a second
-      copy of the sqlite3 WASM module and JS code.
+      functionality only available in the main thread. Either way, it
+      would be missing certain APIs.
     </li>
   </ul>
 
@@ -213,8 +212,8 @@
     const renderFunc = function(name){
         let lbl = name+'()';
         const e = eLi(lbl, eFuncs);;
-        if(name.startsWith('sqlite3_js')
-           || name.startsWith('sqlite3_wasm')){
+        if(name.indexOf('_js')>0
+           || name.indexOf('_wasm')>0){
             e.classList.add('func-wasm');
         }
     };

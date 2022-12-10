@@ -279,8 +279,8 @@ sqlite3-license-version-header.js := $(dir.api)/sqlite3-license-version-header.j
 # sqlite3-api-build-version.js = generated JS file which populates the
 # sqlite3.version object using $(bin.version-info).
 sqlite3-api-build-version.js := $(dir.tmp)/sqlite3-api-build-version.js
-# sqlite3-api.jses = the list of JS files which make up $(sqlite3-api.js), in
-# the order they need to be assembled.
+# sqlite3-api.jses = the list of JS files which make up
+# $(sqlite3-api.js.in), in the order they need to be assembled.
 sqlite3-api.jses := $(sqlite3-license-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-prologue.js
 sqlite3-api.jses += $(dir.common)/whwasmutil.js
@@ -289,8 +289,8 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-glue.js
 sqlite3-api.jses += $(sqlite3-api-build-version.js)
 sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-helper.js
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.js
+sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 # "External" API files which are part of our distribution
@@ -346,12 +346,12 @@ $(sqlite3-license-version.js): $(sqlite3.h) $(sqlite3-license-version-header.js)
 # --post-js and --pre-js are emcc flags we use to append/prepend JS to
 # the generated emscripten module file. The following rules generate
 # various versions of those files for the vanilla and ESM builds.
-pre-js.js.in := $(dir.api)/pre-js.js
+pre-js.js.in := $(dir.api)/pre-js.c-pp.js
 pre-js.js.esm := $(dir.tmp)/pre-js.esm.js
 pre-js.js.vanilla := $(dir.tmp)/pre-js.vanilla.js
 $(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.vanilla),$(c-pp.D.vanilla)))
 $(eval $(call C-PP.FILTER,$(pre-js.js.in),$(pre-js.js.esm),$(c-pp.D.esm)))
-post-js.js.in := $(dir.tmp)/post-js.js
+post-js.js.in := $(dir.tmp)/post-js.c-pp.js
 post-js.js.vanilla := $(dir.tmp)/post-js.vanilla.js
 post-js.js.esm := $(dir.tmp)/post-js.esm.js
 post-jses.js := \
@@ -371,7 +371,7 @@ $(eval $(call C-PP.FILTER,$(post-js.js.in),$(post-js.js.esm),$(c-pp.D.esm)))
 # extern-post-js* and extern-pre-js* are files for use with
 # Emscripten's --extern-pre-js and --extern-post-js flags.  These
 # rules make different copies for the vanilla and ESM builds.
-extern-post-js.js.in := $(dir.api)/extern-post-js.js
+extern-post-js.js.in := $(dir.api)/extern-post-js.c-pp.js
 extern-post-js.js.vanilla := $(dir.tmp)/extern-post-js.vanilla.js
 extern-post-js.js.esm := $(dir.tmp)/extern-post-js.esm.js
 $(eval $(call C-PP.FILTER,$(extern-post-js.js.in),$(extern-post-js.js.vanilla),$(c-pp.D.vanilla)))
@@ -488,7 +488,10 @@ emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 ########################################################################
 
 emcc.jsflags += $(emcc.environment)
-#emcc.jsflags += -sTOTAL_STACK=4194304
+emcc.jsflags += -sSTACK_SIZE=1MB
+# ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 5MB to
+# a mere 64KB, which leads to silent memory corruption via the kvvfs
+# VFS, which requires twice that for its xRead() and xWrite() methods.
 ########################################################################
 # $(sqlite3.js.init-func) is the name Emscripten assigns our exported
 # module init/load function. This symbol name is hard-coded in
@@ -569,7 +572,7 @@ sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 # instead of building a shared copy of sqlite3-wasm.o.
 $(eval $(call call-make-pre-js,sqlite3,vanilla))
 $(eval $(call call-make-pre-js,sqlite3,esm))
-$(sqlite3.js) $(sqlite3.mjs): $(MAKEFILE) $(sqlite3.wasm.obj) \
+$(sqlite3.js) $(sqlite3.mjs): $(MAKEFILE) $(sqlite3-wasm.c) \
     $(EXPORTED_FUNCTIONS.api)
 $(sqlite3.js):  $(pre-post-sqlite3.deps.vanilla)
 $(sqlite3.mjs): $(pre-post-sqlite3.deps.esm)
@@ -670,6 +673,7 @@ speedtest1.eflags.common += -sSTRICT_JS
 speedtest1.eflags.common += -sMODULARIZE
 speedtest1.eflags.common += -Wno-limited-postlink-optimizations
 EXPORTED_FUNCTIONS.speedtest1 := $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
+speedtest1.eflags.common += -sSTACK_SIZE=1MB
 speedtest1.eflags.common += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.speedtest1)
 speedtest1.eflags.common += $(emcc.exportedRuntimeMethods)
 speedtest1.eflags.common += -sALLOW_TABLE_GROWTH
@@ -808,15 +812,10 @@ endif
 ########################################################################
 
 ########################################################################
-# Create main client downloadable zip file:
-ifneq (,$(filter dist snapshot,$(MAKECMDGOALS)))
-include dist.make
-endif
-
-########################################################################
 # Push files to public wasm-testing.sqlite.org server
-wasm-testing.include = *.js *.html batch-runner.list \
+wasm-testing.include = *.js *.mjs *.html \
   ./tests \
+  batch-runner.list \
   $(dir.dout) $(dir.sql) $(dir.common) $(dir.fiddle) $(dir.jacc)
 wasm-testing.exclude = sql/speedtest1.sql
 wasm-testing.dir     = /jail/sites/wasm-testing
@@ -834,23 +833,35 @@ push-testing:
 ########################################################################
 # If we find a copy of the sqlite.org/wasm docs checked out, copy
 # certain files over to it, noting that some need automatable edits...
-WDOCS.home ?= ../../../wdoc
+wasm.docs.home ?= ../../../wasm
+wasm.docs.found = $(if $(wildcard $(wasm.docs.home)/api-index.md),\
+  $(wildcard $(wasm.docs.home)),)
 .PHONY: update-docs
-ifneq (,$(wildcard $(WDOCS.home)/api-index.md))
-WDOCS.jswasm := $(WDOCS.home)/jswasm
-update-docs: $(bin.stripccomments) $(sqlite3.js) $(sqlite3.wasm)
-	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!"
-	cp $(sqlite3.wasm) $(WDOCS.jswasm)/.
-	$(bin.stripccomments) -k -k < $(sqlite3.js) \
-		| sed -e '/^[ \t]*$$/d' > $(WDOCS.jswasm)/sqlite3.js
-	cp demo-123.js demo-123.html demo-123-worker.html $(WDOCS.home)
-	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \
-		module-symbols.html > $(WDOCS.home)/module-symbols.html
-else
+ifeq (,$(wasm.docs.found))
 update-docs:
 	@echo "Cannot find wasm docs checkout."; \
-	echo "Pass WDOCS.home=/path/to/wasm/docs/checkout or edit this makefile to suit."; \
+	echo "Pass wasm.docs.home=/path/to/wasm/docs/checkout or edit this makefile to suit."; \
 	exit 127
+else
+wasm.docs.jswasm := $(wasm.docs.home)/jswasm
+update-docs: $(bin.stripccomments) $(sqlite3.js) $(sqlite3.wasm)
+	@echo "Copying files to the /wasm docs. Be sure to use an -Oz build for this!"
+	cp $(sqlite3.wasm) $(wasm.docs.jswasm)/.
+	$(bin.stripccomments) -k -k < $(sqlite3.js) \
+		| sed -e '/^[ \t]*$$/d' > $(wasm.docs.jswasm)/sqlite3.js
+	cp demo-123.js demo-123.html demo-123-worker.html $(wasm.docs.home)
+	sed -n -e '/EXTRACT_BEGIN/,/EXTRACT_END/p' \
+		module-symbols.html > $(wasm.docs.home)/module-symbols.html
 endif
 # end /wasm docs
 ########################################################################
+
+########################################################################
+# Create main client downloadable zip file:
+ifneq (,$(filter dist snapshot,$(MAKECMDGOALS)))
+include dist.make
+endif
+
+# Run local web server for the test/demo pages.
+httpd:
+	althttpd -max-age 1 -enable-sab -page index.html

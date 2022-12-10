@@ -67,7 +67,7 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 ** block sorting is required.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
-  return pWInfo->nOBSat;
+  return pWInfo->nOBSat<0 ? 0 : pWInfo->nOBSat;
 }
 
 /*
@@ -705,7 +705,7 @@ static void translateColumnToCopy(
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(WHERETRACE_ENABLED)
 static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
   int i;
-  if( !sqlite3WhereTrace ) return;
+  if( (sqlite3WhereTrace & 0x10)==0 ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf(
        "  constraint[%d]: col=%d termid=%d op=%d usabled=%d collseq=%s\n",
@@ -725,7 +725,7 @@ static void whereTraceIndexInfoInputs(sqlite3_index_info *p){
 }
 static void whereTraceIndexInfoOutputs(sqlite3_index_info *p){
   int i;
-  if( !sqlite3WhereTrace ) return;
+  if( (sqlite3WhereTrace & 0x10)==0 ) return;
   for(i=0; i<p->nConstraint; i++){
     sqlite3DebugPrintf("  usage[%d]: argvIdx=%d omit=%d\n",
        i,
@@ -812,6 +812,51 @@ static int termCanDriveIndex(
 
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+/*
+** Argument pIdx represents an automatic index that the current statement
+** will create and populate. Add an OP_Explain with text of the form:
+**
+**     CREATE AUTOMATIC INDEX ON <table>(<cols>) [WHERE <expr>]
+**
+** This is only required if sqlite3_stmt_scanstatus() is enabled, to
+** associate an SQLITE_SCANSTAT_NCYCLE and SQLITE_SCANSTAT_NLOOP
+** values with. In order to avoid breaking legacy code and test cases, 
+** the OP_Explain is not added if this is an EXPLAIN QUERY PLAN command.
+*/
+static void explainAutomaticIndex(
+  Parse *pParse,
+  Index *pIdx,                    /* Automatic index to explain */
+  int bPartial,                   /* True if pIdx is a partial index */
+  int *pAddrExplain               /* OUT: Address of OP_Explain */
+){
+  if( pParse->explain!=2 ){
+    Table *pTab = pIdx->pTable;
+    const char *zSep = "";
+    char *zText = 0;
+    int ii = 0;
+    zText = sqlite3_mprintf("CREATE AUTOMATIC INDEX ON %s(", pTab->zName);
+    assert( pIdx->nColumn>1 );
+    assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID );
+    for(ii=0; ii<(pIdx->nColumn-1); ii++){
+      const char *zName = 0;
+      int iCol = pIdx->aiColumn[ii];
+
+      zName = pTab->aCol[iCol].zCnName;
+      zText = sqlite3_mprintf("%z%s%s", zText, zSep, zName);
+      zSep = ", ";
+    }
+    *pAddrExplain = sqlite3VdbeExplain(
+        pParse, 0, "%s)%s", zText, (bPartial ? " WHERE <expr>" : "")
+    );
+    sqlite3_free(zText);
+  }
+}
+#else
+# define explainAutomaticIndex(a,b,c,d)
+#endif
+
 /*
 ** Generate code to construct the Index object for an automatic index
 ** and to set up the WhereLevel object pLevel so that the code generator
@@ -847,6 +892,9 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   SrcItem *pTabItem;          /* FROM clause term being indexed */
   int addrCounter = 0;        /* Address where integer counter is initialized */
   int regBase;                /* Array of registers where record is assembled */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int addrExp = 0;            /* Address of OP_Explain */
+#endif
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -970,6 +1018,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   pIdx->azColl[n] = sqlite3StrBINARY;
 
   /* Create the automatic index */
+  explainAutomaticIndex(pParse, pIdx, pPartial!=0, &addrExp);
   assert( pLevel->iIdxCur>=0 );
   pLevel->iIdxCur = pParse->nTab++;
   sqlite3VdbeAddOp2(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1);
@@ -1005,6 +1054,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0,
                          regBase, pLoop->u.btree.nEq);
   }
+  sqlite3VdbeScanStatusCounters(v, addrExp, addrExp, sqlite3VdbeCurrentAddr(v));
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
@@ -1025,6 +1075,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
+  sqlite3VdbeScanStatusRange(v, addrExp, addrExp, -1);
 
 end_auto_index_create:
   sqlite3ExprDelete(pParse->db, pPartial);
@@ -1742,7 +1793,7 @@ static int whereRangeSkipScanEst(
       int nAdjust = (sqlite3LogEst(p->nSample) - sqlite3LogEst(nDiff));
       pLoop->nOut -= nAdjust;
       *pbDone = 1;
-      WHERETRACE(0x10, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
+      WHERETRACE(0x20, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
                            nLower, nUpper, nAdjust*-1, pLoop->nOut));
     }
 
@@ -1920,7 +1971,7 @@ static int whereRangeScanEst(
         if( nNew<nOut ){
           nOut = nNew;
         }
-        WHERETRACE(0x10, ("STAT4 range scan: %u..%u  est=%d\n",
+        WHERETRACE(0x20, ("STAT4 range scan: %u..%u  est=%d\n",
                            (u32)iLower, (u32)iUpper, nOut));
       }
     }else{
@@ -1953,7 +2004,7 @@ static int whereRangeScanEst(
   if( nNew<nOut ) nOut = nNew;
 #if defined(WHERETRACE_ENABLED)
   if( pLoop->nOut>nOut ){
-    WHERETRACE(0x10,("Range scan lowers nOut from %d to %d\n",
+    WHERETRACE(0x20,("Range scan lowers nOut from %d to %d\n",
                     pLoop->nOut, nOut));
   }
 #endif
@@ -2018,7 +2069,7 @@ static int whereEqualScanEst(
   pBuilder->nRecValid = nEq;
 
   whereKeyStats(pParse, p, pRec, 0, a);
-  WHERETRACE(0x10,("equality scan regions %s(%d): %d\n",
+  WHERETRACE(0x20,("equality scan regions %s(%d): %d\n",
                    p->zName, nEq-1, (int)a[1]));
   *pnRow = a[1];
   
@@ -2068,7 +2119,7 @@ static int whereInScanEst(
   if( rc==SQLITE_OK ){
     if( nRowEst > nRow0 ) nRowEst = nRow0;
     *pnRow = nRowEst;
-    WHERETRACE(0x10,("IN row estimate: est=%d\n", nRowEst));
+    WHERETRACE(0x20,("IN row estimate: est=%d\n", nRowEst));
   }
   assert( pBuilder->nRecValid==nRecValid );
   return rc;
@@ -2177,7 +2228,7 @@ void sqlite3WhereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" f %06x N %d", p->wsFlags, p->nLTerm);
   }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
-  if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){
+  if( p->nLTerm && (sqlite3WhereTrace & 0x4000)!=0 ){
     int i;
     for(i=0; i<p->nLTerm; i++){
       sqlite3WhereTermPrint(p->aLTerm[i], i);
@@ -3055,7 +3106,7 @@ static int whereLoopAddBtreeIndex(
              && pNew->nOut+10 > pProbe->aiRowLogEst[0]
             ){
 #if WHERETRACE_ENABLED /* 0x01 */
-              if( sqlite3WhereTrace & 0x01 ){
+              if( sqlite3WhereTrace & 0x20 ){
                 sqlite3DebugPrintf(
                    "STAT4 determines term has low selectivity:\n");
                 sqlite3WhereTermPrint(pTerm, 999);
@@ -3092,7 +3143,15 @@ static int whereLoopAddBtreeIndex(
     ** seek only. Then, if this is a non-covering index, add the cost of
     ** visiting the rows in the main table.  */
     assert( pSrc->pTab->szTabRow>0 );
-    rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
+    if( pProbe->idxType==SQLITE_IDXTYPE_IPK ){
+      /* The pProbe->szIdxRow is low for an IPK table since the interior
+      ** pages are small.  Thuse szIdxRow gives a good estimate of seek cost.
+      ** But the leaf pages are full-size, so pProbe->szIdxRow would badly
+      ** under-estimate the scanning cost. */
+      rCostIdx = pNew->nOut + 16;
+    }else{
+      rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
+    }
     pNew->rRun = sqlite3LogEstAdd(rLogSize, rCostIdx);
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK|WHERE_EXPRIDX))==0 ){
       pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
@@ -3472,7 +3531,7 @@ static int whereLoopAddBtree(
     sPk.aiRowLogEst = aiRowEstPk;
     sPk.onError = OE_Replace;
     sPk.pTable = pTab;
-    sPk.szIdxRow = pTab->szTabRow;
+    sPk.szIdxRow = 3;  /* TUNING: Interior rows of IPK table are very small */
     sPk.idxType = SQLITE_IDXTYPE_IPK;
     aiRowEstPk[0] = pTab->nRowLogEst;
     aiRowEstPk[1] = 0;
@@ -3611,7 +3670,7 @@ static int whereLoopAddBtree(
         if( m==TOPBIT || (pProbe->bHasExpr && !pProbe->bHasVCol && m!=0) ){
           u32 isCov = whereIsCoveringIndex(pWInfo, pProbe, pSrc->iCursor);
           if( isCov==0 ){
-            WHERETRACE(0xff,
+            WHERETRACE(0x200,
                ("-> %s is not a covering index"
                 " according to whereIsCoveringIndex()\n", pProbe->zName));
             assert( m!=0 );
@@ -3619,18 +3678,18 @@ static int whereLoopAddBtree(
             m = 0;
             pNew->wsFlags |= isCov;
             if( isCov & WHERE_IDX_ONLY ){
-              WHERETRACE(0xff,
+              WHERETRACE(0x200,
                  ("-> %s is a covering expression index"
                   " according to whereIsCoveringIndex()\n", pProbe->zName));
             }else{
               assert( isCov==WHERE_EXPRIDX );
-              WHERETRACE(0xff,
+              WHERETRACE(0x200,
                  ("-> %s might be a covering expression index"
                   " according to whereIsCoveringIndex()\n", pProbe->zName));
             }
           }
         }else if( m==0 ){
-          WHERETRACE(0xff,
+          WHERETRACE(0x200,
              ("-> %s a covering index according to bitmasks\n",
              pProbe->zName, m==0 ? "is" : "is not"));
           pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
@@ -3807,7 +3866,7 @@ static int whereLoopAddVirtualOne(
       ** that the particular combination of parameters provided is unusable.
       ** Make no entries in the loop table.
       */
-      WHERETRACE(0xffff, ("  ^^^^--- non-viable plan rejected!\n"));
+      WHERETRACE(0xffffffff, ("  ^^^^--- non-viable plan rejected!\n"));
       return SQLITE_OK;
     }
     return rc;
@@ -3918,7 +3977,7 @@ static int whereLoopAddVirtualOne(
     sqlite3_free(pNew->u.vtab.idxStr);
     pNew->u.vtab.needFree = 0;
   }
-  WHERETRACE(0xffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
+  WHERETRACE(0xffffffff, ("  bIn=%d prereqIn=%04llx prereqOut=%04llx\n",
                       *pbIn, (sqlite3_uint64)mPrereq,
                       (sqlite3_uint64)(pNew->prereq & ~mPrereq)));
 
@@ -4110,7 +4169,7 @@ static int whereLoopAddVirtual(
 
   /* First call xBestIndex() with all constraints usable. */
   WHERETRACE(0x800, ("BEGIN %s.addVirtual()\n", pSrc->pTab->zName));
-  WHERETRACE(0x40, ("  VirtualOne: all usable\n"));
+  WHERETRACE(0x800, ("  VirtualOne: all usable\n"));
   rc = whereLoopAddVirtualOne(
       pBuilder, mPrereq, ALLBITS, 0, p, mNoOmit, &bIn, &bRetry
   );
@@ -4135,7 +4194,7 @@ static int whereLoopAddVirtual(
     /* If the plan produced by the earlier call uses an IN(...) term, call
     ** xBestIndex again, this time with IN(...) terms disabled. */
     if( bIn ){
-      WHERETRACE(0x40, ("  VirtualOne: all usable w/o IN\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all usable w/o IN\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, ALLBITS, WO_IN, p, mNoOmit, &bIn, 0);
       assert( bIn==0 );
@@ -4161,7 +4220,7 @@ static int whereLoopAddVirtual(
       mPrev = mNext;
       if( mNext==ALLBITS ) break;
       if( mNext==mBest || mNext==mBestNoIn ) continue;
-      WHERETRACE(0x40, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
+      WHERETRACE(0x800, ("  VirtualOne: mPrev=%04llx mNext=%04llx\n",
                        (sqlite3_uint64)mPrev, (sqlite3_uint64)mNext));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mNext|mPrereq, 0, p, mNoOmit, &bIn, 0);
@@ -4175,7 +4234,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all (i.e. one guaranteed to be
     ** usable), make a call here with all source tables disabled */
     if( rc==SQLITE_OK && seenZero==0 ){
-      WHERETRACE(0x40, ("  VirtualOne: all disabled\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all disabled\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mPrereq, 0, p, mNoOmit, &bIn, 0);
       if( bIn==0 ) seenZeroNoIN = 1;
@@ -4185,7 +4244,7 @@ static int whereLoopAddVirtual(
     ** that requires no source tables at all and does not use an IN(...)
     ** operator, make a final call to obtain one here.  */
     if( rc==SQLITE_OK && seenZeroNoIN==0 ){
-      WHERETRACE(0x40, ("  VirtualOne: all disabled and w/o IN\n"));
+      WHERETRACE(0x800, ("  VirtualOne: all disabled and w/o IN\n"));
       rc = whereLoopAddVirtualOne(
           pBuilder, mPrereq, mPrereq, WO_IN, p, mNoOmit, &bIn, 0);
     }
@@ -4241,7 +4300,7 @@ static int whereLoopAddOr(
       sSubBuild = *pBuilder;
       sSubBuild.pOrSet = &sCur;
 
-      WHERETRACE(0x200, ("Begin processing OR-clause %p\n", pTerm));
+      WHERETRACE(0x400, ("Begin processing OR-clause %p\n", pTerm));
       for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
         if( (pOrTerm->eOperator & WO_AND)!=0 ){
           sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
@@ -4258,9 +4317,9 @@ static int whereLoopAddOr(
         }
         sCur.n = 0;
 #ifdef WHERETRACE_ENABLED
-        WHERETRACE(0x200, ("OR-term %d of %p has %d subterms:\n", 
+        WHERETRACE(0x400, ("OR-term %d of %p has %d subterms:\n", 
                    (int)(pOrTerm-pOrWC->a), pTerm, sSubBuild.pWC->nTerm));
-        if( sqlite3WhereTrace & 0x400 ){
+        if( sqlite3WhereTrace & 0x20000 ){
           sqlite3WhereClausePrint(sSubBuild.pWC);
         }
 #endif
@@ -4322,7 +4381,7 @@ static int whereLoopAddOr(
         pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
       }
-      WHERETRACE(0x200, ("End processing OR-clause %p\n", pTerm));
+      WHERETRACE(0x400, ("End processing OR-clause %p\n", pTerm));
     }
   }
   return rc;
@@ -4803,37 +4862,56 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** order.
 */
 static LogEst whereSortingCost(
-  WhereInfo *pWInfo,
-  LogEst nRow,
-  int nOrderBy,
-  int nSorted
+  WhereInfo *pWInfo, /* Query planning context */
+  LogEst nRow,       /* Estimated number of rows to sort */
+  int nOrderBy,      /* Number of ORDER BY clause terms */
+  int nSorted        /* Number of initial ORDER BY terms naturally in order */
 ){
-  /* TUNING: Estimated cost of a full external sort, where N is 
+  /* Estimated cost of a full external sort, where N is 
   ** the number of rows to sort is:
   **
-  **   cost = (3.0 * N * log(N)).
+  **   cost = (K * N * log(N)).
   ** 
   ** Or, if the order-by clause has X terms but only the last Y 
   ** terms are out of order, then block-sorting will reduce the 
   ** sorting cost to:
   **
-  **   cost = (3.0 * N * log(N)) * (Y/X)
+  **   cost = (K * N * log(N)) * (Y/X)
   **
-  ** The (Y/X) term is implemented using stack variable rScale
-  ** below.
+  ** The constant K is at least 2.0 but will be larger if there are a
+  ** large number of columns to be sorted, as the sorting time is
+  ** proportional to the amount of content to be sorted.  The algorithm
+  ** does not currently distinguish between fat columns (BLOBs and TEXTs) 
+  ** and skinny columns (INTs).  It just uses the number of columns as 
+  ** an approximation for the row width.
+  **
+  ** And extra factor of 2.0 or 3.0 is added to the sorting cost if the sort
+  ** is built using OP_IdxInsert and OP_Sort rather than with OP_SorterInsert.
   */
-  LogEst rScale, rSortCost;
-  assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
-  rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
-  rSortCost = nRow + rScale + 16;
+  LogEst rSortCost, nCol;
+  assert( pWInfo->pSelect!=0 );
+  assert( pWInfo->pSelect->pEList!=0 );
+  /* TUNING: sorting cost proportional to the number of output columns: */
+  nCol = sqlite3LogEst((pWInfo->pSelect->pEList->nExpr+59)/30);
+  rSortCost = nRow + nCol;
+  if( nSorted>0 ){
+    /* Scale the result by (Y/X) */
+    rSortCost += sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
+  }
 
   /* Multiple by log(M) where M is the number of output rows.
   ** Use the LIMIT for M if it is smaller.  Or if this sort is for
   ** a DISTINCT operator, M will be the number of distinct output
   ** rows, so fudge it downwards a bit.
   */
-  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 && pWInfo->iLimit<nRow ){
-    nRow = pWInfo->iLimit;
+  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 ){
+    rSortCost += 10;       /* TUNING: Extra 2.0x if using LIMIT */
+    if( nSorted!=0 ){
+      rSortCost += 6;      /* TUNING: Extra 1.5x if also using partial sort */
+    }
+    if( pWInfo->iLimit<nRow ){
+      nRow = pWInfo->iLimit;
+    }
   }else if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT) ){
     /* TUNING: In the sort for a DISTINCT operator, assume that the DISTINCT
     ** reduces the number of output rows by a factor of 2 */
@@ -4985,11 +5063,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                 pWInfo, nRowEst, nOrderBy, isOrdered
             );
           }
-          /* TUNING:  Add a small extra penalty (5) to sorting as an
+          /* TUNING:  Add a small extra penalty (3) to sorting as an
           ** extra encouragment to the query planner to select a plan
           ** where the rows emerge in the correct order without any sorting
           ** required. */
-          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 5;
+          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 3;
 
           WHERETRACE(0x002,
               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
@@ -5337,7 +5415,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->cId = '0';
 #endif
 #ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace ){
+    if( sqlite3WhereTrace & 0x02 ){
       sqlite3DebugPrintf("whereShortCut() used to compute solution\n");
     }
 #endif
@@ -5467,7 +5545,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
       }
     }
     if( pTerm<pEnd ) continue;
-    WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+    WHERETRACE(0xffffffff, ("-> drop loop %c not used\n", pLoop->cId));
     notReady &= ~pLoop->maskSelf;
     for(pTerm=pWInfo->sWC.a; pTerm<pEnd; pTerm++){
       if( (pTerm->prereqAll & pLoop->maskSelf)!=0 ){
@@ -5527,7 +5605,7 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
         testcase( pItem->fg.jointype & JT_LEFT );
         pLoop->wsFlags |= WHERE_BLOOMFILTER;
         pLoop->wsFlags &= ~WHERE_IDX_ONLY;
-        WHERETRACE(0xffff, (
+        WHERETRACE(0xffffffff, (
            "-> use Bloom-filter on loop %c because there are ~%.1e "
            "lookups into %s which has only ~%.1e rows\n",
            pLoop->cId, (double)sqlite3LogEstToInt(nSearch), pTab->zName,
@@ -5894,13 +5972,13 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
 #if defined(WHERETRACE_ENABLED)
-  if( sqlite3WhereTrace & 0xffff ){
+  if( sqlite3WhereTrace & 0xffffffff ){
     sqlite3DebugPrintf("*** Optimizer Start *** (wctrlFlags: 0x%x",wctrlFlags);
     if( wctrlFlags & WHERE_USE_LIMIT ){
       sqlite3DebugPrintf(", limit: %d", iAuxArg);
     }
     sqlite3DebugPrintf(")\n");
-    if( sqlite3WhereTrace & 0x100 ){
+    if( sqlite3WhereTrace & 0x8000 ){
       Select sSelect;
       memset(&sSelect, 0, sizeof(sSelect));
       sSelect.selFlags = SF_WhereBegin;
@@ -5910,10 +5988,10 @@ WhereInfo *sqlite3WhereBegin(
       sSelect.pEList = pResultSet;
       sqlite3TreeViewSelect(0, &sSelect, 0);
     }
-  }
-  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
-    sqlite3DebugPrintf("---- WHERE clause at start of analysis:\n");
-    sqlite3WhereClausePrint(sWLB.pWC);
+    if( sqlite3WhereTrace & 0x4000 ){ /* Display all WHERE clause terms */
+      sqlite3DebugPrintf("---- WHERE clause at start of analysis:\n");
+      sqlite3WhereClausePrint(sWLB.pWC);
+    }
   }
 #endif
 
@@ -5929,7 +6007,7 @@ WhereInfo *sqlite3WhereBegin(
     ** loops will be built using the revised truthProb values. */
     if( sWLB.bldFlags2 & SQLITE_BLDF2_2NDPASS ){
       WHERETRACE_ALL_LOOPS(pWInfo, sWLB.pWC);
-      WHERETRACE(0xffff, 
+      WHERETRACE(0xffffffff, 
            ("**** Redo all loop computations due to"
             " TERM_HIGHTRUTH changes ****\n"));
       while( pWInfo->pLoops ){
@@ -6015,11 +6093,11 @@ WhereInfo *sqlite3WhereBegin(
   }
 
 #if defined(WHERETRACE_ENABLED)
-  if( sqlite3WhereTrace & 0x100 ){ /* Display all terms of the WHERE clause */
+  if( sqlite3WhereTrace & 0x4000 ){ /* Display all terms of the WHERE clause */
     sqlite3DebugPrintf("---- WHERE clause at end of analysis:\n");
     sqlite3WhereClausePrint(sWLB.pWC);
   }
-  WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));
+  WHERETRACE(0xffffffff,("*** Optimizer Finished ***\n"));
 #endif
   pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 

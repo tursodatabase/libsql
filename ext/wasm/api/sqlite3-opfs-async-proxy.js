@@ -13,7 +13,7 @@
   A Worker which manages asynchronous OPFS handles on behalf of a
   synchronous API which controls it via a combination of Worker
   messages, SharedArrayBuffer, and Atomics. It is the asynchronous
-  counterpart of the API defined in sqlite3-api-opfs.js.
+  counterpart of the API defined in sqlite3-vfs-opfs.js.
 
   Highly indebted to:
 
@@ -263,21 +263,18 @@ const installAsyncProxy = function(self){
     }
   };
   GetSyncHandleError.convertRc = (e,rc)=>{
-    if(0){
-      /* This approach makes the very wild assumption that such a
-         failure _is_ a locking error. In practice that appears to be
-         the most common error, by far, but we cannot unambiguously
-         distinguish that from other errors.
-
-         This approach is highly questionable.
-
-         Note that even if we return SQLITE_IOERR_LOCK from here,
-         it bubbles up to the client as a plain I/O error.
-      */
-      return (e instanceof GetSyncHandleError
-              && e.cause.name==='NoModificationAllowedError')
-        ? state.sq3Codes.SQLITE_IOERR_LOCK
-        : rc;
+    if(1){
+      return (
+        e instanceof GetSyncHandleError
+          && ((e.cause.name==='NoModificationAllowedError')
+              /* Inconsistent exception.name from Chrome/ium with the
+                 same exception.message text: */
+              || (e.cause.name==='DOMException'
+                  && 0===e.cause.message.indexOf('Access Handles cannot')))
+      ) ? (
+        /*console.warn("SQLITE_BUSY",e),*/
+        state.sq3Codes.SQLITE_BUSY
+      ) : rc;
     }else{
       return rc;
     }
@@ -298,7 +295,8 @@ const installAsyncProxy = function(self){
     if(!fh.syncHandle){
       const t = performance.now();
       log("Acquiring sync handle for",fh.filenameAbs);
-      const maxTries = 6, msBase = state.asyncIdleWaitTime * 3;
+      const maxTries = 6,
+            msBase = state.asyncIdleWaitTime * 2;
       let i = 1, ms = msBase;
       for(; true; ms = msBase * ++i){
         try {
@@ -345,16 +343,6 @@ const installAsyncProxy = function(self){
   const affirmNotRO = function(opName,fh){
     if(fh.readOnly) toss(opName+"(): File is read-only: "+fh.filenameAbs);
   };
-  const affirmLocked = function(opName,fh){
-    //if(!fh.syncHandle) toss(opName+"(): File does not have a lock: "+fh.filenameAbs);
-    /**
-       Currently a no-op, as speedtest1 triggers xRead() without a
-       lock (that seems like a bug but it's currently uninvestigated).
-       This means, however, that some OPFS VFS routines may trigger
-       acquisition of a lock but never let it go until xUnlock() is
-       called (which it likely won't be if xLock() was not called).
-    */
-  };
 
   /**
      We track 2 different timers: the "metrics" timer records how much
@@ -395,7 +383,6 @@ const installAsyncProxy = function(self){
   */
   let flagAsyncShutdown = false;
 
-
   /**
      Asynchronous wrappers for sqlite3_vfs and sqlite3_io_methods
      methods, as well as helpers like mkdir(). Maintenance reminder:
@@ -429,11 +416,11 @@ const installAsyncProxy = function(self){
     },
     xAccess: async (filename)=>{
       mTimeStart('xAccess');
-      /* OPFS cannot support the full range of xAccess() queries sqlite3
-         calls for. We can essentially just tell if the file is
-         accessible, but if it is it's automatically writable (unless
-         it's locked, which we cannot(?) know without trying to open
-         it). OPFS does not have the notion of read-only.
+      /* OPFS cannot support the full range of xAccess() queries
+         sqlite3 calls for. We can essentially just tell if the file
+         is accessible, but if it is then it's automatically writable
+         (unless it's locked, which we cannot(?) know without trying
+         to open it). OPFS does not have the notion of read-only.
 
          The return semantics of this function differ from sqlite3's
          xAccess semantics because we are limited in what we can
@@ -518,15 +505,13 @@ const installAsyncProxy = function(self){
     xFileSize: async function(fid/*sqlite3_file pointer*/){
       mTimeStart('xFileSize');
       const fh = __openFiles[fid];
-      let rc;
+      let rc = 0;
       wTimeStart('xFileSize');
       try{
-        affirmLocked('xFileSize',fh);
         const sz = await (await getSyncHandle(fh,'xFileSize')).getSize();
         state.s11n.serialize(Number(sz));
-        rc = 0;
       }catch(e){
-        state.s11n.storeException(2,e);
+        state.s11n.storeException(1,e);
         rc = GetSyncHandleError.convertRc(e,state.sq3Codes.SQLITE_IOERR);
       }
       await releaseImplicitLock(fh);
@@ -618,7 +603,6 @@ const installAsyncProxy = function(self){
       let rc = 0, nRead;
       const fh = __openFiles[fid];
       try{
-        affirmLocked('xRead',fh);
         wTimeStart('xRead');
         nRead = (await getSyncHandle(fh,'xRead')).read(
           fh.sabView.subarray(0, n),
@@ -662,7 +646,6 @@ const installAsyncProxy = function(self){
       const fh = __openFiles[fid];
       wTimeStart('xTruncate');
       try{
-        affirmLocked('xTruncate',fh);
         affirmNotRO('xTruncate', fh);
         await (await getSyncHandle(fh,'xTruncate')).truncate(size);
       }catch(e){
@@ -699,7 +682,6 @@ const installAsyncProxy = function(self){
       const fh = __openFiles[fid];
       wTimeStart('xWrite');
       try{
-        affirmLocked('xWrite',fh);
         affirmNotRO('xWrite', fh);
         rc = (
           n === (await getSyncHandle(fh,'xWrite'))

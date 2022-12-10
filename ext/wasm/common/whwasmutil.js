@@ -316,13 +316,11 @@ self.WhWasmUtilInstaller = function(target){
 
      Throws if passed an invalid n.
 
-     Pedantic side note: the name "heap" is a bit of a misnomer. In an
-     Emscripten environment, the memory managed via the stack
-     allocation API is in the same Memory object as the heap (which
-     makes sense because otherwise arbitrary pointer X would be
-     ambiguous: is it in the heap or the stack?).
+     Pedantic side note: the name "heap" is a bit of a misnomer. In a
+     WASM environment, the stack and heap memory are all accessed via
+     the same view(s) of the memory.
   */
-  target.heapForSize = function(n,unsigned = false){
+  target.heapForSize = function(n,unsigned = true){
     let ctor;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
@@ -599,19 +597,24 @@ self.WhWasmUtilInstaller = function(target){
      type triggers an exception if this.bigIntEnabled is
      falsy). Throws if given an invalid type.
 
+     If the first argument is an array, it is treated as an array of
+     addresses and the result is an array of the values from each of
+     those address, using the same 2nd argument for determining the
+     value type to fetch.
+
      As a special case, if type ends with a `*`, it is considered to
      be a pointer type and is treated as the WASM numeric type
      appropriate for the pointer size (`i32`).
 
-     While likely not obvious, this routine and its setMemValue()
+     While likely not obvious, this routine and its poke()
      counterpart are how pointer-to-value _output_ parameters
      in WASM-compiled C code can be interacted with:
 
      ```
      const ptr = alloc(4);
-     setMemValue(ptr, 0, 'i32'); // clear the ptr's value
+     poke(ptr, 0, 'i32'); // clear the ptr's value
      aCFuncWithOutputPtrToInt32Arg( ptr ); // e.g. void foo(int *x);
-     const result = getMemValue(ptr, 'i32'); // fetch ptr's value
+     const result = peek(ptr, 'i32'); // fetch ptr's value
      dealloc(ptr);
      ```
 
@@ -623,15 +626,15 @@ self.WhWasmUtilInstaller = function(target){
      const scope = scopedAllocPush();
      try{
        const ptr = scopedAlloc(4);
-       setMemValue(ptr, 0, 'i32');
+       poke(ptr, 0, 'i32');
        aCFuncWithOutputPtrArg( ptr );
-       result = getMemValue(ptr, 'i32');
+       result = peek(ptr, 'i32');
      }finally{
        scopedAllocPop(scope);
      }
      ```
 
-     As a rule setMemValue() must be called to set (typically zero
+     As a rule poke() must be called to set (typically zero
      out) the pointer's value, else it will contain an essentially
      random value.
 
@@ -639,70 +642,105 @@ self.WhWasmUtilInstaller = function(target){
      painful impact on performance. Rather than doing so, use
      heapForSize() to fetch the heap object and read directly from it.
 
-     See: setMemValue()
+     See: poke()
   */
-  target.getMemValue = function(ptr, type='i8'){
+  target.peek = function f(ptr, type='i8'){
     if(type.endsWith('*')) type = ptrIR;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
-    switch(type){
-        case 'i1':
-        case 'i8': return c.HEAP8[ptr>>0];
-        case 'i16': return c.HEAP16[ptr>>1];
-        case 'i32': return c.HEAP32[ptr>>2];
-        case 'i64':
-          if(target.bigIntEnabled) return BigInt(c.HEAP64[ptr>>3]);
-          break;
-        case 'float': case 'f32': return c.HEAP32F[ptr>>2];
-        case 'double': case 'f64': return Number(c.HEAP64F[ptr>>3]);
-        default: break;
-    }
-    toss('Invalid type for getMemValue():',type);
+    const list = Array.isArray(ptr) ? [] : undefined;
+    let rc;
+    do{
+      if(list) ptr = arguments[0].shift();
+      switch(type){
+          case 'i1':
+          case 'i8': rc = c.HEAP8[ptr>>0]; break;
+          case 'i16': rc = c.HEAP16[ptr>>1]; break;
+          case 'i32': rc = c.HEAP32[ptr>>2]; break;
+          case 'float': case 'f32': rc = c.HEAP32F[ptr>>2]; break;
+          case 'double': case 'f64': rc = Number(c.HEAP64F[ptr>>3]); break;
+          case 'i64':
+            if(target.bigIntEnabled){
+              rc = BigInt(c.HEAP64[ptr>>3]);
+              break;
+            }
+            /* fallthru */
+          default:
+            toss('Invalid type for peek():',type);
+      }
+      if(list) list.push(rc);
+    }while(list && arguments[0].length);
+    return list || rc;
   };
 
   /**
-     The counterpart of getMemValue(), this sets a numeric value at
+     The counterpart of peek(), this sets a numeric value at
      the given WASM heap address, using the type to define how many
      bytes are written. Throws if given an invalid type. See
-     getMemValue() for details about the type argument. If the 3rd
+     peek() for details about the type argument. If the 3rd
      argument ends with `*` then it is treated as a pointer type and
      this function behaves as if the 3rd argument were `i32`.
 
-     This function returns itself.
+     If the first argument is an array, it is treated like a list
+     of pointers and the given value is written to each one.
+
+     Returns `this`. (Prior to 2022-12-09 it returns this function.)
 
      ACHTUNG: calling this often, e.g. in a loop, can have a noticably
      painful impact on performance. Rather than doing so, use
-     heapForSize() to fetch the heap object and assign directly to it.
+     heapForSize() to fetch the heap object and assign directly to it
+     or use the heap's set() method.
   */
-  target.setMemValue = function f(ptr, value, type='i8'){
+  target.poke = function(ptr, value, type='i8'){
     if (type.endsWith('*')) type = ptrIR;
     const c = (cache.memory && cache.heapSize === cache.memory.buffer.byteLength)
           ? cache : heapWrappers();
-    switch (type) {
-        case 'i1': 
-        case 'i8': c.HEAP8[ptr>>0] = value; return f;
-        case 'i16': c.HEAP16[ptr>>1] = value; return f;
-        case 'i32': c.HEAP32[ptr>>2] = value; return f;
-        case 'i64':
-          if(c.HEAP64){
-            c.HEAP64[ptr>>3] = BigInt(value);
-            return f;
-          }
-          break;
-        case 'float': case 'f32': c.HEAP32F[ptr>>2] = value; return f;
-        case 'double': case 'f64': c.HEAP64F[ptr>>3] = value; return f;
+    for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
+      switch (type) {
+          case 'i1': 
+          case 'i8': c.HEAP8[p>>0] = value; continue;
+          case 'i16': c.HEAP16[p>>1] = value; continue;
+          case 'i32': c.HEAP32[p>>2] = value; continue;
+          case 'float': case 'f32': c.HEAP32F[p>>2] = value; continue;
+          case 'double': case 'f64': c.HEAP64F[p>>3] = value; continue;
+          case 'i64':
+            if(c.HEAP64){
+              c.HEAP64[p>>3] = BigInt(value);
+              continue;
+            }
+            /* fallthru */
+          default:
+            toss('Invalid type for poke(): ' + type);
+      }
     }
-    toss('Invalid type for setMemValue(): ' + type);
+    return this;
   };
 
+  /**
+     Convenience form of peek() intended for fetching
+     pointer-to-pointer values. If passed a single non-array argument
+     it returns the value of that one pointer address. If passed
+     multiple arguments, or a single array of arguments, it returns an
+     array of their values.
+  */
+  target.peekPtr = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), ptrIR );
 
-  /** Convenience form of getMemValue() intended for fetching
-      pointer-to-pointer values. */
-  target.getPtrValue = (ptr)=>target.getMemValue(ptr, ptrIR);
+  /**
+     A variant of poke() intended for setting
+     pointer-to-pointer values. Its differences from poke() are
+     that (1) it defaults to a value of 0, (2) it always writes
+     to the pointer-sized heap view, and (3) it returns `this`.
+  */
+  target.pokePtr = (ptr, value=0)=>target.poke(ptr, value, ptrIR);
 
-  /** Convenience form of setMemValue() intended for setting
-      pointer-to-pointer values. */
-  target.setPtrValue = (ptr, value)=>target.setMemValue(ptr, value, ptrIR);
+  /** Deprecated alias for getMemValue() */
+  target.getMemValue = target.peek;
+  /** Deprecated alias for peekPtr() */
+  target.getPtrValue = target.peekPtr;
+  /** Deprecated alias for poke() */
+  target.setMemValue = target.poke;
+  /** Deprecated alias for pokePtr() */
+  target.setPtrValue = target.pokePtr;
 
   /**
      Returns true if the given value appears to be legal for use as
@@ -725,11 +763,12 @@ self.WhWasmUtilInstaller = function(target){
      Expects ptr to be a pointer into the WASM heap memory which
      refers to a NUL-terminated C-style string encoded as UTF-8.
      Returns the length, in bytes, of the string, as for `strlen(3)`.
-     As a special case, if !ptr then it it returns `null`. Throws if
-     ptr is out of range for target.heap8u().
+     As a special case, if !ptr or if it's not a pointer then it
+     returns `null`. Throws if ptr is out of range for
+     target.heap8u().
   */
   target.cstrlen = function(ptr){
-    if(!ptr) return null;
+    if(!ptr || !target.isPtr(ptr)) return null;
     const h = heapWrappers().HEAP8U;
     let pos = ptr;
     for( ; h[pos] !== 0; ++pos ){}
@@ -753,9 +792,9 @@ self.WhWasmUtilInstaller = function(target){
      refers to a NUL-terminated C-style string encoded as UTF-8. This
      function counts its byte length using cstrlen() then returns a
      JS-format string representing its contents. As a special case, if
-     ptr is falsy, `null` is returned.
+     ptr is falsy or not a pointer, `null` is returned.
   */
-  target.cstringToJs = function(ptr){
+  target.cstrToJs = function(ptr){
     const n = target.cstrlen(ptr);
     return n ? __utf8Decode(heapWrappers().HEAP8U, ptr, ptr+n) : (null===n ? n : "");
   };
@@ -942,10 +981,19 @@ self.WhWasmUtilInstaller = function(target){
   const __allocCStr = function(jstr, returnWithLength, allocator, funcName){
     __affirmAlloc(target, funcName);
     if('string'!==typeof jstr) return null;
-    const n = target.jstrlen(jstr),
-          ptr = allocator(n+1);
-    target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
-    return returnWithLength ? [ptr, n] : ptr;
+    if(0){/* older impl, possibly more widely compatible? */
+      const n = target.jstrlen(jstr),
+            ptr = allocator(n+1);
+      target.jstrcpy(jstr, target.heap8u(), ptr, n+1, true);
+      return returnWithLength ? [ptr, n] : ptr;
+    }else{/* newer, (probably) faster and (certainly) simpler impl */
+      const u = cache.utf8Encoder.encode(jstr),
+            ptr = allocator(u.length+1),
+            heap = heapWrappers().HEAP8U;
+      heap.set(u, ptr);
+      heap[ptr + u.length] = 0;
+      return returnWithLength ? [ptr, u.length] : ptr;
+    }
   };
 
   /**
@@ -1081,39 +1129,66 @@ self.WhWasmUtilInstaller = function(target){
 
   // impl for allocMainArgv() and scopedAllocMainArgv().
   const __allocMainArgv = function(isScoped, list){
-    if(!list.length) toss("Cannot allocate empty array.");
     const pList = target[
       isScoped ? 'scopedAlloc' : 'alloc'
-    ](list.length * target.ptrSizeof);
+    ]((list.length + 1) * target.ptrSizeof);
     let i = 0;
     list.forEach((e)=>{
-      target.setPtrValue(pList + (target.ptrSizeof * i++),
+      target.pokePtr(pList + (target.ptrSizeof * i++),
                          target[
                            isScoped ? 'scopedAllocCString' : 'allocCString'
                          ](""+e));
     });
+    target.pokePtr(pList + (target.ptrSizeof * i), 0);
     return pList;
   };
 
   /**
      Creates an array, using scopedAlloc(), suitable for passing to a
      C-level main() routine. The input is a collection with a length
-     property and a forEach() method. A block of memory list.length
-     entries long is allocated and each pointer-sized block of that
-     memory is populated with a scopedAllocCString() conversion of the
-     (""+value) of each element. Returns a pointer to the start of the
-     list, suitable for passing as the 2nd argument to a C-style
-     main() function.
+     property and a forEach() method. A block of memory
+     (list.length+1) entries long is allocated and each pointer-sized
+     block of that memory is populated with a scopedAllocCString()
+     conversion of the (""+value) of each element, with the exception
+     that the final entry is a NULL pointer. Returns a pointer to the
+     start of the list, suitable for passing as the 2nd argument to a
+     C-style main() function.
 
-     Throws if list.length is falsy or scopedAllocPush() is not active.
+     Throws if scopedAllocPush() is not active.
+
+     Design note: the returned array is allocated with an extra NULL
+     pointer entry to accommodate certain APIs, but client code which
+     does not need that functionality should treat the returned array
+     as list.length entries long.
   */
   target.scopedAllocMainArgv = (list)=>__allocMainArgv(true, list);
 
   /**
      Identical to scopedAllocMainArgv() but uses alloc() instead of
-     scopedAllocMainArgv
+     scopedAlloc().
   */
   target.allocMainArgv = (list)=>__allocMainArgv(false, list);
+
+  /**
+     Expects to be given a C-style string array and its length. It
+     returns a JS array of strings and/or nulls: any entry in the
+     pArgv array which is NULL results in a null entry in the result
+     array. If argc is 0 then an empty array is returned.
+
+     Results are undefined if any entry in the first argc entries of
+     pArgv are neither 0 (NULL) nor legal UTF-format C strings.
+
+     To be clear, the expected C-style arguments to be passed to this
+     function are `(int, char **)` (optionally const-qualified).
+  */
+  target.cArgvToJs = (argc, pArgv)=>{
+    const list = [];
+    for(let i = 0; i < argc; ++i){
+      const arg = target.peekPtr(pArgv + (target.ptrSizeof * i));
+      list.push( arg ? target.cstrToJs(arg) : null );
+    }
+    return list;
+  };
 
   /**
      Wraps function call func() in a scopedAllocPush() and
@@ -1133,7 +1208,7 @@ self.WhWasmUtilInstaller = function(target){
     __affirmAlloc(target, method);
     const pIr = safePtrSize ? 'i64' : ptrIR;
     let m = target[method](howMany * (safePtrSize ? 8 : ptrSizeof));
-    target.setMemValue(m, 0, pIr)
+    target.poke(m, 0, pIr)
     if(1===howMany){
       return m;
     }
@@ -1141,7 +1216,7 @@ self.WhWasmUtilInstaller = function(target){
     for(let i = 1; i < howMany; ++i){
       m += (safePtrSize ? 8 : ptrSizeof);
       a[i] = m;
-      target.setMemValue(m, 0, pIr);
+      target.poke(m, 0, pIr);
     }
     return a;
   };
@@ -1172,7 +1247,7 @@ self.WhWasmUtilInstaller = function(target){
 
      When one of the returned pointers will refer to a 64-bit value,
      e.g. a double or int64, an that value must be written or fetched,
-     e.g. using setMemValue() or getMemValue(), it is important that
+     e.g. using poke() or peek(), it is important that
      the pointer in question be aligned to an 8-byte boundary or else
      it will not be fetched or written properly and will corrupt or
      read neighboring memory. It is only safe to pass false when the
@@ -1267,7 +1342,7 @@ self.WhWasmUtilInstaller = function(target){
      - If v is a string, scopeAlloc() a new C-string from it and return
        that temp string's pointer.
 
-     - Else return the value from the arg adaptor defined for ptrIR.
+     - Else return the value from the arg adapter defined for ptrIR.
 
      TODO? Permit an Int8Array/Uint8Array and convert it to a string?
      Would that be too much magic concentrated in one place, ready to
@@ -1278,14 +1353,14 @@ self.WhWasmUtilInstaller = function(target){
       if('string'===typeof v) return target.scopedAllocCString(v);
       return v ? xcv.arg[ptrIR](v) : null;
     };
-  xcv.result.string = xcv.result.utf8 = (i)=>target.cstringToJs(i);
-  xcv.result['string:free'] = xcv.result['utf8:free'] = (i)=>{
-    try { return i ? target.cstringToJs(i) : null }
+  xcv.result.string = xcv.result.utf8 = (i)=>target.cstrToJs(i);
+  xcv.result['string:dealloc'] = xcv.result['utf8:dealloc'] = (i)=>{
+    try { return i ? target.cstrToJs(i) : null }
     finally{ target.dealloc(i) }
   };
-  xcv.result.json = (i)=>JSON.parse(target.cstringToJs(i));
-  xcv.result['json:free'] = (i)=>{
-    try{ return i ? JSON.parse(target.cstringToJs(i)) : null }
+  xcv.result.json = (i)=>JSON.parse(target.cstrToJs(i));
+  xcv.result['json:dealloc'] = (i)=>{
+    try{ return i ? JSON.parse(target.cstrToJs(i)) : null }
     finally{ target.dealloc(i) }
   }
   xcv.result['void'] = (v)=>undefined;
@@ -1313,7 +1388,7 @@ self.WhWasmUtilInstaller = function(target){
 
   const __xResultAdapterCheck =
         (t)=>xcv.result[t] || toss("Result adapter not found:",t);
-  
+
   cache.xWrap.convertArg = (t,v)=>__xArgAdapterCheck(t)(v);
   cache.xWrap.convertResult =
     (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
@@ -1383,7 +1458,7 @@ self.WhWasmUtilInstaller = function(target){
        true.
 
      - `f32` (`float`), `f64` (`double`) (args and results): pass
-       their argument to Number(). i.e. the adaptor does not currently
+       their argument to Number(). i.e. the adapter does not currently
        distinguish between the two types of floating-point numbers.
 
      - `number` (results): converts the result to a JS Number using
@@ -1411,7 +1486,7 @@ self.WhWasmUtilInstaller = function(target){
          const C-string, encoded as UTF-8, copies it to a JS string,
          and returns that JS string.
 
-     - `string:free` or `utf8:free) (results): treats the result value
+     - `string:dealloc` or `utf8:dealloc) (results): treats the result value
        as a non-const UTF-8 C-string, ownership of which has just been
        transfered to the caller. It copies the C-string to a JS
        string, frees the C-string, and returns the JS string. If such
@@ -1422,8 +1497,8 @@ self.WhWasmUtilInstaller = function(target){
        required. For example:
 
 ```js
-   target.xWrap.resultAdaptor('string:my_free',(i)=>{
-      try { return i ? target.cstringToJs(i) : null }
+   target.xWrap.resultAdapter('string:my_free',(i)=>{
+      try { return i ? target.cstrToJs(i) : null }
       finally{ target.exports.my_free(i) }
    };
 ```
@@ -1432,9 +1507,9 @@ self.WhWasmUtilInstaller = function(target){
        returns the result of passing the converted-to-JS string to
        JSON.parse(). Returns `null` if the C-string is a NULL pointer.
 
-     - `json:free` (results): works exactly like `string:free` but
+     - `json:dealloc` (results): works exactly like `string:dealloc` but
        returns the same thing as the `json` adapter. Note the
-       warning in `string:free` regarding maching allocators and
+       warning in `string:dealloc` regarding maching allocators and
        deallocators.
 
      The type names for results and arguments are validated when
@@ -1442,7 +1517,7 @@ self.WhWasmUtilInstaller = function(target){
      exception.
 
      Clients may map their own result and argument adapters using
-     xWrap.resultAdapter() and xWrap.argAdaptor(), noting that not all
+     xWrap.resultAdapter() and xWrap.argAdapter(), noting that not all
      type conversions are valid for both arguments _and_ result types
      as they often have different memory ownership requirements.
 
@@ -1451,8 +1526,8 @@ self.WhWasmUtilInstaller = function(target){
      - Figure out how/whether we can (semi-)transparently handle
        pointer-type _output_ arguments. Those currently require
        explicit handling by allocating pointers, assigning them before
-       the call using setMemValue(), and fetching them with
-       getMemValue() after the call. We may be able to automate some
+       the call using poke(), and fetching them with
+       peek() after the call. We may be able to automate some
        or all of that.
 
      - Figure out whether it makes sense to extend the arg adapter
@@ -1479,25 +1554,26 @@ self.WhWasmUtilInstaller = function(target){
     /*Verify the arg type conversions are valid...*/;
     if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
     argTypes.forEach(__xArgAdapterCheck);
+    const cxw = cache.xWrap;
     if(0===xf.length){
       // No args to convert, so we can create a simpler wrapper...
       return (...args)=>(args.length
                          ? __argcMismatch(fname, xf.length)
-                         : cache.xWrap.convertResult(resultType, xf.call(null)));
+                         : cxw.convertResult(resultType, xf.call(null)));
     }
     return function(...args){
       if(args.length!==xf.length) __argcMismatch(fname, xf.length);
       const scope = target.scopedAllocPush();
       try{
-        const rc = xf.apply(null,args.map((v,i)=>cache.xWrap.convertArg(argTypes[i], v)));
-        return cache.xWrap.convertResult(resultType, rc);
+        for(const i in args) args[i] = cxw.convertArg(argTypes[i], args[i]);
+        return cxw.convertResult(resultType, xf.apply(null,args));
       }finally{
         target.scopedAllocPop(scope);
       }
     };
   }/*xWrap()*/;
 
-  /** Internal impl for xWrap.resultAdapter() and argAdaptor(). */
+  /** Internal impl for xWrap.resultAdapter() and argAdapter(). */
   const __xAdapter = function(func, argc, typeName, adapter, modeName, xcvPart){
     if('string'===typeof typeName){
       if(1===argc) return xcvPart[typeName];
@@ -1545,7 +1621,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xWrap.resultAdapter = function f(typeName, adapter){
     return __xAdapter(f, arguments.length, typeName, adapter,
-                      'resultAdaptor()', xcv.result);
+                      'resultAdapter()', xcv.result);
   };
 
   /**
@@ -1575,7 +1651,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xWrap.argAdapter = function f(typeName, adapter){
     return __xAdapter(f, arguments.length, typeName, adapter,
-                      'argAdaptor()', xcv.arg);
+                      'argAdapter()', xcv.arg);
   };
 
   /**
@@ -1600,6 +1676,33 @@ self.WhWasmUtilInstaller = function(target){
     if(Array.isArray(arguments[3])) args = arguments[3];
     return target.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
   };
+
+  /**
+     This function is ONLY exposed in the public API to facilitate
+     testing. It should not be used in application-level code, only
+     in test code.
+
+     Expects to be given (typeName, value) and returns a conversion
+     of that value as has been registered using argAdapter().
+     It throws if no adapter is found.
+
+     ACHTUNG: the adapter may require that a scopedAllocPush() is
+     active and it may allocate memory within that scope.
+  */
+  target.xWrap.testConvertArg = cache.xWrap.convertArg;
+  /**
+     This function is ONLY exposed in the public API to facilitate
+     testing. It should not be used in application-level code, only
+     in test code.
+
+     Expects to be given (typeName, value) and returns a conversion
+     of that value as has been registered using resultAdapter().
+     It throws if no adapter is found.
+
+     ACHTUNG: the adapter may allocate memory which the caller may need
+     to know how to free.
+  */
+  target.xWrap.testConvertResult = cache.xWrap.convertResult;
 
   return target;
 };

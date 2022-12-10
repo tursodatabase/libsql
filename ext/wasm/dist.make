@@ -97,7 +97,17 @@ dist: \
 		ls -la $$arczip; \
 		set +e; \
 		unzip -lv $$arczip || echo "Missing unzip app? Not fatal."
+ifeq (,$(wasm.docs.found))
 snapshot: dist
+	@echo "To upload the snapshot build to the wasm docs server:"; \
+	echo "1) move $(dist-name-prefix)*.zip to the top of a wasm docs checkout."; \
+  echo "2) run 'make uv-sync'"
+else
+snapshot: dist
+	@echo "Moving snapshot to [$(wasm.docs.found)]..."; \
+	mv $(dist-name-prefix)*.zip $(wasm.docs.found)/.
+	@echo "Run 'make uv-sync' from $(wasm.docs.found) to upload it."
+endif
 # We need a separate `clean` rule to account for weirdness in
 # a sub-make, where we get a copy of the $(dist-name) dir
 # copied into the new $(dist-name) dir.

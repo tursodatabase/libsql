@@ -7,11 +7,7 @@
     <link rel="stylesheet" href="../common/emscripten.css"/>
     <link rel="stylesheet" href="../common/testing.css"/>
     <title>sqlite3 tester #1: Worker thread</title>
-    <style>
-      body {
-          font-family: monospace;
-      }
-    </style>
+    <style></style>
   </head>
   <body>
     <h1 id='color-target'>sqlite3 tester #1: Worker thread</h1>
@@ -45,7 +41,7 @@
       if(urlParams.has('esm')){
           logHtml('warning',"Attempting to run an ES6 Worker Module, "+
                   "which is not supported by all browsers! "+
-                  "e.g. Firefox (as of 2022-11) cannot do this.");
+                  "e.g. Firefox (as of 2022-12) cannot do this.");
         workerArgs.push("tester1.mjs",{type:"module"});
         document.querySelectorAll('title,#color-target').forEach((e)=>{
           e.innerText = "sqlite3 tester #1: ES6 Worker Module";
@@ -62,11 +58,16 @@
             case 'error':
               logHtml('error', ...data.payload.args);
               break;
-            case 'test-result':
-              document.querySelector('#color-target').classList.add(
-                data.payload.pass ? 'tests-pass' : 'tests-fail'
-              );
-              break;
+            case 'test-result':{
+                document.querySelector('#color-target').classList.add(
+                    data.payload.pass ? 'tests-pass' : 'tests-fail'
+                );
+                const e = document.querySelector('title');
+                e.innerText = (
+                    data.payload.pass ? 'PASS' : 'FAIL'
+                ) + ': ' + e.innerText;
+                break;
+            }
             default:
               logHtml('error',"Unhandled message:",data.type);
         };

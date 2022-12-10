@@ -44,7 +44,7 @@ sqlite3-wasmfs.jsflags += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8O
 sqlite3-wasmfs.jsflags += -sUSE_CLOSURE_COMPILER=0
 sqlite3-wasmfs.jsflags += -sIMPORTED_MEMORY
 #sqlite3-wasmfs.jsflags += -sINITIAL_MEMORY=13107200
-#sqlite3-wasmfs.jsflags += -sTOTAL_STACK=4194304
+sqlite3-wasmfs.jsflags += -sSTACK_SIZE=1MB
 sqlite3-wasmfs.jsflags += -sEXPORT_NAME=$(sqlite3.js.init-func)
 sqlite3-wasmfs.jsflags += -sGLOBAL_BASE=4096 # HYPOTHETICALLY keep func table indexes from overlapping w/ heap addr.
 #sqlite3-wasmfs.jsflags += -sFILESYSTEM=0 # only for experimentation. sqlite3 needs the FS API

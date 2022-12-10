@@ -8,6 +8,14 @@
     <title>sqlite3 WASM Testing Page Index</title>
   </head>
   <body>
+    <style>
+      header {
+          background: #044a64;
+          color: white;
+          padding: 0.5em;
+          border-radius: 0.25em;
+      }
+    </style>
     <header id='titlebar'><span>sqlite3 WASM test pages</span></header>
     <hr>
     <div>Below is the list of test pages for the sqlite3 WASM
@@ -30,7 +38,7 @@
           Chrome or Chromium (v102 at least, possibly newer). OPFS
           support in the other major browsers is pending. Development
           and testing is currently done against a dev-channel release
-          of Chrome (v107 as of 2022-09-26).
+          of Chrome (v110 as of 2022-12-02).
         </li>
       </ul>
     </div>
@@ -80,9 +88,9 @@
             <li><a href='speedtest1.html'>speedtest1</a>: a main-thread WASM build of speedtest1.</li>
             <!--li><a href='speedtest1-wasmfs.html?flags=--size,25'>speedtest1-wasmfs</a>: a variant of speedtest1 built solely for the wasmfs/opfs feature.
                 </li-->
-            <li><a href='speedtest1.html?vfs=kvvfs'>speedtest1-kvvfs</a>: speedtest1 with the kvvfs.</li>
+            <li><a href='speedtest1.html?vfs=kvvfs'>speedtest1?vfs=kvvfs</a>: speedtest1 with the kvvfs.</li>
             <li><a href='speedtest1-worker.html?size=25'>speedtest1-worker</a>: an interactive Worker-thread variant of speedtest1.</li>
-            <li><a href='speedtest1-worker.html?vfs=opfs&size=25'>speedtest1-worker-opfs</a>: speedtest1-worker with the
+            <li><a href='speedtest1-worker.html?vfs=opfs&size=25'>speedtest1-worker?vfs=opfs</a>: speedtest1-worker with the
               OPFS VFS preselected and configured for a moderate workload.</li>
           </ul>
         </li>

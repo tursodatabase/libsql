@@ -73,13 +73,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if(capi.SQLITE_TRACE_STMT===t){
             // x == SQL, p == sqlite3_stmt*
             console.log("SQL TRACE #"+(++this.counter),
-                        wasm.cstringToJs(x));
+                        wasm.cstrToJs(x));
           }
         }.bind({counter: 0}));
 
   /**
-     A map of sqlite3_vfs pointers to SQL code to run when the DB
-     constructor opens a database with the given VFS.
+     A map of sqlite3_vfs pointers to SQL code or a callback function
+     to run when the DB constructor opens a database with the given
+     VFS. In the latter case, the call signature is (theDbObject,sqlite3Namespace)
+     and the callback is expected to throw on error.
   */
   const __vfsPostOpenSql = Object.create(null);
 
@@ -137,7 +139,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       console.error("Invalid DB ctor args",opt,arguments);
       toss3("Invalid arguments for DB constructor.");
     }
-    let fnJs = ('number'===typeof fn) ? wasm.cstringToJs(fn) : fn;
+    let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
     const vfsCheck = ctor._name2vfs[fnJs];
     if(vfsCheck){
       vfsName = vfsCheck.vfs;
@@ -154,21 +156,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     try {
       const pPtr = wasm.pstack.allocPtr() /* output (sqlite3**) arg */;
       let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
-      pDb = wasm.getPtrValue(pPtr);
+      pDb = wasm.peekPtr(pPtr);
       checkSqlite3Rc(pDb, rc);
       if(flagsStr.indexOf('t')>=0){
         capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
                               __dbTraceToConsole, 0);
       }
-      // Check for per-VFS post-open SQL...
-      const pVfs = capi.sqlite3_js_db_vfs(pDb);
-      //console.warn("Opened db",fn,"with vfs",vfsName,pVfs);
-      if(!pVfs) toss3("Internal error: cannot get VFS for new db handle.");
-      const postInitSql = __vfsPostOpenSql[pVfs];
-      if(postInitSql){
-        rc = capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0);
-        checkSqlite3Rc(pDb, rc);
-      }      
     }catch( e ){
       if( pDb ) capi.sqlite3_close_v2(pDb);
       throw e;
@@ -178,12 +171,34 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     this.filename = fnJs;
     __ptrMap.set(this, pDb);
     __stmtMap.set(this, Object.create(null));
+    try{
+      // Check for per-VFS post-open SQL/callback...
+      const pVfs = capi.sqlite3_js_db_vfs(pDb);
+      if(!pVfs) toss3("Internal error: cannot get VFS for new db handle.");
+      const postInitSql = __vfsPostOpenSql[pVfs];
+      if(postInitSql instanceof Function){
+        postInitSql(this, sqlite3);
+      }else if(postInitSql){
+        checkSqlite3Rc(
+          pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
+        );
+      }      
+    }catch(e){
+      this.close();
+      throw e;
+    }
   };
 
   /**
      Sets SQL which should be exec()'d on a DB instance after it is
-     opened with the given VFS pointer. This is intended only for use
-     by DB subclasses or sqlite3_vfs implementations.
+     opened with the given VFS pointer. The SQL may be any type
+     supported by the "string:flexible" function argument conversion.
+     Alternately, the 2nd argument may be a function, in which case it
+     is called with (theOo1DbObject,sqlite3Namespace) at the end of
+     the DB() constructor. The function must throw on error, in which
+     case the db is closed and the exception is propagated.  This
+     function is intended only for use by DB subclasses or sqlite3_vfs
+     implementations.
   */
   dbCtorHelper.setVfsPostOpenSql = function(pVfs, sql){
     __vfsPostOpenSql[pVfs] = sql;
@@ -459,6 +474,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
+     Internal impl of the DB.selectArrays() and
+     selectObjects() methods.
+  */
+  const __selectAll =
+        (db, sql, bind, rowMode)=>db.exec({
+          sql, bind, rowMode, returnValue: 'resultRows'
+        });
+
+  /**
      Expects to be given a DB instance or an `sqlite3*` pointer (may
      be null) and an sqlite3 API result code. If the result code is
      not falsy, this function throws an SQLite3Error with an error
@@ -496,10 +520,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        db is closed but before auxiliary state like this.filename is
        cleared.
 
-       Both onclose handlers are passed this object. If this db is not
-       opened, neither of the handlers are called. Any exceptions the
-       handlers throw are ignored because "destructors must not
-       throw."
+       Both onclose handlers are passed this object, with the onclose
+       object as their "this," noting that the db will have been
+       closed when onclose.after is called. If this db is not opened
+       when close() is called, neither of the handlers are called. Any
+       exceptions the handlers throw are ignored because "destructors
+       must not throw."
 
        Note that garbage collection of a db handle, if it happens at
        all, will never trigger close(), so onclose handlers are not a
@@ -576,7 +602,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       );
       if(pVfs){
         const v = new capi.sqlite3_vfs(pVfs);
-        try{ rc = wasm.cstringToJs(v.$zName) }
+        try{ rc = wasm.cstrToJs(v.$zName) }
         finally { v.dispose() }
       }
       return rc;        
@@ -610,7 +636,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try{
         ppStmt = wasm.pstack.alloc(8)/* output (sqlite3_stmt**) arg */;
         DB.checkRc(this, capi.sqlite3_prepare_v2(this.pointer, sql, -1, ppStmt, null));
-        pStmt = wasm.getPtrValue(ppStmt);
+        pStmt = wasm.peekPtr(ppStmt);
       }
       finally {
         wasm.pstack.restore(stack);
@@ -790,8 +816,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const pSqlEnd = pSql + sqlByteLen;
         if(isTA) wasm.heap8().set(arg.sql, pSql);
         else wasm.jstrcpy(arg.sql, wasm.heap8(), pSql, sqlByteLen, false);
-        wasm.setMemValue(pSql + sqlByteLen, 0/*NUL terminator*/);
-        while(pSql && wasm.getMemValue(pSql, 'i8')
+        wasm.poke(pSql + sqlByteLen, 0/*NUL terminator*/);
+        while(pSql && wasm.peek(pSql, 'i8')
               /* Maintenance reminder:^^^ _must_ be 'i8' or else we
                  will very likely cause an endless loop. What that's
                  doing is checking for a terminating NUL byte. If we
@@ -799,13 +825,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  around the NUL terminator, and get stuck in and
                  endless loop at the end of the SQL, endlessly
                  re-preparing an empty statement. */ ){
-          wasm.setPtrValue(ppStmt, 0);
-          wasm.setPtrValue(pzTail, 0);
+          wasm.pokePtr([ppStmt, pzTail], 0);
           DB.checkRc(this, capi.sqlite3_prepare_v3(
             this.pointer, pSql, sqlByteLen, 0, ppStmt, pzTail
           ));
-          const pStmt = wasm.getPtrValue(ppStmt);
-          pSql = wasm.getPtrValue(pzTail);
+          const pStmt = wasm.peekPtr(ppStmt);
+          pSql = wasm.peekPtr(pzTail);
           sqlByteLen = pSqlEnd - pSql;
           if(!pStmt) continue;
           if(Array.isArray(opt.saveSql)){
@@ -1081,6 +1106,26 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     selectObject: function(sql,bind){
       return __selectFirstRow(this, sql, bind, {});
+    },
+
+    /**
+       Runs the given SQL and returns an array of all results, with
+       each row represented as an array, as per the 'array' `rowMode`
+       option to `exec()`. An empty result set resolves
+       to an empty array. The second argument, if any, is treated as
+       the 'bind' option to a call to exec().
+    */
+    selectArrays: function(sql,bind){
+      return __selectAll(this, sql, bind, 'array');
+    },
+
+    /**
+       Works identically to selectArrays() except that each value
+       in the returned array is an object, as per the 'object' `rowMode`
+       option to `exec()`.
+    */
+    selectObjects: function(sql,bind){
+      return __selectAll(this, sql, bind, 'object');
     },
 
     /**
@@ -1759,10 +1804,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   /** The OO API's public namespace. */
   sqlite3.oo1 = {
-    version: {
-      lib: capi.sqlite3_libversion(),
-      ooApi: "0.1"
-    },
     DB,
     Stmt
   }/*oo1 object*/;

@@ -270,6 +270,8 @@ int sqlite3WhereExplainBloomFilter(
   zMsg = sqlite3StrAccumFinish(&str);
   ret = sqlite3VdbeAddOp4(v, OP_Explain, sqlite3VdbeCurrentAddr(v),
                           pParse->addrExplain, 0, zMsg,P4_DYNAMIC);
+
+  sqlite3VdbeScanStatus(v, sqlite3VdbeCurrentAddr(v)-1, 0, 0, 0, 0);
   return ret;
 }
 #endif /* SQLITE_OMIT_EXPLAIN */
@@ -292,14 +294,27 @@ void sqlite3WhereAddScanStatus(
 ){
   const char *zObj = 0;
   WhereLoop *pLoop = pLvl->pWLoop;
-  if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0  &&  pLoop->u.btree.pIndex!=0 ){
+  int wsFlags = pLoop->wsFlags;
+  int viaCoroutine = 0;
+
+  if( (wsFlags & WHERE_VIRTUALTABLE)==0  &&  pLoop->u.btree.pIndex!=0 ){
     zObj = pLoop->u.btree.pIndex->zName;
   }else{
     zObj = pSrclist->a[pLvl->iFrom].zName;
+    viaCoroutine = pSrclist->a[pLvl->iFrom].fg.viaCoroutine;
   }
   sqlite3VdbeScanStatus(
       v, addrExplain, pLvl->addrBody, pLvl->addrVisit, pLoop->nOut, zObj
   );
+
+  if( viaCoroutine==0 ){
+    if( (wsFlags & (WHERE_MULTI_OR|WHERE_AUTO_INDEX))==0 ){
+      sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iTabCur);
+    }
+    if( wsFlags & WHERE_INDEXED ){
+      sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iIdxCur);
+    }
+  }
 }
 #endif
 
@@ -359,7 +374,7 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
       pTerm->wtFlags |= TERM_CODED;
     }
 #ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace & 0x20000 ){
+    if( (sqlite3WhereTrace & 0x4001)==0x4001 ){
       sqlite3DebugPrintf("DISABLE-");
       sqlite3WhereTermPrint(pTerm, (int)(pTerm - (pTerm->pWC->a)));
     }
@@ -1346,13 +1361,15 @@ Bitmask sqlite3WhereCodeOneLoopStart(
   pLevel->notReady = notReady & ~sqlite3WhereGetMask(&pWInfo->sMaskSet, iCur);
   bRev = (pWInfo->revMask>>iLevel)&1;
   VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
-#if WHERETRACE_ENABLED /* 0x20800 */
-  if( sqlite3WhereTrace & 0x800 ){
+#if WHERETRACE_ENABLED /* 0x4001 */
+  if( sqlite3WhereTrace & 0x1 ){
     sqlite3DebugPrintf("Coding level %d of %d:  notReady=%llx  iFrom=%d\n",
        iLevel, pWInfo->nLevel, (u64)notReady, pLevel->iFrom);
-    sqlite3WhereLoopPrint(pLoop, pWC);
+    if( sqlite3WhereTrace & 0x1000 ){
+      sqlite3WhereLoopPrint(pLoop, pWC);
+    }
   }
-  if( sqlite3WhereTrace & 0x20000 ){
+  if( (sqlite3WhereTrace & 0x4001)==0x4001 ){
     if( iLevel==0 ){
       sqlite3DebugPrintf("WHERE clause being coded:\n");
       sqlite3TreeViewExpr(0, pWInfo->pWhere, 0);
@@ -2276,7 +2293,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }
         /* Loop through table entries that match term pOrTerm. */
         ExplainQueryPlan((pParse, 1, "INDEX %d", ii+1));
-        WHERETRACE(0xffff, ("Subplan for OR-clause:\n"));
+        WHERETRACE(0xffffffff, ("Subplan for OR-clause:\n"));
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0, 0,
                                       WHERE_OR_SUBCLAUSE, iCovCur);
         assert( pSubWInfo || pParse->nErr );
@@ -2513,12 +2530,12 @@ Bitmask sqlite3WhereCodeOneLoopStart(
         }
 #endif
       }
-#ifdef WHERETRACE_ENABLED /* 0xffff */
+#ifdef WHERETRACE_ENABLED /* 0xffffffff */
       if( sqlite3WhereTrace ){
         VdbeNoopComment((v, "WhereTerm[%d] (%p) priority=%d",
                          pWC->nTerm-j, pTerm, iLoop));
       }
-      if( sqlite3WhereTrace & 0x800 ){
+      if( sqlite3WhereTrace & 0x4000 ){
         sqlite3DebugPrintf("Coding auxiliary constraint:\n");
         sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
       }
@@ -2547,8 +2564,8 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( pTerm->leftCursor!=iCur ) continue;
     if( pTabItem->fg.jointype & (JT_LEFT|JT_LTORJ|JT_RIGHT) ) continue;
     pE = pTerm->pExpr;
-#ifdef WHERETRACE_ENABLED /* 0x800 */
-    if( sqlite3WhereTrace & 0x800 ){
+#ifdef WHERETRACE_ENABLED /* 0x4001 */
+    if( (sqlite3WhereTrace & 0x4001)==0x4001 ){
       sqlite3DebugPrintf("Coding transitive constraint:\n");
       sqlite3WhereTermPrint(pTerm, pWC->nTerm-j);
     }
@@ -2663,13 +2680,13 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     }
   }
 
-#if WHERETRACE_ENABLED /* 0x20800 */
-  if( sqlite3WhereTrace & 0x20000 ){
+#if WHERETRACE_ENABLED /* 0x4001 */
+  if( sqlite3WhereTrace & 0x4000 ){
     sqlite3DebugPrintf("All WHERE-clause terms after coding level %d:\n",
                        iLevel);
     sqlite3WhereClausePrint(pWC);
   }
-  if( sqlite3WhereTrace & 0x800 ){
+  if( sqlite3WhereTrace & 0x1 ){
     sqlite3DebugPrintf("End Coding level %d:  notReady=%llx\n",
        iLevel, (u64)pLevel->notReady);
   }

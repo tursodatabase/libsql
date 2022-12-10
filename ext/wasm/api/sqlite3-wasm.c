@@ -32,21 +32,16 @@
 ** the same db handle as another thread, thus multi-threading support
 ** is unnecessary in the library. Because the filesystems are virtual
 ** and local to a given wasm runtime instance, two Workers can never
-** access the same db file at once, with the exception of OPFS. As of
-** this writing (2022-09-30), OPFS exclusively locks a file when
-** opening it, so two Workers can never open the same OPFS-backed file
-** at once. That situation will change if and when lower-level locking
-** features are added to OPFS (as is currently planned, per folks
-** involved with its development).
+** access the same db file at once, with the exception of OPFS.
 **
-** Summary: except for the case of future OPFS, which supports
-** locking, and any similar future filesystems, threading and file
-** locking support are unnecessary in the wasm build.
+** Summary: except for the case of OPFS, which supports locking using
+** its own API, threading and file locking support are unnecessary in
+** the wasm build.
 */
 
 /*
 ** Undefine any SQLITE_... config flags which we specifically do not
-** want undefined. Please keep these alphabetized.
+** want defined. Please keep these alphabetized.
 */
 #undef SQLITE_OMIT_DESERIALIZE
 #undef SQLITE_OMIT_MEMORYDB
@@ -69,9 +64,17 @@
 */
 # define SQLITE_DEFAULT_CACHE_SIZE -16384
 #endif
-#if 0 && !defined(SQLITE_DEFAULT_PAGE_SIZE)
-/* TODO: experiment with this. */
-# define SQLITE_DEFAULT_PAGE_SIZE 8192 /*4096*/
+#if !defined(SQLITE_DEFAULT_PAGE_SIZE)
+/*
+** OPFS performance is improved by approx. 12% with a page size of 8kb
+** instead of 4kb. Performance with 16kb is equivalent to 8kb.
+**
+** Performance difference of kvvfs with a page size of 8kb compared to
+** 4kb, as measured by speedtest1 --size 4, is indeterminate:
+** measurements are all over the place either way and not
+** significantly different.
+*/
+# define SQLITE_DEFAULT_PAGE_SIZE 8192
 #endif
 #ifndef SQLITE_DEFAULT_UNIX_VFS
 # define SQLITE_DEFAULT_UNIX_VFS "unix-none"
@@ -107,6 +110,12 @@
 #endif
 #ifndef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
 #  define SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+#endif
+
+/**********************************************************************/
+/* SQLITE_M... */
+#ifndef SQLITE_MAX_ALLOCATION_SIZE
+# define SQLITE_MAX_ALLOCATION_SIZE 0x1fffffff
 #endif
 
 /**********************************************************************/
@@ -359,11 +368,11 @@ void sqlite3_wasm_test_struct(WasmTestStruct * s){
 */
 SQLITE_WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
-  static char aBuffer[1024 * 12] = {0} /* where the JSON goes */;
+  static char aBuffer[1024 * 16] = {0} /* where the JSON goes */;
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
   char * zPos = &aBuffer[1] /* skip first byte for now to help protect
-                          ** against a small race condition */;
+                            ** against a small race condition */;
   char const * const zEnd = &aBuffer[0] + sizeof(aBuffer) /* one-past-the-end */;
   if(aBuffer[0]) return aBuffer;
   /* Leave aBuffer[0] at 0 until the end to help guard against a tiny
@@ -401,6 +410,12 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
   } _DefGroup;
 
+  /* TODO? Authorizer... */
+  DefGroup(authorizer){
+    DefInt(SQLITE_DENY);
+    DefInt(SQLITE_IGNORE);
+  } _DefGroup;
+
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
     ** integers to avoid casting-related warnings. */
@@ -413,6 +428,45 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_TEXT);
     DefInt(SQLITE_BLOB);
     DefInt(SQLITE_NULL);
+  } _DefGroup;
+
+  DefGroup(dbConfig){
+    DefInt(SQLITE_DBCONFIG_MAINDBNAME);
+    DefInt(SQLITE_DBCONFIG_LOOKASIDE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_FKEY);
+    DefInt(SQLITE_DBCONFIG_ENABLE_TRIGGER);
+    DefInt(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER);
+    DefInt(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION);
+    DefInt(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_QPSG);
+    DefInt(SQLITE_DBCONFIG_TRIGGER_EQP);
+    DefInt(SQLITE_DBCONFIG_RESET_DATABASE);
+    DefInt(SQLITE_DBCONFIG_DEFENSIVE);
+    DefInt(SQLITE_DBCONFIG_WRITABLE_SCHEMA);
+    DefInt(SQLITE_DBCONFIG_LEGACY_ALTER_TABLE);
+    DefInt(SQLITE_DBCONFIG_DQS_DML);
+    DefInt(SQLITE_DBCONFIG_DQS_DDL);
+    DefInt(SQLITE_DBCONFIG_ENABLE_VIEW);
+    DefInt(SQLITE_DBCONFIG_LEGACY_FILE_FORMAT);
+    DefInt(SQLITE_DBCONFIG_TRUSTED_SCHEMA);
+    DefInt(SQLITE_DBCONFIG_MAX);
+  } _DefGroup;
+
+  DefGroup(dbStatus){
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_USED);
+    DefInt(SQLITE_DBSTATUS_CACHE_USED);
+    DefInt(SQLITE_DBSTATUS_SCHEMA_USED);
+    DefInt(SQLITE_DBSTATUS_STMT_USED);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_HIT);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL);
+    DefInt(SQLITE_DBSTATUS_CACHE_HIT);
+    DefInt(SQLITE_DBSTATUS_CACHE_MISS);
+    DefInt(SQLITE_DBSTATUS_CACHE_WRITE);
+    DefInt(SQLITE_DBSTATUS_DEFERRED_FKS);
+    DefInt(SQLITE_DBSTATUS_CACHE_USED_SHARED);
+    DefInt(SQLITE_DBSTATUS_CACHE_SPILL);
+    DefInt(SQLITE_DBSTATUS_MAX);
   } _DefGroup;
 
   DefGroup(encodings) {
@@ -492,6 +546,10 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_IOCAP_POWERSAFE_OVERWRITE);
     DefInt(SQLITE_IOCAP_IMMUTABLE);
     DefInt(SQLITE_IOCAP_BATCH_ATOMIC);
+  } _DefGroup;
+
+  DefGroup(limits) {
+    DefInt(SQLITE_MAX_ALLOCATION_SIZE);
   } _DefGroup;
 
   DefGroup(openFlags) {
@@ -644,6 +702,31 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_DESERIALIZE_RESIZEABLE);
   } _DefGroup;
 
+  DefGroup(sqlite3Status){
+    DefInt(SQLITE_STATUS_MEMORY_USED);
+    DefInt(SQLITE_STATUS_PAGECACHE_USED);
+    DefInt(SQLITE_STATUS_PAGECACHE_OVERFLOW);
+    //DefInt(SQLITE_STATUS_SCRATCH_USED) /* NOT USED */;
+    //DefInt(SQLITE_STATUS_SCRATCH_OVERFLOW) /* NOT USED */;
+    DefInt(SQLITE_STATUS_MALLOC_SIZE);
+    DefInt(SQLITE_STATUS_PARSER_STACK);
+    DefInt(SQLITE_STATUS_PAGECACHE_SIZE);
+    //DefInt(SQLITE_STATUS_SCRATCH_SIZE) /* NOT USED */;
+    DefInt(SQLITE_STATUS_MALLOC_COUNT);
+  } _DefGroup;
+
+  DefGroup(stmtStatus){
+    DefInt(SQLITE_STMTSTATUS_FULLSCAN_STEP);
+    DefInt(SQLITE_STMTSTATUS_SORT);
+    DefInt(SQLITE_STMTSTATUS_AUTOINDEX);
+    DefInt(SQLITE_STMTSTATUS_VM_STEP);
+    DefInt(SQLITE_STMTSTATUS_REPREPARE);
+    DefInt(SQLITE_STMTSTATUS_RUN);
+    DefInt(SQLITE_STMTSTATUS_FILTER_MISS);
+    DefInt(SQLITE_STMTSTATUS_FILTER_HIT);
+    DefInt(SQLITE_STMTSTATUS_MEMUSED);
+  } _DefGroup;
+  
   DefGroup(syncFlags) {
     DefInt(SQLITE_SYNC_NORMAL);
     DefInt(SQLITE_SYNC_FULL);
@@ -668,7 +751,36 @@ const char * sqlite3_wasm_enum_json(void){
     DefStr(SQLITE_VERSION);
     DefStr(SQLITE_SOURCE_ID);
   } _DefGroup;
-  
+
+  DefGroup(vtab) {
+    DefInt(SQLITE_INDEX_SCAN_UNIQUE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_EQ);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_MATCH);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LIKE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GLOB);
+    DefInt(SQLITE_INDEX_CONSTRAINT_REGEXP);
+    DefInt(SQLITE_INDEX_CONSTRAINT_NE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNOT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNOTNULL);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNULL);
+    DefInt(SQLITE_INDEX_CONSTRAINT_IS);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LIMIT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_OFFSET);
+    DefInt(SQLITE_INDEX_CONSTRAINT_FUNCTION);
+    DefInt(SQLITE_VTAB_CONSTRAINT_SUPPORT);
+    DefInt(SQLITE_VTAB_INNOCUOUS);
+    DefInt(SQLITE_VTAB_DIRECTONLY);
+    DefInt(SQLITE_ROLLBACK);
+    //DefInt(SQLITE_IGNORE); // Also used by sqlite3_authorizer() callback
+    DefInt(SQLITE_FAIL);
+    //DefInt(SQLITE_ABORT); // Also an error code
+    DefInt(SQLITE_REPLACE);
+  } _DefGroup;
+
 #undef DefGroup
 #undef DefStr
 #undef DefInt
@@ -695,8 +807,8 @@ const char * sqlite3_wasm_enum_json(void){
   /** Macros for emitting StructBinder description. */
 #define StructBinder__(TYPE)                 \
   n = 0;                                     \
-  outf("%s{", (nStruct++ ? ", " : ""));  \
-  out("\"name\": \"" # TYPE "\",");         \
+  outf("%s{", (nStruct++ ? ", " : ""));      \
+  out("\"name\": \"" # TYPE "\",");          \
   outf("\"sizeof\": %d", (int)sizeof(TYPE)); \
   out(",\"members\": {");
 #define StructBinder_(T) StructBinder__(T)
@@ -716,78 +828,200 @@ const char * sqlite3_wasm_enum_json(void){
 
 #define CurrentStruct sqlite3_vfs
     StructBinder {
-      M(iVersion,"i");
-      M(szOsFile,"i");
-      M(mxPathname,"i");
-      M(pNext,"p");
-      M(zName,"s");
-      M(pAppData,"p");
-      M(xOpen,"i(pppip)");
-      M(xDelete,"i(ppi)");
-      M(xAccess,"i(ppip)");
-      M(xFullPathname,"i(ppip)");
-      M(xDlOpen,"p(pp)");
-      M(xDlError,"p(pip)");
-      M(xDlSym,"p()");
-      M(xDlClose,"v(pp)");
-      M(xRandomness,"i(pip)");
-      M(xSleep,"i(pi)");
-      M(xCurrentTime,"i(pp)");
-      M(xGetLastError,"i(pip)");
-      M(xCurrentTimeInt64,"i(pp)");
-      M(xSetSystemCall,"i(ppp)");
-      M(xGetSystemCall,"p(pp)");
-      M(xNextSystemCall,"p(pp)");
+      M(iVersion,          "i");
+      M(szOsFile,          "i");
+      M(mxPathname,        "i");
+      M(pNext,             "p");
+      M(zName,             "s");
+      M(pAppData,          "p");
+      M(xOpen,             "i(pppip)");
+      M(xDelete,           "i(ppi)");
+      M(xAccess,           "i(ppip)");
+      M(xFullPathname,     "i(ppip)");
+      M(xDlOpen,           "p(pp)");
+      M(xDlError,          "p(pip)");
+      M(xDlSym,            "p()");
+      M(xDlClose,          "v(pp)");
+      M(xRandomness,       "i(pip)");
+      M(xSleep,            "i(pi)");
+      M(xCurrentTime,      "i(pp)");
+      M(xGetLastError,     "i(pip)");
+      M(xCurrentTimeInt64, "i(pp)");
+      M(xSetSystemCall,    "i(ppp)");
+      M(xGetSystemCall,    "p(pp)");
+      M(xNextSystemCall,   "p(pp)");
     } _StructBinder;
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_io_methods
     StructBinder {
-      M(iVersion,"i");
-      M(xClose,"i(p)");
-      M(xRead,"i(ppij)");
-      M(xWrite,"i(ppij)");
-      M(xTruncate,"i(pj)");
-      M(xSync,"i(pi)");
-      M(xFileSize,"i(pp)");
-      M(xLock,"i(pi)");
-      M(xUnlock,"i(pi)");
-      M(xCheckReservedLock,"i(pp)");
-      M(xFileControl,"i(pip)");
-      M(xSectorSize,"i(p)");
-      M(xDeviceCharacteristics,"i(p)");
-      M(xShmMap,"i(piiip)");
-      M(xShmLock,"i(piii)");
-      M(xShmBarrier,"v(p)");
-      M(xShmUnmap,"i(pi)");
-      M(xFetch,"i(pjip)");
-      M(xUnfetch,"i(pjp)");
+      M(iVersion,               "i");
+      M(xClose,                 "i(p)");
+      M(xRead,                  "i(ppij)");
+      M(xWrite,                 "i(ppij)");
+      M(xTruncate,              "i(pj)");
+      M(xSync,                  "i(pi)");
+      M(xFileSize,              "i(pp)");
+      M(xLock,                  "i(pi)");
+      M(xUnlock,                "i(pi)");
+      M(xCheckReservedLock,     "i(pp)");
+      M(xFileControl,           "i(pip)");
+      M(xSectorSize,            "i(p)");
+      M(xDeviceCharacteristics, "i(p)");
+      M(xShmMap,                "i(piiip)");
+      M(xShmLock,               "i(piii)");
+      M(xShmBarrier,            "v(p)");
+      M(xShmUnmap,              "i(pi)");
+      M(xFetch,                 "i(pjip)");
+      M(xUnfetch,               "i(pjp)");
     } _StructBinder;
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_file
     StructBinder {
-      M(pMethods,"p");
+      M(pMethods, "p");
     } _StructBinder;
 #undef CurrentStruct
 
 #define CurrentStruct sqlite3_kvvfs_methods
     StructBinder {
-      M(xRead,"i(sspi)");
-      M(xWrite,"i(sss)");
-      M(xDelete,"i(ss)");
-      M(nKeySize,"i");
+      M(xRead,    "i(sspi)");
+      M(xWrite,   "i(sss)");
+      M(xDelete,  "i(ss)");
+      M(nKeySize, "i");
+    } _StructBinder;
+#undef CurrentStruct
+
+
+#define CurrentStruct sqlite3_vtab
+    StructBinder {
+      M(pModule, "p");
+      M(nRef,    "i");
+      M(zErrMsg, "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_vtab_cursor
+    StructBinder {
+      M(pVtab, "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_module
+    StructBinder {
+      M(iVersion,       "i");
+      M(xCreate,        "i(ppippp)");
+      M(xConnect,       "i(ppippp)");
+      M(xBestIndex,     "i(pp)");
+      M(xDisconnect,    "i(p)");
+      M(xDestroy,       "i(p)");
+      M(xOpen,          "i(pp)");
+      M(xClose,         "i(p)");
+      M(xFilter,        "i(pisip)");
+      M(xNext,          "i(p)");
+      M(xEof,           "i(p)");
+      M(xColumn,        "i(ppi)");
+      M(xRowid,         "i(pp)");
+      M(xUpdate,        "i(pipp)");
+      M(xBegin,         "i(p)");
+      M(xSync,          "i(p)");
+      M(xCommit,        "i(p)");
+      M(xRollback,      "i(p)");
+      M(xFindFunction,  "i(pispp)");
+      M(xRename,        "i(ps)");
+      // ^^^ v1. v2+ follows...
+      M(xSavepoint,     "i(pi)");
+      M(xRelease,       "i(pi)");
+      M(xRollbackTo,    "i(pi)");
+      // ^^^ v2. v3+ follows...
+      M(xShadowName,    "i(s)");
+    } _StructBinder;
+#undef CurrentStruct
+    
+    /**
+     ** Workaround: in order to map the various inner structs from
+     ** sqlite3_index_info, we have to uplift those into constructs we
+     ** can access by type name. These structs _must_ match their
+     ** in-sqlite3_index_info counterparts byte for byte.
+    */
+    typedef struct {
+      int iColumn;
+      unsigned char op;
+      unsigned char usable;
+      int iTermOffset;
+    } sqlite3_index_constraint;
+    typedef struct {
+      int iColumn;
+      unsigned char desc;
+    } sqlite3_index_orderby;
+    typedef struct {
+      int argvIndex;
+      unsigned char omit;
+    } sqlite3_index_constraint_usage;
+    { /* Validate that the above struct sizeof()s match
+      ** expectations. We could improve upon this by
+      ** checking the offsetof() for each member. */
+      const sqlite3_index_info siiCheck;
+#define IndexSzCheck(T,M)           \
+      (sizeof(T) == sizeof(*siiCheck.M))
+      if(!IndexSzCheck(sqlite3_index_constraint,aConstraint)
+         || !IndexSzCheck(sqlite3_index_orderby,aOrderBy)
+         || !IndexSzCheck(sqlite3_index_constraint_usage,aConstraintUsage)){
+        assert(!"sizeof mismatch in sqlite3_index_... struct(s)");
+        return 0;
+      }
+#undef IndexSzCheck
+    }
+
+#define CurrentStruct sqlite3_index_constraint
+    StructBinder {
+      M(iColumn,        "i");
+      M(op,             "C");
+      M(usable,         "C");
+      M(iTermOffset,    "i");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_orderby
+    StructBinder {
+      M(iColumn,   "i");
+      M(desc,      "C");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_constraint_usage
+    StructBinder {
+      M(argvIndex,  "i");
+      M(omit,       "C");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_info
+    StructBinder {
+      M(nConstraint,        "i");
+      M(aConstraint,        "p");
+      M(nOrderBy,           "i");
+      M(aOrderBy,           "p");
+      M(aConstraintUsage,   "p");
+      M(idxNum,             "i");
+      M(idxStr,             "p");
+      M(needToFreeIdxStr,   "i");
+      M(orderByConsumed,    "i");
+      M(estimatedCost,      "d");
+      M(estimatedRows,      "j");
+      M(idxFlags,           "i");
+      M(colUsed,            "j");
     } _StructBinder;
 #undef CurrentStruct
 
 #if SQLITE_WASM_TESTS
 #define CurrentStruct WasmTestStruct
     StructBinder {
-      M(v4,"i");
-      M(cstr,"s");
-      M(ppV,"p");
-      M(v8,"j");
-      M(xFunc,"v(p)");
+      M(v4,    "i");
+      M(cstr,  "s");
+      M(ppV,   "p");
+      M(v8,    "j");
+      M(xFunc, "v(p)");
     } _StructBinder;
 #undef CurrentStruct
 #endif
@@ -820,7 +1054,7 @@ const char * sqlite3_wasm_enum_json(void){
 ** call is returned.
 */
 SQLITE_WASM_KEEP
-int sqlite3_wasm_vfs_unlink(sqlite3_vfs *pVfs, const char * zName){
+int sqlite3_wasm_vfs_unlink(sqlite3_vfs *pVfs, const char *zName){
   int rc = SQLITE_MISUSE /* ??? */;
   if( 0==pVfs && 0!=zName ) pVfs = sqlite3_vfs_find(0);
   if( zName && pVfs && pVfs->xDelete ){
@@ -851,18 +1085,25 @@ sqlite3_vfs * sqlite3_wasm_db_vfs(sqlite3 *pDb, const char *zDbName){
 **
 ** This function resets the given db pointer's database as described at
 **
-** https://www.sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigresetdatabase
+** https://sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigresetdatabase
+**
+** But beware: virtual tables destroyed that way do not have their
+** xDestroy() called, so will leak if they require that function for
+** proper cleanup.
 **
 ** Returns 0 on success, an SQLITE_xxx code on error. Returns
 ** SQLITE_MISUSE if pDb is NULL.
 */
 SQLITE_WASM_KEEP
-int sqlite3_wasm_db_reset(sqlite3*pDb){
+int sqlite3_wasm_db_reset(sqlite3 *pDb){
   int rc = SQLITE_MISUSE;
   if( pDb ){
+    sqlite3_table_column_metadata(pDb, "main", 0, 0, 0, 0, 0, 0, 0);
     rc = sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
-    if( 0==rc ) rc = sqlite3_exec(pDb, "VACUUM", 0, 0, 0);
-    sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+    if( 0==rc ){
+      rc = sqlite3_exec(pDb, "VACUUM", 0, 0, 0);
+      sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 0, 0);
+    }
   }
   return rc;
 }
@@ -907,7 +1148,7 @@ int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
   }
   for( ; 0==rc && nPos<nSize; nPos += nBuf ){
     rc = pFile->pMethods->xRead(pFile, buf, nBuf, nPos);
-    if(SQLITE_IOERR_SHORT_READ == rc){
+    if( SQLITE_IOERR_SHORT_READ == rc ){
       rc = (nPos + nBuf) < nSize ? rc : 0/*assume EOF*/;
     }
     if( 0==rc ) rc = xCallback(buf, nBuf);
@@ -935,7 +1176,7 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
                                sqlite3_int64 *nOut, unsigned int mFlags ){
   unsigned char * z;
   if( !pDb || !pOut ) return SQLITE_MISUSE;
-  if(nOut) *nOut = 0;
+  if( nOut ) *nOut = 0;
   z = sqlite3_serialize(pDb, zSchema ? zSchema : "main", nOut, mFlags);
   if( z || (SQLITE_SERIALIZE_NOCOPY & mFlags) ){
     *pOut = z;
@@ -950,13 +1191,16 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 ** for use by the sqlite project's own JS/WASM bindings.
 **
 ** Creates a new file using the I/O API of the given VFS, containing
-** the given number of bytes of the given data. If the file exists,
-** it is truncated to the given length and populated with the given
+** the given number of bytes of the given data. If the file exists, it
+** is truncated to the given length and populated with the given
 ** data.
 **
 ** This function exists so that we can implement the equivalent of
 ** Emscripten's FS.createDataFile() in a VFS-agnostic way. This
 ** functionality is intended for use in uploading database files.
+**
+** Not all VFSes support this functionality, e.g. the "kvvfs" does
+** not.
 **
 ** If pVfs is NULL, sqlite3_vfs_find(0) is used.
 **
@@ -969,10 +1213,7 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 **
 ** Whether or not directory components of zFilename are created
 ** automatically or not is unspecified: that detail is left to the
-** VFS. The "opfs" VFS, for example, create them.
-**
-** Not all VFSes support this functionality, e.g. the "kvvfs" does
-** not.
+** VFS. The "opfs" VFS, for example, creates them.
 **
 ** If an error happens while populating or truncating the file, the
 ** target file will be deleted (if needed) if this function created
@@ -1004,11 +1245,18 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
     ** it may have a buffer limit related to sqlite3's pager size, we
     ** conservatively write in 512-byte blocks (smallest page
     ** size). */;
-
+  //fprintf(stderr, "pVfs=%p, zFilename=%s, nData=%d\n", pVfs, zFilename, nData);
   if( !pVfs ) pVfs = sqlite3_vfs_find(0);
   if( !pVfs || !zFilename || nData<0 ) return SQLITE_MISUSE;
   pVfs->xAccess(pVfs, zFilename, SQLITE_ACCESS_EXISTS, &fileExisted);
   rc = sqlite3OsOpenMalloc(pVfs, zFilename, &pFile, openFlags, &flagsOut);
+#if 0
+# define RC fprintf(stderr,"create_file(%s,%s) @%d rc=%d\n", \
+                    pVfs->zName, zFilename, __LINE__, rc);
+#else
+# define RC
+#endif
+  RC;
   if(rc) return rc;
   pIo = pFile->pMethods;
   if( pIo->xLock ) {
@@ -1019,26 +1267,37 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
     ** xFileSize(), xTruncate(), and the like, and release the lock
     ** only if it was unlocked when the op was started. */
     rc = pIo->xLock(pFile, SQLITE_LOCK_EXCLUSIVE);
+    RC;
     doUnlock = 0==rc;
   }
-  if( 0==rc) rc = pIo->xTruncate(pFile, nData);
+  if( 0==rc ){
+    rc = pIo->xTruncate(pFile, nData);
+    RC;
+  }
   if( 0==rc && 0!=pData && nData>0 ){
     while( 0==rc && nData>0 ){
       const int n = nData>=blockSize ? blockSize : nData;
       rc = pIo->xWrite(pFile, pPos, n, (sqlite3_int64)(pPos - pData));
+      RC;
       nData -= n;
       pPos += n;
     }
     if( 0==rc && nData>0 ){
       assert( nData<blockSize );
-      rc = pIo->xWrite(pFile, pPos, nData, (sqlite3_int64)(pPos - pData));
+      rc = pIo->xWrite(pFile, pPos, nData,
+                       (sqlite3_int64)(pPos - pData));
+      RC;
     }
   }
-  if( pIo->xUnlock && doUnlock!=0 ) pIo->xUnlock(pFile, SQLITE_LOCK_NONE);
+  if( pIo->xUnlock && doUnlock!=0 ){
+    pIo->xUnlock(pFile, SQLITE_LOCK_NONE);
+  }
   pIo->xClose(pFile);
   if( rc!=0 && 0==fileExisted ){
     pVfs->xDelete(pVfs, zFilename, 1);
   }
+  RC;
+#undef RC
   return rc;
 }
 
@@ -1075,6 +1334,93 @@ SQLITE_WASM_KEEP
 sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
   return &sqlite3KvvfsMethods;
 }
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** This is a proxy for the variadic sqlite3_vtab_config() which passes
+** its argument on, or not, to sqlite3_vtab_config(), depending on the
+** value of its 2nd argument. Returns the result of
+** sqlite3_vtab_config(), or SQLITE_MISUSE if the 2nd arg is not a
+** valid value.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_vtab_config(sqlite3 *pDb, int op, int arg){
+  switch(op){
+  case SQLITE_VTAB_DIRECTONLY:
+  case SQLITE_VTAB_INNOCUOUS:
+    return sqlite3_vtab_config(pDb, op);
+  case SQLITE_VTAB_CONSTRAINT_SUPPORT:
+    return sqlite3_vtab_config(pDb, op, arg);
+  default:
+    return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (int,int*) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_ip(sqlite3 *pDb, int op, int arg1, int* pArg2){
+  switch(op){
+    case SQLITE_DBCONFIG_ENABLE_FKEY:
+    case SQLITE_DBCONFIG_ENABLE_TRIGGER:
+    case SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+    case SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+    case SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+    case SQLITE_DBCONFIG_ENABLE_QPSG:
+    case SQLITE_DBCONFIG_TRIGGER_EQP:
+    case SQLITE_DBCONFIG_RESET_DATABASE:
+    case SQLITE_DBCONFIG_DEFENSIVE:
+    case SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+    case SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+    case SQLITE_DBCONFIG_DQS_DML:
+    case SQLITE_DBCONFIG_DQS_DDL:
+    case SQLITE_DBCONFIG_ENABLE_VIEW:
+    case SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+    case SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+      return sqlite3_db_config(pDb, op, arg1, pArg2);
+    default: return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (void*,int,int) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_pii(sqlite3 *pDb, int op, void * pArg1, int arg2, int arg3){
+  switch(op){
+    case SQLITE_DBCONFIG_LOOKASIDE:
+      return sqlite3_db_config(pDb, op, pArg1, arg2, arg3);
+    default: return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (const char *) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_s(sqlite3 *pDb, int op, const char *zArg){
+  switch(op){
+    case SQLITE_DBCONFIG_MAINDBNAME:
+      return sqlite3_db_config(pDb, op, zArg);
+    default: return SQLITE_MISUSE;
+  }
+}
+
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/wasmfs.h>
@@ -1171,7 +1517,7 @@ void sqlite3_wasm_test_stack_overflow(int recurse){
 /* For testing the 'string-free' whwasmutil.xWrap() conversion. */
 SQLITE_WASM_KEEP
 char * sqlite3_wasm_test_str_hello(int fail){
-  char * s = fail ? 0 : (char *)malloc(6);
+  char * s = fail ? 0 : (char *)sqlite3_malloc(6);
   if(s){
     memcpy(s, "hello", 5);
     s[5] = 0;
