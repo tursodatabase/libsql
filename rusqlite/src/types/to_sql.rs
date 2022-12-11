@@ -368,10 +368,10 @@ mod test {
         db.execute(
             "
             INSERT INTO foo(i128, desc) VALUES
-                (?, 'zero'),
-                (?, 'neg one'), (?, 'neg two'),
-                (?, 'pos one'), (?, 'pos two'),
-                (?, 'min'), (?, 'max')",
+                (?1, 'zero'),
+                (?2, 'neg one'), (?3, 'neg two'),
+                (?4, 'pos one'), (?5, 'pos two'),
+                (?6, 'min'), (?7, 'max')",
             [0i128, -1i128, -2i128, 1i128, 2i128, i128::MIN, i128::MAX],
         )?;
 
@@ -410,11 +410,11 @@ mod test {
         let id = Uuid::new_v4();
 
         db.execute(
-            "INSERT INTO foo (id, label) VALUES (?, ?)",
+            "INSERT INTO foo (id, label) VALUES (?1, ?2)",
             params![id, "target"],
         )?;
 
-        let mut stmt = db.prepare("SELECT id, label FROM foo WHERE id = ?")?;
+        let mut stmt = db.prepare("SELECT id, label FROM foo WHERE id = ?1")?;
 
         let mut rows = stmt.query(params![id])?;
         let row = rows.next()?.unwrap();

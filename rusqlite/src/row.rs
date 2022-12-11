@@ -346,6 +346,46 @@ impl<'stmt> AsRef<Statement<'stmt>> for Row<'stmt> {
     }
 }
 
+/// Debug `Row` like an ordered `Map<Result<&str>, Result<(Type, ValueRef)>>`
+/// with column name as key except that for `Type::Blob` only its size is
+/// printed (not its content).
+impl<'stmt> std::fmt::Debug for Row<'stmt> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut dm = f.debug_map();
+        for c in 0..self.stmt.column_count() {
+            let name = self.stmt.column_name(c);
+            dm.key(&name);
+            let value = self.get_ref(c);
+            match value {
+                Ok(value) => {
+                    let dt = value.data_type();
+                    match value {
+                        ValueRef::Null => {
+                            dm.value(&(dt, ()));
+                        }
+                        ValueRef::Integer(i) => {
+                            dm.value(&(dt, i));
+                        }
+                        ValueRef::Real(f) => {
+                            dm.value(&(dt, f));
+                        }
+                        ValueRef::Text(s) => {
+                            dm.value(&(dt, String::from_utf8_lossy(s)));
+                        }
+                        ValueRef::Blob(b) => {
+                            dm.value(&(dt, b.len()));
+                        }
+                    }
+                }
+                Err(ref _err) => {
+                    dm.value(&value);
+                }
+            }
+        }
+        dm.finish()
+    }
+}
+
 mod sealed {
     /// This trait exists just to ensure that the only impls of `trait Params`
     /// that are allowed are ones in this crate.

@@ -175,12 +175,12 @@ mod test {
     #[test]
     fn test_naive_date() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
-        db.execute("INSERT INTO foo (t) VALUES (?)", [date])?;
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [date])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("2016-02-23", s);
-        let t: NaiveDate = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let t: NaiveDate = db.one_column("SELECT t FROM foo")?;
         assert_eq!(date, t);
         Ok(())
     }
@@ -188,12 +188,12 @@ mod test {
     #[test]
     fn test_naive_time() -> Result<()> {
         let db = checked_memory_handle()?;
-        let time = NaiveTime::from_hms(23, 56, 4);
-        db.execute("INSERT INTO foo (t) VALUES (?)", [time])?;
+        let time = NaiveTime::from_hms_opt(23, 56, 4).unwrap();
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [time])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("23:56:04", s);
-        let v: NaiveTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let v: NaiveTime = db.one_column("SELECT t FROM foo")?;
         assert_eq!(time, v);
         Ok(())
     }
@@ -201,19 +201,19 @@ mod test {
     #[test]
     fn test_naive_date_time() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
-        let time = NaiveTime::from_hms(23, 56, 4);
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
+        let time = NaiveTime::from_hms_opt(23, 56, 4).unwrap();
         let dt = NaiveDateTime::new(date, time);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [dt])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [dt])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("2016-02-23 23:56:04", s);
-        let v: NaiveDateTime = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let v: NaiveDateTime = db.one_column("SELECT t FROM foo")?;
         assert_eq!(dt, v);
 
         db.execute("UPDATE foo set b = datetime(t)", [])?; // "YYYY-MM-DD HH:MM:SS"
-        let hms: NaiveDateTime = db.query_row("SELECT b FROM foo", [], |r| r.get(0))?;
+        let hms: NaiveDateTime = db.one_column("SELECT b FROM foo")?;
         assert_eq!(dt, hms);
         Ok(())
     }
@@ -221,28 +221,26 @@ mod test {
     #[test]
     fn test_date_time_utc() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
-        let time = NaiveTime::from_hms_milli(23, 56, 4, 789);
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
+        let time = NaiveTime::from_hms_milli_opt(23, 56, 4, 789).unwrap();
         let dt = NaiveDateTime::new(date, time);
         let utc = Utc.from_utc_datetime(&dt);
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [utc])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [utc])?;
 
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let s: String = db.one_column("SELECT t FROM foo")?;
         assert_eq!("2016-02-23 23:56:04.789+00:00", s);
 
-        let v1: DateTime<Utc> = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let v1: DateTime<Utc> = db.one_column("SELECT t FROM foo")?;
         assert_eq!(utc, v1);
 
-        let v2: DateTime<Utc> =
-            db.query_row("SELECT '2016-02-23 23:56:04.789'", [], |r| r.get(0))?;
+        let v2: DateTime<Utc> = db.one_column("SELECT '2016-02-23 23:56:04.789'")?;
         assert_eq!(utc, v2);
 
-        let v3: DateTime<Utc> = db.query_row("SELECT '2016-02-23 23:56:04'", [], |r| r.get(0))?;
+        let v3: DateTime<Utc> = db.one_column("SELECT '2016-02-23 23:56:04'")?;
         assert_eq!(utc - Duration::milliseconds(789), v3);
 
-        let v4: DateTime<Utc> =
-            db.query_row("SELECT '2016-02-23 23:56:04.789+00:00'", [], |r| r.get(0))?;
+        let v4: DateTime<Utc> = db.one_column("SELECT '2016-02-23 23:56:04.789+00:00'")?;
         assert_eq!(utc, v4);
         Ok(())
     }
@@ -250,18 +248,18 @@ mod test {
     #[test]
     fn test_date_time_local() -> Result<()> {
         let db = checked_memory_handle()?;
-        let date = NaiveDate::from_ymd(2016, 2, 23);
-        let time = NaiveTime::from_hms_milli(23, 56, 4, 789);
+        let date = NaiveDate::from_ymd_opt(2016, 2, 23).unwrap();
+        let time = NaiveTime::from_hms_milli_opt(23, 56, 4, 789).unwrap();
         let dt = NaiveDateTime::new(date, time);
         let local = Local.from_local_datetime(&dt).single().unwrap();
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [local])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [local])?;
 
         // Stored string should be in UTC
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let s: String = db.one_column("SELECT t FROM foo")?;
         assert!(s.ends_with("+00:00"));
 
-        let v: DateTime<Local> = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let v: DateTime<Local> = db.one_column("SELECT t FROM foo")?;
         assert_eq!(local, v);
         Ok(())
     }
@@ -271,13 +269,13 @@ mod test {
         let db = checked_memory_handle()?;
         let time = DateTime::parse_from_rfc3339("2020-04-07T11:23:45+04:00").unwrap();
 
-        db.execute("INSERT INTO foo (t) VALUES (?)", [time])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1)", [time])?;
 
         // Stored string should preserve timezone offset
-        let s: String = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let s: String = db.one_column("SELECT t FROM foo")?;
         assert!(s.ends_with("+04:00"));
 
-        let v: DateTime<FixedOffset> = db.query_row("SELECT t FROM foo", [], |r| r.get(0))?;
+        let v: DateTime<FixedOffset> = db.one_column("SELECT t FROM foo")?;
         assert_eq!(time.offset(), v.offset());
         assert_eq!(time, v);
         Ok(())
@@ -286,15 +284,13 @@ mod test {
     #[test]
     fn test_sqlite_functions() -> Result<()> {
         let db = checked_memory_handle()?;
-        let result: Result<NaiveTime> = db.query_row("SELECT CURRENT_TIME", [], |r| r.get(0));
+        let result: Result<NaiveTime> = db.one_column("SELECT CURRENT_TIME");
         result.unwrap();
-        let result: Result<NaiveDate> = db.query_row("SELECT CURRENT_DATE", [], |r| r.get(0));
+        let result: Result<NaiveDate> = db.one_column("SELECT CURRENT_DATE");
         result.unwrap();
-        let result: Result<NaiveDateTime> =
-            db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
+        let result: Result<NaiveDateTime> = db.one_column("SELECT CURRENT_TIMESTAMP");
         result.unwrap();
-        let result: Result<DateTime<Utc>> =
-            db.query_row("SELECT CURRENT_TIMESTAMP", [], |r| r.get(0));
+        let result: Result<DateTime<Utc>> = db.one_column("SELECT CURRENT_TIMESTAMP");
         result.unwrap();
         Ok(())
     }
@@ -302,7 +298,7 @@ mod test {
     #[test]
     fn test_naive_date_time_param() -> Result<()> {
         let db = checked_memory_handle()?;
-        let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now().naive_utc()], |r| r.get(0));
+        let result: Result<bool> = db.query_row("SELECT 1 WHERE ?1 BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now().naive_utc()], |r| r.get(0));
         result.unwrap();
         Ok(())
     }
@@ -310,7 +306,7 @@ mod test {
     #[test]
     fn test_date_time_param() -> Result<()> {
         let db = checked_memory_handle()?;
-        let result: Result<bool> = db.query_row("SELECT 1 WHERE ? BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now()], |r| r.get(0));
+        let result: Result<bool> = db.query_row("SELECT 1 WHERE ?1 BETWEEN datetime('now', '-1 minute') AND datetime('now', '+1 minute')", [Utc::now()], |r| r.get(0));
         result.unwrap();
         Ok(())
     }

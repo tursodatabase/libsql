@@ -62,7 +62,7 @@ use std::ffi::{CStr, CString};
 use std::fmt;
 use std::os::raw::{c_char, c_int};
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::result;
 use std::str;
 use std::sync::atomic::Ordering;
@@ -323,7 +323,6 @@ impl DatabaseName<'_> {
 pub struct Connection {
     db: RefCell<InnerConnection>,
     cache: StatementCache,
-    path: Option<PathBuf>,
 }
 
 unsafe impl Send for Connection {}
@@ -420,7 +419,6 @@ impl Connection {
         InnerConnection::open_with_flags(&c_path, flags, None).map(|db| Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            path: Some(path.as_ref().to_path_buf()),
         })
     }
 
@@ -445,7 +443,6 @@ impl Connection {
         InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs)).map(|db| Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            path: Some(path.as_ref().to_path_buf()),
         })
     }
 
@@ -527,7 +524,7 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection};
     /// fn update_rows(conn: &Connection) {
-    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?", [1i32]) {
+    ///     match conn.execute("UPDATE foo SET bar = 'baz' WHERE qux = ?1", [1i32]) {
     ///         Ok(updated) => println!("{} rows were updated", updated),
     ///         Err(err) => println!("update failed: {}", err),
     ///     }
@@ -573,12 +570,23 @@ impl Connection {
 
     /// Returns the path to the database file, if one exists and is known.
     ///
+    /// Returns `Some("")` for a temporary or in-memory database.
+    ///
     /// Note that in some cases [PRAGMA
     /// database_list](https://sqlite.org/pragma.html#pragma_database_list) is
     /// likely to be more robust.
     #[inline]
-    pub fn path(&self) -> Option<&Path> {
-        self.path.as_deref()
+    pub fn path(&self) -> Option<&str> {
+        unsafe {
+            let db = self.handle();
+            let db_name = DatabaseName::Main.as_cstring().unwrap();
+            let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
+            if db_filename.is_null() {
+                None
+            } else {
+                CStr::from_ptr(db_filename).to_str().ok()
+            }
+        }
     }
 
     /// Attempts to free as much heap memory as possible from the database
@@ -638,6 +646,12 @@ impl Connection {
         stmt.query_row(params, f)
     }
 
+    // https://sqlite.org/tclsqlite.html#onecolumn
+    #[cfg(test)]
+    pub(crate) fn one_column<T: crate::types::FromSql>(&self, sql: &str) -> Result<T> {
+        self.query_row(sql, [], |r| r.get(0))
+    }
+
     /// Convenience method to execute a query that is expected to return a
     /// single row, and execute a mapping via `f` on that returned row with
     /// the possibility of failure. The `Result` type of `f` must implement
@@ -684,7 +698,7 @@ impl Connection {
     /// ```rust,no_run
     /// # use rusqlite::{Connection, Result};
     /// fn insert_new_people(conn: &Connection) -> Result<()> {
-    ///     let mut stmt = conn.prepare("INSERT INTO People (name) VALUES (?)")?;
+    ///     let mut stmt = conn.prepare("INSERT INTO People (name) VALUES (?1)")?;
     ///     stmt.execute(["Joe Smith"])?;
     ///     stmt.execute(["Bob Jones"])?;
     ///     Ok(())
@@ -866,12 +880,10 @@ impl Connection {
     /// This function is unsafe because improper use may impact the Connection.
     #[inline]
     pub unsafe fn from_handle(db: *mut ffi::sqlite3) -> Result<Connection> {
-        let db_path = db_filename(db);
         let db = InnerConnection::new(db, false);
         Ok(Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            path: db_path,
         })
     }
 
@@ -924,7 +936,7 @@ impl Connection {
 impl fmt::Debug for Connection {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Connection")
-            .field("path", &self.path)
+            .field("path", &self.path())
             .finish()
     }
 }
@@ -1115,16 +1127,6 @@ impl InterruptHandle {
     }
 }
 
-unsafe fn db_filename(db: *mut ffi::sqlite3) -> Option<PathBuf> {
-    let db_name = DatabaseName::Main.as_cstring().unwrap();
-    let db_filename = ffi::sqlite3_db_filename(db, db_name.as_ptr());
-    if db_filename.is_null() {
-        None
-    } else {
-        CStr::from_ptr(db_filename).to_str().ok().map(PathBuf::from)
-    }
-}
-
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
 
@@ -1212,9 +1214,9 @@ mod test {
 
         let path_string = path.to_str().unwrap();
         let db = Connection::open(path_string)?;
-        let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", [], |r| r.get(0));
+        let the_answer: i64 = db.one_column("SELECT x FROM foo")?;
 
-        assert_eq!(42i64, the_answer?);
+        assert_eq!(42i64, the_answer);
         Ok(())
     }
 
@@ -1224,6 +1226,21 @@ mod test {
 
         let db = checked_memory_handle();
         db.close().unwrap();
+    }
+
+    #[test]
+    fn test_path() -> Result<()> {
+        let tmp = tempfile::tempdir().unwrap();
+        let db = Connection::open("")?;
+        assert_eq!(Some(""), db.path());
+        let db = Connection::open_in_memory()?;
+        assert_eq!(Some(""), db.path());
+        let db = Connection::open("file:dummy.db?mode=memory&cache=shared")?;
+        assert_eq!(Some(""), db.path());
+        let path = tmp.path().join("file.db");
+        let db = Connection::open(path)?;
+        assert!(db.path().map(|p| p.ends_with("file.db")).unwrap_or(false));
+        Ok(())
     }
 
     #[test]
@@ -1269,9 +1286,9 @@ mod test {
         }
 
         let db = Connection::open(&db_path)?;
-        let the_answer: Result<i64> = db.query_row("SELECT x FROM foo", [], |r| r.get(0));
+        let the_answer: i64 = db.one_column("SELECT x FROM foo")?;
 
-        assert_eq!(42i64, the_answer?);
+        assert_eq!(42i64, the_answer);
         Ok(())
     }
 
@@ -1351,13 +1368,10 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER)")?;
 
-        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?)", [1i32])?);
-        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?)", [2i32])?);
+        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?1)", [1i32])?);
+        assert_eq!(1, db.execute("INSERT INTO foo(x) VALUES (?1)", [2i32])?);
 
-        assert_eq!(
-            3i32,
-            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
-        );
+        assert_eq!(3i32, db.one_column::<i32>("SELECT SUM(x) FROM foo")?);
         Ok(())
     }
 
@@ -1365,7 +1379,7 @@ mod test {
     #[cfg(feature = "extra_check")]
     fn test_execute_select() {
         let db = checked_memory_handle();
-        let err = db.execute("SELECT 1 WHERE 1 < ?", [1i32]).unwrap_err();
+        let err = db.execute("SELECT 1 WHERE 1 < ?1", [1i32]).unwrap_err();
         assert_eq!(
             err,
             Error::ExecuteReturnedResults,
@@ -1410,7 +1424,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
-        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
+        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?1)")?;
         assert_eq!(insert_stmt.execute([1i32])?, 1);
         assert_eq!(insert_stmt.execute([2i32])?, 1);
         assert_eq!(insert_stmt.execute([3i32])?, 1);
@@ -1419,7 +1433,7 @@ mod test {
         assert_eq!(insert_stmt.execute(["goodbye"])?, 1);
         assert_eq!(insert_stmt.execute([types::Null])?, 1);
 
-        let mut update_stmt = db.prepare("UPDATE foo SET x=? WHERE x<?")?;
+        let mut update_stmt = db.prepare("UPDATE foo SET x=?1 WHERE x<?2")?;
         assert_eq!(update_stmt.execute([3i32, 3i32])?, 2);
         assert_eq!(update_stmt.execute([3i32, 3i32])?, 0);
         assert_eq!(update_stmt.execute([8i32, 8i32])?, 3);
@@ -1431,12 +1445,12 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
 
-        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?)")?;
+        let mut insert_stmt = db.prepare("INSERT INTO foo(x) VALUES(?1)")?;
         assert_eq!(insert_stmt.execute([1i32])?, 1);
         assert_eq!(insert_stmt.execute([2i32])?, 1);
         assert_eq!(insert_stmt.execute([3i32])?, 1);
 
-        let mut query = db.prepare("SELECT x FROM foo WHERE x < ? ORDER BY x DESC")?;
+        let mut query = db.prepare("SELECT x FROM foo WHERE x < ?1 ORDER BY x DESC")?;
         {
             let mut rows = query.query([4i32])?;
             let mut v = Vec::<i32>::new();
@@ -1492,12 +1506,9 @@ mod test {
                    END;";
         db.execute_batch(sql)?;
 
-        assert_eq!(
-            10i64,
-            db.query_row::<i64, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
-        );
+        assert_eq!(10i64, db.one_column::<i64>("SELECT SUM(x) FROM foo")?);
 
-        let result: Result<i64> = db.query_row("SELECT x FROM foo WHERE x > 5", [], |r| r.get(0));
+        let result: Result<i64> = db.one_column("SELECT x FROM foo WHERE x > 5");
         match result.unwrap_err() {
             Error::QueryReturnedNoRows => (),
             err => panic!("Unexpected error {}", err),
@@ -1513,21 +1524,21 @@ mod test {
     fn test_optional() -> Result<()> {
         let db = Connection::open_in_memory()?;
 
-        let result: Result<i64> = db.query_row("SELECT 1 WHERE 0 <> 0", [], |r| r.get(0));
+        let result: Result<i64> = db.one_column("SELECT 1 WHERE 0 <> 0");
         let result = result.optional();
         match result? {
             None => (),
             _ => panic!("Unexpected result"),
         }
 
-        let result: Result<i64> = db.query_row("SELECT 1 WHERE 0 == 0", [], |r| r.get(0));
+        let result: Result<i64> = db.one_column("SELECT 1 WHERE 0 == 0");
         let result = result.optional();
         match result? {
             Some(1) => (),
             _ => panic!("Unexpected result"),
         }
 
-        let bad_query_result: Result<i64> = db.query_row("NOT A PROPER QUERY", [], |r| r.get(0));
+        let bad_query_result: Result<i64> = db.one_column("NOT A PROPER QUERY");
         let bad_query_result = bad_query_result.optional();
         bad_query_result.unwrap_err();
         Ok(())
@@ -1536,11 +1547,8 @@ mod test {
     #[test]
     fn test_pragma_query_row() -> Result<()> {
         let db = Connection::open_in_memory()?;
-        assert_eq!(
-            "memory",
-            db.query_row::<String, _, _>("PRAGMA journal_mode", [], |r| r.get(0))?
-        );
-        let mode = db.query_row::<String, _, _>("PRAGMA journal_mode=off", [], |r| r.get(0))?;
+        assert_eq!("memory", db.one_column::<String>("PRAGMA journal_mode")?);
+        let mode = db.one_column::<String>("PRAGMA journal_mode=off")?;
         if cfg!(features = "bundled") {
             assert_eq!(mode, "off");
         } else {
@@ -1707,7 +1715,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(i, x);")?;
         let vals = ["foobar", "1234", "qwerty"];
-        let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?, ?)")?;
+        let mut insert_stmt = db.prepare("INSERT INTO foo(i, x) VALUES(?1, ?2)")?;
         for (i, v) in vals.iter().enumerate() {
             let i_to_insert = i as i64;
             assert_eq!(insert_stmt.execute(params![i_to_insert, v])?, 1);
@@ -1973,7 +1981,7 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER);")?;
         let b: Box<dyn ToSql> = Box::new(5);
-        db.execute("INSERT INTO foo VALUES(?)", [b])?;
+        db.execute("INSERT INTO foo VALUES(?1)", [b])?;
         db.query_row("SELECT x FROM foo", [], |r| {
             assert_eq!(5, r.get_unwrap::<_, i32>(0));
             Ok(())
@@ -1985,10 +1993,10 @@ mod test {
         let db = Connection::open_in_memory()?;
         db.query_row(
             "SELECT
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-            ?, ?, ?, ?;",
+            ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
+            ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
+            ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30,
+            ?31, ?32, ?33, ?34;",
             params![
                 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                 1, 1, 1, 1, 1, 1,
@@ -2030,10 +2038,7 @@ mod test {
     fn test_returning() -> Result<()> {
         let db = Connection::open_in_memory()?;
         db.execute_batch("CREATE TABLE foo(x INTEGER PRIMARY KEY)")?;
-        let row_id =
-            db.query_row::<i64, _, _>("INSERT INTO foo DEFAULT VALUES RETURNING ROWID", [], |r| {
-                r.get(0)
-            })?;
+        let row_id = db.one_column::<i64>("INSERT INTO foo DEFAULT VALUES RETURNING ROWID")?;
         assert_eq!(row_id, 1);
         Ok(())
     }

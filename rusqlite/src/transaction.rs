@@ -552,10 +552,7 @@ mod test {
         }
         {
             let tx = db.transaction()?;
-            assert_eq!(
-                2i32,
-                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
-            );
+            assert_eq!(2i32, tx.one_column::<i32>("SELECT SUM(x) FROM foo")?);
         }
         Ok(())
     }
@@ -591,10 +588,7 @@ mod test {
             tx.commit()?;
         }
 
-        assert_eq!(
-            2i32,
-            db.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
-        );
+        assert_eq!(2i32, db.one_column::<i32>("SELECT SUM(x) FROM foo")?);
         Ok(())
     }
 
@@ -619,10 +613,7 @@ mod test {
         }
         {
             let tx = db.transaction()?;
-            assert_eq!(
-                6i32,
-                tx.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?
-            );
+            assert_eq!(6i32, tx.one_column::<i32>("SELECT SUM(x) FROM foo")?);
         }
         Ok(())
     }
@@ -727,11 +718,11 @@ mod test {
     }
 
     fn insert(x: i32, conn: &Connection) -> Result<usize> {
-        conn.execute("INSERT INTO foo VALUES(?)", [x])
+        conn.execute("INSERT INTO foo VALUES(?1)", [x])
     }
 
     fn assert_current_sum(x: i32, conn: &Connection) -> Result<()> {
-        let i = conn.query_row::<i32, _, _>("SELECT SUM(x) FROM foo", [], |r| r.get(0))?;
+        let i = conn.one_column::<i32>("SELECT SUM(x) FROM foo")?;
         assert_eq!(x, i);
         Ok(())
     }

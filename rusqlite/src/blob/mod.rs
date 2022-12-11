@@ -134,7 +134,7 @@
 //! // Insert another BLOB, this time using a parameter passed in from
 //! // rust (potentially with a dynamic size).
 //! db.execute(
-//!     "INSERT INTO test_table (content) VALUES (?)",
+//!     "INSERT INTO test_table (content) VALUES (?1)",
 //!     [ZeroBlob(64)],
 //! )?;
 //!
@@ -175,7 +175,7 @@
 //! // Insert another blob, this time using a parameter passed in from
 //! // rust (potentially with a dynamic size).
 //! db.execute(
-//!     "INSERT INTO test_table (content) VALUES (?)",
+//!     "INSERT INTO test_table (content) VALUES (?1)",
 //!     [ZeroBlob(64)],
 //! )?;
 //!

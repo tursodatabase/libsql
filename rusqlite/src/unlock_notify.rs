@@ -109,8 +109,8 @@ mod test {
             tx2.commit().unwrap();
         });
         assert_eq!(tx.recv().unwrap(), 1);
-        let the_answer: Result<i64> = db1.query_row("SELECT x FROM foo", [], |r| r.get(0));
-        assert_eq!(42i64, the_answer?);
+        let the_answer: i64 = db1.one_column("SELECT x FROM foo")?;
+        assert_eq!(42i64, the_answer);
         child.join().unwrap();
         Ok(())
     }

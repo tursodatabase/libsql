@@ -779,7 +779,7 @@ mod test {
         assert!(session.is_empty());
 
         session.attach(None)?;
-        db.execute("INSERT INTO foo (t) VALUES (?);", ["bar"])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1);", ["bar"])?;
 
         session.changeset()
     }
@@ -792,7 +792,7 @@ mod test {
         assert!(session.is_empty());
 
         session.attach(None)?;
-        db.execute("INSERT INTO foo (t) VALUES (?);", ["bar"])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1);", ["bar"])?;
 
         let mut output = Vec::new();
         session.changeset_strm(&mut output)?;
@@ -852,7 +852,7 @@ mod test {
         )?;
 
         assert!(!CALLED.load(Ordering::Relaxed));
-        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?", ["bar"], |row| {
+        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?1", ["bar"], |row| {
             row.get::<_, i32>(0)
         })?;
         assert_eq!(1, check);
@@ -887,7 +887,7 @@ mod test {
             |_conflict_type, _item| ConflictAction::SQLITE_CHANGESET_OMIT,
         )?;
 
-        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?", ["bar"], |row| {
+        let check = db.query_row("SELECT 1 FROM foo WHERE t = ?1", ["bar"], |row| {
             row.get::<_, i32>(0)
         })?;
         assert_eq!(1, check);
@@ -903,7 +903,7 @@ mod test {
         assert!(session.is_empty());
 
         session.attach(None)?;
-        db.execute("INSERT INTO foo (t) VALUES (?);", ["bar"])?;
+        db.execute("INSERT INTO foo (t) VALUES (?1);", ["bar"])?;
 
         assert!(!session.is_empty());
         Ok(())
