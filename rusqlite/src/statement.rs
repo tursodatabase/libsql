@@ -870,6 +870,11 @@ impl Statement<'_> {
         mem::swap(&mut stmt, &mut self.stmt);
         stmt
     }
+
+    /// Reset all bindings
+    pub fn clear_bindings(&mut self) {
+        self.stmt.clear_bindings()
+    }
 }
 
 impl fmt::Debug for Statement<'_> {
