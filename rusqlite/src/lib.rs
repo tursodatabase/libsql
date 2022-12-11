@@ -936,6 +936,28 @@ impl Connection {
         })
     }
 
+    /// Create a `Connection` from a raw owned handle.
+    ///
+    /// The returned connection will attempt to close the inner connection
+    /// when dropped/closed. This function should only be called on connections
+    /// owned by the caller.
+    ///
+    /// # Safety
+    ///
+    /// This function is unsafe because improper use may impact the Connection.
+    /// In particular, it should only be called on connections created
+    /// and owned by the caller, e.g. as a result of calling ffi::sqlite3_open().
+    #[inline]
+    pub unsafe fn from_handle_owned(db: *mut ffi::sqlite3) -> Result<Connection> {
+        let db_path = db_filename(db);
+        let db = InnerConnection::new(db, true);
+        Ok(Connection {
+            db: RefCell::new(db),
+            cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
+            path: db_path,
+        })
+    }
+
     /// Get access to a handle that can be used to interrupt long running
     /// queries from another thread.
     #[inline]
@@ -1801,6 +1823,16 @@ mod test {
             db.execute_batch("PRAGMA VACUUM")?;
         }
         db.close().unwrap();
+        Ok(())
+    }
+
+    #[test]
+    fn test_from_handle_owned() -> Result<()> {
+        let mut handle: *mut ffi::sqlite3 = std::ptr::null_mut();
+        let r = unsafe { ffi::sqlite3_open(":memory:\0".as_ptr() as *const i8, &mut handle) };
+        assert_eq!(r, ffi::SQLITE_OK);
+        let db = unsafe { Connection::from_handle_owned(handle) }?;
+        db.execute_batch("PRAGMA VACUUM")?;
         Ok(())
     }
 
