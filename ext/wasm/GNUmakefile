@@ -15,9 +15,17 @@
 #      by the target name. Rebuild is necessary for all components to get
 #      the desired optimization level.
 #
+#  quick, q = do just a minimal build (sqlite3.js/wasm, tester1) for
+#      faster development-mode turnaround.
+#
+#  qo2, qoz = a combination of quick+o2/oz.
+#
 #  dist = create end user deliverables. Add dist.build=oX to build
 #      with a specific optimization level, where oX is one of the
-#      above-listed o? target names.
+#      above-listed o? or qo? target names.
+#
+#  snapshot = like dist, but uses a zip file name which clearly
+#      marks it as a prerelease/snapshot build.
 #
 #  clean = clean up
 #
@@ -307,7 +315,8 @@ $$(dir.dout)/$$(notdir $(1)): $(1) $$(MAKEFILE)
 endef
 $(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
   $(eval $(call COPY_XAPI,$(X))))
-all: $(sqlite3-api.ext.jses)
+all quick: $(sqlite3-api.ext.jses)
+q: quick
 
 # sqlite3-api.js.in = the generated sqlite3-api.js before it gets
 # preprocessed. It contains all of $(sqlite3-api.jses) but none of the
@@ -488,7 +497,7 @@ emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 ########################################################################
 
 emcc.jsflags += $(emcc.environment)
-emcc.jsflags += -sSTACK_SIZE=1MB
+emcc.jsflags += -sSTACK_SIZE=512KB
 # ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 5MB to
 # a mere 64KB, which leads to silent memory corruption via the kvvfs
 # VFS, which requires twice that for its xRead() and xWrite() methods.
@@ -627,8 +636,8 @@ $(sqlite3.mjs):
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.mjs) $(sqlite3.wasm)
-all: $(sqlite3.mjs)
-wasm: $(sqlite3.mjs)
+all: $(sqlite3.js) $(sqlite3.mjs)
+quick: $(sqlite3.js)
 # End main $(sqlite3.js) build
 ########################################################################
 
@@ -673,7 +682,7 @@ speedtest1.eflags.common += -sSTRICT_JS
 speedtest1.eflags.common += -sMODULARIZE
 speedtest1.eflags.common += -Wno-limited-postlink-optimizations
 EXPORTED_FUNCTIONS.speedtest1 := $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
-speedtest1.eflags.common += -sSTACK_SIZE=1MB
+speedtest1.eflags.common += -sSTACK_SIZE=512KB
 speedtest1.eflags.common += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.speedtest1)
 speedtest1.eflags.common += $(emcc.exportedRuntimeMethods)
 speedtest1.eflags.common += -sALLOW_TABLE_GROWTH
@@ -748,7 +757,7 @@ $(eval $(call C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
 $(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1.html))
 $(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
-all: tester1
+all quick: tester1
 
 ########################################################################
 # Convenience rules to rebuild with various -Ox levels. Much
@@ -767,14 +776,18 @@ o0: clean
 o1: clean
 	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)"
 o2: clean
-	$(MAKE) -e "emcc_opt=-O2 $(o-xtra)"
+	$(MAKE) -j2 -e "emcc_opt=-O2 $(o-xtra)"
+qo2: clean
+	$(MAKE) -j2 -e "emcc_opt=-O2 $(o-xtra)" quick
 o3: clean
 	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)"
 os: clean
 	@echo "WARNING: -Os can result in a build with mysteriously missing pieces!"
 	$(MAKE) -e "emcc_opt=-Os $(o-xtra)"
 oz: clean
-	$(MAKE) -e "emcc_opt=-Oz $(o-xtra)"
+	$(MAKE) -j2 -e "emcc_opt=-Oz $(o-xtra)"
+qoz: clean
+	$(MAKE) -j2 -e "emcc_opt=-Oz $(o-xtra)" quick
 
 ########################################################################
 # Sub-makes...
