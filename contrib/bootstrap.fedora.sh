@@ -5,10 +5,11 @@
 # Abort the script and exit with failure if any command below exits with
 # a non-zero exit status.
 set -e
-OS=`cat /etc/redhat-release`
 
-[ -e /etc/redhat-release ] || (echo "Not on fedora based System";exit 1)
+
 # Check needed software for building libsql on fedora
+[ -e /etc/redhat-release ] || (echo "Not on fedora based System";exit 1)
+OS=`cat /etc/redhat-release`
 [ -e /usr/bin/gcc      ]   || (echo "sudo dnf install -y gcc ";exit 1)
 [ -e /usr/bin/make     ]   || (echo "sudo dnf install -y make ";exit 1)
 [ -e /usr/bin/libtool  ]   || (echo "sudo dnf install -y libtool ";exit 1)
@@ -17,7 +18,7 @@ OS=`cat /etc/redhat-release`
 [ -e /usr/lib64/tclConfig.sh ] || (echo "sudo dnf install -y tcl-devel";exit 1)
 [ -e /usr/include/readline/chardefs.h ] || (echo "sudo dnf install -y readline-devel";exit 1)
 [ -e /usr/include/unctrl.h ] || (echo "sudo dnf install -y ncurses-devel";exit 1)
-echo "compiling environment on ${OS}is OK now."
+echo "compiling environment on ${OS} is OK now."
 
 # Create the m4/ directory if it doesn't exist.
 [ -d m4 ] || mkdir m4
@@ -37,4 +38,5 @@ echo "compiling environment on ${OS}is OK now."
  
 # If src/codename doesn't exist, there was a Makefile but make hasn't
 # been run yet. Run it, which should produce the codename binary.
+# Last step of make is cp sqlite3 to libsql
 [ -e ./libsql  ] || make
