@@ -1434,77 +1434,155 @@ self.WhWasmUtilInstaller = function(target){
     });
   }
 
-  const __FuncPtrBindModes = ['transient','static','singleton'];
   /**
-     EXPERIMENTAL.
+     EXPERIMENTAL! DO NOT USE IN CLIENT CODE!
 
      An attempt at adding function pointer conversion support to
      xWrap(). This type is recognized by xWrap() as a proxy for
-     converting a JS function to a C-side function, either permanently
-     or only for the duration of a a single call into the C layer.
+     converting a JS function to a C-side function, either
+     permanently, for the duration of a single call into the C layer,
+     or semi-contextual, where it may keep track of a single binding
+     for a given context and uninstall the binding if it's replaced.
+
+     Requires an options object with these properties:
+
+     - name (optional): string describing the function binding. This
+     is solely for debugging and error-reporting purposes. If not
+     provided, an empty string is assumed.
+
+     - signature: an function signature compatible with
+     jsFuncToWasm().
+
+     - bindScope (string): one of ('transient', 'context',
+       'singleton'). Bind scopes are:
+
+       - transient: it will convert JS functions to WASM only for the
+         duration of the xWrap()'d function call, using
+         scopedInstallFunction(). Before that call returns, the
+         WASM-side binding will be uninstalled.
+
+       - singleton: holds one function-pointer binding for this
+         instance. If it's called with a different function pointer,
+         it uninstalls the previous one after converting the new
+         value. This is only useful for use with "global" functions
+         which do not rely on any state other than this function
+         pointer. If the being-converted function pointer is intended
+         to be mapped to some sort of state object (e.g. an sqlite3*)
+         then "context" (see below) is the proper mode.
+
+       - context: similar to singleton mode but for a given "context",
+         where the context is a key provided by the user and possibly
+         dependent on a small amount of call-time context. This mode
+         is the default if bindScope is _not_ set but a property named
+         contextKey (described below) is.
+
+     FIXME: the contextKey definition is only useful for very basic
+     contexts and breaks down with dynamic ones like
+     sqlite3_create_collation().
+
+     - contextKey (function): only used if bindScope is not set or is
+       'context'. This function gets passed (argIndex,argv), where
+       argIndex is the index of this function pointer in its
+       _wrapping_ function's arguments and argv is the _current_
+       being-xWrap()-processed args array. All arguments to the left
+       of argIndex will have been processed by xWrap() by the time
+       this is called. argv[argIndex] will be the value the user
+       passed in to the xWrap()'d function for the argument this
+       FuncPtrAdapter is mapped to. Arguments to the right of
+       argv[argIndex] will not yet have been converted before this is
+       called. The function must return a key which uniquely
+       identifies this function mapping context for _this_
+       FuncPtrAdapter instance (other instances are not considered),
+       taking into account that C functions often take some sort of
+       state object as one or more of their arguments. As an example,
+       if the xWrap()'d function takes `(int,T*,functionPtr,X*)` and
+       this FuncPtrAdapter is the argv[2]nd arg, contextKey(2,argv)
+       might return 'T@'+argv[1], or even just argv[1].  Note,
+       however, that the (X*) argument will not yet have been
+       processed by the time this is called and should not be used as
+       part of that key. Similarly, C-string-type keys should not be
+       used as part of keys because they are normally transient in
+       this environment.
+
+     The constructor only saves the above state for later, and does
+     not actually bind any functions. Its convertArg() methor is
+     called via xWrap() to perform any bindings.
+
+     Caveats:
+
+     - singleton is globally singleton. This type does not currently
+     have enough context to apply, e.g., a different singleton for
+     each (sqlite3*) db handle.
   */
-  xArg.FuncPtrAdapter = class {
-    /**
-       Requires an options object with these properties:
-
-       - signature: an function signature compatible with
-         jsFuncToWasm().
-
-       - bindMode (string): one of ('transient', 'static',
-         'singleton').  If 'transient', it uses
-         scopedInstallFunction() for its function bindings, meaning
-         they're limited to the lifetime of a single xWrap()-induced
-         function call. If it's 'static', the binding is permanent,
-         lasting the life of the WASM environment. If it's 'singleton'
-         then this function remembers the last function it installed
-         and uninstalls it before installing any replacements on
-         subsequent calls. If it's passed the exact same JS function
-         to install later, it will re-use the existing binding.
-
-       - name (optional): string describing the function binding. This
-         is solely for debugging and error-reporting purposes. If not
-         provided, an empty string is assumed.
-
-       The constructor only saves the above state for later, and does
-       not actually bind any functions. Its convertArg() methor is
-       called via xWrap() to perform any bindings.
-    */
-    constructor(opt){
-      this.signature = opt.signature;
-      if(__FuncPtrBindModes.indexOf(opt.bindMode)<0){
-        toss("Invalid options.bindMode ("+opt.bindMod+") for FuncPtrAdapter. "+
-             "Expecting one of: ("+__FuncPtrBindModes.join(', ')+')');
-      }
-      this.bindMode = opt.bindMode;
-      this.name = opt.name || '';
-      this.singleton = ('singleton'===this.bindMode) ? [] : undefined;
-      //console.warn("FuncPtrAdapter()",this.signature,this.transient);
+  xArg.FuncPtrAdapter = function ctor(opt) {
+    if(!(this instanceof xArg.FuncPtrAdapter)){
+      toss("FuncPtrAdapter can only be used as a constructor. Use 'new'.");
     }
+    this.signature = opt.signature;
+    if(!opt.bindScope && (opt.contextKey instanceof Function)){
+      opt.bindScope = 'context';
+    }else if(ctor.bindScopes.indexOf(opt.bindScope)<0){
+      toss("Invalid options.bindScope ("+opt.bindMod+") for FuncPtrAdapter. "+
+           "Expecting one of: ("+ctor.bindScopes.join(', ')+')');
+    }
+    this.bindScope = opt.bindScope;
+    this.name = opt.name || '';
+    if(opt.contextKey) this.contextKey = opt.contextKey /*else inherit one*/;
+    this.isTransient = 'transient'===this.bindScope;
+    this.isContext = 'context'===this.bindScope;
+    if( ('singleton'===this.bindScope) ){
+      this.singleton = [];
+    }else{
+      this.singleton = undefined;
+    }
+    //console.warn("FuncPtrAdapter()",opt,this);
+  };
+  xArg.FuncPtrAdapter.bindScopes = [
+    'transient', 'context', 'singleton'
+  ];
+  xArg.FuncPtrAdapter.prototype = {
+    contextKey: function(argIndex,argv){
+      return this;
+    },
+    contextMap: function(key){
+      const cm = (this.__cmap || (this.__cmap = new Map));
+      let rc = cm.get(key);
+      if(undefined===rc) cm.set(key, (rc = []));
+      return rc;
+    },
     /**
        Gets called via xWrap() to "convert" v to a WASM-bound function
        pointer. If v is one of (a pointer, null, undefined) then
        (v||0) is returned, otherwise v must be a Function, for which
-       xit creates (if needed) a WASM function binding and returns the
-       WASM pointer to that binding. It throws if passed an invalid
-       type.
+       it creates (if needed) a WASM function binding and returns the
+       WASM pointer to that binding. It will remember the binding for
+       at least the next call, to avoid recreating the function
+       unnecessarily.
     */
-    convertArg(v){
+    convertArg: function(v,argIndex,argv){
       //console.warn("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
+      let pair = this.singleton;
+      if(!pair && this.isContext){
+        pair = this.contextMap(this.contextKey(argIndex, argv));
+      }
+      if(pair && pair[0]===v) return pair[1];
       if(v instanceof Function){
-        if(this.singleton && this.singleton[0]===v){
-          return this.singleton[1];
-        }
-        const fp = __installFunction(v, this.signature, 'transient'===this.bindMode);
-        if(this.singleton){
-          if(this.singleton[1]){
-            try{target.uninstallFunction(this.singleton[1])}
+        const fp = __installFunction(v, this.signature, this.isTransient);
+        if(pair){
+          if(pair[1]){
+            try{target.uninstallFunction(pair[1])}
             catch(e){/*ignored*/}
           }
-          this.singleton[0] = v;
-          this.singleton[1] = fp;
+          pair[0] = v;
+          pair[1] = fp;
         }
         return fp;
       }else if(target.isPtr(v) || null===v || undefined===v){
+        if(pair && pair[1]){
+          try{target.uninstallFunction(pair[1])}
+          catch(e){/*ignored*/}
+          pair[0] = pair[1] = (v || 0);
+        }
         return v || 0;
       }else{
         throw new TypeError("Invalid FuncPtrAdapter argument type. "+
@@ -1513,7 +1591,7 @@ self.WhWasmUtilInstaller = function(target){
                             this.signature+".");
       }
     }
-  };
+  }/*FuncPtrAdapter.prototype*/;
 
   const __xArgAdapterCheck =
         (t)=>xArg.get(t) || toss("Argument adapter not found:",t);
@@ -1521,7 +1599,7 @@ self.WhWasmUtilInstaller = function(target){
   const __xResultAdapterCheck =
         (t)=>xResult.get(t) || toss("Result adapter not found:",t);
 
-  cache.xWrap.convertArg = (t,v)=>__xArgAdapterCheck(t)(v);
+  cache.xWrap.convertArg = (t,...args)=>__xArgAdapterCheck(t)(...args);
   cache.xWrap.convertResult =
     (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
 
@@ -1686,7 +1764,7 @@ self.WhWasmUtilInstaller = function(target){
     /*Verify the arg type conversions are valid...*/;
     if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
     for(const t of argTypes){
-      if(t instanceof xArg.FuncPtrAdapter) xArg.set(t, (v)=>t.convertArg(v));
+      if(t instanceof xArg.FuncPtrAdapter) xArg.set(t, (...args)=>t.convertArg(...args));
       else __xArgAdapterCheck(t);
     }
     const cxw = cache.xWrap;
@@ -1700,7 +1778,7 @@ self.WhWasmUtilInstaller = function(target){
       if(args.length!==xf.length) __argcMismatch(fname, xf.length);
       const scope = target.scopedAllocPush();
       try{
-        for(const i in args) args[i] = cxw.convertArg(argTypes[i], args[i]);
+        for(const i in args) args[i] = cxw.convertArg(argTypes[i], args[i], i, args);
         return cxw.convertResult(resultType, xf.apply(null,args));
       }finally{
         target.scopedAllocPop(scope);
