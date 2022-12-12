@@ -1293,6 +1293,17 @@ static int echoRollbackTo(sqlite3_vtab *pVTab, int iSavepoint){
   return SQLITE_OK;
 }
 
+static int echoShadowName(const char *name){
+  assert( name );
+  return SQLITE_OK;
+}
+
+static int echoPrepareSql(sqlite3_vtab_cursor *cur, const char *sql){
+  assert( cur );
+  assert( sql );
+  return SQLITE_OK;
+}
+
 /*
 ** A virtual table module that merely "echos" the contents of another
 ** table (like an SQL VIEW).
@@ -1321,7 +1332,7 @@ static sqlite3_module echoModule = {
 };
 
 static sqlite3_module echoModuleV2 = {
-  2,                         /* iVersion */
+  4,                         /* iVersion */
   echoCreate,
   echoConnect,
   echoBestIndex,
@@ -1343,7 +1354,9 @@ static sqlite3_module echoModuleV2 = {
   echoRename,                /* xRename - rename the table */
   echoSavepoint,
   echoRelease,
-  echoRollbackTo
+  echoRollbackTo,
+  echoShadowName,
+  echoPrepareSql,
 };
 
 /*
