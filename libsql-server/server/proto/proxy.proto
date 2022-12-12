@@ -1,0 +1,66 @@
+syntax = "proto3";
+package proxy;
+
+message SimpleQuery {
+  string q = 1;
+  // Uuid
+  bytes clientId = 2; }
+
+message QueryResult {
+    optional Error          error = 1;
+    optional ResultRows     rows = 2;
+    enum Result {
+        Ok = 0;
+        Err = 1;
+    }
+    Result result = 3;
+}
+
+message Error {
+    enum ErrorCode {
+        SQLError   = 0;
+        TxBusy     = 1;
+        TxTimeout  = 2;
+        Internal   = 3;
+    }
+
+    ErrorCode code = 1;
+    string message = 2;
+}
+message ResultRows {
+    repeated Column   column_descriptions = 1;
+    repeated Row      rows = 2;
+}
+
+message Value {
+    bytes   data = 1;
+}
+
+message Row {
+    repeated Value values = 1;
+}
+
+enum Type {
+    Integer = 0;
+    Binary  = 1;
+    Float   = 2;
+    String  = 3;
+    Null    = 4;
+    Unknown = 5;
+}
+
+message Column {
+    string          name = 1;
+    optional Type   ty = 2;
+}
+
+message DisconnectMessage {
+    bytes clientId = 1;
+}
+
+message Ack {}
+
+service Proxy {
+  rpc Query(SimpleQuery) returns (QueryResult) {}
+  rpc Disconnect(DisconnectMessage) returns (Ack) {}
+}
