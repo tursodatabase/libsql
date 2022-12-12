@@ -572,7 +572,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                           'prepareFlags', 'resultCodes',
                           'serialize', 'sqlite3Status',
                           'stmtStatus', 'syncFlags',
-                          'trace', 'udfFlags',
+                          'trace', 'txnState', 'udfFlags',
                           'version' ];
     if(wasm.bigIntEnabled){
       defineGroups.push('vtab');

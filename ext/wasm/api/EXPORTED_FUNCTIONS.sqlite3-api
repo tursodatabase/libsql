@@ -111,6 +111,7 @@ _sqlite3_table_column_metadata
 _sqlite3_total_changes
 _sqlite3_total_changes64
 _sqlite3_trace_v2
+_sqlite3_txn_state
 _sqlite3_uri_boolean
 _sqlite3_uri_int64
 _sqlite3_uri_key

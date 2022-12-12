@@ -764,6 +764,12 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_TRACE_CLOSE);
   } _DefGroup;
 
+  DefGroup(txnState){
+    DefInt(SQLITE_TXN_NONE);
+    DefInt(SQLITE_TXN_READ);
+    DefInt(SQLITE_TXN_WRITE);
+  } _DefGroup;
+
   DefGroup(udfFlags) {
     DefInt(SQLITE_DETERMINISTIC);
     DefInt(SQLITE_DIRECTONLY);
