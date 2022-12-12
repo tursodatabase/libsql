@@ -192,6 +192,177 @@
   fossil-doc block so that this part can work without modification in
   the wasm docs repo.  */</script>
   <script>(async function(){
+    const apiLinks = Object.assign(Object.create(null),{
+        sqlite3_aggregate_context: 'www:/c3ref/aggregate_context.html',
+        sqlite3_bind_blob: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_double: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_int: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_int64: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_null: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_parameter_count: 'www:/c3ref/bind_parameter_count.html',
+        sqlite3_bind_parameter_index: 'www:/c3ref/bind_parameter_index.html',
+        sqlite3_bind_pointer: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_text: 'www:/c3ref/bind_blob.html',
+        sqlite3_busy_handler: 'www:/c3ref/busy_handler.html',
+        sqlite3_busy_timeout: 'www:/c3ref/busy_timeout.html',
+        sqlite3_changes: 'www:/c3ref/changes.html',
+        sqlite3_changes64: 'www:/c3ref/changes.html',
+        sqlite3_clear_bindings: 'www:/c3ref/clear_bindings.html',
+        sqlite3_close_v2: 'www:/c3ref/close.html',
+        sqlite3_collation_needed: 'www:/c3ref/collation_needed.html',
+        sqlite3_column_blob: 'www:/c3ref/column_blob.html',
+        sqlite3_column_bytes: 'www:/c3ref/column.html',
+        sqlite3_column_count: 'www:/c3ref/column_count.html',
+        sqlite3_column_double: 'www:/c3ref/column_blob.html',
+        sqlite3_column_int: 'www:/c3ref/column_blob.html',
+        sqlite3_column_int64: 'www:/c3ref/column_blob.html',
+        sqlite3_column_name: 'www:/c3ref/column_name.html',
+        sqlite3_column_text: 'www:/c3ref/column_blob.html',
+        sqlite3_column_type: 'www:/c3ref/column_blob.html',
+        sqlite3_column_value: 'www:/c3ref/column_blob.html',
+        sqlite3_compileoption_get: 'www:/c3ref/compileoption_get.html',
+        sqlite3_compileoption_used: 'www:/c3ref/compileoption_get.html',
+        sqlite3_complete: 'www:/c3ref/complete.html',
+        sqlite3_create_collation: 'www:/c3ref/create_collation.html',
+        sqlite3_create_collation_v2: 'www:/c3ref/create_collation.html',
+        sqlite3_create_function: 'www:/c3ref/create_function.html',
+        sqlite3_create_function_v2: 'www:/c3ref/create_function.html',
+        sqlite3_create_module: 'www:/c3ref/create_module.html',
+        sqlite3_create_module_v2: 'www:/c3ref/create_module.html',
+        sqlite3_create_window_function: 'www:/c3ref/create_function.html',
+        sqlite3_db_config: 'www:/c3ref/db_config.html',
+        sqlite3_data_count: 'www:/c3ref/data_count.html',
+        sqlite3_db_filename: 'www:/c3ref/db_filename.html',
+        sqlite3_db_handle: 'www:/c3ref/db_handle.html',
+        sqlite3_db_name: 'www:/c3ref/db_name.html',
+        sqlite3_db_status: 'www:/c3ref/db_status.html',
+        sqlite3_declare_vtab: 'www:/c3ref/declare_vtab.html',
+        sqlite3_deserialize: 'www:/c3ref/deserialize.html',
+        sqlite3_drop_modules: 'www:/c3ref/drop_modules.html',
+        sqlite3_errcode: 'www:/c3ref/errcode.html',
+        sqlite3_errmsg: 'www:/c3ref/errcode.html',
+        sqlite3_error_offset: 'www:/c3ref/error_offset.html',
+        sqlite3_errstr: 'www:/c3ref/errcode.html',
+        sqlite3_exec: 'www:/c3ref/exec.html',
+        sqlite3_expanded_sql: 'www:/c3ref/expanded_sql.html',
+        sqlite3_extended_errcode: 'www:/c3ref/errcode.html',
+        sqlite3_extended_result_codes: 'www:/c3ref/extended_result_codes.html',
+        sqlite3_file_control: 'www:/c3ref/file_control.html',
+        sqlite3_finalize: 'www:/c3ref/finalize.html',
+        sqlite3_free: 'www:/c3ref/free.html',
+        sqlite3_get_auxdata: 'www:/c3ref/get_auxdata.html',
+        sqlite3_initialize: 'www:/c3ref/initialize.html',
+        sqlite3_keyword_check: 'www:/c3ref/keyword_check.html',
+        sqlite3_keyword_count: 'www:/c3ref/keyword_check.html',
+        sqlite3_keyword_name: 'www:/c3ref/keyword_check.html',
+        sqlite3_last_insert_rowid: 'www:/c3ref/last_insert_rowid.html',
+        sqlite3_libversion: 'www:/c3ref/libversion.html',
+        sqlite3_libversion_number: 'www:/c3ref/libversion.html',
+        sqlite3_limit: 'www:/c3ref/limit.html',
+        sqlite3_malloc: 'www:/c3ref/free.html',
+        sqlite3_malloc64: 'www:/c3ref/free.html',
+        sqlite3_msize: 'www:/c3ref/free.html',
+        sqlite3_open: 'www:/c3ref/open.html',
+        sqlite3_open_v2: 'www:/c3ref/open.html',
+        sqlite3_overload_function: 'www:/c3ref/overload_function.html',
+        sqlite3_prepare_v2: 'www:/c3ref/prepare.html',
+        sqlite3_prepare_v3: 'www:/c3ref/prepare.html',
+        sqlite3_progress_handler: 'www:/c3ref/progress_handler.html',
+        sqlite3_randomness: 'www:/c3ref/randomness.html',
+        sqlite3_realloc: 'www:/c3ref/free.html',
+        sqlite3_realloc64: 'www:/c3ref/free.html',
+        sqlite3_reset: 'www:/c3ref/reset.html',
+        sqlite3_result_blob: 'www:/c3ref/result_blob.html',
+        sqlite3_result_double: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error_code: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error_nomem: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error_toobig: 'www:/c3ref/result_blob.html',
+        sqlite3_result_int: 'www:/c3ref/result_blob.html',
+        sqlite3_result_int64: 'www:/c3ref/result_blob.html',
+        sqlite3_result_null: 'www:/c3ref/result_blob.html',
+        sqlite3_result_pointer: 'www:/c3ref/result_blob.html',
+        sqlite3_result_subtype: 'www:/c3ref/result_subtype.html',
+        sqlite3_result_text: 'www:/c3ref/result_blob.html',
+        sqlite3_result_zeroblob: 'www:/c3ref/result_blob.html',
+        sqlite3_result_zeroblob64: 'www:/c3ref/result_blob.html',
+        sqlite3_serialize: 'www:/c3ref/serialize.html',
+        sqlite3_set_auxdata: 'www:/c3ref/set_auxdata.html',
+        sqlite3_set_last_insert_rowid: 'www:/c3ref/set_last_insert_rowid',
+        sqlite3_shutdown: 'www:/c3ref/initialize.html',
+        sqlite3_sourceid: 'www:/c3ref/libversion.html',
+        sqlite3_sql: 'www:/c3ref/expanded_sql.html',
+        sqlite3_status: 'www:/c3ref/status.html',
+        sqlite3_status64: 'www:/c3ref/status.html',
+        sqlite3_step: 'www:/c3ref/step.html',
+        sqlite3_stmt_isexplain: 'www:/c3ref/stmt_isexplain.html',
+        sqlite3_stmt_readonly: 'www:/c3ref/stmt_readonly.html',
+        sqlite3_stmt_status: 'www:/c3ref/stmt_status.html',
+        sqlite3_strglob: 'www:/c3ref/strglob.html',
+        sqlite3_stricmp: 'www:/c3ref/stricmp.html',
+        sqlite3_strlike: 'www:/c3ref/strlike.html',
+        sqlite3_strnicmp: 'www:/c3ref/strnicmp.html',
+        sqlite3_table_column_metadata: 'www:/c3ref/table_column_metadata.html',
+        sqlite3_total_changes: 'www:/c3ref/total_changes.html',
+        sqlite3_total_changes64: 'www:/c3ref/total_changes.html',
+        sqlite3_trace_v2: 'www:/c3ref/trace_v2.html',
+        sqlite3_txn_state: 'www:/c3ref/txn_state.html',
+        sqlite3_uri_boolean: 'www:/c3ref/uri_boolean.html',
+        sqlite3_uri_int64: 'www:/c3ref/uri_boolean.html',
+        sqlite3_uri_key: 'www:/c3ref/uri_boolean.html',
+        sqlite3_uri_parameter: 'www:/c3ref/uri_boolean.html',
+        sqlite3_user_data: 'www:/c3ref/user_data.html',
+        sqlite3_value_blob: 'www:/c3ref/value_blob.html',
+        sqlite3_value_bytes: 'www:/c3ref/value_blob.html',
+        sqlite3_value_double: 'www:/c3ref/value_blob.html',
+        sqlite3_value_dup: 'www:/c3ref/value_dup.html',
+        sqlite3_value_free: 'www:/c3ref/value_dup.html',
+        sqlite3_value_frombind: 'www:/c3ref/value_blob.html',
+        sqlite3_value_int: 'www:/c3ref/value_blob.html',
+        sqlite3_value_int64: 'www:/c3ref/value_blob.html',
+        sqlite3_value_nochange: 'www:/c3ref/value_blob.html',
+        sqlite3_value_numeric_type: 'www:/c3ref/value_blob.html',
+        sqlite3_value_pointer: 'www:/c3ref/value_blob.html',
+        sqlite3_value_subtype: 'www:/c3ref/value_subtype.html',
+        sqlite3_value_text: 'www:/c3ref/value_blob.html',
+        sqlite3_value_type: 'www:/c3ref/value_blob.html',
+        sqlite3_vfs_find: 'www:/c3ref/vfs_find.html',
+        sqlite3_vfs_register: 'www:/c3ref/vfs_find.html',
+        sqlite3_vfs_unregister: 'www:/c3ref/vfs_find.html',
+        sqlite3_vtab_collation: 'www:/c3ref/vtab_collation.html',
+        sqlite3_vtab_config: 'www:/c3ref/vtab_config.html',
+        sqlite3_vtab_distinct: 'www:/c3ref/vtab_distinct.html',
+        sqlite3_vtab_in: 'www:/c3ref/vtab_in.html',
+        sqlite3_vtab_in_first: 'www:/c3ref/vtab_in_first.html',
+        sqlite3_vtab_in_next: 'www:/c3ref/vtab_in_next.html',
+        sqlite3_vtab_nochange: 'www:/c3ref/vtab_nochange.html',
+        sqlite3_vtab_on_conflict: 'www:/c3ref/vtab_on_conflict.html',
+        sqlite3_vtab_rhs_value: 'www:/c3ref/vtab_rhs_value.html',
+
+        sqlite3_column_js: 'wasm:/api-c-style.md#sqlite3_column_js',
+        sqlite3_js_aggregate_context: 'wasm:/api-c-style.md#sqlite3_js_aggregate_context',
+        sqlite3_js_db_export: 'wasm:/api-c-style.md#sqlite3_js_db_export',
+        sqlite3_js_db_uses_vfs: 'wasm:/api-c-style.md#sqlite3_js_db_uses_vfs',
+        sqlite3_js_db_vfs: 'wasm:/api-c-style.md#sqlite3_js_db_vfs',
+        sqlite3_js_kvvfs_clear: 'wasm:/api-c-style.md#sqlite3_js_kvvfs',
+        sqlite3_js_kvvfs_size: 'wasm:/api-c-style.md#sqlite3_js_kvvfs',
+        sqlite3_js_rc_str: 'wasm:/api-c-style.md#sqlite3_js_rc_str',
+        sqlite3_js_vfs_create_file: 'wasm:/api-c-style.md#sqlite3_js_vfs_create_file',
+        sqlite3_js_vfs_list: 'wasm:/api-c-style.md#sqlite3_js_vfs_list',
+        sqlite3_result_error_js: 'wasm:/api-c-style.md#sqlite3_result_error_js',
+        sqlite3_result_js: 'wasm:/api-c-style.md#sqlite3_result_js',
+        sqlite3_value_to_js: 'wasm:/api-c-style.md#sqlite3_value_to_js',
+        sqlite3_values_to_js: 'wasm:/api-c-style.md#sqlite3_values_to_js',
+        
+        xform: (v)=>{
+            if(v){
+                return v.replace('www:','https://sqlite.org')
+                    .replace('wasm:','https://sqlite.org/wasm/doc/trunk');
+            }else{
+                return undefined;
+            }
+        }
+    });
     const eNew = (tag,parent)=>{
         const e = document.createElement(tag);
         if(parent) parent.appendChild(e);
@@ -202,6 +373,16 @@
         e.innerText = label;
         return e;
     };
+    const eLink = (label,url,parent)=>{
+        const w = eNew('span',parent);
+        const e = eNew('a',w);
+        if(url){
+            e.href = url;
+            e.target = 'sqlite3-api-docs';
+        }
+        e.innerText = label;
+        return w;
+    };
     const E = (sel)=>document.querySelector(sel);
     const EAll = (sel)=>document.querySelectorAll(sel);
     const eFuncs = E('#list-functions'),
@@ -211,7 +392,7 @@
     };
     const renderFunc = function(name){
         let lbl = name+'()';
-        const e = eLi(lbl, eFuncs);;
+        const e = eLink(lbl, apiLinks.xform(apiLinks[name]), eFuncs);
         if(name.indexOf('_js')>0
            || name.indexOf('_wasm')>0){
             e.classList.add('func-wasm');
@@ -257,20 +438,28 @@
         );
 
         /* sqlite3_...() and SQLITE_... */
-        const lists = {c: [], f: []};
-        for(const [k,v] of Object.entries(capi)){
-            if(k.startsWith('SQLITE_')) lists.c.push(k);
-            else if(k.startsWith('sqlite3_')) lists.f.push(k);
-        }
+        const lists = {c: [/*constants*/], f: [/*functions*/],
+                       s: [/*structs*/]};
+        /* Exclude these from the function list... */
         const excludeCapi = [
+            // WASMFS stuff:
             'sqlite3_wasmfs_filename_is_persistent',
             'sqlite3_wasmfs_opfs_dir'
         ];
+        for(const [k,v] of Object.entries(capi)){
+            if(k.startsWith('SQLITE_')){
+                lists.c.push(k);
+            }else if(k.startsWith('sqlite3_')){
+                if(excludeCapi.indexOf(k)>=0) continue;
+                if(v.structInfo){
+                    // assume this is a StructType-type.
+                    continue;
+                }
+                lists.f.push(k);
+            }
+        }
         lists.c.sort().forEach(renderConst);
-        lists.f
-            .filter((v)=>excludeCapi.indexOf(v)<0)
-            .sort()
-            .forEach(renderFunc);
+        lists.f.sort().forEach(renderFunc);
         lists.c = lists.f = null;
 
         renderX(E('#list-oo1'), sqlite3.oo1,

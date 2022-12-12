@@ -1959,6 +1959,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
              some initializers. Retain them when running in test mode
              so that we can add tests for them. */
           delete sqlite3.util;
+          /* It's conceivable that we might want to expose
+             StructBinder to client-side code, but it's only useful if
+             clients build their own sqlite3.wasm which contains their
+             one C struct types. */
           delete sqlite3.StructBinder;
         }
         return sqlite3;
