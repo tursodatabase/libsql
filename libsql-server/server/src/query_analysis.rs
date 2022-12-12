@@ -87,4 +87,13 @@ impl Statements {
                 (State::Start, StmtKind::TxnEnd) => State::TxnClosed,
             })
     }
+
+    pub fn is_read_only(&self) -> bool {
+        let state = self.state(State::Start);
+        let is_only_reads = self
+            .kinds
+            .iter()
+            .all(|k| matches!(k, StmtKind::Read | StmtKind::TxnEnd | StmtKind::TxnBegin));
+        (state == State::Start || state == State::TxnClosed) && is_only_reads
+    }
 }
