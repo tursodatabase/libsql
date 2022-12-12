@@ -15,6 +15,7 @@ mod database;
 mod postgres;
 mod query;
 mod query_analysis;
+mod rpc_server;
 mod server;
 mod wal;
 
