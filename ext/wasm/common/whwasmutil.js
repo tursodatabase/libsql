@@ -494,6 +494,70 @@ self.WhWasmUtilInstaller = function(target){
         e: { f: func }
       })).exports['f'];
   }/*jsFuncToWasm()*/;
+
+  /**
+     Documented as target.installFunction() except for the 3rd
+     argument: if truthy, the newly-created function pointer
+     is stashed in the current scoped-alloc scope and will be
+     cleaned up at the matching scopedAllocPop(), else it
+     is not stashed there.
+   */
+  const __installFunction = function f(func, sig, scoped){
+    if(scoped && !cache.scopedAlloc.length){
+      toss("No scopedAllocPush() scope is active.");
+    }
+    if('string'===typeof func){
+      const x = sig;
+      sig = func;
+      func = x;
+    }
+    if('string'!==typeof sig || !(func instanceof Function)){
+      toss("Invalid arguments: expecting (function,signature) "+
+           "or (signature,function).");
+    }
+    const ft = target.functionTable();
+    const oldLen = ft.length;
+    let ptr;
+    while(cache.freeFuncIndexes.length){
+      ptr = cache.freeFuncIndexes.pop();
+      if(ft.get(ptr)){ /* Table was modified via a different API */
+        ptr = null;
+        continue;
+      }else{
+        break;
+      }
+    }
+    if(!ptr){
+      ptr = oldLen;
+      ft.grow(1);
+    }
+    try{
+      /*this will only work if func is a WASM-exported function*/
+      ft.set(ptr, func);
+      if(scoped){
+        cache.scopedAlloc[cache.scopedAlloc.length-1].push(ptr);
+      }
+      return ptr;
+    }catch(e){
+      if(!(e instanceof TypeError)){
+        if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
+        throw e;
+      }
+    }
+    // It's not a WASM-exported function, so compile one...
+    try {
+      const fptr = target.jsFuncToWasm(func, sig);
+      ft.set(ptr, fptr);
+      if(scoped){
+        cache.scopedAlloc[cache.scopedAlloc.length-1].push(ptr);
+      }
+    }catch(e){
+      if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen); 
+     throw e;
+    }
+    return ptr;      
+  };
+
   
   /**
      Expects a JS function and signature, exactly as for
@@ -526,50 +590,19 @@ self.WhWasmUtilInstaller = function(target){
 
      https://github.com/emscripten-core/emscripten/issues/17323
   */
-  target.installFunction = function f(func, sig){
-    if(2!==arguments.length){
-      toss("installFunction() requires exactly 2 arguments");
-    }
-    if('string'===typeof func){
-      const x = sig;
-      sig = func;
-      func = x;
-    }
-    const ft = target.functionTable();
-    const oldLen = ft.length;
-    let ptr;
-    while(cache.freeFuncIndexes.length){
-      ptr = cache.freeFuncIndexes.pop();
-      if(ft.get(ptr)){ /* Table was modified via a different API */
-        ptr = null;
-        continue;
-      }else{
-        break;
-      }
-    }
-    if(!ptr){
-      ptr = oldLen;
-      ft.grow(1);
-    }
-    try{
-      /*this will only work if func is a WASM-exported function*/
-      ft.set(ptr, func);
-      return ptr;
-    }catch(e){
-      if(!(e instanceof TypeError)){
-        if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
-        throw e;
-      }
-    }
-    // It's not a WASM-exported function, so compile one...
-    try {
-      ft.set(ptr, target.jsFuncToWasm(func, sig));
-    }catch(e){
-      if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
-      throw e;
-    }
-    return ptr;      
-  };
+  target.installFunction = (func, sig)=>__installFunction(func, sig, false);
+
+  /**
+     EXPERIMENTAL! DO NOT USE IN CLIENT CODE!
+
+     Works exactly like installFunction() but requires that a
+     scopedAllocPush() is active and uninstalls the given function
+     when that alloc scope is popped via scopedAllocPop().
+     This is used for implementing JS/WASM function bindings which
+     should only persist for the life of a call into a single
+     C-side function.
+  */
+  target.scopedInstallFunction = (func, sig)=>__installFunction(func, sig, true);
 
   /**
      Requires a pointer value previously returned from
@@ -1083,7 +1116,13 @@ self.WhWasmUtilInstaller = function(target){
     if(n<0) toss("Invalid state object for scopedAllocPop().");
     if(0===arguments.length) state = cache.scopedAlloc[n];
     cache.scopedAlloc.splice(n,1);
-    for(let p; (p = state.pop()); ) target.dealloc(p);
+    for(let p; (p = state.pop()); ){
+      if(target.functionEntry(p)){
+        //console.warn("scopedAllocPop() uninstalling transient function",p);
+        target.uninstallFunction(p);
+      }
+      else target.dealloc(p);
+    }
   };
 
   /**
@@ -1303,12 +1342,12 @@ self.WhWasmUtilInstaller = function(target){
      State for use with xWrap()
   */
   cache.xWrap = Object.create(null);
-  const xcv = cache.xWrap.convert = Object.create(null);
+  cache.xWrap.convert = Object.create(null);
   /** Map of type names to argument conversion functions. */
   cache.xWrap.convert.arg = new Map;
   /** Map of type names to return result conversion functions. */
   cache.xWrap.convert.result = new Map;
-  const xArg = xcv.arg, xResult = xcv.result;
+  const xArg = cache.xWrap.convert.arg, xResult = cache.xWrap.convert.result;
 
   if(target.bigIntEnabled){
     xArg.set('i64', (i)=>BigInt(i));
@@ -1394,6 +1433,87 @@ self.WhWasmUtilInstaller = function(target){
       const f = target.jsFuncToWasm(v, WHAT_SIGNATURE);
     });
   }
+
+  const __FuncPtrBindModes = ['transient','static','singleton'];
+  /**
+     EXPERIMENTAL.
+
+     An attempt at adding function pointer conversion support to
+     xWrap(). This type is recognized by xWrap() as a proxy for
+     converting a JS function to a C-side function, either permanently
+     or only for the duration of a a single call into the C layer.
+  */
+  xArg.FuncPtrAdapter = class {
+    /**
+       Requires an options object with these properties:
+
+       - signature: an function signature compatible with
+         jsFuncToWasm().
+
+       - bindMode (string): one of ('transient', 'static',
+         'singleton').  If 'transient', it uses
+         scopedInstallFunction() for its function bindings, meaning
+         they're limited to the lifetime of a single xWrap()-induced
+         function call. If it's 'static', the binding is permanent,
+         lasting the life of the WASM environment. If it's 'singleton'
+         then this function remembers the last function it installed
+         and uninstalls it before installing any replacements on
+         subsequent calls. If it's passed the exact same JS function
+         to install later, it will re-use the existing binding.
+
+       - name (optional): string describing the function binding. This
+         is solely for debugging and error-reporting purposes. If not
+         provided, an empty string is assumed.
+
+       The constructor only saves the above state for later, and does
+       not actually bind any functions. Its convertArg() methor is
+       called via xWrap() to perform any bindings.
+    */
+    constructor(opt){
+      this.signature = opt.signature;
+      if(__FuncPtrBindModes.indexOf(opt.bindMode)<0){
+        toss("Invalid options.bindMode ("+opt.bindMod+") for FuncPtrAdapter. "+
+             "Expecting one of: ("+__FuncPtrBindModes.join(', ')+')');
+      }
+      this.bindMode = opt.bindMode;
+      this.name = opt.name || '';
+      this.singleton = ('singleton'===this.bindMode) ? [] : undefined;
+      //console.warn("FuncPtrAdapter()",this.signature,this.transient);
+    }
+    /**
+       Gets called via xWrap() to "convert" v to a WASM-bound function
+       pointer. If v is one of (a pointer, null, undefined) then
+       (v||0) is returned, otherwise v must be a Function, for which
+       xit creates (if needed) a WASM function binding and returns the
+       WASM pointer to that binding. It throws if passed an invalid
+       type.
+    */
+    convertArg(v){
+      //console.warn("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
+      if(v instanceof Function){
+        if(this.singleton && this.singleton[0]===v){
+          return this.singleton[1];
+        }
+        const fp = __installFunction(v, this.signature, 'transient'===this.bindMode);
+        if(this.singleton){
+          if(this.singleton[1]){
+            try{target.uninstallFunction(this.singleton[1])}
+            catch(e){/*ignored*/}
+          }
+          this.singleton[0] = v;
+          this.singleton[1] = fp;
+        }
+        return fp;
+      }else if(target.isPtr(v) || null===v || undefined===v){
+        return v || 0;
+      }else{
+        throw new TypeError("Invalid FuncPtrAdapter argument type. "+
+                            "Expecting "+(this.name ? this.name+' ' : '')+
+                            "function matching signature "+
+                            this.signature+".");
+      }
+    }
+  };
 
   const __xArgAdapterCheck =
         (t)=>xArg.get(t) || toss("Argument adapter not found:",t);
@@ -1565,7 +1685,10 @@ self.WhWasmUtilInstaller = function(target){
     }
     /*Verify the arg type conversions are valid...*/;
     if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
-    argTypes.forEach(__xArgAdapterCheck);
+    for(const t of argTypes){
+      if(t instanceof xArg.FuncPtrAdapter) xArg.set(t, (v)=>t.convertArg(v));
+      else __xArgAdapterCheck(t);
+    }
     const cxw = cache.xWrap;
     if(0===xf.length){
       // No args to convert, so we can create a simpler wrapper...
@@ -1665,6 +1788,8 @@ self.WhWasmUtilInstaller = function(target){
     return __xAdapter(f, arguments.length, typeName, adapter,
                       'argAdapter()', xArg);
   };
+
+  target.xWrap.FuncPtrAdapter = xArg.FuncPtrAdapter;
 
   /**
      Functions like xCall() but performs argument and result type

@@ -1054,7 +1054,13 @@ self.sqlite3InitModule = sqlite3InitModule;
         .assert(ex.message.indexOf("Invalid SQL")>0);
       T.assert(db === db.checkRc(0))
         .assert(db === sqlite3.oo1.DB.checkRc(db,0))
-        .assert(null === sqlite3.oo1.DB.checkRc(null,0))
+        .assert(null === sqlite3.oo1.DB.checkRc(null,0));
+
+      this.progressHandlerCount = 0;
+      capi.sqlite3_progress_handler(db, 5, (p)=>{
+        ++this.progressHandlerCount;
+        return 0;
+      }, 0);
     })
   ////////////////////////////////////////////////////////////////////
     .t('sqlite3_db_config() and sqlite3_db_status()', function(sqlite3){
@@ -1107,6 +1113,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         new TextEncoder('utf-8').encode("select 3 as a")
       );
       //debug("statement =",st);
+      this.progressHandlerCount = 0;
       try {
         T.assert(wasm.isPtr(st.pointer))
           .mustThrowMatching(()=>st.pointer=1, /read-only/)
@@ -1145,7 +1152,9 @@ self.sqlite3InitModule = sqlite3InitModule;
               st, capi.SQLITE_STMTSTATUS_RUN, 0
             ) > 0);
 
-        T.assert(0===capi.sqlite3_strglob("*.txt", "foo.txt")).
+        T.assert(this.progressHandlerCount > 0,
+                 "Expecting progress callback.").
+          assert(0===capi.sqlite3_strglob("*.txt", "foo.txt")).
           assert(0!==capi.sqlite3_strglob("*.txt", "foo.xtx")).
           assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).
           assert(0!==capi.sqlite3_strlike("%.txt", "foo.xtx", 0));
@@ -1207,6 +1216,7 @@ self.sqlite3InitModule = sqlite3InitModule;
     .t('Table t', function(sqlite3){
       const db = this.db;
       let list = [];
+      this.progressHandlerCount = 0;
       let rc = db.exec({
         sql:['CREATE TABLE t(a,b);',
              // ^^^ using TEMP TABLE breaks the db export test
@@ -1220,7 +1230,9 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(rc === db)
         .assert(2 === list.length)
         .assert('string'===typeof list[1])
-        .assert(4===db.changes());
+        .assert(4===db.changes())
+        .assert(this.progressHandlerCount > 0,
+                "Expecting progress callback.")
       if(wasm.bigIntEnabled){
         T.assert(4n===db.changes(false,true));
       }
@@ -1643,6 +1655,7 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(2===db.selectValue('select a from foo.bar where a>1 order by a'));
       let colCount = 0, rowCount = 0;
       const execCallback = function(pVoid, nCols, aVals, aNames){
+        //console.warn("execCallback(",arguments,")");
         colCount = nCols;
         ++rowCount;
         T.assert(2===aVals.length)
