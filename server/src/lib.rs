@@ -18,6 +18,11 @@ mod query_analysis;
 mod server;
 mod wal;
 
+pub mod proxy_rpc {
+    #![allow(clippy::all)]
+    tonic::include_proto!("proxy");
+}
+
 pub async fn run_server(
     db_path: PathBuf,
     tcp_addr: SocketAddr,
