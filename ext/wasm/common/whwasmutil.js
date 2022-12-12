@@ -1305,30 +1305,37 @@ self.WhWasmUtilInstaller = function(target){
   cache.xWrap = Object.create(null);
   const xcv = cache.xWrap.convert = Object.create(null);
   /** Map of type names to argument conversion functions. */
-  cache.xWrap.convert.arg = Object.create(null);
+  cache.xWrap.convert.arg = new Map;
   /** Map of type names to return result conversion functions. */
-  cache.xWrap.convert.result = Object.create(null);
+  cache.xWrap.convert.result = new Map;
+  const xArg = xcv.arg, xResult = xcv.result;
 
   if(target.bigIntEnabled){
-    xcv.arg.i64 = (i)=>BigInt(i);
+    xArg.set('i64', (i)=>BigInt(i));
   }
-  xcv.arg.i32 = (i)=>(i | 0);
-  xcv.arg.i16 = (i)=>((i | 0) & 0xFFFF);
-  xcv.arg.i8  = (i)=>((i | 0) & 0xFF);
-  xcv.arg.f32 = xcv.arg.float = (i)=>Number(i).valueOf();
-  xcv.arg.f64 = xcv.arg.double = xcv.arg.f32;
-  xcv.arg.int = xcv.arg.i32;
-  xcv.result['*'] = xcv.result['pointer'] = xcv.arg['**'] = xcv.arg[ptrIR];
-  xcv.result['number'] = (v)=>Number(v);
+  xArg.set('i32', (i)=>(i | 0));
+  xArg.set('i16', (i)=>((i | 0) & 0xFFFF));
+  xArg.set('i8', (i)=>((i | 0) & 0xFF));
+  xArg.set('f32', (i)=>Number(i).valueOf());
+  xArg.set('float', xArg.get('f32'));
+  xArg.set('f64', xArg.get('f32'));
+  xArg.set('double', xArg.get('f64'));
+  xArg.set('int', xArg.get('i32'));
+  xResult.set('*', xArg.get(ptrIR));
+  xResult.set('pointer', xArg.get(ptrIR));
+  xArg.set('**', xArg.get(ptrIR));
+  xResult.set('number', (v)=>Number(v));
 
-  { /* Copy certain xcv.arg[...] handlers to xcv.result[...] and
+  { /* Copy certain xArg[...] handlers to xResult[...] and
        add pointer-style variants of them. */
     const copyToResult = ['i8', 'i16', 'i32', 'int',
                           'f32', 'float', 'f64', 'double'];
     if(target.bigIntEnabled) copyToResult.push('i64');
+    const adaptPtr = xArg.get(ptrIR);
     for(const t of copyToResult){
-      xcv.arg[t+'*'] = xcv.result[t+'*'] = xcv.arg[ptrIR];
-      xcv.result[t] = xcv.arg[t] || toss("Missing arg converter:",t);
+      xArg.set(t+'*', adaptPtr);
+      xResult.set(t+'*', adaptPtr);
+      xResult.set(t, (xArg.get(t) || toss("Missing arg converter:",t)));
     }
   }
 
@@ -1348,23 +1355,28 @@ self.WhWasmUtilInstaller = function(target){
      Would that be too much magic concentrated in one place, ready to
      backfire?
   */
-  xcv.arg.string = xcv.arg.utf8 = xcv.arg['pointer'] = xcv.arg['*']
-    = function(v){
-      if('string'===typeof v) return target.scopedAllocCString(v);
-      return v ? xcv.arg[ptrIR](v) : null;
-    };
-  xcv.result.string = xcv.result.utf8 = (i)=>target.cstrToJs(i);
-  xcv.result['string:dealloc'] = xcv.result['utf8:dealloc'] = (i)=>{
+  xArg.set('string', function(v){
+    if('string'===typeof v) return target.scopedAllocCString(v);
+    return v ? xArg.get(ptrIR)(v) : null;
+  });
+  xArg.set('utf8', xArg.get('string'));
+  xArg.set('pointer', xArg.get('string'));
+  xArg.set('*', xArg.get('string'));
+
+  xResult.set('string', (i)=>target.cstrToJs(i));
+  xResult.set('utf8', xResult.get('string'));
+  xResult.set('string:dealloc', (i)=>{
     try { return i ? target.cstrToJs(i) : null }
     finally{ target.dealloc(i) }
-  };
-  xcv.result.json = (i)=>JSON.parse(target.cstrToJs(i));
-  xcv.result['json:dealloc'] = (i)=>{
+  });
+  xResult.set('utf8:dealloc', xResult.get('string:dealloc'));
+  xResult.set('json', (i)=>JSON.parse(target.cstrToJs(i)));
+  xResult.set('json:dealloc', (i)=>{
     try{ return i ? JSON.parse(target.cstrToJs(i)) : null }
     finally{ target.dealloc(i) }
-  }
-  xcv.result['void'] = (v)=>undefined;
-  xcv.result['null'] = (v)=>v;
+  });
+  xResult.set('void', (v)=>undefined);
+  xResult.set('null', (v)=>v);
 
   if(0){
     /***
@@ -1377,17 +1389,17 @@ self.WhWasmUtilInstaller = function(target){
         the value will always be treated like -1 (which has a useful
         case in the sqlite3 bindings).
     */
-    xcv.arg['func-ptr'] = function(v){
-      if(!(v instanceof Function)) return xcv.arg[ptrIR];
+    xArg.set('func-ptr', function(v){
+      if(!(v instanceof Function)) return xArg.get(ptrIR);
       const f = target.jsFuncToWasm(v, WHAT_SIGNATURE);
-    };
+    });
   }
 
   const __xArgAdapterCheck =
-        (t)=>xcv.arg[t] || toss("Argument adapter not found:",t);
+        (t)=>xArg.get(t) || toss("Argument adapter not found:",t);
 
   const __xResultAdapterCheck =
-        (t)=>xcv.result[t] || toss("Result adapter not found:",t);
+        (t)=>xResult.get(t) || toss("Result adapter not found:",t);
 
   cache.xWrap.convertArg = (t,v)=>__xArgAdapterCheck(t)(v);
   cache.xWrap.convertResult =
@@ -1576,15 +1588,15 @@ self.WhWasmUtilInstaller = function(target){
   /** Internal impl for xWrap.resultAdapter() and argAdapter(). */
   const __xAdapter = function(func, argc, typeName, adapter, modeName, xcvPart){
     if('string'===typeof typeName){
-      if(1===argc) return xcvPart[typeName];
+      if(1===argc) return xcvPart.get(typeName);
       else if(2===argc){
         if(!adapter){
-          delete xcvPart[typeName];
+          delete xcvPart.get(typeName);
           return func;
         }else if(!(adapter instanceof Function)){
           toss(modeName,"requires a function argument.");
         }
-        xcvPart[typeName] = adapter;
+        xcvPart.set(typeName, adapter);
         return func;
       }
     }
@@ -1621,7 +1633,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xWrap.resultAdapter = function f(typeName, adapter){
     return __xAdapter(f, arguments.length, typeName, adapter,
-                      'resultAdapter()', xcv.result);
+                      'resultAdapter()', xResult);
   };
 
   /**
@@ -1651,7 +1663,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   target.xWrap.argAdapter = function f(typeName, adapter){
     return __xAdapter(f, arguments.length, typeName, adapter,
-                      'argAdapter()', xcv.arg);
+                      'argAdapter()', xArg);
   };
 
   /**
