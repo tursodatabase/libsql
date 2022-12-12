@@ -368,7 +368,7 @@ void sqlite3_wasm_test_struct(WasmTestStruct * s){
 */
 SQLITE_WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
-  static char aBuffer[1024 * 16] = {0} /* where the JSON goes */;
+  static char aBuffer[1024 * 20] = {0} /* where the JSON goes */;
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
   char * zPos = &aBuffer[1] /* skip first byte for now to help protect
@@ -550,6 +550,30 @@ const char * sqlite3_wasm_enum_json(void){
 
   DefGroup(limits) {
     DefInt(SQLITE_MAX_ALLOCATION_SIZE);
+    DefInt(SQLITE_LIMIT_LENGTH);
+    DefInt(SQLITE_MAX_LENGTH);
+    DefInt(SQLITE_LIMIT_SQL_LENGTH);
+    DefInt(SQLITE_MAX_SQL_LENGTH);
+    DefInt(SQLITE_LIMIT_COLUMN);
+    DefInt(SQLITE_MAX_COLUMN);
+    DefInt(SQLITE_LIMIT_EXPR_DEPTH);
+    DefInt(SQLITE_MAX_EXPR_DEPTH);
+    DefInt(SQLITE_LIMIT_COMPOUND_SELECT);
+    DefInt(SQLITE_MAX_COMPOUND_SELECT);
+    DefInt(SQLITE_LIMIT_VDBE_OP);
+    DefInt(SQLITE_MAX_VDBE_OP);
+    DefInt(SQLITE_LIMIT_FUNCTION_ARG);
+    DefInt(SQLITE_MAX_FUNCTION_ARG);
+    DefInt(SQLITE_LIMIT_ATTACHED);
+    DefInt(SQLITE_MAX_ATTACHED);
+    DefInt(SQLITE_LIMIT_LIKE_PATTERN_LENGTH);
+    DefInt(SQLITE_MAX_LIKE_PATTERN_LENGTH);
+    DefInt(SQLITE_LIMIT_VARIABLE_NUMBER);
+    DefInt(SQLITE_MAX_VARIABLE_NUMBER);
+    DefInt(SQLITE_LIMIT_TRIGGER_DEPTH);
+    DefInt(SQLITE_MAX_TRIGGER_DEPTH);
+    DefInt(SQLITE_LIMIT_WORKER_THREADS);
+    DefInt(SQLITE_MAX_WORKER_THREADS);
   } _DefGroup;
 
   DefGroup(openFlags) {

@@ -957,6 +957,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        might use a different allocator than the user for managing the
        deserialized block. de/serialize() are ONLY safe to use with
        sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. */,
+    ["sqlite3_errcode", "int", "sqlite3*"],
     ["sqlite3_errmsg", "string", "sqlite3*"],
     ["sqlite3_error_offset", "int", "sqlite3*"],
     ["sqlite3_errstr", "string", "int"],
@@ -975,8 +976,12 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        ^^^ we cannot actually currently support this because JS is
         single-threaded and we don't have a portable way to access a DB
         from 2 SharedWorkers concurrently. ],*/
+    ["sqlite3_keyword_count", "int"],
+    ["sqlite3_keyword_name", "int", ["int", "**", "*"]],
+    ["sqlite3_keyword_check", "int", ["string", "int"]],
     ["sqlite3_libversion", "string"],
     ["sqlite3_libversion_number", "int"],
+    ["sqlite3_limit", "int", ["sqlite3*", "int", "int"]],
     ["sqlite3_malloc", "*","int"],
     ["sqlite3_open", "int", "string", "*"],
     ["sqlite3_open_v2", "int", "string", "*", "int", "string"],
@@ -985,6 +990,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        for those, depending on how their SQL argument is provided. */
     /* sqlite3_randomness() uses a hand-written wrapper to extend
        the range of supported argument types. */
+    //TODO: hand-written wrapper to convert function-type arg:
+    //void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
+    //
+    //!TODO!: accept arg/result conversion descriptions which are objects
+    //following an interface and a FuncPtr impl which does that conversion.
+    //That would require moving these bindings int sqlite3-api-glue.js, after
+    //whwasmutil.js is loaded.
+    ["sqlite3_progress_handler", undefined, ["sqlite3*","int", "*", "*"]],
     ["sqlite3_realloc", "*","*","int"],
     ["sqlite3_reset", "int", "sqlite3_stmt*"],
     ["sqlite3_result_blob", undefined, "sqlite3_context*", "*", "int", "*"],
@@ -1007,6 +1020,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_status", "int", "int", "*", "*", "int"],
     ["sqlite3_step", "int", "sqlite3_stmt*"],
+    ["sqlite3_stmt_isexplain", "int", ["sqlite3_stmt*"]],
+    ["sqlite3_stmt_readonly", "int", ["sqlite3_stmt*"]],
     ["sqlite3_stmt_status", "int", "sqlite3_stmt*", "int", "int"],
     ["sqlite3_strglob", "int", "string","string"],
     ["sqlite3_stricmp", "int", "string", "string"],
@@ -1068,12 +1083,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      ["sqlite3*","string","sqlite3_module*","*","*"]],
     ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
     ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
+    ["sqlite3_last_insert_rowid", "i64", ["sqlite3*"]],
     ["sqlite3_malloc64", "*","i64"],
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64", undefined, "*", "i64"],
     ["sqlite3_result_zeroblob64", "int", "*", "i64"],
+    ["sqlite3_set_last_insert_rowid", undefined, ["sqlite3*", "i64"]],
     ["sqlite3_status64", "int", "int", "*", "*", "int"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
     ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
