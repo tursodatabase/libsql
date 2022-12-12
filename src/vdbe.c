@@ -8072,6 +8072,40 @@ case OP_VInitIn: {        /* out2 */
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VPrepareSql P1 * * * *
+**
+** P1 is a cursor opened using VOpen.
+**
+** This opcode invokes the xPrepareSql method on the virtual table specified
+** by P1. The SQL text parameter to xPrepareSql is obtained from Vdbe* `p`.
+**
+*/
+case OP_VPrepareSql: {
+  const sqlite3_module *pModule;
+  sqlite3_vtab_cursor *pVCur;
+  sqlite3_vtab *pVtab;
+  VdbeCursor *pCur;
+
+  pCur = p->apCsr[pOp->p1];
+  assert( pCur!=0 );
+  assert( pCur->eCurType==CURTYPE_VTAB );
+  pVCur = pCur->uc.pVCur;
+  pVtab = pVCur->pVtab;
+  pModule = pVtab->pModule;
+
+  /* Invoke the xPrepareSql method */
+   if( pModule->iVersion>=4 ){
+    if( pModule->xPrepareSql && p->zSql ){
+      rc = pModule->xPrepareSql(pVCur, p->zSql);
+      if( rc ) goto abort_due_to_error; // TODO set and test error msg
+    }
+  }
+
+  if( rc ) goto abort_due_to_error;
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VFilter P1 P2 P3 P4 *
