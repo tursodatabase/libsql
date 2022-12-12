@@ -24,6 +24,11 @@ enum Commands {
         ws_addr: Option<SocketAddr>,
         #[clap(long, short)]
         fdb_config_path: Option<String>,
+        #[clap(long, short)]
+        remote_writer_url: Option<String>,
+        /// run this node in write proxy mode at this address
+        #[clap(long, conflicts_with = "remote_writer_url")]
+        write_rpc_server_addr: Option<SocketAddr>,
     },
 }
 
@@ -43,8 +48,18 @@ async fn main() -> Result<()> {
             tcp_addr,
             ws_addr,
             fdb_config_path,
+            remote_writer_url,
+            write_rpc_server_addr,
         } => {
-            server::run_server(db_path, tcp_addr, ws_addr, fdb_config_path).await?;
+            server::run_server(
+                db_path,
+                tcp_addr,
+                ws_addr,
+                fdb_config_path,
+                remote_writer_url,
+                write_rpc_server_addr,
+            )
+            .await?;
         }
     }
 
