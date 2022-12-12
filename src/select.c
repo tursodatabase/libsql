@@ -2290,6 +2290,14 @@ int sqlite3ColumnsFromExprList(
 }
 
 /*
+** This bit, when added to the "aff" parameter of 
+** sqlite3SelectAddColumnTypeAndCollation() means that result set
+** expressions of the form "CAST(expr AS NUMERIC)" should result in
+** NONE affinity rather than NUMERIC affinity.
+*/
+#define SQLITE_AFF_FLAG1  0x10
+
+/*
 ** Add type and collation information to a column list based on
 ** a SELECT statement.
 ** 
@@ -2299,12 +2307,17 @@ int sqlite3ColumnsFromExprList(
 **
 ** This routine requires that all identifiers in the SELECT
 ** statement be resolved.
+**
+** The SQLITE_AFF_FLAG1 bit added to parameter aff means that a
+** result set column of the form "CAST(expr AS NUMERIC)" should use
+** NONE affinity rather than NUMERIC affinity.  See the
+** 2022-12-10 "reopen" of ticket https://sqlite.org/src/tktview/57c47526c3.
 */
 void sqlite3SelectAddColumnTypeAndCollation(
   Parse *pParse,        /* Parsing contexts */
   Table *pTab,          /* Add column type information to this table */
   Select *pSelect,      /* SELECT used to determine types and collations */
-  char aff              /* Default affinity for columns */
+  char aff              /* Default affinity.  Maybe with SQLITE_AFF_FLAG1 too */
 ){
   sqlite3 *db = pParse->db;
   NameContext sNC;
@@ -2330,6 +2343,12 @@ void sqlite3SelectAddColumnTypeAndCollation(
     zType = columnType(&sNC, p, 0, 0, 0);
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
+    if( pCol->affinity==SQLITE_AFF_NUMERIC
+     && p->op==TK_CAST
+     && (aff & SQLITE_AFF_FLAG1)!=0
+    ){
+      pCol->affinity = SQLITE_AFF_NONE;
+    }
     if( zType ){
       m = sqlite3Strlen30(zType);
       n = sqlite3Strlen30(pCol->zCnName);
@@ -2342,7 +2361,10 @@ void sqlite3SelectAddColumnTypeAndCollation(
         pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       }
     }
-    if( pCol->affinity<=SQLITE_AFF_NONE ) pCol->affinity = aff;
+    if( pCol->affinity<=SQLITE_AFF_NONE ){
+      assert( (SQLITE_AFF_FLAG1 & SQLITE_AFF_MASK)==0 );
+      pCol->affinity = aff & SQLITE_AFF_MASK;
+    }
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl ){
       assert( pTab->pIndex==0 );
@@ -6216,7 +6238,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       if( pSel ){
         while( pSel->pPrior ) pSel = pSel->pPrior;
         sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSel,
-                                               SQLITE_AFF_NONE);
+                                     SQLITE_AFF_NONE|SQLITE_AFF_FLAG1);
       }
     }
   }
