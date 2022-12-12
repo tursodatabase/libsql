@@ -4,12 +4,26 @@ use std::str::FromStr;
 use pgwire::api::{results::FieldInfo, Type as PgType};
 use serde::{Deserialize, Serialize};
 
+use crate::proxy_rpc::{
+    error::ErrorCode as RpcErrorCode, Column as RpcColumn, Error as RpcError, ResultRows,
+    Row as RpcRow, Type as RpcType, Value as RpcValue,
+};
+
 pub type QueryResult = Result<QueryResponse, QueryError>;
 
 #[derive(Debug, Clone)]
 pub struct Column {
     pub name: String,
     pub ty: Option<Type>,
+}
+
+impl From<Column> for RpcColumn {
+    fn from(other: Column) -> Self {
+        RpcColumn {
+            name: other.name,
+            ty: other.ty.map(|ty| RpcType::from(ty).into()),
+        }
+    }
 }
 
 impl From<Column> for FieldInfo {
@@ -41,6 +55,32 @@ impl From<Type> for PgType {
             Type::Float => PgType::NUMERIC,
             Type::String => PgType::VARCHAR,
             Type::Null | Type::Unknown => PgType::UNKNOWN,
+        }
+    }
+}
+
+impl From<Type> for RpcType {
+    fn from(other: Type) -> Self {
+        match other {
+            Type::Integer => Self::Integer,
+            Type::Binary => Self::Binary,
+            Type::Float => Self::Float,
+            Type::String => Self::String,
+            Type::Null => Self::Null,
+            Type::Unknown => Self::Unknown,
+        }
+    }
+}
+
+impl From<RpcType> for Type {
+    fn from(other: RpcType) -> Self {
+        match other {
+            RpcType::Integer => Self::Integer,
+            RpcType::Binary => Self::Binary,
+            RpcType::Float => Self::Float,
+            RpcType::String => Self::String,
+            RpcType::Null => Self::Null,
+            RpcType::Unknown => Self::Unknown,
         }
     }
 }
@@ -94,6 +134,56 @@ pub struct ResultSet {
     pub rows: Vec<Row>,
 }
 
+impl From<ResultSet> for ResultRows {
+    fn from(other: ResultSet) -> Self {
+        let column_descriptions = other.columns.into_iter().map(Into::into).collect();
+        let rows = other
+            .rows
+            .iter()
+            .map(|row| RpcRow {
+                values: row
+                    .values
+                    .iter()
+                    .map(|v| bincode::serialize(v).unwrap())
+                    .map(|data| RpcValue { data })
+                    .collect(),
+            })
+            .collect();
+
+        ResultRows {
+            column_descriptions,
+            rows,
+        }
+    }
+}
+
+impl From<ResultRows> for ResultSet {
+    fn from(rows: ResultRows) -> Self {
+        let columns = rows
+            .column_descriptions
+            .into_iter()
+            .map(|c| Column {
+                ty: Some(c.ty().into()),
+                name: c.name,
+            })
+            .collect();
+
+        let rows = rows
+            .rows
+            .into_iter()
+            .map(|row| {
+                row.values
+                    .iter()
+                    .map(|v| bincode::deserialize(&v.data).unwrap())
+                    .collect::<Vec<_>>()
+            })
+            .map(|values| Row { values })
+            .collect();
+
+        Self { columns, rows }
+    }
+}
+
 #[derive(Debug)]
 pub enum QueryResponse {
     Ack,
@@ -110,6 +200,19 @@ pub enum Query {
 pub struct QueryError {
     pub code: ErrorCode,
     pub msg: String,
+}
+
+impl From<RpcError> for QueryError {
+    fn from(other: RpcError) -> Self {
+        let code = match other.code() {
+            RpcErrorCode::SqlError => ErrorCode::SQLError,
+            RpcErrorCode::TxBusy => ErrorCode::TxBusy,
+            RpcErrorCode::TxTimeout => ErrorCode::TxTimeout,
+            RpcErrorCode::Internal => ErrorCode::Internal,
+        };
+
+        Self::new(code, other.message)
+    }
 }
 
 impl QueryError {
