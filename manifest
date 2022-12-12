@@ -1,5 +1,5 @@
-C ext/wasm/module-symbols.html:\sadd\sa\shyperlink\sto\sthe\sAPI\sdocs\sfor\seach\sexported\ssqlite3_...()\sfunction.
-D 2022-12-12T11:22:05.476
+C ext/wasm/module-symbols.html:\sfor\sC\sAPIs\swhich\shave\sextended\sJS-side\ssemantics,\slink\sto\sthe\sJS-side\sAPI\sdocs\sinstead\sof\sthe\sC\sdocs.
+D 2022-12-12T11:38:22.370
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F ext/wasm/index-dist.html c806b6005145b71d64240606e9c6e0bf56878ee8829c66fe7486c
 F ext/wasm/index.html f151b7c7b5cfdc066567d556acd168e769efd4e982286dc5f849a5ee69ecd0ff
 F ext/wasm/jaccwabyt/jaccwabyt.js 06f2ef1ad640c26c593def3d960336e9bb789819b920516480895c38ed5f58fa
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
-F ext/wasm/module-symbols.html ea74b95c9dbdc479857941ed35cf1f842bfff91dfe1aa38280ba7a670c0a85ef
+F ext/wasm/module-symbols.html 650a5ad1bd54feb39eb627b06093612932317406825f3a727d5926016a46e502
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 4c140457f4d6da9d646a49addd91edb6e9ad1643c6c48e3258b5bce24725dc18
 F ext/wasm/speedtest1-wasmfs.html bc28eb29b69a73864b8d7aae428448f8b7e1de81d8bfb9bba99541322054dbd0
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58052d8285cbc2aa8c4f8a9f5c2d33ac12014f6a70afbc93bc4ce5b9fd1f9ee5
-R 819491edeaf6ff328d176f3bfbb78f44
+P 01d3a9bba3120cfec3f752048281f18ce7ab48fa7584750c097233a9ce095a20
+R 919e96e26165900597588955a230bf5e
 U stephan
-Z 006a199dedeefa1e377f24b77a4a4ef3
+Z db12a0f20be16fdb93fc89d67734b367
 # Remove this line to create a well-formed Fossil manifest.
