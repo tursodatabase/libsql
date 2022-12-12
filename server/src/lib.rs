@@ -28,6 +28,8 @@ pub async fn run_server(
     tcp_addr: SocketAddr,
     ws_addr: Option<SocketAddr>,
     fdb_config_path: Option<String>,
+    writer_rpc_addr: Option<String>,
+    rpc_server_addr: Option<SocketAddr>,
 ) -> Result<()> {
     let mut server = Server::new();
     server.bind_tcp(tcp_addr).await?;
