@@ -1,21 +1,28 @@
 use bytes::Buf;
-use futures::{io, stream, SinkExt, StreamExt};
+use futures::{io, stream, SinkExt};
+use parking_lot::Mutex;
 use pgwire::api::query::SimpleQueryHandler;
-use pgwire::api::results::{text_query_response, FieldInfo, Response, TextDataRowEncoder};
-use pgwire::api::{ClientInfo, Type};
+use pgwire::api::results::{text_query_response, Response, TextDataRowEncoder};
+use pgwire::api::ClientInfo;
 use pgwire::error::{ErrorInfo, PgWireError, PgWireResult};
+use pgwire::messages::data::DataRow;
 use pgwire::messages::response::{ReadyForQuery, READY_STATUS_IDLE};
 use pgwire::messages::startup::SslRequest;
 use pgwire::messages::PgWireBackendMessage;
 use pgwire::tokio::PgWireMessageServerCodec;
-use rusqlite::types::Value;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio_util::codec::Framed;
 
-use crate::query::{QueryResponse, QueryResult};
+use crate::query::{QueryResponse, QueryResult, ResultSet, Row, Value};
 use crate::server::AsyncPeekable;
 
-pub struct SimpleHandler(pub QueryResult);
+pub struct SimpleHandler(pub Mutex<Option<QueryResult>>);
+
+impl SimpleHandler {
+    pub fn new(r: QueryResult) -> Self {
+        Self(Mutex::new(Some(r)))
+    }
+}
 
 #[async_trait::async_trait]
 impl SimpleQueryHandler for SimpleHandler {
@@ -23,50 +30,16 @@ impl SimpleQueryHandler for SimpleHandler {
     where
         C: ClientInfo + Unpin + Send + Sync,
     {
-        // TODO: find a way to prevent unecessary clones.
-        match &self.0 {
+        let query_result = self
+            .0
+            .lock()
+            .take()
+            .expect("SimpleHandler used more that once");
+        match query_result {
             Ok(resp) => match resp {
-                QueryResponse::ResultSet(col_names, rows) => {
-                    let nr_cols = col_names.len();
-                    let field_infos = col_names
-                        .iter()
-                        .map(move |(name, ty)| {
-                            let ty = match ty {
-                                Some(ty) => match ty.as_str() {
-                                    "integer" => Type::INT8,
-                                    "real" => Type::NUMERIC,
-                                    "text" => Type::VARCHAR,
-                                    "blob" => Type::BYTEA,
-                                    _ => Type::UNKNOWN,
-                                },
-                                None => Type::UNKNOWN,
-                            };
-                            FieldInfo::new(name.into(), None, None, ty)
-                        })
-                        .collect();
-                    let data_row_stream = stream::iter(rows.clone().into_iter()).map(move |row| {
-                        let mut encoder = TextDataRowEncoder::new(nr_cols);
-                        for col in &row {
-                            match col {
-                                Value::Null => {
-                                    encoder.append_field(None::<&u8>)?;
-                                }
-                                Value::Integer(i) => {
-                                    encoder.append_field(Some(&i))?;
-                                }
-                                Value::Real(f) => {
-                                    encoder.append_field(Some(&f))?;
-                                }
-                                Value::Text(t) => {
-                                    encoder.append_field(Some(&t))?;
-                                }
-                                Value::Blob(b) => {
-                                    encoder.append_field(Some(&hex::encode(b)))?;
-                                }
-                            }
-                        }
-                        encoder.finish()
-                    });
+                QueryResponse::ResultSet(ResultSet { columns, rows }) => {
+                    let field_infos = columns.into_iter().map(Into::into).collect();
+                    let data_row_stream = stream::iter(rows.into_iter().map(encode_row));
                     return Ok(vec![Response::Query(text_query_response(
                         field_infos,
                         data_row_stream,
@@ -74,9 +47,33 @@ impl SimpleQueryHandler for SimpleHandler {
                 }
                 QueryResponse::Ack => return Ok(vec![]),
             },
-            Err(e) => Err(e.clone().into()),
+            Err(e) => Err(e.into()),
         }
     }
+}
+
+fn encode_row(row: Row) -> PgWireResult<DataRow> {
+    let mut encoder = TextDataRowEncoder::new(row.values.len());
+    for value in row.values {
+        match value {
+            Value::Null => {
+                encoder.append_field(None::<&u8>)?;
+            }
+            Value::Integer(i) => {
+                encoder.append_field(Some(&i))?;
+            }
+            Value::Real(f) => {
+                encoder.append_field(Some(&f))?;
+            }
+            Value::Text(t) => {
+                encoder.append_field(Some(&t))?;
+            }
+            Value::Blob(b) => {
+                encoder.append_field(Some(&hex::encode(b)))?;
+            }
+        }
+    }
+    encoder.finish()
 }
 
 // from https://docs.rs/pgwire/latest/src/pgwire/tokio.rs.html#230-283

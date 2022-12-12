@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
@@ -7,32 +8,41 @@ use rusqlite::OpenFlags;
 use tokio::sync::oneshot;
 use tracing::warn;
 
-use crate::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
+use crate::query::{Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row};
 use crate::query_analysis::{State, Statements};
 
 use super::{Database, TXN_TIMEOUT_SECS};
 
+#[derive(Clone)]
 pub struct LibSqlDb {
     sender: crossbeam::channel::Sender<(Statements, oneshot::Sender<QueryResult>)>,
 }
 
 fn execute_query(conn: &rusqlite::Connection, stmts: &Statements) -> QueryResult {
-    let mut result = vec![];
+    let mut rows = vec![];
     let mut prepared = conn.prepare(&stmts.stmts)?;
-    let columns: Vec<(String, Option<String>)> = prepared
+    let columns = prepared
         .columns()
         .iter()
-        .map(|col| (col.name().into(), col.decl_type().map(str::to_lowercase)))
-        .collect();
-    let mut rows = prepared.query([])?;
-    while let Some(row) = rows.next()? {
-        let mut row_ = vec![];
+        .map(|col| Column {
+            name: col.name().into(),
+            ty: col
+                .decl_type()
+                .map(FromStr::from_str)
+                .transpose()
+                .ok()
+                .flatten(),
+        })
+        .collect::<Vec<_>>();
+    let mut qresult = prepared.query([])?;
+    while let Some(row) = qresult.next()? {
+        let mut values = vec![];
         for (i, _) in columns.iter().enumerate() {
-            row_.push(row.get::<usize, Value>(i)?);
+            values.push(row.get::<usize, Value>(i)?.into());
         }
-        result.push(row_);
+        rows.push(Row { values });
     }
-    Ok(QueryResponse::ResultSet(columns, result))
+    Ok(QueryResponse::ResultSet(ResultSet { columns, rows }))
 }
 
 fn rollback(conn: &rusqlite::Connection) {
