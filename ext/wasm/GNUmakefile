@@ -638,6 +638,7 @@ $(sqlite3.mjs): $(sqlite3.js)
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.mjs) $(sqlite3.wasm)
 all: $(sqlite3.js) $(sqlite3.mjs)
 quick: $(sqlite3.js)
+quick: $(sqlite3.mjs) # for the sake of the snapshot build
 # End main $(sqlite3.js) build
 ########################################################################
 
