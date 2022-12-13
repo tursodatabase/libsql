@@ -363,6 +363,7 @@ struct sqlite3_api_routines {
   /* libSQL 0.1.1 */
   struct libsql_wal_methods *(*wal_methods_find)(const char *);
   int (*wal_methods_register)(struct libsql_wal_methods*);
+  int (*wal_methods_unregister)(struct libsql_wal_methods*);
 };
 
 /*
@@ -692,6 +693,7 @@ typedef int (*sqlite3_loadext_entry)(
 /* libSQL 0.1.1 */
 #define libsql_wal_methods_find        sqlite3_api->wal_methods_find
 #define libsql_wal_methods_register    sqlite3_api->wal_methods_register
+#define libsql_wal_methods_unregister  sqlite3_api->wal_methods_unregister
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)

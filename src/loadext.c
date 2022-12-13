@@ -514,7 +514,8 @@ static const sqlite3_api_routines sqlite3Apis = {
 
   /* libSQL 0.1.1 */
   libsql_wal_methods_find,
-  libsql_wal_methods_register
+  libsql_wal_methods_register,
+  libsql_wal_methods_unregister
 };
 
 /* True if x is the directory separator character
