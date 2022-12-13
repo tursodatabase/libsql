@@ -1,5 +1,5 @@
-C Refactor\sthe\ssqlite3SelectAddColumnTypeAndCollation()\sroutine.\s\sImproved\ncomments.\s\sNow\scalled\ssqlite3SubqueryColumnTypes().
-D 2022-12-13T15:54:43.432
+C Use\sstandard\sdatatype\snames\sfor\sthe\scolumn\sdatatypes\sin\sviews\sand\ssubqueries.
+D 2022-12-13T16:55:23.134
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -645,7 +645,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 9b5fe65391f67cad3ed8e071dbd6e8a6a7fe88a3482b4599d317cf001bb41452
+F src/select.c 44fd33ce5785cc339d20fa20677cd1aab7a8320522096a4ba2579c24509f547c
 F src/shell.c.in 8d9dc02dd03f8fc93f3e3cdb17d8d16e8ddb985dddad213985c08186900a3ebb
 F src/sqlite.h.in e752f82b9d71f1d42b259b1900e4b1caf0965e844d756cd5cc91cc2cf45ed925
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1819,7 +1819,7 @@ F test/vacuum6.test b137b04bf3392d3f5c3b8fda0ce85a6775a70ca112f6559f74ff52dc9ce0
 F test/vacuummem.test 4b30f5b95a9ff86e9d5c20741e50a898b2dc10b0962a3211571eb165357003fb
 F test/varint.test bbce22cda8fc4d135bcc2b589574be8410614e62
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test a5662e9c7425d77b1e1eb4b07fb891fa15f20317013eddcb6f6bee009f2fccc9
+F test/view.test 157a480bcece1436f5ae850a31effa09ffa41ec3748deb89ca57946b1879ac20
 F test/view2.test db32c8138b5b556f610b35dfddd38c5a58a292f07fda5281eedb0851b2672679
 F test/view3.test ad8a8290ee2b55ff6ce66c9ef1ce3f1e47926273a3814e1c425293e128a95456
 F test/vt02.c 33ecddc0832d4cd24e9e9fa83d868981b1e049462f4ec9080710353f6479a534
@@ -2067,11 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7b404f21f657f395eddb32e218eae14e09df08fa03f68ca8bba79ea322ce8ba
-R 8d57b21ff21a1c6bb59874c4ced3e41b
-T *branch * refactor-subquery-types
-T *sym-refactor-subquery-types *
-T -sym-trunk *
+P 4dfb1b450b87e2c6207c83c102b785781d1dbdeadbeeab6a83f96d58bb96cfbf
+R 6aab825d7c825fe79986d6d7941e29bc
 U drh
-Z 35e098fd3e639af36c6fa8765ccf8301
+Z 81f237e4466072746acf71e9caeb1aa9
 # Remove this line to create a well-formed Fossil manifest.

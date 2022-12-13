@@ -2323,7 +2323,7 @@ void sqlite3SubqueryColumnTypes(
   NameContext sNC;
   Column *pCol;
   CollSeq *pColl;
-  int i;
+  int i,j;
   Expr *p;
   struct ExprList_item *a;
 
@@ -2340,19 +2340,6 @@ void sqlite3SubqueryColumnTypes(
     i64 n, m;
     pTab->tabFlags |= (pCol->colFlags & COLFLAG_NOINSERT);
     p = a[i].pExpr;
-    zType = columnType(&sNC, p, 0, 0, 0);
-    if( zType ){
-      m = sqlite3Strlen30(zType);
-      n = sqlite3Strlen30(pCol->zCnName);
-      pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
-      if( pCol->zCnName ){
-        memcpy(&pCol->zCnName[n+1], zType, m+1);
-        pCol->colFlags |= COLFLAG_HASTYPE;
-      }else{
-        testcase( pCol->colFlags & COLFLAG_HASTYPE );
-        pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
-      }
-    }
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity==SQLITE_AFF_NUMERIC
@@ -2364,6 +2351,25 @@ void sqlite3SubqueryColumnTypes(
     if( pCol->affinity<=SQLITE_AFF_NONE ){
       assert( (SQLITE_AFF_FLAG1 & SQLITE_AFF_MASK)==0 );
       pCol->affinity = aff & SQLITE_AFF_MASK;
+    }
+    zType = 0;
+    for(j=0; j<SQLITE_N_STDTYPE; j++){
+      if( sqlite3StdTypeAffinity[j]==pCol->affinity ){
+        zType = sqlite3StdType[j];
+        break;
+      }
+    }
+    if( zType ){
+      m = sqlite3Strlen30(zType);
+      n = sqlite3Strlen30(pCol->zCnName);
+      pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
+      if( pCol->zCnName ){
+        memcpy(&pCol->zCnName[n+1], zType, m+1);
+        pCol->colFlags |= COLFLAG_HASTYPE;
+      }else{
+        testcase( pCol->colFlags & COLFLAG_HASTYPE );
+        pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
+      }
     }
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl ){
