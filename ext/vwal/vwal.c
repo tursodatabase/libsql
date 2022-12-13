@@ -116,6 +116,7 @@ static void v_get_wal_pathname(char *buf, const char *orig, int orig_len) {
 __attribute__((__visibility__("default")))
 void libsql_register_vwal() {
   static libsql_wal_methods methods = {
+    .iVersion = 1,
     .xOpen = v_open,
     .xClose = v_close,
     .xLimit = v_limit,
