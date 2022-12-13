@@ -26,10 +26,11 @@ impl From<Column> for FieldInfo {
 #[derive(Debug, Clone, Copy)]
 pub enum Type {
     Integer,
-    Binary,
-    Float,
-    String,
+    Blob,
+    Real,
+    Text,
     Null,
+    Numeric,
     Unknown,
 }
 
@@ -37,9 +38,10 @@ impl From<Type> for PgType {
     fn from(other: Type) -> Self {
         match other {
             Type::Integer => PgType::INT8,
-            Type::Binary => PgType::BYTEA,
-            Type::Float => PgType::NUMERIC,
-            Type::String => PgType::VARCHAR,
+            Type::Blob => PgType::BYTEA,
+            Type::Real => PgType::FLOAT8,
+            Type::Numeric => PgType::NUMERIC,
+            Type::Text => PgType::TEXT,
             Type::Null | Type::Unknown => PgType::UNKNOWN,
         }
     }
@@ -49,11 +51,14 @@ impl FromStr for Type {
     type Err = Infallible;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "integer" => Type::Integer,
-            "real" => Type::Float,
-            "text" => Type::String,
-            "blob" => Type::Binary,
+        Ok(match s.to_lowercase().as_str() {
+            "integer" | "int" | "tinyint" | "smallint" | "mediumint" | "bigint"
+            | "unsigned big int" | "int2" | "int8" => Type::Integer,
+            "real" | "double" | "double precision" | "float" => Type::Real,
+            "text" | "character" | "varchar" | "varying character" | "nchar"
+            | "native character" | "nvarchar" | "clob" => Type::Text,
+            "blob" => Type::Blob,
+            "numeric" | "decimal" | "boolean" | "date" | "datetime" => Type::Numeric,
             _ => Type::Unknown,
         })
     }
