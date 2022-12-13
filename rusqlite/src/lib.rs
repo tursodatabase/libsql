@@ -949,12 +949,10 @@ impl Connection {
     /// and owned by the caller, e.g. as a result of calling ffi::sqlite3_open().
     #[inline]
     pub unsafe fn from_handle_owned(db: *mut ffi::sqlite3) -> Result<Connection> {
-        let db_path = db_filename(db);
         let db = InnerConnection::new(db, true);
         Ok(Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
-            path: db_path,
         })
     }
 
