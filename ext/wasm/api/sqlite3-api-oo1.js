@@ -158,6 +158,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
       pDb = wasm.peekPtr(pPtr);
       checkSqlite3Rc(pDb, rc);
+      capi.sqlite3_extended_result_codes(pDb, 1);
       if(flagsStr.indexOf('t')>=0){
         capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
                               __dbTraceToConsole, 0);

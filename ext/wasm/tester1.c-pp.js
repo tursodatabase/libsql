@@ -2125,8 +2125,10 @@ self.sqlite3InitModule = sqlite3InitModule;
     })/*custom vtab #2*/
   ////////////////////////////////////////////////////////////////////////
     .t('Custom collation', function(sqlite3){
+      let collationCounter = 0;
       let myCmp = function(pArg,n1,p1,n2,p2){
         //int (*)(void*,int,const void*,int,const void*)
+        ++collationCounter;
         const rc = wasm.exports.sqlite3_strnicmp(p1,p2,(n1<n2?n1:n2));
         return rc ? rc : (n1 - n2);
       };
@@ -2134,18 +2136,51 @@ self.sqlite3InitModule = sqlite3InitModule;
                                                 0, myCmp, 0);
       this.db.checkRc(rc);
       rc = this.db.selectValue("select 'hi' = 'HI' collate mycollation");
-      T.assert(1===rc);
+      T.assert(1===rc).assert(1===collationCounter);
       rc = this.db.selectValue("select 'hii' = 'HI' collate mycollation");
-      T.assert(0===rc);
+      T.assert(0===rc).assert(2===collationCounter);
       rc = this.db.selectValue("select 'hi' = 'HIi' collate mycollation");
-      T.assert(0===rc);
+      T.assert(0===rc).assert(3===collationCounter);
       rc = capi.sqlite3_create_collation(this.db,"hi",capi.SQLITE_UTF8/*not enough args*/);
       T.assert(capi.SQLITE_MISUSE === rc);
       rc = capi.sqlite3_create_collation_v2(this.db,"hi",0/*wrong encoding*/,0,0,0);
       T.assert(capi.SQLITE_FORMAT === rc)
         .mustThrowMatching(()=>this.db.checkRc(rc),
                            /SQLITE_UTF8 is the only supported encoding./);
-    })
+      /*
+        We need to ensure that replacing that collation function does
+        the right thing. We don't have a handle to the underlying WASM
+        pointer from here, so cannot verify (without digging through
+        internal state) that the old one gets uninstalled, but we can
+        verify that a new one properly replaces it.  (That said,
+        console.warn() output has shown that the uninstallation does
+        happen.)
+      */
+      collationCounter = 0;
+      myCmp = function(pArg,n1,p1,n2,p2){
+        --collationCounter;
+        return 0;
+      };
+      rc = capi.sqlite3_create_collation_v2(this.db, "MYCOLLATION", capi.SQLITE_UTF8,
+                                            0, myCmp, 0);
+      this.db.checkRc(rc);
+      rc = this.db.selectValue("select 'hi' = 'HI' collate mycollation");
+      T.assert(rc>0).assert(-1===collationCounter);
+      rc = this.db.selectValue("select 'a' = 'b' collate mycollation");
+      T.assert(rc>0).assert(-2===collationCounter);
+      rc = capi.sqlite3_create_collation_v2(this.db, "MYCOLLATION", capi.SQLITE_UTF8,
+                                            0, null, 0);
+      this.db.checkRc(rc);
+      rc = 0;
+      try {
+        this.db.selectValue("select 'a' = 'b' collate mycollation");
+      }catch(e){
+        /* Why is e.resultCode not automatically an extended result
+           code? The DB() class enables those automatically. */
+        rc = sqlite3.capi.sqlite3_extended_errcode(this.db);
+      }
+      T.assert(capi.SQLITE_ERROR_MISSING_COLLSEQ === rc);
+    })/*custom collation*/
 
   ////////////////////////////////////////////////////////////////////////
     .t('Close db', function(){

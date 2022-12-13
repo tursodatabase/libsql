@@ -462,22 +462,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     const __collationContextKey = (argIndex,argv)=>{
       return 'argv['+argIndex+']:sqlite3@'+argv[0]+
-        ':'+((/*THIS IS WRONG. We can't sensibly use a converted-to-C-string
-                address here and don't have access to the JS string (IF ANY)
-                which the user passed in.*/
-          ''+argv[1]
-        ).toLowerCase());
+        ':'+wasm.cstrToJs(argv[1]).toLowerCase()
     };
     const __ccv2 = wasm.xWrap(
       'sqlite3_create_collation_v2', 'int',
-      'sqlite3*','string','int','*','*','*'
-      /* int(*xCompare)(void*,int,const void*,int,const void*) */
-      /* void(*xDestroy(void*) */
-    );
-    if(0){
-      // Problem: we cannot, due to xWrap() arg-passing limitations,
-      // currently easily/efficiently get a per-collation distinct
-      // key for purposes of creating distinct FuncPtrAdapter contexts.
+      'sqlite3*','string','int','*',
       new wasm.xWrap.FuncPtrAdapter({
         /* int(*xCompare)(void*,int,const void*,int,const void*) */
         name: 'xCompare',
@@ -492,7 +481,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         bindScope: 'context',
         contextKey: __collationContextKey
       })
-    }
+    );
 
     /**
        Works exactly like C's sqlite3_create_collation_v2() except that:
@@ -518,18 +507,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         );
       }
       let rc, pfCompare, pfDestroy;
-      try{
-        if(xCompare instanceof Function){
-          pfCompare = wasm.installFunction(xCompare, 'i(pipip)');
-        }
-        if(xDestroy instanceof Function){
-          pfDestroy = wasm.installFunction(xDestroy, 'v(p)');
-        }
-        rc = __ccv2(pDb, zName, eTextRep, pArg,
-                    pfCompare || xCompare, pfDestroy || xDestroy);
+     try{
+        rc = __ccv2(pDb, zName, eTextRep, pArg, xCompare, xDestroy);
       }catch(e){
-        if(pfCompare) wasm.uninstallFunction(pfCompare);
-        if(pfDestroy) wasm.uninstallFunction(pfDestroy);
         rc = util.sqlite3_wasm_db_error(pDb, e);
       }
       return rc;
@@ -539,7 +519,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return (5===arguments.length)
         ? capi.sqlite3_create_collation_v2(pDb,zName,eTextRep,pArg,xCompare,0)
         : __dbArgcMismatch(pDb, 'sqlite3_create_collation', 5);
-    }
+    };
 
   }/*sqlite3_create_collation() and friends*/
 
