@@ -678,7 +678,7 @@ const installOpfsVfs = function callee(options){
            given pFile is open.
         */
         const f = __openFiles[pFile];
-        wasm.setMemValue(pOut, f.lockType ? 1 : 0, 'i32');
+        wasm.poke(pOut, f.lockType ? 1 : 0, 'i32');
         return 0;
       },
       xClose: function(pFile){
@@ -711,7 +711,7 @@ const installOpfsVfs = function callee(options){
         if(0==rc){
           try {
             const sz = state.s11n.deserialize()[0];
-            wasm.setMemValue(pSz64, sz, 'i64');
+            wasm.poke(pSz64, sz, 'i64');
           }catch(e){
             error("Unexpected error reading xFileSize() result:",e);
             rc = state.sq3Codes.SQLITE_IOERR;
@@ -803,27 +803,27 @@ const installOpfsVfs = function callee(options){
     const vfsSyncWrappers = {
       xAccess: function(pVfs,zName,flags,pOut){
         mTimeStart('xAccess');
-        const rc = opRun('xAccess', wasm.cstringToJs(zName));
-        wasm.setMemValue( pOut, (rc ? 0 : 1), 'i32' );
+        const rc = opRun('xAccess', wasm.cstrToJs(zName));
+        wasm.poke( pOut, (rc ? 0 : 1), 'i32' );
         mTimeEnd();
         return 0;
       },
       xCurrentTime: function(pVfs,pOut){
         /* If it turns out that we need to adjust for timezone, see:
            https://stackoverflow.com/a/11760121/1458521 */
-        wasm.setMemValue(pOut, 2440587.5 + (new Date().getTime()/86400000),
+        wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
                          'double');
         return 0;
       },
       xCurrentTimeInt64: function(pVfs,pOut){
         // TODO: confirm that this calculation is correct
-        wasm.setMemValue(pOut, (2440587.5 * 86400000) + new Date().getTime(),
+        wasm.poke(pOut, (2440587.5 * 86400000) + new Date().getTime(),
                          'i64');
         return 0;
       },
       xDelete: function(pVfs, zName, doSyncDir){
         mTimeStart('xDelete');
-        opRun('xDelete', wasm.cstringToJs(zName), doSyncDir, false);
+        opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
         /* We're ignoring errors because we cannot yet differentiate
            between harmless and non-harmless failures. */
         mTimeEnd();
@@ -855,7 +855,7 @@ const installOpfsVfs = function callee(options){
                C-string here. */
             opfsFlags |= state.opfsFlags.OPFS_UNLOCK_ASAP;
           }
-          zName = wasm.cstringToJs(zName);
+          zName = wasm.cstrToJs(zName);
         }
         const fh = Object.create(null);
         fh.fid = pFile;
@@ -867,7 +867,7 @@ const installOpfsVfs = function callee(options){
           /* Recall that sqlite3_vfs::xClose() will be called, even on
              error, unless pFile->pMethods is NULL. */
           if(fh.readOnly){
-            wasm.setMemValue(pOutFlags, capi.SQLITE_OPEN_READONLY, 'i32');
+            wasm.poke(pOutFlags, capi.SQLITE_OPEN_READONLY, 'i32');
           }
           __openFiles[pFile] = fh;
           fh.sabView = state.sabFileBufView;
@@ -1156,11 +1156,8 @@ const installOpfsVfs = function callee(options){
         opt.vfs = opfsVfs.$zName;
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
-      sqlite3.oo1.OpfsDb =
-        opfsUtil.OpfsDb /* sqlite3.opfs.OpfsDb => deprecated name -
-                           will be phased out Real Soon */ =
-        OpfsDb;
       OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
+      sqlite3.oo1.OpfsDb = OpfsDb;
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         function(oo1Db, sqlite3){
@@ -1185,7 +1182,7 @@ const installOpfsVfs = function callee(options){
           ], 0, 0, 0);
         }
       );
-    }
+    }/*extend sqlite3.oo1*/
 
     const sanityCheck = function(){
       const scope = wasm.scopedAllocPush();
@@ -1205,7 +1202,7 @@ const installOpfsVfs = function callee(options){
         log("deserialize() says:",rc);
         if("This is ä string."!==rc[0]) toss("String d13n error.");
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
-        rc = wasm.getMemValue(pOut,'i32');
+        rc = wasm.peek(pOut,'i32');
         log("xAccess(",dbFile,") exists ?=",rc);
         rc = vfsSyncWrappers.xOpen(opfsVfs.pointer, zDbFile,
                                    fid, openFlags, pOut);
@@ -1216,22 +1213,22 @@ const installOpfsVfs = function callee(options){
           return;
         }
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
-        rc = wasm.getMemValue(pOut,'i32');
+        rc = wasm.peek(pOut,'i32');
         if(!rc) toss("xAccess() failed to detect file.");
         rc = ioSyncWrappers.xSync(sq3File.pointer, 0);
         if(rc) toss('sync failed w/ rc',rc);
         rc = ioSyncWrappers.xTruncate(sq3File.pointer, 1024);
         if(rc) toss('truncate failed w/ rc',rc);
-        wasm.setMemValue(pOut,0,'i64');
+        wasm.poke(pOut,0,'i64');
         rc = ioSyncWrappers.xFileSize(sq3File.pointer, pOut);
         if(rc) toss('xFileSize failed w/ rc',rc);
-        log("xFileSize says:",wasm.getMemValue(pOut, 'i64'));
+        log("xFileSize says:",wasm.peek(pOut, 'i64'));
         rc = ioSyncWrappers.xWrite(sq3File.pointer, zDbFile, 10, 1);
         if(rc) toss("xWrite() failed!");
         const readBuf = wasm.scopedAlloc(16);
         rc = ioSyncWrappers.xRead(sq3File.pointer, readBuf, 6, 2);
-        wasm.setMemValue(readBuf+6,0);
-        let jRead = wasm.cstringToJs(readBuf);
+        wasm.poke(readBuf+6,0);
+        let jRead = wasm.cstrToJs(readBuf);
         log("xRead() got:",jRead);
         if("sanity"!==jRead) toss("Unexpected xRead() value.");
         if(vfsSyncWrappers.xSleep){
@@ -1244,7 +1241,7 @@ const installOpfsVfs = function callee(options){
         log("Deleting file:",dbFile);
         vfsSyncWrappers.xDelete(opfsVfs.pointer, zDbFile, 0x1234);
         vfsSyncWrappers.xAccess(opfsVfs.pointer, zDbFile, 0, pOut);
-        rc = wasm.getMemValue(pOut,'i32');
+        rc = wasm.peek(pOut,'i32');
         if(rc) toss("Expecting 0 from xAccess(",dbFile,") after xDelete().");
         warn("End of OPFS sanity checks.");
       }finally{
@@ -1271,7 +1268,7 @@ const installOpfsVfs = function callee(options){
               and has finished initializing, so the real work can
               begin...*/
             try {
-              sqlite3.VfsHelper.installVfs({
+              sqlite3.vfs.installVfs({
                 io: {struct: opfsIoMethods, methods: ioSyncWrappers},
                 vfs: {struct: opfsVfs, methods: vfsSyncWrappers}
               });

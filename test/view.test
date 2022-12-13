@@ -775,5 +775,27 @@ do_catchsql_test view-29.1 {
   SELECT name FROM sqlite_schema ORDER BY name;
 } {0 {t1 t2}}
 
+#-------------------------------------------------------------------------
+# 2022-12-11.  https://sqlite.org/src/info/679ed6a2
+#
+reset_db
+do_execsql_test view-30.0 {
+  CREATE TABLE t0(a INT, b TEXT);
+
+  INSERT INTO t0 VALUES(1,'one');
+
+  CREATE VIEW t1      AS SELECT a, b FROM t0 UNION ALL SELECT 2, 2;
+  CREATE VIEW t2(a,b) AS SELECT a, b FROM t0 UNION ALL SELECT 2, 2;
+}
+
+ifcapable schema_pragmas {
+  do_execsql_test view-30.1 {
+    PRAGMA table_info = t1;
+  } { 0 a INT 0 {} 0 1 b TEXT 0 {} 0 }
+  do_execsql_test view-30.2 {
+    PRAGMA table_info = t2;
+  } { 0 a INT 0 {} 0 1 b TEXT 0 {} 0 }
+}
 
 finish_test
+

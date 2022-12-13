@@ -368,7 +368,7 @@ void sqlite3_wasm_test_struct(WasmTestStruct * s){
 */
 SQLITE_WASM_KEEP
 const char * sqlite3_wasm_enum_json(void){
-  static char aBuffer[1024 * 12] = {0} /* where the JSON goes */;
+  static char aBuffer[1024 * 20] = {0} /* where the JSON goes */;
   int n = 0, nChildren = 0, nStruct = 0
     /* output counters for figuring out where commas go */;
   char * zPos = &aBuffer[1] /* skip first byte for now to help protect
@@ -410,6 +410,12 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
   } _DefGroup;
 
+  /* TODO? Authorizer... */
+  DefGroup(authorizer){
+    DefInt(SQLITE_DENY);
+    DefInt(SQLITE_IGNORE);
+  } _DefGroup;
+
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
     ** integers to avoid casting-related warnings. */
@@ -422,6 +428,45 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_TEXT);
     DefInt(SQLITE_BLOB);
     DefInt(SQLITE_NULL);
+  } _DefGroup;
+
+  DefGroup(dbConfig){
+    DefInt(SQLITE_DBCONFIG_MAINDBNAME);
+    DefInt(SQLITE_DBCONFIG_LOOKASIDE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_FKEY);
+    DefInt(SQLITE_DBCONFIG_ENABLE_TRIGGER);
+    DefInt(SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER);
+    DefInt(SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION);
+    DefInt(SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE);
+    DefInt(SQLITE_DBCONFIG_ENABLE_QPSG);
+    DefInt(SQLITE_DBCONFIG_TRIGGER_EQP);
+    DefInt(SQLITE_DBCONFIG_RESET_DATABASE);
+    DefInt(SQLITE_DBCONFIG_DEFENSIVE);
+    DefInt(SQLITE_DBCONFIG_WRITABLE_SCHEMA);
+    DefInt(SQLITE_DBCONFIG_LEGACY_ALTER_TABLE);
+    DefInt(SQLITE_DBCONFIG_DQS_DML);
+    DefInt(SQLITE_DBCONFIG_DQS_DDL);
+    DefInt(SQLITE_DBCONFIG_ENABLE_VIEW);
+    DefInt(SQLITE_DBCONFIG_LEGACY_FILE_FORMAT);
+    DefInt(SQLITE_DBCONFIG_TRUSTED_SCHEMA);
+    DefInt(SQLITE_DBCONFIG_MAX);
+  } _DefGroup;
+
+  DefGroup(dbStatus){
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_USED);
+    DefInt(SQLITE_DBSTATUS_CACHE_USED);
+    DefInt(SQLITE_DBSTATUS_SCHEMA_USED);
+    DefInt(SQLITE_DBSTATUS_STMT_USED);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_HIT);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE);
+    DefInt(SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL);
+    DefInt(SQLITE_DBSTATUS_CACHE_HIT);
+    DefInt(SQLITE_DBSTATUS_CACHE_MISS);
+    DefInt(SQLITE_DBSTATUS_CACHE_WRITE);
+    DefInt(SQLITE_DBSTATUS_DEFERRED_FKS);
+    DefInt(SQLITE_DBSTATUS_CACHE_USED_SHARED);
+    DefInt(SQLITE_DBSTATUS_CACHE_SPILL);
+    DefInt(SQLITE_DBSTATUS_MAX);
   } _DefGroup;
 
   DefGroup(encodings) {
@@ -505,6 +550,30 @@ const char * sqlite3_wasm_enum_json(void){
 
   DefGroup(limits) {
     DefInt(SQLITE_MAX_ALLOCATION_SIZE);
+    DefInt(SQLITE_LIMIT_LENGTH);
+    DefInt(SQLITE_MAX_LENGTH);
+    DefInt(SQLITE_LIMIT_SQL_LENGTH);
+    DefInt(SQLITE_MAX_SQL_LENGTH);
+    DefInt(SQLITE_LIMIT_COLUMN);
+    DefInt(SQLITE_MAX_COLUMN);
+    DefInt(SQLITE_LIMIT_EXPR_DEPTH);
+    DefInt(SQLITE_MAX_EXPR_DEPTH);
+    DefInt(SQLITE_LIMIT_COMPOUND_SELECT);
+    DefInt(SQLITE_MAX_COMPOUND_SELECT);
+    DefInt(SQLITE_LIMIT_VDBE_OP);
+    DefInt(SQLITE_MAX_VDBE_OP);
+    DefInt(SQLITE_LIMIT_FUNCTION_ARG);
+    DefInt(SQLITE_MAX_FUNCTION_ARG);
+    DefInt(SQLITE_LIMIT_ATTACHED);
+    DefInt(SQLITE_MAX_ATTACHED);
+    DefInt(SQLITE_LIMIT_LIKE_PATTERN_LENGTH);
+    DefInt(SQLITE_MAX_LIKE_PATTERN_LENGTH);
+    DefInt(SQLITE_LIMIT_VARIABLE_NUMBER);
+    DefInt(SQLITE_MAX_VARIABLE_NUMBER);
+    DefInt(SQLITE_LIMIT_TRIGGER_DEPTH);
+    DefInt(SQLITE_MAX_TRIGGER_DEPTH);
+    DefInt(SQLITE_LIMIT_WORKER_THREADS);
+    DefInt(SQLITE_MAX_WORKER_THREADS);
   } _DefGroup;
 
   DefGroup(openFlags) {
@@ -657,6 +726,31 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_DESERIALIZE_RESIZEABLE);
   } _DefGroup;
 
+  DefGroup(sqlite3Status){
+    DefInt(SQLITE_STATUS_MEMORY_USED);
+    DefInt(SQLITE_STATUS_PAGECACHE_USED);
+    DefInt(SQLITE_STATUS_PAGECACHE_OVERFLOW);
+    //DefInt(SQLITE_STATUS_SCRATCH_USED) /* NOT USED */;
+    //DefInt(SQLITE_STATUS_SCRATCH_OVERFLOW) /* NOT USED */;
+    DefInt(SQLITE_STATUS_MALLOC_SIZE);
+    DefInt(SQLITE_STATUS_PARSER_STACK);
+    DefInt(SQLITE_STATUS_PAGECACHE_SIZE);
+    //DefInt(SQLITE_STATUS_SCRATCH_SIZE) /* NOT USED */;
+    DefInt(SQLITE_STATUS_MALLOC_COUNT);
+  } _DefGroup;
+
+  DefGroup(stmtStatus){
+    DefInt(SQLITE_STMTSTATUS_FULLSCAN_STEP);
+    DefInt(SQLITE_STMTSTATUS_SORT);
+    DefInt(SQLITE_STMTSTATUS_AUTOINDEX);
+    DefInt(SQLITE_STMTSTATUS_VM_STEP);
+    DefInt(SQLITE_STMTSTATUS_REPREPARE);
+    DefInt(SQLITE_STMTSTATUS_RUN);
+    DefInt(SQLITE_STMTSTATUS_FILTER_MISS);
+    DefInt(SQLITE_STMTSTATUS_FILTER_HIT);
+    DefInt(SQLITE_STMTSTATUS_MEMUSED);
+  } _DefGroup;
+  
   DefGroup(syncFlags) {
     DefInt(SQLITE_SYNC_NORMAL);
     DefInt(SQLITE_SYNC_FULL);
@@ -670,6 +764,12 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_TRACE_CLOSE);
   } _DefGroup;
 
+  DefGroup(txnState){
+    DefInt(SQLITE_TXN_NONE);
+    DefInt(SQLITE_TXN_READ);
+    DefInt(SQLITE_TXN_WRITE);
+  } _DefGroup;
+
   DefGroup(udfFlags) {
     DefInt(SQLITE_DETERMINISTIC);
     DefInt(SQLITE_DIRECTONLY);
@@ -681,7 +781,36 @@ const char * sqlite3_wasm_enum_json(void){
     DefStr(SQLITE_VERSION);
     DefStr(SQLITE_SOURCE_ID);
   } _DefGroup;
-  
+
+  DefGroup(vtab) {
+    DefInt(SQLITE_INDEX_SCAN_UNIQUE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_EQ);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_MATCH);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LIKE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_GLOB);
+    DefInt(SQLITE_INDEX_CONSTRAINT_REGEXP);
+    DefInt(SQLITE_INDEX_CONSTRAINT_NE);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNOT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNOTNULL);
+    DefInt(SQLITE_INDEX_CONSTRAINT_ISNULL);
+    DefInt(SQLITE_INDEX_CONSTRAINT_IS);
+    DefInt(SQLITE_INDEX_CONSTRAINT_LIMIT);
+    DefInt(SQLITE_INDEX_CONSTRAINT_OFFSET);
+    DefInt(SQLITE_INDEX_CONSTRAINT_FUNCTION);
+    DefInt(SQLITE_VTAB_CONSTRAINT_SUPPORT);
+    DefInt(SQLITE_VTAB_INNOCUOUS);
+    DefInt(SQLITE_VTAB_DIRECTONLY);
+    DefInt(SQLITE_ROLLBACK);
+    //DefInt(SQLITE_IGNORE); // Also used by sqlite3_authorizer() callback
+    DefInt(SQLITE_FAIL);
+    //DefInt(SQLITE_ABORT); // Also an error code
+    DefInt(SQLITE_REPLACE);
+  } _DefGroup;
+
 #undef DefGroup
 #undef DefStr
 #undef DefInt
@@ -793,6 +922,128 @@ const char * sqlite3_wasm_enum_json(void){
     } _StructBinder;
 #undef CurrentStruct
 
+
+#define CurrentStruct sqlite3_vtab
+    StructBinder {
+      M(pModule, "p");
+      M(nRef,    "i");
+      M(zErrMsg, "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_vtab_cursor
+    StructBinder {
+      M(pVtab, "p");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_module
+    StructBinder {
+      M(iVersion,       "i");
+      M(xCreate,        "i(ppippp)");
+      M(xConnect,       "i(ppippp)");
+      M(xBestIndex,     "i(pp)");
+      M(xDisconnect,    "i(p)");
+      M(xDestroy,       "i(p)");
+      M(xOpen,          "i(pp)");
+      M(xClose,         "i(p)");
+      M(xFilter,        "i(pisip)");
+      M(xNext,          "i(p)");
+      M(xEof,           "i(p)");
+      M(xColumn,        "i(ppi)");
+      M(xRowid,         "i(pp)");
+      M(xUpdate,        "i(pipp)");
+      M(xBegin,         "i(p)");
+      M(xSync,          "i(p)");
+      M(xCommit,        "i(p)");
+      M(xRollback,      "i(p)");
+      M(xFindFunction,  "i(pispp)");
+      M(xRename,        "i(ps)");
+      // ^^^ v1. v2+ follows...
+      M(xSavepoint,     "i(pi)");
+      M(xRelease,       "i(pi)");
+      M(xRollbackTo,    "i(pi)");
+      // ^^^ v2. v3+ follows...
+      M(xShadowName,    "i(s)");
+    } _StructBinder;
+#undef CurrentStruct
+    
+    /**
+     ** Workaround: in order to map the various inner structs from
+     ** sqlite3_index_info, we have to uplift those into constructs we
+     ** can access by type name. These structs _must_ match their
+     ** in-sqlite3_index_info counterparts byte for byte.
+    */
+    typedef struct {
+      int iColumn;
+      unsigned char op;
+      unsigned char usable;
+      int iTermOffset;
+    } sqlite3_index_constraint;
+    typedef struct {
+      int iColumn;
+      unsigned char desc;
+    } sqlite3_index_orderby;
+    typedef struct {
+      int argvIndex;
+      unsigned char omit;
+    } sqlite3_index_constraint_usage;
+    { /* Validate that the above struct sizeof()s match
+      ** expectations. We could improve upon this by
+      ** checking the offsetof() for each member. */
+      const sqlite3_index_info siiCheck;
+#define IndexSzCheck(T,M)           \
+      (sizeof(T) == sizeof(*siiCheck.M))
+      if(!IndexSzCheck(sqlite3_index_constraint,aConstraint)
+         || !IndexSzCheck(sqlite3_index_orderby,aOrderBy)
+         || !IndexSzCheck(sqlite3_index_constraint_usage,aConstraintUsage)){
+        assert(!"sizeof mismatch in sqlite3_index_... struct(s)");
+        return 0;
+      }
+#undef IndexSzCheck
+    }
+
+#define CurrentStruct sqlite3_index_constraint
+    StructBinder {
+      M(iColumn,        "i");
+      M(op,             "C");
+      M(usable,         "C");
+      M(iTermOffset,    "i");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_orderby
+    StructBinder {
+      M(iColumn,   "i");
+      M(desc,      "C");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_constraint_usage
+    StructBinder {
+      M(argvIndex,  "i");
+      M(omit,       "C");
+    } _StructBinder;
+#undef CurrentStruct
+
+#define CurrentStruct sqlite3_index_info
+    StructBinder {
+      M(nConstraint,        "i");
+      M(aConstraint,        "p");
+      M(nOrderBy,           "i");
+      M(aOrderBy,           "p");
+      M(aConstraintUsage,   "p");
+      M(idxNum,             "i");
+      M(idxStr,             "p");
+      M(needToFreeIdxStr,   "i");
+      M(orderByConsumed,    "i");
+      M(estimatedCost,      "d");
+      M(estimatedRows,      "j");
+      M(idxFlags,           "i");
+      M(colUsed,            "j");
+    } _StructBinder;
+#undef CurrentStruct
+
 #if SQLITE_WASM_TESTS
 #define CurrentStruct WasmTestStruct
     StructBinder {
@@ -864,7 +1115,11 @@ sqlite3_vfs * sqlite3_wasm_db_vfs(sqlite3 *pDb, const char *zDbName){
 **
 ** This function resets the given db pointer's database as described at
 **
-** https://www.sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigresetdatabase
+** https://sqlite.org/c3ref/c_dbconfig_defensive.html#sqlitedbconfigresetdatabase
+**
+** But beware: virtual tables destroyed that way do not have their
+** xDestroy() called, so will leak if they require that function for
+** proper cleanup.
 **
 ** Returns 0 on success, an SQLITE_xxx code on error. Returns
 ** SQLITE_MISUSE if pDb is NULL.
@@ -873,6 +1128,7 @@ SQLITE_WASM_KEEP
 int sqlite3_wasm_db_reset(sqlite3 *pDb){
   int rc = SQLITE_MISUSE;
   if( pDb ){
+    sqlite3_table_column_metadata(pDb, "main", 0, 0, 0, 0, 0, 0, 0);
     rc = sqlite3_db_config(pDb, SQLITE_DBCONFIG_RESET_DATABASE, 1, 0);
     if( 0==rc ){
       rc = sqlite3_exec(pDb, "VACUUM", 0, 0, 0);
@@ -1108,6 +1364,93 @@ SQLITE_WASM_KEEP
 sqlite3_kvvfs_methods * sqlite3_wasm_kvvfs_methods(void){
   return &sqlite3KvvfsMethods;
 }
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** This is a proxy for the variadic sqlite3_vtab_config() which passes
+** its argument on, or not, to sqlite3_vtab_config(), depending on the
+** value of its 2nd argument. Returns the result of
+** sqlite3_vtab_config(), or SQLITE_MISUSE if the 2nd arg is not a
+** valid value.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_vtab_config(sqlite3 *pDb, int op, int arg){
+  switch(op){
+  case SQLITE_VTAB_DIRECTONLY:
+  case SQLITE_VTAB_INNOCUOUS:
+    return sqlite3_vtab_config(pDb, op);
+  case SQLITE_VTAB_CONSTRAINT_SUPPORT:
+    return sqlite3_vtab_config(pDb, op, arg);
+  default:
+    return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (int,int*) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_ip(sqlite3 *pDb, int op, int arg1, int* pArg2){
+  switch(op){
+    case SQLITE_DBCONFIG_ENABLE_FKEY:
+    case SQLITE_DBCONFIG_ENABLE_TRIGGER:
+    case SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+    case SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+    case SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+    case SQLITE_DBCONFIG_ENABLE_QPSG:
+    case SQLITE_DBCONFIG_TRIGGER_EQP:
+    case SQLITE_DBCONFIG_RESET_DATABASE:
+    case SQLITE_DBCONFIG_DEFENSIVE:
+    case SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+    case SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+    case SQLITE_DBCONFIG_DQS_DML:
+    case SQLITE_DBCONFIG_DQS_DDL:
+    case SQLITE_DBCONFIG_ENABLE_VIEW:
+    case SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+    case SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+      return sqlite3_db_config(pDb, op, arg1, pArg2);
+    default: return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (void*,int,int) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_pii(sqlite3 *pDb, int op, void * pArg1, int arg2, int arg3){
+  switch(op){
+    case SQLITE_DBCONFIG_LOOKASIDE:
+      return sqlite3_db_config(pDb, op, pArg1, arg2, arg3);
+    default: return SQLITE_MISUSE;
+  }
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Wrapper for the variants of sqlite3_db_config() which take
+** (const char *) variadic args.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_db_config_s(sqlite3 *pDb, int op, const char *zArg){
+  switch(op){
+    case SQLITE_DBCONFIG_MAINDBNAME:
+      return sqlite3_db_config(pDb, op, zArg);
+    default: return SQLITE_MISUSE;
+  }
+}
+
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/wasmfs.h>
