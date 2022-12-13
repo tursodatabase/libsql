@@ -2320,7 +2320,6 @@ void sqlite3SubqueryColumnTypes(
   char aff            /* Default affinity.  Maybe with SQLITE_AFF_FLAG1 too */
 ){
   sqlite3 *db = pParse->db;
-  NameContext sNC;
   Column *pCol;
   CollSeq *pColl;
   int i,j;
@@ -2332,8 +2331,6 @@ void sqlite3SubqueryColumnTypes(
   assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
   if( db->mallocFailed ) return;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
-  memset(&sNC, 0, sizeof(sNC));
-  sNC.pSrcList = pSelect->pSrc;
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     const char *zType;
