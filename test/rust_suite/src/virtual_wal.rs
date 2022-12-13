@@ -54,6 +54,7 @@ mod tests {
 
     #[repr(C)]
     struct libsql_wal_methods {
+        iversion: i32,
         open: extern "C" fn(
             vfs: *const c_void,
             file: *const c_void,
@@ -112,6 +113,8 @@ mod tests {
         db: extern "C" fn(wal: *mut Wal, db: *const c_void),
         pathname_len: extern "C" fn(orig_len: i32) -> i32,
         get_pathname: extern "C" fn(buf: *mut u8, orig: *const u8, orig_len: i32),
+        pre_main_db_open:
+            extern "C" fn(methods: *mut libsql_wal_methods, name: *const i8) -> i32,
         b_uses_shm: i32,
         name: *const u8,
         p_next: *const c_void,
@@ -327,6 +330,9 @@ mod tests {
     extern "C" fn get_pathname(_buf: *mut u8, _orig: *const u8, _orig_len: i32) {
         panic!("Should never be called")
     }
+    extern "C" fn pre_main_db_open(_methods: *mut libsql_wal_methods, _name: *const i8) -> i32 {
+        0
+    }
 
     #[test]
     fn test_vwal_register() {
@@ -338,28 +344,30 @@ mod tests {
             let mut pdb: *mut rusqlite::ffi::sqlite3 = std::ptr::null_mut();
             let ppdb: *mut *mut rusqlite::ffi::sqlite3 = &mut pdb;
             let mut vwal = Box::new(libsql_wal_methods {
-                open: open,
-                close: close,
-                limit: limit,
-                begin_read: begin_read,
-                end_read: end_read,
-                find_frame: find_frame,
-                read_frame: read_frame,
-                db_size: db_size,
-                begin_write: begin_write,
-                end_write: end_write,
-                undo: undo,
-                savepoint: savepoint,
-                savepoint_undo: savepoint_undo,
-                frames: frames,
-                checkpoint: checkpoint,
-                callback: callback,
-                exclusive_mode: exclusive_mode,
-                heap_memory: heap_memory,
-                file: file,
-                db: db,
-                pathname_len: pathname_len,
-                get_pathname: get_pathname,
+                iversion: 1,
+                open,
+                close,
+                limit,
+                begin_read,
+                end_read,
+                find_frame,
+                read_frame,
+                db_size,
+                begin_write,
+                end_write,
+                undo,
+                savepoint,
+                savepoint_undo,
+                frames,
+                checkpoint,
+                callback,
+                exclusive_mode,
+                heap_memory,
+                file,
+                db,
+                pathname_len,
+                get_pathname,
+                pre_main_db_open,
                 b_uses_shm: 0,
                 name: "vwal\0".as_ptr(),
                 p_next: std::ptr::null(),
