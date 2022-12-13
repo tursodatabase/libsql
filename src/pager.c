@@ -4893,6 +4893,14 @@ int sqlite3PagerOpen(
     sqlite3FileSuffix3(zFilename, pPager->zWal);
     pPtr = (u8*)(pPager->zWal + sqlite3Strlen30(pPager->zWal)+1);
 #endif
+
+  if (pWalMethods->xPreMainDbOpen) {
+    int rc = pWalMethods->xPreMainDbOpen(pWalMethods, zPathname);
+    if (rc != SQLITE_OK) {
+      return rc;
+    }
+  }
+
   }else{
     pPager->zWal = 0;
   }

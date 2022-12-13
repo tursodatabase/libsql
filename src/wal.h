@@ -141,6 +141,13 @@ typedef struct libsql_wal_methods {
   ** */
   void (*xGetWalPathname)(char *buf, const char *orig, int orig_len);
 
+  /*
+  ** This optional callback gets called before the main database file which owns
+  ** the WAL file is open. It is a good place for initialization routines, as WAL
+  ** is otherwise open lazily.
+  */
+  int (*xPreMainDbOpen)(libsql_wal_methods *methods, const char *main_db_path);
+
   /* True if the implementation relies on shared memory routines (e.g. locks) */
   int bUsesShm;
 

@@ -4092,6 +4092,10 @@ static void libsqlGetWalPathname(char *buf, const char *orig, int orig_len) {
   memcpy(buf + orig_len, "-wal", 4);
 }
 
+static int libsqlPreMainDbOpen(struct libsql_wal_methods*, const char *) {
+  return SQLITE_OK;
+}
+
 libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
   static libsql_wal_methods methods;
   static libsql_wal_methods *methods_head = NULL; 
@@ -4146,6 +4150,7 @@ libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
     methods.xDb = sqlite3WalDb;
     methods.xPathnameLen = libsqlWalPathnameLen;
     methods.xGetWalPathname = libsqlGetWalPathname;
+    methods.xPreMainDbOpen = libsqlPreMainDbOpen;
 
     methods.bUsesShm = 1;
     methods.zName = "default";

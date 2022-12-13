@@ -151,6 +151,7 @@ void libsql_register_vwal() {
     .xDb = v_db,
     .xPathnameLen = v_pathname_len,
     .xGetWalPathname = v_get_wal_pathname,
+    .xPreMainDbOpen = NULL,
     .zName = "vwal"
   };
   libsql_wal_methods_register(&methods);
