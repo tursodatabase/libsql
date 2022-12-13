@@ -44,44 +44,47 @@ char sqlite3TableColumnAffinity(const Table *pTab, int iCol){
 */
 char sqlite3ExprAffinity(const Expr *pExpr){
   int op;
-  while( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
-    assert( pExpr->op==TK_COLLATE
-         || pExpr->op==TK_IF_NULL_ROW
-         || (pExpr->op==TK_REGISTER && pExpr->op2==TK_IF_NULL_ROW) );
-    pExpr = pExpr->pLeft;
-    assert( pExpr!=0 );
-  }
   op = pExpr->op;
-  if( op==TK_REGISTER ) op = pExpr->op2;
-  if( op==TK_COLUMN || (op==TK_AGG_COLUMN && pExpr->y.pTab!=0) ){
-    assert( ExprUseYTab(pExpr) );
-    assert( pExpr->y.pTab!=0 );
-    return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
-  }
-  if( op==TK_SELECT ){
-    assert( ExprUseXSelect(pExpr) );
-    assert( pExpr->x.pSelect!=0 );
-    assert( pExpr->x.pSelect->pEList!=0 );
-    assert( pExpr->x.pSelect->pEList->a[0].pExpr!=0 );
-    return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
-  }
+  while( 1 /* exit-by-break */ ){
+    if( op==TK_COLUMN || (op==TK_AGG_COLUMN && pExpr->y.pTab!=0) ){
+      assert( ExprUseYTab(pExpr) );
+      assert( pExpr->y.pTab!=0 );
+      return sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
+    }
+    if( op==TK_SELECT ){
+      assert( ExprUseXSelect(pExpr) );
+      assert( pExpr->x.pSelect!=0 );
+      assert( pExpr->x.pSelect->pEList!=0 );
+      assert( pExpr->x.pSelect->pEList->a[0].pExpr!=0 );
+      return sqlite3ExprAffinity(pExpr->x.pSelect->pEList->a[0].pExpr);
+    }
 #ifndef SQLITE_OMIT_CAST
-  if( op==TK_CAST ){
-    assert( !ExprHasProperty(pExpr, EP_IntValue) );
-    return sqlite3AffinityType(pExpr->u.zToken, 0);
-  }
+    if( op==TK_CAST ){
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      return sqlite3AffinityType(pExpr->u.zToken, 0);
+    }
 #endif
-  if( op==TK_SELECT_COLUMN ){
-    assert( pExpr->pLeft!=0 && ExprUseXSelect(pExpr->pLeft) );
-    assert( pExpr->iColumn < pExpr->iTable );
-    assert( pExpr->iTable==pExpr->pLeft->x.pSelect->pEList->nExpr );
-    return sqlite3ExprAffinity(
-        pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
-    );
-  }
-  if( op==TK_VECTOR ){
-    assert( ExprUseXList(pExpr) );
-    return sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
+    if( op==TK_SELECT_COLUMN ){
+      assert( pExpr->pLeft!=0 && ExprUseXSelect(pExpr->pLeft) );
+      assert( pExpr->iColumn < pExpr->iTable );
+      assert( pExpr->iTable==pExpr->pLeft->x.pSelect->pEList->nExpr );
+      return sqlite3ExprAffinity(
+          pExpr->pLeft->x.pSelect->pEList->a[pExpr->iColumn].pExpr
+      );
+    }
+    if( op==TK_VECTOR ){
+      assert( ExprUseXList(pExpr) );
+      return sqlite3ExprAffinity(pExpr->x.pList->a[0].pExpr);
+    }
+    if( ExprHasProperty(pExpr, EP_Skip|EP_IfNullRow) ){
+      assert( pExpr->op==TK_COLLATE
+           || pExpr->op==TK_IF_NULL_ROW
+           || (pExpr->op==TK_REGISTER && pExpr->op2==TK_IF_NULL_ROW) );
+      pExpr = pExpr->pLeft;
+      op = pExpr->op;
+      continue;
+    }
+    if( op!=TK_REGISTER || (op = pExpr->op2)==TK_REGISTER ) break;
   }
   return pExpr->affExpr;
 }
