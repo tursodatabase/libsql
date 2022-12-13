@@ -4200,6 +4200,7 @@ int libsql_wal_methods_register(libsql_wal_methods* pWalMethods) {
   sqlite3_mutex_leave(mutex);
   return SQLITE_OK;
 }
+
 int libsql_wal_methods_unregister(libsql_wal_methods *pWalMethods) {
   if (strncmp(pWalMethods->zName, "default", 7) == 0) {
     return SQLITE_MISUSE;
