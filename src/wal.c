@@ -4111,6 +4111,7 @@ libsql_wal_methods *libsql_wal_methods_find(const char *zName) {
     zName = "default";
   }
   if (methods_head == NULL && strncmp(zName, "default", 7) == 0) {
+    methods.iVersion = 1;
     methods.xOpen = sqlite3WalOpen;
     methods.xClose = sqlite3WalClose;
     methods.xLimit = sqlite3WalLimit;
