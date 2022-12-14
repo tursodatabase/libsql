@@ -222,6 +222,7 @@ struct Wal {
   WalIndexHdr *pSnapshot;    /* Start transaction here if not NULL */
   sqlite3 *db;
   libsql_wal_methods *pMethods; /* Virtual methods for interacting with WAL */;
+  void *pMethodsData;           /* Optional context for private use of libsql_wal_methods */
 };
 
 #endif /* SQLITE_WAL_H */
