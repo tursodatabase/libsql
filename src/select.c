@@ -1298,9 +1298,6 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Fifo );
       testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
-      if( pDest->zAffSdst ){
-        sqlite3VdbeChangeP4(v, -1, pDest->zAffSdst, nResultCol);
-      }
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -7352,10 +7349,7 @@ int sqlite3Select(
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
 
       ExplainQueryPlan2(addrExplain, (pParse, 1, "MATERIALIZE %!S", pItem));
-      dest.zAffSdst = sqlite3TableAffinityStr(db, pItem->pTab);
       sqlite3Select(pParse, pSub, &dest);
-      sqlite3DbFree(db, dest.zAffSdst);
-      dest.zAffSdst = 0;
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
