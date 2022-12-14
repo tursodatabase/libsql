@@ -31,9 +31,9 @@ mod tests {
         recalculate_checksums: u32,
         wal_name: *const u8,
         n_checkpoints: u32,
-        // debug: log_error
-        // snapshot: p_snapshot
-        // setlk: *db
+        lock_error: u8,
+        p_snapshot: *const c_void,
+        p_db: *const c_void,
         wal_methods: *mut libsql_wal_methods,
     }
 
@@ -107,9 +107,17 @@ mod tests {
         callback: extern "C" fn(wal: *mut Wal) -> i32,
         exclusive_mode: extern "C" fn(wal: *mut Wal) -> i32,
         heap_memory: extern "C" fn(wal: *mut Wal) -> i32,
-        // snapshot: get, open, recover, check, unlock
-        // enable_zipvfs: framesize
+        // stubs, only useful with snapshot support compiled-in
+        snapshot_get_stub: *const c_void,
+        snapshot_open_stub: *const c_void,
+        snapshot_recover_stub: *const c_void,
+        snapshot_check_stub: *const c_void,
+        snapshot_unlock_stub: *const c_void,
+        // stub, only useful with zipfs support compiled-in
+        framesize_stub: *const c_void,
         file: extern "C" fn(wal: *mut Wal) -> *const c_void,
+        // stub, only useful with setlk timeout compiled-in
+        write_lock_stub: *const c_void,
         db: extern "C" fn(wal: *mut Wal, db: *const c_void),
         pathname_len: extern "C" fn(orig_len: i32) -> i32,
         get_pathname: extern "C" fn(buf: *mut u8, orig: *const u8, orig_len: i32),
@@ -193,6 +201,9 @@ mod tests {
             recalculate_checksums: 0,
             wal_name: wal_name,
             n_checkpoints: 0,
+            lock_error: 0,
+            p_snapshot: std::ptr::null(),
+            p_db: std::ptr::null(),
             wal_methods: methods,
         });
         unsafe { *wal = &*new_wal }
@@ -363,7 +374,16 @@ mod tests {
                 callback,
                 exclusive_mode,
                 heap_memory,
+                snapshot_get_stub: std::ptr::null(),
+                snapshot_open_stub: std::ptr::null(),
+                snapshot_recover_stub: std::ptr::null(),
+                snapshot_check_stub: std::ptr::null(),
+                snapshot_unlock_stub: std::ptr::null(),
+                // stub, only useful with zipfs support compiled-in
+                framesize_stub: std::ptr::null(),
                 file,
+                // stub, only useful with setlk timeout compiled-in
+                write_lock_stub: std::ptr::null(),
                 db,
                 pathname_len,
                 get_pathname,

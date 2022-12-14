@@ -108,27 +108,25 @@ typedef struct libsql_wal_methods {
   */
   int (*xHeapMemory)(Wal *pWal);
 
-#ifdef SQLITE_ENABLE_SNAPSHOT
+  // Only needed with SQLITE_ENABLE_SNAPSHOT, but part of the ABI
   int (*xSnapshotGet)(Wal *pWal, sqlite3_snapshot **ppSnapshot);
   void (*xSnapshotOpen)(Wal *pWal, sqlite3_snapshot *pSnapshot);
   int (*xSnapshotRecover)(Wal *pWal);
   int (*xSnapshotCheck)(Wal *pWal, sqlite3_snapshot *pSnapshot);
   void (*xSnapshotUnlock)(Wal *pWal);
-#endif
 
-#ifdef SQLITE_ENABLE_ZIPVFS
+  // Only needed with SQLITE_ENABLE_ZIPVFS, but part of the ABI
   /* If the WAL file is not empty, return the number of bytes of content
   ** stored in each frame (i.e. the db page-size when the WAL was created).
   */
   int (*xFramesize)(Wal *pWal);
-#endif
+
 
   /* Return the sqlite3_file object for the WAL file */
   sqlite3_file *(*xFile)(Wal *pWal);
 
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
+  // Only needed with  SQLITE_ENABLE_SETLK_TIMEOUT
   int (*xWriteLock)(Wal *pWal, int bLock);
-#endif
 
   void (*xDb)(Wal *pWal, sqlite3 *db);
 
@@ -220,15 +218,9 @@ struct Wal {
   u32 iReCksum;              /* On commit, recalculate checksums from here */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
-#ifdef SQLITE_DEBUG
   u8 lockError;              /* True if a locking error has occurred */
-#endif
-#ifdef SQLITE_ENABLE_SNAPSHOT
   WalIndexHdr *pSnapshot;    /* Start transaction here if not NULL */
-#endif
-#ifdef SQLITE_ENABLE_SETLK_TIMEOUT
   sqlite3 *db;
-#endif
   libsql_wal_methods *pMethods; /* Virtual methods for interacting with WAL */;
 };
 
