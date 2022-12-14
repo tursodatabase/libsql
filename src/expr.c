@@ -90,6 +90,72 @@ char sqlite3ExprAffinity(const Expr *pExpr){
 }
 
 /*
+** Make a guess at all the possible datatypes of the result that could
+** be returned by an expression.  Return a bitmask indicating the answer:
+**
+**     0x01         Numeric
+**     0x02         Text
+**     0x04         Blob
+**
+** If the expression must return NULL, then 0x00 is returned.
+*/
+int sqlite3ExprDataType(const Expr *pExpr){
+  while( pExpr ){
+    switch( pExpr->op ){
+      case TK_COLLATE:
+      case TK_IF_NULL_ROW:
+      case TK_UPLUS:  {
+        pExpr = pExpr->pLeft;
+        break;
+      }
+      case TK_NULL: {
+        return 0x00;
+      }
+      case TK_STRING: {
+        return 0x02;
+      }
+      case TK_BLOB: {
+        return 0x04;
+      }
+      case TK_CONCAT: {
+        return 0x06;
+      }
+      case TK_VARIABLE:
+      case TK_AGG_FUNCTION:
+      case TK_FUNCTION: {
+        return 0x07;
+      }
+      case TK_COLUMN:
+      case TK_AGG_COLUMN:
+      case TK_SELECT:
+      case TK_CAST:
+      case TK_SELECT_COLUMN:
+      case TK_VECTOR:  {
+        int aff = sqlite3ExprAffinity(pExpr);
+        if( aff>=SQLITE_AFF_NUMERIC ) return 0x05;
+        if( aff==SQLITE_AFF_TEXT )    return 0x06;
+        return 0x07;
+      }
+      case TK_CASE: {
+        int res = 0;
+        int ii;
+        ExprList *pList = pExpr->x.pList;
+        assert( ExprUseXList(pExpr) && pList!=0 );
+        assert( pList->nExpr > 0);
+        for(ii=1; ii<pList->nExpr; ii+=2){
+          res |= sqlite3ExprDataType(pList->a[ii].pExpr);
+        }
+        return res;
+      }
+      default: {
+        return 0x01;
+      }
+    } /* End of switch(op) */
+  } /* End of while(pExpr) */
+  return 0;
+}
+
+/*
 ** Set the collating sequence for expression pExpr to be the collating
 ** sequence named by pToken.   Return a pointer to a new Expr node that
 ** implements the COLLATE operator.

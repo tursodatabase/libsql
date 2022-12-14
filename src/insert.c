@@ -91,7 +91,7 @@ const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
       i16 x = pIdx->aiColumn[n];
       char aff;
       if( x>=0 ){
-        aff = IsView(pTab) ? SQLITE_AFF_BLOB : pTab->aCol[x].affinity;
+        aff = pTab->aCol[x].affinity;
       }else if( x==XN_ROWID ){
         aff = SQLITE_AFF_INTEGER;
       }else{

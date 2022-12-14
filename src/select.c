@@ -2336,15 +2336,27 @@ void sqlite3SubqueryColumnTypes(
     p = a[i].pExpr;
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
-    if( pCol->affinity==SQLITE_AFF_NUMERIC
-     && p->op==TK_CAST
-     && (aff & SQLITE_AFF_FLAG1)!=0
-    ){
-      pCol->affinity = SQLITE_AFF_NONE;
-    }
     if( pCol->affinity<=SQLITE_AFF_NONE ){
       assert( (SQLITE_AFF_FLAG1 & SQLITE_AFF_MASK)==0 );
       pCol->affinity = aff & SQLITE_AFF_MASK;
+    }
+    if( aff & SQLITE_AFF_FLAG1 ){
+      if( pCol->affinity==SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
+        pCol->affinity = SQLITE_AFF_NONE;
+      }
+    }
+    if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
+      int m = 0;
+      Select *pS2;
+      for(m=0, pS2=pSelect->pNext; pS2; pS2=pS2->pNext){
+        m |= sqlite3ExprDataType(pS2->pEList->a[i].pExpr);
+      }
+      if( pCol->affinity==SQLITE_AFF_TEXT && (m&0x01)!=0 ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }else
+      if( pCol->affinity>=SQLITE_AFF_NUMERIC && (m&0x02)!=0 ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }
     }
     zType = 0;
     for(j=0; j<SQLITE_N_STDTYPE; j++){
