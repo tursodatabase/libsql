@@ -66,6 +66,10 @@ impl Database {
     }
 }
 
+fn to_database(db: *mut sqlite3) -> Rc<Database> {
+    unsafe { (*db).inner.clone() }
+}
+
 pub struct sqlite3 {
     inner: Rc<Database>,
 }
@@ -298,7 +302,7 @@ pub extern "C" fn sqlite3_prepare_v2(
     ppStmt: *mut *mut sqlite3_stmt,
     pzTail: *mut *const c_char,
 ) -> c_int {
-    let database = unsafe { (*db).inner.clone() };
+    let database = to_database(db);
     trace!("TRACE sqlite3_prepare_v2");
     let zSql = unsafe { CStr::from_ptr(zSql) };
     let sql = unwrap_ok_or!(zSql.to_str(), _, {
