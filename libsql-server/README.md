@@ -28,3 +28,25 @@ and connect to it with psql:
 ```console
 psql -h 127.0.0.1 -p 5000
 ```
+
+## Building from Sources
+
+### Dependencies
+
+**Ubuntu/Debian:**
+
+```console
+apt install bundler libpq-dev libsqlite3-dev nodejs npm
+```
+
+### Building
+
+```console
+cargo build
+```
+
+### Running tests
+
+```console
+make test
+```
