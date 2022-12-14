@@ -1105,11 +1105,11 @@ self.sqlite3InitModule = sqlite3InitModule;
           T.assert(0 === rc);
         }
         wasm.poke32([pCur, pHi], 0);
-        let [vCur, vHi] = wasm.peek32([pCur, pHi]);
+        let [vCur, vHi] = wasm.peek32(pCur, pHi);
         T.assert(0===vCur).assert(0===vHi);
         rc = capi.sqlite3_status(capi.SQLITE_STATUS_MEMORY_USED,
                                  pCur, pHi, 0);
-        [vCur, vHi] = wasm.peek32([pCur, pHi]);
+        [vCur, vHi] = wasm.peek32(pCur, pHi);
         //console.warn("i32 vCur,vHi",vCur,vHi);
         T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
         if(wasm.bigIntEnabled){
