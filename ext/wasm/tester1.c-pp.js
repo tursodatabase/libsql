@@ -494,9 +494,9 @@ self.sqlite3InitModule = sqlite3InitModule;
           .assert( 31987 === w.poke16(m,31987).peek16(m) )
           .assert( 345678 === w.poke32(m,345678).peek32(m) )
           .assert(
-            T.eqApprox( 345678.9, w.pokeF32(m,345678.9).peekF32(m) )
+            T.eqApprox( 345678.9, w.poke32f(m,345678.9).peek32f(m) )
           ).assert(
-            T.eqApprox( 4567890123.4, w.pokeF64(m, 4567890123.4).peekF64(m) )
+            T.eqApprox( 4567890123.4, w.poke64f(m, 4567890123.4).peek64f(m) )
           );
         if(w.bigIntEnabled){
           T.assert(

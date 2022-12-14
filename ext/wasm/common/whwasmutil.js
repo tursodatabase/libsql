@@ -795,13 +795,13 @@ self.WhWasmUtilInstaller = function(target){
       a BigInt-type value, not a Number-type value. */
   target.poke64 = (ptr, value)=>target.poke(ptr, value, 'i64');
   /** f32 variant of peek8(). */
-  target.peekF32 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f32' );
+  target.peek32f = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f32' );
   /** f32 variant of poke8(). */
-  target.pokeF32 = (ptr, value)=>target.poke(ptr, value, 'f32');
+  target.poke32f = (ptr, value)=>target.poke(ptr, value, 'f32');
   /** f64 variant of peek8(). */
-  target.peekF64 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f64' );
+  target.peek64f = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f64' );
   /** f64 variant of poke8(). */
-  target.pokeF64 = (ptr, value)=>target.poke(ptr, value, 'f64');
+  target.poke64f = (ptr, value)=>target.poke(ptr, value, 'f64');
 
   
   /** Deprecated alias for getMemValue() */
