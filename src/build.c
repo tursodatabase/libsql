@@ -3140,8 +3140,7 @@ static SQLITE_NOINLINE int viewGetColumnNames(Parse *pParse, Table *pTable){
        && pTable->nCol==pSel->pEList->nExpr
       ){
         assert( db->mallocFailed==0 );
-        sqlite3SelectAddColumnTypeAndCollation(pParse, pTable, pSel,
-                                               SQLITE_AFF_NONE);
+        sqlite3SubqueryColumnTypes(pParse, pTable, pSel, SQLITE_AFF_NONE);
       }
     }else{
       /* CREATE VIEW name AS...  without an argument list.  Construct

@@ -158,6 +158,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       let rc = capi.sqlite3_open_v2(fn, pPtr, oflags, vfsName || 0);
       pDb = wasm.peekPtr(pPtr);
       checkSqlite3Rc(pDb, rc);
+      capi.sqlite3_extended_result_codes(pDb, 1);
       if(flagsStr.indexOf('t')>=0){
         capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
                               __dbTraceToConsole, 0);
@@ -439,9 +440,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               out.cbArg = (stmt)=>stmt.get(opt.rowMode);
               break;
             }else if('string'===typeof opt.rowMode && opt.rowMode.length>1){
-              /* "$X", ":X", and "@X" fetch column named "X" (case-sensitive!) */
-              const prefix = opt.rowMode[0];
-              if(':'===prefix || '@'===prefix || '$'===prefix){
+              /* "$X": fetch column named "X" (case-sensitive!). Prior
+                 to 2022-12-14 ":X" and "@X" were also permitted, but
+                 having so many options is unnecessary and likely to
+                 cause confusion. */
+              if('$'===opt.rowMode[0]){
                 out.cbArg = function(stmt){
                   const rc = stmt.get(this.obj)[this.colName];
                   return (undefined===rc) ? toss3("exec(): unknown result column:",this.colName) : rc;
@@ -739,17 +742,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        row. Only that one single value will be passed on.
 
        C) A string with a minimum length of 2 and leading character of
-       ':', '$', or '@' will fetch the row as an object, extract that
-       one field, and pass that field's value to the callback. Note
-       that these keys are case-sensitive so must match the case used
-       in the SQL. e.g. `"select a A from t"` with a `rowMode` of
-       `'$A'` would work but `'$a'` would not. A reference to a column
-       not in the result set will trigger an exception on the first
-       row (as the check is not performed until rows are fetched).
-       Note also that `$` is a legal identifier character in JS so
-       need not be quoted. (Design note: those 3 characters were
-       chosen because they are the characters support for naming bound
-       parameters.)
+       '$' will fetch the row as an object, extract that one field,
+       and pass that field's value to the callback. Note that these
+       keys are case-sensitive so must match the case used in the
+       SQL. e.g. `"select a A from t"` with a `rowMode` of `'$A'`
+       would work but `'$a'` would not. A reference to a column not in
+       the result set will trigger an exception on the first row (as
+       the check is not performed until rows are fetched).  Note also
+       that `$` is a legal identifier character in JS so need not be
+       quoted.
 
        Any other `rowMode` value triggers an exception.
 
@@ -800,6 +801,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       let bind = opt.bind;
       let evalFirstResult = !!(arg.cbArg || opt.columnNames) /* true to evaluate the first result-returning query */;
       const stack = wasm.scopedAllocPush();
+      const saveSql = Array.isArray(opt.saveSql) ? opt.saveSql : undefined;
       try{
         const isTA = util.isSQLableTypedArray(arg.sql)
         /* Optimization: if the SQL is a TypedArray we can save some string
@@ -833,9 +835,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           pSql = wasm.peekPtr(pzTail);
           sqlByteLen = pSqlEnd - pSql;
           if(!pStmt) continue;
-          if(Array.isArray(opt.saveSql)){
-            opt.saveSql.push(capi.sqlite3_sql(pStmt).trim());
-          }
+          if(saveSql) saveSql.push(capi.sqlite3_sql(pStmt).trim());
           stmt = new Stmt(this, pStmt, BindTypes);
           if(bind && stmt.parameterCount){
             stmt.bind(bind);

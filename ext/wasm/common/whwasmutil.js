@@ -759,13 +759,51 @@ self.WhWasmUtilInstaller = function(target){
   target.peekPtr = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), ptrIR );
 
   /**
-     A variant of poke() intended for setting
-     pointer-to-pointer values. Its differences from poke() are
-     that (1) it defaults to a value of 0, (2) it always writes
-     to the pointer-sized heap view, and (3) it returns `this`.
+     A variant of poke() intended for setting pointer-to-pointer
+     values. Its differences from poke() are that (1) it defaults to a
+     value of 0 and (2) it always writes to the pointer-sized heap
+     view.
   */
   target.pokePtr = (ptr, value=0)=>target.poke(ptr, value, ptrIR);
 
+  /**
+     Convenience form of peek() intended for fetching i8 values. If
+     passed a single non-array argument it returns the value of that
+     one pointer address. If passed multiple arguments, or a single
+     array of arguments, it returns an array of their values.
+  */
+  target.peek8 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i8' );
+  /**
+     Convience form of poke() intended for setting individual bytes.
+     Its difference from poke() is that it always writes to the
+     i8-sized heap view.
+  */
+  target.poke8 = (ptr, value)=>target.poke(ptr, value, 'i8');
+  /** i16 variant of peek8(). */
+  target.peek16 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i16' );
+  /** i16 variant of poke8(). */
+  target.poke16 = (ptr, value)=>target.poke(ptr, value, 'i16');
+  /** i32 variant of peek8(). */
+  target.peek32 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i32' );
+  /** i32 variant of poke8(). */
+  target.poke32 = (ptr, value)=>target.poke(ptr, value, 'i32');
+  /** i64 variant of peek8(). Will throw if this build is not
+      configured for BigInt support. */
+  target.peek64 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i64' );
+  /** i64 variant of poke8(). Will throw if this build is not
+      configured for BigInt support. Note that this returns
+      a BigInt-type value, not a Number-type value. */
+  target.poke64 = (ptr, value)=>target.poke(ptr, value, 'i64');
+  /** f32 variant of peek8(). */
+  target.peekF32 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f32' );
+  /** f32 variant of poke8(). */
+  target.pokeF32 = (ptr, value)=>target.poke(ptr, value, 'f32');
+  /** f64 variant of peek8(). */
+  target.peekF64 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f64' );
+  /** f64 variant of poke8(). */
+  target.pokeF64 = (ptr, value)=>target.poke(ptr, value, 'f64');
+
+  
   /** Deprecated alias for getMemValue() */
   target.getMemValue = target.peek;
   /** Deprecated alias for peekPtr() */
@@ -1447,21 +1485,21 @@ self.WhWasmUtilInstaller = function(target){
      Requires an options object with these properties:
 
      - name (optional): string describing the function binding. This
-     is solely for debugging and error-reporting purposes. If not
-     provided, an empty string is assumed.
+       is solely for debugging and error-reporting purposes. If not
+       provided, an empty string is assumed.
 
-     - signature: an function signature compatible with
-     jsFuncToWasm().
+     - signature: a function signature string compatible with
+       jsFuncToWasm().
 
      - bindScope (string): one of ('transient', 'context',
        'singleton'). Bind scopes are:
 
-       - transient: it will convert JS functions to WASM only for the
-         duration of the xWrap()'d function call, using
+       - 'transient': it will convert JS functions to WASM only for
+         the duration of the xWrap()'d function call, using
          scopedInstallFunction(). Before that call returns, the
          WASM-side binding will be uninstalled.
 
-       - singleton: holds one function-pointer binding for this
+       - 'singleton': holds one function-pointer binding for this
          instance. If it's called with a different function pointer,
          it uninstalls the previous one after converting the new
          value. This is only useful for use with "global" functions
@@ -1470,23 +1508,19 @@ self.WhWasmUtilInstaller = function(target){
          to be mapped to some sort of state object (e.g. an sqlite3*)
          then "context" (see below) is the proper mode.
 
-       - context: similar to singleton mode but for a given "context",
-         where the context is a key provided by the user and possibly
-         dependent on a small amount of call-time context. This mode
-         is the default if bindScope is _not_ set but a property named
-         contextKey (described below) is.
+       - 'context': similar to singleton mode but for a given
+         "context", where the context is a key provided by the user
+         and possibly dependent on a small amount of call-time
+         context. This mode is the default if bindScope is _not_ set
+         but a property named contextKey (described below) is.
 
-     FIXME: the contextKey definition is only useful for very basic
-     contexts and breaks down with dynamic ones like
-     sqlite3_create_collation().
-
-     - contextKey (function): only used if bindScope is not set or is
-       'context'. This function gets passed (argIndex,argv), where
-       argIndex is the index of this function pointer in its
+     - contextKey (function): is only used if bindScope is not set or
+       is 'context'. This function gets passed (argIndex,argv), where
+       argIndex is the index of _this_ function pointer in its
        _wrapping_ function's arguments and argv is the _current_
-       being-xWrap()-processed args array. All arguments to the left
-       of argIndex will have been processed by xWrap() by the time
-       this is called. argv[argIndex] will be the value the user
+       still-being-xWrap()-processed args array. All arguments to the
+       left of argIndex will have been processed by xWrap() by the
+       time this is called. argv[argIndex] will be the value the user
        passed in to the xWrap()'d function for the argument this
        FuncPtrAdapter is mapped to. Arguments to the right of
        argv[argIndex] will not yet have been converted before this is
@@ -1500,23 +1534,26 @@ self.WhWasmUtilInstaller = function(target){
        might return 'T@'+argv[1], or even just argv[1].  Note,
        however, that the (X*) argument will not yet have been
        processed by the time this is called and should not be used as
-       part of that key. Similarly, C-string-type keys should not be
-       used as part of keys because they are normally transient in
-       this environment.
+       part of that key because its pre-conversion data type might be
+       unpredictable. Similarly, care must be taken with C-string-type
+       arguments: those to the left in argv will, when this is called,
+       be WASM pointers, whereas those to the right might (and likely
+       do) have another data type. When using C-strings in keys, never
+       use their pointers in the key because most C-strings in this
+       constellation are transient.
+
+     Yes, that ^^^ is a bit awkward, but it's what we have.
 
      The constructor only saves the above state for later, and does
-     not actually bind any functions. Its convertArg() methor is
+     not actually bind any functions. Its convertArg() method is
      called via xWrap() to perform any bindings.
 
-     Caveats:
-
-     - singleton is globally singleton. This type does not currently
-     have enough context to apply, e.g., a different singleton for
-     each (sqlite3*) db handle.
+     If this is called like a function, instead of a constructor,
+     it behaves as if it were called like a constructor.
   */
   xArg.FuncPtrAdapter = function ctor(opt) {
     if(!(this instanceof xArg.FuncPtrAdapter)){
-      toss("FuncPtrAdapter can only be used as a constructor. Use 'new'.");
+      return new xArg.FuncPtrAdapter(opt);
     }
     this.signature = opt.signature;
     if(!opt.bindScope && (opt.contextKey instanceof Function)){
@@ -1530,20 +1567,21 @@ self.WhWasmUtilInstaller = function(target){
     if(opt.contextKey) this.contextKey = opt.contextKey /*else inherit one*/;
     this.isTransient = 'transient'===this.bindScope;
     this.isContext = 'context'===this.bindScope;
-    if( ('singleton'===this.bindScope) ){
-      this.singleton = [];
-    }else{
-      this.singleton = undefined;
-    }
+    if( ('singleton'===this.bindScope) ) this.singleton = [];
+    else this.singleton = undefined;
     //console.warn("FuncPtrAdapter()",opt,this);
   };
   xArg.FuncPtrAdapter.bindScopes = [
     'transient', 'context', 'singleton'
   ];
   xArg.FuncPtrAdapter.prototype = {
+    /* Dummy impl. Overwritten per-instance as needed. */
     contextKey: function(argIndex,argv){
       return this;
     },
+    /* Returns this objects mapping for the given context key, in the
+       form of an an array, creating the mapping if needed. The key
+       may be anything suitable for use in a Map. */
     contextMap: function(key){
       const cm = (this.__cmap || (this.__cmap = new Map));
       let rc = cm.get(key);
@@ -1553,11 +1591,28 @@ self.WhWasmUtilInstaller = function(target){
     /**
        Gets called via xWrap() to "convert" v to a WASM-bound function
        pointer. If v is one of (a pointer, null, undefined) then
-       (v||0) is returned, otherwise v must be a Function, for which
-       it creates (if needed) a WASM function binding and returns the
-       WASM pointer to that binding. It will remember the binding for
-       at least the next call, to avoid recreating the function
-       unnecessarily.
+       (v||0) is returned and any earlier function installed by this
+       mapping _might_, depending on how it's bound, be
+       uninstalled. If v is not one of those types, it must be a
+       Function, for which it creates (if needed) a WASM function
+       binding and returns the WASM pointer to that binding. If this
+       instance is not in 'transient' mode, it will remember the
+       binding for at least the next call, to avoid recreating the
+       function binding unnecessarily.
+
+       If it's passed a pointer(ish) value for v, it does _not_
+       perform any function binding, so this object's bindMode is
+       irrelevant for such cases.
+
+       argIndex is the argv index of _this_ argument in the
+       being-xWrap()'d call. argv is the current argument list
+       undergoing xWrap() argument conversion. argv entries to the
+       left of argIndex will have already undergone transformation and
+       those to the right will not have (they will have the values the
+       client-level code passed in, awaiting conversion). The RHS
+       indexes must never be relied upon for anything because their
+       types are indeterminate, whereas the LHS values will be
+       WASM-compatible values by the time this is called.
     */
     convertArg: function(v,argIndex,argv){
       //console.warn("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
@@ -1569,6 +1624,7 @@ self.WhWasmUtilInstaller = function(target){
       if(v instanceof Function){
         const fp = __installFunction(v, this.signature, this.isTransient);
         if(pair){
+          /* Replace existing stashed mapping */
           if(pair[1]){
             try{target.uninstallFunction(pair[1])}
             catch(e){/*ignored*/}
@@ -1578,7 +1634,9 @@ self.WhWasmUtilInstaller = function(target){
         }
         return fp;
       }else if(target.isPtr(v) || null===v || undefined===v){
-        if(pair && pair[1]){
+        if(pair && pair[1] && pair[1]!==v){
+          /* uninstall stashed mapping and replace stashed mapping with v. */
+          //console.warn("FuncPtrAdapter is uninstalling function", this.contextKey(argIndex,argv),v);
           try{target.uninstallFunction(pair[1])}
           catch(e){/*ignored*/}
           pair[0] = pair[1] = (v || 0);
@@ -1586,11 +1644,12 @@ self.WhWasmUtilInstaller = function(target){
         return v || 0;
       }else{
         throw new TypeError("Invalid FuncPtrAdapter argument type. "+
-                            "Expecting "+(this.name ? this.name+' ' : '')+
+                            "Expecting a function pointer or a "+
+                            (this.name ? this.name+' ' : '')+
                             "function matching signature "+
                             this.signature+".");
       }
-    }
+    }/*convertArg()*/
   }/*FuncPtrAdapter.prototype*/;
 
   const __xArgAdapterCheck =
@@ -1778,6 +1837,21 @@ self.WhWasmUtilInstaller = function(target){
       if(args.length!==xf.length) __argcMismatch(fname, xf.length);
       const scope = target.scopedAllocPush();
       try{
+        /*
+          Maintenance reminder re. arguments passed to convertArgs():
+          The public interface of argument adapters is that they take
+          ONE argument and return a (possibly) converted result for
+          it. The passing-on of arguments after the first is an
+          internal impl. detail for the sake of FuncPtrAdapter, and
+          not to be relied on or documented for other cases. The fact
+          that this is how FuncPtrAdapter.convertArgs() gets its 2nd+
+          arguments, and how FuncPtrAdapter.contextKey() gets its
+          args, is also an implementation detail and subject to
+          change. i.e. the public interface of 1 argument is stable.
+          The fact that any arguments may be passed in after that one,
+          and what those arguments are, is _not_ part of the public
+          interface and is _not_ stable.
+        */
         for(const i in args) args[i] = cxw.convertArg(argTypes[i], args[i], i, args);
         return cxw.convertResult(resultType, xf.apply(null,args));
       }finally{

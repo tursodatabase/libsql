@@ -1673,6 +1673,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        build-generated object.
     */
     version: Object.create(null),
+
+    /**
+       The library reserves the 'client' property for client-side use
+       and promises to never define a property with this name nor to
+       ever rely on specific contents of it. It makes no such guarantees
+       for other properties.
+    */
+    client: undefined,
+
     /**
        Performs any optional asynchronous library-level initialization
        which might be required. This function returns a Promise which

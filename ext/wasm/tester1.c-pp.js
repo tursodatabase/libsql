@@ -472,14 +472,15 @@ self.sqlite3InitModule = sqlite3InitModule;
         m = w.allocFromTypedArray(u);
         for(let i = 0; i < u.length; ++i){
           T.assert(u[i] === byteList[i])
-            .assert(u[i] === w.peek(m + i, 'i8'));
+            .assert(u[i] === w.peek8(m + i));
         }
         w.dealloc(m);
         m = w.allocFromTypedArray(u.buffer);
         for(let i = 0; i < u.length; ++i){
           T.assert(u[i] === byteList[i])
-            .assert(u[i] === w.peek(m + i, 'i8'));
+            .assert(u[i] === w.peek8(m + i));
         }
+
         w.dealloc(m);
         T.mustThrowMatching(
           ()=>w.allocFromTypedArray(1),
@@ -487,6 +488,25 @@ self.sqlite3InitModule = sqlite3InitModule;
         );
       }
 
+      { // Test peekXYZ()/pokeXYZ()...
+        const m = w.alloc(8);
+        T.assert( 17 === w.poke8(m,17).peek8(m) )
+          .assert( 31987 === w.poke16(m,31987).peek16(m) )
+          .assert( 345678 === w.poke32(m,345678).peek32(m) )
+          .assert(
+            T.eqApprox( 345678.9, w.pokeF32(m,345678.9).peekF32(m) )
+          ).assert(
+            T.eqApprox( 4567890123.4, w.pokeF64(m, 4567890123.4).peekF64(m) )
+          );
+        if(w.bigIntEnabled){
+          T.assert(
+            BigInt(Number.MAX_SAFE_INTEGER) ===
+              w.poke64(m, Number.MAX_SAFE_INTEGER).peek64(m)
+          );
+        }
+        w.dealloc(m);
+      }
+      
       // isPtr32()
       {
         const ip = w.isPtr32;
@@ -557,14 +577,14 @@ self.sqlite3InitModule = sqlite3InitModule;
           let rc = w.cstrncpy(cpy, cStr, n+10);
           T.assert(n+1 === rc).
             assert("hello" === w.cstrToJs(cpy)).
-            assert(chr('o') === w.peek(cpy+n-1)).
-            assert(0 === w.peek(cpy+n));
+            assert(chr('o') === w.peek8(cpy+n-1)).
+            assert(0 === w.peek8(cpy+n));
           let cStr2 = w.scopedAllocCString("HI!!!");
           rc = w.cstrncpy(cpy, cStr2, 3);
           T.assert(3===rc).
             assert("HI!lo" === w.cstrToJs(cpy)).
-            assert(chr('!') === w.peek(cpy+2)).
-            assert(chr('l') === w.peek(cpy+3));
+            assert(chr('!') === w.peek8(cpy+2)).
+            assert(chr('l') === w.peek8(cpy+3));
         }finally{
           w.scopedAllocPop(scope);
         }
@@ -587,8 +607,8 @@ self.sqlite3InitModule = sqlite3InitModule;
         const jstr = "hällo, world!";
         const [cstr, n] = w.allocCString(jstr, true);
         T.assert(14 === n)
-          .assert(0===w.peek(cstr+n))
-          .assert(chr('!')===w.peek(cstr+n-1));
+          .assert(0===w.peek8(cstr+n))
+          .assert(chr('!')===w.peek8(cstr+n-1));
         w.dealloc(cstr);
       }
 
@@ -624,8 +644,8 @@ self.sqlite3InitModule = sqlite3InitModule;
 
           const [z1, z2, z3] = w.scopedAllocPtr(3);
           T.assert('number'===typeof z1).assert(z2>z1).assert(z3>z2)
-            .assert(0===w.peek(z1,'i32'), 'allocPtr() must zero the targets')
-            .assert(0===w.peek(z3,'i32'));
+            .assert(0===w.peek32(z1), 'allocPtr() must zero the targets')
+            .assert(0===w.peek32(z3));
         }finally{
           // Pop them in "incorrect" order to make sure they behave:
           w.scopedAllocPop(asc);
@@ -645,8 +665,8 @@ self.sqlite3InitModule = sqlite3InitModule;
           T.assert(1===w.scopedAlloc.level);
           const [cstr, n] = w.scopedAllocCString("hello, world", true);
           T.assert(12 === n)
-            .assert(0===w.peek(cstr+n))
-            .assert(chr('d')===w.peek(cstr+n-1));
+            .assert(0===w.peek8(cstr+n))
+            .assert(chr('d')===w.peek8(cstr+n-1));
         });
       }/*scopedAlloc()*/
 
@@ -710,7 +730,7 @@ self.sqlite3InitModule = sqlite3InitModule;
               const pI1 = w.scopedAlloc(8), pI2 = pI1+4;
               w.pokePtr([pI1, pI2], 0);
               const f = w.xWrap('sqlite3_wasm_test_int64_minmax',undefined,['i64*','i64*']);
-              const [r1, r2] = w.peek([pI1, pI2], 'i64');
+              const [r1, r2] = w.peek64([pI1, pI2]);
               T.assert(!Number.isSafeInteger(r1)).assert(!Number.isSafeInteger(r2));
             });
           }
@@ -954,8 +974,8 @@ self.sqlite3InitModule = sqlite3InitModule;
       try{
         const n = 520;
         const p = wasm.pstack.alloc(n);
-        T.assert(0===wasm.peek(p))
-          .assert(0===wasm.peek(p+n-1));
+        T.assert(0===wasm.peek8(p))
+          .assert(0===wasm.peek8(p+n-1));
         T.assert(undefined === capi.sqlite3_randomness(n - 10, p));
         let j, check = 0;
         const heap = wasm.heap8u();
@@ -1076,7 +1096,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         rc = capi.sqlite3_db_status(this.db, capi.SQLITE_DBSTATUS_LOOKASIDE_USED,
                                     pCur, pHi, 0);
         T.assert(0===rc);
-        if(wasm.peek(pCur, 'i32')){
+        if(wasm.peek32(pCur)){
           warn("Cannot test db_config(SQLITE_DBCONFIG_LOOKASIDE)",
                "while lookaside memory is in use.");
         }else{
@@ -1084,21 +1104,21 @@ self.sqlite3InitModule = sqlite3InitModule;
                                       0, 4096, 12);
           T.assert(0 === rc);
         }
-        wasm.poke([pCur, pHi], 0, 'i32');
-        let [vCur, vHi] = wasm.peek([pCur, pHi], 'i32');
+        wasm.poke32([pCur, pHi], 0);
+        let [vCur, vHi] = wasm.peek32(pCur, pHi);
         T.assert(0===vCur).assert(0===vHi);
         rc = capi.sqlite3_status(capi.SQLITE_STATUS_MEMORY_USED,
                                  pCur, pHi, 0);
-        [vCur, vHi] = wasm.peek([pCur, pHi], 'i32');
+        [vCur, vHi] = wasm.peek32(pCur, pHi);
         //console.warn("i32 vCur,vHi",vCur,vHi);
         T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
         if(wasm.bigIntEnabled){
           // Again in 64-bit. Recall that pCur and pHi are allocated
           // large enough to account for this re-use.
-          wasm.poke([pCur, pHi], 0, 'i64');
+          wasm.poke64([pCur, pHi], 0);
           rc = capi.sqlite3_status64(capi.SQLITE_STATUS_MEMORY_USED,
                                      pCur, pHi, 0);
-          [vCur, vHi] = wasm.peek([pCur, pHi], 'i64');
+          [vCur, vHi] = wasm.peek64([pCur, pHi]);
           //console.warn("i64 vCur,vHi",vCur,vHi);
           T.assert(0 === rc).assert(vCur > 0).assert(vHi >= vCur);
         }
@@ -1246,9 +1266,19 @@ self.sqlite3InitModule = sqlite3InitModule;
         rowMode: 'object',
         resultRows: list,
         columnNames: colNames,
+        _myState: 3 /* Accessible from the callback */,
         callback: function(row,stmt){
           ++counter;
-          T.assert((row.a%2 && row.a<6) || 'blob'===row.a);
+          T.assert(
+            3 === this._myState
+            /* Recall that "this" is the options object. */
+          ).assert(
+            this.columnNames[0]==='a' && this.columnNames[1]==='b'
+            /* options.columnNames is filled out before the first
+               Stmt.step(). */
+          ).assert(
+            (row.a%2 && row.a<6) || 'blob'===row.a
+          );
         }
       });
       T.assert(2 === colNames.length)
@@ -1316,9 +1346,9 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(0===rc)
           .assert("INTEGER"===wasm.cstrToJs(wasm.peekPtr(pzDT)))
           .assert("BINARY"===wasm.cstrToJs(wasm.peekPtr(pzColl)))
-          .assert(0===wasm.peek(pNotNull,'i32'))
-          .assert(1===wasm.peek(pPK,'i32'))
-          .assert(0===wasm.peek(pAuto,'i32'))
+          .assert(0===wasm.peek32(pNotNull))
+          .assert(1===wasm.peek32(pPK))
+          .assert(0===wasm.peek32(pAuto))
       }finally{
         wasm.pstack.restore(stack);
       }
@@ -1465,11 +1495,11 @@ self.sqlite3InitModule = sqlite3InitModule;
           name: 'summer',
           xStep: (pCtx, n)=>{
             const ac = sjac(pCtx, 4);
-            wasm.poke(ac, wasm.peek(ac,'i32') + Number(n), 'i32');
+            wasm.poke32(ac, wasm.peek32(ac) + Number(n));
           },
           xFinal: (pCtx)=>{
             const ac = sjac(pCtx, 0);
-            return ac ? wasm.peek(ac,'i32') : 0;
+            return ac ? wasm.peek32(ac) : 0;
           }
         });
         let v = db.selectValue([
@@ -1488,13 +1518,13 @@ self.sqlite3InitModule = sqlite3InitModule;
           arity: -1,
           xStep: (pCtx, ...args)=>{
             const ac = sjac(pCtx, 4);
-            let sum = wasm.peek(ac, 'i32');
+            let sum = wasm.peek32(ac);
             for(const v of args) sum += Number(v);
-            wasm.poke(ac, sum, 'i32');
+            wasm.poke32(ac, sum);
           },
           xFinal: (pCtx)=>{
             const ac = sjac(pCtx, 0);
-            capi.sqlite3_result_int( pCtx, ac ? wasm.peek(ac,'i32') : 0 );
+            capi.sqlite3_result_int( pCtx, ac ? wasm.peek32(ac) : 0 );
             // xFinal() may either return its value directly or call
             // sqlite3_result_xyz() and return undefined. Both are
             // functionally equivalent.
@@ -1536,11 +1566,11 @@ self.sqlite3InitModule = sqlite3InitModule;
           name: 'summer64',
           xStep: (pCtx, n)=>{
             const ac = sjac(pCtx, 8);
-            wasm.poke(ac, wasm.peek(ac,'i64') + BigInt(n), 'i64');
+            wasm.poke64(ac, wasm.peek64(ac) + BigInt(n));
           },
           xFinal: (pCtx)=>{
             const ac = sjac(pCtx, 0);
-            return ac ? wasm.peek(ac,'i64') : 0n;
+            return ac ? wasm.peek64(ac) : 0n;
           }
         });
         let v = db.selectValue([
@@ -1563,11 +1593,11 @@ self.sqlite3InitModule = sqlite3InitModule;
         const sjac = (cx,n=4)=>capi.sqlite3_js_aggregate_context(cx,n);
         const xValueFinal = (pCtx)=>{
           const ac = sjac(pCtx, 0);
-          return ac ? wasm.peek(ac,'i32') : 0;
+          return ac ? wasm.peek32(ac) : 0;
         };
         const xStepInverse = (pCtx, n)=>{
           const ac = sjac(pCtx);
-          wasm.poke(ac, wasm.peek(ac,'i32') + Number(n), 'i32');
+          wasm.poke32(ac, wasm.peek32(ac) + Number(n));
         };
         db.createFunction({
           name: 'winsumint',
@@ -1686,35 +1716,26 @@ self.sqlite3InitModule = sqlite3InitModule;
         const stack = w.scopedAllocPush();
         let ptrInt;
         const origValue = 512;
-        const ptrValType = 'i32';
         try{
           ptrInt = w.scopedAlloc(4);
-          w.poke(ptrInt,origValue, ptrValType);
+          w.poke32(ptrInt,origValue);
           const cf = w.xGet('sqlite3_wasm_test_intptr');
           const oldPtrInt = ptrInt;
-          //log('ptrInt',ptrInt);
-          //log('peek(ptrInt)',w.peek(ptrInt));
-          T.assert(origValue === w.peek(ptrInt, ptrValType));
+          T.assert(origValue === w.peek32(ptrInt));
           const rc = cf(ptrInt);
-          //log('cf(ptrInt)',rc);
-          //log('ptrInt',ptrInt);
-          //log('peek(ptrInt)',w.peek(ptrInt,ptrValType));
           T.assert(2*origValue === rc).
-            assert(rc === w.peek(ptrInt,ptrValType)).
+            assert(rc === w.peek32(ptrInt)).
             assert(oldPtrInt === ptrInt);
           const pi64 = w.scopedAlloc(8)/*ptr to 64-bit integer*/;
           const o64 = 0x010203040506/*>32-bit integer*/;
-          const ptrType64 = 'i64';
           if(w.bigIntEnabled){
-            w.poke(pi64, o64, ptrType64);
+            w.poke64(pi64, o64);
             //log("pi64 =",pi64, "o64 = 0x",o64.toString(16), o64);
-            const v64 = ()=>w.peek(pi64,ptrType64)
-            //log("peek(pi64)",v64());
+            const v64 = ()=>w.peek64(pi64)
             T.assert(v64() == o64);
-            //T.assert(o64 === w.peek(pi64, ptrType64));
+            //T.assert(o64 === w.peek64(pi64));
             const cf64w = w.xGet('sqlite3_wasm_test_int64ptr');
             cf64w(pi64);
-            //log("peek(pi64)",v64());
             T.assert(v64() == BigInt(2 * o64));
             cf64w(pi64);
             T.assert(v64() == BigInt(4 * o64));
@@ -1726,8 +1747,8 @@ self.sqlite3InitModule = sqlite3InitModule;
 
             const pMin = w.scopedAlloc(16);
             const pMax = pMin + 8;
-            const g64 = (p)=>w.peek(p,ptrType64);
-            w.poke([pMin, pMax], 0, ptrType64);
+            const g64 = (p)=>w.peek64(p);
+            w.poke64([pMin, pMax], 0);
             const minMaxI64 = [
               w.xCall('sqlite3_wasm_test_int64_min'),
               w.xCall('sqlite3_wasm_test_int64_max')
@@ -1739,7 +1760,7 @@ self.sqlite3InitModule = sqlite3InitModule;
             T.assert(g64(pMin) === minMaxI64[0], "int64 mismatch").
               assert(g64(pMax) === minMaxI64[1], "int64 mismatch");
             //log("pMin",g64(pMin), "pMax",g64(pMax));
-            w.poke(pMin, minMaxI64[0], ptrType64);
+            w.poke64(pMin, minMaxI64[0]);
             T.assert(g64(pMin) === minMaxI64[0]).
               assert(minMaxI64[0] === db.selectValue("select ?",g64(pMin))).
               assert(minMaxI64[1] === db.selectValue("select ?",g64(pMax)));
@@ -2125,8 +2146,10 @@ self.sqlite3InitModule = sqlite3InitModule;
     })/*custom vtab #2*/
   ////////////////////////////////////////////////////////////////////////
     .t('Custom collation', function(sqlite3){
+      let collationCounter = 0;
       let myCmp = function(pArg,n1,p1,n2,p2){
         //int (*)(void*,int,const void*,int,const void*)
+        ++collationCounter;
         const rc = wasm.exports.sqlite3_strnicmp(p1,p2,(n1<n2?n1:n2));
         return rc ? rc : (n1 - n2);
       };
@@ -2134,18 +2157,51 @@ self.sqlite3InitModule = sqlite3InitModule;
                                                 0, myCmp, 0);
       this.db.checkRc(rc);
       rc = this.db.selectValue("select 'hi' = 'HI' collate mycollation");
-      T.assert(1===rc);
+      T.assert(1===rc).assert(1===collationCounter);
       rc = this.db.selectValue("select 'hii' = 'HI' collate mycollation");
-      T.assert(0===rc);
+      T.assert(0===rc).assert(2===collationCounter);
       rc = this.db.selectValue("select 'hi' = 'HIi' collate mycollation");
-      T.assert(0===rc);
+      T.assert(0===rc).assert(3===collationCounter);
       rc = capi.sqlite3_create_collation(this.db,"hi",capi.SQLITE_UTF8/*not enough args*/);
       T.assert(capi.SQLITE_MISUSE === rc);
       rc = capi.sqlite3_create_collation_v2(this.db,"hi",0/*wrong encoding*/,0,0,0);
       T.assert(capi.SQLITE_FORMAT === rc)
         .mustThrowMatching(()=>this.db.checkRc(rc),
                            /SQLITE_UTF8 is the only supported encoding./);
-    })
+      /*
+        We need to ensure that replacing that collation function does
+        the right thing. We don't have a handle to the underlying WASM
+        pointer from here, so cannot verify (without digging through
+        internal state) that the old one gets uninstalled, but we can
+        verify that a new one properly replaces it.  (That said,
+        console.warn() output has shown that the uninstallation does
+        happen.)
+      */
+      collationCounter = 0;
+      myCmp = function(pArg,n1,p1,n2,p2){
+        --collationCounter;
+        return 0;
+      };
+      rc = capi.sqlite3_create_collation_v2(this.db, "MYCOLLATION", capi.SQLITE_UTF8,
+                                            0, myCmp, 0);
+      this.db.checkRc(rc);
+      rc = this.db.selectValue("select 'hi' = 'HI' collate mycollation");
+      T.assert(rc>0).assert(-1===collationCounter);
+      rc = this.db.selectValue("select 'a' = 'b' collate mycollation");
+      T.assert(rc>0).assert(-2===collationCounter);
+      rc = capi.sqlite3_create_collation_v2(this.db, "MYCOLLATION", capi.SQLITE_UTF8,
+                                            0, null, 0);
+      this.db.checkRc(rc);
+      rc = 0;
+      try {
+        this.db.selectValue("select 'a' = 'b' collate mycollation");
+      }catch(e){
+        /* Why is e.resultCode not automatically an extended result
+           code? The DB() class enables those automatically. */
+        rc = sqlite3.capi.sqlite3_extended_errcode(this.db);
+      }
+      T.assert(capi.SQLITE_ERROR_MISSING_COLLSEQ === rc);
+    })/*custom collation*/
 
   ////////////////////////////////////////////////////////////////////////
     .t('Close db', function(){

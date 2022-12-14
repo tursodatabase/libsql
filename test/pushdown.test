@@ -95,22 +95,32 @@ do_execsql_test 3.1 {
   CREATE TABLE t0(c0 INT);
   INSERT INTO t0 VALUES(0);
   CREATE TABLE t1_a(a INTEGER PRIMARY KEY, b TEXT);
-  INSERT INTO t1_a VALUES(1,'one'); --,(4,'four');
+  INSERT INTO t1_a VALUES(1,'one');
   CREATE TABLE t1_b(c INTEGER PRIMARY KEY, d TEXT);
-  INSERT INTO t1_b VALUES(2,'two'); --,(5,'five');
+  INSERT INTO t1_b VALUES(2,'two');
   CREATE VIEW v0 AS SELECT CAST(t0.c0 AS INTEGER) AS c0 FROM t0;
-  CREATE VIEW t1 AS SELECT a, b FROM t1_a UNION ALL SELECT c, 0 FROM t1_b;
-  SELECT t1.a, quote(t1.b), t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0,t1;
+  CREATE VIEW v1(a,b) AS SELECT a, b FROM t1_a UNION ALL SELECT c, 0 FROM t1_b;
+  SELECT v1.a, quote(v1.b), t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0,v1;
 } {
   1 'one' 0
-  2 '0'   0
+  2 0     0
 }
 do_execsql_test 3.2 {
   SELECT a, quote(b), cd FROM (
-    SELECT t1.a, t1.b, t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0,t1
+    SELECT v1.a, v1.b, t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0, v1
   ) WHERE a=2 AND b='0' AND cd=0;
+} {}
+do_execsql_test 3.3 {
+  SELECT a, quote(b), cd FROM (
+    SELECT v1.a, v1.b, t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0, v1
+  ) WHERE a=1 AND b='one' AND cd=0;
+} {1 'one' 0}
+do_execsql_test 3.4 {
+  SELECT a, quote(b), cd FROM (
+    SELECT v1.a, v1.b, t0.c0 AS cd FROM t0 LEFT JOIN v0 ON v0.c0!=0, v1
+  ) WHERE a=2 AND b=0 AND cd=0;
 } {
-  2 '0'   0
+  2 0     0
 }
   
 finish_test
