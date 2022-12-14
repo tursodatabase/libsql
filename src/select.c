@@ -2358,11 +2358,15 @@ void sqlite3SubqueryColumnTypes(
         pCol->affinity = SQLITE_AFF_BLOB;
       }
     }
-    zType = 0;
-    for(j=0; j<SQLITE_N_STDTYPE; j++){
-      if( sqlite3StdTypeAffinity[j]==pCol->affinity ){
-        zType = sqlite3StdType[j];
-        break;
+    if( pCol->affinity==SQLITE_AFF_NUMERIC ){
+      zType = "NUM";
+    }else{
+      zType = 0;
+      for(j=1; j<SQLITE_N_STDTYPE; j++){
+        if( sqlite3StdTypeAffinity[j]==pCol->affinity ){
+          zType = sqlite3StdType[j];
+          break;
+        }
       }
     }
     if( zType ){

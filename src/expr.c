@@ -109,7 +109,8 @@ int sqlite3ExprDataType(const Expr *pExpr){
         break;
       }
       case TK_NULL: {
-        return 0x00;
+        pExpr = 0;
+        break;
       }
       case TK_STRING: {
         return 0x02;
@@ -145,6 +146,9 @@ int sqlite3ExprDataType(const Expr *pExpr){
         for(ii=1; ii<pList->nExpr; ii+=2){
           res |= sqlite3ExprDataType(pList->a[ii].pExpr);
         }
+        if( pList->nExpr % 2 ){
+          res |= sqlite3ExprDataType(pList->a[pList->nExpr-1].pExpr);
+        }
         return res;
       }
       default: {
@@ -152,7 +156,7 @@ int sqlite3ExprDataType(const Expr *pExpr){
       }
     } /* End of switch(op) */
   } /* End of while(pExpr) */
-  return 0;
+  return 0x00;
 }
 
 /*
