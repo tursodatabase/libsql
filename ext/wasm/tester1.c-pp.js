@@ -1246,9 +1246,19 @@ self.sqlite3InitModule = sqlite3InitModule;
         rowMode: 'object',
         resultRows: list,
         columnNames: colNames,
+        _myState: 3 /* Accessible from the callback */,
         callback: function(row,stmt){
           ++counter;
-          T.assert((row.a%2 && row.a<6) || 'blob'===row.a);
+          T.assert(
+            3 === this._myState
+            /* Recall that "this" is the options object. */
+          ).assert(
+            this.columnNames[0]==='a' && this.columnNames[1]==='b'
+            /* options.columnNames is filled out before the first
+               Stmt.step(). */
+          ).assert(
+            (row.a%2 && row.a<6) || 'blob'===row.a
+          );
         }
       });
       T.assert(2 === colNames.length)
