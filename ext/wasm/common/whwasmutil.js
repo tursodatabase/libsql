@@ -759,13 +759,51 @@ self.WhWasmUtilInstaller = function(target){
   target.peekPtr = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), ptrIR );
 
   /**
-     A variant of poke() intended for setting
-     pointer-to-pointer values. Its differences from poke() are
-     that (1) it defaults to a value of 0, (2) it always writes
-     to the pointer-sized heap view, and (3) it returns `this`.
+     A variant of poke() intended for setting pointer-to-pointer
+     values. Its differences from poke() are that (1) it defaults to a
+     value of 0 and (2) it always writes to the pointer-sized heap
+     view.
   */
   target.pokePtr = (ptr, value=0)=>target.poke(ptr, value, ptrIR);
 
+  /**
+     Convenience form of peek() intended for fetching i8 values. If
+     passed a single non-array argument it returns the value of that
+     one pointer address. If passed multiple arguments, or a single
+     array of arguments, it returns an array of their values.
+  */
+  target.peek8 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i8' );
+  /**
+     Convience form of poke() intended for setting individual bytes.
+     Its difference from poke() is that it always writes to the
+     i8-sized heap view.
+  */
+  target.poke8 = (ptr, value)=>target.poke(ptr, value, 'i8');
+  /** i16 variant of peek8(). */
+  target.peek16 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i16' );
+  /** i16 variant of poke8(). */
+  target.poke16 = (ptr, value)=>target.poke(ptr, value, 'i16');
+  /** i32 variant of peek8(). */
+  target.peek32 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i32' );
+  /** i32 variant of poke8(). */
+  target.poke32 = (ptr, value)=>target.poke(ptr, value, 'i32');
+  /** i64 variant of peek8(). Will throw if this build is not
+      configured for BigInt support. */
+  target.peek64 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'i64' );
+  /** i64 variant of poke8(). Will throw if this build is not
+      configured for BigInt support. Note that this returns
+      a BigInt-type value, not a Number-type value. */
+  target.poke64 = (ptr, value)=>target.poke(ptr, value, 'i64');
+  /** f32 variant of peek8(). */
+  target.peekF32 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f32' );
+  /** f32 variant of poke8(). */
+  target.pokeF32 = (ptr, value)=>target.poke(ptr, value, 'f32');
+  /** f64 variant of peek8(). */
+  target.peekF64 = (...ptr)=>target.peek( (1===ptr.length ? ptr[0] : ptr), 'f64' );
+  /** f64 variant of poke8(). */
+  target.pokeF64 = (ptr, value)=>target.poke(ptr, value, 'f64');
+
+  
   /** Deprecated alias for getMemValue() */
   target.getMemValue = target.peek;
   /** Deprecated alias for peekPtr() */
@@ -1509,10 +1547,13 @@ self.WhWasmUtilInstaller = function(target){
      The constructor only saves the above state for later, and does
      not actually bind any functions. Its convertArg() method is
      called via xWrap() to perform any bindings.
+
+     If this is called like a function, instead of a constructor,
+     it behaves as if it were called like a constructor.
   */
   xArg.FuncPtrAdapter = function ctor(opt) {
     if(!(this instanceof xArg.FuncPtrAdapter)){
-      toss("FuncPtrAdapter can only be used as a constructor. Use 'new'.");
+      return new xArg.FuncPtrAdapter(opt);
     }
     this.signature = opt.signature;
     if(!opt.bindScope && (opt.contextKey instanceof Function)){

@@ -138,7 +138,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the range of supported argument types. */
     [ 
       "sqlite3_progress_handler", undefined, [
-        "sqlite3*", "int", new wasm.xWrap.FuncPtrAdapter({
+        "sqlite3*", "int", wasm.xWrap.FuncPtrAdapter({
           name: 'xProgressHandler',
           signature: 'i(p)',
           bindScope: 'context',
@@ -180,7 +180,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      "**", "**", "*", "*", "*"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
     ["sqlite3_trace_v2", "int", "sqlite3*", "int",
-     new wasm.xWrap.FuncPtrAdapter({
+     wasm.xWrap.FuncPtrAdapter({
        name: 'sqlite3_trace_v2::callback',
        signature: 'i(ippp)',
        contextKey: (argIndex, argv)=>'sqlite3@'+argv[0]

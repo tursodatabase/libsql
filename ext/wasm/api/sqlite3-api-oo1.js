@@ -442,9 +442,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }else if('string'===typeof opt.rowMode && opt.rowMode.length>1){
               /* "$X": fetch column named "X" (case-sensitive!). Prior
                  to 2022-12-14 ":X" and "@X" were also permitted, but
-                 that seems unnecessary and likely to cause
-                 confusion. $ is the clear usability winner because it
-                 doesn't require quoting in JS. */
+                 having so many options is unnecessary and likely to
+                 cause confusion. */
               if('$'===opt.rowMode[0]){
                 out.cbArg = function(stmt){
                   const rc = stmt.get(this.obj)[this.colName];
