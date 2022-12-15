@@ -1139,6 +1139,9 @@ int sqlite3_wasm_db_reset(sqlite3 *pDb){
 }
 
 /*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
 ** Uses the given database's VFS xRead to stream the db file's
 ** contents out to the given callback. The callback gets a single
 ** chunk of size n (its 2nd argument) on each call and must return 0
@@ -1187,6 +1190,9 @@ int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
 }
 
 /*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
 ** A proxy for sqlite3_serialize() which serializes the schema zSchema
 ** of pDb, placing the serialized output in pOut and nOut. nOut may be
 ** NULL. If zSchema is NULL then "main" is assumed. If pDb or pOut are
@@ -1544,7 +1550,7 @@ void sqlite3_wasm_test_stack_overflow(int recurse){
   if(recurse) sqlite3_wasm_test_stack_overflow(recurse);
 }
 
-/* For testing the 'string-free' whwasmutil.xWrap() conversion. */
+/* For testing the 'string:dealloc' whwasmutil.xWrap() conversion. */
 SQLITE_WASM_KEEP
 char * sqlite3_wasm_test_str_hello(int fail){
   char * s = fail ? 0 : (char *)sqlite3_malloc(6);
