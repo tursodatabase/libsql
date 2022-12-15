@@ -52,7 +52,9 @@ struct KVVfsFile {
   char *aJrnl;                    /* Journal content */
   int szPage;                     /* Last known page size */
   sqlite3_int64 szDb;             /* Database file size.  -1 means unknown */
+  char *aData;                    /* Buffer to hold page data */
 };
+#define SQLITE_KVOS_SZ 133073
 
 /*
 ** Methods for KVVfsFile
@@ -493,6 +495,7 @@ static int kvvfsClose(sqlite3_file *pProtoFile){
   SQLITE_KV_LOG(("xClose %s %s\n", pFile->zClass, 
              pFile->isJournal ? "journal" : "db"));
   sqlite3_free(pFile->aJrnl);
+  sqlite3_free(pFile->aData);
   return SQLITE_OK;
 }
 
@@ -541,7 +544,7 @@ static int kvvfsReadDb(
   unsigned int pgno;
   int got, n;
   char zKey[30];
-  char aData[133073];
+  char *aData = pFile->aData;
   assert( iOfst>=0 );
   assert( iAmt>=0 );
   SQLITE_KV_LOG(("xRead('%s-db',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
@@ -558,7 +561,8 @@ static int kvvfsReadDb(
     pgno = 1;
   }
   sqlite3_snprintf(sizeof(zKey), zKey, "%u", pgno);
-  got = sqlite3KvvfsMethods.xRead(pFile->zClass, zKey, aData, sizeof(aData)-1);
+  got = sqlite3KvvfsMethods.xRead(pFile->zClass, zKey,
+                                  aData, SQLITE_KVOS_SZ-1);
   if( got<0 ){
     n = 0;
   }else{
@@ -566,7 +570,7 @@ static int kvvfsReadDb(
     if( iOfst+iAmt<512 ){
       int k = iOfst+iAmt;
       aData[k*2] = 0;
-      n = kvvfsDecode(aData, &aData[2000], sizeof(aData)-2000);
+      n = kvvfsDecode(aData, &aData[2000], SQLITE_KVOS_SZ-2000);
       if( n>=iOfst+iAmt ){
         memcpy(zBuf, &aData[2000+iOfst], iAmt);
         n = iAmt;
@@ -625,7 +629,7 @@ static int kvvfsWriteDb(
   KVVfsFile *pFile = (KVVfsFile*)pProtoFile;
   unsigned int pgno;
   char zKey[30];
-  char aData[131073];
+  char *aData = pFile->aData;
   SQLITE_KV_LOG(("xWrite('%s-db',%d,%lld)\n", pFile->zClass, iAmt, iOfst));
   assert( iAmt>=512 && iAmt<=65536 );
   assert( (iAmt & (iAmt-1))==0 );
@@ -833,6 +837,10 @@ static int kvvfsOpen(
     pFile->zClass = "session";
   }else{
     pFile->zClass = "local";
+  }
+  pFile->aData = sqlite3_malloc64(SQLITE_KVOS_SZ);
+  if( pFile->aData==0 ){
+    return SQLITE_NOMEM;
   }
   pFile->aJrnl = 0;
   pFile->nJrnl = 0;

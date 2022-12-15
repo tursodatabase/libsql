@@ -279,7 +279,7 @@ static void mallocWithAlarm(int n, void **pp){
 ** The upper bound is slightly less than 2GiB:  0x7ffffeff == 2,147,483,391
 ** This provides a 256-byte safety margin for defense against 32-bit 
 ** signed integer overflow bugs when computing memory allocation sizes.
-** Parnoid applications might want to reduce the maximum allocation size
+** Paranoid applications might want to reduce the maximum allocation size
 ** further for an even larger safety margin.  0x3fffffff or 0x0fffffff
 ** or even smaller would be reasonable upper bounds on the size of a memory
 ** allocations for most applications.

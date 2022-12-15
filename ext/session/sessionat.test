@@ -243,6 +243,60 @@ eval [string map [list %WR% $trailing] {
     sqlite3changeset_apply db $cinv xConflict
     execsql { SELECT * FROM t7 }
   } {1 1 ccc 2 2 ccc 3 3 ccc}
+
+  #-----------------------------------------------------------------------
+  reset_test
+  do_execsql_test $tn.7.0 {
+    CREATE TABLE t8(a PRIMARY KEY, b, c);
+  }
+  do_execsql_test -db db2 $tn.7.1 {
+    CREATE TABLE t8(a PRIMARY KEY, b, c, d DEFAULT 'D', e DEFAULT 'E');
+  }
+
+  do_then_apply_sql {
+    INSERT INTO t8 VALUES(1, 2, 3);
+    INSERT INTO t8 VALUES(4, 5, 6);
+  }
+  do_execsql_test $tn.7.2.1 {
+    SELECT * FROM t8
+  } {1 2 3    4 5 6}
+  do_execsql_test -db db2 $tn.7.2.2 {
+    SELECT * FROM t8
+  } {1 2 3 D E   4 5 6 D E}
+
+  do_then_apply_sql {
+    UPDATE t8 SET c=45 WHERE a=4;
+  }
+  do_execsql_test $tn.7.3.1 {
+    SELECT * FROM t8
+  } {1 2 3    4 5 45}
+  do_execsql_test -db db2 $tn.7.3.2 {
+    SELECT * FROM t8
+  } {1 2 3 D E   4 5 45 D E}
+
+  #-----------------------------------------------------------------------
+  reset_test
+  do_execsql_test $tn.8.0 {
+    CREATE TABLE t9(a PRIMARY KEY, b, c, d, e, f, g, h);
+  }
+  do_execsql_test -db db2 $tn.8.1 {
+    CREATE TABLE t9(a PRIMARY KEY, b, c, d, e, f, g, h, i, j, k, l);
+  }
+  do_then_apply_sql {
+    INSERT INTO t9 VALUES(1, 2, 3, 4, 5, 6, 7, 8);
+  }
+  do_then_apply_sql {
+    UPDATE t9 SET h=450 WHERE a=1
+  }
+  do_execsql_test -db db2 $tn.8.2 {
+    SELECT * FROM t9
+  } {1 2 3 4 5 6 7 450 {} {} {} {}}
+  do_then_apply_sql {
+    UPDATE t9 SET h=NULL
+  }
+  do_execsql_test -db db2 $tn.8.2 {
+    SELECT * FROM t9
+  } {1 2 3 4 5 6 7 {} {} {} {} {}}
 }]
 }
 

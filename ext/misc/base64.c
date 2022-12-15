@@ -91,7 +91,8 @@ static const ubyte b64DigitValues[128] = {
 static const char b64Numerals[64+1]
 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-#define BX_DV_PROTO(c) ((((ubyte)(c))<0x80)? b64DigitValues[c] : 0x80)
+#define BX_DV_PROTO(c) \
+  ((((ubyte)(c))<0x80)? (ubyte)(b64DigitValues[(ubyte)(c)]) : 0x80)
 #define IS_BX_DIGIT(bdp) (((ubyte)(bdp))<0x80)
 #define IS_BX_WS(bdp) ((bdp)==WS)
 #define IS_BX_PAD(bdp) ((bdp)==PC)

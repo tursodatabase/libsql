@@ -39,6 +39,7 @@ fiddle.emcc-flags = \
   $(sqlite3.js.flags.--post-js) \
   $(emcc.exportedRuntimeMethods) \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
+  -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
   $(SQLITE_OPT) $(SHELL_OPT) \
   -DSQLITE_SHELL_FIDDLE
 # -D_POSIX_C_SOURCE is needed for strdup() with emcc

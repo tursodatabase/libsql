@@ -38,7 +38,7 @@ dist-name := $(dist-name-prefix)-TEMP
 # date. Our general policy is that we want the smallest binaries for
 # dist zip files, so use the oz build unless there is a compelling
 # reason not to.
-dist.build ?= oz
+dist.build ?= qoz
 
 dist-dir.top := $(dist-name)
 dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))
@@ -63,7 +63,7 @@ dist.common.extras := \
 # $(dist.build) will depend on clean, having any deps on
 # $(dist-archive) which themselves may be cleaned up by the clean
 # target will lead to grief in parallel builds (-j #). Thus
-# $(dist-target)'s deps must be trimmed to non-generated files or
+# dist's deps must be trimmed to non-generated files or
 # files which are _not_ cleaned up by the clean target.
 #
 # Note that we require $(bin.version-info) in order to figure out the
@@ -97,9 +97,17 @@ dist: \
 		ls -la $$arczip; \
 		set +e; \
 		unzip -lv $$arczip || echo "Missing unzip app? Not fatal."
+ifeq (,$(wasm.docs.found))
 snapshot: dist
-	@echo "Upload snapshot with:"; \
-	echo "rsync -ve ssh $(dist-name-prefix)*.zip $(wasm-testing.dest)/snapshots/."
+	@echo "To upload the snapshot build to the wasm docs server:"; \
+	echo "1) move $(dist-name-prefix)*.zip to the top of a wasm docs checkout."; \
+  echo "2) run 'make uv-sync'"
+else
+snapshot: dist
+	@echo "Moving snapshot to [$(wasm.docs.found)]..."; \
+	mv $(dist-name-prefix)*.zip $(wasm.docs.found)/.
+	@echo "Run 'make uv-sync' from $(wasm.docs.found) to upload it."
+endif
 # We need a separate `clean` rule to account for weirdness in
 # a sub-make, where we get a copy of the $(dist-name) dir
 # copied into the new $(dist-name) dir.

@@ -3031,11 +3031,11 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
   **     no-ops. These locks will not be released until the connection
   **     is closed.
   **
-  **   * Attempting to xSync() the database file causes an SQLITE_INTERNAL 
+  **   * Attempting to xSync() the database file causes an SQLITE_NOTICE 
   **     error.
   **
   ** As a result, unless an error (i.e. OOM or SQLITE_BUSY) occurs, the
-  ** checkpoint below fails with SQLITE_INTERNAL, and leaves the aFrame[]
+  ** checkpoint below fails with SQLITE_NOTICE, and leaves the aFrame[]
   ** array populated with a set of (frame -> page) mappings. Because the 
   ** WRITER, CHECKPOINT and READ0 locks are still held, it is safe to copy 
   ** data from the wal file into the database file according to the 
@@ -3045,7 +3045,7 @@ static void rbuSetupCheckpoint(sqlite3rbu *p, RbuState *pState){
     int rc2;
     p->eStage = RBU_STAGE_CAPTURE;
     rc2 = sqlite3_exec(p->dbMain, "PRAGMA main.wal_checkpoint=restart", 0, 0,0);
-    if( rc2!=SQLITE_INTERNAL ) p->rc = rc2;
+    if( rc2!=SQLITE_NOTICE ) p->rc = rc2;
   }
 
   if( p->rc==SQLITE_OK && p->nFrame>0 ){
@@ -3091,7 +3091,7 @@ static int rbuCaptureWalRead(sqlite3rbu *pRbu, i64 iOff, int iAmt){
 
   if( pRbu->mLock!=mReq ){
     pRbu->rc = SQLITE_BUSY;
-    return SQLITE_INTERNAL;
+    return SQLITE_NOTICE_RBU;
   }
 
   pRbu->pgsz = iAmt;
@@ -4478,7 +4478,7 @@ void sqlite3rbu_rename_handler(
 **     database file are recorded. xShmLock() calls to unlock the same
 **     locks are no-ops (so that once obtained, these locks are never
 **     relinquished). Finally, calls to xSync() on the target database
-**     file fail with SQLITE_INTERNAL errors.
+**     file fail with SQLITE_NOTICE errors.
 */
 
 static void rbuUnlockShm(rbu_file *p){
@@ -4757,7 +4757,7 @@ static int rbuVfsSync(sqlite3_file *pFile, int flags){
   rbu_file *p = (rbu_file *)pFile;
   if( p->pRbu && p->pRbu->eStage==RBU_STAGE_CAPTURE ){
     if( p->openFlags & SQLITE_OPEN_MAIN_DB ){
-      return SQLITE_INTERNAL;
+      return SQLITE_NOTICE_RBU;
     }
     return SQLITE_OK;
   }

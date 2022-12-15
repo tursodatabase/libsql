@@ -370,10 +370,35 @@ static int memdbLock(sqlite3_file *pFile, int eLock){
   int rc = SQLITE_OK;
   if( eLock==pThis->eLock ) return SQLITE_OK;
   memdbEnter(p);
+  assert( p->nWrLock==0 || p->nWrLock==1 );  /* No more than 1 write lock */
   if( eLock>SQLITE_LOCK_SHARED ){
+    assert( pThis->eLock>=SQLITE_LOCK_SHARED );
     if( p->mFlags & SQLITE_DESERIALIZE_READONLY ){
       rc = SQLITE_READONLY;
-    }else if( pThis->eLock<=SQLITE_LOCK_SHARED ){
+    }else if( eLock==SQLITE_LOCK_EXCLUSIVE ){
+      /* We never go for an EXCLUSIVE lock unless we already hold SHARED or
+      ** higher */
+      assert( pThis->eLock>=SQLITE_LOCK_SHARED );
+      testcase( pThis->eLock==SQLITE_LOCK_SHARED );
+
+      /* Because we are holding SHARED or more, there must be at least
+      ** one read lock */
+      assert( p->nRdLock>0 );
+
+      /* The only way that there can be an existing write lock is if we
+      ** currently hold it.  Otherwise, we would have never been able to
+      ** promote from NONE to SHARED. */
+      assert( p->nWrLock==0 || pThis->eLock>SQLITE_LOCK_SHARED );
+
+      if( p->nRdLock>1 ){
+        /* Cannot take EXCLUSIVE if somebody else is holding SHARED */
+        rc = SQLITE_BUSY;
+      }else{
+        p->nWrLock = 1;
+      }
+    }else if( ALWAYS(pThis->eLock<=SQLITE_LOCK_SHARED) ){
+      /* Upgrading to RESERVED or PENDING from SHARED. Fail if any other
+      ** client has a write-lock of any kind.  */
       if( p->nWrLock ){
         rc = SQLITE_BUSY;
       }else{

@@ -67,7 +67,7 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 ** block sorting is required.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
-  return pWInfo->nOBSat;
+  return pWInfo->nOBSat<0 ? 0 : pWInfo->nOBSat;
 }
 
 /*
@@ -812,6 +812,57 @@ static int termCanDriveIndex(
 
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+/*
+** Argument pIdx represents an automatic index that the current statement
+** will create and populate. Add an OP_Explain with text of the form:
+**
+**     CREATE AUTOMATIC INDEX ON <table>(<cols>) [WHERE <expr>]
+**
+** This is only required if sqlite3_stmt_scanstatus() is enabled, to
+** associate an SQLITE_SCANSTAT_NCYCLE and SQLITE_SCANSTAT_NLOOP
+** values with. In order to avoid breaking legacy code and test cases, 
+** the OP_Explain is not added if this is an EXPLAIN QUERY PLAN command.
+*/
+static void explainAutomaticIndex(
+  Parse *pParse,
+  Index *pIdx,                    /* Automatic index to explain */
+  int bPartial,                   /* True if pIdx is a partial index */
+  int *pAddrExplain               /* OUT: Address of OP_Explain */
+){
+  if( pParse->explain!=2 ){
+    Table *pTab = pIdx->pTable;
+    const char *zSep = "";
+    char *zText = 0;
+    int ii = 0;
+    sqlite3_str *pStr = sqlite3_str_new(pParse->db);
+    sqlite3_str_appendf(pStr,"CREATE AUTOMATIC INDEX ON %s(", pTab->zName);
+    assert( pIdx->nColumn>1 );
+    assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID );
+    for(ii=0; ii<(pIdx->nColumn-1); ii++){
+      const char *zName = 0;
+      int iCol = pIdx->aiColumn[ii];
+
+      zName = pTab->aCol[iCol].zCnName;
+      sqlite3_str_appendf(pStr, "%s%s", zSep, zName);
+      zSep = ", ";
+    }
+    zText = sqlite3_str_finish(pStr);
+    if( zText==0 ){
+      sqlite3OomFault(pParse->db);
+    }else{
+      *pAddrExplain = sqlite3VdbeExplain(
+          pParse, 0, "%s)%s", zText, (bPartial ? " WHERE <expr>" : "")
+      );
+      sqlite3_free(zText);
+    }
+  }
+}
+#else
+# define explainAutomaticIndex(a,b,c,d)
+#endif
+
 /*
 ** Generate code to construct the Index object for an automatic index
 ** and to set up the WhereLevel object pLevel so that the code generator
@@ -847,6 +898,9 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   SrcItem *pTabItem;          /* FROM clause term being indexed */
   int addrCounter = 0;        /* Address where integer counter is initialized */
   int regBase;                /* Array of registers where record is assembled */
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+  int addrExp = 0;            /* Address of OP_Explain */
+#endif
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -970,6 +1024,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   pIdx->azColl[n] = sqlite3StrBINARY;
 
   /* Create the automatic index */
+  explainAutomaticIndex(pParse, pIdx, pPartial!=0, &addrExp);
   assert( pLevel->iIdxCur>=0 );
   pLevel->iIdxCur = pParse->nTab++;
   sqlite3VdbeAddOp2(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1);
@@ -1005,6 +1060,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0,
                          regBase, pLoop->u.btree.nEq);
   }
+  sqlite3VdbeScanStatusCounters(v, addrExp, addrExp, sqlite3VdbeCurrentAddr(v));
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
@@ -1025,6 +1081,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
+  sqlite3VdbeScanStatusRange(v, addrExp, addrExp, -1);
 
 end_auto_index_create:
   sqlite3ExprDelete(pParse->db, pPartial);
@@ -3092,7 +3149,15 @@ static int whereLoopAddBtreeIndex(
     ** seek only. Then, if this is a non-covering index, add the cost of
     ** visiting the rows in the main table.  */
     assert( pSrc->pTab->szTabRow>0 );
-    rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
+    if( pProbe->idxType==SQLITE_IDXTYPE_IPK ){
+      /* The pProbe->szIdxRow is low for an IPK table since the interior
+      ** pages are small.  Thuse szIdxRow gives a good estimate of seek cost.
+      ** But the leaf pages are full-size, so pProbe->szIdxRow would badly
+      ** under-estimate the scanning cost. */
+      rCostIdx = pNew->nOut + 16;
+    }else{
+      rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
+    }
     pNew->rRun = sqlite3LogEstAdd(rLogSize, rCostIdx);
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK|WHERE_EXPRIDX))==0 ){
       pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
@@ -3472,7 +3537,7 @@ static int whereLoopAddBtree(
     sPk.aiRowLogEst = aiRowEstPk;
     sPk.onError = OE_Replace;
     sPk.pTable = pTab;
-    sPk.szIdxRow = pTab->szTabRow;
+    sPk.szIdxRow = 3;  /* TUNING: Interior rows of IPK table are very small */
     sPk.idxType = SQLITE_IDXTYPE_IPK;
     aiRowEstPk[0] = pTab->nRowLogEst;
     aiRowEstPk[1] = 0;
@@ -4803,37 +4868,56 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** order.
 */
 static LogEst whereSortingCost(
-  WhereInfo *pWInfo,
-  LogEst nRow,
-  int nOrderBy,
-  int nSorted
+  WhereInfo *pWInfo, /* Query planning context */
+  LogEst nRow,       /* Estimated number of rows to sort */
+  int nOrderBy,      /* Number of ORDER BY clause terms */
+  int nSorted        /* Number of initial ORDER BY terms naturally in order */
 ){
-  /* TUNING: Estimated cost of a full external sort, where N is 
+  /* Estimated cost of a full external sort, where N is 
   ** the number of rows to sort is:
   **
-  **   cost = (3.0 * N * log(N)).
+  **   cost = (K * N * log(N)).
   ** 
   ** Or, if the order-by clause has X terms but only the last Y 
   ** terms are out of order, then block-sorting will reduce the 
   ** sorting cost to:
   **
-  **   cost = (3.0 * N * log(N)) * (Y/X)
+  **   cost = (K * N * log(N)) * (Y/X)
   **
-  ** The (Y/X) term is implemented using stack variable rScale
-  ** below.
+  ** The constant K is at least 2.0 but will be larger if there are a
+  ** large number of columns to be sorted, as the sorting time is
+  ** proportional to the amount of content to be sorted.  The algorithm
+  ** does not currently distinguish between fat columns (BLOBs and TEXTs) 
+  ** and skinny columns (INTs).  It just uses the number of columns as 
+  ** an approximation for the row width.
+  **
+  ** And extra factor of 2.0 or 3.0 is added to the sorting cost if the sort
+  ** is built using OP_IdxInsert and OP_Sort rather than with OP_SorterInsert.
   */
-  LogEst rScale, rSortCost;
-  assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
-  rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
-  rSortCost = nRow + rScale + 16;
+  LogEst rSortCost, nCol;
+  assert( pWInfo->pSelect!=0 );
+  assert( pWInfo->pSelect->pEList!=0 );
+  /* TUNING: sorting cost proportional to the number of output columns: */
+  nCol = sqlite3LogEst((pWInfo->pSelect->pEList->nExpr+59)/30);
+  rSortCost = nRow + nCol;
+  if( nSorted>0 ){
+    /* Scale the result by (Y/X) */
+    rSortCost += sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
+  }
 
   /* Multiple by log(M) where M is the number of output rows.
   ** Use the LIMIT for M if it is smaller.  Or if this sort is for
   ** a DISTINCT operator, M will be the number of distinct output
   ** rows, so fudge it downwards a bit.
   */
-  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 && pWInfo->iLimit<nRow ){
-    nRow = pWInfo->iLimit;
+  if( (pWInfo->wctrlFlags & WHERE_USE_LIMIT)!=0 ){
+    rSortCost += 10;       /* TUNING: Extra 2.0x if using LIMIT */
+    if( nSorted!=0 ){
+      rSortCost += 6;      /* TUNING: Extra 1.5x if also using partial sort */
+    }
+    if( pWInfo->iLimit<nRow ){
+      nRow = pWInfo->iLimit;
+    }
   }else if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT) ){
     /* TUNING: In the sort for a DISTINCT operator, assume that the DISTINCT
     ** reduces the number of output rows by a factor of 2 */
@@ -4985,11 +5069,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                 pWInfo, nRowEst, nOrderBy, isOrdered
             );
           }
-          /* TUNING:  Add a small extra penalty (5) to sorting as an
+          /* TUNING:  Add a small extra penalty (3) to sorting as an
           ** extra encouragment to the query planner to select a plan
           ** where the rows emerge in the correct order without any sorting
           ** required. */
-          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 5;
+          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]) + 3;
 
           WHERETRACE(0x002,
               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
