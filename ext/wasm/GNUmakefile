@@ -461,10 +461,7 @@ emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
 emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.api)
 emcc.exportedRuntimeMethods := \
-    -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory
-    # FS ==> stdio/POSIX I/O proxies. Currently used explicitly only
-    # by the fiddle app, and it must never be exposed to client code
-    # via our APIs.
+    -sEXPORTED_RUNTIME_METHODS=wasmMemory
     # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
