@@ -1,5 +1,5 @@
-C Fix\san\sunsafe\suse\sof\ssqlite3_mprintf()\sin\ssqlite3_overload_function()\sidentified\sby\sforum\spost:\s<https://sqlite.org/forum/forumpost/95b338860d>.
-D 2022-12-15T11:31:11.002
+C Update\sa\stest\scase\sin\sscanstatus2.test\sto\saccount\sfor\srecent\splanner\senhancements.
+D 2022-12-15T11:39:12.701
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1458,7 +1458,7 @@ F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test 7dbcfd6adc6a8df6abc59f83d6da5a27e1bce0b2f6fa55147c8176d7c44e0450
-F test/scanstatus2.test 07e2d1b86a07cd8f6cbef9546c9d6b27af0de5e613b6f38f98666f9c729bd4c7
+F test/scanstatus2.test 719c87a0ac817a67899d3e859923c8bb297ac655617b2dcfb602eb25dd829d45
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10cfe3fae6f680d3ecc3b0afbbf628ce91e34e3757b19dd27c231f0daf44232a
-R 281016ba600cbe656a2c0b41808f6b69
+P 9fa2b94c2e0fd43c1a9c15a79fe1325afa1699f0685dcd039024a80185cc5658
+R 3206fac65ce2964fab31f9993a4a6fc8
 U dan
-Z 11bc9e3e2285b48f4461cd4a302d99e6
+Z 4ae9ab41e1b6fba565ca9008efdfe569
 # Remove this line to create a well-formed Fossil manifest.
