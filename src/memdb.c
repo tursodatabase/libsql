@@ -535,7 +535,7 @@ static int memdbOpen(
 
   memset(pFile, 0, sizeof(*pFile));
   szName = sqlite3Strlen30(zName);
-  if( szName>1 && zName[0]=='/' ){
+  if( szName>1 && (zName[0]=='/' || zName[0]=='\\') ){
     int i;
 #ifndef SQLITE_MUTEX_OMIT
     sqlite3_mutex *pVfsMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
