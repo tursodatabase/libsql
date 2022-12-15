@@ -13,7 +13,7 @@
   A Worker which manages asynchronous OPFS handles on behalf of a
   synchronous API which controls it via a combination of Worker
   messages, SharedArrayBuffer, and Atomics. It is the asynchronous
-  counterpart of the API defined in sqlite3-api-opfs.js.
+  counterpart of the API defined in sqlite3-vfs-opfs.js.
 
   Highly indebted to:
 
@@ -343,16 +343,6 @@ const installAsyncProxy = function(self){
   const affirmNotRO = function(opName,fh){
     if(fh.readOnly) toss(opName+"(): File is read-only: "+fh.filenameAbs);
   };
-  const affirmLocked = function(opName,fh){
-    //if(!fh.syncHandle) toss(opName+"(): File does not have a lock: "+fh.filenameAbs);
-    /**
-       Currently a no-op, as speedtest1 triggers xRead() without a
-       lock (that seems like a bug but it's currently uninvestigated).
-       This means, however, that some OPFS VFS routines may trigger
-       acquisition of a lock but never let it go until xUnlock() is
-       called (which it likely won't be if xLock() was not called).
-    */
-  };
 
   /**
      We track 2 different timers: the "metrics" timer records how much
@@ -393,7 +383,6 @@ const installAsyncProxy = function(self){
   */
   let flagAsyncShutdown = false;
 
-
   /**
      Asynchronous wrappers for sqlite3_vfs and sqlite3_io_methods
      methods, as well as helpers like mkdir(). Maintenance reminder:
@@ -427,11 +416,11 @@ const installAsyncProxy = function(self){
     },
     xAccess: async (filename)=>{
       mTimeStart('xAccess');
-      /* OPFS cannot support the full range of xAccess() queries sqlite3
-         calls for. We can essentially just tell if the file is
-         accessible, but if it is it's automatically writable (unless
-         it's locked, which we cannot(?) know without trying to open
-         it). OPFS does not have the notion of read-only.
+      /* OPFS cannot support the full range of xAccess() queries
+         sqlite3 calls for. We can essentially just tell if the file
+         is accessible, but if it is then it's automatically writable
+         (unless it's locked, which we cannot(?) know without trying
+         to open it). OPFS does not have the notion of read-only.
 
          The return semantics of this function differ from sqlite3's
          xAccess semantics because we are limited in what we can
@@ -519,7 +508,6 @@ const installAsyncProxy = function(self){
       let rc = 0;
       wTimeStart('xFileSize');
       try{
-        affirmLocked('xFileSize',fh);
         const sz = await (await getSyncHandle(fh,'xFileSize')).getSize();
         state.s11n.serialize(Number(sz));
       }catch(e){
@@ -615,7 +603,6 @@ const installAsyncProxy = function(self){
       let rc = 0, nRead;
       const fh = __openFiles[fid];
       try{
-        affirmLocked('xRead',fh);
         wTimeStart('xRead');
         nRead = (await getSyncHandle(fh,'xRead')).read(
           fh.sabView.subarray(0, n),
@@ -659,7 +646,6 @@ const installAsyncProxy = function(self){
       const fh = __openFiles[fid];
       wTimeStart('xTruncate');
       try{
-        affirmLocked('xTruncate',fh);
         affirmNotRO('xTruncate', fh);
         await (await getSyncHandle(fh,'xTruncate')).truncate(size);
       }catch(e){
@@ -696,7 +682,6 @@ const installAsyncProxy = function(self){
       const fh = __openFiles[fid];
       wTimeStart('xWrite');
       try{
-        affirmLocked('xWrite',fh);
         affirmNotRO('xWrite', fh);
         rc = (
           n === (await getSyncHandle(fh,'xWrite'))

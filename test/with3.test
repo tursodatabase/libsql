@@ -89,7 +89,7 @@ ifcapable analyze {
     SELECT * FROM cnt, y1 WHERE i=a
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--MATERIALIZE cnt
+    |--CO-ROUTINE cnt
     |  |--SETUP
     |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
@@ -103,7 +103,7 @@ ifcapable analyze {
     SELECT * FROM cnt, y1 WHERE i=a
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--MATERIALIZE cnt
+    |--CO-ROUTINE cnt
     |  |--SETUP
     |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
@@ -125,7 +125,7 @@ do_eqp_test 3.2.2 {
      WHERE c.id=w2.pk AND c.id=w1.pk;
 } {
   QUERY PLAN
-  |--MATERIALIZE c
+  |--CO-ROUTINE c
   |  |--SETUP
   |  |  |--SCAN CONSTANT ROW
   |  |  `--SCALAR SUBQUERY xxxxxx

@@ -3327,6 +3327,22 @@ static int sessionChangesetNextOne(
       if( p->op==SQLITE_INSERT ) p->op = SQLITE_DELETE;
       else if( p->op==SQLITE_DELETE ) p->op = SQLITE_INSERT;
     }
+
+    /* If this is an UPDATE that is part of a changeset, then check that
+    ** there are no fields in the old.* record that are not (a) PK fields,
+    ** or (b) also present in the new.* record. 
+    **
+    ** Such records are technically corrupt, but the rebaser was at one
+    ** point generating them. Under most circumstances this is benign, but
+    ** can cause spurious SQLITE_RANGE errors when applying the changeset. */
+    if( p->bPatchset==0 && p->op==SQLITE_UPDATE){
+      for(i=0; i<p->nCol; i++){
+        if( p->abPK[i]==0 && p->apValue[i+p->nCol]==0 ){
+          sqlite3ValueFree(p->apValue[i]);
+          p->apValue[i] = 0;
+        }
+      }
+    }
   }
 
   return SQLITE_ROW;
@@ -5523,7 +5539,7 @@ static void sessionAppendPartialUpdate(
         if( !pIter->abPK[i] && a1[0] ) bData = 1;
         memcpy(pOut, a1, n1);
         pOut += n1;
-      }else if( a2[0]!=0xFF ){
+      }else if( a2[0]!=0xFF && a1[0] ){
         bData = 1;
         memcpy(pOut, a2, n2);
         pOut += n2;

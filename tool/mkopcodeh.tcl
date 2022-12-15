@@ -86,6 +86,7 @@ while {![eof $in]} {
     set in3($name) 0
     set out2($name) 0
     set out3($name) 0
+    set ncycle($name) 0
     for {set i 3} {$i<[llength $line]-1} {incr i} {
        switch [string trim [lindex $line $i] ,] {
          same {
@@ -107,6 +108,7 @@ while {![eof $in]} {
          in3   {set in3($name) 1}
          out2  {set out2($name) 1}
          out3  {set out3($name) 1}
+         ncycle {set ncycle($name) 1}
        }
     }
     if {$group($name)} {
@@ -140,6 +142,7 @@ foreach name {OP_Noop OP_Explain OP_Abortable} {
   set in3($name) 0
   set out2($name) 0
   set out3($name) 0
+  set ncycle($name) 0
   set op($name) -1
   set order($nOp) $name
   incr nOp
@@ -285,6 +288,7 @@ for {set i 0} {$i<=$max} {incr i} {
     if {$in3($name)}   {incr x 8}
     if {$out2($name)}  {incr x 16}
     if {$out3($name)}  {incr x 32}
+    if {$ncycle($name)}  {incr x 64}
   }
   set bv($i) $x
 }
@@ -299,6 +303,7 @@ puts "#define OPFLG_IN2         0x04  /* in2:   P2 is an input */"
 puts "#define OPFLG_IN3         0x08  /* in3:   P3 is an input */"
 puts "#define OPFLG_OUT2        0x10  /* out2:  P2 is an output */"
 puts "#define OPFLG_OUT3        0x20  /* out3:  P3 is an output */"
+puts "#define OPFLG_NCYCLE      0x40  /* ncycle:Cycles count against P1 */"
 puts "#define OPFLG_INITIALIZER \173\\"
 for {set i 0} {$i<=$max} {incr i} {
   if {$i%8==0} {
