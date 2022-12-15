@@ -1,5 +1,5 @@
-C Internal\srefactoring\sof\show\ssqlite3.wasm.xWrap()\shandles\sJS-to-C\sfunction\spointer\sconversions,\sto\senable\ssimilar\sconversions\sto\sbe\sadded\smore\seasily.
-D 2022-12-15T02:28:55.691
+C Fix\san\sunsafe\suse\sof\ssqlite3_mprintf()\sin\ssqlite3_overload_function()\sidentified\sby\sforum\spost:\s<https://sqlite.org/forum/forumpost/95b338860d>.
+D 2022-12-15T11:31:11.002
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F src/insert.c 1b11a2e33ee52db93c02fddac67e39d00161d61b69fac2675b82f2aa68c1b61c
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 25663175950c5c4404b9377840b7b4c6fe5c53b415caf43634c62f442c02a9a7
-F src/main.c 1f75553163a3349a3918d1aae072bc8e908bbb58c949d5fec9b90bf49ff3b73e
+F src/main.c 5fba7c69ac63d728090d164930855d8f1dea37cce02858d77a9500ad20261a4b
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa278022afd6dd6e499d26f74a8359f3e9973e1680772059ce331b64e77ec582
-R e784d3c7094c47f7ba465262d6340c12
-U stephan
-Z 0c197c6d7ed7bd2414c2cff61c07cad7
+P 10cfe3fae6f680d3ecc3b0afbbf628ce91e34e3757b19dd27c231f0daf44232a
+R 281016ba600cbe656a2c0b41808f6b69
+U dan
+Z 11bc9e3e2285b48f4461cd4a302d99e6
 # Remove this line to create a well-formed Fossil manifest.
