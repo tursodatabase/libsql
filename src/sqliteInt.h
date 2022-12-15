@@ -2239,6 +2239,7 @@ struct CollSeq {
 #define SQLITE_AFF_NUMERIC  0x43  /* 'C' */
 #define SQLITE_AFF_INTEGER  0x44  /* 'D' */
 #define SQLITE_AFF_REAL     0x45  /* 'E' */
+#define SQLITE_AFF_FLEXNUM  0x46  /* 'F' */
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 

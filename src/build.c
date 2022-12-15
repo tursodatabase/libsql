@@ -2140,7 +2140,8 @@ static char *createTableStmt(sqlite3 *db, Table *p){
         /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NUMERIC */ " NUM",
         /* SQLITE_AFF_INTEGER */ " INT",
-        /* SQLITE_AFF_REAL    */ " REAL"
+        /* SQLITE_AFF_REAL    */ " REAL",
+        /* SQLITE_AFF_FLEXNUM */ " NUM",
     };
     int len;
     const char *zType;
@@ -2156,10 +2157,12 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     testcase( pCol->affinity==SQLITE_AFF_NUMERIC );
     testcase( pCol->affinity==SQLITE_AFF_INTEGER );
     testcase( pCol->affinity==SQLITE_AFF_REAL );
+    testcase( pCol->affinity==SQLITE_AFF_FLEXNUM );
     
     zType = azType[pCol->affinity - SQLITE_AFF_BLOB];
     len = sqlite3Strlen30(zType);
-    assert( pCol->affinity==SQLITE_AFF_BLOB 
+    assert( pCol->affinity==SQLITE_AFF_BLOB
+            || pCol->affinity==SQLITE_AFF_FLEXNUM
             || pCol->affinity==sqlite3AffinityType(zType, 0) );
     memcpy(&zStmt[k], zType, len);
     k += len;

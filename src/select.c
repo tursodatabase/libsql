@@ -2289,14 +2289,6 @@ int sqlite3ColumnsFromExprList(
 }
 
 /*
-** This bit, when added to the "aff" parameter of 
-** sqlite3ColumnTypeOfSubquery() means that result set
-** expressions of the form "CAST(expr AS NUMERIC)" should result in
-** NONE affinity rather than NUMERIC affinity.
-*/
-#define SQLITE_AFF_FLAG1  0x10
-
-/*
 ** pTab is a transient Table object that represents a subquery of some
 ** kind (maybe a parenthesized subquery in the FROM clause of a larger
 ** query, or a VIEW, or a CTE).  This routine computes type information
@@ -2306,17 +2298,12 @@ int sqlite3ColumnsFromExprList(
 **    *   The datatype name, as it might appear in a CREATE TABLE statement
 **    *   Which collating sequence to use for the column
 **    *   The affinity of the column
-**
-** The SQLITE_AFF_FLAG1 bit added to parameter aff means that a
-** result set column of the form "CAST(expr AS NUMERIC)" should use
-** NONE affinity rather than NUMERIC affinity.  See the
-** 2022-12-10 "reopen" of ticket https://sqlite.org/src/tktview/57c47526c3.
 */
 void sqlite3SubqueryColumnTypes(
   Parse *pParse,      /* Parsing contexts */
   Table *pTab,        /* Add column type information to this table */
   Select *pSelect,    /* SELECT used to determine types and collations */
-  char aff            /* Default affinity.  Maybe with SQLITE_AFF_FLAG1 too */
+  char aff            /* Default affinity. */
 ){
   sqlite3 *db = pParse->db;
   Column *pCol;
@@ -2328,6 +2315,7 @@ void sqlite3SubqueryColumnTypes(
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
   assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed ) return;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   a = pSelect->pEList->a;
@@ -2339,13 +2327,9 @@ void sqlite3SubqueryColumnTypes(
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity<=SQLITE_AFF_NONE ){
-      assert( (SQLITE_AFF_FLAG1 & SQLITE_AFF_MASK)==0 );
-      pCol->affinity = aff & SQLITE_AFF_MASK;
-    }
-    if( aff & SQLITE_AFF_FLAG1 ){
-      if( pCol->affinity==SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
-        pCol->affinity = SQLITE_AFF_NONE;
-      }
+      pCol->affinity = aff;
+    }else if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
+      pCol->affinity = SQLITE_AFF_FLEXNUM;
     }
     if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
       int m = 0;
@@ -2360,7 +2344,9 @@ void sqlite3SubqueryColumnTypes(
         pCol->affinity = SQLITE_AFF_BLOB;
       }
     }
-    if( pCol->affinity==SQLITE_AFF_NUMERIC ){
+    if( pCol->affinity==SQLITE_AFF_NUMERIC
+     || pCol->affinity==SQLITE_AFF_FLEXNUM
+    ){
       zType = "NUM";
     }else{
       zType = 0;
@@ -6254,8 +6240,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       /* A sub-query in the FROM clause of a SELECT */
       Select *pSel = pFrom->pSelect;
       if( pSel ){
-        sqlite3SubqueryColumnTypes(pParse, pTab, pSel,
-                                   SQLITE_AFF_NONE|SQLITE_AFF_FLAG1);
+        sqlite3SubqueryColumnTypes(pParse, pTab, pSel, SQLITE_AFF_NONE);
       }
     }
   }

@@ -371,6 +371,10 @@ static void applyNumericAffinity(Mem *pRec, int bTryForInt){
 **    always preferred, even if the affinity is REAL, because
 **    an integer representation is more space efficient on disk.
 **
+** SQLITE_AFF_FLEXNUM:
+**    If the value is text, then try to convert it into a number of
+**    some kind (integer or real) but do not make any other changes.
+**
 ** SQLITE_AFF_TEXT:
 **    Convert pRec to a text representation.
 **
@@ -385,11 +389,11 @@ static void applyAffinity(
 ){
   if( affinity>=SQLITE_AFF_NUMERIC ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
-             || affinity==SQLITE_AFF_NUMERIC );
+             || affinity==SQLITE_AFF_NUMERIC || affinity==SQLITE_AFF_FLEXNUM );
     if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
       if( (pRec->flags & MEM_Real)==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
-      }else{
+      }else if( affinity<=SQLITE_AFF_REAL ){
         sqlite3VdbeIntegerAffinity(pRec);
       }
     }

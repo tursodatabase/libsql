@@ -4250,7 +4250,7 @@ expr_code_doover:
         assert( pExpr->y.pTab!=0 );
         aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
         if( aff>SQLITE_AFF_BLOB ){
-          static const char zAff[] = "B\000C\000D\000E";
+          static const char zAff[] = "B\000C\000D\000E\000F";
           assert( SQLITE_AFF_BLOB=='A' );
           assert( SQLITE_AFF_TEXT=='B' );
           sqlite3VdbeAddOp4(v, OP_Affinity, iReg, 1, 0,
