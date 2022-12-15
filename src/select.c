@@ -2331,7 +2331,7 @@ void sqlite3SubqueryColumnTypes(
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     const char *zType;
-    i64 n, m;
+    i64 n;
     pTab->tabFlags |= (pCol->colFlags & COLFLAG_NOINSERT);
     p = a[i].pExpr;
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
@@ -2370,7 +2370,7 @@ void sqlite3SubqueryColumnTypes(
       }
     }
     if( zType ){
-      m = sqlite3Strlen30(zType);
+      i64 m = sqlite3Strlen30(zType);
       n = sqlite3Strlen30(pCol->zCnName);
       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
       if( pCol->zCnName ){

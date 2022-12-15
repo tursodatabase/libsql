@@ -535,7 +535,7 @@ static char *dynamicContinuePrompt(void){
     return continuePrompt;
   }else{
     if( dynPrompt.zScannerAwaits ){
-      int ncp = strlen(continuePrompt), ndp = strlen(dynPrompt.zScannerAwaits);
+      size_t ncp = strlen(continuePrompt), ndp = strlen(dynPrompt.zScannerAwaits);
       if( ndp > ncp-3 ) return continuePrompt;
       strcpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits);
       while( ndp<3 ) dynPrompt.dynamicPrompt[ndp++] = ' ';
@@ -10378,10 +10378,10 @@ static int do_meta_command(char *zLine, ShellState *p){
 	  if( SQLITE_ROW==sqlite3_step(pCheckStmt) ){
 	    double countIrreversible = sqlite3_column_double(pCheckStmt, 0);
 	    if( countIrreversible>0 ){
-	      int n = (int)(countIrreversible + 0.5);
+	      int sz = (int)(countIrreversible + 0.5);
 	      utf8_printf(stderr,
 		 "Digest includes %d invalidly encoded text field%s.\n",
-		 n, (n>1)? "s": "");
+		 sz, (sz>1)? "s": "");
 	    }
 	  }
 	  sqlite3_finalize(pCheckStmt);
