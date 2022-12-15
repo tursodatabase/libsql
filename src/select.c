@@ -1870,6 +1870,7 @@ static void generateSortTail(
 #else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
 # define columnType(A,B,C,D,E) columnTypeImpl(A,B)
 #endif
+#ifndef SQLITE_OMIT_DECLTYPE
 static const char *columnTypeImpl(
   NameContext *pNC, 
 #ifndef SQLITE_ENABLE_COLUMN_METADATA
@@ -2016,6 +2017,7 @@ static const char *columnTypeImpl(
 #endif
   return zType;
 }
+#endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 
 /*
 ** Generate code that will tell the VDBE the declaration types of columns
