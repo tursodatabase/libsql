@@ -138,7 +138,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the range of supported argument types. */
     [ 
       "sqlite3_progress_handler", undefined, [
-        "sqlite3*", "int", wasm.xWrap.FuncPtrAdapter({
+        "sqlite3*", "int", new wasm.xWrap.FuncPtrAdapter({
           name: 'xProgressHandler',
           signature: 'i(p)',
           bindScope: 'context',
@@ -180,7 +180,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      "**", "**", "*", "*", "*"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
     ["sqlite3_trace_v2", "int", "sqlite3*", "int",
-     wasm.xWrap.FuncPtrAdapter({
+     new wasm.xWrap.FuncPtrAdapter({
        name: 'sqlite3_trace_v2::callback',
        signature: 'i(ippp)',
        contextKey: (argIndex, argv)=>'sqlite3@'+argv[0]
@@ -469,14 +469,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       'sqlite3*','string','int','*',
       new wasm.xWrap.FuncPtrAdapter({
         /* int(*xCompare)(void*,int,const void*,int,const void*) */
-        name: 'xCompare',
+        name: 'sqlite3_create_collation_v2::xCompare',
         signature: 'i(pipip)',
         bindScope: 'context',
         contextKey: __collationContextKey
       }),
       new wasm.xWrap.FuncPtrAdapter({
         /* void(*xDestroy(void*) */
-        name: 'xDestroy',
+        name: 'sqlite3_create_collation_v2::xDestroy',
         signature: 'v(p)',
         bindScope: 'context',
         contextKey: __collationContextKey

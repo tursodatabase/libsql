@@ -1473,8 +1473,40 @@ self.WhWasmUtilInstaller = function(target){
   }
 
   /**
-     EXPERIMENTAL! DO NOT USE IN CLIENT CODE!
+     Internal-use-only base class for FuncPtrAdapter and potentially
+     additional stateful argument adapter classes.
 
+     Note that its main interface (convertArg()) is strictly
+     internal, not to be exposed to client code, as it may still
+     need re-shaping. Only the constructors of concrete subclasses
+     should be exposed to clients, and those in such a way that
+     does not hinder internal redesign of the convertArg()
+     interface.
+  */
+  const AbstractArgAdapter = class {
+    constructor(opt){
+      this.name = opt.name;
+    }
+    /**
+       Gets called via xWrap() to "convert" v to whatever type
+       this specific class supports.
+
+       argIndex is the argv index of _this_ argument in the
+       being-xWrap()'d call. argv is the current argument list
+       undergoing xWrap() argument conversion. argv entries to the
+       left of argIndex will have already undergone transformation and
+       those to the right will not have (they will have the values the
+       client-level code passed in, awaiting conversion). The RHS
+       indexes must never be relied upon for anything because their
+       types are indeterminate, whereas the LHS values will be
+       WASM-compatible values by the time this is called.
+    */
+    convertArg(v,argIndex,argv){
+      toss("AbstractArgAdapter must be subclassed.");
+    }
+  };
+
+  /**
      An attempt at adding function pointer conversion support to
      xWrap(). This type is recognized by xWrap() as a proxy for
      converting a JS function to a C-side function, either
@@ -1482,7 +1514,7 @@ self.WhWasmUtilInstaller = function(target){
      or semi-contextual, where it may keep track of a single binding
      for a given context and uninstall the binding if it's replaced.
 
-     Requires an options object with these properties:
+     The constructor requires an options object with these properties:
 
      - name (optional): string describing the function binding. This
        is solely for debugging and error-reporting purposes. If not
@@ -1514,17 +1546,18 @@ self.WhWasmUtilInstaller = function(target){
          context. This mode is the default if bindScope is _not_ set
          but a property named contextKey (described below) is.
 
-     - contextKey (function): is only used if bindScope is not set or
-       is 'context'. This function gets passed (argIndex,argv), where
-       argIndex is the index of _this_ function pointer in its
-       _wrapping_ function's arguments and argv is the _current_
-       still-being-xWrap()-processed args array. All arguments to the
-       left of argIndex will have been processed by xWrap() by the
-       time this is called. argv[argIndex] will be the value the user
-       passed in to the xWrap()'d function for the argument this
-       FuncPtrAdapter is mapped to. Arguments to the right of
-       argv[argIndex] will not yet have been converted before this is
-       called. The function must return a key which uniquely
+     - contextKey (function): is only used if bindScope is 'context'
+       or if bindScope is not set and this function is, in which case
+       'context' is assumed. This function gets passed
+       (argIndex,argv), where argIndex is the index of _this_ function
+       pointer in its _wrapping_ function's arguments and argv is the
+       _current_ still-being-xWrap()-processed args array. All
+       arguments to the left of argIndex will have been processed by
+       xWrap() by the time this is called. argv[argIndex] will be the
+       value the user passed in to the xWrap()'d function for the
+       argument this FuncPtrAdapter is mapped to. Arguments to the
+       right of argv[argIndex] will not yet have been converted before
+       this is called. The function must return a key which uniquely
        identifies this function mapping context for _this_
        FuncPtrAdapter instance (other instances are not considered),
        taking into account that C functions often take some sort of
@@ -1547,74 +1580,65 @@ self.WhWasmUtilInstaller = function(target){
      The constructor only saves the above state for later, and does
      not actually bind any functions. Its convertArg() method is
      called via xWrap() to perform any bindings.
-
-     If this is called like a function, instead of a constructor,
-     it behaves as if it were called like a constructor.
   */
-  xArg.FuncPtrAdapter = function ctor(opt) {
-    if(!(this instanceof xArg.FuncPtrAdapter)){
-      return new xArg.FuncPtrAdapter(opt);
+  xArg.FuncPtrAdapter = class FuncPtrAdapter extends AbstractArgAdapter {
+    constructor(opt) {
+      super(opt);
+      this.signature = opt.signature;
+      if(!opt.bindScope && (opt.contextKey instanceof Function)){
+        opt.bindScope = 'context';
+      }else if(FuncPtrAdapter.bindScopes.indexOf(opt.bindScope)<0){
+        toss("Invalid options.bindScope ("+opt.bindMod+") for FuncPtrAdapter. "+
+             "Expecting one of: ("+FuncPtrAdapter.bindScopes.join(', ')+')');
+      }
+      this.bindScope = opt.bindScope;
+      if(opt.contextKey) this.contextKey = opt.contextKey /*else inherit one*/;
+      this.isTransient = 'transient'===this.bindScope;
+      this.isContext = 'context'===this.bindScope;
+      if( ('singleton'===this.bindScope) ) this.singleton = [];
+      else this.singleton = undefined;
+      //console.warn("FuncPtrAdapter()",opt,this);
     }
-    this.signature = opt.signature;
-    if(!opt.bindScope && (opt.contextKey instanceof Function)){
-      opt.bindScope = 'context';
-    }else if(ctor.bindScopes.indexOf(opt.bindScope)<0){
-      toss("Invalid options.bindScope ("+opt.bindMod+") for FuncPtrAdapter. "+
-           "Expecting one of: ("+ctor.bindScopes.join(', ')+')');
-    }
-    this.bindScope = opt.bindScope;
-    this.name = opt.name || '';
-    if(opt.contextKey) this.contextKey = opt.contextKey /*else inherit one*/;
-    this.isTransient = 'transient'===this.bindScope;
-    this.isContext = 'context'===this.bindScope;
-    if( ('singleton'===this.bindScope) ) this.singleton = [];
-    else this.singleton = undefined;
-    //console.warn("FuncPtrAdapter()",opt,this);
-  };
-  xArg.FuncPtrAdapter.bindScopes = [
-    'transient', 'context', 'singleton'
-  ];
-  xArg.FuncPtrAdapter.prototype = {
+
+    static bindScopes = [
+      'transient', 'context', 'singleton'
+    ];
+
     /* Dummy impl. Overwritten per-instance as needed. */
-    contextKey: function(argIndex,argv){
+    contextKey(argIndex,argv){
       return this;
-    },
+    }
+
     /* Returns this objects mapping for the given context key, in the
        form of an an array, creating the mapping if needed. The key
        may be anything suitable for use in a Map. */
-    contextMap: function(key){
+    contextMap(key){
       const cm = (this.__cmap || (this.__cmap = new Map));
       let rc = cm.get(key);
       if(undefined===rc) cm.set(key, (rc = []));
       return rc;
-    },
+    }
+
     /**
        Gets called via xWrap() to "convert" v to a WASM-bound function
        pointer. If v is one of (a pointer, null, undefined) then
        (v||0) is returned and any earlier function installed by this
-       mapping _might_, depending on how it's bound, be
-       uninstalled. If v is not one of those types, it must be a
-       Function, for which it creates (if needed) a WASM function
-       binding and returns the WASM pointer to that binding. If this
-       instance is not in 'transient' mode, it will remember the
-       binding for at least the next call, to avoid recreating the
-       function binding unnecessarily.
+       mapping _might_, depending on how it's bound, be uninstalled.
+       If v is not one of those types, it must be a Function, for
+       which it creates (if needed) a WASM function binding and
+       returns the WASM pointer to that binding. If this instance is
+       not in 'transient' mode, it will remember the binding for at
+       least the next call, to avoid recreating the function binding
+       unnecessarily.
 
        If it's passed a pointer(ish) value for v, it does _not_
        perform any function binding, so this object's bindMode is
        irrelevant for such cases.
 
-       argIndex is the argv index of _this_ argument in the
-       being-xWrap()'d call. argv is the current argument list
-       undergoing xWrap() argument conversion. argv entries to the
-       left of argIndex will have already undergone transformation and
-       those to the right will not have (they will have the values the
-       client-level code passed in, awaiting conversion). The RHS
-       indexes must never be relied upon for anything because their
-       types are indeterminate, whereas the LHS values will be
-       WASM-compatible values by the time this is called.
+       See the parent class's convertArg() docs for details on what
+       exactly the 2nd and 3rd arguments are.
     */
-    convertArg: function(v,argIndex,argv){
+    convertArg(v,argIndex,argv){
       //console.warn("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
       let pair = this.singleton;
       if(!pair && this.isContext){
@@ -1650,7 +1674,7 @@ self.WhWasmUtilInstaller = function(target){
                             this.signature+".");
       }
     }/*convertArg()*/
-  }/*FuncPtrAdapter.prototype*/;
+  }/*FuncPtrAdapter*/;
 
   const __xArgAdapterCheck =
         (t)=>xArg.get(t) || toss("Argument adapter not found:",t);
@@ -1823,7 +1847,7 @@ self.WhWasmUtilInstaller = function(target){
     /*Verify the arg type conversions are valid...*/;
     if(undefined!==resultType && null!==resultType) __xResultAdapterCheck(resultType);
     for(const t of argTypes){
-      if(t instanceof xArg.FuncPtrAdapter) xArg.set(t, (...args)=>t.convertArg(...args));
+      if(t instanceof AbstractArgAdapter) xArg.set(t, (...args)=>t.convertArg(...args));
       else __xArgAdapterCheck(t);
     }
     const cxw = cache.xWrap;
@@ -1842,9 +1866,9 @@ self.WhWasmUtilInstaller = function(target){
           The public interface of argument adapters is that they take
           ONE argument and return a (possibly) converted result for
           it. The passing-on of arguments after the first is an
-          internal impl. detail for the sake of FuncPtrAdapter, and
+          internal impl. detail for the sake of AbstractArgAdapter, and
           not to be relied on or documented for other cases. The fact
-          that this is how FuncPtrAdapter.convertArgs() gets its 2nd+
+          that this is how AbstractArgAdapter.convertArgs() gets its 2nd+
           arguments, and how FuncPtrAdapter.contextKey() gets its
           args, is also an implementation detail and subject to
           change. i.e. the public interface of 1 argument is stable.
