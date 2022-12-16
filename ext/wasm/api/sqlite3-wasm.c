@@ -410,10 +410,43 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
   } _DefGroup;
 
-  /* TODO? Authorizer... */
   DefGroup(authorizer){
     DefInt(SQLITE_DENY);
     DefInt(SQLITE_IGNORE);
+    DefInt(SQLITE_CREATE_INDEX);
+    DefInt(SQLITE_CREATE_TABLE);
+    DefInt(SQLITE_CREATE_TEMP_INDEX);
+    DefInt(SQLITE_CREATE_TEMP_TABLE);
+    DefInt(SQLITE_CREATE_TEMP_TRIGGER);
+    DefInt(SQLITE_CREATE_TEMP_VIEW);
+    DefInt(SQLITE_CREATE_TRIGGER);
+    DefInt(SQLITE_CREATE_VIEW);
+    DefInt(SQLITE_DELETE);
+    DefInt(SQLITE_DROP_INDEX);
+    DefInt(SQLITE_DROP_TABLE);
+    DefInt(SQLITE_DROP_TEMP_INDEX);
+    DefInt(SQLITE_DROP_TEMP_TABLE);
+    DefInt(SQLITE_DROP_TEMP_TRIGGER);
+    DefInt(SQLITE_DROP_TEMP_VIEW);
+    DefInt(SQLITE_DROP_TRIGGER);
+    DefInt(SQLITE_DROP_VIEW);
+    DefInt(SQLITE_INSERT);
+    DefInt(SQLITE_PRAGMA);
+    DefInt(SQLITE_READ);
+    DefInt(SQLITE_SELECT);
+    DefInt(SQLITE_TRANSACTION);
+    DefInt(SQLITE_UPDATE);
+    DefInt(SQLITE_ATTACH);
+    DefInt(SQLITE_DETACH);
+    DefInt(SQLITE_ALTER_TABLE);
+    DefInt(SQLITE_REINDEX);
+    DefInt(SQLITE_ANALYZE);
+    DefInt(SQLITE_CREATE_VTABLE);
+    DefInt(SQLITE_DROP_VTABLE);
+    DefInt(SQLITE_FUNCTION);
+    DefInt(SQLITE_SAVEPOINT);
+    //DefInt(SQLITE_COPY) /* No longer used */;
+    DefInt(SQLITE_RECURSIVE);
   } _DefGroup;
 
   DefGroup(blobFinalizers) {

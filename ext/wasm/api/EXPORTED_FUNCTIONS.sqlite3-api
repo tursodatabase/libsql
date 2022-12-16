@@ -92,6 +92,7 @@ _sqlite3_result_text
 _sqlite3_result_zeroblob
 _sqlite3_result_zeroblob64
 _sqlite3_serialize
+_sqlite3_set_authorizer
 _sqlite3_set_auxdata
 _sqlite3_set_last_insert_rowid
 _sqlite3_shutdown

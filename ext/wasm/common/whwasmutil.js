@@ -1580,6 +1580,11 @@ self.WhWasmUtilInstaller = function(target){
      The constructor only saves the above state for later, and does
      not actually bind any functions. Its convertArg() method is
      called via xWrap() to perform any bindings.
+
+     Shortcomings: function pointers which include C-string arguments
+     may still need a level of hand-written wrappers around them,
+     depending on how they're used, in order to provide the client
+     with JS strings.
   */
   xArg.FuncPtrAdapter = class FuncPtrAdapter extends AbstractArgAdapter {
     constructor(opt) {

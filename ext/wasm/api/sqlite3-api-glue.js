@@ -162,6 +162,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
     ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
     ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
+    /* sqlite3_set_authorizer() requires a hand-written binding for
+       string conversions, so is defined elsewhere. */
     ["sqlite3_set_auxdata", undefined, "sqlite3_context*", "int", "*", "*"/* => v(*) */],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
@@ -818,6 +820,37 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }/*sqlite3_prepare_v2/v3()*/;
 
+  {/* sqlite3_set_authorizer() */
+    const __ssa = wasm.xWrap("sqlite3_set_authorizer", 'int', [
+      "sqlite3*",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: "sqlite3_set_authorizer::xAuth",
+        signature: "i(pi"+"ssss)",
+        contextKey: (argIndex, argv)=>argv[0/*(sqlite3*)*/]
+      }),
+      "*"
+    ]);
+    capi.sqlite3_set_authorizer = function(pDb, xAuth, pUserData){
+      if(3!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_set_authorizer', 3);
+      if(xAuth instanceof Function){
+        const xProxy = xAuth;
+        /* Create a proxy which will receive the C-strings from WASM
+           and convert them to JS strings for the client-supplied
+           function. */
+        xAuth = function(pV, iCode, s0, s1, s2, s3){
+          try{
+            s0 = s0 && wasm.cstrToJs(s0); s1 = s1 && wasm.cstrToJs(s1);
+            s2 = s2 && wasm.cstrToJs(s2); s3 = s3 && wasm.cstrToJs(s3);
+            return xProxy(pV, iCode, s0, s1, s2, s3) || 0;
+          }catch(e){
+            return util.sqlite3_wasm_db_error(pDb, e);
+          }
+        };
+      }
+      return __ssa(pDb, xAuth, pUserData);
+    };
+  }/* sqlite3_set_authorizer() */
+
   {/* Import C-level constants and structs... */
     const cJson = wasm.xCall('sqlite3_wasm_enum_json');
     if(!cJson){
@@ -885,9 +918,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.sqlite3_index_info[k] = capi[k];
         delete capi[k];
       }
-      capi.sqlite3_vtab_config =
-        (pDb, op, arg=0)=>wasm.exports.sqlite3_wasm_vtab_config(
-          wasm.xWrap.argAdapter('sqlite3*')(pDb), op, arg);
+      capi.sqlite3_vtab_config = wasm.xWrap(
+        'sqlite3_wasm_vtab_config','int',[
+          'sqlite3*', 'int', 'int']
+      );
     }/* end vtab-related setup */
   }/*end C constant and struct imports*/
 
