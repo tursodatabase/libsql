@@ -1389,7 +1389,22 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(n === db.selectValue('select count(*) from t'))
           .assert(authCount>0);
         authCount = 0;
-        rc = ssa(db, null, 0);
+        rc = ssa(db, function(pV, iCode, s0, s1, s2, s3){
+          ++authCount;
+          throw new Error("Testing catching of authorizer.");
+        }, 0);
+        T.assert(0===rc);
+        authCount = 0;
+        err = undefined;
+        try{ db.exec("select 1 from t") }
+        catch(e){err = e}
+        T.assert(err instanceof Error)
+          .assert(err.message.indexOf('not authorized')>0)
+        /* Note that the thrown message is trumped/overwritten
+           by the authorizer process. */
+          .assert(1===authCount);
+        rc = ssa(db, 0, 0);
+        authCount = 0;
         T.assert(0===rc);
         T.assert(n === db.selectValue('select count(*) from t'))
           .assert(0===authCount);
