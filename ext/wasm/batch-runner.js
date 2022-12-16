@@ -227,20 +227,20 @@
             const pSqlEnd = pSqlBegin + sqlByteLen;
             t = performance.now();
             wasm.heap8().set(sql, pSql);
-            wasm.setMemValue(pSql + sqlByteLen, 0);
+            wasm.poke(pSql + sqlByteLen, 0);
             metrics.strcpy = performance.now() - t;
             let breaker = 0;
-            while(pSql && wasm.getMemValue(pSql,'i8')){
-              wasm.setPtrValue(ppStmt, 0);
-              wasm.setPtrValue(pzTail, 0);
+            while(pSql && wasm.peek(pSql,'i8')){
+              wasm.pokePtr(ppStmt, 0);
+              wasm.pokePtr(pzTail, 0);
               t = performance.now();
               let rc = capi.sqlite3_prepare_v3(
                 db.handle, pSql, sqlByteLen, 0, ppStmt, pzTail
               );
               metrics.prepTotal += performance.now() - t;
               checkSqliteRc(db.handle, rc);
-              pStmt = wasm.getPtrValue(ppStmt);
-              pSql = wasm.getPtrValue(pzTail);
+              pStmt = wasm.peekPtr(ppStmt);
+              pSql = wasm.peekPtr(pzTail);
               sqlByteLen = pSqlEnd - pSql;
               if(!pStmt) continue/*empty statement*/;
               ++metrics.stmtCount;
@@ -495,7 +495,7 @@
           const oFlags = capi.SQLITE_OPEN_CREATE | capi.SQLITE_OPEN_READWRITE;
           const ppDb = wasm.scopedAllocPtr();
           const rc = capi.sqlite3_open_v2(d.filename, ppDb, oFlags, null);
-          pDb = wasm.getPtrValue(ppDb)
+          pDb = wasm.peekPtr(ppDb)
           if(rc) toss("sqlite3_open_v2() failed with code",rc);
           capi.sqlite3_exec(pDb, "PRAGMA cache_size="+cacheSize, 0, 0, 0);
           this.logHtml(dbId,"cache_size =",cacheSize);

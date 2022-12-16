@@ -262,15 +262,15 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   pOp->zComment = 0;
 #endif
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
+  pOp->nExec = 0;
+  pOp->nCycle = 0;
+#endif
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
     test_addop_breakpoint(i, &p->aOp[i]);
   }
-#endif
-#ifdef VDBE_PROFILE
-  pOp->cycles = 0;
-  pOp->cnt = 0;
 #endif
 #ifdef SQLITE_VDBE_COVERAGE
   pOp->iSrcLine = 0;
@@ -439,8 +439,9 @@ void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
 ** If the bPush flag is true, then make this opcode the parent for
 ** subsequent Explains until sqlite3VdbeExplainPop() is called.
 */
-void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
-#ifndef SQLITE_DEBUG
+int sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
+  int addr = 0;
+#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
   /* Always include the OP_Explain opcodes if SQLITE_DEBUG is defined.
   ** But omit them (for performance) during production builds */
   if( pParse->explain==2 )
@@ -455,13 +456,15 @@ void sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
     va_end(ap);
     v = pParse->pVdbe;
     iThis = v->nOp;
-    sqlite3VdbeAddOp4(v, OP_Explain, iThis, pParse->addrExplain, 0,
+    addr = sqlite3VdbeAddOp4(v, OP_Explain, iThis, pParse->addrExplain, 0,
                       zMsg, P4_DYNAMIC);
     sqlite3ExplainBreakpoint(bPush?"PUSH":"", sqlite3VdbeGetLastOp(v)->p4.z);
     if( bPush){
       pParse->addrExplain = iThis;
     }
+    sqlite3VdbeScanStatus(v, iThis, 0, 0, 0, 0);
   }
+  return addr;
 }
 
 /*
@@ -1119,12 +1122,69 @@ void sqlite3VdbeScanStatus(
   aNew = (ScanStatus*)sqlite3DbRealloc(p->db, p->aScan, nByte);
   if( aNew ){
     ScanStatus *pNew = &aNew[p->nScan++];
+    memset(pNew, 0, sizeof(ScanStatus));
     pNew->addrExplain = addrExplain;
     pNew->addrLoop = addrLoop;
     pNew->addrVisit = addrVisit;
     pNew->nEst = nEst;
     pNew->zName = sqlite3DbStrDup(p->db, zName);
     p->aScan = aNew;
+  }
+}
+
+/*
+** Add the range of instructions from addrStart to addrEnd (inclusive) to
+** the set of those corresponding to the sqlite3_stmt_scanstatus() counters
+** associated with the OP_Explain instruction at addrExplain. The
+** sum of the sqlite3Hwtime() values for each of these instructions 
+** will be returned for SQLITE_SCANSTAT_NCYCLE requests.
+*/
+void sqlite3VdbeScanStatusRange(
+  Vdbe *p, 
+  int addrExplain, 
+  int addrStart, 
+  int addrEnd
+){
+  ScanStatus *pScan = 0;
+  int ii;
+  for(ii=p->nScan-1; ii>=0; ii--){
+    pScan = &p->aScan[ii];
+    if( pScan->addrExplain==addrExplain ) break;
+    pScan = 0;
+  }
+  if( pScan ){
+    if( addrEnd<0 ) addrEnd = sqlite3VdbeCurrentAddr(p)-1;
+    for(ii=0; ii<ArraySize(pScan->aAddrRange); ii+=2){
+      if( pScan->aAddrRange[ii]==0 ){
+        pScan->aAddrRange[ii] = addrStart;
+        pScan->aAddrRange[ii+1] = addrEnd;
+        break;
+      }
+    }
+  }
+}
+
+/*
+** Set the addresses for the SQLITE_SCANSTAT_NLOOP and SQLITE_SCANSTAT_NROW
+** counters for the query element associated with the OP_Explain at
+** addrExplain.
+*/
+void sqlite3VdbeScanStatusCounters(
+  Vdbe *p, 
+  int addrExplain, 
+  int addrLoop, 
+  int addrVisit
+){
+  ScanStatus *pScan = 0;
+  int ii;
+  for(ii=p->nScan-1; ii>=0; ii--){
+    pScan = &p->aScan[ii];
+    if( pScan->addrExplain==addrExplain ) break;
+    pScan = 0;
+  }
+  if( pScan ){
+    pScan->addrLoop = addrLoop;
+    pScan->addrVisit = addrVisit;
   }
 }
 #endif
@@ -2424,7 +2484,7 @@ static void *allocSpace(
 ** running it.
 */
 void sqlite3VdbeRewind(Vdbe *p){
-#if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
+#if defined(SQLITE_DEBUG)
   int i;
 #endif
   assert( p!=0 );
@@ -2453,8 +2513,8 @@ void sqlite3VdbeRewind(Vdbe *p){
   p->nFkConstraint = 0;
 #ifdef VDBE_PROFILE
   for(i=0; i<p->nOp; i++){
-    p->aOp[i].cnt = 0;
-    p->aOp[i].cycles = 0;
+    p->aOp[i].nExec = 0;
+    p->aOp[i].nCycle = 0;
   }
 #endif
 }
@@ -2563,9 +2623,6 @@ void sqlite3VdbeMakeReady(
   p->aVar = allocSpace(&x, 0, nVar*sizeof(Mem));
   p->apArg = allocSpace(&x, 0, nArg*sizeof(Mem*));
   p->apCsr = allocSpace(&x, 0, nCursor*sizeof(VdbeCursor*));
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  p->anExec = allocSpace(&x, 0, p->nOp*sizeof(i64));
-#endif
   if( x.nNeeded ){
     x.pSpace = p->pFree = sqlite3DbMallocRawNN(db, x.nNeeded);
     x.nFree = x.nNeeded;
@@ -2574,9 +2631,6 @@ void sqlite3VdbeMakeReady(
       p->aVar = allocSpace(&x, p->aVar, nVar*sizeof(Mem));
       p->apArg = allocSpace(&x, p->apArg, nArg*sizeof(Mem*));
       p->apCsr = allocSpace(&x, p->apCsr, nCursor*sizeof(VdbeCursor*));
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-      p->anExec = allocSpace(&x, p->anExec, p->nOp*sizeof(i64));
-#endif
     }
   }
 
@@ -2591,9 +2645,6 @@ void sqlite3VdbeMakeReady(
     p->nMem = nMem;
     initMemArray(p->aMem, nMem, db, MEM_Undefined);
     memset(p->apCsr, 0, nCursor*sizeof(VdbeCursor*));
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-    memset(p->anExec, 0, p->nOp*sizeof(i64));
-#endif
   }
   sqlite3VdbeRewind(p);
 }
@@ -2651,9 +2702,6 @@ static void closeCursorsInFrame(Vdbe *p){
 int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   Vdbe *v = pFrame->v;
   closeCursorsInFrame(v);
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  v->anExec = pFrame->anExec;
-#endif
   v->aOp = pFrame->aOp;
   v->nOp = pFrame->nOp;
   v->aMem = pFrame->aMem;
@@ -3485,10 +3533,12 @@ int sqlite3VdbeReset(Vdbe *p){
       }
       for(i=0; i<p->nOp; i++){
         char zHdr[100];
+        i64 cnt = p->aOp[i].nExec;
+        i64 cycles = p->aOp[i].nCycle;
         sqlite3_snprintf(sizeof(zHdr), zHdr, "%6u %12llu %8llu ",
-           p->aOp[i].cnt,
-           p->aOp[i].cycles,
-           p->aOp[i].cnt>0 ? p->aOp[i].cycles/p->aOp[i].cnt : 0
+           cnt,
+           cycles,
+           cnt>0 ? cycles/cnt : 0
         );
         fprintf(out, "%s", zHdr);
         sqlite3VdbePrintOp(out, i, &p->aOp[i]);

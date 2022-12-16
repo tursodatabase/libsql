@@ -94,7 +94,7 @@ do_eqp_test 1.7.1 {
   SELECT * FROM t3 JOIN (SELECT 1)
 } {
   QUERY PLAN
-  |--MATERIALIZE (subquery-xxxxxx)
+  |--CO-ROUTINE (subquery-xxxxxx)
   |  `--SCAN CONSTANT ROW
   |--SCAN (subquery-xxxxxx)
   `--SCAN t3
@@ -103,7 +103,7 @@ do_eqp_test 1.7.2 {
   SELECT * FROM t3 JOIN (SELECT 1) AS v1
 } {
   QUERY PLAN
-  |--MATERIALIZE v1
+  |--CO-ROUTINE v1
   |  `--SCAN CONSTANT ROW
   |--SCAN v1
   `--SCAN t3
@@ -112,7 +112,7 @@ do_eqp_test 1.7.3 {
   SELECT * FROM t3 AS xx JOIN (SELECT 1) AS yy
 } {
   QUERY PLAN
-  |--MATERIALIZE yy
+  |--CO-ROUTINE yy
   |  `--SCAN CONSTANT ROW
   |--SCAN yy
   `--SCAN xx
@@ -123,7 +123,7 @@ do_eqp_test 1.8 {
   SELECT * FROM t3 JOIN (SELECT 1 UNION SELECT 2)
 } {
   QUERY PLAN
-  |--MATERIALIZE (subquery-xxxxxx)
+  |--CO-ROUTINE (subquery-xxxxxx)
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
   |     |  `--SCAN CONSTANT ROW
@@ -136,7 +136,7 @@ do_eqp_test 1.9 {
   SELECT * FROM t3 JOIN (SELECT 1 EXCEPT SELECT a FROM t3 LIMIT 17) AS abc
 } {
   QUERY PLAN
-  |--MATERIALIZE abc
+  |--CO-ROUTINE abc
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
   |     |  `--SCAN CONSTANT ROW
@@ -149,7 +149,7 @@ do_eqp_test 1.10 {
   SELECT * FROM t3 JOIN (SELECT 1 INTERSECT SELECT a FROM t3 LIMIT 17) AS abc
 } {
   QUERY PLAN
-  |--MATERIALIZE abc
+  |--CO-ROUTINE abc
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
   |     |  `--SCAN CONSTANT ROW
@@ -163,7 +163,7 @@ do_eqp_test 1.11 {
   SELECT * FROM t3 JOIN (SELECT 1 UNION ALL SELECT a FROM t3 LIMIT 17) abc
 } {
   QUERY PLAN
-  |--MATERIALIZE abc
+  |--CO-ROUTINE abc
   |  `--COMPOUND QUERY
   |     |--LEFT-MOST SUBQUERY
   |     |  `--SCAN CONSTANT ROW
@@ -295,7 +295,7 @@ det 3.2.2 {
   ORDER BY x2.y LIMIT 5
 } {
   QUERY PLAN
-  |--MATERIALIZE x1
+  |--CO-ROUTINE x1
   |  |--SCAN t1
   |  `--USE TEMP B-TREE FOR ORDER BY
   |--MATERIALIZE x2
@@ -834,7 +834,7 @@ do_eqp_test 9.1 {
   ORDER BY 1;
 } {
   QUERY PLAN
-  |--MATERIALIZE thread
+  |--CO-ROUTINE thread
   |  |--SCAN x USING INDEX forumthread
   |  |--USING ROWID SEARCH ON TABLE private FOR IN-OPERATOR
   |  |--CORRELATED SCALAR SUBQUERY xxxxxx
