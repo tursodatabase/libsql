@@ -40,9 +40,9 @@
     <script src="jswasm/speedtest1.js"></script>
     <script>(function(){
     /**
-       If this environment contains OPFS, this function initializes it and
-       returns the name of the dir on which OPFS is mounted, else it returns
-       an empty string.
+       If this environment contains WASMFS with OPFS, this function
+       initializes it and returns the name of the dir on which OPFS is
+       mounted, else it returns an empty string.
     */
     const wasmfsDir = function f(wasmUtil){
         if(undefined !== f._) return f._;

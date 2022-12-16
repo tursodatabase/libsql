@@ -87,7 +87,7 @@ do_eqp_test 131 {
          (SELECT x FROM c LIMIT 5) AS c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE c1
+  |--CO-ROUTINE c1
   |  |--CO-ROUTINE c
   |  |  `--SCAN 2 CONSTANT ROWS
   |  `--SCAN c
@@ -123,7 +123,7 @@ do_eqp_test 141 {
          (SELECT x FROM c LIMIT 7) AS c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE c1
+  |--CO-ROUTINE c1
   |  |--MATERIALIZE c
   |  |  `--SCAN 2 CONSTANT ROWS
   |  `--SCAN c
@@ -151,7 +151,7 @@ do_eqp_test 151 {
          (SELECT x FROM c LIMIT 7) AS c3;
 } {
   QUERY PLAN
-  |--MATERIALIZE c1
+  |--CO-ROUTINE c1
   |  |--MATERIALIZE c
   |  |  `--SCAN 2 CONSTANT ROWS
   |  `--SCAN c
@@ -228,7 +228,7 @@ do_eqp_test 211 {
   SELECT y FROM t2 ORDER BY y;
 } {
   QUERY PLAN
-  |--MATERIALIZE c1
+  |--CO-ROUTINE c1
   |  |--CO-ROUTINE c
   |  |  `--SCAN 3 CONSTANT ROWS
   |  `--SCAN c

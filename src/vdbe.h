@@ -67,13 +67,13 @@ struct VdbeOp {
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   char *zComment;          /* Comment to improve readability */
 #endif
-#ifdef VDBE_PROFILE
-  u32 cnt;                 /* Number of times this instruction was executed */
-  u64 cycles;              /* Total time spent executing this instruction */
-#endif
 #ifdef SQLITE_VDBE_COVERAGE
   u32 iSrcLine;            /* Source-code line that generated this opcode
                            ** with flags in the upper 8 bits */
+#endif
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
+  u64 nExec;
+  u64 nCycle;
 #endif
 };
 typedef struct VdbeOp VdbeOp;
@@ -205,14 +205,20 @@ void sqlite3VdbeEndCoroutine(Vdbe*,int);
 #endif
 VdbeOp *sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp,int iLineno);
 #ifndef SQLITE_OMIT_EXPLAIN
-  void sqlite3VdbeExplain(Parse*,u8,const char*,...);
+  int sqlite3VdbeExplain(Parse*,u8,const char*,...);
   void sqlite3VdbeExplainPop(Parse*);
   int sqlite3VdbeExplainParent(Parse*);
 # define ExplainQueryPlan(P)        sqlite3VdbeExplain P
+# ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+#  define ExplainQueryPlan2(V,P)     (V = sqlite3VdbeExplain P)
+# else
+#  define ExplainQueryPlan2(V,P)     ExplainQueryPlan(P)
+# endif
 # define ExplainQueryPlanPop(P)     sqlite3VdbeExplainPop(P)
 # define ExplainQueryPlanParent(P)  sqlite3VdbeExplainParent(P)
 #else
 # define ExplainQueryPlan(P)
+# define ExplainQueryPlan2(V,P)
 # define ExplainQueryPlanPop(P)
 # define ExplainQueryPlanParent(P) 0
 # define sqlite3ExplainBreakpoint(A,B) /*no-op*/
@@ -385,8 +391,12 @@ int sqlite3VdbeBytecodeVtabInit(sqlite3*);
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
 void sqlite3VdbeScanStatus(Vdbe*, int, int, int, LogEst, const char*);
+void sqlite3VdbeScanStatusRange(Vdbe*, int, int, int);
+void sqlite3VdbeScanStatusCounters(Vdbe*, int, int, int);
 #else
-# define sqlite3VdbeScanStatus(a,b,c,d,e)
+# define sqlite3VdbeScanStatus(a,b,c,d,e,f)
+# define sqlite3VdbeScanStatusRange(a,b,c,d)
+# define sqlite3VdbeScanStatusCounters(a,b,c,d)
 #endif
 
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)

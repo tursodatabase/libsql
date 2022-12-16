@@ -61,7 +61,7 @@
     urlArgsHtml.has('verbose') ? +urlArgsHtml.get('verbose') : 1
   ) || 1;
   options.interval = (
-    urlArgsHtml.has('interval') ? +urlArgsHtml.get('interval') : 750
+    urlArgsHtml.has('interval') ? +urlArgsHtml.get('interval') : 1000
   ) || 1000;
   options.iterations = (
     urlArgsHtml.has('iterations') ? +urlArgsHtml.get('iterations') : 10

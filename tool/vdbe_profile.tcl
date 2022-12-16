@@ -66,6 +66,8 @@ foreach stmt $allstmt {
   puts "********************************************************************"
   puts [string trim $sql($stmt)]
   puts "Execution count: $cnt($stmt)"
+  set tcx 0
+  set ttx 0
   for {set i 0} {[info exists stat($stmt,$i)]} {incr i} {
     foreach {cx tx detail} $stat($stmt,$i) break
     if {$cx==0} {
@@ -74,7 +76,11 @@ foreach stmt $allstmt {
       set ax [expr {$tx/$cx}]
     }
     puts [format {%8d %12d %12d %4d %s} $cx $tx $ax $i $detail]
+    incr tcx $cx
+    incr ttx $tx
   }
+  set tax [expr {$tcx>0?$ttx/$tcx:0}]
+  puts [format {%8d %12d %12d      TOTAL} $tcx $ttx $tax]
 }
 puts "********************************************************************"
 puts "OPCODES:"

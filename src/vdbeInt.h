@@ -171,7 +171,6 @@ struct VdbeFrame {
   Vdbe *v;                /* VM this frame belongs to */
   VdbeFrame *pParent;     /* Parent of this frame, or NULL if parent is main */
   Op *aOp;                /* Program instructions for parent frame */
-  i64 *anExec;            /* Event counters from parent frame */
   Mem *aMem;              /* Array of memory cells for parent frame */
   VdbeCursor **apCsr;     /* Array of Vdbe cursors for parent frame */
   u8 *aOnce;              /* Bitmask used by OP_Once */
@@ -387,10 +386,19 @@ typedef unsigned bft;  /* Bit Field Type */
 
 /* The ScanStatus object holds a single value for the
 ** sqlite3_stmt_scanstatus() interface.
+**
+** aAddrRange[]:
+**   This array is used by ScanStatus elements associated with EQP 
+**   notes that make an SQLITE_SCANSTAT_NCYCLE value available. It is
+**   an array of up to 3 ranges of VM addresses for which the Vdbe.anCycle[]
+**   values should be summed to calculate the NCYCLE value. Each pair of
+**   integer addresses is a start and end address (both inclusive) for a range
+**   instructions. A start value of 0 indicates an empty range.
 */
 typedef struct ScanStatus ScanStatus;
 struct ScanStatus {
   int addrExplain;                /* OP_Explain for loop */
+  int aAddrRange[6];
   int addrLoop;                   /* Address of "loops" counter */
   int addrVisit;                  /* Address of "rows visited" counter */
   int iSelectID;                  /* The "Select-ID" for this loop */
@@ -483,7 +491,6 @@ struct Vdbe {
   SubProgram *pProgram;   /* Linked list of all sub-programs used by VM */
   AuxData *pAuxData;      /* Linked list of auxdata allocations */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-  i64 *anExec;            /* Number of times each op has been executed */
   int nScan;              /* Entries in aScan[] */
   ScanStatus *aScan;      /* Scan definitions for sqlite3_stmt_scanstatus() */
 #endif

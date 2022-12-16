@@ -408,37 +408,39 @@ do_execsql_test 8.1 {
     SELECT a, b FROM t1_a   UNION ALL
     SELECT c, c FROM t1_b   UNION ALL
     SELECT e, f FROM t1_c;
-}
+  SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1;
+} {1 one 0 {} 4 four 0 {} 2 2 0 {} 5 5 0 {} 3 three 0 {} 6 six 0 {}}
+
 optimization_control db all 1
 do_execsql_test 8.2 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2;
 } {2 2 0 {}}
 do_execsql_test 8.3 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2.0;
-} {}
+} {2 2 0 {}}
 do_execsql_test 8.4 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b='2';
-} {2 2 0 {}}
+} {}
 optimization_control db query-flattener,push-down 0
 do_execsql_test 8.5 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2;
 } {2 2 0 {}}
 do_execsql_test 8.6 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2.0;
-} {}
+} {2 2 0 {}}
 do_execsql_test 8.7 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b='2';
-} {2 2 0 {}}
+} {}
 optimization_control db all 0
 do_execsql_test 8.8 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2;
 } {2 2 0 {}}
 do_execsql_test 8.9 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b=2.0;
-} {}
+} {2 2 0 {}}
 do_execsql_test 8.10 {
   SELECT * FROM (SELECT t1.a, t1.b, t0.c0 AS c, v0.c0 AS d FROM t0 LEFT JOIN v0 ON v0.c0>'0',t1) WHERE b='2';
-} {2 2 0 {}}
+} {}
 
 
 finish_test

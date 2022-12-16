@@ -69,7 +69,6 @@ int sqlite3_basexx_init(sqlite3 *db, char **pzErr,
   init_api_ptr(pApi);
   int rc1 = BASE64_INIT(db);
   int rc2 = BASE85_INIT(db);
-  int rc = SQLITE_OK;
 
   if( rc1==SQLITE_OK && rc2==SQLITE_OK ){
     BASE64_EXPOSE(db, pzErr);
