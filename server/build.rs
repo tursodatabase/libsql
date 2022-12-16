@@ -2,7 +2,7 @@ use std::env;
 use std::fs;
 use std::process::Command;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pwd = env::current_dir().unwrap();
     pwd.push("../libsql");
     let libsql_dir = fs::canonicalize(pwd.as_path()).unwrap();
@@ -17,7 +17,14 @@ fn main() {
         .current_dir(libsql_dir.as_path())
         .status()
         .unwrap();
+
+    tonic_build::compile_protos("proto/proxy.proto")?;
+
+    println!("cargo:rerun-if-changed=proto");
+
     println!("cargo:rustc-link-search=native=libsql/.libs");
     println!("cargo:rustc-link-lib=static=sqlite3");
     println!("cargo:rerun-if-changed=../libsql/src");
+
+    Ok(())
 }
