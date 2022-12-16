@@ -1,5 +1,5 @@
-C Add\sa\stest\sconfirming\sthat\sexceptions\sare\snot\spassed\sthrough\sC-space\sif\sa\sJS-side\ssqlite3_set_authorizer()\scallback\sthrows.
-D 2022-12-16T11:33:42.950
+C In\sthe\sfuzzer\sinvariant\schecker,\sdo\snot\sadd\snew\sWHERE\sclause\sterms\sthat\nmake\suse\sof\san\sambiguous\scolumn\sname.
+D 2022-12-16T12:07:48.018
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1175,7 +1175,7 @@ F test/fuzzdata8.db 653423800b7671e67caa740e977d80e1360f0d69e9992851f3ea5c4a69a2
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c 7877178eaa10eb3ea986f81a7010efc371ccd3e13ee5b14fa290b0459002a36a
+F test/fuzzinvariants.c 38434d7553069dc7bc2ba9147c080c0102db63670d3fdf6b7671da743e0e0f5e
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test cc0dbb0ee116e5602e18ea7d47f2a0f76b26e09a823b7c36ef254370c2b0f3c1
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 551b848894c249cb3c9d237643d2ed53ffcb3b003d0cf3f797a535df1731ce39
-R 183891d5190144f93b6a2714a06c3356
-U stephan
-Z fed17b2de76e3754d3662fd743e424cf
+P 5a77c2c7aaa556007274e1b85790934665c2c12661ca11d896eb7d09cd49ce72
+R 5912776d60014d62a178582171ec8c5f
+U drh
+Z 34c5007cd65a0ffb4008240f51abcb89
 # Remove this line to create a well-formed Fossil manifest.

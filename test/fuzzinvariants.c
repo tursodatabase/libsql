@@ -236,7 +236,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   const char *zIn;
   size_t nIn;
   const char *zAnd = "WHERE";
-  int i;
+  int i, j;
   sqlite3_str *pTest;
   sqlite3_stmt *pBase = 0;
   sqlite3 *db = sqlite3_db_handle(pStmt);
@@ -279,6 +279,14 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     ){
       /* This is a randomized column name and so cannot be used in the
       ** WHERE clause. */
+      continue;
+    }
+    for(j=0; j<i; j++){
+      const char *zPrior = sqlite3_column_name(pBase, j);
+      if( sqlite3_stricmp(zPrior, zColName)==0 ) break;
+    }
+    if( j<i ){
+      /* Duplicate column name */
       continue;
     }
     if( iCnt==0 ) continue;
