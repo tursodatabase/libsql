@@ -455,6 +455,38 @@ const char * sqlite3_wasm_enum_json(void){
     out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
   } _DefGroup;
 
+  DefGroup(config){
+    DefInt(SQLITE_CONFIG_SINGLETHREAD);
+    DefInt(SQLITE_CONFIG_MULTITHREAD);
+    DefInt(SQLITE_CONFIG_SERIALIZED);
+    DefInt(SQLITE_CONFIG_MALLOC);
+    DefInt(SQLITE_CONFIG_GETMALLOC);
+    DefInt(SQLITE_CONFIG_SCRATCH);
+    DefInt(SQLITE_CONFIG_PAGECACHE);
+    DefInt(SQLITE_CONFIG_HEAP);
+    DefInt(SQLITE_CONFIG_MEMSTATUS);
+    DefInt(SQLITE_CONFIG_MUTEX);
+    DefInt(SQLITE_CONFIG_GETMUTEX);
+/* previously SQLITE_CONFIG_CHUNKALLOC 12 which is now unused. */
+    DefInt(SQLITE_CONFIG_LOOKASIDE);
+    DefInt(SQLITE_CONFIG_PCACHE);
+    DefInt(SQLITE_CONFIG_GETPCACHE);
+    DefInt(SQLITE_CONFIG_LOG);
+    DefInt(SQLITE_CONFIG_URI);
+    DefInt(SQLITE_CONFIG_PCACHE2);
+    DefInt(SQLITE_CONFIG_GETPCACHE2);
+    DefInt(SQLITE_CONFIG_COVERING_INDEX_SCAN);
+    DefInt(SQLITE_CONFIG_SQLLOG);
+    DefInt(SQLITE_CONFIG_MMAP_SIZE);
+    DefInt(SQLITE_CONFIG_WIN32_HEAPSIZE);
+    DefInt(SQLITE_CONFIG_PCACHE_HDRSZ);
+    DefInt(SQLITE_CONFIG_PMASZ);
+    DefInt(SQLITE_CONFIG_STMTJRNL_SPILL);
+    DefInt(SQLITE_CONFIG_SMALL_MALLOC);
+    DefInt(SQLITE_CONFIG_SORTERREF_SIZE);
+    DefInt(SQLITE_CONFIG_MEMDB_MAXSIZE);
+  } _DefGroup;
+
   DefGroup(dataTypes) {
     DefInt(SQLITE_INTEGER);
     DefInt(SQLITE_FLOAT);
@@ -1490,6 +1522,42 @@ int sqlite3_wasm_db_config_s(sqlite3 *pDb, int op, const char *zArg){
   }
 }
 
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Binding for combinations of sqlite3_config() arguments which take
+** a single integer argument.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_config_i(int op, int arg){
+  return sqlite3_config(op, arg);
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Binding for combinations of sqlite3_config() arguments which take
+** two int arguments.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_config_ii(int op, int arg1, int arg2){
+  return sqlite3_config(op, arg1, arg2);
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Binding for combinations of sqlite3_config() arguments which take
+** a single i64 argument.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_config_j(int op, sqlite3_int64 arg){
+  return sqlite3_config(op, arg);
+}
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/wasmfs.h>

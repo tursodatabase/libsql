@@ -98,11 +98,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
     ["sqlite3_db_name", "string", "sqlite3*", "int"],
     ["sqlite3_db_status", "int", "sqlite3*", "int", "*", "*", "int"],
-    ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
-    /* Careful! Short version: de/serialize() are problematic because they
-       might use a different allocator than the user for managing the
-       deserialized block. de/serialize() are ONLY safe to use with
-       sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. */,
     ["sqlite3_errcode", "int", "sqlite3*"],
     ["sqlite3_errmsg", "string", "sqlite3*"],
     ["sqlite3_error_offset", "int", "sqlite3*"],
@@ -161,9 +156,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_result_subtype", undefined, "sqlite3_value*", "int"],
     ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
     ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
-    /* sqlite3_set_authorizer() requires a hand-written binding for
-       string conversions, so is defined elsewhere. */
     ["sqlite3_set_auxdata", undefined, "sqlite3_context*", "int", "*", "*"/* => v(*) */],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
@@ -238,6 +230,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_create_module_v2", "int",
      ["sqlite3*","string","sqlite3_module*","*","*"]],
     ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
+    ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
+    /* Careful! Short version: de/serialize() are problematic because they
+       might use a different allocator than the user for managing the
+       deserialized block. de/serialize() are ONLY safe to use with
+       sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. */,
     ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
     ["sqlite3_last_insert_rowid", "i64", ["sqlite3*"]],
     ["sqlite3_malloc64", "*","i64"],
@@ -246,6 +243,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64", undefined, "*", "i64"],
     ["sqlite3_result_zeroblob64", "int", "*", "i64"],
+    ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
+    /* sqlite3_set_authorizer() requires a hand-written binding for
+       string conversions, so is defined elsewhere. */
     ["sqlite3_set_last_insert_rowid", undefined, ["sqlite3*", "i64"]],
     ["sqlite3_status64", "int", "int", "*", "*", "int"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
@@ -851,6 +851,52 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }/* sqlite3_set_authorizer() */
 
+  {/* sqlite3_config() */
+    /**
+       Wraps a small subset of the C API's sqlite3_config() options.
+       Unsupported options trigger the return of capi.SQLITE_NOTFOUND.
+       Passing fewer than 2 arguments triggers return of
+       capi.SQLITE_MISUSE.
+    */
+    capi.sqlite3_config = function(op, ...args){
+      if(arguments.length<2) return capi.SQLITE_MISUSE;
+      switch(op){
+          case capi.SQLITE_CONFIG_COVERING_INDEX_SCAN: // 20  /* int */
+          case capi.SQLITE_CONFIG_MEMSTATUS:// 9  /* boolean */
+          case capi.SQLITE_CONFIG_SMALL_MALLOC: // 27  /* boolean */
+          case capi.SQLITE_CONFIG_SORTERREF_SIZE: // 28  /* int nByte */
+          case capi.SQLITE_CONFIG_STMTJRNL_SPILL: // 26  /* int nByte */
+          case capi.SQLITE_CONFIG_URI:// 17  /* int */
+            return wasm.exports.sqlite3_wasm_config_i(op, args[0]);
+          case capi.SQLITE_CONFIG_LOOKASIDE: // 13  /* int int */
+            return wasm.exports.sqlite3_wasm_config_ii(op, args[0], args[1]);
+          case capi.SQLITE_CONFIG_MEMDB_MAXSIZE: // 29  /* sqlite3_int64 */
+            return wasm.exports.sqlite3_wasm_config_j(op, args[0]);
+          case capi.SQLITE_CONFIG_GETMALLOC: // 5 /* sqlite3_mem_methods* */
+          case capi.SQLITE_CONFIG_GETMUTEX: // 11  /* sqlite3_mutex_methods* */
+          case capi.SQLITE_CONFIG_GETPCACHE2: // 19  /* sqlite3_pcache_methods2* */
+          case capi.SQLITE_CONFIG_GETPCACHE: // 15  /* no-op */
+          case capi.SQLITE_CONFIG_HEAP: // 8  /* void*, int nByte, int min */
+          case capi.SQLITE_CONFIG_LOG: // 16  /* xFunc, void* */
+          case capi.SQLITE_CONFIG_MALLOC:// 4  /* sqlite3_mem_methods* */
+          case capi.SQLITE_CONFIG_MMAP_SIZE: // 22  /* sqlite3_int64, sqlite3_int64 */
+          case capi.SQLITE_CONFIG_MULTITHREAD: // 2 /* nil */
+          case capi.SQLITE_CONFIG_MUTEX: // 10  /* sqlite3_mutex_methods* */
+          case capi.SQLITE_CONFIG_PAGECACHE: // 7  /* void*, int sz, int N */
+          case capi.SQLITE_CONFIG_PCACHE2: // 18  /* sqlite3_pcache_methods2* */
+          case capi.SQLITE_CONFIG_PCACHE: // 14  /* no-op */
+          case capi.SQLITE_CONFIG_PCACHE_HDRSZ: // 24  /* int *psz */
+          case capi.SQLITE_CONFIG_PMASZ: // 25  /* unsigned int szPma */
+          case capi.SQLITE_CONFIG_SERIALIZED: // 3 /* nil */
+          case capi.SQLITE_CONFIG_SINGLETHREAD: // 1 /* nil */:
+          case capi.SQLITE_CONFIG_SQLLOG: // 21  /* xSqllog, void* */
+          case capi.SQLITE_CONFIG_WIN32_HEAPSIZE: // 23  /* int nByte */
+          default:
+            return capi.SQLITE_NOTFOUND;
+      }
+    };
+  }/* sqlite3_config() */
+
   {/* Import C-level constants and structs... */
     const cJson = wasm.xCall('sqlite3_wasm_enum_json');
     if(!cJson){
@@ -860,7 +906,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     wasm.ctype = JSON.parse(wasm.cstrToJs(cJson));
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
     const defineGroups = ['access', 'authorizer',
-                          'blobFinalizers', 'dataTypes',
+                          'blobFinalizers', 'config', 'dataTypes',
                           'dbConfig', 'dbStatus',
                           'encodings', 'fcntl', 'flock', 'ioCap',
                           'limits', 'openFlags',

@@ -345,6 +345,38 @@ self.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
   T.g('Basic sanity checks')
     .t({
+      name:'sqlite3_config()',
+      test:function(sqlite3){
+        for(const k of [
+          'SQLITE_CONFIG_GETMALLOC', 'SQLITE_CONFIG_URI'
+        ]){
+          T.assert(capi[k] > 0);
+        }
+        T.assert(capi.SQLITE_MISUSE===capi.sqlite3_config(
+          capi.SQLITE_CONFIG_URI, 1
+        ), "MISUSE because the library has already been initialized.");
+        T.assert(capi.SQLITE_MISUSE === capi.sqlite3_config(
+          // not enough args
+          capi.SQLITE_CONFIG_GETMALLOC
+        ));
+        T.assert(capi.SQLITE_NOTFOUND === capi.sqlite3_config(
+          // unhandled-in-JS config option
+          capi.SQLITE_CONFIG_GETMALLOC, 1
+        ));
+        if(0){
+          log("We cannot _fully_ test sqlite3_config() after the library",
+              "has been initialized (which it necessarily has been to",
+              "set up various bindings) and we cannot shut it down ",
+              "without losing the VFS registrations.");
+          T.assert(0 === capi.sqlite3_config(
+            capi.SQLITE_CONFIG_URI, 1
+          ));
+        }
+      }
+    })/*sqlite3_config()*/
+
+  ////////////////////////////////////////////////////////////////////
+    .t({
       name: "JS wasm-side allocator",
       test: function(sqlite3){
         if(sqlite3.config.useStdAlloc){
@@ -422,6 +454,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).
         assert(0!==capi.sqlite3_strlike("%.txt", "foo.xtx", 0));
     })
+
   ////////////////////////////////////////////////////////////////////
   ;/*end of basic sanity checks*/
 
