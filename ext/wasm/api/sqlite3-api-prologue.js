@@ -79,13 +79,9 @@
      the `realloc(3)`-compatible routine for the WASM
      environment. Defaults to `"sqlite3_realloc"`.
 
-   - `wasmfsOpfsDir`[^1]: if the environment supports persistent
-     storage using OPFS-over-WASMFS , this directory names the "mount
-     point" for that directory. It must be prefixed by `/` and may
-     contain only a single directory-name part. Using the root
-     directory name is not supported by any current persistent
-     backend.  This setting is only used in WASMFS-enabled builds.
-
+   - `wasmfsOpfsDir`[^1]: As of 2022-12-17, this feature does not
+     currently work due to incompatible Emscripten-side changes made
+     in the WASMFS+OPFS combination. This option is currently ignored.
 
    [^1] = This property may optionally be a function, in which case this
           function re-assigns it to the value returned from that function,
@@ -138,6 +134,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       config[k] = config[k]();
     }
   });
+  config.wasmOpfsDir =
+    /* 2022-12-17: WASMFS+OPFS can no longer be activated from the
+       main thread (aborts via a failed assert() if it's attempted),
+       which eliminates any(?) benefit to supporting it. */  false;
 
   /** 
       The main sqlite3 binding API gets installed into this object,
@@ -1050,6 +1050,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /** State for sqlite3_wasmfs_opfs_dir(). */
   let __wasmfsOpfsDir = undefined;
   /**
+     2022-12-17: incompatible WASMFS changes have made WASMFS+OPFS
+     unavailable from the main thread, which eliminates the most
+     significant benefit of supporting WASMFS. This function is now a
+     no-op which always returns a falsy value. Before that change,
+     this function behaved as documented below (and how it will again
+     if we can find a compelling reason to support it).
+
      If the wasm environment has a WASMFS/OPFS-backed persistent
      storage directory, its path is returned by this function. If it
      does not then it returns "" (noting that "" is a falsy value).
@@ -1066,6 +1073,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(undefined !== __wasmfsOpfsDir) return __wasmfsOpfsDir;
     // If we have no OPFS, there is no persistent dir
     const pdir = config.wasmfsOpfsDir;
+    console.error("sqlite3_wasmfs_opfs_dir() can no longer work due "+
+                  "to incompatible WASMFS changes. It will be removed.");
     if(!pdir
        || !self.FileSystemHandle
        || !self.FileSystemDirectoryHandle
