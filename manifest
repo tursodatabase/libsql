@@ -1,5 +1,5 @@
-C Add\sNEVER/ALWAYS\sto\sbranches\sthat\shave\sbecome\sunreachable\sdue\sto\srecent\nenhancements.
-D 2022-12-17T12:49:04.137
+C Remove\sslew\sof\sinadvertant\stabs\sin\sfavor\sof\sspaces.
+D 2022-12-17T19:56:28.185
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -646,7 +646,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 03e79d37c5c322b268734ec81be9ee2bb7c18c0c2f0a97abb664e8e5185f6693
-F src/shell.c.in 47d491325ea7e01d9d4b7f6166a83fbfc6729b3d8a546d857d627a58a5d46d73
+F src/shell.c.in 24e0c75947dd8a3426473d90dfc4887f42553c8b57dff02a6865f04c5efcf864
 F src/sqlite.h.in e752f82b9d71f1d42b259b1900e4b1caf0965e844d756cd5cc91cc2cf45ed925
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32dc98c8001387b1970623192ec6cb89445000fa49bda5f4bd7c525bbe20bb5b
-R fd145bb1e560d360952a4e2703c6c38e
-U drh
-Z 72f0676cf319efb11f4d48e6755a2325
+P b4281db4e4762773684d27b809ef911da08b81cb953b3666e535b990d4d5f701
+R 85402c8273d834f748a67a241cd58b10
+U larrybr
+Z ebd46fda67ba8ed883a528cec7a4021a
 # Remove this line to create a well-formed Fossil manifest.

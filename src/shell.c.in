@@ -540,15 +540,15 @@ static char *dynamicContinuePrompt(void){
       strcpy(dynPrompt.dynamicPrompt, dynPrompt.zScannerAwaits);
       while( ndp<3 ) dynPrompt.dynamicPrompt[ndp++] = ' ';
       strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3,
-	      PROMPT_LEN_MAX-4);
+              PROMPT_LEN_MAX-4);
     }else{
       if( dynPrompt.inParenLevel>9 ){
-	strncpy(dynPrompt.dynamicPrompt, "(..", 4);
+        strncpy(dynPrompt.dynamicPrompt, "(..", 4);
       }else if( dynPrompt.inParenLevel<0 ){
-	strncpy(dynPrompt.dynamicPrompt, ")x!", 4);
+        strncpy(dynPrompt.dynamicPrompt, ")x!", 4);
       }else{
-	strncpy(dynPrompt.dynamicPrompt, "(x.", 4);
-	dynPrompt.dynamicPrompt[2] = (char)('0'+dynPrompt.inParenLevel);
+        strncpy(dynPrompt.dynamicPrompt, "(x.", 4);
+        dynPrompt.dynamicPrompt[2] = (char)('0'+dynPrompt.inParenLevel);
       }
       strncpy(dynPrompt.dynamicPrompt+3, continuePrompt+3, PROMPT_LEN_MAX-4);
     }
@@ -10343,26 +10343,26 @@ static int do_meta_command(char *zLine, ShellState *p){
     {
       int lrc;
       char *zRevText = /* Query for reversible to-blob-to-text check */
-	"SELECT lower(name) as tname FROM sqlite_schema\n"
-	"WHERE type='table' AND coalesce(rootpage,0)>1\n"
-	"AND name NOT LIKE 'sqlite_%%'%s\n"
-	"ORDER BY 1 collate nocase";
+        "SELECT lower(name) as tname FROM sqlite_schema\n"
+        "WHERE type='table' AND coalesce(rootpage,0)>1\n"
+        "AND name NOT LIKE 'sqlite_%%'%s\n"
+        "ORDER BY 1 collate nocase";
       zRevText = sqlite3_mprintf(zRevText, zLike? " AND name LIKE $tspec" : "");
       zRevText = sqlite3_mprintf(
-	  /* lower-case query is first run, producing upper-case query. */
-	  "with tabcols as materialized(\n"
-	  "select tname, cname\n"
-	  "from ("
-	  " select ss.tname as tname, ti.name as cname\n"
-	  " from (%z) ss\n inner join pragma_table_info(tname) ti))\n"
-	  "select 'SELECT total(bad_text_count) AS bad_text_count\n"
-	  "FROM ('||group_concat(query, ' UNION ALL ')||')' as btc_query\n"
-	  " from (select 'SELECT COUNT(*) AS bad_text_count\n"
-	  "FROM '||tname||' WHERE '\n"
-	  "||group_concat('CAST(CAST('||cname||' AS BLOB) AS TEXT)<>'||cname\n"
-	  "|| ' AND typeof('||cname||')=''text'' ',\n"
-	  "' OR ') as query, tname from tabcols group by tname)"
-	  , zRevText);
+          /* lower-case query is first run, producing upper-case query. */
+          "with tabcols as materialized(\n"
+          "select tname, cname\n"
+          "from ("
+          " select ss.tname as tname, ti.name as cname\n"
+          " from (%z) ss\n inner join pragma_table_info(tname) ti))\n"
+          "select 'SELECT total(bad_text_count) AS bad_text_count\n"
+          "FROM ('||group_concat(query, ' UNION ALL ')||')' as btc_query\n"
+          " from (select 'SELECT COUNT(*) AS bad_text_count\n"
+          "FROM '||tname||' WHERE '\n"
+          "||group_concat('CAST(CAST('||cname||' AS BLOB) AS TEXT)<>'||cname\n"
+          "|| ' AND typeof('||cname||')=''text'' ',\n"
+          "' OR ') as query, tname from tabcols group by tname)"
+          , zRevText);
       shell_check_oom(zRevText);
       if( bDebug ) utf8_printf(p->out, "%s\n", zRevText);
       lrc = sqlite3_prepare_v2(p->db, zRevText, -1, &pStmt, 0);
@@ -10375,16 +10375,16 @@ static int do_meta_command(char *zLine, ShellState *p){
         lrc = sqlite3_prepare_v2(p->db, zGenQuery, -1, &pCheckStmt, 0);
         if( bDebug ) utf8_printf(p->out, "%s\n", zGenQuery);
         if( SQLITE_OK==lrc ){
-	  if( SQLITE_ROW==sqlite3_step(pCheckStmt) ){
-	    double countIrreversible = sqlite3_column_double(pCheckStmt, 0);
-	    if( countIrreversible>0 ){
-	      int sz = (int)(countIrreversible + 0.5);
-	      utf8_printf(stderr,
-		 "Digest includes %d invalidly encoded text field%s.\n",
-		 sz, (sz>1)? "s": "");
-	    }
-	  }
-	  sqlite3_finalize(pCheckStmt);
+          if( SQLITE_ROW==sqlite3_step(pCheckStmt) ){
+            double countIrreversible = sqlite3_column_double(pCheckStmt, 0);
+            if( countIrreversible>0 ){
+              int sz = (int)(countIrreversible + 0.5);
+              utf8_printf(stderr,
+                 "Digest includes %d invalidly encoded text field%s.\n",
+                 sz, (sz>1)? "s": "");
+            }
+          }
+          sqlite3_finalize(pCheckStmt);
         }
         sqlite3_finalize(pStmt);
       }
@@ -11119,7 +11119,7 @@ typedef enum {
 ** return values are passed as the 2nd argument.
 */
 static QuickScanState quickscan(char *zLine, QuickScanState qss,
-				SCAN_TRACKER_REFTYPE pst){
+                                SCAN_TRACKER_REFTYPE pst){
   char cin;
   char cWait = (char)qss; /* intentional narrowing loss */
   if( cWait==0 ){
@@ -11143,7 +11143,7 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
         if( *zLine=='*' ){
           ++zLine;
           cWait = '*';
-	  CONTINUE_PROMPT_AWAITS(pst, "/*");
+          CONTINUE_PROMPT_AWAITS(pst, "/*");
           qss = QSS_SETV(qss, cWait);
           goto TermScan;
         }
@@ -11154,14 +11154,14 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
       case '`': case '\'': case '"':
         cWait = cin;
         qss = QSS_HasDark | cWait;
-	CONTINUE_PROMPT_AWAITC(pst, cin);
+        CONTINUE_PROMPT_AWAITC(pst, cin);
         goto TermScan;
       case '(':
-	CONTINUE_PAREN_INCR(pst, 1);
-	break;
+        CONTINUE_PAREN_INCR(pst, 1);
+        break;
       case ')':
-	CONTINUE_PAREN_INCR(pst, -1);
-	break;
+        CONTINUE_PAREN_INCR(pst, -1);
+        break;
       default:
         break;
       }
@@ -11177,19 +11177,19 @@ static QuickScanState quickscan(char *zLine, QuickScanState qss,
             continue;
           ++zLine;
           cWait = 0;
-	  CONTINUE_PROMPT_AWAITC(pst, 0);
+          CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
         case '`': case '\'': case '"':
           if(*zLine==cWait){
-	    /* Swallow doubled end-delimiter.*/
+            /* Swallow doubled end-delimiter.*/
             ++zLine;
             continue;
           }
           /* fall thru */
         case ']':
           cWait = 0;
-	  CONTINUE_PROMPT_AWAITC(pst, 0);
+          CONTINUE_PROMPT_AWAITC(pst, 0);
           qss = QSS_SETV(qss, 0);
           goto PlainScan;
         default: assert(0);
