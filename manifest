@@ -1,5 +1,5 @@
-C Remove\sslew\sof\sinadvertant\stabs\sin\sfavor\sof\sspaces.
-D 2022-12-17T19:56:28.185
+C Fix\san\sunnecessarily\srestrictive\sassert()\sin\sthe\saggregate\slogic.\ndbsqlfuzz\s699bee2aa26c5dc84afabf6894685c316d936485
+D 2022-12-17T22:10:05.452
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -595,7 +595,7 @@ F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
 F src/dbpage.c f1a87f4ebcf22284e0aaf0697862f4ccfc120dcd6db3d8dfa3b049b2580c01d8
 F src/dbstat.c a56a7ad1163a9888d46cd5820be2e65354fb1aa04ed6909f7c3e5831e0ee2c29
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
-F src/expr.c 6dc067ab8244627d62d0d81bd9d9cc78173325cf2fe3f494f0a65a418ce2b9f8
+F src/expr.c dcf31acfea9a9ae305c30d46179e7b06a8478e9ea202ac0c828cc42903fb1874
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c 7e86074afc4dc702691a29b7801f6dcc191db092b52e8bbe69dcd2f7be52194d
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b4281db4e4762773684d27b809ef911da08b81cb953b3666e535b990d4d5f701
-R 85402c8273d834f748a67a241cd58b10
-U larrybr
-Z ebd46fda67ba8ed883a528cec7a4021a
+P 0aa6da69e12e483b5561bb9a054ec27a99f51772340c950783e342e6dd39beb9
+R 110ca66bc767d30b7b2e917b396a8f6b
+U drh
+Z bedbc6af2f074499f6cbab2d3d0d6e50
 # Remove this line to create a well-formed Fossil manifest.
