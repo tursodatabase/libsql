@@ -6314,7 +6314,7 @@ static void printAggInfo(AggInfo *pAggInfo){
   }
   for(ii=0; ii<pAggInfo->nFunc; ii++){
     sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
-        ii, AggInfoFuncReg(pAggInfo,ii));
+        ii, pAggInfo->iFirstReg+pAggInfo->nColumn+ii);
     sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
   }
 }

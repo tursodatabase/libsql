@@ -1,5 +1,5 @@
-C JS\snamespace\supdates\sin\sext/wasm/api/README.md.
-D 2022-12-18T12:00:10.647
+C Fix\sa\sminor\sproblem\swith\sthe\sprintAggInfo()\sroutine\s(used\son\sduring\ndebugging).
+D 2022-12-19T12:25:41.046
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -645,7 +645,7 @@ F src/printf.c e99ee9741e79ae3873458146f59644276657340385ade4e76a5f5d1c25793764
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 03e79d37c5c322b268734ec81be9ee2bb7c18c0c2f0a97abb664e8e5185f6693
+F src/select.c 4e80cb95a428716a5127a91d7d3d3433d0eb8f4ff8deb1d093c0a1f7f3674087
 F src/shell.c.in 24e0c75947dd8a3426473d90dfc4887f42553c8b57dff02a6865f04c5efcf864
 F src/sqlite.h.in e752f82b9d71f1d42b259b1900e4b1caf0965e844d756cd5cc91cc2cf45ed925
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8cc0af81ad03ac65f230d78cf97e1448c2d93d556467ea3ef700d5abd4a3890c
-R a38b7c3628eb3490417cb8521af445ab
-U stephan
-Z 75da09333cff0934309cdfea95b440cb
+P ca59e736b1839c30a820dd5795b4534e1565387ef701423451ea4c503a9701ea
+R 2a1c91b2c82d6841b7280a168b257c80
+U drh
+Z 1a37f773d56dadf2bf6568225ea8676e
 # Remove this line to create a well-formed Fossil manifest.
