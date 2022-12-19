@@ -1298,7 +1298,7 @@ static int echoShadowName(const char *name){
   return SQLITE_OK;
 }
 
-static int echoPrepareSql(sqlite3_vtab_cursor *cur, const char *sql){
+static int echoPreparedSql(sqlite3_vtab_cursor *cur, const char *sql){
   assert( cur );
   assert( sql );
   return SQLITE_OK;
@@ -1356,7 +1356,7 @@ static sqlite3_module echoModuleV2 = {
   echoRelease,
   echoRollbackTo,
   echoShadowName,
-  echoPrepareSql,
+  echoPreparedSql,
 };
 
 /*
