@@ -66,6 +66,10 @@ impl Database {
     }
 }
 
+fn to_database(db: *mut sqlite3) -> Rc<Database> {
+    unsafe { (*db).inner.clone() }
+}
+
 pub struct sqlite3 {
     inner: Rc<Database>,
 }
@@ -119,6 +123,11 @@ impl Statement {
         }
     }
 }
+
+fn to_stmt(stmt: *mut sqlite3_stmt) -> &'static mut Statement {
+    unsafe { &mut (*stmt).inner }
+}
+
 pub struct sqlite3_stmt {
     inner: Statement,
 }
@@ -298,7 +307,7 @@ pub extern "C" fn sqlite3_prepare_v2(
     ppStmt: *mut *mut sqlite3_stmt,
     pzTail: *mut *const c_char,
 ) -> c_int {
-    let database = unsafe { (*db).inner.clone() };
+    let database = to_database(db);
     trace!("TRACE sqlite3_prepare_v2");
     let zSql = unsafe { CStr::from_ptr(zSql) };
     let sql = unwrap_ok_or!(zSql.to_str(), _, {
@@ -479,7 +488,7 @@ define_stub!(sqlite3_bind_zeroblob64);
 #[no_mangle]
 pub extern "C" fn sqlite3_column_count(stmt: *mut sqlite3_stmt) -> c_int {
     trace!("TRACE sqlite3_column_count");
-    let stmt = unsafe { &mut (*stmt).inner };
+    let stmt = to_stmt(stmt);
     if let Some(metadata) = stmt.metadata.as_ref() {
         metadata.col_types.len().try_into().unwrap()
     } else {
@@ -499,7 +508,7 @@ const SQLITE3_TEXT: c_int = 3;
 #[no_mangle]
 pub extern "C" fn sqlite3_column_type(stmt: *mut sqlite3_stmt, n: c_int) -> c_int {
     trace!("TRACE sqlite3_column_type");
-    let stmt = unsafe { &mut (*stmt).inner };
+    let stmt = to_stmt(stmt);
     let ty = &stmt.metadata.as_ref().unwrap().col_types[n as usize];
     match ty.oid() {
         25 => SQLITE3_TEXT,
@@ -517,7 +526,7 @@ pub extern "C" fn sqlite3_column_decltype(_stmt: *mut sqlite3_stmt, _n: c_int) -
 #[no_mangle]
 pub extern "C" fn sqlite3_column_bytes(stmt: *mut sqlite3_stmt, n: c_int) -> c_int {
     trace!("TRACE sqlite3_column_bytes");
-    let stmt = unsafe { &mut (*stmt).inner };
+    let stmt = to_stmt(stmt);
     if let Some((_, column_ranges)) = &stmt.current_row {
         column_ranges[n as usize]
             .as_ref()
@@ -533,7 +542,7 @@ pub extern "C" fn sqlite3_column_bytes(stmt: *mut sqlite3_stmt, n: c_int) -> c_i
 #[no_mangle]
 pub extern "C" fn sqlite3_column_int64(stmt: *mut sqlite3_stmt, n: c_int) -> sqlite3_int64 {
     trace!("TRACE sqlite3_column_int64");
-    let stmt = unsafe { &mut (*stmt).inner };
+    let stmt = to_stmt(stmt);
     if let Some((row, column_ranges)) = &stmt.current_row {
         let range = column_ranges[n as usize].as_ref().unwrap();
         let buf = &row.buffer()[range.to_owned()];
@@ -549,7 +558,7 @@ pub extern "C" fn sqlite3_column_int64(stmt: *mut sqlite3_stmt, n: c_int) -> sql
 #[no_mangle]
 pub extern "C" fn sqlite3_column_text(stmt: *mut sqlite3_stmt, n: c_int) -> *const c_char {
     trace!("TRACE sqlite3_column_text");
-    let stmt = unsafe { &mut (*stmt).inner };
+    let stmt = to_stmt(stmt);
     if let Some((row, column_ranges)) = &stmt.current_row {
         if let Some(range) = &column_ranges[n as usize] {
             let buf = &row.buffer()[range.clone()];
