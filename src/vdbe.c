@@ -8098,11 +8098,10 @@ case OP_VPrepareSql: {
    if( pModule->iVersion>=4 ){
     if( pModule->xPrepareSql && p->zSql ){
       rc = pModule->xPrepareSql(pVCur, p->zSql);
-      if( rc ) goto abort_due_to_error; // TODO set and test error msg
+      if( rc ) goto abort_due_to_error;
     }
   }
 
-  if( rc ) goto abort_due_to_error;
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
