@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sfts5.\sSimplify\smemdb\sxLock/xUnlock\ssome.
-D 2022-12-19T14:06:36.350
+C Update\stest-opfs-vfs.js\sto\saccount\sfor\srecent\sAPI\schanges.\sReported\sin\s[forum:4a97813fcbd4f63e|forum\spost\s4a97813fcbd4f63e].
+D 2022-12-19T14:43:17.130
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f129
 F ext/wasm/sql/000-mandelbrot.sql 775337a4b80938ac8146aedf88808282f04d02d983d82675bd63d9c2d97a15f0
 F ext/wasm/sql/001-sudoku.sql 35b7cb7239ba5d5f193bc05ec379bcf66891bce6f2a5b3879f2f78d0917299b5
 F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555e685bce3da8c3f
-F ext/wasm/test-opfs-vfs.js 44363db07b2a20e73b0eb1808de4400ca71b703af718d0fa6d962f15e73bf2ac
+F ext/wasm/test-opfs-vfs.js f09266873e1a34d9bdb6d3981ec8c9e382f31f215c9fd2f9016d2394b8ae9b7b
 F ext/wasm/tester1-worker.html d43f3c131d88f10d00aff3e328fed13c858d674ea2ff1ff90225506137f85aa9
 F ext/wasm/tester1.c-pp.html d34bef3d48e5cbc1c7c06882ad240fec49bf88f5f65696cc2c72c416933aa406
 F ext/wasm/tester1.c-pp.js c45c46cdae1949d426ee12a736087ab180beacc2a20cd829f9052b957adf9ac9
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8329967f32efedfc8244631a5682f7f7d21c1b3fcd7d5cc67716555716d4926
-R 6042ddce82a3a20317d82903b9fac50b
-U dan
-Z 39cfe154fdc5e8e0df7fb27b393ad160
+P 7fe158aa8071acadd959b2b4a4b66e8a7f7eecec207ba681abf516b0457c2921
+R 87a199145dafbac50eb8b6e84c045220
+U stephan
+Z af699fc85ad9b278de07cb1858e5e2e3
 # Remove this line to create a well-formed Fossil manifest.
