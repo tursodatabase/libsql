@@ -605,7 +605,7 @@ $(sqlite3.mjs): $(pre-post-sqlite3.deps.esm)
 define SQLITE3.xJS.ESM-EXPORT-DEFAULT
 if [ esm = $(1) ]; then \
 		echo "Fragile workaround for an Emscripten annoyance. See SQLITE3.xJS.RECIPE."; \
-		sed -i -e '0,/^export default/{/^export default/d}' $@ || exit $$?; \
+		sed -i -e '0,/^export default/{/^export default/d;}' $@ || exit $$?; \
 		if ! grep -q '^export default' $@; then \
 			echo "Cannot find export default." 1>&2; \
 			exit 1; \
