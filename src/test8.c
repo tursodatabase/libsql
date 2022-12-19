@@ -1332,7 +1332,7 @@ static sqlite3_module echoModule = {
 };
 
 static sqlite3_module echoModuleV2 = {
-  4,                         /* iVersion */
+  700,                       /* iVersion */
   echoCreate,
   echoConnect,
   echoBestIndex,
