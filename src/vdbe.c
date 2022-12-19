@@ -8095,7 +8095,7 @@ case OP_VPrepareSql: {
   pModule = pVtab->pModule;
 
   /* Invoke the xPrepareSql method */
-   if( pModule->iVersion>=4 ){
+   if( pModule->iVersion>=700 ){
     if( pModule->xPrepareSql && p->zSql ){
       rc = pModule->xPrepareSql(pVCur, p->zSql);
       if( rc ) goto abort_due_to_error;
