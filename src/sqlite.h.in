@@ -7078,7 +7078,7 @@ struct sqlite3_module {
   int (*xShadowName)(const char*);
   /* The methods below relate to features contributed by the community and
   ** are available for version 700 and greater. */
-  int (*xPrepareSql)(sqlite3_vtab_cursor*, const char*);
+  int (*xPreparedSql)(sqlite3_vtab_cursor*, const char*);
 };
 
 /*
