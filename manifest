@@ -1,5 +1,5 @@
-C Improvement\sto\sthe\sdbsqlfuzz\sfix\sof\s[f113eebdbe68246f].
-D 2022-12-20T14:02:35.291
+C Add\sALWAYS()\sto\salways-true\sbranches\sin\sthe\slocking\slogic\sof\sthe\smemdb\sVFS.
+D 2022-12-20T15:02:44.342
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -615,7 +615,7 @@ F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
 F src/mem5.c 5a3dbd8ac8a6501152a4fc1fcae9b0900c2d7eb0589c4ec7456fdde15725a26c
-F src/memdb.c eb4730f11de0c15f1a430305ad6be5971a0c4149b685a77559c476fa0ed7ef89
+F src/memdb.c 559c42e61eb70cd6d4bc692b042497133c6d96c09a3d514d92f3dac72268e223
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
 F src/mutex.c 5e3409715552348732e97b9194abe92fdfcd934cfb681df4ba0ab87ac6c18d25
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f113eebdbe68246fd38d640b0cdf0fd73ab5d2abad9226274dfa2e41fe286bf0
-R b4503e02b364911da429efba6923d0ff
+P 79d62956f206cb2987891d4ba5985cece21fc8c8c1158f46c2951f65c0dcf4e8
+R 5acc1f13522325fdf1f4898bb8f90cd2
 U drh
-Z a569ced28e10ad642578a73057b1fd50
+Z 56300490cb2b2641f4534a6742e4b8c6
 # Remove this line to create a well-formed Fossil manifest.

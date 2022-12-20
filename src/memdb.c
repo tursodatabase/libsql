@@ -393,7 +393,7 @@ static int memdbLock(sqlite3_file *pFile, int eLock){
       case SQLITE_LOCK_RESERVED:
       case SQLITE_LOCK_PENDING: {
         assert( pThis->eLock>=SQLITE_LOCK_SHARED );
-        if( pThis->eLock==SQLITE_LOCK_SHARED ){
+        if( ALWAYS(pThis->eLock==SQLITE_LOCK_SHARED) ){
           if( p->nWrLock>0 ){
             rc = SQLITE_BUSY;
           }else{
@@ -431,7 +431,7 @@ static int memdbUnlock(sqlite3_file *pFile, int eLock){
 
   assert( eLock==SQLITE_LOCK_SHARED || eLock==SQLITE_LOCK_NONE );
   if( eLock==SQLITE_LOCK_SHARED ){
-    if( pThis->eLock>SQLITE_LOCK_SHARED ){
+    if( ALWAYS(pThis->eLock>SQLITE_LOCK_SHARED) ){
       p->nWrLock--;
     }
   }else{
