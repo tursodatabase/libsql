@@ -6384,6 +6384,7 @@ static void findOrCreateAggInfoColumn(
   }
 fix_up_expr:
   ExprSetVVAProperty(pExpr, EP_NoReduce);
+  assert( pExpr->pAggInfo==0 || pExpr->pAggInfo==pAggInfo );
   pExpr->pAggInfo = pAggInfo;
   if( pExpr->op==TK_COLUMN ){
     pExpr->op = TK_AGG_COLUMN;
@@ -6419,6 +6420,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       }
       if( pIEpr==0 ) break;
       if( NEVER(!ExprUseYTab(pExpr)) ) break;
+      assert( pExpr->pAggInfo==0 );
 
       /* If we reach this point, it means that expression pExpr can be
       ** translated into a reference to an index column as described by
