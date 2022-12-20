@@ -1,5 +1,5 @@
-C Add\sALWAYS()\sto\salways-true\sbranches\sin\sthe\slocking\slogic\sof\sthe\smemdb\sVFS.
-D 2022-12-20T15:02:44.342
+C Add\sabout\s150\snew\sfuzzer\scases\sto\stest/fuzzdata8.db.
+D 2022-12-20T15:22:57.938
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1171,7 +1171,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db 653423800b7671e67caa740e977d80e1360f0d69e9992851f3ea5c4a69a2724a
+F test/fuzzdata8.db d07d68dcebbc4d537eb9fe066ed858239f901f48032c8e627b52e0f39058ac7a
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79d62956f206cb2987891d4ba5985cece21fc8c8c1158f46c2951f65c0dcf4e8
-R 5acc1f13522325fdf1f4898bb8f90cd2
+P 01fa760212a40cec5b43da99b917ab6389561c96d0567a9f67f516bdfa8f5f3d
+R fa9bba51594fa2fc3abce27a3b0536c5
 U drh
-Z 56300490cb2b2641f4534a6742e4b8c6
+Z bd8bdcd36b98de3b4592eb957ac2aa6d
 # Remove this line to create a well-formed Fossil manifest.
