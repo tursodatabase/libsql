@@ -12,6 +12,7 @@
 ** This file contains code used to implement the ATTACH and DETACH commands.
 */
 #include "sqliteInt.h"
+#include "wal.h"
 
 #ifndef SQLITE_OMIT_ATTACH
 /*
