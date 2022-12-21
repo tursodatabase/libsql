@@ -1082,7 +1082,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
     }
     case SQLITE_BLOB: {
       char const *zBlob = sqlite3_value_blob(pValue);
-      int nBlob = sqlite3_value_bytes(pValue);
+      i64 nBlob = sqlite3_value_bytes(pValue);
       assert( zBlob==sqlite3_value_blob(pValue) ); /* No encoding change */
       sqlite3StrAccumEnlarge(pStr, nBlob*2 + 4);
       if( pStr->accError==0 ){
