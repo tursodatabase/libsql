@@ -13,6 +13,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: update submodules
+      run: git submodule update --init # not recursive
     
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
