@@ -42,11 +42,12 @@ message Row {
 
 enum Type {
     Integer = 0;
-    Binary  = 1;
-    Float   = 2;
-    String  = 3;
+    Blob    = 1;
+    Real    = 2;
+    Text    = 3;
     Null    = 4;
     Unknown = 5;
+    Numeric = 6;
 }
 
 message Column {
