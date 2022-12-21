@@ -800,6 +800,8 @@ BUILD_CFLAGS
 AMALGAMATION_LINE_MACROS
 USE_GCOV
 OPT_FEATURE_FLAGS
+OPT_BOTTOMLESS_LIB
+TARGET_OPT_BOTTOMLESS_LINK
 OPT_WASM_RUNTIME
 CARGO_BIN
 HAVE_ZLIB
@@ -948,6 +950,7 @@ enable_update_limit
 enable_geopoly
 enable_rtree
 enable_session
+enable_bottomless_wal
 enable_gcov
 '
       ac_precious_vars='build_alias
@@ -1617,6 +1620,7 @@ Optional Features:
   --enable-geopoly        Enable the GEOPOLY extension
   --enable-rtree          Enable the RTREE extension
   --enable-session        Enable the SESSION extension
+  --enable-bottomless-wal Enable the bottomless WAL extension
   --enable-gcov           Enable coverage testing using gcov
 
 Optional Packages:
@@ -4469,13 +4473,13 @@ then :
 else $as_nop
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:4472: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:4476: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4475: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:4479: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:4478: output\"" >&5)
+  (eval echo "\"\$as_me:4482: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5726,7 +5730,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5729 "configure"' > conftest.$ac_ext
+  echo '#line 5733 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7069,11 +7073,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7072: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7076: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7076: \$? = $ac_status" >&5
+   echo "$as_me:7080: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7409,11 +7413,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7412: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7416: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7416: \$? = $ac_status" >&5
+   echo "$as_me:7420: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7516,11 +7520,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7519: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7523: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7523: \$? = $ac_status" >&5
+   echo "$as_me:7527: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7572,11 +7576,11 @@ else $as_nop
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7575: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7579: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7579: \$? = $ac_status" >&5
+   echo "$as_me:7583: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9960,7 +9964,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9963 "configure"
+#line 9967 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10057,7 +10061,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10060 "configure"
+#line 10064 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12507,6 +12511,31 @@ else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 fi
+
+#########
+# See whether we should enable the SESSION extension
+# Check whether --enable-bottomless-wal was given.
+if test ${enable_bottomless_wal+y}
+then :
+  enableval=$enable_bottomless_wal;
+fi
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether to support bottomless WAL extension" >&5
+printf %s "checking whether to support bottomless WAL extension... " >&6; }
+if test "${enable_bottomless_wal}" = "yes" -o "${enable_all}" = "yes" ; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_BOTTOMLESS_WAL -DSQLITE_ENABLE_UNLOCK_NOTIFY -DSQLITE_ENABLE_COLUMN_METADATA"
+  TARGET_OPT_BOTTOMLESS_LINK='$(TOP)/.libs/libbottomless.a'
+  OPT_BOTTOMLESS_LIB="libbottomless.a"
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+  TARGET_OPT_BOTTOMLESS_LINK=''
+  OPT_BOTTOMLESS_LIB=''
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
 
 #########
 # attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter

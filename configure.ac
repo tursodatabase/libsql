@@ -767,6 +767,23 @@ else
 fi
 
 #########
+# See whether we should enable the SESSION extension
+AC_ARG_ENABLE(bottomless-wal, AS_HELP_STRING([--enable-bottomless-wal],[Enable the bottomless WAL extension]))
+AC_MSG_CHECKING([whether to support bottomless WAL extension])
+if test "${enable_bottomless_wal}" = "yes" -o "${enable_all}" = "yes" ; then
+  OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_BOTTOMLESS_WAL -DSQLITE_ENABLE_UNLOCK_NOTIFY -DSQLITE_ENABLE_COLUMN_METADATA"
+  TARGET_OPT_BOTTOMLESS_LINK='$(TOP)/.libs/libbottomless.a'
+  OPT_BOTTOMLESS_LIB="libbottomless.a"
+  AC_MSG_RESULT([yes])
+else
+  TARGET_OPT_BOTTOMLESS_LINK=''
+  OPT_BOTTOMLESS_LIB=''
+  AC_MSG_RESULT([no])
+fi
+AC_SUBST(TARGET_OPT_BOTTOMLESS_LINK)
+AC_SUBST(OPT_BOTTOMLESS_LIB)
+
+#########
 # attempt to duplicate any OMITS and ENABLES into the ${OPT_FEATURE_FLAGS} parameter
 for option in $CFLAGS $CPPFLAGS
 do

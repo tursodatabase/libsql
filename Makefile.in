@@ -70,9 +70,13 @@ TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 #
 OPT_WASM_RUNTIME = @OPT_WASM_RUNTIME@
 
+# Optional bottmless WAL library
+#
+TARGET_OPT_BOTTOMLESS_LINK = @TARGET_OPT_BOTTOMLESS_LINK@
+
 # Any target libraries which libsqlite must be linked against
 #
-TLIBS = @LIBS@ $(LIBS)
+TLIBS = @LIBS@ $(LIBS) $(TARGET_OPT_BOTTOMLESS_LINK)
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -359,6 +363,8 @@ SRC += \
   $(TOP)/ext/misc/stmt.c
 SRC += \
   $(TOP)/ext/udf/wasmedge_bindings.c
+SRC += \
+  $(TOP)/ext/bottomless/bottomless.c
 
 # Generated source code files
 #
@@ -792,6 +798,9 @@ mptest:	mptester$(TEXE)
 
 liblibsql_wasm:	$(WBSRC)
 	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp target/release/liblibsql_wasm.* $(TOP)/.libs/
+
+libbottomless.a:	$(TOP)/ext/bottomless/core/src/lib.rs
+	( mkdir -p .libs && cd $(TOP)/ext/bottomless/ && make release_standalone && cp target/release/libbottomless.a $(TOP)/.libs/ )
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
