@@ -1,0 +1,3 @@
+[submodule "ext/bottomless"]
+	path = ext/bottomless
+	url = https://github.com/libsql/bottomless.git
