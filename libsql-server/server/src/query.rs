@@ -65,10 +65,11 @@ impl From<Type> for RpcType {
     fn from(other: Type) -> Self {
         match other {
             Type::Integer => Self::Integer,
-            Type::Binary => Self::Binary,
-            Type::Float => Self::Float,
-            Type::String => Self::String,
+            Type::Blob => Self::Blob,
+            Type::Real => Self::Real,
+            Type::Text => Self::Text,
             Type::Null => Self::Null,
+            Type::Numeric => Self::Numeric,
             Type::Unknown => Self::Unknown,
         }
     }
@@ -78,11 +79,12 @@ impl From<RpcType> for Type {
     fn from(other: RpcType) -> Self {
         match other {
             RpcType::Integer => Self::Integer,
-            RpcType::Binary => Self::Binary,
-            RpcType::Float => Self::Float,
-            RpcType::String => Self::String,
+            RpcType::Blob => Self::Blob,
+            RpcType::Real => Self::Real,
+            RpcType::Text => Self::Text,
             RpcType::Null => Self::Null,
             RpcType::Unknown => Self::Unknown,
+            RpcType::Numeric => Self::Numeric,
         }
     }
 }
