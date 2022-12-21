@@ -53,7 +53,21 @@ int sqlite3Fts5Init(sqlite3*);
 #ifdef SQLITE_ENABLE_STMTVTAB
 int sqlite3StmtVtabInit(sqlite3*);
 #endif
+#ifdef LIBSQL_ENABLE_BOTTOMLESS_WAL
+int libsqlBottomlessInit(sqlite3*);
+#endif
 
+/*
+** An array of pointers to extension initializer functions for
+** built-in extensions that need to be loaded before the first
+** call to open(). In particular, extensions which register VFS
+** or WAL methods.
+*/
+static int (*const sqlite3BuiltinExtensionsEarlyInit[])(sqlite3*) = {
+#ifdef LIBSQL_ENABLE_BOTTOMLESS_WAL
+  libsqlBottomlessInit,
+#endif
+};
 /*
 ** An array of pointers to extension initializer functions for
 ** built-in extensions.
@@ -3387,6 +3401,15 @@ static int openDatabase(
     }
   }
 #endif /* SQLITE_OS_UNIX && defined(SQLITE_OS_KV_OPTIONAL) */
+
+  /* Load compiled-in extensions which need to be loaded before the first call to open() */
+  for(i=0; rc==SQLITE_OK && i<ArraySize(sqlite3BuiltinExtensionsEarlyInit); i++){
+    rc = sqlite3BuiltinExtensionsEarlyInit[i](db);
+  }
+  if( rc!=SQLITE_OK ){
+    sqlite3Error(db, rc);
+    goto opendb_out;
+  }
 
   /* Parse the filename/URI argument
   **
