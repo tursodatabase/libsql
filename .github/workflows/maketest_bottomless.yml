@@ -1,4 +1,4 @@
-name: Makefile CI
+name: Makefile CI with bottomless WAL
 
 on:
   push:
@@ -20,8 +20,8 @@ jobs:
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
 
-    - name: configure
-      run: ./configure
+    - name: configure with bottomless storage
+      run: ./configure --enable-bottomless-wal
       
     - name: Run tests
       run: make test
