@@ -69,10 +69,13 @@ TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 # Optional WebAssembly runtime library 
 #
 TARGET_OPT_WASM_RUNTIME_LINK = @TARGET_OPT_WASM_RUNTIME_LINK@
+# Optional bottmless WAL library
+#
+TARGET_OPT_BOTTOMLESS_LINK = @TARGET_OPT_BOTTOMLESS_LINK@
 
 # Any target libraries which libsqlite must be linked against
 #
-TLIBS = @LIBS@ $(LIBS) $(TARGET_OPT_WASM_RUNTIME_LINK)
+TLIBS = @LIBS@ $(LIBS) $(TARGET_OPT_WASM_RUNTIME_LINK) $(TARGET_OPT_BOTTOMLESS_LINK)
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -373,6 +376,8 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
   $(TOP)/ext/misc/stmt.c
+SRC += \
+  $(TOP)/ext/bottomless/bottomless.c
 
 # Generated source code files
 #
@@ -787,7 +792,10 @@ libwblibsql.so:	$(TOP)/src/rust/wasmtime-bindings/src/lib.rs
 libwblibsql.a:	$(TOP)/src/rust/wasmtime-bindings/src/lib.rs
 	( mkdir -p .libs && cd $(TOP)/src/rust/wasmtime-bindings/ && cargo build --release && cp target/release/libwblibsql.a $(TOP)/.libs/ )
 
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl @OPT_WASM_RUNTIME_LIB@
+libbottomless.a:	$(TOP)/ext/bottomless/core/src/lib.rs
+	( mkdir -p .libs && cd $(TOP)/ext/bottomless/ && make release_standalone && cp target/release/libbottomless.a $(TOP)/.libs/ )
+
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl @OPT_WASM_RUNTIME_LIB@ @OPT_BOTTOMLESS_LIB@
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
