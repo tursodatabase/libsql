@@ -37,6 +37,8 @@ static void pager_test_reiniter(DbPage *pNotUsed){
   return;
 }
 
+extern libsql_wal_methods *libsql_wal_methods_find(const char*);
+
 /*
 ** Usage:   pager_open FILENAME N-PAGE
 **
@@ -50,6 +52,7 @@ static int SQLITE_TCLAPI pager_open(
 ){
   u32 pageSize;
   Pager *pPager;
+  libsql_wal_methods *pWalMethods = NULL;
   int nPage;
   int rc;
   char zBuf[100];
@@ -59,7 +62,10 @@ static int SQLITE_TCLAPI pager_open(
     return TCL_ERROR;
   }
   if( Tcl_GetInt(interp, argv[2], &nPage) ) return TCL_ERROR;
-  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), &pPager, argv[1], 0, 0,
+#ifndef SQLITE_OMIT_WAL
+  pWalMethods = libsql_wal_methods_find(NULL);
+#endif
+  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), pWalMethods, &pPager, argv[1], 0, 0,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB,
       pager_test_reiniter);
   if( rc!=SQLITE_OK ){

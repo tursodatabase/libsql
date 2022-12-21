@@ -1,4 +1,5 @@
 mod random_rowid;
+mod virtual_wal;
 
 #[cfg(all(test, feature = "udf"))]
 mod user_defined_functions;

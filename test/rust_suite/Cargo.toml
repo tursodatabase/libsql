@@ -9,6 +9,7 @@ edition = "2021"
 rusqlite = { version = "0.28", features = ["buildtime_bindgen"] }
 libsqlite3-sys = "0.25"
 itertools = "0.10"
+tempfile = "3.3"
 
 [features]
 default = []

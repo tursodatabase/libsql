@@ -1013,6 +1013,13 @@ struct sqlite3_io_methods {
 ** ^When there are multiple VFS shims in the stack, this opcode finds the
 ** upper-most shim only.
 **
+** <li>[[SQLITE_FCNTL_WAL_METHODS_POINTER]]
+** ^The [SQLITE_FCNTL_WAL_METHODS_POINTER] opcode finds a pointer to the top-level
+** WAL methods currently in use.  ^(The argument X in
+** sqlite3_file_control(db,SQLITE_FCNTL_WAL_METHODS_POINTER,X) must be
+** of type "[libsql_wal_methods] **".  This opcodes will set *X
+** to a pointer to the top-level WAL methods.)^
+**
 ** <li>[[SQLITE_FCNTL_PRAGMA]]
 ** ^Whenever a [PRAGMA] statement is parsed, an [SQLITE_FCNTL_PRAGMA] 
 ** file control is sent to the open [sqlite3_file] object corresponding
@@ -1249,6 +1256,9 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_EXTERNAL_READER        40
 #define SQLITE_FCNTL_CKSM_FILE              41
 #define SQLITE_FCNTL_RESET_CACHE            42
+
+// libSQL extension
+#define SQLITE_FCNTL_WAL_METHODS_POINTER   129
 
 /* deprecated names */
 #define SQLITE_GET_LOCKPROXYFILE      SQLITE_FCNTL_GET_LOCKPROXYFILE
@@ -3683,6 +3693,13 @@ int sqlite3_open_v2(
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
+);
+int libsql_open(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal        /* Name of WAL module to use */
 );
 
 #ifdef LIBSQL_ENABLE_WASM_RUNTIME
@@ -7704,6 +7721,34 @@ int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
 int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
 int sqlite3_vfs_unregister(sqlite3_vfs*);
+
+/*
+** CAPI3REF: Virtual WAL Methods
+**
+** Virtual WAL methods can be redefined in order to change the default
+** behavior of the write-ahead log.
+** Methods can be registered and unregistered.
+** The following interfaces are provided.
+**
+** ^The libsql_wal_methods_find() interface returns a pointer
+** to the methods given their identifier.
+** ^Names are case sensitive.
+** ^Names are zero-terminated UTF-8 strings.
+** ^If there is no match, a NULL pointer is returned.
+** ^If zName is NULL then the default implementation is returned.
+**
+** ^New WAL methods are registered with libsql_wal_methods_register().
+** ^Same methods can be registered multiple times without injury.
+**
+** ^Unregister WAL methods with the libsql_wal_methods_unregister() interface.
+*/
+typedef struct libsql_wal_methods libsql_wal_methods;
+libsql_wal_methods *libsql_wal_methods_find(const char *zName);
+int libsql_wal_methods_register(libsql_wal_methods*);
+int libsql_wal_methods_unregister(libsql_wal_methods*);
+
+libsql_wal_methods *libsql_wal_methods_next(libsql_wal_methods *w);
+const char *libsql_wal_methods_name(libsql_wal_methods *w);
 
 /*
 ** CAPI3REF: Mutexes
