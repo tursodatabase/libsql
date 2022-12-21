@@ -2882,6 +2882,12 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   return oldLimit;                     /* IMP: R-53341-35419 */
 }
 
+#ifdef SQLITE_OMIT_WAL
+libsql_wal_methods* libsql_wal_methods_find(const char *zName) {
+    return NULL;
+}
+#endif
+
 /*
 ** This function is used to parse both URIs and non-URI filenames passed by the
 ** user to API functions sqlite3_open() or sqlite3_open_v2(), and for database
@@ -2902,6 +2908,8 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 ** and is in the same format as names created using sqlite3_create_filename().
 ** The caller must invoke sqlite3_free_filename() (not sqlite3_free()!) on
 ** the value returned in *pzFile to avoid a memory leak.
+** *ppWal is set to point to WAL methods that should be used to open
+** the database file.
 **
 ** If an error occurs, then an SQLite error code is returned and *pzErrMsg
 ** may be set to point to a buffer containing an English language error 
@@ -2910,15 +2918,18 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
 */
 int sqlite3ParseUri(
   const char *zDefaultVfs,        /* VFS to use if no "vfs=xxx" query option */
+  const char *zDefaultWal,        /* WAL module to use if no "wal=xxx" query option */
   const char *zUri,               /* Nul-terminated URI to parse */
   unsigned int *pFlags,           /* IN/OUT: SQLITE_OPEN_XXX flags */
   sqlite3_vfs **ppVfs,            /* OUT: VFS to use */ 
+  libsql_wal_methods **ppWal,     /* OUT: WAL module to use */
   char **pzFile,                  /* OUT: Filename component of URI */
   char **pzErrMsg                 /* OUT: Error message (if rc!=SQLITE_OK) */
 ){
   int rc = SQLITE_OK;
   unsigned int flags = *pFlags;
   const char *zVfs = zDefaultVfs;
+  const char *zWal = zDefaultWal;
   char *zFile;
   char c;
   int nUri = sqlite3Strlen30(zUri);
@@ -3038,8 +3049,8 @@ int sqlite3ParseUri(
     memset(zFile+iOut, 0, 4); /* end-of-options + empty journal filenames */
 
     /* Check if there were any options specified that should be interpreted 
-    ** here. Options that are interpreted here include "vfs" and those that
-    ** correspond to flags that may be passed to the sqlite3_open_v2()
+    ** here. Options that are interpreted here include "vfs", "wal", and those
+    ** that correspond to flags that may be passed to the sqlite3_open_v2()
     ** method. */
     zOpt = &zFile[sqlite3Strlen30(zFile)+1];
     while( zOpt[0] ){
@@ -3049,6 +3060,8 @@ int sqlite3ParseUri(
 
       if( nOpt==3 && memcmp("vfs", zOpt, 3)==0 ){
         zVfs = zVal;
+      }else if( nOpt==3 && memcmp("wal", zOpt, 3)==0 ){
+        zWal = zVal;
       }else{
         struct OpenMode {
           const char *z;
@@ -3131,6 +3144,11 @@ int sqlite3ParseUri(
     *pzErrMsg = sqlite3_mprintf("no such vfs: %s", zVfs);
     rc = SQLITE_ERROR;
   }
+  *ppWal = libsql_wal_methods_find(zWal);
+  if( *ppWal==NULL ){
+    *pzErrMsg = sqlite3_mprintf("no such WAL module: %s", zWal);
+    rc = SQLITE_ERROR;
+  }
  parse_uri_out:
   if( rc!=SQLITE_OK ){
     sqlite3_free_filename(zFile);
@@ -3167,7 +3185,8 @@ static int openDatabase(
   const char *zFilename, /* Database filename UTF-8 encoded */
   sqlite3 **ppDb,        /* OUT: Returned database handle */
   unsigned int flags,    /* Operational flags */
-  const char *zVfs       /* Name of the VFS to use */
+  const char *zVfs,      /* Name of the VFS to use */
+  const char *zWal       /* Name of WAL module to use */
 ){
   sqlite3 *db;                    /* Store allocated handle here */
   int rc;                         /* Return code */
@@ -3391,7 +3410,7 @@ static int openDatabase(
   if( ((1<<(flags&7)) & 0x46)==0 ){
     rc = SQLITE_MISUSE_BKPT;  /* IMP: R-18321-05872 */
   }else{
-    rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
+    rc = sqlite3ParseUri(zVfs, zWal, zFilename, &flags, &db->pVfs, &db->pWalMethods, &zOpen, &zErrMsg);
   }
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
@@ -3407,7 +3426,7 @@ static int openDatabase(
 #endif
 
   /* Open the backend database driver */
-  rc = sqlite3BtreeOpen(db->pVfs, zOpen, db, &db->aDb[0].pBt, 0,
+  rc = sqlite3BtreeOpen(db->pVfs, db->pWalMethods, zOpen, db, &db->aDb[0].pBt, 0,
                         flags | SQLITE_OPEN_MAIN_DB);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){
@@ -3522,7 +3541,7 @@ int sqlite3_open(
   sqlite3 **ppDb 
 ){
   return openDatabase(zFilename, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, NULL);
 }
 int sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
@@ -3530,7 +3549,17 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 ){
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, NULL);
+}
+
+int libsql_open(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal        /* Name of WAL module to use */
+) {
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, zWal);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -3559,7 +3588,7 @@ int sqlite3_open16(
   zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, 0);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, NULL);
     assert( *ppDb || rc==SQLITE_NOMEM );
     if( rc==SQLITE_OK && !DbHasProperty(*ppDb, 0, DB_SchemaLoaded) ){
       SCHEMA_ENC(*ppDb) = ENC(*ppDb) = SQLITE_UTF16NATIVE;
@@ -3947,6 +3976,11 @@ int sqlite3_file_control(sqlite3 *db, const char *zDbName, int op, void *pArg){
     }else if( op==SQLITE_FCNTL_DATA_VERSION ){
       *(unsigned int*)pArg = sqlite3PagerDataVersion(pPager);
       rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_WAL
+    }else if( op==SQLITE_FCNTL_WAL_METHODS_POINTER ){
+      *(libsql_wal_methods**)pArg = sqlite3PagerWalMethods(pPager);
+      rc = SQLITE_OK;
+#endif
     }else if( op==SQLITE_FCNTL_RESERVE_BYTES ){
       int iNew = *(int*)pArg;
       *(int*)pArg = sqlite3BtreeGetRequestedReserve(pBtree);

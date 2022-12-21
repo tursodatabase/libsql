@@ -24,6 +24,7 @@
 #include <string.h>
 
 extern const char *sqlite3ErrName(int);
+extern libsql_wal_methods *libsql_wal_methods_find(const char*);
 
 /*
 ** A bogus sqlite3 connection structure for use in the btree
@@ -57,6 +58,9 @@ static int SQLITE_TCLAPI btree_open(
   nRefSqlite3++;
   if( nRefSqlite3==1 ){
     sDb.pVfs = sqlite3_vfs_find(0);
+  #ifndef SQLITE_OMIT_WAL
+    sDb.pWalMethods = libsql_wal_methods_find(NULL);
+  #endif
     sDb.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_RECURSIVE);
     sqlite3_mutex_enter(sDb.mutex);
   }
@@ -65,7 +69,7 @@ static int SQLITE_TCLAPI btree_open(
   if( zFilename==0 ) return TCL_ERROR;
   memcpy(zFilename, argv[1], n+1);
   zFilename[n+1] = 0;
-  rc = sqlite3BtreeOpen(sDb.pVfs, zFilename, &sDb, &pBt, 0, 
+  rc = sqlite3BtreeOpen(sDb.pVfs, sDb.pWalMethods, zFilename, &sDb, &pBt, 0, 
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
   sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){

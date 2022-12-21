@@ -58,8 +58,11 @@ mod tests {
         let conn = Connection::open_in_memory().unwrap();
 
         conn.execute("CREATE TABLE t(id) RANDOM ROWID", ()).unwrap();
-        conn.execute("INSERT INTO t(rowid) VALUES (42)", ()).unwrap();
-        let rowid: i64 = conn.query_row("SELECT rowid FROM t", [], |r| r.get(0)).unwrap();
+        conn.execute("INSERT INTO t(rowid) VALUES (42)", ())
+            .unwrap();
+        let rowid: i64 = conn
+            .query_row("SELECT rowid FROM t", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(rowid, 42);
     }
 }
