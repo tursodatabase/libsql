@@ -753,7 +753,7 @@ static int sqlite3Step(Vdbe *p){
     /* If the statement completed successfully, invoke the profile callback */
     checkProfileCallback(db, p);
 #endif
-
+    p->pResultRow = 0;
     if( rc==SQLITE_DONE && db->autoCommit ){
       assert( p->rc==SQLITE_OK );
       p->rc = doWalCallbacks(db);

@@ -2316,7 +2316,6 @@ int sqlite3VdbeList(
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
   releaseMemArray(pMem, 8);
-  p->pResultRow = 0;
 
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or

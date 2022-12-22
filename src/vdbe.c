@@ -755,7 +755,6 @@ int sqlite3VdbeExec(
   assert( p->bIsReader || p->readOnly!=0 );
   p->iCurrentTime = 0;
   assert( p->explain==0 );
-  p->pResultRow = 0;
   db->busyHandler.nBusy = 0;
   if( AtomicLoad(&db->u1.isInterrupted) ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
