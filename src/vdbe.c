@@ -5559,8 +5559,11 @@ case OP_Insert: {
   if( pOp->p5 & OPFLAG_ISNOOP ) break;
 #endif
 
-  if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
-  if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = x.nKey;
+  assert( (pOp->p5 & OPFLAG_LASTROWID)==0 || (pOp->p5 & OPFLAG_NCHANGE)!=0 );
+  if( pOp->p5 & OPFLAG_NCHANGE ){
+    p->nChange++;
+    if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = x.nKey;
+  }
   assert( (pData->flags & (MEM_Blob|MEM_Str))!=0 || pData->n==0 );
   x.pData = pData->z;
   x.nData = pData->n;
