@@ -1,5 +1,5 @@
-C More\sefficient\simplementation\sof\slarge\sprecisions\son\sthe\s"%c"\sformat\sfor\nthe\sbuilt-in\sprintf().\s\sThis\sis\san\seffort\sto\savoid\sa\sreported\ntimeout\son\sa\s(ridiculous)\squery\sgenerated\sby\sOSSFuzz.
-D 2022-12-21T19:11:56.600
+C sessionfuzz.c:\suse\slt/gt\sbrackets\sinstead\sof\sdouble-quotes\swhen\s#including\szlib.h,\sas\sreported\sin\s[forum:91a104bd65\s|\sforum\spost\s91a104bd65].
+D 2022-12-22T10:53:08.958
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1488,7 +1488,7 @@ F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae
 F test/server1.test c2b00864514a68a0e6fd518659dc95d0050307a357a08969872bef027d785dc4
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
-F test/sessionfuzz.c f74c4e806bab5a093fb9c11b6123d17a6e0cf73fb7a0f49b12f5a75bf0b7b1a8
+F test/sessionfuzz.c 5eef09af01eeff6f20250ae4c0112c2e576e4d2f2026cc9a49dc5be6886fa6ee
 F test/shared.test f022874d9d299fe913529dc10f52ad5a386e4e7ff709270b9b1111b3a0f3420a
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test f8cd07c1a2b7cdb315c01671a0b2f8e3830b11ef31da6baa9a9cd8da88965403
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 40549bacb3923e439627b0103bedd7da30258b69a46960040f7176e060f51f2f
-R b8948321b04d25266ba13687cc331ab6
-U drh
-Z fb87aea17e86619f82d9de43213241b3
+P 371f9b88387a44a5f820279d79733d1deb7eafc72f320ec47a11679bbdbb49ef
+R 628eedf5dffe439daf55d651e55cc62e
+U stephan
+Z 8e36eea40550d456da71194c9dffe516
 # Remove this line to create a well-formed Fossil manifest.
