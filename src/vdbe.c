@@ -755,7 +755,7 @@ int sqlite3VdbeExec(
   assert( p->bIsReader || p->readOnly!=0 );
   p->iCurrentTime = 0;
   assert( p->explain==0 );
-  p->pResultSet = 0;
+  p->pResultRow = 0;
   db->busyHandler.nBusy = 0;
   if( AtomicLoad(&db->u1.isInterrupted) ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
@@ -1586,10 +1586,10 @@ case OP_ResultRow: {
   assert( pOp->p1+pOp->p2<=(p->nMem+1 - p->nCursor)+1 );
 
   p->cacheCtr = (p->cacheCtr + 2)|1;
-  p->pResultSet = &aMem[pOp->p1];
+  p->pResultRow = &aMem[pOp->p1];
 #ifdef SQLITE_DEBUG
   {
-    Mem *pMem = p->pResultSet;
+    Mem *pMem = p->pResultRow;
     int i;
     for(i=0; i<pOp->p2; i++){
       assert( memIsValid(&pMem[i]) );
