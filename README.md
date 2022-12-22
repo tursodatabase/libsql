@@ -37,7 +37,8 @@ Aside from all the goodies alredy provided by SQLite, libSQL adds:
 
 * [randomized ROWID](https://github.com/libsql/libsql/issues/12)
 * [WebAssembly User Defined Functions](https://blog.chiselstrike.com/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7)
-
+* [Pass down SQL string to virtual table implementation](https://github.com/libsql/libsql/pull/87)
+* [Virtual write-ahead log interface](https://github.com/libsql/libsql/pull/53)
 
 The comprehensive description can be found [here](doc/libsql_extensions.md)
 
