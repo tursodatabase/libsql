@@ -713,6 +713,7 @@ int sqlite3VdbeExec(
 #ifdef SQLITE_DEBUG
   Op *pOrigOp;               /* Value of pOp at the top of the loop */
   int nExtraDelete = 0;      /* Verifies FORDELETE and AUXDELETE flags */
+  u8 iCompareIsInit = 0;     /* iCompare is initialized */
 #endif
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
@@ -2125,18 +2126,21 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         goto jump_to_p2;
       }
       iCompare = +1;
+      VVA_ONLY( iCompareIsInit = 1; )
     }else if( pIn3->u.i < pIn1->u.i ){
       if( sqlite3aLTb[pOp->opcode] ){
         VdbeBranchTaken(1, (pOp->p5 & SQLITE_NULLEQ)?2:3);
         goto jump_to_p2;
       }
       iCompare = -1;
+      VVA_ONLY( iCompareIsInit = 1; )
     }else{
       if( sqlite3aEQb[pOp->opcode] ){
         VdbeBranchTaken(1, (pOp->p5 & SQLITE_NULLEQ)?2:3);
         goto jump_to_p2;
       }
       iCompare = 0;
+      VVA_ONLY( iCompareIsInit = 1; )
     }
     VdbeBranchTaken(0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
     break;
@@ -2168,6 +2172,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         goto jump_to_p2;
       }
       iCompare = 1;    /* Operands are not equal */
+      VVA_ONLY( iCompareIsInit = 1; )
       break;
     }
   }else{
@@ -2224,6 +2229,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     res2 = sqlite3aGTb[pOp->opcode];
   }
   iCompare = res;
+  VVA_ONLY( iCompareIsInit = 1; )
 
   /* Undo any changes made by applyAffinity() to the input registers. */
   assert( (pIn3->flags & MEM_Dyn) == (flags3 & MEM_Dyn) );
@@ -2262,6 +2268,7 @@ case OP_ElseEq: {       /* same as TK_ESCAPE, jump */
     break;
   }
 #endif /* SQLITE_DEBUG */
+  assert( iCompareIsInit );
   VdbeBranchTaken(iCompare==0, 2);
   if( iCompare==0 ) goto jump_to_p2;
   break;
@@ -2356,6 +2363,7 @@ case OP_Compare: {
     pColl = pKeyInfo->aColl[i];
     bRev = (pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_DESC);
     iCompare = sqlite3MemCompare(&aMem[p1+idx], &aMem[p2+idx], pColl);
+    VVA_ONLY( iCompareIsInit = 1; )
     if( iCompare ){
       if( (pKeyInfo->aSortFlags[i] & KEYINFO_ORDER_BIGNULL) 
        && ((aMem[p1+idx].flags & MEM_Null) || (aMem[p2+idx].flags & MEM_Null))
@@ -2380,6 +2388,7 @@ case OP_Compare: {
 */
 case OP_Jump: {             /* jump */
   assert( pOp>aOp && pOp[-1].opcode==OP_Compare );
+  assert( iCompareIsInit );
   if( iCompare<0 ){
     VdbeBranchTaken(0,4); pOp = &aOp[pOp->p1 - 1];
   }else if( iCompare==0 ){
