@@ -734,7 +734,7 @@ int sqlite3VdbeExec(
   /*** INSERT STACK UNION HERE ***/
 
   assert( p->eVdbeState==VDBE_RUN_STATE );  /* sqlite3_step() verifies this */
-  sqlite3VdbeEnter(p);
+  if( !DbMaskAllZero(p->lockMask) )sqlite3VdbeEnter(p);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( db->xProgress ){
     u32 iPrior = p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
@@ -8830,7 +8830,7 @@ vdbe_return:
   }
 #endif
   p->aCounter[SQLITE_STMTSTATUS_VM_STEP] += (int)nVmStep;
-  sqlite3VdbeLeave(p);
+  if( !DbMaskAllZero(p->lockMask) ) sqlite3VdbeLeave(p);
   assert( rc!=SQLITE_OK || nExtraDelete==0 
        || sqlite3_strlike("DELETE%",p->zSql,0)!=0 
   );
