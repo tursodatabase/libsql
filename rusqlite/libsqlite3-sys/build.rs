@@ -185,8 +185,7 @@ mod build_bundled {
                 // Windows without `-vendored-openssl` takes this to link against a prebuilt
                 // OpenSSL lib
                 cfg.include(inc_dir.to_string_lossy().as_ref());
-                let lib = lib_dir.join("libcrypto.lib");
-                cfg.flag(lib.to_string_lossy().as_ref());
+                println!("cargo:rustc-link-lib=dylib=libcrypto");
             } else if use_openssl {
                 cfg.include(inc_dir.to_string_lossy().as_ref());
                 // branch not taken on Windows, just `crypto` is fine.
