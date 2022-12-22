@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::ffi::c_void;
 use std::os::unix::ffi::OsStrExt;
 use std::sync::{Arc, Mutex};
@@ -385,24 +386,20 @@ fn set_mode(wal: *mut Wal, mode: u8) {
 }
 
 extern "C" fn exclusive_mode(wal: *mut Wal, op: i32) -> i32 {
-    if op == 0 {
-        if get_mode(wal) != WAL_NORMAL_MODE {
-            set_mode(wal, WAL_NORMAL_MODE);
-            //FIXME: copy locking implementation from wal.c
-            // and potentially base it on foundationdb input
+    match op.cmp(&0) {
+        Ordering::Equal => {
+            if get_mode(wal) != WAL_NORMAL_MODE {
+                set_mode(wal, WAL_NORMAL_MODE);
+                //FIXME: copy locking implementation from wal.c
+                // and potentially base it on foundationdb input
+            }
+            (get_mode(wal) == WAL_NORMAL_MODE).into()
         }
-        if get_mode(wal) == WAL_NORMAL_MODE {
-            0
-        } else {
+        Ordering::Greater => {
+            set_mode(wal, WAL_EXCLUSIVE_MODE);
             1
         }
-    } else if op > 0 {
-        set_mode(wal, WAL_EXCLUSIVE_MODE);
-        1
-    } else if get_mode(wal) == WAL_NORMAL_MODE {
-        0
-    } else {
-        1
+        Ordering::Less => (get_mode(wal) == WAL_NORMAL_MODE).into(),
     }
 }
 
