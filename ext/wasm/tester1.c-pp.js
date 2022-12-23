@@ -1650,6 +1650,19 @@ self.sqlite3InitModule = sqlite3InitModule;
           assert(2 === blobRc.length);
         //debug("blobRc=",blobRc);
         T.assert(0x68==blobRc[0] && 0x69==blobRc[1]);
+
+        let rc = sqlite3.capi.sqlite3_create_function_v2(
+          this.db, "foo", 0, -1, 0, 0, 0, 0, 0
+        );
+        T.assert(
+          sqlite3.capi.SQLITE_FORMAT === rc,
+          "For invalid eTextRep argument."
+        );
+        rc = sqlite3.capi.sqlite3_create_function_v2(this.db, "foo", 0);
+        T.assert(
+          sqlite3.capi.SQLITE_MISUSE === rc,
+          "For invalid arg count."
+        );
       }
     })
 
@@ -2333,7 +2346,7 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(0===rc).assert(3===collationCounter);
       rc = capi.sqlite3_create_collation(this.db,"hi",capi.SQLITE_UTF8/*not enough args*/);
       T.assert(capi.SQLITE_MISUSE === rc);
-      rc = capi.sqlite3_create_collation_v2(this.db,"hi",0/*wrong encoding*/,0,0,0);
+      rc = capi.sqlite3_create_collation_v2(this.db,"hi",capi.SQLITE_UTF8+1/*invalid encoding*/,0,0,0);
       T.assert(capi.SQLITE_FORMAT === rc)
         .mustThrowMatching(()=>this.db.checkRc(rc),
                            /SQLITE_UTF8 is the only supported encoding./);
