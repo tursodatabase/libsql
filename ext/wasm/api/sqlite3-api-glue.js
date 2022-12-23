@@ -53,7 +53,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
     ["sqlite3_bind_pointer", "int",
      "sqlite3_stmt*", "int", "*", "string:static", "*"],
-    ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "int"
+    ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "*"
      /* We should arguably create a hand-written binding of
         bind_text() which does more flexible text conversion, along
         the lines of sqlite3_prepare_v3(). The slightly problematic
@@ -481,9 +481,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   {/* Convert Arrays and certain TypedArrays to strings for
       'string:flexible'-type arguments */
-    const xString = wasm.xWrap.argAdapter('string');
+    const __xString = wasm.xWrap.argAdapter('string');
     wasm.xWrap.argAdapter(
-      'string:flexible', (v)=>xString(util.flexibleString(v))
+      'string:flexible', (v)=>__xString(util.flexibleString(v))
     );
 
     /**
@@ -513,12 +513,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         if(wasm.isPtr(v)) return v;
         v = ''+v;
         let rc = this[v];
-        return rc || (rc = this[v] = wasm.allocCString(v));
+        return rc || (this[v] = wasm.allocCString(v));
       }.bind(Object.create(null))
     );
   }/* special-case string-type argument conversions */
-  
-  if(1){// WhWasmUtil.xWrap() bindings...
+
+  if(1){// wasm.xWrap() bindings...
     /**
        Add some descriptive xWrap() aliases for '*' intended to (A)
        initially improve readability/correctness of
@@ -562,19 +562,22 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
            VFS in many contexts. We specifically do not want that
            behavior here. */
         return capi.sqlite3_vfs_find(v)
-          || sqlite3.SQLite3Error.toss("Unknown sqlite3_vfs name:",v);
+          || sqlite3.SQLite3Error.toss(
+            capi.SQLITE_NOTFOUND,
+            "Unknown sqlite3_vfs name:", v
+          );
       }
       return aPtr((v instanceof (capi.sqlite3_vfs || nilType))
                   ? v.pointer : v);
     });
 
-    const rPtr = wasm.xWrap.resultAdapter('*');
-    wasm.xWrap.resultAdapter('sqlite3*', rPtr)
-    ('sqlite3_context*', rPtr)
-    ('sqlite3_stmt*', rPtr)
-    ('sqlite3_value*', rPtr)
-    ('sqlite3_vfs*', rPtr)
-    ('void*', rPtr);
+    const __xRcPtr = wasm.xWrap.resultAdapter('*');
+    wasm.xWrap.resultAdapter('sqlite3*', __xRcPtr)
+    ('sqlite3_context*', __xRcPtr)
+    ('sqlite3_stmt*', __xRcPtr)
+    ('sqlite3_value*', __xRcPtr)
+    ('sqlite3_vfs*', __xRcPtr)
+    ('void*', __xRcPtr);
 
     /**
        Populate api object with sqlite3_...() by binding the "raw" wasm
@@ -588,10 +591,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /* For C API functions which cannot work properly unless
-       wasm.bigIntEnabled is true, install a bogus impl which
-       throws if called when bigIntEnabled is false. */
+       wasm.bigIntEnabled is true, install a bogus impl which throws
+       if called when bigIntEnabled is false. The alternative would be
+       to elide these functions altogether, which seems likely to
+       cause more confusion. */
     const fI64Disabled = function(fname){
-      return ()=>toss(fname+"() disabled due to lack",
+      return ()=>toss(fname+"() is unavailable due to lack",
                       "of BigInt support in this build.");
     };
     for(const e of wasm.bindingSignatures.int64){
@@ -614,7 +619,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          - (sqlite3*, int code, string msg)
          - (sqlite3*, Error e [,string msg = ''+e])
 
-         If passed a WasmAllocError, the message is ingored and the
+         If passed a WasmAllocError, the message is ignored and the
          result code is SQLITE_NOMEM. If passed any other Error type,
          the result code defaults to SQLITE_ERROR unless the Error
          object has a resultCode property, in which case that is used
@@ -662,8 +667,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     );
   };
 
-  if(1){/* Bindings for sqlite3_create_collation() */
-
+  if(1){/* Bindings for sqlite3_create_collation[_v2]() */
     const __collationContextKey = (argIndex,argv)=>{
       return 'argv['+argIndex+']:sqlite3@'+argv[0]+
         ':'+wasm.cstrToJs(argv[1]).toLowerCase()
@@ -690,15 +694,22 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        Works exactly like C's sqlite3_create_collation_v2() except that:
 
-       1) It accepts JS functions for its function-pointer arguments,
+       1) It returns capi.SQLITE_FORMAT if the 3rd argument contains
+          any encoding-related value other than capi.SQLITE_UTF8.  No
+          other encodings are supported. As a special case, if the
+          bottom 4 bits of that argument are 0, SQLITE_UTF8 is
+          assumed.
+
+       2) It accepts JS functions for its function-pointer arguments,
           for which it will install WASM-bound proxies. The bindings
           are "permanent," in that they will stay in the WASM environment
-          until it shuts down unless the client somehow finds and removes
-          them.
+          until it shuts down unless the client calls this again with the
+          same collation name and a value of 0 or null for the
+          the function pointer(s).
 
-       2) It returns capi.SQLITE_FORMAT if the 3rd argument is not
-          capi.SQLITE_UTF8. No other encodings are supported. To simplify
-          usage, any falsy value of eTextRep is treated as SQLITE_UTF8.
+       For consistency with the C API, it requires the same number of
+       arguments. It returns capi.SQLITE_MISUSE if passed any other
+       argument count.
 
        Returns 0 on success, non-0 on error, in which case the error
        state of pDb (of type `sqlite3*` or argument-convertible to it)
@@ -706,9 +717,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     capi.sqlite3_create_collation_v2 = function(pDb,zName,eTextRep,pArg,xCompare,xDestroy){
       if(6!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_create_collation_v2', 6);
-      else if(!eTextRep){
-        eTextRep = capi.SQLITE_UTF8;
-      }else if(capi.SQLITE_UTF8!==eTextRep){
+      else if( 0 === (eTextRep & 0xf) ){
+        eTextRep |= capi.SQLITE_UTF8;
+      }else if( capi.SQLITE_UTF8 !== (eTextRep & 0xf) ){
         return __errEncoding(pDb);
       }
       let rc, pfCompare, pfDestroy;
@@ -777,13 +788,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   if(1){/* Special-case handling of sqlite3_create_function_v2()
            and sqlite3_create_window_function() */
+    /* Maintenance reminder: FuncPtrAdapter is not expressive enough
+       to be able to perform these mappings. */
     const sqlite3CreateFunction = wasm.xWrap(
       "sqlite3_create_function_v2", "int",
       ["sqlite3*", "string"/*funcName*/, "int"/*nArg*/,
        "int"/*eTextRep*/, "*"/*pApp*/,
        "*"/*xStep*/,"*"/*xFinal*/, "*"/*xValue*/, "*"/*xDestroy*/]
     );
-    // TODO: reimplement these using FuncPtrAdapter.
+
     const sqlite3CreateWindowFunction = wasm.xWrap(
       "sqlite3_create_window_function", "int",
       ["sqlite3*", "string"/*funcName*/, "int"/*nArg*/,
@@ -836,13 +849,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xDestroy: {sig:'v(p)',   f:__xDestroy}
     });
 
-    const __xWrapFuncs = function(theFuncs, tgtUninst){
+    /* Internal helper for sqlite3_create_function() and friends. */
+    const __xWrapFuncs = function(theKeys, theFuncs, tgtUninst){
       const rc = []
-      let k;
-      for(k in theFuncs){
+      for(const k of theKeys){
         let fArg = theFuncs[k];
         if('function'===typeof fArg){
-          const w = __xMap[k];
+          const w = __xMap[k] || toss3("Internal error in __xWrapFuncs: invalid key:",k);
           fArg = wasm.installFunction(w.sig, w.f(fArg));
           tgtUninst.push(fArg);
         }
@@ -859,18 +872,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xFinal,  //void (*xFinal)(sqlite3_context*)
       xDestroy //void (*xDestroy)(void*)
     ){
-      if(f.length!==arguments.length){
+      if( f.length!==arguments.length ){
         return __dbArgcMismatch(pDb,"sqlite3_create_function_v2",f.length);
-      }else if(!eTextRep){
-        eTextRep = capi.SQLITE_UTF8;
-      }else if(capi.SQLITE_UTF8!==eTextRep){
+      }else if( 0 === (eTextRep & 0xf) ){
+        eTextRep |= capi.SQLITE_UTF8;
+      }else if( capi.SQLITE_UTF8 !== (eTextRep & 0xf) ){
         return __errEncoding(pDb);
       }
       /* Wrap the callbacks in a WASM-bound functions... */
       const uninstall = [/*funcs to uninstall on error*/];
       let rc;
       try{
-        const funcArgs =  __xWrapFuncs({xFunc, xStep, xFinal, xDestroy},
+        const funcArgs =  __xWrapFuncs(['xFunc','xStep','xFinal','xDestroy'],
+                                       {xFunc, xStep, xFinal, xDestroy},
                                        uninstall);
         rc = sqlite3CreateFunction(pDb, funcName, nArg, eTextRep,
                                    pApp, ...funcArgs);
@@ -904,18 +918,19 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       xInverse,//void (*xStep)(sqlite3_context*,int,sqlite3_value**)
       xDestroy //void (*xDestroy)(void*)
     ){
-      if(f.length!==arguments.length){
+      if( f.length!==arguments.length ){
         return __dbArgcMismatch(pDb,"sqlite3_create_window_function",f.length);
-      }else if(!eTextRep){
-        eTextRep = capi.SQLITE_UTF8;
-      }else if(capi.SQLITE_UTF8!==eTextRep){
+      }else if( 0 === (eTextRep & 0xf) ){
+        eTextRep |= capi.SQLITE_UTF8;
+      }else if( capi.SQLITE_UTF8 !== (eTextRep & 0xf) ){
         return __errEncoding(pDb);
       }
       /* Wrap the callbacks in a WASM-bound functions... */
       const uninstall = [/*funcs to uninstall on error*/];
       let rc;
       try{
-        const funcArgs = __xWrapFuncs({xStep, xFinal, xValue, xInverse, xDestroy},
+        const funcArgs = __xWrapFuncs(['xStep','xFinal','xValue','xInverse','xDestroy'],
+                                      {xStep, xFinal, xValue, xInverse, xDestroy},
                                       uninstall);
         rc = sqlite3CreateWindowFunction(pDb, funcName, nArg, eTextRep,
                                          pApp, ...funcArgs);

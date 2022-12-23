@@ -1277,28 +1277,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          so we have no range checking. */
       f._ = {
         string: function(stmt, ndx, val, asBlob){
-          if(1){
-            /* _Hypothetically_ more efficient than the impl in the 'else' block. */
-            const stack = wasm.scopedAllocPush();
-            try{
-              const n = wasm.jstrlen(val);
-              const pStr = wasm.scopedAlloc(n);
-              wasm.jstrcpy(val, wasm.heap8u(), pStr, n, false);
-              const f = asBlob ? capi.sqlite3_bind_blob : capi.sqlite3_bind_text;
-              return f(stmt.pointer, ndx, pStr, n, capi.SQLITE_TRANSIENT);
-            }finally{
-              wasm.scopedAllocPop(stack);
-            }
-          }else{
-            const bytes = wasm.jstrToUintArray(val,false);
-            const pStr = wasm.alloc(bytes.length || 1);
-            wasm.heap8u().set(bytes.length ? bytes : [0], pStr);
-            try{
-              const f = asBlob ? capi.sqlite3_bind_blob : capi.sqlite3_bind_text;
-              return f(stmt.pointer, ndx, pStr, bytes.length, capi.SQLITE_TRANSIENT);
-            }finally{
-              wasm.dealloc(pStr);
-            }
+          const stack = wasm.scopedAllocPush();
+          try{
+            const [pStr, n] = wasm.scopedAllocCString(val, true);
+            const f = asBlob ? capi.sqlite3_bind_blob : capi.sqlite3_bind_text;
+            return f(stmt.pointer, ndx, pStr, n, capi.SQLITE_TRANSIENT);
+          }finally{
+            wasm.scopedAllocPop(stack);
           }
         }
       };
@@ -1354,7 +1339,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               const pBlob = wasm.scopedAlloc(val.byteLength || 1);
               wasm.heap8().set(val.byteLength ? val : [0], pBlob)
               rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
-                                         capi.SQLITE_TRANSIENT);
+                                          capi.SQLITE_TRANSIENT);
             }finally{
               wasm.scopedAllocPop(stack);
             }

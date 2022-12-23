@@ -2557,7 +2557,7 @@ self.sqlite3InitModule = sqlite3InitModule;
             capi.sqlite3_js_vfs_create_file(
               "no-such-vfs", filename, ba
             );
-          }, "Unknown sqlite3_vfs name: no-such-vfs");
+          }, "SQLITE_NOTFOUND: Unknown sqlite3_vfs name: no-such-vfs");
         }finally{
           if(sh) await sh.close();
           unlink();

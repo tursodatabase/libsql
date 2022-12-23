@@ -425,13 +425,19 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        any encoding other than sqlite3.SQLITE_UTF8. The JS API does not
        currently support any other encoding and likely never
        will. This function does not replace that argument on its own
-       because it may contain other flags.
+       because it may contain other flags. As a special case, if
+       the bottom 4 bits of that argument are 0, SQLITE_UTF8 is
+       assumed.
 
        2) Any of the four final arguments may be either WASM pointers
        (assumed to be function pointers) or JS Functions. In the
        latter case, each gets bound to WASM using
        sqlite3.capi.wasm.installFunction() and that wrapper is passed
        on to the native implementation.
+
+       For consistency with the C API, it requires the same number of
+       arguments. It returns capi.SQLITE_MISUSE if passed any other
+       argument count.
 
        The semantics of JS functions are:
 
