@@ -49,6 +49,9 @@ static void init_api_ptr(const sqlite3_api_routines *pApi){
 #undef SQLITE_EXTENSION_INIT2
 #define SQLITE_EXTENSION_INIT2(v) (void)v
 
+typedef unsigned char u8;
+#define U8_TYPEDEF
+
 /* These next 2 undef's are only needed because the entry point names
  * collide when formulated per the rules stated for loadable extension
  * entry point names that will be deduced from the file basenames.
