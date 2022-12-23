@@ -418,6 +418,92 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   Object.assign(capi, {
     /**
+       sqlite3_bind_blob() works exactly like its C counterpart unless
+       its 3rd argument is one of:
+
+       - JS string: the 3rd argument is converted to a C string, the
+         4th argument is ignored, and the C-string's length is used
+         in its place.
+
+       - Array: converted to a string as defined for "flexible
+         strings" and then it's treated as a JS string.
+
+       - Int8Array or Uint8Array: wasm.allocFromTypedArray() is used to
+         conver the memory to the WASM heap. If the 4th argument is
+         0 or greater, it is used as-is, otherwise the array's byteLength
+         value is used. This is an exception to the C API's undefined
+         behavior for a negative 4th argument, but results are undefined
+         if the given 4th argument value is greater than the byteLength
+         of the input array.
+
+       - If it's an ArrayBuffer, it gets wrapped in a Uint8Array and
+         treated as that type.
+
+       In all of those cases, the final argument (text destructor) is
+       ignored and capi.SQLITE_TRANSIENT is assumed.
+
+       A 3rd argument of `null` is treated as if it were a WASM pointer
+       of 0.
+
+       If the 3rd argument is neither a WASM pointer nor one of the
+       above-described types, capi.SQLITE_MISUSE is returned.
+
+       The first argument may be either an `sqlite3_stmt*` WASM
+       pointer or an sqlite3.oo1.Stmt instance.
+
+       For consistency with the C API, it requires the same number of
+       arguments. It returns capi.SQLITE_MISUSE if passed any other
+       argument count.
+    */
+    sqlite3_bind_blob: undefined/*installed later*/,
+
+    /**
+       sqlite3_bind_text() works exactly like its C counterpart unless
+       its 3rd argument is one of:
+
+       - JS string: the 3rd argument is converted to a C string, the
+         4th argument is ignored, and the C-string's length is used
+         in its place.
+
+       - Array: converted to a string as defined for "flexible
+         strings". The 4th argument is ignored and a value of -1
+         is assumed.
+
+       - Int8Array or Uint8Array: is assumed to contain UTF-8 text, is
+         converted to a string. The 4th argument is ignored, replaced
+         by the array's byteLength value.
+
+       - If it's an ArrayBuffer, it gets wrapped in a Uint8Array and
+         treated as that type.
+
+       In each of those cases, the final argument (text destructor) is
+       ignored and capi.SQLITE_TRANSIENT is assumed.
+
+       A 3rd argument of `null` is treated as if it were a WASM pointer
+       of 0.
+
+       If the 3rd argument is neither a WASM pointer nor one of the
+       above-described types, capi.SQLITE_MISUSE is returned.
+
+       The first argument may be either an `sqlite3_stmt*` WASM
+       pointer or an sqlite3.oo1.Stmt instance.
+
+       For consistency with the C API, it requires the same number of
+       arguments. It returns capi.SQLITE_MISUSE if passed any other
+       argument count.
+
+       If client code needs to bind partial strings, it needs to
+       either parcel the string up before passing it in here or it
+       must pass in a WASM pointer for the 3rd argument and a valid
+       4th-argument value, taking care not to pass a value which
+       truncates a multi-byte UTF-8 character. When passing
+       WASM-format strings, it is important that the final argument be
+       valid or unexpected content can result can result, or even a
+       crash if the application reads past the WASM heap bounds.
+    */
+    sqlite3_bind_text: undefined/*installed later*/,
+
+    /**
        sqlite3_create_function_v2() differs from its native
        counterpart only in the following ways:
 
@@ -525,18 +611,18 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        WASM build is compiled with emcc's `-sALLOW_TABLE_GROWTH`
        flag.
     */
-    sqlite3_create_function_v2: function(
+    sqlite3_create_function_v2: (
       pDb, funcName, nArg, eTextRep, pApp,
       xFunc, xStep, xFinal, xDestroy
-    ){/*installed later*/},
+    )=>{/*installed later*/},
     /**
        Equivalent to passing the same arguments to
        sqlite3_create_function_v2(), with 0 as the final argument.
     */
-    sqlite3_create_function:function(
+    sqlite3_create_function: (
       pDb, funcName, nArg, eTextRep, pApp,
       xFunc, xStep, xFinal
-    ){/*installed later*/},
+    )=>{/*installed later*/},
     /**
        The sqlite3_create_window_function() JS wrapper differs from
        its native implementation in the exact same way that
@@ -544,10 +630,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        xInverse(), is treated identically to xStep() by the wrapping
        layer.
     */
-    sqlite3_create_window_function: function(
+    sqlite3_create_window_function: (
       pDb, funcName, nArg, eTextRep, pApp,
       xStep, xFinal, xValue, xInverse, xDestroy
-    ){/*installed later*/},
+    )=>{/*installed later*/},
     /**
        The sqlite3_prepare_v3() binding handles two different uses
        with differing JS/WASM semantics:
@@ -669,7 +755,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     toss3,
     typedArrayPart
   };
-    
+
   Object.assign(wasm, {
     /**
        Emscripten APIs have a deep-seated assumption that all pointers

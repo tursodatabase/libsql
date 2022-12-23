@@ -1332,8 +1332,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }else if(!util.isBindableTypedArray(val)){
             toss3("Binding a value as a blob requires",
                   "that it be a string, Uint8Array, or Int8Array.");
-          }else if(1){
-            /* _Hypothetically_ more efficient than the impl in the 'else' block. */
+          }else{
             const stack = wasm.scopedAllocPush();
             try{
               const pBlob = wasm.scopedAlloc(val.byteLength || 1);
@@ -1342,14 +1341,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                           capi.SQLITE_TRANSIENT);
             }finally{
               wasm.scopedAllocPop(stack);
-            }
-          }else{
-            const pBlob = wasm.allocFromTypedArray(val);
-            try{
-              rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
-                                         capi.SQLITE_TRANSIENT);
-            }finally{
-              wasm.dealloc(pBlob);
             }
           }
           break;

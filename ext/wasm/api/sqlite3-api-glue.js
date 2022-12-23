@@ -42,10 +42,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   wasm.bindingSignatures = [
     // Please keep these sorted by function name!
     ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
-    ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"
-     /* TODO: we should arguably write a custom wrapper which knows
-        how to handle Blob, TypedArrays, and JS strings. */
-    ],
+    /* sqlite3_bind_blob() and sqlite3_bind_text() have hand-written
+       bindings to permit more flexible inputs. */
     ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
     ["sqlite3_bind_int","int", "sqlite3_stmt*", "int", "int"],
     ["sqlite3_bind_null",undefined, "sqlite3_stmt*", "int"],
@@ -53,16 +51,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
     ["sqlite3_bind_pointer", "int",
      "sqlite3_stmt*", "int", "*", "string:static", "*"],
-    ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "*"
-     /* We should arguably create a hand-written binding of
-        bind_text() which does more flexible text conversion, along
-        the lines of sqlite3_prepare_v3(). The slightly problematic
-        part is the final argument (text destructor). */
-    ],
-    //["sqlite3_busy_handler","int", "sqlite3*", "*", "*"],
-    // ^^^^ TODO: custom binding which auto-converts JS function arg
-    // to a WASM function, noting that calling it multiple times
-    // would introduce a leak.
+    ["sqlite3_busy_handler","int", [
+      "sqlite3*",
+      new wasm.xWrap.FuncPtrAdapter({
+        signature: 'i(pi)',
+        contextKey: (argIndex,argv)=>'sqlite3@'+argv[0]
+      }),
+      "*"
+    ]],
     ["sqlite3_busy_timeout","int", "sqlite3*", "int"],
     ["sqlite3_close_v2", "int", "sqlite3*"],
     ["sqlite3_changes", "int", "sqlite3*"],
@@ -779,6 +775,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   if(1){/* Special-case handling of sqlite3_prepare_v2() and
            sqlite3_prepare_v3() */
+
     /**
        Helper for string:flexible conversions which require a
        byte-length counterpart argument. Passed a value and its
@@ -802,32 +799,33 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        Scope-local holder of the two impls of sqlite3_prepare_v2/v3().
     */
-    const __prepare = Object.create(null);
-    /**
-       This binding expects a JS string as its 2nd argument and
-       null as its final argument. In order to compile multiple
-       statements from a single string, the "full" impl (see
-       below) must be used.
-    */
-    __prepare.basic = wasm.xWrap('sqlite3_prepare_v3',
-                                 "int", ["sqlite3*", "string",
-                                         "int"/*ignored for this impl!*/,
-                                         "int", "**",
-                                         "**"/*MUST be 0 or null or undefined!*/]);
-    /**
-       Impl which requires that the 2nd argument be a pointer
-       to the SQL string, instead of being converted to a
-       string. This variant is necessary for cases where we
-       require a non-NULL value for the final argument
-       (exec()'ing multiple statements from one input
-       string). For simpler cases, where only the first
-       statement in the SQL string is required, the wrapper
-       named sqlite3_prepare_v2() is sufficient and easier to
-       use because it doesn't require dealing with pointers.
-    */
-    __prepare.full = wasm.xWrap('sqlite3_prepare_v3',
-                                "int", ["sqlite3*", "*", "int", "int",
-                                        "**", "**"]);
+    const __prepare = {
+      /**
+         This binding expects a JS string as its 2nd argument and
+         null as its final argument. In order to compile multiple
+         statements from a single string, the "full" impl (see
+         below) must be used.
+      */
+      basic: wasm.xWrap('sqlite3_prepare_v3',
+                        "int", ["sqlite3*", "string",
+                                "int"/*ignored for this impl!*/,
+                                "int", "**",
+                                "**"/*MUST be 0 or null or undefined!*/]),
+      /**
+         Impl which requires that the 2nd argument be a pointer
+         to the SQL string, instead of being converted to a
+         string. This variant is necessary for cases where we
+         require a non-NULL value for the final argument
+         (exec()'ing multiple statements from one input
+         string). For simpler cases, where only the first
+         statement in the SQL string is required, the wrapper
+         named sqlite3_prepare_v2() is sufficient and easier to
+         use because it doesn't require dealing with pointers.
+      */
+      full: wasm.xWrap('sqlite3_prepare_v3',
+                       "int", ["sqlite3*", "*", "int", "int",
+                               "**", "**"])
+    };
 
     /* Documented in the capi object's initializer. */
     capi.sqlite3_prepare_v3 = function f(pDb, sql, sqlLen, prepFlags, ppStmt, pzTail){
@@ -852,7 +850,80 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         ? capi.sqlite3_prepare_v3(pDb, sql, sqlLen, 0, ppStmt, pzTail)
         : __dbArgcMismatch(pDb,"sqlite3_prepare_v2",f.length);
     };
-  }/*sqlite3_prepare_v2/v3()*/;
+
+  }/*sqlite3_prepare_v2/v3()*/
+
+  {/*sqlite3_bind_text/blob()*/
+    const __bindText = wasm.xWrap("sqlite3_bind_text", "int", [
+      "sqlite3_stmt*", "int", "string", "int", "*"
+    ]);
+    const __bindBlob = wasm.xWrap("sqlite3_bind_blob", "int", [
+      "sqlite3_stmt*", "int", "*", "int", "*"
+    ]);
+
+    /** Documented in the capi object's initializer. */
+    capi.sqlite3_bind_text = function f(pStmt, iCol, text, nText, xDestroy){
+      if(f.length!==arguments.length){
+        return __dbArgcMismatch(capi.sqlite3_db_handle(pStmt),
+                                "sqlite3_bind_text", f.length);
+      }else if(wasm.isPtr(text) || null===text){
+        return __bindText(pStmt, iCol, text, nText, xDestroy);
+      }else if(text instanceof ArrayBuffer){
+        text = new Uint8Array(text);
+      }else if(Array.isArray(pMem)){
+        text = pMem.join('');
+      }
+      let p, n;
+      try {
+        if(util.isSQLableTypedArray(text)){
+          p = wasm.allocFromTypedArray(text);
+          n = text.byteLength;
+        }else if('string'===typeof text){
+          [p, n] = wasm.allocCString(text);
+        }else{
+          return util.sqlite3_wasm_db_error(
+            capi.sqlite3_db_handle(pStmt), capi.SQLITE_MISUSE,
+            "Invalid 3rd argument type for sqlite3_bind_text()."
+          );
+        }
+        return __bindText(pStmt, iCol, p, n, capi.SQLITE_TRANSIENT);
+      }finally{
+        wasm.dealloc(p);
+      }
+    }/*sqlite3_bind_text()*/;
+
+    /** Documented in the capi object's initializer. */
+    capi.sqlite3_bind_blob = function f(pStmt, iCol, pMem, nMem, xDestroy){
+      if(f.length!==arguments.length){
+        return __dbArgcMismatch(capi.sqlite3_db_handle(pStmt),
+                                "sqlite3_bind_blob", f.length);
+      }else if(wasm.isPtr(pMem) || null===pMem){
+        return __bindBlob(pStmt, iCol, pMem, nMem, xDestroy);
+      }else if(pMem instanceof ArrayBuffer){
+        pMem = new Uint8Array(pMem);
+      }else if(Array.isArray(pMem)){
+        pMem = pMem.join('');
+      }
+      let p, n;
+      try{
+        if(util.isBindableTypedArray(pMem)){
+          p = wasm.allocFromTypedArray(pMem);
+          n = nMem>=0 ? nMem : pMem.byteLength;
+        }else if('string'===typeof pMem){
+          [p, n] = wasm.allocCString(pMem);
+        }else{
+          return util.sqlite3_wasm_db_error(
+            capi.sqlite3_db_handle(pStmt), capi.SQLITE_MISUSE,
+            "Invalid 3rd argument type for sqlite3_bind_blob()."
+          );
+        }
+        return __bindBlob(pStmt, iCol, p, n, capi.SQLITE_TRANSIENT);
+      }finally{
+        wasm.dealloc(p);
+      }
+    }/*sqlite3_bind_blob()*/;
+
+  }/*sqlite3_bind_text/blob()*/
 
   {/* sqlite3_set_authorizer() */
     const __ssa = wasm.xWrap("sqlite3_set_authorizer", 'int', [
