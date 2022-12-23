@@ -3638,10 +3638,10 @@ struct TriggerPrg {
 #else
   typedef unsigned int yDbMask;
 # define DbMaskTest(M,I)    (((M)&(((yDbMask)1)<<(I)))!=0)
-# define DbMaskZero(M)      (M)=0
-# define DbMaskSet(M,I)     (M)|=(((yDbMask)1)<<(I))
-# define DbMaskAllZero(M)   (M)==0
-# define DbMaskNonZero(M)   (M)!=0
+# define DbMaskZero(M)      ((M)=0)
+# define DbMaskSet(M,I)     ((M)|=(((yDbMask)1)<<(I)))
+# define DbMaskAllZero(M)   ((M)==0)
+# define DbMaskNonZero(M)   ((M)!=0)
 #endif
 
 /*
