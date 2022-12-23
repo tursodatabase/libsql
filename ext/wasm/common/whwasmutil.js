@@ -359,7 +359,8 @@ self.WhWasmUtilInstaller = function(target){
 
   /**
      Given a function pointer, returns the WASM function table entry
-     if found, else returns a falsy value.
+     if found, else returns a falsy value: undefined if fptr is out of
+     range or null if it's in range but the table entry is empty.
   */
   target.functionEntry = function(fptr){
     const ft = target.functionTable();
@@ -552,13 +553,12 @@ self.WhWasmUtilInstaller = function(target){
         cache.scopedAlloc[cache.scopedAlloc.length-1].push(ptr);
       }
     }catch(e){
-      if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen); 
-     throw e;
+      if(ptr===oldLen) cache.freeFuncIndexes.push(oldLen);
+      throw e;
     }
-    return ptr;      
+    return ptr;
   };
 
-  
   /**
      Expects a JS function and signature, exactly as for
      this.jsFuncToWasm(). It uses that function to create a
@@ -612,8 +612,13 @@ self.WhWasmUtilInstaller = function(target){
      installFunction() has been called and results are undefined if
      ptr was not returned by that function. The returned function
      may be passed back to installFunction() to reinstall it.
+
+     To simplify certain use cases, if passed a falsy non-0 value
+     (noting that 0 is a valid function table index), this function
+     has no side effects and returns undefined.
   */
   target.uninstallFunction = function(ptr){
+    if(!ptr && 0!==ptr) return undefined;
     const fi = cache.freeFuncIndexes;
     const ft = target.functionTable();
     fi.push(ptr);
@@ -730,7 +735,7 @@ self.WhWasmUtilInstaller = function(target){
           ? cache : heapWrappers();
     for(const p of (Array.isArray(ptr) ? ptr : [ptr])){
       switch (type) {
-          case 'i1': 
+          case 'i1':
           case 'i8': c.HEAP8[p>>0] = value; continue;
           case 'i16': c.HEAP16[p>>1] = value; continue;
           case 'i32': c.HEAP32[p>>2] = value; continue;
@@ -803,7 +808,6 @@ self.WhWasmUtilInstaller = function(target){
   /** f64 variant of poke8(). */
   target.poke64f = (ptr, value)=>target.poke(ptr, value, 'f64');
 
-  
   /** Deprecated alias for getMemValue() */
   target.getMemValue = target.peek;
   /** Deprecated alias for peekPtr() */
@@ -1351,7 +1355,7 @@ self.WhWasmUtilInstaller = function(target){
 
   const __argcMismatch =
         (f,n)=>toss(f+"() requires",n,"argument(s).");
-  
+
   /**
      Looks up a WASM-exported function named fname from
      target.exports. If found, it is called, passed all remaining
@@ -1390,18 +1394,25 @@ self.WhWasmUtilInstaller = function(target){
   if(target.bigIntEnabled){
     xArg.set('i64', (i)=>BigInt(i));
   }
-  xArg.set('i32', (i)=>(i | 0));
-  xArg.set('i16', (i)=>((i | 0) & 0xFFFF));
-  xArg.set('i8', (i)=>((i | 0) & 0xFF));
-  xArg.set('f32', (i)=>Number(i).valueOf());
-  xArg.set('float', xArg.get('f32'));
-  xArg.set('f64', xArg.get('f32'));
-  xArg.set('double', xArg.get('f64'));
-  xArg.set('int', xArg.get('i32'));
-  xResult.set('*', xArg.get(ptrIR));
-  xResult.set('pointer', xArg.get(ptrIR));
-  xArg.set('**', xArg.get(ptrIR));
-  xResult.set('number', (v)=>Number(v));
+  const __xArgPtr = 'i32' === ptrIR
+        ? ((i)=>(i | 0)) : ((i)=>(BigInt(i) | BigInt(0)));
+  xArg.set('i32', __xArgPtr )
+    .set('i16', (i)=>((i | 0) & 0xFFFF))
+    .set('i8', (i)=>((i | 0) & 0xFF))
+    .set('f32', (i)=>Number(i).valueOf())
+    .set('float', xArg.get('f32'))
+    .set('f64', xArg.get('f32'))
+    .set('double', xArg.get('f64'))
+    .set('int', xArg.get('i32'))
+    .set('null', (i)=>i)
+    .set(null, xArg.get('null'))
+    .set('**', __xArgPtr);
+  xResult.set('*', __xArgPtr)
+    .set('pointer', __xArgPtr)
+    .set('number', (v)=>Number(v))
+    .set('void', (v)=>undefined)
+    .set('null', (v)=>v)
+    .set(null, xResult.get('null'));
 
   { /* Copy certain xArg[...] handlers to xResult[...] and
        add pointer-style variants of them. */
@@ -1430,15 +1441,17 @@ self.WhWasmUtilInstaller = function(target){
 
      TODO? Permit an Int8Array/Uint8Array and convert it to a string?
      Would that be too much magic concentrated in one place, ready to
-     backfire?
+     backfire? We handle that at the client level in sqlite3 with a
+     custom argument converter.
   */
-  xArg.set('string', function(v){
+  const __xArgString = function(v){
     if('string'===typeof v) return target.scopedAllocCString(v);
-    return v ? xArg.get(ptrIR)(v) : null;
-  });
-  xArg.set('utf8', xArg.get('string'));
-  xArg.set('pointer', xArg.get('string'));
-  xArg.set('*', xArg.get('string'));
+    return v ? __xArgPtr(v) : null;
+  };
+  xArg.set('string', __xArgString);
+  xArg.set('utf8', __xArgString);
+  xArg.set('pointer', __xArgString);
+  xArg.set('*', __xArgString);
 
   xResult.set('string', (i)=>target.cstrToJs(i));
   xResult.set('utf8', xResult.get('string'));
@@ -1452,25 +1465,6 @@ self.WhWasmUtilInstaller = function(target){
     try{ return i ? JSON.parse(target.cstrToJs(i)) : null }
     finally{ target.dealloc(i) }
   });
-  xResult.set('void', (v)=>undefined);
-  xResult.set('null', (v)=>v);
-
-  if(0){
-    /***
-        This idea can't currently work because we don't know the
-        signature for the func and don't have a way for the user to
-        convey it. To do this we likely need to be able to match
-        arg/result handlers by a regex, but that would incur an O(N)
-        cost as we check the regex one at a time. Another use case for
-        such a thing would be pseudotypes like "int:-1" to say that
-        the value will always be treated like -1 (which has a useful
-        case in the sqlite3 bindings).
-    */
-    xArg.set('func-ptr', function(v){
-      if(!(v instanceof Function)) return xArg.get(ptrIR);
-      const f = target.jsFuncToWasm(v, WHAT_SIGNATURE);
-    });
-  }
 
   /**
      Internal-use-only base class for FuncPtrAdapter and potentially
@@ -1537,8 +1531,8 @@ self.WhWasmUtilInstaller = function(target){
          value. This is only useful for use with "global" functions
          which do not rely on any state other than this function
          pointer. If the being-converted function pointer is intended
-         to be mapped to some sort of state object (e.g. an sqlite3*)
-         then "context" (see below) is the proper mode.
+         to be mapped to some sort of state object (e.g. an
+         `sqlite3*`) then "context" (see below) is the proper mode.
 
        - 'context': similar to singleton mode but for a given
          "context", where the context is a key provided by the user
@@ -1688,35 +1682,41 @@ self.WhWasmUtilInstaller = function(target){
         (t)=>xResult.get(t) || toss("Result adapter not found:",t);
 
   cache.xWrap.convertArg = (t,...args)=>__xArgAdapterCheck(t)(...args);
+  cache.xWrap.convertArgNoCheck = (t,...args)=>xArg.get(t)(...args);
+
   cache.xWrap.convertResult =
     (t,v)=>(null===t ? v : (t ? __xResultAdapterCheck(t)(v) : undefined));
+  cache.xWrap.convertResultNoCheck =
+    (t,v)=>(null===t ? v : (t ? xResult.get(t)(v) : undefined));
 
   /**
-     Creates a wrapper for the WASM-exported function fname. Uses
-     xGet() to fetch the exported function (which throws on
-     error) and returns either that function or a wrapper for that
+     Creates a wrapper for another function which converts the arguments
+     of the wrapper to argument types accepted by the wrapped function,
+     then converts the wrapped function's result to another form
+     for the wrapper.
+
+     The first argument must be one of:
+
+     - A JavaScript function.
+     - The name of a WASM-exported function. In the latter case xGet()
+       is used to fetch the exported function, which throws if it's not
+       found.
+     - A pointer into the indirect function table. e.g. a pointer
+       returned from target.installFunction().
+
+     It returns either the passed-in function or a wrapper for that
      function which converts the JS-side argument types into WASM-side
-     types and converts the result type. If the function takes no
-     arguments and resultType is `null` then the function is returned
-     as-is, else a wrapper is created for it to adapt its arguments
-     and result value, as described below.
+     types and converts the result type.
 
-     (If you're familiar with Emscripten's ccall() and cwrap(), this
-     function is essentially cwrap() on steroids.)
-
-     This function's arguments are:
-
-     - fname: the exported function's name. xGet() is used to fetch
-       this, so will throw if no exported function is found with that
-       name.
-
-     - resultType: the name of the result type. A literal `null` means
-       to return the original function's value as-is (mnemonic: there
-       is "null" conversion going on). Literal `undefined` or the
-       string `"void"` mean to ignore the function's result and return
-       `undefined`. Aside from those two special cases, it may be one
-       of the values described below or any mapping installed by the
-       client using xWrap.resultAdapter().
+     The second argument, `resultType`, describes the conversion for
+     the wrapped functions result. A literal `null` or the string
+     `'null'` both mean to return the original function's value as-is
+     (mnemonic: there is "null" conversion going on). Literal
+     `undefined` or the string `"void"` both mean to ignore the
+     function's result and return `undefined`. Aside from those two
+     special cases, the `resultType` value may be one of the values
+     described below or any mapping installed by the client using
+     xWrap.resultAdapter().
 
      If passed 3 arguments and the final one is an array, that array
      must contain a list of type names (see below) for adapting the
@@ -1729,6 +1729,12 @@ self.WhWasmUtilInstaller = function(target){
      // is equivalent to:
      xWrap('funcname', 'i32', ['string', 'f64']);
      ```
+
+     This function enforces that the given list of arguments has the
+     same arity as the being-wrapped function (as defined by its
+     `length` property) and it will throw if that is not the case.
+     Similarly, the created wrapper will throw if passed a differing
+     argument count.
 
      Type names are symbolic names which map the arguments to an
      adapter function to convert, if needed, the value before passing
@@ -1766,6 +1772,10 @@ self.WhWasmUtilInstaller = function(target){
 
      Non-numeric conversions include:
 
+     - `null` literal or `"null"` string (args and results): perform
+       no translation and pass the arg on as-is. This is primarily
+       useful for results but may have a use or two for arguments.
+
      - `string` or `utf8` (args): has two different semantics in order
        to accommodate various uses of certain C APIs
        (e.g. output-style strings)...
@@ -1780,9 +1790,9 @@ self.WhWasmUtilInstaller = function(target){
          client has already allocated and it's passed on as
          a WASM pointer.
 
-       - `string` or `utf8` (results): treats the result value as a
-         const C-string, encoded as UTF-8, copies it to a JS string,
-         and returns that JS string.
+     - `string` or `utf8` (results): treats the result value as a
+       const C-string, encoded as UTF-8, copies it to a JS string,
+       and returns that JS string.
 
      - `string:dealloc` or `utf8:dealloc) (results): treats the result value
        as a non-const UTF-8 C-string, ownership of which has just been
@@ -1819,6 +1829,11 @@ self.WhWasmUtilInstaller = function(target){
      type conversions are valid for both arguments _and_ result types
      as they often have different memory ownership requirements.
 
+     Design note: the ability to pass in a JS function as the first
+     argument is of relatively limited use, primarily for testing
+     argument and result converters. JS functions, by and large, will
+     not want to deal with C-type arguments.
+
      TODOs:
 
      - Figure out how/whether we can (semi-)transparently handle
@@ -1839,14 +1854,21 @@ self.WhWasmUtilInstaller = function(target){
        abstracting it into this API (and taking on the associated
        costs) may well not make good sense.
   */
-  target.xWrap = function(fname, resultType, ...argTypes){
+  target.xWrap = function(fArg, resultType, ...argTypes){
     if(3===arguments.length && Array.isArray(arguments[2])){
       argTypes = arguments[2];
     }
-    const xf = target.xGet(fname);
-    if(argTypes.length!==xf.length) __argcMismatch(fname, xf.length);
+    if(target.isPtr(fArg)){
+      fArg = target.functionEntry(fArg)
+        || toss("Function pointer not found in WASM function table.");
+    }
+    const fIsFunc = (fArg instanceof Function);
+    const xf = fIsFunc ? fArg : target.xGet(fArg);
+    if(fIsFunc) fArg = xf.name || 'unnamed function';
+    if(argTypes.length!==xf.length) __argcMismatch(fArg, xf.length);
     if((null===resultType) && 0===xf.length){
-      /* Func taking no args with an as-is return. We don't need a wrapper. */
+      /* Func taking no args with an as-is return. We don't need a wrapper.
+         We forego the argc check here, though. */
       return xf;
     }
     /*Verify the arg type conversions are valid...*/;
@@ -1859,11 +1881,11 @@ self.WhWasmUtilInstaller = function(target){
     if(0===xf.length){
       // No args to convert, so we can create a simpler wrapper...
       return (...args)=>(args.length
-                         ? __argcMismatch(fname, xf.length)
+                         ? __argcMismatch(fArg, xf.length)
                          : cxw.convertResult(resultType, xf.call(null)));
     }
     return function(...args){
-      if(args.length!==xf.length) __argcMismatch(fname, xf.length);
+      if(args.length!==xf.length) __argcMismatch(fArg, xf.length);
       const scope = target.scopedAllocPush();
       try{
         /*
@@ -1881,8 +1903,8 @@ self.WhWasmUtilInstaller = function(target){
           and what those arguments are, is _not_ part of the public
           interface and is _not_ stable.
         */
-        for(const i in args) args[i] = cxw.convertArg(argTypes[i], args[i], i, args);
-        return cxw.convertResult(resultType, xf.apply(null,args));
+        for(const i in args) args[i] = cxw.convertArgNoCheck(argTypes[i], args[i], i, args);
+        return cxw.convertResultNoCheck(resultType, xf.apply(null,args));
       }finally{
         target.scopedAllocPop(scope);
       }
@@ -1974,14 +1996,13 @@ self.WhWasmUtilInstaller = function(target){
 
   /**
      Functions like xCall() but performs argument and result type
-     conversions as for xWrap(). The first argument is the name of the
-     exported function to call. The 2nd its the name of its result
-     type, as documented for xWrap(). The 3rd is an array of argument
-     type name, as documented for xWrap() (use a falsy value or an
-     empty array for nullary functions). The 4th+ arguments are
-     arguments for the call, with the special case that if the 4th
-     argument is an array, it is used as the arguments for the
-     call. Returns the converted result of the call.
+     conversions as for xWrap(). The first, second, and third
+     arguments are as documented for xWrap(), except that the 3rd
+     argument may be either a falsy value or empty array to represent
+     nullary functions. The 4th+ arguments are arguments for the call,
+     with the special case that if the 4th argument is an array, it is
+     used as the arguments for the call. Returns the converted result
+     of the call.
 
      This is just a thin wrapper around xWrap(). If the given function
      is to be called more than once, it's more efficient to use
@@ -1990,9 +2011,9 @@ self.WhWasmUtilInstaller = function(target){
      arguably more efficient because it will hypothetically free the
      wrapper function quickly.
   */
-  target.xCallWrapped = function(fname, resultType, argTypes, ...args){
+  target.xCallWrapped = function(fArg, resultType, argTypes, ...args){
     if(Array.isArray(arguments[3])) args = arguments[3];
-    return target.xWrap(fname, resultType, argTypes||[]).apply(null, args||[]);
+    return target.xWrap(fArg, resultType, argTypes||[]).apply(null, args||[]);
   };
 
   /**
