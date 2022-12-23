@@ -97,6 +97,10 @@ static int stmtConnect(
 #define STMT_COLUMN_MEM    10   /* SQLITE_STMTSTATUS_MEMUSED */
 
 
+  (void)pAux;
+  (void)argc;
+  (void)argv;
+  (void)pzErr;
   rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
                     "reprep,run,mem)");
@@ -216,6 +220,10 @@ static int stmtFilter(
   sqlite3_int64 iRowid = 1;
   StmtRow **ppRow = 0;
 
+  (void)idxNum;
+  (void)idxStr;
+  (void)argc;
+  (void)argv;
   stmtCsrReset(pCur);
   ppRow = &pCur->pRow;
   for(p=sqlite3_next_stmt(pCur->db, 0); p; p=sqlite3_next_stmt(pCur->db, p)){
@@ -271,6 +279,7 @@ static int stmtBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
+  (void)tab;
   pIdxInfo->estimatedCost = (double)500;
   pIdxInfo->estimatedRows = 500;
   return SQLITE_OK;

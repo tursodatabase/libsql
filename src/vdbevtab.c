@@ -83,6 +83,9 @@ static int bytecodevtabConnect(
    ");"
   };
 
+  (void)argc;
+  (void)argv;
+  (void)pzErr;
   rc = sqlite3_declare_vtab(db, azSchema[isTabUsed]);
   if( rc==SQLITE_OK ){
     pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -318,6 +321,7 @@ static int bytecodevtabFilter(
   bytecodevtab_cursor *pCur = (bytecodevtab_cursor *)pVtabCursor;
   bytecodevtab *pVTab = (bytecodevtab *)pVtabCursor->pVtab;
   int rc = SQLITE_OK;
+  (void)idxStr;
 
   bytecodevtabCursorClear(pCur);
   pCur->iRowid = 0;

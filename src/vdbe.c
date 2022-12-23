@@ -133,6 +133,9 @@ int sqlite3_found_count = 0;
 */
 static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
   static int n = 0;
+  (void)pc;
+  (void)pOp;
+  (void)v;
   n++;
 }
 #endif

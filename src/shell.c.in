@@ -5423,6 +5423,8 @@ static char *readline_completion_generator(const char *text, int state){
   return zRet;
 }
 static char **readline_completion(const char *zText, int iStart, int iEnd){
+  (void)iStart;
+  (void)iEnd;
   rl_attempted_completion_over = 1;
   return rl_completion_matches(zText, readline_completion_generator);
 }

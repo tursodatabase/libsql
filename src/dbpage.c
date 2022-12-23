@@ -72,6 +72,10 @@ static int dbpageConnect(
 ){
   DbpageTable *pTab = 0;
   int rc = SQLITE_OK;
+  (void)pAux;
+  (void)argc;
+  (void)argv;
+  (void)pzErr;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
   rc = sqlite3_declare_vtab(db, 
@@ -110,6 +114,7 @@ static int dbpageDisconnect(sqlite3_vtab *pVtab){
 static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i;
   int iPlan = 0;
+  (void)tab;
 
   /* If there is a schema= constraint, it must be honored.  Report a
   ** ridiculously large estimated cost if the schema= constraint is
@@ -225,6 +230,8 @@ static int dbpageFilter(
   sqlite3 *db = pTab->db;
   Btree *pBt;
 
+  (void)idxStr;
+  
   /* Default setting is no rows of result */
   pCsr->pgno = 1; 
   pCsr->mxPgno = 0;
@@ -320,6 +327,7 @@ static int dbpageUpdate(
   Pager *pPager;
   int szPage;
 
+  (void)pRowid;
   if( pTab->db->flags & SQLITE_Defensive ){
     zErr = "read-only";
     goto update_fail;

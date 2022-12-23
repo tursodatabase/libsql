@@ -616,7 +616,7 @@ int sqlite3_decimal_init(
 
   SQLITE_EXTENSION_INIT2(pApi);
 
-  for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
+  for(i=0; i<(int)(sizeof(aFunc)/sizeof(aFunc[0])) && rc==SQLITE_OK; i++){
     rc = sqlite3_create_function(db, aFunc[i].zFuncName, aFunc[i].nArg,
                    SQLITE_UTF8|SQLITE_INNOCUOUS|SQLITE_DETERMINISTIC,
                    0, aFunc[i].xFunc, 0, 0);
