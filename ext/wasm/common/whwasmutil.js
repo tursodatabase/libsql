@@ -2026,9 +2026,12 @@ self.WhWasmUtilInstaller = function(target){
      It throws if no adapter is found.
 
      ACHTUNG: the adapter may require that a scopedAllocPush() is
-     active and it may allocate memory within that scope.
+     active and it may allocate memory within that scope. It may also
+     require additional arguments, depending on the type of
+     conversion.
   */
   target.xWrap.testConvertArg = cache.xWrap.convertArg;
+
   /**
      This function is ONLY exposed in the public API to facilitate
      testing. It should not be used in application-level code, only
