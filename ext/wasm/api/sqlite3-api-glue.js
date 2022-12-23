@@ -332,10 +332,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   if(1){// WhWasmUtil.xWrap() bindings...
     /**
        Add some descriptive xWrap() aliases for '*' intended to (A)
-       initially improve readability/correctness of capi.signatures
-       and (B) provide automatic conversion from higher-level
-       representations, e.g. capi.sqlite3_vfs to `sqlite3_vfs*` via
-       capi.sqlite3_vfs.pointer.
+       initially improve readability/correctness of
+       wasm.bindingSignatures and (B) provide automatic conversion
+       from higher-level representations, e.g. capi.sqlite3_vfs to
+       `sqlite3_vfs*` via capi.sqlite3_vfs.pointer.
     */
     const aPtr = wasm.xWrap.argAdapter('*');
     const nilType = function(){};
@@ -343,6 +343,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ('sqlite3_context*', aPtr)
     ('sqlite3_value*', aPtr)
     ('void*', aPtr)
+    ('sqlite3_changegroup*', aPtr)
+    ('sqlite3_changeset_iter*', aPtr)
+    //('sqlite3_rebaser*', aPtr)
+    ('sqlite3_session*', aPtr)
     ('sqlite3_stmt*', (v)=>
       aPtr((v instanceof (sqlite3?.oo1?.Stmt || nilType))
            ? v.pointer : v))
