@@ -1,11 +1,11 @@
-C Add\sbase64()\sand\sbase85()\stext/blob\sconversions\sto\sthe\sCLI.
-D 2022-12-23T19:04:59.875
+C Add\sbase64()\sand\sbase85()\sto\sshell\ssources\sfor\sthe\snon-configured\smakefiles,\stoo.
+D 2022-12-23T19:11:57.957
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 341f02570d220695100004c447773ecb6c082e24178fc45dcbc0a212abaa0655
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc e86ec21328921721dd6f777da435c62a5469cda1a654f5ecefacf87ddb3dfeb3
+F Makefile.msc 5a13f784bd91c246673648f056e7f3193c45d53dff874eecde547ec854c292b8
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 413ec94920a487ae32c9a2a8819544d690662d6f7c7ce025c0d0b8a1e74fa9db
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -564,7 +564,7 @@ F ext/wasm/wasmfs.make cf9a68162d92ca2bcb0b9528b244cb36d5cc2d84ccc9c2d398461927d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk 5ce166d63fb99df9821f262fb1777fd5eb7b6c9396e867a6b0b2761f35f8238a
+F main.mk ed4950f3e1d03687e6c94c0f9aa26373ddab628030480d1e298097cfe0b9a5cf
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d9a14715c25efcd81cadafabf03aad7213251bd1b3dc181939c2dba8d942fb6
-R f473ce0dc90c010b804e2b9eefdd163f
+P 4bc98a2d9520efa9b80142163cbfab72a5f2fe9854cd6ba8291dcefdb872e657
+R 29c37bd5c082a5ba7585171eea4f1caa
 U larrybr
-Z 3ee7c528f374ab6814608dd44133cc19
+Z 2e2497f2640ef121f1aa2ea0415c2016
 # Remove this line to create a well-formed Fossil manifest.
