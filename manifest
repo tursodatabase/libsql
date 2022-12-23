@@ -1,5 +1,5 @@
-C Squelch\sa\snew\s(and,\sin\sthis\scase,\sharmless)\scompiler\swarning.
-D 2022-12-23T11:32:06.928
+C Additional\sfixes\sfor\syet\smore\scompletely\sharmless\scompiler\swarnings.
+D 2022-12-23T11:46:57.966
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -577,7 +577,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
-F src/alter.c 0390ca1d69ec3626cfa9f153114b7ab233e6b2bada6a9eb91361ed385fe90deb
+F src/alter.c 3ca2f449c890f8b86ec9e06f0c4fccf0648941c3308a16904cb2852227db83f7
 F src/analyze.c d2fce73f6a024897593012c6ca25368629fa4aeb49960d88a52fac664582e483
 F src/attach.c 4431f82f0247bf3aaf91589acafdff77d1882235c95407b36da1585c765fbbc8
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
@@ -717,7 +717,7 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 313f3154e2b85a447326f5dd15de8d31a4df6ab0c3579bd58f426ff634ec9050
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c b0a0fcf1906caa09de426bb5f59073ba268f7020bd6a19be677c95dd81cc4150
+F src/vdbe.c b51ec34314b64b77a6a97b67dabbf615f9fa44ba2584dfc1fa15d1792e40205f
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h fc15815b7bdafbb27e7f027faba2b0112e87d382c0d72241672528806ebc0db5
 F src/vdbeapi.c 4ee67890913c1d2469c68e3ad2e7ddeab57ac5924a64bbfd0906a8ea0d542c7f
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b5900a111b9410f7d60c937e5a56304f2f66b94cd0881e94abcc5eedde52514
-R e60c0e3c20a0e7bf83aa49203eb3c182
-U stephan
-Z 6976083f5240fdbe68fe33f0caf6e410
+P a02e19dd6ce00492f3d187e3c3c9bde4d9d1ee9a23616e62ea3590eec95652bd
+R ec4fdcd273b8f133c09ff276d19e040a
+U drh
+Z fd6d92f62b8a4b6b153ebaa254842802
 # Remove this line to create a well-formed Fossil manifest.
