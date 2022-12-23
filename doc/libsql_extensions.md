@@ -338,3 +338,30 @@ int libsql_open(
 ### Example
 
 An example implementation can be browsed in the Rust test suite, at `test/rust_suite/src/virtual_wal.rs`
+
+## xPreparedSql virtual table callback
+
+Virtual tables provide an interface to expose different data sources. Several callbacks are already defined via function pointers on `struct sqlite3_module`, including xConnect and xBestIndex. libSQL introduces a new callback named `xPreparedSql` that allows a virtual table implementation to receive the SQL string submitted by the application for execution.
+
+### How  to enable
+
+In order to enable this callback, applications must define a value for `iVersion >= 700` on `struct sqlite3_module`.
+
+### Usage
+
+The following C99 snippet shows how to declare a virtual table that implements the new callback.
+
+```sql
+static int helloPreparedSql(sqlite3_vtab_cursor *cur, const char *sql) {
+    printf("Prepared SQL: %s\n", sql);
+    return SQLITE_OK;
+}
+
+static sqlite3_module helloModule = {
+    .iVersion     = 700,
+    .xCreate      = helloCreate,
+    .xConnect     = helloConnect,
+    // ...
+    .xPreparedSql = helloPreparedSql,
+};
+```
