@@ -461,6 +461,22 @@ const char * sqlite3_wasm_enum_json(void){
     out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
   } _DefGroup;
 
+  DefGroup(changeset){
+    DefInt(SQLITE_CHANGESETSTART_INVERT);
+    DefInt(SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
+    DefInt(SQLITE_CHANGESETAPPLY_INVERT);
+
+    DefInt(SQLITE_CHANGESET_DATA);
+    DefInt(SQLITE_CHANGESET_NOTFOUND);
+    DefInt(SQLITE_CHANGESET_CONFLICT);
+    DefInt(SQLITE_CHANGESET_CONSTRAINT);
+    DefInt(SQLITE_CHANGESET_FOREIGN_KEY);
+
+    DefInt(SQLITE_CHANGESET_OMIT);
+    DefInt(SQLITE_CHANGESET_REPLACE);
+    DefInt(SQLITE_CHANGESET_ABORT);
+  } _DefGroup;
+
   DefGroup(config){
     DefInt(SQLITE_CONFIG_SINGLETHREAD);
     DefInt(SQLITE_CONFIG_MULTITHREAD);
@@ -795,6 +811,11 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_DESERIALIZE_FREEONCLOSE);
     DefInt(SQLITE_DESERIALIZE_READONLY);
     DefInt(SQLITE_DESERIALIZE_RESIZEABLE);
+  } _DefGroup;
+
+  DefGroup(session){
+    DefInt(SQLITE_SESSION_CONFIG_STRMSIZE);
+    DefInt(SQLITE_SESSION_OBJCONFIG_SIZE);
   } _DefGroup;
 
   DefGroup(sqlite3Status){

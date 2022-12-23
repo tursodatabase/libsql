@@ -446,7 +446,7 @@ self.WhWasmUtilInstaller = function(target){
             type(s) of the given function signature, or throws if the
             signature is invalid. */
         /******** // only valid for use with the WebAssembly.Function ctor, which
-                  // is not yet documented on MDN. 
+                  // is not yet documented on MDN.
         sigToWasm: function(sig){
           const rc = {parameters:[], results: []};
           if('v'!==sig[0]) rc.results.push(f.sigTypes(sig[0]));
@@ -1581,10 +1581,20 @@ self.WhWasmUtilInstaller = function(target){
      not actually bind any functions. Its convertArg() method is
      called via xWrap() to perform any bindings.
 
-     Shortcomings: function pointers which include C-string arguments
-     may still need a level of hand-written wrappers around them,
-     depending on how they're used, in order to provide the client
-     with JS strings.
+     Shortcomings:
+
+     - These "reverse" bindings, i.e. calling into a JS-defined
+       function from a WASM-defined function (the generated proxy
+       wrapper), lack all type conversion support. That means, for
+       example, that...
+
+     - Function pointers which include C-string arguments may still
+       need a level of hand-written wrappers around them, depending on
+       how they're used, in order to provide the client with JS
+       strings. Alternately, clients will need to perform such conversions
+       on their own, e.g. using cstrtojs(). Or maybe we can find a way
+       to perform such conversions here, via addition of an xWrap()-style
+       function signature to the options argument.
   */
   xArg.FuncPtrAdapter = class FuncPtrAdapter extends AbstractArgAdapter {
     constructor(opt) {

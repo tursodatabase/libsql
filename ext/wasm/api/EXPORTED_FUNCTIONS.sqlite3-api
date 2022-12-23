@@ -184,6 +184,7 @@ _sqlite3session_enable
 _sqlite3session_indirect
 _sqlite3session_isempty
 _sqlite3session_memory_used
+_sqlite3session_object_config
 _sqlite3session_patchset
 _sqlite3session_patchset_strm
 _sqlite3session_table_filter
