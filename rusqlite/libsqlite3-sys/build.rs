@@ -181,15 +181,10 @@ mod build_bundled {
                 cfg.include(env::var("DEP_OPENSSL_INCLUDE").unwrap());
                 // cargo will resolve downstream to the static lib in
                 // openssl-sys
-            } else if is_windows {
-                // Windows without `-vendored-openssl` takes this to link against a prebuilt
-                // OpenSSL lib
-                cfg.include(inc_dir.to_string_lossy().as_ref());
-                println!("cargo:rustc-link-lib=dylib=libcrypto");
             } else if use_openssl {
                 cfg.include(inc_dir.to_string_lossy().as_ref());
-                // branch not taken on Windows, just `crypto` is fine.
-                println!("cargo:rustc-link-lib=dylib=crypto");
+                let lib_name = if is_windows { "libcrypto" } else { "crypto" };
+                println!("cargo:rustc-link-lib=dylib={}", lib_name);
                 println!("cargo:rustc-link-search={}", lib_dir.to_string_lossy());
             } else if is_apple {
                 cfg.flag("-DSQLCIPHER_CRYPTO_CC");
