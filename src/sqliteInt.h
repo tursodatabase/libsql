@@ -973,9 +973,9 @@ typedef INT16_TYPE LogEst;
 ** pointers.  In that case, only verify 4-byte alignment.
 */
 #ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
-# define EIGHT_BYTE_ALIGNMENT(X)   ((((char*)(X) - (char*)0)&3)==0)
+# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&3)==0)
 #else
-# define EIGHT_BYTE_ALIGNMENT(X)   ((((char*)(X) - (char*)0)&7)==0)
+# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&7)==0)
 #endif
 
 /*

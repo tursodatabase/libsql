@@ -437,7 +437,7 @@ TESTSRC = \
   $(TOP)/ext/recover/sqlite3recover.c \
   $(TOP)/ext/recover/dbdata.c \
   $(TOP)/ext/recover/test_recover.c \
-  $(TOP)/ext/rbu/test_rbu.c 
+  $(TOP)/ext/rbu/test_rbu.c
 
 # Statically linked extensions
 #
@@ -1118,6 +1118,9 @@ SHELL_SRC = \
         $(TOP)/ext/misc/appendvfs.c \
 	$(TOP)/ext/misc/completion.c \
         $(TOP)/ext/misc/decimal.c \
+        $(TOP)/ext/misc/basexx.c \
+        $(TOP)/ext/misc/base64.c \
+        $(TOP)/ext/misc/base85.c \
 	$(TOP)/ext/misc/fileio.c \
         $(TOP)/ext/misc/ieee754.c \
         $(TOP)/ext/misc/regexp.c \

@@ -133,6 +133,9 @@ int sqlite3_found_count = 0;
 */
 static void test_trace_breakpoint(int pc, Op *pOp, Vdbe *v){
   static int n = 0;
+  (void)pc;
+  (void)pOp;
+  (void)v;
   n++;
 }
 #endif
@@ -735,7 +738,9 @@ int sqlite3VdbeExec(
   /*** INSERT STACK UNION HERE ***/
 
   assert( p->eVdbeState==VDBE_RUN_STATE );  /* sqlite3_step() verifies this */
-  if( DbMaskNonZero(p->lockMask) )sqlite3VdbeEnter(p);
+  if( DbMaskNonZero(p->lockMask) ){
+    sqlite3VdbeEnter(p);
+  }
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( db->xProgress ){
     u32 iPrior = p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
@@ -8838,7 +8843,9 @@ vdbe_return:
   }
 #endif
   p->aCounter[SQLITE_STMTSTATUS_VM_STEP] += (int)nVmStep;
-  if( DbMaskNonZero(p->lockMask) ) sqlite3VdbeLeave(p);
+  if( DbMaskNonZero(p->lockMask) ){
+    sqlite3VdbeLeave(p);
+  }
   assert( rc!=SQLITE_OK || nExtraDelete==0 
        || sqlite3_strlike("DELETE%",p->zSql,0)!=0 
   );

@@ -653,6 +653,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                                               (1===n?"":'s')+".");
   };
 
+  /** Code duplication reducer for functions which take an encoding
+      argument and require SQLITE_UTF8.  Sets the db error code to
+      SQLITE_FORMAT and returns that code. */
+  const __errEncoding = (pDb)=>{
+    return util.sqlite3_wasm_db_error(
+      pDb, capi.SQLITE_FORMAT, "SQLITE_UTF8 is the only supported encoding."
+    );
+  };
+
   if(1){/* Bindings for sqlite3_create_collation() */
 
     const __collationContextKey = (argIndex,argv)=>{
@@ -688,7 +697,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           them.
 
        2) It returns capi.SQLITE_FORMAT if the 3rd argument is not
-          capi.SQLITE_UTF8. No other encodings are supported.
+          capi.SQLITE_UTF8. No other encodings are supported. To simplify
+          usage, any falsy value of eTextRep is treated as SQLITE_UTF8.
 
        Returns 0 on success, non-0 on error, in which case the error
        state of pDb (of type `sqlite3*` or argument-convertible to it)
@@ -696,10 +706,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     capi.sqlite3_create_collation_v2 = function(pDb,zName,eTextRep,pArg,xCompare,xDestroy){
       if(6!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_create_collation_v2', 6);
-      else if(capi.SQLITE_UTF8!==eTextRep){
-        return util.sqlite3_wasm_db_error(
-          pDb, capi.SQLITE_FORMAT, "SQLITE_UTF8 is the only supported encoding."
-        );
+      else if(!eTextRep){
+        eTextRep = capi.SQLITE_UTF8;
+      }else if(capi.SQLITE_UTF8!==eTextRep){
+        return __errEncoding(pDb);
       }
       let rc, pfCompare, pfDestroy;
       try{
@@ -773,6 +783,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        "int"/*eTextRep*/, "*"/*pApp*/,
        "*"/*xStep*/,"*"/*xFinal*/, "*"/*xValue*/, "*"/*xDestroy*/]
     );
+    // TODO: reimplement these using FuncPtrAdapter.
     const sqlite3CreateWindowFunction = wasm.xWrap(
       "sqlite3_create_window_function", "int",
       ["sqlite3*", "string"/*funcName*/, "int"/*nArg*/,
@@ -850,6 +861,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ){
       if(f.length!==arguments.length){
         return __dbArgcMismatch(pDb,"sqlite3_create_function_v2",f.length);
+      }else if(!eTextRep){
+        eTextRep = capi.SQLITE_UTF8;
+      }else if(capi.SQLITE_UTF8!==eTextRep){
+        return __errEncoding(pDb);
       }
       /* Wrap the callbacks in a WASM-bound functions... */
       const uninstall = [/*funcs to uninstall on error*/];
@@ -891,6 +906,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ){
       if(f.length!==arguments.length){
         return __dbArgcMismatch(pDb,"sqlite3_create_window_function",f.length);
+      }else if(!eTextRep){
+        eTextRep = capi.SQLITE_UTF8;
+      }else if(capi.SQLITE_UTF8!==eTextRep){
+        return __errEncoding(pDb);
       }
       /* Wrap the callbacks in a WASM-bound functions... */
       const uninstall = [/*funcs to uninstall on error*/];

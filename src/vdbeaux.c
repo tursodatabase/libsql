@@ -212,6 +212,8 @@ static int growOpArray(Vdbe *v, int nOp){
 */
 static void test_addop_breakpoint(int pc, Op *pOp){
   static int n = 0;
+  (void)pc;
+  (void)pOp;
   n++;
 }
 #endif

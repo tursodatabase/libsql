@@ -304,7 +304,7 @@ static GeoPoly *geopolyFuncParam(
   int nByte;
   testcase( pCtx==0 );
   if( sqlite3_value_type(pVal)==SQLITE_BLOB
-   && (nByte = sqlite3_value_bytes(pVal))>=(4+6*sizeof(GeoCoord))
+   && (nByte = sqlite3_value_bytes(pVal))>=(int)(4+6*sizeof(GeoCoord))
   ){
     const unsigned char *a = sqlite3_value_blob(pVal);
     int nVertex;
@@ -362,6 +362,7 @@ static void geopolyBlobFunc(
   sqlite3_value **argv
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  (void)argc;
   if( p ){
     sqlite3_result_blob(context, p->hdr, 
        4+8*p->nVertex, SQLITE_TRANSIENT);
@@ -381,6 +382,7 @@ static void geopolyJsonFunc(
   sqlite3_value **argv
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  (void)argc;
   if( p ){
     sqlite3 *db = sqlite3_context_db_handle(context);
     sqlite3_str *x = sqlite3_str_new(db);
@@ -462,6 +464,7 @@ static void geopolyXformFunc(
   double F = sqlite3_value_double(argv[6]);
   GeoCoord x1, y1, x0, y0;
   int ii;
+  (void)argc;
   if( p ){
     for(ii=0; ii<p->nVertex; ii++){
       x0 = GeoX(p,ii);
@@ -512,6 +515,7 @@ static void geopolyAreaFunc(
   sqlite3_value **argv
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  (void)argc;
   if( p ){
     sqlite3_result_double(context, geopolyArea(p));
     sqlite3_free(p);
@@ -537,6 +541,7 @@ static void geopolyCcwFunc(
   sqlite3_value **argv
 ){
   GeoPoly *p = geopolyFuncParam(context, argv[0], 0);
+  (void)argc;
   if( p ){
     if( geopolyArea(p)<0.0 ){
       int ii, jj;
@@ -591,6 +596,7 @@ static void geopolyRegularFunc(
   int n = sqlite3_value_int(argv[3]);
   int i;
   GeoPoly *p;
+  (void)argc;
 
   if( n<3 || r<=0.0 ) return;
   if( n>1000 ) n = 1000;
@@ -700,6 +706,7 @@ static void geopolyBBoxFunc(
   sqlite3_value **argv
 ){
   GeoPoly *p = geopolyBBox(context, argv[0], 0, 0);
+  (void)argc;
   if( p ){
     sqlite3_result_blob(context, p->hdr, 
        4+8*p->nVertex, SQLITE_TRANSIENT);
@@ -727,6 +734,7 @@ static void geopolyBBoxStep(
 ){
   RtreeCoord a[4];
   int rc = SQLITE_OK;
+  (void)argc;
   (void)geopolyBBox(context, argv[0], a, &rc);
   if( rc==SQLITE_OK ){
     GeoBBox *pBBox;
@@ -815,6 +823,8 @@ static void geopolyContainsPointFunc(
   int v = 0;
   int cnt = 0;
   int ii;
+  (void)argc;
+    
   if( p1==0 ) return;
   for(ii=0; ii<p1->nVertex-1; ii++){
     v = pointBeneathLine(x0,y0,GeoX(p1,ii), GeoY(p1,ii),
@@ -854,6 +864,7 @@ static void geopolyWithinFunc(
 ){
   GeoPoly *p1 = geopolyFuncParam(context, argv[0], 0);
   GeoPoly *p2 = geopolyFuncParam(context, argv[1], 0);
+  (void)argc;
   if( p1 && p2 ){
     int x = geopolyOverlap(p1, p2);
     if( x<0 ){
@@ -1184,6 +1195,7 @@ static void geopolyOverlapFunc(
 ){
   GeoPoly *p1 = geopolyFuncParam(context, argv[0], 0);
   GeoPoly *p2 = geopolyFuncParam(context, argv[1], 0);
+  (void)argc;
   if( p1 && p2 ){
     int x = geopolyOverlap(p1, p2);
     if( x<0 ){
@@ -1204,8 +1216,12 @@ static void geopolyDebugFunc(
   int argc,
   sqlite3_value **argv
 ){
+  (void)context;
+  (void)argc;
 #ifdef GEOPOLY_ENABLE_DEBUG
   geo_debug = sqlite3_value_int(argv[0]);
+#else
+  (void)argv;
 #endif
 }
 
@@ -1233,6 +1249,7 @@ static int geopolyInit(
   sqlite3_str *pSql;
   char *zSql;
   int ii;
+  (void)pAux;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_CONSTRAINT_SUPPORT, 1);
 
@@ -1349,6 +1366,7 @@ static int geopolyFilter(
   RtreeNode *pRoot = 0;
   int rc = SQLITE_OK;
   int iCell = 0;
+  (void)idxStr;
 
   rtreeReference(pRtree);
 
@@ -1475,6 +1493,7 @@ static int geopolyBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int iRowidTerm = -1;
   int iFuncTerm = -1;
   int idxNum = 0;
+  (void)tab;
 
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     struct sqlite3_index_constraint *p = &pIdxInfo->aConstraint[ii];
@@ -1721,6 +1740,8 @@ static int geopolyFindFunction(
   void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),
   void **ppArg
 ){
+  (void)pVtab;
+  (void)nArg;
   if( sqlite3_stricmp(zName, "geopoly_overlap")==0 ){
     *pxFunc = geopolyOverlapFunc;
     *ppArg = 0;
@@ -1790,7 +1811,7 @@ static int sqlite3_geopoly_init(sqlite3 *db){
   } aAgg[] = {
      { geopolyBBoxStep, geopolyBBoxFinal, "geopoly_group_bbox"    },
   };
-  int i;
+  unsigned int i;
   for(i=0; i<sizeof(aFunc)/sizeof(aFunc[0]) && rc==SQLITE_OK; i++){
     int enc;
     if( aFunc[i].bPure ){

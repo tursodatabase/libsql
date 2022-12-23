@@ -803,6 +803,7 @@ static void re_bytecode_func(
   int i;
   int n;
   char *z;
+  (void)argc;
 
   zPattern = (const char*)sqlite3_value_text(argv[0]);
   if( zPattern==0 ) return;
