@@ -439,23 +439,22 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if(util.isInt32(opt.rowMode)){
               out.cbArg = (stmt)=>stmt.get(opt.rowMode);
               break;
-            }else if('string'===typeof opt.rowMode && opt.rowMode.length>1){
+            }else if('string'===typeof opt.rowMode
+                     && opt.rowMode.length>1
+                     && '$'===opt.rowMode[0]){
               /* "$X": fetch column named "X" (case-sensitive!). Prior
                  to 2022-12-14 ":X" and "@X" were also permitted, but
                  having so many options is unnecessary and likely to
                  cause confusion. */
-              if('$'===opt.rowMode[0]){
-                out.cbArg = function(stmt){
-                  const rc = stmt.get(this.obj)[this.colName];
-                  return (undefined===rc)
-                    ? toss3("exec(): unknown result column:",this.colName)
-                    : rc;
-                }.bind({
-                  obj:Object.create(null),
-                  colName: opt.rowMode.substr(1)
-                });
-                break;
-              }
+              const $colName = opt.rowMode.substr(1);
+              out.cbArg = (stmt)=>{
+                const rc = stmt.get(Object.create(null))[$colName];
+                return (undefined===rc)
+                  ? toss3(capi.SQLITE_NOTFOUND,
+                          "exec(): unknown result column:",$colName)
+                  : rc;
+              };
+              break;
             }
             toss3("Invalid rowMode:",opt.rowMode);
       }
