@@ -337,7 +337,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   const Stmt = function(){
     if(BindTypes!==arguments[2]){
-      toss3("Do not call the Stmt constructor directly. Use DB.prepare().");
+      toss3(capi.SQLITE_MISUSE, "Do not call the Stmt constructor directly. Use DB.prepare().");
     }
     this.db = arguments[0];
     __ptrMap.set(this, arguments[1]);
@@ -887,10 +887,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       return arg.returnVal();
     }/*exec()*/,
+
     /**
-       Creates a new scalar UDF (User-Defined Function) which is
-       accessible via SQL code. This function may be called in any
-       of the following forms:
+       Creates a new UDF (User-Defined Function) which is accessible
+       via SQL code. This function may be called in any of the
+       following forms:
 
        - (name, function)
        - (name, function, optionsObject)
@@ -906,10 +907,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        functions. Creating an aggregate or window function requires
        the options-object form (see below for details).
 
-       UDFs cannot currently be removed from a DB handle after they're
-       added. More correctly, they can be removed as documented for
-       sqlite3_create_function_v2(), but doing so will "leak" the
-       JS-created WASM binding of those functions.
+       UDFs can be removed as documented for
+       sqlite3_create_function_v2() and
+       sqlite3_create_window_function(), but doing so will "leak" the
+       JS-created WASM binding of those functions (meaning that their
+       entries in the WASM indirect function table still
+       exist). Eliminating that potential leak is a pending TODO.
 
        On success, returns this object. Throws on error.
 

@@ -1219,7 +1219,7 @@ self.sqlite3InitModule = sqlite3InitModule;
     })
 
   ////////////////////////////////////////////////////////////////////
-    .t('DB.Stmt', function(S){
+    .t('DB.Stmt', function(sqlite3){
       let st = this.db.prepare(
         new TextEncoder('utf-8').encode("select 3 as a")
       );
@@ -1274,6 +1274,12 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
       T.assert(!st.pointer)
         .assert(0===this.db.openStatementCount());
+
+      T.mustThrowMatching(()=>new sqlite3.oo1.Stmt("hi"), function(err){
+        return (err instanceof sqlite3.SQLite3Error)
+          && capi.SQLITE_MISUSE === err.resultCode
+          && 0 < err.message.indexOf("Do not call the Stmt constructor directly.")
+      });
     })
 
   ////////////////////////////////////////////////////////////////////////
