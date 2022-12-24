@@ -222,7 +222,7 @@ do_graph_test 4.5 {
   ) AS v1 WHERE rt1.x1=v1.x1
 } {
 QUERY (nCycle=nnn)
---MATERIALIZE v1 (nCycle=nnn)
+--CO-ROUTINE v1
 ----SCAN rt2 (nCycle=nnn)
 ----USE TEMP B-TREE FOR GROUP BY
 --SCAN rt1 (nCycle=nnn)

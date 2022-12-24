@@ -38,7 +38,7 @@ dist-name := $(dist-name-prefix)-TEMP
 # date. Our general policy is that we want the smallest binaries for
 # dist zip files, so use the oz build unless there is a compelling
 # reason not to.
-dist.build ?= oz
+dist.build ?= qoz
 
 dist-dir.top := $(dist-name)
 dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))
@@ -63,7 +63,7 @@ dist.common.extras := \
 # $(dist.build) will depend on clean, having any deps on
 # $(dist-archive) which themselves may be cleaned up by the clean
 # target will lead to grief in parallel builds (-j #). Thus
-# $(dist-target)'s deps must be trimmed to non-generated files or
+# dist's deps must be trimmed to non-generated files or
 # files which are _not_ cleaned up by the clean target.
 #
 # Note that we require $(bin.version-info) in order to figure out the

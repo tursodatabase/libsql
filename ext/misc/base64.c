@@ -53,9 +53,7 @@
 
 #include <assert.h>
 
-#ifndef SQLITE_SHELL_EXTFUNCS /* Guard for #include as built-in extension. */
 #include "sqlite3ext.h"
-#endif
 
 SQLITE_EXTENSION_INIT1;
 
@@ -64,12 +62,12 @@ SQLITE_EXTENSION_INIT1;
 #define ND 0x82 /* Not above or digit-value */
 #define PAD_CHAR '='
 
-#ifndef UBYTE_TYPEDEF
-typedef unsigned char ubyte;
-# define UBYTE_TYPEDEF
+#ifndef U8_TYPEDEF
+typedef unsigned char u8;
+#define U8_TYPEDEF
 #endif
 
-static const ubyte b64DigitValues[128] = {
+static const u8 b64DigitValues[128] = {
   /*                             HT LF VT  FF CR       */
     ND,ND,ND,ND, ND,ND,ND,ND, ND,WS,WS,WS, WS,WS,ND,ND,
   /*                                                US */
@@ -92,18 +90,18 @@ static const char b64Numerals[64+1]
 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 #define BX_DV_PROTO(c) \
-  ((((ubyte)(c))<0x80)? (ubyte)(b64DigitValues[(ubyte)(c)]) : 0x80)
-#define IS_BX_DIGIT(bdp) (((ubyte)(bdp))<0x80)
+  ((((u8)(c))<0x80)? (u8)(b64DigitValues[(u8)(c)]) : 0x80)
+#define IS_BX_DIGIT(bdp) (((u8)(bdp))<0x80)
 #define IS_BX_WS(bdp) ((bdp)==WS)
 #define IS_BX_PAD(bdp) ((bdp)==PC)
-#define BX_NUMERAL(dv) (b64Numerals[(ubyte)(dv)])
+#define BX_NUMERAL(dv) (b64Numerals[(u8)(dv)])
 /* Width of base64 lines. Should be an integer multiple of 4. */
 #define B64_DARK_MAX 72
 
 /* Encode a byte buffer into base64 text with linefeeds appended to limit
 ** encoded group lengths to B64_DARK_MAX or to terminate the last group.
 */
-static char* toBase64( ubyte *pIn, int nbIn, char *pOut ){
+static char* toBase64( u8 *pIn, int nbIn, char *pOut ){
   int nCol = 0;
   while( nbIn >= 3 ){
     /* Do the bit-shuffle, exploiting unsigned input to avoid masking. */
@@ -128,7 +126,7 @@ static char* toBase64( ubyte *pIn, int nbIn, char *pOut ){
       if( nbe<nbIn ) qv |= *pIn++;
     }
     for( nbe=3; nbe>=0; --nbe ){
-      char ce = (nbe<nco)? BX_NUMERAL((ubyte)(qv & 0x3f)) : PAD_CHAR;
+      char ce = (nbe<nco)? BX_NUMERAL((u8)(qv & 0x3f)) : PAD_CHAR;
       qv >>= 6;
       pOut[nbe] = ce;
     }
@@ -147,7 +145,7 @@ static char * skipNonB64( char *s ){
 }
 
 /* Decode base64 text into a byte buffer. */
-static ubyte* fromBase64( char *pIn, int ncIn, ubyte *pOut ){
+static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 && *pIn!=PAD_CHAR ){
     static signed char nboi[] = { 0, 0, 1, 2, 3 };
@@ -162,7 +160,7 @@ static ubyte* fromBase64( char *pIn, int ncIn, ubyte *pOut ){
     if( nbo==0 ) break;
     for( nac=0; nac<4; ++nac ){
       char c = (nac<nti)? *pIn++ : b64Numerals[0];
-      ubyte bdp = BX_DV_PROTO(c);
+      u8 bdp = BX_DV_PROTO(c);
       switch( bdp ){
       case ND:
         /*  Treat dark non-digits as pad, but they terminate decode too. */
@@ -200,7 +198,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
   int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
-  ubyte *bBuf;
+  u8 *bBuf;
   assert(na==1);
   switch( sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
@@ -213,7 +211,7 @@ static void base64(sqlite3_context *context, int na, sqlite3_value *av[]){
     }
     cBuf = sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
-    bBuf = (ubyte*)sqlite3_value_blob(av[0]);
+    bBuf = (u8*)sqlite3_value_blob(av[0]);
     nc = (int)(toBase64(bBuf, nb, cBuf) - cBuf);
     sqlite3_result_text(context, cBuf, nc, sqlite3_free);
     break;

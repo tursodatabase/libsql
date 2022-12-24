@@ -836,7 +836,8 @@ static void explainAutomaticIndex(
     const char *zSep = "";
     char *zText = 0;
     int ii = 0;
-    zText = sqlite3_mprintf("CREATE AUTOMATIC INDEX ON %s(", pTab->zName);
+    sqlite3_str *pStr = sqlite3_str_new(pParse->db);
+    sqlite3_str_appendf(pStr,"CREATE AUTOMATIC INDEX ON %s(", pTab->zName);
     assert( pIdx->nColumn>1 );
     assert( pIdx->aiColumn[pIdx->nColumn-1]==XN_ROWID );
     for(ii=0; ii<(pIdx->nColumn-1); ii++){
@@ -844,13 +845,18 @@ static void explainAutomaticIndex(
       int iCol = pIdx->aiColumn[ii];
 
       zName = pTab->aCol[iCol].zCnName;
-      zText = sqlite3_mprintf("%z%s%s", zText, zSep, zName);
+      sqlite3_str_appendf(pStr, "%s%s", zSep, zName);
       zSep = ", ";
     }
-    *pAddrExplain = sqlite3VdbeExplain(
-        pParse, 0, "%s)%s", zText, (bPartial ? " WHERE <expr>" : "")
-    );
-    sqlite3_free(zText);
+    zText = sqlite3_str_finish(pStr);
+    if( zText==0 ){
+      sqlite3OomFault(pParse->db);
+    }else{
+      *pAddrExplain = sqlite3VdbeExplain(
+          pParse, 0, "%s)%s", zText, (bPartial ? " WHERE <expr>" : "")
+      );
+      sqlite3_free(zText);
+    }
   }
 }
 #else
@@ -5672,6 +5678,12 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxEpr;
+#ifdef WHERETRACE_ENABLED
+    if( sqlite3WhereTrace & 0x200 ){
+      sqlite3DebugPrintf("New pParse->pIdxEpr term {%d,%d}\n", iIdxCur, i);
+      if( sqlite3WhereTrace & 0x5000 ) sqlite3ShowExpr(pExpr);
+    }
+#endif
     p->pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
     p->iDataCur = pTabItem->iCursor;
     p->iIdxCur = iIdxCur;
@@ -6634,6 +6646,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         IndexedExpr *p = pParse->pIdxEpr;
         while( p ){
           if( p->iIdxCur==pLevel->iIdxCur ){
+#ifdef WHERETRACE_ENABLED
+            if( sqlite3WhereTrace & 0x200 ){
+              sqlite3DebugPrintf("Disable pParse->pIdxEpr term {%d,%d}\n",
+                                  p->iIdxCur, p->iIdxCol);
+              if( sqlite3WhereTrace & 0x5000 ) sqlite3ShowExpr(p->pExpr);
+            }
+#endif
             p->iDataCur = -1;
             p->iIdxCur = -1;
           }

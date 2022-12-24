@@ -2004,6 +2004,13 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
   if( pCol->colFlags & COLFLAG_PRIMKEY ){
     makeColumnPartOfPrimaryKey(pParse, pCol); /* For the error message */
   }
+  if( ALWAYS(pExpr) && pExpr->op==TK_ID ){
+    /* The value of a generated column needs to be a real expression, not
+    ** just a reference to another column, in order for covering index
+    ** optimizations to work correctly.  So if the value is not an expression,
+    ** turn it into one by adding a unary "+" operator. */
+    pExpr = sqlite3PExpr(pParse, TK_UPLUS, pExpr, 0);
+  }
   sqlite3ColumnSetExpr(pParse, pTab, pCol, pExpr);
   pExpr = 0;
   goto generated_done;
@@ -2140,7 +2147,8 @@ static char *createTableStmt(sqlite3 *db, Table *p){
         /* SQLITE_AFF_TEXT    */ " TEXT",
         /* SQLITE_AFF_NUMERIC */ " NUM",
         /* SQLITE_AFF_INTEGER */ " INT",
-        /* SQLITE_AFF_REAL    */ " REAL"
+        /* SQLITE_AFF_REAL    */ " REAL",
+        /* SQLITE_AFF_FLEXNUM */ " NUM",
     };
     int len;
     const char *zType;
@@ -2156,10 +2164,12 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     testcase( pCol->affinity==SQLITE_AFF_NUMERIC );
     testcase( pCol->affinity==SQLITE_AFF_INTEGER );
     testcase( pCol->affinity==SQLITE_AFF_REAL );
+    testcase( pCol->affinity==SQLITE_AFF_FLEXNUM );
     
     zType = azType[pCol->affinity - SQLITE_AFF_BLOB];
     len = sqlite3Strlen30(zType);
-    assert( pCol->affinity==SQLITE_AFF_BLOB 
+    assert( pCol->affinity==SQLITE_AFF_BLOB
+            || pCol->affinity==SQLITE_AFF_FLEXNUM
             || pCol->affinity==sqlite3AffinityType(zType, 0) );
     memcpy(&zStmt[k], zType, len);
     k += len;
@@ -2574,6 +2584,7 @@ int sqlite3ShadowTableName(sqlite3 *db, const char *zName){
 ** not pass them into code generator routines by mistake.
 */
 static int markImmutableExprStep(Walker *pWalker, Expr *pExpr){
+  (void)pWalker;
   ExprSetVVAProperty(pExpr, EP_Immutable);
   return WRC_Continue;
 }
@@ -3140,8 +3151,7 @@ static SQLITE_NOINLINE int viewGetColumnNames(Parse *pParse, Table *pTable){
        && pTable->nCol==pSel->pEList->nExpr
       ){
         assert( db->mallocFailed==0 );
-        sqlite3SelectAddColumnTypeAndCollation(pParse, pTable, pSel,
-                                               SQLITE_AFF_NONE);
+        sqlite3SubqueryColumnTypes(pParse, pTable, pSel, SQLITE_AFF_NONE);
       }
     }else{
       /* CREATE VIEW name AS...  without an argument list.  Construct

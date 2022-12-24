@@ -1566,6 +1566,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_NOTICE_RECOVER_WAL: zName = "SQLITE_NOTICE_RECOVER_WAL";break;
       case SQLITE_NOTICE_RECOVER_ROLLBACK:
                                 zName = "SQLITE_NOTICE_RECOVER_ROLLBACK"; break;
+      case SQLITE_NOTICE_RBU:         zName = "SQLITE_NOTICE_RBU"; break;
       case SQLITE_WARNING:            zName = "SQLITE_WARNING";           break;
       case SQLITE_WARNING_AUTOINDEX:  zName = "SQLITE_WARNING_AUTOINDEX"; break;
       case SQLITE_DONE:               zName = "SQLITE_DONE";              break;
@@ -2118,7 +2119,7 @@ int sqlite3_overload_function(
   rc = sqlite3FindFunction(db, zName, nArg, SQLITE_UTF8, 0)!=0;
   sqlite3_mutex_leave(db->mutex);
   if( rc ) return SQLITE_OK;
-  zCopy = sqlite3_mprintf(zName);
+  zCopy = sqlite3_mprintf("%s", zName);
   if( zCopy==0 ) return SQLITE_NOMEM;
   return sqlite3_create_function_v2(db, zName, nArg, SQLITE_UTF8,
                            zCopy, sqlite3InvalidFunction, 0, 0, sqlite3_free);

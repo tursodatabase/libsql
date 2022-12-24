@@ -15,9 +15,17 @@
 #      by the target name. Rebuild is necessary for all components to get
 #      the desired optimization level.
 #
+#  quick, q = do just a minimal build (sqlite3.js/wasm, tester1) for
+#      faster development-mode turnaround.
+#
+#  qo2, qoz = a combination of quick+o2/oz.
+#
 #  dist = create end user deliverables. Add dist.build=oX to build
 #      with a specific optimization level, where oX is one of the
-#      above-listed o? target names.
+#      above-listed o? or qo? target names.
+#
+#  snapshot = like dist, but uses a zip file name which clearly
+#      marks it as a prerelease/snapshot build.
 #
 #  clean = clean up
 #
@@ -205,7 +213,10 @@ DISTCLEAN_FILES += $(bin.stripccomments)
 # https://fossil.wanderinghorse.net/r/c-pp
 bin.c-pp := ./c-pp
 $(bin.c-pp): c-pp.c $(sqlite3.c) $(MAKEFILE)
-	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top)
+	$(CC) -O0 -o $@ c-pp.c $(sqlite3.c) '-DCMPP_DEFAULT_DELIM="//#"' -I$(dir.top) \
+		-DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_UTF16 \
+		-DSQLITE_OMIT_SHARED_CACHE -DSQLITE_OMIT_WAL -DSQLITE_THREADSAFE=0 \
+		-DSQLITE_TEMP_STORE=3
 define C-PP.FILTER
 # Create $2 from $1 using $(bin.c-pp)
 # $1 = Input file: c-pp -f $(1).js
@@ -307,7 +318,8 @@ $$(dir.dout)/$$(notdir $(1)): $(1) $$(MAKEFILE)
 endef
 $(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
   $(eval $(call COPY_XAPI,$(X))))
-all: $(sqlite3-api.ext.jses)
+all quick: $(sqlite3-api.ext.jses)
+q: quick
 
 # sqlite3-api.js.in = the generated sqlite3-api.js before it gets
 # preprocessed. It contains all of $(sqlite3-api.jses) but none of the
@@ -452,10 +464,7 @@ emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
 emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.api)
 emcc.exportedRuntimeMethods := \
-    -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory
-    # FS ==> stdio/POSIX I/O proxies. Currently used explicitly only
-    # by the fiddle app, and it must never be exposed to client code
-    # via our APIs.
+    -sEXPORTED_RUNTIME_METHODS=wasmMemory
     # wasmMemory ==> required by our code for use with -sIMPORTED_MEMORY
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
@@ -488,7 +497,7 @@ emcc.jsflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 ########################################################################
 
 emcc.jsflags += $(emcc.environment)
-emcc.jsflags += -sSTACK_SIZE=1MB
+emcc.jsflags += -sSTACK_SIZE=512KB
 # ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 5MB to
 # a mere 64KB, which leads to silent memory corruption via the kvvfs
 # VFS, which requires twice that for its xRead() and xWrite() methods.
@@ -593,20 +602,26 @@ $(sqlite3.mjs): $(pre-post-sqlite3.deps.esm)
 # Upstream RFE:
 # https://github.com/emscripten-core/emscripten/issues/18237
 ########################################################################
+# SQLITE3.xJS.EXPORT-DEFAULT is part of SQLITE3[-WASMFS].xJS.RECIPE,
+# factored into a separate piece to avoid code duplication. $1 is
+# the build mode: one of (vanilla, esm).
+define SQLITE3.xJS.ESM-EXPORT-DEFAULT
+if [ esm = $(1) ]; then \
+		echo "Fragile workaround for an Emscripten annoyance. See SQLITE3.xJS.RECIPE."; \
+		sed -i -e '0,/^export default/{/^export default/d;}' $@ || exit $$?; \
+		if ! grep -q '^export default' $@; then \
+			echo "Cannot find export default." 1>&2; \
+			exit 1; \
+		fi; \
+fi
+endef
 define SQLITE3.xJS.RECIPE
 	@echo "Building $@ ..."
 	$(emcc.bin) -o $@ $(emcc_opt_full) $(emcc.flags) \
     $(emcc.jsflags) \
     $(pre-post-sqlite3.flags.$(1)) $(emcc.flags.sqlite3.$(1)) \
     $(cflags.common) $(SQLITE_OPT) $(sqlite3-wasm.c)
-	@if [ esm = $(1) ]; then \
-		echo "Fragile workaround for an Emscripten annoyance. See emcc.flags.sqlite3.esm."; \
-		sed -i -e '0,/^export default/{/^export default/d}' $@ || exit $$?; \
-		if ! grep -q '^export default' $@; then \
-			echo "Cannot find export default." 1>&2; \
-			exit 1; \
-		fi; \
-	fi
+	@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,$(1))
 	chmod -x $(sqlite3.wasm)
 	$(maybe-wasm-strip) $(sqlite3.wasm)
 	@ls -la $@ $(sqlite3.wasm)
@@ -627,8 +642,9 @@ $(sqlite3.mjs):
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.mjs) $(sqlite3.wasm)
-all: $(sqlite3.mjs)
-wasm: $(sqlite3.mjs)
+all: $(sqlite3.js) $(sqlite3.mjs)
+quick: $(sqlite3.js)
+quick: $(sqlite3.mjs) # for the sake of the snapshot build
 # End main $(sqlite3.js) build
 ########################################################################
 
@@ -658,29 +674,29 @@ all: batch
 ########################################################################
 # Wasmified speedtest1 is our primary benchmarking tool.
 #
-# speedtest1.eflags.common = emcc flags used by multiple builds of speedtest1
-# speedtest1.eflags = emcc flags used by main build of speedtest1
-speedtest1.eflags.common := $(emcc_opt_full)
-speedtest1.eflags :=
-speedtest1.eflags += -sENVIRONMENT=web
-speedtest1.eflags += -sALLOW_MEMORY_GROWTH
-speedtest1.eflags += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
-speedtest1.eflags.common += -sINVOKE_RUN=0
-speedtest1.eflags.common += --no-entry
-#speedtest1.eflags.common += -flto
-speedtest1.eflags.common += -sABORTING_MALLOC
-speedtest1.eflags.common += -sSTRICT_JS
-speedtest1.eflags.common += -sMODULARIZE
-speedtest1.eflags.common += -Wno-limited-postlink-optimizations
+# emcc.speedtest1.common = emcc flags used by multiple builds of speedtest1
+# emcc.speedtest1 = emcc flags used by main build of speedtest1
+emcc.speedtest1.common := $(emcc_opt_full)
+emcc.speedtest1 :=
+emcc.speedtest1 += -sENVIRONMENT=web
+emcc.speedtest1 += -sALLOW_MEMORY_GROWTH
+emcc.speedtest1 += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
+emcc.speedtest1.common += -sINVOKE_RUN=0
+emcc.speedtest1.common += --no-entry
+#emcc.speedtest1.common += -flto
+emcc.speedtest1.common += -sABORTING_MALLOC
+emcc.speedtest1.common += -sSTRICT_JS
+emcc.speedtest1.common += -sMODULARIZE
+emcc.speedtest1.common += -Wno-limited-postlink-optimizations
 EXPORTED_FUNCTIONS.speedtest1 := $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
-speedtest1.eflags.common += -sSTACK_SIZE=1MB
-speedtest1.eflags.common += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.speedtest1)
-speedtest1.eflags.common += $(emcc.exportedRuntimeMethods)
-speedtest1.eflags.common += -sALLOW_TABLE_GROWTH
-speedtest1.eflags.common += -sDYNAMIC_EXECUTION=0
-speedtest1.eflags.common += --minify 0
-speedtest1.eflags.common += -sEXPORT_NAME=$(sqlite3.js.init-func)
-speedtest1.eflags.common += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
+emcc.speedtest1.common += -sSTACK_SIZE=512KB
+emcc.speedtest1.common += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.speedtest1)
+emcc.speedtest1.common += $(emcc.exportedRuntimeMethods)
+emcc.speedtest1.common += -sALLOW_TABLE_GROWTH
+emcc.speedtest1.common += -sDYNAMIC_EXECUTION=0
+emcc.speedtest1.common += --minify 0
+emcc.speedtest1.common += -sEXPORT_NAME=$(sqlite3.js.init-func)
+emcc.speedtest1.common += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 speedtest1.exit-runtime0 := -sEXIT_RUNTIME=0
 speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # Re -sEXIT_RUNTIME=1 vs 0: if it's 1 and speedtest1 crashes, we get
@@ -705,7 +721,7 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
 	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api); } > $@
 speedtest1.js := $(dir.dout)/speedtest1.js
 speedtest1.wasm := $(dir.dout)/speedtest1.wasm
-speedtest1.cflags := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
+cflags.speedtest1 := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
 speedtest1.cses := $(speedtest1.c) $(sqlite3-wasm.c)
 $(eval $(call call-make-pre-js,speedtest1,vanilla))
 $(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
@@ -713,8 +729,8 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
     $(EXPORTED_FUNCTIONS.speedtest1)
 	@echo "Building $@ ..."
 	$(emcc.bin) \
-        $(speedtest1.eflags) $(speedtest1.eflags.common) \
-        $(speedtest1.cflags) $(pre-post-speedtest1.flags.vanilla) \
+        $(emcc.speedtest1) $(emcc.speedtest1.common) \
+        $(cflags.speedtest1) $(pre-post-speedtest1.flags.vanilla) \
         $(SQLITE_OPT) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cses) -lm
@@ -748,7 +764,7 @@ $(eval $(call C-PP.FILTER,tester1.c-pp.js,tester1.mjs,$(c-pp.D.esm)))
 $(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1.html))
 $(eval $(call C-PP.FILTER,tester1.c-pp.html,tester1-esm.html,$(c-pp.D.esm)))
 tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
-all: tester1
+all quick: tester1
 
 ########################################################################
 # Convenience rules to rebuild with various -Ox levels. Much
@@ -757,7 +773,8 @@ all: tester1
 # painful.
 
 .PHONY: o0 o1 o2 o3 os oz
-o-xtra := -flto
+o-xtra :=
+#o-xtra ?= -flto
 # ^^^^ -flto can have a considerably performance boost at -O0 but
 # doubles the build time and seems to have negligible, if any, effect
 # on higher optimization levels.
@@ -766,14 +783,18 @@ o0: clean
 o1: clean
 	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)"
 o2: clean
-	$(MAKE) -e "emcc_opt=-O2 $(o-xtra)"
+	$(MAKE) -j2 -e "emcc_opt=-O2 $(o-xtra)"
+qo2: clean
+	$(MAKE) -j2 -e "emcc_opt=-O2 $(o-xtra)" quick
 o3: clean
 	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)"
 os: clean
 	@echo "WARNING: -Os can result in a build with mysteriously missing pieces!"
 	$(MAKE) -e "emcc_opt=-Os $(o-xtra)"
 oz: clean
-	$(MAKE) -e "emcc_opt=-Oz $(o-xtra)"
+	$(MAKE) -j2 -e "emcc_opt=-Oz $(o-xtra)"
+qoz: clean
+	$(MAKE) -j2 -e "emcc_opt=-Oz $(o-xtra)" quick
 
 ########################################################################
 # Sub-makes...

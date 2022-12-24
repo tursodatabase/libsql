@@ -1298,9 +1298,6 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Fifo );
       testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
-      if( pDest->zAffSdst ){
-        sqlite3VdbeChangeP4(v, -1, pDest->zAffSdst, nResultCol);
-      }
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -1873,6 +1870,7 @@ static void generateSortTail(
 #else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
 # define columnType(A,B,C,D,E) columnTypeImpl(A,B)
 #endif
+#ifndef SQLITE_OMIT_DECLTYPE
 static const char *columnTypeImpl(
   NameContext *pNC, 
 #ifndef SQLITE_ENABLE_COLUMN_METADATA
@@ -1903,7 +1901,7 @@ static const char *columnTypeImpl(
       Table *pTab = 0;            /* Table structure column is extracted from */
       Select *pS = 0;             /* Select the column is extracted from */
       int iCol = pExpr->iColumn;  /* Index of column in pTab */
-      while( pNC && !pTab ){
+      while( ALWAYS(pNC) && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
         if( j<pTabList->nSrc ){
@@ -1914,7 +1912,7 @@ static const char *columnTypeImpl(
         }
       }
 
-      if( pTab==0 ){
+      if( NEVER(pTab==0) ){
         /* At one time, code such as "SELECT new.x" within a trigger would
         ** cause this condition to run.  Since then, we have restructured how
         ** trigger code is generated and so this condition is no longer 
@@ -2019,6 +2017,7 @@ static const char *columnTypeImpl(
 #endif
   return zType;
 }
+#endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 
 /*
 ** Generate code that will tell the VDBE the declaration types of columns
@@ -2290,47 +2289,76 @@ int sqlite3ColumnsFromExprList(
 }
 
 /*
-** Add type and collation information to a column list based on
-** a SELECT statement.
-** 
-** The column list presumably came from selectColumnNamesFromExprList().
-** The column list has only names, not types or collations.  This
-** routine goes through and adds the types and collations.
+** pTab is a transient Table object that represents a subquery of some
+** kind (maybe a parenthesized subquery in the FROM clause of a larger
+** query, or a VIEW, or a CTE).  This routine computes type information
+** for that Table object based on the Select object that implements the
+** subquery.  For the purposes of this routine, "type infomation" means:
 **
-** This routine requires that all identifiers in the SELECT
-** statement be resolved.
+**    *   The datatype name, as it might appear in a CREATE TABLE statement
+**    *   Which collating sequence to use for the column
+**    *   The affinity of the column
 */
-void sqlite3SelectAddColumnTypeAndCollation(
-  Parse *pParse,        /* Parsing contexts */
-  Table *pTab,          /* Add column type information to this table */
-  Select *pSelect,      /* SELECT used to determine types and collations */
-  char aff              /* Default affinity for columns */
+void sqlite3SubqueryColumnTypes(
+  Parse *pParse,      /* Parsing contexts */
+  Table *pTab,        /* Add column type information to this table */
+  Select *pSelect,    /* SELECT used to determine types and collations */
+  char aff            /* Default affinity. */
 ){
   sqlite3 *db = pParse->db;
-  NameContext sNC;
   Column *pCol;
   CollSeq *pColl;
-  int i;
+  int i,j;
   Expr *p;
   struct ExprList_item *a;
 
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
   assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed ) return;
-  memset(&sNC, 0, sizeof(sNC));
-  sNC.pSrcList = pSelect->pSrc;
+  while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   a = pSelect->pEList->a;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     const char *zType;
-    i64 n, m;
+    i64 n;
     pTab->tabFlags |= (pCol->colFlags & COLFLAG_NOINSERT);
     p = a[i].pExpr;
-    zType = columnType(&sNC, p, 0, 0, 0);
     /* pCol->szEst = ... // Column size est for SELECT tables never used */
     pCol->affinity = sqlite3ExprAffinity(p);
+    if( pCol->affinity<=SQLITE_AFF_NONE ){
+      pCol->affinity = aff;
+    }else if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
+      pCol->affinity = SQLITE_AFF_FLEXNUM;
+    }
+    if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
+      int m = 0;
+      Select *pS2;
+      for(m=0, pS2=pSelect->pNext; pS2; pS2=pS2->pNext){
+        m |= sqlite3ExprDataType(pS2->pEList->a[i].pExpr);
+      }
+      if( pCol->affinity==SQLITE_AFF_TEXT && (m&0x01)!=0 ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }else
+      if( pCol->affinity>=SQLITE_AFF_NUMERIC && (m&0x02)!=0 ){
+        pCol->affinity = SQLITE_AFF_BLOB;
+      }
+    }
+    if( pCol->affinity==SQLITE_AFF_NUMERIC
+     || pCol->affinity==SQLITE_AFF_FLEXNUM
+    ){
+      zType = "NUM";
+    }else{
+      zType = 0;
+      for(j=1; j<SQLITE_N_STDTYPE; j++){
+        if( sqlite3StdTypeAffinity[j]==pCol->affinity ){
+          zType = sqlite3StdType[j];
+          break;
+        }
+      }
+    }
     if( zType ){
-      m = sqlite3Strlen30(zType);
+      i64 m = sqlite3Strlen30(zType);
       n = sqlite3Strlen30(pCol->zCnName);
       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
       if( pCol->zCnName ){
@@ -2341,7 +2369,6 @@ void sqlite3SelectAddColumnTypeAndCollation(
         pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       }
     }
-    if( pCol->affinity<=SQLITE_AFF_NONE ) pCol->affinity = aff;
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl ){
       assert( pTab->pIndex==0 );
@@ -2375,7 +2402,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect, char aff){
   pTab->zName = 0;
   pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   sqlite3ColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
-  sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSelect, aff);
+  sqlite3SubqueryColumnTypes(pParse, pTab, pSelect, aff);
   pTab->iPKey = -1;
   if( db->mallocFailed ){
     sqlite3DeleteTable(db, pTab);
@@ -6186,14 +6213,14 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
 ** This is a Walker.xSelectCallback callback for the sqlite3SelectTypeInfo()
 ** interface.
 **
-** For each FROM-clause subquery, add Column.zType and Column.zColl
-** information to the Table structure that represents the result set
-** of that subquery.
+** For each FROM-clause subquery, add Column.zType, Column.zColl, and
+** Column.affinity information to the Table structure that represents
+** the result set of that subquery.
 **
 ** The Table structure that represents the result set was constructed
-** by selectExpander() but the type and collation information was omitted
-** at that point because identifiers had not yet been resolved.  This
-** routine is called after identifier resolution.
+** by selectExpander() but the type and collation and affinity information
+** was omitted at that point because identifiers had not yet been resolved.
+** This routine is called after identifier resolution.
 */
 static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   Parse *pParse;
@@ -6213,9 +6240,7 @@ static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       /* A sub-query in the FROM clause of a SELECT */
       Select *pSel = pFrom->pSelect;
       if( pSel ){
-        while( pSel->pPrior ) pSel = pSel->pPrior;
-        sqlite3SelectAddColumnTypeAndCollation(pParse, pTab, pSel,
-                                               SQLITE_AFF_NONE);
+        sqlite3SubqueryColumnTypes(pParse, pTab, pSel, SQLITE_AFF_NONE);
       }
     }
   }
@@ -6289,7 +6314,7 @@ static void printAggInfo(AggInfo *pAggInfo){
   }
   for(ii=0; ii<pAggInfo->nFunc; ii++){
     sqlite3DebugPrintf("agg-func[%d]: iMem=%d\n",
-        ii, AggInfoFuncReg(pAggInfo,ii));
+        ii, pAggInfo->iFirstReg+pAggInfo->nColumn+ii);
     sqlite3TreeViewExpr(0, pAggInfo->aFunc[ii].pFExpr, 0);
   }
 }
@@ -6697,19 +6722,24 @@ static void havingToWhere(Parse *pParse, Select *p){
 }
 
 /*
-** Check to see if the pThis entry of pTabList is a self-join of a prior view.
-** If it is, then return the SrcItem for the prior view.  If it is not,
-** then return 0.
+** Check to see if the pThis entry of pTabList is a self-join of another view.
+** Search FROM-clause entries in the range of iFirst..iEnd, including iFirst
+** but stopping before iEnd.
+**
+** If pThis is a self-join, then return the SrcItem for the first other
+** instance of that view found.  If pThis is not a self-join then return 0.
 */
 static SrcItem *isSelfJoinView(
   SrcList *pTabList,           /* Search for self-joins in this FROM clause */
-  SrcItem *pThis               /* Search for prior reference to this subquery */
+  SrcItem *pThis,              /* Search for prior reference to this subquery */
+  int iFirst, int iEnd        /* Range of FROM-clause entries to search. */
 ){
   SrcItem *pItem;
   assert( pThis->pSelect!=0 );
   if( pThis->pSelect->selFlags & SF_PushDown ) return 0;
-  for(pItem = pTabList->a; pItem<pThis; pItem++){
+  while( iFirst<iEnd ){
     Select *pS1;
+    pItem = &pTabList->a[iFirst++];
     if( pItem->pSelect==0 ) continue;
     if( pItem->fg.viaCoroutine ) continue;
     if( pItem->zName==0 ) continue;
@@ -6852,6 +6882,62 @@ static int sameSrcAlias(SrcItem *p0, SrcList *pSrc){
     }
   }
   return 0;
+}
+
+/*
+** Return TRUE (non-zero) if the i-th entry in the pTabList SrcList can
+** be implemented as a co-routine.  The i-th entry is guaranteed to be
+** a subquery.
+**
+** The subquery is implemented as a co-routine if all of the following are
+** true:
+**
+**    (1)  The subquery will likely be implemented in the outer loop of
+**         the query.  This will be the case if any one of the following
+**         conditions hold:
+**         (a)  The subquery is the only term in the FROM clause
+**         (b)  The subquery is the left-most term and a CROSS JOIN or similar
+**              requires it to be the outer loop
+**         (c)  All of the following are true:
+**                (i) The subquery is the left-most subquery in the FROM clause
+**               (ii) There is nothing that would prevent the subquery from
+**                    being used as the outer loop if the sqlite3WhereBegin()
+**                    routine nominates it to that position.
+**              (iii) The query is not a UPDATE ... FROM
+**    (2)  The subquery is not a CTE that should be materialized because of
+**         the AS MATERIALIZED keywords
+**    (3)  The subquery is not part of a left operand for a RIGHT JOIN
+**    (4)  The SQLITE_Coroutine optimization disable flag is not set
+**    (5)  The subquery is not self-joined
+*/
+static int fromClauseTermCanBeCoroutine(
+  Parse *pParse,          /* Parsing context */
+  SrcList *pTabList,      /* FROM clause */
+  int i,                  /* Which term of the FROM clause holds the subquery */
+  int selFlags            /* Flags on the SELECT statement */
+){
+  SrcItem *pItem = &pTabList->a[i];
+  if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ) return 0;/* (2) */
+  if( pTabList->a[0].fg.jointype & JT_LTORJ ) return 0;                /* (3) */
+  if( OptimizationDisabled(pParse->db, SQLITE_Coroutines) ) return 0;  /* (4) */
+  if( isSelfJoinView(pTabList, pItem, i+1, pTabList->nSrc)!=0 ){
+    return 0;                                                          /* (5) */
+  }
+  if( i==0 ){
+    if( pTabList->nSrc==1 ) return 1;                             /* (1a) */
+    if( pTabList->a[1].fg.jointype & JT_CROSS ) return 1;         /* (1b) */
+    if( selFlags & SF_UpdateFrom )              return 0;         /* (1c-iii) */
+    return 1;
+  }
+  if( selFlags & SF_UpdateFrom ) return 0;                        /* (1c-iii) */
+  while( 1 /*exit-by-break*/ ){
+    if( pItem->fg.jointype & (JT_OUTER|JT_CROSS)  ) return 0;     /* (1c-ii) */
+    if( i==0 ) break;
+    i--;
+    pItem--;
+    if( pItem->pSelect!=0 ) return 0;                             /* (1c-i) */
+  }
+  return 1;
 }
 
 /*
@@ -7241,35 +7327,19 @@ int sqlite3Select(
     pParse->zAuthContext = pItem->zName;
 
     /* Generate code to implement the subquery
-    **
-    ** The subquery is implemented as a co-routine if all of the following are
-    ** true:
-    **
-    **    (1)  the subquery is guaranteed to be the outer loop (so that
-    **         it does not need to be computed more than once), and
-    **    (2)  the subquery is not a CTE that should be materialized
-    **    (3)  the subquery is not part of a left operand for a RIGHT JOIN
     */
-    if( i==0
-     && (pTabList->nSrc==1
-            || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)  /* (1) */
-     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes)   /* (2) */
-     && (pTabList->a[0].fg.jointype & JT_LTORJ)==0                   /* (3) */
-    ){
+    if( fromClauseTermCanBeCoroutine(pParse, pTabList, i, p->selFlags) ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
       */
       int addrTop = sqlite3VdbeCurrentAddr(v)+1;
-#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-      int addrExplain;
-#endif
      
       pItem->regReturn = ++pParse->nMem;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
       VdbeComment((v, "%!S", pItem));
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
-      ExplainQueryPlan2(addrExplain, (pParse, 1, "CO-ROUTINE %!S", pItem));
+      ExplainQueryPlan((pParse, 1, "CO-ROUTINE %!S", pItem));
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       pItem->fg.viaCoroutine = 1;
@@ -7277,10 +7347,6 @@ int sqlite3Select(
       sqlite3VdbeEndCoroutine(v, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
-      /* For SQLITE_SCANSTAT_NCYCLE, all instructions from the 
-      ** OP_InitCoroutine coded above until this point are attributed to 
-      ** the CO-ROUTINE query element.  */
-      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain-1, -1);
     }else if( pItem->fg.isCte && pItem->u2.pCteUse->addrM9e>0 ){
       /* This is a CTE for which materialization code has already been
       ** generated.  Invoke the subroutine to compute the materialization,
@@ -7293,7 +7359,7 @@ int sqlite3Select(
         VdbeComment((v, "%!S", pItem));
       }
       pSub->nSelectRow = pCteUse->nRowEst;
-    }else if( (pPrior = isSelfJoinView(pTabList, pItem))!=0 ){
+    }else if( (pPrior = isSelfJoinView(pTabList, pItem, 0, i))!=0 ){
       /* This view has already been materialized by a prior entry in
       ** this same FROM clause.  Reuse it. */
       if( pPrior->addrFillSub ){
@@ -7327,14 +7393,12 @@ int sqlite3Select(
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
 
       ExplainQueryPlan2(addrExplain, (pParse, 1, "MATERIALIZE %!S", pItem));
-      dest.zAffSdst = sqlite3TableAffinityStr(db, pItem->pTab);
       sqlite3Select(pParse, pSub, &dest);
-      sqlite3DbFree(db, dest.zAffSdst);
-      dest.zAffSdst = 0;
       pItem->pTab->nRowLogEst = pSub->nSelectRow;
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       sqlite3VdbeAddOp2(v, OP_Return, pItem->regReturn, topAddr+1);
       VdbeComment((v, "end %!S", pItem));
+      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
       sqlite3VdbeJumpHere(v, topAddr);
       sqlite3ClearTempRegCache(pParse);
       if( pItem->fg.isCte && pItem->fg.isCorrelated==0 ){
@@ -7344,9 +7408,6 @@ int sqlite3Select(
         pCteUse->iCur = pItem->iCursor;
         pCteUse->nRowEst = pSub->nSelectRow;
       }
-      /* For SQLITE_SCANSTAT_NCYCLE, all instructions from the 
-      ** OP_Explain to here are attibuted to the MATERIALIZE element. */
-      sqlite3VdbeScanStatusRange(v, addrExplain, addrExplain, -1);
     }
     if( db->mallocFailed ) goto select_end;
     pParse->nHeight -= sqlite3SelectExprHeight(p);
@@ -7624,6 +7685,9 @@ int sqlite3Select(
       goto select_end;
     }
     pAggInfo->selId = p->selId;
+#ifdef SQLITE_DEBUG
+    pAggInfo->pSelect = p;
+#endif
     memset(&sNC, 0, sizeof(sNC));
     sNC.pParse = pParse;
     sNC.pSrcList = pTabList;

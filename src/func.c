@@ -1082,7 +1082,7 @@ void sqlite3QuoteValue(StrAccum *pStr, sqlite3_value *pValue){
     }
     case SQLITE_BLOB: {
       char const *zBlob = sqlite3_value_blob(pValue);
-      int nBlob = sqlite3_value_bytes(pValue);
+      i64 nBlob = sqlite3_value_bytes(pValue);
       assert( zBlob==sqlite3_value_blob(pValue) ); /* No encoding change */
       sqlite3StrAccumEnlarge(pStr, nBlob*2 + 4);
       if( pStr->accError==0 ){
@@ -1440,6 +1440,9 @@ static void unknownFunc(
   sqlite3_value **argv
 ){
   /* no-op */
+  (void)context;
+  (void)argc;
+  (void)argv;
 }
 #endif /*SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION*/
 
@@ -2183,6 +2186,7 @@ static void piFunc(
   sqlite3_value **argv
 ){
   assert( argc==0 );
+  (void)argv;
   sqlite3_result_double(context, M_PI);
 }
 

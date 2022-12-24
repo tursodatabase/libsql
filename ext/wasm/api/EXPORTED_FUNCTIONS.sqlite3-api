@@ -25,6 +25,7 @@ _sqlite3_column_int64
 _sqlite3_column_name
 _sqlite3_column_text
 _sqlite3_column_type
+_sqlite3_column_value
 _sqlite3_compileoption_get
 _sqlite3_compileoption_used
 _sqlite3_complete
@@ -43,6 +44,7 @@ _sqlite3_db_status
 _sqlite3_declare_vtab
 _sqlite3_deserialize
 _sqlite3_drop_modules
+_sqlite3_errcode
 _sqlite3_errmsg
 _sqlite3_error_offset
 _sqlite3_errstr
@@ -55,8 +57,13 @@ _sqlite3_finalize
 _sqlite3_free
 _sqlite3_get_auxdata
 _sqlite3_initialize
+_sqlite3_keyword_count
+_sqlite3_keyword_name
+_sqlite3_keyword_check
+_sqlite3_last_insert_rowid
 _sqlite3_libversion
 _sqlite3_libversion_number
+_sqlite3_limit
 _sqlite3_malloc
 _sqlite3_malloc64
 _sqlite3_msize
@@ -65,6 +72,7 @@ _sqlite3_open_v2
 _sqlite3_overload_function
 _sqlite3_prepare_v2
 _sqlite3_prepare_v3
+_sqlite3_progress_handler
 _sqlite3_randomness
 _sqlite3_realloc
 _sqlite3_realloc64
@@ -84,13 +92,17 @@ _sqlite3_result_text
 _sqlite3_result_zeroblob
 _sqlite3_result_zeroblob64
 _sqlite3_serialize
+_sqlite3_set_authorizer
 _sqlite3_set_auxdata
+_sqlite3_set_last_insert_rowid
 _sqlite3_shutdown
 _sqlite3_sourceid
 _sqlite3_sql
 _sqlite3_status
 _sqlite3_status64
 _sqlite3_step
+_sqlite3_stmt_isexplain
+_sqlite3_stmt_readonly
 _sqlite3_stmt_status
 _sqlite3_strglob
 _sqlite3_stricmp
@@ -100,6 +112,7 @@ _sqlite3_table_column_metadata
 _sqlite3_total_changes
 _sqlite3_total_changes64
 _sqlite3_trace_v2
+_sqlite3_txn_state
 _sqlite3_uri_boolean
 _sqlite3_uri_int64
 _sqlite3_uri_key

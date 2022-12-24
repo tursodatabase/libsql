@@ -79,13 +79,9 @@
      the `realloc(3)`-compatible routine for the WASM
      environment. Defaults to `"sqlite3_realloc"`.
 
-   - `wasmfsOpfsDir`[^1]: if the environment supports persistent
-     storage using OPFS-over-WASMFS , this directory names the "mount
-     point" for that directory. It must be prefixed by `/` and may
-     contain only a single directory-name part. Using the root
-     directory name is not supported by any current persistent
-     backend.  This setting is only used in WASMFS-enabled builds.
-
+   - `wasmfsOpfsDir`[^1]: As of 2022-12-17, this feature does not
+     currently work due to incompatible Emscripten-side changes made
+     in the WASMFS+OPFS combination. This option is currently ignored.
 
    [^1] = This property may optionally be a function, in which case this
           function re-assigns it to the value returned from that function,
@@ -138,6 +134,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       config[k] = config[k]();
     }
   });
+  config.wasmOpfsDir =
+    /* 2022-12-17: WASMFS+OPFS can no longer be activated from the
+       main thread (aborts via a failed assert() if it's attempted),
+       which eliminates any(?) benefit to supporting it. */  false;
 
   /** 
       The main sqlite3 binding API gets installed into this object,
@@ -321,14 +321,17 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Returns true if v appears to be one of our bind()-able TypedArray
-     types: Uint8Array or Int8Array. Support for TypedArrays with
-     element sizes >1 is a potential TODO just waiting on a use case
-     to justify them.
+     Returns v if v appears to be one of our bind()-able TypedArray
+     types: Uint8Array or Int8Array or ArrayBuffer. Support for
+     TypedArrays with element sizes >1 is a potential TODO just
+     waiting on a use case to justify them. Until then, their `buffer`
+     property can be used to pass them as an ArrayBuffer. If it's not
+     a bindable array type, a falsy value is returned.
   */
   const isBindableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array || v instanceof Int8Array);
-    //v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
+    return v && (v instanceof Uint8Array
+                 || v instanceof Int8Array
+                 || v instanceof ArrayBuffer);
   };
 
   /**
@@ -341,8 +344,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      isSQLableTypedArray() list.
   */
   const isSQLableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array || v instanceof Int8Array);
-    //v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
+    return v && (v instanceof Uint8Array
+                 || v instanceof Int8Array
+                 || v instanceof ArrayBuffer);
   };
 
   /** Returns true if isBindableTypedArray(v) does, else throws with a message
@@ -418,6 +422,92 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
   Object.assign(capi, {
     /**
+       sqlite3_bind_blob() works exactly like its C counterpart unless
+       its 3rd argument is one of:
+
+       - JS string: the 3rd argument is converted to a C string, the
+         4th argument is ignored, and the C-string's length is used
+         in its place.
+
+       - Array: converted to a string as defined for "flexible
+         strings" and then it's treated as a JS string.
+
+       - Int8Array or Uint8Array: wasm.allocFromTypedArray() is used to
+         conver the memory to the WASM heap. If the 4th argument is
+         0 or greater, it is used as-is, otherwise the array's byteLength
+         value is used. This is an exception to the C API's undefined
+         behavior for a negative 4th argument, but results are undefined
+         if the given 4th argument value is greater than the byteLength
+         of the input array.
+
+       - If it's an ArrayBuffer, it gets wrapped in a Uint8Array and
+         treated as that type.
+
+       In all of those cases, the final argument (destructor) is
+       ignored and capi.SQLITE_WASM_DEALLOC is assumed.
+
+       A 3rd argument of `null` is treated as if it were a WASM pointer
+       of 0.
+
+       If the 3rd argument is neither a WASM pointer nor one of the
+       above-described types, capi.SQLITE_MISUSE is returned.
+
+       The first argument may be either an `sqlite3_stmt*` WASM
+       pointer or an sqlite3.oo1.Stmt instance.
+
+       For consistency with the C API, it requires the same number of
+       arguments. It returns capi.SQLITE_MISUSE if passed any other
+       argument count.
+    */
+    sqlite3_bind_blob: undefined/*installed later*/,
+
+    /**
+       sqlite3_bind_text() works exactly like its C counterpart unless
+       its 3rd argument is one of:
+
+       - JS string: the 3rd argument is converted to a C string, the
+         4th argument is ignored, and the C-string's length is used
+         in its place.
+
+       - Array: converted to a string as defined for "flexible
+         strings". The 4th argument is ignored and a value of -1
+         is assumed.
+
+       - Int8Array or Uint8Array: is assumed to contain UTF-8 text, is
+         converted to a string. The 4th argument is ignored, replaced
+         by the array's byteLength value.
+
+       - If it's an ArrayBuffer, it gets wrapped in a Uint8Array and
+         treated as that type.
+
+       In each of those cases, the final argument (text destructor) is
+       ignored and capi.SQLITE_WASM_DEALLOC is assumed.
+
+       A 3rd argument of `null` is treated as if it were a WASM pointer
+       of 0.
+
+       If the 3rd argument is neither a WASM pointer nor one of the
+       above-described types, capi.SQLITE_MISUSE is returned.
+
+       The first argument may be either an `sqlite3_stmt*` WASM
+       pointer or an sqlite3.oo1.Stmt instance.
+
+       For consistency with the C API, it requires the same number of
+       arguments. It returns capi.SQLITE_MISUSE if passed any other
+       argument count.
+
+       If client code needs to bind partial strings, it needs to
+       either parcel the string up before passing it in here or it
+       must pass in a WASM pointer for the 3rd argument and a valid
+       4th-argument value, taking care not to pass a value which
+       truncates a multi-byte UTF-8 character. When passing
+       WASM-format strings, it is important that the final argument be
+       valid or unexpected content can result can result, or even a
+       crash if the application reads past the WASM heap bounds.
+    */
+    sqlite3_bind_text: undefined/*installed later*/,
+
+    /**
        sqlite3_create_function_v2() differs from its native
        counterpart only in the following ways:
 
@@ -425,13 +515,19 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        any encoding other than sqlite3.SQLITE_UTF8. The JS API does not
        currently support any other encoding and likely never
        will. This function does not replace that argument on its own
-       because it may contain other flags.
+       because it may contain other flags. As a special case, if
+       the bottom 4 bits of that argument are 0, SQLITE_UTF8 is
+       assumed.
 
        2) Any of the four final arguments may be either WASM pointers
        (assumed to be function pointers) or JS Functions. In the
        latter case, each gets bound to WASM using
        sqlite3.capi.wasm.installFunction() and that wrapper is passed
        on to the native implementation.
+
+       For consistency with the C API, it requires the same number of
+       arguments. It returns capi.SQLITE_MISUSE if passed any other
+       argument count.
 
        The semantics of JS functions are:
 
@@ -519,18 +615,18 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        WASM build is compiled with emcc's `-sALLOW_TABLE_GROWTH`
        flag.
     */
-    sqlite3_create_function_v2: function(
+    sqlite3_create_function_v2: (
       pDb, funcName, nArg, eTextRep, pApp,
       xFunc, xStep, xFinal, xDestroy
-    ){/*installed later*/},
+    )=>{/*installed later*/},
     /**
        Equivalent to passing the same arguments to
        sqlite3_create_function_v2(), with 0 as the final argument.
     */
-    sqlite3_create_function:function(
+    sqlite3_create_function: (
       pDb, funcName, nArg, eTextRep, pApp,
       xFunc, xStep, xFinal
-    ){/*installed later*/},
+    )=>{/*installed later*/},
     /**
        The sqlite3_create_window_function() JS wrapper differs from
        its native implementation in the exact same way that
@@ -538,10 +634,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        xInverse(), is treated identically to xStep() by the wrapping
        layer.
     */
-    sqlite3_create_window_function: function(
+    sqlite3_create_window_function: (
       pDb, funcName, nArg, eTextRep, pApp,
       xStep, xFinal, xValue, xInverse, xDestroy
-    ){/*installed later*/},
+    )=>{/*installed later*/},
     /**
        The sqlite3_prepare_v3() binding handles two different uses
        with differing JS/WASM semantics:
@@ -663,7 +759,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     toss3,
     typedArrayPart
   };
-    
+
   Object.assign(wasm, {
     /**
        Emscripten APIs have a deep-seated assumption that all pointers
@@ -879,231 +975,6 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   }/*compileOptionUsed()*/;
 
   /**
-     Signatures for the WASM-exported C-side functions. Each entry
-     is an array with 2+ elements:
-
-     [ "c-side name",
-       "result type" (wasm.xWrap() syntax),
-       [arg types in xWrap() syntax]
-       // ^^^ this needn't strictly be an array: it can be subsequent
-       // elements instead: [x,y,z] is equivalent to x,y,z
-     ]
-
-     Note that support for the API-specific data types in the
-     result/argument type strings gets plugged in at a later phase in
-     the API initialization process.
-  */
-  wasm.bindingSignatures = [
-    // Please keep these sorted by function name!
-    ["sqlite3_aggregate_context","void*", "sqlite3_context*", "int"],
-    ["sqlite3_bind_blob","int", "sqlite3_stmt*", "int", "*", "int", "*"
-     /* TODO: we should arguably write a custom wrapper which knows
-        how to handle Blob, TypedArrays, and JS strings. */
-    ],
-    ["sqlite3_bind_double","int", "sqlite3_stmt*", "int", "f64"],
-    ["sqlite3_bind_int","int", "sqlite3_stmt*", "int", "int"],
-    ["sqlite3_bind_null",undefined, "sqlite3_stmt*", "int"],
-    ["sqlite3_bind_parameter_count", "int", "sqlite3_stmt*"],
-    ["sqlite3_bind_parameter_index","int", "sqlite3_stmt*", "string"],
-    ["sqlite3_bind_pointer", "int",
-     "sqlite3_stmt*", "int", "*", "string:static", "*"],
-    ["sqlite3_bind_text","int", "sqlite3_stmt*", "int", "string", "int", "int"
-     /* We should arguably create a hand-written binding of
-        bind_text() which does more flexible text conversion, along
-        the lines of sqlite3_prepare_v3(). The slightly problematic
-        part is the final argument (text destructor). */
-    ],
-    //["sqlite3_busy_handler","int", "sqlite3*", "*", "*"],
-    // ^^^^ TODO: custom binding which auto-converts JS function arg
-    // to a WASM function, noting that calling it multiple times
-    // would introduce a leak.
-    ["sqlite3_busy_timeout","int", "sqlite3*", "int"],
-    ["sqlite3_close_v2", "int", "sqlite3*"],
-    ["sqlite3_changes", "int", "sqlite3*"],
-    ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
-    ["sqlite3_collation_needed", "int", "sqlite3*", "*", "*"/*=>v(ppis)*/],
-    ["sqlite3_column_blob","*", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_bytes","int", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_count", "int", "sqlite3_stmt*"],
-    ["sqlite3_column_double","f64", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_int","int", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_name","string", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
-    ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
-    ["sqlite3_compileoption_get", "string", "int"],
-    ["sqlite3_compileoption_used", "int", "string"],
-    ["sqlite3_complete", "int", "string:flexible"],
-    /* sqlite3_create_function(), sqlite3_create_function_v2(), and
-       sqlite3_create_window_function() use hand-written bindings to
-       simplify handling of their function-type arguments. */
-    /* sqlite3_create_collation() and sqlite3_create_collation_v2()
-       use hand-written bindings to simplify passing of the callback
-       function.
-      ["sqlite3_create_collation", "int",
-     "sqlite3*", "string", "int",//SQLITE_UTF8 is the only legal value
-     "*", "*"],
-    ["sqlite3_create_collation_v2", "int",
-     "sqlite3*", "string", "int",//SQLITE_UTF8 is the only legal value
-     "*", "*", "*"],
-    */
-    ["sqlite3_data_count", "int", "sqlite3_stmt*"],
-    ["sqlite3_db_filename", "string", "sqlite3*", "string"],
-    ["sqlite3_db_handle", "sqlite3*", "sqlite3_stmt*"],
-    ["sqlite3_db_name", "string", "sqlite3*", "int"],
-    ["sqlite3_db_status", "int", "sqlite3*", "int", "*", "*", "int"],
-    ["sqlite3_deserialize", "int", "sqlite3*", "string", "*", "i64", "i64", "int"]
-    /* Careful! Short version: de/serialize() are problematic because they
-       might use a different allocator than the user for managing the
-       deserialized block. de/serialize() are ONLY safe to use with
-       sqlite3_malloc(), sqlite3_free(), and its 64-bit variants. */,
-    ["sqlite3_errmsg", "string", "sqlite3*"],
-    ["sqlite3_error_offset", "int", "sqlite3*"],
-    ["sqlite3_errstr", "string", "int"],
-    /*["sqlite3_exec", "int", "sqlite3*", "string", "*", "*", "**"
-      Handled seperately to perform translation of the callback
-      into a WASM-usable one. ],*/
-    ["sqlite3_expanded_sql", "string", "sqlite3_stmt*"],
-    ["sqlite3_extended_errcode", "int", "sqlite3*"],
-    ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],
-    ["sqlite3_file_control", "int", "sqlite3*", "string", "int", "*"],
-    ["sqlite3_finalize", "int", "sqlite3_stmt*"],
-    ["sqlite3_free", undefined,"*"],
-    ["sqlite3_get_auxdata", "*", "sqlite3_context*", "int"],
-    ["sqlite3_initialize", undefined],
-    /*["sqlite3_interrupt", undefined, "sqlite3*"
-       ^^^ we cannot actually currently support this because JS is
-        single-threaded and we don't have a portable way to access a DB
-        from 2 SharedWorkers concurrently. ],*/
-    ["sqlite3_libversion", "string"],
-    ["sqlite3_libversion_number", "int"],
-    ["sqlite3_malloc", "*","int"],
-    ["sqlite3_open", "int", "string", "*"],
-    ["sqlite3_open_v2", "int", "string", "*", "int", "string"],
-    /* sqlite3_prepare_v2() and sqlite3_prepare_v3() are handled
-       separately due to us requiring two different sets of semantics
-       for those, depending on how their SQL argument is provided. */
-    /* sqlite3_randomness() uses a hand-written wrapper to extend
-       the range of supported argument types. */
-    ["sqlite3_realloc", "*","*","int"],
-    ["sqlite3_reset", "int", "sqlite3_stmt*"],
-    ["sqlite3_result_blob", undefined, "sqlite3_context*", "*", "int", "*"],
-    ["sqlite3_result_double", undefined, "sqlite3_context*", "f64"],
-    ["sqlite3_result_error", undefined, "sqlite3_context*", "string", "int"],
-    ["sqlite3_result_error_code", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_result_error_nomem", undefined, "sqlite3_context*"],
-    ["sqlite3_result_error_toobig", undefined, "sqlite3_context*"],
-    ["sqlite3_result_int", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_result_null", undefined, "sqlite3_context*"],
-    ["sqlite3_result_pointer", undefined,
-     "sqlite3_context*", "*", "string:static", "*"],
-    ["sqlite3_result_subtype", undefined, "sqlite3_value*", "int"],
-    ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
-    ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
-    ["sqlite3_set_auxdata", undefined, "sqlite3_context*", "int", "*", "*"/* => v(*) */],
-    ["sqlite3_shutdown", undefined],
-    ["sqlite3_sourceid", "string"],
-    ["sqlite3_sql", "string", "sqlite3_stmt*"],
-    ["sqlite3_status", "int", "int", "*", "*", "int"],
-    ["sqlite3_step", "int", "sqlite3_stmt*"],
-    ["sqlite3_stmt_status", "int", "sqlite3_stmt*", "int", "int"],
-    ["sqlite3_strglob", "int", "string","string"],
-    ["sqlite3_stricmp", "int", "string", "string"],
-    ["sqlite3_strlike", "int", "string", "string","int"],
-    ["sqlite3_strnicmp", "int", "string", "string", "int"],
-    ["sqlite3_table_column_metadata", "int",
-     "sqlite3*", "string", "string", "string",
-     "**", "**", "*", "*", "*"],
-    ["sqlite3_total_changes", "int", "sqlite3*"],
-    ["sqlite3_trace_v2", "int", "sqlite3*", "int", "*", "*"],
-    /* Note that sqlite3_uri_...() have very specific requirements for
-       their first C-string arguments, so we cannot perform any value
-       conversion on those. */
-    ["sqlite3_uri_boolean", "int", "sqlite3_filename", "string", "int"],
-    ["sqlite3_uri_key", "string", "sqlite3_filename", "int"],
-    ["sqlite3_uri_parameter", "string", "sqlite3_filename", "string"],
-    ["sqlite3_user_data","void*", "sqlite3_context*"],
-    ["sqlite3_value_blob", "*", "sqlite3_value*"],
-    ["sqlite3_value_bytes","int", "sqlite3_value*"],
-    ["sqlite3_value_double","f64", "sqlite3_value*"],
-    ["sqlite3_value_dup", "sqlite3_value*", "sqlite3_value*"],
-    ["sqlite3_value_free", undefined, "sqlite3_value*"],
-    ["sqlite3_value_frombind", "int", "sqlite3_value*"],
-    ["sqlite3_value_int","int", "sqlite3_value*"],
-    ["sqlite3_value_nochange", "int", "sqlite3_value*"],
-    ["sqlite3_value_numeric_type", "int", "sqlite3_value*"],
-    ["sqlite3_value_pointer", "*", "sqlite3_value*", "string:static"],
-    ["sqlite3_value_subtype", "int", "sqlite3_value*"],
-    ["sqlite3_value_text", "string", "sqlite3_value*"],
-    ["sqlite3_value_type", "int", "sqlite3_value*"],
-    ["sqlite3_vfs_find", "*", "string"],
-    ["sqlite3_vfs_register", "int", "sqlite3_vfs*", "int"],
-    ["sqlite3_vfs_unregister", "int", "sqlite3_vfs*"]
-  ]/*wasm.bindingSignatures*/;
-
-  if(false && wasm.compileOptionUsed('SQLITE_ENABLE_NORMALIZE')){
-    /* ^^^ "the problem" is that this is an option feature and the
-       build-time function-export list does not currently take
-       optional features into account. */
-    wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
-  }
-  
-  /**
-     Functions which require BigInt (int64) support are separated from
-     the others because we need to conditionally bind them or apply
-     dummy impls, depending on the capabilities of the environment.
-
-     Note that not all of these functions directly require int64
-     but are only for use with APIs which require int64. For example,
-     the vtab-related functions.
-  */
-  wasm.bindingSignatures.int64 = [
-    ["sqlite3_bind_int64","int", ["sqlite3_stmt*", "int", "i64"]],
-    ["sqlite3_changes64","i64", ["sqlite3*"]],
-    ["sqlite3_column_int64","i64", ["sqlite3_stmt*", "int"]],
-    ["sqlite3_create_module", "int",
-     ["sqlite3*","string","sqlite3_module*","*"]],
-    ["sqlite3_create_module_v2", "int",
-     ["sqlite3*","string","sqlite3_module*","*","*"]],
-    ["sqlite3_declare_vtab", "int", ["sqlite3*", "string:flexible"]],
-    ["sqlite3_drop_modules", "int", ["sqlite3*", "**"]],
-    ["sqlite3_malloc64", "*","i64"],
-    ["sqlite3_msize", "i64", "*"],
-    ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
-    ["sqlite3_realloc64", "*","*", "i64"],
-    ["sqlite3_result_int64", undefined, "*", "i64"],
-    ["sqlite3_result_zeroblob64", "int", "*", "i64"],
-    ["sqlite3_status64", "int", "int", "*", "*", "int"],
-    ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
-    ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
-    ["sqlite3_value_int64","i64", "sqlite3_value*"],
-    ["sqlite3_vtab_collation","string","sqlite3_index_info*","int"],
-    ["sqlite3_vtab_distinct","int", "sqlite3_index_info*"],
-    ["sqlite3_vtab_in","int", "sqlite3_index_info*", "int", "int"],
-    ["sqlite3_vtab_in_first", "int", "sqlite3_value*", "**"],
-    ["sqlite3_vtab_in_next", "int", "sqlite3_value*", "**"],
-    /*["sqlite3_vtab_config" is variadic and requires a hand-written
-      proxy.] */
-    ["sqlite3_vtab_nochange","int", "sqlite3_context*"],
-    ["sqlite3_vtab_on_conflict","int", "sqlite3*"],
-    ["sqlite3_vtab_rhs_value","int", "sqlite3_index_info*", "int", "**"]
-  ];
-
-  /**
-     Functions which are intended solely for API-internal use by the
-     WASM components, not client code. These get installed into
-     sqlite3.wasm. Some of them get exposed to clients via variants
-     named sqlite3_js_...().
-  */
-  wasm.bindingSignatures.wasm = [
-    ["sqlite3_wasm_db_reset", "int", "sqlite3*"],
-    ["sqlite3_wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
-    ["sqlite3_wasm_vfs_create_file", "int",
-     "sqlite3_vfs*","string","*", "int"],
-    ["sqlite3_wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
-  ];
-
-  /**
      sqlite3.wasm.pstack (pseudo-stack) holds a special-case
      stack-style allocator intended only for use with _small_ data of
      not more than (in total) a few kb in size, managed as if it were
@@ -1275,6 +1146,13 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /** State for sqlite3_wasmfs_opfs_dir(). */
   let __wasmfsOpfsDir = undefined;
   /**
+     2022-12-17: incompatible WASMFS changes have made WASMFS+OPFS
+     unavailable from the main thread, which eliminates the most
+     significant benefit of supporting WASMFS. This function is now a
+     no-op which always returns a falsy value. Before that change,
+     this function behaved as documented below (and how it will again
+     if we can find a compelling reason to support it).
+
      If the wasm environment has a WASMFS/OPFS-backed persistent
      storage directory, its path is returned by this function. If it
      does not then it returns "" (noting that "" is a falsy value).
@@ -1291,6 +1169,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(undefined !== __wasmfsOpfsDir) return __wasmfsOpfsDir;
     // If we have no OPFS, there is no persistent dir
     const pdir = config.wasmfsOpfsDir;
+    console.error("sqlite3_wasmfs_opfs_dir() can no longer work due "+
+                  "to incompatible WASMFS changes. It will be removed.");
     if(!pdir
        || !self.FileSystemHandle
        || !self.FileSystemDirectoryHandle
@@ -1672,9 +1552,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
      By default it throws if it cannot determine any sensible
      conversion. If passed a falsy second argument, it instead returns
-     `undefined` if no suitable conversion is found. Note that there
+     `undefined` if no suitable conversion is found.  Note that there
      is no conversion from SQL to JS which results in the `undefined`
-     value, so `undefined` has an unambiguous meaning here.
+     value, so `undefined` has an unambiguous meaning here.  It will
+     always throw a WasmAllocError if allocating memory for a
+     conversion fails.
 
      Caveats:
 
@@ -1723,6 +1605,162 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     return arg;
   };
 
+  /**
+     Requires a C-style array of `sqlite3_value*` objects and the
+     number of entries in that array. Returns a JS array containing
+     the results of passing each C array entry to
+     sqlite3_value_to_js(). The 3rd argument to this function is
+     passed on as the 2nd argument to that one.
+  */
+  capi.sqlite3_values_to_js = function(argc,pArgv,throwIfCannotConvert=true){
+    let i;
+    const tgt = [];
+    for(i = 0; i < argc; ++i){
+      /**
+         Curiously: despite ostensibly requiring 8-byte
+         alignment, the pArgv array is parcelled into chunks of
+         4 bytes (1 pointer each). The values those point to
+         have 8-byte alignment but the individual argv entries
+         do not.
+      */
+      tgt.push(capi.sqlite3_value_to_js(
+        wasm.peekPtr(pArgv + (wasm.ptrSizeof * i))
+      ));
+    }
+    return tgt;
+  };
+
+  /**
+     Calls either sqlite3_result_error_nomem(), if e is-a
+     WasmAllocError, or sqlite3_result_error(). In the latter case,
+     the second arugment is coerced to a string to create the error
+     message.
+
+     The first argument is a (sqlite3_context*). Returns void.
+     Does not throw.
+  */
+  capi.sqlite3_result_error_js = function(pCtx,e){
+    if(e instanceof WasmAllocError){
+      capi.sqlite3_result_error_nomem(pCtx);
+    }else{
+      /* Maintenance reminder: ''+e, rather than e.message,
+         will prefix e.message with e.name, so it includes
+         the exception's type name in the result. */;
+      capi.sqlite3_result_error(pCtx, ''+e, -1);
+    }
+  };
+
+  /**
+     This function passes its 2nd argument to one of the
+     sqlite3_result_xyz() routines, depending on the type of that
+     argument:
+
+     - If (val instanceof Error), this function passes it to
+       sqlite3_result_error_js().
+     - `null`: `sqlite3_result_null()`
+     - `boolean`: `sqlite3_result_int()` with a value of 0 or 1.
+     - `number`: `sqlite3_result_int()`, `sqlite3_result_int64()`, or
+       `sqlite3_result_double()`, depending on the range of the number
+       and whether or not int64 support is enabled.
+     - `bigint`: similar to `number` but will trigger an error if the
+       value is too big to store in an int64.
+     - `string`: `sqlite3_result_text()`
+     - Uint8Array or Int8Array or ArrayBuffer: `sqlite3_result_blob()`
+     - `undefined`: is a no-op provided to simplify certain use cases.
+
+     Anything else triggers `sqlite3_result_error()` with a
+     description of the problem.
+
+     The first argument to this function is a `(sqlite3_context*)`.
+     Returns void. Does not throw.
+  */
+  capi.sqlite3_result_js = function(pCtx,val){
+    if(val instanceof Error){
+      capi.sqlite3_result_error_js(pCtx, val);
+      return;
+    }
+    try{
+      switch(typeof val) {
+          case 'undefined':
+            /* This is a no-op. This routine originated in the create_function()
+               family of APIs and in that context, passing in undefined indicated
+               that the caller was responsible for calling sqlite3_result_xxx()
+               (if needed). */
+            break;
+          case 'boolean':
+            capi.sqlite3_result_int(pCtx, val ? 1 : 0);
+            break;
+          case 'bigint':
+            if(util.bigIntFits32(val)){
+              capi.sqlite3_result_int(pCtx, Number(val));
+            }else if(util.bigIntFitsDouble(val)){
+              capi.sqlite3_result_double(pCtx, Number(val));
+            }else if(wasm.bigIntEnabled){
+              if(util.bigIntFits64(val)) capi.sqlite3_result_int64(pCtx, val);
+              else toss3("BigInt value",val.toString(),"is too BigInt for int64.");
+            }else{
+              toss3("BigInt value",val.toString(),"is too BigInt.");
+            }
+            break;
+          case 'number': {
+            let f;
+            if(util.isInt32(val)){
+              f = capi.sqlite3_result_int;
+            }else if(wasm.bigIntEnabled
+                     && Number.isInteger(val)
+                     && util.bigIntFits64(BigInt(val))){
+              f = capi.sqlite3_result_int64;
+            }else{
+              f = capi.sqlite3_result_double;
+            }
+            f(pCtx, val);
+            break;
+          }
+          case 'string': {
+            const [p, n] = wasm.allocCString(val,true);
+            capi.sqlite3_result_text(pCtx, p, n, capi.SQLITE_WASM_DEALLOC);
+            break;
+          }
+          case 'object':
+            if(null===val/*yes, typeof null === 'object'*/) {
+              capi.sqlite3_result_null(pCtx);
+              break;
+            }else if(util.isBindableTypedArray(val)){
+              const pBlob = wasm.allocFromTypedArray(val);
+              capi.sqlite3_result_blob(
+                pCtx, pBlob, val.byteLength,
+                capi.SQLITE_WASM_DEALLOC
+              );
+              break;
+            }
+            // else fall through
+          default:
+            toss3("Don't not how to handle this UDF result value:",(typeof val), val);
+      }
+    }catch(e){
+      capi.sqlite3_result_error_js(pCtx, e);
+    }
+  };
+
+  /**
+     Returns the result sqlite3_column_value(pStmt,iCol) passed to
+     sqlite3_value_to_js(). The 3rd argument of this function is
+     ignored by this function except to pass it on as the second
+     argument of sqlite3_value_to_js(). If the sqlite3_column_value()
+     returns NULL (e.g. because the column index is out of range),
+     this function returns `undefined`, regardless of the 3rd
+     argument. 3rd argument is falsy and conversion fails, `undefined`
+     will be returned.
+
+     Note that sqlite3_column_value() returns an "unprotected" value
+     object, but in a single-threaded environment (like this one)
+     there is no distinction between protected and unprotected values.
+  */
+  capi.sqlite3_column_js = function(pStmt, iCol, throwIfCannotConvert=true){
+    const v = capi.sqlite3_column_value(pStmt, iCol);
+    return (0===v) ? undefined : capi.sqlite3_value_to_js(v, throwIfCannotConvert);
+  };
+
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
     WasmAllocError: WasmAllocError,
@@ -1742,6 +1780,15 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        build-generated object.
     */
     version: Object.create(null),
+
+    /**
+       The library reserves the 'client' property for client-side use
+       and promises to never define a property with this name nor to
+       ever rely on specific contents of it. It makes no such guarantees
+       for other properties.
+    */
+    client: undefined,
+
     /**
        Performs any optional asynchronous library-level initialization
        which might be required. This function returns a Promise which
@@ -1784,6 +1831,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
              some initializers. Retain them when running in test mode
              so that we can add tests for them. */
           delete sqlite3.util;
+          /* It's conceivable that we might want to expose
+             StructBinder to client-side code, but it's only useful if
+             clients build their own sqlite3.wasm which contains their
+             one C struct types. */
           delete sqlite3.StructBinder;
         }
         return sqlite3;

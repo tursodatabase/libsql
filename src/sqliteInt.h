@@ -973,9 +973,9 @@ typedef INT16_TYPE LogEst;
 ** pointers.  In that case, only verify 4-byte alignment.
 */
 #ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
-# define EIGHT_BYTE_ALIGNMENT(X)   ((((char*)(X) - (char*)0)&3)==0)
+# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&3)==0)
 #else
-# define EIGHT_BYTE_ALIGNMENT(X)   ((((char*)(X) - (char*)0)&7)==0)
+# define EIGHT_BYTE_ALIGNMENT(X)   ((((uptr)(X) - (uptr)0)&7)==0)
 #endif
 
 /*
@@ -1844,6 +1844,7 @@ struct sqlite3 {
 #define SQLITE_FlttnUnionAll  0x00800000 /* Disable the UNION ALL flattener */
    /* TH3 expects this value  ^^^^^^^^^^ See flatten04.test */
 #define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
+#define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -2238,6 +2239,7 @@ struct CollSeq {
 #define SQLITE_AFF_NUMERIC  0x43  /* 'C' */
 #define SQLITE_AFF_INTEGER  0x44  /* 'D' */
 #define SQLITE_AFF_REAL     0x45  /* 'E' */
+#define SQLITE_AFF_FLEXNUM  0x46  /* 'F' */
 
 #define sqlite3IsNumericAffinity(X)  ((X)>=SQLITE_AFF_NUMERIC)
 
@@ -2793,6 +2795,9 @@ struct AggInfo {
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   u32 selId;              /* Select to which this AggInfo belongs */
+#ifdef SQLITE_DEBUG
+  Select *pSelect;        /* SELECT statement that this AggInfo supports */
+#endif
 };
 
 /*
@@ -3465,6 +3470,7 @@ struct Select {
 #define SF_MultiPart     0x2000000 /* Has multiple incompatible PARTITIONs */
 #define SF_CopyCte       0x4000000 /* SELECT statement is a copy of a CTE */
 #define SF_OrderByReqd   0x8000000 /* The ORDER BY clause may not be omitted */
+#define SF_UpdateFrom   0x10000000 /* Query originates with UPDATE FROM */
 
 /* True if S exists and has SF_NestedFrom */
 #define IsNestedFrom(S) ((S)!=0 && ((S)->selFlags&SF_NestedFrom)!=0)
@@ -3573,7 +3579,7 @@ struct SelectDest {
   int iSDParm2;        /* A second parameter for the eDest disposal method */
   int iSdst;           /* Base register where results are written */
   int nSdst;           /* Number of registers allocated */
-  char *zAffSdst;      /* Affinity used for SRT_Set, SRT_Table, and similar */
+  char *zAffSdst;      /* Affinity used for SRT_Set */
   ExprList *pOrderBy;  /* Key columns for SRT_Queue and SRT_DistQueue */
 };
 
@@ -3632,10 +3638,10 @@ struct TriggerPrg {
 #else
   typedef unsigned int yDbMask;
 # define DbMaskTest(M,I)    (((M)&(((yDbMask)1)<<(I)))!=0)
-# define DbMaskZero(M)      (M)=0
-# define DbMaskSet(M,I)     (M)|=(((yDbMask)1)<<(I))
-# define DbMaskAllZero(M)   (M)==0
-# define DbMaskNonZero(M)   (M)!=0
+# define DbMaskZero(M)      ((M)=0)
+# define DbMaskSet(M,I)     ((M)|=(((yDbMask)1)<<(I)))
+# define DbMaskAllZero(M)   ((M)==0)
+# define DbMaskNonZero(M)   ((M)!=0)
 #endif
 
 /*
@@ -4678,7 +4684,7 @@ const char *sqlite3ColumnColl(Column*);
 void sqlite3DeleteColumnNames(sqlite3*,Table*);
 void sqlite3GenerateColumnNames(Parse *pParse, Select *pSelect);
 int sqlite3ColumnsFromExprList(Parse*,ExprList*,i16*,Column**);
-void sqlite3SelectAddColumnTypeAndCollation(Parse*,Table*,Select*,char);
+void sqlite3SubqueryColumnTypes(Parse*,Table*,Select*,char);
 Table *sqlite3ResultSetOfSelect(Parse*,Select*,char);
 void sqlite3OpenSchemaTable(Parse *, int);
 Index *sqlite3PrimaryKeyIndex(Table*);
@@ -5049,6 +5055,7 @@ char sqlite3CompareAffinity(const Expr *pExpr, char aff2);
 int sqlite3IndexAffinityOk(const Expr *pExpr, char idx_affinity);
 char sqlite3TableColumnAffinity(const Table*,int);
 char sqlite3ExprAffinity(const Expr *pExpr);
+int sqlite3ExprDataType(const Expr *pExpr);
 int sqlite3Atoi64(const char*, i64*, int, u8);
 int sqlite3DecOrHexToI64(const char*, i64*);
 void sqlite3ErrorWithMsg(sqlite3*, int, const char*,...);
@@ -5207,7 +5214,7 @@ int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
-int sqlite3StrAccumEnlarge(StrAccum*, int);
+int sqlite3StrAccumEnlarge(StrAccum*, i64);
 char *sqlite3StrAccumFinish(StrAccum*);
 void sqlite3StrAccumSetError(StrAccum*, u8);
 void sqlite3ResultStrAccum(sqlite3_context*,StrAccum*);

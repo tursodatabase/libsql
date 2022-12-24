@@ -699,7 +699,7 @@ static const char zHelp[] =
 #include <string.h>
 #include <assert.h>
 #ifndef OMIT_ZLIB
-#include "zlib.h"
+#include <zlib.h>
 #endif
 
 /*
