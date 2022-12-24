@@ -1622,6 +1622,11 @@ int sqlite3_wasm_test_intptr(int * p){
 }
 
 SQLITE_WASM_KEEP
+void * sqlite3_wasm_test_voidptr(void * p){
+  return p;
+}
+
+SQLITE_WASM_KEEP
 int64_t sqlite3_wasm_test_int64_max(void){
   return (int64_t)0x7fffffffffffffff;
 }

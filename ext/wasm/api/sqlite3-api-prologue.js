@@ -321,14 +321,17 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Returns true if v appears to be one of our bind()-able TypedArray
-     types: Uint8Array or Int8Array. Support for TypedArrays with
-     element sizes >1 is a potential TODO just waiting on a use case
-     to justify them.
+     Returns v if v appears to be one of our bind()-able TypedArray
+     types: Uint8Array or Int8Array or ArrayBuffer. Support for
+     TypedArrays with element sizes >1 is a potential TODO just
+     waiting on a use case to justify them. Until then, their `buffer`
+     property can be used to pass them as an ArrayBuffer. If it's not
+     a bindable array type, a falsy value is returned.
   */
   const isBindableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array || v instanceof Int8Array);
-    //v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
+    return v && (v instanceof Uint8Array
+                 || v instanceof Int8Array
+                 || v instanceof ArrayBuffer);
   };
 
   /**
@@ -341,8 +344,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      isSQLableTypedArray() list.
   */
   const isSQLableTypedArray = (v)=>{
-    return v && (v instanceof Uint8Array || v instanceof Int8Array);
-    //v && v.constructor && (1===v.constructor.BYTES_PER_ELEMENT);
+    return v && (v instanceof Uint8Array
+                 || v instanceof Int8Array
+                 || v instanceof ArrayBuffer);
   };
 
   /** Returns true if isBindableTypedArray(v) does, else throws with a message
@@ -439,8 +443,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        - If it's an ArrayBuffer, it gets wrapped in a Uint8Array and
          treated as that type.
 
-       In all of those cases, the final argument (text destructor) is
-       ignored and capi.SQLITE_TRANSIENT is assumed.
+       In all of those cases, the final argument (destructor) is
+       ignored and capi.SQLITE_WASM_DEALLOC is assumed.
 
        A 3rd argument of `null` is treated as if it were a WASM pointer
        of 0.
@@ -477,7 +481,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          treated as that type.
 
        In each of those cases, the final argument (text destructor) is
-       ignored and capi.SQLITE_TRANSIENT is assumed.
+       ignored and capi.SQLITE_WASM_DEALLOC is assumed.
 
        A 3rd argument of `null` is treated as if it were a WASM pointer
        of 0.
@@ -1645,7 +1649,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       capi.sqlite3_result_error(pCtx, ''+e, -1);
     }
   };
-  
+
   /**
      This function passes its 2nd argument to one of the
      sqlite3_result_xyz() routines, depending on the type of that
@@ -1661,7 +1665,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      - `bigint`: similar to `number` but will trigger an error if the
        value is too big to store in an int64.
      - `string`: `sqlite3_result_text()`
-     - Uint8Array or Int8Array: `sqlite3_result_blob()`
+     - Uint8Array or Int8Array or ArrayBuffer: `sqlite3_result_blob()`
      - `undefined`: is a no-op provided to simplify certain use cases.
 
      Anything else triggers `sqlite3_result_error()` with a
@@ -1712,9 +1716,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
             f(pCtx, val);
             break;
           }
-          case 'string':
-            capi.sqlite3_result_text(pCtx, val, -1, capi.SQLITE_TRANSIENT);
+          case 'string': {
+            const [p, n] = wasm.allocCString(val,true);
+            capi.sqlite3_result_text(pCtx, p, n, capi.SQLITE_WASM_DEALLOC);
             break;
+          }
           case 'object':
             if(null===val/*yes, typeof null === 'object'*/) {
               capi.sqlite3_result_null(pCtx);
@@ -1723,7 +1729,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
               const pBlob = wasm.allocFromTypedArray(val);
               capi.sqlite3_result_blob(
                 pCtx, pBlob, val.byteLength,
-                wasm.exports[sqlite3.config.deallocExportName]
+                capi.SQLITE_WASM_DEALLOC
               );
               break;
             }

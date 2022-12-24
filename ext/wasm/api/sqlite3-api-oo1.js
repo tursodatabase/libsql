@@ -1285,7 +1285,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      success.
   */
   const bindOne = function f(stmt,ndx,bindType,val){
-    affirmUnlocked(stmt, 'bind()');
+    affirmUnlocked(affirmStmtOpen(stmt), 'bind()');
     if(!f._){
       f._tooBigInt = (v)=>toss3(
         "BigInt value is too big to store without precision loss:", v
@@ -1295,14 +1295,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          so we have no range checking. */
       f._ = {
         string: function(stmt, ndx, val, asBlob){
-          const stack = wasm.scopedAllocPush();
-          try{
-            const [pStr, n] = wasm.scopedAllocCString(val, true);
-            const f = asBlob ? capi.sqlite3_bind_blob : capi.sqlite3_bind_text;
-            return f(stmt.pointer, ndx, pStr, n, capi.SQLITE_TRANSIENT);
-          }finally{
-            wasm.scopedAllocPop(stack);
-          }
+          const [pStr, n] = wasm.allocCString(val, true);
+          const f = asBlob ? capi.sqlite3_bind_blob : capi.sqlite3_bind_text;
+          return f(stmt.pointer, ndx, pStr, n, capi.SQLITE_WASM_DEALLOC);
         }
       };
     }/* static init */
@@ -1354,15 +1349,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             toss3("Binding a value as a blob requires",
                   "that it be a string, Uint8Array, Int8Array, or ArrayBuffer.");
           }
-          const stack = wasm.scopedAllocPush();
-          try{
-            const pBlob = wasm.scopedAlloc(val.byteLength || 1);
-            wasm.heap8().set(val.byteLength ? val : [0], pBlob)
-            rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
-                                        capi.SQLITE_TRANSIENT);
-          }finally{
-            wasm.scopedAllocPop(stack);
-          }
+          const pBlob = wasm.alloc(val.byteLength || 1);
+          wasm.heap8().set(val.byteLength ? val : [0], pBlob)
+          rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
+                                      capi.SQLITE_WASM_DEALLOC);
           break;
         }
         default:

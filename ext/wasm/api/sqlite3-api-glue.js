@@ -24,6 +24,33 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   self.WhWasmUtilInstaller(wasm);
   delete self.WhWasmUtilInstaller;
 
+  {
+    /**
+       Find a mapping for SQLITE_WASM_DEALLOC, which the API
+       guarantees is a WASM pointer to the same underlying function as
+       wasm.dealloc() (noting that wasm.dealloc() is permitted to be a
+       JS wrapper around the WASM function). There is unfortunately no
+       O(1) algorithm for finding this pointer: we have to walk the
+       WASM indirect function table to find it. However, experience
+       indicates that that particular function is always very close to
+       the front of the table (it's been entry #3 in all relevant
+       tests).
+    */
+    const dealloc = wasm.exports[sqlite3.config.deallocExportName];
+    const nFunc = wasm.functionTable().length;
+    let i;
+    for(i = 0; i < nFunc; ++i){
+      const e = wasm.functionEntry(i);
+      if(dealloc === e){
+        capi.SQLITE_WASM_DEALLOC = i;
+        break;
+      }
+    }
+    if(dealloc !== wasm.functionEntry(capi.SQLITE_WASM_DEALLOC)){
+      toss("Internal error: cannot find function pointer for SQLITE_WASM_DEALLOC.");
+    }
+  }
+
   /**
      Signatures for the WASM-exported C-side functions. Each entry
      is an array with 2+ elements:
@@ -874,7 +901,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         text = pMem.join('');
       }
       let p, n;
-      try {
+      try{
         if(util.isSQLableTypedArray(text)){
           p = wasm.allocFromTypedArray(text);
           n = text.byteLength;
@@ -886,9 +913,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             "Invalid 3rd argument type for sqlite3_bind_text()."
           );
         }
-        return __bindText(pStmt, iCol, p, n, capi.SQLITE_TRANSIENT);
-      }finally{
+        return __bindText(pStmt, iCol, p, n, capi.SQLITE_WASM_DEALLOC);
+      }catch(e){
         wasm.dealloc(p);
+        return util.sqlite3_wasm_db_error(
+          capi.sqlite3_db_handle(pStmt), e
+        );
       }
     }/*sqlite3_bind_text()*/;
 
@@ -917,9 +947,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             "Invalid 3rd argument type for sqlite3_bind_blob()."
           );
         }
-        return __bindBlob(pStmt, iCol, p, n, capi.SQLITE_TRANSIENT);
-      }finally{
+        return __bindBlob(pStmt, iCol, p, n, capi.SQLITE_WASM_DEALLOC);
+      }catch(e){
         wasm.dealloc(p);
+        return util.sqlite3_wasm_db_error(
+          capi.sqlite3_db_handle(pStmt), e
+        );
       }
     }/*sqlite3_bind_blob()*/;
 

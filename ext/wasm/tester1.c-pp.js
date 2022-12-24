@@ -1987,7 +1987,6 @@ self.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #1: eponymous w/ manual exception handling',
       predicate: ()=>!!capi.sqlite3_index_info,
       test: function(sqlite3){
-        warn("The vtab/module JS bindings are experimental and subject to change.");
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
@@ -2185,7 +2184,6 @@ self.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
       predicate: ()=>!!capi.sqlite3_index_info,
       test: function(sqlite3){
-        warn("The vtab/module JS bindings are experimental and subject to change.");
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
