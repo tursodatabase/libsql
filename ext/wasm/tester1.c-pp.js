@@ -1391,6 +1391,14 @@ self.sqlite3InitModule = sqlite3InitModule;
                db.selectValue("SELECT "+Number.MIN_SAFE_INTEGER)).
         assert(Number.MAX_SAFE_INTEGER ===
                db.selectValue("SELECT "+Number.MAX_SAFE_INTEGER));
+
+      counter = 0;
+      db.exec({
+        sql: "SELECT a FROM t",
+        callback: ()=>(1===++counter),
+      });
+      T.assert(2===counter,
+               "Expecting exec step() loop to stop if callback returns false.");
       if(wasm.bigIntEnabled && haveWasmCTests()){
         const mI = wasm.xCall('sqlite3_wasm_test_int64_max');
         const b = BigInt(Number.MAX_SAFE_INTEGER * 2);

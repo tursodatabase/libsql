@@ -447,7 +447,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               if('$'===opt.rowMode[0]){
                 out.cbArg = function(stmt){
                   const rc = stmt.get(this.obj)[this.colName];
-                  return (undefined===rc) ? toss3("exec(): unknown result column:",this.colName) : rc;
+                  return (undefined===rc)
+                    ? toss3("exec(): unknown result column:",this.colName)
+                    : rc;
                 }.bind({
                   obj:Object.create(null),
                   colName: opt.rowMode.substr(1)
@@ -608,7 +610,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         try{ rc = wasm.cstrToJs(v.$zName) }
         finally { v.dispose() }
       }
-      return rc;        
+      return rc;
     },
     /**
        Compiles the given SQL and returns a prepared Stmt. This is
@@ -697,21 +699,27 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        unchanged. Achtung: an SQL result may have multiple columns
        with identical names.
 
-       - `callback` = a function which gets called for each row of
-       the result set, but only if that statement has any result
+       - `callback` = a function which gets called for each row of the
+       result set, but only if that statement has any result
        _rows_. The callback's "this" is the options object, noting
        that this function synthesizes one if the caller does not pass
        one to exec(). The second argument passed to the callback is
        always the current Stmt object, as it's needed if the caller
        wants to fetch the column names or some such (noting that they
        could also be fetched via `this.columnNames`, if the client
-       provides the `columnNames` option).
+       provides the `columnNames` option). If the callback returns a
+       literal `false` (as opposed to any other falsy value, e.g.  an
+       implicit `undefined` return), any ongoing statement-`step()`
+       iteration stops without an error. The return value of the
+       callback is otherwise ignored.
 
        ACHTUNG: The callback MUST NOT modify the Stmt object. Calling
        any of the Stmt.get() variants, Stmt.getColumnName(), or
        similar, is legal, but calling step() or finalize() is
        not. Member methods which are illegal in this context will
-       trigger an exception.
+       trigger an exception, but clients must also refrain from using
+       any lower-level (C-style) APIs which might modify the
+       statement.
 
        The first argument passed to the callback defaults to an array of
        values from the current result row but may be changed with ...
@@ -799,7 +807,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             Array.isArray(opt.resultRows) ? opt.resultRows : undefined;
       let stmt;
       let bind = opt.bind;
-      let evalFirstResult = !!(arg.cbArg || opt.columnNames) /* true to evaluate the first result-returning query */;
+      let evalFirstResult = !!(
+        arg.cbArg || opt.columnNames || resultRows
+      ) /* true to step through the first result-returning statement */;
       const stack = wasm.scopedAllocPush();
       const saveSql = Array.isArray(opt.saveSql) ? opt.saveSql : undefined;
       try{
@@ -810,9 +820,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
            space for the SQL (pSql). When prepare_v2() returns, pzTail
            will point to somewhere in pSql. */
         let sqlByteLen = isTA ? arg.sql.byteLength : wasm.jstrlen(arg.sql);
-        const ppStmt  = wasm.scopedAlloc(/* output (sqlite3_stmt**) arg and pzTail */
-          (2 * wasm.ptrSizeof)
-          + (sqlByteLen + 1/* SQL + NUL */));
+        const ppStmt  = wasm.scopedAlloc(
+          /* output (sqlite3_stmt**) arg and pzTail */
+          (2 * wasm.ptrSizeof) + (sqlByteLen + 1/* SQL + NUL */)
+        );
         const pzTail = ppStmt + wasm.ptrSizeof /* final arg to sqlite3_prepare_v2() */;
         let pSql = pzTail + wasm.ptrSizeof;
         const pSqlEnd = pSql + sqlByteLen;
@@ -848,11 +859,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             if(Array.isArray(opt.columnNames)){
               stmt.getColumnNames(opt.columnNames);
             }
-            while(!!arg.cbArg && stmt.step()){
-              stmt._isLocked = true;
-              const row = arg.cbArg(stmt);
-              if(resultRows) resultRows.push(row);
-              if(callback) callback.call(opt, row, stmt);
+            if(arg.cbArg || resultRows){
+              for(; stmt.step(); stmt._isLocked = false){
+                stmt._isLocked = true;
+                const row = arg.cbArg(stmt);
+                if(resultRows) resultRows.push(row);
+                if(callback && false === callback.call(opt, row, stmt)){
+                  break;
+                }
+              }
               stmt._isLocked = false;
             }
           }else{
