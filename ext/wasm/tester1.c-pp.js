@@ -1648,7 +1648,10 @@ self.sqlite3InitModule = sqlite3InitModule;
           assert(T.eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")));
 
         let blobArg = new Uint8Array([0x68, 0x69]);
-        let blobRc = db.selectValue("select asis(?1)", blobArg);
+        let blobRc = db.selectValue(
+          "select asis(?1)",
+          blobArg.buffer/*confirm that ArrayBuffer is handled as a Uint8Array*/
+        );
         T.assert(blobRc instanceof Uint8Array).
           assert(2 === blobRc.length).
           assert(0x68==blobRc[0] && 0x69==blobRc[1]);

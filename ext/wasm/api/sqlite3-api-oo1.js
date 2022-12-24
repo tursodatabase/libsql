@@ -1230,7 +1230,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           /* else fall through */
         default:
           //console.log("isSupportedBindType",t,v);
-          return util.isBindableTypedArray(v) ? BindTypes.blob : undefined;
+          return (util.isBindableTypedArray(v) || (v instanceof ArrayBuffer))
+            ? BindTypes.blob : undefined;
     }
   };
 
@@ -1346,19 +1347,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         case BindTypes.blob: {
           if('string'===typeof val){
             rc = f._.string(stmt, ndx, val, true);
+            break;
+          }else if(val instanceof ArrayBuffer){
+            val = new Uint8Array(val);
           }else if(!util.isBindableTypedArray(val)){
             toss3("Binding a value as a blob requires",
-                  "that it be a string, Uint8Array, or Int8Array.");
-          }else{
-            const stack = wasm.scopedAllocPush();
-            try{
-              const pBlob = wasm.scopedAlloc(val.byteLength || 1);
-              wasm.heap8().set(val.byteLength ? val : [0], pBlob)
-              rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
-                                          capi.SQLITE_TRANSIENT);
-            }finally{
-              wasm.scopedAllocPop(stack);
-            }
+                  "that it be a string, Uint8Array, Int8Array, or ArrayBuffer.");
+          }
+          const stack = wasm.scopedAllocPush();
+          try{
+            const pBlob = wasm.scopedAlloc(val.byteLength || 1);
+            wasm.heap8().set(val.byteLength ? val : [0], pBlob)
+            rc = capi.sqlite3_bind_blob(stmt.pointer, ndx, pBlob, val.byteLength,
+                                        capi.SQLITE_TRANSIENT);
+          }finally{
+            wasm.scopedAllocPop(stack);
           }
           break;
         }
@@ -1367,6 +1370,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           toss3("Unsupported bind() argument type: "+(typeof val));
     }
     if(rc) DB.checkRc(stmt.db.pointer, rc);
+    stmt._mayGet = false;
     return stmt;
   };
 
@@ -1454,8 +1458,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - Strings are bound as strings (use bindAsBlob() to force
          blob binding).
 
-       - Uint8Array and Int8Array instances are bound as blobs.
-         (TODO: binding the other TypedArray types.)
+       - Uint8Array, Int8Array, and ArrayBuffer instances are bound as
+         blobs. (TODO? binding the other TypedArray types.)
 
        If passed an array, each element of the array is bound at
        the parameter index equal to the array index plus 1
@@ -1510,8 +1514,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         arg.forEach((v,i)=>bindOne(this, i+1, affirmSupportedBindType(v), v));
         return this;
+      }else if(arg instanceof ArrayBuffer){
+        arg = new Uint8Array(arg);
       }
-      else if('object'===typeof arg/*null was checked above*/
+      if('object'===typeof arg/*null was checked above*/
               && !util.isBindableTypedArray(arg)){
         /* Treat each property of arg as a named bound parameter. */
         if(1!==arguments.length){
@@ -1533,7 +1539,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        the value. The ndx may be a numbered or named bind index. The
        value must be of type string, null/undefined (both get treated
        as null), or a TypedArray of a type supported by the bind()
-       API.
+       API. This API cannot bind numbers as blobs.
 
        If passed a single argument, a bind index of 1 is assumed and
        the first argument is the value.
@@ -1549,9 +1555,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          && BindTypes.null !== t){
         toss3("Invalid value type for bindAsBlob()");
       }
-      bindOne(this, ndx, BindTypes.blob, arg);
-      this._mayGet = false;
-      return this;
+      return bindOne(this, ndx, BindTypes.blob, arg);
     },
     /**
        Steps the statement one time. If the result indicates that a
