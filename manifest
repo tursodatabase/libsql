@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\swasi-patches\sbranch.
-D 2022-12-24T15:31:56.293
+C Incorporate\swasi-sdk\sRANLIB\sconfigure\sscript\spatch\sfrom\sthe\sVMware\sOCTO\steam.
+D 2022-12-24T15:34:16.082
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -33,8 +33,8 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 8a95051058f6b314fe3becdd8a3735cba2e0b5ebd0b8ab1a7c2be741cdd1589d x
-F configure.ac e184f2215aa933c691a41140d286baf28f0c9be24e1d53a97a40851ca26724b2
+F configure 7932e767cf730e8161b65bca56dee4d3bba56acd90808ac262e8c6345d1ca006 x
+F configure.ac b5f9355c46b73222ea1a9a16be868e016adda9b9b6349bfc3f72ae267f38331c
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b63342839427917ae48e13b959457baa5c2e0e1be8a444b0e1a4e0446ace9178 ffe2999a91a7dec129a38afb675fe9e539d7c347886bfea85cba55f6367d54d1
-R c1c0aec63849e1bcd3645431f9857a14
+P 52f40ab12e437c59af2b91c7ac105ab7784db57fc8d9ab7a1356f17092681f43
+R 93cdd50555e4edfd8abc358599b58d5a
 U stephan
-Z 62054beb051c57456f6977543b0cb0d2
+Z 748c24f9d507d828fe21c349ea9e2c67
 # Remove this line to create a well-formed Fossil manifest.

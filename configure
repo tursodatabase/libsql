@@ -10443,6 +10443,7 @@ else
 # sqlite3.o building in WASM format.
   CC="${with_wasi_sdk}/bin/clang"
   LD="${with_wasi_sdk}/bin/wasm-ld"
+  RANLIB="${with_wasi_sdk}/bin/llvm-ranlib"
   cross_compiling=yes
   enable_threadsafe=no
   use_tcl=no
