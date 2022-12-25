@@ -329,11 +329,13 @@ SQLITE_WASM_KEEP int sqlite3_wasm_pstack_quota(void){
 */
 SQLITE_WASM_KEEP
 int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
-  if( 0!=zMsg ){
-    const int nMsg = sqlite3Strlen30(zMsg);
-    sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
-  }else{
-    sqlite3ErrorWithMsg(db, err_code, NULL);
+  if( db!=0 ){
+    if( 0!=zMsg ){
+      const int nMsg = sqlite3Strlen30(zMsg);
+      sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
+    }else{
+      sqlite3ErrorWithMsg(db, err_code, NULL);
+    }
   }
   return err_code;
 }
@@ -1646,6 +1648,11 @@ int sqlite3_wasm_init_wasmfs(const char *zUnused){
 SQLITE_WASM_KEEP
 int sqlite3_wasm_test_intptr(int * p){
   return *p = *p * 2;
+}
+
+SQLITE_WASM_KEEP
+void * sqlite3_wasm_test_voidptr(void * p){
+  return p;
 }
 
 SQLITE_WASM_KEEP

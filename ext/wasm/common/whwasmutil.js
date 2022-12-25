@@ -1406,7 +1406,8 @@ self.WhWasmUtilInstaller = function(target){
     .set('int', xArg.get('i32'))
     .set('null', (i)=>i)
     .set(null, xArg.get('null'))
-    .set('**', __xArgPtr);
+    .set('**', __xArgPtr)
+    .set('*', __xArgPtr);
   xResult.set('*', __xArgPtr)
     .set('pointer', __xArgPtr)
     .set('number', (v)=>Number(v))
@@ -1448,23 +1449,23 @@ self.WhWasmUtilInstaller = function(target){
     if('string'===typeof v) return target.scopedAllocCString(v);
     return v ? __xArgPtr(v) : null;
   };
-  xArg.set('string', __xArgString);
-  xArg.set('utf8', __xArgString);
-  xArg.set('pointer', __xArgString);
-  xArg.set('*', __xArgString);
+  xArg.set('string', __xArgString)
+    .set('utf8', __xArgString)
+    .set('pointer', __xArgString);
+  //xArg.set('*', __xArgString);
 
-  xResult.set('string', (i)=>target.cstrToJs(i));
-  xResult.set('utf8', xResult.get('string'));
-  xResult.set('string:dealloc', (i)=>{
-    try { return i ? target.cstrToJs(i) : null }
-    finally{ target.dealloc(i) }
-  });
-  xResult.set('utf8:dealloc', xResult.get('string:dealloc'));
-  xResult.set('json', (i)=>JSON.parse(target.cstrToJs(i)));
-  xResult.set('json:dealloc', (i)=>{
-    try{ return i ? JSON.parse(target.cstrToJs(i)) : null }
-    finally{ target.dealloc(i) }
-  });
+  xResult.set('string', (i)=>target.cstrToJs(i))
+    .set('utf8', xResult.get('string'))
+    .set('string:dealloc', (i)=>{
+      try { return i ? target.cstrToJs(i) : null }
+      finally{ target.dealloc(i) }
+    })
+    .set('utf8:dealloc', xResult.get('string:dealloc'))
+    .set('json', (i)=>JSON.parse(target.cstrToJs(i)))
+    .set('json:dealloc', (i)=>{
+      try{ return i ? JSON.parse(target.cstrToJs(i)) : null }
+      finally{ target.dealloc(i) }
+    });
 
   /**
      Internal-use-only base class for FuncPtrAdapter and potentially
@@ -1495,7 +1496,7 @@ self.WhWasmUtilInstaller = function(target){
        types are indeterminate, whereas the LHS values will be
        WASM-compatible values by the time this is called.
     */
-    convertArg(v,argIndex,argv){
+    convertArg(v,argv,argIndex){
       toss("AbstractArgAdapter must be subclassed.");
     }
   };
@@ -1540,24 +1541,38 @@ self.WhWasmUtilInstaller = function(target){
          context. This mode is the default if bindScope is _not_ set
          but a property named contextKey (described below) is.
 
+     - callProxy (function): if set, this must be a function which
+       will act as a proxy for any "converted" JS function. It is
+       passed the being-converted function value and must return
+       either that function or a function which acts on its
+       behalf. The returned function will be the one which gets
+       installed into the WASM function table. The proxy must perform
+       any required argument conversion (noting that it will be called
+       from C code, so will receive C-format arguments) before passing
+       them on to the being-converted function. Whether or not the
+       proxy itself must return a value depends on the context. If it
+       does, it must be a WASM-friendly value, as it will be returning
+       from a call made from native code.
+
      - contextKey (function): is only used if bindScope is 'context'
        or if bindScope is not set and this function is, in which case
-       'context' is assumed. This function gets passed
-       (argIndex,argv), where argIndex is the index of _this_ function
-       pointer in its _wrapping_ function's arguments and argv is the
-       _current_ still-being-xWrap()-processed args array. All
-       arguments to the left of argIndex will have been processed by
-       xWrap() by the time this is called. argv[argIndex] will be the
-       value the user passed in to the xWrap()'d function for the
-       argument this FuncPtrAdapter is mapped to. Arguments to the
-       right of argv[argIndex] will not yet have been converted before
-       this is called. The function must return a key which uniquely
+       'context' is assumed. This function gets bound to this object,
+       so its "this" is this object. It gets passed (argv,argIndex),
+       where argIndex is the index of _this_ function pointer in its
+       _wrapping_ function's arguments and argv is the _current_
+       still-being-xWrap()-processed args array. All arguments to the
+       left of argIndex will have been processed by xWrap() by the
+       time this is called. argv[argIndex] will be the value the user
+       passed in to the xWrap()'d function for the argument this
+       FuncPtrAdapter is mapped to. Arguments to the right of
+       argv[argIndex] will not yet have been converted before this is
+       called. The function must return a key which uniquely
        identifies this function mapping context for _this_
        FuncPtrAdapter instance (other instances are not considered),
        taking into account that C functions often take some sort of
        state object as one or more of their arguments. As an example,
        if the xWrap()'d function takes `(int,T*,functionPtr,X*)` and
-       this FuncPtrAdapter is the argv[2]nd arg, contextKey(2,argv)
+       this FuncPtrAdapter is the argv[2]nd arg, contextKey(argv,2)
        might return 'T@'+argv[1], or even just argv[1].  Note,
        however, that the (X*) argument will not yet have been
        processed by the time this is called and should not be used as
@@ -1569,7 +1584,7 @@ self.WhWasmUtilInstaller = function(target){
        use their pointers in the key because most C-strings in this
        constellation are transient.
 
-     Yes, that ^^^ is a bit awkward, but it's what we have.
+     Yes, that ^^^ is quite awkward, but it's what we have.
 
      The constructor only saves the above state for later, and does
      not actually bind any functions. Its convertArg() method is
@@ -1593,6 +1608,11 @@ self.WhWasmUtilInstaller = function(target){
   xArg.FuncPtrAdapter = class FuncPtrAdapter extends AbstractArgAdapter {
     constructor(opt) {
       super(opt);
+      if(xArg.FuncPtrAdapter.warnOnUse){
+        console.warn('xArg.FuncPtrAdapter is an internal-only API',
+                     'and is not intended to be invoked from',
+                     'client-level code. Invoked with:',opt);
+      }
       this.signature = opt.signature;
       if(!opt.bindScope && (opt.contextKey instanceof Function)){
         opt.bindScope = 'context';
@@ -1607,14 +1627,18 @@ self.WhWasmUtilInstaller = function(target){
       if( ('singleton'===this.bindScope) ) this.singleton = [];
       else this.singleton = undefined;
       //console.warn("FuncPtrAdapter()",opt,this);
+      this.callProxy = (opt.callProxy instanceof Function)
+        ? opt.callProxy : undefined;
     }
+
+    static warnOnUse = false;
 
     static bindScopes = [
       'transient', 'context', 'singleton'
     ];
 
     /* Dummy impl. Overwritten per-instance as needed. */
-    contextKey(argIndex,argv){
+    contextKey(argv,argIndex){
       return this;
     }
 
@@ -1647,14 +1671,16 @@ self.WhWasmUtilInstaller = function(target){
        See the parent class's convertArg() docs for details on what
        exactly the 2nd and 3rd arguments are.
     */
-    convertArg(v,argIndex,argv){
+    convertArg(v,argv,argIndex){
       //console.warn("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
       let pair = this.singleton;
       if(!pair && this.isContext){
-        pair = this.contextMap(this.contextKey(argIndex, argv));
+        pair = this.contextMap(this.contextKey(argv,argIndex));
       }
       if(pair && pair[0]===v) return pair[1];
       if(v instanceof Function){
+        /* Install a WASM binding and return its pointer. */
+        if(this.callProxy) v = this.callProxy(v);
         const fp = __installFunction(v, this.signature, this.isTransient);
         if(pair){
           /* Replace existing stashed mapping */
@@ -1669,10 +1695,10 @@ self.WhWasmUtilInstaller = function(target){
       }else if(target.isPtr(v) || null===v || undefined===v){
         if(pair && pair[1] && pair[1]!==v){
           /* uninstall stashed mapping and replace stashed mapping with v. */
-          //console.warn("FuncPtrAdapter is uninstalling function", this.contextKey(argIndex,argv),v);
+          //console.warn("FuncPtrAdapter is uninstalling function", this.contextKey(argv,argIndex),v);
           try{target.uninstallFunction(pair[1])}
           catch(e){/*ignored*/}
-          pair[0] = pair[1] = (v || 0);
+          pair[0] = pair[1] = (v | 0);
         }
         return v || 0;
       }else{
@@ -1758,10 +1784,13 @@ self.WhWasmUtilInstaller = function(target){
      - `N*` (args): a type name in the form `N*`, where N is a numeric
        type name, is treated the same as WASM pointer.
 
-     - `*` and `pointer` (args): have multple semantics. They
-       behave exactly as described below for `string` args.
+     - `*` and `pointer` (args): are assumed to be WASM pointer values
+       and are returned coerced to an appropriately-sized pointer
+       value (i32 or i64). Non-numeric values will coerce to 0 and
+       out-of-range values will have undefined results (just as with
+       any pointer misuse).
 
-     - `*` and `pointer` (results): are aliases for the current
+     - `*` and `pointer` (results): aliases for the current
        WASM pointer numeric type.
 
      - `**` (args): is simply a descriptive alias for the WASM pointer
@@ -1903,17 +1932,20 @@ self.WhWasmUtilInstaller = function(target){
           The public interface of argument adapters is that they take
           ONE argument and return a (possibly) converted result for
           it. The passing-on of arguments after the first is an
-          internal impl. detail for the sake of AbstractArgAdapter, and
-          not to be relied on or documented for other cases. The fact
-          that this is how AbstractArgAdapter.convertArgs() gets its 2nd+
-          arguments, and how FuncPtrAdapter.contextKey() gets its
-          args, is also an implementation detail and subject to
-          change. i.e. the public interface of 1 argument is stable.
-          The fact that any arguments may be passed in after that one,
-          and what those arguments are, is _not_ part of the public
-          interface and is _not_ stable.
+          internal implementation detail for the sake of
+          AbstractArgAdapter, and not to be relied on or documented
+          for other cases. The fact that this is how
+          AbstractArgAdapter.convertArgs() gets its 2nd+ arguments,
+          and how FuncPtrAdapter.contextKey() gets its args, is also
+          an implementation detail and subject to change. i.e. the
+          public interface of 1 argument is stable.  The fact that any
+          arguments may be passed in after that one, and what those
+          arguments are, is _not_ part of the public interface and is
+          _not_ stable.
         */
-        for(const i in args) args[i] = cxw.convertArgNoCheck(argTypes[i], args[i], i, args);
+        for(const i in args) args[i] = cxw.convertArgNoCheck(
+          argTypes[i], args[i], args, i
+        );
         return cxw.convertResultNoCheck(resultType, xf.apply(null,args));
       }finally{
         target.scopedAllocPop(scope);

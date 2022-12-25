@@ -1219,7 +1219,7 @@ self.sqlite3InitModule = sqlite3InitModule;
     })
 
   ////////////////////////////////////////////////////////////////////
-    .t('DB.Stmt', function(S){
+    .t('DB.Stmt', function(sqlite3){
       let st = this.db.prepare(
         new TextEncoder('utf-8').encode("select 3 as a")
       );
@@ -1274,6 +1274,12 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
       T.assert(!st.pointer)
         .assert(0===this.db.openStatementCount());
+
+      T.mustThrowMatching(()=>new sqlite3.oo1.Stmt("hi"), function(err){
+        return (err instanceof sqlite3.SQLite3Error)
+          && capi.SQLITE_MISUSE === err.resultCode
+          && 0 < err.message.indexOf("Do not call the Stmt constructor directly.")
+      });
     })
 
   ////////////////////////////////////////////////////////////////////////
@@ -1391,6 +1397,14 @@ self.sqlite3InitModule = sqlite3InitModule;
                db.selectValue("SELECT "+Number.MIN_SAFE_INTEGER)).
         assert(Number.MAX_SAFE_INTEGER ===
                db.selectValue("SELECT "+Number.MAX_SAFE_INTEGER));
+
+      counter = 0;
+      db.exec({
+        sql: "SELECT a FROM t",
+        callback: ()=>(1===++counter),
+      });
+      T.assert(2===counter,
+               "Expecting exec step() loop to stop if callback returns false.");
       if(wasm.bigIntEnabled && haveWasmCTests()){
         const mI = wasm.xCall('sqlite3_wasm_test_int64_max');
         const b = BigInt(Number.MAX_SAFE_INTEGER * 2);
@@ -1611,6 +1625,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         db.createFunction("bar", {
           arity: -1,
           xFunc: (pCx,...args)=>{
+            T.assert(db.pointer === capi.sqlite3_context_db_handle(pCx));
             let rc = 0;
             for(const v of args) rc += v;
             return rc;
@@ -1634,7 +1649,10 @@ self.sqlite3InitModule = sqlite3InitModule;
           assert(T.eqApprox(1.3,db.selectValue("select asis(1 + 0.3)")));
 
         let blobArg = new Uint8Array([0x68, 0x69]);
-        let blobRc = db.selectValue("select asis(?1)", blobArg);
+        let blobRc = db.selectValue(
+          "select asis(?1)",
+          blobArg.buffer/*confirm that ArrayBuffer is handled as a Uint8Array*/
+        );
         T.assert(blobRc instanceof Uint8Array).
           assert(2 === blobRc.length).
           assert(0x68==blobRc[0] && 0x69==blobRc[1]);
@@ -1865,18 +1883,18 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(3===resultRows.length)
         .assert(2===resultRows[1]);
       T.assert(2===db.selectValue('select a from foo.bar where a>1 order by a'));
+
+      /** Demonstrate the JS-simplified form of the sqlite3_exec() callback... */
       let colCount = 0, rowCount = 0;
-      const execCallback = function(pVoid, nCols, aVals, aNames){
-        //console.warn("execCallback(",arguments,")");
-        colCount = nCols;
-        ++rowCount;
-        T.assert(2===aVals.length)
-          .assert(2===aNames.length)
-          .assert(+(aVals[1]) === 2 * +(aVals[0]));
-      };
       let rc = capi.sqlite3_exec(
-        db.pointer, "select a, a*2 from foo.bar", execCallback,
-        0, 0
+        db, "select a, a*2 from foo.bar", function(aVals, aNames){
+          //console.warn("execCallback(",arguments,")");
+          colCount = aVals.length;
+          ++rowCount;
+          T.assert(2===aVals.length)
+            .assert(2===aNames.length)
+            .assert(+(aVals[1]) === 2 * +(aVals[0]));
+        }, 0, 0
       );
       T.assert(0===rc).assert(3===rowCount).assert(2===colCount);
       rc = capi.sqlite3_exec(
@@ -1885,8 +1903,45 @@ self.sqlite3InitModule = sqlite3InitModule;
         }, 0, 0
       );
       T.assert(capi.SQLITE_ABORT === rc);
+
+      /* Demonstrate how to get access to the "full" callback
+         signature, as opposed to the simplified JS-specific one... */
+      rowCount = colCount = 0;
+      const pCb = wasm.installFunction('i(pipp)', function(pVoid,nCols,aVals,aCols){
+        /* Tip: wasm.cArgvToJs() can be used to convert aVals and
+           aCols to arrays: const vals = wasm.cArgvToJs(nCols,
+           aVals); */
+        ++rowCount;
+        colCount = nCols;
+        T.assert(2 === nCols)
+          .assert(wasm.isPtr(pVoid))
+          .assert(wasm.isPtr(aVals))
+          .assert(wasm.isPtr(aCols))
+          .assert(+wasm.cstrToJs(wasm.peekPtr(aVals + wasm.ptrSizeof))
+                  === 2 * +wasm.cstrToJs(wasm.peekPtr(aVals)));
+        return 0;
+      });
+      try {
+        T.assert(wasm.isPtr(pCb));
+        rc = capi.sqlite3_exec(db, "select a, a*2 from foo.bar", pCb, 0, 0);
+        T.assert(0===rc)
+          .assert(3===rowCount)
+          .assert(2===colCount);
+      }finally{
+        wasm.uninstallFunction(pCb);
+      }
+
+      // Demonstrate that an OOM result does not propagate through sqlite3_exec()...
+      rc = capi.sqlite3_exec(
+        db, "select a, a*2 from foo.bar", function(aVals, aNames){
+          sqlite3.WasmAllocError.toss("just testing");
+        }, 0, 0
+      );
+      T.assert(capi.SQLITE_ABORT === rc);
+
       db.exec("detach foo");
-      T.mustThrow(()=>db.exec("select * from foo.bar"));
+      T.mustThrow(()=>db.exec("select * from foo.bar"),
+                  "Because foo is no longer attached.");
     })
 
   ////////////////////////////////////////////////////////////////////
@@ -1970,7 +2025,6 @@ self.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #1: eponymous w/ manual exception handling',
       predicate: ()=>!!capi.sqlite3_index_info,
       test: function(sqlite3){
-        warn("The vtab/module JS bindings are experimental and subject to change.");
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
@@ -2168,7 +2222,6 @@ self.sqlite3InitModule = sqlite3InitModule;
       name: 'virtual table #2: non-eponymous w/ automated exception wrapping',
       predicate: ()=>!!capi.sqlite3_index_info,
       test: function(sqlite3){
-        warn("The vtab/module JS bindings are experimental and subject to change.");
         const VT = sqlite3.vtab;
         const tmplCols = Object.assign(Object.create(null),{
           A: 0, B: 1
