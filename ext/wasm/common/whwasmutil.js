@@ -247,6 +247,25 @@ self.WhWasmUtilInstaller = function(target){
   cache.utf8Encoder = new TextEncoder('utf-8');
 
   /**
+     For the given IR-like string in the set ('i8', 'i16', 'i32',
+     'f32', 'float', 'i64', 'f64', 'double', '*'), or any string value
+     ending in '*', returns the sizeof for that value
+     (target.ptrSizeof in the latter case). For any other value, it
+     returns the undefined value.
+  */
+  target.irSizeof = (n)=>{
+    switch(n){
+        case 'i8': return 1;
+        case 'i16': return 2;
+        case 'i32': case 'f32': case 'float': return 4;
+        case 'i64': case 'f64': case 'double': return 8;
+        case '*': return ptrSizeof;
+        default:
+          return (''+n).endsWith('*') ? ptrSizeof : undefined;
+    }
+  };
+
+  /**
      If (cache.heapSize !== cache.memory.buffer.byteLength), i.e. if
      the heap has grown since the last call, updates cache.HEAPxyz.
      Returns the cache object.
@@ -447,7 +466,7 @@ self.WhWasmUtilInstaller = function(target){
             type(s) of the given function signature, or throws if the
             signature is invalid. */
         /******** // only valid for use with the WebAssembly.Function ctor, which
-                  // is not yet documented on MDN. 
+                  // is not yet documented on MDN.
         sigToWasm: function(sig){
           const rc = {parameters:[], results: []};
           if('v'!==sig[0]) rc.results.push(f.sigTypes(sig[0]));
@@ -1590,10 +1609,20 @@ self.WhWasmUtilInstaller = function(target){
      not actually bind any functions. Its convertArg() method is
      called via xWrap() to perform any bindings.
 
-     Shortcomings: function pointers which include C-string arguments
-     may still need a level of hand-written wrappers around them,
-     depending on how they're used, in order to provide the client
-     with JS strings.
+     Shortcomings:
+
+     - These "reverse" bindings, i.e. calling into a JS-defined
+       function from a WASM-defined function (the generated proxy
+       wrapper), lack all type conversion support. That means, for
+       example, that...
+
+     - Function pointers which include C-string arguments may still
+       need a level of hand-written wrappers around them, depending on
+       how they're used, in order to provide the client with JS
+       strings. Alternately, clients will need to perform such conversions
+       on their own, e.g. using cstrtojs(). Or maybe we can find a way
+       to perform such conversions here, via addition of an xWrap()-style
+       function signature to the options argument.
   */
   xArg.FuncPtrAdapter = class FuncPtrAdapter extends AbstractArgAdapter {
     constructor(opt) {

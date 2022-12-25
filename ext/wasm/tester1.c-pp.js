@@ -1010,7 +1010,12 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(P.quota >= 4096)
           .assert(remaining === P.quota)
           .mustThrowMatching(()=>P.alloc(0), isAllocErr)
-          .mustThrowMatching(()=>P.alloc(-1), isAllocErr);
+          .mustThrowMatching(()=>P.alloc(-1), isAllocErr)
+          .mustThrowMatching(
+            ()=>P.alloc('i33'),
+            (e)=>e instanceof sqlite3.WasmAllocError
+          );
+        ;
         let p1 = P.alloc(12);
         T.assert(p1 === stack - 16/*8-byte aligned*/)
           .assert(P.pointer === p1);
@@ -1029,7 +1034,7 @@ self.sqlite3InitModule = sqlite3InitModule;
 
       T.assert(P.pointer === stack);
       try {
-        const [p1, p2, p3] = P.allocChunks(3,4);
+        const [p1, p2, p3] = P.allocChunks(3,'i32');
         T.assert(P.pointer === stack-16/*always rounded to multiple of 8*/)
           .assert(p2 === p1 + 4)
           .assert(p3 === p2 + 4);
@@ -1143,7 +1148,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           }
         }
       };
-      
+
       T.assert(wasm.isPtr(db.pointer))
         .mustThrowMatching(()=>db.pointer=1, /read-only/)
         .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
@@ -1183,7 +1188,7 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(0 === rc);
       const stack = wasm.pstack.pointer;
       try {
-        const [pCur, pHi] = wasm.pstack.allocChunks(2,8);
+        const [pCur, pHi] = wasm.pstack.allocChunks(2,'i64');
         rc = capi.sqlite3_db_status(this.db, capi.SQLITE_DBSTATUS_LOOKASIDE_USED,
                                     pCur, pHi, 0);
         T.assert(0===rc);
@@ -1729,7 +1734,7 @@ self.sqlite3InitModule = sqlite3InitModule;
             // sqlite3_result_xyz() and return undefined. Both are
             // functionally equivalent.
           }
-        }); 
+        });
         T.assert(18===db.selectValue('select summerN(1,8,9), summerN(2,3,4)'));
         T.mustThrowMatching(()=>{
           db.createFunction('nope',{
@@ -1856,7 +1861,6 @@ self.sqlite3InitModule = sqlite3InitModule;
           .assert('select 2;' === rc[1])
           .assert('-- empty\n; select 3' === rc[2]
                   /* Strange but true. */);
-        
         T.mustThrowMatching(()=>{
           db.exec({sql:'', returnValue: 'nope'});
         }, /^Invalid returnValue/);
@@ -2634,6 +2638,79 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
     }/*OPFS util sanity checks*/)
   ;/* end OPFS tests */
+
+  T.g('Session API')
+    .t({
+      name: 'Session API sanity checks',
+      predicate: ()=>!!capi.sqlite3changegroup_add,
+      test: function(sqlite3){
+        warn("The session API tests could use some expansion.");
+        const db1 = new sqlite3.oo1.DB(), db2 = new sqlite3.oo1.DB();
+        const sqlInit = [
+          "create table t(rowid INTEGER PRIMARY KEY,a,b); ",
+          "insert into t(rowid,a,b) values",
+          "(1,'a1','b1'),",
+          "(2,'a2','b2'),",
+          "(3,'a3','b3');"
+        ].join('');
+        db1.exec(sqlInit);
+        db2.exec(sqlInit);
+        T.assert(3 === db1.selectValue("select count(*) from t"))
+          .assert('b3' === db1.selectValue('select b from t where rowid=3'));
+        const stackPtr = wasm.pstack.pointer;
+        try{
+          let ppOut = wasm.pstack.allocPtr();
+          let rc = capi.sqlite3session_create(db1, "main", ppOut);
+          T.assert(0===rc);
+          let pSession = wasm.peekPtr(ppOut);
+          T.assert(pSession && wasm.isPtr(pSession));
+          if(1){
+            capi.sqlite3session_table_filter(pSession, (pCtx, tbl)=>{
+              T.assert('t' === tbl).assert( 99 === pCtx );
+              return 1;
+            }, 99);
+          }else{
+            rc = capi.sqlite3session_attach(pSession, "t");
+            T.assert( 0 === rc );
+          }
+          db1.exec([
+            "update t set b='bTwo' where rowid=2;",
+            "update t set a='aThree' where rowid=3;",
+            "delete from t where rowid=1;",
+            "insert into t(rowid,a,b) values(4,'a4','b4')"
+          ]);
+          T.assert('bTwo' === db1.selectValue("select b from t where rowid=2"))
+            .assert(undefined === db1.selectValue('select a from t where rowid=1'))
+            .assert('b4' === db1.selectValue('select b from t where rowid=4'));
+
+          let pnChanges = wasm.pstack.alloc('i32'),
+              ppChanges = wasm.pstack.allocPtr();
+          rc = capi.sqlite3session_changeset(pSession, pnChanges, ppChanges);
+          T.assert( 0 === rc );
+          capi.sqlite3session_delete(pSession);
+          pSession = 0;
+          const pChanges = wasm.peekPtr(ppChanges),
+                nChanges = wasm.peek32(pnChanges);
+          T.assert( pChanges && wasm.isPtr( pChanges ) ).assert( nChanges > 0 );
+          pnChanges = ppChanges = 0;
+          //log("pnChanges =", pnChanges, wasm.peek32(pnChanges), '@', pChanges);
+          rc = capi.sqlite3changeset_apply(
+            db2, nChanges, pChanges, 0, (pCtx, eConflict, pIter)=>{
+              return pCtx ? 1 : 0
+            }, 1
+          );
+          wasm.dealloc( pChanges );
+          T.assert( 0 === rc )
+            .assert( 3 === db2.selectValue('select count(*) from t'))
+            .assert( 'b4' === db2.selectValue('select b from t where rowid=4') );
+        }finally{
+          wasm.pstack.restore(stackPtr);
+          db1.close();
+          db2.close();
+        }
+      }
+    })
+  ;/*end of session API group*/;
 
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");
