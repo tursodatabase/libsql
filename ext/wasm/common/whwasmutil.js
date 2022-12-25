@@ -247,6 +247,25 @@ self.WhWasmUtilInstaller = function(target){
   cache.utf8Encoder = new TextEncoder('utf-8');
 
   /**
+     For the given IR-like string in the set ('i8', 'i16', 'i32',
+     'f32', 'float', 'i64', 'f64', 'double', '*'), or any string value
+     ending in '*', returns the sizeof for that value
+     (target.ptrSizeof in the latter case). For any other value, it
+     returns the undefined value.
+  */
+  target.irSizeof = (n)=>{
+    switch(n){
+        case 'i8': return 1;
+        case 'i16': return 2;
+        case 'i32': case 'f32': case 'float': return 4;
+        case 'i64': case 'f64': case 'double': return 8;
+        case '*': return ptrSizeof;
+        default:
+          return (''+n).endsWith('*') ? ptrSizeof : undefined;
+    }
+  };
+
+  /**
      If (cache.heapSize !== cache.memory.buffer.byteLength), i.e. if
      the heap has grown since the last call, updates cache.HEAPxyz.
      Returns the cache object.
