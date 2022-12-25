@@ -948,7 +948,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           const m = f._rx.exec(opt);
           rv[0] = (m ? m[1] : opt);
           rv[1] = m ? (f._rxInt.test(m[2]) ? +m[2] : m[2]) : true;
-        };                    
+        };
       }
       const rc = {}, ov = [0,0];
       let i = 0, k;
@@ -1749,8 +1749,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      argument of sqlite3_value_to_js(). If the sqlite3_column_value()
      returns NULL (e.g. because the column index is out of range),
      this function returns `undefined`, regardless of the 3rd
-     argument. 3rd argument is falsy and conversion fails, `undefined`
-     will be returned.
+     argument. If the 3rd argument is falsy and conversion fails,
+     `undefined` will be returned.
 
      Note that sqlite3_column_value() returns an "unprotected" value
      object, but in a single-threaded environment (like this one)

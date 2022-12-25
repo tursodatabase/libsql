@@ -234,7 +234,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        optional features into account. */
     wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
   }
-  
+
   /**
      Functions which require BigInt (int64) support are separated from
      the others because we need to conditionally bind them or apply
@@ -569,7 +569,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   }/*sqlite3_create_collation() and friends*/
 
-  if(1){/* Special-case handling of sqlite3_exec() */
+  {/* Special-case handling of sqlite3_exec() */
     const __exec = wasm.xWrap("sqlite3_exec", "int",
                               ["sqlite3*", "string:flexible",
                                new wasm.xWrap.FuncPtrAdapter({
@@ -585,23 +585,23 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       /* Wrap the callback in a WASM-bound function and convert the callback's
          `(char**)` arguments to arrays of strings... */
+      let aNames;
       const cbwrap = function(pVoid, nCols, pColVals, pColNames){
         let rc = capi.SQLITE_ERROR;
         try {
-          let aVals = [], aNames = [], i = 0, offset = 0;
-          for( ; i < nCols; offset += (wasm.ptrSizeof * ++i) ){
-            aVals.push( wasm.cstrToJs(wasm.peekPtr(pColVals + offset)) );
-            aNames.push( wasm.cstrToJs(wasm.peekPtr(pColNames + offset)) );
-          }
-          rc = callback(pVoid, nCols, aVals, aNames) | 0;
-          /* The first 2 args of the callback are useless for JS but
-             we want the JS mapping of the C API to be as close to the
-             C API as possible. */
+          const aVals = wasm.cArgvToJs(nCols, pColVals);
+          if(!aNames) aNames = wasm.cArgvToJs(nCols, pColNames);
+          rc = callback(aVals, aNames) | 0;
         }catch(e){
-          /* If we set the db error state here, the higher-level exec() call
-             replaces it with its own, so we have no way of reporting the
-             exception message except the console. We must not propagate
-             exceptions through the C API. */
+          /* If we set the db error state here, the higher-level
+             exec() call replaces it with its own, so we have no way
+             of reporting the exception message except the console. We
+             must not propagate exceptions through the C API. Though
+             we make an effort to report OOM here, sqlite3_exec()
+             translates that into SQLITE_ABORT as well. */
+          rc =  (e instanceof sqlite3.WasmAllocError)
+                 ? capi.SQLITE_NOMEM
+                 : (e.resultCode || capi.SQLITE_ERROR);
         }
         return rc;
       };
@@ -616,7 +616,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
   }/*sqlite3_exec() proxy*/;
 
-  if(1){/* Special-case handling of sqlite3_create_function_v2()
+  {/* Special-case handling of sqlite3_create_function_v2()
            and sqlite3_create_window_function() */
     /* Maintenance reminder: FuncPtrAdapter is not expressive enough
        to be able to perform these mappings. */
@@ -1041,20 +1041,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       toss("Maintenance required: increase sqlite3_wasm_enum_json()'s",
            "static buffer size!");
     }
-    wasm.ctype = JSON.parse(wasm.cstrToJs(cJson));
     //console.debug('wasm.ctype length =',wasm.cstrlen(cJson));
+    wasm.ctype = JSON.parse(wasm.cstrToJs(cJson));
+    // Groups of SQLITE_xyz macros...
     const defineGroups = ['access', 'authorizer',
                           'blobFinalizers', 'config', 'dataTypes',
                           'dbConfig', 'dbStatus',
                           'encodings', 'fcntl', 'flock', 'ioCap',
                           'limits', 'openFlags',
                           'prepareFlags', 'resultCodes',
-                          'serialize', 'sqlite3Status',
+                          'sqlite3Status',
                           'stmtStatus', 'syncFlags',
                           'trace', 'txnState', 'udfFlags',
                           'version' ];
     if(wasm.bigIntEnabled){
-      defineGroups.push('vtab');
+      defineGroups.push('serialize', 'vtab');
     }
     for(const t of defineGroups){
       for(const e of Object.entries(wasm.ctype[t])){

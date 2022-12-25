@@ -1882,18 +1882,18 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(3===resultRows.length)
         .assert(2===resultRows[1]);
       T.assert(2===db.selectValue('select a from foo.bar where a>1 order by a'));
+
+      /** Demonstrate the JS-simplified form of the sqlite3_exec() callback... */
       let colCount = 0, rowCount = 0;
-      const execCallback = function(pVoid, nCols, aVals, aNames){
-        //console.warn("execCallback(",arguments,")");
-        colCount = nCols;
-        ++rowCount;
-        T.assert(2===aVals.length)
-          .assert(2===aNames.length)
-          .assert(+(aVals[1]) === 2 * +(aVals[0]));
-      };
       let rc = capi.sqlite3_exec(
-        db.pointer, "select a, a*2 from foo.bar", execCallback,
-        0, 0
+        db, "select a, a*2 from foo.bar", function(aVals, aNames){
+          //console.warn("execCallback(",arguments,")");
+          colCount = aVals.length;
+          ++rowCount;
+          T.assert(2===aVals.length)
+            .assert(2===aNames.length)
+            .assert(+(aVals[1]) === 2 * +(aVals[0]));
+        }, 0, 0
       );
       T.assert(0===rc).assert(3===rowCount).assert(2===colCount);
       rc = capi.sqlite3_exec(
@@ -1902,8 +1902,45 @@ self.sqlite3InitModule = sqlite3InitModule;
         }, 0, 0
       );
       T.assert(capi.SQLITE_ABORT === rc);
+
+      /* Demonstrate how to get access to the "full" callback
+         signature, as opposed to the simplified JS-specific one... */
+      rowCount = colCount = 0;
+      const pCb = wasm.installFunction('i(pipp)', function(pVoid,nCols,aVals,aCols){
+        /* Tip: wasm.cArgvToJs() can be used to convert aVals and
+           aCols to arrays: const vals = wasm.cArgvToJs(nCols,
+           aVals); */
+        ++rowCount;
+        colCount = nCols;
+        T.assert(2 === nCols)
+          .assert(wasm.isPtr(pVoid))
+          .assert(wasm.isPtr(aVals))
+          .assert(wasm.isPtr(aCols))
+          .assert(+wasm.cstrToJs(wasm.peekPtr(aVals + wasm.ptrSizeof))
+                  === 2 * +wasm.cstrToJs(wasm.peekPtr(aVals)));
+        return 0;
+      });
+      try {
+        T.assert(wasm.isPtr(pCb));
+        rc = capi.sqlite3_exec(db, "select a, a*2 from foo.bar", pCb, 0, 0);
+        T.assert(0===rc)
+          .assert(3===rowCount)
+          .assert(2===colCount);
+      }finally{
+        wasm.uninstallFunction(pCb);
+      }
+
+      // Demonstrate that an OOM result does not propagate through sqlite3_exec()...
+      rc = capi.sqlite3_exec(
+        db, "select a, a*2 from foo.bar", function(aVals, aNames){
+          sqlite3.WasmAllocError.toss("just testing");
+        }, 0, 0
+      );
+      T.assert(capi.SQLITE_ABORT === rc);
+
       db.exec("detach foo");
-      T.mustThrow(()=>db.exec("select * from foo.bar"));
+      T.mustThrow(()=>db.exec("select * from foo.bar"),
+                  "Because foo is no longer attached.");
     })
 
   ////////////////////////////////////////////////////////////////////
