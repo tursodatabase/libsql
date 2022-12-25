@@ -317,16 +317,23 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   // Add session/changeset APIs...
   if(wasm.bigIntEnabled && !!wasm.exports.sqlite3changegroup_add){
     /* ACHTUNG: 2022-12-23: the session/changeset API bindings are
-       COMPLETELY UNTESTED. Additionally, the callback-taking APIs
-       have a shortcoming which will make using those which take
-       string-type arguments more painful than it should be. How best
-       to resolve that, such that we can perform the same type conversions
-       as we do when binding in "the other direction," is as yet
-       undetermined.
+       COMPLETELY UNTESTED. */
+    /**
+       FuncPtrAdapter options for session-related callbacks with the
+       native signature "i(ps)". This proxy converts the 2nd argument
+       from a C string to a JS string before passing the arguments on
+       to the client-provided JS callback.
     */
-    /* TODO: we need hand-written wrappers to adapt callbacks which
-       take string arguments. Or we need to find a way to do this sort
-       of reverse-binding which includes type conversions. */
+    const __ipsProxy = {
+      signature: 'i(ps)',
+      callProxy:(callback)=>{
+        return (p,s)=>{
+          try{return callback(p, wasm.cstrToJs(s)) | 0}
+          catch(e){return e.resultCode || capi.SQLITE_ERROR}
+        }
+      }
+    };
+
     wasm.bindingSignatures.int64.push(...[
       ['sqlite3changegroup_add', 'int', ['sqlite3_changegroup*', 'int', 'void*']],
       ['sqlite3changegroup_add_strm', 'int', [
@@ -349,7 +356,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ['sqlite3changeset_apply', 'int', [
         'sqlite3*', 'int', 'void*',
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'xFilter', signature: 'i(ps)', bindScope: 'transient'
+          name: 'xFilter', bindScope: 'transient', ...__ipsProxy
         }),
         new wasm.xWrap.FuncPtrAdapter({
           name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
@@ -363,7 +370,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }),
         'void*',
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'xFilter', signature: 'i(ps)', bindScope: 'transient'
+          name: 'xFilter', bindScope: 'transient', ...__ipsProxy
         }),
         new wasm.xWrap.FuncPtrAdapter({
           name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
@@ -373,7 +380,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ['sqlite3changeset_apply_v2', 'int', [
         'sqlite3*', 'int', 'void*',
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'xFilter', signature: 'i(ps)', bindScope: 'transient'
+          name: 'xFilter', bindScope: 'transient', ...__ipsProxy
         }),
         new wasm.xWrap.FuncPtrAdapter({
           name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
@@ -384,7 +391,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ['sqlite3changeset_apply_v2', 'int', [
         'sqlite3*', 'int', 'void*',
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'xFilter', signature: 'i(ps)', bindScope: 'transient'
+          name: 'xFilter', bindScope: 'transient', ...__ipsProxy
         }),
         new wasm.xWrap.FuncPtrAdapter({
           name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
@@ -398,7 +405,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }),
         'void*',
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'xFilter', signature: 'i(ps)', bindScope: 'transient'
+          name: 'xFilter', bindScope: 'transient', ...__ipsProxy
         }),
         new wasm.xWrap.FuncPtrAdapter({
           name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
@@ -487,8 +494,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ['sqlite3session_table_filter', undefined, [
         'sqlite3_session*',
         new wasm.xWrap.FuncPtrAdapter({
-          name: 'xFilter', signature: 'i(ps)',
-          contextKey: (argIndex,argv)=>argv[0/* (sqlite3_session*) */]
+          name: 'xFilter', ...__ipsProxy,
+          contextKey: (argv,argIndex)=>argv[0/* (sqlite3_session*) */]
         }),
         '*'
       ]]
