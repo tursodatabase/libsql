@@ -476,8 +476,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Internal impl of the DB.selectvalues(), selectArrays(), and
-     selectObjects() methods.
+     Internal impl of the DB.selectArrays() and selectObjects()
+     methods.
   */
   const __selectAll =
         (db, sql, bind, rowMode)=>db.exec({

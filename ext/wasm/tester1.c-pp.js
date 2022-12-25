@@ -1362,8 +1362,8 @@ self.sqlite3InitModule = sqlite3InitModule;
       let vals = db.selectValues('select a from t order by a limit 2');
       T.assert( 2 === vals.length )
         .assert( 1===vals[0] && 3===vals[1] );
-      vals = db.selectValues('select a from t order by a limit ?',
-                             2, capi.SQLITE_TEXT);
+      vals = db.selectValues('select a from t order by a limit $L',
+                             {$L:2}, capi.SQLITE_TEXT);
       T.assert( 2 === vals.length )
         .assert( '1'===vals[0] && '3'===vals[1] );
       vals = undefined;
