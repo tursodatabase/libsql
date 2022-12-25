@@ -463,22 +463,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Internal impl of the DB.selectArray() and
+     Internal impl of the DB.selectValue(), selectArray(), and
      selectObject() methods.
   */
-  const __selectFirstRow = (db, sql, bind, getArg)=>{
-    let stmt, rc;
+  const __selectFirstRow = (db, sql, bind, ...getArgs)=>{
+    const stmt = db.prepare(sql);
     try {
-      stmt = db.prepare(sql).bind(bind);
-      if(stmt.step()) rc = stmt.get(getArg);
+      return stmt.bind(bind).step() ? stmt.get(...getArgs) : undefined;
     }finally{
-      if(stmt) stmt.finalize();
+      stmt.finalize();
     }
-    return rc;
   };
 
   /**
-     Internal impl of the DB.selectArrays() and
+     Internal impl of the DB.selectvalues(), selectArrays(), and
      selectObjects() methods.
   */
   const __selectAll =
@@ -1083,15 +1081,31 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Throws on error (e.g. malformed SQL).
     */
     selectValue: function(sql,bind,asType){
-      let stmt, rc;
+      return __selectFirstRow(this, sql, bind, 0, asType);
+    },
+
+    /**
+       Runs the given query and returns an array of the values from
+       the first result column of each row of the result set. The 2nd
+       argument is an optional value for use in a single-argument call
+       to Stmt.bind(). The 3rd argument may be any value suitable for
+       use as the 2nd argument to Stmt.get(). If a 3rd argument is
+       desired but no bind data are needed, pass `undefined` for the 2nd
+       argument.
+
+       If there are no result rows, an empty array is returned.
+    */
+    selectValues: function(sql,bind,asType){
+      const stmt = this.prepare(sql), rc = [];
       try {
-        stmt = this.prepare(sql).bind(bind);
-        if(stmt.step()) rc = stmt.get(0,asType);
+        stmt.bind(bind);
+        while(stmt.step()) rc.push(stmt.get(0,asType));
       }finally{
-        if(stmt) stmt.finalize();
+        stmt.finalize();
       }
       return rc;
     },
+
     /**
        Prepares the given SQL, step()s it one time, and returns an
        array containing the values of the first result row. If it has
@@ -1147,7 +1161,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /**
        Returns the number of currently-opened Stmt handles for this db
-       handle, or 0 if this DB instance is closed.
+       handle, or 0 if this DB instance is closed. Note that only
+       handles prepared via this.prepare() are counted, and not
+       handles prepared using capi.sqlite3_prepare_v3() (or
+       equivalent).
     */
     openStatementCount: function(){
       return this.pointer ? Object.keys(__stmtMap.get(this)).length : 0;
@@ -1611,7 +1628,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     },
     /**
        Fetches the value from the given 0-based column index of
-       the current data row, throwing if index is out of range. 
+       the current data row, throwing if index is out of range.
 
        Requires that step() has just returned a truthy value, else
        an exception is thrown.

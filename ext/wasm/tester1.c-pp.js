@@ -1358,6 +1358,16 @@ self.sqlite3InitModule = sqlite3InitModule;
       if(wasm.bigIntEnabled){
         T.assert(4n===db.changes(false,true));
       }
+
+      let vals = db.selectValues('select a from t order by a limit 2');
+      T.assert( 2 === vals.length )
+        .assert( 1===vals[0] && 3===vals[1] );
+      vals = db.selectValues('select a from t order by a limit ?',
+                             2, capi.SQLITE_TEXT);
+      T.assert( 2 === vals.length )
+        .assert( '1'===vals[0] && '3'===vals[1] );
+      vals = undefined;
+
       let blob = db.selectValue("select b from t where a='blob'");
       T.assert(blob instanceof Uint8Array).
         assert(0x68===blob[0] && 0x69===blob[1]);
@@ -2639,6 +2649,7 @@ self.sqlite3InitModule = sqlite3InitModule;
     }/*OPFS util sanity checks*/)
   ;/* end OPFS tests */
 
+  ////////////////////////////////////////////////////////////////////////
   T.g('Session API')
     .t({
       name: 'Session API sanity checks',
@@ -2664,15 +2675,10 @@ self.sqlite3InitModule = sqlite3InitModule;
           T.assert(0===rc);
           let pSession = wasm.peekPtr(ppOut);
           T.assert(pSession && wasm.isPtr(pSession));
-          if(1){
-            capi.sqlite3session_table_filter(pSession, (pCtx, tbl)=>{
-              T.assert('t' === tbl).assert( 99 === pCtx );
-              return 1;
-            }, 99);
-          }else{
-            rc = capi.sqlite3session_attach(pSession, "t");
-            T.assert( 0 === rc );
-          }
+          capi.sqlite3session_table_filter(pSession, (pCtx, tbl)=>{
+            T.assert('t' === tbl).assert( 99 === pCtx );
+            return 1;
+          }, 99);
           db1.exec([
             "update t set b='bTwo' where rowid=2;",
             "update t set a='aThree' where rowid=3;",
@@ -2681,8 +2687,27 @@ self.sqlite3InitModule = sqlite3InitModule;
           ]);
           T.assert('bTwo' === db1.selectValue("select b from t where rowid=2"))
             .assert(undefined === db1.selectValue('select a from t where rowid=1'))
-            .assert('b4' === db1.selectValue('select b from t where rowid=4'));
+            .assert('b4' === db1.selectValue('select b from t where rowid=4'))
+            .assert(3 === db1.selectValue('select count(*) from t'));
 
+          const testSessionEnable = false;
+          if(testSessionEnable){
+            rc = capi.sqlite3session_enable(pSession, 0);
+            T.assert( 0 === rc )
+              .assert( 0 === capi.sqlite3session_enable(pSession, -1) );
+            db1.exec("delete from t where rowid=2;");
+            rc = capi.sqlite3session_enable(pSession, 1);
+            T.assert( rc > 0 )
+              .assert( capi.sqlite3session_enable(pSession, -1) > 0 )
+              .assert(undefined === db1.selectValue('select a from t where rowid=2'));
+          }else{
+            warn("sqlite3session_enable() tests disabled due to unexpected results.",
+                 "(Possibly a tester misunderstanding, as opposed to a bug.)");
+          }
+          let db1Count = db1.selectValue("select count(*) from t");
+          T.assert( db1Count === (testSessionEnable ? 2 : 3) );
+
+          /* Capture changeset and destroy session. */
           let pnChanges = wasm.pstack.alloc('i32'),
               ppChanges = wasm.pstack.allocPtr();
           rc = capi.sqlite3session_changeset(pSession, pnChanges, ppChanges);
@@ -2691,9 +2716,29 @@ self.sqlite3InitModule = sqlite3InitModule;
           pSession = 0;
           const pChanges = wasm.peekPtr(ppChanges),
                 nChanges = wasm.peek32(pnChanges);
-          T.assert( pChanges && wasm.isPtr( pChanges ) ).assert( nChanges > 0 );
+          T.assert( pChanges && wasm.isPtr( pChanges ) )
+            .assert( nChanges > 0 );
+
+          /* Revert db1 via an inverted changeset, but keep pChanges
+             and nChanges for application to db2. */
+          rc = capi.sqlite3changeset_invert( nChanges, pChanges, pnChanges, ppChanges );
+          T.assert( 0 === rc );
+          rc = capi.sqlite3changeset_apply(
+            db1, wasm.peek32(pnChanges), wasm.peekPtr(ppChanges), 0, (pCtx, eConflict, pIter)=>{
+              return 1;
+            }, 0
+          );
+          T.assert( 0 === rc );
+          wasm.dealloc( wasm.peekPtr(ppChanges) );
           pnChanges = ppChanges = 0;
-          //log("pnChanges =", pnChanges, wasm.peek32(pnChanges), '@', pChanges);
+          T.assert('b2' === db1.selectValue("select b from t where rowid=2"))
+            .assert('a1' === db1.selectValue('select a from t where rowid=1'))
+            .assert(undefined === db1.selectValue('select b from t where rowid=4'));
+          db1Count = db1.selectValue("select count(*) from t");
+          T.assert(3 === db1Count);
+
+          /* Apply pre-reverted changeset (pChanges, nChanges) to
+             db2... */
           rc = capi.sqlite3changeset_apply(
             db2, nChanges, pChanges, 0, (pCtx, eConflict, pIter)=>{
               return pCtx ? 1 : 0
@@ -2701,15 +2746,25 @@ self.sqlite3InitModule = sqlite3InitModule;
           );
           wasm.dealloc( pChanges );
           T.assert( 0 === rc )
-            .assert( 3 === db2.selectValue('select count(*) from t'))
-            .assert( 'b4' === db2.selectValue('select b from t where rowid=4') );
+            .assert( 'b4' === db2.selectValue('select b from t where rowid=4') )
+            .assert( 'aThree' === db2.selectValue('select a from t where rowid=3') )
+            .assert( undefined === db2.selectValue('select b from t where rowid=1') );
+          if(testSessionEnable){
+            T.assert( (undefined === db2.selectValue('select b from t where rowid=2')),
+                      "But... the session was disabled when rowid=2 was deleted?" );
+            log("rowids from db2.t:",db2.selectValues('select rowid from t order by rowid'));
+            T.assert( 3 === db2.selectValue('select count(*) from t') );
+          }else{
+            T.assert( 'bTwo' === db2.selectValue('select b from t where rowid=2') )
+              .assert( 3 === db2.selectValue('select count(*) from t') );
+          }
         }finally{
           wasm.pstack.restore(stackPtr);
           db1.close();
           db2.close();
         }
       }
-    })
+    })/*session API sanity tests*/
   ;/*end of session API group*/;
 
   ////////////////////////////////////////////////////////////////////////
