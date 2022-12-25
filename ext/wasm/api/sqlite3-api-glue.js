@@ -388,16 +388,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         'void*', '**', 'int*', 'int'
 
       ]],
-      ['sqlite3changeset_apply_v2', 'int', [
-        'sqlite3*', 'int', 'void*',
-        new wasm.xWrap.FuncPtrAdapter({
-          name: 'xFilter', bindScope: 'transient', ...__ipsProxy
-        }),
-        new wasm.xWrap.FuncPtrAdapter({
-          name: 'xConflict', signature: 'i(pip)', bindScope: 'transient'
-        }),
-        'void*', '**', 'int*', 'int'
-      ]],
       ['sqlite3changeset_apply_v2_strm', 'int', [
         'sqlite3*',
         new wasm.xWrap.FuncPtrAdapter({
