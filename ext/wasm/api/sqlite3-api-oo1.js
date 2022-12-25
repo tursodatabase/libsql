@@ -72,7 +72,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         wasm.installFunction('i(ippp)', function(t,c,p,x){
           if(capi.SQLITE_TRACE_STMT===t){
             // x == SQL, p == sqlite3_stmt*
-            console.log("SQL TRACE #"+(++this.counter),
+            console.log("SQL TRACE #"+(++this.counter)+' via sqlite3@'+c+':',
                         wasm.cstrToJs(x));
           }
         }.bind({counter: 0}));
@@ -161,7 +161,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       capi.sqlite3_extended_result_codes(pDb, 1);
       if(flagsStr.indexOf('t')>=0){
         capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
-                              __dbTraceToConsole, 0);
+                              __dbTraceToConsole, pDb);
       }
     }catch( e ){
       if( pDb ) capi.sqlite3_close_v2(pDb);
