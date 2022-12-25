@@ -1021,7 +1021,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        memory must eventually be released using restore().
 
        If n is a string, it must be a WASM "IR" value in the set
-       accepted by wasm.irSizeof(), which is mapped to the size of
+       accepted by wasm.sizeofIR(), which is mapped to the size of
        that data type. If passed a string not in that set, it throws a
        WasmAllocError.
 
@@ -1031,7 +1031,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        heap. Similarly, the returned address is always 8-byte aligned.
     */
     alloc: function(n){
-      if('string'===typeof n && !(n = wasm.irSizeof(n))){
+      if('string'===typeof n && !(n = wasm.sizeofIR(n))){
         WasmAllocError.toss("Invalid value for pstack.alloc(",arguments[0],")");
       }
       return wasm.exports.sqlite3_wasm_pstack_alloc(n)
@@ -1043,7 +1043,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        returns the addresses as an array of n element, each holding
        the address of one chunk.
 
-       sz may optionally be an IR string accepted by wasm.irSizeof().
+       sz may optionally be an IR string accepted by wasm.sizeofIR().
 
        Throws a WasmAllocError if allocation fails.
 
@@ -1054,7 +1054,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        ```
     */
     allocChunks: function(n,sz){
-      if('string'===typeof sz && !(sz = wasm.irSizeof(sz))){
+      if('string'===typeof sz && !(sz = wasm.sizeofIR(sz))){
         WasmAllocError.toss("Invalid size value for allocChunks(",arguments[1],")");
       }
       const mem = wasm.pstack.alloc(n * sz);

@@ -253,7 +253,7 @@ self.WhWasmUtilInstaller = function(target){
      (target.ptrSizeof in the latter case). For any other value, it
      returns the undefined value.
   */
-  target.irSizeof = (n)=>{
+  target.sizeofIR = (n)=>{
     switch(n){
         case 'i8': return 1;
         case 'i16': return 2;
