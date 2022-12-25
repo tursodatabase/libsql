@@ -1604,18 +1604,19 @@ self.WhWasmUtilInstaller = function(target){
                      'client-level code. Invoked with:',opt);
       }
       this.signature = opt.signature;
-      if(!opt.bindScope && (opt.contextKey instanceof Function)){
-        opt.bindScope = 'context';
-      }else if(FuncPtrAdapter.bindScopes.indexOf(opt.bindScope)<0){
+      if(opt.contextKey instanceof Function){
+        this.contextKey = opt.contextKey;
+        if(!opt.bindScope) opt.bindScope = 'context';
+      }
+      this.bindScope = opt.bindScope
+        || toss("FuncPtrAdapter options requires a bindScope (explicit or implied).");
+      if(FuncPtrAdapter.bindScopes.indexOf(opt.bindScope)<0){
         toss("Invalid options.bindScope ("+opt.bindMod+") for FuncPtrAdapter. "+
              "Expecting one of: ("+FuncPtrAdapter.bindScopes.join(', ')+')');
       }
-      this.bindScope = opt.bindScope;
-      if(opt.contextKey) this.contextKey = opt.contextKey /*else inherit one*/;
       this.isTransient = 'transient'===this.bindScope;
       this.isContext = 'context'===this.bindScope;
-      if( ('singleton'===this.bindScope) ) this.singleton = [];
-      else this.singleton = undefined;
+      this.singleton = ('singleton'===this.bindScope) ? [] : undefined;
       //console.warn("FuncPtrAdapter()",opt,this);
       this.callProxy = (opt.callProxy instanceof Function)
         ? opt.callProxy : undefined;
@@ -1918,7 +1919,7 @@ self.WhWasmUtilInstaller = function(target){
       const scope = target.scopedAllocPush();
       try{
         /*
-          Maintenance reminder re. arguments passed to convertArgs():
+          Maintenance reminder re. arguments passed to convertArg():
           The public interface of argument adapters is that they take
           ONE argument and return a (possibly) converted result for
           it. The passing-on of arguments after the first is an

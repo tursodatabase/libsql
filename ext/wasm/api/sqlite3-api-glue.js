@@ -127,9 +127,32 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_errmsg", "string", "sqlite3*"],
     ["sqlite3_error_offset", "int", "sqlite3*"],
     ["sqlite3_errstr", "string", "int"],
-    /*["sqlite3_exec", "int", "sqlite3*", "string", "*", "*", "**"
-      Handled seperately to perform translation of the callback
-      into a WASM-usable one. ],*/
+    ["sqlite3_exec", "int", [
+      "sqlite3*", "string:flexible",
+      new wasm.xWrap.FuncPtrAdapter({
+        signature: 'i(pipp)',
+        bindScope: 'transient',
+        callProxy: (callback)=>{
+          let aNames;
+          return (pVoid, nCols, pColVals, pColNames)=>{
+            try {
+              const aVals = wasm.cArgvToJs(nCols, pColVals);
+              if(!aNames) aNames = wasm.cArgvToJs(nCols, pColNames);
+              return callback(aVals, aNames) | 0;
+            }catch(e){
+              /* If we set the db error state here, the higher-level
+                 exec() call replaces it with its own, so we have no way
+                 of reporting the exception message except the console. We
+                 must not propagate exceptions through the C API. Though
+                 we make an effort to report OOM here, sqlite3_exec()
+                 translates that into SQLITE_ABORT as well. */
+              return e.resultCode || capi.SQLITE_ERROR;
+            }
+          }
+        }
+      }),
+      "*", "**"
+    ]],
     ["sqlite3_expanded_sql", "string", "sqlite3_stmt*"],
     ["sqlite3_extended_errcode", "int", "sqlite3*"],
     ["sqlite3_extended_result_codes", "int", "sqlite3*", "int"],
@@ -590,49 +613,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     };
 
   }/*sqlite3_create_collation() and friends*/
-
-  {/* Special-case handling of sqlite3_exec() */
-    const __exec = wasm.xWrap("sqlite3_exec", "int",
-                              ["sqlite3*", "string:flexible",
-                               new wasm.xWrap.FuncPtrAdapter({
-                                 signature: 'i(pipp)',
-                                 bindScope: 'transient'
-                               }), "*", "**"]);
-    /* Documented in the api object's initializer. */
-    capi.sqlite3_exec = function f(pDb, sql, callback, pVoid, pErrMsg){
-      if(f.length!==arguments.length){
-        return __dbArgcMismatch(pDb,"sqlite3_exec",f.length);
-      }else if(!(callback instanceof Function)){
-        return __exec(pDb, sql, callback, pVoid, pErrMsg);
-      }
-      /* Wrap the callback in a WASM-bound function and convert the callback's
-         `(char**)` arguments to arrays of strings... */
-      let aNames;
-      const cbwrap = function(pVoid, nCols, pColVals, pColNames){
-        try {
-          const aVals = wasm.cArgvToJs(nCols, pColVals);
-          if(!aNames) aNames = wasm.cArgvToJs(nCols, pColNames);
-          return callback(aVals, aNames) | 0;
-        }catch(e){
-          /* If we set the db error state here, the higher-level
-             exec() call replaces it with its own, so we have no way
-             of reporting the exception message except the console. We
-             must not propagate exceptions through the C API. Though
-             we make an effort to report OOM here, sqlite3_exec()
-             translates that into SQLITE_ABORT as well. */
-          return e.resultCode || capi.SQLITE_ERROR;
-        }
-      };
-      let rc;
-      try{
-        rc = __exec(pDb, sql, cbwrap, pVoid, pErrMsg);
-      }catch(e){
-        rc = util.sqlite3_wasm_db_error(pDb, capi.SQLITE_ERROR,
-                                        "Error running exec(): "+e);
-      }
-      return rc;
-    };
-  }/*sqlite3_exec() proxy*/;
 
   {/* Special-case handling of sqlite3_create_function_v2()
       and sqlite3_create_window_function(). */

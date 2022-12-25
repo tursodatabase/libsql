@@ -1419,7 +1419,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       wasm.dealloc(pData);
     }
   };
-  
+
   if( util.isUIThread() ){
     /* Features specific to the main window thread... */
 
