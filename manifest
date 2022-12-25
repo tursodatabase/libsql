@@ -1,5 +1,5 @@
-C Update\sJS\sworker\s#1\sAPI\sand\srelated\stests\sfor\srecent\sAPI\schanges.
-D 2022-12-25T23:45:59.277
+C module-symbols.html:\sadd\ssome\smissing\slinks\sto\sC-side\sAPI\sdocs\sfor\srecently-added\sJS\scounterparts.
+D 2022-12-25T23:54:16.440
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -541,7 +541,7 @@ F ext/wasm/index-dist.html c806b6005145b71d64240606e9c6e0bf56878ee8829c66fe7486c
 F ext/wasm/index.html cc8b174ff01be282b399e64b58bdf3c921d7020da5d4e22e88bbbb4a6787a209
 F ext/wasm/jaccwabyt/jaccwabyt.js 06f2ef1ad640c26c593def3d960336e9bb789819b920516480895c38ed5f58fa
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
-F ext/wasm/module-symbols.html 573317801087e67c946a157783715d5716e027fcf484918a0c3aae4e627cc93d
+F ext/wasm/module-symbols.html ac9a26524f569b5510e2a66f6a04f3ebd66423c5524e28b1ca723ab1997297ae
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 4c140457f4d6da9d646a49addd91edb6e9ad1643c6c48e3258b5bce24725dc18
 F ext/wasm/speedtest1-wasmfs.html 7a301f4f5b6ad4f5d37fd6e7ca03a2f5d5547fd289da60a39075a93d7646d354
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49a83ca3ba46d3ae8021fbdd72b48ce9181eea6845fa7bb7aa83b16fad1728be
-R 27d11ee0c9b71ea59cc8cc5e957cd154
+P d797e183e96e04520636865204c02307b751fdc2949a04587de9259a1733e37b
+R 3b62b1c0f38c86ade5b52d8fa8da0f03
 U stephan
-Z 0d7e78e20bbd0ad5a9524bd13ad13d60
+Z 2778815949abf0646823d20abb172e24
 # Remove this line to create a well-formed Fossil manifest.
