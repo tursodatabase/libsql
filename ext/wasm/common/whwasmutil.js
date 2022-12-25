@@ -1598,6 +1598,11 @@ self.WhWasmUtilInstaller = function(target){
   xArg.FuncPtrAdapter = class FuncPtrAdapter extends AbstractArgAdapter {
     constructor(opt) {
       super(opt);
+      if(xArg.FuncPtrAdapter.warnOnUse){
+        console.warn('xArg.FuncPtrAdapter is an internal-only API',
+                     'and is not intended to be invoked from',
+                     'client-level code. Invoked with:',opt);
+      }
       this.signature = opt.signature;
       if(!opt.bindScope && (opt.contextKey instanceof Function)){
         opt.bindScope = 'context';
@@ -1615,6 +1620,8 @@ self.WhWasmUtilInstaller = function(target){
       this.callProxy = (opt.callProxy instanceof Function)
         ? opt.callProxy : undefined;
     }
+
+    static warnOnUse = false;
 
     static bindScopes = [
       'transient', 'context', 'singleton'

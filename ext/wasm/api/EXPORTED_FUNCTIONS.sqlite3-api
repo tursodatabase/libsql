@@ -29,6 +29,7 @@ _sqlite3_column_value
 _sqlite3_compileoption_get
 _sqlite3_compileoption_used
 _sqlite3_complete
+_sqlite3_context_db_handle
 _sqlite3_create_collation
 _sqlite3_create_collation_v2
 _sqlite3_create_function

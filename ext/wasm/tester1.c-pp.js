@@ -1625,6 +1625,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         db.createFunction("bar", {
           arity: -1,
           xFunc: (pCx,...args)=>{
+            T.assert(db.pointer === capi.sqlite3_context_db_handle(pCx));
             let rc = 0;
             for(const v of args) rc += v;
             return rc;

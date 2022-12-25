@@ -82,7 +82,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       "sqlite3*",
       new wasm.xWrap.FuncPtrAdapter({
         signature: 'i(pi)',
-        contextKey: (argv,argIndex)=>'sqlite3@'+argv[0]
+        contextKey: (argv,argIndex)=>argv[0/* sqlite3* */]
       }),
       "*"
     ]],
@@ -103,6 +103,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_compileoption_get", "string", "int"],
     ["sqlite3_compileoption_used", "int", "string"],
     ["sqlite3_complete", "int", "string:flexible"],
+    ["sqlite3_context_db_handle", "sqlite3*", "sqlite3_context*"],
+
     /* sqlite3_create_function(), sqlite3_create_function_v2(), and
        sqlite3_create_window_function() use hand-written bindings to
        simplify handling of their function-type arguments. */
@@ -154,16 +156,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        for those, depending on how their SQL argument is provided. */
     /* sqlite3_randomness() uses a hand-written wrapper to extend
        the range of supported argument types. */
-    [ 
-      "sqlite3_progress_handler", undefined, [
-        "sqlite3*", "int", new wasm.xWrap.FuncPtrAdapter({
-          name: 'xProgressHandler',
-          signature: 'i(p)',
-          bindScope: 'context',
-          contextKey: (argv,argIndex)=>'sqlite3@'+argv[0]
-        }), "*"
-      ]
-    ],
+    ["sqlite3_progress_handler", undefined, [
+      "sqlite3*", "int", new wasm.xWrap.FuncPtrAdapter({
+        name: 'xProgressHandler',
+        signature: 'i(p)',
+        bindScope: 'context',
+        contextKey: (argv,argIndex)=>argv[0/* sqlite3* */]
+      }), "*"
+    ]],
     ["sqlite3_realloc", "*","*","int"],
     ["sqlite3_reset", "int", "sqlite3_stmt*"],
     ["sqlite3_result_blob", undefined, "sqlite3_context*", "*", "int", "*"],
@@ -179,7 +179,34 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_result_subtype", undefined, "sqlite3_value*", "int"],
     ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
     ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
-    ["sqlite3_set_auxdata", undefined, "sqlite3_context*", "int", "*", "*"/* => v(*) */],
+    ["sqlite3_set_authorizer", "int", [
+      "sqlite3*",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: "sqlite3_set_authorizer::xAuth",
+        signature: "i(pi"+"ssss)",
+        contextKey: (argv, argIndex)=>argv[0/*(sqlite3*)*/],
+        callProxy: (callback)=>{
+          return (pV, iCode, s0, s1, s2, s3)=>{
+            try{
+              s0 = s0 && wasm.cstrToJs(s0); s1 = s1 && wasm.cstrToJs(s1);
+              s2 = s2 && wasm.cstrToJs(s2); s3 = s3 && wasm.cstrToJs(s3);
+              return callback(pV, iCode, s0, s1, s2, s3) || 0;
+            }catch(e){
+              return e.resultCode || capi.SQLITE_ERROR;
+            }
+          }
+        }
+      }),
+      "*"/*pUserData*/
+    ]],
+    ["sqlite3_set_auxdata", undefined, [
+      "sqlite3_context*", "int", "*",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: 'xDestroyAuxData',
+        signature: 'v(*)',
+        contextKey: (argv, argIndex)=>argv[0/* sqlite3_context* */]
+      })
+    ]],
     ["sqlite3_shutdown", undefined],
     ["sqlite3_sourceid", "string"],
     ["sqlite3_sql", "string", "sqlite3_stmt*"],
@@ -196,12 +223,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      "sqlite3*", "string", "string", "string",
      "**", "**", "*", "*", "*"],
     ["sqlite3_total_changes", "int", "sqlite3*"],
-    ["sqlite3_trace_v2", "int", "sqlite3*", "int",
-     new wasm.xWrap.FuncPtrAdapter({
-       name: 'sqlite3_trace_v2::callback',
-       signature: 'i(ippp)',
-       contextKey: (argv,argIndex)=>'sqlite3@'+argv[0]
-     }), "*"],
+    ["sqlite3_trace_v2", "int", [
+      "sqlite3*", "int",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: 'sqlite3_trace_v2::callback',
+        signature: 'i(ippp)',
+        contextKey: (argv,argIndex)=>argv[0/* sqlite3* */]
+      }),
+      "*"
+    ]],
     ["sqlite3_txn_state", "int", ["sqlite3*","string"]],
     /* Note that sqlite3_uri_...() have very specific requirements for
        their first C-string arguments, so we cannot perform any value
@@ -267,8 +297,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_result_int64", undefined, "*", "i64"],
     ["sqlite3_result_zeroblob64", "int", "*", "i64"],
     ["sqlite3_serialize","*", "sqlite3*", "string", "*", "int"],
-    /* sqlite3_set_authorizer() requires a hand-written binding for
-       string conversions, so is defined elsewhere. */
     ["sqlite3_set_last_insert_rowid", undefined, ["sqlite3*", "i64"]],
     ["sqlite3_status64", "int", "int", "*", "*", "int"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
@@ -500,8 +528,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   {/* Bindings for sqlite3_create_collation[_v2]() */
     // contextKey() impl for wasm.xWrap.FuncPtrAdapter
     const contextKey = (argv,argIndex)=>{
-      return 'argv['+argIndex+']:sqlite3@'+argv[0]+
-        ':'+wasm.cstrToJs(argv[1]).toLowerCase()
+      return 'argv['+argIndex+']:'+argv[0/* sqlite3* */]+
+        ':'+wasm.cstrToJs(argv[1/* collation name */]).toLowerCase()
     };
     const __sqlite3CreateCollationV2 = wasm.xWrap(
       'sqlite3_create_collation_v2', 'int', [
@@ -581,11 +609,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          `(char**)` arguments to arrays of strings... */
       let aNames;
       const cbwrap = function(pVoid, nCols, pColVals, pColNames){
-        let rc = capi.SQLITE_ERROR;
         try {
           const aVals = wasm.cArgvToJs(nCols, pColVals);
           if(!aNames) aNames = wasm.cArgvToJs(nCols, pColNames);
-          rc = callback(aVals, aNames) | 0;
+          return callback(aVals, aNames) | 0;
         }catch(e){
           /* If we set the db error state here, the higher-level
              exec() call replaces it with its own, so we have no way
@@ -593,11 +620,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
              must not propagate exceptions through the C API. Though
              we make an effort to report OOM here, sqlite3_exec()
              translates that into SQLITE_ABORT as well. */
-          rc =  (e instanceof sqlite3.WasmAllocError)
-                 ? capi.SQLITE_NOMEM
-                 : (e.resultCode || capi.SQLITE_ERROR);
+          return e.resultCode || capi.SQLITE_ERROR;
         }
-        return rc;
       };
       let rc;
       try{
@@ -617,7 +641,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     const contextKey = function(argv,argIndex){
       return (
-        'sqlite3@'+argv[0]
+        argv[0/* sqlite3* */]
           +':'+argIndex
           +':'+wasm.cstrToJs(argv[1]).toLowerCase()
       )
@@ -941,37 +965,6 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   }/*sqlite3_bind_text/blob()*/
 
-  {/* sqlite3_set_authorizer() */
-    const __ssa = wasm.xWrap("sqlite3_set_authorizer", 'int', [
-      "sqlite3*",
-      new wasm.xWrap.FuncPtrAdapter({
-        name: "sqlite3_set_authorizer::xAuth",
-        signature: "i(pi"+"ssss)",
-        contextKey: (argIndex, argv)=>argv[0/*(sqlite3*)*/]
-      }),
-      "*"
-    ]);
-    capi.sqlite3_set_authorizer = function(pDb, xAuth, pUserData){
-      if(3!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_set_authorizer', 3);
-      if(xAuth instanceof Function){
-        const xProxy = xAuth;
-        /* Create a proxy which will receive the C-strings from WASM
-           and convert them to JS strings for the client-supplied
-           function. */
-        xAuth = function(pV, iCode, s0, s1, s2, s3){
-          try{
-            s0 = s0 && wasm.cstrToJs(s0); s1 = s1 && wasm.cstrToJs(s1);
-            s2 = s2 && wasm.cstrToJs(s2); s3 = s3 && wasm.cstrToJs(s3);
-            return xProxy(pV, iCode, s0, s1, s2, s3) || 0;
-          }catch(e){
-            return util.sqlite3_wasm_db_error(pDb, e);
-          }
-        };
-      }
-      return __ssa(pDb, xAuth, pUserData);
-    };
-  }/* sqlite3_set_authorizer() */
-
   {/* sqlite3_config() */
     /**
        Wraps a small subset of the C API's sqlite3_config() options.
@@ -1190,4 +1183,5 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
   }/*pKvvfs*/
 
+  wasm.xWrap.FuncPtrAdapter.warnOnUse = true;
 });

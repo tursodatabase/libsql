@@ -405,6 +405,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }else{
         super("Allocation failed.");
       }
+      this.resultCode = capi.SQLITE_NOMEM;
       this.name = 'WasmAllocError';
     }
   };
