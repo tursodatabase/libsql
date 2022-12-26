@@ -760,6 +760,26 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     m.collation.add(__argStr(name).toLowerCase());
   };
 
+  __dbCleanupMap._addUDF = function(pDb, name, arity, map){
+    /* Map UDF name to a Set of arity values */
+    name = __argStr(name).toLowerCase();
+    let u = map.get(name);
+    if(!u) map.set(name, (u = new Set));
+    u.add((arity<0) ? -1 : arity);
+  };
+
+  __dbCleanupMap.addFunction = function(pDb, name, arity){
+    const m = __dbCleanupMap(pDb, 1);
+    if(!m.udf) m.udf = new Map;
+    this._addUDF(pDb, name, arity, m.udf);
+  };
+
+  __dbCleanupMap.addWindowFunc = function(pDb, name, arity){
+    const m = __dbCleanupMap(pDb, 1);
+    if(!m.wudf) m.wudf = new Map;
+    this._addUDF(pDb, name, arity, m.wudf);
+  };
+
   /**
      Intended to be called _only_ from sqlite3_close_v2(),
      passed its non-0 db argument.
@@ -783,7 +803,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   __dbCleanupMap.cleanup = function(pDb){
     pDb = __argPDb(pDb);
-    //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+    wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
     /**
        Installing NULL functions in the C API will remove those
        bindings. The FuncPtrAdapter which sits between us and the C
@@ -809,10 +829,28 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       delete m.collation;
     }
-    if(m.udf){
-      //TODO: map and clean up UDFs.
+    let i;
+    for(i = 0; i < 2; ++i){ /* Clean up UDFs... */
+      const fmap = i ? m.wudf : m.udf;
+      if(!fmap) continue;
+      const func = i
+            ? capi.sqlite3_create_window_function
+            : capi.sqlite3_create_function_v2;
+      for(const e of fmap){
+        const name = e[0], arities = e[1];
+        const fargs = [pDb, name, 0/*arity*/, capi.SQLITE_UTF8, 0, 0, 0, 0, 0];
+        if(i) fargs.push(0);
+        for(const arity of arities){
+          try{ fargs[2] = arity; func.apply(null, fargs); }
+          catch(e){/*ignored*/}
+        }
+        arities.clear();
+      }
+      fmap.clear();
     }
-  };
+    delete m.udf;
+    delete m.wudf;
+  }/*__dbCleanupMap.cleanup()*/;
 
   {/* Binding of sqlite3_close_v2() */
     const __sqlite3CloseV2 = wasm.xWrap("sqlite3_close_v2", "int", "sqlite3*");
@@ -1015,8 +1053,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return __errEncoding(pDb);
       }
       try{
-        return __sqlite3CreateFunction(pDb, funcName, nArg, eTextRep,
-                                       pApp, xFunc, xStep, xFinal, xDestroy);
+        const rc = __sqlite3CreateFunction(pDb, funcName, nArg, eTextRep,
+                                           pApp, xFunc, xStep, xFinal, xDestroy);
+        if(0===rc && (xFunc instanceof Function
+                      || xStep instanceof Function
+                      || xFinal instanceof Function
+                      || xDestroy instanceof Function)){
+          __dbCleanupMap.addFunction(pDb, funcName, nArg);
+        }
+        return rc;
       }catch(e){
         console.error("sqlite3_create_function_v2() setup threw:",e);
         return util.sqlite3_wasm_db_error(pDb, e, "Creation of UDF threw: "+e);
@@ -1051,9 +1096,17 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return __errEncoding(pDb);
       }
       try{
-        return __sqlite3CreateWindowFunction(pDb, funcName, nArg, eTextRep,
-                                             pApp, xStep, xFinal, xValue,
-                                             xInverse, xDestroy);
+        const rc = __sqlite3CreateWindowFunction(pDb, funcName, nArg, eTextRep,
+                                                 pApp, xStep, xFinal, xValue,
+                                                 xInverse, xDestroy);
+        if(0===rc && (xStep instanceof Function
+                      || xFinal instanceof Function
+                      || xValue instanceof Function
+                      || xInverse instanceof Function
+                      || xDestroy instanceof Function)){
+          __dbCleanupMap.addWindowFunc(pDb, funcName, nArg);
+        }
+        return rc;
       }catch(e){
         console.error("sqlite3_create_window_function() setup threw:",e);
         return util.sqlite3_wasm_db_error(pDb, e, "Creation of UDF threw: "+e);

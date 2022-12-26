@@ -1659,8 +1659,9 @@ self.WhWasmUtilInstaller = function(target){
     static warnOnUse = false;
 
     /** If true, convertArg() will FuncPtrAdapter.debugOut() when it
-        (un)installs a function binding to/from WASM.
-    */
+        (un)installs a function binding to/from WASM. Note that
+        deinstallation of bindScope=transient bindings happens
+        via scopedAllocPop() so will not be output. */
     static debugFuncInstall = false;
 
     /** Function used for debug output. */
