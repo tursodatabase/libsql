@@ -935,7 +935,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       try{
         const rc = __sqlite3CreateCollationV2(pDb, zName, eTextRep, pArg, xCompare, xDestroy);
-        if(xCompare) __dbCleanupMap.addCollation(pDb, zName);
+        if(0===rc && xCompare instanceof Function){
+          __dbCleanupMap.addCollation(pDb, zName);
+        }
         return rc;
       }catch(e){
         return util.sqlite3_wasm_db_error(pDb, e);

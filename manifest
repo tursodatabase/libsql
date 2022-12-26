@@ -1,5 +1,5 @@
-C Extend\s[0e69b2c379e618]\sto\ssupport\suninstalling\sstale\sJS-to-WASM\sfunction\spointers\sadded\son\sbehalf\sof\sUDFs.
-D 2022-12-26T13:45:10.544
+C Only\sadd\san\son-db-close\scleanup\sentry\sfor\scollations\sif\sadding\sthe\scollation\ssucceeds\sand\sxCompare\sis-a\sJS\sfunction.
+D 2022-12-26T14:25:21.345
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,7 +503,7 @@ F ext/wasm/api/post-js-footer.js cd0a8ec768501d9bd45d325ab0442037fb0e33d1f3b4f08
 F ext/wasm/api/post-js-header.js 47b6b281f39ad59fa6e8b658308cd98ea292c286a68407b35ff3ed9cfd281a62
 F ext/wasm/api/pre-js.c-pp.js b88499dc303c21fc3f55f2c364a0f814f587b60a95784303881169f9e91c1d5f
 F ext/wasm/api/sqlite3-api-cleanup.js 680d5ccfff54459db136a49b2199d9f879c8405d9c99af1dda0cc5e7c29056f4
-F ext/wasm/api/sqlite3-api-glue.js 859180a5cea4e33d18c3a129d41e4068d5330846efa3287f152ac063859055a6
+F ext/wasm/api/sqlite3-api-glue.js 232bdd95abf27ce6e92b5d7e7ad28118992365520599fcc1b91cf25a430ea8bf
 F ext/wasm/api/sqlite3-api-oo1.js 959be9a922d1f012b4a25e7b763c112220bb0efb989f56b82a776ab1ccebe72d
 F ext/wasm/api/sqlite3-api-prologue.js 3792a703ea15be8d4393a99992862c285d62732d760cec95226dc5ec2781d920
 F ext/wasm/api/sqlite3-api-worker1.js c9ef8865f072e61251260b218aa4ed614a21a25e9e3cc6f22acf81794d32fc0b
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e69b2c379e61893c7db8a9c9d270650f2bd63b6cea30811d41136392a2e4f04
-R 45aeadabb85c467b62debc379d9a6901
+P 7a46e629dcbf97ae037c5abb39306af7ad55f1910c1e962373e09d88d8bd5a33
+R ea04524f0bc74032e475c426c786ceba
 U stephan
-Z eea54b677b9aecae6309be4e3e0e63e0
+Z de786855ae41b30556ccc9f965731fe5
 # Remove this line to create a well-formed Fossil manifest.
