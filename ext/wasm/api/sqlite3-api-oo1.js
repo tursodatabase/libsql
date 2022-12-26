@@ -1246,9 +1246,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if(wasm.bigIntEnabled) return t;
           /* else fall through */
         default:
-          //console.log("isSupportedBindType",t,v);
-          return (util.isBindableTypedArray(v) || (v instanceof ArrayBuffer))
-            ? BindTypes.blob : undefined;
+          return util.isBindableTypedArray(v) ? BindTypes.blob : undefined;
     }
   };
 
@@ -1466,7 +1464,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          blob binding).
 
        - Uint8Array, Int8Array, and ArrayBuffer instances are bound as
-         blobs. (TODO? binding the other TypedArray types.)
+         blobs.
 
        If passed an array, each element of the array is bound at
        the parameter index equal to the array index plus 1

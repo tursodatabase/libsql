@@ -321,7 +321,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Returns v if v appears to be one of our bind()-able TypedArray
+     Returns true if v appears to be one of our bind()-able TypedArray
      types: Uint8Array or Int8Array or ArrayBuffer. Support for
      TypedArrays with element sizes >1 is a potential TODO just
      waiting on a use case to justify them. Until then, their `buffer`
@@ -377,7 +377,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      returned. Else v is returned as-is.
   */
   const flexibleString = function(v){
-    if(isSQLableTypedArray(v)) return typedArrayToString(v);
+    if(isSQLableTypedArray(v)){
+      return typedArrayToString(
+        (v instanceof ArrayBuffer) ? new Uint8Array(v) : v
+      );
+    }
     else if(Array.isArray(v)) return v.join("");
     else if(wasm.isPtr(v)) v = wasm.cstrToJs(v);
     return v;
@@ -751,7 +755,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     affirmBindableTypedArray, flexibleString,
     bigIntFits32, bigIntFits64, bigIntFitsDouble,
     isBindableTypedArray,
-    isInt32, isSQLableTypedArray, isTypedArray, 
+    isInt32, isSQLableTypedArray, isTypedArray,
     typedArrayToString,
     isUIThread: ()=>(self.window===self && !!self.document),
     // is this true for ESM?: 'undefined'===typeof WorkerGlobalScope
