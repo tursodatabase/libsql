@@ -662,8 +662,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        terminated with a 0 byte.
 
        In usage (1), the 2nd argument must be of type string,
-       Uint8Array, or Int8Array (either of which is assumed to
-       hold SQL). If it is, this function assumes case (1) and
+       Uint8Array, Int8Array, or ArrayBuffer (all of which are assumed
+       to hold SQL). If it is, this function assumes case (1) and
        calls the underyling C function with the equivalent of:
 
        (pDb, sqlAsString, -1, prepFlags, ppStmt, null)

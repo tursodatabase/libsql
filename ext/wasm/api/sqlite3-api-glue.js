@@ -1146,16 +1146,18 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        Helper for string:flexible conversions which require a
        byte-length counterpart argument. Passed a value and its
-       ostensible length, this function returns [V,N], where V
-       is either v or a transformed copy of v and N is either n,
-       -1, or the byte length of v (if it's a byte array).
+       ostensible length, this function returns [V,N], where V is
+       either v or a transformed copy of v and N is either n, -1, or
+       the byte length of v (if it's a byte array or ArrayBuffer).
     */
     const __flexiString = (v,n)=>{
       if('string'===typeof v){
         n = -1;
       }else if(util.isSQLableTypedArray(v)){
         n = v.byteLength;
-        v = util.typedArrayToString(v);
+        v = util.typedArrayToString(
+          (v instanceof ArrayBuffer) ? new Uint8Array(v) : v
+        );
       }else if(Array.isArray(v)){
         v = v.join("");
         n = -1;
