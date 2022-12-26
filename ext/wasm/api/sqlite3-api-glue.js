@@ -731,43 +731,95 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     );
   };
 
+  /**
+     __dbCleanupMap is infrastructure for recording registration of
+     UDFs and collations so that sqlite3_close_v2() can clean up any
+     automated JS-to-WASM function conversions installed by those.
+  */
+  const __argPDb = (pDb)=>wasm.xWrap.argAdapter('sqlite3*')(pDb);
+  const __argStr = (str)=>wasm.isPtr(str) ? wasm.cstrToJs(str) : str;
+  const __dbCleanupMap = function(
+    pDb, mode/*0=remove, >0=create if needed, <0=do not create if missing*/
+  ){
+    pDb = __argPDb(pDb);
+    let m = this.dbMap.get(pDb);
+    if(!mode){
+      this.dbMap.delete(pDb);
+      return m;
+    }else if(!m && mode>0){
+      this.dbMap.set(pDb, (m = Object.create(null)));
+    }
+    return m;
+  }.bind(Object.assign(Object.create(null),{
+    dbMap: new Map
+  }));
+
+  __dbCleanupMap.addCollation = function(pDb, name){
+    const m = __dbCleanupMap(pDb, 1);
+    if(!m.collation) m.collation = new Set;
+    m.collation.add(__argStr(name).toLowerCase());
+  };
+
+  /**
+     Intended to be called _only_ from sqlite3_close_v2(),
+     passed its non-0 db argument.
+
+     This function freees up certain automatically-installed WASM
+     function bindings which were installed on behalf of the given db,
+     as those may otherwise leak.
+
+     Notable caveat: this is only ever run via
+     sqlite3.capi.sqlite3_close_v2(). If a client, for whatever
+     reason, uses sqlite3.wasm.exports.sqlite3_close_v2() (the
+     function directly exported from WASM), this cleanup will not
+     happen.
+
+     This is not a silver bullet for avoiding automation-related
+     leaks but represents "an honest effort."
+
+     The issue being addressed here is covered at:
+
+     https://sqlite.org/wasm/doc/trunk/api-c-style.md#convert-func-ptr
+  */
+  __dbCleanupMap.cleanup = function(pDb){
+    pDb = __argPDb(pDb);
+    //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+    /**
+       Installing NULL functions in the C API will remove those
+       bindings. The FuncPtrAdapter which sits between us and the C
+       API will also treat that as an opportunity to
+       wasm.uninstallFunction() any WASM function bindings it has
+       installed for pDb.
+    */
+    try{capi.sqlite3_busy_handler(pDb, 0, 0)} catch(e){/*ignored*/}
+    try{capi.sqlite3_progress_handler(pDb, 0, 0, 0)} catch(e){/*ignored*/}
+    try{capi.sqlite3_trace_v2(pDb, 0, 0, 0, 0)} catch(e){/*ignored*/}
+    try{capi.sqlite3_set_authorizer(pDb, 0, 0)} catch(e){/*ignored*/}
+    const m = __dbCleanupMap(pDb, 0);
+    if(!m) return;
+    if(m.collation){
+      for(const name of m.collation){
+        try{
+          capi.sqlite3_create_collation_v2(
+            pDb, name, capi.SQLITE_UTF8, 0, 0, 0
+          );
+        }catch(e){
+          /*ignored*/
+        }
+      }
+      delete m.collation;
+    }
+    if(m.udf){
+      //TODO: map and clean up UDFs.
+    }
+  };
+
   {/* Binding of sqlite3_close_v2() */
     const __sqlite3CloseV2 = wasm.xWrap("sqlite3_close_v2", "int", "sqlite3*");
     capi.sqlite3_close_v2 = function(pDb){
       if(1!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_close_v2', 1);
       if(pDb){
-        /*
-          We do this as a basic attempt at freeing up certain
-          automatically-installed WASM function bindings, as those may
-          otherwise leak. Installing NULL functions in the C API will
-          remove those bindings. The FuncPtrAdapter which sits between
-          us and the C API will also treat that as an opportunity to
-          wasm.uninstallFunction() any WASM function bindings it has
-          installed for pDb.
-
-          This does not catch all such bindings: those which map to
-          both a db handle and a separate key (e.g. collation sequence
-          name or UDF name) cannot be unmapped here because we don't
-          have the other parts of the mapping key. It's also possible
-          for clients to call wasm.exports.sqlite3_close_v2()
-          directly, bypassing this cleanup altogether. i.e. this is
-          not a silver bullet, just an "honest effort."
-
-          Perhaps we can add some code to sqlite3-wasm.c which can
-          walk through the UDF and collation names to help us free up
-          those auto-converted functions, too. Functions are more
-          complicated because a given function may have multiple
-          mappings for different arities.
-
-          The issue being addressed here is covered at:
-
-          https://sqlite.org/wasm/doc/trunk/api-c-style.md#convert-func-ptr
-        */
-        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
-        try{capi.sqlite3_busy_handler(pDb, 0, 0)} catch(e){/*ignored*/}
-        try{capi.sqlite3_progress_handler(pDb, 0, 0, 0)} catch(e){/*ignored*/}
-        try{capi.sqlite3_trace_v2(pDb, 0, 0, 0, 0)} catch(e){/*ignored*/}
-        try{capi.sqlite3_set_authorizer(pDb, 0, 0)} catch(e){/*ignored*/}
+        try{__dbCleanupMap.cleanup(pDb)} catch(e){/*ignored*/}
       }
       return __sqlite3CloseV2(pDb);
     };
@@ -844,7 +896,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         return __errEncoding(pDb);
       }
       try{
-        return __sqlite3CreateCollationV2(pDb, zName, eTextRep, pArg, xCompare, xDestroy);
+        const rc = __sqlite3CreateCollationV2(pDb, zName, eTextRep, pArg, xCompare, xDestroy);
+        if(xCompare) __dbCleanupMap.addCollation(pDb, zName);
+        return rc;
       }catch(e){
         return util.sqlite3_wasm_db_error(pDb, e);
       }
