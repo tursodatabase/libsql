@@ -2,6 +2,7 @@ _malloc
 _free
 _realloc
 _sqlite3_aggregate_context
+_sqlite3_auto_extension
 _sqlite3_bind_blob
 _sqlite3_bind_double
 _sqlite3_bind_int
@@ -13,6 +14,7 @@ _sqlite3_bind_pointer
 _sqlite3_bind_text
 _sqlite3_busy_handler
 _sqlite3_busy_timeout
+_sqlite3_cancel_auto_extension
 _sqlite3_changes
 _sqlite3_changes64
 _sqlite3_clear_bindings
@@ -81,6 +83,7 @@ _sqlite3_randomness
 _sqlite3_realloc
 _sqlite3_realloc64
 _sqlite3_reset
+_sqlite3_reset_auto_extension
 _sqlite3_result_blob
 _sqlite3_result_double
 _sqlite3_result_error

@@ -2688,6 +2688,30 @@ self.sqlite3InitModule = sqlite3InitModule;
   ;/* end OPFS tests */
 
   ////////////////////////////////////////////////////////////////////////
+  T.g('Auto-extension API')
+    .t({
+      name: "Auto-extension sanity checks.",
+      test: function(sqlite3){
+        let counter = 0;
+        const fp = wasm.installFunction('i(ppp)', function(pDb,pzErr,pApi){
+          ++counter;
+          return 0;
+        });
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 0===counter );
+        capi.sqlite3_auto_extension(fp);
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 1===counter );
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 2===counter );
+        capi.sqlite3_cancel_auto_extension(fp);
+        wasm.uninstallFunction(fp);
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 2===counter );
+      }
+    });
+
+  ////////////////////////////////////////////////////////////////////////
   T.g('Session API')
     .t({
       name: 'Session API sanity checks',

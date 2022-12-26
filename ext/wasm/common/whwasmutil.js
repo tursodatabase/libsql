@@ -1560,6 +1560,10 @@ self.WhWasmUtilInstaller = function(target){
          context. This mode is the default if bindScope is _not_ set
          but a property named contextKey (described below) is.
 
+       - 'permanent': the function is installed and left there
+         forever. There is no way to recover its pointer address
+         later on.
+
      - callProxy (function): if set, this must be a function which
        will act as a proxy for any "converted" JS function. It is
        passed the being-converted function value and must return
@@ -1645,6 +1649,7 @@ self.WhWasmUtilInstaller = function(target){
       }
       this.isTransient = 'transient'===this.bindScope;
       this.isContext = 'context'===this.bindScope;
+      this.isPermanent = 'permanent'===this.bindScope;
       this.singleton = ('singleton'===this.bindScope) ? [] : undefined;
       //console.warn("FuncPtrAdapter()",opt,this);
       this.callProxy = (opt.callProxy instanceof Function)
@@ -1668,7 +1673,7 @@ self.WhWasmUtilInstaller = function(target){
     static debugOut = console.debug.bind(console);
 
     static bindScopes = [
-      'transient', 'context', 'singleton'
+      'transient', 'context', 'singleton', 'permanent'
     ];
 
     /* Dummy impl. Overwritten per-instance as needed. */
