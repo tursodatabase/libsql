@@ -3288,7 +3288,7 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** execution of the prepared statement, such as at the start of each
 ** trigger subprogram. ^The P argument is a pointer to the
 ** [prepared statement]. ^The X argument is a pointer to a string which
-** is the unexpanded SQL text of the prepared statement or an SQL comment 
+** is the unexpanded SQL text of the prepared statement or an SQL comment
 ** that indicates the invocation of a trigger.  ^The callback can compute
 ** the same text that would have been returned by the legacy [sqlite3_trace()]
 ** interface by using the X argument when X begins with "--" and invoking
@@ -3298,13 +3298,13 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** <dd>^An SQLITE_TRACE_PROFILE callback provides approximately the same
 ** information as is provided by the [sqlite3_profile()] callback.
 ** ^The P argument is a pointer to the [prepared statement] and the
-** X argument points to a 64-bit integer which is the estimated of
-** the number of nanosecond that the prepared statement took to run.
+** X argument points to a 64-bit integer which is approximately
+** the number of nanoseconds that the prepared statement took to run.
 ** ^The SQLITE_TRACE_PROFILE callback is invoked when the statement finishes.
 **
 ** [[SQLITE_TRACE_ROW]] <dt>SQLITE_TRACE_ROW</dt>
 ** <dd>^An SQLITE_TRACE_ROW callback is invoked whenever a prepared
-** statement generates a single row of result.  
+** statement generates a single row of result.
 ** ^The P argument is a pointer to the [prepared statement] and the
 ** X argument is unused.
 **

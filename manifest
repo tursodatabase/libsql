@@ -1,5 +1,5 @@
-C module-symbols.html:\sadd\ssome\smissing\slinks\sto\sC-side\sAPI\sdocs\sfor\srecently-added\sJS\scounterparts.
-D 2022-12-25T23:54:16.440
+C Grammar\sfixup\sin\scomment\sre\sSQLITE_TRACE_PROFILE\strace\sevent.
+D 2022-12-26T01:44:04.994
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -647,7 +647,7 @@ F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 83de67e4857be2866d048c98e93f65461d8a0408ca4ce88fec68ebfe030997ae
 F src/shell.c.in 01816a1e0eb3a2e9a9a4b11570d68058969c88b2ec5ecaf80c57d6ca1b8d46a4
-F src/sqlite.h.in e752f82b9d71f1d42b259b1900e4b1caf0965e844d756cd5cc91cc2cf45ed925
+F src/sqlite.h.in 7982c691e4647071a6df1ef45e7d704613225259414e153939b0928a9952a1ae
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
 F src/sqliteInt.h 98bc12d3191ff4c70e8491b639784c83d577b7177377d4fb344826ac56bae8a8
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d797e183e96e04520636865204c02307b751fdc2949a04587de9259a1733e37b
-R 3b62b1c0f38c86ade5b52d8fa8da0f03
-U stephan
-Z 2778815949abf0646823d20abb172e24
+P 7d4f4e96f33f37b0774cb8df22ed1ef33062534653a4fadf606704b855e28c49
+R 926f0cd5532702d032b25076c55fd75c
+U larrybr
+Z 868fbc8bce1667a24be059b48b2f0878
 # Remove this line to create a well-formed Fossil manifest.
