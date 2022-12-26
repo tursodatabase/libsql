@@ -1629,7 +1629,6 @@ self.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name:'Scalar UDFs',
-      //predicate: ()=>false,
       test: function(sqlite3){
         const db = this.db;
         db.createFunction("foo",(pCx,a,b)=>a+b);
@@ -1696,6 +1695,45 @@ self.sqlite3InitModule = sqlite3InitModule;
           sqlite3.capi.SQLITE_MISUSE === rc,
           "For invalid arg count."
         );
+
+        /* Confirm that we can map and unmap the same function with
+           multiple arities... */
+        const fCounts = [0,0];
+        const fArityCheck = function(pCx){
+          return ++fCounts[arguments.length-1];
+        };
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        rc = capi.sqlite3_create_function_v2(
+          db, "nary", 0, capi.SQLITE_UTF8, 0, fArityCheck, 0, 0, 0
+        );
+        T.assert( 0===rc );
+        rc = capi.sqlite3_create_function_v2(
+          db, "nary", 1, capi.SQLITE_UTF8, 0, fArityCheck, 0, 0, 0
+        );
+        T.assert( 0===rc );
+        const sqlFArity0 = "select nary()";
+        const sqlFArity1 = "select nary(1)";
+        T.assert( 1 === db.selectValue(sqlFArity0) )
+          .assert( 1 === fCounts[0] ).assert( 0 === fCounts[1] );
+        T.assert( 1 === db.selectValue(sqlFArity1) )
+          .assert( 1 === fCounts[0] ).assert( 1 === fCounts[1] );
+        capi.sqlite3_create_function_v2(
+          db, "nary", 0, capi.SQLITE_UTF8, 0, 0, 0, 0, 0
+        );
+        T.mustThrowMatching((()=>db.selectValue(sqlFArity0)),
+                            (e)=>((e instanceof sqlite3.SQLite3Error)
+                                  && e.message.indexOf("wrong number of arguments")>0),
+                            "0-arity variant was uninstalled.");
+        T.assert( 2 === db.selectValue(sqlFArity1) )
+          .assert( 1 === fCounts[0] ).assert( 2 === fCounts[1] );
+        capi.sqlite3_create_function_v2(
+          db, "nary", 1, capi.SQLITE_UTF8, 0, 0, 0, 0, 0
+        );
+        T.mustThrowMatching((()=>db.selectValue(sqlFArity1)),
+                            (e)=>((e instanceof sqlite3.SQLite3Error)
+                                  && e.message.indexOf("no such function")>0),
+                            "1-arity variant was uninstalled.");
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
       }
     })
 

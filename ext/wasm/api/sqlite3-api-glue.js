@@ -87,7 +87,8 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       "*"
     ]],
     ["sqlite3_busy_timeout","int", "sqlite3*", "int"],
-    ["sqlite3_close_v2", "int", "sqlite3*"],
+    /*[sqlite3_close_v2() is implemented by hand to perform some
+       extra work. "sqlite3_close_v2", "int", "sqlite3*"],*/
     ["sqlite3_changes", "int", "sqlite3*"],
     ["sqlite3_clear_bindings","int", "sqlite3_stmt*"],
     ["sqlite3_collation_needed", "int", "sqlite3*", "*", "*"/*=>v(ppis)*/],
@@ -489,7 +490,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       ]],
       ['sqlite3session_config', 'int', ['int', 'void*']],
       ['sqlite3session_create', 'int', ['sqlite3*', 'string', '**']],
-      ['sqlite3session_delete', undefined, ['sqlite3_session*']],
+      //sqlite3session_delete() is bound manually
       ['sqlite3session_diff', 'int', ['sqlite3_session*', 'string', 'string', '**']],
       ['sqlite3session_enable', 'int', ['sqlite3_session*', 'int']],
       ['sqlite3session_indirect', 'int', ['sqlite3_session*', 'int']],
@@ -730,6 +731,67 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     );
   };
 
+  {/* Binding of sqlite3_close_v2() */
+    const __sqlite3CloseV2 = wasm.xWrap("sqlite3_close_v2", "int", "sqlite3*");
+    capi.sqlite3_close_v2 = function(pDb){
+      if(1!==arguments.length) return __dbArgcMismatch(pDb, 'sqlite3_close_v2', 1);
+      if(pDb){
+        /*
+          We do this as a basic attempt at freeing up certain
+          automatically-installed WASM function bindings, as those may
+          otherwise leak. Installing NULL functions in the C API will
+          remove those bindings. The FuncPtrAdapter which sits between
+          us and the C API will also treat that as an opportunity to
+          wasm.uninstallFunction() any WASM function bindings it has
+          installed for pDb.
+
+          This does not catch all such bindings: those which map to
+          both a db handle and a separate key (e.g. collation sequence
+          name or UDF name) cannot be unmapped here because we don't
+          have the other parts of the mapping key. It's also possible
+          for clients to call wasm.exports.sqlite3_close_v2()
+          directly, bypassing this cleanup altogether. i.e. this is
+          not a silver bullet, just an "honest effort."
+
+          Perhaps we can add some code to sqlite3-wasm.c which can
+          walk through the UDF and collation names to help us free up
+          those auto-converted functions, too. Functions are more
+          complicated because a given function may have multiple
+          mappings for different arities.
+
+          The issue being addressed here is covered at:
+
+          https://sqlite.org/wasm/doc/trunk/api-c-style.md#convert-func-ptr
+        */
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        try{capi.sqlite3_busy_handler(pDb, 0, 0)} catch(e){/*ignored*/}
+        try{capi.sqlite3_progress_handler(pDb, 0, 0, 0)} catch(e){/*ignored*/}
+        try{capi.sqlite3_trace_v2(pDb, 0, 0, 0, 0)} catch(e){/*ignored*/}
+        try{capi.sqlite3_set_authorizer(pDb, 0, 0)} catch(e){/*ignored*/}
+      }
+      return __sqlite3CloseV2(pDb);
+    };
+  }/*sqlite3_close_v2()*/
+
+  if(capi.sqlite3session_table_filter){
+    const __sqlite3SessionDelete = wasm.xWrap(
+      'sqlite3session_delete', undefined, ['sqlite3_session*']
+    );
+    capi.sqlite3session_delete = function(pSession){
+      if(1!==arguments.length){
+        return __dbArgcMismatch(pDb, 'sqlite3session_delete', 1);
+        /* Yes, we're returning a value from a void function. That seems
+           like the lesser evil compared to not maintaining arg-count
+           consistency as we do with other similar bindings. */
+      }
+      else if(pSession){
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        capi.sqlite3session_table_filter(pSession, 0, 0);
+      }
+      __sqlite3SessionDelete(pSession);
+    };
+  }
+
   {/* Bindings for sqlite3_create_collation[_v2]() */
     // contextKey() impl for wasm.xWrap.FuncPtrAdapter
     const contextKey = (argv,argIndex)=>{
@@ -798,13 +860,13 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   {/* Special-case handling of sqlite3_create_function_v2()
       and sqlite3_create_window_function(). */
-    /**
-       FuncPtrAdapter for contextKey() for sqlite3_create_function().
-    */
+    /** FuncPtrAdapter for contextKey() for sqlite3_create_function()
+        and friends. */
     const contextKey = function(argv,argIndex){
       return (
         argv[0/* sqlite3* */]
-          +':'+argIndex
+          +':'+(argv[2/*number of UDF args*/] < 0 ? -1 : argv[2])
+          +':'+argIndex/*distinct for each xAbc callback type*/
           +':'+wasm.cstrToJs(argv[1]).toLowerCase()
       )
     };

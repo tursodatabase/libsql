@@ -1499,7 +1499,7 @@ self.WhWasmUtilInstaller = function(target){
   */
   const AbstractArgAdapter = class {
     constructor(opt){
-      this.name = opt.name;
+      this.name = opt.name || 'unnamed adapter';
     }
     /**
        Gets called via xWrap() to "convert" v to whatever type
@@ -1651,7 +1651,20 @@ self.WhWasmUtilInstaller = function(target){
         ? opt.callProxy : undefined;
     }
 
+    /** If true, the constructor emits a warning. The intent is that
+        this be set to true after bootstrapping of the higher-level
+        client library is complete, to warn downstream clients that
+        they shouldn't be relying on this implemenation detail which
+        does not have a stable interface. */
     static warnOnUse = false;
+
+    /** If true, convertArg() will FuncPtrAdapter.debugOut() when it
+        (un)installs a function binding to/from WASM.
+    */
+    static debugFuncInstall = false;
+
+    /** Function used for debug output. */
+    static debugOut = console.debug.bind(console);
 
     static bindScopes = [
       'transient', 'context', 'singleton'
@@ -1692,7 +1705,7 @@ self.WhWasmUtilInstaller = function(target){
        exactly the 2nd and 3rd arguments are.
     */
     convertArg(v,argv,argIndex){
-      //console.warn("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
+      //FuncPtrAdapter.debugOut("FuncPtrAdapter.convertArg()",this.signature,this.transient,v);
       let pair = this.singleton;
       if(!pair && this.isContext){
         pair = this.contextMap(this.contextKey(argv,argIndex));
@@ -1702,9 +1715,17 @@ self.WhWasmUtilInstaller = function(target){
         /* Install a WASM binding and return its pointer. */
         if(this.callProxy) v = this.callProxy(v);
         const fp = __installFunction(v, this.signature, this.isTransient);
+        if(FuncPtrAdapter.debugFuncInstall){
+          FuncPtrAdapter.debugOut("FuncPtrAdapter installed", this,
+                                  this.contextKey(argv,argIndex), '@'+fp, v);
+        }
         if(pair){
           /* Replace existing stashed mapping */
           if(pair[1]){
+            if(FuncPtrAdapter.debugFuncInstall){
+              FuncPtrAdapter.debugOut("FuncPtrAdapter uninstalling", this,
+                                      this.contextKey(argv,argIndex), '@'+pair[1], v);
+            }
             try{target.uninstallFunction(pair[1])}
             catch(e){/*ignored*/}
           }
@@ -1715,7 +1736,10 @@ self.WhWasmUtilInstaller = function(target){
       }else if(target.isPtr(v) || null===v || undefined===v){
         if(pair && pair[1] && pair[1]!==v){
           /* uninstall stashed mapping and replace stashed mapping with v. */
-          //console.warn("FuncPtrAdapter is uninstalling function", this.contextKey(argv,argIndex),v);
+          if(FuncPtrAdapter.debugFuncInstall){
+            FuncPtrAdapter.debugOut("FuncPtrAdapter uninstalling", this,
+                                    this.contextKey(argv,argIndex), '@'+pair[1], v);
+          }
           try{target.uninstallFunction(pair[1])}
           catch(e){/*ignored*/}
           pair[0] = pair[1] = (v | 0);
