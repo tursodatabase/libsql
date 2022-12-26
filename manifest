@@ -1,5 +1,5 @@
-C Document\ssqlite3.capi.sqlite3_prepare_v3()\sas\saccepting\san\sArrayBuffer\sand\sensure\sthat\sit\scan.
-D 2022-12-26T15:08:48.274
+C Fix\san\sinfinite\sloop\sin\sthe\sMEMSYS5\sauxiliary\smemory\sallocator\sthat\soccurs\nfor\smemory\sallocations\sbetween\s1GiB\sand\s2GiB\sin\ssize.\s\sError\sintroduced\nby\scheck-in\s[949133231f8f751a].\s\sThe\sproblem\sonly\saffects\sbuilds\sthat\ninclude\sthe\sSQLITE_ENABLE_MEMSYS5\scompile-time\soption.
+D 2022-12-26T15:14:24.028
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
-F src/mem5.c 5a3dbd8ac8a6501152a4fc1fcae9b0900c2d7eb0589c4ec7456fdde15725a26c
+F src/mem5.c b658f3dd447ad8963d2b4b3f0081aa71f0c827eb99f9cb54675bdf2eea5ad34e
 F src/memdb.c 559c42e61eb70cd6d4bc692b042497133c6d96c09a3d514d92f3dac72268e223
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eff5d3bec29043cc1182bbb5229040dac5ff50264d025e354736bb63b4bc97a0
-R 6ff80c69205054a7da640050cde0ccdf
-U stephan
-Z 3c914ac569efd4e323dbc54f2636bac4
+P ae3ae92ec45d3d5de92e70876502f8108fc3fcd87848e86c2b83f8842f1ff139
+R af6df6d036a8bd991cf092623d05af75
+U drh
+Z 333253e835d0b6bf644788ba3ea65af5
 # Remove this line to create a well-formed Fossil manifest.
