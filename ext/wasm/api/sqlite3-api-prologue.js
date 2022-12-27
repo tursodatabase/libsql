@@ -1780,17 +1780,17 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Internal impl of sqlite3_preupdate_new_js() and
-     sqlite3_preupdate_old_js().
+     Internal impl of sqlite3_preupdate_new/old_js() and
+     sqlite3changeset_new/old_js().
   */
-  const __preupdateNewOld = function(pDb, iCol, impl){
+  const __newOldValue = function(pObj, iCol, impl){
     impl = capi[impl];
     if(!this.ptr) this.ptr = wasm.allocPtr();
     else wasm.pokePtr(this.ptr, 0);
-    const rc = impl(pDb, iCol, this.ptr);
-    return rc
-      ? SQLite3Error.toss(rc,arguments[2]+"() failed with code "+rc)
-      : capi.sqlite3_value_to_js( wasm.peekPtr(this.ptr), true );
+    const rc = impl(pObj, iCol, this.ptr);
+    if(rc) return SQLite3Error.toss(rc,arguments[2]+"() failed with code "+rc);
+    const pv = wasm.peekPtr(this.ptr);
+    return pv ? capi.sqlite3_value_to_js( pv, true ) : undefined;
   }.bind(Object.create(null));
 
   /**
@@ -1799,15 +1799,35 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      passing it to sqlite3_value_to_js(). Throws on error.
   */
   capi.sqlite3_preupdate_new_js =
-    (pDb, iCol)=>__preupdateNewOld(pDb, iCol, 'sqlite3_preupdate_new');
+    (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_new');
 
   /**
-     A wrapper around sqlite3_preupdate_old() which fetches the
-     sqlite3_value at the given index and returns the result of
-     passing it to sqlite3_value_to_js(). Throws on error.
+     The sqlite3_preupdate_old() counterpart of
+     sqlite3_preupdate_new_js(), with an identical interface.
   */
   capi.sqlite3_preupdate_old_js =
-    (pDb, iCol)=>__preupdateNewOld(pDb, iCol, 'sqlite3_preupdate_old');
+    (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_old');
+
+  /**
+     A wrapper around sqlite3changeset_new() which fetches the
+     sqlite3_value at the given index and returns the result of
+     passing it to sqlite3_value_to_js(). Throws on error.
+
+     If sqlite3changeset_new() succeeds but has no value to report,
+     this function returns the undefined value, noting that undefined
+     is a valid conversion from an `sqlite3_value`, so is unambiguous.
+  */
+  capi.sqlite3changeset_new_js =
+    (pChangesetIter, iCol) => __newOldValue(pChangesetIter, iCol,
+                                            'sqlite3changeset_new');
+
+  /**
+     The sqlite3changeset_old() counterpart of
+     sqlite3changeset_new_js(), with an identical interface.
+  */
+  capi.sqlite3changeset_old_js =
+    (pChangesetIter, iCol)=>__newOldValue(pChangesetIter, iCol,
+                                          'sqlite3changeset_old');
 
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
