@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\sfts5.
-D 2022-12-27T13:52:25.183
+C Fix\sa\smissing\s0\sat\sthe\send\sof\san\sinteger\sliteral\sin\scheck-in\s[8da0f0c38a458c57]
+D 2022-12-27T14:03:04.522
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
 F src/mem2.c c8bfc9446fd0798bddd495eb5d9dbafa7d4b7287d8c22d50a83ac9daa26d8a75
 F src/mem3.c 30301196cace2a085cbedee1326a49f4b26deff0af68774ca82c1f7c06fda4f6
-F src/mem5.c b658f3dd447ad8963d2b4b3f0081aa71f0c827eb99f9cb54675bdf2eea5ad34e
+F src/mem5.c b7da5c10a726aacacc9ad7cdcb0667deec643e117591cc69cf9b4b9e7f3e96ff
 F src/memdb.c 559c42e61eb70cd6d4bc692b042497133c6d96c09a3d514d92f3dac72268e223
 F src/memjournal.c c283c6c95d940eb9dc70f1863eef3ee40382dbd35e5a1108026e7817c206e8a0
 F src/msvc.h 3a15918220367a8876be3fa4f2abe423a861491e84b864fb2b7426bf022a28f8
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 335ef03eb9694d1fd123f113f235cd34e97834fadc5f7c80489b6513be45d070
-R 2e1c32479eaa51c919684a428b4abbdb
-U dan
-Z 9a5d2ca8dcdd1a53ba4348f8e818c2aa
+P ff5a9b054f4d5ad3d33787aee93b4181822c6dfc513626236d9867bb431f64da
+R f92681d8d01e129072904a73edd86d3a
+U drh
+Z 8530f7f2ef51d599626e5ba8501c27e4
 # Remove this line to create a well-formed Fossil manifest.
