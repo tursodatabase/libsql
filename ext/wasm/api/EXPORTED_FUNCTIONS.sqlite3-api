@@ -79,6 +79,12 @@ _sqlite3_open_v2
 _sqlite3_overload_function
 _sqlite3_prepare_v2
 _sqlite3_prepare_v3
+_sqlite3_preupdate_blobwrite
+_sqlite3_preupdate_count
+_sqlite3_preupdate_depth
+_sqlite3_preupdate_hook
+_sqlite3_preupdate_new
+_sqlite3_preupdate_old
 _sqlite3_progress_handler
 _sqlite3_randomness
 _sqlite3_realloc

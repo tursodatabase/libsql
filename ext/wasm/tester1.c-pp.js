@@ -2690,7 +2690,7 @@ self.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
   T.g('Hook APIs')
     .t({
-      name: "Commit/rollback/update hooks",
+      name: "sqlite3_commit/rollback/update_hook()",
       predicate: ()=>wasm.bigIntEnabled || "Update hook requires int64",
       test: function(sqlite3){
         let countCommit = 0, countRollback = 0;;
@@ -2746,7 +2746,7 @@ self.sqlite3InitModule = sqlite3InitModule;
               case capi.SQLITE_DELETE:
                 countUpdate[op] = (countUpdate[op]||0) + 1;
                 break;
-              default: return;
+              default: toss("Unexpected hook operator:",op);
           }
         }, 3);
         db.transaction((d)=>{
@@ -2770,7 +2770,51 @@ self.sqlite3InitModule = sqlite3InitModule;
         //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
         db.close();
       }
-    });
+    })/* commit/rollback/update hooks */
+    .t({
+      name: "sqlite3_preupdate_hook()",
+      predicate: ()=>wasm.bigIntEnabled || "Pre-update hook requires int64",
+      test: function(sqlite3){
+        const db = new sqlite3.oo1.DB(':memory:', 1 ? 'c' : 'ct');
+        const countHook = Object.create(null);
+        let rc = capi.sqlite3_preupdate_hook(
+          db, function(p, pDb, op, zDb, zTbl, iKey1, iKey2){
+            T.assert(9 === p)
+              .assert(db.pointer === pDb)
+              .assert(1 === capi.sqlite3_preupdate_count(pDb))
+              .assert( 0 > capi.sqlite3_preupdate_blobwrite(pDb) );
+            countHook[op] = (countHook[op]||0) + 1;
+            switch(op){
+                case capi.SQLITE_INSERT:
+                case capi.SQLITE_UPDATE:
+                 T.assert('number' === typeof capi.sqlite3_preupdate_new_js(pDb, 0));
+                  break;
+                case capi.SQLITE_DELETE:
+                 T.assert('number' === typeof capi.sqlite3_preupdate_old_js(pDb, 0));
+                  break;
+                default: toss("Unexpected hook operator:",op);
+            }
+          },
+          9
+        );
+        db.transaction((d)=>{
+          d.exec([
+            "create table t(a);",
+            "insert into t(a) values(1);",
+            "update t set a=2;",
+            "update t set a=3;",
+            "delete from t where a=3"
+          ]);
+        });
+        T.assert(1 === countHook[capi.SQLITE_INSERT])
+          .assert(2 === countHook[capi.SQLITE_UPDATE])
+          .assert(1 === countHook[capi.SQLITE_DELETE]);
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        db.close();
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+      }
+    })/*pre-update hooks*/
+  ;/*end hook API tests*/
 
   ////////////////////////////////////////////////////////////////////////
   T.g('Auto-extension API')

@@ -338,6 +338,26 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_malloc64", "*","i64"],
     ["sqlite3_msize", "i64", "*"],
     ["sqlite3_overload_function", "int", ["sqlite3*","string","int"]],
+    ["sqlite3_preupdate_blobwrite", "int", "sqlite3*"],
+    ["sqlite3_preupdate_count", "int", "sqlite3*"],
+    ["sqlite3_preupdate_depth", "int", "sqlite3*"],
+    ["sqlite3_preupdate_hook", "*", [
+      "sqlite3*",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: 'sqlite3_preupdate_hook',
+        signature: "v(ppippjj)",
+        contextKey: (argv)=>argv[0/* sqlite3* */],
+        callProxy: (callback)=>{
+          return (p,db,op,zDb,zTbl,iKey1,iKey2)=>{
+            callback(p, db, op, wasm.cstrToJs(zDb), wasm.cstrToJs(zTbl),
+                     iKey1, iKey2);
+          };
+        }
+      }),
+      "*"
+    ]],
+    ["sqlite3_preupdate_new", "int", ["sqlite3*", "int", "**"]],
+    ["sqlite3_preupdate_old", "int", ["sqlite3*", "int", "**"]],
     ["sqlite3_realloc64", "*","*", "i64"],
     ["sqlite3_result_int64", undefined, "*", "i64"],
     ["sqlite3_result_zeroblob64", "int", "*", "i64"],
@@ -895,7 +915,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Intended to be called _only_ from sqlite3_close_v2(),
      passed its non-0 db argument.
 
-     This function freees up certain automatically-installed WASM
+     This function frees up certain automatically-installed WASM
      function bindings which were installed on behalf of the given db,
      as those may otherwise leak.
 
@@ -914,7 +934,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   */
   __dbCleanupMap.cleanup = function(pDb){
     pDb = __argPDb(pDb);
-    wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+    //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
     /**
        Installing NULL functions in the C API will remove those
        bindings. The FuncPtrAdapter which sits between us and the C
@@ -922,13 +942,26 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        wasm.uninstallFunction() any WASM function bindings it has
        installed for pDb.
     */
-    try{capi.sqlite3_busy_handler(pDb, 0, 0)} catch(e){/*ignored*/}
-    try{capi.sqlite3_commit_hook(pDb, 0, 0)} catch(e){/*ignored*/}
-    try{capi.sqlite3_progress_handler(pDb, 0, 0, 0)} catch(e){/*ignored*/}
-    try{capi.sqlite3_rollback_hook(pDb, 0, 0)} catch(e){/*ignored*/}
-    try{capi.sqlite3_set_authorizer(pDb, 0, 0)} catch(e){/*ignored*/}
-    try{capi.sqlite3_trace_v2(pDb, 0, 0, 0, 0)} catch(e){/*ignored*/}
-    try{capi.sqlite3_update_hook(pDb, 0, 0)} catch(e){/*ignored*/}
+    const closeArgs = [pDb];
+    for(const name of [
+      'sqlite3_busy_handler',
+      'sqlite3_commit_hook',
+      'sqlite3_preupdate_hook',
+      'sqlite3_progress_handler',
+      'sqlite3_rollback_hook',
+      'sqlite3_set_authorizer',
+      'sqlite3_trace_v2',
+      'sqlite3_update_hook'
+    ]) {
+      const x = wasm.exports[name];
+      closeArgs.length = x.length/*==argument count*/
+      /* recall that undefined entries translate to 0 when passed to
+         WASM. */;
+      try{ capi[name](...closeArgs) }
+      catch(e){
+        console.warn("close-time call of",name+"(",closeArgs,") threw:",e);
+      }
+    }
     const m = __dbCleanupMap(pDb, 0);
     if(!m) return;
     if(m.collation){

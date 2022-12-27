@@ -139,7 +139,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        main thread (aborts via a failed assert() if it's attempted),
        which eliminates any(?) benefit to supporting it. */  false;
 
-  /** 
+  /**
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
       names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
@@ -1778,6 +1778,36 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     const v = capi.sqlite3_column_value(pStmt, iCol);
     return (0===v) ? undefined : capi.sqlite3_value_to_js(v, throwIfCannotConvert);
   };
+
+  /**
+     Internal impl of sqlite3_preupdate_new_js() and
+     sqlite3_preupdate_old_js().
+  */
+  const __preupdateNewOld = function(pDb, iCol, impl){
+    impl = capi[impl];
+    if(!this.ptr) this.ptr = wasm.allocPtr();
+    else wasm.pokePtr(this.ptr, 0);
+    const rc = impl(pDb, iCol, this.ptr);
+    return rc
+      ? SQLite3Error.toss(rc,arguments[2]+"() failed with code "+rc)
+      : capi.sqlite3_value_to_js( wasm.peekPtr(this.ptr), true );
+  }.bind(Object.create(null));
+
+  /**
+     A wrapper around sqlite3_preupdate_new() which fetches the
+     sqlite3_value at the given index and returns the result of
+     passing it to sqlite3_value_to_js(). Throws on error.
+  */
+  capi.sqlite3_preupdate_new_js =
+    (pDb, iCol)=>__preupdateNewOld(pDb, iCol, 'sqlite3_preupdate_new');
+
+  /**
+     A wrapper around sqlite3_preupdate_old() which fetches the
+     sqlite3_value at the given index and returns the result of
+     passing it to sqlite3_value_to_js(). Throws on error.
+  */
+  capi.sqlite3_preupdate_old_js =
+    (pDb, iCol)=>__preupdateNewOld(pDb, iCol, 'sqlite3_preupdate_old');
 
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {
