@@ -31,6 +31,7 @@ _sqlite3_column_name
 _sqlite3_column_text
 _sqlite3_column_type
 _sqlite3_column_value
+_sqlite3_commit_hook
 _sqlite3_compileoption_get
 _sqlite3_compileoption_used
 _sqlite3_complete
@@ -98,6 +99,7 @@ _sqlite3_result_subtype
 _sqlite3_result_text
 _sqlite3_result_zeroblob
 _sqlite3_result_zeroblob64
+_sqlite3_rollback_hook
 _sqlite3_serialize
 _sqlite3_set_authorizer
 _sqlite3_set_auxdata
@@ -120,6 +122,7 @@ _sqlite3_total_changes
 _sqlite3_total_changes64
 _sqlite3_trace_v2
 _sqlite3_txn_state
+_sqlite3_update_hook
 _sqlite3_uri_boolean
 _sqlite3_uri_int64
 _sqlite3_uri_key

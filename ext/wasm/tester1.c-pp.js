@@ -2688,6 +2688,88 @@ self.sqlite3InitModule = sqlite3InitModule;
   ;/* end OPFS tests */
 
   ////////////////////////////////////////////////////////////////////////
+  T.g('Hook APIs')
+    .t({
+      name: "Commit/update/rollback hooks.",
+      predicate: ()=>wasm.bigIntEnabled || "Update hook requires int64",
+      test: function(sqlite3){
+        let countCommit = 0, countRollback = 0;;
+        const db = new sqlite3.oo1.DB(':memory:',1 ? 'c' : 'ct');
+        let rc = capi.sqlite3_commit_hook(db, (p)=>{
+          ++countCommit;
+          return (1 === p) ? 0 : capi.SQLITE_ERROR;
+        }, 1);
+        T.assert( 0 === rc /*void pointer*/ );
+
+        // Commit hook...
+        db.exec("BEGIN; SELECT 1; COMMIT");
+        T.assert(0 === countCommit,
+                 "No-op transactions (mostly) do not trigger commit hook.");
+        db.exec("BEGIN EXCLUSIVE; SELECT 1; COMMIT");
+        T.assert(1 === countCommit,
+                 "But EXCLUSIVE transactions do.");
+        db.transaction((d)=>{d.exec("create table t(a)");});
+        T.assert(2 === countCommit);
+
+        // Rollback hook:
+        rc = capi.sqlite3_rollback_hook(db, (p)=>{
+          ++countRollback;
+          T.assert( 2 === p );
+        }, 2);
+        T.assert( 0 === rc /*void pointer*/ );
+        T.mustThrowMatching(()=>{
+          db.transaction('drop table t',()=>{})
+        }, (e)=>{
+          return (capi.SQLITE_MISUSE === e.resultCode)
+            && ( e.message.indexOf('Invalid argument') > 0 );
+        });
+        T.assert(0 === countRollback, "Transaction was not started.");
+        T.mustThrowMatching(()=>{
+          db.transaction('immediate', ()=>{
+            sqlite3.SQLite3Error.toss(capi.SQLITE_FULL,'testing rollback hook');
+          });
+        }, (e)=>{
+          return capi.SQLITE_FULL === e.resultCode
+        });
+        T.assert(1 === countRollback);
+
+        // Update hook...
+        const countUpdate = Object.create(null);
+        capi.sqlite3_update_hook(db, (p,op,db,tbl,rowid)=>{
+          switch(op){
+              case capi.SQLITE_INSERT:
+              case capi.SQLITE_UPDATE:
+              case capi.SQLITE_DELETE:
+                countUpdate[op] = (countUpdate[op]||0) + 1;
+                break;
+              default: return;
+          }
+          T.assert(3===p).assert('bigint' === typeof rowid);
+        }, 3);
+        db.transaction((d)=>{
+          d.exec([
+            "insert into t(a) values(1);",
+            "update t set a=2;",
+            "update t set a=3;",
+            "delete from t where a=3"
+            // update hook is not called for an unqualified DELETE
+          ]);
+        });
+        T.assert(1 === countRollback)
+          .assert(3 === countCommit)
+          .assert(1 === countUpdate[capi.SQLITE_INSERT])
+          .assert(2 === countUpdate[capi.SQLITE_UPDATE])
+          .assert(1 === countUpdate[capi.SQLITE_DELETE]);
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        T.assert(1 === capi.sqlite3_commit_hook(db, 0, 0));
+        T.assert(2 === capi.sqlite3_rollback_hook(db, 0, 0));
+        T.assert(3 === capi.sqlite3_update_hook(db, 0, 0));
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+        db.close();
+      }
+    });
+
+  ////////////////////////////////////////////////////////////////////////
   T.g('Auto-extension API')
     .t({
       name: "Auto-extension sanity checks.",

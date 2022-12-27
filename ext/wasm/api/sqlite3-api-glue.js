@@ -103,6 +103,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_column_text","string", "sqlite3_stmt*", "int"],
     ["sqlite3_column_type","int", "sqlite3_stmt*", "int"],
     ["sqlite3_column_value","sqlite3_value*", "sqlite3_stmt*", "int"],
+    ["sqlite3_commit_hook", "void*", [
+      "sqlite3*",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: 'sqlite3_commit_hook',
+        signature: 'i(p)',
+        contextKey: (argv)=>argv[0/* sqlite3* */]
+      }),
+      '*'
+    ]],
     ["sqlite3_compileoption_get", "string", "int"],
     ["sqlite3_compileoption_used", "int", "string"],
     ["sqlite3_complete", "int", "string:flexible"],
@@ -206,6 +215,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_result_subtype", undefined, "sqlite3_value*", "int"],
     ["sqlite3_result_text", undefined, "sqlite3_context*", "string", "int", "*"],
     ["sqlite3_result_zeroblob", undefined, "sqlite3_context*", "int"],
+    ["sqlite3_rollback_hook", "void*", [
+      "sqlite3*",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: 'sqlite3_rollback_hook',
+        signature: 'v(p)',
+        contextKey: (argv)=>argv[0/* sqlite3* */]
+      }),
+      '*'
+    ]],
     ["sqlite3_set_authorizer", "int", [
       "sqlite3*",
       new wasm.xWrap.FuncPtrAdapter({
@@ -327,6 +345,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_set_last_insert_rowid", undefined, ["sqlite3*", "i64"]],
     ["sqlite3_status64", "int", "int", "*", "*", "int"],
     ["sqlite3_total_changes64", "i64", ["sqlite3*"]],
+    ["sqlite3_update_hook", "*", [
+      "sqlite3*",
+      new wasm.xWrap.FuncPtrAdapter({
+        name: 'sqlite3_update_hook',
+        signature: "v(iippj)",
+        contextKey: (argv)=>argv[0/* sqlite3* */],
+        callProxy: (callback)=>{
+          return (p,op,z0,z1,rowid)=>{
+            callback(p, op, wasm.cstrToJs(z0), wasm.cstrToJs(z1), rowid);
+          };
+        }
+      }),
+      "*"
+    ]],
     ["sqlite3_uri_int64", "i64", ["sqlite3_filename", "string", "i64"]],
     ["sqlite3_value_int64","i64", "sqlite3_value*"],
     ["sqlite3_vtab_collation","string","sqlite3_index_info*","int"],
@@ -704,7 +736,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           message = message || ''+resultCode;
           resultCode = (resultCode.resultCode || capi.SQLITE_ERROR);
         }
-        return __db_err(pDb, resultCode, message);
+        return pDb ? __db_err(pDb, resultCode, message) : resultCode;
       };
     }else{
       util.sqlite3_wasm_db_error = function(pDb,errCode,msg){
@@ -891,9 +923,12 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        installed for pDb.
     */
     try{capi.sqlite3_busy_handler(pDb, 0, 0)} catch(e){/*ignored*/}
+    try{capi.sqlite3_commit_hook(pDb, 0, 0)} catch(e){/*ignored*/}
     try{capi.sqlite3_progress_handler(pDb, 0, 0, 0)} catch(e){/*ignored*/}
-    try{capi.sqlite3_trace_v2(pDb, 0, 0, 0, 0)} catch(e){/*ignored*/}
+    try{capi.sqlite3_rollback_hook(pDb, 0, 0)} catch(e){/*ignored*/}
     try{capi.sqlite3_set_authorizer(pDb, 0, 0)} catch(e){/*ignored*/}
+    try{capi.sqlite3_trace_v2(pDb, 0, 0, 0, 0)} catch(e){/*ignored*/}
+    try{capi.sqlite3_update_hook(pDb, 0, 0)} catch(e){/*ignored*/}
     const m = __dbCleanupMap(pDb, 0);
     if(!m) return;
     if(m.collation){
