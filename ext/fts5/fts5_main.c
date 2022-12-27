@@ -1625,7 +1625,7 @@ static int fts5UpdateMethod(
   int rc = SQLITE_OK;             /* Return code */
 
   /* A transaction must be open when this is called. */
-  assert( pTab->ts.eState==1 );
+  assert( pTab->ts.eState==1 || pTab->ts.eState==2 );
 
   assert( pVtab->zErrMsg==0 );
   assert( nArg==1 || nArg==(2+pConfig->nCol+2) );
