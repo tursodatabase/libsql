@@ -1,5 +1,5 @@
-C Expose\ssqlite3_commit/rollback/update_hook()\sto\sJS\sAPI.
-D 2022-12-27T12:13:01.660
+C Add\stwo\smore\stests\sto\s[f99f8e3ecfe20].
+D 2022-12-27T12:17:20.531
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -555,7 +555,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js f09266873e1a34d9bdb6d3981ec8c9e382f31f215c9fd2f9016d2394b8ae9b7b
 F ext/wasm/tester1-worker.html d43f3c131d88f10d00aff3e328fed13c858d674ea2ff1ff90225506137f85aa9
 F ext/wasm/tester1.c-pp.html d34bef3d48e5cbc1c7c06882ad240fec49bf88f5f65696cc2c72c416933aa406
-F ext/wasm/tester1.c-pp.js e183830a1c09e9535fea0f28ad8ed60049797d0461450e590f39e61aee48ae81
+F ext/wasm/tester1.c-pp.js 1c14fd42a66e22204bf9444f03f06a25f326cce495475b215caf0b946cc7ec15
 F ext/wasm/tests/opfs/concurrency/index.html 86d8ac435074d1e7007b91105f4897f368c165e8cecb6a9aa3d81f5cf5dcbe70
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 507335c12b1dbe21d180cf6f0a0deb4cc737417acb44c8f1d8fac98b86f62b01
-R 1861a6bdb0fe2e8302265dde3d3ce972
+P f99f8e3ecfe205337996ee61c0b9f139d3e8788b14f32e26560888b3a16564de
+R 51d3334085c220c05328003abe0ae370
 U stephan
-Z 65af223f5379fb35b8546fe3024152a5
+Z f6ae1936446bb6550f102dedb48b83c9
 # Remove this line to create a well-formed Fossil manifest.

@@ -2735,7 +2735,11 @@ self.sqlite3InitModule = sqlite3InitModule;
 
         // Update hook...
         const countUpdate = Object.create(null);
-        capi.sqlite3_update_hook(db, (p,op,db,tbl,rowid)=>{
+        capi.sqlite3_update_hook(db, (p,op,dbName,tbl,rowid)=>{
+          T.assert('main' === dbName.toLowerCase())
+            .assert('t' === tbl.toLowerCase())
+            .assert(3===p)
+            .assert('bigint' === typeof rowid);
           switch(op){
               case capi.SQLITE_INSERT:
               case capi.SQLITE_UPDATE:
@@ -2744,7 +2748,6 @@ self.sqlite3InitModule = sqlite3InitModule;
                 break;
               default: return;
           }
-          T.assert(3===p).assert('bigint' === typeof rowid);
         }, 3);
         db.transaction((d)=>{
           d.exec([
