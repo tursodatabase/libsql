@@ -2690,7 +2690,7 @@ self.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////////
   T.g('Hook APIs')
     .t({
-      name: "Commit/update/rollback hooks.",
+      name: "Commit/rollback/update hooks",
       predicate: ()=>wasm.bigIntEnabled || "Update hook requires int64",
       test: function(sqlite3){
         let countCommit = 0, countRollback = 0;;
