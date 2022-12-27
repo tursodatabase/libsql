@@ -1180,9 +1180,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Note that transactions may not be nested, so this will throw if
        it is called recursively. For nested transactions, use the
        savepoint() method or manually manage SAVEPOINTs using exec().
+
+       If called with 2 arguments, the first must be a keyword which
+       is legal immediately after a BEGIN statement, e.g. one of
+       "DEFERRED", "IMMEDIATE", or "EXCLUSIVE". Though the exact list
+       of supported keywords is not hard-coded here, in order to be
+       future-compatible, if the argument does not look like a single
+       keyword then an exception is triggered with a description of
+       the problem.
      */
-    transaction: function(callback){
-      affirmDbOpen(this).exec("BEGIN");
+    transaction: function(/* [beginQualifier,] */callback){
+      let opener = 'BEGIN';
+      if(arguments.length>1){
+        if(/[^a-zA-Z]/.test(arguments[0])){
+          toss3(capi.SQLITE_MISUSE, "Invalid argument for BEGIN qualifier.");
+        }
+        opener += ' '+arguments[0];
+        callback = arguments[1];
+      }
+      affirmDbOpen(this).exec(opener);
       try {
         const rc = callback(this);
         this.exec("COMMIT");

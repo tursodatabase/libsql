@@ -1,5 +1,5 @@
-C Expose\sthe\sauto-extension\sAPI\sto\sJS\sand\sreorganize\ssome\snearby\scode.
-D 2022-12-26T17:15:05.417
+C Add\san\soptional\sargument\sto\soo1.DB.transaction()\sto\sspecify\san\sexplicit\sBEGIN\squalifier.
+D 2022-12-27T11:40:05.031
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -504,7 +504,7 @@ F ext/wasm/api/post-js-header.js 47b6b281f39ad59fa6e8b658308cd98ea292c286a68407b
 F ext/wasm/api/pre-js.c-pp.js b88499dc303c21fc3f55f2c364a0f814f587b60a95784303881169f9e91c1d5f
 F ext/wasm/api/sqlite3-api-cleanup.js 680d5ccfff54459db136a49b2199d9f879c8405d9c99af1dda0cc5e7c29056f4
 F ext/wasm/api/sqlite3-api-glue.js b55e13aadf33a037e9a6950f370d16e2b0e858b74a2070faa2c87d7cde48c80c
-F ext/wasm/api/sqlite3-api-oo1.js 045c98796950c22556fc0842fe9f0d9a67f31920f247e24fb440571cdb6be5b0
+F ext/wasm/api/sqlite3-api-oo1.js e9fba119e9b1716b3f731838ed1ab18741401bcf4c51d2a4a6e9d1d23cf9d771
 F ext/wasm/api/sqlite3-api-prologue.js e862e5b79d565bd79c8ff59ebb6618a07ecb1a0262a1560dc6a10aa0f4d6f531
 F ext/wasm/api/sqlite3-api-worker1.js c9ef8865f072e61251260b218aa4ed614a21a25e9e3cc6f22acf81794d32fc0b
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8da0f0c38a458c57f979d59b49cf4804ef81fc2eccabde1f166bab24dd1dabea
-R c287fdd5af6e6026238c7a465fc6dd21
+P 52b229d11d82bfb81c8b63e252c51c57a34dc50498dd685451588c185873c628
+R 907b947f3596b78852af2b253c74cbfb
 U stephan
-Z 8fd2961047ac7596d6fac75a1b2c944b
+Z 14582b10a3620eea75adde1bd5a1eeb7
 # Remove this line to create a well-formed Fossil manifest.
