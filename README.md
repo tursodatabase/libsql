@@ -33,10 +33,10 @@ psql -h 127.0.0.1 -p 5000
 
 ### Dependencies
 
-**Ubuntu/Debian:**
+**Linux:**
 
 ```console
-apt install bundler libpq-dev libsqlite3-dev nodejs npm
+./scripts/install-deps.sh
 ```
 
 ### Building
