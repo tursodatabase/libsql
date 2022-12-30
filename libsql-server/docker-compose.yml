@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  writer:
+    build: .
+    command: --write-rpc-server-addr "0.0.0.0:5001" --tcp-addr "0.0.0.0:5000"
+    ports:
+      - "6000:5000"
+  reader:
+    build: .
+    environment:
+      - RUST_LOG=server=trace
+    depends_on:
+      - writer
+    command: --remote-writer-url "http://writer:5001" --tcp-addr "0.0.0.0:5000"
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - reader
+    ports:
+      - "6001:6001"
+
