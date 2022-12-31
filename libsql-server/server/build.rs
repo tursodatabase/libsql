@@ -18,7 +18,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .status()
         .unwrap();
 
-    tonic_build::compile_protos("proto/proxy.proto")?;
+    tonic_build::configure()
+        .protoc_arg("--experimental_allow_proto3_optional")
+        .compile(&["proto/proxy.proto"], &["proto"])?;
 
     println!("cargo:rerun-if-changed=proto");
 
