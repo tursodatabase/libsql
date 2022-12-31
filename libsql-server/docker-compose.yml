@@ -2,16 +2,18 @@ version: "3.9"
 services:
   writer:
     build: .
-    command: --gprc-listen-addr "0.0.0.0:5001" --pg-listen-addr "0.0.0.0:5000"
+    environment:
+      - IKU_TURSO_NODE=primary
     ports:
       - "6000:5000"
   reader:
     build: .
     environment:
       - RUST_LOG=server=trace
+      - IKU_TURSO_NODE=replica
+      - IKU_TURSO_PRIMARY_URL="http://writer:5001"
     depends_on:
       - writer
-    command: --primary-gprc-url "http://writer:5001" --pg-listen-addr "0.0.0.0:5000"
   nginx:
     image: nginx:latest
     volumes:
