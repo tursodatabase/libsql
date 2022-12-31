@@ -418,7 +418,7 @@ static int kvvfsDecode(const char *a, char *aOut, int nOut){
       memset(&aOut[j], 0, n);
       j += n;
       c = aIn[i];
-      if( c==0 ) break;
+      if( c==0 || mult==1 ) break; /* progress stalled if mult==1 */
     }else{
       aOut[j] = c<<4;
       c = kvvfsHexValue[aIn[++i]];
