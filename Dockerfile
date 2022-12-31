@@ -1,8 +1,6 @@
 # install dependencies
 FROM rust:slim-bullseye AS compiler
-RUN apt update && apt install -y libclang-dev clang wget unzip libsqlite3-dev build-essential tcl
-COPY install-protoc.sh .
-RUN ./install-protoc.sh
+RUN apt update && apt install -y libclang-dev clang wget unzip libsqlite3-dev build-essential tcl protobuf-compiler file
 RUN cargo install cargo-chef
 WORKDIR /iku-turso
 
