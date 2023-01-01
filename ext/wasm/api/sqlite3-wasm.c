@@ -463,7 +463,9 @@ const char * sqlite3_wasm_enum_json(void){
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
     ** integers to avoid casting-related warnings. */
-    out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
+    out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1,");
+    outf("\"SQLITE_WASM_DEALLOC\": %lld",
+         (sqlite3_int64)(sqlite3_free));
   } _DefGroup;
 
   DefGroup(changeset){

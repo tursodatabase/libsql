@@ -24,7 +24,20 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   self.WhWasmUtilInstaller(wasm);
   delete self.WhWasmUtilInstaller;
 
-  {
+  if(0){
+    /**
+       This block inexplicably fails on Safari, per report at
+       https://sqlite.org/forum/forumpost/e5b20e1feb. In its place,
+       we instead add an unsightly snippet to
+       sqlite3_wasm_enum_json() which emits the SQLITE_WASM_DEALLOC
+       pointer as an integer.
+
+        "The problem" with that approach is that in order to honor
+        sqlite3.config.deallocExportName, we have to have the
+        following loop (or something equivalent). Because we cannot
+        (for Safari) do so, we are currently implicitly hard-coded to
+        using sqlite3.config.deallocExportName==='sqlite3_free'.
+    */
     /**
        Find a mapping for SQLITE_WASM_DEALLOC, which the API
        guarantees is a WASM pointer to the same underlying function as
@@ -795,6 +808,14 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         // one of the Emscripten-driven optimizers.
         capi[e[0]] = e[1];
       }
+    }
+    if(wasm.exports[sqlite3.config.deallocExportName]
+       !== wasm.functionEntry(capi.SQLITE_WASM_DEALLOC)){
+      toss("Internal error: sqlite3.wasm.exports["+
+           sqlite3.config.deallocExportName+"]",
+           "is not the same pointer as SQLITE_WASM_DEALLOC.",
+           "These must match in order to accommodate allocator-related",
+           "API guarantees.");
     }
     const __rcMap = Object.create(null);
     for(const t of ['resultCodes']){
