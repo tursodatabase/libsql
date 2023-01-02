@@ -22,4 +22,3 @@ services:
       - reader
     ports:
       - "6001:6001"
-
