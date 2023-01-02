@@ -2,7 +2,7 @@ version: "3.9"
 services:
   writer:
     build: .
-    command: --write-rpc-server-addr "0.0.0.0:5001" --tcp-addr "0.0.0.0:5000"
+    command: --gprc-listen-addr "0.0.0.0:5001" --pg-listen-addr "0.0.0.0:5000"
     ports:
       - "6000:5000"
   reader:
@@ -11,7 +11,7 @@ services:
       - RUST_LOG=server=trace
     depends_on:
       - writer
-    command: --remote-writer-url "http://writer:5001" --tcp-addr "0.0.0.0:5000"
+    command: --primary-gprc-url "http://writer:5001" --pg-listen-addr "0.0.0.0:5000"
   nginx:
     image: nginx:latest
     volumes:

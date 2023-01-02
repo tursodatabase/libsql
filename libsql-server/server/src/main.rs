@@ -18,17 +18,20 @@ enum Commands {
     Serve {
         #[clap(long, short, default_value = "iku.db")]
         db_path: PathBuf,
+        /// The address and port the PostgreSQL server listens to.
         #[clap(long, short, default_value = "127.0.0.1:5000")]
-        tcp_addr: SocketAddr,
+        pg_listen_addr: SocketAddr,
+        /// The address and port the PostgreSQL over WebSocket server listens to.
         #[clap(long, short)]
-        ws_addr: Option<SocketAddr>,
+        ws_listen_addr: Option<SocketAddr>,
+        /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
+        #[clap(long, conflicts_with = "primary_grpc_url")]
+        grpc_listen_addr: Option<SocketAddr>,
+        /// The gRPC URL of the primary node to connect to for writes. Example: `http://localhost:5001`.
+        #[clap(long)]
+        primary_grpc_url: Option<String>,
         #[clap(long, short)]
         fdb_config_path: Option<String>,
-        #[clap(long, short)]
-        remote_writer_url: Option<String>,
-        /// run this node in write proxy mode at this address
-        #[clap(long, conflicts_with = "remote_writer_url")]
-        write_rpc_server_addr: Option<SocketAddr>,
     },
 }
 
@@ -45,19 +48,19 @@ async fn main() -> Result<()> {
     match args.command {
         Commands::Serve {
             db_path,
-            tcp_addr,
-            ws_addr,
+            pg_listen_addr,
+            ws_listen_addr,
+            grpc_listen_addr,
+            primary_grpc_url,
             fdb_config_path,
-            remote_writer_url,
-            write_rpc_server_addr,
         } => {
             server::run_server(
                 db_path,
-                tcp_addr,
-                ws_addr,
+                pg_listen_addr,
+                ws_listen_addr,
                 fdb_config_path,
-                remote_writer_url,
-                write_rpc_server_addr,
+                primary_grpc_url,
+                grpc_listen_addr,
             )
             .await?;
         }
