@@ -463,9 +463,13 @@ const char * sqlite3_wasm_enum_json(void){
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
     ** integers to avoid casting-related warnings. */
-    out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1,");
-    outf("\"SQLITE_WASM_DEALLOC\": %lld",
+    out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
+#if 0
+    /* This approach to exporting SQLITE_WASM_DEALLOC as a pointer to
+       sqlite3_free fails in Safari. */
+    outf(",\"SQLITE_WASM_DEALLOC\": %lld",
          (sqlite3_int64)(sqlite3_free));
+#endif
   } _DefGroup;
 
   DefGroup(changeset){
@@ -1591,6 +1595,11 @@ int sqlite3_wasm_config_ii(int op, int arg1, int arg2){
 SQLITE_WASM_KEEP
 int sqlite3_wasm_config_j(int op, sqlite3_int64 arg){
   return sqlite3_config(op, arg);
+}
+
+SQLITE_WASM_KEEP
+void * sqlite3_wasm_ptr_to_sqlite3_free(void){
+  return (void*)sqlite3_free;
 }
 
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)

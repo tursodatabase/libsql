@@ -809,6 +809,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi[e[0]] = e[1];
       }
     }
+    /*  Exporting SQLITE_WASM_DEALLOC via the wasm.ctype entries fails
+        in Safari. One final thing to try: */
+    capi.SQLITE_WASM_DEALLOC = wasm.exports.sqlite3_wasm_ptr_to_sqlite3_free();
     if(wasm.exports[sqlite3.config.deallocExportName]
        !== wasm.functionEntry(capi.SQLITE_WASM_DEALLOC)){
       toss("Internal error: sqlite3.wasm.exports["+
