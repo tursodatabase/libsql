@@ -63,9 +63,10 @@ pub enum State {
 
 impl Statements {
     pub fn parse(s: String) -> Result<Self> {
-        let statements = Parser::parse_sql(&SQLiteDialect {}, &s)?;
         // We don't really care about `StmtKind::Other`, we keep it for conceptual simplicity.
-        let kinds = statements.iter().map(StmtKind::kind).collect();
+        let kinds = Parser::parse_sql(&SQLiteDialect {}, &s)
+            .map(|statements| statements.iter().map(StmtKind::kind).collect())
+            .unwrap_or_else(|_| vec![StmtKind::Other]);
 
         Ok(Self { stmts: s, kinds })
     }
