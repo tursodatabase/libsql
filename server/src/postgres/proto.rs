@@ -131,6 +131,9 @@ where
     let mut buf = [0u8; SslRequest::BODY_SIZE];
     loop {
         let size = socket.peek(&mut buf).await?;
+        if size == 0 {
+            break;
+        }
         if size == SslRequest::BODY_SIZE {
             let mut buf_ref = buf.as_ref();
             // skip first 4 bytes
