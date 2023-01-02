@@ -4092,7 +4092,7 @@ static void libsqlGetWalPathname(char *buf, const char *orig, int orig_len) {
   memcpy(buf + orig_len, "-wal", 4);
 }
 
-static int libsqlPreMainDbOpen(struct libsql_wal_methods*, const char *) {
+static int libsqlPreMainDbOpen(struct libsql_wal_methods *methods, const char *main_db_path) {
   return SQLITE_OK;
 }
 
