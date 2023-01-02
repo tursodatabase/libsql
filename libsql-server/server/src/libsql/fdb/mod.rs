@@ -3,6 +3,8 @@ use std::ffi::c_void;
 use std::os::unix::ffi::OsStrExt;
 use std::sync::{Arc, Mutex};
 
+use super::ffi::types::*;
+
 use rusqlite::ffi;
 
 pub mod replicator;
@@ -61,70 +63,43 @@ pub struct Wal {
 
 #[repr(C)]
 pub struct WalMethods {
-    open: extern "C" fn(
-        vfs: *const c_void,
-        file: *const c_void,
-        wal_name: *const u8,
-        no_shm_mode: i32,
-        max_size: i64,
-        methods: *mut WalMethods,
-        wal: *mut *const Wal,
-    ) -> i32,
-    close: extern "C" fn(
-        wal: *mut Wal,
-        db: *mut c_void,
-        sync_flags: i32,
-        n_buf: i32,
-        z_buf: *mut u8,
-    ) -> i32,
-    limit: extern "C" fn(wal: *mut Wal, limit: i64),
-    begin_read: extern "C" fn(wal: *mut Wal, changed: *mut i32) -> i32,
-    end_read: extern "C" fn(wal: *mut Wal) -> i32,
-    find_frame: extern "C" fn(wal: *mut Wal, pgno: i32, frame: *mut u32) -> i32,
-    read_frame: extern "C" fn(wal: *mut Wal, frame: u32, n_out: i32, p_out: *mut u8) -> i32,
-    db_size: extern "C" fn(wal: *mut Wal) -> u32,
-    begin_write: extern "C" fn(wal: *mut Wal) -> i32,
-    end_write: extern "C" fn(wal: *mut Wal) -> i32,
-    undo: extern "C" fn(
-        wal: *mut Wal,
-        func: extern "C" fn(*mut c_void, i32) -> i32,
-        ctx: *mut c_void,
-    ) -> i32,
-    savepoint: extern "C" fn(wal: *mut Wal, wal_data: *mut u32),
-    savepoint_undo: extern "C" fn(wal: *mut Wal, wal_data: *mut u32) -> i32,
-    frames: extern "C" fn(
-        wal: *mut Wal,
-        page_size: u32,
-        page_headers: *const PgHdr,
-        size_after: u32,
-        is_commit: i32,
-        sync_flags: i32,
-    ) -> i32,
-    checkpoint: extern "C" fn(
-        wal: *mut Wal,
-        db: *mut c_void,
-        emode: i32,
-        busy_handler: extern "C" fn(busy_param: *mut c_void) -> i32,
-        sync_flags: i32,
-        n_buf: i32,
-        z_buf: *mut u8,
-        frames_in_wal: *mut i32,
-        backfilled_frames: *mut i32,
-    ) -> i32,
-    callback: extern "C" fn(wal: *mut Wal) -> i32,
-    exclusive_mode: extern "C" fn(wal: *mut Wal, op: i32) -> i32,
-    heap_memory: extern "C" fn(wal: *mut Wal) -> i32,
-    // snapshot: get, open, recover, check, unlock
-    // enable_zipvfs: framesize
-    file: extern "C" fn(wal: *mut Wal) -> *const c_void,
-    db: extern "C" fn(wal: *mut Wal, db: *const c_void),
-    pathname_len: extern "C" fn(orig_len: i32) -> i32,
-    get_pathname: extern "C" fn(buf: *mut u8, orig: *const u8, orig_len: i32),
-    b_uses_shm: i32,
-    name: *const u8,
-    p_next: *const c_void,
+    pub iVersion: i32,
+    pub xOpen: XWalOpenFn,
+    pub xClose: XWalCloseFn,
+    pub xLimit: XWalLimitFn,
+    pub xBeginReadTransaction: XWalBeginReadTransactionFn,
+    pub xEndReadTransaction: XWalEndReadTransaction,
+    pub xFindFrame: XWalFindFrameFn,
+    pub xReadFrame: XWalReadFrameFn,
+    pub xDbSize: XWalDbSizeFn,
+    pub xBeginWriteTransaction: XWalBeginWriteTransactionFn,
+    pub xEndWriteTransaction: XWalEndWriteTransactionFn,
+    pub xUndo: XWalUndoFn,
+    pub xSavepoint: XWalSavepointFn,
+    pub xSavepointUndo: XWalSavePointUndoFn,
+    pub xFrames: XWalFrameFn,
+    pub xCheckpoint: XWalCheckpointFn,
+    pub xCallback: XWalCallbackFn,
+    pub xExclusiveMode: XWalExclusiveModeFn,
+    pub xHeapMemory: XWalHeapMemoryFn,
+    // snapshot stubs
+    pub snapshot_get_stub: *const c_void,
+    pub snapshot_open_stub: *const c_void,
+    pub snapshot_recover_stub: *const c_void,
+    pub snapshot_check_stub: *const c_void,
+    pub snapshot_unlock_stub: *const c_void,
+    pub framesize_stub: *const c_void, // enable_zipvfs stub
+    pub xFile: XWalFileFn,
+    pub write_lock_stub: *const c_void, // setlk stub
+    pub xDb: XWalDbFn,
+    pub xPathnameLen: XWalPathNameLenFn,
+    pub xGetPathname: XWalGetPathNameFn,
+    pub xPreMainDbOpen: XWallPreMainDbOpen,
+    pub b_uses_shm: i32,
+    pub name: *const u8,
+    pub p_next: *const c_void,
 
-    // User data
+    //user data
     replicator: replicator::Replicator,
 }
 
