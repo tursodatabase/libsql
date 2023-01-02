@@ -1597,6 +1597,27 @@ int sqlite3_wasm_config_j(int op, sqlite3_int64 arg){
   return sqlite3_config(op, arg);
 }
 
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Returns a pointer to sqlite3_free(). In compliant browsers the
+** return value, when passed to sqlite3.wasm.exports.functionEntry(),
+** must resolve to the same function as
+** sqlite3.wasm.exports.sqlite3_free. i.e. from a dev console where
+** sqlite3 is exported globally, the following must be true:
+**
+** ```
+** sqlite3.wasm.functionEntry(
+**   sqlite3.wasm.exports.sqlite3_wasm_ptr_to_sqlite3_free()
+** ) === sqlite3.wasm.exports.sqlite3_free
+** ```
+**
+** Using a function to return this pointer, as opposed to exporting it
+** via sqlite3_wasm_enum_json(), is an attempt to work around a
+** Safari-specific quirk covered at
+** https://sqlite.org/forum/info/e5b20e1feb37a19a.
+**/
 SQLITE_WASM_KEEP
 void * sqlite3_wasm_ptr_to_sqlite3_free(void){
   return (void*)sqlite3_free;
