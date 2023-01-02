@@ -1,5 +1,6 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
@@ -8,6 +9,8 @@ use rusqlite::OpenFlags;
 use tokio::sync::oneshot;
 use tracing::warn;
 
+use crate::libsql::wal_hook::WalHook;
+use crate::libsql::WalMethods;
 use crate::query::{Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row};
 use crate::query_analysis::{State, Statements};
 
@@ -60,8 +63,9 @@ macro_rules! ok_or_exit {
 
 impl LibSqlDb {
     pub fn new(
-        path: PathBuf,
-        vwal_methods: Option<std::sync::Arc<std::sync::Mutex<crate::wal::WalMethods>>>,
+        path: impl AsRef<Path> + Send + 'static,
+        vwal_methods: Option<Arc<Mutex<WalMethods>>>,
+        wal_hook: impl WalHook + Send + Clone + 'static,
     ) -> anyhow::Result<Self> {
         let (sender, receiver) =
             crossbeam::channel::unbounded::<(Statements, oneshot::Sender<QueryResult>)>();
@@ -71,7 +75,7 @@ impl LibSqlDb {
             let conn = loop {
                 let conn_result = match vwal_methods {
                     #[cfg(feature = "fdb")]
-                    Some(ref vwal_methods) => crate::wal::fdb::open_with_virtual_wal(
+                    Some(ref vwal_methods) => crate::libsql::fdb::open_with_virtual_wal(
                         &path,
                         OpenFlags::SQLITE_OPEN_READ_WRITE
                             | OpenFlags::SQLITE_OPEN_CREATE
@@ -81,12 +85,13 @@ impl LibSqlDb {
                     ),
                     #[cfg(not(feature = "fdb"))]
                     Some(_) => panic!("not compiled with fdb support"),
-                    None => crate::wal::open_with_regular_wal(
+                    None => crate::libsql::open_with_regular_wal(
                         &path,
                         OpenFlags::SQLITE_OPEN_READ_WRITE
                             | OpenFlags::SQLITE_OPEN_CREATE
                             | OpenFlags::SQLITE_OPEN_URI
                             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                        wal_hook.clone(),
                     ),
                 };
                 match conn_result {
