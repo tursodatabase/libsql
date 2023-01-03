@@ -7,10 +7,10 @@ use tokio::sync::Mutex;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
-use crate::proxy_rpc::proxy_client::ProxyClient;
-use crate::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery};
 use crate::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
 use crate::query_analysis::{State, Statements};
+use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
+use crate::rpc::proxy::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery};
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
 
