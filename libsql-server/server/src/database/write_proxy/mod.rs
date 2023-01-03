@@ -1,3 +1,5 @@
+mod replication;
+
 use std::future::{ready, Ready};
 use std::path::PathBuf;
 #[cfg(feature = "mwal_backend")]
@@ -13,12 +15,15 @@ use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery};
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
+use replication::PeriodicDbUpdater;
 
 pub struct WriteProxyDbFactory {
     write_proxy: ProxyClient<Channel>,
     db_path: PathBuf,
     #[cfg(feature = "mwal_backend")]
     vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
+    /// abort handle: abort db update loop on drop
+    _abort_handle: crossbeam::channel::Sender<()>,
 }
 
 impl WriteProxyDbFactory {
@@ -30,11 +35,21 @@ impl WriteProxyDbFactory {
         >,
     ) -> anyhow::Result<Self> {
         let write_proxy = ProxyClient::connect(addr.clone()).await?;
+        let mut db_updater = PeriodicDbUpdater::new(&db_path, addr, Duration::from_secs(1)).await?;
+        let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
+        tokio::task::spawn_blocking(move || loop {
+            // must abort
+            if receiver.try_recv().is_err() {
+                break;
+            }
+            db_updater.step();
+        });
         Ok(Self {
             write_proxy,
             db_path,
             #[cfg(feature = "mwal_backend")]
             vwal_methods,
+            _abort_handle,
         })
     }
 }
