@@ -8914,9 +8914,13 @@ static int btreeOverwriteContent(
 
 /*
 ** Overwrite the cell that cursor pCur is pointing to with fresh content
-** contained in pX.
+** contained in pX.  In this variant, pCur is pointing to an overflow
+** cell.
 */
-static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
+static SQLITE_NOINLINE int btreeOverwriteOverflowCell(
+  BtCursor *pCur,                     /* Cursor pointing to cell to ovewrite */
+  const BtreePayload *pX              /* Content to write into the cell */
+){
   int iOffset;                        /* Next byte of pX->pData to write */
   int nTotal = pX->nData + pX->nZero; /* Total bytes of to write */
   int rc;                             /* Return code */
@@ -8925,16 +8929,12 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
   Pgno ovflPgno;                      /* Next overflow page to write */
   u32 ovflPageSize;                   /* Size to write on overflow page */
 
-  if( pCur->info.pPayload + pCur->info.nLocal > pPage->aDataEnd
-   || pCur->info.pPayload < pPage->aData + pPage->cellOffset
-  ){
-    return SQLITE_CORRUPT_BKPT;
-  }
+  assert( pCur->info.nLocal<nTotal );  /* pCur is an overflow cell */
+
   /* Overwrite the local portion first */
   rc = btreeOverwriteContent(pPage, pCur->info.pPayload, pX,
                              0, pCur->info.nLocal);
   if( rc ) return rc;
-  if( pCur->info.nLocal==nTotal ) return SQLITE_OK;
 
   /* Now overwrite the overflow pages */
   iOffset = pCur->info.nLocal;
@@ -8962,6 +8962,29 @@ static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
     iOffset += ovflPageSize;
   }while( iOffset<nTotal );
   return SQLITE_OK;    
+}
+
+/*
+** Overwrite the cell that cursor pCur is pointing to with fresh content
+** contained in pX.
+*/
+static int btreeOverwriteCell(BtCursor *pCur, const BtreePayload *pX){
+  int nTotal = pX->nData + pX->nZero; /* Total bytes of to write */
+  MemPage *pPage = pCur->pPage;       /* Page being written */
+
+  if( pCur->info.pPayload + pCur->info.nLocal > pPage->aDataEnd
+   || pCur->info.pPayload < pPage->aData + pPage->cellOffset
+  ){
+    return SQLITE_CORRUPT_BKPT;
+  }
+  if( pCur->info.nLocal==nTotal ){
+    /* The entire cell is local */
+    return btreeOverwriteContent(pPage, pCur->info.pPayload, pX,
+                                 0, pCur->info.nLocal);
+  }else{
+    /* The cell contains overflow content */
+    return btreeOverwriteOverflowCell(pCur, pX);
+  }
 }
 
 
