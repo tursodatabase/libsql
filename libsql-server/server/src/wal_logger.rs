@@ -217,7 +217,7 @@ mod test {
     #[test]
     fn write_and_read_from_frame_log() {
         let log_file = tempfile::NamedTempFile::new().unwrap();
-        let logger = WalLogger::open(&log_file.path()).unwrap();
+        let logger = WalLogger::open(log_file.path()).unwrap();
 
         assert_eq!(*logger.current_offset.lock(), WalLogger::HEADER_SIZE);
 
@@ -232,7 +232,7 @@ mod test {
         for i in 0..10 {
             let frame = logger.get_entry(i).unwrap().unwrap();
             let WalLogEntry::Frame{ page_no, data } =  frame else {panic!()};
-            assert_eq!(page_no, i as _);
+            assert_eq!(page_no, i as u32);
             assert!(data.iter().all(|x| i as u8 == *x));
         }
 
@@ -245,7 +245,7 @@ mod test {
     #[test]
     fn index_out_of_bounds() {
         let log_file = tempfile::NamedTempFile::new().unwrap();
-        let logger = WalLogger::open(&log_file.path()).unwrap();
+        let logger = WalLogger::open(log_file.path()).unwrap();
         assert!(logger.get_entry(1).unwrap().is_none());
     }
 
@@ -253,7 +253,7 @@ mod test {
     #[should_panic]
     fn incorrect_frame_size() {
         let log_file = tempfile::NamedTempFile::new().unwrap();
-        let logger = WalLogger::open(&log_file.path()).unwrap();
+        let logger = WalLogger::open(log_file.path()).unwrap();
         let entry = WalLogEntry::Frame {
             page_no: 0,
             data: vec![0; 3].into(),
