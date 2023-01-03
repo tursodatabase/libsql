@@ -22,7 +22,7 @@ With `sqld` you can use SQLite-like interface in your app, but have a transparen
 Start a server with:
 
 ```console
-cargo run -- serve
+cargo run
 ```
 
 and connect to it with psql:

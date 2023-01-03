@@ -1611,43 +1611,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "server"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-lock",
- "async-trait",
- "bincode",
- "byteorder",
- "bytes",
- "clap 4.0.29",
- "crossbeam",
- "foundationdb",
- "futures",
- "hex",
- "parking_lot",
- "pgwire",
- "pin-project-lite",
- "postgres-protocol",
- "proptest",
- "prost",
- "rand",
- "rusqlite",
- "serde",
- "smallvec",
- "sqlparser",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
- "tonic",
- "tonic-build",
- "tower",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
 name = "sha-1"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1723,6 +1686,43 @@ name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
+
+[[package]]
+name = "sqld"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-lock",
+ "async-trait",
+ "bincode",
+ "byteorder",
+ "bytes",
+ "clap 4.0.29",
+ "crossbeam",
+ "foundationdb",
+ "futures",
+ "hex",
+ "parking_lot",
+ "pgwire",
+ "pin-project-lite",
+ "postgres-protocol",
+ "proptest",
+ "prost",
+ "rand",
+ "rusqlite",
+ "serde",
+ "smallvec",
+ "sqlparser",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
+ "tonic",
+ "tonic-build",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
 
 [[package]]
 name = "sqlparser"
