@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crossbeam::channel::TryRecvError;
 use tokio::sync::Mutex;
 use tonic::transport::Channel;
 use uuid::Uuid;
@@ -40,7 +41,7 @@ impl WriteProxyDbFactory {
         let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
         tokio::task::spawn_blocking(move || loop {
             // must abort
-            if receiver.try_recv().is_err() {
+            if let Err(TryRecvError::Disconnected) = receiver.try_recv() {
                 break;
             }
             db_updater.step();
