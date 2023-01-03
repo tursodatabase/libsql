@@ -12,11 +12,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if profile.as_str() == "release" {
         configure.arg("--enable-releasemode");
     }
-    configure.status().unwrap();
-    Command::new("make")
+    let output = configure.output().unwrap();
+    if !output.status.success() {
+        println!("{}", std::str::from_utf8(&output.stderr).unwrap());
+        panic!("failed to configure");
+    }
+
+    if !Command::new("make")
         .current_dir(libsql_dir.as_path())
         .status()
-        .unwrap();
+        .unwrap()
+        .success()
+    {
+        panic!("failed to compile");
+    }
 
     tonic_build::configure()
         .protoc_arg("--experimental_allow_proto3_optional")
