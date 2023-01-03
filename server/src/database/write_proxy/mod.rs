@@ -7,12 +7,10 @@ use tokio::sync::Mutex;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
+use crate::proxy_rpc::proxy_client::ProxyClient;
 use crate::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery};
 use crate::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
-use crate::{
-    proxy_rpc::proxy_client::ProxyClient,
-    query_analysis::{State, Statements},
-};
+use crate::query_analysis::{State, Statements};
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
 
@@ -31,7 +29,7 @@ impl WriteProxyDbFactory {
             Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
         >,
     ) -> anyhow::Result<Self> {
-        let write_proxy = ProxyClient::connect(addr).await?;
+        let write_proxy = ProxyClient::connect(addr.clone()).await?;
         Ok(Self {
             write_proxy,
             db_path,
