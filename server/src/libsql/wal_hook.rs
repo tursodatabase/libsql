@@ -313,7 +313,7 @@ pub extern "C" fn xGetPathname(buf: *mut c_char, orig: *const c_char, orig_len: 
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, _path: *const i8) -> i32 {
+pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, _path: *const c_char) -> i32 {
     ffi::SQLITE_OK
 }
 

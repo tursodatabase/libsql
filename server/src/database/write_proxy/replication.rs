@@ -168,7 +168,7 @@ unsafe impl WalHook for ReadReplicationHook {
         }
         // return error from dummy write.
         // this is a trick to prevent sqlite from keeping any state in memory after a dummy write
-        return SQLITE_ERROR;
+        SQLITE_ERROR
     }
 }
 
