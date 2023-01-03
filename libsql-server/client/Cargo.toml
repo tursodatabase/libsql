@@ -1,10 +1,10 @@
 [package]
-name = "edgeproxy"
+name = "sqlc"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "edgeproxy"
+name = "sqlc"
 crate-type = ["cdylib"]
 
 [dependencies]
