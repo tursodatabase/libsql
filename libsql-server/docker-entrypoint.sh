@@ -4,7 +4,7 @@ set -Eeuo pipefail
 
 IKU_TURSO_NODE="${IKU_TURSO_NODE:-primary}"
 
-if [ "$1" = '/bin/server' ] && [ "$2" = 'serve' ]; then
+if [ "$1" = '/bin/sqld' ]; then
   # We are running the server.
   declare -a server_args=()
 
