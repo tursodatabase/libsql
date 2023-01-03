@@ -4,6 +4,7 @@ use std::future::{ready, Ready};
 use std::path::PathBuf;
 #[cfg(feature = "mwal_backend")]
 use std::sync::Arc;
+use std::time::Duration;
 
 use tokio::sync::Mutex;
 use tonic::transport::Channel;
