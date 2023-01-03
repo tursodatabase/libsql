@@ -1,5 +1,5 @@
-C Avoid\san\sunnecessary\scall\sto\sstrlen()\sin\sthe\ssqlite3VdbeMemStringify()\sroutine,\nfor\sa\sperformance\sincrease\sand\ssize\sreduction.
-D 2023-01-03T18:51:18.573
+C Small\sperformance\sincrease\sin\sthe\ssymbol\shash\stable.
+D 2023-01-03T19:27:00.120
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -600,7 +600,7 @@ F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c 68f610a44962814a4ba593fc95137a6682cb7e65086f22167e167b75ee3432e7
 F src/global.c e06ff8e0acd85aec13563c9ecb44fbbf38232ccf73594998fd880b92d619594b
-F src/hash.c 8d7dda241d0ebdafb6ffdeda3149a412d7df75102cecfc1021c98d6219823b19
+F src/hash.c c6af5f96a7a76d000f07c5402c48c318c2566beecdee9e78b9d9f60ce7119565
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h b638809e083b601b618df877b2e89cb87c2a47a01f4def10be4c4ebb54664ac7
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P df5ea47130d275e9fa1bd6aa8d55f1d5e136cba30ba13b7ede22224aa7f78919
-R a2a32720b2f8777521bc8622d675c7f8
+P 284382d37850f469dc4bf3ab8efd2f20971554e897f1ba3e94d3f2f0c35d97d0
+R ab5178d0509e1eb88fa7af9a2e9e5d44
 U drh
-Z f34cc68dd6274f0e7d2c85494306685a
+Z 4f8363fa871c6cb453dc54216172abff
 # Remove this line to create a well-formed Fossil manifest.
