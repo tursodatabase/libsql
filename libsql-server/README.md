@@ -1,20 +1,22 @@
-# Iku-Turso
+# `sqld` - a server mode for libSQL
 
-This is a prototype of ChiselEdge, which aims to be:
+The `sqld` ("SQL daemon") project is a server mode for [libSQL](https://libsql.org).
 
-* A distributed SQL database that speaks SQLite
-* Provides low latency reads (read-only replicas over the world)
-* Writes happen on a cloud-based primary server
-* Enforce programmable policies on data (for example, dynamic data masking)
+Embedded SQL databases such as libSQL and SQLite are great for a lot of use cases, but sometimes you really do want to consume your database as a server.
+For example, with serverless apps, fitting a database engine, as slim as it may be, might be hard, and even when it's _possible_, it might be really inconvenient, which is why we created `sqld`.
 
+With `sqld` you can use SQLite-like interface in your app, but have a transparent proxy translates the C API calls to PostgreSQL wire protocol to talk to a database server, which is internally libSQL.
+
+## Features
+
+* SQLite dialect layered on top of PostgreSQL wire protocol.
+* SQLite-compatible API that you can drop-in with `LD_PRELOAD` in your application to switch from local database to a remote database.
+ 
 ## Roadmap
 
-* ChiselEdge proxy with SQLite-like interface
-* Optimistic caching in ChiselEdge proxy
-* Active replication from ChiselEdge server to write replica
-* Passive replication from ChiselEdge server to read replicas
-* Data policy enforcement at ChiselEdge server
-
+* Read replica support for geo-distribution.
+* Integration with [mvSQLite](https://github.com/losfair/mvsqlite) for high availability and fault tolerance.
+  
 ## Getting Started
 
 Start a server with:
@@ -50,3 +52,11 @@ cargo build
 ```console
 make test
 ```
+
+## License
+
+This project is licensed under the MIT license.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in `sqld` by you, shall be licensed as MIT, without any additional terms or conditions.
