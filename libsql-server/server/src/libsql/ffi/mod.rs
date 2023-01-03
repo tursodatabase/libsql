@@ -2,7 +2,7 @@
 
 pub mod types;
 
-use std::ffi::{c_int, c_void};
+use std::ffi::{c_char, c_int, c_void};
 
 use types::*;
 
@@ -23,11 +23,11 @@ pub struct sqlite3_file {
 #[derive(Debug)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct sqlite3_vfs {
-    iVersion: i32,
-    szOsFile: i32,
-    mxPathname: i32,
+    iVersion: c_int,
+    szOsFile: c_int,
+    mxPathname: c_int,
     pNext: *mut sqlite3_vfs,
-    zname: *const i8,
+    zname: *const c_char,
     pData: *const c_void,
     xOpen: XOpenFn,
     xDelete: XDeleteFn,
@@ -48,7 +48,7 @@ pub struct sqlite3_vfs {
 #[derive(Debug)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct sqlite3_io_methods {
-    iVersion: i32,
+    iVersion: c_int,
     xClose: XCloseFn,
     xRead: XReadFn,
     xWrite: XWriteFn,
@@ -66,33 +66,33 @@ pub struct sqlite3_io_methods {
 #[repr(C)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct Wal {
-    vfs: *const sqlite3_vfs,
-    db_fd: *mut sqlite3_file,
+    pub vfs: *const sqlite3_vfs,
+    pub db_fd: *mut sqlite3_file,
     pub wal_fd: *mut sqlite3_file,
-    callback_value: u32,
-    max_wal_size: i64,
-    wi_data: i32,
-    size_first_block: i32,
-    ap_wi_data: *const *mut u32,
-    page_size: u32,
-    read_lock: i16,
-    sync_flags: u8,
-    exclusive_mode: u8,
-    write_lock: u8,
-    checkpoint_lock: u8,
-    read_only: u8,
-    truncate_on_commit: u8,
-    sync_header: u8,
-    pad_to_section_boundary: u8,
-    b_shm_unreliable: u8,
-    hdr: WalIndexHdr,
-    min_frame: u32,
-    recalculate_checksums: u32,
-    wal_name: *const i8,
-    n_checkpoints: u32,
-    lock_error: u8,
-    p_snapshot: *const c_void,
-    p_db: *const c_void,
+    pub callback_value: u32,
+    pub max_wal_size: i64,
+    pub wi_data: i32,
+    pub size_first_block: i32,
+    pub ap_wi_data: *const *mut u32,
+    pub page_size: u32,
+    pub read_lock: i16,
+    pub sync_flags: u8,
+    pub exclusive_mode: u8,
+    pub write_lock: u8,
+    pub checkpoint_lock: u8,
+    pub read_only: u8,
+    pub truncate_on_commit: u8,
+    pub sync_header: u8,
+    pub pad_to_section_boundary: u8,
+    pub b_shm_unreliable: u8,
+    pub hdr: WalIndexHdr,
+    pub min_frame: u32,
+    pub recalculate_checksums: u32,
+    pub wal_name: *const i8,
+    pub n_checkpoints: u32,
+    pub lock_error: u8,
+    pub p_snapshot: *const c_void,
+    pub p_db: *const c_void,
     pub wal_methods: *mut libsql_wal_methods,
 }
 
@@ -100,17 +100,17 @@ pub struct Wal {
 #[repr(C)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct WalIndexHdr {
-    version: u32,
-    unused: u32,
-    change: u32,
-    is_init: u8,
-    big_endian_checksum: u8,
-    page_size: u16,
-    last_valid_frame: u32,
-    n_pages: u32,
-    frame_checksum: [u32; 2],
-    salt: [u32; 2],
-    checksum: [u32; 2],
+    pub version: u32,
+    pub unused: u32,
+    pub change: u32,
+    pub is_init: u8,
+    pub big_endian_checksum: u8,
+    pub page_size: u16,
+    pub last_valid_frame: u32,
+    pub n_pages: u32,
+    pub frame_checksum: [u32; 2],
+    pub salt: [u32; 2],
+    pub checksum: [u32; 2],
 }
 
 #[repr(C)]
@@ -161,7 +161,7 @@ pub struct PgHdr {
     pub pcache: *const c_void,
     pub dirty: *mut PgHdr,
     pub pager: *const c_void,
-    pub pgno: i32,
+    pub pgno: u32,
     pub flags: u16,
 }
 
@@ -185,7 +185,7 @@ impl PageHdrIter {
 }
 
 impl std::iter::Iterator for PageHdrIter {
-    type Item = (i32, &'static [u8]);
+    type Item = (u32, &'static [u8]);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_ptr.is_null() {

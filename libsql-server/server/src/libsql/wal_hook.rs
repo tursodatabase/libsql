@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_void};
+use std::ffi::{c_char, c_int, c_void};
 
 use super::ffi::{self, libsql_wal_methods, sqlite3_file, sqlite3_vfs, types::*, PgHdr, Wal};
 
@@ -9,6 +9,9 @@ use super::ffi::{self, libsql_wal_methods, sqlite3_file, sqlite3_vfs, types::*, 
 ///
 /// The default implementations for this trait methods is to transparently call the wrapped methods
 /// with the passed arguments
+///
+/// # Safety
+/// The implementer is responsible for calling the orig method with valid arguments.
 pub unsafe trait WalHook {
     /// Intercept `xFrame` call. `orig` is the function pointer to the underlying wal method.
     /// The default implementation of this trait simply calls orig with the other passed arguments.
@@ -17,13 +20,13 @@ pub unsafe trait WalHook {
     fn on_frames(
         &mut self,
         wal: *mut Wal,
-        page_size: u32,
+        page_size: c_int,
         page_headers: *mut PgHdr,
-        size_after: i32,
-        is_commit: i32,
-        sync_flags: i32,
+        size_after: u32,
+        is_commit: c_int,
+        sync_flags: c_int,
         orig: XWalFrameFn,
-    ) -> i32 {
+    ) -> c_int {
         (orig)(
             wal,
             page_size,
@@ -133,9 +136,9 @@ pub extern "C" fn xClose(
     wal: *mut Wal,
     db: *mut c_void,
     sync_flags: i32,
-    n_buf: i32,
+    n_buf: c_int,
     z_buf: *mut u8,
-) -> i32 {
+) -> c_int {
     let orig_methods = unsafe { get_orig_methods(wal) };
     (orig_methods.xClose)(wal, db, sync_flags, n_buf, z_buf)
 }
@@ -159,19 +162,19 @@ pub extern "C" fn xEndReadTransaction(wal: *mut Wal) -> i32 {
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xFindFrame(wal: *mut Wal, pgno: i32, frame: *mut i32) -> i32 {
+pub extern "C" fn xFindFrame(wal: *mut Wal, pgno: u32, frame: *mut u32) -> c_int {
     let orig_methods = unsafe { get_orig_methods(wal) };
     (orig_methods.xFindFrame)(wal, pgno, frame)
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xReadFrame(wal: *mut Wal, frame: u32, n_out: i32, p_out: *mut u8) -> i32 {
+pub extern "C" fn xReadFrame(wal: *mut Wal, frame: u32, n_out: c_int, p_out: *mut u8) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
     (orig_methods.xReadFrame)(wal, frame, n_out, p_out)
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xDbSize(wal: *mut Wal) -> i32 {
+pub extern "C" fn xDbSize(wal: *mut Wal) -> u32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
     (orig_methods.xDbSize)(wal)
 }
@@ -214,12 +217,12 @@ pub extern "C" fn xSavepointUndo(wal: *mut Wal, wal_data: *mut u32) -> i32 {
 #[allow(non_snake_case)]
 pub extern "C" fn xFrames(
     wal: *mut Wal,
-    page_size: u32,
+    page_size: c_int,
     page_headers: *mut PgHdr,
-    size_after: i32,
-    is_commit: i32,
-    sync_flags: i32,
-) -> i32 {
+    size_after: u32,
+    is_commit: c_int,
+    sync_flags: c_int,
+) -> c_int {
     let orig_methods = unsafe { get_orig_methods(wal) };
     let methods = unsafe { get_methods(wal) };
     let hook = &mut methods.hook;
@@ -240,14 +243,14 @@ pub extern "C" fn xFrames(
 pub extern "C" fn xCheckpoint(
     wal: *mut Wal,
     db: *mut c_void,
-    emode: i32,
-    busy_handler: extern "C" fn(busy_param: *mut c_void) -> i32,
+    emode: c_int,
+    busy_handler: extern "C" fn(busy_param: *mut c_void) -> c_int,
     busy_arg: *const c_void,
-    sync_flags: i32,
-    n_buf: i32,
+    sync_flags: c_int,
+    n_buf: c_int,
     z_buf: *mut u8,
-    frames_in_wal: *mut i32,
-    backfilled_frames: *mut i32,
+    frames_in_wal: *mut c_int,
+    backfilled_frames: *mut c_int,
 ) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
     (orig_methods.xCheckpoint)(
@@ -271,9 +274,9 @@ pub extern "C" fn xCallback(wal: *mut Wal) -> i32 {
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xExclusiveMode(wal: *mut Wal) -> i32 {
+pub extern "C" fn xExclusiveMode(wal: *mut Wal, op: c_int) -> c_int {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xExclusiveMode)(wal)
+    (orig_methods.xExclusiveMode)(wal, op)
 }
 
 #[allow(non_snake_case)]
@@ -300,9 +303,15 @@ pub extern "C" fn xPathnameLen(orig_len: i32) -> i32 {
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xGetPathname(buf: *mut u8, orig: *const u8, orig_len: i32) {
+pub extern "C" fn xGetPathname(buf: *mut c_char, orig: *const c_char, orig_len: c_int) {
     unsafe { std::ptr::copy(orig, buf, orig_len as usize) }
-    unsafe { std::ptr::copy("-wal".as_ptr(), buf.offset(orig_len as isize), 4) }
+    unsafe {
+        std::ptr::copy(
+            "-wal".as_ptr(),
+            (buf as *mut u8).offset(orig_len as isize),
+            4,
+        )
+    }
 }
 
 #[allow(non_snake_case)]

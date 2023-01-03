@@ -1,9 +1,15 @@
+#![allow(non_snake_case)]
+
 use std::cmp::Ordering;
-use std::ffi::c_void;
+use std::ffi::{c_char, c_int, c_void};
 use std::os::unix::ffi::OsStrExt;
 use std::sync::{Arc, Mutex};
 
 use super::ffi::types::*;
+use super::ffi::{
+    libsql_wal_methods, libsql_wal_methods_register, sqlite3_file, sqlite3_vfs, PgHdr, Wal,
+    WalIndexHdr,
+};
 
 use rusqlite::ffi;
 
@@ -13,57 +19,9 @@ const WAL_NORMAL_MODE: u8 = 0;
 const WAL_EXCLUSIVE_MODE: u8 = 1;
 const WAL_HEAPMEMORY_MODE: u8 = 2;
 
-// Only here for creating a Wal struct instance, we're not going to use it
-#[repr(C)]
-pub struct WalIndexHdr {
-    version: u32,
-    unused: u32,
-    change: u32,
-    is_init: u8,
-    big_endian_checksum: u8,
-    page_size: u16,
-    last_valid_frame: u32,
-    n_pages: u32,
-    frame_checksum: [u32; 2],
-    salt: [u32; 2],
-    checksum: [u32; 2],
-}
-
-#[repr(C)]
-pub struct Wal {
-    vfs: *const c_void,
-    db_fd: *const c_void,
-    wal_fd: *const c_void,
-    callback_value: u32,
-    max_wal_size: i64,
-    wi_data: i32,
-    size_first_block: i32,
-    ap_wi_data: *const *mut u32,
-    page_size: u32,
-    read_lock: i16,
-    sync_flags: u8,
-    exclusive_mode: u8,
-    write_lock: u8,
-    checkpoint_lock: u8,
-    read_only: u8,
-    truncate_on_commit: u8,
-    sync_header: u8,
-    pad_to_section_boundary: u8,
-    b_shm_unreliable: u8,
-    hdr: WalIndexHdr,
-    min_frame: u32,
-    recalculate_checksums: u32,
-    wal_name: *const u8,
-    n_checkpoints: u32,
-    // if debug defined: log_error
-    // if snapshot defined: p_snapshot
-    // if setlk defined: *db
-    wal_methods: *mut WalMethods,
-}
-
 #[repr(C)]
 pub struct WalMethods {
-    pub iVersion: i32,
+    pub iVersion: c_int,
     pub xOpen: XWalOpenFn,
     pub xClose: XWalCloseFn,
     pub xLimit: XWalLimitFn,
@@ -106,25 +64,13 @@ pub struct WalMethods {
 // Only safe if we consider passing pointers from C safe to Send
 unsafe impl Send for WalMethods {}
 
-#[repr(C)]
-pub(crate) struct PgHdr {
-    page: *const c_void,
-    data: *const c_void,
-    extra: *const c_void,
-    pcache: *const c_void,
-    dirty: *const PgHdr,
-    pager: *const c_void,
-    pgno: i32,
-    flags: u16,
-}
-
-extern "C" fn open(
-    vfs: *const c_void,
-    _file: *const c_void,
-    wal_name: *const u8,
+extern "C" fn xOpen(
+    vfs: *const sqlite3_vfs,
+    _file: *mut sqlite3_file,
+    wal_name: *const c_char,
     no_shm_mode: i32,
     max_size: i64,
-    methods: *mut WalMethods,
+    methods: *mut libsql_wal_methods,
     wal: *mut *const Wal,
 ) -> i32 {
     tracing::debug!("Opening {}", unsafe {
@@ -139,8 +85,8 @@ extern "C" fn open(
     };
     let new_wal = Box::into_raw(Box::new(Wal {
         vfs,
-        db_fd: std::ptr::null(),
-        wal_fd: std::ptr::null(),
+        db_fd: std::ptr::null_mut(),
+        wal_fd: std::ptr::null_mut(),
         callback_value: 0,
         max_wal_size: max_size,
         wi_data: 0,
@@ -174,7 +120,11 @@ extern "C" fn open(
         recalculate_checksums: 0,
         wal_name,
         n_checkpoints: 0,
-        wal_methods: methods,
+        lock_error: 0,
+        p_snapshot: std::ptr::null(),
+        p_db: std::ptr::null(),
+
+        wal_methods: methods as _,
     }));
     unsafe { *wal = new_wal }
     tracing::debug!("Opened WAL at {:?}", new_wal);
@@ -182,40 +132,36 @@ extern "C" fn open(
 }
 
 fn get_methods(wal: *mut Wal) -> &'static mut WalMethods {
-    unsafe { &mut *(*wal).wal_methods }
+    unsafe { &mut *((*wal).wal_methods as *mut WalMethods) }
 }
 
-extern "C" {
-    fn libsql_wal_methods_register(wal_methods: *const WalMethods) -> i32;
-}
-
-extern "C" fn close(
+extern "C" fn xClose(
     wal: *mut Wal,
     _db: *mut c_void,
-    _sync_flags: i32,
-    _n_buf: i32,
+    _sync_flags: c_int,
+    _n_buf: c_int,
     _z_buf: *mut u8,
-) -> i32 {
+) -> c_int {
     let _ = unsafe { Box::from_raw(wal) };
     ffi::SQLITE_OK
 }
 
-extern "C" fn limit(_wal: *mut Wal, limit: i64) {
+extern "C" fn xLimit(_wal: *mut Wal, limit: i64) {
     tracing::debug!("Limit: {}", limit);
 }
 
-extern "C" fn begin_read(_wal: *mut Wal, changed: *mut i32) -> i32 {
+extern "C" fn xBeginReadTransaction(_wal: *mut Wal, changed: *mut i32) -> i32 {
     tracing::debug!("Read starts");
     unsafe { *changed = 1 }
     ffi::SQLITE_OK
 }
 
-extern "C" fn end_read(_wal: *mut Wal) -> i32 {
+extern "C" fn xEndReadTransaction(_wal: *mut Wal) -> i32 {
     tracing::debug!("Read ends");
     ffi::SQLITE_OK
 }
 
-extern "C" fn find_frame(wal: *mut Wal, pgno: i32, frame: *mut u32) -> i32 {
+extern "C" fn xFindFrame(wal: *mut Wal, pgno: u32, frame: *mut u32) -> c_int {
     let methods = get_methods(wal);
     let frameno = methods.replicator.find_frame(pgno);
     tracing::debug!("Page {} has frame {}", pgno, frameno);
@@ -223,7 +169,7 @@ extern "C" fn find_frame(wal: *mut Wal, pgno: i32, frame: *mut u32) -> i32 {
     ffi::SQLITE_OK
 }
 
-extern "C" fn read_frame(wal: *mut Wal, frameno: u32, n_out: i32, p_out: *mut u8) -> i32 {
+extern "C" fn xReadFrame(wal: *mut Wal, frameno: u32, n_out: i32, p_out: *mut u8) -> i32 {
     let methods = get_methods(wal);
     let frame = methods.replicator.get_frame(frameno);
     tracing::debug!(
@@ -242,22 +188,22 @@ extern "C" fn read_frame(wal: *mut Wal, frameno: u32, n_out: i32, p_out: *mut u8
     ffi::SQLITE_OK
 }
 
-extern "C" fn db_size(wal: *mut Wal) -> u32 {
+extern "C" fn xDbSize(wal: *mut Wal) -> u32 {
     let methods = get_methods(wal);
     methods.replicator.get_number_of_pages()
 }
 
-extern "C" fn begin_write(_wal: *mut Wal) -> i32 {
+extern "C" fn xBeginWriteTransaction(_wal: *mut Wal) -> i32 {
     tracing::debug!("Write starts");
     ffi::SQLITE_OK
 }
 
-extern "C" fn end_write(_wal: *mut Wal) -> i32 {
+extern "C" fn xEndWriteTransaction(_wal: *mut Wal) -> i32 {
     tracing::debug!("Write ends");
     ffi::SQLITE_OK
 }
 
-extern "C" fn undo(
+extern "C" fn xUndo(
     wal: *mut Wal,
     _func: extern "C" fn(*mut c_void, i32) -> i32,
     _ctx: *mut c_void,
@@ -267,11 +213,11 @@ extern "C" fn undo(
     ffi::SQLITE_OK
 }
 
-extern "C" fn savepoint(_wal: *mut Wal, _wal_data: *mut u32) {
+extern "C" fn xSavepoint(_wal: *mut Wal, _wal_data: *mut u32) {
     tracing::debug!("Savepoint called!");
 }
 
-extern "C" fn savepoint_undo(_wal: *mut Wal, _wal_data: *mut u32) -> i32 {
+extern "C" fn xSavepointUndo(_wal: *mut Wal, _wal_data: *mut u32) -> i32 {
     tracing::debug!("Savepoint-undo called!");
     ffi::SQLITE_MISUSE
 }
@@ -291,7 +237,7 @@ impl PageHdrIter {
 }
 
 impl std::iter::Iterator for PageHdrIter {
-    type Item = (i32, Vec<u8>);
+    type Item = (u32, Vec<u8>);
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.current_ptr.is_null() {
@@ -306,17 +252,17 @@ impl std::iter::Iterator for PageHdrIter {
     }
 }
 
-extern "C" fn frames(
+extern "C" fn xFrames(
     wal: *mut Wal,
-    page_size: u32,
-    page_headers: *const PgHdr,
+    page_size: c_int,
+    page_headers: *mut PgHdr,
     size_after: u32,
-    is_commit: i32,
-    _sync_flags: i32,
-) -> i32 {
+    is_commit: c_int,
+    _sync_flags: c_int,
+) -> c_int {
     let is_commit = is_commit != 0;
     let methods = get_methods(wal);
-    unsafe { (*wal).page_size = page_size };
+    unsafe { (*wal).page_size = page_size as _ };
     let pages_iter = PageHdrIter::new(page_headers, page_size as usize);
     methods.replicator.add_pending(pages_iter);
     tracing::debug!(
@@ -332,11 +278,12 @@ extern "C" fn frames(
     ffi::SQLITE_OK
 }
 
-extern "C" fn checkpoint(
+extern "C" fn xCheckpoint(
     _wal: *mut Wal,
     _db: *mut c_void,
     _emode: i32,
     _busy_handler: extern "C" fn(busy_param: *mut c_void) -> i32,
+    _busy_arg: *const c_void,
     _sync_flags: i32,
     _n_buf: i32,
     _z_buf: *mut u8,
@@ -347,7 +294,7 @@ extern "C" fn checkpoint(
     ffi::SQLITE_MISUSE
 }
 
-extern "C" fn callback(_wal: *mut Wal) -> i32 {
+extern "C" fn xCallback(_wal: *mut Wal) -> i32 {
     tracing::debug!("Callback called!");
     ffi::SQLITE_MISUSE
 }
@@ -360,7 +307,7 @@ fn set_mode(wal: *mut Wal, mode: u8) {
     unsafe { (*wal).exclusive_mode = mode }
 }
 
-extern "C" fn exclusive_mode(wal: *mut Wal, op: i32) -> i32 {
+extern "C" fn xExclusiveMode(wal: *mut Wal, op: c_int) -> c_int {
     match op.cmp(&0) {
         Ordering::Equal => {
             if get_mode(wal) != WAL_NORMAL_MODE {
@@ -378,56 +325,69 @@ extern "C" fn exclusive_mode(wal: *mut Wal, op: i32) -> i32 {
     }
 }
 
-extern "C" fn heap_memory(_wal: *mut Wal) -> i32 {
+extern "C" fn xHeapMemory(_wal: *mut Wal) -> c_int {
     42
 }
 
-extern "C" fn file(_wal: *mut Wal) -> *const c_void {
+extern "C" fn xFile(_wal: *mut Wal) -> *const c_void {
     tracing::debug!("file() called!");
     std::ptr::null()
 }
 
-extern "C" fn db(_wal: *mut Wal, _db: *const c_void) {
+extern "C" fn xDb(_wal: *mut Wal, _db: *const c_void) {
     tracing::debug!("db() called!");
 }
 
-extern "C" fn pathname_len(orig_len: i32) -> i32 {
+extern "C" fn xPathnameLen(orig_len: c_int) -> c_int {
     orig_len
 }
 
-extern "C" fn get_pathname(buf: *mut u8, orig: *const u8, orig_len: i32) {
+extern "C" fn xGetPathname(buf: *mut c_char, orig: *const c_char, orig_len: c_int) {
     unsafe { std::ptr::copy(orig, buf, orig_len as usize) }
+}
+
+pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, _path: *const c_char) -> i32 {
+    ffi::SQLITE_OK
 }
 
 #[cfg(feature = "fdb")]
 impl WalMethods {
     pub(crate) fn new(fdb_config_path: Option<String>) -> anyhow::Result<Self> {
-        let vwal_name: *const u8 = "edge_vwal\0".as_ptr();
+        let name: *const u8 = "edge_vwal\0".as_ptr();
         let vwal = WalMethods {
-            open,
-            close,
-            limit,
-            begin_read,
-            end_read,
-            find_frame,
-            read_frame,
-            db_size,
-            begin_write,
-            end_write,
-            undo,
-            savepoint,
-            savepoint_undo,
-            frames,
-            checkpoint,
-            callback,
-            exclusive_mode,
-            heap_memory,
-            file,
-            db,
-            pathname_len,
-            get_pathname,
+            iVersion: 1,
+            xOpen,
+            xClose,
+            xLimit,
+            xBeginReadTransaction,
+            xEndReadTransaction,
+            xFindFrame,
+            xReadFrame,
+            xDbSize,
+            xBeginWriteTransaction,
+            xEndWriteTransaction,
+            xUndo,
+            xSavepoint,
+            xSavepointUndo,
+            xFrames,
+            xCheckpoint,
+            xCallback,
+            xExclusiveMode,
+            xHeapMemory,
+            snapshot_get_stub: std::ptr::null(),
+            snapshot_open_stub: std::ptr::null(),
+            snapshot_recover_stub: std::ptr::null(),
+            snapshot_check_stub: std::ptr::null(),
+            snapshot_unlock_stub: std::ptr::null(),
+            framesize_stub: std::ptr::null(),
+            xFile,
+            write_lock_stub: std::ptr::null(),
+            xDb,
+            xPathnameLen,
+            xGetPathname,
+            xPreMainDbOpen,
+            name,
             b_uses_shm: 0,
-            name: vwal_name,
             p_next: std::ptr::null(),
             replicator: replicator::Replicator::new(fdb_config_path)?,
         };
@@ -446,7 +406,8 @@ pub(crate) fn open_with_virtual_wal(
     unsafe {
         let mut pdb: *mut ffi::sqlite3 = std::ptr::null_mut();
         let ppdb: *mut *mut ffi::sqlite3 = &mut pdb;
-        let register_err = libsql_wal_methods_register(&mut *vwal_methods as *mut WalMethods);
+        let register_err =
+            libsql_wal_methods_register(&mut *vwal_methods as *const WalMethods as _);
         assert_eq!(register_err, 0);
         let open_err = super::libsql_open(
             path.as_ref().as_os_str().as_bytes().as_ptr(),
