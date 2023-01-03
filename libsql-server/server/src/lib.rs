@@ -7,7 +7,7 @@ use anyhow::Result;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
-use rpc_server::run_proxy_server;
+use rpc::run_rpc_server;
 
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
@@ -17,13 +17,8 @@ mod libsql;
 mod postgres;
 mod query;
 mod query_analysis;
-mod rpc_server;
+mod rpc;
 mod server;
-
-pub mod proxy_rpc {
-    #![allow(clippy::all)]
-    tonic::include_proto!("proxy");
-}
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
@@ -88,7 +83,7 @@ pub async fn run_server(
             let service = DbFactoryService::new(db_factory.clone());
             let factory = PgConnectionFactory::new(service);
             if let Some(addr) = rpc_server_addr {
-                tokio::spawn(run_proxy_server(addr, db_factory));
+                tokio::spawn(run_rpc_server(addr, db_factory));
             }
             server.serve(factory).await;
         }
