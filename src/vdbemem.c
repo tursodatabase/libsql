@@ -114,9 +114,9 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
     i64 x;
     assert( (p->flags&MEM_Int)*2==sizeof(x) );
     memcpy(&x, (char*)&p->u, (p->flags&MEM_Int)*2);
-    sqlite3Int64ToText(x, zBuf);
+    p->n = sqlite3Int64ToText(x, zBuf);
 #else
-    sqlite3Int64ToText(p->u.i, zBuf);
+    p->n = sqlite3Int64ToText(p->u.i, zBuf);
 #endif
   }else{
     sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
@@ -124,6 +124,7 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
          (p->flags & MEM_IntReal)!=0 ? (double)p->u.i : p->u.r);
     assert( acc.zText==zBuf && acc.mxAlloc<=0 );
     zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */
+    p->n = acc.nChar;
   }
 }
 
@@ -151,6 +152,7 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
 ** This routine is for use inside of assert() statements only.
 */
 int sqlite3VdbeMemValidStrRep(Mem *p){
+  Mem tmp;
   char zBuf[100];
   char *z;
   int i, j, incr;
@@ -167,7 +169,8 @@ int sqlite3VdbeMemValidStrRep(Mem *p){
     assert( p->enc==SQLITE_UTF8 || p->z[((p->n+1)&~1)+1]==0 );
   }
   if( (p->flags & (MEM_Int|MEM_Real|MEM_IntReal))==0 ) return 1;
-  vdbeMemRenderNum(sizeof(zBuf), zBuf, p);
+  memcpy(&tmp, p, sizeof(tmp));
+  vdbeMemRenderNum(sizeof(zBuf), zBuf, &tmp);
   z = p->z;
   i = j = 0;
   incr = 1;
@@ -436,7 +439,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 
   vdbeMemRenderNum(nByte, pMem->z, pMem);
   assert( pMem->z!=0 );
-  pMem->n = sqlite3Strlen30NN(pMem->z);
+  assert( pMem->n==sqlite3Strlen30NN(pMem->z) );
   pMem->enc = SQLITE_UTF8;
   pMem->flags |= MEM_Str|MEM_Term;
   if( bForce ) pMem->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal);

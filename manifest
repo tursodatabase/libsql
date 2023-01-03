@@ -1,5 +1,5 @@
-C Small\sperformance\simprovement\sin\sthe\sbtreeOverwriteCell()\sroutine.
-D 2023-01-03T15:11:01.142
+C Avoid\san\sunnecessary\scall\sto\sstrlen()\sin\sthe\ssqlite3VdbeMemStringify()\sroutine,\nfor\sa\sperformance\sincrease\sand\ssize\sreduction.
+D 2023-01-03T18:51:18.573
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -650,7 +650,7 @@ F src/shell.c.in 01816a1e0eb3a2e9a9a4b11570d68058969c88b2ec5ecaf80c57d6ca1b8d46a
 F src/sqlite.h.in 7982c691e4647071a6df1ef45e7d704613225259414e153939b0928a9952a1ae
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
-F src/sqliteInt.h 98bc12d3191ff4c70e8491b639784c83d577b7177377d4fb344826ac56bae8a8
+F src/sqliteInt.h e0c0fdb6a475c8dcf94c48bc0521c7381ae28239ce9a23d8fbfdea249c0d2899
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -715,7 +715,7 @@ F src/trigger.c 5e68b790f022b8dafbfb0eb244786512a95c9575fc198719d2557d73e5795858
 F src/update.c f118e51768d2c1309e3c81e9f91141b22b8a1339cbc5969b1b2d810feaa25b22
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c 313f3154e2b85a447326f5dd15de8d31a4df6ab0c3579bd58f426ff634ec9050
+F src/util.c 0e5cf9062a796f0f1b6b3228b121b2344932c05425f7c8b5a7cb245812473bbd
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
 F src/vdbe.c b2f2cbaae707685b9860bd54cdd6657076c28e82c725d795ae389c10850a97a6
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
@@ -723,7 +723,7 @@ F src/vdbeInt.h fc15815b7bdafbb27e7f027faba2b0112e87d382c0d72241672528806ebc0db5
 F src/vdbeapi.c 4ee67890913c1d2469c68e3ad2e7ddeab57ac5924a64bbfd0906a8ea0d542c7f
 F src/vdbeaux.c 9eb7394126b88e55f81321d5e87636e0cd5e5856818d644d8abd6bfbb9c0be9d
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
-F src/vdbemem.c 6cfed43758d57b6e3b99d9cdedfeccd86e45a07e427b22d8487cbdbebb6c522a
+F src/vdbemem.c a958d07da2f1093d22ffd1b147530b07f139e781ce51e6dab5a36a15bbdad12d
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7f96803c1cbd0633367173ab0a67a8b301b9e0746e460c50d506b536c15db0a0
-R 10289e6f8e31034fa806339dcdadfd2f
+P df5ea47130d275e9fa1bd6aa8d55f1d5e136cba30ba13b7ede22224aa7f78919
+R a2a32720b2f8777521bc8622d675c7f8
 U drh
-Z 4e108d77c081298b7689d1eafc6b59e1
+Z f34cc68dd6274f0e7d2c85494306685a
 # Remove this line to create a well-formed Fossil manifest.
