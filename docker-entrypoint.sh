@@ -2,7 +2,7 @@
 
 set -Eeuo pipefail
 
-IKU_TURSO_NODE="${IKU_TURSO_NODE:-primary}"
+SQLD_NODE="${SQLD_NODE:-primary}"
 
 if [ "$1" = '/bin/sqld' ]; then
   # We are running the server.
@@ -12,12 +12,12 @@ if [ "$1" = '/bin/sqld' ]; then
   server_args+=("--pg-listen-addr" "0.0.0.0:5000")
 
   # Set remaining arguments depending on what type of node we are.
-  case "$IKU_TURSO_NODE" in
+  case "$SQLD_NODE" in
     primary)
       server_args+=("--grpc-listen-addr" "0.0.0.0:5001")
       ;;
     replica)
-      server_args+=("--primary-grpc-url" "$IKU_TURSO_PRIMARY_URL")
+      server_args+=("--primary-grpc-url" "$SQLD_PRIMARY_URL")
       ;;
     standalone)
       ;;
