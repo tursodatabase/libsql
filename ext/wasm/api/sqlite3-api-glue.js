@@ -26,17 +26,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   if(0){
     /**
-       This block inexplicably fails on Safari, per report at
-       https://sqlite.org/forum/forumpost/e5b20e1feb. In its place,
-       we instead add an unsightly snippet to
-       sqlite3_wasm_enum_json() which emits the SQLITE_WASM_DEALLOC
-       pointer as an integer.
+       Please keep this block around as a maintenance reminder
+       that we cannot rely on this type of check.
 
-        "The problem" with that approach is that in order to honor
-        sqlite3.config.deallocExportName, we have to have the
-        following loop (or something equivalent). Because we cannot
-        (for Safari) do so, we are currently implicitly hard-coded to
-        using sqlite3.config.deallocExportName==='sqlite3_free'.
+       This block fails on Safari, per a report at
+       https://sqlite.org/forum/forumpost/e5b20e1feb.
+
+       It turns out that what Safari serves from the indirect function
+       table (e.g. wasm.functionEntry(X)) is anonymous functions which
+       wrap the WASM functions, rather than returning the WASM
+       functions themselves. That means comparison of such functions
+       is useless for determining whether or not we have a specific
+       function from wasm.exports. i.e. if function X is indirection
+       function table entry N then wasm.exports.X is not equal to
+       wasm.functionEntry(N) in Safari, despite being so in the other
+       browsers.
     */
     /**
        Find a mapping for SQLITE_WASM_DEALLOC, which the API
@@ -809,16 +813,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi[e[0]] = e[1];
       }
     }
-    /*  Exporting SQLITE_WASM_DEALLOC via the wasm.ctype entries fails
-        in Safari. One final thing to try: */
-    capi.SQLITE_WASM_DEALLOC = wasm.exports.sqlite3_wasm_ptr_to_sqlite3_free();
-    if(wasm.exports[sqlite3.config.deallocExportName]
-       !== wasm.functionEntry(capi.SQLITE_WASM_DEALLOC)){
-      toss("Internal error: sqlite3.wasm.exports["+
-           sqlite3.config.deallocExportName+"]",
-           "is not the same pointer as SQLITE_WASM_DEALLOC.",
-           "These must match in order to accommodate allocator-related",
-           "API guarantees.");
+    if(!wasm.functionEntry(capi.SQLITE_WASM_DEALLOC)){
+      toss("Internal error: cannot resolve exported function",
+           "entry SQLITE_WASM_DEALLOC (=="+capi.SQLITE_WASM_DEALLOC+").");
     }
     const __rcMap = Object.create(null);
     for(const t of ['resultCodes']){
