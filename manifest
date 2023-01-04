@@ -1,5 +1,5 @@
-C Elaborate\son\sthe\sopen-in-read-only\sfallback\sbehavior\sof\sthe\sSQLITE_OPEN_READWRITE\sflag,\sper\suser\srequest.\sUnrelated\strailing\sEOL\swhitespace\scleanups.
-D 2023-01-04T11:57:27.127
+C Remove\sthe\sunused\s"sqlite3StackAllocZero()"\smacro.
+D 2023-01-04T11:58:36.598
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -650,7 +650,7 @@ F src/shell.c.in 01816a1e0eb3a2e9a9a4b11570d68058969c88b2ec5ecaf80c57d6ca1b8d46a
 F src/sqlite.h.in 973f6b2e9a6599b14eec6f88212d83a1d4e888bf62086e46b0580614f78cea7c
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
-F src/sqliteInt.h e0c0fdb6a475c8dcf94c48bc0521c7381ae28239ce9a23d8fbfdea249c0d2899
+F src/sqliteInt.h a91f9e4d070321073515d679a8e2a3e4c0b703ae6f71d7e098994967ea3a348e
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2067,8 +2067,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 65ff3200c6009a1649fc108d7ce36f5c014185ba46bbf98471ec86eaeb572656
-R ff536d5b4bd68ee026a95d2a22179954
-U stephan
-Z 24f9760adb78b1f8854f3748c7f5f544
+P 1003144fc192e1531e1bc968d7e1d0ccc7ad31e501180f90e1479565a4abfb96
+R bbb7c2640e428b46b43d7a75ed8c9e3a
+U drh
+Z 3ab3e7982b79f028381868153476f917
 # Remove this line to create a well-formed Fossil manifest.
