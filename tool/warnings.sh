@@ -11,7 +11,13 @@ if uname | grep -i openbsd ; then
 else
   # Use these for testing on Linux and Mac OSX:
   WARNING_OPTS="-Wshadow -Wall -Wextra -pedantic-errors -Wno-long-long"
-  WARNING_ANDROID_OPTS="-Wshadow -Wall -Wextra"
+  gccvers=`gcc -v 2>&1 | grep '^gcc version'`
+  if test "$gccvers" '<' 'gcc version 6'
+  then
+    WARNING_ANDROID_OPTS="-Wshadow -Wall -Wextra"
+  else
+    WARNING_ANDROID_OPTS="-Wshadow -Wall -Wextra -Wimplicit-fallthrough=0"
+  fi
 fi
 
 rm -f sqlite3.c

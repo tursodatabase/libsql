@@ -1,5 +1,5 @@
-C Ensure\sthat\sLIMIT\sclauses\smay\sbe\spassed\sthrough\sto\svirtual\stable\simplementations\seven\sif\sthe\sWHERE\sclause\suses\soperators\sthat\smay\sonly\sbe\soptimized\sby\svirtual,\snot\sbuilt-in,\stables\s(!=,\sfunctions,\sMATCH\setc.).
-D 2023-01-04T17:46:29.753
+C Adjustements\sto\sthe\stool/warnings.sh\sscript\sto\saccount\sfor\scompiler\ndifferences.
+D 2023-01-04T18:32:14.740
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2045,7 +2045,7 @@ F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
-F tool/warnings.sh d58dc38367cc776550f90327e205d7946802d4004fb9f291fd8b81256bc1eedd
+F tool/warnings.sh ab651bb82586c43ff8b560beceac959735bf917b44c5e0f67ba3426e474f29f8
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F vsixtest/App.xaml b76d3b48860e7454775c47ea38ffea9c4abe3e85
 F vsixtest/App.xaml.cpp 41158ee43269820136fa3bba00c0bd91b26cc38b650ee392aec2a8d823e54318
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 869635fb81e0868dee80ce77653a2c1d2af41b3ffbf0a3f7b788ac99dc808887
-R 09b79d8dee52dbbaabe508a6440984a8
-U dan
-Z 3297969a556ae071bd8b9f4bfdf478f8
+P f38caab23bcef1df02618376de22d208a3333d023628cde310345505933329f1
+R 0651c8b5c0eb8ee41e81e5404c0397d0
+U drh
+Z 4a273995e784c5323bf444a97d5e6264
 # Remove this line to create a well-formed Fossil manifest.
