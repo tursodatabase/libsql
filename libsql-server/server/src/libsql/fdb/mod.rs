@@ -52,7 +52,7 @@ pub struct WalMethods {
     pub xDb: XWalDbFn,
     pub xPathnameLen: XWalPathNameLenFn,
     pub xGetPathname: XWalGetPathNameFn,
-    pub xPreMainDbOpen: XWallPreMainDbOpen,
+    pub xPreMainDbOpen: XWalPreMainDbOpen,
     pub b_uses_shm: i32,
     pub name: *const u8,
     pub p_next: *const c_void,

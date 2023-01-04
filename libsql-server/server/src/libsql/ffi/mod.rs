@@ -96,7 +96,6 @@ pub struct Wal {
     pub wal_methods: *mut libsql_wal_methods,
 }
 
-// Only here for creating a Wal struct instance, we're not going to use it
 #[repr(C)]
 #[allow(non_snake_case, non_camel_case_types)]
 pub struct WalIndexHdr {
@@ -147,7 +146,7 @@ pub struct libsql_wal_methods {
     pub xDb: XWalDbFn,
     pub xPathnameLen: XFullPathNameFn,
     pub xGetPathname: XWalGetPathNameFn,
-    pub xPreMainDbOpen: XWallPreMainDbOpen,
+    pub xPreMainDbOpen: XWalPreMainDbOpen,
     pub b_uses_shm: i32,
     pub name: *const u8,
     pub p_next: *const c_void,

@@ -34,7 +34,7 @@ pub type XWalFileFn = extern "C" fn(wal: *mut Wal) -> *const c_void;
 pub type XWalDbFn = extern "C" fn(wal: *mut Wal, db: *const c_void);
 pub type XWalPathNameLenFn = extern "C" fn(orig_len: c_int) -> c_int;
 pub type XWalGetPathNameFn = extern "C" fn(buf: *mut c_char, orig: *const c_char, orig_len: c_int);
-pub type XWallPreMainDbOpen =
+pub type XWalPreMainDbOpen =
     extern "C" fn(methods: *mut libsql_wal_methods, path: *const c_char) -> c_int;
 pub type XWalOpenFn = extern "C" fn(
     vfs: *const sqlite3_vfs,

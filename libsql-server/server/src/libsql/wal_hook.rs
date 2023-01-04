@@ -16,7 +16,6 @@ pub unsafe trait WalHook {
     /// Intercept `xFrame` call. `orig` is the function pointer to the underlying wal method.
     /// The default implementation of this trait simply calls orig with the other passed arguments.
     #[allow(clippy::too_many_arguments)]
-    #[inline]
     fn on_frames(
         &mut self,
         wal: *mut Wal,
@@ -39,7 +38,6 @@ pub unsafe trait WalHook {
 
     /// Intercept `xUndo` call. `orig` is the function pointer to the underlying wal method.
     /// The default implementation of this trait simply calls orig with the other passed arguments.
-    #[inline]
     fn on_undo(
         &mut self,
         wal: *mut Wal,
@@ -353,7 +351,7 @@ pub struct WalMethodsHook {
     pub xDb: XWalDbFn,
     pub xPathnameLen: XWalPathNameLenFn,
     pub xGetPathname: XWalGetPathNameFn,
-    pub xPreMainDbOpen: XWallPreMainDbOpen,
+    pub xPreMainDbOpen: XWalPreMainDbOpen,
     pub b_uses_shm: i32,
     pub name: *const u8,
     pub p_next: *const c_void,
