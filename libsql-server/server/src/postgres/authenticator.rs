@@ -11,7 +11,7 @@ impl PgAuthenticator {
     pub async fn authenticate<T>(
         &self,
         client: &mut Framed<T, PgWireMessageServerCodec>,
-        msg: &PgWireFrontendMessage,
+        msg: PgWireFrontendMessage,
     ) -> Result<(), PgWireError>
     where
         T: AsyncRead + AsyncWrite + Unpin + Send,

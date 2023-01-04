@@ -60,7 +60,7 @@ where
             PgWireConnectionState::AwaitingStartup
             | PgWireConnectionState::AuthenticationInProgress => {
                 self.authenticator
-                    .authenticate(&mut self.socket, &msg)
+                    .authenticate(&mut self.socket, msg)
                     .await?;
             }
             _ => match msg {
@@ -70,7 +70,7 @@ where
                     poll_fn(|c| self.service.poll_ready(c)).await.unwrap();
                     let resp = self.service.call(query).await;
                     SimpleHandler::new(resp)
-                        .on_query(&mut self.socket, &q)
+                        .on_query(&mut self.socket, q)
                         .await?;
                 }
                 // TODO: handle extended queries.
@@ -82,7 +82,11 @@ where
                 PgWireFrontendMessage::Sync(_) => todo!(),
                 PgWireFrontendMessage::Terminate(_) => return Ok(false),
                 // These messages are handled by the connection service on startup.
-                PgWireFrontendMessage::Startup(_) | PgWireFrontendMessage::Password(_) => (),
+                PgWireFrontendMessage::Startup(_)
+                | PgWireFrontendMessage::PasswordMessageFamily(_)
+                | PgWireFrontendMessage::Password(_)
+                | PgWireFrontendMessage::SASLInitialResponse(_)
+                | PgWireFrontendMessage::SASLResponse(_) => (),
             },
         }
         Ok(true)
