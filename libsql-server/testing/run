@@ -8,8 +8,8 @@ import time
 
 def start_server_cmd():
     basedir = os.path.dirname(os.path.realpath(__file__))
-    binary = os.path.realpath(os.path.join(basedir, "../target/debug/server"))
-    return [binary, "serve"]
+    binary = os.path.realpath(os.path.join(basedir, "../target/debug/sqld"))
+    return [binary]
 
 
 cmd = start_server_cmd()
