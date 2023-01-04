@@ -18,9 +18,9 @@ RUN cargo build --release
 
 # runtime
 FROM debian:bullseye-slim
-COPY --from=builder /iku-turso/target/release/server /bin/server
+COPY --from=builder /iku-turso/target/release/sqld /bin/sqld
 COPY docker-entrypoint.sh /usr/local/bin
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 5000
-CMD ["/bin/server", "serve"]
+CMD ["/bin/sqld"]

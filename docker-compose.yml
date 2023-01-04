@@ -3,15 +3,15 @@ services:
   writer:
     build: .
     environment:
-      - IKU_TURSO_NODE=primary
+      - SQLD_NODE=primary
     ports:
       - "6000:5000"
   reader:
     build: .
     environment:
       - RUST_LOG=server=trace
-      - IKU_TURSO_NODE=replica
-      - IKU_TURSO_PRIMARY_URL="http://writer:5001"
+      - SQLD_NODE=replica
+      - SQLD_PRIMARY_URL="http://writer:5001"
     depends_on:
       - writer
   nginx:
