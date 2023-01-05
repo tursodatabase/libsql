@@ -95,9 +95,15 @@ where
             } else if ty == &Type::INT8 {
                 let v = i64::from_be_bytes((val.as_ref().unwrap()[..8]).try_into().unwrap());
                 Value::Integer(v)
+            } else if ty == &Type::BYTEA {
+                Value::Blob(val.as_ref().unwrap().to_vec())
+            } else if ty == &Type::FLOAT8 {
+                let val = f64::from_be_bytes(val.as_ref().unwrap()[..8].try_into().unwrap());
+                Value::Real(val)
             } else {
-                todo!()
+                unimplemented!("unsupported type")
             };
+
             params.push(value);
         }
 
