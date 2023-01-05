@@ -95,4 +95,22 @@ do_execsql_test 3.0 {
   PRAGMA integrity_check;
 } {a {} ok}
 
+
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a REAL, b AS ('expr') ); 
+}
+do_execsql_test 4.1 {
+  INSERT INTO t1 VALUES( REPLACE(0, '', 'expr') );
+}
+do_execsql_test 4.2 {
+  INSERT INTO t1 SELECT REPLACE(4, '', 'expr');
+}
+do_execsql_test 4.3 {
+  SELECT typeof(a), a FROM t1;
+} {
+  real 0.0
+  real 4.0
+}
+
 finish_test

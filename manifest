@@ -1,5 +1,5 @@
-C In\sthe\szipvfile\sextension\s(which\sis\snot\spart\sof\sthe\sSQLite\samalgamation,\sbut\nwhich\sis\sincluded\sin\sthe\sCLI\sby\sdefault)\sensure\sthat\sfopen()\sis\snot\sinvoked\nusing\sa\sNULL\sfilename.\s\sFix\sfor\sthe\sissue\sreported\sby\n[forum:/forumpost/d1c96a9032e564f8|forum\spost\sd1c96a9032e564f8].
-D 2023-01-05T01:26:58.676
+C Fix\sa\sproblem\swith\sapplying\sinteger\saffinity\sto\sa\sMEM_IntReal\svalue.\sForum\spost\s[forum:/forumpost/d270125fae|forum\spost\sd270125fae].
+D 2023-01-05T13:35:23.331
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -717,13 +717,13 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 0e5cf9062a796f0f1b6b3228b121b2344932c05425f7c8b5a7cb245812473bbd
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c b2f2cbaae707685b9860bd54cdd6657076c28e82c725d795ae389c10850a97a6
+F src/vdbe.c 5146547a60e2afe79f8d4e089e6d4e4af7c20dff8726b4afdc3e651951965926
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h fc15815b7bdafbb27e7f027faba2b0112e87d382c0d72241672528806ebc0db5
 F src/vdbeapi.c 4ee67890913c1d2469c68e3ad2e7ddeab57ac5924a64bbfd0906a8ea0d542c7f
 F src/vdbeaux.c 9eb7394126b88e55f81321d5e87636e0cd5e5856818d644d8abd6bfbb9c0be9d
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
-F src/vdbemem.c a958d07da2f1093d22ffd1b147530b07f139e781ce51e6dab5a36a15bbdad12d
+F src/vdbemem.c 316d518115f3720b4097f0231e2a3d6eefd06c787eccf44972f8d8f462153421
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -1231,7 +1231,7 @@ F test/intarray.test bb976b0b3df0ebb6a2eddfb61768280440e672beba5460ed49679ea984c
 F test/interrupt.test 16ea879ec728cb76414c148c5f24afd5d1f91054
 F test/interrupt2.test e4408ca770a6feafbadb0801e54a0dcd1a8d108d
 F test/intpkey.test aee694afed1a65c86c4e69ad030224b3fc268113d00685234d40079fca16bad3
-F test/intreal.test 2a87e85a5949bd55e41ef04c58f5800587c5380bdbc559ff1c79b614b0e6a533
+F test/intreal.test 68829a8bb073ee1610ca3f8f9e0f99b0371fb36e0fa64862dd5ced4ef03c2343
 F test/io.test f138f3fe696d1ed8c51dfea5b325910d319a1b29e1d25ea57231a02092f02cca
 F test/ioerr.test 530d05801ff1b6327018b2e140da34a74effa2773a844ddb8dc79c32e9567318
 F test/ioerr2.test 2593563599e2cc6b6b4fcf5878b177bdd5d8df26
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 863c03bee117e81bcea8c3ae78bf125afc7750aa5bcb89e42ee66d9c8b6ddc29
-R bd7d81d0f784ddf0f83823f59d4bdcb7
-U drh
-Z 83514ac1bc5e12b1f951dce5d4ed25a4
+P d32757ddf5d311b6f62545c861fd606244e03f02cb2e317c1131ee6b80c2299c
+R 43a48a6ce0ca4ae5f2a61e4123b4d02f
+U dan
+Z 2b2dc45aecbee0087730c69517333ab0
 # Remove this line to create a well-formed Fossil manifest.
