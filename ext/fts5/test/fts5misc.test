@@ -352,5 +352,96 @@ do_test 13.3 {
   sqlite3_errmsg db
 } {not an error}
 
+#-------------------------------------------------------------------------
+reset_db
+db close
+sqlite3 db test.db -uri 1
+
+do_execsql_test 14.0 {
+  PRAGMA locking_mode=EXCLUSIVE;
+  BEGIN;
+  ATTACH 'file:/one?vfs=memdb' AS aux1;
+  ATTACH 'file:/one?vfs=memdb' AS aux2;
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+} {exclusive}
+do_catchsql_test 14.1 {
+  ANALYZE;
+} {1 {database is locked}}
+do_catchsql_test 14.2 {
+  COMMIT;
+} {1 {database is locked}}
+do_catchsql_test 14.3 {
+  COMMIT;
+} {1 {database is locked}}
+do_catchsql_test 14.4 {
+  ROLLBACK;
+} {0 {}}
+
+#-------------------------------------------------------------------------
+reset_db
+sqlite3 db2 test.db
+
+do_execsql_test 15.0 {
+  CREATE TABLE t1(a, b);
+  BEGIN;
+    SELECT * FROM t1;
+}
+
+do_execsql_test -db db2 15.1 {
+  BEGIN; 
+    CREATE VIRTUAL TABLE x1 USING fts5(y);
+}
+do_test 15.2 {
+  list [catch { db2 eval COMMIT } msg] $msg
+} {1 {database is locked}}
+do_execsql_test -db db2 15.3 {
+  SAVEPOINT one;
+} {}
+do_execsql_test 15.4 END
+do_test 15.4 {
+  list [catch { db2 eval COMMIT } msg] $msg
+} {0 {}}
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db
+do_execsql_test 16.0 {
+
+  ATTACH 'test.db2' AS aux;
+  CREATE TABLE aux.t2(x,y);
+  INSERT INTO t2 VALUES(1, 2);
+  CREATE VIRTUAL TABLE x1 USING fts5(a);
+  BEGIN;
+    INSERT INTO x1 VALUES('abc');
+    INSERT INTO t2 VALUES(3, 4);
+}
+
+do_execsql_test -db db2 16.1 {
+  ATTACH 'test.db2' AS aux;
+  BEGIN;
+    SELECT * FROM t2
+} {1 2}
+
+do_catchsql_test 16.2 {
+  COMMIT;
+} {1 {database is locked}}
+
+do_execsql_test 16.3 {
+  INSERT INTO x1 VALUES('def');
+}
+
+do_execsql_test -db db2 16.4 { 
+  END 
+}
+
+do_execsql_test 16.5 {
+  COMMIT
+}
+
+do_execsql_test -db db2 16.6 {
+  SELECT * FROM x1
+} {abc def}
+
 finish_test
 

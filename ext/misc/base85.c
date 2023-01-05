@@ -85,9 +85,7 @@
 
 #ifndef BASE85_STANDALONE
 
-#ifndef SQLITE_SHELL_EXTFUNCS /* Guard for #include as built-in extension. */
 # include "sqlite3ext.h"
-#endif
 
 SQLITE_EXTENSION_INIT1;
 
@@ -113,9 +111,9 @@ static void sayHelp(){
 }
 #endif
 
-#ifndef UBYTE_TYPEDEF
-typedef unsigned char ubyte;
-# define UBYTE_TYPEDEF
+#ifndef U8_TYPEDEF
+typedef unsigned char u8;
+#define U8_TYPEDEF
 #endif
 
 /* Classify c according to interval within USASCII set w.r.t. base85
@@ -124,15 +122,15 @@ typedef unsigned char ubyte;
 #define B85_CLASS( c ) (((c)>='#')+((c)>'&')+((c)>='*')+((c)>'z'))
 
 /* Provide digitValue to b85Numeral offset as a function of above class. */
-static ubyte b85_cOffset[] = { 0, '#', 0, '*'-4, 0 };
+static u8 b85_cOffset[] = { 0, '#', 0, '*'-4, 0 };
 #define B85_DNOS( c ) b85_cOffset[B85_CLASS(c)]
 
 /* Say whether c is a base85 numeral. */
 #define IS_B85( c ) (B85_CLASS(c) & 1)
 
 #if 0 /* Not used, */
-static ubyte base85DigitValue( char c ){
-  ubyte dv = (ubyte)(c - '#');
+static u8 base85DigitValue( char c ){
+  u8 dv = (u8)(c - '#');
   if( dv>87 ) return 0xff;
   return (dv > 3)? dv-3 : dv;
 }
@@ -151,7 +149,7 @@ static char * skipNonB85( char *s ){
 /* Convert small integer, known to be in 0..84 inclusive, to base85 numeral.
  * Do not use the macro form with argument expression having a side-effect.*/
 #if 0
-static char base85Numeral( ubyte b ){
+static char base85Numeral( u8 b ){
   return (b < 4)? (char)(b + '#') : (char)(b - 4 + '*');
 }
 #else
@@ -169,7 +167,7 @@ static char *putcs(char *pc, char *s){
 ** to be appended to encoded groups to limit their length to B85_DARK_MAX
 ** or to terminate the last group (to aid concatenation.)
 */
-static char* toBase85( ubyte *pIn, int nbIn, char *pOut, char *pSep ){
+static char* toBase85( u8 *pIn, int nbIn, char *pOut, char *pSep ){
   int nCol = 0;
   while( nbIn >= 4 ){
     int nco = 5;
@@ -197,7 +195,7 @@ static char* toBase85( ubyte *pIn, int nbIn, char *pOut, char *pSep ){
     }
     nCol += nco;
     while( nco > 0 ){
-      ubyte dv = (ubyte)(qv % 85);
+      u8 dv = (u8)(qv % 85);
       qv /= 85;
       pOut[--nco] = base85Numeral(dv);
     }
@@ -209,7 +207,7 @@ static char* toBase85( ubyte *pIn, int nbIn, char *pOut, char *pSep ){
 }
 
 /* Decode base85 text into a byte buffer. */
-static ubyte* fromBase85( char *pIn, int ncIn, ubyte *pOut ){
+static u8* fromBase85( char *pIn, int ncIn, u8 *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 ){
     static signed char nboi[] = { 0, 0, 1, 2, 3, 4 };
@@ -223,7 +221,7 @@ static ubyte* fromBase85( char *pIn, int ncIn, ubyte *pOut ){
     if( nbo==0 ) break;
     while( nti>0 ){
       char c = *pIn++;
-      ubyte cdo = B85_DNOS(c);
+      u8 cdo = B85_DNOS(c);
       --ncIn;
       if( cdo==0 ) break;
       qv = 85 * qv + (c - cdo);
@@ -287,7 +285,7 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
   int nvMax = sqlite3_limit(sqlite3_context_db_handle(context),
                             SQLITE_LIMIT_LENGTH, -1);
   char *cBuf;
-  ubyte *bBuf;
+  u8 *bBuf;
   assert(na==1);
   switch( sqlite3_value_type(av[0]) ){
   case SQLITE_BLOB:
@@ -300,7 +298,7 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     }
     cBuf = sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
-    bBuf = (ubyte*)sqlite3_value_blob(av[0]);
+    bBuf = (u8*)sqlite3_value_blob(av[0]);
     nc = (int)(toBase85(bBuf, nb, cBuf, "\n") - cBuf);
     sqlite3_result_text(context, cBuf, nc, sqlite3_free);
     break;
@@ -370,7 +368,7 @@ static int sqlite3_base85_init
 int main(int na, char *av[]){
   int cin;
   int rc = 0;
-  ubyte bBuf[4*(B85_DARK_MAX/5)];
+  u8 bBuf[4*(B85_DARK_MAX/5)];
   char cBuf[5*(sizeof(bBuf)/4)+2];
   size_t nio;
 # ifndef OMIT_BASE85_CHECKER
