@@ -1,7 +1,7 @@
 # install dependencies
 FROM rust:slim-bullseye AS compiler
 RUN apt update && apt install -y libclang-dev clang libsqlite3-dev \
-    build-essential tcl protobuf-compiler file libssl-dev pkg-config
+    build-essential tcl protobuf-compiler file
 RUN cargo install cargo-chef
 WORKDIR /sqld
 

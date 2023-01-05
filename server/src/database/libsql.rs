@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::str::FromStr;
+#[cfg(feature = "mwal_backend")]
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -63,7 +64,9 @@ macro_rules! ok_or_exit {
 impl LibSqlDb {
     pub fn new(
         path: impl AsRef<Path> + Send + 'static,
-        vwal_methods: Option<Arc<Mutex<mwal::ffi::libsql_wal_methods>>>,
+        #[cfg(feature = "mwal_backend")] vwal_methods: Option<
+            Arc<Mutex<mwal::ffi::libsql_wal_methods>>,
+        >,
         wal_hook: impl WalHook + Send + Clone + 'static,
     ) -> anyhow::Result<Self> {
         let (sender, receiver) =
@@ -72,6 +75,7 @@ impl LibSqlDb {
         tokio::task::spawn_blocking(move || {
             let mut retries = 0;
             let conn = loop {
+                #[cfg(feature = "mwal_backend")]
                 let conn_result = match vwal_methods {
                     Some(ref vwal_methods) => crate::libsql::mwal::open_with_virtual_wal(
                         &path,
@@ -90,6 +94,15 @@ impl LibSqlDb {
                         wal_hook.clone(),
                     ),
                 };
+                #[cfg(not(feature = "mwal_backend"))]
+                let conn_result = crate::libsql::open_with_regular_wal(
+                    &path,
+                    OpenFlags::SQLITE_OPEN_READ_WRITE
+                        | OpenFlags::SQLITE_OPEN_CREATE
+                        | OpenFlags::SQLITE_OPEN_URI
+                        | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                    wal_hook.clone(),
+                );
                 match conn_result {
                     Ok(conn) => break conn,
                     Err(e) => {
