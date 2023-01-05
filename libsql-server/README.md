@@ -15,6 +15,7 @@ With `sqld` you can use SQLite-like interface in your app, but have a transparen
  
 ## Roadmap
 
+* Client authentication and TLS
 * Read replica support for geo-distribution.
 * Integration with libSQL's [bottomless storage](https://github.com/libsql/bottomless)
 
