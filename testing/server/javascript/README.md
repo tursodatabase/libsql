@@ -1,6 +1,6 @@
 # JavaScript PostgreSQL client acceptance tests
 
-These are JavaScript PostgreSQL client acceptance tests for the ChiselEdge server.
+These are JavaScript PostgreSQL client acceptance tests for the `sqld` server.
 
 ## Getting Started
 
