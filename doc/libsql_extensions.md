@@ -183,7 +183,7 @@ Write-ahead log is a journaling mode which enables nice write concurrency charac
 In order to register a new set of virtual WAL methods, these methods need to be implemented. This is the current API:
 ```c
 typedef struct libsql_wal_methods {
-  int iVersion; /* Current version is 1, versioning is here for backward compatibility *.
+  int iVersion; /* Current version is 1, versioning is here for backward compatibility */
   /* Open and close a connection to a write-ahead log. */
   int (*xOpen)(sqlite3_vfs*, sqlite3_file* , const char*, int no_shm_mode, i64 max_size, struct libsql_wal_methods*, Wal**);
   int (*xClose)(Wal*, sqlite3* db, int sync_flags, int nBuf, u8 *zBuf);
