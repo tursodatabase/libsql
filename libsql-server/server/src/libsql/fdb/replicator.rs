@@ -12,10 +12,10 @@ pub(crate) struct Replicator {
     top_frameno: AtomicU32,
     // Map of pages that take part in current transaction,
     // but aren't committed yet
-    pending_pages: HashMap<i32, (u32, Vec<u8>)>,
+    pending_pages: HashMap<u32, (u32, Vec<u8>)>,
     // Map of frames that take part in current transaction,
     // but aren't committed yet
-    pending_frames: HashMap<u32, i32>,
+    pending_frames: HashMap<u32, u32>,
 }
 
 impl Replicator {
@@ -98,7 +98,7 @@ impl Replicator {
         self.clear_pending()
     }
 
-    pub(crate) fn find_frame(&self, pgno: i32) -> u32 {
+    pub(crate) fn find_frame(&self, pgno: u32) -> u32 {
         tracing::debug!("Looking for frame for page {}", pgno,);
 
         if let Some((frame, _)) = self.pending_pages.get(&pgno) {
@@ -124,7 +124,7 @@ impl Replicator {
                     // Proprietary ultimate genius key format: iku-key-XXpageXX-XframeXX
                     let page = std::str::from_utf8(&elem.key()[8..=15])
                         .unwrap()
-                        .parse::<i32>()
+                        .parse::<u32>()
                         .unwrap();
                     let frame = std::str::from_utf8(&elem.key()[17..=24])
                         .unwrap()

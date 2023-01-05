@@ -14,12 +14,12 @@ use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
 
 mod database;
+mod libsql;
 mod postgres;
 mod query;
 mod query_analysis;
 mod rpc_server;
 mod server;
-mod wal;
 
 pub mod proxy_rpc {
     #![allow(clippy::all)]
@@ -43,7 +43,7 @@ pub async fn run_server(
 
     let vwal_methods = match &fdb_config_path {
         #[cfg(feature = "fdb")]
-        Some(_path) => Some(Arc::new(Mutex::new(wal::WalMethods::new(
+        Some(_path) => Some(Arc::new(Mutex::new(libsql::WalMethods::new(
             fdb_config_path.clone(),
         )?))),
         #[cfg(not(feature = "fdb"))]
@@ -62,7 +62,7 @@ pub async fn run_server(
             let db_factory = move || {
                 let db_path = db_path.clone();
                 let vwal_methods = vwal_methods.clone();
-                async move { LibSqlDb::new(db_path, vwal_methods) }
+                async move { LibSqlDb::new(db_path, vwal_methods, ()) }
             };
             let service = DbFactoryService::new(db_factory.clone());
             let factory = PgConnectionFactory::new(service);
