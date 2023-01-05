@@ -76,16 +76,16 @@ impl PeriodicDbUpdater {
 struct ReadReplicationHook {
     logger: WalLogClient<Channel>,
     fetch_frame_index: u64,
-    /// Persistant last commited index used for restarts.
+    /// Persistent last committed index used for restarts.
     /// The File should contain two little-endian u64:
     /// - The first one is the attempted commit index before the call xFrame
-    /// - The second index is the actually commited index after xFrame
+    /// - The second index is the actually committed index after xFrame
     /// After a flight of pages has been successfully written, the two numbers should be the same.
     /// On startup the two number are checked for consistency. If they differ, the database is
     /// considered corrupted, since it is impossible to know what the actually replicated index is.
     last_applied_index_file: File,
     last_applied_index: Option<u64>,
-    /// Buffer for incomming frames
+    /// Buffer for incoming frames
     buffer: VecDeque<WalLogEntry>,
     rt: Handle,
 }
@@ -173,7 +173,7 @@ unsafe impl WalHook for ReadReplicationHook {
 }
 
 /// Turn a list of `WalLogEntry` into a list of PgHdr.
-/// The caller has the responsability to free the returned headers.
+/// The caller has the responsibility to free the returned headers.
 fn make_page_header<'a>(entries: impl Iterator<Item = &'a WalLogEntry>) -> *mut PgHdr {
     let mut current_pg = std::ptr::null_mut();
 
@@ -247,8 +247,8 @@ impl ReadReplicationHook {
     /// Returns the next page headers list the log truncate count, and the commit frame for the
     /// next buffered transaction.
     ///
-    /// The caller is reponsible for freeing the page headers with the `free_page_header` function,
-    /// and avancing the internal buffer with
+    /// The caller is responsible for freeing the page headers with the `free_page_header` function,
+    /// and advancing the internal buffer with
     ///
     /// Note: It does not seem possible to batch transaction. I suspect that this is because the
     /// original implementation of the sqlite WAL overwrites when pages appear multiple times in

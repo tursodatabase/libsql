@@ -16,7 +16,7 @@ use crate::libsql::ffi::{
 };
 use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
 
-// Clone is necesary only because opening a database may fail, and we need to clone the empty
+// Clone is necessary only because opening a database may fail, and we need to clone the empty
 // struct.
 #[derive(Clone)]
 pub struct WalLoggerHook {
