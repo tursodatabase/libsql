@@ -5,14 +5,13 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
-use rusqlite::types::Value;
-use rusqlite::OpenFlags;
+use rusqlite::{params_from_iter, OpenFlags};
 use tokio::sync::oneshot;
 use tracing::warn;
 
 use crate::libsql::wal_hook::WalHook;
 use crate::query::{
-    self, Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row,
+    Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row, Value,
 };
 use crate::query_analysis::{State, Statements};
 
@@ -20,10 +19,14 @@ use super::{Database, TXN_TIMEOUT_SECS};
 
 #[derive(Clone)]
 pub struct LibSqlDb {
-    sender: crossbeam::channel::Sender<(Statements, oneshot::Sender<QueryResult>)>,
+    sender: crossbeam::channel::Sender<(Statements, Vec<Value>, oneshot::Sender<QueryResult>)>,
 }
 
-fn execute_query(conn: &rusqlite::Connection, stmts: &Statements) -> QueryResult {
+fn execute_query(
+    conn: &rusqlite::Connection,
+    stmts: &Statements,
+    params: Vec<Value>,
+) -> QueryResult {
     let mut rows = vec![];
     let mut prepared = conn.prepare(&stmts.stmts)?;
     let columns = prepared
@@ -39,11 +42,13 @@ fn execute_query(conn: &rusqlite::Connection, stmts: &Statements) -> QueryResult
                 .flatten(),
         })
         .collect::<Vec<_>>();
-    let mut qresult = prepared.query([])?;
+    let mut qresult = prepared.query(params_from_iter(
+        params.into_iter().map(rusqlite::types::Value::from),
+    ))?;
     while let Some(row) = qresult.next()? {
         let mut values = vec![];
         for (i, _) in columns.iter().enumerate() {
-            values.push(row.get::<usize, Value>(i)?.into());
+            values.push(row.get::<usize, rusqlite::types::Value>(i)?.into());
         }
         rows.push(Row { values });
     }
@@ -71,8 +76,11 @@ impl LibSqlDb {
         >,
         wal_hook: impl WalHook + Send + Clone + 'static,
     ) -> anyhow::Result<Self> {
-        let (sender, receiver) =
-            crossbeam::channel::unbounded::<(Statements, oneshot::Sender<QueryResult>)>();
+        let (sender, receiver) = crossbeam::channel::unbounded::<(
+            Statements,
+            Vec<Value>,
+            oneshot::Sender<QueryResult>,
+        )>();
 
         tokio::task::spawn_blocking(move || {
             let mut retries = 0;
@@ -135,7 +143,7 @@ impl LibSqlDb {
             let mut timeout_deadline = None;
             let mut timedout = false;
             loop {
-                let (stmts, sender) = match timeout_deadline {
+                let (stmts, params, sender) = match timeout_deadline {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
                         Ok(msg) => msg,
                         Err(RecvTimeoutError::Timeout) => {
@@ -155,7 +163,7 @@ impl LibSqlDb {
                 };
 
                 if !timedout {
-                    let result = execute_query(&conn, &stmts);
+                    let result = execute_query(&conn, &stmts, params);
                     match stmts.state(state) {
                         State::TxnOpened => {
                             timeout_deadline =
@@ -189,9 +197,9 @@ impl LibSqlDb {
 
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute(&self, query: Statements, _params: Vec<query::Value>) -> QueryResult {
+    async fn execute(&self, query: Statements, params: Vec<Value>) -> QueryResult {
         let (sender, receiver) = oneshot::channel();
-        let _ = self.sender.send((query, sender));
+        let _ = self.sender.send((query, params, sender));
         receiver
             .await
             .map_err(|e| QueryError::new(ErrorCode::Internal, e))?
