@@ -1,11 +1,11 @@
-use std::future::{poll_fn, Future};
+use std::future::Future;
 use std::io;
 use std::net::SocketAddr;
 use std::pin::Pin;
 use std::sync::Arc;
 
 use futures::StreamExt;
-use pgwire::api::query::SimpleQueryHandler;
+use pgwire::api::query::{ExtendedQueryHandler, SimpleQueryHandler};
 use pgwire::api::PgWireConnectionState;
 use pgwire::error::PgWireError;
 use pgwire::tokio::PgWireMessageServerCodec;
@@ -19,7 +19,7 @@ use crate::postgres::authenticator::PgAuthenticator;
 use crate::query::{Query, QueryError, QueryResponse};
 use crate::server::AsyncPeekable;
 
-use super::proto::{peek_for_sslrequest, process_error, SimpleHandler};
+use super::proto::{peek_for_sslrequest, process_error, QueryHandler};
 
 /// Manages a postgres wire connection.
 pub struct PgWireConnection<T, S> {
@@ -64,31 +64,39 @@ where
                     .authenticate(&mut self.socket, msg)
                     .await?;
             }
-            _ => match msg {
-                PgWireFrontendMessage::Query(q) => {
-                    let query = Query::SimpleQuery(q.query().to_string());
-
-                    poll_fn(|c| self.service.poll_ready(c)).await.unwrap();
-                    let resp = self.service.call(query).await;
-                    SimpleHandler::new(resp)
-                        .on_query(&mut self.socket, q)
-                        .await?;
+            _ => {
+                let handler = QueryHandler::new(&mut self.service);
+                match msg {
+                    PgWireFrontendMessage::Query(q) => {
+                        handler.on_query(&mut self.socket, q).await?;
+                    }
+                    PgWireFrontendMessage::Parse(p) => {
+                        handler.on_parse(&mut self.socket, p).await?;
+                    }
+                    PgWireFrontendMessage::Close(c) => {
+                        handler.on_close(&mut self.socket, c).await?;
+                    }
+                    PgWireFrontendMessage::Bind(b) => {
+                        handler.on_bind(&mut self.socket, b).await?;
+                    }
+                    PgWireFrontendMessage::Describe(d) => {
+                        handler.on_describe(&mut self.socket, d).await?;
+                    }
+                    PgWireFrontendMessage::Execute(e) => {
+                        handler.on_execute(&mut self.socket, e).await?;
+                    }
+                    PgWireFrontendMessage::Sync(s) => {
+                        handler.on_sync(&mut self.socket, s).await?;
+                    }
+                    PgWireFrontendMessage::Terminate(_) => return Ok(false),
+                    // These messages are handled by the connection service on startup.
+                    PgWireFrontendMessage::Startup(_)
+                    | PgWireFrontendMessage::PasswordMessageFamily(_)
+                    | PgWireFrontendMessage::Password(_)
+                    | PgWireFrontendMessage::SASLInitialResponse(_)
+                    | PgWireFrontendMessage::SASLResponse(_) => (),
                 }
-                // TODO: handle extended queries.
-                PgWireFrontendMessage::Parse(_) => todo!(),
-                PgWireFrontendMessage::Close(_) => todo!(),
-                PgWireFrontendMessage::Bind(_) => todo!(),
-                PgWireFrontendMessage::Describe(_) => todo!(),
-                PgWireFrontendMessage::Execute(_) => todo!(),
-                PgWireFrontendMessage::Sync(_) => todo!(),
-                PgWireFrontendMessage::Terminate(_) => return Ok(false),
-                // These messages are handled by the connection service on startup.
-                PgWireFrontendMessage::Startup(_)
-                | PgWireFrontendMessage::PasswordMessageFamily(_)
-                | PgWireFrontendMessage::Password(_)
-                | PgWireFrontendMessage::SASLInitialResponse(_)
-                | PgWireFrontendMessage::SASLResponse(_) => (),
-            },
+            }
         }
         Ok(true)
     }
