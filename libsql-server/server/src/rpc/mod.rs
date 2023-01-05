@@ -19,6 +19,7 @@ pub async fn run_rpc_server<F>(
 where
     F: DbFactory + 'static,
     F::Db: Sync + Send + Clone,
+    F::Future: Sync,
 {
     let proxy_service = ProxyService::new(factory);
     let logger_service = WalLogService::new(logger);

@@ -11,7 +11,9 @@ use tokio::sync::oneshot;
 use tracing::warn;
 
 use crate::libsql::wal_hook::WalHook;
-use crate::query::{Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row};
+use crate::query::{
+    self, Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row,
+};
 use crate::query_analysis::{State, Statements};
 
 use super::{Database, TXN_TIMEOUT_SECS};
@@ -187,7 +189,7 @@ impl LibSqlDb {
 
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute(&self, query: Statements) -> QueryResult {
+    async fn execute(&self, query: Statements, _params: Vec<query::Value>) -> QueryResult {
         let (sender, receiver) = oneshot::channel();
         let _ = self.sender.send((query, sender));
         receiver
