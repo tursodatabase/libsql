@@ -86,7 +86,7 @@ impl<DB: Database + 'static + Send + Sync> Service<Query> for DbService<DB> {
         match query {
             Query::SimpleQuery(stmts) => Box::pin(async move {
                 match Statements::parse(stmts) {
-                    Ok(stmts) => db.execute(stmts).await,
+                    Ok(stmts) => db.execute(stmts, Vec::new()).await,
                     Err(e) => Err(QueryError::new(ErrorCode::SQLError, e)),
                 }
             }),

@@ -95,7 +95,7 @@ where
 
         tracing::debug!("executing request for {client_id}: {q}");
         let stmts = Statements::parse(q).unwrap();
-        let result = db.execute(stmts).await;
+        let result = db.execute(stmts, Vec::new()).await;
 
         Ok(tonic::Response::new(result.into()))
     }
