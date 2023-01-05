@@ -8,7 +8,7 @@ mkdir -p "$SCRIPT_DIR/../target" "$SCRIPT_DIR/sqlcipher"
 export SQLCIPHER_LIB_DIR="$SCRIPT_DIR/sqlcipher"
 export SQLCIPHER_INCLUDE_DIR="$SQLCIPHER_LIB_DIR"
 
-SQLCIPHER_VERSION="4.5.2"
+SQLCIPHER_VERSION="4.5.3"
 # Download and generate sqlcipher amalgamation
 mkdir -p $SCRIPT_DIR/sqlcipher.src
 [ -e "v${SQLCIPHER_VERSION}.tar.gz" ] || curl -sfL -O "https://github.com/sqlcipher/sqlcipher/archive/v${SQLCIPHER_VERSION}.tar.gz"
