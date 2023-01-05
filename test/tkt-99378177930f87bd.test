@@ -148,7 +148,32 @@ do_execsql_test tkt-99378-240 {
    GROUP BY a;
 } {~/Function/}
 
-
-
+# 2022-12-20 dbsqlfuzz a644e70d7683a7ca59c71861a153c1dccf8850b9
+#
+do_execsql_test tkt-99378-300 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INT);
+  CREATE INDEX i1 ON t1(a,a=a);
+  INSERT INTO t1 VALUES(1),(2),(3),(4);
+  SELECT * FROM t1 NATURAL JOIN t1 
+   WHERE a==1
+      OR (
+           (SELECT avg(
+                (SELECT sum((SELECT 1 FROM t1 NATURAL RIGHT JOIN t1 WHERE a=a)))) AS xyz
+           )
+           AND a==2
+         );
+} {1 2}
+do_execsql_test tkt-99378-310 {
+  DROP INDEX i1;
+  SELECT * FROM t1 NATURAL JOIN t1 
+   WHERE a==1
+      OR (
+           (SELECT avg(
+                (SELECT sum((SELECT 1 FROM t1 NATURAL RIGHT JOIN t1 WHERE a=a)))) AS xyz
+           )
+           AND a==2
+         );
+} {1 2}
 
 finish_test

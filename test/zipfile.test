@@ -853,6 +853,14 @@ do_execsql_test 17.1 {
   )
   SELECT DISTINCT typeof(zipfile(0,0,x,0)) FROM vlist;
 } {blob}
-  
+
+# 2023-01-04
+# https://sqlite.org/forum/forumpost/d1c96a9032e564f8
+# Call to fopen() with a NULL filename.
+#
+do_catchsql_test 18.1 {
+  SELECT * FROM zipfile(NULL);
+} {1 {cannot open file: }}
+
 
 finish_test

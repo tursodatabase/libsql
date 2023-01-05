@@ -55,7 +55,7 @@ while {1} {
     fconfigure $in2 -translation binary
     while {![eof $in2]} {
       set lx [omit_redundant_typedefs [gets $in2]]
-      if {[regexp {^#include "sqlite} $lx]} {
+      if {[regexp {^# *include "sqlite} $lx]} {
         set lx "/* $lx */"
       }
       if {[regexp {^# *include "test_windirent.h"} $lx]} {

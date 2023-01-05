@@ -1499,6 +1499,8 @@ static void xPreUpdate(
   int nDb = sqlite3Strlen30(zDb);
 
   assert( sqlite3_mutex_held(db->mutex) );
+  (void)iKey1;
+  (void)iKey2;
 
   for(pSession=(sqlite3_session *)pCtx; pSession; pSession=pSession->pNext){
     SessionTable *pTab;
@@ -1575,6 +1577,7 @@ static int sessionDiffCount(void *pCtx){
   return p->nOldOff ? p->nOldOff : sqlite3_column_count(p->pStmt);
 }
 static int sessionDiffDepth(void *pCtx){
+  (void)pCtx;
   return 0;
 }
 
@@ -1648,7 +1651,6 @@ static char *sessionExprCompareOther(
 }
 
 static char *sessionSelectFindNew(
-  int nCol,
   const char *zDb1,      /* Pick rows in this db only */
   const char *zDb2,      /* But not in this one */
   const char *zTbl,      /* Table name */
@@ -1672,7 +1674,7 @@ static int sessionDiffFindNew(
   char *zExpr
 ){
   int rc = SQLITE_OK;
-  char *zStmt = sessionSelectFindNew(pTab->nCol, zDb1, zDb2, pTab->zName,zExpr);
+  char *zStmt = sessionSelectFindNew(zDb1, zDb2, pTab->zName,zExpr);
 
   if( zStmt==0 ){
     rc = SQLITE_NOMEM;
@@ -4189,7 +4191,6 @@ static int sessionBindRow(
 ** UPDATE, bind values from the old.* record. 
 */
 static int sessionSeekToRow(
-  sqlite3 *db,                    /* Database handle */
   sqlite3_changeset_iter *pIter,  /* Changeset iterator */
   u8 *abPK,                       /* Primary key flags array */
   sqlite3_stmt *pSelect           /* SELECT statement from sessionSelectRow() */
@@ -4319,7 +4320,7 @@ static int sessionConflictHandler(
 
   /* Bind the new.* PRIMARY KEY values to the SELECT statement. */
   if( pbReplace ){
-    rc = sessionSeekToRow(p->db, pIter, p->abPK, p->pSelect);
+    rc = sessionSeekToRow(pIter, p->abPK, p->pSelect);
   }else{
     rc = SQLITE_OK;
   }
@@ -4493,7 +4494,7 @@ static int sessionApplyOneOp(
       /* Check if there is a conflicting row. For sqlite_stat1, this needs
       ** to be done using a SELECT, as there is no PRIMARY KEY in the 
       ** database schema to throw an exception if a duplicate is inserted.  */
-      rc = sessionSeekToRow(p->db, pIter, p->abPK, p->pSelect);
+      rc = sessionSeekToRow(pIter, p->abPK, p->pSelect);
       if( rc==SQLITE_ROW ){
         rc = SQLITE_CONSTRAINT;
         sqlite3_reset(p->pSelect);

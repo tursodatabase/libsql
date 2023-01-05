@@ -1620,6 +1620,13 @@ void SQLITE_NOINLINE sqlite3WhereAddLimit(WhereClause *pWC, Select *p){
         assert( pWC->a[ii].eOperator==WO_ROWVAL );
         continue;
       }
+      if( pWC->a[ii].nChild ){
+        /* If this term has child terms, then they are also part of the
+        ** pWC->a[] array. So this term can be ignored, as a LIMIT clause
+        ** will only be added if each of the child terms passes the 
+        ** (leftCursor==iCsr) test below.  */
+        continue;
+      }
       if( pWC->a[ii].leftCursor!=iCsr ) return;
     }
 

@@ -5073,7 +5073,7 @@ static void fts5MergePrefixLists(
   /* Initialize a doclist-iterator for each input buffer. Arrange them in
   ** a linked-list starting at pHead in ascending order of rowid. Avoid
   ** linking any iterators already at EOF into the linked list at all. */ 
-  assert( nBuf+1<=sizeof(aMerger)/sizeof(aMerger[0]) );
+  assert( nBuf+1<=(int)(sizeof(aMerger)/sizeof(aMerger[0])) );
   memset(aMerger, 0, sizeof(PrefixMerger)*(nBuf+1));
   pHead = &aMerger[nBuf];
   fts5DoclistIterInit(p1, &pHead->iter);

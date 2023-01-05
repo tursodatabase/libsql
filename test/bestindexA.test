@@ -1,0 +1,138 @@
+# 2020-01-29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix bestindexA
+
+ifcapable !vtab {
+  finish_test
+  return
+}
+
+
+proc vtab_command {method args} {
+  switch -- $method {
+    xConnect {
+      return "CREATE TABLE x(a, b, c)"
+    }
+
+    xBestIndex {
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      foreach c $clist {
+        array set C $c
+        lappend ::vtab_constraints [list $C(op) $C(column)]
+      }
+      return [list]
+    }
+
+    xFilter {
+      return ""
+    }
+
+    xFindFunction {
+      foreach {nArg name} $args {}
+      if {$nArg==2 && $name=="even"} { 
+        return 152 
+      }
+      return 0
+    }
+
+  }
+
+  return {}
+}
+
+register_tcl_module db
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING tcl(vtab_command);
+}
+
+proc do_xbestindex_test {tn sql res} {
+  set script [subst {
+    execsql "$sql"
+    set ::vtab_constraints
+  }]
+
+  uplevel [list do_test $tn $script [list {*}$res]]
+  set ::vtab_constraints [list]
+}
+
+do_xbestindex_test 1.1 {
+  SELECT * FROM t1 WHERE a=?
+} {
+  {eq 0}
+}
+
+do_xbestindex_test 1.2 {
+  SELECT * FROM t1 WHERE a=? LIMIT 10
+} {
+  {eq 0}
+  {limit 0}
+}
+
+do_xbestindex_test 1.3 {
+  SELECT * FROM t1 WHERE a=? AND (b+1)=? LIMIT 10
+} {
+  {eq 0}
+}
+
+proc error_function {args} { error "not a function!" }
+db function even error_function
+
+do_xbestindex_test 1.4 {
+  SELECT * FROM t1 WHERE even(a, ?)
+} {
+  {152 0}
+}
+
+do_xbestindex_test 1.5 {
+  SELECT * FROM t1 WHERE b=10 AND even(a, ?)
+} {
+  {eq 1}
+  {152 0}
+}
+
+do_xbestindex_test 1.6 {
+  SELECT * FROM t1 WHERE b=10 LIMIT 10
+} {
+  {eq 1}
+  {limit 0}
+}
+
+do_xbestindex_test 1.7 {
+  SELECT * FROM t1 WHERE even(b,?) LIMIT 10
+} {
+  {152 1}
+  {limit 0}
+}
+
+do_xbestindex_test 1.8 {
+  SELECT * FROM t1 WHERE b!=? LIMIT 10
+} {
+  {ne 1}
+  {limit 0}
+}
+
+do_xbestindex_test 1.9 {
+  SELECT * FROM t1 WHERE ?=a LIMIT 10
+} {
+  {eq 0}
+  {limit 0}
+}
+
+
+finish_test
+
+
+
