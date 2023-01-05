@@ -741,13 +741,14 @@ static void renameTokenCheckAll(Parse *pParse, const void *pPtr){
   assert( pParse->db->mallocFailed==0 || pParse->nErr!=0 );
   if( pParse->nErr==0 ){
     const RenameToken *p;
-    u8 i = 0;
+    u32 i = 1;
     for(p=pParse->pRename; p; p=p->pNext){
       if( p->p ){
         assert( p->p!=pPtr );
-        i += *(u8*)(p->p);
+        i += *(u8*)(p->p) | 1;
       }
     }
+    assert( i>0 );
   }
 }
 #else

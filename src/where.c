@@ -5678,6 +5678,12 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     p = sqlite3DbMallocRaw(pParse->db,  sizeof(IndexedExpr));
     if( p==0 ) break;
     p->pIENext = pParse->pIdxEpr;
+#ifdef WHERETRACE_ENABLED
+    if( sqlite3WhereTrace & 0x200 ){
+      sqlite3DebugPrintf("New pParse->pIdxEpr term {%d,%d}\n", iIdxCur, i);
+      if( sqlite3WhereTrace & 0x5000 ) sqlite3ShowExpr(pExpr);
+    }
+#endif
     p->pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
     p->iDataCur = pTabItem->iCursor;
     p->iIdxCur = iIdxCur;
@@ -6640,6 +6646,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         IndexedExpr *p = pParse->pIdxEpr;
         while( p ){
           if( p->iIdxCur==pLevel->iIdxCur ){
+#ifdef WHERETRACE_ENABLED
+            if( sqlite3WhereTrace & 0x200 ){
+              sqlite3DebugPrintf("Disable pParse->pIdxEpr term {%d,%d}\n",
+                                  p->iIdxCur, p->iIdxCol);
+              if( sqlite3WhereTrace & 0x5000 ) sqlite3ShowExpr(p->pExpr);
+            }
+#endif
             p->iDataCur = -1;
             p->iIdxCur = -1;
           }

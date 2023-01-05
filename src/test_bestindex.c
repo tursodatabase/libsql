@@ -101,8 +101,10 @@
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
+
 typedef struct tcl_vtab tcl_vtab;
 typedef struct tcl_cursor tcl_cursor;
+typedef struct TestFindFunction TestFindFunction;
 
 /* 
 ** A fs virtual-table object 
@@ -111,6 +113,7 @@ struct tcl_vtab {
   sqlite3_vtab base;
   Tcl_Interp *interp;
   Tcl_Obj *pCmd;
+  TestFindFunction *pFindFunctionList;
   sqlite3 *db;
 };
 
@@ -119,6 +122,13 @@ struct tcl_cursor {
   sqlite3_vtab_cursor base;
   sqlite3_stmt *pStmt;            /* Read data from here */
 };
+
+struct TestFindFunction {
+  tcl_vtab *pTab;
+  const char *zName;
+  TestFindFunction *pNext;
+};
+
 
 /*
 ** Dequote string z in place.
@@ -223,6 +233,11 @@ static int tclConnect(
 /* The xDisconnect and xDestroy methods are also the same */
 static int tclDisconnect(sqlite3_vtab *pVtab){
   tcl_vtab *pTab = (tcl_vtab*)pVtab;
+  while( pTab->pFindFunctionList ){
+    TestFindFunction *p = pTab->pFindFunctionList;
+    pTab->pFindFunctionList = p->pNext;
+    sqlite3_free(p);
+  }
   Tcl_DecrRefCount(pTab->pCmd);
   sqlite3_free(pTab);
   return SQLITE_OK;
@@ -398,7 +413,7 @@ static void testBestIndexObjConstraints(
   for(ii=0; ii<pIdxInfo->nConstraint; ii++){
     struct sqlite3_index_constraint const *pCons = &pIdxInfo->aConstraint[ii];
     Tcl_Obj *pElem = Tcl_NewObj();
-    const char *zOp = "?";
+    const char *zOp = 0;
 
     Tcl_IncrRefCount(pElem);
 
@@ -438,7 +453,11 @@ static void testBestIndexObjConstraints(
     }
 
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("op", -1));
-    Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj(zOp, -1));
+    if( zOp ){
+      Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj(zOp, -1));
+    }else{
+      Tcl_ListObjAppendElement(0, pElem, Tcl_NewIntObj(pCons->op));
+    }
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("column", -1));
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewIntObj(pCons->iColumn));
     Tcl_ListObjAppendElement(0, pElem, Tcl_NewStringObj("usable", -1));
@@ -693,6 +712,83 @@ static int tclBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   return rc;
 }
 
+static void tclFunction(sqlite3_context *pCtx, int nArg, sqlite3_value **apArg){
+  TestFindFunction *p = (TestFindFunction*)sqlite3_user_data(pCtx);
+  Tcl_Interp *interp = p->pTab->interp;
+  Tcl_Obj *pScript = 0;
+  Tcl_Obj *pRet = 0;
+  int ii;
+
+  pScript = Tcl_DuplicateObj(p->pTab->pCmd);
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj("function", -1));
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(p->zName, -1));
+
+  for(ii=0; ii<nArg; ii++){
+    const char *zArg = (const char*)sqlite3_value_text(apArg[ii]);
+    Tcl_ListObjAppendElement(interp, pScript,
+        (zArg ? Tcl_NewStringObj(zArg, -1) : Tcl_NewObj())
+    );
+  }
+  Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
+  Tcl_DecrRefCount(pScript);
+
+  pRet = Tcl_GetObjResult(interp);
+  sqlite3_result_text(pCtx, Tcl_GetString(pRet), -1, SQLITE_TRANSIENT);
+}
+
+static int tclFindFunction(
+  sqlite3_vtab *tab, 
+  int nArg, 
+  const char *zName,
+  void (**pxFunc)(sqlite3_context*,int,sqlite3_value**),   /* OUT */
+  void **ppArg                                             /* OUT */
+){
+  int iRet = 0;
+  tcl_vtab *pTab = (tcl_vtab*)tab;
+  Tcl_Interp *interp = pTab->interp;
+  Tcl_Obj *pScript = 0;
+  int rc = SQLITE_OK;
+
+  pScript = Tcl_DuplicateObj(pTab->pCmd);
+  Tcl_IncrRefCount(pScript);
+  Tcl_ListObjAppendElement(
+      interp, pScript, Tcl_NewStringObj("xFindFunction", -1)
+  );
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(nArg));
+  Tcl_ListObjAppendElement(interp, pScript, Tcl_NewStringObj(zName, -1));
+  rc = Tcl_EvalObjEx(interp, pScript, TCL_EVAL_GLOBAL);
+  Tcl_DecrRefCount(pScript);
+
+  if( rc==SQLITE_OK ){
+    Tcl_Obj *pObj = Tcl_GetObjResult(interp);
+
+    if( Tcl_GetIntFromObj(interp, pObj, &iRet) ){
+      rc = SQLITE_ERROR;
+    }else if( iRet>0 ){
+      int nName = strlen(zName);
+      int nByte = nName + 1 + sizeof(TestFindFunction);
+      TestFindFunction *pNew = 0;
+
+      pNew = (TestFindFunction*)sqlite3_malloc(nByte);
+      if( pNew==0 ){
+        iRet = 0;
+      }else{
+        memset(pNew, 0, nByte);
+        pNew->zName = (const char*)&pNew[1];
+        memcpy((char*)pNew->zName, zName, nName);
+        pNew->pTab = pTab;
+        pNew->pNext = pTab->pFindFunctionList;
+        pTab->pFindFunctionList = pNew;
+        *ppArg = (void*)pNew;
+        *pxFunc = tclFunction;
+      }
+    }
+  }
+
+  return iRet;
+}
+
 /*
 ** A virtual table module that provides read-only access to a
 ** Tcl global variable namespace.
@@ -716,7 +812,7 @@ static sqlite3_module tclModule = {
   0,                           /* xSync */
   0,                           /* xCommit */
   0,                           /* xRollback */
-  0,                           /* xFindMethod */
+  tclFindFunction,             /* xFindFunction */
   0,                           /* xRename */
 };
 

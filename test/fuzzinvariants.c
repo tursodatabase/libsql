@@ -136,16 +136,11 @@ int fuzz_invariant(
     }
     sqlite3_finalize(pCk);
 
-    if( sqlite3_strlike("%group%by%order%by%desc%",sqlite3_sql(pStmt),0)==0 ){
-      /* dbsqlfuzz crash-647c162051c9b23ce091b7bbbe5125ce5f00e922
-      ** Original statement is:
-      **
-      **    SELECT a,c,d,b,'' FROM t1 GROUP BY 1 HAVING d<>345 ORDER BY a DESC;
-      **
-      ** The values of c, d, and b are indeterminate and change when the
-      ** enclosed in the test query because the DESC is dropped.
-      **
-      **    SELECT * FROM (...) WHERE "a"==0
+    if( sqlite3_strlike("%group%by%",sqlite3_sql(pStmt),0)==0 ){
+      /* 
+      ** If there is a GROUP BY clause, it might not cover every term in the
+      ** output.  And then non-covered terms can take on a value from any
+      ** row in the result set.  This can cause differing answers.
       */
       goto not_a_fault;
     }
@@ -236,7 +231,7 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
   const char *zIn;
   size_t nIn;
   const char *zAnd = "WHERE";
-  int i;
+  int i, j;
   sqlite3_str *pTest;
   sqlite3_stmt *pBase = 0;
   sqlite3 *db = sqlite3_db_handle(pStmt);
@@ -279,6 +274,14 @@ static char *fuzz_invariant_sql(sqlite3_stmt *pStmt, int iCnt){
     ){
       /* This is a randomized column name and so cannot be used in the
       ** WHERE clause. */
+      continue;
+    }
+    for(j=0; j<i; j++){
+      const char *zPrior = sqlite3_column_name(pBase, j);
+      if( sqlite3_stricmp(zPrior, zColName)==0 ) break;
+    }
+    if( j<i ){
+      /* Duplicate column name */
       continue;
     }
     if( iCnt==0 ) continue;

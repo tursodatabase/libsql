@@ -166,12 +166,13 @@ static HashElem *findElementWithHash(
     count = pH->count;
   }
   if( pHash ) *pHash = h;
-  while( count-- ){
+  while( count ){
     assert( elem!=0 );
     if( sqlite3StrICmp(elem->pKey,pKey)==0 ){ 
       return elem;
     }
     elem = elem->next;
+    count--;
   }
   return &nullElement;
 }

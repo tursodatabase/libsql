@@ -753,7 +753,7 @@ static int sqlite3Step(Vdbe *p){
     /* If the statement completed successfully, invoke the profile callback */
     checkProfileCallback(db, p);
 #endif
-
+    p->pResultRow = 0;
     if( rc==SQLITE_DONE && db->autoCommit ){
       assert( p->rc==SQLITE_OK );
       p->rc = doWalCallbacks(db);
@@ -1117,7 +1117,7 @@ int sqlite3_column_count(sqlite3_stmt *pStmt){
 */
 int sqlite3_data_count(sqlite3_stmt *pStmt){
   Vdbe *pVm = (Vdbe *)pStmt;
-  if( pVm==0 || pVm->pResultSet==0 ) return 0;
+  if( pVm==0 || pVm->pResultRow==0 ) return 0;
   return pVm->nResColumn;
 }
 
@@ -1172,8 +1172,8 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   if( pVm==0 ) return (Mem*)columnNullValue();
   assert( pVm->db );
   sqlite3_mutex_enter(pVm->db->mutex);
-  if( pVm->pResultSet!=0 && i<pVm->nResColumn && i>=0 ){
-    pOut = &pVm->pResultSet[i];
+  if( pVm->pResultRow!=0 && i<pVm->nResColumn && i>=0 ){
+    pOut = &pVm->pResultRow[i];
   }else{
     sqlite3Error(pVm->db, SQLITE_RANGE);
     pOut = (Mem*)columnNullValue();
