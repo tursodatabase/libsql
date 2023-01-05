@@ -6,7 +6,6 @@ use tokio::sync::Mutex;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
-use crate::libsql::WalMethods;
 use crate::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery};
 use crate::query::{ErrorCode, QueryError, QueryResponse, QueryResult};
 use crate::{
@@ -19,14 +18,14 @@ use super::{libsql::LibSqlDb, service::DbFactory, Database};
 pub struct WriteProxyDbFactory {
     write_proxy: ProxyClient<Channel>,
     db_path: PathBuf,
-    vwal_methods: Option<Arc<std::sync::Mutex<WalMethods>>>,
+    vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
 }
 
 impl WriteProxyDbFactory {
     pub async fn new(
         addr: String,
         db_path: PathBuf,
-        vwal_methods: Option<Arc<std::sync::Mutex<WalMethods>>>,
+        vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
     ) -> anyhow::Result<Self> {
         let write_proxy = ProxyClient::connect(addr).await?;
         Ok(Self {
@@ -62,7 +61,7 @@ impl WriteProxyDatabase {
     fn new(
         write_proxy: ProxyClient<Channel>,
         path: PathBuf,
-        vwal_methods: Option<Arc<std::sync::Mutex<WalMethods>>>,
+        vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
     ) -> anyhow::Result<Self> {
         let read_db = LibSqlDb::new(path, vwal_methods, ())?;
         Ok(Self {

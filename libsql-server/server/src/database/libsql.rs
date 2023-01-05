@@ -10,7 +10,6 @@ use tokio::sync::oneshot;
 use tracing::warn;
 
 use crate::libsql::wal_hook::WalHook;
-use crate::libsql::WalMethods;
 use crate::query::{Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row};
 use crate::query_analysis::{State, Statements};
 
@@ -64,7 +63,7 @@ macro_rules! ok_or_exit {
 impl LibSqlDb {
     pub fn new(
         path: impl AsRef<Path> + Send + 'static,
-        vwal_methods: Option<Arc<Mutex<WalMethods>>>,
+        vwal_methods: Option<Arc<Mutex<mwal::ffi::libsql_wal_methods>>>,
         wal_hook: impl WalHook + Send + Clone + 'static,
     ) -> anyhow::Result<Self> {
         let (sender, receiver) =
@@ -74,8 +73,7 @@ impl LibSqlDb {
             let mut retries = 0;
             let conn = loop {
                 let conn_result = match vwal_methods {
-                    #[cfg(feature = "fdb")]
-                    Some(ref vwal_methods) => crate::libsql::fdb::open_with_virtual_wal(
+                    Some(ref vwal_methods) => crate::libsql::mwal::open_with_virtual_wal(
                         &path,
                         OpenFlags::SQLITE_OPEN_READ_WRITE
                             | OpenFlags::SQLITE_OPEN_CREATE
@@ -83,8 +81,6 @@ impl LibSqlDb {
                             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
                         vwal_methods.clone(),
                     ),
-                    #[cfg(not(feature = "fdb"))]
-                    Some(_) => panic!("not compiled with fdb support"),
                     None => crate::libsql::open_with_regular_wal(
                         &path,
                         OpenFlags::SQLITE_OPEN_READ_WRITE
