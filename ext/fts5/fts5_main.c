@@ -260,7 +260,7 @@ static void fts5CheckTransactionState(Fts5FullTable *p, int op, int iSavepoint){
       break;
 
     case FTS5_SYNC:
-      assert( p->ts.eState==1 );
+      assert( p->ts.eState==1 || p->ts.eState==2 );
       p->ts.eState = 2;
       break;
 
@@ -275,21 +275,21 @@ static void fts5CheckTransactionState(Fts5FullTable *p, int op, int iSavepoint){
       break;
 
     case FTS5_SAVEPOINT:
-      assert( p->ts.eState==1 );
+      assert( p->ts.eState>=1 );
       assert( iSavepoint>=0 );
       assert( iSavepoint>=p->ts.iSavepoint );
       p->ts.iSavepoint = iSavepoint;
       break;
       
     case FTS5_RELEASE:
-      assert( p->ts.eState==1 );
+      assert( p->ts.eState>=1 );
       assert( iSavepoint>=0 );
       assert( iSavepoint<=p->ts.iSavepoint );
       p->ts.iSavepoint = iSavepoint-1;
       break;
 
     case FTS5_ROLLBACKTO:
-      assert( p->ts.eState==1 );
+      assert( p->ts.eState>=1 );
       assert( iSavepoint>=-1 );
       /* The following assert() can fail if another vtab strikes an error
       ** within an xSavepoint() call then SQLite calls xRollbackTo() - without
@@ -1625,7 +1625,7 @@ static int fts5UpdateMethod(
   int rc = SQLITE_OK;             /* Return code */
 
   /* A transaction must be open when this is called. */
-  assert( pTab->ts.eState==1 );
+  assert( pTab->ts.eState==1 || pTab->ts.eState==2 );
 
   assert( pVtab->zErrMsg==0 );
   assert( nArg==1 || nArg==(2+pConfig->nCol+2) );

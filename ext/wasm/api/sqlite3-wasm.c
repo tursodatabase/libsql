@@ -99,11 +99,20 @@
 #ifndef SQLITE_ENABLE_FTS4
 #  define SQLITE_ENABLE_FTS4 1
 #endif
+#ifndef SQLITE_ENABLE_MATH_FUNCTIONS
+#  define SQLITE_ENABLE_MATH_FUNCTIONS 1
+#endif
 #ifndef SQLITE_ENABLE_OFFSET_SQL_FUNC
 #  define SQLITE_ENABLE_OFFSET_SQL_FUNC 1
 #endif
+#ifndef SQLITE_ENABLE_PREUPDATE_HOOK
+#  define SQLITE_ENABLE_PREUPDATE_HOOK 1 /*required by session extension*/
+#endif
 #ifndef SQLITE_ENABLE_RTREE
 #  define SQLITE_ENABLE_RTREE 1
+#endif
+#ifndef SQLITE_ENABLE_SESSION
+#  define SQLITE_ENABLE_SESSION 1
 #endif
 #ifndef SQLITE_ENABLE_STMTVTAB
 #  define SQLITE_ENABLE_STMTVTAB 1
@@ -317,11 +326,13 @@ SQLITE_WASM_KEEP int sqlite3_wasm_pstack_quota(void){
 */
 SQLITE_WASM_KEEP
 int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
-  if( 0!=zMsg ){
-    const int nMsg = sqlite3Strlen30(zMsg);
-    sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
-  }else{
-    sqlite3ErrorWithMsg(db, err_code, NULL);
+  if( db!=0 ){
+    if( 0!=zMsg ){
+      const int nMsg = sqlite3Strlen30(zMsg);
+      sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
+    }else{
+      sqlite3ErrorWithMsg(db, err_code, NULL);
+    }
   }
   return err_code;
 }
@@ -407,16 +418,99 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_ACCESS_READ)/*docs say this is unused*/;
   } _DefGroup;
 
-  /* TODO? Authorizer... */
   DefGroup(authorizer){
     DefInt(SQLITE_DENY);
     DefInt(SQLITE_IGNORE);
+    DefInt(SQLITE_CREATE_INDEX);
+    DefInt(SQLITE_CREATE_TABLE);
+    DefInt(SQLITE_CREATE_TEMP_INDEX);
+    DefInt(SQLITE_CREATE_TEMP_TABLE);
+    DefInt(SQLITE_CREATE_TEMP_TRIGGER);
+    DefInt(SQLITE_CREATE_TEMP_VIEW);
+    DefInt(SQLITE_CREATE_TRIGGER);
+    DefInt(SQLITE_CREATE_VIEW);
+    DefInt(SQLITE_DELETE);
+    DefInt(SQLITE_DROP_INDEX);
+    DefInt(SQLITE_DROP_TABLE);
+    DefInt(SQLITE_DROP_TEMP_INDEX);
+    DefInt(SQLITE_DROP_TEMP_TABLE);
+    DefInt(SQLITE_DROP_TEMP_TRIGGER);
+    DefInt(SQLITE_DROP_TEMP_VIEW);
+    DefInt(SQLITE_DROP_TRIGGER);
+    DefInt(SQLITE_DROP_VIEW);
+    DefInt(SQLITE_INSERT);
+    DefInt(SQLITE_PRAGMA);
+    DefInt(SQLITE_READ);
+    DefInt(SQLITE_SELECT);
+    DefInt(SQLITE_TRANSACTION);
+    DefInt(SQLITE_UPDATE);
+    DefInt(SQLITE_ATTACH);
+    DefInt(SQLITE_DETACH);
+    DefInt(SQLITE_ALTER_TABLE);
+    DefInt(SQLITE_REINDEX);
+    DefInt(SQLITE_ANALYZE);
+    DefInt(SQLITE_CREATE_VTABLE);
+    DefInt(SQLITE_DROP_VTABLE);
+    DefInt(SQLITE_FUNCTION);
+    DefInt(SQLITE_SAVEPOINT);
+    //DefInt(SQLITE_COPY) /* No longer used */;
+    DefInt(SQLITE_RECURSIVE);
   } _DefGroup;
 
   DefGroup(blobFinalizers) {
     /* SQLITE_STATIC/TRANSIENT need to be handled explicitly as
     ** integers to avoid casting-related warnings. */
     out("\"SQLITE_STATIC\":0, \"SQLITE_TRANSIENT\":-1");
+    outf(",\"SQLITE_WASM_DEALLOC\": %lld",
+         (sqlite3_int64)(sqlite3_free));
+  } _DefGroup;
+
+  DefGroup(changeset){
+    DefInt(SQLITE_CHANGESETSTART_INVERT);
+    DefInt(SQLITE_CHANGESETAPPLY_NOSAVEPOINT);
+    DefInt(SQLITE_CHANGESETAPPLY_INVERT);
+
+    DefInt(SQLITE_CHANGESET_DATA);
+    DefInt(SQLITE_CHANGESET_NOTFOUND);
+    DefInt(SQLITE_CHANGESET_CONFLICT);
+    DefInt(SQLITE_CHANGESET_CONSTRAINT);
+    DefInt(SQLITE_CHANGESET_FOREIGN_KEY);
+
+    DefInt(SQLITE_CHANGESET_OMIT);
+    DefInt(SQLITE_CHANGESET_REPLACE);
+    DefInt(SQLITE_CHANGESET_ABORT);
+  } _DefGroup;
+
+  DefGroup(config){
+    DefInt(SQLITE_CONFIG_SINGLETHREAD);
+    DefInt(SQLITE_CONFIG_MULTITHREAD);
+    DefInt(SQLITE_CONFIG_SERIALIZED);
+    DefInt(SQLITE_CONFIG_MALLOC);
+    DefInt(SQLITE_CONFIG_GETMALLOC);
+    DefInt(SQLITE_CONFIG_SCRATCH);
+    DefInt(SQLITE_CONFIG_PAGECACHE);
+    DefInt(SQLITE_CONFIG_HEAP);
+    DefInt(SQLITE_CONFIG_MEMSTATUS);
+    DefInt(SQLITE_CONFIG_MUTEX);
+    DefInt(SQLITE_CONFIG_GETMUTEX);
+/* previously SQLITE_CONFIG_CHUNKALLOC 12 which is now unused. */
+    DefInt(SQLITE_CONFIG_LOOKASIDE);
+    DefInt(SQLITE_CONFIG_PCACHE);
+    DefInt(SQLITE_CONFIG_GETPCACHE);
+    DefInt(SQLITE_CONFIG_LOG);
+    DefInt(SQLITE_CONFIG_URI);
+    DefInt(SQLITE_CONFIG_PCACHE2);
+    DefInt(SQLITE_CONFIG_GETPCACHE2);
+    DefInt(SQLITE_CONFIG_COVERING_INDEX_SCAN);
+    DefInt(SQLITE_CONFIG_SQLLOG);
+    DefInt(SQLITE_CONFIG_MMAP_SIZE);
+    DefInt(SQLITE_CONFIG_WIN32_HEAPSIZE);
+    DefInt(SQLITE_CONFIG_PCACHE_HDRSZ);
+    DefInt(SQLITE_CONFIG_PMASZ);
+    DefInt(SQLITE_CONFIG_STMTJRNL_SPILL);
+    DefInt(SQLITE_CONFIG_SMALL_MALLOC);
+    DefInt(SQLITE_CONFIG_SORTERREF_SIZE);
+    DefInt(SQLITE_CONFIG_MEMDB_MAXSIZE);
   } _DefGroup;
 
   DefGroup(dataTypes) {
@@ -721,6 +815,11 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_DESERIALIZE_FREEONCLOSE);
     DefInt(SQLITE_DESERIALIZE_READONLY);
     DefInt(SQLITE_DESERIALIZE_RESIZEABLE);
+  } _DefGroup;
+
+  DefGroup(session){
+    DefInt(SQLITE_SESSION_CONFIG_STRMSIZE);
+    DefInt(SQLITE_SESSION_OBJCONFIG_SIZE);
   } _DefGroup;
 
   DefGroup(sqlite3Status){
@@ -1136,6 +1235,9 @@ int sqlite3_wasm_db_reset(sqlite3 *pDb){
 }
 
 /*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
 ** Uses the given database's VFS xRead to stream the db file's
 ** contents out to the given callback. The callback gets a single
 ** chunk of size n (its 2nd argument) on each call and must return 0
@@ -1184,6 +1286,9 @@ int sqlite3_wasm_db_export_chunked( sqlite3* pDb,
 }
 
 /*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
 ** A proxy for sqlite3_serialize() which serializes the schema zSchema
 ** of pDb, placing the serialized output in pOut and nOut. nOut may be
 ** NULL. If zSchema is NULL then "main" is assumed. If pDb or pOut are
@@ -1449,6 +1554,72 @@ int sqlite3_wasm_db_config_s(sqlite3 *pDb, int op, const char *zArg){
 }
 
 
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Binding for combinations of sqlite3_config() arguments which take
+** a single integer argument.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_config_i(int op, int arg){
+  return sqlite3_config(op, arg);
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Binding for combinations of sqlite3_config() arguments which take
+** two int arguments.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_config_ii(int op, int arg1, int arg2){
+  return sqlite3_config(op, arg1, arg2);
+}
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Binding for combinations of sqlite3_config() arguments which take
+** a single i64 argument.
+*/
+SQLITE_WASM_KEEP
+int sqlite3_wasm_config_j(int op, sqlite3_int64 arg){
+  return sqlite3_config(op, arg);
+}
+
+#if 0
+// Pending removal after verification of a workaround discussed in the
+// forum post linked to below.
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Returns a pointer to sqlite3_free(). In compliant browsers the
+** return value, when passed to sqlite3.wasm.exports.functionEntry(),
+** must resolve to the same function as
+** sqlite3.wasm.exports.sqlite3_free. i.e. from a dev console where
+** sqlite3 is exported globally, the following must be true:
+**
+** ```
+** sqlite3.wasm.functionEntry(
+**   sqlite3.wasm.exports.sqlite3_wasm_ptr_to_sqlite3_free()
+** ) === sqlite3.wasm.exports.sqlite3_free
+** ```
+**
+** Using a function to return this pointer, as opposed to exporting it
+** via sqlite3_wasm_enum_json(), is an attempt to work around a
+** Safari-specific quirk covered at
+** https://sqlite.org/forum/info/e5b20e1feb37a19a.
+**/
+SQLITE_WASM_KEEP
+void * sqlite3_wasm_ptr_to_sqlite3_free(void){
+  return (void*)sqlite3_free;
+}
+#endif
+
 #if defined(__EMSCRIPTEN__) && defined(SQLITE_ENABLE_WASMFS)
 #include <emscripten/wasmfs.h>
 
@@ -1509,6 +1680,11 @@ int sqlite3_wasm_test_intptr(int * p){
 }
 
 SQLITE_WASM_KEEP
+void * sqlite3_wasm_test_voidptr(void * p){
+  return p;
+}
+
+SQLITE_WASM_KEEP
 int64_t sqlite3_wasm_test_int64_max(void){
   return (int64_t)0x7fffffffffffffff;
 }
@@ -1541,7 +1717,7 @@ void sqlite3_wasm_test_stack_overflow(int recurse){
   if(recurse) sqlite3_wasm_test_stack_overflow(recurse);
 }
 
-/* For testing the 'string-free' whwasmutil.xWrap() conversion. */
+/* For testing the 'string:dealloc' whwasmutil.xWrap() conversion. */
 SQLITE_WASM_KEEP
 char * sqlite3_wasm_test_str_hello(int fail){
   char * s = fail ? 0 : (char *)sqlite3_malloc(6);

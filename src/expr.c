@@ -4250,7 +4250,7 @@ expr_code_doover:
         assert( pExpr->y.pTab!=0 );
         aff = sqlite3TableColumnAffinity(pExpr->y.pTab, pExpr->iColumn);
         if( aff>SQLITE_AFF_BLOB ){
-          static const char zAff[] = "B\000C\000D\000E";
+          static const char zAff[] = "B\000C\000D\000E\000F";
           assert( SQLITE_AFF_BLOB=='A' );
           assert( SQLITE_AFF_TEXT=='B' );
           sqlite3VdbeAddOp4(v, OP_Affinity, iReg, 1, 0,
@@ -6247,10 +6247,8 @@ int sqlite3ReferencesSrcList(Parse *pParse, Expr *pExpr, SrcList *pSrcList){
 ** it does, make a copy.  This is done because the pExpr argument is
 ** subject to change.
 **
-** The copy is stored on pParse->pConstExpr with a register number of 0.
-** This will cause the expression to be deleted automatically when the
-** Parse object is destroyed, but the zero register number means that it
-** will not generate any code in the preamble.
+** The copy is scheduled for deletion using the sqlite3ExprDeferredDelete()
+** which builds on the sqlite3ParserAddCleanup() mechanism.
 */
 static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
   if( ALWAYS(!ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced))
@@ -6261,7 +6259,6 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
     Parse *pParse = pWalker->pParse;
     sqlite3 *db = pParse->db;
     if( pExpr->op!=TK_AGG_FUNCTION ){
-      assert( pExpr->op==TK_AGG_COLUMN || pExpr->op==TK_IF_NULL_ROW );
       assert( iAgg>=0 && iAgg<pAggInfo->nColumn );
       if( pAggInfo->aCol[iAgg].pCExpr==pExpr ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
@@ -6387,6 +6384,7 @@ static void findOrCreateAggInfoColumn(
   }
 fix_up_expr:
   ExprSetVVAProperty(pExpr, EP_NoReduce);
+  assert( pExpr->pAggInfo==0 || pExpr->pAggInfo==pAggInfo );
   pExpr->pAggInfo = pAggInfo;
   if( pExpr->op==TK_COLUMN ){
     pExpr->op = TK_AGG_COLUMN;
@@ -6422,6 +6420,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       }
       if( pIEpr==0 ) break;
       if( NEVER(!ExprUseYTab(pExpr)) ) break;
+      if( pExpr->pAggInfo!=0 ) break; /* Already resolved by outer context */
 
       /* If we reach this point, it means that expression pExpr can be
       ** translated into a reference to an index column as described by

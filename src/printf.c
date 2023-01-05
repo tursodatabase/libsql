@@ -736,13 +736,26 @@ void sqlite3_str_vappendf(
           }
         }
         if( precision>1 ){
+          i64 nPrior = 1;
           width -= precision-1;
           if( width>1 && !flag_leftjustify ){
             sqlite3_str_appendchar(pAccum, width-1, ' ');
             width = 0;
           }
-          while( precision-- > 1 ){
-            sqlite3_str_append(pAccum, buf, length);
+          sqlite3_str_append(pAccum, buf, length);
+          precision--;
+          while( precision > 1 ){
+            i64 nCopyBytes;
+            if( nPrior > precision-1 ) nPrior = precision - 1;
+            nCopyBytes = length*nPrior;
+            if( nCopyBytes + pAccum->nChar >= pAccum->nAlloc ){
+              sqlite3StrAccumEnlarge(pAccum, nCopyBytes);
+            }
+            if( pAccum->accError ) break;
+            sqlite3_str_append(pAccum,
+                 &pAccum->zText[pAccum->nChar-nCopyBytes], nCopyBytes);
+            precision -= nPrior;
+            nPrior *= 2;
           }
         }
         bufpt = buf;
@@ -970,9 +983,9 @@ void sqlite3RecordErrorOffsetOfExpr(sqlite3 *db, const Expr *pExpr){
 ** Return the number of bytes of text that StrAccum is able to accept
 ** after the attempted enlargement.  The value returned might be zero.
 */
-int sqlite3StrAccumEnlarge(StrAccum *p, int N){
+int sqlite3StrAccumEnlarge(StrAccum *p, i64 N){
   char *zNew;
-  assert( p->nChar+(i64)N >= p->nAlloc ); /* Only called if really needed */
+  assert( p->nChar+N >= p->nAlloc ); /* Only called if really needed */
   if( p->accError ){
     testcase(p->accError==SQLITE_TOOBIG);
     testcase(p->accError==SQLITE_NOMEM);
@@ -983,8 +996,7 @@ int sqlite3StrAccumEnlarge(StrAccum *p, int N){
     return p->nAlloc - p->nChar - 1;
   }else{
     char *zOld = isMalloced(p) ? p->zText : 0;
-    i64 szNew = p->nChar;
-    szNew += (sqlite3_int64)N + 1;
+    i64 szNew = p->nChar + N + 1;
     if( szNew+p->nChar<=p->mxAlloc ){
       /* Force exponential buffer size growth as long as it does not overflow,
       ** to avoid having to call this routine too often */
@@ -1014,7 +1026,8 @@ int sqlite3StrAccumEnlarge(StrAccum *p, int N){
       return 0;
     }
   }
-  return N;
+  assert( N>=0 && N<=0x7fffffff );
+  return (int)N;
 }
 
 /*

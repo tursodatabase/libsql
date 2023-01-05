@@ -76,9 +76,7 @@
     await wtest('config-get', (ev)=>{
       const r = ev.result;
       log('sqlite3.config subset:', r);
-      T.assert('boolean' === typeof r.bigIntEnabled)
-        .assert('string'===typeof r.wasmfsOpfsDir)
-        .assert('boolean' === typeof r.wasmfsOpfsEnabled);
+      T.assert('boolean' === typeof r.bigIntEnabled);
       sqConfig = r;
     });
     logHtml('',
@@ -213,7 +211,7 @@
       sql: "select 'foo' foo, a bar, 'baz' baz  from t limit 2",
       callback: resultRowTest3,
       columnNames: [],
-      rowMode: ':bar'
+      rowMode: '$bar'
     }, function(ev){
       log("exec() result row:",ev);
       T.assert(2===resultRowTest3.counter);
