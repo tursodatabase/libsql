@@ -84,12 +84,10 @@ impl<DB: Database + 'static + Send + Sync> Service<Query> for DbService<DB> {
     fn call(&mut self, query: Query) -> Self::Future {
         let db = self.db.clone();
         match query {
-            Query::SimpleQuery(stmts) => Box::pin(async move {
-                match Statements::parse(stmts) {
-                    Ok(stmts) => db.execute(stmts, Vec::new()).await,
-                    Err(e) => Err(QueryError::new(ErrorCode::SQLError, e)),
-                }
-            }),
+            Query::SimpleQuery(stmts, params) => match Statements::parse(stmts) {
+                Ok(stmts) => Box::pin(async move { db.execute(stmts, params).await }),
+                Err(e) => Box::pin(ready(Err(QueryError::new(ErrorCode::SQLError, e)))),
+            },
             Query::Disconnect => Box::pin(ready(Ok(QueryResponse::Ack))),
         }
     }
