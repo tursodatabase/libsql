@@ -7,6 +7,10 @@ For example, with serverless apps, fitting a database engine, as slim as it may 
 
 With `sqld` you can use SQLite-like interface in your app, but have a transparent proxy translates the C API calls to PostgreSQL wire protocol to talk to a database server, which is internally libSQL.
 
+_Disclaimer: although you can connect to `sqld` with a PostgreSQL client and many things just work because PostgreSQL and SQLite are so similar, the goal of this project is to provide SQLite compatibility at the client.
+That is, whenever there's a conflict in behaviour between SQLite and PostgreSQL, we always go with SQLite behavior.
+However, if libSQL starts to provide more [PostgreSQL compatibility](https://github.com/libsql/libsql/issues/80), `sqld` will also support that._
+
 ## Features
 
 * SQLite dialect layered on top of PostgreSQL wire protocol.
