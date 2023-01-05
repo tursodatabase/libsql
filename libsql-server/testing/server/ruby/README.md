@@ -1,6 +1,6 @@
 # Ruby PostgreSQL client acceptance tests
 
-These are Ruby PostgreSQL client acceptance tests for the ChiselEdge server.
+These are Ruby PostgreSQL client acceptance tests for the `sqld` server.
 
 ## Getting Started
 

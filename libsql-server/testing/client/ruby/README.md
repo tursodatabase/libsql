@@ -1,6 +1,6 @@
 # Ruby SQLite client acceptance tests
 
-These are Ruby SQLite client acceptance tests for the ChiselEdge server.
+These are Ruby SQLite client acceptance tests for the `sqld` server.
 
 ## Getting Started
 

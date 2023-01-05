@@ -1,6 +1,6 @@
-# ChiselEdge Proxy
+# SQLite API for `sqld`
 
-This is source code to the ChiselEdge Proxy that provides a SQLite-compatible API.
+This is source code to the SQLite compatible client API for `sqld`.
 
 ## Verifying the ABI
 
