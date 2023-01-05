@@ -1,11 +1,11 @@
-# Iku-Turso User Guide
+# `sqld` User Guide
 
 ## Deploying to Fly
 
-Fly config file:
+First create a Fly config file (pick an application name):
 
 ```toml
-app = "iku-turso"
+app = "<app name>"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
@@ -24,20 +24,34 @@ processes = []
     port = 5000
 ```
 
-Build image:
+Then run (but say not for deploy):
 
 ```console
-podman build . -t iku-turso
+flyctl launch
+```
+
+Build the Docker image:
+
+```console
+podman build . -t sqld
 ```
 
 Push to Fly registry:
 
 ```console
-podman push --format v2s2 iku-turso:latest docker://registry.fly.io/iku-turso:latest
+podman push --format v2s2 sqld:latest docker://registry.fly.io/<app name>:latest
 ```
 
-Deploy:
+Finally, deploy:
 
 ```console
-flyctl deploy -i registry.fly.io/iku-turso:latest
+flyctl deploy -i registry.fly.io/<app name>:latest
 ```
+
+and allocate a IPv4 addres:
+
+```
+flyctl ips allocate-v4 -a <app name>
+```
+
+You now have `sqld` running on Fly listening to port `5000`.
