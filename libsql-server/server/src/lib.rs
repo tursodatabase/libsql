@@ -24,10 +24,17 @@ pub mod proxy_rpc {
     tonic::include_proto!("proxy");
 }
 
+#[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
+pub enum Backend {
+    Libsql,
+    Mwal,
+}
+
 pub async fn run_server(
     db_path: PathBuf,
     tcp_addr: SocketAddr,
     ws_addr: Option<SocketAddr>,
+    backend: Backend,
     mwal_addr: Option<String>,
     writer_rpc_addr: Option<String>,
     rpc_server_addr: Option<SocketAddr>,
@@ -39,9 +46,10 @@ pub async fn run_server(
         server.bind_ws(addr).await?;
     }
 
-    if let Some(addr) = &mwal_addr {
-        std::env::set_var("MVSQLITE_DATA_PLANE", addr);
+    if backend == Backend::Mwal {
+        std::env::set_var("MVSQLITE_DATA_PLANE", mwal_addr.as_ref().unwrap());
     }
+
     let vwal_methods =
         mwal_addr.map(|_| Arc::new(Mutex::new(mwal::ffi::libsql_wal_methods::new())));
 

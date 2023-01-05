@@ -22,6 +22,8 @@ struct Cli {
     /// The gRPC URL of the primary node to connect to for writes. Example: `http://localhost:5001`.
     #[clap(long)]
     primary_grpc_url: Option<String>,
+    #[clap(long, short, value_enum, default_value = "libsql")]
+    backend: sqld::Backend,
     // The url to connect with mWAL backend, based on mvSQLite
     #[clap(long, short)]
     mwal_addr: Option<String>,
@@ -32,10 +34,24 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Cli::parse();
 
+    match (&args.backend, args.mwal_addr.is_some()) {
+        (sqld::Backend::Mwal, false) => {
+            anyhow::bail!("--mwal-addr parameter must be present with mwal backend")
+        }
+        (backend, true) if backend != &sqld::Backend::Mwal => {
+            anyhow::bail!(
+                "--mwal-addr parameter conflicts with backend {:?}",
+                args.backend
+            )
+        }
+        _ => (),
+    }
+
     sqld::run_server(
         args.db_path,
         args.pg_listen_addr,
         args.ws_listen_addr,
+        args.backend,
         args.mwal_addr,
         args.primary_grpc_url,
         args.grpc_listen_addr,
