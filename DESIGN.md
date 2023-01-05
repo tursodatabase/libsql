@@ -1,27 +1,60 @@
-# ChiselEdge Design
-
-This is a design document for ChiselEdge.
-
 ## Overview
 
-ChiselEdge is a distributed SQL database that optimizes for fast application-local reads.
+`sqld` is a server mode for [libSQL](https://libsql.org), which provides SQLite interface and dialect for use cases such as edge functions where it's impractical to embed a full database engine.
 
-## Goals
+## Logical Architecture
 
-* Fast application-local reads using eventual consistent read replicas on SQLite
-* Unified interface for applications with SQLite
-* Easy to integrate with existing apps
+The `sqld` consists of a:
 
-## Architecture
+* Client
+* Primary server
+* Replica servers (optional)
+* mvSQLite backend (optional)
 
-ChiselEdge follows a traditional client-server model:
+The client provides a SQLite ABI compatible inteface as a drop-in replacement for applications using libSQL or SQLite. The client library transforms SQLite C API calls into PostgreSQL wire protocol messages and sends them to the primary server.
 
-* Client talks to the server using the PostgreSQL wire protocol (that carries SQLite statements)
-* Client is either a proxy (that has opportunistic cache) or a replica (copy of the whole database)
-* Server processes client requests against a server-side SQLite and sends responses back to the client.
-* Server passively replicates database to all clients that can hold a replica.
+The primary server is a `sqld` process, which servers SQLite dialect over the PostgreSQL wire protocol. The server can either be backed by single-node `libSQL` database or by a mvSQLite backend, which provides improved write concurrency, high availability, and fault tolerance using FoundationDB.
 
-### Server
+Replica servers is a `sqld` process, which only serves reads locally, and delegates writes to the primary server. The server is backed by a `libSQL` database.
+
+Finally, the mvSQLite backend is a FoundationDB cluster, which can be optionally used by the primary server.
+
+### Reads
+
+Clients initiate reads by using the `sqlite3_exec()` API, for example, to perform a `SELECT` query.
+The client sends messages over the network to a replica server, which performs the `SELECT` query on its local database, and sends back the results over the network.
+The replica also periodically polls the primary server for WAL updates to refresh the database.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Replica
+    participant Primary
+    Client->>Replica: SQL SELECT
+    Replica->>Client: SQL result set
+    Replica->>Primary: Request WAL updates
+    Primary->>Replica: WAL entries
+```
+
+### Writes
+
+Clients initialte writes with, for example, the `sqlite3_exec()` API by performing a `INSERT`, `UPDATE`, or `DELETE` SQL statement.
+The primary server is responsible for writes.
+The client sends writes to the primary server or a replica. If a replica receives a write, it delegates the write to the primary server.
+The primary server either performs the write against its local `libSQL` database or processes it via `mvSQLite`, which uses FoundationDB.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Primary
+    participant mvSQLite
+    Client->>Primary: SQL INSERT
+    Server->>mvSQLite: WAL
+```
+
+## Server
 
 The server architecture uses the service design pattern and uses `tower` as an interface. Tower provides middleware that we can reuse, and the design implements a clear separation of concern. Service is isolated and composable, which is a desirable property.
 
@@ -47,14 +80,3 @@ classDiagram
 The `PgConnectionFactory` service takes a service factory that responds to `Query` requests and drives the Postgres wire protocol.
 
 The `SchedulerServiceFactory` creates `SchedulerService`s that respond to `Query` requests, and schedule them to be performed.
-
-## Transactions
-
-* Serializable reads and writes
-* [Snapshot isolated](https://jepsen.io/consistency/models/snapshot-isolation) reads
-
-The transaction isolation level provided by SQLite is *serializable*, which is the default transaction isolation in ChiselEdge as well. In ChiselEdge, serializable transaction implies a network hop over to the primary server, which means serializable transactions are slow. In particular, SQLite allows a *single* writer at a time, which makes writes very very slow. That said, SQLite does support `BEGIN CONCURRENT`, which should allow at least some write concurrency.
-
-However, ChiselEdge provides *snapshot isolated reads* if there's an application-local replica. The replication itself is eventually consistent, but the reads are *snapshot isolated* because regardless of any ongoing replication, a transaction will use SQLite's transactions to have a consistent view. The read can return stale data, but that's allowed by snapshot isolation.
-
-Marin Postma speculates that if SQLite had MVCC, we could also allow snapshot isolated writes.
