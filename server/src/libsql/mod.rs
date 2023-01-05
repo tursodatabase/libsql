@@ -1,8 +1,8 @@
 #![allow(improper_ctypes)]
 
-pub mod mwal;
-
 pub mod ffi;
+#[cfg(feature = "mwal_backend")]
+pub mod mwal;
 pub mod wal_hook;
 
 use anyhow::ensure;

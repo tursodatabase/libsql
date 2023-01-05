@@ -25,6 +25,7 @@ struct Cli {
     #[clap(long, short, value_enum, default_value = "libsql")]
     backend: sqld::Backend,
     // The url to connect with mWAL backend, based on mvSQLite
+    #[cfg(feature = "mwal_backend")]
     #[clap(long, short)]
     mwal_addr: Option<String>,
 }
@@ -34,6 +35,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Cli::parse();
 
+    #[cfg(feature = "mwal_backend")]
     match (&args.backend, args.mwal_addr.is_some()) {
         (sqld::Backend::Mwal, false) => {
             anyhow::bail!("--mwal-addr parameter must be present with mwal backend")
@@ -52,6 +54,7 @@ async fn main() -> Result<()> {
         args.pg_listen_addr,
         args.ws_listen_addr,
         args.backend,
+        #[cfg(feature = "mwal_backend")]
         args.mwal_addr,
         args.primary_grpc_url,
         args.grpc_listen_addr,

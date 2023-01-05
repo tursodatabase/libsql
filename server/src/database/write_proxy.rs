@@ -1,5 +1,6 @@
 use std::future::{ready, Ready};
 use std::path::PathBuf;
+#[cfg(feature = "mwal_backend")]
 use std::sync::Arc;
 
 use tokio::sync::Mutex;
@@ -18,6 +19,7 @@ use super::{libsql::LibSqlDb, service::DbFactory, Database};
 pub struct WriteProxyDbFactory {
     write_proxy: ProxyClient<Channel>,
     db_path: PathBuf,
+    #[cfg(feature = "mwal_backend")]
     vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
 }
 
@@ -25,12 +27,15 @@ impl WriteProxyDbFactory {
     pub async fn new(
         addr: String,
         db_path: PathBuf,
-        vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
+        #[cfg(feature = "mwal_backend")] vwal_methods: Option<
+            Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
+        >,
     ) -> anyhow::Result<Self> {
         let write_proxy = ProxyClient::connect(addr).await?;
         Ok(Self {
             write_proxy,
             db_path,
+            #[cfg(feature = "mwal_backend")]
             vwal_methods,
         })
     }
@@ -45,6 +50,7 @@ impl DbFactory for WriteProxyDbFactory {
         ready(WriteProxyDatabase::new(
             self.write_proxy.clone(),
             self.db_path.clone(),
+            #[cfg(feature = "mwal_backend")]
             self.vwal_methods.clone(),
         ))
     }
@@ -61,9 +67,16 @@ impl WriteProxyDatabase {
     fn new(
         write_proxy: ProxyClient<Channel>,
         path: PathBuf,
-        vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
+        #[cfg(feature = "mwal_backend")] vwal_methods: Option<
+            Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
+        >,
     ) -> anyhow::Result<Self> {
-        let read_db = LibSqlDb::new(path, vwal_methods, ())?;
+        let read_db = LibSqlDb::new(
+            path,
+            #[cfg(feature = "mwal_backend")]
+            vwal_methods,
+            (),
+        )?;
         Ok(Self {
             read_db,
             write_proxy,
