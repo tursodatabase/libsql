@@ -16,7 +16,8 @@ With `sqld` you can use SQLite-like interface in your app, but have a transparen
 
 * Read replica support for geo-distribution.
 * Integration with [mvSQLite](https://github.com/losfair/mvsqlite) for high availability and fault tolerance.
-  
+* Integration with libSQL's [bottomless storage](https://github.com/libsql/bottomless)
+
 ## Getting Started
 
 Start a server with:
