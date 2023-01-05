@@ -2,7 +2,7 @@ use std::future::{poll_fn, Future};
 use std::io;
 use std::net::SocketAddr;
 use std::pin::Pin;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use futures::StreamExt;
 use pgwire::api::query::SimpleQueryHandler;
@@ -24,14 +24,15 @@ use super::proto::{peek_for_sslrequest, process_error, SimpleHandler};
 /// Manages a postgres wire connection.
 pub struct PgWireConnection<T, S> {
     socket: Framed<T, PgWireMessageServerCodec>,
-    authenticator: Rc<PgAuthenticator>,
+    authenticator: Arc<PgAuthenticator>,
     service: S,
 }
 
 impl<T, S> PgWireConnection<T, S>
 where
-    S: Service<Query, Response = QueryResponse, Error = QueryError>,
+    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
     T: AsyncRead + AsyncWrite + Unpin + Send + Sync,
+    S::Future: Send,
 {
     async fn run(&mut self) {
         loop {
@@ -103,14 +104,14 @@ where
 
 /// A connection factory that takes a stream, and a ServiceFactory, and creates a PgWireConnection
 pub struct PgConnectionFactory<S> {
-    authenticator: Rc<PgAuthenticator>,
+    authenticator: Arc<PgAuthenticator>,
     factory: S,
 }
 
 impl<S> PgConnectionFactory<S> {
     pub fn new(inner: S) -> Self {
         Self {
-            authenticator: Rc::new(PgAuthenticator),
+            authenticator: Arc::new(PgAuthenticator),
             factory: inner,
         }
     }
@@ -118,15 +119,15 @@ impl<S> PgConnectionFactory<S> {
 
 impl<T, F, S> Service<(T, SocketAddr)> for PgConnectionFactory<F>
 where
-    // Send not necessary, get rid of it when implementing authentication.
     T: AsyncRead + AsyncWrite + AsyncPeekable + Unpin + Send + Sync + 'static,
-    F: MakeService<(), Query, MakeError = anyhow::Error, Service = S>,
-    F::Future: 'static,
-    S: Service<Query, Response = QueryResponse, Error = QueryError>,
+    F: MakeService<(), Query, MakeError = anyhow::Error, Service = S> + Sync,
+    F::Future: 'static + Send + Sync,
+    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S::Future: Send,
 {
     type Response = ();
     type Error = anyhow::Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>>>>;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     fn poll_ready(
         &mut self,
