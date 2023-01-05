@@ -1,7 +1,15 @@
 use std::convert::Infallible;
 use std::str::FromStr;
 
-use pgwire::api::{results::FieldInfo, Type as PgType};
+use futures::stream;
+use pgwire::{
+    api::{
+        results::{text_query_response, FieldInfo, Response, TextDataRowEncoder},
+        Type as PgType,
+    },
+    error::PgWireResult,
+    messages::data::DataRow,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::rpc::proxy::proxy_rpc::{
@@ -121,6 +129,18 @@ pub enum Value {
     Blob(Vec<u8>),
 }
 
+impl From<Value> for rusqlite::types::Value {
+    fn from(value: Value) -> Self {
+        match value {
+            Value::Null => Self::Null,
+            Value::Integer(i) => Self::Integer(i),
+            Value::Real(x) => Self::Real(x),
+            Value::Text(s) => Self::Text(s),
+            Value::Blob(b) => Self::Blob(b),
+        }
+    }
+}
+
 impl From<rusqlite::types::Value> for Value {
     fn from(other: rusqlite::types::Value) -> Self {
         use rusqlite::types::Value;
@@ -139,6 +159,38 @@ impl From<rusqlite::types::Value> for Value {
 pub struct ResultSet {
     pub columns: Vec<Column>,
     pub rows: Vec<Row>,
+}
+
+fn encode_row(row: Row) -> PgWireResult<DataRow> {
+    let mut encoder = TextDataRowEncoder::new(row.values.len());
+    for value in row.values {
+        match value {
+            Value::Null => {
+                encoder.append_field(None::<&u8>)?;
+            }
+            Value::Integer(i) => {
+                encoder.append_field(Some(&i))?;
+            }
+            Value::Real(f) => {
+                encoder.append_field(Some(&f))?;
+            }
+            Value::Text(t) => {
+                encoder.append_field(Some(&t))?;
+            }
+            Value::Blob(b) => {
+                encoder.append_field(Some(&hex::encode(b)))?;
+            }
+        }
+    }
+    encoder.finish()
+}
+
+impl From<ResultSet> for Response {
+    fn from(ResultSet { columns, rows }: ResultSet) -> Self {
+        let field_infos = columns.into_iter().map(Into::into).collect();
+        let data_row_stream = stream::iter(rows.into_iter().map(encode_row));
+        Response::Query(text_query_response(field_infos, data_row_stream))
+    }
 }
 
 impl From<ResultSet> for ResultRows {
@@ -199,7 +251,7 @@ pub enum QueryResponse {
 
 #[derive(Debug)]
 pub enum Query {
-    SimpleQuery(String),
+    SimpleQuery(String, Vec<Value>),
     Disconnect,
 }
 
