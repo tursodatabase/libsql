@@ -1285,7 +1285,7 @@ static int zipfileFilter(
   }
 
   if( 0==pTab->pWriteFd && 0==bInMemory ){
-    pCsr->pFile = fopen(zFile, "rb");
+    pCsr->pFile = zFile ? fopen(zFile, "rb") : 0;
     if( pCsr->pFile==0 ){
       zipfileCursorErr(pCsr, "cannot open file: %s", zFile);
       rc = SQLITE_ERROR;

@@ -1,5 +1,5 @@
-C Adjustements\sto\sthe\stool/warnings.sh\sscript\sto\saccount\sfor\scompiler\ndifferences.
-D 2023-01-04T18:32:14.740
+C In\sthe\szipvfile\sextension\s(which\sis\snot\spart\sof\sthe\sSQLite\samalgamation,\sbut\nwhich\sis\sincluded\sin\sthe\sCLI\sby\sdefault)\sensure\sthat\sfopen()\sis\snot\sinvoked\nusing\sa\sNULL\sfilename.\s\sFix\sfor\sthe\sissue\sreported\sby\n[forum:/forumpost/d1c96a9032e564f8|forum\spost\sd1c96a9032e564f8].
+D 2023-01-05T01:26:58.676
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -341,7 +341,7 @@ F ext/misc/vfsstat.c 474d08efc697b8eba300082cb1eb74a5f0f3df31ed257db1cb07e72ab0e
 F ext/misc/vtablog.c 5538acd0c8ddaae372331bee11608d76973436b77d6a91e8635cfc9432fba5ae
 F ext/misc/vtshim.c 1976e6dd68dd0d64508c91a6dfab8e75f8aaf6cd
 F ext/misc/wholenumber.c a838d1bea913c514ff316c69695efbb49ea3b8cb37d22afc57f73b6b010b4546
-F ext/misc/zipfile.c bc4f8c552c8eed68fddc44600da9eed5d4de9c0e765b1256cf8750288097307f
+F ext/misc/zipfile.c f98239261488397618ce4754c500626d1de20cd2d44bf2f2d571d7ddaab668a7
 F ext/misc/zorder.c b0ff58fa643afa1d846786d51ea8d5c4b6b35aa0254ab5a82617db92f3adda64
 F ext/rbu/rbu.c 801450b24eaf14440d8fd20385aacc751d5c9d6123398df41b1b5aa804bf4ce8
 F ext/rbu/rbu1.test c62904bd9526dcdc3496a21199aaf14ae191bbadbf67f076bf16be6b3f2115c2
@@ -1960,7 +1960,7 @@ F test/writecrash.test f1da7f7adfe8d7f09ea79b42e5ca6dcc41102f27f8e334ad71539501d
 F test/zeroblob.test 7b74cefc7b281dfa2b07cd237987fbe94b4a2037a7771e9e83f2d5f608b1d99e
 F test/zeroblobfault.test 861d8191a0d944dfebb3cb4d2c5b4e46a5a119eaec5a63dd996c2389f8063441
 F test/zerodamage.test 9c41628db7e8d9e8a0181e59ea5f189df311a9f6ce99cc376dc461f66db6f8dc
-F test/zipfile.test 0d8758d8c0d63f16644f959689f78969d223789d998964276554039f067b4548
+F test/zipfile.test 4178a2de98739e9adac41cb8f0be5553df060e470c846f51fdbed247117728a7
 F test/zipfile2.test 9903388a602a3834189857a985106ff95c3bba6a3969e0134127df991889db5d
 F test/zipfilefault.test 44d4d7a7f7cca7521d569d7f71026b241d65a6b1757aa409c1a168827edbbc2c
 F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb44
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f38caab23bcef1df02618376de22d208a3333d023628cde310345505933329f1
-R 0651c8b5c0eb8ee41e81e5404c0397d0
+P 863c03bee117e81bcea8c3ae78bf125afc7750aa5bcb89e42ee66d9c8b6ddc29
+R bd7d81d0f784ddf0f83823f59d4bdcb7
 U drh
-Z 4a273995e784c5323bf444a97d5e6264
+Z 83514ac1bc5e12b1f951dce5d4ed25a4
 # Remove this line to create a well-formed Fossil manifest.
