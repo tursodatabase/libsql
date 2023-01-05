@@ -1,7 +1,5 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
-
-#[cfg(feature = "fdb")]
 use std::sync::{Arc, Mutex};
 
 use anyhow::Result;
@@ -30,7 +28,7 @@ pub async fn run_server(
     db_path: PathBuf,
     tcp_addr: SocketAddr,
     ws_addr: Option<SocketAddr>,
-    fdb_config_path: Option<String>,
+    mwal_addr: Option<String>,
     writer_rpc_addr: Option<String>,
     rpc_server_addr: Option<SocketAddr>,
 ) -> Result<()> {
@@ -41,15 +39,11 @@ pub async fn run_server(
         server.bind_ws(addr).await?;
     }
 
-    let vwal_methods = match &fdb_config_path {
-        #[cfg(feature = "fdb")]
-        Some(_path) => Some(Arc::new(Mutex::new(libsql::WalMethods::new(
-            fdb_config_path.clone(),
-        )?))),
-        #[cfg(not(feature = "fdb"))]
-        Some(_path) => panic!("not compiled with fdb"),
-        None => None,
-    };
+    if let Some(addr) = &mwal_addr {
+        std::env::set_var("MVSQLITE_DATA_PLANE", addr);
+    }
+    let vwal_methods =
+        mwal_addr.map(|_| Arc::new(Mutex::new(mwal::ffi::libsql_wal_methods::new())));
 
     match writer_rpc_addr {
         Some(addr) => {
