@@ -1,7 +1,6 @@
 #![allow(improper_ctypes)]
 
-#[cfg(feature = "fdb")]
-pub mod fdb;
+pub mod mwal;
 
 pub mod ffi;
 pub mod wal_hook;
@@ -9,11 +8,6 @@ pub mod wal_hook;
 use anyhow::ensure;
 use rusqlite::Connection;
 use std::os::unix::ffi::OsStrExt;
-
-#[cfg(not(feature = "fdb"))]
-pub struct WalMethods;
-#[cfg(feature = "fdb")]
-pub use fdb::WalMethods;
 
 use crate::libsql::{ffi::libsql_wal_methods_register, wal_hook::WalMethodsHook};
 

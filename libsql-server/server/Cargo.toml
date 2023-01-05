@@ -15,6 +15,9 @@ crossbeam = "0.8.2"
 foundationdb = { version = "0.7.0", features = ["embedded-fdb-include"], optional = true }
 futures = "0.3.25"
 hex = "0.4.3"
+# Regular mvfs prevents users from enabling WAL mode
+mvfs = { git = "https://github.com/psarna/mvsqlite", branch = "mwal" }
+mwal = { git = "https://github.com/psarna/mvsqlite", branch = "mwal" }
 parking_lot = "0.12.1"
 pgwire = "0.7.0"
 pin-project-lite = "0.2.9"
