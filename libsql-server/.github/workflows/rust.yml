@@ -86,4 +86,4 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          tags: iku-turso:unstable
+          tags: sqld:unstable
