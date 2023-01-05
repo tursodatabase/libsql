@@ -50,6 +50,7 @@ impl Server {
     pub async fn serve<S>(self, mut make_svc: S)
     where
         S: Service<(NetStream, SocketAddr)>,
+        S::Future: Send,
         S::Error: fmt::Display,
     {
         let mut connections = FuturesUnordered::new();
