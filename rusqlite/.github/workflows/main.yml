@@ -198,15 +198,38 @@ jobs:
     name: Generate code coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: hecrj/setup-rust-action@v1
-      # TODO: we don't use caching here because it's unclear if it will cause
-      # the coverage to get less accurate (this is the case for some coverage
-      # tools, although possibly not tarpaulin?)
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          args: '--features "bundled-full session buildtime_bindgen"'
-
+          components: 'llvm-tools-preview'
+      - uses: taiki-e/install-action@main
+        with:
+          tool: grcov
+      - name: Run tests for coverage
+        run: |
+          cargo test --verbose
+          cargo test --features="bundled-full" --verbose
+          cargo test --features="bundled-full session buildtime_bindgen" --verbose
+          cargo test --features="bundled-sqlcipher-vendored-openssl" --verbose
+        env:
+          RUSTFLAGS: -Cinstrument-coverage
+          RUSTDOCFLAGS: -Cinstrument-coverage
+          LLVM_PROFILE_FILE: rusqlite-%p-%m.profraw
+      - name: Produce coverage info
+        run: |
+          grcov $(find . -name "rusqlite-*.profraw" -print) \
+            -s . \
+            --branch \
+            --ignore-not-existing \
+            --ignore='target/*' \
+            --ignore='benches/*' \
+            --ignore='/*' \
+            --binary-path ./target/debug/ \
+            --excl-line='#\[derive' \
+            -t lcov \
+            -o lcov.info
       - name: Upload to codecov.io
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+          fail_ci_if_error: true
