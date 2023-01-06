@@ -1,79 +1,113 @@
+use std::borrow::Cow;
+use std::future::poll_fn;
+
 use bytes::Buf;
-use futures::{io, stream, SinkExt};
-use parking_lot::Mutex;
-use pgwire::api::query::SimpleQueryHandler;
-use pgwire::api::results::{text_query_response, Response, TextDataRowEncoder};
-use pgwire::api::ClientInfo;
+use futures::{io, SinkExt};
+use once_cell::sync::Lazy;
+use pgwire::api::portal::Portal;
+use pgwire::api::query::{ExtendedQueryHandler, SimpleQueryHandler};
+use pgwire::api::results::Response;
+use pgwire::api::{ClientInfo, Type};
 use pgwire::error::{ErrorInfo, PgWireError, PgWireResult};
-use pgwire::messages::data::DataRow;
 use pgwire::messages::response::{ReadyForQuery, READY_STATUS_IDLE};
 use pgwire::messages::startup::SslRequest;
 use pgwire::messages::PgWireBackendMessage;
 use pgwire::tokio::PgWireMessageServerCodec;
+use regex::Regex;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tokio::sync::Mutex;
 use tokio_util::codec::Framed;
+use tower::Service;
 
-use crate::query::{QueryResponse, QueryResult, ResultSet, Row, Value};
+use crate::query::{Query, QueryError, QueryResponse, Value};
 use crate::server::AsyncPeekable;
 
-pub struct SimpleHandler(pub Mutex<Option<QueryResult>>);
+// TODO: more robust parsing
+static VAR_REPLACE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"\$(?P<digits>\d*)"#).unwrap());
 
-impl SimpleHandler {
-    pub fn new(r: QueryResult) -> Self {
-        Self(Mutex::new(Some(r)))
+/// This is a dummy handler, it's sole role is to send the response back to the client.
+pub struct QueryHandler<'a, S>(Mutex<&'a mut S>);
+
+impl<'a, S> QueryHandler<'a, S> {
+    pub fn new(s: &'a mut S) -> Self {
+        Self(Mutex::new(s))
     }
-}
 
-#[async_trait::async_trait]
-impl SimpleQueryHandler for SimpleHandler {
-    async fn do_query<C>(&self, _client: &C, _query: &str) -> PgWireResult<Vec<Response>>
+    async fn handle_query(&self, query: Cow<'_, str>, params: Vec<Value>) -> PgWireResult<Response>
     where
-        C: ClientInfo + Unpin + Send + Sync,
+        S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+        S::Future: Send,
     {
-        let query_result = self
-            .0
-            .lock()
-            .take()
-            .expect("SimpleHandler used more that once");
-        match query_result {
+        let query = Query::SimpleQuery(query.into_owned(), params);
+        let mut s = self.0.lock().await;
+        //TODO: handle poll_ready error
+        poll_fn(|cx| s.poll_ready(cx)).await.unwrap();
+        match s.call(query).await {
             Ok(resp) => match resp {
-                QueryResponse::ResultSet(ResultSet { columns, rows }) => {
-                    let field_infos = columns.into_iter().map(Into::into).collect();
-                    let data_row_stream = stream::iter(rows.into_iter().map(encode_row));
-                    return Ok(vec![Response::Query(text_query_response(
-                        field_infos,
-                        data_row_stream,
-                    ))]);
-                }
-                QueryResponse::Ack => return Ok(vec![]),
+                QueryResponse::ResultSet(set) => Ok(set.into()),
             },
             Err(e) => Err(e.into()),
         }
     }
 }
 
-fn encode_row(row: Row) -> PgWireResult<DataRow> {
-    let mut encoder = TextDataRowEncoder::new(row.values.len());
-    for value in row.values {
-        match value {
-            Value::Null => {
-                encoder.append_field(None::<&u8>)?;
-            }
-            Value::Integer(i) => {
-                encoder.append_field(Some(&i))?;
-            }
-            Value::Real(f) => {
-                encoder.append_field(Some(&f))?;
-            }
-            Value::Text(t) => {
-                encoder.append_field(Some(&t))?;
-            }
-            Value::Blob(b) => {
-                encoder.append_field(Some(&hex::encode(b)))?;
-            }
-        }
+#[async_trait::async_trait]
+impl<'a, S> SimpleQueryHandler for QueryHandler<'a, S>
+where
+    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S::Future: Send,
+{
+    async fn do_query<C>(&self, _client: &C, query: &str) -> PgWireResult<Vec<Response>>
+    where
+        C: ClientInfo + Unpin + Send + Sync,
+    {
+        self.handle_query(Cow::Borrowed(query), Vec::new())
+            .await
+            .map(|r| vec![r])
     }
-    encoder.finish()
+}
+
+#[async_trait::async_trait]
+impl<'a, S> ExtendedQueryHandler for QueryHandler<'a, S>
+where
+    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S::Future: Send,
+{
+    async fn do_query<C>(
+        &self,
+        _client: &mut C,
+        portal: &Portal,
+        _max_rows: usize,
+    ) -> PgWireResult<Response>
+    where
+        C: ClientInfo + Unpin + Send + Sync,
+    {
+        debug_assert_eq!(portal.parameter_types().len(), portal.parameter_len());
+        let statement = VAR_REPLACE_RE.replace(portal.statement(), "?$digits");
+        let mut params = Vec::with_capacity(portal.parameter_len());
+        for (val, ty) in portal.parameters().iter().zip(portal.parameter_types()) {
+            let value = if val.is_none() {
+                Value::Null
+            } else if ty == &Type::VARCHAR {
+                let s = String::from_utf8(val.as_ref().unwrap().to_vec()).unwrap();
+                Value::Text(s)
+            } else if ty == &Type::INT8 {
+                let v = i64::from_be_bytes((val.as_ref().unwrap()[..8]).try_into().unwrap());
+                Value::Integer(v)
+            } else if ty == &Type::BYTEA {
+                Value::Blob(val.as_ref().unwrap().to_vec())
+            } else if ty == &Type::FLOAT8 {
+                let val = f64::from_be_bytes(val.as_ref().unwrap()[..8].try_into().unwrap());
+                Value::Real(val)
+            } else {
+                unimplemented!("unsupported type")
+            };
+
+            params.push(value);
+        }
+
+        self.handle_query(statement, params).await
+    }
 }
 
 // from https://docs.rs/pgwire/latest/src/pgwire/tokio.rs.html#230-283
