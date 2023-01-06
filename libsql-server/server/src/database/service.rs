@@ -6,11 +6,9 @@ use std::task::Poll;
 use futures::Future;
 use tower::Service;
 
+use super::Database;
 use crate::query::{ErrorCode, Query, QueryError, QueryResponse, QueryResult};
 use crate::query_analysis::Statements;
-
-use super::Database;
-
 pub trait DbFactory: Send + Sync + 'static {
     type Future: Future<Output = anyhow::Result<Self::Db>> + Send;
     type Db: Database + Send + Sync;
