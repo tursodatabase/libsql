@@ -42,7 +42,7 @@ impl<'a, S> QueryHandler<'a, S> {
         let mut s = self.0.lock().await;
         //TODO: handle poll_ready error
         poll_fn(|cx| s.poll_ready(cx)).await.unwrap();
-        match self.0.lock().await.call(query).await {
+        match s.call(query).await {
             Ok(resp) => match resp {
                 QueryResponse::ResultSet(set) => Ok(set.into()),
             },
