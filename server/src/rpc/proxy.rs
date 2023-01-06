@@ -43,7 +43,6 @@ impl From<QueryResult> for RpcQueryResult {
                     result: RpcResult::Ok.into(),
                 }
             }
-            Ok(QueryResponse::Ack) => todo!(),
             Err(e) => {
                 let code = match e.code {
                     ErrorCode::SQLError => RpcErrorCode::SqlError,

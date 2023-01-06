@@ -2,14 +2,9 @@ use std::convert::Infallible;
 use std::str::FromStr;
 
 use futures::stream;
-use pgwire::{
-    api::{
-        results::{text_query_response, FieldInfo, Response, TextDataRowEncoder},
-        Type as PgType,
-    },
-    error::PgWireResult,
-    messages::data::DataRow,
-};
+use pgwire::api::results::{text_query_response, FieldInfo, Response, TextDataRowEncoder};
+use pgwire::api::Type as PgType;
+use pgwire::{error::PgWireResult, messages::data::DataRow};
 use serde::{Deserialize, Serialize};
 
 use crate::rpc::proxy::proxy_rpc::{
@@ -245,14 +240,12 @@ impl From<ResultRows> for ResultSet {
 
 #[derive(Debug)]
 pub enum QueryResponse {
-    Ack,
     ResultSet(ResultSet),
 }
 
 #[derive(Debug)]
 pub enum Query {
     SimpleQuery(String, Vec<Value>),
-    Disconnect,
 }
 
 #[derive(Debug, Clone)]

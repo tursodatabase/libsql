@@ -52,8 +52,6 @@ where
                 }
             }
         }
-
-        self.shutdown().await;
     }
 
     async fn handle_message(&mut self, msg: PgWireFrontendMessage) -> Result<bool, PgWireError> {
@@ -99,10 +97,6 @@ where
             }
         }
         Ok(true)
-    }
-
-    async fn shutdown(&mut self) {
-        let _ = self.service.call(Query::Disconnect).await;
     }
 
     async fn handle_error(&mut self, error: PgWireError) -> Result<(), io::Error> {
