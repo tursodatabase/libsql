@@ -9,7 +9,6 @@ services:
   reader:
     build: .
     environment:
-      - RUST_LOG=server=trace
       - SQLD_NODE=replica
       - SQLD_PRIMARY_URL=http://writer:5001
     depends_on:
