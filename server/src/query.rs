@@ -4,7 +4,7 @@ use std::str::FromStr;
 use pgwire::api::{results::FieldInfo, Type as PgType};
 use serde::{Deserialize, Serialize};
 
-use crate::proxy_rpc::{
+use crate::rpc::proxy::proxy_rpc::{
     error::ErrorCode as RpcErrorCode, Column as RpcColumn, Error as RpcError, ResultRows,
     Row as RpcRow, Type as RpcType, Value as RpcValue,
 };

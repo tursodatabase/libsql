@@ -2,6 +2,8 @@ use std::env;
 use std::fs;
 use std::process::Command;
 
+use prost_build::Config;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut pwd = env::current_dir().unwrap();
     pwd.push("../libsql");
@@ -12,15 +14,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if profile.as_str() == "release" {
         configure.arg("--enable-releasemode");
     }
-    configure.status().unwrap();
-    Command::new("make")
+    let output = configure.output().unwrap();
+    if !output.status.success() {
+        println!("{}", std::str::from_utf8(&output.stderr).unwrap());
+        panic!("failed to configure");
+    }
+
+    if !Command::new("make")
         .current_dir(libsql_dir.as_path())
         .status()
-        .unwrap();
+        .unwrap()
+        .success()
+    {
+        panic!("failed to compile");
+    }
 
+    let mut config = Config::new();
+    config.bytes([".wal_log"]);
     tonic_build::configure()
         .protoc_arg("--experimental_allow_proto3_optional")
-        .compile(&["proto/proxy.proto"], &["proto"])?;
+        .compile_with_config(
+            config,
+            &["proto/wal_log.proto", "proto/proxy.proto"],
+            &["proto"],
+        )?;
 
     println!("cargo:rerun-if-changed=proto");
 

@@ -4,7 +4,8 @@ package proxy;
 message SimpleQuery {
   string q = 1;
   // Uuid
-  bytes clientId = 2; }
+  bytes clientId = 2;
+  }
 
 message QueryResult {
     optional Error          error = 1;
