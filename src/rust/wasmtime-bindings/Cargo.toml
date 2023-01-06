@@ -20,3 +20,5 @@ opt-level = "s"
 strip = true
 debug = false
 panic = "abort"
+
+[workspace]
