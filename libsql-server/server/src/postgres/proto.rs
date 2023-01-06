@@ -45,7 +45,6 @@ impl<'a, S> QueryHandler<'a, S> {
         match self.0.lock().await.call(query).await {
             Ok(resp) => match resp {
                 QueryResponse::ResultSet(set) => Ok(set.into()),
-                QueryResponse::Ack => unreachable!(),
             },
             Err(e) => Err(e.into()),
         }

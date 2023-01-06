@@ -88,7 +88,6 @@ impl<DB: Database + 'static + Send + Sync> Service<Query> for DbService<DB> {
                 Ok(stmts) => Box::pin(async move { db.execute(stmts, params).await }),
                 Err(e) => Box::pin(ready(Err(QueryError::new(ErrorCode::SQLError, e)))),
             },
-            Query::Disconnect => Box::pin(ready(Ok(QueryResponse::Ack))),
         }
     }
 }
