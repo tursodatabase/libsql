@@ -71,6 +71,12 @@ pub struct DbService<DB> {
     db: Arc<DB>,
 }
 
+impl<DB> Drop for DbService<DB> {
+    fn drop(&mut self) {
+        tracing::trace!("connection closed");
+    }
+}
+
 impl<DB: Database + 'static + Send + Sync> Service<Query> for DbService<DB> {
     type Response = QueryResponse;
     type Error = QueryError;
