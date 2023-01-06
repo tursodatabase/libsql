@@ -1193,7 +1193,7 @@ checksum = "e5ce46fe64a9d73be07dcbe690a38ce1b293be448fd8ce1e6c1b8062c9f72c6a"
 [[package]]
 name = "mvclient"
 version = "0.3.0-beta.1"
-source = "git+https://github.com/psarna/mvsqlite?branch=mwal#6dd0a981173c06a5c73787beb4e4a9ac41a61b0f"
+source = "git+https://github.com/MarinPostma/mvsqlite?branch=use-cchar#e89c9e5fa57796ae19fdcf914d3dae6b6e0198fe"
 dependencies = [
  "anyhow",
  "blake3",
@@ -1219,7 +1219,7 @@ dependencies = [
 [[package]]
 name = "mvfs"
 version = "0.3.0-beta.1"
-source = "git+https://github.com/psarna/mvsqlite?branch=mwal#6dd0a981173c06a5c73787beb4e4a9ac41a61b0f"
+source = "git+https://github.com/MarinPostma/mvsqlite?branch=use-cchar#e89c9e5fa57796ae19fdcf914d3dae6b6e0198fe"
 dependencies = [
  "anyhow",
  "bytes",
@@ -1237,7 +1237,7 @@ dependencies = [
 [[package]]
 name = "mwal"
 version = "0.1.0"
-source = "git+https://github.com/psarna/mvsqlite?branch=mwal#6dd0a981173c06a5c73787beb4e4a9ac41a61b0f"
+source = "git+https://github.com/MarinPostma/mvsqlite?branch=use-cchar#e89c9e5fa57796ae19fdcf914d3dae6b6e0198fe"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -1553,9 +1553,9 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 
 [[package]]
 name = "prettyplease"
-version = "0.1.22"
+version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c8992a85d8e93a28bdf76137db888d3874e3b230dee5ed8bebac4c9f7617773"
+checksum = "e97e3215779627f01ee256d2fad52f3d95e8e1c11e9fc6fd08f7cd455d5d5c78"
 dependencies = [
  "proc-macro2",
  "syn",
@@ -2208,12 +2208,15 @@ dependencies = [
  "postgres-protocol",
  "proptest",
  "prost",
+ "prost-build",
  "rand",
  "rusqlite",
  "serde",
  "smallvec",
  "sqlparser",
+ "tempfile",
  "tokio",
+ "tokio-stream",
  "tokio-tungstenite",
  "tokio-util",
  "tonic",
@@ -2363,9 +2366,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.23.1"
+version = "1.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38a54aca0c15d014013256222ba0ebed095673f89345dd79119d912eb561b7a8"
+checksum = "7125661431c26622a80ca5051a2f936c9a678318e0351007b0cc313143024e5c"
 dependencies = [
  "autocfg",
  "bytes",

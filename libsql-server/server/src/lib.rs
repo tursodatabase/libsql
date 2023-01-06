@@ -1,13 +1,15 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::sync::Arc;
 #[cfg(feature = "mwal_backend")]
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use anyhow::Result;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
-use rpc_server::run_proxy_server;
+use rpc::run_rpc_server;
+use wal_logger::{WalLogger, WalLoggerHook};
 
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
@@ -17,13 +19,9 @@ mod libsql;
 mod postgres;
 mod query;
 mod query_analysis;
-mod rpc_server;
+mod rpc;
 mod server;
-
-pub mod proxy_rpc {
-    #![allow(clippy::all)]
-    tonic::include_proto!("proxy");
-}
+mod wal_logger;
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
@@ -72,23 +70,26 @@ pub async fn run_server(
             server.serve(factory).await;
         }
         None => {
+            let logger = Arc::new(WalLogger::open("wallog")?);
+            let logger_clone = logger.clone();
             let db_factory = move || {
                 let db_path = db_path.clone();
                 #[cfg(feature = "mwal_backend")]
                 let vwal_methods = vwal_methods.clone();
+                let hook = WalLoggerHook::new(logger.clone());
                 async move {
                     LibSqlDb::new(
                         db_path,
                         #[cfg(feature = "mwal_backend")]
                         vwal_methods,
-                        (),
+                        hook,
                     )
                 }
             };
             let service = DbFactoryService::new(db_factory.clone());
             let factory = PgConnectionFactory::new(service);
             if let Some(addr) = rpc_server_addr {
-                tokio::spawn(run_proxy_server(addr, db_factory));
+                tokio::spawn(run_rpc_server(addr, db_factory, logger_clone));
             }
             server.serve(factory).await;
         }

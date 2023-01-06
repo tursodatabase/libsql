@@ -4,3 +4,8 @@ members = [
     "client",
     "server",
 ]
+
+[patch."https://github.com/psarna/mvsqlite"]
+mvfs = { git = "https://github.com/MarinPostma/mvsqlite", branch = "use-cchar" }
+mwal = { git = "https://github.com/MarinPostma/mvsqlite", branch = "use-cchar" }
+

@@ -1,26 +1,30 @@
 use std::collections::HashMap;
-use std::net::SocketAddr;
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
 
 use crate::database::service::DbFactory;
 use crate::database::Database;
-use crate::proxy_rpc::proxy_server::{Proxy, ProxyServer as RpcProxyServer};
-use crate::proxy_rpc::{
+use crate::query::{ErrorCode, QueryResponse, QueryResult};
+use crate::query_analysis::Statements;
+use proxy_rpc::proxy_server::Proxy;
+use proxy_rpc::{
     error::ErrorCode as RpcErrorCode, query_result::Result as RpcResult, Ack, DisconnectMessage,
     Error as RpcError, QueryResult as RpcQueryResult, SimpleQuery,
 };
-use crate::query::{ErrorCode, QueryResponse, QueryResult};
-use crate::query_analysis::Statements;
 
-struct ProxyServer<F: DbFactory> {
+pub mod proxy_rpc {
+    #![allow(clippy::all)]
+    tonic::include_proto!("proxy");
+}
+
+pub struct ProxyService<F: DbFactory> {
     clients: RwLock<HashMap<Uuid, F::Db>>,
     factory: F,
 }
 
-impl<F: DbFactory> ProxyServer<F> {
-    fn new(factory: F) -> Self {
+impl<F: DbFactory> ProxyService<F> {
+    pub fn new(factory: F) -> Self {
         Self {
             clients: Default::default(),
             factory,
@@ -64,7 +68,7 @@ impl From<QueryResult> for RpcQueryResult {
 }
 
 #[tonic::async_trait]
-impl<F> Proxy for ProxyServer<F>
+impl<F> Proxy for ProxyService<F>
 where
     F: DbFactory,
     F::Db: Send + Sync + Clone,
@@ -110,19 +114,4 @@ where
 
         Ok(tonic::Response::new(Ack {}))
     }
-}
-
-pub async fn run_proxy_server<F>(addr: SocketAddr, factory: F) -> anyhow::Result<()>
-where
-    F: DbFactory + 'static,
-    F::Db: Sync + Send + Clone,
-{
-    let server = ProxyServer::new(factory);
-    tracing::info!("serving write proxy server at {addr}");
-    tonic::transport::Server::builder()
-        .add_service(RpcProxyServer::new(server))
-        .serve(addr)
-        .await?;
-
-    Ok(())
 }
