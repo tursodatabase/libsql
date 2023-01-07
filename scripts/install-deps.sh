@@ -20,7 +20,8 @@ elif [ "$ID" = "fedora" ]; then
     nodejs \
     npm \
     protobuf-compiler \
-    rubygem-bundler
+    rubygem-bundler \
+    rubygem-sqlite3 
 else
   echo "Operating system $ID is not supported by this installer."
 fi
