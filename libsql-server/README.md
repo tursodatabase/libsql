@@ -47,6 +47,12 @@ psql -h 127.0.0.1 -p 5000
 ./scripts/install-deps.sh
 ```
 
+### Submodules
+
+```run
+git submodule update --init --force --recursive --depth 1
+```
+
 ### Building
 
 ```console
