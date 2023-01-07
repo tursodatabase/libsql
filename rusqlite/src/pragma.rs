@@ -303,15 +303,15 @@ fn is_identifier(s: &str) -> bool {
 }
 
 fn is_identifier_start(c: char) -> bool {
-    ('A'..='Z').contains(&c) || c == '_' || ('a'..='z').contains(&c) || c > '\x7F'
+    c.is_ascii_uppercase() || c == '_' || c.is_ascii_lowercase() || c > '\x7F'
 }
 
 fn is_identifier_continue(c: char) -> bool {
     c == '$'
-        || ('0'..='9').contains(&c)
-        || ('A'..='Z').contains(&c)
+        || c.is_ascii_digit()
+        || c.is_ascii_uppercase()
         || c == '_'
-        || ('a'..='z').contains(&c)
+        || c.is_ascii_lowercase()
         || c > '\x7F'
 }
 
