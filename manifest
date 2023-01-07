@@ -1,5 +1,5 @@
-C Changes\sa\stestcase()\sinto\san\sassert()\sdue\sto\sthe\n[e58bba93717cd6ff]\schange.
-D 2023-01-05T14:41:18.215
+C Account\sfor\sread-only\sconnections\son\sdatabases\swith\snon-default\sblock\sor\spage\ssizes.
+D 2023-01-07T13:40:32.912
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -274,7 +274,7 @@ F ext/lsm1/lsm_log.c a8bf334532109bba05b09a504ee45fc393828b0d034ca61ab45e3940709
 F ext/lsm1/lsm_main.c b5703f8042e71d3a2d65e671f6832e077e79e89e9975818f67f969922618db63
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
-F ext/lsm1/lsm_shared.c 76adfc1ed9ffebaf92746dde4b370ccc48143ca8b05b563816eadd2aadf1c525
+F ext/lsm1/lsm_shared.c c67282a4f2c91e2a3362bdd40a81f9041cd587973ffc4bca8b8fbdab5470dee1
 F ext/lsm1/lsm_sorted.c 6f7d8cf7a7d3d3f1ab5d9ba6347e8f39f3d73c00ec48afcd0c4bcbefd806f9b8
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e58bba93717cd6ff950c6f9e077b4327b59b1956dd5f6668be3de9509584b8fe
-R b0693ceebcfd21105fef77667ba71a94
-U drh
-Z 1653d29d1da89afb6a78df7f43f0bf8d
+P a6251d72894f9c2e21fc6e91b1d2452a204952f5e1a94fd93835a47c7dfb9be3
+R 15a05d3aebd6f1514e8cca1f3b460440
+U dan
+Z 2ba23fd65cdd196541da0b5ddb08773c
 # Remove this line to create a well-formed Fossil manifest.
