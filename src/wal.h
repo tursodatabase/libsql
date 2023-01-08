@@ -17,7 +17,8 @@
 #ifndef SQLITE_WAL_H
 #define SQLITE_WAL_H
 
-#include "sqliteInt.h"
+#include "sqlite3.h"
+#include "page_header.h"
 
 /* Macros for extracting appropriate sync flags for either transaction
 ** commits (WAL_SYNC_FLAGS(X)) or for checkpoint ops (CKPT_SYNC_FLAGS(X)):
@@ -32,14 +33,16 @@
 */
 typedef struct Wal Wal;
 
+typedef struct PgHdr PgHdr;
+
 typedef struct libsql_wal_methods {
   int iVersion; /* Current version is 1, versioning is here for backward compatibility */
   /* Open and close a connection to a write-ahead log. */
-  int (*xOpen)(sqlite3_vfs*, sqlite3_file* , const char*, int no_shm_mode, i64 max_size, struct libsql_wal_methods*, Wal**);
-  int (*xClose)(Wal*, sqlite3* db, int sync_flags, int nBuf, u8 *zBuf);
+  int (*xOpen)(sqlite3_vfs*, sqlite3_file* , const char*, int no_shm_mode, long long max_size, struct libsql_wal_methods*, Wal**);
+  int (*xClose)(Wal*, sqlite3* db, int sync_flags, int nBuf, unsigned char *zBuf);
 
   /* Set the limiting size of a WAL file. */
-  void (*xLimit)(Wal*, i64 limit);
+  void (*xLimit)(Wal*, long long limit);
 
   /* Used by readers to open (lock) and close (unlock) a snapshot.  A 
   ** snapshot is like a read-transaction.  It is the state of the database
@@ -52,29 +55,29 @@ typedef struct libsql_wal_methods {
   void (*xEndReadTransaction)(Wal *);
 
   /* Read a page from the write-ahead log, if it is present. */
-  int (*xFindFrame)(Wal *, Pgno, u32 *);
-  int (*xReadFrame)(Wal *, u32, int, u8 *);
+  int (*xFindFrame)(Wal *, unsigned int, unsigned int *);
+  int (*xReadFrame)(Wal *, unsigned int, int, unsigned char *);
 
   /* If the WAL is not empty, return the size of the database. */
-  Pgno (*xDbsize)(Wal *pWal);
+  unsigned int (*xDbsize)(Wal *pWal);
 
   /* Obtain or release the WRITER lock. */
   int (*xBeginWriteTransaction)(Wal *pWal);
   int (*xEndWriteTransaction)(Wal *pWal);
 
   /* Undo any frames written (but not committed) to the log */
-  int (*xUndo)(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx);
+  int (*xUndo)(Wal *pWal, int (*xUndo)(void *, unsigned int), void *pUndoCtx);
 
   /* Return an integer that records the current (uncommitted) write
   ** position in the WAL */
-  void (*xSavepoint)(Wal *pWal, u32 *aWalData);
+  void (*xSavepoint)(Wal *pWal, unsigned int *aWalData);
 
   /* Move the write position of the WAL back to iFrame.  Called in
   ** response to a ROLLBACK TO command. */
-  int (*xSavepointUndo)(Wal *pWal, u32 *aWalData);
+  int (*xSavepointUndo)(Wal *pWal, unsigned int *aWalData);
 
   /* Write a frame or frames to the log. */
-  int (*xFrames)(Wal *pWal, int, PgHdr *, Pgno, int, int);
+  int (*xFrames)(Wal *pWal, int, PgHdr *, unsigned int, int, int);
 
   /* Copy pages from the log to the database file */ 
   int (*xCheckpoint)(
@@ -85,7 +88,7 @@ typedef struct libsql_wal_methods {
     void *pBusyArg,                 /* Context argument for xBusyHandler */
     int sync_flags,                 /* Flags to sync db file with (or 0) */
     int nBuf,                       /* Size of buffer nBuf */
-    u8 *zBuf,                       /* Temporary buffer to use */
+    unsigned char *zBuf,                       /* Temporary buffer to use */
     int *pnLog,                     /* OUT: Number of frames in WAL */
     int *pnCkpt                     /* OUT: Number of backfilled frames in WAL */
   );
@@ -176,17 +179,17 @@ typedef struct WalCkptInfo WalCkptInfo;
 ** added in 3.7.1 when support for 64K pages was added.  
 */
 struct WalIndexHdr {
-  u32 iVersion;                   /* Wal-index version */
-  u32 unused;                     /* Unused (padding) field */
-  u32 iChange;                    /* Counter incremented each transaction */
-  u8 isInit;                      /* 1 when initialized */
-  u8 bigEndCksum;                 /* True if checksums in WAL are big-endian */
-  u16 szPage;                     /* Database page size in bytes. 1==64K */
-  u32 mxFrame;                    /* Index of last valid frame in the WAL */
-  u32 nPage;                      /* Size of database in pages */
-  u32 aFrameCksum[2];             /* Checksum of last frame in log */
-  u32 aSalt[2];                   /* Two salt values copied from WAL header */
-  u32 aCksum[2];                  /* Checksum over all prior fields */
+  unsigned int iVersion;                   /* Wal-index version */
+  unsigned int unused;                     /* Unused (padding) field */
+  unsigned int iChange;                    /* Counter incremented each transaction */
+  unsigned char isInit;                    /* 1 when initialized */
+  unsigned char bigEndCksum;               /* True if checksums in WAL are big-endian */
+  unsigned short szPage;                   /* Database page size in bytes. 1==64K */
+  unsigned int mxFrame;                    /* Index of last valid frame in the WAL */
+  unsigned int nPage;                      /* Size of database in pages */
+  unsigned int aFrameCksum[2];             /* Checksum of last frame in log */
+  unsigned int aSalt[2];                   /* Two salt values copied from WAL header */
+  unsigned int aCksum[2];                  /* Checksum over all prior fields */
 };
 
 /*
@@ -194,35 +197,37 @@ struct WalIndexHdr {
 ** following object.
 */
 struct Wal {
-  sqlite3_vfs *pVfs;         /* The VFS used to create pDbFd */
-  sqlite3_file *pDbFd;       /* File handle for the database file */
-  sqlite3_file *pWalFd;      /* File handle for WAL file */
-  u32 iCallback;             /* Value to pass to log callback (or 0) */
-  i64 mxWalSize;             /* Truncate WAL to this size upon reset */
-  int nWiData;               /* Size of array apWiData */
-  int szFirstBlock;          /* Size of first block written to WAL file */
-  volatile u32 **apWiData;   /* Pointer to wal-index content in memory */
-  u32 szPage;                /* Database page size */
-  i16 readLock;              /* Which read lock is being held.  -1 for none */
-  u8 syncFlags;              /* Flags to use to sync header writes */
-  u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
-  u8 writeLock;              /* True if in a write transaction */
-  u8 ckptLock;               /* True if holding a checkpoint lock */
-  u8 readOnly;               /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
-  u8 truncateOnCommit;       /* True to truncate WAL file on commit */
-  u8 syncHeader;             /* Fsync the WAL header if true */
-  u8 padToSectorBoundary;    /* Pad transactions out to the next sector */
-  u8 bShmUnreliable;         /* SHM content is read-only and unreliable */
-  WalIndexHdr hdr;           /* Wal-index header for current transaction */
-  u32 minFrame;              /* Ignore wal frames before this one */
-  u32 iReCksum;              /* On commit, recalculate checksums from here */
-  const char *zWalName;      /* Name of WAL file */
-  u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
-  u8 lockError;              /* True if a locking error has occurred */
-  WalIndexHdr *pSnapshot;    /* Start transaction here if not NULL */
+  sqlite3_vfs *pVfs;                  /* The VFS used to create pDbFd */
+  sqlite3_file *pDbFd;                /* File handle for the database file */
+  sqlite3_file *pWalFd;               /* File handle for WAL file */
+  unsigned int iCallback;             /* Value to pass to log callback (or 0) */
+  long long mxWalSize;                     /* Truncate WAL to this size upon reset */
+  int nWiData;                        /* Size of array apWiData */
+  int szFirstBlock;                   /* Size of first block written to WAL file */
+  volatile unsigned int **apWiData;   /* Pointer to wal-index content in memory */
+  unsigned int szPage;                /* Database page size */
+  short readLock;                     /* Which read lock is being held.  -1 for none */
+  unsigned char syncFlags;            /* Flags to use to sync header writes */
+  unsigned char exclusiveMode;        /* Non-zero if connection is in exclusive mode */
+  unsigned char writeLock;            /* True if in a write transaction */
+  unsigned char ckptLock;             /* True if holding a checkpoint lock */
+  unsigned char readOnly;             /* WAL_RDWR, WAL_RDONLY, or WAL_SHM_RDONLY */
+  unsigned char truncateOnCommit;     /* True to truncate WAL file on commit */
+  unsigned char syncHeader;           /* Fsync the WAL header if true */
+  unsigned char padToSectorBoundary;  /* Pad transactions out to the next sector */
+  unsigned char bShmUnreliable;       /* SHM content is read-only and unreliable */
+  WalIndexHdr hdr;                    /* Wal-index header for current transaction */
+  unsigned int minFrame;              /* Ignore wal frames before this one */
+  unsigned int iReCksum;              /* On commit, recalculate checksums from here */
+  const char *zWalName;               /* Name of WAL file */
+  unsigned int nCkpt;                 /* Checkpoint sequence counter in the wal-header */
+  unsigned char lockError;            /* True if a locking error has occurred */
+  WalIndexHdr *pSnapshot;             /* Start transaction here if not NULL */
   sqlite3 *db;
-  libsql_wal_methods *pMethods; /* Virtual methods for interacting with WAL */;
-  void *pMethodsData;           /* Optional context for private use of libsql_wal_methods */
+  libsql_wal_methods *pMethods;       /* Virtual methods for interacting with WAL */;
+  void *pMethodsData;                 /* Optional context for private use of libsql_wal_methods */
 };
+
+typedef struct Wal libsql_wal;
 
 #endif /* SQLITE_WAL_H */
