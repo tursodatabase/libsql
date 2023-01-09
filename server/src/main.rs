@@ -28,6 +28,9 @@ struct Cli {
     #[cfg(feature = "mwal_backend")]
     #[clap(long, short)]
     mwal_addr: Option<String>,
+
+    #[clap(long)]
+    http_addr: Option<SocketAddr>,
 }
 
 #[tokio::main]
@@ -53,6 +56,7 @@ async fn main() -> Result<()> {
         args.db_path,
         args.pg_listen_addr,
         args.ws_listen_addr,
+        args.http_addr,
         args.backend,
         #[cfg(feature = "mwal_backend")]
         args.mwal_addr,

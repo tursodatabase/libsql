@@ -30,6 +30,7 @@ where
     }
 }
 
+#[derive(Clone)]
 pub struct DbFactoryService<F> {
     factory: F,
 }

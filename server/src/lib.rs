@@ -9,12 +9,15 @@ use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
 use rpc::run_rpc_server;
+use tower::load::Constant;
+use tower::ServiceExt;
 use wal_logger::{WalLogger, WalLoggerHook};
 
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
 
 mod database;
+mod http;
 mod libsql;
 mod postgres;
 mod query;
@@ -34,6 +37,7 @@ pub async fn run_server(
     db_path: PathBuf,
     tcp_addr: SocketAddr,
     ws_addr: Option<SocketAddr>,
+    http_addr: Option<SocketAddr>,
     backend: Backend,
     #[cfg(feature = "mwal_backend")] mwal_addr: Option<String>,
     writer_rpc_addr: Option<String>,
@@ -87,7 +91,13 @@ pub async fn run_server(
                 }
             };
             let service = DbFactoryService::new(db_factory.clone());
-            let factory = PgConnectionFactory::new(service);
+            let factory = PgConnectionFactory::new(service.clone());
+            if let Some(addr) = http_addr {
+                tokio::spawn(http::run_http(
+                    addr,
+                    service.map_response(|s| Constant::new(s, 1)),
+                ));
+            }
             if let Some(addr) = rpc_server_addr {
                 tokio::spawn(run_rpc_server(addr, db_factory, logger_clone));
             }
