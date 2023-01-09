@@ -1,5 +1,5 @@
-C Doc-only\supdate,\ssqlite3_preupdate_hook()\sreturn
-D 2023-01-07T22:28:00.725
+C Fix\sJSON\sfunctions\sso\sthat\sthey\swork\scorrectly\sunder\sPRAGMA\strusted_schema.\n[forum:/forumpost/c88a671ad083d153|Forum\sthread\sc88a671ad083d153].
+D 2023-01-09T12:01:30.207
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -608,7 +608,7 @@ F src/insert.c 1b11a2e33ee52db93c02fddac67e39d00161d61b69fac2675b82f2aa68c1b61c
 F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 25663175950c5c4404b9377840b7b4c6fe5c53b415caf43634c62f442c02a9a7
-F src/main.c 5fba7c69ac63d728090d164930855d8f1dea37cce02858d77a9500ad20261a4b
+F src/main.c fd4f7da9a7ba04e6afe834748a6ee78f699f7ba28570bb2cdb028753140d93f9
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -650,7 +650,7 @@ F src/shell.c.in 47a15d3748e234b8442479ac9bdfc00c5c43ddd645095f8bf729afa9dbca8fa
 F src/sqlite.h.in 51ab9a0a86684e7bdd9781ce8566ec436e54247c5f808cdd0ef08e482ab23bbc
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
-F src/sqliteInt.h a91f9e4d070321073515d679a8e2a3e4c0b703ae6f71d7e098994967ea3a348e
+F src/sqliteInt.h 079ccd9c161f4b74967188fd6321810159fdc4c32371b68559719828fac20f43
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1773,7 +1773,7 @@ F test/triggerE.test 612969cb57a4ef792059ad6d01af0117e1ae862c283753ffcc9a6428642
 F test/triggerF.test 5d76f0a8c428ff87a4d5ed52da06f6096a2c787a1e21b846111dfac4123de3ad
 F test/triggerG.test 2b816093c91ba73c733cfa8aedcc210ad819d72a98b1da30768a3c56505233e9
 F test/triggerupfrom.test d1f9e56090408115c522bee626cc33a2f3370f627a5e341d832589d72e3aa271
-F test/trustschema1.test 4e970aef0bfe0cee139703cc7209d0e0f07725d999b180ba50770f49edef1494
+F test/trustschema1.test d2996bb284859c99956ac706160eab9f086919da738d19bfef3ac431cce8fd47
 F test/tt3_checkpoint.c ac7ca661d739280c89d9c253897df64a59a49369bd1247207ac0f655b622579d
 F test/tt3_index.c 39eec10a35f57672225be4d182862152896dee4a
 F test/tt3_lookaside1.c 0377e202c3c2a50d688cb65ba203afeda6fafeb9
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3a2075b089ecdb4b55243235dfabf466ea7999c2118aa8f58300925fb75c884e
-R c7ab8a82ffd1193e5a602608245dc851
-U larrybr
-Z 2c2cac3bd08ebff5db2cd3fa52c83f0b
+P 2da51d7e1b9f16ef03efbb096ce2a84e8c23b883380f48b2d374bdc521865aeb
+R 87bfc6a18731d6344d1703b2bffdd27e
+U drh
+Z 7fd46056fb2f0aaa2d7ed117d8531c0f
 # Remove this line to create a well-formed Fossil manifest.

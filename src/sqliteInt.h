@@ -1929,8 +1929,14 @@ struct FuncDestructor {
 **     SQLITE_FUNC_TYPEOF      ==  OPFLAG_TYPEOFARG
 **     SQLITE_FUNC_CONSTANT    ==  SQLITE_DETERMINISTIC from the API
 **     SQLITE_FUNC_DIRECT      ==  SQLITE_DIRECTONLY from the API
-**     SQLITE_FUNC_UNSAFE      ==  SQLITE_INNOCUOUS
+**     SQLITE_FUNC_UNSAFE      ==  SQLITE_INNOCUOUS  -- opposite meanings!!!
 **     SQLITE_FUNC_ENCMASK   depends on SQLITE_UTF* macros in the API
+**
+** Note that even though SQLITE_FUNC_UNSAFE and SQLITE_INNOCUOUS have the
+** same bit value, their meanings are inverted.  SQLITE_FUNC_UNSAFE is
+** used internally and if set means tha the function has side effects.
+** SQLITE_INNOCUOUS is used by application code and means "not unsafe".
+** See multiple instances of tag-20230109-1.
 */
 #define SQLITE_FUNC_ENCMASK  0x0003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
 #define SQLITE_FUNC_LIKE     0x0004 /* Candidate for the LIKE optimization */
@@ -2047,7 +2053,7 @@ struct FuncDestructor {
   {nArg, SQLITE_FUNC_BUILTIN|SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
    xPtr, 0, xFunc, 0, 0, 0, #zName, {0} }
 #define JFUNCTION(zName, nArg, iArg, xFunc) \
-  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS|\
+  {nArg, SQLITE_FUNC_BUILTIN|SQLITE_DETERMINISTIC|\
    SQLITE_FUNC_CONSTANT|SQLITE_UTF8, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, 0, #zName, {0} }
 #define INLINE_FUNC(zName, nArg, iArg, mFlags) \

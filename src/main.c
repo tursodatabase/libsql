@@ -1848,7 +1848,7 @@ int sqlite3CreateFunc(
   /* The SQLITE_INNOCUOUS flag is the same bit as SQLITE_FUNC_UNSAFE.  But
   ** the meaning is inverted.  So flip the bit. */
   assert( SQLITE_FUNC_UNSAFE==SQLITE_INNOCUOUS );
-  extraFlags ^= SQLITE_FUNC_UNSAFE;
+  extraFlags ^= SQLITE_FUNC_UNSAFE;  /* tag-20230109-1 */
 
   
 #ifndef SQLITE_OMIT_UTF16
@@ -1866,11 +1866,11 @@ int sqlite3CreateFunc(
     case SQLITE_ANY: {
       int rc;
       rc = sqlite3CreateFunc(db, zFunctionName, nArg,
-           (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE,
+           (SQLITE_UTF8|extraFlags)^SQLITE_FUNC_UNSAFE, /* tag-20230109-1 */
            pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
       if( rc==SQLITE_OK ){
         rc = sqlite3CreateFunc(db, zFunctionName, nArg,
-             (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE,
+             (SQLITE_UTF16LE|extraFlags)^SQLITE_FUNC_UNSAFE, /* tag-20230109-1*/
              pUserData, xSFunc, xStep, xFinal, xValue, xInverse, pDestructor);
       }
       if( rc!=SQLITE_OK ){
