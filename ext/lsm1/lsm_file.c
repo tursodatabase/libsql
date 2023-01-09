@@ -215,8 +215,8 @@ struct FileSystem {
   char *zLog;                     /* Database file name */
   int nMetasize;                  /* Size of meta pages in bytes */
   int nMetaRwSize;                /* Read/written size of meta pages in bytes */
-  int nPagesize;                  /* Database page-size in bytes */
-  int nBlocksize;                 /* Database block-size in bytes */
+  i64 nPagesize;                  /* Database page-size in bytes */
+  i64 nBlocksize;                 /* Database block-size in bytes */
 
   /* r/w file descriptors for both files. */
   LsmFile *pLsmFile;              /* Used after lsm_close() to link into list */
@@ -889,7 +889,7 @@ static LsmPgno fsFirstPageOnBlock(FileSystem *pFS, int iBlock){
       iPg = pFS->nBlocksize * (LsmPgno)(iBlock-1) + 4;
     }
   }else{
-    const int nPagePerBlock = (pFS->nBlocksize / pFS->nPagesize);
+    const i64 nPagePerBlock = (pFS->nBlocksize / pFS->nPagesize);
     if( iBlock==1 ){
       iPg = 1 + ((pFS->nMetasize*2 + pFS->nPagesize - 1) / pFS->nPagesize);
     }else{
@@ -1131,7 +1131,6 @@ static void fsGrowMapping(
   i64 iSz,                        /* Minimum size to extend mapping to */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  assert( pFS->pCompress==0 );
   assert( PAGE_HASPREV==4 );
 
   if( *pRc==LSM_OK && iSz>pFS->nMap ){
@@ -1872,7 +1871,7 @@ void lsmFsGobble(
   assert( nPgno>0 && 0==fsPageRedirects(pFS, pRun, aPgno[0]) );
 
   iBlk = fsPageToBlock(pFS, pRun->iFirst);
-  pRun->nSize += (int)(pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
+  pRun->nSize += (pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
 
   while( rc==LSM_OK ){
     int iNext = 0;
@@ -1883,13 +1882,13 @@ void lsmFsGobble(
     }
     rc = fsBlockNext(pFS, pRun, iBlk, &iNext);
     if( rc==LSM_OK ) rc = fsFreeBlock(pFS, pSnapshot, pRun, iBlk);
-    pRun->nSize -= (int)(
+    pRun->nSize -= (
         1 + fsLastPageOnBlock(pFS, iBlk) - fsFirstPageOnBlock(pFS, iBlk)
     );
     iBlk = iNext;
   }
 
-  pRun->nSize -= (int)(pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
+  pRun->nSize -= (pRun->iFirst - fsFirstPageOnBlock(pFS, iBlk));
   assert( pRun->nSize>0 );
 }
 
