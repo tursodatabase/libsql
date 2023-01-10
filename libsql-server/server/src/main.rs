@@ -9,29 +9,44 @@ use sqld::Config;
 #[command(name = "sqld")]
 #[command(about = "SQL daemon", long_about = None)]
 struct Cli {
-    #[clap(long, short, default_value = "iku.db")]
+    #[clap(long, short, default_value = "iku.db", env = "SQLD_DB_PATH")]
     db_path: PathBuf,
     /// The address and port the PostgreSQL server listens to.
-    #[clap(long, short, default_value = "127.0.0.1:5000")]
+    #[clap(
+        long,
+        short,
+        default_value = "127.0.0.1:5000",
+        env = "SQLD_PG_LISTEN_ADDR"
+    )]
     pg_listen_addr: SocketAddr,
     /// The address and port the PostgreSQL over WebSocket server listens to.
-    #[clap(long, short)]
+    #[clap(long, short, env = "SQLD_WS_LISTEN_ADDR")]
     ws_listen_addr: Option<SocketAddr>,
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
-    #[clap(long, conflicts_with = "primary_grpc_url")]
+    #[clap(
+        long,
+        conflicts_with = "primary_grpc_url",
+        env = "SQLD_GRPC_LISTEN_ADDR"
+    )]
     grpc_listen_addr: Option<SocketAddr>,
     /// The gRPC URL of the primary node to connect to for writes. Example: `http://localhost:5001`.
-    #[clap(long)]
+    #[clap(long, env = "SQLD_PRIMARY_GRPC_URL")]
     primary_grpc_url: Option<String>,
-    #[clap(long, short, value_enum, default_value = "libsql")]
+    #[clap(
+        long,
+        short,
+        value_enum,
+        default_value = "libsql",
+        env = "SQLD_WS_LISTEN_ADDR"
+    )]
     backend: sqld::Backend,
     // The url to connect with mWAL backend, based on mvSQLite
     #[cfg(feature = "mwal_backend")]
-    #[clap(long, short)]
+    #[clap(long, short, env = "SQLD_MWAL_ADDR")]
     mwal_addr: Option<String>,
 
-    #[clap(long)]
-    http_addr: Option<SocketAddr>,
+    #[clap(long, env = "SQLD_HTTP_LISTEN_ADDR")]
+    http_listen_addr: Option<SocketAddr>,
 }
 
 impl From<Cli> for Config {
@@ -40,7 +55,7 @@ impl From<Cli> for Config {
             db_path: cli.db_path,
             tcp_addr: cli.pg_listen_addr,
             ws_addr: cli.ws_listen_addr,
-            http_addr: cli.http_addr,
+            http_addr: cli.http_listen_addr,
             backend: cli.backend,
             writer_rpc_addr: cli.primary_grpc_url,
             rpc_server_addr: cli.grpc_listen_addr,
