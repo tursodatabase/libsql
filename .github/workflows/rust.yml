@@ -2,7 +2,7 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "trying", "staging" ]
   pull_request:
     branches: [ "main" ]
 
@@ -10,10 +10,82 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  checks:
     runs-on: ubuntu-latest
-
+    name: Run Checks
+    env:
+      RUSTFLAGS: -D warnings
+    steps:
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Check format
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --all-targets --all-features
+  clippy:
+    runs-on: ubuntu-latest
+    name: Run Clippy
+    steps:
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+          override: true
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-targets --all-features -- -D warnings
+  rust-fmt:
+    runs-on: ubuntu-latest
+    name: Run Rustfmt
+    steps:
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          components: rustfmt
+          override: true
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Check format
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --check
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
     steps:
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
@@ -25,7 +97,6 @@ jobs:
       with:
         profile: minimal
         toolchain: stable
-        components: rustfmt, clippy
         override: true
     - name: Install Protoc
       uses: arduino/setup-protoc@v1
@@ -48,21 +119,6 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-cargo-
-    - name: Check format
-      uses: actions-rs/cargo@v1
-      with:
-        command: fmt
-        args: --check
-    - name: Clippy
-      uses: actions-rs/clippy-check@v1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-targets --all-features -- -D warnings
-    - name: Build
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --verbose
     - name: Run tests
       uses: actions-rs/cargo@v1
       with:
@@ -73,6 +129,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
+    name: Build Docker
     steps:
       - name: Checkout
         uses: actions/checkout@v3
