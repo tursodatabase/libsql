@@ -10,8 +10,23 @@ processes = []
   auto_rollback = true
 
 [[services]]
-  internal_port = 5000
+  http_checks = []
+  app = "sqld"
+  internal_port = 8080
   protocol = "tcp"
 
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
+
   [[services.ports]]
-    port = 5000
+    force_https = false
+    handlers = ["http"]
+    port = 80
+
+  [[services.tcp_checks]]
+    grace_period = "1s"
+    interval = "15s"
+    restart_limit = 0
+    timeout = "2s"
