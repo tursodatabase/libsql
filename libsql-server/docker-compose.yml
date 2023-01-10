@@ -11,6 +11,7 @@ services:
     environment:
       - SQLD_NODE=replica
       - SQLD_PRIMARY_URL=http://writer:5001
+      - SQLD_HTTP_LISTEN_ADDR=0.0.0.0:8080
     depends_on:
       - writer
   nginx:
@@ -21,3 +22,4 @@ services:
       - reader
     ports:
       - "6001:6001"
+      - "8080:8080"

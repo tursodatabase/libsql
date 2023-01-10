@@ -20,7 +20,7 @@ use self::ws::WsAdapter;
 mod tcp;
 mod ws;
 
-type Listener = Box<dyn Stream<Item = io::Result<(NetStream, SocketAddr)>> + Unpin>;
+type Listener = Box<dyn Stream<Item = io::Result<(NetStream, SocketAddr)>> + Unpin + Send>;
 
 pub struct Server {
     listeners: Vec<Listener>,
@@ -47,7 +47,7 @@ impl Server {
         Ok(self)
     }
 
-    pub async fn serve<S>(self, mut make_svc: S)
+    pub async fn serve<S>(self, mut make_svc: S) -> anyhow::Result<()>
     where
         S: Service<(NetStream, SocketAddr)>,
         S::Future: Send,
@@ -78,6 +78,8 @@ impl Server {
                 }
             }
         }
+
+        Ok(())
     }
 }
 

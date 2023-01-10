@@ -1,4 +1,5 @@
 use std::convert::Infallible;
+use std::fmt;
 use std::str::FromStr;
 
 use futures::stream;
@@ -252,6 +253,14 @@ pub enum Query {
 pub struct QueryError {
     pub code: ErrorCode,
     pub msg: String,
+}
+
+impl std::error::Error for QueryError {}
+
+impl fmt::Display for QueryError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.msg)
+    }
 }
 
 impl From<RpcError> for QueryError {
