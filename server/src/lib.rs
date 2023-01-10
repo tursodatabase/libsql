@@ -8,9 +8,12 @@ use anyhow::Result;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
+use futures::stream::FuturesUnordered;
+use futures::StreamExt;
+use query::{Query, QueryError, QueryResponse};
 use rpc::run_rpc_server;
 use tower::load::Constant;
-use tower::ServiceExt;
+use tower::{Service, ServiceExt};
 use wal_logger::{WalLogger, WalLoggerHook};
 
 use crate::postgres::service::PgConnectionFactory;
@@ -33,51 +36,87 @@ pub enum Backend {
     Mwal,
 }
 
-pub async fn run_server(
-    db_path: PathBuf,
-    tcp_addr: SocketAddr,
-    ws_addr: Option<SocketAddr>,
-    http_addr: Option<SocketAddr>,
-    backend: Backend,
-    #[cfg(feature = "mwal_backend")] mwal_addr: Option<String>,
-    writer_rpc_addr: Option<String>,
-    rpc_server_addr: Option<SocketAddr>,
-) -> Result<()> {
-    let mut server = Server::new();
-    server.bind_tcp(tcp_addr).await?;
+pub struct Config {
+    pub db_path: PathBuf,
+    pub tcp_addr: SocketAddr,
+    pub ws_addr: Option<SocketAddr>,
+    pub http_addr: Option<SocketAddr>,
+    pub backend: Backend,
+    #[cfg(feature = "mwal_backend")]
+    pub mwal_addr: Option<String>,
+    pub writer_rpc_addr: Option<String>,
+    pub rpc_server_addr: Option<SocketAddr>,
+}
 
-    if let Some(addr) = ws_addr {
+async fn run_service<S>(service: S, config: Config) -> Result<()>
+where
+    S: Service<(), Error = anyhow::Error> + Sync + Send + 'static + Clone,
+    S::Response: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S::Future: Send + Sync,
+    <S::Response as Service<Query>>::Future: Send,
+    // F: MakeService<(), Query, MakeError = anyhow::Error> + Sync + Send,
+    // F::Future: 'static + Send + Sync,
+    // F::Service: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    // <F::Service as Service<Query>>::Future: Send,
+{
+    let mut server = Server::new();
+    server.bind_tcp(config.tcp_addr).await?;
+
+    if let Some(addr) = config.ws_addr {
         server.bind_ws(addr).await?;
     }
 
-    tracing::trace!("Backend: {:?}", backend);
+    let mut handles = FuturesUnordered::new();
+    let factory = PgConnectionFactory::new(service.clone());
+    handles.push(tokio::spawn(server.serve(factory)));
+
+    if let Some(addr) = config.http_addr {
+        let handle = tokio::spawn(http::run_http(
+            addr,
+            service.map_response(|s| Constant::new(s, 1)),
+        ));
+
+        handles.push(handle);
+    }
+
+    while let Some(res) = handles.next().await {
+        res??;
+    }
+
+    Ok(())
+}
+
+pub async fn run_server(config: Config) -> Result<()> {
+    tracing::trace!("Backend: {:?}", config.backend);
     #[cfg(feature = "mwal_backend")]
-    if backend == Backend::Mwal {
-        std::env::set_var("MVSQLITE_DATA_PLANE", mwal_addr.as_ref().unwrap());
+    if config.backend == Backend::Mwal {
+        std::env::set_var("MVSQLITE_DATA_PLANE", config.mwal_addr.as_ref().unwrap());
     }
 
     #[cfg(feature = "mwal_backend")]
-    let vwal_methods =
-        mwal_addr.map(|_| Arc::new(Mutex::new(mwal::ffi::libsql_wal_methods::new())));
+    let vwal_methods = config
+        .mwal_addr
+        .as_ref()
+        .map(|_| Arc::new(Mutex::new(mwal::ffi::libsql_wal_methods::new())));
 
-    match writer_rpc_addr {
-        Some(addr) => {
+    match config.writer_rpc_addr {
+        Some(ref addr) => {
             let factory = WriteProxyDbFactory::new(
                 addr,
-                db_path,
+                config.db_path.clone(),
                 #[cfg(feature = "mwal_backend")]
                 vwal_methods,
             )
             .await?;
             let service = DbFactoryService::new(factory);
-            let factory = PgConnectionFactory::new(service);
-            server.serve(factory).await;
+            run_service(service, config).await?;
         }
         None => {
             let logger = Arc::new(WalLogger::open("wallog")?);
             let logger_clone = logger.clone();
+            let path_clone = config.db_path.clone();
             let db_factory = move || {
-                let db_path = db_path.clone();
+                let db_path = path_clone.clone();
                 #[cfg(feature = "mwal_backend")]
                 let vwal_methods = vwal_methods.clone();
                 let hook = WalLoggerHook::new(logger.clone());
@@ -91,17 +130,10 @@ pub async fn run_server(
                 }
             };
             let service = DbFactoryService::new(db_factory.clone());
-            let factory = PgConnectionFactory::new(service.clone());
-            if let Some(addr) = http_addr {
-                tokio::spawn(http::run_http(
-                    addr,
-                    service.map_response(|s| Constant::new(s, 1)),
-                ));
-            }
-            if let Some(addr) = rpc_server_addr {
+            if let Some(addr) = config.rpc_server_addr {
                 tokio::spawn(run_rpc_server(addr, db_factory, logger_clone));
             }
-            server.serve(factory).await;
+            run_service(service, config).await?;
         }
     }
 

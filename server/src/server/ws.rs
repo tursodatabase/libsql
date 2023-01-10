@@ -148,7 +148,8 @@ impl<S> WsStreamAdapter<S> {
     }
 }
 
-type WsAdapterInitFut = Pin<Box<dyn Future<Output = (WebSocketStream<TcpStream>, SocketAddr)>>>;
+type WsAdapterInitFut =
+    Pin<Box<dyn Future<Output = (WebSocketStream<TcpStream>, SocketAddr)> + Send>>;
 
 pub struct WsAdapter {
     listener: TcpListener,
