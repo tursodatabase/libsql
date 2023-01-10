@@ -1,5 +1,5 @@
-C Clarify\shelp\sfor\s.quit.
-D 2023-01-09T18:42:28.572
+C Improvements\sto\sthe\sSQLITE_DIRECTONLY\sdocumentation.
+D 2023-01-10T14:33:26.920
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -647,7 +647,7 @@ F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 83de67e4857be2866d048c98e93f65461d8a0408ca4ce88fec68ebfe030997ae
 F src/shell.c.in f7c75d1a9f900516e40f17f040668d5797592344bd88cff7ee7df586de6893c6
-F src/sqlite.h.in 51ab9a0a86684e7bdd9781ce8566ec436e54247c5f808cdd0ef08e482ab23bbc
+F src/sqlite.h.in 317be795a707c93c03810ba362edb20b49c4ea61b5f1777eeb6557fcaac4a688
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h c4b9fa7a7e2bcdf850cfeb4b8a91d5ec47b7a00033bc996fd2ee96cbf2741f5f
 F src/sqliteInt.h 079ccd9c161f4b74967188fd6321810159fdc4c32371b68559719828fac20f43
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 51a5d83c425d2e31508b73074d0076156817afb19003f847d16bf4a69ae5077b
-R 8395315325bf5149aaad0d9cbdb3c545
-U larrybr
-Z fb84b72fb0f5e2ad6df153dcba612d13
+P 8004a2b7439748f1034df897af7b6c58b48a46923c6fdddbe7d78c89b8d7b438
+R c9dbc17e119fadca6b961e39a53840e1
+U drh
+Z 466ba68605823fd382c0c646a72f4eab
 # Remove this line to create a well-formed Fossil manifest.
