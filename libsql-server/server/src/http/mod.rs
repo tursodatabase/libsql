@@ -8,7 +8,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use hyper::body::to_bytes;
 use hyper::server::conn::AddrStream;
 use hyper::service::make_service_fn;
-use hyper::{Body, Request, Response};
+use hyper::{Body, Method, Request, Response};
 use serde::Deserialize;
 use serde_json::Number;
 use tokio::sync::{mpsc, oneshot};
@@ -55,13 +55,14 @@ fn query_response_to_json(rows: QueryResponse) -> anyhow::Result<Bytes> {
     Ok(buffer.into_inner().freeze())
 }
 
-async fn handle_request(
+async fn handle_query(
     mut req: Request<Body>,
     sender: mpsc::Sender<(oneshot::Sender<Result<QueryResponse, BoxError>>, Query)>,
 ) -> anyhow::Result<Response<Body>> {
     let bytes = to_bytes(req.body_mut()).await?;
     let req: HttpQueryRequest = serde_json::from_slice(&bytes)?;
     let (s, resp) = oneshot::channel();
+    // TODO: send query batch instead
     let _ = sender
         .send((s, Query::SimpleQuery(req.statements.join(";"), Vec::new())))
         .await;
@@ -73,6 +74,16 @@ async fn handle_request(
             Ok(Response::new(Body::from(json)))
         }
         Err(_) => todo!(),
+    }
+}
+
+async fn handle_request(
+    req: Request<Body>,
+    sender: mpsc::Sender<(oneshot::Sender<Result<QueryResponse, BoxError>>, Query)>,
+) -> anyhow::Result<Response<Body>> {
+    match (req.method(), req.uri().path()) {
+        (&Method::POST, "/") => handle_query(req, sender).await,
+        _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
 
