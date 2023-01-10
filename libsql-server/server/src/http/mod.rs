@@ -10,7 +10,7 @@ use hyper::server::conn::AddrStream;
 use hyper::service::make_service_fn;
 use hyper::{Body, Method, Request, Response};
 use serde::Deserialize;
-use serde_json::Number;
+use serde_json::{json, Number};
 use tokio::sync::{mpsc, oneshot};
 use tower::balance::pool;
 use tower::load::Load;
@@ -18,31 +18,36 @@ use tower::{service_fn, BoxError, MakeService, Service};
 
 use crate::query::{self, Query, QueryError, QueryResponse, ResultSet};
 
+impl TryFrom<query::Value> for serde_json::Value {
+    type Error = anyhow::Error;
+
+    fn try_from(value: query::Value) -> Result<Self, Self::Error> {
+        let value = match value {
+            query::Value::Null => serde_json::Value::Null,
+            query::Value::Integer(i) => serde_json::Value::Number(Number::from(i)),
+            query::Value::Real(x) => serde_json::Value::Number(
+                Number::from_f64(x).ok_or_else(|| anyhow::anyhow!("invalid float value"))?,
+            ),
+            query::Value::Text(s) => serde_json::Value::String(s),
+            query::Value::Blob(v) => serde_json::Value::String(BASE64_STANDARD_NO_PAD.encode(v)),
+        };
+
+        Ok(value)
+    }
+}
+
 fn query_response_to_json(rows: QueryResponse) -> anyhow::Result<Bytes> {
     let QueryResponse::ResultSet(ResultSet { columns, rows }) = rows;
-    let mut values = Vec::new();
+    let mut values = Vec::with_capacity(rows.len());
     for row in rows {
         let val = row
             .values
             .into_iter()
             .zip(columns.iter().map(|c| &c.name))
             .try_fold(
-                HashMap::new(),
+                HashMap::<_, serde_json::Value>::new(),
                 |mut map, (value, name)| -> anyhow::Result<_> {
-                    let value = match value {
-                        query::Value::Null => serde_json::Value::Null,
-                        query::Value::Integer(i) => serde_json::Value::Number(Number::from(i)),
-                        query::Value::Real(x) => serde_json::Value::Number(
-                            Number::from_f64(x)
-                                .ok_or_else(|| anyhow::anyhow!("invalid float value"))?,
-                        ),
-                        query::Value::Text(s) => serde_json::Value::String(s),
-                        query::Value::Blob(v) => {
-                            serde_json::Value::String(BASE64_STANDARD_NO_PAD.encode(v))
-                        }
-                    };
-
-                    map.insert(name.to_string(), value);
+                    map.insert(name.to_string(), value.try_into()?);
                     Ok(map)
                 },
             )?;
@@ -54,6 +59,14 @@ fn query_response_to_json(rows: QueryResponse) -> anyhow::Result<Bytes> {
     serde_json::to_writer(&mut buffer, &values)?;
 
     Ok(buffer.into_inner().freeze())
+}
+
+fn error(msg: &str, code: u16) -> Response<Body> {
+    let err = json!({ "error": msg });
+    Response::builder()
+        .status(code)
+        .body(Body::from(serde_json::to_vec(&err).unwrap()))
+        .unwrap()
 }
 
 async fn handle_query(
@@ -68,13 +81,14 @@ async fn handle_query(
         .send((s, Query::SimpleQuery(req.statements.join(";"), Vec::new())))
         .await;
 
-    let result = resp.await?;
+    let result = resp.await;
     match result {
-        Ok(rows) => {
+        Ok(Ok(rows)) => {
             let json = query_response_to_json(rows)?;
             Ok(Response::new(Body::from(json)))
         }
-        Err(_) => todo!(),
+        Ok(Err(err)) => Ok(error(&err.to_string(), 400)),
+        Err(_) => Ok(error("internal error", 500)),
     }
 }
 
