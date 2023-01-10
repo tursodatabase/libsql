@@ -207,4 +207,32 @@ do_test 4.4.2 {
   list [file exists x/test.db-wal] [file exists w/test.db-wal]
 } {1 0}
 
+#-------------------------------------------------------------------------
+# Check that extra ".." in a path are ignored.
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE xyz(x, y, z);
+  INSERT INTO xyz VALUES(1, 2, 3);
+}
+
+set path [pwd]
+set nLink [llength [split $path /]]
+set path "[string repeat ../ [expr $nLink*2]]..${path}/test.db"
+
+sqlite3 db2 $path
+do_execsql_test -db db2 5.1 {
+  SELECT * FROM xyz;
+} {1 2 3}
+db close
+
+forcedelete test.db2
+file link test.db2 $path
+sqlite3 db2 test.db2
+do_execsql_test -db db2 5.2 {
+  SELECT * FROM xyz;
+} {1 2 3}
+forcedelete test.db2
+
+
+
 finish_test
