@@ -2,6 +2,7 @@ use std::{net::SocketAddr, path::PathBuf};
 
 use anyhow::Result;
 use clap::Parser;
+use sqld::Config;
 
 /// SQL daemon
 #[derive(Debug, Parser)]
@@ -33,6 +34,22 @@ struct Cli {
     http_addr: Option<SocketAddr>,
 }
 
+impl From<Cli> for Config {
+    fn from(cli: Cli) -> Self {
+        Self {
+            db_path: cli.db_path,
+            tcp_addr: cli.pg_listen_addr,
+            ws_addr: cli.ws_listen_addr,
+            http_addr: cli.http_addr,
+            backend: cli.backend,
+            writer_rpc_addr: cli.primary_grpc_url,
+            rpc_server_addr: cli.grpc_listen_addr,
+            #[cfg(feature = "mwal_backend")]
+            mwal_addr: cli.mwal_addr,
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -52,18 +69,7 @@ async fn main() -> Result<()> {
         _ => (),
     }
 
-    sqld::run_server(
-        args.db_path,
-        args.pg_listen_addr,
-        args.ws_listen_addr,
-        args.http_addr,
-        args.backend,
-        #[cfg(feature = "mwal_backend")]
-        args.mwal_addr,
-        args.primary_grpc_url,
-        args.grpc_listen_addr,
-    )
-    .await?;
+    sqld::run_server(args.into()).await?;
 
     Ok(())
 }

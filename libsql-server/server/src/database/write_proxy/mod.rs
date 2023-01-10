@@ -19,6 +19,7 @@ use crate::rpc::proxy::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery}
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
 use replication::PeriodicDbUpdater;
 
+#[derive(Clone)]
 pub struct WriteProxyDbFactory {
     write_proxy: ProxyClient<Channel>,
     db_path: PathBuf,
@@ -30,14 +31,15 @@ pub struct WriteProxyDbFactory {
 
 impl WriteProxyDbFactory {
     pub async fn new(
-        addr: String,
+        addr: &str,
         db_path: PathBuf,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
             Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
         >,
     ) -> anyhow::Result<Self> {
-        let write_proxy = ProxyClient::connect(addr.clone()).await?;
-        let mut db_updater = PeriodicDbUpdater::new(&db_path, addr, Duration::from_secs(1)).await?;
+        let write_proxy = ProxyClient::connect(addr.to_string()).await?;
+        let mut db_updater =
+            PeriodicDbUpdater::new(&db_path, addr.to_string(), Duration::from_secs(1)).await?;
         let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
         tokio::task::spawn_blocking(move || loop {
             // must abort

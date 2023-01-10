@@ -119,13 +119,13 @@ impl<S> PgConnectionFactory<S> {
     }
 }
 
-impl<T, F, S> Service<(T, SocketAddr)> for PgConnectionFactory<F>
+impl<T, F> Service<(T, SocketAddr)> for PgConnectionFactory<F>
 where
     T: AsyncRead + AsyncWrite + AsyncPeekable + Unpin + Send + Sync + 'static,
-    F: MakeService<(), Query, MakeError = anyhow::Error, Service = S> + Sync,
+    F: MakeService<(), Query, MakeError = anyhow::Error> + Sync,
     F::Future: 'static + Send + Sync,
-    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
-    S::Future: Send,
+    F::Service: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    <F::Service as Service<Query>>::Future: Send,
 {
     type Response = ();
     type Error = anyhow::Error;

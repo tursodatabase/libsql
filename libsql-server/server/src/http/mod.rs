@@ -33,7 +33,8 @@ fn query_response_to_json(rows: QueryResponse) -> anyhow::Result<Bytes> {
                         query::Value::Null => serde_json::Value::Null,
                         query::Value::Integer(i) => serde_json::Value::Number(Number::from(i)),
                         query::Value::Real(x) => serde_json::Value::Number(
-                            Number::from_f64(x).ok_or(anyhow::anyhow!("invalid float value"))?,
+                            Number::from_f64(x)
+                                .ok_or_else(|| anyhow::anyhow!("invalid float value"))?,
                         ),
                         query::Value::Text(s) => serde_json::Value::String(s),
                         query::Value::Blob(v) => {
