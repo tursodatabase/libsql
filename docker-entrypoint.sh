@@ -11,6 +11,9 @@ if [ "$1" = '/bin/sqld' ]; then
   # Listen to PostgreSQL port by default.
   server_args+=("--pg-listen-addr" "0.0.0.0:5000")
 
+  # Listen on HTTP 8080 port by default.
+  server_args+=("--http-listen-addr" "0.0.0.0:8080")
+
   # Set remaining arguments depending on what type of node we are.
   case "$SQLD_NODE" in
     primary)
