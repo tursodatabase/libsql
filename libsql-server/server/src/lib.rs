@@ -54,10 +54,6 @@ where
     S::Response: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
     S::Future: Send + Sync,
     <S::Response as Service<Query>>::Future: Send,
-    // F: MakeService<(), Query, MakeError = anyhow::Error> + Sync + Send,
-    // F::Future: 'static + Send + Sync,
-    // F::Service: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
-    // <F::Service as Service<Query>>::Future: Send,
 {
     let mut server = Server::new();
     server.bind_tcp(config.tcp_addr).await?;
