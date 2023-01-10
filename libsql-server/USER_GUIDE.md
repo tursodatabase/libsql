@@ -10,9 +10,14 @@ flyctl launch
 ```
 ... then pick a name and respond "Yes" when the prompt asks you to deploy.
 
-Finaly, allocate a IPv4 addres:
-```
-flyctl ips allocate-v4 -a <your app name>
-```
+You now have `sqld` running on Fly listening for HTTP connections.
 
-You now have `sqld` running on Fly listening to port `5000`.
+Give it a try with this snippet, replacing `$YOUR_APP` with your app name:
+```
+curl -X POST -d '{"statements": ["create table testme(a,b,c)"]}' $YOUR_APP.fly.dev
+curl -X POST -d '{"statements": ["insert into testme values(1,2,3)"]}' $YOUR_APP.fly.dev
+curl -X POST -d '{"statements": ["select * from testme"]}' $YOUR_APP.fly.dev
+```
+```
+[{"b":2,"a":1,"c":3}]
+```
