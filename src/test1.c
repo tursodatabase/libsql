@@ -5537,7 +5537,6 @@ static int SQLITE_TCLAPI test_stmt_int(
   return TCL_OK;
 }
 
-
 /*
 ** Usage:  sqlite3_interrupt  DB 
 **
@@ -5556,6 +5555,29 @@ static int SQLITE_TCLAPI test_interrupt(
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
   sqlite3_interrupt(db);
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_is_interrupted  DB 
+**
+** return true if an interrupt is current in effect on DB
+*/
+static int SQLITE_TCLAPI test_is_interrupted(
+  void * clientData,
+  Tcl_Interp *interp,
+  int argc,
+  char **argv
+){
+  sqlite3 *db;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  rc = sqlite3_is_interrupted(db);
+  Tcl_AppendResult(interp, rc ? "1" : "0", (void*)0);
   return TCL_OK;
 }
 
@@ -8631,6 +8653,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_key",                   (Tcl_CmdProc*)test_key              },
      { "sqlite3_rekey",                 (Tcl_CmdProc*)test_rekey            },
      { "sqlite3_interrupt",             (Tcl_CmdProc*)test_interrupt        },
+     { "sqlite3_is_interrupted",        (Tcl_CmdProc*)test_is_interrupted   },
      { "sqlite_delete_function",        (Tcl_CmdProc*)delete_function       },
      { "sqlite_delete_collation",       (Tcl_CmdProc*)delete_collation      },
      { "sqlite3_get_autocommit",        (Tcl_CmdProc*)get_autocommit        },
