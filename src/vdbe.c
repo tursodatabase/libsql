@@ -1150,6 +1150,12 @@ case OP_Halt: {
 #ifdef SQLITE_DEBUG
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
 #endif
+
+  /* A deliberately coded "OP_Halt SQLITE_INTERNAL * * * *" opcode indicates
+  ** something is wrong with the code generator.  Raise and assertion in order
+  ** to bring this to the attention of fuzzers and other testing tools. */
+  assert( pOp->p1!=SQLITE_INTERNAL );
+
   if( p->pFrame && pOp->p1==SQLITE_OK ){
     /* Halt the sub-program. Return control to the parent frame. */
     pFrame = p->pFrame;
@@ -6120,6 +6126,9 @@ case OP_Sort: {        /* jump */
 ** If the table or index is not empty, fall through to the following 
 ** instruction.
 **
+** If P2 is zero, that is an assertion that the P1 table is never
+** empty and hence the jump will never be taken.
+**
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
@@ -6131,6 +6140,8 @@ case OP_Rewind: {        /* jump, ncycle */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5==0 );
+  assert( pOp->p2>=0 && pOp->p2<p->nOp );
+
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( isSorter(pC)==(pOp->opcode==OP_SorterSort) );
@@ -6150,9 +6161,10 @@ case OP_Rewind: {        /* jump, ncycle */
   }
   if( rc ) goto abort_due_to_error;
   pC->nullRow = (u8)res;
-  assert( pOp->p2>0 && pOp->p2<p->nOp );
-  VdbeBranchTaken(res!=0,2);
-  if( res ) goto jump_to_p2;
+  if( pOp->p2>0 ){
+    VdbeBranchTaken(res!=0,2);
+    if( res ) goto jump_to_p2;
+  }
   break;
 }
 
