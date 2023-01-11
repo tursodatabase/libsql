@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\slarge,\scompressed,\slsm\sdatabases.
-D 2023-01-09T21:10:42.176
+C Fix\sanother\s64-bit\soffset\sproblem\sin\slsm.
+D 2023-01-11T16:02:20.434
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -275,7 +275,7 @@ F ext/lsm1/lsm_main.c 87770a9c7e73859fce7620cb79623776ba4b30369086229ad82c3e6eea
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c c67282a4f2c91e2a3362bdd40a81f9041cd587973ffc4bca8b8fbdab5470dee1
-F ext/lsm1/lsm_sorted.c cb163ee5792ddc93f23c9ce061a29a50237afe89296f196d13bfe561c2d58e13
+F ext/lsm1/lsm_sorted.c 8bf11fa5ee03e49858375316aee89bb8fa7c353e1a4138a82312ae5aad4f274b
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 11e0a5c19d754a4e1d93dfad06de8cc201f10f886b8e61a4c599ed34e334fc24
@@ -2068,11 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8004a2b7439748f1034df897af7b6c58b48a46923c6fdddbe7d78c89b8d7b438
-R 86a61cb54cd9cd01f7c6dd3cac50589c
-T *branch * lsm-compress-fixes
-T *sym-lsm-compress-fixes *
-T -sym-trunk *
+P 956e985ff9bf8f21a048e49f7190bcc52ec4a7d35ecd685b0a293a01c9777a96
+R e7e3173ae5c42a097ed69f615ffd8f05
 U dan
-Z d1ca1a8619727c2f60a4fecfd62964f0
+Z e942990f9b9e0d8fe79cbbef95a4eab0
 # Remove this line to create a well-formed Fossil manifest.

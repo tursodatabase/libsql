@@ -1851,7 +1851,7 @@ static int seekInSegment(
   SegmentPtr *pPtr,
   int iTopic,
   void *pKey, int nKey,
-  int iPg,                        /* Page to search */
+  LsmPgno iPg,                    /* Page to search */
   int eSeek,                      /* Search bias - see above */
   LsmPgno *piPtr,                 /* OUT: FC pointer */
   int *pbStop                     /* OUT: Stop search flag */
