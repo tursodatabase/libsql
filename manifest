@@ -1,5 +1,5 @@
-C Improved\sprogress-handler\sand\sinterrupt\sdetection\sduring\sPRAGMA\sintegrity_check.
-D 2023-01-11T16:17:31.352
+C Add\san\sassert()\sto\sthe\sbyte-code\sengine\sthat\sgoes\soff\sif\sthe\sOP_Halt\sopcode\nis\sinvoked\swith\sSQLITE_INTERNAL.\s\sThis\scauses\sthe\sRIGHT\sJOIN\serror\n"Opcode\sjumps\sto\s...\swhich\sis\soutside\sthe\ssubroutine\s..."\sto\sfail\simmediately,\ncausing\sit\sto\scome\smore\sreadily\sto\stester's\sattention.\s\sThere\sis\sat\sleast\none\stestcase\sin\stest/fuzzdata8.db\sthat\sasserts\sdue\sto\sthis\schange.
+D 2023-01-11T16:44:57.242
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -717,7 +717,7 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 0e5cf9062a796f0f1b6b3228b121b2344932c05425f7c8b5a7cb245812473bbd
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c 6b11efa707f92a1f32d31c749609ab5a6acf31c1d95e277f9199ce1901831b1a
+F src/vdbe.c 813c7895fc5516696b7acd5852df470c9ae7f91f46c4dcd7e0bd4e97f8c145b3
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h fc15815b7bdafbb27e7f027faba2b0112e87d382c0d72241672528806ebc0db5
 F src/vdbeapi.c 4ee67890913c1d2469c68e3ad2e7ddeab57ac5924a64bbfd0906a8ea0d542c7f
@@ -2068,8 +2068,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d030f341369b7f32789cbcf3d0ad9a2ac5cad99a56dac7dfe68b7f06dc339b17
-R 7b76cd997666c81e2de9a02fcc1dc055
+P 6db42780a9e530bcc94490cc6080536309666dc13523272d1799d6661137e908
+R 7452496a34578ebcb2192d17749a2338
+T *branch * code-generator-20220111
+T *sym-code-generator-20220111 *
+T -sym-trunk *
 U drh
-Z 15c60f893bce5ca2030105c4cbb8f7ce
+Z 8538b98284c40a3c08b07910b6f7dc3d
 # Remove this line to create a well-formed Fossil manifest.

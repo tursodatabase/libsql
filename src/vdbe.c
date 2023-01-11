@@ -1150,6 +1150,12 @@ case OP_Halt: {
 #ifdef SQLITE_DEBUG
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
 #endif
+
+  /* A deliberately coded "OP_Halt SQLITE_INTERNAL * * * *" opcode indicates
+  ** something is wrong with the code generator.  Raise and assertion in order
+  ** to bring this to the attention of fuzzers and other testing tools. */
+  assert( pOp->p1!=SQLITE_INTERNAL );
+
   if( p->pFrame && pOp->p1==SQLITE_OK ){
     /* Halt the sub-program. Return control to the parent frame. */
     pFrame = p->pFrame;
