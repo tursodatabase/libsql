@@ -20,9 +20,7 @@ struct PgHdr {
   PgHdr *pDirty;                 /* Transient list of dirty sorted by pgno */
   Pager *pPager;                 /* The pager this page is part of */
   unsigned int pgno;             /* Page number for this page */
-#ifdef SQLITE_CHECK_PAGES
   unsigned int pageHash;         /* Hash of page content */
-#endif
   unsigned short flags;          /* PGHDR flags defined below */
 
   /**********************************************************************
