@@ -10430,6 +10430,8 @@ fi
 
 if test "${use_wasi_sdk}" = "no" ; then
   HAVE_WASI_SDK=""
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 else
   HAVE_WASI_SDK=1
 # Changing --host and --target have no effect here except to possibly
@@ -10451,6 +10453,8 @@ else
   # libtool is apparently hard-coded to use gcc for linking DLLs, so
   # we disable the DLL build...
   enable_shared=no
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 fi
 
 

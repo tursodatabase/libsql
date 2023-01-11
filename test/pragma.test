@@ -582,6 +582,59 @@ do_test pragma-3.30 {
   }
 } {}
 
+# The values stored in indexes must be byte-for-byte identical to the
+# values stored in tables.
+#
+reset_db
+do_execsql_test pragma-3.40 {
+  CREATE TABLE t1(
+    a INTEGER PRIMARY KEY,
+    b TEXT COLLATE nocase,
+    c INT COLLATE nocase,
+    d TEXT
+  );
+  INSERT INTO t1(a,b,c,d) VALUES
+    (1, 'one','one','one'),
+    (2, 'two','two','two'),
+    (3, 'three','three','three'),
+    (4, 'four','four','four'),
+    (5, 'five','five','five');
+  CREATE INDEX t1bcd ON t1(b,c,d);
+  CREATE TABLE t2(
+    a INTEGER PRIMARY KEY,
+    b TEXT COLLATE nocase,
+    c INT COLLATE nocase,
+    d TEXT
+  );
+  INSERT INTO t2(a,b,c,d) VALUES
+    (1, 'one','one','one'),
+    (2, 'two','two','TWO'),
+    (3, 'three','THREE','three'),
+    (4, 'FOUR','four','four'),
+    (5, 'FIVE','FIVE','five');
+  CREATE INDEX t2bcd ON t2(b,c,d);
+  CREATE TEMP TABLE saved_schema AS SELECT name, rootpage FROM sqlite_schema;
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_schema
+     SET rootpage=(SELECT rootpage FROM saved_schema WHERE name='t2bcd')
+   WHERE name='t1bcd';
+  UPDATE sqlite_schema
+     SET rootpage=(SELECT rootpage FROM saved_schema WHERE name='t1bcd')
+   WHERE name='t2bcd';
+  PRAGMA Writable_schema=RESET;
+  SELECT integrity_check AS x FROM pragma_integrity_check ORDER BY 1;
+} {
+  {row 2 missing from index t1bcd}
+  {row 2 missing from index t2bcd}
+  {row 3 values differ from index t1bcd}
+  {row 3 values differ from index t2bcd}
+  {row 4 values differ from index t1bcd}
+  {row 4 values differ from index t2bcd}
+  {row 5 values differ from index t1bcd}
+  {row 5 values differ from index t2bcd}
+}
+db eval {DROP TABLE t2}
+
 # Test modifying the cache_size of an attached database.
 ifcapable pager_pragmas&&attach {
 do_test pragma-4.1 {

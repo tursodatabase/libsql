@@ -114,9 +114,9 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
     i64 x;
     assert( (p->flags&MEM_Int)*2==sizeof(x) );
     memcpy(&x, (char*)&p->u, (p->flags&MEM_Int)*2);
-    sqlite3Int64ToText(x, zBuf);
+    p->n = sqlite3Int64ToText(x, zBuf);
 #else
-    sqlite3Int64ToText(p->u.i, zBuf);
+    p->n = sqlite3Int64ToText(p->u.i, zBuf);
 #endif
   }else{
     sqlite3StrAccumInit(&acc, 0, zBuf, sz, 0);
@@ -124,6 +124,7 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
          (p->flags & MEM_IntReal)!=0 ? (double)p->u.i : p->u.r);
     assert( acc.zText==zBuf && acc.mxAlloc<=0 );
     zBuf[acc.nChar] = 0; /* Fast version of sqlite3StrAccumFinish(&acc) */
+    p->n = acc.nChar;
   }
 }
 
@@ -151,6 +152,7 @@ static void vdbeMemRenderNum(int sz, char *zBuf, Mem *p){
 ** This routine is for use inside of assert() statements only.
 */
 int sqlite3VdbeMemValidStrRep(Mem *p){
+  Mem tmp;
   char zBuf[100];
   char *z;
   int i, j, incr;
@@ -167,7 +169,8 @@ int sqlite3VdbeMemValidStrRep(Mem *p){
     assert( p->enc==SQLITE_UTF8 || p->z[((p->n+1)&~1)+1]==0 );
   }
   if( (p->flags & (MEM_Int|MEM_Real|MEM_IntReal))==0 ) return 1;
-  vdbeMemRenderNum(sizeof(zBuf), zBuf, p);
+  memcpy(&tmp, p, sizeof(tmp));
+  vdbeMemRenderNum(sizeof(zBuf), zBuf, &tmp);
   z = p->z;
   i = j = 0;
   incr = 1;
@@ -436,7 +439,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
 
   vdbeMemRenderNum(nByte, pMem->z, pMem);
   assert( pMem->z!=0 );
-  pMem->n = sqlite3Strlen30NN(pMem->z);
+  assert( pMem->n==sqlite3Strlen30NN(pMem->z) );
   pMem->enc = SQLITE_UTF8;
   pMem->flags |= MEM_Str|MEM_Term;
   if( bForce ) pMem->flags &= ~(MEM_Int|MEM_Real|MEM_IntReal);
@@ -676,32 +679,35 @@ int sqlite3VdbeBooleanValue(Mem *pMem, int ifNull){
 }
 
 /*
-** The MEM structure is already a MEM_Real.  Try to also make it a
-** MEM_Int if we can.
+** The MEM structure is already a MEM_Real or MEM_IntReal. Try to 
+** make it a MEM_Int if we can.
 */
 void sqlite3VdbeIntegerAffinity(Mem *pMem){
-  i64 ix;
   assert( pMem!=0 );
-  assert( pMem->flags & MEM_Real );
+  assert( pMem->flags & (MEM_Real|MEM_IntReal) );
   assert( !sqlite3VdbeMemIsRowSet(pMem) );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
-  ix = doubleToInt64(pMem->u.r);
-
-  /* Only mark the value as an integer if
-  **
-  **    (1) the round-trip conversion real->int->real is a no-op, and
-  **    (2) The integer is neither the largest nor the smallest
-  **        possible integer (ticket #3922)
-  **
-  ** The second and third terms in the following conditional enforces
-  ** the second condition under the assumption that addition overflow causes
-  ** values to wrap around.
-  */
-  if( pMem->u.r==ix && ix>SMALLEST_INT64 && ix<LARGEST_INT64 ){
-    pMem->u.i = ix;
+  if( pMem->flags & MEM_IntReal ){
     MemSetTypeFlag(pMem, MEM_Int);
+  }else{
+    i64 ix = doubleToInt64(pMem->u.r);
+
+    /* Only mark the value as an integer if
+    **
+    **    (1) the round-trip conversion real->int->real is a no-op, and
+    **    (2) The integer is neither the largest nor the smallest
+    **        possible integer (ticket #3922)
+    **
+    ** The second and third terms in the following conditional enforces
+    ** the second condition under the assumption that addition overflow causes
+    ** values to wrap around.
+    */
+    if( pMem->u.r==ix && ix>SMALLEST_INT64 && ix<LARGEST_INT64 ){
+      pMem->u.i = ix;
+      MemSetTypeFlag(pMem, MEM_Int);
+    }
   }
 }
 

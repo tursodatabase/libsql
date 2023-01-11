@@ -394,7 +394,7 @@ static void applyAffinity(
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC || affinity==SQLITE_AFF_FLEXNUM );
     if( (pRec->flags & MEM_Int)==0 ){ /*OPTIMIZATION-IF-FALSE*/
-      if( (pRec->flags & MEM_Real)==0 ){
+      if( (pRec->flags & (MEM_Real|MEM_IntReal))==0 ){
         if( pRec->flags & MEM_Str ) applyNumericAffinity(pRec,1);
       }else if( affinity<=SQLITE_AFF_REAL ){
         sqlite3VdbeIntegerAffinity(pRec);
@@ -1150,6 +1150,12 @@ case OP_Halt: {
 #ifdef SQLITE_DEBUG
   if( pOp->p2==OE_Abort ){ sqlite3VdbeAssertAbortable(p); }
 #endif
+
+  /* A deliberately coded "OP_Halt SQLITE_INTERNAL * * * *" opcode indicates
+  ** something is wrong with the code generator.  Raise and assertion in order
+  ** to bring this to the attention of fuzzers and other testing tools. */
+  assert( pOp->p1!=SQLITE_INTERNAL );
+
   if( p->pFrame && pOp->p1==SQLITE_OK ){
     /* Halt the sub-program. Return control to the parent frame. */
     pFrame = p->pFrame;
@@ -3142,7 +3148,7 @@ case OP_TypeCheck: {
         }
         case COLTYPE_REAL: {
           testcase( (pIn1->flags & (MEM_Real|MEM_IntReal))==MEM_Real );
-          testcase( (pIn1->flags & (MEM_Real|MEM_IntReal))==MEM_IntReal );
+          assert( (pIn1->flags & MEM_IntReal)==0 );
           if( pIn1->flags & MEM_Int ){
             /* When applying REAL affinity, if the result is still an MEM_Int
             ** that will fit in 6 bytes, then change the type to MEM_IntReal
@@ -6120,6 +6126,9 @@ case OP_Sort: {        /* jump */
 ** If the table or index is not empty, fall through to the following 
 ** instruction.
 **
+** If P2 is zero, that is an assertion that the P1 table is never
+** empty and hence the jump will never be taken.
+**
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
@@ -6131,6 +6140,8 @@ case OP_Rewind: {        /* jump, ncycle */
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5==0 );
+  assert( pOp->p2>=0 && pOp->p2<p->nOp );
+
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( isSorter(pC)==(pOp->opcode==OP_SorterSort) );
@@ -6150,9 +6161,10 @@ case OP_Rewind: {        /* jump, ncycle */
   }
   if( rc ) goto abort_due_to_error;
   pC->nullRow = (u8)res;
-  assert( pOp->p2>0 && pOp->p2<p->nOp );
-  VdbeBranchTaken(res!=0,2);
-  if( res ) goto jump_to_p2;
+  if( pOp->p2>0 ){
+    VdbeBranchTaken(res!=0,2);
+    if( res ) goto jump_to_p2;
+  }
   break;
 }
 
@@ -6958,13 +6970,14 @@ case OP_IntegrityCk: {
   pIn1 = &aMem[pOp->p1];
   assert( pOp->p5<db->nDb );
   assert( DbMaskTest(p->btreeMask, pOp->p5) );
-  z = sqlite3BtreeIntegrityCheck(db, db->aDb[pOp->p5].pBt, &aRoot[1], nRoot,
-                                 (int)pnErr->u.i+1, &nErr);
+  rc = sqlite3BtreeIntegrityCheck(db, db->aDb[pOp->p5].pBt, &aRoot[1], nRoot,
+                                 (int)pnErr->u.i+1, &nErr, &z);
   sqlite3VdbeMemSetNull(pIn1);
   if( nErr==0 ){
     assert( z==0 );
-  }else if( z==0 ){
-    goto no_mem;
+  }else if( rc ){
+    sqlite3_free(z);
+    goto abort_due_to_error;
   }else{
     pnErr->u.i -= nErr-1;
     sqlite3VdbeMemSetStr(pIn1, z, -1, SQLITE_UTF8, sqlite3_free);

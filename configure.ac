@@ -181,6 +181,7 @@ AC_CACHE_VAL(ac_cv_c_wasi_sdk,[
 ])
 if test "${use_wasi_sdk}" = "no" ; then
   HAVE_WASI_SDK=""
+  AC_MSG_RESULT([no])
 else
   HAVE_WASI_SDK=1
 # Changing --host and --target have no effect here except to possibly
@@ -202,6 +203,7 @@ else
   # libtool is apparently hard-coded to use gcc for linking DLLs, so
   # we disable the DLL build...
   enable_shared=no
+  AC_MSG_RESULT([yes])
 fi
 AC_SUBST(HAVE_WASI_SDK)
 

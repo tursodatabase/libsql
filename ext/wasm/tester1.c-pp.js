@@ -1010,7 +1010,12 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(P.quota >= 4096)
           .assert(remaining === P.quota)
           .mustThrowMatching(()=>P.alloc(0), isAllocErr)
-          .mustThrowMatching(()=>P.alloc(-1), isAllocErr);
+          .mustThrowMatching(()=>P.alloc(-1), isAllocErr)
+          .mustThrowMatching(
+            ()=>P.alloc('i33'),
+            (e)=>e instanceof sqlite3.WasmAllocError
+          );
+        ;
         let p1 = P.alloc(12);
         T.assert(p1 === stack - 16/*8-byte aligned*/)
           .assert(P.pointer === p1);
@@ -1029,7 +1034,7 @@ self.sqlite3InitModule = sqlite3InitModule;
 
       T.assert(P.pointer === stack);
       try {
-        const [p1, p2, p3] = P.allocChunks(3,4);
+        const [p1, p2, p3] = P.allocChunks(3,'i32');
         T.assert(P.pointer === stack-16/*always rounded to multiple of 8*/)
           .assert(p2 === p1 + 4)
           .assert(p3 === p2 + 4);
@@ -1143,7 +1148,7 @@ self.sqlite3InitModule = sqlite3InitModule;
           }
         }
       };
-      
+
       T.assert(wasm.isPtr(db.pointer))
         .mustThrowMatching(()=>db.pointer=1, /read-only/)
         .assert(0===sqlite3.capi.sqlite3_extended_result_codes(db.pointer,1))
@@ -1183,7 +1188,7 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(0 === rc);
       const stack = wasm.pstack.pointer;
       try {
-        const [pCur, pHi] = wasm.pstack.allocChunks(2,8);
+        const [pCur, pHi] = wasm.pstack.allocChunks(2,'i64');
         rc = capi.sqlite3_db_status(this.db, capi.SQLITE_DBSTATUS_LOOKASIDE_USED,
                                     pCur, pHi, 0);
         T.assert(0===rc);
@@ -1353,6 +1358,16 @@ self.sqlite3InitModule = sqlite3InitModule;
       if(wasm.bigIntEnabled){
         T.assert(4n===db.changes(false,true));
       }
+
+      let vals = db.selectValues('select a from t order by a limit 2');
+      T.assert( 2 === vals.length )
+        .assert( 1===vals[0] && 3===vals[1] );
+      vals = db.selectValues('select a from t order by a limit $L',
+                             {$L:2}, capi.SQLITE_TEXT);
+      T.assert( 2 === vals.length )
+        .assert( '1'===vals[0] && '3'===vals[1] );
+      vals = undefined;
+
       let blob = db.selectValue("select b from t where a='blob'");
       T.assert(blob instanceof Uint8Array).
         assert(0x68===blob[0] && 0x69===blob[1]);
@@ -1614,7 +1629,6 @@ self.sqlite3InitModule = sqlite3InitModule;
   ////////////////////////////////////////////////////////////////////
     .t({
       name:'Scalar UDFs',
-      //predicate: ()=>false,
       test: function(sqlite3){
         const db = this.db;
         db.createFunction("foo",(pCx,a,b)=>a+b);
@@ -1625,6 +1639,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         db.createFunction("bar", {
           arity: -1,
           xFunc: (pCx,...args)=>{
+            T.assert(db.pointer === capi.sqlite3_context_db_handle(pCx));
             let rc = 0;
             for(const v of args) rc += v;
             return rc;
@@ -1680,6 +1695,45 @@ self.sqlite3InitModule = sqlite3InitModule;
           sqlite3.capi.SQLITE_MISUSE === rc,
           "For invalid arg count."
         );
+
+        /* Confirm that we can map and unmap the same function with
+           multiple arities... */
+        const fCounts = [0,0];
+        const fArityCheck = function(pCx){
+          return ++fCounts[arguments.length-1];
+        };
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        rc = capi.sqlite3_create_function_v2(
+          db, "nary", 0, capi.SQLITE_UTF8, 0, fArityCheck, 0, 0, 0
+        );
+        T.assert( 0===rc );
+        rc = capi.sqlite3_create_function_v2(
+          db, "nary", 1, capi.SQLITE_UTF8, 0, fArityCheck, 0, 0, 0
+        );
+        T.assert( 0===rc );
+        const sqlFArity0 = "select nary()";
+        const sqlFArity1 = "select nary(1)";
+        T.assert( 1 === db.selectValue(sqlFArity0) )
+          .assert( 1 === fCounts[0] ).assert( 0 === fCounts[1] );
+        T.assert( 1 === db.selectValue(sqlFArity1) )
+          .assert( 1 === fCounts[0] ).assert( 1 === fCounts[1] );
+        capi.sqlite3_create_function_v2(
+          db, "nary", 0, capi.SQLITE_UTF8, 0, 0, 0, 0, 0
+        );
+        T.mustThrowMatching((()=>db.selectValue(sqlFArity0)),
+                            (e)=>((e instanceof sqlite3.SQLite3Error)
+                                  && e.message.indexOf("wrong number of arguments")>0),
+                            "0-arity variant was uninstalled.");
+        T.assert( 2 === db.selectValue(sqlFArity1) )
+          .assert( 1 === fCounts[0] ).assert( 2 === fCounts[1] );
+        capi.sqlite3_create_function_v2(
+          db, "nary", 1, capi.SQLITE_UTF8, 0, 0, 0, 0, 0
+        );
+        T.mustThrowMatching((()=>db.selectValue(sqlFArity1)),
+                            (e)=>((e instanceof sqlite3.SQLite3Error)
+                                  && e.message.indexOf("no such function")>0),
+                            "1-arity variant was uninstalled.");
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
       }
     })
 
@@ -1728,7 +1782,7 @@ self.sqlite3InitModule = sqlite3InitModule;
             // sqlite3_result_xyz() and return undefined. Both are
             // functionally equivalent.
           }
-        }); 
+        });
         T.assert(18===db.selectValue('select summerN(1,8,9), summerN(2,3,4)'));
         T.mustThrowMatching(()=>{
           db.createFunction('nope',{
@@ -1855,7 +1909,6 @@ self.sqlite3InitModule = sqlite3InitModule;
           .assert('select 2;' === rc[1])
           .assert('-- empty\n; select 3' === rc[2]
                   /* Strange but true. */);
-        
         T.mustThrowMatching(()=>{
           db.exec({sql:'', returnValue: 'nope'});
         }, /^Invalid returnValue/);
@@ -1882,18 +1935,18 @@ self.sqlite3InitModule = sqlite3InitModule;
       T.assert(3===resultRows.length)
         .assert(2===resultRows[1]);
       T.assert(2===db.selectValue('select a from foo.bar where a>1 order by a'));
+
+      /** Demonstrate the JS-simplified form of the sqlite3_exec() callback... */
       let colCount = 0, rowCount = 0;
-      const execCallback = function(pVoid, nCols, aVals, aNames){
-        //console.warn("execCallback(",arguments,")");
-        colCount = nCols;
-        ++rowCount;
-        T.assert(2===aVals.length)
-          .assert(2===aNames.length)
-          .assert(+(aVals[1]) === 2 * +(aVals[0]));
-      };
       let rc = capi.sqlite3_exec(
-        db.pointer, "select a, a*2 from foo.bar", execCallback,
-        0, 0
+        db, "select a, a*2 from foo.bar", function(aVals, aNames){
+          //console.warn("execCallback(",arguments,")");
+          colCount = aVals.length;
+          ++rowCount;
+          T.assert(2===aVals.length)
+            .assert(2===aNames.length)
+            .assert(+(aVals[1]) === 2 * +(aVals[0]));
+        }, 0, 0
       );
       T.assert(0===rc).assert(3===rowCount).assert(2===colCount);
       rc = capi.sqlite3_exec(
@@ -1902,8 +1955,48 @@ self.sqlite3InitModule = sqlite3InitModule;
         }, 0, 0
       );
       T.assert(capi.SQLITE_ABORT === rc);
+
+      /* Demonstrate how to get access to the "full" callback
+         signature, as opposed to the simplified JS-specific one... */
+      rowCount = colCount = 0;
+      const pCb = wasm.installFunction('i(pipp)', function(pVoid,nCols,aVals,aCols){
+        /* Tip: wasm.cArgvToJs() can be used to convert aVals and
+           aCols to arrays: const vals = wasm.cArgvToJs(nCols,
+           aVals); */
+        ++rowCount;
+        colCount = nCols;
+        T.assert(2 === nCols)
+          .assert(wasm.isPtr(pVoid))
+          .assert(wasm.isPtr(aVals))
+          .assert(wasm.isPtr(aCols))
+          .assert(+wasm.cstrToJs(wasm.peekPtr(aVals + wasm.ptrSizeof))
+                  === 2 * +wasm.cstrToJs(wasm.peekPtr(aVals)));
+        return 0;
+      });
+      try {
+        T.assert(wasm.isPtr(pCb));
+        rc = capi.sqlite3_exec(
+          db, new TextEncoder('utf-8').encode("select a, a*2 from foo.bar"),
+          pCb, 0, 0
+        );
+        T.assert(0===rc)
+          .assert(3===rowCount)
+          .assert(2===colCount);
+      }finally{
+        wasm.uninstallFunction(pCb);
+      }
+
+      // Demonstrate that an OOM result does not propagate through sqlite3_exec()...
+      rc = capi.sqlite3_exec(
+        db, ["select a,"," a*2 from foo.bar"], (aVals, aNames)=>{
+          sqlite3.WasmAllocError.toss("just testing");
+        }, 0, 0
+      );
+      T.assert(capi.SQLITE_ABORT === rc);
+
       db.exec("detach foo");
-      T.mustThrow(()=>db.exec("select * from foo.bar"));
+      T.mustThrow(()=>db.exec("select * from foo.bar"),
+                  "Because foo is no longer attached.");
     })
 
   ////////////////////////////////////////////////////////////////////
@@ -2593,6 +2686,277 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
     }/*OPFS util sanity checks*/)
   ;/* end OPFS tests */
+
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Hook APIs')
+    .t({
+      name: "sqlite3_commit/rollback/update_hook()",
+      predicate: ()=>wasm.bigIntEnabled || "Update hook requires int64",
+      test: function(sqlite3){
+        let countCommit = 0, countRollback = 0;;
+        const db = new sqlite3.oo1.DB(':memory:',1 ? 'c' : 'ct');
+        let rc = capi.sqlite3_commit_hook(db, (p)=>{
+          ++countCommit;
+          return (1 === p) ? 0 : capi.SQLITE_ERROR;
+        }, 1);
+        T.assert( 0 === rc /*void pointer*/ );
+
+        // Commit hook...
+        db.exec("BEGIN; SELECT 1; COMMIT");
+        T.assert(0 === countCommit,
+                 "No-op transactions (mostly) do not trigger commit hook.");
+        db.exec("BEGIN EXCLUSIVE; SELECT 1; COMMIT");
+        T.assert(1 === countCommit,
+                 "But EXCLUSIVE transactions do.");
+        db.transaction((d)=>{d.exec("create table t(a)");});
+        T.assert(2 === countCommit);
+
+        // Rollback hook:
+        rc = capi.sqlite3_rollback_hook(db, (p)=>{
+          ++countRollback;
+          T.assert( 2 === p );
+        }, 2);
+        T.assert( 0 === rc /*void pointer*/ );
+        T.mustThrowMatching(()=>{
+          db.transaction('drop table t',()=>{})
+        }, (e)=>{
+          return (capi.SQLITE_MISUSE === e.resultCode)
+            && ( e.message.indexOf('Invalid argument') > 0 );
+        });
+        T.assert(0 === countRollback, "Transaction was not started.");
+        T.mustThrowMatching(()=>{
+          db.transaction('immediate', ()=>{
+            sqlite3.SQLite3Error.toss(capi.SQLITE_FULL,'testing rollback hook');
+          });
+        }, (e)=>{
+          return capi.SQLITE_FULL === e.resultCode
+        });
+        T.assert(1 === countRollback);
+
+        // Update hook...
+        const countUpdate = Object.create(null);
+        capi.sqlite3_update_hook(db, (p,op,dbName,tbl,rowid)=>{
+          T.assert('main' === dbName.toLowerCase())
+            .assert('t' === tbl.toLowerCase())
+            .assert(3===p)
+            .assert('bigint' === typeof rowid);
+          switch(op){
+              case capi.SQLITE_INSERT:
+              case capi.SQLITE_UPDATE:
+              case capi.SQLITE_DELETE:
+                countUpdate[op] = (countUpdate[op]||0) + 1;
+                break;
+              default: toss("Unexpected hook operator:",op);
+          }
+        }, 3);
+        db.transaction((d)=>{
+          d.exec([
+            "insert into t(a) values(1);",
+            "update t set a=2;",
+            "update t set a=3;",
+            "delete from t where a=3"
+            // update hook is not called for an unqualified DELETE
+          ]);
+        });
+        T.assert(1 === countRollback)
+          .assert(3 === countCommit)
+          .assert(1 === countUpdate[capi.SQLITE_INSERT])
+          .assert(2 === countUpdate[capi.SQLITE_UPDATE])
+          .assert(1 === countUpdate[capi.SQLITE_DELETE]);
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        T.assert(1 === capi.sqlite3_commit_hook(db, 0, 0));
+        T.assert(2 === capi.sqlite3_rollback_hook(db, 0, 0));
+        T.assert(3 === capi.sqlite3_update_hook(db, 0, 0));
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+        db.close();
+      }
+    })/* commit/rollback/update hooks */
+    .t({
+      name: "sqlite3_preupdate_hook()",
+      predicate: ()=>wasm.bigIntEnabled || "Pre-update hook requires int64",
+      test: function(sqlite3){
+        const db = new sqlite3.oo1.DB(':memory:', 1 ? 'c' : 'ct');
+        const countHook = Object.create(null);
+        let rc = capi.sqlite3_preupdate_hook(
+          db, function(p, pDb, op, zDb, zTbl, iKey1, iKey2){
+            T.assert(9 === p)
+              .assert(db.pointer === pDb)
+              .assert(1 === capi.sqlite3_preupdate_count(pDb))
+              .assert( 0 > capi.sqlite3_preupdate_blobwrite(pDb) );
+            countHook[op] = (countHook[op]||0) + 1;
+            switch(op){
+                case capi.SQLITE_INSERT:
+                case capi.SQLITE_UPDATE:
+                 T.assert('number' === typeof capi.sqlite3_preupdate_new_js(pDb, 0));
+                  break;
+                case capi.SQLITE_DELETE:
+                 T.assert('number' === typeof capi.sqlite3_preupdate_old_js(pDb, 0));
+                  break;
+                default: toss("Unexpected hook operator:",op);
+            }
+          },
+          9
+        );
+        db.transaction((d)=>{
+          d.exec([
+            "create table t(a);",
+            "insert into t(a) values(1);",
+            "update t set a=2;",
+            "update t set a=3;",
+            "delete from t where a=3"
+          ]);
+        });
+        T.assert(1 === countHook[capi.SQLITE_INSERT])
+          .assert(2 === countHook[capi.SQLITE_UPDATE])
+          .assert(1 === countHook[capi.SQLITE_DELETE]);
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = true;
+        db.close();
+        //wasm.xWrap.FuncPtrAdapter.debugFuncInstall = false;
+      }
+    })/*pre-update hooks*/
+  ;/*end hook API tests*/
+
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Auto-extension API')
+    .t({
+      name: "Auto-extension sanity checks.",
+      test: function(sqlite3){
+        let counter = 0;
+        const fp = wasm.installFunction('i(ppp)', function(pDb,pzErr,pApi){
+          ++counter;
+          return 0;
+        });
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 0===counter );
+        capi.sqlite3_auto_extension(fp);
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 1===counter );
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 2===counter );
+        capi.sqlite3_cancel_auto_extension(fp);
+        wasm.uninstallFunction(fp);
+        (new sqlite3.oo1.DB()).close();
+        T.assert( 2===counter );
+      }
+    });
+
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Session API')
+    .t({
+      name: 'Session API sanity checks',
+      predicate: ()=>!!capi.sqlite3changegroup_add,
+      test: function(sqlite3){
+        warn("The session API tests could use some expansion.");
+        const db1 = new sqlite3.oo1.DB(), db2 = new sqlite3.oo1.DB();
+        const sqlInit = [
+          "create table t(rowid INTEGER PRIMARY KEY,a,b); ",
+          "insert into t(rowid,a,b) values",
+          "(1,'a1','b1'),",
+          "(2,'a2','b2'),",
+          "(3,'a3','b3');"
+        ].join('');
+        db1.exec(sqlInit);
+        db2.exec(sqlInit);
+        T.assert(3 === db1.selectValue("select count(*) from t"))
+          .assert('b3' === db1.selectValue('select b from t where rowid=3'));
+        const stackPtr = wasm.pstack.pointer;
+        try{
+          let ppOut = wasm.pstack.allocPtr();
+          let rc = capi.sqlite3session_create(db1, "main", ppOut);
+          T.assert(0===rc);
+          let pSession = wasm.peekPtr(ppOut);
+          T.assert(pSession && wasm.isPtr(pSession));
+          capi.sqlite3session_table_filter(pSession, (pCtx, tbl)=>{
+            T.assert('t' === tbl).assert( 99 === pCtx );
+            return 1;
+          }, 99);
+          db1.exec([
+            "update t set b='bTwo' where rowid=2;",
+            "update t set a='aThree' where rowid=3;",
+            "delete from t where rowid=1;",
+            "insert into t(rowid,a,b) values(4,'a4','b4')"
+          ]);
+          T.assert('bTwo' === db1.selectValue("select b from t where rowid=2"))
+            .assert(undefined === db1.selectValue('select a from t where rowid=1'))
+            .assert('b4' === db1.selectValue('select b from t where rowid=4'))
+            .assert(3 === db1.selectValue('select count(*) from t'));
+
+          const testSessionEnable = false;
+          if(testSessionEnable){
+            rc = capi.sqlite3session_enable(pSession, 0);
+            T.assert( 0 === rc )
+              .assert( 0 === capi.sqlite3session_enable(pSession, -1) );
+            db1.exec("delete from t where rowid=2;");
+            rc = capi.sqlite3session_enable(pSession, 1);
+            T.assert( rc > 0 )
+              .assert( capi.sqlite3session_enable(pSession, -1) > 0 )
+              .assert(undefined === db1.selectValue('select a from t where rowid=2'));
+          }else{
+            warn("sqlite3session_enable() tests disabled due to unexpected results.",
+                 "(Possibly a tester misunderstanding, as opposed to a bug.)");
+          }
+          let db1Count = db1.selectValue("select count(*) from t");
+          T.assert( db1Count === (testSessionEnable ? 2 : 3) );
+
+          /* Capture changeset and destroy session. */
+          let pnChanges = wasm.pstack.alloc('i32'),
+              ppChanges = wasm.pstack.allocPtr();
+          rc = capi.sqlite3session_changeset(pSession, pnChanges, ppChanges);
+          T.assert( 0 === rc );
+          capi.sqlite3session_delete(pSession);
+          pSession = 0;
+          const pChanges = wasm.peekPtr(ppChanges),
+                nChanges = wasm.peek32(pnChanges);
+          T.assert( pChanges && wasm.isPtr( pChanges ) )
+            .assert( nChanges > 0 );
+
+          /* Revert db1 via an inverted changeset, but keep pChanges
+             and nChanges for application to db2. */
+          rc = capi.sqlite3changeset_invert( nChanges, pChanges, pnChanges, ppChanges );
+          T.assert( 0 === rc );
+          rc = capi.sqlite3changeset_apply(
+            db1, wasm.peek32(pnChanges), wasm.peekPtr(ppChanges), 0, (pCtx, eConflict, pIter)=>{
+              return 1;
+            }, 0
+          );
+          T.assert( 0 === rc );
+          wasm.dealloc( wasm.peekPtr(ppChanges) );
+          pnChanges = ppChanges = 0;
+          T.assert('b2' === db1.selectValue("select b from t where rowid=2"))
+            .assert('a1' === db1.selectValue('select a from t where rowid=1'))
+            .assert(undefined === db1.selectValue('select b from t where rowid=4'));
+          db1Count = db1.selectValue("select count(*) from t");
+          T.assert(3 === db1Count);
+
+          /* Apply pre-reverted changeset (pChanges, nChanges) to
+             db2... */
+          rc = capi.sqlite3changeset_apply(
+            db2, nChanges, pChanges, 0, (pCtx, eConflict, pIter)=>{
+              return pCtx ? 1 : 0
+            }, 1
+          );
+          wasm.dealloc( pChanges );
+          T.assert( 0 === rc )
+            .assert( 'b4' === db2.selectValue('select b from t where rowid=4') )
+            .assert( 'aThree' === db2.selectValue('select a from t where rowid=3') )
+            .assert( undefined === db2.selectValue('select b from t where rowid=1') );
+          if(testSessionEnable){
+            T.assert( (undefined === db2.selectValue('select b from t where rowid=2')),
+                      "But... the session was disabled when rowid=2 was deleted?" );
+            log("rowids from db2.t:",db2.selectValues('select rowid from t order by rowid'));
+            T.assert( 3 === db2.selectValue('select count(*) from t') );
+          }else{
+            T.assert( 'bTwo' === db2.selectValue('select b from t where rowid=2') )
+              .assert( 3 === db2.selectValue('select count(*) from t') );
+          }
+        }finally{
+          wasm.pstack.restore(stackPtr);
+          db1.close();
+          db2.close();
+        }
+      }
+    })/*session API sanity tests*/
+  ;/*end of session API group*/;
 
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");

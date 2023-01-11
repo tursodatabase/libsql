@@ -55,6 +55,15 @@
 
 #include "sqlite3ext.h"
 
+#ifndef deliberate_fall_through
+/* Quiet some compilers about some of our intentional code. */
+# if GCC_VERSION>=7000000
+#  define deliberate_fall_through __attribute__((fallthrough));
+# else
+#  define deliberate_fall_through
+# endif
+#endif
+
 SQLITE_EXTENSION_INIT1;
 
 #define PC 0x80 /* pad character */
@@ -165,15 +174,15 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
       case ND:
         /*  Treat dark non-digits as pad, but they terminate decode too. */
         ncIn = 0;
-        /* fall thru */
+        deliberate_fall_through;
       case WS:
         /* Treat whitespace as pad and terminate this group.*/
         nti = nac;
-        /* fall thru */
+        deliberate_fall_through;
       case PC:
         bdp = 0;
         --nbo;
-         /* fall thru */
+        deliberate_fall_through;
       default: /* bdp is the digit value. */
         qv = qv<<6 | bdp;
         break;

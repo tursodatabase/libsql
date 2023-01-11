@@ -139,7 +139,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        main thread (aborts via a failed assert() if it's attempted),
        which eliminates any(?) benefit to supporting it. */  false;
 
-  /** 
+  /**
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
       names with prefixes 'sqlite3_' and 'SQLITE_' behave, insofar as
@@ -321,7 +321,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Returns v if v appears to be one of our bind()-able TypedArray
+     Returns true if v appears to be one of our bind()-able TypedArray
      types: Uint8Array or Int8Array or ArrayBuffer. Support for
      TypedArrays with element sizes >1 is a potential TODO just
      waiting on a use case to justify them. Until then, their `buffer`
@@ -377,7 +377,11 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      returned. Else v is returned as-is.
   */
   const flexibleString = function(v){
-    if(isSQLableTypedArray(v)) return typedArrayToString(v);
+    if(isSQLableTypedArray(v)){
+      return typedArrayToString(
+        (v instanceof ArrayBuffer) ? new Uint8Array(v) : v
+      );
+    }
     else if(Array.isArray(v)) return v.join("");
     else if(wasm.isPtr(v)) v = wasm.cstrToJs(v);
     return v;
@@ -405,6 +409,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }else{
         super("Allocation failed.");
       }
+      this.resultCode = capi.SQLITE_NOMEM;
       this.name = 'WasmAllocError';
     }
   };
@@ -657,8 +662,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        terminated with a 0 byte.
 
        In usage (1), the 2nd argument must be of type string,
-       Uint8Array, or Int8Array (either of which is assumed to
-       hold SQL). If it is, this function assumes case (1) and
+       Uint8Array, Int8Array, or ArrayBuffer (all of which are assumed
+       to hold SQL). If it is, this function assumes case (1) and
        calls the underyling C function with the equivalent of:
 
        (pDb, sqlAsString, -1, prepFlags, ppStmt, null)
@@ -750,7 +755,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     affirmBindableTypedArray, flexibleString,
     bigIntFits32, bigIntFits64, bigIntFitsDouble,
     isBindableTypedArray,
-    isInt32, isSQLableTypedArray, isTypedArray, 
+    isInt32, isSQLableTypedArray, isTypedArray,
     typedArrayToString,
     isUIThread: ()=>(self.window===self && !!self.document),
     // is this true for ESM?: 'undefined'===typeof WorkerGlobalScope
@@ -948,7 +953,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           const m = f._rx.exec(opt);
           rv[0] = (m ? m[1] : opt);
           rv[1] = m ? (f._rxInt.test(m[2]) ? +m[2] : m[2]) : true;
-        };                    
+        };
       }
       const rc = {}, ov = [0,0];
       let i = 0, k;
@@ -1019,12 +1024,20 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        to the memory. On error, returns throws a WasmAllocError. The
        memory must eventually be released using restore().
 
+       If n is a string, it must be a WASM "IR" value in the set
+       accepted by wasm.sizeofIR(), which is mapped to the size of
+       that data type. If passed a string not in that set, it throws a
+       WasmAllocError.
+
        This method always adjusts the given value to be a multiple
        of 8 bytes because failing to do so can lead to incorrect
        results when reading and writing 64-bit values from/to the WASM
        heap. Similarly, the returned address is always 8-byte aligned.
     */
-    alloc: (n)=>{
+    alloc: function(n){
+      if('string'===typeof n && !(n = wasm.sizeofIR(n))){
+        WasmAllocError.toss("Invalid value for pstack.alloc(",arguments[0],")");
+      }
       return wasm.exports.sqlite3_wasm_pstack_alloc(n)
         || WasmAllocError.toss("Could not allocate",n,
                                "bytes from the pstack.");
@@ -1034,6 +1047,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        returns the addresses as an array of n element, each holding
        the address of one chunk.
 
+       sz may optionally be an IR string accepted by wasm.sizeofIR().
+
        Throws a WasmAllocError if allocation fails.
 
        Example:
@@ -1042,7 +1057,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        const [p1, p2, p3] = wasm.pstack.allocChunks(3,4);
        ```
     */
-    allocChunks: (n,sz)=>{
+    allocChunks: function(n,sz){
+      if('string'===typeof sz && !(sz = wasm.sizeofIR(sz))){
+        WasmAllocError.toss("Invalid size value for allocChunks(",arguments[1],")");
+      }
       const mem = wasm.pstack.alloc(n * sz);
       const rc = [];
       let i = 0, offset = 0;
@@ -1418,7 +1436,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       wasm.dealloc(pData);
     }
   };
-  
+
   if( util.isUIThread() ){
     /* Features specific to the main window thread... */
 
@@ -1749,8 +1767,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      argument of sqlite3_value_to_js(). If the sqlite3_column_value()
      returns NULL (e.g. because the column index is out of range),
      this function returns `undefined`, regardless of the 3rd
-     argument. 3rd argument is falsy and conversion fails, `undefined`
-     will be returned.
+     argument. If the 3rd argument is falsy and conversion fails,
+     `undefined` will be returned.
 
      Note that sqlite3_column_value() returns an "unprotected" value
      object, but in a single-threaded environment (like this one)
@@ -1760,6 +1778,56 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     const v = capi.sqlite3_column_value(pStmt, iCol);
     return (0===v) ? undefined : capi.sqlite3_value_to_js(v, throwIfCannotConvert);
   };
+
+  /**
+     Internal impl of sqlite3_preupdate_new/old_js() and
+     sqlite3changeset_new/old_js().
+  */
+  const __newOldValue = function(pObj, iCol, impl){
+    impl = capi[impl];
+    if(!this.ptr) this.ptr = wasm.allocPtr();
+    else wasm.pokePtr(this.ptr, 0);
+    const rc = impl(pObj, iCol, this.ptr);
+    if(rc) return SQLite3Error.toss(rc,arguments[2]+"() failed with code "+rc);
+    const pv = wasm.peekPtr(this.ptr);
+    return pv ? capi.sqlite3_value_to_js( pv, true ) : undefined;
+  }.bind(Object.create(null));
+
+  /**
+     A wrapper around sqlite3_preupdate_new() which fetches the
+     sqlite3_value at the given index and returns the result of
+     passing it to sqlite3_value_to_js(). Throws on error.
+  */
+  capi.sqlite3_preupdate_new_js =
+    (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_new');
+
+  /**
+     The sqlite3_preupdate_old() counterpart of
+     sqlite3_preupdate_new_js(), with an identical interface.
+  */
+  capi.sqlite3_preupdate_old_js =
+    (pDb, iCol)=>__newOldValue(pDb, iCol, 'sqlite3_preupdate_old');
+
+  /**
+     A wrapper around sqlite3changeset_new() which fetches the
+     sqlite3_value at the given index and returns the result of
+     passing it to sqlite3_value_to_js(). Throws on error.
+
+     If sqlite3changeset_new() succeeds but has no value to report,
+     this function returns the undefined value, noting that undefined
+     is a valid conversion from an `sqlite3_value`, so is unambiguous.
+  */
+  capi.sqlite3changeset_new_js =
+    (pChangesetIter, iCol) => __newOldValue(pChangesetIter, iCol,
+                                            'sqlite3changeset_new');
+
+  /**
+     The sqlite3changeset_old() counterpart of
+     sqlite3changeset_new_js(), with an identical interface.
+  */
+  capi.sqlite3changeset_old_js =
+    (pChangesetIter, iCol)=>__newOldValue(pChangesetIter, iCol,
+                                          'sqlite3changeset_old');
 
   /* The remainder of the API will be set up in later steps. */
   const sqlite3 = {

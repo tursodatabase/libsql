@@ -133,10 +133,10 @@
       The <code>sqlite3.version</code> object exposes the following...
     </p>
     <div id='list-version' class='pseudolist wide wrap-anywhere'></div>
-    
+
     <a id="sqlite3-functions"></a>
     <h1><code>sqlite3_...()</code> Function List</h1>
-    
+
     <p>The <code>sqlite3.capi</code> namespace exposes the following
       <a href='https://sqlite.org/c3ref/funclist.html'><code>sqlite3_...()</code>
         functions</a>...
@@ -194,6 +194,7 @@
   <script>(async function(){
     const apiLinks = Object.assign(Object.create(null),{
         sqlite3_aggregate_context: 'www:/c3ref/aggregate_context.html',
+        sqlite3_auto_extension: 'wasm:/api-c-style.md#auto-extension',
         sqlite3_bind_blob: 'www:/c3ref/bind_blob.html',
         sqlite3_bind_double: 'www:/c3ref/bind_blob.html',
         sqlite3_bind_int: 'www:/c3ref/bind_blob.html',
@@ -205,6 +206,7 @@
         sqlite3_bind_text: 'www:/c3ref/bind_blob.html',
         sqlite3_busy_handler: 'www:/c3ref/busy_handler.html',
         sqlite3_busy_timeout: 'www:/c3ref/busy_timeout.html',
+        sqlite3_cancel_auto_extension: 'wasm:/api-c-style.md#auto-extension',
         sqlite3_changes: 'www:/c3ref/changes.html',
         sqlite3_changes64: 'www:/c3ref/changes.html',
         sqlite3_clear_bindings: 'www:/c3ref/clear_bindings.html',
@@ -220,9 +222,12 @@
         sqlite3_column_text: 'www:/c3ref/column_blob.html',
         sqlite3_column_type: 'www:/c3ref/column_blob.html',
         sqlite3_column_value: 'www:/c3ref/column_blob.html',
+        sqlite3_commit_hook: 'wasm:/api-c-style.md#hook-api',
         sqlite3_compileoption_get: 'www:/c3ref/compileoption_get.html',
         sqlite3_compileoption_used: 'www:/c3ref/compileoption_get.html',
         sqlite3_complete: 'www:/c3ref/complete.html',
+        sqlite3_config: 'www:/c3ref/config.html',
+        sqlite3_context_db_handle: 'www:/c3ref/context_db_handle.html',
         sqlite3_create_collation: 'www:/c3ref/create_collation.html',
         sqlite3_create_collation_v2: 'www:/c3ref/create_collation.html',
         sqlite3_create_function: 'wasm:/api-c-style.md#sqlite3_create_function',
@@ -272,6 +277,7 @@
         sqlite3_realloc: 'www:/c3ref/free.html',
         sqlite3_realloc64: 'www:/c3ref/free.html',
         sqlite3_reset: 'www:/c3ref/reset.html',
+        sqlite3_reset_auto_extension: 'wasm:/api-c-style.md#auto-extension',
         sqlite3_result_blob: 'www:/c3ref/result_blob.html',
         sqlite3_result_double: 'www:/c3ref/result_blob.html',
         sqlite3_result_error: 'www:/c3ref/result_blob.html',
@@ -286,9 +292,10 @@
         sqlite3_result_text: 'www:/c3ref/result_blob.html',
         sqlite3_result_zeroblob: 'www:/c3ref/result_blob.html',
         sqlite3_result_zeroblob64: 'www:/c3ref/result_blob.html',
+        sqlite3_rollback_hook: 'wasm:/api-c-style.md#hook-api',
         sqlite3_serialize: 'www:/c3ref/serialize.html',
         sqlite3_set_authorizer: 'wasm:/api-c-style.md#sqlite3_set_authorizer',
-        sqlite3_set_auxdata: 'www:/c3ref/set_auxdata.html',
+        sqlite3_set_auxdata: 'www:/c3ref/get_auxdata.html',
         sqlite3_set_last_insert_rowid: 'www:/c3ref/set_last_insert_rowid',
         sqlite3_shutdown: 'www:/c3ref/initialize.html',
         sqlite3_sourceid: 'www:/c3ref/libversion.html',
@@ -308,6 +315,7 @@
         sqlite3_total_changes64: 'www:/c3ref/total_changes.html',
         sqlite3_trace_v2: 'www:/c3ref/trace_v2.html',
         sqlite3_txn_state: 'www:/c3ref/txn_state.html',
+        sqlite3_update_hook: 'wasm:/api-c-style.md#hook-api',
         sqlite3_uri_boolean: 'www:/c3ref/uri_boolean.html',
         sqlite3_uri_int64: 'www:/c3ref/uri_boolean.html',
         sqlite3_uri_key: 'www:/c3ref/uri_boolean.html',

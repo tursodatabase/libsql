@@ -1306,6 +1306,24 @@ int lsmBeginRoTrans(lsm_db *db){
       }
     }
 
+    /* In 'lsm_open()' we don't update the page and block sizes in the
+    ** Filesystem for 'readonly' connection. Because member 'db->pShmhdr' is a
+    ** nullpointer, this prevents loading a checkpoint. Now that the system is 
+    ** live this member should be set. So we can update both values in 
+    ** the Filesystem.
+    **
+    ** Configure the file-system connection with the page-size and block-size
+    ** of this database. Even if the database file is zero bytes in size
+    ** on disk, these values have been set in shared-memory by now, and so
+    ** are guaranteed not to change during the lifetime of this connection. */
+    if( LSM_OK==rc
+     && 0==lsmCheckpointClientCacheOk(db)
+     && LSM_OK==(rc=lsmCheckpointLoad(db, 0)) 
+    ){
+      lsmFsSetPageSize(db->pFS, lsmCheckpointPgsz(db->aSnapshot));
+      lsmFsSetBlockSize(db->pFS, lsmCheckpointBlksz(db->aSnapshot));
+    }
+
     if( rc==LSM_OK ){
       rc = lsmBeginReadTrans(db);
     }

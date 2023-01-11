@@ -307,6 +307,7 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   char saveBuf[PARSE_TAIL_SZ];
 
   if( pParse->nErr ) return;
+  if( pParse->eParseMode ) return;
   assert( pParse->nested<10 );  /* Nesting should only be of limited depth */
   va_start(ap, zFormat);
   zSql = sqlite3VMPrintf(db, zFormat, ap);

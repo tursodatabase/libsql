@@ -72,7 +72,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         wasm.installFunction('i(ippp)', function(t,c,p,x){
           if(capi.SQLITE_TRACE_STMT===t){
             // x == SQL, p == sqlite3_stmt*
-            console.log("SQL TRACE #"+(++this.counter),
+            console.log("SQL TRACE #"+(++this.counter)+' via sqlite3@'+c+':',
                         wasm.cstrToJs(x));
           }
         }.bind({counter: 0}));
@@ -161,7 +161,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       capi.sqlite3_extended_result_codes(pDb, 1);
       if(flagsStr.indexOf('t')>=0){
         capi.sqlite3_trace_v2(pDb, capi.SQLITE_TRACE_STMT,
-                              __dbTraceToConsole, 0);
+                              __dbTraceToConsole, pDb);
       }
     }catch( e ){
       if( pDb ) capi.sqlite3_close_v2(pDb);
@@ -463,23 +463,21 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     Internal impl of the DB.selectArray() and
+     Internal impl of the DB.selectValue(), selectArray(), and
      selectObject() methods.
   */
-  const __selectFirstRow = (db, sql, bind, getArg)=>{
-    let stmt, rc;
+  const __selectFirstRow = (db, sql, bind, ...getArgs)=>{
+    const stmt = db.prepare(sql);
     try {
-      stmt = db.prepare(sql).bind(bind);
-      if(stmt.step()) rc = stmt.get(getArg);
+      return stmt.bind(bind).step() ? stmt.get(...getArgs) : undefined;
     }finally{
-      if(stmt) stmt.finalize();
+      stmt.finalize();
     }
-    return rc;
   };
 
   /**
-     Internal impl of the DB.selectArrays() and
-     selectObjects() methods.
+     Internal impl of the DB.selectArrays() and selectObjects()
+     methods.
   */
   const __selectAll =
         (db, sql, bind, rowMode)=>db.exec({
@@ -1083,15 +1081,31 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Throws on error (e.g. malformed SQL).
     */
     selectValue: function(sql,bind,asType){
-      let stmt, rc;
+      return __selectFirstRow(this, sql, bind, 0, asType);
+    },
+
+    /**
+       Runs the given query and returns an array of the values from
+       the first result column of each row of the result set. The 2nd
+       argument is an optional value for use in a single-argument call
+       to Stmt.bind(). The 3rd argument may be any value suitable for
+       use as the 2nd argument to Stmt.get(). If a 3rd argument is
+       desired but no bind data are needed, pass `undefined` for the 2nd
+       argument.
+
+       If there are no result rows, an empty array is returned.
+    */
+    selectValues: function(sql,bind,asType){
+      const stmt = this.prepare(sql), rc = [];
       try {
-        stmt = this.prepare(sql).bind(bind);
-        if(stmt.step()) rc = stmt.get(0,asType);
+        stmt.bind(bind);
+        while(stmt.step()) rc.push(stmt.get(0,asType));
       }finally{
-        if(stmt) stmt.finalize();
+        stmt.finalize();
       }
       return rc;
     },
+
     /**
        Prepares the given SQL, step()s it one time, and returns an
        array containing the values of the first result row. If it has
@@ -1147,7 +1161,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /**
        Returns the number of currently-opened Stmt handles for this db
-       handle, or 0 if this DB instance is closed.
+       handle, or 0 if this DB instance is closed. Note that only
+       handles prepared via this.prepare() are counted, and not
+       handles prepared using capi.sqlite3_prepare_v3() (or
+       equivalent).
     */
     openStatementCount: function(){
       return this.pointer ? Object.keys(__stmtMap.get(this)).length : 0;
@@ -1163,9 +1180,25 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Note that transactions may not be nested, so this will throw if
        it is called recursively. For nested transactions, use the
        savepoint() method or manually manage SAVEPOINTs using exec().
+
+       If called with 2 arguments, the first must be a keyword which
+       is legal immediately after a BEGIN statement, e.g. one of
+       "DEFERRED", "IMMEDIATE", or "EXCLUSIVE". Though the exact list
+       of supported keywords is not hard-coded here, in order to be
+       future-compatible, if the argument does not look like a single
+       keyword then an exception is triggered with a description of
+       the problem.
      */
-    transaction: function(callback){
-      affirmDbOpen(this).exec("BEGIN");
+    transaction: function(/* [beginQualifier,] */callback){
+      let opener = 'BEGIN';
+      if(arguments.length>1){
+        if(/[^a-zA-Z]/.test(arguments[0])){
+          toss3(capi.SQLITE_MISUSE, "Invalid argument for BEGIN qualifier.");
+        }
+        opener += ' '+arguments[0];
+        callback = arguments[1];
+      }
+      affirmDbOpen(this).exec(opener);
       try {
         const rc = callback(this);
         this.exec("COMMIT");
@@ -1229,9 +1262,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           if(wasm.bigIntEnabled) return t;
           /* else fall through */
         default:
-          //console.log("isSupportedBindType",t,v);
-          return (util.isBindableTypedArray(v) || (v instanceof ArrayBuffer))
-            ? BindTypes.blob : undefined;
+          return util.isBindableTypedArray(v) ? BindTypes.blob : undefined;
     }
   };
 
@@ -1449,7 +1480,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
          blob binding).
 
        - Uint8Array, Int8Array, and ArrayBuffer instances are bound as
-         blobs. (TODO? binding the other TypedArray types.)
+         blobs.
 
        If passed an array, each element of the array is bound at
        the parameter index equal to the array index plus 1
@@ -1611,7 +1642,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     },
     /**
        Fetches the value from the given 0-based column index of
-       the current data row, throwing if index is out of range. 
+       the current data row, throwing if index is out of range.
 
        Requires that step() has just returned a truthy value, else
        an exception is thrown.
