@@ -185,6 +185,11 @@ int lsmVarintLen32(int n){
   return lsmVarintPut32(aData, n);
 }
 
+int lsmVarintLen64(i64 n){
+  u8 aData[9];
+  return lsmVarintPut64(aData, n);
+}
+
 /*
 ** The argument is the first byte of a varint. This function returns the
 ** total number of bytes in the entire varint (including the first byte).
