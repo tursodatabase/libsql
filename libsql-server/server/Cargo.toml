@@ -13,6 +13,7 @@ byteorder = "1.4.3"
 bytes = { version = "1.2.1", features = ["serde"] }
 clap = { version = "4.0.23", features = [ "derive", "env"] }
 crossbeam = "0.8.2"
+fallible-iterator = "0.2.0"
 futures = "0.3.25"
 hex = "0.4.3"
 hyper = { version = "0.14.23", features = ["http2"] }
@@ -30,7 +31,7 @@ rusqlite = { version = "0.28.0", features = [ "buildtime_bindgen", "column_declt
 serde = { version = "1.0.149", features = ["derive"] }
 serde_json = "1.0.91"
 smallvec = "1.10.0"
-sqlparser = "0.27.0"
+sqlite3-parser = "0.5.0"
 tokio = { version = "1.21.2", features = ["full"] }
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.17.2"

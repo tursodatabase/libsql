@@ -157,6 +157,15 @@ pub struct ResultSet {
     pub rows: Vec<Row>,
 }
 
+impl ResultSet {
+    pub fn empty() -> Self {
+        Self {
+            columns: Vec::new(),
+            rows: Vec::new(),
+        }
+    }
+}
+
 fn encode_row(row: Row) -> PgWireResult<DataRow> {
     let mut encoder = TextDataRowEncoder::new(row.values.len());
     for value in row.values {
