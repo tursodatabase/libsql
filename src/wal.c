@@ -252,6 +252,9 @@
 
 #include "wal.h"
 
+typedef libsql_pghdr PgHdr;
+typedef libsql_wal Wal;
+
 /*
 ** Trace output macros
 */

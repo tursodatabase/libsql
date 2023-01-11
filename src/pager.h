@@ -40,7 +40,7 @@ typedef struct Pager Pager;
 /*
 ** Handle type for pages.
 */
-typedef struct PgHdr DbPage;
+typedef struct libsql_pghdr DbPage;
 
 /*
 ** Page number PAGER_SJ_PGNO is never used in an SQLite database (it is
