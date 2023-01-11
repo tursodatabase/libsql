@@ -12,7 +12,7 @@ use tonic::transport::Channel;
 use uuid::Uuid;
 
 use crate::query::{ErrorCode, QueryError, QueryResponse, QueryResult, Value};
-use crate::query_analysis::{State, Statements};
+use crate::query_analysis::{State, Statement};
 use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery};
 
@@ -105,14 +105,15 @@ impl WriteProxyDatabase {
 
 #[async_trait::async_trait]
 impl Database for WriteProxyDatabase {
-    async fn execute(&self, query: Statements, params: Vec<Value>) -> QueryResult {
+    async fn execute(&self, query: Statement, params: Vec<Value>) -> QueryResult {
         let mut state = self.state.lock().await;
         if query.is_read_only() && *state == State::Start {
             self.read_db.execute(query, params).await
         } else {
-            let next_state = query.state(*state);
+            let mut next_state = *state;
+            next_state.step(query.kind);
             let query = SimpleQuery {
-                q: query.stmts,
+                q: query.stmt,
                 client_id: self.client_id.as_bytes().to_vec(),
             };
             let mut client = self.write_proxy.clone();
