@@ -5,14 +5,14 @@
 
 typedef struct sqlite3_pcache_page sqlite3_pcache_page;
 typedef struct Pager Pager;
-typedef struct PgHdr PgHdr;
+typedef struct libsql_pghdr PgHdr;
 typedef struct PCache PCache;
 
 /*
 ** Every page in the cache is controlled by an instance of the following
 ** structure.
 */
-struct PgHdr {
+struct libsql_pghdr {
   sqlite3_pcache_page *pPage;    /* Pcache object page handle */
   void *pData;                   /* Page data */
   void *pExtra;                  /* Extra content */
@@ -34,5 +34,7 @@ struct PgHdr {
                           /* NB: pDirtyNext and pDirtyPrev are undefined if the
                           ** PgHdr object is not dirty */
 };
+
+typedef struct libsql_pghdr libsql_pghdr;
 
 #endif // LIBSQL_PAGE_HEADER_H

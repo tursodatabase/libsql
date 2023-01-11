@@ -697,7 +697,7 @@ struct Pager {
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   PCache *pPCache;            /* Pointer to page cache object */
 #ifndef SQLITE_OMIT_WAL
-  Wal *pWal;                       /* Write-ahead log used by "journal_mode=wal" */
+  libsql_wal *pWal;                       /* Write-ahead log used by "journal_mode=wal" */
   libsql_wal_methods *pWalMethods; /* Virtual methods for interacting with WAL */
   char *zWal;                      /* File name for write-ahead log */
 #endif
