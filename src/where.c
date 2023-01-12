@@ -4346,7 +4346,7 @@ static int whereLoopAddOr(
           rc = whereLoopAddOr(&sSubBuild, mPrereq, mUnusable);
         }
         assert( rc==SQLITE_OK || rc==SQLITE_DONE || sCur.n==0
-                || rc==SQLITE_NOMEM );
+                || rc==SQLITE_NOMEM || rc==SQLITE_INTERRUPT );
         testcase( rc==SQLITE_NOMEM && sCur.n>0 );
         testcase( rc==SQLITE_DONE );
         if( sCur.n==0 ){

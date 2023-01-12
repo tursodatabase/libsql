@@ -1269,6 +1269,7 @@ ifcapable progress {
     sqlite3_finalize $STMT
   } {SQLITE_INTERRUPT}
   do_test capi3c-21.4 {
+    db progress
     set STMT [sqlite3_prepare $DB {SELECT * FROM t3} -1 TAIL]
     db progress 5 "expr 1"
     sqlite3_step $STMT

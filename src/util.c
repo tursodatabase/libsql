@@ -185,9 +185,12 @@ void sqlite3ProgressCheck(Parse *p){
     p->rc = SQLITE_INTERRUPT;
   }
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  if( db->xProgress && db->xProgress(db->pProgressArg) ){
-    p->nErr++;
-    p->rc = SQLITE_INTERRUPT;
+  if( db->xProgress && (++p->nProgressSteps)>=db->nProgressOps ){
+    if( db->xProgress(db->pProgressArg) ){
+      p->nErr++;
+      p->rc = SQLITE_INTERRUPT;
+    }
+    p->nProgressSteps = 0;
   }
 #endif
 }

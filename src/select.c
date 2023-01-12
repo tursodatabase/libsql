@@ -2316,7 +2316,7 @@ void sqlite3SubqueryColumnTypes(
 
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
-  assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( pTab->nCol==pSelect->pEList->nExpr || pParse->nErr>0 );
   assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed ) return;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
