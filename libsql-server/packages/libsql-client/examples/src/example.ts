@@ -1,4 +1,4 @@
-import { connect } from "@libsql/serverless"
+import { connect } from "@libsql/client"
 
 async function example() {
   const config = {

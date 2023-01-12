@@ -1,5 +1,5 @@
 {
-    "name": "@libsql/serverless",
+    "name": "@libsql/client",
     "version": "0.0.0",
     "keywords": [
         "libsql",
@@ -10,11 +10,11 @@
         "netlify",
         "lambda"
     ],
-    "description": "libSQL serverless driver for TypeScript and JavaScript",
+    "description": "libSQL driver for TypeScript and JavaScript",
     "repository": {
         "type": "git",
         "url": "https://github.com/libsql/sqld.git",
-        "directory": "serverless"
+        "directory": "packages/libsql-client"
     },
     "author": "Pekka Enberg <penberg@chiselstrike.com>",
     "license": "MIT",

@@ -1,11 +1,11 @@
-# libSQL serverless driver for TypeScript and JavaScript
+# libSQL driver for TypeScript and JavaScript
 
 ## Getting Started
 
 To get started, you need `sqld` running somewhere. Then:
 
 ```typescript
-import { connect } from "@libsql/serverless"
+import { connect } from "@libsql/client"
 
 const config = {
   url: "http://localhost:8080"
@@ -18,7 +18,7 @@ console.log(rs);
 You can also just run against local SQLite by dropping the `url` option from configuration:
 
 ```typescript
-import { connect } from "@libsql/serverless"
+import { connect } from "@libsql/client"
 
 const config = { };
 const db = connect(config);
