@@ -2,13 +2,28 @@
 
 ## Getting Started
 
-```typescript
-import { Database } from "@libsql/serverless"
+To get started, you need `sqld` running somewhere. Then:
 
-const db = new Database();
-await db.execute("CREATE TABLE users (email TEXT)");
-await db.execute("INSERT INTO users (email) VALUES ('alice@example.com')");
-await db.execute("INSERT INTO users (email) VALUES ('bob@example.com')");
+```typescript
+import { connect } from "@libsql/serverless"
+
+const config = {
+  url: "http://localhost:8080"
+};
+const db = connect(config);
+const rs = await db.execute("SELECT * FROM users");
+console.log(rs);
+```
+
+You can also just run against local SQLite by dropping the `url` option from configuration:
+
+```typescript
+import { connect } from "@libsql/serverless"
+
+const config = { };
+const db = connect(config);
+const rs = await db.execute("SELECT * FROM users");
+console.log(rs);
 ```
 
 ## Features
