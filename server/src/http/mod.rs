@@ -92,12 +92,17 @@ async fn handle_query(
     }
 }
 
+async fn show_console() -> anyhow::Result<Response<Body>> {
+    Ok(Response::new(Body::from(std::include_str!("console.html"))))
+}
+
 async fn handle_request(
     req: Request<Body>,
     sender: mpsc::Sender<(oneshot::Sender<Result<QueryResponse, BoxError>>, Query)>,
 ) -> anyhow::Result<Response<Body>> {
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => handle_query(req, sender).await,
+        (&Method::GET, "/console") => show_console().await,
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
