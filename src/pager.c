@@ -3280,13 +3280,11 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
 #ifndef SQLITE_OMIT_WAL
 /*
 ** Check if the *-wal file that corresponds to the database opened by pPager
-** exists if the database is not empy, or verify that the *-wal file does
+** exists if the database is not empty, or verify that the *-wal file does
 ** not exist (by deleting it) if the database file is empty.
 **
 ** If the database is not empty and the *-wal file exists, open the pager
-** in WAL mode.  If the database is empty or if no *-wal file exists and
-** if no error occurs, make sure Pager.journalMode is not set to
-** PAGER_JOURNALMODE_WAL.
+** in WAL mode. If the journaling mode is already set to wal, open it.
 **
 ** Return SQLITE_OK or an error code.
 **
@@ -3319,7 +3317,7 @@ static int pagerOpenWalIfPresent(Pager *pPager){
           rc = sqlite3PagerOpenWal(pPager, 0);
         }
       }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
-        pPager->journalMode = PAGER_JOURNALMODE_DELETE;
+        rc = sqlite3PagerOpenWal(pPager, 0);
       }
     }
   }
@@ -4902,6 +4900,10 @@ int sqlite3PagerOpen(
     if (rc != SQLITE_OK) {
       return rc;
     }
+  }
+  if (strcmp(pWalMethods->zName, "default") != 0) {
+    // use WAL journaling by default if custom WAL methods are set
+    sqlite3PagerSetJournalMode(pPager, PAGER_JOURNALMODE_WAL);
   }
 #endif
   (void)pPtr;  /* Suppress warning about unused pPtr value */
