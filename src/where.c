@@ -2686,7 +2686,6 @@ static void whereLoopOutputAdjust(
   LogEst iReduce = 0;    /* pLoop->nOut should not exceed nRow-iReduce */
 
   assert( (pLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
-  sqlite3ProgressCheck(pWC->pWInfo->pParse);
   for(i=pWC->nBase, pTerm=pWC->a; i>0; i--, pTerm++){
     assert( pTerm!=0 );
     if( (pTerm->prereqAll & notAllowed)!=0 ) continue;
@@ -2699,6 +2698,7 @@ static void whereLoopOutputAdjust(
       if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
     }
     if( j<0 ){
+      sqlite3ProgressCheck(pWC->pWInfo->pParse);
       if( pLoop->maskSelf==pTerm->prereqAll ){
         /* If there are extra terms in the WHERE clause not used by an index
         ** that depend only on the table being scanned, and that will tend to
@@ -3185,7 +3185,9 @@ static int whereLoopAddBtreeIndex(
      && (pNew->u.btree.nEq<pProbe->nKeyCol ||
            pProbe->idxType!=SQLITE_IDXTYPE_PRIMARYKEY)
     ){
-      if( pNew->u.btree.nEq>3 ) sqlite3ProgressCheck(pParse);
+      if( pNew->u.btree.nEq>3 ){
+        sqlite3ProgressCheck(pParse);
+      }
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
     pNew->nOut = saved_nOut;
