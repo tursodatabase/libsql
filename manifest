@@ -1,5 +1,5 @@
-C When\sdeleting\sany\sold\sOAL\sfile\sbefore\sstarting\san\sRBU\supdate\sor\svacuum,\suse\sthe\ssame\sVFS\sas\swill\sbe\sused\sfor\sthe\starget\sdatabase,\seven\sif\sthis\sis\snot\sthe\ssystem\sdefault.
-D 2023-01-12T17:13:44.641
+C Avoid\scrashing\swhen\susing\san\sRBU\sVFS\swith\sa\sversion\s1\sparent\sVFS.
+D 2023-01-12T19:11:41.836
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -376,6 +376,7 @@ F ext/rbu/rbufts.test 0ae8d1da191c75bd776b86e24456db0fb6e97b7c944259fae5407ea55d
 F ext/rbu/rbumisc.test 329986cf5dd51890c4eb906c2f960ebb773a79a64bed90f506b7c417825b37eb
 F ext/rbu/rbumulti.test 5fb139058f37ddc5a113c5b93238de915b769b7792de41b44c983bc7c18cf5b9
 F ext/rbu/rbupartial.test f25df014b8dbe3c5345851fba6e66f79ab237f57dc201b2d5f0dbae658ae5a4c
+F ext/rbu/rbupass.test cf4d4ed04fecc5982c3e3aeb3752611dd78acc23977930830ab8df79c18d5748
 F ext/rbu/rbuprogress.test 857cf1f8166c83ef977edb9ef4fc42d80f71fbd798652b46ae2f3a7031870f8d
 F ext/rbu/rburename.test a9b4aea612352b74c45de1757edd2ecb2079348b1d4cc734572dc29e55b1b376
 F ext/rbu/rburesume.test dbdc4ca504e9c76375a69e5f0d91205db967dcc509a5166ca80231f8fda49eb1
@@ -386,7 +387,7 @@ F ext/rbu/rbuvacuum.test 55e101e90168c2b31df6c9638fe73dc7f7cc666b6142266d1563697
 F ext/rbu/rbuvacuum2.test 2643b58f4d8d3573db0f93faae18805a35ab162b4c55ff6b656062ff432ed55b
 F ext/rbu/rbuvacuum3.test 8addd82e4b83b4c93fa47428eae4fd0dbf410f8512c186f38e348feb49ba03dc
 F ext/rbu/rbuvacuum4.test a78898e438a44803eb2bc897ba3323373c9f277418e2d6d76e90f2f1dbccfd10
-F ext/rbu/sqlite3rbu.c cba9af21cc054f8ea0628846168a9b1b871b68087cf26493089a9784e8445027
+F ext/rbu/sqlite3rbu.c 2f82788e5dc0a40ce92237b85ea89093d471187ed09981c3c228c6315c2f4513
 F ext/rbu/sqlite3rbu.h 02d981e2d39c151391759e1a400e29c7388730812957ac3db8dad7f6c9f9cfc8
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
 F ext/recover/dbdata.c dc25628e405c86936c597e28f3e6f56a257029c3034c5ef7f6b10f7c02f41018
@@ -2068,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7526c46632578a2b602622b9debc406b52af4a42cc880970c4307d13853d59d3
-R cd49733a9167873a2082afd8d8db432e
+P 5a86c6cb1f16a15bdbc42544b8ed1912d9e87f04c514b8481a77442fbbd8accf
+R 84be4b3078157b09ef243de7798a57d1
 U dan
-Z e6207c319723ce4c4d4e9414c692849c
+Z 538669987396e2aeb058e8cac985991e
 # Remove this line to create a well-formed Fossil manifest.
