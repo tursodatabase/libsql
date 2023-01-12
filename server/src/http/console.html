@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>sqld</title>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.35.2/js/jquery.terminal.min.js"
+        integrity="sha512-p8htw5zxzQbPLJlmZyejtfkbxFplLATETwPtqOvvINFeQWclXzIPCpCDIE7qCEfTdtqiIJmIthahTCfx6Oz2IA=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/jquery.terminal/2.35.2/css/jquery.terminal.min.css"
+        integrity="sha512-8VWSg5zXhQ4rsThoS0aHmSbOZIwypQw8C+Y7BbURMVOikfXyVVRtDgucZEb+IJTW+UQ+fgg6x/9VL2AwSMlbeg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+</head>
+
+<body>
+    <div id="hidden" style="visibility: hidden"></div>
+    <script>
+        function json2table(json) {
+            if (Object.keys(json).length == 0) {
+                return ''
+            }
+            let headers = Object.keys(json[0]).sort();
+            let html = '<tr>'
+            for (var i = 0; i < headers.length; i++) {
+                html += '<th style = "padding: 5px">' + headers[i] + '</th>'
+            }
+            html += '</tr>';
+            for (var i = 0; i < json.length; i++) {
+                html += '<tr>'
+                for (var j = 0; j < headers.length; j++) {
+                    var header = headers[j];
+                    html += '<td style = "padding: 5px">' + json[i][header] + '</td>'
+                }
+                html += '</tr>'
+            }
+            return html
+        }
+
+        $('body').terminal(function (cmd, term) {
+            if (!cmd) {
+                return
+            }
+            term.pause();
+            $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
+                if (response) {
+                    let parsed = JSON.parse(response)
+                    term.echo(json2table(parsed), { raw: true })
+                    term.resume()
+                }
+            }).catch(error => {
+                term.echo("Error: " + JSON.stringify(error, null, 2))
+                term.resume()
+            });
+        }, {
+            greetings: 'sqld'
+        });
+    </script>
+</body>
+
+</html>
