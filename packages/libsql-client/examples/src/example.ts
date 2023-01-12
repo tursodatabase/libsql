@@ -2,7 +2,7 @@ import { connect } from "@libsql/client"
 
 async function example() {
   const config = {
-    url: "http://localhost:8080"
+    url: process.env.DB_URL
   };
   const db = connect(config);
   await db.transaction([
