@@ -1,3 +1,4 @@
+#![allow(improper_ctypes)]
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
@@ -121,8 +122,7 @@ mod tests {
         db: extern "C" fn(wal: *mut Wal, db: *const c_void),
         pathname_len: extern "C" fn(orig_len: i32) -> i32,
         get_pathname: extern "C" fn(buf: *mut u8, orig: *const u8, orig_len: i32),
-        pre_main_db_open:
-            extern "C" fn(methods: *mut libsql_wal_methods, name: *const i8) -> i32,
+        pre_main_db_open: extern "C" fn(methods: *mut libsql_wal_methods, name: *const i8) -> i32,
         b_uses_shm: i32,
         name: *const u8,
         p_next: *const c_void,
@@ -165,7 +165,7 @@ mod tests {
         wal: *mut *const Wal,
     ) -> i32 {
         let new_wal = Box::new(Wal {
-            vfs: vfs,
+            vfs,
             db_fd: std::ptr::null(),
             wal_fd: std::ptr::null(),
             callback_value: 0,
@@ -199,7 +199,7 @@ mod tests {
             },
             min_frame: 0,
             recalculate_checksums: 0,
-            wal_name: wal_name,
+            wal_name,
             n_checkpoints: 0,
             lock_error: 0,
             p_snapshot: std::ptr::null(),
@@ -253,12 +253,14 @@ mod tests {
             return ERR_MISUSE;
         }
         let out_buffer = unsafe { std::slice::from_raw_parts_mut(p_out, n_out) };
-        out_buffer.copy_from_slice(&data);
+        out_buffer.copy_from_slice(data);
         println!("\t\tread {} bytes", data.len());
         0
     }
-    extern "C" fn db_size(_wal: *mut Wal) -> i32 {
-        ERR_MISUSE
+    extern "C" fn db_size(wal: *mut Wal) -> i32 {
+        println!("Db size called");
+        let methods = unsafe { &*(*wal).wal_methods };
+        methods.pages.len() as i32
     }
     extern "C" fn begin_write(_wal: *mut Wal) -> i32 {
         println!("Write started");
@@ -300,7 +302,7 @@ mod tests {
             }
             .to_vec();
             methods.pages.insert(current.pgno, data);
-            if current.dirty == std::ptr::null() {
+            if current.dirty.is_null() {
                 break;
             }
             current_ptr = current.dirty
@@ -334,12 +336,14 @@ mod tests {
         panic!("Should never be called")
     }
     extern "C" fn db(_wal: *mut Wal, _db: *const c_void) {}
-    extern "C" fn pathname_len(_orig_len: i32) -> i32 {
-        println!("Returning length 0");
-        0
+    extern "C" fn pathname_len(orig_len: i32) -> i32 {
+        orig_len + 4
     }
-    extern "C" fn get_pathname(_buf: *mut u8, _orig: *const u8, _orig_len: i32) {
-        panic!("Should never be called")
+    extern "C" fn get_pathname(buf: *mut u8, orig: *const u8, orig_len: i32) {
+        unsafe {
+            std::ptr::copy_nonoverlapping(orig, buf, orig_len as usize);
+            std::ptr::copy_nonoverlapping(".wal".as_ptr(), buf.offset(orig_len as isize), 4);
+        }
     }
     extern "C" fn pre_main_db_open(_methods: *mut libsql_wal_methods, _name: *const i8) -> i32 {
         0
@@ -402,7 +406,11 @@ mod tests {
             Box::leak(vwal);
             Connection::from_handle(pdb).unwrap()
         };
-        conn.pragma_update(None, "journal_mode", "wal").unwrap();
+        let journal_mode: String = conn
+            .query_row("PRAGMA journal_mode", [], |r| r.get(0))
+            .unwrap();
+        println!("Journaling mode: {}", journal_mode);
+        assert_eq!(journal_mode, "wal".to_string());
         conn.execute("CREATE TABLE t(id)", ()).unwrap();
         conn.execute("INSERT INTO t(id) VALUES (42)", ()).unwrap();
         conn.execute("INSERT INTO t(id) VALUES (zeroblob(8193))", ())
