@@ -7,8 +7,8 @@ use futures::Future;
 use tower::Service;
 
 use super::Database;
-use crate::query::{ErrorCode, Query, QueryError, QueryResponse, QueryResult};
-use crate::query_analysis::Statements;
+use crate::query::{ErrorCode, Query, QueryError, QueryResponse, QueryResult, ResultSet};
+use crate::query_analysis::Statement;
 pub trait DbFactory: Send + Sync + 'static {
     type Future: Future<Output = anyhow::Result<Self::Db>> + Send;
     type Db: Database + Send + Sync;
@@ -89,8 +89,9 @@ impl<DB: Database + 'static + Send + Sync> Service<Query> for DbService<DB> {
     fn call(&mut self, query: Query) -> Self::Future {
         let db = self.db.clone();
         match query {
-            Query::SimpleQuery(stmts, params) => match Statements::parse(stmts) {
-                Ok(stmts) => Box::pin(async move { db.execute(stmts, params).await }),
+            Query::SimpleQuery(stmts, params) => match Statement::parse(stmts) {
+                Ok(None) => Box::pin(ready(Ok(QueryResponse::ResultSet(ResultSet::empty())))),
+                Ok(Some(stmt)) => Box::pin(async move { db.execute(stmt, params).await }),
                 Err(e) => Box::pin(ready(Err(QueryError::new(ErrorCode::SQLError, e)))),
             },
         }
