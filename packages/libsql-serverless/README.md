@@ -15,9 +15,9 @@ await db.execute("INSERT INTO users (email) VALUES ('bob@example.com')");
 
 * SQLite JavaScript API
 * SQLite-backed local-only backend
+* SQL over HTTP with `fetch()`
 
 ## Roadmap
 
-* SQL over HTTP with `fetch()`
 * Read replica mode
 * Cloudflare D1 API compatibility?
