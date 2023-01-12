@@ -3830,7 +3830,8 @@ static void rbuSetupOal(sqlite3rbu *p, RbuState *pState){
 static void rbuDeleteOalFile(sqlite3rbu *p){
   char *zOal = rbuMPrintf(p, "%s-oal", p->zTarget);
   if( zOal ){
-    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+    sqlite3_vfs *pVfs = 0;
+    sqlite3_file_control(p->dbMain, "main", SQLITE_FCNTL_VFS_POINTER, &pVfs);
     assert( pVfs && p->rc==SQLITE_OK && p->zErrmsg==0 );
     pVfs->xDelete(pVfs, zOal, 0);
     sqlite3_free(zOal);
