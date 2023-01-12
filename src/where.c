@@ -2686,6 +2686,7 @@ static void whereLoopOutputAdjust(
   LogEst iReduce = 0;    /* pLoop->nOut should not exceed nRow-iReduce */
 
   assert( (pLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
+  sqlite3ProgressCheck(pWC->pWInfo->pParse);
   for(i=pWC->nBase, pTerm=pWC->a; i>0; i--, pTerm++){
     assert( pTerm!=0 );
     if( (pTerm->prereqAll & notAllowed)!=0 ) continue;
@@ -2865,7 +2866,10 @@ static int whereLoopAddBtreeIndex(
   WhereTerm *pTop = 0, *pBtm = 0; /* Top and bottom range constraints */
 
   pNew = pBuilder->pNew;
-  if( db->mallocFailed ) return SQLITE_NOMEM_BKPT;
+  assert( db->mallocFailed==0 || pParse->nErr>0 );
+  if( pParse->nErr ){
+    return pParse->rc;
+  }
   WHERETRACE(0x800, ("BEGIN %s.addBtreeIdx(%s), nEq=%d, nSkip=%d, rRun=%d\n",
                      pProbe->pTable->zName,pProbe->zName,
                      pNew->u.btree.nEq, pNew->nSkip, pNew->rRun));
@@ -3181,6 +3185,7 @@ static int whereLoopAddBtreeIndex(
      && (pNew->u.btree.nEq<pProbe->nKeyCol ||
            pProbe->idxType!=SQLITE_IDXTYPE_PRIMARYKEY)
     ){
+      if( pNew->u.btree.nEq>3 ) sqlite3ProgressCheck(pParse);
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
     pNew->nOut = saved_nOut;

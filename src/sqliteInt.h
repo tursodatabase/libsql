@@ -4631,6 +4631,7 @@ char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #endif
 
 void sqlite3SetString(char **, sqlite3*, const char*);
+void sqlite3ProgressCheck(Parse*);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 int sqlite3ErrorToParser(sqlite3*,int);
 void sqlite3Dequote(char*);
