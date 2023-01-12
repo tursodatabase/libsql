@@ -1,3 +1,4 @@
+#![allow(improper_ctypes)]
 #[cfg(test)]
 mod tests {
     use rusqlite::Connection;
@@ -164,7 +165,7 @@ mod tests {
         wal: *mut *const Wal,
     ) -> i32 {
         let new_wal = Box::new(Wal {
-            vfs: vfs,
+            vfs,
             db_fd: std::ptr::null(),
             wal_fd: std::ptr::null(),
             callback_value: 0,
@@ -198,7 +199,7 @@ mod tests {
             },
             min_frame: 0,
             recalculate_checksums: 0,
-            wal_name: wal_name,
+            wal_name,
             n_checkpoints: 0,
             lock_error: 0,
             p_snapshot: std::ptr::null(),
@@ -252,7 +253,7 @@ mod tests {
             return ERR_MISUSE;
         }
         let out_buffer = unsafe { std::slice::from_raw_parts_mut(p_out, n_out) };
-        out_buffer.copy_from_slice(&data);
+        out_buffer.copy_from_slice(data);
         println!("\t\tread {} bytes", data.len());
         0
     }
@@ -301,7 +302,7 @@ mod tests {
             }
             .to_vec();
             methods.pages.insert(current.pgno, data);
-            if current.dirty == std::ptr::null() {
+            if current.dirty.is_null() {
                 break;
             }
             current_ptr = current.dirty
