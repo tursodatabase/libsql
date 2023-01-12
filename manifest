@@ -1,5 +1,5 @@
-C Avoid\scrashing\swhen\susing\san\sRBU\sVFS\swith\sa\sversion\s1\sparent\sVFS.
-D 2023-01-12T19:11:41.836
+C Do\snot\sattempt\sto\srun\snew\stest\sfile\srbupass.test\sif\sthe\s"demo"\sVFS\sis\snot\savailable.
+D 2023-01-12T19:28:34.870
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -376,7 +376,7 @@ F ext/rbu/rbufts.test 0ae8d1da191c75bd776b86e24456db0fb6e97b7c944259fae5407ea55d
 F ext/rbu/rbumisc.test 329986cf5dd51890c4eb906c2f960ebb773a79a64bed90f506b7c417825b37eb
 F ext/rbu/rbumulti.test 5fb139058f37ddc5a113c5b93238de915b769b7792de41b44c983bc7c18cf5b9
 F ext/rbu/rbupartial.test f25df014b8dbe3c5345851fba6e66f79ab237f57dc201b2d5f0dbae658ae5a4c
-F ext/rbu/rbupass.test cf4d4ed04fecc5982c3e3aeb3752611dd78acc23977930830ab8df79c18d5748
+F ext/rbu/rbupass.test 1a8f635a9f6026f905a952e70a081811d8042de28165099d874832c1bf49d4b9
 F ext/rbu/rbuprogress.test 857cf1f8166c83ef977edb9ef4fc42d80f71fbd798652b46ae2f3a7031870f8d
 F ext/rbu/rburename.test a9b4aea612352b74c45de1757edd2ecb2079348b1d4cc734572dc29e55b1b376
 F ext/rbu/rburesume.test dbdc4ca504e9c76375a69e5f0d91205db967dcc509a5166ca80231f8fda49eb1
@@ -2069,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5a86c6cb1f16a15bdbc42544b8ed1912d9e87f04c514b8481a77442fbbd8accf
-R 84be4b3078157b09ef243de7798a57d1
+P d149772d18c47bf986decb7e08d148b1d417bbcc8522fd6240ead836ec34074b
+R 46223eaf559523ff66a57b4bacb5c07e
 U dan
-Z 538669987396e2aeb058e8cac985991e
+Z 9e60d9184a671acda6ad686b21155410
 # Remove this line to create a well-formed Fossil manifest.

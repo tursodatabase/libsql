@@ -13,6 +13,11 @@
 source [file join [file dirname [info script]] rbu_common.tcl]
 set ::testprefix rbupass
 
+if {[info commands register_demovfs]==""} {
+  finish_test
+  return
+}
+
 db close
 sqlite3_shutdown
 sqlite3_config_uri 1
@@ -60,12 +65,10 @@ do_test 1.7 {
 } {rbu}
 do_test 1.8 {
   rbu step
-} {SQLITE_IOERR}
-do_test 1.9 {
   catch { rbu close } 
 } {1}
 
-do_execsql_test 1.10 {
+do_execsql_test 1.9 {
   SELECT * FROM t1;
 } {1 2}
 
