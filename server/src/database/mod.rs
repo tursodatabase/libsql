@@ -1,5 +1,5 @@
 use crate::query::{QueryResult, Value};
-use crate::query_analysis::Statements;
+use crate::query_analysis::Statement;
 
 pub mod libsql;
 pub mod service;
@@ -9,5 +9,5 @@ const TXN_TIMEOUT_SECS: u64 = 5;
 
 #[async_trait::async_trait]
 pub trait Database {
-    async fn execute(&self, query: Statements, params: Vec<Value>) -> QueryResult;
+    async fn execute(&self, query: Statement, params: Vec<Value>) -> QueryResult;
 }

@@ -5,8 +5,8 @@ use uuid::Uuid;
 
 use crate::database::service::DbFactory;
 use crate::database::Database;
-use crate::query::{ErrorCode, QueryResponse, QueryResult};
-use crate::query_analysis::Statements;
+use crate::query::{ErrorCode, QueryResponse, QueryResult, ResultSet};
+use crate::query_analysis::Statement;
 use proxy_rpc::proxy_server::Proxy;
 use proxy_rpc::{
     error::ErrorCode as RpcErrorCode, query_result::Result as RpcResult, Ack, DisconnectMessage,
@@ -93,8 +93,11 @@ where
         };
 
         tracing::debug!("executing request for {client_id}: {q}");
-        let stmts = Statements::parse(q).unwrap();
-        let result = db.execute(stmts, Vec::new()).await;
+        let stmt = Statement::parse(q).unwrap();
+        let result = match stmt {
+            Some(stmt) => db.execute(stmt, Vec::new()).await,
+            None => Ok(QueryResponse::ResultSet(ResultSet::empty())),
+        };
 
         Ok(tonic::Response::new(result.into()))
     }
