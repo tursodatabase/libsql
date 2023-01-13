@@ -1,6 +1,6 @@
 import { Driver } from "./driver/Driver";
-import { HttpDriver } from "./driver/HTTPDriver";
-import { SqliteDriver } from "./driver/SQLiteDriver";
+import { HttpDriver } from "./driver/HttpDriver";
+import { SqliteDriver } from "./driver/SqliteDriver";
 
 export type Config = {
   url?: string,
