@@ -56,17 +56,20 @@ fn main() {
     } else if cfg!(feature = "bundled")
         || (win_target() && cfg!(feature = "bundled-windows"))
         || cfg!(feature = "bundled-sqlcipher")
+        || cfg!(feature = "bundled-libsql")
     {
         #[cfg(any(
             feature = "bundled",
             feature = "bundled-windows",
-            feature = "bundled-sqlcipher"
+            feature = "bundled-sqlcipher",
+            feature = "bundled-libsql"
         ))]
         build_bundled::main(&out_dir, &out_path);
         #[cfg(not(any(
             feature = "bundled",
             feature = "bundled-windows",
-            feature = "bundled-sqlcipher"
+            feature = "bundled-sqlcipher",
+            feature = "bundled-libsql"
         )))]
         panic!("The runtime test should not run this branch, which has not compiled any logic.")
     } else {
@@ -77,7 +80,8 @@ fn main() {
 #[cfg(any(
     feature = "bundled",
     feature = "bundled-windows",
-    feature = "bundled-sqlcipher"
+    feature = "bundled-sqlcipher",
+    feature = "bundled-libsql"
 ))]
 mod build_bundled {
     use std::env;
@@ -131,6 +135,10 @@ mod build_bundled {
             .flag("-DHAVE_USLEEP=1")
             .flag("-D_POSIX_THREAD_SAFE_FUNCTIONS") // cross compile with MinGW
             .warnings(false);
+
+        if cfg!(feature = "libsql") {
+            cfg.flag("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
+        }
 
         if cfg!(feature = "bundled-sqlcipher") {
             cfg.flag("-DSQLITE_HAS_CODEC").flag("-DSQLITE_TEMP_STORE=2");
@@ -319,6 +327,8 @@ fn env_prefix() -> &'static str {
 fn lib_name() -> &'static str {
     if cfg!(any(feature = "sqlcipher", feature = "bundled-sqlcipher")) {
         "sqlcipher"
+    } else if cfg!(any(feature = "libsql", feature = "bundled-libsql")) {
+        "libsql"
     } else if cfg!(all(windows, feature = "winsqlite3")) {
         "winsqlite3"
     } else {
