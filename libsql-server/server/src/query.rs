@@ -8,9 +8,9 @@ use pgwire::api::Type as PgType;
 use pgwire::{error::PgWireResult, messages::data::DataRow};
 use serde::{Deserialize, Serialize};
 
+use crate::query_analysis::Statement;
 use crate::rpc::proxy::proxy_rpc::{
-    error::ErrorCode as RpcErrorCode, Column as RpcColumn, Error as RpcError, ResultRows,
-    Row as RpcRow, Type as RpcType, Value as RpcValue,
+    Column as RpcColumn, ResultRows, Row as RpcRow, Type as RpcType, Value as RpcValue,
 };
 
 pub type QueryResult = Result<QueryResponse, QueryError>;
@@ -254,9 +254,12 @@ pub enum QueryResponse {
 }
 
 #[derive(Debug)]
-pub enum Query {
-    SimpleQuery(String, Vec<Value>),
+pub struct Query {
+    pub stmt: Statement,
+    pub params: Vec<Value>,
 }
+
+pub type Queries = Vec<Query>;
 
 #[derive(Debug, Clone)]
 pub struct QueryError {
@@ -269,19 +272,6 @@ impl std::error::Error for QueryError {}
 impl fmt::Display for QueryError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.msg)
-    }
-}
-
-impl From<RpcError> for QueryError {
-    fn from(other: RpcError) -> Self {
-        let code = match other.code() {
-            RpcErrorCode::SqlError => ErrorCode::SQLError,
-            RpcErrorCode::TxBusy => ErrorCode::TxBusy,
-            RpcErrorCode::TxTimeout => ErrorCode::TxTimeout,
-            RpcErrorCode::Internal => ErrorCode::Internal,
-        };
-
-        Self::new(code, other.message)
     }
 }
 

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::future::poll_fn;
 use std::{convert::Infallible, net::SocketAddr};
 
@@ -16,7 +15,8 @@ use tower::balance::pool;
 use tower::load::Load;
 use tower::{service_fn, BoxError, MakeService, Service};
 
-use crate::query::{self, Query, QueryError, QueryResponse, ResultSet};
+use crate::query::{self, Queries, Query, QueryResponse, QueryResult, ResultSet};
+use crate::query_analysis::Statement;
 
 impl TryFrom<query::Value> for serde_json::Value {
     type Error = anyhow::Error;
@@ -36,28 +36,40 @@ impl TryFrom<query::Value> for serde_json::Value {
     }
 }
 
-fn query_response_to_json(rows: QueryResponse) -> anyhow::Result<Bytes> {
-    let QueryResponse::ResultSet(ResultSet { columns, rows }) = rows;
-    let mut values = Vec::with_capacity(rows.len());
-    for row in rows {
-        let val = row
-            .values
-            .into_iter()
-            .zip(columns.iter().map(|c| &c.name))
-            .try_fold(
-                HashMap::<_, serde_json::Value>::new(),
-                |mut map, (value, name)| -> anyhow::Result<_> {
-                    map.insert(name.to_string(), value.try_into()?);
-                    Ok(map)
-                },
-            )?;
+fn query_response_to_json(results: Vec<QueryResult>) -> anyhow::Result<Bytes> {
+    fn result_set_to_json(
+        ResultSet { columns, rows }: ResultSet,
+    ) -> anyhow::Result<serde_json::Value> {
+        let mut values = Vec::with_capacity(rows.len());
+        for row in rows {
+            let val = row
+                .values
+                .into_iter()
+                .zip(columns.iter().map(|c| &c.name))
+                .try_fold(
+                    serde_json::Map::<_, serde_json::Value>::new(),
+                    |mut map, (value, name)| -> anyhow::Result<_> {
+                        map.insert(name.to_string(), value.try_into()?);
+                        Ok(map)
+                    },
+                )?;
 
-        values.push(val);
+            values.push(serde_json::Value::Object(val));
+        }
+
+        Ok(serde_json::Value::Array(values))
     }
 
-    let mut buffer = BytesMut::new().writer();
-    serde_json::to_writer(&mut buffer, &values)?;
+    let json = results
+        .into_iter()
+        .map(|r| match r {
+            Ok(QueryResponse::ResultSet(set)) => result_set_to_json(set),
+            Err(e) => Ok(json!({"error": e.to_string()})),
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
 
+    let mut buffer = BytesMut::new().writer();
+    serde_json::to_writer(&mut buffer, &json)?;
     Ok(buffer.into_inner().freeze())
 }
 
@@ -69,17 +81,44 @@ fn error(msg: &str, code: u16) -> Response<Body> {
         .unwrap()
 }
 
+fn parse_queries(queries: Vec<String>) -> anyhow::Result<Vec<Query>> {
+    let mut out = Vec::with_capacity(queries.len());
+    for query in queries {
+        let stmt = Statement::parse(&query)
+            .next()
+            .transpose()?
+            .unwrap_or_default();
+        let query = Query {
+            stmt,
+            params: Vec::new(),
+        };
+        out.push(query);
+    }
+
+    Ok(out)
+}
+
+/// Internal Message used to communicate between the HTTP service
+struct Message {
+    queries: Queries,
+    resp: oneshot::Sender<Result<Vec<QueryResult>, BoxError>>,
+}
+
 async fn handle_query(
     mut req: Request<Body>,
-    sender: mpsc::Sender<(oneshot::Sender<Result<QueryResponse, BoxError>>, Query)>,
+    sender: mpsc::Sender<Message>,
 ) -> anyhow::Result<Response<Body>> {
     let bytes = to_bytes(req.body_mut()).await?;
     let req: HttpQueryRequest = serde_json::from_slice(&bytes)?;
     let (s, resp) = oneshot::channel();
-    // TODO: send query batch instead
-    let _ = sender
-        .send((s, Query::SimpleQuery(req.statements.join(";"), Vec::new())))
-        .await;
+
+    let queries = match parse_queries(req.statements) {
+        Ok(queries) => queries,
+        Err(e) => return Ok(error(&e.to_string(), 400)),
+    };
+
+    let msg = Message { queries, resp: s };
+    let _ = sender.send(msg).await;
 
     let result = resp.await;
     match result {
@@ -87,8 +126,7 @@ async fn handle_query(
             let json = query_response_to_json(rows)?;
             Ok(Response::new(Body::from(json)))
         }
-        Ok(Err(err)) => Ok(error(&err.to_string(), 400)),
-        Err(_) => Ok(error("internal error", 500)),
+        Err(_) | Ok(Err(_)) => Ok(error("internal error", 500)),
     }
 }
 
@@ -98,7 +136,7 @@ async fn show_console() -> anyhow::Result<Response<Body>> {
 
 async fn handle_request(
     req: Request<Body>,
-    sender: mpsc::Sender<(oneshot::Sender<Result<QueryResponse, BoxError>>, Query)>,
+    sender: mpsc::Sender<Message>,
 ) -> anyhow::Result<Response<Body>> {
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => handle_query(req, sender).await,
@@ -109,14 +147,14 @@ async fn handle_request(
 
 pub async fn run_http<F>(addr: SocketAddr, db_factory: F) -> anyhow::Result<()>
 where
-    F: MakeService<(), Query> + Send + 'static,
-    F::Service: Load + Service<Query, Response = QueryResponse, Error = QueryError>,
+    F: MakeService<(), Queries> + Send + 'static,
+    F::Service: Load + Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error>,
     <F::Service as Load>::Metric: std::fmt::Debug,
     F::MakeError: Into<BoxError>,
     F::Error: Into<BoxError>,
-    <F as MakeService<(), Query>>::Service: Send,
-    <F as MakeService<(), Query>>::Future: Send,
-    <<F as MakeService<(), Query>>::Service as Service<Query>>::Future: Send,
+    <F as MakeService<(), Queries>>::Service: Send,
+    <F as MakeService<(), Queries>>::Future: Send,
+    <<F as MakeService<(), Queries>>::Service as Service<Queries>>::Future: Send,
 {
     tracing::info!("listening for HTTP requests on {addr}");
 
@@ -131,13 +169,13 @@ where
 
     tokio::spawn(async move {
         let mut pool = pool::Builder::new().build(db_factory, ());
-        while let Some((resp, query)) = receiver.recv().await {
+        while let Some(Message { queries, resp }) = receiver.recv().await {
             if let Err(e) = poll_fn(|c| pool.poll_ready(c)).await {
                 tracing::error!("Connection pool error: {e}");
                 continue;
             }
 
-            let fut = pool.call(query);
+            let fut = pool.call(queries);
             tokio::spawn(async move {
                 let _ = resp.send(fut.await);
             });

@@ -12,6 +12,12 @@ pub struct Statement {
     pub kind: StmtKind,
 }
 
+impl Default for Statement {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
 /// Classify statement in categories of interest.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum StmtKind {
@@ -48,11 +54,9 @@ impl StmtKind {
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum State {
     /// The txn in an opened state
-    TxnOpened,
+    Txn,
     /// The txn in a closed state
-    TxnClosed,
-    /// This is the initial state of the state machine
-    Start,
+    Init,
     /// This is an invalid state for the state machine
     Invalid,
 }
@@ -60,38 +64,44 @@ pub enum State {
 impl State {
     pub fn step(&mut self, kind: StmtKind) {
         *self = match (*self, kind) {
-            (State::TxnOpened, StmtKind::TxnBegin) | (State::TxnClosed, StmtKind::TxnEnd) => {
-                State::Invalid
-            }
-            (State::TxnOpened, StmtKind::TxnEnd) => State::TxnClosed,
-            (State::TxnClosed, StmtKind::TxnBegin) => State::TxnOpened,
+            (State::Txn, StmtKind::TxnBegin) | (State::Init, StmtKind::TxnEnd) => State::Invalid,
+            (State::Txn, StmtKind::TxnEnd) => State::Init,
             (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
             (State::Invalid, _) => State::Invalid,
-            (State::Start, StmtKind::TxnBegin) => State::TxnOpened,
-            (State::Start, StmtKind::TxnEnd) => State::TxnClosed,
+            (State::Init, StmtKind::TxnBegin) => State::Txn,
         };
     }
 
     pub fn reset(&mut self) {
-        *self = State::Start
+        *self = State::Init
     }
 }
 
 impl Statement {
-    pub fn parse(s: String) -> Result<Option<Self>> {
-        let mut parser = Parser::new(s.as_bytes());
-        match parser.next()? {
-            Some(cmd) => {
-                let kind =
-                    StmtKind::kind(&cmd).ok_or_else(|| anyhow::anyhow!("unsupported statement"))?;
-
-                Ok(Some(Self {
-                    stmt: cmd.to_string(),
-                    kind,
-                }))
-            }
-            None => Ok(None),
+    pub fn empty() -> Self {
+        Self {
+            stmt: String::new(),
+            // empty statement is arbitrarely made of the read kind so it is not send to a writer
+            kind: StmtKind::Read,
         }
+    }
+
+    pub fn parse(s: &str) -> impl Iterator<Item = Result<Self>> + '_ {
+        fn parse_inner(c: Cmd) -> Result<Statement> {
+            let kind =
+                StmtKind::kind(&c).ok_or_else(|| anyhow::anyhow!("unsupported statement"))?;
+
+            Ok(Statement {
+                stmt: c.to_string(),
+                kind,
+            })
+        }
+        let mut parser = Parser::new(s.as_bytes());
+        std::iter::from_fn(move || match parser.next() {
+            Ok(Some(cmd)) => Some(parse_inner(cmd)),
+            Ok(None) => None,
+            Err(e) => Some(Err(e.into())),
+        })
     }
 
     pub fn is_read_only(&self) -> bool {
@@ -100,4 +110,13 @@ impl Statement {
             StmtKind::Read | StmtKind::TxnEnd | StmtKind::TxnBegin
         )
     }
+}
+
+/// Given a an initial state and an array of queries, return the final state obtained if all the
+/// queries succeeded
+pub fn final_state<'a>(mut state: State, stmts: impl Iterator<Item = &'a Statement>) -> State {
+    for stmt in stmts {
+        state.step(stmt.kind);
+    }
+    state
 }
