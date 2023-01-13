@@ -3980,7 +3980,7 @@ static int mergeWorkerWrite(
     aData = fsPageData(pPg, &nData);
     nRec = pageGetNRec(aData, nData);
     iFPtr = pageGetPtr(aData, nData);
-    iRPtr = iPtr - iFPtr;
+    iRPtr = iPtr ? (iPtr - iFPtr) : 0;
   }
      
   /* Figure out how much space is required by the new record. The space
@@ -4011,7 +4011,7 @@ static int mergeWorkerWrite(
         memset(&aData[iOff], 0, SEGMENT_EOF(nData, nRec)-iOff);
       }
       iFPtr = *pMW->pCsr->pPrevMergePtr;
-      iRPtr = iPtr - iFPtr;
+      iRPtr = iPtr ? (iPtr - iFPtr) : 0;
       iOff = 0;
       nRec = 0;
       rc = mergeWorkerNextPage(pMW, iFPtr);
