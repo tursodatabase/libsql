@@ -3,9 +3,9 @@ import { ResultSet } from "../libsql-js";
 import { Driver } from "./Driver";
 
 export class HttpDriver implements Driver {
-    url: string;
+    url: URL;
 
-    constructor(url: string) {
+    constructor(url: URL) {
         this.url = url;
     }
 

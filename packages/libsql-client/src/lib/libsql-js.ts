@@ -3,7 +3,7 @@ import { HttpDriver } from "./driver/HttpDriver";
 import { SqliteDriver } from "./driver/SqliteDriver";
 
 export type Config = {
-  url?: string,
+  url: string,
 };
 
 /**
@@ -58,9 +58,11 @@ export class Connection {
 }
 
 export function connect(config: Config): Connection {
-  if (config.url) {
-    return new Connection(new HttpDriver(config.url))
+  const rawUrl = config.url;
+  const url = new URL(rawUrl);
+  if (url.protocol == "http:" || url.protocol == "https:") {
+    return new Connection(new HttpDriver(url))
   } else {
-    return new Connection(new SqliteDriver());
+    return new Connection(new SqliteDriver(rawUrl));
   }
 }
