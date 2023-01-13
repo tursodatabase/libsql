@@ -4588,7 +4588,7 @@ static int rbuVfsClose(sqlite3_file *pFile){
   sqlite3_free(p->zDel);
 
   if( p->openFlags & SQLITE_OPEN_MAIN_DB ){
-    sqlite3_io_methods *pMeth = p->pReal->pMethods;
+    const sqlite3_io_methods *pMeth = p->pReal->pMethods;
     rbuMainlistRemove(p);
     rbuUnlockShm(p);
     if( pMeth->iVersion>1 && pMeth->xShmUnmap ){
@@ -5125,7 +5125,7 @@ static int rbuVfsOpen(
     rc = pRealVfs->xOpen(pRealVfs, zOpen, pFd->pReal, oflags, pOutFlags);
   }
   if( pFd->pReal->pMethods ){
-    sqlite3_io_methods *pMeth = pFd->pReal->pMethods;
+    const sqlite3_io_methods *pMeth = pFd->pReal->pMethods;
     /* The xOpen() operation has succeeded. Set the sqlite3_file.pMethods
     ** pointer and, if the file is a main database file, link it into the
     ** mutex protected linked list of all such files.  */
