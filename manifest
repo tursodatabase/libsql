@@ -1,5 +1,5 @@
-C Reduce\sthe\sfrequency\sof\scalls\sto\ssqlite3ProgressCheck().
-D 2023-01-12T20:36:43.946
+C Remove\san\sincorrect\slegacy\sassert().
+D 2023-01-13T11:31:49.436
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -732,7 +732,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 0e5dd009af01250ff3e1f3f632b7ef471cf77c6edc24ebe882433674325c20c8
+F src/where.c 14ee8da18f9b4518af06931a32386dd0c7ec2eacab520726d6425e252e54b280
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c 76bca3379219880d2527493b71a3be49e696f75396d3481e4de5d4ceec7886b2
 F src/whereexpr.c 7c5671a04b00c876bec5e99fd4e6f688065feb4773160fbf76fd7900d2901777
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 05461651599bb490ac6cfd893645dabab9cccedc6adcce15aee2487b2ea6027a
-R fd47709650fb2ea6d296147bce5093e6
+P 795aca4a269ea4ede547844037c218ac714c40e8bee003e4d9b786befc9cf97a
+R 4ca985ce44569e4afda8cfc28aa1c4f0
 U drh
-Z 71632e3006f164270162b7992c4f1e6a
+Z 15a661decb42652b0c29209f4fd01d6d
 # Remove this line to create a well-formed Fossil manifest.
