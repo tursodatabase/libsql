@@ -265,6 +265,7 @@ SRC = \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/os_win.h \
+  $(TOP)/src/page_header.h \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
