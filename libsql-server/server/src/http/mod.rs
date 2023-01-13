@@ -16,7 +16,7 @@ use tower::load::Load;
 use tower::{service_fn, BoxError, MakeService, Service};
 
 use crate::query::{self, Queries, Query, QueryResponse, QueryResult, ResultSet};
-use crate::query_analysis::Statement;
+use crate::query_analysis::{final_state, State, Statement};
 
 impl TryFrom<query::Value> for serde_json::Value {
     type Error = anyhow::Error;
@@ -93,6 +93,13 @@ fn parse_queries(queries: Vec<String>) -> anyhow::Result<Vec<Query>> {
             params: Vec::new(),
         };
         out.push(query);
+    }
+
+    match final_state(State::Init, out.iter().map(|q| &q.stmt)) {
+        State::Txn => anyhow::bail!("interactive transaction not allowed in HTTP queries"),
+        State::Init => (),
+        // maybe we should err here, but let's sqlite deal with that.
+        State::Invalid => (),
     }
 
     Ok(out)
