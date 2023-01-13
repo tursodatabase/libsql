@@ -150,6 +150,7 @@ foreach hdr {
    os_setup.h
    os_win.h
    os.h
+   page_header.h
    pager.h
    parse.h
    pcache.h
