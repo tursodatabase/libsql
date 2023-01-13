@@ -16,7 +16,7 @@ use tower::MakeService;
 use tower::Service;
 
 use crate::postgres::authenticator::PgAuthenticator;
-use crate::query::{Query, QueryError, QueryResponse};
+use crate::query::{Queries, QueryResult};
 use crate::server::AsyncPeekable;
 
 use super::proto::{peek_for_sslrequest, process_error, QueryHandler};
@@ -30,7 +30,7 @@ pub struct PgWireConnection<T, S> {
 
 impl<T, S> PgWireConnection<T, S>
 where
-    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
     T: AsyncRead + AsyncWrite + Unpin + Send + Sync,
     S::Future: Send,
 {
@@ -122,10 +122,10 @@ impl<S> PgConnectionFactory<S> {
 impl<T, F> Service<(T, SocketAddr)> for PgConnectionFactory<F>
 where
     T: AsyncRead + AsyncWrite + AsyncPeekable + Unpin + Send + Sync + 'static,
-    F: MakeService<(), Query, MakeError = anyhow::Error> + Sync,
+    F: MakeService<(), Queries, MakeError = anyhow::Error> + Sync,
     F::Future: 'static + Send + Sync,
-    F::Service: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
-    <F::Service as Service<Query>>::Future: Send,
+    F::Service: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
+    <F::Service as Service<Queries>>::Future: Send,
 {
     type Response = ();
     type Error = anyhow::Error;

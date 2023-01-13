@@ -1,7 +1,6 @@
-use std::borrow::Cow;
 use std::future::poll_fn;
 
-use bytes::Buf;
+use bytes::{Buf, Bytes};
 use futures::{io, SinkExt};
 use once_cell::sync::Lazy;
 use pgwire::api::portal::Portal;
@@ -19,7 +18,8 @@ use tokio::sync::Mutex;
 use tokio_util::codec::Framed;
 use tower::Service;
 
-use crate::query::{Query, QueryError, QueryResponse, Value};
+use crate::query::{Queries, Query, QueryResponse, QueryResult, Value};
+use crate::query_analysis::Statement;
 use crate::server::AsyncPeekable;
 
 // TODO: more robust parsing
@@ -33,20 +33,26 @@ impl<'a, S> QueryHandler<'a, S> {
         Self(Mutex::new(s))
     }
 
-    async fn handle_query(&self, query: Cow<'_, str>, params: Vec<Value>) -> PgWireResult<Response>
+    async fn handle_queries(&self, queries: Queries) -> PgWireResult<Vec<Response>>
     where
-        S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+        S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
         S::Future: Send,
     {
-        let query = Query::SimpleQuery(query.into_owned(), params);
         let mut s = self.0.lock().await;
-        //TODO: handle poll_ready error
+        //FIXME: handle poll_ready error
         poll_fn(|cx| s.poll_ready(cx)).await.unwrap();
-        match s.call(query).await {
-            Ok(resp) => match resp {
-                QueryResponse::ResultSet(set) => Ok(set.into()),
-            },
-            Err(e) => Err(e.into()),
+        match s.call(queries).await {
+            Ok(responses) => Ok(responses
+                .into_iter()
+                .map(|r| match r {
+                    Ok(QueryResponse::ResultSet(set)) => set.into(),
+                    Err(e) => Response::Error(
+                        ErrorInfo::new("ERROR".into(), "XX000".into(), e.to_string()).into(),
+                    ),
+                })
+                .collect()),
+
+            Err(e) => Err(PgWireError::ApiError(e.into())),
         }
     }
 }
@@ -54,23 +60,35 @@ impl<'a, S> QueryHandler<'a, S> {
 #[async_trait::async_trait]
 impl<'a, S> SimpleQueryHandler for QueryHandler<'a, S>
 where
-    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
     S::Future: Send,
 {
     async fn do_query<C>(&self, _client: &C, query: &str) -> PgWireResult<Vec<Response>>
     where
         C: ClientInfo + Unpin + Send + Sync,
     {
-        self.handle_query(Cow::Borrowed(query), Vec::new())
-            .await
-            .map(|r| vec![r])
+        let queries = Statement::parse(query)
+            .map(|s| {
+                s.map(|stmt| Query {
+                    stmt,
+                    params: Vec::new(),
+                })
+            })
+            .collect::<anyhow::Result<Vec<_>>>();
+
+        match queries {
+            Ok(queries) => self.handle_queries(queries).await,
+            Err(e) => Err(PgWireError::UserError(
+                ErrorInfo::new("ERROR".to_string(), "XX000".to_string(), e.to_string()).into(),
+            )),
+        }
     }
 }
 
 #[async_trait::async_trait]
 impl<'a, S> ExtendedQueryHandler for QueryHandler<'a, S>
 where
-    S: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
     S::Future: Send,
 {
     async fn do_query<C>(
@@ -83,31 +101,52 @@ where
         C: ClientInfo + Unpin + Send + Sync,
     {
         debug_assert_eq!(portal.parameter_types().len(), portal.parameter_len());
-        let statement = VAR_REPLACE_RE.replace(portal.statement(), "?$digits");
-        let mut params = Vec::with_capacity(portal.parameter_len());
-        for (val, ty) in portal.parameters().iter().zip(portal.parameter_types()) {
-            let value = if val.is_none() {
-                Value::Null
-            } else if ty == &Type::VARCHAR {
-                let s = String::from_utf8(val.as_ref().unwrap().to_vec()).unwrap();
-                Value::Text(s)
-            } else if ty == &Type::INT8 {
-                let v = i64::from_be_bytes((val.as_ref().unwrap()[..8]).try_into().unwrap());
-                Value::Integer(v)
-            } else if ty == &Type::BYTEA {
-                Value::Blob(val.as_ref().unwrap().to_vec())
-            } else if ty == &Type::FLOAT8 {
-                let val = f64::from_be_bytes(val.as_ref().unwrap()[..8].try_into().unwrap());
-                Value::Real(val)
-            } else {
-                unimplemented!("unsupported type")
-            };
 
-            params.push(value);
-        }
+        let patched_statement = VAR_REPLACE_RE.replace(portal.statement(), "?$digits");
+        let stmt = Statement::parse(&patched_statement)
+            .next()
+            .transpose()
+            .map_err(|e| {
+                PgWireError::UserError(
+                    ErrorInfo::new("ERROR".into(), "XX000".into(), e.to_string()).into(),
+                )
+            })?
+            .unwrap_or_default();
 
-        self.handle_query(statement, params).await
+        let params = parse_params(portal.parameter_types(), portal.parameters());
+
+        let query = Query { stmt, params };
+        self.handle_queries(vec![query]).await.map(|mut res| {
+            assert_eq!(res.len(), 1);
+            res.pop().unwrap()
+        })
     }
+}
+
+fn parse_params(types: &[Type], data: &[Option<Bytes>]) -> Vec<Value> {
+    let mut params = Vec::with_capacity(types.len());
+    for (val, ty) in data.iter().zip(types) {
+        let value = if val.is_none() {
+            Value::Null
+        } else if ty == &Type::VARCHAR {
+            let s = String::from_utf8(val.as_ref().unwrap().to_vec()).unwrap();
+            Value::Text(s)
+        } else if ty == &Type::INT8 {
+            let v = i64::from_be_bytes((val.as_ref().unwrap()[..8]).try_into().unwrap());
+            Value::Integer(v)
+        } else if ty == &Type::BYTEA {
+            Value::Blob(val.as_ref().unwrap().to_vec())
+        } else if ty == &Type::FLOAT8 {
+            let val = f64::from_be_bytes(val.as_ref().unwrap()[..8].try_into().unwrap());
+            Value::Real(val)
+        } else {
+            unimplemented!("unsupported type")
+        };
+
+        params.push(value);
+    }
+
+    params
 }
 
 // from https://docs.rs/pgwire/latest/src/pgwire/tokio.rs.html#230-283
