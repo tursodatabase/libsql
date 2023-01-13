@@ -15,7 +15,7 @@ struct Cli {
     #[clap(
         long,
         short,
-        default_value = "127.0.0.1:5000",
+        default_value = "127.0.0.1:5432",
         env = "SQLD_PG_LISTEN_ADDR"
     )]
     pg_listen_addr: SocketAddr,
