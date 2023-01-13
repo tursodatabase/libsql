@@ -1,5 +1,5 @@
-C Add\smissing\s"const"\son\svariables\sin\srecent\sRBU\sfixes.
-D 2023-01-13T18:20:40.205
+C In\sexpression\snodes\sof\stype\sREGISTER\swith\ssub-type\sCOLUMN,\sensure\sthat\sthe\niColumn\sfield\sis\sset\scorrectly,\sas\sotherwise\sthe\s"IS\sNULL"\soperator\smight\nbe\sincorrectly\soptimized.\s\sFix\sfor\sthe\sproblem\sdescribed\sby\s\n[forum:/forumpost/d010a26798915b53|forum\spost\sd010a26798915b53].
+D 2023-01-13T19:29:46.571
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -644,7 +644,7 @@ F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 9ebd3a1b12bbd1951f0d6db850f32cf5d4547a6ab8bb9e958d75dfbe4e60d0a3
 F src/printf.c ff4b05e38bf928ff1b80d3dda4f977b10fe39ecbfe69c018224c7e5594fb2455
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
-F src/resolve.c efea4e5fbecfd6d0a9071b0be0d952620991673391b6ffaaf4c277b0bb674633
+F src/resolve.c 5a98a7bf277aa60584b6bb4c5dd6a9ef2b19537910612c34f596e2901e88596d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c d389ccdb96855dbfaadc22d936889e1f0652ffca17e31a6b6522b45d99daa8ce
 F src/shell.c.in f7c75d1a9f900516e40f17f040668d5797592344bd88cff7ee7df586de6893c6
@@ -1429,7 +1429,7 @@ F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2
 F test/releasetest_data.tcl 0db8aee0c348090fd06da47020ab4ed8ec692e0723427b2f3947d4dfb806f3b0
 F test/resetdb.test 8062cf10a09d8c048f8de7711e94571c38b38168db0e5877ba7561789e5eeb2b
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
-F test/returning1.test 1366e04566cfe1a082d17b1e0f195ec64473c79374b3a5d4ae00c43d885dea31
+F test/returning1.test 3ef7b264598b3292be0cdb028e4acb7524c5fd409b33b78449f894dfd68db334
 F test/returningfault.test ae4c4b5e8745813287a359d9ccdb9d5c883c2e68afb18fb0767937d5de5692a4
 F test/rollback.test 06680159bc6746d0f26276e339e3ae2f951c64812468308838e0a3362d911eaa
 F test/rollback2.test 3f3a4e20401825017df7e7671e9f31b6de5fae5620c2b9b49917f52f8c160a8f
@@ -2069,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd8fa10e59f58886e10c84ea9934fa1b5f491aac2eff302757a76d2d36d59b69
-R b0128c6ff9efe26a006547103763567b
+P 9b8dcd79050f9bfa745271f51377b38cfed4d8ce41a36b773a30799d69f7b943
+R 5f7ffa85948432974c9308f5ce415cc9
 U drh
-Z 73010cbd896bf55e27536733698725c5
+Z 5d29e551c1198df54d249e9fef0ecfa4
 # Remove this line to create a well-formed Fossil manifest.
