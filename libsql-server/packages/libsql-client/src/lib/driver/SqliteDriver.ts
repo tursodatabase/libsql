@@ -1,14 +1,11 @@
-import "sqlite3";
-import {
-    Database,
-} from "sqlite3";
+import * as sqlite3 from "sqlite3";
 import { ResultSet } from "../libsql-js";
 import { Driver } from "./Driver";
 
 export class SqliteDriver implements Driver {
-    db: Database;
-    constructor() {
-        this.db = new Database(":memory:");
+    db: sqlite3.Database;
+    constructor(url: string) {
+        this.db = new sqlite3.Database(url, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE | sqlite3.OPEN_FULLMUTEX | sqlite3.OPEN_URI);
     }
     async transaction(sqls: string[]): Promise<ResultSet[]> {
         const result = [];
