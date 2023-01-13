@@ -15,12 +15,14 @@ const rs = await db.execute("SELECT * FROM users");
 console.log(rs);
 ```
 
-You can also just run against local SQLite by dropping the `url` option from configuration:
+You can also just run against local SQLite with:
 
 ```typescript
 import { connect } from "@libsql/client"
 
-const config = { };
+const config = {
+  url: "file:example.db" // Use "file::memory:" for in-memory mode.
+};
 const db = connect(config);
 const rs = await db.execute("SELECT * FROM users");
 console.log(rs);
