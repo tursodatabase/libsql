@@ -4,7 +4,7 @@ const { Client } = require('pg')
 test('Connect to server', async () => {
     const client = new Client({
         host: "127.0.0.1",
-        port: 5000,
+        port: 5432,
     })
     await client.connect()
     await client.end()
@@ -13,7 +13,7 @@ test('Connect to server', async () => {
 test('Change schema', async () => {
     const client = new Client({
         host: "127.0.0.1",
-        port: 5000,
+        port: 5432,
     })
     await client.connect()
     await client.query("CREATE TABLE IF NOT EXISTS users (username TEXT)")
@@ -23,7 +23,7 @@ test('Change schema', async () => {
 test('Query tables', async () => {
     const client = new Client({
         host: "127.0.0.1",
-        port: 5000,
+        port: 5432,
     })
     await client.connect()
     await client.query("CREATE TABLE IF NOT EXISTS users (username TEXT)")

@@ -9,7 +9,7 @@ if [ "$1" = '/bin/sqld' ]; then
   declare -a server_args=()
 
   # Listen to PostgreSQL port by default.
-  server_args+=("--pg-listen-addr" "0.0.0.0:5000")
+  server_args+=("--pg-listen-addr" "0.0.0.0:5432")
 
   # Listen on HTTP 8080 port by default.
   server_args+=("--http-listen-addr" "0.0.0.0:8080")
