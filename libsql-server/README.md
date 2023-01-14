@@ -34,7 +34,7 @@ cargo run
 and connect to it with psql:
 
 ```console
-psql -h 127.0.0.1 -p 5000
+psql -h 127.0.0.1 -p 5432
 ```
 
 ## Building from Sources
