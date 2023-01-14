@@ -12,15 +12,22 @@ use tracing::warn;
 use crate::libsql::wal_hook::WalHook;
 use crate::libsql::WalConnection;
 use crate::query::{
-    Column, ErrorCode, QueryError, QueryResponse, QueryResult, ResultSet, Row, Value,
+    Column, ErrorCode, Queries, Query, QueryError, QueryResponse, QueryResult, ResultSet, Row,
+    Value,
 };
 use crate::query_analysis::{State, Statement};
 
 use super::{Database, TXN_TIMEOUT_SECS};
 
+/// Internal message used to communicate between the database thread and the `LibSqlDb` handle.
+struct Message {
+    queries: Queries,
+    resp: oneshot::Sender<(Vec<QueryResult>, State)>,
+}
+
 #[derive(Clone)]
 pub struct LibSqlDb {
-    sender: crossbeam::channel::Sender<(Statement, Vec<Value>, oneshot::Sender<QueryResult>)>,
+    sender: crossbeam::channel::Sender<Message>,
 }
 
 fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Vec<Value>) -> QueryResult {
@@ -39,9 +46,11 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Vec<Valu
                 .flatten(),
         })
         .collect::<Vec<_>>();
+
     let mut qresult = prepared.query(params_from_iter(
         params.into_iter().map(rusqlite::types::Value::from),
     ))?;
+
     while let Some(row) = qresult.next()? {
         let mut values = vec![];
         for (i, _) in columns.iter().enumerate() {
@@ -51,6 +60,61 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Vec<Valu
     }
 
     Ok(QueryResponse::ResultSet(ResultSet { columns, rows }))
+}
+
+struct ConnectionState {
+    state: State,
+    timeout_deadline: Option<Instant>,
+}
+
+impl ConnectionState {
+    fn initial() -> Self {
+        Self {
+            state: State::Init,
+            timeout_deadline: None,
+        }
+    }
+
+    fn deadline(&self) -> Option<Instant> {
+        self.timeout_deadline
+    }
+
+    fn reset(&mut self) {
+        self.state.reset();
+        self.timeout_deadline.take();
+    }
+
+    fn step(&mut self, stmt: &Statement) {
+        let old_state = self.state;
+
+        self.state.step(stmt.kind);
+
+        match (old_state, self.state) {
+            (State::Init, State::Txn) => {
+                self.timeout_deadline
+                    .replace(Instant::now() + Duration::from_secs(TXN_TIMEOUT_SECS));
+            }
+            (State::Txn, State::Init) => self.reset(),
+            (_, State::Invalid) => panic!("invalid state"),
+            _ => (),
+        }
+    }
+}
+
+fn handle_query(
+    conn: &rusqlite::Connection,
+    query: Query,
+    state: &mut ConnectionState,
+) -> QueryResult {
+    let result = execute_query(conn, &query.stmt, query.params);
+
+    // We drive the connection state on success. This is how we keep track of whether
+    // a transaction timeouts
+    if result.is_ok() {
+        state.step(&query.stmt)
+    }
+
+    result
 }
 
 fn rollback(conn: &rusqlite::Connection) {
@@ -138,9 +202,7 @@ impl LibSqlDb {
         >,
         wal_hook: impl WalHook + Send + Clone + 'static,
     ) -> anyhow::Result<Self> {
-        let (sender, receiver) =
-            crossbeam::channel::unbounded::<(Statement, Vec<Value>, oneshot::Sender<QueryResult>)>(
-            );
+        let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
         tokio::task::spawn_blocking(move || {
             let conn = open_db(
@@ -150,19 +212,18 @@ impl LibSqlDb {
                 wal_hook,
             )
             .unwrap();
-            let mut state = State::Start;
-            let mut timeout_deadline = None;
+
+            let mut state = ConnectionState::initial();
             let mut timedout = false;
             loop {
-                let (stmt, params, sender) = match timeout_deadline {
+                let Message { queries, resp } = match state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
                         Ok(msg) => msg,
                         Err(RecvTimeoutError::Timeout) => {
                             warn!("transaction timed out");
                             rollback(&conn);
-                            timeout_deadline = None;
                             timedout = true;
-                            state = State::Start;
+                            state.reset();
                             continue;
                         }
                         Err(RecvTimeoutError::Disconnected) => break,
@@ -174,30 +235,23 @@ impl LibSqlDb {
                 };
 
                 if !timedout {
-                    let old_state = state;
-                    let result = execute_query(&conn, &stmt, params);
-                    if result.is_ok() {
-                        state.step(stmt.kind);
-                        match (old_state, state) {
-                            (State::Start, State::TxnOpened) => {
-                                timeout_deadline.replace(
-                                    Instant::now() + Duration::from_secs(TXN_TIMEOUT_SECS),
-                                );
-                            }
-                            (State::TxnOpened, State::TxnClosed) => {
-                                timeout_deadline.take();
-                                state.reset();
-                            }
-                            (_, State::Invalid) => panic!("invalid state"),
-                            _ => (),
-                        }
+                    let mut results = Vec::with_capacity(queries.len());
+                    for query in queries {
+                        let result = handle_query(&conn, query, &mut state);
+                        results.push(result);
                     }
-                    ok_or_exit!(sender.send(result));
+                    ok_or_exit!(resp.send((results, state.state)));
                 } else {
-                    ok_or_exit!(sender.send(Err(QueryError::new(
-                        ErrorCode::TxTimeout,
-                        "transaction timedout",
-                    ))));
+                    // fail all the queries in the batch with timeout error
+                    let errors = (0..queries.len())
+                        .map(|_| {
+                            Err(QueryError::new(
+                                ErrorCode::TxTimeout,
+                                "transaction timedout",
+                            ))
+                        })
+                        .collect();
+                    ok_or_exit!(resp.send((errors, state.state)));
                     timedout = false;
                 }
             }
@@ -209,11 +263,11 @@ impl LibSqlDb {
 
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute(&self, query: Statement, params: Vec<Value>) -> QueryResult {
-        let (sender, receiver) = oneshot::channel();
-        let _ = self.sender.send((query, params, sender));
-        receiver
-            .await
-            .map_err(|e| QueryError::new(ErrorCode::Internal, e.to_string()))?
+    async fn execute(&self, queries: Queries) -> anyhow::Result<(Vec<QueryResult>, State)> {
+        let (resp, receiver) = oneshot::channel();
+        let msg = Message { queries, resp };
+        let _ = self.sender.send(msg);
+
+        Ok(receiver.await?)
     }
 }

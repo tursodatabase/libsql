@@ -1,4 +1,3 @@
-use std::future::ready;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::Poll;
@@ -7,8 +6,7 @@ use futures::Future;
 use tower::Service;
 
 use super::Database;
-use crate::query::{ErrorCode, Query, QueryError, QueryResponse, QueryResult, ResultSet};
-use crate::query_analysis::Statement;
+use crate::query::{Queries, QueryResult};
 pub trait DbFactory: Send + Sync + 'static {
     type Future: Future<Output = anyhow::Result<Self::Db>> + Send;
     type Db: Database + Send + Sync;
@@ -76,24 +74,18 @@ impl<DB> Drop for DbService<DB> {
     }
 }
 
-impl<DB: Database + 'static + Send + Sync> Service<Query> for DbService<DB> {
-    type Response = QueryResponse;
-    type Error = QueryError;
-    type Future = Pin<Box<dyn Future<Output = QueryResult> + Send>>;
+impl<DB: Database + 'static + Send + Sync> Service<Queries> for DbService<DB> {
+    type Response = Vec<QueryResult>;
+    type Error = anyhow::Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
         // need to implement backpressure: one req at a time.
         Ok(()).into()
     }
 
-    fn call(&mut self, query: Query) -> Self::Future {
+    fn call(&mut self, queries: Queries) -> Self::Future {
         let db = self.db.clone();
-        match query {
-            Query::SimpleQuery(stmts, params) => match Statement::parse(stmts) {
-                Ok(None) => Box::pin(ready(Ok(QueryResponse::ResultSet(ResultSet::empty())))),
-                Ok(Some(stmt)) => Box::pin(async move { db.execute(stmt, params).await }),
-                Err(e) => Box::pin(ready(Err(QueryError::new(ErrorCode::SQLError, e)))),
-            },
-        }
+        Box::pin(async move { Ok(db.execute(queries).await?.0) })
     }
 }
