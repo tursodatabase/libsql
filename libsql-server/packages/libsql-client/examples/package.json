@@ -11,6 +11,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@libsql/client": "^0.0.0"
+    "@libsql/client": "^0.0.2"
   }
 }
