@@ -1,5 +1,5 @@
 import fetch from 'cross-fetch';
-import { ResultSet } from "../libsql-js";
+import { Row, ResultSet } from "../libsql-js";
 import { Driver } from "./Driver";
 
 export class HttpDriver implements Driver {
@@ -17,15 +17,16 @@ export class HttpDriver implements Driver {
             method: 'POST',
             body: JSON.stringify(query),
         });
-        const results = await response.json();
-        // FIXME: Fix return value when there are multiple statements.
-        return [{
-            results: results,
-            success: true,
-            meta: {
-                duration: 0,
-            },
-        }];
+        const results = await response.json() as Row[][];
+        return results.map(rs => {
+            return {
+                results: rs,
+                success: true,
+                meta: {
+                    duration: 0,
+                },
+            };
+        });
     }
 
 }
