@@ -13,7 +13,7 @@ However, if libSQL starts to provide more [PostgreSQL compatibility](https://git
 
 ## Features
 
-* SQLite dialect layered on top of PostgreSQL wire protocol.
+* SQLite dialect layered on top of HTTP or the PostgreSQL wire protocol.
 * SQLite-compatible API that you can drop-in with `LD_PRELOAD` in your application to switch from local database to a remote database.
 * Read replica support.
 * Integration with [mvSQLite](https://github.com/losfair/mvsqlite) for high availability and fault tolerance.
