@@ -1,11 +1,11 @@
-C Add\sOOM\scheck,\sper\stip\sat\s[forum:/forumpost/933479b2d5|forum\spost\s933479b2d5]
-D 2023-01-14T19:27:40.985
+C Omit\sthe\slong-disused\sFTS1\sand\sFTS2\simplements\sfrom\sthe\sactive\ssource\stree.\nThe\scode\swill\spersist\sforever\sin\sthe\ssource\srepository,\sbut\sthere\sis\sno\spoint\nin\scarrying\sit\saround\sin\sthe\slatest\starballs\swhere\sit\sis\snever\sused.
+D 2023-01-14T19:53:42.098
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 341f02570d220695100004c447773ecb6c082e24178fc45dcbc0a212abaa0655
+F Makefile.in 4bba1e74ea2ffc95b9f299d72aebec06dc55c2d93948c93a2f356cc9682912ea
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 5a13f784bd91c246673648f056e7f3193c45d53dff874eecde547ec854c292b8
+F Makefile.msc 6de67bb5a8e849f9a7a11085366cc8daf99845fa21368e89b3cd195abd62cd2a
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 413ec94920a487ae32c9a2a8819544d690662d6f7c7ce025c0d0b8a1e74fa9db
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -54,32 +54,6 @@ F ext/expert/expert1.test 95b00567ce0775126a1b788af2d055255014714ecfddc97913864d
 F ext/expert/sqlite3expert.c a912efbad597eafdb0ce934ebc11039f3190b2d479685d89184e107f65d856e1
 F ext/expert/sqlite3expert.h ca81efc2679a92373a13a3e76a6138d0310e32be53d6c3bfaedabd158ea8969b
 F ext/expert/test_expert.c d56c194b769bdc90cf829a14c9ecbc1edca9c850b837a4d0b13be14095c32a72
-F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
-F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
-F ext/fts1/ft_hash.h 06df7bba40dadd19597aa400a875dbc2fed705ea
-F ext/fts1/fts1.c a39f7d21c2994d27c959ef9c3505c81542c81432
-F ext/fts1/fts1.h 6060b8f62c1d925ea8356cb1a6598073eb9159a6
-F ext/fts1/fts1_hash.c 3196cee866edbebb1c0521e21672e6d599965114
-F ext/fts1/fts1_hash.h e7f0d761353996a8175eda351104acfde23afcb0
-F ext/fts1/fts1_porter.c b1c7304b8988ba3f764a147cdd32043b4913ea7b
-F ext/fts1/fts1_tokenizer.h fdea722c38a9f82ed921642981234f666e47919c
-F ext/fts1/fts1_tokenizer1.c fd00d1fe4dc30dfc5c64cba695ce34f4af20d2fa
-F ext/fts1/fulltext.c 37698e1909584f6d8ea67d1485e3ad39dbf42d19
-F ext/fts1/fulltext.h 08525a47852d1d62a0be81d3fc3fe2d23b094efd
-F ext/fts1/simple_tokenizer.c bbfa4e3b2a26ef17d4edc6d98cd4a3f5396d998a
-F ext/fts1/tokenizer.h 0c53421b832366d20d720d21ea3e1f6e66a36ef9
-F ext/fts2/README.tokenizers 21e3684ea5a095b55d70f6878b4ce6af5932dfb7
-F ext/fts2/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts2/fts2.c 72c816a9ae448049fbbe8f18a85698765fc7956c
-F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
-F ext/fts2/fts2_hash.c 011a1d32de45bb1b519a1fd0048e857d6a843558
-F ext/fts2/fts2_hash.h 1824b99dfd8d0225facbdb26a2c87289b2e7dcf8
-F ext/fts2/fts2_icu.c 51c5cd3c04954badd329fa738c95fcdb717b5188
-F ext/fts2/fts2_porter.c 2cd4a507bf3c3085fe66f59b0f2a325f65aaacf5
-F ext/fts2/fts2_tokenizer.c b529493d55e55497213c37e1f31680a77746be26
-F ext/fts2/fts2_tokenizer.h 27a1a99ca2d615cf7e142839b8d79e8751b4529e
-F ext/fts2/fts2_tokenizer1.c 07e223eecb483d448313b5f1553a4f299a7fb7a1
-F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c7cc3bf59ee
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
@@ -565,7 +539,7 @@ F ext/wasm/wasmfs.make cf9a68162d92ca2bcb0b9528b244cb36d5cc2d84ccc9c2d398461927d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk ed4950f3e1d03687e6c94c0f9aa26373ddab628030480d1e298097cfe0b9a5cf
+F main.mk e8aca588ea9b98108e303972fbe6fa08d0481afbad21e81c288ef44a9a695dab
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2069,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eac135fd6a5dd220a0f7c1b61f987bbd801faabdb76846c4417fef0dd03fcb87
-R 99e97b5c1ed332ad2978f8ea2c2fcf8e
-U larrybr
-Z ebace40712668be3208071b1f9005e7b
+P eda84dcffee6016fb3f8588d96c7ffb6275edd626b11f6fe12e81be90226c7d8
+R 7852d0ec8fdd16208bf35878fba2c912
+U drh
+Z 906fb928e09759a07caadcd98e3668bb
 # Remove this line to create a well-formed Fossil manifest.
