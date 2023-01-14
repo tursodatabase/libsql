@@ -1,8 +1,9 @@
 import { connect } from "@libsql/client"
 
 async function example() {
+  const url = process.env.DB_URL ?? "file::memory:";
   const config = {
-    url: process.env.DB_URL
+    url
   };
   const db = connect(config);
   await db.transaction([
