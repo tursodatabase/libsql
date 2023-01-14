@@ -1,4 +1,4 @@
 source "https://rubygems.org"
 
 gem "rspec"
-gem "sqlite3"
+gem 'sqlite3', '=1.5.3'
