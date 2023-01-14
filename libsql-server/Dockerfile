@@ -23,5 +23,5 @@ COPY --from=builder /sqld/target/release/sqld /bin/sqld
 COPY docker-entrypoint.sh /usr/local/bin
 ENTRYPOINT ["docker-entrypoint.sh"]
 
-EXPOSE 5000
+EXPOSE 5001 5432 8080
 CMD ["/bin/sqld"]
