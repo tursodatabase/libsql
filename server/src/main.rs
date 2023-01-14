@@ -47,6 +47,8 @@ struct Cli {
 
     #[clap(long, env = "SQLD_HTTP_LISTEN_ADDR")]
     http_listen_addr: Option<SocketAddr>,
+    #[clap(long)]
+    enable_http_console: bool,
 }
 
 impl From<Cli> for Config {
@@ -56,6 +58,7 @@ impl From<Cli> for Config {
             tcp_addr: cli.pg_listen_addr,
             ws_addr: cli.ws_listen_addr,
             http_addr: cli.http_listen_addr,
+            enable_http_console: cli.enable_http_console,
             backend: cli.backend,
             writer_rpc_addr: cli.primary_grpc_url,
             rpc_server_addr: cli.grpc_listen_addr,

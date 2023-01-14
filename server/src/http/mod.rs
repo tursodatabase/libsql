@@ -144,15 +144,20 @@ async fn show_console() -> anyhow::Result<Response<Body>> {
 async fn handle_request(
     req: Request<Body>,
     sender: mpsc::Sender<Message>,
+    enable_console: bool,
 ) -> anyhow::Result<Response<Body>> {
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => handle_query(req, sender).await,
-        (&Method::GET, "/console") => show_console().await,
+        (&Method::GET, "/console") if enable_console => show_console().await,
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
 
-pub async fn run_http<F>(addr: SocketAddr, db_factory: F) -> anyhow::Result<()>
+pub async fn run_http<F>(
+    addr: SocketAddr,
+    db_factory: F,
+    enable_console: bool,
+) -> anyhow::Result<()>
 where
     F: MakeService<(), Queries> + Send + 'static,
     F::Service: Load + Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error>,
@@ -170,7 +175,9 @@ where
         hyper::server::Server::bind(&addr).serve(make_service_fn(move |_: &AddrStream| {
             let sender = sender.clone();
             async move {
-                Ok::<_, Infallible>(service_fn(move |req| handle_request(req, sender.clone())))
+                Ok::<_, Infallible>(service_fn(move |req| {
+                    handle_request(req, sender.clone(), enable_console)
+                }))
             }
         }));
 
