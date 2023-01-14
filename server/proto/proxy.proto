@@ -1,20 +1,17 @@
 syntax = "proto3";
 package proxy;
 
-message SimpleQuery {
-  string q = 1;
-  // Uuid
-  bytes clientId = 2;
-  }
+message Queries {
+    repeated string queries = 1;
+    // Uuid
+    bytes clientId = 2;
+}
 
 message QueryResult {
-    optional Error          error = 1;
-    optional ResultRows     rows = 2;
-    enum Result {
-        Ok = 0;
-        Err = 1;
+    oneof row_result {
+        Error error = 1;
+        ResultRows row = 2;
     }
-    Result result = 3;
 }
 
 message Error {
@@ -62,7 +59,18 @@ message DisconnectMessage {
 
 message Ack {}
 
+message ExecuteResults {
+    repeated QueryResult results = 1;
+    enum State {
+        Init = 0;
+        Invalid = 1;
+        Txn = 2;
+    }
+    /// State after executing the queries
+    State state = 2;
+}
+
 service Proxy {
-  rpc Query(SimpleQuery) returns (QueryResult) {}
+  rpc Execute(Queries) returns (ExecuteResults) {}
   rpc Disconnect(DisconnectMessage) returns (Ack) {}
 }

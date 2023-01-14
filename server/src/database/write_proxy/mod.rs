@@ -11,10 +11,11 @@ use tokio::sync::Mutex;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
-use crate::query::{ErrorCode, QueryError, QueryResponse, QueryResult, Value};
-use crate::query_analysis::{State, Statement};
+use crate::query::{self, QueryResponse, QueryResult};
+use crate::query_analysis::{final_state, State};
 use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
-use crate::rpc::proxy::proxy_rpc::{query_result, DisconnectMessage, SimpleQuery};
+use crate::rpc::proxy::proxy_rpc::query_result::RowResult;
+use crate::rpc::proxy::proxy_rpc::{DisconnectMessage, Queries};
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
 use replication::PeriodicDbUpdater;
@@ -97,7 +98,7 @@ impl WriteProxyDatabase {
         Ok(Self {
             read_db,
             write_proxy,
-            state: Mutex::new(State::Start),
+            state: Mutex::new(State::Init),
             client_id: Uuid::new_v4(),
         })
     }
@@ -105,33 +106,43 @@ impl WriteProxyDatabase {
 
 #[async_trait::async_trait]
 impl Database for WriteProxyDatabase {
-    async fn execute(&self, query: Statement, params: Vec<Value>) -> QueryResult {
+    async fn execute(&self, queries: query::Queries) -> anyhow::Result<(Vec<QueryResult>, State)> {
         let mut state = self.state.lock().await;
-        if query.is_read_only() && *state == State::Start {
-            self.read_db.execute(query, params).await
+        if *state == State::Init
+            && queries.iter().all(|q| q.stmt.is_read_only())
+            && final_state(*state, queries.iter().map(|s| &s.stmt)) == State::Init
+        {
+            self.read_db.execute(queries).await
         } else {
-            let mut next_state = *state;
-            next_state.step(query.kind);
-            let query = SimpleQuery {
-                q: query.stmt,
+            let queries = Queries {
+                queries: queries.into_iter().map(|q| q.stmt.stmt).collect(),
                 client_id: self.client_id.as_bytes().to_vec(),
             };
             let mut client = self.write_proxy.clone();
-            match client.query(query).await {
+            match client.execute(queries).await {
                 Ok(r) => {
-                    let result = r.into_inner();
-                    match result.result() {
-                        query_result::Result::Ok => {
-                            let rows = result.rows.expect("invalid response");
-                            *state = next_state;
-                            return Ok(QueryResponse::ResultSet(rows.into()));
-                        }
-                        // FIXME: correct error handling
-                        query_result::Result::Err => Err(QueryError::from(result.error.unwrap())),
-                    }
+                    let execute_result = r.into_inner();
+                    *state = execute_result.state().into();
+                    let results = execute_result
+                        .results
+                        .into_iter()
+                        .map(|r| -> QueryResult {
+                            let result = r.row_result.unwrap();
+                            match result {
+                                RowResult::Row(res) => Ok(QueryResponse::ResultSet(res.into())),
+                                RowResult::Error(e) => Err(e.into()),
+                            }
+                        })
+                        .collect();
+
+                    Ok((results, *state))
                 }
-                // state unknown!
-                Err(e) => Err(QueryError::new(ErrorCode::Internal, e)),
+                Err(e) => {
+                    // Set state to invalid, so next call is sent to remote, and we have a chance
+                    // to recover state.
+                    *state = State::Invalid;
+                    anyhow::bail!("rpc error: {e}")
+                }
             }
         }
     }

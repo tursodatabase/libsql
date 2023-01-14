@@ -10,7 +10,7 @@ use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
-use query::{Query, QueryError, QueryResponse};
+use query::{Queries, QueryResult};
 use rpc::run_rpc_server;
 use tower::load::Constant;
 use tower::{Service, ServiceExt};
@@ -25,7 +25,7 @@ mod libsql;
 mod postgres;
 mod query;
 mod query_analysis;
-mod rpc;
+pub mod rpc;
 mod server;
 mod wal_logger;
 
@@ -51,9 +51,9 @@ pub struct Config {
 async fn run_service<S>(service: S, config: Config) -> Result<()>
 where
     S: Service<(), Error = anyhow::Error> + Sync + Send + 'static + Clone,
-    S::Response: Service<Query, Response = QueryResponse, Error = QueryError> + Sync + Send,
+    S::Response: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
     S::Future: Send + Sync,
-    <S::Response as Service<Query>>::Future: Send,
+    <S::Response as Service<Queries>>::Future: Send,
 {
     let mut server = Server::new();
     server.bind_tcp(config.tcp_addr).await?;
