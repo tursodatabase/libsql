@@ -41,6 +41,7 @@ pub struct Config {
     pub tcp_addr: SocketAddr,
     pub ws_addr: Option<SocketAddr>,
     pub http_addr: Option<SocketAddr>,
+    pub enable_http_console: bool,
     pub backend: Backend,
     #[cfg(feature = "mwal_backend")]
     pub mwal_addr: Option<String>,
@@ -70,6 +71,7 @@ where
         let handle = tokio::spawn(http::run_http(
             addr,
             service.map_response(|s| Constant::new(s, 1)),
+            config.enable_http_console,
         ));
 
         handles.push(handle);
