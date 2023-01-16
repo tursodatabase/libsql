@@ -202,5 +202,19 @@ do_test shell2-1.4.9 {
  SELECT writefile('DoNotCare', x'');}
 } {1 {line 2: cannot use the writefile() function in safe mode}}
 
+# Verify that .clone handles sequence table.
+# See https://sqlite.org/forum/forumpost/71ff9e6c4c
+do_test shell2-1.4.9 {
+  forcedelete clone.db
+  set res [catchcmd :memory: [string trim {
+ CREATE TABLE t(id INTEGER PRIMARY KEY AUTOINCREMENT);
+ INSERT INTO t VALUES (1),(2);
+.clone clone.db
+.open clone.db
+ SELECT max(seq) FROM sqlite_sequence;}]]
+} {0 {t... done
+done
+2}}
+
 
 finish_test
