@@ -2,7 +2,6 @@ use std::future::poll_fn;
 
 use bytes::{Buf, Bytes};
 use futures::{io, SinkExt};
-use once_cell::sync::Lazy;
 use pgwire::api::portal::Portal;
 use pgwire::api::query::{ExtendedQueryHandler, SimpleQueryHandler};
 use pgwire::api::results::Response;
@@ -12,7 +11,6 @@ use pgwire::messages::response::{ReadyForQuery, READY_STATUS_IDLE};
 use pgwire::messages::startup::SslRequest;
 use pgwire::messages::PgWireBackendMessage;
 use pgwire::tokio::PgWireMessageServerCodec;
-use regex::Regex;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::sync::Mutex;
 use tokio_util::codec::Framed;
@@ -21,9 +19,6 @@ use tower::Service;
 use crate::query::{Queries, Query, QueryResponse, QueryResult, Value};
 use crate::query_analysis::Statement;
 use crate::server::AsyncPeekable;
-
-// TODO: more robust parsing
-static VAR_REPLACE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"\$(?P<digits>\d*)"#).unwrap());
 
 /// This is a dummy handler, it's sole role is to send the response back to the client.
 pub struct QueryHandler<'a, S>(Mutex<&'a mut S>);
@@ -102,8 +97,7 @@ where
     {
         debug_assert_eq!(portal.parameter_types().len(), portal.parameter_len());
 
-        let patched_statement = VAR_REPLACE_RE.replace(portal.statement(), "?$digits");
-        let stmt = Statement::parse(&patched_statement)
+        let stmt = Statement::parse(portal.statement())
             .next()
             .transpose()
             .map_err(|e| {
