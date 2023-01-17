@@ -512,14 +512,15 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.40.0 and later */
   sqlite3_value_encoding,
   /* Version 3.41.0 and later */
-  sqlite3_is_interrupted,
+  sqlite3_is_interrupted
+};
 
+static const libsql_api_routines libsqlApis = {
   /* libSQL 0.1.1 */
   libsql_wal_methods_find,
   libsql_wal_methods_register,
   libsql_wal_methods_unregister
 };
-
 /* True if x is the directory separator character
 */
 #if SQLITE_OS_WIN
@@ -653,7 +654,7 @@ static int sqlite3LoadExtension(
     return SQLITE_ERROR;
   }
   sqlite3_free(zAltEntry);
-  rc = xInit(db, &zErrmsg, &sqlite3Apis);
+  rc = xInit(db, &zErrmsg, &sqlite3Apis, &libsqlApis);
   if( rc ){
     if( rc==SQLITE_OK_LOAD_PERMANENTLY ) return SQLITE_OK;
     if( pzErrMsg ){
@@ -880,8 +881,10 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
 #endif
 #ifdef SQLITE_OMIT_LOAD_EXTENSION
     const sqlite3_api_routines *pThunk = 0;
+    const libsql_api_routines *pThunkLibsql = 0;
 #else
     const sqlite3_api_routines *pThunk = &sqlite3Apis;
+    const libsql_api_routines *pThunkLibsql = &libsqlApis;
 #endif
     sqlite3_mutex_enter(mutex);
     if( i>=wsdAutoext.nExt ){
@@ -892,7 +895,7 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
     }
     sqlite3_mutex_leave(mutex);
     zErrmsg = 0;
-    if( xInit && (rc = xInit(db, &zErrmsg, pThunk))!=0 ){
+    if( xInit && (rc = xInit(db, &zErrmsg, pThunk, pThunkLibsql))!=0 ){
       sqlite3ErrorWithMsg(db, rc,
             "automatic extension loading failed: %s", zErrmsg);
       go = 0;

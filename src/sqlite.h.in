@@ -1289,6 +1289,16 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 typedef struct sqlite3_api_routines sqlite3_api_routines;
 
 /*
+** CAPI3REF: Loadable Extension Thunk
+**
+** A pointer to the opaque libsql_api_routines structure is passed as
+** the fourth parameter to entry points of [loadable extensions].  This
+** structure must be typedefed in order to work around compiler warnings
+** on some platforms.
+*/
+typedef struct libsql_api_routines libsql_api_routines;
+
+/*
 ** CAPI3REF: File Name
 **
 ** Type [sqlite3_filename] is used by SQLite to pass filenames to the
