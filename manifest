@@ -1,5 +1,5 @@
-C Cause\s.clone\sto\snot\strip\sover\ssequence\stable\sas\sreported\sat\s[forum:/forumpost/71ff9e6c4c|forum\spost\s71ff9e6c4c].
-D 2023-01-16T21:49:37.618
+C Add\stest\scases\sto\sconfirm\sthat\sthe\sschema\sparsing\squirk\sin\swhich\san\nON\sCONFLICT\sclause\sis\saccepted\sand\signored\son\stable\sCHECK\sconstraints\sbut\nraises\san\serror\son\scolumn\sCHECK\sconstraints.\s\sWe\swant\sto\scontinue\ssupporting\nthis\sharmless\squirk\sto\savoid\sbreaking\slegacy\sapplications\sand\sdatabases\sthat\naccidentally\suse\sit.
+D 2023-01-17T13:33:51.553
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -863,7 +863,7 @@ F test/collateB.test 1e68906951b846570f29f20102ed91d29e634854ee47454d725f2151eca
 F test/colmeta.test 2c765ea61ee37bc43bbe6d6047f89004e6508eb1
 F test/colname.test 87ad5458bb8709312dac0d6755fd30e8e4ca83298d0a9ef6e5c24277a3c3390e
 F test/columncount.test 6fe99c2f35738b0129357a1cf3fa483f76140f4cd8a89014c88c33c876d2638f
-F test/conflict.test ac0667090f66130ac77d5fb764655558ca6600dd6d88f670ca9123b61c448337
+F test/conflict.test b705cddf025a675d3c13d62fa78ab1e2696fb8e07a3d7cccce1596ff8b301492
 F test/conflict2.test 5557909ce683b1073982f5d1b61dfb1d41e369533bfdaf003180c5bc87282dd1
 F test/conflict3.test 81865d9599609aca394fb3b9cd5f561d4729ea5b176bece3644f6ecb540f88ac
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83f21285fe86430a66ce6841606e3ad7c27da52ac75a034c6a00c7a9fdb9791d
-R 09a384ec6c69ca0e41781383672c8e29
-U larrybr
-Z ede7f009862b061932bdbac950bfcd0d
+P b44d04f7b051d807a81152a6e4f15a765f7b9ed1f01b48b40dc5420c11e0c251
+R 1788985ff6e49530e53b2827088bccd2
+U drh
+Z fd1c86a3c35b9c82bf0d3e0fa6d038c1
 # Remove this line to create a well-formed Fossil manifest.
