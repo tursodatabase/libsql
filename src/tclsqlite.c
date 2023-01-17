@@ -3054,6 +3054,9 @@ deserialize_error:
       if( pDb->zProgress ){
         Tcl_AppendResult(interp, pDb->zProgress, (char*)0);
       }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+      sqlite3_progress_handler(pDb->db, 0, 0, 0);
+#endif
     }else if( objc==4 ){
       char *zProgress;
       int len;

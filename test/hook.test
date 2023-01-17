@@ -16,6 +16,7 @@
 #      sqlite_commit_hook    (tests hook-1..hook-3 inclusive)
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
+#      sqlite_preupdate_hook  (tests hook-7..hook-12)
 #
 # $Id: hook.test,v 1.15 2009/04/07 14:14:23 danielk1977 Exp $
 
