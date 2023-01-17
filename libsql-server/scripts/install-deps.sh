@@ -24,7 +24,8 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
       npm \
       protobuf-compiler \
       rubygem-bundler \
-      rubygem-sqlite3 
+      rubygem-sqlite3 \
+      ruby-devel
   else
     echo "Linux distribution $ID is not supported by this installer."
   fi
