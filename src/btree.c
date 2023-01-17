@@ -10183,6 +10183,41 @@ Pager *sqlite3BtreePager(Btree *p){
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
 /*
+** Record an OOM error during integrity_check
+*/
+static void checkOom(IntegrityCk *pCheck){
+  pCheck->rc = SQLITE_NOMEM;
+  pCheck->mxErr = 0;  /* Causes integrity_check processing to stop */
+  if( pCheck->nErr==0 ) pCheck->nErr++;
+}
+
+/*
+** Invoke the progress handler, if appropriate.  Also check for an
+** interrupt.
+*/
+static void checkProgress(IntegrityCk *pCheck){
+  sqlite3 *db = pCheck->db;
+  if( AtomicLoad(&db->u1.isInterrupted) ){
+    pCheck->rc = SQLITE_INTERRUPT;
+    pCheck->nErr++;
+    pCheck->mxErr = 0;
+  }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( db->xProgress ){
+    assert( db->nProgressOps>0 );
+    pCheck->nStep++;
+    if( (pCheck->nStep % db->nProgressOps)==0
+     && db->xProgress(db->pProgressArg)
+    ){
+      pCheck->rc = SQLITE_INTERRUPT;
+      pCheck->nErr++;
+      pCheck->mxErr = 0;
+    }
+  }
+#endif
+}
+
+/*
 ** Append a message to the error message string.
 */
 static void checkAppendMsg(
@@ -10191,6 +10226,7 @@ static void checkAppendMsg(
   ...
 ){
   va_list ap;
+  checkProgress(pCheck);
   if( !pCheck->mxErr ) return;
   pCheck->mxErr--;
   pCheck->nErr++;
@@ -10204,7 +10240,7 @@ static void checkAppendMsg(
   sqlite3_str_vappendf(&pCheck->errMsg, zFormat, ap);
   va_end(ap);
   if( pCheck->errMsg.accError==SQLITE_NOMEM ){
-    pCheck->bOomFault = 1;
+    checkOom(pCheck);
   }
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
@@ -10246,7 +10282,6 @@ static int checkRef(IntegrityCk *pCheck, Pgno iPage){
     checkAppendMsg(pCheck, "2nd reference to page %d", iPage);
     return 1;
   }
-  if( AtomicLoad(&pCheck->db->u1.isInterrupted) ) return 1;
   setPageReferenced(pCheck, iPage);
   return 0;
 }
@@ -10269,7 +10304,7 @@ static void checkPtrmap(
 
   rc = ptrmapGet(pCheck->pBt, iChild, &ePtrmapType, &iPtrmapParent);
   if( rc!=SQLITE_OK ){
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) pCheck->bOomFault = 1;
+    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) checkOom(pCheck);
     checkAppendMsg(pCheck, "Failed to read ptrmap key=%d", iChild);
     return;
   }
@@ -10453,6 +10488,8 @@ static int checkTreePage(
 
   /* Check that the page exists
   */
+  checkProgress(pCheck);
+  if( pCheck->mxErr==0 ) goto end_of_check;
   pBt = pCheck->pBt;
   usableSize = pBt->usableSize;
   if( iPage==0 ) return 0;
@@ -10698,13 +10735,14 @@ end_of_check:
 ** the unverified btrees.  Except, if aRoot[1] is 1, then the freelist
 ** checks are still performed.
 */
-char *sqlite3BtreeIntegrityCheck(
+int sqlite3BtreeIntegrityCheck(
   sqlite3 *db,  /* Database connection that is running the check */
   Btree *p,     /* The btree to be checked */
   Pgno *aRoot,  /* An array of root pages numbers for individual trees */
   int nRoot,    /* Number of entries in aRoot[] */
   int mxErr,    /* Stop reporting errors after this many */
-  int *pnErr    /* Write number of errors seen to this variable */
+  int *pnErr,   /* OUT: Write number of errors seen to this variable */
+  char **pzOut  /* OUT: Write the error message string here */
 ){
   Pgno i;
   IntegrityCk sCheck;
@@ -10727,18 +10765,12 @@ char *sqlite3BtreeIntegrityCheck(
   assert( p->inTrans>TRANS_NONE && pBt->inTransaction>TRANS_NONE );
   VVA_ONLY( nRef = sqlite3PagerRefcount(pBt->pPager) );
   assert( nRef>=0 );
+  memset(&sCheck, 0, sizeof(sCheck));
   sCheck.db = db;
   sCheck.pBt = pBt;
   sCheck.pPager = pBt->pPager;
   sCheck.nPage = btreePagecount(sCheck.pBt);
   sCheck.mxErr = mxErr;
-  sCheck.nErr = 0;
-  sCheck.bOomFault = 0;
-  sCheck.zPfx = 0;
-  sCheck.v1 = 0;
-  sCheck.v2 = 0;
-  sCheck.aPgRef = 0;
-  sCheck.heap = 0;
   sqlite3StrAccumInit(&sCheck.errMsg, 0, zErr, sizeof(zErr), SQLITE_MAX_LENGTH);
   sCheck.errMsg.printfFlags = SQLITE_PRINTF_INTERNAL;
   if( sCheck.nPage==0 ){
@@ -10747,12 +10779,12 @@ char *sqlite3BtreeIntegrityCheck(
 
   sCheck.aPgRef = sqlite3MallocZero((sCheck.nPage / 8)+ 1);
   if( !sCheck.aPgRef ){
-    sCheck.bOomFault = 1;
+    checkOom(&sCheck);
     goto integrity_ck_cleanup;
   }
   sCheck.heap = (u32*)sqlite3PageMalloc( pBt->pageSize );
   if( sCheck.heap==0 ){
-    sCheck.bOomFault = 1;
+    checkOom(&sCheck);
     goto integrity_ck_cleanup;
   }
 
@@ -10833,16 +10865,17 @@ char *sqlite3BtreeIntegrityCheck(
 integrity_ck_cleanup:
   sqlite3PageFree(sCheck.heap);
   sqlite3_free(sCheck.aPgRef);
-  if( sCheck.bOomFault ){
-    sqlite3_str_reset(&sCheck.errMsg);
-    sCheck.nErr++;
-  }
   *pnErr = sCheck.nErr;
-  if( sCheck.nErr==0 ) sqlite3_str_reset(&sCheck.errMsg);
+  if( sCheck.nErr==0 ){
+    sqlite3_str_reset(&sCheck.errMsg);
+    *pzOut = 0;
+  }else{
+    *pzOut = sqlite3StrAccumFinish(&sCheck.errMsg);
+  }
   /* Make sure this analysis did not leave any unref() pages. */
   assert( nRef==sqlite3PagerRefcount(pBt->pPager) );
   sqlite3BtreeLeave(p);
-  return sqlite3StrAccumFinish(&sCheck.errMsg);
+  return sCheck.rc;
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
