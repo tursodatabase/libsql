@@ -6,6 +6,8 @@ resource "tls_self_signed_cert" "root" {
     organization = "ACME Examples, Inc"
   }
 
+  is_ca_certificate = true
+
   validity_period_hours = 12
 
   allowed_uses = ["cert_signing"]
