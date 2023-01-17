@@ -269,8 +269,12 @@ impl ToSql for Value {
 }
 
 impl Params {
-    pub fn new() -> Self {
+    pub fn empty() -> Self {
         Self { params: Vec::new() }
+    }
+
+    pub fn new(params: Vec<(Option<String>, Value)>) -> Self {
+        Self { params }
     }
 
     pub fn push(&mut self, name: Option<String>, value: Value) {
@@ -278,12 +282,17 @@ impl Params {
     }
 
     fn get_name(&self, k: &str) -> Option<&Value> {
-        // posgres passes positional params with $NNN wheras sqlite expect a named param: https://www.sqlite.org/c3ref/bind_blob.html
-        if let Some(index) = k.strip_prefix("$").and_then(|s| s.parse::<usize>().ok()) {
+        // strip prefix ('$', '?', ..)
+        let mut chars = k.chars();
+        chars.next();
+        let stripped = chars.as_str();
+
+        if let Ok(index) = stripped.parse::<usize>() {
             return self.get_pos(index);
         }
+
         self.params.iter().find_map(|(name, val)| match name {
-            Some(name) if name == k => Some(val),
+            Some(name) if name == stripped => Some(val),
             _ => None,
         })
     }

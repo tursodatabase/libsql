@@ -157,7 +157,7 @@ where
                     .unwrap_or_default();
                 Query {
                     stmt,
-                    params: Params::new(),
+                    params: Params::empty(),
                 }
             })
             .collect();
