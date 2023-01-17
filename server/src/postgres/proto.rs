@@ -16,7 +16,7 @@ use tokio::sync::Mutex;
 use tokio_util::codec::Framed;
 use tower::Service;
 
-use crate::query::{Queries, Query, QueryResponse, QueryResult, Value};
+use crate::query::{Params, Queries, Query, QueryResponse, QueryResult, Value};
 use crate::query_analysis::Statement;
 use crate::server::AsyncPeekable;
 
@@ -66,7 +66,7 @@ where
             .map(|s| {
                 s.map(|stmt| Query {
                     stmt,
-                    params: Vec::new(),
+                    params: Params::new(),
                 })
             })
             .collect::<anyhow::Result<Vec<_>>>();
@@ -97,6 +97,7 @@ where
     {
         debug_assert_eq!(portal.parameter_types().len(), portal.parameter_len());
 
+        dbg!(portal.statement());
         let stmt = Statement::parse(portal.statement())
             .next()
             .transpose()
@@ -117,8 +118,8 @@ where
     }
 }
 
-fn parse_params(types: &[Type], data: &[Option<Bytes>]) -> Vec<Value> {
-    let mut params = Vec::with_capacity(types.len());
+fn parse_params(types: &[Type], data: &[Option<Bytes>]) -> Params {
+    let mut params = Params::new();
     for (val, ty) in data.iter().zip(types) {
         let value = if val.is_none() {
             Value::Null
@@ -137,7 +138,7 @@ fn parse_params(types: &[Type], data: &[Option<Bytes>]) -> Vec<Value> {
             unimplemented!("unsupported type")
         };
 
-        params.push(value);
+        params.push(None, value);
     }
 
     params

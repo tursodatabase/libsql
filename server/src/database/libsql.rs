@@ -5,15 +5,15 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
-use rusqlite::{params_from_iter, OpenFlags};
+use rusqlite::OpenFlags;
 use tokio::sync::oneshot;
 use tracing::warn;
 
 use crate::libsql::wal_hook::WalHook;
 use crate::libsql::WalConnection;
 use crate::query::{
-    Column, ErrorCode, Queries, Query, QueryError, QueryResponse, QueryResult, ResultSet, Row,
-    Value,
+    Column, ErrorCode, Params, Queries, Query, QueryError, QueryResponse, QueryResult, ResultSet,
+    Row,
 };
 use crate::query_analysis::{State, Statement};
 
@@ -30,7 +30,7 @@ pub struct LibSqlDb {
     sender: crossbeam::channel::Sender<Message>,
 }
 
-fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Vec<Value>) -> QueryResult {
+fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) -> QueryResult {
     let mut rows = vec![];
     let mut prepared = conn.prepare(&stmt.stmt)?;
     let columns = prepared
@@ -47,9 +47,9 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Vec<Valu
         })
         .collect::<Vec<_>>();
 
-    let mut qresult = prepared.query(params_from_iter(
-        params.into_iter().map(rusqlite::types::Value::from),
-    ))?;
+    params.bind(&mut prepared).unwrap();
+
+    let mut qresult = prepared.raw_query();
 
     while let Some(row) = qresult.next()? {
         let mut values = vec![];

@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::database::service::DbFactory;
 use crate::database::Database;
-use crate::query::Query;
+use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
 use crate::rpc::proxy::proxy_rpc::execute_results::State;
 use proxy_rpc::proxy_server::Proxy;
@@ -157,7 +157,7 @@ where
                     .unwrap_or_default();
                 Query {
                     stmt,
-                    params: Vec::new(),
+                    params: Params::new(),
                 }
             })
             .collect();
