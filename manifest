@@ -1,5 +1,5 @@
-C Change\san\snow\sunreachable\stestcase()\sinto\san\sassert().
-D 2023-01-17T19:00:22.170
+C Fix\sanother\sissue\swith\svery\slarge\scompressed\sLSM\sdatabases.
+D 2023-01-17T19:34:01.586
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -241,7 +241,7 @@ F ext/lsm1/lsm-test/lsmtest_tdb4.c cbe230727b9413d244062943371af1421ace472ccb023
 F ext/lsm1/lsm-test/lsmtest_util.c 241622db5a332a09c8e6e7606b617d288a37b557f7d3bce0bb97809f67cc2806
 F ext/lsm1/lsm-test/lsmtest_win32.c 0e0a224674c4d3170631c41b026b56c7e1672b151f5261e1b4cc19068641da2d
 F ext/lsm1/lsm.h 0f6f64ff071471cb87bf98beb8386566f30ea001
-F ext/lsm1/lsmInt.h 22ed041ac98a94b654432c33e0857d0a128e35d1935f2ce49f64614f03607929
+F ext/lsm1/lsmInt.h 3bcc280347196e4ed14925b64a07685415238bf41317db0598c8d3f6aaceb9c1
 F ext/lsm1/lsm_ckpt.c ad9a8028d401be9e76f20c4d86d49f33f4fc27785577b452ca955094314a72b4
 F ext/lsm1/lsm_file.c 5486f4a63b19e4d7d972ee2482f29ebdf06c29544f31845f713cccb5199f9ad1
 F ext/lsm1/lsm_log.c a8bf334532109bba05b09a504ee45fc393828b0d034ca61ab45e3940709d9a7c
@@ -249,7 +249,7 @@ F ext/lsm1/lsm_main.c 87770a9c7e73859fce7620cb79623776ba4b30369086229ad82c3e6eea
 F ext/lsm1/lsm_mem.c 4c51ea9fa285ee6e35301b33491642d071740a0a
 F ext/lsm1/lsm_mutex.c 378edf0a2b142b4f7640ee982df06d50b98788ea
 F ext/lsm1/lsm_shared.c c67282a4f2c91e2a3362bdd40a81f9041cd587973ffc4bca8b8fbdab5470dee1
-F ext/lsm1/lsm_sorted.c e17769dd283fd3cba086672c29a3519066ea18199041761e25caf24268b14880
+F ext/lsm1/lsm_sorted.c bc276055afc21e7f23538d39d7cf2722379b56c79778ab7232f710e3374d501c
 F ext/lsm1/lsm_str.c 65e361b488c87b10bf3e5c0070b14ffc602cf84f094880bece77bbf6678bca82
 F ext/lsm1/lsm_tree.c 682679d7ef2b8b6f2fe77aeb532c8d29695bca671c220b0abac77069de5fb9fb
 F ext/lsm1/lsm_unix.c 11e0a5c19d754a4e1d93dfad06de8cc201f10f886b8e61a4c599ed34e334fc24
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7cf282d307a23697b38f5fd4b46f13f63a9e6f7cc74ccd66297d88c00aa8f454
-R b07ff8277ee2dd1895bef0be862fbf6d
-U drh
-Z 11f771bd0de4c93b23037737568dbe40
+P 517b2c4c4ee9afc50e5457a6877e5af34358a6267d8dad669d25410c124866ac
+R 8f8f74b60987ef0c37f51221fc78f86c
+U dan
+Z b44db4fb84a9476892cd583f8ab587a9
 # Remove this line to create a well-formed Fossil manifest.

@@ -44,6 +44,8 @@
 # endif
 #endif
 
+/* #define LSM_DEBUG_EXPENSIVE 1 */
+
 /*
 ** Default values for various data structure parameters. These may be
 ** overridden by calls to lsm_config().
