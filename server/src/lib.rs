@@ -1,15 +1,17 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::sync::Arc;
 #[cfg(feature = "mwal_backend")]
 use std::sync::Mutex;
+use std::task::{Context, Poll};
 
 use anyhow::Result;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
 use futures::stream::FuturesUnordered;
-use futures::StreamExt;
+use futures::{Future, StreamExt};
 use query::{Queries, QueryResult};
 use rpc::run_rpc_server;
 use tower::load::Constant;
@@ -84,6 +86,30 @@ where
     Ok(())
 }
 
+pin_project_lite::pin_project! {
+    struct FutOrNever<F> {
+        #[pin]
+        inner: Option<F>,
+    }
+}
+
+impl<T> From<Option<T>> for FutOrNever<T> {
+    fn from(inner: Option<T>) -> Self {
+        Self { inner }
+    }
+}
+
+impl<F: Future> Future for FutOrNever<F> {
+    type Output = F::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        match self.project().inner.as_pin_mut() {
+            Some(fut) => fut.poll(cx),
+            None => Poll::Pending,
+        }
+    }
+}
+
 pub async fn run_server(config: Config) -> Result<()> {
     tracing::trace!("Backend: {:?}", config.backend);
     #[cfg(feature = "mwal_backend")]
@@ -128,10 +154,34 @@ pub async fn run_server(config: Config) -> Result<()> {
                 }
             };
             let service = DbFactoryService::new(db_factory.clone());
-            if let Some(addr) = config.rpc_server_addr {
-                tokio::spawn(run_rpc_server(addr, db_factory, logger_clone));
+            let rpc_fut: FutOrNever<_> = config
+                .rpc_server_addr
+                .map(|addr| tokio::spawn(run_rpc_server(addr, db_factory, logger_clone)))
+                .into();
+
+            let svc_fut = run_service(service, config);
+
+            tokio::select! {
+                ret = rpc_fut => {
+                    match ret {
+                        Ok(Ok(_)) => {
+                            tracing::info!("Rpc server exited, terminating program.");
+                        }
+                        Err(e) => {
+                            tracing::error!("Rpc server exited with error: {e}");
+                        }
+                        Ok(Err(e)) => {
+                            tracing::error!("Rpc server exited with error: {e}");
+                        }
+                    }
+                }
+                ret = svc_fut => {
+                    match ret {
+                        Ok(_) => tracing::info!("Server exited"),
+                        Err(e) => tracing::error!("Server exited with error: {e}"),
+                    }
+                }
             }
-            run_service(service, config).await?;
         }
     }
 
