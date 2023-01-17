@@ -33,12 +33,24 @@ pub struct WriteProxyDbFactory {
 impl WriteProxyDbFactory {
     pub async fn new(
         addr: &str,
+        tls: bool,
+        cert: Option<PathBuf>,
         db_path: PathBuf,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
             Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
         >,
     ) -> anyhow::Result<Self> {
-        let write_proxy = ProxyClient::connect(addr.to_string()).await?;
+        let mut channel = Channel::from_shared(addr.to_string())?;
+        if tls {
+            let cert = std::fs::read_to_string(cert.unwrap())?;
+            let ca = tonic::transport::Certificate::from_pem(&cert);
+            let tls = tonic::transport::ClientTlsConfig::new()
+                .ca_certificate(ca)
+                .domain_name("example.com");
+            channel = channel.tls_config(tls)?;
+        }
+        let conn = channel.connect().await?;
+        let write_proxy = ProxyClient::new(conn);
         let mut db_updater =
             PeriodicDbUpdater::new(&db_path, addr.to_string(), Duration::from_secs(1)).await?;
         let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);

@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::database::service::DbFactory;
@@ -13,6 +14,9 @@ pub mod wal_log;
 
 pub async fn run_rpc_server<F>(
     addr: SocketAddr,
+    tls: bool,
+    cert: Option<PathBuf>,
+    key: Option<PathBuf>,
     factory: F,
     logger: Arc<WalLogger>,
 ) -> anyhow::Result<()>
@@ -25,7 +29,16 @@ where
     let logger_service = WalLogService::new(logger);
 
     tracing::info!("serving write proxy server at {addr}");
-    tonic::transport::Server::builder()
+
+    let mut builder = tonic::transport::Server::builder();
+    if tls {
+        let cert = std::fs::read_to_string(cert.unwrap())?;
+        let key = std::fs::read_to_string(key.unwrap())?;
+        let server_identity = tonic::transport::Identity::from_pem(&cert, &key);
+        builder = builder
+            .tls_config(tonic::transport::ServerTlsConfig::new().identity(server_identity))?;
+    }
+    builder
         .add_service(ProxyServer::new(proxy_service))
         .add_service(WalLogServer::new(logger_service))
         .serve(addr)
