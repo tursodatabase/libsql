@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sCLI.
-D 2023-01-17T18:40:54.202
+C Change\san\snow\sunreachable\stestcase()\sinto\san\sassert().
+D 2023-01-17T19:00:22.170
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -692,7 +692,7 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3ff7bc2b48dd425b1448304bb86273b05da1621f136d51dbb9789f8803559a1f
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c 238635c1c40d42d9ded72994b81d4127f99d6d09e9279bdd37f6f34f4025adee
+F src/vdbe.c da2963a170cea17d88e140c1ab00ce702d27b90e2e27831274a2ae9e9b704897
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h fc15815b7bdafbb27e7f027faba2b0112e87d382c0d72241672528806ebc0db5
 F src/vdbeapi.c 4ee67890913c1d2469c68e3ad2e7ddeab57ac5924a64bbfd0906a8ea0d542c7f
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce18f0ed684824e67ed6c09acab8e735fef2c52b2ed32270dee1a2a67802c59b
-R a114e4235d1828841adb0a1b38ba33a0
+P 7cf282d307a23697b38f5fd4b46f13f63a9e6f7cc74ccd66297d88c00aa8f454
+R b07ff8277ee2dd1895bef0be862fbf6d
 U drh
-Z 845b147611bfaf369b61f4fa54c6a0de
+Z 11f771bd0de4c93b23037737568dbe40
 # Remove this line to create a well-formed Fossil manifest.
