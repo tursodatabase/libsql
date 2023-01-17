@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sconfirm\sthat\sthe\sschema\sparsing\squirk\sin\swhich\san\nON\sCONFLICT\sclause\sis\saccepted\sand\signored\son\stable\sCHECK\sconstraints\sbut\nraises\san\serror\son\scolumn\sCHECK\sconstraints.\s\sWe\swant\sto\scontinue\ssupporting\nthis\sharmless\squirk\sto\savoid\sbreaking\slegacy\sapplications\sand\sdatabases\sthat\naccidentally\suse\sit.
-D 2023-01-17T13:33:51.553
+C Update\svirtual\stables\sjson_each\sand\sjson_tree\sso\sthat\sadding\s"ORDER\sBY\srowid"\sto\sa\squery\sdoes\snot\srequire\san\sexternal\ssort.
+D 2023-01-17T15:46:27.790
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -580,7 +580,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h b638809e083b601b618df877b2e89cb87c2a47a01f4def10be4c4ebb54664ac7
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 1b11a2e33ee52db93c02fddac67e39d00161d61b69fac2675b82f2aa68c1b61c
-F src/json.c 7749b98c62f691697c7ee536b570c744c0583cab4a89200fdd0fc2aa8cc8cbd6
+F src/json.c f68c386e887b564dbab8d2c45b14f6b64226e640ae009c7cc75c79b60668250f
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c b04eb648cedc45efe4298e1ef439ac4f0096ae27b5f01accb0a1f49d57789128
 F src/main.c f5ed7b748d7e54b96ac577a9d87af9461f13f092bbe684d473448010333402dc
@@ -1562,7 +1562,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 65c29b6f1dbf71b0e59a7b221d7e849dfa5a55fa7d0a2902811e8abdecdb1d44
+F test/tester.tcl e72c337f01e47c2833c83288b60e0a1730165cc7de7b59724e925c4ce026c0a1
 F test/testrunner.tcl 86b57135754ab2160aeb04b4829d321fb285a5cfa7a505fe61d69aed605854cc
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -1908,7 +1908,7 @@ F test/window8.tcl 5e02e41d9d9a80f597063aed1a381eb19d1d0ef677a4f0df352c5365cf23f
 F test/window8.test 4ab16817414af0c904abe2ebdf88eb6c2b00058b84f9748c6174ff11fc45f1ed
 F test/window9.test 349c71eab4288a1ffc19e2f65872ec2c37e6cf8a1dda2ad300364b7450ae4836
 F test/windowA.test 6d63dc1260daa17141a55007600581778523a8b420629f1282d2acfc36af23be
-F test/windowB.test f2fb42b864b0cf431c956407583e9478a74c3642bdf8737fdcb6ff4a40298b07
+F test/windowB.test b9c544673d85b3260af6afbc579d44cc5a3c5254d994e65cff9144e9f6a131f1
 F test/windowC.test 6fd75f5bb2f1343d34e470e36e68f0ff638d8a42f6aa7d99471261b31a0d42f2
 F test/windowD.test 65cf5a765fb8072450e8a0de2979ce7f09a38d87724fe1280c6444073e3da49b
 F test/windowE.test 6ba0c8048e4cc02b942e56640f8fcd50fd7ca72c876656c40f6baf42e316684c
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b44d04f7b051d807a81152a6e4f15a765f7b9ed1f01b48b40dc5420c11e0c251
-R 1788985ff6e49530e53b2827088bccd2
-U drh
-Z fd1c86a3c35b9c82bf0d3e0fa6d038c1
+P 92b6a9cd0fb027fe675b3913aa07c75445bba0cfac9530d08d7e48f7869c04cc
+R eac01b79c15f2d7b06eb46f6112b481e
+U dan
+Z 15227cc7c6ac97d235bbf65aa1d05b80
 # Remove this line to create a well-formed Fossil manifest.

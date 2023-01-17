@@ -1062,7 +1062,16 @@ proc append_graph {prefix dxname cxname level} {
 #
 proc do_eqp_test {name sql res} {
   if {[regexp {^\s+QUERY PLAN\n} $res]} {
-    uplevel do_test $name [list [list query_plan_graph $sql]] [list $res]
+
+    set query_plan [query_plan_graph $sql]
+
+    if {[list {*}$query_plan]==[list {*}$res]} {
+      uplevel [list do_test $name [list set {} ok] ok]
+    } else {
+      uplevel [list \
+        do_test $name [list query_plan_graph $sql] $res
+      ]
+    }
   } else {
     if {[string index $res 0]!="/"} {
       set res "/*$res*/"

@@ -2473,6 +2473,13 @@ static int jsonEachBestIndex(
       idxMask |= iMask;
     }
   }
+  if( pIdxInfo->nOrderBy>0 
+   && pIdxInfo->aOrderBy[0].iColumn<0 
+   && pIdxInfo->aOrderBy[0].desc==0
+  ){
+    pIdxInfo->orderByConsumed = 1;
+  }
+
   if( (unusableMask & ~idxMask)!=0 ){
     /* If there are any unusable constraints on JSON or ROOT, then reject
     ** this entire plan */
