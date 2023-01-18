@@ -3316,8 +3316,6 @@ static int pagerOpenWalIfPresent(Pager *pPager){
           testcase( sqlite3PcachePagecount(pPager->pPCache)==0 );
           rc = sqlite3PagerOpenWal(pPager, 0);
         }
-      }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
-        rc = sqlite3PagerOpenWal(pPager, 0);
       }
     }
   }
