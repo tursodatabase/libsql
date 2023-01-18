@@ -1,11 +1,13 @@
 use std::convert::Infallible;
-use std::fmt;
 use std::str::FromStr;
+use std::{fmt, usize};
 
 use futures::stream;
 use pgwire::api::results::{text_query_response, FieldInfo, Response, TextDataRowEncoder};
 use pgwire::api::Type as PgType;
 use pgwire::{error::PgWireResult, messages::data::DataRow};
+use rusqlite::types::ToSqlOutput;
+use rusqlite::ToSql;
 use serde::{Deserialize, Serialize};
 
 use crate::query_analysis::Statement;
@@ -123,18 +125,6 @@ pub enum Value {
     Real(f64),
     Text(String),
     Blob(Vec<u8>),
-}
-
-impl From<Value> for rusqlite::types::Value {
-    fn from(value: Value) -> Self {
-        match value {
-            Value::Null => Self::Null,
-            Value::Integer(i) => Self::Integer(i),
-            Value::Real(x) => Self::Real(x),
-            Value::Text(s) => Self::Text(s),
-            Value::Blob(b) => Self::Blob(b),
-        }
-    }
 }
 
 impl From<rusqlite::types::Value> for Value {
@@ -256,7 +246,81 @@ pub enum QueryResponse {
 #[derive(Debug)]
 pub struct Query {
     pub stmt: Statement,
-    pub params: Vec<Value>,
+    pub params: Params,
+}
+
+#[derive(Debug)]
+pub struct Params {
+    params: Vec<(Option<String>, Value)>,
+}
+
+impl ToSql for Value {
+    fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
+        let val = match self {
+            Value::Null => ToSqlOutput::Owned(rusqlite::types::Value::Null),
+            Value::Integer(i) => ToSqlOutput::Owned(rusqlite::types::Value::Integer(*i)),
+            Value::Real(x) => ToSqlOutput::Owned(rusqlite::types::Value::Real(*x)),
+            Value::Text(s) => ToSqlOutput::Borrowed(rusqlite::types::ValueRef::Text(s.as_bytes())),
+            Value::Blob(b) => ToSqlOutput::Borrowed(rusqlite::types::ValueRef::Blob(b)),
+        };
+
+        Ok(val)
+    }
+}
+
+impl Params {
+    pub fn empty() -> Self {
+        Self { params: Vec::new() }
+    }
+
+    pub fn new(params: Vec<(Option<String>, Value)>) -> Self {
+        Self { params }
+    }
+
+    pub fn push(&mut self, name: Option<String>, value: Value) {
+        self.params.push((name, value));
+    }
+
+    fn get_name(&self, k: &str) -> Option<&Value> {
+        // strip prefix ('$', '?', ..)
+        let mut chars = k.chars();
+        chars.next();
+        let stripped = chars.as_str();
+
+        if let Ok(index) = stripped.parse::<usize>() {
+            return self.get_pos(index);
+        }
+
+        self.params.iter().find_map(|(name, val)| match name {
+            Some(name) if name == stripped => Some(val),
+            _ => None,
+        })
+    }
+
+    fn get_pos(&self, i: usize) -> Option<&Value> {
+        self.params.get(i - 1).map(|(_, val)| val)
+    }
+
+    pub fn bind(&self, stmt: &mut rusqlite::Statement) -> anyhow::Result<()> {
+        let param_count = stmt.parameter_count();
+        if param_count > 0 {
+            for index in 1..=param_count {
+                // get by name
+                if let Some(name) = stmt.parameter_name(index) {
+                    if let Some(val) = self.get_name(name) {
+                        stmt.raw_bind_parameter(index, val)?;
+                    }
+                } else {
+                    // get by pos
+                    if let Some(val) = self.get_pos(index) {
+                        stmt.raw_bind_parameter(index, val)?;
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
 }
 
 pub type Queries = Vec<Query>;

@@ -1,3 +1,5 @@
+mod types;
+
 use std::future::poll_fn;
 use std::{convert::Infallible, net::SocketAddr};
 
@@ -8,15 +10,17 @@ use hyper::body::to_bytes;
 use hyper::server::conn::AddrStream;
 use hyper::service::make_service_fn;
 use hyper::{Body, Method, Request, Response};
-use serde::Deserialize;
 use serde_json::{json, Number};
 use tokio::sync::{mpsc, oneshot};
 use tower::balance::pool;
 use tower::load::Load;
 use tower::{service_fn, BoxError, MakeService, Service};
 
-use crate::query::{self, Queries, Query, QueryResponse, QueryResult, ResultSet};
+use crate::http::types::HttpQuery;
+use crate::query::{self, Params, Queries, Query, QueryResponse, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
+
+use self::types::QueryObject;
 
 impl TryFrom<query::Value> for serde_json::Value {
     type Error = anyhow::Error;
@@ -81,17 +85,18 @@ fn error(msg: &str, code: u16) -> Response<Body> {
         .unwrap()
 }
 
-fn parse_queries(queries: Vec<String>) -> anyhow::Result<Vec<Query>> {
+fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
     let mut out = Vec::with_capacity(queries.len());
     for query in queries {
-        let stmt = Statement::parse(&query)
+        let stmt = Statement::parse(&query.q)
             .next()
             .transpose()?
             .unwrap_or_default();
         let query = Query {
             stmt,
-            params: Vec::new(),
+            params: Params::new(query.params.inner),
         };
+
         out.push(query);
     }
 
@@ -116,7 +121,7 @@ async fn handle_query(
     sender: mpsc::Sender<Message>,
 ) -> anyhow::Result<Response<Body>> {
     let bytes = to_bytes(req.body_mut()).await?;
-    let req: HttpQueryRequest = serde_json::from_slice(&bytes)?;
+    let req: HttpQuery = serde_json::from_slice(&bytes)?;
     let (s, resp) = oneshot::channel();
 
     let queries = match parse_queries(req.statements) {
@@ -199,9 +204,4 @@ where
     server.await?;
 
     Ok(())
-}
-
-#[derive(Debug, Deserialize)]
-pub struct HttpQueryRequest {
-    statements: Vec<String>,
 }
