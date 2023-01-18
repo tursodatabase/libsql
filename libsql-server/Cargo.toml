@@ -1,8 +1,8 @@
 [workspace]
 
 members = [
-    "client",
-    "server",
+    "sqlc",
+    "sqld",
 ]
 
 [patch."https://github.com/psarna/mvsqlite"]
