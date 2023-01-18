@@ -94,14 +94,28 @@ ifcapable {vacuum && !default_autovacuum} {
   } 1
 }
 ifcapable {explain} {
-  do_test interrupt-2.5 {
+  do_test interrupt-2.5.1 {
+    sqlite3_is_interrupted $DB
+  } {0}
+  do_test interrupt-2.5.2 {
+    unset -nocomplain ::interrupt_count
+    set ::interrupt_count 0
     set sql {EXPLAIN SELECT max(a,b), a, b FROM t1}
     execsql $sql
-    set rc [catch {db eval $sql {sqlite3_interrupt $DB}} msg]
+    set rc [catch {db eval $sql {
+      sqlite3_interrupt $DB;
+      incr ::interrupt_count [sqlite3_is_interrupted $DB];
+    }} msg]
     lappend rc $msg
   } {1 interrupted}
+  do_test interrupt-2.5.3 {
+    set ::interrupt_count
+  } {1}
 }
 integrity_check interrupt-2.6
+do_test interrupt-2.7 {
+  sqlite3_is_interrupted $DB
+} {0}
 
 # Ticket #594.  If an interrupt occurs in the middle of a transaction
 # and that transaction is later rolled back, the internal schema tables do

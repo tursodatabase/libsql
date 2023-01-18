@@ -511,6 +511,8 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_db_name,
   /* Version 3.40.0 and later */
   sqlite3_value_encoding,
+  /* Version 3.41.0 and later */
+  sqlite3_is_interrupted,
 
   /* libSQL 0.1.1 */
   libsql_wal_methods_find,

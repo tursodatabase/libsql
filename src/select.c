@@ -1870,7 +1870,6 @@ static void generateSortTail(
 #else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
 # define columnType(A,B,C,D,E) columnTypeImpl(A,B)
 #endif
-#ifndef SQLITE_OMIT_DECLTYPE
 static const char *columnTypeImpl(
   NameContext *pNC, 
 #ifndef SQLITE_ENABLE_COLUMN_METADATA
@@ -1901,7 +1900,7 @@ static const char *columnTypeImpl(
       Table *pTab = 0;            /* Table structure column is extracted from */
       Select *pS = 0;             /* Select the column is extracted from */
       int iCol = pExpr->iColumn;  /* Index of column in pTab */
-      while( ALWAYS(pNC) && !pTab ){
+      while( pNC && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
         if( j<pTabList->nSrc ){
@@ -1912,7 +1911,7 @@ static const char *columnTypeImpl(
         }
       }
 
-      if( NEVER(pTab==0) ){
+      if( pTab==0 ){
         /* At one time, code such as "SELECT new.x" within a trigger would
         ** cause this condition to run.  Since then, we have restructured how
         ** trigger code is generated and so this condition is no longer 
@@ -2017,7 +2016,6 @@ static const char *columnTypeImpl(
 #endif
   return zType;
 }
-#endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 
 /*
 ** Generate code that will tell the VDBE the declaration types of columns
@@ -2213,7 +2211,7 @@ int sqlite3ColumnsFromExprList(
   *pnCol = nCol;
   *paCol = aCol;
 
-  for(i=0, pCol=aCol; i<nCol && !db->mallocFailed; i++, pCol++){
+  for(i=0, pCol=aCol; i<nCol && !pParse->nErr; i++, pCol++){
     struct ExprList_item *pX = &pEList->a[i];
     struct ExprList_item *pCollide;
     /* Get an appropriate name for the column
@@ -2263,7 +2261,10 @@ int sqlite3ColumnsFromExprList(
         if( zName[j]==':' ) nName = j;
       }
       zName = sqlite3MPrintf(db, "%.*z:%u", nName, zName, ++cnt);
-      if( cnt>3 ) sqlite3_randomness(sizeof(cnt), &cnt);
+      sqlite3ProgressCheck(pParse);
+      if( cnt>3 ){
+        sqlite3_randomness(sizeof(cnt), &cnt);
+      }
     }
     pCol->zCnName = zName;
     pCol->hName = sqlite3StrIHash(zName);
@@ -2276,14 +2277,14 @@ int sqlite3ColumnsFromExprList(
     }
   }
   sqlite3HashClear(&ht);
-  if( db->mallocFailed ){
+  if( pParse->nErr ){
     for(j=0; j<i; j++){
       sqlite3DbFree(db, aCol[j].zCnName);
     }
     sqlite3DbFree(db, aCol);
     *paCol = 0;
     *pnCol = 0;
-    return SQLITE_NOMEM_BKPT;
+    return pParse->rc;
   }
   return SQLITE_OK;
 }
@@ -2311,14 +2312,17 @@ void sqlite3SubqueryColumnTypes(
   int i,j;
   Expr *p;
   struct ExprList_item *a;
+  NameContext sNC;
 
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
-  assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( pTab->nCol==pSelect->pEList->nExpr || pParse->nErr>0 );
   assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
   if( db->mallocFailed ) return;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   a = pSelect->pEList->a;
+  memset(&sNC, 0, sizeof(sNC));
+  sNC.pSrcList = pSelect->pSrc;
   for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     const char *zType;
     i64 n;
@@ -2344,28 +2348,31 @@ void sqlite3SubqueryColumnTypes(
         pCol->affinity = SQLITE_AFF_BLOB;
       }
     }
-    if( pCol->affinity==SQLITE_AFF_NUMERIC
-     || pCol->affinity==SQLITE_AFF_FLEXNUM
-    ){
-      zType = "NUM";
-    }else{
-      zType = 0;
-      for(j=1; j<SQLITE_N_STDTYPE; j++){
-        if( sqlite3StdTypeAffinity[j]==pCol->affinity ){
-          zType = sqlite3StdType[j];
-          break;
-        }
-      }
-    }
-    if( zType ){
-      i64 m = sqlite3Strlen30(zType);
-      n = sqlite3Strlen30(pCol->zCnName);
-      pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
-      if( pCol->zCnName ){
-        memcpy(&pCol->zCnName[n+1], zType, m+1);
-        pCol->colFlags |= COLFLAG_HASTYPE;
+    zType = columnType(&sNC, p, 0, 0, 0);
+    if( zType==0 || pCol->affinity!=sqlite3AffinityType(zType, 0) ){
+      if( pCol->affinity==SQLITE_AFF_NUMERIC
+       || pCol->affinity==SQLITE_AFF_FLEXNUM
+      ){
+        zType = "NUM";
       }else{
-        testcase( pCol->colFlags & COLFLAG_HASTYPE );
+        zType = 0;
+        for(j=1; j<SQLITE_N_STDTYPE; j++){
+          if( sqlite3StdTypeAffinity[j]==pCol->affinity ){
+            zType = sqlite3StdType[j];
+            break;
+          }
+        }
+       }
+     }
+     if( zType ){
+       i64 m = sqlite3Strlen30(zType);
+       n = sqlite3Strlen30(pCol->zCnName);
+       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
+       if( pCol->zCnName ){
+         memcpy(&pCol->zCnName[n+1], zType, m+1);
+         pCol->colFlags |= COLFLAG_HASTYPE;
+       }else{
+         testcase( pCol->colFlags & COLFLAG_HASTYPE );
         pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       }
     }

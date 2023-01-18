@@ -574,6 +574,9 @@ static SQLITE_NOINLINE void resizeResolveLabel(Parse *p, Vdbe *v, int j){
     int i;
     for(i=p->nLabelAlloc; i<nNewSize; i++) p->aLabel[i] = -1;
 #endif
+    if( nNewSize>=100 && (nNewSize/100)>(p->nLabelAlloc/100) ){
+      sqlite3ProgressCheck(p);
+    }
     p->nLabelAlloc = nNewSize;
     p->aLabel[j] = v->nOp;
   }

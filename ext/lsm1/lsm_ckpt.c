@@ -511,7 +511,7 @@ static void ckptNewSegment(
   pSegment->iFirst = ckptGobble64(aIn, piIn);
   pSegment->iLastPg = ckptGobble64(aIn, piIn);
   pSegment->iRoot = ckptGobble64(aIn, piIn);
-  pSegment->nSize = (int)ckptGobble64(aIn, piIn);
+  pSegment->nSize = ckptGobble64(aIn, piIn);
   assert( pSegment->iFirst );
 }
 
