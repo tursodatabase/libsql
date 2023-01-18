@@ -8,9 +8,6 @@ WORKDIR /sqld
 # prepare recipe
 FROM compiler AS planner
 COPY . .
-RUN cd libsql && ./configure --with-pic --enable-releasemode && make libsqlite3.la sqlite3.h
-RUN cp ./libsql/.libs/lib* /usr/lib/
-RUN cp ./libsql/sqlite3.h /usr/include
 RUN cargo chef prepare --recipe-path recipe.json
 
 # build sqld
@@ -23,7 +20,6 @@ RUN cargo build --release -p sqld
 # runtime
 FROM debian:bullseye-slim
 COPY --from=builder /sqld/target/release/sqld /bin/sqld
-COPY --from=builder /sqld/libsql/.libs/lib* /usr/lib/
 COPY docker-entrypoint.sh /usr/local/bin
 ENTRYPOINT ["docker-entrypoint.sh"]
 
