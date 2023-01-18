@@ -8,6 +8,8 @@ SQLD_PG_LISTEN_ADDR="${SQLD_PG_LISTEN_ADDR:-"0.0.0.0:5432"}"
 SQLD_HTTP_LISTEN_ADDR="${SQLD_HTTP_LISTEN_ADDR:-"0.0.0.0:8080"}"
 SQLD_GRPC_LISTEN_ADDR="${SQLD_GRPC_LISTEN_ADDR:-"0.0.0.0:5001"}"
 
+SQLD_HTTP_AUTH="${SQLD_HTTP_AUTH:-"always"}"
+
 if [ "$1" = '/bin/sqld' ]; then
   # We are running the server.
   declare -a server_args=()
@@ -17,6 +19,7 @@ if [ "$1" = '/bin/sqld' ]; then
 
   # Listen on HTTP 8080 port by default.
   server_args+=("--http-listen-addr" "$SQLD_HTTP_LISTEN_ADDR")
+  server_args+=("--http-auth" "$SQLD_HTTP_AUTH")
 
   # Set remaining arguments depending on what type of node we are.
   case "$SQLD_NODE" in
