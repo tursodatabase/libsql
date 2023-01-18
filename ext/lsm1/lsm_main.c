@@ -432,7 +432,7 @@ int lsm_config(lsm_db *pDb, int eParam, ...){
 }
 
 void lsmAppendSegmentList(LsmString *pStr, char *zPre, Segment *pSeg){
-  lsmStringAppendf(pStr, "%s{%d %d %d %d}", zPre, 
+  lsmStringAppendf(pStr, "%s{%lld %lld %lld %lld}", zPre, 
         pSeg->iFirst, pSeg->iLastPg, pSeg->iRoot, pSeg->nSize
   );
 }

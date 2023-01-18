@@ -399,5 +399,13 @@ foreach {tn temp} {
   }
 }
 
+# 2022-01-13 https://sqlite.org/forum/forumpost/d010a26798
+#
+reset_db
+do_execsql_test 17.0 {
+  CREATE TABLE bug(id INTEGER PRIMARY KEY NOT NULL, x);
+  INSERT INTO bug(id,x) VALUES(20, NULL);
+  UPDATE bug SET x=NULL WHERE id = 20 RETURNING quote(x), x IS NULL;
+} {NULL 1}
 
 finish_test

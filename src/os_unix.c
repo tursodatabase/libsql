@@ -6462,12 +6462,10 @@ static void appendOnePathElement(
   if( zName[0]=='.' ){
     if( nName==1 ) return;
     if( zName[1]=='.' && nName==2 ){
-      if( pPath->nUsed<=1 ){
-        pPath->rc = SQLITE_ERROR;
-        return;
+      if( pPath->nUsed>1 ){
+        assert( pPath->zOut[0]=='/' );
+        while( pPath->zOut[--pPath->nUsed]!='/' ){}
       }
-      assert( pPath->zOut[0]=='/' );
-      while( pPath->zOut[--pPath->nUsed]!='/' ){}
       return;
     }
   }

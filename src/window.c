@@ -2944,8 +2944,7 @@ void sqlite3WindowCodeStep(
     VdbeCoverageNeverNullIf(v, op==OP_Ge); /* NeverNull because bound <expr> */
     VdbeCoverageNeverNullIf(v, op==OP_Le); /*   values previously checked */
     windowAggFinal(&s, 0);
-    sqlite3VdbeAddOp2(v, OP_Rewind, s.current.csr, 1);
-    VdbeCoverageNeverTaken(v);
+    sqlite3VdbeAddOp1(v, OP_Rewind, s.current.csr);
     windowReturnOneRow(&s);
     sqlite3VdbeAddOp1(v, OP_ResetSorter, s.current.csr);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, lblWhereEnd);
@@ -2957,13 +2956,10 @@ void sqlite3WindowCodeStep(
   }
 
   if( pMWin->eStart!=TK_UNBOUNDED ){
-    sqlite3VdbeAddOp2(v, OP_Rewind, s.start.csr, 1);
-    VdbeCoverageNeverTaken(v);
+    sqlite3VdbeAddOp1(v, OP_Rewind, s.start.csr);
   }
-  sqlite3VdbeAddOp2(v, OP_Rewind, s.current.csr, 1);
-  VdbeCoverageNeverTaken(v);
-  sqlite3VdbeAddOp2(v, OP_Rewind, s.end.csr, 1);
-  VdbeCoverageNeverTaken(v);
+  sqlite3VdbeAddOp1(v, OP_Rewind, s.current.csr);
+  sqlite3VdbeAddOp1(v, OP_Rewind, s.end.csr);
   if( regPeer && pOrderBy ){
     sqlite3VdbeAddOp3(v, OP_Copy, regNewPeer, regPeer, pOrderBy->nExpr-1);
     sqlite3VdbeAddOp3(v, OP_Copy, regPeer, s.start.reg, pOrderBy->nExpr-1);
