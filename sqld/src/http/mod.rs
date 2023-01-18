@@ -1,6 +1,8 @@
+pub mod auth;
 mod types;
 
 use std::future::poll_fn;
+use std::sync::Arc;
 use std::{convert::Infallible, net::SocketAddr};
 
 use base64::prelude::BASE64_STANDARD_NO_PAD;
@@ -21,6 +23,7 @@ use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResponse, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
 
+use self::auth::Authorizer;
 use self::types::QueryObject;
 
 impl TryFrom<query::Value> for serde_json::Value {
@@ -159,10 +162,19 @@ async fn show_console() -> anyhow::Result<Response<Body>> {
 }
 
 async fn handle_request(
+    authorizer: Arc<dyn Authorizer + Send + Sync>,
     req: Request<Body>,
     sender: mpsc::Sender<Message>,
     enable_console: bool,
 ) -> anyhow::Result<Response<Body>> {
+    {
+        if !authorizer.is_authorized(&req) {
+            return Ok(Response::builder()
+                .status(hyper::StatusCode::UNAUTHORIZED)
+                .body(Body::empty())
+                .unwrap());
+        }
+    }
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => handle_query(req, sender).await,
         (&Method::GET, "/console") if enable_console => show_console().await,
@@ -172,6 +184,7 @@ async fn handle_request(
 
 pub async fn run_http<F>(
     addr: SocketAddr,
+    authorizer: Arc<dyn Authorizer + Send + Sync>,
     db_factory: F,
     enable_console: bool,
 ) -> anyhow::Result<()>
@@ -190,10 +203,13 @@ where
     let (sender, mut receiver) = mpsc::channel(1024);
     let server =
         hyper::server::Server::bind(&addr).serve(make_service_fn(move |_: &AddrStream| {
+            let authorizer = authorizer.clone();
             let sender = sender.clone();
             async move {
+                let authorizer = authorizer.clone();
                 Ok::<_, Infallible>(service_fn(move |req| {
-                    handle_request(req, sender.clone(), enable_console)
+                    let authorizer = authorizer.clone();
+                    handle_request(authorizer, req, sender.clone(), enable_console)
                 }))
             }
         }));
