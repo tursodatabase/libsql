@@ -43,6 +43,7 @@ pub struct Config {
     pub tcp_addr: SocketAddr,
     pub ws_addr: Option<SocketAddr>,
     pub http_addr: Option<SocketAddr>,
+    pub http_auth: Option<String>,
     pub enable_http_console: bool,
     pub backend: Backend,
     #[cfg(feature = "mwal_backend")]
@@ -70,8 +71,10 @@ where
     handles.push(tokio::spawn(server.serve(factory)));
 
     if let Some(addr) = config.http_addr {
+        let authorizer = http::auth::parse_auth(config.http_auth)?;
         let handle = tokio::spawn(http::run_http(
             addr,
+            authorizer,
             service.map_response(|s| Constant::new(s, 1)),
             config.enable_http_console,
         ));
