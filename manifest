@@ -1,5 +1,5 @@
-C Fix\sanother\sissue\swith\svery\slarge\scompressed\sLSM\sdatabases.
-D 2023-01-17T19:34:01.586
+C Emit\ssqlite3-api.(m)js\sduring\sthe\sJS\sbuild\sprocess,\swhich\sare\sthe\sJS\sAPIs\swithout\sthe\sEmscripten/wasm-loading\sparts.\sThey\sare\shypothetically\suseful\sfor\sarbitrary\sbuild\senvironments/toolchains\sbut\shave\snotable\scaveats\srelated\sto\sthe\swasm\simports,\sas\selaborated\son\sin\sthe\smakefile.
+D 2023-01-18T17:39:04.990
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -466,8 +466,8 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile ffe0e9818a3b6b36c85a1d10dab76b220a8f5cd83439c62e50223a7970b3d68a
-F ext/wasm/README-dist.txt 2d670b426fc7c613b90a7d2f2b05b433088fe65181abead970980f0a4a75ea20
+F ext/wasm/GNUmakefile 4ce83fdda22c6fde2bd311e87d6bec7469ca3859e758d1f34cd601e64c539efa
+F ext/wasm/README-dist.txt dab111337028af58ec11cb35c2e1a82398217c399c7499fefab0509a0499a5d7
 F ext/wasm/README.md ef39861aa21632fdbca0bdd469f78f0096f6449a720f3f39642594af503030e9
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 517b2c4c4ee9afc50e5457a6877e5af34358a6267d8dad669d25410c124866ac
-R 8f8f74b60987ef0c37f51221fc78f86c
-U dan
-Z b44db4fb84a9476892cd583f8ab587a9
+P d71154265a294a1ece89d257f55f6855db7c30aec55ea0dc4eeb61bce1e8fad3
+R 9999b5fb19f6515ae070f0d44ac959cb
+U stephan
+Z c0250e6423aa26692c2978bfc28218c3
 # Remove this line to create a well-formed Fossil manifest.
