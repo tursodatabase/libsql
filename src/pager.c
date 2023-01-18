@@ -3317,7 +3317,10 @@ static int pagerOpenWalIfPresent(Pager *pPager){
           rc = sqlite3PagerOpenWal(pPager, 0);
         }
       }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
-        rc = sqlite3PagerOpenWal(pPager, 0);
+        if ( pPager->readOnly || sqlite3PagerOpenWal(pPager, 0) != SQLITE_OK ) {
+        // Fall back to default journaling mode if it's not possible to open WAL
+          pPager->journalMode = PAGER_JOURNALMODE_DELETE;
+        }
       }
     }
   }
