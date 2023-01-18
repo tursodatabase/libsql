@@ -9,9 +9,10 @@ use bytes::{BufMut, Bytes, BytesMut};
 use hyper::body::to_bytes;
 use hyper::server::conn::AddrStream;
 use hyper::service::make_service_fn;
-use hyper::{Body, Method, Request, Response};
+use hyper::{Body, Method, Request, Response, StatusCode};
 use serde_json::{json, Number};
 use tokio::sync::{mpsc, oneshot};
+use tonic::codegen::http;
 use tower::balance::pool;
 use tower::load::Load;
 use tower::{service_fn, BoxError, MakeService, Service};
@@ -77,7 +78,7 @@ fn query_response_to_json(results: Vec<QueryResult>) -> anyhow::Result<Bytes> {
     Ok(buffer.into_inner().freeze())
 }
 
-fn error(msg: &str, code: u16) -> Response<Body> {
+fn error(msg: &str, code: StatusCode) -> Response<Body> {
     let err = json!({ "error": msg });
     Response::builder()
         .status(code)
@@ -116,17 +117,28 @@ struct Message {
     resp: oneshot::Sender<Result<Vec<QueryResult>, BoxError>>,
 }
 
+fn parse_payload(data: &[u8]) -> Result<HttpQuery, Response<Body>> {
+    match serde_json::from_slice(data) {
+        Ok(data) => Ok(data),
+        Err(e) => Err(error(&e.to_string(), http::status::StatusCode::BAD_REQUEST)),
+    }
+}
+
 async fn handle_query(
     mut req: Request<Body>,
     sender: mpsc::Sender<Message>,
 ) -> anyhow::Result<Response<Body>> {
     let bytes = to_bytes(req.body_mut()).await?;
-    let req: HttpQuery = serde_json::from_slice(&bytes)?;
+    let req = match parse_payload(&bytes) {
+        Ok(req) => req,
+        Err(resp) => return Ok(resp),
+    };
+
     let (s, resp) = oneshot::channel();
 
     let queries = match parse_queries(req.statements) {
         Ok(queries) => queries,
-        Err(e) => return Ok(error(&e.to_string(), 400)),
+        Err(e) => return Ok(error(&e.to_string(), StatusCode::BAD_REQUEST)),
     };
 
     let msg = Message { queries, resp: s };
@@ -138,7 +150,7 @@ async fn handle_query(
             let json = query_response_to_json(rows)?;
             Ok(Response::new(Body::from(json)))
         }
-        Err(_) | Ok(Err(_)) => Ok(error("internal error", 500)),
+        Err(_) | Ok(Err(_)) => Ok(error("internal error", StatusCode::INTERNAL_SERVER_ERROR)),
     }
 }
 
