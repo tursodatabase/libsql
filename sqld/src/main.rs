@@ -29,7 +29,7 @@ struct Cli {
         env = "SQLD_GRPC_LISTEN_ADDR"
     )]
     grpc_listen_addr: Option<SocketAddr>,
-    #[clap(long)]
+    #[clap(long, requires = "grpc_cert_file", requires = "grpc_key_file")]
     grpc_tls: bool,
     #[clap(long)]
     grpc_cert_file: Option<PathBuf>,
@@ -38,10 +38,10 @@ struct Cli {
     /// The gRPC URL of the primary node to connect to for writes. Example: `http://localhost:5001`.
     #[clap(long, env = "SQLD_PRIMARY_GRPC_URL")]
     primary_grpc_url: Option<String>,
-    #[clap(long)]
+    #[clap(long, requires = "primary_grpc_ca_cert_file")]
     primary_grpc_tls: bool,
     #[clap(long)]
-    primary_grpc_cert_file: Option<PathBuf>,
+    primary_grpc_ca_cert_file: Option<PathBuf>,
     #[clap(
         long,
         short,
@@ -72,7 +72,7 @@ impl From<Cli> for Config {
             backend: cli.backend,
             writer_rpc_addr: cli.primary_grpc_url,
             writer_rpc_tls: cli.primary_grpc_tls,
-            writer_rpc_cert: cli.primary_grpc_cert_file,
+            writer_rpc_ca_cert: cli.primary_grpc_ca_cert_file,
             rpc_server_addr: cli.grpc_listen_addr,
             rpc_server_tls: cli.grpc_tls,
             rpc_server_cert: cli.grpc_cert_file,
@@ -85,7 +85,10 @@ impl From<Cli> for Config {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_ansi(false)
+        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
     let args = Cli::parse();
 
     #[cfg(feature = "mwal_backend")]

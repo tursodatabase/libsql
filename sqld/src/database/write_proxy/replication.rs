@@ -47,7 +47,7 @@ pub struct PeriodicDbUpdater {
 impl PeriodicDbUpdater {
     pub async fn new(
         path: &Path,
-        remote_logger_addr: String,
+        logger: WalLogClient<Channel>,
         interval: Duration,
     ) -> anyhow::Result<Self> {
         let db = open_with_regular_wal(
@@ -56,7 +56,7 @@ impl PeriodicDbUpdater {
                 | OpenFlags::SQLITE_OPEN_CREATE
                 | OpenFlags::SQLITE_OPEN_URI
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            ReadReplicationHook::new(remote_logger_addr).await?,
+            ReadReplicationHook::new(logger).await?,
         )?;
 
         Ok(Self { interval, db })
@@ -210,8 +210,7 @@ fn free_page_header(h: *const PgHdr) {
 }
 
 impl ReadReplicationHook {
-    async fn new(remote_addr: String) -> anyhow::Result<Self> {
-        let logger = WalLogClient::connect(remote_addr).await?;
+    async fn new(logger: WalLogClient<Channel>) -> anyhow::Result<Self> {
         let last_applied_index_file = OpenOptions::new()
             .create(true)
             .read(true)

@@ -2,34 +2,22 @@
 
 ## Configuring gRPC to use TLS
 
-Generate a CA private key:
+Generate development keys and certificates:
 
 ```console
-openssl genrsa -out ca.key 2048
-```
-
-and server private key:
-
-```console
-openssl genrsa -out server1.key 2048
-```
-
-Create certificates:
-
-```console
-cd cert && terraform init && terraform apply
+python scripts/gen_certs.py
 ```
 
 Start a `sqld` server in primary mode:
 
 ```console
-cargo run -- --grpc-listen-addr 127.0.0.1:5001 --grpc-tls --grpc-cert-file server1.pem --grpc-key-file server1.key
+cargo run -- --grpc-listen-addr 127.0.0.1:5001 --grpc-tls --grpc-cert-file server_cert.pem --grpc-key-file server_key.pem
 ```
 
 Start a `sqld` server in replica mode:
 
 ```console
-cargo run -- --primary-grpc-url http://127.0.0.1:5001 --primary-grpc-tls --primary-grpc-cert-file ca.pem 
+cargo run -- --primary-grpc-url http://127.0.0.1:5001 --primary-grpc-tls --primary-grpc-ca-cert-file ca_cert.pem 
 ```
 
 ## Deploying to Fly
