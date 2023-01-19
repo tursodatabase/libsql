@@ -16,6 +16,7 @@ use crate::query_analysis::{final_state, State};
 use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::proxy_rpc::query_result::RowResult;
 use crate::rpc::proxy::proxy_rpc::{DisconnectMessage, Queries};
+use crate::rpc::wal_log::wal_log_rpc::wal_log_client::WalLogClient;
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
 use replication::PeriodicDbUpdater;
@@ -33,14 +34,40 @@ pub struct WriteProxyDbFactory {
 impl WriteProxyDbFactory {
     pub async fn new(
         addr: &str,
+        tls: bool,
+        cert_path: Option<PathBuf>,
+        key_path: Option<PathBuf>,
+        ca_cert_path: Option<PathBuf>,
         db_path: PathBuf,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
             Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
         >,
     ) -> anyhow::Result<Self> {
-        let write_proxy = ProxyClient::connect(addr.to_string()).await?;
+        let mut endpoint = Channel::from_shared(addr.to_string())?;
+        if tls {
+            let cert_pem = std::fs::read_to_string(cert_path.unwrap())?;
+            let key_pem = std::fs::read_to_string(key_path.unwrap())?;
+            let identity = tonic::transport::Identity::from_pem(cert_pem, key_pem);
+
+            let ca_cert_pem = std::fs::read_to_string(ca_cert_path.unwrap())?;
+            let ca_cert = tonic::transport::Certificate::from_pem(ca_cert_pem);
+
+            let tls_config = tonic::transport::ClientTlsConfig::new()
+                .identity(identity)
+                .ca_certificate(ca_cert)
+                .domain_name("sqld");
+            endpoint = endpoint.tls_config(tls_config)?;
+        }
+
+        let channel = endpoint.connect().await?;
+        // false positive, `.to_string()` is needed to satisfy lifetime bounds
+        #[allow(clippy::unnecessary_to_owned)]
+        let uri = tonic::transport::Uri::from_maybe_shared(addr.to_string())?;
+        let write_proxy = ProxyClient::with_origin(channel.clone(), uri.clone());
+        let logger = WalLogClient::with_origin(channel, uri);
+
         let mut db_updater =
-            PeriodicDbUpdater::new(&db_path, addr.to_string(), Duration::from_secs(1)).await?;
+            PeriodicDbUpdater::new(&db_path, logger, Duration::from_secs(1)).await?;
         let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
         tokio::task::spawn_blocking(move || loop {
             // must abort
