@@ -20,6 +20,7 @@ sys.stdout.flush()
 
 env = os.environ.copy()
 env['RUST_LOG'] = 'trace'
+env['SQLD_PG_LISTEN_ADDR'] = "127.0.0.1:5432"
 process = subprocess.Popen(cmd, env=env)
 try:
     time.sleep(1)
