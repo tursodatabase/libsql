@@ -12,6 +12,7 @@ use hyper::body::to_bytes;
 use hyper::server::conn::AddrStream;
 use hyper::service::make_service_fn;
 use hyper::{Body, Method, Request, Response, StatusCode};
+use serde::Serialize;
 use serde_json::{json, Number};
 use tokio::sync::{mpsc, oneshot};
 use tonic::codegen::http;
@@ -20,7 +21,7 @@ use tower::load::Load;
 use tower::{service_fn, BoxError, MakeService, Service};
 
 use crate::http::types::HttpQuery;
-use crate::query::{self, Params, Queries, Query, QueryResponse, QueryResult, ResultSet};
+use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
 
 use self::auth::Authorizer;
@@ -44,35 +45,52 @@ impl TryFrom<query::Value> for serde_json::Value {
     }
 }
 
-fn query_response_to_json(results: Vec<QueryResult>) -> anyhow::Result<Bytes> {
-    fn result_set_to_json(
-        ResultSet { columns, rows }: ResultSet,
-    ) -> anyhow::Result<serde_json::Value> {
-        let mut values = Vec::with_capacity(rows.len());
-        for row in rows {
-            let val = row
-                .values
-                .into_iter()
-                .zip(columns.iter().map(|c| &c.name))
-                .try_fold(
-                    serde_json::Map::<_, serde_json::Value>::new(),
-                    |mut map, (value, name)| -> anyhow::Result<_> {
-                        map.insert(name.to_string(), value.try_into()?);
-                        Ok(map)
-                    },
-                )?;
+/// Encodes a query response rows into json
+#[derive(Debug, Serialize)]
+struct RowsResponse {
+    columns: Vec<String>,
+    rows: Vec<Vec<serde_json::Value>>,
+}
 
-            values.push(serde_json::Value::Object(val));
+#[derive(Debug, Serialize)]
+struct ErrorResponse {
+    message: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+enum ResultResponse {
+    Results(RowsResponse),
+    Error(ErrorResponse),
+}
+
+fn query_response_to_json(results: Vec<QueryResult>) -> anyhow::Result<Bytes> {
+    fn result_set_to_json(ResultSet { columns, rows }: ResultSet) -> anyhow::Result<RowsResponse> {
+        let mut out_rows = Vec::with_capacity(rows.len());
+        for row in rows {
+            let mut out_row = Vec::with_capacity(row.values.len());
+            for value in row.values {
+                out_row.push(value.try_into()?);
+            }
+
+            out_rows.push(out_row);
         }
 
-        Ok(serde_json::Value::Array(values))
+        Ok(RowsResponse {
+            columns: columns.into_iter().map(|c| c.name).collect(),
+            rows: out_rows,
+        })
     }
 
     let json = results
         .into_iter()
         .map(|r| match r {
-            Ok(QueryResponse::ResultSet(set)) => result_set_to_json(set),
-            Err(e) => Ok(json!({"error": e.to_string()})),
+            Ok(query::QueryResponse::ResultSet(set)) => {
+                Ok(ResultResponse::Results(result_set_to_json(set)?))
+            }
+            Err(e) => Ok(ResultResponse::Error(ErrorResponse {
+                message: e.to_string(),
+            })),
         })
         .collect::<anyhow::Result<Vec<_>>>()?;
 
