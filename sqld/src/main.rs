@@ -12,13 +12,8 @@ struct Cli {
     #[clap(long, short, default_value = "iku.db", env = "SQLD_DB_PATH")]
     db_path: PathBuf,
     /// The address and port the PostgreSQL server listens to.
-    #[clap(
-        long,
-        short,
-        default_value = "127.0.0.1:5432",
-        env = "SQLD_PG_LISTEN_ADDR"
-    )]
-    pg_listen_addr: SocketAddr,
+    #[clap(long, short, env = "SQLD_PG_LISTEN_ADDR")]
+    pg_listen_addr: Option<SocketAddr>,
     /// The address and port the PostgreSQL over WebSocket server listens to.
     #[clap(long, short, env = "SQLD_WS_LISTEN_ADDR")]
     ws_listen_addr: Option<SocketAddr>,

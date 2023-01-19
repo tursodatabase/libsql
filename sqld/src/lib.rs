@@ -40,7 +40,7 @@ pub enum Backend {
 
 pub struct Config {
     pub db_path: PathBuf,
-    pub tcp_addr: SocketAddr,
+    pub tcp_addr: Option<SocketAddr>,
     pub ws_addr: Option<SocketAddr>,
     pub http_addr: Option<SocketAddr>,
     pub http_auth: Option<String>,
@@ -60,7 +60,10 @@ where
     <S::Response as Service<Queries>>::Future: Send,
 {
     let mut server = Server::new();
-    server.bind_tcp(config.tcp_addr).await?;
+
+    if let Some(addr) = config.tcp_addr {
+        server.bind_tcp(addr).await?;
+    }
 
     if let Some(addr) = config.ws_addr {
         server.bind_ws(addr).await?;
