@@ -95,4 +95,8 @@ if __name__ == "__main__":
     server_cert = gen_peer_cert(ca_cert, ca_key, server_key, "sqld", ["sqld"])
     store_cert_chain_and_key([server_cert, ca_cert], server_key, "server")
 
+    client_key = gen_key()
+    client_cert = gen_peer_cert(ca_cert, ca_key, client_key, "sqld replica", [])
+    store_cert_chain_and_key([client_cert, ca_cert], client_key, "client")
+
     print(f"these are development certs, they will expire at {not_after}")
