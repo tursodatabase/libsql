@@ -362,7 +362,10 @@ struct sqlite3_api_routines {
   /* Version 3.41.0 and later */
   int (*is_interrupted)(sqlite3*);
 
-  /* libSQL 0.1.1 */
+};
+
+struct libsql_api_routines {
+    /* libSQL 0.1.1 */
   struct libsql_wal_methods *(*wal_methods_find)(const char *);
   int (*wal_methods_register)(struct libsql_wal_methods*);
   int (*wal_methods_unregister)(struct libsql_wal_methods*);
@@ -373,9 +376,10 @@ struct sqlite3_api_routines {
 ** is also defined in the file "loadext.c".
 */
 typedef int (*sqlite3_loadext_entry)(
-  sqlite3 *db,                       /* Handle to the database. */
-  char **pzErrMsg,                   /* Used to set error string on failure. */
-  const sqlite3_api_routines *pThunk /* Extension API function pointers. */
+  sqlite3 *db,                            /* Handle to the database. */
+  char **pzErrMsg,                        /* Used to set error string on failure. */
+  const sqlite3_api_routines *pThunk,     /* Extension API function pointers. */
+  const libsql_api_routines *pThunkLibsql /* Extension API function pointers - libSQL.*/
 );
 
 /*
@@ -695,9 +699,9 @@ typedef int (*sqlite3_loadext_entry)(
 /* Version 3.41.0 and later */
 #define sqlite3_is_interrupted         sqlite3_api->is_interrupted
 /* libSQL 0.1.1 */
-#define libsql_wal_methods_find        sqlite3_api->wal_methods_find
-#define libsql_wal_methods_register    sqlite3_api->wal_methods_register
-#define libsql_wal_methods_unregister  sqlite3_api->wal_methods_unregister
+#define libsql_wal_methods_find        libsql_api->wal_methods_find
+#define libsql_wal_methods_register    libsql_api->wal_methods_register
+#define libsql_wal_methods_unregister  libsql_api->wal_methods_unregister
 #endif /* !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION) */
 
 #if !defined(SQLITE_CORE) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
@@ -707,12 +711,23 @@ typedef int (*sqlite3_loadext_entry)(
 # define SQLITE_EXTENSION_INIT2(v)  sqlite3_api=v;
 # define SQLITE_EXTENSION_INIT3     \
     extern const sqlite3_api_routines *sqlite3_api;
+
+# define LIBSQL_EXTENSION_INIT1     const libsql_api_routines *libsql_api=0;
+# define LIBSQL_EXTENSION_INIT2(v)  libsql_api=v;
+# define LIBSQL_EXTENSION_INIT3     \
+    extern const libsql_api_routines *libsql_api;
+
 #else
   /* This case when the file is being statically linked into the 
   ** application */
 # define SQLITE_EXTENSION_INIT1     /*no-op*/
 # define SQLITE_EXTENSION_INIT2(v)  (void)v; /* unused parameter */
 # define SQLITE_EXTENSION_INIT3     /*no-op*/
+
+# define LIBSQL_EXTENSION_INIT1     /*no-op*/
+# define LIBSQL_EXTENSION_INIT2(v)  (void)v; /* unused parameter */
+# define LIBSQL_EXTENSION_INIT3     /*no-op*/
+
 #endif
 
 #endif /* SQLITE3EXT_H */
