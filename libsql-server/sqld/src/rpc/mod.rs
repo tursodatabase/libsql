@@ -15,8 +15,8 @@ pub mod wal_log;
 pub async fn run_rpc_server<F>(
     addr: SocketAddr,
     tls: bool,
-    cert: Option<PathBuf>,
-    key: Option<PathBuf>,
+    cert_path: Option<PathBuf>,
+    key_path: Option<PathBuf>,
     factory: F,
     logger: Arc<WalLogger>,
 ) -> anyhow::Result<()>
@@ -32,9 +32,9 @@ where
 
     let mut builder = tonic::transport::Server::builder();
     if tls {
-        let cert = std::fs::read_to_string(cert.unwrap())?;
-        let key = std::fs::read_to_string(key.unwrap())?;
-        let server_identity = tonic::transport::Identity::from_pem(&cert, &key);
+        let cert_pem = std::fs::read_to_string(cert_path.unwrap())?;
+        let key_pem = std::fs::read_to_string(key_path.unwrap())?;
+        let server_identity = tonic::transport::Identity::from_pem(&cert_pem, &key_pem);
         builder = builder
             .tls_config(tonic::transport::ServerTlsConfig::new().identity(server_identity))?;
     }

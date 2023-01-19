@@ -49,7 +49,7 @@ pub struct Config {
     pub mwal_addr: Option<String>,
     pub writer_rpc_addr: Option<String>,
     pub writer_rpc_tls: bool,
-    pub writer_rpc_cert: Option<PathBuf>,
+    pub writer_rpc_ca_cert: Option<PathBuf>,
     pub rpc_server_addr: Option<SocketAddr>,
     pub rpc_server_tls: bool,
     pub rpc_server_cert: Option<PathBuf>,
@@ -133,7 +133,7 @@ pub async fn run_server(config: Config) -> Result<()> {
             let factory = WriteProxyDbFactory::new(
                 addr,
                 config.writer_rpc_tls,
-                config.writer_rpc_cert.clone(),
+                config.writer_rpc_ca_cert.clone(),
                 config.db_path.clone(),
                 #[cfg(feature = "mwal_backend")]
                 vwal_methods,

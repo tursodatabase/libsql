@@ -16,6 +16,7 @@ use crate::query_analysis::{final_state, State};
 use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::proxy_rpc::query_result::RowResult;
 use crate::rpc::proxy::proxy_rpc::{DisconnectMessage, Queries};
+use crate::rpc::wal_log::wal_log_rpc::wal_log_client::WalLogClient;
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
 use replication::PeriodicDbUpdater;
@@ -34,25 +35,27 @@ impl WriteProxyDbFactory {
     pub async fn new(
         addr: &str,
         tls: bool,
-        cert: Option<PathBuf>,
+        ca_cert_path: Option<PathBuf>,
         db_path: PathBuf,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
             Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
         >,
     ) -> anyhow::Result<Self> {
-        let mut channel = Channel::from_shared(addr.to_string())?;
+        let mut endpoint = Channel::from_shared(addr.to_string())?;
         if tls {
-            let cert = std::fs::read_to_string(cert.unwrap())?;
-            let ca = tonic::transport::Certificate::from_pem(&cert);
-            let tls = tonic::transport::ClientTlsConfig::new()
-                .ca_certificate(ca)
-                .domain_name("example.com");
-            channel = channel.tls_config(tls)?;
+            let ca_cert_pem = std::fs::read_to_string(ca_cert_path.unwrap())?;
+            let ca_cert = tonic::transport::Certificate::from_pem(&ca_cert_pem);
+            let tls_config = tonic::transport::ClientTlsConfig::new()
+                .ca_certificate(ca_cert)
+                .domain_name("sqld");
+            endpoint = endpoint.tls_config(tls_config)?;
         }
-        let conn = channel.connect().await?;
-        let write_proxy = ProxyClient::new(conn);
+        let channel = endpoint.connect().await?;
+        let uri = tonic::transport::Uri::from_maybe_shared(addr.to_string())?;
+        let write_proxy = ProxyClient::with_origin(channel.clone(), uri.clone());
+        let logger = WalLogClient::with_origin(channel, uri);
         let mut db_updater =
-            PeriodicDbUpdater::new(&db_path, addr.to_string(), Duration::from_secs(1)).await?;
+            PeriodicDbUpdater::new(&db_path, logger, Duration::from_secs(1)).await?;
         let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
         tokio::task::spawn_blocking(move || loop {
             // must abort

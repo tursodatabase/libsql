@@ -36,10 +36,10 @@ tokio = { version = "1.21.2", features = ["full"] }
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.17.2"
 tokio-util = "0.7.4"
-tonic = { version = "0.8.3", features = ["tls", "tls-webpki-roots"] }
+tonic = { version = "0.8.3", features = ["tls"] }
 tower = { version = "0.4.13", features = ["make"] }
 tracing = "0.1.37"
-tracing-subscriber = "0.3.16"
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 uuid = { version = "1.2.2", features = ["v4"] }
 
 [dev-dependencies]
