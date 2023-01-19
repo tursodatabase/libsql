@@ -10,6 +10,8 @@ testing/iku.db
 testing/iku.db-shm
 ca_cert.pem
 ca_key.pem
+client_cert.pem
+client_key.pem
 server_cert.pem
 server_key.pem
 Session.vim

@@ -35,6 +35,8 @@ impl WriteProxyDbFactory {
     pub async fn new(
         addr: &str,
         tls: bool,
+        cert_path: Option<PathBuf>,
+        key_path: Option<PathBuf>,
         ca_cert_path: Option<PathBuf>,
         db_path: PathBuf,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
@@ -43,17 +45,25 @@ impl WriteProxyDbFactory {
     ) -> anyhow::Result<Self> {
         let mut endpoint = Channel::from_shared(addr.to_string())?;
         if tls {
+            let cert_pem = std::fs::read_to_string(cert_path.unwrap())?;
+            let key_pem = std::fs::read_to_string(key_path.unwrap())?;
+            let identity = tonic::transport::Identity::from_pem(&cert_pem, &key_pem);
+
             let ca_cert_pem = std::fs::read_to_string(ca_cert_path.unwrap())?;
             let ca_cert = tonic::transport::Certificate::from_pem(&ca_cert_pem);
+
             let tls_config = tonic::transport::ClientTlsConfig::new()
+                .identity(identity)
                 .ca_certificate(ca_cert)
                 .domain_name("sqld");
             endpoint = endpoint.tls_config(tls_config)?;
         }
+
         let channel = endpoint.connect().await?;
         let uri = tonic::transport::Uri::from_maybe_shared(addr.to_string())?;
         let write_proxy = ProxyClient::with_origin(channel.clone(), uri.clone());
         let logger = WalLogClient::with_origin(channel, uri);
+
         let mut db_updater =
             PeriodicDbUpdater::new(&db_path, logger, Duration::from_secs(1)).await?;
         let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
