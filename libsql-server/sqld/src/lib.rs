@@ -49,7 +49,15 @@ pub struct Config {
     #[cfg(feature = "mwal_backend")]
     pub mwal_addr: Option<String>,
     pub writer_rpc_addr: Option<String>,
+    pub writer_rpc_tls: bool,
+    pub writer_rpc_cert: Option<PathBuf>,
+    pub writer_rpc_key: Option<PathBuf>,
+    pub writer_rpc_ca_cert: Option<PathBuf>,
     pub rpc_server_addr: Option<SocketAddr>,
+    pub rpc_server_tls: bool,
+    pub rpc_server_cert: Option<PathBuf>,
+    pub rpc_server_key: Option<PathBuf>,
+    pub rpc_server_ca_cert: Option<PathBuf>,
 }
 
 async fn run_service<S>(service: S, config: Config) -> Result<()>
@@ -133,6 +141,10 @@ pub async fn run_server(config: Config) -> Result<()> {
         Some(ref addr) => {
             let factory = WriteProxyDbFactory::new(
                 addr,
+                config.writer_rpc_tls,
+                config.writer_rpc_cert.clone(),
+                config.writer_rpc_key.clone(),
+                config.writer_rpc_ca_cert.clone(),
                 config.db_path.clone(),
                 #[cfg(feature = "mwal_backend")]
                 vwal_methods,
@@ -162,7 +174,17 @@ pub async fn run_server(config: Config) -> Result<()> {
             let service = DbFactoryService::new(db_factory.clone());
             let rpc_fut: FutOrNever<_> = config
                 .rpc_server_addr
-                .map(|addr| tokio::spawn(run_rpc_server(addr, db_factory, logger_clone)))
+                .map(|addr| {
+                    tokio::spawn(run_rpc_server(
+                        addr,
+                        config.rpc_server_tls,
+                        config.rpc_server_cert.clone(),
+                        config.rpc_server_key.clone(),
+                        config.rpc_server_ca_cert.clone(),
+                        db_factory,
+                        logger_clone,
+                    ))
+                })
                 .into();
 
             let svc_fut = run_service(service, config);
