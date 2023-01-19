@@ -40,8 +40,8 @@ struct Cli {
     #[clap(long, short, env = "SQLD_MWAL_ADDR")]
     mwal_addr: Option<String>,
 
-    #[clap(long, env = "SQLD_HTTP_LISTEN_ADDR")]
-    http_listen_addr: Option<SocketAddr>,
+    #[clap(long, default_value = "127.0.0.1:8080", env = "SQLD_HTTP_LISTEN_ADDR")]
+    http_listen_addr: SocketAddr,
     #[clap(long, env = "SQLD_HTTP_AUTH")]
     http_auth: Option<String>,
     #[clap(long)]
@@ -54,7 +54,7 @@ impl From<Cli> for Config {
             db_path: cli.db_path,
             tcp_addr: cli.pg_listen_addr,
             ws_addr: cli.ws_listen_addr,
-            http_addr: cli.http_listen_addr,
+            http_addr: Some(cli.http_listen_addr),
             http_auth: cli.http_auth,
             enable_http_console: cli.enable_http_console,
             backend: cli.backend,
