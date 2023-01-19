@@ -47,10 +47,10 @@ impl WriteProxyDbFactory {
         if tls {
             let cert_pem = std::fs::read_to_string(cert_path.unwrap())?;
             let key_pem = std::fs::read_to_string(key_path.unwrap())?;
-            let identity = tonic::transport::Identity::from_pem(&cert_pem, &key_pem);
+            let identity = tonic::transport::Identity::from_pem(cert_pem, key_pem);
 
             let ca_cert_pem = std::fs::read_to_string(ca_cert_path.unwrap())?;
-            let ca_cert = tonic::transport::Certificate::from_pem(&ca_cert_pem);
+            let ca_cert = tonic::transport::Certificate::from_pem(ca_cert_pem);
 
             let tls_config = tonic::transport::ClientTlsConfig::new()
                 .identity(identity)
@@ -60,6 +60,8 @@ impl WriteProxyDbFactory {
         }
 
         let channel = endpoint.connect().await?;
+        // false positive, `.to_string()` is needed to satisfy lifetime bounds
+        #[allow(clippy::unnecessary_to_owned)]
         let uri = tonic::transport::Uri::from_maybe_shared(addr.to_string())?;
         let write_proxy = ProxyClient::with_origin(channel.clone(), uri.clone());
         let logger = WalLogClient::with_origin(channel, uri);

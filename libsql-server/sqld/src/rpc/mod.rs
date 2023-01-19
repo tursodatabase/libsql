@@ -35,10 +35,10 @@ where
     if tls {
         let cert_pem = std::fs::read_to_string(cert_path.unwrap())?;
         let key_pem = std::fs::read_to_string(key_path.unwrap())?;
-        let identity = tonic::transport::Identity::from_pem(&cert_pem, &key_pem);
+        let identity = tonic::transport::Identity::from_pem(cert_pem, key_pem);
 
         let ca_cert_pem = std::fs::read_to_string(ca_cert_path.unwrap())?;
-        let ca_cert = tonic::transport::Certificate::from_pem(&ca_cert_pem);
+        let ca_cert = tonic::transport::Certificate::from_pem(ca_cert_pem);
 
         let tls_config = tonic::transport::ServerTlsConfig::new()
             .identity(identity)
