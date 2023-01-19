@@ -34,7 +34,7 @@ struct Cli {
         long,
         requires = "grpc_cert_file",
         requires = "grpc_key_file",
-        requires = "grpc_ca_cert_file",
+        requires = "grpc_ca_cert_file"
     )]
     grpc_tls: bool,
     #[clap(long)]
@@ -51,7 +51,7 @@ struct Cli {
         long,
         requires = "primary_grpc_cert_file",
         requires = "primary_grpc_key_file",
-        requires = "primary_grpc_ca_cert_file",
+        requires = "primary_grpc_ca_cert_file"
     )]
     primary_grpc_tls: bool,
     #[clap(long)]
