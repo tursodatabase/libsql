@@ -1,5 +1,5 @@
-C Add\stests\sfor\schanging\sthe\sdatabase\sencoding\svia\sRESET_DATABASE/VACUUM.\sAnd\stest\sthat\sit\sis\snot\spossible\sto\strick\sanother\sconnection\swith\sthis.
-D 2023-01-20T15:13:30.927
+C Ensure\sthat\sthe\sdatabase\sencoding\scannot\sbe\schanged\swhile\sthere\sare\sstatements\srunning.\sAnd\sthat\sthe\sconnection\sis\sleft\sin\sa\svalid\sstate\safter\san\sobscure\sOOM\swithin\ssqlite3_deserialize().
+D 2023-01-20T17:50:24.299
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -413,7 +413,7 @@ F ext/rtree/rtreeH.test 0885151ee8429242625600ae47142cca935332c70a06737f35af53a7
 F ext/rtree/rtreeI.test 608e77f7fde9be5a12eae316baef640fffaafcfa90a3d67443e78123e19c4ca4
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl db734b4c5e75fed6acc56d9701f2235345acfdec750b5fc7b587936f5f6bceed
-F ext/rtree/rtreecheck.test 1f542257f21c8a22ce3462c852ec1a0847fa8b3133053abfab3972764210e8bc
+F ext/rtree/rtreecheck.test e53fc47fb727d7ffa17ea79fecfe3e709815b65233c11464a0b8f1f4ac0cb50a
 F ext/rtree/rtreecirc.test aec664eb21ae943aeb344191407afff5d392d3ae9d12b9a112ced0d9c5de298e
 F ext/rtree/rtreeconnect.test 225ad3fcb483d36cbee423a25052a6bbae762c9576ae9268332360c68c170d3d
 F ext/rtree/rtreedoc.test 27a5703cb1200f6f69051de68da546cef3dfdcf59be73afadfc50b9f9c9960d9
@@ -554,7 +554,7 @@ F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 3ca2f449c890f8b86ec9e06f0c4fccf0648941c3308a16904cb2852227db83f7
 F src/analyze.c d2fce73f6a024897593012c6ca25368629fa4aeb49960d88a52fac664582e483
-F src/attach.c 4431f82f0247bf3aaf91589acafdff77d1882235c95407b36da1585c765fbbc8
+F src/attach.c 979be822b989ab3a04015577ffaa0ee88d2421cea0031d8e96d8a27399258ba4
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
@@ -615,7 +615,7 @@ F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 23e74aaa441a03e6d97098db5883f53ee50cc50d294ecefb916437b8484012b3
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
-F src/prepare.c 9ebd3a1b12bbd1951f0d6db850f32cf5d4547a6ab8bb9e958d75dfbe4e60d0a3
+F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
 F src/printf.c ff4b05e38bf928ff1b80d3dda4f977b10fe39ecbfe69c018224c7e5594fb2455
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 5a98a7bf277aa60584b6bb4c5dd6a9ef2b19537910612c34f596e2901e88596d
@@ -764,7 +764,7 @@ F test/atomic.test 065a453dde33c77ff586d91ccaa6ed419829d492dbb1a5694b8a09f3f9d7d
 F test/atomic2.test b6863b4aa552543874f80b42fb3063f1c8c2e3d8e56b6562f00a3cc347b5c1da
 F test/atrc.c c388fac43dbba05c804432a7135ae688b32e8f25818e9994ffba4b64cf60c27c
 F test/attach.test 54f8e49e88d0de48f6428267a678465863d2b8f72320612f35bd5c02e240bc2f
-F test/attach2.test 256bd240da1835fb8408dd59fb7ef71f8358c7a756c46662434d11d07ba3a0ce
+F test/attach2.test 6d1e3a457ce260d6fc8e5945c07fba6c76dc2aa90e1c701f067b50ee88f7315a
 F test/attach3.test c59d92791070c59272e00183b7353eeb94915976
 F test/attach4.test 00e754484859998d124d144de6d114d920f2ed6ca2f961e6a7f4183c714f885e
 F test/attachmalloc.test 67309af95c6b765c13e7d2279d7fccbef78e6eb0565d75d51cefd5dc88784549
@@ -1332,7 +1332,7 @@ F test/nolock.test f196cf8b8fbea4e2ca345140a2b3f3b0da45c76e
 F test/normalize.test f23b6c5926c59548635fcf39678ac613e726121e073dd902a3062fbb83903b72
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
-F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
+F test/notify3.test 796c7b7157f55c93b4e672b724e9c923a6fc6aa72ac419379a623e2350472e22
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
 F test/notnull2.test 8e1aa4f311df37f9d2cd4f5563eea955b8028c692151404e9cc896420a01a3dc
 F test/notnullfault.test fc4bb7845582a2b3db376001ef49118393b1b11abe0d24adb03db057ee2b73d5
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P edcb83fa0d3c832d044b267d608fed31a2ac841b81c7c9406b2136ac43d61a1a
-R 256a5cfc3dc4d3993f2dc607c3e1a445
+P b869054acb8f171cbc16808eb87be85e6e38d5c5670522ff4e49aef92250d5b2
+R bedf2c0681c383cf83b3cfc6ba7be674
 U dan
-Z a4fc650deb2f62fe6d4560b413bf6d10
+Z c27c58ba1965eaaf7cdb3247e248ce17
 # Remove this line to create a well-formed Fossil manifest.
