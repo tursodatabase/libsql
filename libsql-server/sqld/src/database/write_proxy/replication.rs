@@ -33,9 +33,8 @@ use tonic::transport::Channel;
 use crate::libsql::ffi::{types::XWalFrameFn, PgHdr, Wal};
 use crate::libsql::open_with_regular_wal;
 use crate::libsql::wal_hook::WalHook;
-use crate::rpc::wal_log::wal_log_rpc::wal_log_entry::Payload;
-use crate::rpc::wal_log::wal_log_rpc::{wal_log_client::WalLogClient, LogOffset, WalLogEntry};
-use crate::rpc::wal_log::wal_log_rpc::{Commit, Frame};
+use crate::rpc::wal_log::wal_log_rpc::{wal_log_client::WalLogClient, LogOffset};
+use crate::wal_logger::{WalFrame, WAL_PAGE_SIZE};
 
 pub struct PeriodicDbUpdater {
     interval: Duration,
@@ -92,7 +91,7 @@ struct ReadReplicationHook {
     last_applied_index_file: File,
     last_applied_index: Option<u64>,
     /// Buffer for incoming frames
-    buffer: VecDeque<WalLogEntry>,
+    buffer: VecDeque<WalFrame>,
     rt: Handle,
 }
 
@@ -120,7 +119,7 @@ unsafe impl WalHook for ReadReplicationHook {
         _page_headers: *mut PgHdr,
         _size_after: u32,
         _is_commit: c_int,
-        _sync_flags: c_int,
+        sync_flags: c_int,
         orig: XWalFrameFn,
     ) -> c_int {
         let rt = self.rt.clone();
@@ -129,33 +128,21 @@ unsafe impl WalHook for ReadReplicationHook {
             return SQLITE_ERROR;
         }
 
-        while let Some((page_headers, truncate, commit)) = self.next_transaction() {
-            tracing::trace!(commit = ?commit, truncate = truncate);
+        while let Some((page_headers, frame_count)) = self.next_transaction() {
+            let size_after = self.buffer[frame_count - 1].header.size_after;
+            assert_ne!(size_after, 0, "commit index points to non commit frame");
+
+            tracing::trace!(commit = ?frame_count, size_after = size_after);
             let attempted_commit_index = self
                 .last_applied_index
-                .map(|x| x + truncate as u64 - 1)
+                .map(|x| x + frame_count as u64)
                 .unwrap_or_default();
             // pre-write index
             self.last_applied_index_file
                 .write_all_at(&attempted_commit_index.to_le_bytes(), 0)
                 .unwrap();
-            let Commit {
-                page_size,
-                size_after,
-                is_commit,
-                sync_flags,
-            } = commit;
 
-            let ret = unsafe {
-                orig(
-                    wal,
-                    page_size,
-                    page_headers,
-                    size_after,
-                    is_commit as _,
-                    sync_flags,
-                )
-            };
+            let ret = unsafe { orig(wal, WAL_PAGE_SIZE, page_headers, size_after, 1, sync_flags) };
 
             if ret == 0 {
                 debug_assert!(all_applied(page_headers));
@@ -165,7 +152,7 @@ unsafe impl WalHook for ReadReplicationHook {
                     .unwrap();
                 self.last_applied_index.replace(attempted_commit_index);
                 // remove commited entries.
-                self.buffer.drain(..truncate);
+                self.buffer.drain(..frame_count);
                 tracing::trace!("applied frame batch");
             } else {
                 // should we retry?
@@ -180,31 +167,29 @@ unsafe impl WalHook for ReadReplicationHook {
     }
 }
 
-/// Turn a list of `WalLogEntry` into a list of PgHdr.
+/// Turn a list of `WalFrame` into a list of PgHdr.
 /// The caller has the responsibility to free the returned headers.
-fn make_page_header<'a>(entries: impl Iterator<Item = &'a WalLogEntry>) -> *mut PgHdr {
+fn make_page_header<'a>(frames: impl Iterator<Item = &'a WalFrame>) -> *mut PgHdr {
     let mut current_pg = std::ptr::null_mut();
 
     let mut headers_count = 0;
-    for entry in entries {
-        if let Payload::Frame(Frame { page_no, data }) = entry.payload.as_ref().unwrap() {
-            let page = PgHdr {
-                pPage: std::ptr::null_mut(),
-                pData: data.as_ptr() as _,
-                pExtra: std::ptr::null_mut(),
-                pCache: std::ptr::null_mut(),
-                pDirty: current_pg,
-                pPager: std::ptr::null_mut(),
-                pgno: *page_no,
-                pageHash: 0,
-                flags: 0,
-                nRef: 0,
-                pDirtyNext: std::ptr::null_mut(),
-                pDirtyPrev: std::ptr::null_mut(),
-            };
-            headers_count += 1;
-            current_pg = Box::into_raw(Box::new(page));
-        }
+    for frame in frames {
+        let page = PgHdr {
+            pPage: std::ptr::null_mut(),
+            pData: frame.data.as_ptr() as _,
+            pExtra: std::ptr::null_mut(),
+            pCache: std::ptr::null_mut(),
+            pDirty: current_pg,
+            pPager: std::ptr::null_mut(),
+            pgno: frame.header.page_no,
+            pageHash: 0,
+            flags: 0,
+            nRef: 0,
+            pDirtyNext: std::ptr::null_mut(),
+            pDirtyPrev: std::ptr::null_mut(),
+        };
+        headers_count += 1;
+        current_pg = Box::into_raw(Box::new(page));
     }
 
     tracing::trace!("built {headers_count} page headers");
@@ -265,19 +250,22 @@ impl ReadReplicationHook {
     /// Note: It does not seem possible to batch transaction. I suspect that this is because the
     /// original implementation of the sqlite WAL overwrites when pages appear multiple times in
     /// the same transaction.
-    fn next_transaction(&self) -> Option<(*mut PgHdr, usize, Commit)> {
-        let (commit_idx, commit) =
-            self.buffer
-                .iter()
-                .enumerate()
-                .find_map(|(i, e)| match &e.payload {
-                    Some(Payload::Commit(commit)) => Some((i, commit.clone())),
-                    _ => None,
-                })?;
+    fn next_transaction(&self) -> Option<(*mut PgHdr, usize)> {
+        // nothing to do yet.
+        if self.buffer.is_empty() {
+            return None;
+        }
 
-        let headers = make_page_header(self.buffer.iter().take(commit_idx));
+        let frame_count = self
+            .buffer
+            .iter()
+            .enumerate()
+            .find_map(|(i, f)| (f.header.size_after != 0).then_some(i + 1))?; // early return if
+                                                                              // missing commit frame.
 
-        Some((headers, commit_idx + 1, commit))
+        let headers = make_page_header(self.buffer.iter().take(frame_count));
+
+        Some((headers, frame_count))
     }
 
     /// Asks the writer for new log frames to apply.
@@ -287,13 +275,14 @@ impl ReadReplicationHook {
         let req = LogOffset { start_offset };
 
         let mut stream = self.logger.log_entries(req).await?.into_inner();
-        while let Some(frame) = stream.next().await {
-            let frame = frame?;
+        while let Some(raw_frame) = stream.next().await {
+            let raw_frame = raw_frame?;
+            let frame = WalFrame::decode(raw_frame.data)?;
             debug_assert_eq!(
-                frame.index, self.fetch_frame_index,
+                frame.header.frame_id, self.fetch_frame_index,
                 "out of order log frame"
             );
-            self.fetch_frame_index = frame.index + 1;
+            self.fetch_frame_index = frame.header.frame_id + 1;
             self.buffer.push_back(frame);
         }
 

@@ -5,35 +5,18 @@ message LogOffset {
     uint64 startOffset = 1;
 }
 
-message HelloRequest {
-}
+message HelloRequest { }
 
 message HelloResponse {
     string generation_id = 1;
     uint64 first_frame_id_in_generation = 2;
 }
 
-message WalLogEntry {
-    uint64 index = 1;
-    oneof Payload {
-        Frame frame = 2;
-        Commit commit = 3;
-    }
-}
-
 message Frame {
-    uint32 page_no = 1;
-    bytes data = 2;
-}
-
-message Commit {
-    int32 page_size = 1;
-    uint32 size_after = 2;
-    bool is_commit = 3;
-    int32 sync_flags = 4;
+    bytes data = 1;
 }
 
 service WalLog {
-    rpc LogEntries(LogOffset) returns (stream WalLogEntry) {}
     rpc Hello(HelloRequest) returns (HelloResponse) {}
+    rpc LogEntries(LogOffset) returns (stream Frame) {}
 }
