@@ -1,5 +1,5 @@
-C Two\sbranches\sassociated\swith\smemdb\sare\snow\salways\staken\s(I\sbelieve).\s\sTag\nthem\swith\sALWAYS()\sto\sverify\sthis.
-D 2023-01-20T19:19:24.597
+C Extend\sthe\scarray\sextension\sto\sallow\sthe\suse\sof\sBLOB\svalues\sto\sbe\sbound\nas\san\sarray\sof\s"struct\siovec"\sobjects.
+D 2023-01-20T21:00:03.027
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -268,7 +268,7 @@ F ext/misc/base85.c 4b53d66c50e120e8697dd2a8ea6ddbc8750a4a1f6bcc6e0b7202a3998b08
 F ext/misc/basexx.c 5e859e1820620aa8080fb9145eb47089de426ae808f6abb01a8e12921c3a8e67
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
-F ext/misc/carray.c b752f46411e4e47e34dce6f0c88bc8e51bb821ba9e49bfcd882506451c928f69
+F ext/misc/carray.c 0ba03f1e6647785d4e05b51be567f5652f06941314ff9d3d3763900aa353b6b5
 F ext/misc/carray.h d2b1b12486d531367c37832d3d0dad34eea4bdd83ed839d445521ef01f0bc4e3
 F ext/misc/cksumvfs.c 9224e33cc0cb6aa61ff1d7d7b8fd6fe56beca9f9c47954fa4ae0a69bef608f69
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
@@ -630,7 +630,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 8522a04fb9c84faa1d80354430ae0ee9349727a3a4b32e3cfe39b9be8324cabd
-F src/test1.c 39c13c25f5c4e75a07cb6bd34cfc1b8aa97ecc6f80f08953fa164db7e92ce71e
+F src/test1.c 06645f545329458c8c445c125d8af4fe066ffd5f16df596dd26ca5319d18c288
 F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
@@ -838,7 +838,7 @@ F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test 31d3a6778f2d06f2d9222bd7660c41a516d1518a059b069e96ebbeadb5a490f7
 F test/capi3d.test 8b778794af891b0dca3d900bd345fbc8ebd2aa2aae425a9dccdd10d5233dfbde
 F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
-F test/carray01.test d55d57bf66b1af1c7ac55fae66ff4910884a8f5d21a90a18797ce386212a2634
+F test/carray01.test 23ed7074307c4a829ba5ff2970993a9d87db7c5cdbbe1a2cbef672d0df6d6e31
 F test/cast.test e3a7e452f37efec0df0a89e55aa2f04861ba6613deb16075101414668bf4bb24
 F test/cffault.test 9d6b20606afe712374952eec4f8fd74b1a8097ef
 F test/changes.test 9dd8e597d84072122fc8a4fcdea837f4a54a461e6e536053ea984303e8ca937b
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a02da71f3a80dd8e817e89cdaa775c95e38c90d2471f8fec516bed086539e2c0
-R bf07522ded69fabebaa5b325f6b73b2b
+P 20b9b5aa4fa6136059cf1123f00d86cb7bd8fb0f0f86f971e9714f22725e60b5
+R b63d4e1bb53a7ee90a20a60e3fcee608
 U drh
-Z e4cafc4e045b3b49d125bdbd66067c68
+Z 70e393e1d3aa605a996a878e1787d9d5
 # Remove this line to create a well-formed Fossil manifest.
