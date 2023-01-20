@@ -116,7 +116,7 @@ static void attachFunc(
         ** Close the old db and update the aDb[] slot with the new memdb
         ** values.  */
         pNew = &db->aDb[db->init.iDb];
-        if( pNew->pBt ) sqlite3BtreeClose(pNew->pBt);
+        if( ALWAYS(pNew->pBt) ) sqlite3BtreeClose(pNew->pBt);
         pNew->pBt = pNewBt;
         pNew->pSchema = pNewSchema;
       }else{
@@ -237,7 +237,7 @@ static void attachFunc(
   }
 #endif
   if( rc ){
-    if( !REOPEN_AS_MEMDB(db) ){
+    if( ALWAYS(!REOPEN_AS_MEMDB(db)) ){
       int iDb = db->nDb - 1;
       assert( iDb>=2 );
       if( db->aDb[iDb].pBt ){
