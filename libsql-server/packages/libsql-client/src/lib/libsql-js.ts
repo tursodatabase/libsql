@@ -16,9 +16,13 @@ export type Row = Record<string, string | number | boolean | null>;
  */
 export type ResultSet = {
   /**
+   * Query result columns.
+   */
+  columns: string[] | null;
+  /**
    * Query results.
    */
-  results: Row[] | null;
+  rows: Row[] | null;
   /**
    * Was the query successful?
    */
