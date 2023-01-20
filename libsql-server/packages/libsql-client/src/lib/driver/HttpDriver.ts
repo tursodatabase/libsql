@@ -17,16 +17,9 @@ export class HttpDriver implements Driver {
             method: 'POST',
             body: JSON.stringify(query),
         });
-        const results = await response.json() as Row[][];
+        const results = await response.json() as any[];
         return results.map(rs => {
-            return {
-                results: rs,
-                success: true,
-                meta: {
-                    duration: 0,
-                },
-            };
+            return rs.results as ResultSet;
         });
     }
-
 }
