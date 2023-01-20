@@ -2866,7 +2866,9 @@ static int fts5Init(sqlite3 *db){
     }
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_function(
-          db, "fts5_source_id", 0, SQLITE_UTF8, p, fts5SourceIdFunc, 0, 0
+          db, "fts5_source_id", 0, 
+          SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS,
+          p, fts5SourceIdFunc, 0, 0
       );
     }
   }

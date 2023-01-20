@@ -2675,10 +2675,10 @@ void sqlite3RegisterJsonFunctions(void){
 #endif
     WAGGREGATE(json_group_array,  1, 0, 0, 
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS),
+       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
     WAGGREGATE(json_group_object, 2, 0, 0, 
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS)
+       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC)
   };
   sqlite3InsertBuiltinFuncs(aJsonFunc, ArraySize(aJsonFunc));
 #endif
