@@ -32,7 +32,12 @@ export class HttpDriver implements Driver {
             }
             return resultSets;
         } else {
-            throw new Error(`${response.status} ${response.statusText}`)
+            const errorObj = await response.json();
+            if (typeof errorObj === "object" && "error" in errorObj) {
+                throw new Error(errorObj.error)
+            } else {
+                throw new Error(`${response.status} ${response.statusText}`)
+            }
         }
     }
 }
