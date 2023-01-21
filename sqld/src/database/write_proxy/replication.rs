@@ -31,15 +31,15 @@ use tokio::runtime::Handle;
 use tonic::transport::Channel;
 
 use crate::libsql::ffi::{types::XWalFrameFn, PgHdr, Wal};
+use crate::libsql::open_with_regular_wal;
 use crate::libsql::wal_hook::WalHook;
-use crate::libsql::{open_with_regular_wal, WalConnection};
 use crate::rpc::wal_log::wal_log_rpc::wal_log_entry::Payload;
 use crate::rpc::wal_log::wal_log_rpc::{wal_log_client::WalLogClient, LogOffset, WalLogEntry};
 use crate::rpc::wal_log::wal_log_rpc::{Commit, Frame};
 
 pub struct PeriodicDbUpdater {
     interval: Duration,
-    db: WalConnection,
+    db: rusqlite::Connection,
 }
 
 /// The `PeriodicUpdater` role is to periodically trigger a dummy write that will be intercepted by

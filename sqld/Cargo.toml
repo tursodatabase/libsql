@@ -17,6 +17,7 @@ fallible-iterator = "0.2.0"
 futures = "0.3.25"
 hex = "0.4.3"
 hyper = { version = "0.14.23", features = ["http2"] }
+libsql-wasmtime-bindings = "0"
 # Regular mvfs prevents users from enabling WAL mode
 mvfs = { git = "https://github.com/psarna/mvsqlite", branch = "mwal", optional = true }
 mwal = { git = "https://github.com/psarna/mvsqlite", branch = "mwal", optional = true }
@@ -27,7 +28,10 @@ pin-project-lite = "0.2.9"
 postgres-protocol = "0.6.4"
 prost = "0.11.3"
 regex = "1.7.0"
-rusqlite = { version = "0.28.0", features = [ "buildtime_bindgen", "column_decltype" ] }
+rusqlite = { git = "https://github.com/psarna/rusqlite", branch = "libsql-dev", default-features = false, features = [
+    "bundled-libsql",
+    "column_decltype"
+] }
 serde = { version = "1.0.149", features = ["derive"] }
 serde_json = "1.0.91"
 smallvec = "1.10.0"
