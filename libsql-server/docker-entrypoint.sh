@@ -7,7 +7,6 @@ SQLD_NODE="${SQLD_NODE:-primary}"
 SQLD_DB_PATH="${SQLD_DB_PATH:-iku.db}"
 SQLD_PG_LISTEN_ADDR="${SQLD_PG_LISTEN_ADDR:-"0.0.0.0:5432"}"
 SQLD_HTTP_LISTEN_ADDR="${SQLD_HTTP_LISTEN_ADDR:-"0.0.0.0:8080"}"
-SQLD_GRPC_LISTEN_ADDR="${SQLD_GRPC_LISTEN_ADDR:-"0.0.0.0:5001"}"
 
 SQLD_HTTP_AUTH="${SQLD_HTTP_AUTH:-"always"}"
 
@@ -27,6 +26,7 @@ if [ "$1" = '/bin/sqld' ]; then
   # Set remaining arguments depending on what type of node we are.
   case "$SQLD_NODE" in
     primary)
+      SQLD_GRPC_LISTEN_ADDR="${SQLD_GRPC_LISTEN_ADDR:-"0.0.0.0:5001"}"
       server_args+=("--grpc-listen-addr" "$SQLD_GRPC_LISTEN_ADDR")
       ;;
     replica)
