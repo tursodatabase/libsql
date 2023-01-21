@@ -1,4 +1,4 @@
-import DatabaseConstructor, {Database} from "better-sqlite3";
+import DatabaseConstructor, {Database, SqliteError, Statement} from "better-sqlite3";
 import { ResultSet } from "../libsql-js";
 import { Driver } from "./Driver";
 
@@ -17,7 +17,17 @@ export class SqliteDriver implements Driver {
     }
     async execute(sql: string): Promise<ResultSet> {
         return await new Promise(resolve => {
-            const stmt = this.db.prepare(sql);
+            let stmt: Statement
+            try {
+                stmt = this.db.prepare(sql);
+            } catch (e: any) {
+                resolve({
+                    success: false,
+                    error: { message: e.message },
+                    meta: { duration: 0 },
+                })
+                return
+            }
             var columns: string[];
             var rows: any[];
             if (stmt.reader) {
