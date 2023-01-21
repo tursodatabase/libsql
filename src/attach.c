@@ -85,7 +85,7 @@ static void attachFunc(
   char *zErr = 0;
   unsigned int flags;
   Db *aNew;                 /* New array of Db pointers */
-  Db *pNew;                 /* Db object for the newly attached database */
+  Db *pNew = 0;             /* Db object for the newly attached database */
   char *zErrDyn = 0;
   sqlite3_vfs *pVfs;
 
