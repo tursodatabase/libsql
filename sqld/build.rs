@@ -41,9 +41,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("cargo:rerun-if-changed=proto");
 
-    println!("cargo:rustc-link-search=native=libsql/.libs");
-    println!("cargo:rustc-link-lib=static=sqlite3");
-    println!("cargo:rerun-if-changed=../libsql/src");
-
     Ok(())
 }
