@@ -10,7 +10,7 @@ wasmtime = "2.0"
 
 [lib]
 name = "wblibsql"
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["rlib", "cdylib", "staticlib"]
 doc = false
 test = false
 doctest = false
