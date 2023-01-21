@@ -16,21 +16,26 @@ export type Row = Record<string, string | number | boolean | null>;
  */
 export type ResultSet = {
   /**
+   * Was the query successful?
+   * If true, rows and columns are provided.
+   * If false, error is provided
+   */
+  success: boolean;
+  /**
    * Query result columns.
    */
-  columns: string[] | null;
+  columns?: string[];
   /**
    * Query results.
    */
-  rows: Row[] | null;
+  rows?: Row[];
+  error?: {
+    message: string
+  }
   /**
-   * Was the query successful?
+   * Extra information about the query results.
    */
-  success: boolean;
   meta: {
-    /**
-     * Time duration to execute the query.
-     */
     duration: number;
   };
 };
