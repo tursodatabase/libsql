@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sin\sthe\sTCL\stest\sharness\sassociated\swith\scarray.
-D 2023-01-21T00:59:20.911
+C Minor\sAPI\sdoc\scleanups\sand\sJS\scode\ssimplification.
+D 2023-01-21T16:53:01.483
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -480,7 +480,7 @@ F ext/wasm/api/pre-js.c-pp.js b88499dc303c21fc3f55f2c364a0f814f587b60a9578430388
 F ext/wasm/api/sqlite3-api-cleanup.js 680d5ccfff54459db136a49b2199d9f879c8405d9c99af1dda0cc5e7c29056f4
 F ext/wasm/api/sqlite3-api-glue.js 0a93e58aabf52b32ddccbb107a1fd4552f2505e103ab63396c4d0a0743704785
 F ext/wasm/api/sqlite3-api-oo1.js e9fba119e9b1716b3f731838ed1ab18741401bcf4c51d2a4a6e9d1d23cf9d771
-F ext/wasm/api/sqlite3-api-prologue.js 0b9b463db92881990ab6995c863c5968969da3d2a5029112037cbf425c9cb6b1
+F ext/wasm/api/sqlite3-api-prologue.js 69a74f2777aaafafc07ad2c922674fe3197ef63c921a3262b4772f937e7eb14a
 F ext/wasm/api/sqlite3-api-worker1.js c9ef8865f072e61251260b218aa4ed614a21a25e9e3cc6f22acf81794d32fc0b
 F ext/wasm/api/sqlite3-license-version-header.js a661182fc93fc2cf212dfd0b987f8e138a3ac98f850b1112e29b5fbdaecc87c3
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 7795b84b66a7a8dedc791340709b310bb497c3c72a80bef364fa2a58e2ddae3f
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ded60f5b3431283d70eb8c41761c0fa9727021e6309d0df0ae3fb0a5274c1299
-R 263b99d5b2eb9217327321bdb9380ba3
-U drh
-Z deff6bbe33acca00c1d412bded682d75
+P 5a316f9fd94b73fc54ef94a1dab2f13bdd16c4fb13d2620b7c907d104d5b4d7a
+R aa74427da2f9455916615d0917ac944a
+U stephan
+Z b80c3089a2964778472b1bdf708aee21
 # Remove this line to create a well-formed Fossil manifest.
