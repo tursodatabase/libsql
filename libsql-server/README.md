@@ -26,17 +26,40 @@ However, if libSQL starts to provide more [PostgreSQL compatibility](https://git
 
 ## Getting Started
 
-Start a server with:
+Start a server with a postgres and http listeners, writing to the local SQLite-compatible file `foo.db`:
 
 ```console
-cargo run
+sqld -d foo.db -p 127.0.0.1:5432 --http-listen-addr=127.0.0.1:8000
 ```
 
-and connect to it with psql:
+connect to it with psql:
 
 ```console
-psql -h 127.0.0.1 -p 5432
+psql -h 127.0.0.1
 ```
+
+or HTTP:
+
+```console
+curl -s -d '{\"statements\": [\"SELECT * from sqlite_master;\"] }' http://127.0.0.1:8000
+```
+
+You can also inspect the local foo.db file with the `sqlite3` shell
+
+## Homebrew
+
+You can install `sqld` through homebrew by doing:
+
+```
+brew tap libsql/sqld
+brew install sqld-beta
+```
+
+Note that until a stable version is released, it is provided as a separate tap, with a `beta` suffix.
+
+## Clients
+
+`sqld` ships with a native Javascript driver for TypeScript and Javascript. You can find more information [here](https://www.npmjs.com/package/@libsql/client)
 
 ## Building from Sources
 
