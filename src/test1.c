@@ -4137,6 +4137,14 @@ static int SQLITE_TCLAPI test_bind_value_from_select(
   return TCL_OK;
 }
 
+#ifdef _WIN32
+  struct iovec {
+    void *iov_base;
+    size_t iov_len;
+  };
+#else
+# include <sys/uio.h>
+#endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -4149,6 +4157,7 @@ static int SQLITE_TCLAPI test_bind_value_from_select(
 **    -int64
 **    -double
 **    -text
+**    -blob
 **
 ** Each call clears static data.  Called with no options does nothing
 ** but clear static data.
@@ -4188,6 +4197,11 @@ static int SQLITE_TCLAPI test_carray_bind(
         sqlite3_free(((char**)aStaticData)[i]);
       }
     }
+    if( eStaticType==4 ){
+      for(i=0; i<nStaticData; i++){
+        sqlite3_free(((struct iovec*)aStaticData)[i].iov_base);
+      }
+    } 
     sqlite3_free(aStaticData);
     aStaticData = 0;
     nStaticData = 0;
@@ -4217,6 +4231,9 @@ static int SQLITE_TCLAPI test_carray_bind(
     if( strcmp(z, "-text")==0 ){
       eType = 3;  /* CARRAY_TEXT */
     }else
+    if( strcmp(z, "-blob")==0 ){
+      eType = 4;  /* CARRAY_BLOB */
+    }else
     if( strcmp(z, "--")==0 ){
       break;
     }else
@@ -4227,6 +4244,11 @@ static int SQLITE_TCLAPI test_carray_bind(
   }
   if( eType==3 && !isStatic && !isTransient ){
     Tcl_AppendResult(interp, "text data must be either -static or -transient",
+                     (char*)0);
+    return TCL_ERROR;
+  }
+  if( eType==4 && !isStatic && !isTransient ){
+    Tcl_AppendResult(interp, "blob data must be either -static or -transient",
                      (char*)0);
     return TCL_ERROR;
   }
@@ -4244,7 +4266,7 @@ static int SQLITE_TCLAPI test_carray_bind(
   if( Tcl_GetIntFromObj(interp, objv[i], &idx) ) return TCL_ERROR;
   i++;
   nData = objc - i;
-  switch( eType + 4*(nData<=0) ){
+  switch( eType + 5*(nData<=0) ){
     case 0: { /* INT32 */
       int *a = sqlite3_malloc( sizeof(int)*nData );
       if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
@@ -4297,7 +4319,24 @@ static int SQLITE_TCLAPI test_carray_bind(
       aData = a;
       break;
     }
-    case 4: { /* nData==0 */
+    case 4: { /* BLOB */
+      struct iovec *a = sqlite3_malloc( sizeof(struct iovec)*nData );
+      if( a==0 ){ rc = SQLITE_NOMEM; goto carray_bind_done; }
+      for(j=0; j<nData; j++){
+        int n = 0;
+        unsigned char *v = Tcl_GetByteArrayFromObj(objv[i+i], &n);
+        a[j].iov_len = n;
+        a[j].iov_base = sqlite3_malloc64( n );
+        if( a[j].iov_base==0 ){
+          a[j].iov_len = 0;
+        }else{
+          memcpy(a[j].iov_base, v, n);
+        }
+      }
+      aData = a;
+      break;
+    }
+    case 5: { /* nData==0 */
       aData = "";
       xDel = SQLITE_STATIC;
       isTransient = 0;
@@ -4314,6 +4353,9 @@ static int SQLITE_TCLAPI test_carray_bind(
   if( isTransient ){
     if( eType==3 ){
       for(i=0; i<nData; i++) sqlite3_free(((char**)aData)[i]);
+    }
+    if( eType==4 ){
+      for(i=0; i<nData; i++) sqlite3_free(((struct iovec*)aData)[i].iov_base);
     }
     sqlite3_free(aData);
   }

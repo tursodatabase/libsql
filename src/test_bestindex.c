@@ -766,11 +766,11 @@ static int tclFindFunction(
     if( Tcl_GetIntFromObj(interp, pObj, &iRet) ){
       rc = SQLITE_ERROR;
     }else if( iRet>0 ){
-      int nName = strlen(zName);
-      int nByte = nName + 1 + sizeof(TestFindFunction);
+      sqlite3_int64 nName = strlen(zName);
+      sqlite3_int64 nByte = nName + 1 + sizeof(TestFindFunction);
       TestFindFunction *pNew = 0;
 
-      pNew = (TestFindFunction*)sqlite3_malloc(nByte);
+      pNew = (TestFindFunction*)sqlite3_malloc64(nByte);
       if( pNew==0 ){
         iRet = 0;
       }else{

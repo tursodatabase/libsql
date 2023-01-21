@@ -3830,7 +3830,8 @@ static void rbuSetupOal(sqlite3rbu *p, RbuState *pState){
 static void rbuDeleteOalFile(sqlite3rbu *p){
   char *zOal = rbuMPrintf(p, "%s-oal", p->zTarget);
   if( zOal ){
-    sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+    sqlite3_vfs *pVfs = 0;
+    sqlite3_file_control(p->dbMain, "main", SQLITE_FCNTL_VFS_POINTER, &pVfs);
     assert( pVfs && p->rc==SQLITE_OK && p->zErrmsg==0 );
     pVfs->xDelete(pVfs, zOal, 0);
     sqlite3_free(zOal);
@@ -4587,9 +4588,12 @@ static int rbuVfsClose(sqlite3_file *pFile){
   sqlite3_free(p->zDel);
 
   if( p->openFlags & SQLITE_OPEN_MAIN_DB ){
+    const sqlite3_io_methods *pMeth = p->pReal->pMethods;
     rbuMainlistRemove(p);
     rbuUnlockShm(p);
-    p->pReal->pMethods->xShmUnmap(p->pReal, 0);
+    if( pMeth->iVersion>1 && pMeth->xShmUnmap ){
+      pMeth->xShmUnmap(p->pReal, 0);
+    }
   }
   else if( (p->openFlags & SQLITE_OPEN_DELETEONCLOSE) && p->pRbu ){
     rbuUpdateTempSize(p, 0);
@@ -5048,6 +5052,25 @@ static int rbuVfsOpen(
     rbuVfsShmUnmap,               /* xShmUnmap */
     0, 0                          /* xFetch, xUnfetch */
   };
+  static sqlite3_io_methods rbuvfs_io_methods1 = {
+    1,                            /* iVersion */
+    rbuVfsClose,                  /* xClose */
+    rbuVfsRead,                   /* xRead */
+    rbuVfsWrite,                  /* xWrite */
+    rbuVfsTruncate,               /* xTruncate */
+    rbuVfsSync,                   /* xSync */
+    rbuVfsFileSize,               /* xFileSize */
+    rbuVfsLock,                   /* xLock */
+    rbuVfsUnlock,                 /* xUnlock */
+    rbuVfsCheckReservedLock,      /* xCheckReservedLock */
+    rbuVfsFileControl,            /* xFileControl */
+    rbuVfsSectorSize,             /* xSectorSize */
+    rbuVfsDeviceCharacteristics,  /* xDeviceCharacteristics */
+    0, 0, 0, 0, 0, 0
+  };
+
+
+
   rbu_vfs *pRbuVfs = (rbu_vfs*)pVfs;
   sqlite3_vfs *pRealVfs = pRbuVfs->pRealVfs;
   rbu_file *pFd = (rbu_file *)pFile;
@@ -5102,10 +5125,15 @@ static int rbuVfsOpen(
     rc = pRealVfs->xOpen(pRealVfs, zOpen, pFd->pReal, oflags, pOutFlags);
   }
   if( pFd->pReal->pMethods ){
+    const sqlite3_io_methods *pMeth = pFd->pReal->pMethods;
     /* The xOpen() operation has succeeded. Set the sqlite3_file.pMethods
     ** pointer and, if the file is a main database file, link it into the
     ** mutex protected linked list of all such files.  */
-    pFile->pMethods = &rbuvfs_io_methods;
+    if( pMeth->iVersion<2 || pMeth->xShmLock==0 ){
+      pFile->pMethods = &rbuvfs_io_methods1;
+    }else{
+      pFile->pMethods = &rbuvfs_io_methods;
+    }
     if( flags & SQLITE_OPEN_MAIN_DB ){
       rbuMainlistAdd(pFd);
     }

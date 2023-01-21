@@ -506,6 +506,7 @@ static int lookupName(
             if( pParse->bReturning ){
               eNewExprOp = TK_REGISTER;
               pExpr->op2 = TK_COLUMN;
+              pExpr->iColumn = iCol;
               pExpr->iTable = pNC->uNC.iBaseReg + (pTab->nCol+1)*pExpr->iTable +
                  sqlite3TableColumnToStorage(pTab, iCol) + 1;
             }else{

@@ -333,6 +333,32 @@ $(sqlite3-api.js.in): $(sqlite3-api.jses) $(MAKEFILE)
 		echo "/* END FILE: $$i */"; \
 	done > $@
 
+########################################################################
+# $(sqlite3-api.js) and $(sqlite3-api.mjs) (ES6 module) contain the
+# core library code but not the Emscripten-related glue which deals
+# with loading sqlite3.wasm. In theory they can be used by arbitrary
+# build environments and WASM loaders, but in practice that breaks
+# down because the WASM loader has to be able to provide all of the
+# necessary "imports" to sqlite3.wasm, and that list of imports is
+# unknown until sqlite3.wasm is compiled, at which point Emscripten
+# sets up the imports appropriately. Abstractly speaking, it's
+# impossible for other build environments to know exactly which
+# imports are needed and provide them. Tools like wasm-objdump can be
+# used to find the list of imports but it's questionable whether a
+# non-Emscripten tool could realistically use that info to provide
+# proper implementations. Sidebar: some of the imports are used soley
+# by the Emscripten glue, which the sqlite3 JS code does not rely on.
+#
+# We build $(sqlite3-api.js) and $(sqlite3-api.mjs) "because we can"
+# and because it might be a useful point of experimentation for some
+# clients, but the above-described caveat may well make them unusable
+# for real-life clients.
+sqlite3-api.js := $(dir.dout)/sqlite3-api.js
+sqlite3-api.mjs := $(dir.dout)/sqlite3-api.mjs
+$(eval $(call C-PP.FILTER, $(sqlite3-api.js.in), $(sqlite3-api.js)))
+$(eval $(call C-PP.FILTER, $(sqlite3-api.js.in), $(sqlite3-api.mjs), $(c-pp.D.esm)))
+all: $(sqlite3-api.js) $(sqlite3-api.mjs)
+
 $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	@echo "Making $@..."
 	@{ \

@@ -410,4 +410,76 @@ do_execsql_test 10.3 {
   one,two
 }
 
+ifcapable json1 {
+
+  do_execsql_test 11.0 {
+    SELECT value FROM json_each('[1,2,3,4,5]');
+  } {1 2 3 4 5}
+
+  do_execsql_test 11.1 {
+    SELECT key, value FROM json_each('[1,2,3,4,5]');
+  } {0 1  1 2  2 3  3 4  4 5}
+  do_execsql_test 11.2 {
+    SELECT rowid, value FROM json_each('[1,2,3,4,5]');
+  } {0 1  1 2  2 3  3 4  4 5}
+
+  do_execsql_test 11.3 {
+    SELECT sum(value) OVER (ORDER BY rowid) FROM json_each('[1,2,3,4,5]')
+  } {1 3 6 10 15}
+
+  do_execsql_test 11.4 {
+    SELECT sum(value) OVER (
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) FROM json_each('[1,2,3,4,5]')
+  } {1 3 6 10 15}
+
+  do_eqp_test 11.5 {
+    SELECT sum(value) OVER (
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) FROM json_each('[1,2,3,4,5]')
+  } {
+    QUERY PLAN
+      |--CO-ROUTINE (subquery-xxxxxx)
+      |  `--SCAN json_each VIRTUAL TABLE INDEX 1:
+      `--SCAN (subquery-xxxxxx)
+  }
+
+  do_eqp_test 11.6 {
+    SELECT sum(value) OVER (ORDER BY rowid) FROM json_each('[1,2,3,4,5]')
+  } {
+    QUERY PLAN
+      |--CO-ROUTINE (subquery-xxxxxx)
+      |  `--SCAN json_each VIRTUAL TABLE INDEX 1:
+      `--SCAN (subquery-xxxxxx)
+  }
+
+  do_eqp_test 11.8 {
+    SELECT sum(value) OVER (ORDER BY rowid DESC) FROM json_each('[1,2,3,4,5]')
+  } {
+    QUERY PLAN
+      |--CO-ROUTINE (subquery-xxxxxx)
+      |  |--SCAN json_each VIRTUAL TABLE INDEX 1:
+      |  `--USE TEMP B-TREE FOR ORDER BY
+      `--SCAN (subquery-xxxxxx)
+  }
+
+  do_execsql_test 11.9 {
+    SELECT sum(value) OVER (ORDER BY rowid DESC) FROM json_each('[1,2,3,4,5]')
+  } {5 9 12 14 15}
+
+  do_execsql_test 11.10 {
+    SELECT sum(value) OVER (ORDER BY value ASC) FROM json_each('[2,1,4,3,5]')
+  } {1 3 6 10 15}
+  do_eqp_test 11.11 {
+    SELECT sum(value) OVER (ORDER BY value ASC) FROM json_each('[2,1,4,3,5]')
+  } {
+    QUERY PLAN
+      |--CO-ROUTINE (subquery-xxxxxx)
+      |  |--SCAN json_each VIRTUAL TABLE INDEX 1:
+      |  `--USE TEMP B-TREE FOR ORDER BY
+      `--SCAN (subquery-xxxxxx)
+  }
+}
+
 finish_test
+

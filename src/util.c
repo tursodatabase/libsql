@@ -176,6 +176,26 @@ void sqlite3ErrorWithMsg(sqlite3 *db, int err_code, const char *zFormat, ...){
 }
 
 /*
+** Check for interrupts and invoke progress callback.
+*/
+void sqlite3ProgressCheck(Parse *p){
+  sqlite3 *db = p->db;
+  if( AtomicLoad(&db->u1.isInterrupted) ){
+    p->nErr++;
+    p->rc = SQLITE_INTERRUPT;
+  }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( db->xProgress && (++p->nProgressSteps)>=db->nProgressOps ){
+    if( db->xProgress(db->pProgressArg) ){
+      p->nErr++;
+      p->rc = SQLITE_INTERRUPT;
+    }
+    p->nProgressSteps = 0;
+  }
+#endif
+}
+
+/*
 ** Add an error message to pParse->zErrMsg and increment pParse->nErr.
 **
 ** This function should be used to report any error that occurs while

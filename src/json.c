@@ -2473,6 +2473,13 @@ static int jsonEachBestIndex(
       idxMask |= iMask;
     }
   }
+  if( pIdxInfo->nOrderBy>0 
+   && pIdxInfo->aOrderBy[0].iColumn<0 
+   && pIdxInfo->aOrderBy[0].desc==0
+  ){
+    pIdxInfo->orderByConsumed = 1;
+  }
+
   if( (unusableMask & ~idxMask)!=0 ){
     /* If there are any unusable constraints on JSON or ROOT, then reject
     ** this entire plan */
@@ -2668,10 +2675,10 @@ void sqlite3RegisterJsonFunctions(void){
 #endif
     WAGGREGATE(json_group_array,  1, 0, 0, 
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS),
+       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
     WAGGREGATE(json_group_object, 2, 0, 0, 
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
-       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC|SQLITE_INNOCUOUS)
+       SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC)
   };
   sqlite3InsertBuiltinFuncs(aJsonFunc, ArraySize(aJsonFunc));
 #endif
