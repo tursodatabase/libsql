@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2023-01-21T00:19:29.939
+C Fix\sa\smemory\sleak\sin\sthe\sTCL\stest\sharness\sassociated\swith\scarray.
+D 2023-01-21T00:59:20.911
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -630,7 +630,7 @@ F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a3
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c 8522a04fb9c84faa1d80354430ae0ee9349727a3a4b32e3cfe39b9be8324cabd
-F src/test1.c 06645f545329458c8c445c125d8af4fe066ffd5f16df596dd26ca5319d18c288
+F src/test1.c 29ab8aca939818a61bf791e4ff5d45df6da30940c0980dcf502562b925de4e05
 F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
 F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e117a03ca6560e958884f277db827c51ae337a970c17143a0a5f9b150f52f87a
-R 48c8f7c3986ef018a35d1554f31b61d6
+P ded60f5b3431283d70eb8c41761c0fa9727021e6309d0df0ae3fb0a5274c1299
+R 263b99d5b2eb9217327321bdb9380ba3
 U drh
-Z 5a003c04a56485ef83626e9cb0a23f21
+Z deff6bbe33acca00c1d412bded682d75
 # Remove this line to create a well-formed Fossil manifest.

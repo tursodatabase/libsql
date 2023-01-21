@@ -4354,6 +4354,9 @@ static int SQLITE_TCLAPI test_carray_bind(
     if( eType==3 ){
       for(i=0; i<nData; i++) sqlite3_free(((char**)aData)[i]);
     }
+    if( eType==4 ){
+      for(i=0; i<nData; i++) sqlite3_free(((struct iovec*)aData)[i].iov_base);
+    }
     sqlite3_free(aData);
   }
 carray_bind_done:
