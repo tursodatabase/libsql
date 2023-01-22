@@ -951,6 +951,12 @@ impl Connection {
     pub fn is_readonly(&self, db_name: DatabaseName<'_>) -> Result<bool> {
         self.db.borrow().db_readonly(db_name)
     }
+
+    /// Try initializing the WebAssembly functions table (idempotent)
+    #[cfg(feature = "libsql-wasm")]
+    pub fn try_initialize_wasm_func_table(&self) -> Result<()> {
+        self.db.borrow().try_initialize_wasm_func_table()
+    }
 }
 
 impl fmt::Debug for Connection {

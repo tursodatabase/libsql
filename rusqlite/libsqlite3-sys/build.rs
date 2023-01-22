@@ -136,7 +136,7 @@ mod build_bundled {
             .flag("-D_POSIX_THREAD_SAFE_FUNCTIONS") // cross compile with MinGW
             .warnings(false);
 
-        if cfg!(feature = "libsql") {
+        if cfg!(feature = "libsql-wasm") {
             cfg.flag("-DLIBSQL_ENABLE_WASM_RUNTIME=1");
         }
 

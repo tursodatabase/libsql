@@ -63,7 +63,7 @@ impl InnerConnection {
     pub fn open_with_flags(
         c_path: &CStr,
         flags: OpenFlags,
-        vfs: Option<&CStr>,
+        vfs: Option<&CStr>
     ) -> Result<InnerConnection> {
         ensure_safe_sqlite_threading_mode()?;
 
@@ -125,7 +125,10 @@ impl InnerConnection {
                 return Err(e);
             }
 
-            Ok(InnerConnection::new(db, true))
+            let conn = InnerConnection::new(db, true);
+            #[cfg(feature = "libsql-wasm")]
+            conn.try_initialize_wasm_func_table().ok();
+            Ok(conn)
         }
     }
 
@@ -364,6 +367,11 @@ impl InnerConnection {
     #[cfg(feature = "release_memory")]
     pub fn release_memory(&self) -> Result<()> {
         self.decode_result(unsafe { ffi::sqlite3_db_release_memory(self.db) })
+    }
+
+    #[cfg(feature = "libsql-wasm")]
+    pub fn try_initialize_wasm_func_table(&self) -> Result<()> {
+        self.decode_result(unsafe { ffi::libsql_try_initialize_wasm_func_table(self.db) })
     }
 }
 
