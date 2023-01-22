@@ -416,7 +416,14 @@ impl Connection {
     #[inline]
     pub fn open_with_flags<P: AsRef<Path>>(path: P, flags: OpenFlags) -> Result<Connection> {
         let c_path = path_to_cstring(path.as_ref())?;
-        InnerConnection::open_with_flags(&c_path, flags, None).map(|db| Connection {
+        InnerConnection::open_with_flags(
+            &c_path,
+            flags,
+            None,
+            #[cfg(feature = "libsql")]
+            None,
+        )
+        .map(|db| Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
         })
@@ -440,7 +447,37 @@ impl Connection {
     ) -> Result<Connection> {
         let c_path = path_to_cstring(path.as_ref())?;
         let c_vfs = str_to_cstring(vfs)?;
-        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs)).map(|db| Connection {
+        InnerConnection::open_with_flags(
+            &c_path,
+            flags,
+            Some(&c_vfs),
+            #[cfg(feature = "libsql")]
+            None,
+        )
+        .map(|db| Connection {
+            db: RefCell::new(db),
+            cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
+        })
+    }
+
+    /// Open a new connection to a SQLite database using the specific flags and
+    /// WAL methods name.
+    ///
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if either `path` or `wal` cannot be converted to a
+    /// C-compatible string or if the underlying SQLite open call fails.
+    #[inline]
+    #[cfg(feature = "libsql")]
+    pub fn open_with_flags_and_wal<P: AsRef<Path>>(
+        path: P,
+        flags: OpenFlags,
+        wal: &str,
+    ) -> Result<Connection> {
+        let c_path = path_to_cstring(path.as_ref())?;
+        let c_wal = str_to_cstring(wal)?;
+        InnerConnection::open_with_flags(&c_path, flags, None, Some(&c_wal)).map(|db| Connection {
             db: RefCell::new(db),
             cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
         })
