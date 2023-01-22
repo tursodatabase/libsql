@@ -1,6 +1,13 @@
 [workspace]
 
 members = [
+    "bottomless",
+    "bottomless-cli",
+    "libsql-client",
+    "sqlc",
+    "sqld",
+]
+default-members = [
     "sqlc",
     "sqld",
     "libsql-client",
