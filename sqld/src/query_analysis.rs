@@ -2,7 +2,7 @@ use anyhow::Result;
 use fallible_iterator::FallibleIterator;
 use sqlite3_parser::{
     ast::{Cmd, Stmt},
-    lexer::sql::Parser,
+    lexer::sql::{Parser, ParserError},
 };
 
 /// A group of statements to be executed together.
@@ -100,6 +100,15 @@ impl Statement {
         std::iter::from_fn(move || match parser.next() {
             Ok(Some(cmd)) => Some(parse_inner(cmd)),
             Ok(None) => None,
+            Err(sqlite3_parser::lexer::sql::Error::ParserError(
+                ParserError::SyntaxError {
+                    token_type: _,
+                    found: Some(found),
+                },
+                Some((line, col)),
+            )) => Some(Err(anyhow::anyhow!(
+                "syntax error around L{line}:{col}: `{found}`"
+            ))),
             Err(e) => Some(Err(e.into())),
         })
     }
