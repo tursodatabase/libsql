@@ -5,6 +5,10 @@ use std::process::Command;
 use prost_build::Config;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut config = vergen::Config::default();
+    *config.build_mut().kind_mut() = vergen::TimestampKind::All;
+    vergen::vergen(config)?;
+
     let mut pwd = env::current_dir().unwrap();
     pwd.push("../libsql");
     let libsql_dir = fs::canonicalize(pwd.as_path()).unwrap();
