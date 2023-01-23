@@ -46,25 +46,27 @@ unsafe impl WalHook for WalLoggerHook {
             self.commit(page_size, ntruncate, is_commit != 0, sync_flags);
         }
 
-        orig(
-            wal,
-            page_size,
-            page_headers,
-            ntruncate,
-            is_commit,
-            sync_flags,
-        )
+        unsafe {
+            orig(
+                wal,
+                page_size,
+                page_headers,
+                ntruncate,
+                is_commit,
+                sync_flags,
+            )
+        }
     }
 
     fn on_undo(
         &mut self,
         wal: *mut Wal,
-        func: extern "C" fn(*mut c_void, i32) -> i32,
+        func: Option<unsafe extern "C" fn(*mut c_void, u32) -> i32>,
         ctx: *mut c_void,
         orig: XWalUndoFn,
     ) -> i32 {
         self.rollback();
-        orig(wal, func, ctx)
+        unsafe { orig(wal, func, ctx) }
     }
 }
 
