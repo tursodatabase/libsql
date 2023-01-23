@@ -8,6 +8,3 @@ members = [
 [patch."https://github.com/psarna/mvsqlite"]
 mvfs = { git = "https://github.com/MarinPostma/mvsqlite", branch = "use-cchar" }
 mwal = { git = "https://github.com/MarinPostma/mvsqlite", branch = "use-cchar" }
-
-[patch.crates-io]
-sqlite3-parser = { git = "https://github.com/MarinPostma/lemon-rs.git", rev = "d3a6365" }
