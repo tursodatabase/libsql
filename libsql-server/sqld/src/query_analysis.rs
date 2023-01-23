@@ -96,7 +96,7 @@ impl Statement {
                 kind,
             })
         }
-        let mut parser = Parser::new(s.as_bytes());
+        let mut parser = Box::new(Parser::new(s.as_bytes()));
         std::iter::from_fn(move || match parser.next() {
             Ok(Some(cmd)) => Some(parse_inner(cmd)),
             Ok(None) => None,
