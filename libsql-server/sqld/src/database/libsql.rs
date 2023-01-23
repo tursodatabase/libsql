@@ -10,7 +10,6 @@ use tokio::sync::oneshot;
 use tracing::warn;
 
 use crate::libsql::wal_hook::WalHook;
-use crate::libsql::WalConnection;
 use crate::query::{
     Column, ErrorCode, Params, Queries, Query, QueryError, QueryResponse, QueryResult, ResultSet,
     Row,
@@ -136,7 +135,7 @@ fn open_db(
         Arc<Mutex<mwal::ffi::libsql_wal_methods>>,
     >,
     wal_hook: impl WalHook + Send + Clone + 'static,
-) -> anyhow::Result<WalConnection> {
+) -> anyhow::Result<rusqlite::Connection> {
     let mut retries = 0;
     loop {
         #[cfg(feature = "mwal_backend")]

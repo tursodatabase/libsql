@@ -53,6 +53,7 @@ pub unsafe trait WalHook {
 unsafe impl WalHook for () {}
 
 impl WalMethodsHook {
+    pub const METHODS_NAME_STR: &'static str = "wal_hook";
     pub const METHODS_NAME: &'static [u8] = b"wal_hook\0";
 
     pub fn wrap(
