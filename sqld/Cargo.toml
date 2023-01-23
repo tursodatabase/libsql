@@ -29,6 +29,7 @@ postgres-protocol = "0.6.4"
 prost = "0.11.3"
 regex = "1.7.0"
 rusqlite = { git = "https://github.com/psarna/rusqlite", branch = "libsql-dev", default-features = false, features = [
+    "buildtime_bindgen",
     "bundled-libsql",
     "column_decltype"
 ] }
