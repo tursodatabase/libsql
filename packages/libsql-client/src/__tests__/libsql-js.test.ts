@@ -1,11 +1,12 @@
 import { connect, ResultSet } from "../";
 
+const SQLITE_URL = "file::memory:";
+
 test("execute", async () => {
     const table = "_test_table_";
-    const url = process.env.DB_URL ?? "file::memory:";
-    const config = { url };
-    const db = connect(config);
-    var rs: ResultSet
+    const url = process.env.DB_URL ?? SQLITE_URL;
+    const db = connect({ url });
+    let rs: ResultSet
 
     rs = await db.execute(`CREATE TABLE IF NOT EXISTS ${table} (email TEXT)`);
     assertEmptySuccessResult(rs);
@@ -28,10 +29,9 @@ test("execute", async () => {
 });
 
 test("execute-error", async () => {
-    const url = process.env.DB_URL ?? "file::memory:";
-    const config = { url };
-    const db = connect(config);
-    var rs: ResultSet
+    const url = process.env.DB_URL ?? SQLITE_URL;
+    const db = connect({ url });
+    let rs: ResultSet
 
     rs = await db.execute("SELECT * FROM table_does_not_exist");
     expect(rs.success).toEqual(false);
@@ -40,6 +40,30 @@ test("execute-error", async () => {
     expect(typeof rs.error).toBe("object");
     expect(rs.error!.message).toBe("no such table: table_does_not_exist");
     expect(typeof rs.meta.duration).toBe("number");
+});
+
+test("execute-params", async () => {
+    const table = "_test_table_";
+    const url = process.env.DB_URL ?? SQLITE_URL;
+    const db = connect({ url });
+    let rs: ResultSet
+
+    rs = await db.execute(`CREATE TABLE IF NOT EXISTS ${table} (email TEXT)`);
+    assertEmptySuccessResult(rs);
+
+    rs = await db.execute(`DELETE FROM ${table}`);
+    assertEmptySuccessResult(rs);
+
+    const value = "alice@example.com";
+    rs = await db.execute(`INSERT INTO ${table} (email) VALUES (?)`, [value]);
+    assertEmptySuccessResult(rs);
+
+    rs = await db.execute(`SELECT * FROM ${table} WHERE email = :email`, { email: value });
+    expect(rs.columns).toEqual(['email']);
+    expect(rs.rows).toEqual([[value]]);
+
+    rs = await db.execute(`DROP TABLE ${table}`);
+    assertEmptySuccessResult(rs);
 });
 
 
