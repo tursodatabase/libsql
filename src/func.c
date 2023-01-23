@@ -1224,6 +1224,39 @@ static void hexFunc(
 }
 
 /*
+** The unhex() function. Interpret the argument as text. If it consists
+** of an even number of hexadecimal digits, return the equivalent blob.
+** Otherwise, return NULL.
+*/
+static void unhexFunc(
+  sqlite3_context *pCtx,
+  int argc,
+  sqlite3_value **argv
+){
+  const u8 *zHex = sqlite3_value_text(argv[0]);
+  int nHex = sqlite3_value_bytes(argv[0]);
+  if( zHex && (nHex%2)==0 ){
+    u8 *pBlob = contextMalloc(pCtx, (nHex/2)+1);
+    if( pBlob ){
+      const u8 *zEnd = &zHex[nHex];
+      u8 *p = pBlob;
+      while( zHex<zEnd ){
+        unsigned char c = *(zHex++);
+        unsigned char d = *(zHex++);
+        if( !sqlite3Isxdigit(c) || !sqlite3Isxdigit(d) ){
+          sqlite3_free(pBlob);
+          return;
+        }else{
+          *(p++) = (sqlite3HexToInt(c)<<4) | sqlite3HexToInt(d);
+        }
+      }
+      sqlite3_result_blob(pCtx, pBlob, (p - pBlob), sqlite3_free);
+    }
+  }
+}
+
+
+/*
 ** The zeroblob(N) function returns a zero-filled blob of size N bytes.
 */
 static void zeroblobFunc(
@@ -2287,6 +2320,7 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
+    FUNCTION(unhex,              1, 0, 0, unhexFunc        ),
     INLINE_FUNC(ifnull,          2, INLINEFUNC_coalesce, 0 ),
     VFUNCTION(random,            0, 0, 0, randomFunc       ),
     VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),

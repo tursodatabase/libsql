@@ -31,5 +31,15 @@ do_faultsim_test 1.1 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+do_faultsim_test 2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    SELECT hex ( unhex('ABCDEF') );
+  }
+} -test {
+  faultsim_test_result {0 ABCDEF}
+}
+
 
 finish_test
