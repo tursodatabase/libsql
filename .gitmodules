@@ -1,0 +1,3 @@
+[submodule "libsql"]
+	path = libsql
+	url = https://github.com/libsql/libsql/
