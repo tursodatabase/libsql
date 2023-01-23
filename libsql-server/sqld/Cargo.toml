@@ -50,6 +50,7 @@ tempfile = "3.3.0"
 [build-dependencies]
 prost-build = "0.11.4"
 tonic-build = "0.8.4"
+vergen = "6"
 
 [features]
 mwal_backend = ["mvfs", "mwal"]
