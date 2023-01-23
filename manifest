@@ -1,5 +1,5 @@
-C Give\sCLI\s.version\sa\splace\sin\s.help\soutput.
-D 2023-01-22T21:54:17.682
+C Add\sthe\smissing\sCARRAY_BLOB\smacro\sto\sthe\scarray.h\sextension\sheader.
+D 2023-01-23T16:16:00.833
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -269,7 +269,7 @@ F ext/misc/basexx.c 5e859e1820620aa8080fb9145eb47089de426ae808f6abb01a8e12921c3a
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c 0ba03f1e6647785d4e05b51be567f5652f06941314ff9d3d3763900aa353b6b5
-F ext/misc/carray.h d2b1b12486d531367c37832d3d0dad34eea4bdd83ed839d445521ef01f0bc4e3
+F ext/misc/carray.h 503209952ccf2431c7fd899ebb92bf46bf7635b38aace42ec8aa1b8d7b6e98a5
 F ext/misc/cksumvfs.c 9224e33cc0cb6aa61ff1d7d7b8fd6fe56beca9f9c47954fa4ae0a69bef608f69
 F ext/misc/closure.c dbfd8543b2a017ae6b1a5843986b22ddf99ff126ec9634a2f4047cd14c85c243
 F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8beb2f22b9
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f608a3a45609693c1c0237f12c394275ec9a6225fa986e62345f21af763293a0
-R 9efeb3e5ed84cfc70072df0c9463cd19
-U larrybr
-Z f6cf53c748aca5dc650c6d451ffc417b
+P 5f2dfdcc345453ee0a05311f6826d90b7c1d7b95fdaf77a0a8383923a8fc7213
+R 0b4c41bf3b56e5b14e4e52624b4469ad
+U drh
+Z d07c6b24c62a64bf4c6ef3265b0e373d
 # Remove this line to create a well-formed Fossil manifest.
