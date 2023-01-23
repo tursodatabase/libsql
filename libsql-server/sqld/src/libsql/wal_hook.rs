@@ -26,14 +26,16 @@ pub unsafe trait WalHook {
         sync_flags: c_int,
         orig: XWalFrameFn,
     ) -> c_int {
-        (orig)(
-            wal,
-            page_size,
-            page_headers,
-            size_after,
-            is_commit,
-            sync_flags,
-        )
+        unsafe {
+            (orig)(
+                wal,
+                page_size,
+                page_headers,
+                size_after,
+                is_commit,
+                sync_flags,
+            )
+        }
     }
 
     /// Intercept `xUndo` call. `orig` is the function pointer to the underlying wal method.
@@ -41,11 +43,11 @@ pub unsafe trait WalHook {
     fn on_undo(
         &mut self,
         wal: *mut Wal,
-        func: extern "C" fn(*mut c_void, i32) -> i32,
+        func: Option<unsafe extern "C" fn(*mut c_void, u32) -> i32>,
         ctx: *mut c_void,
         orig: XWalUndoFn,
     ) -> i32 {
-        orig(wal, func, ctx)
+        unsafe { orig(wal, func, ctx) }
     }
 }
 
@@ -59,7 +61,7 @@ impl WalMethodsHook {
     pub fn wrap(
         underlying_methods: *const libsql_wal_methods,
         hook: impl WalHook + 'static,
-    ) -> *const libsql_wal_methods {
+    ) -> *mut libsql_wal_methods {
         let name = Self::METHODS_NAME.as_ptr();
         let wal_methods = WalMethodsHook {
             iVersion: 1,
@@ -70,7 +72,7 @@ impl WalMethodsHook {
             xEndReadTransaction,
             xFindFrame,
             xReadFrame,
-            xDbSize,
+            xDbsize,
             xBeginWriteTransaction,
             xEndWriteTransaction,
             xUndo,
@@ -105,20 +107,20 @@ impl WalMethodsHook {
 }
 #[allow(non_snake_case)]
 pub extern "C" fn xOpen(
-    vfs: *const sqlite3_vfs,
+    vfs: *mut sqlite3_vfs,
     db_file: *mut sqlite3_file,
     wal_name: *const c_char,
     no_shm_mode: i32,
     max_size: i64,
     methods: *mut libsql_wal_methods,
-    wal: *mut *const Wal,
+    wal: *mut *mut Wal,
 ) -> i32 {
     tracing::debug!("Opening WAL {}", unsafe {
         std::ffi::CStr::from_ptr(wal_name).to_str().unwrap()
     });
     let ref_methods = unsafe { &*(methods as *mut WalMethodsHook) };
-    let origxOpen = unsafe { (*ref_methods.underlying_methods).xOpen };
-    (origxOpen)(vfs, db_file, wal_name, no_shm_mode, max_size, methods, wal)
+    let origxOpen = unsafe { (*ref_methods.underlying_methods).xOpen.unwrap() };
+    unsafe { (origxOpen)(vfs, db_file, wal_name, no_shm_mode, max_size, methods, wal) }
 }
 
 unsafe fn get_orig_methods(wal: *mut Wal) -> &'static libsql_wal_methods {
@@ -127,90 +129,92 @@ unsafe fn get_orig_methods(wal: *mut Wal) -> &'static libsql_wal_methods {
 }
 
 unsafe fn get_methods(wal: *mut Wal) -> &'static mut WalMethodsHook {
-    &mut *(&mut *(*wal).wal_methods as *mut _ as *mut WalMethodsHook)
+    &mut *(&mut *(*wal).pMethods as *mut _ as *mut WalMethodsHook)
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xClose(
     wal: *mut Wal,
-    db: *mut c_void,
+    db: *mut rusqlite::ffi::sqlite3,
     sync_flags: i32,
     n_buf: c_int,
     z_buf: *mut u8,
 ) -> c_int {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xClose)(wal, db, sync_flags, n_buf, z_buf)
+    unsafe { (orig_methods.xClose.unwrap())(wal, db, sync_flags, n_buf, z_buf) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xLimit(wal: *mut Wal, limit: i64) {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xLimit)(wal, limit)
+    unsafe { (orig_methods.xLimit.unwrap())(wal, limit) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xBeginReadTransaction(wal: *mut Wal, changed: *mut i32) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xBeginReadTransaction)(wal, changed)
+    unsafe { (orig_methods.xBeginReadTransaction.unwrap())(wal, changed) }
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xEndReadTransaction(wal: *mut Wal) -> i32 {
+pub extern "C" fn xEndReadTransaction(wal: *mut Wal) {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xEndReadTransaction)(wal)
+    unsafe { (orig_methods.xEndReadTransaction.unwrap())(wal) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xFindFrame(wal: *mut Wal, pgno: u32, frame: *mut u32) -> c_int {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xFindFrame)(wal, pgno, frame)
+    unsafe { (orig_methods.xFindFrame.unwrap())(wal, pgno, frame) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xReadFrame(wal: *mut Wal, frame: u32, n_out: c_int, p_out: *mut u8) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xReadFrame)(wal, frame, n_out, p_out)
+    unsafe { (orig_methods.xReadFrame.unwrap())(wal, frame, n_out, p_out) }
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xDbSize(wal: *mut Wal) -> u32 {
+pub extern "C" fn xDbsize(wal: *mut Wal) -> u32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xDbSize)(wal)
+    unsafe { (orig_methods.xDbsize.unwrap())(wal) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xBeginWriteTransaction(wal: *mut Wal) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xBeginWriteTransaction)(wal)
+    unsafe { (orig_methods.xBeginWriteTransaction.unwrap())(wal) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xEndWriteTransaction(wal: *mut Wal) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xEndWriteTransaction)(wal)
+    unsafe { (orig_methods.xEndWriteTransaction.unwrap())(wal) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xUndo(
     wal: *mut Wal,
-    func: extern "C" fn(*mut c_void, i32) -> i32,
+    func: Option<unsafe extern "C" fn(*mut c_void, u32) -> i32>,
     ctx: *mut c_void,
 ) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
     let methods = unsafe { get_methods(wal) };
-    methods.hook.on_undo(wal, func, ctx, orig_methods.xUndo)
+    methods
+        .hook
+        .on_undo(wal, func, ctx, orig_methods.xUndo.unwrap())
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xSavepoint(wal: *mut Wal, wal_data: *mut u32) {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xSavepoint)(wal, wal_data)
+    unsafe { (orig_methods.xSavepoint.unwrap())(wal, wal_data) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xSavepointUndo(wal: *mut Wal, wal_data: *mut u32) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xSavepointUndo)(wal, wal_data)
+    unsafe { (orig_methods.xSavepointUndo.unwrap())(wal, wal_data) }
 }
 
 #[allow(non_snake_case)]
@@ -233,7 +237,7 @@ pub extern "C" fn xFrames(
         size_after,
         is_commit,
         sync_flags,
-        orig_methods.xFrames,
+        orig_methods.xFrames.unwrap(),
     )
 }
 
@@ -241,10 +245,10 @@ pub extern "C" fn xFrames(
 #[allow(non_snake_case)]
 pub extern "C" fn xCheckpoint(
     wal: *mut Wal,
-    db: *mut c_void,
+    db: *mut rusqlite::ffi::sqlite3,
     emode: c_int,
-    busy_handler: extern "C" fn(busy_param: *mut c_void) -> c_int,
-    busy_arg: *const c_void,
+    busy_handler: Option<unsafe extern "C" fn(busy_param: *mut c_void) -> c_int>,
+    busy_arg: *mut c_void,
     sync_flags: c_int,
     n_buf: c_int,
     z_buf: *mut u8,
@@ -252,48 +256,50 @@ pub extern "C" fn xCheckpoint(
     backfilled_frames: *mut c_int,
 ) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xCheckpoint)(
-        wal,
-        db,
-        emode,
-        busy_handler,
-        busy_arg,
-        sync_flags,
-        n_buf,
-        z_buf,
-        frames_in_wal,
-        backfilled_frames,
-    )
+    unsafe {
+        (orig_methods.xCheckpoint.unwrap())(
+            wal,
+            db,
+            emode,
+            busy_handler,
+            busy_arg,
+            sync_flags,
+            n_buf,
+            z_buf,
+            frames_in_wal,
+            backfilled_frames,
+        )
+    }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xCallback(wal: *mut Wal) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xCallback)(wal)
+    unsafe { (orig_methods.xCallback.unwrap())(wal) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xExclusiveMode(wal: *mut Wal, op: c_int) -> c_int {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xExclusiveMode)(wal, op)
+    unsafe { (orig_methods.xExclusiveMode.unwrap())(wal, op) }
 }
 
 #[allow(non_snake_case)]
 pub extern "C" fn xHeapMemory(wal: *mut Wal) -> i32 {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xHeapMemory)(wal)
+    unsafe { (orig_methods.xHeapMemory.unwrap())(wal) }
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xFile(wal: *mut Wal) -> *const c_void {
+pub extern "C" fn xFile(wal: *mut Wal) -> *mut sqlite3_file {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xFile)(wal)
+    unsafe { (orig_methods.xFile.unwrap())(wal) }
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xDb(wal: *mut Wal, db: *const c_void) {
+pub extern "C" fn xDb(wal: *mut Wal, db: *mut rusqlite::ffi::sqlite3) {
     let orig_methods = unsafe { get_orig_methods(wal) };
-    (orig_methods.xDb)(wal, db)
+    unsafe { (orig_methods.xDb.unwrap())(wal, db) }
 }
 
 #[allow(non_snake_case)]
@@ -329,7 +335,7 @@ pub struct WalMethodsHook {
     pub xEndReadTransaction: XWalEndReadTransaction,
     pub xFindFrame: XWalFindFrameFn,
     pub xReadFrame: XWalReadFrameFn,
-    pub xDbSize: XWalDbSizeFn,
+    pub xDbsize: XWalDbsizeFn,
     pub xBeginWriteTransaction: XWalBeginWriteTransactionFn,
     pub xEndWriteTransaction: XWalEndWriteTransactionFn,
     pub xUndo: XWalUndoFn,
