@@ -75,6 +75,54 @@ struct Cli {
     http_auth: Option<String>,
     #[clap(long)]
     enable_http_console: bool,
+    /// Don't display welcome message
+    #[clap(long)]
+    no_welcome: bool,
+}
+
+impl Cli {
+    #[rustfmt::skip]
+    fn print_welcome_message(&self) {
+        // no welcome :'(
+        if self.no_welcome { return }
+
+        eprintln!(r#"_____/\\\\\\\\\\\__________/\\\________/\\\______________/\\\\\\\\\\\\____        "#);
+        eprintln!(r#" ___/\\\/////////\\\_____/\\\\/\\\\____\/\\\_____________\/\\\////////\\\__       "#);
+        eprintln!(r#"  __\//\\\______\///____/\\\//\////\\\__\/\\\_____________\/\\\______\//\\\_      "#);
+        eprintln!(r#"   ___\////\\\__________/\\\______\//\\\_\/\\\_____________\/\\\_______\/\\\_     "#);
+        eprintln!(r#"    ______\////\\\______\//\\\______/\\\__\/\\\_____________\/\\\_______\/\\\_    "#);
+        eprintln!(r#"     _________\////\\\____\///\\\\/\\\\/___\/\\\_____________\/\\\_______\/\\\_   "#);
+        eprintln!(r#"      __/\\\______\//\\\_____\////\\\//_____\/\\\_____________\/\\\_______/\\\__  "#);
+        eprintln!(r#"       _\///\\\\\\\\\\\/_________\///\\\\\\__\/\\\\\\\\\\\\\\\_\/\\\\\\\\\\\\/___ "#);
+        eprintln!(r#"        ___\///////////_____________\//////___\///////////////__\////////////_____"#);
+
+        eprintln!();
+        eprintln!("Welcome to sqld!");
+        eprintln!();
+        eprintln!("version: {}", env!("VERGEN_BUILD_SEMVER"));
+        eprintln!("commit SHA: {}", env!("VERGEN_GIT_SHA"));
+        eprintln!("build date: {}", env!("VERGEN_BUILD_DATE"));
+        eprintln!();
+        eprintln!("This software is in BETA version.");
+        eprintln!("If you encounter any bug, please open an issue at https://github.com/libsql/sqld/issues");
+        eprintln!();
+
+        eprintln!("config:");
+
+        eprint!("\t- mode: ");
+        match (&self.grpc_listen_addr, &self.primary_grpc_url) {
+            (None, None) => eprintln!("standalone"),
+            (Some(addr), None) => eprintln!("primary ({addr})"),
+            (None, Some(url)) => eprintln!("replica (primary at {url})"),
+            _ => unreachable!("invalid configuration!"),
+        };
+        eprintln!("\t- database path: {}", self.db_path.display());
+        eprintln!("\t- listening for HTTP requests on: {}", self.http_listen_addr);
+        if let Some(ref addr) = self.pg_listen_addr {
+            eprintln!("\t- listening for PostgreSQL wire on: {addr}");
+        }
+        eprintln!("\t- gprc_tls: {}", if self.grpc_tls { "yes" } else { "no" });
+    }
 }
 
 impl From<Cli> for Config {
@@ -110,6 +158,7 @@ async fn main() -> Result<()> {
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
         .init();
     let args = Cli::parse();
+    args.print_welcome_message();
 
     #[cfg(feature = "mwal_backend")]
     match (&args.backend, args.mwal_addr.is_some()) {
