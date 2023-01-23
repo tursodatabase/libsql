@@ -2935,7 +2935,7 @@ end_playback:
     ** see if it is possible to delete the super-journal.
     */
     assert( zSuper==&pPager->pTmpSpace[4] );
-    memset(&zSuper[-4], 0, 4);
+    memset(pPager->pTmpSpace, 0, 4);
     rc = pager_delsuper(pPager, zSuper);
     testcase( rc!=SQLITE_OK );
   }

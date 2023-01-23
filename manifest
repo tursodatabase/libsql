@@ -1,5 +1,5 @@
-C Due\sto\sa\scoding\serror,\scheck-in\s[8efd61e8518594e3]\sdid\snot\sactually\suse\njust\sread\stransactions\sif\sthe\soperation\sis\sread-only\sand\sthe\nSQLITE_MAX_ATTACHED\smacro\sis\sset\sto\s31\sor\smore.\s\sThis\swas\sdue\sto\sa\smisuse\nof\sthe\swriteMask\sfield\sof\sParse,\spointed\sout\sby\n[forum:/forumpost/aa173c18d5|forum\spost\saa173c18d5].
-D 2023-01-23T20:45:47.013
+C Suppress\sa\sharmless\scompiler\swarning.\n[forum:forumpost/e3f72e9291189925|Forum\spost\se3f72e9291189925].\s\sThe\scode\nwas\slegal\sand\scorrect.\sThe\srevised\scode\sis\sactually\sless\sclear\sin\sits\sintent.\nBut\sat\sleast\snow\sthere\swill\s(hopefully)\sbe\sno\swarning.
+D 2023-01-23T21:41:41.092
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -607,7 +607,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 9107314500e44908e8d2cdf1ed3333ca5fa17dcfdf9c6a079002b4df90d5f806
 F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c d3122cf67f327f1e2df12d06236a3473a8099542071e257067552f42917f172d
+F src/pager.c fc6d3ec7017d7369ab5dc5421ad1763ff224551c9381866b6da69040db62e406
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
 F src/pcache.c f4268f7f73c6a3db12ce22fd25bc68dc42315d19599414ab1207d7cf32f79197
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 10bf639cd169147d4608918543f9a9b15417c10a231590b961c91500a1856f6e
-R 4e18db97b649469d1e0c48866fc9dfcc
+P 8760566893b64325874c7ec0aff8014026ce525e7fff1489027d2ce698495e76
+R 25886a65c46b6ed0c01a0ee1ef164e0e
 U drh
-Z d51908f663e3de8b10baa1d6dbd53843
+Z 45698c64cd604b87ff216ebf0b4c3357
 # Remove this line to create a well-formed Fossil manifest.
