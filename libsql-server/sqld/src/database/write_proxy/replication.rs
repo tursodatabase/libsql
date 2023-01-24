@@ -50,7 +50,7 @@ impl PeriodicDbUpdater {
         logger: WalLogClient<Channel>,
         interval: Duration,
     ) -> anyhow::Result<Self> {
-        let hook = ReadReplicationHook::new(logger).await?;
+        let hook = ReadReplicationHook::new(logger, path).await?;
         let path = path.to_owned();
         let db = tokio::task::spawn_blocking(move || {
             open_with_regular_wal(
@@ -221,12 +221,13 @@ fn free_page_header(h: *const PgHdr) {
 }
 
 impl ReadReplicationHook {
-    async fn new(logger: WalLogClient<Channel>) -> anyhow::Result<Self> {
+    async fn new(logger: WalLogClient<Channel>, db_path: &Path) -> anyhow::Result<Self> {
+        let path = db_path.join("client_wal_index");
         let last_applied_index_file = OpenOptions::new()
             .create(true)
             .read(true)
             .write(true)
-            .open(".wal_index.iku")?;
+            .open(path)?;
 
         let mut buf = [0; 2 * size_of::<u64>()];
         let last_applied_index = match last_applied_index_file.read_exact_at(&mut buf, 0) {
