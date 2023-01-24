@@ -49,8 +49,53 @@ do_catchsql_test 3.0 {
   SELECT unhex();
 } {1 {wrong number of arguments to function unhex()}}
 do_catchsql_test 3.1 {
-  SELECT unhex('ABCD', '1234');
+  SELECT unhex('ABCD', '1234', '');
 } {1 {wrong number of arguments to function unhex()}}
+
+#--------------------------------------------------------------------------
+# Test the 2-argument version.
+#
+foreach {tn hex} {
+  1 "FFFF  ABCD"
+  2 "FFFF ABCD"
+  3 "FFFFABCD "
+  4 " FFFFABCD"
+  5 "--FFFF AB- -CD- "
+  6 "--"
+  7 " --"
+} {
+  set out ""
+  foreach x [split $hex ""] {
+    if {[string is xdigit $x]} { append out $x }
+  }
+
+  do_execsql_test 5.$tn.1 {
+    SELECT hex( unhex($hex, ' -') );
+  } [list $out]
+}
+
+do_execsql_test 6.0 {
+  SELECT typeof( unhex(' ', ' -') ), length( unhex('-', ' -') );
+} {blob 0}
+
+
+do_execsql_test 6.1 "
+  SELECT hex( unhex('\u0E01ABCD\u0E02', '\uE01\uE02') )
+" {ABCD}
+do_execsql_test 6.2 "
+  SELECT typeof( unhex('\u0E01ABCD\u0E02', '\uE03\uE02') )
+" {null}
+do_execsql_test 6.3 "
+  SELECT hex( unhex('\u0E01AB CD\uE02\uE01', '\uE01 \uE02') )
+" {ABCD}
+
+#--------------------------------------------------------------------------
+# Test that if either argument is NULL, the returned value is also NULL.
+#
+do_execsql_test 6.4.1 { SELECT typeof(unhex(NULL)) } {null}
+do_execsql_test 6.4.2 { SELECT typeof(unhex(NULL, ' ')) } {null}
+do_execsql_test 6.4.3 { SELECT typeof(unhex('1234', NULL)) } {null}
+
 
 finish_test
 
