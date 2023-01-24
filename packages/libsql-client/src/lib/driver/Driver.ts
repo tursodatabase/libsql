@@ -1,5 +1,6 @@
-import { ResultSet } from "../libsql-js"
+import { BoundStatement, Params, ResultSet } from "../libsql-js"
 
 export interface Driver {
-    transaction(sql: string[]): Promise<ResultSet[]>;
+    execute(stmt: string, params?: Params): Promise<ResultSet>;
+    transaction(stmts: (string | BoundStatement)[]): Promise<ResultSet[]>;
 }
