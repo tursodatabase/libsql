@@ -3521,6 +3521,10 @@ static int openDatabase(
   setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
                         sqlite3GlobalConfig.nLookaside);
 
+  if (strcmp("default", libsql_wal_methods_name(db->pWalMethods)) != 0) {
+    sqlite3_exec(db, "pragma journal_mode=wal", NULL, NULL, NULL);
+  }
+
   sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
 
 opendb_out:
