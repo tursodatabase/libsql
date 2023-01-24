@@ -177,6 +177,7 @@ foreach hdr {
 set available_hdr(sqliteInt.h) 0
 set available_hdr(os_common.h) 0
 set available_hdr(sqlite3session.h) 0
+set available_hdr(wasm_bindings.h) 0
 
 # These headers should be copied into the amalgamation without modifying any
 # of their function declarations or definitions.
