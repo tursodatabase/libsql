@@ -100,6 +100,7 @@ set filelist [subst {
   $TOP/ext/fts5/fts5.h
   $TOP/src/page_header.h
   $TOP/src/wal.h
+  $TOP/ext/udf/wasm_bindings.h
 }]
 if {$enable_recover} {
   lappend filelist "$TOP/ext/recover/sqlite3recover.h"
