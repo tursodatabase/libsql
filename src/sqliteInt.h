@@ -1330,7 +1330,7 @@ typedef int VList;
 #include "pcache.h"
 #include "mutex.h"
 
-#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+#if defined(LIBSQL_ENABLE_WASM_RUNTIME) && !defined(SQLITE_AMALGAMATION)
 #include "ext/udf/wasm_bindings.h"
 #endif
 
