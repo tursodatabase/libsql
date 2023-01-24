@@ -5996,7 +5996,7 @@ int sqlite3Fts3EvalPhrasePoslist(
       }
     }
     if( bTreeEof ){
-      while( rc==SQLITE_OK && !pNear->bEof ){
+      while( rc==SQLITE_OK && !pNear->bEof && !pNear->bDeferred ){
         fts3EvalNextRow(pCsr, pNear, &rc);
       }
     }
