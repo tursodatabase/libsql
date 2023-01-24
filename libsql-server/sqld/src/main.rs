@@ -9,7 +9,7 @@ use sqld::Config;
 #[command(name = "sqld")]
 #[command(about = "SQL daemon", long_about = None)]
 struct Cli {
-    #[clap(long, short, default_value = "iku.db", env = "SQLD_DB_PATH")]
+    #[clap(long, short, default_value = "data.sqld", env = "SQLD_DB_PATH")]
     db_path: PathBuf,
     /// The address and port the PostgreSQL server listens to.
     #[clap(long, short, env = "SQLD_PG_LISTEN_ADDR")]
