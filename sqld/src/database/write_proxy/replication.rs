@@ -99,7 +99,7 @@ fn all_applied(headers: *const PgHdr) -> bool {
             if (*current).flags & 0x040 == 0 {
                 return false;
             }
-            current = (*current).dirty;
+            current = (*current).pDirty;
         }
     }
 
@@ -140,14 +140,16 @@ unsafe impl WalHook for ReadReplicationHook {
                 sync_flags,
             } = commit;
 
-            let ret = orig(
-                wal,
-                page_size,
-                page_headers,
-                size_after,
-                is_commit as _,
-                sync_flags,
-            );
+            let ret = unsafe {
+                orig(
+                    wal,
+                    page_size,
+                    page_headers,
+                    size_after,
+                    is_commit as _,
+                    sync_flags,
+                )
+            };
 
             if ret == 0 {
                 debug_assert!(all_applied(page_headers));
@@ -181,15 +183,18 @@ fn make_page_header<'a>(entries: impl Iterator<Item = &'a WalLogEntry>) -> *mut 
     for entry in entries {
         if let Payload::Frame(Frame { page_no, data }) = entry.payload.as_ref().unwrap() {
             let page = PgHdr {
-                page: std::ptr::null(),
-                data: data.as_ptr() as _,
-                extra: std::ptr::null(),
-                pcache: std::ptr::null(),
-                dirty: current_pg,
-                pager: std::ptr::null(),
+                pPage: std::ptr::null_mut(),
+                pData: data.as_ptr() as _,
+                pExtra: std::ptr::null_mut(),
+                pCache: std::ptr::null_mut(),
+                pDirty: current_pg,
+                pPager: std::ptr::null_mut(),
                 pgno: *page_no,
-                pagehash: 0,
+                pageHash: 0,
                 flags: 0,
+                nRef: 0,
+                pDirtyNext: std::ptr::null_mut(),
+                pDirtyPrev: std::ptr::null_mut(),
             };
             headers_count += 1;
             current_pg = Box::into_raw(Box::new(page));
@@ -206,7 +211,7 @@ fn free_page_header(h: *const PgHdr) {
     let mut current = h;
     while !current.is_null() {
         let h: Box<PgHdr> = unsafe { Box::from_raw(current as _) };
-        current = h.dirty;
+        current = h.pDirty;
     }
 }
 

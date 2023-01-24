@@ -20,7 +20,7 @@ use self::{
 };
 
 fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
-    let orig: *mut libsql_wal_methods = unsafe { libsql_wal_methods_find(0) };
+    let orig: *mut libsql_wal_methods = unsafe { libsql_wal_methods_find(std::ptr::null()) };
     if orig.is_null() {
         anyhow::bail!("no underlying methods");
     }
