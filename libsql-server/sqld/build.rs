@@ -1,37 +1,9 @@
-use std::env;
-use std::fs;
-use std::process::Command;
-
 use prost_build::Config;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = vergen::Config::default();
     *config.build_mut().kind_mut() = vergen::TimestampKind::All;
     vergen::vergen(config)?;
-
-    let mut pwd = env::current_dir().unwrap();
-    pwd.push("../libsql");
-    let libsql_dir = fs::canonicalize(pwd.as_path()).unwrap();
-    let mut bindings = Command::new("./configure");
-    let configure = bindings.current_dir(libsql_dir.as_path()).arg("--with-pic");
-    let profile = std::env::var("PROFILE").unwrap();
-    if profile.as_str() == "release" {
-        configure.arg("--enable-releasemode");
-    }
-    let output = configure.output().unwrap();
-    if !output.status.success() {
-        println!("{}", std::str::from_utf8(&output.stderr).unwrap());
-        panic!("failed to configure");
-    }
-
-    if !Command::new("make")
-        .current_dir(libsql_dir.as_path())
-        .status()
-        .unwrap()
-        .success()
-    {
-        panic!("failed to compile");
-    }
 
     let mut config = Config::new();
     config.bytes([".wal_log"]);
@@ -44,10 +16,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
 
     println!("cargo:rerun-if-changed=proto");
-
-    println!("cargo:rustc-link-search=native=libsql/.libs");
-    println!("cargo:rustc-link-lib=static=sqlite3");
-    println!("cargo:rerun-if-changed=../libsql/src");
 
     Ok(())
 }
