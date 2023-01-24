@@ -1,26 +1,27 @@
 ///! Typedefs for virtual function signatures.
-use std::ffi::{c_char, c_int, c_void};
+use std::ffi::{c_char, c_int, c_uint, c_void};
 
 use super::{libsql_wal_methods, sqlite3_file, sqlite3_vfs, PgHdr, Wal};
+use rusqlite::ffi::sqlite3;
 
 // WAL methods
 pub type XWalLimitFn = extern "C" fn(wal: *mut Wal, limit: i64);
 pub type XWalBeginReadTransactionFn = extern "C" fn(wal: *mut Wal, changed: *mut c_int) -> c_int;
-pub type XWalEndReadTransaction = extern "C" fn(wal: *mut Wal) -> c_int;
+pub type XWalEndReadTransaction = extern "C" fn(wal: *mut Wal);
 pub type XWalFindFrameFn = extern "C" fn(wal: *mut Wal, pgno: u32, frame: *mut u32) -> c_int;
 pub type XWalReadFrameFn =
     extern "C" fn(wal: *mut Wal, frame: u32, n_out: c_int, p_out: *mut u8) -> c_int;
-pub type XWalDbSizeFn = extern "C" fn(wal: *mut Wal) -> u32;
+pub type XWalDbsizeFn = extern "C" fn(wal: *mut Wal) -> u32;
 pub type XWalBeginWriteTransactionFn = extern "C" fn(wal: *mut Wal) -> c_int;
 pub type XWalEndWriteTransactionFn = extern "C" fn(wal: *mut Wal) -> c_int;
 pub type XWalSavepointFn = extern "C" fn(wal: *mut Wal, wal_data: *mut u32);
 pub type XWalSavePointUndoFn = extern "C" fn(wal: *mut Wal, wal_data: *mut u32) -> c_int;
 pub type XWalCheckpointFn = extern "C" fn(
     wal: *mut Wal,
-    db: *mut c_void,
+    db: *mut rusqlite::ffi::sqlite3,
     emode: c_int,
-    busy_handler: extern "C" fn(busy_param: *mut c_void) -> c_int,
-    busy_arg: *const c_void,
+    busy_handler: Option<unsafe extern "C" fn(busy_param: *mut c_void) -> c_int>,
+    busy_arg: *mut c_void,
     sync_flags: c_int,
     n_buf: c_int,
     z_buf: *mut u8,
@@ -30,29 +31,29 @@ pub type XWalCheckpointFn = extern "C" fn(
 pub type XWalCallbackFn = extern "C" fn(wal: *mut Wal) -> c_int;
 pub type XWalExclusiveModeFn = extern "C" fn(wal: *mut Wal, op: c_int) -> c_int;
 pub type XWalHeapMemoryFn = extern "C" fn(wal: *mut Wal) -> c_int;
-pub type XWalFileFn = extern "C" fn(wal: *mut Wal) -> *const c_void;
-pub type XWalDbFn = extern "C" fn(wal: *mut Wal, db: *const c_void);
+pub type XWalFileFn = extern "C" fn(wal: *mut Wal) -> *mut sqlite3_file;
+pub type XWalDbFn = extern "C" fn(wal: *mut Wal, db: *mut rusqlite::ffi::sqlite3);
 pub type XWalPathNameLenFn = extern "C" fn(orig_len: c_int) -> c_int;
 pub type XWalGetPathNameFn = extern "C" fn(buf: *mut c_char, orig: *const c_char, orig_len: c_int);
 pub type XWalPreMainDbOpen =
     extern "C" fn(methods: *mut libsql_wal_methods, path: *const c_char) -> c_int;
 pub type XWalOpenFn = extern "C" fn(
-    vfs: *const sqlite3_vfs,
+    vfs: *mut sqlite3_vfs,
     file: *mut sqlite3_file,
     wal_name: *const c_char,
     no_shm_mode: c_int,
     max_size: i64,
     methods: *mut libsql_wal_methods,
-    wal: *mut *const Wal,
+    wal: *mut *mut Wal,
 ) -> c_int;
 pub type XWalCloseFn = extern "C" fn(
     wal: *mut Wal,
-    db: *mut c_void,
+    db: *mut sqlite3,
     sync_flags: c_int,
     n_buf: c_int,
     z_buf: *mut u8,
 ) -> c_int;
-pub type XWalFrameFn = extern "C" fn(
+pub type XWalFrameFn = unsafe extern "C" fn(
     wal: *mut Wal,
     page_size: c_int,
     page_headers: *mut PgHdr,
@@ -60,9 +61,9 @@ pub type XWalFrameFn = extern "C" fn(
     is_commit: c_int,
     sync_flags: c_int,
 ) -> c_int;
-pub type XWalUndoFn = extern "C" fn(
+pub type XWalUndoFn = unsafe extern "C" fn(
     wal: *mut Wal,
-    func: extern "C" fn(*mut c_void, c_int) -> c_int,
+    func: Option<unsafe extern "C" fn(*mut c_void, c_uint) -> c_int>,
     ctx: *mut c_void,
 ) -> c_int;
 
