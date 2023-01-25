@@ -193,7 +193,7 @@ impl Session {
 
     pub fn connect_from_ctx<D>(ctx: &worker::RouteContext<D>) -> Result<Self> {
         Ok(Self::connect(
-            &ctx.var("LIBSQL_CLIENT_URL")?.to_string(),
+            ctx.var("LIBSQL_CLIENT_URL")?.to_string(),
             &ctx.var("LIBSQL_CLIENT_USER")?.to_string(),
             &ctx.var("LIBSQL_CLIENT_PASS")?.to_string(),
         ))
