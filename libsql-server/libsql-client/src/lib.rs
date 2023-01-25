@@ -191,6 +191,14 @@ impl Session {
         }
     }
 
+    pub fn connect_from_ctx<D>(ctx: &worker::RouteContext<D>) -> Result<Self> {
+        Ok(Self::connect(
+            &ctx.var("LIBSQL_CLIENT_URL")?.to_string(),
+            &ctx.var("LIBSQL_CLIENT_USER")?.to_string(),
+            &ctx.var("LIBSQL_CLIENT_PASS")?.to_string(),
+        ))
+    }
+
     pub async fn execute(&self, stmt: impl Into<String>) -> Result<ResultSet> {
         let mut results = self.batch(std::iter::once(stmt)).await?;
         Ok(results.remove(0))
