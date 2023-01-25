@@ -247,11 +247,20 @@ impl Session {
         &self,
         stmts: impl IntoIterator<Item = impl Into<String>>,
     ) -> Result<Vec<ResultSet>> {
-        self.batch(
-            std::iter::once("BEGIN".to_string())
-                .chain(stmts.into_iter().map(|s| s.into()))
-                .chain(std::iter::once("END".to_string())),
-        )
-        .await
+        // TODO: Vec is not a good fit for popping the first element,
+        // let's return a templated collection instead and let the user
+        // decide where to store the result.
+        let mut ret: Vec<ResultSet> = self
+            .batch(
+                std::iter::once("BEGIN".to_string())
+                    .chain(stmts.into_iter().map(|s| s.into()))
+                    .chain(std::iter::once("END".to_string())),
+            )
+            .await?
+            .into_iter()
+            .skip(1)
+            .collect();
+        ret.pop();
+        Ok(ret)
     }
 }
