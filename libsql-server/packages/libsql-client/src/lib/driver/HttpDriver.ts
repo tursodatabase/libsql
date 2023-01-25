@@ -24,18 +24,17 @@ export class HttpDriver implements Driver {
             return [];
         }
 
-        const statements = buildStatements(stmts);
+        const statements = buildStatements(["BEGIN", ...stmts, "COMMIT"]);
 
         const response = await fetch(this.url, {
             method: 'POST',
             body: JSON.stringify(statements),
         });
-
         if (response.status === 200) {
             const results = await response.json();
-            validateTopLevelResults(results, stmts.length);
+            validateTopLevelResults(results, statements.statements.length);
             const resultSets: ResultSet[] = [];
-            for (var rsIdx = 0; rsIdx < results.length; rsIdx++) {
+            for (var rsIdx = 1; rsIdx < results.length-1; rsIdx++) {
                 const result = results[rsIdx];
                 const rs = parseResultSet(result, rsIdx);
                 // TODO duration needs to be provided by sqld
