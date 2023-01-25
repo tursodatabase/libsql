@@ -1,4 +1,4 @@
-import fetch from 'cross-fetch';
+import fetch from "cross-fetch";
 import { ResultSet, BoundStatement, Params } from "../libsql-js";
 import { Driver } from "./Driver";
 
@@ -14,9 +14,9 @@ export class HttpDriver implements Driver {
         if (params === undefined) {
             rs = (await this.transaction([stmt]))[0];
         } else {
-            rs = (await this.transaction([{sql: stmt, params: params}]))[0];
+            rs = (await this.transaction([{ sql: stmt, params: params }]))[0];
         }
-        return rs
+        return rs;
     }
 
     async transaction(stmts: (string | BoundStatement)[]): Promise<ResultSet[]> {
@@ -27,14 +27,14 @@ export class HttpDriver implements Driver {
         const statements = buildStatements(["BEGIN", ...stmts, "COMMIT"]);
 
         const response = await fetch(this.url, {
-            method: 'POST',
-            body: JSON.stringify(statements),
+            method: "POST",
+            body: JSON.stringify(statements)
         });
         if (response.status === 200) {
             const results = await response.json();
             validateTopLevelResults(results, statements.statements.length);
             const resultSets: ResultSet[] = [];
-            for (var rsIdx = 1; rsIdx < results.length-1; rsIdx++) {
+            for (var rsIdx = 1; rsIdx < results.length - 1; rsIdx++) {
                 const result = results[rsIdx];
                 const rs = parseResultSet(result, rsIdx);
                 // TODO duration needs to be provided by sqld
@@ -53,24 +53,23 @@ export class HttpDriver implements Driver {
     }
 }
 
-
 function buildStatements(stmts: (string | BoundStatement)[]) {
     let statements;
     if (typeof stmts[0] === "string") {
-        statements = { statements: stmts }
+        statements = { statements: stmts };
     } else {
         const s = stmts as BoundStatement[];
         statements = {
-            statements: s.map(st => {
+            statements: s.map((st) => {
                 return { q: st.sql, params: st.params };
             })
-        }
+        };
     }
-    return statements
+    return statements;
 }
 
 function validateTopLevelResults(results: any, numResults: number) {
-    if (! Array.isArray(results)) {
+    if (!Array.isArray(results)) {
         throw new Error("Response JSON was not an array");
     }
     if (results.length !== numResults) {
@@ -94,8 +93,7 @@ function parseResultSet(result: any, rsIdx: number): ResultSet {
         validateErrorResult(result, rsIdx);
         rs = result as ResultSet;
         rs.success = false;
-    }
-    else {
+    } else {
         throw new Error(`Result ${rsIdx} did not contain results or error`);
     }
     return rs;
