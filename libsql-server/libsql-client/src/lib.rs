@@ -4,11 +4,12 @@ use std::iter::IntoIterator;
 use base64::Engine;
 use worker::*;
 
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Meta {
     pub duration: u64,
 }
 
+#[derive(Clone, Debug)]
 pub enum CellValue {
     Text(String),
     Float(f64),
@@ -16,20 +17,24 @@ pub enum CellValue {
     Bool(bool),
 }
 
+#[derive(Clone, Debug)]
 pub struct Row {
     pub cells: HashMap<String, Option<CellValue>>,
 }
 
+#[derive(Clone, Debug)]
 pub struct Rows {
     pub columns: Vec<String>,
     pub rows: Vec<Row>,
 }
 
+#[derive(Clone, Debug)]
 pub enum ResultSet {
     Error((String, Meta)),
     Success((Rows, Meta)),
 }
 
+#[derive(Clone, Debug)]
 pub struct Session {
     url: String,
     auth: String,
