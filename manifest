@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sfts3\sauxiliary\sfunctions\sand\sone\sor\smore\sNEAR\sexpressions\sORed\stogether.
-D 2023-01-25T15:45:45.110
+C Enhance\sthe\ssqlite3_vtab_in_first()\sand\ssqlite3_vtab_in_next()\sinterfaces\sso\nthat\sthey\sreliably\sreturn\sSQLITE_ERROR\s(and\snot\sSQLITE_MISUSE)\sif\sthey\sare\ninvoked\son\sa\sparameter\sthat\sdid\snot\shave\smulti-value\sIN\sprocessing\senabled\nvia\sa\sprior\scall\sto\ssqlite3_vtab_in().\s\sSee\n[forum:/forumpost/a823d4a3d5f73def|forum\sthread\sa823d4a3d5f73def].
+D 2023-01-25T16:56:24.362
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,7 +622,7 @@ F src/resolve.c 5a98a7bf277aa60584b6bb4c5dd6a9ef2b19537910612c34f596e2901e88596d
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c d389ccdb96855dbfaadc22d936889e1f0652ffca17e31a6b6522b45d99daa8ce
 F src/shell.c.in f7fd28e68269a58690c665e8a5e96ba242201267925fbd335f08695c79fc6db7
-F src/sqlite.h.in 814923254ec52b541eeb7787a09a25e416b9a46333dfbfec324014b9919fd77f
+F src/sqlite.h.in d2a5fc1f6740bd02b571d33d2eb308fa7d1b0fac5b86f6f1fe8310cd49bca97d
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
 F src/sqliteInt.h 43eeee1ea80543a0e40444bf53643ca259a2b1158ccfe859a6a6435b7358ecdd
@@ -692,10 +692,10 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3ff7bc2b48dd425b1448304bb86273b05da1621f136d51dbb9789f8803559a1f
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c da2963a170cea17d88e140c1ab00ce702d27b90e2e27831274a2ae9e9b704897
+F src/vdbe.c 47d3b78e75e239e1909933f0d77612b4111ebe760f01fdd0085e4e30b59b4cc6
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
-F src/vdbeInt.h fc15815b7bdafbb27e7f027faba2b0112e87d382c0d72241672528806ebc0db5
-F src/vdbeapi.c 4ee67890913c1d2469c68e3ad2e7ddeab57ac5924a64bbfd0906a8ea0d542c7f
+F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
+F src/vdbeapi.c 784e90b69884ee2eed1bb191afe130e7f5acbed0465487907027406721111701
 F src/vdbeaux.c 3f9e3b6585e7434aa11300169dd66ddf0fc963a0c6f7940bdc058335dadeb353
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 316d518115f3720b4097f0231e2a3d6eefd06c787eccf44972f8d8f462153421
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a8c91c132f6157b7e3649f57a799984b1d7f8a18fd434515c875617d4195db29
-R 73fe2e4893136a6f2210fe51205c8c54
-U dan
-Z 9784b836281b1acdf9581aedf7823d6d
+P de4690a10ad4631e7452ccbb05b177a821d9dda387a854d216a6c54c7a189ead
+R f1869180bf1d0c0e3b1e12c888e3b381
+U drh
+Z bb6166040462f6ec1fa86f2c8c8a540d
 # Remove this line to create a well-formed Fossil manifest.
