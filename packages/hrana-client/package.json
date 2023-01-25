@@ -1,0 +1,26 @@
+{
+  "name": "@libsql/hrana-client",
+  "type": "commonjs",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "jest"
+  },
+  "dependencies": {
+    "isomorphic-ws": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.4.0",
+    "@types/ws": "^8.5.4",
+    "jest": "^29.4.0",
+    "ts-jest": "^29.0.5",
+    "typescript": "^4.9.4"
+  }
+}
