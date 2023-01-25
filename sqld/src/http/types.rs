@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use serde::de::Error as _;
@@ -16,10 +18,8 @@ pub struct QueryObject {
     pub params: QueryParams,
 }
 
-#[derive(Debug, Default)]
-pub struct QueryParams {
-    pub inner: Vec<(Option<String>, query::Value)>,
-}
+#[derive(Debug)]
+pub struct QueryParams(pub query::Params);
 
 /// Wrapper type to deserialize a payload into a query::Value
 struct ValueDeserializer(query::Value);
@@ -127,24 +127,24 @@ impl<'de> Deserialize<'de> for QueryParams {
             where
                 A: serde::de::SeqAccess<'de>,
             {
-                let mut inner = Vec::new();
+                let mut params = Vec::new();
                 while let Some(val) = seq.next_element::<ValueDeserializer>()? {
-                    inner.push((None, val.0));
+                    params.push(val.0);
                 }
 
-                Ok(QueryParams { inner })
+                Ok(QueryParams(query::Params::new_positional(params)))
             }
 
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
             where
                 A: serde::de::MapAccess<'de>,
             {
-                let mut inner = Vec::new();
+                let mut inner = HashMap::new();
                 while let Some((k, v)) = map.next_entry::<String, ValueDeserializer>()? {
-                    inner.push((Some(k), v.0))
+                    inner.insert(k, v.0);
                 }
 
-                Ok(QueryParams { inner })
+                Ok(QueryParams(query::Params::new_named(inner)))
             }
         }
 
@@ -172,7 +172,7 @@ impl<'de> Deserialize<'de> for QueryObject {
             {
                 Ok(QueryObject {
                     q: q.to_string(),
-                    params: Default::default(),
+                    params: QueryParams(query::Params::empty()),
                 })
             }
 
@@ -204,7 +204,7 @@ impl<'de> Deserialize<'de> for QueryObject {
 
                 Ok(QueryObject {
                     q: q.ok_or_else(|| A::Error::missing_field("q"))?,
-                    params: params.unwrap_or_default(),
+                    params: params.unwrap_or_else(|| QueryParams(query::Params::empty())),
                 })
             }
         }

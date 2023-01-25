@@ -21,7 +21,7 @@ use tower::load::Load;
 use tower::{service_fn, BoxError, MakeService, Service};
 
 use crate::http::types::HttpQuery;
-use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
+use crate::query::{self, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
 
 use self::auth::Authorizer;
@@ -116,7 +116,7 @@ fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
             .unwrap_or_default();
         let query = Query {
             stmt,
-            params: Params::new(query.params.inner),
+            params: query.params.0,
         };
 
         out.push(query);
