@@ -1,1 +1,1 @@
-export * from './lib/libsql-js';
+export * from "./lib/libsql-js";
