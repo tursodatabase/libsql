@@ -1,4 +1,4 @@
-import DatabaseConstructor, {Database, SqliteError, Statement} from "better-sqlite3";
+import DatabaseConstructor, { Database, SqliteError, Statement } from "better-sqlite3";
 import { BoundStatement, Params, ResultSet, SqlValue } from "../libsql-js";
 import { Driver } from "./Driver";
 
@@ -6,25 +6,25 @@ export class SqliteDriver implements Driver {
     private db: Database;
 
     constructor(url: string) {
-        this.db = new DatabaseConstructor(url.substring(5))
+        this.db = new DatabaseConstructor(url.substring(5));
     }
 
     async execute(sql: string, params?: Params): Promise<ResultSet> {
-        return await new Promise(resolve => {
+        return await new Promise((resolve) => {
             let columns: string[];
             let rows: any[];
 
             try {
                 const stmt = this.db.prepare(sql);
                 if (stmt.reader) {
-                    columns = stmt.columns().map(c => c.name);
+                    columns = stmt.columns().map((c) => c.name);
                     if (params === undefined) {
-                        rows = stmt.all()
+                        rows = stmt.all();
                     } else {
-                        rows = stmt.all(params)
+                        rows = stmt.all(params);
                     }
-                    rows = rows.map(row => {
-                        return columns.map(column => row[column]);
+                    rows = rows.map((row) => {
+                        return columns.map((column) => row[column]);
                     });
                 } else {
                     columns = [];
@@ -39,7 +39,7 @@ export class SqliteDriver implements Driver {
                 resolve({
                     success: false,
                     error: { message: e.message },
-                    meta: { duration: 0 },
+                    meta: { duration: 0 }
                 });
                 return;
             }
@@ -48,7 +48,7 @@ export class SqliteDriver implements Driver {
                 success: true,
                 columns,
                 rows,
-                meta: { duration: 0 },
+                meta: { duration: 0 }
             });
         });
     }
