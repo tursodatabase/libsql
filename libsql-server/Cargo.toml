@@ -3,4 +3,5 @@
 members = [
     "sqlc",
     "sqld",
+    "libsql-client",
 ]
