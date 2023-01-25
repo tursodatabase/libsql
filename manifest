@@ -1,5 +1,5 @@
-C Defer\scalling\sthe\sdestructor\sfor\sthe\suser\sdata\son\sa\smodule\suntil\safter\sthe\nmodule\shas\sdisconnected.\n[forum:/forumpost/b68391eb71fdff73|Forum\spost\sb68391eb71fdff73].
-D 2023-01-25T19:05:04.343
+C Fix\sa\sharmless\scompiler\swarning\sin\sFTS3.
+D 2023-01-25T21:28:30.601
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -58,7 +58,7 @@ F ext/fts3/README.content b9078d0843a094d86af0d48dffbff13c906702b4c3558012e67b9c
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers b92bdeb8b46503f0dd301d364efc5ef59ef9fa8e2758b8e742f39fa93a2e422d
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 4b75c00b6c3024959cc4d549422ebd4445c899efda277df9497a05af56550650
+F ext/fts3/fts3.c 66d2ced306ac88c39c00d81184f2c60f338696af6ae8cc26ed7c361b157b09f7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h e573c6d881f7238d77cc3fd2396cbb9b2fe13efef7d2ad295a155151c4e7efbd
 F ext/fts3/fts3_aux.c f0dc9bd98582615b7750218899bd0c729879b6bbf94d1be57ca1833ff49afc6f
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 144326dc171025dc8b5a77bebd8de3c19d5244ab807f5aa41f95313a25b880bc
-R 5a29c34b399edb74f869da7047a085db
+P 1ab122289fe6ac4cb3b0c47d17ac22627fcdfed80c941a57e6e6cc4d9dbd9273
+R a6657d796fc73b211158b972e91d9be4
 U drh
-Z b5069788fe0dbb78acebf224213a255d
+Z ef2bd86d0a0d7cd0e967616628d64863
 # Remove this line to create a well-formed Fossil manifest.

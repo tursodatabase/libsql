@@ -5771,6 +5771,7 @@ static void fts3EvalUpdateCounts(Fts3Expr *pExpr, int nCol){
 */
 static int fts3AllocateMSI(Fts3Expr *pExpr, int iPhrase, void *pCtx){
   Fts3Table *pTab = (Fts3Table*)pCtx;
+  UNUSED_PARAMETER(iPhrase);
   if( pExpr->aMI==0 ){
     pExpr->aMI = (u32 *)sqlite3_malloc64(pTab->nColumn * 3 * sizeof(u32));
     if( pExpr->aMI==0 ) return SQLITE_NOMEM;
