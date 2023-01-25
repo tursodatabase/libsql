@@ -5287,9 +5287,8 @@ static void fts3EvalNextRow(
   Fts3Expr *pExpr,                /* Expr. to advance to next matching row */
   int *pRc                        /* IN/OUT: Error code */
 ){
-  if( *pRc==SQLITE_OK ){
+  if( *pRc==SQLITE_OK && pExpr->bEof==0 ){
     int bDescDoclist = pCsr->bDesc;         /* Used by DOCID_CMP() macro */
-    assert( pExpr->bEof==0 );
     pExpr->bStart = 1;
 
     switch( pExpr->eType ){

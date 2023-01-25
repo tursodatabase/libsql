@@ -184,5 +184,10 @@ do_execsql_test 2.11 {
   SELECT rowid, length(matchinfo(t3)) FROM t3 WHERE t3 MATCH '(a NEAR b)';
 } {1 32 3 32 11 32}
 
+do_execsql_test 2.12 {
+  SELECT rowid, length(matchinfo(t3)) FROM t3 
+  WHERE t3 MATCH '(a NEAR b NEAR a NEAR b NEAR a)'
+} {1 68 3 68 11 68}
+
 
 finish_test
