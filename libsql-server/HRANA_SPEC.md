@@ -41,9 +41,11 @@ to efficiently connect to existing SQL databases.
 
 ## Overview
 
-The protocol runs on top of the [WebSocket protocol][rfc6455]. The client passes
-a value `hrana1` in the `Sec-WebSocket-Protocol` header in the opening
-handshake.
+The protocol runs on top of the [WebSocket protocol][rfc6455] as a subprotocol
+`hrana1`. The client includes `hrana1` in the `Sec-WebSocket-Protocol` request
+header in the opening handshake, and the server replies with `hrana1` in the
+same response header. Future versions of the Hrana protocol will be negotiated
+as different WebSocket subprotocols.
 
 [rfc6455]: https://www.rfc-editor.org/rfc/rfc6455
 
@@ -56,7 +58,8 @@ reduce latency.
 A single connection can host an arbitrary number of _streams_. A stream
 corresponds to a "session" in PostgreSQL or a "connection" in SQLite: SQL
 statements in a stream are executed sequentially and can affect stream-specific
-state such as transactions (with SQL `BEGIN` or `SAVEPOINT`).
+state such as transactions (with SQL `BEGIN` or `SAVEPOINT`). In effect, one
+Hrana connection works as a "connection pool" in traditional SQL servers.
 
 After a stream is opened, the client can execute SQL _statements_ on it. For the
 purposes of this protocol, the statements are arbitrary strings with optional
@@ -226,6 +229,12 @@ The client uses the `open_stream` request to open an SQL stream, which is then
 used to execute SQL statements. The streams are identified by arbitrary 32-bit
 signed integers assigned by the client.
 
+The client can optimistically send follow-up requests on a stream before it
+receives the response to its `open_stream` request. If the server receives an
+request that refers to a stream that is not opened (presumably because the
+stream failed to open), it should respond with an error, but it should not close
+the connection.
+
 The server can impose a reasonable limit to the number of streams opened at the
 same time.
 
@@ -245,10 +254,6 @@ type CloseStreamResp = {
 When the client is done with a stream, it should close it using the
 `close_stream` request. The client can safely reuse the stream id after it
 receives the response.
-
-If a server receives a `close_stream` request for a stream that is not open,
-perhaps because a previous `open_stream` has failed, it should still send a
-successful response.
 
 ### Execute a statement
 
@@ -279,7 +284,8 @@ type Stmt = {
 A statement contains the SQL text in `sql` and an array of arguments in
 `args`. The arguments are bound to positional parameters in the SQL statement
 (such as `$NNN` in Postgres or `?NNN` in SQLite). There is currently no way to
-bind named parameters by name (such as `:XXX` in SQLite).
+bind named parameters by name (such as `:XXX` in SQLite), the protocol might be
+extended with this feature in the future.
 
 The `want_rows` field specifies whether the client is interested in the rows
 produced by the SQL statement. If it is set to `false`, the server should always
