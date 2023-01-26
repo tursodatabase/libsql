@@ -1,7 +1,8 @@
 target
 testing/server/javascript/node_modules/
 testing/server/javascript/package-lock.json
-testing/server/ruby/Gemfile.lock
+testing/*/ruby/Gemfile.lock
+testing/*/ruby/vendor/
 iku.db
 iku.db-shm
 server/iku.db
