@@ -14,7 +14,7 @@ The `Value` type represents an SQLite value. It has 4 variants:
 - Blob: some binary data, encoded in base64
 - Null: the null value.
 
-All these types map to JSON straightforwardly, except for blobs, that are represented as an object with { "type": "blob", "base64": /* base64 encoded blob */}
+All these types map to JSON straightforwardly, except for blobs, that are represented as an object with { "base64": /* base64 encoded blob */}
 
 ### Response format
 
@@ -63,7 +63,7 @@ type QueryBody = {
 }
 
 type Query = string | ParamQuery;
-type ParamQuery = { q: string, params: null | Record<string, Value> | Array<Value> }
+type ParamQuery = { q: string, params: undefined | Record<string, Value> | Array<Value> }
 ```
 
 Queries are either simple strings or `ParamQuery` that accept parameter bindings. The `statements` arrays can contain a mix of the two types.
