@@ -907,7 +907,7 @@ static int valueFromValueList(
 
   *ppOut = 0;
   if( pVal==0 ) return SQLITE_MISUSE;
-  if( pVal->xDel!=sqlite3VdbeValueListFree ){
+  if( (pVal->flags & MEM_Dyn)==0 || pVal->xDel!=sqlite3VdbeValueListFree ){
     return SQLITE_ERROR;
   }else{
     assert( (pVal->flags&(MEM_TypeMask|MEM_Term|MEM_Subtype)) ==
