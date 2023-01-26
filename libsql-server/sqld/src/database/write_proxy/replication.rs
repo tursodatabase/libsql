@@ -50,14 +50,19 @@ impl PeriodicDbUpdater {
         logger: WalLogClient<Channel>,
         interval: Duration,
     ) -> anyhow::Result<Self> {
-        let db = open_with_regular_wal(
-            path,
-            OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_CREATE
-                | OpenFlags::SQLITE_OPEN_URI
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            ReadReplicationHook::new(logger).await?,
-        )?;
+        let hook = ReadReplicationHook::new(logger).await?;
+        let path = path.to_owned();
+        let db = tokio::task::spawn_blocking(move || {
+            open_with_regular_wal(
+                path,
+                OpenFlags::SQLITE_OPEN_READ_WRITE
+                    | OpenFlags::SQLITE_OPEN_CREATE
+                    | OpenFlags::SQLITE_OPEN_URI
+                    | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+                hook,
+            )
+        })
+        .await??;
 
         Ok(Self { interval, db })
     }
