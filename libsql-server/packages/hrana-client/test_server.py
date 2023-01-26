@@ -116,6 +116,8 @@ async def handle_socket(websocket):
             if msg is None:
                 break
             await handle_msg(msg)
+    except websockets.exceptions.ConnectionClosedError:
+        pass
     finally:
         for stream in streams.values():
             stream.conn.close()
