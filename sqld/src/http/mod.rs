@@ -2,15 +2,13 @@ pub mod auth;
 mod types;
 
 use std::future::poll_fn;
+use std::net::SocketAddr;
 use std::sync::Arc;
-use std::{convert::Infallible, net::SocketAddr};
 
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use bytes::{BufMut, Bytes, BytesMut};
 use hyper::body::to_bytes;
-use hyper::server::conn::AddrStream;
-use hyper::service::make_service_fn;
 use hyper::{Body, Method, Request, Response, StatusCode};
 use serde::Serialize;
 use serde_json::{json, Number};
@@ -18,7 +16,8 @@ use tokio::sync::{mpsc, oneshot};
 use tonic::codegen::http;
 use tower::balance::pool;
 use tower::load::Load;
-use tower::{service_fn, BoxError, MakeService, Service};
+use tower::{BoxError, MakeService, Service, ServiceBuilder};
+use tower_http::{compression::CompressionLayer, cors};
 
 use crate::http::types::HttpQuery;
 use crate::query::{self, Queries, Query, QueryResult, ResultSet};
@@ -219,18 +218,19 @@ where
     tracing::info!("listening for HTTP requests on {addr}");
 
     let (sender, mut receiver) = mpsc::channel(1024);
-    let server =
-        hyper::server::Server::bind(&addr).serve(make_service_fn(move |_: &AddrStream| {
+    let service = ServiceBuilder::new()
+        .layer(CompressionLayer::new())
+        .layer(
+            cors::CorsLayer::new()
+                .allow_methods(cors::AllowMethods::any())
+                .allow_origin(cors::Any),
+        )
+        .service_fn(move |req| {
             let authorizer = authorizer.clone();
-            let sender = sender.clone();
-            async move {
-                let authorizer = authorizer.clone();
-                Ok::<_, Infallible>(service_fn(move |req| {
-                    let authorizer = authorizer.clone();
-                    handle_request(authorizer, req, sender.clone(), enable_console)
-                }))
-            }
-        }));
+            handle_request(authorizer, req, sender.clone(), enable_console)
+        });
+
+    let server = hyper::server::Server::bind(&addr).serve(tower::make::Shared::new(service));
 
     tokio::spawn(async move {
         let mut pool = pool::Builder::new().build(db_factory, ());
