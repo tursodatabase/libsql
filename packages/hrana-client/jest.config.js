@@ -1,4 +1,7 @@
 // https://jestjs.io/docs/configuration
-module.exports = {
-    preset: "ts-jest/presets/default",
+export default {
+    preset: "ts-jest/presets/default-esm",
+    moduleNameMapper: {
+        '^(\\.{1,2}/.*)\\.js$': '$1',
+    },
 }
