@@ -55,8 +55,12 @@ export function valueFromProto(value: proto.Value): Value {
     }
 }
 
+export function stmtResultFromProto(result: proto.StmtResult): StmtResult {
+    return {rowsAffected: result["affected_row_count"]};
+}
+
 export function rowArrayFromProto(result: proto.StmtResult): RowArray {
-    const array = new RowArray();
+    const array = new RowArray(result["affected_row_count"]);
     for (const row of result["rows"]) {
         array.push(rowFromProto(result, row));
     }
@@ -65,7 +69,6 @@ export function rowArrayFromProto(result: proto.StmtResult): RowArray {
 
 export function rowFromProto(result: proto.StmtResult, row: Array<proto.Value>): Row {
     const array = row.map((value) => valueFromProto(value));
-    Object.setPrototypeOf(array, Row.prototype);
 
     for (let i = 0; i < result["cols"].length; ++i) {
         const colName = result["cols"][i]["name"];
@@ -80,16 +83,20 @@ export function rowFromProto(result: proto.StmtResult, row: Array<proto.Value>):
     return array;
 }
 
-export function errorFromProto(error: proto.Error): Error {
-    return new Error(`Server returned error ${JSON.stringify(error["message"])}`);
+export interface StmtResult {
+    rowsAffected: number;
 }
 
-export class RowArray extends Array<Row> {
-    constructor() {
+export class RowArray extends Array<Row> implements StmtResult {
+    constructor(public rowsAffected: number) {
         super();
         Object.setPrototypeOf(this, RowArray.prototype);
     }
 }
 
-export class Row extends Array<Value> {
+export type Row = any;
+
+export function errorFromProto(error: proto.Error): Error {
+    return new Error(`Server returned error ${JSON.stringify(error["message"])}`);
 }
+

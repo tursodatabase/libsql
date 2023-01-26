@@ -1,11 +1,14 @@
 import WebSocket from "isomorphic-ws";
 
-import type { Stmt, Value, Row, RowArray } from "./convert";
-import { rowArrayFromProto, stmtToProto, rowFromProto, valueFromProto, errorFromProto } from "./convert";
+import type { Stmt, Value, StmtResult, RowArray, Row } from "./convert";
+import {
+    stmtToProto, rowArrayFromProto, rowFromProto,
+    stmtResultFromProto, valueFromProto, errorFromProto,
+} from "./convert";
 import IdAlloc from "./id_alloc";
 import type * as proto from "./proto";
 
-export type { Stmt, Value, Row, RowArray } from "./convert";
+export type { Stmt, Value, StmtResult, RowArray, Row } from "./convert";
 
 /** Open a Hrana client connected to the given `url`. */
 export function open(url: string, jwt?: string): Client {
@@ -330,11 +333,11 @@ export class Stream {
     }
 
     /** Execute a statement that does not return rows. */
-    execute(stmt: Stmt): Promise<void> {
+    execute(stmt: Stmt): Promise<StmtResult> {
         return new Promise((doneCallback, errorCallback) => {
             this.#client._execute(this.#state, {
                 stmt: stmtToProto(stmt, false),
-                resultCallback() { doneCallback(); },
+                resultCallback(result) { doneCallback(stmtResultFromProto(result)); },
                 errorCallback,
             });
         });
