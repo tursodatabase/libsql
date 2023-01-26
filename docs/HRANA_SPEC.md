@@ -158,8 +158,7 @@ type ResponseErrorMsg = {
 When the server receives a `request` message, it must eventually send either a
 `response_ok` with the response or a `response_error` that describes a failure.
 The response from the server includes the same `request_id` that was provided by
-the client in the request. The server can process the requests asynchronously
-and send the responses in arbitrary order.
+the client in the request. The server can send the responses in arbitrary order.
 
 The request ids are arbitrary 32-bit signed integers, the server does not
 interpret them in any way.
@@ -333,3 +332,13 @@ precision, because some JSON implementations treat all numbers as 64-bit floats
 
 These types exactly correspond to SQLite types. In the future, the protocol
 might be extended with more types for compatibility with Postgres.
+
+### Ordering
+
+The protocol allows the server to reorder the responses: it is not necessary to
+send the responses in the same order as the requests. However, the server must
+process requests related to a single stream id in order.
+
+For example, this means that a client can send an `open_stream` request
+immediately followed by a batch of `execute` requests on that stream and the
+server will always process them in correct order.
