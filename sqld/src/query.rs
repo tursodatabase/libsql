@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use std::convert::Infallible;
+use std::fmt;
 use std::str::FromStr;
-use std::{fmt, usize};
 
+use anyhow::{ensure, Context};
 use futures::stream;
 use pgwire::api::results::{text_query_response, FieldInfo, Response, TextDataRowEncoder};
 use pgwire::api::Type as PgType;
@@ -249,11 +251,6 @@ pub struct Query {
     pub params: Params,
 }
 
-#[derive(Debug)]
-pub struct Params {
-    params: Vec<(Option<String>, Value)>,
-}
-
 impl ToSql for Value {
     fn to_sql(&self) -> rusqlite::Result<rusqlite::types::ToSqlOutput<'_>> {
         let val = match self {
@@ -268,53 +265,83 @@ impl ToSql for Value {
     }
 }
 
+#[derive(Debug)]
+pub enum Params {
+    Named(HashMap<String, Value>),
+    Positional(Vec<Value>),
+}
+
+impl Params {}
+
 impl Params {
     pub fn empty() -> Self {
-        Self { params: Vec::new() }
+        Self::Positional(Vec::new())
     }
 
-    pub fn new(params: Vec<(Option<String>, Value)>) -> Self {
-        Self { params }
+    pub fn new_named(values: HashMap<String, Value>) -> Self {
+        Self::Named(values)
     }
 
-    pub fn push(&mut self, name: Option<String>, value: Value) {
-        self.params.push((name, value));
+    pub fn new_positional(values: Vec<Value>) -> Self {
+        Self::Positional(values)
     }
 
-    fn get_name(&self, k: &str) -> Option<&Value> {
-        // strip prefix ('$', '?', ..)
-        let mut chars = k.chars();
-        chars.next();
-        let stripped = chars.as_str();
-
-        if let Ok(index) = stripped.parse::<usize>() {
-            return self.get_pos(index);
+    pub fn get_pos(&self, pos: usize) -> Option<&Value> {
+        assert!(pos > 0);
+        match self {
+            Params::Named(_) => None,
+            Params::Positional(params) => params.get(pos - 1),
         }
-
-        self.params.iter().find_map(|(name, val)| match name {
-            Some(name) if name == stripped => Some(val),
-            _ => None,
-        })
     }
 
-    fn get_pos(&self, i: usize) -> Option<&Value> {
-        self.params.get(i - 1).map(|(_, val)| val)
+    pub fn get_named(&self, name: &str) -> Option<&Value> {
+        match self {
+            Params::Named(params) => params.get(name),
+            Params::Positional(_) => None,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            Params::Named(params) => params.len(),
+            Params::Positional(params) => params.len(),
+        }
     }
 
     pub fn bind(&self, stmt: &mut rusqlite::Statement) -> anyhow::Result<()> {
         let param_count = stmt.parameter_count();
+        ensure!(
+            param_count <= self.len(),
+            "missing parameters, expected {param_count} found {}",
+            self.len()
+        );
+        ensure!(
+            param_count >= self.len(),
+            "too many parameters, expected {param_count} found {}",
+            self.len()
+        );
+
         if param_count > 0 {
             for index in 1..=param_count {
                 // get by name
-                if let Some(name) = stmt.parameter_name(index) {
-                    if let Some(val) = self.get_name(name) {
-                        stmt.raw_bind_parameter(index, val)?;
+                let maybe_value = match stmt.parameter_name(index) {
+                    Some(name) => {
+                        let mut chars = name.chars();
+                        match chars.next() {
+                            Some('?') => {
+                                let pos = chars.as_str().parse::<usize>().context(
+                                    "invalid parameter {name}: expected a numerical position after `?`",
+                                )?;
+                                self.get_pos(pos)
+                            }
+                            _ => self.get_named(name),
+                        }
                     }
-                } else {
-                    // get by pos
-                    if let Some(val) = self.get_pos(index) {
-                        stmt.raw_bind_parameter(index, val)?;
-                    }
+                    None => self.get_pos(index),
+                };
+
+                if let Some(value) = maybe_value {
+                    stmt.raw_bind_parameter(index, value)?;
                 }
             }
         }
@@ -360,4 +387,72 @@ pub enum ErrorCode {
     TxBusy,
     TxTimeout,
     Internal,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_bind_params_positional_simple() {
+        let con = rusqlite::Connection::open(":memory").unwrap();
+        let mut stmt = con.prepare("SELECT ?").unwrap();
+        let params = Params::new_positional(vec![Value::Integer(10)]);
+        params.bind(&mut stmt).unwrap();
+
+        assert_eq!(stmt.expanded_sql().unwrap(), "SELECT 10");
+    }
+
+    #[test]
+    fn test_bind_params_positional_numbered() {
+        let con = rusqlite::Connection::open(":memory").unwrap();
+        let mut stmt = con.prepare("SELECT ? || ?2 || ?1").unwrap();
+        let params = Params::new_positional(vec![Value::Integer(10), Value::Integer(20)]);
+        params.bind(&mut stmt).unwrap();
+
+        assert_eq!(stmt.expanded_sql().unwrap(), "SELECT 10 || 20 || 10");
+    }
+
+    #[test]
+    fn test_bind_params_positional_named() {
+        let con = rusqlite::Connection::open(":memory").unwrap();
+        let mut stmt = con.prepare("SELECT :first || $second").unwrap();
+        let mut params = HashMap::new();
+        params.insert(":first".to_owned(), Value::Integer(10));
+        params.insert("$second".to_owned(), Value::Integer(20));
+        let params = Params::new_named(params);
+        params.bind(&mut stmt).unwrap();
+
+        assert_eq!(stmt.expanded_sql().unwrap(), "SELECT 10 || 20");
+    }
+
+    #[test]
+    fn test_bind_params_too_many_params() {
+        let con = rusqlite::Connection::open(":memory").unwrap();
+        let mut stmt = con.prepare("SELECT :first || $second").unwrap();
+        let mut params = HashMap::new();
+        params.insert(":first".to_owned(), Value::Integer(10));
+        params.insert("$second".to_owned(), Value::Integer(20));
+        params.insert("$oops".to_owned(), Value::Integer(20));
+        let params = Params::new_named(params);
+        assert!(params.bind(&mut stmt).is_err());
+    }
+
+    #[test]
+    fn test_bind_params_too_few_params() {
+        let con = rusqlite::Connection::open(":memory").unwrap();
+        let mut stmt = con.prepare("SELECT :first || $second").unwrap();
+        let mut params = HashMap::new();
+        params.insert(":first".to_owned(), Value::Integer(10));
+        let params = Params::new_named(params);
+        assert!(params.bind(&mut stmt).is_err());
+    }
+
+    #[test]
+    fn test_bind_params_invalid_positional() {
+        let con = rusqlite::Connection::open(":memory").unwrap();
+        let mut stmt = con.prepare("SELECT ?invalid").unwrap();
+        let params = Params::empty();
+        assert!(params.bind(&mut stmt).is_err());
+    }
 }
