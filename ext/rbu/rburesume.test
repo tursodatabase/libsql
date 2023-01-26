@@ -9,6 +9,8 @@
 #
 #***********************************************************************
 #
+# TESTRUNNER: slow
+#
 # This file contains tests for resumption of RBU operations in the
 # case where the previous RBU process crashed.
 #
