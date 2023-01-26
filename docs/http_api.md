@@ -14,9 +14,7 @@ The `Value` type represents an SQLite value. It has 4 variants:
 - Blob: some binary data, encoded in base64
 - Null: the null value.
 
-All these types map to JSON straightforwardly, with two exceptions:
-- Blob: they are represented as an object with { "type": "blob", "base64": /* base64 encoded blob */}
-- Integers: they are represented as string since some languages are not able to represent them in full fidelity.
+All these types map to JSON straightforwardly, except for blobs, that are represented as an object with { "type": "blob", "base64": /* base64 encoded blob */}
 
 ### Response format
 
