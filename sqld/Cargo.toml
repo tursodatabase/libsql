@@ -17,6 +17,7 @@ fallible-iterator = "0.2.0"
 futures = "0.3.25"
 hex = "0.4.3"
 hyper = { version = "0.14.23", features = ["http2"] }
+jsonwebtoken = "8.2.0"
 libsql-wasmtime-bindings = "0"
 # Regular mvfs prevents users from enabling WAL mode
 mvfs = { git = "https://github.com/psarna/mvsqlite", branch = "mwal", optional = true }
