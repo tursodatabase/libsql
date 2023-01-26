@@ -118,7 +118,7 @@ where
 }
 
 fn parse_params(types: &[Type], data: &[Option<Bytes>]) -> Params {
-    let mut params = Params::empty();
+    let mut params = Vec::with_capacity(data.len());
     for (val, ty) in data.iter().zip(types) {
         let value = if val.is_none() {
             Value::Null
@@ -137,10 +137,10 @@ fn parse_params(types: &[Type], data: &[Option<Bytes>]) -> Params {
             unimplemented!("unsupported type")
         };
 
-        params.push(None, value);
+        params.push(value);
     }
 
-    params
+    Params::new_positional(params)
 }
 
 // from https://docs.rs/pgwire/latest/src/pgwire/tokio.rs.html#230-283
