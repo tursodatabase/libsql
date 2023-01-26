@@ -1,4 +1,4 @@
-import type * as proto from "./proto";
+import type * as proto from "./proto.js";
 
 /** A statement that you can send to the database. Either a plain SQL string, or an SQL string together with
  * values for the `?` parameters.

@@ -1,12 +1,12 @@
 import WebSocket from "isomorphic-ws";
 
-import type { Stmt, Value, StmtResult, RowArray, Row } from "./convert";
+import type { Stmt, Value, StmtResult, RowArray, Row } from "./convert.js";
 import {
     stmtToProto, rowArrayFromProto, rowFromProto,
     stmtResultFromProto, valueFromProto, errorFromProto,
-} from "./convert";
-import IdAlloc from "./id_alloc";
-import type * as proto from "./proto";
+} from "./convert.js";
+import IdAlloc from "./id_alloc.js";
+import type * as proto from "./proto.js";
 
 export type { Stmt, Value, StmtResult, RowArray, Row } from "./convert";
 

@@ -1,3 +1,5 @@
 node_modules
-/lib
+/lib-esm
+/lib-cjs
 package-lock.json
+*.tsbuildinfo
