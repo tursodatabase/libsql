@@ -29,7 +29,12 @@ sqlite3InitModuleState.debugModule('self.location =',self.location);
    4) If none of the above apply, (prefix+path) is returned.
 */
 Module['locateFile'] = function(path, prefix) {
-//#if target=es6-module
+//#if target=es6-bundler-friendly
+  // TEMPORARY KLUDGE to work around a c-pp nested blocks bug which is
+  // currently eluding a fix.  We really should have (#ifnot
+  // target=es6-bundler-friendly) around this whole function.
+  return new URL('sqlite3.wasm', import.meta.url).href;
+//#elif target=es6-module
   return new URL(path, import.meta.url).href;
 //#else
   'use strict';
@@ -51,7 +56,7 @@ Module['locateFile'] = function(path, prefix) {
     "result =", theFile
   );
   return theFile;
-//#endif /* SQLITE_JS_EMS */
+//#endif //target=es6-module
 }.bind(sqlite3InitModuleState);
 
 /**
@@ -62,7 +67,7 @@ Module['locateFile'] = function(path, prefix) {
 
    In such builds we must disable this.
 */
-const xNameOfInstantiateWasm = true
+const xNameOfInstantiateWasm = false
       ? 'instantiateWasm'
       : 'emscripten-bug-17951';
 Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
@@ -102,4 +107,4 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
 Module[xNameOfInstantiateWasm].uri = 'sqlite3.wasm';
 /* END FILE: api/pre-js.js, noting that the build process may add a
    line after this one to change the above .uri to a build-specific
-   one. */
+   one. *//* END FILE: api/pre-js.js */

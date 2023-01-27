@@ -105,6 +105,10 @@ const toExportForES6 =
                    document?.currentScript?.src);
     }
   }
+//#ifnot target=es6-module
+// Emscripten does not inject these module-loader bits in ES6 module
+// build and including them here breaks JS bundlers, so elide them
+// from ES6 builds.
   /* Replace the various module exports performed by the Emscripten
      glue... */
   if (typeof exports === 'object' && typeof module === 'object'){
@@ -114,6 +118,7 @@ const toExportForES6 =
   }
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
+//#endif // !target=es6-module
   return self.sqlite3InitModule /* required for ESM */;
 })();
 //#if target=es6-module
