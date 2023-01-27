@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\shelp\sstatic\sanalyzers.
-D 2023-01-27T20:15:48.669
+C Fix\scompiler\swarning\sin\sbase85.c.
+D 2023-01-27T23:10:10.479
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -264,7 +264,7 @@ F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
 F ext/misc/base64.c d43d2b209c8ab70ca3f860104bb353b0f52a1c5462a2466140025c954e4f3ea7 x
-F ext/misc/base85.c 4b53d66c50e120e8697dd2a8ea6ddbc8750a4a1f6bcc6e0b7202a3998b0852bc
+F ext/misc/base85.c 77dfd5813d23ea561d0348f922583888e78f8eaeb2b9a4a28226d092389890b8
 F ext/misc/basexx.c 5e859e1820620aa8080fb9145eb47089de426ae808f6abb01a8e12921c3a8e67
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c74ad902e3bbfc28d6b30a37f3791176d64cdd8fd5950f1d1749541e244a0494
-R 57fbc0d68a554ca6b628d676f2d12d96
+P e446c8b4aa2ffe075f9c289c771d62a414661c3ffe6abae5649c50af8e32fab6
+R d679b1424ddaeb09fc6eeb6c565e2751
 U drh
-Z 7ac7eacb05727f391b6a985bf9bb5add
+Z 0e1eac878e4ebdd2f0ed91103111d8aa
 # Remove this line to create a well-formed Fossil manifest.
