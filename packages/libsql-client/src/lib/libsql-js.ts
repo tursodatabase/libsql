@@ -12,7 +12,7 @@ export type Config = {
 export type Row = Record<string, SqlValue>;
 export type SqlValue = string | number | boolean | null;
 export type Params = SqlValue[] | Record<string, SqlValue>;
-export type BoundStatement = { sql: string; params: Params };
+export type BoundStatement = { q: string; params: Params };
 
 /**
  * A SQL query result set.
