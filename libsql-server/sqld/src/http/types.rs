@@ -72,6 +72,13 @@ impl<'de> Deserialize<'de> for ValueDeserializer {
                 Ok(query::Value::Integer(v))
             }
 
+            fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(query::Value::Integer(v as i64))
+            }
+
             fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
             where
                 E: serde::de::Error,
