@@ -16,6 +16,7 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+ifcapable !rbu { finish_test ; return }
 set ::testprefix rburesume
 
 forcedelete test.db-shm test.db-oal
