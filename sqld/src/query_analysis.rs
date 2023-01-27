@@ -96,6 +96,11 @@ impl Statement {
                 kind,
             })
         }
+        // The parser needs to be boxed because it's large, and you don't want it on the stack.
+        // There's upstream work to make it smaller, but in the meantime the parser should remain
+        // on the heap:
+        // - https://github.com/gwenn/lemon-rs/issues/8
+        // - https://github.com/gwenn/lemon-rs/pull/19
         let mut parser = Box::new(Parser::new(s.as_bytes()));
         std::iter::from_fn(move || match parser.next() {
             Ok(Some(cmd)) => Some(parse_inner(cmd)),
