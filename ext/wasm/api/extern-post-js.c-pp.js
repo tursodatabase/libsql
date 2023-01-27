@@ -45,14 +45,23 @@ const toExportForES6 =
     moduleScript: self?.document?.currentScript,
     isWorker: ('undefined' !== typeof WorkerGlobalScope),
     location: self.location,
-    urlParams: new URL(self.location.href).searchParams
+    urlParams:
+//#if target=es6-bundler-friendly
+    undefined
+//#else
+    new URL(self.location.href).searchParams
+//#endif
   });
   initModuleState.debugModule =
-    (new URL(self.location.href).searchParams).has('sqlite3.debugModule')
+//#if target=es6-bundler-friendly
+  ()=>{}
+//#else
+  (new URL(self.location.href).searchParams).has('sqlite3.debugModule')
     ? (...args)=>console.warn('sqlite3.debugModule:',...args)
     : ()=>{};
+//#endif
 
-  if(initModuleState.urlParams.has('sqlite3.dir')){
+  if(initModuleState.urlParams && initModuleState.urlParams.has('sqlite3.dir')){
     initModuleState.sqlite3Dir = initModuleState.urlParams.get('sqlite3.dir') +'/';
   }else if(initModuleState.moduleScript){
     const li = initModuleState.moduleScript.src.split('/');

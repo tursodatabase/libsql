@@ -704,7 +704,9 @@ $(sqlite3-bundler-friendly.mjs):
 # (and harmless, just a waste of build time).
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
-$(sqlite3-bundler-friendly.mjs): $(sqlite3.js)
+$(sqlite3-bundler-friendly.mjs): $(sqlite3.mjs)
+# maintenance reminder: the deps on ^^^ must all be such that they are
+# never built in parallel.
 CLEAN_FILES += $(sqlite3.js) $(sqlite3.mjs) $(sqlite3-bundler-friendly.mjs) \
     $(sqlite3.wasm)
 all: $(sqlite3.js) $(sqlite3.mjs) $(sqlite3-bundler-friendly.mjs)

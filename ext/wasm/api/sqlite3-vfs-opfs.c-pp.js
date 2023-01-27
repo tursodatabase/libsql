@@ -100,13 +100,20 @@ const installOpfsVfs = function callee(options){
   if(!options || 'object'!==typeof options){
     options = Object.create(null);
   }
-  const urlParams = new URL(self.location.href).searchParams;
-  if(undefined===options.verbose){
-    options.verbose = urlParams.has('opfs-verbose')
-      ? (+urlParams.get('opfs-verbose') || 2) : 1;
-  }
-  if(undefined===options.sanityChecks){
-    options.sanityChecks = urlParams.has('opfs-sanity-check');
+  const urlParams =
+//#if target=es6-bundler-friendly
+        undefined;
+//#else
+        new URL(self.location.href).searchParams;
+//#endif
+  if(urlParams){
+    if(undefined===options.verbose){
+      options.verbose = urlParams.has('opfs-verbose')
+        ? (+urlParams.get('opfs-verbose') || 2) : 1;
+    }
+    if(undefined===options.sanityChecks){
+      options.sanityChecks = urlParams.has('opfs-sanity-check');
+    }
   }
   if(undefined===options.proxyUri){
     options.proxyUri = callee.defaultProxyUri;
