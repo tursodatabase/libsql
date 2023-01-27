@@ -10410,7 +10410,9 @@ static void checkList(
 ** lower 16 bits are the index of the last byte of that range.
 */
 static void btreeHeapInsert(u32 *aHeap, u32 x){
-  u32 j, i = ++aHeap[0];
+  u32 j, i;
+  assert( aHeap!=0 );
+  i = ++aHeap[0];
   aHeap[i] = x;
   while( (j = i/2)>0 && aHeap[j]>aHeap[i] ){
     x = aHeap[j];
