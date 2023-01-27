@@ -3,22 +3,22 @@ use std::collections::HashMap;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use serde::de::Error as _;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::query;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct HttpQuery {
     pub statements: Vec<QueryObject>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct QueryObject {
     pub q: String,
     pub params: QueryParams,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct QueryParams(pub query::Params);
 
 /// Wrapper type to deserialize a payload into a query::Value
@@ -217,5 +217,37 @@ impl<'de> Deserialize<'de> for QueryObject {
         }
 
         deserializer.deserialize_any(Visitor)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn parse_positional_params() {
+        let json = r#"[1, "hello", 12.1, { "blob": "aGVsbG8K"}, null]"#; // blob: hello\n
+        let found: QueryParams = serde_json::from_str(json).unwrap();
+        insta::assert_json_snapshot!(found);
+    }
+
+    #[test]
+    fn parse_named_params() {
+        let json = r#"{":int": 1, "$real": 1.23, ":str": "hello", ":blob": { "blob": "aGVsbG8K"}, ":null": null}"#;
+        let found: QueryParams = serde_json::from_str(json).unwrap();
+        insta::with_settings!({sort_maps => true}, {
+            insta::assert_json_snapshot!(found);
+        })
+    }
+
+    #[test]
+    fn parse_http_query() {
+        let json = r#"{"statements":["select * from test",
+            {"q": "select ?", "params": [12]},
+            {"q": "select ?", "params": {":foo": "bar"}}]}"#;
+        let found: HttpQuery = serde_json::from_str(json).unwrap();
+        insta::with_settings!({sort_maps => true}, {
+            insta::assert_json_snapshot!(found);
+        })
     }
 }
