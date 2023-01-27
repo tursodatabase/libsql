@@ -34,7 +34,7 @@ pub fn parse_auth(auth: Option<String>) -> Result<Arc<dyn Authorizer + Sync + Se
         Some(auth) => match auth.split_once(':') {
             Some((scheme, param)) => match scheme {
                 "basic" => Ok(Arc::new(BasicAuthAuthorizer {
-                    expected_auth: format!("Basic {param}").to_lowercase(),
+                    expected_auth: format!("Basic {param}"),
                 })),
                 "jwt" => Ok(Arc::new(BearerAuthAuthorizer {
                     decoding_key: decoding_key_from_pem(param)?,
@@ -70,7 +70,7 @@ impl Authorizer for BasicAuthAuthorizer {
         if let Some(actual_auth) = actual_auth {
             actual_auth
                 .to_str()
-                .map(|actual_auth| actual_auth.to_lowercase() == self.expected_auth)
+                .map(|actual_auth| actual_auth == self.expected_auth)
                 .unwrap_or(false)
         } else {
             false
