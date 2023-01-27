@@ -37,7 +37,7 @@ impl Connection {
         let host = url.host_str().unwrap();
         let port = url.port().unwrap();
         let stream = TcpStream::connect((host, port))
-            .with_context(|| format!("Unable to connect to {}", addr))?;
+            .with_context(|| format!("Unable to connect to {addr}"))?;
         let rx_buf = BytesMut::with_capacity(1024);
         let username = url.username().into();
         Ok(Self {
