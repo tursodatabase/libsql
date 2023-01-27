@@ -6,7 +6,9 @@
 */
 
 // See notes in extern-post-js.js
-const sqlite3InitModuleState = self.sqlite3InitModuleState || Object.create(null);
+const sqlite3InitModuleState = self.sqlite3InitModuleState || Object.assign(Object.create(null),{
+  debugModule: ()=>{}
+});
 delete self.sqlite3InitModuleState;
 sqlite3InitModuleState.debugModule('self.location =',self.location);
 
