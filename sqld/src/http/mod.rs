@@ -109,10 +109,13 @@ fn error(msg: &str, code: StatusCode) -> Response<Body> {
 fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
     let mut out = Vec::with_capacity(queries.len());
     for query in queries {
-        let stmt = Statement::parse(&query.q)
-            .next()
-            .transpose()?
-            .unwrap_or_default();
+        let mut iter = Statement::parse(&query.q);
+        let stmt = iter.next().transpose()?.unwrap_or_default();
+        if iter.next().is_some() {
+            anyhow::bail!(
+                "found more than one command in a single statement string. It is allowed to issue only one command per string."
+            );
+        }
         let query = Query {
             stmt,
             params: query.params.0,
