@@ -1,5 +1,5 @@
 {
-  "name": "@libsql/kysely-sqld",
+  "name": "@libsql/kysely-libsql",
 
   "type": "module",
   "main": "lib-cjs/index.js",
