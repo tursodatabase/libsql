@@ -59,6 +59,13 @@ emcc.bin ?= $(word 1,$(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc) $(shell 
 ifeq (,$(emcc.bin))
   $(error Cannot find emcc.)
 endif
+emcc.version := $(shell "$(emcc.bin)" --version | sed -n 1p \
+                  | sed -e 's/^.* \([3-9][^ ]*\) .*$$/\1/;')
+ifeq (,$(emcc.version))
+  $(warning Cannot determine emcc version. This might unduly impact build flags.)
+else
+  $(info using emcc version [$(emcc.version)])
+endif
 
 wasm-strip ?= $(shell which wasm-strip 2>/dev/null)
 ifeq (,$(filter clean,$(MAKECMDGOALS)))
@@ -501,7 +508,6 @@ emcc.cflags :=
 emcc.cflags += -std=c99 -fPIC
 # -------------^^^^^^^^ we need c99 for $(sqlite3-wasm.c).
 emcc.cflags += -I. -I$(dir.top)
-
 ########################################################################
 # emcc flags specific to building .js/.wasm files...
 emcc.jsflags := -fPIC
@@ -509,7 +515,6 @@ emcc.jsflags += --minify 0
 emcc.jsflags += --no-entry
 emcc.jsflags += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 emcc.jsflags += -sMODULARIZE
-emcc.jsflags += -sSTRICT_JS
 emcc.jsflags += -sDYNAMIC_EXECUTION=0
 emcc.jsflags += -sNO_POLYFILL
 emcc.jsflags += -sEXPORTED_FUNCTIONS=@$(EXPORTED_FUNCTIONS.api)
@@ -519,6 +524,13 @@ emcc.exportedRuntimeMethods := \
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
+ifeq (3.1.31,$(emcc.version))
+  emcc.jsflags += -sSTRICT_JS=0
+  $(warning Disabling -sSTRICT_JS for emcc $(emcc.version): \
+     https://github.com/emscripten-core/emscripten/issues/18610)
+else
+  emcc.jsflags += -sSTRICT_JS=1
+endif
 emcc.environment := -sENVIRONMENT=web,worker
 ########################################################################
 # -sINITIAL_MEMORY: How much memory we need to start with is governed
