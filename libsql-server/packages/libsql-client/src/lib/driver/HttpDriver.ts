@@ -14,7 +14,7 @@ export class HttpDriver implements Driver {
         if (params === undefined) {
             rs = (await this.transaction([stmt]))[0];
         } else {
-            rs = (await this.transaction([{ sql: stmt, params: params }]))[0];
+            rs = (await this.transaction([{ q: stmt, params: params }]))[0];
         }
         return rs;
     }
@@ -61,7 +61,7 @@ function buildStatements(stmts: (string | BoundStatement)[]) {
         const s = stmts as BoundStatement[];
         statements = {
             statements: s.map((st) => {
-                return { q: st.sql, params: st.params };
+                return { q: st.q, params: st.params };
             })
         };
     }
