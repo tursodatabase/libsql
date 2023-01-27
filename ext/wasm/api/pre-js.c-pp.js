@@ -10,6 +10,7 @@ const sqlite3InitModuleState = self.sqlite3InitModuleState || Object.create(null
 delete self.sqlite3InitModuleState;
 sqlite3InitModuleState.debugModule('self.location =',self.location);
 
+//#ifnot target=es6-bundler-friendly
 /**
    This custom locateFile() tries to figure out where to load `path`
    from. The intent is to provide a way for foo/bar/X.js loaded from a
@@ -29,12 +30,7 @@ sqlite3InitModuleState.debugModule('self.location =',self.location);
    4) If none of the above apply, (prefix+path) is returned.
 */
 Module['locateFile'] = function(path, prefix) {
-//#if target=es6-bundler-friendly
-  // TEMPORARY KLUDGE to work around a c-pp nested blocks bug which is
-  // currently eluding a fix.  We really should have (#ifnot
-  // target=es6-bundler-friendly) around this whole function.
-  return new URL('sqlite3.wasm', import.meta.url).href;
-//#elif target=es6-module
+//#if target=es6-module
   return new URL(path, import.meta.url).href;
 //#else
   'use strict';
@@ -58,6 +54,7 @@ Module['locateFile'] = function(path, prefix) {
   return theFile;
 //#endif //target=es6-module
 }.bind(sqlite3InitModuleState);
+//#endif //ifnot target=es6-bundler-friendly
 
 /**
    Bug warning: a custom Module.instantiateWasm() does not work
@@ -107,4 +104,4 @@ Module[xNameOfInstantiateWasm] = function callee(imports,onSuccess){
 Module[xNameOfInstantiateWasm].uri = 'sqlite3.wasm';
 /* END FILE: api/pre-js.js, noting that the build process may add a
    line after this one to change the above .uri to a build-specific
-   one. *//* END FILE: api/pre-js.js */
+   one. */
