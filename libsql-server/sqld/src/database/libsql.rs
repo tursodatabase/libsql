@@ -187,8 +187,8 @@ fn open_db(
                         std::thread::sleep(Duration::from_millis(10));
                         retries += 1;
                     }
-                    Ok(e) => panic!("Unhandled error opening libsql: {}", e),
-                    Err(e) => panic!("Unhandled error opening libsql: {}", e),
+                    Ok(e) => panic!("Unhandled error opening libsql: {e}"),
+                    Err(e) => panic!("Unhandled error opening libsql: {e}"),
                 }
             }
         }

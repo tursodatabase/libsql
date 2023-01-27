@@ -34,15 +34,15 @@ pub fn parse_auth(auth: Option<String>) -> Result<Arc<dyn Authorizer + Sync + Se
         Some(auth) => match auth.split_once(':') {
             Some((scheme, param)) => match scheme {
                 "basic" => Ok(Arc::new(BasicAuthAuthorizer {
-                    expected_auth: format!("Basic {}", param).to_lowercase(),
+                    expected_auth: format!("Basic {param}").to_lowercase(),
                 })),
                 "jwt" => Ok(Arc::new(BearerAuthAuthorizer {
                     decoding_key: decoding_key_from_pem(param)?,
                 })),
-                _ => Err(anyhow!("unsupported HTTP auth scheme: {}", scheme)),
+                _ => Err(anyhow!("unsupported HTTP auth scheme: {scheme}")),
             },
             None if auth == "always" => Ok(Arc::new(AlwaysAllowAuthorizer {})),
-            None => Err(anyhow!("invalid HTTP auth config: {}", auth)),
+            None => Err(anyhow!("invalid HTTP auth config: {auth}")),
         },
         None => Ok(Arc::new(AlwaysAllowAuthorizer {})),
     }
