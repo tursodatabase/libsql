@@ -68,7 +68,7 @@ export class SqliteDriver implements Driver {
             if (typeof stmt === "string") {
                 rs = await this.execute(stmt);
             } else {
-                rs = await this.execute(stmt.sql, stmt.params);
+                rs = await this.execute(stmt.q, stmt.params);
             }
             result.push(rs);
         }
