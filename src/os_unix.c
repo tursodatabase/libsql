@@ -218,7 +218,7 @@
 #endif /* SQLITE_WASI */
 
 #ifdef SQLITE_WASI
-# define osGetpid(X) 1
+# define osGetpid(X) (pid_t)1
 #else
 /* Always cast the getpid() return type for compatibility with
 ** kernel modules in VxWorks. */

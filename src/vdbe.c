@@ -8031,7 +8031,7 @@ case OP_VInitIn: {        /* out2, ncycle */
   pRhs->pOut = &aMem[pOp->p3];
   pOut = out2Prerelease(p, pOp);
   pOut->flags = MEM_Null;
-  sqlite3VdbeMemSetPointer(pOut, pRhs, "ValueList", sqlite3_free);
+  sqlite3VdbeMemSetPointer(pOut, pRhs, "ValueList", sqlite3VdbeValueListFree);
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */

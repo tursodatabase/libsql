@@ -657,6 +657,8 @@ int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 
+void sqlite3VdbeValueListFree(void*);
+
 #ifdef SQLITE_DEBUG
   void sqlite3VdbeIncrWriteCounter(Vdbe*, VdbeCursor*);
   void sqlite3VdbeAssertAbortable(Vdbe*);

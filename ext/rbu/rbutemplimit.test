@@ -9,6 +9,7 @@
 #
 #***********************************************************************
 #
+# TESTRUNNER: slow
 
 source [file join [file dirname [info script]] rbu_common.tcl]
 set ::testprefix rbutemplimit

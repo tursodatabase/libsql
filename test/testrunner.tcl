@@ -117,7 +117,7 @@ proc default_njob {} {
 set R(dbname) [file normalize testrunner.db]
 set R(logname) [file normalize testrunner.log]
 set R(info_script) [file normalize [info script]]
-set R(timeout) 10000              ;# Default busy-timeout for testrunner.
+set R(timeout) 10000              ;# Default busy-timeout for testrunner.db 
 set R(nJob)    [default_njob]     ;# Default number of helper processes
 set R(leaker)  ""                 ;# Name of first script to leak memory
 
