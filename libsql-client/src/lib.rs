@@ -47,8 +47,7 @@ fn parse_columns(columns: Vec<serde_json::Value>, result_idx: usize) -> Result<V
             serde_json::Value::String(column) => result.push(column),
             _ => {
                 return Err(worker::Error::from(format!(
-                    "Result {} column name {} not a string",
-                    result_idx, idx
+                    "Result {result_idx} column name {idx} not a string",
                 )))
             }
         }
@@ -70,15 +69,13 @@ fn parse_value(
             None => match v.as_f64() {
                 Some(v) => Ok(Some(CellValue::Float(v))),
                 None => Err(worker::Error::from(format!(
-                    "Result {} row {} cell {} had unknown number value: {}",
-                    result_idx, row_idx, cell_idx, v
+                    "Result {result_idx} row {row_idx} cell {cell_idx} had unknown number value: {v}",
                 ))),
             },
         },
         serde_json::Value::String(v) => Ok(Some(CellValue::Text(v))),
         _ => Err(worker::Error::from(format!(
-            "Result {} row {} cell {} had unknown type",
-            result_idx, row_idx, cell_idx
+            "Result {result_idx} row {row_idx} cell {cell_idx} had unknown type",
         ))),
     }
 }
@@ -94,8 +91,7 @@ fn parse_rows(
             serde_json::Value::Array(row) => {
                 if row.len() != columns.len() {
                     return Err(worker::Error::from(format!(
-                        "Result {} row {} had wrong number of cells",
-                        result_idx, idx
+                        "Result {result_idx} row {idx} had wrong number of cells",
                     )));
                 }
                 let mut cells = HashMap::with_capacity(columns.len());
@@ -109,8 +105,7 @@ fn parse_rows(
             }
             _ => {
                 return Err(worker::Error::from(format!(
-                    "Result {} row {} was not an array",
-                    result_idx, idx
+                    "Result {result_idx} row {idx} was not an array",
                 )))
             }
         }
@@ -128,13 +123,11 @@ fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> 
                             Ok(ResultSet::Error((msg.clone(), Meta::default())))
                         }
                         _ => Err(worker::Error::from(format!(
-                            "Result {} error message was not a string",
-                            idx
+                            "Result {idx} error message was not a string",
                         ))),
                     },
                     _ => Err(worker::Error::from(format!(
-                        "Result {} results was not an object",
-                        idx
+                        "Result {idx} results was not an object",
                     ))),
                 };
             }
@@ -143,11 +136,11 @@ fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> 
             match results {
                 Some(serde_json::Value::Object(obj)) => {
                     let columns = obj.get("columns").ok_or_else(|| {
-                        worker::Error::from(format!("Result {} had no columns", idx))
+                        worker::Error::from(format!("Result {idx} had no columns"))
                     })?;
-                    let rows = obj.get("rows").ok_or_else(|| {
-                        worker::Error::from(format!("Result {} had no rows", idx))
-                    })?;
+                    let rows = obj
+                        .get("rows")
+                        .ok_or_else(|| worker::Error::from(format!("Result {idx} had no rows")))?;
                     match (rows, columns) {
                         (serde_json::Value::Array(rows), serde_json::Value::Array(columns)) => {
                             let columns = parse_columns(columns.to_vec(), idx)?;
@@ -158,24 +151,20 @@ fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> 
                             )))
                         }
                         _ => Err(worker::Error::from(format!(
-                            "Result {} had rows or columns that were not an array",
-                            idx
+                            "Result {idx} had rows or columns that were not an array",
                         ))),
                     }
                 }
                 Some(_) => Err(worker::Error::from(format!(
-                    "Result {} was not an object",
-                    idx
+                    "Result {idx} was not an object",
                 ))),
                 None => Err(worker::Error::from(format!(
-                    "Result {} did not contain results or error",
-                    idx
+                    "Result {idx} did not contain results or error",
                 ))),
             }
         }
         _ => Err(worker::Error::from(format!(
-            "Result {} was not an object",
-            idx
+            "Result {idx} was not an object",
         ))),
     }
 }
@@ -186,7 +175,7 @@ impl Session {
             url: url.into(),
             auth: format!(
                 "Basic {}",
-                base64::engine::general_purpose::STANDARD.encode(format!("{}:{}", username, pass))
+                base64::engine::general_purpose::STANDARD.encode(format!("{username}:{pass}"))
             ),
         }
     }
