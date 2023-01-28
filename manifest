@@ -1,5 +1,5 @@
-C Update\ssqllimits1.test\sto\saccount\sfor\sthe\sfact\sthat\sif\san\sodd\svalue\sis\sspecified\sas\sthe\slength\sin\sbytes\sof\sa\sutf-16\sstring,\sit\sis\struncated\sto\sthe\slargest\ssmaller\seven\snumber.
-D 2023-01-28T16:37:30.454
+C Fix\sa\sproblem\scausing\s"PRAGMA\squick_check"\sto\sreturn\sspurious\scorruption\serrors\sfor\sa\sWITHOUT\sROWID\sfor\swhich\sall\scolumns\sare\seither\svirtual\sor\spart\sof\sthe\sprimary\skey,\sand\sfor\swhich\sthe\sorder\sof\sthe\scolumns\sin\sthe\sprimary\skey\sdefinition\sis\sdifferent\sfrom\sthe\sorder\sin\sthe\stable.
+D 2023-01-28T17:37:37.660
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -613,7 +613,7 @@ F src/parse.y 8e67d820030d2655b9942ffe61c1e7e6b96cea2f2f72183533299393907d0564
 F src/pcache.c f4268f7f73c6a3db12ce22fd25bc68dc42315d19599414ab1207d7cf32f79197
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
-F src/pragma.c 23e74aaa441a03e6d97098db5883f53ee50cc50d294ecefb916437b8484012b3
+F src/pragma.c 82d5090a35eac75876d3b41f48d06b2370553c9576bf2942233c462e03eb94c9
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
 F src/printf.c ff4b05e38bf928ff1b80d3dda4f977b10fe39ecbfe69c018224c7e5594fb2455
@@ -1388,6 +1388,7 @@ F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/pushdown.test f270b8071c02efc218430e0d388c155e1962eaa1d3a3ab186dd38ad6d7e178a4
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
+F test/quickcheck.test f86b25b33455af0189b4d3fe7bd6e553115e80b2d7ec9bbe9a6b37fce0881bfe
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
 F test/quota.test bfb269ce81ea52f593f9648316cd5013d766dd2a
 F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
@@ -2044,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3458a481b9ee391122dba531358d664d5219ce4a58cbce93d07df57cc64dc2c7
-R df4d514a8cefe2ba4ba7ec67cb263215
+P 74508470c4caff04638e750cd84073f3137b8a9f72c6fe390a279da7b1c13398
+R bd3038bc22be97846ba0cea160d15dc3
 U dan
-Z 6dd497de705b6f37d14013dd4a408f6f
+Z be0e76aa8633e358a87d4d35c141ada3
 # Remove this line to create a well-formed Fossil manifest.
