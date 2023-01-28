@@ -2,9 +2,26 @@ syntax = "proto3";
 package proxy;
 
 message Queries {
-    repeated string queries = 1;
+    repeated Query queries = 1;
     // Uuid
     bytes clientId = 2;
+}
+
+message Query {
+    string stmt = 1;
+    oneof Params {
+        Positional positional = 2;
+        Named named = 3;
+    }
+}
+
+message Positional {
+    repeated Value values = 1;
+}
+
+message Named {
+    repeated string names = 1;
+    repeated Value values = 2;
 }
 
 message QueryResult {
@@ -25,12 +42,14 @@ message Error {
     ErrorCode code = 1;
     string message = 2;
 }
+
 message ResultRows {
     repeated Column   column_descriptions = 1;
     repeated Row      rows = 2;
 }
 
 message Value {
+    /// bincode encoded Value
     bytes   data = 1;
 }
 

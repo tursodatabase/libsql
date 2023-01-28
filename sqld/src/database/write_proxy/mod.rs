@@ -15,7 +15,7 @@ use crate::query::{self, QueryResponse, QueryResult};
 use crate::query_analysis::{final_state, State};
 use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::proxy_rpc::query_result::RowResult;
-use crate::rpc::proxy::proxy_rpc::{DisconnectMessage, Queries};
+use crate::rpc::proxy::proxy_rpc::{DisconnectMessage, Queries, Query};
 use crate::rpc::wal_log::wal_log_rpc::wal_log_client::WalLogClient;
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
@@ -142,7 +142,15 @@ impl Database for WriteProxyDatabase {
             self.read_db.execute(queries).await
         } else {
             let queries = Queries {
-                queries: queries.into_iter().map(|q| q.stmt.stmt).collect(),
+                queries: queries
+                    .into_iter()
+                    .map(|q| {
+                        Ok(Query {
+                            stmt: q.stmt.stmt,
+                            params: Some(q.params.try_into()?),
+                        })
+                    })
+                    .collect::<anyhow::Result<Vec<_>>>()?,
                 client_id: self.client_id.as_bytes().to_vec(),
             };
             let mut client = self.write_proxy.clone();
