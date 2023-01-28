@@ -1,5 +1,5 @@
-C Show\smore\sdetails\sabout\sthe\sSrcItem.fg\sfield\sin\stree-trace\soutput.
-D 2023-01-28T21:01:33.369
+C Do\snot\sassume\sthat\ssub-queries\sthat\scontain\swindow\sfunctions\sare\suncorrelated.
+D 2023-01-28T21:06:15.825
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -711,7 +711,7 @@ F src/where.c e75ca01cc4025c0023a4e32c137ad933ecaf1d5fbaf9f88ffae7db216ac2f762
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c 76bca3379219880d2527493b71a3be49e696f75396d3481e4de5d4ceec7886b2
 F src/whereexpr.c 7c5671a04b00c876bec5e99fd4e6f688065feb4773160fbf76fd7900d2901777
-F src/window.c 9ea4dc243420e029586c8e1ed5929fad2eae438279341ae9defc66e8f905aabc
+F src/window.c 76a27cff9ea2ded0c2c3527187029259440fabcc4cc4c07b11d942c78494a614
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
 F test/affinity3.test f094773025eddf31135c7ad4cde722b7696f8eb07b97511f98585addf2a510a9
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a7530f897127f35a212db6557edbcbbb286cc0e094754c1c1b74ce8dbf724470
-R 92c8f8e400ced672286c461a5d51f1a5
-U drh
-Z b3d362fa27b1bfd30226a85010f3f7a0
+P 3d05dddd0bc826a73a8cecd6b116168082fb46b6e4868d03438c0a5a546d2f97
+R 15c7aa257d7f9f8322c2cff93b9d4aee
+U dan
+Z b5cdea142483e57c2a66955139fc295d
 # Remove this line to create a well-formed Fossil manifest.
