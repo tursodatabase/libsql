@@ -1412,14 +1412,26 @@ self.sqlite3InitModule = sqlite3InitModule;
                db.selectValue("SELECT "+Number.MIN_SAFE_INTEGER)).
         assert(Number.MAX_SAFE_INTEGER ===
                db.selectValue("SELECT "+Number.MAX_SAFE_INTEGER));
-
       counter = 0;
-      db.exec({
+      let rv = db.exec({
         sql: "SELECT a FROM t",
         callback: ()=>(1===++counter),
       });
-      T.assert(2===counter,
+      T.assert(db === rv)
+        .assert(2===counter,
                "Expecting exec step() loop to stop if callback returns false.");
+      /** If exec() is passed neither callback nor returnValue but
+          is passed an explicit rowMode then the default returnValue
+          is the whole result set, as if an empty resultRows option
+          had been passed. */
+      rv = db.exec({
+        sql: "SELECT -1 UNION ALL SELECT -2 UNION ALL SELECT -3 ORDER BY 1 DESC",
+        rowMode: 0
+      });
+      T.assert(Array.isArray(rv)).assert(3===rv.length)
+        .assert(-1===rv[0]).assert(-3===rv[2]);
+      rv = db.exec("SELECT 1 WHERE 0",{rowMode: 0});
+      T.assert(Array.isArray(rv)).assert(0===rv.length);
       if(wasm.bigIntEnabled && haveWasmCTests()){
         const mI = wasm.xCall('sqlite3_wasm_test_int64_max');
         const b = BigInt(Number.MAX_SAFE_INTEGER * 2);
