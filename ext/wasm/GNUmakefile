@@ -582,14 +582,15 @@ endef
 sqlite3.wasm := $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 # sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
-# (predictably) results in a slightly faster binary, but we're close
+# (predictably) results in a slightly faster binary. We're close
 # enough to the target speed requirements that the 500ms makes a
-# difference. Thus we build all binaries against sqlite3-wasm.c
-# instead of building a shared copy of sqlite3-wasm.o.
+# difference, so we build all binaries against sqlite3-wasm.c instead
+# of building a shared copy of sqlite3-wasm.o to link against.
 ########################################################################
-# SQLITE3.xJS.RECIPE = the $(call)able recipe body for $(sqlite3.js)
-# and $(sqlite3.mjs). $1 = one of (vanilla, esm). $2 must be 1 for
-# ES6-style builds, 0 for other builds.
+# SQLITE3.xJS.EXPORT-DEFAULT is part of SQLITE3-WASMFS.xJS.RECIPE and
+# SETUP_LIB_BUILD_MODE, factored into a separate piece to avoid code
+# duplication. $1 is 1 if the build mode needs this workaround (esm,
+# bundler-friendly) and 0 if not (vanilla).
 #
 # Reminder for ESM builds: even if we use -sEXPORT_ES6=0, emcc _still_
 # adds:
@@ -603,11 +604,6 @@ sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
 #
 # Upstream RFE:
 # https://github.com/emscripten-core/emscripten/issues/18237
-########################################################################
-# SQLITE3.xJS.EXPORT-DEFAULT is part of SQLITE3[-WASMFS].xJS.RECIPE,
-# factored into a separate piece to avoid code duplication. $1 is 1 if
-# the build mode needs this workaround (esm, bundler-friendly) and 0
-# if not (vanilla).
 define SQLITE3.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
 		echo "Fragile workaround for an Emscripten annoyance. See SQLITE3.xJS.RECIPE."; \
@@ -707,17 +703,16 @@ $(eval $(call SETUP_LIB_BUILD_MODE,bundler-friendly,1,\
 #
 ########################################################################
 ########################################################################
-# We have to ensure that we do not build both $(sqlite3.js) and
-# $(sqlite3.mjs) in parallel because both result in the creation of
-# $(sqlite3.wasm). We have no(?) way to build just the .mjs file
-# without also building the .wasm file. i.e.  we're building
-# $(sqlite3.wasm) multiple times, but that's apparently unavoidable
-# (and harmless, just a waste of build time).
+# We have to ensure that we do not build both $(sqlite3*.*js) in
+# parallel because both result in the creation of $(sqlite3.wasm). We
+# have no way to build just the .mjs file without also building the
+# .wasm file because the generated .mjs file has to include info about
+# the imports needed by the wasm file, so they have to be built
+# together. i.e.  we're building $(sqlite3.wasm) multiple times, but
+# that's unavoidable (and harmless, just a waste of build time).
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 $(sqlite3-bundler-friendly.mjs): $(sqlite3.mjs)
-# maintenance reminder: the deps on ^^^ must all be such that they are
-# never built in parallel.
 CLEAN_FILES += $(sqlite3.wasm)
 
 ########################################################################
@@ -755,7 +750,6 @@ emcc.speedtest1 += -sALLOW_MEMORY_GROWTH
 emcc.speedtest1 += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY))
 emcc.speedtest1.common += -sINVOKE_RUN=0
 emcc.speedtest1.common += --no-entry
-#emcc.speedtest1.common += -flto
 emcc.speedtest1.common += -sABORTING_MALLOC
 emcc.speedtest1.common += -sSTRICT_JS
 emcc.speedtest1.common += -sMODULARIZE
