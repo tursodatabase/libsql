@@ -183,7 +183,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         checkSqlite3Rc(
           pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
         );
-      }      
+      }
     }catch(e){
       this.close();
       throw e;
@@ -790,6 +790,9 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
        - `callback` and `resultRows`: permit an array entries with
        semantics similar to those described for `bind` above.
+
+       - If passed neither a callback nor returnValue but is passed a
+         rowMode, default to returning the result set.
 
     */
     exec: function(/*(sql [,obj]) || (obj)*/){
