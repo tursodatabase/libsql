@@ -3031,6 +3031,7 @@ dependencies = [
  "futures",
  "hex",
  "hyper",
+ "itertools",
  "jsonwebtoken",
  "libsql-wasmtime-bindings",
  "mvfs",

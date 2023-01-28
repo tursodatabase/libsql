@@ -16,13 +16,13 @@ use self::proxy_rpc::ExecuteResults;
 pub mod proxy_rpc {
     #![allow(clippy::all)]
 
-    use crate::query::{self, QueryError, QueryResponse};
+    use crate::query::{QueryError, QueryResponse};
 
     use self::{error::ErrorCode, execute_results::State, query_result::RowResult};
     tonic::include_proto!("proxy");
 
-    impl From<query::QueryResult> for RowResult {
-        fn from(other: query::QueryResult) -> Self {
+    impl From<crate::query::QueryResult> for RowResult {
+        fn from(other: crate::query::QueryResult) -> Self {
             match other {
                 Ok(QueryResponse::ResultSet(set)) => RowResult::Row(set.into()),
                 Err(e) => RowResult::Error(e.into()),
@@ -39,24 +39,24 @@ pub mod proxy_rpc {
         }
     }
 
-    impl From<ErrorCode> for query::ErrorCode {
+    impl From<ErrorCode> for crate::query::ErrorCode {
         fn from(other: ErrorCode) -> Self {
             match other {
-                ErrorCode::SqlError => query::ErrorCode::SQLError,
-                ErrorCode::TxBusy => query::ErrorCode::TxBusy,
-                ErrorCode::TxTimeout => query::ErrorCode::TxTimeout,
-                ErrorCode::Internal => query::ErrorCode::Internal,
+                ErrorCode::SqlError => crate::query::ErrorCode::SQLError,
+                ErrorCode::TxBusy => crate::query::ErrorCode::TxBusy,
+                ErrorCode::TxTimeout => crate::query::ErrorCode::TxTimeout,
+                ErrorCode::Internal => crate::query::ErrorCode::Internal,
             }
         }
     }
 
-    impl From<query::ErrorCode> for ErrorCode {
-        fn from(other: query::ErrorCode) -> Self {
+    impl From<crate::query::ErrorCode> for ErrorCode {
+        fn from(other: crate::query::ErrorCode) -> Self {
             match other {
-                query::ErrorCode::SQLError => ErrorCode::SqlError,
-                query::ErrorCode::TxBusy => ErrorCode::TxBusy,
-                query::ErrorCode::TxTimeout => ErrorCode::TxTimeout,
-                query::ErrorCode::Internal => ErrorCode::Internal,
+                crate::query::ErrorCode::SQLError => ErrorCode::SqlError,
+                crate::query::ErrorCode::TxBusy => ErrorCode::TxBusy,
+                crate::query::ErrorCode::TxTimeout => ErrorCode::TxTimeout,
+                crate::query::ErrorCode::Internal => ErrorCode::Internal,
             }
         }
     }
@@ -67,10 +67,10 @@ pub mod proxy_rpc {
         }
     }
 
-    impl From<query::QueryResult> for QueryResult {
-        fn from(other: query::QueryResult) -> Self {
+    impl From<crate::query::QueryResult> for QueryResult {
+        fn from(other: crate::query::QueryResult) -> Self {
             let res = match other {
-                Ok(query::QueryResponse::ResultSet(q)) => {
+                Ok(crate::query::QueryResponse::ResultSet(q)) => {
                     let rows = q.into();
                     RowResult::Row(rows)
                 }
@@ -99,6 +99,59 @@ pub mod proxy_rpc {
                 State::Txn => crate::query_analysis::State::Txn,
                 State::Init => crate::query_analysis::State::Init,
                 State::Invalid => crate::query_analysis::State::Invalid,
+            }
+        }
+    }
+
+    impl TryFrom<crate::query::Params> for query::Params {
+        type Error = anyhow::Error;
+        fn try_from(value: crate::query::Params) -> Result<Self, Self::Error> {
+            match value {
+                crate::query::Params::Named(params) => {
+                    let iter = params.into_iter().map(|(k, v)| -> anyhow::Result<_> {
+                        let v = Value {
+                            data: bincode::serialize(&v)?,
+                        };
+                        Ok((k, v))
+                    });
+                    let (names, values) = itertools::process_results(iter, |i| i.unzip())?;
+                    Ok(Self::Named(Named { names, values }))
+                }
+                crate::query::Params::Positional(params) => {
+                    let values = params
+                        .iter()
+                        .map(|v| {
+                            Ok(Value {
+                                data: bincode::serialize(&v)?,
+                            })
+                        })
+                        .collect::<anyhow::Result<Vec<_>>>()?;
+                    Ok(Self::Positional(Positional { values }))
+                }
+            }
+        }
+    }
+
+    impl TryFrom<query::Params> for crate::query::Params {
+        type Error = anyhow::Error;
+
+        fn try_from(value: query::Params) -> anyhow::Result<Self> {
+            match value {
+                query::Params::Positional(pos) => {
+                    let params = pos
+                        .values
+                        .into_iter()
+                        .map(|v| bincode::deserialize(&v.data))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    Ok(Self::Positional(params))
+                }
+                query::Params::Named(named) => {
+                    let values = named.values.iter().map(|v| bincode::deserialize(&v.data));
+                    let params = itertools::process_results(values, |values| {
+                        named.names.into_iter().zip(values).collect()
+                    })?;
+                    Ok(Self::Named(params))
+                }
             }
         }
     }
@@ -146,21 +199,25 @@ where
 
         tracing::debug!("executing request for {client_id}");
         let queries = queries
-            .iter()
+            .into_iter()
             .map(|q| {
                 // FIXME: we assume the statement is valid because we trust the caller to have verified
                 // it before: do proper error handling instead
-                let stmt = Statement::parse(q)
+
+                let stmt = Statement::parse(&q.stmt)
                     .next()
                     .transpose()
                     .unwrap()
                     .unwrap_or_default();
-                Query {
+                Ok(Query {
                     stmt,
-                    params: Params::empty(),
-                }
+                    params: Params::try_from(q.params.unwrap())?,
+                })
             })
-            .collect();
+            .collect::<anyhow::Result<Vec<_>>>()
+            .map_err(|_| {
+                tonic::Status::new(tonic::Code::Internal, "failed to deserialize query")
+            })?;
 
         let (results, state) = db.execute(queries).await.unwrap();
         let results = results.into_iter().map(|r| r.into()).collect();
