@@ -11,9 +11,12 @@ build:
 
 - jswasm/sqlite3.mjs is the same but in ES6 module form
 
-- jswasm/sqlite3-bundler-friendly.mjs is the same as the ES6 module
-  with small tweaks to make it compatible with "bundler" tools
-  commonly seen in node.js-based projects.
+- jswasm/*-bundler-friendly.js and .mjs are variants which are
+  intended to be compatible with "bundler" tools commonly seen in
+  node.js-based projects. Projects using such tools should use those
+  variants, where available, instead of files without the
+  "-bundler-friendly" suffix. Some files do not have separate
+  variants.
 
 - jswasm/sqlite3.wasm is the binary WASM file imported by all of the
   above-listed JS files.

@@ -327,8 +327,6 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 # "External" API files which are part of our distribution
 # but not part of the sqlite3-api.js amalgamation.
 SOAP.js := $(dir.api)/sqlite3-opfs-async-proxy.js
-sqlite3-worker1.js := $(dir.api)/sqlite3-worker1.js
-sqlite3-worker1-promiser.js := $(dir.api)/sqlite3-worker1-promiser.js
 # COPY_XAPI = a $(call)able function to copy $1 to $(dir.dout), where
 # $1 must be one of the "external" JS API files.
 define COPY_XAPI
@@ -336,7 +334,7 @@ sqlite3-api.ext.jses += $$(dir.dout)/$$(notdir $(1))
 $$(dir.dout)/$$(notdir $(1)): $(1) $$(MAKEFILE)
 	cp $$< $$@
 endef
-$(foreach X,$(SOAP.js) $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js),\
+$(foreach X,$(SOAP.js),\
   $(eval $(call COPY_XAPI,$(X))))
 all quick: $(sqlite3-api.ext.jses)
 q: quick
@@ -714,6 +712,29 @@ $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 $(sqlite3-bundler-friendly.mjs): $(sqlite3.mjs)
 CLEAN_FILES += $(sqlite3.wasm)
+
+########################################################################
+# We need separate copies of certain supplementary JS files for the
+# bundler-friendly build. Concretely, any supplemental JS files which
+# themselves use importScripts() or Workers or URL() constructors
+# which refer to other in-tree (m)JS files quire a bundler-friendly
+# copy.
+sqlite3-worker1.js.in := $(dir.api)/sqlite3-worker1.c-pp.js
+sqlite3-worker1-promiser.js.in := $(dir.api)/sqlite3-worker1-promiser.c-pp.js
+sqlite3-worker1.js := $(dir.dout)/sqlite3-worker1.js
+sqlite3-worker1-promiser.js := $(dir.dout)/sqlite3-worker1-promiser.js
+sqlite3-worker1-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-bundler-friendly.js
+sqlite3-worker1-promiser-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.js),\
+    $(c-pp.D.bundler-friendly)))
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.js)))
+$(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),\
+    $(sqlite3-worker1-promiser-bundler-friendly.js),\
+    $(c-pp.D.bundler-friendly)))
+$(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.js) \
+    $(sqlite3-worker1-promiser-bundler-friendly.js)
+$(sqlite3.js) $(sqlite3.mjs): $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js)
 
 ########################################################################
 # batch-runner.js is part of one of the test apps which reads in SQL
