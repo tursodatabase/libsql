@@ -56,10 +56,13 @@ dist.common.extras := \
     $(dir.common)/SqliteTestUtil.js
 
 .PHONY: dist snapshot
+# DIST_STRIP_COMMENTS $(call)able to be used in stripping C-style
+# from the dist copies of certain files.
+#
+#  $1 = source js file
+#  $2 = flags for $(bin.stripcomments)
 define DIST_STRIP_COMMENTS
-# $1 = source js file
-# $2 = flags for $(bin.stripcomments)
-$(bin.stripccomments) $(2) < $(1) > $(dist-dir.jswasm)/$(notdir $(1));
+$(bin.stripccomments) $(2) < $(1) > $(dist-dir.jswasm)/$(notdir $(1)) || exit;
 endef
 # STRIP_K1.js = list of JS files which need to be passed through
 # $(bin.stripcomments) with a single -k flag.
@@ -92,8 +95,8 @@ dist: \
 	@cp -p README-dist.txt $(dist-dir.top)/README.txt
 	@cp -p index-dist.html $(dist-dir.top)/index.html
 	@cp -p $(dist.jswasm.extras) $(dist-dir.jswasm)
-	$(foreach JS,$(STRIP_K1.js),$(call DIST_STRIP_COMMENTS,$(JS),-k))
-	$(foreach JS,$(STRIP_K2.js),$(call DIST_STRIP_COMMENTS,$(JS),-k -k))
+	@$(foreach JS,$(STRIP_K1.js),$(call DIST_STRIP_COMMENTS,$(JS),-k))
+	@$(foreach JS,$(STRIP_K2.js),$(call DIST_STRIP_COMMENTS,$(JS),-k -k))
 	@cp -p $(dist.common.extras) $(dist-dir.common)
 	@set -e; \
 		vnum=$$($(bin.version-info) --download-version); \
