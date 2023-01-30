@@ -170,7 +170,13 @@ fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> 
 }
 
 impl Session {
-    pub fn connect(url: impl Into<String>, username: &str, pass: &str) -> Self {
+    pub fn connect(
+        url: impl Into<String>,
+        username: impl Into<String>,
+        pass: impl Into<String>,
+    ) -> Self {
+        let username = username.into();
+        let pass = pass.into();
         Self {
             url: url.into(),
             auth: format!(
@@ -183,8 +189,8 @@ impl Session {
     pub fn connect_from_ctx<D>(ctx: &worker::RouteContext<D>) -> Result<Self> {
         Ok(Self::connect(
             ctx.var("LIBSQL_CLIENT_URL")?.to_string(),
-            &ctx.var("LIBSQL_CLIENT_USER")?.to_string(),
-            &ctx.var("LIBSQL_CLIENT_PASS")?.to_string(),
+            ctx.var("LIBSQL_CLIENT_USER")?.to_string(),
+            ctx.var("LIBSQL_CLIENT_PASS")?.to_string(),
         ))
     }
 
