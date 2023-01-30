@@ -8,12 +8,12 @@ WORKDIR /sqld
 # prepare recipe
 FROM compiler AS planner
 COPY . .
-RUN cargo chef prepare --bin sqld --recipe-path recipe.json
+RUN cargo chef prepare --recipe-path recipe.json
 
 # build sqld
 FROM compiler AS builder
 COPY --from=planner sqld/recipe.json recipe.json
-RUN cargo chef cook --release --bin sqld --recipe-path recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build -p sqld --release
 
