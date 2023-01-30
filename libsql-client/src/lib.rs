@@ -4,11 +4,13 @@ use std::iter::IntoIterator;
 use base64::Engine;
 use worker::*;
 
+/// Metadata of a request
 #[derive(Clone, Debug, Default)]
 pub struct Meta {
     pub duration: u64,
 }
 
+/// Value of a single database cell
 #[derive(Clone, Debug)]
 pub enum CellValue {
     Text(String),
@@ -17,23 +19,29 @@ pub enum CellValue {
     Bool(bool),
 }
 
+/// A database row
 #[derive(Clone, Debug)]
 pub struct Row {
     pub cells: HashMap<String, Option<CellValue>>,
 }
 
+/// Structure holding a set of rows returned from a query
+/// and their corresponding column names
 #[derive(Clone, Debug)]
 pub struct Rows {
     pub columns: Vec<String>,
     pub rows: Vec<Row>,
 }
 
+/// Result of a request - a set of rows or an error
 #[derive(Clone, Debug)]
 pub enum ResultSet {
     Error((String, Meta)),
     Success((Rows, Meta)),
 }
 
+/// Database session. This is the main structure used to
+/// communicate with the database.
 #[derive(Clone, Debug)]
 pub struct Session {
     url: String,
@@ -170,6 +178,12 @@ fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> 
 }
 
 impl Session {
+    /// Establishes a database connection.
+    ///
+    /// # Arguments
+    /// * `url` - URL of the database endpoint
+    /// * `username` - database username
+    /// * `pass` - user's password
     pub fn connect(
         url: impl Into<String>,
         username: impl Into<String>,
@@ -186,6 +200,13 @@ impl Session {
         }
     }
 
+    /// Establishes a database connection from Cloudflare Workers context.
+    /// Expects the context to contain the following variables defined:
+    /// * `LIBSQL_CLIENT_URL`
+    /// * `LIBSQL_CLIENT_USER`
+    /// * `LIBSQL_CLIENT_PASS`
+    /// # Arguments
+    /// * `ctx` - Cloudflare Workers route context
     pub fn connect_from_ctx<D>(ctx: &worker::RouteContext<D>) -> Result<Self> {
         Ok(Self::connect(
             ctx.var("LIBSQL_CLIENT_URL")?.to_string(),
@@ -194,11 +215,21 @@ impl Session {
         ))
     }
 
+    /// Executes a single SQL statement
+    ///
+    /// # Arguments
+    /// * `stmt` - the SQL statement
     pub async fn execute(&self, stmt: impl Into<String>) -> Result<ResultSet> {
         let mut results = self.batch(std::iter::once(stmt)).await?;
         Ok(results.remove(0))
     }
 
+    /// Executes a batch of SQL statements.
+    /// Each statement is going to run in its own transaction,
+    /// unless they're wrapped in BEGIN and END
+    ///
+    /// # Arguments
+    /// * `stmts` - SQL statements
     pub async fn batch(
         &self,
         stmts: impl IntoIterator<Item = impl Into<String>>,
@@ -246,6 +277,12 @@ impl Session {
         }
     }
 
+    /// Executes an SQL transaction.
+    /// Does not support nested transactions - do not use BEGIN or END
+    /// inside a transaction.
+    ///
+    /// # Arguments
+    /// * `stmts` - SQL statements
     pub async fn transaction(
         &self,
         stmts: impl IntoIterator<Item = impl Into<String>>,
