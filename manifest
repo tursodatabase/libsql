@@ -1,5 +1,5 @@
-C Two\sJS\sfile\srenames\swhich\sgot\sinadvertently\sundone\swhile\ssetting\sup\s[9062b31174618c0e].\sCosmetic\scleanups\sin\sext/wasm/dist.make.
-D 2023-01-29T06:01:32.206
+C Additional\stweaks\sto\sthe\senhancement\sat\s[609fbb94b8f01d67]\sto\sfurther\sreduce\nthe\scost\sestimate\sfor\sconstructing\san\sautomatic\sindex\son\san\sephemeral\stable,\nin\sorder\sto\sresolve\sthe\sperformance\sproblem\sdescribed\sby\n[forum:/forumpost/1d571c0296|forum\spost\s1d571c0296].
+D 2023-01-30T20:44:54.399
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,8 +488,8 @@ F ext/wasm/api/sqlite3-v-helper.js 6f6c3e390a72e08b0a5b16a0d567d7af3c04d17283185
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js a10bdc9695dcf453e120970a5de8a3e61db4e4047d0a7cc5a6d63dfe7ae87f4e
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
 F ext/wasm/api/sqlite3-wasm.c 76625a70937a8522d014ef686c32db5b53a3ee61850323f5c601d2ac39fe52fe
-F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js f10c3ecd9df06f6320073c2ce230a7ed7c56034d8b88c1e57095f2a97faf423a w ext/wasm/api/sqlite3-worker1-promiser.js
-F ext/wasm/api/sqlite3-worker1.c-pp.js 77b3835192469e9da23926ec8f78fb0b114a51d048dc54388709ac22b5c5f0a0 w ext/wasm/api/sqlite3-worker1.js
+F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js f10c3ecd9df06f6320073c2ce230a7ed7c56034d8b88c1e57095f2a97faf423a
+F ext/wasm/api/sqlite3-worker1.c-pp.js 77b3835192469e9da23926ec8f78fb0b114a51d048dc54388709ac22b5c5f0a0
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
 F ext/wasm/batch-runner.js 0dad6a02ad796f1003d3b7048947d275c4d6277f63767b8e685c27df8fdac93e
 F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25b4
@@ -707,7 +707,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c e75ca01cc4025c0023a4e32c137ad933ecaf1d5fbaf9f88ffae7db216ac2f762
+F src/where.c f180e2fdc93d286b48f23647cc26aab5a5b7437af2d3843f6228aff8d68eb9fe
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c 76bca3379219880d2527493b71a3be49e696f75396d3481e4de5d4ceec7886b2
 F src/whereexpr.c 7c5671a04b00c876bec5e99fd4e6f688065feb4773160fbf76fd7900d2901777
@@ -1864,7 +1864,7 @@ F test/walthread.test 14b20fcfa6ae152f5d8e12f5dc8a8a724b7ef189f5d8ef1e2ceab79f2a
 F test/walvfs.test e1a6ad0f3c78e98b55c3d5f0889cf366cc0d0a1cb2bccb44ac9ec67384adc4a1
 F test/wapp.tcl b440cd8cf57953d3a49e7ee81e6a18f18efdaf113b69f7d8482b0710a64566ec
 F test/wapptest.tcl 1bea58a6a8e68a73f542ee4fca28b771b84ed803bd0c9e385087070b3d747b3c x
-F test/where.test 3954cf22ba7b17f9606e177001d2963bcd1ecfbc6e1e7caadb14462f7eecd099
+F test/where.test 26c9e2f5db19c7f90e5b70127f664facd30c0e5c496956ea3a533bcda7fad74a
 F test/where2.test 03c21a11e7b90e2845fc3c8b4002fc44cc2797fa74c86ee47d70bd7ea4f29ed6
 F test/where3.test 5b4ffc0ac2ea0fe92f02b1244b7531522fe4d7bccf6fa8741d54e82c10e67753
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9062b31174618c0e67e86441e14eac420c734a0cc321f7eebc7d89ff8a449c10
-R 8f85e81de3851592997fc03573edca4f
-U stephan
-Z bfd47a7c26f55476ee645fdcf247a796
+P 0c2fde767f77d6204e95737edd573f42d72e956a3c20ea7e4daeff906657bbe5
+R eff4b53eb789da902d77064ecbd62787
+U drh
+Z 55e9959d5ae7e5a9913374f5d774ce27
 # Remove this line to create a well-formed Fossil manifest.

@@ -3595,7 +3595,8 @@ static int whereLoopAddBtree(
         if( !IsView(pTab) && (pTab->tabFlags & TF_Ephemeral)==0 ){
           pNew->rSetup += 28;
         }else{
-          pNew->rSetup -= 10;
+          pNew->rSetup -= 25;  /* Greatly reduced setup cost for auto indexes
+                               ** on ephemeral materializations of views */
         }
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         if( pNew->rSetup<0 ) pNew->rSetup = 0;
