@@ -395,7 +395,7 @@ mod test {
 
     #[test]
     fn test_bind_params_positional_simple() {
-        let con = rusqlite::Connection::open(":memory").unwrap();
+        let con = rusqlite::Connection::open_in_memory().unwrap();
         let mut stmt = con.prepare("SELECT ?").unwrap();
         let params = Params::new_positional(vec![Value::Integer(10)]);
         params.bind(&mut stmt).unwrap();
@@ -405,7 +405,7 @@ mod test {
 
     #[test]
     fn test_bind_params_positional_numbered() {
-        let con = rusqlite::Connection::open(":memory").unwrap();
+        let con = rusqlite::Connection::open_in_memory().unwrap();
         let mut stmt = con.prepare("SELECT ? || ?2 || ?1").unwrap();
         let params = Params::new_positional(vec![Value::Integer(10), Value::Integer(20)]);
         params.bind(&mut stmt).unwrap();
@@ -415,7 +415,7 @@ mod test {
 
     #[test]
     fn test_bind_params_positional_named() {
-        let con = rusqlite::Connection::open(":memory").unwrap();
+        let con = rusqlite::Connection::open_in_memory().unwrap();
         let mut stmt = con.prepare("SELECT :first || $second").unwrap();
         let mut params = HashMap::new();
         params.insert(":first".to_owned(), Value::Integer(10));
@@ -428,7 +428,7 @@ mod test {
 
     #[test]
     fn test_bind_params_too_many_params() {
-        let con = rusqlite::Connection::open(":memory").unwrap();
+        let con = rusqlite::Connection::open_in_memory().unwrap();
         let mut stmt = con.prepare("SELECT :first || $second").unwrap();
         let mut params = HashMap::new();
         params.insert(":first".to_owned(), Value::Integer(10));
@@ -440,7 +440,7 @@ mod test {
 
     #[test]
     fn test_bind_params_too_few_params() {
-        let con = rusqlite::Connection::open(":memory").unwrap();
+        let con = rusqlite::Connection::open_in_memory().unwrap();
         let mut stmt = con.prepare("SELECT :first || $second").unwrap();
         let mut params = HashMap::new();
         params.insert(":first".to_owned(), Value::Integer(10));
@@ -450,7 +450,7 @@ mod test {
 
     #[test]
     fn test_bind_params_invalid_positional() {
-        let con = rusqlite::Connection::open(":memory").unwrap();
+        let con = rusqlite::Connection::open_in_memory().unwrap();
         let mut stmt = con.prepare("SELECT ?invalid").unwrap();
         let params = Params::empty();
         assert!(params.bind(&mut stmt).is_err());
