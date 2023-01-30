@@ -4,7 +4,6 @@ use std::pin::Pin;
 use std::task::{ready, Context, Poll};
 use std::{fmt, io};
 
-use anyhow::Result;
 use futures::stream::select_all;
 use futures::{stream::FuturesUnordered, StreamExt};
 use futures::{Future, Stream};
@@ -13,6 +12,7 @@ use tokio::net::{TcpListener, TcpStream, ToSocketAddrs};
 use tower::Service;
 
 use crate::server::ws::WsStreamAdapter;
+use crate::Result;
 
 use self::tcp::TcpAdapter;
 use self::ws::WsAdapter;
@@ -118,24 +118,21 @@ impl AsyncWrite for NetStream {
         self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &[u8],
-    ) -> Poll<Result<usize, std::io::Error>> {
+    ) -> Poll<io::Result<usize>> {
         match self.project() {
             NetStreamProj::Tcp { stream } => stream.poll_write(cx, buf),
             NetStreamProj::Ws { stream } => stream.poll_write(cx, buf),
         }
     }
 
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         match self.project() {
             NetStreamProj::Tcp { stream } => stream.poll_flush(cx),
             NetStreamProj::Ws { stream } => stream.poll_flush(cx),
         }
     }
 
-    fn poll_shutdown(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Result<(), std::io::Error>> {
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
         match self.project() {
             NetStreamProj::Tcp { stream } => stream.poll_shutdown(cx),
             NetStreamProj::Ws { stream } => stream.poll_shutdown(cx),

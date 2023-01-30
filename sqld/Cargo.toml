@@ -41,6 +41,7 @@ smallvec = "1.10.0"
 sqlite3-parser = { git = "https://github.com/gwenn/lemon-rs.git", rev = "be6d0a96c4424fada2e068b51c25d1fdc9f983f4", default-features = false, features = [
     "YYNOERRORRECOVERY"
 ] }
+thiserror = "1.0.38"
 tokio = { version = "1.21.2", features = ["full"] }
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.17.2"
