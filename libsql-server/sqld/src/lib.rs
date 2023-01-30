@@ -6,7 +6,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::task::{Context, Poll};
 
-use anyhow::Result;
+use anyhow::Context as AnyhowContext;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
@@ -18,10 +18,12 @@ use tower::load::Constant;
 use tower::{Service, ServiceExt};
 use wal_logger::{WalLogger, WalLoggerHook};
 
+use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
 
 mod database;
+mod error;
 mod http;
 mod libsql;
 mod postgres;
@@ -37,6 +39,8 @@ pub enum Backend {
     #[cfg(feature = "mwal_backend")]
     Mwal,
 }
+
+type Result<T> = std::result::Result<T, Error>;
 
 pub struct Config {
     pub db_path: PathBuf,
@@ -60,10 +64,10 @@ pub struct Config {
     pub rpc_server_ca_cert: Option<PathBuf>,
 }
 
-async fn run_service<S>(service: S, config: Config) -> Result<()>
+async fn run_service<S>(service: S, config: Config) -> anyhow::Result<()>
 where
-    S: Service<(), Error = anyhow::Error> + Sync + Send + 'static + Clone,
-    S::Response: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
+    S: Service<(), Error = Error> + Sync + Send + 'static + Clone,
+    S::Response: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
     S::Future: Send + Sync,
     <S::Response as Service<Queries>>::Future: Send,
 {
@@ -82,7 +86,8 @@ where
     handles.push(tokio::spawn(server.serve(factory)));
 
     if let Some(addr) = config.http_addr {
-        let authorizer = http::auth::parse_auth(config.http_auth)?;
+        let authorizer =
+            http::auth::parse_auth(config.http_auth).context("failed to parse HTTP auth config")?;
         let handle = tokio::spawn(http::run_http(
             addr,
             authorizer,
@@ -124,7 +129,7 @@ impl<F: Future> Future for FutOrNever<F> {
     }
 }
 
-pub async fn run_server(config: Config) -> Result<()> {
+pub async fn run_server(config: Config) -> anyhow::Result<()> {
     tracing::trace!("Backend: {:?}", config.backend);
     #[cfg(feature = "mwal_backend")]
     if config.backend == Backend::Mwal {
@@ -149,12 +154,13 @@ pub async fn run_server(config: Config) -> Result<()> {
                 #[cfg(feature = "mwal_backend")]
                 vwal_methods,
             )
-            .await?;
+            .await
+            .context("failed to start WriteProxy DB")?;
             let service = DbFactoryService::new(factory);
             run_service(service, config).await?;
         }
         None => {
-            let logger = Arc::new(WalLogger::open("wallog")?);
+            let logger = Arc::new(WalLogger::open("wallog").context("failed to open WalLogger")?);
             let logger_clone = logger.clone();
             let path_clone = config.db_path.clone();
             let db_factory = move || {

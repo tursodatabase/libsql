@@ -1,3 +1,4 @@
+use anyhow::Context;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -43,7 +44,9 @@ where
         let tls_config = tonic::transport::ServerTlsConfig::new()
             .identity(identity)
             .client_ca_root(ca_cert);
-        builder = builder.tls_config(tls_config)?;
+        builder = builder
+            .tls_config(tls_config)
+            .context("Failed to read the TSL config of RPC server")?;
     }
     builder
         .add_service(ProxyServer::new(proxy_service))
