@@ -656,7 +656,7 @@ dependencies = [
  "futures",
  "tokio",
  "tracing",
- "uuid 1.2.2 (git+https://github.com/psarna/uuid?branch=stable_v7)",
+ "uuid 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
