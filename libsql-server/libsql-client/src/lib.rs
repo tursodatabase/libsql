@@ -1,3 +1,14 @@
+//! A library for communicating with a libSQL database over HTTP.
+//!
+//! libsql-client is a lightweight HTTP-based driver for sqld,
+//! which is a server mode for libSQL, which is an open-contribution fork of SQLite.
+//!
+//! libsql-client compiles to wasm32-unknown-unknown target, which makes it a great
+//! driver for environments that run on WebAssembly.
+//!
+//! It is expected to become a general-purpose driver for communicating with sqld/libSQL,
+//! but the only backend implemented at the moment is for Cloudflare Workers environment.
+
 use std::collections::HashMap;
 use std::iter::IntoIterator;
 
@@ -10,7 +21,7 @@ pub use statement::Statement;
 pub mod cell_value;
 pub use cell_value::CellValue;
 
-/// Metadata of a request
+/// Metadata of a database request
 #[derive(Clone, Debug, Default)]
 pub struct Meta {
     pub duration: u64,
@@ -30,7 +41,7 @@ pub struct ResultSet {
     pub rows: Vec<Row>,
 }
 
-/// Result of a request - a set of rows or an error
+/// Result of a database request - a set of rows or an error
 #[derive(Clone, Debug)]
 pub enum QueryResult {
     Error((String, Meta)),
@@ -229,14 +240,16 @@ impl Connection {
     /// # Examples
     ///
     /// ```
-    /// let db = Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
-    /// let result = db.execute("SELECT * FROM sqlite_master").await?;
+    /// # async fn f() {
+    /// let db = libsql_client::Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// let result = db.execute("SELECT * FROM sqlite_master").await;
     /// let result_params = db
-    ///     .execute(Statement::with_params(
+    ///     .execute(libsql_client::Statement::with_params(
     ///         "UPDATE t SET v = ? WHERE key = ?",
-    ///         &[CellValue::Number(5), CellValue::Text("five".to_string())],
+    ///         &[libsql_client::CellValue::Number(5), libsql_client::CellValue::Text("five".to_string())],
     ///     ))
-    ///     .await?;
+    ///     .await;
+    /// # }
     /// ```
     pub async fn execute(&self, stmt: impl Into<Statement>) -> Result<QueryResult> {
         let mut results = self.batch(std::iter::once(stmt)).await?;
@@ -253,10 +266,12 @@ impl Connection {
     /// # Examples
     ///
     /// ```
-    /// let db = Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// # async fn f() {
+    /// let db = libsql_client::Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
     /// let result = db
     ///     .batch(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
     ///     .await;
+    /// # }
     /// ```
     pub async fn batch(
         &self,
@@ -318,10 +333,12 @@ impl Connection {
     /// # Examples
     ///
     /// ```
-    /// let db = Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// # async fn f() {
+    /// let db = libsql_client::Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
     /// let result = db
     ///     .transaction(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
     ///     .await;
+    /// # }
     /// ```
     pub async fn transaction(
         &self,
