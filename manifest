@@ -1,5 +1,5 @@
-C Additional\stweaks\sto\sthe\senhancement\sat\s[609fbb94b8f01d67]\sto\sfurther\sreduce\nthe\scost\sestimate\sfor\sconstructing\san\sautomatic\sindex\son\san\sephemeral\stable,\nin\sorder\sto\sresolve\sthe\sperformance\sproblem\sdescribed\sby\n[forum:/forumpost/1d571c0296|forum\spost\s1d571c0296].
-D 2023-01-30T20:44:54.399
+C Fix\sa\srace\scondition\sduring\shot-journal\srollback\son\sunix\sthat\scould\stheoretically\scause\sspurious\scorruption\serrors.
+D 2023-01-31T20:43:21.518
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 9107314500e44908e8d2cdf1ed3333ca5fa17dcfdf9c6a079002b4df90d5f806
+F src/os_unix.c 85096ad0bb4e6a6ac3764603cea0f5332816fa25f0e50c936453edc8ac9acee7
 F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c fc6d3ec7017d7369ab5dc5421ad1763ff224551c9381866b6da69040db62e406
@@ -677,7 +677,7 @@ F src/test_tclsh.c 7dd98be675a1dc0d1fd302b8247bab992c909db384df054381a2279ad76f9
 F src/test_tclvar.c 33ff42149494a39c5fbb0df3d25d6fafb2f668888e41c0688d07273dcb268dfc
 F src/test_thread.c 269ea9e1fa5828dba550eb26f619aa18aedbc29fd92f8a5f6b93521fbb74a61c
 F src/test_vdbecov.c f60c6f135ec42c0de013a1d5136777aa328a776d33277f92abac648930453d43
-F src/test_vfs.c 2cc38a79892017702d13da79ad5152c196eec19bbd67fbde4d88065aac894a84
+F src/test_vfs.c 193c18da3dbf62a0e33ae7a240bbef938a50846672ee947664512b77d853fe81
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_windirent.c a895e2c068a06644eef91a7f0a32182445a893b9a0f33d0cdb4283dca2486ac1
 F src/test_windirent.h 90dfbe95442c9762357fe128dc7ae3dc199d006de93eb33ba3972e0a90484215
@@ -1371,6 +1371,7 @@ F test/pagesize.test 5769fc62d8c890a83a503f67d47508dfdc543305
 F test/parser1.test 6ccdf5e459a5dc4673d3273dc311a7e9742ca952dd0551a6a6320d27035ce4b3
 F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
+F test/pendingrace.test fb997b46d6c144a508fb8025d988a1e511b53d42d24143c57b51de3a405c7490
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
 F test/permutations.test 4705a032bbfef531bb3fd98b8c6ba4a739998949eae9ac0ea97c8696b331211d
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
@@ -2045,8 +2046,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0c2fde767f77d6204e95737edd573f42d72e956a3c20ea7e4daeff906657bbe5
-R eff4b53eb789da902d77064ecbd62787
-U drh
-Z 55e9959d5ae7e5a9913374f5d774ce27
+P bf1aae7a8c7f2c74681aa29baa35259d10ce6a1737d2607def6bf27fed592131 20ea53ddf590a9dd19501fabd2bfdb9c10b5eb265cd2995bdb335769c936c763
+R acc2b6cc65d6bb367d9e15964ca7789d
+T +closed 20ea53ddf590a9dd19501fabd2bfdb9c10b5eb265cd2995bdb335769c936c763
+U dan
+Z ba4534b9ca16705b4343f518cb36fba2
 # Remove this line to create a well-formed Fossil manifest.
