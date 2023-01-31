@@ -1,3 +1,6 @@
+//! `Statement` represents an SQL statement,
+//! which can be later sent to a database.
+
 use super::CellValue;
 
 /// SQL statement, possibly with bound parameters
@@ -12,7 +15,7 @@ impl Statement {
     /// # Examples
     ///
     /// ```
-    /// let stmt = Statement::new("SELECT * FROM sqlite_master");
+    /// let stmt = libsql_client::Statement::new("SELECT * FROM sqlite_master");
     /// ```
     pub fn new(q: impl Into<String>) -> Statement {
         Self {
@@ -26,7 +29,7 @@ impl Statement {
     /// # Examples
     ///
     /// ```
-    /// let stmt = Statement::with_params("UPDATE t SET x = ? WHERE key = ?", &[3, 8]);
+    /// let stmt = libsql_client::Statement::with_params("UPDATE t SET x = ? WHERE key = ?", &[3, 8]);
     /// ```
     pub fn with_params(q: impl Into<String>, params: &[impl Into<CellValue> + Clone]) -> Statement {
         Self {
