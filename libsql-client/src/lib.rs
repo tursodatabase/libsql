@@ -188,8 +188,17 @@ impl Connection {
     ) -> Self {
         let username = username.into();
         let pass = pass.into();
+        let url = url.into();
+        // Auto-update the URL to start with https://
+        let url = if url.starts_with("https://") {
+            url
+        } else if let Some(stripped) = url.strip_prefix("http://") {
+            "https://".to_owned() + stripped
+        } else {
+            "https://".to_owned() + &url
+        };
         Self {
-            url: url.into(),
+            url,
             auth: format!(
                 "Basic {}",
                 base64::engine::general_purpose::STANDARD.encode(format!("{username}:{pass}"))
