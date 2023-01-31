@@ -225,6 +225,19 @@ impl Connection {
     ///
     /// # Arguments
     /// * `stmt` - the SQL statement
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let db = Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// let result = db.execute("SELECT * FROM sqlite_master").await?;
+    /// let result_params = db
+    ///     .execute(Statement::with_params(
+    ///         "UPDATE t SET v = ? WHERE key = ?",
+    ///         &[CellValue::Number(5), CellValue::Text("five".to_string())],
+    ///     ))
+    ///     .await?;
+    /// ```
     pub async fn execute(&self, stmt: impl Into<Statement>) -> Result<QueryResult> {
         let mut results = self.batch(std::iter::once(stmt)).await?;
         Ok(results.remove(0))
@@ -236,6 +249,15 @@ impl Connection {
     ///
     /// # Arguments
     /// * `stmts` - SQL statements
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let db = Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// let result = db
+    ///     .batch(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
+    ///     .await;
+    /// ```
     pub async fn batch(
         &self,
         stmts: impl IntoIterator<Item = impl Into<Statement>>,
@@ -292,6 +314,15 @@ impl Connection {
     ///
     /// # Arguments
     /// * `stmts` - SQL statements
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let db = Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// let result = db
+    ///     .transaction(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
+    ///     .await;
+    /// ```
     pub async fn transaction(
         &self,
         stmts: impl IntoIterator<Item = impl Into<Statement>>,
