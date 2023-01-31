@@ -40,10 +40,10 @@ pub enum ResultSet {
     Success((Rows, Meta)),
 }
 
-/// Database session. This is the main structure used to
+/// Database connection. This is the main structure used to
 /// communicate with the database.
 #[derive(Clone, Debug)]
-pub struct Session {
+pub struct Connection {
     url: String,
     auth: String,
 }
@@ -177,7 +177,7 @@ fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> 
     }
 }
 
-impl Session {
+impl Connection {
     /// Establishes a database connection.
     ///
     /// # Arguments
