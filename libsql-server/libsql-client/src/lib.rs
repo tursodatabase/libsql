@@ -218,7 +218,7 @@ impl Connection {
     }
 
     /// Establishes a database connection from Cloudflare Workers context.
-    /// Expects the context to contain the following variables defined:
+    /// Expects the context to contain the following secrets defined:
     /// * `LIBSQL_CLIENT_URL`
     /// * `LIBSQL_CLIENT_USER`
     /// * `LIBSQL_CLIENT_PASS`
@@ -226,9 +226,9 @@ impl Connection {
     /// * `ctx` - Cloudflare Workers route context
     pub fn connect_from_ctx<D>(ctx: &worker::RouteContext<D>) -> Result<Self> {
         Ok(Self::connect(
-            ctx.var("LIBSQL_CLIENT_URL")?.to_string(),
-            ctx.var("LIBSQL_CLIENT_USER")?.to_string(),
-            ctx.var("LIBSQL_CLIENT_PASS")?.to_string(),
+            ctx.secret("LIBSQL_CLIENT_URL")?.to_string(),
+            ctx.secret("LIBSQL_CLIENT_USER")?.to_string(),
+            ctx.secret("LIBSQL_CLIENT_PASS")?.to_string(),
         ))
     }
 
