@@ -4,9 +4,8 @@ libSQL Rust client library can be used to communicate with [sqld](https://github
 
 At the moment the library works exclusively in Cloudflare Workers environment, but it is expected to be a general purpose library, with Workers being just one of its backends.
 
-In order to connect to the database, set up the following variables in `wrangler.toml`:
+In order to connect to the database, set up the following variables in `.dev.vars`, or register them as secrets:
 ```
-[vars]
 LIBSQL_CLIENT_URL = "your-db-url.example.com"
 LIBSQL_CLIENT_USER = "me"
 LIBSQL_CLIENT_PASS = "my-password"
