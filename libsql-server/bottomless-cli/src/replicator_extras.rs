@@ -62,7 +62,7 @@ impl Replicator {
             Err(aws_sdk_s3::types::SdkError::ServiceError(err)) if err.err().is_no_such_key() => {
                 println!("\tno main database snapshot file found")
             }
-            Err(e) => println!("\tfailed to fetch main database snapshot info: {}", e),
+            Err(e) => println!("\tfailed to fetch main database snapshot info: {e}"),
         };
         Ok(())
     }
@@ -112,15 +112,15 @@ impl Replicator {
                     if datetime.date() > older_than.unwrap_or(chrono::NaiveDate::MAX) {
                         continue;
                     }
-                    println!("{}", uuid);
+                    println!("{uuid}");
                     if verbose {
                         let counter = self.get_remote_change_counter(&uuid).await?;
                         let (consistent_frame, checksum) =
                             self.get_last_consistent_frame(&uuid).await?;
-                        println!("\tcreated at (UTC):     {}", datetime);
-                        println!("\tchange counter:       {:?}", counter);
-                        println!("\tconsistent WAL frame: {}", consistent_frame);
-                        println!("\tWAL frame checksum:   {:x}", checksum);
+                        println!("\tcreated at (UTC):     {datetime}");
+                        println!("\tchange counter:       {counter:?}");
+                        println!("\tconsistent WAL frame: {consistent_frame}");
+                        println!("\tWAL frame checksum:   {checksum:x}");
                         self.print_snapshot_summary(&uuid).await?;
                         println!()
                     }
@@ -166,7 +166,7 @@ impl Replicator {
             for obj in objs {
                 if let Some(key) = obj.key() {
                     if verbose {
-                        println!("Removing {}", key)
+                        println!("Removing {key}")
                     }
                     self.client
                         .delete_object()
@@ -181,7 +181,7 @@ impl Replicator {
             next_marker = response.next_marker().map(|s| s.to_owned());
             if next_marker.is_none() {
                 if verbose {
-                    println!("Removed {} snapshot generations", removed);
+                    println!("Removed {removed} snapshot generations");
                 }
                 return Ok(());
             }
@@ -227,7 +227,7 @@ impl Replicator {
                         continue;
                     }
                     if verbose {
-                        println!("Removing {}", uuid);
+                        println!("Removing {uuid}");
                     }
                     self.remove(uuid, verbose).await?;
                     removed_count += 1;
@@ -240,7 +240,7 @@ impl Replicator {
             }
         }
         if verbose {
-            println!("Removed {} generations", removed_count);
+            println!("Removed {removed_count} generations");
         }
         Ok(())
     }
@@ -262,9 +262,9 @@ impl Replicator {
         let (consistent_frame, checksum) = self.get_last_consistent_frame(&generation).await?;
         println!("Generation {} for {}", generation, self.db_name);
         println!("\tcreated at:           {}", uuid_to_datetime(&generation));
-        println!("\tchange counter:       {:?}", counter);
-        println!("\tconsistent WAL frame: {}", consistent_frame);
-        println!("\tWAL frame checksum:   {:x}", checksum);
+        println!("\tchange counter:       {counter:?}");
+        println!("\tconsistent WAL frame: {consistent_frame}");
+        println!("\tWAL frame checksum:   {checksum:x}");
         self.print_snapshot_summary(&generation).await?;
         Ok(())
     }
