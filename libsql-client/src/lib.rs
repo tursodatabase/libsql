@@ -200,13 +200,11 @@ impl Connection {
         let username = username.into();
         let pass = pass.into();
         let url = url.into();
-        // Auto-update the URL to start with https://
-        let url = if url.starts_with("https://") {
-            url
-        } else if let Some(stripped) = url.strip_prefix("http://") {
-            "https://".to_owned() + stripped
-        } else {
+        // Auto-update the URL to start with https:// if no protocol was specified
+        let url = if !url.contains("://") {
             "https://".to_owned() + &url
+        } else {
+            url
         };
         Self {
             url,
@@ -241,7 +239,7 @@ impl Connection {
     ///
     /// ```
     /// # async fn f() {
-    /// let db = libsql_client::Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// let db = libsql_client::Connection::connect("https://example.com", "admin", "s3cr3tp4ss");
     /// let result = db.execute("SELECT * FROM sqlite_master").await;
     /// let result_params = db
     ///     .execute(libsql_client::Statement::with_params(
@@ -267,7 +265,7 @@ impl Connection {
     ///
     /// ```
     /// # async fn f() {
-    /// let db = libsql_client::Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// let db = libsql_client::Connection::connect("https://example.com", "admin", "s3cr3tp4ss");
     /// let result = db
     ///     .batch(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
     ///     .await;
@@ -334,7 +332,7 @@ impl Connection {
     ///
     /// ```
     /// # async fn f() {
-    /// let db = libsql_client::Connection::connect("http://example.com", "admin", "s3cr3tp4ss");
+    /// let db = libsql_client::Connection::connect("https://example.com", "admin", "s3cr3tp4ss");
     /// let result = db
     ///     .transaction(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
     ///     .await;
