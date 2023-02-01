@@ -187,6 +187,11 @@ async fn show_console() -> anyhow::Result<Response<Body>> {
     Ok(Response::new(Body::from(std::include_str!("console.html"))))
 }
 
+fn handle_health() -> Response<Body> {
+    // return empty OK
+    Response::new(Body::empty())
+}
+
 async fn handle_request(
     authorizer: Arc<dyn Authorizer + Send + Sync>,
     req: Request<Body>,
@@ -204,6 +209,7 @@ async fn handle_request(
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => handle_query(req, sender).await,
         (&Method::GET, "/console") if enable_console => show_console().await,
+        (&Method::GET, "/health") => Ok(handle_health()),
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
