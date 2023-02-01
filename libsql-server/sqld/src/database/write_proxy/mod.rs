@@ -11,12 +11,14 @@ use tokio::sync::Mutex;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
+use crate::error::Error;
 use crate::query::{self, QueryResponse, QueryResult};
 use crate::query_analysis::{final_state, State};
 use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::proxy_rpc::query_result::RowResult;
 use crate::rpc::proxy::proxy_rpc::{DisconnectMessage, Queries, Query};
 use crate::rpc::wal_log::wal_log_rpc::wal_log_client::WalLogClient;
+use crate::Result;
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
 use replication::PeriodicDbUpdater;
@@ -87,7 +89,7 @@ impl WriteProxyDbFactory {
 }
 
 impl DbFactory for WriteProxyDbFactory {
-    type Future = Ready<anyhow::Result<Self::Db>>;
+    type Future = Ready<Result<Self::Db>>;
 
     type Db = WriteProxyDatabase;
 
@@ -115,7 +117,7 @@ impl WriteProxyDatabase {
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
             Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
         >,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self> {
         let read_db = LibSqlDb::new(
             path,
             #[cfg(feature = "mwal_backend")]
@@ -133,7 +135,7 @@ impl WriteProxyDatabase {
 
 #[async_trait::async_trait]
 impl Database for WriteProxyDatabase {
-    async fn execute(&self, queries: query::Queries) -> anyhow::Result<(Vec<QueryResult>, State)> {
+    async fn execute(&self, queries: query::Queries) -> Result<(Vec<QueryResult>, State)> {
         let mut state = self.state.lock().await;
         if *state == State::Init
             && queries.iter().all(|q| q.stmt.is_read_only())
@@ -150,7 +152,7 @@ impl Database for WriteProxyDatabase {
                             params: Some(q.params.try_into()?),
                         })
                     })
-                    .collect::<anyhow::Result<Vec<_>>>()?,
+                    .collect::<Result<Vec<_>>>()?,
                 client_id: self.client_id.as_bytes().to_vec(),
             };
             let mut client = self.write_proxy.clone();
@@ -165,7 +167,7 @@ impl Database for WriteProxyDatabase {
                             let result = r.row_result.unwrap();
                             match result {
                                 RowResult::Row(res) => Ok(QueryResponse::ResultSet(res.into())),
-                                RowResult::Error(e) => Err(e.into()),
+                                RowResult::Error(e) => Err(Error::RpcQueryError(e)),
                             }
                         })
                         .collect();
@@ -176,7 +178,7 @@ impl Database for WriteProxyDatabase {
                     // Set state to invalid, so next call is sent to remote, and we have a chance
                     // to recover state.
                     *state = State::Invalid;
-                    anyhow::bail!("rpc error: {e}")
+                    Err(Error::RpcQueryExecutionError(e))
                 }
             }
         }

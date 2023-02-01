@@ -5,6 +5,7 @@ use std::future::poll_fn;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use anyhow::Context;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use bytes::{BufMut, Bytes, BytesMut};
@@ -19,6 +20,7 @@ use tower::load::Load;
 use tower::{BoxError, MakeService, Service, ServiceBuilder};
 use tower_http::{compression::CompressionLayer, cors};
 
+use crate::error::Error;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
@@ -27,15 +29,19 @@ use self::auth::Authorizer;
 use self::types::QueryObject;
 
 impl TryFrom<query::Value> for serde_json::Value {
-    type Error = anyhow::Error;
+    type Error = Error;
 
     fn try_from(value: query::Value) -> Result<Self, Self::Error> {
         let value = match value {
             query::Value::Null => serde_json::Value::Null,
             query::Value::Integer(i) => serde_json::Value::Number(Number::from(i)),
-            query::Value::Real(x) => serde_json::Value::Number(
-                Number::from_f64(x).ok_or_else(|| anyhow::anyhow!("invalid float value"))?,
-            ),
+            query::Value::Real(x) => {
+                serde_json::Value::Number(Number::from_f64(x).ok_or_else(|| {
+                    Error::DbValueError(format!(
+                        "Cannot to convert database value `{x}` to a JSON number"
+                    ))
+                })?)
+            }
             query::Value::Text(s) => serde_json::Value::String(s),
             query::Value::Blob(v) => serde_json::Value::String(BASE64_STANDARD_NO_PAD.encode(v)),
         };
@@ -210,7 +216,7 @@ pub async fn run_http<F>(
 ) -> anyhow::Result<()>
 where
     F: MakeService<(), Queries> + Send + 'static,
-    F::Service: Load + Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error>,
+    F::Service: Load + Service<Queries, Response = Vec<QueryResult>, Error = Error>,
     <F::Service as Load>::Metric: std::fmt::Debug,
     F::MakeError: Into<BoxError>,
     F::Error: Into<BoxError>,
@@ -250,7 +256,7 @@ where
         }
     });
 
-    server.await?;
+    server.await.context("Http server exited with an error")?;
 
     Ok(())
 }
