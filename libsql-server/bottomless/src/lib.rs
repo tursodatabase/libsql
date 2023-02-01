@@ -492,6 +492,11 @@ pub extern "C" fn bottomless_init() {
     tracing::debug!("bottomless module initialized");
 }
 
+#[no_mangle]
+pub extern "C" fn bottomless_tracing_init() {
+    tracing_subscriber::fmt::init();
+}
+
 #[tracing::instrument]
 #[no_mangle]
 pub extern "C" fn bottomless_methods(
