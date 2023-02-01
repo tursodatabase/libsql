@@ -656,7 +656,7 @@ dependencies = [
  "futures",
  "tokio",
  "tracing",
- "uuid 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid",
 ]
 
 [[package]]
@@ -673,7 +673,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid 1.2.2 (git+https://github.com/psarna/uuid?branch=stable_v7)",
+ "uuid",
 ]
 
 [[package]]
@@ -2176,7 +2176,7 @@ dependencies = [
  "tagptr",
  "thiserror",
  "triomphe",
- "uuid 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid",
 ]
 
 [[package]]
@@ -2243,7 +2243,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid",
 ]
 
 [[package]]
@@ -3524,7 +3524,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
- "uuid 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "uuid",
  "vergen",
 ]
 
@@ -4123,18 +4123,9 @@ checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
 
 [[package]]
 name = "uuid"
-version = "1.2.2"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "422ee0de9031b5b948b97a8fc04e3aa35230001a722ddd27943e0be31564ce4c"
-dependencies = [
- "atomic",
- "getrandom",
-]
-
-[[package]]
-name = "uuid"
-version = "1.2.2"
-source = "git+https://github.com/psarna/uuid?branch=stable_v7#c867632f6b962faa7fd19833888c2fc1102c3a2a"
+checksum = "1674845326ee10d37ca60470760d4288a6f80f304007d92e5c53bab78c9cfd79"
 dependencies = [
  "atomic",
  "getrandom",
