@@ -8,6 +8,8 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# TESTRUNNER: superslow
+#
 # This file implements regression tests for SQLite library. 
 #
 # The tests in this file are brute force tests of the multi-threaded

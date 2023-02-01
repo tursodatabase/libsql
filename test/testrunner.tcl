@@ -1,4 +1,6 @@
 
+source [file join [file dirname [info script]] testrunner_data.tcl]
+
 #-------------------------------------------------------------------------
 # Usage:
 #
@@ -47,38 +49,77 @@ proc usage {} {
 }
 #-------------------------------------------------------------------------
 
+
+# If this script is invoked using:
+#
+#   testrunner.tcl helper <directory> <permutation> <script>
+#
+if {[lindex $argv 0]=="helper"} {
+  if {[llength $argv]!=3} { error "BAD ARGS" }
+
+  set permutation [lindex $argv 1]
+  set script [file normalize [lindex $argv 2]]
+
+  set ::argv [list]
+
+  if {$permutation=="full"} {
+
+    set testdir [file dirname $argv0]
+    source $::testdir/tester.tcl
+    unset -nocomplain ::G(isquick)
+    reset_db
+
+  } elseif {$permutation!="default" && $permutation!=""} {
+    set testdir [file dirname $argv0]
+    source $::testdir/permutations.test
+
+    if {[info exists ::testspec($permutation)]==0} {
+      error "no such permutation: $permutation"
+    }
+
+    array set O $::testspec($permutation)
+    set ::G(perm:name)         $permutation
+    set ::G(perm:prefix)       $O(-prefix)
+    set ::G(isquick)           1
+    set ::G(perm:dbconfig)     $O(-dbconfig)
+    set ::G(perm:presql)       $O(-presql)
+
+    rename finish_test helper_finish_test
+    proc finish_test {} "
+      uplevel {
+        $O(-shutdown)
+      }
+      helper_finish_test
+    "
+
+    eval $O(-initialize)
+    reset_db
+  }
+
+  source $script
+  exit
+}
+
 #-------------------------------------------------------------------------
 # The database schema used by the testrunner.db database.
 #
 set R(schema) {
   DROP TABLE IF EXISTS script;
-  DROP TABLE IF EXISTS msg;
-  DROP TABLE IF EXISTS malloc;
 
   CREATE TABLE script(
+    build TEXT DEFAULT '',
     config TEXT,
     filename TEXT,                -- full path to test script
     slow BOOLEAN,                 -- true if script is "slow"
-    state TEXT CHECK( state IN ('ready', 'running', 'done') ),
-    testfixtureid,                -- Id of process that ran script
+    state TEXT CHECK( state IN ('ready', 'running', 'done', 'failed') ),
     time INTEGER,                 -- Time in ms
-    nerr INTEGER,                 -- if 'done', the number of errors
-    ntest INTEGER,                -- if 'done', the number of tests
     output TEXT,                  -- full output of test script
-    PRIMARY KEY(config, filename)
+    ismake AS (config='make'),
+    PRIMARY KEY(build, config, filename)
   );
 
-  CREATE TABLE malloc(
-    id INTEGER PRIMARY KEY,
-    nmalloc INTEGER,
-    nbyte INTEGER,
-    leaker TEXT
-  );
-
-  CREATE TABLE msg(
-    id INTEGER PRIMARY KEY,
-    msg TEXT
-  );
+  CREATE INDEX i1 ON script(state, ismake);
+  CREATE INDEX i2 ON script(state, slow DESC, ismake);
 }
 #-------------------------------------------------------------------------
 
@@ -116,6 +157,7 @@ proc default_njob {} {
 
 set R(dbname) [file normalize testrunner.db]
 set R(logname) [file normalize testrunner.log]
+set R(build.logname) [file normalize testrunner_build.log]
 set R(info_script) [file normalize [info script]]
 set R(timeout) 10000              ;# Default busy-timeout for testrunner.db 
 set R(nJob)    [default_njob]     ;# Default number of helper processes
@@ -125,128 +167,247 @@ set R(patternlist) [list]
 
 set testdir [file dirname $argv0]
 
-# Parse the command line options. There are two ways to invoke this
-# script - to create a helper or coordinator process. If there are
-# no helper processes, the coordinator runs test scripts.
-#
-# To create a helper process:
-#
-#    testrunner.tcl helper ID
-#
-# where ID is an integer greater than 0. The process will create and
-# run tests in the "testdir$ID" directory. Helper processes are only
-# created by coordinators - there is no need for a user to create
-# helper processes manually.
-#
-# If the first argument is anything other than "helper", then a coordinator
-# process is started. See the implementation of the [usage] proc above for
-# details.
-#
-switch -- [lindex $argv 0] {
-  helper {
-    set R(helper) 1
-    set R(helper_id) [lindex $argv 1]
-    set argv [list --testdir=testdir$R(helper_id)]
-  }
 
-  default {
-    set R(helper) 0
-    set R(helper_id) 0
 
+# Check that directory $dir exists. If it does not, create it. If 
+# it does, delete its contents.
+#
+proc create_or_clear_dir {dir} {
+  set dir [file normalize $dir]
+  catch { file mkdir $dir }
+  foreach f [glob -nocomplain [file join $dir *]] {
+    catch { file delete -force $f }
   }
 }
-if {$R(helper)==0} {
-  for {set ii 0} {$ii < [llength $argv]} {incr ii} {
-    set a [lindex $argv $ii]
-    set n [string length $a]
 
-    if {[string range $a 0 0]=="-"} {
-      if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
-        incr ii
-          set R(nJob) [lindex $argv $ii]
-      } else {
-        usage
-      }
+proc copy_dir {from to} {
+  foreach f [glob -nocomplain [file join $from *]] {
+    catch { file copy -force $f $to }
+  }
+}
+
+##########################################################################
+##########################################################################
+proc build_to_dirname {bname} {
+  set fold [string tolower [string map {- _} $bname]]
+  return "testrunner_build_$fold"
+}
+
+proc build_input_ready {fd build} {
+  global R
+  global O
+
+  if {[eof $fd]} {
+    foreach {dirname b} $build {}
+
+    fconfigure $fd -blocking 1
+    set rc [catch { close $fd } msg]
+    if {$rc} { 
+      puts "Build \"$b\" finished - FAILED"
+      lappend R(lBuildFail) $build
     } else {
-      lappend R(patternlist) [string map {% *} $a]
+      puts "Build \"$b\" finished - ok"
+    }
+
+    puts $R(log) "### Build \"$b\" in directory $dirname"
+    puts $R(log) $O($fd)
+
+    launch_another_build
+    incr R(nHelperRunning) -1
+    incr ::wakeup
+  } else {
+    if {[gets $fd line]>=0} {
+      append O($fd) "$line\n"
     }
   }
-
-  set argv [list]
+  global R
 }
+
+proc launch_another_build {} {
+  global R
+  if {[llength $R(lBuild)]>0} {
+    set build [lindex $R(lBuild) 0]
+    set R(lBuild) [lrange $R(lBuild) 1 end]
+    foreach {dirname b} $build {}
+
+    puts "Launching build \"$b\" in directory $dirname..."
+    set srcdir [file dirname [file dirname $R(info_script)]]
+
+    incr R(nHelperRunning)
+
+    set pwd [pwd]
+    cd $dirname
+    set fd [open "|bash build.sh $srcdir 2>@1"]
+    cd $pwd
+
+    set O($fd) ""
+    fconfigure $fd -blocking 0
+    fileevent $fd readable [list build_input_ready $fd $build]
+  }
+}
+
+if {[lindex $argv 0]=="build"} {
+
+  # Todo...
+  set platform linux
+
+  # Load configuration data.
+  source [file join [file dirname [info script]] testrunner_data.tcl]
+
+  foreach b [trd_builds $platform] {
+    set dirname [build_to_dirname $b]
+    create_or_clear_dir $dirname
+
+    set target "testprogs"
+    if {$b=="Device-One"} { set target coretestprogs }
+    if {$b=="User-Auth"}  { set target testfixture }
+
+    set cmd [list \
+        [info nameofexec] \
+        [file join [file dirname $R(info_script)] releasetest_data.tcl] \
+        script $b $target
+    ]
+    set script [exec {*}$cmd]
+
+    set fd [open [file join $dirname build.sh] w]
+    puts $fd $script
+    close $fd
+
+    lappend R(lBuild) [list $dirname $b]
+  }
+
+  set R(log) [open $R(build.logname) w]
+
+  set R(nHelperRunning) 0
+  set R(lBuildFail) [list]
+  for {set ii 0} {$ii < $R(nJob)} {incr ii} {
+    launch_another_build
+  }
+
+  while {$R(nHelperRunning)>0} {
+    vwait ::wakeup
+  }
+  close $R(log)
+
+  if {[llength $R(lBuildFail)]==0} {
+    puts "All builds succeeded!"
+  } else {
+    puts "Builds failed:"
+    foreach build $R(lBuildFail) {
+      foreach {dirname b} $build {}
+      puts "  $b ($dirname)"
+    }
+    exit 1
+  }
+
+  puts "Log file is $R(build.logname)"
+  exit
+}
+##########################################################################
+##########################################################################
+
+set R(helper) 0
+set R(helper_id) 0
+for {set ii 0} {$ii < [llength $argv]} {incr ii} {
+  set a [lindex $argv $ii]
+  set n [string length $a]
+
+  if {[string range $a 0 0]=="-"} {
+    if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
+      incr ii
+      set R(nJob) [lindex $argv $ii]
+    } else {
+      usage
+    }
+  } else {
+    lappend R(patternlist) [string map {% *} $a]
+  }
+}
+
+set argv [list]
+
+set dir [pwd]
 source $testdir/permutations.test
+cd $dir
 
 #-------------------------------------------------------------------------
 # Return a list of tests to run. Each element of the list is itself a
 # list of two elements - the name of a permuations.test configuration
 # followed by the full path to a test script. i.e.:
 #
-#    {CONFIG FILENAME} {CONFIG FILENAME} ...
+#    {BUILD CONFIG FILENAME} {BUILD CONFIG FILENAME} ...
 #
 proc testset_patternlist {patternlist} {
 
+  set testset [list]              ;# return value
+
   set first [lindex $patternlist 0]
-  if {$first=="all"} { set first "full" }
 
   if {$first=="release"} {
+    set platform linux
 
-    # The following mirrors the set of test suites invoked by "all.test".
-    #
-    set clist {
-      full
-      no_optimization memsubsys1 memsubsys2 singlethread 
-      multithread onefile utf16 exclusive persistent_journal 
-      persistent_journal_error no_journal no_journal_error
-      autovacuum_ioerr no_mutex_try fullmutex journaltest 
-      inmemory_journal pcache0 pcache10 pcache50 pcache90 
-      pcache100 prepare mmap
-    }
-    ifcapable rbu { lappend clist rbu }
-    if {$::tcl_platform(platform)=="unix"} {
-      ifcapable !default_autovacuum {
-        lappend clist autovacuum_crash 
+    set patternlist [lrange $patternlist 1 end]
+    foreach b [trd_builds $platform] {
+      foreach c [trd_configs $platform $b] {
+        testset_append testset $b $c $patternlist
       }
     }
+
+    if {[llength $patternlist]==0} {
+      foreach b [trd_builds $platform] {
+        foreach e [trd_extras $platform $b] {
+          lappend testset [list $b make $e]
+        }
+      }
+    }
+
+  } elseif {$first=="all"} {
+
+    set clist [trd_all_configs]
     set patternlist [lrange $patternlist 1 end]
+    foreach c $clist {
+      testset_append testset Default $c $patternlist
+    }
 
   } elseif {[info exists ::testspec($first)]} {
     set clist $first
     set patternlist [lrange $patternlist 1 end]
+
+    testset_append testset Default $first [lrange $patternlist 1 end]
   } elseif { [llength $patternlist]==0 } {
-    set clist veryquick
+    testset_append testset Default veryquick $patternlist
   } else {
-    set clist full
+    testset_append testset Default full $patternlist
   }
 
-  set testset [list]
+  set testset
+}
 
-  foreach config $clist {
-    catch { array unset O }
-    array set O $::testspec($config)
-    foreach f $O(-files) {
-      if {[file pathtype $f]!="absolute"} {
-        set f [file join $::testdir $f]
-      }
-      lappend testset [list $config [file normalize $f]]
-    }
-  }
+proc testset_append {listvar build config patternlist} {
+  upvar $listvar lvar
 
-  if {[llength $patternlist]>0} {
-    foreach t $testset {
-      set tail [file tail [lindex $t 1]]
+  catch { array unset O }
+  array set O $::testspec($config)
+
+  foreach f $O(-files) {
+    if {[llength $patternlist]>0} {
+      set bMatch 0
       foreach p $patternlist {
-        if {[string match $p $tail]} {
-          lappend ret $t
-          break;
+        if {[string match $p [file tail $f]]} {
+          set bMatch
+          break
         }
       }
+      if {$bMatch==0} continue
     }
-  } else {
-    set ret $testset
-  }
 
-  set ret
+    if {[file pathtype $f]!="absolute"} {
+      set f [file join $::testdir $f]
+    }
+    lappend lvar [list $build $config $f]
+  }
 }
+
 #--------------------------------------------------------------------------
 
 
@@ -264,6 +425,57 @@ proc r_write_db {tcl} {
   db close
 }
 
+# Obtain a new job to be run by worker $iJob (an integer). A job is
+# returned as a three element list:
+#
+#    {$build $config $file}
+#
+proc r_get_next_job {iJob} {
+
+  switch -- [expr $iJob%3] {
+    0 {
+      set orderby "ORDER BY ismake ASC"
+    }
+    1 {
+      set orderby "ORDER BY slow DESC, ismake ASC"
+    }
+    2 {
+      set orderby "ORDER BY ismake DESC"
+    }
+  }
+
+  r_write_db {
+    set f ""
+    set c ""
+    db eval "
+      SELECT build, config, filename 
+        FROM script 
+        WHERE state='ready' 
+        $orderby LIMIT 1
+    " {
+      set b $build
+      set c $config
+      set f $filename
+    }
+    if {$f!=""} {
+      db eval { 
+        UPDATE script SET state='running'
+        WHERE (build, config, filename) = ($b, $c, $f)
+      }
+    }
+  }
+
+  if {$f==""} { return "" }
+  list $b $c $f
+}
+
+#rename r_get_next_job r_get_next_job_r
+#proc r_get_next_job {iJob} {
+  #puts [time { set res [r_get_next_job_r $iJob] }]
+  #set res
+#}
+
+
 proc make_new_testset {} {
   global R
 
@@ -271,435 +483,205 @@ proc make_new_testset {} {
   r_write_db {
     db eval $R(schema)
     foreach t $tests {
-      foreach {c s} $t {}
+      foreach {b c s} $t {}
       set slow 0
 
-      set fd [open $s]
-      for {set ii 0} {$ii<100 && ![eof $fd]} {incr ii} {
-        set line [gets $fd]
-        if {[string match -nocase *testrunner:* $line]} {
-          regexp -nocase {.*testrunner:(.*)} $line -> properties
-          foreach p $properties {
-            if {$p=="slow"} { set slow 1 }
+      if {$c!="make"} {
+        set fd [open $s]
+        for {set ii 0} {$ii<100 && ![eof $fd]} {incr ii} {
+          set line [gets $fd]
+          if {[string match -nocase *testrunner:* $line]} {
+            regexp -nocase {.*testrunner:(.*)} $line -> properties
+            foreach p $properties {
+              if {$p=="slow"} { set slow 1 }
+              if {$p=="superslow"} { set slow 2 }
+            }
           }
         }
+        close $fd
       }
-      close $fd
+
+      if {$c=="veryquick"} {
+        set c "default"
+      }
 
       db eval { 
-        INSERT INTO script(config, filename, slow, state) 
-            VALUES ($c, $s, $slow, 'ready') 
+        INSERT INTO script(build, config, filename, slow, state) 
+            VALUES ($b, $c, $s, $slow, 'ready') 
       }
     }
   }
 }
 
-# Find the next job in the database and mark it as 'running'. Then return
-# a list consisting of the 
-#
-#   CONFIG FILENAME
-#
-# pair for the test.
-#
-proc get_next_test {} {
+proc script_input_ready {fd iJob b c f} {
   global R
-  set myid $R(helper_id)
+  global O
+  global T
+
+  if {[eof $fd]} {
+    set ::done 1
+    fconfigure $fd -blocking 1
+    set state "done"
+    set rc [catch { close $fd } msg]
+    if {$rc} { 
+      puts "FAILED: $b $c $f"
+      set state "failed" 
+    }
+
+    set tm [expr [clock milliseconds] - $T($iJob)]
+
+    puts $R(log) "### $b ### $c ### $f ${tm}ms ($state)"
+    puts $R(log) [string trim $O($iJob)]
+
+    incr R(nHelperRunning) -1
+    r_write_db {
+      set output $O($iJob)
+      db eval {
+        UPDATE script SET output = $output, state=$state, time=$tm
+        WHERE (build, config, filename) = ($b, $c, $f)
+      }
+    }
+
+    launch_another_job $iJob
+    incr ::wakeup
+  } else {
+    set rc [catch { gets $fd line } res]
+    if {$rc} {
+      puts "ERROR $res"
+    } 
+    if {$res>=0} {
+      append O($iJob) "$line\n"
+    }
+  }
+
+}
+
+proc dirname {ii} {
+  return "testdir$ii"
+}
+
+proc launch_another_job {iJob} {
+  global R
+  global O
+  global T
+
+  set testfixture [info nameofexec]
+  set script $R(info_script)
+
+  set dir [dirname $iJob]
+  create_or_clear_dir $dir
+
+  set O($iJob) ""
+  set T($iJob) [clock milliseconds]
+  
+  set job [r_get_next_job $iJob]
+  if {$job==""} return
+
+  foreach {b c f} $job {}
+
+  if {$c=="make"} {
+    set builddir [build_to_dirname $b]
+    copy_dir $builddir $dir
+    set cmd "make $f"
+  } else {
+    if {$b=="Default"} {
+      set testfixture [info nameofexec]
+    } else {
+      set testfixture [
+        file normalize [file join [build_to_dirname $b] testfixture]
+      ]
+    }
+
+    if {$c=="valgrind"} {
+      set testfixture "valgrind -v --error-exitcode=1 $testfixture"
+      set ::env(OMIT_MISUSE) 1
+    }
+    set cmd [concat $testfixture [list $script helper $c $f]]
+  }
+
+  set pwd [pwd]
+  cd $dir
+  set fd [open "|$cmd 2>@1" r]
+  cd $pwd
+  set pid [pid $fd]
+
+  fconfigure $fd -blocking false
+  fileevent $fd readable [list script_input_ready $fd $iJob $b $c $f]
+  incr R(nHelperRunning) +1
+  unset -nocomplain ::env(OMIT_MISUSE)
+}
+
+proc one_line_report {} {
+  global R
+
+  set tm [expr [clock milliseconds] - $R(starttime)]
+  set tm [format "%.2f" [expr $tm/1000.0]]
+
+  foreach s {ready running done failed} {
+    set v($s,0) 0
+    set v($s,1) 0
+  }
+  set t(0) 0
+  set t(1) 0
 
   r_write_db {
-    set f ""
-    set c ""
     db eval {
-      SELECT config, filename FROM script WHERE state='ready' 
-      ORDER BY 
-        (slow * (($myid+1) % 2)) DESC, 
-        config!='full', 
-        config,
-        filename
-      LIMIT 1
+      SELECT state, ismake, count(*) AS cnt 
+      FROM script 
+      GROUP BY state, ismake
     } {
-      set c $config
-      set f $filename
+      set v($state,$ismake) $cnt
+      incr t($ismake) $cnt
     }
-    if {$f!=""} {
-      db eval { 
-        UPDATE script SET state='running', testfixtureid=$myid 
-        WHERE (config, filename) = ($c, $f)
+  }
+
+  set d0 [expr $v(done,0)+$v(failed,0)]
+  set d1 [expr $v(done,1)+$v(failed,1)]
+
+  puts "${tm}s: scripts: ($d0/$t(0)) $v(failed,0) failed, $v(running,0) running, makes: ($d1/$t(1)) $v(failed,1) failed, $v(running,1) running"
+
+  after 1000 one_line_report
+}
+
+proc run_testset {} {
+  global R
+  set ii 0
+
+  set R(starttime) [clock milliseconds]
+  set R(log) [open $R(logname) w]
+
+  for {set ii 0} {$ii<$R(nJob)} {incr ii} {
+    launch_another_job $ii
+  }
+
+  one_line_report
+  while {$R(nHelperRunning)>0} {
+    after 500 {incr ::wakeup}
+    vwait ::wakeup
+  }
+  close $R(log)
+  one_line_report
+
+  r_write_db {
+    set nErr [db one {SELECT count(*) FROM script WHERE state='failed'}]
+    if {$nErr>0} {
+      puts "$nErr failures:"
+      db eval {
+        SELECT build, config, filename FROM script WHERE state='failed'
+      } {
+        puts "FAILED: $build $config $filename"
       }
     }
   }
-
-  if {$f==""} { return "" }
-  list $c $f
-}
-
-proc r_testname {config filename} {
-  set name [file tail $filename]
-  if {$config!="" && $config!="full" && $config!="veryquick"} {
-    set name "$config-$name"
-  }
-  return $name
-}
-
-proc r_set_test_result {config filename ms nerr ntest output} {
-  global R
-
-  set f [r_testname $config $filename]
-  if {$nerr==0} {
-    set msg "$f... Ok"
-  } else {
-    set msg "$f... FAILED - $nerr errors of $ntest tests"
-  }
-  append msg " (${ms}ms)"
-  if {$R(helper)} {
-    append msg " (helper $R(helper_id))"
-  }
-
-  sqlite3_shutdown
-  set nMalloc [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]
-  set nByte   [sqlite3_memory_used]
-  if {($nByte>0 || $nMalloc>0) && $R(leaker)==""} {
-    set R(leaker) $f
-  }
-
-  r_write_db {
-    db eval {
-      UPDATE script 
-        SET state='done', output=$output, nerr=$nerr, ntest=$ntest, time=$ms
-      WHERE (config, filename)=($config, $filename);
-
-      INSERT INTO msg(msg) VALUES ($msg);
-    }
-  }
-}
-
-set R(iNextMsg) 1
-proc r_get_messages {{db ""}} {
-  global R
-
-  sqlite3_test_control_pending_byte 0x010000
-
-  if {$db==""} {
-    sqlite3 rgmhandle $R(dbname)
-    set dbhandle rgmhandle
-    $dbhandle timeout $R(timeout)
-  } else {
-    set dbhandle $db
-  }
-
-  $dbhandle transaction {
-    set next $R(iNextMsg)
-    set ret [$dbhandle eval {SELECT msg FROM msg WHERE id>=$next}]
-    set R(iNextMsg) [$dbhandle one {SELECT COALESCE(max(id), 0)+1 FROM msg}]
-  }
-
-  if {$db==""} {
-    rgmhandle close
-  }
-
-  set ret
-}
-
-# This is called after all tests have been run to write the leaked memory
-# report into the malloc table of testrunner.db.
-#
-proc r_memory_report {} {
-  global R
-
-  sqlite3_shutdown
-
-  set nMalloc [lindex [sqlite3_status SQLITE_STATUS_MALLOC_COUNT 0] 1]
-  set nByte   [sqlite3_memory_used]
-  set id $R(helper_id)
-  set leaker $R(leaker)
-
-  r_write_db {
-    db eval {
-      INSERT INTO malloc(id, nMalloc, nByte, leaker) 
-        VALUES($id, $nMalloc, $nByte, $leaker)
-    }
-  }
-}
-
-
-#--------------------------------------------------------------------------
-#
-set ::R_INSTALL_PUTS_WRAPPER {
-  proc puts_sts_wrapper {args} {
-    set n [llength $args]
-    if {$n==1 || ($n==2 && [string first [lindex $args 0] -nonewline]==0)} {
-      uplevel puts_into_caller $args
-    } else {
-      # A channel was explicitly specified.
-      uplevel puts_sts_original $args
-    }
-  }
-  rename puts puts_sts_original
-  proc puts {args} { uplevel puts_sts_wrapper $args }
-}
-
-proc r_install_puts_wrapper {} $::R_INSTALL_PUTS_WRAPPER
-proc r_uninstall_puts_wrapper {} {
-  rename puts ""
-  rename puts_sts_original puts
-}
-
-proc slave_test_script {script} {
-
-  # Create the interpreter used to run the test script.
-  interp create tinterp
-
-  # Populate some global variables that tester.tcl expects to see.
-  foreach {var value} [list              \
-    ::argv0 $::argv0                     \
-    ::argv  {}                           \
-    ::SLAVE 1                            \
-  ] {
-    interp eval tinterp [list set $var $value]
-  }
-
-  # The alias used to access the global test counters.
-  tinterp alias set_test_counter set_test_counter
-
-  # Set up an empty ::cmdlinearg array in the slave.
-  interp eval tinterp [list array set ::cmdlinearg [array get ::cmdlinearg]]
-
-  # Set up the ::G array in the slave.
-  interp eval tinterp [list array set ::G [array get ::G]]
-  interp eval tinterp [list set ::G(runner.tcl) 1]
-
-  interp eval tinterp $::R_INSTALL_PUTS_WRAPPER
-  tinterp alias puts_into_caller puts_into_caller
-
-  # Load the various test interfaces implemented in C.
-  load_testfixture_extensions tinterp
-
-  # Run the test script.
-  set rc [catch { interp eval tinterp $script } msg opt]
-  if {$rc} {
-    puts_into_caller $msg
-    puts_into_caller [dict get $opt -errorinfo]
-    incr ::TC(errors)
-  }
-
-  # Check if the interpreter call [run_thread_tests]
-  if { [interp eval tinterp {info exists ::run_thread_tests_called}] } {
-    set ::run_thread_tests_called 1
-  }
-
-  # Delete the interpreter used to run the test script.
-  interp delete tinterp
-}
-
-proc slave_test_file {zFile} {
-  set tail [file tail $zFile]
-
-  # Remember the value of the shared-cache setting. So that it is possible
-  # to check afterwards that it was not modified by the test script.
-  #
-  ifcapable shared_cache { set scs [sqlite3_enable_shared_cache] }
-
-  # Run the test script in a slave interpreter.
-  #
-  unset -nocomplain ::run_thread_tests_called
-  reset_prng_state
-  set ::sqlite_open_file_count 0
-  set time [time { slave_test_script [list source $zFile] }]
-  set ms [expr [lindex $time 0] / 1000]
-
-  r_install_puts_wrapper
-
-  # Test that all files opened by the test script were closed. Omit this
-  # if the test script has "thread" in its name. The open file counter
-  # is not thread-safe.
-  #
-  if {[info exists ::run_thread_tests_called]==0} {
-    do_test ${tail}-closeallfiles { expr {$::sqlite_open_file_count>0} } {0}
-  }
-  set ::sqlite_open_file_count 0
-
-  # Test that the global "shared-cache" setting was not altered by
-  # the test script.
-  #
-  ifcapable shared_cache {
-    set res [expr {[sqlite3_enable_shared_cache] == $scs}]
-    do_test ${tail}-sharedcachesetting [list set {} $res] 1
-  }
-
-  # Add some info to the output.
-  #
-  output2 "Time: $tail $ms ms"
-  show_memstats
-
-  r_uninstall_puts_wrapper
-  return $ms
-}
-
-proc puts_into_caller {args} {
-  global R
-  if {[llength $args]==1} {
-    append R(output) [lindex $args 0]
-    append R(output) "\n"
-  } else {
-    append R(output) [lindex $args 1]
-  }
-}
-
-#-------------------------------------------------------------------------
-#
-proc r_final_report {} {
-  global R
-
-  sqlite3_test_control_pending_byte 0x010000
-  sqlite3 db $R(dbname)
-
-  db timeout $R(timeout)
-
-  set errcode 0
-
-  # Create the text log file. This is just the concatenation of the 
-  # 'output' column of the database for every script that was run.
-  set fd [open $R(logname) w]
-  db eval {SELECT output FROM script ORDER BY config!='full',config,filename} {
-    puts $fd $output
-  }
-  close $fd
-
-  # Check if any scripts reported errors. If so, print one line noting
-  # how many errors, and another identifying the scripts in which they
-  # occured. Or, if no errors occurred, print out "no errors at all!".
-  sqlite3 db $R(dbname)
-  db timeout $R(timeout)
-  db eval { SELECT sum(nerr) AS nerr, sum(ntest) AS ntest FROM script } { }
-  puts "$nerr errors from $ntest tests."
-  if {$nerr>0} {
-    db eval { SELECT config, filename FROM script WHERE nerr>0 } {
-      lappend errlist [r_testname $config $filename]
-    }
-    puts "Errors in: $errlist"
-    set errcode 1
-  }
-
-  # Check if any scripts were not run or did not finish. Print out a
-  # line identifying them if there are any. 
-  set errlist [list]
-  db eval { SELECT config, filename FROM script WHERE state!='done' } {
-    lappend errlist [r_testname $config $filename]
-  }
-  if {$errlist!=[list]} {
-    puts "Tests DID NOT FINISH (crashed?): $errlist"
-    set errcode 1
-  }
-
-  set bLeak 0
-  db eval {
-    SELECT id, nmalloc, nbyte, leaker FROM malloc 
-      WHERE nmalloc>0 OR nbyte>0
-  } {
-    if {$id==0} { 
-      set line "This process " 
-    } else {
-      set line "Helper $id "
-    }
-    append line "leaked $nbyte byte in $nmalloc allocations"
-    if {$leaker!=""} { append line " (perhaps in [file tail $leaker])" }
-    puts $line
-    set bLeak 1
-  }
-  if {$bLeak==0} {
-    puts "No leaks - all allocations freed."
-  }
-
-  db close
 
   puts "Test database is $R(dbname)"
-  puts "Test log file is $R(logname)"
-  if {$errcode} {
-    puts "This test has FAILED."
-  }
-  return $errcode
-}
-
-
-if {$R(helper)==0} {
-  make_new_testset
+  puts "Test log is $R(logname)"
 }
 
 set R(nHelperRunning) 0
-if {$R(helper)==0 && $R(nJob)>1} {
-  cd $cmdlinearg(TESTFIXTURE_HOME)
-  for {set ii 1} {$ii <= $R(nJob)} {incr ii} {
-    set cmd "[info nameofexec] $R(info_script) helper $ii 2>@1"
-    puts "Launching helper $ii ($cmd)"
-    set chan [open "|$cmd" r]
-    fconfigure $chan -blocking false
-    fileevent $chan readable [list r_helper_readable $ii $chan]
-    incr R(nHelperRunning) 
-  }
-  cd $cmdlinearg(testdir)
-}
+set tm [lindex [time { make_new_testset }] 0]
+puts "built testset in [expr $tm/1000]ms.."
 
-proc r_helper_readable {id chan} {
-  set data [gets $chan]
-  if {$data!=""} { puts "helper $id:$data" }
-  if {[eof $chan]} {
-    puts "helper $id is finished"
-    incr ::R(nHelperRunning) -1
-    close $chan
-  }
-}
-
-if {$R(nHelperRunning)==0} {
-  while { ""!=[set t [get_next_test]] } {
-    set R(output) ""
-    set TC(count) 0
-    set TC(errors) 0
-
-    foreach {config filename} $t {}
-
-    array set O $::testspec($config)
-    set ::G(perm:name)         $config
-    set ::G(perm:prefix)       $O(-prefix)
-    set ::G(isquick)           1
-    set ::G(perm:dbconfig)     $O(-dbconfig)
-    set ::G(perm:presql)       $O(-presql)
-
-    eval $O(-initialize)
-    set ms [slave_test_file $filename]
-    eval $O(-shutdown)
-
-    unset -nocomplain ::G(perm:sqlite3_args)
-    unset ::G(perm:name)
-    unset ::G(perm:prefix)
-    unset ::G(perm:dbconfig)
-    unset ::G(perm:presql)
-
-    r_set_test_result $config $filename $ms $TC(errors) $TC(count) $R(output)
-  
-    if {$R(helper)==0} {
-      foreach msg [r_get_messages] { puts $msg }
-    }
-  }
-
-  # Tests are finished - write a record into testrunner.db describing 
-  # any memory leaks. 
-  r_memory_report
-
-} else {
-  set TTT 0
-  sqlite3 db $R(dbname)
-  db timeout $R(timeout)
-  while {$R(nHelperRunning)>0} {
-    after 250 { incr TTT }
-    vwait TTT
-    foreach msg [r_get_messages db] { puts $msg }
-  }
-  db close
-}
-
-set errcode 0
-if {$R(helper)==0} {
-  set errcode [r_final_report]
-}
-
-exit $errcode
+run_testset
+#puts [pwd]
 

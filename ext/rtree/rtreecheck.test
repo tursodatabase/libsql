@@ -167,9 +167,18 @@ do_execsql_test 6.0 {
 }
 db close
 sqlite3 db test.db
-do_catchsql_test 6.1 {
-  SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
-} {1 {database table is locked}}
+
+if {[permutation]=="inmemory_journal"} {
+  # This doesn't hit an SQLITE_LOCKED in this permutation as the schema
+  # has already been loaded. 
+  do_catchsql_test 6.1.inmemory_journal {
+    SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
+  } {0 0}
+} else {
+  do_catchsql_test 6.1 {
+    SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
+  } {1 {database table is locked}}
+}
 
 finish_test
 

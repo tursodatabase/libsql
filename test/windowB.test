@@ -411,6 +411,7 @@ do_execsql_test 10.3 {
 }
 
 ifcapable json1 {
+if {[permutation]!="no_optimization"} {
 
   do_execsql_test 11.0 {
     SELECT value FROM json_each('[1,2,3,4,5]');
@@ -479,7 +480,7 @@ ifcapable json1 {
       |  `--USE TEMP B-TREE FOR ORDER BY
       `--SCAN (subquery-xxxxxx)
   }
-}
+}}
 
 finish_test
 
