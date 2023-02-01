@@ -1946,10 +1946,9 @@ dependencies = [
 
 [[package]]
 name = "libsql-client"
-version = "0.3.2"
+version = "0.2.0"
 dependencies = [
  "base64 0.21.0",
- "num-traits",
  "serde_json",
  "worker",
 ]
@@ -3478,6 +3477,7 @@ dependencies = [
  "smallvec",
  "sqlite3-parser",
  "tempfile",
+ "thiserror",
  "tokio",
  "tokio-stream",
  "tokio-tungstenite",

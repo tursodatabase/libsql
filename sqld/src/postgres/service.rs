@@ -15,6 +15,7 @@ use tokio_util::codec::{Decoder, Framed};
 use tower::MakeService;
 use tower::Service;
 
+use crate::error::Error;
 use crate::postgres::authenticator::PgAuthenticator;
 use crate::query::{Queries, QueryResult};
 use crate::server::AsyncPeekable;
@@ -30,7 +31,7 @@ pub struct PgWireConnection<T, S> {
 
 impl<T, S> PgWireConnection<T, S>
 where
-    S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
+    S: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
     T: AsyncRead + AsyncWrite + Unpin + Send + Sync,
     S::Future: Send,
 {
@@ -122,13 +123,13 @@ impl<S> PgConnectionFactory<S> {
 impl<T, F> Service<(T, SocketAddr)> for PgConnectionFactory<F>
 where
     T: AsyncRead + AsyncWrite + AsyncPeekable + Unpin + Send + Sync + 'static,
-    F: MakeService<(), Queries, MakeError = anyhow::Error> + Sync,
+    F: MakeService<(), Queries, MakeError = Error> + Sync,
     F::Future: 'static + Send + Sync,
-    F::Service: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
+    F::Service: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
     <F::Service as Service<Queries>>::Future: Send,
 {
     type Response = ();
-    type Error = anyhow::Error;
+    type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     fn poll_ready(

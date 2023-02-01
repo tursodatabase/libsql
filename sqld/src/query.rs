@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
-use std::fmt;
 use std::str::FromStr;
 
 use anyhow::{ensure, Context};
@@ -12,12 +11,13 @@ use rusqlite::types::ToSqlOutput;
 use rusqlite::ToSql;
 use serde::{Deserialize, Serialize};
 
+use crate::error::Error;
 use crate::query_analysis::Statement;
 use crate::rpc::proxy::proxy_rpc::{
     Column as RpcColumn, ResultRows, Row as RpcRow, Type as RpcType, Value as RpcValue,
 };
 
-pub type QueryResult = Result<QueryResponse, QueryError>;
+pub type QueryResult = Result<QueryResponse, Error>;
 
 #[derive(Debug, Clone)]
 pub struct Column {
@@ -351,43 +351,6 @@ impl Params {
 }
 
 pub type Queries = Vec<Query>;
-
-#[derive(Debug, Clone)]
-pub struct QueryError {
-    pub code: ErrorCode,
-    pub msg: String,
-}
-
-impl std::error::Error for QueryError {}
-
-impl fmt::Display for QueryError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.msg)
-    }
-}
-
-impl QueryError {
-    pub fn new(code: ErrorCode, msg: impl ToString) -> Self {
-        Self {
-            code,
-            msg: msg.to_string(),
-        }
-    }
-}
-
-impl From<rusqlite::Error> for QueryError {
-    fn from(other: rusqlite::Error) -> Self {
-        Self::new(ErrorCode::SQLError, other)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum ErrorCode {
-    SQLError,
-    TxBusy,
-    TxTimeout,
-    Internal,
-}
 
 #[cfg(test)]
 mod test {

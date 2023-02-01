@@ -6,9 +6,10 @@ use futures::Future;
 use tower::Service;
 
 use super::Database;
+use crate::error::Error;
 use crate::query::{Queries, QueryResult};
 pub trait DbFactory: Send + Sync + 'static {
-    type Future: Future<Output = anyhow::Result<Self::Db>> + Send;
+    type Future: Future<Output = Result<Self::Db, Error>> + Send;
     type Db: Database + Send + Sync;
 
     fn create(&self) -> Self::Future;
@@ -17,7 +18,7 @@ pub trait DbFactory: Send + Sync + 'static {
 impl<F, DB, Fut> DbFactory for F
 where
     F: Fn() -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = anyhow::Result<DB>> + Sync + Send,
+    Fut: Future<Output = Result<DB, Error>> + Sync + Send,
     DB: Database + Sync + Send,
 {
     type Db = DB;
@@ -45,12 +46,10 @@ where
     F::Future: 'static + Send + Sync,
 {
     type Response = DbService<F::Db>;
-    type Error = anyhow::Error;
-    type Future = Pin<
-        Box<dyn Future<Output = std::result::Result<Self::Response, Self::Error>> + Send + Sync>,
-    >;
+    type Error = Error;
+    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send + Sync>>;
 
-    fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<anyhow::Result<()>> {
+    fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<Result<(), Error>> {
         Ok(()).into()
     }
 
@@ -76,7 +75,7 @@ impl<DB> Drop for DbService<DB> {
 
 impl<DB: Database + 'static + Send + Sync> Service<Queries> for DbService<DB> {
     type Response = Vec<QueryResult>;
-    type Error = anyhow::Error;
+    type Error = Error;
     type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
     fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {

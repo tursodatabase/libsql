@@ -16,6 +16,7 @@ use tokio::sync::Mutex;
 use tokio_util::codec::Framed;
 use tower::Service;
 
+use crate::error::Error;
 use crate::query::{Params, Queries, Query, QueryResponse, QueryResult, Value};
 use crate::query_analysis::Statement;
 use crate::server::AsyncPeekable;
@@ -30,7 +31,7 @@ impl<'a, S> QueryHandler<'a, S> {
 
     async fn handle_queries(&self, queries: Queries) -> PgWireResult<Vec<Response>>
     where
-        S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
+        S: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
         S::Future: Send,
     {
         let mut s = self.0.lock().await;
@@ -55,7 +56,7 @@ impl<'a, S> QueryHandler<'a, S> {
 #[async_trait::async_trait]
 impl<'a, S> SimpleQueryHandler for QueryHandler<'a, S>
 where
-    S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
+    S: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
     S::Future: Send,
 {
     async fn do_query<C>(&self, _client: &C, query: &str) -> PgWireResult<Vec<Response>>
@@ -83,7 +84,7 @@ where
 #[async_trait::async_trait]
 impl<'a, S> ExtendedQueryHandler for QueryHandler<'a, S>
 where
-    S: Service<Queries, Response = Vec<QueryResult>, Error = anyhow::Error> + Sync + Send,
+    S: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
     S::Future: Send,
 {
     async fn do_query<C>(

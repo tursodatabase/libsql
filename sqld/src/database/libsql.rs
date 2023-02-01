@@ -9,12 +9,11 @@ use rusqlite::OpenFlags;
 use tokio::sync::oneshot;
 use tracing::warn;
 
+use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
-use crate::query::{
-    Column, ErrorCode, Params, Queries, Query, QueryError, QueryResponse, QueryResult, ResultSet,
-    Row,
-};
+use crate::query::{Column, Params, Queries, Query, QueryResponse, QueryResult, ResultSet, Row};
 use crate::query_analysis::{State, Statement};
+use crate::Result;
 
 use super::{Database, TXN_TIMEOUT_SECS};
 
@@ -48,7 +47,7 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) 
 
     params
         .bind(&mut prepared)
-        .map_err(|e| QueryError::new(ErrorCode::SQLError, e))?;
+        .map_err(Error::LibSqlInvalidQueryParams)?;
 
     let mut qresult = prepared.raw_query();
 
@@ -202,7 +201,7 @@ impl LibSqlDb {
             Arc<Mutex<mwal::ffi::libsql_wal_methods>>,
         >,
         wal_hook: impl WalHook + Send + Clone + 'static,
-    ) -> anyhow::Result<Self> {
+    ) -> crate::Result<Self> {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
         tokio::task::spawn_blocking(move || {
@@ -245,12 +244,7 @@ impl LibSqlDb {
                 } else {
                     // fail all the queries in the batch with timeout error
                     let errors = (0..queries.len())
-                        .map(|_| {
-                            Err(QueryError::new(
-                                ErrorCode::TxTimeout,
-                                "transaction timedout",
-                            ))
-                        })
+                        .map(|idx| Err(Error::LibSqlTxTimeout(idx)))
                         .collect();
                     ok_or_exit!(resp.send((errors, state.state)));
                     timedout = false;
@@ -264,7 +258,7 @@ impl LibSqlDb {
 
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute(&self, queries: Queries) -> anyhow::Result<(Vec<QueryResult>, State)> {
+    async fn execute(&self, queries: Queries) -> Result<(Vec<QueryResult>, State)> {
         let (resp, receiver) = oneshot::channel();
         let msg = Message { queries, resp };
         let _ = self.sender.send(msg);

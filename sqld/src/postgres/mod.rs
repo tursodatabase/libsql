@@ -2,31 +2,29 @@ use std::io;
 
 use pgwire::error::{ErrorInfo, PgWireError};
 
-use crate::query::{ErrorCode, QueryError};
+use crate::error::Error;
 
 pub mod authenticator;
 mod proto;
 pub mod service;
 
-impl From<QueryError> for PgWireError {
-    fn from(other: QueryError) -> Self {
-        match other.code {
-            ErrorCode::SQLError => PgWireError::UserError(Box::new(ErrorInfo::new(
+impl From<Error> for PgWireError {
+    fn from(other: Error) -> Self {
+        match other {
+            Error::LibSqlInvalidQueryParams(_) => PgWireError::UserError(Box::new(ErrorInfo::new(
                 "ERROR".to_owned(),
                 "XX000".to_owned(),
-                other.msg,
+                other.to_string(),
             ))),
-            ErrorCode::TxBusy => {
-                PgWireError::IoError(io::Error::new(io::ErrorKind::WouldBlock, other.msg))
+            Error::LibSqlTxBusy => {
+                PgWireError::IoError(io::Error::new(io::ErrorKind::WouldBlock, other.to_string()))
             }
-            ErrorCode::TxTimeout => PgWireError::UserError(Box::new(ErrorInfo::new(
+            Error::LibSqlTxTimeout(_) => PgWireError::UserError(Box::new(ErrorInfo::new(
                 "ERROR".to_owned(),
                 "XX000".to_owned(),
-                other.msg,
+                other.to_string(),
             ))),
-            ErrorCode::Internal => {
-                PgWireError::IoError(io::Error::new(io::ErrorKind::Other, other.msg))
-            }
+            _ => PgWireError::IoError(io::Error::new(io::ErrorKind::Other, other.to_string())),
         }
     }
 }

@@ -16,7 +16,8 @@ use self::proxy_rpc::ExecuteResults;
 pub mod proxy_rpc {
     #![allow(clippy::all)]
 
-    use crate::query::{QueryError, QueryResponse};
+    use crate::error::Error as SqldError;
+    use crate::query::QueryResponse;
 
     use self::{error::ErrorCode, execute_results::State, query_result::RowResult};
     tonic::include_proto!("proxy");
@@ -30,40 +31,23 @@ pub mod proxy_rpc {
         }
     }
 
-    impl From<QueryError> for Error {
-        fn from(other: QueryError) -> Self {
+    impl From<SqldError> for Error {
+        fn from(other: SqldError) -> Self {
             Error {
-                code: ErrorCode::from(other.code).into(),
-                message: other.msg,
+                message: other.to_string(),
+                code: ErrorCode::from(other).into(),
             }
         }
     }
 
-    impl From<ErrorCode> for crate::query::ErrorCode {
-        fn from(other: ErrorCode) -> Self {
+    impl From<SqldError> for ErrorCode {
+        fn from(other: SqldError) -> Self {
             match other {
-                ErrorCode::SqlError => crate::query::ErrorCode::SQLError,
-                ErrorCode::TxBusy => crate::query::ErrorCode::TxBusy,
-                ErrorCode::TxTimeout => crate::query::ErrorCode::TxTimeout,
-                ErrorCode::Internal => crate::query::ErrorCode::Internal,
+                SqldError::LibSqlInvalidQueryParams(_) => ErrorCode::SqlError,
+                SqldError::LibSqlTxTimeout(_) => ErrorCode::TxTimeout,
+                SqldError::LibSqlTxBusy => ErrorCode::TxBusy,
+                _ => ErrorCode::Internal,
             }
-        }
-    }
-
-    impl From<crate::query::ErrorCode> for ErrorCode {
-        fn from(other: crate::query::ErrorCode) -> Self {
-            match other {
-                crate::query::ErrorCode::SQLError => ErrorCode::SqlError,
-                crate::query::ErrorCode::TxBusy => ErrorCode::TxBusy,
-                crate::query::ErrorCode::TxTimeout => ErrorCode::TxTimeout,
-                crate::query::ErrorCode::Internal => ErrorCode::Internal,
-            }
-        }
-    }
-
-    impl From<Error> for QueryError {
-        fn from(other: Error) -> Self {
-            Self::new(other.code().into(), other.message)
         }
     }
 
@@ -104,11 +88,11 @@ pub mod proxy_rpc {
     }
 
     impl TryFrom<crate::query::Params> for query::Params {
-        type Error = anyhow::Error;
+        type Error = SqldError;
         fn try_from(value: crate::query::Params) -> Result<Self, Self::Error> {
             match value {
                 crate::query::Params::Named(params) => {
-                    let iter = params.into_iter().map(|(k, v)| -> anyhow::Result<_> {
+                    let iter = params.into_iter().map(|(k, v)| -> Result<_, SqldError> {
                         let v = Value {
                             data: bincode::serialize(&v)?,
                         };
@@ -125,7 +109,7 @@ pub mod proxy_rpc {
                                 data: bincode::serialize(&v)?,
                             })
                         })
-                        .collect::<anyhow::Result<Vec<_>>>()?;
+                        .collect::<Result<Vec<_>, SqldError>>()?;
                     Ok(Self::Positional(Positional { values }))
                 }
             }
@@ -133,16 +117,16 @@ pub mod proxy_rpc {
     }
 
     impl TryFrom<query::Params> for crate::query::Params {
-        type Error = anyhow::Error;
+        type Error = SqldError;
 
-        fn try_from(value: query::Params) -> anyhow::Result<Self> {
+        fn try_from(value: query::Params) -> Result<Self, Self::Error> {
             match value {
                 query::Params::Positional(pos) => {
                     let params = pos
                         .values
                         .into_iter()
-                        .map(|v| bincode::deserialize(&v.data))
-                        .collect::<Result<Vec<_>, _>>()?;
+                        .map(|v| bincode::deserialize(&v.data).map_err(|e| e.into()))
+                        .collect::<Result<Vec<_>, SqldError>>()?;
                     Ok(Self::Positional(params))
                 }
                 query::Params::Named(named) => {
@@ -214,7 +198,7 @@ where
                     params: Params::try_from(q.params.unwrap())?,
                 })
             })
-            .collect::<anyhow::Result<Vec<_>>>()
+            .collect::<crate::Result<Vec<_>>>()
             .map_err(|_| {
                 tonic::Status::new(tonic::Code::Internal, "failed to deserialize query")
             })?;
