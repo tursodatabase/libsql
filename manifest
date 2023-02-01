@@ -1,5 +1,5 @@
-C Fix\sa\srace\scondition\sduring\shot-journal\srollback\son\sunix\sthat\scould\stheoretically\scause\sspurious\scorruption\serrors.
-D 2023-01-31T20:43:21.518
+C Fix\sa\scomment\srelated\sto\sPENDING\slocks\sin\sos_unix.c.\sNo\scode\schanges.
+D 2023-02-01T14:17:25.856
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -604,7 +604,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 85096ad0bb4e6a6ac3764603cea0f5332816fa25f0e50c936453edc8ac9acee7
+F src/os_unix.c 49b0d3d0f86fc4736d1b9a71035bbd791b892ed6908803f270d4d71f149c60ac
 F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c fc6d3ec7017d7369ab5dc5421ad1763ff224551c9381866b6da69040db62e406
@@ -2046,9 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf1aae7a8c7f2c74681aa29baa35259d10ce6a1737d2607def6bf27fed592131 20ea53ddf590a9dd19501fabd2bfdb9c10b5eb265cd2995bdb335769c936c763
-R acc2b6cc65d6bb367d9e15964ca7789d
-T +closed 20ea53ddf590a9dd19501fabd2bfdb9c10b5eb265cd2995bdb335769c936c763
+P e365dca4e5775b4897118c8937a1063282d7a1ecc2604529256b0a6b8a3510ba
+R fb035ed50ecd9dcfe4baa0545c9c7232
 U dan
-Z ba4534b9ca16705b4343f518cb36fba2
+Z 000725ab58aa79e849a1ff78f61507a0
 # Remove this line to create a well-formed Fossil manifest.
