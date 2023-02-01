@@ -7,8 +7,3 @@ members = [
     "sqlc",
     "sqld",
 ]
-default-members = [
-    "sqlc",
-    "sqld",
-    "libsql-client",
-]
