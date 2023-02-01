@@ -1,43 +1,51 @@
+//! A library for communicating with a libSQL database over HTTP.
+//!
+//! libsql-client is a lightweight HTTP-based driver for sqld,
+//! which is a server mode for libSQL, which is an open-contribution fork of SQLite.
+//!
+//! libsql-client compiles to wasm32-unknown-unknown target, which makes it a great
+//! driver for environments that run on WebAssembly.
+//!
+//! It is expected to become a general-purpose driver for communicating with sqld/libSQL,
+//! but the only backend implemented at the moment is for Cloudflare Workers environment.
+
 use std::collections::HashMap;
 use std::iter::IntoIterator;
 
 use base64::Engine;
 use worker::*;
 
-/// Metadata of a request
+pub mod statement;
+pub use statement::Statement;
+
+pub mod cell_value;
+pub use cell_value::CellValue;
+
+/// Metadata of a database request
 #[derive(Clone, Debug, Default)]
 pub struct Meta {
     pub duration: u64,
 }
 
-/// Value of a single database cell
-#[derive(Clone, Debug)]
-pub enum CellValue {
-    Text(String),
-    Float(f64),
-    Number(i64),
-    Bool(bool),
-}
-
 /// A database row
 #[derive(Clone, Debug)]
 pub struct Row {
-    pub cells: HashMap<String, Option<CellValue>>,
+    pub cells: HashMap<String, CellValue>,
 }
 
 /// Structure holding a set of rows returned from a query
 /// and their corresponding column names
 #[derive(Clone, Debug)]
-pub struct Rows {
+pub struct ResultSet {
     pub columns: Vec<String>,
     pub rows: Vec<Row>,
 }
 
-/// Result of a request - a set of rows or an error
+/// Result of a database request - a set of rows or an error
 #[derive(Clone, Debug)]
-pub enum ResultSet {
+pub enum QueryResult {
     Error((String, Meta)),
-    Success((Rows, Meta)),
+    Success((ResultSet, Meta)),
 }
 
 /// Database connection. This is the main structure used to
@@ -68,20 +76,20 @@ fn parse_value(
     result_idx: usize,
     row_idx: usize,
     cell_idx: usize,
-) -> Result<Option<CellValue>> {
+) -> Result<CellValue> {
     match cell {
-        serde_json::Value::Null => Ok(None),
-        serde_json::Value::Bool(v) => Ok(Some(CellValue::Bool(v))),
+        serde_json::Value::Null => Ok(CellValue::Null),
+        serde_json::Value::Bool(v) => Ok(CellValue::Bool(v)),
         serde_json::Value::Number(v) => match v.as_i64() {
-            Some(v) => Ok(Some(CellValue::Number(v))),
+            Some(v) => Ok(CellValue::Number(v)),
             None => match v.as_f64() {
-                Some(v) => Ok(Some(CellValue::Float(v))),
+                Some(v) => Ok(CellValue::Float(v)),
                 None => Err(worker::Error::from(format!(
                     "Result {result_idx} row {row_idx} cell {cell_idx} had unknown number value: {v}",
                 ))),
             },
         },
-        serde_json::Value::String(v) => Ok(Some(CellValue::Text(v))),
+        serde_json::Value::String(v) => Ok(CellValue::Text(v)),
         _ => Err(worker::Error::from(format!(
             "Result {result_idx} row {row_idx} cell {cell_idx} had unknown type",
         ))),
@@ -121,14 +129,14 @@ fn parse_rows(
     Ok(result)
 }
 
-fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> {
+fn parse_query_result(result: serde_json::Value, idx: usize) -> Result<QueryResult> {
     match result {
         serde_json::Value::Object(obj) => {
             if let Some(err) = obj.get("error") {
                 return match err {
                     serde_json::Value::Object(obj) => match obj.get("message") {
                         Some(serde_json::Value::String(msg)) => {
-                            Ok(ResultSet::Error((msg.clone(), Meta::default())))
+                            Ok(QueryResult::Error((msg.clone(), Meta::default())))
                         }
                         _ => Err(worker::Error::from(format!(
                             "Result {idx} error message was not a string",
@@ -153,8 +161,8 @@ fn parse_result_set(result: serde_json::Value, idx: usize) -> Result<ResultSet> 
                         (serde_json::Value::Array(rows), serde_json::Value::Array(columns)) => {
                             let columns = parse_columns(columns.to_vec(), idx)?;
                             let rows = parse_rows(rows.to_vec(), &columns, idx)?;
-                            Ok(ResultSet::Success((
-                                Rows { columns, rows },
+                            Ok(QueryResult::Success((
+                                ResultSet { columns, rows },
                                 Meta::default(),
                             )))
                         }
@@ -191,8 +199,15 @@ impl Connection {
     ) -> Self {
         let username = username.into();
         let pass = pass.into();
+        let url = url.into();
+        // Auto-update the URL to start with https:// if no protocol was specified
+        let url = if !url.contains("://") {
+            "https://".to_owned() + &url
+        } else {
+            url
+        };
         Self {
-            url: url.into(),
+            url,
             auth: format!(
                 "Basic {}",
                 base64::engine::general_purpose::STANDARD.encode(format!("{username}:{pass}"))
@@ -201,7 +216,7 @@ impl Connection {
     }
 
     /// Establishes a database connection from Cloudflare Workers context.
-    /// Expects the context to contain the following variables defined:
+    /// Expects the context to contain the following secrets defined:
     /// * `LIBSQL_CLIENT_URL`
     /// * `LIBSQL_CLIENT_USER`
     /// * `LIBSQL_CLIENT_PASS`
@@ -209,9 +224,9 @@ impl Connection {
     /// * `ctx` - Cloudflare Workers route context
     pub fn connect_from_ctx<D>(ctx: &worker::RouteContext<D>) -> Result<Self> {
         Ok(Self::connect(
-            ctx.var("LIBSQL_CLIENT_URL")?.to_string(),
-            ctx.var("LIBSQL_CLIENT_USER")?.to_string(),
-            ctx.var("LIBSQL_CLIENT_PASS")?.to_string(),
+            ctx.secret("LIBSQL_CLIENT_URL")?.to_string(),
+            ctx.secret("LIBSQL_CLIENT_USER")?.to_string(),
+            ctx.secret("LIBSQL_CLIENT_PASS")?.to_string(),
         ))
     }
 
@@ -219,7 +234,22 @@ impl Connection {
     ///
     /// # Arguments
     /// * `stmt` - the SQL statement
-    pub async fn execute(&self, stmt: impl Into<String>) -> Result<ResultSet> {
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # async fn f() {
+    /// let db = libsql_client::Connection::connect("https://example.com", "admin", "s3cr3tp4ss");
+    /// let result = db.execute("SELECT * FROM sqlite_master").await;
+    /// let result_params = db
+    ///     .execute(libsql_client::Statement::with_params(
+    ///         "UPDATE t SET v = ? WHERE key = ?",
+    ///         &[libsql_client::CellValue::Number(5), libsql_client::CellValue::Text("five".to_string())],
+    ///     ))
+    ///     .await;
+    /// # }
+    /// ```
+    pub async fn execute(&self, stmt: impl Into<Statement>) -> Result<QueryResult> {
         let mut results = self.batch(std::iter::once(stmt)).await?;
         Ok(results.remove(0))
     }
@@ -230,21 +260,36 @@ impl Connection {
     ///
     /// # Arguments
     /// * `stmts` - SQL statements
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # async fn f() {
+    /// let db = libsql_client::Connection::connect("https://example.com", "admin", "s3cr3tp4ss");
+    /// let result = db
+    ///     .batch(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
+    ///     .await;
+    /// # }
+    /// ```
     pub async fn batch(
         &self,
-        stmts: impl IntoIterator<Item = impl Into<String>>,
-    ) -> Result<Vec<ResultSet>> {
+        stmts: impl IntoIterator<Item = impl Into<Statement>>,
+    ) -> Result<Vec<QueryResult>> {
         let mut headers = Headers::new();
         headers.append("Authorization", &self.auth).ok();
-        let stmts: Vec<String> = stmts
-            .into_iter()
-            .map(|s| format!("\"{}\"", s.into()))
-            .collect();
+        // FIXME: serialize and deserialize with existing routines from sqld
+        let mut body = "{\"statements\": [".to_string();
+        let mut stmts_count = 0;
+        for stmt in stmts {
+            body += &format!("{},", stmt.into());
+            stmts_count += 1;
+        }
+        if stmts_count > 0 {
+            body.pop();
+        }
+        body += "]}";
         let request_init = RequestInit {
-            body: Some(wasm_bindgen::JsValue::from_str(&format!(
-                "{{\"statements\": [{}]}}",
-                stmts.join(",")
-            ))),
+            body: Some(wasm_bindgen::JsValue::from_str(&body)),
             headers,
             cf: CfProperties::new(),
             method: Method::Post,
@@ -256,18 +301,17 @@ impl Connection {
         let response_json: serde_json::Value = serde_json::from_str(&resp)?;
         match response_json {
             serde_json::Value::Array(results) => {
-                if results.len() != stmts.len() {
+                if results.len() != stmts_count {
                     Err(worker::Error::from(format!(
-                        "Response array did not contain expected {} results",
-                        stmts.len()
+                        "Response array did not contain expected {stmts_count} results"
                     )))
                 } else {
-                    let mut result_sets: Vec<ResultSet> = Vec::with_capacity(stmts.len());
+                    let mut query_results: Vec<QueryResult> = Vec::with_capacity(stmts_count);
                     for (idx, result) in results.into_iter().enumerate() {
-                        result_sets.push(parse_result_set(result, idx)?);
+                        query_results.push(parse_query_result(result, idx)?);
                     }
 
-                    Ok(result_sets)
+                    Ok(query_results)
                 }
             }
             e => Err(worker::Error::from(format!(
@@ -283,18 +327,29 @@ impl Connection {
     ///
     /// # Arguments
     /// * `stmts` - SQL statements
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # async fn f() {
+    /// let db = libsql_client::Connection::connect("https://example.com", "admin", "s3cr3tp4ss");
+    /// let result = db
+    ///     .transaction(["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"])
+    ///     .await;
+    /// # }
+    /// ```
     pub async fn transaction(
         &self,
-        stmts: impl IntoIterator<Item = impl Into<String>>,
-    ) -> Result<Vec<ResultSet>> {
+        stmts: impl IntoIterator<Item = impl Into<Statement>>,
+    ) -> Result<Vec<QueryResult>> {
         // TODO: Vec is not a good fit for popping the first element,
         // let's return a templated collection instead and let the user
         // decide where to store the result.
-        let mut ret: Vec<ResultSet> = self
+        let mut ret: Vec<QueryResult> = self
             .batch(
-                std::iter::once("BEGIN".to_string())
+                std::iter::once(Statement::new("BEGIN"))
                     .chain(stmts.into_iter().map(|s| s.into()))
-                    .chain(std::iter::once("END".to_string())),
+                    .chain(std::iter::once(Statement::new("END"))),
             )
             .await?
             .into_iter()
