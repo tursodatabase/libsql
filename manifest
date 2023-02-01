@@ -1,5 +1,5 @@
-C New\sassert()\sstatements\sto\sverify\sthat\ssqlite3DeleteIndexSamples()\sis\salways\ncalled\swith\snon-NULL\sparameters.
-D 2023-02-01T20:45:12.233
+C Adjustments\sof\sassert()\sstatement\sin\sSTAT4\sin\sorder\sto\sgive\s100%\sMC/DC.
+D 2023-02-01T23:24:34.683
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -698,7 +698,7 @@ F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 40c47b1528d308a322203de21d2e0d711753257ed9771771b6129214b1d65932
 F src/vdbeaux.c 3f9e3b6585e7434aa11300169dd66ddf0fc963a0c6f7940bdc058335dadeb353
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
-F src/vdbemem.c 316d518115f3720b4097f0231e2a3d6eefd06c787eccf44972f8d8f462153421
+F src/vdbemem.c 87d3811aabb68eb9210c14c9a8b5e8ec3acb7ba787beb80a4323af54fb6013f7
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 66f29c403d28630bfaea9124bd63ee4a047b1fe4a7e27dc5d10d67d1601b15e0
-R 528d21e7221f87a57110bf960c25518d
+P 92c71fdd7167a7db055ef0aec522bbba8c7b4b37658efda10dac44699921b57f
+R 3bed385ef72ee5c0645ae5caa491aa6f
 U drh
-Z ab69140996cae547f604b863d81ded55
+Z 5dbaa2f1ac06834b251752125ac989a8
 # Remove this line to create a well-formed Fossil manifest.
