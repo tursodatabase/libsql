@@ -1,5 +1,5 @@
-C Add\sconfiguration\sdata\sfor\sosx\sand\swindows\sto\stestrunner_data.tcl
-D 2023-02-02T19:41:43.495
+C Do\snot\srun\stest\sscript\spendingrace.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.
+D 2023-02-02T20:15:42.613
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1373,7 +1373,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test fb997b46d6c144a508fb8025d988a1e511b53d42d24143c57b51de3a405c7490
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 3a202a870735688a85c03c880a0560ce5a39d7360d5e26469594f365bca9e2b9
+F test/permutations.test 8bd6b6db541e2a7f9bb894be99ef5c00526b23762c4a00c574e1cba697495125
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test a74a9c9642e5d7e32f5a2aa77a2ed64ec5b69fecff39d52c4daf5945a2a4de65
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -2047,8 +2047,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d090948a69a9c4b86693bd3caedba3d7e5883e4b2ad1f2d4bf7ae14c105ddea7
-R af256dfb4826dbcd22db1746ce706917
+P e45d34656a110f85671d8b5d33f0d6d807fd64dfef5777fefba22ac6836f0e86
+R 53b5e11040e0762552b432c9c907db23
 U dan
-Z b3a9b813e7ce2ddd8c1dd80776004721
+Z cfccc793dc6ba86f29efadbd3358e320
 # Remove this line to create a well-formed Fossil manifest.
