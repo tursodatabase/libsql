@@ -92,7 +92,7 @@ impl<'de> Deserialize<'de> for ValueDeserializer {
             {
                 match map.next_entry::<&str, &str>()? {
                     Some((k, v)) => {
-                        if k == "blob" {
+                        if k == "base64" {
                             // FIXME: If the blog payload is too big, it may block the main thread
                             // for too long in an async context. In this case, it may be necessary
                             // to offload deserialization to a separate thread.
@@ -233,14 +233,14 @@ mod test {
 
     #[test]
     fn parse_positional_params() {
-        let json = r#"[1, "hello", 12.1, { "blob": "aGVsbG8K"}, null]"#; // blob: hello\n
+        let json = r#"[1, "hello", 12.1, { "base64": "aGVsbG8K"}, null]"#; // blob: hello\n
         let found: QueryParams = serde_json::from_str(json).unwrap();
         insta::assert_json_snapshot!(found);
     }
 
     #[test]
     fn parse_named_params() {
-        let json = r#"{":int": 1, "$real": 1.23, ":str": "hello", ":blob": { "blob": "aGVsbG8K"}, ":null": null, ":bool": false}"#;
+        let json = r#"{":int": 1, "$real": 1.23, ":str": "hello", ":blob": { "base64": "aGVsbG8K"}, ":null": null, ":bool": false}"#;
         let found: QueryParams = serde_json::from_str(json).unwrap();
         insta::with_settings!({sort_maps => true}, {
             insta::assert_json_snapshot!(found);
