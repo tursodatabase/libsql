@@ -43,7 +43,7 @@ Compatibility with SQLite is of great importance for us. But it can mean many th
 
 libSQL is a fork of SQLite, and we keep their original README [here](README-SQLite.md).
 
-Aside from all the goodies alredy provided by SQLite, libSQL adds:
+Aside from all the goodies already provided by SQLite, libSQL adds:
 
 * [randomized ROWID](https://github.com/libsql/libsql/issues/12)
 * [WebAssembly User Defined Functions](https://blog.chiselstrike.com/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7)
