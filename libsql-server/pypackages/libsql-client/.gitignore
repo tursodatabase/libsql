@@ -1,0 +1,5 @@
+/dist
+__pycache__
+*.pyc
+Session.vim
+poetry.lock

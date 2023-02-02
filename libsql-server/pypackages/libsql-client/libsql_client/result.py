@@ -32,3 +32,6 @@ class Row:
 
     def __len__(self) -> int:
         return len(self._values)
+
+    def __repr__(self) -> str:
+        return repr(self._values)
