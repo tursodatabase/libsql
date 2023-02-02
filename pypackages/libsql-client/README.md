@@ -38,7 +38,7 @@ First, please install Python and [Poetry][poetry]. To install all dependencies f
 virtual environment, run:
 
 ```
-poetry install -G test
+poetry install -G dev
 ```
 
 To run the tests, use:
