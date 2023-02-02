@@ -1,6 +1,6 @@
 [package]
 name = "bottomless"
-version = "0.1.16"
+version = "0.1.17"
 edition = "2021"
 license = "MIT"
 keywords = ["libsql", "sqlite", "s3", "wal", "replication"]
@@ -15,6 +15,7 @@ aws-sdk-s3 = { version = "0.22.0" }
 bytes = "1"
 crc = "3.0.0"
 futures = { version = "0.3.25" }
+sqld = { path = "../sqld" }
 tokio = { version = "1.22.0", features = ["full"] }
 tracing = "0.1.37"
 tracing-subscriber = "0.3.16"
