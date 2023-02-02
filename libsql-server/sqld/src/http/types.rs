@@ -111,6 +111,13 @@ impl<'de> Deserialize<'de> for ValueDeserializer {
                     None => Err(A::Error::missing_field("blob")),
                 }
             }
+
+            fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                Ok(query::Value::Integer(v as _))
+            }
         }
 
         deserializer.deserialize_any(Visitor).map(ValueDeserializer)
@@ -233,7 +240,7 @@ mod test {
 
     #[test]
     fn parse_named_params() {
-        let json = r#"{":int": 1, "$real": 1.23, ":str": "hello", ":blob": { "blob": "aGVsbG8K"}, ":null": null}"#;
+        let json = r#"{":int": 1, "$real": 1.23, ":str": "hello", ":blob": { "blob": "aGVsbG8K"}, ":null": null, ":bool": false}"#;
         let found: QueryParams = serde_json::from_str(json).unwrap();
         insta::with_settings!({sort_maps => true}, {
             insta::assert_json_snapshot!(found);
@@ -243,7 +250,7 @@ mod test {
     #[test]
     fn parse_http_query() {
         let json = r#"{"statements":["select * from test",
-            {"q": "select ?", "params": [12]},
+            {"q": "select ?", "params": [12, true]},
             {"q": "select ?", "params": {":foo": "bar"}}]}"#;
         let found: HttpQuery = serde_json::from_str(json).unwrap();
         insta::with_settings!({sort_maps => true}, {
