@@ -211,20 +211,19 @@ static SQLITE_NOINLINE int isValidSchemaTableName(
   Schema *pSchema           /* non-NULL if a database qualifier is present */
 ){
   const char *zLegacy;
-  const char *zPreferred;
   assert( pTab!=0 );
   assert( pTab->tnum==1 );
   if( sqlite3StrNICmp(zTab, "sqlite_", 7)!=0 ) return 0;
   zLegacy = pTab->zName;
-  zPreferred = sqlite3PreferredTableName(zLegacy);
-  if( sqlite3StrICmp(zTab, zPreferred)==0 ) return 1;
-  if( pSchema && strcmp(zLegacy+7, &LEGACY_TEMP_SCHEMA_TABLE[7])==0){
-    if( sqlite3StrICmp(zTab+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0
-     || sqlite3StrICmp(zTab+7, &PREFERRED_SCHEMA_TABLE[7])==0
-     || sqlite3StrICmp(zTab+7, &LEGACY_SCHEMA_TABLE[7])==0
-    ){
+  if( strcmp(zLegacy+7, &LEGACY_TEMP_SCHEMA_TABLE[7])==0 ){
+    if( sqlite3StrICmp(zTab+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
       return 1;
     }
+    if( pSchema==0 ) return 0;
+    if( sqlite3StrICmp(zTab+7, &LEGACY_SCHEMA_TABLE[7])==0 ) return 1;
+    if( sqlite3StrICmp(zTab+7, &PREFERRED_SCHEMA_TABLE[7])==0 ) return 1;
+  }else{
+    if( sqlite3StrICmp(zTab+7, &PREFERRED_SCHEMA_TABLE[7])==0 ) return 1;
   }
   return 0;
 }
