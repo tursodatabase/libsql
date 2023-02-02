@@ -265,7 +265,7 @@ impl ToSql for Value {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum Params {
     Named(HashMap<String, Value>),
     Positional(Vec<Value>),
