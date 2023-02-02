@@ -1,5 +1,5 @@
-C Update\stestrunner.tcl\sto\suse\sa\sseparate\sprocess\sfor\seach\stest\sscript.\sAnd\sto\srun\ssome\sextra\stests\stoo.
-D 2023-02-01T20:14:59.965
+C Add\sconfiguration\sdata\sfor\sosx\sand\swindows\sto\stestrunner_data.tcl
+D 2023-02-02T19:41:43.495
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1565,8 +1565,8 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 8d54d40a55e12554b4509bc12078b201b233c8e842a7543629094a21b1ba956d
-F test/testrunner.tcl de0f2922631fc1cd43903e6e28fb69d01f09685c4e52bceea9da4f051dc03dab
-F test/testrunner_data.tcl 7c9e97b0caea7420e29bbc731eef7e44a27781c192c4c9e4c605c74ed81a9d2f
+F test/testrunner.tcl 24d785dcad30a53838ad64aac056b49551049eba3b3c27ae3659be3fc157b213
+F test/testrunner_data.tcl 38e2f2b2eb3033b58b4f7428affb5d627719e97ee166c8b95296c39ffca6c849
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2047,11 +2047,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 66f29c403d28630bfaea9124bd63ee4a047b1fe4a7e27dc5d10d67d1601b15e0
-R 06a2d845016cccabda66a252a397ec86
-T *branch * testrunner
-T *sym-testrunner *
-T -sym-trunk *
+P d090948a69a9c4b86693bd3caedba3d7e5883e4b2ad1f2d4bf7ae14c105ddea7
+R af256dfb4826dbcd22db1746ce706917
 U dan
-Z a224100f94ae40bc55815239c2a30b96
+Z b3a9b813e7ce2ddd8c1dd80776004721
 # Remove this line to create a well-formed Fossil manifest.

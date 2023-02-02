@@ -165,9 +165,22 @@ set R(leaker)  ""                 ;# Name of first script to leak memory
 
 set R(patternlist) [list]
 
+switch -nocase -glob -- $tcl_platform(os) {
+  *darwin* {
+    set R(platform) osx
+  }
+  *linux* {
+    set R(platform) linux
+  }
+  *win* {
+    set R(platform) win
+  }
+  default {
+    error "cannot determine platform!"
+  }
+}
+
 set testdir [file dirname $argv0]
-
-
 
 # Check that directory $dir exists. If it does not, create it. If 
 # it does, delete its contents.
@@ -248,13 +261,10 @@ proc launch_another_build {} {
 
 if {[lindex $argv 0]=="build"} {
 
-  # Todo...
-  set platform linux
-
   # Load configuration data.
   source [file join [file dirname [info script]] testrunner_data.tcl]
 
-  foreach b [trd_builds $platform] {
+  foreach b [trd_builds $R(platform)] {
     set dirname [build_to_dirname $b]
     create_or_clear_dir $dirname
 
@@ -344,7 +354,7 @@ proc testset_patternlist {patternlist} {
   set first [lindex $patternlist 0]
 
   if {$first=="release"} {
-    set platform linux
+    set platform $::R(platform)
 
     set patternlist [lrange $patternlist 1 end]
     foreach b [trd_builds $platform] {

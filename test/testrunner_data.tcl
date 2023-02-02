@@ -27,6 +27,16 @@ namespace eval trd {
   set tcltest(linux.Default)              all_plus_autovacuum_crash
   set tcltest(linux.Valgrind)             valgrind
 
+  set tcltest(osx.Locking-Style)          veryquick
+  set tcltest(osx.Have-Not)               veryquick
+  set tcltest(osx.Apple)                  all
+
+  set tcltest(win.Stdcall)                veryquick
+  set tcltest(win.Have-Not)               veryquick
+  set tcltest(win.Windows-Memdebug)       veryquick
+  set tcltest(win.Windows-Win32Heap)      veryquick
+  set tcltest(win.Default)                full
+
   # Extra [make xyz] tests that should be run for various builds.
   #
   set extra(linux.Check-Symbols)          checksymbols
@@ -44,6 +54,16 @@ namespace eval trd {
   set extra(linux.Apple)                  {fuzztest sourcetest}
   set extra(linux.Sanitize)               {fuzztest sourcetest}
   set extra(linux.Default)                {fuzztest sourcetest threadtest}
+
+  set extra(osx.Default)                  {fuzztest threadtest}
+  set extra(osx.Have-Not)                 {fuzztest sourcetest}
+  set extra(osx.Locking-Style)            {mptest fuzztest sourcetest}
+
+  # set extra(win.Default)                  mptest
+  # set extra(win.Stdcall)                  {fuzztest sourcetest}
+  # set extra(win.Windows-Memdebug)         {fuzztest sourcetest}
+  # set extra(win.Windows-Win32Heap)        {fuzztest sourcetest}
+  # set extra(win.Have-Not)                 {fuzztest sourcetest}
 
   # The following mirrors the set of test suites invoked by "all.test".
   #
