@@ -177,7 +177,9 @@ async fn handle_query(
     match result {
         Ok(Ok(rows)) => {
             let json = query_response_to_json(rows)?;
-            Ok(Response::new(Body::from(json)))
+            Ok(Response::builder()
+                .header("Content-Type", "application/json")
+                .body(Body::from(json))?)
         }
         Err(_) | Ok(Err(_)) => Ok(error("internal error", StatusCode::INTERNAL_SERVER_ERROR)),
     }
