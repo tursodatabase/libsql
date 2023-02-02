@@ -1,10 +1,12 @@
 from collections import namedtuple
 from typing import Any, List, Sequence, Tuple, Union, TYPE_CHECKING
+import urllib.parse
 
 if TYPE_CHECKING:
     from .result import ResultSet, Value
 from .driver import _Driver, _RawStmt
 from .http_driver import _HttpDriver
+from .sqlite_driver import _SqliteDriver
 
 Stmt = Union[str, Tuple[str, Sequence["Value"]]]
 
@@ -12,7 +14,13 @@ class Client:
     _driver: _Driver
 
     def __init__(self, url: str) -> None:
-        self._driver = _HttpDriver(url)
+        parsed_url = urllib.parse.urlparse(url)
+        if parsed_url.scheme in ("http", "https"):
+            self._driver = _HttpDriver(url)
+        elif parsed_url.scheme == "file":
+            self._driver = _SqliteDriver(parsed_url.path)
+        else:
+            raise ValueError(f"Unsupported URL scheme: {parsed_url.scheme!r}")
 
     async def execute(self, sql: str, params: Sequence["Value"] = ()) -> "ResultSet":
         return (await self.batch([(sql, params)]))[0]
