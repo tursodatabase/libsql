@@ -1,24 +1,29 @@
 from collections import namedtuple
-from typing import Any, List, Sequence, Tuple, Union, TYPE_CHECKING
+from typing import Any, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING
 import urllib.parse
 
-if TYPE_CHECKING:
-    from .result import ResultSet, Value
 from .driver import _Driver, _RawStmt
 from .http_driver import _HttpDriver
 from .sqlite_driver import _SqliteDriver
+
+if TYPE_CHECKING:
+    import concurrent.futures
+    from .result import ResultSet, Value
 
 Stmt = Union[str, Tuple[str, Sequence["Value"]]]
 
 class Client:
     _driver: _Driver
 
-    def __init__(self, url: str) -> None:
+    def __init__(
+        self, url: str, *,
+        executor: Optional["concurrent.futures.ThreadPoolExecutor"] = None,
+    ) -> None:
         parsed_url = urllib.parse.urlparse(url)
         if parsed_url.scheme in ("http", "https"):
             self._driver = _HttpDriver(url)
         elif parsed_url.scheme == "file":
-            self._driver = _SqliteDriver(parsed_url.path)
+            self._driver = _SqliteDriver(parsed_url.path, executor=executor)
         else:
             raise ValueError(f"Unsupported URL scheme: {parsed_url.scheme!r}")
 

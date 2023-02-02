@@ -1,3 +1,4 @@
+import concurrent.futures
 import libsql_client
 import pytest
 
@@ -27,3 +28,10 @@ async def test_error(url):
         with pytest.raises(libsql_client.ClientResponseError) as excinfo:
             await client.execute("SELECT foo")
         assert "no such column: foo" in str(excinfo.value)
+
+@pytest.mark.asyncio
+async def test_custom_executor(url):
+    with concurrent.futures.ThreadPoolExecutor(1) as executor:
+        async with libsql_client.Client(url, executor=executor) as client:
+            result_set = await client.execute("SELECT 42")
+            assert result_set.rows[0][0] == 42
