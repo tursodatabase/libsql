@@ -1,3 +1,4 @@
+#![allow(clippy::not_unsafe_ptr_arg_deref)]
 use std::ffi::{c_char, c_int, c_void};
 
 use super::ffi::{self, libsql_wal_methods, sqlite3_file, sqlite3_vfs, types::*, PgHdr, Wal};
