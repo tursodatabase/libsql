@@ -32,6 +32,12 @@ async def main():
 asyncio.run(main())
 ```
 
+You can also connect to a local SQLite database simply by changing the URL:
+
+```python
+url = "file:example.db"
+```
+
 ## Contributing to this package
 
 First, please install Python and [Poetry][poetry]. To install all dependencies for local development to a
@@ -45,4 +51,10 @@ To run the tests, use:
 
 ```
 poetry run pytest
+```
+
+To check types with MyPy, use:
+
+```
+poetry run mypy
 ```
