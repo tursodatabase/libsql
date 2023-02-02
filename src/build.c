@@ -5713,6 +5713,8 @@ void libsql_create_function(
     return;
   }
 
+  libsql_try_initialize_wasm_func_table(pParse->db);
+
   Token table = {"libsql_wasm_func_table", 22};
   Token name = {"name", 4};
   Token body = {"body", 4};

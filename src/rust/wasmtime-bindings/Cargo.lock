@@ -525,6 +525,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
 
 [[package]]
+name = "libsql-wasmtime-bindings"
+version = "0.1.0"
+dependencies = [
+ "wasmtime",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.0.46"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -986,13 +993,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de327cf46d5218315957138131ed904621e6f99018aa2da508c0dcf0c65f1bf2"
 dependencies = [
  "cfg-if",
-]
-
-[[package]]
-name = "wasmtime-bindings"
-version = "0.1.0"
-dependencies = [
- "wasmtime",
 ]
 
 [[package]]
