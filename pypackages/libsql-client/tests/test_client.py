@@ -3,7 +3,7 @@ import pytest
 
 @pytest.fixture
 def url():
-    return "ws://localhost:8080"
+    return "http://localhost:8080"
 
 @pytest.mark.asyncio
 async def test_it_works(url):
@@ -93,3 +93,4 @@ async def test_params_blob(url):
             result_set = await client.execute("SELECT length(?)", [blob])
             assert result_set.rows[0][0] == l
 
+# TODO: test errors

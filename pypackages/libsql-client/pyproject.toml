@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "libsql-client"
+version = "0.0.2"
+authors = [
+    "Jan Špaček <honza@chiselstrike.com>",
+    "ChiselStrike",
+]
+description = "sqld client for Python"
+readme = "README.md"
+license = "MIT"
+classifiers = [
+    "Operating System :: OS Independent",
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+aiohttp = "^3.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.2"
+pytest-asyncio = "^0.20.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
