@@ -17,6 +17,9 @@ expression: found
         10
       ]
     },
+    ":bool": {
+      "Integer": 0
+    },
     ":int": {
       "Integer": 1
     },
