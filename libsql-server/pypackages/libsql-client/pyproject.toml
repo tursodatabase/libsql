@@ -20,6 +20,7 @@ aiohttp = "^3.0"
 pytest = "^7.2"
 pytest-asyncio = "^0.20.3"
 mypy = "^0.991"
+requests = "^2.28.2"
 
 [tool.mypy]
 packages = ["libsql_client"]
