@@ -43,7 +43,9 @@ impl TryFrom<query::Value> for serde_json::Value {
                 })?)
             }
             query::Value::Text(s) => serde_json::Value::String(s),
-            query::Value::Blob(v) => serde_json::Value::String(BASE64_STANDARD_NO_PAD.encode(v)),
+            query::Value::Blob(v) => serde_json::json!({
+                "base64": BASE64_STANDARD_NO_PAD.encode(v),
+            }),
         };
 
         Ok(value)

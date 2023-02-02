@@ -656,6 +656,7 @@ dependencies = [
  "futures",
  "tokio",
  "tracing",
+ "tracing-subscriber",
  "uuid",
 ]
 
