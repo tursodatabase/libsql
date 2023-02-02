@@ -58,7 +58,7 @@ def _decode_result_set(result_set_json: Any) -> ResultSet:
     return ResultSet(columns, rows)
 
 def _decode_row(row_json: Any, column_count: int, column_idxs: Dict[str, int]) -> Row:
-    values = [_decode_value(value_json) for value_json in row_json]
+    values = tuple(_decode_value(value_json) for value_json in row_json)
     if len(values) != column_count:
         raise RuntimeError(f"Received {len(values)} values, expected {column_count} columns")
     return Row(column_idxs, values)
