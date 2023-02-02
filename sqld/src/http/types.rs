@@ -92,7 +92,7 @@ impl<'de> Deserialize<'de> for ValueDeserializer {
             {
                 match map.next_entry::<&str, &str>()? {
                     Some((k, v)) => {
-                        if k == "blob" {
+                        if k == "base64" {
                             // FIXME: If the blog payload is too big, it may block the main thread
                             // for too long in an async context. In this case, it may be necessary
                             // to offload deserialization to a separate thread.
