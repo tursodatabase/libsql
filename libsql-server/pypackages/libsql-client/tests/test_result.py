@@ -25,7 +25,6 @@ async def test_big_integer(url):
 # this test fails, because sqld returns blobs as base64-encoded strings, but we cannot distinguish them from
 # normal strings!
 @pytest.mark.asyncio
-@pytest.mark.xfail
 async def test_blob(url):
     async with libsql_client.Client(url) as client:
         result_set = await client.execute(f"SELECT X'deadbeef'")

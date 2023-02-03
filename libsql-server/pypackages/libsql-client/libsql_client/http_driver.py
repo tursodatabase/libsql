@@ -40,7 +40,7 @@ def _encode_value(value: Value) -> Any:
     if isinstance(value, str) or isinstance(value, float) or isinstance(value, int):
         return value
     elif isinstance(value, bytes):
-        return {"blob": base64.b64encode(value).strip(b"=").decode()}
+        return {"base64": base64.b64encode(value).strip(b"=").decode()}
     elif value is None:
         return None
     else:
@@ -66,9 +66,10 @@ def _decode_value(value_json: Any) -> Value:
     if isinstance(value_json, int) or isinstance(value_json, float):
         return value_json
     elif isinstance(value_json, str):
-        # TODO: this might be a base64-encoded blob!
         return value_json
     elif value_json is None:
         return None
+    elif "base64" in value_json:
+        return base64.b64decode(value_json["base64"] + "===")
     else:
         raise RuntimeError(f"Received unexpected JSON value of type {type(value_json)}")
