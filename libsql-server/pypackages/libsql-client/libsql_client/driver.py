@@ -1,12 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple, List, Sequence, TYPE_CHECKING
+from typing import Dict, NamedTuple, List, Sequence, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .result import ResultSet, Value
 
+_RawParams = Union[List["Value"], Dict[str, "Value"]]
+
 class _RawStmt(NamedTuple):
     sql: str
-    params: Sequence["Value"]
+    params: _RawParams
 
 class _Driver:
     @abstractmethod

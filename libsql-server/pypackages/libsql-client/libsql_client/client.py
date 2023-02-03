@@ -1,8 +1,8 @@
 from collections import namedtuple
-from typing import Any, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, TYPE_CHECKING
 import urllib.parse
 
-from .driver import _Driver, _RawStmt
+from .driver import _Driver, _RawParams, _RawStmt
 from .http_driver import _HttpDriver
 from .sqlite_driver import _SqliteDriver
 
@@ -10,7 +10,8 @@ if TYPE_CHECKING:
     import concurrent.futures
     from .result import ResultSet, Value
 
-Stmt = Union[str, Tuple[str, Sequence["Value"]]]
+Params = Union[Sequence["Value"], Dict[str, "Value"]]
+Stmt = Union[str, Tuple[str, Params]]
 
 class Client:
     """A client for sqld that can also work with a local SQLite database."""
@@ -39,7 +40,7 @@ class Client:
         else:
             raise ValueError(f"Unsupported URL scheme: {parsed_url.scheme!r}")
 
-    async def execute(self, sql: str, params: Sequence["Value"] = ()) -> "ResultSet":
+    async def execute(self, sql: str, params: Params = ()) -> "ResultSet":
         """Execute a single SQL statement with optional parameters."""
         return (await self.batch([(sql, params)]))[0]
 
@@ -52,9 +53,14 @@ class Client:
         raw_stmts = []
         for stmt in stmts:
             if isinstance(stmt, tuple):
-                raw_stmts.append(_RawStmt(stmt[0], stmt[1]))
+                raw_params: _RawParams
+                if isinstance(stmt[1], dict):
+                    raw_params = stmt[1]
+                else:
+                    raw_params = list(stmt[1])
+                raw_stmts.append(_RawStmt(stmt[0], raw_params))
             else:
-                raw_stmts.append(_RawStmt(stmt, ()))
+                raw_stmts.append(_RawStmt(stmt, []))
         return await self._driver.batch(raw_stmts)
 
     async def close(self) -> None:

@@ -9,7 +9,7 @@ Turso][turso].
 
 ## Getting started
 
-To get started, you need `sqld` running somewhere. Then you can install this package with:
+To get started, you need [`sqld` running somewhere][sqld]. Then you can install this package with:
 
 ```
 $ pip install libsql-client
