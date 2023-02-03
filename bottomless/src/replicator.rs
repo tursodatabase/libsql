@@ -10,7 +10,7 @@ const CRC_64: crc::Crc<u64> = crc::Crc::<u64>::new(&crc::CRC_64_ECMA_182);
 
 #[derive(Debug)]
 struct Frame {
-    pgno: i32,
+    pgno: u32,
     bytes: BytesMut,
     crc: u64,
 }
@@ -203,7 +203,7 @@ impl Replicator {
     }
 
     // Writes pages to a local in-memory buffer
-    pub fn write(&mut self, pgno: i32, data: &[u8]) {
+    pub fn write(&mut self, pgno: u32, data: &[u8]) {
         let frame = self.next_frame();
         let mut crc = CRC_64.digest_with_initial(self.last_frame_crc);
         crc.update(data);
@@ -381,7 +381,7 @@ impl Replicator {
         let mut last_written_frame = 0;
         for offset in (32..len).step_by(self.page_size + 24) {
             wal_file.seek(tokio::io::SeekFrom::Start(offset)).await?;
-            let pgno = wal_file.read_i32().await?;
+            let pgno = wal_file.read_u32().await?;
             let size_after = wal_file.read_u32().await?;
             tracing::trace!("Size after transaction for {}: {}", pgno, size_after);
             wal_file

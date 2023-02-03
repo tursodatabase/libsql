@@ -645,7 +645,7 @@ dependencies = [
 
 [[package]]
 name = "bottomless"
-version = "0.1.16"
+version = "0.1.17"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -654,6 +654,7 @@ dependencies = [
  "bytes",
  "crc",
  "futures",
+ "sqld",
  "tokio",
  "tracing",
  "tracing-subscriber",

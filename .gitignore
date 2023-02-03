@@ -16,3 +16,6 @@ client_key.pem
 server_cert.pem
 server_key.pem
 Session.vim
+bottomless/test/test.db
+bottomless/test/*.bottomless.backup
+bottomless/test/db.gz

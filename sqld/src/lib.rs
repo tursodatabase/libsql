@@ -25,7 +25,7 @@ use crate::server::Server;
 mod database;
 mod error;
 mod http;
-mod libsql;
+pub mod libsql;
 mod postgres;
 mod query;
 mod query_analysis;
