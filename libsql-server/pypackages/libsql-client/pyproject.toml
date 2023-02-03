@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "libsql-client"
+version = "0.1.0"
+authors = [
+    "Jan Špaček <honza@chiselstrike.com>",
+    "ChiselStrike",
+]
+description = "sqld client for Python"
+readme = "README.md"
+license = "MIT"
+classifiers = [
+    "Operating System :: OS Independent",
+]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+aiohttp = "^3.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2"
+pytest-asyncio = "^0.20.3"
+mypy = "^0.991"
+requests = "^2.28.2"
+
+[tool.mypy]
+packages = ["libsql_client"]
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
