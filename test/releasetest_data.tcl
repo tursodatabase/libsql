@@ -417,7 +417,7 @@ proc main_script {args} {
     usage
   }
   set config [lindex $args end-1]
-  set target [lindex $args end]
+  set srcdir [lindex $args end]
 
   set opts       [list]                         ;# OPTS value
   set cflags     [expr {$bMsvc ? "-Zi" : "-g"}] ;# CFLAGS value
@@ -542,14 +542,16 @@ proc main_script {args} {
     puts {set -e}
     puts {}
     puts {if [ "$#" -ne 1 ] ; then}
-    puts {  echo "Usage: $0 <sqlite-src-dir>" }
+    puts {  echo "Usage: $0 <target>" }
     puts {  exit -1 }
     puts {fi }
-    puts {SRCDIR=$1}
+    puts "SRCDIR=\"$srcdir\""
     puts {}
     puts "TCL=\"[::tcl::pkgconfig get libdir,install]\""
 
-    puts "\$SRCDIR/configure --with-tcl=\$TCL $configOpts"
+    puts {if [ ! -f Makefile ] ; then}
+    puts "  \$SRCDIR/configure --with-tcl=\$TCL $configOpts"
+    puts {fi}
     puts {}
     puts {OPTS="      -DSQLITE_NO_SYNC=1"}
     foreach o $opts { 
@@ -558,11 +560,11 @@ proc main_script {args} {
     puts {}
     puts "CFLAGS=\"$cflags\""
     puts {}
-    puts "make $target \"CFLAGS=\$CFLAGS\" \"OPTS=\$OPTS\" $makeOpts"
+    puts "make \$1 \"CFLAGS=\$CFLAGS\" \"OPTS=\$OPTS\" $makeOpts"
   } else {
 
-    puts {set SRCDIR=%1}
-    set makecmd    "nmake /f %SRCDIR%\\Makefile.msc TOP=%SRCDIR% $target "
+    puts {set TARGET=%1}
+    set makecmd    "nmake /f %SRCDIR%\\Makefile.msc TOP=\"$srcdir\" %TARGET%"
     append makecmd "\"CFLAGS=$cflags\" \"OPTS=$opts\" $makeOpts"
 
     puts "set TMP=%CD%"

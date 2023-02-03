@@ -111,15 +111,18 @@ set R(schema) {
     config TEXT,
     filename TEXT,                -- full path to test script
     slow BOOLEAN,                 -- true if script is "slow"
-    state TEXT CHECK( state IN ('ready', 'running', 'done', 'failed') ),
+    state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
     time INTEGER,                 -- Time in ms
     output TEXT,                  -- full output of test script
-    ismake AS (config='make'),
+    priority AS ((config='make') + ((config='build')*2) + (slow*4)),
+    jobtype AS (
+      CASE WHEN config IN ('build', 'make') THEN config ELSE 'script' END
+    ),
     PRIMARY KEY(build, config, filename)
   );
 
-  CREATE INDEX i1 ON script(state, ismake);
-  CREATE INDEX i2 ON script(state, slow DESC, ismake);
+  CREATE INDEX i1 ON script(state, jobtype);
+  CREATE INDEX i2 ON script(state, priority);
 }
 #-------------------------------------------------------------------------
 
@@ -161,19 +164,64 @@ set R(build.logname) [file normalize testrunner_build.log]
 set R(info_script) [file normalize [info script]]
 set R(timeout) 10000              ;# Default busy-timeout for testrunner.db 
 set R(nJob)    [default_njob]     ;# Default number of helper processes
-set R(leaker)  ""                 ;# Name of first script to leak memory
-
 set R(patternlist) [list]
+
+# This script runs individual tests - tcl scripts or [make xyz] commands -
+# in directories named "testdir$N", where $N is an integer. This variable
+# contains a list of integers indicating the directories in use.
+#
+# This variable is accessed only via the following commands:
+#
+#   dirs_nHelper
+#     Return the number of entries currently in the list.
+#
+#   dirs_freeDir IDIR
+#     Remove value IDIR from the list. It is an error if it is not present.
+#
+#   dirs_allocDir
+#     Select a value that is not already in the list. Add it to the list
+#     and return it.
+#
+set R(dirs_in_use) [list]
+
+proc dirs_nHelper {} {
+  global R
+  llength $R(dirs_in_use)
+}
+proc dirs_freeDir {iDir} {
+  global R
+  set out [list]
+  foreach d $R(dirs_in_use) {
+    if {$iDir!=$d} { lappend out $d }
+  }
+  if {[llength $out]!=[llength $R(dirs_in_use)]-1} {
+    error "dirs_freeDir could not find $iDir"
+  }
+  set R(dirs_in_use) $out
+}
+proc dirs_allocDir {} {
+  global R
+  array set inuse [list]
+  foreach d $R(dirs_in_use) {
+    set inuse($d) 1
+  }
+  for {set iRet 0} {[info exists inuse($iRet)]} {incr iRet} { }
+  lappend R(dirs_in_use) $iRet
+  return $iRet
+}
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
     set R(platform) osx
+    set R(make)     make.sh
   }
   *linux* {
     set R(platform) linux
+    set R(make)     make.sh
   }
   *win* {
     set R(platform) win
+    set R(make)     make.bat
   }
   default {
     error "cannot determine platform!"
@@ -244,13 +292,14 @@ proc launch_another_build {} {
     foreach {dirname b} $build {}
 
     puts "Launching build \"$b\" in directory $dirname..."
-    set srcdir [file dirname [file dirname $R(info_script)]]
+    set target coretestprogs
+    if {$b=="User-Auth"}  { set target testfixture }
 
     incr R(nHelperRunning)
 
     set pwd [pwd]
     cd $dirname
-    set fd [open "|bash build.sh $srcdir 2>@1"]
+    set fd [open "|bash $R(make) $target 2>@1"]
     cd $pwd
 
     set O($fd) ""
@@ -263,23 +312,20 @@ if {[lindex $argv 0]=="build"} {
 
   # Load configuration data.
   source [file join [file dirname [info script]] testrunner_data.tcl]
+  set srcdir [file dirname [file dirname $R(info_script)]]
 
   foreach b [trd_builds $R(platform)] {
     set dirname [build_to_dirname $b]
     create_or_clear_dir $dirname
 
-    set target "testprogs"
-    if {$b=="Device-One"} { set target coretestprogs }
-    if {$b=="User-Auth"}  { set target testfixture }
+    set     cmd [info nameofexec]
+    lappend cmd [file join [file dirname $R(info_script)] releasetest_data.tcl]
+    if {$R(platform)=="win"} { lappend $cmd -msvc }
+    lappend cmd script $b $srcdir
 
-    set cmd [list \
-        [info nameofexec] \
-        [file join [file dirname $R(info_script)] releasetest_data.tcl] \
-        script $b $target
-    ]
     set script [exec {*}$cmd]
 
-    set fd [open [file join $dirname build.sh] w]
+    set fd [open [file join $dirname $R(make)] w]
     puts $fd $script
     close $fd
 
@@ -361,6 +407,13 @@ proc testset_patternlist {patternlist} {
       foreach c [trd_configs $platform $b] {
         testset_append testset $b $c $patternlist
       }
+
+      if {[llength $patternlist]==0 || $b=="User-Auth"} {
+        set target testfixture
+      } else {
+        set target coretestprogs
+      }
+      lappend testset [list $b build $target]
     }
 
     if {[llength $patternlist]==0} {
@@ -376,18 +429,18 @@ proc testset_patternlist {patternlist} {
     set clist [trd_all_configs]
     set patternlist [lrange $patternlist 1 end]
     foreach c $clist {
-      testset_append testset Default $c $patternlist
+      testset_append testset "" $c $patternlist
     }
 
   } elseif {[info exists ::testspec($first)]} {
     set clist $first
     set patternlist [lrange $patternlist 1 end]
 
-    testset_append testset Default $first [lrange $patternlist 1 end]
+    testset_append testset "" $first [lrange $patternlist 1 end]
   } elseif { [llength $patternlist]==0 } {
-    testset_append testset Default veryquick $patternlist
+    testset_append testset "" veryquick $patternlist
   } else {
-    testset_append testset Default full $patternlist
+    testset_append testset "" full $patternlist
   }
 
   set testset
@@ -404,7 +457,7 @@ proc testset_append {listvar build config patternlist} {
       set bMatch 0
       foreach p $patternlist {
         if {[string match $p [file tail $f]]} {
-          set bMatch
+          set bMatch 1
           break
         }
       }
@@ -442,16 +495,10 @@ proc r_write_db {tcl} {
 #
 proc r_get_next_job {iJob} {
 
-  switch -- [expr $iJob%3] {
-    0 {
-      set orderby "ORDER BY ismake ASC"
-    }
-    1 {
-      set orderby "ORDER BY slow DESC, ismake ASC"
-    }
-    2 {
-      set orderby "ORDER BY ismake DESC"
-    }
+  if {($iJob%2)} {
+    set orderby "ORDER BY priority ASC"
+  } else {
+    set orderby "ORDER BY priority DESC"
   }
 
   r_write_db {
@@ -496,7 +543,7 @@ proc make_new_testset {} {
       foreach {b c s} $t {}
       set slow 0
 
-      if {$c!="make"} {
+      if {$c!="make" && $c!="build"} {
         set fd [open $s]
         for {set ii 0} {$ii<100 && ![eof $fd]} {incr ii} {
           set line [gets $fd]
@@ -515,9 +562,14 @@ proc make_new_testset {} {
         set c "default"
       }
 
+      set state ready
+      if {$b!="" && $c!="build"} {
+        set state ""
+      }
+
       db eval { 
         INSERT INTO script(build, config, filename, slow, state) 
-            VALUES ($b, $c, $s, $slow, 'ready') 
+            VALUES ($b, $c, $s, $slow, $state) 
       }
     }
   }
@@ -550,9 +602,15 @@ proc script_input_ready {fd iJob b c f} {
         UPDATE script SET output = $output, state=$state, time=$tm
         WHERE (build, config, filename) = ($b, $c, $f)
       }
+      if {$state=="done" && $c=="build"} {
+        db eval {
+          UPDATE script SET state = 'ready' WHERE (build, state)==($b, '')
+        }
+      }
     }
 
-    launch_another_job $iJob
+    dirs_freeDir $iJob
+    launch_some_jobs
     incr ::wakeup
   } else {
     set rc [catch { gets $fd line } res]
@@ -585,16 +643,38 @@ proc launch_another_job {iJob} {
   set T($iJob) [clock_milliseconds]
   
   set job [r_get_next_job $iJob]
-  if {$job==""} return
+  if {$job==""} { return 0 }
 
   foreach {b c f} $job {}
 
-  if {$c=="make"} {
+  if {$c=="build"} {
+    set srcdir [file dirname [file dirname $R(info_script)]]
+    set builddir [build_to_dirname $b]
+    create_or_clear_dir $builddir
+
+    set     cmd [info nameofexec]
+    lappend cmd [file join [file dirname $R(info_script)] releasetest_data.tcl]
+    if {$R(platform)=="win"} { lappend $cmd -msvc }
+    lappend cmd script $b $srcdir
+
+    set script [exec {*}$cmd]
+    set fd [open [file join $builddir $R(make)] w]
+    puts $fd $script
+    close $fd
+
+    puts "Launching build \"$b\" in directory $builddir..."
+    set target coretestprogs
+    if {$b=="User-Auth"}  { set target testfixture }
+
+    set cmd "bash $R(make) $target"
+    set dir $builddir
+
+  } elseif {$c=="make"} {
     set builddir [build_to_dirname $b]
     copy_dir $builddir $dir
-    set cmd "make $f"
+    set cmd "bash $R(make) $f"
   } else {
-    if {$b=="Default"} {
+    if {$b==""} {
       set testfixture [info nameofexec]
     } else {
       set testfixture [
@@ -619,6 +699,8 @@ proc launch_another_job {iJob} {
   fileevent $fd readable [list script_input_ready $fd $iJob $b $c $f]
   incr R(nHelperRunning) +1
   unset -nocomplain ::env(OMIT_MISUSE)
+
+  return 1
 }
 
 proc one_line_report {} {
@@ -628,29 +710,45 @@ proc one_line_report {} {
   set tm [format "%.2f" [expr $tm/1000.0]]
 
   foreach s {ready running done failed} {
-    set v($s,0) 0
-    set v($s,1) 0
+    set v($s,build) 0
+    set v($s,make) 0
+    set v($s,script) 0
   }
-  set t(0) 0
-  set t(1) 0
 
   r_write_db {
     db eval {
-      SELECT state, ismake, count(*) AS cnt 
+      SELECT state, jobtype, count(*) AS cnt 
       FROM script 
-      GROUP BY state, ismake
+      GROUP BY state, jobtype
     } {
-      set v($state,$ismake) $cnt
-      incr t($ismake) $cnt
+      set v($state,$jobtype) $cnt
+      if {[info exists t($jobtype)]} {
+        incr t($jobtype) $cnt
+      } else {
+        set t($jobtype) $cnt
+      }
     }
   }
 
-  set d0 [expr $v(done,0)+$v(failed,0)]
-  set d1 [expr $v(done,1)+$v(failed,1)]
+  set text ""
+  foreach j [array names t] {
+    set fin [expr $v(done,$j) + $v(failed,$j)]
+    lappend text "$j: ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
+  }
 
-  puts "${tm}s: scripts: ($d0/$t(0)) $v(failed,0) failed, $v(running,0) running, makes: ($d1/$t(1)) $v(failed,1) failed, $v(running,1) running"
-
+  puts "${tm}s: [join $text { || }]"
   after 1000 one_line_report
+}
+
+proc launch_some_jobs {} {
+  global R
+  while {[dirs_nHelper]<$R(nJob)} {
+    set iDir [dirs_allocDir]
+    if {0==[launch_another_job $iDir]} {
+      dirs_freeDir $iDir
+      break;
+    }
+  }
 }
 
 proc run_testset {} {
@@ -660,9 +758,8 @@ proc run_testset {} {
   set R(starttime) [clock_milliseconds]
   set R(log) [open $R(logname) w]
 
-  for {set ii 0} {$ii<$R(nJob)} {incr ii} {
-    launch_another_job $ii
-  }
+  launch_some_jobs
+    # launch_another_job $ii
 
   one_line_report
   while {$R(nHelperRunning)>0} {

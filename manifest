@@ -1,5 +1,5 @@
-C Avoid\susing\sTcl\scommand\s[clock]\sin\stestrunner.tcl.
-D 2023-02-03T11:32:51.147
+C Have\stestrunner.tcl\srun\svarious\sbuilds\sas\spart\sof\sthe\s'release'\scommand.
+D 2023-02-03T18:47:00.141
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1402,7 +1402,7 @@ F test/recover.test fd5199f928757cb308661b5fdca1abc19398a798ff7f24b57c3071e9f8e0
 F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
 F test/regexp2.test 55ed41da802b0e284ac7e2fe944be3948f93ff25abbca0361a609acfed1368b5
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
-F test/releasetest_data.tcl 0db8aee0c348090fd06da47020ab4ed8ec692e0723427b2f3947d4dfb806f3b0
+F test/releasetest_data.tcl 4094c9fc5c9ac544014fa3c66c791bde7d95874b26dd0fd1c058124638ea9001
 F test/resetdb.test 54c06f18bc832ac6d6319e5ab23d5c8dd49fdbeec7c696d791682a8006bd5fc3
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test 3ef7b264598b3292be0cdb028e4acb7524c5fd409b33b78449f894dfd68db334
@@ -1565,8 +1565,8 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 8d54d40a55e12554b4509bc12078b201b233c8e842a7543629094a21b1ba956d
-F test/testrunner.tcl ef21c2f377e4a6648252afbdd7a330256fa075eb3f1f12a4af4fffabb132cdef
-F test/testrunner_data.tcl 38e2f2b2eb3033b58b4f7428affb5d627719e97ee166c8b95296c39ffca6c849
+F test/testrunner.tcl 733f7767c0588ad0ced09c75b6a358dd610f0d6d26750be2c5323363bba124d2
+F test/testrunner_data.tcl ec3b2db9f00746b641f2e010bc4e3504f2aff60983d8786a363f66ad40e0483e
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -2047,8 +2047,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 69d934a1bfad86f3f60dab146db539645f5735f1bdb07dfe3a3d88828a03390b
-R 2c8cdf901157932d2f3f5be2f780ac84
+P b2faf9289f6fbbcd4491e1b063da731b35aeed9ff1fc97f64798e99cac847b4a
+R da71c094a7c065812b6c827874cf66e7
 U dan
-Z 4428f02730b2f2d17ac513e2b892f834
+Z bc53011b32b3964f996ff997c59940a1
 # Remove this line to create a well-formed Fossil manifest.

@@ -55,7 +55,7 @@ namespace eval trd {
   set extra(linux.Sanitize)               {fuzztest sourcetest}
   set extra(linux.Default)                {fuzztest sourcetest threadtest}
 
-  set extra(osx.Default)                  {fuzztest threadtest}
+  set extra(osx.Apple)                    {fuzztest threadtest}
   set extra(osx.Have-Not)                 {fuzztest sourcetest}
   set extra(osx.Locking-Style)            {mptest fuzztest sourcetest}
 
