@@ -59,11 +59,11 @@ namespace eval trd {
   set extra(osx.Have-Not)                 {fuzztest sourcetest}
   set extra(osx.Locking-Style)            {mptest fuzztest sourcetest}
 
-  # set extra(win.Default)                  mptest
-  # set extra(win.Stdcall)                  {fuzztest sourcetest}
-  # set extra(win.Windows-Memdebug)         {fuzztest sourcetest}
-  # set extra(win.Windows-Win32Heap)        {fuzztest sourcetest}
-  # set extra(win.Have-Not)                 {fuzztest sourcetest}
+  set extra(win.Default)                  mptest
+  set extra(win.Stdcall)                  {fuzztest sourcetest}
+  set extra(win.Windows-Memdebug)         {fuzztest sourcetest}
+  set extra(win.Windows-Win32Heap)        {fuzztest sourcetest}
+  set extra(win.Have-Not)                 {fuzztest sourcetest}
 
   # The following mirrors the set of test suites invoked by "all.test".
   #

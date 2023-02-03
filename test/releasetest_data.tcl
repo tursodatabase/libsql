@@ -563,8 +563,11 @@ proc main_script {args} {
     puts "make \$1 \"CFLAGS=\$CFLAGS\" \"OPTS=\$OPTS\" $makeOpts"
   } else {
 
+    set srcdir [file nativename [file normalize $srcdir]]
+    # set srcdir [string map [list "\\" "\\\\"] $srcdir]
+
     puts {set TARGET=%1}
-    set makecmd    "nmake /f %SRCDIR%\\Makefile.msc TOP=\"$srcdir\" %TARGET%"
+    set makecmd    "nmake /f $srcdir\\Makefile.msc TOP=\"$srcdir\" %TARGET% "
     append makecmd "\"CFLAGS=$cflags\" \"OPTS=$opts\" $makeOpts"
 
     puts "set TMP=%CD%"

@@ -214,14 +214,17 @@ switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
     set R(platform) osx
     set R(make)     make.sh
+    set R(makecmd)  "bash make.sh"
   }
   *linux* {
     set R(platform) linux
     set R(make)     make.sh
+    set R(makecmd)  "bash make.sh"
   }
   *win* {
     set R(platform) win
     set R(make)     make.bat
+    set R(makecmd)     make.bat
   }
   default {
     error "cannot determine platform!"
@@ -654,8 +657,9 @@ proc launch_another_job {iJob} {
 
     set     cmd [info nameofexec]
     lappend cmd [file join [file dirname $R(info_script)] releasetest_data.tcl]
-    if {$R(platform)=="win"} { lappend $cmd -msvc }
-    lappend cmd script $b $srcdir
+    lappend cmd script
+    if {$R(platform)=="win"} { lappend cmd -msvc }
+    lappend cmd $b $srcdir
 
     set script [exec {*}$cmd]
     set fd [open [file join $builddir $R(make)] w]
@@ -666,20 +670,20 @@ proc launch_another_job {iJob} {
     set target coretestprogs
     if {$b=="User-Auth"}  { set target testfixture }
 
-    set cmd "bash $R(make) $target"
+    set cmd "$R(makecmd) $target"
     set dir $builddir
 
   } elseif {$c=="make"} {
     set builddir [build_to_dirname $b]
     copy_dir $builddir $dir
-    set cmd "bash $R(make) $f"
+    set cmd "$R(makecmd) $f"
   } else {
     if {$b==""} {
       set testfixture [info nameofexec]
     } else {
-      set testfixture [
-        file normalize [file join [build_to_dirname $b] testfixture]
-      ]
+      set tail testfixture
+      if {$R(platform)=="win"} { set tail testfixture.exe }
+      set testfixture [file normalize [file join [build_to_dirname $b] $tail]]
     }
 
     if {$c=="valgrind"} {
