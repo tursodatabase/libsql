@@ -23,6 +23,14 @@ async def test_batch(url):
         assert result_sets[1].rows[0][1] == "one"
 
 @pytest.mark.asyncio
+async def test_transaction(url):
+    async with libsql_client.Client(url) as client:
+        result_sets = await client.transaction(["SELECT 42", "SELECT 'two'"])
+        assert len(result_sets) == 2
+        assert result_sets[0].rows[0][0] == 42
+        assert result_sets[1].rows[0][0] == "two"
+
+@pytest.mark.asyncio
 async def test_error(url):
     async with libsql_client.Client(url) as client:
         with pytest.raises(libsql_client.ClientResponseError) as excinfo:
