@@ -133,12 +133,15 @@ pub extern "C" fn xClose(
 ) -> i32 {
     tracing::debug!("Closing wal");
     let orig_methods = get_orig_methods(wal);
-    if !is_local() {
-        let _replicator_box =
-            unsafe { Box::from_raw((*wal).pMethodsData as *mut replicator::Context) };
+    let methods_data = unsafe { (*wal).pMethodsData as *mut replicator::Context };
+    let rc = unsafe { (orig_methods.xClose.unwrap())(wal, db, sync_flags, n_buf, z_buf) };
+    if rc != ffi::SQLITE_OK {
+        return rc;
     }
-
-    unsafe { (orig_methods.xClose.unwrap())(wal, db, sync_flags, n_buf, z_buf) }
+    if !is_local() && !methods_data.is_null() {
+        let _box = unsafe { Box::from_raw(methods_data) };
+    }
+    rc
 }
 
 pub extern "C" fn xLimit(wal: *mut Wal, limit: i64) {
