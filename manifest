@@ -1,5 +1,5 @@
-C Improved\sand\ssimplified\slogic\sfor\sresolving\sthe\svarious\saliases\sof\sthe\sschema\ntable.
-D 2023-02-02T16:30:32.865
+C Improved\sdetection\sof\sinvalid\scommand-line\sarguments\sto\sthe\sshowdb\sand\nshowwal\sdebugging\sutility\sprograms.
+D 2023-02-03T12:03:56.008
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1995,12 +1995,12 @@ F tool/replace.tcl 937c931ad560688e85bdd6258bdc754371bb1e2732e1fb28ef441e44c9228
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 72239e95e1d05a2941c6a1d86b4d857812be4dadd71f24e381db572f350fc172
+F tool/showdb.c 495a43b759ae37a0c4561a557a70090cb79b8c1601204e5a77e8b5360e65a954
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
-F tool/showwal.c 0253c187ae16fdae9cde89e63e1dfcd3bb35e5416d066415f99e2f8cac6ab03d
+F tool/showwal.c 4699048f68b6dd7b451011abfff404b8890d5a0b7dab78d2ad50d018116239d5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 1b5be34c6223cb1af06da2a10fb77863eb869b1962d055820b0a11cf2336ab45
 F tool/speed-check.sh 9b27e158330a6587e92214b2344cc6fadde514996c0648fc0de7955ef7a79d77
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7a0112b235d97cb68c92b967bf2218b90258c243ec2b638aaac142392873126
-R d966307a825cea9d3dd0900c140f2d28
+P 5c19491c36b9e2128430e4f153bdef48c3f7b6541d44f36044e8fc2921ecc830
+R ffa507b26ffffe21cc5887aba257a189
 U drh
-Z 264a6d022d54232fa46c723148a1aaba
+Z 94a99f30183c2c51b7133395ab993677
 # Remove this line to create a well-formed Fossil manifest.
