@@ -19,7 +19,7 @@ class _HttpDriver(_Driver):
 
         async with await self._session.post("/", json=req_body) as resp:
             resp.raise_for_status()
-            resp_body = await resp.json(content_type=None)
+            resp_body = await resp.json()
 
         result_sets = [
             _decode_result_set(result_set_json)
