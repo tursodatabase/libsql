@@ -538,7 +538,7 @@ proc script_input_ready {fd iJob b c f} {
       set state "failed" 
     }
 
-    set tm [expr [clock milliseconds] - $T($iJob)]
+    set tm [expr [clock_milliseconds] - $T($iJob)]
 
     puts $R(log) "### $b ### $c ### $f ${tm}ms ($state)"
     puts $R(log) [string trim $O($iJob)]
@@ -582,7 +582,7 @@ proc launch_another_job {iJob} {
   create_or_clear_dir $dir
 
   set O($iJob) ""
-  set T($iJob) [clock milliseconds]
+  set T($iJob) [clock_milliseconds]
   
   set job [r_get_next_job $iJob]
   if {$job==""} return
@@ -624,7 +624,7 @@ proc launch_another_job {iJob} {
 proc one_line_report {} {
   global R
 
-  set tm [expr [clock milliseconds] - $R(starttime)]
+  set tm [expr [clock_milliseconds] - $R(starttime)]
   set tm [format "%.2f" [expr $tm/1000.0]]
 
   foreach s {ready running done failed} {
@@ -657,7 +657,7 @@ proc run_testset {} {
   global R
   set ii 0
 
-  set R(starttime) [clock milliseconds]
+  set R(starttime) [clock_milliseconds]
   set R(log) [open $R(logname) w]
 
   for {set ii 0} {$ii<$R(nJob)} {incr ii} {
