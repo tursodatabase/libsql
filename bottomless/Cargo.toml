@@ -4,7 +4,8 @@ version = "0.1.17"
 edition = "2021"
 license = "MIT"
 keywords = ["libsql", "sqlite", "s3", "wal", "replication"]
-repository = "https://github.com/libsql/bottomless"
+repository = "https://github.com/libsql/sqld"
+readme = "bottomless/README.md"
 description = "Bottomless replication for libSQL"
 
 [dependencies]
