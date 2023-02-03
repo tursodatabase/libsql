@@ -26,3 +26,12 @@ async def test_blob(url):
             result_set = await client.execute("SELECT length(?)", [blob])
             assert result_set.rows[0][0] == l
 
+@pytest.mark.asyncio
+async def test_named(url):
+    async with libsql_client.Client(url) as client:
+        result_set = await client.execute("SELECT :a, @b, $c", {":a": 42, "@b": 0.5, "$c": "brontosaurus"})
+        row = result_set.rows[0]
+        assert row[0] == 42
+        assert row[1] == 0.5
+        assert row[2] == "brontosaurus"
+

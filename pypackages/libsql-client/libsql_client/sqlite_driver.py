@@ -1,4 +1,4 @@
-from typing import List, Optional, TYPE_CHECKING
+from typing import Any, List, Optional, TYPE_CHECKING
 import asyncio
 import sqlite3
 
@@ -36,7 +36,16 @@ def _batch(conn: sqlite3.Connection, stmts: List[_RawStmt]) -> List[ResultSet]:
     result_sets = []
     for stmt in stmts:
         try:
-            cursor = conn.execute(stmt.sql, stmt.params)
+            sql_params: Any
+            if isinstance(stmt.params, dict):
+                sql_params = {}
+                for name, value in stmt.params.items():
+                    if name[:1] not in (":", "@", "$"):
+                        raise ValueError(f"Named parameters should start with :, @ or $, got {name!r}")
+                    sql_params[name[1:]] = value
+            else:
+                sql_params = stmt.params
+            cursor = conn.execute(stmt.sql, sql_params)
         except sqlite3.DatabaseError as e:
             raise ClientResponseError(str(e))
         columns = tuple(descr[0] for descr in cursor.description)

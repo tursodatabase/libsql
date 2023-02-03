@@ -31,9 +31,15 @@ class _HttpDriver(_Driver):
         await self._session.close()
 
 def _encode_stmt(stmt: _RawStmt) -> Any:
+    params_json: Any
+    if isinstance(stmt.params, dict):
+        params_json = {name: _encode_value(value) for name, value in stmt.params.items()}
+    else:
+        params_json = [_encode_value(value) for value in stmt.params]
+
     return {
         "q": stmt.sql,
-        "params": [_encode_value(value) for value in stmt.params],
+        "params": params_json,
     }
 
 def _encode_value(value: Value) -> Any:
