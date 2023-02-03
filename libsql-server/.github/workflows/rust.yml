@@ -87,6 +87,8 @@ jobs:
     runs-on: ubuntu-latest
     name: Run Tests
     steps:
+    - name: Make some room available
+      run: "sudo rm -rf /usr/local/lib/android && sudo rm -rf /usr/share/dotnet"
     - name: Install Ruby
       uses: ruby/setup-ruby@v1
       with:
