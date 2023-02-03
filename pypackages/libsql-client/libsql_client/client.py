@@ -63,6 +63,10 @@ class Client:
                 raw_stmts.append(_RawStmt(stmt, []))
         return await self._driver.batch(raw_stmts)
 
+    async def transaction(self, stmts: Sequence[Stmt]) -> List["ResultSet"]:
+        """Execute a batch of SQL statements between BEGIN and COMMIT."""
+        return (await self.batch(["BEGIN"] + list(stmts) + ["COMMIT"]))[1:-1]
+
     async def close(self) -> None:
         """Close the client and release resources."""
         await self._driver.close()

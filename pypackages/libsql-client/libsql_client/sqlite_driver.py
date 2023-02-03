@@ -48,7 +48,11 @@ def _batch(conn: sqlite3.Connection, stmts: List[_RawStmt]) -> List[ResultSet]:
             cursor = conn.execute(stmt.sql, sql_params)
         except sqlite3.DatabaseError as e:
             raise ClientResponseError(str(e))
-        columns = tuple(descr[0] for descr in cursor.description)
+
+        if cursor.description is not None:
+            columns = tuple(descr[0] for descr in cursor.description)
+        else:
+            columns = ()
         column_idxs = {name: idx for (idx, name) in enumerate(columns)}
         rows = [Row(column_idxs, row) for row in cursor.fetchall()]
         result_sets.append(ResultSet(columns, rows))
