@@ -682,7 +682,7 @@ proc launch_another_job {iJob} {
 
     set     cmd [info nameofexec]
     lappend cmd [file join $testdir releasetest_data.tcl]
-    lappend cmd script
+    lappend cmd trscript
     if {$TRG(platform)=="win"} { lappend cmd -msvc }
     lappend cmd $b $srcdir
 
