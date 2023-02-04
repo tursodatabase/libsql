@@ -17,6 +17,7 @@ proc usage {} {
   puts stderr [string trim [subst -nocommands {
 Usage: 
     $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
+    $a0 PERMUTATION FILE
     $a0 njob ?NJOB?
     $a0 status
 
@@ -39,6 +40,10 @@ least one specified pattern are run.
 If no PATTERN arguments are present, then various fuzztest, threadtest
 and other tests are run as part of the "release" permutation. These are
 omitted if any PATTERN arguments are specified on the command line.
+
+If a PERMUTATION is specified and is followed by the path to a Tcl script
+instead of a list of patterns, then that single Tcl test script is run
+with the specified permutation.
 
 The "status" and "njob" commands are designed to be run from the same
 directory as a running testrunner.tcl script that is running tests. The
