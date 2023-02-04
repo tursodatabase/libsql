@@ -14,7 +14,7 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
-ifcapable !rbu { finish_test ; return }
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbudor
 
 set bigA [string repeat a 5000]

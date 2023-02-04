@@ -15,6 +15,15 @@ if {![info exists testdir]} {
 }
 source $testdir/tester.tcl
 
+proc if_no_rbu_support {tcl} {
+  set bOk 1
+  ifcapable !rbu { set bOk 0 }
+  if {[permutation]=="journaltest"} { set bOk 0 }
+  if {$bOk==0} {
+    uplevel $tcl
+  }
+}
+
 proc check_prestep_state {target state} {
   set oal_exists [file exists $target-oal]
   set wal_exists [file exists $target-wal]

@@ -461,8 +461,6 @@ proc testset_patternlist {patternlist} {
 
   } elseif {[info exists ::testspec($first)]} {
     set clist $first
-    set patternlist [lrange $patternlist 1 end]
-
     testset_append testset "" $first [lrange $patternlist 1 end]
   } elseif { [llength $patternlist]==0 } {
     testset_append testset "" veryquick $patternlist

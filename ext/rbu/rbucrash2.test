@@ -11,14 +11,8 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
-ifcapable !rbu { finish_test ; return }
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbucrash2
-
-db close
-forcedelete test.db-oal rbu.db
-sqlite3_shutdown
-sqlite3_config_uri 1
-reset_db
 
 # Set up a target database and an rbu update database. The target
 # db is the usual "test.db", the rbu db is "test.db2".

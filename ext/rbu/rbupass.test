@@ -11,7 +11,7 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
-ifcapable !rbu { finish_test ; return }
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbupass
 
 if {[info commands register_demovfs]==""} {
@@ -20,22 +20,22 @@ if {[info commands register_demovfs]==""} {
 }
 
 db close
-sqlite3_shutdown
-sqlite3_config_uri 1
 
 register_demovfs
 sqlite3rbu_create_vfs myvfs demo
 
-sqlite3 db file:test.db?vfs=myvfs
+sqlite3 db file:test.db?vfs=myvfs -uri 1
 do_execsql_test 1.0 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
   INSERT INTO t1 VALUES(1, 2);
   SELECT * FROM t1;
 } {1 2}
 
-do_execsql_test 1.1 {
-  PRAGMA journal_mode = wal;
-} {delete}
+if {[permutation]!="inmemory_journal"} {
+  do_execsql_test 1.1 {
+    PRAGMA journal_mode = wal;
+  } {delete}
+}
 
 do_execsql_test 1.2 {
   SELECT * FROM t1;
