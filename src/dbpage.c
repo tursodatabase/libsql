@@ -344,13 +344,13 @@ static int dbpageUpdate(
     goto update_fail;
   }
   zSchema = (const char*)sqlite3_value_text(argv[4]);
-  iDb = zSchema ? sqlite3FindDbName(pTab->db, zSchema) : -1;
-  if( iDb<0 ){
+  iDb = ALWAYS(zSchema) ? sqlite3FindDbName(pTab->db, zSchema) : -1;
+  if( NEVER(iDb<0) ){
     zErr = "no such schema";
     goto update_fail;
   }
   pBt = pTab->db->aDb[iDb].pBt;
-  if( pgno<1 || pBt==0 || pgno>sqlite3BtreeLastPage(pBt) ){
+  if( NEVER(pgno<1) || NEVER(pBt==0) || NEVER(pgno>sqlite3BtreeLastPage(pBt)) ){
     zErr = "bad page number";
     goto update_fail;
   }

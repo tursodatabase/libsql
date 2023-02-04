@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\sthat\scan\sbe\sfalse\sin\ssome\svery\srare\scases.\ndbsqlfuzz\s2274a23c85a93b870f7eb12fe686073da01abc33
-D 2023-02-04T20:07:52.995
+C Add\sALWAYS()\sand\sNEVER()\smacros\sto\sunreachable\sbranchs\sin\ssqlite_dbpage.
+D 2023-02-04T20:53:31.889
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
 F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
-F src/dbpage.c ddc9df5c0d51dff21d610ba0e59dbf918148d966c034bcdfb9651d1832282828
+F src/dbpage.c a7f93c8a849ecdc92c249a9058e23c046a5ee8c70955f33981412177fc2f9225
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
 F src/expr.c 204af6a83c191f5ac19ec4af6ecc546f188cc2dd1c76fc5280982f710ec4b9c4
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c3c587500ac5a3758008f0acb9432bd3bc6f0f31bacd5615f46280e55842982
-R 8cf815638e386ddde1401eb009f5d3e4
+P a4eb0b0d837291590958a5f292f41e80e0f722668a060aebfed5ea36ea176332
+R 209c8556f0975e3b9220a5e1d6dffc37
 U drh
-Z 221a67f438dc59c58979db2b65b9ccb0
+Z bec012735e0de7ece623a38f502fd450
 # Remove this line to create a well-formed Fossil manifest.
