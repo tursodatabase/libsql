@@ -6267,7 +6267,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 # define DIRECT_MODE isDirectMode
 #endif
 
-  if( !pPager->changeCountDone && ALWAYS(pPager->dbSize>0) ){
+  if( !pPager->changeCountDone && pPager->dbSize>0 ){
     PgHdr *pPgHdr;                /* Reference to page 1 */
 
     assert( !pPager->tempFile && isOpen(pPager->fd) );
