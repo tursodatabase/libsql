@@ -1,5 +1,5 @@
-C Fixes\sfor\stestrunner.tcl\son\swindows.
-D 2023-02-03T21:18:58.491
+C Add\stestrunner.tcl\s"njob"\sand\s"status"\scommands.
+D 2023-02-04T18:47:59.581
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1565,7 +1565,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 8d54d40a55e12554b4509bc12078b201b233c8e842a7543629094a21b1ba956d
-F test/testrunner.tcl bbf75e9eb7d0ff04e875d43c06b15a3e07b17929d59e4fcc9c9de5639b876b9e
+F test/testrunner.tcl 9a62899117499f3620c55c4467144b5ee8a94084ad68584bcfdcdb8342dcf040
 F test/testrunner_data.tcl 8169c68654ac8906833b8a6aadca973358a441ebf88270dd05c153e5f96f76b8
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2047,8 +2047,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba2fae30a81e2574f13a7351c9f843b8c2c7d2c93fcd71fb2de98f5b34f3e109
-R b827d3bd516615bc8be9863017fe4046
+P b98e19fc41cb7f89ae9e063b8af414bc01d14833a14de5d646069483ef0127b2
+R 15f5f4eb3cdcecb5727c7e6a221eaddd
 U dan
-Z 9af5347e53bdefc802d4137f874271f5
+Z 0f49a279b4d6d6c60549cf703f29c747
 # Remove this line to create a well-formed Fossil manifest.

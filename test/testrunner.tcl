@@ -1,128 +1,53 @@
 
-source [file join [file dirname [info script]] testrunner_data.tcl]
+set dir [pwd]
+set testdir [file dirname $argv0]
+set saved $argv
+set argv [list]
+source [file join $testdir testrunner_data.tcl]
+source [file join $testdir permutations.test]
+set argv $saved
+cd $dir
 
 #-------------------------------------------------------------------------
 # Usage:
 #
 proc usage {} {
-  set a0 testrunner.tcl
+  set a0 [file tail $::argv0]
 
-  set ::argv [list]
-  uplevel [list source $::testdir/permutations.test]
+  puts stderr [string trim [subst -nocommands {
+Usage: 
+    $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?
+    $a0 njob ?NJOB?
+    $a0 status
 
-  puts stderr "Usage: $a0 ?SWITCHES? ?PERMUTATION? ?PATTERNS?" 
-  puts stderr ""
-  puts stderr "where SWITCHES are:"
-  puts stderr "    --jobs NUMBER-OF-JOBS"
-  puts stderr ""
-  puts stderr "available PERMUTATION values are:"
-  set ii 0
-  foreach name [lsort [array names ::testspec]] {
-    if {($ii % 3)==0} { puts -nonewline stderr "  " }
-    puts -nonewline stderr [format "% -22s" $name]
-    if {($ii % 3)==2} { puts stderr "" }
-    incr ii
-  }
-  puts stderr ""
-  puts stderr ""
-  puts stderr "Examples:"
-  puts stderr " 1) Run the veryquick tests:"
-  puts stderr "      $a0"
-  puts stderr " 2) Run all test scripts in the source tree:"
-  puts stderr "      $a0 full"
-  puts stderr " 2) Run the 'memsubsys1' permutation:"
-  puts stderr "      $a0 memsubsys1"
-  puts stderr " 3) Run all permutations usually run by \[make fulltest\]"
-  puts stderr "      $a0 release"
-  puts stderr " 4) Run all scripts that match the pattern 'select%':"
-  puts stderr "      $a0 select%"
-  puts stderr "      $a0 all select%"
-  puts stderr "      $a0 full select%"
-  puts stderr " 5) Run all scripts that are part of the veryquick permutation and match the pattern 'select%':"
-  puts stderr "      $a0 veryquick select%"
-  puts stderr " 6) Run the 'memsubsys1' permutation, but just those scripts that match 'window%':"
-  puts stderr "      $a0 memsubsys1 window%"
-  puts stderr " 7) Run all the permutations, but only the scripts that match either 'fts5%' or 'rtree%':"
-  puts stderr "      $a0 release fts5% rtree%"
+  where SWITCHES are:
+    --jobs NUMBER-OF-JOBS
+
+Interesting values for PERMUTATION are:
+
+    veryquick - a fast subset of the tcl test scripts. This is the default.
+    full      - all tcl test scripts.
+    all       - all tcl test scripts, plus a subset of test scripts rerun
+                with various permutations.
+    release   - full release test with various builds.
+
+If no PATTERN arguments are present, all tests specified by the PERMUTATION
+are run. Otherwise, each pattern is interpreted as a glob pattern. Only
+those tcl tests for which the final component of the filename matches at
+least one specified pattern are run.
+
+If no PATTERN arguments are present, then various fuzztest, threadtest
+and other tests are run as part of the "release" permutation. These are
+omitted if any PATTERN arguments are specified on the command line.
+
+The "status" and "njob" commands are designed to be run from the same
+directory as a running testrunner.tcl script that is running tests. The
+"status" command prints a report describing the current state and progress 
+of the tests. The "njob" command may be used to query or modify the number
+of sub-processes the test script uses to run tests.
+  }]]
 
   exit 1
-}
-#-------------------------------------------------------------------------
-
-
-# If this script is invoked using:
-#
-#   testrunner.tcl helper <directory> <permutation> <script>
-#
-if {[lindex $argv 0]=="helper"} {
-  if {[llength $argv]!=3} { error "BAD ARGS" }
-
-  set permutation [lindex $argv 1]
-  set script [file normalize [lindex $argv 2]]
-
-  set ::argv [list]
-
-  if {$permutation=="full"} {
-
-    set testdir [file dirname $argv0]
-    source $::testdir/tester.tcl
-    unset -nocomplain ::G(isquick)
-    reset_db
-
-  } elseif {$permutation!="default" && $permutation!=""} {
-    set testdir [file dirname $argv0]
-    source $::testdir/permutations.test
-
-    if {[info exists ::testspec($permutation)]==0} {
-      error "no such permutation: $permutation"
-    }
-
-    array set O $::testspec($permutation)
-    set ::G(perm:name)         $permutation
-    set ::G(perm:prefix)       $O(-prefix)
-    set ::G(isquick)           1
-    set ::G(perm:dbconfig)     $O(-dbconfig)
-    set ::G(perm:presql)       $O(-presql)
-
-    rename finish_test helper_finish_test
-    proc finish_test {} "
-      uplevel {
-        $O(-shutdown)
-      }
-      helper_finish_test
-    "
-
-    eval $O(-initialize)
-    reset_db
-  }
-
-  source $script
-  exit
-}
-
-#-------------------------------------------------------------------------
-# The database schema used by the testrunner.db database.
-#
-set R(schema) {
-  DROP TABLE IF EXISTS script;
-
-  CREATE TABLE script(
-    build TEXT DEFAULT '',
-    config TEXT,
-    filename TEXT,                -- full path to test script
-    slow BOOLEAN,                 -- true if script is "slow"
-    state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
-    time INTEGER,                 -- Time in ms
-    output TEXT,                  -- full output of test script
-    priority AS ((config='make') + ((config='build')*2) + (slow*4)),
-    jobtype AS (
-      CASE WHEN config IN ('build', 'make') THEN config ELSE 'script' END
-    ),
-    PRIMARY KEY(build, config, filename)
-  );
-
-  CREATE INDEX i1 ON script(state, jobtype);
-  CREATE INDEX i2 ON script(state, priority);
 }
 #-------------------------------------------------------------------------
 
@@ -157,14 +82,263 @@ proc default_njob {} {
 }
 #-------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------
+# Setup various default values in the global TRG() array.
+# 
+set TRG(dbname) [file normalize testrunner.db]
+set TRG(logname) [file normalize testrunner.log]
+set TRG(build.logname) [file normalize testrunner_build.log]
+set TRG(info_script) [file normalize [info script]]
+set TRG(timeout) 10000              ;# Default busy-timeout for testrunner.db 
+set TRG(nJob)    [default_njob]     ;# Default number of helper processes
+set TRG(patternlist) [list]
+set TRG(cmdline) $argv
+set TRG(reporttime) 2000
 
-set R(dbname) [file normalize testrunner.db]
-set R(logname) [file normalize testrunner.log]
-set R(build.logname) [file normalize testrunner_build.log]
-set R(info_script) [file normalize [info script]]
-set R(timeout) 10000              ;# Default busy-timeout for testrunner.db 
-set R(nJob)    [default_njob]     ;# Default number of helper processes
-set R(patternlist) [list]
+switch -nocase -glob -- $tcl_platform(os) {
+  *darwin* {
+    set TRG(platform) osx
+    set TRG(make)     make.sh
+    set TRG(makecmd)  "bash make.sh"
+  }
+  *linux* {
+    set TRG(platform) linux
+    set TRG(make)     make.sh
+    set TRG(makecmd)  "bash make.sh"
+  }
+  *win* {
+    set TRG(platform) win
+    set TRG(make)     make.bat
+    set TRG(makecmd)     make.bat
+  }
+  default {
+    error "cannot determine platform!"
+  }
+} 
+#-------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------
+# The database schema used by the testrunner.db database.
+#
+set TRG(schema) {
+  DROP TABLE IF EXISTS script;
+  DROP TABLE IF EXISTS config;
+
+  CREATE TABLE script(
+    build TEXT DEFAULT '',
+    config TEXT,
+    filename TEXT,                -- full path to test script
+    slow BOOLEAN,                 -- true if script is "slow"
+    state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
+    time INTEGER,                 -- Time in ms
+    output TEXT,                  -- full output of test script
+    priority AS ((config='make') + ((config='build')*2) + (slow*4)),
+    jobtype AS (
+      CASE WHEN config IN ('build', 'make') THEN config ELSE 'script' END
+    ),
+    PRIMARY KEY(build, config, filename)
+  );
+
+  CREATE TABLE config(
+    name TEXT COLLATE nocase PRIMARY KEY,
+    value 
+  ) WITHOUT ROWID;
+
+  CREATE INDEX i1 ON script(state, jobtype);
+  CREATE INDEX i2 ON script(state, priority);
+}
+#-------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Check if this script is being invoked to run a single file. If so,
+# run it.
+#
+if {[llength $argv]==2
+ && ([lindex $argv 0]=="" || [info exists ::testspec([lindex $argv 0])])
+ && [file exists [lindex $argv 1]]
+} {
+  set permutation [lindex $argv 0]
+  set script [file normalize [lindex $argv 1]]
+  set ::argv [list]
+
+  if {$permutation=="full"} {
+
+    set testdir [file dirname $argv0]
+    source $::testdir/tester.tcl
+    unset -nocomplain ::G(isquick)
+    reset_db
+
+  } elseif {$permutation!="default" && $permutation!=""} {
+
+    if {[info exists ::testspec($permutation)]==0} {
+      error "no such permutation: $permutation"
+    }
+
+    array set O $::testspec($permutation)
+    set ::G(perm:name)         $permutation
+    set ::G(perm:prefix)       $O(-prefix)
+    set ::G(isquick)           1
+    set ::G(perm:dbconfig)     $O(-dbconfig)
+    set ::G(perm:presql)       $O(-presql)
+
+    rename finish_test helper_finish_test
+    proc finish_test {} "
+      uplevel {
+        $O(-shutdown)
+      }
+      helper_finish_test
+    "
+
+    eval $O(-initialize)
+  }
+
+  reset_db
+  source $script
+  exit
+}
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Check if this is the "njob" command:
+#
+if {([llength $argv]==2 || [llength $argv]==1) 
+ && [string compare -nocase njob [lindex $argv 0]]==0
+} {
+  sqlite3 mydb $TRG(dbname)
+  if {[llength $argv]==2} {
+    set param [lindex $argv 1]
+    if {[string is integer $param]==0 || $param<1 || $param>128} {
+      puts stderr "parameter must be an integer between 1 and 128"
+      exit 1
+    }
+
+    mydb eval { REPLACE INTO config VALUES('njob', $param); }
+  }
+  set res [mydb one { SELECT value FROM config WHERE name='njob' }]
+  mydb close
+  puts "$res"
+  exit
+}
+#--------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------
+# Check if this is the "status" command:
+#
+if {[llength $argv]==1 
+ && [string compare -nocase status [lindex $argv 0]]==0 
+} {
+
+  proc display_job {build config filename {tm ""}} {
+    if {$config=="build"} {
+      set fname "build: $filename"
+      set config ""
+    } elseif {$config=="make"} {
+      set fname "make: $filename"
+      set config ""
+    } else {
+      set fname [file normalize $filename]
+      if {[string first $::srcdir $fname]==0} {
+        set fname [string range $fname [string length $::srcdir]+1 end]
+      }
+    }
+    set dfname [format %-33s $fname]
+
+    set dbuild ""
+    set dconfig ""
+    set dparams ""
+    set dtm ""
+    if {$build!=""} { set dbuild $build }
+    if {$config!="" && $config!="full"} { set dconfig $config }
+    if {$dbuild!="" || $dconfig!=""} {
+      append dparams "("
+      if {$dbuild!=""}                 {append dparams "build=$dbuild"}
+      if {$dbuild!="" && $dconfig!=""} {append dparams " "}
+      if {$dconfig!=""}                {append dparams "config=$dconfig"}
+      append dparams ")"
+      set dparams [format %-33s $dparams]
+    }
+    if {$tm!=""} {
+      set dtm "\[${tm}ms\]"
+    }
+    puts "  $dfname $dparams $dtm"
+  }
+
+  sqlite3 mydb $TRG(dbname)
+  mydb timeout 1000
+  mydb eval BEGIN
+
+  set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
+  set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
+  set tm [expr [clock_milliseconds] - [mydb one {
+    SELECT value FROM config WHERE name='start'
+  }]]
+
+  set total 0
+  foreach s {"" ready running done failed} { set S($s) 0 }
+  mydb eval {
+    SELECT state, count(*) AS cnt FROM script GROUP BY 1
+  } {
+    incr S($state) $cnt
+    incr total $cnt
+  }
+  set fin [expr $S(done)+$S(failed)]
+  if {$cmdline!=""} {set cmdline " $cmdline"}
+
+  set f ""
+  if {$S(failed)>0} {
+    set f "$S(failed) FAILED, "
+  }
+  puts "Command line: \[testrunner.tcl$cmdline\]"
+  puts "Jobs:         $nJob"
+  puts "Summary:      ${tm}ms, ($fin/$total) finished, ${f}$S(running) running"
+
+  set srcdir [file dirname [file dirname $TRG(info_script)]]
+  if {$S(running)>0} {
+    puts "Running: "
+    set now [clock_milliseconds]
+    mydb eval {
+      SELECT build, config, filename, time FROM script WHERE state='running'
+      ORDER BY time 
+    } {
+      display_job $build $config $filename [expr $now-$time]
+    }
+  }
+  if {$S(failed)>0} {
+    puts "Failures: "
+    mydb eval {
+      SELECT build, config, filename FROM script WHERE state='failed'
+    } {
+      display_job $build $config $filename
+    }
+  }
+ 
+  mydb close
+  exit
+}
+
+#-------------------------------------------------------------------------
+# Parse the command line.
+#
+for {set ii 0} {$ii < [llength $argv]} {incr ii} {
+  set isLast [expr $ii==([llength $argv]-1)]
+  set a [lindex $argv $ii]
+  set n [string length $a]
+
+  if {[string range $a 0 0]=="-"} {
+    if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
+      incr ii
+      set TRG(nJob) [lindex $argv $ii]
+      if {$isLast} { usage }
+    } else {
+      usage
+    }
+  } else {
+    lappend TRG(patternlist) [string map {% *} $a]
+  }
+}
+set argv [list]
+
+
 
 # This script runs individual tests - tcl scripts or [make xyz] commands -
 # in directories named "testdir$N", where $N is an integer. This variable
@@ -182,53 +356,32 @@ set R(patternlist) [list]
 #     Select a value that is not already in the list. Add it to the list
 #     and return it.
 #
-set R(dirs_in_use) [list]
+set TRG(dirs_in_use) [list]
 
 proc dirs_nHelper {} {
-  global R
-  llength $R(dirs_in_use)
+  global TRG
+  llength $TRG(dirs_in_use)
 }
 proc dirs_freeDir {iDir} {
-  global R
+  global TRG
   set out [list]
-  foreach d $R(dirs_in_use) {
+  foreach d $TRG(dirs_in_use) {
     if {$iDir!=$d} { lappend out $d }
   }
-  if {[llength $out]!=[llength $R(dirs_in_use)]-1} {
+  if {[llength $out]!=[llength $TRG(dirs_in_use)]-1} {
     error "dirs_freeDir could not find $iDir"
   }
-  set R(dirs_in_use) $out
+  set TRG(dirs_in_use) $out
 }
 proc dirs_allocDir {} {
-  global R
+  global TRG
   array set inuse [list]
-  foreach d $R(dirs_in_use) {
+  foreach d $TRG(dirs_in_use) {
     set inuse($d) 1
   }
   for {set iRet 0} {[info exists inuse($iRet)]} {incr iRet} { }
-  lappend R(dirs_in_use) $iRet
+  lappend TRG(dirs_in_use) $iRet
   return $iRet
-}
-
-switch -nocase -glob -- $tcl_platform(os) {
-  *darwin* {
-    set R(platform) osx
-    set R(make)     make.sh
-    set R(makecmd)  "bash make.sh"
-  }
-  *linux* {
-    set R(platform) linux
-    set R(make)     make.sh
-    set R(makecmd)  "bash make.sh"
-  }
-  *win* {
-    set R(platform) win
-    set R(make)     make.bat
-    set R(makecmd)     make.bat
-  }
-  default {
-    error "cannot determine platform!"
-  }
 }
 
 set testdir [file dirname $argv0]
@@ -250,144 +403,10 @@ proc copy_dir {from to} {
   }
 }
 
-##########################################################################
-##########################################################################
 proc build_to_dirname {bname} {
   set fold [string tolower [string map {- _} $bname]]
   return "testrunner_build_$fold"
 }
-
-proc build_input_ready {fd build} {
-  global R
-  global O
-
-  if {[eof $fd]} {
-    foreach {dirname b} $build {}
-
-    fconfigure $fd -blocking 1
-    set rc [catch { close $fd } msg]
-    if {$rc} { 
-      puts "Build \"$b\" finished - FAILED"
-      lappend R(lBuildFail) $build
-    } else {
-      puts "Build \"$b\" finished - ok"
-    }
-
-    puts $R(log) "### Build \"$b\" in directory $dirname"
-    puts $R(log) $O($fd)
-
-    launch_another_build
-    incr R(nHelperRunning) -1
-    incr ::wakeup
-  } else {
-    if {[gets $fd line]>=0} {
-      append O($fd) "$line\n"
-    }
-  }
-  global R
-}
-
-proc launch_another_build {} {
-  global R
-  if {[llength $R(lBuild)]>0} {
-    set build [lindex $R(lBuild) 0]
-    set R(lBuild) [lrange $R(lBuild) 1 end]
-    foreach {dirname b} $build {}
-
-    puts "Launching build \"$b\" in directory $dirname..."
-    set target coretestprogs
-    if {$b=="User-Auth"}  { set target testfixture }
-
-    incr R(nHelperRunning)
-
-    set pwd [pwd]
-    cd $dirname
-    set fd [open "|bash $R(make) $target 2>@1"]
-    cd $pwd
-
-    set O($fd) ""
-    fconfigure $fd -blocking 0
-    fileevent $fd readable [list build_input_ready $fd $build]
-  }
-}
-
-if {[lindex $argv 0]=="build"} {
-
-  # Load configuration data.
-  source [file join [file dirname [info script]] testrunner_data.tcl]
-  set srcdir [file dirname [file dirname $R(info_script)]]
-
-  foreach b [trd_builds $R(platform)] {
-    set dirname [build_to_dirname $b]
-    create_or_clear_dir $dirname
-
-    set     cmd [info nameofexec]
-    lappend cmd [file join [file dirname $R(info_script)] releasetest_data.tcl]
-    if {$R(platform)=="win"} { lappend $cmd -msvc }
-    lappend cmd script $b $srcdir
-
-    set script [exec {*}$cmd]
-
-    set fd [open [file join $dirname $R(make)] w]
-    puts $fd $script
-    close $fd
-
-    lappend R(lBuild) [list $dirname $b]
-  }
-
-  set R(log) [open $R(build.logname) w]
-
-  set R(nHelperRunning) 0
-  set R(lBuildFail) [list]
-  for {set ii 0} {$ii < $R(nJob)} {incr ii} {
-    launch_another_build
-  }
-
-  while {$R(nHelperRunning)>0} {
-    vwait ::wakeup
-  }
-  close $R(log)
-
-  if {[llength $R(lBuildFail)]==0} {
-    puts "All builds succeeded!"
-  } else {
-    puts "Builds failed:"
-    foreach build $R(lBuildFail) {
-      foreach {dirname b} $build {}
-      puts "  $b ($dirname)"
-    }
-    exit 1
-  }
-
-  puts "Log file is $R(build.logname)"
-  exit
-}
-##########################################################################
-##########################################################################
-
-set R(helper) 0
-set R(helper_id) 0
-for {set ii 0} {$ii < [llength $argv]} {incr ii} {
-  set a [lindex $argv $ii]
-  set n [string length $a]
-
-  if {[string range $a 0 0]=="-"} {
-    if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
-      incr ii
-      set R(nJob) [lindex $argv $ii]
-    } else {
-      usage
-    }
-  } else {
-    lappend R(patternlist) [string map {% *} $a]
-  }
-}
-
-set argv [list]
-
-set dir [pwd]
-source $testdir/permutations.test
-cd $dir
 
 #-------------------------------------------------------------------------
 # Return a list of tests to run. Each element of the list is itself a
@@ -403,7 +422,7 @@ proc testset_patternlist {patternlist} {
   set first [lindex $patternlist 0]
 
   if {$first=="release"} {
-    set platform $::R(platform)
+    set platform $::TRG(platform)
 
     set patternlist [lrange $patternlist 1 end]
     foreach b [trd_builds $platform] {
@@ -478,17 +497,9 @@ proc testset_append {listvar build config patternlist} {
 
 
 proc r_write_db {tcl} {
-  global R
-
-  sqlite3_test_control_pending_byte 0x010000
-  sqlite3 db $R(dbname)
-  db timeout $R(timeout)
-  db eval { BEGIN EXCLUSIVE }
-
+  trdb eval { BEGIN EXCLUSIVE }
   uplevel $tcl
-
-  db eval { COMMIT }
-  db close
+  trdb eval { COMMIT }
 }
 
 # Obtain a new job to be run by worker $iJob (an integer). A job is
@@ -497,6 +508,7 @@ proc r_write_db {tcl} {
 #    {$build $config $file}
 #
 proc r_get_next_job {iJob} {
+  global T
 
   if {($iJob%2)} {
     set orderby "ORDER BY priority ASC"
@@ -507,7 +519,7 @@ proc r_get_next_job {iJob} {
   r_write_db {
     set f ""
     set c ""
-    db eval "
+    trdb eval "
       SELECT build, config, filename 
         FROM script 
         WHERE state='ready' 
@@ -518,8 +530,10 @@ proc r_get_next_job {iJob} {
       set f $filename
     }
     if {$f!=""} {
-      db eval { 
-        UPDATE script SET state='running'
+      set tm [clock_milliseconds]
+      set T($iJob) $tm
+      trdb eval { 
+        UPDATE script SET state='running', time=$tm
         WHERE (build, config, filename) = ($b, $c, $f)
       }
     }
@@ -531,17 +545,24 @@ proc r_get_next_job {iJob} {
 
 #rename r_get_next_job r_get_next_job_r
 #proc r_get_next_job {iJob} {
-  #puts [time { set res [r_get_next_job_r $iJob] }]
-  #set res
+#  puts [time { set res [r_get_next_job_r $iJob] }]
+#  set res
 #}
 
-
 proc make_new_testset {} {
-  global R
+  global TRG
 
-  set tests [testset_patternlist $R(patternlist)]
+  set tests [testset_patternlist $TRG(patternlist)]
   r_write_db {
-    db eval $R(schema)
+
+    trdb eval $TRG(schema)
+    set nJob $TRG(nJob)
+    set cmdline $TRG(cmdline)
+    set tm [clock_milliseconds]
+    trdb eval { REPLACE INTO config VALUES('njob', $nJob ); }
+    trdb eval { REPLACE INTO config VALUES('cmdline', $cmdline ); }
+    trdb eval { REPLACE INTO config VALUES('start', $tm ); }
+
     foreach t $tests {
       foreach {b c s} $t {}
       set slow 0
@@ -562,7 +583,7 @@ proc make_new_testset {} {
       }
 
       if {$c=="veryquick"} {
-        set c "default"
+        set c ""
       }
 
       set state ready
@@ -570,7 +591,7 @@ proc make_new_testset {} {
         set state ""
       }
 
-      db eval { 
+      trdb eval { 
         INSERT INTO script(build, config, filename, slow, state) 
             VALUES ($b, $c, $s, $slow, $state) 
       }
@@ -579,7 +600,7 @@ proc make_new_testset {} {
 }
 
 proc script_input_ready {fd iJob b c f} {
-  global R
+  global TRG
   global O
   global T
 
@@ -595,18 +616,17 @@ proc script_input_ready {fd iJob b c f} {
 
     set tm [expr [clock_milliseconds] - $T($iJob)]
 
-    puts $R(log) "### $b ### $c ### $f ${tm}ms ($state)"
-    puts $R(log) [string trim $O($iJob)]
+    puts $TRG(log) "### $b ### $c ### $f ${tm}ms ($state)"
+    puts $TRG(log) [string trim $O($iJob)]
 
-    incr R(nHelperRunning) -1
     r_write_db {
       set output $O($iJob)
-      db eval {
+      trdb eval {
         UPDATE script SET output = $output, state=$state, time=$tm
         WHERE (build, config, filename) = ($b, $c, $f)
       }
       if {$state=="done" && $c=="build"} {
-        db eval {
+        trdb eval {
           UPDATE script SET state = 'ready' WHERE (build, state)==($b, '')
         }
       }
@@ -632,18 +652,17 @@ proc dirname {ii} {
 }
 
 proc launch_another_job {iJob} {
-  global R
+  global TRG
   global O
   global T
 
   set testfixture [info nameofexec]
-  set script $R(info_script)
+  set script $TRG(info_script)
 
   set dir [dirname $iJob]
   create_or_clear_dir $dir
 
   set O($iJob) ""
-  set T($iJob) [clock_milliseconds]
   
   set job [r_get_next_job $iJob]
   if {$job==""} { return 0 }
@@ -651,18 +670,19 @@ proc launch_another_job {iJob} {
   foreach {b c f} $job {}
 
   if {$c=="build"} {
-    set srcdir [file dirname [file dirname $R(info_script)]]
+    set testdir [file dirname $TRG(info_script)]
+    set srcdir [file dirname $testdir]
     set builddir [build_to_dirname $b]
     create_or_clear_dir $builddir
 
     set     cmd [info nameofexec]
-    lappend cmd [file join [file dirname $R(info_script)] releasetest_data.tcl]
+    lappend cmd [file join $testdir releasetest_data.tcl]
     lappend cmd script
-    if {$R(platform)=="win"} { lappend cmd -msvc }
+    if {$TRG(platform)=="win"} { lappend cmd -msvc }
     lappend cmd $b $srcdir
 
     set script [exec {*}$cmd]
-    set fd [open [file join $builddir $R(make)] w]
+    set fd [open [file join $builddir $TRG(make)] w]
     puts $fd $script
     close $fd
 
@@ -670,19 +690,19 @@ proc launch_another_job {iJob} {
     set target coretestprogs
     if {$b=="User-Auth"}  { set target testfixture }
 
-    set cmd "$R(makecmd) $target"
+    set cmd "$TRG(makecmd) $target"
     set dir $builddir
 
   } elseif {$c=="make"} {
     set builddir [build_to_dirname $b]
     copy_dir $builddir $dir
-    set cmd "$R(makecmd) $f"
+    set cmd "$TRG(makecmd) $f"
   } else {
     if {$b==""} {
       set testfixture [info nameofexec]
     } else {
       set tail testfixture
-      if {$R(platform)=="win"} { set tail testfixture.exe }
+      if {$TRG(platform)=="win"} { set tail testfixture.exe }
       set testfixture [file normalize [file join [build_to_dirname $b] $tail]]
     }
 
@@ -690,7 +710,7 @@ proc launch_another_job {iJob} {
       set testfixture "valgrind -v --error-exitcode=1 $testfixture"
       set ::env(OMIT_MISUSE) 1
     }
-    set cmd [concat $testfixture [list $script helper $c $f]]
+    set cmd [concat $testfixture [list $script $c $f]]
   }
 
   set pwd [pwd]
@@ -701,16 +721,15 @@ proc launch_another_job {iJob} {
 
   fconfigure $fd -blocking false
   fileevent $fd readable [list script_input_ready $fd $iJob $b $c $f]
-  incr R(nHelperRunning) +1
   unset -nocomplain ::env(OMIT_MISUSE)
 
   return 1
 }
 
 proc one_line_report {} {
-  global R
+  global TRG
 
-  set tm [expr [clock_milliseconds] - $R(starttime)]
+  set tm [expr [clock_milliseconds] - $TRG(starttime)]
   set tm [format "%.2f" [expr $tm/1000.0]]
 
   foreach s {ready running done failed} {
@@ -720,7 +739,7 @@ proc one_line_report {} {
   }
 
   r_write_db {
-    db eval {
+    trdb eval {
       SELECT state, jobtype, count(*) AS cnt 
       FROM script 
       GROUP BY state, jobtype
@@ -741,12 +760,15 @@ proc one_line_report {} {
   }
 
   puts "${tm}s: [join $text { || }]"
-  after 1000 one_line_report
+  after $TRG(reporttime) one_line_report
 }
 
 proc launch_some_jobs {} {
-  global R
-  while {[dirs_nHelper]<$R(nJob)} {
+  global TRG
+  r_write_db {
+    set nJob [trdb one { SELECT value FROM config WHERE name='njob' }]
+  }
+  while {[dirs_nHelper]<$nJob} {
     set iDir [dirs_allocDir]
     if {0==[launch_another_job $iDir]} {
       dirs_freeDir $iDir
@@ -756,28 +778,28 @@ proc launch_some_jobs {} {
 }
 
 proc run_testset {} {
-  global R
+  global TRG
   set ii 0
 
-  set R(starttime) [clock_milliseconds]
-  set R(log) [open $R(logname) w]
+  set TRG(starttime) [clock_milliseconds]
+  set TRG(log) [open $TRG(logname) w]
 
   launch_some_jobs
     # launch_another_job $ii
 
   one_line_report
-  while {$R(nHelperRunning)>0} {
+  while {[dirs_nHelper]>0} {
     after 500 {incr ::wakeup}
     vwait ::wakeup
   }
-  close $R(log)
+  close $TRG(log)
   one_line_report
 
   r_write_db {
-    set nErr [db one {SELECT count(*) FROM script WHERE state='failed'}]
+    set nErr [trdb one {SELECT count(*) FROM script WHERE state='failed'}]
     if {$nErr>0} {
       puts "$nErr failures:"
-      db eval {
+      trdb eval {
         SELECT build, config, filename FROM script WHERE state='failed'
       } {
         puts "FAILED: $build $config $filename"
@@ -785,14 +807,16 @@ proc run_testset {} {
     }
   }
 
-  puts "Test database is $R(dbname)"
-  puts "Test log is $R(logname)"
+  puts "Test database is $TRG(dbname)"
+  puts "Test log is $TRG(logname)"
 }
 
-set R(nHelperRunning) 0
+
+sqlite3 trdb $TRG(dbname)
+trdb timeout $TRG(timeout)
 set tm [lindex [time { make_new_testset }] 0]
 puts "built testset in [expr $tm/1000]ms.."
-
 run_testset
+trdb close
 #puts [pwd]
 
