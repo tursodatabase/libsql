@@ -337,7 +337,9 @@ static int dbpageUpdate(
     goto update_fail;
   }
   pgno = sqlite3_value_int(argv[0]);
-  if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL
+   || (Pgno)sqlite3_value_int(argv[1])!=pgno
+  ){
     zErr = "cannot insert";
     goto update_fail;
   }
