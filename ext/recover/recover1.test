@@ -275,11 +275,13 @@ do_recover_test 15
 
 #-------------------------------------------------------------------------
 reset_db
-do_execsql_test 16.1 {
-  PRAGMA journal_mode = wal;
-  CREATE TABLE t1(x);
-  INSERT INTO t1 VALUES(1), (2), (3);
-} {wal}
+do_test 16.1 {
+  execsql { PRAGMA journal_mode = wal }
+  execsql {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1), (2), (3);
+  }
+} {}
 do_test 16.2 {
   set R [sqlite3_recover_init db main test.db2]
   $R run
