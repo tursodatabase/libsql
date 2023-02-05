@@ -1,11 +1,11 @@
-C In\sfuzzcheck,\sonly\sshow\sthe\sdescription\sof\seach\sdatabase\sif\sthe\s-v\soption\nis\sspecified.
-D 2023-02-05T17:09:18.293
+C Add\sthe\s"devtest"\smakefile\starget\sthat\sruns\sboth\sfuzztest\sand\stestrunner.
+D 2023-02-05T17:40:03.752
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 4bba1e74ea2ffc95b9f299d72aebec06dc55c2d93948c93a2f356cc9682912ea
+F Makefile.in 04cdeaae3d4d36f416f53d5cc756ca9862b2b2b99fd74d96f842cddc4670c8ed
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 6de67bb5a8e849f9a7a11085366cc8daf99845fa21368e89b3cd195abd62cd2a
+F Makefile.msc a0f6597b737c8de016deb347f06139a6356a60100bb4c58bb142f75bb7672e72
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 413ec94920a487ae32c9a2a8819544d690662d6f7c7ce025c0d0b8a1e74fa9db
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -462,7 +462,7 @@ F ext/session/sessionstat1.test 218d351cf9fcd6648f125a26b607b140310160184723c266
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
 F ext/session/sqlite3session.c 13bdc093416cd284d4075328dd8599eb59bcedc23a21d561a15d78805c5866bf
 F ext/session/sqlite3session.h 0907de79bc13a2e3af30a6dc29acc60792a3eaf7d33d44cf52500d0f3c2b2171
-F ext/session/test_session.c 94364b91cf4571d320ef5b1e04075d2c58c79b63afdf20c9e470555a691ca5b1
+F ext/session/test_session.c 2de472b4d7e62e85ca1992094612725e2450a77dbf7523db64de94197812462e
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
@@ -540,7 +540,7 @@ F ext/wasm/wasmfs.make cf9a68162d92ca2bcb0b9528b244cb36d5cc2d84ccc9c2d398461927d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk e8aca588ea9b98108e303972fbe6fa08d0481afbad21e81c288ef44a9a695dab
+F main.mk c8af6b90044e4675a1b2c4000c76429fe6bc0dc0a5b3092d7e036f059a58c030
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 647c89dd2f90da1605e6fc01ecc8c1367c12c06b3a972ed682a69e85bf1d77e9
-R 77ff9732e82adc8ec5954a82efc393b9
+P 6a58179aaffa77a5542ab620ffce6f68135e399de957b1a97113fd2f1dc0c098
+R 9a2784af44ff655d487b3d1332912c1d
 U drh
-Z 9755e32866c74c055ed8f2f543efdd26
+Z bc2902b0fc3b12723bd5aae223fa7e5b
 # Remove this line to create a well-formed Fossil manifest.

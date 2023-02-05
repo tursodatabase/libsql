@@ -1276,6 +1276,10 @@ tcltest:	./testfixture$(TEXE)
 testrunner:	testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
 
+# Runs both fuzztest and testrunner, consecutively.
+#
+devtest:	testfixture$(TEXE) fuzztest testrunner
+
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)

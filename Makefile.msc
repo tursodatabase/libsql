@@ -2451,6 +2451,10 @@ tcltest: testfixture.exe
 testrunner:	testfixture.exe
 	.\testfixture.exe $(TOP)\test\testrunner.tcl
 
+# Runs both fuzztest and testrunner, consecutively.
+#
+devtest:	testfixture.exe fuzztest testrunner
+
 smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
