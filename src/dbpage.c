@@ -391,7 +391,7 @@ static int dbpageBegin(sqlite3_vtab *pVtab){
   int i;
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
-    (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
+    if( pBt ) (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
   }
   return SQLITE_OK;
 }

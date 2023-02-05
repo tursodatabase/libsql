@@ -1,5 +1,5 @@
-C Modify\sthe\sstatus\sline\soutput\sfrom\stestrunner\sso\sthat\seach\sline\soverwrites\nthe\sprevious\srather\sthan\sscrolling.
-D 2023-02-05T00:32:32.654
+C Restore\sa\stest\sfor\spBt\sNULL\sthat\swas\sremoved\sby\s[12a14711afa6cddb]\sbut\sturned\nout\sto\sbe\snecessary,\sas\sdbsqlfuzz\squickly\sshowed\sus.\s\sTest\scase\sadded\sto\sTH3.
+D 2023-02-05T00:47:27.663
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
 F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
-F src/dbpage.c 06380a691d648e3920227ef26d40c50a25db78c96dc28dcb1e1803b64222b692
+F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
 F src/expr.c 204af6a83c191f5ac19ec4af6ecc546f188cc2dd1c76fc5280982f710ec4b9c4
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 12a14711afa6cddbf64d5307fd239fc597027d4356a431ad75836025f4bad83c
-R c1726315bf04bf27b32c97db44282c93
+P ad4d28cd68589a9259069c77c8d375ae49cfd0bcdf3b03d3e84418569e12ebfc
+R fe550de4d9bde9fe5f1d009dd2200b54
 U drh
-Z bd379b40987ebd969529c0701c56b718
+Z 76089f5cf34cf0fe14dc9339d94cb9db
 # Remove this line to create a well-formed Fossil manifest.
