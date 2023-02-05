@@ -246,7 +246,7 @@ static int dbpageFilter(
     pCsr->iDb = 0;
   }
   pBt = db->aDb[pCsr->iDb].pBt;
-  if( pBt==0 ) return SQLITE_OK;
+  if( NEVER(pBt==0) ) return SQLITE_OK;
   pCsr->pPager = sqlite3BtreePager(pBt);
   pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
   pCsr->mxPgno = sqlite3BtreeLastPage(pBt);
@@ -389,12 +389,11 @@ static int dbpageBegin(sqlite3_vtab *pVtab){
   DbpageTable *pTab = (DbpageTable *)pVtab;
   sqlite3 *db = pTab->db;
   int i;
-  int rc = SQLITE_OK;
-  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+  for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
-    if( pBt ) rc = sqlite3BtreeBeginTrans(pBt, 1, 0);
+    (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
   }
-  return rc;
+  return SQLITE_OK;
 }
 
 
