@@ -1,5 +1,5 @@
-C Restore\sa\stest\sfor\spBt\sNULL\sthat\swas\sremoved\sby\s[12a14711afa6cddb]\sbut\sturned\nout\sto\sbe\snecessary,\sas\sdbsqlfuzz\squickly\sshowed\sus.\s\sTest\scase\sadded\sto\sTH3.
-D 2023-02-05T00:47:27.663
+C In\sfuzzcheck,\sonly\sshow\sthe\sdescription\sof\seach\sdatabase\sif\sthe\s-v\soption\nis\sspecified.
+D 2023-02-05T17:09:18.293
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1140,7 +1140,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 30475c820dc5ab8a87fa3be1fe8ba8199ebfe2544508a759d653688d8d168766
+F test/fuzzcheck.c 0b8543d29c6f529cb73937607c8649f685510838e40c6287f06df083433c93b6
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ad4d28cd68589a9259069c77c8d375ae49cfd0bcdf3b03d3e84418569e12ebfc
-R fe550de4d9bde9fe5f1d009dd2200b54
+P 647c89dd2f90da1605e6fc01ecc8c1367c12c06b3a972ed682a69e85bf1d77e9
+R 77ff9732e82adc8ec5954a82efc393b9
 U drh
-Z 76089f5cf34cf0fe14dc9339d94cb9db
+Z 9755e32866c74c055ed8f2f543efdd26
 # Remove this line to create a well-formed Fossil manifest.
