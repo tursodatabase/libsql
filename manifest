@@ -1,5 +1,5 @@
-C Changes\sto\sthe\ssqlite_dbpage\svirtual\stable\sto\stag\sor\sremove\sunreachable\nbranches.
-D 2023-02-05T00:24:42.233
+C Modify\sthe\sstatus\sline\soutput\sfrom\stestrunner\sso\sthat\seach\sline\soverwrites\nthe\sprevious\srather\sthan\sscrolling.
+D 2023-02-05T00:32:32.654
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1566,7 +1566,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 8d54d40a55e12554b4509bc12078b201b233c8e842a7543629094a21b1ba956d
-F test/testrunner.tcl ff766305cb067fcb28bfff38532652da4d941dc2216ee0929923a223133b3156
+F test/testrunner.tcl 1ed5d8ce180e2b4716dd0570666d49fc3be60d6313bdc20447682ca2c471567c
 F test/testrunner_data.tcl 8169c68654ac8906833b8a6aadca973358a441ebf88270dd05c153e5f96f76b8
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 92f018698a87ed32acc31d83f7246dbb7295867bd6a801b7984a16f97a5c7786
-R c5efaf927e05e2e8357ea2b9191faf66
+P 12a14711afa6cddbf64d5307fd239fc597027d4356a431ad75836025f4bad83c
+R c1726315bf04bf27b32c97db44282c93
 U drh
-Z 5532ecb0e9d2398529e56b0786ba45ba
+Z bd379b40987ebd969529c0701c56b718
 # Remove this line to create a well-formed Fossil manifest.

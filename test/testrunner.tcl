@@ -762,7 +762,8 @@ proc one_line_report {} {
     lappend text "$j: ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
   }
 
-  puts "${tm}s: [join $text { || }]"
+  puts -nonewline "${tm}s: [join $text { || }]\r"
+  flush stdout
   after $TRG(reporttime) one_line_report
 }
 
@@ -810,7 +811,7 @@ proc run_testset {} {
     }
   }
 
-  puts "Test database is $TRG(dbname)"
+  puts "\nTest database is $TRG(dbname)"
   puts "Test log is $TRG(logname)"
 }
 
@@ -822,4 +823,3 @@ puts "built testset in [expr $tm/1000]ms.."
 run_testset
 trdb close
 #puts [pwd]
-
