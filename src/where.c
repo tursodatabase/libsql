@@ -5596,24 +5596,23 @@ static SQLITE_NOINLINE void whereCheckIfBloomFilterIsUseful(
   const WhereInfo *pWInfo
 ){
   int i;
-  LogEst nSearch;
+  LogEst nSearch = 0;
 
   assert( pWInfo->nLevel>=2 );
   assert( OptimizationEnabled(pWInfo->pParse->db, SQLITE_BloomFilter) );
-  nSearch = pWInfo->a[0].pWLoop->nOut;
-  for(i=1; i<pWInfo->nLevel; i++){
+  for(i=0; i<pWInfo->nLevel; i++){
     WhereLoop *pLoop = pWInfo->a[i].pWLoop;
     const unsigned int reqFlags = (WHERE_SELFCULL|WHERE_COLUMN_EQ);
-    if( (pLoop->wsFlags & reqFlags)==reqFlags
+    SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];
+    Table *pTab = pItem->pTab;
+    if( (pTab->tabFlags & TF_HasStat1)==0 ) break;
+    pTab->tabFlags |= TF_StatsUsed;
+    if( i>=1
+     && (pLoop->wsFlags & reqFlags)==reqFlags
      /* vvvvvv--- Always the case if WHERE_COLUMN_EQ is defined */
      && ALWAYS((pLoop->wsFlags & (WHERE_IPK|WHERE_INDEXED))!=0)
     ){
-      SrcItem *pItem = &pWInfo->pTabList->a[pLoop->iTab];
-      Table *pTab = pItem->pTab;
-      pTab->tabFlags |= TF_StatsUsed;
-      if( nSearch > pTab->nRowLogEst
-       && (pTab->tabFlags & TF_HasStat1)!=0
-      ){
+      if( nSearch > pTab->nRowLogEst ){
         testcase( pItem->fg.jointype & JT_LEFT );
         pLoop->wsFlags |= WHERE_BLOOMFILTER;
         pLoop->wsFlags &= ~WHERE_IDX_ONLY;

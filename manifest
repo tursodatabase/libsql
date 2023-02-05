@@ -1,5 +1,5 @@
-C Add\sthe\s"devtest"\smakefile\starget\sthat\sruns\sboth\sfuzztest\sand\stestrunner.
-D 2023-02-05T17:40:03.752
+C Do\snot\suse\sa\sBloom\sfilter\sif\sany\souter\sloop\slacks\sSTAT1\sdata,\ssince\swithout\nSTAT1\sdata,\sthe\squery\splanner\scannot\smake\san\saccurate\sdetermination\sof\nwhether\sor\snot\sa\sBloom\sfilter\swill\sbe\suseful.\s\sThis\sfixes\sthe\sproblem\nreported\sby\s[forum:/forumpost/56de336385|forum\spost\s56de336385].
+D 2023-02-05T20:29:10.068
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,7 +708,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c f180e2fdc93d286b48f23647cc26aab5a5b7437af2d3843f6228aff8d68eb9fe
+F src/where.c 3bbca705410258969d6d2e0c54b468de9674445d41b67714bb4fc3f1edef41d2
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c 76bca3379219880d2527493b71a3be49e696f75396d3481e4de5d4ceec7886b2
 F src/whereexpr.c 7c5671a04b00c876bec5e99fd4e6f688065feb4773160fbf76fd7900d2901777
@@ -816,7 +816,7 @@ F test/bind2.test 918bc35135f4141809ead7585909cde57d44db90a7a62aef540127148f91aa
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test e7ac6c7d3a985cc4678c64f325292529a69ae252
-F test/bloom1.test 5318eb0648dff073ca9b9a54387ec2c0a7a07ed3490461fe2db0d074b2eb0e7f
+F test/bloom1.test 2785a190fcc2a5e170e5d38b08aca8ff0f3e3b4a74d47453d6ac1bd355180a6a
 F test/boundary1.tcl 6421b2d920d8b09539503a8673339d32f7609eb1
 F test/boundary1.test 66d7f4706ccdb42d58eafdb081de07b0eb42d77b
 F test/boundary2.tcl e34ef4e930cf1083150d4d2c603e146bd3b76bcb
@@ -1220,10 +1220,10 @@ F test/join.test e32cb9b1491eed682489e2cde33a22a4eb7611fe5aa3b0aa4b275fe27ab3f3a
 F test/join2.test 466b07233820f5deee66a6c3bf6e4500c8bbf7b83649e67606f5f649c07928c0
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
-F test/join5.test d22b6cba8fb59ab3f1c82701434c360705eb12d4ce200c449f37b018fc47681a
+F test/join5.test 91f1f4c7d81fd87b58e9ba7cf4a2b5d39e3583b4f8e498a162722a60259c5208
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test 2268dcbb54b724391dda3748ea95c60d960607ffeed67885675998e7117697f6
-F test/join8.test ef5fb09a7ce6b59addb8bd16e11607db6c44a0afcac5774a5dc03193fd0a1df5
+F test/join8.test 40bdf5612444e986187edc5fd5ea9094cb7975b78cac563a97f1f7aefde34ba6
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
 F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f6a
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a58179aaffa77a5542ab620ffce6f68135e399de957b1a97113fd2f1dc0c098
-R 9a2784af44ff655d487b3d1332912c1d
+P c81398c6215d6d1bc7a15b6be9bb1f81effd430ff0a7c86158372accfa77814c
+R 76ab5fe24f1c252174fbac9c48cfe270
 U drh
-Z bc2902b0fc3b12723bd5aae223fa7e5b
+Z 69f390e1536f7fb542731649e7e89600
 # Remove this line to create a well-formed Fossil manifest.
