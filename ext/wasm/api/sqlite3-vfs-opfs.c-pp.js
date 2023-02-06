@@ -112,16 +112,16 @@ const installOpfsVfs = function callee(options){
     options.proxyUri = callee.defaultProxyUri;
   }
 
-  //console.warn("OPFS options =",options,self.location);
+  //sqlite3.config.warn("OPFS options =",options,self.location);
 
   if('function' === typeof options.proxyUri){
     options.proxyUri = options.proxyUri();
   }
   const thePromise = new Promise(function(promiseResolve, promiseReject_){
     const loggers = {
-      0:console.error.bind(console),
-      1:console.warn.bind(console),
-      2:console.log.bind(console)
+      0:sqlite3.config.error.bind(console),
+      1:sqlite3.config.warn.bind(console),
+      2:sqlite3.config.log.bind(console)
     };
     const logImpl = (level,...args)=>{
       if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
@@ -171,11 +171,11 @@ const installOpfsVfs = function callee(options){
           m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
           m.avgWait = (m.count && m.wait) ? (m.wait / m.count) : 0;
         }
-        console.log(self.location.href,
+        sqlite3.config.log(self.location.href,
                     "metrics for",self.location.href,":",metrics,
                     "\nTotal of",n,"op(s) for",t,
                     "ms (incl. "+w+" ms of waiting on the async side)");
-        console.log("Serialization metrics:",metrics.s11n);
+        sqlite3.config.log("Serialization metrics:",metrics.s11n);
         W.postMessage({type:'opfs-async-metrics'});
       },
       reset: function(){
@@ -945,7 +945,7 @@ const installOpfsVfs = function callee(options){
         await opfsUtil.getDirForFilename(absDirName+"/filepart", true);
         return true;
       }catch(e){
-        //console.warn("mkdir(",absDirName,") failed:",e);
+        //sqlite3.config.warn("mkdir(",absDirName,") failed:",e);
         return false;
       }
     };
@@ -1317,13 +1317,13 @@ self.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
     if(sqlite3.scriptInfo.sqlite3Dir){
       installOpfsVfs.defaultProxyUri =
         sqlite3.scriptInfo.sqlite3Dir + proxyJs;
-      //console.warn("installOpfsVfs.defaultProxyUri =",installOpfsVfs.defaultProxyUri);
+      //sqlite3.config.warn("installOpfsVfs.defaultProxyUri =",installOpfsVfs.defaultProxyUri);
     }
     return installOpfsVfs().catch((e)=>{
-      console.warn("Ignoring inability to install OPFS sqlite3_vfs:",e.message);
+      sqlite3.config.warn("Ignoring inability to install OPFS sqlite3_vfs:",e.message);
     });
   }catch(e){
-    console.error("installOpfsVfs() exception:",e);
+    sqlite3.config.error("installOpfsVfs() exception:",e);
     throw e;
   }
 });

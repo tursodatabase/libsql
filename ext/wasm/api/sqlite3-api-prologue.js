@@ -82,6 +82,12 @@
      the `realloc(3)`-compatible routine for the WASM
      environment. Defaults to `"sqlite3_realloc"`.
 
+   - `debug`, `log`, `warn`, and `error` may be functions equivalent
+     to the like-named methods of the global `console` object. By
+     default, these map directly to their `console` counterparts, but
+     can be replaced with (e.g.) empty functions to squelch all such
+     output.
+
    - `wasmfsOpfsDir`[^1]: As of 2022-12-17, this feature does not
      currently work due to incompatible Emscripten-side changes made
      in the WASMFS+OPFS combination. This option is currently ignored.
@@ -113,6 +119,10 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       }
       return !!self.BigInt64Array;
     })(),
+    debug: console.debug.bind(console),
+    warn: console.warn.bind(console),
+    error: console.error.bind(console),
+    log: console.log.bind(console),
     wasmfsOpfsDir: '/opfs',
     /**
        useStdAlloc is just for testing an allocator discrepancy. The

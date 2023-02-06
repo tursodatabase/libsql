@@ -136,7 +136,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if(('string'!==typeof fn && 'number'!==typeof fn)
        || 'string'!==typeof flagsStr
        || (vfsName && ('string'!==typeof vfsName && 'number'!==typeof vfsName))){
-      console.error("Invalid DB ctor args",opt,arguments);
+      sqlite3.config.error("Invalid DB ctor args",opt,arguments);
       toss3("Invalid arguments for DB constructor.");
     }
     let fnJs = ('number'===typeof fn) ? wasm.cstrToJs(fn) : fn;
@@ -881,7 +881,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           stmt = null;
         }
       }/*catch(e){
-        console.warn("DB.exec() is propagating exception",opt,e);
+        sqlite3.config.warn("DB.exec() is propagating exception",opt,e);
         throw e;
       }*/finally{
         if(stmt){
@@ -1278,7 +1278,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      function returns that value, else it throws.
   */
   const affirmSupportedBindType = function(v){
-    //console.log('affirmSupportedBindType',v);
+    //sqlite3.config.log('affirmSupportedBindType',v);
     return isSupportedBindType(v) || toss3("Unsupported bind() argument type:",typeof v);
   };
 
@@ -1394,7 +1394,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           break;
         }
         default:
-          console.warn("Unsupported bind() argument type:",val);
+          sqlite3.config.warn("Unsupported bind() argument type:",val);
           toss3("Unsupported bind() argument type: "+(typeof val));
     }
     if(rc) DB.checkRc(stmt.db.pointer, rc);
@@ -1599,7 +1599,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           case capi.SQLITE_ROW: return this._mayGet = true;
           default:
             this._mayGet = false;
-            console.warn("sqlite3_step() rc=",rc,
+            sqlite3.config.warn("sqlite3_step() rc=",rc,
                          capi.sqlite3_js_rc_str(rc),
                          "SQL =", capi.sqlite3_sql(this.pointer));
             DB.checkRc(this.db.pointer, rc);
@@ -1722,7 +1722,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                    hope for the best, as the C API would do. */
                 toss3("Integer is out of range for JS integer range: "+rc);
               }
-              //console.log("get integer rc=",rc,isInt32(rc));
+              //sqlite3.config.log("get integer rc=",rc,isInt32(rc));
               return util.isInt32(rc) ? (rc | 0) : rc;
             }
           }

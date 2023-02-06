@@ -612,8 +612,8 @@ sqlite3.initWorker1API = function(){
         result.stack = ('string'===typeof err.stack)
           ? err.stack.split(/\n\s*/) : err.stack;
       }
-      if(0) console.warn("Worker is propagating an exception to main thread.",
-                         "Reporting it _here_ for the stack trace:",err,result);
+      if(0) sqlite3.config.warn("Worker is propagating an exception to main thread.",
+                                "Reporting it _here_ for the stack trace:",err,result);
     }
     if(!dbId){
       dbId = result.dbId/*from 'open' cmd*/

@@ -2972,6 +2972,14 @@ self.sqlite3InitModule = sqlite3InitModule;
 
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");
+  if(0){
+    self.sqlite3ApiConfig = {
+      debug: ()=>{},
+      log: ()=>{},
+      warn: ()=>{},
+      error: ()=>{}
+    }
+  }
   if(!self.sqlite3InitModule && !isUIThread()){
     /* Vanilla worker, as opposed to an ES6 module worker */
     /*
@@ -3004,7 +3012,7 @@ self.sqlite3InitModule = sqlite3InitModule;
   }).then(function(sqlite3){
     //console.log('sqlite3 =',sqlite3);
     log("Done initializing WASM/JS bits. Running tests...");
-    console.warn("Installing sqlite3 bits as global S for local dev/test purposes.");
+    sqlite3.config.warn("Installing sqlite3 bits as global S for local dev/test purposes.");
     self.S = sqlite3;
     capi = sqlite3.capi;
     wasm = sqlite3.wasm;
