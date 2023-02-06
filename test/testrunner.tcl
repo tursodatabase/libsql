@@ -23,6 +23,7 @@ Usage:
 
   where SWITCHES are:
     --jobs NUMBER-OF-JOBS
+    --fuzztest
 
 Interesting values for PERMUTATION are:
 
@@ -44,6 +45,11 @@ omitted if any PATTERN arguments are specified on the command line.
 If a PERMUTATION is specified and is followed by the path to a Tcl script
 instead of a list of patterns, then that single Tcl test script is run
 with the specified permutation.
+
+The --fuzztest option is ignored if the PERMUTATION is "release". Otherwise,
+if it is present, then "make -C <dir> fuzztest" is run as part of the tests,
+where <dir> is the directory containing the testfixture binary used to
+run the script.
 
 The "status" and "njob" commands are designed to be run from the same
 directory as a running testrunner.tcl script that is running tests. The
@@ -99,6 +105,7 @@ set TRG(nJob)    [default_njob]     ;# Default number of helper processes
 set TRG(patternlist) [list]
 set TRG(cmdline) $argv
 set TRG(reporttime) 2000
+set TRG(fuzztest) 0                 ;# is the fuzztest option present.
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -114,7 +121,7 @@ switch -nocase -glob -- $tcl_platform(os) {
   *win* {
     set TRG(platform) win
     set TRG(make)     make.bat
-    set TRG(makecmd)     make.bat
+    set TRG(makecmd)  make.bat
   }
   default {
     error "cannot determine platform!"
@@ -335,6 +342,8 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       incr ii
       set TRG(nJob) [lindex $argv $ii]
       if {$isLast} { usage }
+    } elseif {($n>2 && [string match "$a*" --fuzztest]) || $a=="-f"} {
+      set TRG(fuzztest) 1
     } else {
       usage
     }
@@ -422,6 +431,7 @@ proc build_to_dirname {bname} {
 #    {BUILD CONFIG FILENAME} {BUILD CONFIG FILENAME} ...
 #
 proc testset_patternlist {patternlist} {
+  global TRG
 
   set testset [list]              ;# return value
 
@@ -452,6 +462,8 @@ proc testset_patternlist {patternlist} {
       }
     }
 
+    set TRG(fuzztest) 0           ;# ignore --fuzztest option in this case
+
   } elseif {$first=="all"} {
 
     set clist [trd_all_configs]
@@ -467,6 +479,10 @@ proc testset_patternlist {patternlist} {
     testset_append testset "" veryquick $patternlist
   } else {
     testset_append testset "" full $patternlist
+  }
+  if {$TRG(fuzztest)} {
+    if {$TRG(platform)=="win"} { error "todo" }
+    lappend testset [list "" make fuzztest]
   }
 
   set testset
@@ -586,6 +602,11 @@ proc make_new_testset {} {
         close $fd
       }
 
+      if {$c=="make" && $b==""} {
+        # --fuzztest option
+        set slow 1
+      }
+
       if {$c=="veryquick"} {
         set c ""
       }
@@ -698,9 +719,20 @@ proc launch_another_job {iJob} {
     set dir $builddir
 
   } elseif {$c=="make"} {
-    set builddir [build_to_dirname $b]
-    copy_dir $builddir $dir
-    set cmd "$TRG(makecmd) $f"
+    if {$b==""} {
+      if {$f!="fuzztest"} { error "corruption in testrunner.db!" }
+      # Special case - run [make fuzztest] 
+      set makedir [file dirname $testfixture]
+      if {$TRG(platform)=="win"} {
+        error "how?"
+      } else {
+        set cmd [list make -C $makedir fuzztest]
+      }
+    } else {
+      set builddir [build_to_dirname $b]
+      copy_dir $builddir $dir
+      set cmd "$TRG(makecmd) $f"
+    }
   } else {
     if {$b==""} {
       set testfixture [info nameofexec]
@@ -763,8 +795,14 @@ proc one_line_report {} {
     lappend text "$j: ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
   }
 
-  puts -nonewline "${tm}s: [join $text { || }]\r"
+  if {[info exists TRG(reportlength)]} {
+    puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
+  }
+  set report "${tm}s: [join $text { || }]"
+  set TRG(reportlength) [string length $report]
+  puts -nonewline "$report\r"
   flush stdout
+
   after $TRG(reporttime) one_line_report
 }
 
