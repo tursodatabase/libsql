@@ -54,6 +54,8 @@
 # error "FTS5_MAX_PREFIX_INDEXES is too large"
 #endif
 
+#define FTS5_MAX_LEVEL 64
+
 /*
 ** Details:
 **
@@ -4771,7 +4773,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
     pNew->nLevel = pStruct->nLevel+1;
     pNew->nRef = 1;
     pNew->nWriteCounter = pStruct->nWriteCounter;
-    pLvl = &pNew->aLevel[pStruct->nLevel];
+    pLvl = &pNew->aLevel[MIN(pStruct->nLevel, FTS5_MAX_LEVEL-1)];
     pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&p->rc, nByte);
     if( pLvl->aSeg ){
       int iLvl, iSeg;

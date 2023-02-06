@@ -131,7 +131,7 @@
     </style>
     <script>//Assign a distinct target tab name for each test page...
       document.querySelectorAll('a').forEach(function(e){
-          e.target = e.href;
+          e.target = e.href.replace(/^http*:\/\/[^/]+\//, '');
       });
     </script>
   </body>

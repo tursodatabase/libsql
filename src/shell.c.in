@@ -5685,10 +5685,13 @@ static int sql_trace_callback(
 /*
 ** A no-op routine that runs with the ".breakpoint" doc-command.  This is
 ** a useful spot to set a debugger breakpoint.
+**
+** This routine does not do anything practical.  The code are there simply
+** to prevent the compiler from optimizing this routine out.
 */
 static void test_breakpoint(void){
-  static int nCall = 0;
-  nCall++;
+  static unsigned int nCall = 0;
+  if( (nCall++)==0xffffffff ) printf("Many .breakpoints have run\n");
 }
 
 /*

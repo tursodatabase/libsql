@@ -238,20 +238,24 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
 }/*sqlite3Worker1Promiser()*/;
 self.sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
+//#if target=es6-bundler-friendly
+    return new Worker("sqlite3-worker1.js");
+//#else
     let theJs = "sqlite3-worker1.js";
     if(this.currentScript){
       const src = this.currentScript.src.split('/');
       src.pop();
       theJs = src.join('/')+'/' + theJs;
-      //console.warn("promiser currentScript, theJs =",this.currentScript,theJs);
+      //sqlite3.config.warn("promiser currentScript, theJs =",this.currentScript,theJs);
     }else{
-      //console.warn("promiser self.location =",self.location);
+      //sqlite3.config.warn("promiser self.location =",self.location);
       const urlParams = new URL(self.location.href).searchParams;
       if(urlParams.has('sqlite3.dir')){
         theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
       }
     }
     return new Worker(theJs + self.location.search);
+//#endif
   }.bind({
     currentScript: self?.document?.currentScript
   }),

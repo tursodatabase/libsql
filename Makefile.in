@@ -373,7 +373,6 @@ TESTSRC = \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
   $(TOP)/src/test6.c \
-  $(TOP)/src/test7.c \
   $(TOP)/src/test8.c \
   $(TOP)/src/test9.c \
   $(TOP)/src/test_autoext.c \
@@ -402,7 +401,6 @@ TESTSRC = \
   $(TOP)/src/test_quota.c \
   $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
-  $(TOP)/src/test_server.c \
   $(TOP)/src/test_superlock.c \
   $(TOP)/src/test_syscall.c \
   $(TOP)/src/test_tclsh.c \
@@ -1283,6 +1281,15 @@ tcltest:	./testfixture$(TEXE)
 testrunner:	testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl
 
+# Runs both fuzztest and testrunner, consecutively.
+#
+devtest:	testfixture$(TEXE) fuzztest testrunner
+
+# Testing for a release
+#
+releasetest: testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
+
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
@@ -1439,9 +1446,6 @@ threadtest: threadtest3$(TEXE)
 
 threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(LTLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
-
-releasetest:
-	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
 
 # Standard install and cleanup targets
 #

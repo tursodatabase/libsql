@@ -16,8 +16,12 @@ UI thread
     <style></style>
   </head>
   <body><h1 id='color-target'></h1>
-    <div>See <a href='tester1-worker.html' target='tester1-worker.html'>tester1-worker.html</a>
-      for the Worker-thread variant.</div>
+    <div>Variants:
+      <a href='tester1.html' target='tester1.html'>conventional UI thread</a>,
+      <a href='tester1-worker.html' target='tester1-worker.html'>conventional worker</a>,
+      <a href='tester1-esm.html' target='tester1-esm.html'>ESM in UI thread</a>,
+      <a href='tester1-worker.html?esm' target='tester1-worker.html?esm'>ESM worker</a>
+    </div>
     <div class='input-wrapper'>
       <input type='checkbox' id='cb-log-reverse'>
       <label for='cb-log-reverse'>Reverse log order?</label>

@@ -102,9 +102,8 @@ int sql_exec_changeset(
 #ifdef SQLITE_DEBUG
 static int sqlite3_test_changeset(int, void *, char **);
 static void assert_changeset_is_ok(int n, void *p){
-  int rc = 0;
   char *z = 0;
-  rc = sqlite3_test_changeset(n, p, &z);
+  (void)sqlite3_test_changeset(n, p, &z);
   assert( z==0 );
 }
 #else

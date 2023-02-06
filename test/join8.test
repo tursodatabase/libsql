@@ -258,7 +258,7 @@ do_execsql_test join8-7020 {
   )
   SELECT * FROM t0 FULL JOIN t4 ON t0.a=t4.d AND t4.z>0
    ORDER BY coalesce(t0.a, t0.y+200, t4.d);
-} {/.*BLOOM FILTER ON t2.*BLOOM FILTER ON t3.*BLOOM FILTER ON t4.*/}
+} {/.*BLOOM FILTER ON t2.*BLOOM FILTER ON t3.*/}
 
 # 2022-05-12 Difference with PG found (by Dan) while exploring
 # https://sqlite.org/forum/forumpost/677a0ab93fcd9ccd

@@ -11,11 +11,10 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbupartial
 
 db close
-sqlite3_shutdown
-sqlite3_config_uri 1
 
 foreach {tn without_rowid a b c d} {
   1 ""              a b c d

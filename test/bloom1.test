@@ -66,5 +66,39 @@ do_execsql_test 1.5 {
     AND t3.e=t1.b AND t3.f!='silly'
 } {result}
 
-finish_test
+# 2023-02-05
+# https://sqlite.org/forum/forumpost/56de336385
+#
+# Do not employ a Bloom filter if the table being filtered or any table
+# wo the left of the table being filtered lacks STAT1 data, since we
+# cannot make a good Bloom filter usefulness determination without STAT1
+# data.
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE TABLE objs(c INTEGER, s INTEGER, p INTEGER, o INTEGER);
+  CREATE UNIQUE INDEX objs_cspo ON objs(o,p,c,s);
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1 VALUES('objs','objs_cspo','520138 21 20 19 1');
+  ANALYZE sqlite_schema;
+}
+do_eqp_test 2.1 {
+  WITH RECURSIVE transit(x) AS (
+     SELECT s FROM objs WHERE p=9 AND o=32805
+     UNION
+     SELECT objs.s FROM objs, transit WHERE objs.p=9 AND objs.o=transit.x
+  )
+  SELECT x FROM transit;
+} {
+  QUERY PLAN
+  |--CO-ROUTINE transit
+  |  |--SETUP
+  |  |  `--SEARCH objs USING COVERING INDEX objs_cspo (o=? AND p=?)
+  |  `--RECURSIVE STEP
+  |     |--SCAN transit
+  |     `--SEARCH objs USING COVERING INDEX objs_cspo (o=? AND p=?)
+  `--SCAN transit
+} 
 
+finish_test

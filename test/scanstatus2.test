@@ -139,19 +139,21 @@ QUERY (nCycle=nnn)
 }
 
 #-------------------------------------------------------------------------
-reset_db
-do_execsql_test 2.0 {
-  CREATE VIRTUAL TABLE ft USING fts5(a);
-  INSERT INTO ft VALUES('abc');
-  INSERT INTO ft VALUES('def');
-  INSERT INTO ft VALUES('ghi');
-}
-
-do_graph_test 2.1 {
-  SELECT * FROM ft('def')
-} {
+ifcapable fts5 {
+  reset_db
+  do_execsql_test 2.0 {
+    CREATE VIRTUAL TABLE ft USING fts5(a);
+    INSERT INTO ft VALUES('abc');
+    INSERT INTO ft VALUES('def');
+    INSERT INTO ft VALUES('ghi');
+  }
+  
+  do_graph_test 2.1 {
+    SELECT * FROM ft('def')
+  } {
 QUERY (nCycle=nnn)
 --SCAN ft VIRTUAL TABLE INDEX 0:M1 (nCycle=nnn)
+  }
 }
 
 #-------------------------------------------------------------------------

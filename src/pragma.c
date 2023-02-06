@@ -1785,12 +1785,21 @@ void sqlite3Pragma(
         ** will also prepopulate the cursor column cache that is used
         ** by the OP_IsType code, so it is a required step.
         */
-        mxCol = pTab->nCol-1;
-        while( mxCol>=0
-            && ((pTab->aCol[mxCol].colFlags & COLFLAG_VIRTUAL)!=0
-                || pTab->iPKey==mxCol) ) mxCol--;
+        assert( !IsVirtual(pTab) );
+        if( HasRowid(pTab) ){
+          mxCol = -1;
+          for(j=0; j<pTab->nCol; j++){
+            if( (pTab->aCol[j].colFlags & COLFLAG_VIRTUAL)==0 ) mxCol++;
+          }
+          if( mxCol==pTab->iPKey ) mxCol--;
+        }else{
+          /* COLFLAG_VIRTUAL columns are not included in the WITHOUT ROWID
+          ** PK index column-count, so there is no need to account for them 
+          ** in this case. */
+          mxCol = sqlite3PrimaryKeyIndex(pTab)->nColumn-1;
+        }
         if( mxCol>=0 ){
-          sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, mxCol, 3);
+          sqlite3VdbeAddOp3(v, OP_Column, iDataCur, mxCol, 3);
           sqlite3VdbeTypeofColumn(v, 3);
         }
 

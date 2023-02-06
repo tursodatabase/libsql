@@ -218,6 +218,13 @@ void sqlite3TreeViewSrcList(TreeView *pView, const SrcList *pSrc){
     if( pItem->fg.isOn || (pItem->fg.isUsing==0 && pItem->u3.pOn!=0) ){
       sqlite3_str_appendf(&x, " ON");
     }
+    if( pItem->fg.isTabFunc )      sqlite3_str_appendf(&x, " isTabFunc");
+    if( pItem->fg.isCorrelated )   sqlite3_str_appendf(&x, " isCorrelated");
+    if( pItem->fg.isMaterialized ) sqlite3_str_appendf(&x, " isMaterialized");
+    if( pItem->fg.viaCoroutine )   sqlite3_str_appendf(&x, " viaCoroutine");
+    if( pItem->fg.notCte )         sqlite3_str_appendf(&x, " notCte");
+    if( pItem->fg.isNestedFrom )   sqlite3_str_appendf(&x, " isNestedFrom");
+
     sqlite3StrAccumFinish(&x);
     sqlite3TreeViewItem(pView, zLine, i<pSrc->nSrc-1);
     n = 0;

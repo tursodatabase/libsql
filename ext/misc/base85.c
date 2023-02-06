@@ -171,7 +171,8 @@ static char* toBase85( u8 *pIn, int nbIn, char *pOut, char *pSep ){
   int nCol = 0;
   while( nbIn >= 4 ){
     int nco = 5;
-    unsigned long qbv = (pIn[0]<<24)|(pIn[1]<<16)|(pIn[2]<<8)|pIn[3];
+    unsigned long qbv = (((unsigned long)pIn[0])<<24) |
+                        (pIn[1]<<16) | (pIn[2]<<8) | pIn[3];
     while( nco > 0 ){
       unsigned nqv = (unsigned)(qbv/85UL);
       unsigned char dv = qbv - 85UL*nqv;

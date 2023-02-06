@@ -1485,7 +1485,6 @@ TESTSRC = \
   $(TOP)\src\test4.c \
   $(TOP)\src\test5.c \
   $(TOP)\src\test6.c \
-  $(TOP)\src\test7.c \
   $(TOP)\src\test8.c \
   $(TOP)\src\test9.c \
   $(TOP)\src\test_autoext.c \
@@ -1514,7 +1513,6 @@ TESTSRC = \
   $(TOP)\src\test_quota.c \
   $(TOP)\src\test_rtree.c \
   $(TOP)\src\test_schema.c \
-  $(TOP)\src\test_server.c \
   $(TOP)\src\test_superlock.c \
   $(TOP)\src\test_syscall.c \
   $(TOP)\src\test_tclsh.c \
@@ -2450,6 +2448,16 @@ tcltest: testfixture.exe
 # concurrently.
 testrunner:	testfixture.exe
 	.\testfixture.exe $(TOP)\test\testrunner.tcl
+
+# Runs both fuzztest and testrunner, consecutively.
+#
+devtest:	testfixture.exe fuzztest testrunner
+
+# Testing for a release
+#
+releasetest: testfixture.exe fuzztest
+	testfixture.exe $(TOP)/test/testrunner.tcl release
+
 
 smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
