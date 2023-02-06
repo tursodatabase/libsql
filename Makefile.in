@@ -1280,6 +1280,11 @@ testrunner:	testfixture$(TEXE)
 #
 devtest:	testfixture$(TEXE) fuzztest testrunner
 
+# Testing for a release
+#
+releasetest: testfixture$(TEXE)
+	testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
+
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
@@ -1436,9 +1441,6 @@ threadtest: threadtest3$(TEXE)
 
 threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(LTLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
-
-releasetest:
-	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
 
 # Standard install and cleanup targets
 #

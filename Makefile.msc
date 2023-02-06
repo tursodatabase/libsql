@@ -2455,6 +2455,12 @@ testrunner:	testfixture.exe
 #
 devtest:	testfixture.exe fuzztest testrunner
 
+# Testing for a release
+#
+releasetest: testfixture.exe fuzztest
+	testfixture.exe $(TOP)/test/testrunner.tcl release
+
+
 smoketest:	$(TESTPROGS)
 	@set PATH=$(LIBTCLPATH);$(PATH)
 	.\testfixture.exe $(TOP)\test\main.test $(TESTOPTS)
