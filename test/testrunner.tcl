@@ -312,6 +312,7 @@ if {[llength $argv]==1
     puts "Failures: "
     mydb eval {
       SELECT build, config, filename FROM script WHERE state='failed'
+      ORDER BY 3
     } {
       display_job $build $config $filename
     }

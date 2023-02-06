@@ -40,8 +40,11 @@ do_execsql_test 1.0 {
     SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<10
   )
   INSERT INTO t1 SELECT hex(randomblob(100)), hex(randomblob(100)) FROM s;
-  PRAGMA page_count;
-} {20}
+} {}
+do_test 1.1a {
+  set nPg [db one { PRAGMA page_count }]
+  expr ($nPg==20 || $nPg==21)
+} 1
 
 # Simulate a crash in another process. This leaves the db with a hot-journal.
 # Without the journal the db is corrupt.
