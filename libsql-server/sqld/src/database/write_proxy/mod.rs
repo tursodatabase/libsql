@@ -124,6 +124,7 @@ impl WriteProxyDatabase {
             #[cfg(feature = "mwal_backend")]
             vwal_methods,
             (),
+            false, // no bottomless replication for replicas
         )?;
         Ok(Self {
             read_db,

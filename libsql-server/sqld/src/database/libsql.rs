@@ -136,6 +136,7 @@ fn open_db(
         Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
     >,
     wal_hook: impl WalHook + Send + Clone + 'static,
+    with_bottomless: bool,
 ) -> anyhow::Result<rusqlite::Connection> {
     let mut retries = 0;
     loop {
@@ -156,6 +157,7 @@ fn open_db(
                     | OpenFlags::SQLITE_OPEN_URI
                     | OpenFlags::SQLITE_OPEN_NO_MUTEX,
                 wal_hook.clone(),
+                with_bottomless,
             ),
         };
         #[cfg(not(feature = "mwal_backend"))]
@@ -166,6 +168,7 @@ fn open_db(
                 | OpenFlags::SQLITE_OPEN_URI
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
             wal_hook.clone(),
+            with_bottomless,
         );
 
         match conn_result {
@@ -201,6 +204,7 @@ impl LibSqlDb {
             Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
         >,
         wal_hook: impl WalHook + Send + Clone + 'static,
+        with_bottomless: bool,
     ) -> crate::Result<Self> {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
@@ -210,6 +214,7 @@ impl LibSqlDb {
                 #[cfg(feature = "mwal_backend")]
                 vwal_methods,
                 wal_hook,
+                with_bottomless,
             )
             .unwrap();
 
