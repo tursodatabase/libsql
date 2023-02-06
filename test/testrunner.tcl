@@ -766,7 +766,7 @@ proc one_line_report {} {
   global TRG
 
   set tm [expr [clock_milliseconds] - $TRG(starttime)]
-  set tm [format "%.2f" [expr $tm/1000.0]]
+  set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
 
   foreach s {ready running done failed} {
     set v($s,build) 0
@@ -792,16 +792,20 @@ proc one_line_report {} {
   set text ""
   foreach j [array names t] {
     set fin [expr $v(done,$j) + $v(failed,$j)]
-    lappend text "$j: ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
+    lappend text "$j ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
   }
 
   if {[info exists TRG(reportlength)]} {
     puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
   }
-  set report "${tm}s: [join $text { || }]"
+  set report "${tm}s: [join $text { }]"
   set TRG(reportlength) [string length $report]
-  puts -nonewline "$report\r"
-  flush stdout
+  if {[string length $report]<80} {
+    puts -nonewline "$report\r"
+    flush stdout
+  } else {
+    puts $report
+  }
 
   after $TRG(reporttime) one_line_report
 }
