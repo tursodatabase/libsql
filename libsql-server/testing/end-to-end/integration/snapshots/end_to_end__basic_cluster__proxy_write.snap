@@ -1,0 +1,18 @@
+---
+source: integration/basic_cluster.rs
+expression: json
+---
+[
+  {
+    "results": {
+      "columns": [],
+      "rows": []
+    }
+  },
+  {
+    "results": {
+      "columns": [],
+      "rows": []
+    }
+  }
+]
