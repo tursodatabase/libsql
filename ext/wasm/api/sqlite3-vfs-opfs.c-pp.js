@@ -190,7 +190,7 @@ const installOpfsVfs = function callee(options){
         s = metrics.s11n.deserialize = Object.create(null);
         s.count = s.time = 0;
       }
-    }/*metrics*/;      
+    }/*metrics*/;
     const opfsVfs = new sqlite3_vfs();
     const opfsIoMethods = new sqlite3_io_methods();
     const promiseReject = function(err){
@@ -198,7 +198,9 @@ const installOpfsVfs = function callee(options){
       return promiseReject_(err);
     };
     const W =
-//#if target=es6-module
+//#if target=es6-bundler-friendly
+    new Worker(new URL("sqlite3-opfs-async-proxy.js", import.meta.url));
+//#elif target=es6-module
     new Worker(new URL(options.proxyUri, import.meta.url));
 //#else
     new Worker(options.proxyUri);
@@ -743,7 +745,7 @@ const installOpfsVfs = function callee(options){
         let rc;
         try {
           rc = opRun('xRead',pFile, n, Number(offset64));
-          if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){ 
+          if(0===rc || capi.SQLITE_IOERR_SHORT_READ===rc){
             /**
                Results get written to the SharedArrayBuffer f.sabView.
                Because the heap is _not_ a SharedArrayBuffer, we have
@@ -1291,7 +1293,7 @@ const installOpfsVfs = function callee(options){
                 }).catch(promiseReject);
               }else{
                 promiseResolve(sqlite3);
-              }                
+              }
             }catch(e){
               error(e);
               promiseReject(e);

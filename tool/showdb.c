@@ -1097,6 +1097,18 @@ static void ptrmap_coverage_report(const char *zDbName){
 }
 
 /*
+** Check the range validity for a page number.  Print an error and
+** exit if the page is out of range.
+*/
+static void checkPageValidity(int iPage){
+  if( iPage<1 || iPage>g.mxPage ){
+    fprintf(stderr, "Invalid page number %d:  valid range is 1..%d\n",
+            iPage, g.mxPage);
+    exit(1);
+  }
+}
+
+/*
 ** Print a usage comment
 */
 static void usage(const char *argv0){
@@ -1184,10 +1196,12 @@ int main(int argc, char **argv){
         continue;
       }
       iStart = strtoul(azArg[i], &zLeft, 0);
+      checkPageValidity(iStart);
       if( zLeft && strcmp(zLeft,"..end")==0 ){
         iEnd = g.mxPage;
       }else if( zLeft && zLeft[0]=='.' && zLeft[1]=='.' ){
         iEnd = strtol(&zLeft[2], 0, 0);
+        checkPageValidity(iEnd);
       }else if( zLeft && zLeft[0]=='b' ){
         int ofst, nByte, hdrSize;
         unsigned char *a;

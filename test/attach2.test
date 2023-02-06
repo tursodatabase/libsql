@@ -17,6 +17,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix attach2
 
 ifcapable !attach {
   finish_test
@@ -387,5 +388,64 @@ do_test attach2-6.3 {
 } {0 {}}
 
 db close
+
+ifcapable utf16 {
+  forcedelete test.db2      ;# utf-16
+  forcedelete test.db3      ;# utf-16
+  forcedelete test.db4      ;# utf-8
+  
+  sqlite3 db2 test.db2 
+  do_execsql_test -db db2 1.1 {
+    PRAGMA encoding = 'utf16';
+    CREATE TABLE t2(x);
+    INSERT INTO t2 VALUES('text2');
+  }
+  db2 close
+  
+  sqlite3 db3 test.db3 
+  do_execsql_test -db db3 1.2 {
+    PRAGMA encoding = 'utf16';
+    CREATE TABLE t3(x);
+    INSERT INTO t3 VALUES('text3');
+  }
+  db3 close
+  
+  sqlite3 db4 test.db4 
+  do_execsql_test -db db4 1.3 {
+    PRAGMA encoding = 'utf8';
+    CREATE TABLE t4(x);
+    INSERT INTO t4 VALUES('text4');
+  }
+  db4 close
+  
+  reset_db
+  do_execsql_test 2.1 {
+    PRAGMA encoding = 'utf16';
+    ATTACH 'test.db2' AS aux;
+    SELECT * FROM t2;
+  } {text2}
+  
+  reset_db
+  do_execsql_test 2.2 {
+    ATTACH 'test.db4' AS aux;
+    SELECT * FROM t4;
+  } {text4}
+  
+  db close
+  sqlite3 db test.db2
+  do_execsql_test 2.3 {
+    ATTACH 'test.db3' AS aux;
+    SELECT * FROM t3;
+    SELECT * FROM t2;
+  } {text3 text2}
+  
+  db close
+  sqlite3 db test.db2
+  do_catchsql_test 2.4 {
+    ATTACH 'test.db4' AS aux;
+  } {1 {attached databases must use the same text encoding as main database}}
+  
+  db close
+}
 
 finish_test

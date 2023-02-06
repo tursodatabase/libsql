@@ -92,12 +92,14 @@ foreach f [glob -nocomplain            \
     $testdir/../ext/expert/*.test      \
     $testdir/../ext/lsm1/test/*.test   \
     $testdir/../ext/recover/*.test     \
+    $testdir/../ext/rbu/*.test         \
 ] {
   lappend alltests $f 
 }
 foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 
   lappend alltests $f 
 }
+unset f
 
 if {$::tcl_platform(platform)!="unix"} {
   set alltests [test_set $alltests -exclude crash.test crash2.test]
@@ -114,7 +116,7 @@ set allquicktests [test_set $alltests -exclude {
   corruptC.test crash.test crash2.test crash3.test crash4.test crash5.test
   crash6.test crash7.test delete3.test e_fts3.test fts3rnd.test
   fkey_malloc.test fuzz.test fuzz3.test fuzz_malloc.test in2.test loadext.test
-  misc7.test mutex2.test notify2.test onefile.test pagerfault2.test 
+  misc7.test mutex2.test onefile.test pagerfault2.test 
   savepoint4.test savepoint6.test select9.test 
   speed1.test speed1p.test speed2.test speed3.test speed4.test 
   speed4p.test sqllimits1.test tkt2686.test thread001.test thread002.test
@@ -190,7 +192,7 @@ test_suite "veryquick" -prefix "" -description {
   that test malloc and IO errors are omitted.
 } -files [
   test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
-      *fts5corrupt* *fts5big* *fts5aj*
+      *fts5corrupt* *fts5big* *fts5aj* *rbucrash*
 ]
 
 test_suite "shell" -prefix "" -description {
@@ -783,6 +785,7 @@ test_suite "inmemory_journal" -description {
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
   journal3.test 8_3_names.test shmlock.test
+  pendingrace.test
 
   pager1.test async4.test corrupt.test filefmt.test pager2.test
   corrupt5.test corruptA.test pageropt.test
@@ -914,6 +917,8 @@ ifcapable threadsafe {
     autoinstall_test_functions
   } -shutdown {
     catch {db close}
+    catch {db2 close}
+    catch {db3 close}
     sqlite3_shutdown
     install_mutex_counters 0
     sqlite3_initialize
@@ -1059,7 +1064,7 @@ test_suite "session_strm" -description {
 test_suite "rbu" -description {
   RBU tests.
 } -files [
-  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] -exclude rbu.test
+  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] 
 ]
 
 test_suite "no_optimization" -description {

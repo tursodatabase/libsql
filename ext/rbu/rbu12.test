@@ -10,10 +10,8 @@
 #***********************************************************************
 #
 
-if {![info exists testdir]} {
-  set testdir [file join [file dirname [info script]] .. .. test]
-}
-source $testdir/tester.tcl
+source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 source $testdir/lock_common.tcl
 set ::testprefix rbu12
 

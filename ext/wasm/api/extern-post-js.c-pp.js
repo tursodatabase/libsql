@@ -9,7 +9,7 @@
    Emscripten-generated module init scope, in the current
    global scope. */
 //#if target=es6-module
-const toExportForES6 =
+const toExportForESM =
 //#endif
 (function(){
   /**
@@ -45,10 +45,10 @@ const toExportForES6 =
     moduleScript: self?.document?.currentScript,
     isWorker: ('undefined' !== typeof WorkerGlobalScope),
     location: self.location,
-    urlParams: new URL(self.location.href).searchParams
+    urlParams:  new URL(self.location.href).searchParams
   });
   initModuleState.debugModule =
-    (new URL(self.location.href).searchParams).has('sqlite3.debugModule')
+    initModuleState.urlParams.has('sqlite3.debugModule')
     ? (...args)=>console.warn('sqlite3.debugModule:',...args)
     : ()=>{};
 
@@ -105,6 +105,10 @@ const toExportForES6 =
                    document?.currentScript?.src);
     }
   }
+//#ifnot target=es6-module
+// Emscripten does not inject these module-loader bits in ES6 module
+// builds and including them here breaks JS bundlers, so elide them
+// from ESM builds.
   /* Replace the various module exports performed by the Emscripten
      glue... */
   if (typeof exports === 'object' && typeof module === 'object'){
@@ -114,8 +118,9 @@ const toExportForES6 =
   }
   /* AMD modules get injected in a way we cannot override,
      so we can't handle those here. */
+//#endif // !target=es6-module
   return self.sqlite3InitModule /* required for ESM */;
 })();
 //#if target=es6-module
-export default toExportForES6;
+export default toExportForESM;
 //#endif

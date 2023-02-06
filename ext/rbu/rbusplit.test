@@ -12,11 +12,10 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbusplit
 
 db close
-sqlite3_shutdown
-sqlite3_config_uri 1
 
 autoinstall_test_functions
 

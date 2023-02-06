@@ -246,7 +246,7 @@ static int dbpageFilter(
     pCsr->iDb = 0;
   }
   pBt = db->aDb[pCsr->iDb].pBt;
-  if( pBt==0 ) return SQLITE_OK;
+  if( NEVER(pBt==0) ) return SQLITE_OK;
   pCsr->pPager = sqlite3BtreePager(pBt);
   pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
   pCsr->mxPgno = sqlite3BtreeLastPage(pBt);
@@ -337,18 +337,20 @@ static int dbpageUpdate(
     goto update_fail;
   }
   pgno = sqlite3_value_int(argv[0]);
-  if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL
+   || (Pgno)sqlite3_value_int(argv[1])!=pgno
+  ){
     zErr = "cannot insert";
     goto update_fail;
   }
   zSchema = (const char*)sqlite3_value_text(argv[4]);
-  iDb = zSchema ? sqlite3FindDbName(pTab->db, zSchema) : -1;
-  if( iDb<0 ){
+  iDb = ALWAYS(zSchema) ? sqlite3FindDbName(pTab->db, zSchema) : -1;
+  if( NEVER(iDb<0) ){
     zErr = "no such schema";
     goto update_fail;
   }
   pBt = pTab->db->aDb[iDb].pBt;
-  if( pgno<1 || pBt==0 || pgno>sqlite3BtreeLastPage(pBt) ){
+  if( NEVER(pgno<1) || NEVER(pBt==0) || NEVER(pgno>sqlite3BtreeLastPage(pBt)) ){
     zErr = "bad page number";
     goto update_fail;
   }
@@ -387,12 +389,11 @@ static int dbpageBegin(sqlite3_vtab *pVtab){
   DbpageTable *pTab = (DbpageTable *)pVtab;
   sqlite3 *db = pTab->db;
   int i;
-  int rc = SQLITE_OK;
-  for(i=0; rc==SQLITE_OK && i<db->nDb; i++){
+  for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
-    if( pBt ) rc = sqlite3BtreeBeginTrans(pBt, 1, 0);
+    if( pBt ) (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
   }
-  return rc;
+  return SQLITE_OK;
 }
 
 

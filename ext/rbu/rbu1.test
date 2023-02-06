@@ -11,11 +11,10 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbu1
 
 db close
-sqlite3_shutdown
-sqlite3_config_uri 1
 
 # Create a simple RBU database. That expects to write to a table:
 #

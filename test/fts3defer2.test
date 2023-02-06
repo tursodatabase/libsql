@@ -161,5 +161,33 @@ foreach {tn sql} {
   } {1 {1 1 1 4 4 11 912 6} 3 {1 1 1 4 4 11 912 6}}
 }
 
+do_execsql_test 2.5 {
+  INSERT INTO t3(t3) VALUES('rebuild');
+}
+do_execsql_test 2.6 {
+  SELECT rowid, length(offsets(t3)) FROM t3 WHERE t3 MATCH '(a NEAR a)';
+} {11 228929}
+do_execsql_test 2.7 {
+  SELECT rowid, length(offsets(t3)) FROM t3 WHERE t3 MATCH '(a NEAR b NEAR a)';
+} {1 23 3 23 11 205}
+do_execsql_test 2.8 {
+  SELECT rowid, length(offsets(t3)) FROM t3 WHERE t3 MATCH '(a NEAR b)';
+} {1 15 3 15 11 106}
+
+do_execsql_test 2.9 {
+  SELECT rowid, length(matchinfo(t3)) FROM t3 WHERE t3 MATCH '(a NEAR a)';
+} {11 32}
+do_execsql_test 2.10 {
+  SELECT rowid, length(matchinfo(t3)) FROM t3 WHERE t3 MATCH '(a NEAR b NEAR a)'
+} {1 44 3 44 11 44}
+do_execsql_test 2.11 {
+  SELECT rowid, length(matchinfo(t3)) FROM t3 WHERE t3 MATCH '(a NEAR b)';
+} {1 32 3 32 11 32}
+
+do_execsql_test 2.12 {
+  SELECT rowid, length(matchinfo(t3)) FROM t3 
+  WHERE t3 MATCH '(a NEAR b NEAR a NEAR b NEAR a)'
+} {1 68 3 68 11 68}
+
 
 finish_test
