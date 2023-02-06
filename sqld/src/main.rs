@@ -78,6 +78,8 @@ struct Cli {
     /// Don't display welcome message
     #[clap(long)]
     no_welcome: bool,
+    #[clap(long)]
+    enable_bottomless_replication: bool,
 }
 
 impl Cli {
@@ -147,6 +149,7 @@ impl From<Cli> for Config {
             rpc_server_ca_cert: cli.grpc_ca_cert_file,
             #[cfg(feature = "mwal_backend")]
             mwal_addr: cli.mwal_addr,
+            enable_bottomless_replication: cli.enable_bottomless_replication,
         }
     }
 }
