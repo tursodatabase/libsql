@@ -1,7 +1,7 @@
 #![allow(clippy::not_unsafe_ptr_arg_deref)]
 use std::ffi::{c_char, c_int, c_void};
 
-use super::ffi::{self, libsql_wal_methods, sqlite3_file, sqlite3_vfs, types::*, PgHdr, Wal};
+use super::ffi::{libsql_wal_methods, sqlite3_file, sqlite3_vfs, types::*, PgHdr, Wal};
 
 /// The `WalHook` trait allows to intercept WAL method call.
 ///
@@ -60,7 +60,8 @@ impl WalMethodsHook {
     pub const METHODS_NAME: &'static [u8] = b"wal_hook\0";
 
     pub fn wrap(
-        underlying_methods: *mut libsql_wal_methods,
+        default_methods: *mut libsql_wal_methods,
+        maybe_bottomless_methods: *mut libsql_wal_methods,
         hook: impl WalHook + 'static,
     ) -> *mut libsql_wal_methods {
         let name = Self::METHODS_NAME.as_ptr() as *const _;
@@ -101,7 +102,8 @@ impl WalMethodsHook {
                 bUsesShm: 0,
                 pNext: std::ptr::null_mut(),
             },
-            underlying_methods,
+            underlying_methods_for_bottomless: default_methods,
+            underlying_methods: maybe_bottomless_methods,
             hook: Box::new(hook),
         };
 
@@ -123,17 +125,7 @@ pub extern "C" fn xOpen(
     });
     let ref_methods = unsafe { &*(methods as *mut WalMethodsHook) };
     let origxOpen = unsafe { (*ref_methods.underlying_methods).xOpen.unwrap() };
-    unsafe {
-        (origxOpen)(
-            vfs,
-            db_file,
-            wal_name,
-            no_shm_mode,
-            max_size,
-            ref_methods.underlying_methods,
-            wal,
-        )
-    }
+    unsafe { (origxOpen)(vfs, db_file, wal_name, no_shm_mode, max_size, methods, wal) }
 }
 
 unsafe fn get_orig_methods(wal: *mut Wal) -> &'static libsql_wal_methods {
@@ -333,8 +325,9 @@ pub extern "C" fn xGetPathname(buf: *mut c_char, orig: *const c_char, orig_len: 
 }
 
 #[allow(non_snake_case)]
-pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, _path: *const c_char) -> i32 {
-    ffi::SQLITE_OK
+pub extern "C" fn xPreMainDbOpen(methods: *mut libsql_wal_methods, path: *const c_char) -> i32 {
+    let orig_methods = unsafe { &*(*(methods as *mut WalMethodsHook)).underlying_methods };
+    unsafe { (orig_methods.xPreMainDbOpen.unwrap())(methods, path) }
 }
 
 #[repr(C)]
@@ -342,7 +335,9 @@ pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, _path: *cons
 pub struct WalMethodsHook {
     pub methods: libsql_wal_methods,
 
-    //user data
+    // extra-field used by our bottomless storage for nested WAL methods
+    underlying_methods_for_bottomless: *mut libsql_wal_methods,
+    // user data
     underlying_methods: *mut libsql_wal_methods,
     hook: Box<dyn WalHook>,
 }

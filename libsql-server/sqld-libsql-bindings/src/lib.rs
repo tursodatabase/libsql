@@ -41,8 +41,9 @@ pub fn open_with_regular_wal(
 ) -> anyhow::Result<Connection> {
     let path = path.as_ref().join("data");
     unsafe {
-        let orig = get_orig_wal_methods(with_bottomless)?;
-        let wrapped = WalMethodsHook::wrap(orig, wal_hook);
+        let default_methods = get_orig_wal_methods(false)?;
+        let maybe_bottomless_methods = get_orig_wal_methods(with_bottomless)?;
+        let wrapped = WalMethodsHook::wrap(default_methods, maybe_bottomless_methods, wal_hook);
         let res = libsql_wal_methods_register(wrapped);
         ensure!(res == 0, "failed to register WAL methods");
     }
