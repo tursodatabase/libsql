@@ -1,11 +1,11 @@
-C Update\stest\sscripts\sspeed1.test\sand\sspeed1p.test\sso\sthey\smay\sbe\srun\sby\stestrunner.tcl.
-D 2023-02-06T15:46:01.294
+C Remove\sthe\slong\sobsolete\s"client/server"\smode\stests.
+D 2023-02-06T15:46:34.433
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 3c7df00360783e20db13c928cbd2f3561aea14b29da2b78f6ce57393c0643ef3
+F Makefile.in 03ae384c9efbd8827cbcdce1d2fa57c6c0df264cb408d4e10dc4c57534214d36
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 9e0147a280fde917aa4a3337b96da43fab2ed2235b0a0a62b3aa6bd5b8b1774f
+F Makefile.msc 26e2fa6144907df27487b7c25767a87dbc5c4a312ccc382dbf44648f40073623
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 413ec94920a487ae32c9a2a8819544d690662d6f7c7ce025c0d0b8a1e74fa9db
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -540,7 +540,7 @@ F ext/wasm/wasmfs.make cf9a68162d92ca2bcb0b9528b244cb36d5cc2d84ccc9c2d398461927d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk c8af6b90044e4675a1b2c4000c76429fe6bc0dc0a5b3092d7e036f059a58c030
+F main.mk ac6b13f8ecc43f377e9912380ea4cf366051d7f784cf61c8886e03e1cf0fbefa
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -637,7 +637,6 @@ F src/test3.c 61798bb0d38b915067a8c8e03f5a534b431181f802659a6616f9b4ff7d872644
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
 F src/test6.c ae73a3a42bbc982fb9e301b84d30bda65a307be48c6dff20aba1461e17a9b0ce
-F src/test7.c 5612e9aecf934d6df7bba6ce861fdf5ba5456010
 F src/test8.c 0c856d6ff6b0d2ff6696addc467a15ed17c6910f14475302cd5b3b4e54406161
 F src/test9.c 12e5ba554d2d1cbe0158f6ab3f7ffcd7a86ee4e5
 F src/test_async.c 195ab49da082053fdb0f949c114b806a49ca770a
@@ -670,7 +669,6 @@ F src/test_quota.c 6cb9297115b551f433a9ad1741817a9831abed99
 F src/test_quota.h 2a8ad1952d1d2ca9af0ce0465e56e6c023b5e15d
 F src/test_rtree.c 671f3fae50ff116ef2e32a3bf1fe21b5615b4b7b
 F src/test_schema.c f5d6067dfc2f2845c4dd56df63e66ee826fb23877855c785f75cc2ca83fd0c1b
-F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c 540feaea7280cd5f926168aee9deb1065ae136d0bbbe7361e2ef3541783e187a
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
 F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
@@ -1464,7 +1462,6 @@ F test/selectD.test 6d1909b49970bf92f45ce657505befcef5fc7cbc13544e18103a316d3218
 F test/selectE.test a8730ca330fcf40ace158f134f4fe0eb00c7edbf
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae8840
-F test/server1.test c2b00864514a68a0e6fd518659dc95d0050307a357a08969872bef027d785dc4
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
 F test/sessionfuzz.c 5eef09af01eeff6f20250ae4c0112c2e576e4d2f2026cc9a49dc5be6886fa6ee
@@ -2048,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b760a7307c453d95cf3b302c9867c84a9c899956c16c2ce1ea6cce8f025db425
-R 307214cb20044df19132161114770393
-U dan
-Z cf0e7b089ab074de1ca2ba831e6ee97f
+P e761d4b9c8dcacccc927d23f20fdf779a0ae5304281b5bd6aa998bade56f0a37
+R 011e0ef815119f8bbf074c0e4c1fc189
+U drh
+Z 2cf846d6f5b78b2c3d26ce53dcad23b7
 # Remove this line to create a well-formed Fossil manifest.
