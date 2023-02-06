@@ -2,7 +2,9 @@
 
 use std::sync::{Arc, Mutex};
 
-pub(crate) fn open_with_virtual_wal(
+pub use mwal::ffi;
+
+pub fn open_with_virtual_wal(
     path: impl AsRef<std::path::Path>,
     flags: rusqlite::OpenFlags,
     vwal_methods: Arc<Mutex<mwal::ffi::libsql_wal_methods>>,

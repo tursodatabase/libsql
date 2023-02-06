@@ -1,0 +1,21 @@
+[package]
+name = "sqld-libsql-bindings"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.66"
+libsql-wasmtime-bindings = "0"
+mvfs = { git = "https://github.com/psarna/mvsqlite", branch = "mwal", optional = true }
+mwal = { git = "https://github.com/psarna/mvsqlite", branch = "mwal", optional = true }
+rusqlite = { git = "https://github.com/psarna/rusqlite", rev = "4df75df0b0f5ecea2714a8b21bf9f2a0fcfd5905", default-features = false, features = [
+    "buildtime_bindgen",
+    "bundled-libsql",
+    "column_decltype"
+] }
+tracing = "0.1.37"
+
+[features]
+mwal_backend = ["mvfs", "mwal"]

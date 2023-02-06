@@ -12,14 +12,14 @@ pub use wblibsql::{
 use anyhow::ensure;
 use rusqlite::Connection;
 
-use crate::libsql::{ffi::libsql_wal_methods_register, wal_hook::WalMethodsHook};
+use crate::{ffi::libsql_wal_methods_register, wal_hook::WalMethodsHook};
 
 use self::{
     ffi::{libsql_wal_methods, libsql_wal_methods_find},
     wal_hook::WalHook,
 };
 
-fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
+pub fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
     let orig: *mut libsql_wal_methods = unsafe { libsql_wal_methods_find(std::ptr::null()) };
     if orig.is_null() {
         anyhow::bail!("no underlying methods");
@@ -28,7 +28,7 @@ fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
     Ok(orig)
 }
 
-pub(crate) fn open_with_regular_wal(
+pub fn open_with_regular_wal(
     path: impl AsRef<std::path::Path>,
     flags: rusqlite::OpenFlags,
     wal_hook: impl WalHook + 'static,
