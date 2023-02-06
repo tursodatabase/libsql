@@ -60,45 +60,47 @@ impl WalMethodsHook {
     pub const METHODS_NAME: &'static [u8] = b"wal_hook\0";
 
     pub fn wrap(
-        underlying_methods: *const libsql_wal_methods,
+        underlying_methods: *mut libsql_wal_methods,
         hook: impl WalHook + 'static,
     ) -> *mut libsql_wal_methods {
-        let name = Self::METHODS_NAME.as_ptr();
+        let name = Self::METHODS_NAME.as_ptr() as *const _;
         let wal_methods = WalMethodsHook {
-            iVersion: 1,
-            xOpen,
-            xClose,
-            xLimit,
-            xBeginReadTransaction,
-            xEndReadTransaction,
-            xFindFrame,
-            xReadFrame,
-            xDbsize,
-            xBeginWriteTransaction,
-            xEndWriteTransaction,
-            xUndo,
-            xSavepoint,
-            xSavepointUndo,
-            xFrames,
-            xCheckpoint,
-            xCallback,
-            xExclusiveMode,
-            xHeapMemory,
-            snapshot_get_stub: std::ptr::null(),
-            snapshot_open_stub: std::ptr::null(),
-            snapshot_recover_stub: std::ptr::null(),
-            snapshot_check_stub: std::ptr::null(),
-            snapshot_unlock_stub: std::ptr::null(),
-            framesize_stub: std::ptr::null(),
-            xFile,
-            write_lock_stub: std::ptr::null(),
-            xDb,
-            xPathnameLen,
-            xGetPathname,
-            xPreMainDbOpen,
-            name,
-            b_uses_shm: 0,
-            p_next: std::ptr::null(),
+            methods: libsql_wal_methods {
+                iVersion: 1,
+                xOpen: Some(xOpen),
+                xClose: Some(xClose),
+                xLimit: Some(xLimit),
+                xBeginReadTransaction: Some(xBeginReadTransaction),
+                xEndReadTransaction: Some(xEndReadTransaction),
+                xFindFrame: Some(xFindFrame),
+                xReadFrame: Some(xReadFrame),
+                xDbsize: Some(xDbsize),
+                xBeginWriteTransaction: Some(xBeginWriteTransaction),
+                xEndWriteTransaction: Some(xEndWriteTransaction),
+                xUndo: Some(xUndo),
+                xSavepoint: Some(xSavepoint),
+                xSavepointUndo: Some(xSavepointUndo),
+                xFrames: Some(xFrames),
+                xCheckpoint: Some(xCheckpoint),
+                xCallback: Some(xCallback),
+                xExclusiveMode: Some(xExclusiveMode),
+                xHeapMemory: Some(xHeapMemory),
+                xSnapshotGet: None,
+                xSnapshotOpen: None,
+                xSnapshotRecover: None,
+                xSnapshotCheck: None,
+                xSnapshotUnlock: None,
+                xFramesize: None,
+                xFile: Some(xFile),
+                xWriteLock: None,
+                xDb: Some(xDb),
+                xPathnameLen: Some(xPathnameLen),
+                xGetWalPathname: Some(xGetPathname),
+                xPreMainDbOpen: Some(xPreMainDbOpen),
+                zName: name,
+                bUsesShm: 0,
+                pNext: std::ptr::null_mut(),
+            },
             underlying_methods,
             hook: Box::new(hook),
         };
@@ -121,7 +123,17 @@ pub extern "C" fn xOpen(
     });
     let ref_methods = unsafe { &*(methods as *mut WalMethodsHook) };
     let origxOpen = unsafe { (*ref_methods.underlying_methods).xOpen.unwrap() };
-    unsafe { (origxOpen)(vfs, db_file, wal_name, no_shm_mode, max_size, methods, wal) }
+    unsafe {
+        (origxOpen)(
+            vfs,
+            db_file,
+            wal_name,
+            no_shm_mode,
+            max_size,
+            ref_methods.underlying_methods,
+            wal,
+        )
+    }
 }
 
 unsafe fn get_orig_methods(wal: *mut Wal) -> &'static libsql_wal_methods {
@@ -328,43 +340,9 @@ pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, _path: *cons
 #[repr(C)]
 #[allow(non_snake_case)]
 pub struct WalMethodsHook {
-    pub iVersion: i32,
-    pub xOpen: XWalOpenFn,
-    pub xClose: XWalCloseFn,
-    pub xLimit: XWalLimitFn,
-    pub xBeginReadTransaction: XWalBeginReadTransactionFn,
-    pub xEndReadTransaction: XWalEndReadTransaction,
-    pub xFindFrame: XWalFindFrameFn,
-    pub xReadFrame: XWalReadFrameFn,
-    pub xDbsize: XWalDbsizeFn,
-    pub xBeginWriteTransaction: XWalBeginWriteTransactionFn,
-    pub xEndWriteTransaction: XWalEndWriteTransactionFn,
-    pub xUndo: XWalUndoFn,
-    pub xSavepoint: XWalSavepointFn,
-    pub xSavepointUndo: XWalSavePointUndoFn,
-    pub xFrames: XWalFrameFn,
-    pub xCheckpoint: XWalCheckpointFn,
-    pub xCallback: XWalCallbackFn,
-    pub xExclusiveMode: XWalExclusiveModeFn,
-    pub xHeapMemory: XWalHeapMemoryFn,
-    // snapshot stubs
-    pub snapshot_get_stub: *const c_void,
-    pub snapshot_open_stub: *const c_void,
-    pub snapshot_recover_stub: *const c_void,
-    pub snapshot_check_stub: *const c_void,
-    pub snapshot_unlock_stub: *const c_void,
-    pub framesize_stub: *const c_void, // enable_zipvfs stub
-    pub xFile: XWalFileFn,
-    pub write_lock_stub: *const c_void, // setlk stub
-    pub xDb: XWalDbFn,
-    pub xPathnameLen: XWalPathNameLenFn,
-    pub xGetPathname: XWalGetPathNameFn,
-    pub xPreMainDbOpen: XWalPreMainDbOpen,
-    pub b_uses_shm: i32,
-    pub name: *const u8,
-    pub p_next: *const c_void,
+    pub methods: libsql_wal_methods,
 
     //user data
-    underlying_methods: *const libsql_wal_methods,
+    underlying_methods: *mut libsql_wal_methods,
     hook: Box<dyn WalHook>,
 }
