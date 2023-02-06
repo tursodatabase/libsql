@@ -6,6 +6,7 @@ members = [
     "libsql-client",
     "sqlc",
     "sqld",
+    "sqld-libsql-bindings",
 ]
 
 [patch.crates-io]

@@ -133,7 +133,7 @@ macro_rules! ok_or_exit {
 fn open_db(
     path: impl AsRef<Path> + Send + 'static,
     #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-        Arc<Mutex<mwal::ffi::libsql_wal_methods>>,
+        Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
     >,
     wal_hook: impl WalHook + Send + Clone + 'static,
 ) -> anyhow::Result<rusqlite::Connection> {
@@ -198,7 +198,7 @@ impl LibSqlDb {
     pub fn new(
         path: impl AsRef<Path> + Send + 'static,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-            Arc<Mutex<mwal::ffi::libsql_wal_methods>>,
+            Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
         >,
         wal_hook: impl WalHook + Send + Clone + 'static,
     ) -> crate::Result<Self> {

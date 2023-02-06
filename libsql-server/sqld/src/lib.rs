@@ -22,10 +22,11 @@ use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
 
+pub use sqld_libsql_bindings as libsql;
+
 mod database;
 mod error;
 mod http;
-pub mod libsql;
 mod postgres;
 mod query;
 mod query_analysis;
@@ -137,10 +138,11 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
     }
 
     #[cfg(feature = "mwal_backend")]
-    let vwal_methods = config
-        .mwal_addr
-        .as_ref()
-        .map(|_| Arc::new(Mutex::new(mwal::ffi::libsql_wal_methods::new())));
+    let vwal_methods = config.mwal_addr.as_ref().map(|_| {
+        Arc::new(Mutex::new(
+            sqld_libsql_bindings::mwal::ffi::libsql_wal_methods::new(),
+        ))
+    });
 
     match config.writer_rpc_addr {
         Some(ref addr) => {
