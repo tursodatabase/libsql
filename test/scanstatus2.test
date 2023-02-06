@@ -151,8 +151,8 @@ ifcapable fts5 {
   do_graph_test 2.1 {
     SELECT * FROM ft('def')
   } {
-  QUERY (nCycle=nnn)
-  --SCAN ft VIRTUAL TABLE INDEX 0:M1 (nCycle=nnn)
+QUERY (nCycle=nnn)
+--SCAN ft VIRTUAL TABLE INDEX 0:M1 (nCycle=nnn)
   }
 }
 
