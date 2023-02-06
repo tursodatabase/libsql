@@ -282,9 +282,10 @@ impl ReadReplicationHook {
 
     /// Asks the writer for new log frames to apply.
     async fn fetch_log_entries(&mut self) -> anyhow::Result<()> {
-        // try to fetch next page.
         let start_offset = self.fetch_frame_index;
+        // try to fetch next page.
         let req = LogOffset { start_offset };
+        tracing::debug!(start_offset, "fetching log entries");
 
         let mut stream = self.logger.log_entries(req).await?.into_inner();
         while let Some(frame) = stream.next().await {

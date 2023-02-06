@@ -192,6 +192,7 @@ impl WalLogger {
         }
 
         *lock = current_offset;
+        tracing::debug!("new WAL offset: {current_offset}");
     }
 
     /// Returns frame at `index`.
