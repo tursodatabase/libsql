@@ -74,9 +74,9 @@ const installAsyncProxy = function(self){
   state.verbose = 1;
 
   const loggers = {
-    0:sqlite3.config.error.bind(console),
-    1:sqlite3.config.warn.bind(console),
-    2:sqlite3.config.log.bind(console)
+    0:console.error.bind(console),
+    1:console.warn.bind(console),
+    2:console.log.bind(console)
   };
   const logImpl = (level,...args)=>{
     if(state.verbose>level) loggers[level]("OPFS asyncer:",...args);
@@ -106,12 +106,12 @@ const installAsyncProxy = function(self){
       w += m.wait;
       m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
     }
-    sqlite3.config.log(self.location.href,
+    console.log(self.location.href,
                 "metrics for",self.location.href,":\n",
                 metrics,
                 "\nTotal of",n,"op(s) for",t,"ms",
                 "approx",w,"ms spent waiting on OPFS APIs.");
-    sqlite3.config.log("Serialization metrics:",metrics.s11n);
+    console.log("Serialization metrics:",metrics.s11n);
   };
 
   /**
@@ -272,7 +272,7 @@ const installAsyncProxy = function(self){
               || (e.cause.name==='DOMException'
                   && 0===e.cause.message.indexOf('Access Handles cannot')))
       ) ? (
-        /*sqlite3.config.warn("SQLITE_BUSY",e),*/
+        /*console.warn("SQLITE_BUSY",e),*/
         state.sq3Codes.SQLITE_BUSY
       ) : rc;
     }else{
