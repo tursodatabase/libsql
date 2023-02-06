@@ -1,5 +1,5 @@
-C Fix\ssome\stest\sscripts\sthat\swere\sfailing\swith\sSQLITE_OMIT_VIRTUALTABLE\sbuilds.
-D 2023-02-06T10:47:57.478
+C Fix\sproblems\swith\stest\sscripts\spreventing\sthem\sfrom\srunning\swith\sSQLITE_DEFAULT_MEMSTATUS=0\sbuilds.\sOr\sbuilds\swithout\sSQLITE_ENABLE_STAT4.
+D 2023-02-06T11:02:31.024
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1299,7 +1299,7 @@ F test/memjournal.test 70f3a00c7f84ee2978ad14e831231caa1e7f23915a2c54b4f775a021d
 F test/memjournal2.test 6b9083cfaab9a3281ec545c3da2487999e8025fb7501bbae10f713f80c56454c
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test 86b8158752af9188ed5b32a30674a1ef71183e6bc4e6808e815cd658ca9058a6
-F test/memsubsys2.test 3e4a8d0c05fd3e5fa92017c64666730a520c7e08
+F test/memsubsys2.test 774b93cb09ca50d1b759bb7c645baa2a9ce172edc3a3da67d5150a26a9fc2a08
 F test/merge1.test 2de6d6ef8d25402764b1aab49d8f9d7f89208c89a6674e437f76de4c812157b8
 F test/minmax.test fe638b55d77d2375531a8f549b338eafcd9adfbd2f72df37ed77d9b26ca0a71a
 F test/minmax2.test cf9311babb6f0518d04e42fd6a42c619531c4309a9dd790a2c4e9b3bc595e0de
@@ -1436,7 +1436,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
-F test/scanstatus.test 7dbcfd6adc6a8df6abc59f83d6da5a27e1bce0b2f6fa55147c8176d7c44e0450
+F test/scanstatus.test 74391c2c0926994bf0962db6c04c9ff5b95d15a41d2e076fe011b73f92815e70
 F test/scanstatus2.test ad7898854be46065c186d49f242f7bbc4614f21aa626d40a1571a92919dde53a
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
@@ -1491,7 +1491,7 @@ F test/shell8.test 3fd093d481aaa94dc77fb73f1044c1f19c7efe3477a395cc4f7450133bc54
 F test/shmlock.test 3dbf017d34ab0c60abe6a44e447d3552154bd0c87b41eaf5ceacd408dd13fda5
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
-F test/shrink.test 9521e5e0d74c0b6192794f3de3a3e5e3190d465527ae365d96763ef753c7229c
+F test/shrink.test 2668e607dcdfa19c52828c09b69685b38da793856582ae31debf79d90c7bbbdc
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test 1a9972e1dc15ca3887f306d3cd9a29679afb382eca0f3539f3b746f3c2ccaf68
 F test/skipscan2.test b032ed3e0ba5caa4df6c43ef22c31566aac67783bc031869155989a7ccdb5bd5
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6ab96bd0b9efc51fd703bf7e92b079943ad9a3b92183d434adc11fb7d238afb
-R ec14b36542bc3d333822d319f9c0e8cc
+P 81c118d90b281b30f40b3eeefaeb2c8350aa40080b4fe7de8f21d263986c6acb
+R 68c36f7c3bbb0cdfa62cb3d6ed79f926
 U dan
-Z 9bfa1895edd5c830bdaa8a26ed2249d1
+Z c7cd20985880e33926ac0c89209760a5
 # Remove this line to create a well-formed Fossil manifest.
