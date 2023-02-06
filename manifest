@@ -1,9 +1,9 @@
-C Update\s"releasetest"\smakefile\stargets\sto\suse\stestrunner.tcl.
-D 2023-02-06T14:11:18.065
+C Fix\serror\sin\sthe\sreleasetest\smakefile\starget\sfrom\sthe\sprevious\scheck-in.
+D 2023-02-06T14:16:15.272
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 796e15edec6be55f4dfe737304f9e9c05d9929ba0fceec399ed5556ed9e71c61
+F Makefile.in 3c7df00360783e20db13c928cbd2f3561aea14b29da2b78f6ce57393c0643ef3
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 9e0147a280fde917aa4a3337b96da43fab2ed2235b0a0a62b3aa6bd5b8b1774f
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c54f29d8e55419eaa9168e799dab5030e89063b13d8390a50616606422d164dc
-R 3fdbd8d1a610af263100fc6c14881c4d
+P 1b95676b05701952cab7087f528028c48302f611fe63799551dc45098354d27f
+R c838184d0987bde5d37655cf13ea0c8c
 U drh
-Z fe1190a8fd76d371e7444b7421cbb406
+Z d85b5681980ad0c5f219ec22c47716e4
 # Remove this line to create a well-formed Fossil manifest.

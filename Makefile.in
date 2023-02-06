@@ -1283,7 +1283,7 @@ devtest:	testfixture$(TEXE) fuzztest testrunner
 # Testing for a release
 #
 releasetest: testfixture$(TEXE)
-	testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
 
 # Minimal testing that runs in less than 3 minutes
 #
