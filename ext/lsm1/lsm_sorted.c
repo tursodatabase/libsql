@@ -525,7 +525,7 @@ static u8 *pageGetKey(
   LsmBlob *pBlob                  /* If required, use this for dynamic memory */
 ){
   u8 *pKey;
-  int nDummy;
+  i64 nDummy;
   int eType;
   u8 *aData;
   int nData;
@@ -537,10 +537,10 @@ static u8 *pageGetKey(
 
   pKey = pageGetCell(aData, nData, iCell);
   eType = *pKey++;
-  pKey += lsmVarintGet32(pKey, &nDummy);
+  pKey += lsmVarintGet64(pKey, &nDummy);
   pKey += lsmVarintGet32(pKey, pnKey);
   if( rtIsWrite(eType) ){
-    pKey += lsmVarintGet32(pKey, &nDummy);
+    pKey += lsmVarintGet64(pKey, &nDummy);
   }
   *piTopic = rtTopic(eType);
 
@@ -3361,6 +3361,8 @@ static int mergeWorkerPageOffset(u8 *aData, int nData){
   int iOff;
   int nKey;
   int eType;
+  i64 nDummy;
+
 
   nRec = lsmGetU16(&aData[SEGMENT_NRECORD_OFFSET(nData)]);
   iOff = lsmGetU16(&aData[SEGMENT_CELLPTR_OFFSET(nData, nRec-1)]);
@@ -3370,7 +3372,7 @@ static int mergeWorkerPageOffset(u8 *aData, int nData){
        || eType==(LSM_SEPARATOR)
   );
 
-  iOff += lsmVarintGet32(&aData[iOff], &nKey);
+  iOff += lsmVarintGet64(&aData[iOff], &nDummy);
   iOff += lsmVarintGet32(&aData[iOff], &nKey);
 
   return iOff + (eType ? nKey : 0);
@@ -3998,7 +4000,7 @@ static int mergeWorkerWrite(
   **     4) Value size - 1 varint (only if LSM_INSERT flag is set)
   */
   if( rc==LSM_OK ){
-    nHdr = 1 + lsmVarintLen32(iRPtr) + lsmVarintLen32(nKey);
+    nHdr = 1 + lsmVarintLen64(iRPtr) + lsmVarintLen32(nKey);
     if( rtIsWrite(eType) ) nHdr += lsmVarintLen32(nVal);
 
     /* If the entire header will not fit on page pPg, or if page pPg is 
@@ -4050,7 +4052,7 @@ static int mergeWorkerWrite(
 
     /* Write the entry header into the current page. */
     aData[iOff++] = (u8)eType;                                           /* 1 */
-    iOff += lsmVarintPut32(&aData[iOff], iRPtr);                         /* 2 */
+    iOff += lsmVarintPut64(&aData[iOff], iRPtr);                         /* 2 */
     iOff += lsmVarintPut32(&aData[iOff], nKey);                          /* 3 */
     if( rtIsWrite(eType) ) iOff += lsmVarintPut32(&aData[iOff], nVal);   /* 4 */
     pMerge->iOutputOff = iOff;

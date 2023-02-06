@@ -306,7 +306,12 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 #else
       encoding = SQLITE_UTF8;
 #endif
-      sqlite3SetTextEncoding(db, encoding);
+      if( db->nVdbeActive>0 && encoding!=ENC(db) ){
+        rc = SQLITE_LOCKED;
+        goto initone_error_out;
+      }else{
+        sqlite3SetTextEncoding(db, encoding);
+      }
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( (meta[BTREE_TEXT_ENCODING-1] & 3)!=ENC(db) ){

@@ -165,4 +165,6 @@ do_test pager2-3.1 {
   list [catch { db3 eval { INSERT INTO t1 VALUES(3, 4) } } msg] $msg
 } {1 {no such table: t1}}
 
+db1 close
+
 finish_test

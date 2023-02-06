@@ -650,5 +650,7 @@ int sqlite3FtsUnicodeIsalnum(int);
 int sqlite3FtsUnicodeIsdiacritic(int);
 #endif
 
+int sqlite3Fts3ExprIterate(Fts3Expr*, int (*x)(Fts3Expr*,int,void*), void*);
+
 #endif /* !SQLITE_CORE || SQLITE_ENABLE_FTS3 */
 #endif /* _FTSINT_H */

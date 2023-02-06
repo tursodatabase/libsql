@@ -211,10 +211,10 @@ void sqlite3VtabUnlock(VTable *pVTab){
   pVTab->nRef--;
   if( pVTab->nRef==0 ){
     sqlite3_vtab *p = pVTab->pVtab;
-    sqlite3VtabModuleUnref(pVTab->db, pVTab->pMod);
     if( p ){
       p->pModule->xDisconnect(p);
     }
+    sqlite3VtabModuleUnref(pVTab->db, pVTab->pMod);
     sqlite3DbFree(db, pVTab);
   }
 }

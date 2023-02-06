@@ -485,6 +485,9 @@ static int tvfsLock(sqlite3_file *pFile, int eLock){
     tvfsExecTcl(p, "xLock", Tcl_NewStringObj(pFd->zFilename, -1), 
                    Tcl_NewStringObj(zLock, -1), 0, 0);
   }
+  if( p->mask&TESTVFS_LOCK_MASK && tvfsInjectIoerr(p) ){
+    return SQLITE_IOERR_LOCK;
+  }
   return sqlite3OsLock(pFd->pReal, eLock);
 }
 
@@ -500,7 +503,7 @@ static int tvfsUnlock(sqlite3_file *pFile, int eLock){
     tvfsExecTcl(p, "xUnlock", Tcl_NewStringObj(pFd->zFilename, -1), 
                    Tcl_NewStringObj(zLock, -1), 0, 0);
   }
-  if( p->mask&TESTVFS_WRITE_MASK && tvfsInjectIoerr(p) ){
+  if( p->mask&TESTVFS_UNLOCK_MASK && tvfsInjectIoerr(p) ){
     return SQLITE_IOERR_UNLOCK;
   }
   return sqlite3OsUnlock(pFd->pReal, eLock);

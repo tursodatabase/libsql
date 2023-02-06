@@ -11,13 +11,8 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbuexpr
-
-db close
-sqlite3_shutdown
-sqlite3_config_uri 1
-
-sqlite3 db test.db
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b, c PRIMARY KEY);
