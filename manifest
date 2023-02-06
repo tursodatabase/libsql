@@ -1,5 +1,5 @@
-C Shorten\sthe\sstatus\sline\sfor\stestrunner.tcl\sso\sthat\sit\sfits\son\san\s80-character\nterminal.
-D 2023-02-06T14:48:02.936
+C Update\stest\sscripts\sspeed1.test\sand\sspeed1p.test\sso\sthey\smay\sbe\srun\sby\stestrunner.tcl.
+D 2023-02-06T15:46:01.294
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1513,9 +1513,9 @@ F test/sort4.test cca6f4b0b5255882645bbbe346a6a9f4a5c7b6a18513a6a7bf4ac1c4761ddc
 F test/sort5.test 6b43ae0e2169b5ceed441844492e55ba7f1ae0790528395ddf7888ab3094525d
 F test/sorterref.test 9a606c86a4c682db5eeaaefa0565b52102778db53e48ca7101cd4f9ebcc0ad94
 F test/sortfault.test d4ccf606a0c77498e2beb542764fd9394acb4d66
-F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
+F test/speed1.test 0381cfd05e5e7ccfd5eb570976f9075c67ab3e34991a1addf80663b184395219
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
-F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
+F test/speed1p.test 7191cec2aaf8876317bec58cf9c0f3750ab8b9bc23fc8a4000b77da578c7aadc
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e7fe287d7904166c05d31b96ec8fd6f09318869c57437d1c661db7b79e6d8bf2
-R 275b3dab9dd605034221e4747a852771
-U drh
-Z fb7328efb2b2bb6f04a225789570eae4
+P b760a7307c453d95cf3b302c9867c84a9c899956c16c2ce1ea6cce8f025db425
+R 307214cb20044df19132161114770393
+U dan
+Z cf0e7b089ab074de1ca2ba831e6ee97f
 # Remove this line to create a well-formed Fossil manifest.
