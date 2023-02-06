@@ -7,6 +7,7 @@ members = [
     "sqlc",
     "sqld",
     "sqld-libsql-bindings",
+    "testing/end-to-end",
 ]
 
 [patch.crates-io]
