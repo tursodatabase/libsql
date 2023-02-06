@@ -28,7 +28,8 @@ pub struct WriteProxyDbFactory {
     write_proxy: ProxyClient<Channel>,
     db_path: PathBuf,
     #[cfg(feature = "mwal_backend")]
-    vwal_methods: Option<Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>>,
+    vwal_methods:
+        Option<Arc<std::sync::Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>>,
     /// abort handle: abort db update loop on drop
     _abort_handle: crossbeam::channel::Sender<()>,
 }
@@ -42,7 +43,7 @@ impl WriteProxyDbFactory {
         ca_cert_path: Option<PathBuf>,
         db_path: PathBuf,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-            Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
+            Arc<std::sync::Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
         >,
     ) -> anyhow::Result<Self> {
         let mut endpoint = Channel::from_shared(addr.to_string())?;
@@ -115,7 +116,7 @@ impl WriteProxyDatabase {
         write_proxy: ProxyClient<Channel>,
         path: PathBuf,
         #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-            Arc<std::sync::Mutex<mwal::ffi::libsql_wal_methods>>,
+            Arc<std::sync::Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
         >,
     ) -> Result<Self> {
         let read_db = LibSqlDb::new(
