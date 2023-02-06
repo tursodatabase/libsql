@@ -100,7 +100,7 @@ for {set n 1} {$n < 5000} {incr n} {
     break
   }
 
-  foreach f {test.db test.db-oal test.db-wal test.db-shm test.db-vacuum} {
+  foreach f {test.db test.db-oal test.db-wal test.db-vacuum} {
     set f2 [string map [list test.db test.db2] $f]
     if {[file exists $f]} {
       forcecopy $f $f2
@@ -159,7 +159,7 @@ for {set n 1} {$n < 5000} {incr n} {
     break
   }
 
-  foreach f {test.db test.db-oal test.db-wal test.db-shm test.db-vacuum} {
+  foreach f {test.db test.db-oal test.db-wal test.db-vacuum} {
     set f2 [string map [list test.db test.db2] $f]
     if {[file exists $f]} {
       forcecopy $f $f2
@@ -226,7 +226,7 @@ for {set n 1} {$n < 5000} {incr n} {
     break
   }
 
-  foreach f {test.db test.db-oal test.db-wal test.db-shm test.db-vacuum} {
+  foreach f {test.db test.db-oal test.db-wal test.db-vacuum} {
     set f2 [string map [list test.db test.db2] $f]
     if {[file exists $f]} {
       forcecopy $f $f2

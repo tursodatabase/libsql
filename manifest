@@ -1,5 +1,5 @@
-C Omit\sthe\sobsolete\sclient/server\stest\scases.
-D 2023-02-06T16:23:52.256
+C Fix\sRBU\stest\sscripts\sto\savoid\sattempting\sto\scopy\sor\sdelete\sa\slocked\sfile.
+D 2023-02-06T19:00:54.237
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -346,7 +346,7 @@ F ext/rbu/rbuexpr.test 2c91617509c88b6e9030f7bf6ff720df26032fcd801adc25533feae72
 F ext/rbu/rbufault.test c51de14067cfe867849530d3d1718ffeb28522f28d52937f95dd7bc2116eb42e
 F ext/rbu/rbufault2.test 8cc8f6298d2d7d20080b2c77e65b607af8b89839f9d87c0972b27e6442edc258
 F ext/rbu/rbufault3.test d14ff46e050816ce43c4ed320a0927712636ac11bf48bfc5f74601f183af5445
-F ext/rbu/rbufault4.test fa2f9d10b213eaa3cfbf0711ba9255761febe372c9546fa22ef4006f53ed8acc
+F ext/rbu/rbufault4.test 39fbf093b7e16aae85dc309262ec570d217a1578538c1c74dd621e5451c083d6
 F ext/rbu/rbufts.test df754d2f96c22d1da8b5d685b4a4a49863971920856d17620cef724e3a9b6edd
 F ext/rbu/rbumisc.test 6641749e42c83062824c86b3d03a47f8ec35760f341bc023f53e612655b0a8af
 F ext/rbu/rbumulti.test 6f6cdd9b3775108aada5216762cbbd7b5d5caa7cb620b3e6e1b8ace81286a2e0
@@ -354,7 +354,7 @@ F ext/rbu/rbupartial.test 4ed7789f47128c8aa7ff58445face8a070cef852993afe03c86391
 F ext/rbu/rbupass.test 2ee86581a441f3b4b449b99a2dc203d5d6a08750dd2ee9ab6a02743e238d3c8a
 F ext/rbu/rbuprogress.test db8bb26a8123d35f52acfc3984b56caa31c8fcd1fa3589991b9c8e8a68e64b59
 F ext/rbu/rburename.test 8d8a6a6ba896338d0610658e1f60e8055a181d5913e1e21c41b866a8f15bb7cd
-F ext/rbu/rburesume.test ed122426a0411fb16efca49f19a5f2ba18956a765d5d9031b9d01931cbe7f282
+F ext/rbu/rburesume.test 1403752d152b55efb7fc25749c0fccc790061371ec9ffe428cc04f8a69bb834c
 F ext/rbu/rbusave.test 588b618dad9d65c4b13d03a79931de82213503fedc26bdf5789c996ecf427fba
 F ext/rbu/rbusplit.test a6dedd23cf37bcf2e8646d9d7139846e96d60d92f9bc6d6ba6ca8c24c0bd1f72
 F ext/rbu/rbutemplimit.test 4980df2d4b74f4dd982add8f78809106154ef5a3c4bdce747422ab0b0481e029
@@ -2045,9 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e761d4b9c8dcacccc927d23f20fdf779a0ae5304281b5bd6aa998bade56f0a37 aea3b6f6515bc3b7e7205b7d17d99cb1fc68030eb929d8adbe25f065668c9c95
-R caa6ecd94fb7ea02fd878b743e510f50
-T +closed aea3b6f6515bc3b7e7205b7d17d99cb1fc68030eb929d8adbe25f065668c9c95
-U drh
-Z 1340b10b2dc7f9a742e2f9cc54c452b7
+P 5dde07a91dcf99b9c9a418b4e2178f66eef4cffd4799538a419674314a7530f9
+R 249137c726d5884204a2faf3e938a076
+U dan
+Z fb37ea41986419483c8b019665bddd2c
 # Remove this line to create a well-formed Fossil manifest.
