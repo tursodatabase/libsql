@@ -10,6 +10,21 @@ export class SqliteDriver implements Driver {
     }
 
     async execute(sql: string, params?: Params): Promise<ResultSet> {
+        if (params !== undefined && !Array.isArray(params)) {
+            const modifiedParams: Record<string, SqlValue> = {};
+            for (const paramName in params) {
+                const prefix = paramName.charAt(0);
+                if (prefix === "?" || prefix === ":" || prefix === "@" || prefix === "$") {
+                    const param = paramName.substring(1);
+                    modifiedParams[param] = params[paramName];
+                } else {
+                    throw new Error(
+                        `given sqlite parameter '${paramName}' doesn't start with a prefix character (?, $, : or @)`
+                    );
+                }
+            }
+            params = modifiedParams;
+        }
         return await new Promise((resolve) => {
             let columns: string[];
             let rows: any[];

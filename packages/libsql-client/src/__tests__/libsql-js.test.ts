@@ -58,7 +58,7 @@ test("execute-params", async () => {
     rs = await db.execute(`INSERT INTO ${table} (email) VALUES (?)`, [value]);
     assertEmptySuccessResult(rs);
 
-    rs = await db.execute(`SELECT * FROM ${table} WHERE email = :email`, { email: value });
+    rs = await db.execute(`SELECT * FROM ${table} WHERE email = :email`, { ":email": value });
     expect(rs.columns).toEqual(["email"]);
     expect(rs.rows).toEqual([[value]]);
 
