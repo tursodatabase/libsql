@@ -12,6 +12,7 @@ use postgres_protocol::message::backend::DataRowBody;
 use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::ffi::{CStr, CString};
+use std::fmt::Debug;
 use std::ops::Range;
 use std::os::raw::{c_char, c_int, c_void};
 use std::rc::Rc;
@@ -22,9 +23,9 @@ thread_local! {
     static ERRMSG: RefCell<Option<CString>> = RefCell::new(None);
 }
 
-fn set_error_message<T: ToString>(e: T) {
+fn set_error_message<T: Debug>(e: T) {
     ERRMSG.with(|errmsg| {
-        errmsg.replace(Some(CString::new(e.to_string()).unwrap()));
+        errmsg.replace(Some(CString::new(format!("{e:?}")).unwrap()));
     });
 }
 
