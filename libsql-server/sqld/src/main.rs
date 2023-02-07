@@ -78,7 +78,7 @@ struct Cli {
     /// Don't display welcome message
     #[clap(long)]
     no_welcome: bool,
-    #[clap(long)]
+    #[clap(long, env = "SQLD_ENABLE_BOTTOMLESS_REPLICATION")]
     enable_bottomless_replication: bool,
 }
 
