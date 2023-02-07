@@ -28,16 +28,24 @@ fn create_simple_cluster_app() -> AppConfig {
 
 #[derive(clap::Parser)]
 struct Opts {
-    #[clap(long, env = "SQLD_TEST_PODMAN_ADDR")]
-    podman_addr: String,
+    #[clap(long, env = "SQLD_TEST_PODMAN_ADDR", requires("run"))]
+    podman_addr: Option<String>,
+    /// Whether the end-to-end tests should be run
+    #[clap(long)]
+    run: bool,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
-    Octopod::init(&opts.podman_addr, vec![create_simple_cluster_app()])?
+    if opts.run {
+        Octopod::init(
+            opts.podman_addr.as_ref().unwrap(),
+            vec![create_simple_cluster_app()],
+        )?
         .run()
         .await?;
+    }
 
     Ok(())
 }
