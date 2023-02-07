@@ -335,27 +335,12 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 ** that is currently executing.  The same time is reported for all
 ** invocations of this routine from within the same call to sqlite3_step().
 **
-** Return the number of errors.
-*/
-static int setCurrentStmtTime(sqlite3_context *context, DateTime *p){
-  p->iJD = sqlite3StmtCurrentTime(context);
-  if( p->iJD>0 ){
-    p->validJD = 1;
-    return 0;
-  }else{
-    return 1;
-  }
-}
-
-/*
-** Set the time to the current time reported for the current transaction.
-** The same time is set for all calls to this routine within the same
-** transaction.
+** Or if bTxn is true, use the transaction time.
 **
 ** Return the number of errors.
 */
-static int setCurrentTxnTime(sqlite3_context *context, DateTime *p){
-  p->iJD = sqlite3TxnCurrentTime(context);
+static int setCurrentStmtTime(sqlite3_context *context, DateTime *p, int bTxn){
+  p->iJD = sqlite3StmtCurrentTime(context, bTxn);
   if( p->iJD>0 ){
     p->validJD = 1;
     return 0;
@@ -406,9 +391,9 @@ static int parseDateOrTime(
   }else if( parseHhMmSs(zDate, p)==0 ){
     return 0;
   }else if( sqlite3StrICmp(zDate,"now")==0 && sqlite3NotPureFunc(context) ){
-    return setCurrentStmtTime(context, p);
+    return setCurrentStmtTime(context, p, 0);
   }else if( sqlite3StrICmp(zDate,"txn")==0 && sqlite3NotPureFunc(context) ){
-    return setCurrentTxnTime(context, p);
+    return setCurrentStmtTime(context, p, 1);
   }else if( sqlite3AtoF(zDate, &r, sqlite3Strlen30(zDate), SQLITE_UTF8)>0 ){
     setRawDateNumber(p, r);
     return 0;
@@ -967,7 +952,7 @@ static int isDate(
   memset(p, 0, sizeof(*p));
   if( argc==0 ){
     if( !sqlite3NotPureFunc(context) ) return 1;
-    return setCurrentStmtTime(context, p);
+    return setCurrentStmtTime(context, p, 0);
   }
   if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
                    || eType==SQLITE_INTEGER ){

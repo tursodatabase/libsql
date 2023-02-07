@@ -5341,8 +5341,7 @@ FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
     && !defined(SQLITE_OMIT_VIRTUALTABLE)
   void sqlite3VtabUsesAllSchemas(sqlite3_index_info*);
 #endif
-sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
-sqlite3_int64 sqlite3TxnCurrentTime(sqlite3_context*);
+sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*, int);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 void sqlite3ParseObjectInit(Parse*,sqlite3*);
