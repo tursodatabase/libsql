@@ -144,6 +144,11 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         ))
     });
 
+    // create database directory where all the files will go.
+    if !config.db_path.exists() {
+        std::fs::create_dir_all(&config.db_path)?;
+    }
+
     match config.writer_rpc_addr {
         Some(ref addr) => {
             let factory = WriteProxyDbFactory::new(
@@ -162,7 +167,7 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
             run_service(service, config).await?;
         }
         None => {
-            let logger = Arc::new(WalLogger::open("wallog").context("failed to open WalLogger")?);
+            let logger = Arc::new(WalLogger::open(&config.db_path)?);
             let logger_clone = logger.clone();
             let path_clone = config.db_path.clone();
             let db_factory = move || {
