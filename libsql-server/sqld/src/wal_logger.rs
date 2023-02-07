@@ -15,6 +15,7 @@ use crate::libsql::ffi::{
     PgHdr, Wal,
 };
 use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
+use crate::rpc::wal_log::wal_log_rpc::HelloResponse;
 
 // Clone is necessary only because opening a database may fail, and we need to clone the empty
 // struct.
@@ -127,6 +128,7 @@ pub struct WalLogger {
     /// first index present in the file
     start_offset: usize,
     log_file: File,
+    hello_response: HelloResponse,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -170,7 +172,15 @@ impl WalLogger {
             current_offset: Mutex::new(file_end as usize),
             start_offset: header.start_index as _,
             log_file,
+            hello_response: HelloResponse {
+                generation_id: uuid::Uuid::new_v4().to_string(),
+                first_frame_id_in_generation: file_end,
+            },
         })
+    }
+
+    pub fn hello_response(&self) -> &HelloResponse {
+        &self.hello_response
     }
 
     fn append(&self, frames: &[WalLogEntry]) {
