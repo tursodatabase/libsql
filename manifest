@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sexample\sdocumentation\scode\sfor\ssqlite3_vtab_in_next().
-D 2023-02-07T16:58:58.113
+C Fix\sa\stest\sscript\sproblem\scausing\s"make\stest"\sto\sfail\sfor\snon-RBU\sbuilds.
+D 2023-02-07T18:41:23.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -334,7 +334,7 @@ F ext/rbu/rbu9.test 4b66f0705442711a44b54ef2cc3c59952f1ea15f12e34442681bdb1a6eb3
 F ext/rbu/rbuA.test 3f8fdd4ae7b9a0571af7361cd88359254f63e445ac4acfe395173e31d7e3fc31
 F ext/rbu/rbuB.test c639803bbc1dc9358afe6abe046dc4d3e9965238b75239b04e3a8e33e3e90f85
 F ext/rbu/rbuC.test 5326ea3954754c68fd518beb70d3e6b6690af53e1a5fa102d650e4110b26b4c5
-F ext/rbu/rbu_common.tcl 815cc97be0e67e96f3ccaff74d951eef89cefc34cec7d93d64f01d9402121545
+F ext/rbu/rbu_common.tcl 15d063397a89aeaf26b4cbdf6f29911b4154a902ba61a40c4f180ab452454a63
 F ext/rbu/rbubusy.test 88298187ad35aac9084436d85ca66b3722f96eaa704a09cfe5f931d452ab7237
 F ext/rbu/rbucollate.test 9852ec5e5ba7f3b04ce849a24ef7298e03ae0f16e58e6031d0f845234559feec
 F ext/rbu/rbucrash.test d2b5d619d9281c89cad74401b73b46172daa89906940b1d739c813ddc0cd2cf5
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 90b12211376eb445df7221b3d3593394ff651ef93f4218492c6208bc74b8fc63
-R 671a4295326d41710345877fa9cb95d1
-U drh
-Z c1cf8d70fac085412ee8e4c80e6bf788
+P a95dbfae6133cc7aac950c3e7ba55a29d80b1625c39479a7d1d10b0868ee2be4
+R eadbc6d63430234ac2cb17610c353b99
+U dan
+Z b7b3585268bb0984169cdf414e4a24fd
 # Remove this line to create a well-formed Fossil manifest.
