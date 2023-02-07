@@ -61,7 +61,6 @@ impl WalLogService {
                     Err(_) => todo!(),
                 }
             }
-            tracing::debug!("sent {} frames", offset - start_offset);
         });
 
         ReceiverStream::new(receiver)
@@ -76,7 +75,6 @@ impl WalLog for WalLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
         let start_offset = req.into_inner().start_offset;
-        tracing::debug!(start_offset, "received wal log request");
         let stream = self.stream_pages(start_offset as _);
         Ok(tonic::Response::new(stream))
     }
