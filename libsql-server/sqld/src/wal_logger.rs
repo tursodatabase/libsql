@@ -38,15 +38,7 @@ unsafe impl WalHook for WalLoggerHook {
     ) -> c_int {
         assert_eq!(page_size, 4096);
 
-        for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
-            self.write_frame(page_no, data)
-        }
-
-        if is_commit != 0 {
-            self.commit(page_size, ntruncate, is_commit != 0, sync_flags);
-        }
-
-        unsafe {
+        let rc = unsafe {
             orig(
                 wal,
                 page_size,
@@ -55,7 +47,20 @@ unsafe impl WalHook for WalLoggerHook {
                 is_commit,
                 sync_flags,
             )
+        };
+        if rc != crate::libsql::ffi::SQLITE_OK {
+            return rc;
         }
+
+        for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
+            self.write_frame(page_no, data)
+        }
+
+        if is_commit != 0 {
+            self.commit(page_size, ntruncate, is_commit != 0, sync_flags);
+        }
+
+        rc
     }
 
     fn on_undo(
