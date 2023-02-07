@@ -1,3 +1,5 @@
+DB_URI ?= 'postgres://127.0.0.1:5432'
+
 all: setup test
 .PHONY: all
 
@@ -6,5 +8,5 @@ setup:
 .PHONY: setup
 
 test:
-	bundle exec rspec postgresql_spec.rb
+	DB_URI=$(DB_URI) bundle exec rspec postgresql_spec.rb
 .PHONY: test
