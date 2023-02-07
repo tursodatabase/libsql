@@ -988,6 +988,29 @@ sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p){
 }
 
 /*
+** Return the current time for a transaction.  If the current time
+** is requested more than once within the same transaction
+** the same time is returned for each invocation regardless
+** of the amount of time that elapses between invocations.  In other words,
+** the time returned is always the time of the first call.
+*/
+sqlite3_int64 sqlite3TxnCurrentTime(sqlite3_context *p){
+  int rc;
+#ifndef SQLITE_ENABLE_STAT4
+  sqlite3_int64 *piTime = &p->pVdbe->db->txnTime;
+  assert( p->pVdbe!=0 );
+#else
+  sqlite3_int64 iTime = 0;
+  sqlite3_int64 *piTime = p->pVdbe!=0 ? &p->pVdbe->db->txnTime : &iTime;
+#endif
+  if( *piTime==0 ){
+    rc = sqlite3OsCurrentTimeInt64(p->pOut->db->pVfs, piTime);
+    if( rc ) *piTime = 0;
+  }
+  return *piTime;
+}
+
+/*
 ** Create a new aggregate context for p and return a pointer to
 ** its pMem->z element.
 */
