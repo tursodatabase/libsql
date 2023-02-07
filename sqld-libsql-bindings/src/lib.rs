@@ -28,11 +28,13 @@ pub fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
     Ok(orig)
 }
 
+/// Opens a database with the regular wal methods in the directory pointed to by path
 pub fn open_with_regular_wal(
     path: impl AsRef<std::path::Path>,
     flags: rusqlite::OpenFlags,
     wal_hook: impl WalHook + 'static,
 ) -> anyhow::Result<Connection> {
+    let path = path.as_ref().join("data");
     unsafe {
         let orig = get_orig_wal_methods()?;
         let wrapped = WalMethodsHook::wrap(orig, wal_hook);
@@ -41,7 +43,7 @@ pub fn open_with_regular_wal(
     }
     tracing::trace!(
         "Opening a connection with regular WAL at {}",
-        path.as_ref().display()
+        path.display()
     );
     let conn = Connection::open_with_flags_and_wal(path, flags, WalMethodsHook::METHODS_NAME_STR)?;
     conn.pragma_update(None, "journal_mode", "wal")?;
