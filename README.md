@@ -46,6 +46,34 @@ curl -s -d '{\"statements\": [\"SELECT * from sqlite_master;\"] }' http://127.0.
 
 You can also inspect the local foo.db file with the `sqlite3` shell
 
+### Integration with S3 bottomless replication
+
+`sqld` is integrated with [bottomless replication subproject](https://github.com/libsql/sqld/tree/main/bottomless). With bottomless replication, the database state is continuously backed up to S3-compatible storage. Each backup session is called a "generation" and consists of the main database file snapshot and replicates [WAL](https://www.sqlite.org/wal.html) pages.
+
+In order to enable automatic replication to S3 storage, run `sqld` with `--enable-bottomless-replication` parameter:
+```console
+sqld --http-listen-addr=127.0.0.1:8000 --enable-bottomless-replication
+```
+
+#### Configuration
+Replication needs to be able to access an S3-compatible bucket. The following environment variables can be used to configure the replication:
+```sh
+LIBSQL_BOTTOMLESS_BUCKET=my-bucket                 # Default bucket name: bottomless
+LIBSQL_BOTTOMLESS_ENDPOINT='http://localhost:9000' # address can be overridden for local testing, e.g. with Minio
+AWS_SECRET_ACCESS_KEY=                             # regular AWS variables are used
+AWS_ACCESS_KEY_ID=                                 # ... to set up auth, regions, etc.
+AWS_REGION=                                        # .
+```
+
+#### bottomless-cli
+Replicated snapshots can be inspected and managed with the official command-line interface.
+
+The tool can be installed via `cargo`:
+```console
+RUSTFLAGS='--cfg uuid_unstable' cargo install bottomless-cli
+```
+For usage examples and description, refer to the official bottomless-cli documentation: https://github.com/libsql/sqld/tree/main/bottomless#cli
+
 ## Homebrew
 
 You can install `sqld` through homebrew by doing:
