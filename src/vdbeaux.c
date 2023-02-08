@@ -3394,7 +3394,6 @@ int sqlite3VdbeHalt(Vdbe *p){
   */
   if( db->autoCommit ){
     sqlite3ConnectionUnlocked(db);
-    db->txnTime = 0;
   }
 
   assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );

@@ -970,27 +970,18 @@ int sqlite3_vtab_in_next(sqlite3_value *pVal, sqlite3_value **ppOut){
 ** statement, the exact same time is returned for each invocation regardless
 ** of the amount of time that elapses between invocations.  In other words,
 ** the time returned is always the time of the first call.
-**
-** Or, if bTxn, return the transaction time.  The transaction time is the
-** same for all calls within the same transaction.
-**
-** bTxn is 0 for SQL like datetime('now') and is 1 for datetime('txn').
 */
-sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p, int bTxn){
+sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p){
   int rc;
 #ifndef SQLITE_ENABLE_STAT4
-  sqlite3_int64 *piTime;
-  sqlite3 *db = p->pOut->db;
+  sqlite3_int64 *piTime = &p->pVdbe->iCurrentTime;
   assert( p->pVdbe!=0 );
-  piTime = bTxn ? &db->txnTime : &p->pVdbe->iCurrentTime;
 #else
   sqlite3_int64 iTime = 0;
-  sqlite3_int64 *piTime;
-  sqlite3 *db = p->pOut->db;
-  piTime = bTxn ? &db->txnTime : p->pVdbe!=0 ? &p->pVdbe->iCurrentTime : &iTime;
+  sqlite3_int64 *piTime = p->pVdbe!=0 ? &p->pVdbe->iCurrentTime : &iTime;
 #endif
   if( *piTime==0 ){
-    rc = sqlite3OsCurrentTimeInt64(db->pVfs, piTime);
+    rc = sqlite3OsCurrentTimeInt64(p->pOut->db->pVfs, piTime);
     if( rc ) *piTime = 0;
   }
   return *piTime;

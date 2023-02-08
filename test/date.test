@@ -309,9 +309,9 @@ sqlite3_test_control SQLITE_TESTCTRL_LOCALTIME_FAULT 0
 #
 datetest 7.1 {datetime(null)} NULL
 datetest 7.2 {datetime('now',null)} NULL
-datetest 7.3 {datetime('txn','localtime',null)} NULL
+datetest 7.3 {datetime('now','localtime',null)} NULL
 datetest 7.4 {time(null)} NULL
-datetest 7.5 {time('txn',null)} NULL
+datetest 7.5 {time('now',null)} NULL
 datetest 7.6 {time('now','localtime',null)} NULL
 datetest 7.7 {date(null)} NULL
 datetest 7.8 {date('now',null)} NULL
@@ -322,28 +322,28 @@ datetest 7.12 {julianday('now','localtime',null)} NULL
 datetest 7.13 {strftime(null,'now')} NULL
 datetest 7.14 {strftime('%s',null)} NULL
 datetest 7.15 {strftime('%s','now',null)} NULL
-datetest 7.16 {strftime('%s','txn','localtime',null)} NULL
+datetest 7.16 {strftime('%s','now','localtime',null)} NULL
 
 # Test modifiers when the date begins as a julian day number - to
 # make sure the HH:MM:SS is preserved.  Ticket #551.
 #
 set sqlite_current_time [db eval {SELECT strftime('%s','2003-10-22 12:34:00')}]
 datetest 8.1 {datetime('now','weekday 0')} {2003-10-26 12:34:00}
-datetest 8.2 {datetime('txn','weekday 1')} {2003-10-27 12:34:00}
+datetest 8.2 {datetime('now','weekday 1')} {2003-10-27 12:34:00}
 datetest 8.3 {datetime('now','weekday 2')} {2003-10-28 12:34:00}
-datetest 8.4 {datetime('txn','weekday 3')} {2003-10-22 12:34:00}
+datetest 8.4 {datetime('now','weekday 3')} {2003-10-22 12:34:00}
 datetest 8.5 {datetime('now','start of month')} {2003-10-01 00:00:00}
-datetest 8.6 {datetime('txn','start of year')} {2003-01-01 00:00:00}
+datetest 8.6 {datetime('now','start of year')} {2003-01-01 00:00:00}
 datetest 8.7 {datetime('now','start of day')} {2003-10-22 00:00:00}
-datetest 8.8 {datetime('txn','1 day')} {2003-10-23 12:34:00}
+datetest 8.8 {datetime('now','1 day')} {2003-10-23 12:34:00}
 datetest 8.9 {datetime('now','+1 day')} {2003-10-23 12:34:00}
-datetest 8.10 {datetime('txn','+1.25 day')} {2003-10-23 18:34:00}
+datetest 8.10 {datetime('now','+1.25 day')} {2003-10-23 18:34:00}
 datetest 8.11 {datetime('now','-1.0 day')} {2003-10-21 12:34:00}
-datetest 8.12 {datetime('txn','1 month')} {2003-11-22 12:34:00}
+datetest 8.12 {datetime('now','1 month')} {2003-11-22 12:34:00}
 datetest 8.13 {datetime('now','11 month')} {2004-09-22 12:34:00}
-datetest 8.14 {datetime('txn','-13 month')} {2002-09-22 12:34:00}
+datetest 8.14 {datetime('now','-13 month')} {2002-09-22 12:34:00}
 datetest 8.15 {datetime('now','1.5 months')} {2003-12-07 12:34:00}
-datetest 8.16 {datetime('txn','-5 years')} {1998-10-22 12:34:00}
+datetest 8.16 {datetime('now','-5 years')} {1998-10-22 12:34:00}
 datetest 8.17 {datetime('now','+10.5 minutes')} {2003-10-22 12:44:30}
 datetest 8.18 {datetime('now','-1.25 hours')} {2003-10-22 11:19:00}
 datetest 8.19 {datetime('now','11.25 seconds')} {2003-10-22 12:34:11}
@@ -486,76 +486,11 @@ do_test date-15.1 {
   }
 } {0.0}
 do_test date-15.2 {
-  db func sleeper sleeper
-  db eval {
-     SELECT c - a FROM (SELECT julianday('txn') AS a,
-                               sleeper(), julianday('txn') AS c);
-  }
-} {0.0}
-do_test date-15.3 {
   db eval {
      SELECT a==b FROM (SELECT current_timestamp AS a,
                                sleeper(), current_timestamp AS b);
   }
 } {1}
-do_test date-15.4 {
-  db eval {
-     SELECT a==b FROM (SELECT julianday('txn') AS a,
-                               sleeper(), julianday('now') AS b);
-  }
-} {0}
-
-do_execsql_test date-15.5 {
-  CREATE TEMP TABLE t15(a,b);
-  BEGIN;
-  INSERT INTO t15(a,b) VALUES(julianday('txn'),sleeper());
-  INSERT INTO t15(a,b) VALUES(julianday('txn'),sleeper());
-  INSERT INTO t15(a,b) VALUES(julianday('txn'),sleeper());
-  COMMIT;
-  SELECT count(a), count(DISTINCT a) FROM t15;
-} {3 1}
-do_execsql_test date-15.6 {
-  DELETE FROM t15;
-  BEGIN;
-  INSERT INTO t15(a,b) VALUES(julianday('now'),sleeper());
-  INSERT INTO t15(a,b) VALUES(julianday('now'),sleeper());
-  INSERT INTO t15(a,b) VALUES(julianday('now'),sleeper());
-  COMMIT;
-  SELECT count(a), count(DISTINCT a) FROM t15;
-} {3 3}
-do_execsql_test date-15.7 {
-  DELETE FROM t15;
-  INSERT INTO t15(a,b) VALUES(julianday('txn'),sleeper());
-  INSERT INTO t15(a,b) VALUES(julianday('txn'),sleeper());
-  BEGIN;
-  INSERT INTO t15(a,b) VALUES(julianday('txn'),sleeper());
-  INSERT INTO t15(a,b) VALUES(julianday('txn'),sleeper());
-  COMMIT;
-  SELECT count(a), count(DISTINCT a) FROM t15;
-} {4 3}
-
-do_test date-15.10 {
-  unset -nocomplain x
-  db eval {BEGIN;}
-  db eval {
-    SELECT
-       current_time AS ct1,
-       current_date AS cd1,
-       current_timestamp AS cs1,
-       time() AS ct2,
-       datetime() AS cs2;
-    } x {continue}
-  after 1000
-  db eval {
-    SELECT
-      current_time=$x(ct1),
-      current_date=$x(cd1),
-      current_timestamp=$x(cs1),
-      time()=$x(ct2),
-      datetime()=$x(cs2);
-  }
-} {1 1 1 0 0}
-db eval {COMMIT}
 
 # Tests of extreme values in date/time functions.  Run with UBSan or the
 # equivalent to verify no signed interger overflow warnings.
