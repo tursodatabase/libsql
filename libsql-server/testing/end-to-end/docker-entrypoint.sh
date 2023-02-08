@@ -15,6 +15,7 @@ cp -r end-to-end/Cargo.lock build/
 
 cd build
 
-cargo insta test
+
+SQLD_TEST_RUN=true cargo insta test
 
 rsync -r integration ../end-to-end
