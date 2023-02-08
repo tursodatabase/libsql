@@ -31,7 +31,7 @@ struct Opts {
     #[clap(long, env = "SQLD_TEST_PODMAN_ADDR", requires("run"))]
     podman_addr: Option<String>,
     /// Whether the end-to-end tests should be run
-    #[clap(long)]
+    #[clap(long, env = "SQLD_TEST_RUN")]
     run: bool,
 }
 
