@@ -60,6 +60,7 @@ impl PeriodicDbUpdater {
                     | OpenFlags::SQLITE_OPEN_URI
                     | OpenFlags::SQLITE_OPEN_NO_MUTEX,
                 hook,
+                false, // bottomless replication is not enabled for replicas
             )
         })
         .await??;
