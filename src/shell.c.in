@@ -168,7 +168,7 @@ typedef unsigned char u8;
 
 #ifndef deliberate_fall_through
 /* Quiet some compilers about some of our intentional code. */
-# if GCC_VERSION>=7000000
+# if defined(GCC_VERSION) && GCC_VERSION>=7000000
 #  define deliberate_fall_through __attribute__((fallthrough));
 # else
 #  define deliberate_fall_through
