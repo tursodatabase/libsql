@@ -937,8 +937,11 @@ static int parseModifier(
 ** the resulting time into the DateTime structure p.  Return 0
 ** on success and 1 if there are any errors.
 **
-** If there are zero parameters (if even argv[0] is undefined)
-** then assume a default value of "now" for argv[0].
+** If there are zero parameters (if argc<=0) then assume a default
+** value of "now" for argv[0] if argc==0 and "txn" if argc<0.  SQL
+** functions will always have argc>=0, but the special implementations
+** of CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP set argc to -1
+** in order to force the use of 'txn' semantics.
 */
 static int isDate(
   sqlite3_context *context, 
@@ -950,9 +953,9 @@ static int isDate(
   const unsigned char *z;
   int eType;
   memset(p, 0, sizeof(*p));
-  if( argc==0 ){
+  if( argc<=0 ){
     if( !sqlite3NotPureFunc(context) ) return 1;
-    return setCurrentStmtTime(context, p, 1);
+    return setCurrentStmtTime(context, p, argc<0);
   }
   if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
                    || eType==SQLITE_INTEGER ){
@@ -1259,7 +1262,7 @@ static void ctimeFunc(
   sqlite3_value **NotUsed2
 ){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  timeFunc(context, 0, 0);
+  timeFunc(context, -1, 0);
 }
 
 /*
@@ -1273,7 +1276,7 @@ static void cdateFunc(
   sqlite3_value **NotUsed2
 ){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  dateFunc(context, 0, 0);
+  dateFunc(context, -1, 0);
 }
 
 /*
@@ -1287,7 +1290,7 @@ static void ctimestampFunc(
   sqlite3_value **NotUsed2
 ){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  datetimeFunc(context, 0, 0);
+  datetimeFunc(context, -1, 0);
 }
 #endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */
 
