@@ -501,7 +501,7 @@ do_test date-15.3 {
 do_test date-15.4 {
   db eval {
      SELECT a==b FROM (SELECT julianday('txn') AS a,
-                               sleeper(), julianday('txn') AS b);
+                               sleeper(), julianday('now') AS b);
   }
 } {0}
 
@@ -534,7 +534,28 @@ do_execsql_test date-15.7 {
   SELECT count(a), count(DISTINCT a) FROM t15;
 } {4 3}
 
-
+do_test date-15.10 {
+  unset -nocomplain x
+  db eval {BEGIN;}
+  db eval {
+    SELECT
+       current_time AS ct1,
+       current_date AS cd1,
+       current_timestamp AS cs1,
+       time() AS ct2,
+       datetime() AS cs2;
+    } x {continue}
+  after 1000
+  db eval {
+    SELECT
+      current_time=$x(ct1),
+      current_date=$x(cd1),
+      current_timestamp=$x(cs1),
+      time()=$x(ct2),
+      datetime()=$x(cs2);
+  }
+} {1 1 1 0 0}
+db eval {COMMIT}
 
 # Tests of extreme values in date/time functions.  Run with UBSan or the
 # equivalent to verify no signed interger overflow warnings.
