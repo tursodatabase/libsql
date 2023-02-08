@@ -1621,12 +1621,12 @@ static int whereKeyStats(
       if( iCol>0 ){
         pRec->nField = iCol;
         assert( sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec)<=0
-             || pParse->db->mallocFailed );
+             || pParse->db->mallocFailed || CORRUPT_DB );
       }
       if( i>0 ){
         pRec->nField = nField;
         assert( sqlite3VdbeRecordCompare(aSample[i-1].n, aSample[i-1].p, pRec)<0
-             || pParse->db->mallocFailed );
+             || pParse->db->mallocFailed || CORRUPT_DB );
       }
     }
   }

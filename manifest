@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassert()\sin\sSTAT4\slogic\sadded\sjust\sa\sfew\sdays\sago\son\n[2023-02-01|/info/55a26c67ed4a3a93].
-D 2023-02-08T14:17:34.024
+C Update\san\sassert()\sin\sthe\sstat4\scode\sthat\sis\sonly\strue\sfor\sa\swell-formed\sdatabase.
+D 2023-02-08T14:25:00.629
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -706,7 +706,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 3bbca705410258969d6d2e0c54b468de9674445d41b67714bb4fc3f1edef41d2
+F src/where.c 5b20d08699c9a55c0556661ff6f937dd1c8e27567b7553e48d477d3fad22ec4c
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c 76bca3379219880d2527493b71a3be49e696f75396d3481e4de5d4ceec7886b2
 F src/whereexpr.c 7c5671a04b00c876bec5e99fd4e6f688065feb4773160fbf76fd7900d2901777
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61cc8ed8d3541eddf23a9d542179c3f0223c5b8519b54d3be79988a376e25a89
-R b30ddae4c32511676ec9f35ba0a9073d
-U drh
-Z f13262bcc096124d3a09821c781e66c8
+P 168fa2fb22b8c1ad80c7001a429d3a80b48acfbfebb5414a0caa76964ea647c3
+R 81e82019be06f2b1f77bebf5a224afea
+U dan
+Z ee5c3f940801bd68e725142a7015cdad
 # Remove this line to create a well-formed Fossil manifest.
