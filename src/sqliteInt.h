@@ -819,15 +819,9 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 
 /*
 ** The datatype used to store estimates of the number of rows in a
-** table or index.  This is an unsigned integer type.  For 99.9% of
-** the world, a 32-bit integer is sufficient.  But a 64-bit integer
-** can be used at compile-time if desired.
+** table or index.
 */
-#ifdef SQLITE_64BIT_STATS
- typedef u64 tRowcnt;    /* 64-bit only if requested at compile-time */
-#else
- typedef u32 tRowcnt;    /* 32-bit is the default */
-#endif
+typedef u64 tRowcnt;
 
 /*
 ** Estimated quantities used for query planning are stored as 16-bit
