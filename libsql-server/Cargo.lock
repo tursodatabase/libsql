@@ -1996,6 +1996,7 @@ dependencies = [
  "base64 0.21.0",
  "num-traits",
  "serde_json",
+ "url",
  "worker",
 ]
 
