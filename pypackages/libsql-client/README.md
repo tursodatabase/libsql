@@ -1,11 +1,9 @@
 # sqld client for Python
 
-This is a Python client for [sqld][sqld], the server mode for [libSQL][libsql] that powers [Chiselstrike
-Turso][turso].
+This is a Python client for [sqld][sqld], the server mode for [libSQL][libsql].
 
 [sqld]: https://github.com/libsql/sqld
 [libsql]: https://libsql.org/
-[turso]: https://blog.chiselstrike.com/announcing-chiselstrike-turso-164472456b29
 
 ## Getting started
 
@@ -42,6 +40,8 @@ url = "file:example.db"
 
 First, please install Python and [Poetry][poetry]. To install all dependencies for local development to a
 virtual environment, run:
+
+[poetry]: https://python-poetry.org/
 
 ```
 poetry install -G dev
