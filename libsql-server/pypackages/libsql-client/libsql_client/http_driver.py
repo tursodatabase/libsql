@@ -8,18 +8,20 @@ from .result import ResultSet, Row, Value
 
 class _HttpDriver(_Driver):
     _session: aiohttp.ClientSession
+    _url: str
 
     def __init__(self, url: str) -> None:
-        self._session = aiohttp.ClientSession(url)
+        self._session = aiohttp.ClientSession()
+        self._url = url
 
     async def batch(self, stmts: List[_RawStmt]) -> List[ResultSet]:
         req_body = {
             "statements": [_encode_stmt(stmt) for stmt in stmts],
         }
 
-        async with await self._session.post("/", json=req_body) as resp:
+        async with await self._session.post(self._url, json=req_body) as resp:
             resp.raise_for_status()
-            resp_body = await resp.json()
+            resp_body = await resp.json(content_type=None)
 
         result_sets = [
             _decode_result_set(result_set_json)
