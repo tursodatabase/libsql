@@ -952,7 +952,7 @@ static int isDate(
   memset(p, 0, sizeof(*p));
   if( argc==0 ){
     if( !sqlite3NotPureFunc(context) ) return 1;
-    return setCurrentStmtTime(context, p, 0);
+    return setCurrentStmtTime(context, p, 1);
   }
   if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
                    || eType==SQLITE_INTEGER ){
@@ -1318,7 +1318,7 @@ static void currentTimeFunc(
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
 
-  iT = sqlite3StmtCurrentTime(context);
+  iT = sqlite3StmtCurrentTime(context, 1);
   if( iT<=0 ) return;
   t = iT/1000 - 10000*(sqlite3_int64)21086676;
 #if HAVE_GMTIME_R

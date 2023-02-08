@@ -1,5 +1,5 @@
-C Simplify\sthe\scode\sand\sadd\stest\scases.
-D 2023-02-07T23:55:59.881
+C Change\sthe\sbehavior\sof\sdate-time\sfunctions\swithout\sany\sarguments\s(and\sthus\nthe\sCURRENT_TIME,\sCURRENT_DATE,\sand\sCURRENT_TIMESTAMP\svariables)\sso\sthat\sthey\nwork\slike\s'txn'\sinstead\sof\slike\s'now'.\s\sThis\sis\san\sincompatibility\swith\slegacy,\nbut\sbrings\sSQLite\sinto\sconformance\swith\sall\sother\sSQL\ssystems.
+D 2023-02-08T11:34:05.173
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -567,7 +567,7 @@ F src/build.c c55ab6d1b089ceef57160e840f05f692955ac90944c3d04fcf01d97fd7bfd08d
 F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c 0c5db79ea1d5951ed917fa43046e9cc146dfbef5ff46106abe76b69e2523a9f5
+F src/date.c 7bbe94be3ceb349faaf922ed6fb2429c1745bf0c4440c77bfc9ce5b93fcc9fde
 F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e4f45af96247e29910403a63ac148cb313b005f9c014b37a9a49d98f5fef9a6
-R c20bc84a84eb9b7dcb5243c1d98778fa
+P d3bed4caff561e71c396cc869c5b4d9bf216ba203485e738c12ec62741f1aba5
+R 306a6107a9a25e9636c592ddc5563a3a
 U drh
-Z 4b08eb982cff98771c7da608dde8a084
+Z 577c1f61a5429561225ed1087c13c668
 # Remove this line to create a well-formed Fossil manifest.
