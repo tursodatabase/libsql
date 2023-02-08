@@ -39,7 +39,7 @@ fn is_local() -> bool {
 pub extern "C" fn xOpen(
     vfs: *mut sqlite3_vfs,
     db_file: *mut sqlite3_file,
-    wal_name: *const i8,
+    wal_name: *const c_char,
     no_shm_mode: i32,
     max_size: i64,
     methods: *mut libsql_wal_methods,
@@ -456,7 +456,7 @@ async fn try_restore(replicator: &mut replicator::Replicator) -> i32 {
     ffi::SQLITE_OK
 }
 
-pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, path: *const i8) -> i32 {
+pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, path: *const c_char) -> i32 {
     if is_local() {
         tracing::info!("Running in local-mode only, without any replication");
         return ffi::SQLITE_OK;
