@@ -4,7 +4,7 @@ package proxy;
 message Queries {
     repeated Query queries = 1;
     // Uuid
-    bytes clientId = 2;
+    string clientId = 2;
 }
 
 message Query {
