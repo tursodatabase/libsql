@@ -186,12 +186,46 @@ fn parse_query_result(result: serde_json::Value, idx: usize) -> Result<QueryResu
 }
 
 impl Connection {
+    /// Establishes a database connection, given a [`Url`]
+    ///
+    /// # Arguments
+    /// * `url` - [`Url`] object of the database endpoint. This cannot be a relative URL;
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use libsql_client::Connection;
+    /// use url::Url;
+    ///
+    /// let url  = Url::parse("https://foo:bar@localhost:8080").unwrap();
+    /// let db = Connection::connect_from_url(&url).unwrap();
+    /// ```
+    pub fn connect_from_url(url: &url::Url) -> Result<Self> {
+        let username = url.username();
+        let password = url.password().unwrap_or_default();
+        let mut url = url.clone();
+        url.set_username("").map_err(|_| {
+            worker::Error::from("Could not extract username from URL. Invalid URL?".to_string())
+        })?;
+        url.set_password(None).map_err(|_| {
+            worker::Error::from("Could not extract password from URL. Invalid URL?".to_string())
+        })?;
+        Ok(Self::connect(url.as_str(), username, password))
+    }
+
     /// Establishes a database connection.
     ///
     /// # Arguments
-    /// * `url` - URL of the database endpoint
+    /// * `url` - URL of the database endpoint, without its username or password
     /// * `username` - database username
     /// * `pass` - user's password
+    ///
+    /// # Examples
+    /// ```
+    /// # use libsql_client::Connection;
+    ///
+    /// let db = Connection::connect("https://localhost:8080", "user", "pass");
+    /// ```
     pub fn connect(
         url: impl Into<String>,
         username: impl Into<String>,
