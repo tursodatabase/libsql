@@ -1,5 +1,5 @@
-C New\stest\scases\sadded\sto\sfuzzdata8.db.
-D 2023-02-09T12:47:15.432
+C Squelch\stwo\sharmless\ssignedness\scomparison\swarnings\sin\sshell.c.in.
+D 2023-02-09T12:59:44.336
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,7 +622,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c c3ce1b49cca2c66c8c88fe7d9e1f3db23590deb4dd631619ad90e1e5d21bcf1f
-F src/shell.c.in 839d2b9f04f2b24e7032edb9ef756c34fbd60be91e24bc1ac8f1dae3a13c7742
+F src/shell.c.in 5cb750dc00bb8b20b020031fd1bb0cb8759a6e567c27aee6b0af31d187984985
 F src/sqlite.h.in c060f9e6f646fd817abf273c068666e079fc6e8467ea1d3e8b20f355f82722e9
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f4ec68ceefa3a607f37d6355aac89fd1ae1704da4061bad7f271db1f17c1dd3a
-R 2ecfe56d715e0c05010edfc93912b400
-U drh
-Z 0e31dffba5097c501205fab7ba01a193
+P be67bafccd79ba835ed7e287e09852ce83805da0797b164d0c8e44be05d9d28a
+R 6fec803204a277eb62a55d0e585455e9
+U stephan
+Z 899d4fe4d75350213057d49c0ba2beed
 # Remove this line to create a well-formed Fossil manifest.
