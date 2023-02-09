@@ -4103,11 +4103,14 @@ static int exprCodeInlineFunction(
       ** the type affinity of the argument.  This is used for testing of
       ** the SQLite type logic.
       */
-      const char *azAff[] = { "blob", "text", "numeric", "integer", "real" };
+      const char *azAff[] = { "blob", "text", "numeric", "integer",
+                              "real", "flexnum" };
       char aff;
       assert( nFarg==1 );
       aff = sqlite3ExprAffinity(pFarg->a[0].pExpr);
-      sqlite3VdbeLoadString(v, target, 
+      assert( aff<=SQLITE_AFF_NONE
+           || (aff>=SQLITE_AFF_BLOB && aff<=SQLITE_AFF_FLEXNUM) );
+      sqlite3VdbeLoadString(v, target,
               (aff<=SQLITE_AFF_NONE) ? "none" : azAff[aff-SQLITE_AFF_BLOB]);
       break;
     }
