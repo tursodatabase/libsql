@@ -1991,13 +1991,17 @@ dependencies = [
 
 [[package]]
 name = "libsql-client"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "async-trait",
  "base64 0.21.0",
+ "libsql-client",
  "num-traits",
+ "rand",
+ "reqwest",
  "serde_json",
+ "tokio",
  "url",
  "worker",
 ]
