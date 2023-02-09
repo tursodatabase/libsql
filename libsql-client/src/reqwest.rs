@@ -66,7 +66,7 @@ impl Connection {
         Ok(Connection::connect(url.as_str(), username, password))
     }
 
-    pub fn connect_from_ctx() -> anyhow::Result<Connection> {
+    pub fn connect_from_env() -> anyhow::Result<Connection> {
         let url = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
             anyhow::anyhow!("LIBSQL_CLIENT_URL variable should point to your sqld database")
         })?;
