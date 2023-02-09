@@ -1,11 +1,11 @@
-C Squelch\stwo\sharmless\ssignedness\scomparison\swarnings\sin\sshell.c.in.
-D 2023-02-09T12:59:44.336
+C Disable\sthe\sdouble-quoted\sstring\smisfeature\sby\sdefault\sin\sCLI\sbuilds.\nDQS\scan\sbe\sreenabled\sat\srun-time\susing\sthe\s".dbconfig\sdqs_dml"\sand\n".dbconfig\sdqs_ddl"\sdot-commands.
+D 2023-02-09T15:32:24.406
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 8cf9ca38d9a62173d36fe68370b0a95a1e83b93723d05dd76de7d4d7d6115873
+F Makefile.in 594f07f8829020a45d825234edf14046544b5bf6bc0057a9d5b83b58686b1c46
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 26e2fa6144907df27487b7c25767a87dbc5c4a312ccc382dbf44648f40073623
+F Makefile.msc b0026b61d1242add00c28dbe169271a763fffcb3af6762bcdbeb20c3efe6a69f
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 413ec94920a487ae32c9a2a8819544d690662d6f7c7ce025c0d0b8a1e74fa9db
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be67bafccd79ba835ed7e287e09852ce83805da0797b164d0c8e44be05d9d28a
-R 6fec803204a277eb62a55d0e585455e9
-U stephan
-Z 899d4fe4d75350213057d49c0ba2beed
+P bdd3edec13fa1142a8074c316e9ecec93fb278d42836eeb38587376fdf22cebd
+R 297e91bc0b9e7e7772648f2f80752169
+U drh
+Z 9a9ff0b12a67da05a6a51a651af86daf
 # Remove this line to create a well-formed Fossil manifest.
