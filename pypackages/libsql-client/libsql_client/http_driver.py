@@ -1,9 +1,10 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import aiohttp
 import base64
+import json
 
 from .driver import _Driver, _RawStmt
-from .errors import ClientResponseError
+from .errors import ClientResponseError, ClientHttpError
 from .result import ResultSet, Row, Value
 
 class _HttpDriver(_Driver):
@@ -20,12 +21,19 @@ class _HttpDriver(_Driver):
         }
 
         async with await self._session.post(self._url, json=req_body) as resp:
-            resp.raise_for_status()
-            resp_body = await resp.json(content_type=None)
+            if not resp.ok:
+                resp_body = await resp.read()
+                try:
+                    message = json.loads(resp_body).get("error")
+                except ValueError:
+                    message = None
+                raise ClientHttpError(resp.status, message)
+
+            resp_json = await resp.json(content_type=None)
 
         result_sets = [
             _decode_result_set(result_set_json)
-            for result_set_json in resp_body
+            for result_set_json in resp_json
         ]
         return result_sets
 
