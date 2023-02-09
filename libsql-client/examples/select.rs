@@ -21,13 +21,13 @@ fn result_to_string(result: QueryResult) -> String {
     ret
 }
 
-// Serve a request to load the page
-async fn serve(db: impl Connection) -> String {
+// Bumps a counter for one of the geographic locations picked at random.
+async fn bump_counter(db: impl Connection) -> String {
     // Recreate the tables if they do not exist yet
-    db.execute("CREATE TABLE IF NOT EXISTS counter(country TEXT, city TEXT, value, PRIMARY KEY(country, city)) WITHOUT ROWID").await.ok();
-    db.execute(
-        "CREATE TABLE IF NOT EXISTS coordinates(lat INT, long INT, airport TEXT, PRIMARY KEY (lat, long))",
-    ).await.ok();
+    db.batch([
+        "CREATE TABLE IF NOT EXISTS counter(country TEXT, city TEXT, value, PRIMARY KEY(country, city)) WITHOUT ROWID",
+        "CREATE TABLE IF NOT EXISTS coordinates(lat INT, long INT, airport TEXT, PRIMARY KEY (lat, long))"
+    ]).await.ok();
 
     // For demo purposes, let's pick a pseudorandom location
     const FAKE_LOCATIONS: &[(&str, &str, &str, f64, f64)] = &[
@@ -71,6 +71,6 @@ async fn serve(db: impl Connection) -> String {
 #[tokio::main]
 async fn main() {
     let db = libsql_client::reqwest::Connection::connect_from_ctx().unwrap();
-    let response = serve(db).await;
+    let response = bump_counter(db).await;
     println!("{response}")
 }
