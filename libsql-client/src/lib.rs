@@ -26,6 +26,9 @@ pub use connection::Connection;
 #[cfg(feature = "workers_backend")]
 pub mod workers;
 
+#[cfg(feature = "reqwest_backend")]
+pub mod reqwest;
+
 /// Metadata of a database request
 #[derive(Clone, Debug, Default)]
 pub struct Meta {

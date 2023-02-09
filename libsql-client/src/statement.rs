@@ -51,6 +51,12 @@ impl From<&str> for Statement {
     }
 }
 
+impl From<&&str> for Statement {
+    fn from(val: &&str) -> Self {
+        val.to_string().into()
+    }
+}
+
 impl std::fmt::Display for Statement {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.params.is_empty() {
