@@ -31,11 +31,40 @@ async def test_transaction(url):
         assert result_sets[1].rows[0][0] == "two"
 
 @pytest.mark.asyncio
-async def test_error(url):
+async def test_response_error(url):
     async with libsql_client.Client(url) as client:
         with pytest.raises(libsql_client.ClientResponseError) as excinfo:
             await client.execute("SELECT foo")
         assert "no such column: foo" in str(excinfo.value)
+
+@pytest.mark.asyncio
+async def test_http_invalid_url_error(http_url):
+    invalid_url = http_url + "/invalid/url"
+    async with libsql_client.Client(invalid_url) as client:
+        with pytest.raises(libsql_client.ClientHttpError) as excinfo:
+            await client.execute("SELECT 1")
+        assert "404" in str(excinfo.value)
+
+@pytest.mark.asyncio
+async def test_http_invalid_sql_error(http_url):
+    async with libsql_client.Client(http_url) as client:
+        with pytest.raises(libsql_client.ClientHttpError) as excinfo:
+            await client.execute("SELECT")
+        assert "unexpected end of input" in str(excinfo.value)
+
+@pytest.mark.asyncio
+async def test_http_multiple_statements_error(http_url):
+    async with libsql_client.Client(http_url) as client:
+        with pytest.raises(libsql_client.ClientHttpError) as excinfo:
+            await client.execute("SELECT 1; SELECT 2")
+        assert "more than one command" in str(excinfo.value)
+
+@pytest.mark.asyncio
+async def test_http_interactive_transaction_error(http_url):
+    async with libsql_client.Client(http_url) as client:
+        with pytest.raises(libsql_client.ClientHttpError) as excinfo:
+            await client.execute("BEGIN")
+        assert "interactive transaction" in str(excinfo.value)
 
 @pytest.mark.asyncio
 async def test_custom_executor(url):
