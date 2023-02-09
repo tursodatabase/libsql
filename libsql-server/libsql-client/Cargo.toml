@@ -1,6 +1,6 @@
 [package]
 name = "libsql-client"
-version = "0.3.7"
+version = "0.4.1"
 edition = "2021"
 license = "Apache-2.0"
 description = "HTTP-based client for libSQL and sqld"
@@ -13,4 +13,9 @@ url = "2.3.1"
 base64 = "0.21.0"
 num-traits = "0.2.15"
 serde_json = "1.0.91"
-worker = "0.0.12"
+worker = { version = "0.0.12", optional = true }
+anyhow = "1.0.69"
+async-trait = "0.1.64"
+
+[features]
+workers_backend = ["worker"]

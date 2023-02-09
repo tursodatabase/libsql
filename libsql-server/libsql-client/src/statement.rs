@@ -1,12 +1,12 @@
 //! `Statement` represents an SQL statement,
 //! which can be later sent to a database.
 
-use super::CellValue;
+use super::Value;
 
 /// SQL statement, possibly with bound parameters
 pub struct Statement {
     q: String,
-    params: Vec<CellValue>,
+    params: Vec<Value>,
 }
 
 impl Statement {
@@ -31,7 +31,7 @@ impl Statement {
     /// ```
     /// let stmt = libsql_client::Statement::with_params("UPDATE t SET x = ? WHERE key = ?", &[3, 8]);
     /// ```
-    pub fn with_params(q: impl Into<String>, params: &[impl Into<CellValue> + Clone]) -> Statement {
+    pub fn with_params(q: impl Into<String>, params: &[impl Into<Value> + Clone]) -> Statement {
         Self {
             q: q.into(),
             params: params.iter().map(|p| p.clone().into()).collect(),
