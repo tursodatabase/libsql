@@ -1,5 +1,5 @@
-C The\s"flexnum"\saffinity\sthat\swas\sadded\sby\s[44135d6ea84f7ba6]\sneeds\sto\salso\nbe\sadded\sto\sthe\soutput\sof\sthe\saffinity()\sbuilt-in\sfunction.\ndbsqlfuzz\sd309eaa5fe492c9606a8be876c2bc7dedb29d3d8
-D 2023-02-09T11:51:40.007
+C New\stest\scases\sadded\sto\sfuzzdata8.db.
+D 2023-02-09T12:47:15.432
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1146,7 +1146,7 @@ F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e4
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
 F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
-F test/fuzzdata8.db d07d68dcebbc4d537eb9fe066ed858239f901f48032c8e627b52e0f39058ac7a
+F test/fuzzdata8.db f6c2f2af4deaaae0ddb3310d509c2659990794aa653dc501b80a0534c3493f80
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4a145f07322d768a07619bed27e0390d50f3a01d07787b9296234a5ceb6f1218
-R 0e0a47ab991199699eb3ec89de3dd5bd
+P f4ec68ceefa3a607f37d6355aac89fd1ae1704da4061bad7f271db1f17c1dd3a
+R 2ecfe56d715e0c05010edfc93912b400
 U drh
-Z c922ed95eb155a993ae91de5a4e97292
+Z 0e31dffba5097c501205fab7ba01a193
 # Remove this line to create a well-formed Fossil manifest.
