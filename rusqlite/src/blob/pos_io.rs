@@ -265,7 +265,7 @@ mod test {
         ));
         blob.raw_read_at_exact(&mut s2, 5).unwrap_err();
 
-        let end_pos = blob.seek(std::io::SeekFrom::Current(0)).unwrap();
+        let end_pos = blob.stream_position().unwrap();
         assert_eq!(end_pos, 1);
         Ok(())
     }
