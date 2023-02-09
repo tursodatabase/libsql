@@ -70,7 +70,7 @@ async fn bump_counter(db: impl Connection) -> String {
 
 #[tokio::main]
 async fn main() {
-    let db = libsql_client::reqwest::Connection::connect_from_ctx().unwrap();
+    let db = libsql_client::reqwest::Connection::connect_from_env().unwrap();
     let response = bump_counter(db).await;
     println!("{response}")
 }
