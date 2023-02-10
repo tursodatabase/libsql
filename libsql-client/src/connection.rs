@@ -56,3 +56,93 @@ pub trait Connection {
         Ok(ret)
     }
 }
+
+/// A generic connection struct, wrapping possible backends.
+/// It's a convenience struct which allows implementing connect()
+/// with backends being passed as env parameters.
+pub enum GenericConnection {
+    #[cfg(feature = "local_backend")]
+    Local(super::local::Connection),
+    #[cfg(feature = "reqwest_backend")]
+    Reqwest(super::reqwest::Connection),
+    #[cfg(feature = "workers_backend")]
+    Workers(super::workers::Connection),
+}
+
+#[async_trait(?Send)]
+impl Connection for GenericConnection {
+    async fn batch(
+        &self,
+        stmts: impl IntoIterator<Item = impl Into<Statement>>,
+    ) -> Result<Vec<QueryResult>> {
+        match self {
+            #[cfg(feature = "local_backend")]
+            Self::Local(l) => l.batch(stmts).await,
+            #[cfg(feature = "reqwest_backend")]
+            Self::Reqwest(r) => r.batch(stmts).await,
+            #[cfg(feature = "workers_backend")]
+            Self::Workers(w) => w.batch(stmts).await,
+        }
+    }
+}
+
+/// Establishes a database connection based on environment variables
+///
+/// # Env
+/// * `LIBSQL_CLIENT_BACKEND` - one of the available backends; e.g. `reqwest`, `local`, `workers`
+/// * `LIBSQL_CLIENT_URL` - URL of the database endpoint - e.g. a https:// endpoint for remote connections (with specified credentials) or local file:/// path for a local database
+/// *
+/// # Examples
+///
+/// ```
+/// # use libsql_client::Connection;
+/// use url::Url;
+///
+/// let url  = Url::parse("https://foo:bar@localhost:8080").unwrap();
+/// let db = Connection::connect_from_url(&url).unwrap();
+/// ```
+pub fn connect() -> anyhow::Result<GenericConnection> {
+    /*
+    #[cfg(feature = "workers_backend")]
+    pub mod workers;
+
+    #[cfg(feature = "reqwest_backend")]
+    pub mod reqwest;
+
+    #[cfg(feature = "local_backend")]
+    pub mod local;
+        */
+    let url = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
+        anyhow::anyhow!("LIBSQL_CLIENT_URL variable should point to your libSQL/sqld database")
+    })?;
+    let backend = std::env::var("LIBSQL_CLIENT_BACKEND").unwrap_or_else(|_| {
+        if url.starts_with("http") {
+            return if cfg!(feature = "reqwest_backend") {
+                "reqwest"
+            } else if cfg!(feature = "workers_backend") {
+                "workers"
+            } else {
+                "local"
+            }
+            .to_string();
+        } else {
+            "local"
+        }
+        .to_string()
+    });
+    Ok(match backend.as_str() {
+        #[cfg(feature = "local_backend")]
+        "local" => {
+            GenericConnection::Local(super::local::Connection::connect(url)?)
+        },
+        #[cfg(feature = "reqwest_backend")]
+        "reqwest" => {
+            GenericConnection::Reqwest(super::reqwest::Connection::connect_from_url(&url::Url::parse(&url)?)?)
+        },
+        #[cfg(feature = "workers_backend")]
+        "workers" => {
+            anyhow::bail!("Connecting from workers API may need access to worker::RouteContext. Please call libsql_client::workers::Connection::connect_from_ctx() directly")
+        },
+        _ => anyhow::bail!("Unknown backend: {backend}. Make sure your backend exists and is enabled with its feature flag"),
+    })
+}
