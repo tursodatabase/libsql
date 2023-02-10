@@ -17,14 +17,21 @@ worker = { version = "0.0.12", optional = true }
 anyhow = "1.0.69"
 async-trait = "0.1.64"
 reqwest = { version = "0.11.14", optional = true, default-features = false, features = ["rustls-tls"] }
+sqld-libsql-bindings = { version = "0", path = "../sqld-libsql-bindings", optional = true }
+rusqlite = { version = "0.28.0", optional = true, git = "https://github.com/psarna/rusqlite", rev = "4df75df0b0f5ecea2714a8b21bf9f2a0fcfd5905", default-features = false, features = [
+    "buildtime_bindgen",
+    "bundled-libsql",
+    "column_decltype"
+] }
 
 [features]
 workers_backend = ["worker"]
 reqwest_backend = ["reqwest"]
+local_backend = ["rusqlite", "sqld-libsql-bindings"]
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
-libsql-client = { path = ".", features = ["reqwest_backend"] }
+libsql-client = { path = ".", features = ["reqwest_backend", "local_backend"] }
 rand = "0.8.5"
 
 [[example]]

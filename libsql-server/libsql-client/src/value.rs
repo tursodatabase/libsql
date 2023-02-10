@@ -2,6 +2,7 @@
 //! Each database row consists of one or more cell values.
 
 /// Value of a single database cell
+// FIXME: We need to support blobs as well
 #[derive(Clone, Debug)]
 pub enum Value {
     Text(String),
@@ -11,6 +12,7 @@ pub enum Value {
     Null,
 }
 
+// FIXME: we should *not* rely on Display for serialization purposes
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

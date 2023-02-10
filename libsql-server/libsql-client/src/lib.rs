@@ -29,6 +29,9 @@ pub mod workers;
 #[cfg(feature = "reqwest_backend")]
 pub mod reqwest;
 
+#[cfg(feature = "local_backend")]
+pub mod local;
+
 /// Metadata of a database request
 #[derive(Clone, Debug, Default)]
 pub struct Meta {
