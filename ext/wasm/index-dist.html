@@ -41,13 +41,25 @@
     <div>and the individual pages be started in their own tab.
       Warnings and Caveats:
       <ul class='warning'>
-        <li>Some of these pages require that the web server emit the
-          so-called
-          <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy'>COOP</a>
-          and
-          <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy'>COEP</a>
-          headers. <a href='https://sqlite.org/althttpd'>althttpd</a> requires the
-          <code>-enable-sab</code> flag for that.
+        <li>All of these pages must be served via an HTTP
+          server. Browsers do not support loading WASM files via
+          file:// URLs.</li>
+        <li>Any OPFS-related pages or tests require:
+          <ul>
+            <li>That the web server emit the so-called
+              <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy'>COOP</a>
+              and
+              <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy'>COEP</a>
+              headers. <a href='https://sqlite.org/althttpd'>althttpd</a> requires the
+              <code>-enable-sab</code> flag for that.
+            </li>
+            <li>A very recent version of a Chromium-based browser
+              (v102 at least, possibly newer). OPFS support in the
+              other major browsers is pending. Development and testing
+              is currently done against a dev-channel release of
+              Chrome (v111 as of 2023-02-10).
+            </li>
+          </ul>
         </li>
       </ul>
     </div>
