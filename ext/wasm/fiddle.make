@@ -36,7 +36,6 @@ fiddle.emcc-flags = \
   -sWASM_BIGINT=$(emcc.WASM_BIGINT) \
   -sEXPORT_NAME=$(sqlite3.js.init-func) \
   -Wno-limited-postlink-optimizations \
-  $(sqlite3.js.flags.--post-js) \
   $(emcc.exportedRuntimeMethods) \
   -sEXPORTED_FUNCTIONS=@$(abspath $(EXPORTED_FUNCTIONS.fiddle)) \
   -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory \
@@ -59,7 +58,7 @@ fiddle.SOAP.js := $(dir.fiddle)/$(notdir $(SOAP.js))
 $(fiddle.SOAP.js): $(SOAP.js)
 	cp $< $@
 
-$(eval $(call call-make-pre-js,fiddle-module,vanilla))
+$(eval $(call call-make-pre-post,fiddle-module,vanilla))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     $(EXPORTED_FUNCTIONS.fiddle) \
     $(fiddle.cses) $(pre-post-fiddle-module.deps.vanilla) $(fiddle.SOAP.js)
