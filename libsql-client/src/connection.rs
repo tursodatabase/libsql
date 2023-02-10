@@ -89,17 +89,15 @@ impl Connection for GenericConnection {
 /// Establishes a database connection based on environment variables
 ///
 /// # Env
-/// * `LIBSQL_CLIENT_BACKEND` - one of the available backends; e.g. `reqwest`, `local`, `workers`
 /// * `LIBSQL_CLIENT_URL` - URL of the database endpoint - e.g. a https:// endpoint for remote connections (with specified credentials) or local file:/// path for a local database
+/// * (optional) `LIBSQL_CLIENT_BACKEND` - one of the available backends; e.g. `reqwest`, `local`, `workers`
 /// *
 /// # Examples
 ///
 /// ```
 /// # use libsql_client::Connection;
-/// use url::Url;
-///
-/// let url  = Url::parse("https://foo:bar@localhost:8080").unwrap();
-/// let db = Connection::connect_from_url(&url).unwrap();
+/// # std::env::set_var("LIBSQL_CLIENT_URL", "file:////tmp/example.db");
+/// let db = libsql_client::connect().unwrap();
 /// ```
 pub fn connect() -> anyhow::Result<GenericConnection> {
     /*
