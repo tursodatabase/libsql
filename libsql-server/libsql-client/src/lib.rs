@@ -82,11 +82,10 @@ pub fn parse_value(
 ) -> Result<Value> {
     match cell {
         serde_json::Value::Null => Ok(Value::Null),
-        serde_json::Value::Bool(v) => Ok(Value::Bool(v)),
         serde_json::Value::Number(v) => match v.as_i64() {
-            Some(v) => Ok(Value::Number(v)),
+            Some(v) => Ok(Value::Integer(v)),
             None => match v.as_f64() {
-                Some(v) => Ok(Value::Float(v)),
+                Some(v) => Ok(Value::Real(v)),
                 None => Err(anyhow!(
                     "Result {result_idx} row {row_idx} cell {cell_idx} had unknown number value: {v}",
                 )),
