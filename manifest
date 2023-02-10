@@ -1,5 +1,5 @@
-C Minor\stext-only\supdates\sto\swasm\sdemo/test\sHTML\sand\slicense\sheader.
-D 2023-02-10T11:05:16.954
+C Ensure\sthat\sthe\svalueFromFunction()\sroutine\sdoes\snot\sclear\sa\sprior\nparser\serror.\s\sdbsqlfuzz\s6fa816f20cf5b62260d635d110b88f38e29d8fe1.
+D 2023-02-10T14:20:18.565
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -697,7 +697,7 @@ F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 40c47b1528d308a322203de21d2e0d711753257ed9771771b6129214b1d65932
 F src/vdbeaux.c 3f9e3b6585e7434aa11300169dd66ddf0fc963a0c6f7940bdc058335dadeb353
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
-F src/vdbemem.c 86908c0ab1624df678458feb53319bf9720992e761cbccf77a36d671ce11693d
+F src/vdbemem.c 0388576b7cf0be13ce14b9e3b8aa90b8a1b923b60321d0242131ae0b5732b43b
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dcf532931136d09bef23ccad669d486cb31daec8565317c3209c280b5695d45d
-R 04d85ae8958b88100d42ae71d2fbee4a
-U stephan
-Z 7813ea216bdc6db373adeddd4f0a5692
+P f28e2a8613571fe3c23bfbbb602311071f4cb9731653216cfe436c38b0a59736
+R a48d37eb8c6acd00e481b5287e828340
+U drh
+Z c4b57f5d57cd94eef2761849e9ee3247
 # Remove this line to create a well-formed Fossil manifest.

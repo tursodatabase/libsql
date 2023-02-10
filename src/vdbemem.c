@@ -1530,11 +1530,11 @@ static int valueFromFunction(
     }
 #endif
   }
-  pCtx->pParse->rc = rc;
 
  value_from_function_out:
   if( rc!=SQLITE_OK ){
     pVal = 0;
+    pCtx->pParse->rc = rc;
   }
   if( apVal ){
     for(i=0; i<nVal; i++){
