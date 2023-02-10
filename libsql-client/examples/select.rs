@@ -53,8 +53,8 @@ async fn bump_counter(db: impl Connection) -> String {
         Statement::with_params(
             "INSERT OR IGNORE INTO coordinates VALUES (?, ?, ?)",
             &[
-                Value::Float(latitude),
-                Value::Float(longitude),
+                Value::Real(latitude),
+                Value::Real(longitude),
                 airport.into(),
             ],
         ),
