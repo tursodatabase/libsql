@@ -9,7 +9,7 @@ use anyhow::Context;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use bytes::{BufMut, Bytes, BytesMut};
-use hyper::body::to_bytes;
+use hyper::body::{to_bytes, HttpBody};
 use hyper::{Body, Method, Request, Response, StatusCode};
 use serde::Serialize;
 use serde_json::{json, Number};
@@ -22,7 +22,7 @@ use tower_http::{compression::CompressionLayer, cors};
 
 use crate::error::Error;
 use crate::http::types::HttpQuery;
-use crate::query::{self, Queries, Query, QueryResult, ResultSet};
+use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
 
 use self::auth::Authorizer;
@@ -214,7 +214,42 @@ async fn handle_request(
         (&Method::POST, "/") => handle_query(req, sender).await,
         (&Method::GET, "/console") if enable_console => show_console().await,
         (&Method::GET, "/health") => Ok(handle_health()),
+        (&Method::POST, "/load-dump") => Ok(load_dump(req, sender).await?),
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
+    }
+}
+
+async fn load_dump(
+    mut req: Request<Body>,
+    sender: mpsc::Sender<Message>,
+) -> anyhow::Result<Response<Body>> {
+    match req.data().await {
+        Some(Ok(data)) => {
+            // FIXME: Dumps may not fit in memory. A better way would be to stream the payload, and
+            // have a dedicated path to load the dump from it.
+            let mut queries = Vec::new();
+            let s = String::from_utf8(data.to_vec())?;
+            for line in s.lines() {
+                let stmt = Statement::new_unchecked(line);
+                queries.push(Query {
+                    stmt,
+                    params: Params::empty(),
+                });
+            }
+
+            let (resp, receiver) = oneshot::channel();
+            let msg = Message { queries, resp };
+
+            let _ = sender.send(msg).await;
+
+            match receiver.await {
+                Ok(Ok(_)) => Ok(Response::new(Body::empty())),
+                Ok(Err(e)) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
+                Err(e) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
+            }
+        }
+        Some(Err(e)) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
+        None => Ok(Response::new(Body::empty())),
     }
 }
 
