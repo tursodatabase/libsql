@@ -290,6 +290,19 @@ int sqlite3Fts5ExprNew(
 }
 
 /*
+** Assuming that buffer z is at least nByte bytes in size and contains a
+** valid utf-8 string, return the number of characters in the string.
+*/
+static int fts5ExprCountChar(const char *z, int nByte){
+  int nRet = 0;
+  int ii;
+  for(ii=0; ii<nByte; ii++){
+    if( (z[ii] & 0xC0)!=0x80 ) nRet++;
+  }
+  return nRet;
+}
+
+/*
 ** This function is only called when using the special 'trigram' tokenizer.
 ** Argument zText contains the text of a LIKE or GLOB pattern matched
 ** against column iCol. This function creates and compiles an FTS5 MATCH
@@ -326,7 +339,8 @@ int sqlite3Fts5ExprPattern(
       if( i==nText 
        || zText[i]==aSpec[0] || zText[i]==aSpec[1] || zText[i]==aSpec[2] 
       ){
-        if( i-iFirst>=3 ){
+
+        if( fts5ExprCountChar(&zText[iFirst], i-iFirst)>=3 ){
           int jj;
           zExpr[iOut++] = '"';
           for(jj=iFirst; jj<i; jj++){
