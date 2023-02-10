@@ -1,10 +1,6 @@
 use super::{Meta, QueryResult, ResultSet, Row, Statement, Value};
 use async_trait::async_trait;
 
-pub use sqld_libsql_bindings::{
-    libsql_compile_wasm_module, libsql_free_wasm_module, libsql_run_wasm, libsql_wasm_engine_new,
-};
-
 use rusqlite::types::Value as RusqliteValue;
 
 /// Database connection. This is the main structure used to
