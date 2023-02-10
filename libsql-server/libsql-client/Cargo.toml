@@ -37,3 +37,7 @@ rand = "0.8.5"
 [[example]]
 name = "select"
 path = "examples/select.rs"
+
+[[example]]
+name = "connect_from_env"
+path = "examples/connect_from_env.rs"

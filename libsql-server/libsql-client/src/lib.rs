@@ -21,7 +21,7 @@ pub mod value;
 pub use value::Value;
 
 pub mod connection;
-pub use connection::Connection;
+pub use connection::{connect, Connection};
 
 #[cfg(feature = "workers_backend")]
 pub mod workers;
