@@ -49,6 +49,17 @@ impl Connection {
         })
     }
 
+    pub fn connect_from_env() -> anyhow::Result<Self> {
+        let path = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
+            anyhow::anyhow!("LIBSQL_CLIENT_URL variable should point to your sqld database")
+        })?;
+        let path = match path.strip_prefix("file:///") {
+            Some(path) => path,
+            None => anyhow::bail!("Local URL needs to start with file:///"),
+        };
+        Self::connect(path)
+    }
+
     /// Executes a batch of SQL statements.
     /// Each statement is going to run in its own transaction,
     /// unless they're wrapped in BEGIN and END
