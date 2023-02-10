@@ -222,7 +222,7 @@ struct libsql_wal {
   unsigned char lockError;            /* True if a locking error has occurred */
   WalIndexHdr *pSnapshot;             /* Start transaction here if not NULL */
   sqlite3 *db;
-  libsql_wal_methods *pMethods;       /* Virtual methods for interacting with WAL */;
+  libsql_wal_methods *pMethods;       /* Virtual methods for interacting with WAL */
   void *pMethodsData;                 /* Optional context for private use of libsql_wal_methods */
 };
 
