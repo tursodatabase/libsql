@@ -86,6 +86,16 @@ impl Statement {
         }
     }
 
+    /// Returns a statement instance without performing any validation to the input
+    /// It is always assumed that such a statement will be a write, and will always be handled by
+    /// the primary
+    pub fn new_unchecked(s: &str) -> Self {
+        Self {
+            stmt: s.to_string(),
+            kind: StmtKind::Write,
+        }
+    }
+
     pub fn parse(s: &str) -> impl Iterator<Item = Result<Self>> + '_ {
         fn parse_inner(c: Cmd) -> Result<Statement> {
             let kind =
