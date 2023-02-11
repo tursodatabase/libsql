@@ -79,8 +79,9 @@ async fn main() {
         Err(e) => println!("Failed to fetch from a remote database: {e}"),
     }
 
-    let local_db =
-        libsql_client::local::Connection::connect("/tmp/libsql_client_test_db.db").unwrap();
+    let mut path_buf = std::env::temp_dir();
+    path_buf.push("libsql_client_test_db.db");
+    let local_db = libsql_client::local::Connection::connect(path_buf.as_path()).unwrap();
     let response = bump_counter(local_db).await;
     println!("Local:\n{response}");
 }
