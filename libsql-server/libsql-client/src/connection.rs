@@ -87,8 +87,11 @@ impl Connection for GenericConnection {
 /// Establishes a database connection based on environment variables
 ///
 /// # Env
-/// * `LIBSQL_CLIENT_URL` - URL of the database endpoint - e.g. a https:// endpoint for remote connections (with specified credentials) or local file:/// path for a local database
-/// * (optional) `LIBSQL_CLIENT_BACKEND` - one of the available backends; e.g. `reqwest`, `local`, `workers`
+/// * `LIBSQL_CLIENT_URL` - URL of the database endpoint - e.g. a https:// endpoint for remote connections
+///   (with specified credentials) or local file:/// path for a local database
+/// * (optional) `LIBSQL_CLIENT_BACKEND` - one of the available backends,
+///   e.g. `reqwest`, `local`, `workers`. The library will try to deduce the backend
+///   from the URL if not set explicitly. For instance, it will assume that https:// is not a local file.
 /// *
 /// # Examples
 ///
