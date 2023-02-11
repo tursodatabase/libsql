@@ -1,4 +1,4 @@
-use libsql_client::{params, Connection, QueryResult, Statement};
+use libsql_client::{connect, Connection, QueryResult, Statement, Value};
 use rand::prelude::SliceRandom;
 
 fn result_to_string(result: QueryResult) -> String {
@@ -44,7 +44,6 @@ async fn bump_counter(db: impl Connection) -> String {
     db.transaction([
         Statement::with_params(
             "INSERT OR IGNORE INTO counter VALUES (?, ?, 0)",
-            // Parameters that have a single type can be passed as a regular slice
             &[country, city],
         ),
         Statement::with_params(
@@ -53,8 +52,11 @@ async fn bump_counter(db: impl Connection) -> String {
         ),
         Statement::with_params(
             "INSERT OR IGNORE INTO coordinates VALUES (?, ?, ?)",
-            // Parameters with different types can be passed to a convenience macro - params!()
-            params!(latitude, longitude, airport),
+            &[
+                Value::Real(latitude),
+                Value::Real(longitude),
+                airport.into(),
+            ],
         ),
     ])
     .await
@@ -71,17 +73,11 @@ async fn bump_counter(db: impl Connection) -> String {
 
 #[tokio::main]
 async fn main() {
-    match libsql_client::reqwest::Connection::connect_from_env() {
-        Ok(remote_db) => {
-            let response = bump_counter(remote_db).await;
-            println!("Remote:\n{response}");
-        }
-        Err(e) => println!("Failed to fetch from a remote database: {e}"),
-    }
-
-    let mut path_buf = std::env::temp_dir();
-    path_buf.push("libsql_client_test_db.db");
-    let local_db = libsql_client::local::Connection::connect(path_buf.as_path()).unwrap();
-    let response = bump_counter(local_db).await;
-    println!("Local:\n{response}");
+    let db = connect().unwrap();
+    let response = bump_counter(db).await;
+    println!(
+        "Connection parameters: backend={:?} url={:?}\n{response}",
+        std::env::var("LIBSQL_CLIENT_BACKEND"),
+        std::env::var("LIBSQL_CLIENT_URL")
+    );
 }

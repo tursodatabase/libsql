@@ -21,13 +21,16 @@ pub mod value;
 pub use value::Value;
 
 pub mod connection;
-pub use connection::Connection;
+pub use connection::{connect, Connection};
 
 #[cfg(feature = "workers_backend")]
 pub mod workers;
 
 #[cfg(feature = "reqwest_backend")]
 pub mod reqwest;
+
+#[cfg(feature = "local_backend")]
+pub mod local;
 
 /// Metadata of a database request
 #[derive(Clone, Debug, Default)]
@@ -79,11 +82,10 @@ pub fn parse_value(
 ) -> Result<Value> {
     match cell {
         serde_json::Value::Null => Ok(Value::Null),
-        serde_json::Value::Bool(v) => Ok(Value::Bool(v)),
         serde_json::Value::Number(v) => match v.as_i64() {
-            Some(v) => Ok(Value::Number(v)),
+            Some(v) => Ok(Value::Integer(v)),
             None => match v.as_f64() {
-                Some(v) => Ok(Value::Float(v)),
+                Some(v) => Ok(Value::Real(v)),
                 None => Err(anyhow!(
                     "Result {result_idx} row {row_idx} cell {cell_idx} had unknown number value: {v}",
                 )),
@@ -169,4 +171,24 @@ pub fn parse_query_result(result: serde_json::Value, idx: usize) -> Result<Query
         }
         _ => Err(anyhow!("Result {idx} was not an object",)),
     }
+}
+
+/// A macro for passing parameters to statements without having to manually
+/// define their types.
+///
+/// # Example
+///
+/// ```rust,no_run
+///   let db = libsql_client::connect()?;
+///   db.execute(
+///       "INSERT INTO cart(product_id, product_name, quantity, price) VALUES (?, ?, ?, ?)",
+///       params!(64, "socks", 2, 4.5),
+///   ).await?;
+/// ```
+#[macro_export]
+macro_rules! params {
+    () => { &[] };
+    ($($param:expr),+ $(,)?) => {
+        &[$($param.into()),+] as &[libsql_client::Value]
+    };
 }

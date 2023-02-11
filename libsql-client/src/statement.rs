@@ -5,8 +5,8 @@ use super::Value;
 
 /// SQL statement, possibly with bound parameters
 pub struct Statement {
-    q: String,
-    params: Vec<Value>,
+    pub(crate) q: String,
+    pub(crate) params: Vec<Value>,
 }
 
 impl Statement {

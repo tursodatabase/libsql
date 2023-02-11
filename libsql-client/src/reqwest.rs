@@ -41,10 +41,10 @@ impl Connection {
         }
     }
 
-    /// Establishes a database connection, given a [`Url`]
+    /// Establishes a database connection, given a `Url`
     ///
     /// # Arguments
-    /// * `url` - [`Url`] object of the database endpoint. This cannot be a relative URL;
+    /// * `url` - `Url` object of the database endpoint. This cannot be a relative URL;
     ///
     /// # Examples
     ///
