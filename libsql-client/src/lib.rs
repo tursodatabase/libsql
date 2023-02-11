@@ -172,3 +172,23 @@ pub fn parse_query_result(result: serde_json::Value, idx: usize) -> Result<Query
         _ => Err(anyhow!("Result {idx} was not an object",)),
     }
 }
+
+/// A macro for passing parameters to statements without having to manually
+/// define their types.
+///
+/// # Example
+///
+/// ```rust,no_run
+///   let db = libsql_client::connect()?;
+///   db.execute(
+///       "INSERT INTO cart(product_id, product_name, quantity, price) VALUES (?, ?, ?, ?)",
+///       params!(64, "socks", 2, 4.5),
+///   ).await?;
+/// ```
+#[macro_export]
+macro_rules! params {
+    () => { &[] };
+    ($($param:expr),+ $(,)?) => {
+        &[$($param.into()),+] as &[libsql_client::Value]
+    };
+}
