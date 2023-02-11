@@ -1,4 +1,4 @@
-use libsql_client::{Connection, QueryResult, Statement, Value};
+use libsql_client::{params, Connection, QueryResult, Statement};
 use rand::prelude::SliceRandom;
 
 fn result_to_string(result: QueryResult) -> String {
@@ -44,6 +44,7 @@ async fn bump_counter(db: impl Connection) -> String {
     db.transaction([
         Statement::with_params(
             "INSERT OR IGNORE INTO counter VALUES (?, ?, 0)",
+            // Parameters that have a single type can be passed as a regular slice
             &[country, city],
         ),
         Statement::with_params(
@@ -52,11 +53,8 @@ async fn bump_counter(db: impl Connection) -> String {
         ),
         Statement::with_params(
             "INSERT OR IGNORE INTO coordinates VALUES (?, ?, ?)",
-            &[
-                Value::Real(latitude),
-                Value::Real(longitude),
-                airport.into(),
-            ],
+            // Parameters with different types can be passed to a convenience macro - params!()
+            params!(latitude, longitude, airport),
         ),
     ])
     .await
