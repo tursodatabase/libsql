@@ -1,5 +1,5 @@
-C Do\sa\sbetter\sjob\sof\sdetecting\swhen\sa\sWHERE\sclause\sterm\smight\sbe\suseful\sto\nan\sexpression\sindex.\s\sFix\sfor\sperformance\sregression\sreported\sby\n[forum:/forumpost/e65800d8cb|forum\sthread\se65800d8cb].
-D 2023-02-10T21:53:33.465
+C Change\sa\svariable\sfrom\s32\sto\s64-bits\sto\savoid\sa\sharmless\scompiler\swarning\nin\sXcode.\s\s[forum:/forumpost/402d733c22|Forum\spost\s402d733c22].
+D 2023-02-11T21:11:39.733
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -567,7 +567,7 @@ F src/build.c c55ab6d1b089ceef57160e840f05f692955ac90944c3d04fcf01d97fd7bfd08d
 F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c 94ce83b4cd848a387680a5f920c9018c16655db778c4d36525af0a0f34679ac5
+F src/date.c f21815ca7172ce073db3163ac54c8d9f2841077165c1a6123b4d1c376a0c7ec7
 F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 00714b39b39c51519edbc0194f98c7275fecf96763a06fd95db6e1d81bb9f1f1
-R 122a35632c84f1a86bc1efeb49e3bb37
+P 44200596aa943963bc6ca98b5d4fd5b9235d1109d8dfc1a75eeae353b4239142
+R 903a02fdade5e55a6ea70a4f3fe0e724
 U drh
-Z 7d2b0fd613ff6bddf59b196d4f5df2a1
+Z 17dea032ba0170dfca46315f56d7ffa6
 # Remove this line to create a well-formed Fossil manifest.
