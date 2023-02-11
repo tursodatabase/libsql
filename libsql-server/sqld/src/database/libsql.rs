@@ -209,6 +209,7 @@ impl LibSqlDb {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
         tokio::task::spawn_blocking(move || {
+            let path = path.as_ref().join("data");
             let conn = open_db(
                 path,
                 #[cfg(feature = "mwal_backend")]
