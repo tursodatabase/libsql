@@ -25,7 +25,6 @@ pub trait Connection {
     ///
     /// # Arguments
     /// * `stmts` - SQL statements
-    /// ```
     async fn batch(
         &self,
         stmts: impl IntoIterator<Item = impl Into<Statement>>,
@@ -37,7 +36,6 @@ pub trait Connection {
     ///
     /// # Arguments
     /// * `stmts` - SQL statements
-    /// ```
     async fn transaction(
         &self,
         stmts: impl IntoIterator<Item = impl Into<Statement>>,
