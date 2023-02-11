@@ -3,7 +3,6 @@
 members = [
     "bottomless",
     "bottomless-cli",
-    "libsql-client",
     "sqlc",
     "sqld",
     "sqld-libsql-bindings",

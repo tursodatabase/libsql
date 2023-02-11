@@ -27,7 +27,7 @@ pin-project-lite = "0.2.9"
 postgres-protocol = "0.6.4"
 prost = "0.11.3"
 regex = "1.7.0"
-rusqlite = { git = "https://github.com/psarna/rusqlite", rev = "4df75df0b0f5ecea2714a8b21bf9f2a0fcfd5905", default-features = false, features = [
+rusqlite = { version = "0.28.0", git = "https://github.com/psarna/rusqlite", rev = "4df75df0b0f5ecea2714a8b21bf9f2a0fcfd5905", default-features = false, features = [
     "buildtime_bindgen",
     "bundled-libsql",
     "column_decltype"
