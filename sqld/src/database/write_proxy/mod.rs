@@ -75,10 +75,12 @@ impl WriteProxyDbFactory {
         tokio::task::spawn_blocking(move || loop {
             // must abort
             if let Err(TryRecvError::Disconnected) = receiver.try_recv() {
+                tracing::warn!("periodic updater exiting");
                 break;
             }
             db_updater.step();
         });
+
         Ok(Self {
             write_proxy,
             db_path,
