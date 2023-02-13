@@ -1,30 +1,29 @@
-pub mod wal_log_rpc {
+pub mod rpc {
     #![allow(clippy::all)]
     tonic::include_proto!("wal_log");
 }
 
-use std::net::SocketAddr;
-use std::sync::Arc;
-
 use std::collections::HashSet;
-use std::sync::RwLock;
+use std::net::SocketAddr;
+use std::sync::{Arc, RwLock};
+
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::Status;
-use wal_log_rpc::wal_log_server::WalLog;
 
-use crate::wal_logger::{FrameId, WalLogger};
+use crate::replication::logger::{FrameId, ReplicationLogger};
 
-use self::wal_log_rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
+use self::rpc::replication_log_server::ReplicationLog;
+use self::rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
 
-pub struct WalLogService {
-    logger: Arc<WalLogger>,
+pub struct ReplicationLogService {
+    logger: Arc<ReplicationLogger>,
     replicas_with_hello: RwLock<HashSet<SocketAddr>>,
 }
 
 pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
 
-impl WalLogService {
-    pub fn new(logger: Arc<WalLogger>) -> Self {
+impl ReplicationLogService {
+    pub fn new(logger: Arc<ReplicationLogger>) -> Self {
         Self {
             logger,
             replicas_with_hello: RwLock::new(HashSet::<SocketAddr>::new()),
@@ -56,7 +55,7 @@ impl WalLogService {
 }
 
 #[tonic::async_trait]
-impl WalLog for WalLogService {
+impl ReplicationLog for ReplicationLogService {
     type LogEntriesStream = ReceiverStream<Result<Frame, Status>>;
 
     async fn log_entries(

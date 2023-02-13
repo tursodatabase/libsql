@@ -1,5 +1,3 @@
-mod replication;
-
 use std::future::{ready, Ready};
 use std::path::PathBuf;
 use std::time::Duration;
@@ -13,14 +11,14 @@ use uuid::Uuid;
 use crate::error::Error;
 use crate::query::{self, QueryResponse, QueryResult};
 use crate::query_analysis::{final_state, State};
-use crate::rpc::proxy::proxy_rpc::proxy_client::ProxyClient;
-use crate::rpc::proxy::proxy_rpc::query_result::RowResult;
-use crate::rpc::proxy::proxy_rpc::{DisconnectMessage, Queries, Query};
-use crate::rpc::wal_log::wal_log_rpc::wal_log_client::WalLogClient;
+use crate::replication::client::PeriodicDbUpdater;
+use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
+use crate::rpc::proxy::rpc::query_result::RowResult;
+use crate::rpc::proxy::rpc::{DisconnectMessage, Queries, Query};
+use crate::rpc::replication_log::rpc::replication_log_client::ReplicationLogClient;
 use crate::Result;
 
 use super::{libsql::LibSqlDb, service::DbFactory, Database};
-use replication::PeriodicDbUpdater;
 
 #[derive(Clone)]
 pub struct WriteProxyDbFactory {
@@ -60,7 +58,7 @@ impl WriteProxyDbFactory {
         #[allow(clippy::unnecessary_to_owned)]
         let uri = tonic::transport::Uri::from_maybe_shared(addr.to_string())?;
         let write_proxy = ProxyClient::with_origin(channel.clone(), uri.clone());
-        let logger = WalLogClient::with_origin(channel, uri);
+        let logger = ReplicationLogClient::with_origin(channel, uri);
 
         let mut db_updater =
             PeriodicDbUpdater::new(&db_path, logger, Duration::from_secs(1)).await?;

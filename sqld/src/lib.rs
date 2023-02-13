@@ -16,12 +16,12 @@ use once_cell::sync::Lazy;
 #[cfg(feature = "mwal_backend")]
 use once_cell::sync::OnceCell;
 use query::{Queries, QueryResult};
+use replication::logger::{ReplicationLogger, ReplicationLoggerHook};
 use rpc::run_rpc_server;
 use tokio::sync::Notify;
 use tokio::task::JoinHandle;
 use tower::load::Constant;
 use tower::{Service, ServiceExt};
-use wal_logger::{WalLogger, WalLoggerHook};
 
 use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
@@ -35,9 +35,9 @@ mod http;
 mod postgres;
 mod query;
 mod query_analysis;
+mod replication;
 pub mod rpc;
 mod server;
-mod wal_logger;
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
@@ -183,13 +183,13 @@ async fn start_primary(config: &Config, handles: &mut Handles, addr: &str) -> an
 }
 
 async fn start_replica(config: &Config, handles: &mut Handles) -> anyhow::Result<()> {
-    let logger = Arc::new(WalLogger::open(&config.db_path)?);
+    let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
     let enable_bottomless = config.enable_bottomless_replication;
     let db_factory = move || {
         let db_path = path_clone.clone();
-        let hook = WalLoggerHook::new(logger.clone());
+        let hook = ReplicationLoggerHook::new(logger.clone());
         async move { LibSqlDb::new(db_path, hook, enable_bottomless) }
     };
     let service = DbFactoryService::new(db_factory.clone());
