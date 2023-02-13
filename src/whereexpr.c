@@ -1376,7 +1376,6 @@ static void exprAnalyze(
     transferJoinMarkings(pNewExpr1, pExpr);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, wtFlags);
     testcase( idxNew1==0 );
-    exprAnalyze(pSrc, pWC, idxNew1);
     pNewExpr2 = sqlite3ExprDup(db, pLeft, 0);
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
            sqlite3ExprAddCollateString(pParse,pNewExpr2,zCollSeqName),
@@ -1384,6 +1383,7 @@ static void exprAnalyze(
     transferJoinMarkings(pNewExpr2, pExpr);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, wtFlags);
     testcase( idxNew2==0 );
+    exprAnalyze(pSrc, pWC, idxNew1);
     exprAnalyze(pSrc, pWC, idxNew2);
     pTerm = &pWC->a[idxTerm];
     if( isComplete ){
