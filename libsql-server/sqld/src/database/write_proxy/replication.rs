@@ -117,7 +117,7 @@ struct ReadReplicationHook {
     /// On startup the two number are checked for consistency. If they differ, the database is
     /// considered corrupted, since it is impossible to know what the actually replicated index is.
     wal_index_meta_file: File,
-    wal_index_meta: WalIndexMeta,
+    wal_index_meta: Option<WalIndexMeta>,
     /// Buffer for incoming frames
     buffer: VecDeque<WalFrame>,
     rt: Handle,
@@ -332,10 +332,8 @@ impl ReadReplicationHook {
             .open(path)?;
 
         let (sender, receiver) = crossbeam::channel::bounded(1);
-        let mut abort_sender = Some(sender);
-        let meta = WalIndexMeta::read(&index_meta_file)?;
-        let wal_index_meta =
-            Self::perform_handshake(meta, logger.clone(), &mut abort_sender).await?;
+        let abort_sender = Some(sender);
+        let wal_index_meta = WalIndexMeta::read(&index_meta_file)?;
         let this = Self {
             logger,
             wal_index_meta_file: index_meta_file,
@@ -383,20 +381,25 @@ impl ReadReplicationHook {
     }
 
     fn flush_meta(&self) -> anyhow::Result<()> {
-        self.wal_index_meta_file
-            .write_all_at(bytes_of(&self.wal_index_meta), 0)?;
+        if let Some(ref meta) = self.wal_index_meta {
+            self.wal_index_meta_file.write_all_at(bytes_of(meta), 0)?;
+        }
 
         Ok(())
     }
 
     /// Increment the pre-commit index by n, and flush the meta file
     fn inc_pre_commit(&mut self, n: u64) -> anyhow::Result<()> {
-        self.wal_index_meta.pre_commit_index += n;
+        if let Some(ref mut meta) = self.wal_index_meta {
+            meta.pre_commit_index += n;
+        }
         self.flush_meta()
     }
 
     fn sync_post_commit(&mut self) -> anyhow::Result<()> {
-        self.wal_index_meta.post_commit_index = self.wal_index_meta.pre_commit_index;
+        if let Some(ref mut meta) = self.wal_index_meta {
+            meta.post_commit_index = meta.pre_commit_index;
+        }
         self.flush_meta()
     }
 
@@ -440,7 +443,8 @@ impl ReadReplicationHook {
                     let raw_frame = raw_frame?;
                     let frame = WalFrame::decode(raw_frame.data)?;
                     debug_assert_eq!(
-                        frame.header.frame_id, self.wal_index_meta.pre_commit_index,
+                        Some(frame.header.frame_id),
+                        self.wal_index_meta.map(|m| m.pre_commit_index),
                         "out of order log frame"
                     );
                     frame_count += 1;
@@ -454,11 +458,12 @@ impl ReadReplicationHook {
             Err(s) if s.code() == Code::FailedPrecondition && s.message() == NO_HELLO_ERROR_MSG => {
                 tracing::info!("Primary restarted, perfoming hanshake again");
                 self.wal_index_meta = Self::perform_handshake(
-                    Some(self.wal_index_meta),
+                    self.wal_index_meta,
                     self.logger.clone(),
                     &mut self.abort_sender,
                 )
-                .await?;
+                .await?
+                .into();
 
                 Ok(())
             }
@@ -468,16 +473,10 @@ impl ReadReplicationHook {
 
     /// Return the current frame index. None if we haven't received any frame yet
     fn current_frame_index(&self) -> Option<u64> {
-        // This is how we detect a fresh start.
-        // While we could _potentially_ already have requested for index 0, and commited *only*
-        // frame 0, it's ok to reapply it.
-        if self.buffer.is_empty() && self.wal_index_meta.pre_commit_index == 0 {
-            None
-        } else {
-            // the next frame we want to fetch is the one that after the last we have commiter +
-            // the ones we have buffered
-            let index = self.wal_index_meta.pre_commit_index + self.buffer.len() as u64;
-            Some(index)
-        }
+        let meta = self.wal_index_meta.as_ref()?;
+        // the next frame we want to fetch is the one that after the last we have commiter +
+        // the ones we have buffered
+        let index = meta.pre_commit_index + self.buffer.len() as u64;
+        Some(index)
     }
 }

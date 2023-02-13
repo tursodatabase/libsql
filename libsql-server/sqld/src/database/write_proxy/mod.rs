@@ -55,7 +55,7 @@ impl WriteProxyDbFactory {
             endpoint = endpoint.tls_config(tls_config)?;
         }
 
-        let channel = endpoint.connect().await?;
+        let channel = endpoint.connect_lazy();
         // false positive, `.to_string()` is needed to satisfy lifetime bounds
         #[allow(clippy::unnecessary_to_owned)]
         let uri = tonic::transport::Uri::from_maybe_shared(addr.to_string())?;
