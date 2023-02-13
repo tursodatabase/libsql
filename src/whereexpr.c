@@ -988,7 +988,9 @@ static SQLITE_NOINLINE int exprMightBeIndexed2(
       for(i=0; i<pIdx->nKeyCol; i++){
         if( pIdx->aiColumn[i]!=XN_EXPR ) continue;
         assert( pIdx->bHasExpr );
-        if( sqlite3ExprCompareSkip(pExpr,pIdx->aColExpr->a[i].pExpr,iCur)==0 ){
+        if( sqlite3ExprCompareSkip(pExpr,pIdx->aColExpr->a[i].pExpr,iCur)==0 
+          && pExpr->op!=TK_STRING
+        ){
           aiCurCol[0] = iCur;
           aiCurCol[1] = XN_EXPR;
           return 1;

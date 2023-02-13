@@ -1,5 +1,5 @@
-C Allow\svector-IN\sexpressions\slike\s"(a,\sb)\sIN\s(\s(?,?),\s(?,?)\s)"\sto\suse\san\sindex.
-D 2023-02-13T18:37:48.912
+C Do\snot\sallow\sWHERE\sclause\sterms\sto\smatch\sconstant\sstring\sindex\sterms,\swhich\ncan\shappen\sif\sDQS_DDL\sis\senabled.\s\sFollow-up\sto\n[44200596aa943963].\s\sdbsqlfuzz\s54c9db85ed4af7055f5fd0d50877875c82b11d46.
+D 2023-02-13T18:42:01.372
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 5b20d08699c9a55c0556661ff6f937dd1c8e27567b7553e48d477d3fad22ec4c
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c b82d0d33315e1526904b95155e55e61149c4462147668e1cc4567c812735eff1
-F src/whereexpr.c 60dbc85ef8948cf16e306ac28c4bf6a73cf86be4afb134fa79bd20f61c501f14
+F src/whereexpr.c a60a1f88650c561eded95c5affbe846cda71fac35033e1280f28e47934df33c8
 F src/window.c 76a27cff9ea2ded0c2c3527187029259440fabcc4cc4c07b11d942c78494a614
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1189,7 +1189,7 @@ F test/index7.test b238344318e0b4e42126717f6554f0e7dfd0b39cecad4b736039b43e1e3b6
 F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a912a3
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
 F test/indexedby.test f21eca4f7a6ffe14c8500a7ad6cd53166666c99e5ccd311842a28bc94a195fe0
-F test/indexexpr1.test 1cd460113e3999a1477754fd0e3ac0d7bcbbbc742b427b418945f28af708c695
+F test/indexexpr1.test b2a15637dcbae7fd8d7e2fc51f74ac4feaf5510130ee2089a5ec5bd1ef7270e1
 F test/indexexpr2.test 2c7abe3c48f8aaa5a448615ab4d13df3662185d28419c00999670834a3f0b484
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -2045,9 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bf6f1ee77c4bf653f6cd2a3db5292b8c5c83f18ea9acf951107d22807546b28a 1815b15ddb8785a25b7617aab19e13c2410b9377389c16a85176025b3d9400e8
-R a03dd87796b00ce341f74d97782ef151
-T +closed 1815b15ddb8785a25b7617aab19e13c2410b9377389c16a85176025b3d9400e8
-U dan
-Z bda945499e0359a4cf67b9c6621c26ff
+P 18a99d9cfbc3a0419342b3fe91a83d2217578d0f6e8ee1084237d000946b1942
+R 14cd5c9df254cbcecf85cb65ce18e847
+U drh
+Z b1bb2528b9652ea8949295007f6e79e5
 # Remove this line to create a well-formed Fossil manifest.
