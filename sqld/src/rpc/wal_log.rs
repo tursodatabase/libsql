@@ -6,13 +6,13 @@ pub mod wal_log_rpc {
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use crate::wal_logger::{FrameId, WalLogger};
-
 use std::collections::HashSet;
 use std::sync::RwLock;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::Status;
 use wal_log_rpc::wal_log_server::WalLog;
+
+use crate::wal_logger::{FrameId, WalLogger};
 
 use self::wal_log_rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
 
@@ -21,7 +21,7 @@ pub struct WalLogService {
     replicas_with_hello: RwLock<HashSet<SocketAddr>>,
 }
 
-const _NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
+pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
 
 impl WalLogService {
     pub fn new(logger: Arc<WalLogger>) -> Self {
@@ -63,19 +63,17 @@ impl WalLog for WalLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
-        // TODO: Uncomment once replicas have the ability to handle NO_HELLO error
-        //       Remember to rename _NO_HELLO_ERROR_MSG to NO_HELLO_ERROR_MSG
-        //
-        // let replica_addr = req
-        //     .remote_addr()
-        //     .ok_or(Status::internal("No remote RPC address"))?;
-        // {
-        //     let guard = self.replicas_with_hello.read().unwrap();
-        //     if !guard.contains(&replica_addr) {
-        //         return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
-        //     }
-        // }
-        let start_offset = req.into_inner().start_offset;
+        let replica_addr = req
+            .remote_addr()
+            .ok_or(Status::internal("No remote RPC address"))?;
+        {
+            let guard = self.replicas_with_hello.read().unwrap();
+            if !guard.contains(&replica_addr) {
+                return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
+            }
+        }
+        // if current_offset is None, then start sending from 0, otherwise return next frame
+        let start_offset = req.into_inner().current_offset.map(|x| x + 1).unwrap_or(0);
         let stream = self.stream_pages(start_offset as _);
         Ok(tonic::Response::new(stream))
     }
@@ -91,6 +89,12 @@ impl WalLog for WalLogService {
             let mut guard = self.replicas_with_hello.write().unwrap();
             guard.insert(replica_addr);
         }
-        Ok(tonic::Response::new(self.logger.hello_response().clone()))
+        let response = HelloResponse {
+            database_id: self.logger.database_id.to_string(),
+            generation_start_index: self.logger.generation.start_index,
+            generation_id: self.logger.generation.id.to_string(),
+        };
+
+        Ok(tonic::Response::new(response))
     }
 }

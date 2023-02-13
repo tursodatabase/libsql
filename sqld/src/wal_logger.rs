@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use anyhow::ensure;
-use bytemuck::{cast_ref, try_from_bytes, try_pod_read_unaligned, Pod, Zeroable};
+use bytemuck::{cast_ref, try_from_bytes, Pod, Zeroable};
 use bytes::{BufMut, Bytes, BytesMut};
 use crc::Crc;
 use parking_lot::Mutex;
@@ -19,7 +19,6 @@ use crate::libsql::ffi::{
     PgHdr, Wal,
 };
 use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
-use crate::rpc::wal_log::wal_log_rpc::HelloResponse;
 
 pub const WAL_PAGE_SIZE: i32 = 4096;
 const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
@@ -171,7 +170,7 @@ struct WalLoggerFileHeader {
 impl WalLoggerFileHeader {
     fn decode(buf: &[u8]) -> anyhow::Result<Self> {
         let this: Self =
-            try_pod_read_unaligned(buf).map_err(|_e| anyhow::anyhow!("invalid WAL log header"))?;
+            *try_from_bytes(buf).map_err(|_e| anyhow::anyhow!("invalid WAL log header"))?;
         ensure!(this.magic == WAL_MAGIC, "invalid WAL log header");
 
         Ok(this)
@@ -208,6 +207,20 @@ impl WalFrameHeader {
     }
 }
 
+pub struct Generation {
+    pub id: Uuid,
+    pub start_index: u64,
+}
+
+impl Generation {
+    fn new(start_index: u64) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            start_index,
+        }
+    }
+}
+
 pub struct WalLogger {
     /// offset id of the next Frame to write into the log
     next_frame_id: Mutex<FrameId>,
@@ -215,7 +228,8 @@ pub struct WalLogger {
     start_frame_id: FrameId,
     log_file: File,
     current_checksum: AtomicU64,
-    hello_response: HelloResponse,
+    pub database_id: Uuid,
+    pub generation: Generation,
 }
 
 impl WalLogger {
@@ -232,14 +246,16 @@ impl WalLogger {
         let file_end = log_file.metadata()?.len();
         let end_id;
         let current_checksum;
+
         let header = if file_end == 0 {
+            let db_id = Uuid::new_v4();
             let header = WalLoggerFileHeader {
                 version: 1,
                 start_frame_id: 0,
                 magic: WAL_MAGIC,
                 page_size: WAL_PAGE_SIZE,
                 start_checksum: 0,
-                db_id: Uuid::new_v4().as_u128(),
+                db_id: db_id.as_u128(),
             };
 
             let mut header_buf = BytesMut::new();
@@ -264,16 +280,10 @@ impl WalLogger {
             next_frame_id: Mutex::new(end_id),
             start_frame_id: header.start_frame_id,
             log_file,
-            hello_response: HelloResponse {
-                generation_id: uuid::Uuid::new_v4().to_string(),
-                first_frame_id_in_generation: file_end,
-            },
             current_checksum,
+            database_id: Uuid::from_u128(header.db_id),
+            generation: Generation::new(end_id),
         })
-    }
-
-    pub fn hello_response(&self) -> &HelloResponse {
-        &self.hello_response
     }
 
     fn push_page(&self, pages: &[WalPage]) {
