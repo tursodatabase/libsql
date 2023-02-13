@@ -22,6 +22,11 @@
     "test": "jest"
   },
 
+  "files": [
+    "lib-cjs/**",
+    "lib-esm/**"
+  ],
+
   "dependencies": {
     "isomorphic-ws": "^5.0.0"
   },

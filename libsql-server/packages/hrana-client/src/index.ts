@@ -9,6 +9,7 @@ import IdAlloc from "./id_alloc.js";
 import type * as proto from "./proto.js";
 
 export type { Stmt, Value, StmtResult, RowArray, Row } from "./convert";
+export type { proto };
 
 /** Open a Hrana client connected to the given `url`. */
 export function open(url: string, jwt?: string): Client {
@@ -283,6 +284,13 @@ export class Stream {
     constructor(client: Client, state: StreamState) {
         this.#client = client;
         this.#state = state;
+    }
+
+    /** Execute a raw Hrana statement. */
+    executeRaw(stmt: proto.Stmt): Promise<proto.StmtResult> {
+        return new Promise((resultCallback, errorCallback) => {
+            this.#client._execute(this.#state, {stmt, resultCallback, errorCallback});
+        });
     }
 
     /** Execute a statement that returns rows. */
