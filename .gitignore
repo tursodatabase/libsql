@@ -19,3 +19,5 @@ Session.vim
 bottomless/test/test.db
 bottomless/test/*.bottomless.backup
 bottomless/test/db.gz
+data.sqld/
+sqld/data.sqld/

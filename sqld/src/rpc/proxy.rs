@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
@@ -167,7 +168,7 @@ where
         req: tonic::Request<Queries>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
         let Queries { client_id, queries } = req.into_inner();
-        let client_id = Uuid::from_slice(&client_id).unwrap();
+        let client_id = Uuid::from_str(&client_id).unwrap();
 
         let lock = self.clients.upgradable_read().await;
         let db = match lock.get(&client_id) {

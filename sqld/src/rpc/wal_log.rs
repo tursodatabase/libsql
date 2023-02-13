@@ -6,7 +6,7 @@ pub mod wal_log_rpc {
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use crate::wal_logger::{WalLogEntry, WalLogger};
+use crate::wal_logger::{FrameId, WalLogger};
 
 use std::collections::HashSet;
 use std::sync::RwLock;
@@ -14,10 +14,7 @@ use tokio_stream::wrappers::ReceiverStream;
 use tonic::Status;
 use wal_log_rpc::wal_log_server::WalLog;
 
-use self::wal_log_rpc::{
-    wal_log_entry::Payload, Frame, HelloRequest, HelloResponse, LogOffset,
-    WalLogEntry as RpcWalLogEntry,
-};
+use self::wal_log_rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
 
 pub struct WalLogService {
     logger: Arc<WalLogger>,
@@ -25,29 +22,6 @@ pub struct WalLogService {
 }
 
 const _NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
-
-impl From<(u64, WalLogEntry)> for RpcWalLogEntry {
-    fn from((index, entry): (u64, WalLogEntry)) -> Self {
-        let payload = match entry {
-            WalLogEntry::Frame { page_no, data } => Payload::Frame(Frame { page_no, data }),
-            WalLogEntry::Commit {
-                page_size,
-                size_after,
-                is_commit,
-                sync_flags,
-            } => Payload::Commit(wal_log_rpc::Commit {
-                page_size,
-                size_after,
-                is_commit,
-                sync_flags,
-            }),
-        };
-        Self {
-            index,
-            payload: Some(payload),
-        }
-    }
-}
 
 impl WalLogService {
     pub fn new(logger: Arc<WalLogger>) -> Self {
@@ -57,20 +31,22 @@ impl WalLogService {
         }
     }
 
-    fn stream_pages(&self, start_offset: usize) -> ReceiverStream<Result<RpcWalLogEntry, Status>> {
+    fn stream_pages(&self, start_id: FrameId) -> ReceiverStream<Result<Frame, Status>> {
         let logger = self.logger.clone();
         let (sender, receiver) = tokio::sync::mpsc::channel(64);
         tokio::task::spawn_blocking(move || {
-            let mut offset = start_offset;
+            let mut offset = start_id;
             loop {
-                match logger.get_entry(offset) {
+                match logger.frame_bytes(offset) {
                     Ok(None) => break,
-                    Ok(Some(entry)) => {
-                        let entry: RpcWalLogEntry = (offset as u64, entry).into();
-                        let _ = sender.blocking_send(Ok(entry));
+                    Ok(Some(data)) => {
+                        if let Err(e) = sender.blocking_send(Ok(Frame { data })) {
+                            tracing::error!("failed to send frame: {e}");
+                            break;
+                        }
                         offset += 1;
                     }
-                    Err(_) => todo!(),
+                    Err(e) => todo!("{e}"),
                 }
             }
         });
@@ -81,7 +57,8 @@ impl WalLogService {
 
 #[tonic::async_trait]
 impl WalLog for WalLogService {
-    type LogEntriesStream = ReceiverStream<Result<RpcWalLogEntry, Status>>;
+    type LogEntriesStream = ReceiverStream<Result<Frame, Status>>;
+
     async fn log_entries(
         &self,
         req: tonic::Request<LogOffset>,
@@ -102,6 +79,7 @@ impl WalLog for WalLogService {
         let stream = self.stream_pages(start_offset as _);
         Ok(tonic::Response::new(stream))
     }
+
     async fn hello(
         &self,
         req: tonic::Request<HelloRequest>,
