@@ -1302,6 +1302,11 @@ expr(A) ::= expr(A) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
         sqlite3ExprListDelete(pParse->db, Y);
         pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0);
         A = sqlite3PExpr(pParse, TK_EQ, A, pRHS);
+      }else if( Y->nExpr==1 && pRHS->op==TK_SELECT ){
+        A = sqlite3PExpr(pParse, TK_IN, A, 0);
+        sqlite3PExprAddSelect(pParse, A, pRHS->x.pSelect);
+        pRHS->x.pSelect = 0;
+        sqlite3ExprListDelete(pParse->db, Y);
       }else{
         A = sqlite3PExpr(pParse, TK_IN, A, 0);
         if( A==0 ){
