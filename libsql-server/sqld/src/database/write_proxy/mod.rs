@@ -157,7 +157,7 @@ impl Database for WriteProxyDatabase {
                         })
                     })
                     .collect::<Result<Vec<_>>>()?,
-                client_id: self.client_id.as_bytes().to_vec(),
+                client_id: self.client_id.to_string(),
             };
             let mut client = self.write_proxy.clone();
             match client.execute(queries).await {
