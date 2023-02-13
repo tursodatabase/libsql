@@ -1,7 +1,5 @@
 use std::path::Path;
 use std::str::FromStr;
-#[cfg(feature = "mwal_backend")]
-use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
@@ -132,16 +130,13 @@ macro_rules! ok_or_exit {
 
 fn open_db(
     path: impl AsRef<Path> + Send + 'static,
-    #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-        Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
-    >,
     wal_hook: impl WalHook + Send + Clone + 'static,
     with_bottomless: bool,
 ) -> anyhow::Result<rusqlite::Connection> {
     let mut retries = 0;
     loop {
         #[cfg(feature = "mwal_backend")]
-        let conn_result = match vwal_methods {
+        let conn_result = match crate::VWAL_METHODS.get().unwrap() {
             Some(ref vwal_methods) => crate::libsql::mwal::open_with_virtual_wal(
                 &path,
                 OpenFlags::SQLITE_OPEN_READ_WRITE
@@ -160,6 +155,7 @@ fn open_db(
                 with_bottomless,
             ),
         };
+
         #[cfg(not(feature = "mwal_backend"))]
         let conn_result = crate::libsql::open_with_regular_wal(
             &path,
@@ -200,23 +196,13 @@ fn open_db(
 impl LibSqlDb {
     pub fn new(
         path: impl AsRef<Path> + Send + 'static,
-        #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-            Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
-        >,
         wal_hook: impl WalHook + Send + Clone + 'static,
         with_bottomless: bool,
     ) -> crate::Result<Self> {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
         tokio::task::spawn_blocking(move || {
-            let conn = open_db(
-                path,
-                #[cfg(feature = "mwal_backend")]
-                vwal_methods,
-                wal_hook,
-                with_bottomless,
-            )
-            .unwrap();
+            let conn = open_db(path, wal_hook, with_bottomless).unwrap();
 
             let mut state = ConnectionState::initial();
             let mut timedout = false;
