@@ -80,6 +80,9 @@ struct Cli {
     no_welcome: bool,
     #[clap(long, env = "SQLD_ENABLE_BOTTOMLESS_REPLICATION")]
     enable_bottomless_replication: bool,
+    /// Create a tunnel for the HTTP interface, available publicly via the https://localtunnel.me interface. The tunnel URL will be printed to stdin
+    #[clap(long)]
+    create_local_http_tunnel: bool,
 }
 
 impl Cli {
@@ -150,6 +153,7 @@ impl From<Cli> for Config {
             #[cfg(feature = "mwal_backend")]
             mwal_addr: cli.mwal_addr,
             enable_bottomless_replication: cli.enable_bottomless_replication,
+            create_local_http_tunnel: cli.create_local_http_tunnel,
         }
     }
 }
