@@ -82,6 +82,29 @@ test("Stream.execute()", withClient(async (c) => {
     expect(res.rowsAffected).toStrictEqual(1);
 }));
 
+test("Stream.executeRaw()", withClient(async (c) => {
+    const s = c.openStream();
+
+    let res = await s.executeRaw({
+        "sql": "SELECT 1 as one, ? as two, NULL as three",
+        "args": [{"type": "text", "value": "1+1"}],
+        "want_rows": true,
+    });
+
+    expect(res.cols).toStrictEqual([
+        {"name": "one"},
+        {"name": "two"},
+        {"name": "three"},
+    ]);
+    expect(res.rows).toStrictEqual([
+        [
+            {"type": "integer", "value": "1"},
+            {"type": "text", "value": "1+1"},
+            {"type": "null"},
+        ],
+    ]);
+}));
+
 test("concurrent streams", withClient(async (c) => {
     const s1 = c.openStream();
     await s1.execute("CREATE TABLE t (number)");
