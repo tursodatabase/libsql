@@ -2,12 +2,11 @@ mod replication;
 
 use std::future::{ready, Ready};
 use std::path::PathBuf;
-#[cfg(feature = "mwal_backend")]
-use std::sync::Arc;
 use std::time::Duration;
 
 use crossbeam::channel::TryRecvError;
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
@@ -27,9 +26,6 @@ use replication::PeriodicDbUpdater;
 pub struct WriteProxyDbFactory {
     write_proxy: ProxyClient<Channel>,
     db_path: PathBuf,
-    #[cfg(feature = "mwal_backend")]
-    vwal_methods:
-        Option<Arc<std::sync::Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>>,
     /// abort handle: abort db update loop on drop
     _abort_handle: crossbeam::channel::Sender<()>,
 }
@@ -42,10 +38,7 @@ impl WriteProxyDbFactory {
         key_path: Option<PathBuf>,
         ca_cert_path: Option<PathBuf>,
         db_path: PathBuf,
-        #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-            Arc<std::sync::Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
-        >,
-    ) -> anyhow::Result<Self> {
+    ) -> anyhow::Result<(Self, JoinHandle<anyhow::Result<()>>)> {
         let mut endpoint = Channel::from_shared(addr.to_string())?;
         if tls {
             let cert_pem = std::fs::read_to_string(cert_path.unwrap())?;
@@ -72,22 +65,29 @@ impl WriteProxyDbFactory {
         let mut db_updater =
             PeriodicDbUpdater::new(&db_path, logger, Duration::from_secs(1)).await?;
         let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
-        tokio::task::spawn_blocking(move || loop {
-            // must abort
-            if let Err(TryRecvError::Disconnected) = receiver.try_recv() {
-                tracing::warn!("periodic updater exiting");
-                break;
+
+        let handle = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
+            loop {
+                // must abort
+                if let Err(TryRecvError::Disconnected) = receiver.try_recv() {
+                    tracing::warn!("periodic updater exiting");
+                    break Ok(());
+                }
+
+                match db_updater.step() {
+                    Ok(true) => continue,
+                    Ok(false) => return Ok(()),
+                    Err(e) => return Err(e),
+                }
             }
-            db_updater.step();
         });
 
-        Ok(Self {
+        let this = Self {
             write_proxy,
             db_path,
-            #[cfg(feature = "mwal_backend")]
-            vwal_methods,
             _abort_handle,
-        })
+        };
+        Ok((this, handle))
     }
 }
 
@@ -100,8 +100,6 @@ impl DbFactory for WriteProxyDbFactory {
         ready(WriteProxyDatabase::new(
             self.write_proxy.clone(),
             self.db_path.clone(),
-            #[cfg(feature = "mwal_backend")]
-            self.vwal_methods.clone(),
         ))
     }
 }
@@ -114,20 +112,8 @@ pub struct WriteProxyDatabase {
 }
 
 impl WriteProxyDatabase {
-    fn new(
-        write_proxy: ProxyClient<Channel>,
-        path: PathBuf,
-        #[cfg(feature = "mwal_backend")] vwal_methods: Option<
-            Arc<std::sync::Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>,
-        >,
-    ) -> Result<Self> {
-        let read_db = LibSqlDb::new(
-            path,
-            #[cfg(feature = "mwal_backend")]
-            vwal_methods,
-            (),
-            false, // no bottomless replication for replicas
-        )?;
+    fn new(write_proxy: ProxyClient<Channel>, path: PathBuf) -> Result<Self> {
+        let read_db = LibSqlDb::new(path, (), false)?;
         Ok(Self {
             read_db,
             write_proxy,
