@@ -4,14 +4,14 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::database::service::DbFactory;
-use crate::rpc::proxy::proxy_rpc::proxy_server::ProxyServer;
+use crate::replication::logger::ReplicationLogger;
+use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
-use crate::rpc::wal_log::wal_log_rpc::wal_log_server::WalLogServer;
-use crate::rpc::wal_log::WalLogService;
-use crate::wal_logger::WalLogger;
+use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
+use crate::rpc::replication_log::ReplicationLogService;
 
 pub mod proxy;
-pub mod wal_log;
+pub mod replication_log;
 
 pub async fn run_rpc_server<F>(
     addr: SocketAddr,
@@ -20,7 +20,7 @@ pub async fn run_rpc_server<F>(
     key_path: Option<PathBuf>,
     ca_cert_path: Option<PathBuf>,
     factory: F,
-    logger: Arc<WalLogger>,
+    logger: Arc<ReplicationLogger>,
 ) -> anyhow::Result<()>
 where
     F: DbFactory + 'static,
@@ -28,7 +28,7 @@ where
     F::Future: Sync,
 {
     let proxy_service = ProxyService::new(factory);
-    let logger_service = WalLogService::new(logger);
+    let logger_service = ReplicationLogService::new(logger);
 
     tracing::info!("serving write proxy server at {addr}");
 
@@ -50,7 +50,7 @@ where
     }
     builder
         .add_service(ProxyServer::new(proxy_service))
-        .add_service(WalLogServer::new(logger_service))
+        .add_service(ReplicationLogServer::new(logger_service))
         .serve(addr)
         .await?;
 
