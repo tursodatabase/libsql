@@ -12,8 +12,13 @@ use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
 use futures::stream::FuturesUnordered;
 use futures::{Future, StreamExt};
+use once_cell::sync::Lazy;
+#[cfg(feature = "mwal_backend")]
+use once_cell::sync::OnceCell;
 use query::{Queries, QueryResult};
 use rpc::run_rpc_server;
+use tokio::sync::Notify;
+use tokio::task::JoinHandle;
 use tower::load::Constant;
 use tower::{Service, ServiceExt};
 use wal_logger::{WalLogger, WalLoggerHook};
@@ -42,6 +47,21 @@ pub enum Backend {
 }
 
 type Result<T> = std::result::Result<T, Error>;
+/// Services handles registry.
+/// All created services must be registered here, so they can be awaited together.
+type Handles = FuturesUnordered<JoinHandle<anyhow::Result<()>>>;
+
+/// Trigger a hard database reset. This cause the database to be wiped, freshly restarted
+/// This is used for replicas that are left in an unrecoverabe state and should restart from a
+/// fresh state.
+///
+/// /!\ use with caution.
+pub(crate) static HARD_RESET: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
+
+#[cfg(feature = "mwal_backend")]
+pub(crate) static VWAL_METHODS: OnceCell<
+    Option<Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>>,
+> = OnceCell::new();
 
 pub struct Config {
     pub db_path: PathBuf,
@@ -67,7 +87,7 @@ pub struct Config {
     pub create_local_http_tunnel: bool,
 }
 
-async fn run_service<S>(service: S, config: Config) -> anyhow::Result<()>
+async fn run_service<S>(service: S, config: &Config, handles: &mut Handles) -> anyhow::Result<()>
 where
     S: Service<(), Error = Error> + Sync + Send + 'static + Clone,
     S::Response: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
@@ -84,13 +104,12 @@ where
         server.bind_ws(addr).await?;
     }
 
-    let mut handles = FuturesUnordered::new();
     let factory = PgConnectionFactory::new(service.clone());
     handles.push(tokio::spawn(server.serve(factory)));
 
     if let Some(addr) = config.http_addr {
-        let authorizer =
-            http::auth::parse_auth(config.http_auth).context("failed to parse HTTP auth config")?;
+        let authorizer = http::auth::parse_auth(config.http_auth.clone())
+            .context("failed to parse HTTP auth config")?;
         let handle = tokio::spawn(http::run_http(
             addr,
             authorizer,
@@ -101,9 +120,20 @@ where
         handles.push(handle);
     }
 
-    while let Some(res) = handles.next().await {
-        res??;
-    }
+    Ok(())
+}
+
+/// nukes current DB and start anew
+async fn hard_reset(config: &Config, mut handles: Handles) -> anyhow::Result<()> {
+    tracing::error!("received hard-reset command: reseting replica.");
+
+    tracing::info!("Shutting down all services...");
+    handles.iter_mut().for_each(|h| h.abort());
+    while handles.next().await.is_some() {}
+    tracing::info!("All services have been shut down.");
+
+    let db_path = &config.db_path;
+    tokio::fs::remove_dir_all(db_path).await?;
 
     Ok(())
 }
@@ -132,23 +162,71 @@ impl<F: Future> Future for FutOrNever<F> {
     }
 }
 
-pub async fn run_server(config: Config) -> anyhow::Result<()> {
-    tracing::trace!("Backend: {:?}", config.backend);
-    #[cfg(feature = "mwal_backend")]
-    if config.backend == Backend::Mwal {
-        std::env::set_var("MVSQLITE_DATA_PLANE", config.mwal_addr.as_ref().unwrap());
+async fn start_primary(config: &Config, handles: &mut Handles, addr: &str) -> anyhow::Result<()> {
+    let (factory, handle) = WriteProxyDbFactory::new(
+        addr,
+        config.writer_rpc_tls,
+        config.writer_rpc_cert.clone(),
+        config.writer_rpc_key.clone(),
+        config.writer_rpc_ca_cert.clone(),
+        config.db_path.clone(),
+    )
+    .await
+    .context("failed to start WriteProxy DB")?;
+
+    handles.push(handle);
+
+    let service = DbFactoryService::new(factory);
+    run_service(service, config, handles).await?;
+
+    Ok(())
+}
+
+async fn start_replica(config: &Config, handles: &mut Handles) -> anyhow::Result<()> {
+    let logger = Arc::new(WalLogger::open(&config.db_path)?);
+    let logger_clone = logger.clone();
+    let path_clone = config.db_path.clone();
+    let enable_bottomless = config.enable_bottomless_replication;
+    let db_factory = move || {
+        let db_path = path_clone.clone();
+        let hook = WalLoggerHook::new(logger.clone());
+        async move { LibSqlDb::new(db_path, hook, enable_bottomless) }
+    };
+    let service = DbFactoryService::new(db_factory.clone());
+    if let Some(ref addr) = config.rpc_server_addr {
+        let handle = tokio::spawn(run_rpc_server(
+            *addr,
+            config.rpc_server_tls,
+            config.rpc_server_cert.clone(),
+            config.rpc_server_key.clone(),
+            config.rpc_server_ca_cert.clone(),
+            db_factory,
+            logger_clone,
+        ));
+
+        handles.push(handle);
     }
 
-    #[cfg(feature = "mwal_backend")]
-    let vwal_methods = config.mwal_addr.as_ref().map(|_| {
-        Arc::new(Mutex::new(
-            sqld_libsql_bindings::mwal::ffi::libsql_wal_methods::new(),
-        ))
-    });
+    run_service(service, config, handles).await?;
 
-    // create database directory where all the files will go.
-    if !config.db_path.exists() {
-        std::fs::create_dir_all(&config.db_path)?;
+    Ok(())
+}
+
+pub async fn run_server(config: Config) -> anyhow::Result<()> {
+    tracing::trace!("Backend: {:?}", config.backend);
+
+    #[cfg(feature = "mwal_backend")]
+    {
+        if config.backend == Backend::Mwal {
+            std::env::set_var("MVSQLITE_DATA_PLANE", config.mwal_addr.as_ref().unwrap());
+        }
+        VWAL_METHODS
+            .set(config.mwal_addr.as_ref().map(|_| {
+                Arc::new(Mutex::new(
+                    sqld_libsql_bindings::mwal::ffi::libsql_wal_methods::new(),
+                ))
+            }))
+            .map_err(|_| anyhow::anyhow!("wal_methods initialized twice"))?;
     }
 
     if config.enable_bottomless_replication {
@@ -170,84 +248,29 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         println!("HTTP tunnel created: {tunnel}");
     }
 
-    match config.writer_rpc_addr {
-        Some(ref addr) => {
-            let factory = WriteProxyDbFactory::new(
-                addr,
-                config.writer_rpc_tls,
-                config.writer_rpc_cert.clone(),
-                config.writer_rpc_key.clone(),
-                config.writer_rpc_ca_cert.clone(),
-                config.db_path.clone(),
-                #[cfg(feature = "mwal_backend")]
-                vwal_methods,
-            )
-            .await
-            .context("failed to start WriteProxy DB")?;
-            let service = DbFactoryService::new(factory);
-            run_service(service, config).await?;
+    loop {
+        if !config.db_path.exists() {
+            std::fs::create_dir_all(&config.db_path)?;
         }
-        None => {
-            let logger = Arc::new(WalLogger::open(&config.db_path)?);
-            let logger_clone = logger.clone();
-            let path_clone = config.db_path.clone();
-            let db_factory = move || {
-                let db_path = path_clone.clone();
-                #[cfg(feature = "mwal_backend")]
-                let vwal_methods = vwal_methods.clone();
-                let hook = WalLoggerHook::new(logger.clone());
-                async move {
-                    LibSqlDb::new(
-                        db_path,
-                        #[cfg(feature = "mwal_backend")]
-                        vwal_methods,
-                        hook,
-                        config.enable_bottomless_replication,
-                    )
-                }
-            };
-            let service = DbFactoryService::new(db_factory.clone());
-            let rpc_fut: FutOrNever<_> = config
-                .rpc_server_addr
-                .map(|addr| {
-                    tokio::spawn(run_rpc_server(
-                        addr,
-                        config.rpc_server_tls,
-                        config.rpc_server_cert.clone(),
-                        config.rpc_server_key.clone(),
-                        config.rpc_server_ca_cert.clone(),
-                        db_factory,
-                        logger_clone,
-                    ))
-                })
-                .into();
+        let mut handles = FuturesUnordered::new();
 
-            let svc_fut = run_service(service, config);
+        match config.writer_rpc_addr {
+            Some(ref addr) => start_primary(&config, &mut handles, addr).await?,
+            None => start_replica(&config, &mut handles).await?,
+        }
 
+        let reset = HARD_RESET.clone();
+        loop {
             tokio::select! {
-                ret = rpc_fut => {
-                    match ret {
-                        Ok(Ok(_)) => {
-                            tracing::info!("Rpc server exited, terminating program.");
-                        }
-                        Err(e) => {
-                            tracing::error!("Rpc server exited with error: {e}");
-                        }
-                        Ok(Err(e)) => {
-                            tracing::error!("Rpc server exited with error: {e}");
-                        }
-                    }
-                }
-                ret = svc_fut => {
-                    match ret {
-                        Ok(_) => tracing::info!("Server exited"),
-                        Err(e) => tracing::error!("Server exited with error: {e}"),
-                    }
-                }
+                _ = reset.notified() => {
+                    hard_reset(&config, handles).await?;
+                    break;
+                },
+                Some(res) = handles.next() => {
+                    res??;
+                },
+                else => return Ok(()),
             }
         }
     }
-
-    let _ = local_tunnel_shutdown.send(());
-    Ok(())
 }
