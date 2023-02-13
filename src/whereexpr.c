@@ -1440,7 +1440,7 @@ static void exprAnalyze(
    && pTerm->u.x.iField==0
    && pExpr->pLeft->op==TK_VECTOR
    && ALWAYS( ExprUseXSelect(pExpr) )
-   && pExpr->x.pSelect->pPrior==0
+   && (pExpr->x.pSelect->pPrior==0 || (pExpr->x.pSelect->selFlags & SF_Values))
 #ifndef SQLITE_OMIT_WINDOWFUNC
    && pExpr->x.pSelect->pWin==0
 #endif

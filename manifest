@@ -1,5 +1,5 @@
-C Fix\scompile\stime\soption\sSQLITE_DEFAULT_SYNCHRONOUS\sso\sthat\sit\sworks\sconsistently.
-D 2023-02-13T18:26:58.275
+C Allow\svector-IN\sexpressions\slike\s"(a,\sb)\sIN\s(\s(?,?),\s(?,?)\s)"\sto\suse\san\sindex.
+D 2023-02-13T18:37:48.912
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -708,8 +708,8 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 5b20d08699c9a55c0556661ff6f937dd1c8e27567b7553e48d477d3fad22ec4c
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
-F src/wherecode.c 76bca3379219880d2527493b71a3be49e696f75396d3481e4de5d4ceec7886b2
-F src/whereexpr.c bbf7259c6c53c728b505eae6c4965c7c0b1abb853aadcc7cbbf4f2d1b38d6b6b
+F src/wherecode.c b82d0d33315e1526904b95155e55e61149c4462147668e1cc4567c812735eff1
+F src/whereexpr.c 60dbc85ef8948cf16e306ac28c4bf6a73cf86be4afb134fa79bd20f61c501f14
 F src/window.c 76a27cff9ea2ded0c2c3527187029259440fabcc4cc4c07b11d942c78494a614
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1421,7 +1421,7 @@ F test/rowvalue5.test 00740304ea6a53a8704640c7405690f0045d5d2a6b4b04dde7bccc14c3
 F test/rowvalue6.test d19b54feb604d5601f8614b15e214e0774c01087
 F test/rowvalue7.test c1cbdbf407029db01f87764097c6ac02a1c5a37efd2776eff32a9cdfdf6f2dba
 F test/rowvalue8.test 5900eddad9e2c3c2e26f1a95f74aafc1232ee5e0
-F test/rowvalue9.test cb5380df82dca9db463081e26952c1e097b34fc2c2ac87453970c048d97df687
+F test/rowvalue9.test 138252b53b835208a5712e01595403a0ae32b4bc58284d9fe6bea10e58203fe4
 F test/rowvalueA.test 51f79b6098c193f838168752c9640f4eae6c63346bf64b5bed4f4e22fe2c71d0
 F test/rowvaluefault.test 963ae9cdaed30a85a29668dd514e639f3556cae903ee9f172ea972d511c54fff
 F test/rowvaluevtab.test cd9747bb3f308086944c07968f547ad6b05022e698d80b9ffbdfe09ce0b8da6f
@@ -2045,8 +2045,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d35de3ad3fac6b30d3f266cbe4b1e9923eb31a1eff4a869205bbc3ba122eeec5
-R 3b8ce287af44119ec32e692d8c73f32f
+P bf6f1ee77c4bf653f6cd2a3db5292b8c5c83f18ea9acf951107d22807546b28a 1815b15ddb8785a25b7617aab19e13c2410b9377389c16a85176025b3d9400e8
+R a03dd87796b00ce341f74d97782ef151
+T +closed 1815b15ddb8785a25b7617aab19e13c2410b9377389c16a85176025b3d9400e8
 U dan
-Z 66ee548c8bc79c01702d3938217e9a09
+Z bda945499e0359a4cf67b9c6621c26ff
 # Remove this line to create a well-formed Fossil manifest.
