@@ -2,14 +2,19 @@ syntax = "proto3";
 package wal_log;
 
 message LogOffset {
-    uint64 startOffset = 1;
+    // offset of the last reveiced frame. If absent, the server should send frame 0.
+    optional uint64 currentOffset = 1;
 }
 
 message HelloRequest { }
 
 message HelloResponse {
+    /// Uuid of the current generation
     string generation_id = 1;
-    uint64 first_frame_id_in_generation = 2;
+    /// First frame index in the current generation
+    uint64 generation_start_index = 2;
+    /// Uuid of the database being replicated
+    string database_id = 3;
 }
 
 message Frame {
