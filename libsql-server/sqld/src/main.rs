@@ -81,7 +81,7 @@ struct Cli {
     #[clap(long, env = "SQLD_ENABLE_BOTTOMLESS_REPLICATION")]
     enable_bottomless_replication: bool,
     /// Create a tunnel for the HTTP interface, available publicly via the https://localtunnel.me interface. The tunnel URL will be printed to stdin
-    #[clap(long)]
+    #[clap(long, env = "SQLD_CREATE_LOCAL_HTTP_TUNNEL")]
     create_local_http_tunnel: bool,
 }
 
