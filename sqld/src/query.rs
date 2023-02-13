@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::error::Error;
 use crate::query_analysis::Statement;
-use crate::rpc::proxy::proxy_rpc::{
+use crate::rpc::proxy::rpc::{
     Column as RpcColumn, ResultRows, Row as RpcRow, Type as RpcType, Value as RpcValue,
 };
 

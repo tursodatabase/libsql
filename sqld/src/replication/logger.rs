@@ -29,13 +29,13 @@ pub type FrameId = u64;
 // Clone is necessary only because opening a database may fail, and we need to clone the empty
 // struct.
 #[derive(Clone)]
-pub struct WalLoggerHook {
+pub struct ReplicationLoggerHook {
     /// Current frame index, updated on each commit.
     buffer: Vec<WalPage>,
-    logger: Arc<WalLogger>,
+    logger: Arc<ReplicationLogger>,
 }
 
-unsafe impl WalHook for WalLoggerHook {
+unsafe impl WalHook for ReplicationLoggerHook {
     fn on_frames(
         &mut self,
         wal: *mut Wal,
@@ -97,7 +97,7 @@ struct WalPage {
 /// A buffered WalFrame.
 /// Cloning this is cheap.
 pub struct WalFrame {
-    pub header: WalFrameHeader,
+    pub header: FrameHeader,
     pub data: Bytes,
 }
 
@@ -109,20 +109,20 @@ impl WalFrame {
     }
 
     pub fn decode(mut data: Bytes) -> anyhow::Result<Self> {
-        let header_bytes = data.split_to(size_of::<WalFrameHeader>());
+        let header_bytes = data.split_to(size_of::<FrameHeader>());
         ensure!(
             data.len() == WAL_PAGE_SIZE as usize,
             "invalid frame size, expected: {}, found: {}",
             WAL_PAGE_SIZE,
             data.len()
         );
-        let header = WalFrameHeader::decode(&header_bytes)?;
+        let header = FrameHeader::decode(&header_bytes)?;
         Ok(Self { header, data })
     }
 }
 
-impl WalLoggerHook {
-    pub fn new(logger: Arc<WalLogger>) -> Self {
+impl ReplicationLoggerHook {
+    pub fn new(logger: Arc<ReplicationLogger>) -> Self {
         Self {
             buffer: Default::default(),
             logger,
@@ -151,7 +151,7 @@ impl WalLoggerHook {
 
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 #[repr(C)]
-struct WalLoggerFileHeader {
+struct LogFileHeader {
     /// magic number: b"SQLDWAL\0" as u64
     magic: u64,
     /// Initial checksum value for the rolling CRC checksum
@@ -167,7 +167,7 @@ struct WalLoggerFileHeader {
     page_size: i32,
 }
 
-impl WalLoggerFileHeader {
+impl LogFileHeader {
     fn decode(buf: &[u8]) -> anyhow::Result<Self> {
         let this: Self =
             *try_from_bytes(buf).map_err(|_e| anyhow::anyhow!("invalid WAL log header"))?;
@@ -186,7 +186,7 @@ impl WalLoggerFileHeader {
 // repr C for stable sizing
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
-pub struct WalFrameHeader {
+pub struct FrameHeader {
     /// Incremental frame id
     pub frame_id: u64,
     /// Rolling checksum of all the previous frames, including this one.
@@ -196,7 +196,7 @@ pub struct WalFrameHeader {
     pub size_after: u32,
 }
 
-impl WalFrameHeader {
+impl FrameHeader {
     fn encode<B: BufMut>(&self, mut buf: B) {
         buf.put(&cast_ref::<_, [u8; size_of::<Self>()]>(self)[..]);
     }
@@ -221,7 +221,7 @@ impl Generation {
     }
 }
 
-pub struct WalLogger {
+pub struct ReplicationLogger {
     /// offset id of the next Frame to write into the log
     next_frame_id: Mutex<FrameId>,
     /// first index present in the file
@@ -232,9 +232,9 @@ pub struct WalLogger {
     pub generation: Generation,
 }
 
-impl WalLogger {
+impl ReplicationLogger {
     /// size of a single frame
-    pub const FRAME_SIZE: usize = size_of::<WalFrameHeader>() + WAL_PAGE_SIZE as usize;
+    pub const FRAME_SIZE: usize = size_of::<FrameHeader>() + WAL_PAGE_SIZE as usize;
 
     pub fn open(path: impl AsRef<Path>) -> anyhow::Result<Self> {
         let path = path.as_ref().join("wallog");
@@ -249,7 +249,7 @@ impl WalLogger {
 
         let header = if file_end == 0 {
             let db_id = Uuid::new_v4();
-            let header = WalLoggerFileHeader {
+            let header = LogFileHeader {
                 version: 1,
                 start_frame_id: 0,
                 magic: WAL_MAGIC,
@@ -261,17 +261,17 @@ impl WalLogger {
             let mut header_buf = BytesMut::new();
             header.encode(&mut header_buf);
 
-            assert_eq!(header_buf.len(), std::mem::size_of::<WalLoggerFileHeader>());
+            assert_eq!(header_buf.len(), std::mem::size_of::<LogFileHeader>());
 
             log_file.write_all(&header_buf)?;
             end_id = 0;
             current_checksum = AtomicU64::new(0);
             header
         } else {
-            let mut header_buf = BytesMut::zeroed(size_of::<WalLoggerFileHeader>());
+            let mut header_buf = BytesMut::zeroed(size_of::<LogFileHeader>());
             log_file.read_exact(&mut header_buf)?;
-            let header = WalLoggerFileHeader::decode(&header_buf)?;
-            end_id = (file_end - size_of::<WalFrameHeader>() as u64) / Self::FRAME_SIZE as u64;
+            let header = LogFileHeader::decode(&header_buf)?;
+            end_id = (file_end - size_of::<FrameHeader>() as u64) / Self::FRAME_SIZE as u64;
             current_checksum = AtomicU64::new(Self::compute_checksum(&header, &log_file)?);
             header
         };
@@ -297,7 +297,7 @@ impl WalLogger {
             digest.update(&page.data);
             let checksum = digest.finalize();
 
-            let header = WalFrameHeader {
+            let header = FrameHeader {
                 frame_id: current_offset,
                 checksum,
                 page_no: page.page_no,
@@ -353,7 +353,7 @@ impl WalLogger {
 
     /// Returns the bytes position of the `nth` entry in the log
     fn absolute_byte_offset(nth: u64) -> u64 {
-        std::mem::size_of::<WalLoggerFileHeader>() as u64 + nth * WalLogger::FRAME_SIZE as u64
+        std::mem::size_of::<LogFileHeader>() as u64 + nth * ReplicationLogger::FRAME_SIZE as u64
     }
 
     fn byte_offset(&self, id: FrameId) -> Option<u64> {
@@ -368,11 +368,11 @@ impl WalLogger {
         file: &File,
     ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<WalFrame>> + '_> {
         fn read_frame_offset(file: &File, offset: u64) -> anyhow::Result<Option<WalFrame>> {
-            let mut buffer = BytesMut::zeroed(WalLogger::FRAME_SIZE);
+            let mut buffer = BytesMut::zeroed(ReplicationLogger::FRAME_SIZE);
             file.read_exact_at(&mut buffer, offset)?;
             let mut buffer = buffer.freeze();
-            let header_bytes = buffer.split_to(size_of::<WalFrameHeader>());
-            let header = WalFrameHeader::decode(&header_bytes)?;
+            let header_bytes = buffer.split_to(size_of::<FrameHeader>());
+            let header = FrameHeader::decode(&header_bytes)?;
             Ok(Some(WalFrame {
                 header,
                 data: buffer,
@@ -392,7 +392,7 @@ impl WalLogger {
         }))
     }
 
-    fn compute_checksum(wal_header: &WalLoggerFileHeader, log_file: &File) -> anyhow::Result<u64> {
+    fn compute_checksum(wal_header: &LogFileHeader, log_file: &File) -> anyhow::Result<u64> {
         tracing::debug!("computing WAL log running checksum...");
         let mut iter = Self::frames_iter(log_file)?;
         iter.try_fold(wal_header.start_frame_id, |sum, frame| {
@@ -416,7 +416,7 @@ mod test {
     #[test]
     fn write_and_read_from_frame_log() {
         let dir = tempfile::tempdir().unwrap();
-        let logger = WalLogger::open(dir.path()).unwrap();
+        let logger = ReplicationLogger::open(dir.path()).unwrap();
 
         assert_eq!(*logger.next_frame_id.lock(), 0);
 
@@ -441,7 +441,7 @@ mod test {
     #[test]
     fn index_out_of_bounds() {
         let dir = tempfile::tempdir().unwrap();
-        let logger = WalLogger::open(dir.path()).unwrap();
+        let logger = ReplicationLogger::open(dir.path()).unwrap();
         assert!(logger.frame_bytes(1).unwrap().is_none());
     }
 
@@ -449,7 +449,7 @@ mod test {
     #[should_panic]
     fn incorrect_frame_size() {
         let dir = tempfile::tempdir().unwrap();
-        let logger = WalLogger::open(dir.path()).unwrap();
+        let logger = ReplicationLogger::open(dir.path()).unwrap();
         let entry = WalPage {
             page_no: 0,
             size_after: 0,

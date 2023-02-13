@@ -8,13 +8,12 @@ use crate::database::service::DbFactory;
 use crate::database::Database;
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
-use crate::rpc::proxy::proxy_rpc::execute_results::State;
-use proxy_rpc::proxy_server::Proxy;
-use proxy_rpc::{Ack, DisconnectMessage, Queries};
 
-use self::proxy_rpc::ExecuteResults;
+use self::rpc::execute_results::State;
+use self::rpc::proxy_server::Proxy;
+use self::rpc::{Ack, DisconnectMessage, ExecuteResults, Queries};
 
-pub mod proxy_rpc {
+pub mod rpc {
     #![allow(clippy::all)]
 
     use crate::error::Error as SqldError;

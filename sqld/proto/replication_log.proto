@@ -21,7 +21,7 @@ message Frame {
     bytes data = 1;
 }
 
-service WalLog {
+service ReplicationLog {
     rpc Hello(HelloRequest) returns (HelloResponse) {}
     rpc LogEntries(LogOffset) returns (stream Frame) {}
 }
