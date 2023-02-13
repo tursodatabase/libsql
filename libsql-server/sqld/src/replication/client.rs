@@ -38,10 +38,11 @@ use uuid::Uuid;
 use crate::libsql::ffi::{types::XWalFrameFn, PgHdr, Wal};
 use crate::libsql::open_with_regular_wal;
 use crate::libsql::wal_hook::WalHook;
-use crate::rpc::wal_log::wal_log_rpc::{wal_log_client::WalLogClient, LogOffset};
-use crate::rpc::wal_log::wal_log_rpc::{HelloRequest, HelloResponse};
-use crate::rpc::wal_log::NO_HELLO_ERROR_MSG;
-use crate::wal_logger::{WalFrame, WAL_PAGE_SIZE};
+use crate::replication::logger::{WalFrame, WAL_PAGE_SIZE};
+use crate::rpc::replication_log::rpc::{
+    replication_log_client::ReplicationLogClient, HelloRequest, HelloResponse, LogOffset,
+};
+use crate::rpc::replication_log::NO_HELLO_ERROR_MSG;
 use crate::HARD_RESET;
 
 pub struct PeriodicDbUpdater {
@@ -55,7 +56,7 @@ pub struct PeriodicDbUpdater {
 impl PeriodicDbUpdater {
     pub async fn new(
         path: &Path,
-        logger: WalLogClient<Channel>,
+        logger: ReplicationLogClient<Channel>,
         interval: Duration,
     ) -> anyhow::Result<Self> {
         let (hook, abort_receiver) = ReadReplicationHook::new(logger, path).await?;
@@ -108,7 +109,7 @@ impl PeriodicDbUpdater {
 }
 
 struct ReadReplicationHook {
-    logger: WalLogClient<Channel>,
+    logger: ReplicationLogClient<Channel>,
     /// Persistent last committed index used for restarts.
     /// The File should contain two little-endian u64:
     /// - The first one is the attempted commit index before the call xFrame
@@ -321,7 +322,7 @@ impl WalIndexMeta {
 
 impl ReadReplicationHook {
     async fn new(
-        logger: WalLogClient<Channel>,
+        logger: ReplicationLogClient<Channel>,
         db_path: &Path,
     ) -> anyhow::Result<(Self, crossbeam::channel::Receiver<ReplicationError>)> {
         let path = db_path.join("client_wal_index");
@@ -348,7 +349,7 @@ impl ReadReplicationHook {
 
     async fn perform_handshake(
         meta: Option<WalIndexMeta>,
-        mut logger: WalLogClient<Channel>,
+        mut logger: ReplicationLogClient<Channel>,
         abort_sender: &mut Option<crossbeam::channel::Sender<ReplicationError>>,
     ) -> anyhow::Result<WalIndexMeta> {
         let hello = logger.hello(HelloRequest {}).await?.into_inner();

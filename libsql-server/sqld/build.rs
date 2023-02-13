@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .protoc_arg("--experimental_allow_proto3_optional")
         .compile_with_config(
             config,
-            &["proto/wal_log.proto", "proto/proxy.proto"],
+            &["proto/replication_log.proto", "proto/proxy.proto"],
             &["proto"],
         )?;
 
