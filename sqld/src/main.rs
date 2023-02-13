@@ -3,6 +3,7 @@ use std::{net::SocketAddr, path::PathBuf};
 use anyhow::Result;
 use clap::Parser;
 use sqld::Config;
+use tracing_subscriber::filter::LevelFilter;
 
 /// SQL daemon
 #[derive(Debug, Parser)]
@@ -162,7 +163,11 @@ impl From<Cli> for Config {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_ansi(false)
-        .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
         .init();
     let args = Cli::parse();
     args.print_welcome_message();
