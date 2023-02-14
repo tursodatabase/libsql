@@ -124,3 +124,11 @@ GET /health
 ```
 
 The health route return an `HTTP 200 (OK)` if the server is up and running.
+
+#### Load dump
+
+```
+POST /load-dump
+```
+
+The load dump allows the user to load a SQLite dump. A dump is created with the `.dump` command in SQLite. This dump can then be sent to sqld with the `POST /load-dump` route, where the body is set to the bytes of the dump file.
