@@ -24,6 +24,7 @@ Usage:
   where SWITCHES are:
     --jobs NUMBER-OF-JOBS
     --fuzztest
+    --zipvfs ZIPVFS-SOURCE-DIR
 
 Interesting values for PERMUTATION are:
 
@@ -106,6 +107,7 @@ set TRG(patternlist) [list]
 set TRG(cmdline) $argv
 set TRG(reporttime) 2000
 set TRG(fuzztest) 0                 ;# is the fuzztest option present.
+set TRG(zipvfs) ""                  ;# -zipvfs option, if any
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -344,6 +346,10 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
       if {$isLast} { usage }
     } elseif {($n>2 && [string match "$a*" --fuzztest]) || $a=="-f"} {
       set TRG(fuzztest) 1
+    } elseif {($n>2 && [string match "$a*" --zipvfs]) || $a=="-z"} {
+      incr ii
+      set TRG(zipvfs) [lindex $argv $ii]
+      if {$isLast} { usage }
     } else {
       usage
     }
@@ -573,6 +579,12 @@ proc make_new_testset {} {
   global TRG
 
   set tests [testset_patternlist $TRG(patternlist)]
+
+  if {$TRG(zipvfs)!=""} {
+    source [file join $TRG(zipvfs) test zipvfs_testrunner.tcl]
+    set tests [concat $tests [zipvfs_testrunner_testset]]
+  }
+
   r_write_db {
 
     trdb eval $TRG(schema)
@@ -700,13 +712,17 @@ proc launch_another_job {iJob} {
     set builddir [build_to_dirname $b]
     create_or_clear_dir $builddir
 
-    set     cmd [info nameofexec]
-    lappend cmd [file join $testdir releasetest_data.tcl]
-    lappend cmd trscript
-    if {$TRG(platform)=="win"} { lappend cmd -msvc }
-    lappend cmd $b $srcdir
+    if {$b=="Zipvfs"} {
+      set script [zipvfs_testrunner_script]
+    } else {
+      set     cmd [info nameofexec]
+      lappend cmd [file join $testdir releasetest_data.tcl]
+      lappend cmd trscript
+      if {$TRG(platform)=="win"} { lappend cmd -msvc }
+      lappend cmd $b $srcdir
+      set script [exec {*}$cmd]
+    }
 
-    set script [exec {*}$cmd]
     set fd [open [file join $builddir $TRG(make)] w]
     puts $fd $script
     close $fd
