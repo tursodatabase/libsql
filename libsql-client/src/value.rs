@@ -6,7 +6,7 @@ use base64::Engine;
 
 /// Value of a single database cell
 // FIXME: We need to support blobs as well
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Null,
     Integer(i64),
@@ -48,6 +48,7 @@ macro_rules! impl_from_value {
 }
 
 impl_from_value!(String, Text);
+impl_from_value!(&String, Text);
 impl_from_value!(&str, Text);
 
 impl_from_value!(i8, Integer);
