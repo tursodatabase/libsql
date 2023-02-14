@@ -60,6 +60,12 @@ async def test_row_repr(url):
         assert repr(result_set.rows[0]) == "(42, 0.5, 'brontosaurus', None)"
 
 @pytest.mark.asyncio
+async def test_row_slice(url):
+    async with libsql_client.Client(url) as client:
+        result_set = await client.execute("SELECT 'one', 'two', 'three', 'four', 'five'")
+        assert result_set.rows[0][1:3] == ("two", "three")
+
+@pytest.mark.asyncio
 async def test_pandas_from_records(url):
     async with libsql_client.Client(url) as client:
         result_set = await client.execute("SELECT 1, 'two', 3.0")

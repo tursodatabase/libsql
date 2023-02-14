@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, List, Tuple, Union
+from typing import Dict, Iterator, List, Tuple, Union, overload
 import collections
 
 Value = Union[str, float, int, bytes, None]
@@ -43,13 +43,22 @@ class Row(collections.abc.Sequence):
         self._column_idxs = column_idxs
         self._values = values
 
+    @overload
     def __getitem__(self, key: Union[int, str]) -> Value:
+        pass
+
+    @overload
+    def __getitem__(self, key: slice) -> Tuple[Value, ...]:
+        pass
+
+    def __getitem__(self, key: Union[int, str, slice]) -> Union[Value, Tuple[Value, ...]]:
         """Access a value by index or by name."""
+        tuple_key: Union[int, slice]
         if isinstance(key, str):
-            idx = self._column_idxs[key]
+            tuple_key = self._column_idxs[key]
         else:
-            idx = key
-        return self._values[idx]
+            tuple_key = key
+        return self._values[tuple_key]
 
     def __len__(self) -> int:
         return len(self._values)
