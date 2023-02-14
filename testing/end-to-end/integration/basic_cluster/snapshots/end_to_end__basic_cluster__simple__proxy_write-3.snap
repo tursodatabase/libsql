@@ -1,5 +1,5 @@
 ---
-source: integration/basic_cluster.rs
+source: integration/basic_cluster/simple.rs
 expression: json
 ---
 [

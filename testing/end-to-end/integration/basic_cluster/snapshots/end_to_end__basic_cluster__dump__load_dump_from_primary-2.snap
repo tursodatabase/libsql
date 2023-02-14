@@ -1,0 +1,39 @@
+---
+source: integration/basic_cluster/dump.rs
+expression: "resp.json::<serde_json::Value>().await.unwrap()"
+---
+[
+  {
+    "results": {
+      "columns": [
+        "name",
+        "age"
+      ],
+      "rows": [
+        [
+          "adhoc",
+          27
+        ],
+        [
+          "john",
+          42
+        ]
+      ]
+    }
+  },
+  {
+    "results": {
+      "columns": [
+        "kind"
+      ],
+      "rows": [
+        [
+          "cat"
+        ],
+        [
+          "dog"
+        ]
+      ]
+    }
+  }
+]
