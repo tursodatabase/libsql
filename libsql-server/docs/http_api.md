@@ -116,3 +116,11 @@ The prefix of the parameter must be specified in the `params` field (i.e, `:name
     "params": ["adhoc"]
 }
 ```
+
+#### Health
+
+```
+GET /health
+```
+
+The health route return an `HTTP 200 (OK)` if the server is up and running.
