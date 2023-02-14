@@ -45,6 +45,13 @@ impl Connection {
         })
     }
 
+    /// Establishes a new in-memory database and connects to it.
+    pub fn in_memory() -> anyhow::Result<Self> {
+        Ok(Self {
+            inner: rusqlite::Connection::open(":memory:").map_err(|e| anyhow::anyhow!("{e}"))?,
+        })
+    }
+
     pub fn connect_from_env() -> anyhow::Result<Self> {
         let path = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
             anyhow::anyhow!("LIBSQL_CLIENT_URL variable should point to your sqld database")
