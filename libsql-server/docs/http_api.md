@@ -46,7 +46,7 @@ Where `T` is the type of the payload in case of success.
 #### Queries
 
 ```
-POST /query
+POST /queries
 ```
 
 This endpoint supports sending batches of queries to the database. All of the statements in the batch are executed as part of a transaction. If any statement in the batch fails, an error is returned and the transaction is aborted, resulting in no change to the database.
