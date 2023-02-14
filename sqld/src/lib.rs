@@ -5,6 +5,7 @@ use std::sync::Arc;
 #[cfg(feature = "mwal_backend")]
 use std::sync::Mutex;
 use std::task::{Context, Poll};
+use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
 use database::libsql::LibSqlDb;
@@ -85,6 +86,7 @@ pub struct Config {
     pub rpc_server_ca_cert: Option<PathBuf>,
     pub enable_bottomless_replication: bool,
     pub create_local_http_tunnel: bool,
+    pub idle_shutdown_timeout: Option<Duration>,
 }
 
 async fn run_service<S>(service: S, config: &Config, handles: &mut Handles) -> anyhow::Result<()>
