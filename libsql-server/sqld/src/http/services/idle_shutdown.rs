@@ -21,6 +21,9 @@ impl IdleShutdownLayer {
                     Ok(Ok(_)) => continue,
                     Ok(Err(_)) => break,
                     Err(_) => {
+                        tracing::info!(
+                            "Idle timeout, no new connection in {idle_timeout:.0?}. Shutting down.",
+                        );
                         shutdown_notifier.notify_waiters();
                     }
                 }
