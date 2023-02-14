@@ -1,28 +1,26 @@
 mod basic_cluster;
 
+use anyhow::bail;
 use clap::Parser;
 use octopod::{AppConfig, Octopod, ServiceConfig};
 
 fn create_simple_cluster_app() -> AppConfig {
     let mut app = AppConfig::new("simple-cluster");
-    app.add_service(ServiceConfig {
-        name: "primary".into(),
-        image: "sqld".into(),
-        env: vec![
-            ("SQLD_NODE".into(), "primary".into()),
-            ("RUST_LOG".into(), "sqld:debug".into()),
-        ],
-    });
-    app.add_service(ServiceConfig {
-        name: "replica".into(),
-        image: "sqld".into(),
-        env: vec![
-            ("SQLD_NODE".into(), "replica".into()),
-            ("RUST_LOG".into(), "sqld:debug".into()),
-            ("SQLD_PRIMARY_URL".into(), "http://primary:5001".into()),
-            ("SQLD_HTTP_LISTEN_ADDR".into(), "0.0.0.0:8080".into()),
-        ],
-    });
+    app.add_service(
+        ServiceConfig::new("primary", "sqld")
+            .env([("SQLD_NODE", "primary"), ("RUST_LOG", "sqld=debug")])
+            .health("/health", 8080),
+    );
+    app.add_service(
+        ServiceConfig::new("replica", "sqld")
+            .env([
+                ("SQLD_NODE", "replica"),
+                ("RUST_LOG", "sqld=debug"),
+                ("SQLD_PRIMARY_URL", "http://primary:5001"),
+                ("SQLD_HTTP_LISTEN_ADDR", "0.0.0.0:8080"),
+            ])
+            .health("/health", 8080),
+    );
     app
 }
 
@@ -39,12 +37,16 @@ struct Opts {
 async fn main() -> anyhow::Result<()> {
     let opts = Opts::parse();
     if opts.run {
-        Octopod::init(
+        let success = Octopod::init(
             opts.podman_addr.as_ref().unwrap(),
             vec![create_simple_cluster_app()],
         )?
         .run()
         .await?;
+
+        if !success {
+            bail!("tests failed")
+        }
     }
 
     Ok(())
