@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, path::PathBuf};
+use std::{net::SocketAddr, path::PathBuf, time::Duration};
 
 use anyhow::Result;
 use clap::Parser;
@@ -84,6 +84,11 @@ struct Cli {
     /// Create a tunnel for the HTTP interface, available publicly via the https://localtunnel.me interface. The tunnel URL will be printed to stdin
     #[clap(long, env = "SQLD_CREATE_LOCAL_HTTP_TUNNEL")]
     create_local_http_tunnel: bool,
+    /// The duration, in second, after which to shutdown the server if no request have been
+    /// received.
+    /// By default, the server doesn't shutdown when idle.
+    #[clap(long, env = "SQLD_IDLE_SHUTDOWN_TIMEOUT_S")]
+    idle_shutdown_timeout_s: Option<u64>,
 }
 
 impl Cli {
@@ -155,6 +160,7 @@ impl From<Cli> for Config {
             mwal_addr: cli.mwal_addr,
             enable_bottomless_replication: cli.enable_bottomless_replication,
             create_local_http_tunnel: cli.create_local_http_tunnel,
+            idle_shutdown_timeout: cli.idle_shutdown_timeout_s.map(Duration::from_secs),
         }
     }
 }
