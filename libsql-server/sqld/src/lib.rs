@@ -119,6 +119,7 @@ where
             authorizer,
             service.map_response(|s| Constant::new(s, 1)),
             config.enable_http_console,
+            config.idle_shutdown_timeout,
         ));
 
         handles.push(handle);
