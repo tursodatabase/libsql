@@ -58,6 +58,8 @@ type Handles = FuturesUnordered<JoinHandle<anyhow::Result<()>>>;
 ///
 /// /!\ use with caution.
 pub(crate) static HARD_RESET: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
+/// Clean shutdown of the server.
+pub(crate) static SHUTDOWN: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
 
 #[cfg(feature = "mwal_backend")]
 pub(crate) static VWAL_METHODS: OnceCell<
@@ -262,12 +264,16 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         }
 
         let reset = HARD_RESET.clone();
+        let shutdown = SHUTDOWN.clone();
         loop {
             tokio::select! {
                 _ = reset.notified() => {
                     hard_reset(&config, handles).await?;
                     break;
                 },
+                _ = shutdown.notified() => {
+                    return Ok(())
+                }
                 Some(res) = handles.next() => {
                     res??;
                 },
