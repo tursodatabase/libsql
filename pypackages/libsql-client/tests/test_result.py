@@ -1,3 +1,4 @@
+import pandas
 import libsql_client
 import pytest
 
@@ -57,3 +58,24 @@ async def test_row_repr(url):
     async with libsql_client.Client(url) as client:
         result_set = await client.execute("SELECT 42, 0.5, 'brontosaurus', NULL")
         assert repr(result_set.rows[0]) == "(42, 0.5, 'brontosaurus', None)"
+
+@pytest.mark.asyncio
+async def test_row_slice(url):
+    async with libsql_client.Client(url) as client:
+        result_set = await client.execute("SELECT 'one', 'two', 'three', 'four', 'five'")
+        assert result_set.rows[0][1:3] == ("two", "three")
+
+@pytest.mark.asyncio
+async def test_pandas_from_records(url):
+    async with libsql_client.Client(url) as client:
+        result_set = await client.execute("SELECT 1, 'two', 3.0")
+        data_frame = pandas.DataFrame.from_records(result_set.rows)
+        assert data_frame.shape == (1, 3)
+
+@pytest.mark.asyncio
+async def test_pandas_ctor(url):
+    async with libsql_client.Client(url) as client:
+        result_set = await client.execute("SELECT 1 AS one, 'two' AS two, 3.0 AS three")
+        data_frame = pandas.DataFrame(result_set)
+        assert data_frame.shape == (1, 3)
+        assert tuple(data_frame.columns) == ("one", "two", "three")
