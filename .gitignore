@@ -21,3 +21,4 @@ bottomless/test/*.bottomless.backup
 bottomless/test/db.gz
 data.sqld/
 sqld/data.sqld/
+libsql-client/Cargo.lock
