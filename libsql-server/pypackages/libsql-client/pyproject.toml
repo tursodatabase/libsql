@@ -13,10 +13,11 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 aiohttp = "^3.0"
 
 [tool.poetry.group.dev.dependencies]
+pandas = "^1.5"
 pytest = "^7.2"
 pytest-asyncio = "^0.20.3"
 mypy = "^0.991"
