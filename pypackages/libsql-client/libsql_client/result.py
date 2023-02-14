@@ -1,4 +1,5 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Iterator, List, Tuple, Union
+import collections
 
 Value = Union[str, float, int, bytes, None]
 
@@ -26,7 +27,10 @@ class ResultSet:
         """List of all rows in the result set."""
         return self._rows
 
-class Row:
+    def __iter__(self) -> Iterator["Row"]:
+        return self._rows.__iter__()
+
+class Row(collections.abc.Sequence):
     """A row returned by an SQL statement.
 
     The row values can be accessed with an index or by name.
@@ -52,3 +56,7 @@ class Row:
 
     def __repr__(self) -> str:
         return repr(self._values)
+
+    @property
+    def _fields(self) -> Tuple[str, ...]:
+        return tuple(self._column_idxs.keys())
