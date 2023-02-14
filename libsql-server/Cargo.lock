@@ -2556,7 +2556,7 @@ dependencies = [
 [[package]]
 name = "octopod"
 version = "0.1.0"
-source = "git+https://github.com/MarinPostma/octopod.git#500b23d5919e6a7bc1e6a90d2ab3865d185fe4e7"
+source = "git+https://github.com/MarinPostma/octopod.git?rev=a828ce3#a828ce33e3191900bf230b335cc393769b89ea95"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2565,6 +2565,7 @@ dependencies = [
  "maplit",
  "octopod-macros",
  "podman-api",
+ "reqwest",
  "termion",
  "tokio",
  "tokio-stream",
@@ -2574,7 +2575,7 @@ dependencies = [
 [[package]]
 name = "octopod-macros"
 version = "0.1.0"
-source = "git+https://github.com/MarinPostma/octopod.git#500b23d5919e6a7bc1e6a90d2ab3865d185fe4e7"
+source = "git+https://github.com/MarinPostma/octopod.git?rev=a828ce3#a828ce33e3191900bf230b335cc393769b89ea95"
 dependencies = [
  "proc-macro2",
  "quote",
