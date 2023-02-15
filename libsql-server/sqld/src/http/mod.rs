@@ -1,9 +1,11 @@
 pub mod auth;
+mod services;
 mod types;
 
 use std::future::poll_fn;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Context;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
@@ -21,9 +23,11 @@ use tower::{BoxError, MakeService, Service, ServiceBuilder};
 use tower_http::{compression::CompressionLayer, cors};
 
 use crate::error::Error;
+use crate::http::services::idle_shutdown::IdleShutdownLayer;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
+use crate::SHUTDOWN;
 
 use self::auth::Authorizer;
 use self::types::QueryObject;
@@ -265,6 +269,7 @@ pub async fn run_http<F>(
     authorizer: Arc<dyn Authorizer + Send + Sync>,
     db_factory: F,
     enable_console: bool,
+    idle_shutdown: Option<Duration>,
 ) -> anyhow::Result<()>
 where
     F: MakeService<(), Queries> + Send + 'static,
@@ -279,7 +284,9 @@ where
     tracing::info!("listening for HTTP requests on {addr}");
 
     let (sender, mut receiver) = mpsc::channel(1024);
+    let idle_shutdown_layer = idle_shutdown.map(|d| IdleShutdownLayer::new(d, SHUTDOWN.clone()));
     let service = ServiceBuilder::new()
+        .option_layer(idle_shutdown_layer)
         .layer(CompressionLayer::new())
         .layer(
             cors::CorsLayer::new()

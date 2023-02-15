@@ -70,9 +70,12 @@ impl Connection {
         let url = std::env::var("LIBSQL_CLIENT_URL").map_err(|_| {
             anyhow::anyhow!("LIBSQL_CLIENT_URL variable should point to your sqld database")
         })?;
-        let user = std::env::var("LIBSQL_CLIENT_USER").map_err(|_| {
-            anyhow::anyhow!("LIBSQL_CLIENT_USER variable should be set to your sqld username")
-        })?;
+        let user = match std::env::var("LIBSQL_CLIENT_USER") {
+            Ok(user) => user,
+            Err(_) => {
+                return Ok(Connection::connect_from_url(&url::Url::parse(&url)?)?);
+            }
+        };
         let pass = std::env::var("LIBSQL_CLIENT_PASS").map_err(|_| {
             anyhow::anyhow!("LIBSQL_CLIENT_PASS variable should be set to your sqld password")
         })?;
