@@ -5,6 +5,7 @@ use std::sync::Arc;
 #[cfg(feature = "mwal_backend")]
 use std::sync::Mutex;
 use std::task::{Context, Poll};
+use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
 use database::libsql::LibSqlDb;
@@ -57,6 +58,8 @@ type Handles = FuturesUnordered<JoinHandle<anyhow::Result<()>>>;
 ///
 /// /!\ use with caution.
 pub(crate) static HARD_RESET: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
+/// Clean shutdown of the server.
+pub(crate) static SHUTDOWN: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
 
 #[cfg(feature = "mwal_backend")]
 pub(crate) static VWAL_METHODS: OnceCell<
@@ -85,6 +88,7 @@ pub struct Config {
     pub rpc_server_ca_cert: Option<PathBuf>,
     pub enable_bottomless_replication: bool,
     pub create_local_http_tunnel: bool,
+    pub idle_shutdown_timeout: Option<Duration>,
 }
 
 async fn run_service<S>(service: S, config: &Config, handles: &mut Handles) -> anyhow::Result<()>
@@ -115,6 +119,7 @@ where
             authorizer,
             service.map_response(|s| Constant::new(s, 1)),
             config.enable_http_console,
+            config.idle_shutdown_timeout,
         ));
 
         handles.push(handle);
@@ -260,12 +265,16 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         }
 
         let reset = HARD_RESET.clone();
+        let shutdown = SHUTDOWN.clone();
         loop {
             tokio::select! {
                 _ = reset.notified() => {
                     hard_reset(&config, handles).await?;
                     break;
                 },
+                _ = shutdown.notified() => {
+                    return Ok(())
+                }
                 Some(res) = handles.next() => {
                     res??;
                 },
