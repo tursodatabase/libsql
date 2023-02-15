@@ -20,17 +20,18 @@
             if (Object.keys(json).length == 0) {
                 return ''
             }
-            let headers = Object.keys(json[0]).sort();
+            // FIXME: support multiple statements
+            let result = json[0].results;
+            let headers = result.columns;
             let html = '<tr>'
             for (var i = 0; i < headers.length; i++) {
                 html += '<th style = "padding: 5px">' + headers[i] + '</th>'
             }
             html += '</tr>';
-            for (var i = 0; i < json.length; i++) {
+            for (var i = 0; i < result.rows.length; i++) {
                 html += '<tr>'
                 for (var j = 0; j < headers.length; j++) {
-                    var header = headers[j];
-                    html += '<td style = "padding: 5px">' + json[i][header] + '</td>'
+                    html += '<td style = "padding: 5px">' + result.rows[i][j] + '</td>'
                 }
                 html += '</tr>'
             }
@@ -42,15 +43,22 @@
                 return
             }
             term.pause();
-            $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
+            $.post('/queries', JSON.stringify({ statements: [cmd] })).then(response => {
                 if (response) {
-                    let parsed = JSON.parse(response)
-                    term.echo(json2table(parsed), { raw: true })
+                    term.echo(json2table(response), { raw: true })
                     term.resume()
                 }
             }).catch(error => {
-                term.echo("Error: " + JSON.stringify(error, null, 2))
-                term.resume()
+                console.log("Retrying with legacy enpoint: /")
+                $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
+                    if (response) {
+                        term.echo(json2table(response), { raw: true })
+                        term.resume()
+                    }
+                }).catch(error => {
+                    term.echo("Error: " + JSON.stringify(error, null, 2))
+                    term.resume()
+                })
             });
         }, {
             greetings: 'sqld'
