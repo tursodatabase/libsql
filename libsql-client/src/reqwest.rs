@@ -7,7 +7,8 @@ use super::{QueryResult, Statement};
 /// communicate with the database.
 #[derive(Clone, Debug)]
 pub struct Connection {
-    url: String,
+    base_url: String,
+    url_for_queries: String,
     auth: String,
 }
 
@@ -27,13 +28,15 @@ impl Connection {
         let pass = pass.into();
         let url = url.into();
         // Auto-update the URL to start with https:// if no protocol was specified
-        let url = if !url.contains("://") {
+        let base_url = if !url.contains("://") {
             "https://".to_owned() + &url
         } else {
             url
         };
+        let url_for_queries = format!("{base_url}/queries");
         Self {
-            url,
+            base_url,
+            url_for_queries,
             auth: format!(
                 "Basic {}",
                 base64::engine::general_purpose::STANDARD.encode(format!("{username}:{pass}"))
@@ -88,12 +91,24 @@ impl super::Connection for Connection {
     ) -> anyhow::Result<Vec<QueryResult>> {
         let (body, stmts_count) = crate::connection::statements_to_string(stmts);
         let client = reqwest::Client::new();
-        let response = client
-            .post(&self.url)
-            .body(body)
+        let response = match client
+            .post(&self.url_for_queries)
+            .body(body.clone())
             .header("Authorization", &self.auth)
             .send()
-            .await?;
+            .await
+        {
+            Ok(resp) if resp.status() == reqwest::StatusCode::OK => resp,
+            // Retry with the legacy route: "/"
+            _ => {
+                client
+                    .post(&self.base_url)
+                    .body(body)
+                    .header("Authorization", &self.auth)
+                    .send()
+                    .await?
+            }
+        };
         let resp: String = response.text().await?;
         let response_json: serde_json::Value = serde_json::from_str(&resp)?;
         crate::connection::json_to_query_result(response_json, stmts_count)
