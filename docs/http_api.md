@@ -132,3 +132,11 @@ POST /load-dump
 ```
 
 The load dump allows the user to load a SQLite dump. A dump is created with the `.dump` command in SQLite. This dump can then be sent to sqld with the `POST /load-dump` route, where the body is set to the bytes of the dump file.
+
+#### Version
+
+```
+GET /version
+```
+
+returns the server's version.
