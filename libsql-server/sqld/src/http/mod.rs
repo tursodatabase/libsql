@@ -20,11 +20,12 @@ use tonic::codegen::http;
 use tower::balance::pool;
 use tower::load::Load;
 use tower::{BoxError, MakeService, Service, ServiceBuilder};
+use tower_http::trace::DefaultOnResponse;
 use tower_http::{compression::CompressionLayer, cors};
+use tracing::{Level, Span};
 
 use crate::error::Error;
 use crate::http::services::idle_shutdown::IdleShutdownLayer;
-use crate::http::services::logger::LoggerLayer;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
@@ -286,9 +287,20 @@ where
 
     let (sender, mut receiver) = mpsc::channel(1024);
     let idle_shutdown_layer = idle_shutdown.map(|d| IdleShutdownLayer::new(d, SHUTDOWN.clone()));
+    fn trace_request<B>(req: &Request<B>, _span: &Span) {
+        tracing::info!("got request: {} {}", req.method(), req.uri());
+    }
     let service = ServiceBuilder::new()
         .option_layer(idle_shutdown_layer)
-        .layer(LoggerLayer)
+        .layer(
+            tower_http::trace::TraceLayer::new_for_http()
+                .on_request(trace_request)
+                .on_response(
+                    DefaultOnResponse::new()
+                        .level(Level::DEBUG)
+                        .latency_unit(tower_http::LatencyUnit::Micros),
+                ),
+        )
         .layer(CompressionLayer::new())
         .layer(
             cors::CorsLayer::new()
