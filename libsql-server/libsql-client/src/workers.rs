@@ -8,7 +8,8 @@ use super::{QueryResult, Statement};
 /// communicate with the database.
 #[derive(Clone, Debug)]
 pub struct Connection {
-    url: String,
+    base_url: String,
+    url_for_queries: String,
     auth: String,
 }
 
@@ -28,13 +29,15 @@ impl Connection {
         let pass = pass.into();
         let url = url.into();
         // Auto-update the URL to start with https:// if no protocol was specified
-        let url = if !url.contains("://") {
+        let base_url = if !url.contains("://") {
             "https://".to_owned() + &url
         } else {
             url
         };
+        let url_for_queries = format!("{base_url}/queries");
         Self {
-            url,
+            base_url,
+            url_for_queries,
             auth: format!(
                 "Basic {}",
                 base64::engine::general_purpose::STANDARD.encode(format!("{username}:{pass}"))
@@ -119,9 +122,18 @@ impl Connection {
             method: Method::Post,
             redirect: RequestRedirect::Follow,
         };
-        let req = Request::new_with_init(&self.url, &request_init)?;
+        let req = Request::new_with_init(&self.url_for_queries, &request_init)?;
         let response = Fetch::Request(req).send().await;
-        let resp: String = response?.text().await?;
+        let mut response = match response {
+            Ok(r) if r.status_code() == 200 => r,
+            // Retry with the legacy route: "/"
+            _ => {
+                Fetch::Request(Request::new_with_init(&self.base_url, &request_init)?)
+                    .send()
+                    .await?
+            }
+        };
+        let resp: String = response.text().await?;
         let response_json: serde_json::Value = serde_json::from_str(&resp)?;
         super::connection::json_to_query_result(response_json, stmts_count)
             .map_err(|e| worker::Error::from(format!("Error: {} ({:?})", e, request_init.body)))
