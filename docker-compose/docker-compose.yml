@@ -1,21 +1,13 @@
 version: "3.9"
 services:
   writer:
-    build: .
-    environment: 
+    build: ..
+    environment:
       - SQLD_NODE=primary
-      - SQLD_ENABLE_BOTTOMLESS_REPLICATION=true
-      - LIBSQL_BOTTOMLESS_ENDPOINT=http://s3:9000
-      - AWS_ACCESS_KEY_ID=minioadmin
-      - AWS_SECRET_ACCESS_KEY=minioadmin
-      - AWS_DEFAULT_REGION=eu-central-2
-      - RUST_LOG=info,bottomless=trace
     ports:
       - "6000:5000"
-    depends_on:
-      - s3
   reader:
-    build: .
+    build: ..
     environment:
       - SQLD_NODE=replica
       - SQLD_PRIMARY_URL=http://writer:5001
@@ -31,7 +23,3 @@ services:
     ports:
       - "6001:6001"
       - "8080:8080"
-  s3:
-    image: fclairamb/minio-github-actions
-    ports:
-      - "9000:9000"
