@@ -1,13 +1,14 @@
 use async_trait::async_trait;
 use base64::Engine;
 
-use super::{parse_query_result, QueryResult, Statement};
+use super::{QueryResult, Statement};
 
 /// Database connection. This is the main structure used to
 /// communicate with the database.
 #[derive(Clone, Debug)]
 pub struct Connection {
-    url: String,
+    base_url: String,
+    url_for_queries: String,
     auth: String,
 }
 
@@ -27,13 +28,15 @@ impl Connection {
         let pass = pass.into();
         let url = url.into();
         // Auto-update the URL to start with https:// if no protocol was specified
-        let url = if !url.contains("://") {
+        let base_url = if !url.contains("://") {
             "https://".to_owned() + &url
         } else {
             url
         };
+        let url_for_queries = format!("{base_url}/queries");
         Self {
-            url,
+            base_url,
+            url_for_queries,
             auth: format!(
                 "Basic {}",
                 base64::engine::general_purpose::STANDARD.encode(format!("{username}:{pass}"))
@@ -89,44 +92,28 @@ impl super::Connection for Connection {
         &self,
         stmts: impl IntoIterator<Item = impl Into<Statement>>,
     ) -> anyhow::Result<Vec<QueryResult>> {
-        // FIXME: serialize and deserialize with existing routines from sqld
-        let mut body = "{\"statements\": [".to_string();
-        let mut stmts_count = 0;
-        for stmt in stmts {
-            body += &format!("{},", stmt.into());
-            stmts_count += 1;
-        }
-        if stmts_count > 0 {
-            body.pop();
-        }
-        body += "]}";
+        let (body, stmts_count) = crate::connection::statements_to_string(stmts);
         let client = reqwest::Client::new();
-        let response = client
-            .post(&self.url)
-            .body(body)
+        let response = match client
+            .post(&self.url_for_queries)
+            .body(body.clone())
             .header("Authorization", &self.auth)
             .send()
-            .await?;
+            .await
+        {
+            Ok(resp) if resp.status() == reqwest::StatusCode::OK => resp,
+            // Retry with the legacy route: "/"
+            _ => {
+                client
+                    .post(&self.base_url)
+                    .body(body)
+                    .header("Authorization", &self.auth)
+                    .send()
+                    .await?
+            }
+        };
         let resp: String = response.text().await?;
         let response_json: serde_json::Value = serde_json::from_str(&resp)?;
-        match response_json {
-            serde_json::Value::Array(results) => {
-                if results.len() != stmts_count {
-                    Err(anyhow::anyhow!(
-                        "Response array did not contain expected {stmts_count} results"
-                    ))
-                } else {
-                    let mut query_results: Vec<QueryResult> = Vec::with_capacity(stmts_count);
-                    for (idx, result) in results.into_iter().enumerate() {
-                        query_results.push(
-                            parse_query_result(result, idx).map_err(|e| anyhow::anyhow!("{e}"))?,
-                        );
-                    }
-
-                    Ok(query_results)
-                }
-            }
-            e => Err(anyhow::anyhow!("Error: {}", e)),
-        }
+        crate::connection::json_to_query_result(response_json, stmts_count)
     }
 }
