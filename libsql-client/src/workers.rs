@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use base64::Engine;
 use worker::*;
 
-use super::{parse_query_result, QueryResult, Statement};
+use super::{QueryResult, Statement};
 
 /// Database connection. This is the main structure used to
 /// communicate with the database.
@@ -111,17 +111,7 @@ impl Connection {
     ) -> Result<Vec<QueryResult>> {
         let mut headers = Headers::new();
         headers.append("Authorization", &self.auth).ok();
-        // FIXME: serialize and deserialize with existing routines from sqld
-        let mut body = "{\"statements\": [".to_string();
-        let mut stmts_count = 0;
-        for stmt in stmts {
-            body += &format!("{},", stmt.into());
-            stmts_count += 1;
-        }
-        if stmts_count > 0 {
-            body.pop();
-        }
-        body += "]}";
+        let (body, stmts_count) = crate::connection::statements_to_string(stmts);
         let request_init = RequestInit {
             body: Some(wasm_bindgen::JsValue::from_str(&body)),
             headers,
@@ -133,29 +123,8 @@ impl Connection {
         let response = Fetch::Request(req).send().await;
         let resp: String = response?.text().await?;
         let response_json: serde_json::Value = serde_json::from_str(&resp)?;
-        match response_json {
-            serde_json::Value::Array(results) => {
-                if results.len() != stmts_count {
-                    Err(worker::Error::from(format!(
-                        "Response array did not contain expected {stmts_count} results"
-                    )))
-                } else {
-                    let mut query_results: Vec<QueryResult> = Vec::with_capacity(stmts_count);
-                    for (idx, result) in results.into_iter().enumerate() {
-                        query_results.push(
-                            parse_query_result(result, idx)
-                                .map_err(|e| Error::from(format!("{e}")))?,
-                        );
-                    }
-
-                    Ok(query_results)
-                }
-            }
-            e => Err(worker::Error::from(format!(
-                "Error: {} ({:?})",
-                e, request_init.body
-            ))),
-        }
+        super::connection::json_to_query_result(response_json, stmts_count)
+            .map_err(|e| worker::Error::from(format!("Error: {} ({:?})", e, request_init.body)))
     }
 }
 
