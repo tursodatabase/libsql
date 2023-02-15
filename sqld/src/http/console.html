@@ -43,14 +43,22 @@
                 return
             }
             term.pause();
-            $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
+            $.post('/queries', JSON.stringify({ statements: [cmd] })).then(response => {
                 if (response) {
                     term.echo(json2table(response), { raw: true })
                     term.resume()
                 }
             }).catch(error => {
-                term.echo("Error: " + JSON.stringify(error, null, 2))
-                term.resume()
+                console.log("Retrying with legacy enpoint: /")
+                $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
+                    if (response) {
+                        term.echo(json2table(response), { raw: true })
+                        term.resume()
+                    }
+                }).catch(error => {
+                    term.echo("Error: " + JSON.stringify(error, null, 2))
+                    term.resume()
+                })
             });
         }, {
             greetings: 'sqld'
