@@ -1,6 +1,6 @@
 [package]
 name = "libsql-client"
-version = "0.5.5"
+version = "0.5.7"
 edition = "2021"
 license = "Apache-2.0"
 description = "HTTP-based client for libSQL and sqld"
