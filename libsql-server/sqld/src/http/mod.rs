@@ -210,13 +210,20 @@ async fn handle_request(
                 .unwrap());
         }
     }
+
     match (req.method(), req.uri().path()) {
         (&Method::POST, "/") => handle_query(req, sender).await,
+        (&Method::GET, "/version") => Ok(handle_version()),
         (&Method::GET, "/console") if enable_console => show_console().await,
         (&Method::GET, "/health") => Ok(handle_health()),
         (&Method::POST, "/load-dump") => Ok(load_dump(req, sender).await?),
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
+}
+
+fn handle_version() -> Response<Body> {
+    let version = env!("CARGO_PKG_VERSION");
+    Response::new(Body::from(version.as_bytes()))
 }
 
 async fn load_dump(
