@@ -5272,8 +5272,8 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
   nCol = pTab->nCol;
   for(j=0; j<nCol; j++){
     Select *pX;
-    if( (MASKBIT(j) & pItem->colUsed)!=0 ) continue;
-    if( MASKBIT(j)==0 ) break;
+    Bitmask m = j<BMS-1 ? MASKBIT(j) : TOPBIT;
+    if( (m & pItem->colUsed)!=0 ) continue;
     for(pX=pSub; pX; pX=pX->pPrior) {
       Expr *pY = pX->pEList->a[j].pExpr;
       if( pY->op==TK_NULL ) continue;
