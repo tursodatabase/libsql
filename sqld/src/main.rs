@@ -62,7 +62,7 @@ struct Cli {
         short,
         value_enum,
         default_value = "libsql",
-        env = "SQLD_WS_LISTEN_ADDR"
+        env = "SQLD_BACKEND"
     )]
     backend: sqld::Backend,
     // The url to connect with mWAL backend, based on mvSQLite
