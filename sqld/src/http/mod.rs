@@ -24,6 +24,7 @@ use tower_http::{compression::CompressionLayer, cors};
 
 use crate::error::Error;
 use crate::http::services::idle_shutdown::IdleShutdownLayer;
+use crate::http::services::logger::LoggerLayer;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
@@ -287,6 +288,7 @@ where
     let idle_shutdown_layer = idle_shutdown.map(|d| IdleShutdownLayer::new(d, SHUTDOWN.clone()));
     let service = ServiceBuilder::new()
         .option_layer(idle_shutdown_layer)
+        .layer(LoggerLayer)
         .layer(CompressionLayer::new())
         .layer(
             cors::CorsLayer::new()
