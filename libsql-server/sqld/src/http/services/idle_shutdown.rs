@@ -28,6 +28,8 @@ impl IdleShutdownLayer {
                     }
                 }
             }
+
+            tracing::debug!("idle shutdown loop exited");
         });
 
         Self {
