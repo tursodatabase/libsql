@@ -570,6 +570,174 @@ proc main_script {args} {
   }
 }
 
+proc main_trscript {args} {
+  set bMsvc 0
+  set nArg [llength $args]
+  if {$nArg==3} {
+    if {![is_prefix [lindex $args 0] -msvc 2]} usage
+    set bMsvc 1
+  } elseif {$nArg<2 || $nArg>3} {
+    usage
+  }
+  set config [lindex $args end-1]
+  set srcdir [lindex $args end]
+
+  set opts       [list]                         ;# OPTS value
+  set cflags     [expr {$bMsvc ? "-Zi" : "-g"}] ;# CFLAGS value
+  set makeOpts   [list]                         ;# Extra args for [make]
+  set configOpts [list]                         ;# Extra args for [configure]
+
+  if {$::tcl_platform(platform)=="windows" || $bMsvc} {
+    lappend opts -DSQLITE_OS_WIN=1
+  } else {
+    lappend opts -DSQLITE_OS_UNIX=1
+  }
+
+  # Figure out if this is a synthetic ndebug or debug configuration.
+  #
+  set bRemoveDebug 0
+  if {[string match *-ndebug $config]} {
+    set bRemoveDebug 1
+    set config [string range $config 0 end-7]
+  }
+  if {[string match *-debug $config]} {
+    lappend opts -DSQLITE_DEBUG
+    lappend opts -DSQLITE_EXTRA_IFNULLROW
+    set config [string range $config 0 end-6]
+  }
+  regexp {^(.*)-[0-9]+} $config -> config
+
+  # Ensure that the named configuration exists.
+  #
+  if {![info exists ::Configs($config)]} {
+    puts stderr "No such config: $config"
+    exit 1
+  }
+
+  # Loop through the parameters of the nominated configuration, updating
+  # $opts, $cflags, $makeOpts and $configOpts along the way. Rules are as
+  # follows:
+  #
+  #   1. If the parameter begins with a "*", discard it.
+  #
+  #   2. If $bRemoveDebug is set and the parameter is -DSQLITE_DEBUG or
+  #      -DSQLITE_DEBUG=1, discard it
+  #
+  #   3. If the parameter begins with "-D", add it to $opts.
+  #
+  #   4. If the parameter begins with "--" add it to $configOpts. Unless
+  #      this command is preparing a script for MSVC - then add an 
+  #      equivalent to $makeOpts or $opts.
+  #
+  #   5. If the parameter begins with "-" add it to $cflags. If in MSVC
+  #      mode and the parameter is an -O<integer> option, instead add
+  #      an OPTIMIZATIONS=<integer> switch to $makeOpts.
+  #
+  #   6. If none of the above apply, add the parameter to $makeOpts
+  #
+  foreach param $::Configs($config) {
+    if {[string range $param 0 0]=="*"} continue
+
+    if {$bRemoveDebug} {
+      if {$param=="-DSQLITE_DEBUG" || $param=="-DSQLITE_DEBUG=1"
+       || $param=="-DSQLITE_MEMDEBUG" || $param=="-DSQLITE_MEMDEBUG=1"
+       || $param=="--enable-debug"
+      } {
+        continue
+      }
+    }
+
+    if {[string range $param 0 1]=="-D"} {
+      lappend opts $param
+      continue
+    }
+
+    if {[string range $param 0 1]=="--"} {
+      if {$bMsvc} {
+        switch -- $param {
+          --disable-amalgamation {
+            lappend makeOpts USE_AMALGAMATION=0
+          }
+          --disable-shared {
+            lappend makeOpts USE_CRT_DLL=0 DYNAMIC_SHELL=0
+          }
+          --enable-fts5 {
+            lappend opts -DSQLITE_ENABLE_FTS5
+          } 
+          --enable-shared {
+            lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
+          }
+          --enable-session {
+            lappend opts -DSQLITE_ENABLE_PREUPDATE_HOOK
+            lappend opts -DSQLITE_ENABLE_SESSION
+          }
+          default {
+            error "Cannot translate $param for MSVC"
+          }
+        }
+      } else {
+        lappend configOpts $param
+      }
+
+      continue
+    }
+
+    if {[string range $param 0 0]=="-"} {
+      if {$bMsvc && [regexp -- {^-O(\d+)$} $param -> level]} {
+        lappend makeOpts OPTIMIZATIONS=$level
+      } else {
+        lappend cflags $param
+      }
+      continue
+    }
+
+    lappend makeOpts $param
+  }
+
+  # Some configurations specify -DHAVE_USLEEP=0. For all others, add
+  # -DHAVE_USLEEP=1.
+  #
+  if {[lsearch $opts "-DHAVE_USLEEP=0"]<0} {
+    lappend opts -DHAVE_USLEEP=1
+  }
+
+  if {$bMsvc==0} {
+    puts {set -e}
+    puts {}
+    puts {if [ "$#" -ne 1 ] ; then}
+    puts {  echo "Usage: $0 <target>" }
+    puts {  exit -1 }
+    puts {fi }
+    puts "SRCDIR=\"$srcdir\""
+    puts {}
+    puts "TCL=\"[::tcl::pkgconfig get libdir,install]\""
+
+    puts {if [ ! -f Makefile ] ; then}
+    puts "  \$SRCDIR/configure --with-tcl=\$TCL $configOpts"
+    puts {fi}
+    puts {}
+    puts {OPTS="      -DSQLITE_NO_SYNC=1"}
+    foreach o $opts { 
+      puts "OPTS=\"\$OPTS $o\"" 
+    }
+    puts {}
+    puts "CFLAGS=\"$cflags\""
+    puts {}
+    puts "make \$1 \"CFLAGS=\$CFLAGS\" \"OPTS=\$OPTS\" $makeOpts"
+  } else {
+
+    set srcdir [file nativename [file normalize $srcdir]]
+    # set srcdir [string map [list "\\" "\\\\"] $srcdir]
+
+    puts {set TARGET=%1}
+    set makecmd    "nmake /f $srcdir\\Makefile.msc TOP=\"$srcdir\" %TARGET% "
+    append makecmd "\"CFLAGS=$cflags\" \"OPTS=$opts\" $makeOpts"
+
+    puts "set TMP=%CD%"
+    puts $makecmd
+  }
+}
+
 proc main_tests {args} {
   set bNodebug 0
   set nArg [llength $args]
@@ -648,6 +816,8 @@ if {[string match ${cmd}* configurations] && $n==0} {
   main_configurations 
 } elseif {[string match ${cmd}* script]} {
   main_script {*}[lrange $argv 1 end]
+} elseif {[string match ${cmd}* trscript]} {
+  main_trscript {*}[lrange $argv 1 end]
 } elseif {[string match ${cmd}* platforms] && $n==0} {
   main_platforms
 } elseif {[string match ${cmd}* tests]} {

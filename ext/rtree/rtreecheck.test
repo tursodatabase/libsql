@@ -157,4 +157,28 @@ do_execsql_test 5.2 {
     SELECT rtreecheck('r3')=='ok'
 } 0
 
+#-------------------------------------------------------------------------
+# dbsqlfuzz 4a1399d39bf9feccbf6b290da51d3b30103a4bf6
+#
+reset_db
+do_execsql_test 6.0 {
+  PRAGMA encoding = 'utf16';
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x, y);
+}
+db close
+sqlite3 db test.db
+
+if {[permutation]=="inmemory_journal"} {
+  # This doesn't hit an SQLITE_LOCKED in this permutation as the schema
+  # has already been loaded. 
+  do_catchsql_test 6.1.inmemory_journal {
+    SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
+  } {0 0}
+} else {
+  do_catchsql_test 6.1 {
+    SELECT ( 'elvis' IN(SELECT rtreecheck('t1')) ) FROM (SELECT 1) GROUP BY 1;
+  } {1 {database table is locked}}
+}
+
 finish_test
+

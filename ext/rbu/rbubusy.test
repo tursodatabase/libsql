@@ -12,6 +12,8 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+ifcapable !rbu { finish_test ; return }
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbubusy
 
 db close

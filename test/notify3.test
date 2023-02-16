@@ -108,8 +108,8 @@ if {[presql] == ""} {
   } "
     0   0 0 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
     1   0 0 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
-    2   0 1 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
-    3   0 1 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
+    2   0 1 0   $noerr   SQLITE_OK                   SQLITE_OK
+    3   0 1 1   $noerr   SQLITE_OK                   SQLITE_OK
     4   1 0 0   $err     SQLITE_LOCKED               SQLITE_LOCKED_SHAREDCACHE
     5   1 0 1   $err     SQLITE_LOCKED_SHAREDCACHE   SQLITE_LOCKED_SHAREDCACHE
     6   1 1 0   $noerr   SQLITE_OK                   SQLITE_OK

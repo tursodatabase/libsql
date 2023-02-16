@@ -1963,13 +1963,13 @@ int main(int argc, char **argv){
         quietFlag = 0;
         verboseFlag++;
         eVerbosity++;
-        if( verboseFlag>1 ) runFlags |= SQL_TRACE;
+        if( verboseFlag>2 ) runFlags |= SQL_TRACE;
       }else
       if( (nV = numberOfVChar(z))>=1 ){
         quietFlag = 0;
         verboseFlag += nV;
         eVerbosity += nV;
-        if( verboseFlag>1 ) runFlags |= SQL_TRACE;
+        if( verboseFlag>2 ) runFlags |= SQL_TRACE;
       }else
       if( strcmp(z,"version")==0 ){
         int ii;
@@ -2114,11 +2114,11 @@ int main(int argc, char **argv){
         if( zName==0 ) continue;
         if( strcmp(zName, "oss-fuzz")==0 ){
           ossFuzzThisDb = sqlite3_column_int(pStmt,1);
-          if( verboseFlag ) printf("Config: oss-fuzz=%d\n", ossFuzzThisDb);
+          if( verboseFlag>1 ) printf("Config: oss-fuzz=%d\n", ossFuzzThisDb);
         }
         if( strcmp(zName, "limit-mem")==0 ){
           nMemThisDb = sqlite3_column_int(pStmt,1);
-          if( verboseFlag ) printf("Config: limit-mem=%d\n", nMemThisDb);
+          if( verboseFlag>1 ) printf("Config: limit-mem=%d\n", nMemThisDb);
         }
       }
       sqlite3_finalize(pStmt);
@@ -2144,14 +2144,14 @@ int main(int argc, char **argv){
             size_t kk = strlen(zLine);
             while( kk>0 && zLine[kk-1]<=' ' ) kk--;
             sqlite3_bind_text(pStmt, 1, zLine, (int)kk, SQLITE_STATIC);
-            if( verboseFlag ) printf("loading %.*s\n", (int)kk, zLine);
+            if( verboseFlag>1 ) printf("loading %.*s\n", (int)kk, zLine);
             sqlite3_step(pStmt);
             rc = sqlite3_reset(pStmt);
             if( rc ) fatalError("insert failed for %s", zLine);
           }
         }else{
           sqlite3_bind_text(pStmt, 1, argv[i], -1, SQLITE_STATIC);
-          if( verboseFlag ) printf("loading %s\n", argv[i]);
+          if( verboseFlag>1 ) printf("loading %s\n", argv[i]);
           sqlite3_step(pStmt);
           rc = sqlite3_reset(pStmt);
           if( rc ) fatalError("insert failed for %s", argv[i]);
@@ -2235,11 +2235,13 @@ int main(int argc, char **argv){
       i = (int)strlen(zDbName) - 1;
       while( i>0 && zDbName[i-1]!='/' && zDbName[i-1]!='\\' ){ i--; }
       zDbName += i;
-      sqlite3_prepare_v2(db, "SELECT msg FROM readme", -1, &pStmt, 0);
-      if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
-        printf("%s: %s\n", zDbName, sqlite3_column_text(pStmt,0));
+      if( verboseFlag ){
+        sqlite3_prepare_v2(db, "SELECT msg FROM readme", -1, &pStmt, 0);
+        if( pStmt && sqlite3_step(pStmt)==SQLITE_ROW ){
+          printf("%s: %s\n", zDbName, sqlite3_column_text(pStmt,0));
+        }
+        sqlite3_finalize(pStmt);
       }
-      sqlite3_finalize(pStmt);
     }
 
     /* Rebuild the database, if requested */
@@ -2287,7 +2289,7 @@ int main(int argc, char **argv){
     
     /* Run a test using each SQL script against each database.
     */
-    if( !verboseFlag && !quietFlag && !bSpinner && !bScript ){
+    if( verboseFlag<2 && !quietFlag && !bSpinner && !bScript ){
       printf("%s:", zDbName);
     }
     for(pSql=g.pFirstSql; pSql; pSql=pSql->pNext){
@@ -2301,7 +2303,7 @@ int main(int argc, char **argv){
           int idx = pSql->seq;
           printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
           fflush(stdout);
-        }else if( verboseFlag ){
+        }else if( verboseFlag>1 ){
           printf("%s\n", g.zTestName);
           fflush(stdout);
         }else if( !quietFlag ){
@@ -2340,7 +2342,7 @@ int main(int argc, char **argv){
           int idx = pSql->seq*g.nDb + pDb->id - 1;
           printf("\r%s: %d/%d   ", zDbName, idx, nTotal);
           fflush(stdout);
-        }else if( verboseFlag ){
+        }else if( verboseFlag>1 ){
           printf("%s\n", g.zTestName);
           fflush(stdout);
         }else if( !quietFlag ){
@@ -2442,7 +2444,7 @@ int main(int argc, char **argv){
     }else if( bSpinner ){
       int nTotal = g.nDb*g.nSql;
       printf("\r%s: %d/%d   \n", zDbName, nTotal, nTotal);
-    }else if( !quietFlag && !verboseFlag ){
+    }else if( !quietFlag && verboseFlag<2 ){
       printf(" 100%% - %d tests\n", g.nDb*g.nSql);
     }
   

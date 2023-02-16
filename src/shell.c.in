@@ -4795,6 +4795,7 @@ static const char *(azHelp[]) = {
   ".unmodule NAME ...       Unregister virtual table modules",
   "    --allexcept             Unregister everything except those named",
 #endif
+  ".version                 Show source, library and compiler versions",
   ".vfsinfo ?AUX?           Information about the top-level VFS",
   ".vfslist                 List all available VFSes",
   ".vfsname ?AUX?           Print the name of the VFS stack",
@@ -5690,10 +5691,13 @@ static int sql_trace_callback(
 /*
 ** A no-op routine that runs with the ".breakpoint" doc-command.  This is
 ** a useful spot to set a debugger breakpoint.
+**
+** This routine does not do anything practical.  The code are there simply
+** to prevent the compiler from optimizing this routine out.
 */
 static void test_breakpoint(void){
-  static int nCall = 0;
-  nCall++;
+  static unsigned int nCall = 0;
+  if( (nCall++)==0xffffffff ) printf("Many .breakpoints have run\n");
 }
 
 /*
@@ -6005,7 +6009,7 @@ static void tryToCloneSchema(
     zName = sqlite3_column_text(pQuery, 0);
     zSql = sqlite3_column_text(pQuery, 1);
     if( zName==0 || zSql==0 ) continue;
-    if( sqlite3_stricmp(zName, "sqlite_sequence")!=0 ){
+    if( sqlite3_stricmp((char*)zName, "sqlite_sequence")!=0 ){
       printf("%s... ", zName); fflush(stdout);
       sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
       if( zErrMsg ){
@@ -6036,7 +6040,7 @@ static void tryToCloneSchema(
       zName = sqlite3_column_text(pQuery, 0);
       zSql = sqlite3_column_text(pQuery, 1);
       if( zName==0 || zSql==0 ) continue;
-      if( sqlite3_stricmp(zName, "sqlite_sequence")!=0 ) continue;
+      if( sqlite3_stricmp((char*)zName, "sqlite_sequence")!=0 ) continue;
       printf("%s... ", zName); fflush(stdout);
       sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
       if( zErrMsg ){

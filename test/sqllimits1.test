@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix sqllimits1
 
 # Verify that the default per-connection limits are the same as
 # the compile-time hard limits.
@@ -347,7 +348,7 @@ do_test sqllimits1-5.14.6 {
 } {SQLITE_TOOBIG}
 ifcapable utf16 {
   do_test sqllimits1-5.14.7 {
-    catch {sqlite3_bind_text16 $::STMT 1 $::str1 $np1} res
+    catch {sqlite3_bind_text16 $::STMT 1 $::str1 [expr $np1+1]} res
     set res
   } {SQLITE_TOOBIG}
 }
@@ -922,5 +923,56 @@ do_catchsql_test sqllimits1-18.2 {
   INSERT INTO b1 VALUES(1), (2), (3), (4), (5), (6), (7), (8), (9), (10)
     UNION VALUES(11);
 } {1 {too many terms in compound SELECT}}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+ifcapable utf16 {
+  do_execsql_test 19.0 {
+    PRAGMA encoding = 'utf16';
+  }
+  set bigstr [string repeat abcdefghij 5000]
+  set bigstr16 [encoding convertto unicode $bigstr]
+
+  do_test 19.1 {
+    string length $bigstr16
+  } {100000}
+
+  do_test 19.2 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    sqlite3_bind_text16 $::stmt 1 $bigstr16 100000
+    sqlite3_step $::stmt
+    set val [sqlite3_column_int $::stmt 0]
+    sqlite3_finalize $::stmt
+    set val
+  } {50000}
+
+  sqlite3_limit db SQLITE_LIMIT_LENGTH 100000
+
+  do_test 19.3 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    sqlite3_bind_text16 $::stmt 1 $bigstr16 100000
+    sqlite3_step $::stmt
+    set val [sqlite3_column_int $::stmt 0]
+    sqlite3_finalize $::stmt
+    set val
+  } {50000}
+
+  sqlite3_limit db SQLITE_LIMIT_LENGTH 99999
+
+  do_test 19.4 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    list [catch { sqlite3_bind_text16 $::stmt 1 $bigstr16 100000 } msg] $msg
+  } {1 SQLITE_TOOBIG}
+  sqlite3_finalize $::stmt
+
+  sqlite3_limit db SQLITE_LIMIT_LENGTH 100000
+
+  do_test 19.5 {
+    set ::stmt [sqlite3_prepare db "SELECT length( ? )" -1 TAIL]
+    list [catch { sqlite3_bind_text16 $::stmt 1 $bigstr16 100002 } msg] $msg
+  } {1 SQLITE_TOOBIG}
+  sqlite3_finalize $::stmt
+}
 
 finish_test

@@ -15,6 +15,7 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set testprefix rbuvacuum4
 
 set step 1
@@ -87,6 +88,7 @@ do_execsql_test 4.2 {
   SELECT count(*) fROM x1
 } 6
 
+db cache flush
 do_rbu_vacuum_test 4.1.2 0
 
 #-------------------------------------------------------------------------
