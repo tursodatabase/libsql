@@ -9,8 +9,6 @@ use anyhow::Context as AnyhowContext;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
-use futures::stream::FuturesUnordered;
-use futures::StreamExt;
 use once_cell::sync::Lazy;
 #[cfg(feature = "mwal_backend")]
 use once_cell::sync::OnceCell;
@@ -18,7 +16,7 @@ use query::{Queries, QueryResult};
 use replication::logger::{ReplicationLogger, ReplicationLoggerHook};
 use rpc::run_rpc_server;
 use tokio::sync::Notify;
-use tokio::task::JoinHandle;
+use tokio::task::JoinSet;
 use tower::load::Constant;
 use tower::{Service, ServiceExt};
 
@@ -46,9 +44,6 @@ pub enum Backend {
 }
 
 type Result<T> = std::result::Result<T, Error>;
-/// Services handles registry.
-/// All created services must be registered here, so they can be awaited together.
-type Handles = FuturesUnordered<JoinHandle<anyhow::Result<()>>>;
 
 /// Trigger a hard database reset. This cause the database to be wiped, freshly restarted
 /// This is used for replicas that are left in an unrecoverabe state and should restart from a
@@ -89,7 +84,7 @@ pub struct Config {
     pub idle_shutdown_timeout: Option<Duration>,
 }
 
-async fn run_service<S>(service: S, config: &Config, handles: &mut Handles) -> anyhow::Result<()>
+async fn run_service<S>(service: S, config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()>
 where
     S: Service<(), Error = Error> + Sync + Send + 'static + Clone,
     S::Response: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
@@ -107,32 +102,29 @@ where
     }
 
     let factory = PgConnectionFactory::new(service.clone());
-    handles.push(tokio::spawn(server.serve(factory)));
+    join_set.spawn(server.serve(factory));
 
     if let Some(addr) = config.http_addr {
         let authorizer = http::auth::parse_auth(config.http_auth.clone())
             .context("failed to parse HTTP auth config")?;
-        let handle = tokio::spawn(http::run_http(
+        join_set.spawn(http::run_http(
             addr,
             authorizer,
             service.map_response(|s| Constant::new(s, 1)),
             config.enable_http_console,
             config.idle_shutdown_timeout,
         ));
-
-        handles.push(handle);
     }
 
     Ok(())
 }
 
 /// nukes current DB and start anew
-async fn hard_reset(config: &Config, mut handles: Handles) -> anyhow::Result<()> {
+async fn hard_reset(config: &Config, mut join_set: JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
     tracing::error!("received hard-reset command: reseting replica.");
 
     tracing::info!("Shutting down all services...");
-    handles.iter_mut().for_each(|h| h.abort());
-    while handles.next().await.is_some() {}
+    join_set.shutdown().await;
     tracing::info!("All services have been shut down.");
 
     let db_path = &config.db_path;
@@ -141,7 +133,7 @@ async fn hard_reset(config: &Config, mut handles: Handles) -> anyhow::Result<()>
     Ok(())
 }
 
-async fn start_primary(config: &Config, handles: &mut Handles, addr: &str) -> anyhow::Result<()> {
+async fn start_primary(config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>, addr: &str) -> anyhow::Result<()> {
     let (factory, handle) = WriteProxyDbFactory::new(
         addr,
         config.writer_rpc_tls,
@@ -153,15 +145,20 @@ async fn start_primary(config: &Config, handles: &mut Handles, addr: &str) -> an
     .await
     .context("failed to start WriteProxy DB")?;
 
-    handles.push(handle);
+    // the `JoinSet` does not support inserting arbitrary `JoinHandles` (and it also does not
+    // support spawning blocking tasks, so we must spawn a proxy task to add the `handle` to
+    // `join_set`
+    join_set.spawn(async move {
+        handle.await.expect("WriteProxy DB task failed")
+    });
 
     let service = DbFactoryService::new(Arc::new(factory));
-    run_service(service, config, handles).await?;
+    run_service(service, config, join_set).await?;
 
     Ok(())
 }
 
-async fn start_replica(config: &Config, handles: &mut Handles) -> anyhow::Result<()> {
+async fn start_replica(config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
     let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
@@ -173,7 +170,7 @@ async fn start_replica(config: &Config, handles: &mut Handles) -> anyhow::Result
     });
     let service = DbFactoryService::new(db_factory.clone());
     if let Some(ref addr) = config.rpc_server_addr {
-        let handle = tokio::spawn(run_rpc_server(
+        join_set.spawn(run_rpc_server(
             *addr,
             config.rpc_server_tls,
             config.rpc_server_cert.clone(),
@@ -182,11 +179,9 @@ async fn start_replica(config: &Config, handles: &mut Handles) -> anyhow::Result
             db_factory,
             logger_clone,
         ));
-
-        handles.push(handle);
     }
 
-    run_service(service, config, handles).await?;
+    run_service(service, config, join_set).await?;
 
     Ok(())
 }
@@ -231,11 +226,11 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         if !config.db_path.exists() {
             std::fs::create_dir_all(&config.db_path)?;
         }
-        let mut handles = FuturesUnordered::new();
+        let mut join_set = JoinSet::new();
 
         match config.writer_rpc_addr {
-            Some(ref addr) => start_primary(&config, &mut handles, addr).await?,
-            None => start_replica(&config, &mut handles).await?,
+            Some(ref addr) => start_primary(&config, &mut join_set, addr).await?,
+            None => start_replica(&config, &mut join_set).await?,
         }
 
         let reset = HARD_RESET.clone();
@@ -243,13 +238,13 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         loop {
             tokio::select! {
                 _ = reset.notified() => {
-                    hard_reset(&config, handles).await?;
+                    hard_reset(&config, join_set).await?;
                     break;
                 },
                 _ = shutdown.notified() => {
                     return Ok(())
                 }
-                Some(res) = handles.next() => {
+                Some(res) = join_set.join_next() => {
                     res??;
                 },
                 else => return Ok(()),
