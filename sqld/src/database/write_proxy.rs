@@ -92,10 +92,7 @@ impl WriteProxyDbFactory {
 #[async_trait::async_trait]
 impl DbFactory for WriteProxyDbFactory {
     async fn create(&self) -> Result<Arc<dyn Database>> {
-        let db = WriteProxyDatabase::new(
-            self.write_proxy.clone(),
-            self.db_path.clone(),
-        )?;
+        let db = WriteProxyDatabase::new(self.write_proxy.clone(), self.db_path.clone())?;
         Ok(Arc::new(db))
     }
 }
