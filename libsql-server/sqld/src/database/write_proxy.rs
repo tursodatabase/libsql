@@ -1,5 +1,5 @@
-use std::future::{ready, Ready};
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
 use crossbeam::channel::TryRecvError;
@@ -89,16 +89,11 @@ impl WriteProxyDbFactory {
     }
 }
 
+#[async_trait::async_trait]
 impl DbFactory for WriteProxyDbFactory {
-    type Future = Ready<Result<Self::Db>>;
-
-    type Db = WriteProxyDatabase;
-
-    fn create(&self) -> Self::Future {
-        ready(WriteProxyDatabase::new(
-            self.write_proxy.clone(),
-            self.db_path.clone(),
-        ))
+    async fn create(&self) -> Result<Arc<dyn Database>> {
+        let db = WriteProxyDatabase::new(self.write_proxy.clone(), self.db_path.clone())?;
+        Ok(Arc::new(db))
     }
 }
 
