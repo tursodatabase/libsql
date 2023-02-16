@@ -42,7 +42,9 @@ impl StmtKind {
                 | Stmt::CreateTable { .. }
                 | Stmt::Update { .. }
                 | Stmt::Delete { .. }
-                | Stmt::DropTable { .. },
+                | Stmt::DropTable { .. }
+                | Stmt::AlterTable { .. }
+                | Stmt::CreateIndex { .. },
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
             _ => None,
