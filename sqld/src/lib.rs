@@ -12,13 +12,12 @@ use database::write_proxy::WriteProxyDbFactory;
 use once_cell::sync::Lazy;
 #[cfg(feature = "mwal_backend")]
 use once_cell::sync::OnceCell;
-use query::{Queries, QueryResult};
 use replication::logger::{ReplicationLogger, ReplicationLoggerHook};
 use rpc::run_rpc_server;
 use tokio::sync::Notify;
 use tokio::task::JoinSet;
 use tower::load::Constant;
-use tower::{Service, ServiceExt};
+use tower::ServiceExt;
 
 use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
@@ -84,13 +83,7 @@ pub struct Config {
     pub idle_shutdown_timeout: Option<Duration>,
 }
 
-async fn run_service<S>(service: S, config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()>
-where
-    S: Service<(), Error = Error> + Sync + Send + 'static + Clone,
-    S::Response: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
-    S::Future: Send,
-    <S::Response as Service<Queries>>::Future: Send,
-{
+async fn run_service(service: DbFactoryService, config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
     let mut server = Server::new();
 
     if let Some(addr) = config.tcp_addr {
