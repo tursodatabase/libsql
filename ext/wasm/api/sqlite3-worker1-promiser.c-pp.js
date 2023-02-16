@@ -238,6 +238,9 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
 }/*sqlite3Worker1Promiser()*/;
 self.sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
+//#if target=es6-bundler-friendly
+    return new Worker("sqlite3-worker1.js");
+//#else
     let theJs = "sqlite3-worker1.js";
     if(this.currentScript){
       const src = this.currentScript.src.split('/');
@@ -252,6 +255,7 @@ self.sqlite3Worker1Promiser.defaultConfig = {
       }
     }
     return new Worker(theJs + self.location.search);
+//#endif
   }.bind({
     currentScript: self?.document?.currentScript
   }),

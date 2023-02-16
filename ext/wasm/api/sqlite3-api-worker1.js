@@ -1,4 +1,4 @@
-/*
+/**
   2022-07-22
 
   The author disclaims copyright to this source code.  In place of a
@@ -10,12 +10,12 @@
 
   ***********************************************************************
 
-  This file implements the initializer for the sqlite3 "Worker API
-  #1", a very basic DB access API intended to be scripted from a main
-  window thread via Worker-style messages. Because of limitations in
-  that type of communication, this API is minimalistic and only
-  capable of serving relatively basic DB requests (e.g. it cannot
-  process nested query loops concurrently).
+  This file implements the initializer for SQLite's "Worker API #1", a
+  very basic DB access API intended to be scripted from a main window
+  thread via Worker-style messages. Because of limitations in that
+  type of communication, this API is minimalistic and only capable of
+  serving relatively basic DB requests (e.g. it cannot process nested
+  query loops concurrently).
 
   This file requires that the core C-style sqlite3 API and OO API #1
   have been loaded.

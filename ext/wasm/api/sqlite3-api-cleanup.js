@@ -51,11 +51,6 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
     delete self.sqlite3ApiConfig;
   }
 
-  if(self.location && +self.location.port > 1024){
-    console.warn("Installing sqlite3 bits as global S for local dev/test purposes.");
-    self.S = sqlite3;
-  }
-
   Module.sqlite3 = sqlite3 /* Needed for customized sqlite3InitModule() to be able to
                               pass the sqlite3 object off to the client. */;
 }else{

@@ -46,11 +46,11 @@ do_faultsim_test 2 -prep {
 } -body {
   execsql { 
     CREATE VIRTUAL TABLE t1 USING sqlite_dbpage();
-    INSERT INTO t1 DEFAULT VALUES;
+    UPDATE t1 SET data=zeroblob(1024) WHERE pgno=1 AND schema='aux';
   }
 } -test {
   execsql { PRAGMA journal_mode = off }
-  faultsim_test_result {1 {no such schema}}  {1 {SQL logic error}}
+  faultsim_test_result {0 {}} {1 {no such schema}}  {1 {SQL logic error}} {1 {unable to open a temporary database file for storing temporary tables}}
 }
 
 reset_db

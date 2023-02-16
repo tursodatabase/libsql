@@ -183,7 +183,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         checkSqlite3Rc(
           pDb, capi.sqlite3_exec(pDb, postInitSql, 0, 0, 0)
         );
-      }      
+      }
     }catch(e){
       this.close();
       throw e;
@@ -421,6 +421,10 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           break;
         default:
           toss3("Invalid returnValue value:",opt.returnValue);
+    }
+    if(!opt.callback && !opt.returnValue && undefined!==opt.rowMode){
+      if(!opt.resultRows) opt.resultRows = [];
+      out.returnVal = ()=>opt.resultRows;
     }
     if(opt.callback || opt.resultRows){
       switch((undefined===opt.rowMode)
@@ -770,8 +774,11 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - `returnValue`: is a string specifying what this function
        should return:
 
-         A) The default value is `"this"`, meaning that the
-            DB object itself should be returned.
+         A) The default value is (usually) `"this"`, meaning that the
+            DB object itself should be returned. The exceptions is if
+            the caller passes neither of `callback` nor `returnValue`
+            but does pass an explicit `rowMode` then the default
+            `returnValue` is `"resultRows"`, described below.
 
          B) `"resultRows"` means to return the value of the
             `resultRows` option. If `resultRows` is not set, this

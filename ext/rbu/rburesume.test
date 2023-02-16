@@ -9,11 +9,14 @@
 #
 #***********************************************************************
 #
+# TESTRUNNER: slow
+#
 # This file contains tests for resumption of RBU operations in the
 # case where the previous RBU process crashed.
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rburesume
 
 forcedelete test.db-shm test.db-oal

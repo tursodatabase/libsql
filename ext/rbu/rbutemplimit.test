@@ -9,13 +9,13 @@
 #
 #***********************************************************************
 #
+# TESTRUNNER: slow
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbutemplimit
 
 db close
-sqlite3_shutdown
-sqlite3_config_uri 1
 
 proc setup_databases {} {
   forcedelete test.db2

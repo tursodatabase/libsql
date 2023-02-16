@@ -883,6 +883,17 @@ int sqlite3_vtab_nochange(sqlite3_context *p){
 }
 
 /*
+** The destructor function for a ValueList object.  This needs to be
+** a separate function, unknowable to the application, to ensure that
+** calls to sqlite3_vtab_in_first()/sqlite3_vtab_in_next() that are not
+** preceeded by activation of IN processing via sqlite3_vtab_int() do not
+** try to access a fake ValueList object inserted by a hostile extension.
+*/
+void sqlite3VdbeValueListFree(void *pToDelete){
+  sqlite3_free(pToDelete);
+}
+
+/*
 ** Implementation of sqlite3_vtab_in_first() (if bNext==0) and
 ** sqlite3_vtab_in_next() (if bNext!=0).
 */
@@ -896,8 +907,15 @@ static int valueFromValueList(
 
   *ppOut = 0;
   if( pVal==0 ) return SQLITE_MISUSE;
-  pRhs = (ValueList*)sqlite3_value_pointer(pVal, "ValueList");
-  if( pRhs==0 ) return SQLITE_MISUSE;
+  if( (pVal->flags & MEM_Dyn)==0 || pVal->xDel!=sqlite3VdbeValueListFree ){
+    return SQLITE_ERROR;
+  }else{
+    assert( (pVal->flags&(MEM_TypeMask|MEM_Term|MEM_Subtype)) ==
+                 (MEM_Null|MEM_Term|MEM_Subtype) );
+    assert( pVal->eSubtype=='p' );
+    assert( pVal->u.zPType!=0 && strcmp(pVal->u.zPType,"ValueList")==0 );
+    pRhs = (ValueList*)pVal->z;
+  }
   if( bNext ){
     rc = sqlite3BtreeNext(pRhs->pCsr, 0);
   }else{

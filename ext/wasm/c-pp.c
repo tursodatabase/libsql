@@ -51,10 +51,10 @@
 **
 ** Design note: this code makes use of sqlite3. Though not _strictly_
 ** needed in order to implement it, this tool was specifically created
-** for potential use with the sqlite3 project's own JavaScript code,
-** so there's no reason not to make use of it to do some of the heavy
-** lifting. It does not require any cutting-edge sqlite3 features and
-** should be usable with any version which supports `WITHOUT ROWID`.
+** for use with the sqlite3 project's own JavaScript code, so there's
+** no reason not to make use of it to do some of the heavy lifting. It
+** does not require any cutting-edge sqlite3 features and should be
+** usable with any version which supports `WITHOUT ROWID`.
 **
 ** Author(s):
 **
@@ -603,18 +603,9 @@ void g_stderr(char const *zFmt, ...){
   va_end(va);
 }
 
-#if 0
-void cmpp_t_outf(CmppTokenizer * t, char const *zFmt, ...){
-  if(!CT_skip(t)){
-    va_list va;
-    va_start(va, zFmt);
-    vfprintf(g.out.pFile, zFmt, va);
-    va_end(va);
-  }
-}
-#endif
-
 void cmpp_t_out(CmppTokenizer * t, void const *z, unsigned int n){
+  g_debug(3,("CT_skipLevel() ?= %d\n",CT_skipLevel(t)));
+  g_debug(3,("CT_skip() ?= %d\n",CT_skip(t)));
   if(!CT_skip(t)){
     if(1!=fwrite(z, n, 1, g.out.pFile)){
       int const err = errno;
@@ -631,18 +622,28 @@ void CmppLevel_push(CmppTokenizer * const t){
           g.zDelim, CmppLevel_Max);
   }
   pPrev = &CT_level(t);
+  g_debug(3,("push from tokenizer level=%u flags=%04x\n", t->level.ndx, pPrev->flags));
   p = &t->level.stack[++t->level.ndx];
   *p = CmppLevel_empty;
   p->token = t->token;
   p->flags = (CmppLevel_F_INHERIT_MASK & pPrev->flags);
   if(CLvl_skip(pPrev)) p->flags |= CmppLevel_F_ELIDE;
+  g_debug(3,("push to tokenizer level=%u flags=%04x\n", t->level.ndx, p->flags));
 }
 
 void CmppLevel_pop(CmppTokenizer * const t){
   if(!t->level.ndx){
     fatal("Internal error: CmppLevel_pop() at the top of the stack");
   }
+  g_debug(3,("pop from tokenizer level=%u, flags=%04x skipLevel?=%d\n", t->level.ndx,
+             t->level.stack[t->level.ndx].flags, CT_skipLevel(t)));
+  g_debug(3,("CT_skipLevel() ?= %d\n",CT_skipLevel(t)));
+  g_debug(3,("CT_skip() ?= %d\n",CT_skip(t)));
   t->level.stack[t->level.ndx--] = CmppLevel_empty;
+  g_debug(3,("pop to tokenizer level=%u, flags=%04x\n", t->level.ndx,
+             t->level.stack[t->level.ndx].flags));
+  g_debug(3,("CT_skipLevel() ?= %d\n",CT_skipLevel(t)));
+  g_debug(3,("CT_skip() ?= %d\n",CT_skip(t)));
 }
 
 CmppLevel * CmppLevel_get(CmppTokenizer * const t){
@@ -776,7 +777,7 @@ int db_define_has(const char * zName){
     assert(SQLITE_DONE==rc);
     rc = 0;
   }
-  g_debug(1,("define has [%s] = %d\n",zName, rc));
+  g_debug(1,("defined [%s] ?= %d\n",zName, rc));
   sqlite3_clear_bindings(g.stmt.defHas);
   sqlite3_reset(g.stmt.defHas);
   return rc;
@@ -1220,10 +1221,11 @@ static void cmpp_kwd_if(CmppKeyword const * pKw, CmppTokenizer *t){
   if(TT_IfNot==pKw->ttype || TT_ElifNot==pKw->ttype) buul = !buul;
   if(buul){
     CT_pstate(t) = tmpState = TS_IfPassed;
-    CT_skipLevel(t) = 0;    
+    CT_skipLevel(t) = 0;
   }else{
     CT_pstate(t) = TS_If /* also for TT_IfNot, TT_Elif, TT_ElifNot */;
     CT_skipLevel(t) = 1;
+    g_debug(3,("setting CT_skipLevel = 1 @ level %d\n", t->level.ndx));
   }
   if(TT_If==pKw->ttype || TT_IfNot==pKw->ttype){
     unsigned const lvlIf = t->level.ndx;
@@ -1234,10 +1236,13 @@ static void cmpp_kwd_if(CmppKeyword const * pKw, CmppTokenizer *t){
         assert(TT_EndIf == t->token.ttype);
         break;
       }
+#if 0
       if(TS_IfPassed==tmpState){
         tmpState = TS_Start;
         t->level.stack[lvlIf].flags |= CmppLevel_F_ELIDE;
+        g_debug(1,("Setting ELIDE for TS_IfPassed @ lv %d (lvlIf=%d)\n", t->level.ndx, lvlIf));
       }
+#endif
     }
     if(lvlIf <= t->level.ndx){
       cmpp_kwd__err_prefix(pKw, t, NULL);

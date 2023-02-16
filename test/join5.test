@@ -287,6 +287,8 @@ do_eqp_test 7.2 {
 
 do_execsql_test 7.3 {
   CREATE TABLE t3(x);
+  INSERT INTO t3(x) VALUES(1);
+  CREATE INDEX t3x ON t3(x);
 
   CREATE TABLE t4(x, y, z);
   CREATE INDEX t4xy ON t4(x, y);
@@ -296,6 +298,8 @@ do_execsql_test 7.3 {
   INSERT INTO t4 SELECT i/10, i, i FROM s;
 
   ANALYZE;
+  UPDATE sqlite_stat1 SET stat='1000000 10 1' WHERE idx='t3x';
+  ANALYZE sqlite_schema;
 }
 
 do_eqp_test 7.4 {

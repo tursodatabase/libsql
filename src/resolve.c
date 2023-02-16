@@ -203,6 +203,32 @@ static void extendFJMatch(
 }
 
 /*
+** Return TRUE (non-zero) if zTab is a valid name for the schema table pTab.
+*/
+static SQLITE_NOINLINE int isValidSchemaTableName(
+  const char *zTab,         /* Name as it appears in the SQL */
+  Table *pTab,              /* The schema table we are trying to match */
+  Schema *pSchema           /* non-NULL if a database qualifier is present */
+){
+  const char *zLegacy;
+  assert( pTab!=0 );
+  assert( pTab->tnum==1 );
+  if( sqlite3StrNICmp(zTab, "sqlite_", 7)!=0 ) return 0;
+  zLegacy = pTab->zName;
+  if( strcmp(zLegacy+7, &LEGACY_TEMP_SCHEMA_TABLE[7])==0 ){
+    if( sqlite3StrICmp(zTab+7, &PREFERRED_TEMP_SCHEMA_TABLE[7])==0 ){
+      return 1;
+    }
+    if( pSchema==0 ) return 0;
+    if( sqlite3StrICmp(zTab+7, &LEGACY_SCHEMA_TABLE[7])==0 ) return 1;
+    if( sqlite3StrICmp(zTab+7, &PREFERRED_SCHEMA_TABLE[7])==0 ) return 1;
+  }else{
+    if( sqlite3StrICmp(zTab+7, &PREFERRED_SCHEMA_TABLE[7])==0 ) return 1;
+  }
+  return 0;
+}
+
+/*
 ** Given the name of a column of the form X.Y.Z or Y.Z or just Z, look up
 ** that name in the set of source tables in pSrcList and make the pExpr 
 ** expression node refer back to that source column.  The following changes
@@ -355,15 +381,17 @@ static int lookupName(
         }
         assert( zDb==0 || zTab!=0 );
         if( zTab ){
-          const char *zTabName;
           if( zDb ){
             if( pTab->pSchema!=pSchema ) continue;
             if( pSchema==0 && strcmp(zDb,"*")!=0 ) continue;
           }
-          zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;
-          assert( zTabName!=0 );
-          if( sqlite3StrICmp(zTabName, zTab)!=0 ){
-            continue;
+          if( pItem->zAlias!=0 ){
+            if( sqlite3StrICmp(zTab, pItem->zAlias)!=0 ){
+              continue;
+            }
+          }else if( sqlite3StrICmp(zTab, pTab->zName)!=0 ){
+            if( pTab->tnum!=1 ) continue;
+            if( !isValidSchemaTableName(zTab, pTab, pSchema) ) continue;
           }
           assert( ExprUseYTab(pExpr) );
           if( IN_RENAME_OBJECT && pItem->zAlias ){

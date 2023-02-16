@@ -41,10 +41,10 @@ SQLITE_API int sqlite3_carray_bind(
 #define CARRAY_INT64     1    /* Data is 64-bit signed integers */
 #define CARRAY_DOUBLE    2    /* Data is doubles */
 #define CARRAY_TEXT      3    /* Data is char* */
+#define CARRAY_BLOB      4    /* Data is struct iovec */
 
 #ifdef __cplusplus
 }  /* end of the 'extern "C"' block */
 #endif
 
 #endif /* ifndef _CARRAY_H */
-
