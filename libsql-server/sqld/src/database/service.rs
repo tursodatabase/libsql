@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::task::Poll;
 
-use futures::Future;
 use futures::future::BoxFuture;
+use futures::Future;
 use tower::Service;
 
 use super::Database;

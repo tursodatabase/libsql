@@ -83,7 +83,11 @@ pub struct Config {
     pub idle_shutdown_timeout: Option<Duration>,
 }
 
-async fn run_service(service: DbFactoryService, config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
+async fn run_service(
+    service: DbFactoryService,
+    config: &Config,
+    join_set: &mut JoinSet<anyhow::Result<()>>,
+) -> anyhow::Result<()> {
     let mut server = Server::new();
 
     if let Some(addr) = config.tcp_addr {
@@ -113,7 +117,10 @@ async fn run_service(service: DbFactoryService, config: &Config, join_set: &mut 
 }
 
 /// nukes current DB and start anew
-async fn hard_reset(config: &Config, mut join_set: JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
+async fn hard_reset(
+    config: &Config,
+    mut join_set: JoinSet<anyhow::Result<()>>,
+) -> anyhow::Result<()> {
     tracing::error!("received hard-reset command: reseting replica.");
 
     tracing::info!("Shutting down all services...");
@@ -126,7 +133,11 @@ async fn hard_reset(config: &Config, mut join_set: JoinSet<anyhow::Result<()>>) 
     Ok(())
 }
 
-async fn start_primary(config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>, addr: &str) -> anyhow::Result<()> {
+async fn start_primary(
+    config: &Config,
+    join_set: &mut JoinSet<anyhow::Result<()>>,
+    addr: &str,
+) -> anyhow::Result<()> {
     let (factory, handle) = WriteProxyDbFactory::new(
         addr,
         config.writer_rpc_tls,
@@ -141,9 +152,7 @@ async fn start_primary(config: &Config, join_set: &mut JoinSet<anyhow::Result<()
     // the `JoinSet` does not support inserting arbitrary `JoinHandles` (and it also does not
     // support spawning blocking tasks, so we must spawn a proxy task to add the `handle` to
     // `join_set`
-    join_set.spawn(async move {
-        handle.await.expect("WriteProxy DB task failed")
-    });
+    join_set.spawn(async move { handle.await.expect("WriteProxy DB task failed") });
 
     let service = DbFactoryService::new(Arc::new(factory));
     run_service(service, config, join_set).await?;
@@ -151,7 +160,10 @@ async fn start_primary(config: &Config, join_set: &mut JoinSet<anyhow::Result<()
     Ok(())
 }
 
-async fn start_replica(config: &Config, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
+async fn start_replica(
+    config: &Config,
+    join_set: &mut JoinSet<anyhow::Result<()>>,
+) -> anyhow::Result<()> {
     let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
