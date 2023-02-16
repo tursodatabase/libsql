@@ -1,10 +1,8 @@
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::pin::Pin;
 use std::sync::Arc;
 #[cfg(feature = "mwal_backend")]
 use std::sync::Mutex;
-use std::task::{Context, Poll};
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
@@ -12,7 +10,7 @@ use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
 use futures::stream::FuturesUnordered;
-use futures::{Future, StreamExt};
+use futures::StreamExt;
 use once_cell::sync::Lazy;
 #[cfg(feature = "mwal_backend")]
 use once_cell::sync::OnceCell;
@@ -141,30 +139,6 @@ async fn hard_reset(config: &Config, mut handles: Handles) -> anyhow::Result<()>
     tokio::fs::remove_dir_all(db_path).await?;
 
     Ok(())
-}
-
-pin_project_lite::pin_project! {
-    struct FutOrNever<F> {
-        #[pin]
-        inner: Option<F>,
-    }
-}
-
-impl<T> From<Option<T>> for FutOrNever<T> {
-    fn from(inner: Option<T>) -> Self {
-        Self { inner }
-    }
-}
-
-impl<F: Future> Future for FutOrNever<F> {
-    type Output = F::Output;
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        match self.project().inner.as_pin_mut() {
-            Some(fut) => fut.poll(cx),
-            None => Poll::Pending,
-        }
-    }
 }
 
 async fn start_primary(config: &Config, handles: &mut Handles, addr: &str) -> anyhow::Result<()> {
