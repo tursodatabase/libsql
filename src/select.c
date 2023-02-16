@@ -5249,17 +5249,20 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
   Table *pTab;       /* The table that describes the subquery */
   int j;             /* Column number */
   int nChng = 0;     /* Number of columns converted to NULL */
+  Bitmask colUsed;   /* Columns that may not be NULLed out */
 
   assert( pItem!=0 );
-  assert( pItem->pTab!=0 );
-  pTab = pItem->pTab;
-  if( pTab->tabFlags & TF_Ephemeral ){
+  if( pItem->fg.isCorrelated || pItem->fg.isCte ){
     return 0;
   }
+  assert( pItem->pTab!=0 );
+  pTab = pItem->pTab;
   assert( pItem->pSelect!=0 );
   pSub = pItem->pSelect;
   assert( pSub->pEList->nExpr==pTab->nCol );
-  if( pSub->selFlags & SF_Distinct ){
+  if( (pSub->selFlags & (SF_Distinct|SF_Aggregate))!=0 ){
+    testcase( pSub->selFlags & SF_Distinct );
+    testcase( pSub->selFlags & SF_Aggregate );
     return 0;
   }
   for(pX=pSub; pX; pX=pX->pPrior){
@@ -5274,11 +5277,22 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
       return 0;
     }
   }
+ colUsed = pItem->colUsed;
+  if( pSub->pOrderBy ){
+    ExprList *pList = pSub->pOrderBy;
+    for(j=0; j<pList->nExpr; j++){
+      u16 iCol = pList->a[j].u.x.iOrderByCol;
+      if( iCol>0 ){
+        iCol--;
+        colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
+      }
+    }
+  }
   nCol = pTab->nCol;
   for(j=0; j<nCol; j++){
     Select *pX;
     Bitmask m = j<BMS-1 ? MASKBIT(j) : TOPBIT;
-    if( (m & pItem->colUsed)!=0 ) continue;
+    if( (m & colUsed)!=0 ) continue;
     for(pX=pSub; pX; pX=pX->pPrior) {
       Expr *pY = pX->pEList->a[j].pExpr;
       if( pY->op==TK_NULL ) continue;
@@ -7392,7 +7406,9 @@ int sqlite3Select(
     /* Convert unused result columns of the subquery into simple NULL
     ** expressions, to avoid unneeded searching and computation.
     */
-    if( disableUnusedSubqueryResultColumns(pItem) ){
+    if( OptimizationEnabled(db, SQLITE_NullUnusedCols)
+     && disableUnusedSubqueryResultColumns(pItem)
+    ){
 #if TREETRACE_ENABLED
       if( sqlite3TreeTrace & 0x4000 ){
         TREETRACE(0x4000,pParse,p,
