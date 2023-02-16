@@ -13,20 +13,15 @@ use crate::rpc::replication_log::ReplicationLogService;
 pub mod proxy;
 pub mod replication_log;
 
-pub async fn run_rpc_server<F>(
+pub async fn run_rpc_server(
     addr: SocketAddr,
     tls: bool,
     cert_path: Option<PathBuf>,
     key_path: Option<PathBuf>,
     ca_cert_path: Option<PathBuf>,
-    factory: F,
+    factory: Arc<dyn DbFactory>,
     logger: Arc<ReplicationLogger>,
-) -> anyhow::Result<()>
-where
-    F: DbFactory + 'static,
-    F::Db: Sync + Send + Clone,
-    F::Future: Sync,
-{
+) -> anyhow::Result<()> {
     let proxy_service = ProxyService::new(factory);
     let logger_service = ReplicationLogService::new(logger);
 

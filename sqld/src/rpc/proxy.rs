@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::str::FromStr;
+use std::sync::Arc;
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
@@ -141,13 +142,13 @@ pub mod rpc {
     }
 }
 
-pub struct ProxyService<F: DbFactory> {
-    clients: RwLock<HashMap<Uuid, F::Db>>,
-    factory: F,
+pub struct ProxyService {
+    clients: RwLock<HashMap<Uuid, Arc<dyn Database>>>,
+    factory: Arc<dyn DbFactory>,
 }
 
-impl<F: DbFactory> ProxyService<F> {
-    pub fn new(factory: F) -> Self {
+impl ProxyService {
+    pub fn new(factory: Arc<dyn DbFactory>) -> Self {
         Self {
             clients: Default::default(),
             factory,
@@ -156,12 +157,7 @@ impl<F: DbFactory> ProxyService<F> {
 }
 
 #[tonic::async_trait]
-impl<F> Proxy for ProxyService<F>
-where
-    F: DbFactory,
-    F::Db: Send + Sync + Clone,
-    F::Future: Send + Sync,
-{
+impl Proxy for ProxyService {
     async fn execute(
         &self,
         req: tonic::Request<Queries>,

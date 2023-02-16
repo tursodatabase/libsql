@@ -1,86 +1,79 @@
-use std::pin::Pin;
 use std::sync::Arc;
 use std::task::Poll;
 
 use futures::Future;
+use futures::future::BoxFuture;
 use tower::Service;
 
 use super::Database;
 use crate::error::Error;
 use crate::query::{Queries, QueryResult};
-pub trait DbFactory: Send + Sync + 'static {
-    type Future: Future<Output = Result<Self::Db, Error>> + Send;
-    type Db: Database + Send + Sync;
 
-    fn create(&self) -> Self::Future;
+#[async_trait::async_trait]
+pub trait DbFactory: Send + Sync {
+    async fn create(&self) -> Result<Arc<dyn Database>, Error>;
 }
 
+#[async_trait::async_trait]
 impl<F, DB, Fut> DbFactory for F
 where
     F: Fn() -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = Result<DB, Error>> + Sync + Send,
-    DB: Database + Sync + Send,
+    Fut: Future<Output = Result<DB, Error>> + Send,
+    DB: Database + Sync + Send + 'static,
 {
-    type Db = DB;
-    type Future = Fut;
-
-    fn create(&self) -> Self::Future {
-        (self)()
+    async fn create(&self) -> Result<Arc<dyn Database>, Error> {
+        let db = (self)().await?;
+        Ok(Arc::new(db))
     }
 }
 
 #[derive(Clone)]
-pub struct DbFactoryService<F> {
-    factory: F,
+pub struct DbFactoryService {
+    factory: Arc<dyn DbFactory>,
 }
 
-impl<F> DbFactoryService<F> {
-    pub fn new(factory: F) -> Self {
+impl DbFactoryService {
+    pub fn new(factory: Arc<dyn DbFactory>) -> Self {
         Self { factory }
     }
 }
 
-impl<F> Service<()> for DbFactoryService<F>
-where
-    F: DbFactory,
-    F::Future: 'static + Send + Sync,
-{
-    type Response = DbService<F::Db>;
+impl Service<()> for DbFactoryService {
+    type Response = DbService;
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send + Sync>>;
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<Result<(), Error>> {
         Ok(()).into()
     }
 
     fn call(&mut self, _: ()) -> Self::Future {
-        let fut = self.factory.create();
-
+        let factory = self.factory.clone();
         Box::pin(async move {
-            let db = Arc::new(fut.await?);
+            let db = factory.create().await?;
             Ok(DbService { db })
         })
     }
 }
 
-pub struct DbService<DB> {
-    db: Arc<DB>,
+pub struct DbService {
+    db: Arc<dyn Database>,
 }
 
-impl<DB> Drop for DbService<DB> {
+impl Drop for DbService {
     fn drop(&mut self) {
         tracing::trace!("connection closed");
     }
 }
 
-impl<DB: Database + 'static + Send + Sync> Service<Queries> for DbService<DB> {
+impl Service<Queries> for DbService {
     type Response = Vec<QueryResult>;
     type Error = Error;
-    type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
+    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
     fn poll_ready(&mut self, _cx: &mut std::task::Context<'_>) -> Poll<Result<(), Self::Error>> {
         // need to implement backpressure: one req at a time.
-        Ok(()).into()
+        Poll::Ready(Ok(()))
     }
 
     fn call(&mut self, queries: Queries) -> Self::Future {

@@ -95,7 +95,7 @@ async fn run_service<S>(service: S, config: &Config, handles: &mut Handles) -> a
 where
     S: Service<(), Error = Error> + Sync + Send + 'static + Clone,
     S::Response: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
-    S::Future: Send + Sync,
+    S::Future: Send,
     <S::Response as Service<Queries>>::Future: Send,
 {
     let mut server = Server::new();
@@ -181,7 +181,7 @@ async fn start_primary(config: &Config, handles: &mut Handles, addr: &str) -> an
 
     handles.push(handle);
 
-    let service = DbFactoryService::new(factory);
+    let service = DbFactoryService::new(Arc::new(factory));
     run_service(service, config, handles).await?;
 
     Ok(())
@@ -192,11 +192,11 @@ async fn start_replica(config: &Config, handles: &mut Handles) -> anyhow::Result
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
     let enable_bottomless = config.enable_bottomless_replication;
-    let db_factory = move || {
+    let db_factory = Arc::new(move || {
         let db_path = path_clone.clone();
         let hook = ReplicationLoggerHook::new(logger.clone());
         async move { LibSqlDb::new(db_path, hook, enable_bottomless) }
-    };
+    });
     let service = DbFactoryService::new(db_factory.clone());
     if let Some(ref addr) = config.rpc_server_addr {
         let handle = tokio::spawn(run_rpc_server(
