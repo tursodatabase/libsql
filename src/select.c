@@ -5253,10 +5253,15 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
   assert( pItem!=0 );
   assert( pItem->pTab!=0 );
   pTab = pItem->pTab;
-  if( pTab->tabFlags & TF_Ephemeral ) return 0;
+  if( pTab->tabFlags & TF_Ephemeral ){
+    return 0;
+  }
   assert( pItem->pSelect!=0 );
   pSub = pItem->pSelect;
   assert( pSub->pEList->nExpr==pTab->nCol );
+  if( pSub->selFlags & SF_Distinct ){
+    return 0;
+  }
   for(pX=pSub; pX; pX=pX->pPrior){
     if( pX->pPrior && pX->op!=TK_ALL ){
       /* This optimization does not work for compound subqueries that
