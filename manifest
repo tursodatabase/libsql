@@ -1,5 +1,5 @@
-C Provide\san\soptimization-disable\smask\sfor\sthis\soptimization.\s\sDo\snot\sdo\sthe\noptimization\sif\sthe\ssubquery\sis\san\saggregate\sor\sis\sdistinct,\sbut\sallow\sit\sto\nbe\san\sephemeral\ssubquery.\s\sDo\snot\somit\scolumns\sthat\sare\sused\sin\sthe\sORDER\sBY\nof\sthe\ssubquery.
-D 2023-02-16T18:04:49.549
+C A\sfew\ssimple\stest\scases\sfor\sthe\somit-unused-subquery-column\soptimization.
+D 2023-02-16T19:41:39.707
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1462,6 +1462,7 @@ F test/selectD.test 6d1909b49970bf92f45ce657505befcef5fc7cbc13544e18103a316d3218
 F test/selectE.test a8730ca330fcf40ace158f134f4fe0eb00c7edbf
 F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/selectG.test 089f7d3d7e6db91566f00b036cb353107a2cca6220eb1cb264085a836dae8840
+F test/selectH.test a1fed72a83a68ed858db6fcf6d8ddccc4a368645c0ef48dc3ac331d41efe34de
 F test/session.test 78fa2365e93d3663a6e933f86e7afc395adf18be
 F test/sessionfuzz-data1.db 1f8d5def831f19b1c74571037f0d53a588ea49a6c4ca2a028fc0c27ef896dbcb
 F test/sessionfuzz.c 5eef09af01eeff6f20250ae4c0112c2e576e4d2f2026cc9a49dc5be6886fa6ee
@@ -2045,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc148503db8ef180bce984328da7e84959afadd6a9613c2d03bc1eafeb95dfad
-R 90e53b2f21c8456ed0ad4d26c75d661a
+P 6b1a1f374d1372f11f5420d99645b218867100bf070bd3a8885bf5f00c189dff
+R 1e3c678f9fbc9f1a9649605265913343
 U drh
-Z aa83be3d588d7cfee260c5a1a1ab587b
+Z 7d95cef9a9f7a288c86a6fe2f6e032bb
 # Remove this line to create a well-formed Fossil manifest.
