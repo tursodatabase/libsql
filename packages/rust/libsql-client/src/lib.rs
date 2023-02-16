@@ -59,7 +59,21 @@ pub enum QueryResult {
     Success((ResultSet, Meta)),
 }
 
-pub fn parse_columns(columns: Vec<serde_json::Value>, result_idx: usize) -> Result<Vec<String>> {
+impl QueryResult {
+    /// Transforms a query result into [`anyhow::Result<ResultSet>`]
+    /// for convenient chaining with the `?` iterator.
+    pub fn into_result_set(self) -> Result<ResultSet> {
+        match self {
+            QueryResult::Success((result_set, _)) => Ok(result_set),
+            QueryResult::Error((msg, _)) => Err(anyhow!("Querying database failed: {msg}")),
+        }
+    }
+}
+
+pub(crate) fn parse_columns(
+    columns: Vec<serde_json::Value>,
+    result_idx: usize,
+) -> Result<Vec<String>> {
     let mut result = Vec::with_capacity(columns.len());
     for (idx, column) in columns.into_iter().enumerate() {
         match column {
@@ -74,7 +88,7 @@ pub fn parse_columns(columns: Vec<serde_json::Value>, result_idx: usize) -> Resu
     Ok(result)
 }
 
-pub fn parse_value(
+pub(crate) fn parse_value(
     cell: serde_json::Value,
     result_idx: usize,
     row_idx: usize,
@@ -98,7 +112,7 @@ pub fn parse_value(
     }
 }
 
-pub fn parse_rows(
+pub(crate) fn parse_rows(
     rows: Vec<serde_json::Value>,
     columns: &Vec<String>,
     result_idx: usize,
@@ -127,7 +141,7 @@ pub fn parse_rows(
     Ok(result)
 }
 
-pub fn parse_query_result(result: serde_json::Value, idx: usize) -> Result<QueryResult> {
+pub(crate) fn parse_query_result(result: serde_json::Value, idx: usize) -> Result<QueryResult> {
     match result {
         serde_json::Value::Object(obj) => {
             if let Some(err) = obj.get("error") {
