@@ -124,7 +124,7 @@ impl<T, F> Service<(T, SocketAddr)> for PgConnectionFactory<F>
 where
     T: AsyncRead + AsyncWrite + AsyncPeekable + Unpin + Send + Sync + 'static,
     F: MakeService<(), Queries, MakeError = Error> + Sync,
-    F::Future: 'static + Send + Sync,
+    F::Future: 'static + Send,
     F::Service: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
     <F::Service as Service<Queries>>::Future: Send,
 {
