@@ -1,9 +1,4 @@
-import { isNode, isDeno } from "browser-or-node";
-
-import { Driver } from "./driver/Driver";
-import { HttpDriver } from "./driver/HttpDriver";
-import { SqliteDriver } from "./driver/SqliteDriver";
-import { BrowserSqliteDriver } from "./driver/BrowserSqliteDriver";
+import { Driver } from "./driver.js";
 
 export type Config = {
     url: string;
@@ -71,19 +66,5 @@ export class Connection {
      */
     async transaction(stmts: string[] | BoundStatement[]): Promise<ResultSet[]> {
         return await this.driver.transaction(stmts);
-    }
-}
-
-export function connect(config: Config): Connection {
-    const rawUrl = config.url;
-    const url = new URL(rawUrl);
-    if (url.protocol == "http:" || url.protocol == "https:") {
-        return new Connection(new HttpDriver(url));
-    } else {
-        if (isNode || isDeno) {
-            return new Connection(new SqliteDriver(rawUrl));
-        } else {
-            return new Connection(new BrowserSqliteDriver(rawUrl));
-        }
     }
 }

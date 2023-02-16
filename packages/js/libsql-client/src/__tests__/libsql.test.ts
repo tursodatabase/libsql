@@ -1,4 +1,4 @@
-import { connect, ResultSet } from "../";
+import { connect, ResultSet } from "../../";
 
 const SQLITE_URL = "file::memory:";
 
