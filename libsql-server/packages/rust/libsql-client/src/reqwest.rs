@@ -76,7 +76,7 @@ impl Connection {
         let user = match std::env::var("LIBSQL_CLIENT_USER") {
             Ok(user) => user,
             Err(_) => {
-                return Ok(Connection::connect_from_url(&url::Url::parse(&url)?)?);
+                return Connection::connect_from_url(&url::Url::parse(&url)?);
             }
         };
         let pass = std::env::var("LIBSQL_CLIENT_PASS").map_err(|_| {
