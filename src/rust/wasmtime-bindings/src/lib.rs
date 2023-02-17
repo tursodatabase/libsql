@@ -211,8 +211,8 @@ pub fn libsql_run_wasm(
                 };
                 let text_len = unsafe { ((*api).libsql_value_bytes)(arg) } as usize;
 
-                if mem_offset + text_len + 1 > mem_size {
-                    let delta = (text_len + 1 + 65535) / 65536;
+                if mem_offset + text_len + 2 > mem_size {
+                    let delta = (text_len + 2 + 65535) / 65536;
                     match memory.grow(&mut store, delta as u64) {
                         Ok(_) => (),
                         Err(e) => {
