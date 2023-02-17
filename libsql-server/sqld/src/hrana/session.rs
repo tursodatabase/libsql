@@ -5,7 +5,8 @@ use anyhow::{Result, Context as _, bail};
 
 use crate::database::Database;
 use crate::error::Error;
-use crate::query::{Query, QueryResult};
+use crate::query::{Query, QueryResponse, Params, Value};
+use crate::query_analysis::Statement;
 use super::{Server, proto};
 
 pub struct Session {
@@ -22,6 +23,20 @@ pub enum ResponseError {
     StreamNotFound { stream_id: u32 },
     #[error("Stream {stream_id} already exists")]
     StreamExists { stream_id: u32 },
+    #[error("SQL string does not contain any statement")]
+    SqlNoStmt,
+    #[error("SQL string contains more than one statement")]
+    SqlManyStmts,
+    #[error("Arguments do not match SQL parameters: {source}")]
+    InvalidArgs { source: anyhow::Error },
+    #[error("Transaction timed out")]
+    TransactionTimeout,
+    #[error("Server cannot handle additional transactions")]
+    TransactionBusy,
+    #[error("SQLite error: {source}: {message:?}")]
+    SqliteError { source: rusqlite::ffi::Error, message: Option<String> },
+    #[error("SQL input error: {source}: {message:?} at offset {offset}")]
+    SqlInputError { source: rusqlite::ffi::Error, message: String, offset: i32 },
 }
 
 pub async fn handle_hello(_jwt: Option<String>) -> Result<Session> {
@@ -67,25 +82,95 @@ pub(super) async fn handle_request(
 }
 
 async fn execute_stmt(stream: &mut Stream, stmt: proto::Stmt) -> Result<proto::StmtResult> {
-    let query = stmt_to_query(stmt)?;
-    let query_result = match stream.db.execute_one(query).await {
-        Ok((query_result, _)) => query_result,
-        Err(error) => match response_error_from_error(error) {
+    let query = proto_stmt_to_query(stmt)?;
+    let (query_result, _) = stream.db.execute_one(query).await?;
+    match query_result {
+        Ok(query_response) =>
+            Ok(proto_stmt_result_from_query_response(query_response)),
+        Err(error) => match proto_response_error_from_error(error) {
             Ok(resp_error) => bail!(resp_error),
             Err(error) => bail!(error),
         },
+    }
+}
+
+fn proto_stmt_to_query(proto_stmt: proto::Stmt) -> Result<Query> {
+    let mut stmt_iter = Statement::parse(&proto_stmt.sql);
+    let stmt = match stmt_iter.next() {
+        Some(stmt_res) => stmt_res?,
+        None => bail!(ResponseError::SqlNoStmt),
     };
-    stmt_result_from_query(query_result)
+
+    if stmt_iter.next().is_some() {
+        bail!(ResponseError::SqlManyStmts)
+    }
+
+    let params = proto_stmt.args.into_iter().map(proto_value_to_value).collect();
+    let params = Params::Positional(params);
+    Ok(Query { stmt, params })
 }
 
-fn stmt_to_query(_stmt: proto::Stmt) -> Result<Query> {
-    bail!("not implemented")
+fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto::StmtResult {
+    let QueryResponse::ResultSet(result_set) = query_response;
+    let proto_cols = result_set.columns.into_iter()
+        .map(|col| proto::Col { name: Some(col.name) })
+        .collect();
+    let proto_rows = result_set.rows.into_iter()
+        .map(|row| {
+            row.values.into_iter()
+                .map(proto_value_from_value)
+                .collect()
+        })
+        .collect();
+    proto::StmtResult {
+        cols: proto_cols,
+        rows: proto_rows,
+        affected_row_count: result_set.affected_row_count,
+    }
 }
 
-fn stmt_result_from_query(_result: QueryResult) -> Result<proto::StmtResult> {
-    bail!("not implemented")
+fn proto_value_to_value(proto_value: proto::Value) -> Value {
+    match proto_value {
+        proto::Value::Null => Value::Null,
+        proto::Value::Integer { value } => Value::Integer(value),
+        proto::Value::Float { value } => Value::Real(value),
+        proto::Value::Text { value } => Value::Text(value),
+        proto::Value::Blob { value } => Value::Blob(value),
+    }
 }
 
-fn response_error_from_error(error: Error) -> Result<ResponseError, Error> {
-    Err(error)
+fn proto_value_from_value(value: Value) -> proto::Value {
+    match value {
+        Value::Null => proto::Value::Null,
+        Value::Integer(value) => proto::Value::Integer { value },
+        Value::Real(value) => proto::Value::Float { value },
+        Value::Text(value) => proto::Value::Text { value },
+        Value::Blob(value) => proto::Value::Blob { value },
+    }
+}
+
+fn proto_response_error_from_error(error: Error) -> Result<ResponseError, Error> {
+    Ok(match error {
+        Error::LibSqlInvalidQueryParams(source) =>
+            ResponseError::InvalidArgs { source },
+        Error::LibSqlTxTimeout(_) =>
+            ResponseError::TransactionTimeout,
+        Error::LibSqlTxBusy =>
+            ResponseError::TransactionBusy,
+        Error::RusqliteError(rusqlite_error) => match rusqlite_error {
+            rusqlite::Error::SqliteFailure(sqlite_error, message) =>
+                ResponseError::SqliteError {
+                    source: sqlite_error,
+                    message,
+                },
+            rusqlite::Error::SqlInputError { error: sqlite_error, msg: message, offset, .. } =>
+                ResponseError::SqlInputError {
+                    source: sqlite_error,
+                    message,
+                    offset: offset as i32,
+                },
+            rusqlite_error => return Err(Error::RusqliteError(rusqlite_error)),
+        },
+        error => return Err(error),
+    })
 }

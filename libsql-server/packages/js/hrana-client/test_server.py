@@ -64,7 +64,11 @@ async def handle_socket(websocket):
             if stmt["want_rows"]:
                 rows.append([value_from_sqlite(val) for val in row])
 
-        return {"cols": cols, "rows": rows, "affected_row_count": cursor.rowcount}
+        if cursor.rowcount >= 0:
+            affected_row_count = cursor.rowcount
+        else:
+            affected_row_count = 0
+        return {"cols": cols, "rows": rows, "affected_row_count": affected_row_count}
 
     def value_to_sqlite(value):
         if value["type"] == "null":
