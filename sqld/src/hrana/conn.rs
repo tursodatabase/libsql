@@ -68,8 +68,7 @@ async fn handshake(socket: tokio::net::TcpStream) -> Result<WebSocket> {
                 .to_str()
                 .unwrap_or("")
                 .split(',')
-                .find(|p| p.trim() == "hrana1")
-                .is_some();
+                .any(|p| p.trim() == "hrana1");
             if has_hrana1 {
                 resp_parts.headers.append(
                     "sec-websocket-protocol",
@@ -157,7 +156,7 @@ async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> 
                 send_msg(conn, &proto::ServerMsg::HelloError { error }).await?;
                 Ok(false)
             }
-            Err(err) => return Err(err),
+            Err(err) => Err(err),
         },
     }
 }
@@ -190,7 +189,7 @@ async fn handle_request_msg(
                 send_msg(conn, &proto::ServerMsg::ResponseError { request_id, error }).await?;
                 Ok(true)
             }
-            Err(err) => return Err(err),
+            Err(err) => Err(err),
         },
     }
 }
