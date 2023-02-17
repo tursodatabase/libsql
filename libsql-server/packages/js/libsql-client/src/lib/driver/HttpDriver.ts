@@ -1,4 +1,4 @@
-import fetch from "cross-fetch";
+import { fetch as crossFetch } from "cross-fetch";
 import { ResultSet, BoundStatement, Params } from "../libsql-js";
 import { Driver } from "./Driver";
 
@@ -25,11 +25,13 @@ export class HttpDriver implements Driver {
         }
 
         const statements = buildStatements(["BEGIN", ...stmts, "COMMIT"]);
-
-        const response = await fetch(this.url, {
+        const reqParams = {
             method: "POST",
             body: JSON.stringify(statements)
-        });
+        };
+
+        const compatibleFetch = typeof fetch === "function" ? fetch : crossFetch;
+        const response = await compatibleFetch(this.url, reqParams);
         if (response.status === 200) {
             const results = await response.json();
             validateTopLevelResults(results, statements.statements.length);
