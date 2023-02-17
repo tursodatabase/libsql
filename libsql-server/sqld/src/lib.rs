@@ -117,7 +117,9 @@ async fn run_service(
 
     if let Some(addr) = config.hrana_addr {
         join_set.spawn(async move {
-            hrana::serve(service.factory, addr).await.context("Hrana server failed")
+            hrana::serve(service.factory, addr)
+                .await
+                .context("Hrana server failed")
         });
     }
 

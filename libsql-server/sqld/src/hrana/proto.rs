@@ -1,35 +1,22 @@
 //! Messages in the Hrana protocol.
 //!
 //! Please consult the Hrana specification in the `docs/` directory for more information.
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMsg {
-    Hello {
-        jwt: Option<String>,
-    },
-    Request {
-        request_id: i32,
-        request: Request,
-    },
+    Hello { jwt: Option<String> },
+    Request { request_id: i32, request: Request },
 }
 
 #[derive(Serialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ServerMsg {
     HelloOk {},
-    HelloError {
-        error: Error,
-    },
-    ResponseOk {
-        request_id: i32,
-        response: Response,
-    },
-    ResponseError {
-        request_id: i32,
-        error: Error,
-    },
+    HelloError { error: Error },
+    ResponseOk { request_id: i32, response: Response },
+    ResponseError { request_id: i32, error: Error },
 }
 
 #[derive(Deserialize, Debug)]
@@ -47,7 +34,6 @@ pub enum Response {
     CloseStream(CloseStreamResp),
     Execute(ExecuteResp),
 }
-
 
 #[derive(Deserialize, Debug)]
 pub struct OpenStreamReq {
@@ -99,10 +85,20 @@ pub struct Col {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Value {
     Null,
-    Integer { #[serde(with = "i64_as_str")] value: i64 },
-    Float { value: f64 },
-    Text { value: String },
-    Blob { #[serde(with = "bytes_as_base64", rename = "base64")] value: Vec<u8> },
+    Integer {
+        #[serde(with = "i64_as_str")]
+        value: i64,
+    },
+    Float {
+        value: f64,
+    },
+    Text {
+        value: String,
+    },
+    Blob {
+        #[serde(with = "bytes_as_base64", rename = "base64")]
+        value: Vec<u8>,
+    },
 }
 
 #[derive(Serialize, Debug)]
@@ -111,8 +107,8 @@ pub struct Error {
 }
 
 mod i64_as_str {
-    use serde::{ser, de};
-    use serde::{Serialize as _, de::Error as _};
+    use serde::{de, ser};
+    use serde::{de::Error as _, Serialize as _};
 
     pub fn serialize<S: ser::Serializer>(value: &i64, ser: S) -> Result<S::Ok, S::Error> {
         value.to_string().serialize(ser)
@@ -121,15 +117,18 @@ mod i64_as_str {
     pub fn deserialize<'de, D: de::Deserializer<'de>>(de: D) -> Result<i64, D::Error> {
         let str_value = <&'de str as de::Deserialize>::deserialize(de)?;
         str_value.parse().map_err(|_| {
-            D::Error::invalid_value(de::Unexpected::Str(str_value), &"decimal integer as a string")
+            D::Error::invalid_value(
+                de::Unexpected::Str(str_value),
+                &"decimal integer as a string",
+            )
         })
     }
 }
 
 mod bytes_as_base64 {
-    use base64::{Engine as _, engine::general_purpose::STANDARD_NO_PAD};
-    use serde::{ser, de};
-    use serde::{Serialize as _, de::Error as _};
+    use base64::{engine::general_purpose::STANDARD_NO_PAD, Engine as _};
+    use serde::{de, ser};
+    use serde::{de::Error as _, Serialize as _};
 
     pub fn serialize<S: ser::Serializer>(value: &Vec<u8>, ser: S) -> Result<S::Ok, S::Error> {
         STANDARD_NO_PAD.encode(value).serialize(ser)
@@ -137,8 +136,13 @@ mod bytes_as_base64 {
 
     pub fn deserialize<'de, D: de::Deserializer<'de>>(de: D) -> Result<Vec<u8>, D::Error> {
         let str_value = <&'de str as de::Deserialize>::deserialize(de)?;
-        STANDARD_NO_PAD.decode(str_value.trim_end_matches('=')).map_err(|_| {
-            D::Error::invalid_value(de::Unexpected::Str(str_value), &"binary data encoded as base64")
-        })
+        STANDARD_NO_PAD
+            .decode(str_value.trim_end_matches('='))
+            .map_err(|_| {
+                D::Error::invalid_value(
+                    de::Unexpected::Str(str_value),
+                    &"binary data encoded as base64",
+                )
+            })
     }
 }

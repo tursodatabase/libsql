@@ -1,4 +1,4 @@
-use crate::query::{Query, Queries, QueryResult};
+use crate::query::{Queries, Query, QueryResult};
 use crate::query_analysis::State;
 use crate::Result;
 
