@@ -6812,6 +6812,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList!=0 ) return 0;                 /* Must be count(*) */
   if( p->pSrc->nSrc!=1 ) return 0;                  /* One table in FROM  */
+  if( ExprHasProperty(pExpr, EP_WinFunc) ) return 0;/* Not a window function */
   pSub = p->pSrc->a[0].pSelect;
   if( pSub==0 ) return 0;                           /* The FROM is a subquery */
   if( pSub->pPrior==0 ) return 0;                   /* Must be a compound ry */
