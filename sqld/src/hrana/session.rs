@@ -98,7 +98,7 @@ async fn execute_stmt(stream: &mut Stream, stmt: proto::Stmt) -> Result<proto::S
     let (query_result, _) = stream.db.execute_one(query).await?;
     match query_result {
         Ok(query_response) => Ok(proto_stmt_result_from_query_response(query_response)),
-        Err(error) => match proto_response_error_from_error(error) {
+        Err(error) => match ResponseError::try_from(error) {
             Ok(resp_error) => bail!(resp_error),
             Err(error) => bail!(error),
         },
@@ -137,7 +137,7 @@ fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto
     let proto_rows = result_set
         .rows
         .into_iter()
-        .map(|row| row.values.into_iter().map(proto_value_from_value).collect())
+        .map(|row| row.values.into_iter().map(proto::Value::from).collect())
         .collect();
     proto::StmtResult {
         cols: proto_cols,
@@ -190,4 +190,23 @@ fn proto_response_error_from_error(error: Error) -> Result<ResponseError, Error>
         },
         error => return Err(error),
     })
+}
+
+impl From<proto::Value> for Value {
+    fn from(proto_value: proto::Value) -> Value {
+        proto_value_to_value(proto_value)
+    }
+}
+
+impl From<Value> for proto::Value {
+    fn from(value: Value) -> proto::Value {
+        proto_value_from_value(value)
+    }
+}
+
+impl TryFrom<Error> for ResponseError {
+    type Error = Error;
+    fn try_from(error: Error) -> Result<ResponseError, Error> {
+        proto_response_error_from_error(error)
+    }
 }
