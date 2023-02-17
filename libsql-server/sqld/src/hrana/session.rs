@@ -184,7 +184,7 @@ fn proto_response_error_from_error(error: Error) -> Result<ResponseError, Error>
             } => ResponseError::SqlInputError {
                 source: sqlite_error,
                 message,
-                offset: offset as i32,
+                offset,
             },
             rusqlite_error => return Err(Error::RusqliteError(rusqlite_error)),
         },
