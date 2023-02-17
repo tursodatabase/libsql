@@ -147,6 +147,7 @@ impl From<rusqlite::types::Value> for Value {
 pub struct ResultSet {
     pub columns: Vec<Column>,
     pub rows: Vec<Row>,
+    pub affected_row_count: u64,
 }
 
 impl ResultSet {
@@ -154,6 +155,7 @@ impl ResultSet {
         Self {
             columns: Vec::new(),
             rows: Vec::new(),
+            affected_row_count: 0,
         }
     }
 }
@@ -183,7 +185,7 @@ fn encode_row(row: Row) -> PgWireResult<DataRow> {
 }
 
 impl From<ResultSet> for Response {
-    fn from(ResultSet { columns, rows }: ResultSet) -> Self {
+    fn from(ResultSet { columns, rows, .. }: ResultSet) -> Self {
         let field_infos = columns.into_iter().map(Into::into).collect();
         let data_row_stream = stream::iter(rows.into_iter().map(encode_row));
         Response::Query(text_query_response(field_infos, data_row_stream))
@@ -209,13 +211,14 @@ impl From<ResultSet> for ResultRows {
         ResultRows {
             column_descriptions,
             rows,
+            affected_row_count: other.affected_row_count,
         }
     }
 }
 
 impl From<ResultRows> for ResultSet {
-    fn from(rows: ResultRows) -> Self {
-        let columns = rows
+    fn from(result_rows: ResultRows) -> Self {
+        let columns = result_rows
             .column_descriptions
             .into_iter()
             .map(|c| Column {
@@ -224,7 +227,7 @@ impl From<ResultRows> for ResultSet {
             })
             .collect();
 
-        let rows = rows
+        let rows = result_rows
             .rows
             .into_iter()
             .map(|row| {
@@ -236,7 +239,7 @@ impl From<ResultRows> for ResultSet {
             .map(|values| Row { values })
             .collect();
 
-        Self { columns, rows }
+        Self { columns, rows, affected_row_count: result_rows.affected_row_count }
     }
 }
 

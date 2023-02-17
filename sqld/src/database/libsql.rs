@@ -48,7 +48,6 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) 
         .map_err(Error::LibSqlInvalidQueryParams)?;
 
     let mut qresult = prepared.raw_query();
-
     while let Some(row) = qresult.next()? {
         let mut values = vec![];
         for (i, _) in columns.iter().enumerate() {
@@ -57,7 +56,14 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) 
         rows.push(Row { values });
     }
 
-    Ok(QueryResponse::ResultSet(ResultSet { columns, rows }))
+    // sqlite3_changes() is only modified for INSERT, UPDATE or DELETE; it is not reset for SELECT,
+    // but we want to return 0 in that case.
+    let affected_row_count = match stmt.is_iud {
+        true => conn.changes(),
+        false => 0,
+    };
+
+    Ok(QueryResponse::ResultSet(ResultSet { columns, rows, affected_row_count }))
 }
 
 struct ConnectionState {

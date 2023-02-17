@@ -39,6 +39,7 @@ test("Stream.query()", withClient(async (c) => {
     const s = c.openStream();
 
     await s.execute("BEGIN");
+    await s.execute("DROP TABLE IF EXISTS t");
     await s.execute("CREATE TABLE t (one, two, three, four)");
     await s.execute(
         `INSERT INTO t VALUES
@@ -48,7 +49,7 @@ test("Stream.query()", withClient(async (c) => {
 
     const rows = await s.query("SELECT * FROM t ORDER BY one");
     expect(rows.length).toStrictEqual(2);
-    expect(rows.rowsAffected).toStrictEqual(-1);
+    expect(rows.rowsAffected).toStrictEqual(0);
 
     const row0 = rows[0];
     expect(row0[0]).toStrictEqual(1);
@@ -67,19 +68,31 @@ test("Stream.execute()", withClient(async (c) => {
     const s = c.openStream();
 
     let res = await s.execute("BEGIN");
-    expect(res.rowsAffected).toStrictEqual(-1);
+    expect(res.rowsAffected).toStrictEqual(0);
+
+    res = await s.execute("DROP TABLE IF EXISTS t");
+    expect(res.rowsAffected).toStrictEqual(0);
 
     res = await s.execute("CREATE TABLE t (num, word)");
-    expect(res.rowsAffected).toStrictEqual(-1);
+    expect(res.rowsAffected).toStrictEqual(0);
 
     res = await s.execute("INSERT INTO t VALUES (1, 'one'), (2, 'two'), (3, 'three')");
     expect(res.rowsAffected).toStrictEqual(3);
+
+    const rows = await s.query("SELECT * FROM t ORDER BY num");
+    expect(rows.length).toStrictEqual(3);
+    expect(rows.rowsAffected).toStrictEqual(0);
 
     res = await s.execute("DELETE FROM t WHERE num >= 2");
     expect(res.rowsAffected).toStrictEqual(2);
 
     res = await s.execute("UPDATE t SET num = 4, word = 'four'");
     expect(res.rowsAffected).toStrictEqual(1);
+
+    res = await s.execute("DROP TABLE t");
+    expect(res.rowsAffected).toStrictEqual(0);
+
+    await s.execute("COMMIT");
 }));
 
 test("Stream.executeRaw()", withClient(async (c) => {
@@ -107,6 +120,7 @@ test("Stream.executeRaw()", withClient(async (c) => {
 
 test("concurrent streams", withClient(async (c) => {
     const s1 = c.openStream();
+    await s1.execute("DROP TABLE IF EXISTS t");
     await s1.execute("CREATE TABLE t (number)");
     await s1.execute("INSERT INTO t VALUES (1)");
 

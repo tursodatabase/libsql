@@ -46,6 +46,7 @@ message Error {
 message ResultRows {
     repeated Column   column_descriptions = 1;
     repeated Row      rows = 2;
+    uint64            affected_row_count = 3;
 }
 
 message Value {
