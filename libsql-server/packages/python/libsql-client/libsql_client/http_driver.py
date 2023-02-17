@@ -1,26 +1,59 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple, TypeAlias
+from urllib.parse import urljoin
 import aiohttp
 import base64
 import json
 
 from .driver import _Driver, _RawStmt
-from .errors import ClientResponseError, ClientHttpError
+from .errors import ClientResponseError, ClientHttpError, ClientError
 from .result import ResultSet, Row, Value
+
+Version: TypeAlias = Tuple[int, int, int]
 
 class _HttpDriver(_Driver):
     _session: aiohttp.ClientSession
     _url: str
+    _version: Optional[Version]
 
     def __init__(self, url: str) -> None:
         self._session = aiohttp.ClientSession()
         self._url = url
+        self._version = None
+
+    async def _get_version(self) -> Version:
+        url = urljoin(self._url, "version")
+        async with await self._session.get(url) as resp:
+            if not resp.ok:
+                if resp.status == 404:
+                    # pre /version, return dummy 0.0.0 version
+                    return 0, 0, 0
+                resp_body = await resp.read()
+                try:
+                    message = json.loads(resp_body).get("error")
+                except ValueError:
+                    message = None
+                raise ClientHttpError(resp.status, message)
+            version_string = await resp.text()
+            parts = [int(x) for x in version_string.split(".")]
+            if len(parts) != 3:
+                raise ClientError("server returned invalid version number")
+            return tuple(parts)
+
+    async def _get_or_load_cached_version(self) -> Version:
+        if self._version is None:
+            self._version = await self._get_version()
+        return self._version
+
+
 
     async def batch(self, stmts: List[_RawStmt]) -> List[ResultSet]:
         req_body = {
             "statements": [_encode_stmt(stmt) for stmt in stmts],
         }
 
-        async with await self._session.post(self._url, json=req_body) as resp:
+        version = await self._get_or_load_cached_version()
+        url = self._queries_url(version)
+        async with await self._session.post(url, json=req_body) as resp:
             if not resp.ok:
                 resp_body = await resp.read()
                 try:
@@ -39,6 +72,10 @@ class _HttpDriver(_Driver):
 
     async def close(self) -> None:
         await self._session.close()
+
+    # TODO: use version to dispatch query route
+    def _queries_url(self, _version: Version):
+        return urljoin(self._url, "")
 
 def _encode_stmt(stmt: _RawStmt) -> Any:
     params_json: Any
