@@ -46,12 +46,20 @@ struct Stream {
 /// will correspond to a variant of this enum.
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseError {
+    #[error("Authentication using JWT is required")]
+    AuthJwtRequired,
+    #[error("Authentication using JWT failed")]
+    AuthJwtRejected {
+        source: jsonwebtoken::errors::Error,
+    },
+
     #[error("Stream {stream_id} not found")]
     StreamNotFound { stream_id: i32 },
     #[error("Stream {stream_id} already exists")]
     StreamExists { stream_id: i32 },
     #[error("Stream {stream_id} has failed to open")]
     StreamNotOpen { stream_id: i32 },
+
     #[error("SQL string does not contain any statement")]
     SqlNoStmt,
     #[error("SQL string contains more than one statement")]
@@ -75,11 +83,25 @@ pub enum ResponseError {
     },
 }
 
-pub async fn handle_hello(_jwt: Option<String>) -> Result<Session> {
-    // TODO: handle the jwt
+pub(super) async fn handle_hello(server: &Server, jwt: Option<String>) -> Result<Session> {
+    if let Some(jwt_key) = server.jwt_key.as_ref() {
+        let Some(jwt) = jwt else {
+            bail!(ResponseError::AuthJwtRequired)
+        };
+        validate_jwt(jwt_key, &jwt)?;
+    }
+
     Ok(Session {
         streams: HashMap::new(),
     })
+}
+
+fn validate_jwt(jwt_key: &jsonwebtoken::DecodingKey, jwt: &str) -> Result<()> {
+    let validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
+    match jsonwebtoken::decode::<serde_json::Value>(jwt, jwt_key, &validation) {
+        Ok(_token) => Ok(()),
+        Err(error) => bail!(ResponseError::AuthJwtRejected { source: error }),
+    }
 }
 
 pub(super) async fn handle_request(

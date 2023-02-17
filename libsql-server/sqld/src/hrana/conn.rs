@@ -176,7 +176,7 @@ async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> 
         return Ok(false);
     }
 
-    match session::handle_hello(jwt).await {
+    match session::handle_hello(&conn.server, jwt).await {
         Ok(session) => {
             conn.session = Some(session);
             send_msg(conn, &proto::ServerMsg::HelloOk {}).await?;
