@@ -17,6 +17,7 @@ bytes = { version = "1.2.1", features = ["serde"] }
 clap = { version = "4.0.23", features = [ "derive", "env"] }
 crc = "3.0.0"
 crossbeam = "0.8.2"
+enclose = "1.1"
 fallible-iterator = "0.2.0"
 futures = "0.3.25"
 hex = "0.4.3"

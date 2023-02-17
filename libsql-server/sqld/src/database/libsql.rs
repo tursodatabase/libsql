@@ -249,7 +249,7 @@ impl LibSqlDb {
 
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute(&self, queries: Queries) -> Result<(Vec<QueryResult>, State)> {
+    async fn execute_batch(&self, queries: Queries) -> Result<(Vec<QueryResult>, State)> {
         let (resp, receiver) = oneshot::channel();
         let msg = Message { queries, resp };
         let _ = self.sender.send(msg);
