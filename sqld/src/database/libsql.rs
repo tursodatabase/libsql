@@ -63,7 +63,11 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) 
         false => 0,
     };
 
-    Ok(QueryResponse::ResultSet(ResultSet { columns, rows, affected_row_count }))
+    Ok(QueryResponse::ResultSet(ResultSet {
+        columns,
+        rows,
+        affected_row_count,
+    }))
 }
 
 struct ConnectionState {

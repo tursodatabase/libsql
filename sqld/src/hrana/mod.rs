@@ -1,8 +1,8 @@
+use crate::database::service::DbFactory;
+use anyhow::{Context as _, Result};
+use enclose::enclose;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use anyhow::{Result, Context as _};
-use enclose::enclose;
-use crate::database::service::DbFactory;
 
 mod conn;
 mod proto;
@@ -15,7 +15,8 @@ struct Server {
 pub async fn serve(db_factory: Arc<dyn DbFactory>, bind_addr: SocketAddr) -> Result<()> {
     let server = Arc::new(Server { db_factory });
 
-    let listener = tokio::net::TcpListener::bind(bind_addr).await
+    let listener = tokio::net::TcpListener::bind(bind_addr)
+        .await
         .context("Could not bind TCP listener")?;
     let local_addr = listener.local_addr()?;
     tracing::info!("Listening for Hrana connections on {}", local_addr);
@@ -33,7 +34,7 @@ pub async fn serve(db_factory: Arc<dyn DbFactory>, bind_addr: SocketAddr) -> Res
                     match conn::handle_conn(server, socket, conn_id).await {
                         Ok(_) => tracing::info!("Connection #{} was terminated", conn_id),
                         Err(err) => tracing::error!("Connection #{} failed: {:?}", conn_id, err),
-                    } 
+                    }
                 }});
 
                 conn_id += 1;

@@ -106,7 +106,8 @@ impl Statement {
         fn parse_inner(c: Cmd) -> Result<Statement> {
             let kind =
                 StmtKind::kind(&c).ok_or_else(|| anyhow::anyhow!("unsupported statement"))?;
-            let is_iud = matches!(c,
+            let is_iud = matches!(
+                c,
                 Cmd::Stmt(Stmt::Insert { .. } | Stmt::Update { .. } | Stmt::Delete { .. })
             );
 

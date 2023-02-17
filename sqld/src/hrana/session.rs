@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::{Result, Context as _, bail};
+use anyhow::{bail, Context as _, Result};
 
+use super::{proto, Server};
 use crate::database::Database;
 use crate::error::Error;
-use crate::query::{Query, QueryResponse, Params, Value};
+use crate::query::{Params, Query, QueryResponse, Value};
 use crate::query_analysis::Statement;
-use super::{Server, proto};
 
 pub struct Session {
     streams: HashMap<u32, Stream>,
@@ -34,14 +34,23 @@ pub enum ResponseError {
     #[error("Server cannot handle additional transactions")]
     TransactionBusy,
     #[error("SQLite error: {source}: {message:?}")]
-    SqliteError { source: rusqlite::ffi::Error, message: Option<String> },
+    SqliteError {
+        source: rusqlite::ffi::Error,
+        message: Option<String>,
+    },
     #[error("SQL input error: {source}: {message:?} at offset {offset}")]
-    SqlInputError { source: rusqlite::ffi::Error, message: String, offset: i32 },
+    SqlInputError {
+        source: rusqlite::ffi::Error,
+        message: String,
+        offset: i32,
+    },
 }
 
 pub async fn handle_hello(_jwt: Option<String>) -> Result<Session> {
     // TODO: handle the jwt
-    Ok(Session { streams: HashMap::new() })
+    Ok(Session {
+        streams: HashMap::new(),
+    })
 }
 
 pub(super) async fn handle_request(
@@ -57,17 +66,20 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamExists { stream_id })
             }
 
-            let db = server.db_factory.create().await
+            let db = server
+                .db_factory
+                .create()
+                .await
                 .context("Could not create a database connection")?;
             let stream = Stream { db };
             session.streams.insert(stream_id, stream);
 
             Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
-        },
+        }
         proto::Request::CloseStream(req) => {
             session.streams.remove(&req.stream_id);
             Ok(proto::Response::CloseStream(proto::CloseStreamResp {}))
-        },
+        }
         proto::Request::Execute(req) => {
             let stream_id = req.stream_id;
 
@@ -77,7 +89,7 @@ pub(super) async fn handle_request(
 
             let result = execute_stmt(stream, req.stmt).await?;
             Ok(proto::Response::Execute(proto::ExecuteResp { result }))
-        },
+        }
     }
 }
 
@@ -85,8 +97,7 @@ async fn execute_stmt(stream: &mut Stream, stmt: proto::Stmt) -> Result<proto::S
     let query = proto_stmt_to_query(stmt)?;
     let (query_result, _) = stream.db.execute_one(query).await?;
     match query_result {
-        Ok(query_response) =>
-            Ok(proto_stmt_result_from_query_response(query_response)),
+        Ok(query_response) => Ok(proto_stmt_result_from_query_response(query_response)),
         Err(error) => match proto_response_error_from_error(error) {
             Ok(resp_error) => bail!(resp_error),
             Err(error) => bail!(error),
@@ -105,22 +116,28 @@ fn proto_stmt_to_query(proto_stmt: proto::Stmt) -> Result<Query> {
         bail!(ResponseError::SqlManyStmts)
     }
 
-    let params = proto_stmt.args.into_iter().map(proto_value_to_value).collect();
+    let params = proto_stmt
+        .args
+        .into_iter()
+        .map(proto_value_to_value)
+        .collect();
     let params = Params::Positional(params);
     Ok(Query { stmt, params })
 }
 
 fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto::StmtResult {
     let QueryResponse::ResultSet(result_set) = query_response;
-    let proto_cols = result_set.columns.into_iter()
-        .map(|col| proto::Col { name: Some(col.name) })
-        .collect();
-    let proto_rows = result_set.rows.into_iter()
-        .map(|row| {
-            row.values.into_iter()
-                .map(proto_value_from_value)
-                .collect()
+    let proto_cols = result_set
+        .columns
+        .into_iter()
+        .map(|col| proto::Col {
+            name: Some(col.name),
         })
+        .collect();
+    let proto_rows = result_set
+        .rows
+        .into_iter()
+        .map(|row| row.values.into_iter().map(proto_value_from_value).collect())
         .collect();
     proto::StmtResult {
         cols: proto_cols,
@@ -151,24 +168,24 @@ fn proto_value_from_value(value: Value) -> proto::Value {
 
 fn proto_response_error_from_error(error: Error) -> Result<ResponseError, Error> {
     Ok(match error {
-        Error::LibSqlInvalidQueryParams(source) =>
-            ResponseError::InvalidArgs { source },
-        Error::LibSqlTxTimeout(_) =>
-            ResponseError::TransactionTimeout,
-        Error::LibSqlTxBusy =>
-            ResponseError::TransactionBusy,
+        Error::LibSqlInvalidQueryParams(source) => ResponseError::InvalidArgs { source },
+        Error::LibSqlTxTimeout(_) => ResponseError::TransactionTimeout,
+        Error::LibSqlTxBusy => ResponseError::TransactionBusy,
         Error::RusqliteError(rusqlite_error) => match rusqlite_error {
-            rusqlite::Error::SqliteFailure(sqlite_error, message) =>
-                ResponseError::SqliteError {
-                    source: sqlite_error,
-                    message,
-                },
-            rusqlite::Error::SqlInputError { error: sqlite_error, msg: message, offset, .. } =>
-                ResponseError::SqlInputError {
-                    source: sqlite_error,
-                    message,
-                    offset: offset as i32,
-                },
+            rusqlite::Error::SqliteFailure(sqlite_error, message) => ResponseError::SqliteError {
+                source: sqlite_error,
+                message,
+            },
+            rusqlite::Error::SqlInputError {
+                error: sqlite_error,
+                msg: message,
+                offset,
+                ..
+            } => ResponseError::SqlInputError {
+                source: sqlite_error,
+                message,
+                offset: offset as i32,
+            },
             rusqlite_error => return Err(Error::RusqliteError(rusqlite_error)),
         },
         error => return Err(error),

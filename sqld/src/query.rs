@@ -239,7 +239,11 @@ impl From<ResultRows> for ResultSet {
             .map(|values| Row { values })
             .collect();
 
-        Self { columns, rows, affected_row_count: result_rows.affected_row_count }
+        Self {
+            columns,
+            rows,
+            affected_row_count: result_rows.affected_row_count,
+        }
     }
 }
 
