@@ -18,9 +18,15 @@ struct Cli {
     /// The address and port the PostgreSQL over WebSocket server listens to.
     #[clap(long, short, env = "SQLD_WS_LISTEN_ADDR")]
     ws_listen_addr: Option<SocketAddr>,
+
     /// The address and port the Hrana server listens to.
     #[clap(long, short = 'l', env = "SQLD_HRANA_LISTEN_ADDR")]
     hrana_listen_addr: Option<SocketAddr>,
+    /// Path to a file with a JWT decoding key used to authenticate Hrana connections. If you do
+    /// not specify a key, Hrana authentication is not required. The key is either PKCS#8-encoded
+    /// Ed25519 public key, or just plain bytes of the Ed25519 public key in base64.
+    #[clap(long, env = "SQLD_HRANA_JWT_KEY_FILE")]
+    hrana_jwt_key_file: Option<PathBuf>,
 
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
     #[clap(
@@ -149,6 +155,7 @@ impl From<Cli> for Config {
             http_auth: cli.http_auth,
             enable_http_console: cli.enable_http_console,
             hrana_addr: cli.hrana_listen_addr,
+            hrana_jwt_key: cli.hrana_jwt_key_file,
             backend: cli.backend,
             writer_rpc_addr: cli.primary_grpc_url,
             writer_rpc_tls: cli.primary_grpc_tls,
