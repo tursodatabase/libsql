@@ -18,6 +18,9 @@ struct Cli {
     /// The address and port the PostgreSQL over WebSocket server listens to.
     #[clap(long, short, env = "SQLD_WS_LISTEN_ADDR")]
     ws_listen_addr: Option<SocketAddr>,
+    /// The address and port the Hrana server listens to.
+    #[clap(long, short = 'l', env = "SQLD_HRANA_LISTEN_ADDR")]
+    hrana_listen_addr: Option<SocketAddr>,
 
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
     #[clap(
@@ -145,6 +148,7 @@ impl From<Cli> for Config {
             http_addr: Some(cli.http_listen_addr),
             http_auth: cli.http_auth,
             enable_http_console: cli.enable_http_console,
+            hrana_addr: cli.hrana_listen_addr,
             backend: cli.backend,
             writer_rpc_addr: cli.primary_grpc_url,
             writer_rpc_tls: cli.primary_grpc_tls,

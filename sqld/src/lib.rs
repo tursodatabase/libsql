@@ -27,6 +27,7 @@ pub use sqld_libsql_bindings as libsql;
 
 mod database;
 mod error;
+mod hrana;
 mod http;
 mod postgres;
 mod query;
@@ -65,6 +66,7 @@ pub struct Config {
     pub http_addr: Option<SocketAddr>,
     pub http_auth: Option<String>,
     pub enable_http_console: bool,
+    pub hrana_addr: Option<SocketAddr>,
     pub backend: Backend,
     #[cfg(feature = "mwal_backend")]
     pub mwal_addr: Option<String>,
@@ -107,10 +109,16 @@ async fn run_service(
         join_set.spawn(http::run_http(
             addr,
             authorizer,
-            service.map_response(|s| Constant::new(s, 1)),
+            service.clone().map_response(|s| Constant::new(s, 1)),
             config.enable_http_console,
             config.idle_shutdown_timeout,
         ));
+    }
+
+    if let Some(addr) = config.hrana_addr {
+        join_set.spawn(async move {
+            hrana::serve(service.factory, addr).await.context("Hrana server failed")
+        });
     }
 
     Ok(())
