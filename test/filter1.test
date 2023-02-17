@@ -226,7 +226,7 @@ do_execsql_test 7.1 {
 reset_db
 do_execsql_test 8.0 {
   CREATE TABLE t0(c0 INT);
-  CREATE TABLE t1a(a INTEGER PRINARY KEY, b TEXT);
+  CREATE TABLE t1a(a INTEGER PRIMARY KEY, b TEXT);
   INSERT INTO t1a VALUES(1,'one'),(2,NULL),(3,'three');
   CREATE TABLE t1b(c INTEGER PRIMARY KEY, d TEXT);
   INSERT INTO t1b VALUES(4,'four'),(5,NULL),(6,'six');

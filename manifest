@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\sCOUNTOFVIEW\soptimization\sto\srun\sif\sthe\scount()\scontains\na\sFILTER\sclause.\s\sdbsqlfuzz\s4f8e0de6e272bbbb3e1b41cb5aea31e0b47297e3
-D 2023-02-17T18:27:48.113
+C Fix\sa\sharmless\stypo\sin\sthe\stest\scase\sadded\sby\s[29fc06465efb948f].
+D 2023-02-17T22:48:46.796
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -982,7 +982,7 @@ F test/extraquick.test cb254400bd42bfb777ff675356aabf3287978f79
 F test/fallocate.test 37a62e396a68eeede8f8d2ecf23573a80faceb630788d314d0a073d862616717
 F test/filectrl.test 6e871c2d35dead1d9a88e176e8d2ca094fec6bb3
 F test/filefmt.test f393e80c4b8d493b7a7f8f3809a8425bbf4292af1f5140f01cb1427798a2bbd4
-F test/filter1.test caa347bebbbb755b8774b6fba17d5cb6584d458c538469c8fb71f1c8d17584e3
+F test/filter1.test 590f8ba9a0cd0823b80d89ac75c5ce72276189cef9225d2436adaf1ee87f3727
 F test/filter2.tcl 44e525497ce07382915f01bd29ffd0fa49dab3adb87253b5e5103ba8f93393e8
 F test/filter2.test 485cf95d1f6d6ceee5632201ca52a71868599836f430cdee42e5f7f14666e30a
 F test/filterfault.test c08fb491d698e8df6c122c98f7db1c65ffcfcad2c1ab0e07fa8a5be1b34eaa8b
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6c8e19ab0d6e7526d4596b75a45bb6becaf3c029690f7e75c016eac803c9990
-R bcfa89eca9835e46bea960712899b9fd
+P 29fc06465efb948f98d2733bb25ffa1e0662a0189304006b3d0be9fec7dd28c5
+R 94372f0056534229866ecfff803be692
 U drh
-Z 616fd89c19968483e79b848ffb0587c2
+Z 2a6aa3073b2b727399db2402d7718edb
 # Remove this line to create a well-formed Fossil manifest.
