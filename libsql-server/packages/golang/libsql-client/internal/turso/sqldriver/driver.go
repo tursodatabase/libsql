@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"io"
+	"sort"
 
 	tursohttp "github.com/libsql/sqld/tree/main/packages/golang/libsql-client/internal/turso/http"
 )
@@ -67,8 +68,30 @@ func (c *tursoConn) Begin() (driver.Tx, error) {
 	return nil, fmt.Errorf("Begin method not implemented")
 }
 
+func convertArgs(args []driver.NamedValue) tursohttp.Params {
+	if len(args) == 0 {
+		return tursohttp.Params{}
+	}
+	sortedArgs := [](*driver.NamedValue){}
+	for idx := range args {
+		sortedArgs = append(sortedArgs, &args[idx])
+	}
+	sort.Slice(sortedArgs, func(i, j int) bool {
+		return sortedArgs[i].Ordinal < sortedArgs[j].Ordinal
+	})
+	names := [](string){}
+	values := [](any){}
+	for idx := range sortedArgs {
+		if len(sortedArgs[idx].Name) > 0 {
+			names = append(names, sortedArgs[idx].Name)
+		}
+		values = append(values, sortedArgs[idx].Value)
+	}
+	return tursohttp.Params{Names: names, Values: values}
+}
+
 func (c *tursoConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	_, err := tursohttp.CallTurso(c.url, query)
+	_, err := tursohttp.CallTurso(c.url, query, convertArgs(args))
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +99,7 @@ func (c *tursoConn) ExecContext(ctx context.Context, query string, args []driver
 }
 
 func (c *tursoConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	rs, err := tursohttp.CallTurso(c.url, query)
+	rs, err := tursohttp.CallTurso(c.url, query, convertArgs(args))
 	if err != nil {
 		return nil, err
 	}

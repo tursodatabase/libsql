@@ -10,6 +10,25 @@ import (
 	"github.com/xwb1989/sqlparser"
 )
 
+type Params struct {
+	Names  []string
+	Values []any
+}
+
+func (p *Params) MarshalJSON() ([]byte, error) {
+	if len(p.Values) == 0 {
+		return json.Marshal([]string{})
+	}
+	if len(p.Names) == 0 {
+		return json.Marshal(p.Values)
+	}
+	m := map[string]interface{}{}
+	for idx := range p.Values {
+		m["@"+p.Names[idx]] = p.Values[idx]
+	}
+	return json.Marshal(m)
+}
+
 type ResultSet struct {
 	Columns []string `json:"columns"`
 	Rows    []Row    `json:"rows"`
@@ -17,7 +36,7 @@ type ResultSet struct {
 
 type Row []interface{}
 
-func CallTurso(url string, sql string) (*ResultSet, error) {
+func CallTurso(url string, sql string, params Params) (*ResultSet, error) {
 	stmts, err := sqlparser.SplitStatementToPieces(sql)
 	if err != nil {
 		return nil, err
@@ -26,11 +45,17 @@ func CallTurso(url string, sql string) (*ResultSet, error) {
 		return nil, fmt.Errorf("wrong number of statements in SQL: %s\nexpected 1 got %d", sql, len(stmts))
 	}
 
-	rawReq := struct {
-		Statements []string `json:"statements"`
-	}{
-		Statements: stmts,
+	type Statement struct {
+		Query  string `json:"q"`
+		Params Params `json:"params"`
 	}
+
+	rawReq := struct {
+		Statements []Statement `json:"statements"`
+	}{
+		Statements: []Statement{{sql, params}},
+	}
+
 	req, err := json.Marshal(rawReq)
 	if err != nil {
 		return nil, err
