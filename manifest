@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\stypo\sin\sthe\stest\scase\sadded\sby\s[29fc06465efb948f].
-D 2023-02-17T22:48:46.796
+C Fix\sa\sharmless\sUBSAN\swarning\sin\sdebugging\scode\sof\sthe\snew\sunhex()\sfunction.
+D 2023-02-18T15:50:23.240
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -574,7 +574,7 @@ F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
 F src/expr.c 2e5e67e800c9416996df52409746a2f3c7dadf5d38b5a367ce379b239e3f40c8
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
-F src/func.c 0bf5b82df41ffa1afe2bc67c3d0d361761c56c9e1785c999e24a15ba04c28d2b
+F src/func.c 64c4cb2eebf6ddb6b4b08dc17790e7152b887f223f8caf0c0fe96da1c5a876ca
 F src/global.c e06ff8e0acd85aec13563c9ecb44fbbf38232ccf73594998fd880b92d619594b
 F src/hash.c c6af5f96a7a76d000f07c5402c48c318c2566beecdee9e78b9d9f60ce7119565
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 29fc06465efb948f98d2733bb25ffa1e0662a0189304006b3d0be9fec7dd28c5
-R 94372f0056534229866ecfff803be692
+P e0a0bf56f11f32f58705098e76c276deaf90cfa87e110032bdaad10ce9674f61
+R 3050076bb8049141f9c9c7231ab9b1dc
 U drh
-Z 2a6aa3073b2b727399db2402d7718edb
+Z 469436a8ed3c4e499e4243df4cdf92db
 # Remove this line to create a well-formed Fossil manifest.

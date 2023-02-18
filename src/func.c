@@ -1269,7 +1269,7 @@ static void unhexFunc(
   const u8 *zHex = sqlite3_value_text(argv[0]);
   int nHex = sqlite3_value_bytes(argv[0]);
 #ifdef SQLITE_DEBUG
-  const u8 *zEnd = &zHex[nHex];
+  const u8 *zEnd = zHex ? &zHex[nHex] : 0;
 #endif
   u8 *pBlob = 0;
   u8 *p = 0;
