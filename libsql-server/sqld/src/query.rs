@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::str::FromStr;
 
-use anyhow::{ensure, Context};
+use anyhow::{anyhow, ensure, Context};
 use futures::stream;
 use pgwire::api::results::{text_query_response, FieldInfo, Response, TextDataRowEncoder};
 use pgwire::api::Type as PgType;
@@ -318,11 +318,6 @@ impl Params {
     pub fn bind(&self, stmt: &mut rusqlite::Statement) -> anyhow::Result<()> {
         let param_count = stmt.parameter_count();
         ensure!(
-            param_count <= self.len(),
-            "missing parameters, expected {param_count} found {}",
-            self.len()
-        );
-        ensure!(
             param_count >= self.len(),
             "too many parameters, expected {param_count} found {}",
             self.len()
@@ -330,9 +325,11 @@ impl Params {
 
         if param_count > 0 {
             for index in 1..=param_count {
+                let mut param_name = None;
                 // get by name
                 let maybe_value = match stmt.parameter_name(index) {
                     Some(name) => {
+                        param_name = Some(name);
                         let mut chars = name.chars();
                         match chars.next() {
                             Some('?') => {
@@ -341,7 +338,9 @@ impl Params {
                                 )?;
                                 self.get_pos(pos)
                             }
-                            _ => self.get_named(name),
+                            _ => self
+                                .get_named(name)
+                                .or_else(|| self.get_named(chars.as_str())),
                         }
                     }
                     None => self.get_pos(index),
@@ -349,6 +348,10 @@ impl Params {
 
                 if let Some(value) = maybe_value {
                     stmt.raw_bind_parameter(index, value)?;
+                } else if let Some(name) = param_name {
+                    return Err(anyhow!("value for parameter {} not found", name));
+                } else {
+                    return Err(anyhow!("value for parameter {} not found", index));
                 }
             }
         }
@@ -394,6 +397,47 @@ mod test {
         params.bind(&mut stmt).unwrap();
 
         assert_eq!(stmt.expanded_sql().unwrap(), "SELECT 10 || 20");
+    }
+
+    #[test]
+    fn test_bind_params_positional_named_no_prefix() {
+        let con = rusqlite::Connection::open_in_memory().unwrap();
+        let mut stmt = con.prepare("SELECT :first || $second").unwrap();
+        let mut params = HashMap::new();
+        params.insert("first".to_owned(), Value::Integer(10));
+        params.insert("second".to_owned(), Value::Integer(20));
+        let params = Params::new_named(params);
+        params.bind(&mut stmt).unwrap();
+
+        assert_eq!(stmt.expanded_sql().unwrap(), "SELECT 10 || 20");
+    }
+
+    #[test]
+    fn test_bind_params_positional_named_conflict() {
+        let con = rusqlite::Connection::open_in_memory().unwrap();
+        let mut stmt = con.prepare("SELECT :first || $first").unwrap();
+        let mut params = HashMap::new();
+        params.insert("first".to_owned(), Value::Integer(10));
+        params.insert("$first".to_owned(), Value::Integer(20));
+        let params = Params::new_named(params);
+        params.bind(&mut stmt).unwrap();
+
+        assert_eq!(stmt.expanded_sql().unwrap(), "SELECT 10 || 20");
+    }
+
+    #[test]
+    fn test_bind_params_positional_named_repeated() {
+        let con = rusqlite::Connection::open_in_memory().unwrap();
+        let mut stmt = con
+            .prepare("SELECT :first || $second || $first || $second")
+            .unwrap();
+        let mut params = HashMap::new();
+        params.insert("first".to_owned(), Value::Integer(10));
+        params.insert("$second".to_owned(), Value::Integer(20));
+        let params = Params::new_named(params);
+        params.bind(&mut stmt).unwrap();
+
+        assert_eq!(stmt.expanded_sql().unwrap(), "SELECT 10 || 20 || 10 || 20");
     }
 
     #[test]
