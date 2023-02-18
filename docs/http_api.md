@@ -92,19 +92,25 @@ The `Query` can either be a plain query string, such as `SELECT * FROM users` or
 
 Queries with bound parameters come in two types:
 
-1. Named bound parameters, where the parameter is referred to by a name and is prefixed with a `:` or a `$`. If the query uses named parameters, then the `params` field of the query should be an object mapping parameters to their value.
+1. Named bound parameters, where the parameter is referred to by a name and is prefixed with a `:`, a `@` or a `$`. If the query uses named parameters, then the `params` field of the query should be an object mapping parameters to their value.
 
 - Example: a query with named bound parameters
 
 ```json
 {
-    "q": "SELECT * FROM users WHERE name = :name",
+    "q": "SELECT * FROM users WHERE name = :name AND age = &age AND height > @height AND address = $address",
     "params": {
         ":name": "adhoc",
+        "age" : "18",
+        "@height" : "170",
+        "$address" : "very nice place",
     }
 }
 ```
-The prefix of the parameter must be specified in the `params` field (i.e, `:name` instead of `name`), since libSQL threat the two as different parameters.
+The prefix of the parameter does not have to be specified in the `params` field (i.e, `name` instead of `:name`). If a
+param `name` is given in `params` it will be binded to `:name`, `$name` and `@name` unless `params` contain a better
+match. `:name` is a better match for `:name` than `name`.
+One named parameter can occur in a query multiple times but does not have to be repeated in `params`.
 
 2. Positional query parameters, bound by their position in the parameter list, and prefixed `?`. If the query uses positional parameters, the values should be provided as an array to the `params` field.
 
