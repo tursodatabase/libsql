@@ -4,8 +4,8 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use anyhow::{Context as _, Result};
-use futures::{FutureExt as _, SinkExt as _, StreamExt as _, ready};
 use futures::stream::FuturesUnordered;
+use futures::{ready, FutureExt as _, SinkExt as _, StreamExt as _};
 use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
 use tungstenite::http;
@@ -195,16 +195,13 @@ async fn handle_request_msg(
         return Ok(false)
     };
 
-    let response_rx = session::handle_request(
-        &conn.server,
-        session,
-        &mut conn.join_set,
-        request,
-    ).await.unwrap_or_else(|err| {
-        let (tx, rx) = oneshot::channel();
-        tx.send(Err(err)).unwrap();
-        rx
-    });
+    let response_rx = session::handle_request(&conn.server, session, &mut conn.join_set, request)
+        .await
+        .unwrap_or_else(|err| {
+            let (tx, rx) = oneshot::channel();
+            tx.send(Err(err)).unwrap();
+            rx
+        });
 
     conn.responses.push(ResponseFuture {
         request_id,
@@ -217,19 +214,16 @@ impl Future for ResponseFuture {
     type Output = Result<proto::ServerMsg>;
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
         match ready!(Pin::new(&mut self.response_rx).poll(cx)) {
-            Ok(Ok(response)) =>
-                Poll::Ready(Ok(proto::ServerMsg::ResponseOk {
-                    request_id: self.request_id,
-                    response,
-                })),
+            Ok(Ok(response)) => Poll::Ready(Ok(proto::ServerMsg::ResponseOk {
+                request_id: self.request_id,
+                response,
+            })),
             Ok(Err(err)) => match downcast_error(err) {
-                Ok(error) => 
-                    Poll::Ready(Ok(proto::ServerMsg::ResponseError {
-                        request_id: self.request_id,
-                        error,
-                    })),
-                Err(err) =>
-                    Poll::Ready(Err(err)),
+                Ok(error) => Poll::Ready(Ok(proto::ServerMsg::ResponseError {
+                    request_id: self.request_id,
+                    error,
+                })),
+                Err(err) => Poll::Ready(Err(err)),
             },
             Err(_recv_err) => {
                 // do not propagate this error, because the error that caused the receiver to drop
@@ -238,7 +232,7 @@ impl Future for ResponseFuture {
                 // this is also the reason why we need to use `Fuse` in self.response_rx
                 tracing::warn!("Response sender was dropped");
                 Poll::Pending
-            },
+            }
         }
     }
 }

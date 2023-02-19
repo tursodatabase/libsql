@@ -84,12 +84,17 @@ pub(super) async fn handle_request(
             let mut stream_hnd = stream_spawn(join_set, Stream { db: None });
 
             let db_factory = server.db_factory.clone();
-            stream_respond(&mut stream_hnd, resp_tx, move |stream| Box::pin(async move {
-                let db = db_factory.create().await
-                    .context("Could not create a database connection")?;
-                stream.db = Some(db);
-                Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
-            })).await;
+            stream_respond(&mut stream_hnd, resp_tx, move |stream| {
+                Box::pin(async move {
+                    let db = db_factory
+                        .create()
+                        .await
+                        .context("Could not create a database connection")?;
+                    stream.db = Some(db);
+                    Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
+                })
+            })
+            .await;
 
             session.streams.insert(stream_id, stream_hnd);
         }
@@ -99,9 +104,10 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
-            stream_respond(&mut stream_hnd, resp_tx, |_| Box::pin(async move {
-                Ok(proto::Response::CloseStream(proto::CloseStreamResp {}))
-            })).await;
+            stream_respond(&mut stream_hnd, resp_tx, |_| {
+                Box::pin(async move { Ok(proto::Response::CloseStream(proto::CloseStreamResp {})) })
+            })
+            .await;
         }
         proto::Request::Execute(req) => {
             let stream_id = req.stream_id;
@@ -109,13 +115,16 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
-            stream_respond(stream_hnd, resp_tx, move |stream| Box::pin(async move {
-                let Some(db) = stream.db.as_ref() else {
+            stream_respond(stream_hnd, resp_tx, move |stream| {
+                Box::pin(async move {
+                    let Some(db) = stream.db.as_ref() else {
                     bail!(ResponseError::StreamNotOpen { stream_id })
                 };
-                let result = execute_stmt(&**db, req.stmt).await?;
-                Ok(proto::Response::Execute(proto::ExecuteResp { result }))
-            })).await;
+                    let result = execute_stmt(&**db, req.stmt).await?;
+                    Ok(proto::Response::Execute(proto::ExecuteResp { result }))
+                })
+            })
+            .await;
         }
     }
     Ok(resp_rx)
@@ -141,10 +150,12 @@ async fn stream_respond<F>(
     for<'s> F: FnOnce(&'s mut Stream) -> BoxFuture<'s, Result<proto::Response>>,
     F: Send + 'static,
 {
-    let job = StreamJob { f: Box::new(f), resp_tx };
+    let job = StreamJob {
+        f: Box::new(f),
+        resp_tx,
+    };
     let _: Result<_, _> = stream_hnd.job_tx.send(job).await;
 }
-
 
 async fn execute_stmt(db: &dyn Database, stmt: proto::Stmt) -> Result<proto::StmtResult> {
     let query = proto_stmt_to_query(stmt)?;
