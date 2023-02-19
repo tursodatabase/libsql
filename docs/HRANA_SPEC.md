@@ -229,10 +229,13 @@ used to execute SQL statements. The streams are identified by arbitrary 32-bit
 signed integers assigned by the client.
 
 The client can optimistically send follow-up requests on a stream before it
-receives the response to its `open_stream` request. If the server receives an
-request that refers to a stream that is not opened (presumably because the
-stream failed to open), it should respond with an error, but it should not close
-the connection.
+receives the response to its `open_stream` request. If the server receives a
+request that refers to a stream that failed to open, it should respond with an
+error, but it should not close the connection.
+
+Even if the `open_stream` request returns an error, the stream id is still
+considered as used, and the client cannot reuse it until it sends a
+`close_stream` request.
 
 The server can impose a reasonable limit to the number of streams opened at the
 same time.
@@ -253,6 +256,9 @@ type CloseStreamResp = {
 When the client is done with a stream, it should close it using the
 `close_stream` request. The client can safely reuse the stream id after it
 receives the response.
+
+The client should close even streams for which the `open_stream` request
+returned an error.
 
 ### Execute a statement
 
