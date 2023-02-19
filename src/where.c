@@ -2123,7 +2123,7 @@ static int whereInScanEst(
   }
 
   if( rc==SQLITE_OK ){
-    if( nRowEst > nRow0 ) nRowEst = nRow0;
+    if( nRowEst > (tRowcnt)nRow0 ) nRowEst = nRow0;
     *pnRow = nRowEst;
     WHERETRACE(0x20,("IN row estimate: est=%d\n", nRowEst));
   }
