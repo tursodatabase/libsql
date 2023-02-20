@@ -199,7 +199,7 @@ impl Proxy for ProxyService {
                 tonic::Status::new(tonic::Code::Internal, "failed to deserialize query")
             })?;
 
-        let (results, state) = db.execute(queries).await.unwrap();
+        let (results, state) = db.execute_batch(queries).await.unwrap();
         let results = results.into_iter().map(|r| r.into()).collect();
 
         Ok(tonic::Response::new(ExecuteResults {

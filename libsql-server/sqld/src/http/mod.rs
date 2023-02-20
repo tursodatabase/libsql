@@ -78,7 +78,9 @@ enum ResultResponse {
 }
 
 fn query_response_to_json(results: Vec<QueryResult>) -> anyhow::Result<Bytes> {
-    fn result_set_to_json(ResultSet { columns, rows }: ResultSet) -> anyhow::Result<RowsResponse> {
+    fn result_set_to_json(
+        ResultSet { columns, rows, .. }: ResultSet,
+    ) -> anyhow::Result<RowsResponse> {
         let mut out_rows = Vec::with_capacity(rows.len());
         for row in rows {
             let mut out_row = Vec::with_capacity(row.values.len());
