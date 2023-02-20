@@ -29,7 +29,7 @@ where
 
 #[derive(Clone)]
 pub struct DbFactoryService {
-    factory: Arc<dyn DbFactory>,
+    pub factory: Arc<dyn DbFactory>,
 }
 
 impl DbFactoryService {
@@ -78,6 +78,6 @@ impl Service<Queries> for DbService {
 
     fn call(&mut self, queries: Queries) -> Self::Future {
         let db = self.db.clone();
-        Box::pin(async move { Ok(db.execute(queries).await?.0) })
+        Box::pin(async move { Ok(db.execute_batch(queries).await?.0) })
     }
 }

@@ -10,6 +10,8 @@ use sqlite3_parser::{
 pub struct Statement {
     pub stmt: String,
     pub kind: StmtKind,
+    /// Is the statement an INSERT, UPDATE or DELETE?
+    pub is_iud: bool,
 }
 
 impl Default for Statement {
@@ -85,6 +87,7 @@ impl Statement {
             stmt: String::new(),
             // empty statement is arbitrarely made of the read kind so it is not send to a writer
             kind: StmtKind::Read,
+            is_iud: false,
         }
     }
 
@@ -95,6 +98,7 @@ impl Statement {
         Self {
             stmt: s.to_string(),
             kind: StmtKind::Write,
+            is_iud: false,
         }
     }
 
@@ -102,10 +106,15 @@ impl Statement {
         fn parse_inner(c: Cmd) -> Result<Statement> {
             let kind =
                 StmtKind::kind(&c).ok_or_else(|| anyhow::anyhow!("unsupported statement"))?;
+            let is_iud = matches!(
+                c,
+                Cmd::Stmt(Stmt::Insert { .. } | Stmt::Update { .. } | Stmt::Delete { .. })
+            );
 
             Ok(Statement {
                 stmt: c.to_string(),
                 kind,
+                is_iud,
             })
         }
         // The parser needs to be boxed because it's large, and you don't want it on the stack.

@@ -118,13 +118,13 @@ impl WriteProxyDatabase {
 
 #[async_trait::async_trait]
 impl Database for WriteProxyDatabase {
-    async fn execute(&self, queries: query::Queries) -> Result<(Vec<QueryResult>, State)> {
+    async fn execute_batch(&self, queries: query::Queries) -> Result<(Vec<QueryResult>, State)> {
         let mut state = self.state.lock().await;
         if *state == State::Init
             && queries.iter().all(|q| q.stmt.is_read_only())
             && final_state(*state, queries.iter().map(|s| &s.stmt)) == State::Init
         {
-            self.read_db.execute(queries).await
+            self.read_db.execute_batch(queries).await
         } else {
             let queries = Queries {
                 queries: queries

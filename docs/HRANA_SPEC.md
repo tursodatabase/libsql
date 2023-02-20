@@ -297,7 +297,7 @@ separated by a semicolon is not supported.
 type StmtResult = {
     "cols": Array<Col>,
     "rows": Array<Array<Value>>,
-    "affected_row_count": number,
+    "affected_row_count": uint64,
 }
 
 type Col = {
