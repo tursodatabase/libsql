@@ -6138,7 +6138,7 @@ static int db_int(sqlite3 *db, const char *zSql){
   return res;
 }
 
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_ENABLE_DBPAGE_VTAB)
+#if defined(SQLITE_SHELL_HAVE_RECOVER)
 /*
 ** Convert a 2-byte or 4-byte big-endian integer into a native integer
 */
