@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\s#ifdef\sin\sthe\sCLI.
-D 2023-02-20T16:55:58.981
+C Update\sthe\sTEA\sversion\snumber\sto\s3.41.0
+D 2023-02-20T19:43:01.351
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -22,7 +22,7 @@ F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d
 F autoconf/tea/Makefile.in 106a96f2f745d41a0f6193f1de98d7355830b65d45032c18cd7c90295ec24196
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac 2bbcc0f449361c5dfbcfc51ebadc5118e4c4e8c670674a10b6443356ecdb493e
+F autoconf/tea/configure.ac d1eaa72f4d202ca106f4b2762733709d3f89a877da2e385a57881c4ad0427be7
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in b9eb6dd37f64e08e637d576b3c83259814b9cddd78bec4af2e5abfc6c5c750ce
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b2534d8de5051a3516f4b9ee5a4b99e1dcf455e9af88c60815d2c2a479fc8566
-R ab6cba252c112b4e7513f46d9e6246a1
+P 3c4d29cf227511bf218ef620d497dc72c708dcc819971b34c7629f3ed11803fb
+R fa5bbac03ca552ac8f5a43f057f684c0
 U drh
-Z 29a401041348ce9abd7389765a1b9a77
+Z 295e5ada977e6540150832f6a8979c25
 # Remove this line to create a well-formed Fossil manifest.
