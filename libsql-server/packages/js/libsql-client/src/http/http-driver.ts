@@ -4,8 +4,15 @@ import { Driver } from "./../driver.js";
 
 export class HttpDriver implements Driver {
     private url: URL;
+    private authHeader: string | undefined;
 
     constructor(url: URL) {
+        if (url.username !== "" || url.password !== "") {
+            const encodedCreds = Buffer.from(`${url.username}:${url.password}`).toString("base64");
+            this.authHeader = `Basic ${encodedCreds}`;
+            url.username = "";
+            url.password = "";
+        }
         this.url = url;
     }
 
@@ -25,10 +32,16 @@ export class HttpDriver implements Driver {
         }
 
         const statements = buildStatements(["BEGIN", ...stmts, "COMMIT"]);
-        const reqParams = {
+
+        const reqParams: Record<string, unknown> = {
             method: "POST",
             body: JSON.stringify(statements)
         };
+        if (this.authHeader !== undefined) {
+            reqParams.headers = {
+                Authorization: this.authHeader
+            };
+        }
 
         const compatibleFetch = typeof fetch === "function" ? fetch : crossFetch;
         const response = await compatibleFetch(this.url, reqParams);
@@ -45,12 +58,14 @@ export class HttpDriver implements Driver {
             }
             return resultSets;
         } else {
-            const errorObj = await response.json();
-            if (typeof errorObj === "object" && "error" in errorObj) {
-                throw new Error(errorObj.error);
-            } else {
-                throw new Error(`${response.status} ${response.statusText}`);
+            const contentType = response.headers.get("content-type");
+            if (contentType !== null && contentType.indexOf("application/json") !== -1) {
+                const errorObj = await response.json();
+                if (typeof errorObj === "object" && "error" in errorObj) {
+                    throw new Error(errorObj.error);
+                }
             }
+            throw new Error(`${response.status} ${response.statusText}`);
         }
     }
 }
