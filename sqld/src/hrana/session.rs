@@ -11,6 +11,7 @@ use crate::error::Error;
 use crate::query::{Params, Query, QueryResponse, Value};
 use crate::query_analysis::Statement;
 
+/// Session-level state of an authenticated Hrana connection.
 pub struct Session {
     streams: HashMap<i32, StreamHandle>,
 }
@@ -19,16 +20,30 @@ struct StreamHandle {
     job_tx: mpsc::Sender<StreamJob>,
 }
 
+/// An arbitrary job that is executed on a [`Stream`].
+///
+/// All jobs are executed sequentially on a single task (as evidenced by the `&mut Stream` passed
+/// to `f`).
 struct StreamJob {
+    /// The async function which performs the job.
     #[allow(clippy::type_complexity)]
     f: Box<dyn for<'s> FnOnce(&'s mut Stream) -> BoxFuture<'s, Result<proto::Response>> + Send>,
+    /// The result of `f` will be sent here.
     resp_tx: oneshot::Sender<Result<proto::Response>>,
 }
 
+/// State of a Hrana stream, which corresponds to a standalone database connection.
 struct Stream {
+    /// The database handle is `None` when the stream is created, and normally set to `Some` by the
+    /// first job executed on the stream by the [`proto::OpenStreamReq`] request. However, if that
+    /// request returns an error, the following requests may encounter a `None` here.
     db: Option<Arc<dyn Database>>,
 }
 
+/// An error which can be converted to a Hrana [Error][proto::Error].
+///
+/// In the future, we may want to extend Hrana errors with a machine readable reason code, which
+/// will correspond to a variant of this enum.
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseError {
     #[error("Stream {stream_id} not found")]
@@ -118,8 +133,8 @@ pub(super) async fn handle_request(
             stream_respond(stream_hnd, resp_tx, move |stream| {
                 Box::pin(async move {
                     let Some(db) = stream.db.as_ref() else {
-                    bail!(ResponseError::StreamNotOpen { stream_id })
-                };
+                        bail!(ResponseError::StreamNotOpen { stream_id })
+                    };
                     let result = execute_stmt(&**db, req.stmt).await?;
                     Ok(proto::Response::Execute(proto::ExecuteResp { result }))
                 })
