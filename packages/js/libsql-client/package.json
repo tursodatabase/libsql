@@ -21,11 +21,9 @@
         "Pekka Enberg <penberg@chiselstrike.com>"
     ],
     "license": "MIT",
-
     "type": "module",
     "main": "lib-cjs/index.js",
     "types": "lib-esm/index.d.ts",
-
     "scripts": {
         "prebuild": "rm -rf ./lib-cjs ./lib-esm",
         "build": "npm run build:cjs && npm run build:esm",
@@ -49,7 +47,8 @@
     },
     "dependencies": {
         "better-sqlite3": "^8.0.1",
-        "cross-fetch": "^3.1.5"
+        "cross-fetch": "^3.1.5",
+        "js-base64": "^3.7.5"
     },
     "exports": {
         ".": {
@@ -65,7 +64,9 @@
     },
     "typesVersions": {
         "*": {
-          "http": ["./lib-esm/http/index.d.ts"]
+            "http": [
+                "./lib-esm/http/index.d.ts"
+            ]
         }
-      }
+    }
 }
