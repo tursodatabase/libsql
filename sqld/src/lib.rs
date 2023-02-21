@@ -34,6 +34,7 @@ mod query_analysis;
 mod replication;
 pub mod rpc;
 mod server;
+mod utils;
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {

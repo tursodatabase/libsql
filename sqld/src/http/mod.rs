@@ -1,5 +1,4 @@
 pub mod auth;
-mod services;
 mod types;
 
 use std::future::poll_fn;
@@ -30,6 +29,7 @@ use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
 use crate::SHUTDOWN;
+use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::auth::Authorizer;
 use self::types::QueryObject;
