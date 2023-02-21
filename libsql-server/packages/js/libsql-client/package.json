@@ -14,19 +14,30 @@
     "repository": {
         "type": "git",
         "url": "https://github.com/libsql/sqld.git",
-        "directory": "packages/libsql-client"
+        "directory": "packages/js/libsql-client"
     },
-    "author": "Pekka Enberg <penberg@chiselstrike.com>",
+    "authors": [
+        "Jan Plhak <jp@chiselstrike.com>",
+        "Pekka Enberg <penberg@chiselstrike.com>"
+    ],
     "license": "MIT",
-    "main": "lib/index.js",
-    "types": "lib/index.d.ts",
+
+    "type": "module",
+    "main": "lib-cjs/index.js",
+    "types": "lib-esm/index.d.ts",
+
     "scripts": {
-        "build": "tsc",
+        "prebuild": "rm -rf ./lib-cjs ./lib-esm",
+        "build": "npm run build:cjs && npm run build:esm",
+        "build:cjs": "tsc -p tsconfig.build-cjs.json",
+        "build:esm": "tsc -p tsconfig.build-esm.json",
+        "postbuild": "cp package-cjs.json ./lib-cjs/package.json",
         "test": "jest --config jestconfig.json",
         "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write"
     },
     "files": [
-        "lib/**/*"
+        "lib-cjs/**",
+        "lib-esm/**"
     ],
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.3",
@@ -37,10 +48,24 @@
         "typescript": "^4.9.4"
     },
     "dependencies": {
-        "@types/sql.js": "^1.4.4",
         "better-sqlite3": "^8.0.1",
-        "browser-or-node": "^2.1.1",
-        "cross-fetch": "^3.1.5",
-        "sql.js": "^1.8.0"
-    }
+        "cross-fetch": "^3.1.5"
+    },
+    "exports": {
+        ".": {
+            "types": "./lib-esm/index.d.ts",
+            "import": "./lib-esm/index.js",
+            "require": "./lib-cjs/index.js"
+        },
+        "./http": {
+            "types": "./lib-esm/http/index.d.ts",
+            "import": "./lib-esm/http/index.js",
+            "require": "./lib-cjs/http/index.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+          "http": ["./lib-esm/http/index.d.ts"]
+        }
+      }
 }

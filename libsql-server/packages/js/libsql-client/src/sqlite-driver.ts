@@ -1,6 +1,6 @@
-import DatabaseConstructor, { Database, SqliteError, Statement } from "better-sqlite3";
-import { BoundStatement, Params, ResultSet, SqlValue } from "../libsql-js";
-import { Driver } from "./Driver";
+import DatabaseConstructor, { Database } from "better-sqlite3";
+import { Driver } from "./driver.js";
+import { BoundStatement, Params, ResultSet, SqlValue } from "./shared-types.js";
 
 export class SqliteDriver implements Driver {
     private db: Database;
