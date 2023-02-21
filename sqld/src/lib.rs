@@ -188,6 +188,7 @@ async fn start_replica(
             config.rpc_server_ca_cert.clone(),
             db_factory,
             logger_clone,
+            idle_shutdown_layer.clone(),
         ));
     }
 
