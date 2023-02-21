@@ -13,20 +13,28 @@ use tungstenite::protocol::frame::coding::CloseCode;
 
 use super::{proto, session, Server};
 
+/// State of a Hrana connection.
 struct Conn {
     conn_id: u64,
     server: Arc<Server>,
     ws: WebSocket,
     ws_closed: bool,
+    /// After a successful authentication, this contains the session-level state of the connection.
     session: Option<session::Session>,
+    /// Join set for all tasks that were spawned to handle the connection.
     join_set: tokio::task::JoinSet<()>,
+    /// Future responses to requests that we have received but are evaluating asynchronously.
     responses: FuturesUnordered<ResponseFuture>,
 }
 
 type WebSocket = tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>;
 
+/// A `Future` that stores a handle to a future response to request which is being evaluated
+/// asynchronously.
 struct ResponseFuture {
+    /// The request id, which must be included in the response.
     request_id: i32,
+    /// The future that will be resolved with the response.
     response_rx: futures::future::Fuse<oneshot::Receiver<Result<proto::Response>>>,
 }
 
@@ -198,6 +206,8 @@ async fn handle_request_msg(
     let response_rx = session::handle_request(&conn.server, session, &mut conn.join_set, request)
         .await
         .unwrap_or_else(|err| {
+            // we got an error immediately, but let's treat it as a special case of the general
+            // flow
             let (tx, rx) = oneshot::channel();
             tx.send(Err(err)).unwrap();
             rx
