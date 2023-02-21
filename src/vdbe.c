@@ -1152,7 +1152,7 @@ case OP_Halt: {
 #endif
 
   /* A deliberately coded "OP_Halt SQLITE_INTERNAL * * * *" opcode indicates
-  ** something is wrong with the code generator.  Raise and assertion in order
+  ** something is wrong with the code generator.  Raise an assertion in order
   ** to bring this to the attention of fuzzers and other testing tools. */
   assert( pOp->p1!=SQLITE_INTERNAL );
 
