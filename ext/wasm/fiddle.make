@@ -29,7 +29,7 @@ fiddle.emcc-flags = \
   --minify 0 \
   -sALLOW_TABLE_GROWTH \
   -sABORTING_MALLOC \
-  -sSTRICT_JS \
+  -sSTRICT_JS=0 \
   -sENVIRONMENT=web,worker \
   -sMODULARIZE \
   -sDYNAMIC_EXECUTION=0 \

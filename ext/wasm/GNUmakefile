@@ -402,13 +402,10 @@ emcc.exportedRuntimeMethods := \
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
-ifeq (3.1.31,$(emcc.version))
-  emcc.jsflags += -sSTRICT_JS=0
-  $(warning Disabling -sSTRICT_JS for emcc $(emcc.version): \
-     https://github.com/emscripten-core/emscripten/issues/18610)
-else
-  emcc.jsflags += -sSTRICT_JS=1
-endif
+emcc.jsflags += -sSTRICT_JS=0
+# STRICT_JS disabled due to:
+#   https://github.com/emscripten-core/emscripten/issues/18610
+# TL;DR: does not work with MODULARIZE or EXPORT_ES6 as of version 3.1.31.
 emcc.environment := -sENVIRONMENT=web,worker
 ########################################################################
 # -sINITIAL_MEMORY: How much memory we need to start with is governed
@@ -772,7 +769,7 @@ emcc.speedtest1 += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.$(emcc.INITIAL_MEMORY)
 emcc.speedtest1.common += -sINVOKE_RUN=0
 emcc.speedtest1.common += --no-entry
 emcc.speedtest1.common += -sABORTING_MALLOC
-emcc.speedtest1.common += -sSTRICT_JS
+emcc.speedtest1.common += -sSTRICT_JS=0
 emcc.speedtest1.common += -sMODULARIZE
 emcc.speedtest1.common += -Wno-limited-postlink-optimizations
 EXPORTED_FUNCTIONS.speedtest1 := $(abspath $(dir.tmp)/EXPORTED_FUNCTIONS.speedtest1)
