@@ -4,7 +4,6 @@ mod types;
 use std::future::poll_fn;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::Context;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
@@ -24,11 +23,9 @@ use tower_http::{compression::CompressionLayer, cors};
 use tracing::{Level, Span};
 
 use crate::error::Error;
-use crate::http::services::idle_shutdown::IdleShutdownLayer;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
-use crate::SHUTDOWN;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::auth::Authorizer;
@@ -271,7 +268,7 @@ pub async fn run_http<F>(
     authorizer: Arc<dyn Authorizer + Send + Sync>,
     db_factory: F,
     enable_console: bool,
-    idle_shutdown: Option<Duration>,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()>
 where
     F: MakeService<(), Queries> + Send + 'static,
@@ -286,7 +283,6 @@ where
     tracing::info!("listening for HTTP requests on {addr}");
 
     let (sender, mut receiver) = mpsc::channel(1024);
-    let idle_shutdown_layer = idle_shutdown.map(|d| IdleShutdownLayer::new(d, SHUTDOWN.clone()));
     fn trace_request<B>(req: &Request<B>, _span: &Span) {
         tracing::info!("got request: {} {}", req.method(), req.uri());
     }
