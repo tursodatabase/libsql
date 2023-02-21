@@ -1,6 +1,7 @@
 import { fetch as crossFetch } from "cross-fetch";
 import { ResultSet, BoundStatement, Params } from "../shared-types.js";
 import { Driver } from "./../driver.js";
+import { Base64 } from "js-base64";
 
 export class HttpDriver implements Driver {
     private url: URL;
@@ -8,7 +9,7 @@ export class HttpDriver implements Driver {
 
     constructor(url: URL) {
         if (url.username !== "" || url.password !== "") {
-            const encodedCreds = Buffer.from(`${url.username}:${url.password}`).toString("base64");
+            const encodedCreds = Base64.encode(`${url.username}:${url.password}`);
             this.authHeader = `Basic ${encodedCreds}`;
             url.username = "";
             url.password = "";
