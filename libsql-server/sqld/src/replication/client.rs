@@ -445,7 +445,9 @@ impl ReadReplicationHook {
                     let frame = WalFrame::decode(raw_frame.data)?;
                     debug_assert_eq!(
                         Some(frame.header.frame_id),
-                        self.wal_index_meta.map(|m| m.pre_commit_index),
+                        current_offset
+                            .map(|x| x + frame_count + 1)
+                            .or(Some(frame_count)),
                         "out of order log frame"
                     );
                     frame_count += 1;
