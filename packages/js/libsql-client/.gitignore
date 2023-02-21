@@ -1,2 +1,4 @@
 node_modules
-/lib
+/lib-esm
+/lib-cjs
+*.tsbuildinfo

@@ -1,4 +1,4 @@
-import { BoundStatement, Params, ResultSet } from "../libsql-js";
+import { BoundStatement, Params, ResultSet } from "./shared-types.js";
 
 export interface Driver {
     execute(stmt: string, params?: Params): Promise<ResultSet>;
