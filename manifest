@@ -1,5 +1,5 @@
-C Yet\sanother\scomment\stypo\sfix.\s\sNo\schanges\sto\sworking\scode.
-D 2023-02-21T12:42:25.611
+C Disable\sDQS\sby\sdefault\sin\sthe\sMSVC\smakefile\sfor\sthe\samalgamation\starball.
+D 2023-02-21T13:28:49.915
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.msc 8401a514e4e70add3c6448348ae31322d5cb7db427b05a20828f943c3ddb2733
+F autoconf/Makefile.msc 20366d19fbfc3fceecce95344a2114069eaab4fc22e4f02430da167a1e2ddf04
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 42cfd21d0b19dc7d5d85fb5c405c5f3c6a4c923021c39128f6ba685355d8fd56
 F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d5893b277
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7981671d1449b3fc6eb214deb558d91b87dc4fa6e38e24606625a146cc71664a
-R 140291e2d3e1cc0cc4d519c9957e5ee8
+P cdbdc8013fcfa8ce1bd4f5521c8d98afc53b9c577d43e5e6d0d1e15c789b910f
+R 8cba8b939a0caa0ad935e665db07c75b
 U drh
-Z 973d2858212057164abbe4de30ba0238
+Z e5303c361d0e03c6820ada0d69349fa0
 # Remove this line to create a well-formed Fossil manifest.
