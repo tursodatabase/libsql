@@ -119,9 +119,9 @@ const installOpfsVfs = function callee(options){
   }
   const thePromise = new Promise(function(promiseResolve, promiseReject_){
     const loggers = {
-      0:sqlite3.config.error.bind(console),
-      1:sqlite3.config.warn.bind(console),
-      2:sqlite3.config.log.bind(console)
+      0:sqlite3.config.error,
+      1:sqlite3.config.warn,
+      2:sqlite3.config.log
     };
     const logImpl = (level,...args)=>{
       if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
