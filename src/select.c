@@ -5228,6 +5228,76 @@ static int pushDownWhereTerms(
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
 /*
+** Check to see if a subquery contains result-set columns that are
+** never used.  If it does, change the value of those result-set columns
+** to NULL so that they do not cause unnecessary work to compute.
+**
+** Return the number of column that were changed to NULL.
+*/
+static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
+  int nCol;
+  Select *pSub;      /* The subquery to be simplified */
+  Select *pX;        /* For looping over compound elements of pSub */
+  Table *pTab;       /* The table that describes the subquery */
+  int j;             /* Column number */
+  int nChng = 0;     /* Number of columns converted to NULL */
+  Bitmask colUsed;   /* Columns that may not be NULLed out */
+
+  assert( pItem!=0 );
+  if( pItem->fg.isCorrelated || pItem->fg.isCte ){
+    return 0;
+  }
+  assert( pItem->pTab!=0 );
+  pTab = pItem->pTab;
+  assert( pItem->pSelect!=0 );
+  pSub = pItem->pSelect;
+  assert( pSub->pEList->nExpr==pTab->nCol );
+  if( (pSub->selFlags & (SF_Distinct|SF_Aggregate))!=0 ){
+    testcase( pSub->selFlags & SF_Distinct );
+    testcase( pSub->selFlags & SF_Aggregate );
+    return 0;
+  }
+  for(pX=pSub; pX; pX=pX->pPrior){
+    if( pX->pPrior && pX->op!=TK_ALL ){
+      /* This optimization does not work for compound subqueries that
+      ** use UNION, INTERSECT, or EXCEPT.  Only UNION ALL is allowed. */
+      return 0;
+    }
+    if( pX->pWin ){
+      /* This optimization does not work for subqueries that use window
+      ** functions. */
+      return 0;
+    }
+  }
+ colUsed = pItem->colUsed;
+  if( pSub->pOrderBy ){
+    ExprList *pList = pSub->pOrderBy;
+    for(j=0; j<pList->nExpr; j++){
+      u16 iCol = pList->a[j].u.x.iOrderByCol;
+      if( iCol>0 ){
+        iCol--;
+        colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
+      }
+    }
+  }
+  nCol = pTab->nCol;
+  for(j=0; j<nCol; j++){
+    Select *pX;
+    Bitmask m = j<BMS-1 ? MASKBIT(j) : TOPBIT;
+    if( (m & colUsed)!=0 ) continue;
+    for(pX=pSub; pX; pX=pX->pPrior) {
+      Expr *pY = pX->pEList->a[j].pExpr;
+      if( pY->op==TK_NULL ) continue;
+      pY->op = TK_NULL;
+      pX->selFlags |= SF_PushDown;
+      nChng++;
+    }
+  }
+  return nChng;
+}
+
+
+/*
 ** The pFunc is the only aggregate function in the query.  Check to see
 ** if the query is a candidate for the min/max optimization. 
 **
@@ -7324,6 +7394,22 @@ int sqlite3Select(
       assert( pItem->pSelect && (pItem->pSelect->selFlags & SF_PushDown)!=0 );
     }else{
       TREETRACE(0x4000,pParse,p,("Push-down not possible\n"));
+    }
+
+    /* Convert unused result columns of the subquery into simple NULL
+    ** expressions, to avoid unneeded searching and computation.
+    */
+    if( OptimizationEnabled(db, SQLITE_NullUnusedCols)
+     && disableUnusedSubqueryResultColumns(pItem)
+    ){
+#if TREETRACE_ENABLED
+      if( sqlite3TreeTrace & 0x4000 ){
+        TREETRACE(0x4000,pParse,p,
+            ("Change unused result columns to NULL for subquery %d:\n",
+             pSub->selId));
+        sqlite3TreeViewSelect(0, p, 0);
+      }
+#endif
     }
 
     zSavedAuthContext = pParse->zAuthContext;
