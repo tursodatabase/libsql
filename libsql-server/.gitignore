@@ -22,3 +22,4 @@ bottomless/test/db.gz
 data.sqld/
 sqld/data.sqld/
 packages/rust/libsql-client/Cargo.lock
+packages/golang/libsql-client/test.db
