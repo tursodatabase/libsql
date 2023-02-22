@@ -19,16 +19,26 @@ struct Cli {
     #[clap(long, short, env = "SQLD_WS_LISTEN_ADDR")]
     ws_listen_addr: Option<SocketAddr>,
 
+    #[clap(long, default_value = "127.0.0.1:8080", env = "SQLD_HTTP_LISTEN_ADDR")]
+    http_listen_addr: SocketAddr,
+    #[clap(long)]
+    enable_http_console: bool,
+
     /// The address and port the Hrana server listens to.
     #[clap(long, short = 'l', env = "SQLD_HRANA_LISTEN_ADDR")]
     hrana_listen_addr: Option<SocketAddr>,
-    /// Path to a file with a JWT decoding key used to authenticate Hrana connections. If you do
-    /// not specify a key, Hrana authentication is not required. The key is either PKCS#8-encoded
-    /// Ed25519 public key, or just plain bytes of the Ed25519 public key in URL-safe base64.
+
+    /// Path to a file with a JWT decoding key used to authenticate clients in the Hrana and HTTP
+    /// APIs. The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain bytes of
+    /// the Ed25519 public key in URL-safe base64.
     ///
-    /// You can also pass the key directly in the env variable SQLD_HRANA_JWT_KEY.
-    #[clap(long, env = "SQLD_HRANA_JWT_KEY_FILE")]
-    hrana_jwt_key_file: Option<PathBuf>,
+    /// You can also pass the key directly in the env variable SQLD_AUTH_JWT_KEY.
+    #[clap(long, env = "SQLD_AUTH_JWT_KEY_FILE")]
+    auth_jwt_key_file: Option<PathBuf>,
+    /// Specifies legacy HTTP basic authentication. The argument must be in format "basic:$PARAM",
+    /// where $PARAM is base64-encoded string "$USERNAME:$PASSWORD".
+    #[clap(long, env = "SQLD_HTTP_AUTH")]
+    http_auth: Option<String>,
 
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
     #[clap(
@@ -81,12 +91,6 @@ struct Cli {
     #[clap(long, short, env = "SQLD_MWAL_ADDR")]
     mwal_addr: Option<String>,
 
-    #[clap(long, default_value = "127.0.0.1:8080", env = "SQLD_HTTP_LISTEN_ADDR")]
-    http_listen_addr: SocketAddr,
-    #[clap(long, env = "SQLD_HTTP_AUTH")]
-    http_auth: Option<String>,
-    #[clap(long)]
-    enable_http_console: bool,
     /// Don't display welcome message
     #[clap(long)]
     no_welcome: bool,
@@ -148,16 +152,15 @@ impl Cli {
 }
 
 fn config_from_args(args: Cli) -> Result<Config> {
-    let hrana_jwt_key = if let Some(file_path) = args.hrana_jwt_key_file {
-        let data =
-            fs::read_to_string(file_path).context("Could not read file with Hrana JWT key")?;
+    let auth_jwt_key = if let Some(file_path) = args.auth_jwt_key_file {
+        let data = fs::read_to_string(file_path).context("Could not read file with JWT key")?;
         Some(data)
     } else {
-        match env::var("SQLD_HRANA_JWT_KEY") {
+        match env::var("SQLD_AUTH_JWT_KEY") {
             Ok(key) => Some(key),
             Err(env::VarError::NotPresent) => None,
             Err(env::VarError::NotUnicode(_)) => {
-                bail!("Env variable SQLD_HRANA_JWT_KEY does not contain a valid Unicode value")
+                bail!("Env variable SQLD_AUTH_JWT_KEY does not contain a valid Unicode value")
             }
         }
     };
@@ -167,10 +170,10 @@ fn config_from_args(args: Cli) -> Result<Config> {
         tcp_addr: args.pg_listen_addr,
         ws_addr: args.ws_listen_addr,
         http_addr: Some(args.http_listen_addr),
-        http_auth: args.http_auth,
         enable_http_console: args.enable_http_console,
         hrana_addr: args.hrana_listen_addr,
-        hrana_jwt_key,
+        auth_jwt_key,
+        http_auth: args.http_auth,
         backend: args.backend,
         writer_rpc_addr: args.primary_grpc_url,
         writer_rpc_tls: args.primary_grpc_tls,

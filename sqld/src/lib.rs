@@ -20,12 +20,14 @@ use tower::load::Constant;
 use tower::ServiceExt;
 use utils::services::idle_shutdown::IdleShutdownLayer;
 
+use crate::auth::Auth;
 use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
 
 pub use sqld_libsql_bindings as libsql;
 
+mod auth;
 mod database;
 mod error;
 mod hrana;
@@ -64,10 +66,10 @@ pub struct Config {
     pub tcp_addr: Option<SocketAddr>,
     pub ws_addr: Option<SocketAddr>,
     pub http_addr: Option<SocketAddr>,
-    pub http_auth: Option<String>,
     pub enable_http_console: bool,
+    pub http_auth: Option<String>,
     pub hrana_addr: Option<SocketAddr>,
-    pub hrana_jwt_key: Option<String>,
+    pub auth_jwt_key: Option<String>,
     pub backend: Backend,
     #[cfg(feature = "mwal_backend")]
     pub mwal_addr: Option<String>,
@@ -92,12 +94,12 @@ async fn run_service(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
-    let mut server = Server::new();
+    let auth = get_auth(config)?;
 
+    let mut server = Server::new();
     if let Some(addr) = config.tcp_addr {
         server.bind_tcp(addr).await?;
     }
-
     if let Some(addr) = config.ws_addr {
         server.bind_ws(addr).await?;
     }
@@ -106,11 +108,9 @@ async fn run_service(
     join_set.spawn(server.serve(factory));
 
     if let Some(addr) = config.http_addr {
-        let authorizer = http::auth::parse_auth(config.http_auth.clone())
-            .context("failed to parse HTTP auth config")?;
         join_set.spawn(http::run_http(
             addr,
-            authorizer,
+            auth.clone(),
             service.clone().map_response(|s| Constant::new(s, 1)),
             config.enable_http_console,
             idle_shutdown_layer,
@@ -118,21 +118,37 @@ async fn run_service(
     }
 
     if let Some(addr) = config.hrana_addr {
-        let jwt_key = config
-            .hrana_jwt_key
-            .as_deref()
-            .map(hrana::parse_jwt_key)
-            .transpose()
-            .context("Could not parse JWT decoding key for Hrana")?;
-
         join_set.spawn(async move {
-            hrana::serve(service.factory, addr, jwt_key)
+            hrana::serve(service.factory, addr, auth)
                 .await
                 .context("Hrana server failed")
         });
     }
 
     Ok(())
+}
+
+fn get_auth(config: &Config) -> anyhow::Result<Arc<Auth>> {
+    let mut auth = Auth::default();
+
+    if let Some(arg) = config.http_auth.as_deref() {
+        let param = auth::parse_http_basic_auth_arg(arg)?;
+        auth.http_basic = Some(param);
+        tracing::info!("Using legacy HTTP basic authentication");
+    }
+
+    if let Some(jwt_key) = config.auth_jwt_key.as_deref() {
+        let jwt_key = auth::parse_jwt_key(jwt_key).context("Could not parse JWT decoding key")?;
+        auth.jwt_key = Some(jwt_key);
+        tracing::info!("Using JWT-based authentication");
+    }
+
+    auth.disabled = auth.http_basic.is_none() && auth.jwt_key.is_none();
+    if auth.disabled {
+        tracing::warn!("No authentication specified, the server will not require authentication")
+    }
+
+    Ok(Arc::new(auth))
 }
 
 /// nukes current DB and start anew
