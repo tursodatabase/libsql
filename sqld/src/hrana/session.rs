@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::{bail, Context as _, Result};
+use anyhow::{anyhow, bail, Context as _, Result};
 use futures::future::BoxFuture;
 use tokio::sync::{mpsc, oneshot};
 
 use super::{proto, Server};
+use crate::auth::{AuthError, Authenticated};
 use crate::database::Database;
 use crate::error::Error;
 use crate::query::{Params, Query, QueryResponse, Value};
@@ -13,6 +14,7 @@ use crate::query_analysis::Statement;
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session {
+    _authenticated: Authenticated,
     streams: HashMap<i32, StreamHandle>,
 }
 
@@ -46,10 +48,8 @@ struct Stream {
 /// will correspond to a variant of this enum.
 #[derive(thiserror::Error, Debug)]
 pub enum ResponseError {
-    #[error("Authentication using JWT is required")]
-    AuthJwtRequired,
-    #[error("Authentication using JWT failed")]
-    AuthJwtRejected { source: jsonwebtoken::errors::Error },
+    #[error("Authentication failed: {source}")]
+    Auth { source: AuthError },
 
     #[error("Stream {stream_id} not found")]
     StreamNotFound { stream_id: i32 },
@@ -82,24 +82,15 @@ pub enum ResponseError {
 }
 
 pub(super) async fn handle_hello(server: &Server, jwt: Option<String>) -> Result<Session> {
-    if let Some(jwt_key) = server.jwt_key.as_ref() {
-        let Some(jwt) = jwt else {
-            bail!(ResponseError::AuthJwtRequired)
-        };
-        validate_jwt(jwt_key, &jwt)?;
-    }
+    let _authenticated = server
+        .auth
+        .authenticate_jwt(jwt.as_deref())
+        .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
+        _authenticated,
         streams: HashMap::new(),
     })
-}
-
-fn validate_jwt(jwt_key: &jsonwebtoken::DecodingKey, jwt: &str) -> Result<()> {
-    let validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
-    match jsonwebtoken::decode::<serde_json::Value>(jwt, jwt_key, &validation) {
-        Ok(_token) => Ok(()),
-        Err(error) => bail!(ResponseError::AuthJwtRejected { source: error }),
-    }
 }
 
 pub(super) async fn handle_request(
