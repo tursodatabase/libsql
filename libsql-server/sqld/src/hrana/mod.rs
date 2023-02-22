@@ -1,5 +1,5 @@
 use crate::database::service::DbFactory;
-use anyhow::{Context as _, Result};
+use anyhow::{bail, Context as _, Result};
 use enclose::enclose;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -10,10 +10,24 @@ mod session;
 
 struct Server {
     db_factory: Arc<dyn DbFactory>,
+    jwt_key: Option<jsonwebtoken::DecodingKey>,
 }
 
-pub async fn serve(db_factory: Arc<dyn DbFactory>, bind_addr: SocketAddr) -> Result<()> {
-    let server = Arc::new(Server { db_factory });
+pub async fn serve(
+    db_factory: Arc<dyn DbFactory>,
+    bind_addr: SocketAddr,
+    jwt_key: Option<jsonwebtoken::DecodingKey>,
+) -> Result<()> {
+    let server = Arc::new(Server {
+        db_factory,
+        jwt_key,
+    });
+
+    if server.jwt_key.is_some() {
+        tracing::info!("Hrana authentication is enabled");
+    } else {
+        tracing::warn!("Hrana authentication is disabled, the server is unprotected");
+    }
 
     let listener = tokio::net::TcpListener::bind(bind_addr)
         .await
@@ -43,5 +57,19 @@ pub async fn serve(db_factory: Arc<dyn DbFactory>, bind_addr: SocketAddr) -> Res
                 task_res.expect("Hrana connection task failed")
             },
         }
+    }
+}
+
+pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
+    if data.starts_with("-----BEGIN PUBLIC KEY-----") {
+        jsonwebtoken::DecodingKey::from_ed_pem(data.as_bytes())
+            .context("Could not decode Ed25519 public key from PEM")
+    } else if data.starts_with("-----BEGIN PRIVATE KEY-----") {
+        bail!("Received a private key, but a public key is expected")
+    } else if data.starts_with("-----BEGIN") {
+        bail!("Key is in unsupported PEM format")
+    } else {
+        jsonwebtoken::DecodingKey::from_ed_components(data)
+            .context("Could not decode Ed25519 public key from base64")
     }
 }
