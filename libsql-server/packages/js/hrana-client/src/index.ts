@@ -323,7 +323,7 @@ export class Stream {
         });
     }
 
-    /** Execute a statement that returns at most single value. */
+    /** Execute a statement that returns at most a single value. */
     queryValue(stmt: Stmt): Promise<Value | undefined> {
         return new Promise((valueCallback, errorCallback) => {
             this.#client._execute(this.#state, {

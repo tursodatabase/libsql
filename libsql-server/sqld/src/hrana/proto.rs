@@ -37,7 +37,7 @@ pub enum Response {
 
 #[derive(Deserialize, Debug)]
 pub struct OpenStreamReq {
-    pub stream_id: u32,
+    pub stream_id: i32,
 }
 
 #[derive(Serialize, Debug)]
@@ -45,7 +45,7 @@ pub struct OpenStreamResp {}
 
 #[derive(Deserialize, Debug)]
 pub struct CloseStreamReq {
-    pub stream_id: u32,
+    pub stream_id: i32,
 }
 
 #[derive(Serialize, Debug)]
@@ -53,7 +53,7 @@ pub struct CloseStreamResp {}
 
 #[derive(Deserialize, Debug)]
 pub struct ExecuteReq {
-    pub stream_id: u32,
+    pub stream_id: i32,
     pub stmt: Stmt,
 }
 

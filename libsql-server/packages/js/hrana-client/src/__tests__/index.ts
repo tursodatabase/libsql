@@ -118,7 +118,7 @@ test("Stream.executeRaw()", withClient(async (c) => {
     ]);
 }));
 
-test("concurrent streams", withClient(async (c) => {
+test("concurrent streams are separate", withClient(async (c) => {
     const s1 = c.openStream();
     await s1.execute("DROP TABLE IF EXISTS t");
     await s1.execute("CREATE TABLE t (number)");
@@ -133,4 +133,41 @@ test("concurrent streams", withClient(async (c) => {
 
     expect(await s1.queryValue("SELECT SUM(number) FROM t")).toStrictEqual(1);
     expect(await s2.queryValue("SELECT SUM(number) FROM t")).toStrictEqual(11);
+}));
+
+test("concurrent operations are correctly ordered", withClient(async (c) => {
+    const s = c.openStream();
+    await s.execute("DROP TABLE IF EXISTS t");
+    await s.execute("CREATE TABLE t (stream, value)");
+
+    async function stream(streamId: number): Promise<void> {
+        const s = c.openStream();
+
+        let value = "s" + streamId;
+        await s.execute(["INSERT INTO t VALUES (?, ?)", [streamId, value]]);
+
+        const promises: Array<Promise<any>> = [];
+        const expectedValues = [];
+        for (let i = 0; i < 10; ++i) {
+            const promise = s.queryValue([
+                "UPDATE t SET value = value || ? WHERE stream = ? RETURNING value",
+                ["_" + i, streamId],
+            ]);
+            value = value + "_" + i;
+            promises.push(promise);
+            expectedValues.push(value);
+        }
+
+        for (let i = 0; i < promises.length; ++i) {
+            expect(await promises[i]).toStrictEqual(expectedValues[i]);
+        }
+
+        s.close();
+    }
+
+    const promises = [];
+    for (let i = 0; i < 10; ++i) {
+        promises.push(stream(i));
+    }
+    await Promise.all(promises);
 }));

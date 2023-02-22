@@ -1,22 +1,42 @@
+use std::future::Future;
+use std::pin::Pin;
 use std::sync::Arc;
+use std::task::{Context, Poll};
 
 use anyhow::{Context as _, Result};
-use futures::{SinkExt as _, TryStreamExt as _};
+use futures::stream::FuturesUnordered;
+use futures::{ready, FutureExt as _, SinkExt as _, StreamExt as _};
+use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
 use tungstenite::http;
 use tungstenite::protocol::frame::coding::CloseCode;
 
 use super::{proto, session, Server};
 
+/// State of a Hrana connection.
 struct Conn {
     conn_id: u64,
     server: Arc<Server>,
     ws: WebSocket,
     ws_closed: bool,
+    /// After a successful authentication, this contains the session-level state of the connection.
     session: Option<session::Session>,
+    /// Join set for all tasks that were spawned to handle the connection.
+    join_set: tokio::task::JoinSet<()>,
+    /// Future responses to requests that we have received but are evaluating asynchronously.
+    responses: FuturesUnordered<ResponseFuture>,
 }
 
 type WebSocket = tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>;
+
+/// A `Future` that stores a handle to a future response to request which is being evaluated
+/// asynchronously.
+struct ResponseFuture {
+    /// The request id, which must be included in the response.
+    request_id: i32,
+    /// The future that will be resolved with the response.
+    response_rx: futures::future::Fuse<oneshot::Receiver<Result<proto::Response>>>,
+}
 
 pub(super) async fn handle_conn(
     server: Arc<Server>,
@@ -33,21 +53,32 @@ pub(super) async fn handle_conn(
         ws,
         ws_closed: false,
         session: None,
+        join_set: tokio::task::JoinSet::new(),
+        responses: FuturesUnordered::new(),
     };
 
-    while let Some(client_msg) = conn
-        .ws
-        .try_next()
-        .await
-        .context("Could not receive a WebSocket message")?
-    {
-        match handle_msg(&mut conn, client_msg).await {
-            Ok(true) => continue,
-            Ok(false) => break,
-            Err(err) => {
-                close(&mut conn, CloseCode::Error, "Internal server error").await;
-                return Err(err);
-            }
+    loop {
+        tokio::select! {
+            Some(client_msg_res) = conn.ws.next() => {
+                let client_msg = client_msg_res
+                    .context("Could not receive a WebSocket message")?;
+                match handle_msg(&mut conn, client_msg).await {
+                    Ok(true) => continue,
+                    Ok(false) => break,
+                    Err(err) => {
+                        close(&mut conn, CloseCode::Error, "Internal server error").await;
+                        return Err(err);
+                    }
+                }
+            },
+            Some(task_res) = conn.join_set.join_next() => {
+                task_res.expect("Connection subtask failed")
+            },
+            Some(response_res) = conn.responses.next() => {
+                let response_msg = response_res?;
+                send_msg(&mut conn, &response_msg).await?;
+            },
+            else => break,
         }
     }
 
@@ -172,25 +203,47 @@ async fn handle_request_msg(
         return Ok(false)
     };
 
-    match session::handle_request(&conn.server, session, request).await {
-        Ok(response) => {
-            send_msg(
-                conn,
-                &proto::ServerMsg::ResponseOk {
-                    request_id,
-                    response,
-                },
-            )
-            .await?;
-            Ok(true)
-        }
-        Err(err) => match downcast_error(err) {
-            Ok(error) => {
-                send_msg(conn, &proto::ServerMsg::ResponseError { request_id, error }).await?;
-                Ok(true)
+    let response_rx = session::handle_request(&conn.server, session, &mut conn.join_set, request)
+        .await
+        .unwrap_or_else(|err| {
+            // we got an error immediately, but let's treat it as a special case of the general
+            // flow
+            let (tx, rx) = oneshot::channel();
+            tx.send(Err(err)).unwrap();
+            rx
+        });
+
+    conn.responses.push(ResponseFuture {
+        request_id,
+        response_rx: response_rx.fuse(),
+    });
+    Ok(true)
+}
+
+impl Future for ResponseFuture {
+    type Output = Result<proto::ServerMsg>;
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        match ready!(Pin::new(&mut self.response_rx).poll(cx)) {
+            Ok(Ok(response)) => Poll::Ready(Ok(proto::ServerMsg::ResponseOk {
+                request_id: self.request_id,
+                response,
+            })),
+            Ok(Err(err)) => match downcast_error(err) {
+                Ok(error) => Poll::Ready(Ok(proto::ServerMsg::ResponseError {
+                    request_id: self.request_id,
+                    error,
+                })),
+                Err(err) => Poll::Ready(Err(err)),
+            },
+            Err(_recv_err) => {
+                // do not propagate this error, because the error that caused the receiver to drop
+                // is very likely propagating from another task at this moment, and we don't want
+                // to hide it.
+                // this is also the reason why we need to use `Fuse` in self.response_rx
+                tracing::warn!("Response sender was dropped");
+                Poll::Pending
             }
-            Err(err) => Err(err),
-        },
+        }
     }
 }
 
