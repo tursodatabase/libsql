@@ -1,4 +1,3 @@
-pub mod auth;
 mod types;
 
 use std::future::poll_fn;
@@ -22,13 +21,13 @@ use tower_http::trace::DefaultOnResponse;
 use tower_http::{compression::CompressionLayer, cors};
 use tracing::{Level, Span};
 
+use crate::auth::Auth;
 use crate::error::Error;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
-use self::auth::Authorizer;
 use self::types::QueryObject;
 
 impl TryFrom<query::Value> for serde_json::Value {
@@ -202,18 +201,17 @@ fn handle_health() -> Response<Body> {
 }
 
 async fn handle_request(
-    authorizer: Arc<dyn Authorizer + Send + Sync>,
+    auth: Arc<Auth>,
     req: Request<Body>,
     sender: mpsc::Sender<Message>,
     enable_console: bool,
 ) -> anyhow::Result<Response<Body>> {
-    {
-        if !authorizer.is_authorized(&req) {
-            return Ok(Response::builder()
-                .status(hyper::StatusCode::UNAUTHORIZED)
-                .body(Body::empty())
-                .unwrap());
-        }
+    let auth_header = req.headers().get(hyper::header::AUTHORIZATION);
+    if let Err(err) = auth.authenticate_http(auth_header) {
+        return Ok(Response::builder()
+            .status(hyper::StatusCode::UNAUTHORIZED)
+            .body(err.to_string().into())
+            .unwrap());
     }
 
     match (req.method(), req.uri().path()) {
@@ -267,7 +265,7 @@ async fn load_dump(
 
 pub async fn run_http<F>(
     addr: SocketAddr,
-    authorizer: Arc<dyn Authorizer + Send + Sync>,
+    auth: Arc<Auth>,
     db_factory: F,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
@@ -306,10 +304,7 @@ where
                 .allow_headers(cors::Any)
                 .allow_origin(cors::Any),
         )
-        .service_fn(move |req| {
-            let authorizer = authorizer.clone();
-            handle_request(authorizer, req, sender.clone(), enable_console)
-        });
+        .service_fn(move |req| handle_request(auth.clone(), req, sender.clone(), enable_console));
 
     let server = hyper::server::Server::bind(&addr).serve(tower::make::Shared::new(service));
 
