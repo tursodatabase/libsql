@@ -7,9 +7,7 @@
 # Assumes that ./configure and make steps were executed and succeeded
 
 LIBSQL_WASM_UDF_SUFFIX=
-if grep -s "TARGET_OPT_WASM_RUNTIME_LINK.*libwblibsql\.a" Makefile; then
-  LIBSQL_WASM_UDF_SUFFIX="-wasm-udf"
-elif grep -s "TARGET_OPT_WASM_RUNTIME_LINK.*lwblibsql" Makefile; then
+if grep -s "OPT_WASM_RUNTIME_LIBRARY_TARGET.*wasm" Makefile; then
   LIBSQL_WASM_UDF_SUFFIX="-wasm-udf-dynamic"
 fi
 
