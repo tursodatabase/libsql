@@ -13,12 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@1.65.0
     
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
-
-    - name: rustup
-      run: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -qy --default-toolchain `cat src/rust/wasmtime-bindings/rust-toolchain`"
 
     - name: configure with Wasm
       run: ./configure --enable-wasm-runtime
