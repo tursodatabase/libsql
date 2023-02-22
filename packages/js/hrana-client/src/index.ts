@@ -127,7 +127,7 @@ export class Client {
             this.#handleMsg(event.data);
         } catch (e) {
             this.#socket.close(3007, "Could not handle message");
-            this.#setClosed(new Error("Error while handling message from server", {cause: e}));
+            this.#setClosed(e as Error);
         }
     }
 

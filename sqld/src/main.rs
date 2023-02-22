@@ -1,6 +1,6 @@
-use std::{net::SocketAddr, path::PathBuf, time::Duration};
+use std::{env, fs, net::SocketAddr, path::PathBuf, time::Duration};
 
-use anyhow::Result;
+use anyhow::{bail, Context as _, Result};
 use clap::Parser;
 use sqld::Config;
 use tracing_subscriber::filter::LevelFilter;
@@ -18,9 +18,17 @@ struct Cli {
     /// The address and port the PostgreSQL over WebSocket server listens to.
     #[clap(long, short, env = "SQLD_WS_LISTEN_ADDR")]
     ws_listen_addr: Option<SocketAddr>,
+
     /// The address and port the Hrana server listens to.
     #[clap(long, short = 'l', env = "SQLD_HRANA_LISTEN_ADDR")]
     hrana_listen_addr: Option<SocketAddr>,
+    /// Path to a file with a JWT decoding key used to authenticate Hrana connections. If you do
+    /// not specify a key, Hrana authentication is not required. The key is either PKCS#8-encoded
+    /// Ed25519 public key, or just plain bytes of the Ed25519 public key in URL-safe base64.
+    ///
+    /// You can also pass the key directly in the env variable SQLD_HRANA_JWT_KEY.
+    #[clap(long, env = "SQLD_HRANA_JWT_KEY_FILE")]
+    hrana_jwt_key_file: Option<PathBuf>,
 
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
     #[clap(
@@ -135,38 +143,51 @@ impl Cli {
         if let Some(ref addr) = self.pg_listen_addr {
             eprintln!("\t- listening for PostgreSQL wire on: {addr}");
         }
-        eprintln!("\t- gprc_tls: {}", if self.grpc_tls { "yes" } else { "no" });
+        eprintln!("\t- grpc_tls: {}", if self.grpc_tls { "yes" } else { "no" });
     }
 }
 
-impl From<Cli> for Config {
-    fn from(cli: Cli) -> Self {
-        Self {
-            db_path: cli.db_path,
-            tcp_addr: cli.pg_listen_addr,
-            ws_addr: cli.ws_listen_addr,
-            http_addr: Some(cli.http_listen_addr),
-            http_auth: cli.http_auth,
-            enable_http_console: cli.enable_http_console,
-            hrana_addr: cli.hrana_listen_addr,
-            backend: cli.backend,
-            writer_rpc_addr: cli.primary_grpc_url,
-            writer_rpc_tls: cli.primary_grpc_tls,
-            writer_rpc_cert: cli.primary_grpc_cert_file,
-            writer_rpc_key: cli.primary_grpc_key_file,
-            writer_rpc_ca_cert: cli.primary_grpc_ca_cert_file,
-            rpc_server_addr: cli.grpc_listen_addr,
-            rpc_server_tls: cli.grpc_tls,
-            rpc_server_cert: cli.grpc_cert_file,
-            rpc_server_key: cli.grpc_key_file,
-            rpc_server_ca_cert: cli.grpc_ca_cert_file,
-            #[cfg(feature = "mwal_backend")]
-            mwal_addr: cli.mwal_addr,
-            enable_bottomless_replication: cli.enable_bottomless_replication,
-            create_local_http_tunnel: cli.create_local_http_tunnel,
-            idle_shutdown_timeout: cli.idle_shutdown_timeout_s.map(Duration::from_secs),
+fn config_from_args(args: Cli) -> Result<Config> {
+    let hrana_jwt_key = if let Some(file_path) = args.hrana_jwt_key_file {
+        let data =
+            fs::read_to_string(file_path).context("Could not read file with Hrana JWT key")?;
+        Some(data)
+    } else {
+        match env::var("SQLD_HRANA_JWT_KEY") {
+            Ok(key) => Some(key),
+            Err(env::VarError::NotPresent) => None,
+            Err(env::VarError::NotUnicode(_)) => {
+                bail!("Env variable SQLD_HRANA_JWT_KEY does not contain a valid Unicode value")
+            }
         }
-    }
+    };
+
+    Ok(Config {
+        db_path: args.db_path,
+        tcp_addr: args.pg_listen_addr,
+        ws_addr: args.ws_listen_addr,
+        http_addr: Some(args.http_listen_addr),
+        http_auth: args.http_auth,
+        enable_http_console: args.enable_http_console,
+        hrana_addr: args.hrana_listen_addr,
+        hrana_jwt_key,
+        backend: args.backend,
+        writer_rpc_addr: args.primary_grpc_url,
+        writer_rpc_tls: args.primary_grpc_tls,
+        writer_rpc_cert: args.primary_grpc_cert_file,
+        writer_rpc_key: args.primary_grpc_key_file,
+        writer_rpc_ca_cert: args.primary_grpc_ca_cert_file,
+        rpc_server_addr: args.grpc_listen_addr,
+        rpc_server_tls: args.grpc_tls,
+        rpc_server_cert: args.grpc_cert_file,
+        rpc_server_key: args.grpc_key_file,
+        rpc_server_ca_cert: args.grpc_ca_cert_file,
+        #[cfg(feature = "mwal_backend")]
+        mwal_addr: args.mwal_addr,
+        enable_bottomless_replication: args.enable_bottomless_replication,
+        create_local_http_tunnel: args.create_local_http_tunnel,
+        idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
+    })
 }
 
 #[tokio::main]
@@ -196,7 +217,8 @@ async fn main() -> Result<()> {
         _ => (),
     }
 
-    sqld::run_server(args.into()).await?;
+    let config = config_from_args(args)?;
+    sqld::run_server(config).await?;
 
     Ok(())
 }
