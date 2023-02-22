@@ -18,6 +18,7 @@ use tokio::sync::Notify;
 use tokio::task::JoinSet;
 use tower::load::Constant;
 use tower::ServiceExt;
+use utils::services::idle_shutdown::IdleShutdownLayer;
 
 use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
@@ -35,6 +36,7 @@ mod query_analysis;
 mod replication;
 pub mod rpc;
 mod server;
+mod utils;
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
@@ -51,8 +53,6 @@ type Result<T> = std::result::Result<T, Error>;
 ///
 /// /!\ use with caution.
 pub(crate) static HARD_RESET: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
-/// Clean shutdown of the server.
-pub(crate) static SHUTDOWN: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
 
 #[cfg(feature = "mwal_backend")]
 pub(crate) static VWAL_METHODS: OnceCell<
@@ -90,6 +90,7 @@ async fn run_service(
     service: DbFactoryService,
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
     let mut server = Server::new();
 
@@ -112,7 +113,7 @@ async fn run_service(
             authorizer,
             service.clone().map_response(|s| Constant::new(s, 1)),
             config.enable_http_console,
-            config.idle_shutdown_timeout,
+            idle_shutdown_layer,
         ));
     }
 
@@ -155,6 +156,7 @@ async fn start_primary(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     addr: &str,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
     let (factory, handle) = WriteProxyDbFactory::new(
         addr,
@@ -173,7 +175,7 @@ async fn start_primary(
     join_set.spawn(async move { handle.await.expect("WriteProxy DB task failed") });
 
     let service = DbFactoryService::new(Arc::new(factory));
-    run_service(service, config, join_set).await?;
+    run_service(service, config, join_set, idle_shutdown_layer).await?;
 
     Ok(())
 }
@@ -181,6 +183,7 @@ async fn start_primary(
 async fn start_replica(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
     let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
     let logger_clone = logger.clone();
@@ -201,10 +204,11 @@ async fn start_replica(
             config.rpc_server_ca_cert.clone(),
             db_factory,
             logger_clone,
+            idle_shutdown_layer.clone(),
         ));
     }
 
-    run_service(service, config, join_set).await?;
+    run_service(service, config, join_set, idle_shutdown_layer).await?;
 
     Ok(())
 }
@@ -251,20 +255,26 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         }
         let mut join_set = JoinSet::new();
 
+        let shutdown_notify: Arc<Notify> = Arc::new(Notify::new());
+        let idle_shutdown_layer = config
+            .idle_shutdown_timeout
+            .map(|d| IdleShutdownLayer::new(d, shutdown_notify.clone()));
+
         match config.writer_rpc_addr {
-            Some(ref addr) => start_primary(&config, &mut join_set, addr).await?,
-            None => start_replica(&config, &mut join_set).await?,
+            Some(ref addr) => {
+                start_primary(&config, &mut join_set, addr, idle_shutdown_layer).await?
+            }
+            None => start_replica(&config, &mut join_set, idle_shutdown_layer).await?,
         }
 
         let reset = HARD_RESET.clone();
-        let shutdown = SHUTDOWN.clone();
         loop {
             tokio::select! {
                 _ = reset.notified() => {
                     hard_reset(&config, join_set).await?;
                     break;
                 },
-                _ = shutdown.notified() => {
+                _ = shutdown_notify.notified() => {
                     return Ok(())
                 }
                 Some(res) = join_set.join_next() => {
