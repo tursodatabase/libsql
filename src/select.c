@@ -4238,8 +4238,7 @@ static int compoundHasDifferentAffinities(Select *p){
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
 **        (17h) The corresponding result set expressions in all arms of the
-**              compound must have the same affinity. (See restriction (9)
-**              on the push-down optimization.)
+**              compound must have the same affinity.
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -5107,10 +5106,6 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       or EXCEPT, then all of the result set columns for all arms of
 **       the compound must use the BINARY collating sequence.
 **
-**   (9) If the subquery is a compound, then all arms of the compound must
-**       have the same affinity.  (This is the same as restriction (17h)
-**       for query flattening.)
-**       
 **
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
@@ -5140,9 +5135,6 @@ static int pushDownWhereTerms(
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
 #endif
-    }
-    if( compoundHasDifferentAffinities(pSubq) ){
-      return 0;  /* restriction (9) */
     }
     if( notUnionAll ){
       /* If any of the compound arms are connected using UNION, INTERSECT,
