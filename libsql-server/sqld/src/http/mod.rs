@@ -303,6 +303,7 @@ where
         .layer(
             cors::CorsLayer::new()
                 .allow_methods(cors::AllowMethods::any())
+                .allow_headers(cors::Any)
                 .allow_origin(cors::Any),
         )
         .service_fn(move |req| {
