@@ -163,4 +163,25 @@ do_eqp_test 3.6 {
 # We want both arms of the compound subquery to use the
 # primary key.
 
+# The following is a test of the count-of-view optimization.  This does
+# not have anything to do with push-down.  It is here because this is a
+# convenient place to put the test.
+#
+do_execsql_test 3.7 {
+  SELECT count(*) FROM v3;
+} 6
+do_eqp_test 3.8 {
+  SELECT count(*) FROM v3;
+} {
+  QUERY PLAN
+  |--SCAN CONSTANT ROW
+  |--SCALAR SUBQUERY xxxxxx
+  |  `--SCAN t1
+  `--SCALAR SUBQUERY xxxxxx
+     `--SCAN t2
+}
+# ^^^^^^^^^^^^^^^^^^^^
+# The query should be converted into:
+#   SELECT (SELECT count(*) FROM t1)+(SELECT count(*) FROM t2)
+
 finish_test

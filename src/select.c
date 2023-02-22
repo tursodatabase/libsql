@@ -6838,7 +6838,6 @@ static void agginfoFree(sqlite3 *db, AggInfo *p){
   sqlite3DbFreeNN(db, p);
 }
 
-#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
 /*
 ** Attempt to transform a query of the form
 **
@@ -6926,7 +6925,6 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
 #endif
   return 1;
 }
-#endif /* SQLITE_COUNTOFVIEW_OPTIMIZATION */
 
 /*
 ** If any term of pSrc, or any SF_NestedFrom sub-query, is not the same
@@ -7315,7 +7313,6 @@ int sqlite3Select(
     TREETRACE(0x2000,pParse,p,("Constant propagation not helpful\n"));
   }
 
-#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
   if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
    && countOfViewOptimization(pParse, p)
   ){
@@ -7323,7 +7320,6 @@ int sqlite3Select(
     pEList = p->pEList;
     pTabList = p->pSrc;
   }
-#endif
 
   /* For each term in the FROM clause, do two things:
   ** (1) Authorized unreferenced tables
