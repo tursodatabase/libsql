@@ -67,7 +67,7 @@ pub struct Config {
     pub http_auth: Option<String>,
     pub enable_http_console: bool,
     pub hrana_addr: Option<SocketAddr>,
-    pub hrana_jwt_key: Option<PathBuf>,
+    pub hrana_jwt_key: Option<String>,
     pub backend: Backend,
     #[cfg(feature = "mwal_backend")]
     pub mwal_addr: Option<String>,
@@ -117,10 +117,12 @@ async fn run_service(
     }
 
     if let Some(addr) = config.hrana_addr {
-        let jwt_key = config.hrana_jwt_key.as_deref()
-            .map(hrana::load_jwt_key)
+        let jwt_key = config
+            .hrana_jwt_key
+            .as_deref()
+            .map(hrana::parse_jwt_key)
             .transpose()
-            .context("Could not load JWT decoding key for Hrana")?;
+            .context("Could not parse JWT decoding key for Hrana")?;
 
         join_set.spawn(async move {
             hrana::serve(service.factory, addr, jwt_key)

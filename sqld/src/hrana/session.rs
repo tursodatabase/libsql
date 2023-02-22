@@ -49,9 +49,7 @@ pub enum ResponseError {
     #[error("Authentication using JWT is required")]
     AuthJwtRequired,
     #[error("Authentication using JWT failed")]
-    AuthJwtRejected {
-        source: jsonwebtoken::errors::Error,
-    },
+    AuthJwtRejected { source: jsonwebtoken::errors::Error },
 
     #[error("Stream {stream_id} not found")]
     StreamNotFound { stream_id: i32 },

@@ -18,10 +18,13 @@ pubkey_pem = pubkey.public_bytes(
     format=serialization.PublicFormat.SubjectPublicKeyInfo,
 )
 
-pubkey_base64 = base64.b64encode(pubkey.public_bytes(
-    encoding=serialization.Encoding.Raw,
-    format=serialization.PublicFormat.Raw,
-))
+pubkey_base64 = base64.b64encode(
+    pubkey.public_bytes(
+        encoding=serialization.Encoding.Raw,
+        format=serialization.PublicFormat.Raw,
+    ),
+    altchars=b"-_",
+)
 while pubkey_base64[-1] == ord("="):
     pubkey_base64 = pubkey_base64[:-1]
 
