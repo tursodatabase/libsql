@@ -5,6 +5,7 @@ use tokio::sync::{watch, Notify};
 use tokio::time::timeout;
 use tower::{Layer, Service};
 
+#[derive(Clone)]
 pub struct IdleShutdownLayer {
     watcher: Arc<watch::Sender<()>>,
 }
