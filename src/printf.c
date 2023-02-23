@@ -567,7 +567,7 @@ void sqlite3_str_vappendf(
           if( exp>precision && xtype!=etFLOAT ){
             u64 rnd = msd/2;
             int kk = precision;
-            while( kk-- > 0 && rnd ){  rnd /= 10; }
+            while( kk-- > 0 ){  rnd /= 10; }
             longvalue += rnd;
           }
         }else{
@@ -596,7 +596,7 @@ void sqlite3_str_vappendf(
           }
 
           /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
-          if( realvalue>0.0 ){
+          if( ALWAYS(realvalue>0.0) ){
             LONGDOUBLE_TYPE scale = 1.0;
             while( realvalue>=1e100*scale && exp<=350){ scale*=1e100;exp+=100;}
             while( realvalue>=1e10*scale && exp<=350 ){ scale*=1e10; exp+=10; }

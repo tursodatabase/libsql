@@ -1,5 +1,5 @@
-C Increased\sprecision\sof\sfloating-point\sto\sdecimal\sconversions\swhen\sthe\nfloating\spoint\svalue\shas\sno\sfractional\spart.\n[forum:/forumpost/d1387c3979c7f557|Forum\spost\sd1387c3979c7f557]
-D 2023-02-23T21:18:47.560
+C Omit\sunnecessary\sbranches\sfrom\sthe\senhanced\sfloating-point\sconversion\nlogic.
+D 2023-02-23T22:08:22.561
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 82d5090a35eac75876d3b41f48d06b2370553c9576bf2942233c462e03eb94c9
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
-F src/printf.c d7b8c87d3525ee3eea3c4d291023540c88788e47a65c5b1dcff1b432ec9dbda5
+F src/printf.c 74e763868698df16ae24e96558c2a6ab9232ceaa373d326087bf519d2b75708d
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P de6c5c6bb49a0beca793cdc0462da2c17bb05f3292e08dd815be29b45b59a8fb
-R 4769ae3a046ae725cd776ab02bbf2890
+P 18de3a8e6b431a075143631eafdcf0e1b1a21868b417394c365d46d2feca10b5
+R b615a8a32d1ccae3d6ecef9da1392398
 U drh
-Z bc3a2ae65a6e7b1f83be3e57f2f8ed26
+Z 97c2ef6d7f0bcb8f23c758a013f9c50f
 # Remove this line to create a well-formed Fossil manifest.
