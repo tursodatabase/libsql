@@ -1,11 +1,11 @@
-import { connect, ResultSet } from "../../";
+import { createClient, ResultSet } from "../../";
 
 const SQLITE_URL = "file::memory:";
 
 test("execute", async () => {
     const table = "_test_table_";
     const url = process.env.DB_URL ?? SQLITE_URL;
-    const db = connect({ url });
+    const db = createClient({ url });
     let rs: ResultSet;
 
     rs = await db.execute(`CREATE TABLE IF NOT EXISTS ${table} (email TEXT)`);
@@ -30,7 +30,7 @@ test("execute", async () => {
 
 test("execute-error", async () => {
     const url = process.env.DB_URL ?? SQLITE_URL;
-    const db = connect({ url });
+    const db = createClient({ url });
     let rs: ResultSet;
 
     rs = await db.execute("SELECT * FROM table_does_not_exist");
@@ -45,7 +45,7 @@ test("execute-error", async () => {
 test("execute-params", async () => {
     const table = "_test_table_";
     const url = process.env.DB_URL ?? SQLITE_URL;
-    const db = connect({ url });
+    const db = createClient({ url });
     let rs: ResultSet;
 
     rs = await db.execute(`CREATE TABLE IF NOT EXISTS ${table} (email TEXT)`);
