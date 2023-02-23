@@ -5269,7 +5269,7 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
       return 0;
     }
   }
- colUsed = pItem->colUsed;
+  colUsed = pItem->colUsed;
   if( pSub->pOrderBy ){
     ExprList *pList = pSub->pOrderBy;
     for(j=0; j<pList->nExpr; j++){
@@ -5282,7 +5282,6 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
   }
   nCol = pTab->nCol;
   for(j=0; j<nCol; j++){
-    Select *pX;
     Bitmask m = j<BMS-1 ? MASKBIT(j) : TOPBIT;
     if( (m & colUsed)!=0 ) continue;
     for(pX=pSub; pX; pX=pX->pPrior) {
@@ -7317,7 +7316,6 @@ int sqlite3Select(
    && countOfViewOptimization(pParse, p)
   ){
     if( db->mallocFailed ) goto select_end;
-    pEList = p->pEList;
     pTabList = p->pSrc;
   }
 

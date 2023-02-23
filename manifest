@@ -1,5 +1,5 @@
-C Provide\s-DHAVE_LOG2=0\sand\s-DHAVE_LOG10=0\scompile-time\soptions\sfor\suse\son\ssystems\nthat\slack\sthe\slog2()\sand\slog10()\sstandard\smath\slibrary\sroutines,\sto\scause\nSQLite\sto\ssubstitute\sits\sown\salternatives.
-D 2023-02-23T01:52:54.076
+C Fix\sharmless\scompiler\swarnings\sand\sa\scode\sindentation\serror.
+D 2023-02-23T14:43:15.500
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -621,7 +621,7 @@ F src/printf.c ff4b05e38bf928ff1b80d3dda4f977b10fe39ecbfe69c018224c7e5594fb2455
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 39ec68e3e88064c1ce76eb8d3fc7dbf97a95a54ff0c37e22d94df2e33550da6a
+F src/select.c a6a5cc0bbb97be616a2608cb5d063b6635b920ecd6b7b3445cde88597daf3542
 F src/shell.c.in 6f36f5ca05f1bebf74935a7fcf2dce983016e807a09cbd752a673583ad7da087
 F src/sqlite.h.in 662a2fa083d093896b92560c871dea6d86792b49dc4bf7b4e8dbeca8e7171488
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4aacdd323a854d771c8cb1e2e4cfc4fb66b0020cfed23525733603605f5c63b
-R d9f0889f326fe560e4856fa0dae980c0
+P 7ee22f95e7a7d8650f961f20e304e56c7813e624f05655d7392ca9347748270f
+R 6f3dc9114a2c05702b3aef7d84d0887b
 U drh
-Z c988455137d4c4b07349732581414345
+Z ad82adef5ba3f74b5f1d1691fda9e306
 # Remove this line to create a well-formed Fossil manifest.
