@@ -5,7 +5,7 @@ import (
 	"database/sql/driver"
 	"strings"
 
-	tursodriver "github.com/libsql/sqld/tree/main/packages/golang/libsql-client/internal/turso/sqldriver"
+	tursodriver "github.com/libsql/sqld/packages/golang/libsql-client/internal/turso/sqldriver"
 	"github.com/mattn/go-sqlite3"
 )
 
