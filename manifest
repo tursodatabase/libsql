@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sand\sa\scode\sindentation\serror.
-D 2023-02-23T14:43:15.500
+C Increased\sprecision\sof\sfloating-point\sto\sdecimal\sconversions\swhen\sthe\nfloating\spoint\svalue\shas\sno\sfractional\spart.\n[forum:/forumpost/d1387c3979c7f557|Forum\spost\sd1387c3979c7f557]
+D 2023-02-23T21:18:47.560
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 82d5090a35eac75876d3b41f48d06b2370553c9576bf2942233c462e03eb94c9
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
-F src/printf.c ff4b05e38bf928ff1b80d3dda4f977b10fe39ecbfe69c018224c7e5594fb2455
+F src/printf.c d7b8c87d3525ee3eea3c4d291023540c88788e47a65c5b1dcff1b432ec9dbda5
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -1381,7 +1381,7 @@ F test/pragma4.test ca5e4dfc46adfe490f75d73734f70349d95a199e6510973899e502eef2c8
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
-F test/printf.test 390d0d7fcffc3c4ea3c1bb4cbb267444e32b33b048ae21895f23a291844fe1da
+F test/printf.test 22449e13983e9d94fe9a671db68a086c4c55dea51daad825ef7ebb3d192ee997
 F test/printf2.test 3f55c1871a5a65507416076f6eb97e738d5210aeda7595a74ee895f2224cce60
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ee22f95e7a7d8650f961f20e304e56c7813e624f05655d7392ca9347748270f
-R 6f3dc9114a2c05702b3aef7d84d0887b
+P de6c5c6bb49a0beca793cdc0462da2c17bb05f3292e08dd815be29b45b59a8fb
+R 4769ae3a046ae725cd776ab02bbf2890
 U drh
-Z ad82adef5ba3f74b5f1d1691fda9e306
+Z bc3a2ae65a6e7b1f83be3e57f2f8ed26
 # Remove this line to create a well-formed Fossil manifest.
