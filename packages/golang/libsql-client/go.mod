@@ -1,4 +1,4 @@
-module github.com/libsql/sqld/tree/main/packages/golang/libsql-client
+module github.com/libsql/sqld/packages/golang/libsql-client
 
 go 1.19
 

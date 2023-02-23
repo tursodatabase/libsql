@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/libsql/sqld/tree/main/packages/golang/libsql-client/sql_driver"
+	_ "github.com/libsql/sqld/packages/golang/libsql-client/sql_driver"
 )
 
 func exec(db *sql.DB, stmt string, args ...any) sql.Result {
