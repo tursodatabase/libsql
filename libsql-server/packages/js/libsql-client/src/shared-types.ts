@@ -45,9 +45,9 @@ export type ResultSet = {
 };
 
 /**
- * A libSQL database connection.
+ * A libSQL database client.
  */
-export class Connection {
+export class Client {
     private driver: Driver;
 
     constructor(driver: Driver) {
