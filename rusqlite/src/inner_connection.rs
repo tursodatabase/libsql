@@ -371,15 +371,7 @@ impl Drop for InnerConnection {
     #[allow(unused_must_use)]
     #[inline]
     fn drop(&mut self) {
-        use std::thread::panicking;
-
-        if let Err(e) = self.close() {
-            if panicking() {
-                eprintln!("Error while closing SQLite connection: {e:?}");
-            } else {
-                panic!("Error while closing SQLite connection: {:?}", e);
-            }
-        }
+        self.close();
     }
 }
 
