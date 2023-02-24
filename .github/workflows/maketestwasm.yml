@@ -22,7 +22,7 @@ jobs:
       run: > 
         wget -O- https://github.com/WasmEdge/WasmEdge/releases/download/0.11.2/WasmEdge-slim-runtime-0.11.2-manylinux2014_x86_64.tar.gz | tar zxv
         && sudo cp -r WasmEdge-0.11.2-Linux/include/* /usr/include/
-        && sudo cp -r WasmEdge-0.11.2-Linux/lib64/* /usr/lib64/
+        && sudo cp -r WasmEdge-0.11.2-Linux/lib64/* /usr/lib/
 
     - name: configure with Wasm
       run: ./configure --enable-wasm-runtime
