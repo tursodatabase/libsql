@@ -430,9 +430,21 @@ int sqlite3_config(int op, ...){
   va_list ap;
   int rc = SQLITE_OK;
 
-  /* sqlite3_config() shall return SQLITE_MISUSE if it is invoked while
-  ** the SQLite library is in use. */
-  if( sqlite3GlobalConfig.isInit ) return SQLITE_MISUSE_BKPT;
+  /* sqlite3_config() normally returns SQLITE_MISUSE if it is invoked while
+  ** the SQLite library is in use.  Except, a few selected opcodes
+  ** are allowed.
+  */
+  if( sqlite3GlobalConfig.isInit ){
+    static const u64 mAnytimeConfigOption = 0
+       | MASKBIT64( SQLITE_CONFIG_LOG )
+       | MASKBIT64( SQLITE_CONFIG_PCACHE_HDRSZ )
+    ;
+    if( op<0 || op>63 || (MASKBIT64(op) & mAnytimeConfigOption)==0 ){
+      return SQLITE_MISUSE_BKPT;
+    }
+    testcase( op==SQLITE_CONFIG_LOG );
+    testcase( op==SQLITE_CONFIG_PCACHE_HDRSZ );
+  }
 
   va_start(ap, op);
   switch( op ){
@@ -501,6 +513,7 @@ int sqlite3_config(int op, ...){
       break;
     }
     case SQLITE_CONFIG_MEMSTATUS: {
+      assert( !sqlite3GlobalConfig.isInit );  /* Cannot change at runtime */
       /* EVIDENCE-OF: R-61275-35157 The SQLITE_CONFIG_MEMSTATUS option takes
       ** single argument of type int, interpreted as a boolean, which enables
       ** or disables the collection of memory allocation statistics. */
@@ -624,8 +637,10 @@ int sqlite3_config(int op, ...){
       ** sqlite3GlobalConfig.xLog = va_arg(ap, void(*)(void*,int,const char*));
       */
       typedef void(*LOGFUNC_t)(void*,int,const char*);
-      sqlite3GlobalConfig.xLog = va_arg(ap, LOGFUNC_t);
-      sqlite3GlobalConfig.pLogArg = va_arg(ap, void*);
+      LOGFUNC_t xLog = va_arg(ap, LOGFUNC_t);
+      void *pLogArg = va_arg(ap, void*);
+      AtomicStore(&sqlite3GlobalConfig.xLog, xLog);
+      AtomicStore(&sqlite3GlobalConfig.pLogArg, pLogArg);
       break;
     }
 
@@ -639,7 +654,8 @@ int sqlite3_config(int op, ...){
       ** argument of type int. If non-zero, then URI handling is globally
       ** enabled. If the parameter is zero, then URI handling is globally
       ** disabled. */
-      sqlite3GlobalConfig.bOpenUri = va_arg(ap, int);
+      int bOpenUri = va_arg(ap, int);
+      AtomicStore(&sqlite3GlobalConfig.bOpenUri, bOpenUri);
       break;
     }
 
@@ -2939,9 +2955,9 @@ int sqlite3ParseUri(
 
   assert( *pzErrMsg==0 );
 
-  if( ((flags & SQLITE_OPEN_URI)             /* IMP: R-48725-32206 */
-            || sqlite3GlobalConfig.bOpenUri) /* IMP: R-51689-46548 */
-   && nUri>=5 && memcmp(zUri, "file:", 5)==0 /* IMP: R-57884-37496 */
+  if( ((flags & SQLITE_OPEN_URI)                     /* IMP: R-48725-32206 */
+       || AtomicLoad(&sqlite3GlobalConfig.bOpenUri)) /* IMP: R-51689-46548 */
+   && nUri>=5 && memcmp(zUri, "file:", 5)==0         /* IMP: R-57884-37496 */
   ){
     char *zOpt;
     int eState;                   /* Parser state when parsing URI */
