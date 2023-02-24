@@ -1,5 +1,5 @@
-C Allow\sthe\ssqlite3_config()\sinterface\sto\sbe\sinvoked\sat\sany\stime\sfor\sa\sfew\nchoosen\soptions:\s\sSQLITE_CONFIG_LOG,\sSQLITE_CONFIG_URI,\sand\nSQLITE_CONFIG_PCACHE_HDRSZ.\s\sThis\slist\swill\slikely\schange\sbefore\srelease.
-D 2023-02-23T14:22:29.829
+C Merge\senhancements\sfrom\strunk\sinto\sthe\sanytime-config\sbranch.
+D 2023-02-24T12:55:24.927
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,11 +617,11 @@ F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 82d5090a35eac75876d3b41f48d06b2370553c9576bf2942233c462e03eb94c9
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
-F src/printf.c ff4b05e38bf928ff1b80d3dda4f977b10fe39ecbfe69c018224c7e5594fb2455
+F src/printf.c 5957a30d107a3916a411cb979b9ee80447dc3717aecc4648a4d8cce0f929e508
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 39ec68e3e88064c1ce76eb8d3fc7dbf97a95a54ff0c37e22d94df2e33550da6a
+F src/select.c a6a5cc0bbb97be616a2608cb5d063b6635b920ecd6b7b3445cde88597daf3542
 F src/shell.c.in 6f36f5ca05f1bebf74935a7fcf2dce983016e807a09cbd752a673583ad7da087
 F src/sqlite.h.in 3bdc92831511442cad4de5243b619ba8b887bb102bb464bbc5436df7e2e6568a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1381,7 +1381,7 @@ F test/pragma4.test ca5e4dfc46adfe490f75d73734f70349d95a199e6510973899e502eef2c8
 F test/pragma5.test 7b33fc43e2e41abf17f35fb73f71b49671a380ea92a6c94b6ce530a25f8d9102
 F test/pragmafault.test 275edaf3161771d37de60e5c2b412627ac94cef11739236bec12ed1258b240f8
 F test/prefixes.test b524a1c44bffec225b9aec98bd728480352aa8532ac4c15771fb85e8beef65d9
-F test/printf.test 390d0d7fcffc3c4ea3c1bb4cbb267444e32b33b048ae21895f23a291844fe1da
+F test/printf.test 931381fede4f901d5f76275959339502f7d3312492c8df129972487951ff9fd1
 F test/printf2.test 3f55c1871a5a65507416076f6eb97e738d5210aeda7595a74ee895f2224cce60
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -2046,11 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7ee22f95e7a7d8650f961f20e304e56c7813e624f05655d7392ca9347748270f
-R dd36b4ed22c075361723563dc0d19a92
-T *branch * anytime-config
-T *sym-anytime-config *
-T -sym-trunk *
+P e1702eb48d13c7c9b7605f1e77242672222c53059edcdc4e9cea59510715822a 6dea6f4738fc7d003183e94f08bd95181f23e165a966882c0bdc64708a05a607
+R ee505b1732c05f62c8c588523b4188ee
 U drh
-Z be923bc0bbf1d0d6df34f343f10e1fcc
+Z 37e143e028fb2ad426a2f426402e2ea7
 # Remove this line to create a well-formed Fossil manifest.
