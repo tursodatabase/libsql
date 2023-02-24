@@ -1793,7 +1793,6 @@ struct sqlite3_mem_methods {
 ** options is:
 ** <ul>
 ** <li> SQLITE_CONFIG_LOG
-** <li> SQLITE_CONFIG_URI
 ** <li> SQLITE_CONFIG_PCACHE_HDRSZ
 ** </ul>
 **

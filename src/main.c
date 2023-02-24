@@ -437,14 +437,12 @@ int sqlite3_config(int op, ...){
   if( sqlite3GlobalConfig.isInit ){
     static const u64 mAnytimeConfigOption = 0
        | MASKBIT64( SQLITE_CONFIG_LOG )
-       | MASKBIT64( SQLITE_CONFIG_URI )
        | MASKBIT64( SQLITE_CONFIG_PCACHE_HDRSZ )
     ;
     if( op<0 || op>63 || (MASKBIT64(op) & mAnytimeConfigOption)==0 ){
       return SQLITE_MISUSE_BKPT;
     }
     testcase( op==SQLITE_CONFIG_LOG );
-    testcase( op==SQLITE_CONFIG_URI );
     testcase( op==SQLITE_CONFIG_PCACHE_HDRSZ );
   }
 
