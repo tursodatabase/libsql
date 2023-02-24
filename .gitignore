@@ -55,5 +55,6 @@ sqltclsh.c
 srcck1
 test-out.txt
 test/rust_suite/target
+test/rust_suite/Cargo.lock
 testfixture
 libsql
