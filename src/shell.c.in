@@ -4623,8 +4623,10 @@ static const char *(azHelp[]) = {
 #if !defined(SQLITE_OMIT_LOAD_EXTENSION) && !defined(SQLITE_SHELL_FIDDLE)
   ".load FILE ?ENTRY?       Load an extension library",
 #endif
-#ifndef SQLITE_SHELL_FIDDLE
-  ".log FILE|off            Turn logging on or off.  FILE can be stderr/stdout",
+#if !defined(SQLITE_SHELL_FIDDLE)
+  ".log FILE|on|off         Turn logging on or off.  FILE can be stderr/stdout",
+#else
+  ".log on|off              Turn logging on or off.",
 #endif
   ".mode MODE ?OPTIONS?     Set output mode",
   "   MODE is one of:",
@@ -9113,19 +9115,25 @@ static int do_meta_command(char *zLine, ShellState *p){
   }else
 #endif
 
-#ifndef SQLITE_SHELL_FIDDLE
   if( c=='l' && cli_strncmp(azArg[0], "log", n)==0 ){
-    failIfSafeMode(p, "cannot run .log in safe mode");
     if( nArg!=2 ){
       raw_printf(stderr, "Usage: .log FILENAME\n");
       rc = 1;
     }else{
       const char *zFile = azArg[1];
+      if( p->bSafeMode
+       && cli_strcmp(zFile,"on")!=0
+       && cli_strcmp(zFile,"off")!=0
+      ){
+        raw_printf(stdout, "cannot set .log to anything other "
+                   "than \"on\" or \"off\"\n");
+        zFile = "off";
+      }
       output_file_close(p->pLog);
+      if( cli_strcmp(zFile,"on")==0 ) zFile = "stdout";
       p->pLog = output_file_open(zFile, 0);
     }
   }else
-#endif
 
   if( c=='m' && cli_strncmp(azArg[0], "mode", n)==0 ){
     const char *zMode = 0;
