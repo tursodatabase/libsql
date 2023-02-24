@@ -574,20 +574,16 @@ void sqlite3_str_vappendf(
           msd = 0;
           longvalue = 0;  /* To prevent a compiler warning */
           idx = precision & 0xfff;
-          if( idx>20 ){
-            rounder = 0.0;
-          }else{
-            rounder = arRound[idx%10];
-            while( idx>=10 ){ rounder *= 1.0e-10; idx -= 10; }
-            if( xtype==etFLOAT ){
-              double rx = (double)realvalue;
-              sqlite3_uint64 u;
-              int ex;
-              memcpy(&u, &rx, sizeof(u));
-              ex = -1023 + (int)((u>>52)&0x7ff);
-              if( precision+(ex/3) < 15 ) rounder += realvalue*3e-16;
-              realvalue += rounder;
-            }
+          rounder = arRound[idx%10];
+          while( idx>=10 ){ rounder *= 1.0e-10; idx -= 10; }
+          if( xtype==etFLOAT ){
+            double rx = (double)realvalue;
+            sqlite3_uint64 u;
+            int ex;
+            memcpy(&u, &rx, sizeof(u));
+            ex = -1023 + (int)((u>>52)&0x7ff);
+            if( precision+(ex/3) < 15 ) rounder += realvalue*3e-16;
+            realvalue += rounder;
           }
           if( sqlite3IsNaN((double)realvalue) ){
             bufpt = "NaN";

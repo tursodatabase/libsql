@@ -3820,5 +3820,8 @@ do_execsql_test printf-17.9 {
 do_execsql_test printf-17.10 {
   SELECT format('%.5g', 199990000.0);
 } 1.9999e+08
+do_execsql_test printf-17.11 {
+  SELECT format('%.30f',1.0000000000000000076e-50);
+} 0.000000000000000000000000000000
 
 finish_test
