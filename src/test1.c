@@ -16,6 +16,13 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN
 #  include "os_win.h"
+#  include <windows.h>
+#else
+#  include <unistd.h>
+#  if defined(__APPLE__)
+#    include <sys/param.h>
+#    include <sys/sysctl.h>
+#  endif
 #endif
 
 #include "vdbeInt.h"
@@ -8639,6 +8646,40 @@ static int SQLITE_TCLAPI test_autovacuum_pages(
   return TCL_OK;
 }
 
+/*
+** Usage:  number_of_cores
+**
+** Return a guess at the number of available cores available on the
+** processor on which this process is running.
+*/
+static int SQLITE_TCLAPI guess_number_of_cores(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  unsigned int nCore = 1;
+#if SQLITE_OS_WIN
+  SYSTEM_INFO sysinfo;
+  GetSystemInfo(&sysinfo);
+  nCore = (unsigned int)sysinfo.dwNumberOfProcessors;
+#elif defined(__APPLE__)
+  int nm[2];
+  size_t len = 4;
+  nm[0] = CTL_HW; nm[1] = HW_AVAILCPU;
+  sysctl(nm, 2, &nCore, &len, NULL, 0);
+  if( nCore<1 ){
+    nm[1] = HW_NCPU;
+    sysctl(nm, 2, &nCore, &len, NULL, 0);
+  }
+#else
+  nCore = sysconf(_SC_NPROCESSORS_ONLN);
+#endif
+  if( nCore<=0 ) nCore = 1;
+  Tcl_SetObjResult(interp, Tcl_NewIntObj((int)nCore));
+  return SQLITE_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -8939,6 +8980,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "test_write_db",            test_write_db,           0 },
      { "sqlite3_register_cksumvfs", test_register_cksumvfs,  0 },
      { "sqlite3_unregister_cksumvfs", test_unregister_cksumvfs,  0 },
+     { "number_of_cores",             guess_number_of_cores,     0 },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);
