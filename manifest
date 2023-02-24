@@ -1,5 +1,5 @@
-C Add\sthe\s"number_of_cores"\sTCL\scommand\sto\sthe\stestfixture.
-D 2023-02-24T13:25:49.251
+C Adjust\stestrunner.tcl\sto\smake\suse\sof\sthe\snew\snumber_of_cores\sTCL\scommand\navailable\sin\stestfixture,\sand\sto\suse\sno\smore\sthan\shalf\sthe\savailable\scores.
+D 2023-02-24T13:45:51.487
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1564,7 +1564,7 @@ F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d163
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
 F test/tester.tcl 8d54d40a55e12554b4509bc12078b201b233c8e842a7543629094a21b1ba956d
-F test/testrunner.tcl e0b36a732956c69ce19370611b8dc69b44e627d5ea8ec2a5455ca3e8a170ddaa
+F test/testrunner.tcl 59490f189cac99b16b0376d0cc0a7ecfb753a84b89c9f4c361af337d88db53ac
 F test/testrunner_data.tcl 8169c68654ac8906833b8a6aadca973358a441ebf88270dd05c153e5f96f76b8
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
 F test/thread002.test c24c83408e35ba5a952a3638b7ac03ccdf1ce4409289c54a050ac4c5f1de7502
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6dea6f4738fc7d003183e94f08bd95181f23e165a966882c0bdc64708a05a607
-R ec9d2605f4b41b74f37dda061eea41aa
+P 16ee5a7b5d02cad51a35d5675fcc5bb50a62d1f243bde107fc89fed44ffd6a43
+R b016d73baa34c9fd497cfc4bbf069952
 U drh
-Z 7c7b73264f13980fd1dcea1f8e67ede6
+Z 4f8b3d88b5b38f10d362f3547581b15a
 # Remove this line to create a well-formed Fossil manifest.

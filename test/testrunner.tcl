@@ -71,26 +71,32 @@ of sub-processes the test script uses to run tests.
 # switch.
 #
 proc guess_number_of_cores {} {
-  set ret 4
+  if {[catch {number_of_cores} ret]} {
+    set ret 4
   
-  if {$::tcl_platform(os)=="Darwin"} {
-    set cmd "sysctl -n hw.logicalcpu"
-  } else {
-    set cmd "nproc"
-  }
-  catch {
-    set fd [open "|$cmd" r]
-    set ret [gets $fd]
-    close $fd
-    set ret [expr $ret]
+    if {$::tcl_platform(os)=="Darwin"} {
+      set cmd "sysctl -n hw.logicalcpu"
+    } else {
+      set cmd "nproc"
+    }
+    catch {
+      set fd [open "|$cmd" r]
+      set ret [gets $fd]
+      close $fd
+      set ret [expr $ret]
+    }
   }
   return $ret
 }
 
 proc default_njob {} {
   set nCore [guess_number_of_cores]
-  set nHelper [expr int($nCore*0.75)]
-  expr $nHelper>0 ? $nHelper : 1
+  if {$nCore<=2} {
+    set nHelper 1
+  } else {
+    set nHelper [expr int($nCore*0.5)]
+  }
+  return $nHelper
 }
 #-------------------------------------------------------------------------
 
@@ -878,6 +884,9 @@ proc run_testset {} {
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
 set tm [lindex [time { make_new_testset }] 0]
+if {$TRG(nJob)>1} {
+  puts "splitting work across $TRG(nJob) cores"
+}
 puts "built testset in [expr $tm/1000]ms.."
 run_testset
 trdb close
