@@ -12,7 +12,7 @@ keywords = ["libSQL", "Wasmtime", "Wasm", "WebAssembly", "SQLite"]
 wasmtime = "2.0"
 
 [lib]
-name = "wblibsql"
+name = "libsql_wasm"
 crate-type = ["lib", "cdylib", "staticlib"]
 doc = false
 test = false

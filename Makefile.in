@@ -66,13 +66,13 @@ LIBREADLINE = @TARGET_READLINE_LIBS@
 #
 TCC += -DSQLITE_THREADSAFE=@SQLITE_THREADSAFE@
 
-# Optional WebAssembly runtime library 
+# Is the optional WebAssembly runtime library enabled?
 #
-TARGET_OPT_WASM_RUNTIME_LINK = @TARGET_OPT_WASM_RUNTIME_LINK@
+OPT_WASM_RUNTIME = @OPT_WASM_RUNTIME@
 
 # Any target libraries which libsqlite must be linked against
 #
-TLIBS = @LIBS@ $(LIBS) $(TARGET_OPT_WASM_RUNTIME_LINK)
+TLIBS = @LIBS@ $(LIBS)
 
 # Flags controlling use of the in memory btree implementation
 #
@@ -206,6 +206,7 @@ LIBOBJS1 = sqlite3.lo
 # Determine the real value of LIBOBJ based on the 'configure' script
 #
 LIBOBJ = $(LIBOBJS$(USE_AMALGAMATION))
+
 
 
 # All of the source code files.
@@ -368,6 +369,25 @@ SRC += \
   sqlite_cfg.h \
   shell.c \
   sqlite3.h
+
+# Path to the Rust crate with wasm bindings
+#
+WBTOP = $(TOP)/src/rust/wasmtime-bindings
+
+# Source code of the wasm bindings
+#
+WBSRC = \
+  $(WBTOP)/src/lib.rs
+
+# If the WebAssembly runtime library is enabled, link against it
+ifeq ($(OPT_WASM_RUNTIME),y)
+OPT_WASM_RUNTIME_LIBRARY_TARGET=liblibsql_wasm
+OPT_WASM_RUNTIME_INSTALL_TARGET=liblibsql_wasm_install
+TLIBS += -L$(WBTOP)/target/release -llibsql_wasm
+else
+OPT_WASM_RUNTIME_LIBRARY_TARGET=
+OPT_WASM_RUNTIME_INSTALL_TARGET=
+endif
 
 # Source code to the test files.
 #
@@ -631,7 +651,7 @@ ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) libsql$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
+all:	sqlite3.h libsqlite3.la liblibsql.la sqlite3$(TEXE) libsql$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -639,7 +659,14 @@ Makefile: $(TOP)/Makefile.in
 sqlite3.pc: $(TOP)/sqlite3.pc.in
 	./config.status
 
-libsqlite3.la:	$(LIBOBJ)
+libsql.pc: $(TOP)/libsql.pc.in
+	./config.status
+
+libsqlite3.la:	$(LIBOBJ) $(OPT_WASM_RUNTIME_LIBRARY_TARGET)
+	$(LTLINK) -no-undefined -o $@ $(LIBOBJ) $(TLIBS) \
+		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
+
+liblibsql.la:	$(LIBOBJ) $(OPT_WASM_RUNTIME_LIBRARY_TARGET)
 	$(LTLINK) -no-undefined -o $@ $(LIBOBJ) $(TLIBS) \
 		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
 
@@ -756,13 +783,10 @@ mptest:	mptester$(TEXE)
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
-libwblibsql.so:	$(TOP)/src/rust/wasmtime-bindings/src/lib.rs
-	( mkdir -p .libs && cd $(TOP)/src/rust/wasmtime-bindings/ && cargo build --release && cp target/release/libwblibsql.so $(TOP)/.libs/ )
+liblibsql_wasm:	$(WBSRC)
+	cd $(WBTOP) && cargo build --release --lib
 
-libwblibsql.a:	$(TOP)/src/rust/wasmtime-bindings/src/lib.rs
-	( mkdir -p .libs && cd $(TOP)/src/rust/wasmtime-bindings/ && cargo build --release && cp target/release/libwblibsql.a $(TOP)/.libs/ )
-
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl @OPT_WASM_RUNTIME_LIB@
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
@@ -1462,11 +1486,21 @@ releasetest:
 
 # Standard install and cleanup targets
 #
-lib_install:	libsqlite3.la
+liblibsql_wasm_install:	liblibsql_wasm
 	$(INSTALL) -d $(DESTDIR)$(libdir)
+	$(INSTALL) -m 0644 $(WBTOP)/target/release/liblibsql_wasm.so $(DESTDIR)$(libdir)/liblibsql_wasm.so.0.0
+	$(INSTALL) -m 0644 $(WBTOP)/target/release/liblibsql_wasm.a $(DESTDIR)$(libdir)/liblibsql_wasm.a
+	ln -fs $(DESTDIR)$(libdir)/liblibsql_wasm.so.0.0 $(DESTDIR)$(libdir)/liblibsql_wasm.so.0
+	ln -fs $(DESTDIR)$(libdir)/liblibsql_wasm.so.0.0 $(DESTDIR)$(libdir)/liblibsql_wasm.so
+
+liblibsql_install:	liblibsql.la $(OPT_WASM_RUNTIME_INSTALL_TARGET)
+	$(INSTALL) -d $(DESTDIR)$(libdir)
+	$(LTINSTALL) liblibsql.la $(DESTDIR)$(libdir)
+
+lib_install:	libsqlite3.la liblibsql_install
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 
-install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
+install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc libsql.pc ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -d $(DESTDIR)$(bindir)
 	$(LTINSTALL) sqlite3$(TEXE) $(DESTDIR)$(bindir)
 	$(INSTALL) -d $(DESTDIR)$(includedir)
@@ -1474,6 +1508,7 @@ install:	sqlite3$(TEXE) lib_install sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_instal
 	$(INSTALL) -m 0644 $(TOP)/src/sqlite3ext.h $(DESTDIR)$(includedir)
 	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
+	$(INSTALL) -m 0644 libsql.pc $(DESTDIR)$(pkgconfigdir)
 
 pkgIndex.tcl:
 	echo 'package ifneeded sqlite3 $(RELEASE) [list load [file join $$dir libtclsqlite3[info sharedlibextension]] sqlite3]' > $@
@@ -1484,7 +1519,7 @@ tcl_install:	lib_install libtclsqlite3.la pkgIndex.tcl
 	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
 
 clean:
-	rm -f *.lo *.la *.o sqlite3$(TEXE) libsql$(TEXE) libsqlite3.la
+	rm -f *.lo *.la *.o sqlite3$(TEXE) libsql$(TEXE) libsqlite3.la liblibsql.la
 	rm -f sqlite3.h opcodes.*
 	rm -rf .libs .deps
 	rm -f lemon$(BEXE) lempar.c parse.* sqlite*.tar.gz
@@ -1513,9 +1548,10 @@ clean:
 	rm -f fts5.* fts5parse.*
 	rm -f threadtest5
 	rm -f libsql*.tar.gz
+	rm -rf $(WBTOP)/target
 
 distclean:	clean
-	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc sqlite3session.h \
+	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc libsql.pc sqlite3session.h \
 		$(TESTPROGS)
 
 #
