@@ -633,11 +633,20 @@ fi
 AC_ARG_ENABLE(wasm_runtime, 
 AS_HELP_STRING([--enable-wasm-runtime],[Enable WebAssembly runtime integration]))
 AC_MSG_CHECKING([whether to support WebAssembly integration])
-if test "$enable_wasm_runtime" = "yes"; then
+AC_ARG_ENABLE(wasm_runtime_dynamic, 
+AS_HELP_STRING([--enable-wasm-runtime-dynamic],[Link with WebAssembly runtime dynamically]))
+if test "$enable_wasm_runtime" = "yes" -o "$enable_wasm_runtime_dynamic" = "yes"; then
   AC_MSG_RESULT([yes])
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DLIBSQL_ENABLE_WASM_RUNTIME"
   AC_CHECK_PROG(CARGO_BIN, cargo)
-  OPT_WASM_RUNTIME=y
+  AC_MSG_CHECKING([whether to link WebAssembly runtime dynamically])
+  if test "$enable_wasm_runtime_dynamic" = "yes"; then
+    AC_MSG_RESULT([yes])
+    OPT_WASM_RUNTIME=d
+  else
+    AC_MSG_RESULT([no])
+    OPT_WASM_RUNTIME=y # static linking
+  fi
 else
   AC_MSG_RESULT([no])
   OPT_WASM_RUNTIME=n
