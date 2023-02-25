@@ -165,6 +165,14 @@ libsql_wasm_engine_t *libsql_wasm_engine_new() {
 
 libsql_wasm_module_t *libsql_compile_wasm_module(libsql_wasm_engine_t* engine, const char *pSrcBody, int nBody,
     void *(*alloc_err_buf)(unsigned long long), char **err_msg_buf) {
+
+  if (nBody < 4 || memcmp(pSrcBody, "\0asm", 4) != 0) {
+    *err_msg_buf = sqlite3_mprintf("Magic header was not detected. "
+        "WasmEdge backend supports compiled binary Wasm format only. "
+        "If you passed WAT source, please transform it with wat2wasm or any similar tool");
+    return NULL;
+  }
+
   WasmEdge_VMContext *ctx = WasmEdge_VMCreate(NULL, NULL);
   WasmEdge_Result res = WasmEdge_VMLoadWasmFromBuffer(ctx, (const uint8_t *)pSrcBody, nBody);
   if (!WasmEdge_ResultOK(res)) {
