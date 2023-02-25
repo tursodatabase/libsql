@@ -1,5 +1,5 @@
-C Add\sthe\s"on"\soption\sto\sthe\s".log"\scommand\sin\sthe\sCLI.\s\sAllow\s".log\son"\sand\n".log\soff"\seven\sin\s--safe\smode.\s\sEnable\sthe\s.log\scommand\sfor\sfiddle\sbuilds.
-D 2023-02-24T21:23:53.130
+C Performance\soptimization\son\ssqlite3_vsnprintf().
+D 2023-02-25T12:50:54.857
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -617,7 +617,7 @@ F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 82d5090a35eac75876d3b41f48d06b2370553c9576bf2942233c462e03eb94c9
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
-F src/printf.c 5957a30d107a3916a411cb979b9ee80447dc3717aecc4648a4d8cce0f929e508
+F src/printf.c fb31597cf93200eba9167573094ee312b0d51b2c1998613284ceb2c8c212b492
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 847021b402a3e624e22959a70e3e29a4f069c2005534485779cdc018722b5863
-R a03e248570a718d46ef150580e9f4d5a
+P 6bba9100ae81466eeb49845c449cbfddf4f82f18b89f55e6ef575cbf66af63af
+R 50518feb0ca5bebb9a44abf5ec071312
 U drh
-Z b866616686ca4aa5278ef4fb5c394a30
+Z 75921f7ab1a31bc1aea299fbe5176436
 # Remove this line to create a well-formed Fossil manifest.

@@ -1361,12 +1361,22 @@ char *sqlite3_vsnprintf(int n, char *zBuf, const char *zFormat, va_list ap){
   return zBuf;
 }
 char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
-  char *z;
+  StrAccum acc;
   va_list ap;
+  if( n<=0 ) return zBuf;
+#ifdef SQLITE_ENABLE_API_ARMOR
+  if( zBuf==0 || zFormat==0 ) {
+    (void)SQLITE_MISUSE_BKPT;
+    if( zBuf ) zBuf[0] = 0;
+    return zBuf;
+  }
+#endif
+  sqlite3StrAccumInit(&acc, 0, zBuf, n, 0);
   va_start(ap,zFormat);
-  z = sqlite3_vsnprintf(n, zBuf, zFormat, ap);
+  sqlite3_str_vappendf(&acc, zFormat, ap);
   va_end(ap);
-  return z;
+  zBuf[acc.nChar] = 0;
+  return zBuf;
 }
 
 /*
