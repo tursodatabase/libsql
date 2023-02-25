@@ -1328,10 +1328,11 @@ static void btreeParseCell(
 **
 ** cellSizePtrNoPayload()    =>   table internal nodes
 ** cellSizePtrTableLeaf()    =>   table leaf nodes
-** cellSizePtr()             =>   all index nodes & table leaf nodes
+** cellSizePtr()             =>   index internal nodes
+** cellSizeIdxLeaf()         =>   index leaf nodes
 */
 static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
-  u8 *pIter = pCell + pPage->childPtrSize; /* For looping over bytes of pCell */
+  u8 *pIter = pCell + 4;                   /* For looping over bytes of pCell */
   u8 *pEnd;                                /* End mark for a varint */
   u32 nSize;                               /* Size value to return */
 
@@ -1344,6 +1345,49 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   pPage->xParseCell(pPage, pCell, &debuginfo);
 #endif
 
+  assert( pPage->childPtrSize==4 );
+  nSize = *pIter;
+  if( nSize>=0x80 ){
+    pEnd = &pIter[8];
+    nSize &= 0x7f;
+    do{
+      nSize = (nSize<<7) | (*++pIter & 0x7f);
+    }while( *(pIter)>=0x80 && pIter<pEnd );
+  }
+  pIter++;
+  testcase( nSize==pPage->maxLocal );
+  testcase( nSize==(u32)pPage->maxLocal+1 );
+  if( nSize<=pPage->maxLocal ){
+    nSize += (u32)(pIter - pCell);
+    assert( nSize>4 );
+  }else{
+    int minLocal = pPage->minLocal;
+    nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
+    testcase( nSize==pPage->maxLocal );
+    testcase( nSize==(u32)pPage->maxLocal+1 );
+    if( nSize>pPage->maxLocal ){
+      nSize = minLocal;
+    }
+    nSize += 4 + (u16)(pIter - pCell);
+  }
+  assert( nSize==debuginfo.nSize || CORRUPT_DB );
+  return (u16)nSize;
+}
+static u16 cellSizePtrIdxLeaf(MemPage *pPage, u8 *pCell){
+  u8 *pIter = pCell;                       /* For looping over bytes of pCell */
+  u8 *pEnd;                                /* End mark for a varint */
+  u32 nSize;                               /* Size value to return */
+
+#ifdef SQLITE_DEBUG
+  /* The value returned by this function should always be the same as
+  ** the (CellInfo.nSize) value found by doing a full parse of the
+  ** cell. If SQLITE_DEBUG is defined, an assert() at the bottom of
+  ** this function verifies that this invariant is not violated. */
+  CellInfo debuginfo;
+  pPage->xParseCell(pPage, pCell, &debuginfo);
+#endif
+
+  assert( pPage->childPtrSize==0 );
   nSize = *pIter;
   if( nSize>=0x80 ){
     pEnd = &pIter[8];
@@ -1925,14 +1969,14 @@ static int decodeFlags(MemPage *pPage, int flagByte){
     }else if( flagByte==(PTF_ZERODATA | PTF_LEAF) ){
       pPage->intKey = 0;
       pPage->intKeyLeaf = 0;
-      pPage->xCellSize = cellSizePtr;
+      pPage->xCellSize = cellSizePtrIdxLeaf;
       pPage->xParseCell = btreeParseCellPtrIndex;
       pPage->maxLocal = pBt->maxLocal;
       pPage->minLocal = pBt->minLocal;
     }else{
       pPage->intKey = 0;
       pPage->intKeyLeaf = 0;
-      pPage->xCellSize = cellSizePtr;
+      pPage->xCellSize = cellSizePtrIdxLeaf;
       pPage->xParseCell = btreeParseCellPtrIndex;
       return SQLITE_CORRUPT_PAGE(pPage);
     }
