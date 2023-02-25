@@ -383,6 +383,10 @@ WBSRC = \
 ifeq ($(OPT_WASM_RUNTIME),y)
 OPT_WASM_RUNTIME_LIBRARY_TARGET=liblibsql_wasm
 OPT_WASM_RUNTIME_INSTALL_TARGET=liblibsql_wasm_install
+TLIBS += $(WBTOP)/target/release/liblibsql_wasm.a
+else ifeq ($(OPT_WASM_RUNTIME),d)
+OPT_WASM_RUNTIME_LIBRARY_TARGET=liblibsql_wasm
+OPT_WASM_RUNTIME_INSTALL_TARGET=liblibsql_wasm_install
 TLIBS += -L$(WBTOP)/target/release -llibsql_wasm
 else
 OPT_WASM_RUNTIME_LIBRARY_TARGET=
@@ -677,7 +681,7 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 		-version-info "8:6:8" \
 		-avoid-version
 
-sqlite3$(TEXE):	shell.c sqlite3.c
+sqlite3$(TEXE):	shell.c sqlite3.c $(OPT_WASM_RUNTIME_LIBRARY_TARGET)
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
