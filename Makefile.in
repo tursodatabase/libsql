@@ -791,7 +791,7 @@ mptest:	mptester$(TEXE)
 	touch .target_source
 
 liblibsql_wasm:	$(WBSRC)
-	cd $(WBTOP) && cargo build --release --lib
+	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp target/release/liblibsql_wasm.* $(TOP)/.libs/
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
@@ -1336,7 +1336,7 @@ quicktest:	./testfixture$(TEXE)
 rusttest:	sqlite3.h libsqlite3.la
 	( cd test/rust_suite; LD_LIBRARY_PATH=../../.libs cargo test )
 
-rusttestwasm:	sqlite3.h libsqlite3.la
+rusttestwasm:	sqlite3.h libsqlite3.la sqlite3
 	( cd test/rust_suite; LD_LIBRARY_PATH=../../.libs cargo test --features udf )
 
 # This is the common case.  Run many tests that do not take too long,
