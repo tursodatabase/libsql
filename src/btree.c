@@ -1580,10 +1580,10 @@ static int defragmentPage(MemPage *pPage, int nMaxFrag){
       /* These conditions have already been verified in btreeInitPage()
       ** if PRAGMA cell_size_check=ON.
       */
-      if( pc<iCellStart || pc>iCellLast ){
+      if( pc>iCellLast ){
         return SQLITE_CORRUPT_PAGE(pPage);
       }
-      assert( pc>=iCellStart && pc<=iCellLast );
+      assert( pc>=0 && pc<=iCellLast );
       size = pPage->xCellSize(pPage, &src[pc]);
       cbrk -= size;
       if( cbrk<iCellStart || pc+size>usableSize ){
