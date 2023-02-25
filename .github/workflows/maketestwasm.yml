@@ -25,7 +25,7 @@ jobs:
         && sudo cp -r WasmEdge-0.11.2-Linux/lib64/* /usr/lib/
 
     - name: configure with Wasm
-      run: ./configure --enable-wasm-runtime
+      run: ./configure --enable-wasm-runtime-dynamic
 
     - name: make the library generally available
       run: mkdir tmp_lib && DESTDIR=$(pwd)/tmp_lib  make liblibsql_install && sudo cp -r tmp_lib/usr/local/lib/* /usr/lib/
