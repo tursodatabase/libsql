@@ -22,7 +22,7 @@ jobs:
       run: ./configure --enable-wasm-runtime
 
     - name: make the library generally available
-      run: sudo make liblibsql_install
+      run: mkdir tmp_lib && DESTDIR=$(pwd)/tmp_lib  make liblibsql_install && sudo cp -r tmp_lib/usr/local/lib/* /usr/lib/
       
     - name: Run tests
       run: make test
