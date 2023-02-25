@@ -17,6 +17,7 @@ keywordhash.h
 lemon
 lempar.c
 libsqlite3.la
+liblibsql.la
 libtclsqlite3.la
 libtool
 mkkeywordhash
@@ -35,6 +36,7 @@ sqlite3.h
 sqlite3.lo
 sqlite3.o
 sqlite3.pc
+libsql.pc
 sqlite3ext.h
 sqlite3session.h
 tclsqlite.lo

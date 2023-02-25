@@ -13,15 +13,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@1.65.0
     
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
 
     - name: configure with Wasm
-      run: ./configure --enable-wasm-runtime-dynamic
+      run: ./configure --enable-wasm-runtime
 
     - name: make the library generally available
-      run: sudo ln -s $(pwd)/.libs/libwblibsql.so /usr/lib/libwblibsql.so && ls -lsh /usr/lib
+      run: mkdir tmp_lib && DESTDIR=$(pwd)/tmp_lib  make liblibsql_install && sudo cp -r tmp_lib/usr/local/lib/* /usr/lib/
       
     - name: Run tests
       run: make test
