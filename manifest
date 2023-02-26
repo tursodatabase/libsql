@@ -1,5 +1,5 @@
-C In\sthe\s[/info/7c2d3406000dc8ac|omit-unused-subquery-columns\soptimization],\sbe\nsure\sto\sremove\sthe\sEP_Skip\sand\sEP_Unlikely\sflags\sfrom\sthe\sresult\sset\sexpressions\nthat\sget\snulled-out.\s\sdbsqlfuzz\sbf1d3ed6e0e0dd8766027797d43db40c776d2b15.
-D 2023-02-26T11:36:35.402
+C When\sa\stable-valued\sfunction\sappears\sas\sthe\sright\stable\sof\sa\sRIGHT\sJOIN,\nthe\sargument\sconstraints\son\sthe\stable-valued\sfunction\sshould\sbe\sconsidered\npart\sof\sthe\sON\sclause\sof\sthe\sRIGHT\sJOIN.\s\sFix\sfor\sthe\sproblem\sreported\nby\s[forum:/forumpost/422e635f3beafbf6|forum\spost\s422e635f3beafbf6].\s\sTest\ncases\sin\sTH3.\s\sPossibly\srelated\sto\sthe\senhancement\sat\s[501609eddf2a46d5].
+D 2023-02-26T20:57:09.904
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -709,7 +709,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 38c36bb654b4172148aef3b295bbbc1342b52078cf20174f771c746caa98f69a
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c b82d0d33315e1526904b95155e55e61149c4462147668e1cc4567c812735eff1
-F src/whereexpr.c a60a1f88650c561eded95c5affbe846cda71fac35033e1280f28e47934df33c8
+F src/whereexpr.c 16d1eefd95f69843b45aba6d04fe2b63fc4f51584dff85ae380f5c20718f3c75
 F src/window.c 76a27cff9ea2ded0c2c3527187029259440fabcc4cc4c07b11d942c78494a614
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -2046,8 +2046,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 22d32eef8741ae4f2aac3869465e5a7d2e33c6bc2425dd8e77f2a746e43687e8
-R cc7aa349e394b75f23cb7073138b42c3
+P 21aec65e5e2a01e58dd0bb8c8b9b29b8414373b53353fc7ca80a152fdd27566b
+R dd644aa05c12deae01f2f05d2c4bf4e4
 U drh
-Z ca0c0ef47bfc20fd4080b324e9bbcac3
+Z 73efc57a25cea16beea22ea8fc7c8752
 # Remove this line to create a well-formed Fossil manifest.
