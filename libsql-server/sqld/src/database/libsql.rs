@@ -67,6 +67,7 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) 
         columns,
         rows,
         affected_row_count,
+        include_column_defs: true,
     }))
 }
 
