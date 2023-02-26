@@ -5288,6 +5288,7 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
       Expr *pY = pX->pEList->a[j].pExpr;
       if( pY->op==TK_NULL ) continue;
       pY->op = TK_NULL;
+      ExprClearProperty(pY, EP_Skip|EP_Unlikely);
       pX->selFlags |= SF_PushDown;
       nChng++;
     }

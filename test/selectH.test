@@ -106,5 +106,13 @@ do_test 3.7 {
   set ::selectH_cnt
 } {4}
 
+# 2023-02-25 dbsqlfuzz bf1d3ed6e0e0dd8766027797d43db40c776d2b15
+#
+do_execsql_test 4.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  SELECT 1 FROM (SELECT DISTINCT name COLLATE rtrim FROM sqlite_schema
+                 UNION ALL SELECT a FROM t1);
+} 1
 
 finish_test
