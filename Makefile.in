@@ -196,7 +196,7 @@ LIBOBJS0 = alter.lo analyze.lo attach.lo auth.lo \
          update.lo userauth.lo upsert.lo util.lo vacuum.lo \
          vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo vdbevtab.lo \
-         wal.lo walker.lo where.lo wherecode.lo whereexpr.lo \
+         wal.lo walker.lo wasmedge_bindings.lo where.lo wherecode.lo whereexpr.lo \
          window.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
@@ -357,6 +357,8 @@ SRC += \
   $(TOP)/ext/rbu/sqlite3rbu.c
 SRC += \
   $(TOP)/ext/misc/stmt.c
+SRC += \
+  $(TOP)/ext/udf/wasmedge_bindings.c
 
 # Generated source code files
 #
@@ -543,6 +545,7 @@ TESTSRC2 = \
   $(TOP)/ext/async/sqlite3async.c \
   $(TOP)/ext/session/sqlite3session.c \
   $(TOP)/ext/misc/stmt.c \
+  $(TOP)/ext/udf/wasmedge_bindings.c \
   fts5.c
 
 # Header files used by all library source files.
@@ -788,7 +791,7 @@ mptest:	mptester$(TEXE)
 	touch .target_source
 
 liblibsql_wasm:	$(WBSRC)
-	cd $(WBTOP) && cargo build --release --lib
+	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp target/release/liblibsql_wasm.* $(TOP)/.libs/
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
@@ -1215,6 +1218,9 @@ sqlite3session.lo:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
 stmt.lo:	$(TOP)/ext/misc/stmt.c
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/misc/stmt.c
 
+wasmedge_bindings.lo:	$(TOP)/ext/udf/wasmedge_bindings.c $(HDR) $(EXTHDR)
+	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)/ext/udf/wasmedge_bindings.c
+
 # FTS5 things
 #
 FTS5_SRC = \
@@ -1330,7 +1336,7 @@ quicktest:	./testfixture$(TEXE)
 rusttest:	sqlite3.h libsqlite3.la
 	( cd test/rust_suite; LD_LIBRARY_PATH=../../.libs cargo test )
 
-rusttestwasm:	sqlite3.h libsqlite3.la
+rusttestwasm:	sqlite3.h libsqlite3.la sqlite3
 	( cd test/rust_suite; LD_LIBRARY_PATH=../../.libs cargo test --features udf )
 
 # This is the common case.  Run many tests that do not take too long,

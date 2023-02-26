@@ -49,7 +49,7 @@ mod tests {
             .unwrap();
 
         let also_steven = person_iter.next().unwrap().unwrap();
-        println!("Read {:#?}", also_steven);
+        println!("Read {also_steven:#?}");
         assert!(also_steven == steven);
         assert!(person_iter.next().is_none())
     }

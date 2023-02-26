@@ -451,6 +451,7 @@ set flist {
    sqlite3session.c
    fts5.c
    stmt.c
+   wasmedge_bindings.c
 } 
 if {$enable_recover} {
   lappend flist sqlite3recover.c dbdata.c
