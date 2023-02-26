@@ -3157,22 +3157,22 @@ static GET_NULL_SRC: &str = r#"
   (export "get_null" (func $get_null)))
 "#;
 
-pub fn fib_src() -> &'static str {
-    FIB_SRC
+pub fn fib_src() -> String {
+    hex::encode(wabt::wat2wasm(FIB_SRC).unwrap())
 }
 
-pub fn contains_src() -> &'static str {
-    CONTAINS_SRC
+pub fn contains_src() -> String {
+    hex::encode(wabt::wat2wasm(CONTAINS_SRC).unwrap())
 }
 
-pub fn concat3_src() -> &'static str {
-    CONCAT3_SRC
+pub fn concat3_src() -> String {
+    hex::encode(wabt::wat2wasm(CONCAT3_SRC).unwrap())
 }
 
-pub fn reverse_blob_src() -> &'static str {
-    REVERSE_BLOB_SRC
+pub fn reverse_blob_src() -> String {
+    hex::encode(wabt::wat2wasm(REVERSE_BLOB_SRC).unwrap())
 }
 
-pub fn get_null_src() -> &'static str {
-    GET_NULL_SRC
+pub fn get_null_src() -> String {
+    hex::encode(wabt::wat2wasm(GET_NULL_SRC).unwrap())
 }

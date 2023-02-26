@@ -221,7 +221,7 @@ mod tests {
         0
     }
     extern "C" fn limit(wal: *mut Wal, limit: i64) {
-        println!("Limit: {}", limit);
+        println!("Limit: {limit}");
         unsafe { (*wal).max_wal_size = limit }
     }
     extern "C" fn begin_read(_wal: *mut Wal, changed: *mut i32) -> i32 {
@@ -234,7 +234,7 @@ mod tests {
         0
     }
     extern "C" fn find_frame(wal: *mut Wal, pgno: i32, frame: *mut i32) -> i32 {
-        println!("\tLooking for page {}", pgno);
+        println!("\tLooking for page {pgno}");
         let methods = unsafe { &*(*wal).wal_methods };
         if methods.pages.contains_key(&pgno) {
             println!("\t\tpage found");
@@ -245,7 +245,7 @@ mod tests {
         0
     }
     extern "C" fn read_frame(wal: *mut Wal, frame: u32, n_out: i32, p_out: *mut u8) -> i32 {
-        println!("\tReading frame {}", frame);
+        println!("\tReading frame {frame}");
         let n_out = n_out as usize;
         let methods = unsafe { &*(*wal).wal_methods };
         let data = methods.pages.get(&(frame as i32)).unwrap();
@@ -353,7 +353,7 @@ mod tests {
     fn test_vwal_register() {
         let tmpfile = tempfile::NamedTempFile::new().unwrap();
         let path = format!("{}\0", tmpfile.path().to_str().unwrap());
-        println!("Temporary database created at {}", path);
+        println!("Temporary database created at {path}");
 
         let conn = unsafe {
             let mut pdb: *mut rusqlite::ffi::sqlite3 = std::ptr::null_mut();
@@ -409,7 +409,7 @@ mod tests {
         let journal_mode: String = conn
             .query_row("PRAGMA journal_mode", [], |r| r.get(0))
             .unwrap();
-        println!("Journaling mode: {}", journal_mode);
+        println!("Journaling mode: {journal_mode}");
         assert_eq!(journal_mode, "wal".to_string());
         conn.execute("CREATE TABLE t(id)", ()).unwrap();
         conn.execute("INSERT INTO t(id) VALUES (42)", ()).unwrap();

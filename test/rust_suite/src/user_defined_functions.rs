@@ -20,7 +20,7 @@ fn test_create_drop_fib() {
     }
 
     conn.execute(
-        &format!("CREATE FUNCTION fib LANGUAGE wasm AS '{}'", fib_src()),
+        &format!("CREATE FUNCTION fib LANGUAGE wasm AS x'{}'", fib_src()),
         (),
     )
     .unwrap();
@@ -57,7 +57,7 @@ fn test_contains() {
 
     conn.execute(
         &format!(
-            "CREATE FUNCTION contains LANGUAGE wasm AS '{}'",
+            "CREATE FUNCTION contains LANGUAGE wasm AS x'{}'",
             contains_src()
         ),
         (),
@@ -105,7 +105,7 @@ fn test_concat3() {
 
     conn.execute(
         &format!(
-            "CREATE FUNCTION concat3 LANGUAGE wasm AS '{}'",
+            "CREATE FUNCTION concat3 LANGUAGE wasm AS x'{}'",
             concat3_src()
         ),
         (),
@@ -153,7 +153,7 @@ fn test_reverse_blob() {
 
     conn.execute(
         &format!(
-            "CREATE FUNCTION reverse_blob LANGUAGE wasm AS '{}'",
+            "CREATE FUNCTION reverse_blob LANGUAGE wasm AS x'{}'",
             reverse_blob_src()
         ),
         (),
@@ -181,7 +181,7 @@ fn test_get_null() {
 
     conn.execute(
         &format!(
-            "CREATE FUNCTION get_null LANGUAGE wasm AS '{}'",
+            "CREATE FUNCTION get_null LANGUAGE wasm AS x'{}'",
             get_null_src()
         ),
         (),
