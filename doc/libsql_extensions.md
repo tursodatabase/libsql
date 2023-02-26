@@ -62,6 +62,26 @@ You can also download a pre-compiled binary from https://github.com/libsql/libsq
 docker run -it piotrsarna/libsql:libsql-0.1.0-wasm-udf ./libsql
 ```
 
+#### Configurations
+
+WebAssembly runtime can be enabled in multiple configurations:
+1. Based on [Wasmtime](https://wasmtime.dev/), linked statically (default)
+```sh
+./configure --enable-wasm-runtime
+```
+2. Based on [Wasmtime](https://wasmtime.dev/), linked dynamically
+```sh
+./configure --enable-wasm-runtime-dynamic
+```
+3. Based on [WasmEdge](https://wasmedge.org/), linked dynamically with `libwasmedge`
+```sh
+./configure --enable-wasm-runtime-wasmedge
+```
+> **NOTE:** WasmEdge backend comes without the ability to translate WebAssembly text format (WAT) to Wasm binary format. In this configuration, user-defined functions can only be defined with their source code passed as a compiled binary blob. In [libSQL bindgen](https://bindgen.libsql.org) you can produce it by checking the "as a binary blob" checkbox.
+> **NOTE2:** WasmEdge backend depends on `libwasmedge` compatible with their 0.11.2 release. If your package manager does not have it available, download it from the official [release page](https://github.com/WasmEdge/WasmEdge/releases).
+
+If you're interested in a setup that links `libwasmedge.a` statically, let us know, or, better yet, send a patch!
+
 #### shell support
 In order to initialize the internal WebAssembly function lookup table in libsql shell (sqlite3 binary), one can use the `.init_wasm_func_table` command. This command is safe to be called multiple times, even if the internal table already exists.
 
