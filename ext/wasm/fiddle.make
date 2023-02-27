@@ -52,7 +52,7 @@ $(EXPORTED_FUNCTIONS.fiddle): $(fiddle.EXPORTED_FUNCTIONS.in) $(MAKEFILE.fiddle)
 
 fiddle-module.js := $(dir.fiddle)/fiddle-module.js
 fiddle-module.wasm := $(subst .js,.wasm,$(fiddle-module.js))
-fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.c)
+fiddle.cses := $(dir.top)/shell.c $(sqlite3-wasm.cs)
 
 fiddle.SOAP.js := $(dir.fiddle)/$(notdir $(SOAP.js))
 $(fiddle.SOAP.js): $(SOAP.js)

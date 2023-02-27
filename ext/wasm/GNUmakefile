@@ -189,6 +189,34 @@ else
   $(info Development build. Use '$(MAKE) release' for a smaller release build.)
 endif
 
+########################################################################
+# Adding custom C code via sqlite3_wasm_extra_init.c:
+#
+# If the canonical build process finds the file
+# sqlite3_wasm_extra_init.c in the main wasm build directory, it
+# arranges to include that file in the build of sqlite3.wasm and
+# defines SQLITE_EXTRA_INIT=sqlite3_wasm_extra_init.
+#
+# sqlite3_wasm_extra_init() must be a function with this signature:
+#
+#  int sqlite3_wasm_extra_init(const char *)
+#
+# and the sqlite3 library will call it with an argument of NULL one
+# time during sqlite3_initialize(). If it returns non-0,
+# initialization of the library will fail.
+#
+# The filename can be overridden with:
+#
+#  make sqlite3_wasm_extra_init.c=my_custom_stuff.c
+#
+# See example_extra_init.c for an example implementation.
+########################################################################
+sqlite3_wasm_extra_init.c ?= $(wildcard sqlite3_wasm_extra_init.c)
+ifneq (,$(sqlite3_wasm_extra_init.c))
+  $(info Enabling SQLITE_EXTRA_INIT via $(sqlite3_wasm_extra_init.c).)
+  SQLITE_OPT += -I. -DSQLITE_WASM_EXTRA_INIT
+endif
+
 # bin.version-info = binary to output various sqlite3 version info for
 # embedding in the JS files and in building the distribution zip file.
 # It must NOT be in $(dir.tmp) because we need it to survive the
@@ -576,6 +604,7 @@ endef
 # https://github.com/emscripten-core/emscripten/issues/14383
 sqlite3.wasm := $(dir.dout)/sqlite3.wasm
 sqlite3-wasm.c := $(dir.api)/sqlite3-wasm.c
+sqlite3-wasm.cs := $(sqlite3-wasm.c) $(sqlite3_wasm_extra_init.c)
 # sqlite3-wasm.o vs sqlite3-wasm.c: building against the latter
 # (predictably) results in a slightly faster binary. We're close
 # enough to the target speed requirements that the 500ms makes a
@@ -650,12 +679,12 @@ $$(eval $$(call call-make-pre-post,sqlite3,$(1)))
 emcc.flags.sqlite3.$(1) := $(6)
 $$(eval $$(call C-PP.FILTER, $$(sqlite3-api.js.in), $(3), $(5)))
 $(4): $(3)
-$(4): $(3) $$(MAKEFILE) $$(sqlite3-wasm.c) $$(EXPORTED_FUNCTIONS.api) $$(pre-post-sqlite3.deps.$(1))
+$(4): $(3) $$(MAKEFILE) $$(sqlite3-wasm.cs) $$(EXPORTED_FUNCTIONS.api) $$(pre-post-sqlite3.deps.$(1))
 	@echo "Building $$@ ..."
 	$$(emcc.bin) -o $$@ $$(emcc_opt_full) $$(emcc.flags) \
     $$(emcc.jsflags) \
     $$(pre-post-sqlite3.flags.$(1)) $$(emcc.flags.sqlite3.$(1)) \
-    $$(cflags.common) $$(SQLITE_OPT) $$(sqlite3-wasm.c)
+    $$(cflags.common) $$(SQLITE_OPT) $$(sqlite3-wasm.cs)
 	@$$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,$(2))
 	@if [ bundler-friendly = $(1) ]; then \
 		echo "Patching $(3) for sqlite3.wasm..."; \
@@ -806,7 +835,7 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
 speedtest1.js := $(dir.dout)/speedtest1.js
 speedtest1.wasm := $(dir.dout)/speedtest1.wasm
 cflags.speedtest1 := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
-speedtest1.cses := $(speedtest1.c) $(sqlite3-wasm.c)
+speedtest1.cses := $(speedtest1.c) $(sqlite3-wasm.cs)
 $(eval $(call call-make-pre-post,speedtest1,vanilla))
 $(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
     $(pre-post-speedtest1.deps.vanilla) \
