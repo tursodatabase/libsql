@@ -38,6 +38,7 @@ pub enum AuthError {
 }
 
 /// A witness that the user has been authenticated.
+#[derive(Debug)]
 pub struct Authenticated(());
 
 impl Auth {
@@ -177,16 +178,34 @@ mod tests {
     }
 
     const VALID_JWT: &str = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.\
-        eyJleHAiOjE2NzczMzE3NTJ9.\
-        k1_9-JjMmGCtCuZb7HshOlRojPQmDgu_88o-t4SAR1r7YZCHr6TPaNtWH1tqZuNFut5P64fZTcE-RpiLd8IWDA";
-    const VALID_JWT_KEY: &str = "6Zx1NP27GNsej38CoGCQuUJZYAxGETQ1bIE-Fqxkyjk";
+        eyJleHAiOjQ4MzEwOTI5NDh9.\
+        TbPFJBxqb0fPPXj74DgmIZO41skmNEx-8b3PfAXv7IJMeLa3fNgBi7J5xxLm_-0SMEV3f6KMgUN0dBFbGRk4Ag";
+    const VALID_JWT_KEY: &str = "3dwzg2D96T4GcyZkK4MezpRQxU321g7aTrUn1iwOF0s";
+
+    macro_rules! assert_ok {
+        ($e:expr) => {
+            let res = $e;
+            if let Err(err) = res {
+                panic!("Expected Ok, got Err({:?})", err)
+            }
+        };
+    }
+
+    macro_rules! assert_err {
+        ($e:expr) => {
+            let res = $e;
+            if let Ok(ok) = res {
+                panic!("Expected Err, got Ok({:?})", ok);
+            }
+        };
+    }
 
     #[test]
     fn test_default() {
         let auth = Auth::default();
-        assert!(auth.authenticate_http(None).is_err());
-        assert!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI=").is_err());
-        assert!(auth.authenticate_jwt(Some(VALID_JWT)).is_err());
+        assert_err!(auth.authenticate_http(None));
+        assert_err!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI="));
+        assert_err!(auth.authenticate_jwt(Some(VALID_JWT)));
     }
 
     #[test]
@@ -195,20 +214,20 @@ mod tests {
             http_basic: Some(parse_http_basic_auth_arg("basic:d29qdGVrOnRoZWJlYXI=").unwrap()),
             ..Auth::default()
         };
-        assert!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI=").is_ok());
-        assert!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI").is_ok());
-        assert!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI===").is_ok());
+        assert_ok!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI="));
+        assert_ok!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI"));
+        assert_ok!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI==="));
 
-        assert!(authenticate_http(&auth, "basic d29qdGVrOnRoZWJlYXI=").is_ok());
+        assert_ok!(authenticate_http(&auth, "basic d29qdGVrOnRoZWJlYXI="));
 
-        assert!(authenticate_http(&auth, "Basic d29qdgvronrozwjlyxi=").is_err());
-        assert!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWZveA==").is_err());
+        assert_err!(authenticate_http(&auth, "Basic d29qdgvronrozwjlyxi="));
+        assert_err!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWZveA=="));
 
-        assert!(auth.authenticate_http(None).is_err());
-        assert!(authenticate_http(&auth, "").is_err());
-        assert!(authenticate_http(&auth, "foobar").is_err());
-        assert!(authenticate_http(&auth, "foo bar").is_err());
-        assert!(authenticate_http(&auth, "basic #$%^").is_err());
+        assert_err!(auth.authenticate_http(None));
+        assert_err!(authenticate_http(&auth, ""));
+        assert_err!(authenticate_http(&auth, "foobar"));
+        assert_err!(authenticate_http(&auth, "foo bar"));
+        assert_err!(authenticate_http(&auth, "basic #$%^"));
     }
 
     #[test]
@@ -217,11 +236,14 @@ mod tests {
             jwt_key: Some(parse_jwt_key(VALID_JWT_KEY).unwrap()),
             ..Auth::default()
         };
-        assert!(authenticate_http(&auth, &format!("Bearer {VALID_JWT}")).is_ok());
-        assert!(authenticate_http(&auth, &format!("bearer {VALID_JWT}")).is_ok());
+        assert_ok!(authenticate_http(&auth, &format!("Bearer {VALID_JWT}")));
+        assert_ok!(authenticate_http(&auth, &format!("bearer {VALID_JWT}")));
 
-        assert!(authenticate_http(&auth, "Bearer foobar").is_err());
-        assert!(authenticate_http(&auth, &format!("Bearer {}", &VALID_JWT[..80])).is_err());
+        assert_err!(authenticate_http(&auth, "Bearer foobar"));
+        assert_err!(authenticate_http(
+            &auth,
+            &format!("Bearer {}", &VALID_JWT[..80])
+        ));
     }
 
     #[test]
@@ -230,7 +252,7 @@ mod tests {
             jwt_key: Some(parse_jwt_key(VALID_JWT_KEY).unwrap()),
             ..Auth::default()
         };
-        assert!(auth.authenticate_jwt(Some(VALID_JWT)).is_ok());
-        assert!(auth.authenticate_jwt(Some(&VALID_JWT[..80])).is_err());
+        assert_ok!(auth.authenticate_jwt(Some(VALID_JWT)));
+        assert_err!(auth.authenticate_jwt(Some(&VALID_JWT[..80])));
     }
 }
