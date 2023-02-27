@@ -1,5 +1,5 @@
-C Extend\swasm\sbuild\sto\senable\sinclusion\sof\sclient-custom\sC\scode,\sinitialized\svia\sthe\sSQLITE_EXTRA_INIT\smechanism,\sper\sdiscussion\sin\s[forum:1e1c04f3ed1bc96b|forum\spost\s1e1c04f3ed1bc96b].
-D 2023-02-27T07:12:28.112
+C Minor\sdoc\stweak\sfor\sthe\sprevious\scommit.
+D 2023-02-27T07:23:54.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -508,7 +508,7 @@ F ext/wasm/demo-worker1-promiser.js b99c550763fa792c204e9a7cceadd976004036d9fc3e
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
 F ext/wasm/demo-worker1.js a619adffc98b75b66c633b00f747b856449a134a9a0357909287d80a182d70fa
 F ext/wasm/dist.make f55f9c9e1980ea11a59964e59535c66175a17f004d1c2e274522c3366b3a084a
-F ext/wasm/example_extra_init.c 32c6ce5211409400ee875634d0071a3e4060b6b1d12417624a7e60a7c9d83c40
+F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make 71b686d1f3355c0ce65cd76fb231e209dc30fbd2a3b0fd635bf26df904bffce4
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 163d6139a93fab4bcb72064923df050d4e7c0ff0d8aa061ce8776a6e75da8a10
@@ -2047,8 +2047,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 46639f682975dac6efec4e230aca2c9b127b4fc77e0b465fad38ef4caa9b7a4c
-R 2852837dfc2447b63257f54764575344
+P 68a52cafff60f19c9c998133d04f192b1e8b23f78b8cee13807d76845ef5e13d
+R ba04fdd01cb61be6ab30c7f760e622b1
 U stephan
-Z 644646fdf69d91f54f8f3e9a045a3c06
+Z dd2ceac7f5f21e7a1d89e60cff9cef01
 # Remove this line to create a well-formed Fossil manifest.

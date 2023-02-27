@@ -4,7 +4,8 @@
 ** arranges to include that file in the build of sqlite3.wasm and
 ** defines SQLITE_EXTRA_INIT=sqlite3_wasm_extra_init.
 **
-** sqlite3_wasm_extra_init() must be a function with this signature:
+** The C file must define the function sqlite3_wasm_extra_init() with
+** this signature:
 **
 **  int sqlite3_wasm_extra_init(const char *)
 **
