@@ -1,5 +1,5 @@
-C Minor\sdoc\stweak\sfor\sthe\sprevious\scommit.
-D 2023-02-27T07:23:54.876
+C Further\sto\s[46639f682975dac6],\sthe\sparameters\sof\sa\stable\svalued\sfunction\sthat\nis\son\sthe\sleft\sside\sof\sa\sRIGHT\sJOIN\sdo\snot\sneed\sto\sbe\sin\sthe\sON\sclause.\s\sAdd\nnew\stest\scases\sand\stags\sto\sassociated\stest\scases\swith\sthe\scode.
+D 2023-02-27T14:48:54.802
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -710,7 +710,7 @@ F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c 38c36bb654b4172148aef3b295bbbc1342b52078cf20174f771c746caa98f69a
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c b82d0d33315e1526904b95155e55e61149c4462147668e1cc4567c812735eff1
-F src/whereexpr.c 16d1eefd95f69843b45aba6d04fe2b63fc4f51584dff85ae380f5c20718f3c75
+F src/whereexpr.c 1dfda1695e4480c24248157df55bb4d66c732dc8d14ac16b4f076bb15de93d63
 F src/window.c 76a27cff9ea2ded0c2c3527187029259440fabcc4cc4c07b11d942c78494a614
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -1215,14 +1215,14 @@ F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
-F test/join.test e32cb9b1491eed682489e2cde33a22a4eb7611fe5aa3b0aa4b275fe27ab3f3ac
+F test/join.test ed1daf99958fed1b9f017e56bae2bb6b49339a1ec0b70b9e8f7259960c6bf387
 F test/join2.test 466b07233820f5deee66a6c3bf6e4500c8bbf7b83649e67606f5f649c07928c0
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 91f1f4c7d81fd87b58e9ba7cf4a2b5d39e3583b4f8e498a162722a60259c5208
 F test/join6.test f809c025fa253f9e150c0e9afd4cef8813257bceeb6f46e04041228c9403cc2c
 F test/join7.test 2268dcbb54b724391dda3748ea95c60d960607ffeed67885675998e7117697f6
-F test/join8.test 40bdf5612444e986187edc5fd5ea9094cb7975b78cac563a97f1f7aefde34ba6
+F test/join8.test d384d63985e3991c404afccadaf3efd1cdf9cd72680167f80e3cb80b95c18c68
 F test/join9.test 9056ddd3b0c0f4f9d658f4521038d9a37dc23ead8ca9a505d0b0db2b6a471e05
 F test/joinA.test 7eab225dc1c1ab258a5e62513a4ed7cabbd3db971d59d5d92f4fb6fa14c12f6a
 F test/joinB.test 1b2ba3fc8568b49411787fccbf540570c148e9b6a53a30f80691cb6268098ded
@@ -1552,7 +1552,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 241425ce3998687ab24adba09cb95e8012e17499b84a0ed47e128ab45e588bef
+F test/tabfunc01.test 668e5e39108ce84b2f24e402f9382daecc0417edb9c78c6c8f58170584e80c91
 F test/table.test eb3463b7add9f16a5bb836badf118cf391b809d09fdccd1f79684600d07ec132
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -2047,8 +2047,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 68a52cafff60f19c9c998133d04f192b1e8b23f78b8cee13807d76845ef5e13d
-R ba04fdd01cb61be6ab30c7f760e622b1
-U stephan
-Z dd2ceac7f5f21e7a1d89e60cff9cef01
+P a8832164d36ea88dc1c5c874c67212800238eab6b1477e5ca92fbf8c77f341b4
+R b2e782aaeda2460b71d17088eec2e860
+U drh
+Z 08a6cb668d0e2c04f5a8fa21f96385ca
 # Remove this line to create a well-formed Fossil manifest.
