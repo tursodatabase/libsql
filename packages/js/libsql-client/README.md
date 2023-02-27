@@ -5,12 +5,12 @@
 To get started, you need `sqld` running somewhere. Then:
 
 ```typescript
-import { connect } from "@libsql/client"
+import { createClient } from "@libsql/client"
 
 const config = {
   url: "http://localhost:8080"
 };
-const db = connect(config);
+const db = createClient(config);
 const rs = await db.execute("SELECT * FROM users");
 console.log(rs);
 ```
@@ -18,12 +18,12 @@ console.log(rs);
 You can also just run against local SQLite with:
 
 ```typescript
-import { connect } from "@libsql/client"
+import { createClient } from "@libsql/client"
 
 const config = {
   url: "file:example.db" // Use "file::memory:" for in-memory mode.
 };
-const db = connect(config);
+const db = createClient(config);
 const rs = await db.execute("SELECT * FROM users");
 console.log(rs);
 ```
