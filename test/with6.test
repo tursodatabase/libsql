@@ -363,9 +363,13 @@ do_eqp_test 400 {
   |  |--SEARCH raw USING INDEX sqlite_autoindex_raw_1 (country=? AND date>? AND date<?)
   |  `--USE TEMP B-TREE FOR GROUP BY
   |--SCAN sums
+  |--BLOOM FILTER ON sums (country=? AND date=?)
   |--SEARCH sums USING AUTOMATIC COVERING INDEX (country=? AND date=?)
+  |--BLOOM FILTER ON sums (country=? AND date=?)
   |--SEARCH sums USING AUTOMATIC COVERING INDEX (country=? AND date=?)
+  |--BLOOM FILTER ON sums (country=? AND date=?)
   |--SEARCH sums USING AUTOMATIC COVERING INDEX (country=? AND date=?)
+  |--BLOOM FILTER ON i (country=?)
   `--SEARCH i USING AUTOMATIC COVERING INDEX (country=?)
 }
 

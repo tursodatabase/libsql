@@ -1031,6 +1031,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
   VdbeComment((v, "for %s", pTable->zName));
   if( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
+    sqlite3WhereExplainBloomFilter(pParse, pWC->pWInfo, pLevel);
     pLevel->regFilter = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Blob, 10000, pLevel->regFilter);
   }
