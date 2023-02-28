@@ -2457,10 +2457,10 @@ struct sqlite3_mem_methods {
 ** either generated columns or decending indexes.
 ** </dd>
 
-** [[SQLITE_DBCONFIG_STMT_SCANSTATS]]
-** <dt>SQLITE_DBCONFIG_STMT_SCANSTATS</td>
-** <dd>The SQLITE_DBCONFIG_STMT_SCANSTATS option is only useful in
-** SQLITE_ENABLE_STMT_SCANSTATS builds. In this case, it sets or clears
+** [[SQLITE_DBCONFIG_STMT_SCANSTATUS]]
+** <dt>SQLITE_DBCONFIG_STMT_SCANSTATUS</td>
+** <dd>The SQLITE_DBCONFIG_STMT_SCANSTATUS option is only useful in
+** SQLITE_ENABLE_STMT_SCANSTATUS builds. In this case, it sets or clears
 ** a flag that enables collection of the sqlite3_stmt_scanstatus_v2()
 ** statistics. For statistics to be collected, the flag must be set on
 ** the database handle both when the SQL statement is prepared and when it 
@@ -2486,7 +2486,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
-#define SQLITE_DBCONFIG_STMT_SCANSTATS        1018 /* int int* */
+#define SQLITE_DBCONFIG_STMT_SCANSTATUS       1018 /* int int* */
 #define SQLITE_DBCONFIG_MAX                   1018 /* Largest DBCONFIG */
 
 /*

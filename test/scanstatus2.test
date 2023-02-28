@@ -19,7 +19,7 @@ ifcapable !scanstatus {
   return
 }
 
-sqlite3_db_config db STMT_SCANSTATS 1
+sqlite3_db_config db STMT_SCANSTATUS 1
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
@@ -143,7 +143,7 @@ QUERY (nCycle=nnn)
 #-------------------------------------------------------------------------
 ifcapable fts5 {
   reset_db
-  sqlite3_db_config db STMT_SCANSTATS 1
+  sqlite3_db_config db STMT_SCANSTATUS 1
   do_execsql_test 2.0 {
     CREATE VIRTUAL TABLE ft USING fts5(a);
     INSERT INTO ft VALUES('abc');
@@ -161,7 +161,7 @@ QUERY (nCycle=nnn)
 
 #-------------------------------------------------------------------------
 reset_db
-sqlite3_db_config db STMT_SCANSTATS 1
+sqlite3_db_config db STMT_SCANSTATUS 1
 do_execsql_test 3.0 {
   CREATE TABLE x1(a, b);
   CREATE TABLE x2(c, d);
@@ -183,7 +183,7 @@ QUERY (nCycle=nnn)
 
 #-------------------------------------------------------------------------
 reset_db
-sqlite3_db_config db STMT_SCANSTATS 1
+sqlite3_db_config db STMT_SCANSTATUS 1
 do_execsql_test 4.0 {
   CREATE TABLE rt1 (id INTEGER PRIMARY KEY, x1, x2);
   CREATE TABLE rt2 (id, x1, x2);

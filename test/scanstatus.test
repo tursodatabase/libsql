@@ -48,7 +48,7 @@ proc do_scanstatus_test {tn res} {
 do_execsql_test 1.0a { SELECT count(*) FROM t1, t2; } 6
 do_scanstatus_test 1.0b { }
 
-sqlite3_db_config db STMT_SCANSTATS 1
+sqlite3_db_config db STMT_SCANSTATUS 1
 
 do_execsql_test 1.1 { SELECT count(*) FROM t1, t2; } 6
 do_scanstatus_test 1.2 {
@@ -99,7 +99,7 @@ do_scanstatus_test 1.10 {
 # Try a few different types of scans.
 #
 reset_db
-sqlite3_db_config db STMT_SCANSTATS 1
+sqlite3_db_config db STMT_SCANSTATUS 1
 do_execsql_test 2.1 {
   CREATE TABLE x1(i INTEGER PRIMARY KEY, j);
   INSERT INTO x1 VALUES(1, 'one');
@@ -283,7 +283,7 @@ do_scanstatus_test 4.2.2 {
 # Further tests of different scan types.
 #
 reset_db
-sqlite3_db_config db STMT_SCANSTATS 1
+sqlite3_db_config db STMT_SCANSTATUS 1
 proc tochar {i} {
   set alphabet {a b c d e f g h i j k l m n o p q r s t u v w x y z}
   return [lindex $alphabet [expr $i % [llength $alphabet]]]

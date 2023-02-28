@@ -1757,7 +1757,7 @@ struct sqlite3 {
 #define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */
 #define SQLITE_IgnoreChecks   0x00000200  /* Do not enforce check constraints */
-#define SQLITE_StmtScanStats  0x00000400  /* Enable stmt_scanstats() counters */
+#define SQLITE_StmtScanStatus 0x00000400  /* Enable stmt_scanstats() counters */
 #define SQLITE_NoCkptOnClose  0x00000800  /* No checkpoint on close()/DETACH */
 #define SQLITE_ReverseOrder   0x00001000  /* Reverse unordered SELECTs */
 #define SQLITE_RecTriggers    0x00002000  /* Enable recursive triggers */
@@ -5583,7 +5583,7 @@ sqlite3_uint64 sqlite3Hwtime(void);
 #endif
 
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
-# define IS_STMT_SCANSTATUS(db) (db->flags & SQLITE_StmtScanStats)
+# define IS_STMT_SCANSTATUS(db) (db->flags & SQLITE_StmtScanStatus)
 #else
 # define IS_STMT_SCANSTATUS(db) 0
 #endif
