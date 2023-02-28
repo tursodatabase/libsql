@@ -1181,6 +1181,7 @@ int runCombinedDbSqlInput(
     sqlite3_free(aDb);
     return 1;
   }
+  sqlite3_db_config(cx.db, SQLITE_DBCONFIG_STMT_SCANSTATUS, 1, 0);
   if( bVdbeDebug ){
     sqlite3_exec(cx.db, "PRAGMA vdbe_debug=ON", 0, 0, 0);
   }
