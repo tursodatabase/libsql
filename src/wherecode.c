@@ -111,9 +111,9 @@ static void explainIndexRange(StrAccum *pStr, WhereLoop *pLoop){
 
 /*
 ** This function is a no-op unless currently processing an EXPLAIN QUERY PLAN
-** command, or if either SQLITE_DEBUG or SQLITE_ENABLE_STMT_SCANSTATUS was
-** defined at compile-time. If it is not a no-op, a single OP_Explain opcode 
-** is added to the output to describe the table scan strategy in pLevel.
+** command, or if stmt_scanstatus_v2() stats are enabled, or if SQLITE_DEBUG 
+** was defined at compile-time. If it is not a no-op, a single OP_Explain
+** opcode is added to the output to describe the table scan strategy in pLevel.
 **
 ** If an OP_Explain opcode is added to the VM, its address is returned.
 ** Otherwise, if no OP_Explain is coded, zero is returned.
@@ -125,8 +125,8 @@ int sqlite3WhereExplainOneScan(
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
   int ret = 0;
-#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
-  if( sqlite3ParseToplevel(pParse)->explain==2 )
+#if !defined(SQLITE_DEBUG)
+  if( sqlite3ParseToplevel(pParse)->explain==2 || IS_STMT_SCANSTATUS(pParse->db) )
 #endif
   {
     SrcItem *pItem = &pTabList->a[pLevel->iFrom];
@@ -292,27 +292,29 @@ void sqlite3WhereAddScanStatus(
   WhereLevel *pLvl,               /* Level to add scanstatus() entry for */
   int addrExplain                 /* Address of OP_Explain (or 0) */
 ){
-  const char *zObj = 0;
-  WhereLoop *pLoop = pLvl->pWLoop;
-  int wsFlags = pLoop->wsFlags;
-  int viaCoroutine = 0;
+  if( IS_STMT_SCANSTATUS( sqlite3VdbeDb(v) ) ){
+    const char *zObj = 0;
+    WhereLoop *pLoop = pLvl->pWLoop;
+    int wsFlags = pLoop->wsFlags;
+    int viaCoroutine = 0;
 
-  if( (wsFlags & WHERE_VIRTUALTABLE)==0  &&  pLoop->u.btree.pIndex!=0 ){
-    zObj = pLoop->u.btree.pIndex->zName;
-  }else{
-    zObj = pSrclist->a[pLvl->iFrom].zName;
-    viaCoroutine = pSrclist->a[pLvl->iFrom].fg.viaCoroutine;
-  }
-  sqlite3VdbeScanStatus(
-      v, addrExplain, pLvl->addrBody, pLvl->addrVisit, pLoop->nOut, zObj
-  );
-
-  if( viaCoroutine==0 ){
-    if( (wsFlags & (WHERE_MULTI_OR|WHERE_AUTO_INDEX))==0 ){
-      sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iTabCur);
+    if( (wsFlags & WHERE_VIRTUALTABLE)==0  &&  pLoop->u.btree.pIndex!=0 ){
+      zObj = pLoop->u.btree.pIndex->zName;
+    }else{
+      zObj = pSrclist->a[pLvl->iFrom].zName;
+      viaCoroutine = pSrclist->a[pLvl->iFrom].fg.viaCoroutine;
     }
-    if( wsFlags & WHERE_INDEXED ){
-      sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iIdxCur);
+    sqlite3VdbeScanStatus(
+        v, addrExplain, pLvl->addrBody, pLvl->addrVisit, pLoop->nOut, zObj
+    );
+
+    if( viaCoroutine==0 ){
+      if( (wsFlags & (WHERE_MULTI_OR|WHERE_AUTO_INDEX))==0 ){
+        sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iTabCur);
+      }
+      if( wsFlags & WHERE_INDEXED ){
+        sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iIdxCur);
+      }
     }
   }
 }

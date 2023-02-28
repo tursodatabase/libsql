@@ -19,6 +19,8 @@ ifcapable !scanstatus {
   return
 }
 
+sqlite3_db_config db STMT_SCANSTATS 1
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b);
   CREATE TABLE t2(x, y);
@@ -141,6 +143,7 @@ QUERY (nCycle=nnn)
 #-------------------------------------------------------------------------
 ifcapable fts5 {
   reset_db
+  sqlite3_db_config db STMT_SCANSTATS 1
   do_execsql_test 2.0 {
     CREATE VIRTUAL TABLE ft USING fts5(a);
     INSERT INTO ft VALUES('abc');
@@ -158,6 +161,7 @@ QUERY (nCycle=nnn)
 
 #-------------------------------------------------------------------------
 reset_db
+sqlite3_db_config db STMT_SCANSTATS 1
 do_execsql_test 3.0 {
   CREATE TABLE x1(a, b);
   CREATE TABLE x2(c, d);
@@ -173,11 +177,13 @@ do_graph_test 2.1 {
 QUERY (nCycle=nnn)
 --SCAN x1 (nCycle=nnn)
 --CREATE AUTOMATIC INDEX ON x2(c, d) (nCycle=nnn)
+--BLOOM FILTER ON x2 (c=?)
 --SEARCH x2 USING AUTOMATIC COVERING INDEX (c=?) (nCycle=nnn)
 }
 
 #-------------------------------------------------------------------------
 reset_db
+sqlite3_db_config db STMT_SCANSTATS 1
 do_execsql_test 4.0 {
   CREATE TABLE rt1 (id INTEGER PRIMARY KEY, x1, x2);
   CREATE TABLE rt2 (id, x1, x2);
@@ -189,6 +195,7 @@ do_graph_test 4.1 {
 QUERY (nCycle=nnn)
 --SCAN rt1 (nCycle=nnn)
 --CREATE AUTOMATIC INDEX ON rt2(x1, id, x2) (nCycle=nnn)
+--BLOOM FILTER ON rt2 (x1=?)
 --SEARCH rt2 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
 }
 
@@ -198,6 +205,7 @@ do_graph_test 4.2 {
 QUERY (nCycle=nnn)
 --SCAN rt1 (nCycle=nnn)
 --CREATE AUTOMATIC INDEX ON rt2(x1, id) (nCycle=nnn)
+--BLOOM FILTER ON rt2 (x1=?)
 --SEARCH rt2 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
 }
 
@@ -215,6 +223,7 @@ do_graph_test 4.4 {
 QUERY (nCycle=nnn)
 --SCAN rt1 (nCycle=nnn)
 --CREATE AUTOMATIC INDEX ON rt2(x1, id) WHERE <expr> (nCycle=nnn)
+--BLOOM FILTER ON rt2 (x1=?)
 --SEARCH rt2 USING AUTOMATIC PARTIAL COVERING INDEX (x1=?) (nCycle=nnn)
 }
 
@@ -229,6 +238,7 @@ QUERY (nCycle=nnn)
 ----USE TEMP B-TREE FOR GROUP BY
 --SCAN rt1 (nCycle=nnn)
 --CREATE AUTOMATIC INDEX ON v1(x1, cnt) (nCycle=nnn)
+--BLOOM FILTER ON v1 (x1=?)
 --SEARCH v1 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
 }
 

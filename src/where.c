@@ -831,7 +831,7 @@ static void explainAutomaticIndex(
   int bPartial,                   /* True if pIdx is a partial index */
   int *pAddrExplain               /* OUT: Address of OP_Explain */
 ){
-  if( pParse->explain!=2 ){
+  if( IS_STMT_SCANSTATUS(pParse->db) && pParse->explain!=2 ){
     Table *pTab = pIdx->pTable;
     const char *zSep = "";
     char *zText = 0;

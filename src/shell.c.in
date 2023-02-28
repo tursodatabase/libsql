@@ -5416,8 +5416,13 @@ static void open_db(ShellState *p, int openFlags){
     }
 #endif
   }
-  if( p->bSafeModePersist && p->db!=0 ){
-    sqlite3_set_authorizer(p->db, safeModeAuth, p);
+  if( p->db!=0 ){
+    if( p->bSafeModePersist ){
+      sqlite3_set_authorizer(p->db, safeModeAuth, p);
+    }
+    sqlite3_db_config(
+        p->db, SQLITE_DBCONFIG_STMT_SCANSTATS, p->scanstatsOn, (int*)0
+    );
   }
 }
 
@@ -9769,6 +9774,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         p->scanstatsOn = (u8)booleanValue(azArg[1]);
       }
+      sqlite3_db_config(
+          p->db, SQLITE_DBCONFIG_STMT_SCANSTATS, p->scanstatsOn, (int*)0
+      );
 #ifndef SQLITE_ENABLE_STMT_SCANSTATUS
       raw_printf(stderr, "Warning: .scanstats not available in this build.\n");
 #endif
