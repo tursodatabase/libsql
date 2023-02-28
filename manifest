@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sSQLITE_DBCONFIG_STMT_SCANSTATS\sto\sSQLITE_DBCONFIG_STMT_SCANSTATUS.
-D 2023-02-28T20:04:01.467
+C Updates\sto\sspeedtest1.c\sand\sthe\sspeed-check.sh\stest\sscript\sso\sthat\sthey\swork\nwith\sthe\snew\sSQLITE_DBCONFIG_STMT_SCANSTATUS\scontrol.
+D 2023-02-28T20:06:30.036
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1521,7 +1521,7 @@ F test/speed3.test 694affeb9100526007436334cf7d08f3d74b85ef
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 377a0c48e5a92e0b11c1c5ebb1bc9d83a7312c922bc0cb05970ef5d6a96d1f0c
-F test/speedtest1.c 645dbf022337116fcef60ac2579e8d25c94e4475109e2c6f48005f302efe7b09
+F test/speedtest1.c 4a883fe277c289161f84f8c805a38f78bfbd9515eb417071f9bce817c2ca8756
 F test/spellfix.test 951a6405d49d1a23d6b78027d3877b4a33eeb8221dcab5704b499755bb4f552e
 F test/spellfix2.test dfc8f519a3fc204cb2dfa8b4f29821ae90f6f8c3
 F test/spellfix3.test 0f9efaaa502a0e0a09848028518a6fb096c8ad33
@@ -2005,7 +2005,7 @@ F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c
 F tool/showwal.c 4699048f68b6dd7b451011abfff404b8890d5a0b7dab78d2ad50d018116239d5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 1b5be34c6223cb1af06da2a10fb77863eb869b1962d055820b0a11cf2336ab45
-F tool/speed-check.sh 9b27e158330a6587e92214b2344cc6fadde514996c0648fc0de7955ef7a79d77
+F tool/speed-check.sh c24c30cddd0ecb6d1d0775411d22f7619f55fa696a305487645e27b1b8fc05a2
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0f5579bef27b84ee855065cfe87703c51e1f9773906a9e0d4e4dafc90bd0e553
-R 9421f5c28d2a68696ef4d0c2d913d8d5
-U dan
-Z d689787b0a2f50878869838fedf1f287
+P a63e4a150b505fc309fac847131009ee9965eb1b798ebcb202ec8b52f9189240
+R ea36b32b35459259bf3c7ddf5946c632
+U drh
+Z 7b95aa43eab112d9f61ce625acf1b329
 # Remove this line to create a well-formed Fossil manifest.

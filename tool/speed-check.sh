@@ -158,6 +158,9 @@ while test "$1" != ""; do
     --fp)
         SPEEDTEST_OPTS="$SPEEDTEST_OPTS --testset fp"
         ;;
+    --stmtscanstatus)
+        SPEEDTEST_OPTS="$SPEEDTEST_OPTS --stmtscanstatus"
+        ;;
     -*)
         CC_OPTS="$CC_OPTS $1"
         ;;
