@@ -683,8 +683,7 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
     }else if( p->flags & MEM_Real ){
       h += sqlite3VdbeIntValue(p);
     }else if( p->flags & (MEM_Str|MEM_Blob) ){
-      h += p->n;
-      if( p->flags & MEM_Zero ) h += p->u.nZero;
+      /* no-op */
     }
   }
   return h;
