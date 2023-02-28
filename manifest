@@ -1,5 +1,5 @@
-C In\sthe\sBloom\sfilter\soptimization,\shash\sall\sstrings\sand\sblobs\sinto\sthe\ssame\nvalue,\sbecause\swe\sdo\snot\sknow\sif\stwo\sdifferent\sstrings\smight\scompare\sequal\neven\sif\sthey\shave\sdifferent\sbyte\ssequences,\sdue\sto\scollating\sfunctions.\nFormerly,\sthe\shash\sof\sa\sstring\sor\sblob\swas\sjust\sits\slength.\s\sThis\scould\nall\sbe\simproved.\s\sFix\sfor\sthe\sissue\sreported\sby\n[forum:/forumpost/0846211821|forum\spost\s0846211821].
-D 2023-02-28T14:28:54.933
+C Only\suse\sa\sBloom\sfilter\son\san\sautomatic\sindex\sif\sone\sor\smore\sof\sthe\skey\ncolumns\sin\sthe\sindex\scan\stake\son\snon-TEXT\svalues.
+D 2023-02-28T18:06:52.731
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -693,7 +693,7 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3ff7bc2b48dd425b1448304bb86273b05da1621f136d51dbb9789f8803559a1f
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c b3fd04b0643edd7e0a4356aff6d2cf50f04d0e182e292c3a330d1afffe3100e1
+F src/vdbe.c 523fbe2086179b42dfdc07093f592443f0a3e9583d1ff17ef0d03a25777c1347
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 40c47b1528d308a322203de21d2e0d711753257ed9771771b6129214b1d65932
@@ -708,7 +708,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c accf653499cf77d8974aeb9089d81bd0e689dca2b9ee2114096147eb58d70f61
+F src/where.c 76d2014b1e69935cc9b50a710f08321d63f7827f2cf6fd9f21cde7e909a61a6c
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c b82d0d33315e1526904b95155e55e61149c4462147668e1cc4567c812735eff1
 F src/whereexpr.c 1dfda1695e4480c24248157df55bb4d66c732dc8d14ac16b4f076bb15de93d63
@@ -774,7 +774,7 @@ F test/auth2.test 9eb7fce9f34bf1f50d3f366fb3e606be5a2000a1
 F test/auth3.test 76d20a7fa136d63bcfcf8bcb65c0b1455ed71078d81f22bcd0550d3eb18594ab
 F test/autoanalyze1.test b9cc3f32a990fa56669b668d237c6d53e983554ae80c0604992e18869a0b2dec
 F test/autoinc.test 997d6f185f138229dc4251583a1d04816423dddc2fc034871a01aeb1d728cb39
-F test/autoindex1.test b8f093ff5574f14d03645148550612b1a01cd45669b05f5728a6c6fef5ac5bec
+F test/autoindex1.test d34caffb0384003ee28eae87679214c029e9be4b332d9649a79e0b94ab70502c
 F test/autoindex2.test 12ef578928102baaa0dc23ad397601a2f4ecb0df
 F test/autoindex3.test dcd6b2f8bed2be67b131e2e671f892e971d934e24fd00988952d0e0a67e24aa7
 F test/autoindex4.test 5df39313526b6f22a26bd119bbd97ca69f28386ab3c671fc10568d921c41eb08
@@ -816,7 +816,7 @@ F test/bind2.test 918bc35135f4141809ead7585909cde57d44db90a7a62aef540127148f91aa
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test e7ac6c7d3a985cc4678c64f325292529a69ae252
-F test/bloom1.test 589361c1f20158a8583863738c883f0e73e82d18422c9b4ed9c7068c13c2d310
+F test/bloom1.test ab125229849c085b8d4a6768cc321d330d1ed47b21902f1a2854db832c625768
 F test/boundary1.tcl 6421b2d920d8b09539503a8673339d32f7609eb1
 F test/boundary1.test 66d7f4706ccdb42d58eafdb081de07b0eb42d77b
 F test/boundary2.tcl e34ef4e930cf1083150d4d2c603e146bd3b76bcb
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d7b2ac1c1a31fa4285cf6df0995db7e7705bb6a1bc94850c14c94cc4e3eb239a
-R 2983937b0d34422b7617ca6b30588a0e
+P 090304b870419acb5b05205a07fc75830b556928149f76a843cda526f77a6fc0
+R 192a8af525d9a67c0614fb52e425206b
 U drh
-Z c3cca21d42699bd3e59fea902b259dbf
+Z d906284cbfaa2356b8109e77d4c16f08
 # Remove this line to create a well-formed Fossil manifest.

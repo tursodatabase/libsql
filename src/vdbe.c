@@ -683,7 +683,10 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
     }else if( p->flags & MEM_Real ){
       h += sqlite3VdbeIntValue(p);
     }else if( p->flags & (MEM_Str|MEM_Blob) ){
-      /* no-op */
+      /* All strings have the same hash and all blobs have the same hash,
+      ** though, at least, those hashes are different from each other and
+      ** from NULL. */
+      h += 4093 + (p->flags & (MEM_Str|MEM_Blob));
     }
   }
   return h;
