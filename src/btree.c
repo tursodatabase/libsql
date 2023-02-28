@@ -1231,27 +1231,31 @@ static void btreeParseCellPtr(
   iKey = *pIter;
   if( iKey>=0x80 ){
     u8 x;
-    iKey = ((iKey&0x7f)<<7) | ((x = *++pIter) & 0x7f);
+    iKey = (iKey<<7) ^ (x = *++pIter);
     if( x>=0x80 ){
-      iKey = (iKey<<7) | ((x =*++pIter) & 0x7f);
+      iKey = (iKey<<7) ^ (x = *++pIter);
       if( x>=0x80 ){
-        iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+        iKey = (iKey<<7) ^ 0x10204000 ^ (x = *++pIter);
         if( x>=0x80 ){
-          iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+          iKey = (iKey<<7) ^ 0x4000 ^ (x = *++pIter);
           if( x>=0x80 ){
-            iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+            iKey = (iKey<<7) ^ 0x4000 ^ (x = *++pIter);
             if( x>=0x80 ){
-              iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+              iKey = (iKey<<7) ^ 0x4000 ^ (x = *++pIter);
               if( x>=0x80 ){
-                iKey = (iKey<<7) | ((x = *++pIter) & 0x7f);
+                iKey = (iKey<<7) ^ 0x4000 ^ (x = *++pIter);
                 if( x>=0x80 ){
-                  iKey = (iKey<<8) | (*++pIter);
+                  iKey = (iKey<<8) ^ 0x8000 ^ (*++pIter);
                 }
               }
             }
           }
         }
+      }else{
+        iKey ^= 0x204000;
       }
+    }else{
+      iKey ^= 0x4000;
     }
   }
   pIter++;

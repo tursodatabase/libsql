@@ -1,5 +1,5 @@
-C Improve\sthe\serror\smessage\sgenerated\sby\sthe\srecovery\sextension\sif\sit\sis\sused\swith\sa\snon-SQLITE_ENABLE_DBPAGE_VTAB\sbuild.
-D 2023-02-28T11:02:02.719
+C Performance\soptimization\sin\sthe\svarint\sdecoder\sfor\sthe\scell\sparser.
+D 2023-02-28T12:31:40.190
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -562,7 +562,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 04bf3d1c49c9000af0e2d50f04198641fd7dfc6e4eae495cb60b002d38b45e27
+F src/btree.c c547e099f853de61835ff45da8d956a932d02ecf1ffd472a1f2a103b83e6dd40
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h 06bb2c1a07172d5a1cd27a2a5d617b93b1e976c5873709c31964786f86365a6e
 F src/build.c c55ab6d1b089ceef57160e840f05f692955ac90944c3d04fcf01d97fd7bfd08d
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07334aa17b6ded27c5bd353998d96645a94cdcf32440abb59d127a002cd98ce9
-R 70a154261a0e3445bc93a596d807722e
-U dan
-Z 7abce0ed86afcadaaf24935108e839a7
+P c1f2a1d55c180fb51a4e203befbbe529bdd23137b26190c50b8f85820450e7fa
+R b1ce68bb615f7298ac94af8677093307
+U drh
+Z da47b6a5dd71cc45cfa11f11f6878a01
 # Remove this line to create a well-formed Fossil manifest.
