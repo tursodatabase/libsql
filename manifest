@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\sapply\sthe\scount-of-view\soptimization\sto\sa\sCTE.\ndbsqlfuzz\sef8623915d843b150c159166ee4548c78cc6895a
-D 2023-03-01T13:54:07.942
+C Follow-up\sto\s[bbaf1f2eb1e1637b]:\sMake\ssure\ssubtypes\sdo\snot\scross\sa\ssubquery\nboundary\seven\sif\sthe\sfunction\sthat\sreturned\sthe\svalue\swith\sa\ssubtype\sis\nburied\sdown\sinside\sa\slarger\sexpression.\s\sThis\sfixes\sa\sproblem\sidentified\nby\s[forum:/forumpost/37dd14a538|forum\spost\s37dd14a538].
+D 2023-03-01T15:21:53.838
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -573,7 +573,7 @@ F src/date.c f21815ca7172ce073db3163ac54c8d9f2841077165c1a6123b4d1c376a0c7ec7
 F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
-F src/expr.c 2e5e67e800c9416996df52409746a2f3c7dadf5d38b5a367ce379b239e3f40c8
+F src/expr.c e3520c28b322d0e06e883c91de15322ddd06a98d5b4564c3273c99da9391d1b8
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c d187be57a886ddf4e6b7ef584a494361899be3df5eee6d4a747b68ff4aff4122
@@ -1541,7 +1541,7 @@ F test/subquery.test 3a1a5b600b8d4f504d2a2c61f33db820983dba94a0ef3e4aedca8f0165e
 F test/subquery2.test 90cf944b9de8204569cf656028391e4af1ccc8c0cc02d4ef38ee3be8de1ffb12
 F test/subselect.test 0966aa8e720224dbd6a5e769a3ec2a723e332303
 F test/substr.test a673e3763e247e9b5e497a6cacbaf3da2bd8ec8921c0677145c109f2e633f36b
-F test/subtype1.test 45c85632abd38f7ea9b33f17448d966d67550f552e0822bab74576814d0d1718
+F test/subtype1.test 7a9c55ed84d4ce551203d18046f925e293d75f69da81bff71aaf2696e4a2a748
 F test/superlock.test ec94f0556b6488d97f71c79f9061ae08d9ab8f12
 F test/swarmvtab.test 250231404fcac88f61a6c147bb0e3a118ed879278cd3ccb0ae2d3a729e1e8e26
 F test/swarmvtab2.test c948cb2fdfc5b01d85e8f6d6504854202dc1a0782ab2a0ed61538f27cbd0aa5c
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4fe1419ac3161ea8735241b04913593170c636cf3e1583756fe94edd396cd38b
-R 8eb90f4d18319eb19774d62b004fc1bc
+P abc3a383636c0346053b5d09d96585f56c64cacb5751673ea3bf339e4955d1cd
+R df8f421f27eca726fd01bc8901795f0a
 U drh
-Z 423142ebb5d4ee37849ae60a48c54522
+Z d4a7374d77ecf078e57dc52b4f6eecbc
 # Remove this line to create a well-formed Fossil manifest.

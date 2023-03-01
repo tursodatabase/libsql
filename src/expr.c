@@ -4719,10 +4719,13 @@ expr_code_doover:
       return target;
     }
     case TK_COLLATE: {
-      if( !ExprHasProperty(pExpr, EP_Collate)
-       && ALWAYS(pExpr->pLeft)
-       && pExpr->pLeft->op==TK_FUNCTION
-      ){
+      if( !ExprHasProperty(pExpr, EP_Collate) ){
+        /* A TK_COLLATE Expr node without the EP_Collate tag is a so-called
+        ** "SOFT-COLLATE" that is added to constraints that are pushed down
+        ** from outer queries into sub-queries by the push-down optimization.
+        ** Clear subtypes as subtypes may not cross a subquery boundary.
+        */
+        assert( pExpr->pLeft );
         inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
         if( inReg!=target ){
           sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
