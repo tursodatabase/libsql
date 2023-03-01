@@ -229,18 +229,27 @@ fn handle_version() -> Response<Body> {
     Response::new(Body::from(version.as_bytes()))
 }
 
+async fn load_body(mut req: Request<Body>) -> anyhow::Result<Bytes> {
+    let mut bytes = BytesMut::new();
+    while let Some(data) = req.data().await {
+        let data = data?;
+        bytes.extend(data);
+    }
+
+    Ok(bytes.freeze())
+}
+
 async fn load_dump(
-    mut req: Request<Body>,
+    req: Request<Body>,
     sender: mpsc::Sender<Message>,
 ) -> anyhow::Result<Response<Body>> {
-    match req.data().await {
-        Some(Ok(data)) => {
+    match load_body(req).await {
+        Ok(data) => {
             // FIXME: Dumps may not fit in memory. A better way would be to stream the payload, and
             // have a dedicated path to load the dump from it.
             let mut queries = Vec::new();
-            let s = String::from_utf8(data.to_vec())?;
-            for line in s.lines() {
-                let stmt = Statement::new_unchecked(line);
+            for stmt in Statement::parse_unchecked(&data) {
+                let stmt = stmt?;
                 queries.push(Query {
                     stmt,
                     params: Params::empty(),
@@ -258,8 +267,7 @@ async fn load_dump(
                 Err(e) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
             }
         }
-        Some(Err(e)) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
-        None => Ok(Response::new(Body::empty())),
+        Err(e) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
     }
 }
 
