@@ -1,11 +1,7 @@
-test: libsql-test packages-test
+test: libsql-test
 .PHONY: test
 
 libsql-test:
 	@cargo build
 	@./testing/run
 .PHONY: libsq-test
-
-packages-test:
-	@cd packages/js/libsql-client && npm i && npm run build && npm test
-.PHONY: packages-test
