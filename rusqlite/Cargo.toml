@@ -56,7 +56,7 @@ hooks = []
 i128_blob = []
 sqlcipher = ["libsqlite3-sys/sqlcipher"]
 libsql = ["libsqlite3-sys/libsql"]
-libsql-wasm = ["libsqlite3-sys/libsql-wasm"]
+libsql-wasm = ["libsql", "libsqlite3-sys/libsql-wasm"]
 unlock_notify = ["libsqlite3-sys/unlock_notify"]
 # xSavepoint, xRelease and xRollbackTo: 3.7.7 (2011-06-23)
 vtab = []
