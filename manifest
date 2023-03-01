@@ -1,5 +1,5 @@
-C Follow-up\sto\s[bbaf1f2eb1e1637b]:\sMake\ssure\ssubtypes\sdo\snot\scross\sa\ssubquery\nboundary\seven\sif\sthe\sfunction\sthat\sreturned\sthe\svalue\swith\sa\ssubtype\sis\nburied\sdown\sinside\sa\slarger\sexpression.\s\sThis\sfixes\sa\sproblem\sidentified\nby\s[forum:/forumpost/37dd14a538|forum\spost\s37dd14a538].
-D 2023-03-01T15:21:53.838
+C When\sflattening\sa\sview\sthat\sis\sthe\sright\soperand\sof\sa\sLEFT\sJOIN,\susing\nthe\soptimization\sof\scheck-in\s[41c27bc0ff1d3135],\salways\sinsert\sthe\nTK_IF_NULL_ROW\sexpression\snodes,\seven\sfor\sTK_COLUMN\sexpressions,\sas\nthe\sTK_COLUMN\smight\sbe\sa\scolumn\sfrom\san\souter\squery\sand\shence\sstill\sneed\nto\sbe\sNULLed\sout.\sThis\sfixes\sthe\sproblem\sdescribed\sby\n[forum:/forumpost/26387ea7ef|forum\spost\s26387ea7ef].
+D 2023-03-01T20:23:46.877
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -623,7 +623,7 @@ F src/printf.c fb31597cf93200eba9167573094ee312b0d51b2c1998613284ceb2c8c212b492
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c d62c5665279cc7485f9d45b5e20911cc7b19c203f268321a90d05d74f4725750
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 1d9a7c3b60e1e20bd4b5b6c0df0b2fe0958e04fa01b3dedd87c10468bada62e0
+F src/select.c f6224c55bc0de16b8559e80015a26f1eced7809a4a0e774efabacca98b3150f6
 F src/shell.c.in af928afa0376b2e2c962be9a0a3ab716b3983b1adfae10e248ffd40ede03b049
 F src/sqlite.h.in dd0f802db5ce8b2e384cf1e04debe175b38ab5ba2c8e09f00672e8b79a1bb134
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1217,7 +1217,7 @@ F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
 F test/join.test ed1daf99958fed1b9f017e56bae2bb6b49339a1ec0b70b9e8f7259960c6bf387
-F test/join2.test 466b07233820f5deee66a6c3bf6e4500c8bbf7b83649e67606f5f649c07928c0
+F test/join2.test 88f4527101710806674d49257439f198fa147a7fcec11afedf51cf4894dc8877
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 91f1f4c7d81fd87b58e9ba7cf4a2b5d39e3583b4f8e498a162722a60259c5208
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P abc3a383636c0346053b5d09d96585f56c64cacb5751673ea3bf339e4955d1cd
-R df8f421f27eca726fd01bc8901795f0a
+P e72661eb680ea707a839cb3d5cf6c7ef03706e7b40af1b84760147e59cd61a50
+R 5a5a4d6f731a2a4b73a8f17b01f36db2
 U drh
-Z d4a7374d77ecf078e57dc52b4f6eecbc
+Z abb70d1f8b32da91985a98db916a8616
 # Remove this line to create a well-formed Fossil manifest.
