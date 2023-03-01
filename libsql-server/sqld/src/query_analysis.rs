@@ -94,9 +94,9 @@ impl Statement {
     /// Returns a statement instance without performing any validation to the input
     /// It is always assumed that such a statement will be a write, and will always be handled by
     /// the primary
-    pub fn new_unchecked(s: String) -> Self {
+    pub fn new_unchecked(stmt: String) -> Self {
         Self {
-            stmt: s.to_string(),
+            stmt,
             kind: StmtKind::Write,
             is_iud: false,
         }
