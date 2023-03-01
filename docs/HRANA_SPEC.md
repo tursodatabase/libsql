@@ -281,16 +281,32 @@ The server responds with the result of the statement.
 ```
 type Stmt = {
     "sql": string,
-    "args": Array<Value>,
+    "args"?: Array<Value>,
+    "named_args"?: Array<NamedArg>,
     "want_rows": boolean,
+}
+
+type NamedArg = {
+    "name": string,
+    "value": Value,
 }
 ```
 
-A statement contains the SQL text in `sql` and an array of arguments in
-`args`. The arguments are bound to positional parameters in the SQL statement
-(such as `$NNN` in Postgres or `?NNN` in SQLite). There is currently no way to
-bind named parameters by name (such as `:XXX` in SQLite), the protocol might be
-extended with this feature in the future.
+A statement contains the SQL text in `sql` and arguments.
+
+The arguments in `args` are bound to positional parameters in the SQL statement
+(such as `$NNN` in Postgres or `?NNN` in SQLite). The arguments in `named_args`
+are bound to named arguments, such as `:AAAA`, `@AAAA` and `$AAAA` in SQLite.
+
+For SQLite, the names of arguments include the prefix sign (`:`, `@` or `$`). If
+the name of the argument does not start with this prefix, the server will try to
+guess the correct prefix. If an argument is specified both as a positional
+argument and as a named argument, the named argument should take precedence.
+
+It is an error if the request specifies an argument that is not expected by the
+SQL statement, or if the request does not specify and argument that is expected
+by the SQL statement. Some servers may not support specifying both positional
+and named arguments.
 
 The `want_rows` field specifies whether the client is interested in the rows
 produced by the SQL statement. If it is set to `false`, the server should always

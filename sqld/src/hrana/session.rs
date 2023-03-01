@@ -63,7 +63,10 @@ pub enum ResponseError {
     #[error("SQL string contains more than one statement")]
     SqlManyStmts,
     #[error("Arguments do not match SQL parameters: {source}")]
-    InvalidArgs { source: anyhow::Error },
+    ArgsInvalid { source: anyhow::Error },
+    #[error("Specifying both positional and named arguments is not supported")]
+    ArgsBothPositionalAndNamed,
+
     #[error("Transaction timed out")]
     TransactionTimeout,
     #[error("Server cannot handle additional transactions")]
@@ -206,12 +209,24 @@ fn proto_stmt_to_query(proto_stmt: proto::Stmt) -> Result<Query> {
         bail!(ResponseError::SqlManyStmts)
     }
 
-    let params = proto_stmt
-        .args
-        .into_iter()
-        .map(proto_value_to_value)
-        .collect();
-    let params = Params::Positional(params);
+    let params = if proto_stmt.named_args.is_empty() {
+        let values = proto_stmt
+            .args
+            .into_iter()
+            .map(proto_value_to_value)
+            .collect();
+        Params::Positional(values)
+    } else if proto_stmt.args.is_empty() {
+        let values = proto_stmt
+            .named_args
+            .into_iter()
+            .map(|arg| (arg.name, proto_value_to_value(arg.value)))
+            .collect();
+        Params::Named(values)
+    } else {
+        bail!(ResponseError::ArgsBothPositionalAndNamed)
+    };
+
     Ok(Query { stmt, params })
 }
 
@@ -258,7 +273,7 @@ fn proto_value_from_value(value: Value) -> proto::Value {
 
 fn proto_response_error_from_error(error: Error) -> Result<ResponseError, Error> {
     Ok(match error {
-        Error::LibSqlInvalidQueryParams(source) => ResponseError::InvalidArgs { source },
+        Error::LibSqlInvalidQueryParams(source) => ResponseError::ArgsInvalid { source },
         Error::LibSqlTxTimeout(_) => ResponseError::TransactionTimeout,
         Error::LibSqlTxBusy => ResponseError::TransactionBusy,
         Error::RusqliteError(rusqlite_error) => match rusqlite_error {

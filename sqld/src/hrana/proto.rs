@@ -65,8 +65,17 @@ pub struct ExecuteResp {
 #[derive(Deserialize, Debug)]
 pub struct Stmt {
     pub sql: String,
+    #[serde(default)]
     pub args: Vec<Value>,
+    #[serde(default)]
+    pub named_args: Vec<NamedArg>,
     pub want_rows: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct NamedArg {
+    pub name: String,
+    pub value: Value,
 }
 
 #[derive(Serialize, Debug)]
