@@ -51,6 +51,14 @@ do_execsql_test 2.1 {
   SELECT count(*) FROM v1 GROUP BY y;
 } {3 3}
 
-
+# 2023-03-01 dbsqlfuzz ef8623915d843b150c159166ee4548c78cc6895a
+# count-of-view should not apply to CTEs.
+#
+proc progress_stop args {return 1}
+db progress 1000 progress_stop
+do_catchsql_test 3.1 {
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c)
+  SELECT count(*) FROM c;
+} {1 interrupted}
 
 finish_test
