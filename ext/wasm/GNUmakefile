@@ -171,8 +171,10 @@ SQLITE_OPT = \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_WASM_ENABLE_C_TESTS
 
-$(sqlite3.c) $(sqlite3.h):
+.NOTPARALLEL: $(sqlite3.h)
+$(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
+$(sqlite3.c): $(sqlite3.h)
 
 .PHONY: clean distclean
 clean:
@@ -212,9 +214,10 @@ endif
 # See example_extra_init.c for an example implementation.
 ########################################################################
 sqlite3_wasm_extra_init.c ?= $(wildcard sqlite3_wasm_extra_init.c)
+cflags.wasm_extra_init :=
 ifneq (,$(sqlite3_wasm_extra_init.c))
   $(info Enabling SQLITE_EXTRA_INIT via $(sqlite3_wasm_extra_init.c).)
-  SQLITE_OPT += -I. -DSQLITE_WASM_EXTRA_INIT
+  cflags.wasm_extra_init := -DSQLITE_WASM_EXTRA_INIT
 endif
 
 # bin.version-info = binary to output various sqlite3 version info for
@@ -684,7 +687,7 @@ $(4): $(3) $$(MAKEFILE) $$(sqlite3-wasm.cses) $$(EXPORTED_FUNCTIONS.api) $$(pre-
 	$$(emcc.bin) -o $$@ $$(emcc_opt_full) $$(emcc.flags) \
     $$(emcc.jsflags) \
     $$(pre-post-sqlite3.flags.$(1)) $$(emcc.flags.sqlite3.$(1)) \
-    $$(cflags.common) $$(SQLITE_OPT) $$(sqlite3-wasm.cses)
+    $$(cflags.common) $$(SQLITE_OPT) $$(cflags.wasm_extra_init) $$(sqlite3-wasm.cses)
 	@$$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,$(2))
 	@if [ bundler-friendly = $(1) ]; then \
 		echo "Patching $(3) for sqlite3.wasm..."; \
@@ -727,11 +730,11 @@ $(eval $(call SETUP_LIB_BUILD_MODE,bundler-friendly,1,\
 #
 ########################################################################
 ########################################################################
-# We have to ensure that we do not build both $(sqlite3*.*js) in
-# parallel because both result in the creation of $(sqlite3.wasm). We
-# have no way to build just the .mjs file without also building the
-# .wasm file because the generated .mjs file has to include info about
-# the imports needed by the wasm file, so they have to be built
+# We have to ensure that we do not build $(sqlite3*.*js) in parallel
+# because they all result in the creation of $(sqlite3.wasm). We have
+# no way to build just a .[m]js file without also building the .wasm
+# file because the generated .[m]js file has to include info about the
+# imports needed by the wasm file, so they have to be built
 # together. i.e.  we're building $(sqlite3.wasm) multiple times, but
 # that's unavoidable (and harmless, just a waste of build time).
 $(sqlite3.wasm): $(sqlite3.js)
@@ -835,7 +838,7 @@ $(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
 speedtest1.js := $(dir.dout)/speedtest1.js
 speedtest1.wasm := $(dir.dout)/speedtest1.wasm
 cflags.speedtest1 := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
-speedtest1.cses := $(speedtest1.c) $(sqlite3-wasm.cses)
+speedtest1.cses := $(speedtest1.c) $(sqlite3-wasm.c)
 $(eval $(call call-make-pre-post,speedtest1,vanilla))
 $(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
     $(pre-post-speedtest1.deps.vanilla) \
