@@ -58,6 +58,8 @@ pub enum ResponseError {
     #[error("Stream {stream_id} has failed to open")]
     StreamNotOpen { stream_id: i32 },
 
+    #[error("SQL string could not be parsed: {source}")]
+    SqlParseError { source: anyhow::Error },
     #[error("SQL string does not contain any statement")]
     SqlNoStmt,
     #[error("SQL string contains more than one statement")]
@@ -201,7 +203,8 @@ async fn execute_stmt(db: &dyn Database, stmt: proto::Stmt) -> Result<proto::Stm
 fn proto_stmt_to_query(proto_stmt: proto::Stmt) -> Result<Query> {
     let mut stmt_iter = Statement::parse(&proto_stmt.sql);
     let stmt = match stmt_iter.next() {
-        Some(stmt_res) => stmt_res?,
+        Some(Ok(stmt)) => stmt,
+        Some(Err(err)) => bail!(ResponseError::SqlParseError { source: err }),
         None => bail!(ResponseError::SqlNoStmt),
     };
 
