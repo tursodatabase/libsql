@@ -483,6 +483,33 @@ impl Connection {
         })
     }
 
+    /// Open a new connection to a SQLite database using the specific flags and
+    /// WAL methods name.
+    ///
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if either `path` or `wal` cannot be converted to a
+    /// C-compatible string or if the underlying SQLite open call fails.
+    #[inline]
+    #[cfg(feature = "libsql")]
+    pub fn open_with_flags_vfs_and_wal<P: AsRef<Path>>(
+        path: P,
+        flags: OpenFlags,
+        vfs: &str,
+        wal: &str,
+    ) -> Result<Connection> {
+        let c_path = path_to_cstring(path.as_ref())?;
+        let c_vfs = str_to_cstring(vfs)?;
+        let c_wal = str_to_cstring(wal)?;
+        InnerConnection::open_with_flags(&c_path, flags, Some(&c_vfs), Some(&c_wal)).map(|db| {
+            Connection {
+                db: RefCell::new(db),
+                cache: StatementCache::with_capacity(STATEMENT_CACHE_DEFAULT_CAPACITY),
+            }
+        })
+    }
+
     /// Open a new connection to an in-memory SQLite database.
     ///
     /// [Database Connection](http://www.sqlite.org/c3ref/open.html) for a description of valid
