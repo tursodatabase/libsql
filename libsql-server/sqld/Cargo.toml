@@ -32,7 +32,7 @@ pin-project-lite = "0.2.9"
 postgres-protocol = "0.6.4"
 prost = "0.11.3"
 regex = "1.7.0"
-rusqlite = { version = "0.28.0", git = "https://github.com/psarna/rusqlite", rev = "4df75df0b0f5ecea2714a8b21bf9f2a0fcfd5905", default-features = false, features = [
+rusqlite = { version = "0.28.0", git = "https://github.com/psarna/rusqlite", rev = "cc7d3f9d5344332c12c34e36be0c055480659d8c", default-features = false, features = [
     "buildtime_bindgen",
     "bundled-libsql",
     "column_decltype"
@@ -67,3 +67,4 @@ vergen = "6"
 
 [features]
 mwal_backend = ["sqld-libsql-bindings/mwal_backend"]
+unix-excl-vfs = ["sqld-libsql-bindings/unix-excl-vfs"]
