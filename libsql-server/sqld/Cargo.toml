@@ -43,7 +43,7 @@ smallvec = "1.10.0"
 sqld-libsql-bindings = { version = "0", path = "../sqld-libsql-bindings" }
 sqlite3-parser = { version = "0.6.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 thiserror = "1.0.38"
-tokio = { version = "1.21.2", features = ["full"] }
+tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs"] }
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.17.2"
 tokio-util = "0.7.4"
