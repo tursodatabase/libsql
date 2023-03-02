@@ -386,4 +386,22 @@ do_execsql_test 10.4 {
   ) FROM t1;
 } NULL
 
+# 2023-03-02 https://sqlite.org/forum/forumpost/402f05296d
+#
+# The TK_IF_NULL_ROW expression node must ensure that it does not overwrite
+# the result register of an OP_Once subroutine.
+#
+optimization_control db all 1
+do_execsql_test 11.1 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  DROP TABLE t3;
+  CREATE TABLE t1(x TEXT, y INTEGER);
+  INSERT INTO t1(x,y) VALUES(NULL,-2),(NULL,1),('0',2);
+  CREATE TABLE t2(z INTEGER);
+  INSERT INTO t2(z) VALUES(2),(-2);
+  CREATE VIEW t3 AS SELECT z, (SELECT count(*) FROM t1) AS w FROM t2;
+  SELECT * FROM t1 LEFT JOIN t3 ON y=z;
+} {NULL -2 -2 3 NULL 1 NULL NULL 0 2 2 3}
+
 finish_test
