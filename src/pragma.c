@@ -1995,7 +1995,7 @@ void sqlite3Pragma(
               int jmp7;
               sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur+j, 3);
               jmp7 = sqlite3VdbeAddOp3(v, OP_Eq, 3, 0, r1+pIdx->nColumn-1);
-              VdbeCoverage(v);
+              VdbeCoverageNeverNull(v);
               sqlite3VdbeLoadString(v, 3,
                  "rowid not at end-of-record for row ");
               sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
