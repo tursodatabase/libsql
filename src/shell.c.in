@@ -5325,9 +5325,6 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_fileio_init(p->db, 0, 0);
     sqlite3_completion_init(p->db, 0, 0);
 #endif
-#if SQLITE_SHELL_HAVE_RECOVER
-    sqlite3_dbdata_init(p->db, 0, 0);
-#endif
 #ifdef SQLITE_HAVE_ZLIB
     if( !p->bSafeModePersist ){
       sqlite3_zipfile_init(p->db, 0, 0);
