@@ -3662,6 +3662,7 @@ struct IndexedExpr {
   int iIdxCur;            /* The index cursor */
   int iIdxCol;            /* The index column that contains value of pExpr */
   u8 bMaybeNullRow;       /* True if we need an OP_IfNullRow check */
+  u8 aff;                 /* Affinity of the pExpr expression */
   IndexedExpr *pIENext;   /* Next in a list of all indexed expressions */
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   const char *zIdxName;   /* Name of index, used only for bytecode comments */

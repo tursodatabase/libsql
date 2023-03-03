@@ -5706,6 +5706,9 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     p->iIdxCur = iIdxCur;
     p->iIdxCol = i;
     p->bMaybeNullRow = bMaybeNullRow;
+    if( sqlite3IndexAffinityStr(pParse->db, pIdx) ){
+      p->aff = pIdx->zColAff[i];
+    }
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
     p->zIdxName = pIdx->zName;
 #endif
