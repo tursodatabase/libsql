@@ -5309,6 +5309,7 @@ static void open_db(ShellState *p, int openFlags){
       }
       exit(1);
     }
+    sqlite3_db_config(p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, (int)0, (int*)0);
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);

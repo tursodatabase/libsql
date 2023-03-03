@@ -3365,6 +3365,9 @@ static int openDatabase(
 #if defined(SQLITE_DEFAULT_LEGACY_ALTER_TABLE)
                  | SQLITE_LegacyAlter
 #endif
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+                 | SQLITE_StmtScanStatus
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE

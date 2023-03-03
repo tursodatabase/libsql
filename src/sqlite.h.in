@@ -2464,7 +2464,7 @@ struct sqlite3_mem_methods {
 ** a flag that enables collection of the sqlite3_stmt_scanstatus_v2()
 ** statistics. For statistics to be collected, the flag must be set on
 ** the database handle both when the SQL statement is prepared and when it 
-** is stepped. The flag is clear (collection of statistics is disabled)
+** is stepped. The flag is set (collection of statistics is enabled)
 ** by default.
 ** </dl>
 */

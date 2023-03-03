@@ -45,16 +45,19 @@ proc do_scanstatus_test {tn res} {
   uplevel [list do_test $tn [list set {} $ret] [list {*}$res]]
 }
 
-do_execsql_test 1.0a { SELECT count(*) FROM t1, t2; } 6
-do_scanstatus_test 1.0b { }
-
-sqlite3_db_config db STMT_SCANSTATUS 1
-
-do_execsql_test 1.1 { SELECT count(*) FROM t1, t2; } 6
-do_scanstatus_test 1.2 {
+do_execsql_test 1.1a { SELECT count(*) FROM t1, t2; } 6
+do_scanstatus_test 1.1b { 
   nLoop 1 nVisit 2 nEst 1048576.0 zName t1 zExplain {SCAN t1}
   nLoop 2 nVisit 6 nEst 1048576.0 zName t2 zExplain {SCAN t2}
 }
+
+sqlite3_db_config db STMT_SCANSTATUS 0
+
+do_execsql_test 1.2a { SELECT count(*) FROM t1, t2; } 6
+do_scanstatus_test 1.2b { 
+}
+
+sqlite3_db_config db STMT_SCANSTATUS 1
 
 do_execsql_test 1.3 {
   ANALYZE;
