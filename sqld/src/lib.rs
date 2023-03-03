@@ -83,6 +83,7 @@ pub struct Config {
     pub rpc_server_cert: Option<PathBuf>,
     pub rpc_server_key: Option<PathBuf>,
     pub rpc_server_ca_cert: Option<PathBuf>,
+    #[cfg(feature = "bottomless")]
     pub enable_bottomless_replication: bool,
     pub create_local_http_tunnel: bool,
     pub idle_shutdown_timeout: Option<Duration>,
@@ -204,7 +205,10 @@ async fn start_replica(
     let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
+    #[cfg(feature = "bottomless")]
     let enable_bottomless = config.enable_bottomless_replication;
+    #[cfg(not(feature = "bottomless"))]
+    let enable_bottomless = false;
     let db_factory = Arc::new(move || {
         let db_path = path_clone.clone();
         let hook = ReplicationLoggerHook::new(logger.clone());
@@ -246,6 +250,7 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
             .map_err(|_| anyhow::anyhow!("wal_methods initialized twice"))?;
     }
 
+    #[cfg(feature = "bottomless")]
     if config.enable_bottomless_replication {
         bottomless::static_init::register_bottomless_methods();
     }
