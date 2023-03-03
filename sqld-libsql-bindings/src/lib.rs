@@ -51,7 +51,15 @@ pub fn open_with_regular_wal(
         "Opening a connection with regular WAL at {}",
         path.display()
     );
+    #[cfg(not(feature = "unix-excl-vfs"))]
     let conn = Connection::open_with_flags_and_wal(path, flags, WalMethodsHook::METHODS_NAME_STR)?;
+    #[cfg(feature = "unix-excl-vfs")]
+    let conn = Connection::open_with_flags_vfs_and_wal(
+        path,
+        flags,
+        "unix-excl",
+        WalMethodsHook::METHODS_NAME_STR,
+    )?;
     conn.pragma_update(None, "journal_mode", "wal")?;
     Ok(conn)
 }
