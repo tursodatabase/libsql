@@ -94,6 +94,7 @@ struct Cli {
     /// Don't display welcome message
     #[clap(long)]
     no_welcome: bool,
+    #[cfg(feature = "bottomless")]
     #[clap(long, env = "SQLD_ENABLE_BOTTOMLESS_REPLICATION")]
     enable_bottomless_replication: bool,
     /// Create a tunnel for the HTTP interface, available publicly via the https://localtunnel.me interface. The tunnel URL will be printed to stdin
@@ -187,6 +188,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         rpc_server_ca_cert: args.grpc_ca_cert_file,
         #[cfg(feature = "mwal_backend")]
         mwal_addr: args.mwal_addr,
+        #[cfg(feature = "bottomless")]
         enable_bottomless_replication: args.enable_bottomless_replication,
         create_local_http_tunnel: args.create_local_http_tunnel,
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),

@@ -8,6 +8,3 @@ members = [
     "sqld-libsql-bindings",
     "testing/end-to-end",
 ]
-
-[patch.crates-io]
-uuid = { git = "https://github.com/psarna/uuid", branch = "stable_v7" }
