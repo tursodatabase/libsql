@@ -1987,6 +1987,23 @@ void sqlite3Pragma(
             jmp4 = integrityCheckResultRow(v);
             sqlite3VdbeJumpHere(v, jmp2);
 
+            /* The OP_IdxRowid opcode is an optimized version of OP_Column
+            ** that extracts the rowid off the end of the index record.
+            ** But it only works correctly if index record does not have
+            ** any extra bytes at the end.  Verify that this is the case. */
+            if( HasRowid(pTab) ){
+              int jmp7;
+              sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur+j, 3);
+              jmp7 = sqlite3VdbeAddOp3(v, OP_Eq, 3, 0, r1+pIdx->nColumn-1);
+              VdbeCoverage(v);
+              sqlite3VdbeLoadString(v, 3,
+                 "rowid not at end-of-record for row ");
+              sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
+              sqlite3VdbeLoadString(v, 4, " of index ");
+              sqlite3VdbeGoto(v, jmp5-1);
+              sqlite3VdbeJumpHere(v, jmp7);
+            }
+
             /* Any indexed columns with non-BINARY collations must still hold
             ** the exact same text value as the table. */
             label6 = 0;
