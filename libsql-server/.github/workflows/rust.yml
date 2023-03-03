@@ -8,13 +8,14 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: --cfg=uuid_unstable
 
 jobs:
   checks:
     runs-on: ubuntu-latest
     name: Run Checks
     env:
-      RUSTFLAGS: -D warnings
+      RUSTFLAGS: -D warnings --cfg=uuid_unstable
     steps:
       - name: Install Rust
         uses: actions-rs/toolchain@v1
