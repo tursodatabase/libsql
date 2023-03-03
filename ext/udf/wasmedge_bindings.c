@@ -160,6 +160,7 @@ void libsql_free_wasm_module(void *ctx) {
 }
 
 libsql_wasm_engine_t *libsql_wasm_engine_new() {
+  WasmEdge_PluginLoadWithDefaultPaths();
   return NULL;
 }
 
@@ -173,7 +174,12 @@ libsql_wasm_module_t *libsql_compile_wasm_module(libsql_wasm_engine_t* engine, c
     return NULL;
   }
 
-  WasmEdge_VMContext *ctx = WasmEdge_VMCreate(NULL, NULL);
+  WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();
+  WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
+
+  WasmEdge_VMContext *ctx = WasmEdge_VMCreate(ConfCxt, NULL);
+  WasmEdge_ConfigureDelete(ConfCxt);
+  
   WasmEdge_Result res = WasmEdge_VMLoadWasmFromBuffer(ctx, (const uint8_t *)pSrcBody, nBody);
   if (!WasmEdge_ResultOK(res)) {
     *err_msg_buf = sqlite3_mprintf("Compilation failed: %s", WasmEdge_ResultGetMessage(res));
