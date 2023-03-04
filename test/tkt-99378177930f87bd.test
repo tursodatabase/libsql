@@ -176,4 +176,19 @@ do_execsql_test tkt-99378-310 {
          );
 } {1 2}
 
+# 2023-03-04 https://sqlite.org/forum/forumpost/a68313d054
+#
+do_execsql_test tkt-99378-400 {
+  DROP TABLE t1;
+  CREATE TABLE t0(w);
+  INSERT INTO t0(w) VALUES(1);
+  CREATE TABLE t1(x);
+  INSERT INTO t1(x) VALUES(1);
+  CREATE INDEX t1x ON t1(x > 0);
+  CREATE VIEW t2(y) AS SELECT avg(w) FROM t0 GROUP BY w>1;
+  CREATE VIEW t3(z) AS SELECT count(*) FROM t2 WHERE y BETWEEN 0 and 0;
+  SELECT count(*) FROM t1 NOT INDEXED WHERE (SELECT z FROM t3);
+  SELECT count(*) FROM t1 INDEXED BY t1x WHERE (SELECT z FROM t3);
+} {0 0}
+
 finish_test

@@ -6439,10 +6439,12 @@ static void optimizeAggregateUseOfIndexedExpr(
   NameContext *pNC        /* Name context used to resolve agg-func args */
 ){
   assert( pAggInfo->iFirstReg==0 );
+  assert( pSelect!=0 );
+  assert( pSelect->pGroupBy!=0 );
   pAggInfo->nColumn = pAggInfo->nAccumulator;
   if( ALWAYS(pAggInfo->nSortingColumn>0) ){
     if( pAggInfo->nColumn==0 ){
-      pAggInfo->nSortingColumn = 0;
+      pAggInfo->nSortingColumn = pSelect->pGroupBy->nExpr;
     }else{
       pAggInfo->nSortingColumn =
         pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
