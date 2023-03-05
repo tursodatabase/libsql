@@ -1,5 +1,5 @@
-C Fix\sto\scheck-in\s[b9190d3da70c4171]\s-\sthe\sagg-with-indexed-expr\soptimization\nrequested\sby\sticket\s[99378177930f87bd]\s-\sthat\scan\scause\san\sincorrect\sanswer\nif\san\saggregate\ssubquery\shas\sa\sGROUP\sBY\sclause,\sand\sthat\sGROUP\sBY\scontains\sa\nterm\sthat\sis\snot\sin\sthe\sresult\sset,\sand\sthe\souter\squery\smakes\suse\sof\sexpression\nindexes.\s\sProblem\sreported\sby\n[forum:/forumpost/a68313d054|forum\spost\sa68313d054].
-D 2023-03-04T15:36:51.218
+C Correct\srendering\sof\serror\smessages\sin\sdemo-worker1.js.\sRemove\ssome\sstray\sEOL\swhitespace.
+D 2023-03-05T07:33:11.574
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -505,9 +505,9 @@ F ext/wasm/demo-123.js ebae30756585bca655b4ab2553ec9236a87c23ad24fc8652115dcedb0
 F ext/wasm/demo-jsstorage.html 409c4be4af5f207fb2877160724b91b33ea36a3cd8c204e8da1acb828ffe588e
 F ext/wasm/demo-jsstorage.js 44e3ae7ec2483b6c511384c3c290beb6f305c721186bcf5398ca4e00004a06b8
 F ext/wasm/demo-worker1-promiser.html 1de7c248c7c2cfd4a5783d2aa154bce62d74c6de98ab22f5786620b3354ed15f
-F ext/wasm/demo-worker1-promiser.js b99c550763fa792c204e9a7cceadd976004036d9fc3e22fab7051712e30d207d
+F ext/wasm/demo-worker1-promiser.js 51b02509a109e82f623fb4c900c8b48b9a77cc13fbd038396f9a083b86593ae3
 F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2eb1ab2c68ef5d
-F ext/wasm/demo-worker1.js a619adffc98b75b66c633b00f747b856449a134a9a0357909287d80a182d70fa
+F ext/wasm/demo-worker1.js 2c7794d8bc4ab9ecf9cdc2c15de940b11a006942226e441ea41edd458dfc0a26
 F ext/wasm/dist.make f55f9c9e1980ea11a59964e59535c66175a17f004d1c2e274522c3366b3a084a
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
 F ext/wasm/fiddle.make dbe36b90b8907ae28ecb9c0e9fd8389dbdaecf117ea4fb2ea33864bdfa498a94
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 35f10a06ba81b8a526249729828fff06214e9cf95de418a9081f19d8d69fd657
-R 7369d7a38af682b682af1a066f3ec500
-U drh
-Z a08315d4647510add4b36d411a52c34f
+P e06973876993926fd56181281d04b8dd504c689abf883fa21a5721cc1d478ea8
+R 68e1c9d17126465fe92388ca20cce3d9
+U stephan
+Z 9437532fe63139b2ab32f5bb03c117ba
 # Remove this line to create a well-formed Fossil manifest.
