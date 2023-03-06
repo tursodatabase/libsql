@@ -1,5 +1,5 @@
-C Rename\ssqlite3-worker1-bundler-friendly.js\sto\ssqlite3-worker1-bundler-friendly.mjs\sand\srefactor\sit\sto\swork\sas\san\sES6\smodule,\sbased\son\sfeedback\sin\s[forum\spost\sa255f89c2eadf4c4|forum:a255f89c2eadf4c4].
-D 2023-03-05T07:44:23.375
+C Add\sSQLITE_DBCONFIG_REVERSE_SCANORDER\sfor\sdirect\sC-language\saccess\sto\sthe\n"PRAGMA\sreverse_unordered_selects"\ssetting.
+D 2023-03-06T19:04:39.903
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -586,7 +586,7 @@ F src/insert.c 7940fce7d4aa855606432d82d20694e17c18a03956f5f5776f2404e2df7c18a8
 F src/json.c c85ed6fce06f43d414b0d7fff64749d43a0dbd1067123ee407bd3a0752454161
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c b04eb648cedc45efe4298e1ef439ac4f0096ae27b5f01accb0a1f49d57789128
-F src/main.c 50b4f14242c2949fd1f3e83aacf088ed2f1eb16d8c1369ee0156957ea070916e
+F src/main.c 09bc5191f75dc48fc4dfddda143cb864c0c3dbc3297eb9a9c8e01fea58ff847d
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -624,8 +624,8 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 4233c3030341bf1a21cea90890e6b3d3531721acc62ede147e899d36ffad8238
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 2f38b8424d204f79180acc6adf84cf3a35a5176e33bc6b009f9a9f080316d4bb
-F src/shell.c.in 10088fb7a12d9e9b2453b1df32f80f68c6618f998044f82619d769e6f32f72ca
-F src/sqlite.h.in 36882eee65db22e2fdb68782e7fb9b9ea1dd0488d8e2918b3567915ddb3c9611
+F src/shell.c.in db8355bd674fb3ef335f2ca07d7ad8a7512570104eee3ba520cb259c17912b0a
+F src/sqlite.h.in f01033703156615566bb329144d736a37fc35a278049db91127782a9c799b938
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
 F src/sqliteInt.h 34034353de20c29e04295c3486bbf22b2a47842c887f65f7176530b4c35fdd17
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1d5d515ad97cf61bd679f8c1afc607815c079583fe80264b591c6ef18f56fb8b
-R 91c22a1ad29afe8245a97e3ad469bc33
-U stephan
-Z dc276f42e7adb34e8efd79eda6e2d27e
+P af312b131457743d98b84137bd51d9ba60e0daf0bd8f5a66f05956ca35ab68fb
+R ad7078f08d1f30e27457cbb0b25465a3
+U drh
+Z f646de84c6f7cf615b430f5fcccad8cd
 # Remove this line to create a well-formed Fossil manifest.

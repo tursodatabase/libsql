@@ -2456,7 +2456,7 @@ struct sqlite3_mem_methods {
 ** not considered a bug since SQLite versions 3.3.0 and earlier do not support
 ** either generated columns or decending indexes.
 ** </dd>
-
+**
 ** [[SQLITE_DBCONFIG_STMT_SCANSTATUS]]
 ** <dt>SQLITE_DBCONFIG_STMT_SCANSTATUS</td>
 ** <dd>The SQLITE_DBCONFIG_STMT_SCANSTATUS option is only useful in
@@ -2465,7 +2465,17 @@ struct sqlite3_mem_methods {
 ** statistics. For statistics to be collected, the flag must be set on
 ** the database handle both when the SQL statement is prepared and when it 
 ** is stepped. The flag is set (collection of statistics is enabled)
-** by default.
+** by default.</dd>
+**
+** [[SQLITE_DBCONFIG_REVERSE_SCANORDER]]
+** <dt>SQLITE_DBCONFIG_REVERSE_SCANORDER</td>
+** <dd>The SQLITE_DBCONFIG_REVERSE_SCANORDER option change the default order
+** in which tables and indexes are scanned so that the scans start at the end
+** and work toward the beginning rather than starting at the beginning and
+** working toward the end.  Setting SQLITE_DBCONFIG_REVERSE_SCANORDER is the
+** same as setting [PRAGMA reverse_unordered_selects].  This configuration option
+** is useful for application testing.</dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2486,8 +2496,9 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
-#define SQLITE_DBCONFIG_STMT_SCANSTATUS       1018 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1018 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_STMT_SCANSTATUS       1080 /* int int*  */
+#define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1019 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
