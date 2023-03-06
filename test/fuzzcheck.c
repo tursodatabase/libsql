@@ -1001,12 +1001,14 @@ static int recoverSqlCb(void *pCtx, const char *zSql){
 */
 static int recoverDatabase(sqlite3 *db){
   int rc;                                 /* Return code from this routine */
+  const char *zRecoveryDb = "";           /* Name of "recovery" database */
   const char *zLAF = "lost_and_found";    /* Name of "lost_and_found" table */
   int bFreelist = 1;                      /* True to scan the freelist */
   int bRowids = 1;                        /* True to restore ROWID values */
-  sqlite3_recover *p;                     /* The recovery object */
+  sqlite3_recover *p = 0;                 /* The recovery object */
 
   p = sqlite3_recover_init_sql(db, "main", recoverSqlCb, 0);
+  sqlite3_recover_config(p, 789, (void*)zRecoveryDb);
   sqlite3_recover_config(p, SQLITE_RECOVER_LOST_AND_FOUND, (void*)zLAF);
   sqlite3_recover_config(p, SQLITE_RECOVER_ROWIDS, (void*)&bRowids);
   sqlite3_recover_config(p, SQLITE_RECOVER_FREELIST_CORRUPT,(void*)&bFreelist);
@@ -1038,7 +1040,7 @@ static int runDbSql(sqlite3 *db, const char *zSql, unsigned int *pBtsFlags){
     printf("RUNNING-SQL: [%s]\n", zSql);
     fflush(stdout);
   }
-  (*pBtsFlags) &= ~BTS_BADPRAGMA;
+  (*pBtsFlags) &= BTS_BADPRAGMA;
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( rc==SQLITE_OK ){
     int nRow = 0;
