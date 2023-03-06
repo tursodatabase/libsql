@@ -1,0 +1,23 @@
+[package]
+name = "libsql-shell"
+version = "0.1.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+keywords = ["libsql", "sqlite", "cli", "database", "shell"]
+description = "Command-line interface for libSQL - an open-source and open-contribution fork of SQLite"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.69"
+base64 = "0.21.0"
+clap = { version = "4.1.8", features = [ "derive", "env"] }
+home = "0.5.4"
+rusqlite = "0.28.0"
+rustyline = "11.0.0"
+tabled = "0.10.0"
+tracing-subscriber = "0.3.16"
+
+[[bin]]
+name = "libsql"
+path = "src/main.rs"

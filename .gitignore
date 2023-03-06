@@ -58,3 +58,4 @@ test/rust_suite/target
 test/rust_suite/Cargo.lock
 testfixture
 libsql
+src/rust/libsql-shell/target/
