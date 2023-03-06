@@ -22,7 +22,7 @@ bundled-sqlcipher-vendored-openssl = ["bundled-sqlcipher", "openssl-sys/vendored
 buildtime_bindgen = ["bindgen", "pkg-config", "vcpkg"]
 sqlcipher = []
 libsql = []
-libsql-wasm = []
+libsql-wasm = ["dep:libsql-wasmtime-bindings"]
 min_sqlite_version_3_14_0 = ["pkg-config", "vcpkg"]
 # Bundle only the bindings file. Note that this does nothing if
 # `buildtime_bindgen` is enabled.
@@ -46,6 +46,7 @@ winsqlite3 = []
 
 [dependencies]
 openssl-sys = { version = "0.9", optional = true }
+libsql-wasmtime-bindings = { version = "0.2.0", optional = true }
 
 [build-dependencies]
 bindgen = { version = "0.65", optional = true, default-features = false, features = ["runtime"] }
