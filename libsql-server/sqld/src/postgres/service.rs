@@ -11,6 +11,7 @@ use pgwire::error::PgWireError;
 use pgwire::tokio::PgWireMessageServerCodec;
 use pgwire::{api::ClientInfoHolder, messages::PgWireFrontendMessage};
 use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt};
+use tokio::sync::Mutex;
 use tokio_util::codec::{Decoder, Framed};
 use tower::MakeService;
 use tower::Service;
@@ -26,7 +27,7 @@ use super::proto::{peek_for_sslrequest, process_error, QueryHandler};
 pub struct PgWireConnection<T, S> {
     socket: Framed<T, PgWireMessageServerCodec>,
     authenticator: Arc<PgAuthenticator>,
-    service: S,
+    handler: QueryHandler<S>,
 }
 
 impl<T, S> PgWireConnection<T, S>
@@ -64,36 +65,34 @@ where
                     .await?;
             }
             _ => {
-                let handler = QueryHandler::new(&mut self.service);
                 match msg {
                     PgWireFrontendMessage::Query(q) => {
-                        handler.on_query(&mut self.socket, q).await?;
+                        self.handler.on_query(&mut self.socket, q).await?;
                     }
                     PgWireFrontendMessage::Parse(p) => {
-                        handler.on_parse(&mut self.socket, p).await?;
+                        self.handler.on_parse(&mut self.socket, p).await?;
                     }
                     PgWireFrontendMessage::Close(c) => {
-                        handler.on_close(&mut self.socket, c).await?;
+                        self.handler.on_close(&mut self.socket, c).await?;
                     }
                     PgWireFrontendMessage::Bind(b) => {
-                        handler.on_bind(&mut self.socket, b).await?;
+                        self.handler.on_bind(&mut self.socket, b).await?;
                     }
                     PgWireFrontendMessage::Describe(d) => {
-                        handler.on_describe(&mut self.socket, d).await?;
+                        self.handler.on_describe(&mut self.socket, d).await?;
                     }
                     PgWireFrontendMessage::Execute(e) => {
-                        handler.on_execute(&mut self.socket, e).await?;
+                        self.handler.on_execute(&mut self.socket, e).await?;
                     }
                     PgWireFrontendMessage::Sync(s) => {
-                        handler.on_sync(&mut self.socket, s).await?;
+                        self.handler.on_sync(&mut self.socket, s).await?;
                     }
                     PgWireFrontendMessage::Terminate(_) => return Ok(false),
                     // These messages are handled by the connection service on startup.
                     PgWireFrontendMessage::Startup(_)
-                    | PgWireFrontendMessage::PasswordMessageFamily(_)
-                    | PgWireFrontendMessage::Password(_)
-                    | PgWireFrontendMessage::SASLInitialResponse(_)
-                    | PgWireFrontendMessage::SASLResponse(_) => (),
+                    | PgWireFrontendMessage::PasswordMessageFamily(_) => (),
+                    // We don't need to respond flush for now
+                    PgWireFrontendMessage::Flush(_) => (),
                 }
             }
         }
@@ -152,7 +151,7 @@ where
             let mut connection = PgWireConnection {
                 socket,
                 authenticator,
-                service,
+                handler: QueryHandler::new(Arc::new(Mutex::new(service))),
             };
 
             connection.run().await;

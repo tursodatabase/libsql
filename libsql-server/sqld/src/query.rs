@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, ensure, Context};
 use futures::stream;
-use pgwire::api::results::{text_query_response, FieldInfo, Response, TextDataRowEncoder};
+use pgwire::api::results::{query_response, DataRowEncoder, FieldFormat, FieldInfo, Response};
 use pgwire::api::Type as PgType;
 use pgwire::{error::PgWireResult, messages::data::DataRow};
 use rusqlite::types::ToSqlOutput;
@@ -41,6 +41,7 @@ impl From<Column> for FieldInfo {
             None,
             None,
             col.ty.map(PgType::from).unwrap_or(PgType::UNKNOWN),
+            FieldFormat::Text,
         )
     }
 }
@@ -148,47 +149,60 @@ pub struct ResultSet {
     pub columns: Vec<Column>,
     pub rows: Vec<Row>,
     pub affected_row_count: u64,
+    pub include_column_defs: bool,
 }
 
 impl ResultSet {
-    pub fn empty() -> Self {
+    pub fn empty(col_defs: bool) -> Self {
         Self {
             columns: Vec::new(),
             rows: Vec::new(),
             affected_row_count: 0,
+            include_column_defs: col_defs,
         }
     }
 }
 
 fn encode_row(row: Row) -> PgWireResult<DataRow> {
-    let mut encoder = TextDataRowEncoder::new(row.values.len());
+    let mut encoder = DataRowEncoder::new(row.values.len());
     for value in row.values {
         match value {
             Value::Null => {
-                encoder.append_field(None::<&u8>)?;
+                encoder.encode_text_format_field(None::<&u8>)?;
             }
             Value::Integer(i) => {
-                encoder.append_field(Some(&i))?;
+                encoder.encode_text_format_field(Some(&i))?;
             }
             Value::Real(f) => {
-                encoder.append_field(Some(&f))?;
+                encoder.encode_text_format_field(Some(&f))?;
             }
             Value::Text(t) => {
-                encoder.append_field(Some(&t))?;
+                encoder.encode_text_format_field(Some(&t))?;
             }
             Value::Blob(b) => {
-                encoder.append_field(Some(&hex::encode(b)))?;
+                encoder.encode_text_format_field(Some(&hex::encode(b)))?;
             }
         }
     }
     encoder.finish()
 }
 
-impl From<ResultSet> for Response {
-    fn from(ResultSet { columns, rows, .. }: ResultSet) -> Self {
-        let field_infos = columns.into_iter().map(Into::into).collect();
+impl<'a> From<ResultSet> for Response<'a> {
+    fn from(
+        ResultSet {
+            columns,
+            rows,
+            include_column_defs,
+            ..
+        }: ResultSet,
+    ) -> Self {
+        let field_infos = if include_column_defs {
+            Some(columns.into_iter().map(Into::into).collect())
+        } else {
+            None
+        };
         let data_row_stream = stream::iter(rows.into_iter().map(encode_row));
-        Response::Query(text_query_response(field_infos, data_row_stream))
+        Response::Query(query_response(field_infos, data_row_stream))
     }
 }
 
@@ -243,6 +257,7 @@ impl From<ResultRows> for ResultSet {
             columns,
             rows,
             affected_row_count: result_rows.affected_row_count,
+            include_column_defs: true,
         }
     }
 }
