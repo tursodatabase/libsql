@@ -23,6 +23,7 @@ use tracing::{Level, Span};
 
 use crate::auth::Auth;
 use crate::error::Error;
+use crate::hrana;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
@@ -200,12 +201,41 @@ fn handle_health() -> Response<Body> {
     Response::new(Body::empty())
 }
 
+async fn handle_upgrade(
+    upgrade_tx: &mpsc::Sender<hrana::Upgrade>,
+    req: Request<Body>,
+) -> Response<Body> {
+    let (response_tx, response_rx) = oneshot::channel();
+    let _: Result<_, _> = upgrade_tx
+        .send(hrana::Upgrade {
+            request: req,
+            response_tx,
+        })
+        .await;
+
+    match response_rx.await {
+        Ok(response) => response,
+        Err(_) => Response::builder()
+            .status(hyper::StatusCode::SERVICE_UNAVAILABLE)
+            .body(
+                "sqld was not able to process the HTTP upgrade (Hrana support may be disabled)"
+                    .into(),
+            )
+            .unwrap(),
+    }
+}
+
 async fn handle_request(
     auth: Arc<Auth>,
     req: Request<Body>,
     sender: mpsc::Sender<Message>,
+    upgrade_tx: mpsc::Sender<hrana::Upgrade>,
     enable_console: bool,
 ) -> anyhow::Result<Response<Body>> {
+    if hyper_tungstenite::is_upgrade_request(&req) {
+        return Ok(handle_upgrade(&upgrade_tx, req).await);
+    }
+
     let auth_header = req.headers().get(hyper::header::AUTHORIZATION);
     if let Err(err) = auth.authenticate_http(auth_header) {
         return Ok(Response::builder()
@@ -275,6 +305,7 @@ pub async fn run_http<F>(
     addr: SocketAddr,
     auth: Arc<Auth>,
     db_factory: F,
+    upgrade_tx: mpsc::Sender<hrana::Upgrade>,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()>
@@ -312,7 +343,15 @@ where
                 .allow_headers(cors::Any)
                 .allow_origin(cors::Any),
         )
-        .service_fn(move |req| handle_request(auth.clone(), req, sender.clone(), enable_console));
+        .service_fn(move |req| {
+            handle_request(
+                auth.clone(),
+                req,
+                sender.clone(),
+                upgrade_tx.clone(),
+                enable_console,
+            )
+        });
 
     let server = hyper::server::Server::bind(&addr).serve(tower::make::Shared::new(service));
 

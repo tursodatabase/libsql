@@ -5,19 +5,18 @@ use std::task::{Context, Poll};
 
 use anyhow::{Context as _, Result};
 use futures::stream::FuturesUnordered;
-use futures::{ready, FutureExt as _, SinkExt as _, StreamExt as _};
+use futures::{ready, FutureExt as _, StreamExt as _};
 use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
-use tungstenite::http;
 use tungstenite::protocol::frame::coding::CloseCode;
 
-use super::{proto, session, Server};
+use super::{handshake, proto, session, Server, Upgrade};
 
 /// State of a Hrana connection.
 struct Conn {
     conn_id: u64,
     server: Arc<Server>,
-    ws: WebSocket,
+    ws: handshake::WebSocket,
     ws_closed: bool,
     /// After a successful authentication, this contains the session-level state of the connection.
     session: Option<session::Session>,
@@ -26,8 +25,6 @@ struct Conn {
     /// Future responses to requests that we have received but are evaluating asynchronously.
     responses: FuturesUnordered<ResponseFuture>,
 }
-
-type WebSocket = tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>;
 
 /// A `Future` that stores a handle to a future response to request which is being evaluated
 /// asynchronously.
@@ -38,15 +35,29 @@ struct ResponseFuture {
     response_rx: futures::future::Fuse<oneshot::Receiver<Result<proto::Response>>>,
 }
 
-pub(super) async fn handle_conn(
+pub(super) async fn handle_tcp(
     server: Arc<Server>,
     socket: tokio::net::TcpStream,
     conn_id: u64,
 ) -> Result<()> {
-    let ws = handshake(socket)
+    let ws = handshake::handshake_tcp(socket)
         .await
-        .context("Could not perform the WebSocket handshake")?;
+        .context("Could not perform the WebSocket handshake on TCP connection")?;
+    handle_ws(server, ws, conn_id).await
+}
 
+pub(super) async fn handle_upgrade(
+    server: Arc<Server>,
+    upgrade: Upgrade,
+    conn_id: u64,
+) -> Result<()> {
+    let ws = handshake::handshake_upgrade(upgrade)
+        .await
+        .context("Could not perform the WebSocket handshake on HTTP connection")?;
+    handle_ws(server, ws, conn_id).await
+}
+
+async fn handle_ws(server: Arc<Server>, ws: handshake::WebSocket, conn_id: u64) -> Result<()> {
     let mut conn = Conn {
         conn_id,
         server,
@@ -59,7 +70,7 @@ pub(super) async fn handle_conn(
 
     loop {
         tokio::select! {
-            Some(client_msg_res) = conn.ws.next() => {
+            Some(client_msg_res) = conn.ws.recv() => {
                 let client_msg = client_msg_res
                     .context("Could not receive a WebSocket message")?;
                 match handle_msg(&mut conn, client_msg).await {
@@ -84,40 +95,6 @@ pub(super) async fn handle_conn(
 
     close(&mut conn, CloseCode::Normal, "Thank you for using sqld").await;
     Ok(())
-}
-
-async fn handshake(socket: tokio::net::TcpStream) -> Result<WebSocket> {
-    let ws_config = tungstenite::protocol::WebSocketConfig {
-        max_send_queue: Some(1 << 20),
-        ..Default::default()
-    };
-
-    let callback = |req: &http::Request<()>, resp: http::Response<()>| {
-        let (mut resp_parts, _) = resp.into_parts();
-        if let Some(protocol_hdr) = req.headers().get("sec-websocket-protocol") {
-            let has_hrana1 = protocol_hdr
-                .to_str()
-                .unwrap_or("")
-                .split(',')
-                .any(|p| p.trim() == "hrana1");
-            if has_hrana1 {
-                resp_parts.headers.append(
-                    "sec-websocket-protocol",
-                    http::HeaderValue::from_static("hrana1"),
-                );
-            } else {
-                resp_parts.status = http::StatusCode::BAD_REQUEST;
-                let resp_body = Some("Only the 'hrana1' subprotocol is supported".into());
-                return Err(http::Response::from_parts(resp_parts, resp_body));
-            }
-        } else {
-            // Sec-WebSocket-Protocol header not present, assume that the client wants hrana1
-            // According to RFC 6455, we must not set the Sec-WebSocket-Protocol response header
-        }
-        Ok(http::Response::from_parts(resp_parts, ()))
-    };
-
-    Ok(tokio_tungstenite::accept_hdr_async_with_config(socket, callback, Some(ws_config)).await?)
 }
 
 async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result<bool> {
