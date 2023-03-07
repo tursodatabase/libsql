@@ -14,7 +14,7 @@ use once_cell::sync::Lazy;
 use once_cell::sync::OnceCell;
 use replication::logger::{ReplicationLogger, ReplicationLoggerHook};
 use rpc::run_rpc_server;
-use tokio::sync::Notify;
+use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;
 use tower::load::Constant;
 use tower::ServiceExt;
@@ -108,11 +108,14 @@ async fn run_service(
     let factory = PgConnectionFactory::new(service.clone());
     join_set.spawn(server.serve(factory));
 
+    let (upgrade_tx, upgrade_rx) = mpsc::channel(8);
+
     if let Some(addr) = config.http_addr {
         join_set.spawn(http::run_http(
             addr,
             auth.clone(),
             service.clone().map_response(|s| Constant::new(s, 1)),
+            upgrade_tx,
             config.enable_http_console,
             idle_shutdown_layer,
         ));
@@ -120,7 +123,7 @@ async fn run_service(
 
     if let Some(addr) = config.hrana_addr {
         join_set.spawn(async move {
-            hrana::serve(service.factory, addr, auth)
+            hrana::serve(service.factory, auth, addr, upgrade_rx)
                 .await
                 .context("Hrana server failed")
         });
