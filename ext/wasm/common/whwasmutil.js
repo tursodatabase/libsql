@@ -45,8 +45,8 @@
    Intended usage:
 
    ```
-   self.WhWasmUtilInstaller(appObject);
-   delete self.WhWasmUtilInstaller;
+   globalThis.WhWasmUtilInstaller(appObject);
+   delete globalThis.WhWasmUtilInstaller;
    ```
 
    Its global-scope symbol is intended only to provide an easy way to
@@ -171,7 +171,7 @@
 
    https://fossil.wanderinghorse.net/r/jaccwabbyt/file/common/whwasmutil.js
 */
-self.WhWasmUtilInstaller = function(target){
+globalThis.WhWasmUtilInstaller = function(target){
   'use strict';
   if(undefined===target.bigIntEnabled){
     target.bigIntEnabled = !!self['BigInt64Array'];
@@ -2194,7 +2194,7 @@ self.WhWasmUtilInstaller = function(target){
    Error handling is up to the caller, who may attach a `catch()` call
    to the promise.
 */
-self.WhWasmUtilInstaller.yawl = function(config){
+globalThis.WhWasmUtilInstaller.yawl = function(config){
   const wfetch = ()=>fetch(config.uri, {credentials: 'same-origin'});
   const wui = this;
   const finalThen = function(arg){
@@ -2240,4 +2240,4 @@ self.WhWasmUtilInstaller.yawl = function(config){
             .then(finalThen);
         };
   return loadWasm;
-}.bind(self.WhWasmUtilInstaller)/*yawl()*/;
+}.bind(globalThis.WhWasmUtilInstaller)/*yawl()*/;

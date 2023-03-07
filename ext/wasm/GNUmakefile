@@ -437,7 +437,7 @@ emcc.jsflags += -sSTRICT_JS=0
 # STRICT_JS disabled due to:
 #   https://github.com/emscripten-core/emscripten/issues/18610
 # TL;DR: does not work with MODULARIZE or EXPORT_ES6 as of version 3.1.31.
-emcc.environment := -sENVIRONMENT=web,worker
+emcc.environment := -sENVIRONMENT=web,worker,node
 ########################################################################
 # -sINITIAL_MEMORY: How much memory we need to start with is governed
 # at least in part by whether -sALLOW_MEMORY_GROWTH is enabled. If so,
@@ -450,9 +450,9 @@ emcc.environment := -sENVIRONMENT=web,worker
 # such test results are inconsistent due to browser internals which
 # are opaque to us.
 emcc.jsflags += -sALLOW_MEMORY_GROWTH
-emcc.INITIAL_MEMORY.128 := 13107200
+emcc.INITIAL_MEMORY.128 := 134217728
 emcc.INITIAL_MEMORY.96  := 100663296
-emcc.INITIAL_MEMORY.64  := 64225280
+emcc.INITIAL_MEMORY.64  := 67108864
 emcc.INITIAL_MEMORY.32  := 33554432
 emcc.INITIAL_MEMORY.16  := 16777216
 emcc.INITIAL_MEMORY.8   := 8388608
@@ -469,6 +469,8 @@ emcc.jsflags += -sSTACK_SIZE=512KB
 # ^^^ ACHTUNG: emsdk 3.1.27 reduced the default stack size from 5MB to
 # a mere 64KB, which leads to silent memory corruption via the kvvfs
 # VFS, which requires twice that for its xRead() and xWrite() methods.
+# 2023-03: those methods have since been adapted to use a malloc()'d
+# buffer.
 ########################################################################
 # $(sqlite3.js.init-func) is the name Emscripten assigns our exported
 # module init/load function. This symbol name is hard-coded in
@@ -537,7 +539,7 @@ emcc.jsflags += -sLLD_REPORT_UNDEFINED
 $(sqlite3-api-build-version.js): $(bin.version-info) $(MAKEFILE)
 	@echo "Making $@..."
 	@{ \
-  echo 'self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
+  echo 'globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){'; \
 	echo -n '  sqlite3.version = '; \
   $(bin.version-info) --json; \
   echo ';'; \
@@ -666,7 +668,7 @@ pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)
 define SETUP_LIB_BUILD_MODE
 $(info Setting up build [$(1)]: $(4))
 c-pp.D.$(1) := $(5)
-pre-js.js.$(1) := $$(dir.api)/pre-js.$(1).js
+pre-js.js.$(1) := $$(dir.tmp)/pre-js.$(1).js
 $$(eval $$(call C-PP.FILTER,$$(pre-js.js.in),$$(pre-js.js.$(1)),$$(c-pp.D.$(1))))
 post-js.js.$(1) := $$(dir.tmp)/post-js.$(1).js
 $$(eval $$(call C-PP.FILTER,$$(post-js.js.in),$$(post-js.js.$(1)),$$(c-pp.D.$(1))))

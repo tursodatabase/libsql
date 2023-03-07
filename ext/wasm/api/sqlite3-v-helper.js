@@ -15,7 +15,7 @@
    with its virtual table counterpart, sqlite3.vtab.
 */
 'use strict';
-self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
   const vfs = Object.create(null), vtab = Object.create(null);
 

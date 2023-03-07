@@ -36,7 +36,9 @@ import {default as sqlite3InitModule} from './sqlite3-bundler-friendly.mjs';
 //#else
 "use strict";
 {
-  const urlParams = new URL(self.location.href).searchParams;
+  const urlParams = globalThis.location
+        ? new URL(self.location.href).searchParams
+        : new URLSearchParams();
   let theJs = 'sqlite3.js';
   if(urlParams.has('sqlite3.dir')){
     theJs = urlParams.get('sqlite3.dir') + '/' + theJs;

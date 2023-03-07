@@ -29,7 +29,7 @@
    exposed by this API. It is intended to be called one time at the
    end of the API amalgamation process, passed configuration details
    for the current environment, and then optionally be removed from
-   the global object using `delete self.sqlite3ApiBootstrap`.
+   the global object using `delete globalThis.sqlite3ApiBootstrap`.
 
    This function is not intended for client-level use. It is intended
    for use in creating bundles configured for specific WASM
@@ -58,7 +58,7 @@
      WASM-exported memory.
 
    - `bigIntEnabled`: true if BigInt support is enabled. Defaults to
-     true if `self.BigInt64Array` is available, else false. Some APIs
+     true if `globalThis.BigInt64Array` is available, else false. Some APIs
      will throw exceptions if called without BigInt support, as BigInt
      is required for marshalling C-side int64 into and out of JS.
      (Sidebar: it is technically possible to add int64 support via
@@ -100,8 +100,8 @@
 
 */
 'use strict';
-self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
-  apiConfig = (self.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
+globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
+  apiConfig = (globalThis.sqlite3ApiConfig || sqlite3ApiBootstrap.defaultConfig)
 ){
   if(sqlite3ApiBootstrap.sqlite3){ /* already initalized */
     console.warn("sqlite3ApiBootstrap() called multiple times.",
@@ -117,7 +117,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
            -sWASM_BIGINT=1, else it will not. */
         return !!Module.HEAPU64;
       }
-      return !!self.BigInt64Array;
+      return !!globalThis.BigInt64Array;
     })(),
     debug: console.debug.bind(console),
     warn: console.warn.bind(console),
@@ -772,7 +772,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     isBindableTypedArray,
     isInt32, isSQLableTypedArray, isTypedArray,
     typedArrayToString,
-    isUIThread: ()=>(self.window===self && !!self.document),
+    isUIThread: ()=>(globalThis.window===globalThis && !!globalThis.document),
     // is this true for ESM?: 'undefined'===typeof WorkerGlobalScope
     isSharedTypedArray,
     toss: function(...args){throw new Error(args.join(' '))},
@@ -1203,9 +1203,9 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     console.error("sqlite3_wasmfs_opfs_dir() can no longer work due "+
                   "to incompatible WASMFS changes. It will be removed.");
     if(!pdir
-       || !self.FileSystemHandle
-       || !self.FileSystemDirectoryHandle
-       || !self.FileSystemFileHandle){
+       || !globalThis.FileSystemHandle
+       || !globalThis.FileSystemDirectoryHandle
+       || !globalThis.FileSystemFileHandle){
       return __wasmfsOpfsDir = "";
     }
     try{
@@ -1461,8 +1461,8 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       const rc = Object.create(null);
       rc.prefix = 'kvvfs-'+which;
       rc.stores = [];
-      if('session'===which || ""===which) rc.stores.push(self.sessionStorage);
-      if('local'===which || ""===which) rc.stores.push(self.localStorage);
+      if('session'===which || ""===which) rc.stores.push(globalThis.sessionStorage);
+      if('local'===which || ""===which) rc.stores.push(globalThis.localStorage);
       return rc;
     };
 
@@ -1962,7 +1962,7 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   return sqlite3;
 }/*sqlite3ApiBootstrap()*/;
 /**
-  self.sqlite3ApiBootstrap.initializers is an internal detail used by
+  globalThis.sqlite3ApiBootstrap.initializers is an internal detail used by
   the various pieces of the sqlite3 API's amalgamation process. It
   must not be modified by client code except when plugging such code
   into the amalgamation process.
@@ -1980,14 +1980,14 @@ self.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   utilized until the whwasmutil.js part is plugged in via
   sqlite3-api-glue.js.
 */
-self.sqlite3ApiBootstrap.initializers = [];
+globalThis.sqlite3ApiBootstrap.initializers = [];
 /**
-  self.sqlite3ApiBootstrap.initializersAsync is an internal detail
+  globalThis.sqlite3ApiBootstrap.initializersAsync is an internal detail
   used by the sqlite3 API's amalgamation process. It must not be
   modified by client code except when plugging such code into the
   amalgamation process.
 
-  The counterpart of self.sqlite3ApiBootstrap.initializers,
+  The counterpart of globalThis.sqlite3ApiBootstrap.initializers,
   specifically for initializers which are asynchronous. All entries in
   this list must be either async functions, non-async functions which
   return a Promise, or a Promise. Each function in the list is called
@@ -1999,10 +1999,10 @@ self.sqlite3ApiBootstrap.initializers = [];
 
   This list is not processed until the client calls
   sqlite3.asyncPostInit(). This means, for example, that intializers
-  added to self.sqlite3ApiBootstrap.initializers may push entries to
+  added to globalThis.sqlite3ApiBootstrap.initializers may push entries to
   this list.
 */
-self.sqlite3ApiBootstrap.initializersAsync = [];
+globalThis.sqlite3ApiBootstrap.initializersAsync = [];
 /**
    Client code may assign sqlite3ApiBootstrap.defaultConfig an
    object-type value before calling sqlite3ApiBootstrap() (without
@@ -2012,13 +2012,12 @@ self.sqlite3ApiBootstrap.initializersAsync = [];
    an environment-suitable configuration without having to define a new
    global-scope symbol.
 */
-self.sqlite3ApiBootstrap.defaultConfig = Object.create(null);
+globalThis.sqlite3ApiBootstrap.defaultConfig = Object.create(null);
 /**
    Placeholder: gets installed by the first call to
-   self.sqlite3ApiBootstrap(). However, it is recommended that the
+   globalThis.sqlite3ApiBootstrap(). However, it is recommended that the
    caller of sqlite3ApiBootstrap() capture its return value and delete
-   self.sqlite3ApiBootstrap after calling it. It returns the same
+   globalThis.sqlite3ApiBootstrap after calling it. It returns the same
    value which will be stored here.
 */
-self.sqlite3ApiBootstrap.sqlite3 = undefined;
-
+globalThis.sqlite3ApiBootstrap.sqlite3 = undefined;

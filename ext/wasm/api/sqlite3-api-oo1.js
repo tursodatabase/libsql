@@ -12,9 +12,9 @@
 
   This file contains the so-called OO #1 API wrapper for the sqlite3
   WASM build. It requires that sqlite3-api-glue.js has already run
-  and it installs its deliverable as self.sqlite3.oo1.
+  and it installs its deliverable as globalThis.sqlite3.oo1.
 */
-self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const toss3 = (...args)=>{throw new sqlite3.SQLite3Error(...args)};
 
