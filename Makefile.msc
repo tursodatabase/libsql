@@ -1526,7 +1526,7 @@ TESTSRC = \
   $(TOP)\ext\fts3\fts3_term.c \
   $(TOP)\ext\fts3\fts3_test.c \
   $(TOP)\ext\rbu\test_rbu.c \
-  $(TOP)\ext\session\test_session.c 
+  $(TOP)\ext\session\test_session.c
 
 # Statically linked extensions.
 #

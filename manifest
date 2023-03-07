@@ -1,11 +1,11 @@
-C Repair\san\sunintential\sfork.
-D 2023-03-06T23:39:19.905
+C Fix\sa\scouple\sminor\sspacing\sissues\sin\sthe\sMSVC\smakefile.
+D 2023-03-07T02:24:43.740
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 73076ae60a143476b6890b5c3b88848fce19ac8caefc3ff5ae97f72694dc946d
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc e3a7faf7da80b891edcc0378eb9b4b1274ae080ee1fd1337c649bfe9af9aa456
+F Makefile.msc 492eace1ce32ec464792ae60a9b67225ddb68ef742f1a44d25f47745c9c59d3d
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 17f95ae2fdf21f0e9575eb0b0511ea63f15d71dfff431b21c2b4adbfa70cfbbf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P be9ab292cd14889b1c9648b47138260b33fe5be282ff2d90653b1387885a7d02 24bd7e82471925987d924188ce0f80ed4f282b10ea1022e42881a7f529814eb9
-R ef635fb3d47a6aeb141c223bc41368c2
-U drh
-Z 6a26991404e5e106a1611ca3013f4b88
+P 8b524c849f9844ea624cfe8968225200a57cefa8b7a17ebac2153c0cb3b657d7
+R 85b16b20b35bf622a1d3c52ce74239c4
+U mistachkin
+Z da1b337cb038339974cdea1e6ad4a420
 # Remove this line to create a well-formed Fossil manifest.
