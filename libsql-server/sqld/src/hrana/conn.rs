@@ -69,6 +69,10 @@ async fn handle_ws(server: Arc<Server>, ws: handshake::WebSocket, conn_id: u64) 
     };
 
     loop {
+        if let Some(isl) = conn.server.idle_shutdown_layer.as_ref() {
+            isl.kick();
+        }
+
         tokio::select! {
             Some(client_msg_res) = conn.ws.recv() => {
                 let client_msg = client_msg_res
