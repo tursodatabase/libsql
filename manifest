@@ -1,5 +1,5 @@
-C Improve\show\ssqlite3.initWorker1API()\sdetermines\swhether\sit's\srunning\sin\sa\sWorker\sthread.\sBased\son\sfeedback\sin\s[forum:ac7a94d4f77db235|forum\spost\sac7a94d4f77db235].
-D 2023-03-07T19:23:36.571
+C Fix\sa\sbug\sintroduced\s4\sdays\sago\sby\s[e95439119ac200cb]:\sdo\snot\sset\sthe\nExpr.affExpr\sfield\sof\sa\sgenerated\scolumn\sexpression\sif\sthe\sexpression\sis\sa\nRAISE()\sfunction,\sas\saffExpr\shas\sa\sdifferent\smeaning\sfor\sRAISE.\n[forum:/forumpost/b312e075b5|Forum\spost\sb312e075b5].
+D 2023-03-07T23:47:38.041
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -565,7 +565,7 @@ F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
 F src/btree.c c547e099f853de61835ff45da8d956a932d02ecf1ffd472a1f2a103b83e6dd40
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h 06bb2c1a07172d5a1cd27a2a5d617b93b1e976c5873709c31964786f86365a6e
-F src/build.c 542a04532ae810a58366c47453de4fc1ca9fa6e6b2d920b6d639cdd1a1831309
+F src/build.c 4fed662d383527c808d85f53b9c544ead425ac8b9c7cb38501a64e3797921d41
 F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
@@ -1154,7 +1154,7 @@ F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
 F test/fuzzinvariants.c 3ec82ac4277a0c62918f39e7a35893d6fb5ed57c465a938ad18e8e7a69527615
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
-F test/gencol1.test e40c94c0d3485c37c23ec8ff42dbb4464cef3f3e41d96ef1abf9c4f2b97936c9
+F test/gencol1.test aef8b0670abd4b1ae4cae786b15a43758d86f6cd9f12b381d45d96bb51e597c9
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/having.test a89236dd8d55aa50c4805f82ac9daf64d477a44d712d8209c118978d0ca21ec9
 F test/hexlit.test 4a6a5f46e3c65c4bf1fa06f5dd5a9507a5627751
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dbbe8f25e58738c10b6192d41f1e3886983871f17631cbc45ce626d3f05a6e26
-R 88242176303c533a7f2325aa7f3c6c50
-U stephan
-Z f63a46c4cc22a22c8918188d2a3e0439
+P 2f712b836a0dafd0b2ee6ba4eaa9caa35e49375c7ad0562477e0f2d3b086ec03
+R 7932af26b4c2f8946f0c8d4e43a0814e
+U drh
+Z 65b72ddc0fa6d0ebce5a1655fb619090
 # Remove this line to create a well-formed Fossil manifest.
