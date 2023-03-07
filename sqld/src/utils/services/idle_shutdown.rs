@@ -37,6 +37,10 @@ impl IdleShutdownLayer {
             watcher: Arc::new(sender),
         }
     }
+
+    pub fn kick(&self) {
+        let _: Result<_, _> = self.watcher.send(());
+    }
 }
 
 impl<S> Layer<S> for IdleShutdownLayer {

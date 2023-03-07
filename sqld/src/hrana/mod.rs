@@ -1,5 +1,6 @@
 use crate::auth::Auth;
 use crate::database::service::DbFactory;
+use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 use anyhow::{Context as _, Result};
 use enclose::enclose;
 use std::net::SocketAddr;
@@ -15,6 +16,7 @@ mod session;
 struct Server {
     db_factory: Arc<dyn DbFactory>,
     auth: Arc<Auth>,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
     next_conn_id: AtomicU64,
 }
 
@@ -27,12 +29,14 @@ pub struct Upgrade {
 pub async fn serve(
     db_factory: Arc<dyn DbFactory>,
     auth: Arc<Auth>,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
     bind_addr: SocketAddr,
     mut upgrade_rx: mpsc::Receiver<Upgrade>,
 ) -> Result<()> {
     let server = Arc::new(Server {
         db_factory,
         auth,
+        idle_shutdown_layer,
         next_conn_id: AtomicU64::new(0),
     });
 
@@ -44,6 +48,10 @@ pub async fn serve(
 
     let mut join_set = tokio::task::JoinSet::new();
     loop {
+        if let Some(isl) = server.idle_shutdown_layer.as_ref() {
+            isl.kick();
+        }
+
         tokio::select! {
             accept_res = listener.accept() => {
                 let (socket, peer_addr) = accept_res
