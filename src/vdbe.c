@@ -3603,6 +3603,7 @@ case OP_Count: {         /* out2 */
   }else{
     nEntry = 0;  /* Not needed.  Only used to silence a warning. */
     rc = sqlite3BtreeCount(db, pCrsr, &nEntry);
+    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE] += nEntry;
     if( rc ) goto abort_due_to_error;
   }
   pOut = out2Prerelease(p, pOp);
@@ -4762,6 +4763,7 @@ case OP_SeekGT: {       /* jump, in3, group, ncycle */
       goto seek_not_found;
     }
   }
+  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
 #ifdef SQLITE_TEST
   sqlite3_search_count++;
 #endif
@@ -5330,6 +5332,7 @@ notExistsWithKey:
   pC->deferredMoveto = 0;
   VdbeBranchTaken(res!=0,2);
   pC->seekResult = res;
+  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
   if( res!=0 ){
     assert( rc==SQLITE_OK );
     if( pOp->p2==0 ){
@@ -5632,6 +5635,7 @@ case OP_Insert: {
 
   assert( (pOp->p5 & OPFLAG_LASTROWID)==0 || (pOp->p5 & OPFLAG_NCHANGE)!=0 );
   if( pOp->p5 & OPFLAG_NCHANGE ){
+    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
     p->nChange++;
     if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = x.nKey;
   }
@@ -5817,6 +5821,7 @@ case OP_Delete: {
 
   /* Invoke the update-hook if required. */
   if( opflags & OPFLAG_NCHANGE ){
+    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
     p->nChange++;
     if( db->xUpdateCallback && ALWAYS(pTab!=0) && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,
@@ -6213,6 +6218,7 @@ case OP_Rewind: {        /* jump, ncycle */
   }
   if( rc ) goto abort_due_to_error;
   pC->nullRow = (u8)res;
+  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
     if( res ) goto jump_to_p2;
@@ -6318,6 +6324,7 @@ next_tail:
   if( rc==SQLITE_OK ){
     pC->nullRow = 0;
     p->aCounter[pOp->p5]++;
+    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
@@ -6369,6 +6376,7 @@ case OP_IdxInsert: {        /* in2 */
   pIn2 = &aMem[pOp->p2];
   assert( (pIn2->flags & MEM_Blob) || (pOp->p5 & OPFLAG_PREFORMAT) );
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
+  if( pOp->p5 & OPFLAG_NCHANGE ) p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
   assert( pC->eCurType==CURTYPE_BTREE );
   assert( pC->isTable==0 );
   rc = ExpandBlob(pIn2);
@@ -6769,6 +6777,7 @@ case OP_Clear: {
   rc = sqlite3BtreeClearTable(db->aDb[pOp->p2].pBt, (u32)pOp->p1, &nChange);
   if( pOp->p3 ){
     p->nChange += nChange;
+    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
     if( pOp->p3>0 ){
       assert( memIsValid(&aMem[pOp->p3]) );
       memAboutToChange(p, &aMem[pOp->p3]);
@@ -8400,6 +8409,7 @@ case OP_VUpdate: {
         p->errorAction = ((pOp->p5==OE_Replace) ? OE_Abort : pOp->p5);
       }
     }else{
+      p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_WRITTEN - LIBSQL_STMTSTATUS_BASE]++;
       p->nChange++;
     }
     if( rc ) goto abort_due_to_error;

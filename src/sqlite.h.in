@@ -8708,6 +8708,14 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** is ignored when the opcode is SQLITE_STMTSTATUS_MEMUSED.
 ** </dd>
 ** </dl>
+**
+** [[LIBSQL_STMTSTATUS_ROWS_READ]]
+** [[LIBSQL_STMTSTATUS_ROWS_WRITTEN]] 
+** <dt>LIBSQL_STMTSTATUS_ROWS_READ<br>
+** LIBSQL_STMTSTATUS_ROWS_WRITTEN</dt>
+** <dd>^LIBSQL_STMTSTATUS_ROWS_READ is the number of rows read when executing
+** this statement. LIBSQL_STMTSTATUS_ROWS_WRITTEN value is the number of
+** rows written.
 */
 #define SQLITE_STMTSTATUS_FULLSCAN_STEP     1
 #define SQLITE_STMTSTATUS_SORT              2
@@ -8718,6 +8726,10 @@ int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 #define SQLITE_STMTSTATUS_FILTER_MISS       7
 #define SQLITE_STMTSTATUS_FILTER_HIT        8
 #define SQLITE_STMTSTATUS_MEMUSED           99
+
+#define LIBSQL_STMTSTATUS_BASE              1024
+#define LIBSQL_STMTSTATUS_ROWS_READ         LIBSQL_STMTSTATUS_BASE + 1
+#define LIBSQL_STMTSTATUS_ROWS_WRITTEN      LIBSQL_STMTSTATUS_BASE + 2
 
 /*
 ** CAPI3REF: Custom Page Cache Object

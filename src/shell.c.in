@@ -3079,6 +3079,11 @@ static int display_stats(
     raw_printf(pArg->out, "Number of times run:                 %d\n", iCur);
     iCur = sqlite3_stmt_status(pArg->pStmt, SQLITE_STMTSTATUS_MEMUSED, bReset);
     raw_printf(pArg->out, "Memory used by prepared stmt:        %d\n", iCur);
+
+    iCur = sqlite3_stmt_status(pArg->pStmt, LIBSQL_STMTSTATUS_ROWS_READ, bReset);
+    raw_printf(pArg->out, "Rows read:                           %d\n", iCur);
+    iCur = sqlite3_stmt_status(pArg->pStmt, LIBSQL_STMTSTATUS_ROWS_WRITTEN, bReset);
+    raw_printf(pArg->out, "Rows written:                        %d\n", iCur);
   }
 
 #ifdef __linux__

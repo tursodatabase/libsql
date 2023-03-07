@@ -1870,6 +1870,9 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
     db->pnBytesFreed = 0;
     db->lookaside.pEnd = db->lookaside.pTrueEnd;
     sqlite3_mutex_leave(db->mutex);
+  }else if( op>=LIBSQL_STMTSTATUS_BASE ){
+    v = pVdbe->aLibsqlCounter[op - LIBSQL_STMTSTATUS_BASE];
+    if( resetFlag ) pVdbe->aLibsqlCounter[op - LIBSQL_STMTSTATUS_BASE] = 0;
   }else{
     v = pVdbe->aCounter[op];
     if( resetFlag ) pVdbe->aCounter[op] = 0;
