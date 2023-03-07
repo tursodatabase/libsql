@@ -317,7 +317,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 sqlite3.initWorker1API = function(){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
-  if('function' !== typeof importScripts){
+  if(!(globalThis.WorkerGlobalScope instanceof Function)){
     toss("initWorker1API() must be run from a Worker thread.");
   }
   const self = this.self;
