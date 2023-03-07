@@ -122,8 +122,9 @@ async fn run_service(
     }
 
     if let Some(addr) = config.hrana_addr {
+        let idle_kicker = idle_shutdown_layer.map(|isl| isl.into_kicker());
         join_set.spawn(async move {
-            hrana::serve(service.factory, auth, idle_shutdown_layer, addr, upgrade_rx)
+            hrana::serve(service.factory, auth, idle_kicker, addr, upgrade_rx)
                 .await
                 .context("Hrana server failed")
         });
