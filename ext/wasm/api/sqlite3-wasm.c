@@ -168,11 +168,6 @@
 #endif
 
 #include <assert.h>
-#include "sqlite3.c" /* yes, .c instead of .h. */
-
-#if defined(__EMSCRIPTEN__)
-#  include <emscripten/console.h>
-#endif
 
 /*
 ** SQLITE_WASM_EXPORT is functionally identical to EMSCRIPTEN_KEEPALIVE
@@ -201,6 +196,30 @@
 // See also:
 //__attribute__((export_name("theExportedName"), used, visibility("default")))
 
+/*
+** Which sqlite3.c we're using needs to be configurable to enable
+** building against a custom copy, e.g. the SEE variant. Note that we
+** #include the .c file, rather than the header, so that the WASM
+** extensions have access to private API internals.
+**
+** The caveat here is that custom variants need to account for
+** exporting any necessary symbols (e.g. sqlite3_activate_see()).  We
+** cannot export them from here using SQLITE_WASM_EXPORT because that
+** attribute (apparently) has to be part of the function definition.
+*/
+#ifndef SQLITE_C
+# define SQLITE_C sqlite3.c /* yes, .c instead of .h. */
+#endif
+#define INC__STRINGIFY_(f) #f
+#define INC__STRINGIFY(f) INC__STRINGIFY_(f)
+#include INC__STRINGIFY(SQLITE_C)
+#undef INC__STRINGIFY_
+#undef INC__STRINGIFY
+#undef SQLITE_C
+
+#if defined(__EMSCRIPTEN__)
+#  include <emscripten/console.h>
+#endif
 
 #if 0
 /*

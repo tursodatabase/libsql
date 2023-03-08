@@ -145,8 +145,27 @@ ifeq (,$(wildcard $(dir.tmp)))
   dir._tmp := $(shell mkdir -p $(dir.tmp))
 endif
 
-sqlite3.c := $(dir.top)/sqlite3.c
+########################################################################
+# Set up sqlite3.c and sqlite3.h...
+#
+# To build with SEE (https://sqlite.org/see), either put sqlite3-see.c
+# in the top of this build tree or pass
+# sqlite3.c=PATH_TO_sqlite3-see.c to the build. Note that only
+# encryption modules with no 3rd-party dependencies will currently
+# work here: AES256-OFB, AES128-OFB, and AES128-CCM. Not
+# coincidentally, those 3 modules are included in the sqlite3-see.c
+# bundle.
+#
+# A custom sqlite3.c must not have any spaces in its name.
+sqlite3.canonical.c := $(dir.top)/sqlite3.c
+sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
 sqlite3.h := $(dir.top)/sqlite3.h
+ifeq (,$(shell grep sqlite3_activate_see $(sqlite3.c) 2>/dev/null))
+  SQLITE_C_IS_SEE := 0
+else
+  SQLITE_C_IS_SEE := 1
+  $(info This is an SEE build.)
+endif
 # Most SQLITE_OPT flags are set in sqlite3-wasm.c but we need them
 # made explicit here for building speedtest1.c.
 SQLITE_OPT = \
@@ -169,7 +188,8 @@ SQLITE_OPT = \
   -DSQLITE_OS_KV_OPTIONAL=1 \
   '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
   -DSQLITE_USE_URI=1 \
-  -DSQLITE_WASM_ENABLE_C_TESTS
+  -DSQLITE_WASM_ENABLE_C_TESTS \
+  -DSQLITE_C=$(sqlite3.c)
 
 .NOTPARALLEL: $(sqlite3.h)
 $(sqlite3.h):
@@ -226,7 +246,7 @@ endif
 # cleanup process for the dist build to work properly.
 bin.version-info := $(dir.wasm)/version-info
 $(bin.version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
-	$(CC) -O0 -I$(dir.top) -o $@ $<
+	$(CC) -O0 -I$(dir $(sqlite3.c)) -o $@ $<
 DISTCLEAN_FILES += $(bin.version-info)
 
 # bin.stripcomments is used for stripping C/C++-style comments from JS
@@ -284,7 +304,7 @@ endef
 ########################################################################
 
 # cflags.common = C compiler flags for all builds
-cflags.common :=  -I. -I.. -I$(dir.top)
+cflags.common :=  -I. -I$(dir $(sqlite3.c))
 # emcc.WASM_BIGINT = 1 for BigInt (C int64) support, else 0.  The API
 # disables certain features if BigInt is not enabled and such builds
 # _are not tested_ on any regular basis.
@@ -327,10 +347,14 @@ emcc_opt_full := $(emcc_opt) -g3
 
 # EXPORTED_FUNCTIONS.* = files for use with Emscripten's
 # -sEXPORTED_FUNCTION flag.
-EXPORTED_FUNCTIONS.api.in := $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api)
+EXPORTED_FUNCTIONS.api.main := $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api)
+EXPORTED_FUNCTIONS.api.in := $(EXPORTED_FUNCTIONS.api.main)
+ifeq (1,$(SQLITE_C_IS_SEE))
+  EXPORTED_FUNCTIONS.api.in += $(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-see)
+endif
 EXPORTED_FUNCTIONS.api := $(dir.tmp)/EXPORTED_FUNCTIONS.api
-$(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(MAKEFILE)
-	cp $(EXPORTED_FUNCTIONS.api.in) $@
+$(EXPORTED_FUNCTIONS.api): $(EXPORTED_FUNCTIONS.api.in) $(sqlite3.c) $(MAKEFILE)
+	cat $(EXPORTED_FUNCTIONS.api.in) > $@
 
 # sqlite3-license-version.js = generated JS file with the license
 # header and version info.
@@ -834,9 +858,9 @@ speedtest1.exit-runtime1 := -sEXIT_RUNTIME=1
 # -sEXIT_RUNTIME=1 but we need EXIT_RUNTIME=0 for the worker-based app
 # which runs speedtest1 multiple times.
 
-$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api)
+$(EXPORTED_FUNCTIONS.speedtest1): $(EXPORTED_FUNCTIONS.api.main)
 	@echo "Making $@ ..."
-	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api); } > $@
+	@{ echo _wasm_main; cat $(EXPORTED_FUNCTIONS.api.main); } > $@
 speedtest1.js := $(dir.dout)/speedtest1.js
 speedtest1.wasm := $(dir.dout)/speedtest1.wasm
 cflags.speedtest1 := $(cflags.common) -DSQLITE_SPEEDTEST1_WASM
@@ -847,9 +871,11 @@ $(speedtest1.js): $(MAKEFILE) $(speedtest1.cses) \
     $(EXPORTED_FUNCTIONS.speedtest1)
 	@echo "Building $@ ..."
 	$(emcc.bin) \
-        $(emcc.speedtest1) $(emcc.speedtest1.common) \
+        $(emcc.speedtest1) -I$(dir $(sqlite3.canonical.c)) \
+        $(emcc.speedtest1.common) \
         $(cflags.speedtest1) $(pre-post-speedtest1.flags.vanilla) \
         $(SQLITE_OPT) \
+        -USQLITE_C -DSQLITE_C=$(sqlite3.canonical.c) \
         $(speedtest1.exit-runtime0) \
         -o $@ $(speedtest1.cses) -lm
 	$(maybe-wasm-strip) $(speedtest1.wasm)
