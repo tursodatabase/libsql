@@ -1,5 +1,5 @@
-C Export\sthe\snew\sSQLITE_CHANGESETAPPLY_IGNORENOOP\sflag\sto\sJS.
-D 2023-03-08T18:05:57.506
+C Backout\sthe\sOP_MakeRecord\soptimization\sas\sit\sdoes\snot\swork.
+D 2023-03-08T22:48:03.746
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3ff7bc2b48dd425b1448304bb86273b05da1621f136d51dbb9789f8803559a1f
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c 80a64921734e74b1b28b321225137ec555b0e15d73f3322c2c0651a8be481114
+F src/vdbe.c 0cf4c72a9e0eb614afc19c9c4ca9c8a919c97c0866934a70dac7c2f689a4edf8
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 40c47b1528d308a322203de21d2e0d711753257ed9771771b6129214b1d65932
@@ -2049,8 +2049,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cb023fe28560ce0f8c2fd48042553fcdb9db81eba9552be75165de0d46a2645c
-R a9df85e2031c92ccc881b96d87614853
-U stephan
-Z fbd009d6ed5e486e6195915a41c1fb94
+P ac7359b2633ead74a53b2796fe038ca285aacad45b45980db2a76a87154e66e3
+Q -ca89daef0fcf6cb04aa6fa90dd333d6f2474bf3f458c833d9cd5bd8e59f2a04a
+R 5b614ce6b236c8311c427bbe81e4374c
+U drh
+Z 739ce1ec9014df3e668a3263b66c8258
 # Remove this line to create a well-formed Fossil manifest.

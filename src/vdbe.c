@@ -3379,7 +3379,23 @@ case OP_MakeRecord: {
   pRec = pLast;
   do{
     assert( memIsValid(pRec) );
-    if( pRec->flags & (MEM_Int|MEM_IntReal) ){
+    if( pRec->flags & MEM_Null ){
+      if( pRec->flags & MEM_Zero ){
+        /* Values with MEM_Null and MEM_Zero are created by xColumn virtual
+        ** table methods that never invoke sqlite3_result_xxxxx() while
+        ** computing an unchanging column value in an UPDATE statement.
+        ** Give such values a special internal-use-only serial-type of 10
+        ** so that they can be passed through to xUpdate and have
+        ** a true sqlite3_value_nochange(). */
+#ifndef SQLITE_ENABLE_NULL_TRIM
+        assert( pOp->p5==OPFLAG_NOCHNG_MAGIC || CORRUPT_DB );
+#endif
+        pRec->uTemp = 10;
+      }else{
+        pRec->uTemp = 0;
+      }
+      nHdr++;
+    }else if( pRec->flags & (MEM_Int|MEM_IntReal) ){
       /* Figure out whether to use 1, 2, 4, 6 or 8 bytes. */
       i64 i = pRec->u.i;
       u64 uu;
@@ -3429,22 +3445,6 @@ case OP_MakeRecord: {
           pRec->uTemp = 6;
         }
       }
-    }else if( pRec->flags & MEM_Null ){
-      if( pRec->flags & MEM_Zero ){
-        /* Values with MEM_Null and MEM_Zero are created by xColumn virtual
-        ** table methods that never invoke sqlite3_result_xxxxx() while
-        ** computing an unchanging column value in an UPDATE statement.
-        ** Give such values a special internal-use-only serial-type of 10
-        ** so that they can be passed through to xUpdate and have
-        ** a true sqlite3_value_nochange(). */
-#ifndef SQLITE_ENABLE_NULL_TRIM
-        assert( pOp->p5==OPFLAG_NOCHNG_MAGIC || CORRUPT_DB );
-#endif
-        pRec->uTemp = 10;
-      }else{
-        pRec->uTemp = 0;
-      }
-      nHdr++;
     }else if( pRec->flags & MEM_Real ){
       nHdr++;
       nData += 8;
