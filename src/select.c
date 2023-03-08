@@ -2332,8 +2332,6 @@ void sqlite3SubqueryColumnTypes(
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity<=SQLITE_AFF_NONE ){
       pCol->affinity = aff;
-    }else if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
-      pCol->affinity = SQLITE_AFF_FLEXNUM;
     }
     if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
       int m = 0;
@@ -2346,6 +2344,9 @@ void sqlite3SubqueryColumnTypes(
       }else
       if( pCol->affinity>=SQLITE_AFF_NUMERIC && (m&0x02)!=0 ){
         pCol->affinity = SQLITE_AFF_BLOB;
+      }
+      if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
+        pCol->affinity = SQLITE_AFF_FLEXNUM;
       }
     }
     zType = columnType(&sNC, p, 0, 0, 0);
