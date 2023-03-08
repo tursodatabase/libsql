@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sintroduced\s4\sdays\sago\sby\s[e95439119ac200cb]:\sdo\snot\sset\sthe\nExpr.affExpr\sfield\sof\sa\sgenerated\scolumn\sexpression\sif\sthe\sexpression\sis\sa\nRAISE()\sfunction,\sas\saffExpr\shas\sa\sdifferent\smeaning\sfor\sRAISE.\n[forum:/forumpost/b312e075b5|Forum\spost\sb312e075b5].
-D 2023-03-07T23:47:38.041
+C Fix\sa\sproblem\sin\sthe\scount-of-view\soptimization\sthat\scan\slead\sto\sincorrect\nbytecode.\s\sdbsqlfuzz\s23d782160b71c3f8f535ccb2da313dfc8eb8c631.
+D 2023-03-08T00:47:53.498
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -623,7 +623,7 @@ F src/printf.c fb31597cf93200eba9167573094ee312b0d51b2c1998613284ceb2c8c212b492
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 4233c3030341bf1a21cea90890e6b3d3531721acc62ede147e899d36ffad8238
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 2f38b8424d204f79180acc6adf84cf3a35a5176e33bc6b009f9a9f080316d4bb
+F src/select.c 0bbc1eb159d8b54fd356de70f778bd1c758c2ccf4fabfca498b2a56481aff2b1
 F src/shell.c.in d64f0d3822aa94508285f2bcce185b12ace06f37c953371cb0f0d835c171753c
 F src/sqlite.h.in f01033703156615566bb329144d736a37fc35a278049db91127782a9c799b938
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -893,7 +893,7 @@ F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c
 F test/corruptN.test 7c099d153a554001b4fb829c799b01f2ea6276cbc32479131e0db0da4efd9cc4
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
 F test/count.test cd4bd531066e8d77ef8fe1e3fc8253d042072e117ccab214b290cf83f1602249
-F test/countofview.test 5773d192f67bbf271f53ebb1f3292f435c9c7ae91ee0be83f81591c19a983604
+F test/countofview.test 5ecb4ab5449683c5eaa315620fc17838c0f2a58001f3979fcdf9f56cd6af83f5
 F test/coveridxscan.test f35c7208dedc4f98e471c569df64c0f95a49f6e072d8dc7c8f99bdee2697de1b
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f712b836a0dafd0b2ee6ba4eaa9caa35e49375c7ad0562477e0f2d3b086ec03
-R 7932af26b4c2f8946f0c8d4e43a0814e
+P 1096b5a7cc8104db01f8820ace47020baad2f12e6711e3a7b4514ed1becc7b66
+R 132c7e609c38a7be8ca466782d538c7f
 U drh
-Z 65b72ddc0fa6d0ebce5a1655fb619090
+Z 36cb7a4789e4e3ff0efced0434fbf8d1
 # Remove this line to create a well-formed Fossil manifest.
