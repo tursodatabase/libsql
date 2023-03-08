@@ -191,7 +191,7 @@ do_common_sql {
 }
 
 foreach {tn sql} [string map {%T1% t1 %T2% t2 %T3% t3 %T4% t4} $set_of_tests] {
-  do_then_apply_sql $sql
+  do_then_apply_sql -ignorenoop $sql
   do_test 2.$tn { compare_db db db2 } {}
 }
 
@@ -598,7 +598,7 @@ do_common_sql {
   INSERT INTO t1 SELECT NULL, 0, 0, 0, 0, 0 FROM s
 }
 
-do_then_apply_sql {
+do_then_apply_sql -ignorenoop {
   UPDATE t1 SET                             f=f+1 WHERE a=1;
   UPDATE t1 SET                      e=e+1        WHERE a=2;
   UPDATE t1 SET                      e=e+1, f=f+1 WHERE a=3;

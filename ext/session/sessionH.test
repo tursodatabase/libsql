@@ -25,7 +25,7 @@ do_test 1.0 {
   do_common_sql {
     CREATE TABLE t1(a, b, c, PRIMARY KEY(a, b));
   }
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     WITH s(i) AS (
       VALUES(1) UNION ALL SELECT i+1 FROM s WHERe i<10000
     )

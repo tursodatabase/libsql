@@ -112,20 +112,52 @@ proc patchset_from_sql {sql {dbname main}} {
   return $patchset
 }
 
-proc do_then_apply_sql {sql {dbname main}} {
-  proc xConflict args { return "OMIT" }
+# Usage: do_then_apply_sql ?-ignorenoop? SQL ?DBNAME? 
+#
+proc do_then_apply_sql {args} {
+  
+  set bIgnoreNoop 0
+  set a1 [lindex $args 0]
+  if {[string length $a1]>1 && [string first $a1 -ignorenoop]==0} {
+    set bIgnoreNoop 1
+    set args [lrange $args 1 end]
+  }
+
+  if {[llength $args]!=1 && [llength $args]!=2} {
+    error "usage: do_then_apply_sql ?-ignorenoop? SQL ?DBNAME?"
+  }
+
+  set sql [lindex $args 0]
+  if {[llength $args]==1} {
+    set dbname main
+  } else {
+    set dbname [lindex $args 1]
+  }
+
+  set ::n_conflict 0
+  proc xConflict args { incr ::n_conflict ; return "OMIT" }
   set rc [catch {
     sqlite3session S db $dbname
     db eval "SELECT name FROM $dbname.sqlite_master WHERE type = 'table'" {
       S attach $name
     }
     db eval $sql
-    sqlite3changeset_apply db2 [S changeset] xConflict
+    set ::changeset [S changeset]
+    sqlite3changeset_apply db2 $::changeset xConflict
   } msg]
 
   catch { S delete }
-
   if {$rc} {error $msg}
+
+  if {$bIgnoreNoop} {
+    set nSave $::n_conflict
+    set ::n_conflict 0
+    proc xConflict args { incr ::n_conflict ; return "OMIT" }
+    sqlite3changeset_apply_v2 -ignorenoop db2 $::changeset xConflict
+    if {$::n_conflict!=$nSave} {
+      error "-ignorenoop problem ($::n_conflict $nSave)..."
+    }
+  }
 }
 
 proc do_iterator_test {tn tbl_list sql res} {
