@@ -83,6 +83,8 @@ pub struct StmtResult {
     pub cols: Vec<Col>,
     pub rows: Vec<Vec<Value>>,
     pub affected_row_count: u64,
+    #[serde(with = "option_i64_as_str")]
+    pub last_insert_rowid: Option<i64>,
 }
 
 #[derive(Serialize, Debug)]
@@ -131,6 +133,14 @@ mod i64_as_str {
                 &"decimal integer as a string",
             )
         })
+    }
+}
+
+mod option_i64_as_str {
+    use serde::{ser, Serialize as _};
+
+    pub fn serialize<S: ser::Serializer>(value: &Option<i64>, ser: S) -> Result<S::Ok, S::Error> {
+        value.map(|v| v.to_string()).serialize(ser)
     }
 }
 
