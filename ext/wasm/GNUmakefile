@@ -44,7 +44,7 @@
 # 1) Consolidate the code generation for sqlite3*.*js into a script
 #    which generates the makefile code, rather than using $(call) and
 #    $(eval), or at least centralize the setup of the numerous vars
-#    related to each build variant (vanilla, esm, bundler-friendly).
+#    related to each build variant $(JS_BUILD_MODES).
 #
 SHELL := $(shell which bash 2>/dev/null)
 MAKEFILE := $(lastword $(MAKEFILE_LIST))
@@ -52,7 +52,9 @@ CLEAN_FILES :=
 DISTCLEAN_FILES := ./--dummy--
 default: all
 release: oz
-
+# JS_BUILD_MODES exists solely to reduce repetition in documentation
+# below.
+JS_BUILD_MODES := vanilla esm bunder-friendly node
 # Emscripten SDK home dir and related binaries...
 EMSDK_HOME ?= $(word 1,$(wildcard $(HOME)/emsdk $(HOME)/src/emsdk))
 emcc.bin ?= $(word 1,$(wildcard $(EMSDK_HOME)/upstream/emscripten/emcc) $(shell which emcc))
@@ -461,7 +463,16 @@ emcc.jsflags += -sSTRICT_JS=0
 # STRICT_JS disabled due to:
 #   https://github.com/emscripten-core/emscripten/issues/18610
 # TL;DR: does not work with MODULARIZE or EXPORT_ES6 as of version 3.1.31.
-emcc.environment := -sENVIRONMENT=web,worker,node
+
+# -sENVIRONMENT values for the various build modes:
+emcc.environment.vanilla := web,worker
+emcc.environment.bundler-friendly := $(emcc.environment.vanilla)
+emcc.environment.esm := $(emcc.environment.vanilla)
+emcc.environment.node := node
+# Note that adding "node" to the list for the other builds causes
+# Emscripten to generate code which confuses node: it cannot reliably
+# determine whether the build is for a browser or for node.
+
 ########################################################################
 # -sINITIAL_MEMORY: How much memory we need to start with is governed
 # at least in part by whether -sALLOW_MEMORY_GROWTH is enabled. If so,
@@ -605,10 +616,11 @@ $(post-js.js.in): $(post-jses.js) $(MAKEFILE)
 ########################################################################
 # call-make-pre-post is a $(call)able which creates rules for
 # pre-js-$(1).js. $1 = the base name of the JS file on whose behalf
-# this pre-js is for (one of: sqlite3, sqlite3-wasmfs). $2 is the build
-# mode: one of (vanilla, esm, bundler-friendly).  This sets up
-# --[extern-][pre/post]-js flags in $(pre-post-$(1).flags.$(2)) and
-# dependencies in $(pre-post-$(1).deps.$(2)).
+# this pre-js is for (one of: sqlite3, sqlite3-wasmfs). $2 is the
+# build mode: one of $(JS_BUILD_MODES).  This
+# sets up --[extern-][pre/post]-js flags in
+# $(pre-post-$(1).flags.$(2)) and dependencies in
+# $(pre-post-$(1).deps.$(2)).
 define call-make-pre-post
 pre-post-$(1).flags.$(2) ?=
 $$(dir.tmp)/pre-js-$(1)-$(2).js: $$(pre-js.js.$(2)) $$(MAKEFILE)
@@ -681,14 +693,16 @@ pre-post-common.flags := \
 pre-post-jses.deps.common := $(extern-pre-js.js) $(sqlite3-license-version.js)
 ########################################################################
 # SETUP_LIB_BUILD_MODE is a $(call)'able which sets up numerous pieces
-# for one of the build modes (vanilla, esm, bundler-friendly).
+# for one of the build modes.
 #
-# $1 = build mode name
+# $1 = build mode name: one of $(JS_BUILD_MODES)
 # $2 = 1 for ESM build mode, else 0
 # $3 = resulting sqlite-api JS/MJS file
 # $4 = resulting JS/MJS file
 # $5 = -D... flags for $(bin.c-pp)
-# $6 = emcc -sXYZ flags
+# $6 = emcc -sXYZ flags (CURRENTLY UNUSED - was factored out)
+#
+# emcc.environment.$(1) must be set to a value for the -sENVIRONMENT flag.
 define SETUP_LIB_BUILD_MODE
 $(info Setting up build [$(1)]: $(4))
 c-pp.D.$(1) := $(5)
@@ -707,19 +721,21 @@ pre-post-jses.deps.$(1) := $$(pre-post-jses.deps.common) \
 $$(eval $$(call call-make-pre-post,sqlite3,$(1)))
 emcc.flags.sqlite3.$(1) := $(6)
 $$(eval $$(call C-PP.FILTER, $$(sqlite3-api.js.in), $(3), $(5)))
-$(4): $(3)
 $(4): $(3) $$(MAKEFILE) $$(sqlite3-wasm.cses) $$(EXPORTED_FUNCTIONS.api) $$(pre-post-sqlite3.deps.$(1))
 	@echo "Building $$@ ..."
 	$$(emcc.bin) -o $$@ $$(emcc_opt_full) $$(emcc.flags) \
     $$(emcc.jsflags) \
+    -sENVIRONMENT=$$(emcc.environment.$(1)) \
     $$(pre-post-sqlite3.flags.$(1)) $$(emcc.flags.sqlite3.$(1)) \
     $$(cflags.common) $$(SQLITE_OPT) $$(cflags.wasm_extra_init) $$(sqlite3-wasm.cses)
 	@$$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,$(2))
-	@if [ bundler-friendly = $(1) ]; then \
-		echo "Patching $(3) for sqlite3.wasm..."; \
-		rm -f $$(dir.dout)/sqlite3-bundler-friendly.wasm; \
-		sed -i -e 's/sqlite3-bundler-friendly.wasm/sqlite3.wasm/g' $$@ || exit $$$$?; \
-	fi
+	@case $(1) in \
+    bundler-friendly|node) \
+      echo "Patching $(3) for sqlite3.wasm..."; \
+      rm -f $$(dir.dout)/sqlite3-$(1).wasm; \
+      sed -i -e 's/sqlite3-$(1).wasm/sqlite3.wasm/g' $$@ || exit $$$$?; \
+      ;; \
+	esac
 	chmod -x $$(sqlite3.wasm)
 	$$(maybe-wasm-strip) $$(sqlite3.wasm)
 	@ls -la $@ $$(sqlite3.wasm)
@@ -735,6 +751,8 @@ sqlite3-api.mjs := $(dir.dout)/sqlite3-api.mjs
 sqlite3.mjs := $(dir.dout)/sqlite3.mjs
 sqlite3-api-bundler-friendly.mjs := $(dir.dout)/sqlite3-api-bundler-friendly.mjs
 sqlite3-bundler-friendly.mjs := $(dir.dout)/sqlite3-bundler-friendly.mjs
+sqlite3-api-node.mjs := $(dir.dout)/sqlite3-api-node.mjs
+sqlite3-node.mjs := $(dir.dout)/sqlite3-node.mjs
 # Maintenance reminder: careful not to introduce spaces around args $1, $2
 #$(info $(call SETUP_LIB_BUILD_MODE,vanilla,0, $(sqlite3-api.js), $(sqlite3.js)))
 $(eval $(call SETUP_LIB_BUILD_MODE,vanilla,0, $(sqlite3-api.js), $(sqlite3.js)))
@@ -742,7 +760,10 @@ $(eval $(call SETUP_LIB_BUILD_MODE,esm,1, $(sqlite3-api.mjs), $(sqlite3.mjs), \
        -Dtarget=es6-module, -sEXPORT_ES6 -sUSE_ES6_IMPORT_META))
 $(eval $(call SETUP_LIB_BUILD_MODE,bundler-friendly,1,\
        $(sqlite3-api-bundler-friendly.mjs),$(sqlite3-bundler-friendly.mjs),\
-       $(c-pp.D.esm) -Dtarget=es6-bundler-friendly, $(emcc.flags.sqlite3.esm)))
+       $(c-pp.D.esm) -Dtarget=es6-bundler-friendly))
+$(eval $(call SETUP_LIB_BUILD_MODE,node,1,\
+       $(sqlite3-api-node.mjs),$(sqlite3-node.mjs),\
+       $(c-pp.D.bundler-friendly) -Dtarget=node))
 # The various -D... values used by *.c-pp.js include:
 #
 # -Dtarget=es6-module: for all ESM module builds
@@ -753,6 +774,13 @@ $(eval $(call SETUP_LIB_BUILD_MODE,bundler-friendly,1,\
 #    refer to files which are part of this project must be references
 #    as string literals so that bundlers' static-analysis tools can
 #    find those files and include them in their bundles.
+#
+# -Dtarget=es6-module -Dtarget=es6-bundler-friendly -Dtarget=node: is
+#    intended for use by node.js for node.js, as opposed to by
+#    node.js on behalf of a browser. Mixing -sENVIRONMENT=web and
+#    -sENVIRONMENT=node leads to ambiguity and confusion on node's
+#    part, as it's unable to reliably determine whether the target is
+#    a browser or node.
 #
 ########################################################################
 ########################################################################
@@ -766,6 +794,7 @@ $(eval $(call SETUP_LIB_BUILD_MODE,bundler-friendly,1,\
 $(sqlite3.wasm): $(sqlite3.js)
 $(sqlite3.mjs): $(sqlite3.js)
 $(sqlite3-bundler-friendly.mjs): $(sqlite3.mjs)
+$(sqlite3-node.mjs): $(sqlite3.mjs)
 CLEAN_FILES += $(sqlite3.wasm)
 
 ########################################################################
