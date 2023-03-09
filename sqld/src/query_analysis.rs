@@ -12,6 +12,7 @@ pub struct Statement {
     pub kind: StmtKind,
     /// Is the statement an INSERT, UPDATE or DELETE?
     pub is_iud: bool,
+    pub is_insert: bool,
 }
 
 impl Default for Statement {
@@ -88,6 +89,7 @@ impl Statement {
             // empty statement is arbitrarely made of the read kind so it is not send to a writer
             kind: StmtKind::Read,
             is_iud: false,
+            is_insert: false,
         }
     }
 
@@ -99,6 +101,7 @@ impl Statement {
             stmt,
             kind: StmtKind::Write,
             is_iud: false,
+            is_insert: false,
         }
     }
 
@@ -129,11 +132,13 @@ impl Statement {
                 c,
                 Cmd::Stmt(Stmt::Insert { .. } | Stmt::Update { .. } | Stmt::Delete { .. })
             );
+            let is_insert = matches!(c, Cmd::Stmt(Stmt::Insert { .. }));
 
             Ok(Statement {
                 stmt: c.to_string(),
                 kind,
                 is_iud,
+                is_insert,
             })
         }
         // The parser needs to be boxed because it's large, and you don't want it on the stack.

@@ -149,6 +149,7 @@ pub struct ResultSet {
     pub columns: Vec<Column>,
     pub rows: Vec<Row>,
     pub affected_row_count: u64,
+    pub last_insert_rowid: Option<i64>,
     pub include_column_defs: bool,
 }
 
@@ -158,6 +159,7 @@ impl ResultSet {
             columns: Vec::new(),
             rows: Vec::new(),
             affected_row_count: 0,
+            last_insert_rowid: None,
             include_column_defs: col_defs,
         }
     }
@@ -226,6 +228,7 @@ impl From<ResultSet> for ResultRows {
             column_descriptions,
             rows,
             affected_row_count: other.affected_row_count,
+            last_insert_rowid: other.last_insert_rowid,
         }
     }
 }
@@ -257,6 +260,7 @@ impl From<ResultRows> for ResultSet {
             columns,
             rows,
             affected_row_count: result_rows.affected_row_count,
+            last_insert_rowid: result_rows.last_insert_rowid,
             include_column_defs: true,
         }
     }
