@@ -37,6 +37,12 @@ impl IdleShutdownLayer {
             watcher: Arc::new(sender),
         }
     }
+
+    pub fn into_kicker(self) -> IdleKicker {
+        IdleKicker {
+            sender: self.watcher,
+        }
+    }
 }
 
 impl<S> Layer<S> for IdleShutdownLayer {
@@ -47,6 +53,17 @@ impl<S> Layer<S> for IdleShutdownLayer {
             inner,
             watcher: self.watcher.clone(),
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct IdleKicker {
+    sender: Arc<watch::Sender<()>>,
+}
+
+impl IdleKicker {
+    pub fn kick(&self) {
+        let _: Result<_, _> = self.sender.send(());
     }
 }
 
