@@ -42,7 +42,7 @@ const toExportForESM =
      is called.
   */
   const initModuleState = globalThis.sqlite3InitModuleState = Object.assign(Object.create(null),{
-    moduleScript: self?.document?.currentScript,
+    moduleScript: globalThis?.document?.currentScript,
     isWorker: ('undefined' !== typeof WorkerGlobalScope),
     location: globalThis.location,
     urlParams:  globalThis?.location?.href
@@ -63,7 +63,7 @@ const toExportForESM =
   }
 
   globalThis.sqlite3InitModule = function ff(...args){
-    //console.warn("Using replaced sqlite3InitModule()",self.location);
+    //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
       if('undefined'!==typeof WorkerGlobalScope &&
          (EmscriptenModule['ENVIRONMENT_IS_PTHREAD']
