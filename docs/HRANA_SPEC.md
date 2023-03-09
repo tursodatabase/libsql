@@ -319,7 +319,8 @@ separated by a semicolon is not supported.
 type StmtResult = {
     "cols": Array<Col>,
     "rows": Array<Array<Value>>,
-    "affected_row_count": uint64,
+    "affected_row_count": int32,
+    "last_insert_rowid": string | null,
 }
 
 type Col = {
@@ -328,10 +329,18 @@ type Col = {
 ```
 
 The result of executing an SQL statement contains information about the returned
-columns in `cols`, the returned rows in `rows` (the array is empty if the
-statement did not produce any rows or if `want_rows` was `false` in the request)
-and the number of rows that were changed by the statement in
-`affected_row_count`.
+columns in `cols` and the returned rows in `rows` (the array is empty if the
+statement did not produce any rows or if `want_rows` was `false` in the request).
+
+`affected_row_count` counts the number of rows that were changed by the
+statement. This is meaningful only if the statement was an INSERT, UPDATE or
+DELETE, and the value is otherwise undefined.
+
+`last_insert_rowid` is the ROWID of the last successful insert into a rowid
+table. The rowid value is a 64-bit signed integer encoded as a string. For
+other statements, the value is undefined.
+
+### Values
 
 ```
 type Value =

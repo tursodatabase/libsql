@@ -251,6 +251,7 @@ fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto
         cols: proto_cols,
         rows: proto_rows,
         affected_row_count: result_set.affected_row_count,
+        last_insert_rowid: result_set.last_insert_rowid,
     }
 }
 

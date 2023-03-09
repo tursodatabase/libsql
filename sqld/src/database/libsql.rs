@@ -63,10 +63,18 @@ fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) 
         false => 0,
     };
 
+    // sqlite3_last_insert_rowid() only makes sense for INSERTs into a rowid table. we can't detect
+    // a rowid table, but at least we can detect an INSERT
+    let last_insert_rowid = match stmt.is_insert {
+        true => Some(conn.last_insert_rowid()),
+        false => None,
+    };
+
     Ok(QueryResponse::ResultSet(ResultSet {
         columns,
         rows,
         affected_row_count,
+        last_insert_rowid,
         include_column_defs: true,
     }))
 }
