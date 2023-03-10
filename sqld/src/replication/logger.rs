@@ -8,10 +8,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use anyhow::ensure;
-use bytemuck::{cast_ref, try_from_bytes, Pod, Zeroable};
+use bytemuck::{bytes_of, cast_ref, try_from_bytes, Pod, Zeroable};
 use bytes::{BufMut, Bytes, BytesMut};
 use crc::Crc;
 use parking_lot::Mutex;
+use rusqlite::ffi::SQLITE_ERROR;
 use uuid::Uuid;
 
 use crate::libsql::ffi::{
@@ -35,6 +36,14 @@ pub struct ReplicationLoggerHook {
     logger: Arc<ReplicationLogger>,
 }
 
+/// This implementation of WalHook intercepts calls to `on_frame`, and writes them to a
+/// shadow wal. Writing to the shadow wal is done in three steps:
+/// i. append the new pages at the offset pointed by header.start_frame_index + header.frame_count
+/// ii. call the underlying implementation of on_frames
+/// iii. if the call of the underlying method was successfull, update the log header to the new
+/// frame count.
+///
+/// If either writing to the database of to the shadow wal fails, it must be noop.
 unsafe impl WalHook for ReplicationLoggerHook {
     fn on_frames(
         &mut self,
@@ -48,6 +57,22 @@ unsafe impl WalHook for ReplicationLoggerHook {
     ) -> c_int {
         assert_eq!(page_size, 4096);
 
+        for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
+            self.write_frame(page_no, data)
+        }
+
+        let commit_info = if is_commit != 0 {
+            match self.flush(ntruncate) {
+                Err(e) => {
+                    tracing::error!("error writing to replication log: {e}");
+                    return SQLITE_ERROR;
+                }
+                Ok(commit_info) => commit_info,
+            }
+        } else {
+            None
+        };
+
         let rc = unsafe {
             orig(
                 wal,
@@ -58,16 +83,11 @@ unsafe impl WalHook for ReplicationLoggerHook {
                 sync_flags,
             )
         };
-        if rc != crate::libsql::ffi::SQLITE_OK {
-            return rc;
-        }
 
-        for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
-            self.write_frame(page_no, data)
-        }
-
-        if is_commit != 0 {
-            self.commit(ntruncate);
+        if is_commit != 0 && rc == 0 {
+            if let Some((count, checksum)) = commit_info {
+                self.commit(count, checksum);
+            }
         }
 
         rc
@@ -138,10 +158,21 @@ impl ReplicationLoggerHook {
         self.buffer.push(entry);
     }
 
-    fn commit(&mut self, size_after: u32) {
-        self.buffer.last_mut().unwrap().size_after = size_after;
-        self.logger.push_page(&self.buffer);
-        self.buffer.clear();
+    /// write buffered pages to the logger, without commiting.
+    /// Returns the attempted count and checksum, that need to be passed to `commit`
+    fn flush(&mut self, size_after: u32) -> anyhow::Result<Option<(u64, u64)>> {
+        if !self.buffer.is_empty() {
+            self.buffer.last_mut().unwrap().size_after = size_after;
+            let ret = self.logger.write_pages(&self.buffer)?;
+            self.buffer.clear();
+            Ok(Some(ret))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn commit(&self, new_count: u64, new_checksum: u64) {
+        self.logger.commit(new_count, new_checksum)
     }
 
     fn rollback(&mut self) {
@@ -161,10 +192,14 @@ struct LogFileHeader {
     db_id: u128,
     /// Frame index of the first frame in the log
     start_frame_id: u64,
+    /// entry count in file
+    frame_count: u64,
     /// Wal file version number, currently: 1
     version: u32,
     /// page size: 4096
     page_size: i32,
+    /// 0 padding for alignment
+    _pad: u64,
 }
 
 impl LogFileHeader {
@@ -178,6 +213,18 @@ impl LogFileHeader {
 
     fn encode<B: BufMut>(&self, mut buf: B) {
         buf.put(&cast_ref::<_, [u8; size_of::<Self>()]>(self)[..]);
+    }
+
+    /// Returns the bytes position of the `nth` entry in the log
+    fn absolute_byte_offset(nth: u64) -> u64 {
+        std::mem::size_of::<Self>() as u64 + nth * ReplicationLogger::FRAME_SIZE as u64
+    }
+
+    fn byte_offset(&self, id: FrameId) -> Option<u64> {
+        if id < self.start_frame_id || id > self.start_frame_id + self.frame_count {
+            return None;
+        }
+        Self::absolute_byte_offset(id - self.start_frame_id).into()
     }
 }
 
@@ -222,14 +269,10 @@ impl Generation {
 }
 
 pub struct ReplicationLogger {
-    /// offset id of the next Frame to write into the log
-    next_frame_id: Mutex<FrameId>,
-    /// first index present in the file
-    start_frame_id: FrameId,
-    log_file: File,
+    log_header: Mutex<LogFileHeader>,
     current_checksum: AtomicU64,
-    pub database_id: Uuid,
     pub generation: Generation,
+    log_file: File,
 }
 
 impl ReplicationLogger {
@@ -244,7 +287,6 @@ impl ReplicationLogger {
             .read(true)
             .open(path)?;
         let file_end = log_file.metadata()?.len();
-        let end_id;
         let current_checksum;
 
         let header = if file_end == 0 {
@@ -256,39 +298,43 @@ impl ReplicationLogger {
                 page_size: WAL_PAGE_SIZE,
                 start_checksum: 0,
                 db_id: db_id.as_u128(),
+                frame_count: 0,
+                _pad: 0,
             };
 
             let mut header_buf = BytesMut::new();
             header.encode(&mut header_buf);
+            current_checksum = AtomicU64::new(0);
 
             assert_eq!(header_buf.len(), std::mem::size_of::<LogFileHeader>());
 
             log_file.write_all(&header_buf)?;
-            end_id = 0;
-            current_checksum = AtomicU64::new(0);
             header
         } else {
             let mut header_buf = BytesMut::zeroed(size_of::<LogFileHeader>());
             log_file.read_exact(&mut header_buf)?;
             let header = LogFileHeader::decode(&header_buf)?;
-            end_id = (file_end - size_of::<FrameHeader>() as u64) / Self::FRAME_SIZE as u64;
             current_checksum = AtomicU64::new(Self::compute_checksum(&header, &log_file)?);
             header
         };
 
         Ok(Self {
-            next_frame_id: Mutex::new(end_id),
-            start_frame_id: header.start_frame_id,
-            log_file,
             current_checksum,
-            database_id: Uuid::from_u128(header.db_id),
-            generation: Generation::new(end_id),
+            generation: Generation::new(header.start_frame_id),
+            log_header: Mutex::new(header),
+            log_file,
         })
     }
 
-    fn push_page(&self, pages: &[WalPage]) {
-        let mut lock = self.next_frame_id.lock();
-        let mut current_offset = *lock;
+    pub fn database_id(&self) -> Uuid {
+        Uuid::from_u128(self.log_header.lock().db_id)
+    }
+
+    /// Write pages to the log, without updating the file header.
+    /// Returns the new frame count and checksum to commit
+    fn write_pages(&self, pages: &[WalPage]) -> anyhow::Result<(u64, u64)> {
+        let log_header = { *self.log_header.lock() };
+        let mut current_frame = log_header.frame_count;
         let mut buffer = BytesMut::with_capacity(Self::FRAME_SIZE);
         let mut current_checksum = self.current_checksum.load(Ordering::Relaxed);
         for page in pages.iter() {
@@ -298,7 +344,7 @@ impl ReplicationLogger {
             let checksum = digest.finalize();
 
             let header = FrameHeader {
-                frame_id: current_offset,
+                frame_id: log_header.start_frame_id + current_frame,
                 checksum,
                 page_no: page.page_no,
                 size_after: page.size_after,
@@ -311,24 +357,20 @@ impl ReplicationLogger {
 
             frame.encode(&mut buffer);
 
-            self.log_file
-                .write_all_at(
-                    &buffer,
-                    self.byte_offset(current_offset)
-                        .expect("attempt to write entry before first entry in the log"),
-                )
-                .unwrap();
+            let byte_offset = LogFileHeader::absolute_byte_offset(current_frame);
+            tracing::trace!("writing frame {current_frame} at offset {byte_offset}");
+            self.log_file.write_all_at(&buffer, byte_offset)?;
 
-            current_offset += 1;
+            current_frame += 1;
             current_checksum = checksum;
 
             buffer.clear();
         }
 
-        self.current_checksum
-            .store(current_checksum, Ordering::Relaxed);
-
-        *lock = current_offset;
+        Ok((
+            log_header.frame_count + pages.len() as u64,
+            current_checksum,
+        ))
     }
 
     /// Returns bytes represening a WalFrame for frame `id`
@@ -336,31 +378,22 @@ impl ReplicationLogger {
     /// If the requested frame is before the first frame in the log, or after the last frame,
     /// Ok(None) is returned.
     pub fn frame_bytes(&self, id: FrameId) -> anyhow::Result<Option<Bytes>> {
-        if id < self.start_frame_id {
+        let header = { *self.log_header.lock() };
+        if id < header.start_frame_id {
             return Ok(None);
         }
 
-        if id >= *self.next_frame_id.lock() {
+        if id >= header.start_frame_id + header.frame_count {
             return Ok(None);
         }
 
         let mut buffer = BytesMut::zeroed(Self::FRAME_SIZE);
         self.log_file
-            .read_exact_at(&mut buffer, self.byte_offset(id).unwrap())?;
+            .read_exact_at(&mut buffer, header.byte_offset(id).unwrap())?; // unwrap: we checked
+                                                                           // that the frame index
+                                                                           // in in the file before
 
         Ok(Some(buffer.freeze()))
-    }
-
-    /// Returns the bytes position of the `nth` entry in the log
-    fn absolute_byte_offset(nth: u64) -> u64 {
-        std::mem::size_of::<LogFileHeader>() as u64 + nth * ReplicationLogger::FRAME_SIZE as u64
-    }
-
-    fn byte_offset(&self, id: FrameId) -> Option<u64> {
-        if id < self.start_frame_id {
-            return None;
-        }
-        Self::absolute_byte_offset(id - self.start_frame_id).into()
     }
 
     /// Returns an iterator over the WAL frame headers
@@ -383,7 +416,7 @@ impl ReplicationLogger {
         let mut current_offset = 0;
 
         Ok(std::iter::from_fn(move || {
-            let read_offset = Self::absolute_byte_offset(current_offset);
+            let read_offset = LogFileHeader::absolute_byte_offset(current_offset);
             if read_offset >= file_len {
                 return None;
             }
@@ -407,6 +440,19 @@ impl ReplicationLogger {
             Ok(cs)
         })
     }
+
+    fn commit(&self, new_frame_count: u64, new_current_checksum: u64) {
+        let mut header = { *self.log_header.lock() };
+        header.frame_count = new_frame_count;
+
+        self.log_file
+            .write_all_at(bytes_of(&header), 0)
+            .expect("fatal error, failed to commit to log");
+
+        self.current_checksum
+            .store(new_current_checksum, Ordering::Relaxed);
+        *self.log_header.lock() = header;
+    }
 }
 
 #[cfg(test)]
@@ -418,8 +464,6 @@ mod test {
         let dir = tempfile::tempdir().unwrap();
         let logger = ReplicationLogger::open(dir.path()).unwrap();
 
-        assert_eq!(*logger.next_frame_id.lock(), 0);
-
         let frames = (0..10)
             .map(|i| WalPage {
                 page_no: i,
@@ -427,7 +471,8 @@ mod test {
                 data: Bytes::from(vec![i as _; 4096]),
             })
             .collect::<Vec<_>>();
-        logger.push_page(&frames);
+        let (count, chk) = logger.write_pages(&frames).unwrap();
+        logger.commit(count, chk);
 
         for i in 0..10 {
             let frame = WalFrame::decode(logger.frame_bytes(i).unwrap().unwrap()).unwrap();
@@ -435,7 +480,8 @@ mod test {
             assert!(frame.data.iter().all(|x| i as u8 == *x));
         }
 
-        assert_eq!(*logger.next_frame_id.lock(), 10);
+        let header = { *logger.log_header.lock() };
+        assert_eq!(header.start_frame_id + header.frame_count, 10);
     }
 
     #[test]
@@ -455,6 +501,8 @@ mod test {
             size_after: 0,
             data: vec![0; 3].into(),
         };
-        logger.push_page(&[entry]);
+
+        let (count, chk) = logger.write_pages(&[entry]).unwrap();
+        logger.commit(count, chk);
     }
 }

@@ -89,7 +89,7 @@ impl ReplicationLog for ReplicationLogService {
             guard.insert(replica_addr);
         }
         let response = HelloResponse {
-            database_id: self.logger.database_id.to_string(),
+            database_id: self.logger.database_id().to_string(),
             generation_start_index: self.logger.generation.start_index,
             generation_id: self.logger.generation.id.to_string(),
         };
