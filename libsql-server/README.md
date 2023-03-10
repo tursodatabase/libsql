@@ -11,6 +11,12 @@ _Disclaimer: although you can connect to `sqld` with a PostgreSQL client and man
 That is, whenever there's a conflict in behaviour between SQLite and PostgreSQL, we always go with SQLite behavior.
 However, if libSQL starts to provide more [PostgreSQL compatibility](https://github.com/libsql/libsql/issues/80), `sqld` will also support that._
 
+## Clients
+
+* [TypeScript and JavaScript](https://github.com/libsql/libsql-client-ts)
+* [Rust](https://github.com/libsql/libsql-client-rs)
+* [Go](https://github.com/libsql/libsql-client-go)
+
 ## Features
 
 * SQLite dialect layered on top of HTTP or the PostgreSQL wire protocol.
