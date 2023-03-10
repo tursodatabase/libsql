@@ -8,7 +8,7 @@ use anyhow::Context;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use bytes::{BufMut, Bytes, BytesMut};
-use hyper::body::{to_bytes, HttpBody};
+use hyper::body::to_bytes;
 use hyper::{Body, Method, Request, Response, StatusCode};
 use serde::Serialize;
 use serde_json::{json, Number};
@@ -25,7 +25,7 @@ use crate::auth::Auth;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::types::HttpQuery;
-use crate::query::{self, Params, Queries, Query, QueryResult, ResultSet};
+use crate::query::{self, Queries, Query, QueryResult, ResultSet};
 use crate::query_analysis::{final_state, State, Statement};
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
@@ -249,7 +249,6 @@ async fn handle_request(
         (&Method::GET, "/version") => Ok(handle_version()),
         (&Method::GET, "/console") if enable_console => show_console().await,
         (&Method::GET, "/health") => Ok(handle_health()),
-        (&Method::POST, "/load-dump") => Ok(load_dump(req, sender).await?),
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
@@ -257,48 +256,6 @@ async fn handle_request(
 fn handle_version() -> Response<Body> {
     let version = env!("CARGO_PKG_VERSION");
     Response::new(Body::from(version.as_bytes()))
-}
-
-async fn load_body(mut req: Request<Body>) -> anyhow::Result<Bytes> {
-    let mut bytes = BytesMut::new();
-    while let Some(data) = req.data().await {
-        let data = data?;
-        bytes.extend(data);
-    }
-
-    Ok(bytes.freeze())
-}
-
-async fn load_dump(
-    req: Request<Body>,
-    sender: mpsc::Sender<Message>,
-) -> anyhow::Result<Response<Body>> {
-    match load_body(req).await {
-        Ok(data) => {
-            // FIXME: Dumps may not fit in memory. A better way would be to stream the payload, and
-            // have a dedicated path to load the dump from it.
-            let mut queries = Vec::new();
-            for stmt in Statement::parse_unchecked(&data) {
-                let stmt = stmt?;
-                queries.push(Query {
-                    stmt,
-                    params: Params::empty(),
-                });
-            }
-
-            let (resp, receiver) = oneshot::channel();
-            let msg = Message { queries, resp };
-
-            let _ = sender.send(msg).await;
-
-            match receiver.await {
-                Ok(Ok(_)) => Ok(Response::new(Body::empty())),
-                Ok(Err(e)) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
-                Err(e) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
-            }
-        }
-        Err(e) => Ok(error(&e.to_string(), StatusCode::INTERNAL_SERVER_ERROR)),
-    }
 }
 
 pub async fn run_http<F>(
