@@ -109,7 +109,7 @@ struct Cli {
     /// Load the dump at the provided path.
     /// Requires that the node is not in replica mode
     #[clap(long, env = "SQLD_LOAD_DUMP_PATH", conflicts_with = "primary_grpc_url")]
-    load_dump_path: Option<PathBuf>,
+    load_from_dump: Option<PathBuf>,
 }
 
 impl Cli {
@@ -197,7 +197,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         enable_bottomless_replication: args.enable_bottomless_replication,
         create_local_http_tunnel: args.create_local_http_tunnel,
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
-        load_dump_path: args.load_dump_path,
+        load_from_dump: args.load_from_dump,
     })
 }
 

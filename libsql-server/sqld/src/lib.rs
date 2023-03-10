@@ -1,5 +1,5 @@
 use std::net::SocketAddr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 #[cfg(feature = "mwal_backend")]
 use std::sync::Mutex;
@@ -88,7 +88,7 @@ pub struct Config {
     pub enable_bottomless_replication: bool,
     pub create_local_http_tunnel: bool,
     pub idle_shutdown_timeout: Option<Duration>,
-    pub load_dump_path: Option<PathBuf>,
+    pub load_from_dump: Option<PathBuf>,
 }
 
 async fn run_service(
@@ -204,11 +204,16 @@ async fn start_replica(
     Ok(())
 }
 
+fn check_fresh_db(path: &Path) -> bool {
+    !path.join("wallog").exists()
+}
+
 async fn start_primary(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
+    let is_fresh_db = check_fresh_db(&config.db_path);
     let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
@@ -220,7 +225,10 @@ async fn start_primary(
 
     // load dump is necessary
     let dump_loader = DumpLoader::new(config.db_path.clone(), hook.clone()).await?;
-    if let Some(ref path) = config.load_dump_path {
+    if let Some(ref path) = config.load_from_dump {
+        if !is_fresh_db {
+            anyhow::bail!("cannot load from a dump if a database already exists.\nIf you're sure you want to load from a dump, delete your database folder at `{}`", config.db_path.display());
+        }
         dump_loader.load_dump(path.into()).await?;
     }
 
