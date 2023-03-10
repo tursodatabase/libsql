@@ -364,7 +364,7 @@ SRC += \
 SRC += \
   $(TOP)/ext/udf/wasmedge_bindings.c
 SRC += \
-  $(TOP)/ext/bottomless/bottomless.c
+  $(TOP)/ext/sqld/bottomless/bottomless.c
 
 # Generated source code files
 #
@@ -799,8 +799,8 @@ mptest:	mptester$(TEXE)
 liblibsql_wasm:	$(WBSRC)
 	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp target/release/liblibsql_wasm.* $(TOP)/.libs/
 
-libbottomless.a:	$(TOP)/ext/bottomless/core/src/lib.rs
-	( mkdir -p .libs && cd $(TOP)/ext/bottomless/ && make release_standalone && cp target/release/libbottomless.a $(TOP)/.libs/ )
+libbottomless.a:	$(TOP)/ext/sqld/bottomless/src/lib.rs
+	( mkdir -p .libs && cd $(TOP)/ext/sqld/bottomless/ && make release && cp ../target/release/libbottomless.a $(TOP)/.libs/ )
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
