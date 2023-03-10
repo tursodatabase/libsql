@@ -6,6 +6,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
+use database::dump_loader::DumpLoader;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
@@ -87,6 +88,7 @@ pub struct Config {
     pub enable_bottomless_replication: bool,
     pub create_local_http_tunnel: bool,
     pub idle_shutdown_timeout: Option<Duration>,
+    pub load_dump_path: Option<PathBuf>,
 }
 
 async fn run_service(
@@ -214,9 +216,17 @@ async fn start_primary(
     let enable_bottomless = config.enable_bottomless_replication;
     #[cfg(not(feature = "bottomless"))]
     let enable_bottomless = false;
+    let hook = ReplicationLoggerHook::new(logger.clone());
+
+    // load dump is necessary
+    let dump_loader = DumpLoader::new(config.db_path.clone(), hook.clone()).await?;
+    if let Some(ref path) = config.load_dump_path {
+        dump_loader.load_dump(path.into()).await?;
+    }
+
     let db_factory = Arc::new(move || {
         let db_path = path_clone.clone();
-        let hook = ReplicationLoggerHook::new(logger.clone());
+        let hook = hook.clone();
         async move { LibSqlDb::new(db_path, hook, enable_bottomless) }
     });
     let service = DbFactoryService::new(db_factory.clone());

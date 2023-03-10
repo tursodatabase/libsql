@@ -147,7 +147,7 @@ macro_rules! ok_or_exit {
     };
 }
 
-fn open_db(
+pub fn open_db(
     path: impl AsRef<Path> + Send + 'static,
     wal_hook: impl WalHook + Send + Clone + 'static,
     with_bottomless: bool,
