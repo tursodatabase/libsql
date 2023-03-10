@@ -1,11 +1,12 @@
 use std::net::SocketAddr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 #[cfg(feature = "mwal_backend")]
 use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
+use database::dump_loader::DumpLoader;
 use database::libsql::LibSqlDb;
 use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
@@ -87,6 +88,7 @@ pub struct Config {
     pub enable_bottomless_replication: bool,
     pub create_local_http_tunnel: bool,
     pub idle_shutdown_timeout: Option<Duration>,
+    pub load_from_dump: Option<PathBuf>,
 }
 
 async fn run_service(
@@ -202,11 +204,16 @@ async fn start_replica(
     Ok(())
 }
 
+fn check_fresh_db(path: &Path) -> bool {
+    !path.join("wallog").exists()
+}
+
 async fn start_primary(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
+    let is_fresh_db = check_fresh_db(&config.db_path);
     let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
@@ -214,9 +221,20 @@ async fn start_primary(
     let enable_bottomless = config.enable_bottomless_replication;
     #[cfg(not(feature = "bottomless"))]
     let enable_bottomless = false;
+    let hook = ReplicationLoggerHook::new(logger.clone());
+
+    // load dump is necessary
+    let dump_loader = DumpLoader::new(config.db_path.clone(), hook.clone()).await?;
+    if let Some(ref path) = config.load_from_dump {
+        if !is_fresh_db {
+            anyhow::bail!("cannot load from a dump if a database already exists.\nIf you're sure you want to load from a dump, delete your database folder at `{}`", config.db_path.display());
+        }
+        dump_loader.load_dump(path.into()).await?;
+    }
+
     let db_factory = Arc::new(move || {
         let db_path = path_clone.clone();
-        let hook = ReplicationLoggerHook::new(logger.clone());
+        let hook = hook.clone();
         async move { LibSqlDb::new(db_path, hook, enable_bottomless) }
     });
     let service = DbFactoryService::new(db_factory.clone());
