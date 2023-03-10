@@ -5,7 +5,7 @@ use std::sync::Arc;
 use tower::util::option_layer;
 
 use crate::database::service::DbFactory;
-use crate::replication::logger::ReplicationLogger;
+use crate::replication::ReplicationLogger;
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
 use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
