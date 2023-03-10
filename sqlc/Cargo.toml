@@ -5,7 +5,7 @@ edition = "2021"
 
 [lib]
 name = "sqlc"
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 anyhow = "1.0.66"
