@@ -173,7 +173,7 @@ async fn hard_reset(
     Ok(())
 }
 
-async fn start_primary(
+async fn start_replica(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     addr: &str,
@@ -201,7 +201,7 @@ async fn start_primary(
     Ok(())
 }
 
-async fn start_replica(
+async fn start_primary(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
@@ -287,9 +287,9 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
 
         match config.writer_rpc_addr {
             Some(ref addr) => {
-                start_primary(&config, &mut join_set, addr, idle_shutdown_layer).await?
+                start_replica(&config, &mut join_set, addr, idle_shutdown_layer).await?
             }
-            None => start_replica(&config, &mut join_set, idle_shutdown_layer).await?,
+            None => start_primary(&config, &mut join_set, idle_shutdown_layer).await?,
         }
 
         let reset = HARD_RESET.clone();
