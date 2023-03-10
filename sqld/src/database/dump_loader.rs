@@ -49,7 +49,7 @@ impl DumpLoader {
         let (snd, ret) = oneshot::channel();
         self.sender
             .send(Box::new(move |conn| {
-                let ret = perform_dump(conn, path);
+                let ret = perform_load_dump(conn, path);
                 let _ = snd.send(ret);
             }))
             .await
@@ -66,7 +66,7 @@ impl DumpLoader {
 const WASM_TABLE_CREATE: &str =
     "CREATE TABLE libsql_wasm_func_table (name text PRIMARY KEY, body text) WITHOUT ROWID;";
 
-fn perform_dump(conn: &rusqlite::Connection, path: PathBuf) -> anyhow::Result<()> {
+fn perform_load_dump(conn: &rusqlite::Connection, path: PathBuf) -> anyhow::Result<()> {
     let mut f = BufReader::new(File::open(path)?);
     let mut line = String::new();
     let mut skipped_wasm_table = false;
