@@ -2,6 +2,7 @@ use crate::query::{Queries, Query, QueryResult};
 use crate::query_analysis::State;
 use crate::Result;
 
+pub mod dump_loader;
 pub mod libsql;
 pub mod service;
 pub mod write_proxy;
