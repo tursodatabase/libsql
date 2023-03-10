@@ -638,6 +638,7 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_FCNTL_CKPT_START);
     DefInt(SQLITE_FCNTL_EXTERNAL_READER);
     DefInt(SQLITE_FCNTL_CKSM_FILE);
+    DefInt(SQLITE_FCNTL_RESET_CACHE);
   } _DefGroup;
 
   DefGroup(flock) {

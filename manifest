@@ -1,5 +1,5 @@
-C Replace\sa\slingering\suse\sof\s'self'\swith\s'globalThis'\sin\sJS\scode,\sfor\snode\scompatibility.
-D 2023-03-09T22:09:13.397
+C Export\sSQLITE_FCNTL_RESET_CACHE\sto\sJS.
+D 2023-03-10T11:57:23.758
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -491,7 +491,7 @@ F ext/wasm/api/sqlite3-opfs-async-proxy.js 70914ae97784d3028150bbf252e07a423056c
 F ext/wasm/api/sqlite3-v-helper.js e5c202a9ecde9ef818536d3f5faf26c03a1a9f5192b1ddea8bdabf30d75ef487
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 26f6240170d415726d9cfe2fa7a0163e153775e1a74fa91c9ba5446502c71097
 F ext/wasm/api/sqlite3-wasi.h 25356084cfe0d40458a902afb465df8c21fc4152c1d0a59b563a3fba59a068f9
-F ext/wasm/api/sqlite3-wasm.c b32e40678d34f9787f7ebef07a4156c157ef4fce31c7349f0f6bac36b5df86d1
+F ext/wasm/api/sqlite3-wasm.c e04e863be7c3a58aa144a463770c1b68ce69f7cfc9e1a5d6397a67877acaf006
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js 2710a06a59620c6bf7ce298ab1fb6c9ce825b9f9379728b74c486db6613beecc
 F ext/wasm/api/sqlite3-worker1.c-pp.js da509469755035e919c015deea41b4514b5e84c12a1332e6cc8d42cb2cc1fb75
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
@@ -2050,8 +2050,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 870de61f8ef8781f2f9969b012f5c1cb95b6bce1a9a4dcaf02945b7846c3aa83
-R adc352d96ddebf0239be405076193c61
+P 7e3782b5aa07621db95c2dc25b25ae21da988c9876d537b78ea289a83c75b06b
+R bc96caed61337068c801c690a60c3eac
 U stephan
-Z e97aa026ed23206198357485225fe5b1
+Z ab2e7fad50105ec607d48449b7ca6e1c
 # Remove this line to create a well-formed Fossil manifest.
