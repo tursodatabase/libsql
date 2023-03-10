@@ -137,9 +137,10 @@ fn get_auth(config: &Config) -> anyhow::Result<Arc<Auth>> {
     let mut auth = Auth::default();
 
     if let Some(arg) = config.http_auth.as_deref() {
-        let param = auth::parse_http_basic_auth_arg(arg)?;
-        auth.http_basic = Some(param);
-        tracing::info!("Using legacy HTTP basic authentication");
+        if let Some(param) = auth::parse_http_basic_auth_arg(arg)? {
+            auth.http_basic = Some(param);
+            tracing::info!("Using legacy HTTP basic authentication");
+        }
     }
 
     if let Some(jwt_key) = config.auth_jwt_key.as_deref() {
