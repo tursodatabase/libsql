@@ -77,6 +77,7 @@ pub struct sqlite3 {
 
 impl sqlite3 {
     fn connect(addr: &str) -> Result<Self> {
+        let addr = addr.strip_prefix("file:").unwrap_or(addr);
         let mut conn = postgres::Connection::connect(addr)?;
         conn.send_startup()?;
         let (_metadata, rows) = conn.wait_until_ready()?;
