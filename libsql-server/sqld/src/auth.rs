@@ -142,13 +142,17 @@ fn validate_jwt(
     }
 }
 
-pub fn parse_http_basic_auth_arg(arg: &str) -> Result<String> {
+pub fn parse_http_basic_auth_arg(arg: &str) -> Result<Option<String>> {
+    if arg == "always" {
+        return Ok(None);
+    }
+
     let Some((scheme, param)) = arg.split_once(':') else {
         bail!("invalid HTTP auth config: {arg}")
     };
 
     if scheme == "basic" {
-        Ok(param.into())
+        Ok(Some(param.into()))
     } else {
         bail!("unsupported HTTP auth scheme: {scheme:?}")
     }
@@ -211,7 +215,7 @@ mod tests {
     #[test]
     fn test_http_basic() {
         let auth = Auth {
-            http_basic: Some(parse_http_basic_auth_arg("basic:d29qdGVrOnRoZWJlYXI=").unwrap()),
+            http_basic: parse_http_basic_auth_arg("basic:d29qdGVrOnRoZWJlYXI=").unwrap(),
             ..Auth::default()
         };
         assert_ok!(authenticate_http(&auth, "Basic d29qdGVrOnRoZWJlYXI="));
