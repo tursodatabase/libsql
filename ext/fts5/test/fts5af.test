@@ -193,4 +193,34 @@ do_execsql_test 5.6 {
 
 } ;# foreach_detail_mode 
 
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(colA, colB);
+  INSERT INTO t1 VALUES('A B C', 'D E F');
+}
+
+do_execsql_test 6.1 {
+  SELECT colA, colB, snippet(t1,0,'[', ']','...',1) FROM t1 WHERE t1 MATCH 'B';
+} {{A B C} {D E F} ...[B]...}
+breakpoint
+do_execsql_test 6.2 {
+  SELECT colA, colB, snippet(t1, 1,'[',']','...',2) FROM t1 WHERE t1 MATCH 'B';
+} {{A B C} {D E F} {D E...}}
+do_execsql_test 6.3 {
+  SELECT colA, colB, snippet(t1, 1,'[',']','...',1) FROM t1 WHERE t1 MATCH 'B';
+} {{A B C} {D E F} {D...}}
+
+do_execsql_test 6.1 {
+  SELECT colA, colB, snippet(t1,0,'[', ']','...',1) FROM t1 WHERE t1 MATCH 'A';
+} {{A B C} {D E F} [A]...}
+breakpoint
+do_execsql_test 6.2 {
+  SELECT colA, colB, snippet(t1, 1,'[',']','...',2) FROM t1 WHERE t1 MATCH 'A';
+} {{A B C} {D E F} {D E...}}
+do_execsql_test 6.3 {
+  SELECT colA, colB, snippet(t1, 1,'[',']','...',1) FROM t1 WHERE t1 MATCH 'A';
+} {{A B C} {D E F} {D...}}
+
+
+
 finish_test
