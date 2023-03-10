@@ -1,5 +1,5 @@
-C Give\sCLI\sa\sno-more-options\soption.\s(--)
-D 2023-03-10T20:54:44.804
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
+D 2023-03-10T21:27:59.458
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F src/date.c f21815ca7172ce073db3163ac54c8d9f2841077165c1a6123b4d1c376a0c7ec7
 F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 86573edae75e3d3e9a8b590d87db8e47222103029df4f3e11fa56044459b514e
-F src/expr.c 399c10566b94ded9b565c01382026bfa0a7350782d4e9aa4194af1ac05f8af31
+F src/expr.c 0fc6ebb38658d1a08fdd53582f0d2716f72e63d6a49b3c0c669be659545f6142
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c d187be57a886ddf4e6b7ef584a494361899be3df5eee6d4a747b68ff4aff4122
@@ -2050,8 +2050,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96d5116d17cbf3de6be38952881c6ddf6a226ddfd7649197bdb2df39c42b5d8e
-R 3e992775c349664a49a877a29c086ae2
-U larrybr
-Z 54fdda75138049cd04c8f980315f5c7b
+P 0822788752621f6bf6af44b420b594ddd352634b3b0ed0eb835abea34b45817a
+R db9363d6a19c6dbc5cb6cb577fb0dab9
+U drh
+Z fc73c7e44cdd2d405b203191c21c667e
 # Remove this line to create a well-formed Fossil manifest.
