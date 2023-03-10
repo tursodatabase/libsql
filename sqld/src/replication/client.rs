@@ -25,11 +25,13 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use anyhow::Context;
-use bytemuck::{bytes_of, try_from_bytes, Pod, Zeroable};
+use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
 use crossbeam::channel::TryRecvError;
 use futures::StreamExt;
 use rusqlite::ffi::SQLITE_ERROR;
 use rusqlite::OpenFlags;
+use tempfile::NamedTempFile;
+use tokio::io::{AsyncWriteExt, BufWriter};
 use tokio::runtime::Handle;
 use tonic::transport::Channel;
 use tonic::Code;
@@ -42,8 +44,10 @@ use crate::replication::logger::{WalFrame, WAL_PAGE_SIZE};
 use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, HelloResponse, LogOffset,
 };
-use crate::rpc::replication_log::NO_HELLO_ERROR_MSG;
+use crate::rpc::replication_log::{NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG};
 use crate::HARD_RESET;
+
+use super::logger::{FrameHeader, LogFile, WalFrameBorrowed};
 
 /// Maximum number of frames buffered by the replica
 const MAX_REPLICA_BUFFER_SIZE: usize = 1000; // ~= 40MB
@@ -166,56 +170,78 @@ unsafe impl WalHook for ReadReplicationHook {
 
         let rt = self.rt.clone();
         loop {
-            let has_more_pages = match rt.block_on(self.fetch_log_entries()) {
-                Ok(has_more_pages) => has_more_pages,
+            match rt.block_on(self.fetch_log_entries()) {
+                Ok(FetchLogEntryResult::Snapshot(snapshot)) => {
+                    if let Err(e) =
+                        unsafe { self.restore_snapshot(snapshot, sync_flags, orig, wal) }
+                    {
+                        tracing::error!("failed to apply snapshot: {e}");
+                        panic!("what should we do?")
+                    }
+                    // there are more frame that we need to catch up on: fetch them immediately.
+                    continue;
+                }
+                Ok(res @ (FetchLogEntryResult::Ok | FetchLogEntryResult::BufferFull)) => {
+                    while let Some((page_headers, last_frame_index, frame_count, size_after)) =
+                        self.next_transaction()
+                    {
+                        tracing::trace!(commit = ?last_frame_index, size_after = size_after);
+                        // safety: the frame buffer was left untouched between the call to
+                        // make_page_header and the call to apply_pages: the page headers point to
+                        // valid memory areas.
+                        match unsafe {
+                            self.apply_pages(
+                                page_headers,
+                                last_frame_index,
+                                size_after,
+                                sync_flags,
+                                orig,
+                                wal,
+                            )
+                        } {
+                            Ok(_) => {
+                                self.buffer.drain(..frame_count);
+                            }
+                            Err(e) => {
+                                tracing::error!("failed to apply pages: {e}");
+                                panic!("what should we do?")
+                            }
+                        }
+                        free_page_header(page_headers);
+                    }
+                    if matches!(res, FetchLogEntryResult::Ok) {
+                        break;
+                    }
+                }
                 Err(e) => {
                     tracing::error!("error fetching log entries: {e}");
-                    return SQLITE_ERROR;
+                    break;
                 }
-            };
-
-            while let Some((page_headers, frame_count)) = self.next_transaction() {
-                let size_after = self.buffer[frame_count - 1].header.size_after;
-                assert_ne!(size_after, 0, "commit index points to non commit frame");
-
-                tracing::trace!(commit = ?frame_count, size_after = size_after);
-                self.inc_pre_commit(frame_count as u64)
-                    .expect("failed to write pre-commit index");
-                let ret =
-                    unsafe { orig(wal, WAL_PAGE_SIZE, page_headers, size_after, 1, sync_flags) };
-
-                if ret == 0 {
-                    debug_assert!(all_applied(page_headers));
-                    self.sync_post_commit()
-                        .expect("failed to write post-commit index");
-                    // remove commited entries.
-                    self.buffer.drain(..frame_count);
-                    tracing::trace!("applied frame batch");
-                } else {
-                    // should we retry?
-                    todo!("how to handle apply failure?");
-                }
-
-                free_page_header(page_headers);
-            }
-
-            if !has_more_pages {
-                break;
             }
         }
-        // return error from dummy write.
-        // this is a trick to prevent sqlite from keeping any state in memory after a dummy write
+        // return error from dummy write. this is a trick to prevent sqlite from keeping any state in memory after a dummy write
         SQLITE_ERROR
     }
 }
 
 /// Turn a list of `WalFrame` into a list of PgHdr.
 /// The caller has the responsibility to free the returned headers.
-fn make_page_header<'a>(frames: impl Iterator<Item = &'a WalFrame>) -> *mut PgHdr {
+/// return (headers, last_frame_id, size_after)
+fn make_page_header<'a>(
+    frames: impl Iterator<Item = impl Into<WalFrameBorrowed<'a>>>,
+) -> (*mut PgHdr, u64, u32) {
     let mut current_pg = std::ptr::null_mut();
+    let mut last_frame_id = 0;
+    let mut size_after = 0;
 
     let mut headers_count = 0;
     for frame in frames {
+        let frame: WalFrameBorrowed = frame.into();
+        if frame.header.frame_id > last_frame_id {
+            last_frame_id = frame.header.frame_id;
+            size_after = frame.header.size_after;
+        }
+
         let page = PgHdr {
             pPage: std::ptr::null_mut(),
             pData: frame.data.as_ptr() as _,
@@ -236,7 +262,7 @@ fn make_page_header<'a>(frames: impl Iterator<Item = &'a WalFrame>) -> *mut PgHd
 
     tracing::trace!("built {headers_count} page headers");
 
-    current_pg
+    (current_pg, last_frame_id, size_after)
 }
 
 /// frees the `PgHdr` list pointed at by `h`.
@@ -333,6 +359,14 @@ impl WalIndexMeta {
     }
 }
 
+pub struct TempSnapshot(NamedTempFile);
+
+pub enum FetchLogEntryResult {
+    Snapshot(TempSnapshot),
+    BufferFull,
+    Ok,
+}
+
 impl ReadReplicationHook {
     async fn new(
         logger: ReplicationLogClient<Channel>,
@@ -402,31 +436,27 @@ impl ReadReplicationHook {
         Ok(())
     }
 
-    /// Increment the pre-commit index by n, and flush the meta file
-    fn inc_pre_commit(&mut self, n: u64) -> anyhow::Result<()> {
+    /// Set the pre-commit frame_id, and flush the meta file
+    fn pre_commit(&mut self, frame_id: u64) -> anyhow::Result<()> {
         if let Some(ref mut meta) = self.wal_index_meta {
-            meta.pre_commit_index += n;
+            meta.pre_commit_index = frame_id;
         }
         self.flush_meta()
     }
 
-    fn sync_post_commit(&mut self) -> anyhow::Result<()> {
+    fn post_commit(&mut self) -> anyhow::Result<()> {
         if let Some(ref mut meta) = self.wal_index_meta {
             meta.post_commit_index = meta.pre_commit_index;
         }
         self.flush_meta()
     }
 
-    /// Returns the next page headers list the log truncate count, and the commit frame for the
-    /// next buffered transaction.
+    /// Returns the a list of page headers, the last frame id,
+    /// frame count, and the size after for the next transaction.
     ///
     /// The caller is responsible for freeing the page headers with the `free_page_header` function,
     /// and advancing the internal buffer with
-    ///
-    /// Note: It does not seem possible to batch transaction. I suspect that this is because the
-    /// original implementation of the sqlite WAL overwrites when pages appear multiple times in
-    /// the same transaction.
-    fn next_transaction(&self) -> Option<(*mut PgHdr, usize)> {
+    fn next_transaction(&self) -> Option<(*mut PgHdr, u64, usize, u32)> {
         // nothing to do yet.
         if self.buffer.is_empty() {
             return None;
@@ -438,15 +468,43 @@ impl ReadReplicationHook {
             .enumerate()
             .find_map(|(i, f)| (f.header.size_after != 0).then_some(i + 1))?; // early return if
                                                                               // missing commit frame.
+        let (headers, last_frame, size_after) =
+            make_page_header(self.buffer.iter().take(frame_count));
 
-        let headers = make_page_header(self.buffer.iter().take(frame_count));
+        Some((headers, last_frame, frame_count, size_after))
+    }
 
-        Some((headers, frame_count))
+    async fn load_snapshot(&mut self) -> anyhow::Result<Option<TempSnapshot>> {
+        // clear buffer and request entries from latest commited entries
+        self.buffer.clear();
+        let offset = LogOffset {
+            current_offset: self.current_frame_index(),
+        };
+        let mut frames = match self.logger.snapshot(offset).await {
+            Ok(frames) => frames.into_inner(),
+            Err(e) if e.code() == Code::Unavailable => return Ok(None),
+            Err(e) => anyhow::bail!("error fetching snapshop: {e}"),
+        };
+
+        let temp_snapshot_file = NamedTempFile::new()?;
+        // we create a temporary tokio file to write to the temp file in an async context. This
+        // file handle must be dropped before the `NamedTempFile` is dropped.
+        let mut tokio_file = BufWriter::new(tokio::fs::File::from_std(
+            temp_snapshot_file.as_file().try_clone()?,
+        ));
+
+        while let Some(frame) = frames.next().await {
+            let mut frame = frame?;
+            tokio_file.write_all_buf(&mut frame.data).await?;
+        }
+
+        tokio_file.flush().await?;
+
+        Ok(Some(TempSnapshot(temp_snapshot_file)))
     }
 
     /// Asks the writer for new log frames to apply.
-    /// Returns whether there may be new frames available immediately
-    async fn fetch_log_entries(&mut self) -> anyhow::Result<bool> {
+    async fn fetch_log_entries(&mut self) -> anyhow::Result<FetchLogEntryResult> {
         let current_offset = self.current_frame_index();
         let req = LogOffset { current_offset };
 
@@ -455,7 +513,22 @@ impl ReadReplicationHook {
                 let mut stream = stream.into_inner();
                 let mut frame_count = 0;
                 while let Some(raw_frame) = stream.next().await {
-                    let raw_frame = raw_frame?;
+                    let raw_frame = match raw_frame {
+                        Ok(f) => f,
+                        Err(s)
+                            if s.code() == Code::FailedPrecondition
+                                && s.message() == NEED_SNAPSHOT_ERROR_MSG =>
+                        {
+                            match self.load_snapshot().await? {
+                                // snapshot is not ready yet, wait a bit and ask again
+                                None => return Ok(FetchLogEntryResult::Ok),
+                                Some(snapshot_file) => {
+                                    return Ok(FetchLogEntryResult::Snapshot(snapshot_file))
+                                }
+                            }
+                        }
+                        Err(e) => return Err(e.into()),
+                    };
                     let frame = WalFrame::decode(raw_frame.data)?;
                     debug_assert_eq!(
                         Some(frame.header.frame_id),
@@ -467,13 +540,13 @@ impl ReadReplicationHook {
                     frame_count += 1;
                     self.buffer.push_back(frame);
                     if self.buffer.len() >= MAX_REPLICA_BUFFER_SIZE {
-                        return Ok(true);
+                        return Ok(FetchLogEntryResult::BufferFull);
                     }
                 }
 
                 tracing::debug!(current_offset, frame_count,);
 
-                Ok(false)
+                Ok(FetchLogEntryResult::Ok)
             }
             Err(s) if s.code() == Code::FailedPrecondition && s.message() == NO_HELLO_ERROR_MSG => {
                 tracing::info!("Primary restarted, perfoming hanshake again");
@@ -485,7 +558,7 @@ impl ReadReplicationHook {
                 .await?
                 .into();
 
-                Ok(false)
+                Ok(FetchLogEntryResult::Ok)
             }
             Err(e) => Err(e)?,
         }
@@ -498,5 +571,62 @@ impl ReadReplicationHook {
         // the ones we have buffered
         let index = meta.pre_commit_index + self.buffer.len() as u64;
         Some(index)
+    }
+
+    unsafe fn restore_snapshot(
+        &mut self,
+        snapshot: TempSnapshot,
+        sync_flags: i32,
+        orig: XWalFrameFn,
+        wal: *mut Wal,
+    ) -> anyhow::Result<()> {
+        let map = memmap::Mmap::map(snapshot.0.as_file())?;
+
+        let iter = map
+            .chunks(LogFile::FRAME_SIZE)
+            .map(|chunk| WalFrameBorrowed {
+                header: pod_read_unaligned(&chunk[..size_of::<FrameHeader>()]),
+                data: &chunk[size_of::<FrameHeader>()..],
+            });
+
+        let (headers, last_frame_index, size_after) = make_page_header(iter);
+
+        // safety: the headers point to map, which is valid for the duration of the call to
+        // apply_pages
+        let ret = self.apply_pages(headers, last_frame_index, size_after, sync_flags, orig, wal);
+
+        free_page_header(headers);
+
+        ret
+    }
+
+    /// Apply WAL pages to the database.
+    ///
+    /// # Safety
+    /// The caller must ensure that the page headers are valid when calling this method
+    unsafe fn apply_pages(
+        &mut self,
+        page_headers: *mut PgHdr,
+        last_frame_index: u64,
+        size_after: u32,
+        sync_flags: i32,
+        orig: XWalFrameFn,
+        wal: *mut Wal,
+    ) -> anyhow::Result<()> {
+        self.pre_commit(last_frame_index)
+            .expect("failed to write pre-commit index");
+        let ret = orig(wal, WAL_PAGE_SIZE, page_headers, size_after, 1, sync_flags);
+
+        if ret == 0 {
+            debug_assert!(all_applied(page_headers));
+            self.post_commit()
+                .expect("failed to write post-commit index");
+            // remove commited entries.
+            tracing::trace!("applied frame batch");
+
+            Ok(())
+        } else {
+            anyhow::bail!("failed to apply pages");
+        }
     }
 }
