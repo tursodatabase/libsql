@@ -11844,6 +11844,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   int warnInmemoryDb = 0;
   int readStdin = 1;
   int nCmd = 0;
+  int nOptsEnd = argc;
   char **azCmd = 0;
   const char *zVfs = 0;           /* Value of -vfs command-line option */
 #if !SQLITE_SHELL_IS_UTF8
@@ -11953,7 +11954,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   for(i=1; i<argc; i++){
     char *z;
     z = argv[i];
-    if( z[0]!='-' ){
+    if( z[0]!='-' || i>nOptsEnd ){
       if( data.aAuxDb->zDbFilename==0 ){
         data.aAuxDb->zDbFilename = z;
       }else{
@@ -11965,9 +11966,13 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
         shell_check_oom(azCmd);
         azCmd[nCmd-1] = z;
       }
+      continue;
     }
     if( z[1]=='-' ) z++;
-    if( cli_strcmp(z,"-separator")==0
+    if( cli_strcmp(z, "-")==0 ){
+      nOptsEnd = i;
+      continue;
+    }else if( cli_strcmp(z,"-separator")==0
      || cli_strcmp(z,"-nullvalue")==0
      || cli_strcmp(z,"-newline")==0
      || cli_strcmp(z,"-cmd")==0
@@ -12152,7 +12157,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   */
   for(i=1; i<argc; i++){
     char *z = argv[i];
-    if( z[0]!='-' ) continue;
+    if( z[0]!='-' || i>=nOptsEnd ) continue;
     if( z[1]=='-' ){ z++; }
     if( cli_strcmp(z,"-init")==0 ){
       i++;
