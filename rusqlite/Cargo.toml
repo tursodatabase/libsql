@@ -118,7 +118,6 @@ chrono = { version = "0.4", optional = true, default-features = false, features 
 serde_json = { version = "1.0", optional = true }
 csv = { version = "1.1", optional = true }
 url = { version = "2.1", optional = true }
-lazy_static = { version = "1.4", optional = true }
 fallible-iterator = "0.2"
 fallible-streaming-iterator = "0.1"
 uuid = { version = "1.0", optional = true }
