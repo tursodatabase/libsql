@@ -327,6 +327,23 @@ pub extern "C" fn sqlite3_prepare_v2(
     let sql = sql.to_string();
     trace!("QUERY prepared: {sql}");
     let mut stmt = Statement::new(database, sql);
+
+    // FIXME: DBeaver-specific hacks
+    if stmt.sql.contains("select null as TABLE_CAT") {
+        stmt.metadata = Some(Metadata {
+            col_names: vec!["TABLE_CAT".to_string()],
+            col_types: vec![postgres_types::Type::TEXT],
+        })
+    } else if stmt
+        .sql
+        .contains("select null as TABLE_SCHEM, null as TABLE_CATALOG")
+    {
+        stmt.metadata = Some(Metadata {
+            col_names: vec!["TABLE_SCHEM".to_string(), "TABLE_CATALOG".to_string()],
+            col_types: vec![postgres_types::Type::TEXT, postgres_types::Type::TEXT],
+        })
+    }
+
     let ptr = Box::new(sqlite3_stmt { inner: stmt });
     unsafe { *ppStmt = Box::into_raw(ptr) }
     if !pzTail.is_null() {
