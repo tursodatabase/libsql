@@ -25,6 +25,7 @@ macro_rules! trace {
     }};
 }
 */
+
 use unwrap_or::unwrap_ok_or;
 
 thread_local! {
@@ -43,7 +44,6 @@ macro_rules! define_stub {
         pub extern "C" fn $name() -> c_int {
             let func_name = std::stringify!($name);
             trace!("STUB {}", func_name);
-            println!("STUB {func_name}");
             set_error_message(format!("{} not implemented", func_name));
             SQLITE_ERROR
         }
@@ -331,7 +331,7 @@ pub extern "C" fn sqlite3_prepare_v2(
     // FIXME: DBeaver-specific hacks
     if stmt.sql.contains("select null as TABLE_CAT") {
         stmt.metadata = Some(Metadata {
-            col_names: vec!["TABLE_CAT".to_string()],
+            col_names: vec!["TABLE_CAT\0".to_string()],
             col_types: vec![postgres_types::Type::TEXT],
         })
     } else if stmt
@@ -339,7 +339,7 @@ pub extern "C" fn sqlite3_prepare_v2(
         .contains("select null as TABLE_SCHEM, null as TABLE_CATALOG")
     {
         stmt.metadata = Some(Metadata {
-            col_names: vec!["TABLE_SCHEM".to_string(), "TABLE_CATALOG".to_string()],
+            col_names: vec!["TABLE_SCHEM\0".to_string(), "TABLE_CATALOG\0".to_string()],
             col_types: vec![postgres_types::Type::TEXT, postgres_types::Type::TEXT],
         })
     }
@@ -353,10 +353,9 @@ pub extern "C" fn sqlite3_prepare_v2(
 }
 
 #[no_mangle]
-pub extern "C" fn sqlite3_bind_parameter_count(_stmt: *mut sqlite3_stmt) -> c_int {
-    trace!("Bind count");
+pub extern "C" fn sqlite3_bind_parameter_count(stmt: *mut sqlite3_stmt) -> c_int {
     tracing::warn!("STUB sqlite3_bind_parameter_count");
-    0
+    to_stmt(stmt).sql.chars().filter(|c| c == &'?').count() as c_int // FIXME: we just need proper binding support, not this
 }
 
 #[no_mangle]
@@ -536,10 +535,9 @@ pub extern "C" fn sqlite3_column_count(stmt: *mut sqlite3_stmt) -> c_int {
 pub extern "C" fn sqlite3_column_name(stmt: *mut sqlite3_stmt, n: c_int) -> *const c_char {
     let stmt = to_stmt(stmt);
     if let Some(metadata) = stmt.metadata.as_ref() {
-        metadata
-            .col_names
-            .get(n as usize)
-            .map(|s| s.as_ptr() as *const c_char)
+        let name = metadata.col_names.get(n as usize);
+        trace!("Name: {}", name.unwrap_or(&"(no name found)".to_string()));
+        name.map(|s| s.as_ptr() as *const c_char)
             .unwrap_or("\0".as_ptr() as *const c_char) // FIXME: does not have the trailing \0 character
     } else {
         trace!("Column name: (empty) (no metadata)");
@@ -591,15 +589,20 @@ pub extern "C" fn sqlite3_column_int64(stmt: *mut sqlite3_stmt, n: c_int) -> sql
     trace!("TRACE sqlite3_column_int64");
     let stmt = to_stmt(stmt);
     if let Some((row, column_ranges)) = &stmt.current_row {
-        let range = column_ranges[n as usize].as_ref().unwrap();
+        let range = column_ranges[n as usize].as_ref().unwrap_or(&(0..0));
         let buf = &row.buffer()[range.to_owned()];
         let s = unsafe {
             std::str::from_utf8_unchecked(std::slice::from_raw_parts(buf.as_ptr(), range.len()))
         };
-        s.parse().unwrap()
+        s.parse().unwrap_or_default()
     } else {
         0
     }
+}
+
+#[no_mangle]
+pub extern "C" fn sqlite3_column_int(stmt: *mut sqlite3_stmt, n: c_int) -> c_int {
+    sqlite3_column_int64(stmt, n).try_into().unwrap()
 }
 
 #[no_mangle]
@@ -674,7 +677,6 @@ define_stub!(sqlite3_column_database_name);
 define_stub!(sqlite3_column_database_name16);
 define_stub!(sqlite3_column_decltype16);
 define_stub!(sqlite3_column_double);
-define_stub!(sqlite3_column_int);
 define_stub!(sqlite3_column_name16);
 define_stub!(sqlite3_column_origin_name);
 define_stub!(sqlite3_column_origin_name16);
