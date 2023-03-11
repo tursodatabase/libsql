@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
-D 2023-03-10T21:27:59.458
+C Allow\sfunctions\snamed\susing\skeywords\s"CROSS",\s"FULL",\s"INNER",\s"LEFT",\s\n"NATURAL",\s"OUTER",\sand\s"RIGHT".
+D 2023-03-11T12:27:12.895
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -614,7 +614,7 @@ F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 39af8ff7c73a991f61f4d1e3a6f8f98b1c8e29144723507822774cac5e6ee0b5
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
-F src/parse.y 960d2da92a23f8ba2ca22748a51bd75ee2c575564f2cbc59f119640e7f5b4c5d
+F src/parse.y 424e49ed8fc6c907920db9be5a13a75ed43811e1ea8dd21b0fa9ef97f083dc6b
 F src/pcache.c f4268f7f73c6a3db12ce22fd25bc68dc42315d19599414ab1207d7cf32f79197
 F src/pcache.h 4f87acd914cef5016fae3030343540d75f5b85a1877eed1a2a19b9f284248586
 F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
@@ -2050,8 +2050,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0822788752621f6bf6af44b420b594ddd352634b3b0ed0eb835abea34b45817a
-R db9363d6a19c6dbc5cb6cb577fb0dab9
+P 76acc075402aac2d14d8279b8095008a842522a0985fdf89200da4339757a40b
+R 0a1fb32029faefee149cc3206232c91a
+T *branch * functions-named-left
+T *sym-functions-named-left *
+T -sym-trunk *
 U drh
-Z fc73c7e44cdd2d405b203191c21c667e
+Z 8d90c0869867550dc2ef5c4600461bb5
 # Remove this line to create a well-formed Fossil manifest.
