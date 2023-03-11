@@ -404,4 +404,28 @@ do_execsql_test 11.1 {
   SELECT * FROM t1 LEFT JOIN t3 ON y=z;
 } {NULL -2 -2 3 NULL 1 NULL NULL 0 2 2 3}
 
+# 2023-03-11 https://sqlite.org/forum/forumpost/b405033490fa56d9
+# The fix that test 11.1 above checks also caused a performance regression.
+# This test case verifies that the performance regression has been resolved.
+#
+do_execsql_test 12.1 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  DROP VIEW t3;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<100)
+    INSERT INTO t1(a) SELECT n FROM c;
+  CREATE VIEW t2(b) AS SELECT a FROM t1;
+}
+do_vmstep_test 12.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON a=b LIMIT 10 OFFSET 98;
+} 2000 {99 99 100 100}
+do_eqp_test 12.3 {
+  SELECT * FROM t1 LEFT JOIN t2 ON a=b LIMIT 10 OFFSET 98;
+} {
+  QUERY PLAN
+  |--SCAN t1
+  `--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+}
+
 finish_test

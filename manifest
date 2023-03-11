@@ -1,5 +1,5 @@
-C CLI\shelp\sto\sreflect\sno-more-options\soption
-D 2023-03-11T00:15:41.078
+C The\scheck-in\sat\s[198b3e33dcfd74c7]\scaused\sa\sperformance\sregression\sfor\ssome\nqueries,\swhich\sis\shere\sfixed.\s\sProblem\sreported\sby\n[forum:/forumpost/b405033490fa56d9|forum\spost\sb405033490fa56d9].
+D 2023-03-11T23:21:21.156
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -625,7 +625,7 @@ F src/printf.c fb31597cf93200eba9167573094ee312b0d51b2c1998613284ceb2c8c212b492
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 4233c3030341bf1a21cea90890e6b3d3531721acc62ede147e899d36ffad8238
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c d4dd7843ce2fe0b886c3970b34a12330369fbfc7c86a5fece5a8ae02ae157038
+F src/select.c 64a4b48a14f5d19a5ddc4afde37a435aebb92113f52653f8fe9e69fc3e9ff9aa
 F src/shell.c.in 7ade4506b907025a0d19e31f85d1200bfbd1eed48e94cea013b669d3efe5073c
 F src/sqlite.h.in f01033703156615566bb329144d736a37fc35a278049db91127782a9c799b938
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1219,7 +1219,7 @@ F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
 F test/istrue.test e7f285bb70282625c258e866ce6337d4c762922f5a300e1b50f958aef6e7d9c9
 F test/join.test ed1daf99958fed1b9f017e56bae2bb6b49339a1ec0b70b9e8f7259960c6bf387
-F test/join2.test c378a2c59db8da13a265481c9aeab08d854c524f56a0eda12fa7bc535bfbebb1
+F test/join2.test 8561fe82ce434ac96de91544072e578dc2cadddf2d9bc9cd802f866a9b92502e
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 91f1f4c7d81fd87b58e9ba7cf4a2b5d39e3583b4f8e498a162722a60259c5208
@@ -1337,7 +1337,7 @@ F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test 2ecabaa1305083856b7c39cf32816b612740c161
 F test/notify3.test 796c7b7157f55c93b4e672b724e9c923a6fc6aa72ac419379a623e2350472e22
 F test/notnull.test a37b663d5bb728d66fc182016613fb8e4a0a4bbf3d75b8876a7527f7d4ed3f18
-F test/notnull2.test 8e1aa4f311df37f9d2cd4f5563eea955b8028c692151404e9cc896420a01a3dc
+F test/notnull2.test 1ee4acbd614d3cf5f1c4a52f5af7fc771b82352f1a51a86afeaa02c9df1d82ef
 F test/notnullfault.test fc4bb7845582a2b3db376001ef49118393b1b11abe0d24adb03db057ee2b73d5
 F test/null.test b7ff206a1c60fe01aa2abd33ef9ea83c93727d993ca8a613de86e925c9f2bc6f
 F test/nulls1.test 7a5e4346ee4285034100b4cd20e6784f16a9d6c927e44ecdf10034086bbee9c9
@@ -1567,7 +1567,7 @@ F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptable2.test 76821347810ecc88203e6ef0dd6897b6036ac788e9dd3e6b04fd4d1631311a16
 F test/temptable3.test d11a0974e52b347e45ee54ef1923c91ed91e4637
 F test/temptrigger.test 38f0ca479b1822d3117069e014daabcaacefffcc
-F test/tester.tcl 8d54d40a55e12554b4509bc12078b201b233c8e842a7543629094a21b1ba956d
+F test/tester.tcl 68454ef88508c196d19e8694daa27bff7107a91857799eaa12f417188ae53ede
 F test/testrunner.tcl 59490f189cac99b16b0376d0cc0a7ecfb753a84b89c9f4c361af337d88db53ac
 F test/testrunner_data.tcl 8169c68654ac8906833b8a6aadca973358a441ebf88270dd05c153e5f96f76b8
 F test/thread001.test a0985c117eab62c0c65526e9fa5d1360dd1cac5b03bde223902763274ce21899
@@ -2050,8 +2050,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76acc075402aac2d14d8279b8095008a842522a0985fdf89200da4339757a40b
-R ff346326dc1d1e08fe0a4af372c66c16
-U larrybr
-Z 0fb7cbabf6bd8e54781f43c8092f8b04
+P 30d95a12eb8b1cfc8ed11d3ed68cd713993ba34efa2fe623c18cfe41f14df1d9
+R 79587856954d09f32d5a8e1654d18654
+U drh
+Z 3f25d641e3ecb8ffdac28f15dbcf5caf
 # Remove this line to create a well-formed Fossil manifest.
