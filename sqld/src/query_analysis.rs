@@ -50,6 +50,7 @@ impl StmtKind {
                 | Stmt::CreateIndex { .. },
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
+            Cmd::Stmt(Stmt::Pragma { .. }) => Some(Self::Other),
             _ => None,
         }
     }
