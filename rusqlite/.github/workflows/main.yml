@@ -36,7 +36,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # This has a matcher for test panics, so we use it even though elsewhere
       # we use actions-rs/toolchain.
       - uses: hecrj/setup-rust-action@v1
@@ -48,7 +48,7 @@ jobs:
       # complete" that needs to do the complete build (that is, including
       # `--features 'bundled-full session buildtime_bindgen`), which is very
       # slow, and has several deps.
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with: { sharedKey: fullBuild }
 
       - run: cargo build --features bundled --workspace --all-targets --verbose
@@ -80,14 +80,14 @@ jobs:
         # TODO: find a way to test this on windows :(
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # This has a matcher for test panics, so we use it even though elsewhere
       # we use actions-rs/toolchain.
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: stable${{ matrix.host }}
           targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with: { sharedKey: fullBuild }
 
       - run: cargo test --features 'bundled-sqlcipher' --workspace --all-targets --verbose
@@ -113,9 +113,9 @@ jobs:
     name: Test with winsqlite3
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: hecrj/setup-rust-action@v1
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       # TODO: Should this test GNU toolchain? What about +crt-static?
       # TODO: Is it worth testing other features?
       - run: cargo build --features winsqlite3 --workspace --all-targets --verbose
@@ -125,9 +125,9 @@ jobs:
     name: Test with sqlcipher
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: hecrj/setup-rust-action@v1
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - run: sudo apt-get install sqlcipher libsqlcipher-dev
       - run: sqlcipher --version
       # TODO: Is it worth testing other features?
@@ -138,13 +138,13 @@ jobs:
     name: Address Sanitizer
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       # Need nightly rust.
       - uses: hecrj/setup-rust-action@v1
         with:
           rust-version: nightly
           components: rust-src
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Tests with asan
         env:
           RUSTFLAGS: -Zsanitizer=address -Cdebuginfo=0
@@ -162,11 +162,11 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: hecrj/setup-rust-action@v1
         with:
           components: clippy
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - run: cargo clippy --all-targets --workspace --features bundled -- -D warnings
       # Clippy with all non-conflicting features
       - run: cargo clippy --all-targets --workspace --features 'bundled-full session buildtime_bindgen' -- -D warnings
@@ -176,7 +176,7 @@ jobs:
     name: Format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: hecrj/setup-rust-action@v1
         with:
           components: rustfmt
@@ -187,9 +187,9 @@ jobs:
     name: Docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: hecrj/setup-rust-action@v1
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
         with: { sharedKey: fullBuild }
       - run: cargo doc --features 'bundled-full session buildtime_bindgen' --no-deps
         env: { RUSTDOCFLAGS: -Dwarnings }
