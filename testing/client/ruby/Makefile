@@ -1,4 +1,4 @@
-DB_URI ?= 'postgres://127.0.0.1:5432'
+DB_URI ?= 'http://127.0.0.1:8080'
 
 all: setup test
 .PHONY: all
