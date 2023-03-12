@@ -159,7 +159,8 @@ impl Connection {
                 trace!("TRACE postgres -> RowDescription");
                 let mut fields = row_description.fields();
                 while let Some(field) = fields.next()? {
-                    metadata.col_names.push(field.name().into());
+                    let name = format!("{}\0", field.name());
+                    metadata.col_names.push(name);
                     let ty = Type::from_oid(field.type_oid()).unwrap();
                     metadata.col_types.push(ty);
                 }
