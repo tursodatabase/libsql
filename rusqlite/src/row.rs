@@ -338,20 +338,6 @@ impl<'stmt> Row<'stmt> {
     pub fn get_ref_unwrap<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
         self.get_ref(idx).unwrap()
     }
-
-    /// Renamed to [`get_ref`](Row::get_ref).
-    #[deprecated = "Use [`get_ref`](Row::get_ref) instead."]
-    #[inline]
-    pub fn get_raw_checked<I: RowIndex>(&self, idx: I) -> Result<ValueRef<'_>> {
-        self.get_ref(idx)
-    }
-
-    /// Renamed to [`get_ref_unwrap`](Row::get_ref_unwrap).
-    #[deprecated = "Use [`get_ref_unwrap`](Row::get_ref_unwrap) instead."]
-    #[inline]
-    pub fn get_raw<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
-        self.get_ref_unwrap(idx)
-    }
 }
 
 impl<'stmt> AsRef<Statement<'stmt>> for Row<'stmt> {

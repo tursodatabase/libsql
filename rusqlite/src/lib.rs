@@ -140,13 +140,6 @@ pub(crate) use util::SmallCString;
 
 // Number of cached prepared statements we'll hold on to.
 const STATEMENT_CACHE_DEFAULT_CAPACITY: usize = 16;
-/// To be used when your statement has no [parameter][sqlite-varparam].
-///
-/// [sqlite-varparam]: https://sqlite.org/lang_expr.html#varparam
-///
-/// This is deprecated in favor of using an empty array literal.
-#[deprecated = "Use an empty array instead; `stmt.execute(NO_PARAMS)` => `stmt.execute([])`"]
-pub const NO_PARAMS: &[&dyn ToSql] = &[];
 
 /// A macro making it more convenient to longer lists of
 /// parameters as a `&[&dyn ToSql]`.
@@ -606,26 +599,6 @@ impl Connection {
         self.db.borrow_mut().release_memory()
     }
 
-    /// Convenience method to prepare and execute a single SQL statement with
-    /// named parameter(s).
-    ///
-    /// On success, returns the number of rows that were changed or inserted or
-    /// deleted (via `sqlite3_changes`).
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
-    /// or if the underlying SQLite call fails.
-    #[deprecated = "You can use `execute` with named params now."]
-    pub fn execute_named(&self, sql: &str, params: &[(&str, &dyn ToSql)]) -> Result<usize> {
-        // This function itself is deprecated, so it's fine
-        #![allow(deprecated)]
-        self.prepare(sql).and_then(|mut stmt| {
-            stmt.check_no_tail()
-                .and_then(|_| stmt.execute_named(params))
-        })
-    }
-
     /// Get the SQLite rowid of the most recent successful INSERT.
     ///
     /// Uses [sqlite3_last_insert_rowid](https://www.sqlite.org/c3ref/last_insert_rowid.html) under
@@ -677,28 +650,6 @@ impl Connection {
     #[cfg(test)]
     pub(crate) fn one_column<T: crate::types::FromSql>(&self, sql: &str) -> Result<T> {
         self.query_row(sql, [], |r| r.get(0))
-    }
-
-    /// Convenience method to execute a query with named parameter(s) that is
-    /// expected to return a single row.
-    ///
-    /// If the query returns more than one row, all rows except the first are
-    /// ignored.
-    ///
-    /// Returns `Err(QueryReturnedNoRows)` if no results are returned. If the
-    /// query truly is optional, you can call `.optional()` on the result of
-    /// this to get a `Result<Option<T>>`.
-    ///
-    /// # Failure
-    ///
-    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
-    /// or if the underlying SQLite call fails.
-    #[deprecated = "You can use `query_row` with named params now."]
-    pub fn query_row_named<T, F>(&self, sql: &str, params: &[(&str, &dyn ToSql)], f: F) -> Result<T>
-    where
-        F: FnOnce(&Row<'_>) -> Result<T>,
-    {
-        self.query_row(sql, params, f)
     }
 
     /// Convenience method to execute a query that is expected to return a
