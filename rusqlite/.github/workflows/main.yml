@@ -17,6 +17,9 @@ env:
   # smaller. (TODO: use -Cdebuginfo=0 if it doesn't make backtraces useless)
   RUSTFLAGS: -Cdebuginfo=1
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Test ${{ matrix.target }}
