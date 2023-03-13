@@ -11667,8 +11667,8 @@ static void process_sqliterc(
 ** Show available command line options
 */
 static const char zOptions[] =
+  "   --                   treat no subsequent arguments as options\n"
 #if defined(SQLITE_HAVE_ZLIB) && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  "   --                   treat none of arguments following as options\n"
   "   -A ARGS...           run \".archive ARGS\" and exit\n"
 #endif
   "   -append              append the database to the end of the file\n"
@@ -11730,7 +11730,7 @@ static const char zOptions[] =
 ;
 static void usage(int showDetail){
   utf8_printf(stderr,
-      "Usage: %s [OPTIONS] [FILENAME] [SQL]\n"
+      "Usage: %s [OPTIONS] [FILENAME [SQL]]\n"
       "FILENAME is the name of an SQLite database. A new database is created\n"
       "if the file does not previously exist. Defaults to :memory:.\n", Argv0);
   if( showDetail ){
