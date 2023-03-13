@@ -73,6 +73,7 @@ OPT_WASM_RUNTIME = @OPT_WASM_RUNTIME@
 # Optional bottmless WAL library
 #
 TARGET_OPT_BOTTOMLESS_LINK = @TARGET_OPT_BOTTOMLESS_LINK@
+OPT_BOTTOMLESS_LIB = @OPT_BOTTOMLESS_LIB@
 
 # Any target libraries which libsqlite must be linked against
 #
@@ -675,11 +676,11 @@ sqlite3.pc: $(TOP)/sqlite3.pc.in
 libsql.pc: $(TOP)/libsql.pc.in
 	./config.status
 
-libsqlite3.la:	$(LIBOBJ) $(OPT_WASM_RUNTIME_LIBRARY_TARGET)
+libsqlite3.la:	$(LIBOBJ) $(OPT_WASM_RUNTIME_LIBRARY_TARGET) $(OPT_BOTTOMLESS_LIB)
 	$(LTLINK) -no-undefined -o $@ $(LIBOBJ) $(TLIBS) \
 		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
 
-liblibsql.la:	$(LIBOBJ) $(OPT_WASM_RUNTIME_LIBRARY_TARGET)
+liblibsql.la:	$(LIBOBJ) $(OPT_WASM_RUNTIME_LIBRARY_TARGET) $(OPT_BOTTOMLESS_LIB)
 	$(LTLINK) -no-undefined -o $@ $(LIBOBJ) $(TLIBS) \
 		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"
 
@@ -718,7 +719,7 @@ fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
 	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
 
-fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
+fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP) $(OPT_BOTTOMLESS_LIB)
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
 
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
@@ -1290,7 +1291,7 @@ TESTFIXTURE_SRC1 = sqlite3.c
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)/src/tclsqlite.c
 TESTFIXTURE_SRC += $(TESTFIXTURE_SRC$(USE_AMALGAMATION))
 
-testfixture$(TEXE):	$(TESTFIXTURE_SRC)
+testfixture$(TEXE):	$(TESTFIXTURE_SRC) $(OPT_BOTTOMLESS_LIB)
 	$(LTLINK) -DSQLITE_NO_SYNC=1 $(TEMP_STORE) $(TESTFIXTURE_FLAGS) \
 		-o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
