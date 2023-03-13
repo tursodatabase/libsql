@@ -236,6 +236,10 @@ extern char *sqlite3_win32_utf8_to_mbcs_v2(const char *, int);
 extern LPWSTR sqlite3_win32_utf8_to_unicode(const char *zText);
 #endif
 
+#ifdef LIBSQL_ENABLE_BOTTOMLESS_WAL
+extern void libsqlBottomlessInit(sqlite3*);
+#endif
+
 /* On Windows, we normally run with output mode of TEXT so that \n characters
 ** are automatically translated into \r\n.  However, this behavior needs
 ** to be disabled in some cases (ex: when generating CSV output and when
@@ -12106,6 +12110,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   /* All the sqlite3_config() calls have now been made. So it is safe
   ** to call sqlite3_initialize() and process any command line -vfs option. */
   sqlite3_initialize();
+#endif
+
+#ifdef LIBSQL_ENABLE_BOTTOMLESS_WAL
+  libsqlBottomlessInit(NULL);
 #endif
 
   if( zVfs ){
