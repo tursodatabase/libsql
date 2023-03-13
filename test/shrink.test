@@ -17,6 +17,13 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 test_set_config_pagecache 0 0
 
+if {[sqlite3_memory_used]==0} {
+  # SQLITE_DEFAULT_MEMSTATUS=0 build.
+  finish_test
+  return
+}
+
+
 unset -nocomplain baseline
 do_test shrink-1.1 {
   db eval {

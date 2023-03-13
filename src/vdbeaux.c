@@ -443,10 +443,10 @@ void sqlite3ExplainBreakpoint(const char *z1, const char *z2){
 */
 int sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
   int addr = 0;
-#if !defined(SQLITE_DEBUG) && !defined(SQLITE_ENABLE_STMT_SCANSTATUS)
+#if !defined(SQLITE_DEBUG)
   /* Always include the OP_Explain opcodes if SQLITE_DEBUG is defined.
   ** But omit them (for performance) during production builds */
-  if( pParse->explain==2 )
+  if( pParse->explain==2 || IS_STMT_SCANSTATUS(pParse->db) )
 #endif
   {
     char *zMsg;
@@ -1122,18 +1122,20 @@ void sqlite3VdbeScanStatus(
   LogEst nEst,                    /* Estimated number of output rows */
   const char *zName               /* Name of table or index being scanned */
 ){
-  sqlite3_int64 nByte = (p->nScan+1) * sizeof(ScanStatus);
-  ScanStatus *aNew;
-  aNew = (ScanStatus*)sqlite3DbRealloc(p->db, p->aScan, nByte);
-  if( aNew ){
-    ScanStatus *pNew = &aNew[p->nScan++];
-    memset(pNew, 0, sizeof(ScanStatus));
-    pNew->addrExplain = addrExplain;
-    pNew->addrLoop = addrLoop;
-    pNew->addrVisit = addrVisit;
-    pNew->nEst = nEst;
-    pNew->zName = sqlite3DbStrDup(p->db, zName);
-    p->aScan = aNew;
+  if( IS_STMT_SCANSTATUS(p->db) ){
+    sqlite3_int64 nByte = (p->nScan+1) * sizeof(ScanStatus);
+    ScanStatus *aNew;
+    aNew = (ScanStatus*)sqlite3DbRealloc(p->db, p->aScan, nByte);
+    if( aNew ){
+      ScanStatus *pNew = &aNew[p->nScan++];
+      memset(pNew, 0, sizeof(ScanStatus));
+      pNew->addrExplain = addrExplain;
+      pNew->addrLoop = addrLoop;
+      pNew->addrVisit = addrVisit;
+      pNew->nEst = nEst;
+      pNew->zName = sqlite3DbStrDup(p->db, zName);
+      p->aScan = aNew;
+    }
   }
 }
 
@@ -1150,20 +1152,22 @@ void sqlite3VdbeScanStatusRange(
   int addrStart, 
   int addrEnd
 ){
-  ScanStatus *pScan = 0;
-  int ii;
-  for(ii=p->nScan-1; ii>=0; ii--){
-    pScan = &p->aScan[ii];
-    if( pScan->addrExplain==addrExplain ) break;
-    pScan = 0;
-  }
-  if( pScan ){
-    if( addrEnd<0 ) addrEnd = sqlite3VdbeCurrentAddr(p)-1;
-    for(ii=0; ii<ArraySize(pScan->aAddrRange); ii+=2){
-      if( pScan->aAddrRange[ii]==0 ){
-        pScan->aAddrRange[ii] = addrStart;
-        pScan->aAddrRange[ii+1] = addrEnd;
-        break;
+  if( IS_STMT_SCANSTATUS(p->db) ){
+    ScanStatus *pScan = 0;
+    int ii;
+    for(ii=p->nScan-1; ii>=0; ii--){
+      pScan = &p->aScan[ii];
+      if( pScan->addrExplain==addrExplain ) break;
+      pScan = 0;
+    }
+    if( pScan ){
+      if( addrEnd<0 ) addrEnd = sqlite3VdbeCurrentAddr(p)-1;
+      for(ii=0; ii<ArraySize(pScan->aAddrRange); ii+=2){
+        if( pScan->aAddrRange[ii]==0 ){
+          pScan->aAddrRange[ii] = addrStart;
+          pScan->aAddrRange[ii+1] = addrEnd;
+          break;
+        }
       }
     }
   }
@@ -1180,19 +1184,21 @@ void sqlite3VdbeScanStatusCounters(
   int addrLoop, 
   int addrVisit
 ){
-  ScanStatus *pScan = 0;
-  int ii;
-  for(ii=p->nScan-1; ii>=0; ii--){
-    pScan = &p->aScan[ii];
-    if( pScan->addrExplain==addrExplain ) break;
-    pScan = 0;
-  }
-  if( pScan ){
-    pScan->addrLoop = addrLoop;
-    pScan->addrVisit = addrVisit;
+  if( IS_STMT_SCANSTATUS(p->db) ){
+    ScanStatus *pScan = 0;
+    int ii;
+    for(ii=p->nScan-1; ii>=0; ii--){
+      pScan = &p->aScan[ii];
+      if( pScan->addrExplain==addrExplain ) break;
+      pScan = 0;
+    }
+    if( pScan ){
+      pScan->addrLoop = addrLoop;
+      pScan->addrVisit = addrVisit;
+    }
   }
 }
-#endif
+#endif /* defined(SQLITE_ENABLE_STMT_SCANSTATUS) */
 
 
 /*

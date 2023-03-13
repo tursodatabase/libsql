@@ -70,7 +70,8 @@ STRIP_K1.js := $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js) \
   $(sqlite3-worker1-bundler-friendly.js) $(sqlite3-worker1-promiser-bundler-friendly.js)
 # STRIP_K2.js = list of JS files which need to be passed through
 # $(bin.stripcomments) with two -k flags.
-STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) $(sqlite3-bundler-friendly.mjs)
+STRIP_K2.js := $(sqlite3.js) $(sqlite3.mjs) \
+  $(sqlite3-bundler-friendly.mjs) $(sqlite3-node.mjs)
 ########################################################################
 # dist: create the end-user deliverable archive.
 #

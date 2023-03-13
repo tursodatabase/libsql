@@ -2250,15 +2250,17 @@ ifcapable altertable&&vtab {
 # The sqlite3_declare_vtab() call that occurs during pragma_table_list
 # should not cause an authentication failure.
 #
-do_test auth-1.359 {
-  proc auth {code arg1 arg2 arg3 arg4 args} {
-    if {$code=="SQLITE_UPDATE"} {
-      return SQLITE_DENY
+ifcapable vtab {
+  do_test auth-1.359 {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
+      if {$code=="SQLITE_UPDATE"} {
+        return SQLITE_DENY
+      }
+      return SQLITE_OK
     }
-    return SQLITE_OK
-  }
-  catchsql {SELECT * FROM pragma_table_list WHERE name='xyzzy';}
-} {0 {}}
+    catchsql {SELECT * FROM pragma_table_list WHERE name='xyzzy';}
+  } {0 {}}
+}
 
 do_test auth-2.1 {
   proc auth {code arg1 arg2 arg3 arg4 args} {

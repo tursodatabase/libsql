@@ -1038,18 +1038,56 @@ do_execsql_test join-22.10 {
 } {11}
 
 # 2019-12-22 ticket 7929c1efb2d67e98
+# Verification of testtag-20230227a
+#
+# 2023-02-27 https://sqlite.org/forum/forumpost/422e635f3beafbf6
+# Verification of testtag-20230227a, testtag-20230227b, and testtag-20230227c
 #
 reset_db
 ifcapable vtab {
-do_execsql_test join-23.10 {
-  CREATE TABLE t0(c0);
-  INSERT INTO t0(c0) VALUES(123);
-  CREATE VIEW v0(c0) AS SELECT 0 GROUP BY 1;
-  SELECT t0.c0, v0.c0, vt0.name
-   FROM v0, t0 LEFT JOIN pragma_table_info('t0') AS vt0
-     ON vt0.name LIKE 'c0'
-   WHERE v0.c0 == 0;
-} {123 0 c0}
+  do_execsql_test join-23.10 {
+    CREATE TABLE t0(c0);
+    INSERT INTO t0(c0) VALUES(123);
+    CREATE VIEW v0(c0) AS SELECT 0 GROUP BY 1;
+    SELECT t0.c0, v0.c0, vt0.name
+     FROM v0, t0 LEFT JOIN pragma_table_info('t0') AS vt0
+       ON vt0.name LIKE 'c0'
+     WHERE v0.c0 == 0;
+  } {123 0 c0}
+  do_execsql_test join-23.20 {
+    CREATE TABLE a(value TEXT);
+    INSERT INTO a(value) SELECT value FROM json_each('["a", "b", null]');
+    CREATE TABLE b(value TEXT);
+    INSERT INTO b(value) SELECT value FROM json_each('["a", "c", null]');
+    SELECT a.value, b.value FROM a RIGHT JOIN b ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.21 {
+    SELECT a.value, b.value FROM b LEFT JOIN a ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.22 {
+    SELECT a.value, b.value 
+      FROM json_each('["a", "c", null]') AS b
+           LEFT JOIN
+           json_each('["a", "b", null]') AS a ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.23 {
+    SELECT a.value, b.value 
+      FROM json_each('["a", "b", null]') AS a
+           RIGHT JOIN
+           json_each('["a", "c", null]') AS b ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.24 {
+    SELECT a.value, b.value 
+      FROM json_each('["a", "b", null]') AS a
+           RIGHT JOIN
+           b ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.25 {
+    SELECT a.value, b.value 
+      FROM a
+           RIGHT JOIN
+           json_each('["a", "c", null]') AS b ON a.value = b.value;
+  } {a a {} c {} {}}
 }
 
 #-------------------------------------------------------------------------

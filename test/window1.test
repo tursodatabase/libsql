@@ -2210,4 +2210,20 @@ do_execsql_test 72.1 {
   SELECT * FROM v1 WHERE true;
 } {1 0}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 72.0 {
+  CREATE TABLE t0(c0);
+  INSERT INTO t0(c0) VALUES (0);
+  CREATE VIEW v0(c0) AS SELECT TOTAL(0) OVER (PARTITION BY t0.c0) FROM t0;
+}
+do_execsql_test 72.1 {
+  SELECT COUNT(*) FROM (
+      SELECT TOTAL(0) OVER (PARTITION BY t0.c0) FROM t0
+      )
+  WHERE ('1' IS NOT ('abcde' NOTNULL)); 
+} {1}
+
+
 finish_test

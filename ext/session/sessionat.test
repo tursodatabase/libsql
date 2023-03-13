@@ -110,7 +110,7 @@ eval [string map [list %WR% $trailing] {
     CREATE TABLE t3(a, b, c DEFAULT 'D', PRIMARY KEY(b)) %WR%;
   }
   do_test $tn.3.2 {
-    do_then_apply_sql {
+    do_then_apply_sql -ignorenoop {
       INSERT INTO t3 VALUES(1, 2);
       INSERT INTO t3 VALUES(3, 4);
       INSERT INTO t3 VALUES(5, 6);
@@ -118,7 +118,7 @@ eval [string map [list %WR% $trailing] {
     db2 eval {SELECT * FROM t3}
   } {1 2 D 3 4 D 5 6 D}
   do_test $tn.3.3 {
-    do_then_apply_sql {
+    do_then_apply_sql -ignorenoop {
       UPDATE t3 SET a=45 WHERE b=4;
       DELETE FROM t3 WHERE a=5;
     };
@@ -253,7 +253,7 @@ eval [string map [list %WR% $trailing] {
     CREATE TABLE t8(a PRIMARY KEY, b, c, d DEFAULT 'D', e DEFAULT 'E');
   }
 
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     INSERT INTO t8 VALUES(1, 2, 3);
     INSERT INTO t8 VALUES(4, 5, 6);
   }
@@ -264,7 +264,7 @@ eval [string map [list %WR% $trailing] {
     SELECT * FROM t8
   } {1 2 3 D E   4 5 6 D E}
 
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     UPDATE t8 SET c=45 WHERE a=4;
   }
   do_execsql_test $tn.7.3.1 {
@@ -282,7 +282,7 @@ eval [string map [list %WR% $trailing] {
   do_execsql_test -db db2 $tn.8.1 {
     CREATE TABLE t9(a PRIMARY KEY, b, c, d, e, f, g, h, i, j, k, l);
   }
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     INSERT INTO t9 VALUES(1, 2, 3, 4, 5, 6, 7, 8);
   }
   do_then_apply_sql {
@@ -291,7 +291,7 @@ eval [string map [list %WR% $trailing] {
   do_execsql_test -db db2 $tn.8.2 {
     SELECT * FROM t9
   } {1 2 3 4 5 6 7 450 {} {} {} {}}
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     UPDATE t9 SET h=NULL
   }
   do_execsql_test -db db2 $tn.8.2 {

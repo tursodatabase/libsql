@@ -99,6 +99,52 @@ do_eqp_test 2.1 {
   |     |--SCAN transit
   |     `--SEARCH objs USING COVERING INDEX objs_cspo (o=? AND p=?)
   `--SCAN transit
-} 
+}
+
+# 2023-02-28
+# https://sqlite.org/forum/forumpost/0846211821
+#
+# Bloom filter gives an incorrect result if the collating sequence is
+# anything other than binary.
+#
+reset_db
+do_execsql_test 3.1 {
+  CREATE TABLE t0(x TEXT COLLATE rtrim);
+  INSERT INTO t0(x) VALUES ('a'), ('b'), ('c');
+  CREATE VIEW v0(y) AS SELECT DISTINCT x FROM t0;
+  SELECT count(*) FROM t0, v0 WHERE x='b ';
+} 3
+do_eqp_test 3.2 {
+  SELECT count(*) FROM t0, v0 WHERE x='b ';
+} {
+  QUERY PLAN
+  |--CO-ROUTINE v0
+  |  |--SCAN t0
+  |  `--USE TEMP B-TREE FOR DISTINCT
+  |--SCAN v0
+  `--SEARCH t0 USING AUTOMATIC PARTIAL COVERING INDEX (x=?)
+}
+# ^^^^^--- The key feature in the previous result is that no Bloom filter
+# is used.  In the following, a Bloom filter is used because the data type
+# is INT instead of TEXT.
+do_execsql_test 3.3 {
+  CREATE TABLE t1(x INT COLLATE rtrim);
+  INSERT INTO t1(x) VALUES ('a'), ('b'), ('c');
+  CREATE VIEW v1(y) AS SELECT DISTINCT x FROM t1;
+  SELECT count(*) FROM t1, v1 WHERE x='b ';
+} 3
+do_eqp_test 3.4 {
+  SELECT count(*) FROM t1, v1 WHERE x='b ';
+} {
+  QUERY PLAN
+  |--CO-ROUTINE v1
+  |  |--SCAN t1
+  |  `--USE TEMP B-TREE FOR DISTINCT
+  |--SCAN v1
+  |--BLOOM FILTER ON t1 (x=?)
+  `--SEARCH t1 USING AUTOMATIC PARTIAL COVERING INDEX (x=?)
+}
+
+  
 
 finish_test

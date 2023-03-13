@@ -20,8 +20,9 @@ proc if_no_rbu_support {tcl} {
   ifcapable !rbu { set bOk 0 }
   if {[permutation]=="journaltest"} { set bOk 0 }
   if {$bOk==0} {
-    uplevel $tcl
-  }
+    set c [catch {uplevel 1 $tcl} r]
+    return -code $c $r
+  } 
 }
 
 proc check_prestep_state {target state} {

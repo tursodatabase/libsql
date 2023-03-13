@@ -24,6 +24,7 @@ for {set tn 1} {1} {incr tn} {
     INSERT INTO t1 VALUES(1, 2, 3);
     INSERT INTO t1 VALUES(4, 5, 6);
   }
+  db close
 
   forcedelete test.db2
   sqlite3rbu_vacuum rbu test.db test.db2
@@ -53,8 +54,10 @@ for {set tn 1} {1} {incr tn} {
     set trc [rbu close]
     if {$trc!="SQLITE_DONE"} { error "Got $trc instead of SQLITE_DONE!" }
 
+    sqlite3 db test.db
     set rc [db one {PRAGMA integrity_check}]
     if {$rc!="ok"} { error "Got $rc instead of ok!" }
+    db close
   }
 }
 

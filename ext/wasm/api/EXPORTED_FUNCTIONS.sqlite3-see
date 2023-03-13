@@ -1,0 +1,5 @@
+_sqlite3_key
+_sqlite3_key_v2
+_sqlite3_rekey
+_sqlite3_rekey_v2
+_sqlite3_activate_see

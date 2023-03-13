@@ -1,7 +1,7 @@
 /*
 ** LICENSE for the sqlite3 WebAssembly/JavaScript APIs.
 **
-** This bundle (typically released as sqlite3.js or sqlite3-wasmfs.js)
+** This bundle (typically released as sqlite3.js or sqlite3.mjs)
 ** is an amalgamation of JavaScript source code from two projects:
 **
 ** 1) https://emscripten.org: the Emscripten "glue code" is covered by

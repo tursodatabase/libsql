@@ -70,45 +70,47 @@ void sqlite3OpenTable(
 ** is managed along with the rest of the Index structure. It will be
 ** released when sqlite3DeleteIndex() is called.
 */
-const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
+static SQLITE_NOINLINE const char *computeIndexAffStr(sqlite3 *db, Index *pIdx){
+  /* The first time a column affinity string for a particular index is
+  ** required, it is allocated and populated here. It is then stored as
+  ** a member of the Index structure for subsequent use.
+  **
+  ** The column affinity string will eventually be deleted by
+  ** sqliteDeleteIndex() when the Index structure itself is cleaned
+  ** up.
+  */
+  int n;
+  Table *pTab = pIdx->pTable;
+  pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
   if( !pIdx->zColAff ){
-    /* The first time a column affinity string for a particular index is
-    ** required, it is allocated and populated here. It is then stored as
-    ** a member of the Index structure for subsequent use.
-    **
-    ** The column affinity string will eventually be deleted by
-    ** sqliteDeleteIndex() when the Index structure itself is cleaned
-    ** up.
-    */
-    int n;
-    Table *pTab = pIdx->pTable;
-    pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
-    if( !pIdx->zColAff ){
-      sqlite3OomFault(db);
-      return 0;
-    }
-    for(n=0; n<pIdx->nColumn; n++){
-      i16 x = pIdx->aiColumn[n];
-      char aff;
-      if( x>=0 ){
-        aff = pTab->aCol[x].affinity;
-      }else if( x==XN_ROWID ){
-        aff = SQLITE_AFF_INTEGER;
-      }else{
-        assert( x==XN_EXPR );
-        assert( pIdx->bHasExpr );
-        assert( pIdx->aColExpr!=0 );
-        aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
-      }
-      if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
-      if( aff>SQLITE_AFF_NUMERIC) aff = SQLITE_AFF_NUMERIC;
-      pIdx->zColAff[n] = aff;
-    }
-    pIdx->zColAff[n] = 0;
+    sqlite3OomFault(db);
+    return 0;
   }
- 
+  for(n=0; n<pIdx->nColumn; n++){
+    i16 x = pIdx->aiColumn[n];
+    char aff;
+    if( x>=0 ){
+      aff = pTab->aCol[x].affinity;
+    }else if( x==XN_ROWID ){
+      aff = SQLITE_AFF_INTEGER;
+    }else{
+      assert( x==XN_EXPR );
+      assert( pIdx->bHasExpr );
+      assert( pIdx->aColExpr!=0 );
+      aff = sqlite3ExprAffinity(pIdx->aColExpr->a[n].pExpr);
+    }
+    if( aff<SQLITE_AFF_BLOB ) aff = SQLITE_AFF_BLOB;
+    if( aff>SQLITE_AFF_NUMERIC) aff = SQLITE_AFF_NUMERIC;
+    pIdx->zColAff[n] = aff;
+  }
+  pIdx->zColAff[n] = 0;
   return pIdx->zColAff;
 }
+const char *sqlite3IndexAffinityStr(sqlite3 *db, Index *pIdx){
+  if( !pIdx->zColAff ) return computeIndexAffStr(db, pIdx);
+  return pIdx->zColAff;
+}
+
 
 /*
 ** Compute an affinity string for a table.   Space is obtained

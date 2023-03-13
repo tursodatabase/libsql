@@ -23,6 +23,8 @@ Usage:
 
   where SWITCHES are:
     --jobs NUMBER-OF-JOBS
+    --fuzztest
+    --zipvfs ZIPVFS-SOURCE-DIR
 
 Interesting values for PERMUTATION are:
 
@@ -45,6 +47,11 @@ If a PERMUTATION is specified and is followed by the path to a Tcl script
 instead of a list of patterns, then that single Tcl test script is run
 with the specified permutation.
 
+The --fuzztest option is ignored if the PERMUTATION is "release". Otherwise,
+if it is present, then "make -C <dir> fuzztest" is run as part of the tests,
+where <dir> is the directory containing the testfixture binary used to
+run the script.
+
 The "status" and "njob" commands are designed to be run from the same
 directory as a running testrunner.tcl script that is running tests. The
 "status" command prints a report describing the current state and progress 
@@ -64,26 +71,32 @@ of sub-processes the test script uses to run tests.
 # switch.
 #
 proc guess_number_of_cores {} {
-  set ret 4
+  if {[catch {number_of_cores} ret]} {
+    set ret 4
   
-  if {$::tcl_platform(os)=="Darwin"} {
-    set cmd "sysctl -n hw.logicalcpu"
-  } else {
-    set cmd "nproc"
-  }
-  catch {
-    set fd [open "|$cmd" r]
-    set ret [gets $fd]
-    close $fd
-    set ret [expr $ret]
+    if {$::tcl_platform(os)=="Darwin"} {
+      set cmd "sysctl -n hw.logicalcpu"
+    } else {
+      set cmd "nproc"
+    }
+    catch {
+      set fd [open "|$cmd" r]
+      set ret [gets $fd]
+      close $fd
+      set ret [expr $ret]
+    }
   }
   return $ret
 }
 
 proc default_njob {} {
   set nCore [guess_number_of_cores]
-  set nHelper [expr int($nCore*0.75)]
-  expr $nHelper>0 ? $nHelper : 1
+  if {$nCore<=2} {
+    set nHelper 1
+  } else {
+    set nHelper [expr int($nCore*0.5)]
+  }
+  return $nHelper
 }
 #-------------------------------------------------------------------------
 
@@ -99,6 +112,8 @@ set TRG(nJob)    [default_njob]     ;# Default number of helper processes
 set TRG(patternlist) [list]
 set TRG(cmdline) $argv
 set TRG(reporttime) 2000
+set TRG(fuzztest) 0                 ;# is the fuzztest option present.
+set TRG(zipvfs) ""                  ;# -zipvfs option, if any
 
 switch -nocase -glob -- $tcl_platform(os) {
   *darwin* {
@@ -114,7 +129,7 @@ switch -nocase -glob -- $tcl_platform(os) {
   *win* {
     set TRG(platform) win
     set TRG(make)     make.bat
-    set TRG(makecmd)     make.bat
+    set TRG(makecmd)  make.bat
   }
   default {
     error "cannot determine platform!"
@@ -312,6 +327,7 @@ if {[llength $argv]==1
     puts "Failures: "
     mydb eval {
       SELECT build, config, filename FROM script WHERE state='failed'
+      ORDER BY 3
     } {
       display_job $build $config $filename
     }
@@ -333,6 +349,12 @@ for {set ii 0} {$ii < [llength $argv]} {incr ii} {
     if {($n>2 && [string match "$a*" --jobs]) || $a=="-j"} {
       incr ii
       set TRG(nJob) [lindex $argv $ii]
+      if {$isLast} { usage }
+    } elseif {($n>2 && [string match "$a*" --fuzztest]) || $a=="-f"} {
+      set TRG(fuzztest) 1
+    } elseif {($n>2 && [string match "$a*" --zipvfs]) || $a=="-z"} {
+      incr ii
+      set TRG(zipvfs) [lindex $argv $ii]
       if {$isLast} { usage }
     } else {
       usage
@@ -421,6 +443,7 @@ proc build_to_dirname {bname} {
 #    {BUILD CONFIG FILENAME} {BUILD CONFIG FILENAME} ...
 #
 proc testset_patternlist {patternlist} {
+  global TRG
 
   set testset [list]              ;# return value
 
@@ -451,6 +474,8 @@ proc testset_patternlist {patternlist} {
       }
     }
 
+    set TRG(fuzztest) 0           ;# ignore --fuzztest option in this case
+
   } elseif {$first=="all"} {
 
     set clist [trd_all_configs]
@@ -466,6 +491,10 @@ proc testset_patternlist {patternlist} {
     testset_append testset "" veryquick $patternlist
   } else {
     testset_append testset "" full $patternlist
+  }
+  if {$TRG(fuzztest)} {
+    if {$TRG(platform)=="win"} { error "todo" }
+    lappend testset [list "" make fuzztest]
   }
 
   set testset
@@ -556,6 +585,12 @@ proc make_new_testset {} {
   global TRG
 
   set tests [testset_patternlist $TRG(patternlist)]
+
+  if {$TRG(zipvfs)!=""} {
+    source [file join $TRG(zipvfs) test zipvfs_testrunner.tcl]
+    set tests [concat $tests [zipvfs_testrunner_testset]]
+  }
+
   r_write_db {
 
     trdb eval $TRG(schema)
@@ -583,6 +618,11 @@ proc make_new_testset {} {
           }
         }
         close $fd
+      }
+
+      if {$c=="make" && $b==""} {
+        # --fuzztest option
+        set slow 1
       }
 
       if {$c=="veryquick"} {
@@ -678,13 +718,17 @@ proc launch_another_job {iJob} {
     set builddir [build_to_dirname $b]
     create_or_clear_dir $builddir
 
-    set     cmd [info nameofexec]
-    lappend cmd [file join $testdir releasetest_data.tcl]
-    lappend cmd trscript
-    if {$TRG(platform)=="win"} { lappend cmd -msvc }
-    lappend cmd $b $srcdir
+    if {$b=="Zipvfs"} {
+      set script [zipvfs_testrunner_script]
+    } else {
+      set     cmd [info nameofexec]
+      lappend cmd [file join $testdir releasetest_data.tcl]
+      lappend cmd trscript
+      if {$TRG(platform)=="win"} { lappend cmd -msvc }
+      lappend cmd $b $srcdir
+      set script [exec {*}$cmd]
+    }
 
-    set script [exec {*}$cmd]
     set fd [open [file join $builddir $TRG(make)] w]
     puts $fd $script
     close $fd
@@ -697,9 +741,20 @@ proc launch_another_job {iJob} {
     set dir $builddir
 
   } elseif {$c=="make"} {
-    set builddir [build_to_dirname $b]
-    copy_dir $builddir $dir
-    set cmd "$TRG(makecmd) $f"
+    if {$b==""} {
+      if {$f!="fuzztest"} { error "corruption in testrunner.db!" }
+      # Special case - run [make fuzztest] 
+      set makedir [file dirname $testfixture]
+      if {$TRG(platform)=="win"} {
+        error "how?"
+      } else {
+        set cmd [list make -C $makedir fuzztest]
+      }
+    } else {
+      set builddir [build_to_dirname $b]
+      copy_dir $builddir $dir
+      set cmd "$TRG(makecmd) $f"
+    }
   } else {
     if {$b==""} {
       set testfixture [info nameofexec]
@@ -733,7 +788,7 @@ proc one_line_report {} {
   global TRG
 
   set tm [expr [clock_milliseconds] - $TRG(starttime)]
-  set tm [format "%.2f" [expr $tm/1000.0]]
+  set tm [format "%d" [expr int($tm/1000.0 + 0.5)]]
 
   foreach s {ready running done failed} {
     set v($s,build) 0
@@ -759,11 +814,21 @@ proc one_line_report {} {
   set text ""
   foreach j [array names t] {
     set fin [expr $v(done,$j) + $v(failed,$j)]
-    lappend text "$j: ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
+    lappend text "$j ($fin/$t($j)) f=$v(failed,$j) r=$v(running,$j)"
   }
 
-  puts -nonewline "${tm}s: [join $text { || }]\r"
-  flush stdout
+  if {[info exists TRG(reportlength)]} {
+    puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
+  }
+  set report "${tm}s: [join $text { }]"
+  set TRG(reportlength) [string length $report]
+  if {[string length $report]<80} {
+    puts -nonewline "$report\r"
+    flush stdout
+  } else {
+    puts $report
+  }
+
   after $TRG(reporttime) one_line_report
 }
 
@@ -819,6 +884,9 @@ proc run_testset {} {
 sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
 set tm [lindex [time { make_new_testset }] 0]
+if {$TRG(nJob)>1} {
+  puts "splitting work across $TRG(nJob) cores"
+}
 puts "built testset in [expr $tm/1000]ms.."
 run_testset
 trdb close

@@ -212,13 +212,13 @@ do_execsql_test 10.2 {
   END;
 }
 
-do_catchsql_test 10.3 {
+do_catchsql_test 10.3a {
   INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
-} {1 {no such column: rowid}}
+} {1 {no such column: new.rowid}}
 
-do_catchsql_test 10.3 {
+do_catchsql_test 10.3b {
   UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
-} {1 {no such column: rowid}}
+} {1 {no such column: new.rowid}}
 
 do_execsql_test 10.4 {
   SELECT * FROM log;
@@ -407,5 +407,16 @@ do_execsql_test 17.0 {
   INSERT INTO bug(id,x) VALUES(20, NULL);
   UPDATE bug SET x=NULL WHERE id = 20 RETURNING quote(x), x IS NULL;
 } {NULL 1}
+
+# 2023-03-08 https://sqlite.org/forum/forumpost/f5a2b1db87
+# NULL pointer dereference following an error.
+#
+do_execsql_test 18.0 {
+  CREATE TABLE v0(c1 INT);
+  CREATE VIEW view_2(c1) AS SELECT CASE WHEN c1 COLLATE TRUE THEN TRUE ELSE TRUE END FROM v0;
+}
+do_catchsql_test 18.1 {
+  INSERT INTO view_2 DEFAULT VALUES RETURNING *;
+} {1 {no such collation sequence: TRUE}}
 
 finish_test

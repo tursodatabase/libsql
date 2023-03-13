@@ -194,6 +194,7 @@ do_eqp_test autoindex1-501 {
   QUERY PLAN
   |--SCAN t501
   `--CORRELATED LIST SUBQUERY xxxxxx
+     |--BLOOM FILTER ON t502 (y=?)
      `--SEARCH t502 USING AUTOMATIC COVERING INDEX (y=?)
 }
 do_eqp_test autoindex1-502 {

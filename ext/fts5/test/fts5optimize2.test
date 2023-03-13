@@ -21,13 +21,15 @@ ifcapable !fts5 {
   return
 }
 
+set nLoop 2500
+
 do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x);
   INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
 }
 
 do_test 1.1 {
-  for {set ii 0} {$ii < 1500} {incr ii} {
+  for {set ii 0} {$ii < $nLoop} {incr ii} {
     execsql {
       INSERT INTO t1 VALUES('abc def ghi');
       INSERT INTO t1 VALUES('jkl mno pqr');
@@ -38,7 +40,7 @@ do_test 1.1 {
 
 do_execsql_test 1.2 {
   SELECT count(*) FROM t1('mno')
-} {1500}
+} $nLoop
 
 do_execsql_test 2.0 {
   CREATE VIRTUAL TABLE t2 USING fts5(x);
@@ -46,7 +48,7 @@ do_execsql_test 2.0 {
 }
 
 do_test 2.1 {
-  for {set ii 0} {$ii < 1500} {incr ii} {
+  for {set ii 0} {$ii < $nLoop} {incr ii} {
     execsql {
       INSERT INTO t2 VALUES('abc def ghi');
       INSERT INTO t2 VALUES('jkl mno pqr');
@@ -57,6 +59,6 @@ do_test 2.1 {
 
 do_execsql_test 2.2 {
   SELECT count(*) FROM t2('mno')
-} {1500}
+} $nLoop
 
 finish_test

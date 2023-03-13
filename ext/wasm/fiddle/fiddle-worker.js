@@ -46,7 +46,7 @@
     about module loading status so that, e.g., the main thread can
     update a progress widget and DTRT when the module is finished
     loading and available for work. Status messages come in the form
-    
+
     {type:'module', data:{
         type:'status',
         data: {text:string|null, step:1-based-integer}
@@ -370,6 +370,9 @@
   */
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
+    console.warn("Installing sqlite3 module globally (in Worker)",
+                 "for use in the dev console.");
+    self.sqlite3 = sqlite3;
     const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
     fiddleModule.fsUnlink = (fn)=>{
       return sqlite3.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);

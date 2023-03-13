@@ -158,6 +158,56 @@ RELEASE=`cat $srcdir/VERSION`
 AC_MSG_NOTICE(Release set to $RELEASE)
 AC_SUBST(RELEASE)
 
+##########
+# Handle --with-wasi-sdk=DIR
+#
+# This must be early because it changes the toolchain.
+#
+AC_ARG_WITH(wasi-sdk,
+AS_HELP_STRING([--with-wasi-sdk=DIR],
+       [directory containing the WASI SDK. Triggers cross-compile to WASM.]), with_wasisdk=${withval})
+AC_MSG_CHECKING([for WASI SDK directory])
+AC_CACHE_VAL(ac_cv_c_wasi_sdk,[
+  # First check to see if --with-tcl was specified.
+  if test x"${with_wasi_sdk}" != x ; then
+    if ! test -d "${with_wasi_sdk}" ; then
+      AC_MSG_ERROR([${with_wasi_sdk} directory doesn't exist])
+    fi
+    AC_MSG_RESULT([${with_wasi_sdk}: using wasi-sdk clang, disabling: tcl, CLI shell, DLL])
+    use_wasi_sdk=yes
+  else
+    use_wasi_sdk=no
+  fi
+])
+if test "${use_wasi_sdk}" = "no" ; then
+  HAVE_WASI_SDK=""
+  AC_MSG_RESULT([no])
+else
+  HAVE_WASI_SDK=1
+# Changing --host and --target have no effect here except to possibly
+# cause confusion. autoconf has finished processing them by this
+# point.
+#
+#  host_alias=wasm32-wasi
+#  target=wasm32-wasi
+#
+# Merely changing CC and LD to the wasi-sdk's is enough to get
+# sqlite3.o building in WASM format.
+  CC="${with_wasi_sdk}/bin/clang"
+  LD="${with_wasi_sdk}/bin/wasm-ld"
+  RANLIB="${with_wasi_sdk}/bin/llvm-ranlib"
+  cross_compiling=yes
+  enable_threadsafe=no
+  use_tcl=no
+  enable_tcl=no
+  # libtool is apparently hard-coded to use gcc for linking DLLs, so
+  # we disable the DLL build...
+  enable_shared=no
+  AC_MSG_RESULT([yes])
+fi
+AC_SUBST(HAVE_WASI_SDK)
+
+
 #########
 # Locate a compiler for the build machine.  This compiler should
 # generate command-line programs that run on the build machine.
@@ -578,7 +628,9 @@ AC_SUBST(TARGET_DEBUG)
 
 #########
 # See whether we should use the amalgamation to build
-AC_ARG_ENABLE(amalgamation, AS_HELP_STRING([--disable-amalgamation],[Disable the amalgamation and instead build all files separately]))
+
+AC_ARG_ENABLE(amalgamation, AS_HELP_STRING([--disable-amalgamation],
+      [Disable the amalgamation and instead build all files separately]))
 if test "${enable_amalgamation}" = "no" ; then
   USE_AMALGAMATION=0
 fi
@@ -592,7 +644,8 @@ AC_SUBST(HAVE_ZLIB)
 
 #########
 # See whether we should allow loadable extensions
-AC_ARG_ENABLE(load-extension, AS_HELP_STRING([--disable-load-extension],[Disable loading of external extensions]),,[enable_load_extension=yes])
+AC_ARG_ENABLE(load-extension, AS_HELP_STRING([--disable-load-extension],
+      [Disable loading of external extensions]),,[enable_load_extension=yes])
 if test "${enable_load_extension}" = "yes" ; then
   OPT_FEATURE_FLAGS=""
   AC_SEARCH_LIBS(dlopen, dl)
@@ -665,7 +718,8 @@ AC_SUBST(OPT_WASM_RUNTIME)
 ########
 # The --enable-all argument is short-hand to enable
 # multiple extensions.
-AC_ARG_ENABLE(all, AS_HELP_STRING([--enable-all],[Enable FTS4, FTS5, Geopoly, RTree, Sessions]))
+AC_ARG_ENABLE(all, AS_HELP_STRING([--enable-all],
+      [Enable FTS4, FTS5, Geopoly, RTree, Sessions]))
 
 ##########
 # Do we want to support memsys3 and/or memsys5
@@ -691,7 +745,8 @@ fi
 
 #########
 # See whether we should enable Full Text Search extensions
-AC_ARG_ENABLE(fts3, AS_HELP_STRING([--enable-fts3],[Enable the FTS3 extension]))
+AC_ARG_ENABLE(fts3, AS_HELP_STRING([--enable-fts3],
+      [Enable the FTS3 extension]))
 AC_MSG_CHECKING([whether to support FTS3])
 if test "${enable_fts3}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_FTS3"
@@ -699,7 +754,8 @@ if test "${enable_fts3}" = "yes" ; then
 else
   AC_MSG_RESULT([no])
 fi
-AC_ARG_ENABLE(fts4, AS_HELP_STRING([--enable-fts4],[Enable the FTS4 extension]))
+AC_ARG_ENABLE(fts4, AS_HELP_STRING([--enable-fts4],
+      [Enable the FTS4 extension]))
 AC_MSG_CHECKING([whether to support FTS4])
 if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
   AC_MSG_RESULT([yes])
@@ -708,7 +764,8 @@ if test "${enable_fts4}" = "yes" -o "${enable_all}" = "yes" ; then
 else
   AC_MSG_RESULT([no])
 fi
-AC_ARG_ENABLE(fts5, AS_HELP_STRING([--enable-fts5],[Enable the FTS5 extension]))
+AC_ARG_ENABLE(fts5, AS_HELP_STRING([--enable-fts5],
+      [Enable the FTS5 extension]))
 AC_MSG_CHECKING([whether to support FTS5])
 if test "${enable_fts5}" = "yes" -o "${enable_all}" = "yes" ; then
   AC_MSG_RESULT([yes])
@@ -721,7 +778,8 @@ fi
 #########
 # See whether we should enable the LIMIT clause on UPDATE and DELETE
 # statements.
-AC_ARG_ENABLE(update-limit, AS_HELP_STRING([--enable-update-limit],[Enable the UPDATE/DELETE LIMIT clause]))
+AC_ARG_ENABLE(update-limit, AS_HELP_STRING([--enable-update-limit],
+      [Enable the UPDATE/DELETE LIMIT clause]))
 AC_MSG_CHECKING([whether to support LIMIT on UPDATE and DELETE statements])
 if test "${enable_update_limit}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_UPDATE_DELETE_LIMIT"
@@ -732,7 +790,8 @@ fi
 
 #########
 # See whether we should enable GEOPOLY
-AC_ARG_ENABLE(geopoly, AS_HELP_STRING([--enable-geopoly],[Enable the GEOPOLY extension]),
+AC_ARG_ENABLE(geopoly, AS_HELP_STRING([--enable-geopoly],
+      [Enable the GEOPOLY extension]),
       [enable_geopoly=yes],[enable_geopoly=no])
 AC_MSG_CHECKING([whether to support GEOPOLY])
 if test "${enable_geopoly}" = "yes" -o "${enable_all}" = "yes" ; then
@@ -745,7 +804,8 @@ fi
 
 #########
 # See whether we should enable RTREE
-AC_ARG_ENABLE(rtree, AS_HELP_STRING([--enable-rtree],[Enable the RTREE extension]))
+AC_ARG_ENABLE(rtree, AS_HELP_STRING([--enable-rtree],
+      [Enable the RTREE extension]))
 AC_MSG_CHECKING([whether to support RTREE])
 if test "${enable_rtree}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_RTREE"
@@ -756,7 +816,8 @@ fi
 
 #########
 # See whether we should enable the SESSION extension
-AC_ARG_ENABLE(session, AS_HELP_STRING([--enable-session],[Enable the SESSION extension]))
+AC_ARG_ENABLE(session, AS_HELP_STRING([--enable-session],
+      [Enable the SESSION extension]))
 AC_MSG_CHECKING([whether to support SESSION])
 if test "${enable_session}" = "yes" -o "${enable_all}" = "yes" ; then
   OPT_FEATURE_FLAGS="${OPT_FEATURE_FLAGS} -DSQLITE_ENABLE_SESSION"
@@ -819,7 +880,8 @@ BUILD_CFLAGS=$ac_temp_BUILD_CFLAGS
 
 #########
 # See whether we should use GCOV
-AC_ARG_ENABLE(gcov, AS_HELP_STRING([--enable-gcov],[Enable coverage testing using gcov]))
+AC_ARG_ENABLE(gcov, AS_HELP_STRING([--enable-gcov],
+      [Enable coverage testing using gcov]))
 if test "${use_gcov}" = "yes" ; then
   USE_GCOV=1
 else

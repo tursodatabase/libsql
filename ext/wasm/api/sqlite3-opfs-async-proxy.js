@@ -50,10 +50,10 @@
 const wPost = (type,...args)=>postMessage({type, payload:args});
 const installAsyncProxy = function(self){
   const toss = function(...args){throw new Error(args.join(' '))};
-  if(self.window === self){
+  if(globalThis.window === globalThis){
     toss("This code cannot run from the main thread.",
          "Load it as a Worker from a separate Worker.");
-  }else if(!navigator.storage.getDirectory){
+  }else if(!navigator?.storage?.getDirectory){
     toss("This API requires navigator.storage.getDirectory.");
   }
 
@@ -106,8 +106,8 @@ const installAsyncProxy = function(self){
       w += m.wait;
       m.avgTime = (m.count && m.time) ? (m.time / m.count) : 0;
     }
-    console.log(self.location.href,
-                "metrics for",self.location.href,":\n",
+    console.log(globalThis?.location?.href,
+                "metrics for",globalThis?.location?.href,":\n",
                 metrics,
                 "\nTotal of",n,"op(s) for",t,"ms",
                 "approx",w,"ms spent waiting on OPFS APIs.");
@@ -843,7 +843,7 @@ const installAsyncProxy = function(self){
 
   navigator.storage.getDirectory().then(function(d){
     state.rootDir = d;
-    self.onmessage = function({data}){
+    globalThis.onmessage = function({data}){
       switch(data.type){
           case 'opfs-async-init':{
             /* Receive shared state from synchronous partner */
@@ -880,17 +880,17 @@ const installAsyncProxy = function(self){
     wPost('opfs-async-loaded');
   }).catch((e)=>error("error initializing OPFS asyncer:",e));
 }/*installAsyncProxy()*/;
-if(!self.SharedArrayBuffer){
+if(!globalThis.SharedArrayBuffer){
   wPost('opfs-unavailable', "Missing SharedArrayBuffer API.",
         "The server must emit the COOP/COEP response headers to enable that.");
-}else if(!self.Atomics){
+}else if(!globalThis.Atomics){
   wPost('opfs-unavailable', "Missing Atomics API.",
         "The server must emit the COOP/COEP response headers to enable that.");
-}else if(!self.FileSystemHandle ||
-         !self.FileSystemDirectoryHandle ||
-         !self.FileSystemFileHandle ||
-         !self.FileSystemFileHandle.prototype.createSyncAccessHandle ||
-         !navigator.storage.getDirectory){
+}else if(!globalThis.FileSystemHandle ||
+         !globalThis.FileSystemDirectoryHandle ||
+         !globalThis.FileSystemFileHandle ||
+         !globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle ||
+         !navigator?.storage?.getDirectory){
   wPost('opfs-unavailable',"Missing required OPFS APIs.");
 }else{
   installAsyncProxy(self);

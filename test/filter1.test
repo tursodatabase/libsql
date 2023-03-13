@@ -220,6 +220,18 @@ do_execsql_test 7.1 {
   444 {} 120000
 }
 
-
+# 2023-02-17 dbsqlfuzz 4f8e0de6e272bbbb3e1b41cb5aea31e0b47297e3
+# count() with FILTER clause using the COUNTOFVIEW optimization.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t0(c0 INT);
+  CREATE TABLE t1a(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1a VALUES(1,'one'),(2,NULL),(3,'three');
+  CREATE TABLE t1b(c INTEGER PRIMARY KEY, d TEXT);
+  INSERT INTO t1b VALUES(4,'four'),(5,NULL),(6,'six');
+  CREATE VIEW t1 AS SELECT a, b FROM t1a UNION ALL SELECT c, d FROM t1b;
+  SELECT count()FILTER(WHERE b IS NULL) FROM t1;
+} 2
 
 finish_test
