@@ -94,37 +94,6 @@ impl Statement {
         }
     }
 
-    /// Returns a statement instance without performing any validation to the input
-    /// It is always assumed that such a statement will be a write, and will always be handled by
-    /// the primary
-    pub fn new_unchecked(stmt: String) -> Self {
-        Self {
-            stmt,
-            kind: StmtKind::Write,
-            is_iud: false,
-            is_insert: false,
-        }
-    }
-
-    /// parses a series of statements into unchecked statemments
-    pub fn parse_unchecked(s: &[u8]) -> impl Iterator<Item = Result<Self>> + '_ {
-        let mut parser = Box::new(Parser::new(s));
-        std::iter::from_fn(move || match parser.next() {
-            Ok(Some(cmd)) => Some(Ok(Self::new_unchecked(cmd.to_string()))),
-            Ok(None) => None,
-            Err(sqlite3_parser::lexer::sql::Error::ParserError(
-                ParserError::SyntaxError {
-                    token_type: _,
-                    found: Some(found),
-                },
-                Some((line, col)),
-            )) => Some(Err(anyhow::anyhow!(
-                "syntax error around L{line}:{col}: `{found}`"
-            ))),
-            Err(e) => Some(Err(e.into())),
-        })
-    }
-
     pub fn parse(s: &str) -> impl Iterator<Item = Result<Self>> + '_ {
         fn parse_inner(c: Cmd) -> Result<Statement> {
             let kind =
