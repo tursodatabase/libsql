@@ -9,7 +9,7 @@
   *   May you share freely, never taking more than you give.
 
   ***********************************************************************
-  
+
   Demonstration of the sqlite3 Worker API #1 Promiser: a Promise-based
   proxy for for the sqlite3 Worker #1 API.
 */
@@ -81,7 +81,7 @@
     });
     logHtml('',
             "Sending 'open' message and waiting for its response before continuing...");
-    
+
     await wtest('open', {
       filename: dbFilename,
       simulateError: 0 /* if true, fail the 'open' */,

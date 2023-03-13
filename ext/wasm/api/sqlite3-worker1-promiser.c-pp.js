@@ -114,7 +114,7 @@
    by all client code except that which tests this API. The `row`
    property contains the row result in the form implied by the
    `rowMode` option (defaulting to `'array'`). The `rowNumber` is a
-   1-based integer value incremented by 1 on each call into th 
+   1-based integer value incremented by 1 on each call into the
    callback.
 
    At the end of the result set, the same event is fired with
@@ -122,8 +122,17 @@
    the end of the result set has been reached. Note that the rows
    arrive via worker-posted messages, with all the implications
    of that.
+
+   Notable shortcomings:
+
+   - This API was not designed with ES6 modules in mind. Neither Firefox
+     nor Safari support, as of March 2023, the {type:"module"} flag to the
+     Worker constructor, so that particular usage is not something we're going
+     to target for the time being:
+
+     https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker
 */
-self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
+globalThis.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
   // Inspired by: https://stackoverflow.com/a/52439530
   if(1===arguments.length && 'function'===typeof arguments[0]){
     const f = config;
@@ -160,7 +169,7 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
       if(msgHandler && msgHandler.onrow){
         msgHandler.onrow(ev);
         return;
-      }        
+      }
       if(config.onunhandled) config.onunhandled(arguments[0]);
       else err("sqlite3Worker1Promiser() unhandled worker message:",ev);
       return;
@@ -236,28 +245,31 @@ self.sqlite3Worker1Promiser = function callee(config = callee.defaultConfig){
     return p;
   };
 }/*sqlite3Worker1Promiser()*/;
-self.sqlite3Worker1Promiser.defaultConfig = {
+globalThis.sqlite3Worker1Promiser.defaultConfig = {
   worker: function(){
 //#if target=es6-bundler-friendly
-    return new Worker("sqlite3-worker1.js");
+    return new Worker("sqlite3-worker1-bundler-friendly.mjs",{
+      type: 'module' /* Noting that neither Firefox nor Safari suppor this,
+                        as of this writing. */
+    });
 //#else
     let theJs = "sqlite3-worker1.js";
     if(this.currentScript){
       const src = this.currentScript.src.split('/');
       src.pop();
       theJs = src.join('/')+'/' + theJs;
-      //console.warn("promiser currentScript, theJs =",this.currentScript,theJs);
-    }else{
-      //console.warn("promiser self.location =",self.location);
-      const urlParams = new URL(self.location.href).searchParams;
+      //sqlite3.config.warn("promiser currentScript, theJs =",this.currentScript,theJs);
+    }else if(globalThis.location){
+      //sqlite3.config.warn("promiser globalThis.location =",globalThis.location);
+      const urlParams = new URL(globalThis.location.href).searchParams;
       if(urlParams.has('sqlite3.dir')){
         theJs = urlParams.get('sqlite3.dir') + '/' + theJs;
       }
     }
-    return new Worker(theJs + self.location.search);
+    return new Worker(theJs + globalThis.location.search);
 //#endif
   }.bind({
-    currentScript: self?.document?.currentScript
+    currentScript: globalThis?.document?.currentScript
   }),
   onerror: (...args)=>console.error('worker1 promiser error',...args)
 };

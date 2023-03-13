@@ -104,6 +104,7 @@ do_eqp_test rtree6.2.4.1 {
 } {
   QUERY PLAN
   |--SCAN t1 VIRTUAL TABLE INDEX 2:C0E1
+  |--BLOOM FILTER ON t2 (v=?)
   `--SEARCH t2 USING AUTOMATIC COVERING INDEX (v=?)
 }
 do_eqp_test rtree6.2.4.2 {
@@ -111,6 +112,7 @@ do_eqp_test rtree6.2.4.2 {
 } {
   QUERY PLAN
   |--SCAN t1 VIRTUAL TABLE INDEX 2:C0E1
+  |--BLOOM FILTER ON t2 (v=?)
   `--SEARCH t2 USING AUTOMATIC PARTIAL COVERING INDEX (v=?)
 }
 

@@ -189,5 +189,24 @@ do_execsql_test 610 {
     AND A.RunYearMonth = B.RunYearMonth;
 } {4 202004 4 202004 5 202004 5 202004}
 
+# 2023-02-10 https://sqlite.org/forum/forumpost/0a539c76db3b9e29
+# The original constant propagation implementation caused a performance
+# regression.  Because "abs(v)" was rewritten into "abs(1)" it no longer
+# matches the indexed column and the index is not used.
+# 
+reset_db
+do_execsql_test 700 {
+  CREATE TABLE t1(v INTEGER);
+  WITH RECURSIVE c(x) AS (VALUES(-10) UNION ALL SELECT x+1 FROM c WHERE x<10)
+    INSERT INTO t1(v) SELECT x FROM c;
+  CREATE INDEX idx ON t1( abs(v) );
+  SELECT v FROM t1 WHERE abs(v)=1 and v=1;
+} 1
+do_eqp_test 710 {
+  SELECT v FROM t1 WHERE abs(v)=1 and v=1;
+} {
+  QUERY PLAN
+  `--SEARCH t1 USING INDEX idx (<expr>=?)
+}
 
 finish_test

@@ -410,7 +410,7 @@ do_execsql_test 10.3 {
   one,two
 }
 
-ifcapable json1 {
+ifcapable json1&&vtab {
 if {[permutation]!="no_optimization"} {
 
   do_execsql_test 11.0 {

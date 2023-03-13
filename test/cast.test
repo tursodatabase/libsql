@@ -539,20 +539,22 @@ do_execsql_test cast-10.6 {
   SELECT * FROM dual CROSS JOIN (SELECT CAST(44 AS REAL) AS 'm'
                                  UNION ALL SELECT 55);
 } {X 44.0 X 55}
-do_execsql_test cast-10.7 {
-  DROP VIEW v1;
-  CREATE VIEW v1 AS SELECT CAST(44 AS REAL) AS 'm' UNION ALL SELECT 55;
-  SELECT name, type FROM pragma_table_info('v1');
-} {m NUM}
-do_execsql_test cast-10.8 {
-  CREATE VIEW v2 AS VALUES(CAST(44 AS REAL)),(55);
-  SELECT type FROM pragma_table_info('v2');
-} {NUM}
-do_execsql_test cast-10.9 {
-  SELECT * FROM v1;
-} {44.0 55}
-do_execsql_test cast-10.10 {
-  SELECT * FROM v2;
-} {44.0 55}
+ifcapable vtab {
+  do_execsql_test cast-10.7 {
+    DROP VIEW v1;
+    CREATE VIEW v1 AS SELECT CAST(44 AS REAL) AS 'm' UNION ALL SELECT 55;
+    SELECT name, type FROM pragma_table_info('v1');
+  } {m NUM}
+  do_execsql_test cast-10.8 {
+    CREATE VIEW v2 AS VALUES(CAST(44 AS REAL)),(55);
+    SELECT type FROM pragma_table_info('v2');
+  } {NUM}
+  do_execsql_test cast-10.9 {
+    SELECT * FROM v1;
+  } {44.0 55}
+  do_execsql_test cast-10.10 {
+    SELECT * FROM v2;
+  } {44.0 55}
+}
 
 finish_test

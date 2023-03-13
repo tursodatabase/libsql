@@ -565,6 +565,32 @@ do_execsql_test indexexpr1-2030 {
     FROM t1;
 } {/.*SCAN t1 USING INDEX t1x.*/}
 
+reset_db
+do_execsql_test indexexpr1-2100 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  INSERT INTO t1(a,b) VALUES(1,0);
+  CREATE INDEX x1 ON t1( "y" );
+  CREATE INDEX x2 ON t1( +"y" );
+  CREATE INDEX x3 ON t1( +'y' );
+  CREATE INDEX x4 ON t1( "y*" );
+}
+do_execsql_test indexexpr1-2110 {
+  UPDATE t1 SET b=100 WHERE (SELECT 'y') GLOB "y";
+  SELECT b FROM t1;
+} 100
+do_execsql_test indexexpr1-2120 {
+  UPDATE t1 SET b=200 WHERE (SELECT 'y') GLOB +"y";
+  SELECT b FROM t1;
+} 200
+do_execsql_test indexexpr1-2130 {
+  UPDATE t1 SET b=300 WHERE (SELECT 'y') GLOB +'y';
+  SELECT b FROM t1;
+} 300
+do_execsql_test indexexpr1-2140 {
+  UPDATE t1 SET b=400 WHERE (SELECT 'y') GLOB "y*";
+  SELECT b FROM t1;
+} 400
+
 
 
 finish_test

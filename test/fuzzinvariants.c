@@ -115,6 +115,8 @@ int fuzz_invariant(
   if( rc==SQLITE_DONE ){
     /* No matching output row found */
     sqlite3_stmt *pCk = 0;
+    int iOrigRSO;
+
 
     /* This is not a fault if the database file is corrupt, because anything
     ** can happen with a corrupt database file */
@@ -136,28 +138,24 @@ int fuzz_invariant(
     }
     sqlite3_finalize(pCk);
 
-    if( sqlite3_strlike("%group%by%",sqlite3_sql(pStmt),0)==0 ){
-      /* 
-      ** If there is a GROUP BY clause, it might not cover every term in the
-      ** output.  And then non-covered terms can take on a value from any
-      ** row in the result set.  This can cause differing answers.
-      */
-      goto not_a_fault;
+    /*
+    ** If inverting the scan order also results in a miss, assume that the
+    ** query is ambiguous and do not report a fault.
+    */
+    sqlite3_db_config(db, SQLITE_DBCONFIG_REVERSE_SCANORDER, -1, &iOrigRSO);
+    sqlite3_db_config(db, SQLITE_DBCONFIG_REVERSE_SCANORDER, !iOrigRSO, 0);
+    sqlite3_prepare_v2(db, sqlite3_sql(pStmt), -1, &pCk, 0);
+    sqlite3_db_config(db, SQLITE_DBCONFIG_REVERSE_SCANORDER, iOrigRSO, 0);
+    while( (rc = sqlite3_step(pCk))==SQLITE_ROW ){
+      for(i=0; i<nCol; i++){
+        if( !sameValue(pStmt, i, pTestStmt, i, 0) ) break;
+      }
+      if( i>=nCol ) break;
     }
-
-    if( sqlite3_strlike("%limit%)%order%by%", sqlite3_sql(pTestStmt),0)==0 ){
-      /* crash-89bd6a6f8c6166e9a4c5f47b3e70b225f69b76c6
-      ** Original statement is:
-      **
-      **    SELECT a,b,c* FROM t1 LIMIT 1%5<4
-      **
-      ** When running:
-      **
-      **    SELECT * FROM (...) ORDER BY 1
-      **
-      ** A different subset of the rows come out
-      */
-      goto not_a_fault;
+    sqlite3_finalize(pCk);
+    if( rc==SQLITE_DONE ){
+      sqlite3_finalize(pTestStmt);
+      return SQLITE_DONE;
     }
 
     /* The original sameValue() comparison assumed a collating sequence

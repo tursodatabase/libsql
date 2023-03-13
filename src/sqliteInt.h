@@ -224,8 +224,8 @@
 #endif
 
 /*
-** WAL mode depends on atomic aligned 32-bit loads and stores in a few
-** places.  The following macros try to make this explicit.
+** A few places in the code require atomic load/store of aligned
+** integer values.
 */
 #ifndef __has_extension
 # define __has_extension(x) 0     /* compatibility with non-clang compilers */
@@ -819,15 +819,9 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 
 /*
 ** The datatype used to store estimates of the number of rows in a
-** table or index.  This is an unsigned integer type.  For 99.9% of
-** the world, a 32-bit integer is sufficient.  But a 64-bit integer
-** can be used at compile-time if desired.
+** table or index.
 */
-#ifdef SQLITE_64BIT_STATS
- typedef u64 tRowcnt;    /* 64-bit only if requested at compile-time */
-#else
- typedef u32 tRowcnt;    /* 32-bit is the default */
-#endif
+typedef u64 tRowcnt;
 
 /*
 ** Estimated quantities used for query planning are stored as 16-bit
@@ -1779,7 +1773,7 @@ struct sqlite3 {
 #define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */
 #define SQLITE_IgnoreChecks   0x00000200  /* Do not enforce check constraints */
-#define SQLITE_ReadUncommit   0x00000400  /* READ UNCOMMITTED in shared-cache */
+#define SQLITE_StmtScanStatus 0x00000400  /* Enable stmt_scanstats() counters */
 #define SQLITE_NoCkptOnClose  0x00000800  /* No checkpoint on close()/DETACH */
 #define SQLITE_ReverseOrder   0x00001000  /* Reverse unordered SELECTs */
 #define SQLITE_RecTriggers    0x00002000  /* Enable recursive triggers */
@@ -1805,6 +1799,7 @@ struct sqlite3 {
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
 #define SQLITE_CorruptRdOnly  HI(0x00002) /* Prohibit writes due to error */
+#define SQLITE_ReadUncommit   HI(0x00004) /* READ UNCOMMITTED in shared-cache */
 
 /* Flags used only if debugging */
 #ifdef SQLITE_DEBUG
@@ -1861,6 +1856,7 @@ struct sqlite3 {
    /* TH3 expects this value  ^^^^^^^^^^ See flatten04.test */
 #define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
 #define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
+#define SQLITE_NullUnusedCols 0x04000000 /* NULL unused columns in subqueries */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -3686,6 +3682,7 @@ struct IndexedExpr {
   int iIdxCur;            /* The index cursor */
   int iIdxCol;            /* The index column that contains value of pExpr */
   u8 bMaybeNullRow;       /* True if we need an OP_IfNullRow check */
+  u8 aff;                 /* Affinity of the pExpr expression */
   IndexedExpr *pIENext;   /* Next in a list of all indexed expressions */
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   const char *zIdxName;   /* Name of index, used only for bytecode comments */
@@ -5604,6 +5601,12 @@ int sqlite3KvvfsInit(void);
  || defined(SQLITE_PERFORMANCE_TRACE) \
  || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 sqlite3_uint64 sqlite3Hwtime(void);
+#endif
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+# define IS_STMT_SCANSTATUS(db) (db->flags & SQLITE_StmtScanStatus)
+#else
+# define IS_STMT_SCANSTATUS(db) 0
 #endif
 
 #endif /* SQLITEINT_H */

@@ -19,7 +19,7 @@
 
 */
 'use strict';
-self.Jaccwabyt = function StructBinderFactory(config){
+globalThis.Jaccwabyt = function StructBinderFactory(config){
 /* ^^^^ it is recommended that clients move that object into wherever
    they'd like to have it and delete the self-held copy ("self" being
    the global window or worker object).  This API does not require the

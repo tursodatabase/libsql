@@ -2012,6 +2012,7 @@ void sqlite3AddGenerated(Parse *pParse, Expr *pExpr, Token *pType){
     ** turn it into one by adding a unary "+" operator. */
     pExpr = sqlite3PExpr(pParse, TK_UPLUS, pExpr, 0);
   }
+  if( pExpr && pExpr->op!=TK_RAISE ) pExpr->affExpr = pCol->affinity;
   sqlite3ColumnSetExpr(pParse, pTab, pCol, pExpr);
   pExpr = 0;
   goto generated_done;

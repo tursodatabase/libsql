@@ -1514,9 +1514,10 @@ do_createtable_tests 4.14 -error {NOT NULL constraint failed: %s} {
   5    "INSERT INTO t3 VALUES(NULL, 'g', 'h')"    {t3.a}
 }
 
-# EVIDENCE-OF: R-42511-39459 PRIMARY KEY, UNIQUE and NOT NULL
-# constraints may be explicitly assigned a default conflict resolution
-# algorithm by including a conflict-clause in their definitions.
+# EVIDENCE-OF: R-34093-09213 PRIMARY KEY, UNIQUE and NOT NULL
+# constraints may be explicitly assigned another default conflict
+# resolution algorithm by including a conflict-clause in their
+# definitions.
 #
 #     Conflict clauses: ABORT, ROLLBACK, IGNORE, FAIL, REPLACE
 #
@@ -1631,9 +1632,9 @@ foreach {tn tbl res ac data} {
 }
 catchsql COMMIT
 
-# EVIDENCE-OF: R-12645-39772 Or, if a constraint definition does not
-# include a conflict-clause or it is a CHECK constraint, the default
-# conflict resolution algorithm is ABORT.
+# EVIDENCE-OF: R-17539-59899 Or, if a constraint definition does not
+# include a conflict-clause, the default conflict resolution algorithm
+# is ABORT.
 #
 #     The first half of the above is tested along with explicit ON 
 #     CONFLICT clauses above (specifically, the tests involving t1_xx, t2_xx

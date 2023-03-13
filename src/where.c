@@ -831,7 +831,7 @@ static void explainAutomaticIndex(
   int bPartial,                   /* True if pIdx is a partial index */
   int *pAddrExplain               /* OUT: Address of OP_Explain */
 ){
-  if( pParse->explain!=2 ){
+  if( IS_STMT_SCANSTATUS(pParse->db) && pParse->explain!=2 ){
     Table *pTab = pIdx->pTable;
     const char *zSep = "";
     char *zText = 0;
@@ -892,7 +892,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   char *zNotUsed;             /* Extra space on the end of pIdx */
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
   Bitmask extraCols;          /* Bitmap of additional columns */
-  u8 sentWarning = 0;         /* True if a warnning has been issued */
+  u8 sentWarning = 0;         /* True if a warning has been issued */
+  u8 useBloomFilter = 0;      /* True to also add a Bloom filter */
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
   SrcItem *pTabItem;          /* FROM clause term being indexed */
@@ -998,6 +999,16 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
         assert( pColl!=0 || pParse->nErr>0 ); /* TH3 collate01.800 */
         pIdx->azColl[n] = pColl ? pColl->zName : sqlite3StrBINARY;
         n++;
+        if( ALWAYS(pX->pLeft!=0)
+         && sqlite3ExprAffinity(pX->pLeft)!=SQLITE_AFF_TEXT
+        ){
+          /* TUNING: only use a Bloom filter on an automatic index
+          ** if one or more key columns has the ability to hold numeric
+          ** values, since strings all have the same hash in the Bloom
+          ** filter implementation and hence a Bloom filter on a text column
+          ** is not usually helpful. */
+          useBloomFilter = 1;
+        }
       }
     }
   }
@@ -1030,7 +1041,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1);
   sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
   VdbeComment((v, "for %s", pTable->zName));
-  if( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) ){
+  if( OptimizationEnabled(pParse->db, SQLITE_BloomFilter) && useBloomFilter ){
+    sqlite3WhereExplainBloomFilter(pParse, pWC->pWInfo, pLevel);
     pLevel->regFilter = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Blob, 10000, pLevel->regFilter);
   }
@@ -1621,12 +1633,12 @@ static int whereKeyStats(
       if( iCol>0 ){
         pRec->nField = iCol;
         assert( sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec)<=0
-             || pParse->db->mallocFailed );
+             || pParse->db->mallocFailed || CORRUPT_DB );
       }
       if( i>0 ){
         pRec->nField = nField;
         assert( sqlite3VdbeRecordCompare(aSample[i-1].n, aSample[i-1].p, pRec)<0
-             || pParse->db->mallocFailed );
+             || pParse->db->mallocFailed || CORRUPT_DB );
       }
     }
   }
@@ -2123,7 +2135,7 @@ static int whereInScanEst(
   }
 
   if( rc==SQLITE_OK ){
-    if( nRowEst > nRow0 ) nRowEst = nRow0;
+    if( nRowEst > (tRowcnt)nRow0 ) nRowEst = nRow0;
     *pnRow = nRowEst;
     WHERETRACE(0x20,("IN row estimate: est=%d\n", nRowEst));
   }
@@ -5694,6 +5706,9 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
     p->iIdxCur = iIdxCur;
     p->iIdxCol = i;
     p->bMaybeNullRow = bMaybeNullRow;
+    if( sqlite3IndexAffinityStr(pParse->db, pIdx) ){
+      p->aff = pIdx->zColAff[i];
+    }
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
     p->zIdxName = pIdx->zName;
 #endif

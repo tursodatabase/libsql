@@ -55,6 +55,7 @@ foreach {tn like res} {
   6 {abc%klm}  1
   7 {ABCDEFG%} 1
   8 {%รุงเ%}    2
+  9 {%งเ%}     2
 } {
   do_execsql_test 1.3.$tn {
     SELECT rowid FROM t1 WHERE y LIKE $like
@@ -196,5 +197,22 @@ do_eqp_test 6.3 {
 do_eqp_test 6.4 {
   SELECT * FROM ci1 WHERE x GLOB ?
 } {VIRTUAL TABLE INDEX 0:G0}
+
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE f USING FTS5(filename, tokenize="trigram");
+  INSERT INTO f (rowid, filename) VALUES 
+      (10, "giraffe.png"), 
+      (20, "жираф.png"), 
+      (30, "cat.png"), 
+      (40, "кот.png"), 
+      (50, "misic-🎵-.mp3");
+}
+do_execsql_test 7.1 {
+  SELECT rowid FROM f WHERE +filename GLOB '*ир*';
+} {20}
+do_execsql_test 7.2 {
+  SELECT rowid FROM f WHERE filename GLOB '*ир*';
+} {20}
 
 finish_test

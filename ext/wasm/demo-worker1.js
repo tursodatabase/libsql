@@ -62,7 +62,7 @@
       return this.queue.shift();
     }
   };
-  
+
   const testCount = ()=>{
     logHtml("","Total test count:",T.counter+". Total time =",(performance.now() - startTime),"ms");
   };
@@ -74,7 +74,7 @@
             (ev.workerRespondTime - ev.workerReceivedTime),"ms.",
             "Round-trip event time =",
             (performance.now() - ev.departureTime),"ms.",
-            (evd.errorClass ? ev.message : "")//, JSON.stringify(evd)
+            (evd.errorClass ? evd.message : "")//, JSON.stringify(evd)
            );
   };
 

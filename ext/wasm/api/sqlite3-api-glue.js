@@ -16,13 +16,13 @@
   initializes the main API pieces so that the downstream components
   (e.g. sqlite3-api-oo1.js) have all that they need.
 */
-self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   'use strict';
   const toss = (...args)=>{throw new Error(args.join(' '))};
   const toss3 = sqlite3.SQLite3Error.toss;
   const capi = sqlite3.capi, wasm = sqlite3.wasm, util = sqlite3.util;
-  self.WhWasmUtilInstaller(wasm);
-  delete self.WhWasmUtilInstaller;
+  globalThis.WhWasmUtilInstaller(wasm);
+  delete globalThis.WhWasmUtilInstaller;
 
   if(0){
     /**
@@ -327,6 +327,15 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     wasm.bindingSignatures.push(["sqlite3_normalized_sql", "string", "sqlite3_stmt*"]);
   }
 
+  if(wasm.exports.sqlite3_activate_see instanceof Function){
+    wasm.bindingSignatures.push(
+      ["sqlite3_key", "int", "sqlite3*", "string", "int"],
+      ["sqlite3_key_v2","int","sqlite3*","string","*","int"],
+      ["sqlite3_rekey", "int", "sqlite3*", "string", "int"],
+      ["sqlite3_rekey_v2", "int", "sqlite3*", "string", "*", "int"],
+      ["sqlite3_activate_see", undefined, "string"]
+    );
+  }
   /**
      Functions which require BigInt (int64) support are separated from
      the others because we need to conditionally bind them or apply
@@ -605,7 +614,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   /**
      Install JS<->C struct bindings for the non-opaque struct types we
      need... */
-  sqlite3.StructBinder = self.Jaccwabyt({
+  sqlite3.StructBinder = globalThis.Jaccwabyt({
     heap: 0 ? wasm.memory : wasm.heap8u,
     alloc: wasm.alloc,
     dealloc: wasm.dealloc,
@@ -613,7 +622,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     memberPrefix: /* Never change this: this prefix is baked into any
                      amount of code and client-facing docs. */ '$'
   });
-  delete self.Jaccwabyt;
+  delete globalThis.Jaccwabyt;
 
   {// wasm.xWrap() bindings...
 

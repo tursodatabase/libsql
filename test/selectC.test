@@ -230,6 +230,11 @@ do_execsql_test selectC-4.2 {
   select a from (select distinct a, b from t_distinct_bug)
 } {1 1 1}
 
+do_execsql_test selectC-4.2b {
+  CREATE VIEW v42b AS SELECT DISTINCT a, b FROM t_distinct_bug;
+  SELECT a FROM v42b;
+} {1 1 1}
+
 do_execsql_test selectC-4.3 {
   select a, udf() from (select distinct a, b from t_distinct_bug)
 } {1 1 1 2 1 3}

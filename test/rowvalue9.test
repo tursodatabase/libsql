@@ -308,6 +308,46 @@ do_catchsql_test 8.2 {
   SELECT a FROM t1 NATURAL JOIN t1 WHERE (a,b)> (SELECT 2 IN (SELECT 2,2), 2);
 } {1 {sub-select returns 2 columns - expected 1}}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 9.0 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 1), (1, 2), (2, 2), (2, 3), (3, 3), (3, 4), (4, 4);
+}
+
+do_execsql_test 9.1 {
+  SELECT * FROM t1 WHERE (a, b) IN ( (3, 3), (2, 2) );
+} {
+  2 2 3 3
+}
+do_execsql_test 9.2 {
+  CREATE INDEX i1 ON t1(a);
+}
+
+do_execsql_test 9.4 {
+  SELECT * FROM t1 WHERE (a, b) IN ( (3, 3), (2, 2) );
+} {
+  2 2 3 3
+}
+do_eqp_test 9.4e {
+  SELECT * FROM t1 WHERE (a, b) IN ( (3, 3), (2, 2) );
+} {
+  *SEARCH t1 USING INDEX i1*
+}
+
+do_execsql_test 9.5 {
+  CREATE INDEX i2 ON t1(b, a);
+  SELECT * FROM t1 WHERE (a, b) IN ( (3, 3), (2, 2) );
+} {
+  2 2 3 3
+}
+do_eqp_test 9.5e {
+  SELECT * FROM t1 WHERE (a, b) IN ( (3, 3), (2, 2) );
+} {
+  *SEARCH t1 USING COVERING INDEX i2*
+}
+
 
 finish_test
 

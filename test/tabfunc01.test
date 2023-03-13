@@ -270,6 +270,7 @@ do_test tabfunc01-750 {
 } {5.0 x5 | 7.0 x7 | 13.0 x13 | 17.0 x17 | 23.0 x23 |}
 
 # ticket https://www.sqlite.org/src/info/2ae0c599b735d59e
+# Verification of testtag-20230227a
 do_test tabfunc01-751 {
   db eval {
     SELECT aa.value, bb.value, '|'

@@ -615,4 +615,58 @@ do_execsql_test gencol1-22.1 {
      AND (y.a=2 OR (x.b LIKE '2*' AND y.a=x.b));
 } {2 2 2 2}
 
+
+# 2023-03-02 dbsqlfuzz 65f5eb57f8859344d5f1f33e08c77ee12960ed83
+#
+set typelist {ANY INT REAL BLOB TEXT {}}
+set cnt 0
+foreach t1 $typelist {
+  foreach t2 $typelist {
+    incr cnt
+    db eval "
+      DROP TABLE IF EXISTS t1;
+      CREATE TABLE t1(
+        x $t1,
+        a $t2 AS (x) VIRTUAL,
+        b BLOB AS (x) VIRTUAL
+      );
+      CREATE INDEX x2 ON t1(a);
+      INSERT INTO t1(x) VALUES(NULL),('1'),(2),(3.5),('xyz');
+    "
+    set x1 [lsort [db eval {SELECT typeof(b) FROM t1}]]
+    do_test gencol1-23.1.$cnt {
+      lsort [db eval {SELECT typeof(b) FROM t1 INDEXED BY x2}]
+    } $x1
+  }
+}
+do_execsql_test gencol1-23.2 {
+  DROP TABLE t1;
+  CREATE TABLE t1(
+    x,
+    a INT AS (x) VIRTUAL,
+    b BLOB AS (x) VIRTUAL
+  );
+  CREATE INDEX x2 ON t1(a);
+  INSERT INTO t1(x) VALUES(NULL),('1'),('xyz'),(2),(3.5);
+  SELECT quote(a) FROM t1 INDEXED BY x2;
+} {NULL 1 2 3.5 'xyz'}
+do_execsql_test gencol1-23.3 {
+  EXPLAIN SELECT a FROM t1 INDEXED BY x2;
+} {~/Column 0/}
+#    ^^^^^^^^---- verfies that x2 acts like a covering index
+do_execsql_test gencol1-23.4 {
+  EXPLAIN SELECT b FROM t1 INDEXED BY x2;
+} {/Column 0/}
+#  ^^^^^^^^^^--- Must reference the original table in this case because
+# of the different datatype on column b.
+
+# 2023-03-07 https://sqlite.org/forum/forumpost/b312e075b5
+#
+do_execsql_test gencol1-23.5 {
+  CREATE TABLE v0(c1 INT, c2 AS (RAISE(IGNORE)));
+}
+do_catchsql_test gencol1-23.6 {
+  SELECT * FROM v0;
+} {1 {RAISE() may only be used within a trigger-program}}
+
 finish_test

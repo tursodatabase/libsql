@@ -622,16 +622,20 @@ do_execsql_test pragma-3.40 {
      SET rootpage=(SELECT rootpage FROM saved_schema WHERE name='t1bcd')
    WHERE name='t2bcd';
   PRAGMA Writable_schema=RESET;
-  SELECT integrity_check AS x FROM pragma_integrity_check ORDER BY 1;
-} {
-  {row 2 missing from index t1bcd}
-  {row 2 missing from index t2bcd}
-  {row 3 values differ from index t1bcd}
-  {row 3 values differ from index t2bcd}
-  {row 4 values differ from index t1bcd}
-  {row 4 values differ from index t2bcd}
-  {row 5 values differ from index t1bcd}
-  {row 5 values differ from index t2bcd}
+}
+ifcapable vtab {
+  do_execsql_test pragma-3.41 {
+    SELECT integrity_check AS x FROM pragma_integrity_check ORDER BY 1;
+  } {
+    {row 2 missing from index t1bcd}
+    {row 2 missing from index t2bcd}
+    {row 3 values differ from index t1bcd}
+    {row 3 values differ from index t2bcd}
+    {row 4 values differ from index t1bcd}
+    {row 4 values differ from index t2bcd}
+    {row 5 values differ from index t1bcd}
+    {row 5 values differ from index t2bcd}
+  }
 }
 db eval {DROP TABLE t2}
 

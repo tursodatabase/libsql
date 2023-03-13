@@ -354,5 +354,78 @@ do_execsql_test 9.11 {
   SELECT ccc, ccc IS NULL AS ddd FROM t1 LEFT JOIN v2;
 } {{} 1}
 
+# 2023-03-01 https://sqlite.org/forum/forumpost/26387ea7ef
+# When flattening a VIEW which is the RHS of a LEFT JOIN, always put
+# an TK_IF_NULL_ROW operator on all accesses, even TK_COLUMN nodes, since
+# the TK_COLUMN might reference an outer subquery.
+#
+reset_db
+db null NULL
+do_execsql_test 10.1 {
+  CREATE TABLE t1 (x INTEGER);
+  INSERT INTO t1 VALUES(1);   -- Some true value
+  CREATE TABLE t2 (z TEXT);
+  INSERT INTO t2 VALUES('some value');
+  CREATE TABLE t3(w TEXT);
+  INSERT INTO t3 VALUES('some other value');
+}
+do_execsql_test 10.2 {
+  SELECT (
+    SELECT 1 FROM t2 LEFT JOIN (SELECT x AS v FROM t3) ON 500=v WHERE (v OR FALSE)
+  ) FROM t1;
+} NULL
+do_execsql_test 10.3 {
+  SELECT (
+    SELECT 1 FROM t2 LEFT JOIN (SELECT x AS v FROM t3) ON 500=v WHERE (v)
+  ) FROM t1;
+} NULL
+optimization_control db all 0
+do_execsql_test 10.4 {
+  SELECT (
+    SELECT 1 FROM t2 LEFT JOIN (SELECT x AS v FROM t3) ON 500=v WHERE (v OR FALSE)
+  ) FROM t1;
+} NULL
+
+# 2023-03-02 https://sqlite.org/forum/forumpost/402f05296d
+#
+# The TK_IF_NULL_ROW expression node must ensure that it does not overwrite
+# the result register of an OP_Once subroutine.
+#
+optimization_control db all 1
+do_execsql_test 11.1 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  DROP TABLE t3;
+  CREATE TABLE t1(x TEXT, y INTEGER);
+  INSERT INTO t1(x,y) VALUES(NULL,-2),(NULL,1),('0',2);
+  CREATE TABLE t2(z INTEGER);
+  INSERT INTO t2(z) VALUES(2),(-2);
+  CREATE VIEW t3 AS SELECT z, (SELECT count(*) FROM t1) AS w FROM t2;
+  SELECT * FROM t1 LEFT JOIN t3 ON y=z;
+} {NULL -2 -2 3 NULL 1 NULL NULL 0 2 2 3}
+
+# 2023-03-11 https://sqlite.org/forum/forumpost/b405033490fa56d9
+# The fix that test 11.1 above checks also caused a performance regression.
+# This test case verifies that the performance regression has been resolved.
+#
+do_execsql_test 12.1 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+  DROP VIEW t3;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<100)
+    INSERT INTO t1(a) SELECT n FROM c;
+  CREATE VIEW t2(b) AS SELECT a FROM t1;
+}
+do_vmstep_test 12.2 {
+  SELECT * FROM t1 LEFT JOIN t2 ON a=b LIMIT 10 OFFSET 98;
+} 2000 {99 99 100 100}
+do_eqp_test 12.3 {
+  SELECT * FROM t1 LEFT JOIN t2 ON a=b LIMIT 10 OFFSET 98;
+} {
+  QUERY PLAN
+  |--SCAN t1
+  `--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+}
 
 finish_test

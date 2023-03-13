@@ -175,6 +175,16 @@ do_test shell1-1.16.1 {
   set x [catchcmd "-version test.db" ""]
 } {/3.[0-9.]+ 20\d\d-[01]\d-\d\d \d\d:\d\d:\d\d [0-9a-f]+/}
 
+# Handle no-more-options option
+forcedelete ./--db
+do_test shell1-1.17.1 {
+  catchcmd {-- --db "CREATE TABLE T(c1);"}
+} {0 {}}
+do_test shell1-1.17.2 {
+  catchcmd {-- --db "SELECT name from sqlite_schema;"}
+} {0 T}
+forcedelete ./--db
+
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
 #

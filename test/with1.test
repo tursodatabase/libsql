@@ -1124,7 +1124,7 @@ do_execsql_test 24.1 {
   CREATE VIEW v1 AS SELECT max(a), min(b) FROM t1 GROUP BY c;
 }
 do_test 24.1 {
-  set program [db eval {EXPLAIN SELECT 1 FROM v1,v1,v1}]
+  set program [db eval {EXPLAIN SELECT * FROM v1 AS aa, v1 AS bb, v1 AS cc}]
   expr [lsearch $program OpenDup]>0
 } {1}
 do_execsql_test 24.2 {

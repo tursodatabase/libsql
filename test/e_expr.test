@@ -215,7 +215,7 @@ foreach {tn literal type} {
 #
 # EVIDENCE-OF: R-03679-60639 Equals can be either = or ==.
 #
-# EVIDENCE-OF: R-30082-38996 The non-equals operator can be either != or
+# EVIDENCE-OF: R-49372-18364 The not-equal operator can be either != or
 # <>.
 #
 foreach {tn literal different} {
@@ -1892,9 +1892,10 @@ do_expr_test e_expr-35.1.6 {
   (SELECT a FROM t2 UNION SELECT COALESCE(b, 55) FROM t2 ORDER BY 1)
 } integer 4
 
-# EVIDENCE-OF: R-22239-33740 A subquery that returns two or more columns
-# is a row value subquery and can only be used as the operand of a
-# comparison operator.
+# EVIDENCE-OF: R-43101-20178 A subquery that returns two or more columns
+# is a row value subquery and can only be used as an operand of a
+# comparison operator or as the value in an UPDATE SET clause whose
+# column name list has the same size.
 #
 # The following block tests that errors are returned in a bunch of cases
 # where a subquery returns more than one column.

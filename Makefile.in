@@ -404,7 +404,6 @@ TESTSRC = \
   $(TOP)/src/test4.c \
   $(TOP)/src/test5.c \
   $(TOP)/src/test6.c \
-  $(TOP)/src/test7.c \
   $(TOP)/src/test8.c \
   $(TOP)/src/test9.c \
   $(TOP)/src/test_autoext.c \
@@ -433,7 +432,6 @@ TESTSRC = \
   $(TOP)/src/test_quota.c \
   $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
-  $(TOP)/src/test_server.c \
   $(TOP)/src/test_superlock.c \
   $(TOP)/src/test_syscall.c \
   $(TOP)/src/test_tclsh.c \
@@ -622,7 +620,8 @@ TESTOPTS = --verbose=file --output=test-out.txt
 
 # Extra compiler options for various shell tools
 #
-SHELL_OPT = -DSQLITE_ENABLE_FTS4
+SHELL_OPT += -DSQLITE_DQS=0
+SHELL_OPT += -DSQLITE_ENABLE_FTS4
 #SHELL_OPT += -DSQLITE_ENABLE_FTS5
 SHELL_OPT += -DSQLITE_ENABLE_RTREE
 SHELL_OPT += -DSQLITE_ENABLE_EXPLAIN_COMMENTS
@@ -635,17 +634,35 @@ SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
 FUZZERSHELL_OPT = 
 FUZZCHECK_OPT += -I$(TOP)/test
 FUZZCHECK_OPT += -I$(TOP)/ext/recover
-FUZZCHECK_OPT += -DSQLITE_OMIT_LOAD_EXTENSION
-FUZZCHECK_OPT += -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_OSS_FUZZ
-FUZZCHECK_OPT += -DSQLITE_MAX_MEMORY=50000000
-FUZZCHECK_OPT += -DSQLITE_PRINTF_PRECISION_LIMIT=1000
-FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS4
-FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS3_PARENTHESIS
-FUZZCHECK_OPT += -DSQLITE_ENABLE_FTS5
-FUZZCHECK_OPT += -DSQLITE_ENABLE_RTREE
-FUZZCHECK_OPT += -DSQLITE_ENABLE_GEOPOLY
-FUZZCHECK_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
-FUZZCHECK_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
+FUZZCHECK_OPT += \
+  -DSQLITE_OSS_FUZZ \
+  -DSQLITE_ENABLE_BYTECODE_VTAB \
+  -DSQLITE_ENABLE_DBPAGE_VTAB \
+  -DSQLITE_ENABLE_DBSTAT_VTAB \
+  -DSQLITE_ENABLE_BYTECODE_VTAB \
+  -DSQLITE_ENABLE_DESERIALIZE \
+  -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
+  -DSQLITE_ENABLE_FTS3_PARENTHESIS \
+  -DSQLITE_ENABLE_FTS4 \
+  -DSQLITE_ENABLE_FTS5 \
+  -DSQLITE_ENABLE_GEOPOLY \
+  -DSQLITE_ENABLE_MATH_FUNCTIONS \
+  -DSQLITE_ENABLE_MEMSYS5 \
+  -DSQLITE_ENABLE_NORMALIZE \
+  -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
+  -DSQLITE_ENABLE_PREUPDATE_HOOK \
+  -DSQLITE_ENABLE_RTREE \
+  -DSQLITE_ENABLE_SESSION \
+  -DSQLITE_ENABLE_STMTVTAB \
+  -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
+  -DSQLITE_ENABLE_STAT4 \
+  -DSQLITE_ENABLE_STMT_SCANSTATUS \
+  -DSQLITE_MAX_MEMORY=50000000 \
+  -DSQLITE_MAX_MMAP_SIZE=0 \
+  -DSQLITE_OMIT_LOAD_EXTENSION \
+  -DSQLITE_PRINTF_PRECISION_LIMIT=1000 \
+  -DSQLITE_PRIVATE=""
+
 FUZZCHECK_SRC += $(TOP)/test/fuzzcheck.c
 FUZZCHECK_SRC += $(TOP)/test/ossfuzz.c
 FUZZCHECK_SRC += $(TOP)/test/fuzzinvariants.c
@@ -655,10 +672,17 @@ FUZZCHECK_SRC += $(TOP)/test/vt02.c
 DBFUZZ_OPT =
 ST_OPT = -DSQLITE_OS_KV_OPTIONAL
 
+
+# In wasi-sdk builds, disable the CLI shell build in the "all" target.
+SQLITE3_SHELL_TARGET_  = sqlite3$(TEXE) libsql$(TEXE)
+SQLITE3_SHELL_TARGET_1 =
+SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
+
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
 #
-all:	sqlite3.h libsqlite3.la liblibsql.la sqlite3$(TEXE) libsql$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
+all:	sqlite3.h libsqlite3.la liblibsql.la $(SQLITE3_SHELL_TARGET) \
+  $(HAVE_TCL:1=libtclsqlite3.la)
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -1328,6 +1352,11 @@ testrunner:	testfixture$(TEXE)
 #
 devtest:	testfixture$(TEXE) fuzztest testrunner
 
+# Testing for a release
+#
+releasetest: testfixture$(TEXE)
+	./testfixture$(TEXE) $(TOP)/test/testrunner.tcl release
+
 # Minimal testing that runs in less than 3 minutes
 #
 quicktest:	./testfixture$(TEXE)
@@ -1490,9 +1519,6 @@ threadtest: threadtest3$(TEXE)
 
 threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 	$(LTLINK) $(TOP)/test/threadtest5.c sqlite3.c -o $@ $(TLIBS)
-
-releasetest:
-	$(TCLSH_CMD) $(TOP)/test/releasetest.tcl
 
 # Standard install and cleanup targets
 #

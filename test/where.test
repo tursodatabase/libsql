@@ -1620,10 +1620,11 @@ do_execsql_test where-28.1 {
 
 # 2022-12-07 Yong Heng [https://sqlite.org/forum/forumpost/dfe8084751]
 #
-do_execsql_test where-29.1 {
-  SELECT DISTINCT 'xyz' FROM pragma_cache_size
-   WHERE rowid OR abs(0)
-   ORDER BY
+ifcapable vtab {
+  do_execsql_test where-29.1 {
+    SELECT DISTINCT 'xyz' FROM pragma_cache_size
+      WHERE rowid OR abs(0)
+      ORDER BY
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -1631,7 +1632,8 @@ do_execsql_test where-29.1 {
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       1, 1, 1, 1;
-} {xyz}
+  } {xyz}
+}
 
 # 2023-01-30
 # Tests case for the query planner performance issue reported by

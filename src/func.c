@@ -1273,7 +1273,7 @@ static void unhexFunc(
   const u8 *zHex = sqlite3_value_text(argv[0]);
   int nHex = sqlite3_value_bytes(argv[0]);
 #ifdef SQLITE_DEBUG
-  const u8 *zEnd = &zHex[nHex];
+  const u8 *zEnd = zHex ? &zHex[nHex] : 0;
 #endif
   u8 *pBlob = 0;
   u8 *p = 0;
@@ -2164,6 +2164,18 @@ static void ceilingFunc(
 */
 static double xCeil(double x){ return ceil(x); }
 static double xFloor(double x){ return floor(x); }
+
+/*
+** Some systems do not have log2() and log10() in their standard math
+** libraries.
+*/
+#if defined(HAVE_LOG10) && HAVE_LOG10==0
+# define log10(X) (0.4342944819032517867*log(X))
+#endif
+#if defined(HAVE_LOG2) && HAVE_LOG2==0
+# define log2(X) (1.442695040888963456*log(X))
+#endif
+
 
 /*
 ** Implementation of SQL functions:

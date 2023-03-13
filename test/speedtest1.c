@@ -39,6 +39,7 @@ static const char zHelp[] =
   "  --size N            Relative test size.  Default=100\n"
   "  --strict            Use STRICT table where appropriate\n"
   "  --stats             Show statistics at the end\n"
+  "  --stmtscanstatus    Activate SQLITE_DBCONFIG_STMT_SCANSTATUS\n"
   "  --temp N            N from 0 to 9.  0: no temp table. 9: all temp tables\n"
   "  --testset T         Run test-set T (main, cte, rtree, orm, fp, debug)\n"
   "  --trace             Turn on SQL tracing\n"
@@ -100,6 +101,7 @@ static struct Global {
   int nRepeat;               /* Repeat selects this many times */
   int doCheckpoint;          /* Run PRAGMA wal_checkpoint after each trans */
   int nReserve;              /* Reserve bytes */
+  int stmtScanStatus;        /* True to activate Stmt ScanStatus reporting */
   int doBigTransactions;     /* Enable transactions on tests 410 and 510 */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
@@ -2391,6 +2393,8 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"reserve")==0 ){
         ARGC_VALUE_CHECK(1);
         g.nReserve = atoi(argv[++i]);
+      }else if( strcmp(z,"stmtscanstatus")==0 ){
+        g.stmtScanStatus = 1;
       }else if( strcmp(z,"without-rowid")==0 ){
         if( strstr(g.zWR,"WITHOUT")!=0 ){
           /* no-op */
@@ -2473,6 +2477,9 @@ int main(int argc, char **argv){
 #endif
   if( g.nReserve>0 ){
     sqlite3_file_control(g.db, 0, SQLITE_FCNTL_RESERVE_BYTES, &g.nReserve);
+  }
+  if( g.stmtScanStatus ){
+    sqlite3_db_config(g.db, SQLITE_DBCONFIG_STMT_SCANSTATUS, 1, 0);
   }
 
   /* Set database connection options */

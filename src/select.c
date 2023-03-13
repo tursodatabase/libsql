@@ -2332,8 +2332,6 @@ void sqlite3SubqueryColumnTypes(
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity<=SQLITE_AFF_NONE ){
       pCol->affinity = aff;
-    }else if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
-      pCol->affinity = SQLITE_AFF_FLEXNUM;
     }
     if( pCol->affinity>=SQLITE_AFF_TEXT && pSelect->pNext ){
       int m = 0;
@@ -2346,6 +2344,9 @@ void sqlite3SubqueryColumnTypes(
       }else
       if( pCol->affinity>=SQLITE_AFF_NUMERIC && (m&0x02)!=0 ){
         pCol->affinity = SQLITE_AFF_BLOB;
+      }
+      if( pCol->affinity>=SQLITE_AFF_NUMERIC && p->op==TK_CAST ){
+        pCol->affinity = SQLITE_AFF_FLEXNUM;
       }
     }
     zType = columnType(&sNC, p, 0, 0, 0);
@@ -3861,7 +3862,9 @@ static Expr *substExpr(
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
         sqlite3 *db = pSubst->pParse->db;
-        if( pSubst->isOuterJoin && pCopy->op!=TK_COLUMN ){
+        if( pSubst->isOuterJoin
+         && (pCopy->op!=TK_COLUMN || pCopy->iTable!=pSubst->iNewTable)
+        ){
           memset(&ifNullRow, 0, sizeof(ifNullRow));
           ifNullRow.op = TK_IF_NULL_ROW;
           ifNullRow.pLeft = pCopy;
@@ -4238,8 +4241,7 @@ static int compoundHasDifferentAffinities(Select *p){
 **              query or there are no RIGHT or FULL JOINs in any arm
 **              of the subquery.  (This is a duplicate of condition (27b).)
 **        (17h) The corresponding result set expressions in all arms of the
-**              compound must have the same affinity. (See restriction (9)
-**              on the push-down optimization.)
+**              compound must have the same affinity.
 **
 **        The parent and sub-query may contain WHERE clauses. Subject to
 **        rules (11), (13) and (14), they may also contain ORDER BY,
@@ -5107,10 +5109,6 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       or EXCEPT, then all of the result set columns for all arms of
 **       the compound must use the BINARY collating sequence.
 **
-**   (9) If the subquery is a compound, then all arms of the compound must
-**       have the same affinity.  (This is the same as restriction (17h)
-**       for query flattening.)
-**       
 **
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
@@ -5140,9 +5138,6 @@ static int pushDownWhereTerms(
 #ifndef SQLITE_OMIT_WINDOWFUNC
       if( pSel->pWin ) return 0;    /* restriction (6b) */
 #endif
-    }
-    if( compoundHasDifferentAffinities(pSubq) ){
-      return 0;  /* restriction (9) */
     }
     if( notUnionAll ){
       /* If any of the compound arms are connected using UNION, INTERSECT,
@@ -5234,6 +5229,76 @@ static int pushDownWhereTerms(
   return nChng;
 }
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
+
+/*
+** Check to see if a subquery contains result-set columns that are
+** never used.  If it does, change the value of those result-set columns
+** to NULL so that they do not cause unnecessary work to compute.
+**
+** Return the number of column that were changed to NULL.
+*/
+static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
+  int nCol;
+  Select *pSub;      /* The subquery to be simplified */
+  Select *pX;        /* For looping over compound elements of pSub */
+  Table *pTab;       /* The table that describes the subquery */
+  int j;             /* Column number */
+  int nChng = 0;     /* Number of columns converted to NULL */
+  Bitmask colUsed;   /* Columns that may not be NULLed out */
+
+  assert( pItem!=0 );
+  if( pItem->fg.isCorrelated || pItem->fg.isCte ){
+    return 0;
+  }
+  assert( pItem->pTab!=0 );
+  pTab = pItem->pTab;
+  assert( pItem->pSelect!=0 );
+  pSub = pItem->pSelect;
+  assert( pSub->pEList->nExpr==pTab->nCol );
+  if( (pSub->selFlags & (SF_Distinct|SF_Aggregate))!=0 ){
+    testcase( pSub->selFlags & SF_Distinct );
+    testcase( pSub->selFlags & SF_Aggregate );
+    return 0;
+  }
+  for(pX=pSub; pX; pX=pX->pPrior){
+    if( pX->pPrior && pX->op!=TK_ALL ){
+      /* This optimization does not work for compound subqueries that
+      ** use UNION, INTERSECT, or EXCEPT.  Only UNION ALL is allowed. */
+      return 0;
+    }
+    if( pX->pWin ){
+      /* This optimization does not work for subqueries that use window
+      ** functions. */
+      return 0;
+    }
+  }
+  colUsed = pItem->colUsed;
+  if( pSub->pOrderBy ){
+    ExprList *pList = pSub->pOrderBy;
+    for(j=0; j<pList->nExpr; j++){
+      u16 iCol = pList->a[j].u.x.iOrderByCol;
+      if( iCol>0 ){
+        iCol--;
+        colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
+      }
+    }
+  }
+  nCol = pTab->nCol;
+  for(j=0; j<nCol; j++){
+    Bitmask m = j<BMS-1 ? MASKBIT(j) : TOPBIT;
+    if( (m & colUsed)!=0 ) continue;
+    for(pX=pSub; pX; pX=pX->pPrior) {
+      Expr *pY = pX->pEList->a[j].pExpr;
+      if( pY->op==TK_NULL ) continue;
+      pY->op = TK_NULL;
+      ExprClearProperty(pY, EP_Skip|EP_Unlikely);
+      pX->selFlags |= SF_PushDown;
+      nChng++;
+    }
+  }
+  return nChng;
+}
+
 
 /*
 ** The pFunc is the only aggregate function in the query.  Check to see
@@ -6377,10 +6442,12 @@ static void optimizeAggregateUseOfIndexedExpr(
   NameContext *pNC        /* Name context used to resolve agg-func args */
 ){
   assert( pAggInfo->iFirstReg==0 );
+  assert( pSelect!=0 );
+  assert( pSelect->pGroupBy!=0 );
   pAggInfo->nColumn = pAggInfo->nAccumulator;
   if( ALWAYS(pAggInfo->nSortingColumn>0) ){
     if( pAggInfo->nColumn==0 ){
-      pAggInfo->nSortingColumn = 0;
+      pAggInfo->nSortingColumn = pSelect->pGroupBy->nExpr;
     }else{
       pAggInfo->nSortingColumn =
         pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
@@ -6776,7 +6843,6 @@ static void agginfoFree(sqlite3 *db, AggInfo *p){
   sqlite3DbFreeNN(db, p);
 }
 
-#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
 /*
 ** Attempt to transform a query of the form
 **
@@ -6805,6 +6871,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( p->pEList->nExpr!=1 ) return 0;               /* Single result column */
   if( p->pWhere ) return 0;
   if( p->pGroupBy ) return 0;
+  if( p->pOrderBy ) return 0;
   pExpr = p->pEList->a[0].pExpr;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;        /* Result is an aggregate */
   assert( ExprUseUToken(pExpr) );
@@ -6812,9 +6879,11 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   assert( ExprUseXList(pExpr) );
   if( pExpr->x.pList!=0 ) return 0;                 /* Must be count(*) */
   if( p->pSrc->nSrc!=1 ) return 0;                  /* One table in FROM  */
+  if( ExprHasProperty(pExpr, EP_WinFunc) ) return 0;/* Not a window function */
   pSub = p->pSrc->a[0].pSelect;
   if( pSub==0 ) return 0;                           /* The FROM is a subquery */
-  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound ry */
+  if( pSub->pPrior==0 ) return 0;                   /* Must be a compound */
+  if( pSub->selFlags & SF_CopyCte ) return 0;       /* Not a CTE */
   do{
     if( pSub->op!=TK_ALL && pSub->pPrior ) return 0;  /* Must be UNION ALL */
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
@@ -6863,7 +6932,6 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
 #endif
   return 1;
 }
-#endif /* SQLITE_COUNTOFVIEW_OPTIMIZATION */
 
 /*
 ** If any term of pSrc, or any SF_NestedFrom sub-query, is not the same
@@ -7252,15 +7320,12 @@ int sqlite3Select(
     TREETRACE(0x2000,pParse,p,("Constant propagation not helpful\n"));
   }
 
-#ifdef SQLITE_COUNTOFVIEW_OPTIMIZATION
   if( OptimizationEnabled(db, SQLITE_QueryFlattener|SQLITE_CountOfView)
    && countOfViewOptimization(pParse, p)
   ){
     if( db->mallocFailed ) goto select_end;
-    pEList = p->pEList;
     pTabList = p->pSrc;
   }
-#endif
 
   /* For each term in the FROM clause, do two things:
   ** (1) Authorized unreferenced tables
@@ -7331,6 +7396,22 @@ int sqlite3Select(
       assert( pItem->pSelect && (pItem->pSelect->selFlags & SF_PushDown)!=0 );
     }else{
       TREETRACE(0x4000,pParse,p,("Push-down not possible\n"));
+    }
+
+    /* Convert unused result columns of the subquery into simple NULL
+    ** expressions, to avoid unneeded searching and computation.
+    */
+    if( OptimizationEnabled(db, SQLITE_NullUnusedCols)
+     && disableUnusedSubqueryResultColumns(pItem)
+    ){
+#if TREETRACE_ENABLED
+      if( sqlite3TreeTrace & 0x4000 ){
+        TREETRACE(0x4000,pParse,p,
+            ("Change unused result columns to NULL for subquery %d:\n",
+             pSub->selId));
+        sqlite3TreeViewSelect(0, p, 0);
+      }
+#endif
     }
 
     zSavedAuthContext = pParse->zAuthContext;
@@ -7875,7 +7956,7 @@ int sqlite3Select(
         pAggInfo->useSortingIdx = 1;
       }
 
-      /* If there entries in pAgggInfo->aFunc[] that contain subexpressions
+      /* If there are entries in pAgggInfo->aFunc[] that contain subexpressions
       ** that are indexed (and that were previously identified and tagged
       ** in optimizeAggregateUseOfIndexedExpr()) then those subexpressions
       ** must now be converted into a TK_AGG_COLUMN node so that the value

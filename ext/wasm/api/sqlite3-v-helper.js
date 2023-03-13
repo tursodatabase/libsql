@@ -15,10 +15,13 @@
    with its virtual table counterpart, sqlite3.vtab.
 */
 'use strict';
-self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const wasm = sqlite3.wasm, capi = sqlite3.capi, toss = sqlite3.util.toss3;
   const vfs = Object.create(null), vtab = Object.create(null);
 
+  const StructBinder = sqlite3.StructBinder
+  /* we require a local alias b/c StructBinder is removed from the sqlite3
+     object during the final steps of the API cleanup. */;
   sqlite3.vfs = vfs;
   sqlite3.vtab = vtab;
 
@@ -112,7 +115,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const installMethod = function callee(
     tgt, name, func, applyArgcCheck = callee.installMethodArgcCheck
   ){
-    if(!(tgt instanceof sqlite3.StructBinder.StructType)){
+    if(!(tgt instanceof StructBinder.StructType)){
       toss("Usage error: target object is-not-a StructType.");
     }else if(!(func instanceof Function) && !wasm.isPtr(func)){
       toss("Usage errror: expecting a Function or WASM pointer to one.");
@@ -132,7 +135,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
       };
       /* An ondispose() callback for use with
-         sqlite3.StructBinder-created types. */
+         StructBinder-created types. */
       callee.removeFuncList = function(){
         if(this.ondispose.__removeFuncList){
           this.ondispose.__removeFuncList.forEach(
@@ -221,7 +224,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      and the first is an object, it's instead equivalent to calling
      installMethods(this,...arguments).
   */
-  sqlite3.StructBinder.StructType.prototype.installMethod = function callee(
+  StructBinder.StructType.prototype.installMethod = function callee(
     name, func, applyArgcCheck = installMethod.installMethodArgcCheck
   ){
     return (arguments.length < 3 && name && 'object'===typeof name)
@@ -233,7 +236,7 @@ self.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Equivalent to calling installMethods() with a first argument
      of this object.
   */
-  sqlite3.StructBinder.StructType.prototype.installMethods = function(
+  StructBinder.StructType.prototype.installMethods = function(
     methods, applyArgcCheck = installMethod.installMethodArgcCheck
   ){
     return installMethods(this, methods, applyArgcCheck);

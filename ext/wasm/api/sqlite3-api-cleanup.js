@@ -25,7 +25,7 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
       exports: Module['asm'],
       memory: Module.wasmMemory /* gets set if built with -sIMPORT_MEMORY */
     },
-    self.sqlite3ApiConfig || {}
+    globalThis.sqlite3ApiConfig || {}
   );
 
   /**
@@ -33,29 +33,29 @@ if('undefined' !== typeof Module){ // presumably an Emscripten build
      sqlite3ApiBootstrap().  That decision will be revisited at some
      point, as we really want client code to be able to call this to
      configure certain parts. Clients may modify
-     self.sqlite3ApiBootstrap.defaultConfig to tweak the default
+     globalThis.sqlite3ApiBootstrap.defaultConfig to tweak the default
      configuration used by a no-args call to sqlite3ApiBootstrap(),
      but must have first loaded their WASM module in order to be
      able to provide the necessary configuration state.
   */
-  //console.warn("self.sqlite3ApiConfig = ",self.sqlite3ApiConfig);
-  self.sqlite3ApiConfig = SABC;
+  //console.warn("globalThis.sqlite3ApiConfig = ",globalThis.sqlite3ApiConfig);
+  globalThis.sqlite3ApiConfig = SABC;
   let sqlite3;
   try{
-    sqlite3 = self.sqlite3ApiBootstrap();
+    sqlite3 = globalThis.sqlite3ApiBootstrap();
   }catch(e){
     console.error("sqlite3ApiBootstrap() error:",e);
     throw e;
   }finally{
-    delete self.sqlite3ApiBootstrap;
-    delete self.sqlite3ApiConfig;
+    delete globalThis.sqlite3ApiBootstrap;
+    delete globalThis.sqlite3ApiConfig;
   }
 
   Module.sqlite3 = sqlite3 /* Needed for customized sqlite3InitModule() to be able to
                               pass the sqlite3 object off to the client. */;
 }else{
   console.warn("This is not running in an Emscripten module context, so",
-               "self.sqlite3ApiBootstrap() is _not_ being called due to lack",
+               "globalThis.sqlite3ApiBootstrap() is _not_ being called due to lack",
                "of config info for the WASM environment.",
                "It must be called manually.");
 }
