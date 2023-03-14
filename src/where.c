@@ -1135,6 +1135,10 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
   Vdbe *v = pParse->pVdbe;             /* VDBE under construction */
   WhereLoop *pLoop = pLevel->pWLoop;   /* The loop being coded */
   int iCur;                            /* Cursor for table getting the filter */
+  IndexedExpr *saved_pIdxEpr;          /* saved copy of Parse.pIdxEpr */
+
+  saved_pIdxEpr = pParse->pIdxEpr;
+  pParse->pIdxEpr = 0;
 
   assert( pLoop!=0 );
   assert( v!=0 );
@@ -1191,9 +1195,8 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
       int r1 = sqlite3GetTempRange(pParse, n);
       int jj;
       for(jj=0; jj<n; jj++){
-        int iCol = pIdx->aiColumn[jj];
         assert( pIdx->pTable==pItem->pTab );
-        sqlite3ExprCodeGetColumnOfTable(v, pIdx->pTable, iCur, iCol,r1+jj);
+        sqlite3ExprCodeLoadIndexColumn(pParse, pIdx, iCur, jj, r1+jj);
       }
       sqlite3VdbeAddOp4Int(v, OP_FilterAdd, pLevel->regFilter, 0, r1, n);
       sqlite3ReleaseTempRange(pParse, r1, n);
@@ -1224,6 +1227,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     }
   }while( iLevel < pWInfo->nLevel );
   sqlite3VdbeJumpHere(v, addrOnce);
+  pParse->pIdxEpr = saved_pIdxEpr;
 }
 
 
