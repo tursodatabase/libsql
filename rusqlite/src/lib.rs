@@ -1029,6 +1029,7 @@ bitflags::bitflags! {
     /// The default open flags are `SQLITE_OPEN_READ_WRITE | SQLITE_OPEN_CREATE
     /// | SQLITE_OPEN_URI | SQLITE_OPEN_NO_MUTEX`. See [`Connection::open`] for
     /// some discussion about these flags.
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
     #[repr(C)]
     pub struct OpenFlags: ::std::os::raw::c_int {
         /// The database is opened in read-only mode.

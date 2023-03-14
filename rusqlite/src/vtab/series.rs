@@ -28,6 +28,7 @@ const SERIES_COLUMN_STOP: c_int = 2;
 const SERIES_COLUMN_STEP: c_int = 3;
 
 bitflags::bitflags! {
+    #[derive(Clone, Copy)]
     #[repr(C)]
     struct QueryPlanFlags: ::std::os::raw::c_int {
         // start = $value  -- constraint exists
@@ -41,7 +42,7 @@ bitflags::bitflags! {
         // output in ascending order
         const ASC  = 16;
         // Both start and stop
-        const BOTH  = QueryPlanFlags::START.bits | QueryPlanFlags::STOP.bits;
+        const BOTH  = QueryPlanFlags::START.bits() | QueryPlanFlags::STOP.bits();
     }
 }
 
