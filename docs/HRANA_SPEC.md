@@ -65,10 +65,10 @@ After a stream is opened, the client can execute SQL _statements_ on it. For the
 purposes of this protocol, the statements are arbitrary strings with optional
 parameters. The protocol can thus work with any SQL dialect.
 
-To reduce the number of roundtrips, the protocol supports rudimentary
-computation on the server, which can be used to conditionally execute
+To reduce the number of roundtrips, the protocol supports rudimentary programs
+that are evaluated on the server, which can be used to conditionally execute
 statements. For example, this mechanism can be used to implement non-interactive
-transactions (batches).
+transactions (batches) in a single roundtrip.
 
 ## Messages
 
@@ -79,7 +79,7 @@ messages with a more compact binary encoding.
 This specification describes the JSON messages using TypeScript syntax as
 follows:
 
-```
+```typescript
 type ClientMsg =
     | HelloMsg
     | RequestMsg
@@ -96,7 +96,7 @@ type `ServerMsg`. The type of the message is determined by its `type` field.
 
 ### Hello
 
-```
+```typescript
 type HelloMsg = {
     "type": "hello",
     "jwt": string | null,
@@ -111,7 +111,7 @@ such as with mutual TLS), the `jwt` field might be set to `null`.
 
 [rfc7519]: https://www.rfc-editor.org/rfc/rfc7519
 
-```
+```typescript
 type HelloOkMsg = {
     "type": "hello_ok",
 }
@@ -133,7 +133,7 @@ should close the WebSocket immediately.
 
 ### Request/response
 
-```
+```typescript
 type RequestMsg = {
     "type": "request",
     "request_id": int32,
@@ -146,7 +146,7 @@ messages. The client uses requests to open SQL streams and execute statements on
 them. The client assigns an identifier to every request, which is then used to
 match a response to the request.
 
-```
+```typescript
 type ResponseOkMsg = {
     "type": "response_ok",
     "request_id": int32,
@@ -175,7 +175,7 @@ other hand, the client should always receive messages, to avoid deadlock.
 
 ### Errors
 
-```
+```typescript
 type Error = {
     "message": string,
 }
@@ -201,18 +201,18 @@ response.
 
 Most of the work in the protocol happens in request/response interactions.
 
-```
+```typescript
 type Request =
     | OpenStreamReq
     | CloseStreamReq
-    | ComputeReq
     | ExecuteReq
+    | ProgReq
 
 type Response =
     | OpenStreamResp
     | CloseStreamResp
-    | ComputeResp
     | ExecuteResp
+    | ProgResp
 ```
 
 The type of the request and response is determined by its `type` field. The
@@ -220,7 +220,7 @@ The type of the request and response is determined by its `type` field. The
 
 ### Open stream
 
-```
+```typescript
 type OpenStreamReq = {
     "type": "open_stream",
     "stream_id": int32,
@@ -249,7 +249,7 @@ same time.
 
 ### Close stream
 
-```
+```typescript
 type CloseStreamReq = {
     "type": "close_stream",
     "stream_id": int32,
@@ -267,56 +267,25 @@ receives the response.
 The client should close even streams for which the `open_stream` request
 returned an error.
 
-### Evaluate compute operations
-
-```
-type ComputeReq = {
-    "type": "compute",
-    "ops": Array<ComputeOp>,
-}
-
-type ComputeResp = {
-    "type": "compute",
-    "results": Array<Value>,
-}
-```
-
-The `compute` request can be used to evaluate compute operations on the server.
-The operations are evaluated sequentially, and the response contains the result
-of each operation.
-
 ### Execute a statement
 
-```
+```typescript
 type ExecuteReq = {
     "type": "execute",
     "stream_id": int32,
     "stmt": Stmt,
-    "condition"?: ComputeExpr | null,
-    "on_ok"?: Array<ComputeOp>,
-    "on_error"?: Array<ComputeOp>,
 }
 
 type ExecuteResp = {
     "type": "execute",
-    "result": StmtResult | null,
+    "result": StmtResult,
 }
 ```
 
 The client sends an `execute` request to execute an SQL statement on a stream.
 The server responds with the result of the statement.
 
-If the request contains the `condition`, the statement will be executed only if
-it evaluates to true. If the condition evaluates to false, the response `result`
-will be `null`.
-
-If the statement executes successfully, the server evaluates operations in
-`on_ok`. If the statement fails with an error, the server evaluates operations
-in `on_error`. If the statement is skipped because `condition` evaluated to
-false, neither `on_ok` nor `on_error` is evaluated. The results of these
-operations are ignored.
-
-```
+```typescript
 type Stmt = {
     "sql": string,
     "args"?: Array<Value>,
@@ -353,7 +322,7 @@ reply with no rows, even if the statement produced some.
 The SQL text should contain just a single statement. Issuing multiple statements
 separated by a semicolon is not supported.
 
-```
+```typescript
 type StmtResult = {
     "cols": Array<Col>,
     "rows": Array<Array<Value>>,
@@ -378,9 +347,103 @@ DELETE, and the value is otherwise undefined.
 table. The rowid value is a 64-bit signed integer encoded as a string. For
 other statements, the value is undefined.
 
+### Execute a program
+
+```typescript
+type ProgReq = {
+    "type": "prog",
+    "stream_id": int32,
+    "prog": Prog,
+}
+
+type ProgResp = {
+    "type": "prog",
+    "result": ProgResult,
+}
+```
+
+The `prog` request executes a program on a stream. The server responds with the
+result of the program execution.
+
+### Programs
+
+```typescript
+type Prog = {
+    "steps": Array<ProgStep>,
+}
+
+type ProgStep =
+    | ExecuteStep
+    | OutputStep
+    | OpStep
+```
+
+A program is a sequence of steps, which are executed in order by the server.
+
+```typescript
+type ExecuteStep = {
+    "type": "execute",
+    "stmt": Stmt,
+    "condition"?: ProgExpr | null,
+    "on_ok"?: Array<ProgOp>,
+    "on_error"?: Array<ProgOp>,
+}
+```
+
+The `execute` step executes a statement `stmt` on the stream. If the `condition`
+is specified, the server first evaluates the expression and it executes the
+statement only if it evaluated to true.
+
+The `on_ok` and `on_error` sequences of operations, if present, are executed if
+the statement executed successfully or with an error, respec
+
+The operations in `on_ok` are executed only if the statement executed
+successfully, and the operations in `on_error` are executed only if the
+statement failed. If the statement was not executed because the `condition`
+evaluated to false, neither `on_ok` nor `on_error` are executed.
+
+The result or error from executing the statement is stored in `execute_results` or
+`execute_errors` array in the `ProgResult`.
+
+```typescript
+type OutputStep = {
+    "type": "output",
+    "expr": ProgExpr,
+}
+```
+
+The `output` step evaluates an expression and returns the resulting value in the
+`outputs` array in `ProgResult`.
+
+```typescript
+type OpStep = {
+    "type": "op",
+    "ops": Array<ProgOp>,
+}
+```
+
+The `op` step executes a sequence of operations.
+
+```typescript
+type ProgResult = {
+    "execute_results": Array<StmtResult | null>,
+    "execute_errors": Array<Error | null>,
+    "outputs": Array<Value>,
+}
+```
+
+The result of executing a program contains the results of `execute` and `output`
+steps in the program.
+
+- `execute_results[i]` contains the result of the `i`-th `execute` step. If the
+statement produced an error or if it was skipped, this is `null`.
+- `execute_errors[i]` contains the error produced by the `i`-th `execute` step.
+If the statement suceeded or if it was skipped, this is `null`.
+- `outputs[i]` contains the value produced by the `i`-th `output` step.
+
 ### Values
 
-```
+```typescript
 type Value =
     | { "type": "null" }
     | { "type": "integer", "value": string }
@@ -402,31 +465,22 @@ precision, because some JSON implementations treat all numbers as 64-bit floats
 These types exactly correspond to SQLite types. In the future, the protocol
 might be extended with more types for compatibility with Postgres.
 
-### Compute operations
+### Program operations and expressions
 
-```
-type ComputeOp =
-    | { "type": "set", "var": int32, "expr": ComputeExpr }
-    | { "type": "unset", "var": int32 }
-    | { "type": "eval", "expr": ComputeExpr }
+```typescript
+type ProgOp =
+    | { "type": "set", "var": int32, "expr": ProgExpr }
 ```
 
-Compute operations are sequential instructions. They can refer to variables,
-which are named with arbitrary integers assigned by the client. Each operation
-produces a value as a result; this result is returned by the `compute` request,
-for example.
+Program operations are imperative compute instructions. There is only a single
+operation, `set`, which evaluates an expression and assigns the value to a
+variable.
 
-- `set` evaluates an expression and assigns it to a variable. The variable is
-created if it does not exist. The result of this op is NULL.
-- `unset` removes a variable. The client should unset unused variables to save
-resources on the server. The result of this op is NULL.
-- `eval` evaluates an expression and returns the result.
-
-```
-type ComputeExpr =
+```typescript
+type ProgExpr =
     | Value
     | { "type": "var", "var": int32 }
-    | { "type": "not", "expr": ComputeExpr }
+    | { "type": "not", "expr": ProgExpr }
 ```
 
 Expressions evaluate to values. Expressions are pure, their evaluation does not
@@ -434,12 +488,12 @@ have side effects.
 
 - Each `Value` is also an expression that evaluates to itself.
 - `var` evaluates to the current value of given variable. If the variable is not
-set, an error is returned.
+set, an error is produced.
 - `not` evaluates `expr` and returns the logical negative: if `expr` evaluated
 to true, it returns integer 0, otherwise it returns integer 1.
 
 When a value is treated as a boolean (such as in the condition of `execute`
-request or in `not` expression), they are converted as follows:
+request or in `not` expression), it is converted as follows:
 
 - NULL is false.
 - Integers and floats are true iff they are nonzero.
@@ -449,8 +503,7 @@ request or in `not` expression), they are converted as follows:
 
 The protocol allows the server to reorder the responses: it is not necessary to
 send the responses in the same order as the requests. However, the server must
-process requests related to a single stream id in order. The server also
-evaluates `compute` requests and conditions on `execute` requests in order.
+process requests related to a single stream id in order.
 
 For example, this means that a client can send an `open_stream` request
 immediately followed by a batch of `execute` requests on that stream and the
