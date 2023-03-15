@@ -163,7 +163,7 @@ pub(super) async fn handle_request(
                 Some(expr) => {
                     let ctx = session.compute_ctx.lock();
                     let value = compute::eval_expr(&ctx, expr)?;
-                    compute::is_true(&value)
+                    compute::is_truthy(&value)
                 }
                 None => true,
             };

@@ -32,8 +32,6 @@ pub fn eval_op(ctx: &mut Ctx, op: &proto::ComputeOp) -> Result<Arc<proto::Value>
     }
 }
 
-static NULL: Lazy<Arc<proto::Value>> = Lazy::new(|| Arc::new(proto::Value::Null));
-
 pub fn eval_expr(ctx: &Ctx, expr: &proto::ComputeExpr) -> Result<Arc<proto::Value>> {
     match expr {
         proto::ComputeExpr::Expr(expr) => match expr {
@@ -41,12 +39,16 @@ pub fn eval_expr(ctx: &Ctx, expr: &proto::ComputeExpr) -> Result<Arc<proto::Valu
                 Some(value) => Ok(value.clone()),
                 None => Err(ResponseError::ExprUnsetVar { var: *var }),
             },
+            proto::ComputeExpr_::Not { expr } => match is_truthy(&*eval_expr(ctx, expr)?) {
+                true => Ok(FALSE.clone()),
+                false => Ok(TRUE.clone()),
+            },
         },
         proto::ComputeExpr::Value(value) => Ok(value.clone()),
     }
 }
 
-pub fn is_true(value: &proto::Value) -> bool {
+pub fn is_truthy(value: &proto::Value) -> bool {
     match value {
         proto::Value::Null => false,
         proto::Value::Integer { value } => *value != 0,
@@ -55,3 +57,7 @@ pub fn is_true(value: &proto::Value) -> bool {
         proto::Value::Blob { value } => !value.is_empty(),
     }
 }
+
+static NULL: Lazy<Arc<proto::Value>> = Lazy::new(|| Arc::new(proto::Value::Null));
+static FALSE: Lazy<Arc<proto::Value>> = Lazy::new(|| Arc::new(proto::Value::Integer { value: 0 }));
+static TRUE: Lazy<Arc<proto::Value>> = Lazy::new(|| Arc::new(proto::Value::Integer { value: 1 }));
