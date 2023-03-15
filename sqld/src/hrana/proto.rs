@@ -2,6 +2,7 @@
 //!
 //! Please consult the Hrana specification in the `docs/` directory for more information.
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -24,6 +25,7 @@ pub enum ServerMsg {
 pub enum Request {
     OpenStream(OpenStreamReq),
     CloseStream(OpenStreamReq),
+    Compute(ComputeReq),
     Execute(ExecuteReq),
 }
 
@@ -32,6 +34,7 @@ pub enum Request {
 pub enum Response {
     OpenStream(OpenStreamResp),
     CloseStream(CloseStreamResp),
+    Compute(ComputeResp),
     Execute(ExecuteResp),
 }
 
@@ -52,14 +55,30 @@ pub struct CloseStreamReq {
 pub struct CloseStreamResp {}
 
 #[derive(Deserialize, Debug)]
+pub struct ComputeReq {
+    pub ops: Vec<ComputeOp>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct ComputeResp {
+    pub results: Vec<Arc<Value>>,
+}
+
+#[derive(Deserialize, Debug)]
 pub struct ExecuteReq {
     pub stream_id: i32,
     pub stmt: Stmt,
+    #[serde(default)]
+    pub condition: Option<ComputeExpr>,
+    #[serde(default)]
+    pub on_ok: Vec<ComputeOp>,
+    #[serde(default)]
+    pub on_error: Vec<ComputeOp>,
 }
 
 #[derive(Serialize, Debug)]
 pub struct ExecuteResp {
-    pub result: StmtResult,
+    pub result: Option<StmtResult>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -110,6 +129,27 @@ pub enum Value {
         #[serde(with = "bytes_as_base64", rename = "base64")]
         value: Vec<u8>,
     },
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ComputeOp {
+    Set { var: i32, expr: ComputeExpr },
+    Unset { var: i32 },
+    Eval { expr: ComputeExpr },
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum ComputeExpr {
+    Value(Arc<Value>),
+    Expr(ComputeExpr_),
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ComputeExpr_ {
+    Var { var: i32 },
 }
 
 #[derive(Serialize, Debug)]

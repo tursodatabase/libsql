@@ -65,6 +65,11 @@ After a stream is opened, the client can execute SQL _statements_ on it. For the
 purposes of this protocol, the statements are arbitrary strings with optional
 parameters. The protocol can thus work with any SQL dialect.
 
+To reduce the number of roundtrips, the protocol supports rudimentary
+computation on the server, which can be used to conditionally execute
+statements. For example, this mechanism can be used to implement non-interactive
+transactions (batches).
+
 ## Messages
 
 All messages exchanged between the client and server are text messages encoded
@@ -200,11 +205,13 @@ Most of the work in the protocol happens in request/response interactions.
 type Request =
     | OpenStreamReq
     | CloseStreamReq
+    | ComputeReq
     | ExecuteReq
 
 type Response =
     | OpenStreamResp
     | CloseStreamResp
+    | ComputeResp
     | ExecuteResp
 ```
 
@@ -260,6 +267,24 @@ receives the response.
 The client should close even streams for which the `open_stream` request
 returned an error.
 
+### Evaluate compute operations
+
+```
+type ComputeReq = {
+    "type": "compute",
+    "ops": Array<ComputeOp>,
+}
+
+type ComputeResp = {
+    "type": "compute",
+    "results": Array<Value>,
+}
+```
+
+The `compute` request can be used to evaluate compute operations on the server.
+The operations are evaluated sequentially, and the response contains the result
+of each operation.
+
 ### Execute a statement
 
 ```
@@ -267,16 +292,29 @@ type ExecuteReq = {
     "type": "execute",
     "stream_id": int32,
     "stmt": Stmt,
+    "condition"?: ComputeExpr | null,
+    "on_ok"?: Array<ComputeOp>,
+    "on_error"?: Array<ComputeOp>,
 }
 
 type ExecuteResp = {
     "type": "execute",
-    "result": StmtResult,
+    "result": StmtResult | null,
 }
 ```
 
 The client sends an `execute` request to execute an SQL statement on a stream.
 The server responds with the result of the statement.
+
+If the request contains the `condition`, the statement will be executed only if
+it evaluates to true. If the condition evaluates to false, the response `result`
+will be `null`.
+
+If the statement executes successfully, the server evaluates operations in
+`on_ok`. If the statement fails with an error, the server evaluates operations
+in `on_error`. If the statement is skipped because `condition` evaluated to
+false, neither `on_ok` nor `on_error` is evaluated. The results of these
+operations are ignored.
 
 ```
 type Stmt = {
@@ -364,11 +402,52 @@ precision, because some JSON implementations treat all numbers as 64-bit floats
 These types exactly correspond to SQLite types. In the future, the protocol
 might be extended with more types for compatibility with Postgres.
 
+### Compute operations
+
+```
+type ComputeOp =
+    | { "type": "set", "var": int32, "expr": ComputeExpr }
+    | { "type": "unset", "var": int32 }
+    | { "type": "eval", "expr": ComputeExpr }
+```
+
+Compute operations are sequential instructions. They can refer to variables,
+which are named with arbitrary integers assigned by the client. Each operation
+produces a value as a result; this result is returned by the `compute` request,
+for example.
+
+- `set` evaluates an expression and assigns it to a variable. The variable is
+created if it does not exist. The result of this op is NULL.
+- `unset` removes a variable. The client should unset unused variables to save
+resources on the server. The result of this op is NULL.
+- `eval` evaluates an expression and returns the result.
+
+```
+type ComputeExpr =
+    | Value
+    | { "type": "var", "var": int32 }
+```
+
+Expressions evaluate to values. Expressions are pure, their evaluation does not
+have side effects.
+
+- Each `Value` is also an expression that evaluates to itself.
+- `var` evaluates to the current value of given variable. If the variable is not
+set, an error is returned.
+
+When a value is treated as a boolean (such as in the condition of `execute`
+request), they are converted as follows:
+
+- NULL is false.
+- Integers and floats are true iff they are nonzero.
+- Texts and blobs are true iff they are nonempty.
+
 ### Ordering
 
 The protocol allows the server to reorder the responses: it is not necessary to
 send the responses in the same order as the requests. However, the server must
-process requests related to a single stream id in order.
+process requests related to a single stream id in order. The server also
+evaluates `compute` requests and conditions on `execute` requests in order.
 
 For example, this means that a client can send an `open_stream` request
 immediately followed by a batch of `execute` requests on that stream and the
