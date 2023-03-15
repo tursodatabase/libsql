@@ -3,9 +3,10 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context as _, Result};
 use futures::future::BoxFuture;
+use parking_lot::Mutex;
 use tokio::sync::{mpsc, oneshot};
 
-use super::{proto, Server};
+use super::{compute, proto, Server};
 use crate::auth::{AuthError, Authenticated};
 use crate::database::Database;
 use crate::error::Error;
@@ -16,6 +17,7 @@ use crate::query_analysis::Statement;
 pub struct Session {
     _authenticated: Authenticated,
     streams: HashMap<i32, StreamHandle>,
+    compute_ctx: Arc<Mutex<compute::Ctx>>,
 }
 
 struct StreamHandle {
@@ -69,6 +71,9 @@ pub enum ResponseError {
     #[error("Specifying both positional and named arguments is not supported")]
     ArgsBothPositionalAndNamed,
 
+    #[error("Variable {var} is not set")]
+    ExprUnsetVar { var: i32 },
+
     #[error("Transaction timed out")]
     TransactionTimeout,
     #[error("Server cannot handle additional transactions")]
@@ -95,6 +100,7 @@ pub(super) async fn handle_hello(server: &Server, jwt: Option<String>) -> Result
     Ok(Session {
         _authenticated,
         streams: HashMap::new(),
+        compute_ctx: Arc::new(Mutex::new(compute::Ctx::default())),
     })
 }
 
@@ -140,18 +146,50 @@ pub(super) async fn handle_request(
             })
             .await;
         }
+        proto::Request::Compute(req) => {
+            let mut ctx = session.compute_ctx.lock();
+            let results = compute::eval_ops(&mut ctx, &req.ops)?;
+            resp_tx
+                .send(Ok(proto::Response::Compute(proto::ComputeResp { results })))
+                .unwrap();
+        }
         proto::Request::Execute(req) => {
             let stream_id = req.stream_id;
             let Some(stream_hnd) = session.streams.get_mut(&stream_id) else {
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
+            let condition_passed = match req.condition.as_ref() {
+                Some(expr) => {
+                    let ctx = session.compute_ctx.lock();
+                    let value = compute::eval_expr(&ctx, expr)?;
+                    compute::is_true(&value)
+                }
+                None => true,
+            };
+
+            let compute_ctx = session.compute_ctx.clone();
             stream_respond(stream_hnd, resp_tx, move |stream| {
                 Box::pin(async move {
                     let Some(db) = stream.db.as_ref() else {
                         bail!(ResponseError::StreamNotOpen { stream_id })
                     };
-                    let result = execute_stmt(&**db, req.stmt).await?;
+
+                    let result = if condition_passed {
+                        let result = execute_stmt(&**db, req.stmt).await;
+
+                        let ops = match result.is_ok() {
+                            true => &req.on_ok,
+                            false => &req.on_error,
+                        };
+                        let mut ctx = compute_ctx.lock();
+                        compute::eval_ops(&mut ctx, ops)?;
+
+                        Some(result?)
+                    } else {
+                        None
+                    };
+
                     Ok(proto::Response::Execute(proto::ExecuteResp { result }))
                 })
             })

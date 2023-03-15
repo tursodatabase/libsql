@@ -38,7 +38,7 @@ rusqlite = { version = "0.28.0", git = "https://github.com/psarna/rusqlite", rev
     "bundled-libsql-wasm",
     "column_decltype"
 ] }
-serde = { version = "1.0.149", features = ["derive"] }
+serde = { version = "1.0.149", features = ["derive", "rc"] }
 serde_json = "1.0.91"
 smallvec = "1.10.0"
 sqld-libsql-bindings = { version = "0", path = "../sqld-libsql-bindings" }
