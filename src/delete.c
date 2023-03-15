@@ -483,7 +483,7 @@ void sqlite3DeleteFrom(
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
   {
     u16 wcf = WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK;
-    if( sNC.ncFlags & NC_VarSelect ) bComplex = 1;
+    if( sNC.ncFlags & NC_Subquery ) bComplex = 1;
     wcf |= (bComplex ? 0 : WHERE_ONEPASS_MULTIROW);
     if( HasRowid(pTab) ){
       /* For a rowid table, initialize the RowSet to an empty set */
