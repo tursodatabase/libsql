@@ -750,8 +750,7 @@ static int dbdataGetEncoding(DbdataCursor *pCsr){
   int nPg1 = 0;
   u8 *aPg1 = 0;
   rc = dbdataLoadPage(pCsr, 1, &aPg1, &nPg1);
-  assert( rc!=SQLITE_OK || nPg1==0 || nPg1>=512 );
-  if( rc==SQLITE_OK && nPg1>0 ){
+  if( rc==SQLITE_OK && nPg1>=(56+4) ){
     pCsr->enc = get_uint32(&aPg1[56]);
   }
   sqlite3_free(aPg1);

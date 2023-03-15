@@ -1,5 +1,5 @@
-C Fix\sBloom\sfilters\son\san\sexpression\sindex.\s\n[forum:/forumpost/2e427099d5|forum\spost\s2e427099d5]\sand\n[forum:/forumpost/d47a0e8e3a|forum\spost\sd47a0e8e3a].
-D 2023-03-14T20:08:39.468
+C Fix\sa\sbroken\sassert()\sin\sthe\srecovery\sextension.
+D 2023-03-15T13:53:47.255
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -365,7 +365,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c 348bb6251e6ec459de102f8b2dd50789a98643ef7a28e56e4c787ac9659c15ea
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
-F ext/recover/dbdata.c ac504aa06fab51ade9c0521b96cb6ec21d40619aa5e9a3e14ef9a60978699fd0
+F ext/recover/dbdata.c ab5e6ee837717c5cec505c34bba9fb188cc405f95157d681f8df8fe927c82324
 F ext/recover/recover1.test 2072993624d5e32fef20ae03b17fc06c02bcb344421fe17bb329b24d2a51e647
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test a6f05273ff5fe517afd166444597c70cb97033e7f58496433a4428a1ecb5d79f
@@ -2050,8 +2050,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 9e2c771daad485d923751fdee0316b195bb49ec9f865f2e39565906edeaa5cf8
-R c3393138ebe1c3b0466080fa5ffa80b2
-U drh
-Z f74a80a854a5c1a7493bae1be34b47cd
+P c028fb669a5ae34dbaf50fffab1ae49bc568b994435cf02e145d24da3cfb48d7
+R 08e4ffb83c4b2d94021f24c51d8dc054
+U dan
+Z 71596409b5637be1db41be73621dc119
 # Remove this line to create a well-formed Fossil manifest.
