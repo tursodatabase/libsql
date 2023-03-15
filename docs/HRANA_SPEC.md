@@ -426,6 +426,7 @@ resources on the server. The result of this op is NULL.
 type ComputeExpr =
     | Value
     | { "type": "var", "var": int32 }
+    | { "type": "not", "expr": ComputeExpr }
 ```
 
 Expressions evaluate to values. Expressions are pure, their evaluation does not
@@ -434,9 +435,11 @@ have side effects.
 - Each `Value` is also an expression that evaluates to itself.
 - `var` evaluates to the current value of given variable. If the variable is not
 set, an error is returned.
+- `not` evaluates `expr` and returns the logical negative: if `expr` evaluated
+to true, it returns integer 0, otherwise it returns integer 1.
 
 When a value is treated as a boolean (such as in the condition of `execute`
-request), they are converted as follows:
+request or in `not` expression), they are converted as follows:
 
 - NULL is false.
 - Integers and floats are true iff they are nonzero.

@@ -150,6 +150,7 @@ pub enum ComputeExpr {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ComputeExpr_ {
     Var { var: i32 },
+    Not { expr: Box<ComputeExpr> },
 }
 
 #[derive(Serialize, Debug)]
