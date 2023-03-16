@@ -1,5 +1,5 @@
-C Additional\sdebug/test\soutput\sfrom\sthe\squery\sinvariant\schecker\sshowing\sthe\nrow-number\sthat\sis\sbeing\schecked.
-D 2023-03-16T12:28:48.259
+C Correctly\shandle\sSELECT\sDISTINCT\s...\sORDER\sBY\swhen\sall\sof\sthe\sresult\sset\sterms\nare\sconstant\sand\sthere\sare\smore\sresult\sset\sterms\sthan\sORDER\sBY\sterms.\nFix\sfor\sthese\stickets:\s[c36cdb4afd504dc1],\s[4051a7f931d9ba24],\n[d6fd512f50513ab7].
+D 2023-03-16T20:54:29.173
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -710,7 +710,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 9f0ffd5f4cb2f6ff09da2e805d95e859babf601383a5d7f527cbe036765f72f5
+F src/where.c f369f3423da9c0d71f7206345e6e775aa06997b74bdb70934ed4677187a72eb8
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c 9919e5a22f4b24dd96c49b8981484cbe6bbfcf466ff73ac40a06e1356aa8bf87
 F src/whereexpr.c 1dfda1695e4480c24248157df55bb4d66c732dc8d14ac16b4f076bb15de93d63
@@ -937,7 +937,7 @@ F test/descidx1.test edc8adee58d491b06c7157c50364eaf1c3605c9c19f8093cb1ea2b6184f
 F test/descidx2.test a0ba347037ff3b811f4c6ceca5fd0f9d5d72e74e59f2d9de346a9d2f6ad78298
 F test/descidx3.test 953c831df7ea219c73826dfbf2f6ee02d95040725aa88ccb4fa43d1a1999b926
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
-F test/distinct.test a7687c2fb50c93f6a486936c51439a93221c6e1188f9bc7b27b3ec26f9c58b1e
+F test/distinct.test 691c9e850b0d0b56b66e7e235453198cb4cf0760e324b7403d3c5abbeab0a014
 F test/distinct2.test cd1d15a4a2abf579298f7161e821ed50c0119136fe0424db85c52cf0adc230d1
 F test/distinctagg.test 14ec5026e684eddd414c61c08692b43773e224ac92efbed6ec08c6994bc39723
 F test/e_blobbytes.test 4c01dfe4f12087b92b20705a3fdfded45dc4ed16d5a211fed4e1d2786ba68a52
@@ -2050,8 +2050,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8f45ad27403e971d88ec62e674c03f82eb19df0b43aa58d20b3400cdb6611d90
-R 1be156af5539063c8f0cdb78fcf0c4ec
+P e4b6eb58e65f7fa0c92768f42bc820614169b7c2f37ded391b866ddb0d894de0
+R 4d12677b2569d68bf087d08fc5281334
 U drh
-Z cd1b805566b97c55f9fb9cc640849ea7
+Z f57ce3e1c7e1fa81dd8ab238bc06fc2a
 # Remove this line to create a well-formed Fossil manifest.
