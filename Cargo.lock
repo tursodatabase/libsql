@@ -2185,6 +2185,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "348108ab3fba42ec82ff6e9564fc4ca0247bdccdc68dd8af9764bbc79c3c8ffb"
 
 [[package]]
+name = "libsql-client"
+version = "0.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c7b1c078b4d3d45ba0db91accc23dcb8d2761d67f819efd94293065597b7ac8"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.21.0",
+ "num-traits",
+ "reqwest",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "libsql-wasmtime-bindings"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3291,6 +3306,7 @@ dependencies = [
  "http",
  "http-body",
  "hyper",
+ "hyper-rustls",
  "hyper-tls",
  "ipnet",
  "js-sys",
@@ -3300,16 +3316,20 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
+ "rustls",
+ "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "tokio",
  "tokio-native-tls",
+ "tokio-rustls",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "webpki-roots",
  "winreg",
 ]
 
@@ -3781,9 +3801,9 @@ dependencies = [
  "bytes 1.4.0",
  "fallible-iterator",
  "fn-error-context",
- "postgres-protocol",
- "postgres-types",
+ "libsql-client",
  "scram",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "unwrap_or",
@@ -3792,7 +3812,7 @@ dependencies = [
 
 [[package]]
 name = "sqld"
-version = "0.3.3"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-lock",
@@ -4080,9 +4100,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.25.0"
+version = "1.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8e00990ebabbe4c14c08aca901caed183ecd5c09562a12c824bb53d3c3fd3af"
+checksum = "03201d01c3c27a29c8a5cee5b55a93ddae1ccf6f08f65365c2c918f8c1b76f64"
 dependencies = [
  "autocfg",
  "bytes 1.4.0",
@@ -4095,7 +4115,7 @@ dependencies = [
  "signal-hook-registry",
  "socket2",
  "tokio-macros",
- "windows-sys 0.42.0",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
