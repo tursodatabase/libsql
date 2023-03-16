@@ -126,6 +126,12 @@ int fuzz_invariant(
       sqlite3_finalize(pTestStmt);
       return rc;
     }
+    if( eVerbosity>=2 ){
+      char *zSql = sqlite3_expanded_sql(pCk);
+      printf("invariant-validity-check #1:\n%s\n", zSql);
+      sqlite3_free(zSql);
+    }
+
     rc = sqlite3_step(pCk);
     if( rc!=SQLITE_ROW
      || sqlite3_column_text(pCk, 0)==0
@@ -146,6 +152,11 @@ int fuzz_invariant(
     sqlite3_db_config(db, SQLITE_DBCONFIG_REVERSE_SCANORDER, !iOrigRSO, 0);
     sqlite3_prepare_v2(db, sqlite3_sql(pStmt), -1, &pCk, 0);
     sqlite3_db_config(db, SQLITE_DBCONFIG_REVERSE_SCANORDER, iOrigRSO, 0);
+    if( eVerbosity>=2 ){
+      char *zSql = sqlite3_expanded_sql(pCk);
+      printf("invariant-validity-check #2:\n%s\n", zSql);
+      sqlite3_free(zSql);
+    }
     while( (rc = sqlite3_step(pCk))==SQLITE_ROW ){
       for(i=0; i<nCol; i++){
         if( !sameValue(pStmt, i, pTestStmt, i, 0) ) break;
@@ -167,6 +178,12 @@ int fuzz_invariant(
        "SELECT ?1=?2 OR ?1=?2 COLLATE nocase OR ?1=?2 COLLATE rtrim",
        -1, &pCk, 0);
     if( rc==SQLITE_OK ){
+      if( eVerbosity>=2 ){
+        char *zSql = sqlite3_expanded_sql(pCk);
+        printf("invariant-validity-check #3:\n%s\n", zSql);
+        sqlite3_free(zSql);
+      }
+
       sqlite3_reset(pTestStmt);
       while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){
         for(i=0; i<nCol; i++){
@@ -185,6 +202,11 @@ int fuzz_invariant(
     rc = sqlite3_prepare_v2(db, 
             "SELECT 1 FROM bytecode(?1) WHERE opcode='VOpen'", -1, &pCk, 0);
     if( rc==SQLITE_OK ){
+      if( eVerbosity>=2 ){
+        char *zSql = sqlite3_expanded_sql(pCk);
+        printf("invariant-validity-check #4:\n%s\n", zSql);
+        sqlite3_free(zSql);
+      }
       sqlite3_bind_pointer(pCk, 1, pStmt, "stmt-pointer", 0);
       rc = sqlite3_step(pCk);
     }
