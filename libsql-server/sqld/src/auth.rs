@@ -125,7 +125,9 @@ fn validate_jwt(
 ) -> Result<Authenticated, AuthError> {
     use jsonwebtoken::errors::ErrorKind;
 
-    let validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
+    let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
+    validation.required_spec_claims.remove("exp");
+
     match jsonwebtoken::decode::<serde_json::Value>(jwt, jwt_key, &validation) {
         Ok(_token) => Ok(Authenticated(())),
         Err(error) => Err(match error.kind() {
