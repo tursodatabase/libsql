@@ -103,7 +103,7 @@ int fuzz_invariant(
   }
   if( eVerbosity>=2 ){
     char *zSql = sqlite3_expanded_sql(pTestStmt);
-    printf("invariant-sql #%d:\n%s\n", iCnt, zSql);
+    printf("invariant-sql row=%d #%d:\n%s\n", iRow, iCnt, zSql);
     sqlite3_free(zSql);
   }
   while( (rc = sqlite3_step(pTestStmt))==SQLITE_ROW ){

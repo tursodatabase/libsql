@@ -1,5 +1,5 @@
-C Update\sthe\stracing\soutput\sfor\sthe\squery-invariant\schecker\ssuch\sthat\sit\sshows\nthe\sSQL\sthat\sis\srun\sto\sverify\sthat\sa\sfound\squery-invariant\sdiscrepency\sis\nvalid.\s\sChanges\sto\stesting\slogic\sonly.
-D 2023-03-16T11:50:44.645
+C Additional\sdebug/test\soutput\sfrom\sthe\squery\sinvariant\schecker\sshowing\sthe\nrow-number\sthat\sis\sbeing\schecked.
+D 2023-03-16T12:28:48.259
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1154,7 +1154,7 @@ F test/fuzzdata8.db f6c2f2af4deaaae0ddb3310d509c2659990794aa653dc501b80a0534c349
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
 F test/fuzzer2.test a85ef814ce071293bce1ad8dffa217cbbaad4c14
 F test/fuzzerfault.test f64c4aef4c9e9edf1d6dc0d3f1e65dcc81e67c996403c88d14f09b74807a42bc
-F test/fuzzinvariants.c cc9291de9be93207442561ec9a0c07d2c236389c47c4965a6f90bc0fbf4ab6bd
+F test/fuzzinvariants.c b34530e8431f2cf3591eff588fc7684d6fdef466916fb46141c8c5374a3d8099
 F test/gcfault.test dd28c228a38976d6336a3fc42d7e5f1ad060cb8c
 F test/gencol1.test aef8b0670abd4b1ae4cae786b15a43758d86f6cd9f12b381d45d96bb51e597c9
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
@@ -2050,8 +2050,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2c56b984a0bd3be5ec326a2109ea7b8f1d4ef63c8fc325caac9663cf2479eaff
-R b0e423029bdbdf0c07b87c0b38c5e2f1
+P 8f45ad27403e971d88ec62e674c03f82eb19df0b43aa58d20b3400cdb6611d90
+R 1be156af5539063c8f0cdb78fcf0c4ec
 U drh
-Z cc7b3cfd55b0f4c7215af58b26a1c7fb
+Z cd1b805566b97c55f9fb9cc640849ea7
 # Remove this line to create a well-formed Fossil manifest.
