@@ -426,6 +426,9 @@ do_execsql_test delete-11.1 {
 # run after one or more rows have been deleted, which can change
 # the result of the subquery, and result in the wrong answer.
 #
+# Similar problem for UPDATE tested by update-21.4
+# https://sqlite.org/forum/forumpost/0007d1fdb1
+#
 reset_db
 do_execsql_test delete-12.0 {
   CREATE TABLE t0(vkey INTEGER, pkey INTEGER,c1 INTEGER);

@@ -727,12 +727,22 @@ void sqlite3Update(
       /* Begin the database scan. 
       **
       ** Do not consider a single-pass strategy for a multi-row update if
-      ** there are any triggers or foreign keys to process, or rows may
-      ** be deleted as a result of REPLACE conflict handling. Any of these
-      ** things might disturb a cursor being used to scan through the table
-      ** or index, causing a single-pass approach to malfunction.  */
+      ** there is anything that might disrupt the cursor being used to do
+      ** the UPDATE:
+      **   (1) This is a nested UPDATE
+      **   (2) There are triggers
+      **   (3) There are FOREIGN KEY constraints
+      **   (4) There are REPLACE conflict handlers
+      **   (5) There are subqueries in the WHERE clause
+      */
       flags = WHERE_ONEPASS_DESIRED;
-      if( !pParse->nested && !pTrigger && !hasFK && !chngKey && !bReplace ){
+      if( !pParse->nested
+       && !pTrigger
+       && !hasFK
+       && !chngKey
+       && !bReplace
+       && (sNC.ncFlags & NC_Subquery)==0
+      ){
         flags |= WHERE_ONEPASS_MULTIROW;
       }
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere,0,0,0,flags,iIdxCur);

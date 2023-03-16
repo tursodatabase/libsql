@@ -732,4 +732,37 @@ do_execsql_test update-20.30 {
   PRAGMA integrity_check;
 } {ok}
 
+# 2023-03-16 https://sqlite.org/forum/forumpost/0007d1fdb1
+# A subquery in the WHERE clause of an UPDATE and behind a
+# short-circuit evaluation caused problems because multi-row
+# single-pass was selected.
+#
+# Similar problem for DELETE tested by delete-12.0.
+# https://sqlite.org/src/info/73f0036f045bf371
+#
+reset_db
+do_execsql_test update-21.1 {
+  CREATE TABLE t1 (vkey INTEGER, c5 INTEGER);
+  INSERT INTO t1 VALUES(3,NULL),(6,-54);
+}
+db null NULL
+do_execsql_test update-21.2 {
+  BEGIN;
+  UPDATE t1 SET vkey = 100 WHERE c5 is null;
+  SELECT * FROM t1 ORDER BY vkey, c5;
+  ROLLBACK;
+} {6 -54 100 NULL}
+do_execsql_test update-21.3 {
+  BEGIN;
+  UPDATE t1 SET vkey = 100 WHERE NOT (-10*(select min(vkey) from t1) >= c5);
+  SELECT * FROM t1 ORDER BY vkey, c5;
+  ROLLBACK;
+} {3 NULL 6 -54}
+do_execsql_test update-21.4 {
+  BEGIN;
+  UPDATE t1 SET vkey = 100 WHERE c5 is null OR NOT (-10*(select min(vkey) from t1) >= c5);
+  SELECT * FROM t1 ORDER BY vkey, c5;
+  ROLLBACK;
+} {6 -54 100 NULL}
+
 finish_test
