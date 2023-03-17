@@ -42,7 +42,7 @@ void libsql_run_wasm(libsql_wasm_udf_api *api, sqlite3_context *context, libsql_
       const char *text = sqlite3_value_text(argv[i]);
 
       malloc_param[0] = WasmEdge_ValueGenI32(text_len + 2);
-      WasmEdge_String wasmedge_func_name = WasmEdge_StringCreateByCString("malloc");
+      WasmEdge_String wasmedge_func_name = WasmEdge_StringCreateByCString("libsql_malloc");
       res = WasmEdge_VMExecute(ctx, wasmedge_func_name, malloc_param, 1, results, 1);
       WasmEdge_StringDelete(wasmedge_func_name);
       if (!WasmEdge_ResultOK(res)) {
@@ -63,7 +63,7 @@ void libsql_run_wasm(libsql_wasm_udf_api *api, sqlite3_context *context, libsql_
       const void *blob = sqlite3_value_blob(argv[i]);
       
       malloc_param[0] = WasmEdge_ValueGenI32(blob_len + 5);
-      WasmEdge_String wasmedge_func_name = WasmEdge_StringCreateByCString("malloc");
+      WasmEdge_String wasmedge_func_name = WasmEdge_StringCreateByCString("libsql_malloc");
       res = WasmEdge_VMExecute(ctx, wasmedge_func_name, malloc_param, 1, results, 1);
       WasmEdge_StringDelete(wasmedge_func_name);
       if (!WasmEdge_ResultOK(res)) {
@@ -82,7 +82,7 @@ void libsql_run_wasm(libsql_wasm_udf_api *api, sqlite3_context *context, libsql_
     case SQLITE_NULL:
 
       malloc_param[0] = WasmEdge_ValueGenI32(1);
-      WasmEdge_String wasmedge_func_name = WasmEdge_StringCreateByCString("malloc");
+      WasmEdge_String wasmedge_func_name = WasmEdge_StringCreateByCString("libsql_malloc");
       res = WasmEdge_VMExecute(ctx, wasmedge_func_name, malloc_param, 1, results, 1);
       WasmEdge_StringDelete(wasmedge_func_name);
       if (!WasmEdge_ResultOK(res)) {
