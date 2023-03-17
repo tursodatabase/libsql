@@ -1,5 +1,5 @@
-C Allow\sfunctions\snamed\susing\skeywords\s"CROSS",\s"FULL",\s"INNER",\s"LEFT",\s\n"NATURAL",\s"OUTER",\sand\s"RIGHT".
-D 2023-03-11T12:27:12.895
+C Add\stest\scases\sfor\sfunctions\snamed\sthe\ssame\sas\sjoin\skeywords.
+D 2023-03-17T19:07:48.724
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1135,6 +1135,7 @@ F test/func4.test 2285fb5792d593fef442358763f0fd9de806eda47dbc7a5934df57ffdc484c
 F test/func5.test 863e6d1bd0013d09c17236f8a13ea34008dd857d87d85a13a673960e4c25d82a
 F test/func6.test 9cc9b1f43b435af34fe1416eb1e318c8920448ea7a6962f2121972f5215cb9b0
 F test/func7.test adbfc910385a6ffd15dc47be3c619ef070c542fcb7488964badb17b2d9a4d080
+F test/func8.test c4e2ecacf9f16e47a245e7a25fbabcc7e78f9c7c41a80f158527cdfdc6dd299d
 F test/fuzz-oss1.test 514dcabb24687818ea949fa6760229eaacad74ca70157743ef36d35bbe01ffb0
 F test/fuzz.test 4608c1310cff4c3014a84bcced6278139743e080046e5f6784b0de7b069371d8
 F test/fuzz2.test 76dc35b32b6d6f965259508508abce75a6c4d7e1
@@ -2050,11 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76acc075402aac2d14d8279b8095008a842522a0985fdf89200da4339757a40b
-R 0a1fb32029faefee149cc3206232c91a
-T *branch * functions-named-left
-T *sym-functions-named-left *
-T -sym-trunk *
+P eeac3d5ec93e9cf8613d764b700b6e39a3ffb39b3953ce1e6a2f84dd986f9e86
+R f66f9e3cb0d1817a5dd25fbf43695e68
 U drh
-Z 8d90c0869867550dc2ef5c4600461bb5
+Z 2a027c2b3d756e8d338ef759071dc4ed
 # Remove this line to create a well-formed Fossil manifest.
