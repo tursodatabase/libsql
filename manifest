@@ -1,5 +1,5 @@
-C Add\ssafety\smargin\son\sthe\sCLI\sinput\sbuffer\sfor\stickets\n[33aa4c0de8a62e33],\s[b97e6c5e6a91d97f],\s[2971fbe3f993e95a],\sand\n[2971fbe3f993e95a].
-D 2023-03-17T00:42:27.613
+C Ensure\sthat\san\serror\sdoes\snot\sdelete\sthe\sTable\sobject\sout\sfrom\sunder\nthe\sxConstruct\smethod\sof\sa\svirtual\stable.\ndbsqlfuzz\s7cc8804a1c6d4e3d554d79096e6ea75a7c1c7d2d
+D 2023-03-17T10:43:05.828
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -705,7 +705,7 @@ F src/vdbemem.c 0388576b7cf0be13ce14b9e3b8aa90b8a1b923b60321d0242131ae0b5732b43b
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
-F src/vtab.c a39f6ed161f16a84ff445af9dba4776b2cf0898be08a33bee8e1128a66c0074b
+F src/vtab.c 4516e9fecff8d4f353132be0468bc6424b102937c50c52e01fd9a0a9e9e34ca5
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c b9df133a705093da8977da5eb202eaadb844839f1c7297c08d33471f5491843d
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
@@ -2050,8 +2050,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 648899e4ded72cac6cc24bccf7ebfc709ee7309a003452b21fd6ab0ba20c34b8
-R 669516456aeda41d2a3ee4cbf4f0ac18
+P 741af08af1b93406a120580379d13e514524af627da5387ecfa6e442d004bfdd
+R c2d5a5d6b87ec41a79e446c5372dacc4
 U drh
-Z 314e43e240f0cb240b68efb4946e48cc
+Z 5cbbee7a44b99c1cb81f73e037d66431
 # Remove this line to create a well-formed Fossil manifest.
