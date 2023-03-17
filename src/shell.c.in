@@ -11465,9 +11465,9 @@ static int process_input(ShellState *p){
     }
     /* No single-line dispositions remain; accumulate line(s). */
     nLine = strlen(zLine);
-    if( nSql+nLine+2>=nAlloc ){
+    if( nSql+nLine+8>=nAlloc ){
       /* Grow buffer by half-again increments when big. */
-      nAlloc = nSql+(nSql>>1)+nLine+100;
+      nAlloc = nSql+(nSql>>1)+nLine+104;
       zSql = realloc(zSql, nAlloc);
       shell_check_oom(zSql);
     }
