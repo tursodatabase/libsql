@@ -419,4 +419,23 @@ do_catchsql_test 18.1 {
   INSERT INTO view_2 DEFAULT VALUES RETURNING *;
 } {1 {no such collation sequence: TRUE}}
 
+# 2023-03-16 
+# https://sqlite.org/forum/forumpost/c99d6e0329
+# ticket d15b3a4ea901ef0d
+# ticket 89d259d45b855a0d
+#
+# A RETURNING clause on an IF NOT EXISTS trigger does not generate
+# an error if the trigger already exists.
+#
+do_execsql_test 19.0 {
+  DROP TABLE IF EXISTS t1;CREATE TABLE t1(a);
+  CREATE TRIGGER r1 AFTER UPDATE ON t1 BEGIN VALUES(0); END;
+} {}
+do_catchsql_test 19.1 {
+  CREATE TRIGGER IF NOT EXISTS r1 AFTER DELETE ON t1 BEGIN
+    INSERT  INTO t1(a) VALUES (1) RETURNING FALSE;
+    INSERT  INTO t1(a) VALUES (2) RETURNING TRUE;
+  END;
+} {0 {}}
+
 finish_test
