@@ -2667,16 +2667,18 @@ static int fts3MsrBufferData(
   char *pList,
   i64 nList
 ){
-  if( nList>pMsr->nBuffer ){
+  if( (nList+FTS3_NODE_PADDING)>pMsr->nBuffer ){
     char *pNew;
-    pMsr->nBuffer = nList*2;
-    pNew = (char *)sqlite3_realloc64(pMsr->aBuffer, pMsr->nBuffer);
+    int nNew = nList*2 + FTS3_NODE_PADDING;
+    pNew = (char *)sqlite3_realloc64(pMsr->aBuffer, nNew);
     if( !pNew ) return SQLITE_NOMEM;
     pMsr->aBuffer = pNew;
+    pMsr->nBuffer = nNew;
   }
 
   assert( nList>0 );
   memcpy(pMsr->aBuffer, pList, nList);
+  memset(&pMsr->aBuffer[nList], 0, FTS3_NODE_PADDING);
   return SQLITE_OK;
 }
 

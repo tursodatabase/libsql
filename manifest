@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sname\sfunctions\susing\sone\sof\sthe\sjoin\skeywords\slike\nCROSS\sFULL\sINNER\sLEFT\sNATURAL\sOUTER\sRIGHT.
-D 2023-03-17T19:18:17.276
+C Avoid\sa\sbuffer\soverread\sin\sfts3\sthat\scould\soccur\swhen\sprocessing\sa\scorrupt\srecord.
+D 2023-03-18T16:12:27.555
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -76,7 +76,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 4fb644df0ff840267e47a724286c7a1fa5540273a7ce15756dd5913a101ec302
+F ext/fts3/fts3_write.c 33d2d0db4dd4e7a7a7e9a7f790414293277f9e7682a2fd9d61c713bfc37cd8b6
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -2051,9 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0b3b5bf9597615589a1d045aaa697c13550553ee4fe4b9008a8e51415b6fe96a 94944b239ce674d984c88ef6029b0260a972f1b25f01614b559ca07c3ebaf8f5
-R 07b8484e41d6b78cbc774ca07208b7eb
-T +closed 94944b239ce674d984c88ef6029b0260a972f1b25f01614b559ca07c3ebaf8f5
-U drh
-Z 4e9f7dbd3bbd0c5da8cb618454aab138
+P 0910b1925e97f7ae4dae86894c9e2f54273c85115e19d0d9bff1280ffee35eed
+R 0669622949fcc9c4cc476c1d0c95dee1
+U dan
+Z 7914734e12c594e04b43e5b8d992dc23
 # Remove this line to create a well-formed Fossil manifest.
