@@ -9,7 +9,8 @@ keywords = ["libSQL", "Wasmtime", "Wasm", "WebAssembly", "SQLite"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasmtime = "2.0"
+wasmtime = "3.0"
+wasmtime-wasi = "3.0"
 
 [lib]
 name = "libsql_wasm"
