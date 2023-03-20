@@ -26,7 +26,7 @@ pub enum Request {
     OpenStream(OpenStreamReq),
     CloseStream(OpenStreamReq),
     Execute(ExecuteReq),
-    Run(RunReq),
+    Prog(ProgReq),
 }
 
 #[derive(Serialize, Debug)]
@@ -35,7 +35,7 @@ pub enum Response {
     OpenStream(OpenStreamResp),
     CloseStream(CloseStreamResp),
     Execute(ExecuteResp),
-    Run(RunResp),
+    Prog(ProgResp),
 }
 
 #[derive(Deserialize, Debug)]
@@ -66,13 +66,13 @@ pub struct ExecuteResp {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct RunReq {
+pub struct ProgReq {
     pub stream_id: i32,
     pub prog: prog::proto::Prog,
 }
 
 #[derive(Serialize, Debug)]
-pub struct RunResp {
+pub struct ProgResp {
     pub result: prog::proto::ProgResult,
 }
 

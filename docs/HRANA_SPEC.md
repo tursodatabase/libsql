@@ -206,13 +206,13 @@ type Request =
     | OpenStreamReq
     | CloseStreamReq
     | ExecuteReq
-    | RunReq
+    | ProgReq
 
 type Response =
     | OpenStreamResp
     | CloseStreamResp
     | ExecuteResp
-    | RunResp
+    | ProgResp
 ```
 
 The type of the request and response is determined by its `type` field. The
@@ -350,14 +350,14 @@ other statements, the value is undefined.
 ### Execute a program
 
 ```typescript
-type RunReq = {
-    "type": "run",
+type ProgReq = {
+    "type": "prog",
     "stream_id": int32,
     "prog": Prog,
 }
 
-type RunResp = {
-    "type": "run",
+type ProgResp = {
+    "type": "prog",
     "result": ProgResult,
 }
 ```
