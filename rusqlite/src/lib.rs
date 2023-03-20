@@ -420,7 +420,7 @@ impl Connection {
             &c_path,
             flags,
             None,
-            #[cfg(feature = "libsql")]
+            #[cfg(feature = "libsql-experimental")]
             None,
         )
         .map(|db| Connection {
@@ -451,7 +451,7 @@ impl Connection {
             &c_path,
             flags,
             Some(&c_vfs),
-            #[cfg(feature = "libsql")]
+            #[cfg(feature = "libsql-experimental")]
             None,
         )
         .map(|db| Connection {
@@ -469,7 +469,7 @@ impl Connection {
     /// Will return `Err` if either `path` or `wal` cannot be converted to a
     /// C-compatible string or if the underlying SQLite open call fails.
     #[inline]
-    #[cfg(feature = "libsql")]
+    #[cfg(feature = "libsql-experimental")]
     pub fn open_with_flags_and_wal<P: AsRef<Path>>(
         path: P,
         flags: OpenFlags,
@@ -492,7 +492,7 @@ impl Connection {
     /// Will return `Err` if either `path` or `wal` cannot be converted to a
     /// C-compatible string or if the underlying SQLite open call fails.
     #[inline]
-    #[cfg(feature = "libsql")]
+    #[cfg(feature = "libsql-experimental")]
     pub fn open_with_flags_vfs_and_wal<P: AsRef<Path>>(
         path: P,
         flags: OpenFlags,
@@ -1017,7 +1017,7 @@ impl Connection {
     }
 
     /// Try initializing the WebAssembly functions table (idempotent)
-    #[cfg(feature = "libsql-wasm")]
+    #[cfg(feature = "libsql-wasm-experimental")]
     pub fn try_initialize_wasm_func_table(&self) -> Result<()> {
         self.db.borrow().try_initialize_wasm_func_table()
     }

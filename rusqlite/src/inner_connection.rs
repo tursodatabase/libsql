@@ -64,7 +64,7 @@ impl InnerConnection {
         c_path: &CStr,
         flags: OpenFlags,
         vfs: Option<&CStr>,
-        #[cfg(feature = "libsql")] wal: Option<&CStr>,
+        #[cfg(feature = "libsql-experimental")] wal: Option<&CStr>,
     ) -> Result<InnerConnection> {
         ensure_safe_sqlite_threading_mode()?;
 
@@ -88,16 +88,16 @@ impl InnerConnection {
             None => ptr::null(),
         };
 
-        #[cfg(feature = "libsql")]
+        #[cfg(feature = "libsql-experimental")]
         let z_wal = wal
             .map(|c_wal| c_wal.as_ptr())
             .unwrap_or_else(std::ptr::null);
 
         unsafe {
             let mut db: *mut ffi::sqlite3 = ptr::null_mut();
-            #[cfg(not(feature = "libsql"))]
+            #[cfg(not(feature = "libsql-experimental"))]
             let r = ffi::sqlite3_open_v2(c_path.as_ptr(), &mut db, flags.bits(), z_vfs);
-            #[cfg(feature = "libsql")]
+            #[cfg(feature = "libsql-experimental")]
             let r = ffi::libsql_open(c_path.as_ptr(), &mut db, flags.bits(), z_vfs, z_wal);
             if r != ffi::SQLITE_OK {
                 let e = if db.is_null() {
@@ -135,7 +135,7 @@ impl InnerConnection {
             }
 
             let conn = InnerConnection::new(db, true);
-            #[cfg(feature = "libsql-wasm")]
+            #[cfg(feature = "libsql-wasm-experimental")]
             conn.try_initialize_wasm_func_table().ok();
             Ok(conn)
         }
@@ -378,7 +378,7 @@ impl InnerConnection {
         self.decode_result(unsafe { ffi::sqlite3_db_release_memory(self.db) })
     }
 
-    #[cfg(feature = "libsql-wasm")]
+    #[cfg(feature = "libsql-wasm-experimental")]
     pub fn try_initialize_wasm_func_table(&self) -> Result<()> {
         self.decode_result(unsafe { ffi::libsql_try_initialize_wasm_func_table(self.db) })
     }
