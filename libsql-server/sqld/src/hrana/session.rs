@@ -81,6 +81,16 @@ pub(super) async fn handle_request(
     req: proto::Request,
 ) -> Result<oneshot::Receiver<Result<proto::Response>>> {
     let (resp_tx, resp_rx) = oneshot::channel();
+
+    macro_rules! stream_respond {
+        ($stream_hnd:expr, async move |$stream:ident| { $($body:tt)* }) => {
+            stream_respond($stream_hnd, resp_tx, move |$stream| {
+                Box::pin(async move { $($body)* })
+            })
+            .await
+        };
+    }
+
     match req {
         proto::Request::OpenStream(req) => {
             let stream_id = req.stream_id;
@@ -91,17 +101,14 @@ pub(super) async fn handle_request(
             let mut stream_hnd = stream_spawn(join_set, Stream { db: None });
 
             let db_factory = server.db_factory.clone();
-            stream_respond(&mut stream_hnd, resp_tx, move |stream| {
-                Box::pin(async move {
-                    let db = db_factory
-                        .create()
-                        .await
-                        .context("Could not create a database connection")?;
-                    stream.db = Some(db);
-                    Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
-                })
-            })
-            .await;
+            stream_respond!(&mut stream_hnd, async move |stream| {
+                let db = db_factory
+                    .create()
+                    .await
+                    .context("Could not create a database connection")?;
+                stream.db = Some(db);
+                Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
+            });
 
             session.streams.insert(stream_id, stream_hnd);
         }
@@ -111,10 +118,9 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
-            stream_respond(&mut stream_hnd, resp_tx, |_| {
-                Box::pin(async move { Ok(proto::Response::CloseStream(proto::CloseStreamResp {})) })
-            })
-            .await;
+            stream_respond!(&mut stream_hnd, async move |_stream| {
+                Ok(proto::Response::CloseStream(proto::CloseStreamResp {}))
+            });
         }
         proto::Request::Execute(req) => {
             let stream_id = req.stream_id;
@@ -122,18 +128,15 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
-            stream_respond(stream_hnd, resp_tx, move |stream| {
-                Box::pin(async move {
-                    let Some(db) = stream.db.as_ref() else {
-                        bail!(ResponseError::StreamNotOpen { stream_id })
-                    };
-                    match prog::execute_stmt(&**db, &req.stmt).await {
-                        Ok(result) => Ok(proto::Response::Execute(proto::ExecuteResp { result })),
-                        Err(err) => bail!(ResponseError::Stmt(err.downcast::<prog::StmtError>()?)),
-                    }
-                })
-            })
-            .await;
+            stream_respond!(stream_hnd, async move |stream| {
+                let Some(db) = stream.db.as_ref() else {
+                    bail!(ResponseError::StreamNotOpen { stream_id })
+                };
+                match prog::execute_stmt(&**db, &req.stmt).await {
+                    Ok(result) => Ok(proto::Response::Execute(proto::ExecuteResp { result })),
+                    Err(err) => bail!(ResponseError::Stmt(err.downcast::<prog::StmtError>()?)),
+                }
+            });
         }
         proto::Request::Run(req) => {
             let stream_id = req.stream_id;
@@ -141,18 +144,15 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
-            stream_respond(stream_hnd, resp_tx, move |stream| {
-                Box::pin(async move {
-                    let Some(db) = stream.db.as_ref() else {
-                        bail!(ResponseError::StreamNotOpen { stream_id })
-                    };
-                    match prog::execute_prog(&**db, &req.prog).await {
-                        Ok(result) => Ok(proto::Response::Run(proto::RunResp { result })),
-                        Err(err) => bail!(ResponseError::Prog(err.downcast::<prog::ProgError>()?)),
-                    }
-                })
-            })
-            .await;
+            stream_respond!(stream_hnd, async move |stream| {
+                let Some(db) = stream.db.as_ref() else {
+                    bail!(ResponseError::StreamNotOpen { stream_id })
+                };
+                match prog::execute_prog(&**db, &req.prog).await {
+                    Ok(result) => Ok(proto::Response::Run(proto::RunResp { result })),
+                    Err(err) => bail!(ResponseError::Prog(err.downcast::<prog::ProgError>()?)),
+                }
+            });
         }
     }
     Ok(resp_rx)
