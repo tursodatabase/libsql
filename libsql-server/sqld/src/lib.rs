@@ -34,6 +34,7 @@ mod error;
 mod hrana;
 mod http;
 mod postgres;
+mod prog;
 mod query;
 mod query_analysis;
 mod replication;
