@@ -2774,6 +2774,7 @@ static char *shell_error_context(const char *zSql, sqlite3 *db){
   if( db==0
    || zSql==0
    || (iOffset = sqlite3_error_offset(db))<0
+   || iOffset>=strlen(zSql)
   ){
     return sqlite3_mprintf("");
   }
