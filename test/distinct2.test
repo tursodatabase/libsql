@@ -301,4 +301,16 @@ do_execsql_test 3030 {
   {} 1 a
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+
+do_execsql_test 4010 {
+  CREATE TABLE t1(a, b COLLATE RTRIM);
+  INSERT INTO t1 VALUES(1, ''), (2, ' '), (3, '  ');
+}
+do_execsql_test 4020 {
+  SELECT b FROM t1 UNION SELECT 1;
+} {1 {  }}
+
 finish_test
