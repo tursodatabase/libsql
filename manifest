@@ -1,5 +1,5 @@
-C Expression\serrors\sin\sgenerated\scolumns\sshould\snot\sgenerate\snon-negative\nsqlite3_error_offset()\sreturns.\s\sSecond\sof\stwo\sdefenses\sagainst\n[33aa4c0de8a62e33].
-D 2023-03-20T00:53:56.312
+C A\sbetter\sfix\sfor\sthe\ssqlite3_error_offset()\sproblem\son\sgenerated\scolumns.
+D 2023-03-20T01:55:39.149
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F src/date.c f21815ca7172ce073db3163ac54c8d9f2841077165c1a6123b4d1c376a0c7ec7
 F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 201fe0763c52783d205c8c13cdd9d55c1bd5cb21c1f036753f99103b43284b90
-F src/expr.c 46aa5d02c6815c8addb0ea42fffaf6eaefeb68fdf0ebe26dd53da1a87b8e0737
+F src/expr.c e02117f1d698d781dc5990364bec01ef19688f084e14b5ea468a972c3b26903b
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c d187be57a886ddf4e6b7ef584a494361899be3df5eee6d4a747b68ff4aff4122
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 26adbb80f51b9219ab2a3593496458b74a567ba5ee46b5154f056e389cfc09f7
-R a948b20149315f9dc540cd3e08c48bb0
+P 2adb4e0dda471ffc9b2a5cbad01b6c2bc6091b7526a8c8b19944cb2d4a5111e7
+R 6c29c6313761fba8300293fe905fb541
 U drh
-Z bb36e2b1c27e531b9e4a73caa47bce20
+Z ca1ef3f48c098aade28ded216a6d7df7
 # Remove this line to create a well-formed Fossil manifest.
