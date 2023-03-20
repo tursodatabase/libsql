@@ -1,8 +1,8 @@
-use anyhow::{Result, bail};
-use std::collections::HashMap;
-use crate::database::Database;
-pub use self::stmt::{StmtError, execute_stmt};
 use self::stmt::proto_error_from_stmt_error;
+pub use self::stmt::{execute_stmt, StmtError};
+use crate::database::Database;
+use anyhow::{bail, Result};
+use std::collections::HashMap;
 
 pub mod proto;
 mod stmt;
@@ -71,11 +71,9 @@ async fn execute_step(ctx: &mut Ctx, db: &dyn Database, step: &proto::ProgStep) 
             };
 
             ctx.results.push(result);
-        },
-        proto::ProgStep::Output { expr } =>
-            ctx.outputs.push(eval_expr(ctx, expr)?),
-        proto::ProgStep::Op { ops } =>
-            execute_ops(ctx, ops)?,
+        }
+        proto::ProgStep::Output { expr } => ctx.outputs.push(eval_expr(ctx, expr)?),
+        proto::ProgStep::Op { ops } => execute_ops(ctx, ops)?,
     }
     Ok(())
 }

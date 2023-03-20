@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::{bail, Result};
 
 use super::proto;
 use crate::database::Database;
@@ -62,11 +62,7 @@ fn proto_stmt_to_query(proto_stmt: &proto::Stmt) -> Result<Query> {
     }
 
     let params = if proto_stmt.named_args.is_empty() {
-        let values = proto_stmt
-            .args
-            .iter()
-            .map(proto_value_to_value)
-            .collect();
+        let values = proto_stmt.args.iter().map(proto_value_to_value).collect();
         Params::Positional(values)
     } else if proto_stmt.args.is_empty() {
         let values = proto_stmt
@@ -119,8 +115,12 @@ fn proto_value_from_value(value: Value) -> proto::Value {
         Value::Null => proto::Value::Null,
         Value::Integer(value) => proto::Value::Integer { value },
         Value::Real(value) => proto::Value::Float { value },
-        Value::Text(value) => proto::Value::Text { value: value.into() },
-        Value::Blob(value) => proto::Value::Blob { value: value.into() },
+        Value::Text(value) => proto::Value::Text {
+            value: value.into(),
+        },
+        Value::Blob(value) => proto::Value::Blob {
+            value: value.into(),
+        },
     }
 }
 
@@ -151,7 +151,9 @@ fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, SqldEr
 }
 
 pub fn proto_error_from_stmt_error(error: &StmtError) -> hrana::proto::Error {
-    hrana::proto::Error { message: error.to_string() }
+    hrana::proto::Error {
+        message: error.to_string(),
+    }
 }
 
 impl From<&proto::Value> for Value {
@@ -165,4 +167,3 @@ impl From<Value> for proto::Value {
         proto_value_from_value(value)
     }
 }
-

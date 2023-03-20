@@ -1,8 +1,8 @@
 //! Messages in the Hrana protocol.
 //!
 //! Please consult the Hrana specification in the `docs/` directory for more information.
-use serde::{Deserialize, Serialize};
 use crate::prog;
+use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]

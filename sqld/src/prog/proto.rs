@@ -1,10 +1,10 @@
 //! These data structures correspond to the Hrana protocol.
 //!
 //! Please consult the Hrana specification in the `docs/` directory for more information.
+use crate::hrana;
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use crate::hrana;
 
 #[derive(Deserialize, Debug)]
 pub struct Stmt {
@@ -158,14 +158,9 @@ mod bytes_as_base64 {
     pub fn deserialize<'de, D: de::Deserializer<'de>>(de: D) -> Result<Bytes, D::Error> {
         let text = <&'de str as de::Deserialize>::deserialize(de)?;
         let text = text.trim_end_matches('=');
-        let bytes = STANDARD_NO_PAD
-            .decode(text)
-            .map_err(|_| {
-                D::Error::invalid_value(
-                    de::Unexpected::Str(text),
-                    &"binary data encoded as base64",
-                )
-            })?;
+        let bytes = STANDARD_NO_PAD.decode(text).map_err(|_| {
+            D::Error::invalid_value(de::Unexpected::Str(text), &"binary data encoded as base64")
+        })?;
         Ok(Bytes::from(bytes))
     }
 }
