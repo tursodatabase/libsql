@@ -6132,7 +6132,8 @@ static SQLITE_NOINLINE int btreeNext(BtCursor *pCur){
 
   pPage = pCur->pPage;
   idx = ++pCur->ix;
-  if( !pPage->isInit || sqlite3FaultSim(412) ){
+  if( sqlite3FaultSim(412) ) pPage->isInit = 0;
+  if( !pPage->isInit ){
     return SQLITE_CORRUPT_BKPT;
   }
 
