@@ -138,7 +138,7 @@ pub(super) async fn handle_request(
                 }
             });
         }
-        proto::Request::Run(req) => {
+        proto::Request::Prog(req) => {
             let stream_id = req.stream_id;
             let Some(stream_hnd) = session.streams.get_mut(&stream_id) else {
                 bail!(ResponseError::StreamNotFound { stream_id })
@@ -149,7 +149,7 @@ pub(super) async fn handle_request(
                     bail!(ResponseError::StreamNotOpen { stream_id })
                 };
                 match prog::execute_prog(&**db, &req.prog).await {
-                    Ok(result) => Ok(proto::Response::Run(proto::RunResp { result })),
+                    Ok(result) => Ok(proto::Response::Prog(proto::ProgResp { result })),
                     Err(err) => bail!(ResponseError::Prog(err.downcast::<prog::ProgError>()?)),
                 }
             });
