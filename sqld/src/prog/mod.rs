@@ -100,13 +100,36 @@ fn eval_expr(ctx: &Ctx, expr: &proto::ProgExpr) -> Result<proto::Value> {
                 None => bail!(ProgError::ExprUnsetVar { var: *var }),
             },
             proto::ProgExpr_::Not { expr } => match is_truthy(&eval_expr(ctx, expr)?) {
-                true => proto::Value::Integer { value: 0 },
-                false => proto::Value::Integer { value: 1 },
+                true => FALSE.clone(),
+                false => TRUE.clone(),
+            },
+            proto::ProgExpr_::And { exprs } => {
+                let mut value = TRUE.clone();
+                for expr in exprs.iter() {
+                    value = eval_expr(ctx, expr)?;
+                    if !is_truthy(&value) {
+                        break;
+                    }
+                }
+                value
+            },
+            proto::ProgExpr_::Or { exprs } => {
+                let mut value = FALSE.clone();
+                for expr in exprs.iter() {
+                    value = eval_expr(ctx, expr)?;
+                    if is_truthy(&value) {
+                        break;
+                    }
+                }
+                value
             },
         },
         proto::ProgExpr::Value(value) => value.clone(),
     })
 }
+
+const FALSE: proto::Value = proto::Value::Integer { value: 0 };
+const TRUE: proto::Value = proto::Value::Integer { value: 1 };
 
 fn is_truthy(value: &proto::Value) -> bool {
     match value {

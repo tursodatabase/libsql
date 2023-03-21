@@ -481,6 +481,8 @@ type ProgExpr =
     | Value
     | { "type": "var", "var": int32 }
     | { "type": "not", "expr": ProgExpr }
+    | { "type": "and", "exprs": Array<ProgExpr> }
+    | { "type": "or", "exprs": Array<ProgExpr> }
 ```
 
 Expressions evaluate to values. Expressions are pure, their evaluation does not
@@ -491,6 +493,12 @@ have side effects.
 set, an error is produced.
 - `not` evaluates `expr` and returns the logical negative: if `expr` evaluated
 to true, it returns integer 0, otherwise it returns integer 1.
+- `and` returns the value of the first expression from `exprs` that evaluates to
+false, or the value of the last expression if all evaluate to true. If `exprs`
+is empty, `and` returns integer 1.
+- `or` returns the value of the first expression from `exprs` that evaluates to
+true, or the value of the last expression if all evaluate to false. If `exprs`
+is empty, `and` returns integer 0.
 
 When a value is treated as a boolean (such as in the condition of `execute`
 request or in `not` expression), it is converted as follows:
