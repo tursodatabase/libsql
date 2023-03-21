@@ -1,9 +1,9 @@
-C Fix\sa\svalgrind\serror\sand\spotential\sbuffer\soverread\swhen\shandling\sa\scorrupt\sdatabase.
-D 2023-03-21T11:13:53.102
+C Add\sthe\sfuzzcheck-asan\starget\sto\sthe\smain\sposix\smakefile.
+D 2023-03-21T11:56:04.957
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 73076ae60a143476b6890b5c3b88848fce19ac8caefc3ff5ae97f72694dc946d
+F Makefile.in 764f2e3e8fb4ae1c8dfe03e65b2b3b01bd1fc57edf78ec2cab3a1301e90e1905
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 492eace1ce32ec464792ae60a9b67225ddb68ef742f1a44d25f47745c9c59d3d
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 20b3ef04d8c79e281e32676d57c7a8569fac9e782ca24337691d44d383eff7bb
-R a3001c5c51434121b500669f922f717c
-U dan
-Z 9c6312542876d7b19be169e17e21a1f1
+P b1e0cd6444d1f710e58129723b285cf1321679fa920fc2841492dcb489ab8b9d
+R 50824eb04e8f08352358f9986fed7b28
+U drh
+Z 5768155f673f1bab658f8db6b588a12f
 # Remove this line to create a well-formed Fossil manifest.
