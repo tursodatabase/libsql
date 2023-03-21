@@ -96,6 +96,8 @@ pub enum ProgExpr {
 pub enum ProgExpr_ {
     Var { var: i32 },
     Not { expr: Box<ProgExpr> },
+    And { exprs: Vec<ProgExpr> },
+    Or { exprs: Vec<ProgExpr> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
