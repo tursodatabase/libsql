@@ -467,7 +467,8 @@ static int lookupName(
         assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
         if( pParse->bReturning ){
           if( (pNC->ncFlags & NC_UBaseReg)!=0
-           && (zTab==0 || sqlite3StrICmp(zTab,pParse->pTriggerTab->zName)==0)
+           && ALWAYS(zTab==0
+                     || sqlite3StrICmp(zTab,pParse->pTriggerTab->zName)==0)
           ){
             pExpr->iTable = op!=TK_DELETE;
             pTab = pParse->pTriggerTab;
