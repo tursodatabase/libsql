@@ -1,11 +1,11 @@
-C Add\sthe\sfuzzcheck-asan\starget\sto\sthe\smain\sposix\smakefile.
-D 2023-03-21T11:56:04.957
+C Add\sthe\sfuzzcheck-asan.exe\starget\sto\sthe\sMSVC\smakefile.
+D 2023-03-21T12:29:50.863
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 764f2e3e8fb4ae1c8dfe03e65b2b3b01bd1fc57edf78ec2cab3a1301e90e1905
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 492eace1ce32ec464792ae60a9b67225ddb68ef742f1a44d25f47745c9c59d3d
+F Makefile.msc ada3466f8f0112a8baead4d6cc2a99bf544d228958baae12ca35a3ee5755c806
 F README.md 8b8df9ca852aeac4864eb1e400002633ee6db84065bd01b78c33817f97d31f5e
 F VERSION 17f95ae2fdf21f0e9575eb0b0511ea63f15d71dfff431b21c2b4adbfa70cfbbf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b1e0cd6444d1f710e58129723b285cf1321679fa920fc2841492dcb489ab8b9d
-R 50824eb04e8f08352358f9986fed7b28
+P 55e94adddba77c1d6ee6ef0c0cf37f7cdccc3bdc144ceaed675d79cdb25f48a6
+R 3dfde50db61b3d09a5903868e1d360e1
 U drh
-Z 5768155f673f1bab658f8db6b588a12f
+Z 41857f2f862e112dfc52716e5f288973
 # Remove this line to create a well-formed Fossil manifest.
