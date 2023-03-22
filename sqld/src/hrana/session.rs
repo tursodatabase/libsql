@@ -7,8 +7,8 @@ use tokio::sync::{mpsc, oneshot};
 
 use super::{proto, Server};
 use crate::auth::{AuthError, Authenticated};
-use crate::database::Database;
 use crate::batch;
+use crate::database::Database;
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session {

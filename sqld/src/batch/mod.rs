@@ -82,15 +82,12 @@ fn eval_cond(ctx: &Ctx, cond: &proto::BatchCond) -> Result<bool> {
             Some(Err(_)) => true,
             None => false,
         },
-        proto::BatchCond::Not { cond } =>
-            !eval_cond(ctx, cond)?,
-        proto::BatchCond::And { conds } =>
-            conds.iter().try_fold(true, |x, cond| {
-                eval_cond(ctx, cond).map(|y| x & y)
-            })?,
-        proto::BatchCond::Or { conds } =>
-            conds.iter().try_fold(false, |x, cond| {
-                eval_cond(ctx, cond).map(|y| x | y)
-            })?,
+        proto::BatchCond::Not { cond } => !eval_cond(ctx, cond)?,
+        proto::BatchCond::And { conds } => conds
+            .iter()
+            .try_fold(true, |x, cond| eval_cond(ctx, cond).map(|y| x & y))?,
+        proto::BatchCond::Or { conds } => conds
+            .iter()
+            .try_fold(false, |x, cond| eval_cond(ctx, cond).map(|y| x | y))?,
     })
 }
