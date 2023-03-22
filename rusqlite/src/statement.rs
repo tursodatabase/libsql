@@ -709,6 +709,12 @@ impl Statement<'_> {
         self.stmt.is_explain()
     }
 
+    /// Returns true if the statement is read only.
+    #[inline]
+    pub fn readonly(&self) -> bool {
+        self.stmt.readonly()
+    }
+
     #[cfg(feature = "extra_check")]
     #[inline]
     pub(crate) fn check_no_tail(&self) -> Result<()> {
@@ -1321,6 +1327,14 @@ mod test {
         let db = Connection::open_in_memory()?;
         let stmt = db.prepare("SELECT 1;")?;
         assert_eq!(0, stmt.is_explain());
+        Ok(())
+    }
+
+    #[test]
+    fn readonly() -> Result<()> {
+        let db = Connection::open_in_memory()?;
+        let stmt = db.prepare("SELECT 1;")?;
+        assert!(stmt.readonly());
         Ok(())
     }
 
