@@ -586,8 +586,13 @@ void sqlite3_str_vappendf(
             realvalue += rounder;
           }
           if( sqlite3IsNaN((double)realvalue) ){
-            bufpt = "NaN";
-            length = 3;
+            if( flag_zeropad ){
+              bufpt = "null";
+              length = 4;
+            }else{
+              bufpt = "NaN";
+              length = 3;
+            }
             break;
           }
 
