@@ -1,5 +1,5 @@
-C Add\sALWAYS()\son\sa\sbranch\sthis\sis\salways\strue\snow\sdue\sto\s[84417bbd144b2197].
-D 2023-03-21T14:20:10.860
+C Update\sthe\sversion\snumber\sfor\sthe\sTEA\starball\sto\s3.42.0,\sto\smatch\sthe\score.
+D 2023-03-22T14:51:22.647
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -22,7 +22,7 @@ F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d
 F autoconf/tea/Makefile.in 106a96f2f745d41a0f6193f1de98d7355830b65d45032c18cd7c90295ec24196
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
-F autoconf/tea/configure.ac d1eaa72f4d202ca106f4b2762733709d3f89a877da2e385a57881c4ad0427be7
+F autoconf/tea/configure.ac e6a7f2abf7a94b5dae00713ad6b3bebc59b878e2705607589830792c61d2ca38
 F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in b9eb6dd37f64e08e637d576b3c83259814b9cddd78bec4af2e5abfc6c5c750ce
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0901bc02783527090bdaa626d946ee1e92c7c6848f3c77a799e6837f4e7f8d7b
-R 26f3f2ce957685138bbdbbf793825478
+P badf7d0e3cfa6efaff4b132cb4ecca79a16e73197c5e275db14ccb5ff938276d
+R f9a0e32a5a944935ccdf4d832a3793b8
 U drh
-Z 9924100eafef345f3f8e1d95add43173
+Z c47bf29e585485f3f7c489971119cf34
 # Remove this line to create a well-formed Fossil manifest.
