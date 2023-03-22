@@ -39,8 +39,7 @@ impl ReplicationLogService {
                 match logger.frame_bytes(offset) {
                     Ok(None) => break,
                     Ok(Some(data)) => {
-                        if let Err(e) = sender.blocking_send(Ok(Frame { data })) {
-                            tracing::error!("failed to send frame: {e}");
+                        if sender.blocking_send(Ok(Frame { data })).is_err() {
                             break;
                         }
                         offset += 1;
