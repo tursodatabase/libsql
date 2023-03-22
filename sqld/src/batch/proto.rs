@@ -37,67 +37,31 @@ pub struct Col {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct RunReq {
-    pub stream_id: i32,
-    pub prog: Prog,
-}
-
-#[derive(Serialize, Debug)]
-pub struct RunResp {
-    pub result: ProgResult,
+pub struct Batch {
+    pub steps: Vec<BatchStep>,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Prog {
-    pub steps: Vec<ProgStep>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum ProgStep {
-    Execute(ExecuteStep),
-    Output { expr: ProgExpr },
-    Op { ops: Vec<ProgOp> },
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ExecuteStep {
+pub struct BatchStep {
     pub stmt: Stmt,
     #[serde(default)]
-    pub condition: Option<ProgExpr>,
-    #[serde(default)]
-    pub on_ok: Vec<ProgOp>,
-    #[serde(default)]
-    pub on_error: Vec<ProgOp>,
+    pub condition: Option<BatchCond>,
 }
 
 #[derive(Serialize, Debug)]
-pub struct ProgResult {
-    pub execute_results: Vec<Option<StmtResult>>,
-    pub execute_errors: Vec<Option<hrana::proto::Error>>,
-    pub outputs: Vec<Value>,
+pub struct BatchResult {
+    pub step_results: Vec<Option<StmtResult>>,
+    pub step_errors: Vec<Option<hrana::proto::Error>>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "type", rename_all = "snake_case")]
-pub enum ProgOp {
-    Set { var: i32, expr: ProgExpr },
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(untagged)]
-pub enum ProgExpr {
-    Value(Value),
-    Expr(ProgExpr_),
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(tag = "type", rename_all = "snake_case")]
-pub enum ProgExpr_ {
-    Var { var: i32 },
-    Not { expr: Box<ProgExpr> },
-    And { exprs: Vec<ProgExpr> },
-    Or { exprs: Vec<ProgExpr> },
+pub enum BatchCond {
+    Ok { step: i32 },
+    Error { step: i32 },
+    Not { cond: Box<BatchCond> },
+    And { conds: Vec<BatchCond> },
+    Or { conds: Vec<BatchCond> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
