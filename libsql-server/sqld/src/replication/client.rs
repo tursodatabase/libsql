@@ -45,6 +45,9 @@ use crate::rpc::replication_log::rpc::{
 use crate::rpc::replication_log::NO_HELLO_ERROR_MSG;
 use crate::HARD_RESET;
 
+/// Maximum number of frames buffered by the replica
+const MAX_REPLICA_BUFFER_SIZE: usize = 1000; // ~= 40MB
+
 pub struct PeriodicDbUpdater {
     interval: Duration,
     db: rusqlite::Connection,
@@ -162,33 +165,43 @@ unsafe impl WalHook for ReadReplicationHook {
         }
 
         let rt = self.rt.clone();
-        if let Err(e) = rt.block_on(self.fetch_log_entries()) {
-            tracing::error!("error fetching log entries: {e}");
-            return SQLITE_ERROR;
-        }
+        loop {
+            let has_more_pages = match rt.block_on(self.fetch_log_entries()) {
+                Ok(has_more_pages) => has_more_pages,
+                Err(e) => {
+                    tracing::error!("error fetching log entries: {e}");
+                    return SQLITE_ERROR;
+                }
+            };
 
-        while let Some((page_headers, frame_count)) = self.next_transaction() {
-            let size_after = self.buffer[frame_count - 1].header.size_after;
-            assert_ne!(size_after, 0, "commit index points to non commit frame");
+            while let Some((page_headers, frame_count)) = self.next_transaction() {
+                let size_after = self.buffer[frame_count - 1].header.size_after;
+                assert_ne!(size_after, 0, "commit index points to non commit frame");
 
-            tracing::trace!(commit = ?frame_count, size_after = size_after);
-            self.inc_pre_commit(frame_count as u64)
-                .expect("failed to write pre-commit index");
-            let ret = unsafe { orig(wal, WAL_PAGE_SIZE, page_headers, size_after, 1, sync_flags) };
+                tracing::trace!(commit = ?frame_count, size_after = size_after);
+                self.inc_pre_commit(frame_count as u64)
+                    .expect("failed to write pre-commit index");
+                let ret =
+                    unsafe { orig(wal, WAL_PAGE_SIZE, page_headers, size_after, 1, sync_flags) };
 
-            if ret == 0 {
-                debug_assert!(all_applied(page_headers));
-                self.sync_post_commit()
-                    .expect("failed to write post-commit index");
-                // remove commited entries.
-                self.buffer.drain(..frame_count);
-                tracing::trace!("applied frame batch");
-            } else {
-                // should we retry?
-                todo!("how to handle apply failure?");
+                if ret == 0 {
+                    debug_assert!(all_applied(page_headers));
+                    self.sync_post_commit()
+                        .expect("failed to write post-commit index");
+                    // remove commited entries.
+                    self.buffer.drain(..frame_count);
+                    tracing::trace!("applied frame batch");
+                } else {
+                    // should we retry?
+                    todo!("how to handle apply failure?");
+                }
+
+                free_page_header(page_headers);
             }
 
-            free_page_header(page_headers);
+            if !has_more_pages {
+                break;
+            }
         }
         // return error from dummy write.
         // this is a trick to prevent sqlite from keeping any state in memory after a dummy write
@@ -432,7 +445,8 @@ impl ReadReplicationHook {
     }
 
     /// Asks the writer for new log frames to apply.
-    async fn fetch_log_entries(&mut self) -> anyhow::Result<()> {
+    /// Returns whether there may be new frames available immediately
+    async fn fetch_log_entries(&mut self) -> anyhow::Result<bool> {
         let current_offset = self.current_frame_index();
         let req = LogOffset { current_offset };
 
@@ -452,11 +466,14 @@ impl ReadReplicationHook {
                     );
                     frame_count += 1;
                     self.buffer.push_back(frame);
+                    if self.buffer.len() >= MAX_REPLICA_BUFFER_SIZE {
+                        return Ok(true);
+                    }
                 }
 
                 tracing::debug!(current_offset, frame_count,);
 
-                Ok(())
+                Ok(false)
             }
             Err(s) if s.code() == Code::FailedPrecondition && s.message() == NO_HELLO_ERROR_MSG => {
                 tracing::info!("Primary restarted, perfoming hanshake again");
@@ -468,7 +485,7 @@ impl ReadReplicationHook {
                 .await?
                 .into();
 
-                Ok(())
+                Ok(false)
             }
             Err(e) => Err(e)?,
         }
