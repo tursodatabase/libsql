@@ -307,8 +307,11 @@ static void jsonAppendValue(
       jsonAppendRaw(p, "null", 4);
       break;
     }
-    case SQLITE_INTEGER:
     case SQLITE_FLOAT: {
+      jsonPrintf(100, p, "%!0.15g", sqlite3_value_double(pValue));
+      break;
+    }
+    case SQLITE_INTEGER: {
       const char *z = (const char*)sqlite3_value_text(pValue);
       u32 n = (u32)sqlite3_value_bytes(pValue);
       jsonAppendRaw(p, z, n);
