@@ -1,7 +1,7 @@
 //! Messages in the Hrana protocol.
 //!
 //! Please consult the Hrana specification in the `docs/` directory for more information.
-use crate::prog;
+use crate::batch;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
@@ -26,7 +26,7 @@ pub enum Request {
     OpenStream(OpenStreamReq),
     CloseStream(OpenStreamReq),
     Execute(ExecuteReq),
-    Prog(ProgReq),
+    Batch(BatchReq),
 }
 
 #[derive(Serialize, Debug)]
@@ -35,7 +35,7 @@ pub enum Response {
     OpenStream(OpenStreamResp),
     CloseStream(CloseStreamResp),
     Execute(ExecuteResp),
-    Prog(ProgResp),
+    Batch(BatchResp),
 }
 
 #[derive(Deserialize, Debug)]
@@ -57,23 +57,23 @@ pub struct CloseStreamResp {}
 #[derive(Deserialize, Debug)]
 pub struct ExecuteReq {
     pub stream_id: i32,
-    pub stmt: prog::proto::Stmt,
+    pub stmt: batch::proto::Stmt,
 }
 
 #[derive(Serialize, Debug)]
 pub struct ExecuteResp {
-    pub result: prog::proto::StmtResult,
+    pub result: batch::proto::StmtResult,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct ProgReq {
+pub struct BatchReq {
     pub stream_id: i32,
-    pub prog: prog::proto::Prog,
+    pub batch: batch::proto::Batch,
 }
 
 #[derive(Serialize, Debug)]
-pub struct ProgResp {
-    pub result: prog::proto::ProgResult,
+pub struct BatchResp {
+    pub result: batch::proto::BatchResult,
 }
 
 #[derive(Serialize, Debug)]

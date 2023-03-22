@@ -371,7 +371,7 @@ type Batch = {
 }
 
 type BatchStep = {
-    "condition"?: BatchCond,
+    "condition"?: BatchCond | null,
     "stmt": Stmt,
 }
 

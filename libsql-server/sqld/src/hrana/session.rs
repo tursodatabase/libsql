@@ -8,7 +8,7 @@ use tokio::sync::{mpsc, oneshot};
 use super::{proto, Server};
 use crate::auth::{AuthError, Authenticated};
 use crate::database::Database;
-use crate::prog;
+use crate::batch;
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session {
@@ -57,9 +57,9 @@ pub enum ResponseError {
     StreamNotOpen { stream_id: i32 },
 
     #[error(transparent)]
-    Prog(prog::ProgError),
+    Batch(batch::BatchError),
     #[error(transparent)]
-    Stmt(prog::StmtError),
+    Stmt(batch::StmtError),
 }
 
 pub(super) async fn handle_hello(server: &Server, jwt: Option<String>) -> Result<Session> {
@@ -132,13 +132,13 @@ pub(super) async fn handle_request(
                 let Some(db) = stream.db.as_ref() else {
                     bail!(ResponseError::StreamNotOpen { stream_id })
                 };
-                match prog::execute_stmt(&**db, &req.stmt).await {
+                match batch::execute_stmt(&**db, &req.stmt).await {
                     Ok(result) => Ok(proto::Response::Execute(proto::ExecuteResp { result })),
-                    Err(err) => bail!(ResponseError::Stmt(err.downcast::<prog::StmtError>()?)),
+                    Err(err) => bail!(ResponseError::Stmt(err.downcast::<batch::StmtError>()?)),
                 }
             });
         }
-        proto::Request::Prog(req) => {
+        proto::Request::Batch(req) => {
             let stream_id = req.stream_id;
             let Some(stream_hnd) = session.streams.get_mut(&stream_id) else {
                 bail!(ResponseError::StreamNotFound { stream_id })
@@ -148,9 +148,9 @@ pub(super) async fn handle_request(
                 let Some(db) = stream.db.as_ref() else {
                     bail!(ResponseError::StreamNotOpen { stream_id })
                 };
-                match prog::execute_prog(&**db, &req.prog).await {
-                    Ok(result) => Ok(proto::Response::Prog(proto::ProgResp { result })),
-                    Err(err) => bail!(ResponseError::Prog(err.downcast::<prog::ProgError>()?)),
+                match batch::execute_batch(&**db, &req.batch).await {
+                    Ok(result) => Ok(proto::Response::Batch(proto::BatchResp { result })),
+                    Err(err) => bail!(ResponseError::Batch(err.downcast::<batch::BatchError>()?)),
                 }
             });
         }
