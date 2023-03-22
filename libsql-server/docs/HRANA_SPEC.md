@@ -65,10 +65,10 @@ After a stream is opened, the client can execute SQL _statements_ on it. For the
 purposes of this protocol, the statements are arbitrary strings with optional
 parameters. The protocol can thus work with any SQL dialect.
 
-To reduce the number of roundtrips, the protocol supports rudimentary programs
-that are evaluated on the server, which can be used to conditionally execute
-statements. For example, this mechanism can be used to implement non-interactive
-transactions (batches) in a single roundtrip.
+To reduce the number of roundtrips, the protocol supports batches of statements
+that are executed conditionally, based on success or failure of previous
+statements. This mechanism is used to implement non-interactive transactions in
+a single roundtrip.
 
 ## Messages
 
@@ -206,13 +206,13 @@ type Request =
     | OpenStreamReq
     | CloseStreamReq
     | ExecuteReq
-    | ProgReq
+    | BatchReq
 
 type Response =
     | OpenStreamResp
     | CloseStreamResp
     | ExecuteResp
-    | ProgResp
+    | BatchResp
 ```
 
 The type of the request and response is determined by its `type` field. The
@@ -347,99 +347,71 @@ DELETE, and the value is otherwise undefined.
 table. The rowid value is a 64-bit signed integer encoded as a string. For
 other statements, the value is undefined.
 
-### Execute a program
+### Execute a batch
 
 ```typescript
-type ProgReq = {
-    "type": "prog",
+type BatchReq = {
+    "type": "batch",
     "stream_id": int32,
-    "prog": Prog,
+    "batch": Batch,
 }
 
-type ProgResp = {
-    "type": "prog",
-    "result": ProgResult,
+type BatchResp = {
+    "type": "batch",
+    "result": BatchResult,
 }
 ```
 
-The `run` request runs a program on a stream. The server responds with the
-result of the program execution.
-
-### Programs
+The `batch` request runs a batch of statements on a stream. The server responds
+with the result of the batch execution.
 
 ```typescript
-type Prog = {
-    "steps": Array<ProgStep>,
+type Batch = {
+    "steps": Array<BatchStep>,
 }
 
-type ProgStep =
-    | ExecuteStep
-    | OutputStep
-    | OpStep
-```
-
-A program is a sequence of steps, which are executed in order by the server.
-
-```typescript
-type ExecuteStep = {
-    "type": "execute",
+type BatchStep = {
+    "condition"?: BatchCond,
     "stmt": Stmt,
-    "condition"?: ProgExpr | null,
-    "on_ok"?: Array<ProgOp>,
-    "on_error"?: Array<ProgOp>,
+}
+
+type BatchResult = {
+    "step_results": Array<StmtResult | null>,
+    "step_errors": Array<Error | null>,
 }
 ```
 
-The `execute` step executes a statement `stmt` on the stream. If the `condition`
-is specified, the server first evaluates the expression and it executes the
-statement only if it evaluated to true.
+A batch is a list of statements (steps) which are always executed sequentially.
+If the `condition` of a step is present and evaluates to false, the statement is
+skipped.
 
-The `on_ok` and `on_error` sequences of operations, if present, are executed if
-the statement executed successfully or with an error, respec
-
-The operations in `on_ok` are executed only if the statement executed
-successfully, and the operations in `on_error` are executed only if the
-statement failed. If the statement was not executed because the `condition`
-evaluated to false, neither `on_ok` nor `on_error` are executed.
-
-The result or error from executing the statement is stored in `execute_results` or
-`execute_errors` array in the `ProgResult`.
+The batch result contains the results or errors of statements from each step.
+For the step in `steps[i]`, `step_results[i]` contains the result of the
+statement if the statement was executed and succeeded, and `step_errors[i]`
+contains the error if the statement was executed and failed. If the statement
+was skipped because its condition evaluated to false, both `step_results[i]` and
+`step_errors[i]` will be `null`.
 
 ```typescript
-type OutputStep = {
-    "type": "output",
-    "expr": ProgExpr,
-}
+type BatchCond =
+    | { "type": "ok", "step": int32 }
+    | { "type": "error", "step": int32 }
+    | { "type": "not", "cond": BatchCond }
+    | { "type": "and", "conds": Array<BatchCond> }
+    | { "type": "or", "conds": Array<BatchCond> }
 ```
 
-The `output` step evaluates an expression and returns the resulting value in the
-`outputs` array in `ProgResult`.
+Conditions are expressions that evaluate to true or false:
 
-```typescript
-type OpStep = {
-    "type": "op",
-    "ops": Array<ProgOp>,
-}
-```
-
-The `op` step executes a sequence of operations.
-
-```typescript
-type ProgResult = {
-    "execute_results": Array<StmtResult | null>,
-    "execute_errors": Array<Error | null>,
-    "outputs": Array<Value>,
-}
-```
-
-The result of executing a program contains the results of `execute` and `output`
-steps in the program.
-
-- `execute_results[i]` contains the result of the `i`-th `execute` step. If the
-statement produced an error or if it was skipped, this is `null`.
-- `execute_errors[i]` contains the error produced by the `i`-th `execute` step.
-If the statement suceeded or if it was skipped, this is `null`.
-- `outputs[i]` contains the value produced by the `i`-th `output` step.
+- `ok` evaluates to true if the `step` (referenced by a 0-based index) was
+executed successfully. If the statement was skipped, this condition evaluates to
+false.
+- `error` evaluates to true if the `step` (referenced by a 0-based index) has
+produced an error. If the statement was skipped, this condition evaluates to
+false.
+- `not` evaluates `cond` and returns the logical negative.
+- `and` evaluates `conds` and returns the logical conjunction of them.
+- `or` evaluates `conds` and returns the logical disjunction of them.
 
 ### Values
 
@@ -464,48 +436,6 @@ precision, because some JSON implementations treat all numbers as 64-bit floats
 
 These types exactly correspond to SQLite types. In the future, the protocol
 might be extended with more types for compatibility with Postgres.
-
-### Program operations and expressions
-
-```typescript
-type ProgOp =
-    | { "type": "set", "var": int32, "expr": ProgExpr }
-```
-
-Program operations are imperative compute instructions. There is only a single
-operation, `set`, which evaluates an expression and assigns the value to a
-variable.
-
-```typescript
-type ProgExpr =
-    | Value
-    | { "type": "var", "var": int32 }
-    | { "type": "not", "expr": ProgExpr }
-    | { "type": "and", "exprs": Array<ProgExpr> }
-    | { "type": "or", "exprs": Array<ProgExpr> }
-```
-
-Expressions evaluate to values. Expressions are pure, their evaluation does not
-have side effects.
-
-- Each `Value` is also an expression that evaluates to itself.
-- `var` evaluates to the current value of given variable. If the variable is not
-set, an error is produced.
-- `not` evaluates `expr` and returns the logical negative: if `expr` evaluated
-to true, it returns integer 0, otherwise it returns integer 1.
-- `and` returns the value of the first expression from `exprs` that evaluates to
-false, or the value of the last expression if all evaluate to true. If `exprs`
-is empty, `and` returns integer 1.
-- `or` returns the value of the first expression from `exprs` that evaluates to
-true, or the value of the last expression if all evaluate to false. If `exprs`
-is empty, `and` returns integer 0.
-
-When a value is treated as a boolean (such as in the condition of `execute`
-request or in `not` expression), it is converted as follows:
-
-- NULL is false.
-- Integers and floats are true iff they are nonzero.
-- Texts and blobs are true iff they are nonempty.
 
 ### Ordering
 
