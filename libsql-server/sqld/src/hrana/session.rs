@@ -7,10 +7,8 @@ use tokio::sync::{mpsc, oneshot};
 
 use super::{proto, Server};
 use crate::auth::{AuthError, Authenticated};
+use crate::batch;
 use crate::database::Database;
-use crate::error::Error;
-use crate::query::{Params, Query, QueryResponse, Value};
-use crate::query_analysis::Statement;
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session {
@@ -58,32 +56,10 @@ pub enum ResponseError {
     #[error("Stream {stream_id} has failed to open")]
     StreamNotOpen { stream_id: i32 },
 
-    #[error("SQL string could not be parsed: {source}")]
-    SqlParseError { source: anyhow::Error },
-    #[error("SQL string does not contain any statement")]
-    SqlNoStmt,
-    #[error("SQL string contains more than one statement")]
-    SqlManyStmts,
-    #[error("Arguments do not match SQL parameters: {source}")]
-    ArgsInvalid { source: anyhow::Error },
-    #[error("Specifying both positional and named arguments is not supported")]
-    ArgsBothPositionalAndNamed,
-
-    #[error("Transaction timed out")]
-    TransactionTimeout,
-    #[error("Server cannot handle additional transactions")]
-    TransactionBusy,
-    #[error("SQLite error: {source}: {message:?}")]
-    SqliteError {
-        source: rusqlite::ffi::Error,
-        message: Option<String>,
-    },
-    #[error("SQL input error: {source}: {message:?} at offset {offset}")]
-    SqlInputError {
-        source: rusqlite::ffi::Error,
-        message: String,
-        offset: i32,
-    },
+    #[error(transparent)]
+    Batch(batch::BatchError),
+    #[error(transparent)]
+    Stmt(batch::StmtError),
 }
 
 pub(super) async fn handle_hello(server: &Server, jwt: Option<String>) -> Result<Session> {
@@ -105,6 +81,16 @@ pub(super) async fn handle_request(
     req: proto::Request,
 ) -> Result<oneshot::Receiver<Result<proto::Response>>> {
     let (resp_tx, resp_rx) = oneshot::channel();
+
+    macro_rules! stream_respond {
+        ($stream_hnd:expr, async move |$stream:ident| { $($body:tt)* }) => {
+            stream_respond($stream_hnd, resp_tx, move |$stream| {
+                Box::pin(async move { $($body)* })
+            })
+            .await
+        };
+    }
+
     match req {
         proto::Request::OpenStream(req) => {
             let stream_id = req.stream_id;
@@ -115,17 +101,14 @@ pub(super) async fn handle_request(
             let mut stream_hnd = stream_spawn(join_set, Stream { db: None });
 
             let db_factory = server.db_factory.clone();
-            stream_respond(&mut stream_hnd, resp_tx, move |stream| {
-                Box::pin(async move {
-                    let db = db_factory
-                        .create()
-                        .await
-                        .context("Could not create a database connection")?;
-                    stream.db = Some(db);
-                    Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
-                })
-            })
-            .await;
+            stream_respond!(&mut stream_hnd, async move |stream| {
+                let db = db_factory
+                    .create()
+                    .await
+                    .context("Could not create a database connection")?;
+                stream.db = Some(db);
+                Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
+            });
 
             session.streams.insert(stream_id, stream_hnd);
         }
@@ -135,10 +118,9 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
-            stream_respond(&mut stream_hnd, resp_tx, |_| {
-                Box::pin(async move { Ok(proto::Response::CloseStream(proto::CloseStreamResp {})) })
-            })
-            .await;
+            stream_respond!(&mut stream_hnd, async move |_stream| {
+                Ok(proto::Response::CloseStream(proto::CloseStreamResp {}))
+            });
         }
         proto::Request::Execute(req) => {
             let stream_id = req.stream_id;
@@ -146,16 +128,31 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
-            stream_respond(stream_hnd, resp_tx, move |stream| {
-                Box::pin(async move {
-                    let Some(db) = stream.db.as_ref() else {
-                        bail!(ResponseError::StreamNotOpen { stream_id })
-                    };
-                    let result = execute_stmt(&**db, req.stmt).await?;
-                    Ok(proto::Response::Execute(proto::ExecuteResp { result }))
-                })
-            })
-            .await;
+            stream_respond!(stream_hnd, async move |stream| {
+                let Some(db) = stream.db.as_ref() else {
+                    bail!(ResponseError::StreamNotOpen { stream_id })
+                };
+                match batch::execute_stmt(&**db, &req.stmt).await {
+                    Ok(result) => Ok(proto::Response::Execute(proto::ExecuteResp { result })),
+                    Err(err) => bail!(ResponseError::Stmt(err.downcast::<batch::StmtError>()?)),
+                }
+            });
+        }
+        proto::Request::Batch(req) => {
+            let stream_id = req.stream_id;
+            let Some(stream_hnd) = session.streams.get_mut(&stream_id) else {
+                bail!(ResponseError::StreamNotFound { stream_id })
+            };
+
+            stream_respond!(stream_hnd, async move |stream| {
+                let Some(db) = stream.db.as_ref() else {
+                    bail!(ResponseError::StreamNotOpen { stream_id })
+                };
+                match batch::execute_batch(&**db, &req.batch).await {
+                    Ok(result) => Ok(proto::Response::Batch(proto::BatchResp { result })),
+                    Err(err) => bail!(ResponseError::Batch(err.downcast::<batch::BatchError>()?)),
+                }
+            });
         }
     }
     Ok(resp_rx)
@@ -186,136 +183,4 @@ async fn stream_respond<F>(
         resp_tx,
     };
     let _: Result<_, _> = stream_hnd.job_tx.send(job).await;
-}
-
-async fn execute_stmt(db: &dyn Database, stmt: proto::Stmt) -> Result<proto::StmtResult> {
-    let query = proto_stmt_to_query(stmt)?;
-    let (query_result, _) = db.execute_one(query).await?;
-    match query_result {
-        Ok(query_response) => Ok(proto_stmt_result_from_query_response(query_response)),
-        Err(error) => match ResponseError::try_from(error) {
-            Ok(resp_error) => bail!(resp_error),
-            Err(error) => bail!(error),
-        },
-    }
-}
-
-fn proto_stmt_to_query(proto_stmt: proto::Stmt) -> Result<Query> {
-    let mut stmt_iter = Statement::parse(&proto_stmt.sql);
-    let stmt = match stmt_iter.next() {
-        Some(Ok(stmt)) => stmt,
-        Some(Err(err)) => bail!(ResponseError::SqlParseError { source: err }),
-        None => bail!(ResponseError::SqlNoStmt),
-    };
-
-    if stmt_iter.next().is_some() {
-        bail!(ResponseError::SqlManyStmts)
-    }
-
-    let params = if proto_stmt.named_args.is_empty() {
-        let values = proto_stmt
-            .args
-            .into_iter()
-            .map(proto_value_to_value)
-            .collect();
-        Params::Positional(values)
-    } else if proto_stmt.args.is_empty() {
-        let values = proto_stmt
-            .named_args
-            .into_iter()
-            .map(|arg| (arg.name, proto_value_to_value(arg.value)))
-            .collect();
-        Params::Named(values)
-    } else {
-        bail!(ResponseError::ArgsBothPositionalAndNamed)
-    };
-
-    Ok(Query { stmt, params })
-}
-
-fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto::StmtResult {
-    let QueryResponse::ResultSet(result_set) = query_response;
-    let proto_cols = result_set
-        .columns
-        .into_iter()
-        .map(|col| proto::Col {
-            name: Some(col.name),
-        })
-        .collect();
-    let proto_rows = result_set
-        .rows
-        .into_iter()
-        .map(|row| row.values.into_iter().map(proto::Value::from).collect())
-        .collect();
-    proto::StmtResult {
-        cols: proto_cols,
-        rows: proto_rows,
-        affected_row_count: result_set.affected_row_count,
-        last_insert_rowid: result_set.last_insert_rowid,
-    }
-}
-
-fn proto_value_to_value(proto_value: proto::Value) -> Value {
-    match proto_value {
-        proto::Value::Null => Value::Null,
-        proto::Value::Integer { value } => Value::Integer(value),
-        proto::Value::Float { value } => Value::Real(value),
-        proto::Value::Text { value } => Value::Text(value),
-        proto::Value::Blob { value } => Value::Blob(value),
-    }
-}
-
-fn proto_value_from_value(value: Value) -> proto::Value {
-    match value {
-        Value::Null => proto::Value::Null,
-        Value::Integer(value) => proto::Value::Integer { value },
-        Value::Real(value) => proto::Value::Float { value },
-        Value::Text(value) => proto::Value::Text { value },
-        Value::Blob(value) => proto::Value::Blob { value },
-    }
-}
-
-fn proto_response_error_from_error(error: Error) -> Result<ResponseError, Error> {
-    Ok(match error {
-        Error::LibSqlInvalidQueryParams(source) => ResponseError::ArgsInvalid { source },
-        Error::LibSqlTxTimeout(_) => ResponseError::TransactionTimeout,
-        Error::LibSqlTxBusy => ResponseError::TransactionBusy,
-        Error::RusqliteError(rusqlite_error) => match rusqlite_error {
-            rusqlite::Error::SqliteFailure(sqlite_error, message) => ResponseError::SqliteError {
-                source: sqlite_error,
-                message,
-            },
-            rusqlite::Error::SqlInputError {
-                error: sqlite_error,
-                msg: message,
-                offset,
-                ..
-            } => ResponseError::SqlInputError {
-                source: sqlite_error,
-                message,
-                offset,
-            },
-            rusqlite_error => return Err(Error::RusqliteError(rusqlite_error)),
-        },
-        error => return Err(error),
-    })
-}
-
-impl From<proto::Value> for Value {
-    fn from(proto_value: proto::Value) -> Value {
-        proto_value_to_value(proto_value)
-    }
-}
-
-impl From<Value> for proto::Value {
-    fn from(value: Value) -> proto::Value {
-        proto_value_from_value(value)
-    }
-}
-
-impl TryFrom<Error> for ResponseError {
-    type Error = Error;
-    fn try_from(error: Error) -> Result<ResponseError, Error> {
-        proto_response_error_from_error(error)
-    }
 }

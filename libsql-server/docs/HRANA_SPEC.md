@@ -65,6 +65,11 @@ After a stream is opened, the client can execute SQL _statements_ on it. For the
 purposes of this protocol, the statements are arbitrary strings with optional
 parameters. The protocol can thus work with any SQL dialect.
 
+To reduce the number of roundtrips, the protocol supports batches of statements
+that are executed conditionally, based on success or failure of previous
+statements. This mechanism is used to implement non-interactive transactions in
+a single roundtrip.
+
 ## Messages
 
 All messages exchanged between the client and server are text messages encoded
@@ -74,7 +79,7 @@ messages with a more compact binary encoding.
 This specification describes the JSON messages using TypeScript syntax as
 follows:
 
-```
+```typescript
 type ClientMsg =
     | HelloMsg
     | RequestMsg
@@ -91,7 +96,7 @@ type `ServerMsg`. The type of the message is determined by its `type` field.
 
 ### Hello
 
-```
+```typescript
 type HelloMsg = {
     "type": "hello",
     "jwt": string | null,
@@ -106,7 +111,7 @@ such as with mutual TLS), the `jwt` field might be set to `null`.
 
 [rfc7519]: https://www.rfc-editor.org/rfc/rfc7519
 
-```
+```typescript
 type HelloOkMsg = {
     "type": "hello_ok",
 }
@@ -128,7 +133,7 @@ should close the WebSocket immediately.
 
 ### Request/response
 
-```
+```typescript
 type RequestMsg = {
     "type": "request",
     "request_id": int32,
@@ -141,7 +146,7 @@ messages. The client uses requests to open SQL streams and execute statements on
 them. The client assigns an identifier to every request, which is then used to
 match a response to the request.
 
-```
+```typescript
 type ResponseOkMsg = {
     "type": "response_ok",
     "request_id": int32,
@@ -170,7 +175,7 @@ other hand, the client should always receive messages, to avoid deadlock.
 
 ### Errors
 
-```
+```typescript
 type Error = {
     "message": string,
 }
@@ -196,16 +201,18 @@ response.
 
 Most of the work in the protocol happens in request/response interactions.
 
-```
+```typescript
 type Request =
     | OpenStreamReq
     | CloseStreamReq
     | ExecuteReq
+    | BatchReq
 
 type Response =
     | OpenStreamResp
     | CloseStreamResp
     | ExecuteResp
+    | BatchResp
 ```
 
 The type of the request and response is determined by its `type` field. The
@@ -213,7 +220,7 @@ The type of the request and response is determined by its `type` field. The
 
 ### Open stream
 
-```
+```typescript
 type OpenStreamReq = {
     "type": "open_stream",
     "stream_id": int32,
@@ -242,7 +249,7 @@ same time.
 
 ### Close stream
 
-```
+```typescript
 type CloseStreamReq = {
     "type": "close_stream",
     "stream_id": int32,
@@ -262,7 +269,7 @@ returned an error.
 
 ### Execute a statement
 
-```
+```typescript
 type ExecuteReq = {
     "type": "execute",
     "stream_id": int32,
@@ -278,7 +285,7 @@ type ExecuteResp = {
 The client sends an `execute` request to execute an SQL statement on a stream.
 The server responds with the result of the statement.
 
-```
+```typescript
 type Stmt = {
     "sql": string,
     "args"?: Array<Value>,
@@ -315,7 +322,7 @@ reply with no rows, even if the statement produced some.
 The SQL text should contain just a single statement. Issuing multiple statements
 separated by a semicolon is not supported.
 
-```
+```typescript
 type StmtResult = {
     "cols": Array<Col>,
     "rows": Array<Array<Value>>,
@@ -340,9 +347,75 @@ DELETE, and the value is otherwise undefined.
 table. The rowid value is a 64-bit signed integer encoded as a string. For
 other statements, the value is undefined.
 
+### Execute a batch
+
+```typescript
+type BatchReq = {
+    "type": "batch",
+    "stream_id": int32,
+    "batch": Batch,
+}
+
+type BatchResp = {
+    "type": "batch",
+    "result": BatchResult,
+}
+```
+
+The `batch` request runs a batch of statements on a stream. The server responds
+with the result of the batch execution.
+
+```typescript
+type Batch = {
+    "steps": Array<BatchStep>,
+}
+
+type BatchStep = {
+    "condition"?: BatchCond | null,
+    "stmt": Stmt,
+}
+
+type BatchResult = {
+    "step_results": Array<StmtResult | null>,
+    "step_errors": Array<Error | null>,
+}
+```
+
+A batch is a list of steps (statements) which are always executed sequentially.
+If the `condition` of a step is present and evaluates to false, the statement is
+skipped.
+
+The batch result contains the results or errors of statements from each step.
+For the step in `steps[i]`, `step_results[i]` contains the result of the
+statement if the statement was executed and succeeded, and `step_errors[i]`
+contains the error if the statement was executed and failed. If the statement
+was skipped because its condition evaluated to false, both `step_results[i]` and
+`step_errors[i]` will be `null`.
+
+```typescript
+type BatchCond =
+    | { "type": "ok", "step": int32 }
+    | { "type": "error", "step": int32 }
+    | { "type": "not", "cond": BatchCond }
+    | { "type": "and", "conds": Array<BatchCond> }
+    | { "type": "or", "conds": Array<BatchCond> }
+```
+
+Conditions are expressions that evaluate to true or false:
+
+- `ok` evaluates to true if the `step` (referenced by its 0-based index) was
+executed successfully. If the statement was skipped, this condition evaluates to
+false.
+- `error` evaluates to true if the `step` (referenced by its 0-based index) has
+produced an error. If the statement was skipped, this condition evaluates to
+false.
+- `not` evaluates `cond` and returns the logical negative.
+- `and` evaluates `conds` and returns the logical conjunction of them.
+- `or` evaluates `conds` and returns the logical disjunction of them.
+
 ### Values
 
-```
+```typescript
 type Value =
     | { "type": "null" }
     | { "type": "integer", "value": string }
