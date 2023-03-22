@@ -24,4 +24,5 @@ message Frame {
 service ReplicationLog {
     rpc Hello(HelloRequest) returns (HelloResponse) {}
     rpc LogEntries(LogOffset) returns (stream Frame) {}
+    rpc Snapshot(LogOffset) returns (stream Frame) {}
 }

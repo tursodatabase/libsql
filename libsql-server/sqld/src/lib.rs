@@ -13,7 +13,7 @@ use database::write_proxy::WriteProxyDbFactory;
 use once_cell::sync::Lazy;
 #[cfg(feature = "mwal_backend")]
 use once_cell::sync::OnceCell;
-use replication::logger::{ReplicationLogger, ReplicationLoggerHook};
+use replication::{ReplicationLogger, ReplicationLoggerHook};
 use rpc::run_rpc_server;
 use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;
@@ -89,6 +89,7 @@ pub struct Config {
     pub create_local_http_tunnel: bool,
     pub idle_shutdown_timeout: Option<Duration>,
     pub load_from_dump: Option<PathBuf>,
+    pub max_log_size: u64,
 }
 
 async fn run_service(
@@ -214,7 +215,10 @@ async fn start_primary(
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
     let is_fresh_db = check_fresh_db(&config.db_path);
-    let logger = Arc::new(ReplicationLogger::open(&config.db_path)?);
+    let logger = Arc::new(ReplicationLogger::open(
+        &config.db_path,
+        config.max_log_size,
+    )?);
     let logger_clone = logger.clone();
     let path_clone = config.db_path.clone();
     #[cfg(feature = "bottomless")]
