@@ -10,7 +10,7 @@ use tokio::sync::{mpsc, oneshot};
 
 mod conn;
 mod handshake;
-mod proto;
+pub mod proto;
 mod session;
 
 struct Server {
