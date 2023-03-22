@@ -7,10 +7,11 @@ use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 
+use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::Status;
 
-use crate::replication::logger::{FrameId, ReplicationLogger};
+use crate::replication::{FrameId, LogReadError, ReplicationLogger};
 
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
@@ -21,6 +22,7 @@ pub struct ReplicationLogService {
 }
 
 pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
+pub const NEED_SNAPSHOT_ERROR_MSG: &str = "NEED_SNAPSHOT";
 
 impl ReplicationLogService {
     pub fn new(logger: Arc<ReplicationLogger>) -> Self {
@@ -36,15 +38,34 @@ impl ReplicationLogService {
         tokio::task::spawn_blocking(move || {
             let mut offset = start_id;
             loop {
-                match logger.frame_bytes(offset) {
-                    Ok(None) => break,
-                    Ok(Some(data)) => {
-                        if sender.blocking_send(Ok(Frame { data })).is_err() {
+                // FIXME: add buffering of the log frames.
+                let log_file = logger.log_file.read();
+                match log_file.frame_bytes(offset) {
+                    Err(LogReadError::Ahead) => break,
+                    Ok(data) => {
+                        // release lock asap
+                        drop(log_file);
+                        if let Err(e) = sender.blocking_send(Ok(Frame { data })) {
+                            tracing::error!("failed to send frame: {e}");
                             break;
                         }
                         offset += 1;
                     }
-                    Err(e) => todo!("{e}"),
+                    Err(LogReadError::SnapshotRequired) => {
+                        let _ = sender.blocking_send(Err(Status::new(
+                            tonic::Code::FailedPrecondition,
+                            NEED_SNAPSHOT_ERROR_MSG,
+                        )));
+                        break;
+                    }
+                    Err(LogReadError::Error(e)) => {
+                        if let Err(e) = sender
+                            .blocking_send(Err(Status::new(tonic::Code::Internal, e.to_string())))
+                        {
+                            tracing::error!("failed to send frame: {e}");
+                        }
+                        break;
+                    }
                 }
             }
         });
@@ -56,6 +77,7 @@ impl ReplicationLogService {
 #[tonic::async_trait]
 impl ReplicationLog for ReplicationLogService {
     type LogEntriesStream = ReceiverStream<Result<Frame, Status>>;
+    type SnapshotStream = ReceiverStream<Result<Frame, Status>>;
 
     async fn log_entries(
         &self,
@@ -88,11 +110,47 @@ impl ReplicationLog for ReplicationLogService {
             guard.insert(replica_addr);
         }
         let response = HelloResponse {
-            database_id: self.logger.database_id().to_string(),
+            database_id: self.logger.database_id().unwrap().to_string(),
             generation_start_index: self.logger.generation.start_index,
             generation_id: self.logger.generation.id.to_string(),
         };
 
         Ok(tonic::Response::new(response))
+    }
+
+    async fn snapshot(
+        &self,
+        req: tonic::Request<LogOffset>,
+    ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
+        let (sender, receiver) = mpsc::channel(10);
+        let offset = req.into_inner().current_offset();
+        match self.logger.locate_snapshot(offset).await {
+            Ok(Some(snapshot)) => {
+                tokio::task::spawn_blocking(move || {
+                    let mut frames = snapshot.frames_iter_until(offset);
+                    loop {
+                        match frames.next() {
+                            Some(Ok(data)) => {
+                                let _ = sender.blocking_send(Ok(Frame { data }));
+                            }
+                            Some(Err(e)) => {
+                                let _ = sender.blocking_send(Err(Status::new(
+                                    tonic::Code::Internal,
+                                    e.to_string(),
+                                )));
+                                break;
+                            }
+                            None => {
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                Ok(tonic::Response::new(ReceiverStream::new(receiver)))
+            }
+            Ok(None) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
+            Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),
+        }
     }
 }
