@@ -381,7 +381,7 @@ type BatchResult = {
 }
 ```
 
-A batch is a list of statements (steps) which are always executed sequentially.
+A batch is a list of steps (statements) which are always executed sequentially.
 If the `condition` of a step is present and evaluates to false, the statement is
 skipped.
 
@@ -403,10 +403,10 @@ type BatchCond =
 
 Conditions are expressions that evaluate to true or false:
 
-- `ok` evaluates to true if the `step` (referenced by a 0-based index) was
+- `ok` evaluates to true if the `step` (referenced by its 0-based index) was
 executed successfully. If the statement was skipped, this condition evaluates to
 false.
-- `error` evaluates to true if the `step` (referenced by a 0-based index) has
+- `error` evaluates to true if the `step` (referenced by its 0-based index) has
 produced an error. If the statement was skipped, this condition evaluates to
 false.
 - `not` evaluates `cond` and returns the logical negative.
