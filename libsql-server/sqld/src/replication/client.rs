@@ -529,7 +529,7 @@ impl ReadReplicationHook {
                         }
                         Err(e) => return Err(e.into()),
                     };
-                    let frame = WalFrame::decode(raw_frame.data)?;
+                    let frame = WalFrame::try_from_bytes(raw_frame.data)?;
                     debug_assert_eq!(
                         Some(frame.header.frame_id),
                         current_offset

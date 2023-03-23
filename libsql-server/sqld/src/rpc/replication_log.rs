@@ -123,11 +123,12 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
         let (sender, receiver) = mpsc::channel(10);
+        let logger = self.logger.clone();
         let offset = req.into_inner().current_offset();
-        match self.logger.locate_snapshot(offset).await {
-            Ok(Some(snapshot)) => {
+        match tokio::task::spawn_blocking(move || logger.get_snapshot_file(offset)).await {
+            Ok(Ok(Some(snapshot))) => {
                 tokio::task::spawn_blocking(move || {
-                    let mut frames = snapshot.frames_iter_until(offset);
+                    let mut frames = snapshot.frames_iter_from(offset);
                     loop {
                         match frames.next() {
                             Some(Ok(data)) => {
@@ -149,8 +150,9 @@ impl ReplicationLog for ReplicationLogService {
 
                 Ok(tonic::Response::new(ReceiverStream::new(receiver)))
             }
-            Ok(None) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
+            Ok(Ok(None)) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),
+            Ok(Err(e)) => Err(Status::new(tonic::Code::Internal, e.to_string())),
         }
     }
 }

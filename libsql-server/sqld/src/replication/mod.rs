@@ -1,5 +1,4 @@
 pub mod client;
-mod log_compaction;
 mod logger;
 mod snapshot;
 
