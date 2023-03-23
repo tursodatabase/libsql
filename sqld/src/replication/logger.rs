@@ -10,9 +10,7 @@ use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use crc::Crc;
-use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use regex::Regex;
 use rusqlite::ffi::SQLITE_ERROR;
 use uuid::Uuid;
 
@@ -22,8 +20,7 @@ use crate::libsql::ffi::{
 };
 use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
 
-use super::log_compaction::LogCompactor;
-use super::snapshot::SnapshotFile;
+use super::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
 
 pub const WAL_PAGE_SIZE: i32 = 4096;
 pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
@@ -99,7 +96,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
                 .maybe_compact(
                     self.logger.compactor.clone(),
                     ntruncate,
-                    &self.logger.path,
+                    &self.logger.db_path,
                     self.logger.current_checksum.load(Ordering::Relaxed),
                 )
                 .unwrap();
@@ -136,6 +133,24 @@ pub struct WalFrame {
     pub data: Bytes,
 }
 
+impl WalFrame {
+    /// size of a single frame
+    pub const SIZE: usize = size_of::<FrameHeader>() + WAL_PAGE_SIZE as usize;
+
+    pub fn try_from_bytes(mut data: Bytes) -> anyhow::Result<Self> {
+        let header_bytes = data.split_to(size_of::<FrameHeader>());
+        ensure!(
+            data.len() == WAL_PAGE_SIZE as usize,
+            "invalid frame size, expected: {}, found: {}",
+            WAL_PAGE_SIZE,
+            data.len()
+        );
+        let header = FrameHeader::decode(&header_bytes)?;
+
+        Ok(Self { header, data })
+    }
+}
+
 pub struct WalFrameBorrowed<'a> {
     pub header: FrameHeader,
     pub data: &'a [u8],
@@ -147,20 +162,6 @@ impl<'a> From<&'a WalFrame> for WalFrameBorrowed<'a> {
             header: other.header,
             data: &other.data,
         }
-    }
-}
-
-impl WalFrame {
-    pub fn decode(mut data: Bytes) -> anyhow::Result<Self> {
-        let header_bytes = data.split_to(size_of::<FrameHeader>());
-        ensure!(
-            data.len() == WAL_PAGE_SIZE as usize,
-            "invalid frame size, expected: {}, found: {}",
-            WAL_PAGE_SIZE,
-            data.len()
-        );
-        let header = FrameHeader::decode(&header_bytes)?;
-        Ok(Self { header, data })
     }
 }
 
@@ -519,12 +520,12 @@ pub struct ReplicationLogger {
     pub generation: Generation,
     pub log_file: RwLock<LogFile>,
     compactor: LogCompactor,
-    path: PathBuf,
+    db_path: PathBuf,
 }
 
 impl ReplicationLogger {
-    pub fn open(path: impl AsRef<Path>, max_log_size: u64) -> anyhow::Result<Self> {
-        let log_path = path.as_ref().join("wallog");
+    pub fn open(db_path: &Path, max_log_size: u64) -> anyhow::Result<Self> {
+        let log_path = db_path.join("wallog");
         let file = OpenOptions::new()
             .create(true)
             .write(true)
@@ -544,9 +545,9 @@ impl ReplicationLogger {
         Ok(Self {
             current_checksum,
             generation: Generation::new(generation_start_frame_id),
+            compactor: LogCompactor::new(db_path, log_file.header.db_id)?,
             log_file: RwLock::new(log_file),
-            compactor: LogCompactor::new(path.as_ref().to_owned()),
-            path: path.as_ref().to_owned(),
+            db_path: db_path.to_owned(),
         })
     }
 
@@ -616,43 +617,8 @@ impl ReplicationLogger {
             .store(new_current_checksum, Ordering::Relaxed);
     }
 
-    pub async fn locate_snapshot(
-        &self,
-        start_idx: FrameId,
-    ) -> anyhow::Result<Option<SnapshotFile>> {
-        static SNAPSHOT_FILE_MATCHER: Lazy<Regex> = Lazy::new(|| {
-            Regex::new(
-                r#"(?x)
-                # match database id
-                (\w{8}-\w{4}-\w{4}-\w{4}-\w{12})-
-                # match start frame id
-                (\d*)-
-                # match end frame-id
-                (\d*).snap"#,
-            )
-            .unwrap()
-        });
-
-        let snapshots_dir = self.path.join("snapshots");
-        let mut entries = tokio::fs::read_dir(snapshots_dir).await?;
-
-        while let Some(entry) = entries.next_entry().await? {
-            let path = entry.path();
-            let Some(name) = path.file_name() else {continue;};
-            let Some(name_str) = name.to_str() else { continue;};
-            let Some(captures) = SNAPSHOT_FILE_MATCHER.captures(name_str) else {continue;};
-            let _db_id = captures.get(1).unwrap();
-            let start_index: u64 = captures.get(2).unwrap().as_str().parse().unwrap();
-            let end_index: u64 = captures.get(3).unwrap().as_str().parse().unwrap();
-            // we're looking for the frame right after the last applied frame on the replica
-            if (start_index..=end_index).contains(&(start_idx + 1)) {
-                tracing::debug!("found snapshot for frame {start_idx} at {path:?}");
-                let snapshot_file = SnapshotFile::open(&path)?;
-                return Ok(Some(snapshot_file));
-            }
-        }
-
-        Ok(None)
+    pub fn get_snapshot_file(&self, from: FrameId) -> anyhow::Result<Option<SnapshotFile>> {
+        find_snapshot_file(&self.db_path, from)
     }
 }
 
@@ -677,7 +643,7 @@ mod test {
 
         let log_file = logger.log_file.write();
         for i in 0..10 {
-            let frame = WalFrame::decode(log_file.frame_bytes(i).unwrap()).unwrap();
+            let frame = WalFrame::try_from_bytes(log_file.frame_bytes(i).unwrap()).unwrap();
             assert_eq!(frame.header.page_no, i as u32);
             assert!(frame.data.iter().all(|x| i as u8 == *x));
         }
