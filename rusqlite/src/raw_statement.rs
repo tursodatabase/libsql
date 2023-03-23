@@ -197,7 +197,6 @@ impl RawStatement {
     }
 
     // does not work for PRAGMA
-    #[cfg(feature = "extra_check")]
     #[inline]
     pub fn readonly(&self) -> bool {
         unsafe { ffi::sqlite3_stmt_readonly(self.ptr) != 0 }
