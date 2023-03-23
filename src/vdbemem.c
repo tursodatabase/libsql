@@ -1519,16 +1519,11 @@ static int valueFromFunction(
   }else{
     sqlite3ValueApplyAffinity(pVal, aff, SQLITE_UTF8);
     assert( rc==SQLITE_OK );
-    assert( enc==pVal->enc
-         || (pVal->flags & MEM_Str)==0
-         || db->mallocFailed  );
-#if 0  /* Not reachable except after a prior failure */
     rc = sqlite3VdbeChangeEncoding(pVal, enc);
-    if( rc==SQLITE_OK && sqlite3VdbeMemTooBig(pVal) ){
+    if( NEVER(rc==SQLITE_OK && sqlite3VdbeMemTooBig(pVal)) ){
       rc = SQLITE_TOOBIG;
       pCtx->pParse->nErr++;
     }
-#endif
   }
 
  value_from_function_out:

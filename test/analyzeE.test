@@ -239,4 +239,16 @@ do_execsql_test analyzeE-4.11 {
   SELECT * FROM t1 WHERE a<1900 AND c=123
 } {/SCAN t1/}
 
+# 2023-03-23 https://sqlite.org/forum/forumpost/dc4854437b
+#
+reset_db
+do_execsql_test analyzeE-5.0 {
+  PRAGMA encoding = 'UTF-16';
+  CREATE TABLE t0 (c1 TEXT);
+  INSERT INTO t0 VALUES ('');
+  CREATE INDEX i0 ON t0(c1);
+  ANALYZE;
+  SELECT * FROM t0 WHERE t0.c1 BETWEEN '' AND (ABS(''));
+} {{}}
+
 finish_test
