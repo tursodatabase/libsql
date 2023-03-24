@@ -1463,6 +1463,18 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(e instanceof sqlite3.SQLite3Error)
           .assert(0==e.message.indexOf('Cannot prepare empty'));
       }
+
+      counter = 0;
+      db.exec({
+        // Check for https://sqlite.org/forum/forumpost/895425b49a
+        sql: "pragma table_info('t')",
+        rowMode: 'object',
+        callback: function(row){
+          ++counter;
+          T.assert(row.name==='a' || row.name==='b');
+        }
+      });
+      T.assert(2===counter);
     })/*setup table T*/
 
   ////////////////////////////////////////////////////////////////////
