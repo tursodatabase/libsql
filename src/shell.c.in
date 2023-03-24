@@ -5130,7 +5130,7 @@ static void shellInt32(
   pBlob = (const unsigned char*)sqlite3_value_blob(argv[0]);
   iInt = sqlite3_value_int(argv[1]);
 
-  if( iInt>=0 && (iInt+1)*4<=nBlob ){
+  if( iInt>=0 && iInt<(nBlob/4) ){
     const unsigned char *a = &pBlob[iInt*4];
     sqlite3_int64 iVal = ((sqlite3_int64)a[0]<<24)
                        + ((sqlite3_int64)a[1]<<16)

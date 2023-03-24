@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\sOP_SeekScan\sopcode\sadded\sby\scheck-in\s[4a43430fd23f8835].\nProblem\sreported\sby\s[forum:/forumpost/8cc1dc0fe9|forum\spost\s8cc1dc0fe9].
-D 2023-03-24T21:24:52.602
+C Fix\spossible\sinteger\soverflow\sin\sbounds\schecking\sfor\sthe\sdebugging\sfunction\n"shell_int32()"\sfound\sin\sthe\sCLI.\s\sThis\schange\sdoes\snot\saffect\sthe\score\nSQLite.\s\s[forum:/forumpost/be9c294ee0|Forum\spost\sbe9c294ee0].
+D 2023-03-24T21:35:48.482
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -626,7 +626,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 83812448cf5a645f37d79c43fa92d38d7a9f7790d95f7ac09ac02b4064810bd2
-F src/shell.c.in e92846a40dae4acd20ae6073846d8a54ba7fc84c8299af3b8d63be19491c5ad9
+F src/shell.c.in 9e99faf8b27757d3a774e7febeae31cdd873249097127c0297089a6352316570
 F src/sqlite.h.in f01033703156615566bb329144d736a37fc35a278049db91127782a9c799b938
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8259877eaa962e6f90675790d3770ef02bd1a5d86d319cd8c1834710df844c4
-R ceac5b217457e4b5c354099ee0f2a202
+P 651a13fcd16f03e89eb6228c9f3250e25910b9bbe2637f627f65ff78f8ba2059
+R bcd7de74660ca1aa84d989e9651b4c63
 U drh
-Z c8ed2eeb19fba230a018ea1c48ee7af0
+Z 1b96d62587bba5c2429601d51964cf5c
 # Remove this line to create a well-formed Fossil manifest.
