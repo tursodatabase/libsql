@@ -4973,6 +4973,7 @@ case OP_SeekScan: {          /* ncycle */
       break;
     }
     nStep--;
+    pC->cacheStatus = CACHE_STALE;
     rc = sqlite3BtreeNext(pC->uc.pCursor, 0);
     if( rc ){
       if( rc==SQLITE_DONE ){
