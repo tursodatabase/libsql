@@ -251,4 +251,30 @@ do_execsql_test analyzeE-5.0 {
   SELECT * FROM t0 WHERE t0.c1 BETWEEN '' AND (ABS(''));
 } {{}}
 
+# 2023-03-24 https://sqlite.org/forum/forumpost/bc39e531e5
+#
+reset_db
+do_execsql_test analyzeE-6.0 {
+  CREATE TABLE t1(x);
+  CREATE INDEX i1 ON t1(x,x,x,x,x||2);
+  CREATE INDEX i2 ON t1(1<2);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
+    INSERT INTO t1(x) SELECT x FROM c;
+  ANALYZE;
+} {}
+do_execsql_test analyzeE-6.1 {
+  SELECT count(*)>1 FROM sqlite_stat4 WHERE idx='i2' AND neq='1000 1';
+} 1
+do_execsql_test analyzeE-6.2 {
+  SELECT count(*) FROM sqlite_stat4 WHERE idx='i2' AND neq<>'1000 1';
+} 0
+do_execsql_test analyzeE-6.3 {
+  SELECT count(*)>1 FROM sqlite_stat4 WHERE idx='i1' AND neq='1 1 1 1 1 1';
+} 1
+do_execsql_test analyzeE-6.4 {
+  SELECT count(*) FROM sqlite_stat4 WHERE idx='i1' AND neq<>'1 1 1 1 1 1';
+} 0
+
+
+
 finish_test

@@ -994,8 +994,11 @@ static void analyzeOneTable(
   int regIdxname = iMem++;     /* Register containing index name */
   int regStat1 = iMem++;       /* Value for the stat column of sqlite_stat1 */
   int regPrev = iMem;          /* MUST BE LAST (see below) */
+#ifdef SQLITE_ENABLE_STAT4
+  int doOnce = 1;              /* Flag for a one-time computation */
+#endif
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-  Table *pStat1 = 0; 
+  Table *pStat1 = 0;
 #endif
 
   pParse->nMem = MAX(pParse->nMem, iMem);
@@ -1276,7 +1279,25 @@ static void analyzeOneTable(
       int addrIsNull;
       u8 seekOp = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
 
-      pParse->nMem = MAX(pParse->nMem, regCol+nCol);
+      if( doOnce ){
+        int mxCol = nCol;
+        Index *pX;
+
+        /* Compute the maximum number of columns in any index */
+        for(pX=pTab->pIndex; pX; pX=pX->pNext){
+          int nColX;                     /* Number of columns in pX */
+          if( !HasRowid(pTab) && IsPrimaryKeyIndex(pX) ){
+            nColX = pX->nKeyCol;
+          }else{
+            nColX = pX->nColumn;
+          }
+          if( nColX>mxCol ) mxCol = nColX;
+        }
+
+        /* Allocate space to compute results for the largest index */
+        pParse->nMem = MAX(pParse->nMem, regCol+mxCol);
+        doOnce = 0;
+      }
 
       addrNext = sqlite3VdbeCurrentAddr(v);
       callStatGet(pParse, regStat, STAT_GET_ROWID, regSampleRowid);
