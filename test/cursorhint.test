@@ -159,4 +159,13 @@ do_test 4.6desc {
   }
 } {AND(AND(EQ(c0,22),GE(c1,10)),LE(c1,20))}
 
+# 2023-03-24 https://sqlite.org/forum/forumpost/591006b1cc
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(x TEXT PRIMARY KEY) WITHOUT ROWID;
+  CREATE VIEW t2 AS SELECT 0 FROM t1 WHERE x>='a' OR x='1';
+  SELECT * FROM t2 RIGHT JOIN t1 ON true;
+}
+
 finish_test
