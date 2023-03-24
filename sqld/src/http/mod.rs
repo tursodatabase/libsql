@@ -1,3 +1,4 @@
+mod hrana_over_http;
 mod types;
 
 use std::future::poll_fn;
@@ -22,6 +23,7 @@ use tower_http::{compression::CompressionLayer, cors};
 use tracing::{Level, Span};
 
 use crate::auth::Auth;
+use crate::database::service::DbFactory;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::types::HttpQuery;
@@ -230,6 +232,7 @@ async fn handle_request(
     req: Request<Body>,
     sender: mpsc::Sender<Message>,
     upgrade_tx: mpsc::Sender<hrana::Upgrade>,
+    db_factory: Arc<dyn DbFactory>,
     enable_console: bool,
 ) -> anyhow::Result<Response<Body>> {
     if hyper_tungstenite::is_upgrade_request(&req) {
@@ -249,6 +252,8 @@ async fn handle_request(
         (&Method::GET, "/version") => Ok(handle_version()),
         (&Method::GET, "/console") if enable_console => show_console().await,
         (&Method::GET, "/health") => Ok(handle_health()),
+        (&Method::GET, "/v1") => hrana_over_http::handle_index(req).await,
+        (&Method::POST, "/v1/execute") => hrana_over_http::handle_execute(db_factory, req).await,
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
@@ -261,7 +266,8 @@ fn handle_version() -> Response<Body> {
 pub async fn run_http<F>(
     addr: SocketAddr,
     auth: Arc<Auth>,
-    db_factory: F,
+    db_factory_service: F,
+    db_factory: Arc<dyn DbFactory>,
     upgrade_tx: mpsc::Sender<hrana::Upgrade>,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
@@ -306,6 +312,7 @@ where
                 req,
                 sender.clone(),
                 upgrade_tx.clone(),
+                db_factory.clone(),
                 enable_console,
             )
         });
@@ -313,7 +320,7 @@ where
     let server = hyper::server::Server::bind(&addr).serve(tower::make::Shared::new(service));
 
     tokio::spawn(async move {
-        let mut pool = pool::Builder::new().build(db_factory, ());
+        let mut pool = pool::Builder::new().build(db_factory_service, ());
         while let Some(Message { queries, resp }) = receiver.recv().await {
             if let Err(e) = poll_fn(|c| pool.poll_ready(c)).await {
                 tracing::error!("Connection pool error: {e}");
