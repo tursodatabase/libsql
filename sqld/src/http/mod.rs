@@ -254,6 +254,7 @@ async fn handle_request(
         (&Method::GET, "/health") => Ok(handle_health()),
         (&Method::GET, "/v1") => hrana_over_http::handle_index(req).await,
         (&Method::POST, "/v1/execute") => hrana_over_http::handle_execute(db_factory, req).await,
+        (&Method::POST, "/v1/batch") => hrana_over_http::handle_batch(db_factory, req).await,
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }

@@ -12,6 +12,8 @@ enum ResponseError {
 
     #[error(transparent)]
     Stmt(batch::StmtError),
+    #[error(transparent)]
+    Batch(batch::BatchError),
 }
 
 pub async fn handle_index(
@@ -62,6 +64,43 @@ pub async fn handle_execute(
     })
 }
 
+pub async fn handle_batch(
+    db_factory: Arc<dyn DbFactory>,
+    req: hyper::Request<hyper::Body>,
+) -> Result<hyper::Response<hyper::Body>> {
+    #[derive(Debug, Deserialize)]
+    struct ReqBody {
+        batch: batch::proto::Batch,
+    }
+
+    #[derive(Debug, Serialize)]
+    struct RespBody {
+        result: batch::proto::BatchResult,
+    }
+
+    let res: Result<_> = async move {
+        let req_body = json_request_body::<ReqBody>(req.into_body()).await?;
+        let db = db_factory
+            .create()
+            .await
+            .context("Could not create a database connection")?;
+        let result = batch::execute_batch(&*db, &req_body.batch)
+            .await
+            .map_err(|err| match err.downcast::<batch::BatchError>() {
+                Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
+                Err(err) => err,
+            })
+            .context("Could not execute batch")?;
+        Ok(json_response(hyper::StatusCode::OK, &RespBody { result }))
+    }
+    .await;
+
+    Ok(match res {
+        Ok(resp) => resp,
+        Err(err) => error_response(err.downcast::<ResponseError>()?),
+    })
+}
+
 async fn json_request_body<T: DeserializeOwned>(body: hyper::Body) -> Result<T> {
     let body = hyper::body::to_bytes(body).await?;
     let body =
@@ -70,7 +109,7 @@ async fn json_request_body<T: DeserializeOwned>(body: hyper::Body) -> Result<T> 
 }
 
 fn error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
-    use batch::StmtError;
+    use batch::{BatchError, StmtError};
     let status = match &err {
         ResponseError::BadRequestBody { .. } => hyper::StatusCode::BAD_REQUEST,
         ResponseError::Stmt(err) => match err {
@@ -84,6 +123,9 @@ fn error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
                 hyper::StatusCode::SERVICE_UNAVAILABLE
             }
             StmtError::SqliteError { .. } => hyper::StatusCode::INTERNAL_SERVER_ERROR,
+        },
+        ResponseError::Batch(err) => match err {
+            BatchError::CondBadStep => hyper::StatusCode::BAD_REQUEST,
         },
     };
 
