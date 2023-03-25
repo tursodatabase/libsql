@@ -4222,7 +4222,19 @@ expr_code_doover:
       AggInfo *pAggInfo = pExpr->pAggInfo;
       struct AggInfo_col *pCol;
       assert( pAggInfo!=0 );
-      assert( pExpr->iAgg>=0 && pExpr->iAgg<pAggInfo->nColumn );
+      assert( pExpr->iAgg>=0 );
+      if( pExpr->iAgg>=pAggInfo->nColumn ){
+        /* Happens when the left table of a RIGHT JOIN is null and
+        ** is using an expression index */
+        sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+#ifdef SQLITE_VDBE_COVERAGE
+        /* Verify that the OP_Null above is exercised by tests
+        ** tag-20230325-2 */
+        sqlite3VdbeAddOp2(v, OP_NotNull, target, 1);
+        VdbeCoverageNeverTaken(v);
+#endif
+        break;
+      }
       pCol = &pAggInfo->aCol[pExpr->iAgg];
       if( !pAggInfo->directMode ){
         return AggInfoColumnReg(pAggInfo, pExpr->iAgg);
