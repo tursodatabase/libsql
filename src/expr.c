@@ -4397,11 +4397,8 @@ expr_code_doover:
 #ifndef SQLITE_OMIT_CAST
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
-      inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
-      if( inReg!=target ){
-        sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
-        inReg = target;
-      }
+      sqlite3ExprCode(pParse, pExpr->pLeft, target);
+      assert( inReg==target );
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3VdbeAddOp2(v, OP_Cast, target,
                         sqlite3AffinityType(pExpr->u.zToken, 0));
@@ -4740,13 +4737,9 @@ expr_code_doover:
         ** Clear subtypes as subtypes may not cross a subquery boundary.
         */
         assert( pExpr->pLeft );
-        inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
-        if( inReg!=target ){
-          sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
-          inReg = target;
-        }
-        sqlite3VdbeAddOp1(v, OP_ClrSubtype, inReg);
-        return inReg;
+        sqlite3ExprCode(pParse, pExpr->pLeft, target);
+        sqlite3VdbeAddOp1(v, OP_ClrSubtype, target);
+        return target;
       }else{
         pExpr = pExpr->pLeft;
         goto expr_code_doover; /* 2018-04-28: Prevent deep recursion. */
@@ -4856,12 +4849,9 @@ expr_code_doover:
       **        "target" and not someplace else.
       */
       pParse->okConstFactor = 0;   /* note (1) above */
-      inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
+      sqlite3ExprCode(pParse, pExpr->pLeft, target);
+      assert( target==inReg );
       pParse->okConstFactor = okConstFactor;
-      if( inReg!=target ){         /* note (2) above */
-        sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
-        inReg = target;
-      }
       sqlite3VdbeJumpHere(v, addrINR);
       break;
     }
