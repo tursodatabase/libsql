@@ -1311,7 +1311,7 @@ static void analyzeOneTable(
           }
         }
 #endif
-        pParse->nTempReg = 0;
+        pParse->nTempReg = 0;  /* tag-20230325-1 */
       }
 
       addrNext = sqlite3VdbeCurrentAddr(v);
