@@ -1297,6 +1297,21 @@ static void analyzeOneTable(
         /* Allocate space to compute results for the largest index */
         pParse->nMem = MAX(pParse->nMem, regCol+mxCol);
         doOnce = 0;
+#ifdef SQLITE_DEBUG
+        /* Verify that setting pParse->nTempReg to zero below really
+        ** is needed in some cases, in order to excise all temporary
+        ** registers from the middle of the STAT4 buffer.  
+        ** https://sqlite.org/forum/forumpost/83cb4a95a0 (2023-03-25)
+        */
+        if( pParse->nTempReg>0 ){
+          int kk;
+          for(kk=0; kk<pParse->nTempReg; kk++){
+            int regT = pParse->aTempReg[kk];
+            testcase( regT>=regCol && regT<regCol+mxCol );
+          }
+        }
+#endif
+        pParse->nTempReg = 0;
       }
 
       addrNext = sqlite3VdbeCurrentAddr(v);
