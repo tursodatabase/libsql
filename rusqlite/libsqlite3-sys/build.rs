@@ -538,7 +538,8 @@ mod bindings {
 }"#,
             )
             .blocklist_function("sqlite3_cancel_auto_extension")
-            .raw_line(r#"extern "C" {
+            .raw_line(
+                r#"extern "C" {
     pub fn sqlite3_cancel_auto_extension(
         xEntryPoint: ::std::option::Option<
             unsafe extern "C" fn(
@@ -548,7 +549,8 @@ mod bindings {
             ) -> ::std::os::raw::c_int,
         >,
     ) -> ::std::os::raw::c_int;
-}"#)
+}"#,
+            )
             .rustfmt_bindings(true);
 
         if cfg!(any(feature = "sqlcipher", feature = "bundled-sqlcipher")) {
