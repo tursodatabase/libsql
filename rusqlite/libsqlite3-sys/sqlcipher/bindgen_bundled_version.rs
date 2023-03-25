@@ -6,7 +6,7 @@ extern "C" {
             unsafe extern "C" fn(
                 db: *mut sqlite3,
                 pzErrMsg: *mut *const ::std::os::raw::c_char,
-                pThunk: *mut sqlite3_api_routines,
+                pThunk: *const sqlite3_api_routines,
             ) -> ::std::os::raw::c_int,
         >,
     ) -> ::std::os::raw::c_int;
