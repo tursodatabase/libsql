@@ -4224,9 +4224,15 @@ expr_code_doover:
       assert( pAggInfo!=0 );
       assert( pExpr->iAgg>=0 );
       if( pExpr->iAgg>=pAggInfo->nColumn ){
+        /* Happens when the left table of a RIGHT JOIN is null and
+        ** is using an expression index */
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
-        /* FIXME:  Need to verify that tests run this opcode
-        ** Some kind of coverage macro.. VdbeCoverage(v);  tag-20230325-2 */
+#ifdef SQLITE_VDBE_COVERAGE
+        /* Verify that the OP_Null above is exercised by tests
+        ** tag-20230325-2 */
+        sqlite3VdbeAddOp2(v, OP_NotNull, target, 1);
+        VdbeCoverageNeverTaken(v);
+#endif
         break;
       }
       pCol = &pAggInfo->aCol[pExpr->iAgg];
