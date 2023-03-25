@@ -31,9 +31,6 @@ mod bindings {
 }
 pub use bindings::*;
 
-pub type sqlite3_index_constraint = sqlite3_index_info_sqlite3_index_constraint;
-pub type sqlite3_index_constraint_usage = sqlite3_index_info_sqlite3_index_constraint_usage;
-
 impl Default for sqlite3_vtab {
     fn default() -> Self {
         unsafe { mem::zeroed() }
