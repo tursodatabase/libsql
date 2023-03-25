@@ -2089,6 +2089,7 @@ static void printSchemaLine(FILE *out, const char *z, const char *zTail){
     int i;
     for(i=0; i<ArraySize(azTerm); i++){
       char *zNew = sqlite3_mprintf("%s%s;", zOrig, azTerm[i]);
+      shell_check_oom(zNew);
       if( sqlite3_complete(zNew) ){
         size_t n = strlen(zNew);
         zNew[n-1] = 0;
