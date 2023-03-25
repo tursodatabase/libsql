@@ -585,8 +585,12 @@ static int sqlite3LoadExtension(
   /* tag-20210611-1.  Some dlopen() implementations will segfault if given
   ** an oversize filename.  Most filesystems have a pathname limit of 4K,
   ** so limit the extension filename length to about twice that.
-  ** https://sqlite.org/forum/forumpost/08a0d6d9bf */
-  if( nMsg>SQLITE_MAX_PATHLEN ) goto extension_not_found;
+  ** https://sqlite.org/forum/forumpost/08a0d6d9bf
+  **
+  ** Later (2023-03-25): Save an extra 6 bytes for the filename suffix.
+  ** See https://sqlite.org/forum/forumpost/24083b579d.
+  */
+  if( nMsg>SQLITE_MAX_PATHLEN-6 ) goto extension_not_found;
     
   handle = sqlite3OsDlOpen(pVfs, zFile);
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN
