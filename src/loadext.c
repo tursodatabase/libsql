@@ -590,14 +590,16 @@ static int sqlite3LoadExtension(
   ** Later (2023-03-25): Save an extra 6 bytes for the filename suffix.
   ** See https://sqlite.org/forum/forumpost/24083b579d.
   */
-  if( nMsg>SQLITE_MAX_PATHLEN-6 ) goto extension_not_found;
+  if( nMsg>SQLITE_MAX_PATHLEN ) goto extension_not_found;
     
   handle = sqlite3OsDlOpen(pVfs, zFile);
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN
   for(ii=0; ii<ArraySize(azEndings) && handle==0; ii++){
     char *zAltFile = sqlite3_mprintf("%s.%s", zFile, azEndings[ii]);
     if( zAltFile==0 ) return SQLITE_NOMEM_BKPT;
-    handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    if( nMsg+strlen(azEndings[ii])+1<=SQLITE_MAX_PATHLEN ){
+      handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    }
     sqlite3_free(zAltFile);
   }
 #endif
