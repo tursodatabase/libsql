@@ -619,7 +619,7 @@ impl IndexConstraintUsage<'_> {
 
 /// `feature = "vtab"`
 pub struct OrderByIter<'a> {
-    iter: slice::Iter<'a, ffi::sqlite3_index_info_sqlite3_index_orderby>,
+    iter: slice::Iter<'a, ffi::sqlite3_index_orderby>,
 }
 
 impl<'a> Iterator for OrderByIter<'a> {
@@ -637,7 +637,7 @@ impl<'a> Iterator for OrderByIter<'a> {
 }
 
 /// A column of the ORDER BY clause.
-pub struct OrderBy<'a>(&'a ffi::sqlite3_index_info_sqlite3_index_orderby);
+pub struct OrderBy<'a>(&'a ffi::sqlite3_index_orderby);
 
 impl OrderBy<'_> {
     /// Column number

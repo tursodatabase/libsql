@@ -1879,10 +1879,10 @@ pub struct sqlite3_module {
 #[derive(Debug, Copy, Clone)]
 pub struct sqlite3_index_info {
     pub nConstraint: ::std::os::raw::c_int,
-    pub aConstraint: *mut sqlite3_index_info_sqlite3_index_constraint,
+    pub aConstraint: *mut sqlite3_index_constraint,
     pub nOrderBy: ::std::os::raw::c_int,
-    pub aOrderBy: *mut sqlite3_index_info_sqlite3_index_orderby,
-    pub aConstraintUsage: *mut sqlite3_index_info_sqlite3_index_constraint_usage,
+    pub aOrderBy: *mut sqlite3_index_orderby,
+    pub aConstraintUsage: *mut sqlite3_index_constraint_usage,
     pub idxNum: ::std::os::raw::c_int,
     pub idxStr: *mut ::std::os::raw::c_char,
     pub needToFreeIdxStr: ::std::os::raw::c_int,
@@ -1894,7 +1894,7 @@ pub struct sqlite3_index_info {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct sqlite3_index_info_sqlite3_index_constraint {
+pub struct sqlite3_index_constraint {
     pub iColumn: ::std::os::raw::c_int,
     pub op: ::std::os::raw::c_uchar,
     pub usable: ::std::os::raw::c_uchar,
@@ -1902,13 +1902,13 @@ pub struct sqlite3_index_info_sqlite3_index_constraint {
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct sqlite3_index_info_sqlite3_index_orderby {
+pub struct sqlite3_index_orderby {
     pub iColumn: ::std::os::raw::c_int,
     pub desc: ::std::os::raw::c_uchar,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
-pub struct sqlite3_index_info_sqlite3_index_constraint_usage {
+pub struct sqlite3_index_constraint_usage {
     pub argvIndex: ::std::os::raw::c_int,
     pub omit: ::std::os::raw::c_uchar,
 }
