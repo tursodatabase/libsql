@@ -1,5 +1,5 @@
-C Fix\sCLI\snon-handling\sof\sOOM\sreported\sat\s[forum:/forumpost/6872514e04|Forum\spost\s6872514e04].
-D 2023-03-25T01:29:40.329
+C New\stest\scase\sto\sfurther\svalidate\sthe\sfix\sat\s[221fdcec964f8317].\n[forum:/forumpost/d34ad68c36|Forum\spost\sd34ad68c36].
+D 2023-03-25T02:07:20.189
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -911,7 +911,7 @@ F test/createtab.test 85cdfdae5c3de331cd888d6c66e1aba575b47c2e3c3cc4a1d6f5414069
 F test/cse.test 00b3aea44b16828833c94fbe92475fd6977583fcb064ae0bc590986812b38d0c
 F test/csv01.test 2ab5514005fd308995c8910bc313e47f0368b94213b9d6c27f9a2da78796a091
 F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c4773
-F test/cursorhint.test 096c8a210b31934a1964d45d7fb2aedf1e09e91773b0942abd039285b9953906
+F test/cursorhint.test 12e7d03262be8705798fe7b5719956bcda14989f10296a5e8fdc13466b7b75fc
 F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee9ae9c42f
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
 F test/date.test 118e04db8c8b4efeb885542b4918c7b869a34c460a6bebbfe927dfd75706b80d
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1ef461aa4e95d254c2c1edebbbfd92ca96d752e04f68ebe70104e8d936d36be9
-R fbdb1a010f49bcb705fde9b123ee05a5
-U larrybr
-Z 701892f33d4b936af4ab128b00443fae
+P 6f6a0fd63b13cb827d6a402de01a701eb5b3f92954032ea80e78ec864861a26c
+R e2ed905d54c7918df3ba25117b34f60f
+U drh
+Z 49399da496c8dc088d55e5249fd1fc3d
 # Remove this line to create a well-formed Fossil manifest.
