@@ -198,7 +198,6 @@ static void openStatTable(
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   assert( sqlite3VdbeDb(v)==db );
   pDb = &db->aDb[iDb];
-  pParse->okConstFactor = 0;
 
   /* Create new statistic tables if they do not exist, or clear them
   ** if they do already exist.
@@ -1002,7 +1001,8 @@ static void analyzeOneTable(
   Table *pStat1 = 0;
 #endif
 
-  pParse->nMem = MAX(pParse->nMem, iMem);
+  sqlite3TouchRegister(pParse, iMem);
+  assert( sqlite3NoTempsInRange(pParse, regNewRowid, iMem) );
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) ){
     return;
@@ -1108,7 +1108,7 @@ static void analyzeOneTable(
     ** the regPrev array and a trailing rowid (the rowid slot is required
     ** when building a record to insert into the sample column of 
     ** the sqlite_stat4 table.  */
-    pParse->nMem = MAX(pParse->nMem, regPrev+nColTest);
+    sqlite3TouchRegister(pParse, regPrev+nColTest);
 
     /* Open a read-only cursor on the index being analyzed. */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
@@ -1296,24 +1296,19 @@ static void analyzeOneTable(
         }
 
         /* Allocate space to compute results for the largest index */
-        pParse->nMem = MAX(pParse->nMem, regCol+mxCol);
+        sqlite3TouchRegister(pParse, regCol+mxCol);
         doOnce = 0;
 #ifdef SQLITE_DEBUG
-        /* Verify that setting pParse->nTempReg to zero below really
-        ** is needed in some cases, in order to excise all temporary
-        ** registers from the middle of the STAT4 buffer.  
+        /* Verify that the call to sqlite3ClearTempRegCache() below
+        ** really is needed.
         ** https://sqlite.org/forum/forumpost/83cb4a95a0 (2023-03-25)
         */
-        if( pParse->nTempReg>0 ){
-          int kk;
-          for(kk=0; kk<pParse->nTempReg; kk++){
-            int regT = pParse->aTempReg[kk];
-            testcase( regT>=regCol && regT<regCol+mxCol );
-          }
-        }
+        testcase( !sqlite3NoTempsInRange(pParse, regEq, regCol+mxCol) );
 #endif
-        pParse->nTempReg = 0;  /* tag-20230325-1 */
+        sqlite3ClearTempRegCache(pParse);  /* tag-20230325-1 */
+        assert( sqlite3NoTempsInRange(pParse, regEq, regCol+mxCol) );
       }
+      assert( sqlite3NoTempsInRange(pParse, regEq, regCol+nCol) );
 
       addrNext = sqlite3VdbeCurrentAddr(v);
       callStatGet(pParse, regStat, STAT_GET_ROWID, regSampleRowid);
@@ -1394,6 +1389,7 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
     analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab);
+    iMem = sqlite3FirstAvailableRegister(pParse, iMem);
   }
   loadAnalysis(pParse, iDb);
 }

@@ -1524,7 +1524,7 @@ void sqlite3Pragma(
       zDb = db->aDb[iDb].zDbSName;
       sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
-      if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
+      sqlite3TouchRegister(pParse, pTab->nCol+regRow);
       sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
       sqlite3VdbeLoadString(v, regResult, pTab->zName);
       assert( IsOrdinaryTable(pTab) );
@@ -1565,7 +1565,7 @@ void sqlite3Pragma(
         ** regRow..regRow+n. If any of the child key values are NULL, this 
         ** row cannot cause an FK violation. Jump directly to addrOk in 
         ** this case. */
-        if( regRow+pFK->nCol>pParse->nMem ) pParse->nMem = regRow+pFK->nCol;
+        sqlite3TouchRegister(pParse, regRow + pFK->nCol);
         for(j=0; j<pFK->nCol; j++){
           int iCol = aiCols ? aiCols[j] : pFK->aCol[j].iFrom;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, iCol, regRow+j);
@@ -1729,7 +1729,7 @@ void sqlite3Pragma(
       aRoot[0] = cnt;
 
       /* Make sure sufficient number of registers have been allocated */
-      pParse->nMem = MAX( pParse->nMem, 8+mxIdx );
+      sqlite3TouchRegister(pParse, 8+mxIdx);
       sqlite3ClearTempRegCache(pParse);
 
       /* Do the b-tree integrity checks */
