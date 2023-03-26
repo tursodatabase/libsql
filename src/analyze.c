@@ -198,6 +198,7 @@ static void openStatTable(
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   assert( sqlite3VdbeDb(v)==db );
   pDb = &db->aDb[iDb];
+  pParse->okConstFactor = 0;
 
   /* Create new statistic tables if they do not exist, or clear them
   ** if they do already exist.
