@@ -523,6 +523,34 @@ mod bindings {
             .trust_clang_mangling(false)
             .header(header.clone())
             .parse_callbacks(Box::new(SqliteTypeChooser))
+            .blocklist_function("sqlite3_auto_extension")
+            .raw_line(
+                r#"extern "C" {
+    pub fn sqlite3_auto_extension(
+        xEntryPoint: ::std::option::Option<
+            unsafe extern "C" fn(
+                db: *mut sqlite3,
+                pzErrMsg: *mut *const ::std::os::raw::c_char,
+                pThunk: *const sqlite3_api_routines,
+            ) -> ::std::os::raw::c_int,
+        >,
+    ) -> ::std::os::raw::c_int;
+}"#,
+            )
+            .blocklist_function("sqlite3_cancel_auto_extension")
+            .raw_line(
+                r#"extern "C" {
+    pub fn sqlite3_cancel_auto_extension(
+        xEntryPoint: ::std::option::Option<
+            unsafe extern "C" fn(
+                db: *mut sqlite3,
+                pzErrMsg: *mut *const ::std::os::raw::c_char,
+                pThunk: *const sqlite3_api_routines,
+            ) -> ::std::os::raw::c_int,
+        >,
+    ) -> ::std::os::raw::c_int;
+}"#,
+            )
             .rustfmt_bindings(true);
 
         if cfg!(any(feature = "sqlcipher", feature = "bundled-sqlcipher")) {
