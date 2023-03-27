@@ -1,8 +1,10 @@
 use anyhow::{anyhow, Context, Result};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::future::Future;
 use std::sync::Arc;
 
 use crate::database::service::DbFactory;
+use crate::database::Database;
 use crate::{batch, hrana};
 
 #[derive(thiserror::Error, Debug)]
@@ -41,27 +43,17 @@ pub async fn handle_execute(
         result: batch::proto::StmtResult,
     }
 
-    let res: Result<_> = async move {
-        let req_body = json_request_body::<ReqBody>(req.into_body()).await?;
-        let db = db_factory
-            .create()
+    handle_request(db_factory, req, |db, req_body: ReqBody| async move {
+        batch::execute_stmt(&*db, &req_body.stmt)
             .await
-            .context("Could not create a database connection")?;
-        let result = batch::execute_stmt(&*db, &req_body.stmt)
-            .await
+            .map(|result| RespBody { result })
             .map_err(|err| match err.downcast::<batch::StmtError>() {
                 Ok(stmt_err) => anyhow!(ResponseError::Stmt(stmt_err)),
                 Err(err) => err,
             })
-            .context("Could not execute statement")?;
-        Ok(json_response(hyper::StatusCode::OK, &RespBody { result }))
-    }
-    .await;
-
-    Ok(match res {
-        Ok(resp) => resp,
-        Err(err) => error_response(err.downcast::<ResponseError>()?),
+            .context("Could not execute statement")
     })
+    .await
 }
 
 pub async fn handle_batch(
@@ -78,20 +70,42 @@ pub async fn handle_batch(
         result: batch::proto::BatchResult,
     }
 
-    let res: Result<_> = async move {
-        let req_body = json_request_body::<ReqBody>(req.into_body()).await?;
-        let db = db_factory
-            .create()
+    handle_request(db_factory, req, |db, req_body: ReqBody| async move {
+        batch::execute_batch(&*db, &req_body.batch)
             .await
-            .context("Could not create a database connection")?;
-        let result = batch::execute_batch(&*db, &req_body.batch)
-            .await
+            .map(|result| RespBody { result })
             .map_err(|err| match err.downcast::<batch::BatchError>() {
                 Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
                 Err(err) => err,
             })
-            .context("Could not execute batch")?;
-        Ok(json_response(hyper::StatusCode::OK, &RespBody { result }))
+            .context("Could not execute batch")
+    })
+    .await
+}
+
+async fn handle_request<ReqBody, RespBody, F, Fut>(
+    db_factory: Arc<dyn DbFactory>,
+    req: hyper::Request<hyper::Body>,
+    f: F,
+) -> Result<hyper::Response<hyper::Body>>
+where
+    ReqBody: DeserializeOwned,
+    RespBody: Serialize,
+    F: FnOnce(Arc<dyn Database>, ReqBody) -> Fut,
+    Fut: Future<Output = Result<RespBody>>,
+{
+    let res: Result<_> = async move {
+        let req_body = hyper::body::to_bytes(req.into_body()).await?;
+        let req_body = serde_json::from_slice(&req_body)
+            .map_err(|e| ResponseError::BadRequestBody { source: e })?;
+
+        let db = db_factory
+            .create()
+            .await
+            .context("Could not create a database connection")?;
+        let resp_body = f(db, req_body).await?;
+
+        Ok(json_response(hyper::StatusCode::OK, &resp_body))
     }
     .await;
 
@@ -99,13 +113,6 @@ pub async fn handle_batch(
         Ok(resp) => resp,
         Err(err) => error_response(err.downcast::<ResponseError>()?),
     })
-}
-
-async fn json_request_body<T: DeserializeOwned>(body: hyper::Body) -> Result<T> {
-    let body = hyper::body::to_bytes(body).await?;
-    let body =
-        serde_json::from_slice(&body).map_err(|e| ResponseError::BadRequestBody { source: e })?;
-    Ok(body)
 }
 
 fn error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
