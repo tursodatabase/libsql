@@ -1694,6 +1694,7 @@ void sqlite3Pragma(
       if( iDb>=0 && i!=iDb ) continue;
 
       sqlite3CodeVerifySchema(pParse, i);
+      pParse->okConstFactor = 0;  /* tag-20230327-1 */
 
       /* Do an integrity check of the B-Tree
       **
