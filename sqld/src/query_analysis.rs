@@ -6,7 +6,7 @@ use sqlite3_parser::{
 };
 
 /// A group of statements to be executed together.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Statement {
     pub stmt: String,
     pub kind: StmtKind,
@@ -70,11 +70,7 @@ pub enum State {
 impl State {
     pub fn step(&mut self, kind: StmtKind) {
         *self = match (*self, kind) {
-            // those two transition will cause an error, but since we are interested in what the
-            // pesimistic final state is, and we will adjust when we get the actual state back.
-            (State::Txn, StmtKind::TxnBegin) => State::Txn,
-            (State::Init, StmtKind::TxnEnd) => State::Init,
-
+            (State::Txn, StmtKind::TxnBegin) | (State::Init, StmtKind::TxnEnd) => State::Invalid,
             (State::Txn, StmtKind::TxnEnd) => State::Init,
             (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
             (State::Invalid, _) => State::Invalid,
@@ -145,9 +141,12 @@ impl Statement {
     }
 }
 
-/// Given a an initial state and an array of queries, return the final state obtained if all the
-/// queries succeeded
-pub fn final_state<'a>(mut state: State, stmts: impl Iterator<Item = &'a Statement>) -> State {
+/// Given a an initial state and an array of queries, attempts to predict what the final state will
+/// be
+pub fn predict_final_state<'a>(
+    mut state: State,
+    stmts: impl Iterator<Item = &'a Statement>,
+) -> State {
     for stmt in stmts {
         state.step(stmt.kind);
     }

@@ -15,6 +15,8 @@ use self::rpc::{Ack, DisconnectMessage, ExecuteResults};
 pub mod rpc {
     #![allow(clippy::all)]
 
+    use std::sync::Arc;
+
     use anyhow::Context;
 
     use crate::query::QueryResponse;
@@ -145,13 +147,13 @@ pub mod rpc {
         type Error = anyhow::Error;
 
         fn try_from(pgm: Program) -> Result<Self, Self::Error> {
-            Ok(Self {
-                steps: pgm
-                    .steps
-                    .into_iter()
-                    .map(TryInto::try_into)
-                    .collect::<anyhow::Result<_>>()?,
-            })
+            let steps = pgm
+                .steps
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<anyhow::Result<_>>()?;
+
+            Ok(Self::new(steps))
         }
     }
 
@@ -215,8 +217,14 @@ pub mod rpc {
 
     impl From<database::Program> for Program {
         fn from(pgm: database::Program) -> Self {
+            // TODO: use unwrap_or_clone when stable
+            let steps = match Arc::try_unwrap(pgm.steps) {
+                Ok(steps) => steps,
+                Err(arc) => (*arc).clone(),
+            };
+
             Self {
-                steps: pgm.steps.into_iter().map(|s| s.into()).collect(),
+                steps: steps.into_iter().map(|s| s.into()).collect(),
             }
         }
     }

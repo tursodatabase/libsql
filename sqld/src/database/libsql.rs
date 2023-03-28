@@ -207,8 +207,8 @@ impl Connection {
     fn run(&mut self, pgm: Program) -> Vec<Option<QueryResult>> {
         let mut results = Vec::with_capacity(pgm.steps.len());
 
-        for step in pgm.steps {
-            let res = self.execute_step(&step, &results);
+        for step in pgm.steps() {
+            let res = self.execute_step(step, &results);
             results.push(res);
         }
 

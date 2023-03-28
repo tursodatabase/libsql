@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::error::Error;
 use crate::query::{QueryResponse, QueryResult};
-use crate::query_analysis::{final_state, State};
+use crate::query_analysis::State;
 use crate::replication::client::PeriodicDbUpdater;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
@@ -115,50 +115,62 @@ impl WriteProxyDatabase {
             client_id: Uuid::new_v4(),
         })
     }
+
+    async fn execute_remote(
+        &self,
+        pgm: Program,
+        state: &mut State,
+    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        let mut client = self.write_proxy.clone();
+        let req = crate::rpc::proxy::rpc::ProgramReq {
+            client_id: self.client_id.to_string(),
+            pgm: Some(pgm.into()),
+        };
+        match client.execute(req).await {
+            Ok(r) => {
+                let execute_result = r.into_inner();
+                *state = execute_result.state().into();
+                let results = execute_result
+                    .results
+                    .into_iter()
+                    .map(|r| -> Option<QueryResult> {
+                        let result = r.row_result?;
+                        match result {
+                            RowResult::Row(res) => Some(Ok(QueryResponse::ResultSet(res.into()))),
+                            RowResult::Error(e) => Some(Err(Error::RpcQueryError(e))),
+                        }
+                    })
+                    .collect();
+
+                Ok((results, *state))
+            }
+            Err(e) => {
+                // Set state to invalid, so next call is sent to remote, and we have a chance
+                // to recover state.
+                *state = State::Invalid;
+                Err(Error::RpcQueryExecutionError(e))
+            }
+        }
+    }
 }
 
 #[async_trait::async_trait]
 impl Database for WriteProxyDatabase {
     async fn execute_program(&self, pgm: Program) -> Result<(Vec<Option<QueryResult>>, State)> {
         let mut state = self.state.lock().await;
-        if *state == State::Init
-            && pgm.is_read_only()
-            && final_state(*state, pgm.steps.iter().map(|s| &s.query.stmt)) == State::Init
-        {
-            self.read_db.execute_program(pgm).await
-        } else {
-            let mut client = self.write_proxy.clone();
-            let req = crate::rpc::proxy::rpc::ProgramReq {
-                client_id: self.client_id.to_string(),
-                pgm: Some(pgm.into()),
-            };
-            match client.execute(req).await {
-                Ok(r) => {
-                    let execute_result = r.into_inner();
-                    *state = execute_result.state().into();
-                    let results = execute_result
-                        .results
-                        .into_iter()
-                        .map(|r| -> Option<QueryResult> {
-                            let result = r.row_result?;
-                            match result {
-                                RowResult::Row(res) => {
-                                    Some(Ok(QueryResponse::ResultSet(res.into())))
-                                }
-                                RowResult::Error(e) => Some(Err(Error::RpcQueryError(e))),
-                            }
-                        })
-                        .collect();
-
-                    Ok((results, *state))
-                }
-                Err(e) => {
-                    // Set state to invalid, so next call is sent to remote, and we have a chance
-                    // to recover state.
-                    *state = State::Invalid;
-                    Err(Error::RpcQueryExecutionError(e))
-                }
+        if *state == State::Init && pgm.is_read_only() {
+            // We know that this program won't perform any writes. We attempt to run it on the
+            // replica. If it leaves an open transaction, then this program is an interactive
+            // transaction, so we rollback the replica, and execute again on the primary.
+            let (results, new_state) = self.read_db.execute_program(pgm.clone()).await?;
+            if new_state != State::Init {
+                self.read_db.rollback().await?;
+                self.execute_remote(pgm, &mut state).await
+            } else {
+                Ok((results, new_state))
             }
+        } else {
+            self.execute_remote(pgm, &mut state).await
         }
     }
 }
