@@ -492,7 +492,6 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 }
 %endif  SQLITE_OMIT_VIEW
 
-%ifdef LIBSQL_ENABLE_WASM_RUNTIME
 ///////////////////// The CREATE FUNCTION statement /////////////////////////
 //
 
@@ -510,7 +509,6 @@ cmd ::= createkw FUNCTION ifnotexists(E) nm(N) LANGUAGE nm(L) AS BLOB(B). {
 cmd ::= DROP FUNCTION ifexists(E) nm(N). {
   libsql_drop_function(pParse, &N, E);
 }
-%endif
 
 //////////////////////// The SELECT statement /////////////////////////////////
 //
