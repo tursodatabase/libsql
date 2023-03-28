@@ -24,7 +24,7 @@ pub enum ServerMsg {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Request {
     OpenStream(OpenStreamReq),
-    CloseStream(OpenStreamReq),
+    CloseStream(CloseStreamReq),
     Execute(ExecuteReq),
     Batch(BatchReq),
 }
