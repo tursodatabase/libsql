@@ -6,19 +6,20 @@ use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
 
 use crate::database::service::DbFactory;
-use crate::database::Database;
-use crate::query::{Params, Query};
-use crate::query_analysis::Statement;
+use crate::database::{Database, Program};
 
 use self::rpc::execute_results::State;
 use self::rpc::proxy_server::Proxy;
-use self::rpc::{Ack, DisconnectMessage, ExecuteResults, Queries};
+use self::rpc::{Ack, DisconnectMessage, ExecuteResults};
 
 pub mod rpc {
     #![allow(clippy::all)]
 
-    use crate::error::Error as SqldError;
+    use anyhow::Context;
+
     use crate::query::QueryResponse;
+    use crate::query_analysis::Statement;
+    use crate::{database, error::Error as SqldError};
 
     use self::{error::ErrorCode, execute_results::State, query_result::RowResult};
     tonic::include_proto!("proxy");
@@ -52,19 +53,18 @@ pub mod rpc {
         }
     }
 
-    impl From<crate::query::QueryResult> for QueryResult {
-        fn from(other: crate::query::QueryResult) -> Self {
+    impl From<Option<crate::query::QueryResult>> for QueryResult {
+        fn from(other: Option<crate::query::QueryResult>) -> Self {
             let res = match other {
-                Ok(crate::query::QueryResponse::ResultSet(q)) => {
+                Some(Ok(crate::query::QueryResponse::ResultSet(q))) => {
                     let rows = q.into();
-                    RowResult::Row(rows)
+                    Some(RowResult::Row(rows))
                 }
-                Err(e) => RowResult::Error(e.into()),
+                Some(Err(e)) => Some(RowResult::Error(e.into())),
+                None => None,
             };
 
-            QueryResult {
-                row_result: Some(res),
-            }
+            QueryResult { row_result: res }
         }
     }
 
@@ -140,6 +140,124 @@ pub mod rpc {
             }
         }
     }
+
+    impl TryFrom<Program> for database::Program {
+        type Error = anyhow::Error;
+
+        fn try_from(pgm: Program) -> Result<Self, Self::Error> {
+            Ok(Self {
+                steps: pgm
+                    .steps
+                    .into_iter()
+                    .map(TryInto::try_into)
+                    .collect::<anyhow::Result<_>>()?,
+            })
+        }
+    }
+
+    impl TryFrom<Step> for database::Step {
+        type Error = anyhow::Error;
+
+        fn try_from(step: Step) -> Result<Self, Self::Error> {
+            Ok(Self {
+                query: step.query.context("step is missing query")?.try_into()?,
+                cond: step.cond.map(TryInto::try_into).transpose()?,
+            })
+        }
+    }
+
+    impl TryFrom<Cond> for database::Cond {
+        type Error = anyhow::Error;
+
+        fn try_from(cond: Cond) -> Result<Self, Self::Error> {
+            let cond = match cond.cond {
+                Some(cond::Cond::Ok(OkCond { step })) => Self::Ok { step: step as _ },
+                Some(cond::Cond::Err(ErrCond { step })) => Self::Err { step: step as _ },
+                Some(cond::Cond::Not(cond)) => Self::Not {
+                    cond: Box::new((*cond.cond.context("empty `not` condition")?).try_into()?),
+                },
+                Some(cond::Cond::And(AndCond { conds })) => Self::And {
+                    conds: conds
+                        .into_iter()
+                        .map(TryInto::try_into)
+                        .collect::<anyhow::Result<_>>()?,
+                },
+                Some(cond::Cond::Or(OrCond { conds })) => Self::Or {
+                    conds: conds
+                        .into_iter()
+                        .map(TryInto::try_into)
+                        .collect::<anyhow::Result<_>>()?,
+                },
+                None => anyhow::bail!("invalid condition"),
+            };
+
+            Ok(cond)
+        }
+    }
+
+    impl TryFrom<Query> for crate::query::Query {
+        type Error = anyhow::Error;
+
+        fn try_from(query: Query) -> Result<Self, Self::Error> {
+            let stmt = Statement::parse(&query.stmt)
+                .next()
+                .context("invalid empty statement")??;
+
+            Ok(Self {
+                stmt,
+                params: query
+                    .params
+                    .context("missing params in query")?
+                    .try_into()?,
+            })
+        }
+    }
+
+    impl From<database::Program> for Program {
+        fn from(pgm: database::Program) -> Self {
+            Self {
+                steps: pgm.steps.into_iter().map(|s| s.into()).collect(),
+            }
+        }
+    }
+
+    impl From<crate::query::Query> for Query {
+        fn from(query: crate::query::Query) -> Self {
+            Self {
+                stmt: query.stmt.stmt,
+                params: Some(query.params.try_into().unwrap()),
+            }
+        }
+    }
+
+    impl From<database::Step> for Step {
+        fn from(step: database::Step) -> Self {
+            Self {
+                cond: step.cond.map(|c| c.into()),
+                query: Some(step.query.into()),
+            }
+        }
+    }
+
+    impl From<database::Cond> for Cond {
+        fn from(cond: database::Cond) -> Self {
+            let cond = match cond {
+                database::Cond::Ok { step } => cond::Cond::Ok(OkCond { step: step as i64 }),
+                database::Cond::Err { step } => cond::Cond::Err(ErrCond { step: step as i64 }),
+                database::Cond::Not { cond } => cond::Cond::Not(Box::new(NotCond {
+                    cond: Some(Box::new(Cond::from(*cond))),
+                })),
+                database::Cond::Or { conds } => cond::Cond::Or(OrCond {
+                    conds: conds.into_iter().map(|c| c.into()).collect(),
+                }),
+                database::Cond::And { conds } => cond::Cond::And(AndCond {
+                    conds: conds.into_iter().map(|c| c.into()).collect(),
+                }),
+            };
+
+            Self { cond: Some(cond) }
+        }
+    }
 }
 
 pub struct ProxyService {
@@ -160,10 +278,12 @@ impl ProxyService {
 impl Proxy for ProxyService {
     async fn execute(
         &self,
-        req: tonic::Request<Queries>,
+        req: tonic::Request<rpc::ProgramReq>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
-        let Queries { client_id, queries } = req.into_inner();
-        let client_id = Uuid::from_str(&client_id).unwrap();
+        let req = req.into_inner();
+        let pgm = Program::try_from(req.pgm.unwrap())
+            .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument, e.to_string()))?;
+        let client_id = Uuid::from_str(&req.client_id).unwrap();
 
         let lock = self.clients.upgradable_read().await;
         let db = match lock.get(&client_id) {
@@ -178,28 +298,7 @@ impl Proxy for ProxyService {
         };
 
         tracing::debug!("executing request for {client_id}");
-        let queries = queries
-            .into_iter()
-            .map(|q| {
-                // FIXME: we assume the statement is valid because we trust the caller to have verified
-                // it before: do proper error handling instead
-
-                let stmt = Statement::parse(&q.stmt)
-                    .next()
-                    .transpose()
-                    .unwrap()
-                    .unwrap_or_default();
-                Ok(Query {
-                    stmt,
-                    params: Params::try_from(q.params.unwrap())?,
-                })
-            })
-            .collect::<crate::Result<Vec<_>>>()
-            .map_err(|_| {
-                tonic::Status::new(tonic::Code::Internal, "failed to deserialize query")
-            })?;
-
-        let (results, state) = db.execute_batch(queries).await.unwrap();
+        let (results, state) = db.execute_program(pgm).await.unwrap();
         let results = results.into_iter().map(|r| r.into()).collect();
 
         Ok(tonic::Response::new(ExecuteResults {
@@ -214,7 +313,7 @@ impl Proxy for ProxyService {
         msg: tonic::Request<DisconnectMessage>,
     ) -> Result<tonic::Response<Ack>, tonic::Status> {
         let DisconnectMessage { client_id } = msg.into_inner();
-        let client_id = Uuid::from_slice(&client_id).unwrap();
+        let client_id = Uuid::from_str(&client_id).unwrap();
 
         tracing::debug!("disconnected: {client_id}");
 

@@ -49,7 +49,7 @@ pub async fn execute_stmt(db: &dyn Database, stmt: &proto::Stmt) -> Result<proto
     }
 }
 
-fn proto_stmt_to_query(proto_stmt: &proto::Stmt) -> Result<Query> {
+pub fn proto_stmt_to_query(proto_stmt: &proto::Stmt) -> Result<Query> {
     let mut stmt_iter = Statement::parse(&proto_stmt.sql);
     let stmt = match stmt_iter.next() {
         Some(Ok(stmt)) => stmt,
@@ -78,7 +78,7 @@ fn proto_stmt_to_query(proto_stmt: &proto::Stmt) -> Result<Query> {
     Ok(Query { stmt, params })
 }
 
-fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto::StmtResult {
+pub fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto::StmtResult {
     let QueryResponse::ResultSet(result_set) = query_response;
     let proto_cols = result_set
         .columns
@@ -124,7 +124,7 @@ fn proto_value_from_value(value: Value) -> proto::Value {
     }
 }
 
-fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, SqldError> {
+pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, SqldError> {
     Ok(match sqld_error {
         SqldError::LibSqlInvalidQueryParams(source) => StmtError::ArgsInvalid { source },
         SqldError::LibSqlTxTimeout(_) => StmtError::TransactionTimeout,

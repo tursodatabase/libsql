@@ -75,10 +75,10 @@ message Column {
 }
 
 message DisconnectMessage {
-    bytes clientId = 1;
+    string clientId = 1;
 }
 
-message Ack {}
+message Ack { }
 
 message ExecuteResults {
     repeated QueryResult results = 1;
@@ -91,7 +91,51 @@ message ExecuteResults {
     State state = 2;
 }
 
+message Program {
+    repeated Step steps = 1;
+}
+
+message Step {
+    optional Cond cond = 1;
+    Query query = 2;
+}
+
+message Cond {
+    oneof cond {
+        OkCond ok = 1;
+        ErrCond err = 2;
+        NotCond not = 3;
+        AndCond and = 4;
+        OrCond or = 5;
+    }
+}
+
+message OkCond {
+    int64 step = 1;
+}
+
+message ErrCond {
+    int64 step = 1;
+}
+
+message NotCond {
+    Cond cond = 1;
+}
+
+message AndCond {
+    repeated Cond conds = 1;
+}
+
+message OrCond {
+    repeated Cond conds = 1;
+}
+
+message ProgramReq {
+    string client_id = 1;
+    Program pgm = 2;
+}
+
 service Proxy {
-  rpc Execute(Queries) returns (ExecuteResults) {}
+  rpc Execute(ProgramReq) returns (ExecuteResults) {}
   rpc Disconnect(DisconnectMessage) returns (Ack) {}
 }
