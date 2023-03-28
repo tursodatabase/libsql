@@ -2,4 +2,4 @@ pub mod client;
 mod logger;
 mod snapshot;
 
-pub use logger::{FrameId, LogReadError, ReplicationLogger, ReplicationLoggerHook};
+pub use logger::{FrameNo, LogReadError, ReplicationLogger, ReplicationLoggerHook};
