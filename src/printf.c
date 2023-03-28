@@ -586,8 +586,13 @@ void sqlite3_str_vappendf(
             realvalue += rounder;
           }
           if( sqlite3IsNaN((double)realvalue) ){
-            bufpt = "NaN";
-            length = 3;
+            if( flag_zeropad ){
+              bufpt = "null";
+              length = 4;
+            }else{
+              bufpt = "NaN";
+              length = 3;
+            }
             break;
           }
 
@@ -601,11 +606,16 @@ void sqlite3_str_vappendf(
             while( realvalue<1e-8 ){ realvalue *= 1e8; exp-=8; }
             while( realvalue<1.0 ){ realvalue *= 10.0; exp--; }
             if( exp>350 ){
-              bufpt = buf;
-              buf[0] = prefix;
-              memcpy(buf+(prefix!=0),"Inf",4);
-              length = 3+(prefix!=0);
-              break;
+              if( flag_zeropad ){
+                realvalue = 9.0;
+                exp = 999;
+              }else{
+                bufpt = buf;
+                buf[0] = prefix;
+                memcpy(buf+(prefix!=0),"Inf",4);
+                length = 3+(prefix!=0);
+                break;
+              }
             }
             if( xtype!=etFLOAT ){
               realvalue += rounder;

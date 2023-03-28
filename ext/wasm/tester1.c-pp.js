@@ -1189,17 +1189,6 @@ self.sqlite3InitModule = sqlite3InitModule;
       const stack = wasm.pstack.pointer;
       try {
         const [pCur, pHi] = wasm.pstack.allocChunks(2,'i64');
-        rc = capi.sqlite3_db_status(this.db, capi.SQLITE_DBSTATUS_LOOKASIDE_USED,
-                                    pCur, pHi, 0);
-        T.assert(0===rc);
-        if(!wasm.peek32(pCur)){
-          rc = capi.sqlite3_db_config(this.db, capi.SQLITE_DBCONFIG_LOOKASIDE,
-                                      0, 4096, 12);
-          T.assert(0 === rc);
-        }else{
-          console.debug("Cannot test db_config(SQLITE_DBCONFIG_LOOKASIDE)",
-                        "while lookaside memory is in use.");
-        }
         wasm.poke32([pCur, pHi], 0);
         let [vCur, vHi] = wasm.peek32(pCur, pHi);
         T.assert(0===vCur).assert(0===vHi);
@@ -1463,6 +1452,18 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(e instanceof sqlite3.SQLite3Error)
           .assert(0==e.message.indexOf('Cannot prepare empty'));
       }
+
+      counter = 0;
+      db.exec({
+        // Check for https://sqlite.org/forum/forumpost/895425b49a
+        sql: "pragma table_info('t')",
+        rowMode: 'object',
+        callback: function(row){
+          ++counter;
+          T.assert(row.name==='a' || row.name==='b');
+        }
+      });
+      T.assert(2===counter);
     })/*setup table T*/
 
   ////////////////////////////////////////////////////////////////////

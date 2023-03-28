@@ -117,7 +117,7 @@ const installOpfsVfs = function callee(options){
   if('function' === typeof options.proxyUri){
     options.proxyUri = options.proxyUri();
   }
-  const thePromise = new Promise(function(promiseResolve, promiseReject_){
+  const thePromise = new Promise(function(promiseResolve_, promiseReject_){
     const loggers = {
       0:sqlite3.config.error,
       1:sqlite3.config.warn,
@@ -193,9 +193,15 @@ const installOpfsVfs = function callee(options){
     }/*metrics*/;
     const opfsVfs = new sqlite3_vfs();
     const opfsIoMethods = new sqlite3_io_methods();
-    const promiseReject = function(err){
+    let promiseWasRejected = undefined;
+    const promiseReject = (err)=>{
+      promiseWasRejected = true;
       opfsVfs.dispose();
       return promiseReject_(err);
+    };
+    const promiseResolve = (value)=>{
+      promiseWasRejected = false;
+      return promiseResolve_(value);
     };
     const W =
 //#if target=es6-bundler-friendly
@@ -205,6 +211,18 @@ const installOpfsVfs = function callee(options){
 //#else
     new Worker(options.proxyUri);
 //#endif
+    setTimeout(()=>{
+      /* At attempt to work around a browser-specific quirk in which
+         the Worker load is failing in such a way that we neither
+         resolve nor reject it. This workaround gives that resolve/reject
+         a time limit and rejects if that timer expires. Discussion:
+         https://sqlite.org/forum/forumpost/a708c98dcb3ef */
+      if(undefined===promiseWasRejected){
+        promiseReject(
+          new Error("Timeout while waiting for OPFS async proxy worker.")
+        );
+      }
+    }, 4000);
     W._originalOnError = W.onerror /* will be restored later */;
     W.onerror = function(err){
       // The error object doesn't contain any useful info when the
@@ -1269,6 +1287,9 @@ const installOpfsVfs = function callee(options){
             /*Indicates that the async partner has received the 'init'
               and has finished initializing, so the real work can
               begin...*/
+            if(true===promiseWasRejected){
+              break /* promise was already rejected via timer */;
+            }
             try {
               sqlite3.vfs.installVfs({
                 io: {struct: opfsIoMethods, methods: ioSyncWrappers},

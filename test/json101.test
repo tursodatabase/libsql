@@ -885,4 +885,16 @@ do_execsql_test json-19.3 {
   SELECT * FROM t1;
 } {}
 
+# 2023-03-17 positive and negative infinities
+#
+do_execsql_test json-20.1 {
+  SELECT json_object('a',2e370,'b',-3e380);
+} {{{"a":9.0e+999,"b":-9.0e+999}}}
+do_execsql_test json-20.2 {
+  SELECT json_object('a',2e370,'b',-3e380)->>'a';
+} Inf
+do_execsql_test json-20.3 {
+  SELECT json_object('a',2e370,'b',-3e380)->>'b';
+} {-Inf}
+
 finish_test

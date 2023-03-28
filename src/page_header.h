@@ -28,7 +28,7 @@ struct libsql_pghdr {
   ** private to pcache.c and should not be accessed by other modules.
   ** pCache is grouped with the public elements for efficiency.
   */
-  short nRef;                    /* Number of users of this page */
+  unsigned long long nRef;       /* Number of users of this page */
   PgHdr *pDirtyNext;             /* Next element in list of dirty pages */
   PgHdr *pDirtyPrev;             /* Previous element in list of dirty pages */
                           /* NB: pDirtyNext and pDirtyPrev are undefined if the

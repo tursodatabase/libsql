@@ -91,12 +91,12 @@ void sqlite3PcacheClearSyncFlags(PCache *);
 void sqlite3PcacheClear(PCache*);
 
 /* Return the total number of outstanding page references */
-int sqlite3PcacheRefCount(PCache*);
+i64 sqlite3PcacheRefCount(PCache*);
 
 /* Increment the reference count of an existing page */
 void sqlite3PcacheRef(PgHdr*);
 
-int sqlite3PcachePageRefcount(PgHdr*);
+i64 sqlite3PcachePageRefcount(PgHdr*);
 
 /* Return the total number of pages stored in the cache */
 int sqlite3PcachePagecount(PCache*);

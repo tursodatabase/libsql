@@ -994,11 +994,15 @@ static void analyzeOneTable(
   int regIdxname = iMem++;     /* Register containing index name */
   int regStat1 = iMem++;       /* Value for the stat column of sqlite_stat1 */
   int regPrev = iMem;          /* MUST BE LAST (see below) */
+#ifdef SQLITE_ENABLE_STAT4
+  int doOnce = 1;              /* Flag for a one-time computation */
+#endif
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-  Table *pStat1 = 0; 
+  Table *pStat1 = 0;
 #endif
 
-  pParse->nMem = MAX(pParse->nMem, iMem);
+  sqlite3TouchRegister(pParse, iMem);
+  assert( sqlite3NoTempsInRange(pParse, regNewRowid, iMem) );
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) ){
     return;
@@ -1104,7 +1108,7 @@ static void analyzeOneTable(
     ** the regPrev array and a trailing rowid (the rowid slot is required
     ** when building a record to insert into the sample column of 
     ** the sqlite_stat4 table.  */
-    pParse->nMem = MAX(pParse->nMem, regPrev+nColTest);
+    sqlite3TouchRegister(pParse, regPrev+nColTest);
 
     /* Open a read-only cursor on the index being analyzed. */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
@@ -1276,7 +1280,35 @@ static void analyzeOneTable(
       int addrIsNull;
       u8 seekOp = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
 
-      pParse->nMem = MAX(pParse->nMem, regCol+nCol);
+      if( doOnce ){
+        int mxCol = nCol;
+        Index *pX;
+
+        /* Compute the maximum number of columns in any index */
+        for(pX=pTab->pIndex; pX; pX=pX->pNext){
+          int nColX;                     /* Number of columns in pX */
+          if( !HasRowid(pTab) && IsPrimaryKeyIndex(pX) ){
+            nColX = pX->nKeyCol;
+          }else{
+            nColX = pX->nColumn;
+          }
+          if( nColX>mxCol ) mxCol = nColX;
+        }
+
+        /* Allocate space to compute results for the largest index */
+        sqlite3TouchRegister(pParse, regCol+mxCol);
+        doOnce = 0;
+#ifdef SQLITE_DEBUG
+        /* Verify that the call to sqlite3ClearTempRegCache() below
+        ** really is needed.
+        ** https://sqlite.org/forum/forumpost/83cb4a95a0 (2023-03-25)
+        */
+        testcase( !sqlite3NoTempsInRange(pParse, regEq, regCol+mxCol) );
+#endif
+        sqlite3ClearTempRegCache(pParse);  /* tag-20230325-1 */
+        assert( sqlite3NoTempsInRange(pParse, regEq, regCol+mxCol) );
+      }
+      assert( sqlite3NoTempsInRange(pParse, regEq, regCol+nCol) );
 
       addrNext = sqlite3VdbeCurrentAddr(v);
       callStatGet(pParse, regStat, STAT_GET_ROWID, regSampleRowid);
@@ -1357,6 +1389,7 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
     analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab);
+    iMem = sqlite3FirstAvailableRegister(pParse, iMem);
   }
   loadAnalysis(pParse, iDb);
 }

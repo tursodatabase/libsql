@@ -419,4 +419,14 @@ do_execsql_test skipscan1-4.10 {
      AND a <= 10;
 } {3}
 
+# 2023-03-24 https://sqlite.org/forum/forumpost/8cc1dc0fe9
+#
+reset_db
+do_execsql_test skipscan1-5.0 {
+  CREATE TABLE t1(a TEXT, UNIQUE(a,a,a));
+  INSERT INTO t1 VALUES (hex(zeroblob(241))),(1),(2),(3);
+  ANALYZE;
+  SELECT max(a) FROM t1 WHERE a IN t1;
+} {3}
+
 finish_test
