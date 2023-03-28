@@ -6286,9 +6286,11 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
     int iAgg = pExpr->iAgg;
     Parse *pParse = pWalker->pParse;
     sqlite3 *db = pParse->db;
+    assert( iAgg>=0 );
     if( pExpr->op!=TK_AGG_FUNCTION ){
-      assert( iAgg>=0 && iAgg<pAggInfo->nColumn );
-      if( pAggInfo->aCol[iAgg].pCExpr==pExpr ){
+      if( iAgg<pAggInfo->nColumn
+       && pAggInfo->aCol[iAgg].pCExpr==pExpr
+      ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
           pAggInfo->aCol[iAgg].pCExpr = pExpr;
@@ -6297,8 +6299,9 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
       }
     }else{
       assert( pExpr->op==TK_AGG_FUNCTION );
-      assert( iAgg>=0 && iAgg<pAggInfo->nFunc );
-      if( pAggInfo->aFunc[iAgg].pFExpr==pExpr ){
+      if( ALWAYS(iAgg<pAggInfo->nFunc)
+       && pAggInfo->aFunc[iAgg].pFExpr==pExpr
+      ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         if( pExpr ){
           pAggInfo->aFunc[iAgg].pFExpr = pExpr;

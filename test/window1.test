@@ -2276,5 +2276,44 @@ do_catchsql_test 73.7 {
   UPDATE t2 SET c=nth_value(15,2) OVER() FROM (SELECT * FROM t1) WHERE b=4 RETURNING *;
 } {1 {cannot modify t2 because it is a view}}
 
+# 2023-03-28 https://sqlite.org/forum/forumpost/bad532820c
+#
+reset_db
+do_execsql_test 74.0 {
+  CREATE TABLE t1 (a INT, b INT);
+  CREATE TABLE t2 (c INT, d INT);
+  CREATE INDEX idx ON t1(abs(a));
+  INSERT INTO t1 VALUES(1,2),(3,4);
+  INSERT INTO t2 VALUES(5,6),(7,8);
+}
+do_execsql_test 74.1 {
+  SELECT (
+    SELECT count( a ) FROM t2 LIMIT 1
+  )
+  FROM t1;
+} {2}  ;# Verified using PG 14.2
+do_execsql_test 74.2 {
+  SELECT (
+    SELECT count( a+c ) FROM t2 LIMIT 1
+  )
+  FROM t1;
+} {2 2}  ;# verified on PG 14.2.  Crashes PG 9.6!
+do_execsql_test 74.3 {
+  SELECT (
+    SELECT count( ( SELECT(sum(0) OVER(ORDER BY c, abs(a))) ) )
+      FROM t2 GROUP BY c LIMIT 1
+  ) 
+  FROM t1;
+} {1 1}  ;# verified on PG 14.2
+do_execsql_test 74.4 {
+  /* Original test case reported in https://sqlite.org/forum/forumpost/bad532820c
+  CREATE TABLE v0 (c1);
+  CREATE INDEX i ON v0 (c1, c1=1);
+  SELECT 0 FROM v0 AS a1
+   WHERE (SELECT count((SELECT(sum(0) OVER(PARTITION BY(c1), (a1.c1=1) ))))
+            FROM v0
+           GROUP BY hex(0))
+     AND a1.c1=0;
+} {}
 
 finish_test
