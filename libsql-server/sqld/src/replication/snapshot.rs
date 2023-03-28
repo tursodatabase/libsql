@@ -20,7 +20,7 @@ use uuid::Uuid;
 
 use super::logger::LogFile;
 use super::logger::WalFrame;
-use super::FrameId;
+use super::FrameNo;
 
 /// This is the ratio of the space required to store snapshot vs size of the actual database.
 /// When this ratio is exceeded, compaction is triggered.
@@ -34,9 +34,9 @@ pub struct SnapshotFileHeader {
     /// id of the database
     pub db_id: u128,
     /// first frame in the snapshot
-    pub start_frame_id: u64,
+    pub start_frame_no: u64,
     /// end frame in the snapshot
-    pub end_frame_id: u64,
+    pub end_frame_no: u64,
     /// number of frames in the snapshot
     pub frame_count: u64,
     /// safe of the database after applying the snapshot
@@ -49,16 +49,16 @@ pub struct SnapshotFile {
     header: SnapshotFileHeader,
 }
 
-/// returns (db_id, start_frame_id, end_frame_id) for the given snapshot name
+/// returns (db_id, start_frame_no, end_frame_no) for the given snapshot name
 fn parse_snapshot_name(name: &str) -> Option<(Uuid, u64, u64)> {
     static SNAPSHOT_FILE_MATCHER: Lazy<Regex> = Lazy::new(|| {
         Regex::new(
             r#"(?x)
             # match database id
             (\w{8}-\w{4}-\w{4}-\w{4}-\w{12})-
-            # match start frame-id
+            # match start frame_no
             (\d*)-
-            # match end frame-id
+            # match end frame_no
             (\d*).snap"#,
         )
         .unwrap()
@@ -90,17 +90,18 @@ fn snapshot_list(db_path: &Path) -> anyhow::Result<impl Iterator<Item = String>>
     }))
 }
 
+/// Return snapshot file containing "logically" frame_no
 pub fn find_snapshot_file(
     db_path: &Path,
-    start_idx: FrameId,
+    frame_no: FrameNo,
 ) -> anyhow::Result<Option<SnapshotFile>> {
     let snapshot_dir_path = snapshot_dir_path(db_path);
     for name in snapshot_list(db_path)? {
-        let Some((_, start_frame_id, end_frame_id)) = parse_snapshot_name(&name) else { continue; };
+        let Some((_, start_frame_no, end_frame_no)) = parse_snapshot_name(&name) else { continue; };
         // we're looking for the frame right after the last applied frame on the replica
-        if (start_frame_id..=end_frame_id).contains(&(start_idx + 1)) {
+        if (start_frame_no..=end_frame_no).contains(&(frame_no + 1)) {
             let snapshot_path = snapshot_dir_path.join(&name);
-            tracing::debug!("found snapshot for frame {start_idx} at {snapshot_path:?}");
+            tracing::debug!("found snapshot for frame {frame_no} at {snapshot_path:?}");
             let snapshot_file = SnapshotFile::open(&snapshot_path)?;
             return Ok(Some(snapshot_file));
         }
@@ -119,7 +120,7 @@ impl SnapshotFile {
         Ok(Self { file, header })
     }
 
-    /// Iterator on the frames contained in the snapshot file, in reverse frame_id order.
+    /// Iterator on the frames contained in the snapshot file, in reverse frame_no order.
     pub fn frames_iter(&self) -> impl Iterator<Item = anyhow::Result<Bytes>> + '_ {
         let mut current_offset = 0;
         std::iter::from_fn(move || {
@@ -137,16 +138,16 @@ impl SnapshotFile {
         })
     }
 
-    /// Like `frames_iter`, but stops as soon as a frame with id <= `frame_id` is reached
+    /// Like `frames_iter`, but stops as soon as a frame with id <= `frame_no` is reached
     pub fn frames_iter_from(
         &self,
-        frame_id: u64,
+        frame_no: u64,
     ) -> impl Iterator<Item = anyhow::Result<Bytes>> + '_ {
         let mut iter = self.frames_iter();
         std::iter::from_fn(move || match iter.next() {
             Some(Ok(bytes)) => match WalFrame::try_from_bytes(bytes.clone()) {
                 Ok(frame) => {
-                    if frame.header.frame_id <= frame_id {
+                    if frame.header.frame_no <= frame_no {
                         None
                     } else {
                         Some(Ok(bytes))
@@ -282,7 +283,7 @@ impl SnapshotMerger {
             temp.push((
                 snapshot_name,
                 snapshot.header.frame_count,
-                snapshot.header.start_frame_id,
+                snapshot.header.start_frame_no,
             ))
         }
 
@@ -307,11 +308,11 @@ impl SnapshotMerger {
             builder.append_frames(iter)?;
         }
 
-        let (_, start_frame_id, _) = parse_snapshot_name(&snapshots[0].0).unwrap();
-        let (_, _, end_frame_id) = parse_snapshot_name(&snapshots.last().unwrap().0).unwrap();
+        let (_, start_frame_no, _) = parse_snapshot_name(&snapshots[0].0).unwrap();
+        let (_, _, end_frame_no) = parse_snapshot_name(&snapshots.last().unwrap().0).unwrap();
 
-        builder.header.start_frame_id = start_frame_id;
-        builder.header.end_frame_id = end_frame_id;
+        builder.header.start_frame_no = start_frame_no;
+        builder.header.end_frame_no = end_frame_no;
 
         let compacted_snapshot_infos = builder.finish()?;
 
@@ -352,7 +353,7 @@ struct SnapshotBuilder {
     header: SnapshotFileHeader,
     snapshot_file: BufWriter<NamedTempFile>,
     db_path: PathBuf,
-    last_seen_frame_id: u64,
+    last_seen_frame_no: u64,
 }
 
 fn snapshot_dir_path(db_path: &Path) -> PathBuf {
@@ -371,19 +372,19 @@ impl SnapshotBuilder {
             seen_pages: HashSet::new(),
             header: SnapshotFileHeader {
                 db_id,
-                start_frame_id: u64::MAX,
-                end_frame_id: u64::MIN,
+                start_frame_no: u64::MAX,
+                end_frame_no: u64::MIN,
                 frame_count: 0,
                 size_after: 0,
                 _pad: 0,
             },
             snapshot_file: target,
             db_path: db_path.to_path_buf(),
-            last_seen_frame_id: u64::MAX,
+            last_seen_frame_no: u64::MAX,
         })
     }
 
-    /// append frames to the snapshot. Frames must be in decreasing frame_id order.
+    /// append frames to the snapshot. Frames must be in decreasing frame_no order.
     fn append_frames(
         &mut self,
         frames: impl Iterator<Item = anyhow::Result<WalFrame>>,
@@ -392,18 +393,18 @@ impl SnapshotBuilder {
         // make sure that only the most recent version of each file is present in the resulting
         // snapshot.
         //
-        // The snapshot file contains the most recent version of each page, in descending frame id
-        // order. That last part is important for when we read it later on.
+        // The snapshot file contains the most recent version of each page, in descending frame
+        // number order. That last part is important for when we read it later on.
         for frame in frames {
             let frame = frame?;
-            assert!(frame.header.frame_id < self.last_seen_frame_id);
-            self.last_seen_frame_id = frame.header.frame_id;
-            if frame.header.frame_id < self.header.start_frame_id {
-                self.header.start_frame_id = frame.header.frame_id;
+            assert!(frame.header.frame_no < self.last_seen_frame_no);
+            self.last_seen_frame_no = frame.header.frame_no;
+            if frame.header.frame_no < self.header.start_frame_no {
+                self.header.start_frame_no = frame.header.frame_no;
             }
 
-            if frame.header.frame_id > self.header.end_frame_id {
-                self.header.end_frame_id = frame.header.frame_id;
+            if frame.header.frame_no > self.header.end_frame_no {
+                self.header.end_frame_no = frame.header.frame_no;
                 self.header.size_after = frame.header.size_after;
             }
 
@@ -426,8 +427,8 @@ impl SnapshotBuilder {
         let snapshot_name = format!(
             "{}-{}-{}.snap",
             Uuid::from_u128(self.header.db_id),
-            self.header.start_frame_id,
-            self.header.end_frame_id,
+            self.header.start_frame_no,
+            self.header.end_frame_no,
         );
 
         file.persist(snapshot_dir_path(&self.db_path).join(&snapshot_name))?;
@@ -471,7 +472,7 @@ mod test {
             magic: WAL_MAGIC,
             start_checksum: 0,
             db_id: db_id.as_u128(),
-            start_frame_id: 0,
+            start_frame_no: 0,
             frame_count: 50,
             version: 0,
             page_size: WAL_PAGE_SIZE,
@@ -480,11 +481,11 @@ mod test {
         log_file.write_header(&expected_header).unwrap();
 
         // add 50 pages, each one in two versions
-        let mut frame_id = 0;
+        let mut frame_no = 0;
         for _ in 0..2 {
             for i in 0..25 {
                 let frame_header = FrameHeader {
-                    frame_id,
+                    frame_no,
                     checksum: 0,
                     page_no: i,
                     size_after: i + 1,
@@ -496,7 +497,7 @@ mod test {
                 };
                 log_file.push_frame(frame).unwrap();
 
-                frame_id += 1;
+                frame_no += 1;
             }
         }
 
@@ -514,8 +515,8 @@ mod test {
         let header: SnapshotFileHeader =
             pod_read_unaligned(&snapshot[..std::mem::size_of::<SnapshotFileHeader>()]);
 
-        assert_eq!(header.start_frame_id, 0);
-        assert_eq!(header.end_frame_id, 49);
+        assert_eq!(header.start_frame_no, 0);
+        assert_eq!(header.end_frame_no, 49);
         assert_eq!(header.frame_count, 25);
         assert_eq!(header.db_id, db_id.as_u128());
         assert_eq!(header.size_after, 25);
@@ -525,11 +526,11 @@ mod test {
         let data = &snapshot[std::mem::size_of::<SnapshotFileHeader>()..];
         data.chunks(LogFile::FRAME_SIZE).for_each(|f| {
             let frame = WalFrame::try_from_bytes(Bytes::copy_from_slice(f)).unwrap();
-            assert!(!seen_frames.contains(&frame.header.frame_id));
+            assert!(!seen_frames.contains(&frame.header.frame_no));
             assert!(!seen_page_no.contains(&frame.header.page_no));
             seen_page_no.insert(frame.header.page_no);
-            seen_frames.insert(frame.header.frame_id);
-            assert!(frame.header.frame_id >= 25);
+            seen_frames.insert(frame.header.frame_no);
+            assert!(frame.header.frame_no >= 25);
         });
 
         assert_eq!(seen_frames.len(), 25);
@@ -538,14 +539,14 @@ mod test {
         let snapshot_file = SnapshotFile::open(&snapshot_path).unwrap();
 
         let frames = snapshot_file.frames_iter_from(0);
-        let mut expected_frame_id = 49;
+        let mut expected_frame_no = 49;
         for frame in frames {
             let frame = frame.unwrap();
             let header: FrameHeader = pod_read_unaligned(&frame[..size_of::<FrameHeader>()]);
-            assert_eq!(header.frame_id, expected_frame_id);
-            expected_frame_id -= 1;
+            assert_eq!(header.frame_no, expected_frame_no);
+            expected_frame_no -= 1;
         }
 
-        assert_eq!(expected_frame_id, 24);
+        assert_eq!(expected_frame_no, 24);
     }
 }
