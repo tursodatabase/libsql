@@ -38,8 +38,9 @@ impl QueryHandler {
         queries: Vec<Query>,
         col_defs: bool,
     ) -> PgWireResult<Vec<Response>> {
+        let auth = crate::auth::Authenticated::Authorized(crate::auth::Authorized::FullAccess);
         //FIXME: handle poll_ready error
-        match self.database.execute_batch(queries).await {
+        match self.database.execute_batch(queries, auth).await {
             Ok((resp, _)) => {
                 let ret = resp
                     .into_iter()

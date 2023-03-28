@@ -20,7 +20,7 @@ use tower_http::trace::DefaultOnResponse;
 use tower_http::{compression::CompressionLayer, cors};
 use tracing::{Level, Span};
 
-use crate::auth::Auth;
+use crate::auth::{Auth, Authenticated};
 use crate::database::factory::DbFactory;
 use crate::error::Error;
 use crate::hrana;
@@ -158,6 +158,7 @@ fn parse_payload(data: &[u8]) -> Result<HttpQuery, Response<Body>> {
 
 async fn handle_query(
     mut req: Request<Body>,
+    auth: Authenticated,
     db_factory: Arc<dyn DbFactory>,
 ) -> anyhow::Result<Response<Body>> {
     let bytes = to_bytes(req.body_mut()).await?;
@@ -173,7 +174,7 @@ async fn handle_query(
 
     let db = db_factory.create().await?;
 
-    match db.execute_batch_or_rollback(batch).await {
+    match db.execute_batch_or_rollback(batch, auth).await {
         Ok((rows, _)) => {
             let json = query_response_to_json(rows)?;
             Ok(Response::builder()
@@ -230,21 +231,26 @@ async fn handle_request(
     }
 
     let auth_header = req.headers().get(hyper::header::AUTHORIZATION);
-    if let Err(err) = auth.authenticate_http(auth_header) {
-        return Ok(Response::builder()
-            .status(hyper::StatusCode::UNAUTHORIZED)
-            .body(err.to_string().into())
-            .unwrap());
-    }
+    let auth = match auth.authenticate_http(auth_header) {
+        Ok(auth) => auth,
+        Err(err) => {
+            return Ok(Response::builder()
+                .status(hyper::StatusCode::UNAUTHORIZED)
+                .body(err.to_string().into())
+                .unwrap());
+        }
+    };
 
     match (req.method(), req.uri().path()) {
-        (&Method::POST, "/") => handle_query(req, db_factory.clone()).await,
+        (&Method::POST, "/") => handle_query(req, auth, db_factory.clone()).await,
         (&Method::GET, "/version") => Ok(handle_version()),
         (&Method::GET, "/console") if enable_console => show_console().await,
         (&Method::GET, "/health") => Ok(handle_health()),
         (&Method::GET, "/v1") => hrana_over_http::handle_index(req).await,
-        (&Method::POST, "/v1/execute") => hrana_over_http::handle_execute(db_factory, req).await,
-        (&Method::POST, "/v1/batch") => hrana_over_http::handle_batch(db_factory, req).await,
+        (&Method::POST, "/v1/execute") => {
+            hrana_over_http::handle_execute(db_factory, auth, req).await
+        }
+        (&Method::POST, "/v1/batch") => hrana_over_http::handle_batch(db_factory, auth, req).await,
         (&Method::GET, "/v1/stats") => Ok(stats::handle_stats(&stats)),
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }

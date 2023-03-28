@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::auth::Authenticated;
 use crate::query::{Params, Query, QueryResult};
 use crate::query_analysis::{State, Statement};
 use crate::Result;
@@ -50,13 +51,17 @@ pub enum Cond {
 #[async_trait::async_trait]
 pub trait Database: Send + Sync {
     /// Executes a query program
-    async fn execute_program(&self, pgm: Program) -> Result<(Vec<Option<QueryResult>>, State)>;
+    async fn execute_program(
+        &self,
+        pgm: Program,
+        auth: Authenticated,
+    ) -> Result<(Vec<Option<QueryResult>>, State)>;
 
     /// Unconditionnaly execute a query as part of a program
-    async fn execute_one(&self, query: Query) -> Result<(QueryResult, State)> {
+    async fn execute_one(&self, query: Query, auth: Authenticated) -> Result<(QueryResult, State)> {
         let pgm = Program::new(vec![Step { cond: None, query }]);
 
-        let (results, state) = self.execute_program(pgm).await?;
+        let (results, state) = self.execute_program(pgm, auth).await?;
         Ok((results.into_iter().next().unwrap().unwrap(), state))
     }
 
@@ -66,6 +71,7 @@ pub trait Database: Send + Sync {
     async fn execute_batch_or_rollback(
         &self,
         batch: Vec<Query>,
+        auth: Authenticated,
     ) -> Result<(Vec<Option<QueryResult>>, State)> {
         let mut steps = make_batch_program(batch);
 
@@ -86,7 +92,7 @@ pub trait Database: Send + Sync {
 
         let pgm = Program::new(steps);
 
-        let (mut results, state) = self.execute_program(pgm).await?;
+        let (mut results, state) = self.execute_program(pgm, auth).await?;
         // remove the rollback result
         results.pop();
 
@@ -95,18 +101,25 @@ pub trait Database: Send + Sync {
 
     /// Execute all the queries in the batch sequentially.
     /// If an query in the batch fails, the remaining queries are ignored
-    async fn execute_batch(&self, batch: Vec<Query>) -> Result<(Vec<Option<QueryResult>>, State)> {
+    async fn execute_batch(
+        &self,
+        batch: Vec<Query>,
+        auth: Authenticated,
+    ) -> Result<(Vec<Option<QueryResult>>, State)> {
         let steps = make_batch_program(batch);
         let pgm = Program::new(steps);
-        self.execute_program(pgm).await
+        self.execute_program(pgm, auth).await
     }
 
-    async fn rollback(&self) -> Result<()> {
+    async fn rollback(&self, auth: Authenticated) -> Result<()> {
         let (results, _) = self
-            .execute_one(Query {
-                stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
-                params: Params::empty(),
-            })
+            .execute_one(
+                Query {
+                    stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
+                    params: Params::empty(),
+                },
+                auth,
+            )
             .await?;
 
         results?;
