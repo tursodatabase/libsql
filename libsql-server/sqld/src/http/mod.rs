@@ -28,7 +28,7 @@ use crate::error::Error;
 use crate::hrana;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Query, QueryResult, ResultSet};
-use crate::query_analysis::{final_state, State, Statement};
+use crate::query_analysis::{predict_final_state, State, Statement};
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::types::QueryObject;
@@ -140,7 +140,7 @@ fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
         out.push(query);
     }
 
-    match final_state(State::Init, out.iter().map(|q| &q.stmt)) {
+    match predict_final_state(State::Init, out.iter().map(|q| &q.stmt)) {
         State::Txn => anyhow::bail!("interactive transaction not allowed in HTTP queries"),
         State::Init => (),
         // maybe we should err here, but let's sqlite deal with that.

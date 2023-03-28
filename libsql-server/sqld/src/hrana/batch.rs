@@ -68,7 +68,7 @@ fn batch_to_program(batch: &proto::Batch) -> Result<Program> {
         steps.push(step);
     }
 
-    Ok(Program { steps })
+    Ok(Program::new(steps))
 }
 
 pub async fn execute_batch(db: &dyn Database, batch: &proto::Batch) -> Result<proto::BatchResult> {

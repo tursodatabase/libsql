@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::query::{Params, Query, QueryResult};
 use crate::query_analysis::{State, Statement};
 use crate::Result;
@@ -9,24 +11,34 @@ pub mod write_proxy;
 
 const TXN_TIMEOUT_SECS: u64 = 5;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Program {
-    pub steps: Vec<Step>,
+    pub steps: Arc<Vec<Step>>,
 }
 
 impl Program {
+    pub fn new(steps: Vec<Step>) -> Self {
+        Self {
+            steps: Arc::new(steps),
+        }
+    }
+
     pub fn is_read_only(&self) -> bool {
         self.steps.iter().all(|s| s.query.stmt.is_read_only())
     }
+
+    pub fn steps(&self) -> &[Step] {
+        self.steps.as_slice()
+    }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Step {
     pub cond: Option<Cond>,
     pub query: Query,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Cond {
     Ok { step: usize },
     Err { step: usize },
@@ -42,9 +54,7 @@ pub trait Database: Send + Sync {
 
     /// Unconditionnaly execute a query as part of a program
     async fn execute_one(&self, query: Query) -> Result<(QueryResult, State)> {
-        let pgm = Program {
-            steps: vec![Step { cond: None, query }],
-        };
+        let pgm = Program::new(vec![Step { cond: None, query }]);
 
         let (results, state) = self.execute_program(pgm).await?;
         Ok((results.into_iter().next().unwrap().unwrap(), state))
@@ -85,12 +95,25 @@ pub trait Database: Send + Sync {
             })
         }
 
-        let pgm = Program { steps };
+        let pgm = Program::new(steps);
 
         let (mut results, state) = self.execute_program(pgm).await?;
         // remove the rollback result
         results.pop();
 
         Ok((results, state))
+    }
+
+    async fn rollback(&self) -> Result<()> {
+        let (results, _) = self
+            .execute_one(Query {
+                stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
+                params: Params::empty(),
+            })
+            .await?;
+
+        results?;
+
+        Ok(())
     }
 }
