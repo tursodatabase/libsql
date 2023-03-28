@@ -11,7 +11,7 @@ use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::Status;
 
-use crate::replication::{FrameId, LogReadError, ReplicationLogger};
+use crate::replication::{FrameNo, LogReadError, ReplicationLogger};
 
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
@@ -32,7 +32,7 @@ impl ReplicationLogService {
         }
     }
 
-    fn stream_pages(&self, start_id: FrameId) -> ReceiverStream<Result<Frame, Status>> {
+    fn stream_pages(&self, start_id: FrameNo) -> ReceiverStream<Result<Frame, Status>> {
         let logger = self.logger.clone();
         let (sender, receiver) = tokio::sync::mpsc::channel(64);
         tokio::task::spawn_blocking(move || {

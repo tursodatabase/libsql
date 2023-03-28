@@ -11,7 +11,7 @@ message HelloRequest { }
 message HelloResponse {
     /// Uuid of the current generation
     string generation_id = 1;
-    /// First frame index in the current generation
+    /// First frame_no in the current generation
     uint64 generation_start_index = 2;
     /// Uuid of the database being replicated
     string database_id = 3;

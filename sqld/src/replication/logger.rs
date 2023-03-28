@@ -26,20 +26,20 @@ pub const WAL_PAGE_SIZE: i32 = 4096;
 pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
 const CRC_64_GO_ISO: Crc<u64> = Crc::<u64>::new(&crc::CRC_64_GO_ISO);
 
-pub type FrameId = u64;
+/// The frame uniquely identifing, monotonically increasing number
+pub type FrameNo = u64;
 
 // Clone is necessary only because opening a database may fail, and we need to clone the empty
 // struct.
 #[derive(Clone)]
 pub struct ReplicationLoggerHook {
-    /// Current frame index, updated on each commit.
     buffer: Vec<WalPage>,
     logger: Arc<ReplicationLogger>,
 }
 
 /// This implementation of WalHook intercepts calls to `on_frame`, and writes them to a
 /// shadow wal. Writing to the shadow wal is done in three steps:
-/// i. append the new pages at the offset pointed by header.start_frame_index + header.frame_count
+/// i. append the new pages at the offset pointed by header.start_frame_no + header.frame_count
 /// ii. call the underlying implementation of on_frames
 /// iii. if the call of the underlying method was successfull, update the log header to the new
 /// frame count.
@@ -236,7 +236,7 @@ impl LogFile {
             let db_id = Uuid::new_v4();
             let header = LogFileHeader {
                 version: 1,
-                start_frame_id: 0,
+                start_frame_no: 0,
                 magic: WAL_MAGIC,
                 page_size: WAL_PAGE_SIZE,
                 start_checksum: 0,
@@ -315,8 +315,8 @@ impl LogFile {
     }
 
     pub fn push_frame(&mut self, frame: WalFrame) -> anyhow::Result<()> {
-        let offset = frame.header.frame_id;
-        let byte_offset = Self::absolute_byte_offset(offset - self.header.start_frame_id);
+        let offset = frame.header.frame_no;
+        let byte_offset = Self::absolute_byte_offset(offset - self.header.start_frame_no);
         tracing::trace!("writing frame {offset} at offset {byte_offset}");
         self.file
             .write_all_at(bytes_of(&frame.header), byte_offset)?;
@@ -331,33 +331,33 @@ impl LogFile {
         std::mem::size_of::<LogFileHeader>() as u64 + nth * Self::FRAME_SIZE as u64
     }
 
-    fn byte_offset(&self, id: FrameId) -> anyhow::Result<Option<u64>> {
-        if id < self.header.start_frame_id
-            || id > self.header.start_frame_id + self.header.frame_count
+    fn byte_offset(&self, id: FrameNo) -> anyhow::Result<Option<u64>> {
+        if id < self.header.start_frame_no
+            || id > self.header.start_frame_no + self.header.frame_count
         {
             return Ok(None);
         }
-        Ok(Self::absolute_byte_offset(id - self.header.start_frame_id).into())
+        Ok(Self::absolute_byte_offset(id - self.header.start_frame_no).into())
     }
 
-    /// Returns bytes represening a WalFrame for frame `id`
+    /// Returns bytes represening a WalFrame for frame `frame_no`
     ///
     /// If the requested frame is before the first frame in the log, or after the last frame,
     /// Ok(None) is returned.
-    pub fn frame_bytes(&self, id: FrameId) -> std::result::Result<Bytes, LogReadError> {
-        if id < self.header.start_frame_id {
+    pub fn frame_bytes(&self, frame_no: FrameNo) -> std::result::Result<Bytes, LogReadError> {
+        if frame_no < self.header.start_frame_no {
             return Err(LogReadError::SnapshotRequired);
         }
 
-        if id >= self.header.start_frame_id + self.header.frame_count {
+        if frame_no >= self.header.start_frame_no + self.header.frame_count {
             return Err(LogReadError::Ahead);
         }
 
         let mut buffer = BytesMut::zeroed(Self::FRAME_SIZE);
         self.file
-            .read_exact_at(&mut buffer, self.byte_offset(id)?.unwrap())
+            .read_exact_at(&mut buffer, self.byte_offset(frame_no)?.unwrap())
             .map_err(anyhow::Error::from)?; // unwrap: we checked
-                                            // that the frame index
+                                            // that the frame_no
                                             // in in the file before
         Ok(buffer.freeze())
     }
@@ -392,7 +392,7 @@ impl LogFile {
             .open(&temp_log_path)?;
         let mut new_log_file = LogFile::new(file, self.max_log_frame_count)?;
         let new_header = LogFileHeader {
-            start_frame_id: self.header.start_frame_id + self.header.frame_count,
+            start_frame_no: self.header.start_frame_no + self.header.frame_count,
             frame_count: 0,
             start_checksum,
             ..self.header
@@ -468,8 +468,8 @@ pub struct LogFileHeader {
     pub start_checksum: u64,
     /// Uuid of the database associated with this log.
     pub db_id: u128,
-    /// Frame index of the first frame in the log
-    pub start_frame_id: u64,
+    /// Frame_no of the first frame in the log
+    pub start_frame_no: FrameNo,
     /// entry count in file
     pub frame_count: u64,
     /// Wal file version number, currently: 1
@@ -485,8 +485,8 @@ pub struct LogFileHeader {
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Zeroable, Pod)]
 pub struct FrameHeader {
-    /// Incremental frame id
-    pub frame_id: u64,
+    /// Incremental frame number
+    pub frame_no: FrameNo,
     /// Rolling checksum of all the previous frames, including this one.
     pub checksum: u64,
     /// page number, if frame_type is FrameType::Page
@@ -534,17 +534,17 @@ impl ReplicationLogger {
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
         let log_file = LogFile::new(file, max_log_frame_count)?;
         let current_checksum =
-            if log_file.header().frame_count == 0 && log_file.header().start_frame_id == 0 {
+            if log_file.header().frame_count == 0 && log_file.header().start_frame_no == 0 {
                 AtomicU64::new(0)
             } else {
                 AtomicU64::new(Self::compute_checksum(log_file.header(), &log_file)?)
             };
 
         let header = log_file.header;
-        let generation_start_frame_id = header.start_frame_id + header.frame_count;
+        let generation_start_frame_no = header.start_frame_no + header.frame_count;
         Ok(Self {
             current_checksum,
-            generation: Generation::new(generation_start_frame_id),
+            generation: Generation::new(generation_start_frame_no),
             compactor: LogCompactor::new(db_path, log_file.header.db_id)?,
             log_file: RwLock::new(log_file),
             db_path: db_path.to_owned(),
@@ -569,7 +569,7 @@ impl ReplicationLogger {
             let checksum = digest.finalize();
 
             let header = FrameHeader {
-                frame_id: log_header.start_frame_id + current_frame,
+                frame_no: log_header.start_frame_no + current_frame,
                 checksum,
                 page_no: page.page_no,
                 size_after: page.size_after,
@@ -617,7 +617,7 @@ impl ReplicationLogger {
             .store(new_current_checksum, Ordering::Relaxed);
     }
 
-    pub fn get_snapshot_file(&self, from: FrameId) -> anyhow::Result<Option<SnapshotFile>> {
+    pub fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
         find_snapshot_file(&self.db_path, from)
     }
 }
@@ -649,7 +649,7 @@ mod test {
         }
 
         assert_eq!(
-            log_file.header.start_frame_id + log_file.header.frame_count,
+            log_file.header.start_frame_no + log_file.header.frame_count,
             10
         );
     }
