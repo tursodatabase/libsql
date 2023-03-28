@@ -149,11 +149,11 @@ extern "C" {
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
 */
-#define SQLITE_VERSION        "3.41.0"
-#define SQLITE_VERSION_NUMBER 3041000
-#define SQLITE_SOURCE_ID      "2023-02-05 20:29:10 e6ab96bd0b9efc51fd703bf7e92b079943ad9a3b92183d434adc11fb7d23alt1"
+#define SQLITE_VERSION        "3.42.0"
+#define SQLITE_VERSION_NUMBER 3042000
+#define SQLITE_SOURCE_ID      "2023-03-11 23:21:21 dc9f025dc43cb8008e7d8d644175d8b2d084e602a1513803c40c513d1e99alt1"
 
-#define LIBSQL_VERSION        "0.2.0"
+#define LIBSQL_VERSION        "0.2.1"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
@@ -1190,7 +1190,6 @@ struct sqlite3_io_methods {
 ** in wal mode after the client has finished copying pages from the wal
 ** file to the database file, but before the *-shm file is updated to
 ** record the fact that the pages have been checkpointed.
-** </ul>
 **
 ** <li>[[SQLITE_FCNTL_EXTERNAL_READER]]
 ** The EXPERIMENTAL [SQLITE_FCNTL_EXTERNAL_READER] opcode is used to detect
@@ -1203,16 +1202,16 @@ struct sqlite3_io_methods {
 ** the database is not a wal-mode db, or if there is no such connection in any
 ** other process. This opcode cannot be used to detect transactions opened
 ** by clients within the current process, only within other processes.
-** </ul>
 **
 ** <li>[[SQLITE_FCNTL_CKSM_FILE]]
-** Used by the cksmvfs VFS module only.
+** The [SQLITE_FCNTL_CKSM_FILE] opcode is for use interally by the
+** [checksum VFS shim] only.
 **
 ** <li>[[SQLITE_FCNTL_RESET_CACHE]]
 ** If there is currently no transaction open on the database, and the
-** database is not a temp db, then this file-control purges the contents
-** of the in-memory page cache. If there is an open transaction, or if
-** the db is a temp-db, it is a no-op, not an error.
+** database is not a temp db, then the [SQLITE_FCNTL_RESET_CACHE] file-control
+** purges the contents of the in-memory page cache. If there is an open
+** transaction, or if the db is a temp-db, this opcode is a no-op, not an error.
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -1683,19 +1682,22 @@ SQLITE_API int sqlite3_os_end(void);
 ** must ensure that no other SQLite interfaces are invoked by other
 ** threads while sqlite3_config() is running.</b>
 **
-** The sqlite3_config() interface
-** may only be invoked prior to library initialization using
-** [sqlite3_initialize()] or after shutdown by [sqlite3_shutdown()].
-** ^If sqlite3_config() is called after [sqlite3_initialize()] and before
-** [sqlite3_shutdown()] then it will return SQLITE_MISUSE.
-** Note, however, that ^sqlite3_config() can be called as part of the
-** implementation of an application-defined [sqlite3_os_init()].
-**
 ** The first argument to sqlite3_config() is an integer
 ** [configuration option] that determines
 ** what property of SQLite is to be configured.  Subsequent arguments
 ** vary depending on the [configuration option]
 ** in the first argument.
+**
+** For most configuration options, the sqlite3_config() interface
+** may only be invoked prior to library initialization using
+** [sqlite3_initialize()] or after shutdown by [sqlite3_shutdown()].
+** The exceptional configuration options that may be invoked at any time
+** are called "anytime configuration options".
+** ^If sqlite3_config() is called after [sqlite3_initialize()] and before
+** [sqlite3_shutdown()] with a first argument that is not an anytime
+** configuration option, then the sqlite3_config() call will return SQLITE_MISUSE.
+** Note, however, that ^sqlite3_config() can be called as part of the
+** implementation of an application-defined [sqlite3_os_init()].
 **
 ** ^When a configuration option is set, sqlite3_config() returns [SQLITE_OK].
 ** ^If the option is unknown or SQLite is unable to set the option
@@ -1803,6 +1805,23 @@ struct sqlite3_mem_methods {
 **
 ** These constants are the available integer configuration options that
 ** can be passed as the first argument to the [sqlite3_config()] interface.
+**
+** Most of the configuration options for sqlite3_config()
+** will only work if invoked prior to [sqlite3_initialize()] or after
+** [sqlite3_shutdown()].  The few exceptions to this rule are called
+** "anytime configuration options".
+** ^Calling [sqlite3_config()] with a first argument that is not an
+** anytime configuration option in between calls to [sqlite3_initialize()] and
+** [sqlite3_shutdown()] is a no-op that returns SQLITE_MISUSE.
+**
+** The set of anytime configuration options can change (by insertions
+** and/or deletions) from one release of SQLite to the next.
+** As of SQLite version 3.42.0, the complete set of anytime configuration
+** options is:
+** <ul>
+** <li> SQLITE_CONFIG_LOG
+** <li> SQLITE_CONFIG_PCACHE_HDRSZ
+** </ul>
 **
 ** New configuration options may be added in future releases of SQLite.
 ** Existing configuration options might be discontinued.  Applications
@@ -2464,6 +2483,26 @@ struct sqlite3_mem_methods {
 ** not considered a bug since SQLite versions 3.3.0 and earlier do not support
 ** either generated columns or decending indexes.
 ** </dd>
+**
+** [[SQLITE_DBCONFIG_STMT_SCANSTATUS]]
+** <dt>SQLITE_DBCONFIG_STMT_SCANSTATUS</td>
+** <dd>The SQLITE_DBCONFIG_STMT_SCANSTATUS option is only useful in
+** SQLITE_ENABLE_STMT_SCANSTATUS builds. In this case, it sets or clears
+** a flag that enables collection of the sqlite3_stmt_scanstatus_v2()
+** statistics. For statistics to be collected, the flag must be set on
+** the database handle both when the SQL statement is prepared and when it
+** is stepped. The flag is set (collection of statistics is enabled)
+** by default.</dd>
+**
+** [[SQLITE_DBCONFIG_REVERSE_SCANORDER]]
+** <dt>SQLITE_DBCONFIG_REVERSE_SCANORDER</td>
+** <dd>The SQLITE_DBCONFIG_REVERSE_SCANORDER option change the default order
+** in which tables and indexes are scanned so that the scans start at the end
+** and work toward the beginning rather than starting at the beginning and
+** working toward the end.  Setting SQLITE_DBCONFIG_REVERSE_SCANORDER is the
+** same as setting [PRAGMA reverse_unordered_selects].  This configuration option
+** is useful for application testing.</dd>
+**
 ** </dl>
 */
 #define SQLITE_DBCONFIG_MAINDBNAME            1000 /* const char* */
@@ -2484,7 +2523,9 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
-#define SQLITE_DBCONFIG_MAX                   1017 /* Largest DBCONFIG */
+#define SQLITE_DBCONFIG_STMT_SCANSTATUS       1080 /* int int*  */
+#define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
+#define SQLITE_DBCONFIG_MAX                   1019 /* Largest DBCONFIG */
 
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes
@@ -8708,6 +8749,14 @@ SQLITE_API int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 ** is ignored when the opcode is SQLITE_STMTSTATUS_MEMUSED.
 ** </dd>
 ** </dl>
+**
+** [[LIBSQL_STMTSTATUS_ROWS_READ]]
+** [[LIBSQL_STMTSTATUS_ROWS_WRITTEN]]
+** <dt>LIBSQL_STMTSTATUS_ROWS_READ<br>
+** LIBSQL_STMTSTATUS_ROWS_WRITTEN</dt>
+** <dd>^LIBSQL_STMTSTATUS_ROWS_READ is the number of rows read when executing
+** this statement. LIBSQL_STMTSTATUS_ROWS_WRITTEN value is the number of
+** rows written.
 */
 #define SQLITE_STMTSTATUS_FULLSCAN_STEP     1
 #define SQLITE_STMTSTATUS_SORT              2
@@ -8718,6 +8767,10 @@ SQLITE_API int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 #define SQLITE_STMTSTATUS_FILTER_MISS       7
 #define SQLITE_STMTSTATUS_FILTER_HIT        8
 #define SQLITE_STMTSTATUS_MEMUSED           99
+
+#define LIBSQL_STMTSTATUS_BASE              1024
+#define LIBSQL_STMTSTATUS_ROWS_READ         LIBSQL_STMTSTATUS_BASE + 1
+#define LIBSQL_STMTSTATUS_ROWS_WRITTEN      LIBSQL_STMTSTATUS_BASE + 2
 
 /*
 ** CAPI3REF: Custom Page Cache Object
@@ -9886,7 +9939,7 @@ SQLITE_API int sqlite3_vtab_in(sqlite3_index_info*, int iCons, int bHandle);
 **
 ** <blockquote><pre>
 ** &nbsp;  for(rc=sqlite3_vtab_in_first(pList, &pVal);
-** &nbsp;      rc==SQLITE_OK && pVal
+** &nbsp;      rc==SQLITE_OK && pVal;
 ** &nbsp;      rc=sqlite3_vtab_in_next(pList, &pVal)
 ** &nbsp;  ){
 ** &nbsp;    // do something with pVal
@@ -10020,7 +10073,6 @@ SQLITE_API int sqlite3_vtab_rhs_value(sqlite3_index_info*, int, sqlite3_value **
 ** id for the X-th query plan element. The id value is unique within the
 ** statement. The select-id is the same value as is output in the first
 ** column of an [EXPLAIN QUERY PLAN] query.
-** </dl>
 **
 ** [[SQLITE_SCANSTAT_PARENTID]] <dt>SQLITE_SCANSTAT_PARENTID</dt>
 ** <dd>The "int" variable pointed to by the V parameter will be set to the
@@ -10034,6 +10086,7 @@ SQLITE_API int sqlite3_vtab_rhs_value(sqlite3_index_info*, int, sqlite3_value **
 ** query element was being processed. This value is not available for
 ** all query elements - if it is unavailable the output variable is
 ** set to -1.
+** </dl>
 */
 #define SQLITE_SCANSTAT_NLOOP    0
 #define SQLITE_SCANSTAT_NVISIT   1
@@ -10190,7 +10243,7 @@ SQLITE_API int sqlite3_db_cacheflush(sqlite3*);
 ** function is not defined for operations on WITHOUT ROWID tables, or for
 ** DELETE operations on rowid tables.
 **
-** ^The sqlite3_update_hook(D,C,P) function returns the P argument from
+** ^The sqlite3_preupdate_hook(D,C,P) function returns the P argument from
 ** the previous call on the same [database connection] D, or NULL for
 ** the first call on D.
 **
@@ -10597,6 +10650,19 @@ SQLITE_API int sqlite3_deserialize(
 */
 #ifdef SQLITE_OMIT_FLOATING_POINT
 # undef double
+#endif
+
+#if defined(__wasi__)
+# undef SQLITE_WASI
+# define SQLITE_WASI 1
+# undef SQLITE_OMIT_WAL
+# define SQLITE_OMIT_WAL 1/* because it requires shared memory APIs */
+# ifndef SQLITE_OMIT_LOAD_EXTENSION
+#  define SQLITE_OMIT_LOAD_EXTENSION
+# endif
+# ifndef SQLITE_THREADSAFE
+#  define SQLITE_THREADSAFE 0
+# endif
 #endif
 
 #ifdef __cplusplus
@@ -11968,9 +12034,23 @@ SQLITE_API int sqlite3changeset_apply_v2(
 **   Invert the changeset before applying it. This is equivalent to inverting
 **   a changeset using sqlite3changeset_invert() before applying it. It is
 **   an error to specify this flag with a patchset.
+**
+** <dt>SQLITE_CHANGESETAPPLY_IGNORENOOP <dd>
+**   Do not invoke the conflict handler callback for any changes that
+**   would not actually modify the database even if they were applied.
+**   Specifically, this means that the conflict handler is not invoked
+**   for:
+**    <ul>
+**    <li>a delete change if the row being deleted cannot be found,
+**    <li>an update change if the modified fields are already set to
+**        their new values in the conflicting row, or
+**    <li>an insert change if all fields of the conflicting row match
+**        the row being inserted.
+**    </ul>
 */
 #define SQLITE_CHANGESETAPPLY_NOSAVEPOINT   0x0001
 #define SQLITE_CHANGESETAPPLY_INVERT        0x0002
+#define SQLITE_CHANGESETAPPLY_IGNORENOOP    0x0004
 
 /*
 ** CAPI3REF: Constants Passed To The Conflict Handler
