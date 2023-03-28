@@ -5810,4 +5810,26 @@ void libsql_drop_function(
 
   sqlite3VdbeAddOp4(sqlite3GetVdbe(pParse), OP_DropWasmFunc, noErr, 0, 0, zName, P4_DYNAMIC);
 }
+
+#else
+
+void libsql_create_function(
+  Parse *pParse,     /* The parsing context */
+  Token *pName,      /* Function name */
+  Token *pLang,      /* Language of the function */
+  Token *pBody,      /* Body of the function */
+  int isBlob,        /* If the input token is blob */
+  int noErr          /* Suppress error messages if FUNCTION already exists */
+) {
+  sqlite3ErrorMsg(pParse, "Support for user-defined functions is not compiled-in. Try ./configure --enable-wasm-runtime");
+}
+
+void libsql_drop_function(
+  Parse *pParse,     /* The parsing context */
+  Token *pName,      /* Function name */
+  int noErr          /* Suppress error messages if FUNCTION does not exist */
+) {
+  sqlite3ErrorMsg(pParse, "Support for user-defined functions is not compiled-in. Try ./configure --enable-wasm-runtime");
+}
+
 #endif
