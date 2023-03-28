@@ -3,6 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::future::Future;
 use std::sync::Arc;
 
+use crate::auth::Authenticated;
 use crate::database::factory::DbFactory;
 use crate::database::Database;
 use crate::hrana;
@@ -31,6 +32,7 @@ pub async fn handle_index(
 
 pub async fn handle_execute(
     db_factory: Arc<dyn DbFactory>,
+    auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>> {
     #[derive(Debug, Deserialize)]
@@ -43,21 +45,27 @@ pub async fn handle_execute(
         result: hrana::proto::StmtResult,
     }
 
-    handle_request(db_factory, req, |db, req_body: ReqBody| async move {
-        hrana::stmt::execute_stmt(&*db, &req_body.stmt)
-            .await
-            .map(|result| RespBody { result })
-            .map_err(|err| match err.downcast::<hrana::stmt::StmtError>() {
-                Ok(stmt_err) => anyhow!(ResponseError::Stmt(stmt_err)),
-                Err(err) => err,
-            })
-            .context("Could not execute statement")
-    })
+    handle_request(
+        db_factory,
+        auth,
+        req,
+        |db, auth: Authenticated, req_body: ReqBody| async move {
+            hrana::stmt::execute_stmt(&*db, auth, &req_body.stmt)
+                .await
+                .map(|result| RespBody { result })
+                .map_err(|err| match err.downcast::<hrana::stmt::StmtError>() {
+                    Ok(stmt_err) => anyhow!(ResponseError::Stmt(stmt_err)),
+                    Err(err) => err,
+                })
+                .context("Could not execute statement")
+        },
+    )
     .await
 }
 
 pub async fn handle_batch(
     db_factory: Arc<dyn DbFactory>,
+    auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>> {
     #[derive(Debug, Deserialize)]
@@ -70,28 +78,34 @@ pub async fn handle_batch(
         result: hrana::proto::BatchResult,
     }
 
-    handle_request(db_factory, req, |db, req_body: ReqBody| async move {
-        hrana::batch::execute_batch(&*db, &req_body.batch)
-            .await
-            .map(|result| RespBody { result })
-            .map_err(|err| match err.downcast::<hrana::batch::BatchError>() {
-                Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
-                Err(err) => err,
-            })
-            .context("Could not execute batch")
-    })
+    handle_request(
+        db_factory,
+        auth,
+        req,
+        |db, auth: Authenticated, req_body: ReqBody| async move {
+            hrana::batch::execute_batch(&*db, auth, &req_body.batch)
+                .await
+                .map(|result| RespBody { result })
+                .map_err(|err| match err.downcast::<hrana::batch::BatchError>() {
+                    Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
+                    Err(err) => err,
+                })
+                .context("Could not execute batch")
+        },
+    )
     .await
 }
 
 async fn handle_request<ReqBody, RespBody, F, Fut>(
     db_factory: Arc<dyn DbFactory>,
+    auth: Authenticated,
     req: hyper::Request<hyper::Body>,
     f: F,
 ) -> Result<hyper::Response<hyper::Body>>
 where
     ReqBody: DeserializeOwned,
     RespBody: Serialize,
-    F: FnOnce(Arc<dyn Database>, ReqBody) -> Fut,
+    F: FnOnce(Arc<dyn Database>, Authenticated, ReqBody) -> Fut,
     Fut: Future<Output = Result<RespBody>>,
 {
     let res: Result<_> = async move {
@@ -103,7 +117,7 @@ where
             .create()
             .await
             .context("Could not create a database connection")?;
-        let resp_body = f(db, req_body).await?;
+        let resp_body = f(db, auth, req_body).await?;
 
         Ok(json_response(hyper::StatusCode::OK, &resp_body))
     }

@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+use crate::auth::Authenticated;
 use crate::database::{Cond, Database, Program, Step};
 
 use super::proto;
@@ -71,11 +72,15 @@ fn batch_to_program(batch: &proto::Batch) -> Result<Program> {
     Ok(Program::new(steps))
 }
 
-pub async fn execute_batch(db: &dyn Database, batch: &proto::Batch) -> Result<proto::BatchResult> {
+pub async fn execute_batch(
+    db: &dyn Database,
+    auth: Authenticated,
+    batch: &proto::Batch,
+) -> Result<proto::BatchResult> {
     let pgm = batch_to_program(batch)?;
     let mut step_results = Vec::with_capacity(pgm.steps.len());
     let mut step_errors = Vec::with_capacity(pgm.steps.len());
-    let (results, _state) = db.execute_program(pgm).await?;
+    let (results, _state) = db.execute_program(pgm, auth).await?;
     for result in results {
         let (step_result, step_error) = match result {
             Some(Ok(r)) => (Some(proto_stmt_result_from_query_response(r)), None),

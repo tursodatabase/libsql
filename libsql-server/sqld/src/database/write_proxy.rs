@@ -110,15 +110,19 @@ impl WriteProxyDatabase {
 
 #[async_trait::async_trait]
 impl Database for WriteProxyDatabase {
-    async fn execute_program(&self, pgm: Program) -> Result<(Vec<Option<QueryResult>>, State)> {
+    async fn execute_program(
+        &self,
+        pgm: Program,
+        auth: crate::auth::Authenticated,
+    ) -> Result<(Vec<Option<QueryResult>>, State)> {
         let mut state = self.state.lock().await;
         if *state == State::Init && pgm.is_read_only() {
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
-            let (results, new_state) = self.read_db.execute_program(pgm.clone()).await?;
+            let (results, new_state) = self.read_db.execute_program(pgm.clone(), auth).await?;
             if new_state != State::Init {
-                self.read_db.rollback().await?;
+                self.read_db.rollback(auth).await?;
                 self.execute_remote(pgm, &mut state).await
             } else {
                 Ok((results, new_state))

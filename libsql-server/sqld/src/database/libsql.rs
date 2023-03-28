@@ -7,10 +7,11 @@ use rusqlite::{OpenFlags, StatementStatus};
 use tokio::sync::oneshot;
 use tracing::warn;
 
+use crate::auth::{Authenticated, Authorized};
 use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
 use crate::query::{Column, Query, QueryResponse, QueryResult, ResultSet, Row};
-use crate::query_analysis::{State, Statement};
+use crate::query_analysis::{State, Statement, StmtKind};
 use crate::stats::Stats;
 use crate::Result;
 
@@ -344,9 +345,37 @@ fn eval_cond(cond: &Cond, results: &[Option<QueryResult>]) -> Result<bool> {
     })
 }
 
+fn check_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
+    for step in pgm.steps() {
+        let query = &step.query;
+        match (query.stmt.kind, &auth) {
+            (_, Authenticated::Anonymous) => {
+                return Err(Error::NotAuthorized(
+                    "anonymous access not allowed".to_string(),
+                ));
+            }
+            (StmtKind::Read, Authenticated::Authorized(_)) => (),
+            (StmtKind::TxnBegin, _) | (StmtKind::TxnEnd, _) => (),
+            (_, Authenticated::Authorized(Authorized::FullAccess)) => (),
+            _ => {
+                return Err(Error::NotAuthorized(format!(
+                    "Current session is not authorized to run: {}",
+                    query.stmt.stmt
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute_program(&self, pgm: Program) -> Result<(Vec<Option<QueryResult>>, State)> {
+    async fn execute_program(
+        &self,
+        pgm: Program,
+        auth: Authenticated,
+    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        check_auth(auth, &pgm)?;
         let (resp, receiver) = oneshot::channel();
         let msg = Message { pgm, resp };
         let _ = self.sender.send(msg);

@@ -306,7 +306,8 @@ impl Proxy for ProxyService {
         };
 
         tracing::debug!("executing request for {client_id}");
-        let (results, state) = db.execute_program(pgm).await.unwrap();
+        let auth = crate::auth::Authenticated::Authorized(crate::auth::Authorized::FullAccess);
+        let (results, state) = db.execute_program(pgm, auth).await.unwrap();
         let results = results.into_iter().map(|r| r.into()).collect();
 
         Ok(tonic::Response::new(ExecuteResults {
