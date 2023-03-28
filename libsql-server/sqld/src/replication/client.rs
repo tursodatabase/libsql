@@ -48,6 +48,7 @@ use crate::rpc::replication_log::{NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG};
 use crate::HARD_RESET;
 
 use super::logger::{FrameHeader, LogFile, WalFrameBorrowed};
+use super::FrameNo;
 
 /// Maximum number of frames buffered by the replica
 const MAX_REPLICA_BUFFER_SIZE: usize = 1000; // ~= 40MB
@@ -117,7 +118,7 @@ impl PeriodicDbUpdater {
 
 struct ReadReplicationHook {
     logger: ReplicationLogClient<Channel>,
-    /// Persistent last committed index used for restarts.
+    /// Persistent last committed frame_no used for restarts.
     /// The File should contain two little-endian u64:
     /// - The first one is the attempted commit index before the call xFrame
     /// - The second index is the actually committed index after xFrame
@@ -182,17 +183,17 @@ unsafe impl WalHook for ReadReplicationHook {
                     continue;
                 }
                 Ok(res @ (FetchLogEntryResult::Ok | FetchLogEntryResult::BufferFull)) => {
-                    while let Some((page_headers, last_frame_index, frame_count, size_after)) =
+                    while let Some((page_headers, last_frame_no, frame_count, size_after)) =
                         self.next_transaction()
                     {
-                        tracing::trace!(commit = ?last_frame_index, size_after = size_after);
+                        tracing::trace!(commit = ?last_frame_no, size_after = size_after);
                         // safety: the frame buffer was left untouched between the call to
                         // make_page_header and the call to apply_pages: the page headers point to
                         // valid memory areas.
                         match unsafe {
                             self.apply_pages(
                                 page_headers,
-                                last_frame_index,
+                                last_frame_no,
                                 size_after,
                                 sync_flags,
                                 orig,
@@ -226,19 +227,19 @@ unsafe impl WalHook for ReadReplicationHook {
 
 /// Turn a list of `WalFrame` into a list of PgHdr.
 /// The caller has the responsibility to free the returned headers.
-/// return (headers, last_frame_id, size_after)
+/// return (headers, last_frame_no, size_after)
 fn make_page_header<'a>(
     frames: impl Iterator<Item = impl Into<WalFrameBorrowed<'a>>>,
 ) -> (*mut PgHdr, u64, u32) {
     let mut current_pg = std::ptr::null_mut();
-    let mut last_frame_id = 0;
+    let mut last_frame_no = 0;
     let mut size_after = 0;
 
     let mut headers_count = 0;
     for frame in frames {
         let frame: WalFrameBorrowed = frame.into();
-        if frame.header.frame_id > last_frame_id {
-            last_frame_id = frame.header.frame_id;
+        if frame.header.frame_no > last_frame_no {
+            last_frame_no = frame.header.frame_no;
             size_after = frame.header.size_after;
         }
 
@@ -262,7 +263,7 @@ fn make_page_header<'a>(
 
     tracing::trace!("built {headers_count} page headers");
 
-    (current_pg, last_frame_id, size_after)
+    (current_pg, last_frame_no, size_after)
 }
 
 /// frees the `PgHdr` list pointed at by `h`.
@@ -277,12 +278,12 @@ fn free_page_header(h: *const PgHdr) {
 #[repr(C)]
 #[derive(Debug, Pod, Zeroable, Clone, Copy)]
 struct WalIndexMeta {
-    /// This is the anticipated next frame index to request
-    pre_commit_index: u64,
+    /// This is the anticipated next frame_no to request
+    pre_commit_frame_no: u64,
     /// After we have written the frames back to the wal, we set this value to the same value as
     /// pre_commit_index
     /// On startup we check this value against the pre-commit value to check for consistency
-    post_commit_index: u64,
+    post_commit_frame_no: u64,
     /// Generation Uuid
     generation_id: u128,
     /// Uuid of the database this instance is a replica of
@@ -333,7 +334,7 @@ impl WalIndexMeta {
 
         if self.generation_id == hello_gen_id {
             Ok(self)
-        } else if self.pre_commit_index <= hello.generation_start_index {
+        } else if self.pre_commit_frame_no <= hello.generation_start_index {
             // Ok: generation changed, but we aren't ahead of primary
             self.generation_id = hello_gen_id;
             Ok(self)
@@ -351,8 +352,8 @@ impl WalIndexMeta {
             .as_u128();
 
         Ok(Self {
-            pre_commit_index: 0,
-            post_commit_index: 0,
+            pre_commit_frame_no: 0,
+            post_commit_frame_no: 0,
             generation_id,
             database_id,
         })
@@ -436,22 +437,22 @@ impl ReadReplicationHook {
         Ok(())
     }
 
-    /// Set the pre-commit frame_id, and flush the meta file
-    fn pre_commit(&mut self, frame_id: u64) -> anyhow::Result<()> {
+    /// Set the pre-commit frame_no, and flush the meta file
+    fn pre_commit(&mut self, frame_no: u64) -> anyhow::Result<()> {
         if let Some(ref mut meta) = self.wal_index_meta {
-            meta.pre_commit_index = frame_id;
+            meta.pre_commit_frame_no = frame_no;
         }
         self.flush_meta()
     }
 
     fn post_commit(&mut self) -> anyhow::Result<()> {
         if let Some(ref mut meta) = self.wal_index_meta {
-            meta.post_commit_index = meta.pre_commit_index;
+            meta.post_commit_frame_no = meta.pre_commit_frame_no;
         }
         self.flush_meta()
     }
 
-    /// Returns the a list of page headers, the last frame id,
+    /// Returns the a list of page headers, the last frame number,
     /// frame count, and the size after for the next transaction.
     ///
     /// The caller is responsible for freeing the page headers with the `free_page_header` function,
@@ -478,7 +479,7 @@ impl ReadReplicationHook {
         // clear buffer and request entries from latest commited entries
         self.buffer.clear();
         let offset = LogOffset {
-            current_offset: self.current_frame_index(),
+            current_offset: self.current_frame_no(),
         };
         let mut frames = match self.logger.snapshot(offset).await {
             Ok(frames) => frames.into_inner(),
@@ -505,7 +506,7 @@ impl ReadReplicationHook {
 
     /// Asks the writer for new log frames to apply.
     async fn fetch_log_entries(&mut self) -> anyhow::Result<FetchLogEntryResult> {
-        let current_offset = self.current_frame_index();
+        let current_offset = self.current_frame_no();
         let req = LogOffset { current_offset };
 
         match self.logger.log_entries(req).await {
@@ -531,7 +532,7 @@ impl ReadReplicationHook {
                     };
                     let frame = WalFrame::try_from_bytes(raw_frame.data)?;
                     debug_assert_eq!(
-                        Some(frame.header.frame_id),
+                        Some(frame.header.frame_no),
                         current_offset
                             .map(|x| x + frame_count + 1)
                             .or(Some(frame_count)),
@@ -564,13 +565,13 @@ impl ReadReplicationHook {
         }
     }
 
-    /// Return the current frame index. None if we haven't received any frame yet
-    fn current_frame_index(&self) -> Option<u64> {
+    /// Return the current frame_no. None if we haven't received any frame yet
+    fn current_frame_no(&self) -> Option<FrameNo> {
         let meta = self.wal_index_meta.as_ref()?;
         // the next frame we want to fetch is the one that after the last we have commiter +
         // the ones we have buffered
-        let index = meta.pre_commit_index + self.buffer.len() as u64;
-        Some(index)
+        let frame_no = meta.pre_commit_frame_no + self.buffer.len() as u64;
+        Some(frame_no)
     }
 
     unsafe fn restore_snapshot(
@@ -589,11 +590,11 @@ impl ReadReplicationHook {
                 data: &chunk[size_of::<FrameHeader>()..],
             });
 
-        let (headers, last_frame_index, size_after) = make_page_header(iter);
+        let (headers, last_frame_no, size_after) = make_page_header(iter);
 
         // safety: the headers point to map, which is valid for the duration of the call to
         // apply_pages
-        let ret = self.apply_pages(headers, last_frame_index, size_after, sync_flags, orig, wal);
+        let ret = self.apply_pages(headers, last_frame_no, size_after, sync_flags, orig, wal);
 
         free_page_header(headers);
 
@@ -607,20 +608,20 @@ impl ReadReplicationHook {
     unsafe fn apply_pages(
         &mut self,
         page_headers: *mut PgHdr,
-        last_frame_index: u64,
+        last_frame_no: u64,
         size_after: u32,
         sync_flags: i32,
         orig: XWalFrameFn,
         wal: *mut Wal,
     ) -> anyhow::Result<()> {
-        self.pre_commit(last_frame_index)
-            .expect("failed to write pre-commit index");
+        self.pre_commit(last_frame_no)
+            .expect("failed to write pre-commit frame_no");
         let ret = orig(wal, WAL_PAGE_SIZE, page_headers, size_after, 1, sync_flags);
 
         if ret == 0 {
             debug_assert!(all_applied(page_headers));
             self.post_commit()
-                .expect("failed to write post-commit index");
+                .expect("failed to write post-commit frame_no");
             // remove commited entries.
             tracing::trace!("applied frame batch");
 
