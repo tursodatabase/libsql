@@ -119,6 +119,7 @@ async fn run_service(
             addr,
             auth.clone(),
             service.clone().map_response(|s| Constant::new(s, 1)),
+            service.factory.clone(),
             upgrade_tx,
             config.enable_http_console,
             idle_shutdown_layer.clone(),
