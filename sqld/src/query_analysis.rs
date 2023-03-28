@@ -70,7 +70,11 @@ pub enum State {
 impl State {
     pub fn step(&mut self, kind: StmtKind) {
         *self = match (*self, kind) {
-            (State::Txn, StmtKind::TxnBegin) | (State::Init, StmtKind::TxnEnd) => State::Invalid,
+            // those two transition will cause an error, but since we are interested in what the
+            // pesimistic final state is, and we will adjust when we get the actual state back.
+            (State::Txn, StmtKind::TxnBegin) => State::Txn,
+            (State::Init, StmtKind::TxnEnd) => State::Init,
+
             (State::Txn, StmtKind::TxnEnd) => State::Init,
             (state, StmtKind::Other | StmtKind::Write | StmtKind::Read) => state,
             (State::Invalid, _) => State::Invalid,

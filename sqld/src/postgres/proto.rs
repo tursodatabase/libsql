@@ -22,7 +22,7 @@ use tokio_util::codec::Framed;
 use tower::Service;
 
 use crate::error::Error;
-use crate::query::{Params, Queries, Query, QueryResponse, QueryResult, Value};
+use crate::query::{Params, Query, QueryResponse, QueryResult, ResultSet, Value};
 use crate::query_analysis::Statement;
 use crate::server::AsyncPeekable;
 
@@ -42,9 +42,13 @@ impl<'a, S> QueryHandler<S> {
         }
     }
 
-    async fn handle_queries(&self, queries: Queries, col_defs: bool) -> PgWireResult<Vec<Response>>
+    async fn handle_queries(
+        &self,
+        queries: Vec<Query>,
+        col_defs: bool,
+    ) -> PgWireResult<Vec<Response>>
     where
-        S: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
+        S: Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error> + Sync + Send,
         S::Future: Send,
     {
         let mut s = self.state.lock().await;
@@ -54,13 +58,14 @@ impl<'a, S> QueryHandler<S> {
             Ok(responses) => Ok(responses
                 .into_iter()
                 .map(|r| match r {
-                    Ok(QueryResponse::ResultSet(mut set)) => {
+                    Some(Ok(QueryResponse::ResultSet(mut set))) => {
                         set.include_column_defs = col_defs;
                         set.into()
                     }
-                    Err(e) => Response::Error(
+                    Some(Err(e)) => Response::Error(
                         ErrorInfo::new("ERROR".into(), "XX000".into(), e.to_string()).into(),
                     ),
+                    None => ResultSet::empty(false).into(),
                 })
                 .collect()),
 
@@ -72,7 +77,7 @@ impl<'a, S> QueryHandler<S> {
 #[async_trait::async_trait]
 impl<S> SimpleQueryHandler for QueryHandler<S>
 where
-    S: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
+    S: Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error> + Sync + Send,
     S::Future: Send,
 {
     async fn do_query<'q, 'b: 'q, C>(
@@ -106,7 +111,7 @@ const REQUEST_DESCRIBE: &str = "SQLD_REQUEST_DESCRIBE";
 #[async_trait::async_trait]
 impl<S> ExtendedQueryHandler for QueryHandler<S>
 where
-    S: Service<Queries, Response = Vec<QueryResult>, Error = Error> + Sync + Send,
+    S: Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error> + Sync + Send,
     S::Future: Send,
 {
     type Statement = String;

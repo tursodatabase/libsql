@@ -379,8 +379,6 @@ impl Params {
     }
 }
 
-pub type Queries = Vec<Query>;
-
 #[cfg(test)]
 mod test {
     use super::*;

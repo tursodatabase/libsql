@@ -21,6 +21,8 @@ pub enum Error {
     // Consider creating a dedicate enum value for your error.
     #[error("Internal Error: `{0}`")]
     Internal(String),
+    #[error("Invalid batch step: {0}")]
+    InvalidBatchStep(usize),
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {

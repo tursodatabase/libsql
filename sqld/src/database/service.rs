@@ -7,7 +7,7 @@ use tower::Service;
 
 use super::Database;
 use crate::error::Error;
-use crate::query::{Queries, QueryResult};
+use crate::query::{Query, QueryResult};
 
 #[async_trait::async_trait]
 pub trait DbFactory: Send + Sync {
@@ -66,8 +66,8 @@ impl Drop for DbService {
     }
 }
 
-impl Service<Queries> for DbService {
-    type Response = Vec<QueryResult>;
+impl Service<Vec<Query>> for DbService {
+    type Response = Vec<Option<QueryResult>>;
     type Error = Error;
     type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
@@ -76,8 +76,8 @@ impl Service<Queries> for DbService {
         Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, queries: Queries) -> Self::Future {
+    fn call(&mut self, batch: Vec<Query>) -> Self::Future {
         let db = self.db.clone();
-        Box::pin(async move { Ok(db.execute_batch(queries).await?.0) })
+        Box::pin(async move { Ok(db.execute_batch_or_rollback(batch).await?.0) })
     }
 }

@@ -1,5 +1,5 @@
-use crate::query::{Queries, Query, QueryResult};
-use crate::query_analysis::State;
+use crate::query::{Params, Query, QueryResult};
+use crate::query_analysis::{State, Statement};
 use crate::Result;
 
 pub mod dump_loader;
@@ -9,17 +9,88 @@ pub mod write_proxy;
 
 const TXN_TIMEOUT_SECS: u64 = 5;
 
+#[derive(Debug)]
+pub struct Program {
+    pub steps: Vec<Step>,
+}
+
+impl Program {
+    pub fn is_read_only(&self) -> bool {
+        self.steps.iter().all(|s| s.query.stmt.is_read_only())
+    }
+}
+
+#[derive(Debug)]
+pub struct Step {
+    pub cond: Option<Cond>,
+    pub query: Query,
+}
+
+#[derive(Debug)]
+pub enum Cond {
+    Ok { step: usize },
+    Err { step: usize },
+    Not { cond: Box<Self> },
+    Or { conds: Vec<Self> },
+    And { conds: Vec<Self> },
+}
+
 #[async_trait::async_trait]
 pub trait Database: Send + Sync {
-    /// Executes a query (statement), and returns the result of the query and the state of the
-    /// database connection after the query.
+    /// Executes a query program
+    async fn execute_program(&self, pgm: Program) -> Result<(Vec<Option<QueryResult>>, State)>;
+
+    /// Unconditionnaly execute a query as part of a program
     async fn execute_one(&self, query: Query) -> Result<(QueryResult, State)> {
-        let (mut results, state) = self.execute_batch(vec![query]).await?;
-        let mut results = results.drain(..);
-        Ok((results.next().unwrap(), state))
+        let pgm = Program {
+            steps: vec![Step { cond: None, query }],
+        };
+
+        let (results, state) = self.execute_program(pgm).await?;
+        Ok((results.into_iter().next().unwrap().unwrap(), state))
     }
 
-    /// Executes a batch of queries, and returns a vec of results corresponding to the queries,
-    /// and the state the database is in after the call to execute.
-    async fn execute_batch(&self, queries: Queries) -> Result<(Vec<QueryResult>, State)>;
+    /// Execute all the queries in the batch sequentially.
+    /// If an query in the batch fails, the remaining queries are ignores, and the batch current
+    /// transaction (if any) is rolledback.
+    async fn execute_batch_or_rollback(
+        &self,
+        batch: Vec<Query>,
+    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        let mut steps = Vec::with_capacity(batch.len());
+        for (i, query) in batch.into_iter().enumerate() {
+            let cond = if i > 0 {
+                // only execute if the previous step was a success
+                Some(Cond::Ok { step: i - 1 })
+            } else {
+                None
+            };
+
+            let step = Step { cond, query };
+            steps.push(step);
+        }
+
+        if !steps.is_empty() {
+            // We add a conditional rollback step if the last step was not sucessful.
+            steps.push(Step {
+                query: Query {
+                    stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
+                    params: Params::empty(),
+                },
+                cond: Some(Cond::Not {
+                    cond: Box::new(Cond::Ok {
+                        step: steps.len() - 1,
+                    }),
+                }),
+            })
+        }
+
+        let pgm = Program { steps };
+
+        let (mut results, state) = self.execute_program(pgm).await?;
+        // remove the rollback result
+        results.pop();
+
+        Ok((results, state))
+    }
 }

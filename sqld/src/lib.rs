@@ -29,7 +29,6 @@ use crate::server::Server;
 pub use sqld_libsql_bindings as libsql;
 
 mod auth;
-mod batch;
 mod database;
 mod error;
 mod hrana;

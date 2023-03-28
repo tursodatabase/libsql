@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::database::service::DbFactory;
 use crate::database::Database;
-use crate::{batch, hrana};
+use crate::hrana;
 
 #[derive(thiserror::Error, Debug)]
 enum ResponseError {
@@ -13,9 +13,9 @@ enum ResponseError {
     BadRequestBody { source: serde_json::Error },
 
     #[error(transparent)]
-    Stmt(batch::StmtError),
+    Stmt(hrana::stmt::StmtError),
     #[error(transparent)]
-    Batch(batch::BatchError),
+    Batch(hrana::batch::BatchError),
 }
 
 pub async fn handle_index(
@@ -35,19 +35,19 @@ pub async fn handle_execute(
 ) -> Result<hyper::Response<hyper::Body>> {
     #[derive(Debug, Deserialize)]
     struct ReqBody {
-        stmt: batch::proto::Stmt,
+        stmt: hrana::proto::Stmt,
     }
 
     #[derive(Debug, Serialize)]
     struct RespBody {
-        result: batch::proto::StmtResult,
+        result: hrana::proto::StmtResult,
     }
 
     handle_request(db_factory, req, |db, req_body: ReqBody| async move {
-        batch::execute_stmt(&*db, &req_body.stmt)
+        hrana::stmt::execute_stmt(&*db, &req_body.stmt)
             .await
             .map(|result| RespBody { result })
-            .map_err(|err| match err.downcast::<batch::StmtError>() {
+            .map_err(|err| match err.downcast::<hrana::stmt::StmtError>() {
                 Ok(stmt_err) => anyhow!(ResponseError::Stmt(stmt_err)),
                 Err(err) => err,
             })
@@ -62,19 +62,19 @@ pub async fn handle_batch(
 ) -> Result<hyper::Response<hyper::Body>> {
     #[derive(Debug, Deserialize)]
     struct ReqBody {
-        batch: batch::proto::Batch,
+        batch: hrana::proto::Batch,
     }
 
     #[derive(Debug, Serialize)]
     struct RespBody {
-        result: batch::proto::BatchResult,
+        result: hrana::proto::BatchResult,
     }
 
     handle_request(db_factory, req, |db, req_body: ReqBody| async move {
-        batch::execute_batch(&*db, &req_body.batch)
+        hrana::batch::execute_batch(&*db, &req_body.batch)
             .await
             .map(|result| RespBody { result })
-            .map_err(|err| match err.downcast::<batch::BatchError>() {
+            .map_err(|err| match err.downcast::<hrana::batch::BatchError>() {
                 Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
                 Err(err) => err,
             })
@@ -116,7 +116,8 @@ where
 }
 
 fn error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
-    use batch::{BatchError, StmtError};
+    use hrana::batch::BatchError;
+    use hrana::stmt::StmtError;
     let status = match &err {
         ResponseError::BadRequestBody { .. } => hyper::StatusCode::BAD_REQUEST,
         ResponseError::Stmt(err) => match err {
