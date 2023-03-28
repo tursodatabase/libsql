@@ -963,7 +963,11 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   ** original table changes and the index and table cannot both be used
   ** if they go out of sync.
   */
-  extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
+  if( IsView(pTable) ){
+    extraCols = ALLBITS;
+  }else{
+    extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
+  }
   mxBitCol = MIN(BMS-1,pTable->nCol);
   testcase( pTable->nCol==BMS-1 );
   testcase( pTable->nCol==BMS-2 );

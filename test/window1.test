@@ -2225,5 +2225,56 @@ do_execsql_test 72.1 {
   WHERE ('1' IS NOT ('abcde' NOTNULL)); 
 } {1}
 
+# 2023-03-28 https://sqlite.org/forum/forumpost/dc3b92cfa0 (Song Liu)
+#
+reset_db
+do_execsql_test 73.0 {
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1(a) VALUES(1),(2),(4);
+  CREATE VIEW t2(b,c) AS SELECT * FROM t1 JOIN t1 A ORDER BY sum(0) OVER(PARTITION BY 0);
+  CREATE TRIGGER x1 INSTEAD OF UPDATE ON t2 BEGIN SELECT true; END;
+}
+do_execsql_test 73.1 {
+  SELECT * FROM t2;
+} {1 1 1 2 1 4 2 1 2 2 2 4 4 1 4 2 4 4}
+do_execsql_test 73.2 {
+  UPDATE t2 SET c=99 WHERE b=4 RETURNING *;
+} {4 99 4 99 4 99}
+do_execsql_test 73.3 {
+  SELECT *, nth_value(15,2) OVER() FROM t2, t1 WHERE b=4;
+} {
+  4 1 1 15
+  4 2 1 15
+  4 4 1 15
+  4 1 2 15
+  4 2 2 15
+  4 4 2 15
+  4 1 4 15
+  4 2 4 15
+  4 4 4 15
+}
+do_execsql_test 73.4 {
+  UPDATE t2 SET c=nth_value(15,2) OVER() FROM (SELECT * FROM t1) WHERE b=4 RETURNING *;
+} {
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+}
+do_execsql_test 73.5 {
+  DROP TRIGGER x1;
+}
+do_catchsql_test 73.6 {
+  UPDATE t2 SET c=99 WHERE b=4 RETURNING *;
+} {1 {cannot modify t2 because it is a view}}
+do_catchsql_test 73.7 {
+  UPDATE t2 SET c=nth_value(15,2) OVER() FROM (SELECT * FROM t1) WHERE b=4 RETURNING *;
+} {1 {cannot modify t2 because it is a view}}
+
 
 finish_test

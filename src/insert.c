@@ -796,7 +796,7 @@ void sqlite3Insert(
 
   /* Cannot insert into a read-only table.
   */
-  if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
+  if( sqlite3IsReadOnly(pParse, pTab, pTrigger) ){
     goto insert_cleanup;
   }
 
@@ -1243,7 +1243,7 @@ void sqlite3Insert(
     }
 
     /* Copy the new data already generated. */
-    assert( pTab->nNVCol>0 );
+    assert( pTab->nNVCol>0 || pParse->nErr>0 );
     sqlite3VdbeAddOp3(v, OP_Copy, regRowid+1, regCols+1, pTab->nNVCol-1);
 
 #ifndef SQLITE_OMIT_GENERATED_COLUMNS
