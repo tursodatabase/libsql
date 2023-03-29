@@ -3363,7 +3363,7 @@ struct NameContext {
 #define NC_HasAgg    0x000010 /* One or more aggregate functions seen */
 #define NC_IdxExpr   0x000020 /* True if resolving columns of CREATE INDEX */
 #define NC_SelfRef   0x00002e /* Combo: PartIdx, isCheck, GenCol, and IdxExpr */
-#define NC_VarSelect 0x000040 /* A correlated subquery has been seen */
+#define NC_Subquery  0x000040 /* A subquery has been seen */
 #define NC_UEList    0x000080 /* True if uNC.pEList is used */
 #define NC_UAggInfo  0x000100 /* True if uNC.pAggInfo is used */
 #define NC_UUpsert   0x000200 /* True if uNC.pUpsert is used */
@@ -3734,6 +3734,9 @@ struct Parse {
   u8 withinRJSubrtn;   /* Nesting level for RIGHT JOIN body subroutines */
 #if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
   u8 earlyCleanup;     /* OOM inside sqlite3ParserAddCleanup() */
+#endif
+#ifdef SQLITE_DEBUG
+  u8 ifNotExists;      /* Might be true if IF NOT EXISTS.  Assert()s only */
 #endif
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -4666,6 +4669,8 @@ void sqlite3ReleaseTempReg(Parse*,int);
 int sqlite3GetTempRange(Parse*,int);
 void sqlite3ReleaseTempRange(Parse*,int,int);
 void sqlite3ClearTempRegCache(Parse*);
+void sqlite3TouchRegister(Parse*,int);
+int sqlite3FirstAvailableRegister(Parse*,int);
 #ifdef SQLITE_DEBUG
 int sqlite3NoTempsInRange(Parse*,int,int);
 #endif

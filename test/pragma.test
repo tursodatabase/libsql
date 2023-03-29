@@ -2060,4 +2060,17 @@ ifcapable !has_codec {
   } {0 {{database disk image is malformed}}}
 }  
 database_never_corrupt
+
+# 2023-03-27.  Register allocation issue in integrity_check discovered
+# by new assert() statements added in [6f8b97f31a4c8552].
+# dbsqlfuzz dc9ab26037cf5ef797d28cd1ae0855ade584216d
+# tag-20230327-1
+#
+reset_db
+do_execsql_test 25.0 {
+  CREATE TABLE t1(a INT, b AS (a*2) NOT NULL);
+  CREATE TEMP TABLE t2(a PRIMARY KEY, b, c UNIQUE) WITHOUT ROWID;
+  CREATE UNIQUE INDEX t2x ON t2(c,b);
+  PRAGMA integrity_check;
+} ok
 finish_test

@@ -610,7 +610,9 @@ static int vtabCallConstructor(
   sCtx.pPrior = db->pVtabCtx;
   sCtx.bDeclared = 0;
   db->pVtabCtx = &sCtx;
+  pTab->nTabRef++;
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
+  sqlite3DeleteTable(db, pTab);
   db->pVtabCtx = sCtx.pPrior;
   if( rc==SQLITE_NOMEM ) sqlite3OomFault(db);
   assert( sCtx.pTab==pTab );

@@ -239,4 +239,56 @@ do_execsql_test analyzeE-4.11 {
   SELECT * FROM t1 WHERE a<1900 AND c=123
 } {/SCAN t1/}
 
+# 2023-03-23 https://sqlite.org/forum/forumpost/dc4854437b
+#
+reset_db
+do_execsql_test analyzeE-5.0 {
+  PRAGMA encoding = 'UTF-16';
+  CREATE TABLE t0 (c1 TEXT);
+  INSERT INTO t0 VALUES ('');
+  CREATE INDEX i0 ON t0(c1);
+  ANALYZE;
+  SELECT * FROM t0 WHERE t0.c1 BETWEEN '' AND (ABS(''));
+} {{}}
+
+# 2023-03-24 https://sqlite.org/forum/forumpost/bc39e531e5
+#
+reset_db
+do_execsql_test analyzeE-6.0 {
+  CREATE TABLE t1(x);
+  CREATE INDEX i1 ON t1(x,x,x,x,x||2);
+  CREATE INDEX i2 ON t1(1<2);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<1000)
+    INSERT INTO t1(x) SELECT x FROM c;
+  ANALYZE;
+} {}
+do_execsql_test analyzeE-6.1 {
+  SELECT count(*)>1 FROM sqlite_stat4 WHERE idx='i2' AND neq='1000 1';
+} 1
+do_execsql_test analyzeE-6.2 {
+  SELECT count(*) FROM sqlite_stat4 WHERE idx='i2' AND neq<>'1000 1';
+} 0
+do_execsql_test analyzeE-6.3 {
+  SELECT count(*)>1 FROM sqlite_stat4 WHERE idx='i1' AND neq='1 1 1 1 1 1';
+} 1
+do_execsql_test analyzeE-6.4 {
+  SELECT count(*) FROM sqlite_stat4 WHERE idx='i1' AND neq<>'1 1 1 1 1 1';
+} 0
+
+# 2023-03-25 https://sqlite.org/forum/forumpost/5275207102
+# Correctly expand zeroblobs while processing STAT4 information
+# during query planning.
+#
+reset_db
+do_execsql_test analyzeE-7.0 {
+  CREATE TABLE t1(a TEXT COLLATE binary);
+  CREATE INDEX t1x ON t1(a);
+  INSERT INTO t1(a) VALUES(0),('apple'),(NULL),(''),('banana');
+  ANALYZE;
+  SELECT format('(%s)',a) FROM t1 WHERE t1.a > CAST(zeroblob(5) AS TEXT);
+} {(0) (apple) (banana)}
+do_execsql_test analyzeE-7.1 {
+  SELECT format('(%s)',a) FROM t1 WHERE t1.a <= CAST(zeroblob(5) AS TEXT);
+} {()}
+
 finish_test

@@ -41,7 +41,7 @@
 struct PCache {
   PgHdr *pDirty, *pDirtyTail;         /* List of dirty pages in LRU order */
   PgHdr *pSynced;                     /* Last synced page in dirty page list */
-  int nRefSum;                        /* Sum of ref counts over all pages */
+  i64 nRefSum;                        /* Sum of ref counts over all pages */
   int szCache;                        /* Configured cache size */
   int szSpill;                        /* Size before spilling occurs */
   int szPage;                         /* Size of every page in this cache */
@@ -71,7 +71,7 @@ struct PCache {
     unsigned char *a;
     int j;
     pPg = (PgHdr*)pLower->pExtra;
-    printf("%3d: nRef %2d flgs %02x data ", i, pPg->nRef, pPg->flags);
+    printf("%3lld: nRef %2d flgs %02x data ", i, pPg->nRef, pPg->flags);
     a = (unsigned char *)pLower->pBuf;
     for(j=0; j<12; j++) printf("%02x", a[j]);
     printf(" ptr %p\n", pPg);
@@ -815,14 +815,14 @@ PgHdr *sqlite3PcacheDirtyList(PCache *pCache){
 ** This is not the total number of pages referenced, but the sum of the
 ** reference count for all pages.
 */
-int sqlite3PcacheRefCount(PCache *pCache){
+i64 sqlite3PcacheRefCount(PCache *pCache){
   return pCache->nRefSum;
 }
 
 /*
 ** Return the number of references to the page supplied as an argument.
 */
-int sqlite3PcachePageRefcount(PgHdr *p){
+i64 sqlite3PcachePageRefcount(PgHdr *p){
   return p->nRef;
 }
 

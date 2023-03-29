@@ -1269,11 +1269,14 @@ do_test 15.0 {
 }]} {}
 
 extra_schema_checks 0
-do_execsql_test 15.1 {
+do_catchsql_test 15.1 {
   PRAGMA cell_size_check = 0;
   UPDATE c1 SET c= NOT EXISTS(SELECT 1 FROM c1 ORDER BY (SELECT 1 FROM c1 ORDER BY a)) +10 WHERE d BETWEEN 4 AND 7;
-} {}
+} {1 {database disk image is malformed}}
 extra_schema_checks 1
+do_execsql_test 15.2 {
+  PRAGMA integrity_check;
+} {/in database main/}
 
 #-------------------------------------------------------------------------
 reset_db
