@@ -140,6 +140,7 @@ fn error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
         status,
         &hrana::proto::Error {
             message: err.to_string(),
+            code: err.code().into(),
         },
     )
 }
@@ -154,4 +155,14 @@ fn json_response<T: Serialize>(
         .header("content-type", "application/json")
         .body(hyper::Body::from(body))
         .unwrap()
+}
+
+impl ResponseError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::BadRequestBody { .. } => "HTTP_BAD_REQUEST_BODY",
+            Self::Stmt(err) => err.code(),
+            Self::Batch(err) => err.code(),
+        }
+    }
 }

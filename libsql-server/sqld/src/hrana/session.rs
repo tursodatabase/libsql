@@ -184,3 +184,16 @@ async fn stream_respond<F>(
     };
     let _: Result<_, _> = stream_hnd.job_tx.send(job).await;
 }
+
+impl ResponseError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::Auth { source } => source.code(),
+            Self::StreamNotFound { .. } => "STREAM_NOT_FOUND",
+            Self::StreamExists { .. } => "STREAM_EXISTS",
+            Self::StreamNotOpen { .. } => "STREAM_NOT_OPEN",
+            Self::Batch(err) => err.code(),
+            Self::Stmt(err) => err.code(),
+        }
+    }
+}

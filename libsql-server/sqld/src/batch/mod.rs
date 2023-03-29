@@ -91,3 +91,11 @@ fn eval_cond(ctx: &Ctx, cond: &proto::BatchCond) -> Result<bool> {
             .try_fold(false, |x, cond| eval_cond(ctx, cond).map(|y| x | y))?,
     })
 }
+
+impl BatchError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::CondBadStep => "BATCH_COND_BAD_STEP",
+        }
+    }
+}
