@@ -1,4 +1,5 @@
 mod hrana_over_http;
+mod stats;
 mod types;
 
 use std::future::poll_fn;
@@ -29,6 +30,7 @@ use crate::hrana;
 use crate::http::types::HttpQuery;
 use crate::query::{self, Query, QueryResult, ResultSet};
 use crate::query_analysis::{predict_final_state, State, Statement};
+use crate::stats::Stats;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::types::QueryObject;
@@ -236,6 +238,7 @@ async fn handle_request(
     upgrade_tx: mpsc::Sender<hrana::Upgrade>,
     db_factory: Arc<dyn DbFactory>,
     enable_console: bool,
+    stats: Stats,
 ) -> anyhow::Result<Response<Body>> {
     if hyper_tungstenite::is_upgrade_request(&req) {
         return Ok(handle_upgrade(&upgrade_tx, req).await);
@@ -257,6 +260,7 @@ async fn handle_request(
         (&Method::GET, "/v1") => hrana_over_http::handle_index(req).await,
         (&Method::POST, "/v1/execute") => hrana_over_http::handle_execute(db_factory, req).await,
         (&Method::POST, "/v1/batch") => hrana_over_http::handle_batch(db_factory, req).await,
+        (&Method::GET, "/v1/stats") => Ok(stats::handle_stats(&stats)),
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
@@ -266,6 +270,8 @@ fn handle_version() -> Response<Body> {
     Response::new(Body::from(version.as_bytes()))
 }
 
+// TODO: refactor
+#[allow(clippy::too_many_arguments)]
 pub async fn run_http<F>(
     addr: SocketAddr,
     auth: Arc<Auth>,
@@ -274,6 +280,7 @@ pub async fn run_http<F>(
     upgrade_tx: mpsc::Sender<hrana::Upgrade>,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
+    stats: Stats,
 ) -> anyhow::Result<()>
 where
     F: MakeService<(), Vec<Query>> + Send + 'static,
@@ -317,6 +324,7 @@ where
                 upgrade_tx.clone(),
                 db_factory.clone(),
                 enable_console,
+                stats.clone(),
             )
         });
 
