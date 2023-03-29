@@ -79,4 +79,5 @@ pub struct BatchResp {
 #[derive(Serialize, Debug)]
 pub struct Error {
     pub message: String,
+    pub code: String,
 }

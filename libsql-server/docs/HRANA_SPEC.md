@@ -178,13 +178,14 @@ other hand, the client should always receive messages, to avoid deadlock.
 ```typescript
 type Error = {
     "message": string,
+    "code"?: string | null,
 }
 ```
 
 When a server refuses to accept a client `hello` or fails to process a
 `request`, it responds with a message that describes the error. The `message`
-field contains an English human-readable description of the error. The protocol
-will be extended with machine-readable error codes in the future.
+field contains an English human-readable description of the error. The `code`
+contains a machine-readable error code.
 
 If either peer detects that the protocol has been violated, it should close the
 WebSocket with an appropriate WebSocket close code and reason. Some examples of
