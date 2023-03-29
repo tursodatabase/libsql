@@ -232,6 +232,7 @@ fn downcast_error(err: anyhow::Error) -> Result<proto::Error> {
     match err.downcast_ref::<session::ResponseError>() {
         Some(error) => Ok(proto::Error {
             message: error.to_string(),
+            code: error.code().into(),
         }),
         None => Err(err),
     }

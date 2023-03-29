@@ -153,6 +153,53 @@ fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, SqldEr
 pub fn proto_error_from_stmt_error(error: &StmtError) -> hrana::proto::Error {
     hrana::proto::Error {
         message: error.to_string(),
+        code: error.code().into(),
+    }
+}
+
+impl StmtError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::SqlParse { .. } => "SQL_PARSE_ERROR",
+            Self::SqlNoStmt => "SQL_NO_STATEMENT",
+            Self::SqlManyStmts => "SQL_MANY_STATEMENTS",
+            Self::ArgsInvalid { .. } => "ARGS_INVALID",
+            Self::ArgsBothPositionalAndNamed => "ARGS_BOTH_POSITIONAL_AND_NAMED",
+            Self::TransactionTimeout => "TRANSACTION_TIMEOUT",
+            Self::TransactionBusy => "TRANSACTION_BUSY",
+            Self::SqliteError { source, .. } => sqlite_error_code(source.code),
+            Self::SqlInputError { .. } => "SQL_INPUT_ERROR",
+        }
+    }
+}
+
+fn sqlite_error_code(code: rusqlite::ffi::ErrorCode) -> &'static str {
+    match code {
+        rusqlite::ErrorCode::InternalMalfunction => "SQLITE_INTERNAL",
+        rusqlite::ErrorCode::PermissionDenied => "SQLITE_PERM",
+        rusqlite::ErrorCode::OperationAborted => "SQLITE_ABORT",
+        rusqlite::ErrorCode::DatabaseBusy => "SQLITE_BUSY",
+        rusqlite::ErrorCode::DatabaseLocked => "SQLITE_LOCKED",
+        rusqlite::ErrorCode::OutOfMemory => "SQLITE_NOMEM",
+        rusqlite::ErrorCode::ReadOnly => "SQLITE_READONLY",
+        rusqlite::ErrorCode::OperationInterrupted => "SQLITE_INTERRUPT",
+        rusqlite::ErrorCode::SystemIoFailure => "SQLITE_IOERR",
+        rusqlite::ErrorCode::DatabaseCorrupt => "SQLITE_CORRUPT",
+        rusqlite::ErrorCode::NotFound => "SQLITE_NOTFOUND",
+        rusqlite::ErrorCode::DiskFull => "SQLITE_FULL",
+        rusqlite::ErrorCode::CannotOpen => "SQLITE_CANTOPEN",
+        rusqlite::ErrorCode::FileLockingProtocolFailed => "SQLITE_PROTOCOL",
+        rusqlite::ErrorCode::SchemaChanged => "SQLITE_SCHEMA",
+        rusqlite::ErrorCode::TooBig => "SQLITE_TOOBIG",
+        rusqlite::ErrorCode::ConstraintViolation => "SQLITE_CONSTRAINT",
+        rusqlite::ErrorCode::TypeMismatch => "SQLITE_MISMATCH",
+        rusqlite::ErrorCode::ApiMisuse => "SQLITE_MISUSE",
+        rusqlite::ErrorCode::NoLargeFileSupport => "SQLITE_NOLFS",
+        rusqlite::ErrorCode::AuthorizationForStatementDenied => "SQLITE_AUTH",
+        rusqlite::ErrorCode::ParameterOutOfRange => "SQLITE_RANGE",
+        rusqlite::ErrorCode::NotADatabase => "SQLITE_NOTADB",
+        rusqlite::ErrorCode::Unknown => "SQLITE_UNKNOWN",
+        _ => "SQLITE_UNKNOWN",
     }
 }
 
