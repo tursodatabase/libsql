@@ -1587,7 +1587,13 @@ static int valueFromExpr(
     rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
     testcase( rc!=SQLITE_OK );
     if( *ppVal ){
+#ifdef SQLITE_ENABLE_STAT4
       rc = ExpandBlob(*ppVal);
+#else
+      /* zero-blobs only come from functions, not literal values.  And
+      ** functions are only processed under STAT4 */
+      assert( (ppVal[0][0].flags & MEM_Zero)==0 );
+#endif
       sqlite3VdbeMemCast(*ppVal, aff, enc);
       sqlite3ValueApplyAffinity(*ppVal, affinity, enc);
     }
