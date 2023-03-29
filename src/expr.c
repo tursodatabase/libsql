@@ -6646,6 +6646,7 @@ void sqlite3TouchRegister(Parse *pParse, int iReg){
   if( pParse->nMem<iReg ) pParse->nMem = iReg;
 }
 
+#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_DEBUG)
 /*
 ** Return the latest reusable register in the set of all registers.
 ** The value returned is no less than iMin.  If any register iMin or
@@ -6666,6 +6667,7 @@ int sqlite3FirstAvailableRegister(Parse *pParse, int iMin){
   pParse->nRangeReg = 0;
   return iMin;
 }
+#endif /* SQLITE_ENABLE_STAT4 || SQLITE_DEBUG */
 
 /*
 ** Validate that no temporary register falls within the range of
