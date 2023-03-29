@@ -27,8 +27,8 @@ use crate::database::service::DbFactory;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::types::HttpQuery;
-use crate::query::{self, Queries, Query, QueryResult, ResultSet};
-use crate::query_analysis::{final_state, State, Statement};
+use crate::query::{self, Query, QueryResult, ResultSet};
+use crate::query_analysis::{predict_final_state, State, Statement};
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::types::QueryObject;
@@ -76,7 +76,7 @@ enum ResultResponse {
     Error(ErrorResponse),
 }
 
-fn query_response_to_json(results: Vec<QueryResult>) -> anyhow::Result<Bytes> {
+fn query_response_to_json(results: Vec<Option<QueryResult>>) -> anyhow::Result<Bytes> {
     fn result_set_to_json(
         ResultSet { columns, rows, .. }: ResultSet,
     ) -> anyhow::Result<RowsResponse> {
@@ -99,12 +99,13 @@ fn query_response_to_json(results: Vec<QueryResult>) -> anyhow::Result<Bytes> {
     let json = results
         .into_iter()
         .map(|r| match r {
-            Ok(query::QueryResponse::ResultSet(set)) => {
-                Ok(ResultResponse::Results(result_set_to_json(set)?))
+            Some(Ok(query::QueryResponse::ResultSet(set))) => {
+                Ok(Some(ResultResponse::Results(result_set_to_json(set)?)))
             }
-            Err(e) => Ok(ResultResponse::Error(ErrorResponse {
+            Some(Err(e)) => Ok(Some(ResultResponse::Error(ErrorResponse {
                 message: e.to_string(),
-            })),
+            }))),
+            None => Ok(None),
         })
         .collect::<anyhow::Result<Vec<_>>>()?;
 
@@ -139,7 +140,7 @@ fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
         out.push(query);
     }
 
-    match final_state(State::Init, out.iter().map(|q| &q.stmt)) {
+    match predict_final_state(State::Init, out.iter().map(|q| &q.stmt)) {
         State::Txn => anyhow::bail!("interactive transaction not allowed in HTTP queries"),
         State::Init => (),
         // maybe we should err here, but let's sqlite deal with that.
@@ -151,8 +152,8 @@ fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
 
 /// Internal Message used to communicate between the HTTP service
 struct Message {
-    queries: Queries,
-    resp: oneshot::Sender<Result<Vec<QueryResult>, BoxError>>,
+    batch: Vec<Query>,
+    resp: oneshot::Sender<Result<Vec<Option<QueryResult>>, BoxError>>,
 }
 
 fn parse_payload(data: &[u8]) -> Result<HttpQuery, Response<Body>> {
@@ -174,15 +175,16 @@ async fn handle_query(
 
     let (s, resp) = oneshot::channel();
 
-    let queries = match parse_queries(req.statements) {
+    let batch = match parse_queries(req.statements) {
         Ok(queries) => queries,
         Err(e) => return Ok(error(&e.to_string(), StatusCode::BAD_REQUEST)),
     };
 
-    let msg = Message { queries, resp: s };
+    let msg = Message { batch, resp: s };
     let _ = sender.send(msg).await;
 
     let result = resp.await;
+
     match result {
         Ok(Ok(rows)) => {
             let json = query_response_to_json(rows)?;
@@ -274,14 +276,14 @@ pub async fn run_http<F>(
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()>
 where
-    F: MakeService<(), Queries> + Send + 'static,
-    F::Service: Load + Service<Queries, Response = Vec<QueryResult>, Error = Error>,
+    F: MakeService<(), Vec<Query>> + Send + 'static,
+    F::Service: Load + Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error>,
     <F::Service as Load>::Metric: std::fmt::Debug,
     F::MakeError: Into<BoxError>,
     F::Error: Into<BoxError>,
-    <F as MakeService<(), Queries>>::Service: Send,
-    <F as MakeService<(), Queries>>::Future: Send,
-    <<F as MakeService<(), Queries>>::Service as Service<Queries>>::Future: Send,
+    <F as MakeService<(), Vec<Query>>>::Service: Send,
+    <F as MakeService<(), Vec<Query>>>::Future: Send,
+    <<F as MakeService<(), Vec<Query>>>::Service as Service<Vec<Query>>>::Future: Send,
 {
     tracing::info!("listening for HTTP requests on {addr}");
 
@@ -322,13 +324,13 @@ where
 
     tokio::spawn(async move {
         let mut pool = pool::Builder::new().build(db_factory_service, ());
-        while let Some(Message { queries, resp }) = receiver.recv().await {
+        while let Some(Message { batch, resp }) = receiver.recv().await {
             if let Err(e) = poll_fn(|c| pool.poll_ready(c)).await {
                 tracing::error!("Connection pool error: {e}");
                 continue;
             }
 
-            let fut = pool.call(queries);
+            let fut = pool.call(batch);
             tokio::spawn(async move {
                 let _ = resp.send(fut.await);
             });
