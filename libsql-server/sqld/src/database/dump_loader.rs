@@ -23,7 +23,7 @@ impl DumpLoader {
 
         let (ok_snd, ok_rcv) = oneshot::channel::<anyhow::Result<()>>();
         tokio::task::spawn_blocking(move || {
-            let db = match open_db(path, hooks, false) {
+            let db = match open_db(&path, hooks, false) {
                 Ok(db) => {
                     let _ = ok_snd.send(Ok(()));
                     db

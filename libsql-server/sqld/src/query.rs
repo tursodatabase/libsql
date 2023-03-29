@@ -271,7 +271,7 @@ pub enum QueryResponse {
     ResultSet(ResultSet),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Query {
     pub stmt: Statement,
     pub params: Params,
@@ -291,7 +291,7 @@ impl ToSql for Value {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub enum Params {
     Named(HashMap<String, Value>),
     Positional(Vec<Value>),
@@ -378,8 +378,6 @@ impl Params {
         Ok(())
     }
 }
-
-pub type Queries = Vec<Query>;
 
 #[cfg(test)]
 mod test {

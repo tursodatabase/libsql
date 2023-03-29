@@ -6,7 +6,7 @@ use sqlite3_parser::{
 };
 
 /// A group of statements to be executed together.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Statement {
     pub stmt: String,
     pub kind: StmtKind,
@@ -141,9 +141,12 @@ impl Statement {
     }
 }
 
-/// Given a an initial state and an array of queries, return the final state obtained if all the
-/// queries succeeded
-pub fn final_state<'a>(mut state: State, stmts: impl Iterator<Item = &'a Statement>) -> State {
+/// Given a an initial state and an array of queries, attempts to predict what the final state will
+/// be
+pub fn predict_final_state<'a>(
+    mut state: State,
+    stmts: impl Iterator<Item = &'a Statement>,
+) -> State {
     for stmt in stmts {
         state.step(stmt.kind);
     }

@@ -9,74 +9,21 @@ use tracing::warn;
 
 use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
-use crate::query::{Column, Params, Queries, Query, QueryResponse, QueryResult, ResultSet, Row};
+use crate::query::{Column, Query, QueryResponse, QueryResult, ResultSet, Row};
 use crate::query_analysis::{State, Statement};
 use crate::Result;
 
-use super::{Database, TXN_TIMEOUT_SECS};
+use super::{Cond, Database, Program, Step, TXN_TIMEOUT_SECS};
 
 /// Internal message used to communicate between the database thread and the `LibSqlDb` handle.
 struct Message {
-    queries: Queries,
-    resp: oneshot::Sender<(Vec<QueryResult>, State)>,
+    pgm: Program,
+    resp: oneshot::Sender<(Vec<Option<QueryResult>>, State)>,
 }
 
 #[derive(Clone)]
 pub struct LibSqlDb {
     sender: crossbeam::channel::Sender<Message>,
-}
-
-fn execute_query(conn: &rusqlite::Connection, stmt: &Statement, params: Params) -> QueryResult {
-    let mut rows = vec![];
-    let mut prepared = conn.prepare(&stmt.stmt)?;
-    let columns = prepared
-        .columns()
-        .iter()
-        .map(|col| Column {
-            name: col.name().into(),
-            ty: col
-                .decl_type()
-                .map(FromStr::from_str)
-                .transpose()
-                .ok()
-                .flatten(),
-        })
-        .collect::<Vec<_>>();
-
-    params
-        .bind(&mut prepared)
-        .map_err(Error::LibSqlInvalidQueryParams)?;
-
-    let mut qresult = prepared.raw_query();
-    while let Some(row) = qresult.next()? {
-        let mut values = vec![];
-        for (i, _) in columns.iter().enumerate() {
-            values.push(row.get::<usize, rusqlite::types::Value>(i)?.into());
-        }
-        rows.push(Row { values });
-    }
-
-    // sqlite3_changes() is only modified for INSERT, UPDATE or DELETE; it is not reset for SELECT,
-    // but we want to return 0 in that case.
-    let affected_row_count = match stmt.is_iud {
-        true => conn.changes(),
-        false => 0,
-    };
-
-    // sqlite3_last_insert_rowid() only makes sense for INSERTs into a rowid table. we can't detect
-    // a rowid table, but at least we can detect an INSERT
-    let last_insert_rowid = match stmt.is_insert {
-        true => Some(conn.last_insert_rowid()),
-        false => None,
-    };
-
-    Ok(QueryResponse::ResultSet(ResultSet {
-        columns,
-        rows,
-        affected_row_count,
-        last_insert_rowid,
-        include_column_defs: true,
-    }))
 }
 
 struct ConnectionState {
@@ -118,27 +65,6 @@ impl ConnectionState {
     }
 }
 
-fn handle_query(
-    conn: &rusqlite::Connection,
-    query: Query,
-    state: &mut ConnectionState,
-) -> QueryResult {
-    let result = execute_query(conn, &query.stmt, query.params);
-
-    // We drive the connection state on success. This is how we keep track of whether
-    // a transaction timeouts
-    if result.is_ok() {
-        state.step(&query.stmt)
-    }
-
-    result
-}
-
-fn rollback(conn: &rusqlite::Connection) {
-    conn.execute("rollback transaction;", ())
-        .expect("failed to rollback");
-}
-
 macro_rules! ok_or_exit {
     ($e:expr) => {
         if let Err(_) = $e {
@@ -148,7 +74,7 @@ macro_rules! ok_or_exit {
 }
 
 pub fn open_db(
-    path: impl AsRef<Path> + Send + 'static,
+    path: &Path,
     wal_hook: impl WalHook + Send + Clone + 'static,
     with_bottomless: bool,
 ) -> anyhow::Result<rusqlite::Connection> {
@@ -157,7 +83,7 @@ pub fn open_db(
         #[cfg(feature = "mwal_backend")]
         let conn_result = match crate::VWAL_METHODS.get().unwrap() {
             Some(ref vwal_methods) => crate::libsql::mwal::open_with_virtual_wal(
-                &path,
+                path,
                 OpenFlags::SQLITE_OPEN_READ_WRITE
                     | OpenFlags::SQLITE_OPEN_CREATE
                     | OpenFlags::SQLITE_OPEN_URI
@@ -165,7 +91,7 @@ pub fn open_db(
                 vwal_methods.clone(),
             ),
             None => crate::libsql::open_with_regular_wal(
-                &path,
+                path,
                 OpenFlags::SQLITE_OPEN_READ_WRITE
                     | OpenFlags::SQLITE_OPEN_CREATE
                     | OpenFlags::SQLITE_OPEN_URI
@@ -177,7 +103,7 @@ pub fn open_db(
 
         #[cfg(not(feature = "mwal_backend"))]
         let conn_result = crate::libsql::open_with_regular_wal(
-            &path,
+            path,
             OpenFlags::SQLITE_OPEN_READ_WRITE
                 | OpenFlags::SQLITE_OPEN_CREATE
                 | OpenFlags::SQLITE_OPEN_URI
@@ -221,19 +147,16 @@ impl LibSqlDb {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
         tokio::task::spawn_blocking(move || {
-            let conn = open_db(path, wal_hook, with_bottomless).unwrap();
-
-            let mut state = ConnectionState::initial();
-            let mut timedout = false;
+            let mut connection = Connection::new(path.as_ref(), wal_hook, with_bottomless).unwrap();
             loop {
-                let Message { queries, resp } = match state.deadline() {
+                let Message { pgm, resp } = match connection.state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
                         Ok(msg) => msg,
                         Err(RecvTimeoutError::Timeout) => {
                             warn!("transaction timed out");
-                            rollback(&conn);
-                            timedout = true;
-                            state.reset();
+                            connection.rollback();
+                            connection.timed_out = true;
+                            connection.state.reset();
                             continue;
                         }
                         Err(RecvTimeoutError::Disconnected) => break,
@@ -244,20 +167,16 @@ impl LibSqlDb {
                     },
                 };
 
-                if !timedout {
-                    let mut results = Vec::with_capacity(queries.len());
-                    for query in queries {
-                        let result = handle_query(&conn, query, &mut state);
-                        results.push(result);
-                    }
-                    ok_or_exit!(resp.send((results, state.state)));
+                if !connection.timed_out {
+                    let results = connection.run(pgm);
+                    ok_or_exit!(resp.send((results, connection.state.state)));
                 } else {
                     // fail all the queries in the batch with timeout error
-                    let errors = (0..queries.len())
-                        .map(|idx| Err(Error::LibSqlTxTimeout(idx)))
+                    let errors = (0..pgm.steps.len())
+                        .map(|idx| Some(Err(Error::LibSqlTxTimeout(idx))))
                         .collect();
-                    ok_or_exit!(resp.send((errors, state.state)));
-                    timedout = false;
+                    ok_or_exit!(resp.send((errors, connection.state.state)));
+                    connection.timed_out = false;
                 }
             }
         });
@@ -266,11 +185,153 @@ impl LibSqlDb {
     }
 }
 
+struct Connection {
+    state: ConnectionState,
+    conn: rusqlite::Connection,
+    timed_out: bool,
+}
+
+impl Connection {
+    fn new(
+        path: &Path,
+        wal_hook: impl WalHook + Send + Clone + 'static,
+        with_bottomless: bool,
+    ) -> anyhow::Result<Self> {
+        Ok(Self {
+            conn: open_db(path, wal_hook, with_bottomless)?,
+            state: ConnectionState::initial(),
+            timed_out: false,
+        })
+    }
+
+    fn run(&mut self, pgm: Program) -> Vec<Option<QueryResult>> {
+        let mut results = Vec::with_capacity(pgm.steps.len());
+
+        for step in pgm.steps() {
+            let res = self.execute_step(step, &results);
+            results.push(res);
+        }
+
+        results
+    }
+
+    fn execute_step(
+        &mut self,
+        step: &Step,
+        results: &[Option<QueryResult>],
+    ) -> Option<QueryResult> {
+        let enabled = match step.cond.as_ref() {
+            Some(cond) => match eval_cond(cond, results) {
+                Ok(enabled) => enabled,
+                Err(e) => return Some(Err(e)),
+            },
+            None => true,
+        };
+
+        enabled.then(|| self.execute_query(&step.query))
+    }
+
+    fn execute_query(&mut self, query: &Query) -> QueryResult {
+        let result = self.execute_query_inner(query);
+
+        // We drive the connection state on success. This is how we keep track of whether
+        // a transaction timeouts
+        if result.is_ok() {
+            self.state.step(&query.stmt)
+        }
+
+        result
+    }
+
+    fn execute_query_inner(&self, query: &Query) -> QueryResult {
+        let mut rows = vec![];
+        let mut prepared = self.conn.prepare(&query.stmt.stmt)?;
+        let columns = prepared
+            .columns()
+            .iter()
+            .map(|col| Column {
+                name: col.name().into(),
+                ty: col
+                    .decl_type()
+                    .map(FromStr::from_str)
+                    .transpose()
+                    .ok()
+                    .flatten(),
+            })
+            .collect::<Vec<_>>();
+
+        query
+            .params
+            .bind(&mut prepared)
+            .map_err(Error::LibSqlInvalidQueryParams)?;
+
+        let mut qresult = prepared.raw_query();
+        while let Some(row) = qresult.next()? {
+            let mut values = vec![];
+            for (i, _) in columns.iter().enumerate() {
+                values.push(row.get::<usize, rusqlite::types::Value>(i)?.into());
+            }
+            rows.push(Row { values });
+        }
+
+        // sqlite3_changes() is only modified for INSERT, UPDATE or DELETE; it is not reset for SELECT,
+        // but we want to return 0 in that case.
+        let affected_row_count = match query.stmt.is_iud {
+            true => self.conn.changes(),
+            false => 0,
+        };
+
+        // sqlite3_last_insert_rowid() only makes sense for INSERTs into a rowid table. we can't detect
+        // a rowid table, but at least we can detect an INSERT
+        let last_insert_rowid = match query.stmt.is_insert {
+            true => Some(self.conn.last_insert_rowid()),
+            false => None,
+        };
+
+        Ok(QueryResponse::ResultSet(ResultSet {
+            columns,
+            rows,
+            affected_row_count,
+            last_insert_rowid,
+            include_column_defs: true,
+        }))
+    }
+
+    fn rollback(&self) {
+        self.conn
+            .execute("rollback transaction;", ())
+            .expect("failed to rollback");
+    }
+}
+
+fn eval_cond(cond: &Cond, results: &[Option<QueryResult>]) -> Result<bool> {
+    let get_step_res = |step: usize| -> Result<Option<&QueryResult>> {
+        let res = results
+            .get(step)
+            .ok_or(Error::InvalidBatchStep(step))?
+            .as_ref();
+
+        Ok(res)
+    };
+
+    Ok(match cond {
+        Cond::Ok { step } => get_step_res(*step)?.map(|r| r.is_ok()).unwrap_or(false),
+        Cond::Err { step } => get_step_res(*step)?.map(|r| r.is_err()).unwrap_or(false),
+        Cond::Not { cond } => !eval_cond(cond, results)?,
+        Cond::And { conds } => conds
+            .iter()
+            .try_fold(true, |x, cond| eval_cond(cond, results).map(|y| x & y))?,
+        Cond::Or { conds } => conds
+            .iter()
+            .try_fold(false, |x, cond| eval_cond(cond, results).map(|y| x | y))?,
+    })
+}
+
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute_batch(&self, queries: Queries) -> Result<(Vec<QueryResult>, State)> {
+    async fn execute_program(&self, pgm: Program) -> Result<(Vec<Option<QueryResult>>, State)> {
         let (resp, receiver) = oneshot::channel();
-        let msg = Message { queries, resp };
+        let msg = Message { pgm, resp };
         let _ = self.sender.send(msg);
 
         Ok(receiver.await?)
