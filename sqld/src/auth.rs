@@ -174,6 +174,24 @@ pub fn parse_jwt_key(data: &str) -> Result<jsonwebtoken::DecodingKey> {
     }
 }
 
+impl AuthError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::HttpAuthHeaderMissing => "AUTH_HTTP_HEADER_MISSING",
+            Self::HttpAuthHeaderInvalid => "AUTH_HTTP_HEADER_INVALID",
+            Self::HttpAuthHeaderUnsupportedScheme => "AUTH_HTTP_HEADER_UNSUPPORTED_SCHEME",
+            Self::BasicNotAllowed => "AUTH_BASIC_NOT_ALLOWED",
+            Self::BasicRejected => "AUTH_BASIC_REJECTED",
+            Self::JwtMissing => "AUTH_JWT_MISSING",
+            Self::JwtNotAllowed => "AUTH_JWT_NOT_ALLOWED",
+            Self::JwtInvalid => "AUTH_JWT_INVALID",
+            Self::JwtExpired => "AUTH_JWT_EXPIRED",
+            Self::JwtImmature => "AUTH_JWT_IMMATURE",
+            Self::Other => "AUTH_FAILED",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
