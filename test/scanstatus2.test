@@ -242,6 +242,34 @@ QUERY (nCycle=nnn)
 --SEARCH v1 USING AUTOMATIC COVERING INDEX (x1=?) (nCycle=nnn)
 }
 
+#-------------------------------------------------------------------------
+reset_db
+
+ifcapable trace { 
+  do_execsql_test 5.0 {
+    CREATE TABLE t1(x, y);
+    CREATE TRIGGER tr1 AFTER DELETE ON t1 BEGIN
+      SELECT 1;
+    END;
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  
+  proc trace {stmt sql} {
+    array set A [sqlite3_stmt_scanstatus -flags complex [format %x $stmt] 0]
+    lappend ::trace_explain $A(zExplain)
+  }
+  db trace_v2 trace 
+  
+  set ::trace_explain [list]
+  do_execsql_test 5.1 {
+    DELETE FROM t1 WHERE x=1;
+  }
+  
+  do_test 5.2 {
+    set ::trace_explain
+  } {{SCAN t1} {SCAN t1} {SCAN t1}}
+}
+
 finish_test
 
 
