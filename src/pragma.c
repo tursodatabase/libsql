@@ -1880,15 +1880,29 @@ void sqlite3Pragma(
           labelOk = sqlite3VdbeMakeLabel(pParse);
           if( pCol->notNull ){
             /* (1) NOT NULL columns may not contain a NULL */
+            int jmp3;
             int jmp2 = sqlite3VdbeAddOp4Int(v, OP_IsType, p1, labelOk, p3, p4);
-            sqlite3VdbeChangeP5(v, 0x0f);
             VdbeCoverage(v);
+            if( p1<0 ){
+              sqlite3VdbeChangeP5(v, 0x0f); /* INT, REAL, TEXT, or BLOB */
+              jmp3 = jmp2;
+            }else{
+              sqlite3VdbeChangeP5(v, 0x0d); /* INT, TEXT, or BLOB */
+              /* OP_IsType does not detect NaN values in the database file
+              ** which should be treated as a NULL.  So if the header type
+              ** is REAL, we have to load the actual data using OP_Column
+              ** to reliably determine if the value is a NULL. */
+              sqlite3VdbeAddOp3(v, OP_Column, p1, p3, 3);
+              jmp3 = sqlite3VdbeAddOp2(v, OP_NotNull, 3, labelOk);
+              VdbeCoverage(v);
+            }            
             zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                                 pCol->zCnName);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, zErr, P4_DYNAMIC);
             if( doTypeCheck ){
               sqlite3VdbeGoto(v, labelError);
               sqlite3VdbeJumpHere(v, jmp2);
+              sqlite3VdbeJumpHere(v, jmp3);
             }else{
               /* VDBE byte code will fall thru */
             }

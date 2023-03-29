@@ -1,5 +1,5 @@
-C Fix\sa\sweird\scorner\scase\sin\saggregate\sfunction\sprocessing\sthat\sresults\sfrom\sthe\nrecent\saddition\sof\ssupport\sfor\sindex\sexpressions\son\saggregate\squeries.\n[forum:/forumpost/bad532820c|Forum\spost\sbad532820c].
-D 2023-03-28T16:02:28.157
+C Enhance\sPRAGMA\sintegrity_check\sso\sthat\sit\scan\sdetect\sthat\sa\sNOT\sNULL\scolumn\ncontains\sa\sNaN\svalue\sand\sreport\sthat\sas\san\serror.\ndbsqlfuzz\sf144b642fe6f1a1c196f258ac6e60118a0cb59b2.
+D 2023-03-29T11:36:24.481
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/parse.y 424e49ed8fc6c907920db9be5a13a75ed43811e1ea8dd21b0fa9ef97f083dc6b
 F src/pcache.c 842410539b544e12d5fccfcf29890782f46a58f227a77bc0bd76243799662c0c
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
-F src/pragma.c 367652f5374b2f17761c96b262d9534d89bf089572a1ebba70d426a138c6802a
+F src/pragma.c 26ed2cfdc5c12aa1c707178635709684960288cacc9cff9d491a38ff10e395f1
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c ce87a08cfddd45a147150db34190b1986f2d4a0e0828858cb6bd908c78fb02e3
 F src/printf.c 7eac1a9896a80697e03e08963e210830532ae2ff610e16c193e95af007ca5623
@@ -695,7 +695,7 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c 3ff7bc2b48dd425b1448304bb86273b05da1621f136d51dbb9789f8803559a1f
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
-F src/vdbe.c 2bb4694bff3c1c4f52fd47e66be30278b5251d62d23b768af7c3b3a0dd7ba901
+F src/vdbe.c a6c52ba65e8ceb574fe0eda62af84e6c50c176ffc5f310c613425f7ab2b1484b
 F src/vdbe.h 73b904a6b3bb27f308c6cc287a5751ebc7f1f89456be0ed068a12b92844c6e8c
 F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 40c47b1528d308a322203de21d2e0d711753257ed9771771b6129214b1d65932
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8bedef0d61731c29ae34de1594222d15b578f9e2cddbbd5b74fb3059644fe0f
-R 68fb0cae877919b0f69109342d216ada
+P c34fd9fe1b76e0a5943f014f46141cbe55d41bb1e6980adf9bcb6785a03e7883
+R df22a94c4699a51ccc0a1666db70f0f4
 U drh
-Z f12fcdd961dcea42a705ad864ed7007e
+Z 05ab517810b9c5736ce209544eca4198
 # Remove this line to create a well-formed Fossil manifest.

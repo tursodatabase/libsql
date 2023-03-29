@@ -2626,6 +2626,12 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
 ** (0x01) bit. SQLITE_FLOAT is the 0x02 bit. SQLITE_TEXT is 0x04.
 ** SQLITE_BLOB is 0x08.  SQLITE_NULL is 0x10.
 **
+** WARNING: This opcode does not reliably distinguish between NULL and REAL
+** when P1>=0.  If the database contains a NaN value, this opcode will think
+** that the datatype is REAL when it should be NULL.  When P1<0 and the value
+** is already stored in register P3, then this opcode does reliably
+** distinguish between NULL and REAL.  The problem only arises then P1>=0.
+**
 ** Take the jump to address P2 if and only if the datatype of the
 ** value determined by P1 and P3 corresponds to one of the bits in the
 ** P5 bitmask.
