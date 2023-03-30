@@ -17,7 +17,7 @@ set testprefix aggfault
 
 do_execsql_test 1 {
   CREATE TABLE t1(x);
-  CREATE TABLE t1x ON t1(x, x=0);
+  CREATE INDEX t1x ON t1(x, x=0);
 }
 faultsim_save_and_close
 
