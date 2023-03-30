@@ -25,6 +25,7 @@ use crate::auth::Auth;
 use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
 use crate::server::Server;
+use crate::stats::Stats;
 
 pub use sqld_libsql_bindings as libsql;
 
@@ -39,6 +40,7 @@ mod query_analysis;
 mod replication;
 pub mod rpc;
 mod server;
+mod stats;
 mod utils;
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
@@ -97,6 +99,7 @@ async fn run_service(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
+    stats: Stats,
 ) -> anyhow::Result<()> {
     let auth = get_auth(config)?;
 
@@ -122,6 +125,7 @@ async fn run_service(
             upgrade_tx,
             config.enable_http_console,
             idle_shutdown_layer.clone(),
+            stats,
         ));
     }
 
@@ -183,6 +187,7 @@ async fn start_replica(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     addr: &str,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
+    stats: Stats,
 ) -> anyhow::Result<()> {
     let (factory, handle) = WriteProxyDbFactory::new(
         addr,
@@ -191,6 +196,7 @@ async fn start_replica(
         config.writer_rpc_key.clone(),
         config.writer_rpc_ca_cert.clone(),
         config.db_path.clone(),
+        stats.clone(),
     )
     .await
     .context("failed to start WriteProxy DB")?;
@@ -201,7 +207,7 @@ async fn start_replica(
     join_set.spawn(async move { handle.await.expect("WriteProxy DB task failed") });
 
     let service = DbFactoryService::new(Arc::new(factory));
-    run_service(service, config, join_set, idle_shutdown_layer).await?;
+    run_service(service, config, join_set, idle_shutdown_layer, stats).await?;
 
     Ok(())
 }
@@ -214,6 +220,7 @@ async fn start_primary(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
+    stats: Stats,
 ) -> anyhow::Result<()> {
     let is_fresh_db = check_fresh_db(&config.db_path);
     let logger = Arc::new(ReplicationLogger::open(
@@ -237,10 +244,12 @@ async fn start_primary(
         dump_loader.load_dump(path.into()).await?;
     }
 
+    let stats_clone = stats.clone();
     let db_factory = Arc::new(move || {
         let db_path = path_clone.clone();
         let hook = hook.clone();
-        async move { LibSqlDb::new(db_path, hook, enable_bottomless) }
+        let stats_clone = stats_clone.clone();
+        async move { LibSqlDb::new(db_path, hook, enable_bottomless, stats_clone) }
     });
     let service = DbFactoryService::new(db_factory.clone());
     if let Some(ref addr) = config.rpc_server_addr {
@@ -256,7 +265,7 @@ async fn start_primary(
         ));
     }
 
-    run_service(service, config, join_set, idle_shutdown_layer).await?;
+    run_service(service, config, join_set, idle_shutdown_layer, stats).await?;
 
     Ok(())
 }
@@ -309,11 +318,13 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
             .idle_shutdown_timeout
             .map(|d| IdleShutdownLayer::new(d, shutdown_notify.clone()));
 
+        let stats = Stats::new(&config.db_path)?;
+
         match config.writer_rpc_addr {
             Some(ref addr) => {
-                start_replica(&config, &mut join_set, addr, idle_shutdown_layer).await?
+                start_replica(&config, &mut join_set, addr, idle_shutdown_layer, stats).await?
             }
-            None => start_primary(&config, &mut join_set, idle_shutdown_layer).await?,
+            None => start_primary(&config, &mut join_set, idle_shutdown_layer, stats).await?,
         }
 
         let reset = HARD_RESET.clone();

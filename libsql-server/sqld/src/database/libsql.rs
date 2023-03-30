@@ -3,7 +3,7 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
-use rusqlite::OpenFlags;
+use rusqlite::{OpenFlags, StatementStatus};
 use tokio::sync::oneshot;
 use tracing::warn;
 
@@ -11,6 +11,7 @@ use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
 use crate::query::{Column, Query, QueryResponse, QueryResult, ResultSet, Row};
 use crate::query_analysis::{State, Statement};
+use crate::stats::Stats;
 use crate::Result;
 
 use super::{Cond, Database, Program, Step, TXN_TIMEOUT_SECS};
@@ -143,11 +144,13 @@ impl LibSqlDb {
         path: impl AsRef<Path> + Send + 'static,
         wal_hook: impl WalHook + Send + Clone + 'static,
         with_bottomless: bool,
+        stats: Stats,
     ) -> crate::Result<Self> {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
         tokio::task::spawn_blocking(move || {
-            let mut connection = Connection::new(path.as_ref(), wal_hook, with_bottomless).unwrap();
+            let mut connection =
+                Connection::new(path.as_ref(), wal_hook, with_bottomless, stats).unwrap();
             loop {
                 let Message { pgm, resp } = match connection.state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
@@ -189,6 +192,7 @@ struct Connection {
     state: ConnectionState,
     conn: rusqlite::Connection,
     timed_out: bool,
+    stats: Stats,
 }
 
 impl Connection {
@@ -196,11 +200,13 @@ impl Connection {
         path: &Path,
         wal_hook: impl WalHook + Send + Clone + 'static,
         with_bottomless: bool,
+        stats: Stats,
     ) -> anyhow::Result<Self> {
         Ok(Self {
             conn: open_db(path, wal_hook, with_bottomless)?,
             state: ConnectionState::initial(),
             timed_out: false,
+            stats,
         })
     }
 
@@ -245,8 +251,8 @@ impl Connection {
 
     fn execute_query_inner(&self, query: &Query) -> QueryResult {
         let mut rows = vec![];
-        let mut prepared = self.conn.prepare(&query.stmt.stmt)?;
-        let columns = prepared
+        let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
+        let columns = stmt
             .columns()
             .iter()
             .map(|col| Column {
@@ -262,10 +268,10 @@ impl Connection {
 
         query
             .params
-            .bind(&mut prepared)
+            .bind(&mut stmt)
             .map_err(Error::LibSqlInvalidQueryParams)?;
 
-        let mut qresult = prepared.raw_query();
+        let mut qresult = stmt.raw_query();
         while let Some(row) = qresult.next()? {
             let mut values = vec![];
             for (i, _) in columns.iter().enumerate() {
@@ -288,6 +294,10 @@ impl Connection {
             false => None,
         };
 
+        drop(qresult);
+
+        self.update_stats(&stmt);
+
         Ok(QueryResponse::ResultSet(ResultSet {
             columns,
             rows,
@@ -301,6 +311,13 @@ impl Connection {
         self.conn
             .execute("rollback transaction;", ())
             .expect("failed to rollback");
+    }
+
+    fn update_stats(&self, stmt: &rusqlite::Statement) {
+        self.stats
+            .inc_rows_read(stmt.get_status(StatementStatus::RowsRead) as usize);
+        self.stats
+            .inc_rows_written(stmt.get_status(StatementStatus::RowsWritten) as usize);
     }
 }
 

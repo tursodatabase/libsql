@@ -16,6 +16,7 @@ use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
 use crate::rpc::proxy::rpc::DisconnectMessage;
 use crate::rpc::replication_log::rpc::replication_log_client::ReplicationLogClient;
+use crate::stats::Stats;
 use crate::Result;
 
 use super::Program;
@@ -25,6 +26,7 @@ use super::{libsql::LibSqlDb, service::DbFactory, Database};
 pub struct WriteProxyDbFactory {
     write_proxy: ProxyClient<Channel>,
     db_path: PathBuf,
+    stats: Stats,
     /// abort handle: abort db update loop on drop
     _abort_handle: crossbeam::channel::Sender<()>,
 }
@@ -37,6 +39,7 @@ impl WriteProxyDbFactory {
         key_path: Option<PathBuf>,
         ca_cert_path: Option<PathBuf>,
         db_path: PathBuf,
+        stats: Stats,
     ) -> anyhow::Result<(Self, JoinHandle<anyhow::Result<()>>)> {
         let mut endpoint = Channel::from_shared(addr.to_string())?;
         if tls {
@@ -84,6 +87,7 @@ impl WriteProxyDbFactory {
         let this = Self {
             write_proxy,
             db_path,
+            stats,
             _abort_handle,
         };
         Ok((this, handle))
@@ -93,7 +97,11 @@ impl WriteProxyDbFactory {
 #[async_trait::async_trait]
 impl DbFactory for WriteProxyDbFactory {
     async fn create(&self) -> Result<Arc<dyn Database>> {
-        let db = WriteProxyDatabase::new(self.write_proxy.clone(), self.db_path.clone())?;
+        let db = WriteProxyDatabase::new(
+            self.write_proxy.clone(),
+            self.db_path.clone(),
+            self.stats.clone(),
+        )?;
         Ok(Arc::new(db))
     }
 }
@@ -106,8 +114,8 @@ pub struct WriteProxyDatabase {
 }
 
 impl WriteProxyDatabase {
-    fn new(write_proxy: ProxyClient<Channel>, path: PathBuf) -> Result<Self> {
-        let read_db = LibSqlDb::new(path, (), false)?;
+    fn new(write_proxy: ProxyClient<Channel>, path: PathBuf, stats: Stats) -> Result<Self> {
+        let read_db = LibSqlDb::new(path, (), false, stats)?;
         Ok(Self {
             read_db,
             write_proxy,
