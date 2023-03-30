@@ -1,4 +1,5 @@
 pub mod client;
+pub mod frame_stream;
 mod logger;
 mod snapshot;
 

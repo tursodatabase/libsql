@@ -481,6 +481,12 @@ pub struct LogFileHeader {
     pub _pad: u64,
 }
 
+impl LogFileHeader {
+    pub fn last_frame_no(&self) -> FrameNo {
+        self.start_frame_no + self.frame_count
+    }
+}
+
 /// The file header for the WAL log. All fields are represented in little-endian ordering.
 /// See `encode` and `decode` for actual layout.
 // repr C for stable sizing
@@ -525,7 +531,7 @@ pub struct ReplicationLogger {
     db_path: PathBuf,
     /// a notifier channel other tasks can subscribe to, and get notified when new frames become
     /// available.
-    new_frame_notifier: watch::Sender<FrameNo>,
+    pub new_frame_notifier: watch::Sender<FrameNo>,
 }
 
 impl ReplicationLogger {
@@ -628,6 +634,10 @@ impl ReplicationLogger {
 
     pub fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
         find_snapshot_file(&self.db_path, from)
+    }
+
+    pub fn get_frame(&self, frame_no: FrameNo) -> Result<Bytes, LogReadError> {
+        self.log_file.read().frame_bytes(frame_no)
     }
 }
 
