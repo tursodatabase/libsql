@@ -1,0 +1,16 @@
+[package]
+name = "integration-check"
+version = "0.0.1"
+edition = "2021"
+authors = ["Matt Wonlaw"]
+description = "rs integration check for crsqlite"
+keywords = ["sqlite"]
+license = "Apache-2.0"
+
+[dependencies]
+sqlite_nostd = { path="../sqlite-rs-embedded/sqlite_nostd", features=["static"] }
+integration_utils = { path="../integration-utils" }
+cargo-valgrind = "2.1.0"
+
+[build-dependencies]
+cc = "1.0.79"

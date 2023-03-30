@@ -1,0 +1,18 @@
+[package]
+name = "sqlite3_allocator"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matt Wonlaw"]
+description = "Rust allocator backed by the sqlite3 memory system"
+keywords = ["sqlite"]
+license = "MIT"
+
+[lib]
+name = "sqlite3_allocator"
+crate-type = ["rlib"]
+
+[dependencies]
+sqlite3_capi = {version="0.1.0", path="../sqlite3_capi"}
+
+# dev dependencies for examples
+[dev-dependencies]

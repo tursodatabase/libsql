@@ -1,0 +1,18 @@
+[package]
+name = "sqlite3_capi"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "sqlite3_capi"
+crate-type = ["rlib"]
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.63.0"
+
+[features]
+loadable_extension = []
+static = []
+omit_load_extension = []

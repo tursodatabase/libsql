@@ -1,0 +1,8 @@
+# Use the Google style in this project.
+BasedOnStyle: Google
+
+# Some folks prefer to write "int& foo" while others prefer "int &foo".  The
+# Google Style Guide only asks for consistency within a project, we chose
+# "int &foo" for this project:
+DerivePointerAlignment: false
+PointerAlignment: Right

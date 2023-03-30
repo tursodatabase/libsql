@@ -1,0 +1,31 @@
+[package]
+name = "crsql_fractindex_core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matt Wonlaw"]
+keywords = ["sqlite", "cr-sqlite", "fractional indexing"]
+license = "Apache 2"
+
+[lib]
+name = "crsql_fractindex_core"
+crate-type = ["rlib"]
+
+[dependencies]
+sqlite_nostd = { path="../sqlite-rs-embedded/sqlite_nostd" }
+
+[dev-dependencies]
+rand = "0.8.5"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[build]
+target = "wasm32-unknown-emscripten"
+
+[features]
+loadable_extension = ["sqlite_nostd/loadable_extension"]
+static = ["sqlite_nostd/static"]
+omit_load_extension = ["sqlite_nostd/omit_load_extension"]

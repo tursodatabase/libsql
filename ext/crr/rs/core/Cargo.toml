@@ -1,0 +1,27 @@
+[package]
+name = "crsql_core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Matt Wonlaw"]
+keywords = ["sqlite", "cr-sqlite", "crdt"]
+license = "Apache 2"
+
+[lib]
+name = "crsql_core"
+crate-type = ["rlib"]
+
+[dependencies]
+sqlite_nostd = { path="../sqlite-rs-embedded/sqlite_nostd" }
+
+[dev-dependencies]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
+[features]
+loadable_extension = ["sqlite_nostd/loadable_extension"]
+static = ["sqlite_nostd/static"]
+omit_load_extension = ["sqlite_nostd/omit_load_extension"]
