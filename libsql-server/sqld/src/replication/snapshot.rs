@@ -138,7 +138,7 @@ impl SnapshotFile {
         })
     }
 
-    /// Like `frames_iter`, but stops as soon as a frame with id <= `frame_no` is reached
+    /// Like `frames_iter`, but stops as soon as a frame with frame_no <= `frame_no` is reached
     pub fn frames_iter_from(
         &self,
         frame_no: u64,
@@ -456,9 +456,7 @@ mod test {
     use bytes::Bytes;
     use tempfile::tempdir;
 
-    use crate::replication::logger::{
-        FrameHeader, LogFileHeader, WalFrame, WAL_MAGIC, WAL_PAGE_SIZE,
-    };
+    use crate::replication::logger::{Frame, FrameHeader, LogFileHeader, WAL_MAGIC, WAL_PAGE_SIZE};
     use crate::replication::snapshot::SnapshotFile;
 
     use super::*;
@@ -491,7 +489,7 @@ mod test {
                     size_after: i + 1,
                 };
                 let data = std::iter::repeat(0).take(4096).collect();
-                let frame = WalFrame {
+                let frame = Frame {
                     header: frame_header,
                     data,
                 };
@@ -525,7 +523,7 @@ mod test {
         let mut seen_page_no = HashSet::new();
         let data = &snapshot[std::mem::size_of::<SnapshotFileHeader>()..];
         data.chunks(LogFile::FRAME_SIZE).for_each(|f| {
-            let frame = WalFrame::try_from_bytes(Bytes::copy_from_slice(f)).unwrap();
+            let frame = Frame::try_from_bytes(Bytes::copy_from_slice(f)).unwrap();
             assert!(!seen_frames.contains(&frame.header.frame_no));
             assert!(!seen_page_no.contains(&frame.header.page_no));
             seen_page_no.insert(frame.header.page_no);
