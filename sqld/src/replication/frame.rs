@@ -5,7 +5,7 @@ use std::ops::Deref;
 use bytemuck::{bytes_of, from_bytes, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 
-use crate::replication::logger::WAL_PAGE_SIZE;
+use crate::replication::WAL_PAGE_SIZE;
 
 use super::FrameNo;
 
