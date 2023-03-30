@@ -877,6 +877,13 @@ pub enum StatementStatus {
     FilterHit = 8,
     /// Equivalent to SQLITE_STMTSTATUS_MEMUSED (3.20.0)
     MemUsed = 99,
+
+    /// Equivalent to LIBSQL_STMTSTATUS_ROWS_READ (libsql-0.2.1)
+    #[cfg(feature = "libsql-experimental")]
+    RowsRead = 1024 + 1,
+    /// Equivalent to LIBSQL_STMTSTATUS_ROWS_WRITTEN (libsql-0.2.1)
+    #[cfg(feature = "libsql-experimental")]
+    RowsWritten = 1024 + 2,
 }
 
 #[cfg(test)]
