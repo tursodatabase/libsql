@@ -314,16 +314,10 @@ impl Connection {
     }
 
     fn update_stats(&self, stmt: &rusqlite::Statement) {
-        const STMT_ROWS_READ: i32 = 1024 + 1;
-        const STMT_ROWS_WRITTEN: i32 = 1024 + 2;
-
-        let rows_read: StatementStatus = unsafe { std::mem::transmute(STMT_ROWS_READ) };
-        let rows_written: StatementStatus = unsafe { std::mem::transmute(STMT_ROWS_WRITTEN) };
-
         self.stats
-            .inc_rows_read(stmt.get_status(rows_read) as usize);
+            .inc_rows_read(stmt.get_status(StatementStatus::RowsRead) as usize);
         self.stats
-            .inc_rows_written(stmt.get_status(rows_written) as usize);
+            .inc_rows_written(stmt.get_status(StatementStatus::RowsWritten) as usize);
     }
 }
 
