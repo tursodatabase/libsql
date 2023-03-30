@@ -6462,6 +6462,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       tmp.iTable = pIEpr->iIdxCur;
       tmp.iColumn = pIEpr->iIdxCol;
       findOrCreateAggInfoColumn(pParse, pAggInfo, &tmp);
+      if( pParse->nErr ) return WRC_Abort;
       pAggInfo->aCol[tmp.iAgg].pCExpr = pExpr;
       pExpr->pAggInfo = pAggInfo;
       pExpr->iAgg = tmp.iAgg;
