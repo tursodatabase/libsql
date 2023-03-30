@@ -40,7 +40,7 @@ use uuid::Uuid;
 use crate::libsql::ffi::{types::XWalFrameFn, PgHdr, Wal};
 use crate::libsql::open_with_regular_wal;
 use crate::libsql::wal_hook::WalHook;
-use crate::replication::logger::WAL_PAGE_SIZE;
+use crate::replication::WAL_PAGE_SIZE;
 use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, HelloResponse, LogOffset,
 };
@@ -48,7 +48,7 @@ use crate::rpc::replication_log::{NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG};
 use crate::HARD_RESET;
 
 use super::frame::{Frame, FrameBorrowed};
-use super::logger::LogFile;
+use super::primary::logger::LogFile;
 use super::FrameNo;
 
 /// Maximum number of frames buffered by the replica

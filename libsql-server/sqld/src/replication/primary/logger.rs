@@ -9,7 +9,6 @@ use std::sync::Arc;
 use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
-use crc::Crc;
 use parking_lot::RwLock;
 use rusqlite::ffi::SQLITE_ERROR;
 use tokio::sync::watch;
@@ -20,16 +19,9 @@ use crate::libsql::ffi::{
     PgHdr, Wal,
 };
 use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
-
-use super::frame::{Frame, FrameHeader};
-use super::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
-
-pub const WAL_PAGE_SIZE: i32 = 4096;
-pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
-const CRC_64_GO_ISO: Crc<u64> = Crc::<u64>::new(&crc::CRC_64_GO_ISO);
-
-/// The frame uniquely identifing, monotonically increasing number
-pub type FrameNo = u64;
+use crate::replication::frame::{Frame, FrameHeader};
+use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
+use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC, WAL_PAGE_SIZE};
 
 // Clone is necessary only because opening a database may fail, and we need to clone the empty
 // struct.

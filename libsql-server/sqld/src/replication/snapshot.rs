@@ -19,7 +19,7 @@ use tempfile::NamedTempFile;
 use uuid::Uuid;
 
 use super::frame::Frame;
-use super::logger::LogFile;
+use super::primary::logger::LogFile;
 use super::FrameNo;
 
 /// This is the ratio of the space required to store snapshot vs size of the actual database.
@@ -458,8 +458,9 @@ mod test {
     use tempfile::tempdir;
 
     use crate::replication::frame::FrameHeader;
-    use crate::replication::logger::{LogFileHeader, WAL_MAGIC, WAL_PAGE_SIZE};
+    use crate::replication::primary::logger::LogFileHeader;
     use crate::replication::snapshot::SnapshotFile;
+    use crate::replication::{WAL_MAGIC, WAL_PAGE_SIZE};
 
     use super::*;
 
