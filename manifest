@@ -1,5 +1,5 @@
-C Omit\sa\sbranch\sthat\sis\sno\slonger\sneeded\sfollowing\s[c9c4f287652933eb].
-D 2023-03-30T16:08:54.466
+C Earlier\serror\sdetection\sfor\sindex\sexpression\susage\sby\saggregate\sfunctions.\ndbsqlfuzz\s29214ace4e25c98d2ddff8fbcf97afdda23f28b9
+D 2023-03-30T19:05:48.274
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F src/date.c f21815ca7172ce073db3163ac54c8d9f2841077165c1a6123b4d1c376a0c7ec7
 F src/dbpage.c d47549716549311f79dc39fe5c8fb19390a6eb2c960f8e37c89a9c4de0c1052e
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c a9c6d3f51c0a31e9b831e0a0580a98d702904b42d216fee530940e40dec34873
-F src/expr.c e35eb0f324645e172cab367403e17701332a21f7af0f2ef6d0a6de08fb1f4fbe
+F src/expr.c 5f2b5f25a90aa4ff1c84d175b1adf790be8f8719f3b38851e2b5b293e0e5e916
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 722f20779f5342a787922deded3628d8c74b5249cab04098cf17ee2f2aaff002
 F src/func.c d187be57a886ddf4e6b7ef584a494361899be3df5eee6d4a747b68ff4aff4122
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8724fe7426da55d19dba7b30e09321ba30c73286513864cb05de32f72e50ee31
-R 1624b0eb89a914d1ae752ba25df52cd1
+P 960a488a2db92f5437bc8171cdbed44618d9381c57fd41b2f0e357b6012c80b5
+R 4f561ce7d94ebba6771f71291846cad2
 U drh
-Z 7c95356d2ffe255785c95c9a7696e988
+Z 91fc03feb4d1edcaf09570adbf0b39df
 # Remove this line to create a well-formed Fossil manifest.
