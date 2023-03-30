@@ -12,6 +12,7 @@ use bytes::{Bytes, BytesMut};
 use crc::Crc;
 use parking_lot::RwLock;
 use rusqlite::ffi::SQLITE_ERROR;
+use tokio::sync::watch;
 use uuid::Uuid;
 
 use crate::libsql::ffi::{
@@ -210,7 +211,8 @@ impl ReplicationLoggerHook {
 pub struct LogFile {
     file: File,
     header: LogFileHeader,
-    max_log_frame_count: u64,
+    /// the maximum number of frames this log is allowed to contain before it should be compacted.
+    max_log_size: u64,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -248,7 +250,7 @@ impl LogFile {
             let mut this = Self {
                 file,
                 header,
-                max_log_frame_count,
+                max_log_size: max_log_frame_count,
             };
 
             this.write_header(&header)?;
@@ -259,7 +261,7 @@ impl LogFile {
             Ok(Self {
                 file,
                 header,
-                max_log_frame_count,
+                max_log_size: max_log_frame_count,
             })
         }
     }
@@ -369,7 +371,7 @@ impl LogFile {
         path: &Path,
         start_checksum: u64,
     ) -> anyhow::Result<()> {
-        if self.header.frame_count > self.max_log_frame_count {
+        if self.header.frame_count > self.max_log_size {
             return self.do_compaction(compactor, size_after, path, start_checksum);
         }
 
@@ -390,7 +392,7 @@ impl LogFile {
             .write(true)
             .create(true)
             .open(&temp_log_path)?;
-        let mut new_log_file = LogFile::new(file, self.max_log_frame_count)?;
+        let mut new_log_file = LogFile::new(file, self.max_log_size)?;
         let new_header = LogFileHeader {
             start_frame_no: self.header.start_frame_no + self.header.frame_count,
             frame_count: 0,
@@ -521,6 +523,9 @@ pub struct ReplicationLogger {
     pub log_file: RwLock<LogFile>,
     compactor: LogCompactor,
     db_path: PathBuf,
+    /// a notifier channel other tasks can subscribe to, and get notified when new frames become
+    /// available.
+    new_frame_notifier: watch::Sender<FrameNo>,
 }
 
 impl ReplicationLogger {
@@ -542,12 +547,16 @@ impl ReplicationLogger {
 
         let header = log_file.header;
         let generation_start_frame_no = header.start_frame_no + header.frame_count;
+
+        let (new_frame_notifier, _) = watch::channel(generation_start_frame_no);
+
         Ok(Self {
             current_checksum,
             generation: Generation::new(generation_start_frame_no),
             compactor: LogCompactor::new(db_path, log_file.header.db_id)?,
             log_file: RwLock::new(log_file),
             db_path: db_path.to_owned(),
+            new_frame_notifier,
         })
     }
 
