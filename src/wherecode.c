@@ -2002,7 +2002,7 @@ Bitmask sqlite3WhereCodeOneLoopStart(
     if( zEndAff ) sqlite3DbNNFreeNN(db, zEndAff);
 
     /* Top of the loop body */
-    if( pLevel->p2==0 ) pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+    pLevel->p2 = sqlite3VdbeCurrentAddr(v);
 
     /* Check if the index cursor is past the end of the range. */
     if( nConstraint ){
