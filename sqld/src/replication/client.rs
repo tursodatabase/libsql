@@ -25,7 +25,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use anyhow::Context;
-use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
+use bytemuck::{bytes_of, try_from_bytes, Pod, Zeroable};
 use crossbeam::channel::TryRecvError;
 use futures::StreamExt;
 use rusqlite::ffi::SQLITE_ERROR;
@@ -40,14 +40,15 @@ use uuid::Uuid;
 use crate::libsql::ffi::{types::XWalFrameFn, PgHdr, Wal};
 use crate::libsql::open_with_regular_wal;
 use crate::libsql::wal_hook::WalHook;
-use crate::replication::logger::{WalFrame, WAL_PAGE_SIZE};
+use crate::replication::logger::WAL_PAGE_SIZE;
 use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, HelloResponse, LogOffset,
 };
 use crate::rpc::replication_log::{NEED_SNAPSHOT_ERROR_MSG, NO_HELLO_ERROR_MSG};
 use crate::HARD_RESET;
 
-use super::logger::{FrameHeader, LogFile, WalFrameBorrowed};
+use super::frame::{Frame, FrameBorrowed};
+use super::logger::LogFile;
 use super::FrameNo;
 
 /// Maximum number of frames buffered by the replica
@@ -128,7 +129,7 @@ struct ReadReplicationHook {
     wal_index_meta_file: File,
     wal_index_meta: Option<WalIndexMeta>,
     /// Buffer for incoming frames
-    buffer: VecDeque<WalFrame>,
+    buffer: VecDeque<Frame>,
     rt: Handle,
     /// A channel to send error back to the polling loop.
     /// When an error occurs that causes an abort, this handle should be replaced with None, and
@@ -228,19 +229,16 @@ unsafe impl WalHook for ReadReplicationHook {
 /// Turn a list of `WalFrame` into a list of PgHdr.
 /// The caller has the responsibility to free the returned headers.
 /// return (headers, last_frame_no, size_after)
-fn make_page_header<'a>(
-    frames: impl Iterator<Item = impl Into<WalFrameBorrowed<'a>>>,
-) -> (*mut PgHdr, u64, u32) {
+fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (*mut PgHdr, u64, u32) {
     let mut current_pg = std::ptr::null_mut();
     let mut last_frame_no = 0;
     let mut size_after = 0;
 
     let mut headers_count = 0;
     for frame in frames {
-        let frame: WalFrameBorrowed = frame.into();
-        if frame.header.frame_no > last_frame_no {
-            last_frame_no = frame.header.frame_no;
-            size_after = frame.header.size_after;
+        if frame.header().frame_no > last_frame_no {
+            last_frame_no = frame.header().frame_no;
+            size_after = frame.header().size_after;
         }
 
         let page = PgHdr {
@@ -250,7 +248,7 @@ fn make_page_header<'a>(
             pCache: std::ptr::null_mut(),
             pDirty: current_pg,
             pPager: std::ptr::null_mut(),
-            pgno: frame.header.page_no,
+            pgno: frame.header().page_no,
             pageHash: 0,
             flags: 0,
             nRef: 0,
@@ -467,10 +465,10 @@ impl ReadReplicationHook {
             .buffer
             .iter()
             .enumerate()
-            .find_map(|(i, f)| (f.header.size_after != 0).then_some(i + 1))?; // early return if
-                                                                              // missing commit frame.
-        let (headers, last_frame, size_after) =
-            make_page_header(self.buffer.iter().take(frame_count));
+            .find_map(|(i, f)| (f.header().size_after != 0).then_some(i + 1))?; // early return if
+                                                                                // missing commit frame.
+        let iter = self.buffer.iter().map(|f| &**f).take(frame_count);
+        let (headers, last_frame, size_after) = make_page_header(iter);
 
         Some((headers, last_frame, frame_count, size_after))
     }
@@ -530,9 +528,9 @@ impl ReadReplicationHook {
                         }
                         Err(e) => return Err(e.into()),
                     };
-                    let frame = WalFrame::try_from_bytes(raw_frame.data)?;
+                    let frame = Frame::try_from_bytes(raw_frame.data)?;
                     debug_assert_eq!(
-                        Some(frame.header.frame_no),
+                        Some(frame.header().frame_no),
                         current_offset
                             .map(|x| x + frame_count + 1)
                             .or(Some(frame_count)),
@@ -585,10 +583,7 @@ impl ReadReplicationHook {
 
         let iter = map
             .chunks(LogFile::FRAME_SIZE)
-            .map(|chunk| WalFrameBorrowed {
-                header: pod_read_unaligned(&chunk[..size_of::<FrameHeader>()]),
-                data: &chunk[size_of::<FrameHeader>()..],
-            });
+            .map(|chunk| FrameBorrowed::from_bytes(chunk));
 
         let (headers, last_frame_no, size_after) = make_page_header(iter);
 
