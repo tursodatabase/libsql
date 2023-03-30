@@ -18,8 +18,8 @@ use regex::Regex;
 use tempfile::NamedTempFile;
 use uuid::Uuid;
 
+use super::frame::Frame;
 use super::logger::LogFile;
-use super::logger::WalFrame;
 use super::FrameNo;
 
 /// This is the ratio of the space required to store snapshot vs size of the actual database.
@@ -145,9 +145,9 @@ impl SnapshotFile {
     ) -> impl Iterator<Item = anyhow::Result<Bytes>> + '_ {
         let mut iter = self.frames_iter();
         std::iter::from_fn(move || match iter.next() {
-            Some(Ok(bytes)) => match WalFrame::try_from_bytes(bytes.clone()) {
+            Some(Ok(bytes)) => match Frame::try_from_bytes(bytes.clone()) {
                 Ok(frame) => {
-                    if frame.header.frame_no <= frame_no {
+                    if frame.header().frame_no <= frame_no {
                         None
                     } else {
                         Some(Ok(bytes))
@@ -304,7 +304,7 @@ impl SnapshotMerger {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         for (name, _) in snapshots.iter().rev() {
             let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name))?;
-            let iter = snapshot.frames_iter().map(|b| WalFrame::try_from_bytes(b?));
+            let iter = snapshot.frames_iter().map(|b| Frame::try_from_bytes(b?));
             builder.append_frames(iter)?;
         }
 
@@ -387,7 +387,7 @@ impl SnapshotBuilder {
     /// append frames to the snapshot. Frames must be in decreasing frame_no order.
     fn append_frames(
         &mut self,
-        frames: impl Iterator<Item = anyhow::Result<WalFrame>>,
+        frames: impl Iterator<Item = anyhow::Result<Frame>>,
     ) -> anyhow::Result<()> {
         // We iterate on the frames starting from the end of the log and working our way backward. We
         // make sure that only the most recent version of each file is present in the resulting
@@ -397,20 +397,21 @@ impl SnapshotBuilder {
         // number order. That last part is important for when we read it later on.
         for frame in frames {
             let frame = frame?;
-            assert!(frame.header.frame_no < self.last_seen_frame_no);
-            self.last_seen_frame_no = frame.header.frame_no;
-            if frame.header.frame_no < self.header.start_frame_no {
-                self.header.start_frame_no = frame.header.frame_no;
+            assert!(frame.header().frame_no < self.last_seen_frame_no);
+            self.last_seen_frame_no = frame.header().frame_no;
+            if frame.header().frame_no < self.header.start_frame_no {
+                self.header.start_frame_no = frame.header().frame_no;
             }
 
-            if frame.header.frame_no > self.header.end_frame_no {
-                self.header.end_frame_no = frame.header.frame_no;
-                self.header.size_after = frame.header.size_after;
+            if frame.header().frame_no > self.header.end_frame_no {
+                self.header.end_frame_no = frame.header().frame_no;
+                self.header.size_after = frame.header().size_after;
             }
 
-            if !self.seen_pages.contains(&frame.header.page_no) {
-                self.seen_pages.insert(frame.header.page_no);
-                self.snapshot_file.write_all(bytes_of(&frame.header))?;
+            if !self.seen_pages.contains(&frame.header().page_no) {
+                self.seen_pages.insert(frame.header().page_no);
+                self.snapshot_file
+                    .write_all(bytes_of(frame.header().as_ref()))?;
                 self.snapshot_file.write_all(&frame.data)?;
                 self.header.frame_count += 1;
             }
@@ -456,7 +457,8 @@ mod test {
     use bytes::Bytes;
     use tempfile::tempdir;
 
-    use crate::replication::logger::{Frame, FrameHeader, LogFileHeader, WAL_MAGIC, WAL_PAGE_SIZE};
+    use crate::replication::frame::FrameHeader;
+    use crate::replication::logger::{LogFileHeader, WAL_MAGIC, WAL_PAGE_SIZE};
     use crate::replication::snapshot::SnapshotFile;
 
     use super::*;
@@ -488,11 +490,8 @@ mod test {
                     page_no: i,
                     size_after: i + 1,
                 };
-                let data = std::iter::repeat(0).take(4096).collect();
-                let frame = Frame {
-                    header: frame_header,
-                    data,
-                };
+                let data = std::iter::repeat(0).take(4096).collect::<Bytes>();
+                let frame = Frame::from_parts(&frame_header, &data);
                 log_file.push_frame(frame).unwrap();
 
                 frame_no += 1;
@@ -524,11 +523,11 @@ mod test {
         let data = &snapshot[std::mem::size_of::<SnapshotFileHeader>()..];
         data.chunks(LogFile::FRAME_SIZE).for_each(|f| {
             let frame = Frame::try_from_bytes(Bytes::copy_from_slice(f)).unwrap();
-            assert!(!seen_frames.contains(&frame.header.frame_no));
-            assert!(!seen_page_no.contains(&frame.header.page_no));
-            seen_page_no.insert(frame.header.page_no);
-            seen_frames.insert(frame.header.frame_no);
-            assert!(frame.header.frame_no >= 25);
+            assert!(!seen_frames.contains(&frame.header().frame_no));
+            assert!(!seen_page_no.contains(&frame.header().page_no));
+            seen_page_no.insert(frame.header().page_no);
+            seen_frames.insert(frame.header().frame_no);
+            assert!(frame.header().frame_no >= 25);
         });
 
         assert_eq!(seen_frames.len(), 25);
