@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt;
 use std::mem::{align_of, align_of_val, size_of, transmute};
 use std::ops::Deref;
 
@@ -29,6 +30,15 @@ pub struct FrameHeader {
 /// Cloning this is cheap.
 pub struct Frame {
     pub data: Bytes,
+}
+
+impl fmt::Debug for Frame {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Frame")
+            .field("header", &self.header())
+            .field("data", &"[..]")
+            .finish()
+    }
 }
 
 impl Frame {
