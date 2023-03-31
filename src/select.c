@@ -6871,6 +6871,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( (p->selFlags & SF_Aggregate)==0 ) return 0;   /* This is an aggregate */
   if( p->pEList->nExpr!=1 ) return 0;               /* Single result column */
   if( p->pWhere ) return 0;
+  if( p->pHaving ) return 0;
   if( p->pGroupBy ) return 0;
   if( p->pOrderBy ) return 0;
   pExpr = p->pEList->a[0].pExpr;
@@ -6890,7 +6891,8 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
     if( pSub->pLimit ) return 0;                      /* No LIMIT clause */
     if( pSub->selFlags & SF_Aggregate ) return 0;     /* Not an aggregate */
-    pSub = pSub->pPrior;                              /* Repeat over compound */
+    assert( pSub->pHaving==0 );  /* Due to the previous */
+   pSub = pSub->pPrior;                              /* Repeat over compound */
   }while( pSub );
 
   /* If we reach this point then it is OK to perform the transformation */

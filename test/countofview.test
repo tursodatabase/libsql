@@ -76,4 +76,32 @@ do_execsql_test 4.1 {
   SELECT count(*) FROM t3 ORDER BY sum(a);
 } 1
 
+# 2023-03-31 dbsqlfuzz 6a107e3055bd22afab31cfddabc2d9d54fcbaf69
+# Having clauses should disqualify count-of-view
+#
+reset_db
+do_execsql_test 5.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(1,'one'),(4,'four');
+  CREATE TABLE t2(c INTEGER PRIMARY KEY, d TEXT);
+  INSERT INTO t2 VALUES(2,'two'),(5,'five');
+  CREATE VIEW t3 AS SELECT a, b FROM t1 UNION ALL SELECT c, d FROM t2;
+  SELECT count(*) FROM t3 HAVING count(*)>0;
+} 4
+do_execsql_test 5.2 {
+  SELECT count(*) FROM t3 HAVING count(*)>5;
+} {}
+do_execsql_test 5.3 {
+  SELECT count(*) FROM t3 HAVING max(b)>'mmm';
+} 4
+do_execsql_test 5.4 {
+  SELECT count(*) FROM t3 HAVING min(b)>'mmm';
+} {}
+do_execsql_test 5.5 {
+  SELECT count(*) FROM (
+     SELECT a, max(b) FROM t1 HAVING a<100 UNION ALL SELECT c, d FROM t2
+  )
+} 3
+
+
 finish_test
