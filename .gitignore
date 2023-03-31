@@ -1,7 +1,7 @@
 .libs/
 .target_source
 .vscode/
-Makefile
+/Makefile
 autom4te.cache/
 config.h
 config.log
