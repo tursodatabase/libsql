@@ -1,7 +1,7 @@
 .libs/
 .target_source
 .vscode/
-Makefile
+/Makefile
 autom4te.cache/
 config.h
 config.log
@@ -56,6 +56,7 @@ srcck1
 test-out.txt
 test/rust_suite/target
 test/rust_suite/Cargo.lock
+ext/embeddings/Cargo.lock
 testfixture
 libsql
 src/rust/libsql-shell/target/

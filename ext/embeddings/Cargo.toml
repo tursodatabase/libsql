@@ -1,0 +1,13 @@
+[package]
+name = "libsql-embeddings"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rust-bert = "0.20.0"
+tch = "0.10.0"
+
+[lib]
+crate-type = ["rlib", "staticlib", "dylib"]
