@@ -7,7 +7,7 @@ and most of the documentation are managed separately.
 
 ## Version Control
 
-SQLite sources are managed using the
+SQLite sources are managed using
 [Fossil](https://www.fossil-scm.org/), a distributed version control system
 that was specifically designed and written to support SQLite development.
 The [Fossil repository](https://sqlite.org/src/timeline) contains the urtext.
