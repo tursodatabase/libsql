@@ -2140,7 +2140,7 @@ int sqlite3_stmt_scanstatus_v2(
   Vdbe *p = (Vdbe*)pStmt;
   VdbeOp *aOp = p->aOp;
   int nOp = p->nOp;
-  ScanStatus *pScan;
+  ScanStatus *pScan = 0;
   int idx;
 
   if( p->pFrame ){
