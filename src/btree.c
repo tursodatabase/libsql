@@ -10283,7 +10283,8 @@ static void checkAppendMsg(
     sqlite3_str_append(&pCheck->errMsg, "\n", 1);
   }
   if( pCheck->zPfx ){
-    sqlite3_str_appendf(&pCheck->errMsg, pCheck->zPfx, pCheck->v1, pCheck->v2);
+    sqlite3_str_appendf(&pCheck->errMsg, pCheck->zPfx,
+                        pCheck->v0, pCheck->v1, pCheck->v2);
   }
   sqlite3_str_vappendf(&pCheck->errMsg, zFormat, ap);
   va_end(ap);
@@ -10544,8 +10545,8 @@ static int checkTreePage(
   usableSize = pBt->usableSize;
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage) ) return 0;
-  pCheck->zPfx = "Page %u: ";
-  pCheck->v1 = iPage;
+  pCheck->zPfx = "Tree %u page %u: ";
+  pCheck->v0 = pCheck->v1 = iPage;
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
@@ -10571,7 +10572,7 @@ static int checkTreePage(
   hdr = pPage->hdrOffset;
 
   /* Set up for cell analysis */
-  pCheck->zPfx = "On tree page %u cell %u: ";
+  pCheck->zPfx = "Tree %u page %u cell %u: ";
   contentOffset = get2byteNotZero(&data[hdr+5]);
   assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
 
@@ -10591,7 +10592,7 @@ static int checkTreePage(
     pgno = get4byte(&data[hdr+8]);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
-      pCheck->zPfx = "On page %u at right child: ";
+      pCheck->zPfx = "Tree %u page %u right child: ";
       checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage);
     }
 #endif
@@ -10844,7 +10845,7 @@ int sqlite3BtreeIntegrityCheck(
   /* Check the integrity of the freelist
   */
   if( bCkFreelist ){
-    sCheck.zPfx = "Main freelist: ";
+    sCheck.zPfx = "Freelist: ";
     checkList(&sCheck, 1, get4byte(&pBt->pPage1->aData[32]),
               get4byte(&pBt->pPage1->aData[36]));
     sCheck.zPfx = 0;
@@ -10892,7 +10893,7 @@ int sqlite3BtreeIntegrityCheck(
     for(i=1; i<=sCheck.nPage && sCheck.mxErr; i++){
 #ifdef SQLITE_OMIT_AUTOVACUUM
       if( getPageReferenced(&sCheck, i)==0 ){
-        checkAppendMsg(&sCheck, "Page %u is never used", i);
+        checkAppendMsg(&sCheck, "Page %u: never used", i);
       }
 #else
       /* If the database supports auto-vacuum, make sure no tables contain
@@ -10900,11 +10901,11 @@ int sqlite3BtreeIntegrityCheck(
       */
       if( getPageReferenced(&sCheck, i)==0 && 
          (PTRMAP_PAGENO(pBt, i)!=i || !pBt->autoVacuum) ){
-        checkAppendMsg(&sCheck, "Page %u is never used", i);
+        checkAppendMsg(&sCheck, "Page %u: never used", i);
       }
       if( getPageReferenced(&sCheck, i)!=0 && 
          (PTRMAP_PAGENO(pBt, i)==i && pBt->autoVacuum) ){
-        checkAppendMsg(&sCheck, "Pointer map page %u is referenced", i);
+        checkAppendMsg(&sCheck, "Page %u: pointer map referenced", i);
       }
 #endif
     }
