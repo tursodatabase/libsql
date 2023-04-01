@@ -136,8 +136,8 @@ sqlite3_uint64 sqlite3BtreeSeekCount(Btree *pBt){
 int corruptPageError(int lineno, MemPage *p){
   char *zMsg;
   sqlite3BeginBenignMalloc();
-  zMsg = sqlite3_mprintf("database corruption page %d of %s",
-      (int)p->pgno, sqlite3PagerFilename(p->pBt->pPager, 0)
+  zMsg = sqlite3_mprintf("database corruption page %u of %s",
+             p->pgno, sqlite3PagerFilename(p->pBt->pPager, 0)
   );
   sqlite3EndBenignMalloc();
   if( zMsg ){
@@ -1032,7 +1032,7 @@ static void ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent, int *pRC){
   pPtrmap = (u8 *)sqlite3PagerGetData(pDbPage);
 
   if( eType!=pPtrmap[offset] || get4byte(&pPtrmap[offset+1])!=parent ){
-    TRACE(("PTRMAP_UPDATE: %d->(%d,%d)\n", key, eType, parent));
+    TRACE(("PTRMAP_UPDATE: %u->(%u,%u)\n", key, eType, parent));
     *pRC= rc = sqlite3PagerWrite(pDbPage);
     if( rc==SQLITE_OK ){
       pPtrmap[offset] = eType;
@@ -3846,7 +3846,7 @@ static int relocatePage(
   if( iDbPage<3 ) return SQLITE_CORRUPT_BKPT;
 
   /* Move page iDbPage from its current location to page number iFreePage */
-  TRACE(("AUTOVACUUM: Moving %d to free page %d (ptr page %d type %d)\n", 
+  TRACE(("AUTOVACUUM: Moving %u to free page %u (ptr page %u type %u)\n", 
       iDbPage, iFreePage, iPtrPage, eType));
   rc = sqlite3PagerMovepage(pPager, pDbPage->pDbPage, iFreePage, isCommit);
   if( rc!=SQLITE_OK ){
@@ -6396,7 +6396,7 @@ static int allocateBtreePage(
         memcpy(&pPage1->aData[32], &pTrunk->aData[0], 4);
         *ppPage = pTrunk;
         pTrunk = 0;
-        TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
+        TRACE(("ALLOCATE: %u trunk - %u free pages left\n", *pPgno, n-1));
       }else if( k>(u32)(pBt->usableSize/4 - 2) ){
         /* Value of k is out of range.  Database corruption */
         rc = SQLITE_CORRUPT_PGNO(iTrunk);
@@ -6462,7 +6462,7 @@ static int allocateBtreePage(
           }
         }
         pTrunk = 0;
-        TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
+        TRACE(("ALLOCATE: %u trunk - %u free pages left\n", *pPgno, n-1));
 #endif
       }else if( k>0 ){
         /* Extract a leaf from the trunk */
@@ -6507,8 +6507,8 @@ static int allocateBtreePage(
         ){
           int noContent;
           *pPgno = iPage;
-          TRACE(("ALLOCATE: %d was leaf %d of %d on trunk %d"
-                 ": %d more free pages\n",
+          TRACE(("ALLOCATE: %u was leaf %u of %u on trunk %u"
+                 ": %u more free pages\n",
                  *pPgno, closest+1, k, pTrunk->pgno, n-1));
           rc = sqlite3PagerWrite(pTrunk->pDbPage);
           if( rc ) goto end_allocate_page;
@@ -6564,7 +6564,7 @@ static int allocateBtreePage(
       ** becomes a new pointer-map page, the second is used by the caller.
       */
       MemPage *pPg = 0;
-      TRACE(("ALLOCATE: %d from end of file (pointer-map page)\n", pBt->nPage));
+      TRACE(("ALLOCATE: %u from end of file (pointer-map page)\n", pBt->nPage));
       assert( pBt->nPage!=PENDING_BYTE_PAGE(pBt) );
       rc = btreeGetUnusedPage(pBt, pBt->nPage, &pPg, bNoContent);
       if( rc==SQLITE_OK ){
@@ -6587,7 +6587,7 @@ static int allocateBtreePage(
       releasePage(*ppPage);
       *ppPage = 0;
     }
-    TRACE(("ALLOCATE: %d from end of file\n", *pPgno));
+    TRACE(("ALLOCATE: %u from end of file\n", *pPgno));
   }
 
   assert( CORRUPT_DB || *pPgno!=PENDING_BYTE_PAGE(pBt) );
@@ -6715,7 +6715,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
         }
         rc = btreeSetHasContent(pBt, iPage);
       }
-      TRACE(("FREE-PAGE: %d leaf on trunk page %d\n",pPage->pgno,pTrunk->pgno));
+      TRACE(("FREE-PAGE: %u leaf on trunk page %u\n",pPage->pgno,pTrunk->pgno));
       goto freepage_out;
     }
   }
@@ -6736,7 +6736,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   put4byte(pPage->aData, iTrunk);
   put4byte(&pPage->aData[4], 0);
   put4byte(&pPage1->aData[32], iPage);
-  TRACE(("FREE-PAGE: %d new trunk page replacing %d\n", pPage->pgno, iTrunk));
+  TRACE(("FREE-PAGE: %u new trunk page replacing %u\n", pPage->pgno, iTrunk));
 
 freepage_out:
   if( pPage ){
@@ -8322,7 +8322,7 @@ static int balance_nonroot(
   **        that page.
   */
   assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) || CORRUPT_DB);
-  TRACE(("BALANCE: old: %d(nc=%d) %d(nc=%d) %d(nc=%d)\n",
+  TRACE(("BALANCE: old: %u(nc=%u) %u(nc=%u) %u(nc=%u)\n",
     apOld[0]->pgno, apOld[0]->nCell,
     nOld>=2 ? apOld[1]->pgno : 0, nOld>=2 ? apOld[1]->nCell : 0,
     nOld>=3 ? apOld[2]->pgno : 0, nOld>=3 ? apOld[2]->nCell : 0
@@ -8406,8 +8406,8 @@ static int balance_nonroot(
     }
   }
 
-  TRACE(("BALANCE: new: %d(%d nc=%d) %d(%d nc=%d) %d(%d nc=%d) "
-         "%d(%d nc=%d) %d(%d nc=%d)\n",
+  TRACE(("BALANCE: new: %u(%u nc=%u) %u(%u nc=%u) %u(%u nc=%u) "
+         "%u(%u nc=%u) %u(%u nc=%u)\n",
     apNew[0]->pgno, szNew[0], cntNew[0],
     nNew>=2 ? apNew[1]->pgno : 0, nNew>=2 ? szNew[1] : 0,
     nNew>=2 ? cntNew[1] - cntNew[0] - !leafData : 0,
@@ -8652,7 +8652,7 @@ static int balance_nonroot(
   }
 
   assert( pParent->isInit );
-  TRACE(("BALANCE: finished: old=%d new=%d cells=%d\n",
+  TRACE(("BALANCE: finished: old=%u new=%u cells=%u\n",
           nOld, nNew, b.nCell));
 
   /* Free any old pages that were not reused as new pages.
@@ -8737,7 +8737,7 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   assert( sqlite3PagerIswriteable(pRoot->pDbPage) );
   assert( pChild->nCell==pRoot->nCell || CORRUPT_DB );
 
-  TRACE(("BALANCE: copy root %d into %d\n", pRoot->pgno, pChild->pgno));
+  TRACE(("BALANCE: copy root %u into %u\n", pRoot->pgno, pChild->pgno));
 
   /* Copy the overflow cells from pRoot to pChild */
   memcpy(pChild->aiOvfl, pRoot->aiOvfl,
@@ -9235,7 +9235,7 @@ int sqlite3BtreeInsert(
     if( rc ) return rc;
   }
 
-  TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
+  TRACE(("INSERT: table=%u nkey=%lld ndata=%u page=%u %s\n",
           pCur->pgnoRoot, pX->nKey, pX->nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
   assert( pPage->isInit || CORRUPT_DB );
@@ -10323,11 +10323,11 @@ static void setPageReferenced(IntegrityCk *pCheck, Pgno iPg){
 */
 static int checkRef(IntegrityCk *pCheck, Pgno iPage){
   if( iPage>pCheck->nPage || iPage==0 ){
-    checkAppendMsg(pCheck, "invalid page number %d", iPage);
+    checkAppendMsg(pCheck, "invalid page number %u", iPage);
     return 1;
   }
   if( getPageReferenced(pCheck, iPage) ){
-    checkAppendMsg(pCheck, "2nd reference to page %d", iPage);
+    checkAppendMsg(pCheck, "2nd reference to page %u", iPage);
     return 1;
   }
   setPageReferenced(pCheck, iPage);
@@ -10353,13 +10353,13 @@ static void checkPtrmap(
   rc = ptrmapGet(pCheck->pBt, iChild, &ePtrmapType, &iPtrmapParent);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) checkOom(pCheck);
-    checkAppendMsg(pCheck, "Failed to read ptrmap key=%d", iChild);
+    checkAppendMsg(pCheck, "Failed to read ptrmap key=%u", iChild);
     return;
   }
 
   if( ePtrmapType!=eType || iPtrmapParent!=iParent ){
     checkAppendMsg(pCheck,
-      "Bad ptr map entry key=%d expected=(%d,%d) got=(%d,%d)", 
+      "Bad ptr map entry key=%u expected=(%u,%u) got=(%u,%u)", 
       iChild, eType, iParent, ePtrmapType, iPtrmapParent);
   }
 }
@@ -10384,7 +10384,7 @@ static void checkList(
     if( checkRef(pCheck, iPage) ) break;
     N--;
     if( sqlite3PagerGet(pCheck->pPager, (Pgno)iPage, &pOvflPage, 0) ){
-      checkAppendMsg(pCheck, "failed to get page %d", iPage);
+      checkAppendMsg(pCheck, "failed to get page %u", iPage);
       break;
     }
     pOvflData = (unsigned char *)sqlite3PagerGetData(pOvflPage);
@@ -10397,7 +10397,7 @@ static void checkList(
 #endif
       if( n>pCheck->pBt->usableSize/4-2 ){
         checkAppendMsg(pCheck,
-           "freelist leaf count too big on page %d", iPage);
+           "freelist leaf count too big on page %u", iPage);
         N--;
       }else{
         for(i=0; i<(int)n; i++){
@@ -10429,7 +10429,7 @@ static void checkList(
   }
   if( N && nErrAtStart==pCheck->nErr ){
     checkAppendMsg(pCheck,
-      "%s is %d but should be %d",
+      "%s is %u but should be %u",
       isFreeList ? "size" : "overflow list length",
       expected-N, expected);
   }
@@ -10571,7 +10571,7 @@ static int checkTreePage(
   hdr = pPage->hdrOffset;
 
   /* Set up for cell analysis */
-  pCheck->zPfx = "On tree page %u cell %d: ";
+  pCheck->zPfx = "On tree page %u cell %u: ";
   contentOffset = get2byteNotZero(&data[hdr+5]);
   assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
 
@@ -10615,7 +10615,7 @@ static int checkTreePage(
     pc = get2byteAligned(pCellIdx);
     pCellIdx -= 2;
     if( pc<contentOffset || pc>usableSize-4 ){
-      checkAppendMsg(pCheck, "Offset %d out of range %d..%d",
+      checkAppendMsg(pCheck, "Offset %u out of range %u..%u",
                              pc, contentOffset, usableSize-4);
       doCoverageCheck = 0;
       continue;
@@ -10747,7 +10747,7 @@ static int checkTreePage(
     */
     if( heap[0]==0 && nFrag!=data[hdr+7] ){
       checkAppendMsg(pCheck,
-          "Fragmentation of %d bytes reported as %d on page %u",
+          "Fragmentation of %u bytes reported as %u on page %u",
           nFrag, data[hdr+7], iPage);
     }
   }
@@ -10861,7 +10861,7 @@ int sqlite3BtreeIntegrityCheck(
       mxInHdr = get4byte(&pBt->pPage1->aData[52]);
       if( mx!=mxInHdr ){
         checkAppendMsg(&sCheck,
-          "max rootpage (%d) disagrees with header (%d)",
+          "max rootpage (%u) disagrees with header (%u)",
           mx, mxInHdr
         );
       }
@@ -10892,7 +10892,7 @@ int sqlite3BtreeIntegrityCheck(
     for(i=1; i<=sCheck.nPage && sCheck.mxErr; i++){
 #ifdef SQLITE_OMIT_AUTOVACUUM
       if( getPageReferenced(&sCheck, i)==0 ){
-        checkAppendMsg(&sCheck, "Page %d is never used", i);
+        checkAppendMsg(&sCheck, "Page %u is never used", i);
       }
 #else
       /* If the database supports auto-vacuum, make sure no tables contain
@@ -10900,11 +10900,11 @@ int sqlite3BtreeIntegrityCheck(
       */
       if( getPageReferenced(&sCheck, i)==0 && 
          (PTRMAP_PAGENO(pBt, i)!=i || !pBt->autoVacuum) ){
-        checkAppendMsg(&sCheck, "Page %d is never used", i);
+        checkAppendMsg(&sCheck, "Page %u is never used", i);
       }
       if( getPageReferenced(&sCheck, i)!=0 && 
          (PTRMAP_PAGENO(pBt, i)==i && pBt->autoVacuum) ){
-        checkAppendMsg(&sCheck, "Pointer map page %d is referenced", i);
+        checkAppendMsg(&sCheck, "Pointer map page %u is referenced", i);
       }
 #endif
     }
