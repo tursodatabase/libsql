@@ -1,5 +1,5 @@
-C Clear\sexecutable\sbit\son\sbase64.c
-D 2023-04-02T14:53:59.580
+C Earlier\sdetection\sof\scorruption\sin\ssqlite3BtreeDelete().\ndbsqlfuzz\sa4c48c291d6e40157a1b749a05eaa7c7faf5a625.
+D 2023-04-02T16:43:20.854
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -564,7 +564,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c ecce2a6cf75ccd1f419f774a026ab102399aeae90f33abb14aed363c4e0f839c
+F src/btree.c c2ececcbcb1a35bbd9efcbb43a821eaec60cc9796dccbb33f3b0fd4c7ab2f539
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h a3268a60cbc91f578001f44ba40aae9c1b8aecbb0d2c095dd7fc54b0872ea4b8
 F src/build.c 8357d6ca9a8c9afc297c431df28bc2af407b47f3ef2311875276c944b30c4d54
@@ -888,7 +888,7 @@ F test/corruptE.test 4143791f2dfb443aec5b7fabfa5821e6063eccc3b49b06f212c2f014715
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test adf79b669cbfd19e28c8191a610d083ae53a6d51
 F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
-F test/corruptI.test a17bbf54fdde78d43cf3cc34b0057719fd4a173a3d824285b67dc5257c064c7b
+F test/corruptI.test 9d8cbf6214e492abe9e822e759b9751ae336cec0a6fe3ff3b37bfbd8ff9c22ca
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
 F test/corruptL.test b42978028afc5eefc8b51d8d7cd6a9344ba7362d7ed4511ee2070f56e06d5a1c
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 715c00e58b774d6a29e2f60fd33a2ecb960307192ae1fdb8ed396f74fd62b444
-R 76be783a3d8976f5c3106dd2a2179fd6
-U larrybr
-Z 7cb6cca24a98be0d56433a58a4384bb2
+P ec1ddbce7db270afc25f71546fa745935ad74bc72920fccfcb37e98649612bf2
+R 1f7f7780d232aaca9814c0eee95933c1
+U drh
+Z 4959631f3771aa98a65ccf057f0978b9
 # Remove this line to create a well-formed Fossil manifest.

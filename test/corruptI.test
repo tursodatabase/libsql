@@ -123,18 +123,13 @@ do_execsql_test 4.0 {
 set root [db one {SELECT rootpage FROM sqlite_master}]
 set offset [expr ($root-1) * 65536]
 
-ifcapable oversize_cell_check {
-  set res {1 {database disk image is malformed}}
-} else {
-  set res {0 {}}
-}
 do_test 4.1 {
   db close
   hexio_write test.db [expr $offset + 8 + 2] 0000
   hexio_write test.db [expr $offset + 5] 0000
   sqlite3 db test.db
   catchsql { DELETE FROM t1 WHERE a=0 }
-} $res
+} {1 {database disk image is malformed}}
 
 
 #-------------------------------------------------------------------------

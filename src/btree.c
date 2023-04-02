@@ -7351,7 +7351,7 @@ static int rebuildPage(
 
   assert( i<iEnd );
   j = get2byte(&aData[hdr+5]);
-  if( j>(u32)usableSize ){ j = 0; }
+  if( NEVER(j>(u32)usableSize) ){ j = 0; }
   memcpy(&pTmp[j], &aData[j], usableSize - j);
 
   for(k=0; pCArray->ixNx[k]<=i && ALWAYS(k<NB*2); k++){}
@@ -9533,6 +9533,9 @@ int sqlite3BtreeDelete(BtCursor *pCur, u8 flags){
   }
   pCell = findCell(pPage, iCellIdx);
   if( pPage->nFree<0 && btreeComputeFreeSpace(pPage) ){
+    return SQLITE_CORRUPT_BKPT;
+  }
+  if( pCell<&pPage->aCellIdx[pPage->nCell] ){
     return SQLITE_CORRUPT_BKPT;
   }
 
