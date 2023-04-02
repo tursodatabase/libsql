@@ -757,6 +757,27 @@ static int jsonIs4Hex(const char *z){
   return 1;
 }
 
+#ifdef SQLITE_ENABLE_JSON_NAN_INF
+/*
+** Extra floating-point literals to allow in JSON.
+*/
+static const struct NanInfName {
+  char c1;
+  char c2;
+  char n;
+  char eType;
+  char nRepl;
+  char *zMatch;
+  char *zRepl;
+} aNanInfName[] = {
+  { 'i', 'I', 3, JSON_REAL, 7, "inf", "9.0e999" },
+  { 'i', 'I', 8, JSON_REAL, 7, "infinity", "9.0e999" },
+  { 'n', 'N', 3, JSON_NULL, 4, "NaN", "null" },
+  { 'q', 'Q', 4, JSON_NULL, 4, "QNaN", "null" },
+  { 's', 'S', 4, JSON_NULL, 4, "SNaN", "null" },
+}; 
+#endif /* SQLITE_ENABLE_JSON_NAN_INF */
+
 /*
 ** Parse a single JSON value which begins at pParse->zJson[i].  Return the
 ** index of the first character past the end of the value parsed.
@@ -902,6 +923,24 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
         if( c<'0' || c>'9' ) return -1;
         continue;
       }
+#ifdef SQLITE_ENABLE_JSON_NAN_INF
+      /* Non-standard JSON:  Allow "-Inf" (in any case)
+      ** to be understood as floating point literals. */
+      if( (c=='i' || c=='I')
+       && j==i+1
+       && z[i]=='-'
+       && sqlite3StrNICmp(&z[j], "inf",3)==0
+      ){
+        if( !sqlite3Isalnum(z[j+3]) ){
+          jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
+          return i+4;
+        }else if( (sqlite3StrNICmp(&z[j],"infinity",8)==0 &&
+                  !sqlite3Isalnum(z[j+8])) ){
+          jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
+          return i+9;
+        }
+      }
+#endif
       break;
     }
     if( z[j-1]<'0' ) return -1;
@@ -915,6 +954,20 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   }else if( c==0 ){
     return 0;   /* End of file */
   }else{
+#ifdef SQLITE_ENABLE_JSON_NAN_INF
+    int k, nn;
+    for(k=0; k<sizeof(aNanInfName)/sizeof(aNanInfName[0]); k++){
+      if( c!=aNanInfName[k].c1 && c!=aNanInfName[k].c2 ) continue;
+      nn = aNanInfName[k].n;
+      if( sqlite3StrNICmp(&z[i], aNanInfName[k].zMatch, nn)!=0 ){
+        continue;
+      }
+      if( sqlite3Isalnum(z[i+nn]) ) continue;
+      jsonParseAddNode(pParse, aNanInfName[k].eType,
+          aNanInfName[k].nRepl, aNanInfName[k].zRepl);
+      return i + nn;
+    }
+#endif
     return -1;  /* Syntax error */
   }
 }
