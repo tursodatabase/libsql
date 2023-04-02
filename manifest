@@ -1,5 +1,5 @@
-C Fix\san\soff-by-one\serror\sin\sthe\srecognition\sof\s-Infinity.
-D 2023-04-02T20:27:02.691
+C More\soff-by-one\serrors\sin\sthe\snew\sJSON\sparsing.
+D 2023-04-02T20:46:24.359
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -585,7 +585,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h b638809e083b601b618df877b2e89cb87c2a47a01f4def10be4c4ebb54664ac7
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c a8de1db43335fc4946370a7a7e47d89975ad678ddb15078a150e993ba2fb37d4
-F src/json.c 442e035cca4f93b22a024851762499ea7156fc2496e1062a21cfa5f9729fe7a8
+F src/json.c edae65fe1f66ce8b1e7fa6eb036a3d8cf525dacd91d58f12068e80a81ac34f61
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c be5af440f3192c58681b5d43167dbca3ccbfce394d89faa22378a14264781136
 F src/main.c 09bc5191f75dc48fc4dfddda143cb864c0c3dbc3297eb9a9c8e01fea58ff847d
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fc8793e5acac7351749e360c6bace5d5a8b3de3aa600ae23e260557db650c461
-R e03c2372523f504c7365a6c5a8a2394b
+P f7ebf3e6286ddc8cdaa9446235407785d1be2be2d9992e21ef59fcd655f68432
+R d7e51978d4e1fb261c348646bf7a99ee
 U drh
-Z b04d3ca6b8bf072d9ad0c754d33e8df2
+Z 9992e24fdfdd6a2fbe49a1cdeef61dfd
 # Remove this line to create a well-formed Fossil manifest.

@@ -931,11 +931,11 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
        && z[i]=='-'
        && sqlite3StrNICmp(&z[j], "inf",3)==0
       ){
-        if( !sqlite3Isalnum(z[j+4]) ){
+        if( !sqlite3Isalnum(z[j+3]) ){
           jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
           return i+4;
         }else if( (sqlite3StrNICmp(&z[j],"infinity",8)==0 &&
-                  !sqlite3Isalnum(z[j+9])) ){
+                  !sqlite3Isalnum(z[j+8])) ){
           jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
           return i+9;
         }
