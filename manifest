@@ -1,5 +1,5 @@
-C Swat\sgrammar\snit\son\sREADME.md
-D 2023-04-01T16:14:50.138
+C Clear\sexecutable\sbit\son\sbase64.c
+D 2023-04-02T14:53:59.580
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -264,7 +264,7 @@ F ext/misc/README.md d6dd0fe1d8af77040216798a6a2b0c46c73054d2f0ea544fbbcdccf6f23
 F ext/misc/amatch.c e3ad5532799cee9a97647f483f67f43b38796b84b5a8c60594fe782a4338f358
 F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a22525eddb
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
-F ext/misc/base64.c d43d2b209c8ab70ca3f860104bb353b0f52a1c5462a2466140025c954e4f3ea7 x
+F ext/misc/base64.c e83a915fcb94c9332e9a92aa4c3beafe2552bd3da2813fc5fff31918cca0b834
 F ext/misc/base85.c 77dfd5813d23ea561d0348f922583888e78f8eaeb2b9a4a28226d092389890b8
 F ext/misc/basexx.c 5e859e1820620aa8080fb9145eb47089de426ae808f6abb01a8e12921c3a8e67
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4fb2864fe01cce9694242a0750623ca47fcecd68f74c4239d3eb5fbf978770a
-R fa814ff747457204df2159749d0b640b
+P 715c00e58b774d6a29e2f60fd33a2ecb960307192ae1fdb8ed396f74fd62b444
+R 76be783a3d8976f5c3106dd2a2179fd6
 U larrybr
-Z e5553ea70d055b6fd82dee42eb351c51
+Z 7cb6cca24a98be0d56433a58a4384bb2
 # Remove this line to create a well-formed Fossil manifest.
