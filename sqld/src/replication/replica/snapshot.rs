@@ -37,7 +37,7 @@ impl TempSnapshot {
         Ok(Self { path, map })
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a FrameBorrowed> {
+    pub fn iter(&self) -> impl Iterator<Item = &FrameBorrowed> {
         self.map.chunks(Frame::SIZE).map(FrameBorrowed::from_bytes)
     }
 }

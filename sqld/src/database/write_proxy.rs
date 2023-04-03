@@ -1,21 +1,16 @@
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::Duration;
 
-use crossbeam::channel::TryRecvError;
 use tokio::sync::Mutex;
-use tokio::task::JoinHandle;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
 use crate::error::Error;
 use crate::query::{QueryResponse, QueryResult};
 use crate::query_analysis::State;
-use crate::replication::client::PeriodicDbUpdater;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
 use crate::rpc::proxy::rpc::DisconnectMessage;
-use crate::rpc::replication_log::rpc::replication_log_client::ReplicationLogClient;
 use crate::stats::Stats;
 use crate::Result;
 
@@ -24,73 +19,24 @@ use super::{libsql::LibSqlDb, service::DbFactory, Database};
 
 #[derive(Clone)]
 pub struct WriteProxyDbFactory {
-    write_proxy: ProxyClient<Channel>,
+    client: ProxyClient<Channel>,
     db_path: PathBuf,
     stats: Stats,
-    /// abort handle: abort db update loop on drop
-    _abort_handle: crossbeam::channel::Sender<()>,
 }
 
 impl WriteProxyDbFactory {
-    pub async fn new(
-        addr: &str,
-        tls: bool,
-        cert_path: Option<PathBuf>,
-        key_path: Option<PathBuf>,
-        ca_cert_path: Option<PathBuf>,
+    pub fn new(
         db_path: PathBuf,
+        channel: Channel,
+        uri: tonic::transport::Uri,
         stats: Stats,
-    ) -> anyhow::Result<(Self, JoinHandle<anyhow::Result<()>>)> {
-        let mut endpoint = Channel::from_shared(addr.to_string())?;
-        if tls {
-            let cert_pem = std::fs::read_to_string(cert_path.unwrap())?;
-            let key_pem = std::fs::read_to_string(key_path.unwrap())?;
-            let identity = tonic::transport::Identity::from_pem(cert_pem, key_pem);
-
-            let ca_cert_pem = std::fs::read_to_string(ca_cert_path.unwrap())?;
-            let ca_cert = tonic::transport::Certificate::from_pem(ca_cert_pem);
-
-            let tls_config = tonic::transport::ClientTlsConfig::new()
-                .identity(identity)
-                .ca_certificate(ca_cert)
-                .domain_name("sqld");
-            endpoint = endpoint.tls_config(tls_config)?;
-        }
-
-        let channel = endpoint.connect_lazy();
-        // false positive, `.to_string()` is needed to satisfy lifetime bounds
-        #[allow(clippy::unnecessary_to_owned)]
-        let uri = tonic::transport::Uri::from_maybe_shared(addr.to_string())?;
-        let write_proxy = ProxyClient::with_origin(channel.clone(), uri.clone());
-        let logger = ReplicationLogClient::with_origin(channel, uri);
-
-        let mut db_updater =
-            PeriodicDbUpdater::new(&db_path, logger, Duration::from_secs(1)).await?;
-        let (_abort_handle, receiver) = crossbeam::channel::bounded::<()>(1);
-
-        let handle = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
-            loop {
-                // must abort
-                if let Err(TryRecvError::Disconnected) = receiver.try_recv() {
-                    tracing::warn!("periodic updater exiting");
-                    break Ok(());
-                }
-
-                match db_updater.step() {
-                    Ok(true) => continue,
-                    Ok(false) => return Ok(()),
-                    Err(e) => return Err(e),
-                }
-            }
-        });
-
-        let this = Self {
-            write_proxy,
+    ) -> Self {
+        let client = ProxyClient::with_origin(channel, uri);
+        Self {
+            client,
             db_path,
             stats,
-            _abort_handle,
-        };
-        Ok((this, handle))
+        }
     }
 }
 
@@ -98,7 +44,7 @@ impl WriteProxyDbFactory {
 impl DbFactory for WriteProxyDbFactory {
     async fn create(&self) -> Result<Arc<dyn Database>> {
         let db = WriteProxyDatabase::new(
-            self.write_proxy.clone(),
+            self.client.clone(),
             self.db_path.clone(),
             self.stats.clone(),
         )?;
