@@ -6,18 +6,20 @@ use futures::StreamExt;
 use tonic::transport::Channel;
 
 use crate::replication::frame::Frame;
+use crate::replication::replica::snapshot::TempSnapshot;
 use crate::replication::FrameNo;
 use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, LogOffset,
 };
+use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 
-use super::hook::FrameApplicatorHandle;
+use super::hook::{FrameApplicatorHandle, Frames};
 
 const HANDSHAKE_MAX_RETRIES: usize = 100;
 
 type Client = ReplicationLogClient<Channel>;
 
-struct LogReplicator {
+pub struct LogReplicator {
     client: Client,
     db_path: PathBuf,
     applicator: Option<FrameApplicatorHandle>,
@@ -25,16 +27,17 @@ struct LogReplicator {
 }
 
 impl LogReplicator {
-    async fn new(db_path: PathBuf, client: Client) -> anyhow::Result<Self> {
-        Ok(Self {
+    pub fn new(db_path: PathBuf, channel: Channel, uri: tonic::transport::Uri) -> Self {
+        let client = Client::with_origin(channel, uri);
+        Self {
             client,
             db_path,
             applicator: None,
             current_frame_no: FrameNo::MAX,
-        })
+        }
     }
 
-    async fn run(mut self) -> anyhow::Result<()> {
+    pub async fn run(mut self) -> anyhow::Result<()> {
         loop {
             if self.applicator.is_none() {
                 self.try_perform_handshake().await?;
@@ -42,8 +45,6 @@ impl LogReplicator {
             let _ = self.replicate().await;
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
-
-        Ok(())
     }
 
     async fn try_perform_handshake(&mut self) -> anyhow::Result<()> {
@@ -53,8 +54,11 @@ impl LogReplicator {
                 if let Some(applicator) = self.applicator.take() {
                     applicator.shutdown().await?;
                 }
-                let applicator = FrameApplicatorHandle::new(self.db_path.clone(), hello).await?;
+                let (applicator, last_applied_frame_no) =
+                    FrameApplicatorHandle::new(self.db_path.clone(), hello).await?;
+                self.current_frame_no = last_applied_frame_no;
                 self.applicator.replace(applicator);
+                return Ok(());
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
@@ -65,8 +69,7 @@ impl LogReplicator {
     async fn replicate(&mut self) -> anyhow::Result<()> {
         let offset = LogOffset {
             // if current == FrameNo::Max then it means that we're starting fresh
-            current_offset: (self.current_frame_no != FrameNo::MAX)
-                .then_some(self.current_frame_no),
+            current_offset: self.current_frame_no(),
         };
         let mut stream = self.client.log_entries(offset).await?.into_inner();
 
@@ -80,10 +83,47 @@ impl LogReplicator {
                         self.flush_txn(std::mem::take(&mut buffer)).await?;
                     }
                 }
-                Some(Err(_)) => todo!(),
+                Some(Err(err))
+                    if err.code() == tonic::Code::FailedPrecondition
+                        && err.message() == NEED_SNAPSHOT_ERROR_MSG =>
+                {
+                    return dbg!(self.load_snapshot().await);
+                }
+                Some(Err(e)) => {
+                    // non fatal error
+                    tracing::warn!("replication error: {e}");
+                    return Ok(());
+                }
                 None => return Ok(()),
             }
         }
+    }
+
+    async fn load_snapshot(&mut self) -> anyhow::Result<()> {
+        dbg!();
+        let frames = self
+            .client
+            .snapshot(LogOffset {
+                current_offset: self.current_frame_no(),
+            })
+            .await?
+            .into_inner();
+
+        dbg!();
+        let stream = frames.map(|data| match data {
+            Ok(frame) => Frame::try_from_bytes(frame.data),
+            Err(e) => anyhow::bail!(e),
+        });
+        dbg!();
+        let snap = TempSnapshot::from_stream(&self.db_path, stream).await?;
+        self.current_frame_no = self
+            .applicator
+            .as_mut()
+            .unwrap()
+            .apply_frames(Frames::Snapshot(snap))
+            .await?;
+
+        Ok(())
     }
 
     async fn flush_txn(&mut self, frames: Vec<Frame>) -> anyhow::Result<()> {
@@ -91,9 +131,13 @@ impl LogReplicator {
             .applicator
             .as_mut()
             .expect("invalid state")
-            .apply_frames(frames)
+            .apply_frames(Frames::Vec(frames))
             .await?;
 
         Ok(())
+    }
+
+    fn current_frame_no(&self) -> Option<FrameNo> {
+        (self.current_frame_no != FrameNo::MAX).then_some(self.current_frame_no)
     }
 }

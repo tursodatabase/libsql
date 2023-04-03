@@ -410,9 +410,7 @@ impl SnapshotBuilder {
 
             if !self.seen_pages.contains(&frame.header().page_no) {
                 self.seen_pages.insert(frame.header().page_no);
-                self.snapshot_file
-                    .write_all(bytes_of(frame.header().as_ref()))?;
-                self.snapshot_file.write_all(&frame.data)?;
+                self.snapshot_file.write_all(&frame.as_bytes())?;
                 self.header.frame_count += 1;
             }
         }

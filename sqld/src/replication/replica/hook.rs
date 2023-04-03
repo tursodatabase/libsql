@@ -18,21 +18,36 @@ use crate::HARD_RESET;
 
 use super::error::ReplicationError;
 use super::meta::WalIndexMeta;
+use super::snapshot::TempSnapshot;
+
+#[derive(Debug)]
+pub enum Frames {
+    Vec(Vec<Frame>),
+    Snapshot(TempSnapshot),
+}
+
+impl Frames {
+    fn to_headers(&self) -> (*mut PgHdr, u64, u32) {
+        match self {
+            Frames::Vec(frames) => make_page_header(frames.iter().map(|f| &**f)),
+            Frames::Snapshot(snap) => make_page_header(snap.iter()),
+        }
+    }
+}
 
 #[derive(Debug)]
 struct FrameApplyOp {
-    frames: Vec<Frame>,
+    frames: Frames,
     ret: oneshot::Sender<anyhow::Result<FrameNo>>,
 }
 
 pub struct FrameApplicatorHandle {
     handle: JoinHandle<anyhow::Result<()>>,
     sender: mpsc::Sender<FrameApplyOp>,
-    last_applied_frame_no: FrameNo,
 }
 
 impl FrameApplicatorHandle {
-    pub async fn new(db_path: PathBuf, hello: HelloResponse) -> anyhow::Result<Self> {
+    pub async fn new(db_path: PathBuf, hello: HelloResponse) -> anyhow::Result<(Self, FrameNo)> {
         let (sender, mut receiver) = mpsc::channel(16);
         let (ret, init_ok) = oneshot::channel();
         let handle = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
@@ -59,11 +74,7 @@ impl FrameApplicatorHandle {
 
         let last_applied_frame_no = init_ok.await??;
 
-        Ok(Self {
-            handle,
-            sender,
-            last_applied_frame_no,
-        })
+        Ok((Self { handle, sender }, last_applied_frame_no))
     }
 
     pub async fn shutdown(self) -> anyhow::Result<()> {
@@ -71,7 +82,7 @@ impl FrameApplicatorHandle {
         self.handle.await?
     }
 
-    pub async fn apply_frames(&mut self, frames: Vec<Frame>) -> anyhow::Result<FrameNo> {
+    pub async fn apply_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
         let (ret, rcv) = oneshot::channel();
         self.sender.send(FrameApplyOp { frames, ret }).await?;
         rcv.await?
@@ -106,7 +117,6 @@ impl FrameApplicator {
     }
 
     fn init(db_path: &Path, meta_file: File, meta: WalIndexMeta) -> anyhow::Result<Self> {
-        let path = db_path.join("data");
         let hook = ReplicationHook {
             inner: Rc::new(RefCell::new(ReplicationHookInner {
                 current_txn_frames: None,
@@ -116,7 +126,7 @@ impl FrameApplicator {
             })),
         };
         let conn = open_with_regular_wal(
-            path,
+            db_path,
             OpenFlags::SQLITE_OPEN_READ_WRITE
                 | OpenFlags::SQLITE_OPEN_CREATE
                 | OpenFlags::SQLITE_OPEN_URI
@@ -128,7 +138,7 @@ impl FrameApplicator {
         Ok(Self { conn, hook })
     }
 
-    fn apply_frames(&mut self, frames: Vec<Frame>) -> anyhow::Result<FrameNo> {
+    fn apply_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
         self.hook
             .inner
             .borrow_mut()
@@ -155,7 +165,7 @@ struct ReplicationHook {
 
 pub struct ReplicationHookInner {
     /// slot for the frames to be applied by the next call to xframe
-    current_txn_frames: Option<Vec<Frame>>,
+    current_txn_frames: Option<Frames>,
     /// slot to store the result of the call to xframes.
     /// On success, returns the last applied frame_no
     result: Option<anyhow::Result<FrameNo>>,
@@ -224,7 +234,7 @@ unsafe impl WalHook for ReplicationHook {
             return SQLITE_ERROR;
         };
 
-        let (headers, last_frame_no, size_after) = make_page_header(frames.iter().map(|f| &**f));
+        let (headers, last_frame_no, size_after) = frames.to_headers();
 
         // SAFETY: frame headers are valid for the duration of the call of apply_pages
         let result =
@@ -232,7 +242,7 @@ unsafe impl WalHook for ReplicationHook {
 
         free_page_header(headers);
 
-        let result = result.map(|_| frames.last().as_ref().unwrap().header().frame_no);
+        let result = result.map(|_| last_frame_no);
         this.result.replace(result);
 
         SQLITE_ERROR
@@ -256,7 +266,7 @@ fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (*mu
 
         let page = PgHdr {
             pPage: std::ptr::null_mut(),
-            pData: frame.data.as_ptr() as _,
+            pData: frame.page().as_ptr() as _,
             pExtra: std::ptr::null_mut(),
             pCache: std::ptr::null_mut(),
             pDirty: current_pg,

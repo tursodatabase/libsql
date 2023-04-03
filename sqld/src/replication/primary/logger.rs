@@ -150,7 +150,8 @@ impl ReplicationLoggerHook {
     }
 
     fn commit(&self, new_count: u64, new_checksum: u64) {
-        self.logger.commit(new_count, new_checksum)
+        let new_frame_no = self.logger.commit(new_count, new_checksum);
+        let _ = self.logger.new_frame_notifier.send(new_frame_no);
     }
 
     fn rollback(&mut self) {
@@ -533,7 +534,7 @@ impl ReplicationLogger {
         iter.try_fold(wal_header.start_checksum, |sum, frame| {
             let frame = frame?;
             let mut digest = CRC_64_GO_ISO.digest_with_initial(sum);
-            digest.update(&frame.data);
+            digest.update(&frame.page());
             let cs = digest.finalize();
             ensure!(
                 cs == frame.header().checksum,
@@ -543,13 +544,15 @@ impl ReplicationLogger {
         })
     }
 
-    fn commit(&self, new_frame_count: u64, new_current_checksum: u64) {
+    /// commit the current transaction and returns the new top frame number
+    fn commit(&self, new_frame_count: u64, new_current_checksum: u64) -> FrameNo {
         let mut log_file = self.log_file.write();
         let mut header = *log_file.header();
         header.frame_count = new_frame_count;
         log_file.write_header(&header).expect("dailed to commit");
         self.current_checksum
             .store(new_current_checksum, Ordering::Relaxed);
+        log_file.header().last_frame_no()
     }
 
     pub fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
@@ -584,7 +587,7 @@ mod test {
         for i in 0..10 {
             let frame = Frame::try_from_bytes(log_file.frame_bytes(i).unwrap()).unwrap();
             assert_eq!(frame.header().page_no, i as u32);
-            assert!(frame.data.iter().all(|x| i as u8 == *x));
+            assert!(frame.page().iter().all(|x| i as u8 == *x));
         }
 
         assert_eq!(
