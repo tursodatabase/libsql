@@ -6288,7 +6288,7 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
     sqlite3 *db = pParse->db;
     assert( iAgg>=0 );
     if( pExpr->op!=TK_AGG_FUNCTION ){
-      if( iAgg<pAggInfo->nColumn
+      if( ALWAYS(iAgg<pAggInfo->nColumn)
        && pAggInfo->aCol[iAgg].pCExpr==pExpr
       ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
@@ -6441,6 +6441,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
     default: {
       IndexedExpr *pIEpr;
       Expr tmp;
+      int i;
       assert( pParse->iSelfTab==0 );
       if( (pNC->ncFlags & NC_InAggFunc)==0 ) break;
       if( pParse->pIdxEpr==0 ) break;
@@ -6451,7 +6452,11 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       }
       if( pIEpr==0 ) break;
       if( NEVER(!ExprUseYTab(pExpr)) ) break;
-      if( pExpr->pAggInfo!=0 ) break; /* Already resolved by outer context */
+      for(i=0; i<pSrcList->nSrc; i++){
+         if( pSrcList->a[0].iCursor==pIEpr->iDataCur ) break;
+      }
+      if( i>=pSrcList->nSrc ) break;
+      if( NEVER(pExpr->pAggInfo!=0) ) break; /* Resolved by outer context */
       if( pParse->nErr ){ return WRC_Abort; }
 
       /* If we reach this point, it means that expression pExpr can be

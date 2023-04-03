@@ -6485,7 +6485,7 @@ static int aggregateIdxEprRefToColCallback(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_AGG_FUNCTION ) return WRC_Continue;
   if( pExpr->op==TK_IF_NULL_ROW ) return WRC_Continue;
   pAggInfo = pExpr->pAggInfo;
-  if( pExpr->iAgg>=pAggInfo->nColumn ) return WRC_Continue;
+  if( NEVER(pExpr->iAgg>=pAggInfo->nColumn) ) return WRC_Continue;
   assert( pExpr->iAgg>=0 );
   pCol = &pAggInfo->aCol[pExpr->iAgg];
   pExpr->op = TK_AGG_COLUMN;

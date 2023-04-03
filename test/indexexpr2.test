@@ -410,4 +410,19 @@ do_execsql_test 10.1 {
    GROUP BY SUBSTR(0,0);
 } 4
 
+# 2023-04-03 https://sqlite.org/forum/forumpost/409ebc7368
+# When a generated column appears in both an outer and an inner loop
+# (that is to say, the same table is used in both loops) and the
+# generated column is indexed and it is used inside an aggregate function,
+# make sure that the terms resolve to the correct aggregate.
+#
+do_execsql_test 11.0 {
+  CREATE TABLE t3 (a INT, b AS (-a));
+  CREATE INDEX t3x ON t3(b, a);
+  INSERT INTO t3(a) VALUES(44);
+  SELECT * FROM t3 AS a0
+   WHERE (SELECT sum(-a0.a=b) FROM t3 GROUP BY b)
+   GROUP BY b;
+} {44 -44}
+
 finish_test
