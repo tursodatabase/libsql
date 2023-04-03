@@ -17,6 +17,7 @@ use replication::{ReplicationLogger, ReplicationLoggerHook};
 use rpc::run_rpc_server;
 use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;
+use tonic::transport::Channel;
 use tower::load::Constant;
 use tower::ServiceExt;
 use utils::services::idle_shutdown::IdleShutdownLayer;
@@ -24,6 +25,7 @@ use utils::services::idle_shutdown::IdleShutdownLayer;
 use crate::auth::Auth;
 use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
+use crate::replication::replica::LogReplicator;
 use crate::server::Server;
 use crate::stats::Stats;
 
@@ -182,30 +184,41 @@ async fn hard_reset(
     Ok(())
 }
 
+fn configure_rpc(config: &Config) -> anyhow::Result<(Channel, tonic::transport::Uri)> {
+    let mut endpoint = Channel::from_shared(config.writer_rpc_addr.clone().unwrap())?;
+    if config.rpc_server_tls {
+        let cert_pem = std::fs::read_to_string(config.rpc_server_cert.clone().unwrap())?;
+        let key_pem = std::fs::read_to_string(config.rpc_server_key.clone().unwrap())?;
+        let identity = tonic::transport::Identity::from_pem(cert_pem, key_pem);
+
+        let ca_cert_pem = std::fs::read_to_string(config.rpc_server_ca_cert.clone().unwrap())?;
+        let ca_cert = tonic::transport::Certificate::from_pem(ca_cert_pem);
+
+        let tls_config = tonic::transport::ClientTlsConfig::new()
+            .identity(identity)
+            .ca_certificate(ca_cert)
+            .domain_name("sqld");
+        endpoint = endpoint.tls_config(tls_config)?;
+    }
+
+    let channel = endpoint.connect_lazy();
+    let uri = tonic::transport::Uri::from_maybe_shared(config.writer_rpc_addr.clone().unwrap())?;
+
+    Ok((channel, uri))
+}
+
 async fn start_replica(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
-    addr: &str,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
 ) -> anyhow::Result<()> {
-    let (factory, handle) = WriteProxyDbFactory::new(
-        addr,
-        config.writer_rpc_tls,
-        config.writer_rpc_cert.clone(),
-        config.writer_rpc_key.clone(),
-        config.writer_rpc_ca_cert.clone(),
-        config.db_path.clone(),
-        stats.clone(),
-    )
-    .await
-    .context("failed to start WriteProxy DB")?;
+    let (channel, uri) = configure_rpc(config)?;
+    let replicator = LogReplicator::new(config.db_path.clone(), channel.clone(), uri.clone());
 
-    // the `JoinSet` does not support inserting arbitrary `JoinHandles` (and it also does not
-    // support spawning blocking tasks, so we must spawn a proxy task to add the `handle` to
-    // `join_set`
-    join_set.spawn(async move { handle.await.expect("WriteProxy DB task failed") });
+    join_set.spawn(replicator.run());
 
+    let factory = WriteProxyDbFactory::new(config.db_path.clone(), channel, uri, stats.clone());
     let service = DbFactoryService::new(Arc::new(factory));
     run_service(service, config, join_set, idle_shutdown_layer, stats).await?;
 
@@ -321,9 +334,7 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         let stats = Stats::new(&config.db_path)?;
 
         match config.writer_rpc_addr {
-            Some(ref addr) => {
-                start_replica(&config, &mut join_set, addr, idle_shutdown_layer, stats).await?
-            }
+            Some(_) => start_replica(&config, &mut join_set, idle_shutdown_layer, stats).await?,
             None => start_primary(&config, &mut join_set, idle_shutdown_layer, stats).await?,
         }
 

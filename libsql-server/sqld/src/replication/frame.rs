@@ -29,7 +29,7 @@ pub struct FrameHeader {
 /// The owned version of a replication frame.
 /// Cloning this is cheap.
 pub struct Frame {
-    pub data: Bytes,
+    data: Bytes,
 }
 
 impl fmt::Debug for Frame {
@@ -63,18 +63,19 @@ impl Frame {
 /// The borrowed version of Frame
 #[repr(transparent)]
 pub struct FrameBorrowed {
-    pub data: [u8],
+    data: [u8],
 }
 
 impl FrameBorrowed {
     pub fn header(&self) -> Cow<FrameHeader> {
         if align_of_val(&self.data) == align_of::<FrameHeader>() {
-            Cow::Borrowed(from_bytes(&self.data))
+            Cow::Borrowed(from_bytes(&self.data[..size_of::<FrameHeader>()]))
         } else {
-            Cow::Owned(pod_read_unaligned(&self.data))
+            Cow::Owned(pod_read_unaligned(&self.data[..size_of::<FrameHeader>()]))
         }
     }
 
+    /// Returns the bytes for this frame. Includes the header bytes.
     pub fn as_bytes(&self) -> &[u8] {
         &self.data
     }
@@ -83,6 +84,11 @@ impl FrameBorrowed {
         assert_eq!(data.len(), Frame::SIZE);
         // SAFETY: &WalFrameBorrowed is equivalent to &[u8]
         unsafe { transmute(data) }
+    }
+
+    /// returns this frame's page data.
+    pub fn page(&self) -> &[u8] {
+        &self.data[size_of::<FrameHeader>()..]
     }
 }
 

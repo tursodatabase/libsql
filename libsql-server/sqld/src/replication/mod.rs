@@ -1,8 +1,8 @@
-pub mod client;
+// pub mod client;
 pub mod frame;
 pub mod frame_stream;
 mod primary;
-mod replica;
+pub mod replica;
 mod snapshot;
 
 use crc::Crc;

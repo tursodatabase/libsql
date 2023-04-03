@@ -78,9 +78,10 @@ impl Stream for FrameStream {
                 self.poll_next(cx)
             }
             FrameStreamState::WaitingFrame(ref mut fut) => match ready!(fut.as_mut().poll(cx)) {
-                Ok(page) => {
+                Ok(frame) => {
+                    self.current_frameno += 1;
                     self.transition_state_next_frame();
-                    Poll::Ready(Some(Ok(page)))
+                    Poll::Ready(Some(Ok(frame)))
                 }
 
                 Err(LogReadError::Ahead) => {
