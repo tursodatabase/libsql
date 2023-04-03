@@ -1,5 +1,5 @@
-C With\sthe\s-DSQLITE_ENABLE_JSON_NAN_INF\scompile-time\soption,\snon-standard\nJSON\snumeric\svalues\s"Inf",\s"Infinity",\s"-Inf",\s"-Infinity",\s"NaN",\s"QNaN",\nand\s"SNaN"\sare\sall\saccepted.\s\sSQLite\sshould\snever\sgenerate\sthese\svalues,\nbut\sit\swill\saccept\sthat\swith\sthe\sappropriate\scompile-time\soption.
-D 2023-04-02T20:56:29.250
+C Stronger\sconstraint\schecking\sin\sallocateSpace().\ndbsqlfuzz\s93d4c9ff5ef7cd29f16e767af1ee71c29ec5a4c0
+D 2023-04-03T12:33:12.512
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -564,7 +564,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c c2ececcbcb1a35bbd9efcbb43a821eaec60cc9796dccbb33f3b0fd4c7ab2f539
+F src/btree.c 023b41e0a4563880812288e32682538013287b7b82e0c24a57b0e26b6f0ef168
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h a3268a60cbc91f578001f44ba40aae9c1b8aecbb0d2c095dd7fc54b0872ea4b8
 F src/build.c 8357d6ca9a8c9afc297c431df28bc2af407b47f3ef2311875276c944b30c4d54
@@ -2052,9 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 978dc71c388b37740da38c310674315c7d7fe814d1daa16a146b4df71385d1e1 dbc99662087b63c9ed5b398535a6091fc2c5e507907dd1fcb7ad0b6ab3f17144
-R 0c80a0a9d7056c4e9cc79fd3f48ab255
-T +closed dbc99662087b63c9ed5b398535a6091fc2c5e507907dd1fcb7ad0b6ab3f17144
+P 0a050e9013331595e13ca9f859180057b59291c70a6cedb6230eefb25956df9e
+R b7ae8f88dfdd5f67e5cf7bfa8f601f36
 U drh
-Z ff807b459bbce1f6e27ef0b5e65a972d
+Z a657f98c5955b6184103f4e037cbdd56
 # Remove this line to create a well-formed Fossil manifest.
