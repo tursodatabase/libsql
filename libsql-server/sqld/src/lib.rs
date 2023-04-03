@@ -186,12 +186,12 @@ async fn hard_reset(
 
 fn configure_rpc(config: &Config) -> anyhow::Result<(Channel, tonic::transport::Uri)> {
     let mut endpoint = Channel::from_shared(config.writer_rpc_addr.clone().unwrap())?;
-    if config.rpc_server_tls {
-        let cert_pem = std::fs::read_to_string(config.rpc_server_cert.clone().unwrap())?;
-        let key_pem = std::fs::read_to_string(config.rpc_server_key.clone().unwrap())?;
+    if config.writer_rpc_tls {
+        let cert_pem = std::fs::read_to_string(config.writer_rpc_cert.clone().unwrap())?;
+        let key_pem = std::fs::read_to_string(config.writer_rpc_key.clone().unwrap())?;
         let identity = tonic::transport::Identity::from_pem(cert_pem, key_pem);
 
-        let ca_cert_pem = std::fs::read_to_string(config.rpc_server_ca_cert.clone().unwrap())?;
+        let ca_cert_pem = std::fs::read_to_string(config.writer_rpc_ca_cert.clone().unwrap())?;
         let ca_cert = tonic::transport::Certificate::from_pem(ca_cert_pem);
 
         let tls_config = tonic::transport::ClientTlsConfig::new()

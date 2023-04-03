@@ -84,7 +84,6 @@ impl FrameInjector {
 
                     anyhow::bail!(e);
                 }
-                Err(_e @ ReplicationError::DbIncompatible) => anyhow::bail!(ReplicationError::Exit),
                 Err(e) => anyhow::bail!(e),
             },
             None => WalIndexMeta::new_from_hello(hello)?,

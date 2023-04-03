@@ -6,6 +6,4 @@ pub enum ReplicationError {
     DbIncompatible,
     #[error("{0}")]
     Other(#[from] anyhow::Error),
-    #[error("Replication loop exited")]
-    Exit,
 }
