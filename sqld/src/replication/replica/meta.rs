@@ -1,11 +1,9 @@
-use std::{
-    fs::{File, OpenOptions},
-    io::ErrorKind,
-    mem::size_of,
-    os::unix::prelude::FileExt,
-    path::Path,
-    str::FromStr,
-};
+use std::fs::{File, OpenOptions};
+use std::io::ErrorKind;
+use std::mem::size_of;
+use std::os::unix::prelude::FileExt;
+use std::path::Path;
+use std::str::FromStr;
 
 use anyhow::Context;
 use bytemuck::{try_pod_read_unaligned, Pod, Zeroable};
