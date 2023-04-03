@@ -78,6 +78,7 @@ static int dbpageConnect(
   (void)pzErr;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
+  sqlite3_vtab_config(db, SQLITE_VTAB_USES_ALL_SCHEMAS);
   rc = sqlite3_declare_vtab(db, 
           "CREATE TABLE x(pgno INTEGER PRIMARY KEY, data BLOB, schema HIDDEN)");
   if( rc==SQLITE_OK ){
@@ -161,7 +162,6 @@ static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   ){
     pIdxInfo->orderByConsumed = 1;
   }
-  sqlite3VtabUsesAllSchemas(pIdxInfo);
   return SQLITE_OK;
 }
 

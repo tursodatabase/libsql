@@ -167,6 +167,7 @@ static int dbdataConnect(
   (void)argc;
   (void)argv;
   (void)pzErr;
+  sqlite3_vtab_config(db, SQLITE_VTAB_USES_ALL_SCHEMAS);
   if( rc==SQLITE_OK ){
     pTab = (DbdataTable*)sqlite3_malloc64(sizeof(DbdataTable));
     if( pTab==0 ){

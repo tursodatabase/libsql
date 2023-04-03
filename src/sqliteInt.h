@@ -2312,6 +2312,7 @@ struct VTable {
   sqlite3_vtab *pVtab;      /* Pointer to vtab instance */
   int nRef;                 /* Number of pointers to this structure */
   u8 bConstraint;           /* True if constraints are supported */
+  u8 bAllSchemas;           /* True if might use any attached schema */
   u8 eVtabRisk;             /* Riskiness of allowing hacker access */
   int iSavepoint;           /* Depth of the SAVEPOINT stack */
   VTable *pNext;            /* Next in linked list (see above) */
@@ -5340,10 +5341,7 @@ int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, VTable *);
 
 FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
-#if (defined(SQLITE_ENABLE_DBPAGE_VTAB) || defined(SQLITE_TEST)) \
-    && !defined(SQLITE_OMIT_VIRTUALTABLE)
-  void sqlite3VtabUsesAllSchemas(sqlite3_index_info*);
-#endif
+void sqlite3VtabUsesAllSchemas(Parse*);
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
