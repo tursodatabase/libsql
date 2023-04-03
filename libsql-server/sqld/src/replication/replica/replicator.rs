@@ -20,14 +20,16 @@ const HANDSHAKE_MAX_RETRIES: usize = 100;
 
 type Client = ReplicationLogClient<Channel>;
 
-pub struct LogReplicator {
+/// The `Replicator` duty is to download frames from the primary, and pass them to the injector at
+/// transaction boundaries.
+pub struct Replicator {
     client: Client,
     db_path: PathBuf,
     injector: Option<FrameInjectorHandle>,
     current_frame_no: FrameNo,
 }
 
-impl LogReplicator {
+impl Replicator {
     pub fn new(db_path: PathBuf, channel: Channel, uri: tonic::transport::Uri) -> Self {
         let client = Client::with_origin(channel, uri);
         Self {
@@ -50,6 +52,7 @@ impl LogReplicator {
 
     async fn try_perform_handshake(&mut self) -> anyhow::Result<()> {
         for _ in 0..HANDSHAKE_MAX_RETRIES {
+            tracing::info!("Attempting to perform handshake with primary.");
             if let Ok(resp) = self.client.hello(HelloRequest {}).await {
                 let hello = resp.into_inner();
                 if let Some(applicator) = self.injector.take() {
@@ -88,10 +91,14 @@ impl LogReplicator {
                     if err.code() == tonic::Code::FailedPrecondition
                         && err.message() == NEED_SNAPSHOT_ERROR_MSG =>
                 {
-                    return dbg!(self.load_snapshot().await);
+                    return self.load_snapshot().await;
                 }
                 Some(Err(e)) => {
-                    // non fatal error
+                    // non fatal error. We shutdown the injector, and reset the protocol,
+                    // attempting, to recover replication where we left it.
+                    if let Some(injector) = self.injector.take() {
+                        injector.shutdown().await?;
+                    }
                     tracing::warn!("replication error: {e}");
                     return Ok(());
                 }
@@ -101,7 +108,6 @@ impl LogReplicator {
     }
 
     async fn load_snapshot(&mut self) -> anyhow::Result<()> {
-        dbg!();
         let frames = self
             .client
             .snapshot(LogOffset {
@@ -110,12 +116,10 @@ impl LogReplicator {
             .await?
             .into_inner();
 
-        dbg!();
         let stream = frames.map(|data| match data {
             Ok(frame) => Frame::try_from_bytes(frame.data),
             Err(e) => anyhow::bail!(e),
         });
-        dbg!();
         let snap = TempSnapshot::from_stream(&self.db_path, stream).await?;
         self.current_frame_no = self
             .injector

@@ -25,7 +25,7 @@ use utils::services::idle_shutdown::IdleShutdownLayer;
 use crate::auth::Auth;
 use crate::error::Error;
 use crate::postgres::service::PgConnectionFactory;
-use crate::replication::replica::LogReplicator;
+use crate::replication::replica::Replicator;
 use crate::server::Server;
 use crate::stats::Stats;
 
@@ -214,7 +214,7 @@ async fn start_replica(
     stats: Stats,
 ) -> anyhow::Result<()> {
     let (channel, uri) = configure_rpc(config)?;
-    let replicator = LogReplicator::new(config.db_path.clone(), channel.clone(), uri.clone());
+    let replicator = Replicator::new(config.db_path.clone(), channel.clone(), uri.clone());
 
     join_set.spawn(replicator.run());
 

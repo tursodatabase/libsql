@@ -5,4 +5,4 @@ mod meta;
 mod replicator;
 mod snapshot;
 
-pub use replicator::LogReplicator;
+pub use replicator::Replicator;
