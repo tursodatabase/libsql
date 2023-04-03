@@ -1,0 +1,16 @@
+[package]
+name = "sqlite_web"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "sqlite_web"
+crate-type = ["rlib"]
+
+[dependencies]
+sqlite_nostd = { path="../sqlite_nostd"}
+
+[features]
+loadable_extension = ["sqlite_nostd/loadable_extension"]
+static = ["sqlite_nostd/static"]
+

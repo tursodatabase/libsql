@@ -1,0 +1,36 @@
+{
+  "name": "@vlcn.io/crsqlite",
+  "version": "0.9.1",
+  "description": "CR-SQLite loadable extension",
+  "homepage": "https://vlcn.io",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/vlcn-io/cr-sqlite"
+  },
+  "files": [
+    "Makefile",
+    "src/**",
+    "rs/**/*.rs",
+    "rs/**/*.toml",
+    "rs/**/*.lock",
+    "rs/**/*.h",
+    "nodejs-helper.d.ts",
+    "nodejs-helper.js",
+    "nodejs-install-helper.js"
+  ],
+  "type": "module",
+  "main": "nodejs-helper.js",
+  "types": "nodejs-helper.d.ts",
+  "scripts": {
+    "install": "node ./nodejs-install-helper.js",
+    "test": "make test",
+    "deep-clean": "rm -rf ./dbg || true && rm -rf ./dist || true"
+  },
+  "license": "Apache 2",
+  "keywords": [
+    "sql",
+    "sqlite",
+    "sqlite3",
+    "crdt"
+  ]
+}
