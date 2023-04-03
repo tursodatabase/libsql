@@ -3,14 +3,12 @@ services:
   writer:
     build: ..
     environment:
-      - RUST_BACKTRACE=1
       - SQLD_NODE=primary
     ports:
       - "6000:5000"
   reader:
     build: ..
     environment:
-      - RUST_BACKTRACE=1
       - SQLD_NODE=replica
       - SQLD_PRIMARY_URL=http://writer:5001
       - SQLD_HTTP_LISTEN_ADDR=0.0.0.0:8080
