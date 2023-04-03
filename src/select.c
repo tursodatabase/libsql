@@ -6491,6 +6491,7 @@ static int aggregateIdxEprRefToColCallback(Walker *pWalker, Expr *pExpr){
   pExpr->op = TK_AGG_COLUMN;
   pExpr->iTable = pCol->iTable;
   pExpr->iColumn = pCol->iColumn;
+  ExprClearProperty(pExpr, EP_Skip|EP_Collate);
   return WRC_Prune;
 }
 

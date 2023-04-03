@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_VTAB_USES_ALL_SCHEMAS\soption\sto\ssqlite3_vtab_config().\s\sUpdate\nthe\ssqlite_dbpage,\ssqlite_dbdata,\sand\ssqlite_dbptr\svirtual\stables\sto\smake\nuse\sof\sthat\sinterface.\s\sThis\swas\sformerly\shandled\sby\sthe\sinternal\nsqlite3VtabUsesAllSchemas()\sroutine\sthat\swas\scalled\sdirectly\sfrom\ssqlite_dbpage.\nBut\ssince\ssqlite_dbdata\sand\ssqlite_dbptr\sare\san\sextension,\san\sexternal\ninterface\sto\sthat\sfunctionality\shad\sto\sbe\sprovided.\ndbsqlfuzz\s1a29c245175a63393b6a78c5b8cab5199939d6a8
-D 2023-04-03T15:01:37.035
+C When\schanging\sa\sCOLLATE\sexpression\snode\sinto\sTK_AGG_COLUMN\sbecause\sthe\snodes\nvalue\sis\scontained\sin\san\sindexed\sexpression,\sbe\ssure\sto\sclear\sthe\nEP_Collate\sproperty\sfrom\sthe\sexpression\snode.\s\sFix\sfor\sthe\sassertion\sfaults\nreported\sby\s[forum:/forumpost/e45108732c|forum\spost\se45108732c]\sand\n[forum:/forumpost/44270909bb|forum\spost\s44270909bb].
+D 2023-04-03T17:46:14.710
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -625,7 +625,7 @@ F src/printf.c 7eac1a9896a80697e03e08963e210830532ae2ff610e16c193e95af007ca5623
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 2fef08c06348c9b490f047926d322b0d58e556dae658f1dac14b9e4b9410fd46
+F src/select.c 2584199f36de79d0845e1d1dedc5418b33299fa89d2b7e15df30393bcf2f3704
 F src/shell.c.in 55a17c94e3e240f4d5f01eecff1f6f9bea7f8fd257e95d5ce014eef7b556a6e1
 F src/sqlite.h.in 84f0e61a07292977c31f108776e5148eb1c761e7c276de2290c1511dad7c7d3a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -1196,7 +1196,7 @@ F test/index8.test caa097735c91dbc23d8a402f5e63a2a03c83840ba3928733ed7f9a03f8a91
 F test/index9.test 2ac891806a4136ef3e91280477e23114e67575207dc331e6797fa0ed9379f997
 F test/indexedby.test f21eca4f7a6ffe14c8500a7ad6cd53166666c99e5ccd311842a28bc94a195fe0
 F test/indexexpr1.test b2a15637dcbae7fd8d7e2fc51f74ac4feaf5510130ee2089a5ec5bd1ef7270e1
-F test/indexexpr2.test 8a4cf83e12b041334c5ef36b9a3932451808378352c24d65049b31f3737a82b9
+F test/indexexpr2.test f5732485abfe8edb5006a4e599914afd8ff7ff7b88d9b88e1731cb063495ba36
 F test/indexfault.test 98d78a8ff1f5335628b62f886a1cb7c7dac1ef6d48fa39c51ec871c87dce9811
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 4e3f0de67aac3c5be1f4aaedbcea11638f1b5cdc9a3115be14d19aa9db7623c6
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c0eff02854d469bcdb949c09531760d6f96b49c17375abd1c131d41f38b9b2f0
-R 163596c68b1c70989e5dfc4dd76d338c
+P bcd51abee0b0f82bb5dbb881025a92d55baf9df6adeaf3a305e2e0da96a81d58
+R a62e4585b51771f1a5bd36f0c33ce6ea
 U drh
-Z 23f00d31ae2c07aa6d8ef757c285add5
+Z 4c60945d3ef4bd40ca949dea1a2f0787
 # Remove this line to create a well-formed Fossil manifest.
