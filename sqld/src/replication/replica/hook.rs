@@ -1,22 +1,14 @@
 use std::os::unix::prelude::FileExt;
-use std::path::PathBuf;
-use std::{cell::RefCell, ffi::c_int, fs::File, path::Path, rc::Rc};
+use std::{cell::RefCell, ffi::c_int, fs::File, rc::Rc};
 
-use anyhow::bail;
 use bytemuck::bytes_of;
 use rusqlite::ffi::{PgHdr, SQLITE_ERROR};
-use rusqlite::OpenFlags;
 use sqld_libsql_bindings::ffi::Wal;
-use sqld_libsql_bindings::{ffi::types::XWalFrameFn, open_with_regular_wal, wal_hook::WalHook};
-use tokio::sync::{mpsc, oneshot};
-use tokio::task::JoinHandle;
+use sqld_libsql_bindings::{ffi::types::XWalFrameFn, wal_hook::WalHook};
 
 use crate::replication::frame::{Frame, FrameBorrowed};
 use crate::replication::{FrameNo, WAL_PAGE_SIZE};
-use crate::rpc::replication_log::rpc::HelloResponse;
-use crate::HARD_RESET;
 
-use super::error::ReplicationError;
 use super::meta::WalIndexMeta;
 use super::snapshot::TempSnapshot;
 
@@ -35,137 +27,50 @@ impl Frames {
     }
 }
 
-#[derive(Debug)]
-struct FrameApplyOp {
-    frames: Frames,
-    ret: oneshot::Sender<anyhow::Result<FrameNo>>,
+/// The injector hook hijacks a call to xframes, and replace the content of the call with it's own
+/// frames.
+/// The Caller must first call `set_frames`, passing the frames to be injected, then trigger a call
+/// to xFrames from the libsql connection (see dummy write in `injector`), and can then collect the
+/// result on the injection with `take_result`
+#[derive(Clone)]
+pub struct InjectorHook {
+    inner: Rc<RefCell<InjectorHookInner>>,
 }
 
-pub struct FrameApplicatorHandle {
-    handle: JoinHandle<anyhow::Result<()>>,
-    sender: mpsc::Sender<FrameApplyOp>,
-}
-
-impl FrameApplicatorHandle {
-    pub async fn new(db_path: PathBuf, hello: HelloResponse) -> anyhow::Result<(Self, FrameNo)> {
-        let (sender, mut receiver) = mpsc::channel(16);
-        let (ret, init_ok) = oneshot::channel();
-        let handle = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
-            let mut applicator = match FrameApplicator::new_from_hello(&db_path, hello) {
-                Ok((hook, last_applied_frame_no)) => {
-                    ret.send(Ok(last_applied_frame_no)).unwrap();
-                    hook
-                }
-                Err(e) => {
-                    ret.send(Err(e)).unwrap();
-                    return Ok(());
-                }
-            };
-
-            while let Some(FrameApplyOp { frames, ret }) = receiver.blocking_recv() {
-                let res = applicator.apply_frames(frames);
-                if ret.send(res).is_err() {
-                    bail!("frame application result must not be ignored.");
-                }
-            }
-
-            Ok(())
-        });
-
-        let last_applied_frame_no = init_ok.await??;
-
-        Ok((Self { handle, sender }, last_applied_frame_no))
-    }
-
-    pub async fn shutdown(self) -> anyhow::Result<()> {
-        drop(self.sender);
-        self.handle.await?
-    }
-
-    pub async fn apply_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
-        let (ret, rcv) = oneshot::channel();
-        self.sender.send(FrameApplyOp { frames, ret }).await?;
-        rcv.await?
-    }
-}
-
-pub struct FrameApplicator {
-    conn: rusqlite::Connection,
-    hook: ReplicationHook,
-}
-
-impl FrameApplicator {
-    /// returns the replication hook and the currently applied frame_no
-    pub fn new_from_hello(db_path: &Path, hello: HelloResponse) -> anyhow::Result<(Self, FrameNo)> {
-        let (meta, file) = WalIndexMeta::read_from_path(db_path)?;
-        let meta = match meta {
-            Some(meta) => match meta.merge_from_hello(hello) {
-                Ok(meta) => meta,
-                Err(e @ ReplicationError::Lagging) => {
-                    tracing::error!("Replica ahead of primary: hard-reseting replica");
-                    HARD_RESET.notify_waiters();
-
-                    bail!(e);
-                }
-                Err(_e @ ReplicationError::DbIncompatible) => bail!(ReplicationError::Exit),
-                Err(e) => bail!(e),
-            },
-            None => WalIndexMeta::new_from_hello(hello)?,
-        };
-
-        Ok((Self::init(db_path, file, meta)?, meta.current_frame_no()))
-    }
-
-    fn init(db_path: &Path, meta_file: File, meta: WalIndexMeta) -> anyhow::Result<Self> {
-        let hook = ReplicationHook {
-            inner: Rc::new(RefCell::new(ReplicationHookInner {
-                current_txn_frames: None,
+impl InjectorHook {
+    pub fn new(meta_file: File, meta: WalIndexMeta) -> Self {
+        Self {
+            inner: Rc::new(RefCell::new(InjectorHookInner {
+                current_frames: None,
                 result: None,
                 meta_file,
                 meta,
             })),
-        };
-        let conn = open_with_regular_wal(
-            db_path,
-            OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_CREATE
-                | OpenFlags::SQLITE_OPEN_URI
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            hook.clone(),
-            false, // bottomless replication is not enabled for replicas
-        )?;
-
-        Ok(Self { conn, hook })
-    }
-
-    fn apply_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
-        self.hook
-            .inner
-            .borrow_mut()
-            .current_txn_frames
-            .replace(frames);
-
-        let _ = self.conn.execute(
-            "create table if not exists __dummy__ (dummy); insert into __dummy__ values (1);",
-            (),
-        );
-
-        {
-            let mut inner = self.hook.inner.borrow_mut();
-            inner.current_txn_frames.take();
-            inner.result.take().unwrap()
         }
     }
+
+    fn with_inner_mut<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&mut InjectorHookInner) -> R,
+    {
+        f(&mut self.inner.borrow_mut())
+    }
+
+    /// Set the hook's current frames
+    pub fn set_frames(&self, frames: Frames) {
+        self.with_inner_mut(|this| this.current_frames.replace(frames));
+    }
+
+    /// Take the result currently held by the hook.
+    /// Panics if there is no result
+    pub fn take_result(&self) -> anyhow::Result<FrameNo> {
+        self.with_inner_mut(|this| this.result.take().expect("no result to take"))
+    }
 }
 
-#[derive(Clone)]
-struct ReplicationHook {
-    inner: Rc<RefCell<ReplicationHookInner>>,
-}
-
-pub struct ReplicationHookInner {
+pub struct InjectorHookInner {
     /// slot for the frames to be applied by the next call to xframe
-    current_txn_frames: Option<Frames>,
+    current_frames: Option<Frames>,
     /// slot to store the result of the call to xframes.
     /// On success, returns the last applied frame_no
     result: Option<anyhow::Result<FrameNo>>,
@@ -173,7 +78,7 @@ pub struct ReplicationHookInner {
     meta: WalIndexMeta,
 }
 
-impl ReplicationHookInner {
+impl InjectorHookInner {
     unsafe fn apply_pages(
         &mut self,
         page_headers: *mut PgHdr,
@@ -206,6 +111,7 @@ impl ReplicationHookInner {
         self.flush_meta()
     }
 
+    /// Set the post-commit value to the pre-commit value.
     fn post_commit(&mut self) -> anyhow::Result<()> {
         self.meta.post_commit_frame_no = self.meta.pre_commit_frame_no;
         self.flush_meta()
@@ -218,7 +124,7 @@ impl ReplicationHookInner {
     }
 }
 
-unsafe impl WalHook for ReplicationHook {
+unsafe impl WalHook for InjectorHook {
     fn on_frames(
         &mut self,
         wal: *mut Wal,
@@ -229,23 +135,25 @@ unsafe impl WalHook for ReplicationHook {
         sync_flags: c_int,
         orig: XWalFrameFn,
     ) -> c_int {
-        let mut this = self.inner.borrow_mut();
-        let Some(ref frames) = this.current_txn_frames.take() else {
-            return SQLITE_ERROR;
-        };
+        self.with_inner_mut(|this| {
+            let Some(ref frames) = this.current_frames.take() else {
+                return SQLITE_ERROR;
+            };
 
-        let (headers, last_frame_no, size_after) = frames.to_headers();
+            let (headers, last_frame_no, size_after) = frames.to_headers();
 
-        // SAFETY: frame headers are valid for the duration of the call of apply_pages
-        let result =
-            unsafe { this.apply_pages(headers, last_frame_no, size_after, sync_flags, orig, wal) };
+            // SAFETY: frame headers are valid for the duration of the call of apply_pages
+            let result = unsafe {
+                this.apply_pages(headers, last_frame_no, size_after, sync_flags, orig, wal)
+            };
 
-        free_page_header(headers);
+            free_page_header(headers);
 
-        let result = result.map(|_| last_frame_no);
-        this.result.replace(result);
+            let result = result.map(|_| last_frame_no);
+            this.result.replace(result);
 
-        SQLITE_ERROR
+            SQLITE_ERROR
+        })
     }
 }
 
