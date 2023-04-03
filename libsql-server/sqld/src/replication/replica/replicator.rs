@@ -13,7 +13,8 @@ use crate::rpc::replication_log::rpc::{
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 
-use super::hook::{FrameApplicatorHandle, Frames};
+use super::hook::Frames;
+use super::injector::FrameInjectorHandle;
 
 const HANDSHAKE_MAX_RETRIES: usize = 100;
 
@@ -22,7 +23,7 @@ type Client = ReplicationLogClient<Channel>;
 pub struct LogReplicator {
     client: Client,
     db_path: PathBuf,
-    applicator: Option<FrameApplicatorHandle>,
+    injector: Option<FrameInjectorHandle>,
     current_frame_no: FrameNo,
 }
 
@@ -32,14 +33,14 @@ impl LogReplicator {
         Self {
             client,
             db_path,
-            applicator: None,
+            injector: None,
             current_frame_no: FrameNo::MAX,
         }
     }
 
     pub async fn run(mut self) -> anyhow::Result<()> {
         loop {
-            if self.applicator.is_none() {
+            if self.injector.is_none() {
                 self.try_perform_handshake().await?;
             }
             let _ = self.replicate().await;
@@ -51,13 +52,13 @@ impl LogReplicator {
         for _ in 0..HANDSHAKE_MAX_RETRIES {
             if let Ok(resp) = self.client.hello(HelloRequest {}).await {
                 let hello = resp.into_inner();
-                if let Some(applicator) = self.applicator.take() {
+                if let Some(applicator) = self.injector.take() {
                     applicator.shutdown().await?;
                 }
                 let (applicator, last_applied_frame_no) =
-                    FrameApplicatorHandle::new(self.db_path.clone(), hello).await?;
+                    FrameInjectorHandle::new(self.db_path.clone(), hello).await?;
                 self.current_frame_no = last_applied_frame_no;
-                self.applicator.replace(applicator);
+                self.injector.replace(applicator);
                 return Ok(());
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
@@ -117,7 +118,7 @@ impl LogReplicator {
         dbg!();
         let snap = TempSnapshot::from_stream(&self.db_path, stream).await?;
         self.current_frame_no = self
-            .applicator
+            .injector
             .as_mut()
             .unwrap()
             .apply_frames(Frames::Snapshot(snap))
@@ -128,7 +129,7 @@ impl LogReplicator {
 
     async fn flush_txn(&mut self, frames: Vec<Frame>) -> anyhow::Result<()> {
         self.current_frame_no = self
-            .applicator
+            .injector
             .as_mut()
             .expect("invalid state")
             .apply_frames(Frames::Vec(frames))
