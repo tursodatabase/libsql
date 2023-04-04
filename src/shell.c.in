@@ -1183,10 +1183,8 @@ INCLUDE ../ext/expert/sqlite3expert.c
 #endif
 #if SQLITE_SHELL_HAVE_RECOVER
 INCLUDE ../ext/recover/sqlite3recover.h
-# ifndef SQLITE_HAVE_SQLITE3R
 INCLUDE ../ext/recover/dbdata.c
 INCLUDE ../ext/recover/sqlite3recover.c
-# endif
 #endif
 #ifdef SQLITE_SHELL_EXTSRC
 # include SHELL_STRINGIFY(SQLITE_SHELL_EXTSRC)
@@ -5203,7 +5201,7 @@ static void open_db(ShellState *p, int openFlags){
     sqlite3_regexp_init(p->db, 0, 0);
     sqlite3_ieee_init(p->db, 0, 0);
     sqlite3_series_init(p->db, 0, 0);
-#ifndef SQLITE_OMIT_VIRTUALTABLE
+#if SQLITE_SHELL_HAVE_RECOVER
     sqlite3_dbdata_init(p->db, 0, 0);
 #endif
 #ifndef SQLITE_SHELL_FIDDLE
@@ -6021,7 +6019,7 @@ static int db_int(sqlite3 *db, const char *zSql){
   return res;
 }
 
-#if defined(SQLITE_SHELL_HAVE_RECOVER)
+#if SQLITE_SHELL_HAVE_RECOVER
 /*
 ** Convert a 2-byte or 4-byte big-endian integer into a native integer
 */

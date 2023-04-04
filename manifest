@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sentry\sin\sthe\sarray\sthat\smaps\ssqlite3_value\svalues\sinto\nactual\sdatatype\snumbers.\s\sdbsqlfuzz\sf660c659bcec48577a43d3bab37f46baaa22f59e
-D 2023-04-04T18:55:31.328
+C Shell\sto\suse\sSQLITE_SHELL_HAVE_RECOVER\sconsistently\s(correcting\scheck-in\s0421cc03e0efa8f1)
+D 2023-04-04T19:56:28.782
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -626,7 +626,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c df007d60326a9aad94f5a4915d01e7de19d77627ed09338747a2e8e741a75add
-F src/shell.c.in b3bc71c0f3259992b7279bbc5a419ab2a9678fad565ae5ec3ed07d291fc027a6
+F src/shell.c.in 4532aa8748d0aa76ac1d5ffb1e58405556197c3482b033b91c536501adb78a6f
 F src/sqlite.h.in 84f0e61a07292977c31f108776e5148eb1c761e7c276de2290c1511dad7c7d3a
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2b23dd249d0bc254308f5539936d33ee558f1100dec616caac7317dbe70db761
-R f84b3fd47f49ba254250f609c6bf0e88
-U drh
-Z 531e29c60ba2bb032a54c2bb58a3e2cb
+P fa8537dc90cad962dec695418d48da2890a172801ecad0c7c804023a063d3a02
+R b56dd0792b457a030e49bb49e1966109
+U larrybr
+Z 9c0bb6709148976b80e47a4a30512730
 # Remove this line to create a well-formed Fossil manifest.
