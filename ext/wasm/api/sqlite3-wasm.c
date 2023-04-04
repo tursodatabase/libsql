@@ -928,6 +928,7 @@ const char * sqlite3_wasm_enum_json(void){
     DefInt(SQLITE_VTAB_CONSTRAINT_SUPPORT);
     DefInt(SQLITE_VTAB_INNOCUOUS);
     DefInt(SQLITE_VTAB_DIRECTONLY);
+    DefInt(SQLITE_VTAB_USES_ALL_SCHEMAS);
     DefInt(SQLITE_ROLLBACK);
     //DefInt(SQLITE_IGNORE); // Also used by sqlite3_authorizer() callback
     DefInt(SQLITE_FAIL);
