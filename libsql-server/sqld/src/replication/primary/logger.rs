@@ -274,7 +274,7 @@ impl LogFile {
         let offset = frame.header().frame_no;
         let byte_offset = Self::absolute_byte_offset(offset - self.header.start_frame_no);
         tracing::trace!("writing frame {offset} at offset {byte_offset}");
-        self.file.write_all_at(&frame.as_bytes(), byte_offset)?;
+        self.file.write_all_at(frame.as_bytes(), byte_offset)?;
 
         Ok(())
     }
@@ -534,7 +534,7 @@ impl ReplicationLogger {
         iter.try_fold(wal_header.start_checksum, |sum, frame| {
             let frame = frame?;
             let mut digest = CRC_64_GO_ISO.digest_with_initial(sum);
-            digest.update(&frame.page());
+            digest.update(frame.page());
             let cs = digest.finalize();
             ensure!(
                 cs == frame.header().checksum,

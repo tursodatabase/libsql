@@ -46,7 +46,7 @@ impl Drop for TempSnapshot {
     fn drop(&mut self) {
         let path = std::mem::take(&mut self.path);
         tokio::task::spawn(async move {
-            let _ = tokio::fs::remove_file(path);
+            let _ = tokio::fs::remove_file(path).await;
         });
     }
 }
