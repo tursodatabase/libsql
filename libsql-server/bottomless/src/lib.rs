@@ -492,6 +492,7 @@ pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, path: *const
         replicator::Replicator::create(replicator::Options {
             create_bucket_if_not_exists: true,
             verify_crc: true,
+            use_compression: false,
         })
     );
     let mut replicator = match replicator {
