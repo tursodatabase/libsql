@@ -30,6 +30,8 @@ pub struct Replicator {
     pub bucket: String,
     pub db_path: String,
     pub db_name: String,
+
+    use_compression: bool,
 }
 
 #[derive(Debug)]
@@ -49,6 +51,7 @@ pub enum RestoreAction {
 pub struct Options {
     pub create_bucket_if_not_exists: bool,
     pub verify_crc: bool,
+    pub use_compression: bool,
 }
 
 impl Replicator {
@@ -58,6 +61,7 @@ impl Replicator {
         Self::create(Options {
             create_bucket_if_not_exists: false,
             verify_crc: true,
+            use_compression: false,
         })
         .await
     }
@@ -104,6 +108,7 @@ impl Replicator {
             last_transaction_crc: 0,
             db_path: String::new(),
             db_name: String::new(),
+            use_compression: options.use_compression,
         })
     }
 
@@ -234,25 +239,34 @@ impl Replicator {
         // FIXME: instead of batches processed in bursts, better to allow X concurrent tasks with a semaphore
         const CONCURRENCY: usize = 64;
         let last_frame_in_transaction_crc = self.write_buffer.iter().last().unwrap().1.crc;
-        for (frame, Frame { pgno, bytes, crc }) in self.write_buffer.iter() {
-            let data: &[u8] = bytes;
+        let write_buffer = std::mem::take(&mut self.write_buffer);
+        for (frame, Frame { pgno, bytes, crc }) in write_buffer.into_iter() {
+            let data = bytes;
             if data.len() != self.page_size {
                 tracing::warn!("Unexpected truncated page of size {}", data.len())
             }
-            let mut compressor = async_compression::tokio::bufread::GzipEncoder::new(data);
-            let mut compressed: Vec<u8> = Vec::with_capacity(self.page_size);
-            tokio::io::copy(&mut compressor, &mut compressed).await?;
+
             let key = format!(
                 "{}-{}/{:012}-{:012}-{:016x}",
                 self.db_name, self.generation, frame, pgno, crc
             );
-            tracing::trace!("Flushing {} (compressed size: {})", key, compressed.len());
+
+            let body: ByteStream = if self.use_compression {
+                let mut compressor = async_compression::tokio::bufread::GzipEncoder::new(&data[..]);
+                let mut compressed: Vec<u8> = Vec::with_capacity(self.page_size);
+                tokio::io::copy(&mut compressor, &mut compressed).await?;
+                tracing::trace!("Flushing {} (compressed size: {})", key, compressed.len());
+                ByteStream::from(compressed)
+            } else {
+                ByteStream::from(data.freeze())
+            };
+
             tasks.push(
                 self.client
                     .put_object()
                     .bucket(&self.bucket)
                     .key(key)
-                    .body(ByteStream::from(compressed))
+                    .body(body)
                     .send(),
             );
             if tasks.len() >= CONCURRENCY {
@@ -263,7 +277,6 @@ impl Replicator {
         if !tasks.is_empty() {
             futures::future::try_join_all(tasks).await?;
         }
-        self.write_buffer.clear();
         self.last_transaction_crc = last_frame_in_transaction_crc;
         tracing::trace!("Last transaction crc: {}", self.last_transaction_crc);
         Ok(self.next_frame - 1)
@@ -430,17 +443,31 @@ impl Replicator {
         }
         tracing::debug!("Snapshotting {}", self.db_path);
 
-        // TODO: find a way to compress ByteStream on the fly instead of creating
-        // an intermediary file.
-        let (compressed_db_path, change_counter) = self.compress_main_db_file().await?;
-        let key = format!("{}-{}/db.gz", self.db_name, self.generation);
-        self.client
-            .put_object()
-            .bucket(&self.bucket)
-            .key(key)
-            .body(ByteStream::from_path(compressed_db_path).await?)
-            .send()
-            .await?;
+        let change_counter = if self.use_compression {
+            // TODO: find a way to compress ByteStream on the fly instead of creating
+            // an intermediary file.
+            let (compressed_db_path, change_counter) = self.compress_main_db_file().await?;
+            let key = format!("{}-{}/db.gz", self.db_name, self.generation);
+            self.client
+                .put_object()
+                .bucket(&self.bucket)
+                .key(key)
+                .body(ByteStream::from_path(compressed_db_path).await?)
+                .send()
+                .await?;
+            change_counter
+        } else {
+            self.client
+                .put_object()
+                .bucket(&self.bucket)
+                .key(format!("{}-{}/db.db", self.db_name, self.generation))
+                .body(ByteStream::from_path(&self.db_path).await?)
+                .send()
+                .await?;
+            let mut reader = tokio::fs::File::open(&self.db_path).await?;
+            Self::read_change_counter(&mut reader).await?
+        };
+
         /* FIXME: we can't rely on the change counter in WAL mode:
          ** "In WAL mode, changes to the database are detected using the wal-index and
          ** so the change counter is not needed. Hence, the change counter might not be
@@ -564,9 +591,57 @@ impl Replicator {
         Some((frameno, pgno, crc))
     }
 
+    async fn restore_frame(
+        &mut self,
+        pgno: i32,
+        crc: u64,
+        prev_crc: u64,
+        page_buffer: &mut Vec<u8>,
+        main_db_writer: &mut (impl tokio::io::AsyncWriteExt
+                  + tokio::io::AsyncSeekExt
+                  + std::marker::Unpin),
+        reader: &mut (impl tokio::io::AsyncRead + std::marker::Unpin),
+    ) -> Result<()> {
+        // If page size is unknown *or* crc verification is performed,
+        // a page needs to be loaded to memory first
+        if self.verify_crc || self.page_size == Self::UNSET_PAGE_SIZE {
+            let page_size = tokio::io::copy(reader, page_buffer).await?;
+            if self.verify_crc {
+                let mut expected_crc = CRC_64.digest_with_initial(prev_crc);
+                expected_crc.update(page_buffer);
+                let expected_crc = expected_crc.finalize();
+                tracing::debug!(crc, expected_crc);
+                if crc != expected_crc {
+                    tracing::warn!(
+                        "CRC check failed: {:016x} != {:016x} (expected)",
+                        crc,
+                        expected_crc
+                    );
+                }
+            };
+            self.set_page_size(page_size as usize)?;
+            let offset = (pgno - 1) as u64 * page_size;
+            main_db_writer
+                .seek(tokio::io::SeekFrom::Start(offset))
+                .await?;
+            tokio::io::copy(&mut &page_buffer[..], main_db_writer).await?;
+            page_buffer.clear();
+        } else {
+            let offset = (pgno - 1) as u64 * self.page_size as u64;
+            main_db_writer
+                .seek(tokio::io::SeekFrom::Start(offset))
+                .await?;
+            // FIXME: we only need to overwrite with the newest page,
+            // no need to replay the whole WAL
+            tokio::io::copy(reader, main_db_writer).await?;
+        }
+        main_db_writer.flush().await?;
+        Ok(())
+    }
+
     // Restores the database state from given remote generation
     pub async fn restore_from(&mut self, generation: uuid::Uuid) -> Result<RestoreAction> {
-        use tokio::io::{AsyncSeekExt, AsyncWriteExt};
+        use tokio::io::AsyncWriteExt;
 
         // Check if the database needs to be restored by inspecting the database
         // change counter and the WAL size.
@@ -627,16 +702,23 @@ impl Replicator {
             .ok(); // Best effort
         let mut main_db_writer = tokio::fs::File::create(&self.db_path).await?;
         // If the db file is not present, the database could have been empty
-        if let Ok(db_file) = self
-            .get_object(format!("{}-{}/db.gz", self.db_name, generation))
-            .send()
-            .await
-        {
-            let body_reader = db_file.body.into_async_read();
-            let mut decompress_reader = async_compression::tokio::bufread::GzipDecoder::new(
-                tokio::io::BufReader::new(body_reader),
-            );
-            tokio::io::copy(&mut decompress_reader, &mut main_db_writer).await?;
+
+        let main_db_path = if self.use_compression {
+            format!("{}-{}/db.gz", self.db_name, generation)
+        } else {
+            format!("{}-{}/db.db", self.db_name, generation)
+        };
+
+        if let Ok(db_file) = self.get_object(main_db_path).send().await {
+            let mut body_reader = db_file.body.into_async_read();
+            if self.use_compression {
+                let mut decompress_reader = async_compression::tokio::bufread::GzipDecoder::new(
+                    tokio::io::BufReader::new(body_reader),
+                );
+                tokio::io::copy(&mut decompress_reader, &mut main_db_writer).await?;
+            } else {
+                tokio::io::copy(&mut body_reader, &mut main_db_writer).await?;
+            }
             main_db_writer.flush().await?;
         }
         tracing::info!("Restored the main database file");
@@ -678,6 +760,7 @@ impl Replicator {
                     Some(result) => result,
                     None => {
                         if !key.ends_with(".gz")
+                            && !key.ends_with(".db")
                             && !key.ends_with(".consistent")
                             && !key.ends_with(".changecounter")
                         {
@@ -691,47 +774,34 @@ impl Replicator {
                                 frameno, last_consistent_frame);
                     break;
                 }
-                let body_reader = frame.body.into_async_read();
-                let mut decompress_reader = async_compression::tokio::bufread::GzipDecoder::new(
-                    tokio::io::BufReader::new(body_reader),
-                );
-                // If page size is unknown *or* crc verification is performed,
-                // a page needs to be loaded to memory first
-                if self.verify_crc || self.page_size == Self::UNSET_PAGE_SIZE {
-                    let page_size =
-                        tokio::io::copy(&mut decompress_reader, &mut page_buffer).await?;
-                    if self.verify_crc {
-                        let mut expected_crc = CRC_64.digest_with_initial(prev_crc);
-                        expected_crc.update(&page_buffer);
-                        let expected_crc = expected_crc.finalize();
-                        tracing::debug!(crc, expected_crc);
-                        if crc != expected_crc {
-                            tracing::warn!(
-                                "CRC check failed: {:016x} != {:016x} (expected)",
-                                crc,
-                                expected_crc
-                            );
-                        }
-                        prev_crc = crc;
-                    }
-                    self.set_page_size(page_size as usize)?;
-                    let offset = (pgno - 1) as u64 * page_size;
-                    main_db_writer
-                        .seek(tokio::io::SeekFrom::Start(offset))
-                        .await?;
-                    tokio::io::copy(&mut &page_buffer[..], &mut main_db_writer).await?;
-                    page_buffer.clear();
+                let mut body_reader = frame.body.into_async_read();
+                if self.use_compression {
+                    let mut compressed_reader = async_compression::tokio::bufread::GzipDecoder::new(
+                        tokio::io::BufReader::new(body_reader),
+                    );
+                    self.restore_frame(
+                        pgno,
+                        crc,
+                        prev_crc,
+                        &mut page_buffer,
+                        &mut main_db_writer,
+                        &mut compressed_reader,
+                    )
+                    .await?;
                 } else {
-                    let offset = (pgno - 1) as u64 * self.page_size as u64;
-                    main_db_writer
-                        .seek(tokio::io::SeekFrom::Start(offset))
-                        .await?;
-                    // FIXME: we only need to overwrite with the newest page,
-                    // no need to replay the whole WAL
-                    tokio::io::copy(&mut decompress_reader, &mut main_db_writer).await?;
-                }
-                main_db_writer.flush().await?;
+                    self.restore_frame(
+                        pgno,
+                        crc,
+                        prev_crc,
+                        &mut page_buffer,
+                        &mut main_db_writer,
+                        &mut body_reader,
+                    )
+                    .await?;
+                };
                 tracing::debug!("Written frame {} as main db page {}", frameno, pgno);
+
+                prev_crc = crc;
                 applied_wal_frame = true;
             }
             next_marker = response
