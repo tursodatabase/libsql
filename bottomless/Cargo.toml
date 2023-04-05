@@ -1,6 +1,6 @@
 [package]
 name = "bottomless"
-version = "0.1.17"
+version = "0.1.18"
 edition = "2021"
 license = "MIT"
 keywords = ["libsql", "sqlite", "s3", "wal", "replication"]
