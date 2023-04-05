@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\sthat\smight\snow\sbe\sfalse\sdue\sto\sthe\sprior\scheck-in.
-D 2023-04-05T02:50:00.410
+C Add\sa\stest\scase\sfor\sthe\sALWAYS()\smacro\sremoved\sby\sthe\sprevious\scheck-in.
+D 2023-04-05T02:55:08.114
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1168,7 +1168,7 @@ F test/hook2.test b9ff3b8c6519fb67f33192f1afe86e7782ee4ac8
 F test/icu.test 716a6b89fbabe5cc63e0cd4c260befb08fd7b9d761f04d43669233292f0753b1
 F test/ieee754.test b0945d12be7d255f3dfa18e2511b17ca37e0edd2b803231c52d05b86c04ab26e
 F test/imposter1.test c3f1db2d3db2c24611a6596a3fc0ffc14f1466c8
-F test/in.test 291d881deae63fc2f0f3a9d7fdc1d300db58a6812c08e7c0370c970a984ecfbf
+F test/in.test d1cad4ededd425568b2e39fb0c31fa9a3772311dd595801ff13ba3912b69bba6
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test fdd1d8134da8376985c2edba6035a2de1f6c731524d2ffa651419e8fe2cd1c5a
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cc5041f3f067cf610adffb868b4e2d1b5d248dc5a0ecc551339b670800ecb0ff
-R 13f76b464bbf0db7eee4f47f89c8f40d
+P fc68993501aaa7180f5457dcb3c296e5b199904a385d98e2bcad7854e34d428e
+R 46750fc7c83a7b3de64aef61186b2ed5
 U drh
-Z c4aa246b09ce02d9717280a76242d5a6
+Z 63d4005b82e21c619045072b7f26d1d8
 # Remove this line to create a well-formed Fossil manifest.

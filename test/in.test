@@ -842,6 +842,12 @@ do_execsql_test in-23.0 {
    GROUP BY a0.a
   HAVING (SELECT sum( (a1.a == +a0.a COLLATE NOCASE) IN (SELECT b FROM t4)));
 } {ABC abc,ABC,def abc abc,ABC,def def abc,ABC,def}
+do_execsql_test in-23.0-b {
+  SELECT a0.a, group_concat(a1.a) AS b
+    FROM t4 AS a0 JOIN t4 AS a1
+   GROUP BY a0.a
+  HAVING (SELECT sum( (a1.a GLOB +a0.a COLLATE NOCASE) IN (SELECT b FROM t4)));
+} {ABC abc,ABC,def abc abc,ABC,def def abc,ABC,def}
 #
 # Follow-up forum/forumpost/0713a16a44
 #
