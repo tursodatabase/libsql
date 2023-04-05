@@ -278,9 +278,8 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, const Expr *pExpr){
       }else{
         Expr *pNext  = p->pRight;
         /* The Expr.x union is never used at the same time as Expr.pRight */
-        assert( ExprUseXList(p) );
-        assert( p->x.pList==0 || p->pRight==0 );
-        if( p->x.pList!=0 && !db->mallocFailed ){
+        assert( !ExprUseXList(p) || p->x.pList==0 || p->pRight==0 );
+        if( ExprUseXList(p) && p->x.pList!=0 && !db->mallocFailed ){
           int i;
           for(i=0; ALWAYS(i<p->x.pList->nExpr); i++){
             if( ExprHasProperty(p->x.pList->a[i].pExpr, EP_Collate) ){

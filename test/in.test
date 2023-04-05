@@ -842,7 +842,16 @@ do_execsql_test in-23.0 {
    GROUP BY a0.a
   HAVING (SELECT sum( (a1.a == +a0.a COLLATE NOCASE) IN (SELECT b FROM t4)));
 } {ABC abc,ABC,def abc abc,ABC,def def abc,ABC,def}
-
-
+#
+# Follow-up forum/forumpost/0713a16a44
+#
+do_execsql_test in-23.1 {
+  CREATE VIEW t5 AS
+    SELECT 1 AS b
+     WHERE (SELECT count(0=NOT+a COLLATE NOCASE IN (SELECT 0))
+              FROM t4
+             GROUP BY a);
+  SELECT * FROM t5;
+} 1
 
 finish_test
