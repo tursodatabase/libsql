@@ -28,7 +28,7 @@ However, if libSQL starts to provide more [PostgreSQL compatibility](https://git
 ## Roadmap
 
 * Client authentication and TLS
-* Integration with libSQL's [bottomless storage](https://github.com/libsql/bottomless)
+* Integration with libSQL's [bottomless storage](https://github.com/libsql/sqld/tree/main/bottomless)
 
 ## Getting Started
 
