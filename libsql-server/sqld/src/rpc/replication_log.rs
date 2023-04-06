@@ -8,12 +8,13 @@ use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 
 use bytes::Bytes;
+use futures::stream::BoxStream;
 use futures::StreamExt;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use tonic::Status;
 
-use crate::replication::frame_stream::FrameStream;
+use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 
 use self::rpc::replication_log_server::ReplicationLog;
@@ -36,9 +37,6 @@ impl ReplicationLogService {
     }
 }
 
-type ConvertStreamOutputFn = fn(Result<Bytes, LogReadError>) -> Result<Frame, Status>;
-type RpcFrameStream = futures::stream::Map<FrameStream, ConvertStreamOutputFn>;
-
 fn map_frame_stream_output(r: Result<Bytes, LogReadError>) -> Result<Frame, Status> {
     match r {
         Ok(data) => Ok(Frame { data }),
@@ -57,8 +55,8 @@ fn map_frame_stream_output(r: Result<Bytes, LogReadError>) -> Result<Frame, Stat
 
 #[tonic::async_trait]
 impl ReplicationLog for ReplicationLogService {
-    type LogEntriesStream = RpcFrameStream;
-    type SnapshotStream = ReceiverStream<Result<Frame, Status>>;
+    type LogEntriesStream = BoxStream<'static, Result<Frame, Status>>;
+    type SnapshotStream = BoxStream<'static, Result<Frame, Status>>;
 
     async fn log_entries(
         &self,
@@ -75,7 +73,8 @@ impl ReplicationLog for ReplicationLogService {
         }
 
         let stream = FrameStream::new(self.logger.clone(), req.into_inner().current_offset())
-            .map(map_frame_stream_output as ConvertStreamOutputFn);
+            .map(map_frame_stream_output)
+            .boxed();
 
         Ok(tonic::Response::new(stream))
     }
@@ -130,7 +129,7 @@ impl ReplicationLog for ReplicationLogService {
                     }
                 });
 
-                Ok(tonic::Response::new(ReceiverStream::new(receiver)))
+                Ok(tonic::Response::new(ReceiverStream::new(receiver).boxed()))
             }
             Ok(Ok(None)) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),

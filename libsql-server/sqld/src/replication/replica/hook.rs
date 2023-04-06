@@ -79,7 +79,7 @@ pub struct InjectorHookInner {
 }
 
 impl InjectorHookInner {
-    unsafe fn apply_pages(
+    unsafe fn inject_pages(
         &mut self,
         page_headers: *mut PgHdr,
         last_frame_no: u64,
@@ -144,7 +144,7 @@ unsafe impl WalHook for InjectorHook {
 
             // SAFETY: frame headers are valid for the duration of the call of apply_pages
             let result = unsafe {
-                this.apply_pages(headers, last_frame_no, size_after, sync_flags, orig, wal)
+                this.inject_pages(headers, last_frame_no, size_after, sync_flags, orig, wal)
             };
 
             free_page_header(headers);

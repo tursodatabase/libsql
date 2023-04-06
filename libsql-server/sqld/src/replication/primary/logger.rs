@@ -166,7 +166,7 @@ pub struct LogFile {
     file: File,
     header: LogFileHeader,
     /// the maximum number of frames this log is allowed to contain before it should be compacted.
-    max_log_size: u64,
+    max_log_frame_count: u64,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -204,7 +204,7 @@ impl LogFile {
             let mut this = Self {
                 file,
                 header,
-                max_log_size: max_log_frame_count,
+                max_log_frame_count,
             };
 
             this.write_header(&header)?;
@@ -215,7 +215,7 @@ impl LogFile {
             Ok(Self {
                 file,
                 header,
-                max_log_size: max_log_frame_count,
+                max_log_frame_count,
             })
         }
     }
@@ -322,7 +322,7 @@ impl LogFile {
         path: &Path,
         start_checksum: u64,
     ) -> anyhow::Result<()> {
-        if self.header.frame_count > self.max_log_size {
+        if self.header.frame_count > self.max_log_frame_count {
             return self.do_compaction(compactor, size_after, path, start_checksum);
         }
 
@@ -343,7 +343,7 @@ impl LogFile {
             .write(true)
             .create(true)
             .open(&temp_log_path)?;
-        let mut new_log_file = LogFile::new(file, self.max_log_size)?;
+        let mut new_log_file = LogFile::new(file, self.max_log_frame_count)?;
         let new_header = LogFileHeader {
             start_frame_no: self.header.start_frame_no + self.header.frame_count,
             frame_count: 0,
