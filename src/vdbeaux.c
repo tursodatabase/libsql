@@ -3326,6 +3326,8 @@ int sqlite3VdbeHalt(Vdbe *p){
           db->flags &= ~(u64)SQLITE_DeferFKs;
           sqlite3CommitInternalChanges(db);
         }
+      }else if( p->rc==SQLITE_SCHEMA && db->nVdbeActive>1 ){
+        p->nChange = 0;
       }else{
         sqlite3RollbackAll(db, SQLITE_OK);
         p->nChange = 0;

@@ -154,4 +154,30 @@ do_execsql_test 3.2 {
 
 }
 
+# 2023-04-06 https://sqlite.org/forum/forumpost/cae4367d9b
+#
+# This is not a test of FTS5, but rather a test of the of what happens to
+# prepared statements that encounter SQLITE_SCHEMA while other prepared
+# statements are running.  The original problem POC used FTS5, and so
+# is seems reasonable to put the test here.
+#
+# The vdbeaux24.test module in TH3 also tests this same behavior but
+# without requiring FTS5 or an other extension.
+#
+reset_db
+db null NULL
+do_execsql_test 4.0 {
+  CREATE TABLE t5(a PRIMARY KEY);
+  INSERT INTO t5 VALUES(0);
+  CREATE VIRTUAL TABLE t6 USING fts5(0);
+  DELETE FROM t6;
+  CREATE TABLE t7(x);
+  WITH cte(a) AS (
+     SELECT a FROM t5
+      WHERE ((0,0) IN (SELECT 0, LAG(0) OVER (PARTITION BY 0) FROM t6), 0)
+               < (a,0)
+  )
+  SELECT max(a) FROM cte;
+} NULL
+
 finish_test
