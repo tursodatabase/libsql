@@ -9649,6 +9649,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       }else{
         p->scanstatsOn = (u8)booleanValue(azArg[1]);
       }
+      open_db(p, 0);
       sqlite3_db_config(
           p->db, SQLITE_DBCONFIG_STMT_SCANSTATUS, p->scanstatsOn, (int*)0
       );
