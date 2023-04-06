@@ -7496,42 +7496,49 @@ static int pageFreeArray(
   u8 * const pEnd = &aData[pPg->pBt->usableSize];
   u8 * const pStart = &aData[pPg->hdrOffset + 8 + pPg->childPtrSize];
   int nRet = 0;
-  int i;
+  int i, j;
   int iEnd = iFirst + nCell;
-  u8 *pFree = 0;                  /* \__ Parameters for pending call to */
-  int szFree = 0;                 /* /   freeSpace()                    */
+  int nFree = 0;
+  int aOfst[10];
+  int aAfter[10];
 
   for(i=iFirst; i<iEnd; i++){
     u8 *pCell = pCArray->apCell[i];
     if( SQLITE_WITHIN(pCell, pStart, pEnd) ){
       int sz;
+      int iAfter;
+      int iOfst;
       /* No need to use cachedCellSize() here.  The sizes of all cells that
       ** are to be freed have already been computing while deciding which
       ** cells need freeing */
       sz = pCArray->szCell[i];  assert( sz>0 );
-      if( pFree!=(pCell + sz) ){
-        if( pFree ){
-          assert( pFree>aData && (pFree - aData)<65536 );
-          freeSpace(pPg, (u16)(pFree - aData), szFree);
+      iOfst = (u16)(pCell - aData);
+      iAfter = iOfst+sz;
+      for(j=0; j<nFree; j++){
+        if( aOfst[j]==iAfter ){
+          aOfst[j] = iOfst;
+          break;
+        }else if( aAfter[j]==iOfst ){
+          aAfter[j] = iAfter;
+          break;
         }
-        pFree = pCell;
-        szFree = sz;
-        if( pFree+sz>pEnd ){
-          return 0;
+      }
+      if( j>=nFree ){
+        if( nFree>=sizeof(aOfst)/sizeof(aOfst[0]) ){
+          for(j=0; j<nFree; j++){
+            freeSpace(pPg, aOfst[j], aAfter[j]-aOfst[j]);
+          }
+          nFree = 0;
         }
-      }else{
-        /* The current cell is adjacent to and before the pFree cell.
-        ** Combine the two regions into one to reduce the number of calls
-        ** to freeSpace(). */
-        pFree = pCell;
-        szFree += sz;
+        aOfst[nFree] = iOfst;
+        aAfter[nFree] = iAfter;
+        nFree++;
       }
       nRet++;
     }
   }
-  if( pFree ){
-    assert( pFree>aData && (pFree - aData)<65536 );
-    freeSpace(pPg, (u16)(pFree - aData), szFree);
+  for(j=0; j<nFree; j++){
+    freeSpace(pPg, aOfst[j], aAfter[j]-aOfst[j]);
   }
   return nRet;
 }
