@@ -45,29 +45,47 @@ impl Replicator {
             if self.injector.is_none() {
                 self.try_perform_handshake().await?;
             }
-            let _ = self.replicate().await;
+
+            if let Err(e) = self.replicate().await {
+                // Replication encountered an error. We log the error, and then shut down the
+                // injector and propagate a potential panic from there.
+                tracing::warn!("replication error: {e}");
+                if let Some(injector) = self.injector.take() {
+                    if let Err(e) = injector.shutdown().await {
+                        tracing::warn!("error shutting down frame injector: {e}");
+                    }
+                }
+            }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 
     async fn try_perform_handshake(&mut self) -> anyhow::Result<()> {
+        let mut error_printed = false;
         for _ in 0..HANDSHAKE_MAX_RETRIES {
             tracing::info!("Attempting to perform handshake with primary.");
-            if let Ok(resp) = self.client.hello(HelloRequest {}).await {
-                let hello = resp.into_inner();
-                if let Some(applicator) = self.injector.take() {
-                    applicator.shutdown().await?;
+            match self.client.hello(HelloRequest {}).await {
+                Ok(resp) => {
+                    let hello = resp.into_inner();
+                    if let Some(applicator) = self.injector.take() {
+                        applicator.shutdown().await?;
+                    }
+                    let (injector, last_applied_frame_no) =
+                        FrameInjectorHandle::new(self.db_path.clone(), hello).await?;
+                    self.current_frame_no = last_applied_frame_no;
+                    self.injector.replace(injector);
+                    return Ok(());
                 }
-                let (applicator, last_applied_frame_no) =
-                    FrameInjectorHandle::new(self.db_path.clone(), hello).await?;
-                self.current_frame_no = last_applied_frame_no;
-                self.injector.replace(applicator);
-                return Ok(());
+                Err(e) if !error_printed => {
+                    tracing::error!("error connecting to primary. retrying. error: {e}");
+                    error_printed = true;
+                }
+                _ => (),
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
 
-        bail!("couldn't connect to primary after {HANDSHAKE_MAX_RETRIES} tries ({HANDSHAKE_MAX_RETRIES} seconds)");
+        bail!("couldn't connect to primary after {HANDSHAKE_MAX_RETRIES} tries.");
     }
 
     async fn replicate(&mut self) -> anyhow::Result<()> {
@@ -93,15 +111,7 @@ impl Replicator {
                 {
                     return self.load_snapshot().await;
                 }
-                Some(Err(e)) => {
-                    // non fatal error. We shutdown the injector, and reset the protocol,
-                    // attempting, to recover replication where we left it.
-                    if let Some(injector) = self.injector.take() {
-                        injector.shutdown().await?;
-                    }
-                    tracing::warn!("replication error: {e}");
-                    return Ok(());
-                }
+                Some(Err(e)) => return Err(e.into()),
                 None => return Ok(()),
             }
         }

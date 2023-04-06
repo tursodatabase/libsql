@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::fmt;
-use std::mem::{align_of, align_of_val, size_of, transmute};
+use std::mem::{size_of, transmute};
 use std::ops::Deref;
 
-use bytemuck::{bytes_of, from_bytes, pod_read_unaligned, Pod, Zeroable};
+use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 
 use crate::replication::WAL_PAGE_SIZE;
@@ -22,6 +22,8 @@ pub struct FrameHeader {
     pub checksum: u64,
     /// page number, if frame_type is FrameType::Page
     pub page_no: u32,
+    /// Size of the database (in page) after commiting the transaction. This is passed from sqlite,
+    /// and serves as commit transaction boundary
     pub size_after: u32,
 }
 
@@ -68,11 +70,10 @@ pub struct FrameBorrowed {
 
 impl FrameBorrowed {
     pub fn header(&self) -> Cow<FrameHeader> {
-        if align_of_val(&self.data) == align_of::<FrameHeader>() {
-            Cow::Borrowed(from_bytes(&self.data[..size_of::<FrameHeader>()]))
-        } else {
-            Cow::Owned(pod_read_unaligned(&self.data[..size_of::<FrameHeader>()]))
-        }
+        let data = &self.data[..size_of::<FrameHeader>()];
+        try_from_bytes(data)
+            .map(Cow::Borrowed)
+            .unwrap_or_else(|_| Cow::Owned(pod_read_unaligned(data)))
     }
 
     /// Returns the bytes for this frame. Includes the header bytes.
@@ -82,7 +83,7 @@ impl FrameBorrowed {
 
     pub fn from_bytes(data: &[u8]) -> &Self {
         assert_eq!(data.len(), Frame::SIZE);
-        // SAFETY: &WalFrameBorrowed is equivalent to &[u8]
+        // SAFETY: &FrameBorrowed is equivalent to &[u8]
         unsafe { transmute(data) }
     }
 
@@ -96,8 +97,6 @@ impl Deref for Frame {
     type Target = FrameBorrowed;
 
     fn deref(&self) -> &Self::Target {
-        let data: &[u8] = &self.data;
-        // SAFETY: &WalFrameBorrowed is equivalent to &[u8]
-        unsafe { transmute(data) }
+        FrameBorrowed::from_bytes(&self.data)
     }
 }

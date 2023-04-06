@@ -28,7 +28,7 @@ impl FrameInjectorHandle {
         let (sender, mut receiver) = mpsc::channel(16);
         let (ret, init_ok) = oneshot::channel();
         let handle = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
-            let mut applicator = match FrameInjector::new_from_hello(&db_path, hello) {
+            let mut injector = match FrameInjector::new_from_hello(&db_path, hello) {
                 Ok((hook, last_applied_frame_no)) => {
                     ret.send(Ok(last_applied_frame_no)).unwrap();
                     hook
@@ -40,7 +40,7 @@ impl FrameInjectorHandle {
             };
 
             while let Some(FrameApplyOp { frames, ret }) = receiver.blocking_recv() {
-                let res = applicator.apply_frames(frames);
+                let res = injector.inject_frames(frames);
                 if ret.send(res).is_err() {
                     anyhow::bail!("frame application result must not be ignored.");
                 }
@@ -56,7 +56,16 @@ impl FrameInjectorHandle {
 
     pub async fn shutdown(self) -> anyhow::Result<()> {
         drop(self.sender);
-        self.handle.await?
+        if let Err(e) = self.handle.await {
+            // propagate panic
+            if e.is_panic() {
+                std::panic::resume_unwind(e.into_panic());
+            } else {
+                return Err(e)?;
+            }
+        }
+
+        Ok(())
     }
 
     pub async fn apply_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
@@ -109,13 +118,12 @@ impl FrameInjector {
 
     /// sets the injector's frames to the provided frames, trigger a dummy write, and collect the
     /// injection result.
-    fn apply_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
+    fn inject_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
         self.hook.set_frames(frames);
 
-        let _ = self.conn.execute(
-            "create table if not exists __dummy__ (dummy); insert into __dummy__ values (1);",
-            (),
-        );
+        let _ = self
+            .conn
+            .execute("create table if not exists __dummy__ (dummy)", ());
 
         self.hook.take_result()
     }

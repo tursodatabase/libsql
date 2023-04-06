@@ -1,6 +1,5 @@
 pub mod frame;
-pub mod frame_stream;
-mod primary;
+pub mod primary;
 pub mod replica;
 mod snapshot;
 

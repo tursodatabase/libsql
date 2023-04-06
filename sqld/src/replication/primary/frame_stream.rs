@@ -3,14 +3,15 @@ use std::task::{ready, Poll};
 use std::{pin::Pin, task::Context};
 
 use bytes::Bytes;
-use futures::{Future, Stream};
+use futures::future::BoxFuture;
+use futures::Stream;
 
-use super::{FrameNo, LogReadError, ReplicationLogger};
+use crate::replication::{FrameNo, LogReadError, ReplicationLogger};
 
-/// Streams pages starting from an offset and only stop if the request frame is older than the
-/// first frame in the current log file.
+/// Streams frames from the replication log starting at `current_frame_no`.
+/// Only stops if the current frame is not in the log anymore.
 pub struct FrameStream {
-    current_frameno: FrameNo,
+    current_frame_no: FrameNo,
     max_available_frame_no: FrameNo,
     logger: Arc<ReplicationLogger>,
     state: FrameStreamState,
@@ -20,7 +21,7 @@ impl FrameStream {
     pub fn new(logger: Arc<ReplicationLogger>, current_frameno: FrameNo) -> Self {
         let max_available_frame_no = *logger.new_frame_notifier.subscribe().borrow();
         Self {
-            current_frameno,
+            current_frame_no: current_frameno,
             max_available_frame_no,
             logger,
             state: FrameStreamState::Init,
@@ -32,7 +33,7 @@ impl FrameStream {
             return;
         }
 
-        let next_frameno = self.current_frameno + 1;
+        let next_frameno = self.current_frame_no + 1;
         let logger = self.logger.clone();
         let fut = async move {
             let res = tokio::task::spawn_blocking(move || logger.get_frame(next_frameno)).await;
@@ -50,10 +51,8 @@ impl FrameStream {
 enum FrameStreamState {
     Init,
     /// waiting for new frames to replicate
-    WaitingFrameNo(Pin<Box<dyn Future<Output = anyhow::Result<FrameNo>> + Send + Sync + 'static>>),
-    WaitingFrame(
-        Pin<Box<dyn Future<Output = Result<Bytes, LogReadError>> + Send + Sync + 'static>>,
-    ),
+    WaitingFrameNo(BoxFuture<'static, anyhow::Result<FrameNo>>),
+    WaitingFrame(BoxFuture<'static, Result<Bytes, LogReadError>>),
     Closed,
 }
 
@@ -79,7 +78,7 @@ impl Stream for FrameStream {
             }
             FrameStreamState::WaitingFrame(ref mut fut) => match ready!(fut.as_mut().poll(cx)) {
                 Ok(frame) => {
-                    self.current_frameno += 1;
+                    self.current_frame_no += 1;
                     self.transition_state_next_frame();
                     Poll::Ready(Some(Ok(frame)))
                 }
