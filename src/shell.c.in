@@ -2786,7 +2786,7 @@ static char *shell_error_context(const char *zSql, sqlite3 *db){
   len = strlen(zSql);
   if( len>78 ){
     len = 78;
-    while( (zSql[len]&0xc0)==0x80 ) len--;
+    while( len>0 && (zSql[len]&0xc0)==0x80 ) len--;
   }
   zCode = sqlite3_mprintf("%.*s", len, zSql);
   shell_check_oom(zCode);
