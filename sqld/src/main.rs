@@ -2,8 +2,12 @@ use std::{env, fs, net::SocketAddr, path::PathBuf, time::Duration};
 
 use anyhow::{bail, Context as _, Result};
 use clap::Parser;
+use mimalloc::MiMalloc;
 use sqld::Config;
 use tracing_subscriber::filter::LevelFilter;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
 
 /// SQL daemon
 #[derive(Debug, Parser)]
