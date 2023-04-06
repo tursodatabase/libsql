@@ -7,11 +7,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use anyhow::{bail, ensure};
-use bytemuck::{bytes_of, pod_read_unaligned, try_from_bytes, Pod, Zeroable};
+use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
-use crc::Crc;
 use parking_lot::RwLock;
 use rusqlite::ffi::SQLITE_ERROR;
+use tokio::sync::watch;
 use uuid::Uuid;
 
 use crate::libsql::ffi::{
@@ -19,15 +19,9 @@ use crate::libsql::ffi::{
     PgHdr, Wal,
 };
 use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
-
-use super::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
-
-pub const WAL_PAGE_SIZE: i32 = 4096;
-pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
-const CRC_64_GO_ISO: Crc<u64> = Crc::<u64>::new(&crc::CRC_64_GO_ISO);
-
-/// The frame uniquely identifing, monotonically increasing number
-pub type FrameNo = u64;
+use crate::replication::frame::{Frame, FrameHeader};
+use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
+use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC, WAL_PAGE_SIZE};
 
 // Clone is necessary only because opening a database may fail, and we need to clone the empty
 // struct.
@@ -125,46 +119,6 @@ struct WalPage {
     data: Bytes,
 }
 
-#[derive(Clone)]
-/// A buffered WalFrame.
-/// Cloning this is cheap.
-pub struct WalFrame {
-    pub header: FrameHeader,
-    pub data: Bytes,
-}
-
-impl WalFrame {
-    /// size of a single frame
-    pub const SIZE: usize = size_of::<FrameHeader>() + WAL_PAGE_SIZE as usize;
-
-    pub fn try_from_bytes(mut data: Bytes) -> anyhow::Result<Self> {
-        let header_bytes = data.split_to(size_of::<FrameHeader>());
-        ensure!(
-            data.len() == WAL_PAGE_SIZE as usize,
-            "invalid frame size, expected: {}, found: {}",
-            WAL_PAGE_SIZE,
-            data.len()
-        );
-        let header = FrameHeader::decode(&header_bytes)?;
-
-        Ok(Self { header, data })
-    }
-}
-
-pub struct WalFrameBorrowed<'a> {
-    pub header: FrameHeader,
-    pub data: &'a [u8],
-}
-
-impl<'a> From<&'a WalFrame> for WalFrameBorrowed<'a> {
-    fn from(other: &'a WalFrame) -> WalFrameBorrowed<'a> {
-        WalFrameBorrowed {
-            header: other.header,
-            data: &other.data,
-        }
-    }
-}
-
 impl ReplicationLoggerHook {
     pub fn new(logger: Arc<ReplicationLogger>) -> Self {
         Self {
@@ -196,7 +150,8 @@ impl ReplicationLoggerHook {
     }
 
     fn commit(&self, new_count: u64, new_checksum: u64) {
-        self.logger.commit(new_count, new_checksum)
+        let new_frame_no = self.logger.commit(new_count, new_checksum);
+        let _ = self.logger.new_frame_notifier.send(new_frame_no);
     }
 
     fn rollback(&mut self) {
@@ -210,6 +165,7 @@ impl ReplicationLoggerHook {
 pub struct LogFile {
     file: File,
     header: LogFileHeader,
+    /// the maximum number of frames this log is allowed to contain before it should be compacted.
     max_log_frame_count: u64,
 }
 
@@ -286,7 +242,7 @@ impl LogFile {
     }
 
     /// Returns an iterator over the WAL frame headers
-    fn frames_iter(&self) -> anyhow::Result<impl Iterator<Item = anyhow::Result<WalFrame>> + '_> {
+    fn frames_iter(&self) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
         let mut current_offset = 0;
         Ok(std::iter::from_fn(move || {
             if current_offset >= self.header.frame_count {
@@ -301,7 +257,7 @@ impl LogFile {
     /// Returns an iterator over the WAL frame headers
     pub fn rev_frames_iter(
         &self,
-    ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<WalFrame>> + '_> {
+    ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
         let mut current_offset = self.header.frame_count;
 
         Ok(std::iter::from_fn(move || {
@@ -314,14 +270,11 @@ impl LogFile {
         }))
     }
 
-    pub fn push_frame(&mut self, frame: WalFrame) -> anyhow::Result<()> {
-        let offset = frame.header.frame_no;
+    pub fn push_frame(&mut self, frame: Frame) -> anyhow::Result<()> {
+        let offset = frame.header().frame_no;
         let byte_offset = Self::absolute_byte_offset(offset - self.header.start_frame_no);
         tracing::trace!("writing frame {offset} at offset {byte_offset}");
-        self.file
-            .write_all_at(bytes_of(&frame.header), byte_offset)?;
-        self.file
-            .write_all_at(&frame.data, byte_offset + size_of::<FrameHeader>() as u64)?;
+        self.file.write_all_at(frame.as_bytes(), byte_offset)?;
 
         Ok(())
     }
@@ -406,16 +359,11 @@ impl LogFile {
         Ok(())
     }
 
-    fn read_frame_offset(&self, offset: u64) -> anyhow::Result<Option<WalFrame>> {
+    fn read_frame_offset(&self, offset: u64) -> anyhow::Result<Option<Frame>> {
         let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
         self.file.read_exact_at(&mut buffer, offset)?;
-        let mut buffer = buffer.freeze();
-        let header_bytes = buffer.split_to(size_of::<FrameHeader>());
-        let header = FrameHeader::decode(&header_bytes)?;
-        Ok(Some(WalFrame {
-            header,
-            data: buffer,
-        }))
+        let buffer = buffer.freeze();
+        Ok(Some(Frame::try_from_bytes(buffer)?))
     }
 }
 
@@ -479,25 +427,9 @@ pub struct LogFileHeader {
     pub _pad: u64,
 }
 
-/// The file header for the WAL log. All fields are represented in little-endian ordering.
-/// See `encode` and `decode` for actual layout.
-// repr C for stable sizing
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Zeroable, Pod)]
-pub struct FrameHeader {
-    /// Incremental frame number
-    pub frame_no: FrameNo,
-    /// Rolling checksum of all the previous frames, including this one.
-    pub checksum: u64,
-    /// page number, if frame_type is FrameType::Page
-    pub page_no: u32,
-    pub size_after: u32,
-}
-
-impl FrameHeader {
-    fn decode(buf: &[u8]) -> anyhow::Result<Self> {
-        let this = try_from_bytes(buf).map_err(|_e| anyhow::anyhow!("invalid frame header"))?;
-        Ok(*this)
+impl LogFileHeader {
+    pub fn last_frame_no(&self) -> FrameNo {
+        self.start_frame_no + self.frame_count
     }
 }
 
@@ -521,6 +453,9 @@ pub struct ReplicationLogger {
     pub log_file: RwLock<LogFile>,
     compactor: LogCompactor,
     db_path: PathBuf,
+    /// a notifier channel other tasks can subscribe to, and get notified when new frames become
+    /// available.
+    pub new_frame_notifier: watch::Sender<FrameNo>,
 }
 
 impl ReplicationLogger {
@@ -542,12 +477,16 @@ impl ReplicationLogger {
 
         let header = log_file.header;
         let generation_start_frame_no = header.start_frame_no + header.frame_count;
+
+        let (new_frame_notifier, _) = watch::channel(generation_start_frame_no);
+
         Ok(Self {
             current_checksum,
             generation: Generation::new(generation_start_frame_no),
             compactor: LogCompactor::new(db_path, log_file.header.db_id)?,
             log_file: RwLock::new(log_file),
             db_path: db_path.to_owned(),
+            new_frame_notifier,
         })
     }
 
@@ -575,10 +514,7 @@ impl ReplicationLogger {
                 size_after: page.size_after,
             };
 
-            let frame = WalFrame {
-                header,
-                data: page.data.clone(),
-            };
+            let frame = Frame::from_parts(&header, &page.data);
 
             log_file.push_frame(frame)?;
 
@@ -598,27 +534,33 @@ impl ReplicationLogger {
         iter.try_fold(wal_header.start_checksum, |sum, frame| {
             let frame = frame?;
             let mut digest = CRC_64_GO_ISO.digest_with_initial(sum);
-            digest.update(&frame.data);
+            digest.update(frame.page());
             let cs = digest.finalize();
             ensure!(
-                cs == frame.header.checksum,
+                cs == frame.header().checksum,
                 "invalid WAL file: invalid checksum"
             );
             Ok(cs)
         })
     }
 
-    fn commit(&self, new_frame_count: u64, new_current_checksum: u64) {
+    /// commit the current transaction and returns the new top frame number
+    fn commit(&self, new_frame_count: u64, new_current_checksum: u64) -> FrameNo {
         let mut log_file = self.log_file.write();
         let mut header = *log_file.header();
         header.frame_count = new_frame_count;
         log_file.write_header(&header).expect("dailed to commit");
         self.current_checksum
             .store(new_current_checksum, Ordering::Relaxed);
+        log_file.header().last_frame_no()
     }
 
     pub fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
         find_snapshot_file(&self.db_path, from)
+    }
+
+    pub fn get_frame(&self, frame_no: FrameNo) -> Result<Bytes, LogReadError> {
+        self.log_file.read().frame_bytes(frame_no)
     }
 }
 
@@ -643,9 +585,9 @@ mod test {
 
         let log_file = logger.log_file.write();
         for i in 0..10 {
-            let frame = WalFrame::try_from_bytes(log_file.frame_bytes(i).unwrap()).unwrap();
-            assert_eq!(frame.header.page_no, i as u32);
-            assert!(frame.data.iter().all(|x| i as u8 == *x));
+            let frame = Frame::try_from_bytes(log_file.frame_bytes(i).unwrap()).unwrap();
+            assert_eq!(frame.header().page_no, i as u32);
+            assert!(frame.page().iter().all(|x| i as u8 == *x));
         }
 
         assert_eq!(
