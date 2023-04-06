@@ -57,6 +57,7 @@ uuid = { version = "1.3", features = ["v4", "serde"] }
 nix = { version = "0.26.2", features = ["fs"] }
 tempfile = "3.3.0"
 memmap = "0.7.0"
+mimalloc = "0.1.36"
 
 [dev-dependencies]
 proptest = "1.0.0"
