@@ -1,5 +1,5 @@
-C Work\saround\sa\sharmless\sassertion\sfault\sassociated\swith\nsqlite3VdbeMemAboutToChange()\ssuch\sthat\sthe\sdetection\sof\sstale\svalues\nin\sregisters\sis\spreserved\sin\sdebugging\sbuilds,\sbut\swe\savoid\sa\sfalse-positive\nassertion\sfault\sin\scases\sinvolving\sa\svirtual\stable\swith\sa\sLIMIT\sclause\nin\san\sIN-operator\sloop.\ndbsqlfuzz\s3fd70d4ab4950acf1deb8f610a7a7c67cd38713b
-D 2023-04-06T17:29:38.736
+C Add\sfurther\stests\sfor\sthe\srbu_exclusive_lock=1\sURI\soption.
+D 2023-04-07T11:18:08.946
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -341,7 +341,7 @@ F ext/rbu/rbucrash.test d2b5d619d9281c89cad74401b73b46172daa89906940b1d739c813dd
 F ext/rbu/rbucrash2.test 0a1a72223d880215ce2893a3260320c31a9358d23cb124c610e4f0d984a93285
 F ext/rbu/rbudiff.test 8b8b8b569c68fc880134e0fac4bf6b4b7a907aea4cc6eacf7e1d45e1d47b6aac
 F ext/rbu/rbudor.test 293a192e668bb8e9c7c9704b080c1086ee17496f768e0f1823049e7d02651d1b
-F ext/rbu/rbuexlock.test e3ece733cc8e0a6cb08533a41ed6f562438539ed309028c63375a5adee4a263b
+F ext/rbu/rbuexlock.test 703bb26cb13d655920670974a5d6823b8f7a8b1d4451162a0c1caf44c3d44252
 F ext/rbu/rbuexpr.test 2c91617509c88b6e9030f7bf6ff720df26032fcd801adc25533feae726a57382
 F ext/rbu/rbufault.test c51de14067cfe867849530d3d1718ffeb28522f28d52937f95dd7bc2116eb42e
 F ext/rbu/rbufault2.test 8cc8f6298d2d7d20080b2c77e65b607af8b89839f9d87c0972b27e6442edc258
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 857d0f5e16ba69ac9e5ee581befca2f7ed933edfe6e36396b10dae7979b44a57
-R 2288ff5cfd8b0483680fe089706fc5b1
-U drh
-Z a25cf56afdc01321117f5bc71f12f074
+P 56ea2c2fe6108d39833ac40957afab59ade01a216639d5bafdeeca53bbf4cd67
+R 9275838142062bf058148e4ea2fb7583
+U dan
+Z c616b58415bad4443461c0a782c05091
 # Remove this line to create a well-formed Fossil manifest.
