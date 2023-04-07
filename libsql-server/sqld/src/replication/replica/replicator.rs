@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use anyhow::bail;
 use futures::StreamExt;
+use tokio::sync::watch;
 use tonic::transport::Channel;
 
 use crate::replication::frame::Frame;
@@ -27,16 +28,19 @@ pub struct Replicator {
     db_path: PathBuf,
     injector: Option<FrameInjectorHandle>,
     current_frame_no: FrameNo,
+    current_frame_no_notifier: watch::Sender<FrameNo>,
 }
 
 impl Replicator {
     pub fn new(db_path: PathBuf, channel: Channel, uri: tonic::transport::Uri) -> Self {
         let client = Client::with_origin(channel, uri);
+        let (applied_frame_notifier, _) = watch::channel(FrameNo::MAX);
         Self {
             client,
             db_path,
             injector: None,
             current_frame_no: FrameNo::MAX,
+            current_frame_no_notifier: applied_frame_notifier,
         }
     }
 
@@ -72,7 +76,7 @@ impl Replicator {
                     }
                     let (injector, last_applied_frame_no) =
                         FrameInjectorHandle::new(self.db_path.clone(), hello).await?;
-                    self.current_frame_no = last_applied_frame_no;
+                    self.update_current_frame_no(last_applied_frame_no);
                     self.injector.replace(injector);
                     return Ok(());
                 }
@@ -86,6 +90,11 @@ impl Replicator {
         }
 
         bail!("couldn't connect to primary after {HANDSHAKE_MAX_RETRIES} tries.");
+    }
+
+    fn update_current_frame_no(&mut self, new_frame_no: FrameNo) {
+        self.current_frame_no = new_frame_no;
+        self.current_frame_no_notifier.send_replace(new_frame_no);
     }
 
     async fn replicate(&mut self) -> anyhow::Result<()> {
@@ -142,12 +151,14 @@ impl Replicator {
     }
 
     async fn flush_txn(&mut self, frames: Vec<Frame>) -> anyhow::Result<()> {
-        self.current_frame_no = self
+        let new_frame_no = self
             .injector
             .as_mut()
             .expect("invalid state")
             .apply_frames(Frames::Vec(frames))
             .await?;
+
+        self.update_current_frame_no(new_frame_no);
 
         Ok(())
     }
