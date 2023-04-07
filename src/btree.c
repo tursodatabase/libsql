@@ -7150,7 +7150,7 @@ static int insertCell(
     assert( j==0 || i==pPage->aiOvfl[j-1]+1 );   /* Overflows are sequential */
   }else{
     int rc = sqlite3PagerWrite(pPage->pDbPage);
-    if( rc!=SQLITE_OK ){
+    if( NEVER(rc!=SQLITE_OK) ){
       return rc;
     }
     assert( sqlite3PagerIswriteable(pPage->pDbPage) );

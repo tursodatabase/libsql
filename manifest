@@ -1,5 +1,5 @@
-C Fix\san\sassert().
-D 2023-04-07T15:49:42.983
+C Add\sNEVER\son\san\sunreachable\sbranch.
+D 2023-04-07T16:30:33.632
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -564,7 +564,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 467786f4d7eb53e5fcd7b08d71de3b8af3360e19ce1fdecbf3d270772e0284a5
+F src/btree.c 119a010f26b0ddbfa8117917bcb0a95b1286c5550e7222a72f3a0565599f6379
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h a3268a60cbc91f578001f44ba40aae9c1b8aecbb0d2c095dd7fc54b0872ea4b8
 F src/build.c 8357d6ca9a8c9afc297c431df28bc2af407b47f3ef2311875276c944b30c4d54
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 203a581a9177c1083e8d5b49e8ff026af33b5c5e3e144aeda126f07a3a2953bf
-R 54f048283a72db7525d9a6de65af4d6f
+P 7eff46ba97dd8a3d6a5d01d5d61e98a2805deceafa47335eded7d784a8304525
+R d683893a4f37f40e4189174d14b43d68
 U drh
-Z 23390f9086f977a9a4d3c1c740b228e3
+Z 012057b737c59630df75dcd34aedd019
 # Remove this line to create a well-formed Fossil manifest.
