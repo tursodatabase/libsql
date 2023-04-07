@@ -1746,7 +1746,7 @@ static u8 *pageFindSlot(MemPage *pPg, int nByte, int *pRc){
 ** allocation is being made in order to insert a new cell, so we will
 ** also end up needing a new cell pointer.
 */
-static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
+static SQLITE_INLINE int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   const int hdr = pPage->hdrOffset;    /* Local cache of pPage->hdrOffset */
   u8 * const data = pPage->aData;      /* Local cache of pPage->aData */
   int top;                             /* First byte of cell content area */
@@ -7096,6 +7096,14 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
 ** in pTemp or the original pCell) and also record its index. 
 ** Allocating a new entry in pPage->aCell[] implies that 
 ** pPage->nOverflow is incremented.
+**
+** The insertCellFast() routine below works exactly the same as
+** insertCell() except that it lacks the pTemp and iChild parameters
+** which are assumed zero.  Other than that, the two routines are the
+** same.
+**
+** Fixes or enhancements to this routine should be reflected in
+** insertCellFast()!
 */
 static int insertCell(
   MemPage *pPage,   /* Page into which we are copying */
@@ -7168,6 +7176,89 @@ static int insertCell(
     }else{
       memcpy(&data[idx], pCell, sz);
     }
+    pIns = pPage->aCellIdx + i*2;
+    memmove(pIns+2, pIns, 2*(pPage->nCell - i));
+    put2byte(pIns, idx);
+    pPage->nCell++;
+    /* increment the cell count */
+    if( (++data[pPage->hdrOffset+4])==0 ) data[pPage->hdrOffset+3]++;
+    assert( get2byte(&data[pPage->hdrOffset+3])==pPage->nCell || CORRUPT_DB );
+#ifndef SQLITE_OMIT_AUTOVACUUM
+    if( pPage->pBt->autoVacuum ){
+      int rc2 = SQLITE_OK;
+      /* The cell may contain a pointer to an overflow page. If so, write
+      ** the entry for the overflow page into the pointer map.
+      */
+      ptrmapPutOvflPtr(pPage, pPage, pCell, &rc2);
+      if( rc2 ) return rc2;
+    }
+#endif
+  }
+  return SQLITE_OK;
+}
+
+/*
+** This variant of insertCell() assumes that the pTemp and iChild
+** parameters are both zero.  Use this variant in sqlite3BtreeInsert()
+** for performance improvement, and also so that this variant is only
+** called from that one place, and is thus inlined, and thus runs must
+** faster.
+**
+** Fixes or enhancements to this routine should be reflected into
+** the insertCell() routine.
+*/
+static int insertCellFast(
+  MemPage *pPage,   /* Page into which we are copying */
+  int i,            /* New cell becomes the i-th cell of the page */
+  u8 *pCell,        /* Content of the new cell */
+  int sz            /* Bytes of content in pCell */
+){
+  int idx = 0;      /* Where to write new cell content in data[] */
+  int j;            /* Loop counter */
+  u8 *data;         /* The content of the whole page */
+  u8 *pIns;         /* The point in pPage->aCellIdx[] where no cell inserted */
+
+  assert( i>=0 && i<=pPage->nCell+pPage->nOverflow );
+  assert( MX_CELL(pPage->pBt)<=10921 );
+  assert( pPage->nCell<=MX_CELL(pPage->pBt) || CORRUPT_DB );
+  assert( pPage->nOverflow<=ArraySize(pPage->apOvfl) );
+  assert( ArraySize(pPage->apOvfl)==ArraySize(pPage->aiOvfl) );
+  assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  assert( sz==pPage->xCellSize(pPage, pCell) || CORRUPT_DB );
+  assert( pPage->nFree>=0 );
+  if( pPage->nOverflow || sz+2>pPage->nFree ){
+    j = pPage->nOverflow++;
+    /* Comparison against ArraySize-1 since we hold back one extra slot
+    ** as a contingency.  In other words, never need more than 3 overflow
+    ** slots but 4 are allocated, just to be safe. */
+    assert( j < ArraySize(pPage->apOvfl)-1 );
+    pPage->apOvfl[j] = pCell;
+    pPage->aiOvfl[j] = (u16)i;
+
+    /* When multiple overflows occur, they are always sequential and in
+    ** sorted order.  This invariants arise because multiple overflows can
+    ** only occur when inserting divider cells into the parent page during
+    ** balancing, and the dividers are adjacent and sorted.
+    */
+    assert( j==0 || pPage->aiOvfl[j-1]<(u16)i ); /* Overflows in sorted order */
+    assert( j==0 || i==pPage->aiOvfl[j-1]+1 );   /* Overflows are sequential */
+  }else{
+    int rc = sqlite3PagerWrite(pPage->pDbPage);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+    assert( sqlite3PagerIswriteable(pPage->pDbPage) );
+    data = pPage->aData;
+    assert( &data[pPage->cellOffset]==pPage->aCellIdx );
+    rc = allocateSpace(pPage, sz, &idx);
+    if( rc ){ return rc; }
+    /* The allocateSpace() routine guarantees the following properties
+    ** if it returns successfully */
+    assert( idx >= 0 );
+    assert( idx >= pPage->cellOffset+2*pPage->nCell+2 || CORRUPT_DB );
+    assert( idx+sz <= (int)pPage->pBt->usableSize );
+    pPage->nFree -= (u16)(2 + sz);
+    memcpy(&data[idx], pCell, sz);
     pIns = pPage->aCellIdx + i*2;
     memmove(pIns+2, pIns, 2*(pPage->nCell - i));
     put2byte(pIns, idx);
@@ -9319,7 +9410,7 @@ int sqlite3BtreeInsert(
   }else{
     assert( pPage->leaf );
   }
-  rc = insertCell(pPage, idx, newCell, szNew, 0, 0);
+  rc = insertCellFast(pPage, idx, newCell, szNew);
   assert( pPage->nOverflow==0 || rc==SQLITE_OK );
   assert( rc!=SQLITE_OK || pPage->nCell>0 || pPage->nOverflow>0 );
 

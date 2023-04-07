@@ -286,10 +286,13 @@
 */
 #if defined(__GNUC__)
 #  define SQLITE_NOINLINE  __attribute__((noinline))
+#  define SQLITE_INLINE    __attribute__((always_inline)) inline
 #elif defined(_MSC_VER) && _MSC_VER>=1310
 #  define SQLITE_NOINLINE  __declspec(noinline)
+#  define SQLITE_INLINE    __forceinline
 #else
 #  define SQLITE_NOINLINE
+#  define SQLITE_INLINE
 #endif
 
 /*
