@@ -7619,6 +7619,7 @@ static int pageFreeArray(
         }
         aOfst[nFree] = iOfst;
         aAfter[nFree] = iAfter;
+        if( &aData[iAfter]>pEnd ) return 0;
         nFree++;
       }
       nRet++;
