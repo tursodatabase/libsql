@@ -1,5 +1,5 @@
-C Increase\sthe\ssize\sof\sthe\scache\sof\sfree\sblocks\sinside\sof\spageFreeArray()\sto\nreduce\sthe\snumber\sof\scalls\sto\sfreeSpace().
-D 2023-04-06T20:14:10.861
+C Small\sperformance\simprovement\sin\sfreeSpace().
+D 2023-04-07T13:21:20.818
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -564,7 +564,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 1a5f31d548a68d2bd537919d8afa176540c3ea70787fe10d5873beb00f9db615
+F src/btree.c ab147fedb774a7af5a2b665091aaf1b3d379c0215f00958f0d8b62d0c3d8c462
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h a3268a60cbc91f578001f44ba40aae9c1b8aecbb0d2c095dd7fc54b0872ea4b8
 F src/build.c 8357d6ca9a8c9afc297c431df28bc2af407b47f3ef2311875276c944b30c4d54
@@ -2052,11 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 56ea2c2fe6108d39833ac40957afab59ade01a216639d5bafdeeca53bbf4cd67
-R f4ea0d3a1a9bcf702848933fabd592b4
-T *branch * btree-freespace-opt
-T *sym-btree-freespace-opt *
-T -sym-trunk *
+P 27c59f1ea789f3ff245f23e79ded5cd71c48e3a51ffbb8c220b51101a4e69fd7
+R d6591cb8459c4b329119f7b1d9a296cf
 U drh
-Z a279ebfc98f243d3f64ca427ad2184cf
+Z 18a83276bbdc23812267f1b7bee10433
 # Remove this line to create a well-formed Fossil manifest.

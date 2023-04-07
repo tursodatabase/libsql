@@ -1919,6 +1919,11 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   }
   pTmp = &data[hdr+5];
   x = get2byte(pTmp);
+  if( pPage->pBt->btsFlags & BTS_FAST_SECURE ){
+    /* Overwrite deleted information with zeros when the secure_delete
+    ** option is enabled */
+    memset(&data[iStart], 0, iSize);
+  }
   if( iStart<=x ){
     /* The new freeblock is at the beginning of the cell content area,
     ** so just extend the cell content area rather than create another
@@ -1930,14 +1935,9 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   }else{
     /* Insert the new freeblock into the freelist */
     put2byte(&data[iPtr], iStart);
+    put2byte(&data[iStart], iFreeBlk);
+    put2byte(&data[iStart+2], iSize);
   }
-  if( pPage->pBt->btsFlags & BTS_FAST_SECURE ){
-    /* Overwrite deleted information with zeros when the secure_delete
-    ** option is enabled */
-    memset(&data[iStart], 0, iSize);
-  }
-  put2byte(&data[iStart], iFreeBlk);
-  put2byte(&data[iStart+2], iSize);
   pPage->nFree += iOrigSize;
   return SQLITE_OK;
 }
