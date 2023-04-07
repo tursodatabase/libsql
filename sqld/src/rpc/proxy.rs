@@ -327,11 +327,12 @@ impl Proxy for ProxyService {
             .await
             .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
         let results = results.into_iter().map(|r| r.into()).collect();
-        let _current_frame_no = *self.new_frame_notifier.borrow();
+        let current_frame_no = *self.new_frame_notifier.borrow();
 
         Ok(tonic::Response::new(ExecuteResults {
             results,
             state: State::from(state).into(),
+            current_frame_no,
         }))
     }
 
