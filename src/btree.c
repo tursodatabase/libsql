@@ -7126,14 +7126,13 @@ static int insertCell(
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( sz==pPage->xCellSize(pPage, pCell) || CORRUPT_DB );
   assert( pPage->nFree>=0 );
+  assert( iChild>0 );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){
       memcpy(pTemp, pCell, sz);
       pCell = pTemp;
     }
-    if( iChild ){
-      put4byte(pCell, iChild);
-    }
+    put4byte(pCell, iChild);
     j = pPage->nOverflow++;
     /* Comparison against ArraySize-1 since we hold back one extra slot
     ** as a contingency.  In other words, never need more than 3 overflow
@@ -7165,17 +7164,13 @@ static int insertCell(
     assert( idx >= pPage->cellOffset+2*pPage->nCell+2 || CORRUPT_DB );
     assert( idx+sz <= (int)pPage->pBt->usableSize );
     pPage->nFree -= (u16)(2 + sz);
-    if( iChild ){
-      /* In a corrupt database where an entry in the cell index section of
-      ** a btree page has a value of 3 or less, the pCell value might point
-      ** as many as 4 bytes in front of the start of the aData buffer for
-      ** the source page.  Make sure this does not cause problems by not
-      ** reading the first 4 bytes */
-      memcpy(&data[idx+4], pCell+4, sz-4);
-      put4byte(&data[idx], iChild);
-    }else{
-      memcpy(&data[idx], pCell, sz);
-    }
+    /* In a corrupt database where an entry in the cell index section of
+    ** a btree page has a value of 3 or less, the pCell value might point
+    ** as many as 4 bytes in front of the start of the aData buffer for
+    ** the source page.  Make sure this does not cause problems by not
+    ** reading the first 4 bytes */
+    memcpy(&data[idx+4], pCell+4, sz-4);
+    put4byte(&data[idx], iChild);
     pIns = pPage->aCellIdx + i*2;
     memmove(pIns+2, pIns, 2*(pPage->nCell - i));
     put2byte(pIns, idx);
@@ -7226,7 +7221,8 @@ static int insertCellFast(
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( sz==pPage->xCellSize(pPage, pCell) || CORRUPT_DB );
   assert( pPage->nFree>=0 );
-  if( pPage->nOverflow || sz+2>pPage->nFree ){
+  assert( pPage->nOverflow==0 );
+  if( sz+2>pPage->nFree ){
     j = pPage->nOverflow++;
     /* Comparison against ArraySize-1 since we hold back one extra slot
     ** as a contingency.  In other words, never need more than 3 overflow

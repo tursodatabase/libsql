@@ -281,7 +281,7 @@
 #endif
 
 /*
-** A macro to hint to the compiler that a function should not be
+** Macros to hint to the compiler that a function should or should not be
 ** inlined.
 */
 #if defined(__GNUC__)
@@ -293,6 +293,10 @@
 #else
 #  define SQLITE_NOINLINE
 #  define SQLITE_INLINE
+#endif
+#if defined(SQLITE_COVERAGE_TEST)
+# undef SQLITE_INLINE
+# define SQLITE_INLINE
 #endif
 
 /*
