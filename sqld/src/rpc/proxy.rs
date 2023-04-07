@@ -3,11 +3,13 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
+use tokio::sync::watch;
 use uuid::Uuid;
 
 use crate::auth::{Authenticated, Authorized};
 use crate::database::factory::DbFactory;
 use crate::database::{Database, Program};
+use crate::replication::FrameNo;
 
 use self::rpc::execute_results::State;
 use self::rpc::proxy_server::Proxy;
@@ -272,13 +274,15 @@ pub mod rpc {
 pub struct ProxyService {
     clients: RwLock<HashMap<Uuid, Arc<dyn Database>>>,
     factory: Arc<dyn DbFactory>,
+    new_frame_notifier: watch::Receiver<FrameNo>,
 }
 
 impl ProxyService {
-    pub fn new(factory: Arc<dyn DbFactory>) -> Self {
+    pub fn new(factory: Arc<dyn DbFactory>, new_frame_notifier: watch::Receiver<FrameNo>) -> Self {
         Self {
             clients: Default::default(),
             factory,
+            new_frame_notifier,
         }
     }
 }
@@ -323,6 +327,7 @@ impl Proxy for ProxyService {
             .await
             .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
         let results = results.into_iter().map(|r| r.into()).collect();
+        let _current_frame_no = *self.new_frame_notifier.borrow();
 
         Ok(tonic::Response::new(ExecuteResults {
             results,

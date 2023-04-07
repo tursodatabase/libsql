@@ -26,7 +26,7 @@ pub async fn run_rpc_server(
     logger: Arc<ReplicationLogger>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {
-    let proxy_service = ProxyService::new(factory);
+    let proxy_service = ProxyService::new(factory, logger.new_frame_notifier.subscribe());
     let logger_service = ReplicationLogService::new(logger);
 
     tracing::info!("serving write proxy server at {addr}");
