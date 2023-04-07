@@ -28,7 +28,7 @@ pub struct Replicator {
     db_path: PathBuf,
     injector: Option<FrameInjectorHandle>,
     current_frame_no: FrameNo,
-    current_frame_no_notifier: watch::Sender<FrameNo>,
+    pub current_frame_no_notifier: watch::Sender<FrameNo>,
 }
 
 impl Replicator {

@@ -201,10 +201,17 @@ async fn start_replica(
 ) -> anyhow::Result<()> {
     let (channel, uri) = configure_rpc(config)?;
     let replicator = Replicator::new(config.db_path.clone(), channel.clone(), uri.clone());
+    let applied_frame_no_receiver = replicator.current_frame_no_notifier.subscribe();
 
     join_set.spawn(replicator.run());
 
-    let factory = WriteProxyDbFactory::new(config.db_path.clone(), channel, uri, stats.clone());
+    let factory = WriteProxyDbFactory::new(
+        config.db_path.clone(),
+        channel,
+        uri,
+        stats.clone(),
+        applied_frame_no_receiver,
+    );
     run_service(
         Arc::new(factory),
         config,
