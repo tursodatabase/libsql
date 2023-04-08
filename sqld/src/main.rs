@@ -19,9 +19,6 @@ struct Cli {
     /// The address and port the PostgreSQL server listens to.
     #[clap(long, short, env = "SQLD_PG_LISTEN_ADDR")]
     pg_listen_addr: Option<SocketAddr>,
-    /// The address and port the PostgreSQL over WebSocket server listens to.
-    #[clap(long, short, env = "SQLD_WS_LISTEN_ADDR")]
-    ws_listen_addr: Option<SocketAddr>,
 
     #[clap(long, default_value = "127.0.0.1:8080", env = "SQLD_HTTP_LISTEN_ADDR")]
     http_listen_addr: SocketAddr,
@@ -180,7 +177,6 @@ fn config_from_args(args: Cli) -> Result<Config> {
     Ok(Config {
         db_path: args.db_path,
         tcp_addr: args.pg_listen_addr,
-        ws_addr: args.ws_listen_addr,
         http_addr: Some(args.http_listen_addr),
         enable_http_console: args.enable_http_console,
         hrana_addr: args.hrana_listen_addr,
