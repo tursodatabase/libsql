@@ -596,7 +596,7 @@ int main(int argc, char **argv){
   printf("/* aKWNext[] forms the hash collision chain.  If aKWHash[i]==0\n");
   printf("** then the i-th keyword has no more hash collisions.  Otherwise,\n");
   printf("** the next keyword with the same hash is aKWHash[i]-1. */\n");
-  printf("static const unsigned char aKWNext[%d] = {\n", nKeyword);
+  printf("static const unsigned char aKWNext[%d] = {0,\n", nKeyword+1);
   for(i=j=0; i<nKeyword; i++){
     if( j==0 ) printf("  ");
     printf(" %3d,", aKeywordTable[i].iNext);
@@ -609,7 +609,7 @@ int main(int argc, char **argv){
   printf("%s};\n", j==0 ? "" : "\n");    
 
   printf("/* aKWLen[i] is the length (in bytes) of the i-th keyword */\n");
-  printf("static const unsigned char aKWLen[%d] = {\n", nKeyword);
+  printf("static const unsigned char aKWLen[%d] = {0,\n", nKeyword+1);
   for(i=j=0; i<nKeyword; i++){
     if( j==0 ) printf("  ");
     printf(" %3d,", aKeywordTable[i].len+aKeywordTable[i].prefix);
@@ -623,7 +623,7 @@ int main(int argc, char **argv){
 
   printf("/* aKWOffset[i] is the index into zKWText[] of the start of\n");
   printf("** the text for the i-th keyword. */\n");
-  printf("static const unsigned short int aKWOffset[%d] = {\n", nKeyword);
+  printf("static const unsigned short int aKWOffset[%d] = {0,\n", nKeyword+1);
   for(i=j=0; i<nKeyword; i++){
     if( j==0 ) printf("  ");
     printf(" %3d,", aKeywordTable[i].offset);
@@ -636,7 +636,7 @@ int main(int argc, char **argv){
   printf("%s};\n", j==0 ? "" : "\n");
 
   printf("/* aKWCode[i] is the parser symbol code for the i-th keyword */\n");
-  printf("static const unsigned char aKWCode[%d] = {\n", nKeyword);
+  printf("static const unsigned char aKWCode[%d] = {0,\n", nKeyword+1);
   for(i=j=0; i<nKeyword; i++){
     char *zToken = aKeywordTable[i].zTokenType;
     if( j==0 ) printf("  ");
@@ -669,7 +669,7 @@ int main(int argc, char **argv){
   printf("    i = ((charMap(z[0])*%d) %c", HASH_C0, HASH_CC);
   printf(" (charMap(z[n-1])*%d) %c", HASH_C1, HASH_CC);
   printf(" n*%d) %% %d;\n", HASH_C2, bestSize);
-  printf("    for(i=((int)aKWHash[i])-1; i>=0; i=((int)aKWNext[i])-1){\n");
+  printf("    for(i=(int)aKWHash[i]; i>0; i=aKWNext[i]){\n");
   printf("      if( aKWLen[i]!=n ) continue;\n");
   printf("      zKW = &zKWText[aKWOffset[i]];\n");
   printf("#ifdef SQLITE_ASCII\n");
@@ -687,7 +687,7 @@ int main(int argc, char **argv){
   printf("      if( j<n ) continue;\n");
   for(i=0; i<nKeyword; i++){
     printf("      testcase( i==%d ); /* %s */\n",
-           i, aKeywordTable[i].zOrigName);
+           i+1, aKeywordTable[i].zOrigName);
   }
   printf("      *pType = aKWCode[i];\n");
   printf("      break;\n");
@@ -703,6 +703,7 @@ int main(int argc, char **argv){
   printf("#define SQLITE_N_KEYWORD %d\n", nKeyword);
   printf("int sqlite3_keyword_name(int i,const char **pzName,int *pnName){\n");
   printf("  if( i<0 || i>=SQLITE_N_KEYWORD ) return SQLITE_ERROR;\n");
+  printf("  i++;\n");
   printf("  *pzName = zKWText + aKWOffset[i];\n");
   printf("  *pnName = aKWLen[i];\n");
   printf("  return SQLITE_OK;\n");

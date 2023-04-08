@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning.
-D 2023-04-08T13:31:17.304
+C Faster\simplementation\sof\skeywordCode()\s-\sthe\sroutine\sthat\sdetermines\sif\san\nidentifier\sis\sreally\sa\skeyword\sand\sif\sso,\swhich\skeyword.
+D 2023-04-08T16:51:08.427
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1978,7 +1978,7 @@ F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a19
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
 F tool/mkctimec.tcl 38e3db33210a200aae791635125052a643a27aa0619a0debf19aa9c55e1b2dde x
-F tool/mkkeywordhash.c 35bfc41adacc4aa6ef6fca7fd0c63e0ec0534b78daf4d0cfdebe398216bbffc3
+F tool/mkkeywordhash.c 9822bd1f58a70e5f84179df3045bba4791df69180e991bec88662703f2e93761
 F tool/mkmsvcmin.tcl 6ecab9fe22c2c8de4d82d4c46797bda3d2deac8e763885f5a38d0c44a895ab33
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
 F tool/mkopcodeh.tcl 769d9e6a8b462323150dc13a8539d6064664b72974f7894befe2491cc73e05cd
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5c12c400fe8eb4e86e14c69a6c34d0d78d9861e5d40a36c6a596a81c6dd65977
-R 9bee361640c8d6b170c8d56996d80384
+P c9559ba62191fe7fa2a718233afaa841e2594d1fc833314bf5b0a6b775e87c35
+R a6a030871b8c18c0abdeba3bc5e7f2b5
 U drh
-Z 6d533f3536f56e3e50b677595cc8fd42
+Z b5330e1f9352658322b2ceaebf7861af
 # Remove this line to create a well-formed Fossil manifest.
