@@ -1,9 +1,8 @@
 use std::fmt::Debug;
-use std::future::poll_fn;
 use std::sync::Arc;
 
-use bytes::{Buf, Bytes};
-use futures::{io, Sink, SinkExt};
+use bytes::Bytes;
+use futures::Sink;
 use pgwire::api::portal::Portal;
 use pgwire::api::query::{ExtendedQueryHandler, SimpleQueryHandler};
 use pgwire::api::results::{DescribeResponse, Response};
@@ -12,31 +11,23 @@ use pgwire::api::store::{MemPortalStore, PortalStore};
 use pgwire::api::{ClientInfo, Type, DEFAULT_NAME};
 use pgwire::error::{ErrorInfo, PgWireError, PgWireResult};
 use pgwire::messages::extendedquery::Describe;
-use pgwire::messages::response::{ReadyForQuery, READY_STATUS_IDLE};
-use pgwire::messages::startup::SslRequest;
 use pgwire::messages::PgWireBackendMessage;
-use pgwire::tokio::PgWireMessageServerCodec;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use tokio::sync::Mutex;
-use tokio_util::codec::Framed;
-use tower::Service;
 
-use crate::error::Error;
-use crate::query::{Params, Query, QueryResponse, QueryResult, ResultSet, Value};
+use crate::database::Database;
+use crate::query::{Params, Query, QueryResponse, ResultSet, Value};
 use crate::query_analysis::Statement;
-use crate::server::AsyncPeekable;
 
 /// This is a dummy handler, it's sole role is to send the response back to the client.
-pub struct QueryHandler<S> {
-    state: Arc<Mutex<S>>,
+pub struct QueryHandler {
+    database: Arc<dyn Database>,
     query_parser: Arc<NoopQueryParser>,
     portal_store: Arc<MemPortalStore<String>>,
 }
 
-impl<'a, S> QueryHandler<S> {
-    pub fn new(s: Arc<Mutex<S>>) -> Self {
+impl QueryHandler {
+    pub fn new(database: Arc<dyn Database>) -> Self {
         Self {
-            state: s,
+            database,
             query_parser: Arc::new(NoopQueryParser::new()),
             portal_store: Arc::new(MemPortalStore::new()),
         }
@@ -46,40 +37,32 @@ impl<'a, S> QueryHandler<S> {
         &self,
         queries: Vec<Query>,
         col_defs: bool,
-    ) -> PgWireResult<Vec<Response>>
-    where
-        S: Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error> + Sync + Send,
-        S::Future: Send,
-    {
-        let mut s = self.state.lock().await;
+    ) -> PgWireResult<Vec<Response>> {
         //FIXME: handle poll_ready error
-        poll_fn(|cx| s.poll_ready(cx)).await.unwrap();
-        match s.call(queries).await {
-            Ok(responses) => Ok(responses
-                .into_iter()
-                .map(|r| match r {
-                    Some(Ok(QueryResponse::ResultSet(mut set))) => {
-                        set.include_column_defs = col_defs;
-                        set.into()
-                    }
-                    Some(Err(e)) => Response::Error(
-                        ErrorInfo::new("ERROR".into(), "XX000".into(), e.to_string()).into(),
-                    ),
-                    None => ResultSet::empty(false).into(),
-                })
-                .collect()),
-
+        match self.database.execute_batch_or_rollback(queries).await {
+            Ok((resp, _)) => {
+                let ret = resp
+                    .into_iter()
+                    .map(|r| match r {
+                        Some(Ok(QueryResponse::ResultSet(mut set))) => {
+                            set.include_column_defs = col_defs;
+                            set.into()
+                        }
+                        Some(Err(e)) => Response::Error(
+                            ErrorInfo::new("ERROR".into(), "XX000".into(), e.to_string()).into(),
+                        ),
+                        None => ResultSet::empty(false).into(),
+                    })
+                    .collect();
+                Ok(ret)
+            }
             Err(e) => Err(PgWireError::ApiError(e.into())),
         }
     }
 }
 
 #[async_trait::async_trait]
-impl<S> SimpleQueryHandler for QueryHandler<S>
-where
-    S: Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error> + Sync + Send,
-    S::Future: Send,
-{
+impl SimpleQueryHandler for QueryHandler {
     async fn do_query<'q, 'b: 'q, C>(
         &'b self,
         _client: &C,
@@ -109,11 +92,7 @@ where
 const REQUEST_DESCRIBE: &str = "SQLD_REQUEST_DESCRIBE";
 
 #[async_trait::async_trait]
-impl<S> ExtendedQueryHandler for QueryHandler<S>
-where
-    S: Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error> + Sync + Send,
-    S::Future: Send,
-{
+impl ExtendedQueryHandler for QueryHandler {
     type Statement = String;
     type PortalStore = MemPortalStore<Self::Statement>;
     type QueryParser = NoopQueryParser;
@@ -216,85 +195,4 @@ fn parse_params(types: &[Type], data: &[Option<Bytes>]) -> Params {
     }
 
     Params::new_positional(params)
-}
-
-// from https://docs.rs/pgwire/latest/src/pgwire/tokio.rs.html#230-283
-pub async fn process_error<S>(
-    socket: &mut Framed<S, PgWireMessageServerCodec>,
-    error: PgWireError,
-) -> Result<(), io::Error>
-where
-    S: AsyncRead + AsyncWrite + Unpin + Send + Sync,
-{
-    match error {
-        PgWireError::UserError(error_info) => {
-            socket
-                .feed(PgWireBackendMessage::ErrorResponse((*error_info).into()))
-                .await?;
-
-            socket
-                .feed(PgWireBackendMessage::ReadyForQuery(ReadyForQuery::new(
-                    READY_STATUS_IDLE,
-                )))
-                .await?;
-            socket.flush().await?;
-        }
-        PgWireError::ApiError(e) => {
-            let error_info = ErrorInfo::new("ERROR".to_owned(), "XX000".to_owned(), e.to_string());
-            socket
-                .feed(PgWireBackendMessage::ErrorResponse(error_info.into()))
-                .await?;
-            socket
-                .feed(PgWireBackendMessage::ReadyForQuery(ReadyForQuery::new(
-                    READY_STATUS_IDLE,
-                )))
-                .await?;
-            socket.flush().await?;
-        }
-        _ => {
-            // Internal error
-            let error_info =
-                ErrorInfo::new("FATAL".to_owned(), "XX000".to_owned(), error.to_string());
-            socket
-                .send(PgWireBackendMessage::ErrorResponse(error_info.into()))
-                .await?;
-            socket.close().await?;
-        }
-    }
-
-    Ok(())
-}
-
-pub async fn peek_for_sslrequest<I>(socket: &mut I, ssl_supported: bool) -> Result<bool, io::Error>
-where
-    I: AsyncWrite + AsyncRead + AsyncPeekable + Unpin,
-{
-    let mut ssl = false;
-    let mut buf = [0u8; SslRequest::BODY_SIZE];
-    loop {
-        let size = socket.peek(&mut buf).await?;
-        if size == 0 {
-            break;
-        }
-        if size == SslRequest::BODY_SIZE {
-            let mut buf_ref = buf.as_ref();
-            // skip first 4 bytes
-            buf_ref.get_i32();
-            if buf_ref.get_i32() == SslRequest::BODY_MAGIC_NUMBER {
-                // the socket is sending sslrequest, read the first 8 bytes
-                // skip first 8 bytes
-                socket.read_exact(&mut [0u8; SslRequest::BODY_SIZE]).await?;
-                // ssl configured
-                if ssl_supported {
-                    ssl = true;
-                    socket.write_all(b"S").await?;
-                } else {
-                    socket.write_all(b"N").await?;
-                }
-            }
-            break;
-        }
-    }
-
-    Ok(ssl)
 }

@@ -3,7 +3,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::future::Future;
 use std::sync::Arc;
 
-use crate::database::service::DbFactory;
+use crate::database::factory::DbFactory;
 use crate::database::Database;
 use crate::hrana;
 

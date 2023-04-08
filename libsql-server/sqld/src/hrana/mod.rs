@@ -1,5 +1,5 @@
 use crate::auth::Auth;
-use crate::database::service::DbFactory;
+use crate::database::factory::DbFactory;
 use crate::utils::services::idle_shutdown::IdleKicker;
 use anyhow::{Context as _, Result};
 use enclose::enclose;
