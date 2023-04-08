@@ -67,18 +67,7 @@ pub trait Database: Send + Sync {
         &self,
         batch: Vec<Query>,
     ) -> Result<(Vec<Option<QueryResult>>, State)> {
-        let mut steps = Vec::with_capacity(batch.len());
-        for (i, query) in batch.into_iter().enumerate() {
-            let cond = if i > 0 {
-                // only execute if the previous step was a success
-                Some(Cond::Ok { step: i - 1 })
-            } else {
-                None
-            };
-
-            let step = Step { cond, query };
-            steps.push(step);
-        }
+        let mut steps = make_batch_program(batch);
 
         if !steps.is_empty() {
             // We add a conditional rollback step if the last step was not sucessful.
@@ -104,6 +93,14 @@ pub trait Database: Send + Sync {
         Ok((results, state))
     }
 
+    /// Execute all the queries in the batch sequentially.
+    /// If an query in the batch fails, the remaining queries are ignored
+    async fn execute_batch(&self, batch: Vec<Query>) -> Result<(Vec<Option<QueryResult>>, State)> {
+        let steps = make_batch_program(batch);
+        let pgm = Program::new(steps);
+        self.execute_program(pgm).await
+    }
+
     async fn rollback(&self) -> Result<()> {
         let (results, _) = self
             .execute_one(Query {
@@ -116,4 +113,20 @@ pub trait Database: Send + Sync {
 
         Ok(())
     }
+}
+
+fn make_batch_program(batch: Vec<Query>) -> Vec<Step> {
+    let mut steps = Vec::with_capacity(batch.len());
+    for (i, query) in batch.into_iter().enumerate() {
+        let cond = if i > 0 {
+            // only execute if the previous step was a success
+            Some(Cond::Ok { step: i - 1 })
+        } else {
+            None
+        };
+
+        let step = Step { cond, query };
+        steps.push(step);
+    }
+    steps
 }
