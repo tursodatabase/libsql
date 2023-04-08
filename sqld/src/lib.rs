@@ -7,8 +7,8 @@ use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
 use database::dump_loader::DumpLoader;
+use database::factory::DbFactory;
 use database::libsql::LibSqlDb;
-use database::service::DbFactoryService;
 use database::write_proxy::WriteProxyDbFactory;
 use once_cell::sync::Lazy;
 #[cfg(feature = "mwal_backend")]
@@ -18,15 +18,11 @@ use rpc::run_rpc_server;
 use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;
 use tonic::transport::Channel;
-use tower::load::Constant;
-use tower::ServiceExt;
 use utils::services::idle_shutdown::IdleShutdownLayer;
 
 use crate::auth::Auth;
 use crate::error::Error;
-use crate::postgres::service::PgConnectionFactory;
 use crate::replication::replica::Replicator;
-use crate::server::Server;
 use crate::stats::Stats;
 
 pub use sqld_libsql_bindings as libsql;
@@ -41,7 +37,6 @@ mod query;
 mod query_analysis;
 mod replication;
 pub mod rpc;
-mod server;
 mod stats;
 mod utils;
 
@@ -69,7 +64,6 @@ pub(crate) static VWAL_METHODS: OnceCell<
 pub struct Config {
     pub db_path: PathBuf,
     pub tcp_addr: Option<SocketAddr>,
-    pub ws_addr: Option<SocketAddr>,
     pub http_addr: Option<SocketAddr>,
     pub enable_http_console: bool,
     pub http_auth: Option<String>,
@@ -97,7 +91,7 @@ pub struct Config {
 }
 
 async fn run_service(
-    service: DbFactoryService,
+    db_factory: Arc<dyn DbFactory>,
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
@@ -105,16 +99,9 @@ async fn run_service(
 ) -> anyhow::Result<()> {
     let auth = get_auth(config)?;
 
-    let mut server = Server::new();
     if let Some(addr) = config.tcp_addr {
-        server.bind_tcp(addr).await?;
+        join_set.spawn(postgres::server::run(addr, db_factory.clone()));
     }
-    if let Some(addr) = config.ws_addr {
-        server.bind_ws(addr).await?;
-    }
-
-    let factory = PgConnectionFactory::new(service.clone());
-    join_set.spawn(server.serve(factory));
 
     let (upgrade_tx, upgrade_rx) = mpsc::channel(8);
 
@@ -122,8 +109,7 @@ async fn run_service(
         join_set.spawn(http::run_http(
             addr,
             auth.clone(),
-            service.clone().map_response(|s| Constant::new(s, 1)),
-            service.factory.clone(),
+            db_factory.clone(),
             upgrade_tx,
             config.enable_http_console,
             idle_shutdown_layer.clone(),
@@ -134,7 +120,7 @@ async fn run_service(
     if let Some(addr) = config.hrana_addr {
         let idle_kicker = idle_shutdown_layer.map(|isl| isl.into_kicker());
         join_set.spawn(async move {
-            hrana::serve(service.factory, auth, idle_kicker, addr, upgrade_rx)
+            hrana::serve(db_factory, auth, idle_kicker, addr, upgrade_rx)
                 .await
                 .context("Hrana server failed")
         });
@@ -219,8 +205,14 @@ async fn start_replica(
     join_set.spawn(replicator.run());
 
     let factory = WriteProxyDbFactory::new(config.db_path.clone(), channel, uri, stats.clone());
-    let service = DbFactoryService::new(Arc::new(factory));
-    run_service(service, config, join_set, idle_shutdown_layer, stats).await?;
+    run_service(
+        Arc::new(factory),
+        config,
+        join_set,
+        idle_shutdown_layer,
+        stats,
+    )
+    .await?;
 
     Ok(())
 }
@@ -264,7 +256,7 @@ async fn start_primary(
         let stats_clone = stats_clone.clone();
         async move { LibSqlDb::new(db_path, hook, enable_bottomless, stats_clone) }
     });
-    let service = DbFactoryService::new(db_factory.clone());
+
     if let Some(ref addr) = config.rpc_server_addr {
         join_set.spawn(run_rpc_server(
             *addr,
@@ -272,13 +264,13 @@ async fn start_primary(
             config.rpc_server_cert.clone(),
             config.rpc_server_key.clone(),
             config.rpc_server_ca_cert.clone(),
-            db_factory,
+            db_factory.clone(),
             logger_clone,
             idle_shutdown_layer.clone(),
         ));
     }
 
-    run_service(service, config, join_set, idle_shutdown_layer, stats).await?;
+    run_service(db_factory, config, join_set, idle_shutdown_layer, stats).await?;
 
     Ok(())
 }

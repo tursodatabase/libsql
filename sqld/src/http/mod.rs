@@ -2,7 +2,6 @@ mod hrana_over_http;
 mod stats;
 mod types;
 
-use std::future::poll_fn;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -16,15 +15,13 @@ use serde::Serialize;
 use serde_json::{json, Number};
 use tokio::sync::{mpsc, oneshot};
 use tonic::codegen::http;
-use tower::balance::pool;
-use tower::load::Load;
-use tower::{BoxError, MakeService, Service, ServiceBuilder};
+use tower::ServiceBuilder;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::{compression::CompressionLayer, cors};
 use tracing::{Level, Span};
 
 use crate::auth::Auth;
-use crate::database::service::DbFactory;
+use crate::database::factory::DbFactory;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::types::HttpQuery;
@@ -152,12 +149,6 @@ fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
     Ok(out)
 }
 
-/// Internal Message used to communicate between the HTTP service
-struct Message {
-    batch: Vec<Query>,
-    resp: oneshot::Sender<Result<Vec<Option<QueryResult>>, BoxError>>,
-}
-
 fn parse_payload(data: &[u8]) -> Result<HttpQuery, Response<Body>> {
     match serde_json::from_slice(data) {
         Ok(data) => Ok(data),
@@ -167,7 +158,7 @@ fn parse_payload(data: &[u8]) -> Result<HttpQuery, Response<Body>> {
 
 async fn handle_query(
     mut req: Request<Body>,
-    sender: mpsc::Sender<Message>,
+    db_factory: Arc<dyn DbFactory>,
 ) -> anyhow::Result<Response<Body>> {
     let bytes = to_bytes(req.body_mut()).await?;
     let req = match parse_payload(&bytes) {
@@ -175,26 +166,21 @@ async fn handle_query(
         Err(resp) => return Ok(resp),
     };
 
-    let (s, resp) = oneshot::channel();
-
     let batch = match parse_queries(req.statements) {
         Ok(queries) => queries,
         Err(e) => return Ok(error(&e.to_string(), StatusCode::BAD_REQUEST)),
     };
 
-    let msg = Message { batch, resp: s };
-    let _ = sender.send(msg).await;
+    let db = db_factory.create().await?;
 
-    let result = resp.await;
-
-    match result {
-        Ok(Ok(rows)) => {
+    match db.execute_batch_or_rollback(batch).await {
+        Ok((rows, _)) => {
             let json = query_response_to_json(rows)?;
             Ok(Response::builder()
                 .header("Content-Type", "application/json")
                 .body(Body::from(json))?)
         }
-        Err(_) | Ok(Err(_)) => Ok(error("internal error", StatusCode::INTERNAL_SERVER_ERROR)),
+        Err(_) => Ok(error("internal error", StatusCode::INTERNAL_SERVER_ERROR)),
     }
 }
 
@@ -234,7 +220,6 @@ async fn handle_upgrade(
 async fn handle_request(
     auth: Arc<Auth>,
     req: Request<Body>,
-    sender: mpsc::Sender<Message>,
     upgrade_tx: mpsc::Sender<hrana::Upgrade>,
     db_factory: Arc<dyn DbFactory>,
     enable_console: bool,
@@ -253,7 +238,7 @@ async fn handle_request(
     }
 
     match (req.method(), req.uri().path()) {
-        (&Method::POST, "/") => handle_query(req, sender).await,
+        (&Method::POST, "/") => handle_query(req, db_factory.clone()).await,
         (&Method::GET, "/version") => Ok(handle_version()),
         (&Method::GET, "/console") if enable_console => show_console().await,
         (&Method::GET, "/health") => Ok(handle_health()),
@@ -272,29 +257,17 @@ fn handle_version() -> Response<Body> {
 
 // TODO: refactor
 #[allow(clippy::too_many_arguments)]
-pub async fn run_http<F>(
+pub async fn run_http(
     addr: SocketAddr,
     auth: Arc<Auth>,
-    db_factory_service: F,
     db_factory: Arc<dyn DbFactory>,
     upgrade_tx: mpsc::Sender<hrana::Upgrade>,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
-) -> anyhow::Result<()>
-where
-    F: MakeService<(), Vec<Query>> + Send + 'static,
-    F::Service: Load + Service<Vec<Query>, Response = Vec<Option<QueryResult>>, Error = Error>,
-    <F::Service as Load>::Metric: std::fmt::Debug,
-    F::MakeError: Into<BoxError>,
-    F::Error: Into<BoxError>,
-    <F as MakeService<(), Vec<Query>>>::Service: Send,
-    <F as MakeService<(), Vec<Query>>>::Future: Send,
-    <<F as MakeService<(), Vec<Query>>>::Service as Service<Vec<Query>>>::Future: Send,
-{
+) -> anyhow::Result<()> {
     tracing::info!("listening for HTTP requests on {addr}");
 
-    let (sender, mut receiver) = mpsc::channel(1024);
     fn trace_request<B>(req: &Request<B>, _span: &Span) {
         tracing::info!("got request: {} {}", req.method(), req.uri());
     }
@@ -320,7 +293,6 @@ where
             handle_request(
                 auth.clone(),
                 req,
-                sender.clone(),
                 upgrade_tx.clone(),
                 db_factory.clone(),
                 enable_console,
@@ -329,21 +301,6 @@ where
         });
 
     let server = hyper::server::Server::bind(&addr).serve(tower::make::Shared::new(service));
-
-    tokio::spawn(async move {
-        let mut pool = pool::Builder::new().build(db_factory_service, ());
-        while let Some(Message { batch, resp }) = receiver.recv().await {
-            if let Err(e) = poll_fn(|c| pool.poll_ready(c)).await {
-                tracing::error!("Connection pool error: {e}");
-                continue;
-            }
-
-            let fut = pool.call(batch);
-            tokio::spawn(async move {
-                let _ = resp.send(fut.await);
-            });
-        }
-    });
 
     server.await.context("Http server exited with an error")?;
 

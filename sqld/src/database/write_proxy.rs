@@ -15,7 +15,7 @@ use crate::stats::Stats;
 use crate::Result;
 
 use super::Program;
-use super::{libsql::LibSqlDb, service::DbFactory, Database};
+use super::{factory::DbFactory, libsql::LibSqlDb, Database};
 
 #[derive(Clone)]
 pub struct WriteProxyDbFactory {

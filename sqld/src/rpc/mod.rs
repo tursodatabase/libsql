@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tower::util::option_layer;
 
-use crate::database::service::DbFactory;
+use crate::database::factory::DbFactory;
 use crate::replication::ReplicationLogger;
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
