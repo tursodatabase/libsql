@@ -5,8 +5,8 @@ use crate::query_analysis::{State, Statement};
 use crate::Result;
 
 pub mod dump_loader;
+pub mod factory;
 pub mod libsql;
-pub mod service;
 pub mod write_proxy;
 
 const TXN_TIMEOUT_SECS: u64 = 5;

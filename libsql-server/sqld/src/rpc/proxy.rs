@@ -5,7 +5,7 @@ use std::sync::Arc;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
 
-use crate::database::service::DbFactory;
+use crate::database::factory::DbFactory;
 use crate::database::{Database, Program};
 
 use self::rpc::execute_results::State;

@@ -4,9 +4,8 @@ use pgwire::error::{ErrorInfo, PgWireError};
 
 use crate::error::Error;
 
-pub mod authenticator;
 mod proto;
-pub mod service;
+pub mod server;
 
 impl From<Error> for PgWireError {
     fn from(other: Error) -> Self {
