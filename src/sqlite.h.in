@@ -2496,7 +2496,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_DBCONFIG_ENABLE_VIEW           1015 /* int int* */
 #define SQLITE_DBCONFIG_LEGACY_FILE_FORMAT    1016 /* int int* */
 #define SQLITE_DBCONFIG_TRUSTED_SCHEMA        1017 /* int int* */
-#define SQLITE_DBCONFIG_STMT_SCANSTATUS       1080 /* int int*  */
+#define SQLITE_DBCONFIG_STMT_SCANSTATUS       1018 /* int int*  */
 #define SQLITE_DBCONFIG_REVERSE_SCANORDER     1019 /* int int* */
 #define SQLITE_DBCONFIG_MAX                   1019 /* Largest DBCONFIG */
 
