@@ -6441,7 +6441,6 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
     default: {
       IndexedExpr *pIEpr;
       Expr tmp;
-      int i;
       assert( pParse->iSelfTab==0 );
       if( (pNC->ncFlags & NC_InAggFunc)==0 ) break;
       if( pParse->pIdxEpr==0 ) break;
