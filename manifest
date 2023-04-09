@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\swhereRangeScanEst()\sthat\sshould\sonly\sapply\sif\sthere\nare\snot\sprior\serrors.\ndbsqlfuzz\s567ad91132879cbab8172b38c6a68ad40fa8d650.
-D 2023-04-09T10:09:28.921
+C Fix\san\sassertion\sfault\sthat\scan\soccur\swhen\scompiling\swith\sboth\nSQLITE_ENABLE_UNKNOWN_SQL_FUNCTIONS\sand\sSQLITE_ENABLE_STAT4.
+D 2023-04-09T20:44:09.894
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -701,7 +701,7 @@ F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 1a95162e26d5eda3b7b46fbe4fcbc33eb7f801529d66fc2e14c52094a5523339
 F src/vdbeaux.c 0379f2529aa16ab82fefddb1163c3138d6552ede80962b599ae711bbf5777608
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
-F src/vdbemem.c 6bf53dee95b4fd8585aef191ee381259b546256b3c056669c20f0fecd2a2fe1b
+F src/vdbemem.c 1d9a0f37b0097fbb53f0d7ba081f7181b83cee2c6f46364706ea0c3896bd8ec0
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b864a370fd04bba11487e3dab0388394bc71e1f3f006f7bd9d64eefe04e8b61
-R eb05fc199e96c886a58dbf98249166ca
+P 8ba9b08bd976ed2c024f5f378b4dd40a55226e950af77c476c21273fccaf7e26
+R 889add789cd2553848be57f0d2fe0e07
 U drh
-Z 8ca7ee35df5ac0bab38cf17f583933ba
+Z a5ce80245e588ea8ba300425da779261
 # Remove this line to create a well-formed Fossil manifest.

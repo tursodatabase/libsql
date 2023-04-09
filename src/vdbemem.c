@@ -1483,8 +1483,11 @@ static int valueFromFunction(
   if( pList ) nVal = pList->nExpr;
   assert( !ExprHasProperty(p, EP_IntValue) );
   pFunc = sqlite3FindFunction(db, p->u.zToken, nVal, enc, 0);
+#ifdef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+  if( pFunc==0 ) return SQLITE_OK;
+#endif
   assert( pFunc );
-  if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0 
+  if( (pFunc->funcFlags & (SQLITE_FUNC_CONSTANT|SQLITE_FUNC_SLOCHNG))==0
    || (pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL)
   ){
     return SQLITE_OK;
