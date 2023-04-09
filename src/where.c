@@ -2020,7 +2020,7 @@ static int whereRangeScanEst(
   UNUSED_PARAMETER(pBuilder);
   assert( pLower || pUpper );
 #endif
-  assert( pUpper==0 || (pUpper->wtFlags & TERM_VNULL)==0 );
+  assert( pUpper==0 || (pUpper->wtFlags & TERM_VNULL)==0 || pParse->nErr>0 );
   nNew = whereRangeAdjust(pLower, nOut);
   nNew = whereRangeAdjust(pUpper, nNew);
 
