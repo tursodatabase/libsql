@@ -4186,6 +4186,7 @@ struct Walker {
     struct CoveringIndexCheck *pCovIdxCk;     /* Check for covering index */
     SrcItem *pSrcItem;                        /* A single FROM clause item */
     DbFixer *pFix;                            /* See sqlite3FixSelect() */
+    Mem *aMem;                                /* See sqlite3BtreeCursorHint() */
   } u;
 };
 

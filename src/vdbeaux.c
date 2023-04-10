@@ -5275,6 +5275,20 @@ int sqlite3NotPureFunc(sqlite3_context *pCtx){
   return 1;
 }
 
+#if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
+/*
+** This Walker callback is used to help verify that calls to
+** sqlite3BtreeCursorHint() with opcode BTREE_HINT_RANGE have 
+** byte-code register values correctly initialized.
+*/
+int sqlite3CursorRangeHintExprCheck(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_REGISTER ){
+    assert( (pWalker->u.aMem[pExpr->iTable].flags & MEM_Undefined)==0 );
+  }
+  return WRC_Continue;
+}
+#endif /* SQLITE_ENABLE_CURSOR_HINTS && SQLITE_DEBUG */
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored
