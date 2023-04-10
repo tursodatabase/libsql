@@ -1,5 +1,5 @@
-C New\sassert()\sstatements\sto\svalidate\sthe\sparameters\sto\nsqlite3BtreeCursorHint().\s\sFix\sa\sproblem\swith\sthe\sconstruction\sof\sthose\nparameters\sdiscovered\sby\n[forum:/forumpost/0b53708c95|forum\spost\s0b53708c95].
-D 2023-04-10T18:44:00.864
+C For\ssha3\sextension,\smention\sNIST\sstandard\simplemented.
+D 2023-04-10T23:21:19.052
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -300,7 +300,7 @@ F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d385
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
 F ext/misc/series.c 8d79354f2c3d46b95ee21272a07cf0bcabb58d1f2b06d9e7b8a31dca1dacb3e5
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
-F ext/misc/shathree.c 9b7af7b7d55b27c5bbd16548b67fe6aa47a819e71bc6a80a456144f86f4e834d
+F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
 F ext/misc/spellfix.c 94df9bbfa514a563c1484f684a2df3d128a2f7209a84ca3ca100c68a0163e29f
 F ext/misc/sqlar.c 53e7d48f68d699a24f1a92e68e71eca8b3a9ff991fe9588c2a05bde103c6e7b7
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 49ba030080dd00b4fdf788fd3da057b333e705fa0fe37d653e2461bf96ca3785
-R 52234413a35145fce6946ef5d4a92056
-U drh
-Z c6b409950782fc21232dcb9d111b6a54
+P 4c5a3c5fb351cc1c2ce16c33314ce19c53531f09263f87456283d9d756002f9d
+R d7c4b934385537fc62cb31933fd99395
+U larrybr
+Z 04beccf7708e38ec632db3683e5bb16e
 # Remove this line to create a well-formed Fossil manifest.
