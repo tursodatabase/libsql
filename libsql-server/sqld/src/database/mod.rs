@@ -4,7 +4,7 @@ use crate::query::{Params, Query, QueryResult};
 use crate::query_analysis::{State, Statement};
 use crate::Result;
 
-pub mod dump_loader;
+pub mod dump;
 pub mod factory;
 pub mod libsql;
 pub mod write_proxy;

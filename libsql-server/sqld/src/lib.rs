@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
-use database::dump_loader::DumpLoader;
+use database::dump::loader::DumpLoader;
 use database::factory::DbFactory;
 use database::libsql::LibSqlDb;
 use database::write_proxy::WriteProxyDbFactory;
