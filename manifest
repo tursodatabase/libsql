@@ -1,5 +1,5 @@
-C Fix\san\sassertion\sfault\sthat\scan\soccur\swhen\scompiling\swith\sboth\nSQLITE_ENABLE_UNKNOWN_SQL_FUNCTIONS\sand\sSQLITE_ENABLE_STAT4.
-D 2023-04-09T20:44:09.894
+C Sync\sthe\svt02.c\stest\svirtual\stable\swith\sTH3,\sin\sorder\sto\spull\sin\sthe\sfix\nfor\slong\sdelays\swhen\sthere\sare\shuge\sOFFSET\svalues.
+D 2023-04-10T13:20:51.922
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1807,7 +1807,7 @@ F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
 F test/view.test d4c4281e1679245829db35597817282f60dc513fc39cc5439078f009bd118487
 F test/view2.test db32c8138b5b556f610b35dfddd38c5a58a292f07fda5281eedb0851b2672679
 F test/view3.test ad8a8290ee2b55ff6ce66c9ef1ce3f1e47926273a3814e1c425293e128a95456
-F test/vt02.c 86253b57d6bc2170dfca33f45fd099b66d0bf874e95ecd7786dcbb134f179469
+F test/vt02.c f4a357c8180d71120ca2b466a8df48d9c40fc50873694840327d9647450485f3
 F test/vtab1.test 09a72330d0f31eda2ffaa828b06a6b917fb86250ee72de0301570af725774c07
 F test/vtab2.test 14d4ab26cee13ba6cf5c5601b158e4f57552d3b055cdd9406cf7f711e9c84082
 F test/vtab3.test b45f47d20f225ccc9c28dc915d92740c2dee311e
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 8ba9b08bd976ed2c024f5f378b4dd40a55226e950af77c476c21273fccaf7e26
-R 889add789cd2553848be57f0d2fe0e07
+P 9ff69e599817610d14948a3eebcc4d3c18245f78a1433c23ae659211cbbdb017
+R 7cdb734827060f13b761710e5ee55378
 U drh
-Z a5ce80245e588ea8ba300425da779261
+Z 7d4200ee23a188536db0fc075de1e41b
 # Remove this line to create a well-formed Fossil manifest.
