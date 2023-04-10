@@ -39,7 +39,7 @@ impl QueryHandler {
         col_defs: bool,
     ) -> PgWireResult<Vec<Response>> {
         //FIXME: handle poll_ready error
-        match self.database.execute_batch_or_rollback(queries).await {
+        match self.database.execute_batch(queries).await {
             Ok((resp, _)) => {
                 let ret = resp
                     .into_iter()
