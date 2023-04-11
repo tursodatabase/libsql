@@ -181,7 +181,10 @@ async fn handle_query(
                 .header("Content-Type", "application/json")
                 .body(Body::from(json))?)
         }
-        Err(_) => Ok(error("internal error", StatusCode::INTERNAL_SERVER_ERROR)),
+        Err(e) => Ok(error(
+            &format!("internal error: {e}"),
+            StatusCode::INTERNAL_SERVER_ERROR,
+        )),
     }
 }
 
