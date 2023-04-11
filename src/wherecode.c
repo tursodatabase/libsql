@@ -1131,7 +1131,7 @@ static void codeCursorHint(
   }
   if( pExpr!=0 ){
     sWalker.xExprCallback = codeCursorHintFixExpr;
-    sqlite3WalkExpr(&sWalker, pExpr);
+    if( pParse->nErr==0 ) sqlite3WalkExpr(&sWalker, pExpr);
     sqlite3VdbeAddOp4(v, OP_CursorHint, 
                       (sHint.pIdx ? sHint.iIdxCur : sHint.iTabCur), 0, 0,
                       (const char*)pExpr, P4_EXPR);

@@ -1,5 +1,5 @@
-C For\ssha3\sextension,\smention\sNIST\sstandard\simplemented.
-D 2023-04-10T23:21:19.052
+C Better\shandling\sof\sOOM\serrors\sin\sthe\scursor-hint\slogic.\ndbsqlfuzz\s60cd5fff91974af91c2c3692beb4a2d7fdafef46
+D 2023-04-11T02:10:34.486
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -712,7 +712,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c ef9e644d1d76e86f68c941eb05d30a98fc0811eeef2a110906d81fedde81b6bf
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
-F src/wherecode.c 277c38607de247353af79d54385d602d8fc2e535113253c006b749d9fff48c45
+F src/wherecode.c 85790d7e5365ac41085713331ce52e4343586ad3d37d218ffe00572357baa62b
 F src/whereexpr.c 1dfda1695e4480c24248157df55bb4d66c732dc8d14ac16b4f076bb15de93d63
 F src/window.c 76a27cff9ea2ded0c2c3527187029259440fabcc4cc4c07b11d942c78494a614
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c5a3c5fb351cc1c2ce16c33314ce19c53531f09263f87456283d9d756002f9d
-R d7c4b934385537fc62cb31933fd99395
-U larrybr
-Z 04beccf7708e38ec632db3683e5bb16e
+P 529ab138a438379f0cbd170bff5211aee1c327a1b3119a714ee15f68fd2239f3
+R 2b073bb091f9647750fe13a7239467ad
+U drh
+Z 5c099af3d555e42160813c7dd8f116af
 # Remove this line to create a well-formed Fossil manifest.
