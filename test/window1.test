@@ -2316,4 +2316,18 @@ do_execsql_test 74.4 {
      AND a1.c1=0;
 } {}
 
+# 2023-04-11 https://sqlite.org/forum/forumpost/6c5678e3da
+# An ALWAYS() turns out to be sometimes false.
+#
+do_execsql_test 75.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INT, b INT);
+  CREATE INDEX t1x ON t1(a+b);
+}
+do_catchsql_test 75.1 {
+  SELECT count((SELECT count(a0.a+a0.b) ORDER BY sum(0) OVER (PARTITION BY 0)))
+    FROM t1 AS a0 JOIN t1 AS a1
+   GROUP BY a1.a;
+} {1 {misuse of aggregate: count()}}
+
 finish_test

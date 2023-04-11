@@ -6288,7 +6288,7 @@ static int agginfoPersistExprCb(Walker *pWalker, Expr *pExpr){
     sqlite3 *db = pParse->db;
     assert( iAgg>=0 );
     if( pExpr->op!=TK_AGG_FUNCTION ){
-      if( ALWAYS(iAgg<pAggInfo->nColumn)
+      if( iAgg<pAggInfo->nColumn
        && pAggInfo->aCol[iAgg].pCExpr==pExpr
       ){
         pExpr = sqlite3ExprDup(db, pExpr, 0);
