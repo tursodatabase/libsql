@@ -5266,11 +5266,13 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
       ** use UNION, INTERSECT, or EXCEPT.  Only UNION ALL is allowed. */
       return 0;
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( pX->pWin ){
       /* This optimization does not work for subqueries that use window
       ** functions. */
       return 0;
     }
+#endif
   }
   colUsed = pItem->colUsed;
   if( pSub->pOrderBy ){
