@@ -1,5 +1,5 @@
-C New\s#ifdef\sto\senable\sbuilding\swith\s-DSQLITE_OMIT_WINDOWFUNC.
-D 2023-04-11T19:38:47.332
+C Avoid\sleaking\sa\sdatabase\shandle\sin\stest\sscript\srbuexlock.test.
+D 2023-04-12T18:18:28.553
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -341,7 +341,7 @@ F ext/rbu/rbucrash.test d2b5d619d9281c89cad74401b73b46172daa89906940b1d739c813dd
 F ext/rbu/rbucrash2.test 0a1a72223d880215ce2893a3260320c31a9358d23cb124c610e4f0d984a93285
 F ext/rbu/rbudiff.test 8b8b8b569c68fc880134e0fac4bf6b4b7a907aea4cc6eacf7e1d45e1d47b6aac
 F ext/rbu/rbudor.test 293a192e668bb8e9c7c9704b080c1086ee17496f768e0f1823049e7d02651d1b
-F ext/rbu/rbuexlock.test 703bb26cb13d655920670974a5d6823b8f7a8b1d4451162a0c1caf44c3d44252
+F ext/rbu/rbuexlock.test e07a0875d0b72f7c007e5d5dcf424e9d48a4752a1a9bcee8ee36947e6add6d5b
 F ext/rbu/rbuexpr.test 2c91617509c88b6e9030f7bf6ff720df26032fcd801adc25533feae726a57382
 F ext/rbu/rbufault.test c51de14067cfe867849530d3d1718ffeb28522f28d52937f95dd7bc2116eb42e
 F ext/rbu/rbufault2.test 8cc8f6298d2d7d20080b2c77e65b607af8b89839f9d87c0972b27e6442edc258
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8fb143d64d8e823684cd26799080da4b42bef121ca3c6315b1803a593490926
-R 23a3c5b92c8f88b7b4f263831382c52f
-U drh
-Z 51e0cafc6ddabd2f402c0ebee1449b15
+P e1ff83fa2565334b28bd0d6582088c4ae0d2d9a590d973615a4a598683fe419c
+R 63ae784cbfa30c9af9f17fd8269f114d
+U dan
+Z 80aaf53aef46b41d0dd8a763fb401b0e
 # Remove this line to create a well-formed Fossil manifest.

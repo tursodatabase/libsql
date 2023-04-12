@@ -287,5 +287,6 @@ do_test 4.22 {
   catchsql { SELECT * FROM t1 } cons
 } {0 {1 one 2 two}}
 
+cons close
 
 finish_test
