@@ -1623,6 +1623,8 @@ static int fts5UpdateMethod(
   Fts5Config *pConfig = pTab->p.pConfig;
   int eType0;                     /* value_type() of apVal[0] */
   int rc = SQLITE_OK;             /* Return code */
+  int bUpdateOrDelete = 0;
+  
 
   /* A transaction must be open when this is called. */
   assert( pTab->ts.eState==1 || pTab->ts.eState==2 );
@@ -1633,6 +1635,11 @@ static int fts5UpdateMethod(
        || sqlite3_value_type(apVal[0])==SQLITE_NULL 
   );
   assert( pTab->p.pConfig->pzErrmsg==0 );
+  if( pConfig->pgsz==0 ){
+    rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+    if( rc!=SQLITE_OK ) return rc;
+  }
+
   pTab->p.pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
 
   /* Put any active cursors into REQUIRE_SEEK state. */
@@ -1685,6 +1692,7 @@ static int fts5UpdateMethod(
     else if( nArg==1 ){
       i64 iDel = sqlite3_value_int64(apVal[0]);  /* Rowid to delete */
       rc = sqlite3Fts5StorageDelete(pTab->pStorage, iDel, 0);
+      bUpdateOrDelete = 1;
     }
 
     /* INSERT or UPDATE */
@@ -1700,6 +1708,7 @@ static int fts5UpdateMethod(
         if( eConflict==SQLITE_REPLACE && eType1==SQLITE_INTEGER ){
           i64 iNew = sqlite3_value_int64(apVal[1]);  /* Rowid to delete */
           rc = sqlite3Fts5StorageDelete(pTab->pStorage, iNew, 0);
+          bUpdateOrDelete = 1;
         }
         fts5StorageInsert(&rc, pTab, apVal, pRowid);
       }
@@ -1728,7 +1737,21 @@ static int fts5UpdateMethod(
           rc = sqlite3Fts5StorageDelete(pTab->pStorage, iOld, 0);
           fts5StorageInsert(&rc, pTab, apVal, pRowid);
         }
+        bUpdateOrDelete = 1;
       }
+    }
+  }
+
+  if( rc==SQLITE_OK 
+   && bUpdateOrDelete 
+   && pConfig->bSecureDelete 
+   && pConfig->iVersion==FTS5_CURRENT_VERSION 
+  ){
+    rc = sqlite3Fts5StorageConfigValue(
+        pTab->pStorage, "version", 0, FTS5_CURRENT_VERSION_SECUREDELETE
+    );
+    if( rc==SQLITE_OK ){
+      pConfig->iVersion = FTS5_CURRENT_VERSION_SECUREDELETE;
     }
   }
 
@@ -2591,6 +2614,7 @@ static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   UNUSED_PARAM(iSavepoint);  /* Call below is a no-op for NDEBUG builds */
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
   fts5TripCursors(pTab);
+  pTab->p.pConfig->pgsz = 0;
   return sqlite3Fts5StorageRollback(pTab->pStorage);
 }
 
