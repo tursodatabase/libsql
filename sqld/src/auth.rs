@@ -37,9 +37,20 @@ pub enum AuthError {
     Other,
 }
 
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Authorized {
+    FullAccess,
+    ReadOnly,
+}
+
 /// A witness that the user has been authenticated.
-#[derive(Debug)]
-pub struct Authenticated(());
+#[non_exhaustive]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Authenticated {
+    Anonymous,
+    Authorized(Authorized),
+}
 
 impl Auth {
     pub fn authenticate_http(
@@ -47,7 +58,7 @@ impl Auth {
         auth_header: Option<&hyper::header::HeaderValue>,
     ) -> Result<Authenticated, AuthError> {
         if self.disabled {
-            return Ok(Authenticated(()));
+            return Ok(Authenticated::Authorized(Authorized::FullAccess));
         }
 
         let Some(auth_header) = auth_header else {
@@ -64,7 +75,7 @@ impl Auth {
                 let actual_value = actual_value.trim_end_matches('=');
                 let expected_value = expected_value.trim_end_matches('=');
                 if actual_value == expected_value {
-                    Ok(Authenticated(()))
+                    Ok(Authenticated::Authorized(Authorized::FullAccess))
                 } else {
                     Err(AuthError::BasicRejected)
                 }
@@ -75,7 +86,7 @@ impl Auth {
 
     pub fn authenticate_jwt(&self, jwt: Option<&str>) -> Result<Authenticated, AuthError> {
         if self.disabled {
-            return Ok(Authenticated(()));
+            return Ok(Authenticated::Authorized(Authorized::FullAccess));
         }
 
         let Some(jwt) = jwt else {
@@ -128,8 +139,18 @@ fn validate_jwt(
     let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::EdDSA);
     validation.required_spec_claims.remove("exp");
 
-    match jsonwebtoken::decode::<serde_json::Value>(jwt, jwt_key, &validation) {
-        Ok(_token) => Ok(Authenticated(())),
+    match jsonwebtoken::decode::<serde_json::Value>(jwt, jwt_key, &validation).map(|t| t.claims) {
+        Ok(serde_json::Value::Object(claims)) => {
+            tracing::trace!("Claims: {claims:#?}");
+            Ok(match claims.get("a").and_then(|s| s.as_str()) {
+                Some("ro") => Authenticated::Authorized(Authorized::ReadOnly),
+                Some("rw") => Authenticated::Authorized(Authorized::FullAccess),
+                Some(_) => Authenticated::Anonymous,
+                // Backward compatibility - no access claim means full access
+                None => Authenticated::Authorized(Authorized::FullAccess),
+            })
+        }
+        Ok(_) => Err(AuthError::JwtInvalid),
         Err(error) => Err(match error.kind() {
             ErrorKind::InvalidToken
             | ErrorKind::InvalidSignature
@@ -201,10 +222,13 @@ mod tests {
         auth.authenticate_http(Some(&HeaderValue::from_str(header).unwrap()))
     }
 
-    const VALID_JWT: &str = "eyJ0eXAiOiJKV1QiLCJhbGciOiJFZERTQSJ9.\
-        eyJleHAiOjQ4MzEwOTI5NDh9.\
-        TbPFJBxqb0fPPXj74DgmIZO41skmNEx-8b3PfAXv7IJMeLa3fNgBi7J5xxLm_-0SMEV3f6KMgUN0dBFbGRk4Ag";
-    const VALID_JWT_KEY: &str = "3dwzg2D96T4GcyZkK4MezpRQxU321g7aTrUn1iwOF0s";
+    const VALID_JWT_KEY: &str = "zaMv-aFGmB7PXkjM4IrMdF6B5zCYEiEGXW3RgMjNAtc";
+    const VALID_JWT: &str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
+        eyJleHAiOjc5ODg0ODM4Mjd9.\
+        MatB2aLnPFusagqH2RMoVExP37o2GFLmaJbmd52OdLtAehRNeqeJZPrefP1t2GBFidApUTLlaBRL6poKq_s3CQ";
+    const VALID_READONLY_JWT: &str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
+        eyJleHAiOjc5ODg0ODM4MjcsImEiOiJybyJ9.\
+        _2ZZiO2HC8b3CbCHSCufXXBmwpl-dLCv5O9Owvpy7LZ9aiQhXODpgV-iCdTsLQJ5FVanWhfn3FtJSnmWHn25DQ";
 
     macro_rules! assert_ok {
         ($e:expr) => {
@@ -268,6 +292,11 @@ mod tests {
             &auth,
             &format!("Bearer {}", &VALID_JWT[..80])
         ));
+
+        assert_eq!(
+            authenticate_http(&auth, &format!("Bearer {VALID_READONLY_JWT}")).unwrap(),
+            Authenticated::Authorized(Authorized::ReadOnly)
+        );
     }
 
     #[test]

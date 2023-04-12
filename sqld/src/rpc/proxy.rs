@@ -5,6 +5,7 @@ use std::sync::Arc;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
 
+use crate::auth::{Authenticated, Authorized};
 use crate::database::factory::DbFactory;
 use crate::database::{Database, Program};
 
@@ -305,8 +306,22 @@ impl Proxy for ProxyService {
             }
         };
 
+        let auth = match req.authorized {
+            Some(0) => Authenticated::Authorized(Authorized::ReadOnly),
+            Some(1) => Authenticated::Authorized(Authorized::FullAccess),
+            Some(_) => {
+                return Err(tonic::Status::new(
+                    tonic::Code::PermissionDenied,
+                    "invalid authorization level",
+                ))
+            }
+            None => Authenticated::Anonymous,
+        };
         tracing::debug!("executing request for {client_id}");
-        let (results, state) = db.execute_program(pgm).await.unwrap();
+        let (results, state) = db
+            .execute_program(pgm, auth)
+            .await
+            .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
         let results = results.into_iter().map(|r| r.into()).collect();
 
         Ok(tonic::Response::new(ExecuteResults {

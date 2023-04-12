@@ -13,7 +13,7 @@ use crate::hrana::stmt::{execute_stmt, StmtError};
 
 /// Session-level state of an authenticated Hrana connection.
 pub struct Session {
-    _authenticated: Authenticated,
+    authenticated: Authenticated,
     streams: HashMap<i32, StreamHandle>,
 }
 
@@ -64,13 +64,13 @@ pub enum ResponseError {
 }
 
 pub(super) async fn handle_hello(server: &Server, jwt: Option<String>) -> Result<Session> {
-    let _authenticated = server
+    let authenticated = server
         .auth
         .authenticate_jwt(jwt.as_deref())
         .map_err(|err| anyhow!(ResponseError::Auth { source: err }))?;
 
     Ok(Session {
-        _authenticated,
+        authenticated,
         streams: HashMap::new(),
     })
 }
@@ -129,11 +129,12 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
+            let auth = session.authenticated;
             stream_respond!(stream_hnd, async move |stream| {
                 let Some(db) = stream.db.as_ref() else {
                     bail!(ResponseError::StreamNotOpen { stream_id })
                 };
-                match execute_stmt(&**db, &req.stmt).await {
+                match execute_stmt(&**db, auth, &req.stmt).await {
                     Ok(result) => Ok(proto::Response::Execute(proto::ExecuteResp { result })),
                     Err(err) => bail!(ResponseError::Stmt(err.downcast::<StmtError>()?)),
                 }
@@ -145,11 +146,12 @@ pub(super) async fn handle_request(
                 bail!(ResponseError::StreamNotFound { stream_id })
             };
 
+            let auth = session.authenticated;
             stream_respond!(stream_hnd, async move |stream| {
                 let Some(db) = stream.db.as_ref() else {
                     bail!(ResponseError::StreamNotOpen { stream_id })
                 };
-                match execute_batch(&**db, &req.batch).await {
+                match execute_batch(&**db, auth, &req.batch).await {
                     Ok(result) => Ok(proto::Response::Batch(proto::BatchResp { result })),
                     Err(err) => bail!(ResponseError::Batch(err.downcast::<BatchError>()?)),
                 }
