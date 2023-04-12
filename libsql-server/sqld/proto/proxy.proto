@@ -130,9 +130,15 @@ message OrCond {
     repeated Cond conds = 1;
 }
 
+enum Authorized {
+    READONLY = 0;
+    FULL = 1;
+}
+
 message ProgramReq {
     string client_id = 1;
     Program pgm = 2;
+    optional Authorized authorized = 3;
 }
 
 service Proxy {

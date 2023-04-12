@@ -5,6 +5,7 @@ use tokio::sync::Mutex;
 use tonic::transport::Channel;
 use uuid::Uuid;
 
+use crate::auth::{Authenticated, Authorized};
 use crate::error::Error;
 use crate::query::{QueryResponse, QueryResult};
 use crate::query_analysis::State;
@@ -74,11 +75,18 @@ impl WriteProxyDatabase {
         &self,
         pgm: Program,
         state: &mut State,
+        auth: Authenticated,
     ) -> Result<(Vec<Option<QueryResult>>, State)> {
         let mut client = self.write_proxy.clone();
+        let authorized: Option<i32> = match auth {
+            Authenticated::Anonymous => None,
+            Authenticated::Authorized(Authorized::ReadOnly) => Some(0),
+            Authenticated::Authorized(Authorized::FullAccess) => Some(1),
+        };
         let req = crate::rpc::proxy::rpc::ProgramReq {
             client_id: self.client_id.to_string(),
             pgm: Some(pgm.into()),
+            authorized,
         };
         match client.execute(req).await {
             Ok(r) => {
@@ -113,7 +121,7 @@ impl Database for WriteProxyDatabase {
     async fn execute_program(
         &self,
         pgm: Program,
-        auth: crate::auth::Authenticated,
+        auth: Authenticated,
     ) -> Result<(Vec<Option<QueryResult>>, State)> {
         let mut state = self.state.lock().await;
         if *state == State::Init && pgm.is_read_only() {
@@ -123,12 +131,12 @@ impl Database for WriteProxyDatabase {
             let (results, new_state) = self.read_db.execute_program(pgm.clone(), auth).await?;
             if new_state != State::Init {
                 self.read_db.rollback(auth).await?;
-                self.execute_remote(pgm, &mut state).await
+                self.execute_remote(pgm, &mut state, auth).await
             } else {
                 Ok((results, new_state))
             }
         } else {
-            self.execute_remote(pgm, &mut state).await
+            self.execute_remote(pgm, &mut state, auth).await
         }
     }
 }
