@@ -1,5 +1,5 @@
-C New\s#ifdef\sto\senable\sbuilding\swith\s-DSQLITE_OMIT_WINDOWFUNC.
-D 2023-04-11T19:38:47.332
+C WIP:\sCLI\soption\sto\stake\scontrol\sof\sconsole\son\sWindows\sand\smake\sit\ssupport\sUTF-8\sinput\spasting\s(or\styping).\sNeeds\swork\sto\sbecome\srobust\sper\s"ToDo:".
+D 2023-04-12T17:54:52.445
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -626,7 +626,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c 93bb02212256b49a90589a4664031896e2b2991198153dff1a33a72f437dad94
-F src/shell.c.in 80f7c4c1bdabc9dab416b59287458044c01df97035d626ea57ffeabbb289bdc6
+F src/shell.c.in 156279044afe3acdd48997531617c6bd1b5a37b5761b67900cc4dbfcc8af7130
 F src/sqlite.h.in 4fff9c6cc5d4cbba9532a668112efb6dc469c425e1a2196664d7c07d508363ef
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2052,8 +2052,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c8fb143d64d8e823684cd26799080da4b42bef121ca3c6315b1803a593490926
-R 23a3c5b92c8f88b7b4f263831382c52f
-U drh
-Z 51e0cafc6ddabd2f402c0ebee1449b15
+P e1ff83fa2565334b28bd0d6582088c4ae0d2d9a590d973615a4a598683fe419c
+R 42a09bb2160cadfa8aa798fa30b96ed8
+T *branch * cli-utf8
+T *sym-cli-utf8 *
+T -sym-trunk *
+U larrybr
+Z e14b183810e19b5d66903057d8becd3e
 # Remove this line to create a well-formed Fossil manifest.

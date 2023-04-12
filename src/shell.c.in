@@ -228,6 +228,7 @@ typedef unsigned char u8;
 #if SQLITE_OS_WINRT
 #include <intrin.h>
 #endif
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 /* string conversion routines only needed on Win32 */
@@ -442,10 +443,17 @@ static void endTimer(void){
 static int bail_on_error = 0;
 
 /*
-** Threat stdin as an interactive input if the following variable
+** Treat stdin as an interactive input if the following variable
 ** is true.  Otherwise, assume stdin is connected to a file or pipe.
 */
 static int stdin_is_interactive = 1;
+
+#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+/*
+** Setup console for UTF-8 input/output when following variable true.
+*/
+static int console_utf8 = 0;
+#endif
 
 /*
 ** On Windows systems we have to know if standard output is a console
@@ -578,6 +586,80 @@ static char *dynamicContinuePrompt(void){
   return dynPrompt.dynamicPrompt;
 }
 #endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
+
+#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+static int infsMode;
+static UINT codePage;
+static HANDLE hConsoleIn;
+static DWORD consoleMode;
+/*
+** Prepare input stream, (if known to be a WIN32 console), for UTF-8
+** input (from either typing or suitable paste operations) and for
+** UTF-8 rendering. This may "fail" with a message to stderr, where
+** the preparation is not done and common "code page" issues occur.
+*/
+static void instream_prepare(){
+  if( isatty(0) ){
+    if( !IsValidCodePage(CP_UTF8) ){
+      fprintf(stderr, "Cannot use UTF-8 code page.\n");
+      console_utf8 = 0;
+      return;
+    }
+    codePage = GetConsoleCP();
+    SetConsoleCP(CP_UTF8);
+    hConsoleIn = GetStdHandle(STD_INPUT_HANDLE);
+    GetConsoleMode( hConsoleIn, &consoleMode);
+    SetConsoleMode( hConsoleIn, consoleMode | ENABLE_LINE_INPUT );
+    infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
+    console_utf8 = 1;
+  }else{
+    console_utf8 = 0;
+  }
+}
+
+/*
+** Undo the effects of instream_prepare(), if any.
+*/
+static void instream_restore(){
+  if( console_utf8 ){
+    _setmode(_fileno(stdin), infsMode);
+    SetConsoleCP(codePage);
+    SetConsoleMode( hConsoleIn, consoleMode );
+  }
+}
+
+/*
+** Collect input like fgets(...) with special provisions for input
+** from the Windows console to get around its strange coding issues.
+** Defers to plain fgets() when input is not interactive or when the
+** startup option, -utf8, has not been provided or taken effect.
+** WIP: This routine needs work to consume only as many characters
+** as can be fit into the provided input buffer. ToDo: That work.
+** Avoiding this issue will require some refactoring of CLI input.
+*/
+static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
+  if( fin==stdin && stdin_is_interactive && console_utf8 ){
+    wchar_t * wbuf = (wchar_t*) malloc(ncmax * sizeof(wchar_t));
+    wchar_t * wz;
+    int nmb;
+    if( wbuf==0 ) return 0;
+    if( 0 == (wz = fgetws(wbuf, ncmax, stdin))
+        || 0 == (nmb = WideCharToMultiByte(CP_UTF8, 0, wz, -1, 0, 0, 0, 0))
+        || nmb > ncmax ){
+      buf = 0;
+      goto bail;
+    }
+    WideCharToMultiByte(CP_UTF8, 0, wz, -1, buf, nmb, 0, 0);
+  bail:
+    free(wbuf);
+    return buf;
+  }else{
+    return fgets(buf, ncmax, fin);
+  }
+}
+
+# define fgets(b,n,f) utf8_fgets(b,n,f)
+#endif /* (defined(_WIN32)||defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE) */
 
 /*
 ** Render output like fprintf().  Except, if the output is going to the
@@ -802,7 +884,11 @@ static char *local_getline(char *zLine, FILE *in){
   /* For interactive input on Windows systems, translate the
   ** multi-byte characterset characters into UTF-8. */
   if( stdin_is_interactive && in==stdin ){
+    // FILE *cil = fopen("cin.log", "wa");
+    // i64 nzl = strlen(zLine);
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
+    // fwrite(zLine, nzl, 1, cil);
+    // fwrite("\n", 1,1, cil);
     if( zTrans ){
       i64 nTrans = strlen(zTrans)+1;
       if( nTrans>nLine ){
@@ -810,8 +896,11 @@ static char *local_getline(char *zLine, FILE *in){
         shell_check_oom(zLine);
       }
       memcpy(zLine, zTrans, nTrans);
+      // fwrite(zLine, nTrans-1, 1, cil);
+      // fwrite("\n", 1,1, cil);
       sqlite3_free(zTrans);
     }
+    // fclose(cil);
   }
 #endif /* defined(_WIN32) || defined(WIN32) */
   return zLine;
@@ -11585,6 +11674,9 @@ static const char zOptions[] =
   "   -stats               print memory stats before each finalize\n"
   "   -table               set output mode to 'table'\n"
   "   -tabs                set output mode to 'tabs'\n"
+#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+  "   -utf8                setup interactive console code page for UTF-8\n"
+#endif
   "   -version             show SQLite version\n"
   "   -vfs NAME            use NAME as the default VFS\n"
 #ifdef SQLITE_ENABLE_VFSTRACE
@@ -12116,6 +12208,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       stdin_is_interactive = 1;
     }else if( cli_strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
+    }else if( cli_strcmp(z,"-utf8")==0 ){
+#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+      console_utf8 = 1;
+#endif
     }else if( cli_strcmp(z,"-heap")==0 ){
       i++;
     }else if( cli_strcmp(z,"-pagecache")==0 ){
@@ -12193,6 +12289,13 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }
     data.cMode = data.mode;
   }
+#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+  if( console_utf8 && stdin_is_interactive ){
+    instream_prepare();
+  }else{
+    console_utf8 = 0;
+  }
+#endif
 
   if( !readStdin ){
     /* Run all arguments that do not begin with '-' as if they were separate
@@ -12267,6 +12370,11 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       rc = process_input(&data);
     }
   }
+#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+  if( console_utf8 ){
+    instream_restore();
+  }
+#endif
 #ifndef SQLITE_SHELL_FIDDLE
   /* In WASM mode we have to leave the db state in place so that
   ** client code can "push" SQL into it after this call returns. */
