@@ -1,5 +1,5 @@
-C Add\sthe\s'secure-delete'\soption\sto\sfts5.\sUsed\sto\sconfigure\sfts5\sto\saggressively\sremove\sold\sfull-text-index\sentries\sbelonging\sto\sdeleted\sor\supdated\srows.
-D 2023-04-12T17:40:44.865
+C Remove\stemporary\sdebugging\scode\saccidentally\sleft\son\sthis\sbranch.
+D 2023-04-12T18:06:43.220
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 46af0b3c3c3f00bfc5bdd307434d7c5f0fa0678a034dd48345cd83b20068efbd
 F ext/fts5/fts5_expr.c 48e8e45261c6030cf5c77f606217a22722b1a4d0b34e2ba6cbfc386581627989
 F ext/fts5/fts5_hash.c d4fb70940359f2120ccd1de7ffe64cc3efe65de9e8995b822cd536ff64c96982
-F ext/fts5/fts5_index.c 111da0b3226461111bf014a4e0c57dc61bcd7947b90584699ca1090f409fef45
+F ext/fts5/fts5_index.c 4dc0f8b79af771a6a490e4c3476729cba201fb9081c88324da45ece57c7a3372
 F ext/fts5/fts5_main.c b4dba04a36aaf9b8e8cef0100b6dbb422cc74753eacc11d6401cac7a87c0f38d
 F ext/fts5/fts5_storage.c 76c6085239eb44424004c022e9da17a5ecd5aaec859fba90ad47d3b08f4c8082
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2055,11 +2055,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1ff83fa2565334b28bd0d6582088c4ae0d2d9a590d973615a4a598683fe419c
-R 77520373799013e82dff45638b253c47
-T *branch * fts5-secure-delete
-T *sym-fts5-secure-delete *
-T -sym-trunk *
+P 4240fd09b717dbc69dffe3b88ec9149777ca4c3efa12f282af65be3af6fa5bb0
+R 94c13bd9e875c4e10b2fe9e0cf572c45
 U dan
-Z 0c15d52b2e44a1574709121e2f6a7b6b
+Z 057142ccfc1c60d57ad54409384a9ea2
 # Remove this line to create a well-formed Fossil manifest.

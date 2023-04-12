@@ -6213,7 +6213,6 @@ static void fts5TestDlidxReverse(
     int pgno = fts5DlidxIterPgno(pDlidx);
     assert( pgno>iLeaf );
     cksum1 += iRowid + ((i64)pgno<<32);
-    // printf("1: rowid=%lld pgno=%d\n", iRowid, pgno);
   }
   fts5DlidxIterFree(pDlidx);
   pDlidx = 0;
@@ -6226,7 +6225,6 @@ static void fts5TestDlidxReverse(
     int pgno = fts5DlidxIterPgno(pDlidx);
     assert( fts5DlidxIterPgno(pDlidx)>iLeaf );
     cksum2 += iRowid + ((i64)pgno<<32);
-    // printf("2: rowid=%lld pgno=%d\n", iRowid, pgno);
   }
   fts5DlidxIterFree(pDlidx);
   pDlidx = 0;
