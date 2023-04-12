@@ -1,5 +1,5 @@
-C Avoid\sleaking\sa\sdatabase\shandle\sin\stest\sscript\srbuexlock.test.
-D 2023-04-12T18:18:28.553
+C Small\sperformance\senhancement\sto\sinteger-to-text\sconversion.
+D 2023-04-12T18:57:50.762
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -693,7 +693,7 @@ F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
 F src/update.c 3f4fb5ad7c9b48d7911974d6579192bb3a6c27f46140b6cbb9139cc8a77b8691
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c 3ff7bc2b48dd425b1448304bb86273b05da1621f136d51dbb9789f8803559a1f
+F src/util.c 2106b5176a847d5b91a9345b38a098c202b7691a19070e0fa194cbd3ff139d24
 F src/vacuum.c 84ce7f01f8a7a08748e107a441db83bcec13970190ddcb0c9ff522adbc1c23fd
 F src/vdbe.c a6c52ba65e8ceb574fe0eda62af84e6c50c176ffc5f310c613425f7ab2b1484b
 F src/vdbe.h 637ae853b7d42ae3951034cc63ab7c8af837861f79504cdb5399552fcd89a884
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e1ff83fa2565334b28bd0d6582088c4ae0d2d9a590d973615a4a598683fe419c
-R 63ae784cbfa30c9af9f17fd8269f114d
-U dan
-Z 80aaf53aef46b41d0dd8a763fb401b0e
+P 2edf98d128cabc0c9de1295470d7f87eb64e4cc1f13344fe3c198fcf9c7bf019
+R 32bf4858ec539f44d2811a04e07432be
+U drh
+Z 133353557a8d275c28d13edc04e62688
 # Remove this line to create a well-formed Fossil manifest.
