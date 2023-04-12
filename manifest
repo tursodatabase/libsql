@@ -1,5 +1,5 @@
-C Small\sperformance\senhancement\sto\sinteger-to-text\sconversion.
-D 2023-04-12T18:57:50.762
+C Automatically\sset\sHAVE_PREAD\sand\sHAVE_PWRITE\son\slinux,\sas\shas\sbeen\sdone\sin\nMacOS\sfor\sa\slong\stime\snow.
+D 2023-04-12T19:40:00.840
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -609,7 +609,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 90c4fa0a88c8b0817c7ce4dbea0ac3aebfd7deb0797945ac34dfd25006ba393a
+F src/os_unix.c 1b3ddb7814c4bf37f494c04d2ab30c1ced5b2c927267e1930ce7cd388787a96d
 F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 39af8ff7c73a991f61f4d1e3a6f8f98b1c8e29144723507822774cac5e6ee0b5
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2edf98d128cabc0c9de1295470d7f87eb64e4cc1f13344fe3c198fcf9c7bf019
-R 32bf4858ec539f44d2811a04e07432be
+P cfb3dba9b015ce7a75857978bfd2540b4d5be985d9d2ec4a5842b3089ed3da60
+R a27797e00df587d05c58ecedf6ed69c3
 U drh
-Z 133353557a8d275c28d13edc04e62688
+Z 0702655698bfbb6d67bb8fe5728ec984
 # Remove this line to create a well-formed Fossil manifest.
