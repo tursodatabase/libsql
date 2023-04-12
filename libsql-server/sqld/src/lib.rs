@@ -28,7 +28,7 @@ use crate::stats::Stats;
 pub use sqld_libsql_bindings as libsql;
 
 mod auth;
-mod database;
+pub mod database;
 mod error;
 mod hrana;
 mod http;
