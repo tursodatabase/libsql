@@ -1,6 +1,7 @@
 use anyhow::{bail, Result};
 
 use super::proto;
+use crate::auth::Authenticated;
 use crate::database::Database;
 use crate::error::Error as SqldError;
 use crate::hrana;
@@ -37,9 +38,13 @@ pub enum StmtError {
     },
 }
 
-pub async fn execute_stmt(db: &dyn Database, stmt: &proto::Stmt) -> Result<proto::StmtResult> {
+pub async fn execute_stmt(
+    db: &dyn Database,
+    auth: Authenticated,
+    stmt: &proto::Stmt,
+) -> Result<proto::StmtResult> {
     let query = proto_stmt_to_query(stmt)?;
-    let (query_result, _) = db.execute_one(query).await?;
+    let (query_result, _) = db.execute_one(query, auth).await?;
     match query_result {
         Ok(query_response) => Ok(proto_stmt_result_from_query_response(query_response)),
         Err(sqld_error) => match stmt_error_from_sqld_error(sqld_error) {

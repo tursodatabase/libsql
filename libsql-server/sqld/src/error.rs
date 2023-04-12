@@ -23,6 +23,8 @@ pub enum Error {
     Internal(String),
     #[error("Invalid batch step: {0}")]
     InvalidBatchStep(usize),
+    #[error("Not authorized to execute query: {0}")]
+    NotAuthorized(String),
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {
