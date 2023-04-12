@@ -222,13 +222,13 @@ mod tests {
         auth.authenticate_http(Some(&HeaderValue::from_str(header).unwrap()))
     }
 
-    const VALID_JWT_KEY: &str = "HJwsOjoUT-Ct4G27f7GPkIywbg4jEgrmaPQbTx_Ld-c";
+    const VALID_JWT_KEY: &str = "-7VHgCfQpv3yxEQvrWO3Bh8h4j3ycRyafHMzmdTjsXU";
     const VALID_JWT: &str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
-        eyJleHAiOjE2ODAyNjA3MDl9.\
-        VvppV-_Q2MTJKZf0w64O-mgl-miNC0YE8SXwPThOdjctWzDicpR63rhl1MI1JynW33EtwEpmMFbtWvNU4QTyCA";
+        eyJleHAiOjc5ODg0ODE5MzB9.\
+        76nJKANvYKV3pnE97ny7c5PZBl6SE4L5TooJUZPENf0rYJETFfm_dS268OStcP_laNvm-O2_TX3E2u9cfko3BQ";
     const VALID_READONLY_JWT: &str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
-        eyJleHAiOjE2ODAyNjA3MDksImFjY2VzcyI6InJlYWQtb25seSJ9.\
-        EZsW-dlKKufbFkUpXRZRwL4kacbY3ZWYOYXv8JrM_hTaoE9bix2l-aCQKvVHV5uyN6cCby_TtThZl06CQxB0CA";
+        eyJleHAiOjc5ODg0ODE5MzAsImFjY2VzcyI6InJlYWQtb25seSJ9.\
+        85JOGgrdo0tnfgRq71rPXVuIyBWBeYD0axCY67Se3rwRYkTt9P0uJPA9dm4SRkvfbDee_G7qyDNzZ5I3ZuTtBg";
 
     macro_rules! assert_ok {
         ($e:expr) => {
