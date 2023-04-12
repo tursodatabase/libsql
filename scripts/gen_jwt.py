@@ -40,7 +40,7 @@ claims = {
 }
 token = jwt.encode(claims, privkey_pem, "EdDSA")
 
-claims["access"] = "read-only"
+claims["a"] = "ro"
 ro_token = jwt.encode(claims, privkey_pem, "EdDSA")
 
 open("jwt_key.pem", "wb").write(pubkey_pem)

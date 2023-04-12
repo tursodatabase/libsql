@@ -142,9 +142,9 @@ fn validate_jwt(
     match jsonwebtoken::decode::<serde_json::Value>(jwt, jwt_key, &validation).map(|t| t.claims) {
         Ok(serde_json::Value::Object(claims)) => {
             tracing::trace!("Claims: {claims:#?}");
-            Ok(match claims.get("access").and_then(|s| s.as_str()) {
-                Some("read-only") => Authenticated::Authorized(Authorized::ReadOnly),
-                Some("full-access") => Authenticated::Authorized(Authorized::FullAccess),
+            Ok(match claims.get("a").and_then(|s| s.as_str()) {
+                Some("ro") => Authenticated::Authorized(Authorized::ReadOnly),
+                Some("rw") => Authenticated::Authorized(Authorized::FullAccess),
                 Some(_) => Authenticated::Anonymous,
                 // Backward compatibility - no access claim means full access
                 None => Authenticated::Authorized(Authorized::FullAccess),
@@ -222,13 +222,13 @@ mod tests {
         auth.authenticate_http(Some(&HeaderValue::from_str(header).unwrap()))
     }
 
-    const VALID_JWT_KEY: &str = "-7VHgCfQpv3yxEQvrWO3Bh8h4j3ycRyafHMzmdTjsXU";
+    const VALID_JWT_KEY: &str = "zaMv-aFGmB7PXkjM4IrMdF6B5zCYEiEGXW3RgMjNAtc";
     const VALID_JWT: &str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
-        eyJleHAiOjc5ODg0ODE5MzB9.\
-        76nJKANvYKV3pnE97ny7c5PZBl6SE4L5TooJUZPENf0rYJETFfm_dS268OStcP_laNvm-O2_TX3E2u9cfko3BQ";
+        eyJleHAiOjc5ODg0ODM4Mjd9.\
+        MatB2aLnPFusagqH2RMoVExP37o2GFLmaJbmd52OdLtAehRNeqeJZPrefP1t2GBFidApUTLlaBRL6poKq_s3CQ";
     const VALID_READONLY_JWT: &str = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.\
-        eyJleHAiOjc5ODg0ODE5MzAsImFjY2VzcyI6InJlYWQtb25seSJ9.\
-        85JOGgrdo0tnfgRq71rPXVuIyBWBeYD0axCY67Se3rwRYkTt9P0uJPA9dm4SRkvfbDee_G7qyDNzZ5I3ZuTtBg";
+        eyJleHAiOjc5ODg0ODM4MjcsImEiOiJybyJ9.\
+        _2ZZiO2HC8b3CbCHSCufXXBmwpl-dLCv5O9Owvpy7LZ9aiQhXODpgV-iCdTsLQJ5FVanWhfn3FtJSnmWHn25DQ";
 
     macro_rules! assert_ok {
         ($e:expr) => {
