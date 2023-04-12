@@ -746,19 +746,40 @@ static void walChecksumBytes(
   assert( nByte>=8 );
   assert( (nByte&0x00000007)==0 );
   assert( nByte<=65536 );
+  assert( nByte%4==0 );
 
-  if( nativeCksum ){
-    do {
-      s1 += *aData++ + s2;
-      s2 += *aData++ + s1;
-    }while( aData<aEnd );
-  }else{
+  if( !nativeCksum ){
     do {
       s1 += BYTESWAP32(aData[0]) + s2;
       s2 += BYTESWAP32(aData[1]) + s1;
       aData += 2;
     }while( aData<aEnd );
+  }else if( nByte%64==0 ){
+    do {
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+    }while( aData<aEnd );
+  }else{
+    do {
+      s1 += *aData++ + s2;
+      s2 += *aData++ + s1;
+    }while( aData<aEnd );
   }
+  assert( aData==aEnd );
 
   aOut[0] = s1;
   aOut[1] = s2;
