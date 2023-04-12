@@ -120,7 +120,7 @@ impl<W: Write> DumpState<W> {
         let col_count = stmt.column_count();
         let mut rows = stmt.query(())?;
         while let Some(row) = rows.next()? {
-            let ValueRef::Text(sql) = row.get_ref(0)? else { bail!("first row in a table dump query should be of tyhpe text") };
+            let ValueRef::Text(sql) = row.get_ref(0)? else { bail!("the first row in a table dump query should be of type text") };
             self.writer.write_all(sql)?;
             for i in 1..col_count {
                 let ValueRef::Text(s) = row.get_ref(i)? else { bail!("row {i} in table dump query should be of type text") };
@@ -157,22 +157,20 @@ impl<W: Write> DumpState<W> {
         })?;
 
         // from sqlite:
-        // The decision of whether or not a rowid really needs to be preserved
-        // is tricky.  We never need to preserve a rowid for a WITHOUT ROWID table
-        // or a table with an INTEGER PRIMARY KEY.  We are unable to preserve
-        // rowids on tables where the rowid is inaccessible because there are other
-        // columns in the table named "rowid", "_rowid_", and "oid".
+        // > The decision of whether or not a rowid really needs to be preserved
+        // > is tricky.  We never need to preserve a rowid for a WITHOUT ROWID table
+        // > or a table with an INTEGER PRIMARY KEY.  We are unable to preserve
+        // > rowids on tables where the rowid is inaccessible because there are other
+        // > columns in the table named "rowid", "_rowid_", and "oid".
         if is_integer_primary_key {
             // from sqlite:
-            // If a single PRIMARY KEY column with type INTEGER was seen, then it
-            // might be an alise for the ROWID.  But it might also be a WITHOUT ROWID
-            // table or a INTEGER PRIMARY KEY DESC column, neither of which are
-            // ROWID aliases.  To distinguish these cases, check to see if
-            // there is a "pk" entry in "PRAGMA index_list".  There will be
-            // no "pk" index if the PRIMARY KEY really is an alias for the ROWID.
+            // > If a single PRIMARY KEY column with type INTEGER was seen, then it
+            // > might be an alise for the ROWID.  But it might also be a WITHOUT ROWID
+            // > table or a INTEGER PRIMARY KEY DESC column, neither of which are
+            // > ROWID aliases.  To distinguish these cases, check to see if
+            // > there is a "pk" entry in "PRAGMA index_list".  There will be
+            // > no "pk" index if the PRIMARY KEY really is an alias for the ROWID.
 
-            // unset preserve_row_id
-            preserve_row_id = false;
             txn.query_row(
                 "SELECT 1 FROM pragma_index_list(?)  WHERE origin='pk'",
                 [table],
@@ -245,12 +243,14 @@ fn write_value_ref<W: Write>(mut w: W, val: ValueRef) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Attempt to determine if identifier zName needs to be quoted, either
-/// because it contains non-alphanumeric characters, or because it is an
-/// SQLite keyword.  Be conservative in this estimate:  When in doubt assume
-/// that quoting is required.
+/// Perform quoting as per sqlite algorithm.
+/// from sqlite:
+/// > Attempt to determine if identifier self.0 needs to be quoted, either
+/// > because it contains non-alphanumeric characters, or because it is an
+/// > SQLite keyword.  Be conservative in this estimate:  When in doubt assume
+/// > that quoting is required.
 ///
-/// Return '"' if quoting is required.  Return 0 if no quoting is required.
+/// > Return '"' if quoting is required.  Return 0 if no quoting is required.
 struct Quoted<'a>(&'a str);
 
 impl Display for Quoted<'_> {
@@ -293,7 +293,6 @@ impl Display for Escaped<'_> {
             .chars()
             .take_while(|c| !['\'', '\n', '\r'].contains(c))
             .count();
-
         if i == self.0.chars().count() {
             // nothing to escape
             write!(f, "'{}'", self.0)?;
@@ -434,9 +433,9 @@ pub fn export_dump(mut db: rusqlite::Connection, writer: impl Write) -> anyhow::
     writeln!(state.writer, "BEGIN TRANSACTION;")?;
 
     // from sqlite:
-    // Set writable_schema=ON since doing so forces SQLite to initialize
-    // as much of the schema as it can even if the sqlite_schema table is
-    // corrupt.
+    // > Set writable_schema=ON since doing so forces SQLite to initialize
+    // > as much of the schema as it can even if the sqlite_schema table is
+    // > corrupt.
 
     let q = "SELECT name, type, sql FROM sqlite_schema AS o 
 WHERE type=='table' 
