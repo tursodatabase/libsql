@@ -11,6 +11,7 @@
 *************************************************************************
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
+ToDo: The -utf8 option may not play well with line editing input libraries.
 */
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_CRT_SECURE_NO_WARNINGS)
 /* This needs to come before any includes for MSVC compiler */
@@ -20,7 +21,7 @@ typedef unsigned int u32;
 typedef unsigned short int u16;
 
 /*
-** Optionally #include a user-defined header, whereby compilation options
+** optionally #include a user-defined header, whereby compilation options
 ** may be set prior to where they take effect, but after platform setup.
 ** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
 ** file. Note that this macro has a like effect on sqlite3.c compilation.
@@ -589,16 +590,17 @@ static char *dynamicContinuePrompt(void){
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
 static int infsMode;
-static UINT codePage;
+static UINT codePage = 0;
 static HANDLE hConsoleIn;
 static DWORD consoleMode;
+
 /*
 ** Prepare input stream, (if known to be a WIN32 console), for UTF-8
 ** input (from either typing or suitable paste operations) and for
 ** UTF-8 rendering. This may "fail" with a message to stderr, where
 ** the preparation is not done and common "code page" issues occur.
 */
-static void instream_prepare(){
+static void instream_prepare(void){
   if( isatty(0) ){
     if( !IsValidCodePage(CP_UTF8) ){
       fprintf(stderr, "Cannot use UTF-8 code page.\n");
@@ -620,11 +622,12 @@ static void instream_prepare(){
 /*
 ** Undo the effects of instream_prepare(), if any.
 */
-static void instream_restore(){
-  if( console_utf8 ){
+static void SQLITE_CDECL instream_restore(void){
+  if( console_utf8 && codePage!=0 ){
     _setmode(_fileno(stdin), infsMode);
     SetConsoleCP(codePage);
     SetConsoleMode( hConsoleIn, consoleMode );
+    console_utf8 = 0; /* Avoid multiple calls. */
   }
 }
 
@@ -633,25 +636,30 @@ static void instream_restore(){
 ** from the Windows console to get around its strange coding issues.
 ** Defers to plain fgets() when input is not interactive or when the
 ** startup option, -utf8, has not been provided or taken effect.
-** WIP: This routine needs work to consume only as many characters
-** as can be fit into the provided input buffer. ToDo: That work.
-** Avoiding this issue will require some refactoring of CLI input.
 */
 static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
+  #define SQLITE_IA_LINE_LEN 150
   if( fin==stdin && stdin_is_interactive && console_utf8 ){
-    wchar_t * wbuf = (wchar_t*) malloc(ncmax * sizeof(wchar_t));
-    wchar_t * wz;
-    int nmb;
-    if( wbuf==0 ) return 0;
-    if( 0 == (wz = fgetws(wbuf, ncmax, stdin))
-        || 0 == (nmb = WideCharToMultiByte(CP_UTF8, 0, wz, -1, 0, 0, 0, 0))
-        || nmb > ncmax ){
-      buf = 0;
-      goto bail;
+    wchar_t wbuf[SQLITE_IA_LINE_LEN];
+    int noc = 0;
+    if( ncmax == 0 ) return 0;
+    buf[0] = 0;
+    while( noc < ncmax-7-1 ){
+      /* There is room for at least 2 more characters and the 0-terminator. */
+      int na = (ncmax-1 - noc)/4;
+      wchar_t * wz;
+      if( na > SQLITE_IA_LINE_LEN ) na = SQLITE_IA_LINE_LEN;
+      wz = fgetws(wbuf, na, stdin);
+      if( wz != 0 ){
+        int nmb = WideCharToMultiByte(CP_UTF8, 0, wz, -1, 0, 0, 0, 0);
+        if( nmb !=0 && noc+nmb <= ncmax ){
+          WideCharToMultiByte(CP_UTF8, 0, wz, -1, buf+noc, nmb, 0, 0);
+          noc += nmb-1; /* Strip 0-terminator added by above call. */
+          if( buf[noc-1] == '\n' ) break;
+        }else break; /* Drop apparent garbage in. (Could assert.) */
+      }else break;
     }
-    WideCharToMultiByte(CP_UTF8, 0, wz, -1, buf, nmb, 0, 0);
-  bail:
-    free(wbuf);
+    if( noc == 0 ) return 0;
     return buf;
   }else{
     return fgets(buf, ncmax, fin);
@@ -11789,7 +11797,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   char **argv;
 #endif
 #ifdef SQLITE_DEBUG
-  sqlite3_int64 mem_main_enter = sqlite3_memory_used();
+  sqlite3_int64 mem_main_enter = 0;
 #endif
   char *zErrMsg = 0;
 #ifdef SQLITE_SHELL_FIDDLE
@@ -11821,7 +11829,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
 #endif
-
+#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+  atexit(instream_restore); /* Needs revision for CLI as library call */
+#endif
+#ifdef SQLITE_DEBUG
+  mem_main_enter = sqlite3_memory_used();
+#endif
 #if !defined(_WIN32_WCE)
   if( getenv("SQLITE_DEBUG_BREAK") ){
     if( isatty(0) && isatty(2) ){
@@ -12370,11 +12383,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       rc = process_input(&data);
     }
   }
-#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
-  if( console_utf8 ){
-    instream_restore();
-  }
-#endif
 #ifndef SQLITE_SHELL_FIDDLE
   /* In WASM mode we have to leave the db state in place so that
   ** client code can "push" SQL into it after this call returns. */
