@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use tokio::sync::Mutex;
+use parking_lot::Mutex as PMutex;
+use tokio::sync::{watch, Mutex};
 use tonic::transport::Channel;
 use uuid::Uuid;
 
@@ -9,6 +10,7 @@ use crate::auth::{Authenticated, Authorized};
 use crate::error::Error;
 use crate::query::{QueryResponse, QueryResult};
 use crate::query_analysis::State;
+use crate::replication::FrameNo;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
 use crate::rpc::proxy::rpc::DisconnectMessage;
@@ -23,6 +25,7 @@ pub struct WriteProxyDbFactory {
     client: ProxyClient<Channel>,
     db_path: PathBuf,
     stats: Stats,
+    applied_frame_no_receiver: watch::Receiver<FrameNo>,
 }
 
 impl WriteProxyDbFactory {
@@ -31,12 +34,14 @@ impl WriteProxyDbFactory {
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Stats,
+        applied_frame_no_receiver: watch::Receiver<FrameNo>,
     ) -> Self {
         let client = ProxyClient::with_origin(channel, uri);
         Self {
             client,
             db_path,
             stats,
+            applied_frame_no_receiver,
         }
     }
 }
@@ -48,6 +53,7 @@ impl DbFactory for WriteProxyDbFactory {
             self.client.clone(),
             self.db_path.clone(),
             self.stats.clone(),
+            self.applied_frame_no_receiver.clone(),
         )?;
         Ok(Arc::new(db))
     }
@@ -58,16 +64,29 @@ pub struct WriteProxyDatabase {
     write_proxy: ProxyClient<Channel>,
     state: Mutex<State>,
     client_id: Uuid,
+    /// FrameNo of the last write performed by this connection on the primary.
+    /// any subsequent read on this connection must wait for the replicator to catch up with this
+    /// frame_no
+    last_write_frame_no: PMutex<FrameNo>,
+    /// Notifier from the repliator of the currently applied frameno
+    applied_frame_no_receiver: watch::Receiver<FrameNo>,
 }
 
 impl WriteProxyDatabase {
-    fn new(write_proxy: ProxyClient<Channel>, path: PathBuf, stats: Stats) -> Result<Self> {
+    fn new(
+        write_proxy: ProxyClient<Channel>,
+        path: PathBuf,
+        stats: Stats,
+        applied_frame_no_receiver: watch::Receiver<FrameNo>,
+    ) -> Result<Self> {
         let read_db = LibSqlDb::new(path, (), false, stats)?;
         Ok(Self {
             read_db,
             write_proxy,
             state: Mutex::new(State::Init),
             client_id: Uuid::new_v4(),
+            last_write_frame_no: PMutex::new(FrameNo::MAX),
+            applied_frame_no_receiver,
         })
     }
 
@@ -104,6 +123,8 @@ impl WriteProxyDatabase {
                     })
                     .collect();
 
+                self.update_last_write_frame_no(execute_result.current_frame_no);
+
                 Ok((results, *state))
             }
             Err(e) => {
@@ -113,6 +134,35 @@ impl WriteProxyDatabase {
                 Err(Error::RpcQueryExecutionError(e))
             }
         }
+    }
+
+    fn update_last_write_frame_no(&self, new_frame_no: FrameNo) {
+        let mut last_frame_no = self.last_write_frame_no.lock();
+        if *last_frame_no == FrameNo::MAX || new_frame_no > *last_frame_no {
+            *last_frame_no = new_frame_no
+        }
+    }
+
+    /// wait for the replicator to have caught up with our current write frame_no
+    async fn wait_replication_sync(&self) -> Result<()> {
+        let current_frame_no = *self.last_write_frame_no.lock();
+
+        if current_frame_no == FrameNo::MAX {
+            return Ok(());
+        }
+
+        let mut receiver = self.applied_frame_no_receiver.clone();
+        let mut last_applied = *receiver.borrow_and_update();
+
+        while last_applied < current_frame_no {
+            receiver
+                .changed()
+                .await
+                .map_err(|_| Error::ReplicatorExited)?;
+            last_applied = *receiver.borrow_and_update();
+        }
+
+        Ok(())
     }
 }
 
@@ -125,6 +175,7 @@ impl Database for WriteProxyDatabase {
     ) -> Result<(Vec<Option<QueryResult>>, State)> {
         let mut state = self.state.lock().await;
         if *state == State::Init && pgm.is_read_only() {
+            self.wait_replication_sync().await?;
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.

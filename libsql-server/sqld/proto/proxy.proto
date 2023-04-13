@@ -89,6 +89,8 @@ message ExecuteResults {
     }
     /// State after executing the queries
     State state = 2;
+    /// Primary frame_no after executing the request.
+    uint64 current_frame_no = 3;
 }
 
 message Program {
