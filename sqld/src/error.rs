@@ -25,6 +25,8 @@ pub enum Error {
     InvalidBatchStep(usize),
     #[error("Not authorized to execute query: {0}")]
     NotAuthorized(String),
+    #[error("The replicator exited, instance cannot make any progress.")]
+    ReplicatorExited,
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {
