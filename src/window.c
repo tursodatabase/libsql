@@ -785,6 +785,7 @@ static int selectWindowRewriteExprCb(Walker *pWalker, Expr *pExpr){
       }
       /* no break */ deliberate_fall_through
 
+    case TK_IF_NULL_ROW:
     case TK_AGG_FUNCTION:
     case TK_COLUMN: {
       int iCol = -1;

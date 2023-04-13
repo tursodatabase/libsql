@@ -2330,4 +2330,21 @@ do_catchsql_test 75.1 {
    GROUP BY a1.a;
 } {1 {misuse of aggregate: count()}}
 
+# 2023-04-13 https://sqlite.org/forum/forumpost/0d48347967
+reset_db
+do_execsql_test 76.0 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1(a,b) VALUES (111,222),(111,223),(118,229);
+  CREATE INDEX t1a ON t1(a);
+  CREATE TABLE t2(x INT);
+  INSERT INTO t2 VALUES (333),(444),(555);
+}
+do_execsql_test 76.1 {
+  SELECT c, (SELECT c + sum(1) OVER ()) AS "res"
+    FROM t2 LEFT JOIN (SELECT +a AS c FROM t1) AS v1 ON true
+   GROUP BY c
+   ORDER by c;
+} {111 112 118 119}
+# ^^^^^^^^^^^^^^^^^-- results verified against PG 14.2
+
 finish_test
