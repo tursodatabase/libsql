@@ -2347,4 +2347,20 @@ do_execsql_test 76.1 {
 } {111 112 118 119}
 # ^^^^^^^^^^^^^^^^^-- results verified against PG 14.2
 
+do_execsql_test 76.2 {
+  CREATE TABLE t3(x);
+  CREATE TABLE t4(y);
+  INSERT INTO t3 VALUES(100), (200), (400);
+  INSERT INTO t4 VALUES(100), (300), (400);
+}
+do_execsql_test 76.3 {
+  SELECT (SELECT y+sum(0) OVER ()) FROM t3 LEFT JOIN t4 ON x=y;
+} {100 {} 400}
+do_execsql_test 76.4 {
+  SELECT (SELECT y+sum(0) OVER ()) FROM t3 LEFT JOIN t4 ON x=y GROUP BY x;
+} {100 {} 400}
+do_execsql_test 76.5 {
+  SELECT (SELECT max(y)+sum(0) OVER ()) FROM t3 LEFT JOIN t4 ON x=y GROUP BY x;
+} {100 {} 400}
+
 finish_test

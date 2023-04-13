@@ -1,5 +1,5 @@
-C Fix\sa\scode-generator\sissue\sassociated\swith\svery\sunusual\suse\sof\swindow\nfunctions.\s\sBoth\sthe\sexpr.c\sor\sthe\swindow.c\schanges\swill\seach\nindependently\sfix\sthe\sproblem.\s\sThey\sare\sboth\sincluded\sin\sthis\spatch\sfor\ndefense\sin\sdepth.\s\s[forum:/forumpost/0d48347967|Forum\spost\s0d48347967].
-D 2023-04-13T14:50:50.896
+C Add\sextra\stest\scases\sto\swindow1.test.
+D 2023-04-13T14:53:19.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1902,7 +1902,7 @@ F test/win32heap.test 10fd891266bd00af68671e702317726375e5407561d859be1aa04696f2
 F test/win32lock.test e0924eb8daac02bf80e9da88930747bd44dd9b230b7759fed927b1655b467c9c
 F test/win32longpath.test 4baffc3acb2e5188a5e3a895b2b543ed09e62f7c72d713c1feebf76222fe9976
 F test/win32nolock.test ac4f08811a562e45a5755e661f45ca85892bdbbc
-F test/window1.test 57a2107dd1a869d857be560927f9424486da98e849256700ff7e90adbe164f38
+F test/window1.test 5ba48e9d33231e6ef16f21426bade9ccc52abf65a10587bff90a6c14fe174594
 F test/window2.tcl 492c125fa550cda1dd3555768a2303b3effbeceee215293adf8871efc25f1476
 F test/window2.test e466a88bd626d66edc3d352d7d7e1d5531e0079b549ba44efb029d1fbff9fd3c
 F test/window3.tcl acea6e86a4324a210fd608d06741010ca83ded9fde438341cb978c49928faf03
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P eb94ae13206762a42ddad12e0d1461df83e9759e44a369f188cd3aad82f211c4
-R 790521fc0147ba246247d1806b2d1934
-U drh
-Z 4c16acea7a283d44dd652b716e84bf87
+P 1ba22631a7831e3562eda0eb6a5edf7f009c85c7ab4451d9eacd13ef0fb6036a
+R 5689abcdd9a92d7ec887a4030b4e7bcf
+U dan
+Z 478a4462c289eca49f2307135f0a942e
 # Remove this line to create a well-formed Fossil manifest.
