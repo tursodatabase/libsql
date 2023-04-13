@@ -1280,6 +1280,19 @@ static int renameEditSql(
 }
 
 /*
+** Set all pEList->a[].fg.eEName fields in the expression-list to val.
+*/
+static void renameSetENames(ExprList *pEList, int val){
+  if( pEList ){
+    int i;
+    for(i=0; i<pEList->nExpr; i++){
+      assert( val==ENAME_NAME || pEList->a[i].fg.eEName==ENAME_NAME );
+      pEList->a[i].fg.eEName = val;
+    }
+  }
+}
+
+/*
 ** Resolve all symbols in the trigger at pParse->pNewTrigger, assuming
 ** it was read from the schema of database zDb. Return SQLITE_OK if 
 ** successful. Otherwise, return an SQLite error code and leave an error
@@ -1326,7 +1339,17 @@ static int renameResolveTrigger(Parse *pParse){
           pSrc = 0;
           rc = SQLITE_NOMEM;
         }else{
+          /* pStep->pExprList contains an expression-list used for an UPDATE
+          ** statement. So the a[].zEName values are the RHS of the
+          ** "<col> = <expr>" clauses of the UPDATE statement. So, before
+          ** running SelectPrep(), change all the eEName values in
+          ** pStep->pExprList to ENAME_SPAN (from their current value of
+          ** ENAME_NAME). This is to prevent any ids in ON() clauses that are
+          ** part of pSrc from being incorrectly resolved against the
+          ** a[].zEName values as if they were column aliases.  */
+          renameSetENames(pStep->pExprList, ENAME_SPAN);
           sqlite3SelectPrep(pParse, pSel, 0);
+          renameSetENames(pStep->pExprList, ENAME_NAME);
           rc = pParse->nErr ? SQLITE_ERROR : SQLITE_OK;
           assert( pStep->pExprList==0 || pStep->pExprList==pSel->pEList );
           assert( pSrc==pSel->pSrc );
