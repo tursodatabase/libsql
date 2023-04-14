@@ -131,8 +131,41 @@ do_faultsim_test 4.1 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
 
+set doc1 [string repeat "abc " 10]
+set doc2 [string repeat "def " 10]
 
+do_test 5.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts5(ab);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+    BEGIN;
+  }
+  for {set i 0} {$i < 50} {incr i} {
+    execsql {
+      INSERT INTO t1(rowid, ab) VALUES($i, 'abcdefg');
+    }
+  }
+  execsql {
+    INSERT INTO t1(rowid, ab) VALUES(105, 'def');
+    COMMIT;
+  }
+} {}
+faultsim_save_and_close
+
+do_faultsim_test 5.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE rowid = 105 }
+} -test {
+  faultsim_test_result {0 {}}
+}
 
 
 finish_test

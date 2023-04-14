@@ -1,5 +1,5 @@
-C Add\stests\sfor\sthe\snew\sfeature\son\sthis\sbranch.
-D 2023-04-14T16:11:05.842
+C Add\sextra\sOOM\stest\sfor\sthe\snew\scode\son\sthis\sbranch.
+D 2023-04-14T17:00:29.247
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -191,7 +191,7 @@ F ext/fts5/test/fts5secure.test 214a561519d1b1817f146efd1057e2a97cc896e75c2accc7
 F ext/fts5/test/fts5secure2.test 2e961d7eef939f294c56b5d895cac7f1c3a60b934ee2cfd5e5e620bdf1ba6bbc
 F ext/fts5/test/fts5secure3.test fd73b98a6e11038960b84109fed42f9e0a098a31338c94d07c163244d4bd7254
 F ext/fts5/test/fts5secure4.test 3eed9eaece133fa4921b4383b13f71db1c0e415324cd86bb9dc5ac91609d5776
-F ext/fts5/test/fts5securefault.test 707483e996f7b12077a490cd71a0ca45ccde0e7ffc737c3ab52ff7d6ad8e3a7c
+F ext/fts5/test/fts5securefault.test d18e3cab7a3c4a66f44812202e1b0ea0b4bd0f9ee766951749737cfbab100e7e
 F ext/fts5/test/fts5simple.test a298670508c1458b88ce6030440f26a30673931884eb5f4094ac1773b3ba217b
 F ext/fts5/test/fts5simple2.test 258a1b0c590409bfa5271e872c79572b319d2a56554d0585f68f146a0da603f0
 F ext/fts5/test/fts5simple3.test d5c74a9d3ca71bd5dd5cacb7c55b86ea12cdddfc8b1910e3de2995206898380f
@@ -2057,8 +2057,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a0f64870feaf95d2673efc8884ad1236d9bbf9bdb94364f8d2602221bd36ff3
-R b7a845354df37e1aac7f6581514d1050
+P 0268d1a59316d169927cbd4c562725e46a9023b7d7123ade911c12203e222adf
+R d8f750d5cff7a2eb655ae379ef3df034
 U dan
-Z 01ce26ba699a74240fcd6e679f13a11b
+Z babd8fc4a31fce6ad5175a62742eb085
 # Remove this line to create a well-formed Fossil manifest.
