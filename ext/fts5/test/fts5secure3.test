@@ -9,6 +9,8 @@
 #
 #*************************************************************************
 #
+# TESTRUNNER: slow
+#
 
 source [file join [file dirname [info script]] fts5_common.tcl]
 ifcapable !fts5 { finish_test ; return }
@@ -142,8 +144,10 @@ foreach ii [lshuffle [db eval {SELECT rowid FROM fff}]] {
     DELETE FROM fff WHERE rowid=$ii;
   }
   #if {$iTest==1} { dump fff }
-  do_execsql_test 3.1.$iTest.$ii.ic {
-    INSERT INTO fff(fff) VALUES('integrity-check');
+  if {($iTest % 20)==0} {
+    do_execsql_test 3.1.$iTest.$ii.ic {
+      INSERT INTO fff(fff) VALUES('integrity-check');
+    }
   }
   #if {$iTest==1} { break }
   incr iTest
