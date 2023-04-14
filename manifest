@@ -1,5 +1,5 @@
-C Avoid\sdouble\sde-quoting\sof\stable\snames\swhen\sprocessing\sRESTRICT\sactions\nin\sforeign\skey\sconstraints.\n[https://bugs.chromium.org/p/chromium/issues/detail?id=1405220|Chromium\s1405220].
-D 2023-04-14T00:20:16.995
+C Fix\sa\scosmetic\sindentation\sissue.
+D 2023-04-14T10:35:29.876
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -625,7 +625,7 @@ F src/printf.c 7eac1a9896a80697e03e08963e210830532ae2ff610e16c193e95af007ca5623
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c d0c7187b0f557337cd187e5c37ae43012a5d902f7e35d902423cb3cb81f21c76
+F src/select.c f803ac95411fec545e96a2667734e300428aaeb75a27d96b5b3ac62a7461b25a
 F src/shell.c.in 80f7c4c1bdabc9dab416b59287458044c01df97035d626ea57ffeabbb289bdc6
 F src/sqlite.h.in 4fff9c6cc5d4cbba9532a668112efb6dc469c425e1a2196664d7c07d508363ef
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2052,8 +2052,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4845a7c5f7f219848d3ee32eef0f9c69ad6dc6e8509da84d612f41e1e05f007
-R e187e9998555a73ed3722571589e480f
+P bb2b5ab172f0751c00343facf36fb12db10c88220caece31849f2711f12293d9
+R 98fb747f8b76030eab4ec959dcc2d1ae
 U drh
-Z 8502a1b30a3157b76d54d4493f6eaab0
+Z 4db1767c2c2b21dfcda57aec5fef47c6
 # Remove this line to create a well-formed Fossil manifest.

@@ -2363,17 +2363,17 @@ void sqlite3SubqueryColumnTypes(
             break;
           }
         }
-       }
-     }
-     if( zType ){
-       i64 m = sqlite3Strlen30(zType);
-       n = sqlite3Strlen30(pCol->zCnName);
-       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
-       if( pCol->zCnName ){
-         memcpy(&pCol->zCnName[n+1], zType, m+1);
-         pCol->colFlags |= COLFLAG_HASTYPE;
-       }else{
-         testcase( pCol->colFlags & COLFLAG_HASTYPE );
+      }
+    }
+    if( zType ){
+      i64 m = sqlite3Strlen30(zType);
+      n = sqlite3Strlen30(pCol->zCnName);
+      pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
+      if( pCol->zCnName ){
+        memcpy(&pCol->zCnName[n+1], zType, m+1);
+        pCol->colFlags |= COLFLAG_HASTYPE;
+      }else{
+        testcase( pCol->colFlags & COLFLAG_HASTYPE );
         pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       }
     }
