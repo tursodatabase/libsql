@@ -449,7 +449,13 @@ static int bail_on_error = 0;
 */
 static int stdin_is_interactive = 1;
 
-#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+#if (defined(_WIN32) || defined(WIN32)) && SHELL_USE_LOCAL_GETLINE
+# define SHELL_WIN_UTF8_OPT 1
+#else
+# define SHELL_WIN_UTF8_OPT 0
+#endif
+
+#if SHELL_WIN_UTF8_OPT
 /*
 ** Setup console for UTF-8 input/output when following variable true.
 */
@@ -588,7 +594,7 @@ static char *dynamicContinuePrompt(void){
 }
 #endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
 
-#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+#if SHELL_WIN_UTF8_OPT
 /* Following variables are used for -utf8 operation. */
 static int stdinEof = 0;  /* EOF seen on console input */
 static int infsMode;      /* Input file stream mode upon shell start */
@@ -696,7 +702,7 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
 }
 
 # define fgets(b,n,f) utf8_fgets(b,n,f)
-#endif /* (defined(_WIN32)||defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE) */
+#endif /* SHELL_WIN_UTF8_OPT */
 
 /*
 ** Render output like fprintf().  Except, if the output is going to the
@@ -921,7 +927,11 @@ static char *local_getline(char *zLine, FILE *in){
   /* For interactive input on Windows systems, without -utf8,
   ** translate the multi-byte characterset characters into UTF-8.
   ** This is the translation that predates the -utf8 option. */
-  if( stdin_is_interactive && in==stdin && !console_utf8 ){
+  if( stdin_is_interactive && in==stdin
+# if SHELL_WIN_UTF8_OPT
+      && !console_utf8
+# endif /* SHELL_WIN_UTF8_OPT */
+      ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
     if( zTrans ){
       i64 nTrans = strlen(zTrans)+1;
@@ -11705,7 +11715,7 @@ static const char zOptions[] =
   "   -stats               print memory stats before each finalize\n"
   "   -table               set output mode to 'table'\n"
   "   -tabs                set output mode to 'tabs'\n"
-#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+#if SHELL_WIN_UTF8_OPT
   "   -utf8                setup interactive console code page for UTF-8\n"
 #endif
   "   -version             show SQLite version\n"
@@ -11851,7 +11861,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   stdin_is_interactive = isatty(0);
   stdout_is_console = isatty(1);
 #endif
-#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+#if SHELL_WIN_UTF8_OPT
   atexit(instream_restore); /* Needs revision for CLI as library call */
 #endif
 #ifdef SQLITE_DEBUG
@@ -12244,9 +12254,9 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-batch")==0 ){
       stdin_is_interactive = 0;
     }else if( cli_strcmp(z,"-utf8")==0 ){
-#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+#if SHELL_WIN_UTF8_OPT
       console_utf8 = 1;
-#endif
+#endif /* SHELL_WIN_UTF8_OPT */
     }else if( cli_strcmp(z,"-heap")==0 ){
       i++;
     }else if( cli_strcmp(z,"-pagecache")==0 ){
@@ -12324,7 +12334,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }
     data.cMode = data.mode;
   }
-#if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
+#if SHELL_WIN_UTF8_OPT
   if( console_utf8 && stdin_is_interactive ){
     instream_prepare();
   }else{
