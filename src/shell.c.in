@@ -589,10 +589,12 @@ static char *dynamicContinuePrompt(void){
 #endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
 
 #if (defined(_WIN32) || defined(WIN32)) && !defined(SQLITE_SHELL_FIDDLE)
-static int infsMode;
-static UINT codePage = 0;
-static HANDLE hConsoleIn;
-static DWORD consoleMode;
+/* Following variables are used for -utf8 operation. */
+static int stdinEof = 0;  /* EOF seen on console input */
+static int infsMode;      /* Input file stream mode upon shell start */
+static UINT codePage = 0; /* Input code page upon shell start */
+static HANDLE hConsoleIn = INVALID_HANDLE_VALUE; /* Console input handle */
+static DWORD consoleMode; /* Console mode upon shell start */
 
 /*
 ** Prepare input stream, (if known to be a WIN32 console), for UTF-8
@@ -601,7 +603,8 @@ static DWORD consoleMode;
 ** the preparation is not done and common "code page" issues occur.
 */
 static void instream_prepare(void){
-  if( isatty(0) ){
+  hConsoleIn = GetStdHandle(STD_INPUT_HANDLE);
+  if( isatty(0) && GetFileType(hConsoleIn)==FILE_TYPE_CHAR ){
     if( !IsValidCodePage(CP_UTF8) ){
       fprintf(stderr, "Cannot use UTF-8 code page.\n");
       console_utf8 = 0;
@@ -609,7 +612,6 @@ static void instream_prepare(void){
     }
     codePage = GetConsoleCP();
     SetConsoleCP(CP_UTF8);
-    hConsoleIn = GetStdHandle(STD_INPUT_HANDLE);
     GetConsoleMode( hConsoleIn, &consoleMode);
     SetConsoleMode( hConsoleIn, consoleMode | ENABLE_LINE_INPUT );
     infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
@@ -623,7 +625,7 @@ static void instream_prepare(void){
 ** Undo the effects of instream_prepare(), if any.
 */
 static void SQLITE_CDECL instream_restore(void){
-  if( console_utf8 && codePage!=0 ){
+  if( console_utf8 && codePage!=0 &&hConsoleIn != INVALID_HANDLE_VALUE ){
     _setmode(_fileno(stdin), infsMode);
     SetConsoleCP(codePage);
     SetConsoleMode( hConsoleIn, consoleMode );
@@ -638,28 +640,55 @@ static void SQLITE_CDECL instream_restore(void){
 ** startup option, -utf8, has not been provided or taken effect.
 */
 static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
-  #define SQLITE_IA_LINE_LEN 150
+  if( fin==0 ) fin = stdin;
   if( fin==stdin && stdin_is_interactive && console_utf8 ){
-    wchar_t wbuf[SQLITE_IA_LINE_LEN];
+# define SQLITE_IALIM 150
+    wchar_t wbuf[SQLITE_IALIM];
+    int lend = 0;
     int noc = 0;
-    if( ncmax == 0 ) return 0;
+    if( ncmax == 0 || stdinEof ) return 0;
     buf[0] = 0;
-    while( noc < ncmax-7-1 ){
-      /* There is room for at least 2 more characters and the 0-terminator. */
-      int na = (ncmax-1 - noc)/4;
-      wchar_t * wz;
-      if( na > SQLITE_IA_LINE_LEN ) na = SQLITE_IA_LINE_LEN;
-      wz = fgetws(wbuf, na, stdin);
-      if( wz != 0 ){
-        int nmb = WideCharToMultiByte(CP_UTF8, 0, wz, -1, 0, 0, 0, 0);
+    while( noc < ncmax-7-1 && !lend ){
+      /* There is room for at least 2 more characters and a 0-terminator. */
+      int na = (ncmax > SQLITE_IALIM*4+1 + noc)
+        ? SQLITE_IALIM : (ncmax-1 - noc)/4;
+# undef SQLITE_IALIM
+      DWORD nbr = 0;
+      BOOL bRC = ReadConsoleW(hConsoleIn, wbuf, na, &nbr, 0);
+      if( !bRC || (noc==0 && nbr==0) ) return 0;
+      if( nbr > 0 ){
+        int nmb = WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK|WC_DEFAULTCHAR,
+                                      wbuf,nbr, 0,0, 0, 0);
         if( nmb !=0 && noc+nmb <= ncmax ){
-          WideCharToMultiByte(CP_UTF8, 0, wz, -1, buf+noc, nmb, 0, 0);
-          noc += nmb-1; /* Strip 0-terminator added by above call. */
-          if( buf[noc-1] == '\n' ) break;
+          int iseg = noc;
+          nmb = WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK|WC_DEFAULTCHAR,
+                                    wbuf,nbr, buf+noc,nmb, 0,0);
+          noc += nmb;
+          /* Fixup line-ends as coded by Windows for CR (or "Enter".)*/
+          if( noc > 0 ){
+            if( buf[noc-1]=='\n' ){
+              lend = 1;
+              if( noc > 1 && buf[noc-2]=='\r' ){
+                buf[noc-2] = '\n';
+                --noc;
+              }
+            }
+          }
+          /* Check for ^Z (anywhere in line) too. */
+          while( iseg < noc ){
+            if( buf[iseg]==0x1a ){
+              stdinEof = 1;
+              noc = iseg; /* Chop ^Z and anything following. */
+              break;
+            }
+            ++iseg;
+          }
         }else break; /* Drop apparent garbage in. (Could assert.) */
       }else break;
     }
+    /* If got nothing, (after ^Z chop), must be at end-of-file. */
     if( noc == 0 ) return 0;
+    buf[noc] = 0;
     return buf;
   }else{
     return fgets(buf, ncmax, fin);
@@ -889,14 +918,11 @@ static char *local_getline(char *zLine, FILE *in){
     }
   }
 #if defined(_WIN32) || defined(WIN32)
-  /* For interactive input on Windows systems, translate the
-  ** multi-byte characterset characters into UTF-8. */
-  if( stdin_is_interactive && in==stdin ){
-    // FILE *cil = fopen("cin.log", "wa");
-    // i64 nzl = strlen(zLine);
+  /* For interactive input on Windows systems, without -utf8,
+  ** translate the multi-byte characterset characters into UTF-8.
+  ** This is the translation that predates the -utf8 option. */
+  if( stdin_is_interactive && in==stdin && !console_utf8 ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
-    // fwrite(zLine, nzl, 1, cil);
-    // fwrite("\n", 1,1, cil);
     if( zTrans ){
       i64 nTrans = strlen(zTrans)+1;
       if( nTrans>nLine ){
@@ -904,11 +930,8 @@ static char *local_getline(char *zLine, FILE *in){
         shell_check_oom(zLine);
       }
       memcpy(zLine, zTrans, nTrans);
-      // fwrite(zLine, nTrans-1, 1, cil);
-      // fwrite("\n", 1,1, cil);
       sqlite3_free(zTrans);
     }
-    // fclose(cil);
   }
 #endif /* defined(_WIN32) || defined(WIN32) */
   return zLine;
@@ -11819,7 +11842,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   int argcToFree = 0;
 #endif
 
-  setBinaryMode(stdin, 0);
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
 #ifdef SQLITE_SHELL_FIDDLE
   stdin_is_interactive = 0;
@@ -12306,6 +12328,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   if( console_utf8 && stdin_is_interactive ){
     instream_prepare();
   }else{
+    setBinaryMode(stdin, 0);
     console_utf8 = 0;
   }
 #endif
