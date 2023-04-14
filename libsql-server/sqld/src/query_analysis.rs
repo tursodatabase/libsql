@@ -47,7 +47,10 @@ impl StmtKind {
                 | Stmt::Delete { .. }
                 | Stmt::DropTable { .. }
                 | Stmt::AlterTable { .. }
-                | Stmt::CreateIndex { .. },
+                | Stmt::CreateIndex { .. }
+                // only support non-temp views for now. We don't have a mecanism to sync
+                // connection state between the primary and the replica right now.
+                | Stmt::CreateView { temporary: false, .. }
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
             Cmd::Stmt(Stmt::Pragma { .. }) => Some(Self::Other),
