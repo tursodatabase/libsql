@@ -550,8 +550,7 @@ mod bindings {
         >,
     ) -> ::std::os::raw::c_int;
 }"#,
-            )
-            .rustfmt_bindings(true);
+            );
 
         if cfg!(any(feature = "sqlcipher", feature = "bundled-sqlcipher")) {
             bindings = bindings.clang_arg("-DSQLITE_HAS_CODEC");
