@@ -28,7 +28,7 @@ do_execsql_test 1.0 {
 forcedelete test.db2
 do_test 1.1 {
   set R [sqlite3_recover_init db main test.db2]
-} {sqlite_recover1}
+} {/sqlite_recover.*/}
 
 do_test 1.2 {
   $R run
