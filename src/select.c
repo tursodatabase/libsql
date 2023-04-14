@@ -2369,12 +2369,12 @@ void sqlite3SubqueryColumnTypes(
       i64 m = sqlite3Strlen30(zType);
       n = sqlite3Strlen30(pCol->zCnName);
       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
+      pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       if( pCol->zCnName ){
         memcpy(&pCol->zCnName[n+1], zType, m+1);
         pCol->colFlags |= COLFLAG_HASTYPE;
       }else{
         testcase( pCol->colFlags & COLFLAG_HASTYPE );
-        pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
       }
     }
     pColl = sqlite3ExprCollSeq(pParse, p);
