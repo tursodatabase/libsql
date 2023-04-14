@@ -11,7 +11,6 @@
 *************************************************************************
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
-ToDo: The -utf8 option may not play well with line editing input libraries.
 */
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_CRT_SECURE_NO_WARNINGS)
 /* This needs to come before any includes for MSVC compiler */
@@ -21,7 +20,7 @@ typedef unsigned int u32;
 typedef unsigned short int u16;
 
 /*
-** optionally #include a user-defined header, whereby compilation options
+** Optionally #include a user-defined header, whereby compilation options
 ** may be set prior to where they take effect, but after platform setup.
 ** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
 ** file. Note that this macro has a like effect on sqlite3.c compilation.
