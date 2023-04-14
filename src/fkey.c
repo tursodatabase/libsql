@@ -1317,22 +1317,22 @@ static Trigger *fkActionTrigger(
 
     if( action==OE_Restrict ){
       int iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-      Token tFrom;
-      Token tDb;
+      SrcList *pSrc;
       Expr *pRaise; 
-
-      tFrom.z = zFrom;
-      tFrom.n = nFrom;
-      tDb.z = db->aDb[iDb].zDbSName;
-      tDb.n = sqlite3Strlen30(tDb.z);
 
       pRaise = sqlite3Expr(db, TK_RAISE, "FOREIGN KEY constraint failed");
       if( pRaise ){
         pRaise->affExpr = OE_Abort;
       }
+      pSrc = sqlite3SrcListAppend(pParse, 0, 0, 0);
+      if( pSrc ){
+        assert( pSrc->nSrc==1 );
+        pSrc->a[0].zName = sqlite3DbStrDup(db, zFrom);
+        pSrc->a[0].zDatabase = sqlite3DbStrDup(db, db->aDb[iDb].zDbSName);
+      }
       pSelect = sqlite3SelectNew(pParse, 
           sqlite3ExprListAppend(pParse, 0, pRaise),
-          sqlite3SrcListAppend(pParse, 0, &tDb, &tFrom),
+          pSrc,
           pWhere,
           0, 0, 0, 0, 0
       );

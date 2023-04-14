@@ -272,4 +272,15 @@ do_catchsql_test 8.3 {
   REINDEX;
 } {1 {database disk image is malformed}}
 
+# 2023-04-13 https://bugs.chromium.org/p/chromium/issues/detail?id=1405220
+# Avoid double-de-quoting of table names when processing foreign keys.
+#
+reset_db
+do_execsql_test 9.1 {
+  PRAGMA foreign_keys = ON;
+  CREATE TABLE """1"("""2", """3" PRIMARY KEY);
+  CREATE TABLE """4"("""5" REFERENCES """1" ON DELETE RESTRICT);
+  DELETE FROM """1";
+}
+
 finish_test
