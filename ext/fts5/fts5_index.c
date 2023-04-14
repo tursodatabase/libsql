@@ -5002,7 +5002,6 @@ static void fts5FlushOneHash(Fts5Index *p){
 
           if( bTermWritten==0 ){
             fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
-            if( p->rc!=SQLITE_OK ) break;
             bTermWritten = 1;
             assert( writer.bFirstRowidInPage==0 );
           }
@@ -5012,10 +5011,10 @@ static void fts5FlushOneHash(Fts5Index *p){
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
             writer.bFirstRowidInPage = 0;
             fts5WriteDlidxAppend(p, &writer, iRowid);
-            if( p->rc!=SQLITE_OK ) break;
           }else{
             pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid-iPrev);
           }
+          if( p->rc!=SQLITE_OK ) break;
           assert( pBuf->n<=pBuf->nSpace );
           iPrev = iRowid;
 
