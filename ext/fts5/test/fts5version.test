@@ -38,20 +38,20 @@ do_execsql_test 1.3 {
 
 sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 1.4 {
-  UPDATE t1_config set v=5 WHERE k='version';
+  UPDATE t1_config set v=6 WHERE k='version';
 }
 
 do_test 1.5 {
   db close
   sqlite3 db test.db
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'a' }
-} {1 {invalid fts5 file format (found 5, expected 4) - run 'rebuild'}}
+} {1 {invalid fts5 file format (found 6, expected 4 or 5) - run 'rebuild'}}
 
 do_test 1.6 {
   db close
   sqlite3 db test.db
   catchsql { INSERT INTO t1 VALUES('x y z') }
-} {1 {invalid fts5 file format (found 5, expected 4) - run 'rebuild'}}
+} {1 {invalid fts5 file format (found 6, expected 4 or 5) - run 'rebuild'}}
 
 do_test 1.7 {
   sqlite3_db_config db DEFENSIVE 0
@@ -59,7 +59,75 @@ do_test 1.7 {
   db close
   sqlite3 db test.db
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'a' }
-} {1 {invalid fts5 file format (found 0, expected 4) - run 'rebuild'}}
+} {1 {invalid fts5 file format (found 0, expected 4 or 5) - run 'rebuild'}}
+
+do_test 1.8 {
+  sqlite3_db_config db DEFENSIVE 0
+  execsql { INSERT INTO t1_config VALUES('version', 4) }
+  execsql { INSERT INTO t1(t1, rank) VALUES('secure-delete', 1) }
+} {}
+
+do_execsql_test 1.10 {
+  SELECT * FROM t1_config
+} {secure-delete 1 version 4}
+
+do_execsql_test 1.11 {
+  INSERT INTO t1(rowid, one) VALUES(123, 'one two three');
+  DELETE FROM t1 WHERE rowid=123;
+  SELECT * FROM t1_config
+} {secure-delete 1 version 5}
+
+do_execsql_test 1.11 {
+  INSERT INTO t1(t1) VALUES('rebuild');
+  SELECT * FROM t1_config
+} {secure-delete 1 version 4}
+
+do_execsql_test 1.12 {
+  SELECT * FROM t1_config
+} {secure-delete 1 version 4}
+
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE xyz USING fts5(x);
+  INSERT INTO xyz(rowid, x) VALUES
+      (1, 'one document'),
+      (2, 'two document'),
+      (3, 'three document'),
+      (4, 'four document'),
+      (5, 'five document'),
+      (6, 'six document');
+
+  INSERT INTO xyz(xyz, rank) VALUES('secure-delete', 1);
+  SELECT v FROM xyz_config WHERE k='version';
+} {4}
+
+do_execsql_test 2.1 {
+  BEGIN;
+    INSERT INTO xyz(rowid, x) VALUES(7, 'seven document');
+    SAVEPOINT one;
+      DELETE FROM xyz WHERE rowid = 4;
+}
+
+do_execsql_test 2.2 {
+      SELECT v FROM xyz_config WHERE k='version';
+} {5}
+
+do_execsql_test 2.3 {
+    ROLLBACK TO one;
+      SELECT v FROM xyz_config WHERE k='version';
+} {4}
+
+
+do_execsql_test 2.4 {
+      DELETE FROM xyz WHERE rowid = 3;
+  COMMIT;
+  SELECT v FROM xyz_config WHERE k='version';
+} {5}
+
+
 
 
 finish_test
+
