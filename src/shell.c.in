@@ -448,7 +448,8 @@ static int bail_on_error = 0;
 */
 static int stdin_is_interactive = 1;
 
-#if (defined(_WIN32) || defined(WIN32)) && SHELL_USE_LOCAL_GETLINE
+#if (defined(_WIN32) || defined(WIN32)) && SHELL_USE_LOCAL_GETLINE \
+  && !defined(SHELL_OMIT_WIN_UTF8)
 # define SHELL_WIN_UTF8_OPT 1
 #else
 # define SHELL_WIN_UTF8_OPT 0
@@ -594,32 +595,38 @@ static char *dynamicContinuePrompt(void){
 #endif /* !defined(SQLITE_OMIT_DYNAPROMPT) */
 
 #if SHELL_WIN_UTF8_OPT
-/* Following variables are used for -utf8 operation. */
-static int stdinEof = 0;  /* EOF seen on console input */
-static int infsMode;      /* Input file stream mode upon shell start */
-static UINT codePage = 0; /* Input code page upon shell start */
-static HANDLE hConsoleIn = INVALID_HANDLE_VALUE; /* Console input handle */
-static DWORD consoleMode; /* Console mode upon shell start */
+/* Following struct is used for -utf8 operation. */
+static struct ConsoleState {
+  int stdinEof;      /* EOF has been seen on console input */
+  int infsMode;      /* Input file stream mode upon shell start */
+  UINT inCodePage;   /* Input code page upon shell start */
+  UINT outCodePage;  /* Output code page upon shell start */
+  HANDLE hConsoleIn; /* Console input handle */
+  DWORD consoleMode; /* Console mode upon shell start */
+} conState = { 0, 0, 0, 0, INVALID_HANDLE_VALUE, 0 };
 
 /*
-** Prepare input stream, (if known to be a WIN32 console), for UTF-8
+** Prepare console, (if known to be a WIN32 console), for UTF-8
 ** input (from either typing or suitable paste operations) and for
 ** UTF-8 rendering. This may "fail" with a message to stderr, where
 ** the preparation is not done and common "code page" issues occur.
 */
-static void instream_prepare(void){
-  hConsoleIn = GetStdHandle(STD_INPUT_HANDLE);
-  if( isatty(0) && GetFileType(hConsoleIn)==FILE_TYPE_CHAR ){
+static void console_prepare(void){
+  conState.hConsoleIn = GetStdHandle(STD_INPUT_HANDLE);
+  if( isatty(0) && GetFileType(conState.hConsoleIn)==FILE_TYPE_CHAR ){
     if( !IsValidCodePage(CP_UTF8) ){
       fprintf(stderr, "Cannot use UTF-8 code page.\n");
       console_utf8 = 0;
       return;
     }
-    codePage = GetConsoleCP();
+    conState.inCodePage = GetConsoleCP();
+    conState.outCodePage = GetConsoleOutputCP();
     SetConsoleCP(CP_UTF8);
-    GetConsoleMode( hConsoleIn, &consoleMode);
-    SetConsoleMode( hConsoleIn, consoleMode | ENABLE_LINE_INPUT );
-    infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
+    SetConsoleOutputCP(CP_UTF8);
+    GetConsoleMode( conState.hConsoleIn, &conState.consoleMode);
+    SetConsoleMode( conState.hConsoleIn,
+                    conState.consoleMode | ENABLE_LINE_INPUT );
+    conState.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
     console_utf8 = 1;
   }else{
     console_utf8 = 0;
@@ -627,13 +634,15 @@ static void instream_prepare(void){
 }
 
 /*
-** Undo the effects of instream_prepare(), if any.
+** Undo the effects of console_prepare(), if any.
 */
-static void SQLITE_CDECL instream_restore(void){
-  if( console_utf8 && codePage!=0 &&hConsoleIn != INVALID_HANDLE_VALUE ){
-    _setmode(_fileno(stdin), infsMode);
-    SetConsoleCP(codePage);
-    SetConsoleMode( hConsoleIn, consoleMode );
+static void SQLITE_CDECL console_restore(void){
+  if( console_utf8 && conState.inCodePage!=0
+      && conState.hConsoleIn != INVALID_HANDLE_VALUE ){
+    _setmode(_fileno(stdin), conState.infsMode);
+    SetConsoleCP(conState.inCodePage);
+    SetConsoleOutputCP(conState.outCodePage);
+    SetConsoleMode( conState.hConsoleIn, conState.consoleMode );
     console_utf8 = 0; /* Avoid multiple calls. */
   }
 }
@@ -651,7 +660,7 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
     wchar_t wbuf[SQLITE_IALIM];
     int lend = 0;
     int noc = 0;
-    if( ncmax == 0 || stdinEof ) return 0;
+    if( ncmax == 0 || conState.stdinEof ) return 0;
     buf[0] = 0;
     while( noc < ncmax-7-1 && !lend ){
       /* There is room for at least 2 more characters and a 0-terminator. */
@@ -659,7 +668,7 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
         ? SQLITE_IALIM : (ncmax-1 - noc)/4;
 # undef SQLITE_IALIM
       DWORD nbr = 0;
-      BOOL bRC = ReadConsoleW(hConsoleIn, wbuf, na, &nbr, 0);
+      BOOL bRC = ReadConsoleW(conState.hConsoleIn, wbuf, na, &nbr, 0);
       if( !bRC || (noc==0 && nbr==0) ) return 0;
       if( nbr > 0 ){
         int nmb = WideCharToMultiByte(CP_UTF8, WC_COMPOSITECHECK|WC_DEFAULTCHAR,
@@ -682,7 +691,7 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
           /* Check for ^Z (anywhere in line) too. */
           while( iseg < noc ){
             if( buf[iseg]==0x1a ){
-              stdinEof = 1;
+              conState.stdinEof = 1;
               noc = iseg; /* Chop ^Z and anything following. */
               break;
             }
@@ -11861,7 +11870,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   stdout_is_console = isatty(1);
 #endif
 #if SHELL_WIN_UTF8_OPT
-  atexit(instream_restore); /* Needs revision for CLI as library call */
+  atexit(console_restore); /* Needs revision for CLI as library call */
 #endif
 #ifdef SQLITE_DEBUG
   mem_main_enter = sqlite3_memory_used();
@@ -12335,7 +12344,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   }
 #if SHELL_WIN_UTF8_OPT
   if( console_utf8 && stdin_is_interactive ){
-    instream_prepare();
+    console_prepare();
   }else{
     setBinaryMode(stdin, 0);
     console_utf8 = 0;
