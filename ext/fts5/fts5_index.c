@@ -4831,7 +4831,7 @@ static void fts5FlushSecureDelete(
               memcpy(&aPg[iOff], &zTerm[nPrefix], nPrefix2-nPrefix);
               iOff += (nPrefix2-nPrefix);
             }
-            memcpy(&aPg[iOff], &aPg[iNextOff], nSuffix2);
+            memmove(&aPg[iOff], &aPg[iNextOff], nSuffix2);
             iOff += nSuffix2;
             iNextOff += nSuffix2;
           }

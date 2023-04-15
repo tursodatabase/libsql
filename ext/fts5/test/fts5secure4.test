@@ -53,6 +53,23 @@ do_execsql_test 1.6 {
   INSERT INTO t1(t1) VALUES('integrity-check');
 }
 
+do_execsql_test 1.7 {
+CREATE VIRTUAL TABLE y1 USING fts5(xx, prefix='1,2');
+INSERT INTO y1(y1, rank) VALUES('pgsz', 64);
+INSERT INTO y1(y1, rank) VALUES('secure-delete', 1);
+}
+do_execsql_test 1.8 {
+  BEGIN;
+  INSERT INTO y1(rowid, xx) VALUES(1, 'abc def');
+  INSERT INTO y1(rowid, xx) VALUES(2, 'reallyreallylongtoken');
+  COMMIT;
+}
+do_execsql_test 1.9 {
+  DELETE FROM y1 WHERE rowid=1;
+  INSERT INTO y1(y1) VALUES('integrity-check');
+}
+
+
 #-------------------------------------------------------------------------
 # Test using secure-delete with detail=none or detail=col.
 #
@@ -130,6 +147,7 @@ foreach {tn d} {1 full 2 none 3 column} {
     SELECT * FROM x1
   } {}
 }
+
 
 
 finish_test
