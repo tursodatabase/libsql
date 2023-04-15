@@ -4994,7 +4994,7 @@ static void fts5FlushOneHash(Fts5Index *p){
           ** using fts5FlushSecureDelete().  */
           if( bSecureDelete && (pDoclist[iOff] & 0x01) ){
             fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
-            if( pDoclist[iOff]==0x01 ){
+            if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
               iOff++;
               continue;
             }
