@@ -3,7 +3,11 @@ use prost_build::Config;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut config = vergen::Config::default();
     *config.build_mut().kind_mut() = vergen::TimestampKind::All;
-    vergen::vergen(config)?;
+    // when building from source, git is not available
+    if vergen::vergen(config.clone()).is_err() {
+        *config.git_mut().enabled_mut() = false;
+        vergen::vergen(config)?;
+    }
 
     let mut config = Config::new();
     config.bytes([".wal_log"]);
