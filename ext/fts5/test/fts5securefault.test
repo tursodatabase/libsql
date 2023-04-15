@@ -167,5 +167,36 @@ do_faultsim_test 5.1 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 6.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts5(ab);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+    BEGIN;
+      INSERT INTO t1(rowid, ab) VALUES(1, 'abcdefg');
+      INSERT INTO t1(rowid, ab) VALUES(2, 'abcdefg');
+      INSERT INTO t1(rowid, ab) VALUES(3, 'abcdefg');
+    COMMIT;
+  }
+} {}
+faultsim_save_and_close
+
+do_faultsim_test 6.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { 
+    BEGIN;
+      UPDATE t1 SET ab='abcdefg' WHERE rowid=2;
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
 
 finish_test
