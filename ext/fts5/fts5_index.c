@@ -4903,7 +4903,7 @@ static void fts5FlushSecureDelete(
           fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iLeafPgno);
         }
 
-        assert( nPg>4 || fts5GetU16(aPg)==0 );
+        assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
         fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid, pSeg->iLeafPgno), aPg, nPg);
         sqlite3_free(aIdx);
       }
