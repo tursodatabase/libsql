@@ -69,6 +69,20 @@ do_execsql_test 1.9 {
   INSERT INTO y1(y1) VALUES('integrity-check');
 }
 
+do_execsql_test 1.10 {
+  CREATE VIRTUAL TABLE w1 USING fts5(ww, content="");
+  INSERT INTO w1(rowid, ww) VALUES(123, '');
+}
+do_catchsql_test 1.11 {
+  INSERT INTO w1(w1, rowid, ww) VALUES('delete', 123, 'xyz');
+} {1 {database disk image is malformed}}
+do_catchsql_test 1.12 {
+  DROP TABLE w1;
+  CREATE VIRTUAL TABLE w1 USING fts5(ww, content="");
+  INSERT INTO w1(rowid, ww) VALUES(123, '');
+  DELETE FROM w1_data WHERE id>10;
+  INSERT INTO w1(w1, rowid, ww) VALUES('delete', 123, 'xyz');
+} {1 {database disk image is malformed}}
 
 #-------------------------------------------------------------------------
 # Test using secure-delete with detail=none or detail=col.

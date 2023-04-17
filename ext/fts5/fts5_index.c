@@ -4509,16 +4509,16 @@ static void fts5IndexCrisismerge(
 ){
   const int nCrisis = p->pConfig->nCrisisMerge;
   Fts5Structure *pStruct = *ppStruct;
-  int iLvl = 0;
-
-  assert( p->rc!=SQLITE_OK || pStruct->nLevel>0 );
-  while( p->rc==SQLITE_OK && pStruct->aLevel[iLvl].nSeg>=nCrisis ){
-    fts5IndexMergeLevel(p, &pStruct, iLvl, 0);
-    assert( p->rc!=SQLITE_OK || pStruct->nLevel>(iLvl+1) );
-    fts5StructurePromote(p, iLvl+1, pStruct);
-    iLvl++;
+  if( pStruct && pStruct->nLevel>0 ){
+    int iLvl = 0;
+    while( p->rc==SQLITE_OK && pStruct->aLevel[iLvl].nSeg>=nCrisis ){
+      fts5IndexMergeLevel(p, &pStruct, iLvl, 0);
+      assert( p->rc!=SQLITE_OK || pStruct->nLevel>(iLvl+1) );
+      fts5StructurePromote(p, iLvl+1, pStruct);
+      iLvl++;
+    }
+    *ppStruct = pStruct;
   }
-  *ppStruct = pStruct;
 }
 
 static int fts5IndexReturn(Fts5Index *p){
@@ -4823,17 +4823,21 @@ static void fts5FlushSecureDelete(
             nPrefix = MIN(nPrefix, nPrefix2);
             nSuffix = (nPrefix2 + nSuffix2) - nPrefix;
 
-            if( iKey!=1 ){
-              iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
+            if( (iKeyOff+nSuffix)>iPgIdx || (iNextOff+nSuffix2)>iPgIdx ){
+              p->rc = FTS5_CORRUPT;
+            }else{
+              if( iKey!=1 ){
+                iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
+              }
+              iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
+              if( nPrefix2>nPrefix ){
+                memcpy(&aPg[iOff], &zTerm[nPrefix], nPrefix2-nPrefix);
+                iOff += (nPrefix2-nPrefix);
+              }
+              memmove(&aPg[iOff], &aPg[iNextOff], nSuffix2);
+              iOff += nSuffix2;
+              iNextOff += nSuffix2;
             }
-            iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-            if( nPrefix2>nPrefix ){
-              memcpy(&aPg[iOff], &zTerm[nPrefix], nPrefix2-nPrefix);
-              iOff += (nPrefix2-nPrefix);
-            }
-            memmove(&aPg[iOff], &aPg[iNextOff], nSuffix2);
-            iOff += nSuffix2;
-            iNextOff += nSuffix2;
           }
         }else if( iStart==4 ){
           assert_nc( pSeg->iLeafPgno>pSeg->iTermLeafPgno );
@@ -4878,33 +4882,35 @@ static void fts5FlushSecureDelete(
           }
         }
 
-        nMove = nPg - iNextOff;
-        memmove(&aPg[iOff], &aPg[iNextOff], nMove);
-        iPgIdx -= (iNextOff - iOff);
-        nPg = iPgIdx;
-        fts5PutU16(&aPg[2], iPgIdx);
+        if( p->rc==SQLITE_OK ){
+          nMove = nPg - iNextOff;
+          memmove(&aPg[iOff], &aPg[iNextOff], nMove);
+          iPgIdx -= (iNextOff - iOff);
+          nPg = iPgIdx;
+          fts5PutU16(&aPg[2], iPgIdx);
 
-        nShift = iNextOff - iOff;
-        for(iIdx=0, iKeyOff=0, iPrevKeyOff=0; iIdx<nIdx; /* no-op */){
-          u32 iVal = 0;
-          iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-          iKeyOff += iVal;
-          if( iKeyOff!=iDelKeyOff ){
-            if( iKeyOff>iOff ){
-              iKeyOff -= nShift;
-              nShift = 0;
+          nShift = iNextOff - iOff;
+          for(iIdx=0, iKeyOff=0, iPrevKeyOff=0; iIdx<nIdx; /* no-op */){
+            u32 iVal = 0;
+            iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
+            iKeyOff += iVal;
+            if( iKeyOff!=iDelKeyOff ){
+              if( iKeyOff>iOff ){
+                iKeyOff -= nShift;
+                nShift = 0;
+              }
+              nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOff - iPrevKeyOff);
+              iPrevKeyOff = iKeyOff;
             }
-            nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOff - iPrevKeyOff);
-            iPrevKeyOff = iKeyOff;
           }
-        }
 
-        if( iPgIdx==nPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
-          fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iLeafPgno);
-        }
+          if( iPgIdx==nPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
+            fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iLeafPgno);
+          }
 
-        assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
-        fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid, pSeg->iLeafPgno), aPg, nPg);
+          assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
+          fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg,nPg);
+        }
         sqlite3_free(aIdx);
       }
     }
