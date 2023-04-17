@@ -612,18 +612,19 @@ static struct ConsoleState {
 ** the preparation is not done and common "code page" issues occur.
 */
 static void console_prepare(void){
-  conState.hConsoleIn = GetStdHandle(STD_INPUT_HANDLE);
-  if( isatty(0) && GetFileType(conState.hConsoleIn)==FILE_TYPE_CHAR ){
+  HANDLE hCI = GetStdHandle(STD_INPUT_HANDLE);
+  if( isatty(0) && GetFileType(hCI)==FILE_TYPE_CHAR
+      && GetConsoleMode( hCI, &conState.consoleMode) ){
     if( !IsValidCodePage(CP_UTF8) ){
       fprintf(stderr, "Cannot use UTF-8 code page.\n");
       console_utf8 = 0;
       return;
     }
+    conState.hConsoleIn = hCI;
     conState.inCodePage = GetConsoleCP();
     conState.outCodePage = GetConsoleOutputCP();
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
-    GetConsoleMode( conState.hConsoleIn, &conState.consoleMode);
     SetConsoleMode( conState.hConsoleIn,
                     conState.consoleMode | ENABLE_LINE_INPUT );
     conState.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
@@ -643,7 +644,9 @@ static void SQLITE_CDECL console_restore(void){
     SetConsoleCP(conState.inCodePage);
     SetConsoleOutputCP(conState.outCodePage);
     SetConsoleMode( conState.hConsoleIn, conState.consoleMode );
-    console_utf8 = 0; /* Avoid multiple calls. */
+    /* Avoid multiple calls. */
+    conState.hConsoleIn = INVALID_HANDLE_VALUE;
+    console_utf8 = 0;
   }
 }
 
@@ -714,14 +717,20 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
 
 /*
 ** Render output like fprintf().  Except, if the output is going to the
-** console and if this is running on a Windows machine, translate the
-** output from UTF-8 into MBCS.
+** console and if this is running on a Windows machine, and if the -utf8
+** option is unavailable or (available and inactive), translate the
+** output from UTF-8 into MBCS for output through 8-bit stdout stream.
+** (With -utf8 active, no translation is needed and must not be done.)
 */
 #if defined(_WIN32) || defined(WIN32)
 void utf8_printf(FILE *out, const char *zFormat, ...){
   va_list ap;
   va_start(ap, zFormat);
-  if( stdout_is_console && (out==stdout || out==stderr) ){
+  if( stdout_is_console && (out==stdout || out==stderr)
+# if SHELL_WIN_UTF8_OPT
+      && !console_utf8
+# endif
+      ){
     char *z1 = sqlite3_vmprintf(zFormat, ap);
     char *z2 = sqlite3_win32_utf8_to_mbcs_v2(z1, 0);
     sqlite3_free(z1);

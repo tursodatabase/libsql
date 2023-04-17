@@ -1,0 +1,278 @@
+# 2023 Feb 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+ifcapable !fts5 { finish_test ; return }
+set ::testprefix fts5secure
+
+proc dump {tname} {
+  execsql_pp "SELECT * FROM ${tname}_idx"
+  execsql_pp "SELECT id, quote(block), fts5_decode(id,block) FROM ${tname}_data"
+}
+
+
+do_execsql_test 0.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(ab);
+  CREATE VIRTUAL TABLE v1 USING fts5vocab('t1', 'instance');
+  INSERT INTO t1(rowid, ab) VALUES
+      (0,'abc'), (1,'abc'), (2,'abc'), (3,'abc'), (4,'def');
+}
+
+do_execsql_test 0.1 {
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+}
+
+do_execsql_test 0.2 {
+  DELETE FROM t1 WHERE rowid=2;
+}
+
+do_execsql_test 0.3 {
+  SELECT count(*) FROM t1_data
+} 3
+
+do_execsql_test 0.4 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} 
+
+do_execsql_test 0.5 {
+  DELETE FROM t1 WHERE rowid=3;
+}
+
+do_execsql_test 0.6 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} 
+
+do_execsql_test 0.7 {
+  DELETE FROM t1 WHERE rowid=0;
+}
+
+do_execsql_test 0.8 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+} 
+
+#----------------------------------
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t2 USING fts5(ab);
+  INSERT INTO t2(rowid, ab) VALUES (5, 'key'), (6, 'value');
+  INSERT INTO t2(t2, rank) VALUES('secure-delete', 1);
+}
+
+#execsql_pp { SELECT id, quote(block) FROM t1_data }
+#execsql_pp { SELECT segid, quote(term), pgno FROM t1_idx }
+
+do_execsql_test 1.1 {
+  DELETE FROM t2 WHERE rowid = 5;
+}
+
+do_execsql_test 1.2 {
+  INSERT INTO t2(t2) VALUES('integrity-check');
+} 
+
+do_execsql_test 1.3 {
+  DELETE FROM t2 WHERE rowid = 6;
+}
+
+do_execsql_test 1.4 {
+  INSERT INTO t2(t2) VALUES('integrity-check');
+} 
+
+do_execsql_test 1.5 {
+  SELECT * FROM t2('value');
+  SELECT * FROM t2('v*');
+} 
+
+do_execsql_test 1.6 {
+  SELECT * FROM t2('value') ORDER BY rowid DESC;
+  SELECT * FROM t2('v*') ORDER BY rowid DESC;
+} 
+execsql_pp {
+  SELECT id, quote(block) FROM t2_data;
+}
+
+#----------------------------------
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(ab);
+  CREATE VIRTUAL TABLE vocab USING fts5vocab('ft', 'instance');
+  INSERT INTO ft(rowid, ab) VALUES
+    (1, 'one'), 
+    (2, 'two'), 
+    (3, 'three'), 
+    (4, 'four'), 
+    (5, 'one one'), 
+    (6, 'one two'), 
+    (7, 'one three'), 
+    (8, 'one four'), 
+    (9,  'two one'),
+    (10, 'two two'),
+    (11, 'two three'),
+    (12, 'two four'),
+    (13, 'three one'), 
+    (14, 'three two'), 
+    (15, 'three three'), 
+    (16, 'three four');
+}
+
+do_execsql_test 2.1 {
+  SELECT count(*) FROM ft_data;
+} {3}
+
+do_execsql_test 2.2 {
+  INSERT INTO ft(ft, rank) VALUES('secure-delete', 1);
+}
+
+do_execsql_test 2.3 {
+  DELETE FROM ft WHERE rowid=9;
+}
+
+do_execsql_test 2.4 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 2.5 {
+  DELETE FROM ft WHERE ab LIKE '%two%'
+}
+
+do_execsql_test 2.6 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+do_execsql_test 2.7 {
+  SELECT count(*) FROM ft_data;
+} {3}
+
+#----------------------------------
+reset_db
+
+set ::vocab {
+  one two three four five six seven eight nine ten
+  eleven twelve thirteen fourteen fifteen sixteen 
+  seventeen eighteen nineteen twenty
+}
+proc rnddoc {} {
+  set nVocab [llength $::vocab]
+  set ret [list]
+  for {set ii 0} {$ii < 8} {incr ii} {
+    lappend ret [lindex $::vocab [expr int(abs(rand()) * $nVocab)]]
+  }
+  set ret
+}
+
+proc contains {list val} {
+  expr {[lsearch $list $val]>=0}
+}
+
+foreach {tn pgsz} {
+  2 64
+  1 1000
+} {
+  reset_db
+  db function rnddoc rnddoc
+  db function contains contains
+  
+  expr srand(1)
+
+  do_execsql_test 3.$tn.0 {
+    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', $pgsz);
+    WITH s(i) AS (
+      VALUES(1) UNION SELECT i+1 FROM s WHERE i<20
+    )
+    INSERT INTO t1 SELECT rnddoc() FROM s;
+  }
+
+  do_execsql_test 3.$tn.1 {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+  
+  foreach {rowid} {
+    6 16 3 4 9 14 13 7 20 15 19 10 11 2 5 18 17 1 12 8
+  } {
+
+    do_execsql_test 3.$tn.2.$rowid {
+      DELETE FROM t1 WHERE rowid=$rowid;
+    }
+    do_execsql_test 3.$tn.2.$rowid.ic {
+      INSERT INTO t1(t1) VALUES('integrity-check');
+    }
+
+    foreach v $::vocab {
+      do_execsql_test 3.$tn.2.$rowid.q.$v {
+        SELECT rowid FROM t1($v)
+      } [db eval {SELECT rowid FROM t1 WHERE contains(x, $v)}]
+
+      do_execsql_test 3.$tn.2.$rowid.q.$v.DESC {
+        SELECT rowid FROM t1($v) ORDER BY 1 DESC
+      } [db eval {SELECT rowid FROM t1 WHERE contains(x, $v) ORDER BY 1 DESC}]
+    }
+  }
+}
+
+do_execsql_test 3.3 {
+  INSERT INTO t1(x) VALUES('optimize');
+  INSERT INTO t1(t1) VALUES('optimize');
+  SELECT count(*) FROM t1_data;
+} {3}
+
+#----------------------------------
+reset_db
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+}
+
+set L1 [string repeat abcdefghij 10]
+set L2 [string repeat 1234567890 10]
+
+do_execsql_test 4.1 {
+  INSERT INTO t1 VALUES('aa' || $L1 || ' ' || $L2);
+}
+do_execsql_test 4.2 {
+  DELETE FROM t1 WHERE rowid=1
+}
+do_execsql_test 4.3 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+#----------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+}
+
+set doc "aa [string repeat {abc } 60]"
+
+do_execsql_test 5.1 {
+  BEGIN;
+    INSERT INTO t1 VALUES($doc);
+    INSERT INTO t1 VALUES('aa abc');
+  COMMIT;
+}
+
+do_execsql_test 5.2 {
+  DELETE FROM t1 WHERE rowid = 1;
+}
+
+do_execsql_test 5.3 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+do_execsql_test 5.4 { SELECT rowid FROM t1('abc'); } 2
+do_execsql_test 5.5 { SELECT rowid FROM t1('aa'); } 2
+
+
+finish_test
+

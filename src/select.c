@@ -2318,7 +2318,7 @@ void sqlite3SubqueryColumnTypes(
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
   assert( pTab->nCol==pSelect->pEList->nExpr || pParse->nErr>0 );
   assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
-  if( db->mallocFailed ) return;
+  if( db->mallocFailed || IN_RENAME_OBJECT ) return;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   a = pSelect->pEList->a;
   memset(&sNC, 0, sizeof(sNC));
@@ -2363,18 +2363,18 @@ void sqlite3SubqueryColumnTypes(
             break;
           }
         }
-       }
-     }
-     if( zType ){
-       i64 m = sqlite3Strlen30(zType);
-       n = sqlite3Strlen30(pCol->zCnName);
-       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
-       if( pCol->zCnName ){
-         memcpy(&pCol->zCnName[n+1], zType, m+1);
-         pCol->colFlags |= COLFLAG_HASTYPE;
-       }else{
-         testcase( pCol->colFlags & COLFLAG_HASTYPE );
-        pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
+      }
+    }
+    if( zType ){
+      i64 m = sqlite3Strlen30(zType);
+      n = sqlite3Strlen30(pCol->zCnName);
+      pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
+      pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
+      if( pCol->zCnName ){
+        memcpy(&pCol->zCnName[n+1], zType, m+1);
+        pCol->colFlags |= COLFLAG_HASTYPE;
+      }else{
+        testcase( pCol->colFlags & COLFLAG_HASTYPE );
       }
     }
     pColl = sqlite3ExprCollSeq(pParse, p);

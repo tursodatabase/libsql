@@ -903,6 +903,18 @@ int sqlite3Fts5ConfigSetValue(
       rc = SQLITE_OK;
       *pbBadkey = 1;
     }
+  }
+
+  else if( 0==sqlite3_stricmp(zKey, "secure-delete") ){
+    int bVal = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      bVal = sqlite3_value_int(pVal);
+    }
+    if( bVal<0 ){
+      *pbBadkey = 1;
+    }else{
+      pConfig->bSecureDelete = (bVal ? 1 : 0);
+    }
   }else{
     *pbBadkey = 1;
   }
@@ -947,15 +959,20 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
     rc = sqlite3_finalize(p);
   }
   
-  if( rc==SQLITE_OK && iVersion!=FTS5_CURRENT_VERSION ){
+  if( rc==SQLITE_OK 
+   && iVersion!=FTS5_CURRENT_VERSION
+   && iVersion!=FTS5_CURRENT_VERSION_SECUREDELETE
+  ){
     rc = SQLITE_ERROR;
     if( pConfig->pzErrmsg ){
       assert( 0==*pConfig->pzErrmsg );
-      *pConfig->pzErrmsg = sqlite3_mprintf(
-          "invalid fts5 file format (found %d, expected %d) - run 'rebuild'",
-          iVersion, FTS5_CURRENT_VERSION
+      *pConfig->pzErrmsg = sqlite3_mprintf("invalid fts5 file format "
+          "(found %d, expected %d or %d) - run 'rebuild'",
+          iVersion, FTS5_CURRENT_VERSION, FTS5_CURRENT_VERSION_SECUREDELETE
       );
     }
+  }else{
+    pConfig->iVersion = iVersion;
   }
 
   if( rc==SQLITE_OK ){
