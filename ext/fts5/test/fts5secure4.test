@@ -90,18 +90,20 @@ do_catchsql_test 1.12 {
 foreach {tn d} {1 full 2 none 3 column} {
   reset_db
   do_execsql_test 2.$tn.1 "
-    CREATE VIRTUAL TABLE x1 USING fts5(xx, yy, zz, detail=$d, prefix='1,2');
+    CREATE VIRTUAL TABLE x1 USING fts5(xx, yy, zz, detail=$d, prefix='10,20');
     INSERT INTO x1(x1, rank) VALUES('pgsz', 64);
+    INSERT INTO x1(x1, rank) VALUES('secure-delete', 1);
   "
 
   do_execsql_test 2.$tn.2 {
     BEGIN;
-      INSERT INTO x1 VALUES('a b c', 'd e f', 'a b c');
-      INSERT INTO x1 VALUES('a b c', 'd e f', 'a b c');
-      INSERT INTO x1 VALUES('a b c', 'd e f', 'a b c');
-      INSERT INTO x1 VALUES('a b c', 'd e f', 'a b c');
-      INSERT INTO x1 VALUES('a b c', 'd e f', 'a b c');
+      INSERT INTO x1(xx, yy, zz) VALUES('a b c', 'd e f', 'a b c');
+      INSERT INTO x1(xx, yy, zz) VALUES('a b c', 'd e f', 'a b c');
+      INSERT INTO x1(xx, yy, zz) VALUES('a b c', 'd e f', 'a b c');
+      INSERT INTO x1(xx, yy, zz) VALUES('a b c', 'd e f', 'a b c');
+      INSERT INTO x1(xx, yy, zz) VALUES('a b c', 'd e f', 'a b c');
     COMMIT;
+    INSERT INTO x1(x1) VALUES('integrity-check');
   }
 
   do_execsql_test 2.$tn.3 {

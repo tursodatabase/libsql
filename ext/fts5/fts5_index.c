@@ -1954,7 +1954,7 @@ static void fts5SegIterNext_None(
   iOff = pIter->iLeafOffset;
 
   /* Next entry is on the next page */
-  if( pIter->pSeg && iOff>=pIter->pLeaf->szLeaf ){
+  while( pIter->pSeg && iOff>=pIter->pLeaf->szLeaf ){
     fts5SegIterNextPage(p, pIter);
     if( p->rc || pIter->pLeaf==0 ) return;
     pIter->iRowid = 0;
@@ -4601,6 +4601,7 @@ static void fts5SecureDeleteOverflow(
   int iPgno,
   int *pbLastInDoclist
 ){
+  const int bDetailNone = (p->pConfig->eDetail==FTS5_DETAIL_NONE);
   int pgno;
   Fts5Data *pLeaf = 0;
   assert( iPgno!=1 );
@@ -4627,9 +4628,12 @@ static void fts5SecureDeleteOverflow(
       /* The page contains no terms or rowids. Replace it with an empty
       ** page and move on to the right-hand peer.  */
       const u8 aEmpty[] = {0x00, 0x00, 0x00, 0x04}; 
-      fts5DataWrite(p, iRowid, aEmpty, sizeof(aEmpty));
+      assert_nc( bDetailNone==0 || pLeaf->nn==4 );
+      if( bDetailNone==0 ) fts5DataWrite(p, iRowid, aEmpty, sizeof(aEmpty));
       fts5DataRelease(pLeaf);
       pLeaf = 0;
+    }else if( bDetailNone ){
+      break;
     }else{
       int nShift = iNext - 4;
       int nPg;
@@ -4678,6 +4682,245 @@ static void fts5SecureDeleteOverflow(
   fts5DataRelease(pLeaf);
 }
 
+/*
+** Completely remove the entry that pSeg currently points to from 
+** the database.
+*/
+static void fts5DoSecureDelete(
+  Fts5Index *p,
+  Fts5Structure *pStruct,
+  Fts5SegIter *pSeg
+){
+  const int bDetailNone = (p->pConfig->eDetail==FTS5_DETAIL_NONE);
+  int iSegid = pSeg->pSeg->iSegid;
+  u8 *aPg = pSeg->pLeaf->p;
+  int nPg = pSeg->pLeaf->nn;
+  int iPgIdx = pSeg->pLeaf->szLeaf;
+
+  u64 iDelta = 0;
+  u64 iNextDelta = 0;
+  int iNextOff = 0;
+  int iOff = 0;
+  int nIdx = 0;
+  u8 *aIdx = 0;
+  int bLastInDoclist = 0;
+  int iIdx = 0;
+  int iStart = 0;
+  int iKeyOff = 0;
+  int iPrevKeyOff = 0;
+  int iDelKeyOff = 0;       /* Offset of deleted key, if any */
+
+  nIdx = nPg-iPgIdx;
+  aIdx = sqlite3Fts5MallocZero(&p->rc, nIdx+16);
+  if( p->rc ) return;
+  memcpy(aIdx, &aPg[iPgIdx], nIdx);
+
+  /* At this point segment iterator pSeg points to the entry
+  ** this function should remove from the b-tree segment. 
+  **
+  ** In detail=full or detail=column mode, pSeg->iLeafOffset is the 
+  ** offset of the first byte in the position-list for the entry to 
+  ** remove. Immediately before this comes two varints that will also
+  ** need to be removed:
+  **
+  **     + the rowid or delta rowid value for the entry, and
+  **     + the size of the position list in bytes.
+  **
+  ** Or, in detail=none mode, there is a single varint prior to 
+  ** pSeg->iLeafOffset - the rowid or delta rowid value.
+  **
+  ** This block sets the following variables:
+  **
+  **   iStart:
+  **   iDelta:
+  */
+  {
+    int iSOP;
+    if( pSeg->iLeafPgno==pSeg->iTermLeafPgno ){
+      iStart = pSeg->iTermLeafOffset;
+    }else{
+      iStart = fts5GetU16(&aPg[0]);
+    }
+
+    iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
+    assert_nc( iSOP<=pSeg->iLeafOffset );
+
+    if( bDetailNone ){
+      while( iSOP<pSeg->iLeafOffset ){
+        if( aPg[iSOP]==0x00 ) iSOP++;
+        if( aPg[iSOP]==0x00 ) iSOP++;
+        iStart = iSOP;
+        iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
+      }
+
+      iNextOff = iSOP;
+      if( iNextOff<pSeg->iEndofDoclist && aPg[iNextOff]==0x00 ) iNextOff++;
+      if( iNextOff<pSeg->iEndofDoclist && aPg[iNextOff]==0x00 ) iNextOff++;
+
+    }else{
+      int nPos = 0;
+      iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
+      while( iSOP<pSeg->iLeafOffset ){
+        iStart = iSOP + (nPos/2);
+        iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
+        iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
+      }
+      assert_nc( iSOP==pSeg->iLeafOffset );
+      iNextOff = pSeg->iLeafOffset + pSeg->nPos;
+    }
+  }
+
+  iOff = iStart;
+  if( iNextOff>=iPgIdx ){
+    int pgno = pSeg->iLeafPgno+1;
+    fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
+    iNextOff = iPgIdx;
+  }else{
+    /* Set bLastInDoclist to true if the entry being removed is the last
+    ** in its doclist.  */
+    for(iIdx=0, iKeyOff=0; iIdx<nIdx; /* no-op */){
+      u32 iVal = 0;
+      iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
+      iKeyOff += iVal;
+      if( iKeyOff==iNextOff ){
+        bLastInDoclist = 1;
+      }
+    }
+  }
+
+  if( fts5GetU16(&aPg[0])==iStart && (bLastInDoclist||iNextOff==iPgIdx) ){
+    fts5PutU16(&aPg[0], 0);
+  }
+
+  if( bLastInDoclist==0 ){
+    if( iNextOff!=iPgIdx ){
+      iNextOff += fts5GetVarint(&aPg[iNextOff], &iNextDelta);
+      iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta + iNextDelta);
+    }
+  }else if( 
+      iStart==pSeg->iTermLeafOffset && pSeg->iLeafPgno==pSeg->iTermLeafPgno 
+  ){
+    /* The entry being removed was the only position list in its
+    ** doclist. Therefore the term needs to be removed as well. */
+    int iKey = 0;
+    for(iIdx=0, iKeyOff=0; iIdx<nIdx; iKey++){
+      u32 iVal = 0;
+      iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
+      if( (iKeyOff+iVal)>iStart ) break;
+      iKeyOff += iVal;
+    }
+
+    iDelKeyOff = iOff = iKeyOff;
+    if( iNextOff!=iPgIdx ){
+      int nPrefix = 0;
+      int nSuffix = 0;
+      int nPrefix2 = 0;
+      int nSuffix2 = 0;
+
+      iDelKeyOff = iNextOff;
+      iNextOff += fts5GetVarint32(&aPg[iNextOff], nPrefix2);
+      iNextOff += fts5GetVarint32(&aPg[iNextOff], nSuffix2);
+
+      if( iKey!=1 ){
+        iKeyOff += fts5GetVarint32(&aPg[iKeyOff], nPrefix);
+      }
+      iKeyOff += fts5GetVarint32(&aPg[iKeyOff], nSuffix);
+
+      nPrefix = MIN(nPrefix, nPrefix2);
+      nSuffix = (nPrefix2 + nSuffix2) - nPrefix;
+
+      if( (iKeyOff+nSuffix)>iPgIdx || (iNextOff+nSuffix2)>iPgIdx ){
+        p->rc = FTS5_CORRUPT;
+      }else{
+        if( iKey!=1 ){
+          iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
+        }
+        iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
+        if( nPrefix2>nPrefix ){
+          memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);
+          iOff += (nPrefix2-nPrefix);
+        }
+        memmove(&aPg[iOff], &aPg[iNextOff], nSuffix2);
+        iOff += nSuffix2;
+        iNextOff += nSuffix2;
+      }
+    }
+  }else if( iStart==4 ){
+      assert_nc( pSeg->iLeafPgno>pSeg->iTermLeafPgno );
+      /* The entry being removed may be the only position list in
+      ** its doclist. */
+      int iPgno = pSeg->iLeafPgno-1;
+
+      for(iPgno=pSeg->iLeafPgno-1; iPgno>pSeg->iTermLeafPgno; iPgno-- ){
+        Fts5Data *pPg = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, iPgno));
+        int bEmpty = (pPg && pPg->nn==4);
+        fts5DataRelease(pPg);
+        if( bEmpty==0 ) break;
+      }
+
+      if( iPgno==pSeg->iTermLeafPgno ){
+        i64 iId = FTS5_SEGMENT_ROWID(iSegid, pSeg->iTermLeafPgno);
+        Fts5Data *pTerm = fts5DataRead(p, iId);
+        if( pTerm && pTerm->szLeaf==pSeg->iTermLeafOffset ){
+          u8 *aTermIdx = &pTerm->p[pTerm->szLeaf];
+          int nTermIdx = pTerm->nn - pTerm->szLeaf;
+          int iTermIdx = 0;
+          int iTermOff = 0;
+
+          while( 1 ){
+            u32 iVal = 0;
+            int nByte = fts5GetVarint32(&aTermIdx[iTermIdx], iVal);
+            iTermOff += iVal;
+            if( (iTermIdx+nByte)>=nTermIdx ) break;
+            iTermIdx += nByte;
+          }
+          nTermIdx = iTermIdx;
+
+          memmove(&pTerm->p[iTermOff], &pTerm->p[pTerm->szLeaf], nTermIdx);
+          fts5PutU16(&pTerm->p[2], iTermOff);
+
+          fts5DataWrite(p, iId, pTerm->p, iTermOff+nTermIdx);
+          if( nTermIdx==0 ){
+            fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iTermLeafPgno);
+          }
+        }
+        fts5DataRelease(pTerm);
+      }
+    }
+
+    if( p->rc==SQLITE_OK ){
+      const int nMove = nPg - iNextOff;
+      int nShift = 0;
+
+      memmove(&aPg[iOff], &aPg[iNextOff], nMove);
+      iPgIdx -= (iNextOff - iOff);
+      nPg = iPgIdx;
+      fts5PutU16(&aPg[2], iPgIdx);
+
+      nShift = iNextOff - iOff;
+      for(iIdx=0, iKeyOff=0, iPrevKeyOff=0; iIdx<nIdx; /* no-op */){
+        u32 iVal = 0;
+        iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
+        iKeyOff += iVal;
+        if( iKeyOff!=iDelKeyOff ){
+          if( iKeyOff>iOff ){
+            iKeyOff -= nShift;
+            nShift = 0;
+          }
+          nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOff - iPrevKeyOff);
+          iPrevKeyOff = iKeyOff;
+        }
+      }
+
+      if( iPgIdx==nPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
+        fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iLeafPgno);
+      }
+
+      assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
+      fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg,nPg);
+    }
+    sqlite3_free(aIdx);
+}
 
 /*
 ** This is called as part of flushing a delete to disk in 'secure-delete'
@@ -4706,213 +4949,7 @@ static void fts5FlushSecureDelete(
      && iRowid==fts5MultiIterRowid(pIter)
     ){
       Fts5SegIter *pSeg = &pIter->aSeg[pIter->aFirst[1].iFirst];
-      int iSegid = pSeg->pSeg->iSegid;
-      u8 *aPg = pSeg->pLeaf->p;
-      int nPg = pSeg->pLeaf->nn;
-      int iPgIdx = pSeg->pLeaf->szLeaf;
-
-      u64 iDelta = 0;
-      u64 iNextDelta = 0;
-      int iNextOff = 0;
-      int iOff = 0;
-      int nMove = 0;
-      int nIdx = 0;
-
-      u8 *aIdx = 0;
-
-      nIdx = nPg-iPgIdx;
-      aIdx = sqlite3Fts5MallocZero(&p->rc, nIdx+16);
-      if( aIdx ){
-        int bLastInDoclist = 0;
-        int iIdx = 0;
-        int iStart = 0;
-        int iKeyOff = 0;
-        int iPrevKeyOff = 0;
-        int nShift = 0;
-        int iDelKeyOff = 0;       /* Offset of deleted key, if any */
-        memcpy(aIdx, &aPg[iPgIdx], nIdx);
-
-        /* At this point segment iterator pSeg points to the entry
-        ** this function should remove from the b-tree segment. 
-        **
-        ** More specifically, pSeg->iLeafOffset is the offset of the
-        ** first byte in the position-list for the entry to remove.
-        ** Immediately before this comes two varints that will also
-        ** need to be removed:
-        **
-        **     + the rowid or delta rowid value for the entry, and
-        **     + the size of the position list in bytes.
-        */
-        {
-          int iSOP;
-          int nPos = 0;
-          if( pSeg->iLeafPgno==pSeg->iTermLeafPgno ){
-            iStart = pSeg->iTermLeafOffset;
-          }else{
-            iStart = fts5GetU16(&aPg[0]);
-          }
-
-          iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
-          iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
-          assert_nc( iSOP<=pSeg->iLeafOffset );
-          while( iSOP<pSeg->iLeafOffset ){
-            iStart = iSOP + (nPos/2);
-            iSOP = iStart + fts5GetVarint(&aPg[iStart], &iDelta);
-            iSOP += fts5GetVarint32(&aPg[iSOP], nPos);
-          }
-          assert_nc( iSOP==pSeg->iLeafOffset );
-        }
-
-        iOff = iStart;
-        iNextOff = pSeg->iLeafOffset + pSeg->nPos;
-        if( iNextOff>=iPgIdx ){
-          int pgno = pSeg->iLeafPgno+1;
-          fts5SecureDeleteOverflow(p, pSeg->pSeg, pgno, &bLastInDoclist);
-          iNextOff = iPgIdx;
-        }else{
-          /* Set bLastInDoclist to true if the entry being removed is the last
-          ** in its doclist.  */
-          for(iIdx=0, iKeyOff=0; iIdx<nIdx; /* no-op */){
-            u32 iVal = 0;
-            iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-            iKeyOff += iVal;
-            if( iKeyOff==iNextOff ){
-              bLastInDoclist = 1;
-            }
-          }
-        }
-
-        if( fts5GetU16(&aPg[0])==iStart && (bLastInDoclist||iNextOff==iPgIdx) ){
-          fts5PutU16(&aPg[0], 0);
-        }
-
-        if( bLastInDoclist==0 ){
-          if( iNextOff!=iPgIdx ){
-            iNextOff += fts5GetVarint(&aPg[iNextOff], &iNextDelta);
-            iOff += sqlite3Fts5PutVarint(&aPg[iOff], iDelta + iNextDelta);
-          }
-        }else if( 
-          iStart==pSeg->iTermLeafOffset && pSeg->iLeafPgno==pSeg->iTermLeafPgno 
-        ){
-          /* The entry being removed was the only position list in its
-          ** doclist. Therefore the term needs to be removed as well. */
-          int iKey = 0;
-          for(iIdx=0, iKeyOff=0; iIdx<nIdx; iKey++){
-            u32 iVal = 0;
-            iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-            if( (iKeyOff+iVal)>iStart ) break;
-            iKeyOff += iVal;
-          }
-
-          iDelKeyOff = iOff = iKeyOff;
-          if( iNextOff!=iPgIdx ){
-            int nPrefix = 0;
-            int nSuffix = 0;
-            int nPrefix2 = 0;
-            int nSuffix2 = 0;
-
-            iDelKeyOff = iNextOff;
-            iNextOff += fts5GetVarint32(&aPg[iNextOff], nPrefix2);
-            iNextOff += fts5GetVarint32(&aPg[iNextOff], nSuffix2);
-
-            if( iKey!=1 ){
-              iKeyOff += fts5GetVarint32(&aPg[iKeyOff], nPrefix);
-            }
-            iKeyOff += fts5GetVarint32(&aPg[iKeyOff], nSuffix);
-
-            nPrefix = MIN(nPrefix, nPrefix2);
-            nSuffix = (nPrefix2 + nSuffix2) - nPrefix;
-
-            if( (iKeyOff+nSuffix)>iPgIdx || (iNextOff+nSuffix2)>iPgIdx ){
-              p->rc = FTS5_CORRUPT;
-            }else{
-              if( iKey!=1 ){
-                iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
-              }
-              iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-              if( nPrefix2>nPrefix ){
-                memcpy(&aPg[iOff], &zTerm[nPrefix], nPrefix2-nPrefix);
-                iOff += (nPrefix2-nPrefix);
-              }
-              memmove(&aPg[iOff], &aPg[iNextOff], nSuffix2);
-              iOff += nSuffix2;
-              iNextOff += nSuffix2;
-            }
-          }
-        }else if( iStart==4 ){
-          assert_nc( pSeg->iLeafPgno>pSeg->iTermLeafPgno );
-          /* The entry being removed may be the only position list in
-          ** its doclist. */
-          int iPgno = pSeg->iLeafPgno-1;
-
-          for(iPgno=pSeg->iLeafPgno-1; iPgno>pSeg->iTermLeafPgno; iPgno-- ){
-            Fts5Data *pPg = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, iPgno));
-            int bEmpty = (pPg && pPg->nn==4);
-            fts5DataRelease(pPg);
-            if( bEmpty==0 ) break;
-          }
-
-          if( iPgno==pSeg->iTermLeafPgno ){
-            i64 iId = FTS5_SEGMENT_ROWID(iSegid, pSeg->iTermLeafPgno);
-            Fts5Data *pTerm = fts5DataRead(p, iId);
-            if( pTerm && pTerm->szLeaf==pSeg->iTermLeafOffset ){
-              u8 *aTermIdx = &pTerm->p[pTerm->szLeaf];
-              int nTermIdx = pTerm->nn - pTerm->szLeaf;
-              int iTermIdx = 0;
-              int iTermOff = 0;
-
-              while( 1 ){
-                u32 iVal = 0;
-                int nByte = fts5GetVarint32(&aTermIdx[iTermIdx], iVal);
-                iTermOff += iVal;
-                if( (iTermIdx+nByte)>=nTermIdx ) break;
-                iTermIdx += nByte;
-              }
-              nTermIdx = iTermIdx;
-
-              memmove(&pTerm->p[iTermOff], &pTerm->p[pTerm->szLeaf], nTermIdx);
-              fts5PutU16(&pTerm->p[2], iTermOff);
-
-              fts5DataWrite(p, iId, pTerm->p, iTermOff+nTermIdx);
-              if( nTermIdx==0 ){
-                fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iTermLeafPgno);
-              }
-            }
-            fts5DataRelease(pTerm);
-          }
-        }
-
-        if( p->rc==SQLITE_OK ){
-          nMove = nPg - iNextOff;
-          memmove(&aPg[iOff], &aPg[iNextOff], nMove);
-          iPgIdx -= (iNextOff - iOff);
-          nPg = iPgIdx;
-          fts5PutU16(&aPg[2], iPgIdx);
-
-          nShift = iNextOff - iOff;
-          for(iIdx=0, iKeyOff=0, iPrevKeyOff=0; iIdx<nIdx; /* no-op */){
-            u32 iVal = 0;
-            iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-            iKeyOff += iVal;
-            if( iKeyOff!=iDelKeyOff ){
-              if( iKeyOff>iOff ){
-                iKeyOff -= nShift;
-                nShift = 0;
-              }
-              nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOff - iPrevKeyOff);
-              iPrevKeyOff = iKeyOff;
-            }
-          }
-
-          if( iPgIdx==nPg && nIdx>0 && pSeg->iLeafPgno!=1 ){
-            fts5SecureDeleteIdxEntry(p, iSegid, pSeg->iLeafPgno);
-          }
-
-          assert_nc( nPg>4 || fts5GetU16(aPg)==0 );
-          fts5DataWrite(p, FTS5_SEGMENT_ROWID(iSegid,pSeg->iLeafPgno), aPg,nPg);
-        }
-        sqlite3_free(aIdx);
-      }
+      fts5DoSecureDelete(p, pStruct, pSeg);
     }
   }
 
@@ -4998,11 +5035,24 @@ static void fts5FlushOneHash(Fts5Index *p){
           /* If in secure delete mode, and if this entry in the poslist is
           ** in fact a delete, then edit the existing segments directly
           ** using fts5FlushSecureDelete().  */
-          if( bSecureDelete && (pDoclist[iOff] & 0x01) ){
-            fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
-            if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
-              iOff++;
-              continue;
+          if( bSecureDelete ){
+            if( eDetail==FTS5_DETAIL_NONE ){
+              if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
+                fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
+                iOff++;
+                if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
+                  iOff++;
+                  nDoclist = 0;
+                }else{
+                  continue;
+                }
+              }
+            }else if( (pDoclist[iOff] & 0x01) ){
+              fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
+              if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
+                iOff++;
+                continue;
+              }
             }
           }
 
