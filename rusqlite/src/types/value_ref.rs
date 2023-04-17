@@ -158,6 +158,7 @@ impl<'a> ValueRef<'a> {
 
 impl From<ValueRef<'_>> for Value {
     #[inline]
+    #[track_caller]
     fn from(borrowed: ValueRef<'_>) -> Value {
         match borrowed {
             ValueRef::Null => Value::Null,

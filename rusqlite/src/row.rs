@@ -257,6 +257,7 @@ impl<'stmt> Row<'stmt> {
     /// * If the underlying SQLite integral value is outside the range
     ///   representable by `T`
     /// * If `idx` is outside the range of columns in the returned query
+    #[track_caller]
     pub fn get_unwrap<I: RowIndex, T: FromSql>(&self, idx: I) -> T {
         self.get(idx).unwrap()
     }
@@ -277,6 +278,7 @@ impl<'stmt> Row<'stmt> {
     /// If the result type is i128 (which requires the `i128_blob` feature to be
     /// enabled), and the underlying SQLite column is a blob whose size is not
     /// 16 bytes, `Error::InvalidColumnType` will also be returned.
+    #[track_caller]
     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
         let idx = idx.idx(self.stmt)?;
         let value = self.stmt.value_ref(idx);
@@ -335,6 +337,7 @@ impl<'stmt> Row<'stmt> {
     ///
     /// * If `idx` is outside the range of columns in the returned query.
     /// * If `idx` is not a valid column name for this row.
+    #[track_caller]
     pub fn get_ref_unwrap<I: RowIndex>(&self, idx: I) -> ValueRef<'_> {
         self.get_ref(idx).unwrap()
     }
