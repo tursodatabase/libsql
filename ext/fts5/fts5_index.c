@@ -5059,7 +5059,7 @@ static void fts5FlushOneHash(Fts5Index *p){
           if( p->rc==SQLITE_OK && bTermWritten==0 ){
             fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
             bTermWritten = 1;
-            assert( writer.bFirstRowidInPage==0 );
+            assert( p->rc!=SQLITE_OK || writer.bFirstRowidInPage==0 );
           }
           
           if( writer.bFirstRowidInPage ){
