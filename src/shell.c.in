@@ -627,8 +627,8 @@ static void console_prepare(void){
     conState.outCodePage = GetConsoleOutputCP();
     SetConsoleCP(CP_UTF8);
     SetConsoleOutputCP(CP_UTF8);
-    SetConsoleMode(conState.hConsoleIn,
-                   conState.consoleMode | ENABLE_LINE_INPUT);
+    consoleMode |= ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT;
+    SetConsoleMode(conState.hConsoleIn, consoleMode);
     conState.infsMode = _setmode(_fileno(stdin), _O_U16TEXT);
     console_utf8 = 1;
   }else{
@@ -992,10 +992,20 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
 #if SHELL_USE_LOCAL_GETLINE
     printf("%s", zPrompt);
     fflush(stdout);
-    zResult = local_getline(zPrior, stdin);
+    do{
+      zResult = local_getline(zPrior, stdin);
+      /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
+      if( zResult==0 ) sqlite3_sleep(50);
+    }while( zResult==0 && seenInterrupt>0 );
 #else
     free(zPrior);
     zResult = shell_readline(zPrompt);
+    while( zResult==0 ){
+      /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
+      sqlite3_sleep(50);
+      if( seenInterrupt==0 ) break;
+      zResult = shell_readline("");
+    }
     if( zResult && *zResult ) shell_add_history(zResult);
 #endif
   }
@@ -2102,8 +2112,7 @@ static void output_csv(ShellState *p, const char *z, int bSep){
 */
 static void interrupt_handler(int NotUsed){
   UNUSED_PARAMETER(NotUsed);
-  seenInterrupt++;
-  if( seenInterrupt>2 ) exit(1);
+  if( ++seenInterrupt>1 ) exit(1);
   if( globalDb ) sqlite3_interrupt(globalDb);
 }
 
@@ -11830,6 +11839,10 @@ static char *cmdline_option_value(int argc, char **argv, int i){
   return argv[i];
 }
 
+static void sayAbnormalExit(void){
+  if( seenInterrupt ) fprintf(stderr, "Program interrupted.\n");
+}
+
 #ifndef SQLITE_SHELL_IS_UTF8
 #  if (defined(_WIN32) || defined(WIN32)) \
    && (defined(_MSC_VER) || (defined(UNICODE) && defined(__GNUC__)))
@@ -11871,8 +11884,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
   char **argvToFree = 0;
   int argcToFree = 0;
 #endif
-
   setvbuf(stderr, 0, _IONBF, 0); /* Make sure stderr is unbuffered */
+
 #ifdef SQLITE_SHELL_FIDDLE
   stdin_is_interactive = 0;
   stdout_is_console = 1;
@@ -11884,6 +11897,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #if SHELL_WIN_UTF8_OPT
   atexit(console_restore); /* Needs revision for CLI as library call */
 #endif
+  atexit(sayAbnormalExit);
 #ifdef SQLITE_DEBUG
   mem_main_enter = sqlite3_memory_used();
 #endif
@@ -11905,6 +11919,14 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
       raise(SIGTRAP);
 #endif
     }
+  }
+#endif
+  /* Register a valid signal handler early, before much else is done. */
+#ifdef SIGINT
+  signal(SIGINT, interrupt_handler);
+#elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
+  if( !SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE) ){
+    fprintf(stderr, "No ^C handler.\n");
   }
 #endif
 
@@ -11945,15 +11967,6 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 
   assert( argc>=1 && argv && argv[0] );
   Argv0 = argv[0];
-
-  /* Make sure we have a valid signal handler early, before anything
-  ** else is done.
-  */
-#ifdef SIGINT
-  signal(SIGINT, interrupt_handler);
-#elif (defined(_WIN32) || defined(WIN32)) && !defined(_WIN32_WCE)
-  SetConsoleCtrlHandler(ConsoleCtrlHandler, TRUE);
-#endif
 
 #ifdef SQLITE_SHELL_DBNAME_PROC
   {
