@@ -591,6 +591,29 @@ do_execsql_test indexexpr1-2140 {
   SELECT b FROM t1;
 } 400
 
-
+# 2023-04-18 Forum post https://sqlite.org/forum/forumpost/f34e32d120 from
+# Alexis King.
+#
+# This problem originates at check-in b9190d3da70c4171 (2022-11-25).
+# A similar problem arose on 2023-03-04 at
+# https://sqlite.org/forum/forumpost/a68313d054 and was fixed at
+# check-in e06973876993926f.  See the test case tkt-99378-400.
+# 
+reset_db
+do_execsql_test indexexpr1-2200 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, tag INT);
+  INSERT INTO t1 VALUES (0, 7), (1, 8);
+  CREATE TABLE t2(type INT, t1_id  INT, value  INT);
+  INSERT INTO t2 VALUES (0, 0, 100), (0, 1, 101);
+  CREATE INDEX t1x ON t1(-tag);
+  SELECT u.tag, v.max_value
+    FROM (SELECT tag FROM t1 GROUP BY -tag) u
+    JOIN (SELECT t1.tag AS "tag", t2.type AS "type",
+                 MAX(t2.value) AS "max_value"
+            FROM t1
+                 JOIN t2 ON t2.t1_id = t1.id
+           GROUP BY t2.type, t1.tag
+         ) v ON v.type = 0 AND v.tag = u.tag;
+} {7 100 8 101}
 
 finish_test

@@ -6448,12 +6448,13 @@ static void optimizeAggregateUseOfIndexedExpr(
   assert( pSelect->pGroupBy!=0 );
   pAggInfo->nColumn = pAggInfo->nAccumulator;
   if( ALWAYS(pAggInfo->nSortingColumn>0) ){
-    if( pAggInfo->nColumn==0 ){
-      pAggInfo->nSortingColumn = pSelect->pGroupBy->nExpr;
-    }else{
-      pAggInfo->nSortingColumn =
-        pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
+    int mx = pSelect->pGroupBy->nExpr - 1;
+    int j, k;
+    for(j=0; j<pAggInfo->nColumn; j++){
+      k = pAggInfo->aCol[j].iSorterColumn;
+      if( k>mx ) mx = k;
     }
+    pAggInfo->nSortingColumn = mx+1;
   }
   analyzeAggFuncArgs(pAggInfo, pNC);
 #if TREETRACE_ENABLED
