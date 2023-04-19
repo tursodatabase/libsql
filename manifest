@@ -1,5 +1,5 @@
-C Attempt\sto\ssuppress\sharmless\scompiler\swarnings\sreported\sby\n[forum:/forumpost/fc98845c06|forum\spost\sfc98845c06].
-D 2023-04-19T12:08:46.749
+C Add\spager\sdebug\stracing\sof\struncate\soperations.
+D 2023-04-19T13:30:17.418
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 1b3ddb7814c4bf37f494c04d2ab30c1ced5b2c927267e1930ce7cd388787a96d
 F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 39af8ff7c73a991f61f4d1e3a6f8f98b1c8e29144723507822774cac5e6ee0b5
+F src/pager.c 575133bda34ec8a8b11325152063e6981d8a357e553ba1cdfc8b586ea3e859ac
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y e8b5c753e3194e03d69e108753c1dbceb01fa4c158b2c6b726a048023ea0fdc1
 F src/pcache.c 842410539b544e12d5fccfcf29890782f46a58f227a77bc0bd76243799662c0c
@@ -2058,8 +2058,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ba8e4378f21d529a248d2d60b60974fef0d6612dcaaa1f6b7f8a6946fc46b39b
-R 70cfff64a8ee73f6f83838961859b992
+P f6e6c5f94cef83645288568a344a0ff64e4ef17b10fab28996567a94db0a002a
+R 645b34b49128ce0ee2d93bc1fed8bf95
 U drh
-Z 4d312cdcd589df887faf890c715735dd
+Z 43ce893918c01cfc76bddfc773b7f230
 # Remove this line to create a well-formed Fossil manifest.

@@ -2605,6 +2605,8 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
   int rc = SQLITE_OK;
   assert( pPager->eState!=PAGER_ERROR );
   assert( pPager->eState!=PAGER_READER );
+  PAGERTRACE(("Truncate %d npage %u\n", PAGERID(pPager), nPage));
+
   
   if( isOpen(pPager->fd) 
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN) 
