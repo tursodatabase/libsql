@@ -1,7 +1,8 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::time::{Duration, Instant};
 
+use anyhow::Context;
 use crossbeam::channel::RecvTimeoutError;
 use rusqlite::{OpenFlags, StatementStatus};
 use tokio::sync::oneshot;
@@ -143,6 +144,7 @@ pub fn open_db(
 impl LibSqlDb {
     pub fn new(
         path: impl AsRef<Path> + Send + 'static,
+        extensions: Vec<PathBuf>,
         wal_hook: impl WalHook + Send + Clone + 'static,
         with_bottomless: bool,
         stats: Stats,
@@ -151,7 +153,8 @@ impl LibSqlDb {
 
         tokio::task::spawn_blocking(move || {
             let mut connection =
-                Connection::new(path.as_ref(), wal_hook, with_bottomless, stats).unwrap();
+                Connection::new(path.as_ref(), extensions, wal_hook, with_bottomless, stats)
+                    .unwrap();
             loop {
                 let Message { pgm, resp } = match connection.state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
@@ -199,16 +202,29 @@ struct Connection {
 impl Connection {
     fn new(
         path: &Path,
+        extensions: Vec<PathBuf>,
         wal_hook: impl WalHook + Send + Clone + 'static,
         with_bottomless: bool,
         stats: Stats,
     ) -> anyhow::Result<Self> {
-        Ok(Self {
+        let this = Self {
             conn: open_db(path, wal_hook, with_bottomless)?,
             state: ConnectionState::initial(),
             timed_out: false,
             stats,
-        })
+        };
+
+        for ext in extensions {
+            unsafe {
+                let _guard = rusqlite::LoadExtensionGuard::new(&this.conn).unwrap();
+                this.conn
+                    .load_extension(&ext, None)
+                    .with_context(|| format!("Could not load extension: {}", &ext.display()))?;
+                tracing::info!("Loaded extension {}", ext.display());
+            }
+        }
+
+        Ok(this)
     }
 
     fn run(&mut self, pgm: Program) -> Vec<Option<QueryResult>> {

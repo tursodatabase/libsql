@@ -24,6 +24,7 @@ use super::{factory::DbFactory, libsql::LibSqlDb, Database};
 pub struct WriteProxyDbFactory {
     client: ProxyClient<Channel>,
     db_path: PathBuf,
+    extensions: Vec<PathBuf>,
     stats: Stats,
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
 }
@@ -31,6 +32,7 @@ pub struct WriteProxyDbFactory {
 impl WriteProxyDbFactory {
     pub fn new(
         db_path: PathBuf,
+        extensions: Vec<PathBuf>,
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Stats,
@@ -40,6 +42,7 @@ impl WriteProxyDbFactory {
         Self {
             client,
             db_path,
+            extensions,
             stats,
             applied_frame_no_receiver,
         }
@@ -52,6 +55,7 @@ impl DbFactory for WriteProxyDbFactory {
         let db = WriteProxyDatabase::new(
             self.client.clone(),
             self.db_path.clone(),
+            self.extensions.clone(),
             self.stats.clone(),
             self.applied_frame_no_receiver.clone(),
         )?;
@@ -76,10 +80,11 @@ impl WriteProxyDatabase {
     fn new(
         write_proxy: ProxyClient<Channel>,
         path: PathBuf,
+        extensions: Vec<PathBuf>,
         stats: Stats,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
     ) -> Result<Self> {
-        let read_db = LibSqlDb::new(path, (), false, stats)?;
+        let read_db = LibSqlDb::new(path, extensions, (), false, stats)?;
         Ok(Self {
             read_db,
             write_proxy,
