@@ -1,5 +1,5 @@
-C Remove\sunreachable\slegacy\scode.
-D 2023-04-19T18:32:32.235
+C Improved\srebustness\sof\sthe\spcache\stracing\slogic.
+D 2023-04-19T18:36:49.496
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -621,7 +621,7 @@ F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9d36ddedc842e993c88c222ed914822dbd6f8ece3c648fde04468637012a034a
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y e8b5c753e3194e03d69e108753c1dbceb01fa4c158b2c6b726a048023ea0fdc1
-F src/pcache.c 589326520a41211b50bb946973ca7f1e30f824641af546ea8fa6224bf0e4ea5c
+F src/pcache.c 8ee13acccfd9accbf0af94910b7323dd7f7d55300d92ddafcf40e34fcc8e21be
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c dee95e3cd2b61e6512dc814c5ab76d5eb36f0bfc9441dbb4260fccc0d12bbddc
 F src/pragma.c 26ed2cfdc5c12aa1c707178635709684960288cacc9cff9d491a38ff10e395f1
@@ -2058,8 +2058,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 020968f857d7b90bab3525fc9d6b859a019f6a80422c3d5ffb88f5bdb8e02a11
-R 830602ab1372d787b9670b489818f9ab
+P e3e7fb87d90690c29b70da261887c8f7d87b62188d15577e48db91232e13608c
+R 3964c30fad91750ec1a096a4b6637fa8
 U drh
-Z 0011d2490fa3ab04ee8b4d3dc4a07ff1
+Z addba7fae3e9b75b9a30be88346b1406
 # Remove this line to create a well-formed Fossil manifest.
