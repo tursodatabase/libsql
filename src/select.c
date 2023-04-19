@@ -2373,8 +2373,6 @@ void sqlite3SubqueryColumnTypes(
       if( pCol->zCnName ){
         memcpy(&pCol->zCnName[n+1], zType, m+1);
         pCol->colFlags |= COLFLAG_HASTYPE;
-      }else{
-        testcase( pCol->colFlags & COLFLAG_HASTYPE );
       }
     }
     pColl = sqlite3ExprCollSeq(pParse, p);

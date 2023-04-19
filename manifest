@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scould\soccur\sif\sa\snon-empty\sin-memory\sdatabase\swas\sthe\sdestination\sof\sa\sbackup\soperation\sfrom\sa\sdatabase\swith\sa\ssmaller\spage\ssize.
-D 2023-04-19T17:07:35.099
+C Remove\sunreachable\slegacy\scode.
+D 2023-04-19T18:32:32.235
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -631,7 +631,7 @@ F src/printf.c 7eac1a9896a80697e03e08963e210830532ae2ff610e16c193e95af007ca5623
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 4054886848b2aaf3d92d28bda9fabff3b5c5c1ffe8511b0dbafcea008d58a66b
+F src/select.c f879cef11c462a2c37a8c906932781e384c3bb32042c355a704a043029c90d27
 F src/shell.c.in 9d5da77007123401da702e8587558edddd520c925f8f561aa7b8d9387e71e096
 F src/sqlite.h.in 4fff9c6cc5d4cbba9532a668112efb6dc469c425e1a2196664d7c07d508363ef
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2058,8 +2058,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 982b35563da685dfdf50cbe4a7ae829d3b428e03587028df7efe520f819b1dc2
-R cb5ceacd1fcb276c3a493137d395e5ff
-U dan
-Z 770c9a899bf77db795bc4c69f9feca6f
+P 020968f857d7b90bab3525fc9d6b859a019f6a80422c3d5ffb88f5bdb8e02a11
+R 830602ab1372d787b9670b489818f9ab
+U drh
+Z 0011d2490fa3ab04ee8b4d3dc4a07ff1
 # Remove this line to create a well-formed Fossil manifest.
