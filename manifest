@@ -1,5 +1,5 @@
-C Improved\srebustness\sof\sthe\spcache\stracing\slogic.
-D 2023-04-19T18:36:49.496
+C Add\stests\sfor\sthe\sprogress-handler\scallback\swith\sthe\sfts5\s'secure-delete'\sfeature.
+D 2023-04-19T20:29:26.231
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -192,6 +192,7 @@ F ext/fts5/test/fts5secure2.test 2e961d7eef939f294c56b5d895cac7f1c3a60b934ee2cfd
 F ext/fts5/test/fts5secure3.test c7e1080a6912f2a3ac68f2e05b88b72a99de38543509b2bbf427cac5c9c1c610
 F ext/fts5/test/fts5secure4.test 0d10a80590c07891478700af7793b232962042677432b9846cf7fc8337b67c97
 F ext/fts5/test/fts5secure5.test c07a68ced5951567ac116c22f2d2aafae497e47fe9fcb6a335c22f9c7a4f2c3a
+F ext/fts5/test/fts5secure6.test 7a959d834be6725c641b3c3b38ef86570ea671216ad803e054e4fdff33a72ce2
 F ext/fts5/test/fts5securefault.test dbca2b6a1c16700017f5051138991b705410889933f2a37c57ae8a23b296b10b
 F ext/fts5/test/fts5simple.test a298670508c1458b88ce6030440f26a30673931884eb5f4094ac1773b3ba217b
 F ext/fts5/test/fts5simple2.test 258a1b0c590409bfa5271e872c79572b319d2a56554d0585f68f146a0da603f0
@@ -2058,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e3e7fb87d90690c29b70da261887c8f7d87b62188d15577e48db91232e13608c
-R 3964c30fad91750ec1a096a4b6637fa8
-U drh
-Z addba7fae3e9b75b9a30be88346b1406
+P 0a43235b8368a0996d1856c4e956786a5321275458cb9179ce818aa47bb824ed
+R fec6a45b9c73831f007d768e2aab8221
+U dan
+Z e1912bc11e1db99b09a714bb11e7ca84
 # Remove this line to create a well-formed Fossil manifest.
