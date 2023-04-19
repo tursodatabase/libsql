@@ -1,5 +1,5 @@
-C Do\snot\sremove\spages\sfrom\sthe\scache\sof\san\sin-memory\sdatabase\sdue\sto\sa\nfailure\sto\sacquire\sthe\spage\sdue\sto\sit\sbeing\slarger\sthan\sthe\smaximum\spage\nsize.\sFix\sfor\s[forum:/forumpost/a19bb49140|forum\spost\sa19bb49140].
-D 2023-04-19T15:35:45.024
+C Fix\sa\ssegfault\sthat\scould\soccur\sif\sa\snon-empty\sin-memory\sdatabase\swas\sthe\sdestination\sof\sa\sbackup\soperation\sfrom\sa\sdatabase\swith\sa\ssmaller\spage\ssize.
+D 2023-04-19T17:07:35.099
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -567,7 +567,7 @@ F src/alter.c 482c534877fbb543f8295992cde925df55443febac5db5438d5aaba6f78c4940
 F src/analyze.c 01bfd40026632eaae1d93212b684f539c6674cb573535dc90199674cbf7e0cdc
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
-F src/backup.c a2891172438e385fdbe97c11c9745676bec54f518d4447090af97189fd8e52d7
+F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
 F src/btree.c af379d801906f21dc18b534fc250a479f56045a450d8d5859ba2f57fd9eefcef
@@ -794,7 +794,7 @@ F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avfs.test 0c3a38e03cccb0fc3127838462dc05dc3f4c1480d770c084b388304c25de3652
 F test/avtrans.test b7dc25459ecbd86c6fa9c606ee3068f59d81e225118617dcf2bbb6ded2ade89e
 F test/backcompat.test 3e64cedda754c778ef6bbe417b6e7a295e662a4d
-F test/backup.test fc1ecefce723fad5199b55cec7a5a992ec8c3ad6873419e5e8919066dec457f3
+F test/backup.test 3b08fd4af69f0fa786931103a31f4542b184aba16e239e5f22b18c3c2476697f
 F test/backup2.test 8facb54df1388419d34b362ab1f7e233310ff3a3af64e8ad5ec47ba3c2bbe5cf
 F test/backup4.test 8f6fd48e0dfde77b9a3bb26dc471ede3e101df32
 F test/backup5.test ee5da6d7fe5082f5b9b0bbfa31d016f52412a2e4
@@ -2058,8 +2058,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d419e65eef2954ed759121254024028854b55e8c4f52ff7a8896c8cadfc57f53
-R 2ff39e988928f271722070323e9929b5
-U drh
-Z 57826475051b9681a19f44a30db70018
+P 982b35563da685dfdf50cbe4a7ae829d3b428e03587028df7efe520f819b1dc2
+R cb5ceacd1fcb276c3a493137d395e5ff
+U dan
+Z 770c9a899bf77db795bc4c69f9feca6f
 # Remove this line to create a well-formed Fossil manifest.
