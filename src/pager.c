@@ -5688,10 +5688,12 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
 /*
 ** Release a page reference.
 **
-** The sqlite3PagerUnref() and sqlite3PagerUnrefNotNull() may only be
-** used if we know that the page being released is not the last page.
+** The sqlite3PagerUnref() and sqlite3PagerUnrefNotNull() may only be used
+** if we know that the page being released is not the last reference to page1.
 ** The btree layer always holds page1 open until the end, so these first
-** to routines can be used to release any page other than BtShared.pPage1.
+** two routines can be used to release any page other than BtShared.pPage1.
+** The assert() at tag-20230419-2 proves that this constraint is always
+** honored.
 **
 ** Use sqlite3PagerUnrefPageOne() to release page1.  This latter routine
 ** checks the total number of outstanding pages and if the number of
@@ -5707,7 +5709,7 @@ void sqlite3PagerUnrefNotNull(DbPage *pPg){
     sqlite3PcacheRelease(pPg);
   }
   /* Do not use this routine to release the last reference to page1 */
-  assert( sqlite3PcacheRefCount(pPager->pPCache)>0 );
+  assert( sqlite3PcacheRefCount(pPager->pPCache)>0 ); /* tag-20230419-2 */
 }
 void sqlite3PagerUnref(DbPage *pPg){
   if( pPg ) sqlite3PagerUnrefNotNull(pPg);

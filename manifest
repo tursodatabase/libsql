@@ -1,5 +1,5 @@
-C Fix\sa\sdebugging\sprintf()\sin\spcache.c.\s\sThis\sonly\scomes\sup\son\scustom\sbuilds.
-D 2023-04-19T13:56:47.024
+C Fix\sambiguity\sin\sthe\sheader\scomment\sto\sthe\ssqlite3PagerUnrefNotNull()\sroutine.\nNo\scode\schanges.
+D 2023-04-19T14:26:43.117
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 1b3ddb7814c4bf37f494c04d2ab30c1ced5b2c927267e1930ce7cd388787a96d
 F src/os_win.c 295fe45f18bd86f2477f4cd79f3377c6f883ceb941b1f46808665c73747f2345
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 575133bda34ec8a8b11325152063e6981d8a357e553ba1cdfc8b586ea3e859ac
+F src/pager.c 725385bdb872e1764f8698b1c2fbb87635d8720f8589ba5a27ed4b6183cbbab0
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y e8b5c753e3194e03d69e108753c1dbceb01fa4c158b2c6b726a048023ea0fdc1
 F src/pcache.c 589326520a41211b50bb946973ca7f1e30f824641af546ea8fa6224bf0e4ea5c
@@ -2058,8 +2058,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c81c968b458977b2d6dd2fdd3c3d667f0e7cee069f3715363d0e8aed4e6e8377
-R 1e45a38de02e3f841d848ec85fdde14f
+P f2d6756731caadf9a30214ab7d19717a2ca1dae2652bcc6b211f6b0830362240
+R d9a8cdd9e9c2d3f863d060c3de9c370c
 U drh
-Z dfce4f4da24d9b79dc856d23ff7bd173
+Z 55eddf4ca402ac276f5fb0dc48de52ae
 # Remove this line to create a well-formed Fossil manifest.
