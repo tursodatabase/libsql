@@ -5524,6 +5524,10 @@ static int getPageNormal(
     if( !isOpen(pPager->fd) || pPager->dbSize<pgno || noContent ){
       if( pgno>pPager->mxPgno ){
         rc = SQLITE_FULL;
+        if( pgno<=pPager->dbSize ){
+          sqlite3PcacheRelease(pPg);
+          pPg = 0;
+        }
         goto pager_acquire_err;
       }
       if( noContent ){
