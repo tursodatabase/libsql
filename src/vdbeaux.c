@@ -820,6 +820,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   Op *pOp;
   Parse *pParse = p->pParse;
   int *aLabel = pParse->aLabel;
+
+  assert( pParse->db->mallocFailed==0 ); /* tag-20230419-1 */
   p->readOnly = 1;
   p->bIsReader = 0;
   pOp = &p->aOp[p->nOp-1];
@@ -879,6 +881,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
             ** have non-negative values for P2. */
             assert( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)!=0 );
             assert( ADDR(pOp->p2)<-pParse->nLabel );
+            assert( aLabel!=0 );  /* True because of tag-20230419-1 */
             pOp->p2 = aLabel[ADDR(pOp->p2)];
           }
           break;
