@@ -2225,5 +2225,142 @@ do_execsql_test 72.1 {
   WHERE ('1' IS NOT ('abcde' NOTNULL)); 
 } {1}
 
+# 2023-03-28 https://sqlite.org/forum/forumpost/dc3b92cfa0 (Song Liu)
+#
+reset_db
+do_execsql_test 73.0 {
+  CREATE TABLE t1(a INT);
+  INSERT INTO t1(a) VALUES(1),(2),(4);
+  CREATE VIEW t2(b,c) AS SELECT * FROM t1 JOIN t1 A ORDER BY sum(0) OVER(PARTITION BY 0);
+  CREATE TRIGGER x1 INSTEAD OF UPDATE ON t2 BEGIN SELECT true; END;
+}
+do_execsql_test 73.1 {
+  SELECT * FROM t2;
+} {1 1 1 2 1 4 2 1 2 2 2 4 4 1 4 2 4 4}
+do_execsql_test 73.2 {
+  UPDATE t2 SET c=99 WHERE b=4 RETURNING *;
+} {4 99 4 99 4 99}
+do_execsql_test 73.3 {
+  SELECT *, nth_value(15,2) OVER() FROM t2, t1 WHERE b=4;
+} {
+  4 1 1 15
+  4 2 1 15
+  4 4 1 15
+  4 1 2 15
+  4 2 2 15
+  4 4 2 15
+  4 1 4 15
+  4 2 4 15
+  4 4 4 15
+}
+do_execsql_test 73.4 {
+  UPDATE t2 SET c=nth_value(15,2) OVER() FROM (SELECT * FROM t1) WHERE b=4 RETURNING *;
+} {
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+  4 15
+}
+do_execsql_test 73.5 {
+  DROP TRIGGER x1;
+}
+do_catchsql_test 73.6 {
+  UPDATE t2 SET c=99 WHERE b=4 RETURNING *;
+} {1 {cannot modify t2 because it is a view}}
+do_catchsql_test 73.7 {
+  UPDATE t2 SET c=nth_value(15,2) OVER() FROM (SELECT * FROM t1) WHERE b=4 RETURNING *;
+} {1 {cannot modify t2 because it is a view}}
+
+# 2023-03-28 https://sqlite.org/forum/forumpost/bad532820c
+#
+reset_db
+do_execsql_test 74.0 {
+  CREATE TABLE t1 (a INT, b INT);
+  CREATE TABLE t2 (c INT, d INT);
+  CREATE INDEX idx ON t1(abs(a));
+  INSERT INTO t1 VALUES(1,2),(3,4);
+  INSERT INTO t2 VALUES(5,6),(7,8);
+}
+do_execsql_test 74.1 {
+  SELECT (
+    SELECT count( a ) FROM t2 LIMIT 1
+  )
+  FROM t1;
+} {2}  ;# Verified using PG 14.2
+do_execsql_test 74.2 {
+  SELECT (
+    SELECT count( a+c ) FROM t2 LIMIT 1
+  )
+  FROM t1;
+} {2 2}  ;# verified on PG 14.2.  Crashes PG 9.6!
+do_execsql_test 74.3 {
+  SELECT (
+    SELECT count( ( SELECT(sum(0) OVER(ORDER BY c, abs(a))) ) )
+      FROM t2 GROUP BY c LIMIT 1
+  ) 
+  FROM t1;
+} {1 1}  ;# verified on PG 14.2
+do_execsql_test 74.4 {
+  /* Original test case reported in https://sqlite.org/forum/forumpost/bad532820c
+  CREATE TABLE v0 (c1);
+  CREATE INDEX i ON v0 (c1, c1=1);
+  SELECT 0 FROM v0 AS a1
+   WHERE (SELECT count((SELECT(sum(0) OVER(PARTITION BY(c1), (a1.c1=1) ))))
+            FROM v0
+           GROUP BY hex(0))
+     AND a1.c1=0;
+} {}
+
+# 2023-04-11 https://sqlite.org/forum/forumpost/6c5678e3da
+# An ALWAYS() turns out to be sometimes false.
+#
+do_execsql_test 75.0 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a INT, b INT);
+  CREATE INDEX t1x ON t1(a+b);
+}
+do_catchsql_test 75.1 {
+  SELECT count((SELECT count(a0.a+a0.b) ORDER BY sum(0) OVER (PARTITION BY 0)))
+    FROM t1 AS a0 JOIN t1 AS a1
+   GROUP BY a1.a;
+} {1 {misuse of aggregate: count()}}
+
+# 2023-04-13 https://sqlite.org/forum/forumpost/0d48347967
+reset_db
+do_execsql_test 76.0 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1(a,b) VALUES (111,222),(111,223),(118,229);
+  CREATE INDEX t1a ON t1(a);
+  CREATE TABLE t2(x INT);
+  INSERT INTO t2 VALUES (333),(444),(555);
+}
+do_execsql_test 76.1 {
+  SELECT c, (SELECT c + sum(1) OVER ()) AS "res"
+    FROM t2 LEFT JOIN (SELECT +a AS c FROM t1) AS v1 ON true
+   GROUP BY c
+   ORDER by c;
+} {111 112 118 119}
+# ^^^^^^^^^^^^^^^^^-- results verified against PG 14.2
+
+do_execsql_test 76.2 {
+  CREATE TABLE t3(x);
+  CREATE TABLE t4(y);
+  INSERT INTO t3 VALUES(100), (200), (400);
+  INSERT INTO t4 VALUES(100), (300), (400);
+}
+do_execsql_test 76.3 {
+  SELECT (SELECT y+sum(0) OVER ()) FROM t3 LEFT JOIN t4 ON x=y;
+} {100 {} 400}
+do_execsql_test 76.4 {
+  SELECT (SELECT y+sum(0) OVER ()) FROM t3 LEFT JOIN t4 ON x=y GROUP BY x;
+} {100 {} 400}
+do_execsql_test 76.5 {
+  SELECT (SELECT max(y)+sum(0) OVER ()) FROM t3 LEFT JOIN t4 ON x=y GROUP BY x;
+} {100 {} 400}
 
 finish_test

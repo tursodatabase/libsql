@@ -242,13 +242,7 @@ static int backupOnePage(
   assert( !isFatalError(p->rc) );
   assert( iSrcPg!=PENDING_BYTE_PAGE(p->pSrc->pBt) );
   assert( zSrcData );
-
-  /* Catch the case where the destination is an in-memory database and the
-  ** page sizes of the source and destination differ. 
-  */
-  if( nSrcPgsz!=nDestPgsz && sqlite3PagerIsMemdb(pDestPager) ){
-    rc = SQLITE_READONLY;
-  }
+  assert( nSrcPgsz==nDestPgsz || sqlite3PagerIsMemdb(pDestPager)==0 );
 
   /* This loop runs once for each destination page spanned by the source 
   ** page. For each iteration, variable iOff is set to the byte offset
@@ -381,7 +375,10 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     pgszSrc = sqlite3BtreeGetPageSize(p->pSrc);
     pgszDest = sqlite3BtreeGetPageSize(p->pDest);
     destMode = sqlite3PagerGetJournalMode(sqlite3BtreePager(p->pDest));
-    if( SQLITE_OK==rc && destMode==PAGER_JOURNALMODE_WAL && pgszSrc!=pgszDest ){
+    if( SQLITE_OK==rc 
+     && (destMode==PAGER_JOURNALMODE_WAL || sqlite3PagerIsMemdb(pDestPager))
+     && pgszSrc!=pgszDest 
+    ){
       rc = SQLITE_READONLY;
     }
   

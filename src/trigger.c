@@ -1453,6 +1453,9 @@ u32 sqlite3TriggerColmask(
   Trigger *p;
 
   assert( isNew==1 || isNew==0 );
+  if( IsView(pTab) ){
+    return 0xffffffff;
+  }
   for(p=pTrigger; p; p=p->pNext){
     if( p->op==op
      && (tr_tm&p->tr_tm)

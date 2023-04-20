@@ -207,5 +207,86 @@ do_test 3.4.0 {
 } SQLITE_OK
 rbu close
 
+#-------------------------------------------------------------------------
+reset_db
+forcedelete rbu1.db
+forcedelete rbu2.db
+
+sqlite3 rbu rbu1.db 
+do_execsql_test -db rbu 4.1 {
+  CREATE TABLE data_t1(a, b, rbu_control);
+  INSERT INTO data_t1 VALUES(1, 'one', 0);
+}
+rbu close
+sqlite3 rbu rbu2.db 
+do_execsql_test -db rbu 4.2 {
+  CREATE TABLE data_t1(a, b, rbu_control);
+  INSERT INTO data_t1 VALUES(2, 'two', 0);
+}
+rbu close
+
+do_execsql_test 4.3 {
+  CREATE TABLE t1(a PRIMARY KEY, b);
+}
+db close
+
+do_test 4.4 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=1 rbu1.db
+  rbu step
+  rbu state
+} {oal}
+
+sqlite3 cons test.db
+do_execsql_test -db cons 4.5 {
+  SELECT * FROM t1
+} {}
+
+do_test 4.6 { rbu step ; rbu state } {oal}
+do_test 4.7 { rbu step ; rbu state } {move}
+do_execsql_test -db cons 4.8 {
+  SELECT * FROM t1
+} {}
+do_test 4.9 { rbu step ; rbu state } {checkpoint}
+do_test 4.10 {
+  catchsql { SELECT * FROM t1 } cons
+} {1 {database is locked}}
+do_test 4.11 { rbu step ; rbu state } {checkpoint}
+do_test 4.11 { rbu step ; rbu state } {done}
+rbu close
+
+do_test 4.12 {
+  catchsql { SELECT * FROM t1 } cons
+} {0 {1 one}}
+
+do_test 4.13 {
+  sqlite3rbu rbu file:test.db?rbu_exclusive_checkpoint=1 rbu2.db
+  rbu step
+  rbu state
+} {oal}
+
+do_test 4.14 {
+  catchsql { SELECT * FROM t1 } cons
+} {0 {1 one}}
+
+do_test 4.15 { rbu step ; rbu state } {oal}
+do_test 4.16 { rbu step ; rbu state } {move}
+
+do_test 4.17 {
+  catchsql { SELECT * FROM t1 } cons
+} {0 {1 one}}
+
+do_test 4.18 { rbu step ; rbu state } {checkpoint}
+do_test 4.19 {
+  catchsql { SELECT * FROM t1 } cons
+} {1 {database is locked}}
+do_test 4.20 { rbu step ; rbu state } {checkpoint}
+do_test 4.21 { rbu step ; rbu state } {done}
+rbu close
+
+do_test 4.22 {
+  catchsql { SELECT * FROM t1 } cons
+} {0 {1 one 2 two}}
+
+cons close
 
 finish_test

@@ -2391,6 +2391,7 @@ static int SQLITE_TCLAPI vfsCurrentTimeInt64(
   return TCL_OK;
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Usage: create_null_module DB NAME
 */
@@ -2413,6 +2414,7 @@ static int SQLITE_TCLAPI test_create_null_module(
   sqlite3_create_module(db, zName, 0, 0);
   return TCL_OK;
 }
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifdef SQLITE_ENABLE_SNAPSHOT
 /*
@@ -9005,7 +9007,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_register_cksumvfs", test_register_cksumvfs,  0 },
      { "sqlite3_unregister_cksumvfs", test_unregister_cksumvfs,  0 },
      { "number_of_cores",             guess_number_of_cores,     0 },
+#ifndef SQLITE_OMIT_VIRTUALTABLE
      { "create_null_module",       test_create_null_module,     0 },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   static int longdouble_size = sizeof(LONGDOUBLE_TYPE);

@@ -594,6 +594,10 @@ proc nearset_rc {aCol args} {
   list
 }
 
+proc dump {tname} {
+  execsql_pp "SELECT * FROM ${tname}_idx"
+  execsql_pp "SELECT id, quote(block), fts5_decode(id,block) FROM ${tname}_data"
+}
 
 #-------------------------------------------------------------------------
 # Code for a simple Tcl tokenizer that supports synonyms at query time.

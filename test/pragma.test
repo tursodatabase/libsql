@@ -433,9 +433,9 @@ ifcapable attach {
         PRAGMA integrity_check
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
     do_execsql_test pragma-3.9b {
       PRAGMA t2.integrity_check=t2;
     } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
@@ -447,79 +447,79 @@ Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2
         PRAGMA integrity_check=1
       }
     } {{*** in database t2 ***
-Page 4 is never used}}
+Page 4: never used}}
     do_test pragma-3.11 {
       execsql {
         PRAGMA integrity_check=5
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2}}
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2}}
     do_test pragma-3.12 {
       execsql {
         PRAGMA integrity_check=4
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2}}
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2}}
     do_test pragma-3.13 {
       execsql {
         PRAGMA integrity_check=3
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used}}
+Page 4: never used
+Page 5: never used
+Page 6: never used}}
     do_test pragma-3.14 {
       execsql {
         PRAGMA integrity_check(2)
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used}}
+Page 4: never used
+Page 5: never used}}
     do_test pragma-3.15 {
       execsql {
         ATTACH 'testerr.db' AS t3;
         PRAGMA integrity_check
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.16 {
       execsql {
         PRAGMA integrity_check(10)
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2}}
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2}}
     do_test pragma-3.17 {
       execsql {
         PRAGMA integrity_check=8
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
-Page 4 is never used
-Page 5 is never used}}
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 4: never used
+Page 5: never used}}
     do_test pragma-3.18 {
       execsql {
         PRAGMA integrity_check=4
       }
     } {{*** in database t2 ***
-Page 4 is never used
-Page 5 is never used
-Page 6 is never used} {row 1 missing from index i2}}
+Page 4: never used
+Page 5: never used
+Page 6: never used} {row 1 missing from index i2}}
   }
   do_test pragma-3.19 {
     catch {db close}

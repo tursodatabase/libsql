@@ -178,6 +178,8 @@ do_execsql_test tkt-99378-310 {
 
 # 2023-03-04 https://sqlite.org/forum/forumpost/a68313d054
 #
+# See also indexexpr1-2200 added on 2023-03-18.
+#
 do_execsql_test tkt-99378-400 {
   DROP TABLE t1;
   CREATE TABLE t0(w);

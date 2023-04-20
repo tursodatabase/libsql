@@ -76,6 +76,7 @@ typedef unsigned char u8;
 #define U8_TYPEDEF
 #endif
 
+/* Decoding table, ASCII (7-bit) value to base 64 digit value or other */
 static const u8 b64DigitValues[128] = {
   /*                             HT LF VT  FF CR       */
     ND,ND,ND,ND, ND,ND,ND,ND, ND,WS,WS,WS, WS,WS,ND,ND,

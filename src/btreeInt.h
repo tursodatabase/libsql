@@ -701,8 +701,9 @@ struct IntegrityCk {
   int rc;           /* SQLITE_OK, SQLITE_NOMEM, or SQLITE_INTERRUPT */
   u32 nStep;        /* Number of steps into the integrity_check process */
   const char *zPfx; /* Error message prefix */
-  Pgno v1;          /* Value for first %u substitution in zPfx */
-  int v2;           /* Value for second %d substitution in zPfx */
+  Pgno v0;          /* Value for first %u substitution in zPfx (root page) */
+  Pgno v1;          /* Value for second %u substitution in zPfx (current pg) */
+  int v2;           /* Value for third %d substitution in zPfx */
   StrAccum errMsg;  /* Accumulate the error message text here */
   u32 *heap;        /* Min-heap used for analyzing cell coverage */
   sqlite3 *db;      /* Database connection running the check */

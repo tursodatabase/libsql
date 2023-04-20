@@ -670,13 +670,15 @@ int sqlite3Int64ToText(i64 v, char *zOut){
   }
   i = sizeof(zTemp)-2;
   zTemp[sizeof(zTemp)-1] = 0;
-  do{
-    zTemp[i--] = (x%10) + '0';
+  while( 1 /*exit-by-break*/ ){
+    zTemp[i] = (x%10) + '0';
     x = x/10;
-  }while( x );
-  if( v<0 ) zTemp[i--] = '-';
-  memcpy(zOut, &zTemp[i+1], sizeof(zTemp)-1-i);
-  return sizeof(zTemp)-2-i;
+    if( x==0 ) break;
+    i--;
+  };
+  if( v<0 ) zTemp[--i] = '-';
+  memcpy(zOut, &zTemp[i], sizeof(zTemp)-i);
+  return sizeof(zTemp)-1-i;
 }
 
 /*
@@ -877,7 +879,7 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
     u32 u = 0;
     zNum += 2;
     while( zNum[0]=='0' ) zNum++;
-    for(i=0; sqlite3Isxdigit(zNum[i]) && i<8; i++){
+    for(i=0; i<8 && sqlite3Isxdigit(zNum[i]); i++){
       u = u*16 + sqlite3HexToInt(zNum[i]);
     }
     if( (u&0x80000000)==0 && sqlite3Isxdigit(zNum[i])==0 ){

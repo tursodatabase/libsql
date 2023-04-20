@@ -408,7 +408,7 @@ void sqlite3Update(
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto update_cleanup;
   }
-  if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
+  if( sqlite3IsReadOnly(pParse, pTab, pTrigger) ){
     goto update_cleanup;
   }
 

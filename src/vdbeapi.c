@@ -271,7 +271,7 @@ int sqlite3_value_type(sqlite3_value* pVal){
      SQLITE_NULL,     /* 0x1f (not possible) */
      SQLITE_FLOAT,    /* 0x20 INTREAL */
      SQLITE_NULL,     /* 0x21 (not possible) */
-     SQLITE_TEXT,     /* 0x22 INTREAL + TEXT */
+     SQLITE_FLOAT,    /* 0x22 INTREAL + TEXT */
      SQLITE_NULL,     /* 0x23 (not possible) */
      SQLITE_FLOAT,    /* 0x24 (not possible) */
      SQLITE_NULL,     /* 0x25 (not possible) */
@@ -2141,15 +2141,24 @@ int sqlite3_stmt_scanstatus_v2(
   void *pOut                      /* OUT: Write the answer here */
 ){
   Vdbe *p = (Vdbe*)pStmt;
-  ScanStatus *pScan;
+  VdbeOp *aOp = p->aOp;
+  int nOp = p->nOp;
+  ScanStatus *pScan = 0;
   int idx;
+
+  if( p->pFrame ){
+    VdbeFrame *pFrame;
+    for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
+    aOp = pFrame->aOp;
+    nOp = pFrame->nOp;
+  }
 
   if( iScan<0 ){
     int ii;
     if( iScanStatusOp==SQLITE_SCANSTAT_NCYCLE ){
       i64 res = 0;
-      for(ii=0; ii<p->nOp; ii++){
-        res += p->aOp[ii].nCycle;
+      for(ii=0; ii<nOp; ii++){
+        res += aOp[ii].nCycle;
       }
       *(i64*)pOut = res;
       return 0;
@@ -2175,7 +2184,7 @@ int sqlite3_stmt_scanstatus_v2(
   switch( iScanStatusOp ){
     case SQLITE_SCANSTAT_NLOOP: {
       if( pScan->addrLoop>0 ){
-        *(sqlite3_int64*)pOut = p->aOp[pScan->addrLoop].nExec;
+        *(sqlite3_int64*)pOut = aOp[pScan->addrLoop].nExec;
       }else{
         *(sqlite3_int64*)pOut = -1;
       }
@@ -2183,7 +2192,7 @@ int sqlite3_stmt_scanstatus_v2(
     }
     case SQLITE_SCANSTAT_NVISIT: {
       if( pScan->addrVisit>0 ){
-        *(sqlite3_int64*)pOut = p->aOp[pScan->addrVisit].nExec;
+        *(sqlite3_int64*)pOut = aOp[pScan->addrVisit].nExec;
       }else{
         *(sqlite3_int64*)pOut = -1;
       }
@@ -2205,7 +2214,7 @@ int sqlite3_stmt_scanstatus_v2(
     }
     case SQLITE_SCANSTAT_EXPLAIN: {
       if( pScan->addrExplain ){
-        *(const char**)pOut = p->aOp[ pScan->addrExplain ].p4.z;
+        *(const char**)pOut = aOp[ pScan->addrExplain ].p4.z;
       }else{
         *(const char**)pOut = 0;
       }
@@ -2213,7 +2222,7 @@ int sqlite3_stmt_scanstatus_v2(
     }
     case SQLITE_SCANSTAT_SELECTID: {
       if( pScan->addrExplain ){
-        *(int*)pOut = p->aOp[ pScan->addrExplain ].p1;
+        *(int*)pOut = aOp[ pScan->addrExplain ].p1;
       }else{
         *(int*)pOut = -1;
       }
@@ -2221,7 +2230,7 @@ int sqlite3_stmt_scanstatus_v2(
     }
     case SQLITE_SCANSTAT_PARENTID: {
       if( pScan->addrExplain ){
-        *(int*)pOut = p->aOp[ pScan->addrExplain ].p2;
+        *(int*)pOut = aOp[ pScan->addrExplain ].p2;
       }else{
         *(int*)pOut = -1;
       }
@@ -2239,18 +2248,18 @@ int sqlite3_stmt_scanstatus_v2(
           if( iIns==0 ) break;
           if( iIns>0 ){
             while( iIns<=iEnd ){
-              res += p->aOp[iIns].nCycle;
+              res += aOp[iIns].nCycle;
               iIns++;
             }
           }else{
             int iOp;
-            for(iOp=0; iOp<p->nOp; iOp++){
-              Op *pOp = &p->aOp[iOp];
+            for(iOp=0; iOp<nOp; iOp++){
+              Op *pOp = &aOp[iOp];
               if( pOp->p1!=iEnd ) continue;
               if( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_NCYCLE)==0 ){
                 continue;
               }
-              res += p->aOp[iOp].nCycle;
+              res += aOp[iOp].nCycle;
             }
           }
         }

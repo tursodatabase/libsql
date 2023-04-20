@@ -1279,14 +1279,15 @@ const installOpfsVfs = function callee(options){
             promiseReject(new Error(data.payload.join(' ')));
             break;
           case 'opfs-async-loaded':
-            /*Arrives as soon as the asyc proxy finishes loading.
-              Pass our config and shared state on to the async worker.*/
+            /* Arrives as soon as the asyc proxy finishes loading.
+               Pass our config and shared state on to the async
+               worker. */
             W.postMessage({type: 'opfs-async-init',args: state});
             break;
-          case 'opfs-async-inited':{
-            /*Indicates that the async partner has received the 'init'
-              and has finished initializing, so the real work can
-              begin...*/
+          case 'opfs-async-inited': {
+            /* Indicates that the async partner has received the 'init'
+               and has finished initializing, so the real work can
+               begin... */
             if(true===promiseWasRejected){
               break /* promise was already rejected via timer */;
             }
@@ -1321,10 +1322,15 @@ const installOpfsVfs = function callee(options){
             }
             break;
           }
-          default:
-            promiseReject(e);
-            error("Unexpected message from the async worker:",data);
+          default: {
+            const errMsg = (
+              "Unexpected message from the OPFS async worker: " +
+              JSON.stringify(data)
+            );
+            error(errMsg);
+            promiseReject(new Error(errMsg));
             break;
+          }
       }/*switch(data.type)*/
     }/*W.onmessage()*/;
   })/*thePromise*/;

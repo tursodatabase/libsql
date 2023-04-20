@@ -403,4 +403,8 @@ void sqlite3VdbeScanStatusCounters(Vdbe*, int, int, int);
 void sqlite3VdbePrintOp(FILE*, int, VdbeOp*);
 #endif
 
+#if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
+int sqlite3CursorRangeHintExprCheck(Walker *pWalker, Expr *pExpr);
+#endif
+
 #endif /* SQLITE_VDBE_H */

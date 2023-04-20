@@ -177,8 +177,6 @@
   #include <assert.h>
 #endif
 
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-
 /* Forward declarations */
 typedef struct vt02_vtab vt02_vtab;
 typedef struct vt02_cur vt02_cur;
@@ -381,7 +379,7 @@ static int vt02Filter(
       sqlite3_int64 v;
       pVal = 0;
       if( sqlite3_vtab_in_first(0, &pVal)!=SQLITE_MISUSE
-       || sqlite3_vtab_in_first(argv[iArg], &pVal)!=SQLITE_MISUSE
+       || sqlite3_vtab_in_first(argv[iArg], &pVal)!=SQLITE_ERROR
       ){
         vt02ErrMsg(pCursor->pVtab, 
                 "unexpected success from sqlite3_vtab_in_first()");
@@ -420,7 +418,7 @@ static int vt02Filter(
   }
   if( bUseOffset ){
     int nSkip = sqlite3_value_int(argv[iArg]);
-    while( nSkip-- > 0 ) vt02Next(pCursor);
+    while( nSkip-- > 0 && pCur->i<pCur->iEof ) vt02Next(pCursor);
   }
   return SQLITE_OK;
 
@@ -1000,10 +998,6 @@ static void vt02CoreInit(sqlite3 *db){
   sqlite3_create_module(db, "vt02pkx", &vt02Module, (void*)zPkXSchema);
   sqlite3_create_module(db, "vt02pkabcd", &vt02Module, (void*)zPkABCDSchema);
 }
-
-#else
-# define vt02CoreInit(db)
-#endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 #ifdef TH3_VERSION
 static void vt02_init(th3state *p, int iDb, char *zArg){

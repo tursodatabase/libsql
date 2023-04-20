@@ -820,6 +820,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   Op *pOp;
   Parse *pParse = p->pParse;
   int *aLabel = pParse->aLabel;
+
+  assert( pParse->db->mallocFailed==0 ); /* tag-20230419-1 */
   p->readOnly = 1;
   p->bIsReader = 0;
   pOp = &p->aOp[p->nOp-1];
@@ -879,6 +881,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
             ** have non-negative values for P2. */
             assert( (sqlite3OpcodeProperty[pOp->opcode] & OPFLG_JUMP)!=0 );
             assert( ADDR(pOp->p2)<-pParse->nLabel );
+            assert( aLabel!=0 );  /* True because of tag-20230419-1 */
             pOp->p2 = aLabel[ADDR(pOp->p2)];
           }
           break;
@@ -3326,6 +3329,8 @@ int sqlite3VdbeHalt(Vdbe *p){
           db->flags &= ~(u64)SQLITE_DeferFKs;
           sqlite3CommitInternalChanges(db);
         }
+      }else if( p->rc==SQLITE_SCHEMA && db->nVdbeActive>1 ){
+        p->nChange = 0;
       }else{
         sqlite3RollbackAll(db, SQLITE_OK);
         p->nChange = 0;
@@ -3644,9 +3649,9 @@ static void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
 #ifdef SQLITE_ENABLE_NORMALIZE
   sqlite3DbFree(db, p->zNormSql);
   {
-    DblquoteStr *pThis, *pNext;
-    for(pThis=p->pDblStr; pThis; pThis=pNext){
-      pNext = pThis->pNextStr;
+    DblquoteStr *pThis, *pNxt;
+    for(pThis=p->pDblStr; pThis; pThis=pNxt){
+      pNxt = pThis->pNextStr;
       sqlite3DbFree(db, pThis);
     }
   }
@@ -5272,6 +5277,20 @@ int sqlite3NotPureFunc(sqlite3_context *pCtx){
   }
   return 1;
 }
+
+#if defined(SQLITE_ENABLE_CURSOR_HINTS) && defined(SQLITE_DEBUG)
+/*
+** This Walker callback is used to help verify that calls to
+** sqlite3BtreeCursorHint() with opcode BTREE_HINT_RANGE have 
+** byte-code register values correctly initialized.
+*/
+int sqlite3CursorRangeHintExprCheck(Walker *pWalker, Expr *pExpr){
+  if( pExpr->op==TK_REGISTER ){
+    assert( (pWalker->u.aMem[pExpr->iTable].flags & MEM_Undefined)==0 );
+  }
+  return WRC_Continue;
+}
+#endif /* SQLITE_ENABLE_CURSOR_HINTS && SQLITE_DEBUG */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*

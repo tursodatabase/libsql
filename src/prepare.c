@@ -306,7 +306,9 @@ int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg, u32 mFlags){
 #else
       encoding = SQLITE_UTF8;
 #endif
-      if( db->nVdbeActive>0 && encoding!=ENC(db) ){
+      if( db->nVdbeActive>0 && encoding!=ENC(db)
+       && (db->mDbFlags & DBFLAG_Vacuum)==0
+      ){
         rc = SQLITE_LOCKED;
         goto initone_error_out;
       }else{
