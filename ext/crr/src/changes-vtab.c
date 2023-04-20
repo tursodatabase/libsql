@@ -10,7 +10,6 @@
 #include "consts.h"
 #include "crsqlite.h"
 #include "ext-data.h"
-#include "seen-peers.h"
 #include "util.h"
 
 /**
@@ -46,7 +45,6 @@ static int changesConnect(sqlite3 *db, void *pAux, int argc,
   memset(pNew, 0, sizeof(*pNew));
   pNew->db = db;
   pNew->pExtData = (crsql_ExtData *)pAux;
-  pNew->pSeenPeers = crsql_newSeenPeers();
 
   rc = crsql_ensureTableInfosAreUpToDate(db, pNew->pExtData,
                                          &(*ppVtab)->zErrMsg);
@@ -67,7 +65,6 @@ static int changesConnect(sqlite3 *db, void *pAux, int argc,
  */
 static int changesDisconnect(sqlite3_vtab *pVtab) {
   crsql_Changes_vtab *p = (crsql_Changes_vtab *)pVtab;
-  crsql_freeSeenPeers(p->pSeenPeers);
   // ext data is free by other registered extensions
   sqlite3_free(p);
   return SQLITE_OK;
@@ -539,18 +536,6 @@ static int changesApply(sqlite3_vtab *pVTab, int argc, sqlite3_value **argv,
   return SQLITE_OK;
 }
 
-// We must define a `begin` method. Not defining it causes `commit` to never be
-// invoked.
-static int changesInsertBegin(sqlite3_vtab *pVTab) { return SQLITE_OK; }
-
-static int changesInsertCommit(sqlite3_vtab *pVTab) {
-  crsql_Changes_vtab *crsqlTab = (crsql_Changes_vtab *)pVTab;
-
-  int rc = crsql_writeTrackedPeers(crsqlTab->pSeenPeers, crsqlTab->pExtData);
-  crsql_resetSeenPeers(crsqlTab->pSeenPeers);
-  return rc;
-}
-
 sqlite3_module crsql_changesModule = {
     /* iVersion    */ 0,
     /* xCreate     */ 0,
@@ -566,9 +551,9 @@ sqlite3_module crsql_changesModule = {
     /* xColumn     */ changesColumn,
     /* xRowid      */ changesRowid,
     /* xUpdate     */ changesApply,
-    /* xBegin      */ changesInsertBegin,
+    /* xBegin      */ 0,
     /* xSync       */ 0,
-    /* xCommit     */ changesInsertCommit,
+    /* xCommit     */ 0,
     /* xRollback   */ 0,
     /* xFindMethod */ 0,
     /* xRename     */ 0,

@@ -175,7 +175,7 @@ fn validate_order_key(key: &str) -> Result<(), &'static str> {
     let f = &key[i.len()..];
     let as_bytes = f.as_bytes();
     if as_bytes.len() > 0 && as_bytes[as_bytes.len() - 1] == zero_charcode {
-        return Err("Integer part should not end with 0");
+        return Err("Fractional part should not end with 0");
     }
 
     Ok(())
@@ -372,11 +372,15 @@ mod tests {
             None,
             Ok(Some(String::from("zzzzzzzzzzzzzzzzzzzzzzzzzzzV"))),
         );
-        test(Some("a00"), None, Err("Integer part should not end with 0"));
+        test(
+            Some("a00"),
+            None,
+            Err("Fractional part should not end with 0"),
+        );
         test(
             Some("a00"),
             Some("a1"),
-            Err("Integer part should not end with 0"),
+            Err("Fractional part should not end with 0"),
         );
         test(Some("0"), Some("1"), Err("head is out of range"));
         test(

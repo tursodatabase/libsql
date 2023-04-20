@@ -45,7 +45,6 @@ SQLITE_EXTENSION_INIT3
 
 #include "crsqlite.h"
 #include "ext-data.h"
-#include "seen-peers.h"
 #include "tableinfo.h"
 
 extern sqlite3_module crsql_changesModule;
@@ -61,7 +60,6 @@ struct crsql_Changes_vtab {
   sqlite3_vtab base;
   sqlite3 *db;
 
-  crsql_SeenPeers *pSeenPeers;
   crsql_ExtData *pExtData;
 };
 

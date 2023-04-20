@@ -1,5 +1,23 @@
 # @vlcn.io/crsqlite
 
+## 0.9.3
+
+### Patch Changes
+
+- release lock fix
+
+## 0.9.2
+
+### Patch Changes
+
+- e5919ae: fix xcommit deadlock, bump versions on dependencies
+
+## 0.9.2-next.0
+
+### Patch Changes
+
+- fix xcommit deadlock, bump versions on dependencies
+
 ## 0.9.1
 
 ### Patch Changes

@@ -122,46 +122,9 @@ static int createSchemaTableIfNotExists(sqlite3 *db) {
   }
 
   char *zSql = sqlite3_mprintf(
-      "CREATE TABLE IF NOT EXISTS \"%s\" (id INTEGER PRIMARY KEY "
-      "AUTOINCREMENT, type TEXT NOT NULL, name TEXT NOT "
-      "NULL, augments TEXT NOT NULL) STRICT;",
+      "CREATE TABLE IF NOT EXISTS \"%s\" (\"key\" TEXT PRIMARY KEY, \"value\" "
+      "TEXT);",
       TBL_SCHEMA);
-  rc = sqlite3_exec(db, zSql, 0, 0, 0);
-  sqlite3_free(zSql);
-
-  if (rc != SQLITE_OK) {
-    sqlite3_exec(db, "ROLLBACK;", 0, 0, 0);
-    return rc;
-  }
-
-  zSql = sqlite3_mprintf(
-      "CREATE UNIQUE INDEX IF NOT EXISTS __crsql_master_index ON "
-      "\"%s\" (type, name);",
-      TBL_SCHEMA);
-  rc = sqlite3_exec(db, zSql, 0, 0, 0);
-  sqlite3_free(zSql);
-
-  if (rc != SQLITE_OK) {
-    sqlite3_exec(db, "ROLLBACK;", 0, 0, 0);
-    return rc;
-  }
-
-  zSql = sqlite3_mprintf(
-      "CREATE TABLE IF NOT EXISTS \"%s\" (master_id INTEGER NOT NULL, key "
-      "TEXT NOT NULL, ord INTEGER DEFAULT 0, value ANY) STRICT;",
-      TBL_SCHEMA_PROPS);
-  rc = sqlite3_exec(db, zSql, 0, 0, 0);
-  sqlite3_free(zSql);
-
-  if (rc != SQLITE_OK) {
-    sqlite3_exec(db, "ROLLBACK;", 0, 0, 0);
-    return rc;
-  }
-
-  zSql = sqlite3_mprintf(
-      "CREATE UNIQUE INDEX IF NOT EXISTS __crsql_master_prop_id_index "
-      "ON \"%s\" (master_id, key, ord);",
-      TBL_SCHEMA_PROPS);
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
   sqlite3_free(zSql);
 
