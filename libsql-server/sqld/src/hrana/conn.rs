@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -109,8 +110,9 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
             let client_msg: proto::ClientMsg = match serde_json::from_str(&client_msg) {
                 Ok(client_msg) => client_msg,
                 Err(err) => {
-                    close(conn, CloseCode::Invalid, "Invalid format of client message").await;
-                    tracing::warn!("Could not deserialize client message: {}", err);
+                    let error_msg = format!("Invalid format of client message: {}", err);
+                    close(conn, CloseCode::Invalid, &error_msg).await;
+                    tracing::warn!("{}", error_msg);
                     return Ok(false);
                 }
             };
@@ -247,14 +249,14 @@ async fn send_msg(conn: &mut Conn, msg: &proto::ServerMsg) -> Result<()> {
         .context("Could not send response to the WebSocket")
 }
 
-async fn close(conn: &mut Conn, code: CloseCode, reason: &'static str) {
+async fn close(conn: &mut Conn, code: CloseCode, reason: &str) {
     if conn.ws_closed {
         return;
     }
 
     let close_frame = tungstenite::protocol::frame::CloseFrame {
         code,
-        reason: reason.into(),
+        reason: Cow::Owned(reason.into()),
     };
     if let Err(err) = conn
         .ws
