@@ -316,5 +316,18 @@ do_execsql_test 16.9 {
   COMMIT;
 } {1 2 3 4}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.1 {
+  CREATE TABLE t(a, PRIMARY KEY(a, a COLLATE NOCASE)) WITHOUT ROWID;
+  INSERT INTO t VALUES('abc');
+  INSERT INTO t VALUES('def');
+}
+do_test 17.2 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  list [catch { $R finish } msg] $msg
+} {0 {}}
+
 finish_test
 
