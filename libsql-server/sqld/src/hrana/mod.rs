@@ -23,6 +23,12 @@ struct Server {
 }
 
 #[derive(Debug)]
+pub struct Accept {
+    pub socket: tokio::net::TcpStream,
+    pub peer_addr: SocketAddr,
+}
+
+#[derive(Debug)]
 pub struct Upgrade {
     pub request: hyper::Request<hyper::Body>,
     pub response_tx: oneshot::Sender<hyper::Response<hyper::Body>>,
@@ -32,7 +38,7 @@ pub async fn serve(
     db_factory: Arc<dyn DbFactory>,
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
-    bind_addr: SocketAddr,
+    mut accept_rx: mpsc::Receiver<Accept>,
     mut upgrade_rx: mpsc::Receiver<Upgrade>,
 ) -> Result<()> {
     let server = Arc::new(Server {
@@ -42,12 +48,6 @@ pub async fn serve(
         next_conn_id: AtomicU64::new(0),
     });
 
-    let listener = tokio::net::TcpListener::bind(bind_addr)
-        .await
-        .context("Could not bind TCP listener")?;
-    let local_addr = listener.local_addr()?;
-    tracing::info!("Listening for Hrana connections on {}", local_addr);
-
     let mut join_set = tokio::task::JoinSet::new();
     loop {
         if let Some(kicker) = server.idle_kicker.as_ref() {
@@ -55,14 +55,12 @@ pub async fn serve(
         }
 
         tokio::select! {
-            accept_res = listener.accept() => {
-                let (socket, peer_addr) = accept_res
-                    .context("Could not accept a TCP connection")?;
+            Some(accept) = accept_rx.recv() => {
                 let conn_id = server.next_conn_id.fetch_add(1, Ordering::AcqRel);
-                tracing::info!("Received TCP connection #{} from {}", conn_id, peer_addr);
+                tracing::info!("Received TCP connection #{} from {}", conn_id, accept.peer_addr);
 
                 join_set.spawn(enclose!{(server, conn_id) async move {
-                    match conn::handle_tcp(server, socket, conn_id).await {
+                    match conn::handle_tcp(server, accept.socket, conn_id).await {
                         Ok(_) => tracing::info!("TCP connection #{} was terminated", conn_id),
                         Err(err) => tracing::error!("TCP connection #{} failed: {:?}", conn_id, err),
                     }
@@ -83,5 +81,21 @@ pub async fn serve(
                 task_res.expect("Hrana connection task failed")
             },
         }
+    }
+}
+
+pub async fn listen(bind_addr: SocketAddr, accept_tx: mpsc::Sender<Accept>) -> Result<()> {
+    let listener = tokio::net::TcpListener::bind(bind_addr)
+        .await
+        .context("Could not bind TCP listener")?;
+    let local_addr = listener.local_addr()?;
+    tracing::info!("Listening for Hrana connections on {}", local_addr);
+
+    loop {
+        let (socket, peer_addr) = listener
+            .accept()
+            .await
+            .context("Could not accept a TCP connection")?;
+        let _: Result<_, _> = accept_tx.send(Accept { socket, peer_addr }).await;
     }
 }
