@@ -10464,28 +10464,35 @@ static int do_meta_command(char *zLine, ShellState *p){
       shell_check_oom(zRevText);
       if( bDebug ) utf8_printf(p->out, "%s\n", zRevText);
       lrc = sqlite3_prepare_v2(p->db, zRevText, -1, &pStmt, 0);
-      assert(lrc==SQLITE_OK);
-      if( zLike ) sqlite3_bind_text(pStmt,1,zLike,-1,SQLITE_STATIC);
-      lrc = SQLITE_ROW==sqlite3_step(pStmt);
-      if( lrc ){
-        const char *zGenQuery = (char*)sqlite3_column_text(pStmt,0);
-        sqlite3_stmt *pCheckStmt;
-        lrc = sqlite3_prepare_v2(p->db, zGenQuery, -1, &pCheckStmt, 0);
-        if( bDebug ) utf8_printf(p->out, "%s\n", zGenQuery);
-        if( SQLITE_OK==lrc ){
-          if( SQLITE_ROW==sqlite3_step(pCheckStmt) ){
-            double countIrreversible = sqlite3_column_double(pCheckStmt, 0);
-            if( countIrreversible>0 ){
-              int sz = (int)(countIrreversible + 0.5);
-              utf8_printf(stderr,
-                 "Digest includes %d invalidly encoded text field%s.\n",
-                 sz, (sz>1)? "s": "");
+      if( lrc!=SQLITE_OK ){
+        assert(lrc==SQLITE_NOMEM);
+        rc = 1;
+      }else{
+        if( zLike ) sqlite3_bind_text(pStmt,1,zLike,-1,SQLITE_STATIC);
+        lrc = SQLITE_ROW==sqlite3_step(pStmt);
+        if( lrc ){
+          const char *zGenQuery = (char*)sqlite3_column_text(pStmt,0);
+          sqlite3_stmt *pCheckStmt;
+          lrc = sqlite3_prepare_v2(p->db, zGenQuery, -1, &pCheckStmt, 0);
+          if( bDebug ) utf8_printf(p->out, "%s\n", zGenQuery);
+          if( lrc!=SQLITE_OK ){
+            rc = 1;
+          }else{
+            if( SQLITE_ROW==sqlite3_step(pCheckStmt) ){
+              double countIrreversible = sqlite3_column_double(pCheckStmt, 0);
+              if( countIrreversible>0 ){
+                int sz = (int)(countIrreversible + 0.5);
+                utf8_printf(stderr,
+                     "Digest includes %d invalidly encoded text field%s.\n",
+                            sz, (sz>1)? "s": "");
+              }
             }
+            sqlite3_finalize(pCheckStmt);
           }
-          sqlite3_finalize(pCheckStmt);
+          sqlite3_finalize(pStmt);
         }
-        sqlite3_finalize(pStmt);
       }
+      if( rc ) utf8_printf(stderr, ".sha3sum failed.\n");
       sqlite3_free(zRevText);
     }
 #endif /* !defined(*_OMIT_SCHEMA_PRAGMAS) && !defined(*_OMIT_VIRTUALTABLE) */
