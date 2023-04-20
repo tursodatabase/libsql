@@ -133,7 +133,7 @@ impl Cli {
         eprintln!();
         eprintln!("version: {}", env!("VERGEN_BUILD_SEMVER"));
         if let Some(git_sha) = option_env!("VERGEN_GIT_SHA") {
-            eprintln!("commit SHA: {}", git_sha);
+            eprintln!("commit SHA: {git_sha}");
         }
         eprintln!("build date: {}", env!("VERGEN_BUILD_DATE"));
         eprintln!();
