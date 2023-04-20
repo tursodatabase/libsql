@@ -98,9 +98,6 @@ struct Cli {
     #[cfg(feature = "bottomless")]
     #[clap(long, env = "SQLD_ENABLE_BOTTOMLESS_REPLICATION")]
     enable_bottomless_replication: bool,
-    /// Create a tunnel for the HTTP interface, available publicly via the https://localtunnel.me interface. The tunnel URL will be printed to stdin
-    #[clap(long, env = "SQLD_CREATE_LOCAL_HTTP_TUNNEL")]
-    create_local_http_tunnel: bool,
     /// The duration, in second, after which to shutdown the server if no request have been
     /// received.
     /// By default, the server doesn't shutdown when idle.
@@ -199,7 +196,6 @@ fn config_from_args(args: Cli) -> Result<Config> {
         mwal_addr: args.mwal_addr,
         #[cfg(feature = "bottomless")]
         enable_bottomless_replication: args.enable_bottomless_replication,
-        create_local_http_tunnel: args.create_local_http_tunnel,
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
         load_from_dump: args.load_from_dump,
         max_log_size: args.max_log_size,
