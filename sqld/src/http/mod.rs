@@ -213,10 +213,7 @@ async fn handle_upgrade(
         Ok(response) => response,
         Err(_) => Response::builder()
             .status(hyper::StatusCode::SERVICE_UNAVAILABLE)
-            .body(
-                "sqld was not able to process the HTTP upgrade (Hrana support may be disabled)"
-                    .into(),
-            )
+            .body("sqld was not able to process the HTTP upgrade".into())
             .unwrap(),
     }
 }

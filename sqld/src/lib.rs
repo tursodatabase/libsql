@@ -102,26 +102,43 @@ async fn run_service(
         join_set.spawn(postgres::server::run(addr, db_factory.clone()));
     }
 
-    let (upgrade_tx, upgrade_rx) = mpsc::channel(8);
+    let (hrana_accept_tx, hrana_accept_rx) = mpsc::channel(8);
+    let (hrana_upgrade_tx, hrana_upgrade_rx) = mpsc::channel(8);
+
+    if config.http_addr.is_some() || config.hrana_addr.is_some() {
+        let db_factory = db_factory.clone();
+        let auth = auth.clone();
+        let idle_kicker = idle_shutdown_layer.clone().map(|isl| isl.into_kicker());
+        join_set.spawn(async move {
+            hrana::serve(
+                db_factory,
+                auth,
+                idle_kicker,
+                hrana_accept_rx,
+                hrana_upgrade_rx,
+            )
+            .await
+            .context("Hrana server failed")
+        });
+    }
 
     if let Some(addr) = config.http_addr {
         join_set.spawn(http::run_http(
             addr,
-            auth.clone(),
-            db_factory.clone(),
-            upgrade_tx,
+            auth,
+            db_factory,
+            hrana_upgrade_tx,
             config.enable_http_console,
-            idle_shutdown_layer.clone(),
+            idle_shutdown_layer,
             stats,
         ));
     }
 
     if let Some(addr) = config.hrana_addr {
-        let idle_kicker = idle_shutdown_layer.map(|isl| isl.into_kicker());
         join_set.spawn(async move {
-            hrana::serve(db_factory, auth, idle_kicker, addr, upgrade_rx)
+            hrana::listen(addr, hrana_accept_tx)
                 .await
-                .context("Hrana server failed")
+                .context("Hrana listener failed")
         });
     }
 
