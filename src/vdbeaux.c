@@ -1625,7 +1625,7 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
 
 /* Return the most recently added opcode
 */
-VdbeOp * sqlite3VdbeGetLastOp(Vdbe *p){
+VdbeOp *sqlite3VdbeGetLastOp(Vdbe *p){
   return sqlite3VdbeGetOp(p, p->nOp - 1);
 }
 

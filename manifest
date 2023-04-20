@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\sthe\srecovery\sextension.\s[forum:/forumpost/82a88f5812|Forum\spost\s82a88f5812].
-D 2023-04-20T10:26:56.069
+C Fix\sa\sfunction\sdeclaration\sso\sthat\sit\scorrectly\sappears\sas\sprivate\sin\nthe\samalgamation.\s\s[forum:/forumpost/ec8c77516c|Forum\spost\sec8c77516c].
+D 2023-04-20T10:40:37.868
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -706,7 +706,7 @@ F src/vdbe.c a6c52ba65e8ceb574fe0eda62af84e6c50c176ffc5f310c613425f7ab2b1484b
 F src/vdbe.h 637ae853b7d42ae3951034cc63ab7c8af837861f79504cdb5399552fcd89a884
 F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 1a95162e26d5eda3b7b46fbe4fcbc33eb7f801529d66fc2e14c52094a5523339
-F src/vdbeaux.c 913801bb824d6ef0a49c80e973563063e453f41e6c382c5940de8e5d34f0cd56
+F src/vdbeaux.c 24637a004cda26aca1970a78ebfb9f7895aec820525bdb784a76933bb4af83f7
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 1d9a0f37b0097fbb53f0d7ba081f7181b83cee2c6f46364706ea0c3896bd8ec0
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 48505ad950bc0902d58210be066d4672e6085eb27c525ba2bc663fde7e932ff7
-R b509297d16c0cc9afe0aac10a864ef81
-U dan
-Z 36fc4028e4d720bb78b5659604227df8
+P 8a1ad137606ce5bddbed62f89ff9a5cd922c6530db84c12b8b27c08df3c66bc6
+R 5650bdd0fe3fa605ffb40959b74f4f18
+U drh
+Z 9167a0af56191794ab500594595d0dd0
 # Remove this line to create a well-formed Fossil manifest.
