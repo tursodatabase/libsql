@@ -84,7 +84,6 @@ pub struct Config {
     pub rpc_server_ca_cert: Option<PathBuf>,
     #[cfg(feature = "bottomless")]
     pub enable_bottomless_replication: bool,
-    pub create_local_http_tunnel: bool,
     pub idle_shutdown_timeout: Option<Duration>,
     pub load_from_dump: Option<PathBuf>,
     pub max_log_size: u64,
@@ -302,21 +301,6 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
     #[cfg(feature = "bottomless")]
     if config.enable_bottomless_replication {
         bottomless::static_init::register_bottomless_methods();
-    }
-
-    let (local_tunnel_shutdown, _) = localtunnel_client::broadcast::channel(1);
-    if config.create_local_http_tunnel {
-        let tunnel = localtunnel_client::open_tunnel(
-            Some("https://localtunnel.me"),
-            None,
-            config.http_addr.map(|a| a.ip().to_string()).as_deref(),
-            config.http_addr.map(|a| a.port()).unwrap_or(8080),
-            local_tunnel_shutdown.clone(),
-            3,
-            None,
-        )
-        .await?;
-        println!("HTTP tunnel created: {tunnel}");
     }
 
     loop {
