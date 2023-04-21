@@ -40,6 +40,9 @@ impl StmtKind {
             Cmd::ExplainQueryPlan(_) => Some(Self::Other),
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
             Cmd::Stmt(Stmt::Commit { .. } | Stmt::Rollback { .. }) => Some(Self::TxnEnd),
+            Cmd::Stmt(Stmt::CreateVirtualTable { tbl_name, .. }) if tbl_name.db_name.as_ref().map(|n| n.0.as_str()) != Some("TEMP") => {
+                Some(Self::Write)
+            }
             Cmd::Stmt(
                 Stmt::Insert { .. }
                 | Stmt::CreateTable { .. }
