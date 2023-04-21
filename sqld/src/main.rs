@@ -16,6 +16,16 @@ static GLOBAL: MiMalloc = MiMalloc;
 struct Cli {
     #[clap(long, short, default_value = "data.sqld", env = "SQLD_DB_PATH")]
     db_path: PathBuf,
+
+    /// The directory path where trusted extensions can be loaded from.
+    /// If not present, extension loading is disabled.
+    /// If present, the directory is expected to have a trusted.lst file containing
+    /// the sha256 and name of each extension, one per line. Example:
+    ///
+    /// 99890762817735984843bf5cf02a4b2ea648018fd05f04df6f9ce7f976841510  math.dylib
+    #[clap(long, short)]
+    extensions_path: Option<PathBuf>,
+
     /// The address and port the PostgreSQL server listens to.
     #[clap(long, short, env = "SQLD_PG_LISTEN_ADDR")]
     pg_listen_addr: Option<SocketAddr>,
@@ -151,6 +161,8 @@ impl Cli {
             _ => unreachable!("invalid configuration!"),
         };
         eprintln!("\t- database path: {}", self.db_path.display());
+        let extensions_str = self.extensions_path.clone().map_or("<disabled>".to_string(), |x| x.display().to_string());
+        eprintln!("\t- extensions path: {}", extensions_str);
         eprintln!("\t- listening for HTTP requests on: {}", self.http_listen_addr);
         if let Some(ref addr) = self.pg_listen_addr {
             eprintln!("\t- listening for PostgreSQL wire on: {addr}");
@@ -175,6 +187,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
 
     Ok(Config {
         db_path: args.db_path,
+        extensions_path: args.extensions_path,
         tcp_addr: args.pg_listen_addr,
         http_addr: Some(args.http_listen_addr),
         enable_http_console: args.enable_http_console,
