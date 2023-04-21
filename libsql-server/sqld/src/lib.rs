@@ -25,6 +25,8 @@ use crate::error::Error;
 use crate::replication::replica::Replicator;
 use crate::stats::Stats;
 
+use sha256::try_digest;
+
 pub use sqld_libsql_bindings as libsql;
 
 mod auth;
@@ -63,6 +65,7 @@ pub(crate) static VWAL_METHODS: OnceCell<
 
 pub struct Config {
     pub db_path: PathBuf,
+    pub extensions_path: Option<PathBuf>,
     pub tcp_addr: Option<SocketAddr>,
     pub http_addr: Option<SocketAddr>,
     pub enable_http_console: bool,
@@ -221,8 +224,11 @@ async fn start_replica(
 
     join_set.spawn(replicator.run());
 
+    let valid_extensions = validate_extensions(config.extensions_path.clone())?;
+
     let factory = WriteProxyDbFactory::new(
         config.db_path.clone(),
+        valid_extensions,
         channel,
         uri,
         stats.clone(),
@@ -242,6 +248,51 @@ async fn start_replica(
 
 fn check_fresh_db(path: &Path) -> bool {
     !path.join("wallog").exists()
+}
+
+fn validate_extensions(extensions_path: Option<PathBuf>) -> anyhow::Result<Vec<PathBuf>> {
+    let mut valid_extensions = vec![];
+    if let Some(ext_dir) = extensions_path {
+        let extensions_list = ext_dir.join("trusted.lst");
+
+        let file_contents = std::fs::read_to_string(&extensions_list)
+            .with_context(|| format!("can't read {}", &extensions_list.display()))?;
+
+        let extensions = file_contents.lines().filter(|c| !c.is_empty());
+
+        for line in extensions {
+            let mut ext_info = line.trim().split_ascii_whitespace();
+
+            let ext_sha = ext_info.next().ok_or_else(|| {
+                anyhow::anyhow!("invalid line on {}: {}", &extensions_list.display(), line)
+            })?;
+            let ext_fname = ext_info.next().ok_or_else(|| {
+                anyhow::anyhow!("invalid line on {}: {}", &extensions_list.display(), line)
+            })?;
+
+            anyhow::ensure!(
+                ext_info.next().is_none(),
+                "extension list seem to contain a filename with whitespaces. Rejected"
+            );
+
+            let extension_full_path = ext_dir.join(ext_fname);
+            let digest = try_digest(extension_full_path.as_path()).with_context(|| {
+                format!(
+                    "Failed to get sha256 digest, while trying to read {}",
+                    extension_full_path.display()
+                )
+            })?;
+
+            anyhow::ensure!(
+                digest == ext_sha,
+                "sha256 differs for {}. Got {}",
+                ext_fname,
+                digest
+            );
+            valid_extensions.push(extension_full_path);
+        }
+    }
+    Ok(valid_extensions)
 }
 
 async fn start_primary(
@@ -272,12 +323,23 @@ async fn start_primary(
         dump_loader.load_dump(path.into()).await?;
     }
 
+    let valid_extensions = validate_extensions(config.extensions_path.clone())?;
+
     let stats_clone = stats.clone();
     let db_factory = Arc::new(move || {
         let db_path = path_clone.clone();
         let hook = hook.clone();
         let stats_clone = stats_clone.clone();
-        async move { LibSqlDb::new(db_path, hook, enable_bottomless, stats_clone) }
+        let valid_extensions = valid_extensions.clone();
+        async move {
+            LibSqlDb::new(
+                db_path,
+                valid_extensions,
+                hook,
+                enable_bottomless,
+                stats_clone,
+            )
+        }
     });
 
     if let Some(ref addr) = config.rpc_server_addr {
