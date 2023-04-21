@@ -1,5 +1,5 @@
-C Increase\sCLI\stolerance\sof\sarifically\slow\smemory.
-D 2023-04-20T20:07:14.732
+C Add\sa\snew\smodifier\sto\sdate/time\sfunctions:\s"subsecond".\s\sMay\sbe\nabbreviated\sas\sjust\s"subsec".\s\sThis\smodifier\scauses\sfunctions\sto\stry\nto\sshow\sfractional\sseconds\sif\sthey\sdo\snot\salready.
+D 2023-04-21T15:30:47.608
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -578,7 +578,7 @@ F src/build.c 8357d6ca9a8c9afc297c431df28bc2af407b47f3ef2311875276c944b30c4d54
 F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c f21815ca7172ce073db3163ac54c8d9f2841077165c1a6123b4d1c376a0c7ec7
+F src/date.c aca9e0c08b400b21238b609aea7c09585396cd770985cf8f475560f69222dad3
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c a9c6d3f51c0a31e9b831e0a0580a98d702904b42d216fee530940e40dec34873
@@ -2059,8 +2059,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 104ab105ac0e96c0fc61c6d69179bf984fcfe5e0efb2c82f3742456c1b5fe5d1
-R aa97778045cfce91a857103f91418d38
-U larrybr
-Z aaec46b2f4c843c0506897156fa41de9
+P 13f2638622871db9b91db547dcfd38f61c03e7696e4df5144adefcd86140aeba
+R 2529341824942da9d8aad7d6b6ee37a6
+T *branch * subsec-modifier
+T *sym-subsec-modifier *
+T -sym-trunk *
+U drh
+Z 03013fcb8c96af9e078547fa6f689eef
 # Remove this line to create a well-formed Fossil manifest.
