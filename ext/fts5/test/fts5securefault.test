@@ -1,0 +1,225 @@
+# 2023 April 14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+source $testdir/malloc_common.tcl
+set testprefix fts5securefault
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+return_if_no_fts5
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(ab);
+  INSERT INTO t1(rowid, ab) VALUES
+      (0, 'abc'), (1, 'abc'), (2, 'abc'), (3, 'abc'), (4, 'def');
+}
+faultsim_save_and_close
+
+do_faultsim_test 1.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE rowid=2 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+do_faultsim_test 1.2 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE rowid IN(0, 1, 2, 3, 4) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+set big  [string repeat abcdefghij 5]
+set big2 [string repeat klmnopqrst 5]
+set doc "$big $big2"
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(ab);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<4
+  )
+  INSERT INTO t1(rowid, ab) SELECT i, $doc FROM s;
+}
+faultsim_save_and_close
+
+do_faultsim_test 2.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE rowid = 3 }
+  execsql { DELETE FROM t1 WHERE rowid = 4 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+set big  [string repeat abcdefghij 5]
+set big2 [string repeat klmnopqrst 5]
+set doc "$big $big2"
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(ab);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<25
+  )
+  INSERT INTO t1(rowid, ab) SELECT i, $doc FROM s;
+
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  DELETE FROM t1 WHERE rowid BETWEEN 3 AND 23;
+}
+faultsim_save_and_close
+
+do_faultsim_test 3.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE rowid = 24 }
+  execsql { DELETE FROM t1 WHERE rowid = 25 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+set doc [string repeat "tok " 400]
+
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(ab);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+  INSERT INTO t1(rowid, ab) VALUES(1, $doc), (2, $doc), (3, $doc);
+}
+faultsim_save_and_close
+
+do_faultsim_test 4.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE rowid = 2 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+
+set doc1 [string repeat "abc " 10]
+set doc2 [string repeat "def " 10]
+
+do_test 5.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts5(ab);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+    BEGIN;
+  }
+  for {set i 0} {$i < 50} {incr i} {
+    execsql {
+      INSERT INTO t1(rowid, ab) VALUES($i, 'abcdefg');
+    }
+  }
+  execsql {
+    INSERT INTO t1(rowid, ab) VALUES(105, 'def');
+    COMMIT;
+  }
+} {}
+faultsim_save_and_close
+
+do_faultsim_test 5.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { DELETE FROM t1 WHERE rowid = 105 }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 6.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts5(ab);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+    BEGIN;
+      INSERT INTO t1(rowid, ab) VALUES(1, 'abcdefg');
+      INSERT INTO t1(rowid, ab) VALUES(2, 'abcdefg');
+      INSERT INTO t1(rowid, ab) VALUES(3, 'abcdefg');
+    COMMIT;
+  }
+} {}
+faultsim_save_and_close
+
+do_faultsim_test 6.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} -body {
+  execsql { 
+    UPDATE t1 SET ab='abcdefg' WHERE rowid=2;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 7.0 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts5(ab);
+    INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+} {}
+faultsim_save_and_close
+
+do_faultsim_test 7.1 -faults oom* -prep {
+  faultsim_restore_and_reopen
+  set big1 "[string repeat x 50] [string repeat y 50] [string repeat z 50]"
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES($big1);
+  }
+} -body {
+  execsql { COMMIT }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+
+finish_test

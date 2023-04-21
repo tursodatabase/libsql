@@ -113,7 +113,7 @@ do_test corruptD-1.1.1 {
   hexio_write test.db [expr 1024+1] FFFF
   catchsql { PRAGMA quick_check }
 } {0 {{*** in database main ***
-Page 2: free space corruption}}}
+Tree 2 page 2: free space corruption}}}
 do_test corruptD-1.1.2 {
   incr_change_counter
   hexio_write test.db [expr 1024+1] [hexio_render_int32 1021]

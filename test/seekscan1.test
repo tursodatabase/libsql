@@ -24,6 +24,7 @@ do_execsql_test 1.0 {
   ANALYZE;
 }
 
+
 do_execsql_test 1.1 {
   SELECT a,b,c FROM t1 
   WHERE b IN (234, 345) AND c BETWEEN 6 AND 6.5 AND a='abc' 
@@ -57,6 +58,10 @@ do_execsql_test 1.4 {
 } {
   abc 234 6
   abc 345 7
+}
+
+do_execsql_test 1.5 {
+  SELECT a,b,c FROM t1 WHERE b IN (235, 345) AND c<=3 AND a='abc' ORDER BY a, b;
 }
 
 

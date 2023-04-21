@@ -1389,7 +1389,11 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
     analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab);
+#ifdef SQLITE_ENABLE_STAT4
     iMem = sqlite3FirstAvailableRegister(pParse, iMem);
+#else
+    assert( iMem==sqlite3FirstAvailableRegister(pParse,iMem) );
+#endif
   }
   loadAnalysis(pParse, iDb);
 }

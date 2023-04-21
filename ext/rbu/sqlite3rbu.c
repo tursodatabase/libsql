@@ -3141,6 +3141,11 @@ static void rbuCheckpointFrame(sqlite3rbu *p, RbuFrame *pFrame){
   p->rc = pDb->pMethods->xWrite(pDb, p->aBuf, p->pgsz, iOff);
 }
 
+/*
+** This value is copied from the definition of ZIPVFS_CTRL_FILE_POINTER
+** in zipvfs.h. 
+*/
+#define RBU_ZIPVFS_CTRL_FILE_POINTER 230439
 
 /*
 ** Take an EXCLUSIVE lock on the database file. Return SQLITE_OK if
@@ -3149,7 +3154,11 @@ static void rbuCheckpointFrame(sqlite3rbu *p, RbuFrame *pFrame){
 static int rbuLockDatabase(sqlite3 *db){
   int rc = SQLITE_OK;
   sqlite3_file *fd = 0;
-  sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, &fd);
+
+  sqlite3_file_control(db, "main", RBU_ZIPVFS_CTRL_FILE_POINTER, &fd);
+  if( fd==0 ){
+    sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, &fd);
+  }
 
   if( fd->pMethods ){
     rc = fd->pMethods->xLock(fd, SQLITE_LOCK_SHARED);

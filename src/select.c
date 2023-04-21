@@ -2318,7 +2318,7 @@ void sqlite3SubqueryColumnTypes(
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
   assert( pTab->nCol==pSelect->pEList->nExpr || pParse->nErr>0 );
   assert( aff==SQLITE_AFF_NONE || aff==SQLITE_AFF_BLOB );
-  if( db->mallocFailed ) return;
+  if( db->mallocFailed || IN_RENAME_OBJECT ) return;
   while( pSelect->pPrior ) pSelect = pSelect->pPrior;
   a = pSelect->pEList->a;
   memset(&sNC, 0, sizeof(sNC));
@@ -2363,18 +2363,16 @@ void sqlite3SubqueryColumnTypes(
             break;
           }
         }
-       }
-     }
-     if( zType ){
-       i64 m = sqlite3Strlen30(zType);
-       n = sqlite3Strlen30(pCol->zCnName);
-       pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
-       if( pCol->zCnName ){
-         memcpy(&pCol->zCnName[n+1], zType, m+1);
-         pCol->colFlags |= COLFLAG_HASTYPE;
-       }else{
-         testcase( pCol->colFlags & COLFLAG_HASTYPE );
-        pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
+      }
+    }
+    if( zType ){
+      i64 m = sqlite3Strlen30(zType);
+      n = sqlite3Strlen30(pCol->zCnName);
+      pCol->zCnName = sqlite3DbReallocOrFree(db, pCol->zCnName, n+m+2);
+      pCol->colFlags &= ~(COLFLAG_HASTYPE|COLFLAG_HASCOLL);
+      if( pCol->zCnName ){
+        memcpy(&pCol->zCnName[n+1], zType, m+1);
+        pCol->colFlags |= COLFLAG_HASTYPE;
       }
     }
     pColl = sqlite3ExprCollSeq(pParse, p);
@@ -5266,11 +5264,13 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
       ** use UNION, INTERSECT, or EXCEPT.  Only UNION ALL is allowed. */
       return 0;
     }
+#ifndef SQLITE_OMIT_WINDOWFUNC
     if( pX->pWin ){
       /* This optimization does not work for subqueries that use window
       ** functions. */
       return 0;
     }
+#endif
   }
   colUsed = pItem->colUsed;
   if( pSub->pOrderBy ){
@@ -6446,12 +6446,13 @@ static void optimizeAggregateUseOfIndexedExpr(
   assert( pSelect->pGroupBy!=0 );
   pAggInfo->nColumn = pAggInfo->nAccumulator;
   if( ALWAYS(pAggInfo->nSortingColumn>0) ){
-    if( pAggInfo->nColumn==0 ){
-      pAggInfo->nSortingColumn = pSelect->pGroupBy->nExpr;
-    }else{
-      pAggInfo->nSortingColumn =
-        pAggInfo->aCol[pAggInfo->nColumn-1].iSorterColumn+1;
+    int mx = pSelect->pGroupBy->nExpr - 1;
+    int j, k;
+    for(j=0; j<pAggInfo->nColumn; j++){
+      k = pAggInfo->aCol[j].iSorterColumn;
+      if( k>mx ) mx = k;
     }
+    pAggInfo->nSortingColumn = mx+1;
   }
   analyzeAggFuncArgs(pAggInfo, pNC);
 #if TREETRACE_ENABLED
@@ -6485,12 +6486,13 @@ static int aggregateIdxEprRefToColCallback(Walker *pWalker, Expr *pExpr){
   if( pExpr->op==TK_AGG_FUNCTION ) return WRC_Continue;
   if( pExpr->op==TK_IF_NULL_ROW ) return WRC_Continue;
   pAggInfo = pExpr->pAggInfo;
-  if( pExpr->iAgg>=pAggInfo->nColumn ) return WRC_Continue;
+  if( NEVER(pExpr->iAgg>=pAggInfo->nColumn) ) return WRC_Continue;
   assert( pExpr->iAgg>=0 );
   pCol = &pAggInfo->aCol[pExpr->iAgg];
   pExpr->op = TK_AGG_COLUMN;
   pExpr->iTable = pCol->iTable;
   pExpr->iColumn = pCol->iColumn;
+  ExprClearProperty(pExpr, EP_Skip|EP_Collate);
   return WRC_Prune;
 }
 
@@ -6871,6 +6873,7 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
   if( (p->selFlags & SF_Aggregate)==0 ) return 0;   /* This is an aggregate */
   if( p->pEList->nExpr!=1 ) return 0;               /* Single result column */
   if( p->pWhere ) return 0;
+  if( p->pHaving ) return 0;
   if( p->pGroupBy ) return 0;
   if( p->pOrderBy ) return 0;
   pExpr = p->pEList->a[0].pExpr;
@@ -6890,7 +6893,8 @@ static int countOfViewOptimization(Parse *pParse, Select *p){
     if( pSub->pWhere ) return 0;                      /* No WHERE clause */
     if( pSub->pLimit ) return 0;                      /* No LIMIT clause */
     if( pSub->selFlags & SF_Aggregate ) return 0;     /* Not an aggregate */
-    pSub = pSub->pPrior;                              /* Repeat over compound */
+    assert( pSub->pHaving==0 );  /* Due to the previous */
+   pSub = pSub->pPrior;                              /* Repeat over compound */
   }while( pSub );
 
   /* If we reach this point then it is OK to perform the transformation */

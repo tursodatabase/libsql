@@ -1,0 +1,166 @@
+# 2023 Feb 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+# TESTRUNNER: slow
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+ifcapable !fts5 { finish_test ; return }
+set ::testprefix fts5secure3
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(col);
+  INSERT INTO ft VALUES('data for the table');
+  INSERT INTO ft VALUES('more of the same');
+  INSERT INTO ft VALUES('and extra data');
+
+  INSERT INTO ft(ft, rank) VALUES('secure-delete', 1);
+}
+
+do_execsql_test 1.1 {
+  BEGIN;
+    INSERT INTO ft(rowid, col) VALUES(0, 'the next data');
+    DELETE FROM ft WHERE rowid=1;
+    DELETE FROM ft WHERE rowid=2;
+    INSERT INTO ft(rowid, col) VALUES(6, 'with some more of the same data');
+  COMMIT;
+}
+
+do_execsql_test 1.2 {
+  INSERT INTO ft(ft) VALUES('integrity-check');
+}
+
+#-------------------------------------------------------------------------
+
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 64);
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  BEGIN;
+    INSERT INTO t1 VALUES('the start');
+}
+do_test 2.1 {
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t1 VALUES('the ' || hex(randomblob(3))) }
+  }
+  execsql  {
+      INSERT INTO t1 VALUES('the end');
+    COMMIT;
+  }
+} {}
+
+do_execsql_test 2.2 {
+  DELETE FROM t1 WHERE rowid BETWEEN 2 AND 1000;
+}
+
+do_execsql_test 2.3 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+do_execsql_test 2.6 {
+  INSERT INTO t1(rowid, x) VALUES(500, 'middle');
+  INSERT INTO t1(rowid, x) VALUES(501, 'value');
+  SELECT * FROM t1('the middle');
+}
+
+do_execsql_test 2.7 {
+  INSERT INTO t1(t1) VALUES('optimize');
+}
+
+do_execsql_test 2.8 {
+  SELECT count(*) FROM t1_data
+} 4
+
+#execsql_pp { SELECT id, quote(block), fts5_decode(id, block) FROM t1_data; }
+
+#-------------------------------------------------------------------------
+# Tests with large/small rowid values.
+#
+
+reset_db
+
+expr srand(0)
+
+set vocab {
+  Popper Poppins Popsicle Porfirio Porrima Porsche
+  Porter Portia Portland Portsmouth Portugal Portuguese
+  Poseidon Post PostgreSQL Potemkin Potomac Potsdam
+  Pottawatomie Potter Potts Pound Poussin Powell
+  PowerPC PowerPoint Powers Powhatan Poznan Prada
+  Prado Praetorian Prague Praia Prakrit Pratchett
+  Pratt Pravda Praxiteles Preakness Precambrian Preminger
+  Premyslid Prensa Prentice Pres Presbyterian Presbyterianism
+}
+proc newdoc {} {
+  for {set i 0} {$i<8} {incr i} {
+    lappend ret [lindex $::vocab [expr int(abs(rand()) * [llength $::vocab])]]
+  }
+  set ret
+}
+db func newdoc newdoc
+
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE fff USING fts5(y);
+  INSERT INTO fff(fff, rank) VALUES('pgsz', 64);
+
+  WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
+  INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
+
+  WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
+  INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
+
+  WITH s(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM s WHERE x<1000 )
+  INSERT INTO fff(rowid, y) SELECT random() , newdoc() FROM s;
+
+  INSERT INTO fff(fff, rank) VALUES('secure-delete', 1);
+}
+
+proc lshuffle {in} {
+  set out [list]
+  while {[llength $in]>0} {
+    set idx [expr int(abs(rand()) * [llength $in])]
+    lappend out [lindex $in $idx]
+    set in [lreplace $in $idx $idx]
+  }
+  set out
+}
+
+#dump fff
+
+set iTest 1
+foreach ii [lshuffle [db eval {SELECT rowid FROM fff}]] {
+  #if {$iTest==1} { dump fff }
+  #if {$iTest==1} { breakpoint }
+  do_execsql_test 3.1.$iTest.$ii {
+    DELETE FROM fff WHERE rowid=$ii;
+  }
+  #if {$iTest==1} { dump fff }
+  if {($iTest % 20)==0} {
+    do_execsql_test 3.1.$iTest.$ii.ic {
+      INSERT INTO fff(fff) VALUES('integrity-check');
+    }
+  }
+  #if {$iTest==1} { break }
+  incr iTest
+}
+
+#execsql_pp { SELECT rowid FROM fff('post') ORDER BY rowid ASC }
+#breakpoint
+#execsql_pp { 
+#  SELECT rowid FROM fff('post') ORDER BY rowid DESC 
+#}
+#
+#dump fff
+
+
+finish_test
+

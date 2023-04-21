@@ -114,13 +114,15 @@ static int tabIsReadOnly(Parse *pParse, Table *pTab){
 ** If pTab is writable but other errors have occurred -> return 1.
 ** If pTab is writable and no prior errors -> return 0;
 */
-int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
+int sqlite3IsReadOnly(Parse *pParse, Table *pTab, Trigger *pTrigger){
   if( tabIsReadOnly(pParse, pTab) ){
     sqlite3ErrorMsg(pParse, "table %s may not be modified", pTab->zName);
     return 1;
   }
 #ifndef SQLITE_OMIT_VIEW
-  if( !viewOk && IsView(pTab) ){
+  if( IsView(pTab) 
+   && (pTrigger==0 || (pTrigger->bReturning && pTrigger->pNext==0))
+  ){
     sqlite3ErrorMsg(pParse,"cannot modify %s because it is a view",pTab->zName);
     return 1;
   }
@@ -374,7 +376,7 @@ void sqlite3DeleteFrom(
     goto delete_from_cleanup;
   }
 
-  if( sqlite3IsReadOnly(pParse, pTab, (pTrigger?1:0)) ){
+  if( sqlite3IsReadOnly(pParse, pTab, pTrigger) ){
     goto delete_from_cleanup;
   }
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);

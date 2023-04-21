@@ -12,6 +12,7 @@ static const char zHelp[] =
   "  --checkpoint        Run PRAGMA wal_checkpoint after each test case\n"
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
   "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
+  "  --fullfsync         Enable fullfsync=TRUE\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
   "  --journal M         Set the journal_mode to M\n"
@@ -2203,6 +2204,7 @@ int main(int argc, char **argv){
   int doAutovac = 0;            /* True for --autovacuum */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
   int doExclusive = 0;          /* True for --exclusive */
+  int doFullFSync = 0;          /* True for --fullfsync */
   int nHeap = 0, mnHeap = 0;    /* Heap size from --heap */
   int doIncrvac = 0;            /* True for --incrvacuum */
   const char *zJMode = 0;       /* Journal mode */
@@ -2267,6 +2269,8 @@ int main(int argc, char **argv){
         cacheSize = integerValue(argv[++i]);
       }else if( strcmp(z,"exclusive")==0 ){
         doExclusive = 1;
+      }else if( strcmp(z,"fullfsync")==0 ){
+        doFullFSync = 1;
       }else if( strcmp(z,"checkpoint")==0 ){
         g.doCheckpoint = 1;
       }else if( strcmp(z,"explain")==0 ){
@@ -2511,7 +2515,11 @@ int main(int argc, char **argv){
   if( cacheSize ){
     speedtest1_exec("PRAGMA cache_size=%d", cacheSize);
   }
-  if( noSync ) speedtest1_exec("PRAGMA synchronous=OFF");
+  if( noSync ){
+    speedtest1_exec("PRAGMA synchronous=OFF");
+  }else if( doFullFSync ){
+    speedtest1_exec("PRAGMA fullfsync=ON");
+  }
   if( doExclusive ){
     speedtest1_exec("PRAGMA locking_mode=EXCLUSIVE");
   }

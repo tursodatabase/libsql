@@ -981,4 +981,22 @@ do_catchsql_test 32.0 {
   ALTER TABLE t1 RENAME TO x;
 } {1 {error in trigger r1: no tables specified}}
 
+# 2023-04-13 https://sqlite.org/forum/forumpost/ff3840145a
+#
+reset_db
+do_execsql_test 33.0 {
+  CREATE TABLE t1(a TEXT);
+  INSERT INTO t1(a) VALUES('abc'),('def'),(NULL);
+  CREATE TABLE t2(b TEXT);
+  CREATE TRIGGER r3 AFTER INSERT ON t1 BEGIN
+   UPDATE t2 SET (b,a)=(SELECT 1) FROM t1 JOIN t2 ON (SELECT * FROM (SELECT a));
+  END;
+}
+do_catchsql_test 33.1 {
+  ALTER TABLE t1 RENAME COLUMN a TO b;
+} {1 {error in trigger r3 after rename: no such column: a}}
+do_execsql_test 33.2 {
+  SELECT quote(a) FROM t1 ORDER BY +a;
+} {NULL 'abc' 'def'}
+
 finish_test

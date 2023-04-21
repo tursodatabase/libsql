@@ -1331,6 +1331,10 @@ int sqlite3_vtab_config(sqlite3 *db, int op, ...){
         p->pVTable->eVtabRisk = SQLITE_VTABRISK_High;
         break;
       }
+      case SQLITE_VTAB_USES_ALL_SCHEMAS: {
+        p->pVTable->bAllSchemas = 1;
+        break;
+      }
       default: {
         rc = SQLITE_MISUSE_BKPT;
         break;
