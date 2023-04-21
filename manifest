@@ -1,5 +1,5 @@
-C Increase\sCLI\stolerance\sof\sarifically\slow\smemory.
-D 2023-04-20T20:07:14.732
+C Change\sthe\sreturn\stype\sof\sthe\sts_read/write()\sfamily\sof\sfunctions\sfrom\sint\sto\sssize_t,\sper\sreport\sin\s[forum\spost\s947169d5e7](forum:947169d5e7).
+D 2023-04-21T15:37:33.313
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -682,7 +682,7 @@ F src/test_rtree.c 671f3fae50ff116ef2e32a3bf1fe21b5615b4b7b
 F src/test_schema.c f5d6067dfc2f2845c4dd56df63e66ee826fb23877855c785f75cc2ca83fd0c1b
 F src/test_sqllog.c 540feaea7280cd5f926168aee9deb1065ae136d0bbbe7361e2ef3541783e187a
 F src/test_superlock.c 4839644b9201da822f181c5bc406c0b2385f672e
-F src/test_syscall.c 1073306ba2e9bfc886771871a13d3de281ed3939
+F src/test_syscall.c 9fdb13b1df05e639808d44fcb8f6064aaded32b6565c00b215cfd05a060d1aca
 F src/test_tclsh.c 3ff5d188a72f00807425954ea3b493dfd3a4b890ecc6700ea83bad2fd1332ecf
 F src/test_tclvar.c 33ff42149494a39c5fbb0df3d25d6fafb2f668888e41c0688d07273dcb268dfc
 F src/test_thread.c 7ddcf0c8b79fa3c1d172f82f322302c963d923cdb503c6171f3c8081586d0b01
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 104ab105ac0e96c0fc61c6d69179bf984fcfe5e0efb2c82f3742456c1b5fe5d1
-R aa97778045cfce91a857103f91418d38
-U larrybr
-Z aaec46b2f4c843c0506897156fa41de9
+P 13f2638622871db9b91db547dcfd38f61c03e7696e4df5144adefcd86140aeba
+R e9a0afe7218502491faa04d7c99873d5
+U stephan
+Z 5f0988cb68325b7fd3f7bb2bc00ecc24
 # Remove this line to create a well-formed Fossil manifest.
