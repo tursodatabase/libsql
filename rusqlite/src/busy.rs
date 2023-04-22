@@ -1,4 +1,4 @@
-///! Busy handler (when the database is locked)
+//! Busy handler (when the database is locked)
 use std::convert::TryInto;
 use std::mem;
 use std::os::raw::{c_int, c_void};
