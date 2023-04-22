@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\s[1489e7f53a4863b3].
-D 2023-04-22T12:11:31.666
+C Fix\sa\sincorrect\sassert()\sstatement\sin\sthe\spre-update\shook\slogic.\s\sNo\schanges\nto\sproduction\scode.\s\sFix\sfor\sthe\sproblem\sreported\sby\n[forum:/info/19b217bfe709a072|forum\spost\s19b217bfe709a072].
+D 2023-04-22T12:37:41.683
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -706,7 +706,7 @@ F src/vdbe.c a6c52ba65e8ceb574fe0eda62af84e6c50c176ffc5f310c613425f7ab2b1484b
 F src/vdbe.h 637ae853b7d42ae3951034cc63ab7c8af837861f79504cdb5399552fcd89a884
 F src/vdbeInt.h a4147a4ddf613cb1bcb555ace9e9e74a9c099d65facd88155f191b1fb4d74cfb
 F src/vdbeapi.c 1a95162e26d5eda3b7b46fbe4fcbc33eb7f801529d66fc2e14c52094a5523339
-F src/vdbeaux.c 24637a004cda26aca1970a78ebfb9f7895aec820525bdb784a76933bb4af83f7
+F src/vdbeaux.c 958bb807a3756c34fc6e434065e134fa3ae5f7e46da615224e216b33d5dd4c8f
 F src/vdbeblob.c 5e61ce31aca17db8fb60395407457a8c1c7fb471dde405e0cd675974611dcfcd
 F src/vdbemem.c 1d9a0f37b0097fbb53f0d7ba081f7181b83cee2c6f46364706ea0c3896bd8ec0
 F src/vdbesort.c 43756031ca7430f7aec3ef904824a7883c4ede783e51f280d99b9b65c0796e35
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3ac1984039a50445ff65db97468a5313d7f09db7b604755e444b77ac9346ea76
-R a7018966659aa9504cb3419068cca920
+P da907dbc60b4f754845ae0bedc05cbda4cbfed9f468be3ffdc18860c763d9324
+R 36e71f1e432856694c39827bc9e4c8a4
 U drh
-Z 03ef28817b511e683f2c329e4cadf0e1
+Z 656f30b58cde31ad921d5c9abfca4d0e
 # Remove this line to create a well-formed Fossil manifest.

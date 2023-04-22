@@ -5354,6 +5354,9 @@ void sqlite3VdbePreUpdateHook(
   PreUpdate preupdate;
   const char *zTbl = pTab->zName;
   static const u8 fakeSortOrder = 0;
+#ifdef SQLITE_DEBUG
+  int nRealCol = (pTab->tabFlags & TF_HasVirtual) ? pTab->nNVCol : pTab->nCol;
+#endif
 
   assert( db->pPreUpdate==0 );
   memset(&preupdate, 0, sizeof(PreUpdate));
@@ -5370,8 +5373,8 @@ void sqlite3VdbePreUpdateHook(
 
   assert( pCsr!=0 );
   assert( pCsr->eCurType==CURTYPE_BTREE );
-  assert( pCsr->nField==pTab->nCol 
-       || (pCsr->nField==pTab->nCol+1 && op==SQLITE_DELETE && iReg==-1)
+  assert( pCsr->nField==nRealCol 
+       || (pCsr->nField==nRealCol+1 && op==SQLITE_DELETE && iReg==-1)
   );
 
   preupdate.v = v;
