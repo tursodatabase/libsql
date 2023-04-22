@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\sassert()\sstatement\sin\sbtree.c\sas\sfound\sby\n[forum:/info/d03345d572713fe6|forum\spost\sd03345d572713fe6].
-D 2023-04-22T12:47:16.752
+C Add\sthe\s--unsafe-testing\scommand-line\soption\sto\sthe\sCLI.\s\sWithout\sthis\soption,\nfeatures\sof\sthe\sCLI\sthat\sare\sintended\sfor\stesting\sand\sthat\smight\sresult\sin\nincorrect\sanswers,\sassertion\sfaults,\sand/or\scorrupt\sdatabase\sfiles\sif\smisused\nare\sdisabled.
+D 2023-04-22T17:41:53.196
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c f879cef11c462a2c37a8c906932781e384c3bb32042c355a704a043029c90d27
-F src/shell.c.in dffb9fd88cd10b64267077edb98cb6792a014dc89dd34891b8f3a45906b6a16d
+F src/shell.c.in f85b07dc6d75d17217f6a842fa9c43c6ef6db6551b51be76055b814fe7a24376
 F src/sqlite.h.in 4fff9c6cc5d4cbba9532a668112efb6dc469c425e1a2196664d7c07d508363ef
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2059,8 +2059,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53a61f7423a7f057568a1d8a1e63be01a2328997850dc32e3d8c6d51f1c5ab0b
-R 5677d2da177f240210053dffbed7c16a
+P cd485b302c54aef066d751a153df34eea0cd23e54a414e291f636ad9929fe78a b3d9ac052d5c2dd1afeeeb5c9cfac9dd91a1b8d6a74a2ef10aa2037ca505abce
+R be58d94e52d56c14dee82adb68874a9b
+T +closed b3d9ac052d5c2dd1afeeeb5c9cfac9dd91a1b8d6a74a2ef10aa2037ca505abce
 U drh
-Z c7873e11c59de450a8f61d4742b32434
+Z 292d5d1b263a4abd453b30cd2562934c
 # Remove this line to create a well-formed Fossil manifest.
