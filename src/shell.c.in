@@ -3840,6 +3840,7 @@ static void exec_prepared_stmt_columnar(
     }
     if( wx<0 ) wx = -wx;
     uz = (const unsigned char*)sqlite3_column_name(pStmt,i);
+    if( uz==0 ) uz = "";
     azData[i] = translateForDisplayAndDup(uz, &zNotUsed, wx, bw);
   }
   do{
