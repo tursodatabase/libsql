@@ -36,7 +36,11 @@ fn main() {
             .expect("Could not copy bindings to output directory");
         return;
     }
-    if cfg!(all(
+
+    println!("cargo:rerun-if-env-changed=LIBSQLITE3_SYS_USE_PKG_CONFIG");
+    if env::var_os("LIBSQLITE3_SYS_USE_PKG_CONFIG").map_or(false, |s| s != "0") {
+        build_linked::main(&out_dir, &out_path);
+    } else if cfg!(all(
         feature = "sqlcipher",
         not(feature = "bundled-sqlcipher")
     )) {
