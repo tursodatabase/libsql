@@ -765,7 +765,7 @@ static void shell_out_of_memory(void){
 /* Check a pointer to see if it is NULL.  If it is NULL, exit with an
 ** out-of-memory error.
 */
-static void shell_check_oom(void *p){
+static void shell_check_oom(const void *p){
   if( p==0 ) shell_out_of_memory();
 }
 
@@ -3810,7 +3810,7 @@ static void exec_prepared_stmt_columnar(
   azData = sqlite3_malloc64( nAlloc*sizeof(char*) );
   shell_check_oom(azData);
   azNextLine = sqlite3_malloc64( nColumn*sizeof(char*) );
-  shell_check_oom((void*)azNextLine);
+  shell_check_oom(azNextLine);
   memset((void*)azNextLine, 0, nColumn*sizeof(char*) );
   if( p->cmOpts.bQuote ){
     azQuoted = sqlite3_malloc64( nColumn*sizeof(char*) );
@@ -6242,7 +6242,7 @@ static int shell_dbinfo_command(ShellState *p, int nArg, char **azArg){
    && sqlite3_column_bytes(pStmt,0)>100
   ){
     const u8 *pb = sqlite3_column_blob(pStmt,0);
-    shell_check_oom((void*)pb);
+    shell_check_oom(pb);
     memcpy(aHdr, pb, 100);
     sqlite3_finalize(pStmt);
   }else{
