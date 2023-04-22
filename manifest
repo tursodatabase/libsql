@@ -1,5 +1,5 @@
-C Early\sout\sfrom\ssqlite3Prepare()\sfollowing\san\sOOM\sto\savoid\spossible\nproblems\sfurther\salong\sin\sthe\sparse.\s\sFix\sfor\sthe\sNULL\spointer\sdereference\nreported\sby\s[forum:/info/2e5131839365682a|forum\spost\s2e5131839365682a].
-D 2023-04-22T11:29:36.514
+C Also\sfix\sno-length\sstring\sintolerance\sfor\sCLI\sjson\smode.
+D 2023-04-22T11:33:27.966
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -633,7 +633,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c f879cef11c462a2c37a8c906932781e384c3bb32042c355a704a043029c90d27
-F src/shell.c.in b39dd30addf6ac8d56087ea920aa303e257b0fb8a3f800110a4d5b4be1a8d12f
+F src/shell.c.in c9c032ea6a8f75fc844b1eac0a5b97baab77442796953de7e61e7931a9986245
 F src/sqlite.h.in 4fff9c6cc5d4cbba9532a668112efb6dc469c425e1a2196664d7c07d508363ef
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1489e7f53a4863b316af6dee10d9c66491d1bed6cf52a3538ac118c03b1d7ef9
-R 462d4d9e4d63b37d965c734364dc27f6
-U drh
-Z 62d7b2c15834aaaa388f530f49fabdda
+P f35ce7c122017009496b777f33e641d0be086abee6ea8e25aab4c3e0fb45731a
+R 5863e993e7a680782da9f66708ce9aeb
+U larrybr
+Z 96dbf988c0ae45ea8aa1e82d19e17cea
 # Remove this line to create a well-formed Fossil manifest.
