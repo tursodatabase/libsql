@@ -1874,7 +1874,7 @@ static int loadStat4(sqlite3 *db, const char *zDb){
    && IsOrdinaryTable(pStat4)
   ){
     rc = loadStatTbl(db,
-      "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
+      "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx COLLATE nocase", 
       "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4",
       zDb
     );
