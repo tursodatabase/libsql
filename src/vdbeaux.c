@@ -5355,7 +5355,14 @@ void sqlite3VdbePreUpdateHook(
   const char *zTbl = pTab->zName;
   static const u8 fakeSortOrder = 0;
 #ifdef SQLITE_DEBUG
-  int nRealCol = (pTab->tabFlags & TF_HasVirtual) ? pTab->nNVCol : pTab->nCol;
+  int nRealCol;
+  if( pTab->tabFlags & TF_WithoutRowid ){
+    nRealCol = sqlite3PrimaryKeyIndex(pTab)->nColumn;
+  }else if( pTab->tabFlags & TF_HasVirtual ){
+    nRealCol = pTab->nNVCol;
+  }else{
+    nRealCol = pTab->nCol;
+  }
 #endif
 
   assert( db->pPreUpdate==0 );
