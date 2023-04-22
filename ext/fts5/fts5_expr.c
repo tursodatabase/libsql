@@ -407,7 +407,7 @@ int sqlite3Fts5ExprAnd(Fts5Expr **pp1, Fts5Expr *p2){
   Fts5Parse sParse;
   memset(&sParse, 0, sizeof(sParse));
 
-  if( *pp1 ){
+  if( *pp1 && p2 ){
     Fts5Expr *p1 = *pp1;
     int nPhrase = p1->nPhrase + p2->nPhrase;
 
@@ -432,7 +432,7 @@ int sqlite3Fts5ExprAnd(Fts5Expr **pp1, Fts5Expr *p2){
     }
     sqlite3_free(p2->apExprPhrase);
     sqlite3_free(p2);
-  }else{
+  }else if( p2 ){
     *pp1 = p2;
   }
 
