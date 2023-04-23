@@ -4776,13 +4776,13 @@ static const char *(azHelp[]) = {
   "        input text.",
 #endif
 #ifndef SQLITE_OMIT_TEST_CONTROL
-  ".imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
+  ",imposter INDEX TABLE    Create imposter table TABLE on index INDEX",
 #endif
   ".indexes ?TABLE?         Show names of indexes",
   "                           If TABLE is specified, only show indexes for",
   "                           tables matching TABLE using the LIKE operator.",
 #ifdef SQLITE_ENABLE_IOTRACE
-  ".iotrace FILE            Enable I/O diagnostic logging to FILE",
+  ",iotrace FILE            Enable I/O diagnostic logging to FILE",
 #endif
   ".limit ?LIMIT? ?VAL?     Display or change the value of an SQLITE_LIMIT",
   ".lint OPTIONS            Report potential schema issues.",
@@ -4891,7 +4891,7 @@ static const char *(azHelp[]) = {
   "   Options:",
   "      --indent             Try to pretty-print the schema",
   "      --nosys              Omit objects whose names start with \"sqlite_\"",
-  ".selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
+  ",selftest ?OPTIONS?      Run tests defined in the SELFTEST table",
   "    Options:",
   "       --init               Create a new SELFTEST table",
   "       -v                   Verbose output",
@@ -4933,9 +4933,9 @@ static const char *(azHelp[]) = {
 #endif
   ".tables ?TABLE?          List names of tables matching LIKE pattern TABLE",
 #ifndef SQLITE_SHELL_FIDDLE
-  ".testcase NAME           Begin redirecting output to 'testcase-out.txt'",
+  ",testcase NAME           Begin redirecting output to 'testcase-out.txt'",
 #endif
-  ".testctrl CMD ...        Run various sqlite3_test_control() operations",
+  ",testctrl CMD ...        Run various sqlite3_test_control() operations",
   "                           Run \".testctrl\" with no arguments for details",
   ".timeout MS              Try opening locked tables for MS milliseconds",
   ".timer on|off            Turn SQL timer on or off",
@@ -4987,16 +4987,41 @@ static int showHelp(FILE *out, const char *zPattern){
    || cli_strcmp(zPattern,"-all")==0
    || cli_strcmp(zPattern,"--all")==0
   ){
-    /* Show all commands, but only one line per command */
-    if( zPattern==0 ) zPattern = "";
+    enum HelpWanted { HW_NoCull = 0, HW_SummaryOnly = 1, HW_Undoc = 2 };
+    enum HelpHave { HH_Undoc = 2, HH_Summary = 1, HH_More = 0 };
+    /* Show all or most commands
+    ** *zPattern==0   => summary of documented commands only
+    ** *zPattern=='0' => whole help for undocumented commands
+    ** Otherwise      => whole help for documented commands
+    */
+    enum HelpWanted hw = HW_SummaryOnly;
+    if( zPattern!=0 ){
+      hw = (*zPattern=='0')? HW_NoCull|HW_Undoc : HW_NoCull;
+    }
+    enum HelpHave hh = HH_More;
     for(i=0; i<ArraySize(azHelp); i++){
-      if( azHelp[i][0]=='.' || zPattern[0] ){
-        utf8_printf(out, "%s\n", azHelp[i]);
-        n++;
+      switch( azHelp[i][0] ){
+      case ',':
+        hh = HH_Summary|HH_Undoc;
+        break;
+      case '.':
+        hh = HH_Summary;
+        break;
+      default:
+        hh &= ~HH_Summary;
+        break;
+      }
+      if( ((hw^hh)&HH_Undoc)==0 ){
+        if( (hh&HH_Summary)!=0 ){
+          utf8_printf(out, ".%s\n", azHelp[i]+1);
+          ++n;
+        }else if( (hw&HW_SummaryOnly)==0 ){
+          utf8_printf(out, "%s\n", azHelp[i]);
+        }
       }
     }
   }else{
-    /* Look for commands that for which zPattern is an exact prefix */
+    /* Seek documented commands for which zPattern is an exact prefix */
     zPat = sqlite3_mprintf(".%s*", zPattern);
     shell_check_oom(zPat);
     for(i=0; i<ArraySize(azHelp); i++){
@@ -5009,24 +5034,28 @@ static int showHelp(FILE *out, const char *zPattern){
     sqlite3_free(zPat);
     if( n ){
       if( n==1 ){
-        /* when zPattern is a prefix of exactly one command, then include the
-        ** details of that command, which should begin at offset j */
-        while( j<ArraySize(azHelp)-1 && azHelp[j][0]!='.' ){
+        /* when zPattern is a prefix of exactly one command, then include
+        ** the details of that command, which should begin at offset j */
+        while( j<ArraySize(azHelp)-1 && azHelp[j][0]==' ' ){
           utf8_printf(out, "%s\n", azHelp[j]);
           j++;
         }
       }
       return n;
     }
-    /* Look for commands that contain zPattern anywhere.  Show the complete
-    ** text of all commands that match. */
+    /* Look for documented commands that contain zPattern anywhere.
+    ** Show complete text of all documented commands that match. */
     zPat = sqlite3_mprintf("%%%s%%", zPattern);
     shell_check_oom(zPat);
     for(i=0; i<ArraySize(azHelp); i++){
+      if( azHelp[i][0]==',' ){
+        while( i<ArraySize(azHelp)-1 && azHelp[i+1][0]==' ' ) ++i;
+        continue;
+      }
       if( azHelp[i][0]=='.' ) j = i;
       if( sqlite3_strlike(zPat, azHelp[i], 0)==0 ){
         utf8_printf(out, "%s\n", azHelp[j]);
-        while( j<ArraySize(azHelp)-1 && azHelp[j+1][0]!='.' ){
+        while( j<ArraySize(azHelp)-1 && azHelp[j+1][0]==' ' ){
           j++;
           utf8_printf(out, "%s\n", azHelp[j]);
         }
