@@ -804,7 +804,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       x = jsonParseValue(pParse, j);
       if( x<0 ){
         pParse->iDepth--;
-        if( x==(-2) && pParse->nNode==(u32)iThis+1 ) return j+1;
+        if( x==(-2) ) break;
         return -1;
       }
       if( pParse->oom ) return -1;
@@ -838,7 +838,7 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       x = jsonParseValue(pParse, j);
       pParse->iDepth--;
       if( x<0 ){
-        if( x==(-3) && pParse->nNode==(u32)iThis+1 ) return j+1;
+        if( x==(-3) ) break;
         return -1;
       }
       j = x;

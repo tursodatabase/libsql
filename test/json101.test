@@ -308,12 +308,24 @@ do_execsql_test json-5.8 {
 
 do_execsql_test json-6.1 {
   SELECT json_valid('{"a":55,"b":72,}');
+} {1}
+do_execsql_test json-6.1b {
+  SELECT json_valid('{"a":55,"b":72 , }');
+} {1}
+do_execsql_test json-6.1c {
+  SELECT json_valid('{"a":55,"b":72,,}');
 } {0}
 do_execsql_test json-6.2 {
   SELECT json_valid('{"a":55,"b":72}');
 } {1}
 do_execsql_test json-6.3 {
   SELECT json_valid('["a",55,"b",72,]');
+} {1}
+do_execsql_test json-6.3b {
+  SELECT json_valid('["a",55,"b",72 , ]');
+} {1}
+do_execsql_test json-6.3c {
+  SELECT json_valid('["a",55,"b",72,,]');
 } {0}
 do_execsql_test json-6.4 {
   SELECT json_valid('["a",55,"b",72]');
