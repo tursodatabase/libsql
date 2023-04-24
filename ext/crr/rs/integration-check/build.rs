@@ -19,8 +19,8 @@ fn main() {
         .expect("failed to make loadable extension");
 
     cc::Build::new()
-        .file("../../../../sqlite3.c")
-        .include("../../../../")
+        .file("../../src/sqlite/sqlite3.c")
+        .include("../../src/sqlite/")
         .flag("-DSQLITE_CORE")
         .compile("sqlite3");
 }

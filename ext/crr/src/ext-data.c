@@ -24,18 +24,10 @@ crsql_ExtData *crsql_newExtData(sqlite3 *db) {
     sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
     return 0;
   }
-  pExtData->pTrackPeersStmt = 0;
-  rc = sqlite3_prepare_v3(
-      db,
-      "INSERT INTO crsql_tracked_peers (\"site_id\", \"version\", "
-      "\"tag\", \"event\") VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET "
-      "\"version\" = "
-      "MAX(\"version\", EXCLUDED.\"version\")",
-      -1, SQLITE_PREPARE_PERSISTENT, &(pExtData->pTrackPeersStmt), 0);
+
   if (rc != SQLITE_OK) {
     sqlite3_finalize(pExtData->pPragmaDataVersionStmt);
     sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
-    sqlite3_finalize(pExtData->pTrackPeersStmt);
     return 0;
   }
 
@@ -61,7 +53,6 @@ void crsql_freeExtData(crsql_ExtData *pExtData) {
   sqlite3_finalize(pExtData->pDbVersionStmt);
   sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
   sqlite3_finalize(pExtData->pPragmaDataVersionStmt);
-  sqlite3_finalize(pExtData->pTrackPeersStmt);
   crsql_freeAllTableInfos(pExtData->zpTableInfos, pExtData->tableInfosLen);
   sqlite3_free(pExtData);
 }
@@ -75,11 +66,9 @@ void crsql_finalize(crsql_ExtData *pExtData) {
   sqlite3_finalize(pExtData->pDbVersionStmt);
   sqlite3_finalize(pExtData->pPragmaSchemaVersionStmt);
   sqlite3_finalize(pExtData->pPragmaDataVersionStmt);
-  sqlite3_finalize(pExtData->pTrackPeersStmt);
   pExtData->pDbVersionStmt = 0;
   pExtData->pPragmaSchemaVersionStmt = 0;
   pExtData->pPragmaDataVersionStmt = 0;
-  pExtData->pTrackPeersStmt = 0;
 }
 
 #define DB_VERSION_SCHEMA_VERSION 0

@@ -49,8 +49,7 @@ ext_files=src/crsqlite.c \
 	src/changes-vtab-common.c \
 	src/changes-vtab-write.c \
 	src/ext-data.c \
-	src/get-table.c \
-	src/seen-peers.c
+	src/get-table.c
 ext_headers=src/crsqlite.h \
 	src/util.h \
 	src/tableinfo.h \
@@ -59,8 +58,7 @@ ext_headers=src/crsqlite.h \
 	src/changes-vtab-read.h \
 	src/changes-vtab-common.h \
 	src/changes-vtab-write.h \
-	src/ext-data.h \
-	src/seen-peers.h
+	src/ext-data.h
 
 $(prefix):
 	mkdir -p $(prefix)
@@ -70,6 +68,7 @@ $(dbg_prefix):
 clean:
 	rm -rf $(prefix)
 	rm -rf $(dbg_prefix)
+	cd rs/bundle && cargo clean
 
 
 FORMAT_FILES=$(ext_files) $(ext_headers) ./src/core_init.c
