@@ -1,7 +1,7 @@
 use anyhow::Result;
 use fallible_iterator::FallibleIterator;
 use sqlite3_parser::{
-    ast::{Cmd, Stmt},
+    ast::{Cmd, PragmaBody, QualifiedName, Stmt},
     lexer::sql::{Parser, ParserError},
 };
 
@@ -56,9 +56,20 @@ impl StmtKind {
                 | Stmt::CreateView { temporary: false, .. }
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
-            Cmd::Stmt(Stmt::Pragma { .. }) => Some(Self::Other),
+            Cmd::Stmt(Stmt::Pragma(name, body)) if is_pragma_allowed(&name, body.as_ref()) => Some(Self::Write),
             _ => None,
         }
+    }
+}
+
+fn is_pragma_allowed(name: &QualifiedName, _body: Option<&PragmaBody>) -> bool {
+    match name {
+        QualifiedName {
+            db_name: None,
+            name,
+            alias: None,
+        } if name.0 == "writable_schema" || name.0 == "foreign_keys" => true,
+        _ => false,
     }
 }
 
