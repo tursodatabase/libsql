@@ -38,6 +38,40 @@ fn execute(stmt: &mut Statement) -> Result<Vec<Vec<String>>> {
     Ok(rows.map(|r| r.unwrap()).collect())
 }
 
+struct StrStatements {
+    value: String,
+}
+
+impl Iterator for StrStatements {
+    type Item = String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut embedded = false;
+        let mut pos = 0;
+        for (index, char) in self.value.trim().chars().enumerate() {
+            if char == '\'' {
+                embedded = !embedded;
+                continue;
+            }
+            if embedded || char != ';' {
+                continue;
+            }
+            let str_statement = self.value[pos..index+1].to_string();
+            if str_statement.starts_with(';') || str_statement.is_empty() {
+                pos = index+1;
+                continue;
+            }
+            self.value = self.value[index+1..].to_string();
+            return Some(str_statement.to_string())
+        }
+        None
+    }
+}
+
+fn get_str_statements(str: String) -> StrStatements {
+    StrStatements { value: str}
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
@@ -75,31 +109,33 @@ fn main() -> Result<()> {
                     continue;
                 };
                 rl.add_history_entry(&line).ok();
-                let mut stmt = match connection.prepare(&line) {
-                    Ok(stmt) => stmt,
-                    Err(e) => {
-                        println!("Error: {e}");
+                for str_statement in get_str_statements(line) {
+                    let mut stmt = match connection.prepare(&str_statement) {
+                        Ok(stmt) => stmt,
+                        Err(e) => {
+                            println!("Error: {e}");
+                            continue;
+                        }
+                    };
+                    let rows = match execute(&mut stmt) {
+                        Ok(rows) => rows,
+                        Err(e) => {
+                            println!("Error: {e}");
+                            continue;
+                        }
+                    };
+                    if rows.is_empty() {
                         continue;
                     }
-                };
-                let rows = match execute(&mut stmt) {
-                    Ok(rows) => rows,
-                    Err(e) => {
-                        println!("Error: {e}");
-                        continue;
+                    let mut builder = tabled::builder::Builder::new();
+                    builder.set_columns(stmt.column_names());
+                    for row in rows {
+                        builder.add_record(row);
                     }
-                };
-                if rows.is_empty() {
-                    continue;
+                    let mut table = builder.build();
+                    table.with(tabled::Style::psql());
+                    println!("{table}")
                 }
-                let mut builder = tabled::builder::Builder::new();
-                builder.set_columns(stmt.column_names());
-                for row in rows {
-                    builder.add_record(row);
-                }
-                let mut table = builder.build();
-                table.with(tabled::Style::psql());
-                println!("{table}")
             }
             Err(ReadlineError::Interrupted) => {
                 leftovers = String::new();
