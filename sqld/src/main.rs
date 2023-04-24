@@ -1,9 +1,16 @@
-use std::{env, fs, net::SocketAddr, path::PathBuf, time::Duration};
+use std::{
+    env,
+    fs::{self, OpenOptions},
+    io::{stdout, Write},
+    net::SocketAddr,
+    path::{Path, PathBuf},
+    time::Duration,
+};
 
 use anyhow::{bail, Context as _, Result};
 use clap::Parser;
 use mimalloc::MiMalloc;
-use sqld::Config;
+use sqld::{database::dump::exporter::export_dump, Config};
 use tracing_subscriber::filter::LevelFilter;
 
 #[global_allocator]
@@ -123,6 +130,18 @@ struct Cli {
     /// defaults to 200MB.
     #[clap(long, env = "SQLD_MAX_LOG_SIZE", default_value = "200")]
     max_log_size: u64,
+
+    #[clap(subcommand)]
+    utils: Option<UtilsSubcommands>,
+}
+
+#[derive(clap::Subcommand, Debug)]
+enum UtilsSubcommands {
+    Dump {
+        #[clap(long)]
+        /// Path at which to write the dump
+        path: Option<PathBuf>,
+    },
 }
 
 impl Cli {
@@ -162,7 +181,7 @@ impl Cli {
         };
         eprintln!("\t- database path: {}", self.db_path.display());
         let extensions_str = self.extensions_path.clone().map_or("<disabled>".to_string(), |x| x.display().to_string());
-        eprintln!("\t- extensions path: {}", extensions_str);
+        eprintln!("\t- extensions path: {extensions_str}");
         eprintln!("\t- listening for HTTP requests on: {}", self.http_listen_addr);
         if let Some(ref addr) = self.pg_listen_addr {
             eprintln!("\t- listening for PostgreSQL wire on: {addr}");
@@ -215,6 +234,25 @@ fn config_from_args(args: Cli) -> Result<Config> {
     })
 }
 
+fn perform_dump(dump_path: Option<&Path>, db_path: &Path) -> anyhow::Result<()> {
+    let out: Box<dyn Write> = match dump_path {
+        Some(path) => {
+            let f = OpenOptions::new()
+                .create_new(true)
+                .write(true)
+                .open(path)
+                .with_context(|| format!("file `{}` already exists", path.display()))?;
+            Box::new(f)
+        }
+        None => Box::new(stdout()),
+    };
+    let conn = rusqlite::Connection::open(db_path.join("data"))?;
+
+    export_dump(conn, out)?;
+
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
@@ -226,24 +264,38 @@ async fn main() -> Result<()> {
         )
         .init();
     let args = Cli::parse();
-    args.print_welcome_message();
 
-    #[cfg(feature = "mwal_backend")]
-    match (&args.backend, args.mwal_addr.is_some()) {
-        (sqld::Backend::Mwal, false) => {
-            anyhow::bail!("--mwal-addr parameter must be present with mwal backend")
+    match args.utils {
+        Some(UtilsSubcommands::Dump { path }) => {
+            if let Some(ref path) = path {
+                eprintln!(
+                    "Dumping database {} to {}",
+                    args.db_path.display(),
+                    path.display()
+                );
+            }
+            perform_dump(path.as_deref(), &args.db_path)
         }
-        (backend, true) if backend != &sqld::Backend::Mwal => {
-            anyhow::bail!(
-                "--mwal-addr parameter conflicts with backend {:?}",
-                args.backend
-            )
+        None => {
+            args.print_welcome_message();
+            #[cfg(feature = "mwal_backend")]
+            match (&args.backend, args.mwal_addr.is_some()) {
+                (sqld::Backend::Mwal, false) => {
+                    anyhow::bail!("--mwal-addr parameter must be present with mwal backend")
+                }
+                (backend, true) if backend != &sqld::Backend::Mwal => {
+                    anyhow::bail!(
+                        "--mwal-addr parameter conflicts with backend {:?}",
+                        args.backend
+                    )
+                }
+                _ => (),
+            }
+
+            let config = config_from_args(args)?;
+            sqld::run_server(config).await?;
+
+            Ok(())
         }
-        _ => (),
     }
-
-    let config = config_from_args(args)?;
-    sqld::run_server(config).await?;
-
-    Ok(())
 }

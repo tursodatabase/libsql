@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
-use database::dump_loader::DumpLoader;
+use database::dump::loader::DumpLoader;
 use database::factory::DbFactory;
 use database::libsql::LibSqlDb;
 use database::write_proxy::WriteProxyDbFactory;
@@ -30,7 +30,7 @@ use sha256::try_digest;
 pub use sqld_libsql_bindings as libsql;
 
 mod auth;
-mod database;
+pub mod database;
 mod error;
 mod hrana;
 mod http;
