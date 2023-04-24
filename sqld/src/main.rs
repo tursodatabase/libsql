@@ -162,7 +162,7 @@ impl Cli {
         };
         eprintln!("\t- database path: {}", self.db_path.display());
         let extensions_str = self.extensions_path.clone().map_or("<disabled>".to_string(), |x| x.display().to_string());
-        eprintln!("\t- extensions path: {}", extensions_str);
+        eprintln!("\t- extensions path: {extensions_str}");
         eprintln!("\t- listening for HTTP requests on: {}", self.http_listen_addr);
         if let Some(ref addr) = self.pg_listen_addr {
             eprintln!("\t- listening for PostgreSQL wire on: {addr}");

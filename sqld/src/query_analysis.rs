@@ -56,21 +56,18 @@ impl StmtKind {
                 | Stmt::CreateView { temporary: false, .. }
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
-            Cmd::Stmt(Stmt::Pragma(name, body)) if is_pragma_allowed(&name, body.as_ref()) => Some(Self::Write),
+            Cmd::Stmt(Stmt::Pragma(name, body)) if is_pragma_allowed(name, body.as_ref()) => Some(Self::Write),
             _ => None,
         }
     }
 }
 
 fn is_pragma_allowed(name: &QualifiedName, _body: Option<&PragmaBody>) -> bool {
-    match name {
-        QualifiedName {
+    matches!(name, QualifiedName {
             db_name: None,
             name,
             alias: None,
-        } if name.0 == "writable_schema" || name.0 == "foreign_keys" => true,
-        _ => false,
-    }
+        } if name.0 == "writable_schema" || name.0 == "foreign_keys")
 }
 
 /// The state of a transaction for a series of statement
