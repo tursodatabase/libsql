@@ -1189,7 +1189,15 @@ const installOpfsVfs = function callee(options){
             /* Truncate journal mode is faster than delete for
                this vfs, per speedtest1. That gap seems to have closed with
                Chrome version 108 or 109, but "persist" is very roughly 5-6%
-               faster than truncate in initial tests. */
+               faster than truncate in initial tests.
+
+               For later analysis: Roy Hashimoto notes that TRUNCATE
+               and PERSIST modes may decrease OPFS concurrency because
+               multiple connections can open the journal file in those
+               modes:
+
+               https://github.com/rhashimoto/wa-sqlite/issues/68
+            */
             "pragma journal_mode=persist;",
             /*
               This vfs benefits hugely from cache on moderate/large
