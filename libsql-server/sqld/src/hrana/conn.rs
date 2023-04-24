@@ -110,7 +110,7 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
             let client_msg: proto::ClientMsg = match serde_json::from_str(&client_msg) {
                 Ok(client_msg) => client_msg,
                 Err(err) => {
-                    let error_msg = format!("Invalid format of client message: {}", err);
+                    let error_msg = format!("Invalid format of client message: {err}");
                     close(conn, CloseCode::Invalid, &error_msg).await;
                     tracing::warn!("{}", error_msg);
                     return Ok(false);

@@ -6,7 +6,7 @@ use anyhow::anyhow;
 use sqld_libsql_bindings::wal_hook::WalHook;
 use tokio::sync::{mpsc, oneshot};
 
-use super::libsql::open_db;
+use super::super::libsql::open_db;
 
 type OpMsg = Box<dyn FnOnce(&rusqlite::Connection) + 'static + Send + Sync>;
 
