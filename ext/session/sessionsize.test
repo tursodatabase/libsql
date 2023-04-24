@@ -113,17 +113,17 @@ do_execsql_test 3.0 {
 
 do_test 3.1 {
   sqlite3session S db main
-  S object_config_size -1
+  S object_config size -1
 } 1
 
-do_test 3.2.1 { S object_config_size 0  } 0
-do_test 3.2.2 { S object_config_size -1 } 0
-do_test 3.2.3 { S object_config_size 1  } 1
-do_test 3.2.4 { S object_config_size -1 } 1
+do_test 3.2.1 { S object_config size 0  } 0
+do_test 3.2.2 { S object_config size -1 } 0
+do_test 3.2.3 { S object_config size 1  } 1
+do_test 3.2.4 { S object_config size -1 } 1
 
 do_test 3.3 { S attach t1 } {}
-do_test 3.4 { S object_config_size 1  } {SQLITE_MISUSE}
-do_test 3.4 { S object_config_size -1 } {1}
+do_test 3.4 { S object_config size 1  } {SQLITE_MISUSE}
+do_test 3.4 { S object_config size -1 } {1}
 
 S delete
 
