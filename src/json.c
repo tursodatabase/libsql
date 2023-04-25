@@ -130,9 +130,10 @@ struct JsonParse {
   JsonNode *aNode;   /* Array of nodes containing the parse */
   const char *zJson; /* Original JSON string */
   u32 *aUp;          /* Index of parent of each node */
-  u8 oom;            /* Set to true if out of memory */
-  u8 nErr;           /* Number of errors seen */
   u16 iDepth;        /* Nesting depth */
+  u8 nErr;           /* Number of errors seen */
+  u8 oom;            /* Set to true if out of memory */
+  u8 has5;           /* True if input has JSON5 features */
   int nJson;         /* Length of the zJson string in bytes */
   u32 iHold;         /* Replace cache line with the lowest iHold value */
 };
@@ -804,7 +805,10 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       x = jsonParseValue(pParse, j);
       if( x<0 ){
         pParse->iDepth--;
-        if( x==(-2) ) break;
+        if( x==(-2) ){
+          if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
+          break;
+        }
         return -1;
       }
       if( pParse->oom ) return -1;
@@ -838,7 +842,10 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       x = jsonParseValue(pParse, j);
       pParse->iDepth--;
       if( x<0 ){
-        if( x==(-3) ) break;
+        if( x==(-3) ){
+          if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
+          break;
+        }
         return -1;
       }
       j = x;
@@ -2001,6 +2008,16 @@ static void jsonValidFunc(
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
   p = jsonParseCached(ctx, argv, 0);
+  sqlite3_result_int(ctx, p!=0 && p->has5==0);
+}
+static void jsonValid5Func(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse *p;          /* The parse */
+  UNUSED_PARAMETER(argc);
+  p = jsonParseCached(ctx, argv, 0);
   sqlite3_result_int(ctx, p!=0);
 }
 
@@ -2725,6 +2742,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_type,          1, 0,  jsonTypeFunc),
     JFUNCTION(json_type,          2, 0,  jsonTypeFunc),
     JFUNCTION(json_valid,         1, 0,  jsonValidFunc),
+    JFUNCTION(json_valid5,        1, 0,  jsonValid5Func),
 #if SQLITE_DEBUG
     JFUNCTION(json_parse,         1, 0,  jsonParseFunc),
     JFUNCTION(json_test1,         1, 0,  jsonTest1Func),
