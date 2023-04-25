@@ -6011,7 +6011,6 @@ WhereInfo *sqlite3WhereBegin(
   for(ii=0; ii<sWLB.pWC->nBase; ii++){
     WhereTerm *pT = &sWLB.pWC->a[ii];  /* A term of the WHERE clause */
     Expr *pX;                          /* The expression of pT */
-    int ltoj;                          /* Left table of the join */
     if( pT->wtFlags & TERM_VIRTUAL ) continue;
     pX = pT->pExpr;
     assert( pX!=0 );
