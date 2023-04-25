@@ -148,9 +148,9 @@ static char* toBase64( u8 *pIn, int nbIn, char *pOut ){
 }
 
 /* Skip over text which is not base64 numeral(s). */
-static char * skipNonB64( char *s ){
+static char * skipNonB64( char *s, int nc ){
   char c;
-  while( (c = *s) && !IS_BX_DIGIT(BX_DV_PROTO(c)) ) ++s;
+  while( nc-- > 0 && (c = *s) && !IS_BX_DIGIT(BX_DV_PROTO(c)) ) ++s;
   return s;
 }
 
@@ -159,7 +159,7 @@ static u8* fromBase64( char *pIn, int ncIn, u8 *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 && *pIn!=PAD_CHAR ){
     static signed char nboi[] = { 0, 0, 1, 2, 3 };
-    char *pUse = skipNonB64(pIn);
+    char *pUse = skipNonB64(pIn, ncIn);
     unsigned long qv = 0L;
     int nti, nbo, nac;
     ncIn -= (pUse - pIn);

@@ -140,9 +140,9 @@ static u8 base85DigitValue( char c ){
 #define B85_DARK_MAX 80
 
 
-static char * skipNonB85( char *s ){
+static char * skipNonB85( char *s, int nc ){
   char c;
-  while( (c = *s) && !IS_B85(c) ) ++s;
+  while( nc-- > 0 && (c = *s) && !IS_B85(c) ) ++s;
   return s;
 }
 
@@ -212,7 +212,7 @@ static u8* fromBase85( char *pIn, int ncIn, u8 *pOut ){
   if( ncIn>0 && pIn[ncIn-1]=='\n' ) --ncIn;
   while( ncIn>0 ){
     static signed char nboi[] = { 0, 0, 1, 2, 3, 4 };
-    char *pUse = skipNonB85(pIn);
+    char *pUse = skipNonB85(pIn, ncIn);
     unsigned long qv = 0L;
     int nti, nbo;
     ncIn -= (pUse - pIn);
