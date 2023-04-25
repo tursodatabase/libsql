@@ -1,5 +1,5 @@
-C Handle\snewline-trimmed\sinput\sTEXT\scorrectly\sin\sbase64,\sbase85\sUDFs.
-D 2023-04-25T04:28:39.874
+C Avoid\sassuming\sthat\san\sexpression\sin\san\sON()\sclause\sthat\sevaluates\sto\szero\simplies\sthat\sthe\squery\swill\sreturn\szero\srows\swhen\sthe\squery\scontains\sa\sRIGHT\sJOIN.\s[forum:95849acbe1|Forum\sPost\s95849acbe1].
+D 2023-04-25T14:37:12.443
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -717,7 +717,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 3f4ac276a60bda76f9f1f6f1c2c38599bacd4987e5efcd3f7fed2647bf97280a
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c ef9e644d1d76e86f68c941eb05d30a98fc0811eeef2a110906d81fedde81b6bf
+F src/where.c 8899e22a397c839f551c8e1741c100ae2675feb0fe0a383d55816f2ca3d2b583
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c 85790d7e5365ac41085713331ce52e4343586ad3d37d218ffe00572357baa62b
 F src/whereexpr.c 1dfda1695e4480c24248157df55bb4d66c732dc8d14ac16b4f076bb15de93d63
@@ -1242,7 +1242,7 @@ F test/joinC.test 1f1a602c2127f55f136e2cbd3bf2d26546614bf8cffe5902ec1ac9c07f87f2
 F test/joinD.test 2ce62e7353a0702ca5e70008faf319c1d4686aa19fba34275c6d1da0e960be28
 F test/joinE.test d5d182f3812771e2c0d97c9dcf5dbe4c41c8e21c82560e59358731c4a3981d6b
 F test/joinF.test 53dd66158806823ea680dd7543b5406af151b5aafa5cd06a7f3231cd94938127
-F test/joinH.test 15f501b33d848521964afde9865a92aeca79c8c41fa84dc4dc3f865c9ed8c868
+F test/joinH.test 705157cf9b9b7c207caf960812a7d0e4dc1dd45aa5fb2b563f12df59088645f3
 F test/journal1.test c7b768041b7f494471531e17abc2f4f5ebf9e5096984f43ed17c4eb80ba34497
 F test/journal2.test 9dac6b4ba0ca79c3b21446bbae993a462c2397c4
 F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ffa140e
@@ -2059,8 +2059,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e6f9c0b1f963033a8e17d13935c5c6b12d263fe10c585035a3d1f1154c6ba5d6
-R 7500f54b9a757a6bdf9e41121051af70
-U larrybr
-Z e45f0a7f30148e18d14433c2a4564a3c
+P 8f637aae23e6638c064a34262dcf16a3cdfd000fb1fa1b2a834b292fe6659408
+R 162170fabcf6c22e465922e65b3136a8
+U dan
+Z 748c21dff95a1a525519cd6fda798ed3
 # Remove this line to create a well-formed Fossil manifest.
