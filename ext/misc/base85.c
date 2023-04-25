@@ -297,9 +297,16 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
       sqlite3_result_error(context, "blob expanded to base85 too big", -1);
       return;
     }
+    bBuf = (u8*)sqlite3_value_blob(av[0]);
+    if( !bBuf ){
+      if( SQLITE_NOMEM==sqlite3_errcode(sqlite3_context_db_handle(context)) ){
+        goto memFail;
+      }
+      sqlite3_result_text(context,"",-1,SQLITE_STATIC);
+      break;
+    }
     cBuf = sqlite3_malloc(nc);
     if( !cBuf ) goto memFail;
-    bBuf = (u8*)sqlite3_value_blob(av[0]);
     nc = (int)(toBase85(bBuf, nb, cBuf, "\n") - cBuf);
     sqlite3_result_text(context, cBuf, nc, sqlite3_free);
     break;
@@ -312,9 +319,16 @@ static void base85(sqlite3_context *context, int na, sqlite3_value *av[]){
     }else if( nb<1 ){
       nb = 1;
     }
+    cBuf = (char *)sqlite3_value_text(av[0]);
+    if( !cBuf ){
+      if( SQLITE_NOMEM==sqlite3_errcode(sqlite3_context_db_handle(context)) ){
+        goto memFail;
+      }
+      sqlite3_result_zeroblob(context, 0);
+      break;
+    }
     bBuf = sqlite3_malloc(nb);
     if( !bBuf ) goto memFail;
-    cBuf = (char *)sqlite3_value_text(av[0]);
     nb = (int)(fromBase85(cBuf, nc, bBuf) - bBuf);
     sqlite3_result_blob(context, bBuf, nb, sqlite3_free);
     break;
