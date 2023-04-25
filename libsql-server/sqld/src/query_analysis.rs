@@ -42,22 +42,29 @@ impl StmtKind {
             Cmd::ExplainQueryPlan(_) => Some(Self::Other),
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
             Cmd::Stmt(Stmt::Commit { .. } | Stmt::Rollback { .. }) => Some(Self::TxnEnd),
-            Cmd::Stmt(Stmt::CreateVirtualTable { tbl_name, .. } | Stmt::CreateTable { tbl_name, temporary: false, ..}) if !is_temp(tbl_name) => {
-                Some(Self::Write)
-            }
+            Cmd::Stmt(
+                Stmt::CreateVirtualTable { tbl_name, .. }
+                | Stmt::CreateTable {
+                    tbl_name,
+                    temporary: false,
+                    ..
+                },
+            ) if !is_temp(tbl_name) => Some(Self::Write),
             Cmd::Stmt(
                 Stmt::Insert { .. }
                 | Stmt::Update { .. }
                 | Stmt::Delete { .. }
                 | Stmt::DropTable { .. }
                 | Stmt::AlterTable { .. }
-                | Stmt::CreateIndex { .. }
-                // only support non-temp views for now. We don't have a mecanism to sync
-                // connection state between the primary and the replica right now.
-                | Stmt::CreateView { temporary: false, .. }
+                | Stmt::CreateTrigger {
+                    temporary: false, ..
+                }
+                | Stmt::CreateIndex { .. },
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
-            Cmd::Stmt(Stmt::Pragma(name, body)) if is_pragma_allowed(name, body.as_ref()) => Some(Self::Write),
+            Cmd::Stmt(Stmt::Pragma(name, body)) if is_pragma_allowed(name, body.as_ref()) => {
+                Some(Self::Write)
+            }
             _ => None,
         }
     }
