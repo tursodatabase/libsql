@@ -84,6 +84,7 @@ proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
     db eval BEGIN
 
     sqlite3session S1 db main
+    S1 object_config rowid 1
     S1 attach *
     execsql $sql1 db
     set c1 [S1 changeset]
@@ -91,6 +92,7 @@ proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
 
     if {$i==1} {
       sqlite3session S2 db2 main
+      S2 object_config rowid 1
       S2 attach *
       execsql $sql2 db2
       set c2 [S2 changeset]
@@ -100,6 +102,7 @@ proc do_rebase_test {tn sql1 sql2 conflict_handler {testsql ""} {testres ""}} {
       foreach sql [split $sql2 ";"] {
         if {[string is space $sql]} continue
         sqlite3session S2 db2 main
+        S2 object_config rowid 1
         S2 attach *
         execsql $sql db2
         lappend c2 [S2 changeset]
@@ -340,6 +343,79 @@ do_rebase_test 2.2.3 {
 } {
   OMIT
 } { SELECT * FROM t2 WHERE z='B' } { 1 one B }
+
+
+reset_db
+do_execsql_test 2.3.0 {
+  CREATE TABLE t1 (b TEXT);
+  INSERT INTO t1(rowid, b) VALUES(1, 'one');
+  INSERT INTO t1(rowid, b) VALUES(2, 'two');
+  INSERT INTO t1(rowid, b) VALUES(3, 'three');
+}
+do_rebase_test 2.3.1 {
+  UPDATE t1 SET b = 'two.1' WHERE rowid=2
+} {
+  UPDATE t1 SET b = 'two.2' WHERE rowid=2;
+} {
+  OMIT
+} { SELECT rowid, * FROM t1 } {1 one 2 two.1 3 three}
+
+do_rebase_test 2.3.2 {
+  UPDATE t1 SET b = 'two.1' WHERE rowid=2
+} {
+  UPDATE t1 SET b = 'two.2' WHERE rowid=2;
+} {
+  REPLACE
+} { SELECT rowid, * FROM t1 } {1 one 2 two.2 3 three}
+
+do_rebase_test 2.3.3 {
+  DELETE FROM t1 WHERE rowid=3
+} {
+  DELETE FROM t1 WHERE rowid=3;
+} {
+  OMIT
+} { SELECT rowid, * FROM t1 } {1 one 2 two}
+
+do_rebase_test 2.3.4 {
+  DELETE FROM t1 WHERE rowid=1
+} {
+  UPDATE t1 SET b='one.2' WHERE rowid=1
+} {
+  OMIT
+} { SELECT rowid, * FROM t1 } {2 two 3 three}
+
+do_rebase_test 2.3.6 {
+  UPDATE t1 SET b='three.1' WHERE rowid=3
+} {
+  DELETE FROM t1 WHERE rowid=3;
+} {
+  OMIT
+} { SELECT rowid, * FROM t1 } {1 one 2 two 3 three.1}
+
+do_rebase_test 2.3.7 {
+  UPDATE t1 SET b='three.1' WHERE rowid=3
+} {
+  DELETE FROM t1 WHERE rowid=3;
+} {
+  REPLACE
+} { SELECT rowid, * FROM t1 } {1 one 2 two}
+
+do_rebase_test 2.3.8 {
+  INSERT INTO t1(rowid, b) VALUES(4, 'four.1')
+} {
+  INSERT INTO t1(rowid, b) VALUES(4, 'four.2');
+} {
+  REPLACE
+} { SELECT rowid, * FROM t1 } {1 one 2 two 3 three 4 four.2}
+
+do_rebase_test 2.3.9 {
+  INSERT INTO t1(rowid, b) VALUES(4, 'four.1')
+} {
+  INSERT INTO t1(rowid, b) VALUES(4, 'four.2');
+} {
+  OMIT
+} { SELECT rowid, * FROM t1 } {1 one 2 two 3 three 4 four.1}
+
 
 #-------------------------------------------------------------------------
 reset_db

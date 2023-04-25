@@ -52,6 +52,7 @@ proc do_conflict_test {tn args} {
   proc bgerror {args} { set ::background_error $args }
 
   sqlite3session S db main
+  S object_config rowid 1
   foreach t $O(-tables) { S attach $t }
   execsql $O(-sql)
 
@@ -81,6 +82,7 @@ proc changeset_from_sql {sql {dbname main}} {
   }
   set rc [catch {
     sqlite3session S db $dbname
+    S object_config rowid 1
     db eval "SELECT name FROM $dbname.sqlite_master WHERE type = 'table'" {
       S attach $name
     }
@@ -138,6 +140,7 @@ proc do_then_apply_sql {args} {
   proc xConflict args { incr ::n_conflict ; return "OMIT" }
   set rc [catch {
     sqlite3session S db $dbname
+    S object_config rowid 1
     db eval "SELECT name FROM $dbname.sqlite_master WHERE type = 'table'" {
       S attach $name
     }
@@ -162,6 +165,8 @@ proc do_then_apply_sql {args} {
 
 proc do_iterator_test {tn tbl_list sql res} {
   sqlite3session S db main
+  S object_config rowid 1
+
   if {[llength $tbl_list]==0} { S attach * }
   foreach t $tbl_list {S attach $t}
 
@@ -171,6 +176,7 @@ proc do_iterator_test {tn tbl_list sql res} {
   foreach v $res { lappend r $v }
 
   set x [list]
+# set ::c [S changeset] ; execsql_pp { SELECT quote($::c) }
   sqlite3session_foreach c [S changeset] { lappend x $c }
   uplevel do_test $tn [list [list set {} $x]] [list $r]
 
@@ -244,4 +250,50 @@ proc number_name {n} {
   set txt [string trim $txt]
   if {$txt==""} {set txt zero}
   return $txt
+}
+
+proc scksum {db dbname} {
+
+  if {$dbname=="temp"} {
+    set master sqlite_temp_master
+  } else {
+    set master $dbname.sqlite_master
+  }
+
+  set alltab [$db eval "SELECT name FROM $master WHERE type='table'"]
+  set txt [$db eval "SELECT * FROM $master ORDER BY type,name,sql"]
+  foreach tab $alltab {
+    set cols [list]
+    db eval "PRAGMA $dbname.table_info = $tab" x { 
+      lappend cols "quote($x(name))" 
+    }
+    set cols [join $cols ,]
+    append txt [db eval "SELECT $cols FROM $dbname.$tab ORDER BY $cols"]
+  }
+  return [md5 $txt]
+}
+
+proc do_diff_test {tn setup} {
+  reset_db
+  forcedelete test.db2
+  execsql { ATTACH 'test.db2' AS aux }
+  execsql $setup
+
+  sqlite3session S db main
+  S object_config rowid 1
+  foreach tbl [db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
+    S attach $tbl
+    S diff aux $tbl
+  }
+
+  set C [S changeset]
+  S delete
+
+  sqlite3 db2 test.db2
+  sqlite3changeset_apply db2 $C ""
+  uplevel do_test $tn.1 [list {execsql { PRAGMA integrity_check } db2}] ok
+  db2 close
+
+  set cksum [scksum db main]
+  uplevel do_test $tn.2 [list {scksum db aux}] [list $cksum]
 }
