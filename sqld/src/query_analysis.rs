@@ -1,9 +1,7 @@
 use anyhow::Result;
 use fallible_iterator::FallibleIterator;
-use sqlite3_parser::{
-    ast::{Cmd, PragmaBody, QualifiedName, Stmt},
-    lexer::sql::{Parser, ParserError},
-};
+use sqlite3_parser::ast::{Cmd, PragmaBody, QualifiedName, Stmt};
+use sqlite3_parser::lexer::sql::{Parser, ParserError};
 
 /// A group of statements to be executed together.
 #[derive(Debug, Clone)]
@@ -33,6 +31,10 @@ pub enum StmtKind {
     Other,
 }
 
+fn is_temp(name: &QualifiedName) -> bool {
+    name.db_name.as_ref().map(|n| n.0.as_str()) == Some("TEMP")
+}
+
 impl StmtKind {
     fn kind(cmd: &Cmd) -> Option<Self> {
         match cmd {
@@ -40,12 +42,11 @@ impl StmtKind {
             Cmd::ExplainQueryPlan(_) => Some(Self::Other),
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
             Cmd::Stmt(Stmt::Commit { .. } | Stmt::Rollback { .. }) => Some(Self::TxnEnd),
-            Cmd::Stmt(Stmt::CreateVirtualTable { tbl_name, .. }) if tbl_name.db_name.as_ref().map(|n| n.0.as_str()) != Some("TEMP") => {
+            Cmd::Stmt(Stmt::CreateVirtualTable { tbl_name, .. } | Stmt::CreateTable { tbl_name, temporary: false, ..}) if !is_temp(tbl_name) => {
                 Some(Self::Write)
             }
             Cmd::Stmt(
                 Stmt::Insert { .. }
-                | Stmt::CreateTable { .. }
                 | Stmt::Update { .. }
                 | Stmt::Delete { .. }
                 | Stmt::DropTable { .. }
