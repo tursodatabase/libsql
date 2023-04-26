@@ -62,12 +62,26 @@ impl StmtKind {
                 | Stmt::CreateIndex { .. },
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
-            Cmd::Stmt(Stmt::Pragma(name, body)) if is_pragma_allowed(name, body.as_ref()) => {
-                Some(Self::Write)
+            Cmd::Stmt(Stmt::Pragma(name, body)) => {
+                if is_ro_pragma(name, body.as_ref()) {
+                    Some(Self::Read)
+                } else if is_pragma_allowed(name, body.as_ref()) {
+                    Some(Self::Write)
+                } else {
+                    None
+                }
             }
             _ => None,
         }
     }
+}
+
+fn is_ro_pragma(name: &QualifiedName, _body: Option<&PragmaBody>) -> bool {
+    matches!(name, QualifiedName {
+            db_name: None,
+            name,
+            alias: None,
+        } if name.0.starts_with("index_")|| name.0 == "encoding" || name.0 == "function_list" || name.0 == "module_list" || name.0.starts_with("table_"))
 }
 
 fn is_pragma_allowed(name: &QualifiedName, _body: Option<&PragmaBody>) -> bool {
@@ -75,7 +89,7 @@ fn is_pragma_allowed(name: &QualifiedName, _body: Option<&PragmaBody>) -> bool {
             db_name: None,
             name,
             alias: None,
-        } if name.0 == "writable_schema" || name.0 == "foreign_keys")
+        } if name.0 == "writable_schema" || name.0.starts_with("foreign_key"))
 }
 
 /// The state of a transaction for a series of statement
