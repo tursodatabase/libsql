@@ -1,4 +1,3 @@
-use anyhow::Result;
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -10,7 +9,7 @@ pub async fn server_heartbeat(
     auth: Option<String>,
     update_period: Duration,
     stats: Stats,
-) -> Result<()> {
+) {
     let client = reqwest::Client::new();
     loop {
         sleep(update_period).await;
