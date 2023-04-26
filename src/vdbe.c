@@ -3240,7 +3240,7 @@ case OP_Affinity: {
       }else{
         pIn1->u.r = (double)pIn1->u.i;
         pIn1->flags |= MEM_Real;
-        pIn1->flags &= ~MEM_Int;
+        pIn1->flags &= ~(MEM_Int|MEM_Str);
       }
     }
     REGISTER_TRACE((int)(pIn1-aMem), pIn1);
