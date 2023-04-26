@@ -2,6 +2,7 @@ use anyhow::Result;
 use std::time::Duration;
 use tokio::time::sleep;
 
+use crate::http::stats::StatsResponse;
 use crate::stats::Stats;
 
 pub async fn server_heartbeat(
@@ -13,10 +14,10 @@ pub async fn server_heartbeat(
     let client = reqwest::Client::new();
     loop {
         sleep(update_period).await;
-        let body = serde_json::json!({
-            "rows_read": stats.rows_read(),
-            "rows_written": stats.rows_written(),
-        });
+        let body = StatsResponse {
+            rows_read_count: stats.rows_read(),
+            rows_written_count: stats.rows_written(),
+        };
         let request = client.post(&url);
         let request = if let Some(ref auth) = auth {
             request.header("Authorization", auth.clone())
