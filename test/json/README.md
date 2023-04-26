@@ -11,7 +11,8 @@ of the SQLite JSON parser.
 
   1.  Run: "`tclsh json-generator.tcl | sqlite3 json100mb.db`" to create
       the 100 megabyte test database.  Do this so that the "json100mb.db"
-      file lands in the same directory as the json-generator.tcl script.
+      file lands in the directory from which you will run tests, not in
+      the test/json subdirectory of the source tree.
 
   2.  Build the baseline sqlite3.c file.  ("`make sqlite3.c`")
 
