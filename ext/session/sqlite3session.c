@@ -1765,7 +1765,7 @@ static char *sessionAllCols(
   int ii;
   char *zRet = 0;
   for(ii=0; ii<pTab->nCol; ii++){
-    zRet = sqlite3_mprintf("%z%s\"%w\".\"%w\".\"%w\"%s",
+    zRet = sqlite3_mprintf("%z%s\"%w\".\"%w\".\"%w\"",
         zRet, (zRet ? ", " : ""), zDb, pTab->zName, pTab->azCol[ii] 
     );
     if( !zRet ) break;

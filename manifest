@@ -1,5 +1,5 @@
-C When\schanging\sa\slarge\sinteger\sinto\sa\sfloating\spoint\svalue,\scancel\sthe\nstring\srepresentation.\s\sFix\sfor\n[forum:/forumpost/5c74a3bc4a|forum\spost\s5c74a3bc4a].
-D 2023-04-26T18:23:47.136
+C Fix\sa\stypo\sin\sa\sprintf()\sformat\sstring\sthe\ssessions\smodule.
+D 2023-04-26T18:50:49.563
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -470,7 +470,7 @@ F ext/session/sessionrowid.test 6323ba831721205fd729929745038fd54e9d128c66c654b8
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c a0d7d71f9b111e443b53afc49b6cb5ccf48734af216c91dbe6640b7e4cd8c740
+F ext/session/sqlite3session.c c30768077832f04f6ae98ab5a5347eae78b4f840bc958e16ae8aa970261a315e
 F ext/session/sqlite3session.h 24299a3b64f11afc4422ce92d030ffdb2d3181851a1763b4a0432e195b2a8a16
 F ext/session/test_session.c 5285482f83cd92b4c1fe12fcf88210566a18312f4f2aa110f6399dae46aeccbb
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -2060,8 +2060,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d4431bc44e206f48f3bcc1f51399b38bd4cb418e7e50a37495475fb8da04646
-R 890da1742f527a634e898a7eb7549799
-U drh
-Z a31dc7374b94808e2db1fdf0feced2a2
+P 3e2da8a7e35c839128d26aac575605e1e34889e8ab3484440bdd65c4d752c6bb
+R 4e23a1ec1e088b34c19a8052565eac29
+U dan
+Z 09bae246348989754f2af6790026c07b
 # Remove this line to create a well-formed Fossil manifest.
