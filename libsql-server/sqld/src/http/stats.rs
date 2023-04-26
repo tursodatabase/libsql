@@ -4,9 +4,9 @@ use serde::Serialize;
 use crate::stats::Stats;
 
 #[derive(Serialize)]
-struct StatsResponse {
-    rows_read_count: usize,
-    rows_written_count: usize,
+pub struct StatsResponse {
+    pub rows_read_count: usize,
+    pub rows_written_count: usize,
 }
 
 pub fn handle_stats(stats: &Stats) -> Response<Body> {
