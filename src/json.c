@@ -758,6 +758,124 @@ static int jsonIs4Hex(const char *z){
   return 1;
 }
 
+/*
+** Return the number of bytes of JSON5 whitespace at the beginning of
+** the input string z[].
+**
+** JSON5 whitespace consists of any of the following characters:
+**
+**    Unicode  UTF-8         Name
+**    U+0009   09            horizontal tab
+**    U+000a   0a            line feed
+**    U+000b   0b            vertical tab
+**    U+000c   0c            form feed
+**    U+000d   0d            carriage return
+**    U+0020   20            space
+**    U+00a0   c2 a0         non-breaking space
+**    U+1680   e1 9a 80      ogham space mark
+**    U+2000   e2 80 80      en quad
+**    U+2001   e2 80 81      em quad
+**    U+2002   e2 80 82      en space
+**    U+2003   e2 80 83      em space
+**    U+2004   e2 80 84      three-per-em space
+**    U+2005   e2 80 85      four-per-em space
+**    U+2006   e2 80 86      six-per-em space
+**    U+2007   e2 80 87      figure space
+**    U+2008   e2 80 88      punctuation space
+**    U+2009   e2 80 89      thin space
+**    U+200a   e2 80 8a      hair space
+**    U+2028   e2 80 a8      line separator
+**    U+2029   e2 80 a9      paragraph separator
+**    U+202f   e2 80 af      narrow no-break space (NNBSP)
+**    U+205f   e2 81 9f      medium mathematical space (MMSP)
+**    U+3000   e3 80 80      ideographical space
+**    U+FEFF   ef bb bf      byte order mark
+**
+** In addition, comments between '/', '*' and '*', '/' and
+** from '/', '/' to end-of-line are also considered to be whitespace.
+*/
+static int json5Whitespace(const char *zIn){
+  int n = 0;
+  const u8 *z = (u8*)zIn;
+  while( 1 /*exit by "goto whitespace_done"*/ ){
+    switch( z[n] ){
+      case 0x09:
+      case 0x0a:
+      case 0x0b:
+      case 0x0c:
+      case 0x0d:
+      case 0x20: {
+        n++;
+        break;
+      }
+      case '/': {
+        if( z[n+1]=='*' && z[n+2]!=0 ){
+          int j;
+          for(j=n+3; z[j]!='/' || z[j-1]!='*'; j++){
+            if( z[j]==0 ) goto whitespace_done;
+          }
+          n += j;
+          break;
+        }else if( z[n+1]=='/' ){
+          int j;
+          for(j=n+2; z[j] && z[j]!='\n'; j++){}
+          n += j;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xc2: {
+        if( z[n+1]==0xa0 ){
+          n += 2;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xe1: {
+        if( z[n+1]==0x9a && z[n+2]==0x80 ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xe2: {
+        if( z[n+1]==0x80 ){
+          u8 c = z[n+2];
+          if( c<0x80 ) goto whitespace_done;
+          if( c<=0x8a || c==0xa8 || c==0xa9 || c==0xaf ){
+            n += 3;
+            break;
+          }
+        }else if( z[n+1]==0x81 && z[n+2]==0x9f ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xe3: {
+        if( z[n+1]==0x80 && z[n+2]==0x80 ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xef: {
+        if( z[n+1]==0xbb && z[n+2]==0xbf ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      default: {
+        goto whitespace_done;
+      }
+    }
+  }
+  whitespace_done:
+  return n;
+}
+
+
 #ifdef SQLITE_ENABLE_JSON_NAN_INF
 /*
 ** Extra floating-point literals to allow in JSON.
@@ -795,7 +913,9 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   JsonNode *pNode;
   const char *z = pParse->zJson;
   while( fast_isspace(z[i]) ){ i++; }
-  if( (c = z[i])=='{' ){
+json_parse_restart:
+  c = z[i];
+  if( c=='{' ){
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
@@ -960,6 +1080,10 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     return -3;  /* End of [...] */
   }else if( c==0 ){
     return 0;   /* End of file */
+  }else if( (j = json5Whitespace(&z[i]))>0 ){
+    i += j;
+    pParse->has5 = 1;
+    goto json_parse_restart;
   }else{
 #ifdef SQLITE_ENABLE_JSON_NAN_INF
     int k, nn;
