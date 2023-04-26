@@ -104,6 +104,7 @@ static const char * const jsonType[] = {
 #define JNODE_PATCH   0x10         /* Patch with JsonNode.u.pPatch */
 #define JNODE_APPEND  0x20         /* More ARRAY/OBJECT entries at u.iAppend */
 #define JNODE_LABEL   0x40         /* Is a label of an object */
+#define JNODE_JSON5   0x80         /* Node contains JSON5 enhancements */
 
 
 /* A single node of parsed JSON
@@ -296,6 +297,72 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
 }
 
 /*
+** The zIn[0..N] string is a JSON5 string literal.  Append to p a translation
+** of the string literal that standard JSON and that omits all JSON5
+** features.
+*/
+static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
+  jsonAppendChar(p, '"');
+  jsonAppendRaw(p, &zIn[1], N-2); /* TODO: translate JSON5 escapes */
+  jsonAppendChar(p, '"');
+}
+
+/*
+** The zIn[0..N] string is a JSON5 integer literal.  Append to p a translation
+** of the string literal that standard JSON and that omits all JSON5
+** features.
+*/
+static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
+  if( zIn[0]=='+' ){
+    zIn++;
+    N--;
+  }else if( zIn[0]=='-' ){
+    jsonAppendChar(p, '-');
+    zIn++;
+    N--;
+  }
+  while( zIn[0]=='0' && N>1 ){
+    zIn++;
+    N--;
+  } 
+  jsonAppendRaw(p, zIn, N);
+}
+
+/*
+** The zIn[0..N] string is a JSON5 real literal.  Append to p a translation
+** of the string literal that standard JSON and that omits all JSON5
+** features.
+*/
+static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
+  int i;
+  if( zIn[0]=='+' ){
+    zIn++;
+    N--;
+  }else if( zIn[0]=='-' ){
+    jsonAppendChar(p, '-');
+    zIn++;
+    N--;
+  }
+  if( zIn[0]=='.' ){
+    jsonAppendChar(p, '0');
+  }
+  for(i=0; i<N; i++){
+    if( zIn[i]=='.' && (i+1==N || !sqlite3Isdigit(zIn[i+1])) ){
+      jsonAppendRaw(p, zIn, i);
+      zIn += i;
+      N -= i;
+      jsonAppendChar(p, '0');
+      break;
+    }
+  }
+  if( N>0 ){
+    jsonAppendRaw(p, zIn, N);
+  }
+}
+
+
+
+/*
 ** Append a function parameter value to the JSON string under 
 ** construction.
 */
@@ -425,17 +492,32 @@ static void jsonRenderNode(
       break;
     }
     case JSON_STRING: {
+      assert( pNode->eU==1 );
       if( pNode->jnFlags & JNODE_RAW ){
-        assert( pNode->eU==1 );
         jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
-        break;
+      }else if( pNode->jnFlags & JNODE_JSON5 ){
+        jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
+      }else{
+        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
       }
-      /* no break */ deliberate_fall_through
+      break;
     }
-    case JSON_REAL:
+    case JSON_REAL: {
+      assert( pNode->eU==1 );
+      if( pNode->jnFlags & JNODE_JSON5 ){
+        jsonAppendNormalizedReal(pOut, pNode->u.zJContent, pNode->n);
+      }else{
+        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+      }
+      break;
+    }
     case JSON_INT: {
       assert( pNode->eU==1 );
-      jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+      if( pNode->jnFlags & JNODE_JSON5 ){
+        jsonAppendNormalizedInt(pOut, pNode->u.zJContent, pNode->n);
+      }else{
+        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+      }
       break;
     }
     case JSON_ARRAY: {
@@ -615,9 +697,10 @@ static void jsonReturn(
         const char *z;
         char *zOut;
         u32 j;
+        u32 nOut = n;
         assert( pNode->eU==1 );
         z = pNode->u.zJContent;
-        zOut = sqlite3_malloc( n+1 );
+        zOut = sqlite3_malloc( nOut+1 );
         if( zOut==0 ){
           sqlite3_result_error_nomem(pCtx);
           break;
@@ -669,6 +752,15 @@ static void jsonReturn(
                 c = '\r';
               }else if( c=='t' ){
                 c = '\t';
+              }else if( c=='v' ){
+                c = '\v';
+              }else if( c=='\'' ){
+                c = '\'';
+              }else if( c=='0' ){
+                c = 0;
+              }else if( c=='x' ){
+                c = (jsonHexToInt(z[i+1])<<4) | jsonHexToInt(z[i+2]);
+                i += 2;
               }
               zOut[j++] = c;
             }
@@ -750,12 +842,17 @@ static int jsonParseAddNode(
 }
 
 /*
+** Return true if z[] begins with 2 (or more) hexadecimal digits
+*/
+static int jsonIs2Hex(const char *z){
+  return sqlite3Isxdigit(z[0]) && sqlite3Isxdigit(z[1]);
+}
+
+/*
 ** Return true if z[] begins with 4 (or more) hexadecimal digits
 */
 static int jsonIs4Hex(const char *z){
-  int i;
-  for(i=0; i<4; i++) if( !sqlite3Isxdigit(z[i]) ) return 0;
-  return 1;
+  return jsonIs2Hex(z) && jsonIs2Hex(&z[2]);
 }
 
 /*
@@ -978,9 +1075,17 @@ json_parse_restart:
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
     return j+1;
   }
-  case '"': {
+  case '\'': {
+    u8 jnFlags;
+    char cDelim;
+    pParse->has5 = 1;
+    jnFlags = JNODE_JSON5;
+    goto parse_string;
+  case '"':
     /* Parse string */
-    u8 jnFlags = 0;
+    jnFlags = 0;
+  parse_string:
+    cDelim = z[i];
     j = i+1;
     for(;;){
       c = z[j];
@@ -992,12 +1097,16 @@ json_parse_restart:
         c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
            || c=='n' || c=='r' || c=='t'
-           || (c=='u' && jsonIs4Hex(z+j+1)) ){
-          jnFlags = JNODE_ESCAPE;
+           || (c=='u' && jsonIs4Hex(&z[j+1])) ){
+          jnFlags |= JNODE_ESCAPE;
+        }else if( c=='\'' || c=='0' || c=='v'
+           || (c=='x' && jsonIs2Hex(&z[j+1])) ){
+          jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
+          pParse->has5 = 1;
         }else{
           return -1;
         }
-      }else if( c=='"' ){
+      }else if( c==cDelim ){
         break;
       }
       j++;
@@ -1027,9 +1136,11 @@ json_parse_restart:
     }
     return -1;
   }
-  case '+':
+  case '+': {
+    u8 seenDP, seenE, jnFlags;
     pParse->has5 = 1;
-    /* fall through */
+    jnFlags = JNODE_JSON5;
+    goto parse_number;
   case '-':
   case '0':
   case '1':
@@ -1040,10 +1151,12 @@ json_parse_restart:
   case '6':
   case '7':
   case '8':
-  case '9': {
+  case '9':
     /* Parse number */
-    u8 seenDP = 0;
-    u8 seenE = 0;
+    jnFlags = 0;
+  parse_number:
+    seenDP = 0;
+    seenE = 0;
     assert( '-' < '0' );
     assert( '+' < '0' );
     assert( '.' < '0' );
@@ -1053,10 +1166,14 @@ json_parse_restart:
       if( c=='0' ){
         if( sqlite3Isdigit(z[i+1]) ){
           pParse->has5 = 1;
+          jnFlags = JNODE_JSON5;
         }
       }else{
         if( !sqlite3Isdigit(z[i+1]) ) return -1;
-        if( z[i+1]=='0' && sqlite3Isdigit(z[i+2]) ) pParse->has5 = 1;
+        if( z[i+1]=='0' && sqlite3Isdigit(z[i+2]) ){
+          pParse->has5 = 1;
+          jnFlags = JNODE_JSON5;
+        }
       }
     }
     for(j=i+1;; j++){
@@ -1103,6 +1220,9 @@ json_parse_restart:
     if( z[j-1]<'0' ) return -1;
     jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
                         j - i, &z[i]);
+    if( jnFlags && !pParse->oom ){
+      pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
+    }
     return j;
   }
   case '}': {
