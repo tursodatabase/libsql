@@ -1,5 +1,5 @@
 mod hrana_over_http;
-mod stats;
+pub mod stats;
 mod types;
 
 use std::net::SocketAddr;
