@@ -912,10 +912,9 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   int x;
   JsonNode *pNode;
   const char *z = pParse->zJson;
-  while( fast_isspace(z[i]) ){ i++; }
 json_parse_restart:
-  c = z[i];
-  if( c=='{' ){
+  switch( (u8)z[i] ){
+  case '{': {
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
@@ -951,7 +950,8 @@ json_parse_restart:
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
     return j+1;
-  }else if( c=='[' ){
+  }
+  case '[': {
     /* Parse array */
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
     if( iThis<0 ) return -1;
@@ -977,7 +977,8 @@ json_parse_restart:
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
     return j+1;
-  }else if( c=='"' ){
+  }
+  case '"': {
     /* Parse string */
     u8 jnFlags = 0;
     j = i+1;
@@ -1004,32 +1005,61 @@ json_parse_restart:
     jsonParseAddNode(pParse, JSON_STRING, j+1-i, &z[i]);
     if( !pParse->oom ) pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
     return j+1;
-  }else if( c=='n'
-         && strncmp(z+i,"null",4)==0
-         && !sqlite3Isalnum(z[i+4]) ){
-    jsonParseAddNode(pParse, JSON_NULL, 0, 0);
-    return i+4;
-  }else if( c=='t'
-         && strncmp(z+i,"true",4)==0
-         && !sqlite3Isalnum(z[i+4]) ){
-    jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
-    return i+4;
-  }else if( c=='f'
-         && strncmp(z+i,"false",5)==0
-         && !sqlite3Isalnum(z[i+5]) ){
-    jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
-    return i+5;
-  }else if( c=='-' || (c>='0' && c<='9') ){
+  }
+  case 'n': {
+    if( strncmp(z+i,"null",4)==0 && !sqlite3Isalnum(z[i+4]) ){
+      jsonParseAddNode(pParse, JSON_NULL, 0, 0);
+      return i+4;
+    }
+    return -1;
+  }
+  case 't': {
+    if( strncmp(z+i,"true",4)==0 && !sqlite3Isalnum(z[i+4]) ){
+      jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
+      return i+4;
+    }
+    return -1;
+  }
+  case 'f': {
+    if( strncmp(z+i,"false",5)==0 && !sqlite3Isalnum(z[i+5]) ){
+      jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
+      return i+5;
+    }
+    return -1;
+  }
+  case '+':
+    pParse->has5 = 1;
+    /* fall through */
+  case '-':
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9': {
     /* Parse number */
     u8 seenDP = 0;
     u8 seenE = 0;
     assert( '-' < '0' );
+    assert( '+' < '0' );
+    assert( '.' < '0' );
+    c = z[i];
+
     if( c<='0' ){
-      j = c=='-' ? i+1 : i;
-      if( z[j]=='0' && z[j+1]>='0' && z[j+1]<='9' ) return -1;
+      if( c=='0' ){
+        if( sqlite3Isdigit(z[i+1]) ){
+          pParse->has5 = 1;
+        }
+      }else{
+        if( !sqlite3Isdigit(z[i+1]) ) return -1;
+        if( z[i+1]=='0' && sqlite3Isdigit(z[i+2]) ) pParse->has5 = 1;
+      }
     }
-    j = i+1;
-    for(;; j++){
+    for(j=i+1;; j++){
       c = z[j];
       if( c>='0' && c<='9' ) continue;
       if( c=='.' ){
@@ -1074,19 +1104,44 @@ json_parse_restart:
     jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
                         j - i, &z[i]);
     return j;
-  }else if( c=='}' ){
+  }
+  case '}': {
     return -2;  /* End of {...} */
-  }else if( c==']' ){
+  }
+  case ']': {
     return -3;  /* End of [...] */
-  }else if( c==0 ){
+  }
+  case 0: {
     return 0;   /* End of file */
-  }else if( (j = json5Whitespace(&z[i]))>0 ){
-    i += j;
-    pParse->has5 = 1;
+  }
+  case 0x09:
+  case 0x0a:
+  case 0x0d:
+  case 0x20: {
+    do{
+      i++;
+    }while( fast_isspace(z[i]) );
     goto json_parse_restart;
-  }else{
+  }
+  case 0x0b:
+  case 0x0c:
+  case '/':
+  case 0xc2:
+  case 0xe1:
+  case 0xe2:
+  case 0xe3: {
+    j = json5Whitespace(&z[i]);
+    if( j>0 ){
+      i += j;
+      pParse->has5 = 1;
+      goto json_parse_restart;
+    }
+    return -1;
+  }
+  default: {
 #ifdef SQLITE_ENABLE_JSON_NAN_INF
     int k, nn;
+    c = z[i];
     for(k=0; k<sizeof(aNanInfName)/sizeof(aNanInfName[0]); k++){
       if( c!=aNanInfName[k].c1 && c!=aNanInfName[k].c2 ) continue;
       nn = aNanInfName[k].n;
@@ -1101,6 +1156,7 @@ json_parse_restart:
 #endif
     return -1;  /* Syntax error */
   }
+  } /* End switch(z[i]) */
 }
 
 /*
