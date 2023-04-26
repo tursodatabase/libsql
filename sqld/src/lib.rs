@@ -166,8 +166,8 @@ async fn run_service(
                     heartbeat_period,
                     stats.clone(),
                 )
-                .await
-                .context("Heartbeat setup failed")
+                .await;
+                Ok(())
             });
         }
         None => {
