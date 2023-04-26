@@ -68,23 +68,37 @@ const WASM_TABLE_CREATE: &str =
 
 fn perform_load_dump(conn: &rusqlite::Connection, path: PathBuf) -> anyhow::Result<()> {
     let mut f = BufReader::new(File::open(path)?);
+    let mut curr = String::new();
     let mut line = String::new();
     let mut skipped_wasm_table = false;
-    while let Ok(n) = f.read_line(&mut line) {
+    while let Ok(n) = f.read_line(&mut curr) {
         if n == 0 {
             break;
         }
+        let frag = curr.trim();
+
+        if frag.is_empty() || frag.starts_with("--") {
+            curr.clear();
+            continue;
+        }
+
+        line.push_str(frag);
+        curr.clear();
 
         // This is a hack to ignore the libsql_wasm_func_table table because it is already created
         // by the system.
-        if !skipped_wasm_table && line.trim() == WASM_TABLE_CREATE {
+        if !skipped_wasm_table && line == WASM_TABLE_CREATE {
             skipped_wasm_table = true;
             line.clear();
             continue;
         }
 
-        conn.execute(&line, ())?;
-        line.clear();
+        if line.ends_with(';') {
+            conn.execute(&line, ())?;
+            line.clear();
+        } else {
+            line.push(' ');
+        }
     }
 
     Ok(())
