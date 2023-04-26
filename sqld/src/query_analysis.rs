@@ -62,77 +62,75 @@ impl StmtKind {
                 | Stmt::CreateIndex { .. },
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
-            Cmd::Stmt(Stmt::Pragma(name, body)) => {
-                if is_pragma_allowed(name, body.as_ref()) {
-                    Some(Self::Write)
-                } else {
-                    None
-                }
-            }
+            Cmd::Stmt(Stmt::Pragma(name, body)) => Self::pragma_kind(name, body.as_ref()),
             _ => None,
         }
     }
-}
 
-fn is_pragma_allowed(name: &QualifiedName, body: Option<&PragmaBody>) -> bool {
-    let name = name.name.0.as_str();
-    match name {
-        // always ok
-        "foreign_key" | "foreign_key_list" | "foreign_key_check" | "collation_list"
-        | "compile_options" | "data_version" | "database_list" | "freelist_count"
-        | "function_list" | "index_list" | "index_xinfo" | "integrity_check"
-        | "legacy_file_format" | "page_count" | "pragma_list" | "quick_check" | "stats" | "table_info" | "table_list" | "table_xinfo" => true,
-        // ok without args
-        "analysis_limit"
-        | "application_id"
-        | "auto_vacuum"
-        | "automatic_index"
-        | "busy_timeout"
-        | "cache_size"
-        | "cache_spill"
-        | "cell_size_check"
-        | "checkpoint_fullfsync"
-        | "defer_foreign_keys"
-        | "encoding"
-        | "fullfsync"
-        | "hard_heap_limit"
-        | "journal_mode"
-        | "journal_size_limit"
-        | "legacy_alter_table"
-        | "locking_mode"
-        | "max_page_count"
-        | "mmap_size"
-        | "page_size"
-        | "query_only"
-        | "read_uncommitted"
-        | "recursive_triggers"
-        | "reverse_unordered_selects"
-        | "schema_version"
-        | "secure_delete"
-        | "soft_heap_limit"
-        | "synchronous"
-        | "temp_store"
-        | "threads"
-        | "trusted_schema"
-        | "user_version"
-        | "wal_autocheckpoint"
-
-            if body.is_none() =>
-        {
-            true
+    fn pragma_kind(name: &QualifiedName, body: Option<&PragmaBody>) -> Option<Self> {
+        let name = name.name.0.as_str();
+        match name {
+            // always ok to be served by primary or replicas - pure readonly pragmas
+            "table_list" | "index_list" | "table_info" | "table_xinfo" | "index_xinfo"
+            | "pragma_list" | "compile_options" | "database_list" | "function_list"
+            | "module_list" => Some(Self::Read),
+            // special case for `encoding` - it's effectively readonly for connections
+            // that already created a database, which is always the case for sqld
+            "encoding" => Some(Self::Read),
+            // always ok to be served by primary
+            "foreign_key" | "foreign_key_list" | "foreign_key_check" | "collation_list"
+            | "data_version" | "freelist_count" | "integrity_check" | "legacy_file_format"
+            | "page_count" | "quick_check" | "stats" => Some(Self::Write),
+            // ok to be served by primary without args
+            "analysis_limit"
+            | "application_id"
+            | "auto_vacuum"
+            | "automatic_index"
+            | "busy_timeout"
+            | "cache_size"
+            | "cache_spill"
+            | "cell_size_check"
+            | "checkpoint_fullfsync"
+            | "defer_foreign_keys"
+            | "fullfsync"
+            | "hard_heap_limit"
+            | "journal_mode"
+            | "journal_size_limit"
+            | "legacy_alter_table"
+            | "locking_mode"
+            | "max_page_count"
+            | "mmap_size"
+            | "page_size"
+            | "query_only"
+            | "read_uncommitted"
+            | "recursive_triggers"
+            | "reverse_unordered_selects"
+            | "schema_version"
+            | "secure_delete"
+            | "soft_heap_limit"
+            | "synchronous"
+            | "temp_store"
+            | "threads"
+            | "trusted_schema"
+            | "user_version"
+            | "wal_autocheckpoint" => {
+                match body {
+                    Some(_) => None,
+                    None => Some(Self::Write),
+                }
+            }
+            // changes the state of the connection, and can't be allowed rn:
+            "case_sensitive_like" | "ignore_check_constraints" | "incremental_vacuum"
+                // TODO: check if optimize can be safely performed
+                | "optimize"
+                | "parser_trace"
+                | "shrink_memory"
+                | "wal_checkpoint" => None,
+            _ => {
+                tracing::debug!("Unknown pragma: {name}");
+                None
+            },
         }
-        // changes the state of the connection, and can't be allowed rn:
-        "case_sensitive_like" | "ignore_check_constraints" | "incremental_vacuum" 
-            // TODO: check if optimize can be safely performed
-            | "optimize"
-            | "parser_trace"
-            | "shrink_memory"
-            | "wal_checkpoint"
-
-            => {
-            false
-        }
-        _ => false,
     }
 }
 
