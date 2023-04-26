@@ -1,5 +1,5 @@
-C Add\sscripts\sfor\sJSON\sperformance\stesting.
-D 2023-04-26T13:25:30.498
+C Fix\sto\sthe\sjson-speed-check.sh\sscript.
+D 2023-04-26T13:52:20.152
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1252,7 +1252,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/json/README.md 9d117e0d6da9eee96de2fc8e32b603208b0e5b460ff99e5de3407bb713f0bb5c
 F test/json/json-generator.tcl 229bd293f1865f787c160886cadd282631721925cca2947aaa54bbcd7f65cef7
 F test/json/json-q1.txt 335a7c8ab291d354f33b7decc9559e99a2823d4142291c4be7aa339a631f3c2d
-F test/json/json-speed-check.sh b1544c21e6f04e9c3ecc3caa858e0607703a4ed29d4d8b631a736d28e298ed9d x
+F test/json/json-speed-check.sh 362f9c5c4a69c6f2c6fa98f538fb2e07e084dc0bef74f8bbd92cc1666e8415e5 x
 F test/json101.test 7241ab038c75ba780b009c6f37e4b660e5e63d1d74c110336a4779a2db8653f7
 F test/json102.test 327e77275f338c028faefa2da5164daf6b142a165e3015ff2a6e4251ddc6a0ac
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
@@ -2063,8 +2063,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d33ab77800765c8b3a13ffcc02ba8a348d71b2b425924560418b517d723494d
-R 370adb66bc2173cabe35b75b43054560
+P 3051d6a7c12cbf86634d8fab64f3f3bc9a1eb184260e56a82eb543cb634ba7ef
+R 76520c4f968a15591ad7c027fe9539e0
 U drh
-Z 49f1c31b7a1708965e204247b5ad4fd6
+Z 781a4e98041d9791d0ec4084972b315b
 # Remove this line to create a well-formed Fossil manifest.

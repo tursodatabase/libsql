@@ -68,7 +68,8 @@ echo "CC_OPTS        = $CC_OPTS" | tee -a summary-$NAME.txt
 rm -f cachegrind.out.* jsonshell
 $CC -g -Os -Wall -I. $CC_OPTS ./shell.c ./sqlite3.c -o jsonshell -ldl -lpthread
 ls -l jsonshell | tee -a summary-$NAME.txt
-home=/home/drh/sqlite/json-perf
+home=`echo $0 | sed -e 's,/[^/]*$,,'`
+echo ./jsonshell $home/json100mb.db "<$home/json-q1.txt"
 valgrind --tool=cachegrind ./jsonshell $home/json100mb.db <$home/json-q1.txt \
       2>&1 | tee -a summary-$NAME.txt
 cg_anno.tcl cachegrind.out.* >jout-$NAME.txt
