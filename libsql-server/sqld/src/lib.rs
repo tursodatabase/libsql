@@ -32,6 +32,7 @@ pub use sqld_libsql_bindings as libsql;
 mod auth;
 pub mod database;
 mod error;
+mod heartbeat;
 mod hrana;
 mod http;
 mod postgres;
@@ -90,6 +91,9 @@ pub struct Config {
     pub idle_shutdown_timeout: Option<Duration>,
     pub load_from_dump: Option<PathBuf>,
     pub max_log_size: u64,
+    pub heartbeat_url: Option<String>,
+    pub heartbeat_auth: Option<String>,
+    pub heartbeat_period: Duration,
 }
 
 async fn run_service(
@@ -133,7 +137,7 @@ async fn run_service(
             hrana_upgrade_tx,
             config.enable_http_console,
             idle_shutdown_layer,
-            stats,
+            stats.clone(),
         ));
     }
 
@@ -143,6 +147,32 @@ async fn run_service(
                 .await
                 .context("Hrana listener failed")
         });
+    }
+
+    match &config.heartbeat_url {
+        Some(heartbeat_url) => {
+            let heartbeat_period = config.heartbeat_period;
+            tracing::info!(
+                "Server sending heartbeat to URL {} every {:?}",
+                heartbeat_url,
+                heartbeat_period,
+            );
+            let heartbeat_url = heartbeat_url.clone();
+            let heartbeat_auth = config.heartbeat_auth.clone();
+            join_set.spawn(async move {
+                heartbeat::server_heartbeat(
+                    heartbeat_url,
+                    heartbeat_auth,
+                    heartbeat_period,
+                    stats.clone(),
+                )
+                .await
+                .context("Heartbeat setup failed")
+            });
+        }
+        None => {
+            tracing::warn!("No server heartbeat configured")
+        }
     }
 
     Ok(())

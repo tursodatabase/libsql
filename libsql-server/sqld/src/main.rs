@@ -133,6 +133,22 @@ struct Cli {
 
     #[clap(subcommand)]
     utils: Option<UtilsSubcommands>,
+
+    /// The URL to send a server heartbeat `POST` request to.
+    /// By default, the server doesn't send a heartbeat.
+    #[clap(long, env = "SQLD_HEARTBEAT_URL")]
+    heartbeat_url: Option<String>,
+
+    /// The HTTP "Authornization" header to include in the a server heartbeat
+    /// `POST` request.
+    /// By default, the server doesn't send a heartbeat.
+    #[clap(long, env = "SQLD_HEARTBEAT_AUTH")]
+    heartbeat_auth: Option<String>,
+
+    /// The heartbeat time period in seconds.
+    /// By default, the the period is 30 seconds.
+    #[clap(long, env = "SQLD_HEARTBEAT_PERIOD_S", default_value = "30")]
+    heartbeat_period_s: u64,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -231,6 +247,9 @@ fn config_from_args(args: Cli) -> Result<Config> {
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
         load_from_dump: args.load_from_dump,
         max_log_size: args.max_log_size,
+        heartbeat_url: args.heartbeat_url,
+        heartbeat_auth: args.heartbeat_auth,
+        heartbeat_period: Duration::from_secs(args.heartbeat_period_s),
     })
 }
 
