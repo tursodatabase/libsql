@@ -316,7 +316,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
       if( N==0 ) break;     
     }
     assert( zIn[0]=='\\' );
-    switch( zIn[1] ){
+    switch( (u8)zIn[1] ){
       case '\'':
         jsonAppendChar(p, '\'');
         break;
@@ -331,6 +331,21 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
         break;
       case '0':
         jsonAppendRaw(p, "\\u0000", 6);
+        break;
+      case '\r':
+        if( N>=3 && zIn[2]=='\n' ){
+          zIn++;
+          N--;
+        }
+        break;
+      case '\n':
+        break;
+      case 0xe2:
+        assert( N>=4 );
+        assert( 0x80==(u8)zIn[2] );
+        assert( 0xa8==(u8)zIn[3] || 0xa9==(u8)zIn[3] );
+        zIn += 2;
+        N -= 2;
         break;
       default:
         jsonAppendRaw(p, zIn, 2);
@@ -742,9 +757,7 @@ static void jsonReturn(
         }
         for(i=1, j=0; i<n-1; i++){
           char c = z[i];
-          if( c!='\\' ){
-            zOut[j++] = c;
-          }else{
+          if( c=='\\' ){
             c = z[++i];
             if( c=='u' ){
               u32 v = jsonHexToInt4(z+i+1);
@@ -776,31 +789,42 @@ static void jsonReturn(
                   zOut[j++] = 0x80 | (v&0x3f);
                 }
               }
+              continue;
+            }else if( c=='b' ){
+              c = '\b';
+            }else if( c=='f' ){
+              c = '\f';
+            }else if( c=='n' ){
+              c = '\n';
+            }else if( c=='r' ){
+              c = '\r';
+            }else if( c=='t' ){
+              c = '\t';
+            }else if( c=='v' ){
+              c = '\v';
+            }else if( c=='\'' ){
+              c = '\'';
+            }else if( c=='"' ){
+              c = '"';
+            }else if( c=='0' ){
+              c = 0;
+            }else if( c=='x' ){
+              c = (jsonHexToInt(z[i+1])<<4) | jsonHexToInt(z[i+2]);
+              i += 2;
+            }else if( c=='\r' && z[i+1]=='\n' ){
+              i++;
+              continue;
+            }else if( 0xe2==(u8)c ){
+              assert( 0x80==(u8)z[i+1] );
+              assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
+              i+= 2;
+              continue;
             }else{
-              if( c=='b' ){
-                c = '\b';
-              }else if( c=='f' ){
-                c = '\f';
-              }else if( c=='n' ){
-                c = '\n';
-              }else if( c=='r' ){
-                c = '\r';
-              }else if( c=='t' ){
-                c = '\t';
-              }else if( c=='v' ){
-                c = '\v';
-              }else if( c=='\'' ){
-                c = '\'';
-              }else if( c=='0' ){
-                c = 0;
-              }else if( c=='x' ){
-                c = (jsonHexToInt(z[i+1])<<4) | jsonHexToInt(z[i+2]);
-                i += 2;
-              }
-              zOut[j++] = c;
+              continue;
             }
-          }
-        }
+          } /* end if( c=='\\' ) */
+          zOut[j++] = c;
+        } /* end for() */
         zOut[j] = 0;
         sqlite3_result_text(pCtx, zOut, j, sqlite3_free);
       }
@@ -1202,6 +1226,9 @@ json_parse_restart:
            || (c=='u' && jsonIs4Hex(&z[j+1])) ){
           jnFlags |= JNODE_ESCAPE;
         }else if( c=='\'' || c=='0' || c=='v'
+           || c=='\r' || c=='\n'
+           || (0xe2==(u8)c && 0x80==(u8)z[j+1]
+                && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2]))
            || (c=='x' && jsonIs2Hex(&z[j+1])) ){
           jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
           pParse->has5 = 1;
