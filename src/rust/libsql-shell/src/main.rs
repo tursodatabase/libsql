@@ -48,7 +48,7 @@ impl Iterator for StrStatements {
     fn next(&mut self) -> Option<Self::Item> {
         let mut embedded = false;
         let mut pos = 0;
-        for (index, char) in self.value.trim().chars().enumerate() {
+        for (index, char) in self.value.chars().enumerate() {
             if char == '\'' {
                 embedded = !embedded;
                 continue;
@@ -56,20 +56,20 @@ impl Iterator for StrStatements {
             if embedded || char != ';' {
                 continue;
             }
-            let str_statement = self.value[pos..index+1].to_string();
+            let str_statement = self.value[pos..index + 1].to_string();
             if str_statement.starts_with(';') || str_statement.is_empty() {
-                pos = index+1;
+                pos = index + 1;
                 continue;
             }
-            self.value = self.value[index+1..].to_string();
-            return Some(str_statement.to_string())
+            self.value = self.value[index + 1..].to_string();
+            return Some(str_statement.trim().to_string());
         }
         None
     }
 }
 
 fn get_str_statements(str: String) -> StrStatements {
-    StrStatements { value: str}
+    StrStatements { value: str }
 }
 
 fn main() -> Result<()> {
@@ -152,4 +152,24 @@ fn main() -> Result<()> {
     }
     rl.save_history(history.as_path()).ok();
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_str_statements_itterator() {
+        let mut str_statements_iterator =
+            get_str_statements(String::from("SELECT ';' FROM test; SELECT * FROM test;;"));
+        assert_eq!(
+            str_statements_iterator.next(),
+            Some("SELECT ';' FROM test;".to_owned())
+        );
+        assert_eq!(
+            str_statements_iterator.next(),
+            Some("SELECT * FROM test;".to_owned())
+        );
+        assert_eq!(str_statements_iterator.next(), None);
+    }
 }
