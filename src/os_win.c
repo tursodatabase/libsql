@@ -5197,7 +5197,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5214,7 +5214,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5234,7 +5234,7 @@ static int winOpen(
       if( isReadWrite ){
         int rc2, isRO = 0;
         sqlite3BeginBenignMalloc();
-        rc2 = winAccess(pVfs, zName, SQLITE_ACCESS_READ, &isRO);
+        rc2 = winAccess(pVfs, zUtf8Name, SQLITE_ACCESS_READ, &isRO);
         sqlite3EndBenignMalloc();
         if( rc2==SQLITE_OK && isRO ) break;
       }
@@ -5452,6 +5452,11 @@ static int winAccess(
   DWORD lastErrno = 0;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
+
+  if( zFilename==0 ){
+    *pResOut = 0;
+    return SQLITE_OK;
+  }
 
   SimulateIOError( return SQLITE_IOERR_ACCESS; );
   OSTRACE(("ACCESS name=%s, flags=%x, pResOut=%p\n",
