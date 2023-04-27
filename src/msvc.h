@@ -38,4 +38,8 @@
 #define SQLITE_4_BYTE_ALIGNED_MALLOC
 #endif /* defined(_MSC_VER) && !defined(_WIN64) */
 
+#if !defined(HAVE_LOG2) && defined(_MSC_VER) && _MSC_VER<1800
+#define HAVE_LOG2 0
+#endif /* !defined(HAVE_LOG2) && defined(_MSC_VER) && _MSC_VER<1800 */
+
 #endif /* SQLITE_MSVC_H */

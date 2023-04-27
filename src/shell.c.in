@@ -3565,10 +3565,14 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
     sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
     if( rc==SQLITE_OK && pQ && sqlite3_step(pQ)==SQLITE_ROW ){
       sqlite3_bind_value(pStmt, i, sqlite3_column_value(pQ, 0));
+#ifdef NAN
     }else if( sqlite3_strlike("_NAN", zVar, 0)==0 ){
       sqlite3_bind_double(pStmt, i, NAN);
+#endif
+#ifdef INFINITY
     }else if( sqlite3_strlike("_INF", zVar, 0)==0 ){
       sqlite3_bind_double(pStmt, i, INFINITY);
+#endif
     }else{
       sqlite3_bind_null(pStmt, i);
     }
@@ -4995,10 +4999,10 @@ static int showHelp(FILE *out, const char *zPattern){
     ** Otherwise      => whole help for documented commands
     */
     enum HelpWanted hw = HW_SummaryOnly;
+    enum HelpHave hh = HH_More;
     if( zPattern!=0 ){
       hw = (*zPattern=='0')? HW_NoCull|HW_Undoc : HW_NoCull;
     }
-    enum HelpHave hh = HH_More;
     for(i=0; i<ArraySize(azHelp); i++){
       switch( azHelp[i][0] ){
       case ',':
