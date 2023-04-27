@@ -372,6 +372,18 @@ static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
     N--;
   }
   while( zIn[0]=='0' && N>1 ){
+    if( zIn[1]=='x' || zIn[1]=='X' ){
+      sqlite3_int64 i = 0;
+      int rc = sqlite3DecOrHexToI64(zIn, &i);
+      if( rc<=1 ){
+        jsonPrintf(100,p,"%lld",i);
+      }else if( rc==2 ){
+        jsonAppendRaw(p, "9.0e999", 7);
+      }else{
+        jsonAppendRaw(p, "9223372036854775808", 18);
+      }
+      return;
+    }
     zIn++;
     N--;
   } 
@@ -684,44 +696,32 @@ static void jsonReturn(
     }
     case JSON_INT: {
       sqlite3_int64 i = 0;
+      int rc;
+      int bNeg = 0;
       const char *z;
+     
+   
       assert( pNode->eU==1 );
       z = pNode->u.zJContent;
-      if( z[0]=='-' ){ z++; }
-      while( z[0]>='0' && z[0]<='9' ){
-        unsigned v = *(z++) - '0';
-        if( i>=LARGEST_INT64/10 ){
-          if( i>LARGEST_INT64/10 ) goto int_as_real;
-          if( z[0]>='0' && z[0]<='9' ) goto int_as_real;
-          if( v==9 ) goto int_as_real;
-          if( v==8 ){
-            if( pNode->u.zJContent[0]=='-' ){
-              sqlite3_result_int64(pCtx, SMALLEST_INT64);
-              goto int_done;
-            }else{
-              goto int_as_real;
-            }
-          }
-        }
-        i = i*10 + v;
+      if( z[0]=='-' ){ z++; bNeg = 1; }
+      else if( z[0]=='+' ){ z++; }
+      rc = sqlite3DecOrHexToI64(z, &i);
+      if( rc<=1 ){
+        sqlite3_result_int64(pCtx, bNeg ? -i : i);
+      }else if( rc==3 && bNeg ){
+        sqlite3_result_int64(pCtx, SMALLEST_INT64);
+      }else{
+        goto to_double;
       }
-      if( pNode->u.zJContent[0]=='-' ){ i = -i; }
-      sqlite3_result_int64(pCtx, i);
-      int_done:
       break;
-      int_as_real: ; /* no break */ deliberate_fall_through
     }
     case JSON_REAL: {
       double r;
-#ifdef SQLITE_AMALGAMATION
       const char *z;
       assert( pNode->eU==1 );
+    to_double:
       z = pNode->u.zJContent;
       sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
-#else
-      assert( pNode->eU==1 );
-      r = strtod(pNode->u.zJContent, 0);
-#endif
       sqlite3_result_double(pCtx, r);
       break;
     }
@@ -1369,6 +1369,16 @@ json_parse_restart:
         }
         if( c<'0' || c>'9' ) return -1;
         continue;
+      }
+      if( (c=='x' || c=='X')
+       && (j==i+1 || (j==i+2 && (z[i]=='-' || z[i]=='+')))
+       && z[j-1]=='0'
+       && sqlite3Isxdigit(z[j+1])
+      ){
+        assert( seenDP==0 );
+        pParse->has5 = 1;
+        jnFlags |= JNODE_JSON5;
+        for(j=j+2; sqlite3Isxdigit(z[j]); j++){}
       }
       break;
     }
