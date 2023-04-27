@@ -1059,13 +1059,25 @@ json_parse_restart:
       if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
       x = jsonParseValue(pParse, j);
       if( x<=0 ){
-        pParse->iDepth--;
         if( x==(-2) ){
           j = pParse->iErr;
           if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
+          pParse->iDepth--;
           break;
         }
-        return -1;
+        j += json5Whitespace(&z[j]);
+        if( sqlite3Isalpha(z[j]) || z[j]=='_' || z[j]=='$' ){
+          int k;
+          for(k=j+1; sqlite3Isalnum(z[k]) || z[k]=='_' || z[k]=='$'; k++){}
+          jsonParseAddNode(pParse, JSON_STRING, k-j, &z[j]);
+          if( !pParse->oom ){
+            pParse->aNode[pParse->nNode-1].jnFlags = JNODE_RAW;
+          }
+          pParse->has5 = 1;
+          x = k;
+        }else{
+          return -1;
+        }
       }
       if( pParse->oom ) return -1;
       pNode = &pParse->aNode[pParse->nNode-1];
