@@ -1031,7 +1031,7 @@ static int json5Whitespace(const char *zIn){
 }
 
 
-#ifdef SQLITE_ENABLE_JSON_NAN_INF
+#ifdef SQLITE_EXTENDED_NAN_INF
 /*
 ** Extra floating-point literals to allow in JSON.
 */
@@ -1050,7 +1050,7 @@ static const struct NanInfName {
   { 'q', 'Q', 4, JSON_NULL, 4, "QNaN", "null" },
   { 's', 'S', 4, JSON_NULL, 4, "SNaN", "null" },
 }; 
-#endif /* SQLITE_ENABLE_JSON_NAN_INF */
+#endif /* SQLITE_EXTENDED_NAN_INF */
 
 /*
 ** Parse a single JSON value which begins at pParse->zJson[i].  Return the
@@ -1306,7 +1306,35 @@ json_parse_restart:
           jnFlags = JNODE_JSON5;
         }
       }else{
-        if( !sqlite3Isdigit(z[i+1]) ) return -1;
+        if( !sqlite3Isdigit(z[i+1]) ){
+          if( z[i+1]=='I'
+           && (c=='-' || c=='+')
+           && strncmp(&z[i+1], "Infinity",8)==0
+          ){
+            if( z[i]=='-' ){
+              jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
+            }else{
+              jsonParseAddNode(pParse, JSON_REAL, 7, "9.0e999");
+            }
+            return i+9;
+          }
+#ifdef SQLITE_EXTENDED_NAN_INF
+          /* Non-standard JSON and JSON5:  Allow "Inf" as an alternative
+          ** spelling for "Infinity" and allow it to be in any case. */
+          if( (z[i+1]=='I' || z[i+1]=='i')
+           && (c=='-' || c=='+')
+           && sqlite3StrNICmp(&z[i+1], "inf",3)==0
+          ){
+            if( z[i]=='-' ){
+              jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
+            }else{
+              jsonParseAddNode(pParse, JSON_REAL, 7, "9.0e999");
+            }
+            return i+4;
+          }
+#endif
+          return -1;
+        }
         if( z[i+1]=='0' && sqlite3Isdigit(z[i+2]) ){
           pParse->has5 = 1;
           jnFlags = JNODE_JSON5;
@@ -1342,24 +1370,6 @@ json_parse_restart:
         if( c<'0' || c>'9' ) return -1;
         continue;
       }
-#ifdef SQLITE_ENABLE_JSON_NAN_INF
-      /* Non-standard JSON:  Allow "-Inf" (in any case)
-      ** to be understood as floating point literals. */
-      if( (c=='i' || c=='I')
-       && j==i+1
-       && z[i]=='-'
-       && sqlite3StrNICmp(&z[j], "inf",3)==0
-      ){
-        if( !sqlite3Isalnum(z[j+3]) ){
-          jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
-          return i+4;
-        }else if( (sqlite3StrNICmp(&z[j],"infinity",8)==0 &&
-                  !sqlite3Isalnum(z[j+8])) ){
-          jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
-          return i+9;
-        }
-      }
-#endif
       break;
     }
     if( z[j-1]<'0' ){
@@ -1376,6 +1386,22 @@ json_parse_restart:
       pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
     }
     return j;
+  }
+  case 'N': {
+    if( strncmp(&z[i],"NaN",3)==0 ){
+      jsonParseAddNode(pParse, JSON_NULL, 4, "null");
+      pParse->has5 = 1;
+      return i+3;
+    }
+    return -1;
+  }
+  case 'I': {
+    if( strncmp(&z[i],"Infinity",8)==0 ){
+      jsonParseAddNode(pParse, JSON_REAL, 7, "9.0e999");
+      pParse->has5 = 1;
+      return i+8;
+    }
+    return -1;
   }
   case '}': {
     pParse->iErr = i;
@@ -1421,7 +1447,7 @@ json_parse_restart:
     return -1;
   }
   default: {
-#ifdef SQLITE_ENABLE_JSON_NAN_INF
+#ifdef SQLITE_EXTENDED_NAN_INF
     int k, nn;
     c = z[i];
     for(k=0; k<sizeof(aNanInfName)/sizeof(aNanInfName[0]); k++){
