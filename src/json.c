@@ -398,6 +398,7 @@ static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
   }
   for(i=0; i<N; i++){
     if( zIn[i]=='.' && (i+1==N || !sqlite3Isdigit(zIn[i+1])) ){
+      i++;
       jsonAppendRaw(p, zIn, i);
       zIn += i;
       N -= i;
@@ -802,7 +803,7 @@ static void jsonReturn(
               c = '\t';
             }else if( c=='v' ){
               c = '\v';
-            }else if( c=='\'' || c=='"' || c=='/' ){
+            }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
               /* pass through unchanged */
             }else if( c=='0' ){
               c = 0;
@@ -1268,6 +1269,15 @@ json_parse_restart:
     pParse->has5 = 1;
     jnFlags = JNODE_JSON5;
     goto parse_number;
+  case '.':
+    if( sqlite3Isdigit(z[i+1]) ){
+      pParse->has5 = 1;
+      jnFlags = JNODE_JSON5;
+      seenE = 0;
+      seenDP = 1;
+      goto parse_number_2;
+    }
+    return -1;
   case '-':
   case '0':
   case '1':
@@ -1303,6 +1313,7 @@ json_parse_restart:
         }
       }
     }
+  parse_number_2:
     for(j=i+1;; j++){
       c = z[j];
       if( c>='0' && c<='9' ) continue;
@@ -1313,7 +1324,14 @@ json_parse_restart:
         continue;
       }
       if( c=='e' || c=='E' ){
-        if( z[j-1]<'0' ) return -1;
+        if( z[j-1]<'0' ){
+          if( z[j-1]=='.' && j-2>=i && sqlite3Isdigit(z[j-2]) ){
+            pParse->has5 = 1;
+            jnFlags |= JNODE_JSON5;
+          }else{
+            return -1;
+          }
+        }
         if( seenE ) return -1;
         seenDP = seenE = 1;
         c = z[j+1];
@@ -1344,7 +1362,14 @@ json_parse_restart:
 #endif
       break;
     }
-    if( z[j-1]<'0' ) return -1;
+    if( z[j-1]<'0' ){
+      if( z[j-1]=='.' && j-2>=i && sqlite3Isdigit(z[j-2]) ){
+        pParse->has5 = 1;
+        jnFlags |= JNODE_JSON5;
+      }else{
+        return -1;
+      }
+    }
     jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
                         j - i, &z[i]);
     if( jnFlags && !pParse->oom ){
