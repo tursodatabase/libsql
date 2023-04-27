@@ -332,9 +332,9 @@ impl Connection {
 
     fn update_stats(&self, stmt: &rusqlite::Statement) {
         self.stats
-            .inc_rows_read(stmt.get_status(StatementStatus::RowsRead) as usize);
+            .inc_rows_read(stmt.get_status(StatementStatus::RowsRead) as u64);
         self.stats
-            .inc_rows_written(stmt.get_status(StatementStatus::RowsWritten) as usize);
+            .inc_rows_written(stmt.get_status(StatementStatus::RowsWritten) as u64);
     }
 }
 
