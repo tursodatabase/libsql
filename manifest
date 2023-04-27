@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\smacro\sthat\scan\sin\sfact\ssometimes\sbe\sfalse.\n[forum:/forumpost/f0e872fcee|Forum\spost\sf0e872fcee].
-D 2023-04-27T23:40:03.444
+C Remove\sa\sfaulty\sassert()\sfrom\sthe\sCLI.\n[forum:/forumpost/726c4f7db0|Forum\spost\s726c4f7db0].
+D 2023-04-27T23:44:38.716
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -634,7 +634,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c f879cef11c462a2c37a8c906932781e384c3bb32042c355a704a043029c90d27
-F src/shell.c.in 5dcbcbcd8d984d05737172bcc23678ec34367905871ca1fdec4ca831bfd806fa
+F src/shell.c.in 3b5633b7c78e51df21af693ce27cccca28e6118480060876d6be968c2f7a577c
 F src/sqlite.h.in 4fff9c6cc5d4cbba9532a668112efb6dc469c425e1a2196664d7c07d508363ef
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2060,8 +2060,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ba2a651120391d779a3db9881c0fb17e1322cc9d8738f915a46e31a2f313578
-R 17f49f4919f4d8f5c0f5d76a60091614
+P d85880e4ed89e2198beea642818051f7a91a71fea9929be0a7ed0603b493ce47
+R c57990c4154d9f0a3a4f65c13761b58d
 U drh
-Z 328809aebe8b52d41e5cb3bc142e5a4c
+Z d40988ca57efd61e3977061d11afa616
 # Remove this line to create a well-formed Fossil manifest.

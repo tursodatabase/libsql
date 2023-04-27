@@ -10516,7 +10516,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( bDebug ) utf8_printf(p->out, "%s\n", zRevText);
       lrc = sqlite3_prepare_v2(p->db, zRevText, -1, &pStmt, 0);
       if( lrc!=SQLITE_OK ){
-        assert(lrc==SQLITE_NOMEM);
+        /* assert(lrc==SQLITE_NOMEM); // might also be SQLITE_ERROR if the
+        ** user does cruel and unnatural things like ".limit expr_depth 0". */
         rc = 1;
       }else{
         if( zLike ) sqlite3_bind_text(pStmt,1,zLike,-1,SQLITE_STATIC);
