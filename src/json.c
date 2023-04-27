@@ -816,7 +816,7 @@ static void jsonReturn(
             }else if( 0xe2==(u8)c ){
               assert( 0x80==(u8)z[i+1] );
               assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
-              i+= 2;
+              i += 2;
               continue;
             }else{
               continue;
@@ -1221,11 +1221,15 @@ json_parse_restart:
            || c=='n' || c=='r' || c=='t'
            || (c=='u' && jsonIs4Hex(&z[j+1])) ){
           jnFlags |= JNODE_ESCAPE;
-        }else if( c=='\'' || c=='0' || c=='v'
-           || c=='\r' || c=='\n'
+        }else if( c=='\'' || c=='0' || c=='v' || c=='\n'
            || (0xe2==(u8)c && 0x80==(u8)z[j+1]
                 && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2]))
            || (c=='x' && jsonIs2Hex(&z[j+1])) ){
+          jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
+          pParse->has5 = 1;
+        }else if( c=='\r' ){
+          j++;
+          if( z[j+1]=='\n' ) j++;
           jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
           pParse->has5 = 1;
         }else{
@@ -1270,7 +1274,7 @@ json_parse_restart:
       pParse->has5 = 1;
       jnFlags = JNODE_JSON5;
       seenE = 0;
-      seenDP = 1;
+      seenDP = JSON_REAL;
       goto parse_number_2;
     }
     return -1;
@@ -1335,6 +1339,11 @@ json_parse_restart:
             return i+4;
           }
 #endif
+          if( z[i+1]=='.' ){
+            pParse->has5 = 1;
+            jnFlags |= JNODE_JSON5;
+            goto parse_number_2;
+          }
           return -1;
         }
         if( z[i+1]=='0' ){
@@ -1355,7 +1364,6 @@ json_parse_restart:
       c = z[j];
       if( sqlite3Isdigit(c) ) continue;
       if( c=='.' ){
-        if( z[j-1]=='-' ) return -1;
         if( seenDP==JSON_REAL ) return -1;
         seenDP = JSON_REAL;
         continue;
