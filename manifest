@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\son\swindows\ssometimes\scausing\sSQLITE_NOMEM\sto\sbe\sreturned\sif\san\serror\soccurred\swhile\sopening\sa\stemp\sfile.
-D 2023-04-27T13:55:29.757
+C Adjust\sOSTRACE\susage\sso\sthat\sit\sworks\swith\sthe\schanges\sin\sthe\sprevious\scheck-in.
+D 2023-04-27T21:31:21.305
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -618,7 +618,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 1b3ddb7814c4bf37f494c04d2ab30c1ced5b2c927267e1930ce7cd388787a96d
-F src/os_win.c 20c2f020b54fe6ae210c1f200efc097ac50e7e7b24f64c632c1b751ac1f96899
+F src/os_win.c 2b2411279f7b24f927591561303fc5871845732df42641cbf695c23640b16975
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 9d36ddedc842e993c88c222ed914822dbd6f8ece3c648fde04468637012a034a
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
@@ -2060,8 +2060,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 14d1c4a828660bc137dcea1bb4cc439e1ed3872867a0dab486f6a639ef3bcc45
-R 1e3870610983faacb84c1d55e8f701dd
-U dan
-Z ef68dfd966e00e89b716183914f3d8f9
+P c22a39a6b28e3039fe453c0c0db98744b8a63ef9063cc3f6e0ed67d2506d34be
+R cc0091be8db1b63c66828854cc8ff562
+U mistachkin
+Z ac07319bd47da651541c0acc4d52b4bc
 # Remove this line to create a well-formed Fossil manifest.

@@ -5453,14 +5453,16 @@ static int winAccess(
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
 
-  if( zFilename==0 ){
-    *pResOut = 0;
-    return SQLITE_OK;
-  }
-
   SimulateIOError( return SQLITE_IOERR_ACCESS; );
   OSTRACE(("ACCESS name=%s, flags=%x, pResOut=%p\n",
            zFilename, flags, pResOut));
+
+  if( zFilename==0 ){
+    *pResOut = 0;
+    OSTRACE(("ACCESS name=%s, pResOut=%p, *pResOut=%d, rc=SQLITE_OK\n",
+             zFilename, pResOut, *pResOut));
+    return SQLITE_OK;
+  }
 
   zConverted = winConvertFromUtf8Filename(zFilename);
   if( zConverted==0 ){
