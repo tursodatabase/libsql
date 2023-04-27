@@ -1075,19 +1075,35 @@ json_parse_restart:
       if( z[j]==':' ){
         j++;
       }else{
+        if( fast_isspace(z[j]) ){
+          do{ j++; }while( fast_isspace(z[j]) );
+          if( z[j]==':' ){
+            j++;
+            goto parse_object_value;
+          }
+        }
         x = jsonParseValue(pParse, j);
         if( x!=(-5) ) return -1;
         j = pParse->iErr+1;
       }
+    parse_object_value:
       x = jsonParseValue(pParse, j);
       pParse->iDepth--;
-      if( x<0 ) return -1;
+      if( x<=0 ) return -1;
       j = x;
       if( z[j]==',' ){
         continue;
       }else if( z[j]=='}' ){
         break;
       }else{
+        if( fast_isspace(z[j]) ){
+          do{ j++; }while( fast_isspace(z[j]) );
+          if( z[j]==',' ){
+            continue;
+          }else if( z[j]=='}' ){
+            break;
+          }
+        }
         x = jsonParseValue(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
@@ -1112,7 +1128,7 @@ json_parse_restart:
       if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
       x = jsonParseValue(pParse, j);
       pParse->iDepth--;
-      if( x<0 ){
+      if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
           if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
@@ -1126,6 +1142,14 @@ json_parse_restart:
       }else if( z[j]==']' ){
         break;
       }else{
+        if( fast_isspace(z[j]) ){
+          do{ j++; }while( fast_isspace(z[j]) );
+          if( z[j]==',' ){
+            continue;
+          }else if( z[j]==']' ){
+            break;
+          }
+        }
         x = jsonParseValue(pParse, j);
         if( x==(-4) ){
           j = pParse->iErr;
@@ -1378,7 +1402,10 @@ static int jsonParse(
     while( fast_isspace(zJson[i]) ) i++;
     if( zJson[i] ){
       i += json5Whitespace(&zJson[i]);
-      if( zJson[i] ) return -1;
+      if( zJson[i] ){
+        jsonParseReset(pParse);
+        return 1;
+      }
       pParse->has5 = 1;
     }
   }
