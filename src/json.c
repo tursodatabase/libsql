@@ -1292,7 +1292,7 @@ json_parse_restart:
     /* Parse number */
     jnFlags = 0;
   parse_number:
-    seenDP = 0;
+    seenDP = JSON_INT;
     seenE = 0;
     assert( '-' < '0' );
     assert( '+' < '0' );
@@ -1304,6 +1304,12 @@ json_parse_restart:
         if( sqlite3Isdigit(z[i+1]) ){
           pParse->has5 = 1;
           jnFlags = JNODE_JSON5;
+        }else if( (z[i+1]=='x' || z[i+1]=='X') && sqlite3Isxdigit(z[i+2]) ){
+          assert( seenDP==JSON_INT );
+          pParse->has5 = 1;
+          jnFlags |= JNODE_JSON5;
+          for(j=i+3; sqlite3Isxdigit(z[j]); j++){}
+          goto parse_number_finish;
         }
       }else{
         if( !sqlite3Isdigit(z[i+1]) ){
@@ -1335,20 +1341,27 @@ json_parse_restart:
 #endif
           return -1;
         }
-        if( z[i+1]=='0' && sqlite3Isdigit(z[i+2]) ){
-          pParse->has5 = 1;
-          jnFlags = JNODE_JSON5;
+        if( z[i+1]=='0' ){
+          if( sqlite3Isdigit(z[i+2]) ){
+            pParse->has5 = 1;
+            jnFlags = JNODE_JSON5;
+          }else if( (z[i+2]=='x' || z[i+2]=='X') && sqlite3Isxdigit(z[i+3]) ){
+            pParse->has5 = 1;
+            jnFlags |= JNODE_JSON5;
+            for(j=i+4; sqlite3Isxdigit(z[j]); j++){}
+            goto parse_number_finish;
+          }
         }
       }
     }
   parse_number_2:
     for(j=i+1;; j++){
       c = z[j];
-      if( c>='0' && c<='9' ) continue;
+      if( sqlite3Isdigit(c) ) continue;
       if( c=='.' ){
         if( z[j-1]=='-' ) return -1;
-        if( seenDP ) return -1;
-        seenDP = 1;
+        if( seenDP==JSON_REAL ) return -1;
+        seenDP = JSON_REAL;
         continue;
       }
       if( c=='e' || c=='E' ){
@@ -1361,7 +1374,8 @@ json_parse_restart:
           }
         }
         if( seenE ) return -1;
-        seenDP = seenE = 1;
+        seenDP = JSON_REAL;
+        seenE = 1;
         c = z[j+1];
         if( c=='+' || c=='-' ){
           j++;
@@ -1369,16 +1383,6 @@ json_parse_restart:
         }
         if( c<'0' || c>'9' ) return -1;
         continue;
-      }
-      if( (c=='x' || c=='X')
-       && (j==i+1 || (j==i+2 && (z[i]=='-' || z[i]=='+')))
-       && z[j-1]=='0'
-       && sqlite3Isxdigit(z[j+1])
-      ){
-        assert( seenDP==0 );
-        pParse->has5 = 1;
-        jnFlags |= JNODE_JSON5;
-        for(j=j+2; sqlite3Isxdigit(z[j]); j++){}
       }
       break;
     }
@@ -1390,8 +1394,8 @@ json_parse_restart:
         return -1;
       }
     }
-    jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
-                        j - i, &z[i]);
+  parse_number_finish:
+    jsonParseAddNode(pParse, seenDP, j - i, &z[i]);
     if( jnFlags && !pParse->oom ){
       pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
     }
