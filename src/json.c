@@ -891,8 +891,8 @@ static int jsonParseAddNode(
     return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
   p = &pParse->aNode[pParse->nNode];
-  p->eType = (u8)eType;
-  p->jnFlags = 0;
+  p->eType = (u8)(eType & 0xff);
+  p->jnFlags = (u8)(eType >> 8);
   VVA( p->eU = zContent ? 1 : 0 );
   p->n = n;
   p->u.zJContent = zContent;
@@ -1092,10 +1092,7 @@ json_parse_restart:
         if( sqlite3Isalpha(z[j]) || z[j]=='_' || z[j]=='$' ){
           int k;
           for(k=j+1; sqlite3Isalnum(z[k]) || z[k]=='_' || z[k]=='$'; k++){}
-          jsonParseAddNode(pParse, JSON_STRING, k-j, &z[j]);
-          if( !pParse->oom ){
-            pParse->aNode[pParse->nNode-1].jnFlags = JNODE_RAW;
-          }
+          jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), k-j, &z[j]);
           pParse->has5 = 1;
           x = k;
         }else{
@@ -1239,8 +1236,7 @@ json_parse_restart:
       }
       j++;
     }
-    jsonParseAddNode(pParse, JSON_STRING, j+1-i, &z[i]);
-    if( !pParse->oom ) pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
+    jsonParseAddNode(pParse, JSON_STRING | (jnFlags<<8), j+1-i, &z[i]);
     return j+1;
   }
   case 'n': {
@@ -1395,10 +1391,7 @@ json_parse_restart:
       }
     }
   parse_number_finish:
-    jsonParseAddNode(pParse, seenDP, j - i, &z[i]);
-    if( jnFlags && !pParse->oom ){
-      pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
-    }
+    jsonParseAddNode(pParse, seenDP | (jnFlags<<8), j - i, &z[i]);
     return j;
   }
   case 'N': {
