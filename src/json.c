@@ -302,8 +302,42 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
 ** features.
 */
 static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
+  int i;
   jsonAppendChar(p, '"');
-  jsonAppendRaw(p, &zIn[1], N-2); /* TODO: translate JSON5 escapes */
+  zIn++;
+  N -= 2;
+  while( N>0 ){
+    for(i=0; i<N && zIn[i]!='\\'; i++){}
+    if( i>0 ){
+      jsonAppendRaw(p, zIn, i);
+      zIn += i;
+      N -= i;
+      if( N==0 ) break;     
+    }
+    assert( zIn[0]=='\\' );
+    switch( zIn[1] ){
+      case '\'':
+        jsonAppendChar(p, '\'');
+        break;
+      case 'v':
+        jsonAppendRaw(p, "\\u0009", 6);
+        break;
+      case 'x':
+        jsonAppendRaw(p, "\\u00", 4);
+        jsonAppendRaw(p, &zIn[2], 2);
+        zIn += 2;
+        N -= 2;
+        break;
+      case '0':
+        jsonAppendRaw(p, "\\u0000", 6);
+        break;
+      default:
+        jsonAppendRaw(p, zIn, 2);
+        break;
+    }
+    zIn += 2;
+    N -= 2;
+  }
   jsonAppendChar(p, '"');
 }
 
