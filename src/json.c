@@ -802,10 +802,8 @@ static void jsonReturn(
               c = '\t';
             }else if( c=='v' ){
               c = '\v';
-            }else if( c=='\'' ){
-              c = '\'';
-            }else if( c=='"' ){
-              c = '"';
+            }else if( c=='\'' || c=='"' || c=='/' ){
+              /* pass through unchanged */
             }else if( c=='0' ){
               c = 0;
             }else if( c=='x' ){
