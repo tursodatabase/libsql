@@ -1093,7 +1093,7 @@ json_parse_restart:
           pParse->has5 = 1;
           x = k;
         }else{
-          pParse->iErr = j;
+          if( x!=-1 ) pParse->iErr = j;
           return -1;
         }
       }
@@ -1114,7 +1114,7 @@ json_parse_restart:
         }
         x = jsonParseValue(pParse, j);
         if( x!=(-5) ){
-          pParse->iErr = j;
+          if( x!=(-1) ) pParse->iErr = j;
           return -1;
         }
         j = pParse->iErr+1;
@@ -1123,7 +1123,7 @@ json_parse_restart:
       x = jsonParseValue(pParse, j);
       pParse->iDepth--;
       if( x<=0 ){
-        pParse->iErr = j;
+        if( x!=(-1) ) pParse->iErr = j;
         return -1;
       }
       j = x;
@@ -1174,7 +1174,7 @@ json_parse_restart:
           if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
           break;
         }
-        pParse->iErr = j;
+        if( x!=(-1) ) pParse->iErr = j;
         return -1;
       }
       j = x;
