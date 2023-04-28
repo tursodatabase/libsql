@@ -37,17 +37,31 @@ jobs:
       - uses: actions/download-artifact@v3
 
       - name: Display fetched artifacts
-        run: ls -R
+        run: ls -Rha
 
-      - name: Emit a Github Release
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GH_TOKEN }}"
-          automatic_release_tag: "latest"
-          prerelease: true
-          title: "Development Build"
-          files: |
-            libsql-wasm-windows-latest/*
-            libsql-wasm-macos-latest/*
-            libsql-wasm-ubuntu-latest/*
+      # - name: Emit a Github Release
+      #   uses: "marvinpinto/action-automatic-releases@latest"
+      #   with:
+      #     repo_token: "${{ secrets.GH_TOKEN }}"
+      #     automatic_release_tag: "latest"
+      #     release_name: ${{ github.ref }}
+      #     prerelease: true
+      #     title: "Development Build"
+      #     files: |
+      #       libsql-wasm-windows-latest
+      #       libsql-wasm-macos-latest/*
+      #       libsql-wasm-ubuntu-latest/*
         
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          token: "${{ secrets.GH_TOKEN }}"
+          body_path: RELEASE_NOTES.txt
+          prerelease: true
+          #tag_name: v0.1.2
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          files: |
+            libsql-wasm-windows-latest.zip
+            libsql-wasm-macos-latest.zip
+            libsql-wasm-ubuntu-latest.zip
