@@ -1073,7 +1073,10 @@ json_parse_restart:
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
     for(j=i+1;;j++){
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+        pParse->iErr = j;
+        return -1;
+      }
       x = jsonParseValue(pParse, j);
       if( x<=0 ){
         if( x==(-2) ){
@@ -1090,6 +1093,7 @@ json_parse_restart:
           pParse->has5 = 1;
           x = k;
         }else{
+          pParse->iErr = j;
           return -1;
         }
       }
@@ -1109,13 +1113,19 @@ json_parse_restart:
           }
         }
         x = jsonParseValue(pParse, j);
-        if( x!=(-5) ) return -1;
+        if( x!=(-5) ){
+          pParse->iErr = j;
+          return -1;
+        }
         j = pParse->iErr+1;
       }
     parse_object_value:
       x = jsonParseValue(pParse, j);
       pParse->iDepth--;
-      if( x<=0 ) return -1;
+      if( x<=0 ){
+        pParse->iErr = j;
+        return -1;
+      }
       j = x;
       if( z[j]==',' ){
         continue;
@@ -1140,6 +1150,7 @@ json_parse_restart:
           break;
         }
       }
+      pParse->iErr = j;
       return -1;
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
@@ -1151,7 +1162,10 @@ json_parse_restart:
     if( iThis<0 ) return -1;
     memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
     for(j=i+1;;j++){
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
+      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+        pParse->iErr = j;
+        return -1;
+      }
       x = jsonParseValue(pParse, j);
       pParse->iDepth--;
       if( x<=0 ){
@@ -1160,6 +1174,7 @@ json_parse_restart:
           if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
           break;
         }
+        pParse->iErr = j;
         return -1;
       }
       j = x;
@@ -1186,6 +1201,7 @@ json_parse_restart:
           break;
         }
       }
+      pParse->iErr = j;
       return -1;
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
@@ -1207,6 +1223,7 @@ json_parse_restart:
       c = z[j];
       if( (c & ~0x1f)==0 ){
         /* Control characters are not allowed in strings */
+        pParse->iErr = j;
         return -1;
       }
       if( c=='\\' ){
@@ -1227,6 +1244,7 @@ json_parse_restart:
           jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
           pParse->has5 = 1;
         }else{
+          pParse->iErr = j;
           return -1;
         }
       }else if( c==cDelim ){
@@ -1242,6 +1260,7 @@ json_parse_restart:
       jsonParseAddNode(pParse, JSON_NULL, 0, 0);
       return i+4;
     }
+    pParse->iErr = i;
     return -1;
   }
   case 't': {
@@ -1249,6 +1268,7 @@ json_parse_restart:
       jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
       return i+4;
     }
+    pParse->iErr = i;
     return -1;
   }
   case 'f': {
@@ -1256,6 +1276,7 @@ json_parse_restart:
       jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
       return i+5;
     }
+    pParse->iErr = i;
     return -1;
   }
   case '+': {
@@ -1271,6 +1292,7 @@ json_parse_restart:
       seenDP = JSON_REAL;
       goto parse_number_2;
     }
+    pParse->iErr = i;
     return -1;
   case '-':
   case '0':
@@ -1338,6 +1360,7 @@ json_parse_restart:
             jnFlags |= JNODE_JSON5;
             goto parse_number_2;
           }
+          pParse->iErr = i;
           return -1;
         }
         if( z[i+1]=='0' ){
@@ -1358,7 +1381,10 @@ json_parse_restart:
       c = z[j];
       if( sqlite3Isdigit(c) ) continue;
       if( c=='.' ){
-        if( seenDP==JSON_REAL ) return -1;
+        if( seenDP==JSON_REAL ){
+          pParse->iErr = j;
+          return -1;
+        }
         seenDP = JSON_REAL;
         continue;
       }
@@ -1368,10 +1394,14 @@ json_parse_restart:
             pParse->has5 = 1;
             jnFlags |= JNODE_JSON5;
           }else{
+            pParse->iErr = j;
             return -1;
           }
         }
-        if( seenE ) return -1;
+        if( seenE ){
+          pParse->iErr = j;
+          return -1;
+        }
         seenDP = JSON_REAL;
         seenE = 1;
         c = z[j+1];
@@ -1379,7 +1409,10 @@ json_parse_restart:
           j++;
           c = z[j+1];
         }
-        if( c<'0' || c>'9' ) return -1;
+        if( c<'0' || c>'9' ){
+          pParse->iErr = j;
+          return -1;
+        }
         continue;
       }
       break;
@@ -1389,6 +1422,7 @@ json_parse_restart:
         pParse->has5 = 1;
         jnFlags |= JNODE_JSON5;
       }else{
+        pParse->iErr = j;
         return -1;
       }
     }
@@ -1402,6 +1436,7 @@ json_parse_restart:
       pParse->has5 = 1;
       return i+3;
     }
+    pParse->iErr = i;
     return -1;
   }
   case 'I': {
@@ -1410,6 +1445,7 @@ json_parse_restart:
       pParse->has5 = 1;
       return i+8;
     }
+    pParse->iErr = i;
     return -1;
   }
   case '}': {
@@ -1453,6 +1489,7 @@ json_parse_restart:
       pParse->has5 = 1;
       goto json_parse_restart;
     }
+    pParse->iErr = i;
     return -1;
   }
   default: {
@@ -1471,6 +1508,7 @@ json_parse_restart:
       return i + nn;
     }
 #endif
+    pParse->iErr = i;
     return -1;  /* Syntax error */
   }
   } /* End switch(z[i]) */
@@ -1575,6 +1613,15 @@ static int jsonParseFindParents(JsonParse *pParse){
 ** is no longer valid, parse the JSON again and return the new parse,
 ** and also register the new parse so that it will be available for
 ** future sqlite3_get_auxdata() calls.
+**
+** If an error occurs and pErrCtx!=0 then report the error on pErrCtx
+** and return NULL.
+**
+** If an error occurs and pErrCtx==0 then return the Parse object with
+** JsonParse.nErr non-zero.  If the caller invokes this routine with
+** pErrCtx==0 and it gets back a JsonParse with nErr!=0, then the caller
+** is responsible for invoking jsonParseFree() on the returned value.
+** But the caller may invoke jsonParseFree() *only* if pParse->nErr!=0.
 */
 static JsonParse *jsonParseCached(
   sqlite3_context *pCtx,
@@ -1624,6 +1671,10 @@ static JsonParse *jsonParseCached(
   p->zJson = (char*)&p[1];
   memcpy((char*)p->zJson, zJson, nJson+1);
   if( jsonParse(p, pErrCtx, p->zJson) ){
+    if( pErrCtx==0 ){
+      p->nErr = 1;
+      return p;
+    }
     sqlite3_free(p);
     return 0;
   }
@@ -2501,8 +2552,8 @@ static void jsonTypeFunc(
 /*
 ** json_valid(JSON)
 **
-** Return 1 if JSON is a well-formed JSON string according to RFC-7159.
-** Return 0 otherwise.
+** Return 1 if JSON is a well-formed canonical JSON string according
+** to RFC-7159. Return 0 otherwise.
 */
 static void jsonValidFunc(
   sqlite3_context *ctx,
@@ -2512,8 +2563,17 @@ static void jsonValidFunc(
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
   p = jsonParseCached(ctx, argv, 0);
-  sqlite3_result_int(ctx, p!=0 && p->has5==0);
+  sqlite3_result_int(ctx, p!=0 && p->nErr==0 && p->has5==0);
+  if( p!=0 && p->nErr ) jsonParseFree(p);
 }
+
+
+/*
+** json_valid5(JSON)
+**
+** Return 1 if JSON is a well-formed JSON5 string.
+** Return 0 otherwise.
+*/
 static void jsonValid5Func(
   sqlite3_context *ctx,
   int argc,
@@ -2522,7 +2582,39 @@ static void jsonValid5Func(
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
   p = jsonParseCached(ctx, argv, 0);
-  sqlite3_result_int(ctx, p!=0);
+  sqlite3_result_int(ctx, p!=0 && p->nErr==0);
+  if( p!=0 && p->nErr ) jsonParseFree(p);
+}
+
+
+
+/*
+** json_error(JSON)
+**
+** If JSON is not a well-formed JSON5 string, then return the 1-based
+** character offset to the location of the first error in that string.
+** Return 0 otherwise.
+*/
+static void jsonErrorFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse *p;          /* The parse */
+  UNUSED_PARAMETER(argc);
+  p = jsonParseCached(ctx, argv, 0);
+  if( p==0 || p->oom || p->nErr==0 ){
+    sqlite3_result_int(ctx, 0);
+  }else{
+    int n = 0;
+    int i;
+    const char *z = p->zJson;
+    for(i=0; i<p->iErr && z[i]; i++){
+      if( (z[i]&0xc0)!=80 ) n++;
+    }
+    sqlite3_result_int(ctx, n);
+    jsonParseFree(p);
+  }
 }
 
 
@@ -3235,6 +3327,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_array,        -1, 0,  jsonArrayFunc),
     JFUNCTION(json_array_length,  1, 0,  jsonArrayLengthFunc),
     JFUNCTION(json_array_length,  2, 0,  jsonArrayLengthFunc),
+    JFUNCTION(json_error,         1, 0,  jsonErrorFunc),
     JFUNCTION(json_extract,      -1, 0,  jsonExtractFunc),
     JFUNCTION(->,                 2, JSON_JSON, jsonExtractFunc),
     JFUNCTION(->>,                2, JSON_SQL, jsonExtractFunc),
