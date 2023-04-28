@@ -47,7 +47,7 @@ jobs:
           prerelease: true
           title: "Development Build"
           files: |
-            libsql-wasm-windows-latest/*.zip
-            libsql-wasm-macos-latest/*.zip
-            libsql-wasm-ubuntu-latest/*.zip
+            libsql-wasm-windows-latest/*
+            libsql-wasm-macos-latest/*
+            libsql-wasm-ubuntu-latest/*
         
