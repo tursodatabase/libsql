@@ -151,6 +151,9 @@ void setupSequence( SequenceSpec *pss ){
       pss->isNotEOF = 1;
       pss->uMaxRowidM1 = puspan/pss->iStep;
     }
+  }else if( pss->iTerm == pss->iBase ){
+      pss->isNotEOF = 1;
+      pss->uMaxRowidM1 = 0;
   }
   pss->uRidCurrent = (pss->isReversing)? pss->uMaxRowidM1 : 0;
   pss->iValueCurrent = (pss->isReversing)

@@ -1,5 +1,5 @@
-C Revise\sgenerate_series()\sextension\s(in\sCLI)\sto\saddress\soverflow\sreported\sin\s[forum:754e2d4db2a5|forum\spost\s#754e2d4db2a5]\sand\sto\smake\sbehavior\sbetter\smatch\sthe\slike-named\sPostgreSQL\sfunction.
-D 2023-04-28T21:25:03.297
+C Add\stests\sfor\sgenerate_series(),\sand\schange\san\sexisting\stest\sthat\senforced\svarying\srowid-to-value\smapping\swith\squery\sordering.\s(That\sno\slonger\svaries.)
+D 2023-04-28T23:39:16.250
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -305,7 +305,7 @@ F ext/misc/regexp.c f50ab59bfa8934b7ed98de069d2c74c187f2ef523fb09e85f8840f6459a9
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 9553821737ea55abcf534b22a63e9d29c2c9c07c1f82dd56cfa2b18e4d59d046
+F ext/misc/series.c bc7cb3bb6165a15d2e8a37dd5a261c0f11d55e00155f631db22d63fe519b753e
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
 F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -1493,7 +1493,7 @@ F test/sharedB.test 1a84863d7a2204e0d42f2e1606577c5e92e4473fa37ea0f5bdf829e4bf8e
 F test/shared_err.test 32634e404a3317eeb94abc7a099c556a346fdb8fb3858dbe222a4cbb8926a939
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test 291c5c4b313adbe44d847af78b730a3bbfa1598c450e09ffe5601170bf7f28e7
-F test/shell2.test 35c0c19d3198ee7669a748c1aedcce27a776ee575cc76128f8fcf665b79672f7
+F test/shell2.test b330df173012f7047593dff8aca049a83f401c991e8a3f1ee6e9ed7753cd3a66
 F test/shell3.test 91febeac0412812bf6370abb8ed72700e32bf8f9878849414518f662dfd55e8a
 F test/shell4.test 9abd0c12a7e20a4c49e84d5be208d2124fa6c09e728f56f1f4bee0f02853935f
 F test/shell5.test c8b6c54f26ec537f8558273d7ed293ca3725ef42e6b12b8f151718628bd1473b
@@ -1565,7 +1565,7 @@ F test/sync.test 89539f4973c010eda5638407e71ca7fddbcd8e0594f4c9980229f804d433309
 F test/sync2.test 8f9f7d4f6d5be8ca8941a8dadcc4299e558cb6a1ff653a9469146c7a76ef2039
 F test/syscall.test a39d9a36f852ae6e4800f861bc2f2e83f68bbc2112d9399931ecfadeabd2d69d
 F test/sysfault.test c9f2b0d8d677558f74de750c75e12a5454719d04
-F test/tabfunc01.test 668e5e39108ce84b2f24e402f9382daecc0417edb9c78c6c8f58170584e80c91
+F test/tabfunc01.test 54f27eacd054aa528a8b6e3331192c484104f30aaee351ad035f2b39a00f87c4
 F test/table.test eb3463b7add9f16a5bb836badf118cf391b809d09fdccd1f79684600d07ec132
 F test/tableapi.test ecbcc29c4ab62c1912c3717c48ea5c5e59f7d64e4a91034e6148bd2b82f177f4
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
@@ -2060,11 +2060,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a63346d6a0c0ca7ba4c87499de2e461be9c77e9b5d98f2bebf308cdb6599f33c
-R 13e2ac79f26c72ca3ffff8649a5a99a9
-T *branch * generate_series-revamp
-T *sym-generate_series-revamp *
-T -sym-trunk *
+P beeea3e1b010dace9789f27172462b912819d0f8142a67e3e1e7335211e0e9a8
+R 52e53a4d072b5936841d520d44c7af9b
 U larrybr
-Z d68099c137797424f3a3da0f35ed98b8
+Z 346788f1a790d4959913907c4ebea4ca
 # Remove this line to create a well-formed Fossil manifest.
