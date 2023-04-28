@@ -963,12 +963,22 @@ static int json5Whitespace(const char *zIn){
           for(j=n+3; z[j]!='/' || z[j-1]!='*'; j++){
             if( z[j]==0 ) goto whitespace_done;
           }
-          n += j+1;
+          n = j+1;
           break;
         }else if( z[n+1]=='/' ){
           int j;
-          for(j=n+2; z[j] && z[j]!='\n'; j++){}
-          n += j;
+          char c;
+          for(j=n+2; (c = z[j])!=0; j++){
+            if( c=='\n' || c=='\r' ) break;
+            if( 0xe2==(u8)c && 0x80==(u8)z[j+1]
+             && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2])
+            ){
+              j += 2;
+              break;
+            }
+          }
+          n = j;
+          if( z[n] ) n++;
           break;
         }
         goto whitespace_done;
