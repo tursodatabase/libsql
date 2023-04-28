@@ -1860,6 +1860,7 @@ static void output_quoted_string(FILE *out, const char *z){
   int i;
   char c;
   setBinaryMode(out, 1);
+  if( z==0 ) return;
   for(i=0; (c = z[i])!=0 && c!='\''; i++){}
   if( c==0 ){
     utf8_printf(out,"'%s'",z);
