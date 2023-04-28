@@ -20,10 +20,11 @@ However, if libSQL starts to provide more [PostgreSQL compatibility](https://git
 ## Features
 
 * SQLite dialect layered on top of HTTP or the PostgreSQL wire protocol.
-* TypeScript/JavaScript client
+* TypeScript/JavaScript, Rust, Go and Python clients
 * SQLite-compatible API that you can drop-in with `LD_PRELOAD` in your application to switch from local database to a remote database.
 * Read replica support.
 * Integration with [mvSQLite](https://github.com/losfair/mvsqlite) for high availability and fault tolerance.
+# SQLite extensions support
  
 ## Roadmap
 
@@ -51,6 +52,30 @@ curl -s -d '{\"statements\": [\"SELECT * from sqlite_master;\"] }' http://127.0.
 ```
 
 You can also inspect the local foo.db file with the `sqlite3` shell
+
+### Loading extensions
+
+Extensions need to be preloaded at startup. To do that, add all of your extensions to a directory,
+and add a file called `trusted.lst` with the `sha256sum` of each file to that directory. For example:
+
+```console
+$ cat trusted.lst
+04cd193d2547ff99d672fbfc6dcd7e0b220869a1ab867a9bb325f7374d168533  vector0.so
+74f9029cbf6e31b155c097a273e08517eb4e56f2300dede65c801407b01eb248  vss0.so
+5bbbe0f80dd7721162157f852bd5f364348eb504f9799ae521f832d44c13a3a1  crypto.so
+731a8cbe150351fed02944a00ca586fc60d8f3814e4f83efbe60fcef62d4332b  fuzzy.so
+1dbe9e4e58c4b994a119f1b507d07eb7a4311a80b96482c979b3bc0defd485fb  math.so
+511bf71b0621977bd9575d71e90adf6d02967008e460066a33aed8720957fecb  stats.so
+ae7fff8412e4e66e7f22b9af620bd24074bc9c77da6746221a9aba9d2b38d6a6  text.so
+9ed6e7f4738c2223e194c7a80525d87f323df269c04d155a769d733e0ab3b4d0  unicode.so
+19106ded4fd3fd4986a5111433d062a73bcf9557e07fa6d9154e088523e02bb0  uuid.so
+```
+
+Extensions will be loaded in the order they appear on that file, so if there are
+dependencies between extensions make sure they are listed in the proper order.
+
+Then start the server with the `--extensions-path` option pointing at the extension directory
+
 
 ### Integration with S3 bottomless replication
 
