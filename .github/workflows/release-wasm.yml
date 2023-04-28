@@ -58,7 +58,7 @@ jobs:
           token: "${{ secrets.GH_TOKEN }}"
           body_path: RELEASE_NOTES.txt
           prerelease: true
-          #tag_name: v0.1.2
+          tag_name: "${{ github.ref }}"
           generate_release_notes: true
           fail_on_unmatched_files: false
           files: |
