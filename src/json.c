@@ -2606,11 +2606,11 @@ static void jsonErrorFunc(
   if( p==0 || p->oom || p->nErr==0 ){
     sqlite3_result_int(ctx, 0);
   }else{
-    int n = 0;
+    int n = 1;
     int i;
     const char *z = p->zJson;
     for(i=0; i<p->iErr && z[i]; i++){
-      if( (z[i]&0xc0)!=80 ) n++;
+      if( (z[i]&0xc0)!=0x80 ) n++;
     }
     sqlite3_result_int(ctx, n);
     jsonParseFree(p);
