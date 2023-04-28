@@ -1,5 +1,5 @@
-C Use\sa\snew\stechnique\sto\sdetect\sfresh\sOOM\sfaults\sin\scolumnName()\sthat\sdoes\snot\nrely\son\sthere\sbeing\sno\sOOMs\sprior\sto\sentry\sinto\scolumnName(),\sas\n[forum/forumpost/fb6811c2f9|forum\spost\sfb6811c2f9]\sdemonstrates\sa\stechnique\nwhich\scould\scause\san\sOOM\sprior\sto\sentry\sinto\scolumnName().
-D 2023-04-27T23:59:51.813
+C Revise\sgenerate_series()\sextension\s(in\sCLI)\sto\saddress\soverflow\sreported\sin\s[forum:754e2d4db2a5|forum\spost\s#754e2d4db2a5]\sand\sto\smake\sbehavior\sbetter\smatch\sthe\slike-named\sPostgreSQL\sfunction.
+D 2023-04-28T21:25:03.297
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -305,7 +305,7 @@ F ext/misc/regexp.c f50ab59bfa8934b7ed98de069d2c74c187f2ef523fb09e85f8840f6459a9
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c 8d79354f2c3d46b95ee21272a07cf0bcabb58d1f2b06d9e7b8a31dca1dacb3e5
+F ext/misc/series.c 9553821737ea55abcf534b22a63e9d29c2c9c07c1f82dd56cfa2b18e4d59d046
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
 F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -2060,8 +2060,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4bbebb6bfb9910265d91b777c1711b3b8e0732bcf299f7459b20c4ea110422bd
-R 59c8d7a772734f630b5bf6fd205de302
-U drh
-Z d29ba302c14b4aed5db886f9a3fc4bd5
+P a63346d6a0c0ca7ba4c87499de2e461be9c77e9b5d98f2bebf308cdb6599f33c
+R 13e2ac79f26c72ca3ffff8649a5a99a9
+T *branch * generate_series-revamp
+T *sym-generate_series-revamp *
+T -sym-trunk *
+U larrybr
+Z d68099c137797424f3a3da0f35ed98b8
 # Remove this line to create a well-formed Fossil manifest.
