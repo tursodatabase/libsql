@@ -1,0 +1,53 @@
+name: Build 
+
+on:
+  push:
+    branches: [ "release-pipeline" ]
+
+jobs:
+  build:
+    # Build on Linux, Windows and MacOS
+    strategy:
+      matrix:
+        #os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@1.65.0
+   
+      - name: configure with Wasm
+        run: |
+          ./configure --enable-releasemode --enable-wasm-runtime && make libsqlite3.la
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: libsql-wasm-${{ matrix.os }}
+          path:  .libs/liblibsql_wasm.a
+          retention-days: 1
+
+
+  release:
+    name: "Prelease"
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # We don't need the repo, grab all artifacts from the build stage
+      # The plugin puts each artifact in a folder of `artifactname`
+      - uses: actions/download-artifact@v3
+
+      - name: Display fetched artifacts
+        run: ls -R
+
+      - name: Emit a Github Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GH_TOKEN }}"
+          automatic_release_tag: "latest"
+          prerelease: true
+          title: "Development Build"
+          files: |
+            libsql-wasm-windows-latest/*.zip
+            libsql-wasm-macos-latest/*.zip
+            libsql-wasm-ubuntu-latest/*.zip
+        
