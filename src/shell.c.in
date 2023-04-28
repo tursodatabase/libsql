@@ -1860,6 +1860,7 @@ static void output_quoted_string(FILE *out, const char *z){
   int i;
   char c;
   setBinaryMode(out, 1);
+  if( z==0 ) return;
   for(i=0; (c = z[i])!=0 && c!='\''; i++){}
   if( c==0 ){
     utf8_printf(out,"'%s'",z);
@@ -3565,10 +3566,14 @@ static void bind_prepared_stmt(ShellState *pArg, sqlite3_stmt *pStmt){
     sqlite3_bind_text(pQ, 1, zVar, -1, SQLITE_STATIC);
     if( rc==SQLITE_OK && pQ && sqlite3_step(pQ)==SQLITE_ROW ){
       sqlite3_bind_value(pStmt, i, sqlite3_column_value(pQ, 0));
+#ifdef NAN
     }else if( sqlite3_strlike("_NAN", zVar, 0)==0 ){
       sqlite3_bind_double(pStmt, i, NAN);
+#endif
+#ifdef INFINITY
     }else if( sqlite3_strlike("_INF", zVar, 0)==0 ){
       sqlite3_bind_double(pStmt, i, INFINITY);
+#endif
     }else{
       sqlite3_bind_null(pStmt, i);
     }
@@ -4995,10 +5000,10 @@ static int showHelp(FILE *out, const char *zPattern){
     ** Otherwise      => whole help for documented commands
     */
     enum HelpWanted hw = HW_SummaryOnly;
+    enum HelpHave hh = HH_More;
     if( zPattern!=0 ){
       hw = (*zPattern=='0')? HW_NoCull|HW_Undoc : HW_NoCull;
     }
-    enum HelpHave hh = HH_More;
     for(i=0; i<ArraySize(azHelp); i++){
       switch( azHelp[i][0] ){
       case ',':
@@ -9187,7 +9192,8 @@ static int do_meta_command(char *zLine, ShellState *p){
     const char *zFile, *zProc;
     char *zErrMsg = 0;
     failIfSafeMode(p, "cannot run .load in safe mode");
-    if( nArg<2 ){
+    if( nArg<2 || azArg[1][0]==0 ){
+      /* Must have a non-empty FILE. (Will not load self.) */
       raw_printf(stderr, "Usage: .load FILE ?ENTRYPOINT?\n");
       rc = 1;
       goto meta_command_exit;
@@ -10512,7 +10518,8 @@ static int do_meta_command(char *zLine, ShellState *p){
       if( bDebug ) utf8_printf(p->out, "%s\n", zRevText);
       lrc = sqlite3_prepare_v2(p->db, zRevText, -1, &pStmt, 0);
       if( lrc!=SQLITE_OK ){
-        assert(lrc==SQLITE_NOMEM);
+        /* assert(lrc==SQLITE_NOMEM); // might also be SQLITE_ERROR if the
+        ** user does cruel and unnatural things like ".limit expr_depth 0". */
         rc = 1;
       }else{
         if( zLike ) sqlite3_bind_text(pStmt,1,zLike,-1,SQLITE_STATIC);

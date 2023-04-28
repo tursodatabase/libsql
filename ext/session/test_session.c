@@ -76,9 +76,11 @@ int sql_exec_changeset(
 ){
   sqlite3_session *pSession = 0;
   int rc;
+  int val = 1;
 
   /* Create a new session object */
   rc = sqlite3session_create(db, "main", &pSession);
+  sqlite3session_object_config(pSession, SQLITE_SESSION_OBJCONFIG_ROWID, &val);
 
   /* Configure the session object to record changes to all tables */
   if( rc==SQLITE_OK ) rc = sqlite3session_attach(pSession, NULL);
@@ -260,7 +262,7 @@ static int SQLITE_TCLAPI test_session_cmd(
     { "diff",         2, "FROMDB TBL", }, /* 8 */
     { "memory_used",  0, "",           }, /* 9 */
     { "changeset_size", 0, "",         }, /* 10 */
-    { "object_config_size", 1, "INTEGER", }, /* 11 */
+    { "object_config", 2, "OPTION INTEGER", }, /* 11 */
     { 0 }
   };
   int iSub;
@@ -379,15 +381,27 @@ static int SQLITE_TCLAPI test_session_cmd(
       Tcl_SetObjResult(interp, Tcl_NewWideIntObj(nSize));
       break;
     }
-    case 11: {
+    case 11: {    /* object_config */
+      struct ObjConfOpt {
+        const char *zName;
+        int opt;
+      } aOpt[] = {
+        { "size", SQLITE_SESSION_OBJCONFIG_SIZE },
+        { "rowid", SQLITE_SESSION_OBJCONFIG_ROWID },
+        { 0, 0 }
+      };
+      size_t sz = sizeof(aOpt[0]);
+
       int rc;
       int iArg;
-      if( Tcl_GetIntFromObj(interp, objv[2], &iArg) ){
+      int iOpt;
+      if( Tcl_GetIndexFromObjStruct(interp,objv[2],aOpt,sz,"option",0,&iOpt) ){
         return TCL_ERROR;
       }
-      rc = sqlite3session_object_config(
-          pSession, SQLITE_SESSION_OBJCONFIG_SIZE, &iArg
-      );
+      if( Tcl_GetIntFromObj(interp, objv[3], &iArg) ){
+        return TCL_ERROR;
+      }
+      rc = sqlite3session_object_config(pSession, aOpt[iOpt].opt, &iArg);
       if( rc!=SQLITE_OK ){
         extern const char *sqlite3ErrName(int);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
