@@ -14,11 +14,14 @@
 </head>
 
 <body>
-    <div id="hidden" style="visibility: hidden"></div>
     <script>
         function json2table(json) {
             if (Object.keys(json).length == 0) {
                 return ''
+            }
+            const error = json[0].error;
+            if (error) {
+                return "Error: " + error.message
             }
             // FIXME: support multiple statements
             let result = json[0].results;
@@ -43,22 +46,14 @@
                 return
             }
             term.pause();
-            $.post('/queries', JSON.stringify({ statements: [cmd] })).then(response => {
+            $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
                 if (response) {
                     term.echo(json2table(response), { raw: true })
                     term.resume()
                 }
             }).catch(error => {
-                console.log("Retrying with legacy enpoint: /")
-                $.post('/', JSON.stringify({ statements: [cmd] })).then(response => {
-                    if (response) {
-                        term.echo(json2table(response), { raw: true })
-                        term.resume()
-                    }
-                }).catch(error => {
-                    term.echo("Error: " + JSON.stringify(error, null, 2))
-                    term.resume()
-                })
+                term.echo("Error: " + JSON.stringify(error, null, 2))
+                term.resume()
             });
         }, {
             greetings: 'sqld'
