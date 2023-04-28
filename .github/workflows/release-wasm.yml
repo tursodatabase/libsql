@@ -20,12 +20,19 @@ jobs:
         run: |
           ./configure --enable-releasemode --enable-wasm-runtime && make libsqlite3.la
 
+      - name: Zip artifact for deployment (linux/maxos)
+        if: matrix.os != 'windows-latest'
+        run: zip libsql-wasm-${{ matrix.os }}.zip .libs/liblibsql_wasm.a 
+
+      - name: Zip artifact for deployment (windows)
+        if: matrix.os == 'windows-latest'
+        run: Compress-Archive .libs/liblibsql_wasm.a libsql-wasm-${{ matrix.os }}.zip
+  
       - uses: actions/upload-artifact@v3
         with:
           name: libsql-wasm-${{ matrix.os }}
-          path:  .libs/liblibsql_wasm.a
+          path: libsql-wasm-${{ matrix.os }}.zip
           retention-days: 1
-
 
   release:
     name: "Prelease"
@@ -56,7 +63,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           token: "${{ secrets.GH_TOKEN }}"
-          body_path: RELEASE_NOTES.txt
+          #body_path: RELEASE_NOTES.txt
           prerelease: true
           tag_name: "${{ github.ref }}"
           generate_release_notes: true
