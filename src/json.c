@@ -726,17 +726,11 @@ static void jsonReturn(
       break;
     }
     case JSON_STRING: {
-#if 0 /* Never happens because JNODE_RAW is only set by json_set(),
-      ** json_insert() and json_replace() and those routines do not
-      ** call jsonReturn() */
       if( pNode->jnFlags & JNODE_RAW ){
         assert( pNode->eU==1 );
         sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
                             SQLITE_TRANSIENT);
-      }else 
-#endif
-      assert( (pNode->jnFlags & JNODE_RAW)==0 );
-      if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
+      }else if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
         /* JSON formatted without any backslash-escapes */
         assert( pNode->eU==1 );
         sqlite3_result_text(pCtx, pNode->u.zJContent+1, pNode->n-2,
@@ -2872,14 +2866,16 @@ static void jsonAppendObjectPathElement(
   assert( pNode->eU==1 );
   z = pNode->u.zJContent;
   nn = pNode->n;
-  assert( nn>=2 );
-  assert( z[0]=='"' );
-  assert( z[nn-1]=='"' );
-  if( nn>2 && sqlite3Isalpha(z[1]) ){
-    for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
-    if( jj==nn-1 ){
-      z++;
-      nn -= 2;
+  if( (pNode->jnFlags & JNODE_RAW)==0 ){
+    assert( nn>=2 );
+    assert( z[0]=='"' );
+    assert( z[nn-1]=='"' );
+    if( nn>2 && sqlite3Isalpha(z[1]) ){
+      for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
+      if( jj==nn-1 ){
+        z++;
+        nn -= 2;
+      }
     }
   }
   jsonPrintf(nn+2, pStr, ".%.*s", nn, z);
