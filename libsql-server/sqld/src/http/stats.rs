@@ -5,8 +5,8 @@ use crate::stats::Stats;
 
 #[derive(Serialize)]
 pub struct StatsResponse {
-    pub rows_read_count: usize,
-    pub rows_written_count: usize,
+    pub rows_read_count: u64,
+    pub rows_written_count: u64,
 }
 
 pub fn handle_stats(stats: &Stats) -> Response<Body> {
