@@ -371,21 +371,17 @@ static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
     zIn++;
     N--;
   }
-  while( zIn[0]=='0' && N>1 ){
-    if( zIn[1]=='x' || zIn[1]=='X' ){
-      sqlite3_int64 i = 0;
-      int rc = sqlite3DecOrHexToI64(zIn, &i);
-      if( rc<=1 ){
-        jsonPrintf(100,p,"%lld",i);
-      }else{
-        assert( rc==2 );
-        jsonAppendRaw(p, "9.0e999", 7);
-      }
-      return;
+  if( zIn[0]=='0' && (zIn[1]=='x' || zIn[1]=='X') ){
+    sqlite3_int64 i = 0;
+    int rc = sqlite3DecOrHexToI64(zIn, &i);
+    if( rc<=1 ){
+      jsonPrintf(100,p,"%lld",i);
+    }else{
+      assert( rc==2 );
+      jsonAppendRaw(p, "9.0e999", 7);
     }
-    zIn++;
-    N--;
-  } 
+    return;
+  }
   jsonAppendRaw(p, zIn, N);
 }
 
@@ -2571,8 +2567,13 @@ static void jsonValidFunc(
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
   p = jsonParseCached(ctx, argv, 0);
-  sqlite3_result_int(ctx, p!=0 && p->nErr==0 && p->has5==0);
-  if( p!=0 && p->nErr ) jsonParseFree(p);
+  if( p==0 || p->oom ){
+    sqlite3_result_error_nomem(ctx);
+    sqlite3_free(p);
+  }else{
+    sqlite3_result_int(ctx, p->nErr==0 && p->has5==0);
+    if( p->nErr ) jsonParseFree(p);
+  }
 }
 
 
@@ -2590,8 +2591,13 @@ static void jsonValid5Func(
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
   p = jsonParseCached(ctx, argv, 0);
-  sqlite3_result_int(ctx, p!=0 && p->nErr==0);
-  if( p!=0 && p->nErr ) jsonParseFree(p);
+  if( p==0 || p->oom ){
+    sqlite3_result_error_nomem(ctx);
+    sqlite3_free(p);
+  }else{
+    sqlite3_result_int(ctx, p->nErr==0);
+    if( p->nErr ) jsonParseFree(p);
+  }
 }
 
 
@@ -2611,7 +2617,10 @@ static void jsonErrorFunc(
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
   p = jsonParseCached(ctx, argv, 0);
-  if( p==0 || p->oom || p->nErr==0 ){
+  if( p==0 || p->oom ){
+    sqlite3_result_error_nomem(ctx);
+    sqlite3_free(p);
+  }else if( p->nErr==0 ){
     sqlite3_result_int(ctx, 0);
   }else{
     int n = 1;
