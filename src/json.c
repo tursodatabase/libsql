@@ -1492,7 +1492,8 @@ json_parse_restart:
   case 0xc2:
   case 0xe1:
   case 0xe2:
-  case 0xe3: {
+  case 0xe3:
+  case 0xef: {
     j = json5Whitespace(&z[i]);
     if( j>0 ){
       i += j;
