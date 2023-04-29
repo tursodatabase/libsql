@@ -61,7 +61,7 @@ do_execsql_test tabfunc01-1.8 {
 } {30 25 20 15 10 5 0}
 do_execsql_test tabfunc01-1.9 {
   SELECT rowid, * FROM generate_series(0,32,5) ORDER BY value DESC;
-} {1 30 2 25 3 20 4 15 5 10 6 5 7 0}
+} {7 30 6 25 5 20 4 15 3 10 2 5 1 0}
 do_execsql_test tabfunc01-1.10 {
   SELECT rowid, * FROM generate_series(0,32,5) ORDER BY +value DESC;
 } {7 30 6 25 5 20 4 15 3 10 2 5 1 0}
