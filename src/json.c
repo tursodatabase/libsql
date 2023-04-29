@@ -377,10 +377,9 @@ static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
       int rc = sqlite3DecOrHexToI64(zIn, &i);
       if( rc<=1 ){
         jsonPrintf(100,p,"%lld",i);
-      }else if( rc==2 ){
-        jsonAppendRaw(p, "9.0e999", 7);
       }else{
-        jsonAppendRaw(p, "9223372036854775808", 18);
+        assert( rc==2 );
+        jsonAppendRaw(p, "9.0e999", 7);
       }
       return;
     }
@@ -1109,7 +1108,10 @@ json_parse_restart:
       }
       if( pParse->oom ) return -1;
       pNode = &pParse->aNode[pParse->nNode-1];
-      if( pNode->eType!=JSON_STRING ) return -1;
+      if( pNode->eType!=JSON_STRING ){
+        pParse->iErr = j;
+        return -1;
+      }
       pNode->jnFlags |= JNODE_LABEL;
       j = x;
       if( z[j]==':' ){
@@ -1249,7 +1251,6 @@ json_parse_restart:
           jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
           pParse->has5 = 1;
         }else if( c=='\r' ){
-          j++;
           if( z[j+1]=='\n' ) j++;
           jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
           pParse->has5 = 1;
@@ -1339,10 +1340,7 @@ json_parse_restart:
         }
       }else{
         if( !sqlite3Isdigit(z[i+1]) ){
-          if( z[i+1]=='I'
-           && (c=='-' || c=='+')
-           && strncmp(&z[i+1], "Infinity",8)==0
-          ){
+          if( z[i+1]=='I' && strncmp(&z[i+1], "Infinity",8)==0 ){
             if( z[i]=='-' ){
               jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
             }else{
@@ -1354,7 +1352,6 @@ json_parse_restart:
           /* Non-standard JSON and JSON5:  Allow "Inf" as an alternative
           ** spelling for "Infinity" and allow it to be in any case. */
           if( (z[i+1]=='I' || z[i+1]=='i')
-           && (c=='-' || c=='+')
            && sqlite3StrNICmp(&z[i+1], "inf",3)==0
           ){
             if( z[i]=='-' ){
@@ -2971,8 +2968,8 @@ static void jsonAppendObjectPathElement(
   nn = pNode->n;
   if( (pNode->jnFlags & JNODE_RAW)==0 ){
     assert( nn>=2 );
-    assert( z[0]=='"' );
-    assert( z[nn-1]=='"' );
+    assert( z[0]=='"' || z[0]=='\'' );
+    assert( z[nn-1]=='"' || z[0]=='\'' );
     if( nn>2 && sqlite3Isalpha(z[1]) ){
       for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
       if( jj==nn-1 ){
