@@ -1393,7 +1393,7 @@ json_parse_restart:
       }
       if( c=='e' || c=='E' ){
         if( z[j-1]<'0' ){
-          if( ALWAYS(z[j-1]=='.') && j-2>=i && sqlite3Isdigit(z[j-2]) ){
+          if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
             pParse->has5 = 1;
             jnFlags |= JNODE_JSON5;
           }else{
@@ -1421,7 +1421,7 @@ json_parse_restart:
       break;
     }
     if( z[j-1]<'0' ){
-      if( ALWAYS(z[j-1]=='.') && j-2>=i && sqlite3Isdigit(z[j-2]) ){
+      if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
         pParse->has5 = 1;
         jnFlags |= JNODE_JSON5;
       }else{
