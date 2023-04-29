@@ -1393,7 +1393,7 @@ json_parse_restart:
       }
       if( c=='e' || c=='E' ){
         if( z[j-1]<'0' ){
-          if( z[j-1]=='.' && j-2>=i && sqlite3Isdigit(z[j-2]) ){
+          if( ALWAYS(z[j-1]=='.') && j-2>=i && sqlite3Isdigit(z[j-2]) ){
             pParse->has5 = 1;
             jnFlags |= JNODE_JSON5;
           }else{
@@ -1421,7 +1421,7 @@ json_parse_restart:
       break;
     }
     if( z[j-1]<'0' ){
-      if( z[j-1]=='.' && j-2>=i && sqlite3Isdigit(z[j-2]) ){
+      if( ALWAYS(z[j-1]=='.') && j-2>=i && sqlite3Isdigit(z[j-2]) ){
         pParse->has5 = 1;
         jnFlags |= JNODE_JSON5;
       }else{
@@ -2626,7 +2626,7 @@ static void jsonErrorFunc(
     int n = 1;
     int i;
     const char *z = p->zJson;
-    for(i=0; i<p->iErr && z[i]; i++){
+    for(i=0; i<p->iErr && ALWAYS(z[i]); i++){
       if( (z[i]&0xc0)!=0x80 ) n++;
     }
     sqlite3_result_int(ctx, n);
