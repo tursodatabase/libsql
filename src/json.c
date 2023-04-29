@@ -333,7 +333,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
         jsonAppendRaw(p, "\\u0000", 6);
         break;
       case '\r':
-        if( N>=3 && zIn[2]=='\n' ){
+        if( zIn[2]=='\n' ){
           zIn++;
           N--;
         }
@@ -1328,15 +1328,15 @@ json_parse_restart:
 
     if( c<='0' ){
       if( c=='0' ){
-        if( sqlite3Isdigit(z[i+1]) ){
-          pParse->has5 = 1;
-          jnFlags = JNODE_JSON5;
-        }else if( (z[i+1]=='x' || z[i+1]=='X') && sqlite3Isxdigit(z[i+2]) ){
+        if( (z[i+1]=='x' || z[i+1]=='X') && sqlite3Isxdigit(z[i+2]) ){
           assert( seenDP==JSON_INT );
           pParse->has5 = 1;
           jnFlags |= JNODE_JSON5;
           for(j=i+3; sqlite3Isxdigit(z[j]); j++){}
           goto parse_number_finish;
+        }else if( sqlite3Isdigit(z[i+1]) ){
+          pParse->iErr = i+1;
+          return -1;
         }
       }else{
         if( !sqlite3Isdigit(z[i+1]) ){
@@ -1372,8 +1372,8 @@ json_parse_restart:
         }
         if( z[i+1]=='0' ){
           if( sqlite3Isdigit(z[i+2]) ){
-            pParse->has5 = 1;
-            jnFlags = JNODE_JSON5;
+            pParse->iErr = i+1;
+            return -1;
           }else if( (z[i+2]=='x' || z[i+2]=='X') && sqlite3Isxdigit(z[i+3]) ){
             pParse->has5 = 1;
             jnFlags |= JNODE_JSON5;
