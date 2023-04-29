@@ -120,9 +120,9 @@ typedef struct SequenceSpec {
   sqlite3_int64 iBase;         /* Starting value ("start") */
   sqlite3_int64 iTerm;         /* Given terminal value ("stop") */
   sqlite3_int64 iStep;         /* Increment ("step") */
-  sqlite3_uint64 uMaxRowidM1;  /* maximum rowid minus 1 */
-  sqlite3_uint64 uRidCurrent;  /* Current rowid-1 during generation */
-  sqlite3_int64 iValueCurrent; /* Current value during generation */
+  sqlite3_uint64 uSeqIndexMax; /* maximum sequence index (aka "n") */
+  sqlite3_uint64 uSeqIndexNow; /* Current index during generation */
+  sqlite3_int64 iValueNow;     /* Current value during generation */
   u8 isNotEOF;                 /* Sequence generation not exhausted */
   u8 isReversing;              /* Sequence is being reverse generated */
 } SequenceSpec;
@@ -133,31 +133,31 @@ typedef struct SequenceSpec {
 ** initialized per given isReversing. Other members are computed.
 */
 void setupSequence( SequenceSpec *pss ){
-  pss->uMaxRowidM1 = 0;
+  pss->uSeqIndexMax = 0;
   pss->isNotEOF = 0;
   if( pss->iTerm < pss->iBase ){
     sqlite3_uint64 nuspan = (sqlite3_uint64)(pss->iBase-pss->iTerm);
     if( pss->iStep<0 ){
       pss->isNotEOF = 1;
       if( nuspan==ULONG_MAX ){
-        pss->uMaxRowidM1 = ( pss->iStep>LLONG_MIN )? nuspan/-pss->iStep : 1;
+        pss->uSeqIndexMax = ( pss->iStep>LLONG_MIN )? nuspan/-pss->iStep : 1;
       }else if( pss->iStep>LLONG_MIN ){
-        pss->uMaxRowidM1 = nuspan/-pss->iStep;
+        pss->uSeqIndexMax = nuspan/-pss->iStep;
       }
     }
   }else if( pss->iTerm > pss->iBase ){
     sqlite3_uint64 puspan = (sqlite3_uint64)(pss->iTerm-pss->iBase);
     if( pss->iStep>0 ){
       pss->isNotEOF = 1;
-      pss->uMaxRowidM1 = puspan/pss->iStep;
+      pss->uSeqIndexMax = puspan/pss->iStep;
     }
   }else if( pss->iTerm == pss->iBase ){
       pss->isNotEOF = 1;
-      pss->uMaxRowidM1 = 0;
+      pss->uSeqIndexMax = 0;
   }
-  pss->uRidCurrent = (pss->isReversing)? pss->uMaxRowidM1 : 0;
-  pss->iValueCurrent = (pss->isReversing)
-    ? genSeqMember(pss->iBase, pss->iStep, pss->uMaxRowidM1)
+  pss->uSeqIndexNow = (pss->isReversing)? pss->uSeqIndexMax : 0;
+  pss->iValueNow = (pss->isReversing)
+    ? genSeqMember(pss->iBase, pss->iStep, pss->uSeqIndexMax)
     : pss->iBase;
 }
 
@@ -169,16 +169,16 @@ void setupSequence( SequenceSpec *pss ){
 int progressSequence( SequenceSpec *pss ){
   if( !pss->isNotEOF ) return 0;
   if( pss->isReversing ){
-    if( pss->uRidCurrent > 0 ){
-      pss->uRidCurrent--;
-      pss->iValueCurrent -= pss->iStep;
+    if( pss->uSeqIndexNow > 0 ){
+      pss->uSeqIndexNow--;
+      pss->iValueNow -= pss->iStep;
     }else{
       pss->isNotEOF = 0;
     }
   }else{
-    if( pss->uRidCurrent < pss->uMaxRowidM1 ){
-      pss->uRidCurrent++;
-      pss->iValueCurrent += pss->iStep;
+    if( pss->uSeqIndexNow < pss->uSeqIndexMax ){
+      pss->uSeqIndexNow++;
+      pss->iValueNow += pss->iStep;
     }else{
       pss->isNotEOF = 0;
     }
@@ -294,7 +294,7 @@ static int seriesColumn(
     case SERIES_COLUMN_START:  x = pCur->ss.iBase; break;
     case SERIES_COLUMN_STOP:   x = pCur->ss.iTerm; break;
     case SERIES_COLUMN_STEP:   x = pCur->ss.iStep;   break;
-    default:                   x = pCur->ss.iValueCurrent;  break;
+    default:                   x = pCur->ss.iValueNow;  break;
   }
   sqlite3_result_int64(ctx, x);
   return SQLITE_OK;
@@ -307,7 +307,7 @@ static int seriesColumn(
 */
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;
-  *pRowid = ((sqlite3_int64)pCur->ss.uRidCurrent + 1);
+  *pRowid = ((sqlite3_int64)pCur->ss.uSeqIndexNow + 1);
   return SQLITE_OK;
 }
 
