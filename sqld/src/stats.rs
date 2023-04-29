@@ -1,7 +1,7 @@
 use std::fs::{File, OpenOptions};
 use std::io::Seek;
 use std::path::Path;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -14,8 +14,8 @@ pub struct Stats {
 
 #[derive(Serialize, Deserialize, Default)]
 struct StatsInner {
-    rows_written: AtomicUsize,
-    rows_read: AtomicUsize,
+    rows_written: AtomicU64,
+    rows_read: AtomicU64,
 }
 
 impl Stats {
@@ -37,22 +37,22 @@ impl Stats {
     }
 
     /// increments the number of written rows by n
-    pub fn inc_rows_written(&self, n: usize) {
+    pub fn inc_rows_written(&self, n: u64) {
         self.inner.rows_written.fetch_add(n, Ordering::Relaxed);
     }
 
     /// increments the number of read rows by n
-    pub fn inc_rows_read(&self, n: usize) {
+    pub fn inc_rows_read(&self, n: u64) {
         self.inner.rows_read.fetch_add(n, Ordering::Relaxed);
     }
 
     /// returns the total number of rows read since this database was created
-    pub fn rows_read(&self) -> usize {
+    pub fn rows_read(&self) -> u64 {
         self.inner.rows_read.load(Ordering::Relaxed)
     }
 
     /// returns the total number of rows written since this database was created
-    pub fn rows_written(&self) -> usize {
+    pub fn rows_written(&self) -> u64 {
         self.inner.rows_written.load(Ordering::Relaxed)
     }
 }
