@@ -63,7 +63,7 @@ set testprefix json501
 #    1) Object keys may be an ECMAScript 5.1 IdentifierName.
 do_execsql_test 1.1 {
   WITH c(x) AS (VALUES('{a:5,b:6}'))
-  SELECT x->>'a', json(x), json_valid(x), json_valid5(x) FROM c;
+  SELECT x->>'a', json(x), json_valid(x), NOT json_error_position(x) FROM c;
 } {5 {{"a":5,"b":6}} 0 1}
 do_execsql_test 1.2 {
   SELECT '[7,null,{a:5,b:6},[8,9]]'->>'$[2].b';
@@ -98,7 +98,7 @@ do_catchsql_test 1.11 {
 
 do_execsql_test 2.1 {
   WITH c(x) AS (VALUES('{"a":5, "b":6, }'))
-  SELECT x->>'b', json(x), json_valid(x), json_valid5(x) FROM c;
+  SELECT x->>'b', json(x), json_valid(x), NOT json_error_position(x) FROM c;
 } {6 {{"a":5,"b":6}} 0 1}
 do_execsql_test 2.2 {
   SELECT '{a:5, b:6 , }'->>'b';
@@ -115,7 +115,7 @@ do_catchsql_test 2.4 {
 
 do_execsql_test 3.1 {
   WITH c(x) AS (VALUES('[5, 6,]'))
-  SELECT x->>1, json(x), json_valid(x), json_valid5(x) FROM c;
+  SELECT x->>1, json(x), json_valid(x), NOT json_error_position(x) FROM c;
 } {6 {[5,6]} 0 1}
 do_execsql_test 3.2 {
   SELECT '[5, 6 , ]'->>1;
@@ -132,7 +132,7 @@ do_catchsql_test 3.4 {
 
 do_execsql_test 4.1 {
   WITH c(x) AS (VALUES('{"a": ''abcd''}'))
-  SELECT x->>'a', json(x), json_valid(x), json_valid5(x) FROM c;
+  SELECT x->>'a', json(x), json_valid(x), NOT json_error_position(x) FROM c;
 } {abcd {{"a":"abcd"}} 0 1}
 do_execsql_test 4.2 {
   SELECT '{b: 123, ''a'': ''ab\''cd''}'->>'a';
@@ -143,7 +143,7 @@ do_execsql_test 4.2 {
 
 do_execsql_test 5.1 {
   WITH c(x) AS (VALUES('{a: "abc'||char(0x5c,0x0a)||'xyz"}'))
-  SELECT x->>'a', json(x), json_valid(x), json_valid5(x) FROM c;
+  SELECT x->>'a', json(x), json_valid(x), NOT json_error_position(x) FROM c;
 } {abcxyz {{"a":"abcxyz"}} 0 1}
 do_execsql_test 5.2 {
   SELECT ('{a: "abc'||char(0x5c,0x0d)||'xyz"}')->>'a';

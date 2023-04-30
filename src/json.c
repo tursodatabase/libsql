@@ -134,7 +134,7 @@ struct JsonParse {
   u16 iDepth;        /* Nesting depth */
   u8 nErr;           /* Number of errors seen */
   u8 oom;            /* Set to true if out of memory */
-  u8 has5;           /* True if input has JSON5 features */
+  u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
   int nJson;         /* Length of the zJson string in bytes */
   u32 iErr;          /* Error location in zJson[] */
   u32 iHold;         /* Replace cache line with the lowest iHold value */
@@ -1086,7 +1086,7 @@ json_parse_restart:
       if( x<=0 ){
         if( x==(-2) ){
           j = pParse->iErr;
-          if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
+          if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
           pParse->iDepth--;
           break;
         }
@@ -1095,7 +1095,7 @@ json_parse_restart:
           int k;
           for(k=j+1; sqlite3Isalnum(z[k]) || z[k]=='_' || z[k]=='$'; k++){}
           jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), k-j, &z[j]);
-          pParse->has5 = 1;
+          pParse->hasNonstd = 1;
           x = k;
         }else{
           if( x!=-1 ) pParse->iErr = j;
@@ -1179,7 +1179,7 @@ json_parse_restart:
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
-          if( pParse->nNode!=(u32)iThis+1 ) pParse->has5 = 1;
+          if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
           break;
         }
         if( x!=(-1) ) pParse->iErr = j;
@@ -1218,7 +1218,7 @@ json_parse_restart:
   case '\'': {
     u8 jnFlags;
     char cDelim;
-    pParse->has5 = 1;
+    pParse->hasNonstd = 1;
     jnFlags = JNODE_JSON5;
     goto parse_string;
   case '"':
@@ -1245,11 +1245,11 @@ json_parse_restart:
                 && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2]))
            || (c=='x' && jsonIs2Hex(&z[j+1])) ){
           jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
-          pParse->has5 = 1;
+          pParse->hasNonstd = 1;
         }else if( c=='\r' ){
           if( z[j+1]=='\n' ) j++;
           jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
-          pParse->has5 = 1;
+          pParse->hasNonstd = 1;
         }else{
           pParse->iErr = j;
           return -1;
@@ -1288,12 +1288,12 @@ json_parse_restart:
   }
   case '+': {
     u8 seenDP, seenE, jnFlags;
-    pParse->has5 = 1;
+    pParse->hasNonstd = 1;
     jnFlags = JNODE_JSON5;
     goto parse_number;
   case '.':
     if( sqlite3Isdigit(z[i+1]) ){
-      pParse->has5 = 1;
+      pParse->hasNonstd = 1;
       jnFlags = JNODE_JSON5;
       seenE = 0;
       seenDP = JSON_REAL;
@@ -1326,7 +1326,7 @@ json_parse_restart:
       if( c=='0' ){
         if( (z[i+1]=='x' || z[i+1]=='X') && sqlite3Isxdigit(z[i+2]) ){
           assert( seenDP==JSON_INT );
-          pParse->has5 = 1;
+          pParse->hasNonstd = 1;
           jnFlags |= JNODE_JSON5;
           for(j=i+3; sqlite3Isxdigit(z[j]); j++){}
           goto parse_number_finish;
@@ -1359,7 +1359,7 @@ json_parse_restart:
           }
 #endif
           if( z[i+1]=='.' ){
-            pParse->has5 = 1;
+            pParse->hasNonstd = 1;
             jnFlags |= JNODE_JSON5;
             goto parse_number_2;
           }
@@ -1371,7 +1371,7 @@ json_parse_restart:
             pParse->iErr = i+1;
             return -1;
           }else if( (z[i+2]=='x' || z[i+2]=='X') && sqlite3Isxdigit(z[i+3]) ){
-            pParse->has5 = 1;
+            pParse->hasNonstd = 1;
             jnFlags |= JNODE_JSON5;
             for(j=i+4; sqlite3Isxdigit(z[j]); j++){}
             goto parse_number_finish;
@@ -1394,7 +1394,7 @@ json_parse_restart:
       if( c=='e' || c=='E' ){
         if( z[j-1]<'0' ){
           if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
-            pParse->has5 = 1;
+            pParse->hasNonstd = 1;
             jnFlags |= JNODE_JSON5;
           }else{
             pParse->iErr = j;
@@ -1422,7 +1422,7 @@ json_parse_restart:
     }
     if( z[j-1]<'0' ){
       if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
-        pParse->has5 = 1;
+        pParse->hasNonstd = 1;
         jnFlags |= JNODE_JSON5;
       }else{
         pParse->iErr = j;
@@ -1436,7 +1436,7 @@ json_parse_restart:
   case 'N': {
     if( strncmp(&z[i],"NaN",3)==0 ){
       jsonParseAddNode(pParse, JSON_NULL, 4, "null");
-      pParse->has5 = 1;
+      pParse->hasNonstd = 1;
       return i+3;
     }
     pParse->iErr = i;
@@ -1445,7 +1445,7 @@ json_parse_restart:
   case 'I': {
     if( strncmp(&z[i],"Infinity",8)==0 ){
       jsonParseAddNode(pParse, JSON_REAL, 7, "9.0e999");
-      pParse->has5 = 1;
+      pParse->hasNonstd = 1;
       return i+8;
     }
     pParse->iErr = i;
@@ -1490,7 +1490,7 @@ json_parse_restart:
     j = json5Whitespace(&z[i]);
     if( j>0 ){
       i += j;
-      pParse->has5 = 1;
+      pParse->hasNonstd = 1;
       goto json_parse_restart;
     }
     pParse->iErr = i;
@@ -1545,7 +1545,7 @@ static int jsonParse(
         jsonParseReset(pParse);
         return 1;
       }
-      pParse->has5 = 1;
+      pParse->hasNonstd = 1;
     }
   }
   if( i<=0 ){
@@ -2571,43 +2571,38 @@ static void jsonValidFunc(
     sqlite3_result_error_nomem(ctx);
     sqlite3_free(p);
   }else{
-    sqlite3_result_int(ctx, p->nErr==0 && p->has5==0);
+    sqlite3_result_int(ctx, p->nErr==0 && p->hasNonstd==0);
     if( p->nErr ) jsonParseFree(p);
   }
 }
 
-
 /*
-** json_valid5(JSON)
+** json_error_position(JSON)
 **
-** Return 1 if JSON is a well-formed JSON5 string.
-** Return 0 otherwise.
-*/
-static void jsonValid5Func(
-  sqlite3_context *ctx,
-  int argc,
-  sqlite3_value **argv
-){
-  JsonParse *p;          /* The parse */
-  UNUSED_PARAMETER(argc);
-  p = jsonParseCached(ctx, argv, 0);
-  if( p==0 || p->oom ){
-    sqlite3_result_error_nomem(ctx);
-    sqlite3_free(p);
-  }else{
-    sqlite3_result_int(ctx, p->nErr==0);
-    if( p->nErr ) jsonParseFree(p);
-  }
-}
-
-
-
-/*
-** json_error(JSON)
+** If the argument is not an interpretable JSON string, then return the 1-based
+** character position at which the parser first recognized that the input
+** was in error.  The left-most character is 1.  If the string is valid
+** JSON, then return 0.
 **
-** If JSON is not a well-formed JSON5 string, then return the 1-based
-** character offset to the location of the first error in that string.
-** Return 0 otherwise.
+** Note that json_valid() is only true for strictly conforming canonical JSON.
+** But this routine returns zero if the input contains extension.  Thus:
+**
+** (1) If the input X is strictly conforming canonical JSON:
+**
+**         json_valid(X) returns true
+**         json_error_position(X) returns 0
+**
+** (2) If the input X is JSON but it includes extension (such as JSON5) that
+**     are not part of RFC-8259:
+**
+**         json_valid(X) returns false
+**         json_error_position(X) return 0
+**
+** (3) If the input X cannot be interpreted as JSON even taking extensions
+**     into account:
+**
+**         json_valid(X) return false
+**         json_error_position(X) returns 1 or more
 */
 static void jsonErrorFunc(
   sqlite3_context *ctx,
@@ -3344,7 +3339,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_array,        -1, 0,  jsonArrayFunc),
     JFUNCTION(json_array_length,  1, 0,  jsonArrayLengthFunc),
     JFUNCTION(json_array_length,  2, 0,  jsonArrayLengthFunc),
-    JFUNCTION(json_error,         1, 0,  jsonErrorFunc),
+    JFUNCTION(json_error_position,1, 0,  jsonErrorFunc),
     JFUNCTION(json_extract,      -1, 0,  jsonExtractFunc),
     JFUNCTION(->,                 2, JSON_JSON, jsonExtractFunc),
     JFUNCTION(->>,                2, JSON_SQL, jsonExtractFunc),
@@ -3358,7 +3353,6 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_type,          1, 0,  jsonTypeFunc),
     JFUNCTION(json_type,          2, 0,  jsonTypeFunc),
     JFUNCTION(json_valid,         1, 0,  jsonValidFunc),
-    JFUNCTION(json_valid5,        1, 0,  jsonValid5Func),
 #if SQLITE_DEBUG
     JFUNCTION(json_parse,         1, 0,  jsonParseFunc),
     JFUNCTION(json_test1,         1, 0,  jsonTest1Func),

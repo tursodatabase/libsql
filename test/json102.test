@@ -319,7 +319,7 @@ foreach {id j x0 x5} {
   1415 {'{"x":+5.5}'} 0 1
 } {
   do_execsql_test json102-$id "
-     SELECT json_valid($j), json_valid5($j);
+     SELECT json_valid($j), NOT json_error_position($j);
   " [list $x0 $x5]
 }
 
