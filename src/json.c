@@ -552,7 +552,13 @@ static void jsonRenderNode(
     case JSON_STRING: {
       assert( pNode->eU==1 );
       if( pNode->jnFlags & JNODE_RAW ){
-        jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
+        if( pNode->jnFlags & JNODE_LABEL ){
+          jsonAppendChar(pOut, '"');
+          jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+          jsonAppendChar(pOut, '"');
+        }else{
+          jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
+        }
       }else if( pNode->jnFlags & JNODE_JSON5 ){
         jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
       }else{
@@ -1046,7 +1052,7 @@ static const struct NanInfName {
   { 'n', 'N', 3, JSON_NULL, 4, "NaN", "null" },
   { 'q', 'Q', 4, JSON_NULL, 4, "QNaN", "null" },
   { 's', 'S', 4, JSON_NULL, 4, "SNaN", "null" },
-}; 
+};
 
 /*
 ** Parse a single JSON value which begins at pParse->zJson[i].  Return the
@@ -1088,9 +1094,15 @@ json_parse_restart:
           break;
         }
         j += json5Whitespace(&z[j]);
-        if( sqlite3Isalpha(z[j]) || z[j]=='_' || z[j]=='$' ){
-          int k;
-          for(k=j+1; sqlite3Isalnum(z[k]) || z[k]=='_' || z[k]=='$'; k++){}
+        if( sqlite3JsonId1(z[j])
+         || (z[j]=='\\' && z[j+1]=='u' && jsonIs4Hex(&z[j+2]))
+        ){
+          int k = j+1;
+          while( (sqlite3JsonId2(z[k]) && json5Whitespace(&z[k])==0)
+            || (z[k]=='\\' && z[k+1]=='u' && jsonIs4Hex(&z[k+2]))
+          ){
+            k++;
+          }
           jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), k-j, &z[j]);
           pParse->hasNonstd = 1;
           x = k;

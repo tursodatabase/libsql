@@ -4456,6 +4456,8 @@ int sqlite3CantopenError(int);
 # define sqlite3Isxdigit(x)  (sqlite3CtypeMap[(unsigned char)(x)]&0x08)
 # define sqlite3Tolower(x)   (sqlite3UpperToLower[(unsigned char)(x)])
 # define sqlite3Isquote(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x80)
+# define sqlite3JsonId1(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x42)
+# define sqlite3JsonId2(x)   (sqlite3CtypeMap[(unsigned char)(x)]&0x46)
 #else
 # define sqlite3Toupper(x)   toupper((unsigned char)(x))
 # define sqlite3Isspace(x)   isspace((unsigned char)(x))
@@ -4465,6 +4467,8 @@ int sqlite3CantopenError(int);
 # define sqlite3Isxdigit(x)  isxdigit((unsigned char)(x))
 # define sqlite3Tolower(x)   tolower((unsigned char)(x))
 # define sqlite3Isquote(x)   ((x)=='"'||(x)=='\''||(x)=='['||(x)=='`')
+# define sqlite3JsonId1(x)   (sqlite3IsIdChar(x)&&(x)<'0')
+# define sqlite3JsonId2(x)   sqlite3IsIdChar(x)
 #endif
 int sqlite3IsIdChar(u8);
 

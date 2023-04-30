@@ -86,12 +86,9 @@ do_catchsql_test 1.10 {
   SELECT json('{ MNO_123/xyz : 789 }');
 } {1 {malformed JSON}}
 
-# Contra the JSON5 standard, SQLite does not allow non-ASCII characters in
-# an unquoted object label.
-#
-do_catchsql_test 1.11 {
-  SELECT json('{ MNO_123æxyz : 789 }');
-} {1 {malformed JSON}}
+do_execsql_test 1.11 {
+  SELECT '{ MNO_123æxyz : 789 }'->>'MNO_123æxyz';
+} {789}
 
 ###############################################################################
 #    2) Objects may have a single trailing comma.

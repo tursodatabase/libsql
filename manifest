@@ -1,5 +1,5 @@
-C All\sJSON\sto\sunderstand\sfloating\spoint\sliterals\s"Inf"\sand\s"QNaN"\sand\s"SNaN"\sin\nany\scase,\swithout\sthe\sSQLITE_EXTENDED_NAN_INF\scompile-time\soption.\s\sThis\nextension\sis\salways\savailable.
-D 2023-04-30T19:45:25.975
+C Accept\sthe\sfull\sECMAScript\s5.1\sIdentifyName\ssyntax\sfor\skeys\sin\sobjects.
+D 2023-04-30T20:37:49.462
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -589,13 +589,13 @@ F src/expr.c 6353f4d92d9f67ec3466d8e6978cd31a45e34cb755c4d11e689077f03f7c0a15
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 03c134cc8bffe54835f742ddea0b72ebfc8f6b32773d175c71b8afeea6cb5c83
 F src/func.c d187be57a886ddf4e6b7ef584a494361899be3df5eee6d4a747b68ff4aff4122
-F src/global.c 428d2580a1cdf5dbe1f356d1feab83710ae0cc862ece0fb57bc8259e43838c74
+F src/global.c bd0892ade7289f6e20bff44c07d06371f2ff9b53cea359e7854b9b72f65adc30
 F src/hash.c c6af5f96a7a76d000f07c5402c48c318c2566beecdee9e78b9d9f60ce7119565
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h b638809e083b601b618df877b2e89cb87c2a47a01f4def10be4c4ebb54664ac7
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c a8de1db43335fc4946370a7a7e47d89975ad678ddb15078a150e993ba2fb37d4
-F src/json.c bd22944b15d786a7a17f0faa672cdb3abeef1b59c505684df64caaca2a18a03a
+F src/json.c 0915244c5eae7f80d4a7418ddac3186add8f7cc7185fd9fa7a64f5d9d3a5507b
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c be5af440f3192c58681b5d43167dbca3ccbfce394d89faa22378a14264781136
 F src/main.c 09bc5191f75dc48fc4dfddda143cb864c0c3dbc3297eb9a9c8e01fea58ff847d
@@ -640,7 +640,7 @@ F src/shell.c.in 09097e1b9df1f8092e85bf89979e12ca7b608d7efc84551b5d0c8de4dded779
 F src/sqlite.h.in 4fff9c6cc5d4cbba9532a668112efb6dc469c425e1a2196664d7c07d508363ef
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
-F src/sqliteInt.h bf15f7db635d2e64a227bbf86845bc19755dbd932021a6461d6dd15b0da2cfd3
+F src/sqliteInt.h 6766b36c215e33d2cbfd48e632b7cc516092273d909672fdc095bcbd8c005ba1
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -1261,7 +1261,7 @@ F test/json102.test 13dc9e7b7f359ecb861e02f9bd7019f7342a63d1c354273b0a8f39040505
 F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a8880112dbe
 F test/json104.test a502dc01853aada95d721b3b275afbe2dc18fffdac1fea6e96fb20c13586bbb5
 F test/json105.test 11670a4387f4308ae0318cadcbd6a918ea7edcd19fbafde020720a073952675d
-F test/json501.test 9b14d14f26659287277a1f6fcf2a932a0a2351e1aae522586b530498c977ce45
+F test/json501.test f71710f60fa45b19dc336fbaac9e8362f70f80cf81badefdb845ed3f7c7c2ccc
 F test/json502.test 66d150cc098674b8bf4354526a8dd411b926f43ca892306bcb3b6d3f93fef7be
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c feb4358fb022da8ebd098c45811f2f6507688bb6c43aa72b3e840df19026317b
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 34c4e900a9cc51630eeaf01deef74bf5b18d66e0ab1dc61a2023ac8f837a5197
-R 6addb4498a8cf4456a809d957c22b7a6
+P fb551145e0d84213b3343dc1bc7db70c898b9dea24a72b968240617f4b52d821
+R b58bc780aaf2d8c5cd999008db262a63
 U drh
-Z 050299ed4706f61a98d79f7a5528f481
+Z 3139cc4432c28195fb82dc0d5445fb75
 # Remove this line to create a well-formed Fossil manifest.
