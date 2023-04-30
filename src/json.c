@@ -1675,7 +1675,7 @@ static JsonParse *jsonParseCached(
 ** Compare the OBJECT label at pNode against zKey,nKey.  Return true on
 ** a match.
 */
-static int jsonLabelCompare(JsonNode *pNode, const char *zKey, u32 nKey){
+static int jsonLabelCompare(const JsonNode *pNode, const char *zKey, u32 nKey){
   assert( pNode->eU==1 );
   if( pNode->jnFlags & JNODE_RAW ){
     if( pNode->n!=nKey ) return 0;
@@ -1683,6 +1683,15 @@ static int jsonLabelCompare(JsonNode *pNode, const char *zKey, u32 nKey){
   }else{
     if( pNode->n!=nKey+2 ) return 0;
     return strncmp(pNode->u.zJContent+1, zKey, nKey)==0;
+  }
+}
+static int jsonSameLabel(const JsonNode *p1, const JsonNode *p2){
+  if( p1->jnFlags & JNODE_RAW ){
+    return jsonLabelCompare(p2, p1->u.zJContent, p1->n);
+  }else if( p2->jnFlags & JNODE_RAW ){
+    return jsonLabelCompare(p1, p2->u.zJContent, p2->n);
+  }else{
+    return p1->n==p2->n && strncmp(p1->u.zJContent,p2->u.zJContent,p1->n)==0;
   }
 }
 
@@ -2246,12 +2255,10 @@ static JsonNode *jsonMergePatch(
     assert( pPatch[i].eU==1 );
     nKey = pPatch[i].n;
     zKey = pPatch[i].u.zJContent;
-    assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
     for(j=1; j<pTarget->n; j += jsonNodeSize(&pTarget[j+1])+1 ){
       assert( pTarget[j].eType==JSON_STRING );
       assert( pTarget[j].jnFlags & JNODE_LABEL );
-      assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
-      if( pTarget[j].n==nKey && strncmp(pTarget[j].u.zJContent,zKey,nKey)==0 ){
+      if( jsonSameLabel(&pPatch[i], &pTarget[j]) ){
         if( pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_PATCH) ) break;
         if( pPatch[i+1].eType==JSON_NULL ){
           pTarget[j+1].jnFlags |= JNODE_REMOVE;
