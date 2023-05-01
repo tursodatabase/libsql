@@ -294,7 +294,7 @@
 #  define SQLITE_NOINLINE
 #  define SQLITE_INLINE
 #endif
-#if defined(SQLITE_COVERAGE_TEST)
+#if defined(SQLITE_COVERAGE_TEST) || defined(__STRICT_ANSI__)
 # undef SQLITE_INLINE
 # define SQLITE_INLINE
 #endif

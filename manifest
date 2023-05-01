@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sFTS5.
-D 2023-05-01T19:59:10.767
+C The\sgcc\sdefinition\sof\sthe\sSQLITE_INLINE\smacro\sis\snot\scompatible\swith\nstring\sANSI,\sso\sdisable\sit\sif\sthe\s-std=c89\scommand-line\soption\sis\sused.
+D 2023-05-01T20:09:52.574
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -640,7 +640,7 @@ F src/shell.c.in 3984d857a1a5d76eff261dfe8d7bef1f0e51e586af0215365301b5c0bd5ffec
 F src/sqlite.h.in 6066996620c2a97193518148ab2d3cedf37d8ee7667dafa96c207a86152b2cfb
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
-F src/sqliteInt.h 6766b36c215e33d2cbfd48e632b7cc516092273d909672fdc095bcbd8c005ba1
+F src/sqliteInt.h ef0268eeba1449170d5967493a3f6b720344cd6f461c3430299c00d51da74d9d
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f809de7f232c8c2731a877c7bf1ad39fda5b326b2e45e4748cab4dc5e5b535bd
-R 45e5fb43b6aee3bc110fdb481053e8ce
+P f6210017b3143ccbaea23655852f947f779bb438ad4fbf582f5da42f7cd1d9f5
+R d44790037dd861d5257bed7882abaacb
 U drh
-Z 2e25ac07eeb6e88a92808fc530aa5f7b
+Z 90bec5e74583a5ab9272344e6da3c9a1
 # Remove this line to create a well-formed Fossil manifest.
