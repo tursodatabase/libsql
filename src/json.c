@@ -2164,7 +2164,7 @@ static void jsonExtractFunc(
     zPath = (const char*)sqlite3_value_text(argv[1]);
     if( zPath==0 ) return;
     if( flags & JSON_ABPATH ){
-      if( zPath[0]!='$' ){
+      if( zPath[0]!='$' || (zPath[1]!='.' && zPath[1]!='[' && zPath[1]!=0) ){
         /* The -> and ->> operators accept abbreviated PATH arguments.  This
         ** is mostly for compatibility with PostgreSQL, but also for
         ** convenience.
