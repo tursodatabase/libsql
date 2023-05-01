@@ -55,6 +55,7 @@ impl StmtKind {
                 | Stmt::Update { .. }
                 | Stmt::Delete { .. }
                 | Stmt::DropTable { .. }
+                | Stmt::DropIndex { .. }
                 | Stmt::AlterTable { .. }
                 | Stmt::CreateTrigger {
                     temporary: false, ..
