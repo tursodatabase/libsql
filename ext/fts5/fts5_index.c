@@ -984,6 +984,7 @@ static int fts5StructureDecode(
 */
 static void fts5StructureAddLevel(int *pRc, Fts5Structure **ppStruct){
   fts5StructureMakeWritable(pRc, ppStruct);
+  assert( (ppStruct!=0 && (*ppStruct)!=0) || (*pRc)!=SQLITE_OK );
   if( *pRc==SQLITE_OK ){
     Fts5Structure *pStruct = *ppStruct;
     int nLevel = pStruct->nLevel;
@@ -4849,11 +4850,11 @@ static void fts5DoSecureDelete(
       }
     }
   }else if( iStart==4 ){
+      int iPgno;
+
       assert_nc( pSeg->iLeafPgno>pSeg->iTermLeafPgno );
       /* The entry being removed may be the only position list in
       ** its doclist. */
-      int iPgno = pSeg->iLeafPgno-1;
-
       for(iPgno=pSeg->iLeafPgno-1; iPgno>pSeg->iTermLeafPgno; iPgno-- ){
         Fts5Data *pPg = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, iPgno));
         int bEmpty = (pPg && pPg->nn==4);
