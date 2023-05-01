@@ -303,7 +303,7 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
 ** features.
 */
 static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
-  int i;
+  u32 i;
   jsonAppendChar(p, '"');
   zIn++;
   N -= 2;
@@ -391,7 +391,7 @@ static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
 ** features.
 */
 static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
-  int i;
+  u32 i;
   if( zIn[0]=='+' ){
     zIn++;
     N--;
@@ -2608,7 +2608,7 @@ static void jsonErrorFunc(
     sqlite3_result_int(ctx, 0);
   }else{
     int n = 1;
-    int i;
+    u32 i;
     const char *z = p->zJson;
     for(i=0; i<p->iErr && ALWAYS(z[i]); i++){
       if( (z[i]&0xc0)!=0x80 ) n++;

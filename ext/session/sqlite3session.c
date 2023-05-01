@@ -1102,7 +1102,7 @@ static int sessionTableInfo(
   
     i = 0;
     if( bRowid ){
-      int nName = strlen(SESSIONS_ROWID);
+      size_t nName = strlen(SESSIONS_ROWID);
       memcpy(pAlloc, SESSIONS_ROWID, nName+1);
       azCol[i] = (char*)pAlloc;
       pAlloc += nName+1;

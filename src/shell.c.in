@@ -5757,7 +5757,7 @@ static int sql_trace_callback(
       break;
     }
     case SQLITE_TRACE_PROFILE: {
-      sqlite3_int64 nNanosec = *(sqlite3_int64*)pX;
+      sqlite3_int64 nNanosec = pX ? *(sqlite3_int64*)pX : 0;
       utf8_printf(p->traceOut, "%.*s; -- %lld ns\n", (int)nSql, zSql, nNanosec);
       break;
     }

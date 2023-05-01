@@ -4809,7 +4809,7 @@ static void fts5DoSecureDelete(
     for(iIdx=0, iKeyOff=0; iIdx<nIdx; iKey++){
       u32 iVal = 0;
       iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-      if( (iKeyOff+iVal)>iStart ) break;
+      if( (iKeyOff+iVal)>(u32)iStart ) break;
       iKeyOff += iVal;
     }
 
@@ -4937,7 +4937,7 @@ static void fts5FlushSecureDelete(
   i64 iRowid
 ){
   const int f = FTS5INDEX_QUERY_SKIPHASH;
-  int nTerm = strlen(zTerm);
+  int nTerm = (int)strlen(zTerm);
   Fts5Iter *pIter = 0;            /* Used to find term instance */
 
   fts5MultiIterNew(p, pStruct, f, 0, (const u8*)zTerm, nTerm, -1, 0, &pIter);
