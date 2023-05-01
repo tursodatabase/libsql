@@ -438,6 +438,7 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
                     break;
                 },
                 _ = shutdown_notify.notified() => {
+                    join_set.shutdown().await;
                     return Ok(())
                 }
                 Some(res) = join_set.join_next() => {
