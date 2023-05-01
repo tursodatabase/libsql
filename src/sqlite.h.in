@@ -2445,7 +2445,7 @@ struct sqlite3_mem_methods {
 ** any SQLite version back to 3.0.0 ([dateof:3.0.0]).  Without this setting,
 ** newly created databases are generally not understandable by SQLite versions
 ** prior to 3.3.0 ([dateof:3.3.0]).  As these words are written, there
-** is now scarcely any need to generated database files that are compatible 
+** is now scarcely any need to generate database files that are compatible 
 ** all the way back to version 3.0.0, and so this setting is of little
 ** practical use, but is provided so that SQLite can continue to claim the
 ** ability to generate new database files that are compatible with  version
@@ -2465,17 +2465,27 @@ struct sqlite3_mem_methods {
 ** statistics. For statistics to be collected, the flag must be set on
 ** the database handle both when the SQL statement is prepared and when it 
 ** is stepped. The flag is set (collection of statistics is enabled)
-** by default.
+** by default.  This option takes two arguments: an integer and a pointer to
+** an integer..  The first argument is 1, 0, or -1 to enable, disable, or
+** leave unchanged the statement scanstatus option.  If the second argument
+** is not NULL, then the value of the statement scanstatus setting after
+** processing the first argument is written into the integer that the second
+** argument points to.
 ** </dd>
 **
 ** [[SQLITE_DBCONFIG_REVERSE_SCANORDER]]
 ** <dt>SQLITE_DBCONFIG_REVERSE_SCANORDER</dt>
-** <dd>The SQLITE_DBCONFIG_REVERSE_SCANORDER option change the default order
+** <dd>The SQLITE_DBCONFIG_REVERSE_SCANORDER option changes the default order
 ** in which tables and indexes are scanned so that the scans start at the end
 ** and work toward the beginning rather than starting at the beginning and
 ** working toward the end. Setting SQLITE_DBCONFIG_REVERSE_SCANORDER is the
-** same as setting [PRAGMA reverse_unordered_selects].
-** This configuration option is useful for application testing.
+** same as setting [PRAGMA reverse_unordered_selects].  This option takes
+** two arguments which are an integer and a pointer to an integer.  The first
+** argument is 1, 0, or -1 to enable, disable, or leave unchanged the
+** reverse scan order flag, respectively.  If the second argument is not NULL,
+** then 0 or 1 is written into the integer that the second argument points to
+** depending on if the reverse scan order flag is set after processing the
+** first argument.
 ** </dd>
 **
 ** </dl>
