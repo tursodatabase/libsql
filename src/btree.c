@@ -7628,7 +7628,7 @@ static int pageFreeArray(
         }
       }
       if( j>=nFree ){
-        if( nFree>=sizeof(aOfst)/sizeof(aOfst[0]) ){
+        if( nFree>=(int)(sizeof(aOfst)/sizeof(aOfst[0])) ){
           for(j=0; j<nFree; j++){
             freeSpace(pPg, aOfst[j], aAfter[j]-aOfst[j]);
           }

@@ -1,5 +1,5 @@
-C The\sgcc\sdefinition\sof\sthe\sSQLITE_INLINE\smacro\sis\snot\scompatible\swith\nstring\sANSI,\sso\sdisable\sit\sif\sthe\s-std=c89\scommand-line\soption\sis\sused.
-D 2023-05-01T20:09:52.574
+C Fix\sharmless\scompiler\swarnings.
+D 2023-05-01T20:42:15.797
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 46af0b3c3c3f00bfc5bdd307434d7c5f0fa0678a034dd48345cd83b20068efbd
 F ext/fts5/fts5_expr.c 7d298d76ea010c339b26ca47f6f69e9aef520ea46c083deaa4e83e87cf0e94b1
 F ext/fts5/fts5_hash.c d4fb70940359f2120ccd1de7ffe64cc3efe65de9e8995b822cd536ff64c96982
-F ext/fts5/fts5_index.c 9fdb195bac8b199410d4057c8a99ae8005ce9c9f46d7cf4a41a5a0cb2e80cbe9
+F ext/fts5/fts5_index.c d1eaca422cd3ab52adbe94f2a1ff6b3a4bea2960c6fa33a03f57499204ec36e0
 F ext/fts5/fts5_main.c b4dba04a36aaf9b8e8cef0100b6dbb422cc74753eacc11d6401cac7a87c0f38d
 F ext/fts5/fts5_storage.c 76c6085239eb44424004c022e9da17a5ecd5aaec859fba90ad47d3b08f4c8082
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -574,7 +574,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c 37292454e4f5cd148b3c661770df44e28060f2cefd227ad979bf9b5f155db11b
+F src/btree.c 1949007d2792cf761799348b3760c8489d1964c49efa9e52591aa1f2fcdbc96f
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h a3268a60cbc91f578001f44ba40aae9c1b8aecbb0d2c095dd7fc54b0872ea4b8
 F src/build.c 8357d6ca9a8c9afc297c431df28bc2af407b47f3ef2311875276c944b30c4d54
@@ -595,7 +595,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h b638809e083b601b618df877b2e89cb87c2a47a01f4def10be4c4ebb54664ac7
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c a8de1db43335fc4946370a7a7e47d89975ad678ddb15078a150e993ba2fb37d4
-F src/json.c 77686019edebe229dfaabada4180b4dca6d3122ea82f981e178b77b7a9340a16
+F src/json.c d24acf11f291728454cb4fa04a6ff01242fa5adc5e709698a6549a343dcf3c4f
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c be5af440f3192c58681b5d43167dbca3ccbfce394d89faa22378a14264781136
 F src/main.c 09bc5191f75dc48fc4dfddda143cb864c0c3dbc3297eb9a9c8e01fea58ff847d
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f6210017b3143ccbaea23655852f947f779bb438ad4fbf582f5da42f7cd1d9f5
-R d44790037dd861d5257bed7882abaacb
+P 62d703d83cf8cf3358715792347c49315a82c659e475158e385746f4329a4f39
+R 8aa668c10cf5e2b54fa315ec3531ad19
 U drh
-Z 90bec5e74583a5ab9272344e6da3c9a1
+Z caf909fa3681476c6c8857eef3f4bd8c
 # Remove this line to create a well-formed Fossil manifest.

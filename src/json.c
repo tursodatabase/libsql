@@ -1480,7 +1480,8 @@ json_parse_restart:
     return -1;
   }
   default: {
-    int k, nn;
+    u32 k;
+    int nn;
     c = z[i];
     for(k=0; k<sizeof(aNanInfName)/sizeof(aNanInfName[0]); k++){
       if( c!=aNanInfName[k].c1 && c!=aNanInfName[k].c2 ) continue;

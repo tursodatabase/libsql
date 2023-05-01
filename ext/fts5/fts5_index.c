@@ -4692,7 +4692,6 @@ static void fts5SecureDeleteOverflow(
 */
 static void fts5DoSecureDelete(
   Fts5Index *p,
-  Fts5Structure *pStruct,
   Fts5SegIter *pSeg
 ){
   const int bDetailNone = (p->pConfig->eDetail==FTS5_DETAIL_NONE);
@@ -4953,7 +4952,7 @@ static void fts5FlushSecureDelete(
      && iRowid==fts5MultiIterRowid(pIter)
     ){
       Fts5SegIter *pSeg = &pIter->aSeg[pIter->aFirst[1].iFirst];
-      fts5DoSecureDelete(p, pStruct, pSeg);
+      fts5DoSecureDelete(p, pSeg);
     }
   }
 
