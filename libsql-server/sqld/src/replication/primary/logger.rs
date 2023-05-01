@@ -1,5 +1,6 @@
 use std::ffi::{c_int, c_void};
 use std::fs::{File, OpenOptions};
+use std::io::Write;
 use std::mem::size_of;
 use std::os::unix::prelude::FileExt;
 use std::path::{Path, PathBuf};
@@ -237,6 +238,7 @@ impl LogFile {
 
     pub fn write_header(&mut self, header: &LogFileHeader) -> anyhow::Result<()> {
         self.file.write_all_at(bytes_of(header), 0)?;
+        self.file.flush()?;
         self.header = *header;
         Ok(())
     }
