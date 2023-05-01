@@ -310,12 +310,33 @@ do_execsql_test json-6.1 {
   SELECT json_valid('{"a":55,"b":72,}');
 } {0}
 do_execsql_test json-6.2 {
+  SELECT json_error_position('{"a":55,"b":72,}');
+} {0}
+do_execsql_test json-6.3 {
+  SELECT json_valid(json('{"a":55,"b":72,}'));
+} {1}
+do_execsql_test json-6.4 {
+  SELECT json_valid('{"a":55,"b":72 , }');
+} {0}
+do_execsql_test json-6.5 {
+  SELECT json_error_position('{"a":55,"b":72 , }');
+} {0}
+do_execsql_test json-6.6 {
+  SELECT json_error_position('{"a":55,"b":72,,}');
+} {16}
+do_execsql_test json-6.7 {
   SELECT json_valid('{"a":55,"b":72}');
 } {1}
-do_execsql_test json-6.3 {
-  SELECT json_valid('["a",55,"b",72,]');
+do_execsql_test json-6.8 {
+  SELECT json_error_position('["a",55,"b",72,]');
 } {0}
-do_execsql_test json-6.4 {
+do_execsql_test json-6.9 {
+  SELECT json_error_position('["a",55,"b",72 , ]');
+} {0}
+do_execsql_test json-6.10 {
+  SELECT json_error_position('["a",55,"b",72,,]');
+} {16}
+do_execsql_test json-6.11 {
   SELECT json_valid('["a",55,"b",72]');
 } {1}
 
