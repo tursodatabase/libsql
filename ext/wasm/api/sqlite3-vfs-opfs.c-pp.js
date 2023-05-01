@@ -780,7 +780,10 @@ const installOpfsVfs = function callee(options){
       },
       xSync: function(pFile,flags){
         ++metrics.xSync.count;
-        return 0; // impl'd in xFileControl()
+        mTimeStart('xSync');
+        const rc = opRun('xSync', pFile, flags);
+        mTimeEnd();
+        return rc;
       },
       xTruncate: function(pFile,sz64){
         mTimeStart('xTruncate');
