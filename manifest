@@ -1,5 +1,5 @@
-C Minor\scode\schange\sin\sthe\sCLI\sto\smake\sa\sUAF\swarning\sfrom\sscan-build\sgo\saway.
-D 2023-05-02T00:33:45.834
+C Fix\stypo\sin\scomment.\s\s[forum:/forumpost/3da7d9c445|Forum\spost\s3da7d9c445].
+D 2023-05-02T10:22:05.731
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -576,7 +576,7 @@ F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
 F src/btree.c 1949007d2792cf761799348b3760c8489d1964c49efa9e52591aa1f2fcdbc96f
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
-F src/btreeInt.h a3268a60cbc91f578001f44ba40aae9c1b8aecbb0d2c095dd7fc54b0872ea4b8
+F src/btreeInt.h a9ae91868acc4b3146d47ae2a072aac2cf41ecb7386015752160c8e1a212d9f2
 F src/build.c 8357d6ca9a8c9afc297c431df28bc2af407b47f3ef2311875276c944b30c4d54
 F src/callback.c 4cd7225b26a97f7de5fee5ae10464bed5a78f2adefe19534cc2095b3a8ca484a
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 342af5b4fa0bd7c699e5497161db13d0cf795c7a5875ae30d666122e518f213b
-R 7a9bcd99b7e3fd522d9cd87b9c8b8b06
+P ad6aae768ad0816bfd1c8e9db5c0153226982d3af9a089f31e608223339e9829
+R 75b63009a85208adf7bba398404174e3
 U drh
-Z 0ff5e0a327400ee6b7dae6af00731fff
+Z f13cf165f55d1155b732975be8f5e7cd
 # Remove this line to create a well-formed Fossil manifest.
