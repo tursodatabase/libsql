@@ -1249,15 +1249,15 @@ static int sessionUpdateMaxSize(
     int ii;
     u8 *pCsr = pC->aRecord;
     if( pTab->bRowid ){
-      nNew += 9;
+      nNew += 9 + 1;
       pCsr += 9;
     }
-    for(ii=0; ii<(pTab->nCol-pTab->bRowid); ii++){
+    for(ii=pTab->bRowid; ii<pTab->nCol; ii++){
       int bChanged = 1;
       int nOld = 0;
       int eType;
       sqlite3_value *p = 0;
-      pSession->hook.xNew(pSession->hook.pCtx, ii, &p);
+      pSession->hook.xNew(pSession->hook.pCtx, ii-pTab->bRowid, &p);
       if( p==0 ){
         return SQLITE_NOMEM;
       }
@@ -2405,7 +2405,7 @@ static int sessionAppendUpdate(
     /* If at least one field has been modified, this is not a no-op. */
     if( bChanged ) bNoop = 0;
 
-    /* Add a field to the old.* record. This is omitted if this modules is
+    /* Add a field to the old.* record. This is omitted if this module is
     ** currently generating a patchset. */
     if( bPatchset==0 ){
       if( bChanged || abPK[i] ){
@@ -2847,7 +2847,7 @@ int sqlite3session_changeset(
 
   if( pnChangeset==0 || ppChangeset==0 ) return SQLITE_MISUSE;
   rc = sessionGenerateChangeset(pSession, 0, 0, 0, pnChangeset, ppChangeset);
-  assert( 1 || rc || pnChangeset==0 
+  assert( rc || pnChangeset==0 
        || pSession->bEnableSize==0 || *pnChangeset<=pSession->nMaxChangesetSize 
   );
   return rc;

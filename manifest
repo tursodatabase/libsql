@@ -1,5 +1,5 @@
-C Cure\sCLI\shang\son\s.import\swith\shigh-ASCII\scolumn\sseparator.
-D 2023-05-02T18:03:25.907
+C Fix\sa\sproblem\swith\sthe\ssqlite3changeset_size()\sAPI\sand\srowid\stables.
+D 2023-05-02T20:34:15.093
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -472,7 +472,7 @@ F ext/session/sessionrowid.test 6323ba831721205fd729929745038fd54e9d128c66c654b8
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c d14d3043d4e04b080090d92b46e7b01ed25f49985161c8cb4fba05eefaf85850
+F ext/session/sqlite3session.c e50a9218ee360db0a25298adc6614162d80ebe65d3f6a5b0a021e0902f6536a1
 F ext/session/sqlite3session.h 653e9d49c4edae231df8a4c8d69c2145195aedb32462d4b44229dbee7d2680fb
 F ext/session/test_session.c 5285482f83cd92b4c1fe12fcf88210566a18312f4f2aa110f6399dae46aeccbb
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6bee0a19e2efb6e39097fb22602556791d3d3962c50a1a0471c39a0c61db632e
-R cedc5713e8adb684ab4577dbf72daabf
-U larrybr
-Z 10156d687667290729862638bd5abda0
+P aac8ac631de5c5b439c48c13f5fd271d76c11b1a5fd0919dfe4506ef7725f5ab
+R 61d9a9d2668f7db76ae5cd18e6e09935
+U dan
+Z 12f32504ba9b59579e904b79780ed5db
 # Remove this line to create a well-formed Fossil manifest.
