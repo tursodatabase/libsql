@@ -5599,6 +5599,7 @@ static void linenoise_completion(const char *zLine, linenoiseCompletions *lc){
 **    \'    -> '
 **    \\    -> backslash
 **    \NNN  -> ascii character NNN in octal
+**    \xHH  -> ascii character HH in hexadecimal
 */
 static void resolve_backslashes(char *z){
   int i, j;
@@ -5627,6 +5628,15 @@ static void resolve_backslashes(char *z){
         c = '\'';
       }else if( c=='\\' ){
         c = '\\';
+      }else if( c=='x' ){
+        int nhd = 0, hdv;
+        u8 hv = 0;
+        while( nhd<2 && (c=z[i+1+nhd])!=0 && (hdv=hexDigitValue(c))>=0 ){
+          hv = (u8)((hv<<4)|hdv);
+          ++nhd;
+        }
+        i += nhd;
+        c = (u8)hv;
       }else if( c>='0' && c<='7' ){
         c -= '0';
         if( z[i+1]>='0' && z[i+1]<='7' ){
