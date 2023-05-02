@@ -247,4 +247,20 @@ do_test shell2-1.4.10 {
 1
 2}}
 
+# Bug discovered while messing around, .import hangs with
+# bit 7 set in column separator.
+do_test shell2-1.4.11 {
+  forcedelete dummy.csv
+  set df [open dummy.csv w]
+  puts $df dog,cat
+  close $df
+  set res [catchcmd :memory: [string trim {
+ CREATE TABLE t(line text);
+.mode ascii
+.separator "\377" "\n"
+.import dummy.csv t
+ SELECT count(*) FROM t;}]]
+} {0 1}
+
+
 finish_test
