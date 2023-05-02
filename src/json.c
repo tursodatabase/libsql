@@ -2556,6 +2556,7 @@ static void jsonValidFunc(
 ){
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   p = jsonParseCached(ctx, argv, 0);
   if( p==0 || p->oom ){
     sqlite3_result_error_nomem(ctx);
@@ -2601,6 +2602,7 @@ static void jsonErrorFunc(
 ){
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   p = jsonParseCached(ctx, argv, 0);
   if( p==0 || p->oom ){
     sqlite3_result_error_nomem(ctx);
