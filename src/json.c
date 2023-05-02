@@ -1271,14 +1271,6 @@ json_parse_restart:
     jsonParseAddNode(pParse, JSON_STRING | (jnFlags<<8), j+1-i, &z[i]);
     return j+1;
   }
-  case 'n': {
-    if( strncmp(z+i,"null",4)==0 && !sqlite3Isalnum(z[i+4]) ){
-      jsonParseAddNode(pParse, JSON_NULL, 0, 0);
-      return i+4;
-    }
-    pParse->iErr = i;
-    return -1;
-  }
   case 't': {
     if( strncmp(z+i,"true",4)==0 && !sqlite3Isalnum(z[i+4]) ){
       jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
@@ -1478,6 +1470,13 @@ json_parse_restart:
     }
     pParse->iErr = i;
     return -1;
+  }
+  case 'n': {
+    if( strncmp(z+i,"null",4)==0 && !sqlite3Isalnum(z[i+4]) ){
+      jsonParseAddNode(pParse, JSON_NULL, 0, 0);
+      return i+4;
+    }
+    /* fall-through into the default case that checks for NaN */
   }
   default: {
     u32 k;
