@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2023-05-01T20:42:15.797
+C Minor\scode\schange\sin\sthe\sCLI\sto\smake\sa\sUAF\swarning\sfrom\sscan-build\sgo\saway.
+D 2023-05-02T00:33:45.834
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -636,7 +636,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c f879cef11c462a2c37a8c906932781e384c3bb32042c355a704a043029c90d27
-F src/shell.c.in 3984d857a1a5d76eff261dfe8d7bef1f0e51e586af0215365301b5c0bd5ffec4
+F src/shell.c.in ae33222a1776ce24a1e0fe565639126e9fd6efd276af8df562d9296db53cd3d7
 F src/sqlite.h.in 6066996620c2a97193518148ab2d3cedf37d8ee7667dafa96c207a86152b2cfb
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 62d703d83cf8cf3358715792347c49315a82c659e475158e385746f4329a4f39
-R 8aa668c10cf5e2b54fa315ec3531ad19
+P 342af5b4fa0bd7c699e5497161db13d0cf795c7a5875ae30d666122e518f213b
+R 7a9bcd99b7e3fd522d9cd87b9c8b8b06
 U drh
-Z caf909fa3681476c6c8857eef3f4bd8c
+Z 0ff5e0a327400ee6b7dae6af00731fff
 # Remove this line to create a well-formed Fossil manifest.

@@ -994,6 +994,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
     fflush(stdout);
     do{
       zResult = local_getline(zPrior, stdin);
+      zPrior = 0;
       /* ^C trap creates a false EOF, so let "interrupt" thread catch up. */
       if( zResult==0 ) sqlite3_sleep(50);
     }while( zResult==0 && seenInterrupt>0 );
