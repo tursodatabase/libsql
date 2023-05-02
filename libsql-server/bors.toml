@@ -1,9 +1,0 @@
-status = [
-    "Run Clippy",
-    "Run Rustfmt",
-    "Run Tests",
-    "Build Docker",
-    "Run Checks"
-]
-# 3 hours timeout
-timeout-sec = 10800
