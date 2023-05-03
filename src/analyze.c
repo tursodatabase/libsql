@@ -1870,7 +1870,8 @@ static int loadStat4(sqlite3 *db, const char *zDb){
   const Table *pStat4;
 
   assert( db->lookaside.bDisable );
-  if( (pStat4 = sqlite3FindTable(db, "sqlite_stat4", zDb))!=0
+  if( OptimizationEnabled(db, SQLITE_Stat4)
+   && (pStat4 = sqlite3FindTable(db, "sqlite_stat4", zDb))!=0
    && IsOrdinaryTable(pStat4)
   ){
     rc = loadStatTbl(db,

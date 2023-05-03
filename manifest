@@ -1,5 +1,5 @@
-C Fix\sCLI\smishandling\sof\sOOM\sduring\s.import\s_of_\sa\sDB.\s[forum:7ed4a250d3|Reported\sby\sforum\spost\s7ed4a250d3].
-D 2023-05-03T02:32:42.390
+C Do\snot\seven\sattempt\sto\sload\sthe\ssqlite_stat4\stable\sif\sthe\suse\sof\sSTAT4\sis\s\ndisabled\susing\ssqlite3_test_control().
+D 2023-05-03T04:21:31.109
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -568,7 +568,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 482c534877fbb543f8295992cde925df55443febac5db5438d5aaba6f78c4940
-F src/analyze.c 6f4d31f7b899528fa06cbc6263d019343461ebe1ce182335daec1e8c2b66a5a9
+F src/analyze.c b69928424c793fee41cabdb1cd2f444cc9981fc75062ec5fa7a9cc245dac43e7
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 776d1a47aae3c3679a2d158595e84facf118adf2d1bca0f0642311dd346479b8
-R 19f615e80f231fc52648e343cfe97c62
-U larrybr
-Z c218f3b36abf312eb659cc1f0b002462
+P 30da3f0ebd944754881bce678c61289fdaf1e32198d241cc6b5c003e4fb33c0e
+R 8b393843bb16b91282a9fff4a784e2ac
+U drh
+Z 02e90fa572bcc3117385e7df187a1f45
 # Remove this line to create a well-formed Fossil manifest.
