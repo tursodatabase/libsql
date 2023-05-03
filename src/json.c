@@ -1080,17 +1080,16 @@ json_parse_restart:
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
+    if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+      pParse->iErr = i;
+      return -1;
+    }
     for(j=i+1;;j++){
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
-        pParse->iErr = j;
-        return -1;
-      }
       x = jsonParseValue(pParse, j);
       if( x<=0 ){
         if( x==(-2) ){
           j = pParse->iErr;
           if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
-          pParse->iDepth--;
           break;
         }
         j += json5Whitespace(&z[j]);
@@ -1138,7 +1137,6 @@ json_parse_restart:
       }
     parse_object_value:
       x = jsonParseValue(pParse, j);
-      pParse->iDepth--;
       if( x<=0 ){
         if( x!=(-1) ) pParse->iErr = j;
         return -1;
@@ -1171,20 +1169,20 @@ json_parse_restart:
       return -1;
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    pParse->iDepth--;
     return j+1;
   }
   case '[': {
     /* Parse array */
     iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
     if( iThis<0 ) return -1;
+    if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+      pParse->iErr = i;
+      return -1;
+    }
     memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
     for(j=i+1;;j++){
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ){
-        pParse->iErr = j;
-        return -1;
-      }
       x = jsonParseValue(pParse, j);
-      pParse->iDepth--;
       if( x<=0 ){
         if( x==(-3) ){
           j = pParse->iErr;
@@ -1222,6 +1220,7 @@ json_parse_restart:
       return -1;
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    pParse->iDepth--;
     return j+1;
   }
   case '\'': {
