@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sthe\s[0512f82a2cde7447]\schange\sto\slink\sit\sto\sits\sTH3\stest\scase.
-D 2023-05-03T13:33:37.268
+C Protect\sa\smacro\sargument\swith\sparentheses\sin\sFTS5.
+D 2023-05-03T13:48:33.942
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -86,7 +86,7 @@ F ext/fts3/unicode/mkunicode.tcl d5aebf022fa4577ee8cdf27468f0d847879993959101f6d
 F ext/fts3/unicode/parseunicode.tcl a981bd6466d12dd17967515801c3ff23f74a281be1a03cf1e6f52a6959fc77eb
 F ext/fts5/extract_api_docs.tcl a36e54ec777172ddd3f9a88daf593b00848368e0
 F ext/fts5/fts5.h c132a9323f22a972c4c93a8d5a3d901113a6e612faf30ca8e695788438c5ca2a
-F ext/fts5/fts5Int.h f473de2bdae0977af0d6c8cce96e3666821b85efba5f6006c7732662c3aabcb3
+F ext/fts5/fts5Int.h ed48a096418ff4a7c02ac9bd1e8d40c46de21b79a132b8b08d3f32233703de7d
 F ext/fts5/fts5_aux.c 572d5ec92ba7301df2fea3258576332f2f4d2dfd66d8263afd157d9deceac480
 F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b729225eeaf6a5
 F ext/fts5/fts5_config.c 46af0b3c3c3f00bfc5bdd307434d7c5f0fa0678a034dd48345cd83b20068efbd
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 960dc97083ed9a7bfa912010b9ea19114f51dd10e73d5c5bf06cc642ebd1a2e7
-R 798fb99811141b8c96d6f8c5dfb8c2b3
+P 1281d4d9d799ef83e6eb51d656ede82b4503d39adf169deb936b30ebfddd88b1
+R 9516b56d5d45e2ff26de5e83c0989fd0
 U drh
-Z cba791afa2bb6a058a382b3a06d77fb9
+Z b2678be6d28e6d4b10fe2ebee437ba56
 # Remove this line to create a well-formed Fossil manifest.
