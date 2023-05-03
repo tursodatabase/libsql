@@ -1,5 +1,5 @@
-C Conform\sCLI\sdouble-quoted\sescaping\sto\swhat\sits\sdoc\ssays.
-D 2023-05-03T11:27:15.731
+C Enhancement\sto\sshowwal\ssuch\sthat\sit\sshows\swhat\sthe\spage\shash\sshould\sbe\non\sa\shash\smismatch.
+D 2023-05-03T13:03:30.883
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2022,7 +2022,7 @@ F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
 F tool/showstat4.c 0682ebea7abf4d3657f53c4a243f2e7eab48eab344ed36a94bb75dcd19a5c2a1
-F tool/showwal.c 4699048f68b6dd7b451011abfff404b8890d5a0b7dab78d2ad50d018116239d5
+F tool/showwal.c 65ecabae3a2dcff4116301d5a8dbb8c4964814da1b2aff6d85c806a88b71fa4e
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/spaceanal.tcl 1b5be34c6223cb1af06da2a10fb77863eb869b1962d055820b0a11cf2336ab45
 F tool/speed-check.sh c24c30cddd0ecb6d1d0775411d22f7619f55fa696a305487645e27b1b8fc05a2
@@ -2068,9 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1b489d008b7bda12f9bf92e246bc613ef61e9c74ace0652d6d088e5a6e0696f6 90e434a6ae370a35109802fc336b98298d345f3d23125ef2cc68c31d8e69bb50
-R f83257d6b84f976842731b607596c265
-T +closed 90e434a6ae370a35109802fc336b98298d345f3d23125ef2cc68c31d8e69bb50
-U larrybr
-Z b5b6e25710fb288f20b1637e21b6730a
+P 910535ba518f35ecc64c980ad67e3af69008d1995235f52ab12db6cefdb6602b
+R 657ee6c6ba3ee49c6865a9c8e3edac4d
+U drh
+Z 07845ca22d4be2499966fc677eb008ed
 # Remove this line to create a well-formed Fossil manifest.
