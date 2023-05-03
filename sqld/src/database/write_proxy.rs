@@ -18,7 +18,7 @@ use crate::stats::Stats;
 use crate::Result;
 
 use super::Program;
-use super::{factory::DbFactory, libsql::LibSqlDb, Database};
+use super::{factory::DbFactory, libsql::LibSqlDb, Database, DescribeResult};
 
 #[derive(Clone)]
 pub struct WriteProxyDbFactory {
@@ -194,6 +194,11 @@ impl Database for WriteProxyDatabase {
         } else {
             self.execute_remote(pgm, &mut state, auth).await
         }
+    }
+
+    async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult> {
+        self.wait_replication_sync().await?;
+        self.read_db.describe(sql, auth).await
     }
 }
 

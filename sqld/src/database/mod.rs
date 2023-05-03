@@ -48,6 +48,27 @@ pub enum Cond {
     And { conds: Vec<Self> },
 }
 
+pub type DescribeResult = Result<DescribeResponse>;
+
+#[derive(Debug, Clone)]
+pub struct DescribeResponse {
+    pub params: Vec<DescribeParam>,
+    pub cols: Vec<DescribeCol>,
+    pub is_explain: bool,
+    pub is_readonly: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct DescribeParam {
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct DescribeCol {
+    pub name: String,
+    pub decltype: Option<String>,
+}
+
 #[async_trait::async_trait]
 pub trait Database: Send + Sync {
     /// Executes a query program
@@ -126,6 +147,9 @@ pub trait Database: Send + Sync {
 
         Ok(())
     }
+
+    /// Parse the SQL statements and return information about it.
+    async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult>;
 }
 
 fn make_batch_program(batch: Vec<Query>) -> Vec<Step> {

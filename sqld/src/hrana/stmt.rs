@@ -1,8 +1,12 @@
 use anyhow::{bail, Result};
+use std::collections::HashMap;
 
+use super::conn::ProtocolError;
+use super::handshake::Protocol;
 use super::proto;
+use super::session::ResponseError;
 use crate::auth::Authenticated;
-use crate::database::Database;
+use crate::database::{Database, DescribeResponse};
 use crate::error::Error as SqldError;
 use crate::hrana;
 use crate::query::{Params, Query, QueryResponse, Value};
@@ -41,9 +45,8 @@ pub enum StmtError {
 pub async fn execute_stmt(
     db: &dyn Database,
     auth: Authenticated,
-    stmt: &proto::Stmt,
+    query: Query,
 ) -> Result<proto::StmtResult> {
-    let query = proto_stmt_to_query(stmt)?;
     let (query_result, _) = db.execute_one(query, auth).await?;
     match query_result {
         Ok(query_response) => Ok(proto_stmt_result_from_query_response(query_response)),
@@ -54,8 +57,30 @@ pub async fn execute_stmt(
     }
 }
 
-pub fn proto_stmt_to_query(proto_stmt: &proto::Stmt) -> Result<Query> {
-    let mut stmt_iter = Statement::parse(&proto_stmt.sql);
+pub async fn describe_stmt(
+    db: &dyn Database,
+    auth: Authenticated,
+    sql: String,
+) -> Result<proto::DescribeResult> {
+    match db.describe(sql, auth).await? {
+        Ok(describe_response) => Ok(proto_describe_result_from_describe_response(
+            describe_response,
+        )),
+        Err(sqld_error) => match stmt_error_from_sqld_error(sqld_error) {
+            Ok(stmt_error) => bail!(stmt_error),
+            Err(sqld_error) => bail!(sqld_error),
+        },
+    }
+}
+
+pub fn proto_stmt_to_query(
+    proto_stmt: &proto::Stmt,
+    sqls: &HashMap<i32, String>,
+    protocol: Protocol,
+) -> Result<Query> {
+    let sql = proto_sql_to_sql(proto_stmt.sql.as_deref(), proto_stmt.sql_id, sqls, protocol)?;
+
+    let mut stmt_iter = Statement::parse(sql);
     let stmt = match stmt_iter.next() {
         Some(Ok(stmt)) => stmt,
         Some(Err(err)) => bail!(StmtError::SqlParse { source: err }),
@@ -81,6 +106,33 @@ pub fn proto_stmt_to_query(proto_stmt: &proto::Stmt) -> Result<Query> {
     };
 
     Ok(Query { stmt, params })
+}
+
+pub fn proto_sql_to_sql<'s>(
+    proto_sql: Option<&'s str>,
+    proto_sql_id: Option<i32>,
+    sqls: &'s HashMap<i32, String>,
+    protocol: Protocol,
+) -> Result<&'s str> {
+    if proto_sql_id.is_some() && protocol < Protocol::Hrana2 {
+        bail!(ProtocolError::from_message(
+            "`sql_id` can be specified in protocol version 2 and higher"
+        ))
+    }
+
+    match (proto_sql, proto_sql_id) {
+        (Some(sql), None) => Ok(sql),
+        (None, Some(sql_id)) => match sqls.get(&sql_id) {
+            Some(sql) => Ok(sql),
+            None => bail!(ResponseError::SqlNotFound { sql_id }),
+        },
+        (Some(_), Some(_)) => bail!(ProtocolError::from_message(
+            "Either `sql` or `sql_id` are required, but not both"
+        )),
+        (None, None) => bail!(ProtocolError::from_message(
+            "Either `sql` or `sql_id` are required"
+        )),
+    }
 }
 
 pub fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto::StmtResult {
@@ -126,6 +178,28 @@ fn proto_value_from_value(value: Value) -> proto::Value {
         Value::Blob(value) => proto::Value::Blob {
             value: value.into(),
         },
+    }
+}
+
+fn proto_describe_result_from_describe_response(
+    response: DescribeResponse,
+) -> proto::DescribeResult {
+    proto::DescribeResult {
+        params: response
+            .params
+            .into_iter()
+            .map(|p| proto::DescribeParam { name: p.name })
+            .collect(),
+        cols: response
+            .cols
+            .into_iter()
+            .map(|c| proto::DescribeCol {
+                name: c.name,
+                decltype: c.decltype,
+            })
+            .collect(),
+        is_explain: response.is_explain,
+        is_readonly: response.is_readonly,
     }
 }
 

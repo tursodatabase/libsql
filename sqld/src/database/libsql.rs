@@ -16,12 +16,21 @@ use crate::query_analysis::{State, Statement, StmtKind};
 use crate::stats::Stats;
 use crate::Result;
 
-use super::{Cond, Database, Program, Step, TXN_TIMEOUT_SECS};
+use super::{
+    Cond, Database, DescribeCol, DescribeParam, DescribeResponse, DescribeResult, Program, Step,
+    TXN_TIMEOUT_SECS,
+};
 
 /// Internal message used to communicate between the database thread and the `LibSqlDb` handle.
-struct Message {
-    pgm: Program,
-    resp: oneshot::Sender<(Vec<Option<QueryResult>>, State)>,
+enum Message {
+    Program {
+        pgm: Program,
+        resp: oneshot::Sender<(Vec<Option<QueryResult>>, State)>,
+    },
+    Describe {
+        sql: String,
+        resp: oneshot::Sender<DescribeResult>,
+    },
 }
 
 #[derive(Clone)]
@@ -156,7 +165,7 @@ impl LibSqlDb {
                 Connection::new(path.as_ref(), extensions, wal_hook, with_bottomless, stats)
                     .unwrap();
             loop {
-                let Message { pgm, resp } = match connection.state.deadline() {
+                let message = match connection.state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
                         Ok(msg) => msg,
                         Err(RecvTimeoutError::Timeout) => {
@@ -174,16 +183,24 @@ impl LibSqlDb {
                     },
                 };
 
-                if !connection.timed_out {
-                    let results = connection.run(pgm);
-                    ok_or_exit!(resp.send((results, connection.state.state)));
-                } else {
-                    // fail all the queries in the batch with timeout error
-                    let errors = (0..pgm.steps.len())
-                        .map(|idx| Some(Err(Error::LibSqlTxTimeout(idx))))
-                        .collect();
-                    ok_or_exit!(resp.send((errors, connection.state.state)));
-                    connection.timed_out = false;
+                match message {
+                    Message::Program { pgm, resp } => {
+                        if !connection.timed_out {
+                            let results = connection.run(pgm);
+                            ok_or_exit!(resp.send((results, connection.state.state)));
+                        } else {
+                            // fail all the queries in the batch with timeout error
+                            let errors = (0..pgm.steps.len())
+                                .map(|idx| Some(Err(Error::LibSqlTxTimeout(idx))))
+                                .collect();
+                            ok_or_exit!(resp.send((errors, connection.state.state)));
+                            connection.timed_out = false;
+                        }
+                    }
+                    Message::Describe { sql, resp } => {
+                        let result = connection.describe(&sql);
+                        ok_or_exit!(resp.send(result));
+                    }
                 }
             }
         });
@@ -336,6 +353,36 @@ impl Connection {
         self.stats
             .inc_rows_written(stmt.get_status(StatementStatus::RowsWritten) as u64);
     }
+
+    fn describe(&self, sql: &str) -> DescribeResult {
+        let stmt = self.conn.prepare(sql)?;
+
+        let params = (1..=stmt.parameter_count())
+            .map(|param_i| {
+                let name = stmt.parameter_name(param_i).map(|n| n.into());
+                DescribeParam { name }
+            })
+            .collect();
+
+        let cols = stmt
+            .columns()
+            .into_iter()
+            .map(|col| {
+                let name = col.name().into();
+                let decltype = col.decl_type().map(|t| t.into());
+                DescribeCol { name, decltype }
+            })
+            .collect();
+
+        let is_explain = stmt.is_explain() != 0;
+        let is_readonly = stmt.readonly();
+        Ok(DescribeResponse {
+            params,
+            cols,
+            is_explain,
+            is_readonly,
+        })
+    }
 }
 
 fn eval_cond(cond: &Cond, results: &[Option<QueryResult>]) -> Result<bool> {
@@ -361,7 +408,7 @@ fn eval_cond(cond: &Cond, results: &[Option<QueryResult>]) -> Result<bool> {
     })
 }
 
-fn check_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
+fn check_program_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
     for step in pgm.steps() {
         let query = &step.query;
         match (query.stmt.kind, &auth) {
@@ -384,6 +431,15 @@ fn check_auth(auth: Authenticated, pgm: &Program) -> Result<()> {
     Ok(())
 }
 
+fn check_describe_auth(auth: Authenticated) -> Result<()> {
+    match auth {
+        Authenticated::Anonymous => {
+            Err(Error::NotAuthorized("anonymous access not allowed".into()))
+        }
+        Authenticated::Authorized(_) => Ok(()),
+    }
+}
+
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
     async fn execute_program(
@@ -391,10 +447,19 @@ impl Database for LibSqlDb {
         pgm: Program,
         auth: Authenticated,
     ) -> Result<(Vec<Option<QueryResult>>, State)> {
-        check_auth(auth, &pgm)?;
+        check_program_auth(auth, &pgm)?;
         let (resp, receiver) = oneshot::channel();
-        let msg = Message { pgm, resp };
-        let _ = self.sender.send(msg);
+        let msg = Message::Program { pgm, resp };
+        let _: Result<_, _> = self.sender.send(msg);
+
+        Ok(receiver.await?)
+    }
+
+    async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult> {
+        check_describe_auth(auth)?;
+        let (resp, receiver) = oneshot::channel();
+        let msg = Message::Describe { sql, resp };
+        let _: Result<_, _> = self.sender.send(msg);
 
         Ok(receiver.await?)
     }

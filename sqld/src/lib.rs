@@ -50,7 +50,7 @@ pub enum Backend {
     Mwal,
 }
 
-type Result<T> = std::result::Result<T, Error>;
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 /// Trigger a hard database reset. This cause the database to be wiped, freshly restarted
 /// This is used for replicas that are left in an unrecoverabe state and should restart from a
