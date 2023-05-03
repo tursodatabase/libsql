@@ -954,6 +954,7 @@ static int fts5StructureDecode(
             rc = FTS5_CORRUPT;
             break;
           }
+          assert( pSeg!=0 );
           i += fts5GetVarint32(&pData[i], pSeg->iSegid);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoFirst);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoLast);

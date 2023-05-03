@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\sfts5_config\sto\sensure\sthat\sa\spotential\sOOM\sis\sbeing\shandled\scorrectly.
-D 2023-05-03T13:57:57.095
+C Add\sanother\sassert()\sto\sFTS5\sto\sdemonstrate\sthat\sa\spointer\sis\snever\sNULL.
+D 2023-05-03T14:10:05.186
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 051056a9052f5d3a4d1c695f996fd364f920e341f136c60ab2c04aa7e267113f
 F ext/fts5/fts5_expr.c 7d298d76ea010c339b26ca47f6f69e9aef520ea46c083deaa4e83e87cf0e94b1
 F ext/fts5/fts5_hash.c d4fb70940359f2120ccd1de7ffe64cc3efe65de9e8995b822cd536ff64c96982
-F ext/fts5/fts5_index.c d1eaca422cd3ab52adbe94f2a1ff6b3a4bea2960c6fa33a03f57499204ec36e0
+F ext/fts5/fts5_index.c de3cdae2e0056594aad97a728be5c43b6d7a6cdc7e9cc16f197892b2d8689c21
 F ext/fts5/fts5_main.c b4dba04a36aaf9b8e8cef0100b6dbb422cc74753eacc11d6401cac7a87c0f38d
 F ext/fts5/fts5_storage.c 76c6085239eb44424004c022e9da17a5ecd5aaec859fba90ad47d3b08f4c8082
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bc07fe51fe0c6bb50ca8ae1baefcc35c8f5395b2d0de641bf0b0cedc92d754d4
-R 625f4f8e19c0564c6824b8df3fb60f96
-U dan
-Z 02f663935f6d74bd0b94b27bc7460e80
+P fe9c207657400f9d9f4e822eb658157bc147ed538e2701322f6f973933f023ed
+R c1a3282fd819ceeb732ff9847b630694
+U drh
+Z 1b21a7b118e5d963084d32beaa5d7297
 # Remove this line to create a well-formed Fossil manifest.
