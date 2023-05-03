@@ -8,12 +8,18 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot};
 
-pub mod batch;
+pub use self::batch::{execute_batch, proto_batch_to_program, BatchError};
+pub use self::handshake::Protocol;
+pub use self::stmt::{
+    describe_stmt, execute_stmt, proto_sql_to_sql, proto_stmt_to_query, StmtError,
+};
+
+mod batch;
 mod conn;
 mod handshake;
 pub mod proto;
 mod session;
-pub mod stmt;
+mod stmt;
 
 struct Server {
     db_factory: Arc<dyn DbFactory>,

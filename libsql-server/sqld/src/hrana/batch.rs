@@ -1,8 +1,10 @@
 use anyhow::Result;
+use std::collections::HashMap;
 
 use crate::auth::Authenticated;
 use crate::database::{Cond, Database, Program, Step};
 
+use super::handshake::Protocol;
 use super::proto;
 use super::stmt::{
     proto_error_from_stmt_error, proto_stmt_result_from_query_response, proto_stmt_to_query,
@@ -55,10 +57,14 @@ fn proto_cond_to_cond(cond: &proto::BatchCond) -> Result<Cond> {
     Ok(cond)
 }
 
-fn batch_to_program(batch: &proto::Batch) -> Result<Program> {
+pub fn proto_batch_to_program(
+    batch: &proto::Batch,
+    sqls: &HashMap<i32, String>,
+    protocol: Protocol,
+) -> Result<Program> {
     let mut steps = Vec::with_capacity(batch.steps.len());
     for step in &batch.steps {
-        let query = proto_stmt_to_query(&step.stmt)?;
+        let query = proto_stmt_to_query(&step.stmt, sqls, protocol)?;
         let cond = step
             .condition
             .as_ref()
@@ -75,9 +81,8 @@ fn batch_to_program(batch: &proto::Batch) -> Result<Program> {
 pub async fn execute_batch(
     db: &dyn Database,
     auth: Authenticated,
-    batch: &proto::Batch,
+    pgm: Program,
 ) -> Result<proto::BatchResult> {
-    let pgm = batch_to_program(batch)?;
     let mut step_results = Vec::with_capacity(pgm.steps.len());
     let mut step_errors = Vec::with_capacity(pgm.steps.len());
     let (results, _state) = db.execute_program(pgm, auth).await?;

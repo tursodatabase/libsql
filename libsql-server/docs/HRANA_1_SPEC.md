@@ -1,7 +1,7 @@
-# The Hrana protocol specification
+# The Hrana protocol specification (version 1)
 
-Hrana (from Czech "hrana", which means "edge") is a protocol for connecting to
-SQL database over a WebSocket. It is designed to be used from edge functions,
+Hrana (from Czech "hrana", which means "edge") is a protocol for connecting to a
+SQLite database over a WebSocket. It is designed to be used from edge functions,
 where low latency and small overhead is important.
 
 ## Motivation
@@ -36,8 +36,8 @@ to `sqld` using Hrana, because it has native support for the protocol. This is
 the approach with lowest latency, because no software in the middle is
 necessary.
 
-- Connecting to Postgres or SQLite through a proxy: this allows edge functions
-to efficiently connect to existing SQL databases.
+- Connecting to SQLite through a proxy: this allows edge functions
+to efficiently connect to an existing SQLite databases.
 
 ## Overview
 
@@ -302,9 +302,8 @@ type NamedArg = {
 
 A statement contains the SQL text in `sql` and arguments.
 
-The arguments in `args` are bound to positional parameters in the SQL statement
-(such as `$NNN` in Postgres or `?NNN` in SQLite). The arguments in `named_args`
-are bound to named arguments, such as `:AAAA`, `@AAAA` and `$AAAA` in SQLite.
+The arguments in `args` are bound to parameters in the SQL statement by
+position. The arguments in `named_args` are bound to parameters by name.
 
 For SQLite, the names of arguments include the prefix sign (`:`, `@` or `$`). If
 the name of the argument does not start with this prefix, the server will try to

@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Context, Result};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 
@@ -14,9 +15,9 @@ enum ResponseError {
     BadRequestBody { source: serde_json::Error },
 
     #[error(transparent)]
-    Stmt(hrana::stmt::StmtError),
+    Stmt(hrana::StmtError),
     #[error(transparent)]
-    Batch(hrana::batch::BatchError),
+    Batch(hrana::BatchError),
 }
 
 pub async fn handle_index(
@@ -50,10 +51,15 @@ pub async fn handle_execute(
         auth,
         req,
         |db, auth: Authenticated, req_body: ReqBody| async move {
-            hrana::stmt::execute_stmt(&*db, auth, &req_body.stmt)
+            let query = hrana::proto_stmt_to_query(
+                &req_body.stmt,
+                &HashMap::new(),
+                hrana::Protocol::Hrana1,
+            )?;
+            hrana::execute_stmt(&*db, auth, query)
                 .await
                 .map(|result| RespBody { result })
-                .map_err(|err| match err.downcast::<hrana::stmt::StmtError>() {
+                .map_err(|err| match err.downcast::<hrana::StmtError>() {
                     Ok(stmt_err) => anyhow!(ResponseError::Stmt(stmt_err)),
                     Err(err) => err,
                 })
@@ -83,10 +89,15 @@ pub async fn handle_batch(
         auth,
         req,
         |db, auth: Authenticated, req_body: ReqBody| async move {
-            hrana::batch::execute_batch(&*db, auth, &req_body.batch)
+            let pgm = hrana::proto_batch_to_program(
+                &req_body.batch,
+                &HashMap::new(),
+                hrana::Protocol::Hrana1,
+            )?;
+            hrana::execute_batch(&*db, auth, pgm)
                 .await
                 .map(|result| RespBody { result })
-                .map_err(|err| match err.downcast::<hrana::batch::BatchError>() {
+                .map_err(|err| match err.downcast::<hrana::BatchError>() {
                     Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
                     Err(err) => err,
                 })
@@ -130,8 +141,8 @@ where
 }
 
 fn error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
-    use hrana::batch::BatchError;
-    use hrana::stmt::StmtError;
+    use hrana::BatchError;
+    use hrana::StmtError;
     let status = match &err {
         ResponseError::BadRequestBody { .. } => hyper::StatusCode::BAD_REQUEST,
         ResponseError::Stmt(err) => match err {

@@ -1,24 +1,28 @@
 use std::borrow::Cow;
+use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll};
 
-use anyhow::{Context as _, Result};
+use anyhow::{bail, Context as _, Result};
 use futures::stream::FuturesUnordered;
 use futures::{ready, FutureExt as _, StreamExt as _};
 use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
 use tungstenite::protocol::frame::coding::CloseCode;
 
+use super::handshake::{Protocol, WebSocket};
 use super::{handshake, proto, session, Server, Upgrade};
 
 /// State of a Hrana connection.
 struct Conn {
     conn_id: u64,
     server: Arc<Server>,
-    ws: handshake::WebSocket,
+    ws: WebSocket,
     ws_closed: bool,
+    /// The version of the protocol that has been negotiated in the WebSocket handshake.
+    protocol: Protocol,
     /// After a successful authentication, this contains the session-level state of the connection.
     session: Option<session::Session>,
     /// Join set for all tasks that were spawned to handle the connection.
@@ -36,15 +40,31 @@ struct ResponseFuture {
     response_rx: futures::future::Fuse<oneshot::Receiver<Result<proto::Response>>>,
 }
 
+/// A protocol error that should close the WebSocket.
+#[derive(Debug)]
+pub struct ProtocolError {
+    pub code: CloseCode,
+    pub message: String,
+}
+
+impl ProtocolError {
+    pub fn from_message(message: impl Into<String>) -> Self {
+        Self {
+            code: CloseCode::Policy,
+            message: message.into(),
+        }
+    }
+}
+
 pub(super) async fn handle_tcp(
     server: Arc<Server>,
     socket: tokio::net::TcpStream,
     conn_id: u64,
 ) -> Result<()> {
-    let ws = handshake::handshake_tcp(socket)
+    let (ws, protocol) = handshake::handshake_tcp(socket)
         .await
         .context("Could not perform the WebSocket handshake on TCP connection")?;
-    handle_ws(server, ws, conn_id).await
+    handle_ws(server, ws, protocol, conn_id).await
 }
 
 pub(super) async fn handle_upgrade(
@@ -52,18 +72,24 @@ pub(super) async fn handle_upgrade(
     upgrade: Upgrade,
     conn_id: u64,
 ) -> Result<()> {
-    let ws = handshake::handshake_upgrade(upgrade)
+    let (ws, protocol) = handshake::handshake_upgrade(upgrade)
         .await
         .context("Could not perform the WebSocket handshake on HTTP connection")?;
-    handle_ws(server, ws, conn_id).await
+    handle_ws(server, ws, protocol, conn_id).await
 }
 
-async fn handle_ws(server: Arc<Server>, ws: handshake::WebSocket, conn_id: u64) -> Result<()> {
+async fn handle_ws(
+    server: Arc<Server>,
+    ws: WebSocket,
+    protocol: Protocol,
+    conn_id: u64,
+) -> Result<()> {
     let mut conn = Conn {
         conn_id,
         server,
         ws,
         ws_closed: false,
+        protocol,
         session: None,
         join_set: tokio::task::JoinSet::new(),
         responses: FuturesUnordered::new(),
@@ -82,8 +108,21 @@ async fn handle_ws(server: Arc<Server>, ws: handshake::WebSocket, conn_id: u64) 
                     Ok(true) => continue,
                     Ok(false) => break,
                     Err(err) => {
-                        close(&mut conn, CloseCode::Error, "Internal server error").await;
-                        return Err(err);
+                        match err.downcast::<ProtocolError>() {
+                            Ok(proto_err) => {
+                                tracing::warn!(
+                                    "Connection #{} terminated due to protocol error: {}",
+                                    conn.conn_id,
+                                    proto_err.message,
+                                );
+                                close(&mut conn, proto_err.code, proto_err.message).await;
+                                return Ok(())
+                            }
+                            Err(err) => {
+                                close(&mut conn, CloseCode::Error, "Internal server error".into()).await;
+                                return Err(err);
+                            }
+                        }
                     }
                 }
             },
@@ -98,7 +137,12 @@ async fn handle_ws(server: Arc<Server>, ws: handshake::WebSocket, conn_id: u64) 
         }
     }
 
-    close(&mut conn, CloseCode::Normal, "Thank you for using sqld").await;
+    close(
+        &mut conn,
+        CloseCode::Normal,
+        "Thank you for using sqld".into(),
+    )
+    .await;
     Ok(())
 }
 
@@ -109,12 +153,10 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
             // in JSON
             let client_msg: proto::ClientMsg = match serde_json::from_str(&client_msg) {
                 Ok(client_msg) => client_msg,
-                Err(err) => {
-                    let error_msg = format!("Invalid format of client message: {err}");
-                    close(conn, CloseCode::Invalid, &error_msg).await;
-                    tracing::warn!("{}", error_msg);
-                    return Ok(false);
-                }
+                Err(err) => bail!(ProtocolError {
+                    code: CloseCode::Invalid,
+                    message: format!("Invalid format of client message: {err}"),
+                }),
             };
 
             match client_msg {
@@ -134,34 +176,22 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
             Ok(true)
         }
         tungstenite::Message::Close(_) => Ok(false),
-        _ => {
-            close(
-                conn,
-                CloseCode::Unsupported,
-                "Unsupported WebSocket message type",
-            )
-            .await;
-            tracing::warn!("Received an unsupported WebSocket message");
-            Ok(false)
-        }
+        _ => bail!(ProtocolError {
+            code: CloseCode::Unsupported,
+            message: "Received an unsupported WebSocket message".into(),
+        }),
     }
 }
 
 async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> {
-    if conn.session.is_some() {
-        close(
-            conn,
-            CloseCode::Policy,
-            "Hello message can only be sent once",
-        )
-        .await;
-        tracing::warn!("Received a hello message twice");
-        return Ok(false);
-    }
+    let hello_res = match conn.session.as_mut() {
+        None => session::handle_initial_hello(&conn.server, conn.protocol, jwt)
+            .map(|session| conn.session = Some(session)),
+        Some(session) => session::handle_repeated_hello(&conn.server, session, jwt),
+    };
 
-    match session::handle_hello(&conn.server, jwt).await {
-        Ok(session) => {
-            conn.session = Some(session);
+    match hello_res {
+        Ok(_) => {
             send_msg(conn, &proto::ServerMsg::HelloOk {}).await?;
             Ok(true)
         }
@@ -181,9 +211,7 @@ async fn handle_request_msg(
     request: proto::Request,
 ) -> Result<bool> {
     let Some(session) = conn.session.as_mut() else {
-        close(conn, CloseCode::Policy, "Requests can only be sent after a hello").await;
-        tracing::warn!("Received a request message before hello");
-        return Ok(false)
+        bail!(ProtocolError::from_message("Requests can only be sent after a hello"))
     };
 
     let response_rx = session::handle_request(&conn.server, session, &mut conn.join_set, request)
@@ -249,14 +277,14 @@ async fn send_msg(conn: &mut Conn, msg: &proto::ServerMsg) -> Result<()> {
         .context("Could not send response to the WebSocket")
 }
 
-async fn close(conn: &mut Conn, code: CloseCode, reason: &str) {
+async fn close(conn: &mut Conn, code: CloseCode, reason: String) {
     if conn.ws_closed {
         return;
     }
 
     let close_frame = tungstenite::protocol::frame::CloseFrame {
         code,
-        reason: Cow::Owned(reason.into()),
+        reason: Cow::Owned(reason),
     };
     if let Err(err) = conn
         .ws
@@ -276,4 +304,10 @@ async fn close(conn: &mut Conn, code: CloseCode, reason: &str) {
     }
 
     conn.ws_closed = true;
+}
+
+impl fmt::Display for ProtocolError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        <String as fmt::Display>::fmt(&self.message, f)
+    }
 }
