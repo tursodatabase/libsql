@@ -862,5 +862,26 @@ do_catchsql_test 18.1 {
   SELECT * FROM zipfile(NULL);
 } {1 {cannot open file: }}
 
+# 2023-05-03 https://sqlite.org/forum/info/f03f1e4c5a5c9959
+#
+do_test 19.1 {
+  sqlite3 db :memory:
+  load_static_extension db zipfile
+  forcedelete zipfile19.zip
+  db eval {
+    CREATE VIRTUAL TABLE t1 USING zipfile('zipfile19.zip');
+    INSERT INTO t1 DEFAULT VALUES;
+  }
+  db close
+  sqlite3 db :memory:
+  load_static_extension db zipfile
+  db eval {
+    CREATE VIRTUAL TABLE v0 USING zipfile('zipfile19.zip');
+    SAVEPOINT y;
+    DELETE FROM v0 WHERE 9;
+    INSERT INTO v0 DEFAULT VALUES;
+  }
+} {}
+forcedelete zipfile19.zip
 
 finish_test
