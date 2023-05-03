@@ -1,5 +1,5 @@
-C Enhancement\sto\sshowwal\ssuch\sthat\sit\sshows\swhat\sthe\spage\shash\sshould\sbe\non\sa\shash\smismatch.
-D 2023-05-03T13:03:30.883
+C Add\sa\scomment\sto\sthe\s[0512f82a2cde7447]\schange\sto\slink\sit\sto\sits\sTH3\stest\scase.
+D 2023-05-03T13:33:37.268
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -717,7 +717,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
 F src/vtab.c 4a1b231b5938de0282fbb605eb068ca673a1b6a383130f54d1bcbbac951988ad
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 6a2bba81139f12189d4fc60f30ff5147581328c2cefc99eb809017ab90c08dff
+F src/wal.c 7a65f64bfe4a783c5e2df73ffb0efc383dec934dee9e3ac706b2eeb3631d17ac
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c f69d94f34e1c523cd9b66041e4afe015cad29888617f3c09a2a5bc36018917d0
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 910535ba518f35ecc64c980ad67e3af69008d1995235f52ab12db6cefdb6602b
-R 657ee6c6ba3ee49c6865a9c8e3edac4d
+P 960dc97083ed9a7bfa912010b9ea19114f51dd10e73d5c5bf06cc642ebd1a2e7
+R 798fb99811141b8c96d6f8c5dfb8c2b3
 U drh
-Z 07845ca22d4be2499966fc677eb008ed
+Z cba791afa2bb6a058a382b3a06d77fb9
 # Remove this line to create a well-formed Fossil manifest.
