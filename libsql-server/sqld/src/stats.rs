@@ -16,6 +16,7 @@ pub struct Stats {
 struct StatsInner {
     rows_written: AtomicU64,
     rows_read: AtomicU64,
+    storage_bytes_used: AtomicU64,
 }
 
 impl Stats {
@@ -46,6 +47,10 @@ impl Stats {
         self.inner.rows_read.fetch_add(n, Ordering::Relaxed);
     }
 
+    pub fn set_storage_bytes_used(&self, n: u64) {
+        self.inner.storage_bytes_used.store(n, Ordering::Relaxed);
+    }
+
     /// returns the total number of rows read since this database was created
     pub fn rows_read(&self) -> u64 {
         self.inner.rows_read.load(Ordering::Relaxed)
@@ -54,6 +59,11 @@ impl Stats {
     /// returns the total number of rows written since this database was created
     pub fn rows_written(&self) -> u64 {
         self.inner.rows_written.load(Ordering::Relaxed)
+    }
+
+    /// returns the total number of bytes used by the database (excluding uncheckpointed WAL entries)
+    pub fn storage_bytes_used(&self) -> u64 {
+        self.inner.storage_bytes_used.load(Ordering::Relaxed)
     }
 }
 

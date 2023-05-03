@@ -13,10 +13,7 @@ pub async fn server_heartbeat(
     let client = reqwest::Client::new();
     loop {
         sleep(update_period).await;
-        let body = StatsResponse {
-            rows_read_count: stats.rows_read(),
-            rows_written_count: stats.rows_written(),
-        };
+        let body = StatsResponse::from(&stats);
         let request = client.post(&url);
         let request = if let Some(ref auth) = auth {
             request.header("Authorization", auth.clone())

@@ -390,6 +390,19 @@ async fn start_primary(
     Ok(())
 }
 
+// Periodically check the storage used by the database and save it in the Stats structure.
+// TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
+// right after checkpointing is exactly where it should be done.
+async fn run_storage_monitor(mut db_path: PathBuf, stats: Stats) -> anyhow::Result<()> {
+    let duration = tokio::time::Duration::from_secs(60 * 15);
+    db_path.push("data");
+    loop {
+        let attr = tokio::fs::metadata(&db_path).await;
+        stats.set_storage_bytes_used(attr.map_or(0, |stats| stats.len()));
+        tokio::time::sleep(duration).await;
+    }
+}
+
 pub async fn run_server(config: Config) -> anyhow::Result<()> {
     tracing::trace!("Backend: {:?}", config.backend);
 
@@ -424,6 +437,8 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
             .map(|d| IdleShutdownLayer::new(d, shutdown_notify.clone()));
 
         let stats = Stats::new(&config.db_path)?;
+
+        join_set.spawn(run_storage_monitor(config.db_path.clone(), stats.clone()));
 
         match config.writer_rpc_addr {
             Some(_) => start_replica(&config, &mut join_set, idle_shutdown_layer, stats).await?,
