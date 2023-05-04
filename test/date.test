@@ -544,4 +544,10 @@ datetest 17.7 {datetime(38,'start of year')} {-4712-01-01 00:00:00}
 #
 datetest 18.1 {strftime('%f',1.234,'unixepoch','localtime')} {01.234}
 
+# 2023-04 The 'subsecond' (or 'subsec') modifier alters resolutions
+# to at least milliseconds. Added for release 3.42.0 .
+datetest 18.2 {unixepoch('1970-01-01T00:00:00.1', 'subsec')} {0.1}
+datetest 18.3 {unixepoch('1970-01-01T00:00:00.2', 'subsecond')} {0.2}
+datetest 18.4 {julianday('-4713-11-24 13:40:48.864', 'subsec')} {0.07001}
+datetest 18.5 {typeof(unixepoch('now', 'subsecond'))} {real}
 finish_test
