@@ -35,6 +35,15 @@ fn is_temp(name: &QualifiedName) -> bool {
     name.db_name.as_ref().map(|n| n.0.as_str()) == Some("TEMP")
 }
 
+fn is_reserved_tbl(name: &QualifiedName) -> bool {
+    let n = name.name.0.to_lowercase();
+    n == "_litestream_seq" || n == "_litestream_lock" || n == "libsql_wasm_func_table"
+}
+
+fn write_if_not_reserved(name: &QualifiedName) -> Option<StmtKind> {
+    (!is_reserved_tbl(name)).then_some(StmtKind::Write)
+}
+
 impl StmtKind {
     fn kind(cmd: &Cmd) -> Option<Self> {
         match cmd {
@@ -51,12 +60,30 @@ impl StmtKind {
                 },
             ) if !is_temp(tbl_name) => Some(Self::Write),
             Cmd::Stmt(
-                Stmt::Insert { .. }
-                | Stmt::Update { .. }
-                | Stmt::Delete { .. }
-                | Stmt::DropTable { .. }
-                | Stmt::DropIndex { .. }
-                | Stmt::AlterTable { .. }
+                Stmt::Insert {
+                    with: _,
+                    or_conflict: _,
+                    tbl_name,
+                    ..
+                }
+                | Stmt::Update {
+                    with: _,
+                    or_conflict: _,
+                    tbl_name,
+                    ..
+                },
+            ) => write_if_not_reserved(tbl_name),
+
+            Cmd::Stmt(Stmt::Delete {
+                with: _, tbl_name, ..
+            }) => write_if_not_reserved(tbl_name),
+            Cmd::Stmt(Stmt::DropTable {
+                if_exists: _,
+                tbl_name,
+            }) => write_if_not_reserved(tbl_name),
+            Cmd::Stmt(Stmt::AlterTable(tbl_name, _)) => write_if_not_reserved(tbl_name),
+            Cmd::Stmt(
+                Stmt::DropIndex { .. }
                 | Stmt::CreateTrigger {
                     temporary: false, ..
                 }
