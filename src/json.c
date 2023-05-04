@@ -104,6 +104,7 @@ static const char * const jsonType[] = {
 #define JNODE_PATCH   0x10         /* Patch with JsonNode.u.pPatch */
 #define JNODE_APPEND  0x20         /* More ARRAY/OBJECT entries at u.iAppend */
 #define JNODE_LABEL   0x40         /* Is a label of an object */
+#define JNODE_JSON5   0x80         /* Node contains JSON5 enhancements */
 
 
 /* A single node of parsed JSON
@@ -130,10 +131,12 @@ struct JsonParse {
   JsonNode *aNode;   /* Array of nodes containing the parse */
   const char *zJson; /* Original JSON string */
   u32 *aUp;          /* Index of parent of each node */
-  u8 oom;            /* Set to true if out of memory */
-  u8 nErr;           /* Number of errors seen */
   u16 iDepth;        /* Nesting depth */
+  u8 nErr;           /* Number of errors seen */
+  u8 oom;            /* Set to true if out of memory */
+  u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
   int nJson;         /* Length of the zJson string in bytes */
+  u32 iErr;          /* Error location in zJson[] */
   u32 iHold;         /* Replace cache line with the lowest iHold value */
 };
 
@@ -295,6 +298,129 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
 }
 
 /*
+** The zIn[0..N] string is a JSON5 string literal.  Append to p a translation
+** of the string literal that standard JSON and that omits all JSON5
+** features.
+*/
+static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
+  u32 i;
+  jsonAppendChar(p, '"');
+  zIn++;
+  N -= 2;
+  while( N>0 ){
+    for(i=0; i<N && zIn[i]!='\\'; i++){}
+    if( i>0 ){
+      jsonAppendRaw(p, zIn, i);
+      zIn += i;
+      N -= i;
+      if( N==0 ) break;     
+    }
+    assert( zIn[0]=='\\' );
+    switch( (u8)zIn[1] ){
+      case '\'':
+        jsonAppendChar(p, '\'');
+        break;
+      case 'v':
+        jsonAppendRaw(p, "\\u0009", 6);
+        break;
+      case 'x':
+        jsonAppendRaw(p, "\\u00", 4);
+        jsonAppendRaw(p, &zIn[2], 2);
+        zIn += 2;
+        N -= 2;
+        break;
+      case '0':
+        jsonAppendRaw(p, "\\u0000", 6);
+        break;
+      case '\r':
+        if( zIn[2]=='\n' ){
+          zIn++;
+          N--;
+        }
+        break;
+      case '\n':
+        break;
+      case 0xe2:
+        assert( N>=4 );
+        assert( 0x80==(u8)zIn[2] );
+        assert( 0xa8==(u8)zIn[3] || 0xa9==(u8)zIn[3] );
+        zIn += 2;
+        N -= 2;
+        break;
+      default:
+        jsonAppendRaw(p, zIn, 2);
+        break;
+    }
+    zIn += 2;
+    N -= 2;
+  }
+  jsonAppendChar(p, '"');
+}
+
+/*
+** The zIn[0..N] string is a JSON5 integer literal.  Append to p a translation
+** of the string literal that standard JSON and that omits all JSON5
+** features.
+*/
+static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
+  if( zIn[0]=='+' ){
+    zIn++;
+    N--;
+  }else if( zIn[0]=='-' ){
+    jsonAppendChar(p, '-');
+    zIn++;
+    N--;
+  }
+  if( zIn[0]=='0' && (zIn[1]=='x' || zIn[1]=='X') ){
+    sqlite3_int64 i = 0;
+    int rc = sqlite3DecOrHexToI64(zIn, &i);
+    if( rc<=1 ){
+      jsonPrintf(100,p,"%lld",i);
+    }else{
+      assert( rc==2 );
+      jsonAppendRaw(p, "9.0e999", 7);
+    }
+    return;
+  }
+  jsonAppendRaw(p, zIn, N);
+}
+
+/*
+** The zIn[0..N] string is a JSON5 real literal.  Append to p a translation
+** of the string literal that standard JSON and that omits all JSON5
+** features.
+*/
+static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
+  u32 i;
+  if( zIn[0]=='+' ){
+    zIn++;
+    N--;
+  }else if( zIn[0]=='-' ){
+    jsonAppendChar(p, '-');
+    zIn++;
+    N--;
+  }
+  if( zIn[0]=='.' ){
+    jsonAppendChar(p, '0');
+  }
+  for(i=0; i<N; i++){
+    if( zIn[i]=='.' && (i+1==N || !sqlite3Isdigit(zIn[i+1])) ){
+      i++;
+      jsonAppendRaw(p, zIn, i);
+      zIn += i;
+      N -= i;
+      jsonAppendChar(p, '0');
+      break;
+    }
+  }
+  if( N>0 ){
+    jsonAppendRaw(p, zIn, N);
+  }
+}
+
+
+
+/*
 ** Append a function parameter value to the JSON string under 
 ** construction.
 */
@@ -424,17 +550,38 @@ static void jsonRenderNode(
       break;
     }
     case JSON_STRING: {
+      assert( pNode->eU==1 );
       if( pNode->jnFlags & JNODE_RAW ){
-        assert( pNode->eU==1 );
-        jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
-        break;
+        if( pNode->jnFlags & JNODE_LABEL ){
+          jsonAppendChar(pOut, '"');
+          jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+          jsonAppendChar(pOut, '"');
+        }else{
+          jsonAppendString(pOut, pNode->u.zJContent, pNode->n);
+        }
+      }else if( pNode->jnFlags & JNODE_JSON5 ){
+        jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
+      }else{
+        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
       }
-      /* no break */ deliberate_fall_through
+      break;
     }
-    case JSON_REAL:
+    case JSON_REAL: {
+      assert( pNode->eU==1 );
+      if( pNode->jnFlags & JNODE_JSON5 ){
+        jsonAppendNormalizedReal(pOut, pNode->u.zJContent, pNode->n);
+      }else{
+        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+      }
+      break;
+    }
     case JSON_INT: {
       assert( pNode->eU==1 );
-      jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+      if( pNode->jnFlags & JNODE_JSON5 ){
+        jsonAppendNormalizedInt(pOut, pNode->u.zJContent, pNode->n);
+      }else{
+        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+      }
       break;
     }
     case JSON_ARRAY: {
@@ -550,59 +697,41 @@ static void jsonReturn(
     }
     case JSON_INT: {
       sqlite3_int64 i = 0;
+      int rc;
+      int bNeg = 0;
       const char *z;
+     
+   
       assert( pNode->eU==1 );
       z = pNode->u.zJContent;
-      if( z[0]=='-' ){ z++; }
-      while( z[0]>='0' && z[0]<='9' ){
-        unsigned v = *(z++) - '0';
-        if( i>=LARGEST_INT64/10 ){
-          if( i>LARGEST_INT64/10 ) goto int_as_real;
-          if( z[0]>='0' && z[0]<='9' ) goto int_as_real;
-          if( v==9 ) goto int_as_real;
-          if( v==8 ){
-            if( pNode->u.zJContent[0]=='-' ){
-              sqlite3_result_int64(pCtx, SMALLEST_INT64);
-              goto int_done;
-            }else{
-              goto int_as_real;
-            }
-          }
-        }
-        i = i*10 + v;
+      if( z[0]=='-' ){ z++; bNeg = 1; }
+      else if( z[0]=='+' ){ z++; }
+      rc = sqlite3DecOrHexToI64(z, &i);
+      if( rc<=1 ){
+        sqlite3_result_int64(pCtx, bNeg ? -i : i);
+      }else if( rc==3 && bNeg ){
+        sqlite3_result_int64(pCtx, SMALLEST_INT64);
+      }else{
+        goto to_double;
       }
-      if( pNode->u.zJContent[0]=='-' ){ i = -i; }
-      sqlite3_result_int64(pCtx, i);
-      int_done:
       break;
-      int_as_real: ; /* no break */ deliberate_fall_through
     }
     case JSON_REAL: {
       double r;
-#ifdef SQLITE_AMALGAMATION
       const char *z;
       assert( pNode->eU==1 );
+    to_double:
       z = pNode->u.zJContent;
       sqlite3AtoF(z, &r, sqlite3Strlen30(z), SQLITE_UTF8);
-#else
-      assert( pNode->eU==1 );
-      r = strtod(pNode->u.zJContent, 0);
-#endif
       sqlite3_result_double(pCtx, r);
       break;
     }
     case JSON_STRING: {
-#if 0 /* Never happens because JNODE_RAW is only set by json_set(),
-      ** json_insert() and json_replace() and those routines do not
-      ** call jsonReturn() */
       if( pNode->jnFlags & JNODE_RAW ){
         assert( pNode->eU==1 );
         sqlite3_result_text(pCtx, pNode->u.zJContent, pNode->n,
                             SQLITE_TRANSIENT);
-      }else 
-#endif
-      assert( (pNode->jnFlags & JNODE_RAW)==0 );
-      if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
+      }else if( (pNode->jnFlags & JNODE_ESCAPE)==0 ){
         /* JSON formatted without any backslash-escapes */
         assert( pNode->eU==1 );
         sqlite3_result_text(pCtx, pNode->u.zJContent+1, pNode->n-2,
@@ -614,18 +743,17 @@ static void jsonReturn(
         const char *z;
         char *zOut;
         u32 j;
+        u32 nOut = n;
         assert( pNode->eU==1 );
         z = pNode->u.zJContent;
-        zOut = sqlite3_malloc( n+1 );
+        zOut = sqlite3_malloc( nOut+1 );
         if( zOut==0 ){
           sqlite3_result_error_nomem(pCtx);
           break;
         }
         for(i=1, j=0; i<n-1; i++){
           char c = z[i];
-          if( c!='\\' ){
-            zOut[j++] = c;
-          }else{
+          if( c=='\\' ){
             c = z[++i];
             if( c=='u' ){
               u32 v = jsonHexToInt4(z+i+1);
@@ -657,22 +785,40 @@ static void jsonReturn(
                   zOut[j++] = 0x80 | (v&0x3f);
                 }
               }
+              continue;
+            }else if( c=='b' ){
+              c = '\b';
+            }else if( c=='f' ){
+              c = '\f';
+            }else if( c=='n' ){
+              c = '\n';
+            }else if( c=='r' ){
+              c = '\r';
+            }else if( c=='t' ){
+              c = '\t';
+            }else if( c=='v' ){
+              c = '\v';
+            }else if( c=='\'' || c=='"' || c=='/' || c=='\\' ){
+              /* pass through unchanged */
+            }else if( c=='0' ){
+              c = 0;
+            }else if( c=='x' ){
+              c = (jsonHexToInt(z[i+1])<<4) | jsonHexToInt(z[i+2]);
+              i += 2;
+            }else if( c=='\r' && z[i+1]=='\n' ){
+              i++;
+              continue;
+            }else if( 0xe2==(u8)c ){
+              assert( 0x80==(u8)z[i+1] );
+              assert( 0xa8==(u8)z[i+2] || 0xa9==(u8)z[i+2] );
+              i += 2;
+              continue;
             }else{
-              if( c=='b' ){
-                c = '\b';
-              }else if( c=='f' ){
-                c = '\f';
-              }else if( c=='n' ){
-                c = '\n';
-              }else if( c=='r' ){
-                c = '\r';
-              }else if( c=='t' ){
-                c = '\t';
-              }
-              zOut[j++] = c;
+              continue;
             }
-          }
-        }
+          } /* end if( c=='\\' ) */
+          zOut[j++] = c;
+        } /* end for() */
         zOut[j] = 0;
         sqlite3_result_text(pCtx, zOut, j, sqlite3_free);
       }
@@ -740,8 +886,8 @@ static int jsonParseAddNode(
     return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
   p = &pParse->aNode[pParse->nNode];
-  p->eType = (u8)eType;
-  p->jnFlags = 0;
+  p->eType = (u8)(eType & 0xff);
+  p->jnFlags = (u8)(eType >> 8);
   VVA( p->eU = zContent ? 1 : 0 );
   p->n = n;
   p->u.zJContent = zContent;
@@ -749,15 +895,146 @@ static int jsonParseAddNode(
 }
 
 /*
+** Return true if z[] begins with 2 (or more) hexadecimal digits
+*/
+static int jsonIs2Hex(const char *z){
+  return sqlite3Isxdigit(z[0]) && sqlite3Isxdigit(z[1]);
+}
+
+/*
 ** Return true if z[] begins with 4 (or more) hexadecimal digits
 */
 static int jsonIs4Hex(const char *z){
-  int i;
-  for(i=0; i<4; i++) if( !sqlite3Isxdigit(z[i]) ) return 0;
-  return 1;
+  return jsonIs2Hex(z) && jsonIs2Hex(&z[2]);
 }
 
-#ifdef SQLITE_ENABLE_JSON_NAN_INF
+/*
+** Return the number of bytes of JSON5 whitespace at the beginning of
+** the input string z[].
+**
+** JSON5 whitespace consists of any of the following characters:
+**
+**    Unicode  UTF-8         Name
+**    U+0009   09            horizontal tab
+**    U+000a   0a            line feed
+**    U+000b   0b            vertical tab
+**    U+000c   0c            form feed
+**    U+000d   0d            carriage return
+**    U+0020   20            space
+**    U+00a0   c2 a0         non-breaking space
+**    U+1680   e1 9a 80      ogham space mark
+**    U+2000   e2 80 80      en quad
+**    U+2001   e2 80 81      em quad
+**    U+2002   e2 80 82      en space
+**    U+2003   e2 80 83      em space
+**    U+2004   e2 80 84      three-per-em space
+**    U+2005   e2 80 85      four-per-em space
+**    U+2006   e2 80 86      six-per-em space
+**    U+2007   e2 80 87      figure space
+**    U+2008   e2 80 88      punctuation space
+**    U+2009   e2 80 89      thin space
+**    U+200a   e2 80 8a      hair space
+**    U+2028   e2 80 a8      line separator
+**    U+2029   e2 80 a9      paragraph separator
+**    U+202f   e2 80 af      narrow no-break space (NNBSP)
+**    U+205f   e2 81 9f      medium mathematical space (MMSP)
+**    U+3000   e3 80 80      ideographical space
+**    U+FEFF   ef bb bf      byte order mark
+**
+** In addition, comments between '/', '*' and '*', '/' and
+** from '/', '/' to end-of-line are also considered to be whitespace.
+*/
+static int json5Whitespace(const char *zIn){
+  int n = 0;
+  const u8 *z = (u8*)zIn;
+  while( 1 /*exit by "goto whitespace_done"*/ ){
+    switch( z[n] ){
+      case 0x09:
+      case 0x0a:
+      case 0x0b:
+      case 0x0c:
+      case 0x0d:
+      case 0x20: {
+        n++;
+        break;
+      }
+      case '/': {
+        if( z[n+1]=='*' && z[n+2]!=0 ){
+          int j;
+          for(j=n+3; z[j]!='/' || z[j-1]!='*'; j++){
+            if( z[j]==0 ) goto whitespace_done;
+          }
+          n = j+1;
+          break;
+        }else if( z[n+1]=='/' ){
+          int j;
+          char c;
+          for(j=n+2; (c = z[j])!=0; j++){
+            if( c=='\n' || c=='\r' ) break;
+            if( 0xe2==(u8)c && 0x80==(u8)z[j+1]
+             && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2])
+            ){
+              j += 2;
+              break;
+            }
+          }
+          n = j;
+          if( z[n] ) n++;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xc2: {
+        if( z[n+1]==0xa0 ){
+          n += 2;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xe1: {
+        if( z[n+1]==0x9a && z[n+2]==0x80 ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xe2: {
+        if( z[n+1]==0x80 ){
+          u8 c = z[n+2];
+          if( c<0x80 ) goto whitespace_done;
+          if( c<=0x8a || c==0xa8 || c==0xa9 || c==0xaf ){
+            n += 3;
+            break;
+          }
+        }else if( z[n+1]==0x81 && z[n+2]==0x9f ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xe3: {
+        if( z[n+1]==0x80 && z[n+2]==0x80 ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      case 0xef: {
+        if( z[n+1]==0xbb && z[n+2]==0xbf ){
+          n += 3;
+          break;
+        }
+        goto whitespace_done;
+      }
+      default: {
+        goto whitespace_done;
+      }
+    }
+  }
+  whitespace_done:
+  return n;
+}
+
 /*
 ** Extra floating-point literals to allow in JSON.
 */
@@ -775,16 +1052,20 @@ static const struct NanInfName {
   { 'n', 'N', 3, JSON_NULL, 4, "NaN", "null" },
   { 'q', 'Q', 4, JSON_NULL, 4, "QNaN", "null" },
   { 's', 'S', 4, JSON_NULL, 4, "SNaN", "null" },
-}; 
-#endif /* SQLITE_ENABLE_JSON_NAN_INF */
+};
 
 /*
 ** Parse a single JSON value which begins at pParse->zJson[i].  Return the
 ** index of the first character past the end of the value parsed.
 **
-** Return negative for a syntax error.  Special cases:  return -2 if the
-** first non-whitespace character is '}' and return -3 if the first
-** non-whitespace character is ']'.
+** Special return values:
+**
+**      0    End if input
+**     -1    Syntax error
+**     -2    '}' seen
+**     -3    ']' seen
+**     -4    ',' seen
+**     -5    ':' seen
 */
 static int jsonParseValue(JsonParse *pParse, u32 i){
   char c;
@@ -793,169 +1074,413 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
   int x;
   JsonNode *pNode;
   const char *z = pParse->zJson;
-  while( fast_isspace(z[i]) ){ i++; }
-  if( (c = z[i])=='{' ){
+json_parse_restart:
+  switch( (u8)z[i] ){
+  case '{': {
     /* Parse object */
     iThis = jsonParseAddNode(pParse, JSON_OBJECT, 0, 0);
     if( iThis<0 ) return -1;
+    if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+      pParse->iErr = i;
+      return -1;
+    }
     for(j=i+1;;j++){
-      while( fast_isspace(z[j]) ){ j++; }
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
       x = jsonParseValue(pParse, j);
-      if( x<0 ){
-        pParse->iDepth--;
-        if( x==(-2) && pParse->nNode==(u32)iThis+1 ) return j+1;
-        return -1;
+      if( x<=0 ){
+        if( x==(-2) ){
+          j = pParse->iErr;
+          if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
+          break;
+        }
+        j += json5Whitespace(&z[j]);
+        if( sqlite3JsonId1(z[j])
+         || (z[j]=='\\' && z[j+1]=='u' && jsonIs4Hex(&z[j+2]))
+        ){
+          int k = j+1;
+          while( (sqlite3JsonId2(z[k]) && json5Whitespace(&z[k])==0)
+            || (z[k]=='\\' && z[k+1]=='u' && jsonIs4Hex(&z[k+2]))
+          ){
+            k++;
+          }
+          jsonParseAddNode(pParse, JSON_STRING | (JNODE_RAW<<8), k-j, &z[j]);
+          pParse->hasNonstd = 1;
+          x = k;
+        }else{
+          if( x!=-1 ) pParse->iErr = j;
+          return -1;
+        }
       }
       if( pParse->oom ) return -1;
       pNode = &pParse->aNode[pParse->nNode-1];
-      if( pNode->eType!=JSON_STRING ) return -1;
+      if( pNode->eType!=JSON_STRING ){
+        pParse->iErr = j;
+        return -1;
+      }
       pNode->jnFlags |= JNODE_LABEL;
       j = x;
-      while( fast_isspace(z[j]) ){ j++; }
-      if( z[j]!=':' ) return -1;
-      j++;
+      if( z[j]==':' ){
+        j++;
+      }else{
+        if( fast_isspace(z[j]) ){
+          do{ j++; }while( fast_isspace(z[j]) );
+          if( z[j]==':' ){
+            j++;
+            goto parse_object_value;
+          }
+        }
+        x = jsonParseValue(pParse, j);
+        if( x!=(-5) ){
+          if( x!=(-1) ) pParse->iErr = j;
+          return -1;
+        }
+        j = pParse->iErr+1;
+      }
+    parse_object_value:
       x = jsonParseValue(pParse, j);
-      pParse->iDepth--;
-      if( x<0 ) return -1;
-      j = x;
-      while( fast_isspace(z[j]) ){ j++; }
-      c = z[j];
-      if( c==',' ) continue;
-      if( c!='}' ) return -1;
-      break;
-    }
-    pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
-    return j+1;
-  }else if( c=='[' ){
-    /* Parse array */
-    iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
-    if( iThis<0 ) return -1;
-    memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
-    for(j=i+1;;j++){
-      while( fast_isspace(z[j]) ){ j++; }
-      if( ++pParse->iDepth > JSON_MAX_DEPTH ) return -1;
-      x = jsonParseValue(pParse, j);
-      pParse->iDepth--;
-      if( x<0 ){
-        if( x==(-3) && pParse->nNode==(u32)iThis+1 ) return j+1;
+      if( x<=0 ){
+        if( x!=(-1) ) pParse->iErr = j;
         return -1;
       }
       j = x;
-      while( fast_isspace(z[j]) ){ j++; }
-      c = z[j];
-      if( c==',' ) continue;
-      if( c!=']' ) return -1;
-      break;
+      if( z[j]==',' ){
+        continue;
+      }else if( z[j]=='}' ){
+        break;
+      }else{
+        if( fast_isspace(z[j]) ){
+          do{ j++; }while( fast_isspace(z[j]) );
+          if( z[j]==',' ){
+            continue;
+          }else if( z[j]=='}' ){
+            break;
+          }
+        }
+        x = jsonParseValue(pParse, j);
+        if( x==(-4) ){
+          j = pParse->iErr;
+          continue;
+        }
+        if( x==(-2) ){
+          j = pParse->iErr;
+          break;
+        }
+      }
+      pParse->iErr = j;
+      return -1;
     }
     pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    pParse->iDepth--;
     return j+1;
-  }else if( c=='"' ){
+  }
+  case '[': {
+    /* Parse array */
+    iThis = jsonParseAddNode(pParse, JSON_ARRAY, 0, 0);
+    if( iThis<0 ) return -1;
+    if( ++pParse->iDepth > JSON_MAX_DEPTH ){
+      pParse->iErr = i;
+      return -1;
+    }
+    memset(&pParse->aNode[iThis].u, 0, sizeof(pParse->aNode[iThis].u));
+    for(j=i+1;;j++){
+      x = jsonParseValue(pParse, j);
+      if( x<=0 ){
+        if( x==(-3) ){
+          j = pParse->iErr;
+          if( pParse->nNode!=(u32)iThis+1 ) pParse->hasNonstd = 1;
+          break;
+        }
+        if( x!=(-1) ) pParse->iErr = j;
+        return -1;
+      }
+      j = x;
+      if( z[j]==',' ){
+        continue;
+      }else if( z[j]==']' ){
+        break;
+      }else{
+        if( fast_isspace(z[j]) ){
+          do{ j++; }while( fast_isspace(z[j]) );
+          if( z[j]==',' ){
+            continue;
+          }else if( z[j]==']' ){
+            break;
+          }
+        }
+        x = jsonParseValue(pParse, j);
+        if( x==(-4) ){
+          j = pParse->iErr;
+          continue;
+        }
+        if( x==(-3) ){
+          j = pParse->iErr;
+          break;
+        }
+      }
+      pParse->iErr = j;
+      return -1;
+    }
+    pParse->aNode[iThis].n = pParse->nNode - (u32)iThis - 1;
+    pParse->iDepth--;
+    return j+1;
+  }
+  case '\'': {
+    u8 jnFlags;
+    char cDelim;
+    pParse->hasNonstd = 1;
+    jnFlags = JNODE_JSON5;
+    goto parse_string;
+  case '"':
     /* Parse string */
-    u8 jnFlags = 0;
+    jnFlags = 0;
+  parse_string:
+    cDelim = z[i];
     j = i+1;
     for(;;){
       c = z[j];
       if( (c & ~0x1f)==0 ){
         /* Control characters are not allowed in strings */
+        pParse->iErr = j;
         return -1;
       }
       if( c=='\\' ){
         c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
            || c=='n' || c=='r' || c=='t'
-           || (c=='u' && jsonIs4Hex(z+j+1)) ){
-          jnFlags = JNODE_ESCAPE;
+           || (c=='u' && jsonIs4Hex(&z[j+1])) ){
+          jnFlags |= JNODE_ESCAPE;
+        }else if( c=='\'' || c=='0' || c=='v' || c=='\n'
+           || (0xe2==(u8)c && 0x80==(u8)z[j+1]
+                && (0xa8==(u8)z[j+2] || 0xa9==(u8)z[j+2]))
+           || (c=='x' && jsonIs2Hex(&z[j+1])) ){
+          jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
+          pParse->hasNonstd = 1;
+        }else if( c=='\r' ){
+          if( z[j+1]=='\n' ) j++;
+          jnFlags |= (JNODE_ESCAPE|JNODE_JSON5);
+          pParse->hasNonstd = 1;
         }else{
+          pParse->iErr = j;
           return -1;
         }
-      }else if( c=='"' ){
+      }else if( c==cDelim ){
         break;
       }
       j++;
     }
-    jsonParseAddNode(pParse, JSON_STRING, j+1-i, &z[i]);
-    if( !pParse->oom ) pParse->aNode[pParse->nNode-1].jnFlags = jnFlags;
+    jsonParseAddNode(pParse, JSON_STRING | (jnFlags<<8), j+1-i, &z[i]);
     return j+1;
-  }else if( c=='n'
-         && strncmp(z+i,"null",4)==0
-         && !sqlite3Isalnum(z[i+4]) ){
-    jsonParseAddNode(pParse, JSON_NULL, 0, 0);
-    return i+4;
-  }else if( c=='t'
-         && strncmp(z+i,"true",4)==0
-         && !sqlite3Isalnum(z[i+4]) ){
-    jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
-    return i+4;
-  }else if( c=='f'
-         && strncmp(z+i,"false",5)==0
-         && !sqlite3Isalnum(z[i+5]) ){
-    jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
-    return i+5;
-  }else if( c=='-' || (c>='0' && c<='9') ){
-    /* Parse number */
-    u8 seenDP = 0;
-    u8 seenE = 0;
-    assert( '-' < '0' );
-    if( c<='0' ){
-      j = c=='-' ? i+1 : i;
-      if( z[j]=='0' && z[j+1]>='0' && z[j+1]<='9' ) return -1;
+  }
+  case 't': {
+    if( strncmp(z+i,"true",4)==0 && !sqlite3Isalnum(z[i+4]) ){
+      jsonParseAddNode(pParse, JSON_TRUE, 0, 0);
+      return i+4;
     }
-    j = i+1;
-    for(;; j++){
+    pParse->iErr = i;
+    return -1;
+  }
+  case 'f': {
+    if( strncmp(z+i,"false",5)==0 && !sqlite3Isalnum(z[i+5]) ){
+      jsonParseAddNode(pParse, JSON_FALSE, 0, 0);
+      return i+5;
+    }
+    pParse->iErr = i;
+    return -1;
+  }
+  case '+': {
+    u8 seenDP, seenE, jnFlags;
+    pParse->hasNonstd = 1;
+    jnFlags = JNODE_JSON5;
+    goto parse_number;
+  case '.':
+    if( sqlite3Isdigit(z[i+1]) ){
+      pParse->hasNonstd = 1;
+      jnFlags = JNODE_JSON5;
+      seenE = 0;
+      seenDP = JSON_REAL;
+      goto parse_number_2;
+    }
+    pParse->iErr = i;
+    return -1;
+  case '-':
+  case '0':
+  case '1':
+  case '2':
+  case '3':
+  case '4':
+  case '5':
+  case '6':
+  case '7':
+  case '8':
+  case '9':
+    /* Parse number */
+    jnFlags = 0;
+  parse_number:
+    seenDP = JSON_INT;
+    seenE = 0;
+    assert( '-' < '0' );
+    assert( '+' < '0' );
+    assert( '.' < '0' );
+    c = z[i];
+
+    if( c<='0' ){
+      if( c=='0' ){
+        if( (z[i+1]=='x' || z[i+1]=='X') && sqlite3Isxdigit(z[i+2]) ){
+          assert( seenDP==JSON_INT );
+          pParse->hasNonstd = 1;
+          jnFlags |= JNODE_JSON5;
+          for(j=i+3; sqlite3Isxdigit(z[j]); j++){}
+          goto parse_number_finish;
+        }else if( sqlite3Isdigit(z[i+1]) ){
+          pParse->iErr = i+1;
+          return -1;
+        }
+      }else{
+        if( !sqlite3Isdigit(z[i+1]) ){
+          /* JSON5 allows for "+Infinity" and "-Infinity" using exactly
+          ** that case.  SQLite also allows these in any case and it allows
+          ** "+inf" and "-inf". */
+          if( (z[i+1]=='I' || z[i+1]=='i')
+           && sqlite3StrNICmp(&z[i+1], "inf",3)==0
+          ){
+            pParse->hasNonstd = 1;
+            if( z[i]=='-' ){
+              jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
+            }else{
+              jsonParseAddNode(pParse, JSON_REAL, 7, "9.0e999");
+            }
+            return i + (sqlite3StrNICmp(&z[i+4],"inity",5)==0 ? 9 : 4);
+          }
+          if( z[i+1]=='.' ){
+            pParse->hasNonstd = 1;
+            jnFlags |= JNODE_JSON5;
+            goto parse_number_2;
+          }
+          pParse->iErr = i;
+          return -1;
+        }
+        if( z[i+1]=='0' ){
+          if( sqlite3Isdigit(z[i+2]) ){
+            pParse->iErr = i+1;
+            return -1;
+          }else if( (z[i+2]=='x' || z[i+2]=='X') && sqlite3Isxdigit(z[i+3]) ){
+            pParse->hasNonstd = 1;
+            jnFlags |= JNODE_JSON5;
+            for(j=i+4; sqlite3Isxdigit(z[j]); j++){}
+            goto parse_number_finish;
+          }
+        }
+      }
+    }
+  parse_number_2:
+    for(j=i+1;; j++){
       c = z[j];
-      if( c>='0' && c<='9' ) continue;
+      if( sqlite3Isdigit(c) ) continue;
       if( c=='.' ){
-        if( z[j-1]=='-' ) return -1;
-        if( seenDP ) return -1;
-        seenDP = 1;
+        if( seenDP==JSON_REAL ){
+          pParse->iErr = j;
+          return -1;
+        }
+        seenDP = JSON_REAL;
         continue;
       }
       if( c=='e' || c=='E' ){
-        if( z[j-1]<'0' ) return -1;
-        if( seenE ) return -1;
-        seenDP = seenE = 1;
+        if( z[j-1]<'0' ){
+          if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
+            pParse->hasNonstd = 1;
+            jnFlags |= JNODE_JSON5;
+          }else{
+            pParse->iErr = j;
+            return -1;
+          }
+        }
+        if( seenE ){
+          pParse->iErr = j;
+          return -1;
+        }
+        seenDP = JSON_REAL;
+        seenE = 1;
         c = z[j+1];
         if( c=='+' || c=='-' ){
           j++;
           c = z[j+1];
         }
-        if( c<'0' || c>'9' ) return -1;
+        if( c<'0' || c>'9' ){
+          pParse->iErr = j;
+          return -1;
+        }
         continue;
       }
-#ifdef SQLITE_ENABLE_JSON_NAN_INF
-      /* Non-standard JSON:  Allow "-Inf" (in any case)
-      ** to be understood as floating point literals. */
-      if( (c=='i' || c=='I')
-       && j==i+1
-       && z[i]=='-'
-       && sqlite3StrNICmp(&z[j], "inf",3)==0
-      ){
-        if( !sqlite3Isalnum(z[j+3]) ){
-          jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
-          return i+4;
-        }else if( (sqlite3StrNICmp(&z[j],"infinity",8)==0 &&
-                  !sqlite3Isalnum(z[j+8])) ){
-          jsonParseAddNode(pParse, JSON_REAL, 8, "-9.0e999");
-          return i+9;
-        }
-      }
-#endif
       break;
     }
-    if( z[j-1]<'0' ) return -1;
-    jsonParseAddNode(pParse, seenDP ? JSON_REAL : JSON_INT,
-                        j - i, &z[i]);
+    if( z[j-1]<'0' ){
+      if( ALWAYS(z[j-1]=='.') && ALWAYS(j-2>=i) && sqlite3Isdigit(z[j-2]) ){
+        pParse->hasNonstd = 1;
+        jnFlags |= JNODE_JSON5;
+      }else{
+        pParse->iErr = j;
+        return -1;
+      }
+    }
+  parse_number_finish:
+    jsonParseAddNode(pParse, seenDP | (jnFlags<<8), j - i, &z[i]);
     return j;
-  }else if( c=='}' ){
+  }
+  case '}': {
+    pParse->iErr = i;
     return -2;  /* End of {...} */
-  }else if( c==']' ){
+  }
+  case ']': {
+    pParse->iErr = i;
     return -3;  /* End of [...] */
-  }else if( c==0 ){
+  }
+  case ',': {
+    pParse->iErr = i;
+    return -4;  /* List separator */
+  }
+  case ':': {
+    pParse->iErr = i;
+    return -5;  /* Object label/value separator */
+  }
+  case 0: {
     return 0;   /* End of file */
-  }else{
-#ifdef SQLITE_ENABLE_JSON_NAN_INF
-    int k, nn;
+  }
+  case 0x09:
+  case 0x0a:
+  case 0x0d:
+  case 0x20: {
+    do{
+      i++;
+    }while( fast_isspace(z[i]) );
+    goto json_parse_restart;
+  }
+  case 0x0b:
+  case 0x0c:
+  case '/':
+  case 0xc2:
+  case 0xe1:
+  case 0xe2:
+  case 0xe3:
+  case 0xef: {
+    j = json5Whitespace(&z[i]);
+    if( j>0 ){
+      i += j;
+      pParse->hasNonstd = 1;
+      goto json_parse_restart;
+    }
+    pParse->iErr = i;
+    return -1;
+  }
+  case 'n': {
+    if( strncmp(z+i,"null",4)==0 && !sqlite3Isalnum(z[i+4]) ){
+      jsonParseAddNode(pParse, JSON_NULL, 0, 0);
+      return i+4;
+    }
+    /* fall-through into the default case that checks for NaN */
+  }
+  default: {
+    u32 k;
+    int nn;
+    c = z[i];
     for(k=0; k<sizeof(aNanInfName)/sizeof(aNanInfName[0]); k++){
       if( c!=aNanInfName[k].c1 && c!=aNanInfName[k].c2 ) continue;
       nn = aNanInfName[k].n;
@@ -965,11 +1490,13 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( sqlite3Isalnum(z[i+nn]) ) continue;
       jsonParseAddNode(pParse, aNanInfName[k].eType,
           aNanInfName[k].nRepl, aNanInfName[k].zRepl);
+      pParse->hasNonstd = 1;
       return i + nn;
     }
-#endif
+    pParse->iErr = i;
     return -1;  /* Syntax error */
   }
+  } /* End switch(z[i]) */
 }
 
 /*
@@ -993,7 +1520,14 @@ static int jsonParse(
   if( i>0 ){
     assert( pParse->iDepth==0 );
     while( fast_isspace(zJson[i]) ) i++;
-    if( zJson[i] ) i = -1;
+    if( zJson[i] ){
+      i += json5Whitespace(&zJson[i]);
+      if( zJson[i] ){
+        jsonParseReset(pParse);
+        return 1;
+      }
+      pParse->hasNonstd = 1;
+    }
   }
   if( i<=0 ){
     if( pCtx!=0 ){
@@ -1064,6 +1598,15 @@ static int jsonParseFindParents(JsonParse *pParse){
 ** is no longer valid, parse the JSON again and return the new parse,
 ** and also register the new parse so that it will be available for
 ** future sqlite3_get_auxdata() calls.
+**
+** If an error occurs and pErrCtx!=0 then report the error on pErrCtx
+** and return NULL.
+**
+** If an error occurs and pErrCtx==0 then return the Parse object with
+** JsonParse.nErr non-zero.  If the caller invokes this routine with
+** pErrCtx==0 and it gets back a JsonParse with nErr!=0, then the caller
+** is responsible for invoking jsonParseFree() on the returned value.
+** But the caller may invoke jsonParseFree() *only* if pParse->nErr!=0.
 */
 static JsonParse *jsonParseCached(
   sqlite3_context *pCtx,
@@ -1113,6 +1656,10 @@ static JsonParse *jsonParseCached(
   p->zJson = (char*)&p[1];
   memcpy((char*)p->zJson, zJson, nJson+1);
   if( jsonParse(p, pErrCtx, p->zJson) ){
+    if( pErrCtx==0 ){
+      p->nErr = 1;
+      return p;
+    }
     sqlite3_free(p);
     return 0;
   }
@@ -1127,7 +1674,7 @@ static JsonParse *jsonParseCached(
 ** Compare the OBJECT label at pNode against zKey,nKey.  Return true on
 ** a match.
 */
-static int jsonLabelCompare(JsonNode *pNode, const char *zKey, u32 nKey){
+static int jsonLabelCompare(const JsonNode *pNode, const char *zKey, u32 nKey){
   assert( pNode->eU==1 );
   if( pNode->jnFlags & JNODE_RAW ){
     if( pNode->n!=nKey ) return 0;
@@ -1135,6 +1682,15 @@ static int jsonLabelCompare(JsonNode *pNode, const char *zKey, u32 nKey){
   }else{
     if( pNode->n!=nKey+2 ) return 0;
     return strncmp(pNode->u.zJContent+1, zKey, nKey)==0;
+  }
+}
+static int jsonSameLabel(const JsonNode *p1, const JsonNode *p2){
+  if( p1->jnFlags & JNODE_RAW ){
+    return jsonLabelCompare(p2, p1->u.zJContent, p1->n);
+  }else if( p2->jnFlags & JNODE_RAW ){
+    return jsonLabelCompare(p1, p2->u.zJContent, p2->n);
+  }else{
+    return p1->n==p2->n && strncmp(p1->u.zJContent,p2->u.zJContent,p1->n)==0;
   }
 }
 
@@ -1607,7 +2163,7 @@ static void jsonExtractFunc(
     zPath = (const char*)sqlite3_value_text(argv[1]);
     if( zPath==0 ) return;
     if( flags & JSON_ABPATH ){
-      if( zPath[0]!='$' ){
+      if( zPath[0]!='$' || (zPath[1]!='.' && zPath[1]!='[' && zPath[1]!=0) ){
         /* The -> and ->> operators accept abbreviated PATH arguments.  This
         ** is mostly for compatibility with PostgreSQL, but also for
         ** convenience.
@@ -1698,12 +2254,10 @@ static JsonNode *jsonMergePatch(
     assert( pPatch[i].eU==1 );
     nKey = pPatch[i].n;
     zKey = pPatch[i].u.zJContent;
-    assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
     for(j=1; j<pTarget->n; j += jsonNodeSize(&pTarget[j+1])+1 ){
       assert( pTarget[j].eType==JSON_STRING );
       assert( pTarget[j].jnFlags & JNODE_LABEL );
-      assert( (pPatch[i].jnFlags & JNODE_RAW)==0 );
-      if( pTarget[j].n==nKey && strncmp(pTarget[j].u.zJContent,zKey,nKey)==0 ){
+      if( jsonSameLabel(&pPatch[i], &pTarget[j]) ){
         if( pTarget[j+1].jnFlags & (JNODE_REMOVE|JNODE_PATCH) ) break;
         if( pPatch[i+1].eType==JSON_NULL ){
           pTarget[j+1].jnFlags |= JNODE_REMOVE;
@@ -1990,8 +2544,8 @@ static void jsonTypeFunc(
 /*
 ** json_valid(JSON)
 **
-** Return 1 if JSON is a well-formed JSON string according to RFC-7159.
-** Return 0 otherwise.
+** Return 1 if JSON is a well-formed canonical JSON string according
+** to RFC-7159. Return 0 otherwise.
 */
 static void jsonValidFunc(
   sqlite3_context *ctx,
@@ -2000,8 +2554,69 @@ static void jsonValidFunc(
 ){
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   p = jsonParseCached(ctx, argv, 0);
-  sqlite3_result_int(ctx, p!=0);
+  if( p==0 || p->oom ){
+    sqlite3_result_error_nomem(ctx);
+    sqlite3_free(p);
+  }else{
+    sqlite3_result_int(ctx, p->nErr==0 && p->hasNonstd==0);
+    if( p->nErr ) jsonParseFree(p);
+  }
+}
+
+/*
+** json_error_position(JSON)
+**
+** If the argument is not an interpretable JSON string, then return the 1-based
+** character position at which the parser first recognized that the input
+** was in error.  The left-most character is 1.  If the string is valid
+** JSON, then return 0.
+**
+** Note that json_valid() is only true for strictly conforming canonical JSON.
+** But this routine returns zero if the input contains extension.  Thus:
+**
+** (1) If the input X is strictly conforming canonical JSON:
+**
+**         json_valid(X) returns true
+**         json_error_position(X) returns 0
+**
+** (2) If the input X is JSON but it includes extension (such as JSON5) that
+**     are not part of RFC-8259:
+**
+**         json_valid(X) returns false
+**         json_error_position(X) return 0
+**
+** (3) If the input X cannot be interpreted as JSON even taking extensions
+**     into account:
+**
+**         json_valid(X) return false
+**         json_error_position(X) returns 1 or more
+*/
+static void jsonErrorFunc(
+  sqlite3_context *ctx,
+  int argc,
+  sqlite3_value **argv
+){
+  JsonParse *p;          /* The parse */
+  UNUSED_PARAMETER(argc);
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  p = jsonParseCached(ctx, argv, 0);
+  if( p==0 || p->oom ){
+    sqlite3_result_error_nomem(ctx);
+    sqlite3_free(p);
+  }else if( p->nErr==0 ){
+    sqlite3_result_int(ctx, 0);
+  }else{
+    int n = 1;
+    u32 i;
+    const char *z = p->zJson;
+    for(i=0; i<p->iErr && ALWAYS(z[i]); i++){
+      if( (z[i]&0xc0)!=0x80 ) n++;
+    }
+    sqlite3_result_int(ctx, n);
+    jsonParseFree(p);
+  }
 }
 
 
@@ -2345,14 +2960,16 @@ static void jsonAppendObjectPathElement(
   assert( pNode->eU==1 );
   z = pNode->u.zJContent;
   nn = pNode->n;
-  assert( nn>=2 );
-  assert( z[0]=='"' );
-  assert( z[nn-1]=='"' );
-  if( nn>2 && sqlite3Isalpha(z[1]) ){
-    for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
-    if( jj==nn-1 ){
-      z++;
-      nn -= 2;
+  if( (pNode->jnFlags & JNODE_RAW)==0 ){
+    assert( nn>=2 );
+    assert( z[0]=='"' || z[0]=='\'' );
+    assert( z[nn-1]=='"' || z[0]=='\'' );
+    if( nn>2 && sqlite3Isalpha(z[1]) ){
+      for(jj=2; jj<nn-1 && sqlite3Isalnum(z[jj]); jj++){}
+      if( jj==nn-1 ){
+        z++;
+        nn -= 2;
+      }
     }
   }
   jsonPrintf(nn+2, pStr, ".%.*s", nn, z);
@@ -2712,6 +3329,7 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_array,        -1, 0,  jsonArrayFunc),
     JFUNCTION(json_array_length,  1, 0,  jsonArrayLengthFunc),
     JFUNCTION(json_array_length,  2, 0,  jsonArrayLengthFunc),
+    JFUNCTION(json_error_position,1, 0,  jsonErrorFunc),
     JFUNCTION(json_extract,      -1, 0,  jsonExtractFunc),
     JFUNCTION(->,                 2, JSON_JSON, jsonExtractFunc),
     JFUNCTION(->>,                2, JSON_SQL, jsonExtractFunc),

@@ -7628,7 +7628,7 @@ static int pageFreeArray(
         }
       }
       if( j>=nFree ){
-        if( nFree>=sizeof(aOfst)/sizeof(aOfst[0]) ){
+        if( nFree>=(int)(sizeof(aOfst)/sizeof(aOfst[0])) ){
           for(j=0; j<nFree; j++){
             freeSpace(pPg, aOfst[j], aAfter[j]-aOfst[j]);
           }
@@ -9333,7 +9333,7 @@ int sqlite3BtreeInsert(
     }
   }
   assert( pCur->eState==CURSOR_VALID 
-       || (pCur->eState==CURSOR_INVALID && loc) );
+       || (pCur->eState==CURSOR_INVALID && loc) || CORRUPT_DB );
 
   pPage = pCur->pPage;
   assert( pPage->intKey || pX->nKey>=0 || (flags & BTREE_PREFORMAT) );

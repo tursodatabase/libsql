@@ -954,6 +954,7 @@ static int fts5StructureDecode(
             rc = FTS5_CORRUPT;
             break;
           }
+          assert( pSeg!=0 );
           i += fts5GetVarint32(&pData[i], pSeg->iSegid);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoFirst);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoLast);
@@ -984,6 +985,7 @@ static int fts5StructureDecode(
 */
 static void fts5StructureAddLevel(int *pRc, Fts5Structure **ppStruct){
   fts5StructureMakeWritable(pRc, ppStruct);
+  assert( (ppStruct!=0 && (*ppStruct)!=0) || (*pRc)!=SQLITE_OK );
   if( *pRc==SQLITE_OK ){
     Fts5Structure *pStruct = *ppStruct;
     int nLevel = pStruct->nLevel;
@@ -4634,6 +4636,9 @@ static void fts5SecureDeleteOverflow(
       pLeaf = 0;
     }else if( bDetailNone ){
       break;
+    }else if( iNext>=pLeaf->szLeaf || iNext<4 ){
+      p->rc = FTS5_CORRUPT;
+      break;
     }else{
       int nShift = iNext - 4;
       int nPg;
@@ -4688,7 +4693,6 @@ static void fts5SecureDeleteOverflow(
 */
 static void fts5DoSecureDelete(
   Fts5Index *p,
-  Fts5Structure *pStruct,
   Fts5SegIter *pSeg
 ){
   const int bDetailNone = (p->pConfig->eDetail==FTS5_DETAIL_NONE);
@@ -4806,7 +4810,7 @@ static void fts5DoSecureDelete(
     for(iIdx=0, iKeyOff=0; iIdx<nIdx; iKey++){
       u32 iVal = 0;
       iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-      if( (iKeyOff+iVal)>iStart ) break;
+      if( (iKeyOff+iVal)>(u32)iStart ) break;
       iKeyOff += iVal;
     }
 
@@ -4846,11 +4850,11 @@ static void fts5DoSecureDelete(
       }
     }
   }else if( iStart==4 ){
+      int iPgno;
+
       assert_nc( pSeg->iLeafPgno>pSeg->iTermLeafPgno );
       /* The entry being removed may be the only position list in
       ** its doclist. */
-      int iPgno = pSeg->iLeafPgno-1;
-
       for(iPgno=pSeg->iLeafPgno-1; iPgno>pSeg->iTermLeafPgno; iPgno-- ){
         Fts5Data *pPg = fts5DataRead(p, FTS5_SEGMENT_ROWID(iSegid, iPgno));
         int bEmpty = (pPg && pPg->nn==4);
@@ -4934,7 +4938,7 @@ static void fts5FlushSecureDelete(
   i64 iRowid
 ){
   const int f = FTS5INDEX_QUERY_SKIPHASH;
-  int nTerm = strlen(zTerm);
+  int nTerm = (int)strlen(zTerm);
   Fts5Iter *pIter = 0;            /* Used to find term instance */
 
   fts5MultiIterNew(p, pStruct, f, 0, (const u8*)zTerm, nTerm, -1, 0, &pIter);
@@ -4949,7 +4953,7 @@ static void fts5FlushSecureDelete(
      && iRowid==fts5MultiIterRowid(pIter)
     ){
       Fts5SegIter *pSeg = &pIter->aSeg[pIter->aFirst[1].iFirst];
-      fts5DoSecureDelete(p, pStruct, pSeg);
+      fts5DoSecureDelete(p, pSeg);
     }
   }
 

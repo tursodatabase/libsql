@@ -1781,6 +1781,10 @@ static int loadStatTbl(
     pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
     assert( pIdx==0 || pIdx->nSample==0 );
     if( pIdx==0 ) continue;
+    if( pIdx->aSample!=0 ){
+      /* The same index appears in sqlite_stat4 under multiple names */
+      continue;
+    }
     assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
     if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
       nIdxCol = pIdx->nKeyCol;
@@ -1788,6 +1792,7 @@ static int loadStatTbl(
       nIdxCol = pIdx->nColumn;
     }
     pIdx->nSampleCol = nIdxCol;
+    pIdx->mxSample = nSample;
     nByte = sizeof(IndexSample) * nSample;
     nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
     nByte += nIdxCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
@@ -1827,6 +1832,11 @@ static int loadStatTbl(
     if( zIndex==0 ) continue;
     pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
     if( pIdx==0 ) continue;
+    if( pIdx->nSample>=pIdx->mxSample ){
+      /* Too many slots used because the same index appears in
+      ** sqlite_stat4 using multiple names */
+      continue;
+    }
     /* This next condition is true if data has already been loaded from 
     ** the sqlite_stat4 table. */
     nCol = pIdx->nSampleCol;
@@ -1870,11 +1880,12 @@ static int loadStat4(sqlite3 *db, const char *zDb){
   const Table *pStat4;
 
   assert( db->lookaside.bDisable );
-  if( (pStat4 = sqlite3FindTable(db, "sqlite_stat4", zDb))!=0
+  if( OptimizationEnabled(db, SQLITE_Stat4)
+   && (pStat4 = sqlite3FindTable(db, "sqlite_stat4", zDb))!=0
    && IsOrdinaryTable(pStat4)
   ){
     rc = loadStatTbl(db,
-      "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
+      "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx COLLATE nocase", 
       "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4",
       zDb
     );

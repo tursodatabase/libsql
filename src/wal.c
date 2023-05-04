@@ -3710,7 +3710,9 @@ int sqlite3WalFrames(
       if( rc ) return rc;
     }
   }
-  assert( (int)pWal->szPage==szPage );
+  if( (int)pWal->szPage!=szPage ){
+    return SQLITE_CORRUPT_BKPT;  /* TH3 test case: cov1/corrupt155.test */
+  }
 
   /* Setup information needed to write frames into the WAL */
   w.pWal = pWal;

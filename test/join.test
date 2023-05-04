@@ -1245,4 +1245,22 @@ do_eqp_test join-28.2 {
 #   |--SCAN t4
 #   `--SEARCH t3 USING AUTOMATIC COVERING INDEX (a=?)
 
+
+# 2023-05-01 https://sqlite.org/forum/forumpost/96cd4a7e9e
+#
+reset_db
+db null NULL
+do_execsql_test join-29.1 {
+  CREATE TABLE t0(a INT); INSERT INTO t0(a) VALUES (1);
+  CREATE TABLE t1(b INT); INSERT INTO t1(b) VALUES (2);
+  CREATE VIEW v2(c) AS SELECT 3 FROM t1;
+  SELECT * FROM t1 JOIN v2 ON 0     FULL OUTER JOIN t0 ON true;
+} {NULL NULL 1}
+do_execsql_test join-29.2 {
+  SELECT * FROM t1 JOIN v2 ON 1=0   FULL OUTER JOIN t0 ON true;
+} {NULL NULL 1}
+do_execsql_test join-29.3 {
+  SELECT * FROM t1 JOIN v2 ON false FULL OUTER JOIN t0 ON true;
+} {NULL NULL 1}
+
 finish_test

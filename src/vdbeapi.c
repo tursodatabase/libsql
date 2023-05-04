@@ -1337,9 +1337,9 @@ static const void *columnName(
   assert( db!=0 );
   n = sqlite3_column_count(pStmt);
   if( N<n && N>=0 ){
+    u8 prior_mallocFailed = db->mallocFailed;
     N += useType*n;
     sqlite3_mutex_enter(db->mutex);
-    assert( db->mallocFailed==0 );
 #ifndef SQLITE_OMIT_UTF16
     if( useUtf16 ){
       ret = sqlite3_value_text16((sqlite3_value*)&p->aColName[N]);
@@ -1351,7 +1351,8 @@ static const void *columnName(
     /* A malloc may have failed inside of the _text() call. If this
     ** is the case, clear the mallocFailed flag and return NULL.
     */
-    if( db->mallocFailed ){
+    assert( db->mallocFailed==0 || db->mallocFailed==1 );
+    if( db->mallocFailed > prior_mallocFailed ){
       sqlite3OomClear(db);
       ret = 0;
     }

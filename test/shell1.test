@@ -254,6 +254,11 @@ do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode \"csv\""
 } {0 {}}
 
+# check that certain quoted arg escapes work
+do_test shell1-2.5.1 {
+  catchcmd ":memory:" ".print \"\\060\\077 \\x3f\\x30 \\a\\t\""
+} [list 0 "0? ?0 \a\t"]
+
 
 #----------------------------------------------------------------------------
 # Test cases shell1-3.*: Basic test that "dot" command can be called.

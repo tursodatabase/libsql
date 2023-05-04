@@ -1211,7 +1211,7 @@ static void exprAnalyze(
      && 0==sqlite3ExprCanBeNull(pLeft)
     ){
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
-      pExpr->op = TK_TRUEFALSE;
+      pExpr->op = TK_TRUEFALSE;  /* See tag-20230504-1 */
       pExpr->u.zToken = "false";
       ExprSetProperty(pExpr, EP_IsFalse);
       pTerm->prereqAll = 0;

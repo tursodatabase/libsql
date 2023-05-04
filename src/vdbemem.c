@@ -157,6 +157,7 @@ int sqlite3VdbeMemValidStrRep(Mem *p){
   char *z;
   int i, j, incr;
   if( (p->flags & MEM_Str)==0 ) return 1;
+  if( p->db && p->db->mallocFailed ) return 1;
   if( p->flags & MEM_Term ){
     /* Insure that the string is properly zero-terminated.  Pay particular
     ** attention to the case where p->n is odd */

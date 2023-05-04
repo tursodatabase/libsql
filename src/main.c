@@ -3933,7 +3933,7 @@ int sqlite3_sleep(int ms){
   /* This function works in milliseconds, but the underlying OsSleep() 
   ** API uses microseconds. Hence the 1000's.
   */
-  rc = (sqlite3OsSleep(pVfs, 1000*ms)/1000);
+  rc = (sqlite3OsSleep(pVfs, ms<0 ? 0 : 1000*ms)/1000);
   return rc;
 }
 

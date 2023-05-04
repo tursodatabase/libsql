@@ -443,5 +443,33 @@ do_execsql_test -db db2 16.6 {
   SELECT * FROM x1
 } {abc def}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.1 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, tokenize="unicode61 separators 'X'");
+}
+do_execsql_test 17.2 {
+  SELECT 0 FROM ft WHERE ft MATCH 'X' AND ft MATCH 'X'
+}
+do_execsql_test 17.3 {
+  SELECT 0 FROM ft('X')
+}
+
+do_execsql_test 17.4 {
+  CREATE VIRTUAL TABLE t0 USING fts5(c0, t="trigram");
+  INSERT INTO t0 VALUES('assertionfaultproblem');
+}
+do_execsql_test 17.5 {
+  SELECT 0 FROM t0(0) WHERE c0 GLOB 0;
+} {}
+
+do_execsql_test 17.5 {
+  SELECT c0 FROM t0 WHERE c0 GLOB '*f*';
+} {assertionfaultproblem}
+do_execsql_test 17.5 {
+  SELECT c0 FROM t0 WHERE c0 GLOB '*faul*';
+} {assertionfaultproblem}
+
+
 finish_test
 
