@@ -1,5 +1,5 @@
-C Add\sanother\sassert()\sto\sFTS5\sto\sdemonstrate\sthat\sa\spointer\sis\snever\sNULL.
-D 2023-05-03T14:10:05.186
+C Fix\sa\sbug\sin\scursor\shints\sthat\scan\scause\sreferences\sto\stables\sthat\shave\snot\nbeen\sopened.\s\sCursor\shints\sare\sintended\sfor\suse\sby\sCOMDB2\sonly\sand\sshould\snot\nappear\sin\sproduction\sbuilds,\sso\sthis\sshould\snot\sbe\sa\sfactor\sfor\sthe\svast\nmajority\sof\susers.
+D 2023-05-04T11:29:15.774
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -722,8 +722,8 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
 F src/where.c f69d94f34e1c523cd9b66041e4afe015cad29888617f3c09a2a5bc36018917d0
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
-F src/wherecode.c 85790d7e5365ac41085713331ce52e4343586ad3d37d218ffe00572357baa62b
-F src/whereexpr.c 1dfda1695e4480c24248157df55bb4d66c732dc8d14ac16b4f076bb15de93d63
+F src/wherecode.c b300db0bcd84ad6c2642bf3f509f92fad7b7d697b9856b64dd66d692d184d054
+F src/whereexpr.c 22cf19b0ececeaf838daed1039c5231a8778784eba5ad67b991442a23473fd3f
 F src/window.c e075ea85bea322e30e361fa6e69eddba74f461e99e2a564dc09973f8a1fb27d9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/affinity2.test ce1aafc86e110685b324e9a763eab4f2a73f737842ec3b687bd965867de90627
@@ -922,7 +922,7 @@ F test/createtab.test 85cdfdae5c3de331cd888d6c66e1aba575b47c2e3c3cc4a1d6f5414069
 F test/cse.test 00b3aea44b16828833c94fbe92475fd6977583fcb064ae0bc590986812b38d0c
 F test/csv01.test 2ab5514005fd308995c8910bc313e47f0368b94213b9d6c27f9a2da78796a091
 F test/ctime.test 340f362f41f92972bbd71f44e10569a5cc694062b692231bd08aa6fe6c1c4773
-F test/cursorhint.test a44811a341281ebb73b939cb11bdcc2f374dc70e7e0f6cd7bfcb02e6fee67831
+F test/cursorhint.test 05cf0febe5c5f8a31f199401fd1c9322249e753950d55f26f9d5aca61408a270
 F test/cursorhint2.test 6f3aa9cb19e7418967a10ec6905209bcbb5968054da855fc36c8beee9ae9c42f
 F test/dataversion1.test 6e5e86ac681f0782e766ebcb56c019ae001522d114e0e111e5ebf68ccf2a7bb8
 F test/date.test 118e04db8c8b4efeb885542b4918c7b869a34c460a6bebbfe927dfd75706b80d
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fe9c207657400f9d9f4e822eb658157bc147ed538e2701322f6f973933f023ed
-R c1a3282fd819ceeb732ff9847b630694
+P b8a84a1bf53fa07ef01c57c6db6329ba439774a262b3adcbe94e7bd77525e296
+R 1610cda0987046b0dcf6630915e091b1
 U drh
-Z 1b21a7b118e5d963084d32beaa5d7297
+Z f5391cf5725e58bc0346459288bb8d90
 # Remove this line to create a well-formed Fossil manifest.

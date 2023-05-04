@@ -191,4 +191,24 @@ do_execsql_test 6.0 {
   HAVING (SELECT true FROM t6 AS aa LEFT JOIN t6 AS bb ON length(v1.a)>5);
 } {abc 2 uvw 2}
 
+
+# 2023-05-04 https://sqlite.org/forum/forumpost/29a47cf6d1
+#
+# codeCursorHint() should not walk expressions that have been optimized
+# out and converted to TRUE or FALSE.  This only comes up when compiling
+# with SQLITE_ENABLE_CURSOR_HINTS
+#
+reset_db
+do_execsql_test 7.1 {
+  CREATE TABLE t1(a INT PRIMARY KEY) WITHOUT ROWID;
+  CREATE TABLE t2(b INT PRIMARY KEY) WITHOUT ROWID;
+  CREATE TABLE t3(c INT PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t1(a) VALUES(1),(2);
+  INSERT INTO t2(b) VALUES(4),(8);
+  INSERT INTO t3(c) VALUES(16),(32);
+  CREATE VIEW v4(d) AS SELECT c FROM t3;
+  SELECT * FROM t1 RIGHT JOIN t2 ON true JOIN v4 ON (d IS NULL);
+} {}
+
+
 finish_test

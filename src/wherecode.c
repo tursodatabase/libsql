@@ -1030,6 +1030,9 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
     reg = sqlite3ExprCodeTarget(pWalker->pParse, pExpr, reg);
     pExpr->op = TK_REGISTER;
     pExpr->iTable = reg;
+  }else if( pExpr->op==TK_TRUEFALSE ){
+    /* Do not walk disabled expressions.  tag-20230504-1 */
+    return WRC_Prune;
   }
   return rc;
 }
