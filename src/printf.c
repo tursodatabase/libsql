@@ -649,7 +649,7 @@ void sqlite3_str_vappendf(
         {
           i64 szBufNeeded;           /* Size of a temporary buffer needed */
           szBufNeeded = MAX(e2,0)+(i64)precision+(i64)width+15;
-          if( cThousand ) szBufNeeded += (e2+2)/3;
+          if( cThousand && e2>0 ) szBufNeeded += (e2+2)/3;
           if( szBufNeeded > etBUFSIZE ){
             bufpt = zExtra = printfTempBuf(pAccum, szBufNeeded);
             if( bufpt==0 ) return;
