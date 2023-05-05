@@ -1,5 +1,5 @@
-C Updates\sto\scompile-time\soption\susage\sand\sespecially\sto\sthe\scompile-time\soption\ntest\sscript\sin\stool/omittest.tcl.
-D 2023-05-05T14:16:31.991
+C Do\snot\sattempt\sto\srun\sjson502.test\swith\sSQLITE_OMIT_VIRTUALTABLE\sbuilds.
+D 2023-05-05T15:28:35.372
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1262,7 +1262,7 @@ F test/json103.test 53df87f83a4e5fa0c0a56eb29ff6c94055c6eb919f33316d62161a888011
 F test/json104.test 1b844a70cddcfa2e4cd81a5db0657b2e61e7f00868310f24f56a9ba0114348c1
 F test/json105.test 11670a4387f4308ae0318cadcbd6a918ea7edcd19fbafde020720a073952675d
 F test/json501.test f71710f60fa45b19dc336fbaac9e8362f70f80cf81badefdb845ed3f7c7c2ccc
-F test/json502.test 66d150cc098674b8bf4354526a8dd411b926f43ca892306bcb3b6d3f93fef7be
+F test/json502.test 4edb1e8ed4f8ef2e16236d4c52e80036399f7fa1fe02386a909b573be9700d67
 F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/kvtest.c feb4358fb022da8ebd098c45811f2f6507688bb6c43aa72b3e840df19026317b
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a77c8a780f884d0cb01d20912cf1aeec0bb7f3999d23117fe5bd82bc4405d483
-R 74f98f7cc72d3aae8c89e24d9fb2e559
-U drh
-Z cacd26f295de4dcda9a986aaebe10401
+P fece588b186c4f9f76d626313e35336fd5681e966e9bd0fa1053b147c4e3c315
+R 4f9e6360f1a1bc9368471bbb0d80beb6
+U dan
+Z 0beac7195282461c4777228af10dffa7
 # Remove this line to create a well-formed Fossil manifest.
