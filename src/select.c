@@ -717,7 +717,7 @@ static void pushOntoSorter(
   **   (2) All output columns are included in the sort record.  In that
   **       case regData==regOrigData.
   **   (3) Some output columns are omitted from the sort record due to
-  **       the SQLITE_ENABLE_SORTER_REFERENCE optimization, or due to the
+  **       the SQLITE_ENABLE_SORTER_REFERENCES optimization, or due to the
   **       SQLITE_ECEL_OMITREF optimization, or due to the 
   **       SortCtx.pDeferredRowLoad optimiation.  In any of these cases
   **       regOrigData is 0 to prevent this routine from trying to copy

@@ -1518,7 +1518,7 @@ static void trimFunc(
 /*
 ** The "unknown" function is automatically substituted in place of
 ** any unrecognized function name when doing an EXPLAIN or EXPLAIN QUERY PLAN
-** when the SQLITE_ENABLE_UNKNOWN_FUNCTION compile-time option is used.
+** when the SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION compile-time option is used.
 ** When the "sqlite3" command-line shell is built using this functionality,
 ** that allows an EXPLAIN or EXPLAIN QUERY PLAN for complex queries
 ** involving application-defined functions to be examined in a generic

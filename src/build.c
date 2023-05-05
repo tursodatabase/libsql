@@ -848,7 +848,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   if( IsOrdinaryTable(pTable) ){
     sqlite3FkDelete(db, pTable);
   }
-#ifndef SQLITE_OMIT_VIRTUAL_TABLE
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   else if( IsVirtual(pTable) ){
     sqlite3VtabClear(db, pTable);
   }
