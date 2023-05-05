@@ -89,7 +89,7 @@ pub fn open_db(
     path: &Path,
     wal_hook: impl WalHook + Send + Clone + 'static,
     with_bottomless: bool,
-) -> anyhow::Result<rusqlite::Connection> {
+) -> anyhow::Result<sqld_libsql_bindings::Connection> {
     let mut retries = 0;
     loop {
         #[cfg(feature = "mwal_backend")]
@@ -211,7 +211,7 @@ impl LibSqlDb {
 
 struct Connection {
     state: ConnectionState,
-    conn: rusqlite::Connection,
+    conn: sqld_libsql_bindings::Connection,
     timed_out: bool,
     stats: Stats,
 }

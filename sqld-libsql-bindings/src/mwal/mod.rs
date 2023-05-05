@@ -2,6 +2,7 @@
 
 use std::sync::{Arc, Mutex};
 
+use super::Connection;
 pub use mwal::ffi;
 
 /// Opens a database with the virtual wal methods in the directory pointed to by path
@@ -9,7 +10,7 @@ pub fn open_with_virtual_wal(
     path: impl AsRef<std::path::Path>,
     flags: rusqlite::OpenFlags,
     vwal_methods: Arc<Mutex<mwal::ffi::libsql_wal_methods>>,
-) -> anyhow::Result<rusqlite::Connection> {
+) -> anyhow::Result<Connection> {
     let mut vwal_methods = vwal_methods.lock().map_err(|e| anyhow::anyhow!("{}", e))?;
     let path = path.as_ref().join("data");
     unsafe {
@@ -28,5 +29,8 @@ pub fn open_with_virtual_wal(
             .unwrap()
     })?;
     conn.pragma_update(None, "journal_mode", "wal")?;
-    Ok(conn)
+    Ok(Connection {
+        conn,
+        wal_methods: None,
+    })
 }
