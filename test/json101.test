@@ -721,20 +721,20 @@ do_execsql_test json-10.95 {
 #
 do_execsql_test json-11.0 {
   /* Shallow enough to be parsed */
-  SELECT json_valid(printf('%.2000c0%.2000c','[',']'));
+  SELECT json_valid(printf('%.1000c0%.1000c','[',']'));
 } {1}
 do_execsql_test json-11.1 {
   /* Too deep by one */
-  SELECT json_valid(printf('%.2001c0%.2001c','[',']'));
+  SELECT json_valid(printf('%.1001c0%.1001c','[',']'));
 } {0}
 do_execsql_test json-11.2 {
   /* Shallow enough to be parsed { */
-  SELECT json_valid(replace(printf('%.2000c0%.2000c','[','}'),'[','{"a":'));
+  SELECT json_valid(replace(printf('%.1000c0%.1000c','[','}'),'[','{"a":'));
   /* } */
 } {1}
 do_execsql_test json-11.3 {
   /* Too deep by one { */
-  SELECT json_valid(replace(printf('%.2001c0%.2001c','[','}'),'[','{"a":'));
+  SELECT json_valid(replace(printf('%.1001c0%.1001c','[','}'),'[','{"a":'));
   /* } */
 } {0}
 
