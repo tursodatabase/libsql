@@ -1,5 +1,5 @@
-C Fix\sa\sbuffer\soverrun\sthat\scould\soccur\swhen\susing\sthe\sformat()\sfunction\sto\sformat\sa\svery\ssmall\sreal\svalue\swith\sthe\s","\smodifier.
-D 2023-05-05T19:36:13.987
+C Fix\sa\scomment\sin\sthe\sJSON\slogic.\s\sNo\scode\schanges.
+D 2023-05-05T20:22:06.621
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -595,7 +595,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h b638809e083b601b618df877b2e89cb87c2a47a01f4def10be4c4ebb54664ac7
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c a8de1db43335fc4946370a7a7e47d89975ad678ddb15078a150e993ba2fb37d4
-F src/json.c eba5afc4de8cb18958f3d2b56737f1096a2e2e73f720a357d7c57882b7925bc2
+F src/json.c 2ccd22e631227b6329f76412de58aa4926621a10d667d7f2a3374eaade202ff6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c be5af440f3192c58681b5d43167dbca3ccbfce394d89faa22378a14264781136
 F src/main.c 035be2e9ba2a0fc1701a8ab1880af3001a968a24556433538a6c073558ee4341
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c7697a0d45bfab20ec09f17ad65e375ddb43af6762278481c13a65c9a784978e
-R 05f80cf064e5f1b4255fef1b69dd8ed9
-U dan
-Z 4b92cc4794f6ed3e073d6a74365d8e83
+P 910e770ad4d8e8e45bf069af963f2e975bfcfb882578dc5fe714cd2396258934
+R fb2c885eb34d0a9c073f49ec6e0b9a64
+U drh
+Z 083918063f857e50a07fc4bf5f897840
 # Remove this line to create a well-formed Fossil manifest.

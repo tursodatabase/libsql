@@ -144,8 +144,8 @@ struct JsonParse {
 ** Maximum nesting depth of JSON for this implementation.
 **
 ** This limit is needed to avoid a stack overflow in the recursive
-** descent parser.  A depth of 2000 is far deeper than any sane JSON
-** should go.
+** descent parser.  A depth of 1000 is far deeper than any sane JSON
+** should go.  Historical note: This limit was 2000 prior to version 3.42.0
 */
 #define JSON_MAX_DEPTH  1000
 
