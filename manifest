@@ -1,5 +1,5 @@
-C Add\sthe\s"subsecond"\smodifier\sto\sthe\sdate/time\sfunctions.
-D 2023-05-04T20:28:19.528
+C Improved\sformatting\sof\scomments\son\sSQLITE_CONFIG_xxx\sdefines\sas\sthose\ncomments\sare\sused\sby\sdocumentation.
+D 2023-05-05T11:33:59.479
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -637,7 +637,7 @@ F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c f879cef11c462a2c37a8c906932781e384c3bb32042c355a704a043029c90d27
 F src/shell.c.in 39ea3d9c17c65c42c6c415222d89a32ae683b245c8af7b4bfc544d9246055d16
-F src/sqlite.h.in d6b0b83b2deab8f92ef7cc6f6fb94fa59d21c59f7b55f4c693bfff161ce42238
+F src/sqlite.h.in 27ca1d4b2eda8feee468af5735182390e8fe4696522751eec0136d17323201ad
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
 F src/sqliteInt.h 91303fb4ee858b85ae1a8a48cc8f723339b81ba7138b42ee5c000083bfff0934
@@ -2068,9 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 83683e108bce83c105bbcce1aa62880d8f14ebf3383d87d83a1e5c85026a7817 6499ebff545e663198bd0534be205a4e9ca68c7fb20fdcfa54fae4d9b79bfe3a
-R 8af27f80731782e09fcf7d27c983e6a4
-T +closed 6499ebff545e663198bd0534be205a4e9ca68c7fb20fdcfa54fae4d9b79bfe3a
+P 6fcb5a941fba0449d017954590bde7da74e5a1f8fd9b3e1febdff9bed1f22051
+R 11c5acaba323814d1711daf662533952
 U drh
-Z ec3e442191ef8c8a1600e49b9abb536f
+Z 9311f3acd15641a9173eab56a31a958b
 # Remove this line to create a well-formed Fossil manifest.
