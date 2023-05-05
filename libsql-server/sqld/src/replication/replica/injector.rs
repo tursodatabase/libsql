@@ -76,7 +76,7 @@ impl FrameInjectorHandle {
 }
 
 pub struct FrameInjector {
-    conn: rusqlite::Connection,
+    conn: sqld_libsql_bindings::Connection,
     hook: InjectorHook,
 }
 

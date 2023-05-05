@@ -55,6 +55,16 @@ pub unsafe trait WalHook {
 /// Wal implemementation that just proxies calls to the wrapped WAL methods implementation
 unsafe impl WalHook for () {}
 
+pub struct OwnedWalMethods(Box<WalMethodsHook>);
+
+impl OwnedWalMethods {
+    /// returns a pointer to the wal methods. The caller must make sure that the this pointer lives
+    /// long enough. Failing to do so will cause a segfault.
+    pub fn as_ptr(&mut self) -> *mut libsql_wal_methods {
+        self.0.as_mut() as *mut WalMethodsHook as *mut _
+    }
+}
+
 impl WalMethodsHook {
     pub const METHODS_NAME_STR: &'static str = "wal_hook";
     pub const METHODS_NAME: &'static [u8] = b"wal_hook\0";
@@ -63,7 +73,7 @@ impl WalMethodsHook {
         default_methods: *mut libsql_wal_methods,
         maybe_bottomless_methods: *mut libsql_wal_methods,
         hook: impl WalHook + 'static,
-    ) -> *mut libsql_wal_methods {
+    ) -> OwnedWalMethods {
         let name = Self::METHODS_NAME.as_ptr() as *const _;
         let wal_methods = WalMethodsHook {
             methods: libsql_wal_methods {
@@ -107,7 +117,7 @@ impl WalMethodsHook {
             hook: Box::new(hook),
         };
 
-        Box::into_raw(Box::new(wal_methods)) as _
+        OwnedWalMethods(Box::new(wal_methods))
     }
 }
 #[allow(non_snake_case)]
