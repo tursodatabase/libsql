@@ -7473,13 +7473,15 @@ int sqlite3PagerWalSupported(Pager *pPager){
 */
 static int pagerExclusiveLock(Pager *pPager){
   int rc;                         /* Return code */
+  u8 eOrigLock;                   /* Original lock */
 
-  assert( pPager->eLock==SHARED_LOCK || pPager->eLock==EXCLUSIVE_LOCK );
+  assert( pPager->eLock>=SHARED_LOCK );
+  eOrigLock = pPager->eLock;
   rc = pagerLockDb(pPager, EXCLUSIVE_LOCK);
   if( rc!=SQLITE_OK ){
     /* If the attempt to grab the exclusive lock failed, release the 
     ** pending lock that may have been obtained instead.  */
-    pagerUnlockDb(pPager, SHARED_LOCK);
+    pagerUnlockDb(pPager, eOrigLock);
   }
 
   return rc;

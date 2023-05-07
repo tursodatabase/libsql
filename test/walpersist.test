@@ -121,6 +121,22 @@ do_test walpersist-3.4 {
   sqlite3 db test.db
   execsql { PRAGMA integrity_check }
 } {ok}
- 
+
+# 2023-05-07 https://sqlite.org/forum/forumpost/8130545bc6
+#
+reset_db
+do_test 4.1 {
+  db eval {
+    PRAGMA journal_mode=WAL;
+    CREATE TABLE t1(x);
+  }
+  file_control_persist_wal db 1
+  db eval {
+    PRAGMA journal_mode=TRUNCATE;
+    PRAGMA journal_mode=MEMORY;
+    PRAGMA journal_mode=WAL;
+    PRAGMA journal_mode=PERSIST;
+  }
+} {truncate memory wal persist}
 
 finish_test

@@ -1,5 +1,5 @@
-C Fix\sa\scomment\sin\sthe\sJSON\slogic.\s\sNo\scode\schanges.
-D 2023-05-05T20:22:06.621
+C It\sturns\sout\sthat\spagerExclusiveLock()\scan\sbe\scalled\swith\sthe\slock\sstate\nalready\sset\sto\sRESERVED\sif\sthe\sSQLITE_FCNTL_PERSIST_WAL\ssetting\sis\sset\sand\na\sspecific\ssequence\sof\smultiple\sjournal\smode\schanges\soccur.\nEnhance\spagerExclusiveLock()\sto\sdeal\swith\sthis.\n[forum:/forumpost/8130545bc6|Forum\spost\s8130545bc6]
+D 2023-05-07T03:23:32.841
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -622,7 +622,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 1b3ddb7814c4bf37f494c04d2ab30c1ced5b2c927267e1930ce7cd388787a96d
 F src/os_win.c 2b2411279f7b24f927591561303fc5871845732df42641cbf695c23640b16975
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 9d36ddedc842e993c88c222ed914822dbd6f8ece3c648fde04468637012a034a
+F src/pager.c 45e2ef5e9eb5cc0138bcc32b5d2299479be80b206f621873f59149dfb517f496
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y 146f9a1db7db5ef4299c6897d335e5abed348c2626190d2877d45ffa210fd4ca
 F src/pcache.c 8ee13acccfd9accbf0af94910b7323dd7f7d55300d92ddafcf40e34fcc8e21be
@@ -1874,7 +1874,7 @@ F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test cd6e7cff618eaaa5910ce57c3657aa50110397f86213886a2400afb9bfec7b7b
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/waloverwrite.test dad2f26567f1b45174e54fbf9a8dc1cb876a7f03
-F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
+F test/walpersist.test 8d78a1ec91299163451417b451a2bac3481f8eb9f455b1ca507a6625c927ca6e
 F test/walprotocol.test 1b3f922125e341703f6e946d77fdc564d38fb3e07a9385cfdc6c99cac1ecf878
 F test/walprotocol2.test 7d3b6b4bf0b12f8007121b1e6ef714bc99101fb3b48e46371df1db868eebc131
 F test/walro.test cb438d05ba0d191f10b688e39c4f0cd5b71569a1d1f4440e5bdf3c6880e08c20
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 910e770ad4d8e8e45bf069af963f2e975bfcfb882578dc5fe714cd2396258934
-R fb2c885eb34d0a9c073f49ec6e0b9a64
+P 3f30ea5ec9d849c64d8c38f4fffbc06c749ecff91ab90bc29b3a3cc9ec5b9df0
+R 50489123bab67876dc44e71aabe4a3c4
 U drh
-Z 083918063f857e50a07fc4bf5f897840
+Z 15666d796dadaefad48a0d98e2e18377
 # Remove this line to create a well-formed Fossil manifest.
