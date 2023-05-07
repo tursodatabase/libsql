@@ -43,6 +43,9 @@ pub mod rpc;
 mod stats;
 mod utils;
 
+const MAX_CONCCURENT_DBS: usize = 128;
+const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
+
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
     Libsql,
@@ -263,7 +266,9 @@ async fn start_replica(
         uri,
         stats.clone(),
         applied_frame_no_receiver,
-    );
+    )
+    .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT));
+
     run_service(
         Arc::new(factory),
         config,
@@ -356,21 +361,24 @@ async fn start_primary(
     let valid_extensions = validate_extensions(config.extensions_path.clone())?;
 
     let stats_clone = stats.clone();
-    let db_factory = Arc::new(move || {
-        let db_path = path_clone.clone();
-        let hook = hook.clone();
-        let stats_clone = stats_clone.clone();
-        let valid_extensions = valid_extensions.clone();
-        async move {
-            LibSqlDb::new(
-                db_path,
-                valid_extensions,
-                hook,
-                enable_bottomless,
-                stats_clone,
-            )
-        }
-    });
+    let db_factory = Arc::new(
+        (move || {
+            let db_path = path_clone.clone();
+            let hook = hook.clone();
+            let stats_clone = stats_clone.clone();
+            let valid_extensions = valid_extensions.clone();
+            async move {
+                LibSqlDb::new(
+                    db_path,
+                    valid_extensions,
+                    hook,
+                    enable_bottomless,
+                    stats_clone,
+                )
+            }
+        })
+        .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT)),
+    );
 
     if let Some(ref addr) = config.rpc_server_addr {
         join_set.spawn(run_rpc_server(
