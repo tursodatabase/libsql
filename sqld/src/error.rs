@@ -27,6 +27,8 @@ pub enum Error {
     NotAuthorized(String),
     #[error("The replicator exited, instance cannot make any progress.")]
     ReplicatorExited,
+    #[error("Timed out while openning database connection")]
+    DbCreateTimeout,
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {
