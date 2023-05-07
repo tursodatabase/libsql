@@ -240,7 +240,7 @@ mod build_bundled {
             cfg.flag("-DHAVE_LOCALTIME_R");
         }
         // Target wasm32-wasi can't compile the default VFS
-        if is_compiler("wasm32-wasi") {
+        if env::var("TARGET").map_or(false, |v| v == "wasm32-wasi") {
             cfg.flag("-DSQLITE_OS_OTHER")
                 // https://github.com/rust-lang/rust/issues/74393
                 .flag("-DLONGDOUBLE_TYPE=double");
