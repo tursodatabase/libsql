@@ -26,4 +26,15 @@ do_execsql_test 1.1 {
 
 }
 
+do_execsql_test 2.1 {
+  SELECT json_error_position('{a:null,{"h":[1,[1,2,3]],"j":"abc"}:true}');
+} 9
+do_catchsql_test 2.2 {
+  SELECT json('{a:null,{"h":[1,[1,2,3]],"j":"abc"}:true}');
+} {1 {malformed JSON}}
+do_catchsql_test 2.3 {
+  SELECT '{a:null,{"h":[1,[1,2,3]],"j":"abc"}:true}'->'$h[#-1]';
+} {1 {malformed JSON}}
+
+
 finish_test

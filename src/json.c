@@ -1085,6 +1085,7 @@ json_parse_restart:
       return -1;
     }
     for(j=i+1;;j++){
+      u32 nNode = pParse->nNode;
       x = jsonParseValue(pParse, j);
       if( x<=0 ){
         if( x==(-2) ){
@@ -1111,7 +1112,7 @@ json_parse_restart:
         }
       }
       if( pParse->oom ) return -1;
-      pNode = &pParse->aNode[pParse->nNode-1];
+      pNode = &pParse->aNode[nNode];
       if( pNode->eType!=JSON_STRING ){
         pParse->iErr = j;
         return -1;
