@@ -7696,7 +7696,7 @@ static int editPage(
     nCell -= nTail;
   }
 
-  pData = &aData[get2byteNotZero(&aData[hdr+5])];
+  pData = &aData[get2byte(&aData[hdr+5])];
   if( pData<pBegin ) goto editpage_fail;
   if( NEVER(pData>pPg->aDataEnd) ) goto editpage_fail;
 
