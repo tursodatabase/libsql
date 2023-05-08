@@ -333,6 +333,7 @@ do_test 17.2 {
 foreach enc {utf8 utf16 utf16le utf16be} {
   reset_db
   do_execsql_test 18.$enc.1 {
+    PRAGMA auto_vacuum = 0;
     PRAGMA encoding='utf16';
     CREATE TABLE t1(a, b);
     CREATE TABLE t2(a, b);
