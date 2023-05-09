@@ -237,7 +237,7 @@ impl Connection {
                 this.conn
                     .load_extension(&ext, None)
                     .with_context(|| format!("Could not load extension: {}", &ext.display()))?;
-                tracing::info!("Loaded extension {}", ext.display());
+                tracing::debug!("Loaded extension {}", ext.display());
             }
         }
 
