@@ -94,6 +94,10 @@ type ServerMsg =
 The client sends messages of type `ClientMsg`, and the server sends messages of
 type `ServerMsg`. The type of the message is determined by its `type` field.
 
+To maintain backwards compatibility, the recipient must ignore any unrecognized
+fields in the JSON messages. However, if the recipient receives a message with
+unrecognized `type`, it must abort the connection.
+
 ### Hello
 
 ```typescript
@@ -311,7 +315,7 @@ guess the correct prefix. If an argument is specified both as a positional
 argument and as a named argument, the named argument should take precedence.
 
 It is an error if the request specifies an argument that is not expected by the
-SQL statement, or if the request does not specify and argument that is expected
+SQL statement, or if the request does not specify an argument that is expected
 by the SQL statement. Some servers may not support specifying both positional
 and named arguments.
 

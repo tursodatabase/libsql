@@ -33,17 +33,19 @@ connection properly authenticated.
 
 ## Requests
 
-Version 2 introduces three new requests:
+Version 2 introduces four new requests:
 
 ```typescript
 type Request =
     | ...
+    | SequenceReq
     | DescribeReq
     | StoreSqlReq
     | CloseSqlReq
 
 type Response =
     | ...
+    | SequenceResp
     | DescribeResp
     | StoreSqlReq
     | CloseSqlReq
@@ -64,7 +66,7 @@ type StoreSqlResp = {
 ```
 
 The `store_sql` request stores an SQL text on the server. The client can then
-refer to this SQL text in `Stmt` objects by its id, instead of repeatedly
+refer to this SQL text in other requests by its id, instead of repeatedly
 sending the same string over the network.
 
 SQL text ids are arbitrary 32-bit signed integers assigned by the client. It is
@@ -90,6 +92,29 @@ the response.
 
 It is not an error if the client attempts to close a SQL text id that is not
 used.
+
+### Execute a sequence of SQL statements
+
+```typescript
+type SequenceReq = {
+    "type": "sequence",
+    "stream_id": int32,
+    "sql"?: string | null,
+    "sql_id"?: int32 | null,
+}
+
+type SequenceResp = {
+    "type": "sequence",
+}
+```
+
+The `sequence` request executes a sequence of SQL statements separated by
+semicolons on the stream given by `stream_id`. `sql` or `sql_id` specify the SQL
+text; exactly one of these fields must be specified.
+
+Any rows returned by the statements are ignored. If any statement fails, the
+subsequent statements are not executed and the request returns an error
+response.
 
 ### Describe a statement
 
@@ -180,3 +205,15 @@ id that has previously been stored with the `store_sql` request. Exactly one of
 `sql` and `sql_id` must be passed.
 
 Also, the `want_rows` field is now optional and defaults to `true`.
+
+### Statement result
+
+```typescript
+type Col = {
+    "name": string | null,
+    "decltype": string | null,
+}
+```
+
+In version 2 of the protocol, the column descriptor in the statement result also
+includes the declared type of the column (if available).

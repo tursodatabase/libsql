@@ -23,6 +23,7 @@ pub type QueryResult = Result<QueryResponse, Error>;
 pub struct Column {
     pub name: String,
     pub ty: Option<Type>,
+    pub decltype: Option<String>,
 }
 
 impl From<Column> for RpcColumn {
@@ -30,6 +31,7 @@ impl From<Column> for RpcColumn {
         RpcColumn {
             name: other.name,
             ty: other.ty.map(|ty| RpcType::from(ty).into()),
+            decltype: other.decltype,
         }
     }
 }
@@ -241,6 +243,7 @@ impl From<ResultRows> for ResultSet {
             .map(|c| Column {
                 ty: Some(c.ty().into()),
                 name: c.name,
+                decltype: c.decltype,
             })
             .collect();
 
@@ -296,8 +299,6 @@ pub enum Params {
     Named(HashMap<String, Value>),
     Positional(Vec<Value>),
 }
-
-impl Params {}
 
 impl Params {
     pub fn empty() -> Self {

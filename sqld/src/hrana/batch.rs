@@ -1,8 +1,11 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use crate::auth::Authenticated;
 use crate::database::{Cond, Database, Program, Step};
+use crate::query::{Params, Query};
+use crate::query_analysis::Statement;
 
 use super::handshake::Protocol;
 use super::proto;
@@ -103,5 +106,39 @@ pub async fn execute_batch(
     Ok(proto::BatchResult {
         step_results,
         step_errors,
+    })
+}
+
+pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
+    let stmts = Statement::parse(sql).collect::<Result<Vec<_>>>()?;
+    let steps = stmts
+        .into_iter()
+        .enumerate()
+        .map(|(step_i, stmt)| {
+            let cond = match step_i {
+                0 => None,
+                _ => Some(Cond::Ok { step: step_i - 1 }),
+            };
+            let query = Query {
+                stmt,
+                params: Params::empty(),
+            };
+            Step { cond, query }
+        })
+        .collect();
+    Ok(Program {
+        steps: Arc::new(steps),
+    })
+}
+
+pub async fn execute_sequence(db: &dyn Database, auth: Authenticated, pgm: Program) -> Result<()> {
+    let (results, _state) = db.execute_program(pgm, auth).await?;
+    results.into_iter().try_for_each(|result| match result {
+        Some(Ok(_)) => Ok(()),
+        Some(Err(e)) => match stmt_error_from_sqld_error(e) {
+            Ok(stmt_err) => Err(anyhow!(stmt_err)),
+            Err(sqld_err) => Err(anyhow!(sqld_err)),
+        },
+        None => Err(anyhow!("Statement in sequence was not executed")),
     })
 }

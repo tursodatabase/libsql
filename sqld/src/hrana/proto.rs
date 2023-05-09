@@ -29,6 +29,7 @@ pub enum Request {
     CloseStream(CloseStreamReq),
     Execute(ExecuteReq),
     Batch(BatchReq),
+    Sequence(SequenceReq),
     Describe(DescribeReq),
     StoreSql(StoreSqlReq),
     CloseSql(CloseSqlReq),
@@ -41,6 +42,7 @@ pub enum Response {
     CloseStream(CloseStreamResp),
     Execute(ExecuteResp),
     Batch(BatchResp),
+    Sequence(SequenceResp),
     Describe(DescribeResp),
     StoreSql(StoreSqlResp),
     CloseSql(CloseSqlResp),
@@ -84,6 +86,17 @@ pub struct BatchResp {
     pub result: BatchResult,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct SequenceReq {
+    pub stream_id: i32,
+    #[serde(default)]
+    pub sql: Option<String>,
+    #[serde(default)]
+    pub sql_id: Option<i32>,
+}
+
+#[derive(Serialize, Debug)]
+pub struct SequenceResp {}
 #[derive(Deserialize, Debug)]
 pub struct DescribeReq {
     pub stream_id: i32,
@@ -153,6 +166,7 @@ pub struct StmtResult {
 #[derive(Serialize, Debug)]
 pub struct Col {
     pub name: Option<String>,
+    pub decltype: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]

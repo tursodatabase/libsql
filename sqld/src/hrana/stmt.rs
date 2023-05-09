@@ -142,6 +142,7 @@ pub fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> p
         .into_iter()
         .map(|col| proto::Col {
             name: Some(col.name),
+            decltype: col.decltype,
         })
         .collect();
     let proto_rows = result_set

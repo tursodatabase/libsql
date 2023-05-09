@@ -297,6 +297,7 @@ impl Connection {
                     .transpose()
                     .ok()
                     .flatten(),
+                decltype: col.decl_type().map(|t| t.into()),
             })
             .collect::<Vec<_>>();
 
@@ -343,7 +344,7 @@ impl Connection {
 
     fn rollback(&self) {
         self.conn
-            .execute("rollback transaction;", ())
+            .execute("ROLLBACK", ())
             .expect("failed to rollback");
     }
 

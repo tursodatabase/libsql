@@ -10,7 +10,9 @@ use super::handshake::Protocol;
 use super::{proto, Server};
 use crate::auth::{AuthError, Authenticated};
 use crate::database::Database;
-use crate::hrana::batch::{execute_batch, proto_batch_to_program, BatchError};
+use crate::hrana::batch::{
+    execute_batch, execute_sequence, proto_batch_to_program, proto_sequence_to_program, BatchError,
+};
 use crate::hrana::stmt::{
     describe_stmt, execute_stmt, proto_sql_to_sql, proto_stmt_to_query, StmtError,
 };
@@ -113,6 +115,9 @@ pub(super) async fn handle_request(
     join_set: &mut tokio::task::JoinSet<()>,
     req: proto::Request,
 ) -> Result<oneshot::Receiver<Result<proto::Response>>> {
+    // TODO: this function has rotten: it is too long and contains too much duplicated code. It
+    // should be refactored at the next opportunity, together with code in stmt.rs and batch.rs
+
     let (resp_tx, resp_rx) = oneshot::channel();
 
     macro_rules! stream_respond {
@@ -197,6 +202,36 @@ pub(super) async fn handle_request(
                     .await
                     .map_err(wrap_batch_error)?;
                 Ok(proto::Response::Batch(proto::BatchResp { result }))
+            });
+        }
+        proto::Request::Sequence(req) => {
+            if session.protocol < Protocol::Hrana2 {
+                bail!(ProtocolError::from_message(
+                    "The `sequence` request is only supported in protocol version 2 and higher"
+                ))
+            }
+
+            let stream_id = req.stream_id;
+            let Some(stream_hnd) = session.streams.get_mut(&stream_id) else {
+                bail!(ResponseError::StreamNotFound { stream_id })
+            };
+
+            let sql = proto_sql_to_sql(
+                req.sql.as_deref(),
+                req.sql_id,
+                &session.sqls,
+                session.protocol,
+            )?;
+            let pgm = proto_sequence_to_program(sql).map_err(wrap_batch_error)?;
+            let auth = session.authenticated;
+            stream_respond!(stream_hnd, async move |stream| {
+                let Some(db) = stream.db.as_ref() else {
+                    bail!(ResponseError::StreamNotOpen { stream_id })
+                };
+                execute_sequence(&**db, auth, pgm)
+                    .await
+                    .map_err(wrap_stmt_error)?;
+                Ok(proto::Response::Sequence(proto::SequenceResp {}))
             });
         }
         proto::Request::Describe(req) => {
