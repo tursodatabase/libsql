@@ -148,7 +148,7 @@ pub trait Database: Send + Sync {
         Ok(())
     }
 
-    /// Parse the SQL statements and return information about it.
+    /// Parse the SQL statement and return information about it.
     async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult>;
 }
 
