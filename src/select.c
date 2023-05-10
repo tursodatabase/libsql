@@ -5107,6 +5107,23 @@ static int pushDownWindowCheck(Parse *pParse, Select *pSubq, Expr *pExpr){
 **       or EXCEPT, then all of the result set columns for all arms of
 **       the compound must use the BINARY collating sequence.
 **
+**   (9) All three of the following are true:
+**
+**       (9a) The WHERE clause expression originates in the ON or USING clause
+**            of a join (either an INNER or an OUTER join), and
+**
+**       (9b) The subquery is to the right of the ON/USING clause
+**
+**       (9c) There is a RIGHT JOIN (or FULL JOIN) in between the ON/USING
+**            clause and the subquery.
+**
+**       Without this restriction, the push-down optimization might move
+**       the ON/USING filter expression from the left side of a RIGHT JOIN
+**       over to the right side, which leads to incorrect answers.
+**
+**  (10) The inner query is not the right-hand table of a RIGHT JOIN.
+**
+**  (11) The subquery is not a VALUES clause
 **
 ** Return 0 if no changes are made and non-zero if one or more WHERE clause
 ** terms are duplicated into the subquery.
@@ -5115,13 +5132,20 @@ static int pushDownWhereTerms(
   Parse *pParse,        /* Parse context (for malloc() and error reporting) */
   Select *pSubq,        /* The subquery whose WHERE clause is to be augmented */
   Expr *pWhere,         /* The WHERE clause of the outer query */
-  SrcItem *pSrc         /* The subquery term of the outer FROM clause */
+  SrcList *pSrcList,    /* The complete from clause of the outer query */
+  int iSrc              /* Which FROM clause term to try to push into  */
 ){
   Expr *pNew;
+  SrcItem *pSrc;        /* The subquery FROM term into which WHERE is pushed */
   int nChng = 0;
+  pSrc = &pSrcList->a[iSrc];
   if( pWhere==0 ) return 0;
-  if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ) return 0;
-  if( pSrc->fg.jointype & (JT_LTORJ|JT_RIGHT) ) return 0;
+  if( pSubq->selFlags & (SF_Recursive|SF_MultiPart) ){
+    return 0;           /* restrictions (2) and (11) */
+  }
+  if( pSrc->fg.jointype & (JT_LTORJ|JT_RIGHT) ){
+    return 0;           /* restrictions (10) */
+  }
 
   if( pSubq->pPrior ){
     Select *pSel;
@@ -5176,8 +5200,26 @@ static int pushDownWhereTerms(
     return 0; /* restriction (3) */
   }
   while( pWhere->op==TK_AND ){
-    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight, pSrc);
+    nChng += pushDownWhereTerms(pParse, pSubq, pWhere->pRight, pSrcList, iSrc);
     pWhere = pWhere->pLeft;
+  }
+
+  if( ExprHasProperty(pWhere, EP_OuterON|EP_InnerON) /* (9a) */
+   && (pSrcList->a[0].fg.jointype & JT_LTORJ)!=0     /* Fast pre-test of (9c) */
+  ){
+    int jj;
+    for(jj=0; jj<iSrc; jj++){
+      if( pWhere->w.iJoin==pSrcList->a[jj].iCursor ){
+        /* If we reach this point, both (9a) and (9b) are satisfied.
+        ** The following loop checks (9c):
+        */
+        for(jj++; jj<iSrc; jj++){
+          if( (pSrcList->a[jj].fg.jointype & JT_RIGHT)!=0 ){
+            return 0;  /* restriction (9) */
+          }
+        }
+      }
+    }
   }
 
 #if 0  /* Legacy code. Checks now done by sqlite3ExprIsTableConstraint() */
@@ -7389,7 +7431,7 @@ int sqlite3Select(
     if( OptimizationEnabled(db, SQLITE_PushDown)
      && (pItem->fg.isCte==0 
          || (pItem->u2.pCteUse->eM10d!=M10d_Yes && pItem->u2.pCteUse->nUse<2))
-     && pushDownWhereTerms(pParse, pSub, p->pWhere, pItem)
+     && pushDownWhereTerms(pParse, pSub, p->pWhere, pTabList, i)
     ){
 #if TREETRACE_ENABLED
       if( sqlite3TreeTrace & 0x4000 ){

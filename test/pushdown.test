@@ -184,4 +184,27 @@ do_eqp_test 3.8 {
 # The query should be converted into:
 #   SELECT (SELECT count(*) FROM t1)+(SELECT count(*) FROM t2)
 
+# 2023-05-09 https://sqlite.org/forum/forumpost/a7d4be7fb6
+# Restriction (9) on the push-down optimization.
+# 
+reset_db
+db null -
+do_execsql_test 4.1 {
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT);
+  CREATE TABLE t3(c INT);
+  INSERT INTO t3(c) VALUES(3);
+  CREATE TABLE t4(d INT);
+  CREATE TABLE t5(e INT);
+  INSERT INTO t5(e) VALUES(5);
+  CREATE VIEW v6(f,g) AS SELECT d, e FROM t4 RIGHT JOIN t5 ON true;
+  SELECT * FROM  t1 JOIN t2 ON false RIGHT JOIN t3 ON true CROSS JOIN v6;
+} {- - 3 - 5}
+do_execsql_test 4.2 {
+  SELECT * FROM v6 JOIN t5 ON false RIGHT JOIN t3 ON true;
+} {- - - 3}
+do_execsql_test 4.3 {
+  SELECT * FROM t1 JOIN t2 ON false JOIN v6 ON true RIGHT JOIN t3 ON true;
+} {- - - - 3}
+
 finish_test
