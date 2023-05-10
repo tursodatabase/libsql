@@ -342,7 +342,7 @@ blob_open_out:
     if( pBlob && pBlob->pStmt ) sqlite3VdbeFinalize((Vdbe *)pBlob->pStmt);
     sqlite3DbFree(db, pBlob);
   }
-  sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : 0), zErr);
+  sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : (char*)0), zErr);
   sqlite3DbFree(db, zErr);
   sqlite3ParseObjectReset(&sParse);
   rc = sqlite3ApiExit(db, rc);
@@ -501,7 +501,7 @@ int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
     ((Vdbe*)p->pStmt)->rc = SQLITE_OK;
     rc = blobSeekToRow(p, iRow, &zErr);
     if( rc!=SQLITE_OK ){
-      sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : 0), zErr);
+      sqlite3ErrorWithMsg(db, rc, (zErr ? "%s" : (char*)0), zErr);
       sqlite3DbFree(db, zErr);
     }
     assert( rc!=SQLITE_SCHEMA );
