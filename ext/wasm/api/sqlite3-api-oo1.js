@@ -1844,8 +1844,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Object.defineProperty(DB.prototype, 'pointer', prop);
   }
   /**
-     A Stmt's columntCount property is an interceptor for
-     sqlite3_column_count().
+     Stmt.columnCount is an interceptor for sqlite3_column_count().
 
      This requires an unfortunate performance hit compared to caching
      columnCount when the Stmt is created/prepared (as was done in
