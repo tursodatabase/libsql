@@ -5222,7 +5222,7 @@ static int pushDownWhereTerms(
     }
   }
 
-#if 0  /* Legacy code. Checks now done by sqlite3ExprIsTableConstraint() */
+#if 0 /* These checks now done by sqlite3ExprIsSingleTableConstraint() */
   if( isLeftJoin
    && (ExprHasProperty(pWhere,EP_OuterON)==0
          || pWhere->w.iJoin!=iCursor)
@@ -5236,7 +5236,7 @@ static int pushDownWhereTerms(
   }
 #endif
 
-  if( sqlite3ExprIsTableConstraint(pWhere, pSrc) ){
+  if( sqlite3ExprIsSingleTableConstraint(pWhere, pSrc) ){
     nChng++;
     pSubq->selFlags |= SF_PushDown;
     while( pSubq ){

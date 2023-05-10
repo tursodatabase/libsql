@@ -2378,12 +2378,16 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 }
 
 /*
-** Check pExpr to see if it is an invariant constraint on data source pSrc.
+** Check pExpr to see if it is an constraint on the single data source pSrc.
+** In other words, check to see if pExpr constrains pSrc but does not depend
+** on any other tables or data sources anywhere else in the query.  Return
+** true (non-zero) if pExpr is a constraint on pSrc only.
+**
 ** This is an optimization.  False negatives will perhaps cause slower
 ** queries, but false positives will yield incorrect answers.  So when in
 ** doubt, return 0.
 **
-** To be an invariant constraint, the following must be true:
+** To be an single-source constraint, the following must be true:
 **
 **   (1)  pExpr cannot refer to any table other than pSrc->iCursor.
 **
@@ -2400,7 +2404,7 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 **        operand of a RIGHT JOIN, then pExpr must be from the WHERE
 **        clause, not an ON clause.
 */
-int sqlite3ExprIsTableConstraint(Expr *pExpr, const SrcItem *pSrc){
+int sqlite3ExprIsSingleTableConstraint(Expr *pExpr, const SrcItem *pSrc){
   if( pSrc->fg.jointype & JT_LTORJ ){
     return 0;  /* rule (3) */
   }

@@ -4906,7 +4906,7 @@ int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*, u8);
 int sqlite3ExprIsConstantOrGroupBy(Parse*, Expr*, ExprList*);
 int sqlite3ExprIsTableConstant(Expr*,int);
-int sqlite3ExprIsTableConstraint(Expr*,const SrcItem*);
+int sqlite3ExprIsSingleTableConstraint(Expr*,const SrcItem*);
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
 int sqlite3ExprContainsSubquery(Expr*);
 #endif
