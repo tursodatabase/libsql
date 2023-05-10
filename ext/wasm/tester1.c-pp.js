@@ -1229,6 +1229,8 @@ self.sqlite3InitModule = sqlite3InitModule;
             ) === 0)
           .assert(!st._mayGet)
           .assert('a' === st.getColumnName(0))
+          .mustThrowMatching(()=>st.columnCount=2,
+                             /columnCount property is read-only/)
           .assert(1===st.columnCount)
           .assert(0===st.parameterCount)
           .mustThrow(()=>st.bind(1,null))
@@ -1374,9 +1376,9 @@ self.sqlite3InitModule = sqlite3InitModule;
             3 === this._myState
             /* Recall that "this" is the options object. */
           ).assert(
+            this.columnNames===colNames
+          ).assert(
             this.columnNames[0]==='a' && this.columnNames[1]==='b'
-            /* options.columnNames is filled out before the first
-               Stmt.step(). */
           ).assert(
             (row.a%2 && row.a<6) || 'blob'===row.a
           );
@@ -1386,6 +1388,14 @@ self.sqlite3InitModule = sqlite3InitModule;
         .assert('a' === colNames[0])
         .assert(4 === counter)
         .assert(4 === list.length);
+      colNames = [];
+      db.exec({
+        /* Ensure that columnNames is populated for empty result sets. */
+        sql: "SELECT a a, b B FROM t WHERE 0",
+        columnNames: colNames
+      });
+      T.assert(2===colNames.length)
+        .assert('a'===colNames[0] && 'B'===colNames[1]);
       list.length = 0;
       db.exec("SELECT a a, b b FROM t",{
         rowMode: 'array',
@@ -1438,6 +1448,7 @@ self.sqlite3InitModule = sqlite3InitModule;
 
       let st = db.prepare("update t set b=:b where a='blob'");
       try {
+        T.assert(0===st.columnCount);
         const ndx = st.getParamIndex(':b');
         T.assert(1===ndx);
         st.bindAsBlob(ndx, "ima blob").reset(true);

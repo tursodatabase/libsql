@@ -330,10 +330,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - `db`: the DB object which created the statement.
 
-     - `columnCount`: the number of result columns in the query, or 0 for
-     queries which cannot return results.
+     - `columnCount`: the number of result columns in the query, or 0
+     for queries which cannot return results. This property is a proxy
+     for sqlite3_column_count() and its use in loops should be avoided
+     because of the call overhead associated with that. The
+     `columnCount` is not cached when the Stmt is created because a
+     schema change made via a separate db connection between this
+     statement's preparation and when it is stepped may invalidate it.
 
-     - `parameterCount`: the number of bindable paramters in the query.
+     - `parameterCount`: the number of bindable parameters in the query.
   */
   const Stmt = function(){
     if(BindTypes!==arguments[2]){
@@ -341,7 +346,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     this.db = arguments[0];
     __ptrMap.set(this, arguments[1]);
-    this.columnCount = capi.sqlite3_column_count(this.pointer);
     this.parameterCount = capi.sqlite3_bind_parameter_count(this.pointer);
   };
 
@@ -701,18 +705,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        with identical names.
 
        - `callback` = a function which gets called for each row of the
-       result set, but only if that statement has any result
-       _rows_. The callback's "this" is the options object, noting
-       that this function synthesizes one if the caller does not pass
-       one to exec(). The second argument passed to the callback is
-       always the current Stmt object, as it's needed if the caller
-       wants to fetch the column names or some such (noting that they
-       could also be fetched via `this.columnNames`, if the client
-       provides the `columnNames` option). If the callback returns a
-       literal `false` (as opposed to any other falsy value, e.g.  an
-       implicit `undefined` return), any ongoing statement-`step()`
-       iteration stops without an error. The return value of the
-       callback is otherwise ignored.
+       result set, but only if that statement has any result rows. The
+       callback's "this" is the options object, noting that this
+       function synthesizes one if the caller does not pass one to
+       exec(). The second argument passed to the callback is always
+       the current Stmt object, as it's needed if the caller wants to
+       fetch the column names or some such (noting that they could
+       also be fetched via `this.columnNames`, if the client provides
+       the `columnNames` option). If the callback returns a literal
+       `false` (as opposed to any other falsy value, e.g. an implicit
+       `undefined` return), any ongoing statement-`step()` iteration
+       stops without an error. The return value of the callback is
+       otherwise ignored.
 
        ACHTUNG: The callback MUST NOT modify the Stmt object. Calling
        any of the Stmt.get() variants, Stmt.getColumnName(), or
@@ -733,7 +737,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
          A.1) `'array'` (the default) causes the results of
          `stmt.get([])` to be passed to the `callback` and/or appended
-         to `resultRows`
+         to `resultRows`.
 
          A.2) `'object'` causes the results of
          `stmt.get(Object.create(null))` to be passed to the
@@ -744,8 +748,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
          A.3) `'stmt'` causes the current Stmt to be passed to the
          callback, but this mode will trigger an exception if
-         `resultRows` is an array because appending the statement to
-         the array would be downright unhelpful.
+         `resultRows` is an array because appending the transient
+         statement to the array would be downright unhelpful.
 
        B) An integer, indicating a zero-based column in the result
        row. Only that one single value will be passed on.
@@ -857,14 +861,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             bind = null;
           }
           if(evalFirstResult && stmt.columnCount){
-            /* Only forward SELECT results for the FIRST query
+            /* Only forward SELECT-style results for the FIRST query
                in the SQL which potentially has them. */
+            let gotColNames = Array.isArray(
+              opt.columnNames
+              /* As reported in
+                 https://sqlite.org/forum/forumpost/7774b773937cbe0a
+                 we need to delay fetching of the column names until
+                 after the first step() (if we step() at all) because
+                 a schema change between the prepare() and step(), via
+                 another connection, may invalidate the column count
+                 and names. */) ? 0 : 1;
             evalFirstResult = false;
-            if(Array.isArray(opt.columnNames)){
-              stmt.getColumnNames(opt.columnNames);
-            }
             if(arg.cbArg || resultRows){
               for(; stmt.step(); stmt._isLocked = false){
+                if(0===gotColNames++) stmt.getColumnNames(opt.columnNames);
                 stmt._isLocked = true;
                 const row = arg.cbArg(stmt);
                 if(resultRows) resultRows.push(row);
@@ -873,6 +884,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                 }
               }
               stmt._isLocked = false;
+            }
+            if(0===gotColNames){
+              /* opt.columnNames was provided but we visited no result rows */
+              stmt.getColumnNames(opt.columnNames);
             }
           }else{
             stmt.step();
@@ -1416,7 +1431,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.sqlite3_finalize(this.pointer);
         __ptrMap.delete(this);
         delete this._mayGet;
-        delete this.columnCount;
         delete this.parameterCount;
         delete this.db;
         delete this._isLocked;
@@ -1686,13 +1700,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       if(Array.isArray(ndx)){
         let i = 0;
-        while(i<this.columnCount){
+        const n = this.columnCount;
+        while(i<n){
           ndx[i] = this.get(i++);
         }
         return ndx;
       }else if(ndx && 'object'===typeof ndx){
         let i = 0;
-        while(i<this.columnCount){
+        const n = this.columnCount;
+        while(i<n){
           ndx[capi.sqlite3_column_name(this.pointer,i)] = this.get(i++);
         }
         return ndx;
@@ -1790,16 +1806,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       );
     },
     /**
-       If this statement potentially has result columns, this
-       function returns an array of all such names. If passed an
-       array, it is used as the target and all names are appended
-       to it. Returns the target array. Throws if this statement
-       cannot have result columns. This object's columnCount member
-       holds the number of columns.
+       If this statement potentially has result columns, this function
+       returns an array of all such names. If passed an array, it is
+       used as the target and all names are appended to it. Returns
+       the target array. Throws if this statement cannot have result
+       columns. This object's columnCount property holds the number of
+       columns.
     */
     getColumnNames: function(tgt=[]){
       affirmColIndex(affirmStmtOpen(this),0);
-      for(let i = 0; i < this.columnCount; ++i){
+      const n = this.columnCount;
+      for(let i = 0; i < n; ++i){
         tgt.push(capi.sqlite3_column_name(this.pointer, i));
       }
       return tgt;
@@ -1826,6 +1843,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Object.defineProperty(Stmt.prototype, 'pointer', prop);
     Object.defineProperty(DB.prototype, 'pointer', prop);
   }
+  /**
+     A Stmt's columntCount property is an interceptor for
+     sqlite3_column_count().
+
+     This requires an unfortunate performance hit compared to caching
+     columnCount when the Stmt is created/prepared (as was done in
+     SQLite <=3.42.0), but is necessary in order to handle certain
+     corner cases, as described in
+     https://sqlite.org/forum/forumpost/7774b773937cbe0a.
+  */
+  Object.defineProperty(Stmt.prototype, 'columnCount', {
+    enumerable: false,
+    get: function(){return capi.sqlite3_column_count(this.pointer)},
+    set: ()=>toss3("The columnCount property is read-only.")
+  });
 
   /** The OO API's public namespace. */
   sqlite3.oo1 = {

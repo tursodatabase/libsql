@@ -1,5 +1,5 @@
-C Enhance\sthe\ssplit-sqlite3c.tcl\sscript\sso\sthat\sit\suses\ssingle-character\nextensions\son\ssubordinate\ssource\sfiles,\seven\swhen\sthe\snumber\sof\ssubordinates\nexceeds\s9.\s\sThis\sis\snot\syet\sneeded,\sbut\smight\sbe\ssoon.
-D 2023-05-10T16:04:04.601
+C Resolve\sthe\sJS-side\scorner\scase\sreported\sin\s[forum:7774b773937cbe0a\s|\sforum\spost\s7774b773937cbe0a]\sby\snot\scaching\soo1.Stmt.columnCount.
+D 2023-05-10T21:06:02.101
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -493,7 +493,7 @@ F ext/wasm/api/post-js-header.js 47b6b281f39ad59fa6e8b658308cd98ea292c286a68407b
 F ext/wasm/api/pre-js.c-pp.js ad906703f7429590f2fbf5e6498513bf727a1a4f0ebfa057afb08161d7511219
 F ext/wasm/api/sqlite3-api-cleanup.js cc21e3486da748463e02bbe51e2464c6ac136587cdfd5aa00cd0b5385f6ca808
 F ext/wasm/api/sqlite3-api-glue.js f1b2dcb944de5138bb5bd9a1559d2e76a4f3ec25260963d709e8237476688803
-F ext/wasm/api/sqlite3-api-oo1.js 2691a34a741015127b210954a1b9586764d3ff0c8a20f00fd15c00f339ecc79f
+F ext/wasm/api/sqlite3-api-oo1.js 4c7067c63eb1cdf78aee510243405f76816d737f679349482b865c714573ddac
 F ext/wasm/api/sqlite3-api-prologue.js 17f4ec398ba34c5c666fea8e8c4eb82064a35b302f2f2eb355283cd8d3f68ed5
 F ext/wasm/api/sqlite3-api-worker1.js 40a5b1813fcbe789f23ae196c833432c8c83e7054d660194ddfc51eab1c5b9bf
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
@@ -507,7 +507,7 @@ F ext/wasm/api/sqlite3-worker1.c-pp.js da509469755035e919c015deea41b4514b5e84c12
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
 F ext/wasm/batch-runner.js 0dad6a02ad796f1003d3b7048947d275c4d6277f63767b8e685c27df8fdac93e
 F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25b4
-F ext/wasm/common/SqliteTestUtil.js d8bf97ecb0705a2299765c8fc9e11b1a5ac7f10988bbf375a6558b7ca287067b
+F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css 0ff15602a3ab2bad8aef2c3bd120c7ee3fd1c2054ad2ace7e214187ae68d926f
 F ext/wasm/common/whwasmutil.js 749a1f81f85835e9a384e9706f2a955a7158f2b8cc9da33f41105cac7775a305
@@ -545,7 +545,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js f09266873e1a34d9bdb6d3981ec8c9e382f31f215c9fd2f9016d2394b8ae9b7b
 F ext/wasm/tester1-worker.html 258d08f1ba9cc2d455958751e26be833893cf9ff7853e9436e593e1f778a386b
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js 587a18db0f794c594eb0fade37c92af3e2370501576bb08dafd8ed7d009b6516
+F ext/wasm/tester1.c-pp.js 2682abac377af9625f23837b7cfdbd0d8e0d5fee4d2acf3c98e1564785ccc479
 F ext/wasm/tests/opfs/concurrency/index.html 0802373d57034d51835ff6041cda438c7a982deea6079efd98098d3e42fbcbc1
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2068,8 +2068,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5bc17cbccdd369486fca049be9d7457e18f162c0e2f5475809ffc8f01c5fa9d2
-R 7825f403dc8e20a9b2cba11eaedce32c
-U drh
-Z 0780e89a4d80820b94f58c1bb18accfa
+P 4150e416263f24efcbfe68d5b1e15ec7e79df41dff0b6dfdc59f06ee9e205049
+R 4aa19a03c6b96f49d09013b0f165e4f7
+T *branch * oo1-no-cache-Stmt.columnCount
+T *sym-oo1-no-cache-Stmt.columnCount *
+T -sym-trunk * Cancelled\sby\sbranch.
+U stephan
+Z a06e6de30a703955eb7f478e54c3db62
 # Remove this line to create a well-formed Fossil manifest.
