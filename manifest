@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sfrom\sthe\sCBMC\scompiler.
-D 2023-05-10T13:56:32.946
+C Enhance\sthe\ssplit-sqlite3c.tcl\sscript\sso\sthat\sit\suses\ssingle-character\nextensions\son\ssubordinate\ssource\sfiles,\seven\swhen\sthe\snumber\sof\ssubordinates\nexceeds\s9.\s\sThis\sis\snot\syet\sneeded,\sbut\smight\sbe\ssoon.
+D 2023-05-10T16:04:04.601
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2031,7 +2031,7 @@ F tool/speedtest16.c ecb6542862151c3e6509bbc00509b234562ae81e
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 7ce07da76b5e745783e703a834417d725b7d45fd
-F tool/split-sqlite3c.tcl 6b02bb5444cabc477c0d6eb3ecedcc827063e9ac41954831e90c72c481aa9d30
+F tool/split-sqlite3c.tcl 5aa60643afca558bc732b1444ae81a522326f91e1dc5665b369c54f09e20de60
 F tool/sqldiff.c 4f967c199c5f93eec64978e3a625d6c07fb1162212b1d48f65740d9eb4607eee
 F tool/sqlite3_analyzer.c.in f88615bf33098945e0a42f17733f472083d150b58bdaaa5555a7129d0a51621c
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dae897431a0a9dbb354c4a8a48f935ea7438035d96f90b83dd81eae434c8277
-R 1467e785cae819526435dd09310bb846
+P 5bc17cbccdd369486fca049be9d7457e18f162c0e2f5475809ffc8f01c5fa9d2
+R 7825f403dc8e20a9b2cba11eaedce32c
 U drh
-Z 2f70947bee8313ef1d318a607ced119d
+Z 0780e89a4d80820b94f58c1bb18accfa
 # Remove this line to create a well-formed Fossil manifest.
