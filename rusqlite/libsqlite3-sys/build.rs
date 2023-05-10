@@ -268,6 +268,11 @@ mod build_bundled {
         }
         println!("cargo:rerun-if-env-changed=SQLITE_MAX_EXPR_DEPTH");
 
+        if let Ok(limit) = env::var("SQLITE_MAX_COLUMN") {
+            cfg.flag(&format!("-DSQLITE_MAX_COLUMN={limit}"));
+        }
+        println!("cargo:rerun-if-env-changed=SQLITE_MAX_COLUMN");
+
         if let Ok(extras) = env::var("LIBSQLITE3_FLAGS") {
             for extra in extras.split_whitespace() {
                 if extra.starts_with("-D") || extra.starts_with("-U") {
