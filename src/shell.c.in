@@ -6140,7 +6140,7 @@ static void tryToCloneSchema(
       zName = sqlite3_column_text(pQuery, 0);
       zSql = sqlite3_column_text(pQuery, 1);
       if( zName==0 || zSql==0 ) continue;
-      if( sqlite3_stricmp((char*)zName, "sqlite_sequence")!=0 ) continue;
+      if( sqlite3_stricmp((char*)zName, "sqlite_sequence")==0 ) continue;
       printf("%s... ", zName); fflush(stdout);
       sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
       if( zErrMsg ){
