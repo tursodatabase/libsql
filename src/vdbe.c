@@ -2399,7 +2399,7 @@ case OP_Compare: {
 /* Opcode: Jump P1 P2 P3 * *
 **
 ** Jump to the instruction at address P1, P2, or P3 depending on whether
-** in the most recent OP_Compare instruction the P1 vector was less than
+** in the most recent OP_Compare instruction the P1 vector was less than,
 ** equal to, or greater than the P2 vector, respectively.
 **
 ** This opcode must immediately follow an OP_Compare opcode.
