@@ -122,6 +122,7 @@ pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
             let query = Query {
                 stmt,
                 params: Params::empty(),
+                want_rows: false,
             };
             Step { cond, query }
         })

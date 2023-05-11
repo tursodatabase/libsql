@@ -214,6 +214,7 @@ pub mod rpc {
                     .params
                     .context("missing params in query")?
                     .try_into()?,
+                want_rows: !query.skip_rows,
             })
         }
     }
@@ -237,6 +238,7 @@ pub mod rpc {
             Self {
                 stmt: query.stmt.stmt,
                 params: Some(query.params.try_into().unwrap()),
+                skip_rows: !query.want_rows,
             }
         }
     }

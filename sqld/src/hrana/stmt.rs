@@ -105,7 +105,12 @@ pub fn proto_stmt_to_query(
         bail!(StmtError::ArgsBothPositionalAndNamed)
     };
 
-    Ok(Query { stmt, params })
+    let want_rows = proto_stmt.want_rows.unwrap_or(true);
+    Ok(Query {
+        stmt,
+        params,
+        want_rows,
+    })
 }
 
 pub fn proto_sql_to_sql<'s>(

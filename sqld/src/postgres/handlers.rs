@@ -77,6 +77,7 @@ impl SimpleQueryHandler for QueryHandler {
                 s.map(|stmt| Query {
                     stmt,
                     params: Params::empty(),
+                    want_rows: true,
                 })
             })
             .collect::<anyhow::Result<Vec<_>>>();
@@ -124,7 +125,11 @@ impl ExtendedQueryHandler for QueryHandler {
 
         let params = parse_params(portal.statement().parameter_types(), portal.parameters());
 
-        let query = Query { stmt, params };
+        let query = Query {
+            stmt,
+            params,
+            want_rows: true,
+        };
         let include_col_defs = client.metadata_mut().remove(REQUEST_DESCRIBE).is_some();
         self.handle_queries(vec![query], include_col_defs)
             .await

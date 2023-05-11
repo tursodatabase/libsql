@@ -308,6 +308,13 @@ impl Connection {
 
         let mut qresult = stmt.raw_query();
         while let Some(row) = qresult.next()? {
+            if !query.want_rows {
+                // if the caller does not want rows, we keep `rows` empty, but we still iterate the
+                // statement to completion to make sure that we don't miss any errors or side
+                // effects
+                continue;
+            }
+
             let mut values = vec![];
             for (i, _) in columns.iter().enumerate() {
                 values.push(row.get::<usize, rusqlite::types::Value>(i)?.into());

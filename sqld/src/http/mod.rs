@@ -134,6 +134,7 @@ fn parse_queries(queries: Vec<QueryObject>) -> anyhow::Result<Vec<Query>> {
         let query = Query {
             stmt,
             params: query.params.0,
+            want_rows: true,
         };
 
         out.push(query);

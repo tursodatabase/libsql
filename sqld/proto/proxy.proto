@@ -13,6 +13,7 @@ message Query {
         Positional positional = 2;
         Named named = 3;
     }
+    bool skip_rows = 4;
 }
 
 message Positional {
