@@ -278,6 +278,7 @@ pub enum QueryResponse {
 pub struct Query {
     pub stmt: Statement,
     pub params: Params,
+    pub want_rows: bool,
 }
 
 impl ToSql for Value {

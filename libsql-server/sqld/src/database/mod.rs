@@ -102,6 +102,7 @@ pub trait Database: Send + Sync {
                 query: Query {
                     stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
                     params: Params::empty(),
+                    want_rows: false,
                 },
                 cond: Some(Cond::Not {
                     cond: Box::new(Cond::Ok {
@@ -138,6 +139,7 @@ pub trait Database: Send + Sync {
                 Query {
                     stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
                     params: Params::empty(),
+                    want_rows: false,
                 },
                 auth,
             )
