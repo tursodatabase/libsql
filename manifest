@@ -1,5 +1,5 @@
-C Enhance\sthe\ssplit-sqlite3c.tcl\sscript\sso\sthat\sit\suses\ssingle-character\nextensions\son\ssubordinate\ssource\sfiles,\seven\swhen\sthe\snumber\sof\ssubordinates\nexceeds\s9.\s\sThis\sis\snot\syet\sneeded,\sbut\smight\sbe\ssoon.
-D 2023-05-10T16:04:04.601
+C Fix\sthe\srbu_exclusive_checkpoint=1\soption\sso\sthat\sit\sworks\swith\sa\szipvfs\sdatabase\sin\spass-through\smode.
+D 2023-05-11T17:25:14.597
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -371,7 +371,7 @@ F ext/rbu/rbuvacuum.test 542561741ff2b262e3694bc6012b44694ee62c545845319a06f3237
 F ext/rbu/rbuvacuum2.test ae097d04feb041446a74fac94b24bffeb3fdd60e32b848c5611e507ab702b81b
 F ext/rbu/rbuvacuum3.test 3ce42695fdf21aaa3499e857d7d4253bc499ad759bcd6c9362042c13cd37d8de
 F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69eefaebb205
-F ext/rbu/sqlite3rbu.c 71a7f0dea3a846ff7c2499dc34a2528f5ddcbe23e2c54dc3cd1fa4d933377c6d
+F ext/rbu/sqlite3rbu.c d4ddf8f0e93772556e452a6c2814063cf47efb760a0834391a9d0cd9859fa4b9
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
 F ext/recover/dbdata.c 31d580785cf14eb3c20ed6fbb421a10a66569858f837928e6b326088c38d4c72
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5bc17cbccdd369486fca049be9d7457e18f162c0e2f5475809ffc8f01c5fa9d2
-R 7825f403dc8e20a9b2cba11eaedce32c
-U drh
-Z 0780e89a4d80820b94f58c1bb18accfa
+P 4150e416263f24efcbfe68d5b1e15ec7e79df41dff0b6dfdc59f06ee9e205049
+R abf708c32a6eaa48f7e9ca50034b97cf
+U dan
+Z 02eedd6b9e26cc67afc3a09e72d02f3e
 # Remove this line to create a well-formed Fossil manifest.
