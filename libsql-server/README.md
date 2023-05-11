@@ -122,6 +122,27 @@ Note that until a stable version is released, it is provided as a separate tap, 
 
 ## Building from Sources
 
+### Using Docker/Podman
+The easiest way to build `sqld` is using Docker; Build dependencies will be installed in the build container and compilation will be done in a clean, isolated environment. 
+
+```console
+docker build -t libsql/sqld:latest .
+```
+
+After building the docker image, you can run `sqld` as follows:
+
+```console
+docker volume create sqld-data
+docker container run -d -v sqld-data:/var/lib/sqld --name sqld -P libsql/sqld:latest
+docker container port sqld # View the mapped port for sqld container
+```
+
+The following environment variables can be used to configure the `sqld` container:
+- `SQLD_DB_PATH` - Database file, defaults to `iku.db`. Absolute path can be used if you want the file in a different directory than `/var/lib/sqld` - note that the folder needs to be writable for `sqld` user (uid 666).
+- `SQLD_NODE` - Node type, defaults to `primary`. Valid values are `primary`, `replica` or `standalone`.
+
+All other standard `sqld` environment variables work as well. Try `docker container run --rm -it sqld /bin/sqld --help` to view them.
+
 ### Dependencies
 
 **Linux:**
