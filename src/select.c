@@ -7234,7 +7234,7 @@ int sqlite3Select(
                     pTabList->a[0].fg.jointype & JT_LTORJ);
     }
 
-    /* No futher action if this term of the FROM clause is no a subquery */
+    /* No futher action if this term of the FROM clause is not a subquery */
     if( pSub==0 ) continue;
 
     /* Catch mismatch in the declared columns of a view and the number of

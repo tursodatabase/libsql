@@ -1,5 +1,5 @@
-C Fix\sthe\srbu_exclusive_checkpoint=1\soption\sso\sthat\sit\sworks\swith\sa\szipvfs\sdatabase\sin\spass-through\smode.
-D 2023-05-11T17:25:14.597
+C Fix\sa\sminor\stypo\sin\sa\scomment.\s\sNo\scode\schanges.
+D 2023-05-11T18:03:11.662
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -635,7 +635,7 @@ F src/printf.c b9320cdbeca0b336c3f139fd36dd121e4167dd62b35fbe9ccaa9bab44c0af38d
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 46ff52b69d3a85cb71663e48ca2ce6fb8ca35708cb80dda0e4abc4225f2c1d88
+F src/select.c 12aa3168be4ff175702fe0ebeaf544312be22d275d378a28e7b2fad32d552d36
 F src/shell.c.in 8cfc51a5711df05ea0e8a4fbbe20117eb629233f0e92ebea21c2e7dc717ec3d9
 F src/sqlite.h.in 27ca1d4b2eda8feee468af5735182390e8fe4696522751eec0136d17323201ad
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4150e416263f24efcbfe68d5b1e15ec7e79df41dff0b6dfdc59f06ee9e205049
-R abf708c32a6eaa48f7e9ca50034b97cf
-U dan
-Z 02eedd6b9e26cc67afc3a09e72d02f3e
+P caca67d30670913914335aa3edff784e1c3d26aed70ae32efb5607ccf31ad142
+R fd8d4680e1e19432e6f44d2411716e16
+U drh
+Z e79912786f3f45d1ec22559d3cd92d52
 # Remove this line to create a well-formed Fossil manifest.
