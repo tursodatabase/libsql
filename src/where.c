@@ -5522,6 +5522,13 @@ static void showAllWhereLoops(WhereInfo *pWInfo, WhereClause *pWC){
 **      at most a single row.
 **   4) The table must not be referenced by any part of the query apart
 **      from its own USING or ON clause.
+**   5) The table must not have an inner-join ON or USING clause if there is
+**      a RIGHT JOIN anywhere in the query.  Otherwise the ON/USING clause
+**      might move from the right side to the left side of the RIGHT JOIN.
+**      Note: Due to (2), this condition can only arise if the table is
+**      the right-most table of a subquery that was flattened into the
+**      main query and that subquery was the right-hand operand of an
+**      inner join that held an ON or USING clause.
 **
 ** For example, given:
 **
@@ -5547,6 +5554,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
 ){
   int i;
   Bitmask tabUsed;
+  int hasRightJoin;
 
   /* Preconditions checked by the caller */
   assert( pWInfo->nLevel>=2 );
@@ -5561,6 +5569,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
   if( pWInfo->pOrderBy ){
     tabUsed |= sqlite3WhereExprListUsage(&pWInfo->sMaskSet, pWInfo->pOrderBy);
   }
+  hasRightJoin = (pWInfo->pTabList->a[0].fg.jointype & JT_LTORJ)!=0;
   for(i=pWInfo->nLevel-1; i>=1; i--){
     WhereTerm *pTerm, *pEnd;
     SrcItem *pItem;
@@ -5582,6 +5591,12 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
         ){
           break;
         }
+      }
+      if( hasRightJoin
+       && ExprHasProperty(pTerm->pExpr, EP_InnerON)
+       && pTerm->pExpr->w.iJoin==pItem->iCursor
+      ){
+        break;  /* restriction (5) */
       }
     }
     if( pTerm<pEnd ) continue;
