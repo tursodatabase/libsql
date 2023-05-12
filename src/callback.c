@@ -185,6 +185,7 @@ void sqlite3SetTextEncoding(sqlite3 *db, u8 enc){
   ** strings is BINARY. 
   */
   db->pDfltColl = sqlite3FindCollSeq(db, enc, sqlite3StrBINARY, 0);
+  sqlite3ExpirePreparedStatements(db, 1);
 }
 
 /*
