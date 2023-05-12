@@ -11,7 +11,7 @@ use super::handshake::Protocol;
 use super::proto;
 use super::stmt::{
     proto_error_from_stmt_error, proto_stmt_result_from_query_response, proto_stmt_to_query,
-    stmt_error_from_sqld_error,
+    stmt_error_from_sqld_error, StmtError,
 };
 
 #[derive(thiserror::Error, Debug)]
@@ -110,7 +110,10 @@ pub async fn execute_batch(
 }
 
 pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
-    let stmts = Statement::parse(sql).collect::<Result<Vec<_>>>()?;
+    let stmts = Statement::parse(sql)
+        .collect::<Result<Vec<_>>>()
+        .map_err(|err| anyhow!(StmtError::SqlParse { source: err }))?;
+
     let steps = stmts
         .into_iter()
         .enumerate()

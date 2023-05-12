@@ -247,12 +247,28 @@ async fn handle_request(
         (&Method::GET, "/version") => Ok(handle_version()),
         (&Method::GET, "/console") if enable_console => show_console().await,
         (&Method::GET, "/health") => Ok(handle_health()),
-        (&Method::GET, "/v1") => hrana_over_http::handle_index(req).await,
-        (&Method::POST, "/v1/execute") => {
-            hrana_over_http::handle_execute(db_factory, auth, req).await
-        }
-        (&Method::POST, "/v1/batch") => hrana_over_http::handle_batch(db_factory, auth, req).await,
         (&Method::GET, "/v1/stats") => Ok(stats::handle_stats(&stats)),
+
+        (&Method::GET, "/v1" | "/v2") => hrana_over_http::handle_index(req).await,
+        (&Method::POST, "/v1/execute") => {
+            hrana_over_http::handle_execute(db_factory, hrana::Protocol::Hrana1, auth, req).await
+        }
+        (&Method::POST, "/v2/execute") => {
+            hrana_over_http::handle_execute(db_factory, hrana::Protocol::Hrana2, auth, req).await
+        }
+        (&Method::POST, "/v1/batch") => {
+            hrana_over_http::handle_batch(db_factory, hrana::Protocol::Hrana1, auth, req).await
+        }
+        (&Method::POST, "/v2/batch") => {
+            hrana_over_http::handle_batch(db_factory, hrana::Protocol::Hrana2, auth, req).await
+        }
+        (&Method::POST, "/v2/sequence") => {
+            hrana_over_http::handle_sequence(db_factory, auth, req).await
+        }
+        (&Method::POST, "/v2/describe") => {
+            hrana_over_http::handle_describe(db_factory, auth, req).await
+        }
+
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
     }
 }
