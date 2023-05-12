@@ -1,5 +1,5 @@
-C Fix\sunlikely\sstrange\sresult\sof\sCLI\sedit().
-D 2023-05-12T14:51:00.610
+C Make\sthe\sregexp\sextension\smore\srobust\sagainst\sOOM\serrors\sduring\scompilation\nof\sthe\srecognizer\sengine.\n[forum:/forumpost/f50aecd5e8|Forum\spost\sf50aecd5e8].
+D 2023-05-12T15:45:34.949
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -303,7 +303,7 @@ F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea57645
 F ext/misc/prefixes.c 0f4f8cff5aebc00a7e3ac4021fd59cfe1a8e17c800ceaf592859ecb9cbc38196
 F ext/misc/qpvtab.c 09738419e25f603a35c0ac8bd0a04daab794f48d08a9bc07a6085b9057b99009
 F ext/misc/randomjson.c 7dd13664155319d47b9facc0d8dbf45e13062966a47168e54e3f26d48240d7ea
-F ext/misc/regexp.c f50ab59bfa8934b7ed98de069d2c74c187f2ef523fb09e85f8840f6459a90942
+F ext/misc/regexp.c 588b6f67b4d3d00acbe31c793d965890893fbcfe24e53e305530973961773300
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 504effa89b48c0dc6cd12b3eaf6017be3f32017c601af17759a3cc185346d868
-R 7b322be7a0b0968d044fb9694e50e6d3
-U larrybr
-Z be57394b3dc65bf45231fa83c98fd2dc
+P ab3797e844c97fed344b36f30cfb788aca9e0d68c574fb833712219eb712db44
+R 273fa6b9f32e4223b5b45d8fc6394dc6
+U drh
+Z f78e0028467b93abd16e9ed3e77ee0f5
 # Remove this line to create a well-formed Fossil manifest.

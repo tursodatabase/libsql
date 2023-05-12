@@ -619,7 +619,7 @@ static const char *re_subcompile_string(ReCompiled *p){
           if( rePeek(p)==']' ){ p->sIn.i++; break; }
         }
         if( c==0 ) return "unclosed '['";
-        p->aArg[iFirst] = p->nState - iFirst;
+        if( p->nState>iFirst ) p->aArg[iFirst] = p->nState - iFirst;
         break;
       }
       case '\\': {
