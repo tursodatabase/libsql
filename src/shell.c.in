@@ -605,6 +605,10 @@ static struct ConsoleState {
   DWORD consoleMode; /* Console mode upon shell start */
 } conState = { 0, 0, 0, 0, INVALID_HANDLE_VALUE, 0 };
 
+#ifndef _O_U16TEXT /* For build environments lacking this constant: */
+# define _O_U16TEXT 0x20000
+#endif
+
 /*
 ** Prepare console, (if known to be a WIN32 console), for UTF-8
 ** input (from either typing or suitable paste operations) and for
