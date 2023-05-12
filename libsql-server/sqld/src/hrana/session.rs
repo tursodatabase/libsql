@@ -222,7 +222,7 @@ pub(super) async fn handle_request(
                 &session.sqls,
                 session.protocol,
             )?;
-            let pgm = proto_sequence_to_program(sql).map_err(wrap_batch_error)?;
+            let pgm = proto_sequence_to_program(sql).map_err(wrap_stmt_error)?;
             let auth = session.authenticated;
             stream_respond!(stream_hnd, async move |stream| {
                 let Some(db) = stream.db.as_ref() else {
