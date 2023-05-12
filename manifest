@@ -1,5 +1,5 @@
-C Make\sthe\sregexp\sextension\smore\srobust\sagainst\sOOM\serrors\sduring\scompilation\nof\sthe\srecognizer\sengine.\n[forum:/forumpost/f50aecd5e8|Forum\spost\sf50aecd5e8].
-D 2023-05-12T15:45:34.949
+C Add\smulti-threaded\stest\sfor\s"INSERT\s...\sRETURNING\s..."\sand\sSQLITE_BUSY\serrors.
+D 2023-05-12T19:02:50.042
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1595,6 +1595,7 @@ F test/thread004.test f51dfc3936184aaf73ee85f315224baad272a87f
 F test/thread005.test 50d10b5684399676174bd96c94ad4250b1a2c8b6
 F test/thread1.test df115faa10a4ba1d456e9d4d9ec165016903eae4
 F test/thread2.test f35d2106452b77523b3a2b7d1dcde2e5ee8f9e46
+F test/thread3.test 5f53b6a8e7391d8653116fd0bee4f9774efee4410e039990821de39c6b4375a9
 F test/thread_common.tcl 334639cadcb9f912bf82aa73f49efd5282e6cadd
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c a70a8e94bef23339d34226eb9521015ef99f4df8
@@ -2068,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ab3797e844c97fed344b36f30cfb788aca9e0d68c574fb833712219eb712db44
-R 273fa6b9f32e4223b5b45d8fc6394dc6
-U drh
-Z f78e0028467b93abd16e9ed3e77ee0f5
+P 0772ddf56713d013cd1bd44f9c75977ca14f852e3a8f038b0a6b9814f6519d79
+R e2b505b83d26427c5d1e5feebd702346
+U dan
+Z c00872b8cf2e35e5cd276b5a40cad3e4
 # Remove this line to create a well-formed Fossil manifest.
