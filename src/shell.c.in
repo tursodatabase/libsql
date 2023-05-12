@@ -1776,6 +1776,7 @@ static void editFunc(
     }else{
       /* If the file did not originally contain \r\n then convert any new
       ** \r\n back into \n */
+      p[sz] = 0;
       for(i=j=0; i<sz; i++){
         if( p[i]=='\r' && p[i+1]=='\n' ) i++;
         p[j++] = p[i];
