@@ -1,5 +1,5 @@
-C Add\smulti-threaded\stest\sfor\s"INSERT\s...\sRETURNING\s..."\sand\sSQLITE_BUSY\serrors.
-D 2023-05-12T19:02:50.042
+C Fix\sharmless\scompiler\swarning\scaused\sby\s[0772ddf56713d013].
+D 2023-05-12T19:06:00.854
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -303,7 +303,7 @@ F ext/misc/percentile.c b9086e223d583bdaf8cb73c98a6539d501a2fc4282654adbfea57645
 F ext/misc/prefixes.c 0f4f8cff5aebc00a7e3ac4021fd59cfe1a8e17c800ceaf592859ecb9cbc38196
 F ext/misc/qpvtab.c 09738419e25f603a35c0ac8bd0a04daab794f48d08a9bc07a6085b9057b99009
 F ext/misc/randomjson.c 7dd13664155319d47b9facc0d8dbf45e13062966a47168e54e3f26d48240d7ea
-F ext/misc/regexp.c 588b6f67b4d3d00acbe31c793d965890893fbcfe24e53e305530973961773300
+F ext/misc/regexp.c 4bdd0045912f81c84908bd535ec5ad3b1c8540b4287c70ab84070963624047db
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
@@ -2069,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0772ddf56713d013cd1bd44f9c75977ca14f852e3a8f038b0a6b9814f6519d79
-R e2b505b83d26427c5d1e5feebd702346
-U dan
-Z c00872b8cf2e35e5cd276b5a40cad3e4
+P 559cb1c6de384fd14160db005acaf1858b8b018d3d40d7f786a56a49d3cdbd59
+R 4b606a426eae6c5f8f90a511d40b128f
+U drh
+Z 4e1ae7be32b97c6dbec7b8961e4a74ee
 # Remove this line to create a well-formed Fossil manifest.

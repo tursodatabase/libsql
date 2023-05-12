@@ -595,7 +595,7 @@ static const char *re_subcompile_string(ReCompiled *p){
         break;
       }
       case '[': {
-        int iFirst = p->nState;
+        unsigned int iFirst = p->nState;
         if( rePeek(p)=='^' ){
           re_append(p, RE_OP_CC_EXC, 0);
           p->sIn.i++;
