@@ -1,5 +1,5 @@
-C Fix\sharmless\stypos\sin\scomments.
-D 2023-05-12T12:45:56.781
+C Remove\sa\sstray\sCR\sfrom\send\sof\sline\sin\sa\ssource\sfile.
+D 2023-05-12T12:57:44.642
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -585,7 +585,7 @@ F src/date.c aca9e0c08b400b21238b609aea7c09585396cd770985cf8f475560f69222dad3
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c a9c6d3f51c0a31e9b831e0a0580a98d702904b42d216fee530940e40dec34873
-F src/expr.c 6b04cccecd6f3342673fafd56033c7e40a3ff1531a6550d0a0af36bac8e824a7
+F src/expr.c b239be118a24f1520b44efb850cd1754854606bccb1a5f9dceeb0ff48f6bad79
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 03c134cc8bffe54835f742ddea0b72ebfc8f6b32773d175c71b8afeea6cb5c83
 F src/func.c 03e6b501f3056d0ba398bda17df938b2b566aa0b3ca7e1942a3cd1925d04ec36
@@ -2068,8 +2068,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 469718f106e1cfa7f8f4714a9e743108c361af81e0258061c2b76880a7c352ae
-R 8b088e730cd28a75803b13b2c2a16a8a
+P 607c3efbe0293d7c11a955a9f21e24fb9f7f1bb758e13e60f4ba0cc0ac8b900c
+R 3bfe30c59997b7ecaaf967f6c65fb515
 U drh
-Z 9e1ace85a6514136d51fb08d6c7d88e6
+Z 4dfb7243a06de6c1bb7faa74afa633d4
 # Remove this line to create a well-formed Fossil manifest.
