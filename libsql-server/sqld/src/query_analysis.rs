@@ -106,7 +106,7 @@ impl StmtKind {
             // that already created a database, which is always the case for sqld
             "encoding" => Some(Self::Read),
             // always ok to be served by primary
-            "foreign_key" | "foreign_key_list" | "foreign_key_check" | "collation_list"
+            "foreign_keys" | "foreign_key_list" | "foreign_key_check" | "collation_list"
             | "data_version" | "freelist_count" | "integrity_check" | "legacy_file_format"
             | "page_count" | "quick_check" | "stats" => Some(Self::Write),
             // ok to be served by primary without args
