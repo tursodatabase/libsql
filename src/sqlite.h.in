@@ -7881,7 +7881,7 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** ^(Some systems (for example, Windows 95) do not support the operation
 ** implemented by sqlite3_mutex_try().  On those systems, sqlite3_mutex_try()
 ** will always return SQLITE_BUSY. The SQLite core only ever uses
-** sqlite3_mutex_try() as an optimization so this is acceptable 
+** sqlite3_mutex_try() as an optimization so this is acceptable
 ** behavior.)^
 **
 ** ^The sqlite3_mutex_leave() routine exits a mutex that was
@@ -7889,9 +7889,9 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** is undefined if the mutex is not currently entered by the
 ** calling thread or is not currently allocated.
 **
-** ^If the argument to sqlite3_mutex_enter(), sqlite3_mutex_try(), or
-** sqlite3_mutex_leave() is a NULL pointer, then all three routines
-** behave as no-ops.
+** ^If the argument to sqlite3_mutex_enter(), sqlite3_mutex_try(),
+** sqlite3_mutex_leave(), or sqlite3_mutex_free() is a NULL pointer,
+** then any of the four routines behaves as a no-op.
 **
 ** See also: [sqlite3_mutex_held()] and [sqlite3_mutex_notheld()].
 */
