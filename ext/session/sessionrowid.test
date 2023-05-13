@@ -255,6 +255,7 @@ do_conflict_test 3.20 -sql {
 do_execsql_test -db db2 3.21 {
   SELECT * FROM t4
 } {one blip}
+db2 close
 
 #--------------------------------------------------------------------------
 breakpoint
