@@ -1349,8 +1349,10 @@ INCLUDE ../ext/expert/sqlite3expert.c
 #endif
 #if SQLITE_SHELL_HAVE_RECOVER
 INCLUDE ../ext/recover/sqlite3recover.h
+# ifndef SQLITE_HAVE_SQLITE3R
 INCLUDE ../ext/recover/dbdata.c
 INCLUDE ../ext/recover/sqlite3recover.c
+# endif /* SQLITE_HAVE_SQLITE3R */
 #endif
 #ifdef SQLITE_SHELL_EXTSRC
 # include SHELL_STRINGIFY(SQLITE_SHELL_EXTSRC)
