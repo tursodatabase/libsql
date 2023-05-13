@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\scaused\sby\s[0772ddf56713d013].
-D 2023-05-12T19:06:00.854
+C Fix\scompilation\sissue\sseen\swith\sMSVC.
+D 2023-05-13T05:13:29.183
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -274,7 +274,7 @@ F ext/misc/anycollseq.c 5ffdfde9829eeac52219136ad6aa7cd9a4edb3b15f4f2532de52f4a2
 F ext/misc/appendvfs.c 9642c7a194a2a25dca7ad3e36af24a0a46d7702168c4ad7e59c9f9b0e16a3824
 F ext/misc/base64.c a71b131e50300c654a66c469a25b62874481f3d1cb3beb56aca9a68edd812e0d
 F ext/misc/base85.c 073054111988db593ef5fdb87ab8c459df1ea0c3aaaddf0f5bfa3d72b7e6280a
-F ext/misc/basexx.c 5e859e1820620aa8080fb9145eb47089de426ae808f6abb01a8e12921c3a8e67
+F ext/misc/basexx.c 89ad6b76558efbceb627afd5e2ef1d84b2e96d9aaf9b7ecb20e3d00b51be6fcf
 F ext/misc/blobio.c a867c4c4617f6ec223a307ebfe0eabb45e0992f74dd47722b96f3e631c0edb2a
 F ext/misc/btreeinfo.c d28ce349b40054eaa9473e835837bad7a71deec33ba13e39f963d50933bfa0f9
 F ext/misc/carray.c 0ba03f1e6647785d4e05b51be567f5652f06941314ff9d3d3763900aa353b6b5
@@ -2069,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 559cb1c6de384fd14160db005acaf1858b8b018d3d40d7f786a56a49d3cdbd59
-R 4b606a426eae6c5f8f90a511d40b128f
-U drh
-Z 4e1ae7be32b97c6dbec7b8961e4a74ee
+P f06c16a8b0e7a15ce4f7d99af3376a1bf1bfbfc0fdc048b079418ae74c619d6b
+R 68bf0e0720f39d0e6119c2e069e78207
+U mistachkin
+Z 12f9058013daf2741959b0b8eb6c3d0b
 # Remove this line to create a well-formed Fossil manifest.
