@@ -1,11 +1,11 @@
-C Add\sthe\s--wait\scommand-line\soption\sto\sfuzzcheck.
-D 2023-05-15T10:55:04.270
+C Increase\sthe\sstack\ssize\savailable\sto\sfuzzcheck\sto\s8MB\son\sWindows.
+D 2023-05-15T17:20:21.780
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 764f2e3e8fb4ae1c8dfe03e65b2b3b01bd1fc57edf78ec2cab3a1301e90e1905
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc ada3466f8f0112a8baead4d6cc2a99bf544d228958baae12ca35a3ee5755c806
+F Makefile.msc ce7bea7931e1ef96b0f44c0362074a8bb62e61a0e7cfdb05afebd928adaacc2b
 F README.md e05bd8fcb45da04ab045c37f79a98654e8aa3b3b8f302cfbba80a0d510df75f7
 F VERSION 17f95ae2fdf21f0e9575eb0b0511ea63f15d71dfff431b21c2b4adbfa70cfbbf
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2069,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4c5cd3e6968c44749b7663beee790969b41d247b9201b771ef90cbb03d09108f
-R 8e25843c4ee0f260b64ed5ed5ad00324
+P 5a479a2c7637a018d1828d9d37973bf3d36a2fc4cd5b752bca61a41cd0920d39
+R e97269b0123587f5dfc34cc853ad1390
 U drh
-Z e10ee59e7e5fb8f6585296436b7719da
+Z e688fa42e0abab382f3875162dadcd6f
 # Remove this line to create a well-formed Fossil manifest.
