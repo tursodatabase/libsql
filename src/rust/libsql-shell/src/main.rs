@@ -72,6 +72,53 @@ fn get_str_statements(str: String) -> StrStatements {
     StrStatements { value: str }
 }
 
+fn run_statement(connection: &Connection, statement: String) {
+    for str_statement in get_str_statements(statement) {
+        let mut stmt = match connection.prepare(&str_statement) {
+            Ok(stmt) => stmt,
+            Err(e) => {
+                println!("Error: {e}");
+                continue;
+            }
+        };
+        let rows = match execute(&mut stmt) {
+            Ok(rows) => rows,
+            Err(e) => {
+                println!("Error: {e}");
+                continue;
+            }
+        };
+        if rows.is_empty() {
+            continue;
+        }
+        let mut builder = tabled::builder::Builder::new();
+        builder.set_columns(stmt.column_names());
+        for row in rows {
+            builder.add_record(row);
+        }
+        let mut table = builder.build();
+        table.with(tabled::Style::psql());
+        println!("{table}")
+    }
+}
+
+fn list_tables(pattern: Option<&str>, connection: &Connection) {
+    let mut statement = String::from("SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%'");
+    match pattern {
+        Some(p) => statement.push_str(format!("AND name LIKE {p};").as_str()),
+        None => statement.push(';')
+    }
+    run_statement(connection, statement)
+}
+
+fn run_command(command: &str, args: Vec<&str>, connection: &Connection) {
+    match command {
+        "quit" => std::process::exit(0),
+        "tables" => list_tables(args.get(0).copied(), connection),
+        _ => println!("Unknown command '{}'", command)
+    }
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
@@ -102,39 +149,21 @@ fn main() -> Result<()> {
         match readline {
             Ok(line) => {
                 let line = leftovers + line.trim_end();
-                if line.ends_with(';') {
+                if line.ends_with(';') || line.starts_with('.') {
                     leftovers = String::new();
                 } else {
                     leftovers = line + " ";
                     continue;
                 };
                 rl.add_history_entry(&line).ok();
-                for str_statement in get_str_statements(line) {
-                    let mut stmt = match connection.prepare(&str_statement) {
-                        Ok(stmt) => stmt,
-                        Err(e) => {
-                            println!("Error: {e}");
-                            continue;
-                        }
+                if line.starts_with('.') {
+                    let cmd: String = line[1..].to_string();
+                    match cmd.split_once(' ') {
+                        Some((command, args)) => run_command(&command, args.split_whitespace().collect(), &connection),
+                        None => run_command(&cmd, Vec::new(), &connection)
                     };
-                    let rows = match execute(&mut stmt) {
-                        Ok(rows) => rows,
-                        Err(e) => {
-                            println!("Error: {e}");
-                            continue;
-                        }
-                    };
-                    if rows.is_empty() {
-                        continue;
-                    }
-                    let mut builder = tabled::builder::Builder::new();
-                    builder.set_columns(stmt.column_names());
-                    for row in rows {
-                        builder.add_record(row);
-                    }
-                    let mut table = builder.build();
-                    table.with(tabled::Style::psql());
-                    println!("{table}")
+                } else {
+                    run_statement(&connection, line)
                 }
             }
             Err(ReadlineError::Interrupted) => {
