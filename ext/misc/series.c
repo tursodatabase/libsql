@@ -143,9 +143,10 @@ typedef struct SequenceSpec {
 ** initialized per given isReversing. Other members are computed.
 */
 static void setupSequence( SequenceSpec *pss ){
+  int bSameSigns;
   pss->uSeqIndexMax = 0;
   pss->isNotEOF = 0;
-  int bSameSigns = (pss->iBase < 0)==(pss->iTerm < 0);
+  bSameSigns = (pss->iBase < 0)==(pss->iTerm < 0);
   if( pss->iTerm < pss->iBase ){
     sqlite3_uint64 nuspan = 0;
     if( bSameSigns ){
