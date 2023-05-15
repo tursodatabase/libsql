@@ -180,7 +180,11 @@ if {[detail_is_full]} {
   } {1 2}
 }
 
-do_execsql_test 4.5 {
+do_execsql_test 4.5.1 {
+  SELECT rowid FROM s1 WHERE s1 MATCH 'a AND x'
+} {1 2}
+
+do_execsql_test 4.5.2 {
   SELECT rowid FROM s1 WHERE s1 MATCH 'a x'
 } {1 2}
 
