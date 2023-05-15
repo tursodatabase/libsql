@@ -207,4 +207,24 @@ do_execsql_test 4.3 {
   SELECT * FROM t1 JOIN t2 ON false JOIN v6 ON true RIGHT JOIN t3 ON true;
 } {- - - - 3}
 
+# 2023-05-15 https://sqlite.org/forum/forumpost/f3f546025a
+# This is restriction (6) on sqlite3ExprIsSingleTableConstraint().
+# That restriction (now) used to implement restriction (9) on push-down.
+# It is used for other things too, so it is not purely a push-down
+# restriction.  But it seems convenient to put it here.
+#
+reset_db
+db null -
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a INT);  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(b INT);  INSERT INTO t2 VALUES(2);
+  CREATE TABLE t3(c INT);  INSERT INTO t3 VALUES(3);
+  CREATE TABLE t4(d INT);  INSERT INTO t4 VALUES(4);
+  CREATE TABLE t5(e INT);  INSERT INTO t5 VALUES(5);
+  SELECT *
+    FROM t1 JOIN t2 ON null RIGHT JOIN t3 ON true
+          LEFT JOIN (t4 JOIN t5 ON d+1=e) ON d=4
+   WHERE e>0;
+} {- - 3 4 5}
+
 finish_test

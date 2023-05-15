@@ -2378,10 +2378,11 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 }
 
 /*
-** Check pExpr to see if it is an constraint on the single data source pSrc.
-** In other words, check to see if pExpr constrains pSrc but does not depend
-** on any other tables or data sources anywhere else in the query.  Return
-** true (non-zero) if pExpr is a constraint on pSrc only.
+** Check pExpr to see if it is an constraint on the single data source
+** pSrc = &pSrcList->a[iSrc].  In other words, check to see if pExpr
+** constrains pSrc but does not depend on any other tables or data
+** sources anywhere else in the query.  Return true (non-zero) if pExpr
+** is a constraint on pSrc only.
 **
 ** This is an optimization.  False negatives will perhaps cause slower
 ** queries, but false positives will yield incorrect answers.  So when in
@@ -2398,13 +2399,31 @@ int sqlite3ExprIsTableConstant(Expr *p, int iCur){
 **
 **   (4)  If pSrc is the right operand of a LEFT JOIN, then...
 **         (4a)  pExpr must come from an ON clause..
-           (4b)  and specifically the ON clause associated with the LEFT JOIN.
+**         (4b)  and specifically the ON clause associated with the LEFT JOIN.
 **
 **   (5)  If pSrc is not the right operand of a LEFT JOIN or the left
 **        operand of a RIGHT JOIN, then pExpr must be from the WHERE
 **        clause, not an ON clause.
+**
+**   (6) Either:
+**
+**       (6a) pExpr does not originate in an ON or USING clause, or
+**
+**       (6b) The ON or USING clause from which pExpr is derived is
+**            not to the left of a RIGHT JOIN (or FULL JOIN).
+**
+**       Without this restriction, accepting pExpr as a single-table
+**       constraint might move the the ON/USING filter expression
+**       from the left side of a RIGHT JOIN over to the right side,
+**       which leads to incorrect answers.  See also restriction (9)
+**       on push-down.
 */
-int sqlite3ExprIsSingleTableConstraint(Expr *pExpr, const SrcItem *pSrc){
+int sqlite3ExprIsSingleTableConstraint(
+  Expr *pExpr,                 /* The constraint */
+  const SrcList *pSrcList,     /* Complete FROM clause */
+  int iSrc                     /* Which element of pSrcList to use */
+){
+  const SrcItem *pSrc = &pSrcList->a[iSrc];
   if( pSrc->fg.jointype & JT_LTORJ ){
     return 0;  /* rule (3) */
   }
@@ -2413,6 +2432,19 @@ int sqlite3ExprIsSingleTableConstraint(Expr *pExpr, const SrcItem *pSrc){
     if( pExpr->w.iJoin!=pSrc->iCursor ) return 0;         /* rule (4b) */
   }else{
     if( ExprHasProperty(pExpr, EP_OuterON) ) return 0;    /* rule (5) */
+  }
+  if( ExprHasProperty(pExpr, EP_OuterON|EP_InnerON)  /* (6a) */
+   && (pSrcList->a[0].fg.jointype & JT_LTORJ)!=0     /* Fast pre-test of (6b) */
+  ){
+    int jj;
+    for(jj=0; jj<iSrc; jj++){
+      if( pExpr->w.iJoin==pSrcList->a[jj].iCursor ){
+        if( (pSrcList->a[jj].fg.jointype & JT_LTORJ)!=0 ){
+          return 0;  /* restriction (6) */
+        }
+        break;
+      }
+    }
   }
   return sqlite3ExprIsTableConstant(pExpr, pSrc->iCursor); /* rules (1), (2) */
 }

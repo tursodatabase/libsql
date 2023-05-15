@@ -895,6 +895,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   u8 useBloomFilter = 0;      /* True to also add a Bloom filter */
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
+  SrcList *pTabList;          /* The complete FROM clause */
   SrcItem *pSrc;              /* The FROM clause term to get the next index */
   int addrCounter = 0;        /* Address where integer counter is initialized */
   int regBase;                /* Array of registers where record is assembled */
@@ -911,7 +912,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
   nKeyCol = 0;
-  pSrc = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
+  pTabList = pWC->pWInfo->pTabList;
+  pSrc = &pTabList->a[pLevel->iFrom];
   pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   pLoop = pLevel->pWLoop;
@@ -922,7 +924,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     ** WHERE clause (or the ON clause of a LEFT join) that constrain which
     ** rows of the target table (pSrc) that can be used. */
     if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && sqlite3ExprIsSingleTableConstraint(pExpr, pSrc)
+     && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, pLevel->iFrom)
     ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
@@ -1150,9 +1152,11 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
 
   addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   do{
+    const SrcList *pTabList;
     const SrcItem *pItem;
     const Table *pTab;
     u64 sz;
+    int iSrc;
     sqlite3WhereExplainBloomFilter(pParse, pWInfo, pLevel);
     addrCont = sqlite3VdbeMakeLabel(pParse);
     iCur = pLevel->iTabCur;
@@ -1166,7 +1170,9 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     ** testing complicated.  By basing the blob size on the value in the
     ** sqlite_stat1 table, testing is much easier.
     */
-    pItem = &pWInfo->pTabList->a[pLevel->iFrom];
+    pTabList = pWInfo->pTabList;
+    iSrc = pLevel->iFrom;
+    pItem = &pTabList->a[iSrc];
     assert( pItem!=0 );
     pTab = pItem->pTab;
     assert( pTab!=0 );
@@ -1183,7 +1189,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
       Expr *pExpr = pTerm->pExpr;
       if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-       && sqlite3ExprIsSingleTableConstraint(pExpr, pItem)
+       && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, iSrc)
       ){
         sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
       }

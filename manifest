@@ -1,5 +1,5 @@
-C Simplify\sthe\sinterface\sto\sconstructAutomaticIndex().
-D 2023-05-15T01:02:50.881
+C As\sevidenced\sby\s[forum:/forumpost/f3f546025a|forum\spost\sf3f546025a],\sthe\nnew\sRIGHT\sJOIN\srelated\srestriction\son\sthe\spush-down\soptimization\simplemented\nby\s[da3fba18742b6e0b]\salso\sneeds\sto\sapply\sto\sthe\sautomatic\sindex\n(a.k.a.\shash-join)\soptimization\sand\sto\sthe\sBloom\sfilter\soptimization.\nComputation\sof\sthe\srestriction\sis\snow\nmoved\sinto\sthe\ssqlite3ExprIsSingleTableConstraint()\sroutine.
+D 2023-05-15T02:06:35.229
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -585,7 +585,7 @@ F src/date.c aca9e0c08b400b21238b609aea7c09585396cd770985cf8f475560f69222dad3
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c a9c6d3f51c0a31e9b831e0a0580a98d702904b42d216fee530940e40dec34873
-F src/expr.c b239be118a24f1520b44efb850cd1754854606bccb1a5f9dceeb0ff48f6bad79
+F src/expr.c 941fe758212c6cf0007c6d7daf5368e11c199376ace9b3018494296e18a27eac
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c 03c134cc8bffe54835f742ddea0b72ebfc8f6b32773d175c71b8afeea6cb5c83
 F src/func.c 03e6b501f3056d0ba398bda17df938b2b566aa0b3ca7e1942a3cd1925d04ec36
@@ -635,12 +635,12 @@ F src/printf.c b9320cdbeca0b336c3f139fd36dd121e4167dd62b35fbe9ccaa9bab44c0af38d
 F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
-F src/select.c 12aa3168be4ff175702fe0ebeaf544312be22d275d378a28e7b2fad32d552d36
+F src/select.c 738c3a3d6929f8be66c319bad17f6b297bd60a4eb14006075c48a28487dc7786
 F src/shell.c.in 52836b4002a2cad8095b451f0c39a6542c23a231eb0ed5e39387bc8b1f7aaa9e
 F src/sqlite.h.in c14a4471fcd897a03631ac7ad3d05505e895e7b6419ec5b96cae9bc4df7a9fc6
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
-F src/sqliteInt.h 6e08039aa944e874d3878c4f12bbd78cea797c988dad147adc9ffb1c2b179402
+F src/sqliteInt.h a3ced8b9ebc573189c87b69f24bf10d2b9cd3cefefaae52623a2fa79e6fdd408
 F src/sqliteLimit.h d7323ffea5208c6af2734574bae933ca8ed2ab728083caa117c9738581a31657
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -720,7 +720,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 7a65f64bfe4a783c5e2df73ffb0efc383dec934dee9e3ac706b2eeb3631d17ac
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c 58a3ecca3d688030a9e61d66874e37f1c21a02ada78b4342feca384e7f149ab4
+F src/where.c b74a83b4c8f65b218c5c1c8d9122433f85ee1300fd9263ba1697d0e1040eeb36
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c b300db0bcd84ad6c2642bf3f509f92fad7b7d697b9856b64dd66d692d184d054
 F src/whereexpr.c 22cf19b0ececeaf838daed1039c5231a8778784eba5ad67b991442a23473fd3f
@@ -1407,7 +1407,7 @@ F test/printf.test 512152dca7f2f578f045a5a732e7bee08e4f47a8a212f83ce46791b518eba
 F test/printf2.test 3f55c1871a5a65507416076f6eb97e738d5210aeda7595a74ee895f2224cce60
 F test/progress.test ebab27f670bd0d4eb9d20d49cef96e68141d92fb
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/pushdown.test 043e69055d841f5c4be0ff264b2a9de32d2342c3d71b20a786b0e6656603c66a
+F test/pushdown.test 1495a09837a1cedfc0adf07ba42dc6b83be05a2c15de331b67c39a0e22078238
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quickcheck.test f86b25b33455af0189b4d3fe7bd6e553115e80b2d7ec9bbe9a6b37fce0881bfe
@@ -2069,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e4989c111ddffe6818cbb88a72bd027b30124d1e8de0cce4109c72a214ffb5b8
-R b21c8261c54a385eacafd0ff3e6873f4
+P c5da16551619718bf649c517515261706843e11e131f0b99e1fd6927d0f7e238
+R 19526b8216d20a0f1da8af3749d5cbdb
 U drh
-Z 300738534ea13b0c642673e90b4b2e81
+Z 784c6c524217b70137b2b3907aa60981
 # Remove this line to create a well-formed Fossil manifest.
