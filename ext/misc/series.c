@@ -109,7 +109,17 @@ static sqlite3_int64 genSeqMember(sqlite3_int64 smBase,
   if( ix>=(sqlite3_uint64)LLONG_MAX ){
     /* Get ix into signed i64 range. */
     ix -= (sqlite3_uint64)LLONG_MAX;
-    smBase += LLONG_MAX * smStep;
+    /* With 2's complement ALU, this next can be 1 step, but is split into
+     * 2 for UBSAN's satisfaction (and hypothetical 1's complement ALUs.) */
+    smBase += (LLONG_MAX/2) * smStep;
+    smBase += (LLONG_MAX - LLONG_MAX/2) * smStep;
+  }
+  /* Under UBSAN (or on 1's complement machines), must do this last term
+   * in steps to avoid the dreaded (and harmless) signed multiply overlow. */
+  if( ix>=2 ){
+    sqlite3_int64 ix2 = (sqlite3_int64)ix/2;
+    smBase += ix2*smStep;
+    ix -= ix2;
   }
   return smBase + ((sqlite3_int64)ix)*smStep;
 }
@@ -132,11 +142,21 @@ typedef struct SequenceSpec {
 ** given initialized iBase, iTerm and iStep values. Sequence is
 ** initialized per given isReversing. Other members are computed.
 */
-void setupSequence( SequenceSpec *pss ){
+static void setupSequence( SequenceSpec *pss ){
   pss->uSeqIndexMax = 0;
   pss->isNotEOF = 0;
+  int bSameSigns = (pss->iBase < 0)==(pss->iTerm < 0);
   if( pss->iTerm < pss->iBase ){
-    sqlite3_uint64 nuspan = (sqlite3_uint64)(pss->iBase-pss->iTerm);
+    sqlite3_uint64 nuspan = 0;
+    if( bSameSigns ){
+      nuspan = (sqlite3_uint64)(pss->iBase - pss->iTerm);
+    }else{
+      /* Under UBSAN (or on 1's complement machines), must do this in steps.
+       * In this clause, iBase>=0 and iTerm<0 . */
+      nuspan = 1;
+      nuspan += pss->iBase;
+      nuspan += -(pss->iTerm+1);
+    }
     if( pss->iStep<0 ){
       pss->isNotEOF = 1;
       if( nuspan==ULONG_MAX ){
@@ -146,7 +166,16 @@ void setupSequence( SequenceSpec *pss ){
       }
     }
   }else if( pss->iTerm > pss->iBase ){
-    sqlite3_uint64 puspan = (sqlite3_uint64)(pss->iTerm-pss->iBase);
+    sqlite3_uint64 puspan = 0;
+    if( bSameSigns ){
+      puspan = (sqlite3_uint64)(pss->iTerm - pss->iBase);
+    }else{
+      /* Under UBSAN (or on 1's complement machines), must do this in steps.
+       * In this clause, iTerm>=0 and iBase<0 . */
+      puspan = 1;
+      puspan += pss->iTerm;
+      puspan += -(pss->iBase+1);
+    }
     if( pss->iStep>0 ){
       pss->isNotEOF = 1;
       pss->uSeqIndexMax = puspan/pss->iStep;
@@ -166,7 +195,7 @@ void setupSequence( SequenceSpec *pss ){
 ** Leave its state to either yield next value or be at EOF.
 ** Return whether there is a next value, or 0 at EOF.
 */
-int progressSequence( SequenceSpec *pss ){
+static int progressSequence( SequenceSpec *pss ){
   if( !pss->isNotEOF ) return 0;
   if( pss->isReversing ){
     if( pss->uSeqIndexNow > 0 ){
@@ -301,13 +330,13 @@ static int seriesColumn(
 }
 
 /*
-** Return the rowid for the current row. In this implementation, the
-** first row returned is assigned rowid value 1, and each subsequent
-** row a value 1 more than that of the previous.
+** Return the rowid for the current row, logically equivalent to n+1 where
+** "n" is the ascending integer in the aforesaid production definition.
 */
 static int seriesRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   series_cursor *pCur = (series_cursor*)cur;
-  *pRowid = ((sqlite3_int64)pCur->ss.uSeqIndexNow + 1);
+  sqlite3_uint64 n = pCur->ss.uSeqIndexNow;
+  *pRowid = (sqlite3_int64)((n<0xffffffffffffffff)? n+1 : 0);
   return SQLITE_OK;
 }
 
