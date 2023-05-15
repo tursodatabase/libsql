@@ -1,5 +1,5 @@
-C Fix\swindows-specific\sproblems\sin\stest\sscripts\ssessionnoop2.test\sand\ssessionrowid.test.
-D 2023-05-13T20:01:27.585
+C Simplify\sthe\sinterface\sto\sconstructAutomaticIndex().
+D 2023-05-15T01:02:50.881
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -720,7 +720,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c 7a65f64bfe4a783c5e2df73ffb0efc383dec934dee9e3ac706b2eeb3631d17ac
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c f890a3298418d7cba3b69b8803594fdc484ea241206a8dfa99db6dd36f8cbb3b
-F src/where.c cec6a06508239c09e3637b52a12484fc9a84dc4302d45b4a311cce2ea6e4fd47
+F src/where.c 58a3ecca3d688030a9e61d66874e37f1c21a02ada78b4342feca384e7f149ab4
 F src/whereInt.h e25203e5bfee149f5f1225ae0166cfb4f1e65490c998a024249e98bb0647377c
 F src/wherecode.c b300db0bcd84ad6c2642bf3f509f92fad7b7d697b9856b64dd66d692d184d054
 F src/whereexpr.c 22cf19b0ececeaf838daed1039c5231a8778784eba5ad67b991442a23473fd3f
@@ -2069,8 +2069,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 84ca2000007d217f911a3b1586143fc9261c0697a9e9fadda6bd3dd6afdfb099
-R c933d9f546fb29ddf58309941128fcab
-U dan
-Z 6d76e668d8cb61673b60eec0be9b46ba
+P e4989c111ddffe6818cbb88a72bd027b30124d1e8de0cce4109c72a214ffb5b8
+R b21c8261c54a385eacafd0ff3e6873f4
+U drh
+Z 300738534ea13b0c642673e90b4b2e81
 # Remove this line to create a well-formed Fossil manifest.

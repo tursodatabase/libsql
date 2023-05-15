@@ -870,8 +870,7 @@ static void explainAutomaticIndex(
 */
 static SQLITE_NOINLINE void constructAutomaticIndex(
   Parse *pParse,              /* The parsing context */
-  const WhereClause *pWC,     /* The WHERE clause */
-  const SrcItem *pSrc,        /* The FROM clause term to get the next index */
+  WhereClause *pWC,           /* The WHERE clause */
   const Bitmask notReady,     /* Mask of cursors that are not available */
   WhereLevel *pLevel          /* Write new index here */
 ){
@@ -896,7 +895,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   u8 useBloomFilter = 0;      /* True to also add a Bloom filter */
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
-  SrcItem *pTabItem;          /* FROM clause term being indexed */
+  SrcItem *pSrc;              /* The FROM clause term to get the next index */
   int addrCounter = 0;        /* Address where integer counter is initialized */
   int regBase;                /* Array of registers where record is assembled */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
@@ -912,6 +911,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
   nKeyCol = 0;
+  pSrc = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
   pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   pLoop = pLevel->pWLoop;
@@ -1052,14 +1052,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }
 
   /* Fill the automatic index with content */
-  pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
-  if( pTabItem->fg.viaCoroutine ){
-    int regYield = pTabItem->regReturn;
+  assert( pSrc == &pWC->pWInfo->pTabList->a[pLevel->iFrom] );
+  if( pSrc->fg.viaCoroutine ){
+    int regYield = pSrc->regReturn;
     addrCounter = sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pSrc->addrFillSub);
     addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
     VdbeCoverage(v);
-    VdbeComment((v, "next row of %s", pTabItem->pTab->zName));
+    VdbeComment((v, "next row of %s", pSrc->pTab->zName));
   }else{
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
   }
@@ -1080,14 +1080,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
-  if( pTabItem->fg.viaCoroutine ){
+  if( pSrc->fg.viaCoroutine ){
     sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
     testcase( pParse->db->mallocFailed );
     assert( pLevel->iIdxCur>0 );
     translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
-                          pTabItem->regResult, pLevel->iIdxCur);
+                          pSrc->regResult, pLevel->iIdxCur);
     sqlite3VdbeGoto(v, addrTop);
-    pTabItem->fg.viaCoroutine = 0;
+    pSrc->fg.viaCoroutine = 0;
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
     sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
@@ -6415,11 +6415,11 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeJumpHere(v, iOnce);
       }
     }
+    assert( pTabList == pWInfo->pTabList );
     if( (wsFlags & (WHERE_AUTO_INDEX|WHERE_BLOOMFILTER))!=0 ){
       if( (wsFlags & WHERE_AUTO_INDEX)!=0 ){
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
-        constructAutomaticIndex(pParse, &pWInfo->sWC,
-                  &pTabList->a[pLevel->iFrom], notReady, pLevel);
+        constructAutomaticIndex(pParse, &pWInfo->sWC, notReady, pLevel);
 #endif
       }else{
         sqlite3ConstructBloomFilter(pWInfo, ii, pLevel, notReady);
