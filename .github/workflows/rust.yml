@@ -119,6 +119,28 @@ jobs:
     - name: Run functional tests
       run: make test
 
+  check-openssl:
+    runs-on: ubuntu-latest
+    name: Check that we don't depend on openssl
+    steps:
+    - name: Install minimal stable toolchain with clippy and rustfmt
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    - name: Test openssl
+      shell: bash {0}
+      run: cargo tree -p sqld -i openssl; [ $? = 101 ]
+
   docker:
     runs-on: ubuntu-latest
     name: Build Docker
