@@ -1,5 +1,5 @@
-C Resolve\sthe\sJS-side\scorner\scase\sreported\sin\s[forum:7774b773937cbe0a\s|\sforum\spost\s7774b773937cbe0a]\sby\snot\scaching\soo1.Stmt.columnCount.
-D 2023-05-16T14:18:48.756
+C Increase\sthe\sversion\snumber\sto\s3.43.0\sin\sorder\sto\sbegin\sthe\snext\ndevelopment\scycle.
+D 2023-05-16T14:20:04.873
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -7,7 +7,7 @@ F Makefile.in 764f2e3e8fb4ae1c8dfe03e65b2b3b01bd1fc57edf78ec2cab3a1301e90e1905
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc ce7bea7931e1ef96b0f44c0362074a8bb62e61a0e7cfdb05afebd928adaacc2b
 F README.md e05bd8fcb45da04ab045c37f79a98654e8aa3b3b8f302cfbba80a0d510df75f7
-F VERSION 17f95ae2fdf21f0e9575eb0b0511ea63f15d71dfff431b21c2b4adbfa70cfbbf
+F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
@@ -33,7 +33,7 @@ F autoconf/tea/win/nmakehlp.c b01f822eabbe1ed2b64e70882d97d48402b42d2689a1ea0034
 F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 883205ddf25b46f10c181818bf42c09da9888884af96f79e1719264345053bd6
 F config.sub c2d0260f17f3e4bc0b6808fccf1b291cb5e9126c14fc5890efc77b9fd0175559
-F configure 2f2c090e0a1d051bb53741f0c961f5ebb24507a4f599d686ad6d7ff236144609 x
+F configure 9dc3300339f4d6b3c3b108de60cc6ae6b3c547e25c7e6df280b4775db4de3a1b x
 F configure.ac 4654d32ac0a0d0b48f1e1e79bdc3d777b723cf2f63c33eb1d7c4ed8b435938e8
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
@@ -2070,9 +2070,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 831d0fb2836b71c9bc51067c49fee4b8f18047814f2ff22d817d25195cf350b0 e841b142f583e49350c7cdd14dc4da72434cc67c7b521ae741e03e37e785d7e0
-R 0ef1fb13a841d252487ff68b403f70e3
-T +closed e841b142f583e49350c7cdd14dc4da72434cc67c7b521ae741e03e37e785d7e0 Closed\sby\sintegrate-merge.
-U stephan
-Z b38835aeee87cf1e75a7d5c7de5d0fa7
+P 37d44e8c447626738a8a7f915a9bc3f35fbb95581236dd152fc119b0c3a24c2a
+R 4cc0cf987f7e49496050a3a9278b3c5a
+U drh
+Z d89e1078314b6033b53caa70e26a5316
 # Remove this line to create a well-formed Fossil manifest.
