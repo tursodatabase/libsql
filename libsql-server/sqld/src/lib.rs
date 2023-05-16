@@ -402,11 +402,21 @@ async fn start_primary(
 // TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
 // right after checkpointing is exactly where it should be done.
 async fn run_storage_monitor(mut db_path: PathBuf, stats: Stats) -> anyhow::Result<()> {
-    let duration = tokio::time::Duration::from_secs(60 * 15);
+    let duration = tokio::time::Duration::from_secs(60);
     db_path.push("data");
     loop {
-        let attr = tokio::fs::metadata(&db_path).await;
-        stats.set_storage_bytes_used(attr.map_or(0, |stats| stats.len()));
+        if let Ok(conn) = rusqlite::Connection::open_with_flags(
+            &db_path,
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        ) {
+            if let Ok(storage_bytes_used) =
+                conn.query_row("select sum(pgsize) from dbstat;", [], |row| {
+                    row.get::<usize, u64>(0)
+                })
+            {
+                stats.set_storage_bytes_used(storage_bytes_used);
+            }
+        }
         tokio::time::sleep(duration).await;
     }
 }
