@@ -141,7 +141,7 @@ The following environment variables can be used to configure the `sqld` containe
 - `SQLD_DB_PATH` - Database file, defaults to `iku.db`. Absolute path can be used if you want the file in a different directory than `/var/lib/sqld` - note that the folder needs to be writable for `sqld` user (uid 666).
 - `SQLD_NODE` - Node type, defaults to `primary`. Valid values are `primary`, `replica` or `standalone`.
 
-All other standard `sqld` environment variables work as well. Try `docker container run --rm -it sqld /bin/sqld --help` to view them.
+All other standard `sqld` environment variables work as well. Try `docker container run --rm -it libsql/sqld /bin/sqld --help` to view them.
 
 ### Dependencies
 
