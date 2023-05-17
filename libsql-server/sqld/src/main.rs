@@ -19,7 +19,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// SQL daemon
 #[derive(Debug, Parser)]
 #[command(name = "sqld")]
-#[command(about = "SQL daemon", long_about = None)]
+#[command(about = "SQL daemon", version, long_about = None)]
 struct Cli {
     #[clap(long, short, default_value = "data.sqld", env = "SQLD_DB_PATH")]
     db_path: PathBuf,
