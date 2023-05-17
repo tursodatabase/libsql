@@ -3555,7 +3555,11 @@ int sqlite3BtreeNewDb(Btree *p){
 ** when A already has a read lock, we encourage A to give up and let B
 ** proceed.
 */
-int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
+static SQLITE_NOINLINE int btreeBeginTrans(
+  Btree *p,                 /* The btree in which to start the transactino */
+  int wrflag,               /* True to start a write transaction */
+  int *pSchemaVersion       /* Put schema version number here, if not NULL */
+){
   BtShared *pBt = p->pBt;
   Pager *pPager = pBt->pPager;
   int rc = SQLITE_OK;
@@ -3726,6 +3730,28 @@ trans_begun:
   btreeIntegrity(p);
   sqlite3BtreeLeave(p);
   return rc;
+}
+int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
+  BtShared *pBt;
+  if( p->sharable
+   || p->inTrans==TRANS_NONE
+   || (p->inTrans==TRANS_READ && wrflag!=0)
+  ){
+    return btreeBeginTrans(p,wrflag,pSchemaVersion);
+  }
+  pBt = p->pBt;
+  if( pSchemaVersion ){
+    *pSchemaVersion = get4byte(&pBt->pPage1->aData[40]);
+  }
+  if( wrflag ){
+    /* This call makes sure that the pager has the correct number of
+    ** open savepoints. If the second parameter is greater than 0 and
+    ** the sub-journal is not already open, then it will be opened here.
+    */
+    return sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint);
+  }else{
+    return SQLITE_OK;
+  }
 }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
