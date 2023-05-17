@@ -201,18 +201,35 @@ impl Statement {
     }
 
     pub fn parse(s: &str) -> impl Iterator<Item = Result<Self>> + '_ {
-        fn parse_inner(original: &str, c: Cmd) -> Result<Statement> {
+        fn parse_inner(
+            original: &str,
+            stmt_count: u64,
+            has_more_stmts: bool,
+            c: Cmd,
+        ) -> Result<Statement> {
             let kind =
                 StmtKind::kind(&c).ok_or_else(|| anyhow::anyhow!("unsupported statement"))?;
 
-            // XXX: Temporary workaround for https://github.com/gwenn/lemon-rs/issues/30
-            if let Cmd::Stmt(Stmt::CreateVirtualTable { .. }) = &c {
-                return Ok(Statement {
-                    stmt: original.to_string(),
-                    kind,
-                    is_iud: false,
-                    is_insert: false,
-                });
+            if stmt_count == 1 && !has_more_stmts {
+                // XXX: Temporary workaround for https://github.com/gwenn/lemon-rs/issues/30
+                if let Cmd::Stmt(Stmt::CreateVirtualTable { .. }) = &c {
+                    return Ok(Statement {
+                        stmt: original.to_string(),
+                        kind,
+                        is_iud: false,
+                        is_insert: false,
+                    });
+                }
+
+                // XXX: Temporary workaround for integration with Atlas
+                if let Cmd::Stmt(Stmt::CreateTable { .. }) = &c {
+                    return Ok(Statement {
+                        stmt: original.to_string(),
+                        kind,
+                        is_iud: false,
+                        is_insert: false,
+                    });
+                }
             }
 
             let is_iud = matches!(
@@ -233,20 +250,29 @@ impl Statement {
         // on the heap:
         // - https://github.com/gwenn/lemon-rs/issues/8
         // - https://github.com/gwenn/lemon-rs/pull/19
-        let mut parser = Box::new(Parser::new(s.as_bytes()));
-        std::iter::from_fn(move || match parser.next() {
-            Ok(Some(cmd)) => Some(parse_inner(s, cmd)),
-            Ok(None) => None,
-            Err(sqlite3_parser::lexer::sql::Error::ParserError(
-                ParserError::SyntaxError {
-                    token_type: _,
-                    found: Some(found),
-                },
-                Some((line, col)),
-            )) => Some(Err(anyhow::anyhow!(
-                "syntax error around L{line}:{col}: `{found}`"
-            ))),
-            Err(e) => Some(Err(e.into())),
+        let mut parser = Box::new(Parser::new(s.as_bytes()).peekable());
+        let mut stmt_count = 0;
+        std::iter::from_fn(move || {
+            stmt_count += 1;
+            match parser.next() {
+                Ok(Some(cmd)) => Some(parse_inner(
+                    s,
+                    stmt_count,
+                    parser.peek().map_or(true, |o| o.is_some()),
+                    cmd,
+                )),
+                Ok(None) => None,
+                Err(sqlite3_parser::lexer::sql::Error::ParserError(
+                    ParserError::SyntaxError {
+                        token_type: _,
+                        found: Some(found),
+                    },
+                    Some((line, col)),
+                )) => Some(Err(anyhow::anyhow!(
+                    "syntax error around L{line}:{col}: `{found}`"
+                ))),
+                Err(e) => Some(Err(e.into())),
+            }
         })
     }
 
