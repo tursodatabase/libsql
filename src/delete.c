@@ -35,6 +35,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   pTab = sqlite3LocateTableItem(pParse, 0, pItem);
   sqlite3DeleteTable(pParse->db, pItem->pTab);
   pItem->pTab = pTab;
+  pItem->fg.notCte = 1;
   if( pTab ){
     pTab->nTabRef++;
     if( pItem->fg.isIndexedBy && sqlite3IndexedByLookup(pParse, pItem) ){
