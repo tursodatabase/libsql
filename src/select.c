@@ -3851,11 +3851,14 @@ static Expr *substExpr(
 #endif
     {
       Expr *pNew;
-      int iColumn = pExpr->iColumn;
-      Expr *pCopy = pSubst->pEList->a[iColumn].pExpr;
+      int iColumn;
+      Expr *pCopy;
       Expr ifNullRow;
+      iColumn = pExpr->iColumn;
+      assert( iColumn>=0 );
       assert( pSubst->pEList!=0 && iColumn<pSubst->pEList->nExpr );
       assert( pExpr->pRight==0 );
+      pCopy = pSubst->pEList->a[iColumn].pExpr;
       if( sqlite3ExprIsVector(pCopy) ){
         sqlite3VectorErrorMsg(pSubst->pParse, pCopy);
       }else{
