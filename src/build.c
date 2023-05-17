@@ -2234,7 +2234,7 @@ static void estimateIndexWidth(Index *pIdx){
   for(i=0; i<pIdx->nColumn; i++){
     i16 x = pIdx->aiColumn[i];
     assert( x<pIdx->pTable->nCol );
-    wIndex += x<0 ? 1 : aCol[pIdx->aiColumn[i]].szEst;
+    wIndex += x<0 ? 1 : aCol[x].szEst;
   }
   pIdx->szIdxRow = sqlite3LogEst(wIndex*4);
 }
