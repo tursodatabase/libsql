@@ -429,7 +429,7 @@ pub fn export_dump(mut db: rusqlite::Connection, writer: impl Write) -> anyhow::
         writer,
     };
 
-    writeln!(state.writer, "PRAGMA foreign_keys=OFF")?;
+    writeln!(state.writer, "PRAGMA foreign_keys=OFF;")?;
     writeln!(state.writer, "BEGIN TRANSACTION;")?;
 
     // from sqlite:
