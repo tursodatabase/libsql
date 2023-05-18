@@ -1,5 +1,5 @@
-C Fast-path\sthe\sbtree\stransaction\sstart\sfor\sthe\scommon\scase\swhere\sa\ntransaction\sis\salready\sactive.
-D 2023-05-17T19:23:24.667
+C Fix\sincorrect\sb-tree\sroot\spage\sreports\sfrom\sthe\senhanced\sPRAGMA\sintegrity_check\noutput\sintroduced\sin\sversion\s3.42.0.
+D 2023-05-18T23:25:48.162
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F src/auth.c f4fa91b6a90bbc8e0d0f738aa284551739c9543a367071f55574681e0f24f8cf
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 7c849aac407230278445cb069bebc5f89bf2ddd87c5ed9459b070a9175707b3d
 F src/btmutex.c 6ffb0a22c19e2f9110be0964d0731d2ef1c67b5f7fabfbaeb7b9dabc4b7740ca
-F src/btree.c ecfb015125daff2fe69cc663c9a07f3c43259cbf0fbdf13f3305f88f14a4a262
+F src/btree.c 46a97286ef0d6caedfbbb7d2fb4fc66fe2eee5484458efeddfce85fb5152799b
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h b900603c8956bdeb313841f9b67bdeceef32c64d962d35477c07ec25e8cf0f9b
 F src/build.c 5512d5a335334b48d116f1ecd051edef96a60add18ae48e0ea302a395f00f3d9
@@ -883,7 +883,7 @@ F test/conflict2.test 5557909ce683b1073982f5d1b61dfb1d41e369533bfdaf003180c5bc87
 F test/conflict3.test 81865d9599609aca394fb3b9cd5f561d4729ea5b176bece3644f6ecb540f88ac
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test d7cb0300e4a297147b6a05e92a1684bc8973635c3bcaa3d66e983c9cbdbf47a3
-F test/corrupt2.test 6e0c1e1c2ff4bedde4bc73f16250d74ae5b3d9ece086640ce88b9a94620ba993
+F test/corrupt2.test 9745c55b3ff2d84d9b6dc4f7365f91a99e70d90f3127ebc97ff0549c418e4d3d
 F test/corrupt3.test 6a982535d52c8165654cbc79a043cfd0bf02495a5efbf4754295e056fc548539
 F test/corrupt4.test b5ae41607e8d17d9c1f3e94fdb572ce061ed3beeebdb46fb3a348181b8c8a097
 F test/corrupt5.test 387be3250795e2a86e6234745558b80efb248a357d0cd8e53bce75c7463f545d
@@ -2070,8 +2070,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4fbe02651e877e442d62308d7f607e503695104cd71c5565132fcd1398c120df
-R 1d4ea27d6db6a9e62f6f4b03683e08b9
+P 798c3ff20c606b5f9fde16dc67781f238370a7c450bc239c3a98d0f4ca370399
+Q +81b1bce719813cabf54105d3535015d597e411702643ed21552e0f986b1433db
+R 7232ac4bffc21d1cae8b6d560d491225
 U drh
-Z c7ab7659bb2e2f13db3dbd0d4bde5a0c
+Z b1b3a651bfb46a49ad5f44e127b8207f
 # Remove this line to create a well-formed Fossil manifest.

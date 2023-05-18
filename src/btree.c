@@ -10688,7 +10688,7 @@ static int checkTreePage(
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage) ) return 0;
   pCheck->zPfx = "Tree %u page %u: ";
-  pCheck->v0 = pCheck->v1 = iPage;
+  pCheck->v1 = iPage;
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
@@ -11025,6 +11025,7 @@ int sqlite3BtreeIntegrityCheck(
       checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0);
     }
 #endif
+    sCheck.v0 = aRoot[i];
     checkTreePage(&sCheck, aRoot[i], &notUsed, LARGEST_INT64);
   }
   pBt->db->flags = savedDbFlags;
