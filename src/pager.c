@@ -700,6 +700,7 @@ struct Pager {
   libsql_wal *pWal;                       /* Write-ahead log used by "journal_mode=wal" */
   libsql_wal_methods *pWalMethods; /* Virtual methods for interacting with WAL */
   char *zWal;                      /* File name for write-ahead log */
+  void *pMethodsData;
 #endif
 };
 
@@ -4685,6 +4686,7 @@ int sqlite3PagerFlush(Pager *pPager){
 int sqlite3PagerOpen(
   sqlite3_vfs *pVfs,       /* The virtual file system to use */
   libsql_wal_methods *pWalMethods, /* WAL methods to use */
+  void *pMethodsData,
   Pager **ppPager,         /* OUT: Return the Pager structure here */
   const char *zFilename,   /* Name of the database file to open */
   int nExtra,              /* Extra bytes append to each in-memory page */
@@ -4849,6 +4851,7 @@ int sqlite3PagerOpen(
   pPager->fd = (sqlite3_file*)pPtr;       pPtr += ROUND8(pVfs->szOsFile);
   pPager->sjfd = (sqlite3_file*)pPtr;     pPtr += journalFileSize;
   pPager->jfd =  (sqlite3_file*)pPtr;     pPtr += journalFileSize;
+  pPager->pMethodsData = pMethodsData;
   assert( EIGHT_BYTE_ALIGNMENT(pPager->jfd) );
   memcpy(pPtr, &pPager, sizeof(pPager));  pPtr += sizeof(pPager);
 
@@ -7575,6 +7578,10 @@ static int pagerOpenWal(Pager *pPager){
         pPager->fd, pPager->zWal, pPager->exclusiveMode,
         pPager->journalSizeLimit, pPager->pWalMethods, &pPager->pWal
     );
+
+    if (rc == SQLITE_OK) {
+        pPager->pWal->pMethodsData = pPager->pMethodsData;
+    }
   }
   pagerFixMaplimit(pPager);
 

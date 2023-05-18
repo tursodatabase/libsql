@@ -3766,7 +3766,8 @@ int libsql_open(
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
-  const char *zWal        /* Name of WAL module to use */
+  const char *zWal,       /* Name of WAL module to use */
+  void *pMethodData       /* optional data for the wal methods */
 );
 
 LIBSQL_API int libsql_try_initialize_wasm_func_table(sqlite3 *db);

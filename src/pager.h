@@ -119,6 +119,7 @@ typedef struct libsql_wal_methods libsql_wal_methods;
 int sqlite3PagerOpen(
   sqlite3_vfs*,
   libsql_wal_methods*,
+  void* pMethodsData,
   Pager **ppPager,
   const char*,
   int,

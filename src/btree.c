@@ -2646,7 +2646,7 @@ int sqlite3BtreeOpen(
       rc = SQLITE_NOMEM_BKPT;
       goto btree_open_out;
     }
-    rc = sqlite3PagerOpen(pVfs, pWal, &pBt->pPager, zFilename,
+    rc = sqlite3PagerOpen(pVfs, pWal, db->pMethodsData,&pBt->pPager, zFilename,
                           sizeof(MemPage), flags, vfsFlags, pageReinit);
     if( rc==SQLITE_OK ){
       sqlite3PagerSetMmapLimit(pBt->pPager, db->szMmap);
