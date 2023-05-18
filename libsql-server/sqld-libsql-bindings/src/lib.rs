@@ -45,6 +45,14 @@ impl Deref for Connection {
     }
 }
 
+// Registering WAL methods may be subject to race with the later call to libsql_wal_methods_find,
+// if we overwrite methods with the same name. A short-term solution is to force register+find
+// to be atomic.
+// FIXME: a proper solution (Marin is working on it) is to be able to pass user data as a pointer
+// directly to libsql_open()
+static DB_OPENING_MUTEX: once_cell::sync::Lazy<parking_lot::Mutex<()>> =
+    once_cell::sync::Lazy::new(|| parking_lot::Mutex::new(()));
+
 /// Opens a database with the regular wal methods in the directory pointed to by path
 pub fn open_with_regular_wal(
     path: impl AsRef<std::path::Path>,
@@ -52,6 +60,7 @@ pub fn open_with_regular_wal(
     wal_hook: impl WalHook + 'static,
     with_bottomless: bool,
 ) -> anyhow::Result<Connection> {
+    let opening_lock = DB_OPENING_MUTEX.lock();
     let path = path.as_ref().join("data");
     let wal_methods = unsafe {
         let default_methods = get_orig_wal_methods(false)?;
@@ -78,6 +87,7 @@ pub fn open_with_regular_wal(
         "unix-excl",
         WalMethodsHook::METHODS_NAME_STR,
     )?;
+    drop(opening_lock);
     conn.pragma_update(None, "journal_mode", "wal")?;
 
     Ok(Connection {
