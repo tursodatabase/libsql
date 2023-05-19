@@ -1166,7 +1166,8 @@ self.sqlite3InitModule = sqlite3InitModule;
       try{db.checkRc(rc)}
       catch(e){ex = e}
       T.assert(ex instanceof sqlite3.SQLite3Error)
-        .assert(0===ex.message.indexOf("sqlite3 result code"))
+        .assert(capi.SQLITE_MISUSE===ex.resultCode)
+        .assert(0===ex.message.indexOf("SQLITE_MISUSE: sqlite3 result code"))
         .assert(ex.message.indexOf("Invalid SQL")>0);
       T.assert(db === db.checkRc(0))
         .assert(db === sqlite3.oo1.DB.checkRc(db,0))
