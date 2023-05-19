@@ -1474,7 +1474,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        also called, otherwise any existing bindings, along with
        any memory allocated for them, are retained.
 
-       In verions 3.42.0 and earlier, this function did not throw if
+       In versions 3.42.0 and earlier, this function did not throw if
        sqlite3_reset() returns non-0, but it was discovered that
        throwing (or significant extra client-side code) is necessary
        in order to avoid certain silent failure scenarios, as
