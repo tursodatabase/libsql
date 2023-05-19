@@ -783,7 +783,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        should return:
 
          A) The default value is (usually) `"this"`, meaning that the
-            DB object itself should be returned. The exceptions is if
+            DB object itself should be returned. The exception is if
             the caller passes neither of `callback` nor `returnValue`
             but does pass an explicit `rowMode` then the default
             `returnValue` is `"resultRows"`, described below.
