@@ -478,7 +478,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const __selectFirstRow = (db, sql, bind, ...getArgs)=>{
     const stmt = db.prepare(sql);
     try {
-      return stmt.bind(bind).step() ? stmt.get(...getArgs) : undefined;
+      const rc = stmt.bind(bind).step() ? stmt.get(...getArgs) : undefined;
+      stmt.reset(/*for INSERT...RETURNING locking case*/);
+      return rc;
     }finally{
       stmt.finalize();
     }
@@ -1133,6 +1135,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try {
         stmt.bind(bind);
         while(stmt.step()) rc.push(stmt.get(0,asType));
+        stmt.reset(/*for INSERT...RETURNING locking case*/);
       }finally{
         stmt.finalize();
       }
@@ -1686,7 +1689,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     stepFinalize: function(){
       try{
-        return this.step();
+        const rc = this.step();
+        this.reset(/*for INSERT...RETURNING locking case*/);
+        return rc;
       }finally{
         try{this.finalize()}
         catch(e){/*ignored*/}

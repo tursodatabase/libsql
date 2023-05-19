@@ -1353,7 +1353,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(3n===db.changes(false,true));
       }
       rc = db.exec({
-        sql: "INSERT INTO t values('blob',X'6869') RETURNING 13",
+        sql: "INSERT INTO t(a,b) values('blob',X'6869') RETURNING 13",
         rowMode: 0
       });
       T.assert(Array.isArray(rc))
@@ -1628,7 +1628,19 @@ self.sqlite3InitModule = sqlite3InitModule;
         .assert(3===rc[1].a)
         .assert(4===rc[1].b);
     })
-
+  ////////////////////////////////////////////////////////////////////////
+    .t('selectArray/Object/Values() via INSERT/UPDATE...RETURNING', function(sqlite3){
+      let rc = this.db.selectObject("INSERT INTO t(a,b) VALUES(83,84) RETURNING a as AA");
+      T.assert(83===rc.AA);
+      rc = this.db.selectArray("UPDATE T set a=85 WHERE a=83 RETURNING b as BB");
+      T.assert(Array.isArray(rc)).assert(84===rc[0]);
+      //log("select * from t:",this.db.selectObjects("select * from t order by a"));
+      rc = this.db.selectValues("UPDATE T set a=a*1 RETURNING a");
+      T.assert(Array.isArray(rc))
+        .assert(5 === rc.length)
+        .assert('number'===typeof rc[0])
+        .assert(rc[0]|0 === rc[0] /* is small integer */);
+    })
   ////////////////////////////////////////////////////////////////////////
     .t({
       name: 'sqlite3_js_db_export()',
