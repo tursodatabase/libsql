@@ -12177,7 +12177,7 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
 #endif
 #ifdef SQLITE_ENABLE_MULTIPLEX
     }else if( cli_strcmp(z,"-multiplex")==0 ){
-      extern int sqlite3_multiple_initialize(const char*,int);
+      extern int sqlite3_multiplex_initialize(const char*,int);
       sqlite3_multiplex_initialize(0, 1);
 #endif
     }else if( cli_strcmp(z,"-mmap")==0 ){
