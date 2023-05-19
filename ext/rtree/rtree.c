@@ -2051,7 +2051,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         zIdxStr[iIdx++] = op;
         zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
         pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
-        pIdxInfo->aConstraintUsage[ii].omit = 1;
+        pIdxInfo->aConstraintUsage[ii].omit = (op!=RTREE_EQ);
       }
     }
   }
