@@ -1220,6 +1220,7 @@ self.sqlite3InitModule = sqlite3InitModule;
       );
       //debug("statement =",st);
       this.progressHandlerCount = 0;
+      let rc;
       try {
         T.assert(wasm.isPtr(st.pointer))
           .mustThrowMatching(()=>st.pointer=1, /read-only/)
@@ -1267,10 +1268,11 @@ self.sqlite3InitModule = sqlite3InitModule;
           assert(0===capi.sqlite3_strlike("%.txt", "foo.txt", 0)).
           assert(0!==capi.sqlite3_strlike("%.txt", "foo.xtx", 0));
       }finally{
-        st.finalize();
+        rc = st.finalize();
       }
       T.assert(!st.pointer)
-        .assert(0===this.db.openStatementCount());
+        .assert(0===this.db.openStatementCount())
+        .assert(0===rc);
 
       T.mustThrowMatching(()=>new sqlite3.oo1.Stmt("hi"), function(err){
         return (err instanceof sqlite3.SQLite3Error)
@@ -1460,9 +1462,11 @@ self.sqlite3InitModule = sqlite3InitModule;
         T.assert(0===st.columnCount);
         const ndx = st.getParamIndex(':b');
         T.assert(1===ndx);
-        st.bindAsBlob(ndx, "ima blob").reset(true);
+        st.bindAsBlob(ndx, "ima blob")
+          /*step() skipped intentionally*/.reset(true);
       } finally {
-        st.finalize();
+        T.assert(0===st.finalize())
+          .assert(undefined===st.finalize());        
       }
 
       try {

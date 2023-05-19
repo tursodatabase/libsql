@@ -554,7 +554,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         const pDb = this.pointer;
         Object.keys(__stmtMap.get(this)).forEach((k,s)=>{
-          if(s && s.pointer) s.finalize();
+          if(s && s.pointer){
+            try{s.finalize()}
+            catch(e){/*ignore*/}
+          }
         });
         __ptrMap.delete(this);
         __stmtMap.delete(this);
@@ -878,16 +881,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
                  and names. */) ? 0 : 1;
             evalFirstResult = false;
             if(arg.cbArg || resultRows){
-              for(; stmt.step(); stmt._isLocked = false){
+              for(; stmt.step(); stmt._lockedByExec = false){
                 if(0===gotColNames++) stmt.getColumnNames(opt.columnNames);
-                stmt._isLocked = true;
+                stmt._lockedByExec = true;
                 const row = arg.cbArg(stmt);
                 if(resultRows) resultRows.push(row);
                 if(callback && false === callback.call(opt, row, stmt)){
                   break;
                 }
               }
-              stmt._isLocked = false;
+              stmt._lockedByExec = false;
             }
             if(0===gotColNames){
               /* opt.columnNames was provided but we visited no result rows */
@@ -896,16 +899,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }else{
             stmt.step();
           }
-          stmt.finalize();
+          stmt.reset(
+            /* In order to trigger an exception in the
+               INSERT...RETURNING locking scenario:
+               https://sqlite.org/forum/forumpost/36f7a2e7494897df
+            */).finalize();
           stmt = null;
-        }
+        }/*prepare() loop*/
       }/*catch(e){
         sqlite3.config.warn("DB.exec() is propagating exception",opt,e);
         throw e;
       }*/finally{
         wasm.scopedAllocPop(stack);
         if(stmt){
-          delete stmt._isLocked;
+          delete stmt._lockedByExec;
           stmt.finalize();
         }
       }
@@ -1321,15 +1328,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     If stmt._isLocked is truthy, this throws an exception
+     If stmt._lockedByExec is truthy, this throws an exception
      complaining that the 2nd argument (an operation name,
      e.g. "bind()") is not legal while the statement is "locked".
      Locking happens before an exec()-like callback is passed a
      statement, to ensure that the callback does not mutate or
      finalize the statement. If it does not throw, it returns stmt.
   */
-  const affirmUnlocked = function(stmt,currentOpName){
-    if(stmt._isLocked){
+  const affirmNotLockedByExec = function(stmt,currentOpName){
+    if(stmt._lockedByExec){
       toss3("Operation is illegal when statement is locked:",currentOpName);
     }
     return stmt;
@@ -1342,14 +1349,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      success.
   */
   const bindOne = function f(stmt,ndx,bindType,val){
-    affirmUnlocked(affirmStmtOpen(stmt), 'bind()');
+    affirmNotLockedByExec(affirmStmtOpen(stmt), 'bind()');
     if(!f._){
       f._tooBigInt = (v)=>toss3(
         "BigInt value is too big to store without precision loss:", v
       );
-      /* Reminder: when not in BigInt mode, it's impossible for
-         JS to represent a number out of the range we can bind,
-         so we have no range checking. */
       f._ = {
         string: function(stmt, ndx, val, asBlob){
           const [pStr, n] = wasm.allocCString(val, true);
@@ -1423,33 +1427,28 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   Stmt.prototype = {
     /**
-       "Finalizes" this statement. This is a no-op if the
-       statement has already been finalized. Returns
-       undefined. Most methods in this class will throw if called
-       after this is.
+       "Finalizes" this statement. This is a no-op if the statement
+       has already been finalized. Returns the result of
+       sqlite3_finalize() (0 on success, non-0 on error), or the
+       undefined value if the statement has already been
+       finalized. Regardless of success or failure, most methods in
+       this class will throw if called after this is.
 
        This method always throws if called when it is illegal to do
-       so, e.g. from a per-row callback handler of a DB.exec() call.
-
-       As of versions 3.42.1 and 3.43, this method will throw by
-       default if sqlite3_finalize() returns an error code, which can
-       happen in certain unusual cases involving locking. When it
-       throws for this reason, throwing is delayed until after all
-       resources are cleaned up. That is, the finalization still runs
-       to completion.
+       so. Namely, when triggered via a per-row callback handler of a
+       DB.exec() call.
     */
     finalize: function(){
       if(this.pointer){
-        affirmUnlocked(this,'finalize()');
-        const rc = capi.sqlite3_finalize(this.pointer),
-              db = this.db;
-        delete __stmtMap.get(db)[this.pointer];
+        affirmNotLockedByExec(this,'finalize()');
+        const rc = capi.sqlite3_finalize(this.pointer);
+        delete __stmtMap.get(this.db)[this.pointer];
         __ptrMap.delete(this);
         delete this._mayGet;
         delete this.parameterCount;
-        delete this._isLocked;
+        delete this._lockedByExec;
         delete this.db;
-        checkSqlite3Rc(db, rc);
+        return rc;
       }
     },
     /**
@@ -1459,7 +1458,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        a DB.exec() call).
     */
     clearBindings: function(){
-      affirmUnlocked(affirmStmtOpen(this), 'clearBindings()')
+      affirmNotLockedByExec(affirmStmtOpen(this), 'clearBindings()')
       capi.sqlite3_clear_bindings(this.pointer);
       this._mayGet = false;
       return this;
@@ -1467,19 +1466,24 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /**
        Resets this statement so that it may be step()ed again from the
        beginning. Returns this object. Throws if this statement has
-       been finalized or if it may not legally be reset because it is
-       currently being used from a DB.exec() callback.
+       been finalized, if it may not legally be reset because it is
+       currently being used from a DB.exec() callback, or if the
+       underlying call to sqlite3_reset() returns non-0.
 
        If passed a truthy argument then this.clearBindings() is
        also called, otherwise any existing bindings, along with
        any memory allocated for them, are retained.
 
-       As of versions 3.42.1 and 3.43, this function throws if the
-       underlying call to sqlite3_reset() returns non-0. That is
-       necessary for catching errors in certain locking-related cases.
+       In verions 3.42.0 and earlier, this function did not throw if
+       sqlite3_reset() returns non-0, but it was discovered that
+       throwing (or significant extra client-side code) is necessary
+       in order to avoid certain silent failure scenarios, as
+       discussed at:
+
+       https://sqlite.org/forum/forumpost/36f7a2e7494897df
     */
     reset: function(alsoClearBinds){
-      affirmUnlocked(this,'reset()');
+      affirmNotLockedByExec(this,'reset()');
       if(alsoClearBinds) this.clearBindings();
       const rc = capi.sqlite3_reset(affirmStmtOpen(this).pointer);
       this._mayGet = false;
@@ -1632,7 +1636,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        value is returned.  Throws on error.
     */
     step: function(){
-      affirmUnlocked(this, 'step()');
+      affirmNotLockedByExec(this, 'step()');
       const rc = capi.sqlite3_step(affirmStmtOpen(this).pointer);
       switch(rc){
           case capi.SQLITE_DONE: return this._mayGet = false;
@@ -1681,20 +1685,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        ```
     */
     stepFinalize: function(){
-      let rc, err;
       try{
-        rc = this.step();
-      }catch(e){
-        err = e;
-      }
-      if(err){
+        return this.step();
+      }finally{
         try{this.finalize()}
-        catch(x){/*ignored*/}
-        throw err;
-      }else{
-        this.finalize();
+        catch(e){/*ignored*/}
       }
-      return rc;
     },
     /**
        Fetches the value from the given 0-based column index of
