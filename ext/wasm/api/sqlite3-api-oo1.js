@@ -1431,12 +1431,12 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        This method always throws if called when it is illegal to do
        so, e.g. from a per-row callback handler of a DB.exec() call.
 
-       As of version 3.43, this method will throw if
-       sqlite3_finalize() returns an error code, which can happen in
-       certain unusual cases involving locking. When it throws for
-       this reason, throwing is delayed until after all resources are
-       cleaned up. That is, the finalization still runs to
-       completion.
+       As of versions 3.42.1 and 3.43, this method will throw by
+       default if sqlite3_finalize() returns an error code, which can
+       happen in certain unusual cases involving locking. When it
+       throws for this reason, throwing is delayed until after all
+       resources are cleaned up. That is, the finalization still runs
+       to completion.
     */
     finalize: function(){
       if(this.pointer){
@@ -1465,19 +1465,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return this;
     },
     /**
-       Resets this statement so that it may be step()ed again
-       from the beginning. Returns this object. Throws if this
-       statement has been finalized.
+       Resets this statement so that it may be step()ed again from the
+       beginning. Returns this object. Throws if this statement has
+       been finalized or if it may not legally be reset because it is
+       currently being used from a DB.exec() callback.
 
        If passed a truthy argument then this.clearBindings() is
        also called, otherwise any existing bindings, along with
        any memory allocated for them, are retained.
+
+       As of versions 3.42.1 and 3.43, this function throws if the
+       underlying call to sqlite3_reset() returns non-0. That is
+       necessary for catching errors in certain locking-related cases.
     */
     reset: function(alsoClearBinds){
       affirmUnlocked(this,'reset()');
       if(alsoClearBinds) this.clearBindings();
-      capi.sqlite3_reset(affirmStmtOpen(this).pointer);
+      const rc = capi.sqlite3_reset(affirmStmtOpen(this).pointer);
       this._mayGet = false;
+      checkSqlite3Rc(this.db, rc);
       return this;
     },
     /**
@@ -1661,11 +1667,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return this.reset();
     },
     /**
-       Functions like step() except that it finalizes this statement
-       immediately after stepping unless the step cannot be performed
-       because the statement is locked. Throws on error, but any error
-       other than the statement-is-locked case will also trigger
-       finalization of this statement.
+       Functions like step() except that it calls finalize() on this
+       statement immediately after stepping, even if the step() call
+       throws.
 
        On success, it returns true if the step indicated that a row of
        data was available, else it returns false.
@@ -1677,8 +1681,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        ```
     */
     stepFinalize: function(){
-      const rc = this.step();
-      this.finalize();
+      let rc, err;
+      try{
+        rc = this.step();
+      }catch(e){
+        err = e;
+      }
+      if(err){
+        try{this.finalize()}
+        catch(x){/*ignored*/}
+        throw err;
+      }else{
+        this.finalize();
+      }
       return rc;
     },
     /**
