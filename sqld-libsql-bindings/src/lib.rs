@@ -10,7 +10,9 @@ use std::ops::Deref;
 use anyhow::ensure;
 use wal_hook::OwnedWalMethods;
 
-use crate::{ffi::libsql_wal_methods_register, wal_hook::WalMethodsHook};
+use crate::{
+    ffi::libsql_wal_methods_register, ffi::libsql_wal_methods_unregister, wal_hook::WalMethodsHook,
+};
 
 use self::{
     ffi::{libsql_wal_methods, libsql_wal_methods_find},
@@ -62,7 +64,7 @@ pub fn open_with_regular_wal(
 ) -> anyhow::Result<Connection> {
     let opening_lock = DB_OPENING_MUTEX.lock();
     let path = path.as_ref().join("data");
-    let wal_methods = unsafe {
+    let mut wal_methods = unsafe {
         let default_methods = get_orig_wal_methods(false)?;
         let maybe_bottomless_methods = get_orig_wal_methods(with_bottomless)?;
         let mut wrapped = WalMethodsHook::wrap(default_methods, maybe_bottomless_methods, wal_hook);
@@ -87,6 +89,9 @@ pub fn open_with_regular_wal(
         "unix-excl",
         WalMethodsHook::METHODS_NAME_STR,
     )?;
+    unsafe {
+        libsql_wal_methods_unregister(wal_methods.as_ptr());
+    }
     drop(opening_lock);
     conn.pragma_update(None, "journal_mode", "wal")?;
 
