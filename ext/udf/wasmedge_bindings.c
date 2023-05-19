@@ -175,6 +175,9 @@ libsql_wasm_engine_t *libsql_wasm_engine_new() {
   return NULL;
 }
 
+void libsql_wasm_engine_free(libsql_wasm_engine_t *eng) {
+}
+
 libsql_wasm_module_t *libsql_compile_wasm_module(libsql_wasm_engine_t* engine, const char *pSrcBody, int nBody,
     void *(*alloc_err_buf)(unsigned long long), char **err_msg_buf) {
 

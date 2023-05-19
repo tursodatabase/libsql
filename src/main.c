@@ -1266,6 +1266,11 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   /* Convert the connection into a zombie and then close it.
   */
   db->eOpenState = SQLITE_STATE_ZOMBIE;
+#ifdef LIBSQL_ENABLE_WASM_RUNTIME
+  if (db->wasm.engine) {
+    libsql_wasm_engine_free(db->wasm.engine);
+  }
+#endif
   sqlite3LeaveMutexAndCloseZombie(db);
   return SQLITE_OK;
 }

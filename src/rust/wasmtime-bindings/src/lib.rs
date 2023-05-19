@@ -85,10 +85,12 @@ pub fn libsql_wasm_engine_new() -> *const c_void {
         Err(_) => return std::ptr::null() as *const c_void,
     };
 
-    let engine = Box::new(engine);
-    let engine_ptr = &*engine as *const Engine as *const c_void;
-    std::mem::forget(engine);
-    engine_ptr
+    Box::into_raw(Box::new(engine)) as *const c_void
+}
+
+#[no_mangle]
+pub fn libsql_wasm_engine_free(engine: *mut c_void) {
+    unsafe { Box::from_raw(engine as *mut Engine) };
 }
 
 #[repr(C)]
