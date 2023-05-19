@@ -48,6 +48,7 @@ void libsql_free_wasm_module(void *module);
 ** Creates a new wasm engine
 */
 libsql_wasm_engine_t *libsql_wasm_engine_new();
+void libsql_wasm_engine_free(libsql_wasm_engine_t *);
 
 #endif //LIBSQL_WASM_BINDINGS_H
 #endif //LIBSQL_ENABLE_WASM_RUNTIME

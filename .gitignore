@@ -59,3 +59,4 @@ test/rust_suite/Cargo.lock
 testfixture
 libsql
 src/rust/libsql-shell/target/
+src/rust/wasmtime-bindings/Cargo.lock
