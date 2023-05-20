@@ -371,17 +371,16 @@ impl LogFile {
 
 #[cfg(target_os = "macos")]
 fn atomic_rename(p1: impl AsRef<Path>, p2: impl AsRef<Path>) -> anyhow::Result<()> {
+    use std::ffi::CString;
     use std::os::unix::prelude::OsStrExt;
 
     use nix::libc::renamex_np;
     use nix::libc::RENAME_SWAP;
 
+    let p1 = CString::new(p1.as_ref().as_os_str().as_bytes())?;
+    let p2 = CString::new(p2.as_ref().as_os_str().as_bytes())?;
     unsafe {
-        let ret = renamex_np(
-            p1.as_ref().as_os_str().as_bytes().as_ptr() as _,
-            p2.as_ref().as_os_str().as_bytes().as_ptr() as _,
-            RENAME_SWAP,
-        );
+        let ret = renamex_np(p2.as_ptr(), p1.as_ptr(), RENAME_SWAP);
 
         if ret != 0 {
             bail!("failed to perform snapshot file swap");
