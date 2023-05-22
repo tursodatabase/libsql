@@ -29,12 +29,12 @@ pub enum StmtError {
     TransactionTimeout,
     #[error("Server cannot handle additional transactions")]
     TransactionBusy,
-    #[error("SQLite error: {source}: {message:?}")]
+    #[error("SQLite error: {message}")]
     SqliteError {
         source: rusqlite::ffi::Error,
-        message: Option<String>,
+        message: String,
     },
-    #[error("SQL input error: {source}: {message:?} at offset {offset}")]
+    #[error("SQL input error: {message} (at offset {offset})")]
     SqlInputError {
         source: rusqlite::ffi::Error,
         message: String,
@@ -215,9 +215,13 @@ pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, Sq
         SqldError::LibSqlTxTimeout(_) => StmtError::TransactionTimeout,
         SqldError::LibSqlTxBusy => StmtError::TransactionBusy,
         SqldError::RusqliteError(rusqlite_error) => match rusqlite_error {
-            rusqlite::Error::SqliteFailure(sqlite_error, message) => StmtError::SqliteError {
+            rusqlite::Error::SqliteFailure(sqlite_error, Some(message)) => StmtError::SqliteError {
                 source: sqlite_error,
                 message,
+            },
+            rusqlite::Error::SqliteFailure(sqlite_error, None) => StmtError::SqliteError {
+                message: sqlite_error.to_string(),
+                source: sqlite_error,
             },
             rusqlite::Error::SqlInputError {
                 error: sqlite_error,
