@@ -1907,7 +1907,20 @@ static int rtreeFilter(
             p->pInfo->nCoord = pRtree->nDim2;
             p->pInfo->anQueue = pCsr->anQueue;
             p->pInfo->mxLevel = pRtree->iDepth + 1;
-          }else if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+          }else if( eType==SQLITE_INTEGER ){
+            sqlite3_int64 iVal = sqlite3_value_int64(argv[ii]);
+#ifdef SQLITE_RTREE_INT_ONLY
+            p->u.rValue = iVal;
+#else
+            p->u.rValue = (double)iVal;
+            if( iVal>=((sqlite3_int64)1)<<48
+             || -iVal>=((sqlite3_int64)1)<<48
+            ){
+              if( p->op==RTREE_LT ) p->op = RTREE_LE;
+              if( p->op==RTREE_GT ) p->op = RTREE_GE;
+            }
+#endif
+          }else if( eType==SQLITE_FLOAT ){
 #ifdef SQLITE_RTREE_INT_ONLY
             p->u.rValue = sqlite3_value_int64(argv[ii]);
 #else
@@ -2038,11 +2051,12 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         || p->op==SQLITE_INDEX_CONSTRAINT_MATCH)
     ){
       u8 op;
+      u8 doOmit = 1;
       switch( p->op ){
-        case SQLITE_INDEX_CONSTRAINT_EQ:    op = RTREE_EQ;    break;
-        case SQLITE_INDEX_CONSTRAINT_GT:    op = RTREE_GT;    break;
+        case SQLITE_INDEX_CONSTRAINT_EQ:    op = RTREE_EQ;    doOmit = 0; break;
+        case SQLITE_INDEX_CONSTRAINT_GT:    op = RTREE_GT;    doOmit = 0; break;
         case SQLITE_INDEX_CONSTRAINT_LE:    op = RTREE_LE;    break;
-        case SQLITE_INDEX_CONSTRAINT_LT:    op = RTREE_LT;    break;
+        case SQLITE_INDEX_CONSTRAINT_LT:    op = RTREE_LT;    doOmit = 0; break;
         case SQLITE_INDEX_CONSTRAINT_GE:    op = RTREE_GE;    break;
         case SQLITE_INDEX_CONSTRAINT_MATCH: op = RTREE_MATCH; break;
         default:                            op = 0;           break;
@@ -2051,7 +2065,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
         zIdxStr[iIdx++] = op;
         zIdxStr[iIdx++] = (char)(p->iColumn - 1 + '0');
         pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
-        pIdxInfo->aConstraintUsage[ii].omit = (op!=RTREE_EQ);
+        pIdxInfo->aConstraintUsage[ii].omit = doOmit;
       }
     }
   }
