@@ -228,6 +228,7 @@ typedef unsigned char u8;
 #if SQLITE_OS_WINRT
 #include <intrin.h>
 #endif
+#undef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -6014,7 +6015,7 @@ static void tryToCloneData(
   if( rc ){
     utf8_printf(stderr, "Error %d: %s on [%s]\n",
             sqlite3_extended_errcode(newDb), sqlite3_errmsg(newDb),
-            zQuery);
+            zInsert);
     goto end_data_xfer;
   }
   for(k=0; k<2; k++){
