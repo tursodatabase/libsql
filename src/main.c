@@ -3222,7 +3222,7 @@ static int openDatabase(
   unsigned int flags,    /* Operational flags */
   const char *zVfs,      /* Name of the VFS to use */
   const char *zWal,      /* Name of WAL module to use */
-  void* pMethodsData            /* Pointer to the user data*/
+  void* pWalMethodsData  /* Pointer to the user data*/
 ){
   sqlite3 *db;                    /* Store allocated handle here */
   int rc;                         /* Return code */
@@ -3281,8 +3281,8 @@ static int openDatabase(
 
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
-  db->pMethodsData = pMethodsData;
   if( db==0 ) goto opendb_out;
+  db->pWalMethodsData = pWalMethodsData;
   if( isThreadsafe 
 #ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
    || sqlite3GlobalConfig.bCoreMutex
@@ -3468,7 +3468,6 @@ static int openDatabase(
   /* Open the backend database driver */
   rc = sqlite3BtreeOpen(db->pVfs, db->pWalMethods, zOpen, db, &db->aDb[0].pBt, 0,
                         flags | SQLITE_OPEN_MAIN_DB);
-
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_IOERR_NOMEM ){
       rc = SQLITE_NOMEM_BKPT;
@@ -3602,10 +3601,20 @@ int libsql_open(
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
-  const char *zWal,       /* Name of WAL module to use */
-  void* pMethodsData
+  const char *zWal        /* Name of WAL module to use */
 ) {
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, zWal, pMethodsData);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, zWal, NULL);
+}
+
+int libsql_open_v2(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal,       /* Name of WAL module to use */
+  void* pWalMethodsData   /* User data, passed to the libsql_wal struct*/
+) {
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, zWal, pWalMethodsData);
 }
 
 #ifndef SQLITE_OMIT_UTF16

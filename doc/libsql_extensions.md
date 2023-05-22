@@ -214,6 +214,8 @@ to manage it:
 ```
 , and they are quite self-descriptive. They also work similarly to their `sqlite3_vfs*` counterparts, which they were modeled after.
 
+It is important to note that wal_methods in themselves should be stateless. There are registered globally, and accessible from every connection. When state needs to be accessed from the WAL methods, state can be passed as the 7th argument to `libsql_open_v2`. This state will then become accessible in the `pMethodData` field of the `libsql_wal` struct passed to the WAL methods.
+
 ### Using WAL methods
 
 Custom WAL methods need to be declared when opening a new database connection.

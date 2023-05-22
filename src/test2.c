@@ -65,7 +65,7 @@ static int SQLITE_TCLAPI pager_open(
 #ifndef SQLITE_OMIT_WAL
   pWalMethods = libsql_wal_methods_find(NULL);
 #endif
-  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), pWalMethods, NULL,&pPager, argv[1], 0, 0,
+  rc = sqlite3PagerOpen(sqlite3_vfs_find(0), pWalMethods, NULL, &pPager, argv[1], 0, 0,
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB,
       pager_test_reiniter);
   if( rc!=SQLITE_OK ){
