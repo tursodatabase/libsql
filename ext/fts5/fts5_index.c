@@ -4636,7 +4636,7 @@ static void fts5SecureDeleteOverflow(
       pLeaf = 0;
     }else if( bDetailNone ){
       break;
-    }else if( iNext>=pLeaf->szLeaf || iNext<4 ){
+    }else if( iNext>=pLeaf->szLeaf || pLeaf->nn<pLeaf->szLeaf || iNext<4 ){
       p->rc = FTS5_CORRUPT;
       break;
     }else{
