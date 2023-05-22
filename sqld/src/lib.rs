@@ -97,6 +97,8 @@ pub struct Config {
     pub heartbeat_url: Option<String>,
     pub heartbeat_auth: Option<String>,
     pub heartbeat_period: Duration,
+    pub soft_heap_limit_mb: Option<usize>,
+    pub hard_heap_limit_mb: Option<usize>,
 }
 
 async fn run_service(
@@ -441,6 +443,19 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
     #[cfg(feature = "bottomless")]
     if config.enable_bottomless_replication {
         bottomless::static_init::register_bottomless_methods();
+    }
+
+    if let Some(soft_limit_mb) = config.soft_heap_limit_mb {
+        tracing::warn!("Setting soft heap limit to {soft_limit_mb}MiB");
+        unsafe {
+            sqld_libsql_bindings::ffi::sqlite3_soft_heap_limit64(soft_limit_mb as i64 * 1024 * 1024)
+        };
+    }
+    if let Some(hard_limit_mb) = config.hard_heap_limit_mb {
+        tracing::warn!("Setting hard heap limit to {hard_limit_mb}MiB");
+        unsafe {
+            sqld_libsql_bindings::ffi::sqlite3_hard_heap_limit64(hard_limit_mb as i64 * 1024 * 1024)
+        };
     }
 
     loop {
