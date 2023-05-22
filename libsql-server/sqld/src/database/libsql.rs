@@ -284,6 +284,8 @@ impl Connection {
     }
 
     fn execute_query_inner(&self, query: &Query) -> QueryResult {
+        tracing::trace!("executing query: {}", query.stmt.stmt);
+
         let mut rows = vec![];
         let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
         let columns = stmt
