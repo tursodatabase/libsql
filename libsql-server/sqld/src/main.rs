@@ -149,6 +149,15 @@ struct Cli {
     /// By default, the the period is 30 seconds.
     #[clap(long, env = "SQLD_HEARTBEAT_PERIOD_S", default_value = "30")]
     heartbeat_period_s: u64,
+
+    /// Soft heap size limit in mebibytes - libSQL will try to not go over this limit with memory usage.
+    #[clap(long, env = "SQLD_SOFT_HEAP_LIMIT_MB")]
+    soft_heap_limit_mb: Option<usize>,
+
+    /// Hard heap size limit in mebibytes - libSQL will bail out with SQLITE_NOMEM error
+    /// if it goes over this limit with memory usage.
+    #[clap(long, env = "SQLD_HARD_HEAP_LIMIT_MB")]
+    hard_heap_limit_mb: Option<usize>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -250,6 +259,8 @@ fn config_from_args(args: Cli) -> Result<Config> {
         heartbeat_url: args.heartbeat_url,
         heartbeat_auth: args.heartbeat_auth,
         heartbeat_period: Duration::from_secs(args.heartbeat_period_s),
+        soft_heap_limit_mb: args.soft_heap_limit_mb,
+        hard_heap_limit_mb: args.hard_heap_limit_mb,
     })
 }
 
