@@ -2407,7 +2407,7 @@ case OP_Compare: {
 /* Opcode: Jump P1 P2 P3 * *
 **
 ** Jump to the instruction at address P1, P2, or P3 depending on whether
-** in the most recent OP_Compare instruction the P1 vector was less than
+** in the most recent OP_Compare instruction the P1 vector was less than,
 ** equal to, or greater than the P2 vector, respectively.
 **
 ** This opcode must immediately follow an OP_Compare opcode.
@@ -2753,7 +2753,7 @@ case OP_IfNullRow: {         /* jump */
   VdbeCursor *pC;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  if( ALWAYS(pC) && pC->nullRow ){
+  if( pC && pC->nullRow ){
     sqlite3VdbeMemSetNull(aMem + pOp->p3);
     goto jump_to_p2;
   }
@@ -3248,7 +3248,7 @@ case OP_Affinity: {
       }else{
         pIn1->u.r = (double)pIn1->u.i;
         pIn1->flags |= MEM_Real;
-        pIn1->flags &= ~MEM_Int;
+        pIn1->flags &= ~(MEM_Int|MEM_Str);
       }
     }
     REGISTER_TRACE((int)(pIn1-aMem), pIn1);

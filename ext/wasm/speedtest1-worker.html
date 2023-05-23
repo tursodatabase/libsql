@@ -23,7 +23,7 @@
     </figure>
     <div class="emscripten" id="module-status">Downloading...</div>
     <div class="emscripten">
-      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>
     </div><!-- /emscripten bits -->
     <fieldset id='ui-controls' class='hidden'>
       <legend>Options</legend>
@@ -68,10 +68,9 @@
       <ul>
         <li>Control-click the flags to (de)select multiple flags.</li>
         <li>The <tt>--big-transactions</tt> flag is important for two
-          of the bigger tests. Without it, those tests create a
-          combined total of 140k implicit transactions, reducing their
-          speed to an absolute crawl, especially when WASMFS is
-          activated.
+          of the bigger tests. Without it, those tests create many
+          thousands of implicit transactions, reducing the affected
+          tests to an absolute crawl, in particular with OPFS.
         </li>
         <li>The easiest way to try different optimization levels is,
           from this directory:

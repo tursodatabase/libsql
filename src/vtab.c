@@ -1102,7 +1102,10 @@ int sqlite3VtabSavepoint(sqlite3 *db, int op, int iSavepoint){
             break;
         }
         if( xMethod && pVTab->iSavepoint>iSavepoint ){
+          u64 savedFlags = (db->flags & SQLITE_Defensive);
+          db->flags &= ~(u64)SQLITE_Defensive;
           rc = xMethod(pVTab->pVtab, iSavepoint);
+          db->flags |= savedFlags;
         }
         sqlite3VtabUnlock(pVTab);
       }

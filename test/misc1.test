@@ -592,6 +592,9 @@ do_test misc1-18.1 {
   set n [sqlite3_sleep 100]
   expr {$n>=100}
 } {1}
+do_test misc1-18.2 {
+  sqlite3_sleep -100
+} {0}
 
 # 2014-01-10:  In a CREATE TABLE AS, if one or more of the column names
 # are an empty string, that is still OK.

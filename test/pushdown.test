@@ -184,4 +184,47 @@ do_eqp_test 3.8 {
 # The query should be converted into:
 #   SELECT (SELECT count(*) FROM t1)+(SELECT count(*) FROM t2)
 
+# 2023-05-09 https://sqlite.org/forum/forumpost/a7d4be7fb6
+# Restriction (9) on the push-down optimization.
+# 
+reset_db
+db null -
+do_execsql_test 4.1 {
+  CREATE TABLE t1(a INT);
+  CREATE TABLE t2(b INT);
+  CREATE TABLE t3(c INT);
+  INSERT INTO t3(c) VALUES(3);
+  CREATE TABLE t4(d INT);
+  CREATE TABLE t5(e INT);
+  INSERT INTO t5(e) VALUES(5);
+  CREATE VIEW v6(f,g) AS SELECT d, e FROM t4 RIGHT JOIN t5 ON true;
+  SELECT * FROM  t1 JOIN t2 ON false RIGHT JOIN t3 ON true CROSS JOIN v6;
+} {- - 3 - 5}
+do_execsql_test 4.2 {
+  SELECT * FROM v6 JOIN t5 ON false RIGHT JOIN t3 ON true;
+} {- - - 3}
+do_execsql_test 4.3 {
+  SELECT * FROM t1 JOIN t2 ON false JOIN v6 ON true RIGHT JOIN t3 ON true;
+} {- - - - 3}
+
+# 2023-05-15 https://sqlite.org/forum/forumpost/f3f546025a
+# This is restriction (6) on sqlite3ExprIsSingleTableConstraint().
+# That restriction (now) used to implement restriction (9) on push-down.
+# It is used for other things too, so it is not purely a push-down
+# restriction.  But it seems convenient to put it here.
+#
+reset_db
+db null -
+do_execsql_test 5.0 {
+  CREATE TABLE t1(a INT);  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(b INT);  INSERT INTO t2 VALUES(2);
+  CREATE TABLE t3(c INT);  INSERT INTO t3 VALUES(3);
+  CREATE TABLE t4(d INT);  INSERT INTO t4 VALUES(4);
+  CREATE TABLE t5(e INT);  INSERT INTO t5 VALUES(5);
+  SELECT *
+    FROM t1 JOIN t2 ON null RIGHT JOIN t3 ON true
+          LEFT JOIN (t4 JOIN t5 ON d+1=e) ON d=4
+   WHERE e>0;
+} {- - 3 4 5}
+
 finish_test

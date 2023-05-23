@@ -316,5 +316,51 @@ do_execsql_test 16.9 {
   COMMIT;
 } {1 2 3 4}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 17.1 {
+  CREATE TABLE t(a, PRIMARY KEY(a, a COLLATE NOCASE)) WITHOUT ROWID;
+  INSERT INTO t VALUES('abc');
+  INSERT INTO t VALUES('def');
+}
+do_test 17.2 {
+  set R [sqlite3_recover_init db main test.db2]
+  $R run
+  list [catch { $R finish } msg] $msg
+} {0 {}}
+
+#-------------------------------------------------------------------------
+foreach enc {utf8 utf16 utf16le utf16be} {
+  reset_db
+  do_execsql_test 18.$enc.1 {
+    PRAGMA auto_vacuum = 0;
+    PRAGMA encoding='utf16';
+    CREATE TABLE t1(a, b);
+    CREATE TABLE t2(a, b);
+    INSERT INTO t1 VALUES('abc', 'def');
+    PRAGMA writable_schema = 1;
+    DELETE FROM sqlite_schema WHERE name='t1';
+  }
+
+  proc my_sql_hook {sql} {
+    if {[string match "INSERT INTO lostandfound*" $sql]} {
+      lappend ::script $sql
+    }
+    return 0
+  }
+  do_test 18.$enc.2 {
+    set ::script [list]
+    set R [sqlite3_recover_init_sql db main my_sql_hook]
+    $R config lostandfound lostandfound
+    $R run
+    $R finish
+    set ::script
+  } {{INSERT INTO lostandfound VALUES(2, 2, 2, 1, 'abc', 'def')}}
+}
+
+
+
+
+
 finish_test
 

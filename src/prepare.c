@@ -702,7 +702,11 @@ static int sqlite3Prepare(
   sParse.db = db;
   sParse.pReprepare = pReprepare;
   assert( ppStmt && *ppStmt==0 );
-  if( db->mallocFailed ) sqlite3ErrorMsg(&sParse, "out of memory");
+  if( db->mallocFailed ){
+    sqlite3ErrorMsg(&sParse, "out of memory");
+    db->errCode = rc = SQLITE_NOMEM;
+    goto end_prepare;
+  }
   assert( sqlite3_mutex_held(db->mutex) );
 
   /* For a long-term use prepared statement avoid the use of

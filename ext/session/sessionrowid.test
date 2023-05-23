@@ -1,0 +1,282 @@
+# 2011 Mar 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the session module.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix sessionrowid
+
+do_execsql_test 0.0 { 
+  CREATE TABLE t1(a, b);
+}
+
+foreach {tn rowid bEmpty} {
+  1 0    1
+  2 1    0
+  3 -1   1
+} {
+  do_test 0.$tn {
+    sqlite3session S db main
+    if {$rowid>=0} { S object_config rowid $rowid }
+    S attach t1
+    execsql { INSERT INTO t1 VALUES(1, 2); }
+    expr [string length [S changeset]]==0
+  } $bEmpty
+  S delete
+}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 1.0 { 
+  CREATE TABLE t1(a, b);
+}
+
+do_iterator_test 1.1 t1 {
+  INSERT INTO t1 VALUES('i', 'one');
+} {
+  {INSERT t1 0 X.. {} {i 1 t i t one}}
+}
+
+do_execsql_test 1.2 {
+  SELECT rowid, * FROM t1
+} {1 i one}
+
+do_iterator_test 1.3 t1 {
+  UPDATE t1 SET b='two'
+} {
+  {UPDATE t1 0 X.. {i 1 {} {} t one} {{} {} {} {} t two}}
+}
+
+do_iterator_test 1.4 t1 {
+  DELETE FROM t1;
+} {
+  {DELETE t1 0 X.. {i 1 t i t two} {}}
+}
+
+do_iterator_test 1.5 t1 {
+  INSERT INTO t1(rowid, a, b) VALUES(14, 'hello', 'world');
+  INSERT INTO t1(rowid, a, b) VALUES(NULL, 'yes', 'no');
+  INSERT INTO t1(rowid, a, b) VALUES(-123, 'ii', 'iii');
+} {
+  {INSERT t1 0 X.. {} {i -123 t ii t iii}}
+  {INSERT t1 0 X.. {} {i 15 t yes t no}}
+  {INSERT t1 0 X.. {} {i 14 t hello t world}}
+}
+
+do_iterator_test 1.6 t1 {
+  UPDATE t1 SET a='deluxe' WHERE rowid=14;
+  DELETE FROM t1 WHERE rowid=-123;
+  INSERT INTO t1 VALUES('x', 'xi');
+} {
+  {DELETE t1 0 X.. {i -123 t ii t iii} {}}
+  {UPDATE t1 0 X.. {i 14 t hello {} {}} {{} {} t deluxe {} {}}}
+  {INSERT t1 0 X.. {} {i 16 t x t xi}}
+}
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a, b);
+}
+do_execsql_test -db db2 2.0.1 {
+  CREATE TABLE t1(a, b);
+}
+
+proc xConflict {args} { 
+  puts "CONFLICT!"
+  return "OMIT" 
+}
+
+do_test 2.1 {
+  set C [changeset_from_sql {
+    INSERT INTO t1 VALUES('abc', 'def');
+  }]
+  sqlite3changeset_apply db2 $C xConflict
+  execsql { SELECT * FROM t1 } db2
+} {abc def}
+do_test 2.2 {
+  set C [changeset_from_sql {
+    UPDATE t1 SET b='hello'
+  }]
+  sqlite3changeset_apply db2 $C xConflict
+  execsql { SELECT * FROM t1 } db2
+} {abc hello}
+do_test 2.3 {
+  set C [changeset_from_sql {
+    DELETE FROM t1 WHERE b='hello'
+  }]
+  sqlite3changeset_apply db2 $C xConflict
+  execsql { SELECT * FROM t1 } db2
+} {}
+
+do_test 2.4 {
+  do_then_apply_sql {
+    INSERT INTO t1 VALUES('i', 'one');
+    INSERT INTO t1 VALUES('ii', 'two');
+    INSERT INTO t1 VALUES('iii', 'three');
+    INSERT INTO t1 VALUES('iv', 'four');
+  }
+  compare_db db db2
+} {}
+
+do_test 2.5 {
+  do_then_apply_sql {
+    DELETE FROM t1 WHERE a='ii';
+    UPDATE t1 SET b='THREE' WHERE a='iii';
+    UPDATE t1 SET a='III' WHERE a='iii';
+    INSERT INTO t1 VALUES('v', 'five');
+  }
+  compare_db db db2
+} {}
+
+do_execsql_test 2.6 {SELECT * FROM t1} {i one III THREE iv four v five}
+do_execsql_test -db db2 2.7 {SELECT * FROM t1} {i one III THREE iv four v five}
+
+#-------------------------------------------------------------------------
+db2 close
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+set init_sql {
+  CREATE TABlE t4(a, b);
+  CREATE INDEX t4a ON t4(a);
+  CREATE UNIQUE INDEX t4b ON t4(b);
+}
+
+do_execsql_test 3.0 $init_sql
+do_execsql_test -db db2 3.0a $init_sql
+
+do_execsql_test -db db2 3.1 {
+  INSERT INTO t4(rowid, a, b) VALUES(43, 'hello', 'world');
+}
+do_conflict_test 3.2 -sql {
+  INSERT INTO t4(rowid, a, b) VALUES(43, 'abc', 'def');
+} -tables t4 -conflicts {
+  {INSERT t4 CONFLICT {i 43 t abc t def} {i 43 t hello t world}}
+}
+do_execsql_test -db db2 3.3 {
+  SELECT * FROM t4
+} {hello world}
+
+do_execsql_test 3.4 { DELETE FROM t4 }
+do_conflict_test 3.5 -sql {
+  INSERT INTO t4(rowid, a, b) VALUES(43, 'abc', 'def');
+} -tables t4 -conflicts {
+  {INSERT t4 CONFLICT {i 43 t abc t def} {i 43 t hello t world}}
+} -policy REPLACE
+do_execsql_test -db db2 3.6 {
+  SELECT * FROM t4
+} {abc def}
+
+do_execsql_test 3.7 { DELETE FROM t4 }
+do_conflict_test 3.8 -sql {
+  INSERT INTO t4(rowid, a, b) VALUES(45, 'xyz', 'def');
+} -tables t4 -conflicts {
+  {INSERT t4 CONSTRAINT {i 45 t xyz t def}}
+} 
+do_execsql_test -db db2 3.9 {
+  SELECT * FROM t4
+} {abc def}
+
+
+do_execsql_test -db db  3.10a { DELETE FROM t4 }
+do_execsql_test -db db2 3.10b { DELETE FROM t4 }
+
+do_execsql_test -db db 3.11a {
+  INSERT INTO t4(rowid, a, b) VALUES(111, 'one', 'one');
+  INSERT INTO t4(rowid, a, b) VALUES(222, 'two', 'two');
+}
+do_execsql_test -db db2 3.11b {
+  INSERT INTO t4(rowid, a, b) VALUES(111, 'one', 'blip');
+}
+
+do_conflict_test 3.12 -sql {
+  DELETE FROM t4 WHERE a='one';
+} -tables t4 -conflicts {
+  {DELETE t4 DATA {i 111 t one t one} {i 111 t one t blip}}
+} 
+do_execsql_test -db db2 3.13 {
+  SELECT * FROM t4
+} {one blip}
+
+do_conflict_test 3.14 -sql {
+  DELETE FROM t4 WHERE a='two';
+} -tables t4 -conflicts {
+  {DELETE t4 NOTFOUND {i 222 t two t two}}
+} 
+do_execsql_test -db db2 3.15 {
+  SELECT * FROM t4
+} {one blip}
+
+do_execsql_test -db db  3.16a { DELETE FROM t4 }
+do_execsql_test -db db2 3.16b { DELETE FROM t4 }
+
+do_execsql_test -db db 3.17a {
+  INSERT INTO t4(rowid, a, b) VALUES(111, 'one', 'one');
+  INSERT INTO t4(rowid, a, b) VALUES(222, 'two', 'two');
+}
+do_execsql_test -db db2 3.17b {
+  INSERT INTO t4(rowid, a, b) VALUES(111, 'one', 'blip');
+}
+
+do_conflict_test 3.18 -sql {
+  UPDATE t4 SET b='xyz' WHERE a='one'
+} -tables t4 -conflicts {
+  {UPDATE t4 DATA {i 111 {} {} t one} {{} {} {} {} t xyz} {i 111 t one t blip}}
+} 
+do_execsql_test -db db2 3.19 {
+  SELECT * FROM t4
+} {one blip}
+
+do_conflict_test 3.20 -sql {
+  UPDATE t4 SET b='123' WHERE a='two'
+} -tables t4 -conflicts {
+  {UPDATE t4 NOTFOUND {i 222 {} {} t two} {{} {} {} {} t 123}}
+} 
+do_execsql_test -db db2 3.21 {
+  SELECT * FROM t4
+} {one blip}
+db2 close
+
+#--------------------------------------------------------------------------
+breakpoint
+do_diff_test 4.0 {
+  CREATE TABLE t1(x, y);
+  CREATE TABLE aux.t1(x, y);
+  INSERT INTO t1 VALUES(1, 2);
+}
+
+do_diff_test 4.1 {
+  CREATE TABLE t1(x, y);
+  CREATE TABLE aux.t1(x, y);
+  INSERT INTO aux.t1 VALUES(1, 2);
+}
+
+do_diff_test 4.2 {
+  CREATE TABLE t1(x, y);
+  CREATE TABLE aux.t1(x, y);
+  INSERT INTO t1(rowid, x, y) VALUES(413, 'hello', 'there');
+  INSERT INTO aux.t1(rowid, x, y) VALUES(413, 'hello', 'world');
+}
+
+finish_test
+

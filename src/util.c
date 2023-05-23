@@ -843,7 +843,9 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
       u = u*16 + sqlite3HexToInt(z[k]);
     }
     memcpy(pOut, &u, 8);
-    return (z[k]==0 && k-i<=16) ? 0 : 2;
+    if( k-i>16 ) return 2;
+    if( z[k]!=0 ) return 1;
+    return 0;
   }else
 #endif /* SQLITE_OMIT_HEX_INTEGER */
   {

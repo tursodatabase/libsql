@@ -310,12 +310,33 @@ do_execsql_test json-6.1 {
   SELECT json_valid('{"a":55,"b":72,}');
 } {0}
 do_execsql_test json-6.2 {
+  SELECT json_error_position('{"a":55,"b":72,}');
+} {0}
+do_execsql_test json-6.3 {
+  SELECT json_valid(json('{"a":55,"b":72,}'));
+} {1}
+do_execsql_test json-6.4 {
+  SELECT json_valid('{"a":55,"b":72 , }');
+} {0}
+do_execsql_test json-6.5 {
+  SELECT json_error_position('{"a":55,"b":72 , }');
+} {0}
+do_execsql_test json-6.6 {
+  SELECT json_error_position('{"a":55,"b":72,,}');
+} {16}
+do_execsql_test json-6.7 {
   SELECT json_valid('{"a":55,"b":72}');
 } {1}
-do_execsql_test json-6.3 {
-  SELECT json_valid('["a",55,"b",72,]');
+do_execsql_test json-6.8 {
+  SELECT json_error_position('["a",55,"b",72,]');
 } {0}
-do_execsql_test json-6.4 {
+do_execsql_test json-6.9 {
+  SELECT json_error_position('["a",55,"b",72 , ]');
+} {0}
+do_execsql_test json-6.10 {
+  SELECT json_error_position('["a",55,"b",72,,]');
+} {16}
+do_execsql_test json-6.11 {
   SELECT json_valid('["a",55,"b",72]');
 } {1}
 
@@ -700,20 +721,20 @@ do_execsql_test json-10.95 {
 #
 do_execsql_test json-11.0 {
   /* Shallow enough to be parsed */
-  SELECT json_valid(printf('%.2000c0%.2000c','[',']'));
+  SELECT json_valid(printf('%.1000c0%.1000c','[',']'));
 } {1}
 do_execsql_test json-11.1 {
   /* Too deep by one */
-  SELECT json_valid(printf('%.2001c0%.2001c','[',']'));
+  SELECT json_valid(printf('%.1001c0%.1001c','[',']'));
 } {0}
 do_execsql_test json-11.2 {
   /* Shallow enough to be parsed { */
-  SELECT json_valid(replace(printf('%.2000c0%.2000c','[','}'),'[','{"a":'));
+  SELECT json_valid(replace(printf('%.1000c0%.1000c','[','}'),'[','{"a":'));
   /* } */
 } {1}
 do_execsql_test json-11.3 {
   /* Too deep by one { */
-  SELECT json_valid(replace(printf('%.2001c0%.2001c','[','}'),'[','{"a":'));
+  SELECT json_valid(replace(printf('%.1001c0%.1001c','[','}'),'[','{"a":'));
   /* } */
 } {0}
 
@@ -896,5 +917,98 @@ do_execsql_test json-20.2 {
 do_execsql_test json-20.3 {
   SELECT json_object('a',2e370,'b',-3e380)->>'b';
 } {-Inf}
+
+# 2023-05-02 https://sqlite.org/forum/forumpost/06c6334412
+# JSON functions should normally return NULL when given
+# a NULL value as the JSON input.
+#
+db null NULL
+do_execsql_test json-21.1 {
+  SELECT json_valid(NULL);
+} NULL
+do_execsql_test json-21.2 {
+  SELECT json_error_position(NULL);
+} NULL
+do_execsql_test json-21.3 {
+  SELECT json(NULL);
+} NULL
+do_execsql_test json-21.4 {
+  SELECT json_array(NULL);
+} {[null]}
+do_execsql_test json-21.5 {
+  SELECT json_extract(NULL);
+} NULL
+do_execsql_test json-21.6 {
+  SELECT json_insert(NULL,'$',123);
+} NULL
+do_execsql_test json-21.7 {
+  SELECT NULL->0;
+} NULL
+do_execsql_test json-21.8 {
+  SELECT NULL->>0;
+} NULL
+do_execsql_test json-21.9 {
+  SELECT '{a:5}'->NULL;
+} NULL
+do_execsql_test json-21.10 {
+  SELECT '{a:5}'->>NULL;
+} NULL
+do_catchsql_test json-21.11 {
+  SELECT json_object(NULL,5);
+} {1 {json_object() labels must be TEXT}}
+do_execsql_test json-21.12 {
+  SELECT json_patch(NULL,'{a:5}');
+} NULL
+do_execsql_test json-21.13 {
+  SELECT json_patch('{a:5}',NULL);
+} NULL
+do_execsql_test json-21.14 {
+  SELECT json_patch(NULL,NULL);
+} NULL
+do_execsql_test json-21.15 {
+  SELECT json_remove(NULL,'$');
+} NULL
+do_execsql_test json-21.16 {
+  SELECT json_remove('{a:5,b:7}',NULL);
+} NULL
+do_execsql_test json-21.17 {
+  SELECT json_replace(NULL,'$.a',123);
+} NULL
+do_execsql_test json-21.18 {
+  SELECT json_replace('{a:5,b:7}',NULL,NULL);
+} {{{"a":5,"b":7}}}
+do_execsql_test json-21.19 {
+  SELECT json_set(NULL,'$.a',123);
+} NULL
+do_execsql_test json-21.20 {
+  SELECT json_set('{a:5,b:7}',NULL,NULL);
+} {{{"a":5,"b":7}}}
+do_execsql_test json-21.21 {
+  SELECT json_type(NULL);
+} NULL
+do_execsql_test json-21.22 {
+  SELECT json_type('{a:5,b:7}',NULL);
+} NULL
+do_execsql_test json-21.23 {
+  SELECT json_quote(NULL);
+} null
+do_execsql_test json-21.24 {
+  SELECT count(*) FROM json_each(NULL);
+} 0
+do_execsql_test json-21.25 {
+  SELECT count(*) FROM json_tree(NULL);
+} 0
+do_execsql_test json-21.26 {
+  WITH c(x) AS (VALUES(1),(2.0),(NULL),('three'))
+  SELECT json_group_array(x) FROM c;
+} {[1,2.0,null,"three"]}
+do_execsql_test json-21.27 {
+  WITH c(x,y) AS (VALUES('a',1),('b',2.0),('c',NULL),(NULL,'three'),('e','four'))
+  SELECT json_group_object(x,y) FROM c;
+} {{{"a":1,"b":2.0,"c":null,:"three","e":"four"}}}
+
+
+
+
 
 finish_test

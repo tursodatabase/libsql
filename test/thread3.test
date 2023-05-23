@@ -1,0 +1,78 @@
+# 2023 May 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+if {[run_thread_tests]==0} { finish_test ; return }
+
+set testprefix thread3
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b);
+  PRAGMA journal_mode = DELETE;
+} {delete}
+
+proc wait_for_var {varname} {
+  if {0==[uplevel [list info exists $varname]]} {
+    uplevel [list vwait $varname]
+  }
+  uplevel [list set $varname]
+}
+
+set nAttempt 250
+
+do_test 1.1 {
+  for {set i 0} {$i < $nAttempt} {incr i} {
+    unset -nocomplain X
+    unset -nocomplain Y
+
+    sqlthread spawn X {
+      sqlite3 dbI test.db
+      dbI timeout 100
+      set rc 1
+      set nBusy 0
+      while {$rc} {
+        set rc [catch {
+          dbI eval { INSERT INTO t1 VALUES(203, 'message') RETURNING a; }
+        } msg]
+        if {$rc} { incr nBusy }
+      }
+      dbI close
+      set nBusy
+    }
+
+    sqlthread spawn Y {
+      sqlite3 dbR test.db
+      catch {
+        dbR eval { SELECT count(*) FROM t1 }
+      } msg
+      dbR close
+      set msg
+    }
+
+    wait_for_var X
+    wait_for_var Y
+    incr nTotalBusy $X
+  }
+
+  execsql { SELECT count(*) FROM t1 }
+  set {} {}
+} {}
+
+do_execsql_test "1.Total BUSY errors: $nTotalBusy .2" {
+  SELECT count(*) FROM t1;
+} $nAttempt
+
+finish_test
+

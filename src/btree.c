@@ -3556,7 +3556,11 @@ int sqlite3BtreeNewDb(Btree *p){
 ** when A already has a read lock, we encourage A to give up and let B
 ** proceed.
 */
-int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
+static SQLITE_NOINLINE int btreeBeginTrans(
+  Btree *p,                 /* The btree in which to start the transactino */
+  int wrflag,               /* True to start a write transaction */
+  int *pSchemaVersion       /* Put schema version number here, if not NULL */
+){
   BtShared *pBt = p->pBt;
   Pager *pPager = pBt->pPager;
   int rc = SQLITE_OK;
@@ -3727,6 +3731,28 @@ trans_begun:
   btreeIntegrity(p);
   sqlite3BtreeLeave(p);
   return rc;
+}
+int sqlite3BtreeBeginTrans(Btree *p, int wrflag, int *pSchemaVersion){
+  BtShared *pBt;
+  if( p->sharable
+   || p->inTrans==TRANS_NONE
+   || (p->inTrans==TRANS_READ && wrflag!=0)
+  ){
+    return btreeBeginTrans(p,wrflag,pSchemaVersion);
+  }
+  pBt = p->pBt;
+  if( pSchemaVersion ){
+    *pSchemaVersion = get4byte(&pBt->pPage1->aData[40]);
+  }
+  if( wrflag ){
+    /* This call makes sure that the pager has the correct number of
+    ** open savepoints. If the second parameter is greater than 0 and
+    ** the sub-journal is not already open, then it will be opened here.
+    */
+    return sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint);
+  }else{
+    return SQLITE_OK;
+  }
 }
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
@@ -7629,7 +7655,7 @@ static int pageFreeArray(
         }
       }
       if( j>=nFree ){
-        if( nFree>=sizeof(aOfst)/sizeof(aOfst[0]) ){
+        if( nFree>=(int)(sizeof(aOfst)/sizeof(aOfst[0])) ){
           for(j=0; j<nFree; j++){
             freeSpace(pPg, aOfst[j], aAfter[j]-aOfst[j]);
           }
@@ -7697,7 +7723,7 @@ static int editPage(
     nCell -= nTail;
   }
 
-  pData = &aData[get2byteNotZero(&aData[hdr+5])];
+  pData = &aData[get2byte(&aData[hdr+5])];
   if( pData<pBegin ) goto editpage_fail;
   if( NEVER(pData>pPg->aDataEnd) ) goto editpage_fail;
 
@@ -9334,7 +9360,7 @@ int sqlite3BtreeInsert(
     }
   }
   assert( pCur->eState==CURSOR_VALID 
-       || (pCur->eState==CURSOR_INVALID && loc) );
+       || (pCur->eState==CURSOR_INVALID && loc) || CORRUPT_DB );
 
   pPage = pCur->pPage;
   assert( pPage->intKey || pX->nKey>=0 || (flags & BTREE_PREFORMAT) );
@@ -10663,7 +10689,7 @@ static int checkTreePage(
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage) ) return 0;
   pCheck->zPfx = "Tree %u page %u: ";
-  pCheck->v0 = pCheck->v1 = iPage;
+  pCheck->v1 = iPage;
   if( (rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0 ){
     checkAppendMsg(pCheck,
        "unable to get the page. error code=%d", rc);
@@ -11000,6 +11026,7 @@ int sqlite3BtreeIntegrityCheck(
       checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0);
     }
 #endif
+    sCheck.v0 = aRoot[i];
     checkTreePage(&sCheck, aRoot[i], &notUsed, LARGEST_INT64);
   }
   pBt->db->flags = savedDbFlags;

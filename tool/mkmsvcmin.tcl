@@ -110,3 +110,4 @@ set data [string map [list " \$(ALL_TCL_TARGETS)" ""] $data]
 set data [string map [list "\$(TOP)\\src\\" "\$(TOP)\\"] $data]
 
 writeFile $toFileName $data
+puts "generated $toFileName from $fromFileName"

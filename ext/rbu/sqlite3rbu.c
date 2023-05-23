@@ -3156,11 +3156,18 @@ static int rbuLockDatabase(sqlite3 *db){
   sqlite3_file *fd = 0;
 
   sqlite3_file_control(db, "main", RBU_ZIPVFS_CTRL_FILE_POINTER, &fd);
-  if( fd==0 ){
+  if( fd ){
+    sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, &fd);
+    rc = fd->pMethods->xLock(fd, SQLITE_LOCK_SHARED);
+    if( rc==SQLITE_OK ){
+      rc = fd->pMethods->xUnlock(fd, SQLITE_LOCK_NONE);
+    }
+    sqlite3_file_control(db, "main", RBU_ZIPVFS_CTRL_FILE_POINTER, &fd);
+  }else{
     sqlite3_file_control(db, "main", SQLITE_FCNTL_FILE_POINTER, &fd);
   }
 
-  if( fd->pMethods ){
+  if( rc==SQLITE_OK && fd->pMethods ){
     rc = fd->pMethods->xLock(fd, SQLITE_LOCK_SHARED);
     if( rc==SQLITE_OK ){
       rc = fd->pMethods->xLock(fd, SQLITE_LOCK_EXCLUSIVE);

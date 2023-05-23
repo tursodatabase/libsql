@@ -69,9 +69,12 @@ __declspec(dllexport)
 #endif
 int sqlite3_basexx_init(sqlite3 *db, char **pzErr,
                                const sqlite3_api_routines *pApi){
+  int rc1;
+  int rc2;
+
   init_api_ptr(pApi);
-  int rc1 = BASE64_INIT(db);
-  int rc2 = BASE85_INIT(db);
+  rc1 = BASE64_INIT(db);
+  rc2 = BASE85_INIT(db);
 
   if( rc1==SQLITE_OK && rc2==SQLITE_OK ){
     BASE64_EXPOSE(db, pzErr);

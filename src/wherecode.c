@@ -812,7 +812,7 @@ static int codeAllEqualityTerms(
   /* Figure out how many memory cells we will need then allocate them.
   */
   regBase = pParse->nMem + 1;
-  nReg = pLoop->u.btree.nEq + nExtraReg;
+  nReg = nEq + nExtraReg;
   pParse->nMem += nReg;
 
   zAff = sqlite3DbStrDup(pParse->db,sqlite3IndexAffinityStr(pParse->db,pIdx));
@@ -859,9 +859,6 @@ static int codeAllEqualityTerms(
         sqlite3VdbeAddOp2(v, OP_Copy, r1, regBase+j);
       }
     }
-  }
-  for(j=nSkip; j<nEq; j++){
-    pTerm = pLoop->aLTerm[j];
     if( pTerm->eOperator & WO_IN ){
       if( pTerm->pExpr->flags & EP_xIsSelect ){
         /* No affinity ever needs to be (or should be) applied to a value
@@ -1030,6 +1027,9 @@ static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
     reg = sqlite3ExprCodeTarget(pWalker->pParse, pExpr, reg);
     pExpr->op = TK_REGISTER;
     pExpr->iTable = reg;
+  }else if( pExpr->op==TK_TRUEFALSE ){
+    /* Do not walk disabled expressions.  tag-20230504-1 */
+    return WRC_Prune;
   }
   return rc;
 }

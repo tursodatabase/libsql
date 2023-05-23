@@ -97,7 +97,7 @@ const unsigned char *sqlite3aGTb = &sqlite3UpperToLower[256+12-OP_Ne];
 **   isalnum()                        0x06
 **   isxdigit()                       0x08
 **   toupper()                        0x20
-**   SQLite identifier character      0x40
+**   SQLite identifier character      0x40   $, _, or non-ascii
 **   Quote character                  0x80
 **
 ** Bit 0x20 is set if the mapped character requires translation to upper
