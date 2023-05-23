@@ -329,17 +329,13 @@ pub extern "C" fn xCheckpoint(
      ** mode is not allowed. Only TRUNCATE checkpoints are accepted,
      ** because these are guaranteed to block writes, copy all WAL pages
      ** back into the main database file and reset the frame number.
-     ** In order to make this mechanism work smoothly with the final
-     ** checkpoint on WAL close as well as default autocheckpoints,
-     ** the mode is unconditionally upgraded to SQLITE_CHECKPOINT_TRUNCATE.
-     ** An alternative to consider is to just refuse weaker checkpoints.
+     ** In order to avoid autocheckpoint on close (that's too often),
+     ** checkpoint attempts weaker than TRUNCATE are ignored.
      */
-    let emode = if emode < ffi::SQLITE_CHECKPOINT_TRUNCATE {
-        tracing::trace!("Upgrading checkpoint to TRUNCATE mode");
-        ffi::SQLITE_CHECKPOINT_TRUNCATE
-    } else {
-        emode
-    };
+    if emode < ffi::SQLITE_CHECKPOINT_TRUNCATE {
+        tracing::trace!("Ignoring a checkpoint request weaker than TRUNCATE");
+        return ffi::SQLITE_OK;
+    }
     /* If there's no busy handler, let's provide a default one,
      ** since we auto-upgrade the passive checkpoint
      */
