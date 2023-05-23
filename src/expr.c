@@ -6414,6 +6414,7 @@ static void findOrCreateAggInfoColumn(
   assert( pAggInfo->iFirstReg==0 );
   pCol = pAggInfo->aCol;
   for(k=0; k<pAggInfo->nColumn; k++, pCol++){
+    if( pCol->pCExpr==pExpr ) return;
     if( pCol->iTable==pExpr->iTable
      && pCol->iColumn==pExpr->iColumn
      && pExpr->op!=TK_IF_NULL_ROW
