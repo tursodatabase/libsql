@@ -664,8 +664,14 @@ static int dbdataNext(sqlite3_vtab_cursor *pCursor){
           if( pCsr->pHdrPtr>&pCsr->pRec[pCsr->nRec] ){
             bNextPage = 1;
           }else{
+            int szField = 0;
             pCsr->pHdrPtr += dbdataGetVarintU32(pCsr->pHdrPtr, &iType);
-            pCsr->pPtr += dbdataValueBytes(iType);
+            szField = dbdataValueBytes(iType);
+            if( (pCsr->nRec - (pCsr->pPtr - pCsr->pRec))<szField ){
+              pCsr->pPtr = &pCsr->pRec[pCsr->nRec];
+            }else{
+              pCsr->pPtr += szField;
+            }
           }
         }
       }

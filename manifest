@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sthe\srecovery\sextension.\sNo\schanges\sto\scode.
-D 2023-05-23T11:47:56.999
+C Fix\sa\sbuffer\soverread\sin\sthe\srecovery\sextension\sthat\smight\soccur\son\s32-bit\splatforms.
+D 2023-05-23T14:05:02.575
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -375,7 +375,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c d4ddf8f0e93772556e452a6c2814063cf47efb760a0834391a9d0cd9859fa4b9
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
-F ext/recover/dbdata.c 31d580785cf14eb3c20ed6fbb421a10a66569858f837928e6b326088c38d4c72
+F ext/recover/dbdata.c e5ad2bd4e87df0ebefd773ea6b8188233a70db935cd8508d1b6428a199ba63eb
 F ext/recover/recover1.test c484d01502239f11b61f23c1cee9f5dd19fa17617f8974e42e74d64639c524cf
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
@@ -2070,8 +2070,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 81ffcf41d69ae73ee8c037f675e18e2b46a15bee34062914640456381262d6fc
-R 12019fbbf2bc7c3eeccf5f3e751dc370
+P cec49c7d93362f527f0b4744cd1ae95d44a79671d49d69baa77fda70be29f7e8
+R d92aff5b47c8b0d809c583bb2242a746
 U dan
-Z 1dc12d1fd9ff7a3bfac47f935795421e
+Z bbabe97c5c83c968f15d1eeeeb40b68e
 # Remove this line to create a well-formed Fossil manifest.
