@@ -353,7 +353,6 @@ const installOpfsVfs = function callee(options){
       state.opIds.xClose = i++;
       state.opIds.xDelete = i++;
       state.opIds.xDeleteNoWait = i++;
-      state.opIds.xFileControl = i++;
       state.opIds.xFileSize = i++;
       state.opIds.xLock = i++;
       state.opIds.xOpen = i++;
@@ -718,12 +717,9 @@ const installOpfsVfs = function callee(options){
         return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
       },
       xFileControl: function(pFile, opId, pArg){
-        mTimeStart('xFileControl');
-        const rc = (capi.SQLITE_FCNTL_SYNC===opId)
-              ? opRun('xSync', pFile, 0)
-              : capi.SQLITE_NOTFOUND;
-        mTimeEnd();
-        return rc;
+        /*mTimeStart('xFileControl');
+          mTimeEnd();*/
+        return capi.SQLITE_NOTFOUND;
       },
       xFileSize: function(pFile,pSz64){
         mTimeStart('xFileSize');
@@ -779,8 +775,11 @@ const installOpfsVfs = function callee(options){
         return rc;
       },
       xSync: function(pFile,flags){
+        mTimeStart('xSync');
         ++metrics.xSync.count;
-        return 0; // impl'd in xFileControl()
+        const rc = opRun('xSync', pFile, flags);
+        mTimeEnd();
+        return rc;
       },
       xTruncate: function(pFile,sz64){
         mTimeStart('xTruncate');
@@ -1189,7 +1188,15 @@ const installOpfsVfs = function callee(options){
             /* Truncate journal mode is faster than delete for
                this vfs, per speedtest1. That gap seems to have closed with
                Chrome version 108 or 109, but "persist" is very roughly 5-6%
-               faster than truncate in initial tests. */
+               faster than truncate in initial tests.
+
+               For later analysis: Roy Hashimoto notes that TRUNCATE
+               and PERSIST modes may decrease OPFS concurrency because
+               multiple connections can open the journal file in those
+               modes:
+
+               https://github.com/rhashimoto/wa-sqlite/issues/68
+            */
             "pragma journal_mode=persist;",
             /*
               This vfs benefits hugely from cache on moderate/large

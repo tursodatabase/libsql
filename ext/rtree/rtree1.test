@@ -756,4 +756,32 @@ do_execsql_test 20.4 {
   SELECT * FROM t1 JOIN t0 ON true RIGHT JOIN rt0 ON x0>a WHERE x0 = 0;
 } {- - 0 0.0 0.0}
 
+# 2023-05-19 https://sqlite.org/forum/forumpost/da61c4a1b5b4af19
+# Do not omit constraints that involve equality comparisons of
+# floating-point values.
+#
+reset_db
+do_execsql_test 21.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x0, x1);
+  INSERT INTO t1 VALUES(0, 1, 9223372036854775807);
+  SELECT count(*) FROM t1 WHERE x1=9223372036854775807;
+} {0}
+do_execsql_test 21.1 {
+ SELECT x1=9223372036854775807 FROM t1;
+} {0}
+
+# 2023-05-22 https://sqlite.org/forum/forumpost/da70ee0d0d
+# Round-off error associated with using large integer constraints on
+# a rtree search.
+#
+reset_db
+do_execsql_test 22.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree ( id, x0, x1 );  
+  INSERT INTO t1 VALUES (123, 9223372036854775799, 9223372036854775800);
+  SELECT id FROM t1 WHERE x0 > 9223372036854775807;
+} {123}
+do_execsql_test 22.1 {
+  SELECT id, x0 > 9223372036854775807 AS 'a0' FROM t1;
+} {123 1}
+
 finish_test

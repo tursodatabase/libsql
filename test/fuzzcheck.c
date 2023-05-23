@@ -1771,6 +1771,8 @@ static void showHelp(void){
 "  --timeout N          Maximum time for any one test in N millseconds\n"
 "  -v|--verbose         Increased output.  Repeat for more output.\n"
 "  --vdbe-debug         Activate VDBE debugging.\n"
+"  --wait N             Wait N seconds before continuing - useful for\n"
+"                          attaching an MSVC debugging.\n"
   );
 }
 
@@ -1982,6 +1984,22 @@ int main(int argc, char **argv){
           printf("%s\n", zz);
         }
         return 0;
+      }else
+      if( strcmp(z,"wait")==0 ){
+        int iDelay;
+        if( i>=argc-1 ) fatalError("missing arguments on %s", argv[i]);
+        iDelay = integerValue(argv[++i]);
+        printf("Waiting %d seconds:", iDelay);
+        fflush(stdout);
+        while( 1 /*exit-by-break*/ ){
+          sqlite3_sleep(1000);
+          iDelay--;
+          if( iDelay<=0 ) break;
+          printf(" %d", iDelay);
+          fflush(stdout);
+        }
+        printf("\n");
+        fflush(stdout);
       }else
       if( strcmp(z,"is-dbsql")==0 ){
         i++;

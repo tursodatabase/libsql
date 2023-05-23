@@ -147,24 +147,25 @@ do_test pager2-2.2 {
   file size test.db
 } {3072}
 
-#-------------------------------------------------------------------------
-# Test that shared in-memory databases seem to work.
-#
-db close
-do_test pager2-3.1 {
-  forcedelete test.db
-  sqlite3_shutdown
-  sqlite3_config_uri 1
-
-  sqlite3 db1 {file:test.db?mode=memory&cache=shared}
-  sqlite3 db2 {file:test.db?mode=memory&cache=shared}
-  sqlite3 db3 test.db
-
-  db1 eval { CREATE TABLE t1(a, b) }
-  db2 eval { INSERT INTO t1 VALUES(1, 2) }
-  list [catch { db3 eval { INSERT INTO t1 VALUES(3, 4) } } msg] $msg
-} {1 {no such table: t1}}
-
-db1 close
+ifcapable shared_cache {
+  #-------------------------------------------------------------------------
+  # Test that shared in-memory databases seem to work.
+  #
+  db close
+  do_test pager2-3.1 {
+    forcedelete test.db
+    sqlite3_shutdown
+    sqlite3_config_uri 1
+  
+    sqlite3 db1 {file:test.db?mode=memory&cache=shared}
+    sqlite3 db2 {file:test.db?mode=memory&cache=shared}
+    sqlite3 db3 test.db
+  
+    db1 eval { CREATE TABLE t1(a, b) }
+    db2 eval { INSERT INTO t1 VALUES(1, 2) }
+    list [catch { db3 eval { INSERT INTO t1 VALUES(3, 4) } } msg] $msg
+  } {1 {no such table: t1}}
+  db1 close
+}
 
 finish_test

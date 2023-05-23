@@ -1537,6 +1537,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
      Full docs: https://sqlite.org/c3ref/db_config.html
 
      Returns capi.SQLITE_MISUSE if op is not a valid operation ID.
+
+     The variants which take `(int, int*)` arguments treat a
+     missing or falsy pointer argument as 0.
   */
   capi.sqlite3_db_config = function(pDb, op, ...args){
     if(!this.s){
@@ -1565,6 +1568,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         case capi.SQLITE_DBCONFIG_ENABLE_VIEW:
         case capi.SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
         case capi.SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+        case capi.SQLITE_DBCONFIG_STMT_SCANSTATUS:
+        case capi.SQLITE_DBCONFIG_REVERSE_SCANORDER:
           return this.ip(pDb, op, args[0], args[1] || 0);
         case capi.SQLITE_DBCONFIG_LOOKASIDE:
           return this.pii(pDb, op, args[0], args[1], args[2]);

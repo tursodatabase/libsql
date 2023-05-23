@@ -870,8 +870,7 @@ static void explainAutomaticIndex(
 */
 static SQLITE_NOINLINE void constructAutomaticIndex(
   Parse *pParse,              /* The parsing context */
-  const WhereClause *pWC,     /* The WHERE clause */
-  const SrcItem *pSrc,        /* The FROM clause term to get the next index */
+  WhereClause *pWC,           /* The WHERE clause */
   const Bitmask notReady,     /* Mask of cursors that are not available */
   WhereLevel *pLevel          /* Write new index here */
 ){
@@ -896,7 +895,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   u8 useBloomFilter = 0;      /* True to also add a Bloom filter */
   Expr *pPartial = 0;         /* Partial Index Expression */
   int iContinue = 0;          /* Jump here to skip excluded rows */
-  SrcItem *pTabItem;          /* FROM clause term being indexed */
+  SrcList *pTabList;          /* The complete FROM clause */
+  SrcItem *pSrc;              /* The FROM clause term to get the next index */
   int addrCounter = 0;        /* Address where integer counter is initialized */
   int regBase;                /* Array of registers where record is assembled */
 #ifdef SQLITE_ENABLE_STMT_SCANSTATUS
@@ -912,6 +912,8 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
   nKeyCol = 0;
+  pTabList = pWC->pWInfo->pTabList;
+  pSrc = &pTabList->a[pLevel->iFrom];
   pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   pLoop = pLevel->pWLoop;
@@ -922,7 +924,7 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
     ** WHERE clause (or the ON clause of a LEFT join) that constrain which
     ** rows of the target table (pSrc) that can be used. */
     if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-     && sqlite3ExprIsTableConstraint(pExpr, pSrc)
+     && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, pLevel->iFrom)
     ){
       pPartial = sqlite3ExprAnd(pParse, pPartial,
                                 sqlite3ExprDup(pParse->db, pExpr, 0));
@@ -1052,14 +1054,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   }
 
   /* Fill the automatic index with content */
-  pTabItem = &pWC->pWInfo->pTabList->a[pLevel->iFrom];
-  if( pTabItem->fg.viaCoroutine ){
-    int regYield = pTabItem->regReturn;
+  assert( pSrc == &pWC->pWInfo->pTabList->a[pLevel->iFrom] );
+  if( pSrc->fg.viaCoroutine ){
+    int regYield = pSrc->regReturn;
     addrCounter = sqlite3VdbeAddOp2(v, OP_Integer, 0, 0);
-    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pSrc->addrFillSub);
     addrTop =  sqlite3VdbeAddOp1(v, OP_Yield, regYield);
     VdbeCoverage(v);
-    VdbeComment((v, "next row of %s", pTabItem->pTab->zName));
+    VdbeComment((v, "next row of %s", pSrc->pTab->zName));
   }else{
     addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur); VdbeCoverage(v);
   }
@@ -1080,14 +1082,14 @@ static SQLITE_NOINLINE void constructAutomaticIndex(
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   if( pPartial ) sqlite3VdbeResolveLabel(v, iContinue);
-  if( pTabItem->fg.viaCoroutine ){
+  if( pSrc->fg.viaCoroutine ){
     sqlite3VdbeChangeP2(v, addrCounter, regBase+n);
     testcase( pParse->db->mallocFailed );
     assert( pLevel->iIdxCur>0 );
     translateColumnToCopy(pParse, addrTop, pLevel->iTabCur,
-                          pTabItem->regResult, pLevel->iIdxCur);
+                          pSrc->regResult, pLevel->iIdxCur);
     sqlite3VdbeGoto(v, addrTop);
-    pTabItem->fg.viaCoroutine = 0;
+    pSrc->fg.viaCoroutine = 0;
   }else{
     sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1); VdbeCoverage(v);
     sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
@@ -1150,9 +1152,11 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
 
   addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
   do{
+    const SrcList *pTabList;
     const SrcItem *pItem;
     const Table *pTab;
     u64 sz;
+    int iSrc;
     sqlite3WhereExplainBloomFilter(pParse, pWInfo, pLevel);
     addrCont = sqlite3VdbeMakeLabel(pParse);
     iCur = pLevel->iTabCur;
@@ -1166,7 +1170,9 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     ** testing complicated.  By basing the blob size on the value in the
     ** sqlite_stat1 table, testing is much easier.
     */
-    pItem = &pWInfo->pTabList->a[pLevel->iFrom];
+    pTabList = pWInfo->pTabList;
+    iSrc = pLevel->iFrom;
+    pItem = &pTabList->a[iSrc];
     assert( pItem!=0 );
     pTab = pItem->pTab;
     assert( pTab!=0 );
@@ -1183,7 +1189,7 @@ static SQLITE_NOINLINE void sqlite3ConstructBloomFilter(
     for(pTerm=pWInfo->sWC.a; pTerm<pWCEnd; pTerm++){
       Expr *pExpr = pTerm->pExpr;
       if( (pTerm->wtFlags & TERM_VIRTUAL)==0
-       && sqlite3ExprIsTableConstraint(pExpr, pItem)
+       && sqlite3ExprIsSingleTableConstraint(pExpr, pTabList, iSrc)
       ){
         sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
       }
@@ -5522,6 +5528,13 @@ static void showAllWhereLoops(WhereInfo *pWInfo, WhereClause *pWC){
 **      at most a single row.
 **   4) The table must not be referenced by any part of the query apart
 **      from its own USING or ON clause.
+**   5) The table must not have an inner-join ON or USING clause if there is
+**      a RIGHT JOIN anywhere in the query.  Otherwise the ON/USING clause
+**      might move from the right side to the left side of the RIGHT JOIN.
+**      Note: Due to (2), this condition can only arise if the table is
+**      the right-most table of a subquery that was flattened into the
+**      main query and that subquery was the right-hand operand of an
+**      inner join that held an ON or USING clause.
 **
 ** For example, given:
 **
@@ -5547,6 +5560,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
 ){
   int i;
   Bitmask tabUsed;
+  int hasRightJoin;
 
   /* Preconditions checked by the caller */
   assert( pWInfo->nLevel>=2 );
@@ -5561,6 +5575,7 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
   if( pWInfo->pOrderBy ){
     tabUsed |= sqlite3WhereExprListUsage(&pWInfo->sMaskSet, pWInfo->pOrderBy);
   }
+  hasRightJoin = (pWInfo->pTabList->a[0].fg.jointype & JT_LTORJ)!=0;
   for(i=pWInfo->nLevel-1; i>=1; i--){
     WhereTerm *pTerm, *pEnd;
     SrcItem *pItem;
@@ -5582,6 +5597,12 @@ static SQLITE_NOINLINE Bitmask whereOmitNoopJoin(
         ){
           break;
         }
+      }
+      if( hasRightJoin
+       && ExprHasProperty(pTerm->pExpr, EP_InnerON)
+       && pTerm->pExpr->w.iJoin==pItem->iCursor
+      ){
+        break;  /* restriction (5) */
       }
     }
     if( pTerm<pEnd ) continue;
@@ -5982,22 +6003,45 @@ WhereInfo *sqlite3WhereBegin(
   }
   if( pParse->nErr ) goto whereBeginError;
 
-  /* Special case: WHERE terms that do not refer to any tables in the join
-  ** (constant expressions). Evaluate each such term, and jump over all the
-  ** generated code if the result is not true.  
+  /* The False-WHERE-Term-Bypass optimization:
   **
-  ** Do not do this if the expression contains non-deterministic functions
-  ** that are not within a sub-select. This is not strictly required, but
-  ** preserves SQLite's legacy behaviour in the following two cases:
+  ** If there are WHERE terms that are false, then no rows will be output,
+  ** so skip over all of the code generated here.
   **
-  **   FROM ... WHERE random()>0;           -- eval random() once per row
-  **   FROM ... WHERE (SELECT random())>0;  -- eval random() once overall
+  ** Conditions:
+  **
+  **   (1)  The WHERE term must not refer to any tables in the join.
+  **   (2)  The term must not come from an ON clause on the
+  **        right-hand side of a LEFT or FULL JOIN.
+  **   (3)  The term must not come from an ON clause, or there must be
+  **        no RIGHT or FULL OUTER joins in pTabList.
+  **   (4)  If the expression contains non-deterministic functions
+  **        that are not within a sub-select. This is not required
+  **        for correctness but rather to preserves SQLite's legacy
+  **        behaviour in the following two cases:
+  **
+  **          WHERE random()>0;           -- eval random() once per row
+  **          WHERE (SELECT random())>0;  -- eval random() just once overall
+  **
+  ** Note that the Where term need not be a constant in order for this
+  ** optimization to apply, though it does need to be constant relative to
+  ** the current subquery (condition 1).  The term might include variables
+  ** from outer queries so that the value of the term changes from one
+  ** invocation of the current subquery to the next.
   */
   for(ii=0; ii<sWLB.pWC->nBase; ii++){
-    WhereTerm *pT = &sWLB.pWC->a[ii];
+    WhereTerm *pT = &sWLB.pWC->a[ii];  /* A term of the WHERE clause */
+    Expr *pX;                          /* The expression of pT */
     if( pT->wtFlags & TERM_VIRTUAL ) continue;
-    if( pT->prereqAll==0 && (nTabList==0 || exprIsDeterministic(pT->pExpr)) ){
-      sqlite3ExprIfFalse(pParse, pT->pExpr, pWInfo->iBreak, SQLITE_JUMPIFNULL);
+    pX = pT->pExpr;
+    assert( pX!=0 );
+    assert( pT->prereqAll!=0 || !ExprHasProperty(pX, EP_OuterON) );
+    if( pT->prereqAll==0                           /* Conditions (1) and (2) */
+     && (nTabList==0 || exprIsDeterministic(pX))   /* Condition (4) */
+     && !(ExprHasProperty(pX, EP_InnerON)          /* Condition (3) */
+          && (pTabList->a[0].fg.jointype & JT_LTORJ)!=0 )
+    ){
+      sqlite3ExprIfFalse(pParse, pX, pWInfo->iBreak, SQLITE_JUMPIFNULL);
       pT->wtFlags |= TERM_CODED;
     }
   }
@@ -6377,11 +6421,11 @@ WhereInfo *sqlite3WhereBegin(
         sqlite3VdbeJumpHere(v, iOnce);
       }
     }
+    assert( pTabList == pWInfo->pTabList );
     if( (wsFlags & (WHERE_AUTO_INDEX|WHERE_BLOOMFILTER))!=0 ){
       if( (wsFlags & WHERE_AUTO_INDEX)!=0 ){
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
-        constructAutomaticIndex(pParse, &pWInfo->sWC,
-                  &pTabList->a[pLevel->iFrom], notReady, pLevel);
+        constructAutomaticIndex(pParse, &pWInfo->sWC, notReady, pLevel);
 #endif
       }else{
         sqlite3ConstructBloomFilter(pWInfo, ii, pLevel, notReady);

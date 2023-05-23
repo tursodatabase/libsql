@@ -550,6 +550,7 @@ int sqlite3Fts5ConfigParse(
     rc = SQLITE_ERROR;
   }
 
+  assert( (pRet->abUnindexed && pRet->azCol) || rc!=SQLITE_OK );
   for(i=3; rc==SQLITE_OK && i<nArg; i++){
     const char *zOrig = azArg[i];
     const char *z;

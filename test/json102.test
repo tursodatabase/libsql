@@ -301,18 +301,27 @@ for {set i 0} {$i<100} {incr i} {
 # allowing them.  The following tests verify that the problem is now
 # fixed.
 #
-do_execsql_test json102-1401 { SELECT json_valid('{"x":01}') } 0
-do_execsql_test json102-1402 { SELECT json_valid('{"x":-01}') } 0
-do_execsql_test json102-1403 { SELECT json_valid('{"x":0}') } 1
-do_execsql_test json102-1404 { SELECT json_valid('{"x":-0}') } 1
-do_execsql_test json102-1405 { SELECT json_valid('{"x":0.1}') } 1
-do_execsql_test json102-1406 { SELECT json_valid('{"x":-0.1}') } 1
-do_execsql_test json102-1407 { SELECT json_valid('{"x":0.0000}') } 1
-do_execsql_test json102-1408 { SELECT json_valid('{"x":-0.0000}') } 1
-do_execsql_test json102-1409 { SELECT json_valid('{"x":01.5}') } 0
-do_execsql_test json102-1410 { SELECT json_valid('{"x":-01.5}') } 0
-do_execsql_test json102-1411 { SELECT json_valid('{"x":00}') } 0
-do_execsql_test json102-1412 { SELECT json_valid('{"x":-00}') } 0
+foreach {id j x0 x5} {
+  1401 {'{"x":01}'} 0 0
+  1402 {'{"x":-01}'} 0 0
+  1403 {'{"x":0}'} 1 1
+  1404 {'{"x":-0}'} 1 1
+  1405 {'{"x":0.1}'} 1 1
+  1406 {'{"x":-0.1}'} 1 1
+  1407 {'{"x":0.0000}'} 1 1
+  1408 {'{"x":-0.0000}'} 1 1
+  1409 {'{"x":01.5}'} 0 0
+  1410 {'{"x":-01.5}'} 0 0
+  1411 {'{"x":00}'} 0 0
+  1412 {'{"x":-00}'} 0 0
+  1413 {'{"x":+0}'} 0 1
+  1414 {'{"x":+5}'} 0 1
+  1415 {'{"x":+5.5}'} 0 1
+} {
+  do_execsql_test json102-$id "
+     SELECT json_valid($j), NOT json_error_position($j);
+  " [list $x0 $x5]
+}
 
 #------------------------------------------------------------------------
 # 2017-04-10 ticket 6c9b5514077fed34551f98e64c09a10dc2fc8e16

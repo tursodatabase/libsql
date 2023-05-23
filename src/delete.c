@@ -35,6 +35,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   pTab = sqlite3LocateTableItem(pParse, 0, pItem);
   sqlite3DeleteTable(pParse->db, pItem->pTab);
   pItem->pTab = pTab;
+  pItem->fg.notCte = 1;
   if( pTab ){
     pTab->nTabRef++;
     if( pItem->fg.isIndexedBy && sqlite3IndexedByLookup(pParse, pItem) ){
@@ -225,14 +226,20 @@ Expr *sqlite3LimitWhere(
     );
   }else{
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
+    assert( pPk->nKeyCol>=1 );
     if( pPk->nKeyCol==1 ){
-      const char *zName = pTab->aCol[pPk->aiColumn[0]].zCnName;
+      const char *zName;
+      assert( pPk->aiColumn[0]>=0 && pPk->aiColumn[0]<pTab->nCol );
+      zName = pTab->aCol[pPk->aiColumn[0]].zCnName;
       pLhs = sqlite3Expr(db, TK_ID, zName);
       pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ID, zName));
     }else{
       int i;
       for(i=0; i<pPk->nKeyCol; i++){
-        Expr *p = sqlite3Expr(db, TK_ID, pTab->aCol[pPk->aiColumn[i]].zCnName);
+        Expr *p;
+        assert( pPk->aiColumn[i]>=0 && pPk->aiColumn[i]<pTab->nCol );
+        p = sqlite3Expr(db, TK_ID, pTab->aCol[pPk->aiColumn[i]].zCnName);
         pEList = sqlite3ExprListAppend(pParse, pEList, p);
       }
       pLhs = sqlite3PExpr(pParse, TK_VECTOR, 0, 0);

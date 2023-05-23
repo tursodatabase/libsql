@@ -89,5 +89,35 @@ do_execsql_test 4.4 {
   SELECT (d IS NULL) FROM t1 RIGHT JOIN t2 ON (j=33);
 } {1}
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t0(w);
+  CREATE TABLE t1(x);
+  CREATE TABLE t2(y);
+  CREATE TABLE t3(z);
+  INSERT INTO t3 VALUES('t3val');
+}
+
+do_execsql_test 5.1 {
+  SELECT * FROM t1 INNER JOIN t2 ON (0) RIGHT OUTER JOIN t3;
+} {{} {} t3val}
+
+do_execsql_test 5.2 {
+  SELECT * FROM t1 INNER JOIN t2 ON (0) FULL OUTER JOIN t3;
+} {{} {} t3val}
+
+do_execsql_test 5.3 {
+  SELECT * FROM t3 LEFT JOIN t2 ON (0);
+} {t3val {}}
+
+do_execsql_test 5.4 {
+  SELECT * FROM t0 RIGHT JOIN t1 INNER JOIN t2 ON (0) RIGHT JOIN t3
+} {{} {} {} t3val}
+
+do_execsql_test 5.5 {
+  SELECT * FROM t0 RIGHT JOIN t1 INNER JOIN t2 ON (0)
+} {}
 
 finish_test

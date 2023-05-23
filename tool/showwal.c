@@ -233,16 +233,21 @@ static void print_oneline_frame(int iFrame, Cksum *pCksum){
   extendCksum(pCksum, getContent(iStart+24, pagesize), pagesize, 0);
   s0 = getInt32(aData+16);
   s1 = getInt32(aData+20);
-  fprintf(stdout, "Frame %4d: %6d %6d 0x%08x,%08x 0x%08x,%08x %s\n",
+  fprintf(stdout, "Frame %4d: %6d %6d 0x%08x,%08x 0x%08x,%08x",
           iFrame, 
           getInt32(aData),
           getInt32(aData+4),
           getInt32(aData+8),
           getInt32(aData+12),
           s0,
-          s1,
-          (s0==pCksum->s0 && s1==pCksum->s1) ? "" : "cksum-fail"
+          s1
   );
+  if( s0==pCksum->s0 && s1==pCksum->s1 ){
+    fprintf(stdout, "\n");
+  }else{
+    fprintf(stdout, " should be 0x%08x,%08x\n",
+                    pCksum->s0, pCksum->s1);
+  }
 
   /* Reset the checksum so that a single frame checksum failure will not
   ** cause all subsequent frames to also show a failure. */

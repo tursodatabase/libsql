@@ -30,6 +30,48 @@ do_execsql_test json104-100 {
        }
      }');
 } {{{"a":"z","c":{"d":"e"}}}}
+do_execsql_test json104-101 {
+  SELECT json_patch('{
+       "a": "b",
+       "c": {
+         "d": "e",
+         "f": "g"
+       }
+     }','{
+       a:"z",
+       c: {
+         f: null
+       }
+     }');
+} {{{"a":"z","c":{"d":"e"}}}}
+do_execsql_test json104-102 {
+  SELECT json_patch('{
+       a: "b",
+       c: {
+         d: "e",
+         f: "g"
+       }
+     }','{
+       "a":"z",
+       "c": {
+         "f": null
+       }
+     }');
+} {{{"a":"z","c":{"d":"e"}}}}
+do_execsql_test json104-103 {
+  SELECT json_patch('{
+       a: "b",
+       c: {
+         d: "e",
+         f: "g"
+       }
+     }','{
+       a:"z",
+       c: {
+         f: null
+       }
+     }');
+} {{{"a":"z","c":{"d":"e"}}}}
 
 
 # This is the example from pages 4 and 5 of RFC-7396 

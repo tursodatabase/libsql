@@ -1,0 +1,4 @@
+.mode qbox
+.timer on
+.param set $label 'q87'
+SELECT rowid, x->>$label FROM data1 WHERE x->>$label IS NOT NULL;

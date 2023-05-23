@@ -848,7 +848,7 @@ static void SQLITE_NOINLINE deleteTable(sqlite3 *db, Table *pTable){
   if( IsOrdinaryTable(pTable) ){
     sqlite3FkDelete(db, pTable);
   }
-#ifndef SQLITE_OMIT_VIRTUAL_TABLE
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   else if( IsVirtual(pTable) ){
     sqlite3VtabClear(db, pTable);
   }
@@ -2234,7 +2234,7 @@ static void estimateIndexWidth(Index *pIdx){
   for(i=0; i<pIdx->nColumn; i++){
     i16 x = pIdx->aiColumn[i];
     assert( x<pIdx->pTable->nCol );
-    wIndex += x<0 ? 1 : aCol[pIdx->aiColumn[i]].szEst;
+    wIndex += x<0 ? 1 : aCol[x].szEst;
   }
   pIdx->szIdxRow = sqlite3LogEst(wIndex*4);
 }

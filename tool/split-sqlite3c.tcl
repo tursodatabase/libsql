@@ -48,7 +48,14 @@ set filecnt 0
 proc write_one_file {content} {
   global filecnt
   incr filecnt
-  set out [open sqlite3-$filecnt.c w]
+  set label $filecnt
+  if {$filecnt>9} {
+    set label [string index ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop \
+                [expr {$filecnt-10}]]
+  } else {
+    set label $filecnt
+  }
+  set out [open sqlite3-$label.c w]
   fconfigure $out -translation lf
   puts -nonewline $out $content
   close $out

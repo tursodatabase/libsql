@@ -18,7 +18,7 @@ source [file join [file dirname [info script]] session_common.tcl]
 source $testdir/tester.tcl
 ifcapable !session {finish_test; return}
 
-set testprefix sessionnoop
+set testprefix sessionnoop2
 
 foreach {tn wo} {
   1 ""
@@ -120,11 +120,11 @@ do_test $tn.2.2 {
   }
 } {}
 
+db2 close
 
 }]
 }
 
-db2 close
 
 #-------------------------------------------------------------------------
 reset_db

@@ -55,6 +55,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     if(sqliteResultCode){
       if(dbPtr instanceof DB) dbPtr = dbPtr.pointer;
       toss3(
+        sqliteResultCode,
         "sqlite3 result code",sqliteResultCode+":",
         (dbPtr
          ? capi.sqlite3_errmsg(dbPtr)
@@ -330,10 +331,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - `db`: the DB object which created the statement.
 
-     - `columnCount`: the number of result columns in the query, or 0 for
-     queries which cannot return results.
+     - `columnCount`: the number of result columns in the query, or 0
+     for queries which cannot return results. This property is a proxy
+     for sqlite3_column_count() and its use in loops should be avoided
+     because of the call overhead associated with that. The
+     `columnCount` is not cached when the Stmt is created because a
+     schema change made via a separate db connection between this
+     statement's preparation and when it is stepped may invalidate it.
 
-     - `parameterCount`: the number of bindable paramters in the query.
+     - `parameterCount`: the number of bindable parameters in the query.
   */
   const Stmt = function(){
     if(BindTypes!==arguments[2]){
@@ -341,7 +347,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
     this.db = arguments[0];
     __ptrMap.set(this, arguments[1]);
-    this.columnCount = capi.sqlite3_column_count(this.pointer);
     this.parameterCount = capi.sqlite3_bind_parameter_count(this.pointer);
   };
 
@@ -473,7 +478,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const __selectFirstRow = (db, sql, bind, ...getArgs)=>{
     const stmt = db.prepare(sql);
     try {
-      return stmt.bind(bind).step() ? stmt.get(...getArgs) : undefined;
+      const rc = stmt.bind(bind).step() ? stmt.get(...getArgs) : undefined;
+      stmt.reset(/*for INSERT...RETURNING locking case*/);
+      return rc;
     }finally{
       stmt.finalize();
     }
@@ -498,6 +505,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      or SQLITE_DONE, it will still throw but the error string might be
      "Not an error."  The various non-0 non-error codes need to be
      checked for in client code where they are expected.
+
+     The thrown exception's `resultCode` property will be the value of
+     the second argument to this function.
 
      If it does not throw, it returns its first argument.
   */
@@ -546,7 +556,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         const pDb = this.pointer;
         Object.keys(__stmtMap.get(this)).forEach((k,s)=>{
-          if(s && s.pointer) s.finalize();
+          if(s && s.pointer){
+            try{s.finalize()}
+            catch(e){/*ignore*/}
+          }
         });
         __ptrMap.delete(this);
         __stmtMap.delete(this);
@@ -701,18 +714,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        with identical names.
 
        - `callback` = a function which gets called for each row of the
-       result set, but only if that statement has any result
-       _rows_. The callback's "this" is the options object, noting
-       that this function synthesizes one if the caller does not pass
-       one to exec(). The second argument passed to the callback is
-       always the current Stmt object, as it's needed if the caller
-       wants to fetch the column names or some such (noting that they
-       could also be fetched via `this.columnNames`, if the client
-       provides the `columnNames` option). If the callback returns a
-       literal `false` (as opposed to any other falsy value, e.g.  an
-       implicit `undefined` return), any ongoing statement-`step()`
-       iteration stops without an error. The return value of the
-       callback is otherwise ignored.
+       result set, but only if that statement has any result rows. The
+       callback's "this" is the options object, noting that this
+       function synthesizes one if the caller does not pass one to
+       exec(). The second argument passed to the callback is always
+       the current Stmt object, as it's needed if the caller wants to
+       fetch the column names or some such (noting that they could
+       also be fetched via `this.columnNames`, if the client provides
+       the `columnNames` option). If the callback returns a literal
+       `false` (as opposed to any other falsy value, e.g. an implicit
+       `undefined` return), any ongoing statement-`step()` iteration
+       stops without an error. The return value of the callback is
+       otherwise ignored.
 
        ACHTUNG: The callback MUST NOT modify the Stmt object. Calling
        any of the Stmt.get() variants, Stmt.getColumnName(), or
@@ -733,7 +746,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
          A.1) `'array'` (the default) causes the results of
          `stmt.get([])` to be passed to the `callback` and/or appended
-         to `resultRows`
+         to `resultRows`.
 
          A.2) `'object'` causes the results of
          `stmt.get(Object.create(null))` to be passed to the
@@ -744,8 +757,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
          A.3) `'stmt'` causes the current Stmt to be passed to the
          callback, but this mode will trigger an exception if
-         `resultRows` is an array because appending the statement to
-         the array would be downright unhelpful.
+         `resultRows` is an array because appending the transient
+         statement to the array would be downright unhelpful.
 
        B) An integer, indicating a zero-based column in the result
        row. Only that one single value will be passed on.
@@ -775,7 +788,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        should return:
 
          A) The default value is (usually) `"this"`, meaning that the
-            DB object itself should be returned. The exceptions is if
+            DB object itself should be returned. The exception is if
             the caller passes neither of `callback` nor `returnValue`
             but does pass an explicit `rowMode` then the default
             `returnValue` is `"resultRows"`, described below.
@@ -857,38 +870,53 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             bind = null;
           }
           if(evalFirstResult && stmt.columnCount){
-            /* Only forward SELECT results for the FIRST query
+            /* Only forward SELECT-style results for the FIRST query
                in the SQL which potentially has them. */
+            let gotColNames = Array.isArray(
+              opt.columnNames
+              /* As reported in
+                 https://sqlite.org/forum/forumpost/7774b773937cbe0a
+                 we need to delay fetching of the column names until
+                 after the first step() (if we step() at all) because
+                 a schema change between the prepare() and step(), via
+                 another connection, may invalidate the column count
+                 and names. */) ? 0 : 1;
             evalFirstResult = false;
-            if(Array.isArray(opt.columnNames)){
-              stmt.getColumnNames(opt.columnNames);
-            }
             if(arg.cbArg || resultRows){
-              for(; stmt.step(); stmt._isLocked = false){
-                stmt._isLocked = true;
+              for(; stmt.step(); stmt._lockedByExec = false){
+                if(0===gotColNames++) stmt.getColumnNames(opt.columnNames);
+                stmt._lockedByExec = true;
                 const row = arg.cbArg(stmt);
                 if(resultRows) resultRows.push(row);
                 if(callback && false === callback.call(opt, row, stmt)){
                   break;
                 }
               }
-              stmt._isLocked = false;
+              stmt._lockedByExec = false;
+            }
+            if(0===gotColNames){
+              /* opt.columnNames was provided but we visited no result rows */
+              stmt.getColumnNames(opt.columnNames);
             }
           }else{
             stmt.step();
           }
-          stmt.finalize();
+          stmt.reset(
+            /* In order to trigger an exception in the
+               INSERT...RETURNING locking scenario:
+               https://sqlite.org/forum/forumpost/36f7a2e7494897df
+            */).finalize();
           stmt = null;
-        }
+        }/*prepare() loop*/
       }/*catch(e){
         sqlite3.config.warn("DB.exec() is propagating exception",opt,e);
         throw e;
       }*/finally{
+        wasm.scopedAllocPop(stack);
         if(stmt){
-          delete stmt._isLocked;
+          delete stmt._lockedByExec;
           stmt.finalize();
         }
-        wasm.scopedAllocPop(stack);
       }
       return arg.returnVal();
     }/*exec()*/,
@@ -1107,6 +1135,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       try {
         stmt.bind(bind);
         while(stmt.step()) rc.push(stmt.get(0,asType));
+        stmt.reset(/*for INSERT...RETURNING locking case*/);
       }finally{
         stmt.finalize();
       }
@@ -1241,7 +1270,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        not throw, it returns this object.
     */
     checkRc: function(resultCode){
-      return DB.checkRc(this, resultCode);
+      return checkSqlite3Rc(this, resultCode);
     }
   }/*DB.prototype*/;
 
@@ -1302,15 +1331,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   };
 
   /**
-     If stmt._isLocked is truthy, this throws an exception
+     If stmt._lockedByExec is truthy, this throws an exception
      complaining that the 2nd argument (an operation name,
      e.g. "bind()") is not legal while the statement is "locked".
      Locking happens before an exec()-like callback is passed a
      statement, to ensure that the callback does not mutate or
      finalize the statement. If it does not throw, it returns stmt.
   */
-  const affirmUnlocked = function(stmt,currentOpName){
-    if(stmt._isLocked){
+  const affirmNotLockedByExec = function(stmt,currentOpName){
+    if(stmt._lockedByExec){
       toss3("Operation is illegal when statement is locked:",currentOpName);
     }
     return stmt;
@@ -1323,14 +1352,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      success.
   */
   const bindOne = function f(stmt,ndx,bindType,val){
-    affirmUnlocked(affirmStmtOpen(stmt), 'bind()');
+    affirmNotLockedByExec(affirmStmtOpen(stmt), 'bind()');
     if(!f._){
       f._tooBigInt = (v)=>toss3(
         "BigInt value is too big to store without precision loss:", v
       );
-      /* Reminder: when not in BigInt mode, it's impossible for
-         JS to represent a number out of the range we can bind,
-         so we have no range checking. */
       f._ = {
         string: function(stmt, ndx, val, asBlob){
           const [pStr, n] = wasm.allocCString(val, true);
@@ -1404,46 +1430,67 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   Stmt.prototype = {
     /**
-       "Finalizes" this statement. This is a no-op if the
-       statement has already been finalizes. Returns
-       undefined. Most methods in this class will throw if called
-       after this is.
+       "Finalizes" this statement. This is a no-op if the statement
+       has already been finalized. Returns the result of
+       sqlite3_finalize() (0 on success, non-0 on error), or the
+       undefined value if the statement has already been
+       finalized. Regardless of success or failure, most methods in
+       this class will throw if called after this is.
+
+       This method always throws if called when it is illegal to do
+       so. Namely, when triggered via a per-row callback handler of a
+       DB.exec() call.
     */
     finalize: function(){
       if(this.pointer){
-        affirmUnlocked(this,'finalize()');
+        affirmNotLockedByExec(this,'finalize()');
+        const rc = capi.sqlite3_finalize(this.pointer);
         delete __stmtMap.get(this.db)[this.pointer];
-        capi.sqlite3_finalize(this.pointer);
         __ptrMap.delete(this);
         delete this._mayGet;
-        delete this.columnCount;
         delete this.parameterCount;
+        delete this._lockedByExec;
         delete this.db;
-        delete this._isLocked;
+        return rc;
       }
     },
-    /** Clears all bound values. Returns this object.
-        Throws if this statement has been finalized. */
+    /**
+       Clears all bound values. Returns this object.  Throws if this
+       statement has been finalized or if modification of the
+       statement is currently illegal (e.g. in the per-row callback of
+       a DB.exec() call).
+    */
     clearBindings: function(){
-      affirmUnlocked(affirmStmtOpen(this), 'clearBindings()')
+      affirmNotLockedByExec(affirmStmtOpen(this), 'clearBindings()')
       capi.sqlite3_clear_bindings(this.pointer);
       this._mayGet = false;
       return this;
     },
     /**
-       Resets this statement so that it may be step()ed again
-       from the beginning. Returns this object. Throws if this
-       statement has been finalized.
+       Resets this statement so that it may be step()ed again from the
+       beginning. Returns this object. Throws if this statement has
+       been finalized, if it may not legally be reset because it is
+       currently being used from a DB.exec() callback, or if the
+       underlying call to sqlite3_reset() returns non-0.
 
        If passed a truthy argument then this.clearBindings() is
        also called, otherwise any existing bindings, along with
        any memory allocated for them, are retained.
+
+       In versions 3.42.0 and earlier, this function did not throw if
+       sqlite3_reset() returns non-0, but it was discovered that
+       throwing (or significant extra client-side code) is necessary
+       in order to avoid certain silent failure scenarios, as
+       discussed at:
+
+       https://sqlite.org/forum/forumpost/36f7a2e7494897df
     */
     reset: function(alsoClearBinds){
-      affirmUnlocked(this,'reset()');
+      affirmNotLockedByExec(this,'reset()');
       if(alsoClearBinds) this.clearBindings();
-      capi.sqlite3_reset(affirmStmtOpen(this).pointer);
+      const rc = capi.sqlite3_reset(affirmStmtOpen(this).pointer);
       this._mayGet = false;
+      checkSqlite3Rc(this.db, rc);
       return this;
     },
     /**
@@ -1592,7 +1639,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        value is returned.  Throws on error.
     */
     step: function(){
-      affirmUnlocked(this, 'step()');
+      affirmNotLockedByExec(this, 'step()');
       const rc = capi.sqlite3_step(affirmStmtOpen(this).pointer);
       switch(rc){
           case capi.SQLITE_DONE: return this._mayGet = false;
@@ -1627,11 +1674,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return this.reset();
     },
     /**
-       Functions like step() except that it finalizes this statement
-       immediately after stepping unless the step cannot be performed
-       because the statement is locked. Throws on error, but any error
-       other than the statement-is-locked case will also trigger
-       finalization of this statement.
+       Functions like step() except that it calls finalize() on this
+       statement immediately after stepping, even if the step() call
+       throws.
 
        On success, it returns true if the step indicated that a row of
        data was available, else it returns false.
@@ -1643,9 +1688,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        ```
     */
     stepFinalize: function(){
-      const rc = this.step();
-      this.finalize();
-      return rc;
+      try{
+        const rc = this.step();
+        this.reset(/*for INSERT...RETURNING locking case*/);
+        return rc;
+      }finally{
+        try{this.finalize()}
+        catch(e){/*ignored*/}
+      }
     },
     /**
        Fetches the value from the given 0-based column index of
@@ -1686,13 +1736,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       if(Array.isArray(ndx)){
         let i = 0;
-        while(i<this.columnCount){
+        const n = this.columnCount;
+        while(i<n){
           ndx[i] = this.get(i++);
         }
         return ndx;
       }else if(ndx && 'object'===typeof ndx){
         let i = 0;
-        while(i<this.columnCount){
+        const n = this.columnCount;
+        while(i<n){
           ndx[capi.sqlite3_column_name(this.pointer,i)] = this.get(i++);
         }
         return ndx;
@@ -1790,16 +1842,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       );
     },
     /**
-       If this statement potentially has result columns, this
-       function returns an array of all such names. If passed an
-       array, it is used as the target and all names are appended
-       to it. Returns the target array. Throws if this statement
-       cannot have result columns. This object's columnCount member
-       holds the number of columns.
+       If this statement potentially has result columns, this function
+       returns an array of all such names. If passed an array, it is
+       used as the target and all names are appended to it. Returns
+       the target array. Throws if this statement cannot have result
+       columns. This object's columnCount property holds the number of
+       columns.
     */
     getColumnNames: function(tgt=[]){
       affirmColIndex(affirmStmtOpen(this),0);
-      for(let i = 0; i < this.columnCount; ++i){
+      const n = this.columnCount;
+      for(let i = 0; i < n; ++i){
         tgt.push(capi.sqlite3_column_name(this.pointer, i));
       }
       return tgt;
@@ -1826,6 +1879,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     Object.defineProperty(Stmt.prototype, 'pointer', prop);
     Object.defineProperty(DB.prototype, 'pointer', prop);
   }
+  /**
+     Stmt.columnCount is an interceptor for sqlite3_column_count().
+
+     This requires an unfortunate performance hit compared to caching
+     columnCount when the Stmt is created/prepared (as was done in
+     SQLite <=3.42.0), but is necessary in order to handle certain
+     corner cases, as described in
+     https://sqlite.org/forum/forumpost/7774b773937cbe0a.
+  */
+  Object.defineProperty(Stmt.prototype, 'columnCount', {
+    enumerable: false,
+    get: function(){return capi.sqlite3_column_count(this.pointer)},
+    set: ()=>toss3("The columnCount property is read-only.")
+  });
 
   /** The OO API's public namespace. */
   sqlite3.oo1 = {

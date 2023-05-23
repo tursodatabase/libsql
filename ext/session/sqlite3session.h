@@ -80,16 +80,20 @@ int sqlite3session_create(
 void sqlite3session_delete(sqlite3_session *pSession);
 
 /*
-** CAPIREF: Conigure a Session Object
+** CAPI3REF: Configure a Session Object
 ** METHOD: sqlite3_session
 **
 ** This method is used to configure a session object after it has been
-** created. At present the only valid value for the second parameter is
-** [SQLITE_SESSION_OBJCONFIG_SIZE].
+** created. At present the only valid values for the second parameter are
+** [SQLITE_SESSION_OBJCONFIG_SIZE] and [SQLITE_SESSION_OBJCONFIG_ROWID].
 **
-** Arguments for sqlite3session_object_config()
+*/
+int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
+
+/*
+** CAPI3REF: Options for sqlite3session_object_config
 **
-** The following values may passed as the the 4th parameter to
+** The following values may passed as the the 2nd parameter to
 ** sqlite3session_object_config().
 **
 ** <dt>SQLITE_SESSION_OBJCONFIG_SIZE <dd>
@@ -105,12 +109,21 @@ void sqlite3session_delete(sqlite3_session *pSession);
 **
 **   It is an error (SQLITE_MISUSE) to attempt to modify this setting after 
 **   the first table has been attached to the session object.
+**
+** <dt>SQLITE_SESSION_OBJCONFIG_ROWID <dd>
+**   This option is used to set, clear or query the flag that enables
+**   collection of data for tables with no explicit PRIMARY KEY.
+**
+**   Normally, tables with no explicit PRIMARY KEY are simply ignored
+**   by the sessions module. However, if this flag is set, it behaves
+**   as if such tables have a column "_rowid_ INTEGER PRIMARY KEY" inserted
+**   as their leftmost columns.
+**
+**   It is an error (SQLITE_MISUSE) to attempt to modify this setting after 
+**   the first table has been attached to the session object.
 */
-int sqlite3session_object_config(sqlite3_session*, int op, void *pArg);
-
-/*
-*/
-#define SQLITE_SESSION_OBJCONFIG_SIZE 1
+#define SQLITE_SESSION_OBJCONFIG_SIZE  1
+#define SQLITE_SESSION_OBJCONFIG_ROWID 2
 
 /*
 ** CAPI3REF: Enable Or Disable A Session Object

@@ -1,0 +1,99 @@
+# 2023 April 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5corrupt7
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+sqlite3_fts5_may_be_corrupt 1
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('pgsz', 32);
+}
+
+set doc [string repeat "a b " 30]
+
+do_execsql_test 1.1 {
+  BEGIN;
+    INSERT INTO t1(rowid, x) VALUES(123, $doc);
+    INSERT INTO t1(rowid, x) VALUES(124, $doc);
+  COMMIT;
+}
+
+execsql_pp {
+  SELECT id, fts5_decode(id, block), quote(block) FROM t1_data
+}
+
+set rows [db eval { SELECT rowid FROM t1_data }]
+db_save_and_close
+
+foreach r $rows {
+  db_restore_and_reopen
+
+  proc edit_block {b} {
+    binary scan $b c* in
+    set out [lreplace $in 0 1 255 255]
+    binary format c* $out
+  }
+  db func edit_block edit_block
+
+  do_execsql_test 1.2.$r.1 {
+    UPDATE t1_data SET block = edit_block(block) WHERE rowid=$r;
+  }
+
+  do_execsql_test 1.2.$r.2 {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+
+  do_test 1.2.$r.3 {
+    catchsql { DELETE FROM t1 WHERE rowid=123; }
+    catchsql { DELETE FROM t1 WHERE rowid=124; }
+    set {} {}
+  } {}
+
+  db close
+}
+
+foreach r $rows {
+set r 137438953475
+  db_restore_and_reopen
+
+  proc edit_block {b} {
+    binary scan $b c* in
+    set out [lreplace $in end end 127]
+    binary format c* $out
+  }
+  db func edit_block edit_block
+
+  do_execsql_test 1.2.$r.1 {
+    UPDATE t1_data SET block = edit_block(block) WHERE rowid=$r;
+  }
+
+  do_execsql_test 1.2.$r.2 {
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+  }
+
+  do_test 1.2.$r.3 {
+    catchsql { DELETE FROM t1 WHERE rowid=124; }
+    catchsql { DELETE FROM t1 WHERE rowid=123; }
+    set {} {}
+  } {}
+
+  db close
+}
+
+finish_test

@@ -736,4 +736,31 @@ do_execsql_test 7.2 {
   ANALYZE sqlite_master;
 }
 
+# 2023-04-22 https://sqlite.org/forum/info/6c118daad0f1f5ef
+# Case differences in the sqlite_stat4.idx field should not matter.
+#
+reset_db
+do_execsql_test 8.0 {
+  CREATE TABLE t1(a PRIMARY KEY, v) WITHOUT ROWID;
+  ANALYZE sqlite_schema;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1','1 1');
+  INSERT INTO sqlite_stat4 VALUES('t1','t1','1','0','0',X'021b76657273696f6e');
+  INSERT INTO sqlite_stat4 VALUES('T1','T1','1','0','0',X'021b76657273696f6e');
+  ANALYZE sqlite_schema;
+} {}
+
+# 2023-05-03 https://sqlite.org/forum/forumpost/537d8ab118
+# Same index appears by two different names in the sqlite_stat4 table.
+#
+reset_db
+do_execsql_test 8.1 {
+  CREATE TABLE t1(a INT PRIMARY KEY, b INT) WITHOUT ROWID;
+  ANALYZE sqlite_schema;
+  INSERT INTO sqlite_stat4 VALUES
+     ('t1','t1','1','2','2',X'03000103'),
+     ('t1','sqlite_autoindex_t1_1','1','2','2',X'03000103');
+  ANALYZE sqlite_schema;
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

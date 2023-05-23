@@ -216,5 +216,51 @@ do_test shell2-1.4.9 {
 done
 2}}
 
+# Verify that generate_series stays sane near 64-bit range boundaries.
+# See overflow report at https://sqlite.org/forum/forumpost/5d34ce5280
+do_test shell2-1.4.10 {
+ set res [catchcmd :memory: [string trim {
+ SELECT * FROM generate_series(9223372036854775807,9223372036854775807,1);
+ SELECT * FROM generate_series(9223372036854775807,9223372036854775807,-1);
+ SELECT avg(rowid),min(value),max(value) FROM generate_series(
+  -9223372036854775808,9223372036854775807,1085102592571150095);
+ SELECT * FROM generate_series(-9223372036854775808,9223372036854775807,
+  9223372036854775807);
+ SELECT value,rowid FROM generate_series(-4611686018427387904,
+  4611686018427387904, 4611686018427387904) ORDER BY value DESC;
+ SELECT * FROM generate_series(0,-2,-1);
+ SELECT * FROM generate_series(0,-2);
+ SELECT * FROM generate_series(0,2) LIMIT 3;}]]
+} {0 {9223372036854775807
+9223372036854775807
+9.5|-9223372036854775808|9223372036854775807
+-9223372036854775808
+-1
+9223372036854775806
+4611686018427387904|3
+0|2
+-4611686018427387904|1
+0
+-1
+-2
+0
+1
+2}}
+
+# Bug discovered while messing around, .import hangs with
+# bit 7 set in column separator.
+do_test shell2-1.4.11 {
+  forcedelete dummy.csv
+  set df [open dummy.csv w]
+  puts $df dog,cat
+  close $df
+  set res [catchcmd :memory: [string trim {
+ CREATE TABLE t(line text);
+.mode ascii
+.separator "\377" "\n"
+.import dummy.csv t
+ SELECT count(*) FROM t;}]]
+} {0 1}
+
 
 finish_test
