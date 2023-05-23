@@ -2363,4 +2363,17 @@ do_execsql_test 76.5 {
   SELECT (SELECT max(y)+sum(0) OVER ()) FROM t3 LEFT JOIN t4 ON x=y GROUP BY x;
 } {100 {} 400}
 
+# 2023-05-23 https://sqlite.org/forum/forumpost/fbfe330a20
+#
+reset_db
+do_execsql_test 77.1 {
+  CREATE TABLE t1(x INT);
+  CREATE INDEX t1x ON t1(likely(x));
+  INSERT INTO t1 VALUES(1),(2),(4),(8);
+}
+do_execsql_test 77.2 {
+  SELECT max(~likely(x)) FILTER (WHERE true) FROM t1 INDEXED BY t1x GROUP BY x;
+} {-2 -3 -5 -9}
+
+
 finish_test
