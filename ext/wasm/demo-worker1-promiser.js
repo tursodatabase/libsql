@@ -102,7 +102,6 @@
       sql: ["create table t(a,b)",
             "insert into t(a,b) values(1,2),(3,4),(5,6)"
            ].join(';'),
-      multi: true,
       resultRows: [], columnNames: []
     }, function(ev){
       ev = ev.result;
@@ -218,13 +217,12 @@
     });
 
     await wtest('exec',{
-      multi: true,
       sql:[
         'pragma foreign_keys=0;',
         // ^^^ arbitrary query with no result columns
         'select a, b from t order by a desc; select a from t;'
-        // multi-exec only honors results from the first
-        // statement with result columns (regardless of whether)
+        // exec() only honors SELECT results from the first
+        // statement with result columns (regardless of whether
         // it has any rows).
       ],
       rowMode: 1,
