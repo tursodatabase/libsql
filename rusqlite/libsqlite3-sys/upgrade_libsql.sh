@@ -15,7 +15,7 @@ rm -f "$LIBSQL_LIB_DIR/bindgen_bundled_version.rs"
 
 # cargo update
 find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec rm {} \;
-env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "libsql-wasm-experimental libsql-experimental buildtime_bindgen session"
+env LIBSQLITE3_SYS_BUNDLING=1 cargo build --features "bundled-libsql-wasm-experimental bundled-libsql-experimental libsql-wasm-experimental libsql-experimental buildtime_bindgen session"
 find "$SCRIPT_DIR/../target" -type f -name bindgen.rs -exec mv {} "$LIBSQL_LIB_DIR/bindgen_bundled_version.rs" \;
 
 # Sanity checks
