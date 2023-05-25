@@ -11,10 +11,11 @@ async-trait = "0.1.58"
 base64 = "0.21.0"
 bincode = "1.3.3"
 bottomless = { version = "0", path = "../bottomless", features = ["libsql_linked_statically"], optional = true }
-byteorder = "1.4.3"
 bytemuck = { version = "1.13.0", features = ["derive"] }
+byteorder = "1.4.3"
 bytes = { version = "1.2.1", features = ["serde"] }
 clap = { version = "4.0.23", features = [ "derive", "env"] }
+console-subscriber = { version = "0.1.9", optional = true }
 crc = "3.0.0"
 crossbeam = "0.8.2"
 enclose = "1.1"
@@ -25,6 +26,9 @@ hyper = { version = "0.14.23", features = ["http2"] }
 hyper-tungstenite = "0.9"
 itertools = "0.10.5"
 jsonwebtoken = "8.2.0"
+memmap = "0.7.0"
+mimalloc = { version = "0.1.36", default-features = false }
+nix = { version = "0.26.2", features = ["fs"] }
 once_cell = "1.17.0"
 parking_lot = "0.12.1"
 pgwire = "0.11.1"
@@ -32,17 +36,19 @@ pin-project-lite = "0.2.9"
 postgres-protocol = "0.6.4"
 prost = "0.11.3"
 regex = "1.7.0"
-rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev = "b53d623ce", default-features = false, features = [
-    "buildtime_bindgen",
-    "bundled-libsql-wasm-experimental",
-    "column_decltype",
-    "load_extension",
-] }
+reqwest = { version = "0.11.16", features = ["json", "rustls-tls"], default-features = false }
+rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev = "f4fbb1a17b7387", default-features = false, features = [
+        "buildtime_bindgen",
+        "bundled-libsql-wasm-experimental",
+        "column_decltype",
+        "load_extension"] }
 serde = { version = "1.0.149", features = ["derive", "rc"] }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
+sha256 = "1.1.3"
 smallvec = "1.10.0"
 sqld-libsql-bindings = { version = "0", path = "../sqld-libsql-bindings" }
 sqlite3-parser = { version = "0.6.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
+tempfile = "3.3.0"
 thiserror = "1.0.38"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs"] }
 tokio-stream = "0.1.11"
@@ -54,13 +60,6 @@ tower-http = { version = "0.3.5", features = ["compression-full", "cors", "trace
 tracing = "0.1.37"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
 uuid = { version = "1.3", features = ["v4", "serde"] }
-nix = { version = "0.26.2", features = ["fs"] }
-tempfile = "3.3.0"
-memmap = "0.7.0"
-mimalloc = { version = "0.1.36", default-features = false }
-sha256 = "1.1.3"
-reqwest = { version = "0.11.16", features = ["json", "rustls-tls"], default-features = false }
-console-subscriber = { version = "0.1.9", optional = true }
 
 [dev-dependencies]
 proptest = "1.0.0"

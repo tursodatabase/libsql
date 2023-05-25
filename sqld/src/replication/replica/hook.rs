@@ -1,9 +1,11 @@
+use std::ffi::CStr;
 use std::os::unix::prelude::FileExt;
 use std::{cell::RefCell, ffi::c_int, fs::File, rc::Rc};
 
 use bytemuck::bytes_of;
 use rusqlite::ffi::{PgHdr, SQLITE_ERROR};
 use sqld_libsql_bindings::ffi::Wal;
+use sqld_libsql_bindings::init_static_wal_method;
 use sqld_libsql_bindings::{ffi::types::XWalFrameFn, wal_hook::WalHook};
 
 use crate::replication::frame::{Frame, FrameBorrowed};
@@ -27,17 +29,21 @@ impl Frames {
     }
 }
 
+init_static_wal_method!(INJECTOR_METHODS, InjectorHook);
+
 /// The injector hook hijacks a call to xframes, and replace the content of the call with it's own
 /// frames.
 /// The Caller must first call `set_frames`, passing the frames to be injected, then trigger a call
 /// to xFrames from the libsql connection (see dummy write in `injector`), and can then collect the
 /// result on the injection with `take_result`
-#[derive(Clone)]
-pub struct InjectorHook {
-    inner: Rc<RefCell<InjectorHookInner>>,
+pub enum InjectorHook {}
+
+#[derive(Clone, Debug)]
+pub struct InjectorHookCtx {
+    pub inner: Rc<RefCell<InjectorHookInner>>,
 }
 
-impl InjectorHook {
+impl InjectorHookCtx {
     pub fn new(meta_file: File, meta: WalIndexMeta) -> Self {
         Self {
             inner: Rc::new(RefCell::new(InjectorHookInner {
@@ -68,6 +74,7 @@ impl InjectorHook {
     }
 }
 
+#[derive(Debug)]
 pub struct InjectorHookInner {
     /// slot for the frames to be applied by the next call to xframe
     current_frames: Option<Frames>,
@@ -75,7 +82,7 @@ pub struct InjectorHookInner {
     /// On success, returns the last applied frame_no
     result: Option<anyhow::Result<FrameNo>>,
     meta_file: File,
-    meta: WalIndexMeta,
+    pub meta: WalIndexMeta,
 }
 
 impl InjectorHookInner {
@@ -125,9 +132,10 @@ impl InjectorHookInner {
 }
 
 unsafe impl WalHook for InjectorHook {
+    type Context = InjectorHookCtx;
+
     fn on_frames(
-        &mut self,
-        wal: *mut Wal,
+        wal: &mut Wal,
         _page_size: c_int,
         _page_headers: *mut PgHdr,
         _size_after: u32,
@@ -135,16 +143,26 @@ unsafe impl WalHook for InjectorHook {
         sync_flags: c_int,
         orig: XWalFrameFn,
     ) -> c_int {
-        self.with_inner_mut(|this| {
-            let Some(ref frames) = this.current_frames.take() else {
-                return SQLITE_ERROR;
-            };
+        let wal_ptr = wal as *mut _;
+        let ctx = Self::wal_extract_ctx(wal);
+        ctx.with_inner_mut(|this| {
+            let frames = this
+                .current_frames
+                .take()
+                .expect("should not have been called with no frames");
 
             let (headers, last_frame_no, size_after) = frames.to_headers();
 
             // SAFETY: frame headers are valid for the duration of the call of apply_pages
             let result = unsafe {
-                this.inject_pages(headers, last_frame_no, size_after, sync_flags, orig, wal)
+                this.inject_pages(
+                    headers,
+                    last_frame_no,
+                    size_after,
+                    sync_flags,
+                    orig,
+                    wal_ptr,
+                )
             };
 
             free_page_header(headers);
@@ -154,6 +172,10 @@ unsafe impl WalHook for InjectorHook {
 
             SQLITE_ERROR
         })
+    }
+
+    fn name() -> &'static CStr {
+        CStr::from_bytes_with_nul(b"frame_injector_hook\0").unwrap()
     }
 }
 

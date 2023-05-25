@@ -1,4 +1,4 @@
-use std::ffi::{c_int, c_void};
+use std::ffi::{c_int, c_void, CStr};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::mem::size_of;
@@ -11,6 +11,7 @@ use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use parking_lot::RwLock;
 use rusqlite::ffi::SQLITE_IOERR;
+use sqld_libsql_bindings::init_static_wal_method;
 use tokio::sync::watch;
 use uuid::Uuid;
 
@@ -23,10 +24,12 @@ use crate::replication::frame::{Frame, FrameHeader};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
 use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC, WAL_PAGE_SIZE};
 
-// Clone is necessary only because opening a database may fail, and we need to clone the empty
-// struct.
+init_static_wal_method!(REPLICATION_METHODS, ReplicationLoggerHook);
+
+pub enum ReplicationLoggerHook {}
+
 #[derive(Clone)]
-pub struct ReplicationLoggerHook {
+pub struct ReplicationLoggerHookCtx {
     buffer: Vec<WalPage>,
     logger: Arc<ReplicationLogger>,
 }
@@ -40,9 +43,14 @@ pub struct ReplicationLoggerHook {
 ///
 /// If either writing to the database of to the shadow wal fails, it must be noop.
 unsafe impl WalHook for ReplicationLoggerHook {
+    type Context = ReplicationLoggerHookCtx;
+
+    fn name() -> &'static CStr {
+        CStr::from_bytes_with_nul(b"replication_logger_hook\0").unwrap()
+    }
+
     fn on_frames(
-        &mut self,
-        wal: *mut Wal,
+        wal: &mut Wal,
         page_size: c_int,
         page_headers: *mut PgHdr,
         ntruncate: u32,
@@ -51,11 +59,13 @@ unsafe impl WalHook for ReplicationLoggerHook {
         orig: XWalFrameFn,
     ) -> c_int {
         assert_eq!(page_size, 4096);
+        let wal_ptr = wal as *mut _;
+        let ctx = Self::wal_extract_ctx(wal);
 
         for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
-            self.write_frame(page_no, data)
+            ctx.write_frame(page_no, data)
         }
-        if let Err(e) = self.flush(ntruncate) {
+        if let Err(e) = ctx.flush(ntruncate) {
             tracing::error!("error writing to replication log: {e}");
             // returning IO_ERR ensure that xUndo will be called by sqlite.
             return SQLITE_IOERR;
@@ -63,7 +73,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
 
         let rc = unsafe {
             orig(
-                wal,
+                wal_ptr,
                 page_size,
                 page_headers,
                 ntruncate,
@@ -73,7 +83,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
         };
 
         if is_commit != 0 && rc == 0 {
-            if let Err(e) = self.commit() {
+            if let Err(e) = ctx.commit() {
                 // If we reach this point, it means that we have commited a transaction to sqlite wal,
                 // but failed to commit it to the shadow WAL, which leaves us in an inconsistent state.
                 tracing::error!(
@@ -82,10 +92,10 @@ unsafe impl WalHook for ReplicationLoggerHook {
                 std::process::abort();
             }
 
-            if let Err(e) = self.logger.log_file.write().maybe_compact(
-                self.logger.compactor.clone(),
+            if let Err(e) = ctx.logger.log_file.write().maybe_compact(
+                ctx.logger.compactor.clone(),
                 ntruncate,
-                &self.logger.db_path,
+                &ctx.logger.db_path,
             ) {
                 tracing::error!("fatal error: {e}, exiting");
                 std::process::abort()
@@ -96,14 +106,14 @@ unsafe impl WalHook for ReplicationLoggerHook {
     }
 
     fn on_undo(
-        &mut self,
-        wal: *mut Wal,
+        wal: &mut Wal,
         func: Option<unsafe extern "C" fn(*mut c_void, u32) -> i32>,
-        ctx: *mut c_void,
+        undo_ctx: *mut c_void,
         orig: XWalUndoFn,
     ) -> i32 {
-        self.rollback();
-        unsafe { orig(wal, func, ctx) }
+        let ctx = Self::wal_extract_ctx(wal);
+        ctx.rollback();
+        unsafe { orig(wal, func, undo_ctx) }
     }
 }
 
@@ -115,7 +125,7 @@ pub struct WalPage {
     pub data: Bytes,
 }
 
-impl ReplicationLoggerHook {
+impl ReplicationLoggerHookCtx {
     pub fn new(logger: Arc<ReplicationLogger>) -> Self {
         Self {
             buffer: Default::default(),
@@ -456,10 +466,13 @@ fn atomic_rename(p1: impl AsRef<Path>, p2: impl AsRef<Path>) -> anyhow::Result<(
     let p1 = CString::new(p1.as_ref().as_os_str().as_bytes())?;
     let p2 = CString::new(p2.as_ref().as_os_str().as_bytes())?;
     unsafe {
-        let ret = renamex_np(p2.as_ptr(), p1.as_ptr(), RENAME_SWAP);
+        let ret = renamex_np(p1.as_ptr(), p2.as_ptr(), RENAME_SWAP);
 
         if ret != 0 {
-            bail!("failed to perform snapshot file swap");
+            bail!(
+                "failed to perform snapshot file swap: {ret}, errno: {}",
+                std::io::Error::last_os_error()
+            );
         }
     }
 

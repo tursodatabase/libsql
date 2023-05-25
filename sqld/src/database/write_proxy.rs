@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use parking_lot::Mutex as PMutex;
+use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::sync::{watch, Mutex};
 use tonic::transport::Channel;
 use uuid::Uuid;
@@ -84,7 +85,7 @@ impl WriteProxyDatabase {
         stats: Stats,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
     ) -> Result<Self> {
-        let read_db = LibSqlDb::new(path, extensions, (), false, stats)?;
+        let read_db = LibSqlDb::new(path, extensions, &TRANSPARENT_METHODS, (), stats)?;
         Ok(Self {
             read_db,
             write_proxy,

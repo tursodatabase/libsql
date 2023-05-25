@@ -1,10 +1,12 @@
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::Context;
 use crossbeam::channel::RecvTimeoutError;
 use rusqlite::{OpenFlags, StatementStatus};
+use sqld_libsql_bindings::wal_hook::WalMethodsHook;
 use tokio::sync::oneshot;
 use tracing::warn;
 
@@ -16,6 +18,7 @@ use crate::query_analysis::{State, Statement, StmtKind};
 use crate::stats::Stats;
 use crate::Result;
 
+use super::factory::DbFactory;
 use super::{
     Cond, Database, DescribeCol, DescribeParam, DescribeResponse, DescribeResult, Program, Step,
     TXN_TIMEOUT_SECS,
@@ -31,6 +34,69 @@ enum Message {
         sql: String,
         resp: oneshot::Sender<DescribeResult>,
     },
+}
+
+pub struct LibSqlDbFactory<W: WalHook + 'static> {
+    db_path: PathBuf,
+    hook: &'static WalMethodsHook<W>,
+    ctx_builder: Box<dyn Fn() -> W::Context + Sync + Send + 'static>,
+    stats: Stats,
+    extensions: Vec<PathBuf>,
+    /// In wal mode, closing the last database takes time, and causes other databases creation to
+    /// return sqlite busy. To mitigate that, we hold on to one connection
+    _db: Option<LibSqlDb>,
+}
+
+impl<W: WalHook + 'static> LibSqlDbFactory<W>
+where
+    W: WalHook + 'static + Sync + Send,
+    W::Context: Send + 'static,
+{
+    pub fn new<F>(
+        db_path: PathBuf,
+        hook: &'static WalMethodsHook<W>,
+        ctx_builder: F,
+        stats: Stats,
+        extensions: Vec<PathBuf>,
+    ) -> Result<Self>
+    where
+        F: Fn() -> W::Context + Sync + Send + 'static,
+    {
+        let mut this = Self {
+            db_path,
+            hook,
+            ctx_builder: Box::new(ctx_builder),
+            stats,
+            extensions,
+            _db: None,
+        };
+
+        let db = this.create_database()?;
+        this._db = Some(db);
+
+        Ok(this)
+    }
+
+    fn create_database(&self) -> Result<LibSqlDb> {
+        LibSqlDb::new(
+            self.db_path.clone(),
+            self.extensions.clone(),
+            self.hook,
+            (self.ctx_builder)(),
+            self.stats.clone(),
+        )
+    }
+}
+
+#[async_trait::async_trait]
+impl<W> DbFactory for LibSqlDbFactory<W>
+where
+    W: WalHook + 'static + Sync + Send,
+    W::Context: Send + 'static,
+{
+    async fn create(&self) -> Result<Arc<dyn Database>, Error> {
+        Ok(Arc::new(self.create_database()?))
+    }
 }
 
 #[derive(Clone)]
@@ -85,63 +151,43 @@ macro_rules! ok_or_exit {
     };
 }
 
-pub fn open_db(
+pub fn open_db<'a, W>(
     path: &Path,
-    wal_hook: impl WalHook + Send + Clone + 'static,
-    with_bottomless: bool,
-) -> anyhow::Result<sqld_libsql_bindings::Connection> {
-    let mut retries = 0;
-    loop {
-        let conn_result = crate::libsql::open_with_regular_wal(
-            path,
-            OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_CREATE
-                | OpenFlags::SQLITE_OPEN_URI
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            wal_hook.clone(),
-            with_bottomless,
-        );
-
-        match conn_result {
-            Ok(conn) => return Ok(conn),
-            Err(e) => {
-                match e.downcast::<rusqlite::Error>() {
-                    // > When the last connection to a particular database is closing, that
-                    // > connection will acquire an exclusive lock for a short time while it cleans
-                    // > up the WAL and shared-memory files. If a second database tries to open and
-                    // > query the database while the first connection is still in the middle of its
-                    // > cleanup process, the second connection might get an SQLITE_BUSY error.
-                    //
-                    // For this reason we may not be able to open the database right away, so we
-                    // retry a couple of times before giving up.
-                    Ok(rusqlite::Error::SqliteFailure(e, _))
-                        if e.code == rusqlite::ffi::ErrorCode::DatabaseBusy && retries < 10 =>
-                    {
-                        std::thread::sleep(Duration::from_millis(10));
-                        retries += 1;
-                    }
-                    Ok(e) => panic!("Unhandled error opening libsql: {e}"),
-                    Err(e) => panic!("Unhandled error opening libsql: {e}"),
-                }
-            }
-        }
-    }
+    wal_methods: &'static WalMethodsHook<W>,
+    hook_ctx: &'a mut W::Context,
+) -> anyhow::Result<sqld_libsql_bindings::Connection<'a>>
+where
+    W: WalHook,
+{
+    sqld_libsql_bindings::Connection::open(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_WRITE
+            | OpenFlags::SQLITE_OPEN_CREATE
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX,
+        wal_methods,
+        hook_ctx,
+    )
 }
 
 impl LibSqlDb {
-    pub fn new(
+    pub fn new<W>(
         path: impl AsRef<Path> + Send + 'static,
         extensions: Vec<PathBuf>,
-        wal_hook: impl WalHook + Send + Clone + 'static,
-        with_bottomless: bool,
+        wal_hook: &'static WalMethodsHook<W>,
+        hook_ctx: W::Context,
         stats: Stats,
-    ) -> crate::Result<Self> {
+    ) -> crate::Result<Self>
+    where
+        W: WalHook,
+        W::Context: Send,
+    {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
 
         tokio::task::spawn_blocking(move || {
+            let mut ctx = hook_ctx;
             let mut connection =
-                Connection::new(path.as_ref(), extensions, wal_hook, with_bottomless, stats)
-                    .unwrap();
+                Connection::new(path.as_ref(), extensions, wal_hook, &mut ctx, stats).unwrap();
             loop {
                 let message = match connection.state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
@@ -187,23 +233,23 @@ impl LibSqlDb {
     }
 }
 
-struct Connection {
+struct Connection<'a> {
     state: ConnectionState,
-    conn: sqld_libsql_bindings::Connection,
+    conn: sqld_libsql_bindings::Connection<'a>,
     timed_out: bool,
     stats: Stats,
 }
 
-impl Connection {
-    fn new(
+impl<'a> Connection<'a> {
+    fn new<W: WalHook>(
         path: &Path,
         extensions: Vec<PathBuf>,
-        wal_hook: impl WalHook + Send + Clone + 'static,
-        with_bottomless: bool,
+        wal_methods: &'static WalMethodsHook<W>,
+        hook_ctx: &'a mut W::Context,
         stats: Stats,
     ) -> anyhow::Result<Self> {
         let this = Self {
-            conn: open_db(path, wal_hook, with_bottomless)?,
+            conn: open_db(path, wal_methods, hook_ctx)?,
             state: ConnectionState::initial(),
             timed_out: false,
             stats,

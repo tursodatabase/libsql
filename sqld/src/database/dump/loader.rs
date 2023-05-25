@@ -1,12 +1,14 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use anyhow::anyhow;
-use sqld_libsql_bindings::wal_hook::WalHook;
 use tokio::sync::{mpsc, oneshot};
 
-use super::super::libsql::open_db;
+use crate::database::libsql::open_db;
+use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
+use crate::replication::ReplicationLogger;
 
 type OpMsg = Box<dyn FnOnce(&rusqlite::Connection) + 'static + Send + Sync>;
 
@@ -15,15 +17,13 @@ pub struct DumpLoader {
 }
 
 impl DumpLoader {
-    pub async fn new(
-        path: PathBuf,
-        hooks: impl WalHook + Clone + Send + 'static,
-    ) -> anyhow::Result<Self> {
+    pub async fn new(path: PathBuf, logger: Arc<ReplicationLogger>) -> anyhow::Result<Self> {
         let (sender, mut receiver) = mpsc::channel::<OpMsg>(1);
 
         let (ok_snd, ok_rcv) = oneshot::channel::<anyhow::Result<()>>();
         tokio::task::spawn_blocking(move || {
-            let db = match open_db(&path, hooks, false) {
+            let mut ctx = ReplicationLoggerHookCtx::new(logger);
+            let db = match open_db(&path, &REPLICATION_METHODS, &mut ctx) {
                 Ok(db) => {
                     let _ = ok_snd.send(Ok(()));
                     db
