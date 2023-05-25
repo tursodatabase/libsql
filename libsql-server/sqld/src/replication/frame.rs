@@ -60,6 +60,10 @@ impl Frame {
         anyhow::ensure!(data.len() == Self::SIZE, "invalid frame size");
         Ok(Self { data })
     }
+
+    pub fn bytes(&self) -> Bytes {
+        self.data.clone()
+    }
 }
 
 /// The borrowed version of Frame
@@ -77,7 +81,7 @@ impl FrameBorrowed {
     }
 
     /// Returns the bytes for this frame. Includes the header bytes.
-    pub fn as_bytes(&self) -> &[u8] {
+    pub fn as_slice(&self) -> &[u8] {
         &self.data
     }
 
