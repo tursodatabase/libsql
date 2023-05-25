@@ -11,7 +11,10 @@ use anyhow::{bail, Context as _, Result};
 use clap::Parser;
 use mimalloc::MiMalloc;
 use sqld::{database::dump::exporter::export_dump, Config};
-use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::{
+    filter::LevelFilter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
+    Layer,
+};
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -277,16 +280,43 @@ fn perform_dump(dump_path: Option<&Path>, db_path: &Path) -> anyhow::Result<()> 
     Ok(())
 }
 
+#[cfg(feature = "debug-tools")]
+fn enable_libsql_logging() {
+    use std::ffi::c_int;
+    use std::sync::Once;
+    static ONCE: Once = Once::new();
+
+    fn libsql_log(code: c_int, msg: &str) {
+        tracing::error!("sqlite error {code}: {msg}");
+    }
+
+    ONCE.call_once(|| unsafe {
+        rusqlite::trace::config_log(Some(libsql_log)).unwrap();
+    });
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_ansi(false)
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
-                .from_env_lossy(),
+    let registry = tracing_subscriber::registry();
+
+    #[cfg(feature = "debug-tools")]
+    let registry = registry.with(console_subscriber::spawn());
+
+    #[cfg(feature = "debug-tools")]
+    enable_libsql_logging();
+
+    registry
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_ansi(false)
+                .with_filter(
+                    tracing_subscriber::EnvFilter::builder()
+                        .with_default_directive(LevelFilter::INFO.into())
+                        .from_env_lossy(),
+                ),
         )
         .init();
+
     let args = Cli::parse();
 
     match args.utils {
