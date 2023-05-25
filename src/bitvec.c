@@ -89,7 +89,7 @@
 ** values between 1 and iDivisor.  apSub[1] holds values between
 ** iDivisor+1 and 2*iDivisor.  apSub[N] holds values between
 ** N*iDivisor+1 and (N+1)*iDivisor.  Each subbitmap is normalized
-** to hold deal with values between 1 and iDivisor.
+** to deal with values between 1 and iDivisor.
 */
 struct Bitvec {
   u32 iSize;      /* Maximum bit index.  Max iSize is 4,294,967,296. */
