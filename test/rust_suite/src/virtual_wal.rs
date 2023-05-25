@@ -36,6 +36,7 @@ mod tests {
         p_snapshot: *const c_void,
         p_db: *const c_void,
         wal_methods: *mut libsql_wal_methods,
+        p_methods_data: *mut c_void,
     }
 
     #[repr(C)]
@@ -205,6 +206,7 @@ mod tests {
             p_snapshot: std::ptr::null(),
             p_db: std::ptr::null(),
             wal_methods: methods,
+            p_methods_data: std::ptr::null_mut(),
         });
         unsafe { *wal = &*new_wal }
         Box::leak(new_wal);

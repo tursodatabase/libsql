@@ -3226,7 +3226,8 @@ static int openDatabase(
   sqlite3 **ppDb,        /* OUT: Returned database handle */
   unsigned int flags,    /* Operational flags */
   const char *zVfs,      /* Name of the VFS to use */
-  const char *zWal       /* Name of WAL module to use */
+  const char *zWal,      /* Name of WAL module to use */
+  void* pWalMethodsData  /* Pointer to the user data*/
 ){
   sqlite3 *db;                    /* Store allocated handle here */
   int rc;                         /* Return code */
@@ -3286,6 +3287,7 @@ static int openDatabase(
   /* Allocate the sqlite data structure */
   db = sqlite3MallocZero( sizeof(sqlite3) );
   if( db==0 ) goto opendb_out;
+  db->pWalMethodsData = pWalMethodsData;
   if( isThreadsafe 
 #ifdef SQLITE_ENABLE_MULTITHREADED_CHECKS
    || sqlite3GlobalConfig.bCoreMutex
@@ -3588,7 +3590,7 @@ int sqlite3_open(
   sqlite3 **ppDb 
 ){
   return openDatabase(zFilename, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, NULL);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, NULL, NULL);
 }
 int sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
@@ -3596,7 +3598,7 @@ int sqlite3_open_v2(
   int flags,              /* Flags */
   const char *zVfs        /* Name of VFS module to use */
 ){
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, NULL);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, NULL, NULL);
 }
 
 int libsql_open(
@@ -3606,7 +3608,18 @@ int libsql_open(
   const char *zVfs,       /* Name of VFS module to use, NULL for default */
   const char *zWal        /* Name of WAL module to use */
 ) {
-  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, zWal);
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, zWal, NULL);
+}
+
+int libsql_open_v2(
+  const char *filename,   /* Database filename (UTF-8) */
+  sqlite3 **ppDb,         /* OUT: SQLite db handle */
+  int flags,              /* Flags */
+  const char *zVfs,       /* Name of VFS module to use, NULL for default */
+  const char *zWal,       /* Name of WAL module to use */
+  void* pWalMethodsData   /* User data, passed to the libsql_wal struct*/
+) {
+  return openDatabase(filename, ppDb, (unsigned int)flags, zVfs, zWal, pWalMethodsData);
 }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -3635,7 +3648,7 @@ int sqlite3_open16(
   zFilename8 = sqlite3ValueText(pVal, SQLITE_UTF8);
   if( zFilename8 ){
     rc = openDatabase(zFilename8, ppDb,
-                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, NULL);
+                      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL, NULL, NULL);
     assert( *ppDb || rc==SQLITE_NOMEM );
     if( rc==SQLITE_OK && !DbHasProperty(*ppDb, 0, DB_SchemaLoaded) ){
       SCHEMA_ENC(*ppDb) = ENC(*ppDb) = SQLITE_UTF16NATIVE;
