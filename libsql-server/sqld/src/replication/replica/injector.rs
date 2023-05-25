@@ -1,15 +1,13 @@
-use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use rusqlite::OpenFlags;
-use sqld_libsql_bindings::open_with_regular_wal;
 use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
 
 use crate::{replication::FrameNo, rpc::replication_log::rpc::HelloResponse, HARD_RESET};
 
 use super::error::ReplicationError;
-use super::hook::{Frames, InjectorHook};
+use super::hook::{Frames, InjectorHookCtx, INJECTOR_METHODS};
 use super::meta::WalIndexMeta;
 
 #[derive(Debug)]
@@ -19,37 +17,47 @@ struct FrameApplyOp {
 }
 
 pub struct FrameInjectorHandle {
-    handle: JoinHandle<anyhow::Result<()>>,
+    handle: JoinHandle<()>,
     sender: mpsc::Sender<FrameApplyOp>,
+}
+
+fn injector_loop(
+    db_path: &Path,
+    hello: HelloResponse,
+    mut receiver: mpsc::Receiver<FrameApplyOp>,
+    init_ret: mpsc::Sender<anyhow::Result<FrameNo>>,
+) -> anyhow::Result<()> {
+    let mut ctx = InjectorHookCtx::new_from_hello(db_path, hello)?;
+    let mut injector = FrameInjector::init(db_path, &mut ctx)?;
+
+    init_ret.try_send(Ok(injector.ctx.inner.borrow().meta.current_frame_no()))?;
+
+    while let Some(FrameApplyOp { frames, ret }) = receiver.blocking_recv() {
+        let res = injector.inject_frames(frames);
+        if ret.send(res).is_err() {
+            anyhow::bail!("frame application result must not be ignored.");
+        }
+    }
+
+    Ok(())
 }
 
 impl FrameInjectorHandle {
     pub async fn new(db_path: PathBuf, hello: HelloResponse) -> anyhow::Result<(Self, FrameNo)> {
-        let (sender, mut receiver) = mpsc::channel(16);
-        let (ret, init_ok) = oneshot::channel();
-        let handle = tokio::task::spawn_blocking(move || -> anyhow::Result<()> {
-            let mut injector = match FrameInjector::new_from_hello(&db_path, hello) {
-                Ok((hook, last_applied_frame_no)) => {
-                    ret.send(Ok(last_applied_frame_no)).unwrap();
-                    hook
-                }
-                Err(e) => {
-                    ret.send(Err(e)).unwrap();
-                    return Ok(());
-                }
-            };
-
-            while let Some(FrameApplyOp { frames, ret }) = receiver.blocking_recv() {
-                let res = injector.inject_frames(frames);
-                if ret.send(res).is_err() {
-                    anyhow::bail!("frame application result must not be ignored.");
-                }
+        let (sender, receiver) = mpsc::channel(16);
+        // this ret thing is a bit convoluted: we want to collect the initialization result and
+        // then run the loop. This channel with only ever receive one message, but we collect the
+        // error outside of `injector_loop`, and the frame_no inside, so a oneshot doesn't cut it.
+        // If someone has a nicer solution that does not involve many matches, go ahead :)
+        let (ret, mut init_ok) = mpsc::channel(1);
+        let handle = tokio::task::spawn_blocking(move || {
+            if let Err(e) = injector_loop(&db_path, hello, receiver, ret.clone()) {
+                let _ = ret.try_send(Err(e));
             }
-
-            Ok(())
         });
 
-        let last_applied_frame_no = init_ok.await??;
+        // there should always be a single message coming from this channel
+        let last_applied_frame_no = init_ok.recv().await.unwrap()?;
 
         Ok((Self { handle, sender }, last_applied_frame_no))
     }
@@ -75,14 +83,13 @@ impl FrameInjectorHandle {
     }
 }
 
-pub struct FrameInjector {
-    conn: sqld_libsql_bindings::Connection,
-    hook: InjectorHook,
+pub struct FrameInjector<'a> {
+    conn: sqld_libsql_bindings::Connection<'a>,
+    ctx: InjectorHookCtx,
 }
 
-impl FrameInjector {
-    /// returns the replication hook and the currently applied frame_no
-    pub fn new_from_hello(db_path: &Path, hello: HelloResponse) -> anyhow::Result<(Self, FrameNo)> {
+impl InjectorHookCtx {
+    pub fn new_from_hello(db_path: &Path, hello: HelloResponse) -> anyhow::Result<Self> {
         let (meta, file) = WalIndexMeta::read_from_path(db_path)?;
         let meta = match meta {
             Some(meta) => match meta.merge_from_hello(hello) {
@@ -98,33 +105,35 @@ impl FrameInjector {
             None => WalIndexMeta::new_from_hello(hello)?,
         };
 
-        Ok((Self::init(db_path, file, meta)?, meta.current_frame_no()))
+        Ok(Self::new(file, meta))
     }
+}
 
-    fn init(db_path: &Path, meta_file: File, meta: WalIndexMeta) -> anyhow::Result<Self> {
-        let hook = InjectorHook::new(meta_file, meta);
-        let conn = open_with_regular_wal(
+impl<'a> FrameInjector<'a> {
+    fn init(db_path: &Path, hook_ctx: &'a mut InjectorHookCtx) -> anyhow::Result<Self> {
+        let ctx = hook_ctx.clone();
+        let conn = sqld_libsql_bindings::Connection::open(
             db_path,
             OpenFlags::SQLITE_OPEN_READ_WRITE
                 | OpenFlags::SQLITE_OPEN_CREATE
                 | OpenFlags::SQLITE_OPEN_URI
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-            hook.clone(),
-            false, // bottomless replication is not enabled for replicas
+            &INJECTOR_METHODS,
+            hook_ctx,
         )?;
 
-        Ok(Self { conn, hook })
+        Ok(Self { conn, ctx })
     }
 
     /// sets the injector's frames to the provided frames, trigger a dummy write, and collect the
     /// injection result.
     fn inject_frames(&mut self, frames: Frames) -> anyhow::Result<FrameNo> {
-        self.hook.set_frames(frames);
+        self.ctx.set_frames(frames);
 
         let _ = self
             .conn
             .execute("create table if not exists __dummy__ (dummy)", ());
 
-        self.hook.take_result()
+        self.ctx.take_result()
     }
 }

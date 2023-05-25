@@ -3,14 +3,10 @@
 pub mod ffi;
 pub mod wal_hook;
 
-use std::ops::Deref;
+use std::{ffi::CString, marker::PhantomData, ops::Deref, time::Duration};
 
-use anyhow::ensure;
-use wal_hook::OwnedWalMethods;
-
-use crate::{
-    ffi::libsql_wal_methods_register, ffi::libsql_wal_methods_unregister, wal_hook::WalMethodsHook,
-};
+pub use crate::wal_hook::WalMethodsHook;
+pub use once_cell::sync::Lazy;
 
 use self::{
     ffi::{libsql_wal_methods, libsql_wal_methods_find},
@@ -30,14 +26,12 @@ pub fn get_orig_wal_methods(with_bottomless: bool) -> anyhow::Result<*mut libsql
     Ok(orig)
 }
 
-pub struct Connection {
-    // conn must be dropped first, do not reorder.
+pub struct Connection<'a> {
     conn: rusqlite::Connection,
-    #[allow(dead_code)]
-    wal_methods: Option<OwnedWalMethods>,
+    _pth: PhantomData<&'a mut ()>,
 }
 
-impl Deref for Connection {
+impl Deref for Connection<'_> {
     type Target = rusqlite::Connection;
 
     fn deref(&self) -> &Self::Target {
@@ -45,56 +39,55 @@ impl Deref for Connection {
     }
 }
 
-// Registering WAL methods may be subject to race with the later call to libsql_wal_methods_find,
-// if we overwrite methods with the same name. A short-term solution is to force register+find
-// to be atomic.
-// FIXME: a proper solution (Marin is working on it) is to be able to pass user data as a pointer
-// directly to libsql_open()
-static DB_OPENING_MUTEX: once_cell::sync::Lazy<parking_lot::Mutex<()>> =
-    once_cell::sync::Lazy::new(|| parking_lot::Mutex::new(()));
+impl<'a> Connection<'a> {
+    /// Opens a database with the regular wal methods in the directory pointed to by path
+    pub fn open<W: WalHook>(
+        path: impl AsRef<std::path::Path>,
+        flags: rusqlite::OpenFlags,
+        // we technically _only_ need to know about W, but requiring a static ref to the wal_hook ensures that
+        // it has been instanciated and lives for long enough
+        _wal_hook: &'static WalMethodsHook<W>,
+        hook_ctx: &'a mut W::Context,
+    ) -> anyhow::Result<Self> {
+        let path = path.as_ref().join("data");
+        tracing::trace!(
+            "Opening a connection with regular WAL at {}",
+            path.display()
+        );
 
-/// Opens a database with the regular wal methods in the directory pointed to by path
-pub fn open_with_regular_wal(
-    path: impl AsRef<std::path::Path>,
-    flags: rusqlite::OpenFlags,
-    wal_hook: impl WalHook + 'static,
-    with_bottomless: bool,
-) -> anyhow::Result<Connection> {
-    let opening_lock = DB_OPENING_MUTEX.lock();
-    let path = path.as_ref().join("data");
-    let mut wal_methods = unsafe {
-        let default_methods = get_orig_wal_methods(false)?;
-        let maybe_bottomless_methods = get_orig_wal_methods(with_bottomless)?;
-        let mut wrapped = WalMethodsHook::wrap(default_methods, maybe_bottomless_methods, wal_hook);
-        let res = libsql_wal_methods_register(wrapped.as_ptr());
-        ensure!(res == 0, "failed to register WAL methods");
-        wrapped
-    };
-    tracing::trace!(
-        "Opening a connection with regular WAL at {}",
-        path.display()
-    );
-    #[cfg(not(feature = "unix-excl-vfs"))]
-    let conn = rusqlite::Connection::open_with_flags_and_wal(
-        path,
-        flags,
-        WalMethodsHook::METHODS_NAME_STR,
-    )?;
-    #[cfg(feature = "unix-excl-vfs")]
-    let conn = rusqlite::Connection::open_with_flags_vfs_and_wal(
-        path,
-        flags,
-        "unix-excl",
-        WalMethodsHook::METHODS_NAME_STR,
-    )?;
-    unsafe {
-        libsql_wal_methods_unregister(wal_methods.as_ptr());
+        let conn_str = format!("file:{}?_journal_mode=WAL", path.display());
+        let filename = CString::new(conn_str).unwrap();
+        let mut db: *mut rusqlite::ffi::sqlite3 = std::ptr::null_mut();
+
+        unsafe {
+            // We pass a pointer to the WAL methods data to the database connection. This means
+            // that the reference must outlive the connection. This is guaranteed by the marker in
+            // the returned connection.
+            let rc = rusqlite::ffi::libsql_open_v2(
+                filename.as_ptr(),
+                &mut db as *mut _,
+                flags.bits(),
+                std::ptr::null_mut(),
+                W::name().as_ptr(),
+                hook_ctx as *mut _ as *mut _,
+            );
+
+            if rc != 0 {
+                rusqlite::ffi::sqlite3_close(db);
+                return Err(
+                    rusqlite::Error::SqliteFailure(rusqlite::ffi::Error::new(rc), None).into(),
+                );
+            }
+
+            assert!(!db.is_null());
+        };
+
+        let conn = unsafe { rusqlite::Connection::from_handle_owned(db)? };
+        conn.busy_timeout(Duration::from_millis(5000))?;
+
+        Ok(Connection {
+            conn,
+            _pth: PhantomData,
+        })
     }
-    drop(opening_lock);
-    conn.pragma_update(None, "journal_mode", "wal")?;
-
-    Ok(Connection {
-        conn,
-        wal_methods: Some(wal_methods),
-    })
 }

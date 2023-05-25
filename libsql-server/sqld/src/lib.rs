@@ -6,10 +6,11 @@ use std::time::Duration;
 use anyhow::Context as AnyhowContext;
 use database::dump::loader::DumpLoader;
 use database::factory::DbFactory;
-use database::libsql::LibSqlDb;
+use database::libsql::LibSqlDbFactory;
 use database::write_proxy::WriteProxyDbFactory;
 use once_cell::sync::Lazy;
-use replication::{ReplicationLogger, ReplicationLoggerHook};
+use replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
+use replication::ReplicationLogger;
 use rpc::run_rpc_server;
 use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;
@@ -330,16 +331,9 @@ async fn start_primary(
         &config.db_path,
         config.max_log_size,
     )?);
-    let logger_clone = logger.clone();
-    let path_clone = config.db_path.clone();
-    #[cfg(feature = "bottomless")]
-    let enable_bottomless = config.enable_bottomless_replication;
-    #[cfg(not(feature = "bottomless"))]
-    let enable_bottomless = false;
-    let hook = ReplicationLoggerHook::new(logger.clone());
 
     // load dump is necessary
-    let dump_loader = DumpLoader::new(config.db_path.clone(), hook.clone()).await?;
+    let dump_loader = DumpLoader::new(config.db_path.clone(), logger.clone()).await?;
     if let Some(ref path) = config.load_from_dump {
         if !is_fresh_db {
             anyhow::bail!("cannot load from a dump if a database already exists.\nIf you're sure you want to load from a dump, delete your database folder at `{}`", config.db_path.display());
@@ -349,25 +343,18 @@ async fn start_primary(
 
     let valid_extensions = validate_extensions(config.extensions_path.clone())?;
 
-    let stats_clone = stats.clone();
-    let db_factory = Arc::new(
-        (move || {
-            let db_path = path_clone.clone();
-            let hook = hook.clone();
-            let stats_clone = stats_clone.clone();
-            let valid_extensions = valid_extensions.clone();
-            async move {
-                LibSqlDb::new(
-                    db_path,
-                    valid_extensions,
-                    hook,
-                    enable_bottomless,
-                    stats_clone,
-                )
-            }
-        })
-        .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT)),
-    );
+    let db_factory: Arc<_> = LibSqlDbFactory::new(
+        config.db_path.clone(),
+        &REPLICATION_METHODS,
+        {
+            let logger = logger.clone();
+            move || ReplicationLoggerHookCtx::new(logger.clone())
+        },
+        stats.clone(),
+        valid_extensions,
+    )?
+    .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT))
+    .into();
 
     if let Some(ref addr) = config.rpc_server_addr {
         join_set.spawn(run_rpc_server(
@@ -377,7 +364,7 @@ async fn start_primary(
             config.rpc_server_key.clone(),
             config.rpc_server_ca_cert.clone(),
             db_factory.clone(),
-            logger_clone,
+            logger,
             idle_shutdown_layer.clone(),
         ));
     }
