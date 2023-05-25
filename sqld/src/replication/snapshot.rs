@@ -410,7 +410,7 @@ impl SnapshotBuilder {
 
             if !self.seen_pages.contains(&frame.header().page_no) {
                 self.seen_pages.insert(frame.header().page_no);
-                self.snapshot_file.write_all(frame.as_bytes())?;
+                self.snapshot_file.write_all(frame.as_slice())?;
                 self.header.frame_count += 1;
             }
         }
@@ -456,9 +456,8 @@ mod test {
     use tempfile::tempdir;
 
     use crate::replication::frame::FrameHeader;
-    use crate::replication::primary::logger::LogFileHeader;
+    use crate::replication::primary::logger::WalPage;
     use crate::replication::snapshot::SnapshotFile;
-    use crate::replication::{WAL_MAGIC, WAL_PAGE_SIZE};
 
     use super::*;
 
@@ -467,35 +466,23 @@ mod test {
         let temp = tempfile::NamedTempFile::new().unwrap();
         let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0).unwrap();
         let db_id = Uuid::new_v4();
-        let expected_header = LogFileHeader {
-            magic: WAL_MAGIC,
-            start_checksum: 0,
-            db_id: db_id.as_u128(),
-            start_frame_no: 0,
-            frame_count: 50,
-            version: 0,
-            page_size: WAL_PAGE_SIZE,
-            _pad: 0,
-        };
-        log_file.write_header(&expected_header).unwrap();
+        log_file.header.db_id = db_id.as_u128();
+        log_file.write_header().unwrap();
 
         // add 50 pages, each one in two versions
-        let mut frame_no = 0;
         for _ in 0..2 {
             for i in 0..25 {
-                let frame_header = FrameHeader {
-                    frame_no,
-                    checksum: 0,
+                let data = std::iter::repeat(0).take(4096).collect::<Bytes>();
+                let page = WalPage {
                     page_no: i,
                     size_after: i + 1,
+                    data,
                 };
-                let data = std::iter::repeat(0).take(4096).collect::<Bytes>();
-                let frame = Frame::from_parts(&frame_header, &data);
-                log_file.push_frame(frame).unwrap();
-
-                frame_no += 1;
+                log_file.push_page(&page).unwrap();
             }
         }
+
+        log_file.commit().unwrap();
 
         let dump_dir = tempdir().unwrap();
         let compactor = LogCompactor::new(dump_dir.path(), db_id.as_u128()).unwrap();

@@ -25,7 +25,7 @@ impl TempSnapshot {
         let mut tokio_file = BufWriter::new(tokio_file);
         while let Some(frame) = s.next().await {
             let frame = frame?;
-            tokio_file.write_all(frame.as_bytes()).await?;
+            tokio_file.write_all(frame.as_slice()).await?;
         }
 
         tokio_file.flush().await?;

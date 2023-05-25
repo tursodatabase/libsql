@@ -7,7 +7,6 @@ use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 
-use bytes::Bytes;
 use futures::stream::BoxStream;
 use futures::StreamExt;
 use tokio::sync::mpsc;
@@ -37,9 +36,13 @@ impl ReplicationLogService {
     }
 }
 
-fn map_frame_stream_output(r: Result<Bytes, LogReadError>) -> Result<Frame, Status> {
+fn map_frame_stream_output(
+    r: Result<crate::replication::frame::Frame, LogReadError>,
+) -> Result<Frame, Status> {
     match r {
-        Ok(data) => Ok(Frame { data }),
+        Ok(frame) => Ok(Frame {
+            data: frame.bytes(),
+        }),
         Err(LogReadError::SnapshotRequired) => Err(Status::new(
             tonic::Code::FailedPrecondition,
             NEED_SNAPSHOT_ERROR_MSG,

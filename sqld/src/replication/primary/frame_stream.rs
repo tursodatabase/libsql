@@ -2,10 +2,10 @@ use std::sync::Arc;
 use std::task::{ready, Poll};
 use std::{pin::Pin, task::Context};
 
-use bytes::Bytes;
 use futures::future::BoxFuture;
 use futures::Stream;
 
+use crate::replication::frame::Frame;
 use crate::replication::{FrameNo, LogReadError, ReplicationLogger};
 
 /// Streams frames from the replication log starting at `current_frame_no`.
@@ -52,12 +52,12 @@ enum FrameStreamState {
     Init,
     /// waiting for new frames to replicate
     WaitingFrameNo(BoxFuture<'static, anyhow::Result<FrameNo>>),
-    WaitingFrame(BoxFuture<'static, Result<Bytes, LogReadError>>),
+    WaitingFrame(BoxFuture<'static, Result<Frame, LogReadError>>),
     Closed,
 }
 
 impl Stream for FrameStream {
-    type Item = Result<Bytes, LogReadError>;
+    type Item = Result<Frame, LogReadError>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         match self.state {

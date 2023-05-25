@@ -4,14 +4,13 @@ use std::io::Write;
 use std::mem::size_of;
 use std::os::unix::prelude::FileExt;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
 use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use parking_lot::RwLock;
-use rusqlite::ffi::SQLITE_ERROR;
+use rusqlite::ffi::SQLITE_IOERR;
 use tokio::sync::watch;
 use uuid::Uuid;
 
@@ -56,18 +55,11 @@ unsafe impl WalHook for ReplicationLoggerHook {
         for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
             self.write_frame(page_no, data)
         }
-
-        let commit_info = if is_commit != 0 {
-            match self.flush(ntruncate) {
-                Err(e) => {
-                    tracing::error!("error writing to replication log: {e}");
-                    return SQLITE_ERROR;
-                }
-                Ok(commit_info) => commit_info,
-            }
-        } else {
-            None
-        };
+        if let Err(e) = self.flush(ntruncate) {
+            tracing::error!("error writing to replication log: {e}");
+            // returning IO_ERR ensure that xUndo will be called by sqlite.
+            return SQLITE_IOERR;
+        }
 
         let rc = unsafe {
             orig(
@@ -81,20 +73,23 @@ unsafe impl WalHook for ReplicationLoggerHook {
         };
 
         if is_commit != 0 && rc == 0 {
-            if let Some((count, checksum)) = commit_info {
-                self.commit(count, checksum);
+            if let Err(e) = self.commit() {
+                // If we reach this point, it means that we have commited a transaction to sqlite wal,
+                // but failed to commit it to the shadow WAL, which leaves us in an inconsistent state.
+                tracing::error!(
+                    "fatal error: log failed to commit: inconsistent replication log: {e}"
+                );
+                std::process::abort();
             }
 
-            self.logger
-                .log_file
-                .write()
-                .maybe_compact(
-                    self.logger.compactor.clone(),
-                    ntruncate,
-                    &self.logger.db_path,
-                    self.logger.current_checksum.load(Ordering::Relaxed),
-                )
-                .unwrap();
+            if let Err(e) = self.logger.log_file.write().maybe_compact(
+                self.logger.compactor.clone(),
+                ntruncate,
+                &self.logger.db_path,
+            ) {
+                tracing::error!("fatal error: {e}, exiting");
+                std::process::abort()
+            }
         }
 
         rc
@@ -113,11 +108,11 @@ unsafe impl WalHook for ReplicationLoggerHook {
 }
 
 #[derive(Clone)]
-struct WalPage {
-    page_no: u32,
+pub struct WalPage {
+    pub page_no: u32,
     /// 0 for non-commit frames
-    size_after: u32,
-    data: Bytes,
+    pub size_after: u32,
+    pub data: Bytes,
 }
 
 impl ReplicationLoggerHook {
@@ -138,24 +133,24 @@ impl ReplicationLoggerHook {
     }
 
     /// write buffered pages to the logger, without commiting.
-    /// Returns the attempted count and checksum, that need to be passed to `commit`
-    fn flush(&mut self, size_after: u32) -> anyhow::Result<Option<(u64, u64)>> {
+    fn flush(&mut self, size_after: u32) -> anyhow::Result<()> {
         if !self.buffer.is_empty() {
             self.buffer.last_mut().unwrap().size_after = size_after;
-            let ret = self.logger.write_pages(&self.buffer)?;
+            self.logger.write_pages(&self.buffer)?;
             self.buffer.clear();
-            Ok(Some(ret))
-        } else {
-            Ok(None)
         }
+
+        Ok(())
     }
 
-    fn commit(&self, new_count: u64, new_checksum: u64) {
-        let new_frame_no = self.logger.commit(new_count, new_checksum);
+    fn commit(&self) -> anyhow::Result<()> {
+        let new_frame_no = self.logger.commit()?;
         let _ = self.logger.new_frame_notifier.send(new_frame_no);
+        Ok(())
     }
 
     fn rollback(&mut self) {
+        self.logger.log_file.write().rollback();
         self.buffer.clear();
     }
 }
@@ -163,11 +158,22 @@ impl ReplicationLoggerHook {
 /// Represent a LogFile, and operations that can be performed on it.
 /// A log file must only ever be opened by a single instance of LogFile, since it caches the file
 /// header.
+#[derive(Debug)]
 pub struct LogFile {
     file: File,
-    header: LogFileHeader,
+    pub header: LogFileHeader,
     /// the maximum number of frames this log is allowed to contain before it should be compacted.
     max_log_frame_count: u64,
+    /// number of frames in the log that have not been commited yet. On commit the header's frame
+    /// count is incremented by that ammount. New pages are written after the last
+    /// header.frame_count + uncommit_frame_count.
+    /// On rollback, this is reset to 0, so that everything that was written after the previous
+    /// header.frame_count is ignored and can be overwritten
+    uncommitted_frame_count: u64,
+    uncommitted_checksum: u64,
+
+    /// checksum of the last commited frame
+    commited_checksum: u64,
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -206,18 +212,37 @@ impl LogFile {
                 file,
                 header,
                 max_log_frame_count,
+                uncommitted_frame_count: 0,
+                uncommitted_checksum: 0,
+                commited_checksum: 0,
             };
 
-            this.write_header(&header)?;
+            this.write_header()?;
 
             Ok(this)
         } else {
             let header = Self::read_header(&file)?;
-            Ok(Self {
+            let mut this = Self {
                 file,
                 header,
                 max_log_frame_count,
-            })
+                uncommitted_frame_count: 0,
+                uncommitted_checksum: 0,
+                commited_checksum: 0,
+            };
+
+            if let Some(last_commited) = this.last_commited_frame_no() {
+                // file is not empty, the starting checksum is the checksum from the last entry
+                let last_frame = this.frame(last_commited)?;
+                this.commited_checksum = last_frame.header().checksum;
+                this.uncommitted_checksum = last_frame.header().checksum;
+            } else {
+                // file contains no entry, start with the initial checksum from the file header.
+                this.commited_checksum = this.header.start_checksum;
+                this.uncommitted_checksum = this.header.start_checksum;
+            }
+
+            Ok(this)
         }
     }
 
@@ -236,23 +261,38 @@ impl LogFile {
         &self.header
     }
 
-    pub fn write_header(&mut self, header: &LogFileHeader) -> anyhow::Result<()> {
-        self.file.write_all_at(bytes_of(header), 0)?;
+    pub fn commit(&mut self) -> anyhow::Result<()> {
+        self.header.frame_count += self.uncommitted_frame_count;
+        self.uncommitted_frame_count = 0;
+        self.commited_checksum = self.uncommitted_checksum;
+        self.write_header()?;
+
+        Ok(())
+    }
+
+    fn rollback(&mut self) {
+        self.uncommitted_frame_count = 0;
+        self.uncommitted_checksum = self.commited_checksum;
+    }
+
+    pub fn write_header(&mut self) -> anyhow::Result<()> {
+        self.file.write_all_at(bytes_of(&self.header), 0)?;
         self.file.flush()?;
-        self.header = *header;
+
         Ok(())
     }
 
     /// Returns an iterator over the WAL frame headers
+    #[allow(dead_code)]
     fn frames_iter(&self) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
-        let mut current_offset = 0;
+        let mut current_frame_offset = 0;
         Ok(std::iter::from_fn(move || {
-            if current_offset >= self.header.frame_count {
+            if current_frame_offset >= self.header.frame_count {
                 return None;
             }
-            let read_offset = Self::absolute_byte_offset(current_offset);
-            current_offset += 1;
-            self.read_frame_offset(read_offset).transpose()
+            let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
+            current_frame_offset += 1;
+            Some(self.read_frame_byte_offset(read_byte_offset))
         }))
     }
 
@@ -260,25 +300,57 @@ impl LogFile {
     pub fn rev_frames_iter(
         &self,
     ) -> anyhow::Result<impl Iterator<Item = anyhow::Result<Frame>> + '_> {
-        let mut current_offset = self.header.frame_count;
+        let mut current_frame_offset = self.header.frame_count;
 
         Ok(std::iter::from_fn(move || {
-            if current_offset == 0 {
+            if current_frame_offset == 0 {
                 return None;
             }
-            current_offset -= 1;
-            let read_offset = Self::absolute_byte_offset(current_offset);
-            self.read_frame_offset(read_offset).transpose()
+            current_frame_offset -= 1;
+            let read_byte_offset = Self::absolute_byte_offset(current_frame_offset);
+            let frame = self.read_frame_byte_offset(read_byte_offset);
+            Some(frame)
         }))
     }
 
-    pub fn push_frame(&mut self, frame: Frame) -> anyhow::Result<()> {
-        let offset = frame.header().frame_no;
-        let byte_offset = Self::absolute_byte_offset(offset - self.header.start_frame_no);
-        tracing::trace!("writing frame {offset} at offset {byte_offset}");
-        self.file.write_all_at(frame.as_bytes(), byte_offset)?;
+    fn compute_checksum(&self, page: &WalPage) -> u64 {
+        let mut digest = CRC_64_GO_ISO.digest_with_initial(self.uncommitted_checksum);
+        digest.update(&page.data);
+        digest.finalize()
+    }
+
+    pub fn push_page(&mut self, page: &WalPage) -> anyhow::Result<()> {
+        let checksum = self.compute_checksum(page);
+        let frame = Frame::from_parts(
+            &FrameHeader {
+                frame_no: self.next_frame_no(),
+                checksum,
+                page_no: page.page_no,
+                size_after: page.size_after,
+            },
+            &page.data,
+        );
+
+        let byte_offset = self.next_byte_offset();
+        tracing::trace!(
+            "writing frame {} at offset {byte_offset}",
+            frame.header().frame_no
+        );
+        self.file.write_all_at(frame.as_slice(), byte_offset)?;
+
+        self.uncommitted_frame_count += 1;
+        self.uncommitted_checksum = checksum;
 
         Ok(())
+    }
+
+    /// offset in bytes at which to write the next frame
+    fn next_byte_offset(&self) -> u64 {
+        Self::absolute_byte_offset(self.header().frame_count + self.uncommitted_frame_count)
+    }
+
+    fn next_frame_no(&self) -> FrameNo {
+        self.header().start_frame_no + self.header().frame_count + self.uncommitted_frame_count
     }
 
     /// Returns the bytes position of the `nth` entry in the log
@@ -299,7 +371,7 @@ impl LogFile {
     ///
     /// If the requested frame is before the first frame in the log, or after the last frame,
     /// Ok(None) is returned.
-    pub fn frame_bytes(&self, frame_no: FrameNo) -> std::result::Result<Bytes, LogReadError> {
+    pub fn frame(&self, frame_no: FrameNo) -> std::result::Result<Frame, LogReadError> {
         if frame_no < self.header.start_frame_no {
             return Err(LogReadError::SnapshotRequired);
         }
@@ -308,13 +380,9 @@ impl LogFile {
             return Err(LogReadError::Ahead);
         }
 
-        let mut buffer = BytesMut::zeroed(Self::FRAME_SIZE);
-        self.file
-            .read_exact_at(&mut buffer, self.byte_offset(frame_no)?.unwrap())
-            .map_err(anyhow::Error::from)?; // unwrap: we checked
-                                            // that the frame_no
-                                            // in in the file before
-        Ok(buffer.freeze())
+        let frame = self.read_frame_byte_offset(self.byte_offset(frame_no)?.unwrap())?;
+
+        Ok(frame)
     }
 
     fn maybe_compact(
@@ -322,10 +390,9 @@ impl LogFile {
         compactor: LogCompactor,
         size_after: u32,
         path: &Path,
-        start_checksum: u64,
     ) -> anyhow::Result<()> {
         if self.header.frame_count > self.max_log_frame_count {
-            return self.do_compaction(compactor, size_after, path, start_checksum);
+            return self.do_compaction(compactor, size_after, path);
         }
 
         Ok(())
@@ -336,7 +403,6 @@ impl LogFile {
         compactor: LogCompactor,
         size_after: u32,
         path: &Path,
-        start_checksum: u64,
     ) -> anyhow::Result<()> {
         tracing::info!("performing log compaction");
         let temp_log_path = path.join("temp_log");
@@ -349,10 +415,11 @@ impl LogFile {
         let new_header = LogFileHeader {
             start_frame_no: self.header.start_frame_no + self.header.frame_count,
             frame_count: 0,
-            start_checksum,
+            start_checksum: self.commited_checksum,
             ..self.header
         };
-        new_log_file.write_header(&new_header).unwrap();
+        new_log_file.header = new_header;
+        new_log_file.write_header().unwrap();
         // swap old and new snapshot
         atomic_rename(&temp_log_path, path.join("wallog")).unwrap();
         let old_log_file = std::mem::replace(self, new_log_file);
@@ -361,11 +428,20 @@ impl LogFile {
         Ok(())
     }
 
-    fn read_frame_offset(&self, offset: u64) -> anyhow::Result<Option<Frame>> {
+    fn read_frame_byte_offset(&self, offset: u64) -> anyhow::Result<Frame> {
         let mut buffer = BytesMut::zeroed(LogFile::FRAME_SIZE);
         self.file.read_exact_at(&mut buffer, offset)?;
         let buffer = buffer.freeze();
-        Ok(Some(Frame::try_from_bytes(buffer)?))
+
+        Frame::try_from_bytes(buffer)
+    }
+
+    fn last_commited_frame_no(&self) -> Option<FrameNo> {
+        if self.header.frame_count == 0 {
+            None
+        } else {
+            Some(self.header.start_frame_no + self.header.frame_count - 1)
+        }
     }
 }
 
@@ -449,7 +525,6 @@ impl Generation {
 }
 
 pub struct ReplicationLogger {
-    current_checksum: AtomicU64,
     pub generation: Generation,
     pub log_file: RwLock<LogFile>,
     compactor: LogCompactor,
@@ -469,12 +544,6 @@ impl ReplicationLogger {
             .open(log_path)?;
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
         let log_file = LogFile::new(file, max_log_frame_count)?;
-        let current_checksum =
-            if log_file.header().frame_count == 0 && log_file.header().start_frame_no == 0 {
-                AtomicU64::new(0)
-            } else {
-                AtomicU64::new(Self::compute_checksum(log_file.header(), &log_file)?)
-            };
 
         let header = log_file.header;
         let generation_start_frame_no = header.start_frame_no + header.frame_count;
@@ -482,7 +551,6 @@ impl ReplicationLogger {
         let (new_frame_notifier, _) = watch::channel(generation_start_frame_no);
 
         Ok(Self {
-            current_checksum,
             generation: Generation::new(generation_start_frame_no),
             compactor: LogCompactor::new(db_path, log_file.header.db_id)?,
             log_file: RwLock::new(log_file),
@@ -497,38 +565,16 @@ impl ReplicationLogger {
 
     /// Write pages to the log, without updating the file header.
     /// Returns the new frame count and checksum to commit
-    fn write_pages(&self, pages: &[WalPage]) -> anyhow::Result<(u64, u64)> {
+    fn write_pages(&self, pages: &[WalPage]) -> anyhow::Result<()> {
         let mut log_file = self.log_file.write();
-        let log_header = *log_file.header();
-        let mut current_frame = log_header.frame_count;
-        let mut current_checksum = self.current_checksum.load(Ordering::Relaxed);
         for page in pages.iter() {
-            assert_eq!(page.data.len(), WAL_PAGE_SIZE as usize);
-            let mut digest = CRC_64_GO_ISO.digest_with_initial(current_checksum);
-            digest.update(&page.data);
-            let checksum = digest.finalize();
-
-            let header = FrameHeader {
-                frame_no: log_header.start_frame_no + current_frame,
-                checksum,
-                page_no: page.page_no,
-                size_after: page.size_after,
-            };
-
-            let frame = Frame::from_parts(&header, &page.data);
-
-            log_file.push_frame(frame)?;
-
-            current_frame += 1;
-            current_checksum = checksum;
+            log_file.push_page(page)?;
         }
 
-        Ok((
-            log_header.frame_count + pages.len() as u64,
-            current_checksum,
-        ))
+        Ok(())
     }
 
+    #[allow(dead_code)]
     fn compute_checksum(wal_header: &LogFileHeader, log_file: &LogFile) -> anyhow::Result<u64> {
         tracing::debug!("computing WAL log running checksum...");
         let mut iter = log_file.frames_iter()?;
@@ -546,22 +592,18 @@ impl ReplicationLogger {
     }
 
     /// commit the current transaction and returns the new top frame number
-    fn commit(&self, new_frame_count: u64, new_current_checksum: u64) -> FrameNo {
+    fn commit(&self) -> anyhow::Result<FrameNo> {
         let mut log_file = self.log_file.write();
-        let mut header = *log_file.header();
-        header.frame_count = new_frame_count;
-        log_file.write_header(&header).expect("dailed to commit");
-        self.current_checksum
-            .store(new_current_checksum, Ordering::Relaxed);
-        log_file.header().last_frame_no()
+        log_file.commit()?;
+        Ok(log_file.header().last_frame_no())
     }
 
     pub fn get_snapshot_file(&self, from: FrameNo) -> anyhow::Result<Option<SnapshotFile>> {
         find_snapshot_file(&self.db_path, from)
     }
 
-    pub fn get_frame(&self, frame_no: FrameNo) -> Result<Bytes, LogReadError> {
-        self.log_file.read().frame_bytes(frame_no)
+    pub fn get_frame(&self, frame_no: FrameNo) -> Result<Frame, LogReadError> {
+        self.log_file.read().frame(frame_no)
     }
 }
 
@@ -581,12 +623,12 @@ mod test {
                 data: Bytes::from(vec![i as _; 4096]),
             })
             .collect::<Vec<_>>();
-        let (count, chk) = logger.write_pages(&frames).unwrap();
-        logger.commit(count, chk);
+        logger.write_pages(&frames).unwrap();
+        logger.commit().unwrap();
 
         let log_file = logger.log_file.write();
         for i in 0..10 {
-            let frame = Frame::try_from_bytes(log_file.frame_bytes(i).unwrap()).unwrap();
+            let frame = log_file.frame(i).unwrap();
             assert_eq!(frame.header().page_no, i as u32);
             assert!(frame.page().iter().all(|x| i as u8 == *x));
         }
@@ -602,7 +644,7 @@ mod test {
         let dir = tempfile::tempdir().unwrap();
         let logger = ReplicationLogger::open(dir.path(), 0).unwrap();
         let log_file = logger.log_file.write();
-        assert!(matches!(log_file.frame_bytes(1), Err(LogReadError::Ahead)));
+        assert!(matches!(log_file.frame(1), Err(LogReadError::Ahead)));
     }
 
     #[test]
@@ -616,7 +658,51 @@ mod test {
             data: vec![0; 3].into(),
         };
 
-        let (count, chk) = logger.write_pages(&[entry]).unwrap();
-        logger.commit(count, chk);
+        logger.write_pages(&[entry]).unwrap();
+        logger.commit().unwrap();
+    }
+
+    #[test]
+    fn log_file_test_rollback() {
+        let f = tempfile::tempfile().unwrap();
+        let mut log_file = LogFile::new(f, 100).unwrap();
+        (0..5)
+            .map(|i| WalPage {
+                page_no: i,
+                size_after: 5,
+                data: Bytes::from_static(&[1; 4096]),
+            })
+            .for_each(|p| {
+                log_file.push_page(&p).unwrap();
+            });
+
+        assert_eq!(log_file.frames_iter().unwrap().count(), 0);
+
+        log_file.commit().unwrap();
+
+        (0..5)
+            .map(|i| WalPage {
+                page_no: i,
+                size_after: 5,
+                data: Bytes::from_static(&[1; 4096]),
+            })
+            .for_each(|p| {
+                log_file.push_page(&p).unwrap();
+            });
+
+        log_file.rollback();
+        assert_eq!(log_file.frames_iter().unwrap().count(), 5);
+
+        log_file
+            .push_page(&WalPage {
+                page_no: 42,
+                size_after: 5,
+                data: Bytes::from_static(&[1; 4096]),
+            })
+            .unwrap();
+
+        assert_eq!(log_file.frames_iter().unwrap().count(), 5);
+        log_file.commit().unwrap();
+        assert_eq!(log_file.frames_iter().unwrap().count(), 6);
     }
 }
