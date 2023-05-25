@@ -1,8 +1,6 @@
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-#[cfg(feature = "mwal_backend")]
-use std::sync::Mutex;
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
@@ -11,8 +9,6 @@ use database::factory::DbFactory;
 use database::libsql::LibSqlDb;
 use database::write_proxy::WriteProxyDbFactory;
 use once_cell::sync::Lazy;
-#[cfg(feature = "mwal_backend")]
-use once_cell::sync::OnceCell;
 use replication::{ReplicationLogger, ReplicationLoggerHook};
 use rpc::run_rpc_server;
 use tokio::sync::{mpsc, Notify};
@@ -49,8 +45,6 @@ const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
     Libsql,
-    #[cfg(feature = "mwal_backend")]
-    Mwal,
 }
 
 type Result<T, E = Error> = std::result::Result<T, E>;
@@ -62,11 +56,6 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 /// /!\ use with caution.
 pub(crate) static HARD_RESET: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
 
-#[cfg(feature = "mwal_backend")]
-pub(crate) static VWAL_METHODS: OnceCell<
-    Option<Arc<Mutex<sqld_libsql_bindings::mwal::ffi::libsql_wal_methods>>>,
-> = OnceCell::new();
-
 pub struct Config {
     pub db_path: PathBuf,
     pub extensions_path: Option<PathBuf>,
@@ -77,8 +66,6 @@ pub struct Config {
     pub hrana_addr: Option<SocketAddr>,
     pub auth_jwt_key: Option<String>,
     pub backend: Backend,
-    #[cfg(feature = "mwal_backend")]
-    pub mwal_addr: Option<String>,
     pub writer_rpc_addr: Option<String>,
     pub writer_rpc_tls: bool,
     pub writer_rpc_cert: Option<PathBuf>,
@@ -425,20 +412,6 @@ async fn run_storage_monitor(mut db_path: PathBuf, stats: Stats) -> anyhow::Resu
 
 pub async fn run_server(config: Config) -> anyhow::Result<()> {
     tracing::trace!("Backend: {:?}", config.backend);
-
-    #[cfg(feature = "mwal_backend")]
-    {
-        if config.backend == Backend::Mwal {
-            std::env::set_var("MVSQLITE_DATA_PLANE", config.mwal_addr.as_ref().unwrap());
-        }
-        VWAL_METHODS
-            .set(config.mwal_addr.as_ref().map(|_| {
-                Arc::new(Mutex::new(
-                    sqld_libsql_bindings::mwal::ffi::libsql_wal_methods::new(),
-                ))
-            }))
-            .map_err(|_| anyhow::anyhow!("wal_methods initialized twice"))?;
-    }
 
     #[cfg(feature = "bottomless")]
     if config.enable_bottomless_replication {

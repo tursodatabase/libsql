@@ -73,6 +73,5 @@ tonic-build = "0.8.4"
 vergen = "6"
 
 [features]
-mwal_backend = ["sqld-libsql-bindings/mwal_backend"]
 unix-excl-vfs = ["sqld-libsql-bindings/unix-excl-vfs"]
 bottomless = ["dep:bottomless"]

@@ -104,10 +104,6 @@ struct Cli {
         env = "SQLD_BACKEND"
     )]
     backend: sqld::Backend,
-    // The url to connect with mWAL backend, based on mvSQLite
-    #[cfg(feature = "mwal_backend")]
-    #[clap(long, short, env = "SQLD_MWAL_ADDR")]
-    mwal_addr: Option<String>,
 
     /// Don't display welcome message
     #[clap(long)]
@@ -249,8 +245,6 @@ fn config_from_args(args: Cli) -> Result<Config> {
         rpc_server_cert: args.grpc_cert_file,
         rpc_server_key: args.grpc_key_file,
         rpc_server_ca_cert: args.grpc_ca_cert_file,
-        #[cfg(feature = "mwal_backend")]
-        mwal_addr: args.mwal_addr,
         #[cfg(feature = "bottomless")]
         enable_bottomless_replication: args.enable_bottomless_replication,
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
@@ -308,20 +302,6 @@ async fn main() -> Result<()> {
         }
         None => {
             args.print_welcome_message();
-            #[cfg(feature = "mwal_backend")]
-            match (&args.backend, args.mwal_addr.is_some()) {
-                (sqld::Backend::Mwal, false) => {
-                    anyhow::bail!("--mwal-addr parameter must be present with mwal backend")
-                }
-                (backend, true) if backend != &sqld::Backend::Mwal => {
-                    anyhow::bail!(
-                        "--mwal-addr parameter conflicts with backend {:?}",
-                        args.backend
-                    )
-                }
-                _ => (),
-            }
-
             let config = config_from_args(args)?;
             sqld::run_server(config).await?;
 

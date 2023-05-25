@@ -92,28 +92,6 @@ pub fn open_db(
 ) -> anyhow::Result<sqld_libsql_bindings::Connection> {
     let mut retries = 0;
     loop {
-        #[cfg(feature = "mwal_backend")]
-        let conn_result = match crate::VWAL_METHODS.get().unwrap() {
-            Some(ref vwal_methods) => crate::libsql::mwal::open_with_virtual_wal(
-                path,
-                OpenFlags::SQLITE_OPEN_READ_WRITE
-                    | OpenFlags::SQLITE_OPEN_CREATE
-                    | OpenFlags::SQLITE_OPEN_URI
-                    | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-                vwal_methods.clone(),
-            ),
-            None => crate::libsql::open_with_regular_wal(
-                path,
-                OpenFlags::SQLITE_OPEN_READ_WRITE
-                    | OpenFlags::SQLITE_OPEN_CREATE
-                    | OpenFlags::SQLITE_OPEN_URI
-                    | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-                wal_hook.clone(),
-                with_bottomless,
-            ),
-        };
-
-        #[cfg(not(feature = "mwal_backend"))]
         let conn_result = crate::libsql::open_with_regular_wal(
             path,
             OpenFlags::SQLITE_OPEN_READ_WRITE

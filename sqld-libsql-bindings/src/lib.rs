@@ -1,8 +1,6 @@
 #![allow(improper_ctypes)]
 
 pub mod ffi;
-#[cfg(feature = "mwal_backend")]
-pub mod mwal;
 pub mod wal_hook;
 
 use std::ops::Deref;
