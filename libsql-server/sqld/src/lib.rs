@@ -64,6 +64,7 @@ pub struct Config {
     pub http_addr: Option<SocketAddr>,
     pub enable_http_console: bool,
     pub http_auth: Option<String>,
+    pub http_self_url: Option<String>,
     pub hrana_addr: Option<SocketAddr>,
     pub auth_jwt_key: Option<String>,
     pub backend: Backend,
@@ -110,7 +111,7 @@ async fn run_service(
         let auth = auth.clone();
         let idle_kicker = idle_shutdown_layer.clone().map(|isl| isl.into_kicker());
         join_set.spawn(async move {
-            hrana::serve(
+            hrana::ws::serve(
                 db_factory,
                 auth,
                 idle_kicker,
@@ -123,20 +124,29 @@ async fn run_service(
     }
 
     if let Some(addr) = config.http_addr {
+        let hrana_http_srv = Arc::new(hrana::http::Server::new(
+            db_factory.clone(),
+            config.http_self_url.clone(),
+        ));
         join_set.spawn(http::run_http(
             addr,
             auth,
             db_factory,
             hrana_upgrade_tx,
+            hrana_http_srv.clone(),
             config.enable_http_console,
             idle_shutdown_layer,
             stats.clone(),
         ));
+        join_set.spawn(async move {
+            hrana_http_srv.run_expire().await;
+            Ok(())
+        });
     }
 
     if let Some(addr) = config.hrana_addr {
         join_set.spawn(async move {
-            hrana::listen(addr, hrana_accept_tx)
+            hrana::ws::listen(addr, hrana_accept_tx)
                 .await
                 .context("Hrana listener failed")
         });

@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -12,7 +11,8 @@ use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
 use tungstenite::protocol::frame::coding::CloseCode;
 
-use super::handshake::{Protocol, WebSocket};
+use super::super::{ProtocolError, Version};
+use super::handshake::WebSocket;
 use super::{handshake, proto, session, Server, Upgrade};
 
 /// State of a Hrana connection.
@@ -22,7 +22,7 @@ struct Conn {
     ws: WebSocket,
     ws_closed: bool,
     /// The version of the protocol that has been negotiated in the WebSocket handshake.
-    protocol: Protocol,
+    version: Version,
     /// After a successful authentication, this contains the session-level state of the connection.
     session: Option<session::Session>,
     /// Join set for all tasks that were spawned to handle the connection.
@@ -40,31 +40,15 @@ struct ResponseFuture {
     response_rx: futures::future::Fuse<oneshot::Receiver<Result<proto::Response>>>,
 }
 
-/// A protocol error that should close the WebSocket.
-#[derive(Debug)]
-pub struct ProtocolError {
-    pub code: CloseCode,
-    pub message: String,
-}
-
-impl ProtocolError {
-    pub fn from_message(message: impl Into<String>) -> Self {
-        Self {
-            code: CloseCode::Policy,
-            message: message.into(),
-        }
-    }
-}
-
 pub(super) async fn handle_tcp(
     server: Arc<Server>,
     socket: tokio::net::TcpStream,
     conn_id: u64,
 ) -> Result<()> {
-    let (ws, protocol) = handshake::handshake_tcp(socket)
+    let (ws, version) = handshake::handshake_tcp(socket)
         .await
         .context("Could not perform the WebSocket handshake on TCP connection")?;
-    handle_ws(server, ws, protocol, conn_id).await
+    handle_ws(server, ws, version, conn_id).await
 }
 
 pub(super) async fn handle_upgrade(
@@ -72,16 +56,16 @@ pub(super) async fn handle_upgrade(
     upgrade: Upgrade,
     conn_id: u64,
 ) -> Result<()> {
-    let (ws, protocol) = handshake::handshake_upgrade(upgrade)
+    let (ws, version) = handshake::handshake_upgrade(upgrade)
         .await
         .context("Could not perform the WebSocket handshake on HTTP connection")?;
-    handle_ws(server, ws, protocol, conn_id).await
+    handle_ws(server, ws, version, conn_id).await
 }
 
 async fn handle_ws(
     server: Arc<Server>,
     ws: WebSocket,
-    protocol: Protocol,
+    version: Version,
     conn_id: u64,
 ) -> Result<()> {
     let mut conn = Conn {
@@ -89,7 +73,7 @@ async fn handle_ws(
         server,
         ws,
         ws_closed: false,
-        protocol,
+        version,
         session: None,
         join_set: tokio::task::JoinSet::new(),
         responses: FuturesUnordered::new(),
@@ -113,9 +97,10 @@ async fn handle_ws(
                                 tracing::warn!(
                                     "Connection #{} terminated due to protocol error: {}",
                                     conn.conn_id,
-                                    proto_err.message,
+                                    proto_err,
                                 );
-                                close(&mut conn, proto_err.code, proto_err.message).await;
+                                let close_code = protocol_error_to_close_code(&proto_err);
+                                close(&mut conn, close_code, proto_err.to_string()).await;
                                 return Ok(())
                             }
                             Err(err) => {
@@ -153,10 +138,7 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
             // in JSON
             let client_msg: proto::ClientMsg = match serde_json::from_str(&client_msg) {
                 Ok(client_msg) => client_msg,
-                Err(err) => bail!(ProtocolError {
-                    code: CloseCode::Invalid,
-                    message: format!("Invalid format of client message: {err}"),
-                }),
+                Err(err) => bail!(ProtocolError::Deserialize { source: err }),
             };
 
             match client_msg {
@@ -167,6 +149,7 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
                 } => handle_request_msg(conn, request_id, request).await,
             }
         }
+        tungstenite::Message::Binary(_) => bail!(ProtocolError::BinaryWebSocketMessage),
         tungstenite::Message::Ping(ping_data) => {
             let pong_msg = tungstenite::Message::Pong(ping_data);
             conn.ws
@@ -175,17 +158,15 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
                 .context("Could not send pong to the WebSocket")?;
             Ok(true)
         }
+        tungstenite::Message::Pong(_) => Ok(true),
         tungstenite::Message::Close(_) => Ok(false),
-        _ => bail!(ProtocolError {
-            code: CloseCode::Unsupported,
-            message: "Received an unsupported WebSocket message".into(),
-        }),
+        tungstenite::Message::Frame(_) => panic!("Received a tungstenite::Message::Frame"),
     }
 }
 
 async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> {
     let hello_res = match conn.session.as_mut() {
-        None => session::handle_initial_hello(&conn.server, conn.protocol, jwt)
+        None => session::handle_initial_hello(&conn.server, conn.version, jwt)
             .map(|session| conn.session = Some(session)),
         Some(session) => session::handle_repeated_hello(&conn.server, session, jwt),
     };
@@ -211,7 +192,7 @@ async fn handle_request_msg(
     request: proto::Request,
 ) -> Result<bool> {
     let Some(session) = conn.session.as_mut() else {
-        bail!(ProtocolError::from_message("Requests can only be sent after a hello"))
+        bail!(ProtocolError::RequestBeforeHello)
     };
 
     let response_rx = session::handle_request(&conn.server, session, &mut conn.join_set, request)
@@ -306,8 +287,10 @@ async fn close(conn: &mut Conn, code: CloseCode, reason: String) {
     conn.ws_closed = true;
 }
 
-impl fmt::Display for ProtocolError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        <String as fmt::Display>::fmt(&self.message, f)
+fn protocol_error_to_close_code(err: &ProtocolError) -> CloseCode {
+    match err {
+        ProtocolError::Deserialize { .. } => CloseCode::Invalid,
+        ProtocolError::BinaryWebSocketMessage => CloseCode::Unsupported,
+        _ => CloseCode::Policy,
     }
 }

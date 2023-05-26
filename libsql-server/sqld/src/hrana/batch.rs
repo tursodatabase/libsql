@@ -7,30 +7,20 @@ use crate::database::{Cond, Database, Program, Step};
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
 
-use super::handshake::Protocol;
-use super::proto;
 use super::stmt::{
     proto_error_from_stmt_error, proto_stmt_result_from_query_response, proto_stmt_to_query,
     stmt_error_from_sqld_error, StmtError,
 };
+use super::Version;
+use super::{proto, ProtocolError};
 
-#[derive(thiserror::Error, Debug)]
-pub enum BatchError {
-    #[error("Invalid reference to step in a condition")]
-    CondBadStep,
-}
-
-impl BatchError {
-    pub fn code(&self) -> &'static str {
-        match self {
-            Self::CondBadStep => "BATCH_COND_BAD_STEP",
+fn proto_cond_to_cond(cond: &proto::BatchCond, max_step_i: usize) -> Result<Cond> {
+    let try_convert_step = |step: i32| -> Result<usize, ProtocolError> {
+        let step = usize::try_from(step).map_err(|_| ProtocolError::BatchCondBadStep)?;
+        if step >= max_step_i {
+            return Err(ProtocolError::BatchCondBadStep);
         }
-    }
-}
-
-fn proto_cond_to_cond(cond: &proto::BatchCond) -> Result<Cond> {
-    let try_convert_step = |step: i32| -> std::result::Result<usize, BatchError> {
-        usize::try_from(step).map_err(|_| BatchError::CondBadStep)
+        Ok(step)
     };
 
     let cond = match cond {
@@ -41,18 +31,18 @@ fn proto_cond_to_cond(cond: &proto::BatchCond) -> Result<Cond> {
             step: try_convert_step(*step)?,
         },
         proto::BatchCond::Not { cond } => Cond::Not {
-            cond: proto_cond_to_cond(cond)?.into(),
+            cond: proto_cond_to_cond(cond, max_step_i)?.into(),
         },
         proto::BatchCond::And { conds } => Cond::And {
             conds: conds
                 .iter()
-                .map(proto_cond_to_cond)
+                .map(|cond| proto_cond_to_cond(cond, max_step_i))
                 .collect::<Result<_>>()?,
         },
         proto::BatchCond::Or { conds } => Cond::Or {
             conds: conds
                 .iter()
-                .map(proto_cond_to_cond)
+                .map(|cond| proto_cond_to_cond(cond, max_step_i))
                 .collect::<Result<_>>()?,
         },
     };
@@ -63,15 +53,15 @@ fn proto_cond_to_cond(cond: &proto::BatchCond) -> Result<Cond> {
 pub fn proto_batch_to_program(
     batch: &proto::Batch,
     sqls: &HashMap<i32, String>,
-    protocol: Protocol,
+    version: Version,
 ) -> Result<Program> {
     let mut steps = Vec::with_capacity(batch.steps.len());
-    for step in &batch.steps {
-        let query = proto_stmt_to_query(&step.stmt, sqls, protocol)?;
+    for (step_i, step) in batch.steps.iter().enumerate() {
+        let query = proto_stmt_to_query(&step.stmt, sqls, version)?;
         let cond = step
             .condition
             .as_ref()
-            .map(proto_cond_to_cond)
+            .map(|cond| proto_cond_to_cond(cond, step_i))
             .transpose()?;
         let step = Step { query, cond };
 

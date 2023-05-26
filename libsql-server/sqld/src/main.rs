@@ -60,6 +60,10 @@ struct Cli {
     /// where $PARAM is base64-encoded string "$USERNAME:$PASSWORD".
     #[clap(long, env = "SQLD_HTTP_AUTH")]
     http_auth: Option<String>,
+    /// URL that points to the HTTP API of this server. If set, this is used to implement "sticky
+    /// sessions" in Hrana over HTTP.
+    #[clap(long, env = "SQLD_HTTP_SELF_URL")]
+    http_self_url: Option<String>,
 
     /// The address and port the inter-node RPC protocol listens to. Example: `0.0.0.0:5001`.
     #[clap(
@@ -237,6 +241,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         hrana_addr: args.hrana_listen_addr,
         auth_jwt_key,
         http_auth: args.http_auth,
+        http_self_url: args.http_self_url,
         backend: args.backend,
         writer_rpc_addr: args.primary_grpc_url,
         writer_rpc_tls: args.primary_grpc_tls,
