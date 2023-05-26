@@ -1,10 +1,8 @@
 use anyhow::{bail, Result};
 use std::collections::HashMap;
 
-use super::conn::ProtocolError;
-use super::handshake::Protocol;
 use super::proto;
-use super::session::ResponseError;
+use super::{ProtocolError, Version};
 use crate::auth::Authenticated;
 use crate::database::{Database, DescribeResponse};
 use crate::error::Error as SqldError;
@@ -12,6 +10,7 @@ use crate::hrana;
 use crate::query::{Params, Query, QueryResponse, Value};
 use crate::query_analysis::Statement;
 
+/// An error during execution of an SQL statement.
 #[derive(thiserror::Error, Debug)]
 pub enum StmtError {
     #[error("SQL string could not be parsed: {source}")]
@@ -76,9 +75,9 @@ pub async fn describe_stmt(
 pub fn proto_stmt_to_query(
     proto_stmt: &proto::Stmt,
     sqls: &HashMap<i32, String>,
-    protocol: Protocol,
+    verion: Version,
 ) -> Result<Query> {
-    let sql = proto_sql_to_sql(proto_stmt.sql.as_deref(), proto_stmt.sql_id, sqls, protocol)?;
+    let sql = proto_sql_to_sql(proto_stmt.sql.as_deref(), proto_stmt.sql_id, sqls, verion)?;
 
     let mut stmt_iter = Statement::parse(sql);
     let stmt = match stmt_iter.next() {
@@ -117,26 +116,23 @@ pub fn proto_sql_to_sql<'s>(
     proto_sql: Option<&'s str>,
     proto_sql_id: Option<i32>,
     sqls: &'s HashMap<i32, String>,
-    protocol: Protocol,
-) -> Result<&'s str> {
-    if proto_sql_id.is_some() && protocol < Protocol::Hrana2 {
-        bail!(ProtocolError::from_message(
-            "`sql_id` can be specified in protocol version 2 and higher"
-        ))
+    verion: Version,
+) -> Result<&'s str, ProtocolError> {
+    if proto_sql_id.is_some() && verion < Version::Hrana2 {
+        return Err(ProtocolError::NotSupported {
+            what: "`sql_id`",
+            min_version: Version::Hrana2,
+        });
     }
 
     match (proto_sql, proto_sql_id) {
         (Some(sql), None) => Ok(sql),
         (None, Some(sql_id)) => match sqls.get(&sql_id) {
             Some(sql) => Ok(sql),
-            None => bail!(ResponseError::SqlNotFound { sql_id }),
+            None => Err(ProtocolError::SqlNotFound { sql_id }),
         },
-        (Some(_), Some(_)) => bail!(ProtocolError::from_message(
-            "Either `sql` or `sql_id` are required, but not both"
-        )),
-        (None, None) => bail!(ProtocolError::from_message(
-            "Either `sql` or `sql_id` are required"
-        )),
+        (Some(_), Some(_)) => Err(ProtocolError::SqlIdAndSqlGiven),
+        (None, None) => Err(ProtocolError::SqlIdOrSqlNotGiven),
     }
 }
 

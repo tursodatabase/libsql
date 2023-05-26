@@ -1,4 +1,4 @@
-mod hrana_over_http;
+mod hrana_over_http_1;
 pub mod stats;
 mod types;
 
@@ -199,12 +199,12 @@ fn handle_health() -> Response<Body> {
 }
 
 async fn handle_upgrade(
-    upgrade_tx: &mpsc::Sender<hrana::Upgrade>,
+    upgrade_tx: &mpsc::Sender<hrana::ws::Upgrade>,
     req: Request<Body>,
 ) -> Response<Body> {
     let (response_tx, response_rx) = oneshot::channel();
     let _: Result<_, _> = upgrade_tx
-        .send(hrana::Upgrade {
+        .send(hrana::ws::Upgrade {
             request: req,
             response_tx,
         })
@@ -222,7 +222,8 @@ async fn handle_upgrade(
 async fn handle_request(
     auth: Arc<Auth>,
     req: Request<Body>,
-    upgrade_tx: mpsc::Sender<hrana::Upgrade>,
+    upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
+    hrana_http_srv: Arc<hrana::http::Server>,
     db_factory: Arc<dyn DbFactory>,
     enable_console: bool,
     stats: Stats,
@@ -249,24 +250,23 @@ async fn handle_request(
         (&Method::GET, "/health") => Ok(handle_health()),
         (&Method::GET, "/v1/stats") => Ok(stats::handle_stats(&stats)),
 
-        (&Method::GET, "/v1" | "/v2") => hrana_over_http::handle_index(req).await,
+        (&Method::GET, "/v1") => hrana_over_http_1::handle_index(req).await,
         (&Method::POST, "/v1/execute") => {
-            hrana_over_http::handle_execute(db_factory, hrana::Protocol::Hrana1, auth, req).await
-        }
-        (&Method::POST, "/v2/execute") => {
-            hrana_over_http::handle_execute(db_factory, hrana::Protocol::Hrana2, auth, req).await
+            hrana_over_http_1::handle_execute(db_factory, auth, req).await
         }
         (&Method::POST, "/v1/batch") => {
-            hrana_over_http::handle_batch(db_factory, hrana::Protocol::Hrana1, auth, req).await
+            hrana_over_http_1::handle_batch(db_factory, auth, req).await
         }
-        (&Method::POST, "/v2/batch") => {
-            hrana_over_http::handle_batch(db_factory, hrana::Protocol::Hrana2, auth, req).await
+
+        (&Method::GET, "/v2") => {
+            hrana_http_srv
+                .handle(auth, hrana::http::Route::GetIndex, req)
+                .await
         }
-        (&Method::POST, "/v2/sequence") => {
-            hrana_over_http::handle_sequence(db_factory, auth, req).await
-        }
-        (&Method::POST, "/v2/describe") => {
-            hrana_over_http::handle_describe(db_factory, auth, req).await
+        (&Method::POST, "/v2/pipeline") => {
+            hrana_http_srv
+                .handle(auth, hrana::http::Route::PostPipeline, req)
+                .await
         }
 
         _ => Ok(Response::builder().status(404).body(Body::empty()).unwrap()),
@@ -284,7 +284,8 @@ pub async fn run_http(
     addr: SocketAddr,
     auth: Arc<Auth>,
     db_factory: Arc<dyn DbFactory>,
-    upgrade_tx: mpsc::Sender<hrana::Upgrade>,
+    upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
+    hrana_http_srv: Arc<hrana::http::Server>,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
@@ -317,6 +318,7 @@ pub async fn run_http(
                 auth.clone(),
                 req,
                 upgrade_tx.clone(),
+                hrana_http_srv.clone(),
                 db_factory.clone(),
                 enable_console,
                 stats.clone(),

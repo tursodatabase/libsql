@@ -3,13 +3,8 @@ use futures::{SinkExt as _, StreamExt as _};
 use tokio_tungstenite::tungstenite;
 use tungstenite::http;
 
+use super::super::Version;
 use super::Upgrade;
-
-#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq)]
-pub enum Protocol {
-    Hrana1,
-    Hrana2,
-}
 
 #[derive(Debug)]
 pub enum WebSocket {
@@ -17,17 +12,17 @@ pub enum WebSocket {
     Upgraded(tokio_tungstenite::WebSocketStream<hyper::upgrade::Upgraded>),
 }
 
-pub async fn handshake_tcp(socket: tokio::net::TcpStream) -> Result<(WebSocket, Protocol)> {
-    let mut protocol = None;
+pub async fn handshake_tcp(socket: tokio::net::TcpStream) -> Result<(WebSocket, Version)> {
+    let mut version = None;
     let callback = |req: &http::Request<()>, resp: http::Response<()>| {
         let (mut resp_parts, _) = resp.into_parts();
         resp_parts
             .headers
             .insert("server", http::HeaderValue::from_static("sqld-hrana-tcp"));
 
-        match negotiate_protocol(req.headers(), &mut resp_parts.headers) {
-            Ok(protocol_) => {
-                protocol = Some(protocol_);
+        match negotiate_version(req.headers(), &mut resp_parts.headers) {
+            Ok(version_) => {
+                version = Some(version_);
                 Ok(http::Response::from_parts(resp_parts, ()))
             }
             Err(resp_body) => Err(http::Response::from_parts(resp_parts, Some(resp_body))),
@@ -37,17 +32,16 @@ pub async fn handshake_tcp(socket: tokio::net::TcpStream) -> Result<(WebSocket, 
     let ws_config = Some(get_ws_config());
     let stream =
         tokio_tungstenite::accept_hdr_async_with_config(socket, callback, ws_config).await?;
-    Ok((WebSocket::Tcp(stream), protocol.unwrap()))
+    Ok((WebSocket::Tcp(stream), version.unwrap()))
 }
 
-pub async fn handshake_upgrade(upgrade: Upgrade) -> Result<(WebSocket, Protocol)> {
+pub async fn handshake_upgrade(upgrade: Upgrade) -> Result<(WebSocket, Version)> {
     let mut req = upgrade.request;
 
     let ws_config = Some(get_ws_config());
-    let (mut resp, stream_fut_protocol_res) = match hyper_tungstenite::upgrade(&mut req, ws_config)
-    {
-        Ok((mut resp, stream_fut)) => match negotiate_protocol(req.headers(), resp.headers_mut()) {
-            Ok(protocol) => (resp, Ok((stream_fut, protocol))),
+    let (mut resp, stream_fut_version_res) = match hyper_tungstenite::upgrade(&mut req, ws_config) {
+        Ok((mut resp, stream_fut)) => match negotiate_version(req.headers(), resp.headers_mut()) {
+            Ok(version) => (resp, Ok((stream_fut, version))),
             Err(msg) => {
                 *resp.status_mut() = http::StatusCode::BAD_REQUEST;
                 *resp.body_mut() = hyper::Body::from(msg.clone());
@@ -77,17 +71,17 @@ pub async fn handshake_upgrade(upgrade: Upgrade) -> Result<(WebSocket, Protocol)
         bail!("Could not send the HTTP upgrade response")
     }
 
-    let (stream_fut, protocol) = stream_fut_protocol_res?;
+    let (stream_fut, version) = stream_fut_version_res?;
     let stream = stream_fut
         .await
         .context("Could not upgrade HTTP request to a WebSocket")?;
-    Ok((WebSocket::Upgraded(stream), protocol))
+    Ok((WebSocket::Upgraded(stream), version))
 }
 
-fn negotiate_protocol(
+fn negotiate_version(
     req_headers: &http::HeaderMap,
     resp_headers: &mut http::HeaderMap,
-) -> Result<Protocol, String> {
+) -> Result<Version, String> {
     if let Some(protocol_hdr) = req_headers.get("sec-websocket-protocol") {
         let supported_by_client = protocol_hdr
             .to_str()
@@ -98,27 +92,27 @@ fn negotiate_protocol(
         let mut hrana1_supported = false;
         let mut hrana2_supported = false;
         for protocol_str in supported_by_client {
-            hrana1_supported |= protocol_str == "hrana1";
-            hrana2_supported |= protocol_str == "hrana2";
+            hrana1_supported |= protocol_str.eq_ignore_ascii_case("hrana1");
+            hrana2_supported |= protocol_str.eq_ignore_ascii_case("hrana2");
         }
 
-        let (protocol, protocol_str) = if hrana2_supported {
-            (Protocol::Hrana2, "hrana2")
+        let version = if hrana2_supported {
+            Version::Hrana2
         } else if hrana1_supported {
-            (Protocol::Hrana1, "hrana1")
+            Version::Hrana1
         } else {
             return Err("Only 'hrana1' and 'hrana2' subprotocols are supported".into());
         };
 
         resp_headers.append(
             "sec-websocket-protocol",
-            http::HeaderValue::from_static(protocol_str),
+            http::HeaderValue::from_str(&version.to_string()).unwrap(),
         );
-        Ok(protocol)
+        Ok(version)
     } else {
         // Sec-WebSocket-Protocol header not present, assume that the client wants hrana1
         // According to RFC 6455, we must not set the Sec-WebSocket-Protocol response header
-        Ok(Protocol::Hrana1)
+        Ok(Version::Hrana1)
     }
 }
 
