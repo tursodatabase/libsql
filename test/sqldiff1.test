@@ -63,4 +63,26 @@ CREATE TABLE t3(a,b,c);
 INSERT INTO t3(rowid,a,b,c) VALUES(1,111,222,333);
 DROP TABLE t4;}
 
+db close
+forcedelete test.db test2.db
+sqlite3 db test.db
+
+do_test sqldiff-2.0 {
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY);
+  }
+  db close
+  sqlite3 db test2.db
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+  }
+  db close
+  set line "exec $PROG test.db test2.db"
+  unset -nocomplain ::MSG
+  catch {eval $line} ::MSG
+} {0}
+do_test sqldiff-2.1 {
+  set ::MSG
+} {ALTER TABLE t1 ADD COLUMN b;}
+
 finish_test
