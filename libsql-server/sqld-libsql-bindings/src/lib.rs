@@ -48,7 +48,7 @@ impl<'a> Connection<'a> {
         // it has been instanciated and lives for long enough
         _wal_hook: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self, rusqlite::Error> {
         let path = path.as_ref().join("data");
         tracing::trace!(
             "Opening a connection with regular WAL at {}",
@@ -74,9 +74,10 @@ impl<'a> Connection<'a> {
 
             if rc != 0 {
                 rusqlite::ffi::sqlite3_close(db);
-                return Err(
-                    rusqlite::Error::SqliteFailure(rusqlite::ffi::Error::new(rc), None).into(),
-                );
+                return Err(rusqlite::Error::SqliteFailure(
+                    rusqlite::ffi::Error::new(rc),
+                    None,
+                ));
             }
 
             assert!(!db.is_null());

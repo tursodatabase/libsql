@@ -59,7 +59,8 @@ impl DbFactory for WriteProxyDbFactory {
             self.extensions.clone(),
             self.stats.clone(),
             self.applied_frame_no_receiver.clone(),
-        )?;
+        )
+        .await?;
         Ok(Arc::new(db))
     }
 }
@@ -78,14 +79,14 @@ pub struct WriteProxyDatabase {
 }
 
 impl WriteProxyDatabase {
-    fn new(
+    async fn new(
         write_proxy: ProxyClient<Channel>,
         path: PathBuf,
         extensions: Vec<PathBuf>,
         stats: Stats,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
     ) -> Result<Self> {
-        let read_db = LibSqlDb::new(path, extensions, &TRANSPARENT_METHODS, (), stats)?;
+        let read_db = LibSqlDb::new(path, extensions, &TRANSPARENT_METHODS, (), stats).await?;
         Ok(Self {
             read_db,
             write_proxy,
