@@ -3,9 +3,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use anyhow::Context;
 use crossbeam::channel::RecvTimeoutError;
-use rusqlite::{OpenFlags, StatementStatus};
+use rusqlite::{ErrorCode, OpenFlags, StatementStatus};
 use sqld_libsql_bindings::wal_hook::WalMethodsHook;
 use tokio::sync::oneshot;
 use tracing::warn;
@@ -52,7 +51,7 @@ where
     W: WalHook + 'static + Sync + Send,
     W::Context: Send + 'static,
 {
-    pub fn new<F>(
+    pub async fn new<F>(
         db_path: PathBuf,
         hook: &'static WalMethodsHook<W>,
         ctx_builder: F,
@@ -71,13 +70,42 @@ where
             _db: None,
         };
 
-        let db = this.create_database()?;
+        let db = this.try_create_db().await?;
         this._db = Some(db);
 
         Ok(this)
     }
 
-    fn create_database(&self) -> Result<LibSqlDb> {
+    /// Tries to create a database, retrying if the database is busy.
+    async fn try_create_db(&self) -> Result<LibSqlDb> {
+        // try 100 times to acquire initial db connection.
+        let mut retries = 0;
+        loop {
+            match self.create_database().await {
+                Ok(conn) => return Ok(conn),
+                Err(
+                    err @ Error::RusqliteError(rusqlite::Error::SqliteFailure(
+                        rusqlite::ffi::Error {
+                            code: ErrorCode::DatabaseBusy,
+                            ..
+                        },
+                        _,
+                    )),
+                ) => {
+                    if retries < 100 {
+                        tracing::warn!("Database file is busy, retrying...");
+                        retries += 1;
+                        tokio::time::sleep(Duration::from_millis(100)).await
+                    } else {
+                        Err(err)?;
+                    }
+                }
+                Err(e) => Err(e)?,
+            }
+        }
+    }
+
+    async fn create_database(&self) -> Result<LibSqlDb> {
         LibSqlDb::new(
             self.db_path.clone(),
             self.extensions.clone(),
@@ -85,6 +113,7 @@ where
             (self.ctx_builder)(),
             self.stats.clone(),
         )
+        .await
     }
 }
 
@@ -95,7 +124,7 @@ where
     W::Context: Send + 'static,
 {
     async fn create(&self) -> Result<Arc<dyn Database>, Error> {
-        Ok(Arc::new(self.create_database()?))
+        Ok(Arc::new(self.create_database().await?))
     }
 }
 
@@ -155,23 +184,23 @@ pub fn open_db<'a, W>(
     path: &Path,
     wal_methods: &'static WalMethodsHook<W>,
     hook_ctx: &'a mut W::Context,
-) -> anyhow::Result<sqld_libsql_bindings::Connection<'a>>
+    flags: Option<OpenFlags>,
+) -> Result<sqld_libsql_bindings::Connection<'a>, rusqlite::Error>
 where
     W: WalHook,
 {
-    sqld_libsql_bindings::Connection::open(
-        path,
+    let flags = flags.unwrap_or(
         OpenFlags::SQLITE_OPEN_READ_WRITE
             | OpenFlags::SQLITE_OPEN_CREATE
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
-        wal_methods,
-        hook_ctx,
-    )
+    );
+
+    sqld_libsql_bindings::Connection::open(path, flags, wal_methods, hook_ctx)
 }
 
 impl LibSqlDb {
-    pub fn new<W>(
+    pub async fn new<W>(
         path: impl AsRef<Path> + Send + 'static,
         extensions: Vec<PathBuf>,
         wal_hook: &'static WalMethodsHook<W>,
@@ -183,11 +212,22 @@ impl LibSqlDb {
         W::Context: Send,
     {
         let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
+        let (init_sender, init_receiver) = oneshot::channel();
 
         tokio::task::spawn_blocking(move || {
             let mut ctx = hook_ctx;
             let mut connection =
-                Connection::new(path.as_ref(), extensions, wal_hook, &mut ctx, stats).unwrap();
+                match Connection::new(path.as_ref(), extensions, wal_hook, &mut ctx, stats) {
+                    Ok(conn) => {
+                        let Ok(_) = init_sender.send(Ok(())) else { return };
+                        conn
+                    }
+                    Err(e) => {
+                        let _ = init_sender.send(Err(e));
+                        return;
+                    }
+                };
+
             loop {
                 let message = match connection.state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
@@ -229,6 +269,8 @@ impl LibSqlDb {
             }
         });
 
+        init_receiver.await??;
+
         Ok(Self { sender })
     }
 }
@@ -247,9 +289,9 @@ impl<'a> Connection<'a> {
         wal_methods: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
         stats: Stats,
-    ) -> anyhow::Result<Self> {
+    ) -> Result<Self> {
         let this = Self {
-            conn: open_db(path, wal_methods, hook_ctx)?,
+            conn: open_db(path, wal_methods, hook_ctx, None)?,
             state: ConnectionState::initial(),
             timed_out: false,
             stats,
@@ -258,9 +300,10 @@ impl<'a> Connection<'a> {
         for ext in extensions {
             unsafe {
                 let _guard = rusqlite::LoadExtensionGuard::new(&this.conn).unwrap();
-                this.conn
-                    .load_extension(&ext, None)
-                    .with_context(|| format!("Could not load extension: {}", &ext.display()))?;
+                if let Err(e) = this.conn.load_extension(&ext, None) {
+                    tracing::error!("failed to load extension: {}", ext.display());
+                    Err(e)?;
+                }
                 tracing::debug!("Loaded extension {}", ext.display());
             }
         }

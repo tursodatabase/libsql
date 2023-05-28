@@ -1,13 +1,16 @@
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc::RecvTimeoutError;
 use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
 use database::dump::loader::DumpLoader;
 use database::factory::DbFactory;
-use database::libsql::LibSqlDbFactory;
+use database::libsql::{open_db, LibSqlDbFactory};
 use database::write_proxy::WriteProxyDbFactory;
+use futures::never::Never;
+use libsql::wal_hook::TRANSPARENT_METHODS;
 use once_cell::sync::Lazy;
 use replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
 use replication::ReplicationLogger;
@@ -362,7 +365,8 @@ async fn start_primary(
         },
         stats.clone(),
         valid_extensions,
-    )?
+    )
+    .await?
     .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT))
     .into();
 
@@ -387,24 +391,49 @@ async fn start_primary(
 // Periodically check the storage used by the database and save it in the Stats structure.
 // TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
 // right after checkpointing is exactly where it should be done.
-async fn run_storage_monitor(mut db_path: PathBuf, stats: Stats) -> anyhow::Result<()> {
-    let duration = tokio::time::Duration::from_secs(60);
-    db_path.push("data");
-    loop {
-        if let Ok(conn) = rusqlite::Connection::open_with_flags(
-            &db_path,
-            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-        ) {
-            if let Ok(storage_bytes_used) =
-                conn.query_row("select sum(pgsize) from dbstat;", [], |row| {
-                    row.get::<usize, u64>(0)
-                })
-            {
-                stats.set_storage_bytes_used(storage_bytes_used);
+async fn run_storage_monitor(db_path: PathBuf, stats: Stats) -> anyhow::Result<()> {
+    let (_drop_guard, exit_notify) = std::sync::mpsc::channel::<Never>();
+    let _ = tokio::task::spawn_blocking(move || {
+        let duration = tokio::time::Duration::from_secs(60);
+        loop {
+            // because closing the last connection interferes with opening a new one, we lazily
+            // initialize a connection here, and keep it alive for the entirety of the program. If we
+            // fail to open it, we wait for `duration` and try again later.
+            let ctx = &mut ();
+            let maybe_conn = match open_db(&db_path, &TRANSPARENT_METHODS, ctx, Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)) {
+                Ok(conn) => Some(conn),
+                Err(e) => {
+                    tracing::warn!("failed to open connection for storager monitor: {e}, trying again in {duration:?}");
+                    None
+                },
+            };
+
+            loop {
+                if let Some(ref conn) = maybe_conn {
+                    if let Ok(storage_bytes_used) =
+                        conn.query_row("select sum(pgsize) from dbstat;", [], |row| {
+                            row.get::<usize, u64>(0)
+                        })
+                    {
+                        stats.set_storage_bytes_used(storage_bytes_used);
+                    }
+                }
+
+                match exit_notify.recv_timeout(duration) {
+                    Ok(_) => unreachable!(),
+                    Err(RecvTimeoutError::Disconnected) => return,
+                    Err(RecvTimeoutError::Timeout) => (),
+
+                }
+
+                if maybe_conn.is_none() {
+                    break
+                }
             }
         }
-        tokio::time::sleep(duration).await;
-    }
+    }).await;
+
+    Ok(())
 }
 
 pub async fn run_server(config: Config) -> anyhow::Result<()> {
@@ -441,7 +470,9 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
 
         let stats = Stats::new(&config.db_path)?;
 
-        join_set.spawn(run_storage_monitor(config.db_path.clone(), stats.clone()));
+        if config.heartbeat_url.is_some() {
+            join_set.spawn(run_storage_monitor(config.db_path.clone(), stats.clone()));
+        }
 
         match config.writer_rpc_addr {
             Some(_) => start_replica(&config, &mut join_set, idle_shutdown_layer, stats).await?,

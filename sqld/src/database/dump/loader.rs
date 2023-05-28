@@ -2,8 +2,10 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::anyhow;
+use rusqlite::ErrorCode;
 use tokio::sync::{mpsc, oneshot};
 
 use crate::database::libsql::open_db;
@@ -12,6 +14,7 @@ use crate::replication::ReplicationLogger;
 
 type OpMsg = Box<dyn FnOnce(&rusqlite::Connection) + 'static + Send + Sync>;
 
+#[derive(Debug)]
 pub struct DumpLoader {
     sender: mpsc::Sender<OpMsg>,
 }
@@ -23,16 +26,36 @@ impl DumpLoader {
         let (ok_snd, ok_rcv) = oneshot::channel::<anyhow::Result<()>>();
         tokio::task::spawn_blocking(move || {
             let mut ctx = ReplicationLoggerHookCtx::new(logger);
-            let db = match open_db(&path, &REPLICATION_METHODS, &mut ctx) {
-                Ok(db) => {
-                    let _ = ok_snd.send(Ok(()));
-                    db
-                }
-                Err(e) => {
-                    let _ = ok_snd.send(Err(e));
-                    return;
+            let mut retries = 0;
+            let db = loop {
+                match open_db(&path, &REPLICATION_METHODS, &mut ctx, None) {
+                    Ok(db) => {
+                        if ok_snd.send(Ok(())).is_ok() {
+                            break db;
+                        } else {
+                            return;
+                        }
+                    }
+                    // Creating the loader database can, in rare occurences, return sqlite busy,
+                    // because of a race condition opening the monitor thread db. This is there to
+                    // retry a bunch of times if that happens.
+                    Err(rusqlite::Error::SqliteFailure(
+                        rusqlite::ffi::Error {
+                            code: ErrorCode::DatabaseBusy,
+                            ..
+                        },
+                        _,
+                    )) if retries < 10 => {
+                        retries += 1;
+                        std::thread::sleep(Duration::from_millis(100));
+                    }
+                    Err(e) => {
+                        let _ = ok_snd.send(Err(e.into()));
+                        return;
+                    }
                 }
             };
+
             while let Some(f) = receiver.blocking_recv() {
                 f(&db);
             }
