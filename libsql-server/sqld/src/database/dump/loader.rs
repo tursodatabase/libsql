@@ -20,12 +20,22 @@ pub struct DumpLoader {
 }
 
 impl DumpLoader {
-    pub async fn new(path: PathBuf, logger: Arc<ReplicationLogger>) -> anyhow::Result<Self> {
+    pub async fn new(
+        path: PathBuf,
+        logger: Arc<ReplicationLogger>,
+        #[cfg(feature = "bottomless")] bottomless_replicator: Option<
+            Arc<std::sync::Mutex<bottomless::replicator::Replicator>>,
+        >,
+    ) -> anyhow::Result<Self> {
         let (sender, mut receiver) = mpsc::channel::<OpMsg>(1);
 
         let (ok_snd, ok_rcv) = oneshot::channel::<anyhow::Result<()>>();
         tokio::task::spawn_blocking(move || {
-            let mut ctx = ReplicationLoggerHookCtx::new(logger);
+            let mut ctx = ReplicationLoggerHookCtx::new(
+                logger,
+                #[cfg(feature = "bottomless")]
+                bottomless_replicator,
+            );
             let mut retries = 0;
             let db = loop {
                 match open_db(&path, &REPLICATION_METHODS, &mut ctx, None) {

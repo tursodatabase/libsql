@@ -16,9 +16,12 @@ use tokio::sync::watch;
 use uuid::Uuid;
 
 use crate::libsql::ffi::{
-    types::{XWalFrameFn, XWalUndoFn},
-    PgHdr, Wal,
+    sqlite3,
+    types::{XWalCheckpointFn, XWalFrameFn, XWalSavePointUndoFn, XWalUndoFn},
+    PgHdr, Wal, SQLITE_OK,
 };
+#[cfg(feature = "bottomless")]
+use crate::libsql::ffi::{SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR_WRITE};
 use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
 use crate::replication::frame::{Frame, FrameHeader};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
@@ -32,6 +35,8 @@ pub enum ReplicationLoggerHook {}
 pub struct ReplicationLoggerHookCtx {
     buffer: Vec<WalPage>,
     logger: Arc<ReplicationLogger>,
+    #[cfg(feature = "bottomless")]
+    bottomless_replicator: Option<Arc<std::sync::Mutex<bottomless::replicator::Replicator>>>,
 }
 
 /// This implementation of WalHook intercepts calls to `on_frame`, and writes them to a
@@ -60,6 +65,10 @@ unsafe impl WalHook for ReplicationLoggerHook {
     ) -> c_int {
         assert_eq!(page_size, 4096);
         let wal_ptr = wal as *mut _;
+        #[cfg(feature = "bottomless")]
+        let last_valid_frame = wal.hdr.mxFrame;
+        #[cfg(feature = "bottomless")]
+        let frame_checksum = wal.hdr.aFrameCksum;
         let ctx = Self::wal_extract_ctx(wal);
 
         for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
@@ -70,6 +79,39 @@ unsafe impl WalHook for ReplicationLoggerHook {
             // returning IO_ERR ensure that xUndo will be called by sqlite.
             return SQLITE_IOERR;
         }
+
+        // FIXME: instead of block_on, we should consider replicating asynchronously in the background,
+        // e.g. by sending the data to another fiber by an unbounded channel (which allows sync insertions).
+        #[allow(clippy::await_holding_lock)] // uncontended -> only gets called under a libSQL write lock
+        #[cfg(feature = "bottomless")]
+        let last_consistent_frame = {
+            let runtime = tokio::runtime::Handle::current();
+            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
+                match runtime.block_on(async move {
+                    let mut replicator = replicator.lock().unwrap();
+                    replicator.register_last_valid_frame(last_valid_frame);
+                    // In theory it's enough to set the page size only once, but in practice
+                    // it's a very cheap operation anyway, and the page is not always known
+                    // upfront and can change dynamically.
+                    // FIXME: changing the page size in the middle of operation is *not*
+                    // supported by bottomless storage.
+                    replicator.set_page_size(page_size as usize)?;
+                    for (pgno, data) in PageHdrIter::new(page_headers, page_size as usize) {
+                        replicator.write(pgno, data);
+                    }
+
+                    replicator.flush().await
+                }) {
+                    Ok(last_consistent_frame) => last_consistent_frame,
+                    Err(e) => {
+                        tracing::error!("error writing to bottomless: {e}");
+                        return SQLITE_IOERR_WRITE;
+                    }
+                }
+            } else {
+                0
+            }
+        };
 
         let rc = unsafe {
             orig(
@@ -83,6 +125,23 @@ unsafe impl WalHook for ReplicationLoggerHook {
         };
 
         if is_commit != 0 && rc == 0 {
+            #[allow(clippy::await_holding_lock)] // uncontended -> only gets called under a libSQL write lock
+            #[cfg(feature = "bottomless")]
+            {
+                let runtime = tokio::runtime::Handle::current();
+                if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
+                    if let Err(e) = runtime.block_on(async move {
+                        let mut replicator = replicator.lock().unwrap();
+                        replicator
+                            .finalize_commit(last_consistent_frame, frame_checksum)
+                            .await
+                    }) {
+                        tracing::error!("error writing to bottomless: {e}");
+                        return SQLITE_IOERR_WRITE;
+                    }
+                }
+            }
+
             if let Err(e) = ctx.commit() {
                 // If we reach this point, it means that we have commited a transaction to sqlite wal,
                 // but failed to commit it to the shadow WAL, which leaves us in an inconsistent state.
@@ -113,7 +172,109 @@ unsafe impl WalHook for ReplicationLoggerHook {
     ) -> i32 {
         let ctx = Self::wal_extract_ctx(wal);
         ctx.rollback();
+
+        #[cfg(feature = "bottomless")]
+        tracing::error!(
+            "fixme: implement bottomless undo for {:?}",
+            ctx.bottomless_replicator
+        );
+
         unsafe { orig(wal, func, undo_ctx) }
+    }
+
+    fn on_savepoint_undo(wal: &mut Wal, wal_data: *mut u32, orig: XWalSavePointUndoFn) -> i32 {
+        let rc = unsafe { orig(wal, wal_data) };
+        if rc != SQLITE_OK {
+            return rc;
+        };
+
+        #[cfg(feature = "bottomless")]
+        {
+            let ctx = Self::wal_extract_ctx(wal);
+            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
+                let last_valid_frame = unsafe { *wal_data };
+                let mut replicator = replicator.lock().unwrap();
+                let prev_valid_frame = replicator.peek_last_valid_frame();
+                tracing::trace!(
+                    "Savepoint: rolling back from frame {prev_valid_frame} to {last_valid_frame}",
+                );
+                replicator.rollback_to_frame(last_valid_frame);
+            }
+        }
+
+        rc
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn on_checkpoint(
+        wal: &mut Wal,
+        db: *mut sqlite3,
+        emode: i32,
+        busy_handler: Option<unsafe extern "C" fn(*mut c_void) -> i32>,
+        busy_arg: *mut c_void,
+        sync_flags: i32,
+        n_buf: i32,
+        z_buf: *mut u8,
+        frames_in_wal: *mut i32,
+        backfilled_frames: *mut i32,
+        orig: XWalCheckpointFn,
+    ) -> i32 {
+        #[cfg(feature = "bottomless")]
+        {
+            tracing::trace!("bottomless checkpoint");
+
+            /* In order to avoid partial checkpoints, passive checkpoint
+             ** mode is not allowed. Only TRUNCATE checkpoints are accepted,
+             ** because these are guaranteed to block writes, copy all WAL pages
+             ** back into the main database file and reset the frame number.
+             ** In order to avoid autocheckpoint on close (that's too often),
+             ** checkpoint attempts weaker than TRUNCATE are ignored.
+             */
+            if emode < SQLITE_CHECKPOINT_TRUNCATE {
+                tracing::trace!("Ignoring a checkpoint request weaker than TRUNCATE");
+                return SQLITE_OK;
+            }
+        }
+        let rc = unsafe {
+            orig(
+                wal,
+                db,
+                emode,
+                busy_handler,
+                busy_arg,
+                sync_flags,
+                n_buf,
+                z_buf,
+                frames_in_wal,
+                backfilled_frames,
+            )
+        };
+
+        if rc != SQLITE_OK {
+            return rc;
+        }
+
+        #[allow(clippy::await_holding_lock)] // uncontended -> only gets called under a libSQL write lock
+        #[cfg(feature = "bottomless")]
+        {
+            let ctx = Self::wal_extract_ctx(wal);
+            let runtime = tokio::runtime::Handle::current();
+            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
+                let mut replicator = replicator.lock().unwrap();
+                if replicator.commits_in_current_generation == 0 {
+                    tracing::debug!("No commits happened in this generation, not snapshotting");
+                    return SQLITE_OK;
+                }
+                replicator.new_generation();
+                if let Err(e) =
+                    runtime.block_on(async move { replicator.snapshot_main_db_file().await })
+                {
+                    tracing::error!("Failed to snapshot the main db file during checkpoint: {e}");
+                    return SQLITE_IOERR_WRITE;
+                }
+            }
+        }
+        SQLITE_OK
     }
 }
 
@@ -126,10 +287,19 @@ pub struct WalPage {
 }
 
 impl ReplicationLoggerHookCtx {
-    pub fn new(logger: Arc<ReplicationLogger>) -> Self {
+    pub fn new(
+        logger: Arc<ReplicationLogger>,
+        #[cfg(feature = "bottomless")] bottomless_replicator: Option<
+            Arc<std::sync::Mutex<bottomless::replicator::Replicator>>,
+        >,
+    ) -> Self {
+        #[cfg(feature = "bottomless")]
+        tracing::trace!("bottomless replication enabled: {bottomless_replicator:?}");
         Self {
             buffer: Default::default(),
             logger,
+            #[cfg(feature = "bottomless")]
+            bottomless_replicator,
         }
     }
 

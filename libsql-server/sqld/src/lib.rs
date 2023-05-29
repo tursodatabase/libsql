@@ -333,6 +333,45 @@ fn validate_extensions(extensions_path: Option<PathBuf>) -> anyhow::Result<Vec<P
     Ok(valid_extensions)
 }
 
+#[cfg(feature = "bottomless")]
+pub async fn init_bottomless_replicator(
+    path: impl AsRef<std::path::Path>,
+) -> anyhow::Result<bottomless::replicator::Replicator> {
+    tracing::debug!("Initializing bottomless replication");
+    let mut replicator =
+        bottomless::replicator::Replicator::create(bottomless::replicator::Options {
+            create_bucket_if_not_exists: true,
+            verify_crc: false,
+            use_compression: false,
+        })
+        .await?;
+
+    // NOTICE: LIBSQL_BOTTOMLESS_DATABASE_ID env variable can be used
+    // to pass an additional prefix for the database identifier
+    replicator.register_db(
+        path.as_ref()
+            .to_str()
+            .ok_or_else(|| anyhow::anyhow!("Invalid db path"))?
+            .to_owned(),
+    );
+
+    match replicator.restore().await? {
+        bottomless::replicator::RestoreAction::None => (),
+        bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
+            replicator.new_generation();
+            replicator.snapshot_main_db_file().await?;
+            // Restoration process only leaves the local WAL file if it was
+            // detected to be newer than its remote counterpart.
+            replicator.maybe_replicate_wal().await?
+        }
+        bottomless::replicator::RestoreAction::ReuseGeneration(gen) => {
+            replicator.set_generation(gen);
+        }
+    }
+
+    Ok(replicator)
+}
+
 async fn start_primary(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
@@ -345,8 +384,23 @@ async fn start_primary(
         config.max_log_size,
     )?);
 
+    #[cfg(feature = "bottomless")]
+    let bottomless_replicator = if config.enable_bottomless_replication {
+        Some(Arc::new(std::sync::Mutex::new(
+            init_bottomless_replicator(config.db_path.join("data")).await?,
+        )))
+    } else {
+        None
+    };
+
     // load dump is necessary
-    let dump_loader = DumpLoader::new(config.db_path.clone(), logger.clone()).await?;
+    let dump_loader = DumpLoader::new(
+        config.db_path.clone(),
+        logger.clone(),
+        #[cfg(feature = "bottomless")]
+        bottomless_replicator.clone(),
+    )
+    .await?;
     if let Some(ref path) = config.load_from_dump {
         if !is_fresh_db {
             anyhow::bail!("cannot load from a dump if a database already exists.\nIf you're sure you want to load from a dump, delete your database folder at `{}`", config.db_path.display());
@@ -361,7 +415,15 @@ async fn start_primary(
         &REPLICATION_METHODS,
         {
             let logger = logger.clone();
-            move || ReplicationLoggerHookCtx::new(logger.clone())
+            #[cfg(feature = "bottomless")]
+            let bottomless_replicator = bottomless_replicator.clone();
+            move || {
+                ReplicationLoggerHookCtx::new(
+                    logger.clone(),
+                    #[cfg(feature = "bottomless")]
+                    bottomless_replicator.clone(),
+                )
+            }
         },
         stats.clone(),
         valid_extensions,
