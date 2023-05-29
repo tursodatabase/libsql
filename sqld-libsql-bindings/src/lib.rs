@@ -13,12 +13,8 @@ use self::{
     wal_hook::WalHook,
 };
 
-pub fn get_orig_wal_methods(with_bottomless: bool) -> anyhow::Result<*mut libsql_wal_methods> {
-    let orig: *mut libsql_wal_methods = if with_bottomless {
-        unsafe { libsql_wal_methods_find("bottomless\0".as_ptr() as *const _) }
-    } else {
-        unsafe { libsql_wal_methods_find(std::ptr::null()) }
-    };
+pub fn get_orig_wal_methods() -> anyhow::Result<*mut libsql_wal_methods> {
+    let orig: *mut libsql_wal_methods = unsafe { libsql_wal_methods_find(std::ptr::null()) };
     if orig.is_null() {
         anyhow::bail!("no underlying methods");
     }
