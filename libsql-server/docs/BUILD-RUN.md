@@ -1,8 +1,9 @@
 # Build and run sqld
 
-There are three ways to build and run sqld:
+There are four ways to build and run sqld:
 
 - [Using Homebrew](#build-and-install-with-homebrew)
+- [Using a prebuilt Docker image](#using-a-prebuilt-docker-image)
 - [From source using Docker/Podman](#build-from-source-using-docker--podman)
 - [From source using Rust](#build-from-source-using-rust)
 
@@ -44,6 +45,23 @@ which should be in your PATH.
 
 ```bash
 sqld --help
+```
+
+## Using a prebuilt Docker image
+
+The sqld release process publishes a Docker image to the GitHub Container
+Registry. The URL is https://ghcr.io/libsql/sqld. You can run the latest image locally
+on port 8080 with the following:
+
+```bash
+docker run -p 8080:8080 -d ghcr.io/libsql/sqld:latest
+```
+
+Or you can run a specific version using one of the [sqld container release
+tags] in the following form for version X.Y.Z:
+
+```bash
+docker run -p 8080:8080 -d ghcr.io/libsql/sqld:vX.Y.Z
 ```
 
 ## Build from source using Docker / Podman
@@ -184,4 +202,5 @@ make test
 ```
 
 
-[sqld release tags]: /libsql/sqld/releases
+[sqld container release tags]: https://github.com/libsql/sqld/pkgs/container/sqld
+[sqld release tags]: https://github.com/libsql/sqld/releases
