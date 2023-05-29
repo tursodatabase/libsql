@@ -870,10 +870,45 @@ static int parseModifier(
     case '9': {
       double rRounder;
       int i;
-      for(n=1; z[n] && z[n]!=':' && !sqlite3Isspace(z[n]); n++){}
+      int Y,M,D,H,x;
+      for(n=1; z[n]; n++){
+        if( z[n]==':' ) break;
+        if( sqlite3Isspace(z[n]) ) break;
+        if( z[n]=='-' && n==5 && getDigits(&z[1], "40f", &Y)==1 ) break;
+      }
       if( sqlite3AtoF(z, &r, n, SQLITE_UTF8)<=0 ){
         rc = 1;
         break;
+      }
+      if( z[n]=='-' ){
+        /* A modifier of the form (+|-)YYYY-MM-DD adds or subtracts the
+        ** specified number of years, months, and days.  MM is limited to
+        ** the range 0-11 and DD is limited to 0-30.
+        */
+        if( z[0]!='+' && z[0]!='-' ) break;  /* Must start with +/- */
+        if( n!=5 ) break;                    /* Must be 4-digit YYYY */
+        if( getDigits(&z[1], "40f-20a-20d 20c", &Y, &M, &D, &H)!=4 ) break;
+        if( M>=12 ) break;                   /* M range 0..11 */
+        if( D>=31 ) break;                   /* D range 0..30 */
+        computeYMD_HMS(p);
+        p->validJD = 0;
+        if( z[0]=='-' ){
+          p->Y -= Y;
+          p->M -= M;
+          D = -D;
+        }else{
+          p->Y += Y;
+          p->M += M;
+        }
+        x = p->M>0 ? (p->M-1)/12 : (p->M-12)/12;
+        p->Y += x;
+        p->M -= x*12;
+        computeJD(p);
+        p->validHMS = 0;
+        p->validYMD = 0;
+        p->iJD += (i64)D*86400000;
+        z = &z[12];
+        n = 2;
       }
       if( z[n]==':' ){
         /* A modifier of the form (+|-)HH:MM:SS.FFF adds (or subtracts) the
@@ -916,7 +951,6 @@ static int parseModifier(
         ){
           switch( i ){
             case 4: { /* Special processing to add months */
-              int x;
               assert( strcmp(aXformType[i].zName,"month")==0 );
               computeYMD_HMS(p);
               p->M += (int)r;
