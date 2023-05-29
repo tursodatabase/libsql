@@ -46,7 +46,7 @@ libSQL is a fork of SQLite, and we keep their original README [here](README-SQLi
 Aside from all the goodies already provided by SQLite, libSQL adds:
 
 * [randomized ROWID](https://github.com/libsql/libsql/issues/12)
-* [WebAssembly User Defined Functions](https://blog.chiselstrike.com/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7)
+* [WebAssembly User Defined Functions](https://blog.turso.tech/webassembly-functions-for-your-sqlite-compatible-database-7e1ad95a2aa7)
 * [Pass down SQL string to virtual table implementation](https://github.com/libsql/libsql/pull/87)
 * [Virtual write-ahead log interface](https://github.com/libsql/libsql/pull/53)
 
