@@ -99,7 +99,7 @@ pub fn find_snapshot_file(
     for name in snapshot_list(db_path)? {
         let Some((_, start_frame_no, end_frame_no)) = parse_snapshot_name(&name) else { continue; };
         // we're looking for the frame right after the last applied frame on the replica
-        if (start_frame_no..=end_frame_no).contains(&(frame_no + 1)) {
+        if (start_frame_no..=end_frame_no).contains(&frame_no) {
             let snapshot_path = snapshot_dir_path.join(&name);
             tracing::debug!("found snapshot for frame {frame_no} at {snapshot_path:?}");
             let snapshot_file = SnapshotFile::open(&snapshot_path)?;
@@ -147,7 +147,7 @@ impl SnapshotFile {
         std::iter::from_fn(move || match iter.next() {
             Some(Ok(bytes)) => match Frame::try_from_bytes(bytes.clone()) {
                 Ok(frame) => {
-                    if frame.header().frame_no <= frame_no {
+                    if frame.header().frame_no < frame_no {
                         None
                     } else {
                         Some(Ok(bytes))

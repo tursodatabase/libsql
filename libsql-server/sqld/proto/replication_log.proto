@@ -2,8 +2,7 @@ syntax = "proto3";
 package wal_log;
 
 message LogOffset {
-    // offset of the last reveiced frame. If absent, the server should send frame 0.
-    optional uint64 currentOffset = 1;
+    uint64 next_offset = 1;
 }
 
 message HelloRequest { }

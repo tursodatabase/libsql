@@ -33,7 +33,7 @@ impl FrameStream {
             return;
         }
 
-        let next_frameno = self.current_frame_no + 1;
+        let next_frameno = self.current_frame_no;
         let logger = self.logger.clone();
         let fut = async move {
             let res = tokio::task::spawn_blocking(move || logger.get_frame(next_frameno)).await;
