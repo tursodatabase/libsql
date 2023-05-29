@@ -642,6 +642,25 @@ static const struct {
 };
 
 /*
+** If the DateTime p is raw number, try to figure out if it is
+** a julian day number of a unix timestamp.  Set the p value
+** appropriately.
+*/
+static void autoAdjustDate(DateTime *p){
+  if( !p->rawS || p->validJD ){
+    p->rawS = 0;
+  }else if( p->s>=-21086676*(i64)10000        /* -4713-11-24 12:00:00 */
+         && p->s<=(25340230*(i64)10000)+799   /*  9999-12-31 23:59:59 */
+  ){
+    double r = p->s*1000.0 + 210866760000000.0;
+    clearYMD_HMS_TZ(p);
+    p->iJD = (sqlite3_int64)(r + 0.5);
+    p->validJD = 1;
+    p->rawS = 0;
+  }
+}
+
+/*
 ** Process a modifier to a date-time stamp.  The modifiers are
 ** as follows:
 **
@@ -684,19 +703,8 @@ static int parseModifier(
       */
       if( sqlite3_stricmp(z, "auto")==0 ){
         if( idx>1 ) return 1; /* IMP: R-33611-57934 */
-        if( !p->rawS || p->validJD ){
-          rc = 0;
-          p->rawS = 0;
-        }else if( p->s>=-21086676*(i64)10000        /* -4713-11-24 12:00:00 */
-               && p->s<=(25340230*(i64)10000)+799   /*  9999-12-31 23:59:59 */
-        ){
-          r = p->s*1000.0 + 210866760000000.0;
-          clearYMD_HMS_TZ(p);
-          p->iJD = (sqlite3_int64)(r + 0.5);
-          p->validJD = 1;
-          p->rawS = 0;
-          rc = 0;
-        }
+        autoAdjustDate(p);
+        rc = 0;
       }
       break;
     }
@@ -1326,6 +1334,61 @@ static void cdateFunc(
 }
 
 /*
+** timediff(DATE1, DATE2)
+**
+** Return the that amount of time that DATE1 is later than DATE2 in
+** this format:
+**
+**     +YYYY-MM-DD HH:MM:SS.SSS
+**
+** The initial "+" becomes "-" if DATE1 occurs before DATE2.
+*/
+static void timediffFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  DateTime d1, d2;
+  sqlite3_str *pOut = 0;
+  char sign = '+';
+  int rc;
+  if( isDate(context, 1, argv, &d1)     ) return;
+  if( isDate(context, 1, &argv[1], &d2) ) return;
+  autoAdjustDate(&d1);
+  computeJD(&d1);
+  autoAdjustDate(&d2);
+  computeJD(&d2);
+  pOut = sqlite3_str_new(sqlite3_context_db_handle(context));
+  if( pOut==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+  if( d1.iJD<d2.iJD ){
+    sign = '-';
+    DateTime x = d1;
+    d1 = d2;
+    d2 = x;
+  }
+  d1.validYMD = 0;
+  d1.validHMS = 0;
+  d1.validTZ = 0;
+  d1.iJD -= d2.iJD;
+  d1.iJD += 148699540800000;
+  computeYMD_HMS(&d1);
+  sqlite3_str_appendf(pOut, "%c%04d-%02d-%02d %02d:%02d:%07.3f",
+     sign, d1.Y, d1.M-1, d1.D-1, d1.h, d1.m, d1.s);
+  rc = sqlite3_str_errcode(pOut);
+  if( rc ){
+    sqlite3_free(sqlite3_str_finish(pOut));
+    sqlite3_result_error_code(context, rc);
+  }else{
+    sqlite3_result_text(context, 
+        sqlite3_str_finish(pOut), -1, sqlite3_free);
+  }
+}
+
+
+/*
 ** current_timestamp()
 **
 ** This function returns the same value as datetime('now').
@@ -1399,6 +1462,7 @@ void sqlite3RegisterDateTimeFunctions(void){
     PURE_DATE(time,             -1, 0, 0, timeFunc      ),
     PURE_DATE(datetime,         -1, 0, 0, datetimeFunc  ),
     PURE_DATE(strftime,         -1, 0, 0, strftimeFunc  ),
+    PURE_DATE(timediff,          2, 0, 0, timediffFunc  ),
     DFUNCTION(current_time,      0, 0, 0, ctimeFunc     ),
     DFUNCTION(current_timestamp, 0, 0, 0, ctimestampFunc),
     DFUNCTION(current_date,      0, 0, 0, cdateFunc     ),
