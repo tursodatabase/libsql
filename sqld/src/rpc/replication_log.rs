@@ -75,7 +75,7 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let stream = FrameStream::new(self.logger.clone(), req.into_inner().current_offset())
+        let stream = FrameStream::new(self.logger.clone(), req.into_inner().next_offset)
             .map(map_frame_stream_output)
             .boxed();
 
@@ -108,7 +108,7 @@ impl ReplicationLog for ReplicationLogService {
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         let (sender, receiver) = mpsc::channel(10);
         let logger = self.logger.clone();
-        let offset = req.into_inner().current_offset();
+        let offset = req.into_inner().next_offset;
         match tokio::task::spawn_blocking(move || logger.get_snapshot_file(offset)).await {
             Ok(Ok(Some(snapshot))) => {
                 tokio::task::spawn_blocking(move || {

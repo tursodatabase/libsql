@@ -100,7 +100,7 @@ impl Replicator {
     async fn replicate(&mut self) -> anyhow::Result<()> {
         let offset = LogOffset {
             // if current == FrameNo::Max then it means that we're starting fresh
-            current_offset: self.current_frame_no(),
+            next_offset: self.next_offset(),
         };
         let mut stream = self.client.log_entries(offset).await?.into_inner();
 
@@ -130,7 +130,7 @@ impl Replicator {
         let frames = self
             .client
             .snapshot(LogOffset {
-                current_offset: self.current_frame_no(),
+                next_offset: self.next_offset(),
             })
             .await?
             .into_inner();
@@ -161,6 +161,10 @@ impl Replicator {
         self.update_current_frame_no(new_frame_no);
 
         Ok(())
+    }
+
+    fn next_offset(&self) -> FrameNo {
+        self.current_frame_no().map(|x| x + 1).unwrap_or(0)
     }
 
     fn current_frame_no(&self) -> Option<FrameNo> {
