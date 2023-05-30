@@ -1,14 +1,15 @@
 use anyhow::{bail, Result};
 use std::collections::HashMap;
 
-use super::proto;
-use super::{ProtocolError, Version};
+use super::result_builder::SingleStatementBuilder;
+use super::{proto, ProtocolError, Version};
 use crate::auth::Authenticated;
 use crate::database::{Database, DescribeResponse};
 use crate::error::Error as SqldError;
 use crate::hrana;
-use crate::query::{Params, Query, QueryResponse, Value};
+use crate::query::{Params, Query, Value};
 use crate::query_analysis::Statement;
+use crate::query_result_builder::QueryResultBuilder;
 
 /// An error during execution of an SQL statement.
 #[derive(thiserror::Error, Debug)]
@@ -42,22 +43,18 @@ pub enum StmtError {
 }
 
 pub async fn execute_stmt(
-    db: &dyn Database,
+    db: &impl Database,
     auth: Authenticated,
     query: Query,
 ) -> Result<proto::StmtResult> {
-    let (query_result, _) = db.execute_one(query, auth).await?;
-    match query_result {
-        Ok(query_response) => Ok(proto_stmt_result_from_query_response(query_response)),
-        Err(sqld_error) => match stmt_error_from_sqld_error(sqld_error) {
-            Ok(stmt_error) => bail!(stmt_error),
-            Err(sqld_error) => bail!(sqld_error),
-        },
-    }
+    let builder = SingleStatementBuilder::default();
+    let (stmt_result, _) = db.execute_batch(vec![query], auth, builder).await?;
+
+    Ok(stmt_result.into_ret()?)
 }
 
 pub async fn describe_stmt(
-    db: &dyn Database,
+    db: &impl Database,
     auth: Authenticated,
     sql: String,
 ) -> Result<proto::DescribeResult> {
@@ -136,29 +133,6 @@ pub fn proto_sql_to_sql<'s>(
     }
 }
 
-pub fn proto_stmt_result_from_query_response(query_response: QueryResponse) -> proto::StmtResult {
-    let QueryResponse::ResultSet(result_set) = query_response;
-    let proto_cols = result_set
-        .columns
-        .into_iter()
-        .map(|col| proto::Col {
-            name: Some(col.name),
-            decltype: col.decltype,
-        })
-        .collect();
-    let proto_rows = result_set
-        .rows
-        .into_iter()
-        .map(|row| row.values.into_iter().map(proto::Value::from).collect())
-        .collect();
-    proto::StmtResult {
-        cols: proto_cols,
-        rows: proto_rows,
-        affected_row_count: result_set.affected_row_count,
-        last_insert_rowid: result_set.last_insert_rowid,
-    }
-}
-
 fn proto_value_to_value(proto_value: &proto::Value) -> Value {
     match proto_value {
         proto::Value::Null => Value::Null,
@@ -208,7 +182,7 @@ fn proto_describe_result_from_describe_response(
 pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, SqldError> {
     Ok(match sqld_error {
         SqldError::LibSqlInvalidQueryParams(source) => StmtError::ArgsInvalid { source },
-        SqldError::LibSqlTxTimeout(_) => StmtError::TransactionTimeout,
+        SqldError::LibSqlTxTimeout => StmtError::TransactionTimeout,
         SqldError::LibSqlTxBusy => StmtError::TransactionBusy,
         SqldError::RusqliteError(rusqlite_error) => match rusqlite_error {
             rusqlite::Error::SqliteFailure(sqlite_error, Some(message)) => StmtError::SqliteError {

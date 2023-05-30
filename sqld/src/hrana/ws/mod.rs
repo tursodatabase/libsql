@@ -1,5 +1,6 @@
 use crate::auth::Auth;
 use crate::database::factory::DbFactory;
+use crate::database::Database;
 use crate::utils::services::idle_shutdown::IdleKicker;
 use anyhow::{Context as _, Result};
 use enclose::enclose;
@@ -14,8 +15,8 @@ mod conn;
 mod handshake;
 mod session;
 
-struct Server {
-    db_factory: Arc<dyn DbFactory>,
+struct Server<D> {
+    db_factory: Arc<dyn DbFactory<Db = D>>,
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
     next_conn_id: AtomicU64,
@@ -34,7 +35,7 @@ pub struct Upgrade {
 }
 
 pub async fn serve(
-    db_factory: Arc<dyn DbFactory>,
+    db_factory: Arc<dyn DbFactory<Db = impl Database>>,
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
     mut accept_rx: mpsc::Receiver<Accept>,

@@ -1,129 +1,15 @@
 use std::collections::HashMap;
-use std::convert::Infallible;
-use std::str::FromStr;
 
 use anyhow::{anyhow, ensure, Context};
-use futures::stream;
-use pgwire::api::results::{query_response, DataRowEncoder, FieldFormat, FieldInfo, Response};
-use pgwire::api::Type as PgType;
-use pgwire::{error::PgWireResult, messages::data::DataRow};
-use rusqlite::types::ToSqlOutput;
+use rusqlite::types::{ToSqlOutput, ValueRef};
 use rusqlite::ToSql;
 use serde::{Deserialize, Serialize};
 
-use crate::error::Error;
 use crate::query_analysis::Statement;
-use crate::rpc::proxy::rpc::{
-    Column as RpcColumn, ResultRows, Row as RpcRow, Type as RpcType, Value as RpcValue,
-};
-
-pub type QueryResult = Result<QueryResponse, Error>;
-
-#[derive(Debug, Clone)]
-pub struct Column {
-    pub name: String,
-    pub ty: Option<Type>,
-    pub decltype: Option<String>,
-}
-
-impl From<Column> for RpcColumn {
-    fn from(other: Column) -> Self {
-        RpcColumn {
-            name: other.name,
-            ty: other.ty.map(|ty| RpcType::from(ty).into()),
-            decltype: other.decltype,
-        }
-    }
-}
-
-impl From<Column> for FieldInfo {
-    fn from(col: Column) -> Self {
-        FieldInfo::new(
-            col.name,
-            None,
-            None,
-            col.ty.map(PgType::from).unwrap_or(PgType::UNKNOWN),
-            FieldFormat::Text,
-        )
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Type {
-    Integer,
-    Blob,
-    Real,
-    Text,
-    Null,
-    Numeric,
-    Unknown,
-}
-
-impl From<Type> for PgType {
-    fn from(other: Type) -> Self {
-        match other {
-            Type::Integer => PgType::INT8,
-            Type::Blob => PgType::BYTEA,
-            Type::Real => PgType::FLOAT8,
-            Type::Numeric => PgType::NUMERIC,
-            Type::Text => PgType::TEXT,
-            Type::Null | Type::Unknown => PgType::UNKNOWN,
-        }
-    }
-}
-
-impl From<Type> for RpcType {
-    fn from(other: Type) -> Self {
-        match other {
-            Type::Integer => Self::Integer,
-            Type::Blob => Self::Blob,
-            Type::Real => Self::Real,
-            Type::Text => Self::Text,
-            Type::Null => Self::Null,
-            Type::Numeric => Self::Numeric,
-            Type::Unknown => Self::Unknown,
-        }
-    }
-}
-
-impl From<RpcType> for Type {
-    fn from(other: RpcType) -> Self {
-        match other {
-            RpcType::Integer => Self::Integer,
-            RpcType::Blob => Self::Blob,
-            RpcType::Real => Self::Real,
-            RpcType::Text => Self::Text,
-            RpcType::Null => Self::Null,
-            RpcType::Unknown => Self::Unknown,
-            RpcType::Numeric => Self::Numeric,
-        }
-    }
-}
-
-impl FromStr for Type {
-    type Err = Infallible;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s.to_lowercase().as_str() {
-            "integer" | "int" | "tinyint" | "smallint" | "mediumint" | "bigint"
-            | "unsigned big int" | "int2" | "int8" => Type::Integer,
-            "real" | "double" | "double precision" | "float" => Type::Real,
-            "text" | "character" | "varchar" | "varying character" | "nchar"
-            | "native character" | "nvarchar" | "clob" => Type::Text,
-            "blob" => Type::Blob,
-            "numeric" | "decimal" | "boolean" | "date" | "datetime" => Type::Numeric,
-            _ => Type::Unknown,
-        })
-    }
-}
-
-#[derive(Debug)]
-pub struct Row {
-    pub values: Vec<Value>,
-}
 
 /// Mirrors rusqlite::Value, but implement extra traits
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub enum Value {
     Null,
     Integer(i64),
@@ -132,146 +18,32 @@ pub enum Value {
     Blob(Vec<u8>),
 }
 
-impl From<rusqlite::types::Value> for Value {
-    fn from(other: rusqlite::types::Value) -> Self {
-        use rusqlite::types::Value;
-
-        match other {
-            Value::Null => Self::Null,
-            Value::Integer(i) => Self::Integer(i),
-            Value::Real(x) => Self::Real(x),
-            Value::Text(s) => Self::Text(s),
-            Value::Blob(b) => Self::Blob(b),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct ResultSet {
-    pub columns: Vec<Column>,
-    pub rows: Vec<Row>,
-    pub affected_row_count: u64,
-    pub last_insert_rowid: Option<i64>,
-    pub include_column_defs: bool,
-}
-
-impl ResultSet {
-    pub fn empty(col_defs: bool) -> Self {
-        Self {
-            columns: Vec::new(),
-            rows: Vec::new(),
-            affected_row_count: 0,
-            last_insert_rowid: None,
-            include_column_defs: col_defs,
-        }
-    }
-}
-
-fn encode_row(row: Row) -> PgWireResult<DataRow> {
-    let mut encoder = DataRowEncoder::new(row.values.len());
-    for value in row.values {
+impl<'a> From<&'a Value> for ValueRef<'a> {
+    fn from(value: &'a Value) -> Self {
         match value {
-            Value::Null => {
-                encoder.encode_text_format_field(None::<&u8>)?;
-            }
-            Value::Integer(i) => {
-                encoder.encode_text_format_field(Some(&i))?;
-            }
-            Value::Real(f) => {
-                encoder.encode_text_format_field(Some(&f))?;
-            }
-            Value::Text(t) => {
-                encoder.encode_text_format_field(Some(&t))?;
-            }
-            Value::Blob(b) => {
-                encoder.encode_text_format_field(Some(&hex::encode(b)))?;
-            }
+            Value::Null => ValueRef::Null,
+            Value::Integer(i) => ValueRef::Integer(*i),
+            Value::Real(x) => ValueRef::Real(*x),
+            Value::Text(s) => ValueRef::Text(s.as_bytes()),
+            Value::Blob(b) => ValueRef::Blob(b.as_slice()),
         }
     }
-    encoder.finish()
 }
 
-impl<'a> From<ResultSet> for Response<'a> {
-    fn from(
-        ResultSet {
-            columns,
-            rows,
-            include_column_defs,
-            ..
-        }: ResultSet,
-    ) -> Self {
-        let field_infos = if include_column_defs {
-            Some(columns.into_iter().map(Into::into).collect())
-        } else {
-            None
+impl TryFrom<rusqlite::types::ValueRef<'_>> for Value {
+    type Error = anyhow::Error;
+
+    fn try_from(value: rusqlite::types::ValueRef<'_>) -> anyhow::Result<Value> {
+        let val = match value {
+            rusqlite::types::ValueRef::Null => Value::Null,
+            rusqlite::types::ValueRef::Integer(i) => Value::Integer(i),
+            rusqlite::types::ValueRef::Real(x) => Value::Real(x),
+            rusqlite::types::ValueRef::Text(s) => Value::Text(String::from_utf8(Vec::from(s))?),
+            rusqlite::types::ValueRef::Blob(b) => Value::Blob(Vec::from(b)),
         };
-        let data_row_stream = stream::iter(rows.into_iter().map(encode_row));
-        Response::Query(query_response(field_infos, data_row_stream))
+
+        Ok(val)
     }
-}
-
-impl From<ResultSet> for ResultRows {
-    fn from(other: ResultSet) -> Self {
-        let column_descriptions = other.columns.into_iter().map(Into::into).collect();
-        let rows = other
-            .rows
-            .iter()
-            .map(|row| RpcRow {
-                values: row
-                    .values
-                    .iter()
-                    .map(|v| bincode::serialize(v).unwrap())
-                    .map(|data| RpcValue { data })
-                    .collect(),
-            })
-            .collect();
-
-        ResultRows {
-            column_descriptions,
-            rows,
-            affected_row_count: other.affected_row_count,
-            last_insert_rowid: other.last_insert_rowid,
-        }
-    }
-}
-
-impl From<ResultRows> for ResultSet {
-    fn from(result_rows: ResultRows) -> Self {
-        let columns = result_rows
-            .column_descriptions
-            .into_iter()
-            .map(|c| Column {
-                ty: Some(c.ty().into()),
-                name: c.name,
-                decltype: c.decltype,
-            })
-            .collect();
-
-        let rows = result_rows
-            .rows
-            .into_iter()
-            .map(|row| {
-                row.values
-                    .iter()
-                    .map(|v| bincode::deserialize(&v.data).unwrap())
-                    .collect::<Vec<_>>()
-            })
-            .map(|values| Row { values })
-            .collect();
-
-        Self {
-            columns,
-            rows,
-            affected_row_count: result_rows.affected_row_count,
-            last_insert_rowid: result_rows.last_insert_rowid,
-            include_column_defs: true,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum QueryResponse {
-    ResultSet(ResultSet),
 }
 
 #[derive(Debug, Clone)]

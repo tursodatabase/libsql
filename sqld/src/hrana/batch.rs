@@ -4,15 +4,14 @@ use std::sync::Arc;
 
 use crate::auth::Authenticated;
 use crate::database::{Cond, Database, Program, Step};
+use crate::hrana::stmt::StmtError;
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
+use crate::query_result_builder::{QueryResultBuilder, StepResult, StepResultsBuilder};
 
-use super::stmt::{
-    proto_error_from_stmt_error, proto_stmt_result_from_query_response, proto_stmt_to_query,
-    stmt_error_from_sqld_error, StmtError,
-};
-use super::Version;
-use super::{proto, ProtocolError};
+use super::result_builder::HranaBatchProtoBuilder;
+use super::stmt::{proto_stmt_to_query, stmt_error_from_sqld_error};
+use super::{proto, ProtocolError, Version};
 
 fn proto_cond_to_cond(cond: &proto::BatchCond, max_step_i: usize) -> Result<Cond> {
     let try_convert_step = |step: i32| -> Result<usize, ProtocolError> {
@@ -72,31 +71,14 @@ pub fn proto_batch_to_program(
 }
 
 pub async fn execute_batch(
-    db: &dyn Database,
+    db: &impl Database,
     auth: Authenticated,
     pgm: Program,
 ) -> Result<proto::BatchResult> {
-    let mut step_results = Vec::with_capacity(pgm.steps.len());
-    let mut step_errors = Vec::with_capacity(pgm.steps.len());
-    let (results, _state) = db.execute_program(pgm, auth).await?;
-    for result in results {
-        let (step_result, step_error) = match result {
-            Some(Ok(r)) => (Some(proto_stmt_result_from_query_response(r)), None),
-            Some(Err(e)) => (
-                None,
-                Some(proto_error_from_stmt_error(&stmt_error_from_sqld_error(e)?)),
-            ),
-            None => (None, None),
-        };
+    let batch_builder = HranaBatchProtoBuilder::default();
+    let (builder, _state) = db.execute_program(pgm, auth, batch_builder).await?;
 
-        step_errors.push(step_error);
-        step_results.push(step_result);
-    }
-
-    Ok(proto::BatchResult {
-        step_results,
-        step_errors,
-    })
+    Ok(builder.into_ret())
 }
 
 pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
@@ -125,14 +107,18 @@ pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
     })
 }
 
-pub async fn execute_sequence(db: &dyn Database, auth: Authenticated, pgm: Program) -> Result<()> {
-    let (results, _state) = db.execute_program(pgm, auth).await?;
-    results.into_iter().try_for_each(|result| match result {
-        Some(Ok(_)) => Ok(()),
-        Some(Err(e)) => match stmt_error_from_sqld_error(e) {
-            Ok(stmt_err) => Err(anyhow!(stmt_err)),
-            Err(sqld_err) => Err(anyhow!(sqld_err)),
-        },
-        None => Err(anyhow!("Statement in sequence was not executed")),
-    })
+pub async fn execute_sequence(db: &impl Database, auth: Authenticated, pgm: Program) -> Result<()> {
+    let builder = StepResultsBuilder::default();
+    let (builder, _state) = db.execute_program(pgm, auth, builder).await?;
+    builder
+        .into_ret()
+        .into_iter()
+        .try_for_each(|result| match result {
+            StepResult::Ok => Ok(()),
+            StepResult::Err(e) => match stmt_error_from_sqld_error(e) {
+                Ok(stmt_err) => Err(anyhow!(stmt_err)),
+                Err(sqld_err) => Err(anyhow!(sqld_err)),
+            },
+            StepResult::Skipped => Err(anyhow!("Statement in sequence was not executed")),
+        })
 }

@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Stats {
     inner: Arc<StatsInner>,
 }

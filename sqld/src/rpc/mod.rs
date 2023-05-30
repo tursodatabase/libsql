@@ -5,6 +5,7 @@ use std::sync::Arc;
 use tower::util::option_layer;
 
 use crate::database::factory::DbFactory;
+use crate::database::Database;
 use crate::replication::ReplicationLogger;
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
@@ -16,13 +17,13 @@ pub mod proxy;
 pub mod replication_log;
 
 #[allow(clippy::too_many_arguments)]
-pub async fn run_rpc_server(
+pub async fn run_rpc_server<D: Database>(
     addr: SocketAddr,
     tls: bool,
     cert_path: Option<PathBuf>,
     key_path: Option<PathBuf>,
     ca_cert_path: Option<PathBuf>,
-    factory: Arc<dyn DbFactory>,
+    factory: Arc<dyn DbFactory<Db = D>>,
     logger: Arc<ReplicationLogger>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
 ) -> anyhow::Result<()> {

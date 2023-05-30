@@ -3,6 +3,7 @@ use std::fmt;
 pub mod batch;
 pub mod http;
 pub mod proto;
+mod result_builder;
 pub mod stmt;
 pub mod ws;
 

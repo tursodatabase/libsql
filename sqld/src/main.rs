@@ -1,20 +1,18 @@
-use std::{
-    env,
-    fs::{self, OpenOptions},
-    io::{stdout, Write},
-    net::SocketAddr,
-    path::{Path, PathBuf},
-    time::Duration,
-};
+use std::env;
+use std::fs::{self, OpenOptions};
+use std::io::{stdout, Write};
+use std::net::SocketAddr;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
 
 use anyhow::{bail, Context as _, Result};
 use clap::Parser;
 use mimalloc::MiMalloc;
 use sqld::{database::dump::exporter::export_dump, Config};
-use tracing_subscriber::{
-    filter::LevelFilter, prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt,
-    Layer,
-};
+use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::Layer;
 
 #[global_allocator]
 static GLOBAL: MiMalloc = MiMalloc;
@@ -35,10 +33,6 @@ struct Cli {
     /// 99890762817735984843bf5cf02a4b2ea648018fd05f04df6f9ce7f976841510  math.dylib
     #[clap(long, short)]
     extensions_path: Option<PathBuf>,
-
-    /// The address and port the PostgreSQL server listens to.
-    #[clap(long, short, env = "SQLD_PG_LISTEN_ADDR")]
-    pg_listen_addr: Option<SocketAddr>,
 
     #[clap(long, default_value = "127.0.0.1:8080", env = "SQLD_HTTP_LISTEN_ADDR")]
     http_listen_addr: SocketAddr,
@@ -211,9 +205,6 @@ impl Cli {
         let extensions_str = self.extensions_path.clone().map_or("<disabled>".to_string(), |x| x.display().to_string());
         eprintln!("\t- extensions path: {extensions_str}");
         eprintln!("\t- listening for HTTP requests on: {}", self.http_listen_addr);
-        if let Some(ref addr) = self.pg_listen_addr {
-            eprintln!("\t- listening for PostgreSQL wire on: {addr}");
-        }
         eprintln!("\t- grpc_tls: {}", if self.grpc_tls { "yes" } else { "no" });
     }
 }
@@ -235,7 +226,6 @@ fn config_from_args(args: Cli) -> Result<Config> {
     Ok(Config {
         db_path: args.db_path,
         extensions_path: args.extensions_path,
-        tcp_addr: args.pg_listen_addr,
         http_addr: Some(args.http_listen_addr),
         enable_http_console: args.enable_http_console,
         hrana_addr: args.hrana_listen_addr,

@@ -36,6 +36,15 @@ impl Deref for Connection<'_> {
 }
 
 impl<'a> Connection<'a> {
+    /// returns a dummy, in-memory connection. For testing purposes only
+    pub fn test(_: &mut ()) -> Self {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        Self {
+            conn,
+            _pth: PhantomData,
+        }
+    }
+
     /// Opens a database with the regular wal methods in the directory pointed to by path
     pub fn open<W: WalHook>(
         path: impl AsRef<std::path::Path>,
