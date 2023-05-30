@@ -887,7 +887,7 @@ static int parseModifier(
         ** the range 0-11 and DD is limited to 0-30.
         */
         if( z[0]!='+' && z[0]!='-' ) break;  /* Must start with +/- */
-        if( n!=5 ) break;                    /* Must be 4-digit YYYY */
+        if( NEVER(n!=5) ) break;             /* Must be 4-digit YYYY */
         if( getDigits(&z[1], "40f-20a-20d", &Y, &M, &D)!=3 ) break;
         if( M>=12 ) break;                   /* M range 0..11 */
         if( D>=31 ) break;                   /* D range 0..30 */
@@ -1400,18 +1400,12 @@ static void timediffFunc(
   int argc,
   sqlite3_value **argv
 ){
-  DateTime d1, d2;
-  sqlite3_str *pOut = 0;
   char sign;
-  int rc;
   int Y, M;
+  DateTime d1, d2;
+  sqlite3_str sRes;
   if( isDate(context, 1, argv, &d1)     ) return;
   if( isDate(context, 1, &argv[1], &d2) ) return;
-  pOut = sqlite3_str_new(sqlite3_context_db_handle(context));
-  if( pOut==0 ){
-    sqlite3_result_error_nomem(context);
-    return;
-  }
   computeYMD_HMS(&d1);
   computeYMD_HMS(&d2);
   if( d1.iJD>=d2.iJD ){
@@ -1439,7 +1433,7 @@ static void timediffFunc(
         Y--;
       }
       d2.M--;
-      if( d2.M<0 ){
+      if( d2.M<1 ){
         d2.M = 12;
         d2.Y--;
       }
@@ -1487,16 +1481,10 @@ static void timediffFunc(
   d1.validHMS = 0;
   d1.validTZ = 0;
   computeYMD_HMS(&d1);
-  sqlite3_str_appendf(pOut, "%c%04d-%02d-%02d %02d:%02d:%06.3f",
+  sqlite3StrAccumInit(&sRes, 0, 0, 0, 100);
+  sqlite3_str_appendf(&sRes, "%c%04d-%02d-%02d %02d:%02d:%06.3f",
        sign, Y, M, d1.D-1, d1.h, d1.m, d1.s);
-  rc = sqlite3_str_errcode(pOut);
-  if( rc ){
-    sqlite3_free(sqlite3_str_finish(pOut));
-    sqlite3_result_error_code(context, rc);
-  }else{
-    sqlite3_result_text(context, 
-        sqlite3_str_finish(pOut), -1, sqlite3_free);
-  }
+  sqlite3ResultStrAccum(context, &sRes);
 }
 
 

@@ -1,5 +1,5 @@
-C New\stest\scases\sfor\sthe\stimediff\senhancements.
-D 2023-05-30T11:51:45.702
+C Simplifications\sto\sthe\snew\stimediff()\slogic.
+D 2023-05-30T14:46:30.043
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -583,7 +583,7 @@ F src/build.c 5512d5a335334b48d116f1ecd051edef96a60add18ae48e0ea302a395f00f3d9
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c fc60c1a37df9773d0b764a21947ecbf8a28f09b06069f8a4e44ed6c83706c068
+F src/date.c cb71f73d5df5303ec6630971b9c8b8c7df466fa3233dbdc643d613806e53e554
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 05e27e3a55dcfeadf2f7ca95a5c5e0928f182c04640ec1954ffa42f3d5c19341
@@ -2072,8 +2072,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa9237a8ab803ca3f67fe753516b7bdb98be3d625e8e241ddf9b02509210e225
-R 51c5fa7aa16d0c81c327481e1cc4975e
+P f14633ce6ddf28a14b03e2da623d96e439966aa3fc30c26cb0be59c0e15b3e9c
+R 200e909133393bbb7ad7eb71a74582fc
 U drh
-Z dfeb1c0c465184df485198331681092e
+Z a8e1aeb111a402709c4efa768d7bf30a
 # Remove this line to create a well-formed Fossil manifest.
