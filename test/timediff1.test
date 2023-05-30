@@ -88,26 +88,62 @@ set p1 {
   7   {2050-05-29 14:26}
 }
 set p2 {
-  A   {1900-02-28 11:00}
-  B   {1900-03-01 12:00}
-  C   {2000-02-29 13:00}
-  D   {2005-04-30 23:59:59}
-  E   {2005-05-01}
-  F   {1066-10-14}
-  G   {1904-02-29 11:25}
+  A   {1066-10-14}
+  B   {1900-02-28 11:00}
+  C   {1900-03-01 12:00}
+  D   {1904-02-29 11:25}
+  E   {2000-02-29 13:00}
+  E   {2000-03-01 14:00}
+  F   {2001-03-31 15:15}
+  G   {2002-04-01 16:59}
+  H   {2003-04-30 17:00}
+  I   {2004-05-01 23:59:59}
+  J   {2005-06-01}
+  K   {2006-06-30 01:23:45}
+  L   {2007-12-31 02:00}
+  M   {2008-01-01 01:59}
 }
 
 foreach {x1 d1} $p1 {
   foreach {x2 d2} $p2 {
-    set r1 [db one {SELECT datetime($d1,'auto')}]
+    set r1 [db one {SELECT datetime($d1)}]
     do_execsql_test timediff-4-$x1$x2 {
-      SELECT datetime($d2, 'auto', timediff($d1,$d2));
+      SELECT datetime($d2, timediff($d1,$d2));
     } [list $r1]
-    set r2 [db one {SELECT datetime($d2,'auto')}]
+    set r2 [db one {SELECT datetime($d2)}]
     do_execsql_test timediff-4-$x2$x1 {
-      SELECT datetime($d1, 'auto', timediff($d2,$d1));
+      SELECT datetime($d1, timediff($d2,$d1));
     } [list $r2]
   }
 }
+
+# Partial time-diffs as modifiers
+#
+datetest 5-1 {datetime('2000-01-01','+0001-02-03')} {2001-03-04 00:00:00}
+datetest 5-2 {datetime('2000-01-01','+0001-02-03x')} {NULL}
+datetest 5-3 {datetime('2000-01-01','+0001-11-03')} {2001-12-04 00:00:00}
+datetest 5-4 {datetime('2000-01-01','+0001-12-03')} {NULL}
+datetest 5-5 {datetime('2000-01-01','+0001-02-30')} {2001-03-31 00:00:00}
+datetest 5-6 {datetime('2000-01-01','+0001-02-31')} {NULL}
+datetest 5-7 {datetime('2000-01-01','+0001-02-03 0')} {NULL}
+datetest 5-8 {datetime('2000-01-01','+0001-02-03 01')} {NULL}
+datetest 5-9 {datetime('2000-01-01','+0001-02-03 01:')} {NULL}
+datetest 5-10 {datetime('2000-01-01','+0001-02-03 01:0')} {NULL}
+datetest 5-11 {datetime('2000-01-01','+0001-02-03 01:02')} {2001-03-04 01:02:00}
+datetest 5-12 {datetime('2000-01-01','+0001-02-03 01:02:')} {NULL}
+datetest 5-13 {datetime('2000-01-01','+0001-02-03 01:02:0')} {NULL}
+datetest 5-14 {datetime('2000-01-01','+0001-02-03 01:02:03')} \
+                                                   {2001-03-04 01:02:03}
+datetest 5-15 {datetime('2000-01-01','+0001-02-03 01:02:03.')} NULL
+datetest 5-16 {datetime('2000-01-01','+0001-02-03 01:02:03.5')} \
+                                                   {2001-03-04 01:02:03}
+datetest 5-17 {datetime('2000-01-01','+0001-02-03 01:02:03.50')} \
+                                                   {2001-03-04 01:02:03}
+datetest 5-18 {datetime('2000-01-01','+0001-02-03 01:02:03.500')} \
+                                                   {2001-03-04 01:02:03}
+datetest 5-19 {datetime('2000-01-01','+0001-02-03 01:02:03.500x')} {NULL}
+datetest 5-20 {datetime('2000-01-01','+0001-02-03 01:02:03.500 x')} {NULL}
+
+
 
 finish_test

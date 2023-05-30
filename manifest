@@ -1,5 +1,5 @@
-C All\sdate/time\smodifiers\sof\sthe\sform\s(+/-)YYYY-MM-DD\swithout\sthe\sfollowing\nHH:MM:SS.SSS.
-D 2023-05-30T11:13:56.499
+C New\stest\scases\sfor\sthe\stimediff\senhancements.
+D 2023-05-30T11:51:45.702
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1605,7 +1605,7 @@ F test/threadtest3.c 655bff6c0895ec03f014126aa65e808fac9aae8c5a7a7da58a510cbe8b4
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
-F test/timediff1.test ff10ea5829bbe7d11c3c9bed75f8cba1cf42b3c23bd68c4f9d6ef8868546eb85
+F test/timediff1.test 635b0e1857d1a3519382ae1a0aff9580c33e550c5a5cbec600b5edd2e0487018
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-18458b1a.test 6a62cb1ee50fa3c620da59e3a6f531eb38fceaf7e2166203816b724524e6f1d6
 F test/tkt-26ff0c2d1e.test c15bec890c4d226c0da2f35ff30f9e84c169cfef90e73a8cb5cec11d723dfa96
@@ -2072,8 +2072,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P cff293b0a79107def7bfe54fd60ac4a721c5098c85229d9b46a4e2c4cbf34a6a
-R 0943b555654140e47681c2f446f6eb02
+P fa9237a8ab803ca3f67fe753516b7bdb98be3d625e8e241ddf9b02509210e225
+R 51c5fa7aa16d0c81c327481e1cc4975e
 U drh
-Z 8e551011a7166e1e39c03f9c16d64816
+Z dfeb1c0c465184df485198331681092e
 # Remove this line to create a well-formed Fossil manifest.
