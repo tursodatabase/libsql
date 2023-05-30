@@ -211,16 +211,6 @@ impl Statement {
                 StmtKind::kind(&c).ok_or_else(|| anyhow::anyhow!("unsupported statement"))?;
 
             if stmt_count == 1 && !has_more_stmts {
-                // XXX: Temporary workaround for https://github.com/gwenn/lemon-rs/issues/30
-                if let Cmd::Stmt(Stmt::CreateVirtualTable { .. }) = &c {
-                    return Ok(Statement {
-                        stmt: original.to_string(),
-                        kind,
-                        is_iud: false,
-                        is_insert: false,
-                    });
-                }
-
                 // XXX: Temporary workaround for integration with Atlas
                 if let Cmd::Stmt(Stmt::CreateTable { .. }) = &c {
                     return Ok(Statement {
