@@ -1,5 +1,5 @@
-C Minor\stweak\sto\sthe\sOPFS\sasync\sproxy\sto\sattempt\sto\saccount\sfor\sa\sspurious\shigh-load\sconsole\serror\smessage\swhich\swas\sreported\svia\sthe\ssqlite-wasm\snpm\sproject.
-D 2023-05-30T14:10:28.641
+C Enhancements\sto\sdate/time\sfunctions:\n(1)\sAdd\ssupport\sfor\stime-shift\smodifiers\sof\sthe\sform\s(+|-)YYYY-MM-DD\sHH:MM:SS.SSS\n(2)\sAdd\sthe\stimediff(A,B)\sSQL\sfunction\sthat\sreturns\sthe\stime-shift\smodifier\nsufficient\sto\smove\sB\sto\sA.
+D 2023-05-30T16:40:42.849
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -583,7 +583,7 @@ F src/build.c 5512d5a335334b48d116f1ecd051edef96a60add18ae48e0ea302a395f00f3d9
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c aca9e0c08b400b21238b609aea7c09585396cd770985cf8f475560f69222dad3
+F src/date.c cb71f73d5df5303ec6630971b9c8b8c7df466fa3233dbdc643d613806e53e554
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 05e27e3a55dcfeadf2f7ca95a5c5e0928f182c04640ec1954ffa42f3d5c19341
@@ -1605,6 +1605,7 @@ F test/threadtest3.c 655bff6c0895ec03f014126aa65e808fac9aae8c5a7a7da58a510cbe8b4
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
+F test/timediff1.test 635b0e1857d1a3519382ae1a0aff9580c33e550c5a5cbec600b5edd2e0487018
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-18458b1a.test 6a62cb1ee50fa3c620da59e3a6f531eb38fceaf7e2166203816b724524e6f1d6
 F test/tkt-26ff0c2d1e.test c15bec890c4d226c0da2f35ff30f9e84c169cfef90e73a8cb5cec11d723dfa96
@@ -2071,8 +2072,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 68abee3c1bf4e9ff632fccaa6ac7c5c4cdf55c4ff1749830ae3bd5ff6d55ebb2
-R e35de080a5d8c160cf20199fde831e23
-U stephan
-Z a6e965e2f0231d43e4b927decea2e440
+P a61467d1fbb7a2804bfdc685a38e0b738747b9afd42c25a78a938b114a822f61 d6954259bd3f8475f3804fd02a1591d037efa9df54da45776863c024ff90e596
+R 255227b4547145c8dcfb80a734de5898
+T +closed d6954259bd3f8475f3804fd02a1591d037efa9df54da45776863c024ff90e596
+U drh
+Z b0a2fbca407b458dcbae70cd95c3b03c
 # Remove this line to create a well-formed Fossil manifest.
