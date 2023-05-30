@@ -325,7 +325,7 @@ pub async fn run_http(
             )
         });
 
-    let server = hyper::server::Server::bind(&addr).serve(tower::make::Shared::new(service));
+    let server = hyper::server::Server::try_bind(&addr)?.serve(tower::make::Shared::new(service));
 
     server.await.context("Http server exited with an error")?;
 

@@ -79,6 +79,10 @@ pub async fn serve(
             Some(task_res) = join_set.join_next() => {
                 task_res.expect("Hrana connection task failed")
             },
+            else => {
+                tracing::error!("hrana server loop exited");
+                return Ok(())
+            }
         }
     }
 }
