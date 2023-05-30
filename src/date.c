@@ -870,7 +870,7 @@ static int parseModifier(
     case '9': {
       double rRounder;
       int i;
-      int Y,M,D,H,x;
+      int Y,M,D,h,m,x;
       const char *z2 = z;
       for(n=1; z[n]; n++){
         if( z[n]==':' ) break;
@@ -888,7 +888,7 @@ static int parseModifier(
         */
         if( z[0]!='+' && z[0]!='-' ) break;  /* Must start with +/- */
         if( n!=5 ) break;                    /* Must be 4-digit YYYY */
-        if( getDigits(&z[1], "40f-20a-20d 20c", &Y, &M, &D, &H)!=4 ) break;
+        if( getDigits(&z[1], "40f-20a-20d", &Y, &M, &D)!=3 ) break;
         if( M>=12 ) break;                   /* M range 0..11 */
         if( D>=31 ) break;                   /* D range 0..30 */
         computeYMD_HMS(p);
@@ -908,8 +908,18 @@ static int parseModifier(
         p->validHMS = 0;
         p->validYMD = 0;
         p->iJD += (i64)D*86400000;
-        z2 = &z[12];
-        n = 2;
+        if( z[11]==0 ){
+          rc = 0;
+          break;
+        }
+        if( sqlite3Isspace(z[11])
+         && getDigits(&z[12], "20c:20e", &h, &m)==2
+        ){
+          z2 = &z[12];
+          n = 2;
+        }else{
+          break;
+        }
       }
       if( z2[n]==':' ){
         /* A modifier of the form (+|-)HH:MM:SS.FFF adds (or subtracts) the

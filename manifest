@@ -1,5 +1,5 @@
-C Problems\sfixed.\s\sAll\stests\sare\spassing\snow.
-D 2023-05-30T02:50:32.127
+C All\sdate/time\smodifiers\sof\sthe\sform\s(+/-)YYYY-MM-DD\swithout\sthe\sfollowing\nHH:MM:SS.SSS.
+D 2023-05-30T11:13:56.499
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -583,7 +583,7 @@ F src/build.c 5512d5a335334b48d116f1ecd051edef96a60add18ae48e0ea302a395f00f3d9
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c bd35fd6aadd63dd0019ccd54314e74e058d024704fd02ac22e0041b6012fa610
+F src/date.c fc60c1a37df9773d0b764a21947ecbf8a28f09b06069f8a4e44ed6c83706c068
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 05e27e3a55dcfeadf2f7ca95a5c5e0928f182c04640ec1954ffa42f3d5c19341
@@ -2072,8 +2072,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2cf6518140d61e2123dc20f39d7e97e7bce17e7641405df7fd63e1cdda444ae0
-R b57102997b3962a96160f5f593dc69e1
+P cff293b0a79107def7bfe54fd60ac4a721c5098c85229d9b46a4e2c4cbf34a6a
+R 0943b555654140e47681c2f446f6eb02
 U drh
-Z 1fcaecaf5799b220b4fbf66eb096e19d
+Z 8e551011a7166e1e39c03f9c16d64816
 # Remove this line to create a well-formed Fossil manifest.
