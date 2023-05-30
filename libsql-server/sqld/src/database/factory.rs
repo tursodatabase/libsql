@@ -4,11 +4,16 @@ use futures::Future;
 use tokio::{sync::Semaphore, time::timeout};
 
 use super::{Database, DescribeResult, Program};
-use crate::{auth::Authenticated, error::Error, query::QueryResult, query_analysis::State};
+use crate::{
+    auth::Authenticated, error::Error, query_analysis::State,
+    query_result_builder::QueryResultBuilder,
+};
 
 #[async_trait::async_trait]
-pub trait DbFactory: Send + Sync {
-    async fn create(&self) -> Result<Arc<dyn Database>, Error>;
+pub trait DbFactory: Send + Sync + 'static {
+    type Db: Database;
+
+    async fn create(&self) -> Result<Self::Db, Error>;
 
     fn throttled(self, conccurency: usize, timeout: Option<Duration>) -> ThrottledDbFactory<Self>
     where
@@ -25,9 +30,11 @@ where
     Fut: Future<Output = Result<DB, Error>> + Send,
     DB: Database + Sync + Send + 'static,
 {
-    async fn create(&self) -> Result<Arc<dyn Database>, Error> {
+    type Db = DB;
+
+    async fn create(&self) -> Result<Self::Db, Error> {
         let db = (self)().await?;
-        Ok(Arc::new(db))
+        Ok(db)
     }
 }
 
@@ -50,36 +57,41 @@ impl<F> ThrottledDbFactory<F> {
 
 #[async_trait::async_trait]
 impl<F: DbFactory> DbFactory for ThrottledDbFactory<F> {
-    async fn create(&self) -> Result<Arc<dyn Database>, Error> {
+    type Db = TrackedDb<F::Db>;
+
+    async fn create(&self) -> Result<Self::Db, Error> {
         let fut = self.semaphore.clone().acquire_owned();
         let permit = match self.timeout {
             Some(t) => timeout(t, fut).await.map_err(|_| Error::DbCreateTimeout)?,
             None => fut.await,
         }
         .expect("semaphore closed");
-        let db = self.factory.create().await?;
-        Ok(Arc::new(TrackedDb { permit, db }))
+        let inner = self.factory.create().await?;
+        Ok(TrackedDb { permit, inner })
     }
 }
 
-struct TrackedDb {
-    db: Arc<dyn Database>,
+pub struct TrackedDb<DB> {
+    inner: DB,
     #[allow(dead_code)] // just hold on to it
     permit: tokio::sync::OwnedSemaphorePermit,
 }
 
 #[async_trait::async_trait]
-impl Database for TrackedDb {
-    async fn execute_program(
+impl<DB: Database> Database for TrackedDb<DB> {
+    #[inline]
+    async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
         auth: Authenticated,
-    ) -> crate::Result<(Vec<Option<QueryResult>>, State)> {
-        self.db.execute_program(pgm, auth).await
+        builder: B,
+    ) -> crate::Result<(B, State)> {
+        self.inner.execute_program(pgm, auth, builder).await
     }
 
+    #[inline]
     async fn describe(&self, sql: String, auth: Authenticated) -> crate::Result<DescribeResult> {
-        self.db.describe(sql, auth).await
+        self.inner.describe(sql, auth).await
     }
 }
 
@@ -91,11 +103,12 @@ mod test {
 
     #[async_trait::async_trait]
     impl Database for DummyDb {
-        async fn execute_program(
+        async fn execute_program<B: QueryResultBuilder>(
             &self,
             _pgm: Program,
             _auth: Authenticated,
-        ) -> crate::Result<(Vec<Option<QueryResult>>, State)> {
+            _builder: B,
+        ) -> crate::Result<(B, State)> {
             unreachable!()
         }
 

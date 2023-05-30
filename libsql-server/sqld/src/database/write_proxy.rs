@@ -1,7 +1,7 @@
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use parking_lot::Mutex as PMutex;
+use rusqlite::types::ValueRef;
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::sync::{watch, Mutex};
 use tonic::transport::Channel;
@@ -9,12 +9,13 @@ use uuid::Uuid;
 
 use crate::auth::{Authenticated, Authorized};
 use crate::error::Error;
-use crate::query::{QueryResponse, QueryResult};
+use crate::query::Value;
 use crate::query_analysis::State;
+use crate::query_result_builder::{Column, QueryResultBuilder, QueryResultBuilderError};
 use crate::replication::FrameNo;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
-use crate::rpc::proxy::rpc::DisconnectMessage;
+use crate::rpc::proxy::rpc::{DisconnectMessage, ExecuteResults};
 use crate::stats::Stats;
 use crate::Result;
 
@@ -52,7 +53,8 @@ impl WriteProxyDbFactory {
 
 #[async_trait::async_trait]
 impl DbFactory for WriteProxyDbFactory {
-    async fn create(&self) -> Result<Arc<dyn Database>> {
+    type Db = WriteProxyDatabase;
+    async fn create(&self) -> Result<Self::Db> {
         let db = WriteProxyDatabase::new(
             self.client.clone(),
             self.db_path.clone(),
@@ -61,7 +63,7 @@ impl DbFactory for WriteProxyDbFactory {
             self.applied_frame_no_receiver.clone(),
         )
         .await?;
-        Ok(Arc::new(db))
+        Ok(db)
     }
 }
 
@@ -76,6 +78,50 @@ pub struct WriteProxyDatabase {
     last_write_frame_no: PMutex<FrameNo>,
     /// Notifier from the repliator of the currently applied frameno
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
+}
+
+fn execute_results_to_builder<B: QueryResultBuilder>(
+    execute_result: ExecuteResults,
+    mut builder: B,
+) -> Result<B> {
+    builder.init()?;
+    for result in execute_result.results {
+        match result.row_result {
+            Some(RowResult::Row(rows)) => {
+                builder.begin_step()?;
+                builder.cols_description(rows.column_descriptions.iter().map(|c| Column {
+                    name: &c.name,
+                    decl_ty: c.decltype.as_deref(),
+                }))?;
+
+                builder.begin_rows()?;
+                for row in rows.rows {
+                    builder.begin_row()?;
+                    for value in row.values {
+                        let value: Value = bincode::deserialize(&value.data)
+                            // something is wrong, better stop right here
+                            .map_err(QueryResultBuilderError::from_any)?;
+                        builder.add_row_value(ValueRef::from(&value))?;
+                    }
+                    builder.finish_row()?;
+                }
+
+                builder.finish_rows()?;
+
+                builder.finish_step(rows.affected_row_count, rows.last_insert_rowid)?;
+            }
+            Some(RowResult::Error(err)) => {
+                builder.begin_step()?;
+                builder.step_error(Error::RpcQueryError(err))?;
+                builder.finish_step(0, None)?;
+            }
+            None => (),
+        }
+    }
+
+    builder.finish()?;
+
+    Ok(builder)
 }
 
 impl WriteProxyDatabase {
@@ -97,12 +143,13 @@ impl WriteProxyDatabase {
         })
     }
 
-    async fn execute_remote(
+    async fn execute_remote<B: QueryResultBuilder>(
         &self,
         pgm: Program,
         state: &mut State,
         auth: Authenticated,
-    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        builder: B,
+    ) -> Result<(B, State)> {
         let mut client = self.write_proxy.clone();
         let authorized: Option<i32> = match auth {
             Authenticated::Anonymous => None,
@@ -118,21 +165,11 @@ impl WriteProxyDatabase {
             Ok(r) => {
                 let execute_result = r.into_inner();
                 *state = execute_result.state().into();
-                let results = execute_result
-                    .results
-                    .into_iter()
-                    .map(|r| -> Option<QueryResult> {
-                        let result = r.row_result?;
-                        match result {
-                            RowResult::Row(res) => Some(Ok(QueryResponse::ResultSet(res.into()))),
-                            RowResult::Error(e) => Some(Err(Error::RpcQueryError(e))),
-                        }
-                    })
-                    .collect();
+                let current_frame_no = execute_result.current_frame_no;
+                let builder = execute_results_to_builder(execute_result, builder)?;
+                self.update_last_write_frame_no(current_frame_no);
 
-                self.update_last_write_frame_no(execute_result.current_frame_no);
-
-                Ok((results, *state))
+                Ok((builder, *state))
             }
             Err(e) => {
                 // Set state to invalid, so next call is sent to remote, and we have a chance
@@ -175,26 +212,30 @@ impl WriteProxyDatabase {
 
 #[async_trait::async_trait]
 impl Database for WriteProxyDatabase {
-    async fn execute_program(
+    async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
         auth: Authenticated,
-    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        builder: B,
+    ) -> Result<(B, State)> {
         let mut state = self.state.lock().await;
         if *state == State::Init && pgm.is_read_only() {
             self.wait_replication_sync().await?;
             // We know that this program won't perform any writes. We attempt to run it on the
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
-            let (results, new_state) = self.read_db.execute_program(pgm.clone(), auth).await?;
+            let (builder, new_state) = self
+                .read_db
+                .execute_program(pgm.clone(), auth, builder)
+                .await?;
             if new_state != State::Init {
                 self.read_db.rollback(auth).await?;
-                self.execute_remote(pgm, &mut state, auth).await
+                self.execute_remote(pgm, &mut state, auth, builder).await
             } else {
-                Ok((results, new_state))
+                Ok((builder, new_state))
             }
         } else {
-            self.execute_remote(pgm, &mut state, auth).await
+            self.execute_remote(pgm, &mut state, auth, builder).await
         }
     }
 
@@ -211,6 +252,34 @@ impl Drop for WriteProxyDatabase {
         let client_id = self.client_id.to_string();
         tokio::spawn(async move {
             let _ = remote.disconnect(DisconnectMessage { client_id }).await;
+        });
+    }
+}
+
+#[cfg(test)]
+pub mod test {
+    use arbitrary::{Arbitrary, Unstructured};
+    use rand::Fill;
+
+    use super::*;
+    use crate::query_result_builder::test::test_driver;
+
+    /// generate an arbitraty rpc value. see build.rs for usage.
+    pub fn arbitrary_rpc_value(u: &mut Unstructured) -> arbitrary::Result<Vec<u8>> {
+        let data = bincode::serialize(&crate::query::Value::arbitrary(u)?).unwrap();
+
+        Ok(data)
+    }
+
+    /// In this test, we generate random ExecuteResults, and ensures that the `execute_results_to_builder` drives the builder FSM correctly.
+    #[test]
+    fn test_execute_results_to_builder() {
+        test_driver(1000, |b| {
+            let mut data = [0; 10_000];
+            data.try_fill(&mut rand::thread_rng()).unwrap();
+            let mut un = Unstructured::new(&data);
+            let res = ExecuteResults::arbitrary(&mut un).unwrap();
+            execute_results_to_builder(res, b)
         });
     }
 }

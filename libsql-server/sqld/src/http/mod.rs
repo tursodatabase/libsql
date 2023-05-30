@@ -1,4 +1,5 @@
 mod hrana_over_http_1;
+mod result_builder;
 pub mod stats;
 mod types;
 
@@ -8,11 +9,10 @@ use std::sync::Arc;
 use anyhow::Context;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
-use bytes::{BufMut, Bytes, BytesMut};
 use hyper::body::to_bytes;
 use hyper::{Body, Method, Request, Response, StatusCode};
 use serde::Serialize;
-use serde_json::{json, Number};
+use serde_json::Number;
 use tokio::sync::{mpsc, oneshot};
 use tonic::codegen::http;
 use tower::ServiceBuilder;
@@ -22,14 +22,17 @@ use tracing::{Level, Span};
 
 use crate::auth::{Auth, Authenticated};
 use crate::database::factory::DbFactory;
+use crate::database::Database;
 use crate::error::Error;
 use crate::hrana;
 use crate::http::types::HttpQuery;
-use crate::query::{self, Query, QueryResult, ResultSet};
+use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, State, Statement};
+use crate::query_result_builder::QueryResultBuilder;
 use crate::stats::Stats;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
+use self::result_builder::JsonHttpPayloadBuilder;
 use self::types::QueryObject;
 
 impl TryFrom<query::Value> for serde_json::Value {
@@ -68,53 +71,8 @@ struct ErrorResponse {
     message: String,
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-enum ResultResponse {
-    Results(RowsResponse),
-    Error(ErrorResponse),
-}
-
-fn query_response_to_json(results: Vec<Option<QueryResult>>) -> anyhow::Result<Bytes> {
-    fn result_set_to_json(
-        ResultSet { columns, rows, .. }: ResultSet,
-    ) -> anyhow::Result<RowsResponse> {
-        let mut out_rows = Vec::with_capacity(rows.len());
-        for row in rows {
-            let mut out_row = Vec::with_capacity(row.values.len());
-            for value in row.values {
-                out_row.push(value.try_into()?);
-            }
-
-            out_rows.push(out_row);
-        }
-
-        Ok(RowsResponse {
-            columns: columns.into_iter().map(|c| c.name).collect(),
-            rows: out_rows,
-        })
-    }
-
-    let json = results
-        .into_iter()
-        .map(|r| match r {
-            Some(Ok(query::QueryResponse::ResultSet(set))) => {
-                Ok(Some(ResultResponse::Results(result_set_to_json(set)?)))
-            }
-            Some(Err(e)) => Ok(Some(ResultResponse::Error(ErrorResponse {
-                message: e.to_string(),
-            }))),
-            None => Ok(None),
-        })
-        .collect::<anyhow::Result<Vec<_>>>()?;
-
-    let mut buffer = BytesMut::new().writer();
-    serde_json::to_writer(&mut buffer, &json)?;
-    Ok(buffer.into_inner().freeze())
-}
-
 fn error(msg: &str, code: StatusCode) -> Response<Body> {
-    let err = json!({ "error": msg });
+    let err = serde_json::json!({ "error": msg });
     Response::builder()
         .status(code)
         .body(Body::from(serde_json::to_vec(&err).unwrap()))
@@ -157,10 +115,10 @@ fn parse_payload(data: &[u8]) -> Result<HttpQuery, Response<Body>> {
     }
 }
 
-async fn handle_query(
+async fn handle_query<D: Database>(
     mut req: Request<Body>,
     auth: Authenticated,
-    db_factory: Arc<dyn DbFactory>,
+    db_factory: Arc<dyn DbFactory<Db = D>>,
 ) -> anyhow::Result<Response<Body>> {
     let bytes = to_bytes(req.body_mut()).await?;
     let req = match parse_payload(&bytes) {
@@ -175,13 +133,11 @@ async fn handle_query(
 
     let db = db_factory.create().await?;
 
-    match db.execute_batch_or_rollback(batch, auth).await {
-        Ok((rows, _)) => {
-            let json = query_response_to_json(rows)?;
-            Ok(Response::builder()
-                .header("Content-Type", "application/json")
-                .body(Body::from(json))?)
-        }
+    let builder = JsonHttpPayloadBuilder::new();
+    match db.execute_batch_or_rollback(batch, auth, builder).await {
+        Ok((builder, _)) => Ok(Response::builder()
+            .header("Content-Type", "application/json")
+            .body(Body::from(builder.into_ret()))?),
         Err(e) => Ok(error(
             &format!("internal error: {e}"),
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -219,12 +175,12 @@ async fn handle_upgrade(
     }
 }
 
-async fn handle_request(
+async fn handle_request<D: Database>(
     auth: Arc<Auth>,
     req: Request<Body>,
     upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
-    hrana_http_srv: Arc<hrana::http::Server>,
-    db_factory: Arc<dyn DbFactory>,
+    hrana_http_srv: Arc<hrana::http::Server<D>>,
+    db_factory: Arc<dyn DbFactory<Db = D>>,
     enable_console: bool,
     stats: Stats,
 ) -> anyhow::Result<Response<Body>> {
@@ -280,12 +236,12 @@ fn handle_version() -> Response<Body> {
 
 // TODO: refactor
 #[allow(clippy::too_many_arguments)]
-pub async fn run_http(
+pub async fn run_http<D: Database>(
     addr: SocketAddr,
     auth: Arc<Auth>,
-    db_factory: Arc<dyn DbFactory>,
+    db_factory: Arc<dyn DbFactory<Db = D>>,
     upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
-    hrana_http_srv: Arc<hrana::http::Server>,
+    hrana_http_srv: Arc<hrana::http::Server<D>>,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,

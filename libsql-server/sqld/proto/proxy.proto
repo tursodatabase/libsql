@@ -60,19 +60,8 @@ message Row {
     repeated Value values = 1;
 }
 
-enum Type {
-    Integer = 0;
-    Blob    = 1;
-    Real    = 2;
-    Text    = 3;
-    Null    = 4;
-    Unknown = 5;
-    Numeric = 6;
-}
-
 message Column {
     string          name = 1;
-    optional Type   ty = 2;
     optional string decltype = 3;
 }
 

@@ -6,16 +6,17 @@ use std::sync::Arc;
 use super::ProtocolError;
 use crate::auth::Authenticated;
 use crate::database::factory::DbFactory;
+use crate::database::Database;
 
 mod proto;
 mod request;
 mod stream;
 
-pub struct Server {
-    db_factory: Arc<dyn DbFactory>,
+pub struct Server<D> {
+    db_factory: Arc<dyn DbFactory<Db = D>>,
     self_url: Option<String>,
     baton_key: [u8; 32],
-    stream_state: Mutex<stream::ServerStreamState>,
+    stream_state: Mutex<stream::ServerStreamState<D>>,
 }
 
 #[derive(Debug)]
@@ -24,8 +25,8 @@ pub enum Route {
     PostPipeline,
 }
 
-impl Server {
-    pub fn new(db_factory: Arc<dyn DbFactory>, self_url: Option<String>) -> Self {
+impl<D: Database> Server<D> {
+    pub fn new(db_factory: Arc<dyn DbFactory<Db = D>>, self_url: Option<String>) -> Self {
         Self {
             db_factory,
             self_url,
@@ -63,8 +64,8 @@ fn handle_index() -> Result<hyper::Response<hyper::Body>> {
     ))
 }
 
-async fn handle_pipeline(
-    server: &Server,
+async fn handle_pipeline<D: Database>(
+    server: &Server<D>,
     auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>> {

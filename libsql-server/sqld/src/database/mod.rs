@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use crate::auth::Authenticated;
-use crate::query::{Params, Query, QueryResult};
+use crate::query::{Params, Query};
 use crate::query_analysis::{State, Statement};
+use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
 use crate::Result;
 
 pub mod dump;
@@ -30,6 +31,25 @@ impl Program {
 
     pub fn steps(&self) -> &[Step] {
         self.steps.as_slice()
+    }
+
+    #[cfg(test)]
+    pub fn seq(stmts: &[&str]) -> Self {
+        let mut steps = Vec::with_capacity(stmts.len());
+        for stmt in stmts {
+            let step = Step {
+                cond: None,
+                query: Query {
+                    stmt: Statement::parse(stmt).next().unwrap().unwrap(),
+                    params: Params::empty(),
+                    want_rows: true,
+                },
+            };
+
+            steps.push(step);
+        }
+
+        Self::new(steps)
     }
 }
 
@@ -70,30 +90,25 @@ pub struct DescribeCol {
 }
 
 #[async_trait::async_trait]
-pub trait Database: Send + Sync {
+pub trait Database: Send + Sync + 'static {
     /// Executes a query program
-    async fn execute_program(
+    async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
         auth: Authenticated,
-    ) -> Result<(Vec<Option<QueryResult>>, State)>;
-
-    /// Unconditionnaly execute a query as part of a program
-    async fn execute_one(&self, query: Query, auth: Authenticated) -> Result<(QueryResult, State)> {
-        let pgm = Program::new(vec![Step { cond: None, query }]);
-
-        let (results, state) = self.execute_program(pgm, auth).await?;
-        Ok((results.into_iter().next().unwrap().unwrap(), state))
-    }
+        reponse_builder: B,
+    ) -> Result<(B, State)>;
 
     /// Execute all the queries in the batch sequentially.
     /// If an query in the batch fails, the remaining queries are ignores, and the batch current
     /// transaction (if any) is rolledback.
-    async fn execute_batch_or_rollback(
+    async fn execute_batch_or_rollback<B: QueryResultBuilder>(
         &self,
         batch: Vec<Query>,
         auth: Authenticated,
-    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        result_builder: B,
+    ) -> Result<(B, State)> {
+        let batch_len = batch.len();
         let mut steps = make_batch_program(batch);
 
         if !steps.is_empty() {
@@ -114,38 +129,37 @@ pub trait Database: Send + Sync {
 
         let pgm = Program::new(steps);
 
-        let (mut results, state) = self.execute_program(pgm, auth).await?;
-        // remove the rollback result
-        results.pop();
+        // ignore the rollback result
+        let builder = result_builder.take(batch_len);
+        let (builder, state) = self.execute_program(pgm, auth, builder).await?;
 
-        Ok((results, state))
+        Ok((builder.into_inner(), state))
     }
 
     /// Execute all the queries in the batch sequentially.
     /// If an query in the batch fails, the remaining queries are ignored
-    async fn execute_batch(
+    async fn execute_batch<B: QueryResultBuilder>(
         &self,
         batch: Vec<Query>,
         auth: Authenticated,
-    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        result_builder: B,
+    ) -> Result<(B, State)> {
         let steps = make_batch_program(batch);
         let pgm = Program::new(steps);
-        self.execute_program(pgm, auth).await
+        self.execute_program(pgm, auth, result_builder).await
     }
 
     async fn rollback(&self, auth: Authenticated) -> Result<()> {
-        let (results, _) = self
-            .execute_one(
-                Query {
-                    stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
-                    params: Params::empty(),
-                    want_rows: false,
-                },
-                auth,
-            )
-            .await?;
-
-        results?;
+        self.execute_batch(
+            vec![Query {
+                stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
+                params: Params::empty(),
+                want_rows: false,
+            }],
+            auth,
+            IgnoreResult,
+        )
+        .await?;
 
         Ok(())
     }

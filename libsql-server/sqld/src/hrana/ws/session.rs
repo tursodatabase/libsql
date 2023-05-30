@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context as _, Result};
 use futures::future::BoxFuture;
@@ -11,35 +10,35 @@ use crate::auth::{AuthError, Authenticated};
 use crate::database::Database;
 
 /// Session-level state of an authenticated Hrana connection.
-pub struct Session {
+pub struct Session<D> {
     authenticated: Authenticated,
     version: Version,
-    streams: HashMap<i32, StreamHandle>,
+    streams: HashMap<i32, StreamHandle<D>>,
     sqls: HashMap<i32, String>,
 }
 
-struct StreamHandle {
-    job_tx: mpsc::Sender<StreamJob>,
+struct StreamHandle<D> {
+    job_tx: mpsc::Sender<StreamJob<D>>,
 }
 
 /// An arbitrary job that is executed on a [`Stream`].
 ///
 /// All jobs are executed sequentially on a single task (as evidenced by the `&mut Stream` passed
 /// to `f`).
-struct StreamJob {
+struct StreamJob<D> {
     /// The async function which performs the job.
     #[allow(clippy::type_complexity)]
-    f: Box<dyn for<'s> FnOnce(&'s mut Stream) -> BoxFuture<'s, Result<proto::Response>> + Send>,
+    f: Box<dyn for<'s> FnOnce(&'s mut Stream<D>) -> BoxFuture<'s, Result<proto::Response>> + Send>,
     /// The result of `f` will be sent here.
     resp_tx: oneshot::Sender<Result<proto::Response>>,
 }
 
 /// State of a Hrana stream, which corresponds to a standalone database connection.
-struct Stream {
+struct Stream<D> {
     /// The database handle is `None` when the stream is created, and normally set to `Some` by the
     /// first job executed on the stream by the [`proto::OpenStreamReq`] request. However, if that
     /// request returns an error, the following requests may encounter a `None` here.
-    db: Option<Arc<dyn Database>>,
+    db: Option<D>,
 }
 
 /// An error which can be converted to a Hrana [Error][proto::Error].
@@ -55,11 +54,11 @@ pub enum ResponseError {
     Stmt(stmt::StmtError),
 }
 
-pub(super) fn handle_initial_hello(
-    server: &Server,
+pub(super) fn handle_initial_hello<D: Database>(
+    server: &Server<D>,
     version: Version,
     jwt: Option<String>,
-) -> Result<Session> {
+) -> Result<Session<D>> {
     let authenticated = server
         .auth
         .authenticate_jwt(jwt.as_deref())
@@ -73,9 +72,9 @@ pub(super) fn handle_initial_hello(
     })
 }
 
-pub(super) fn handle_repeated_hello(
-    server: &Server,
-    session: &mut Session,
+pub(super) fn handle_repeated_hello<DB: Database>(
+    server: &Server<DB>,
+    session: &mut Session<DB>,
     jwt: Option<String>,
 ) -> Result<()> {
     if session.version < Version::Hrana2 {
@@ -92,9 +91,9 @@ pub(super) fn handle_repeated_hello(
     Ok(())
 }
 
-pub(super) async fn handle_request(
-    server: &Server,
-    session: &mut Session,
+pub(super) async fn handle_request<DB: Database>(
+    server: &Server<DB>,
+    session: &mut Session<DB>,
     join_set: &mut tokio::task::JoinSet<()>,
     req: proto::Request,
 ) -> Result<oneshot::Receiver<Result<proto::Response>>> {
@@ -192,7 +191,7 @@ pub(super) async fn handle_request(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::execute_stmt(&**db, auth, query)
+                let result = stmt::execute_stmt(db, auth, query)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Execute(proto::ExecuteResp { result }))
@@ -208,7 +207,7 @@ pub(super) async fn handle_request(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = batch::execute_batch(&**db, auth, pgm).await?;
+                let result = batch::execute_batch(db, auth, pgm).await?;
                 Ok(proto::Response::Batch(proto::BatchResp { result }))
             });
         }
@@ -228,7 +227,7 @@ pub(super) async fn handle_request(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                batch::execute_sequence(&**db, auth, pgm)
+                batch::execute_sequence(db, auth, pgm)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Sequence(proto::SequenceResp {}))
@@ -250,7 +249,7 @@ pub(super) async fn handle_request(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::describe_stmt(&**db, auth, sql)
+                let result = stmt::describe_stmt(db, auth, sql)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Describe(proto::DescribeResp { result }))
@@ -281,8 +280,11 @@ pub(super) async fn handle_request(
 
 const MAX_SQL_COUNT: usize = 150;
 
-fn stream_spawn(join_set: &mut tokio::task::JoinSet<()>, stream: Stream) -> StreamHandle {
-    let (job_tx, mut job_rx) = mpsc::channel::<StreamJob>(8);
+fn stream_spawn<D: Database>(
+    join_set: &mut tokio::task::JoinSet<()>,
+    stream: Stream<D>,
+) -> StreamHandle<D> {
+    let (job_tx, mut job_rx) = mpsc::channel::<StreamJob<D>>(8);
     join_set.spawn(async move {
         let mut stream = stream;
         while let Some(job) = job_rx.recv().await {
@@ -293,12 +295,12 @@ fn stream_spawn(join_set: &mut tokio::task::JoinSet<()>, stream: Stream) -> Stre
     StreamHandle { job_tx }
 }
 
-async fn stream_respond<F>(
-    stream_hnd: &mut StreamHandle,
+async fn stream_respond<F, D>(
+    stream_hnd: &mut StreamHandle<D>,
     resp_tx: oneshot::Sender<Result<proto::Response>>,
     f: F,
 ) where
-    for<'s> F: FnOnce(&'s mut Stream) -> BoxFuture<'s, Result<proto::Response>>,
+    for<'s> F: FnOnce(&'s mut Stream<D>) -> BoxFuture<'s, Result<proto::Response>>,
     F: Send + 'static,
 {
     let job = StreamJob {

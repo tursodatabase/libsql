@@ -116,8 +116,6 @@ jobs:
       with:
         command: test
         args: --verbose
-    - name: Run functional tests
-      run: make test
 
   check-openssl:
     runs-on: ubuntu-latest

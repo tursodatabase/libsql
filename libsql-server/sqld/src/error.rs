@@ -1,10 +1,12 @@
+use crate::query_result_builder::QueryResultBuilderError;
+
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("LibSQL failed to bind provided query parameters: `{0}`")]
     LibSqlInvalidQueryParams(anyhow::Error),
-    #[error("Transaction timed-out when evaluating query no. `{0}`")]
-    LibSqlTxTimeout(usize),
+    #[error("Transaction timed-out")]
+    LibSqlTxTimeout,
     #[error("Server can't handle additional transactions")]
     LibSqlTxBusy,
     #[error(transparent)]
@@ -29,6 +31,8 @@ pub enum Error {
     ReplicatorExited,
     #[error("Timed out while openning database connection")]
     DbCreateTimeout,
+    #[error(transparent)]
+    BuilderError(#[from] QueryResultBuilderError),
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {

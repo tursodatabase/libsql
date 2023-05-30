@@ -3,6 +3,7 @@ use anyhow::{anyhow, bail, Result};
 use super::super::{batch, stmt, ProtocolError, Version};
 use super::{proto, stream};
 use crate::auth::Authenticated;
+use crate::database::Database;
 
 /// An error from executing a [`proto::StreamRequest`]
 #[derive(thiserror::Error, Debug)]
@@ -13,8 +14,8 @@ pub enum StreamResponseError {
     Stmt(stmt::StmtError),
 }
 
-pub async fn handle(
-    stream_guard: &mut stream::Guard<'_>,
+pub async fn handle<D: Database>(
+    stream_guard: &mut stream::Guard<'_, D>,
     auth: Authenticated,
     request: proto::StreamRequest,
 ) -> Result<proto::StreamResult> {
@@ -32,8 +33,8 @@ pub async fn handle(
     Ok(result)
 }
 
-async fn try_handle(
-    stream_guard: &mut stream::Guard<'_>,
+async fn try_handle<D: Database>(
+    stream_guard: &mut stream::Guard<'_, D>,
     auth: Authenticated,
     request: proto::StreamRequest,
 ) -> Result<proto::StreamResponse> {

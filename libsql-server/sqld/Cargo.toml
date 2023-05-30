@@ -12,7 +12,6 @@ base64 = "0.21.0"
 bincode = "1.3.3"
 bottomless = { version = "0", path = "../bottomless", features = ["libsql_linked_statically"], optional = true }
 bytemuck = { version = "1.13.0", features = ["derive"] }
-byteorder = "1.4.3"
 bytes = { version = "1.2.1", features = ["serde"] }
 clap = { version = "4.0.23", features = [ "derive", "env"] }
 console-subscriber = { version = "0.1.9", optional = true }
@@ -21,7 +20,6 @@ crossbeam = "0.8.2"
 enclose = "1.1"
 fallible-iterator = "0.2.0"
 futures = "0.3.25"
-hex = "0.4.3"
 hmac = "0.12"
 hyper = { version = "0.14.23", features = ["http2"] }
 hyper-tungstenite = "0.10"
@@ -32,9 +30,6 @@ mimalloc = { version = "0.1.36", default-features = false }
 nix = { version = "0.26.2", features = ["fs"] }
 once_cell = "1.17.0"
 parking_lot = "0.12.1"
-pgwire = "0.11.1"
-pin-project-lite = "0.2.9"
-postgres-protocol = "0.6.4"
 priority-queue = "1.3"
 prost = "0.11.3"
 rand = "0.8"
@@ -49,7 +44,6 @@ serde = { version = "1.0.149", features = ["derive", "rc"] }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
 sha2 = "0.10"
 sha256 = "1.1.3"
-smallvec = "1.10.0"
 sqld-libsql-bindings = { version = "0", path = "../sqld-libsql-bindings" }
 sqlite3-parser = { version = "0.8.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.3.0"
@@ -57,7 +51,6 @@ thiserror = "1.0.38"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs"] }
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.19"
-tokio-util = "0.7.4"
 tonic = { version = "0.8.3", features = ["tls"] }
 tower = { version = "0.4.13", features = ["make"] }
 tower-http = { version = "0.3.5", features = ["compression-full", "cors", "trace"] }
@@ -70,6 +63,7 @@ proptest = "1.0.0"
 rand = "0.8.5"
 tempfile = "3.3.0"
 insta = { version = "1.26.0", features = ["json"] }
+arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
 
 [build-dependencies]
 prost-build = "0.11.4"
@@ -79,4 +73,4 @@ vergen = "6"
 [features]
 unix-excl-vfs = ["sqld-libsql-bindings/unix-excl-vfs"]
 bottomless = ["dep:bottomless"]
-debug-tools = ["console-subscriber","rusqlite/trace", "tokio/tracing"]
+debug-tools = ["console-subscriber", "rusqlite/trace", "tokio/tracing"]

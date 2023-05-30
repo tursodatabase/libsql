@@ -16,9 +16,6 @@ if [ "$1" = '/bin/sqld' ]; then
 
   server_args+=("--db-path" "$SQLD_DB_PATH")
 
-  # Listen to PostgreSQL port by default.
-  server_args+=("--pg-listen-addr" "$SQLD_PG_LISTEN_ADDR")
-
   # Listen on HTTP 8080 port by default.
   server_args+=("--http-listen-addr" "$SQLD_HTTP_LISTEN_ADDR")
   server_args+=("--http-auth" "$SQLD_HTTP_AUTH")

@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::auth::Authenticated;
 use crate::database::factory::DbFactory;
 use crate::database::Database;
-use crate::hrana;
+use crate::hrana::{self};
 
 #[derive(thiserror::Error, Debug)]
 enum ResponseError {
@@ -25,8 +25,8 @@ pub async fn handle_index(
         .unwrap())
 }
 
-pub async fn handle_execute(
-    db_factory: Arc<dyn DbFactory>,
+pub async fn handle_execute<D: Database>(
+    db_factory: Arc<dyn DbFactory<Db = D>>,
     auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>> {
@@ -47,7 +47,7 @@ pub async fn handle_execute(
             hrana::Version::Hrana1,
         )
         .map_err(catch_stmt_error)?;
-        hrana::stmt::execute_stmt(&*db, auth, query)
+        hrana::stmt::execute_stmt(&db, auth, query)
             .await
             .map(|result| RespBody { result })
             .map_err(catch_stmt_error)
@@ -56,8 +56,8 @@ pub async fn handle_execute(
     .await
 }
 
-pub async fn handle_batch(
-    db_factory: Arc<dyn DbFactory>,
+pub async fn handle_batch<D: Database>(
+    db_factory: Arc<dyn DbFactory<Db = D>>,
     auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>> {
@@ -78,7 +78,7 @@ pub async fn handle_batch(
             hrana::Version::Hrana1,
         )
         .map_err(catch_stmt_error)?;
-        hrana::batch::execute_batch(&*db, auth, pgm)
+        hrana::batch::execute_batch(&db, auth, pgm)
             .await
             .map(|result| RespBody { result })
             .context("Could not execute batch")
@@ -86,16 +86,17 @@ pub async fn handle_batch(
     .await
 }
 
-async fn handle_request<ReqBody, RespBody, F, Fut>(
-    db_factory: Arc<dyn DbFactory>,
+async fn handle_request<ReqBody, RespBody, F, Fut, FT>(
+    db_factory: Arc<FT>,
     req: hyper::Request<hyper::Body>,
     f: F,
 ) -> Result<hyper::Response<hyper::Body>>
 where
     ReqBody: DeserializeOwned,
     RespBody: Serialize,
-    F: FnOnce(Arc<dyn Database>, ReqBody) -> Fut,
+    F: FnOnce(FT::Db, ReqBody) -> Fut,
     Fut: Future<Output = Result<RespBody>>,
+    FT: DbFactory + ?Sized,
 {
     let res: Result<_> = async move {
         let req_body = hyper::body::to_bytes(req.into_body()).await?;

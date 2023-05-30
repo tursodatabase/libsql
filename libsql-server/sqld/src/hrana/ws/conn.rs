@@ -11,20 +11,22 @@ use tokio::sync::oneshot;
 use tokio_tungstenite::tungstenite;
 use tungstenite::protocol::frame::coding::CloseCode;
 
+use crate::database::Database;
+
 use super::super::{ProtocolError, Version};
 use super::handshake::WebSocket;
 use super::{handshake, proto, session, Server, Upgrade};
 
 /// State of a Hrana connection.
-struct Conn {
+struct Conn<D> {
     conn_id: u64,
-    server: Arc<Server>,
+    server: Arc<Server<D>>,
     ws: WebSocket,
     ws_closed: bool,
     /// The version of the protocol that has been negotiated in the WebSocket handshake.
     version: Version,
     /// After a successful authentication, this contains the session-level state of the connection.
-    session: Option<session::Session>,
+    session: Option<session::Session<D>>,
     /// Join set for all tasks that were spawned to handle the connection.
     join_set: tokio::task::JoinSet<()>,
     /// Future responses to requests that we have received but are evaluating asynchronously.
@@ -41,7 +43,7 @@ struct ResponseFuture {
 }
 
 pub(super) async fn handle_tcp(
-    server: Arc<Server>,
+    server: Arc<Server<impl Database>>,
     socket: tokio::net::TcpStream,
     conn_id: u64,
 ) -> Result<()> {
@@ -52,7 +54,7 @@ pub(super) async fn handle_tcp(
 }
 
 pub(super) async fn handle_upgrade(
-    server: Arc<Server>,
+    server: Arc<Server<impl Database>>,
     upgrade: Upgrade,
     conn_id: u64,
 ) -> Result<()> {
@@ -62,8 +64,8 @@ pub(super) async fn handle_upgrade(
     handle_ws(server, ws, version, conn_id).await
 }
 
-async fn handle_ws(
-    server: Arc<Server>,
+async fn handle_ws<D: Database>(
+    server: Arc<Server<D>>,
     ws: WebSocket,
     version: Version,
     conn_id: u64,
@@ -131,7 +133,10 @@ async fn handle_ws(
     Ok(())
 }
 
-async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result<bool> {
+async fn handle_msg(
+    conn: &mut Conn<impl Database>,
+    client_msg: tungstenite::Message,
+) -> Result<bool> {
     match client_msg {
         tungstenite::Message::Text(client_msg) => {
             // client messages are received as text WebSocket messages that encode the `ClientMsg`
@@ -164,7 +169,7 @@ async fn handle_msg(conn: &mut Conn, client_msg: tungstenite::Message) -> Result
     }
 }
 
-async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> {
+async fn handle_hello_msg(conn: &mut Conn<impl Database>, jwt: Option<String>) -> Result<bool> {
     let hello_res = match conn.session.as_mut() {
         None => session::handle_initial_hello(&conn.server, conn.version, jwt)
             .map(|session| conn.session = Some(session)),
@@ -187,7 +192,7 @@ async fn handle_hello_msg(conn: &mut Conn, jwt: Option<String>) -> Result<bool> 
 }
 
 async fn handle_request_msg(
-    conn: &mut Conn,
+    conn: &mut Conn<impl Database>,
     request_id: i32,
     request: proto::Request,
 ) -> Result<bool> {
@@ -249,7 +254,7 @@ fn downcast_error(err: anyhow::Error) -> Result<proto::Error> {
     }
 }
 
-async fn send_msg(conn: &mut Conn, msg: &proto::ServerMsg) -> Result<()> {
+async fn send_msg<D: Database>(conn: &mut Conn<D>, msg: &proto::ServerMsg) -> Result<()> {
     let msg = serde_json::to_string(&msg).context("Could not serialize response message")?;
     let msg = tungstenite::Message::Text(msg);
     conn.ws
@@ -258,7 +263,7 @@ async fn send_msg(conn: &mut Conn, msg: &proto::ServerMsg) -> Result<()> {
         .context("Could not send response to the WebSocket")
 }
 
-async fn close(conn: &mut Conn, code: CloseCode, reason: String) {
+async fn close<D>(conn: &mut Conn<D>, code: CloseCode, reason: String) {
     if conn.ws_closed {
         return;
     }

@@ -1,6 +1,4 @@
 use std::path::{Path, PathBuf};
-use std::str::FromStr;
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
@@ -12,8 +10,9 @@ use tracing::warn;
 use crate::auth::{Authenticated, Authorized};
 use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
-use crate::query::{Column, Query, QueryResponse, QueryResult, ResultSet, Row};
+use crate::query::Query;
 use crate::query_analysis::{State, Statement, StmtKind};
+use crate::query_result_builder::QueryResultBuilder;
 use crate::stats::Stats;
 use crate::Result;
 
@@ -24,16 +23,7 @@ use super::{
 };
 
 /// Internal message used to communicate between the database thread and the `LibSqlDb` handle.
-enum Message {
-    Program {
-        pgm: Program,
-        resp: oneshot::Sender<(Vec<Option<QueryResult>>, State)>,
-    },
-    Describe {
-        sql: String,
-        resp: oneshot::Sender<DescribeResult>,
-    },
-}
+type ExecCallback = Box<dyn FnOnce(Result<&mut Connection>) -> anyhow::Result<()> + Send + 'static>;
 
 pub struct LibSqlDbFactory<W: WalHook + 'static> {
     db_path: PathBuf,
@@ -123,14 +113,16 @@ where
     W: WalHook + 'static + Sync + Send,
     W::Context: Send + 'static,
 {
-    async fn create(&self) -> Result<Arc<dyn Database>, Error> {
-        Ok(Arc::new(self.create_database().await?))
+    type Db = LibSqlDb;
+
+    async fn create(&self) -> Result<Self::Db, Error> {
+        self.create_database().await
     }
 }
 
 #[derive(Clone)]
 pub struct LibSqlDb {
-    sender: crossbeam::channel::Sender<Message>,
+    sender: crossbeam::channel::Sender<ExecCallback>,
 }
 
 struct ConnectionState {
@@ -172,14 +164,6 @@ impl ConnectionState {
     }
 }
 
-macro_rules! ok_or_exit {
-    ($e:expr) => {
-        if let Err(_) = $e {
-            return;
-        }
-    };
-}
-
 pub fn open_db<'a, W>(
     path: &Path,
     wal_methods: &'static WalMethodsHook<W>,
@@ -211,7 +195,7 @@ impl LibSqlDb {
         W: WalHook,
         W::Context: Send,
     {
-        let (sender, receiver) = crossbeam::channel::unbounded::<Message>();
+        let (sender, receiver) = crossbeam::channel::unbounded::<ExecCallback>();
         let (init_sender, init_receiver) = oneshot::channel();
 
         tokio::task::spawn_blocking(move || {
@@ -229,7 +213,7 @@ impl LibSqlDb {
                 };
 
             loop {
-                let message = match connection.state.deadline() {
+                let exec = match connection.state.deadline() {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
                         Ok(msg) => msg,
                         Err(RecvTimeoutError::Timeout) => {
@@ -247,25 +231,16 @@ impl LibSqlDb {
                     },
                 };
 
-                match message {
-                    Message::Program { pgm, resp } => {
-                        if !connection.timed_out {
-                            let results = connection.run(pgm);
-                            ok_or_exit!(resp.send((results, connection.state.state)));
-                        } else {
-                            // fail all the queries in the batch with timeout error
-                            let errors = (0..pgm.steps.len())
-                                .map(|idx| Some(Err(Error::LibSqlTxTimeout(idx))))
-                                .collect();
-                            ok_or_exit!(resp.send((errors, connection.state.state)));
-                            connection.timed_out = false;
-                        }
-                    }
-                    Message::Describe { sql, resp } => {
-                        let result = connection.describe(&sql);
-                        ok_or_exit!(resp.send(result));
-                    }
-                }
+                let maybe_conn = if !connection.timed_out {
+                    Ok(&mut connection)
+                } else {
+                    Err(Error::LibSqlTxTimeout)
+                };
+
+                if exec(maybe_conn).is_err() {
+                    tracing::warn!("Database connection closed unexpectedly");
+                    return;
+                };
             }
         });
 
@@ -311,35 +286,65 @@ impl<'a> Connection<'a> {
         Ok(this)
     }
 
-    fn run(&mut self, pgm: Program) -> Vec<Option<QueryResult>> {
+    fn run<B: QueryResultBuilder>(&mut self, pgm: Program, mut builder: B) -> Result<B> {
         let mut results = Vec::with_capacity(pgm.steps.len());
 
+        builder.init()?;
+
         for step in pgm.steps() {
-            let res = self.execute_step(step, &results);
+            let res = self.execute_step(step, &results, &mut builder)?;
             results.push(res);
         }
 
-        results
+        builder.finish()?;
+
+        Ok(builder)
     }
 
     fn execute_step(
         &mut self,
         step: &Step,
-        results: &[Option<QueryResult>],
-    ) -> Option<QueryResult> {
-        let enabled = match step.cond.as_ref() {
+        results: &[bool],
+        builder: &mut impl QueryResultBuilder,
+    ) -> Result<bool> {
+        builder.begin_step()?;
+        let mut enabled = match step.cond.as_ref() {
             Some(cond) => match eval_cond(cond, results) {
                 Ok(enabled) => enabled,
-                Err(e) => return Some(Err(e)),
+                Err(e) => {
+                    builder.step_error(e).unwrap();
+                    false
+                }
             },
             None => true,
         };
 
-        enabled.then(|| self.execute_query(&step.query))
+        let (affected_row_count, last_insert_rowid) = if enabled {
+            match self.execute_query(&step.query, builder) {
+                // builder error interupt the execution of query. we should exit immediately.
+                Err(e @ Error::BuilderError(_)) => return Err(e),
+                Err(e) => {
+                    builder.step_error(e)?;
+                    enabled = false;
+                    (0, None)
+                }
+                Ok(x) => x,
+            }
+        } else {
+            (0, None)
+        };
+
+        builder.finish_step(affected_row_count, last_insert_rowid)?;
+
+        Ok(enabled)
     }
 
-    fn execute_query(&mut self, query: &Query) -> QueryResult {
-        let result = self.execute_query_inner(query);
+    fn execute_query(
+        &mut self,
+        query: &Query,
+        builder: &mut impl QueryResultBuilder,
+    ) -> Result<(u64, Option<i64>)> {
+        let result = self.execute_query_inner(query, builder);
 
         // We drive the connection state on success. This is how we keep track of whether
         // a transaction timeouts
@@ -350,25 +355,19 @@ impl<'a> Connection<'a> {
         result
     }
 
-    fn execute_query_inner(&self, query: &Query) -> QueryResult {
+    fn execute_query_inner(
+        &self,
+        query: &Query,
+        builder: &mut impl QueryResultBuilder,
+    ) -> Result<(u64, Option<i64>)> {
         tracing::trace!("executing query: {}", query.stmt.stmt);
 
-        let mut rows = vec![];
         let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
-        let columns = stmt
-            .columns()
-            .iter()
-            .map(|col| Column {
-                name: col.name().into(),
-                ty: col
-                    .decl_type()
-                    .map(FromStr::from_str)
-                    .transpose()
-                    .ok()
-                    .flatten(),
-                decltype: col.decl_type().map(|t| t.into()),
-            })
-            .collect::<Vec<_>>();
+
+        let cols = stmt.columns();
+        let cols_count = cols.len();
+        builder.cols_description(cols.iter())?;
+        drop(cols);
 
         query
             .params
@@ -376,20 +375,17 @@ impl<'a> Connection<'a> {
             .map_err(Error::LibSqlInvalidQueryParams)?;
 
         let mut qresult = stmt.raw_query();
+        builder.begin_rows()?;
         while let Some(row) = qresult.next()? {
-            if !query.want_rows {
-                // if the caller does not want rows, we keep `rows` empty, but we still iterate the
-                // statement to completion to make sure that we don't miss any errors or side
-                // effects
-                continue;
+            builder.begin_row()?;
+            for i in 0..cols_count {
+                let val = row.get_ref(i)?;
+                builder.add_row_value(val)?;
             }
-
-            let mut values = Vec::with_capacity(columns.len());
-            for (i, _) in columns.iter().enumerate() {
-                values.push(row.get::<usize, rusqlite::types::Value>(i)?.into());
-            }
-            rows.push(Row { values });
+            builder.finish_row()?;
         }
+
+        builder.finish_rows()?;
 
         // sqlite3_changes() is only modified for INSERT, UPDATE or DELETE; it is not reset for SELECT,
         // but we want to return 0 in that case.
@@ -409,13 +405,7 @@ impl<'a> Connection<'a> {
 
         self.update_stats(&stmt);
 
-        Ok(QueryResponse::ResultSet(ResultSet {
-            columns,
-            rows,
-            affected_row_count,
-            last_insert_rowid,
-            include_column_defs: true,
-        }))
+        Ok((affected_row_count, last_insert_rowid))
     }
 
     fn rollback(&self) {
@@ -462,19 +452,16 @@ impl<'a> Connection<'a> {
     }
 }
 
-fn eval_cond(cond: &Cond, results: &[Option<QueryResult>]) -> Result<bool> {
-    let get_step_res = |step: usize| -> Result<Option<&QueryResult>> {
-        let res = results
-            .get(step)
-            .ok_or(Error::InvalidBatchStep(step))?
-            .as_ref();
+fn eval_cond(cond: &Cond, results: &[bool]) -> Result<bool> {
+    let get_step_res = |step: usize| -> Result<bool> {
+        let res = results.get(step).ok_or(Error::InvalidBatchStep(step))?;
 
-        Ok(res)
+        Ok(*res)
     };
 
     Ok(match cond {
-        Cond::Ok { step } => get_step_res(*step)?.map(|r| r.is_ok()).unwrap_or(false),
-        Cond::Err { step } => get_step_res(*step)?.map(|r| r.is_err()).unwrap_or(false),
+        Cond::Ok { step } => get_step_res(*step)?,
+        Cond::Err { step } => !get_step_res(*step)?,
         Cond::Not { cond } => !eval_cond(cond, results)?,
         Cond::And { conds } => conds
             .iter()
@@ -519,25 +506,78 @@ fn check_describe_auth(auth: Authenticated) -> Result<()> {
 
 #[async_trait::async_trait]
 impl Database for LibSqlDb {
-    async fn execute_program(
+    async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,
         auth: Authenticated,
-    ) -> Result<(Vec<Option<QueryResult>>, State)> {
+        builder: B,
+    ) -> Result<(B, State)> {
         check_program_auth(auth, &pgm)?;
         let (resp, receiver) = oneshot::channel();
-        let msg = Message::Program { pgm, resp };
-        let _: Result<_, _> = self.sender.send(msg);
+        let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
+            let res = maybe_conn.and_then(|c| Ok((c.run(pgm, builder)?, c.state.state)));
 
-        Ok(receiver.await?)
+            if resp.send(res).is_err() {
+                anyhow::bail!("connection closed");
+            }
+
+            Ok(())
+        });
+
+        let _: Result<_, _> = self.sender.send(cb);
+
+        Ok(receiver.await??)
     }
 
     async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult> {
         check_describe_auth(auth)?;
         let (resp, receiver) = oneshot::channel();
-        let msg = Message::Describe { sql, resp };
-        let _: Result<_, _> = self.sender.send(msg);
+        let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
+            let res = maybe_conn.and_then(|c| c.describe(&sql));
+
+            if resp.send(res).is_err() {
+                anyhow::bail!("connection closed");
+            }
+
+            Ok(())
+        });
+
+        let _: Result<_, _> = self.sender.send(cb);
 
         Ok(receiver.await?)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use itertools::Itertools;
+
+    use crate::query_result_builder::{test::test_driver, IgnoreResult};
+
+    use super::*;
+
+    fn setup_test_conn(ctx: &mut ()) -> Connection {
+        let mut conn = Connection {
+            state: ConnectionState::initial(),
+            conn: sqld_libsql_bindings::Connection::test(ctx),
+            timed_out: false,
+            stats: Stats::default(),
+        };
+
+        let stmts = std::iter::once("create table test (x)")
+            .chain(std::iter::repeat("insert into test values ('hello world')").take(100))
+            .collect_vec();
+        conn.run(Program::seq(&stmts), IgnoreResult).unwrap();
+
+        conn
+    }
+
+    #[test]
+    fn test_libsql_conn_builder_driver() {
+        test_driver(1000, |b| {
+            let ctx = &mut ();
+            let mut conn = setup_test_conn(ctx);
+            conn.run(Program::seq(&["select * from test"]), b)
+        })
     }
 }
