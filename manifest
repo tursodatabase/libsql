@@ -1,5 +1,5 @@
-C New\sdate/time\smodifier:\s\s(+|-)YYYY-MM-DD\sHH:MM(:SS.SSS)?
-D 2023-05-29T20:33:33.570
+C Improvements\sto\sthe\stimediff()\sfunction.\s\sTest\scases\sadded.\sNot\sall\stest\ncases\sare\spassing.
+D 2023-05-30T02:16:33.896
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -583,7 +583,7 @@ F src/build.c 5512d5a335334b48d116f1ecd051edef96a60add18ae48e0ea302a395f00f3d9
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c 3752bcd1a5b90147f28fff2a32877935afe10d79ac33a08f24ddf820c5d2e924
+F src/date.c 71c0484764e7d2c4a5f7a98c4e6d3403998eae554a81b3c02a90a1c836049902
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 05e27e3a55dcfeadf2f7ca95a5c5e0928f182c04640ec1954ffa42f3d5c19341
@@ -1605,6 +1605,7 @@ F test/threadtest3.c 655bff6c0895ec03f014126aa65e808fac9aae8c5a7a7da58a510cbe8b4
 F test/threadtest4.c c1e67136ceb6c7ec8184e56ac61db28f96bd2925
 F test/threadtest5.c 9b4d782c58d8915d7e955ff8051f3d03628bda0d33b82971ea8c0f2f2808c421
 F test/time-wordcount.sh 8e0b0f8109367827ad5d58f5cc849705731e4b90
+F test/timediff1.test 701eea6ce725d71305d64292b44d9a0154b7c99ce09c916f9386de3e71689918
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-18458b1a.test 6a62cb1ee50fa3c620da59e3a6f531eb38fceaf7e2166203816b724524e6f1d6
 F test/tkt-26ff0c2d1e.test c15bec890c4d226c0da2f35ff30f9e84c169cfef90e73a8cb5cec11d723dfa96
@@ -2071,8 +2072,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 054a195125a273bab026ada5f07cc7c32818007027a1fd028ca59d2f179276d4
-R b507ad1612c7c470e9ed65929342a32e
+P 3832b8a9ef84d9b53b48dfce9c1e724897cd7b3e05711e01675419655f894eac
+R 8ffc400398f351d057bce50fed0005bf
 U drh
-Z c8a8d9945ac3ddc516393bf70fb76d82
+Z 6414db32510ab8f356b11e69a29d6be4
 # Remove this line to create a well-formed Fossil manifest.

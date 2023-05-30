@@ -871,6 +871,7 @@ static int parseModifier(
       double rRounder;
       int i;
       int Y,M,D,H,x;
+      const char *z2 = z;
       for(n=1; z[n]; n++){
         if( z[n]==':' ) break;
         if( sqlite3Isspace(z[n]) ) break;
@@ -907,16 +908,16 @@ static int parseModifier(
         p->validHMS = 0;
         p->validYMD = 0;
         p->iJD += (i64)D*86400000;
-        z = &z[12];
+        z2 = &z[12];
         n = 2;
       }
-      if( z[n]==':' ){
+      if( z2[n]==':' ){
         /* A modifier of the form (+|-)HH:MM:SS.FFF adds (or subtracts) the
         ** specified number of hours, minutes, seconds, and fractional seconds
         ** to the time.  The ".FFF" may be omitted.  The ":SS.FFF" may be
         ** omitted.
         */
-        const char *z2 = z;
+
         DateTime tx;
         sqlite3_int64 day;
         if( !sqlite3Isdigit(*z2) ) z2++;
@@ -1370,12 +1371,15 @@ static void cdateFunc(
 /*
 ** timediff(DATE1, DATE2)
 **
-** Return the that amount of time that DATE1 is later than DATE2 in
-** this format:
+** Return the amount of time that must be added to DATE2 in order to
+** convert it into DATE2.  The time difference format is:
 **
 **     +YYYY-MM-DD HH:MM:SS.SSS
 **
-** The initial "+" becomes "-" if DATE1 occurs before DATE2.
+** The initial "+" becomes "-" if DATE1 occurs before DATE2.  For
+** date/time values A and B, the following invariant should hold:
+**
+**     datetime(A) == (datetime(B, timediff(A,B))
 */
 static void timediffFunc(
   sqlite3_context *context,
@@ -1384,8 +1388,9 @@ static void timediffFunc(
 ){
   DateTime d1, d2;
   sqlite3_str *pOut = 0;
-  char sign = '+';
+  char sign;
   int rc;
+  int Y, M;
   if( isDate(context, 1, argv, &d1)     ) return;
   if( isDate(context, 1, &argv[1], &d2) ) return;
   autoAdjustDate(&d1);
@@ -1397,20 +1402,85 @@ static void timediffFunc(
     sqlite3_result_error_nomem(context);
     return;
   }
-  if( d1.iJD<d2.iJD ){
+  computeYMD_HMS(&d1);
+  computeYMD_HMS(&d2);
+  if( d1.iJD>=d2.iJD ){
+    sign = '+';
+    Y = d1.Y - d2.Y;
+    if( Y ){
+      d2.Y = d1.Y;
+      d2.validJD = 0;
+      computeJD(&d2);
+    }
+    M = d1.M - d2.M;
+    if( M<0 ){
+      Y--;
+      d2.Y--;
+      M += 12;
+    }
+    if( M!=0 ){
+      d2.M = d1.M;
+      d2.validJD = 0;
+      computeJD(&d2);
+    }
+    if( d1.iJD<d2.iJD ){
+      M--;
+      if( M<0 ){
+        M = 11;
+        Y--;
+      }
+      d2.M--;
+      if( d2.M<0 ){
+        d2.M = 12;
+        d2.Y--;
+      }
+      d2.validJD = 0;
+      computeJD(&d2);
+    }
+    d1.iJD -= d2.iJD;
+    d1.iJD += 148699540800000;
+  }else{
     sign = '-';
-    DateTime x = d1;
-    d1 = d2;
-    d2 = x;
+    Y = d2.Y - d1.Y;
+    if( Y ){
+      d2.Y = d1.Y;
+      d2.validJD = 0;
+      computeJD(&d2);
+    }
+    M = d2.M - d1.M;
+    if( M<0 ){
+      Y--;
+      d2.Y--;
+      M += 12;
+    }
+    if( M!=0 ){
+      d2.M = d1.M;
+      d2.validJD = 0;
+      computeJD(&d2);
+    }
+    if( d1.iJD>d2.iJD ){
+      M--;
+      if( M<0 ){
+        M = 11;
+        Y--;
+      }
+      d2.M++;
+      if( d2.M>12 ){
+        d2.M = 1;
+        d2.Y++;
+      }
+      d2.validJD = 0;
+      computeJD(&d2);
+    }
+    d1.iJD = d2.iJD - d1.iJD;
+    d1.iJD += 148699540800000;
   }
   d1.validYMD = 0;
   d1.validHMS = 0;
   d1.validTZ = 0;
-  d1.iJD -= d2.iJD;
-  d1.iJD += 148699540800000;
   computeYMD_HMS(&d1);
-  sqlite3_str_appendf(pOut, "%c%04d-%02d-%02d %02d:%02d:%07.3f",
-     sign, d1.Y, d1.M-1, d1.D-1, d1.h, d1.m, d1.s);
+  sqlite3_str_appendf(pOut, "%c%04d-%02d-%02d %02d:%02d:%06.3f",
+       sign, Y, M, d1.D-1, d1.h, d1.m, d1.s);
   rc = sqlite3_str_errcode(pOut);
   if( rc ){
     sqlite3_free(sqlite3_str_finish(pOut));
