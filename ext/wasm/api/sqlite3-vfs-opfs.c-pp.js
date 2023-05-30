@@ -484,7 +484,8 @@ const installOpfsVfs = function callee(options){
          This proxy de/serializes cross-thread function arguments and
          output-pointer values via the state.sabIO SharedArrayBuffer,
          using the region defined by (state.sabS11nOffset,
-         state.sabS11nOffset]. Only one dataset is recorded at a time.
+         state.sabS11nOffset + state.sabS11nSize]. Only one dataset is
+         recorded at a time.
 
          This is not a general-purpose format. It only supports the
          range of operations, and data sizes, needed by the
