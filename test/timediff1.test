@@ -81,7 +81,7 @@ unset -nocomplain p2
 set p1 {
   1   {0000-01-01 12:34:56}
   2   {1776-07-04 13:00:00}
-  3   {-275529600}
+  3   {1969-07-20 20:17}
   4   {2440587.5}
   5   {2000-05-29 14:26}
   6   {2023-05-29 18:11}
@@ -93,17 +93,19 @@ set p2 {
   C   {2000-02-29 13:00}
   D   {2005-04-30 23:59:59}
   E   {2005-05-01}
+  F   {1066-10-14}
+  G   {1904-02-29 11:25}
 }
 
 foreach {x1 d1} $p1 {
   foreach {x2 d2} $p2 {
     set r1 [db one {SELECT datetime($d1,'auto')}]
     do_execsql_test timediff-4-$x1$x2 {
-      SELECT datetime($d2, timediff($d1,$d2));
+      SELECT datetime($d2, 'auto', timediff($d1,$d2));
     } [list $r1]
     set r2 [db one {SELECT datetime($d2,'auto')}]
     do_execsql_test timediff-4-$x2$x1 {
-      SELECT datetime($d1, timediff($d2,$d1));
+      SELECT datetime($d1, 'auto', timediff($d2,$d1));
     } [list $r2]
   }
 }

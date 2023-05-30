@@ -1380,6 +1380,10 @@ static void cdateFunc(
 ** date/time values A and B, the following invariant should hold:
 **
 **     datetime(A) == (datetime(B, timediff(A,B))
+**
+** Both DATE arguments must be either a julian day number, or an
+** ISO-8601 string.  The unix timestamps are not supported by this
+** routine.
 */
 static void timediffFunc(
   sqlite3_context *context,
@@ -1393,10 +1397,6 @@ static void timediffFunc(
   int Y, M;
   if( isDate(context, 1, argv, &d1)     ) return;
   if( isDate(context, 1, &argv[1], &d2) ) return;
-  autoAdjustDate(&d1);
-  computeJD(&d1);
-  autoAdjustDate(&d2);
-  computeJD(&d2);
   pOut = sqlite3_str_new(sqlite3_context_db_handle(context));
   if( pOut==0 ){
     sqlite3_result_error_nomem(context);
@@ -1415,7 +1415,6 @@ static void timediffFunc(
     M = d1.M - d2.M;
     if( M<0 ){
       Y--;
-      d2.Y--;
       M += 12;
     }
     if( M!=0 ){
@@ -1450,7 +1449,6 @@ static void timediffFunc(
     M = d2.M - d1.M;
     if( M<0 ){
       Y--;
-      d2.Y--;
       M += 12;
     }
     if( M!=0 ){
