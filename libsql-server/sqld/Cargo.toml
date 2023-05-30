@@ -35,11 +35,7 @@ prost = "0.11.3"
 rand = "0.8"
 regex = "1.7.0"
 reqwest = { version = "0.11.16", features = ["json", "rustls-tls"], default-features = false }
-rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev = "f4fbb1a17b7387", default-features = false, features = [
-        "buildtime_bindgen",
-        "bundled-libsql-wasm-experimental",
-        "column_decltype",
-        "load_extension"] }
+rusqlite = { workspace = true }
 serde = { version = "1.0.149", features = ["derive", "rc"] }
 serde_json = { version = "1.0.91", features = ["preserve_order"] }
 sha2 = "0.10"
