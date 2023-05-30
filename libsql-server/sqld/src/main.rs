@@ -182,9 +182,9 @@ impl Cli {
         eprintln!();
         eprintln!("Welcome to sqld!");
         eprintln!();
-        eprintln!("version: {}", env!("VERGEN_BUILD_SEMVER"));
-        if let Some(git_sha) = option_env!("VERGEN_GIT_SHA") {
-            eprintln!("commit SHA: {git_sha}");
+        eprintln!("version: {}", env!("CARGO_PKG_VERSION"));
+        if env!("VERGEN_GIT_SHA") != "VERGEN_IDEMPOTENT_OUTPUT" {
+            eprintln!("commit SHA: {}", env!("VERGEN_GIT_SHA"));
         }
         eprintln!("build date: {}", env!("VERGEN_BUILD_DATE"));
         eprintln!();

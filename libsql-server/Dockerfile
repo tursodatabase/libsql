@@ -3,7 +3,7 @@ FROM rust:slim-bullseye AS builder
 RUN apt update \
     && apt install -y libclang-dev clang \
         build-essential tcl protobuf-compiler file \
-        libssl-dev pkg-config \
+        libssl-dev pkg-config git\
     && apt clean
 COPY . .
 RUN cargo build -p sqld --release

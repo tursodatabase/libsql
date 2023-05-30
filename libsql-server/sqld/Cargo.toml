@@ -68,7 +68,7 @@ arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
 [build-dependencies]
 prost-build = "0.11.4"
 tonic-build = "0.8.4"
-vergen = "6"
+vergen = { version = "8", features = ["build", "git", "gitcl"] }
 
 [features]
 unix-excl-vfs = ["sqld-libsql-bindings/unix-excl-vfs"]
