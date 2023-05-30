@@ -3876,11 +3876,11 @@ dependencies = [
 
 [[package]]
 name = "sqlite3-parser"
-version = "0.6.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d205238c044fa541fd89cbed47db430f1344018336dacbea2b26fe53a463ecc3"
+checksum = "c3995a6daa13c113217b6ad22154865fb06f9cb939bef398fd04f4a7aaaf5bd7"
 dependencies = [
- "bitflags 1.3.2",
+ "bitflags 2.3.1",
  "cc",
  "fallible-iterator",
  "indexmap",
