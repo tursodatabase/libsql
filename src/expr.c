@@ -6009,23 +6009,18 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_ISNULL:
     case TK_NOTNULL:
     case TK_IS:
-    case TK_OR:
     case TK_VECTOR:
-    case TK_CASE:
-    case TK_IN:
     case TK_FUNCTION:
     case TK_TRUTH:
       testcase( pExpr->op==TK_ISNOT );
       testcase( pExpr->op==TK_ISNULL );
       testcase( pExpr->op==TK_NOTNULL );
       testcase( pExpr->op==TK_IS );
-      testcase( pExpr->op==TK_OR );
       testcase( pExpr->op==TK_VECTOR );
-      testcase( pExpr->op==TK_CASE );
-      testcase( pExpr->op==TK_IN );
       testcase( pExpr->op==TK_FUNCTION );
       testcase( pExpr->op==TK_TRUTH );
       return WRC_Prune;
+
     case TK_COLUMN:
       if( pWalker->u.iCur==pExpr->iTable ){
         pWalker->eCode = 1;
@@ -6033,7 +6028,10 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       }
       return WRC_Prune;
 
+    case TK_OR:
     case TK_AND:
+      testcase( pExpr->op==TK_OR );
+      testcase( pExpr->op==TK_AND );
       if( pWalker->eCode==0 ){
         sqlite3WalkExpr(pWalker, pExpr->pLeft);
         if( pWalker->eCode ){
@@ -6043,11 +6041,13 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       }
       return WRC_Prune;
 
+    case TK_CASE:
+    case TK_IN:
     case TK_BETWEEN:
-      if( sqlite3WalkExpr(pWalker, pExpr->pLeft)==WRC_Abort ){
-        assert( pWalker->eCode );
-        return WRC_Abort;
-      }
+      testcase( pExpr->op==TK_CASE );
+      testcase( pExpr->op==TK_IN );
+      testcase( pExpr->op==TK_BETWEEN );
+      sqlite3WalkExpr(pWalker, pExpr->pLeft);
       return WRC_Prune;
 
     /* Virtual tables are allowed to use constraints like x=NULL.  So
