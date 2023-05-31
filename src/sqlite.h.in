@@ -3388,8 +3388,10 @@ SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 ** M argument should be the bitwise OR-ed combination of
 ** zero or more [SQLITE_TRACE] constants.
 **
-** ^Each call to either sqlite3_trace() or sqlite3_trace_v2() overrides 
-** (cancels) any prior calls to sqlite3_trace() or sqlite3_trace_v2().
+** ^Each call to either sqlite3_trace(D,X,P) or sqlite3_trace_v2(D,M,X,P)
+** overrides (cancels) all prior calls to sqlite3_trace(D,X,P) or
+** sqlite3_trace_v2(D,M,X,P) for the [database connection] D.  Each
+** database connection may have at most one trace callback.
 **
 ** ^The X callback is invoked whenever any of the events identified by 
 ** mask M occur.  ^The integer return value from the callback is currently
