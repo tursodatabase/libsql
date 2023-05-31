@@ -1,5 +1,5 @@
 use std::ffi::{c_int, c_void, CStr};
-use std::fs::{File, OpenOptions};
+use std::fs::{remove_dir_all, File, OpenOptions};
 use std::io::Write;
 use std::mem::size_of;
 use std::os::unix::prelude::FileExt;
@@ -10,24 +10,35 @@ use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use parking_lot::RwLock;
-use rusqlite::ffi::SQLITE_IOERR;
 use sqld_libsql_bindings::init_static_wal_method;
 use tokio::sync::watch;
 use uuid::Uuid;
 
+#[cfg(feature = "bottomless")]
+use crate::libsql::ffi::SQLITE_IOERR_WRITE;
 use crate::libsql::ffi::{
     sqlite3,
     types::{XWalCheckpointFn, XWalFrameFn, XWalSavePointUndoFn, XWalUndoFn},
-    PgHdr, Wal, SQLITE_OK,
+    PageHdrIter, PgHdr, Wal, SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR, SQLITE_OK,
 };
-#[cfg(feature = "bottomless")]
-use crate::libsql::ffi::{SQLITE_CHECKPOINT_TRUNCATE, SQLITE_IOERR_WRITE};
-use crate::libsql::{ffi::PageHdrIter, wal_hook::WalHook};
+use crate::libsql::wal_hook::WalHook;
 use crate::replication::frame::{Frame, FrameHeader};
 use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
 use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC, WAL_PAGE_SIZE};
 
 init_static_wal_method!(REPLICATION_METHODS, ReplicationLoggerHook);
+
+#[derive(PartialEq, Eq)]
+struct Version([u16; 4]);
+
+impl Version {
+    fn current() -> Self {
+        let major = env!("CARGO_PKG_VERSION_MAJOR").parse().unwrap();
+        let minor = env!("CARGO_PKG_VERSION_MINOR").parse().unwrap();
+        let patch = env!("CARGO_PKG_VERSION_PATCH").parse().unwrap();
+        Self([0, major, minor, patch])
+    }
+}
 
 pub enum ReplicationLoggerHook {}
 
@@ -378,14 +389,14 @@ impl LogFile {
         if file_end == 0 {
             let db_id = Uuid::new_v4();
             let header = LogFileHeader {
-                version: 1,
+                version: 2,
                 start_frame_no: 0,
                 magic: WAL_MAGIC,
                 page_size: WAL_PAGE_SIZE,
                 start_checksum: 0,
                 db_id: db_id.as_u128(),
                 frame_count: 0,
-                _pad: 0,
+                sqld_version: Version::current().0,
             };
 
             let mut this = Self {
@@ -623,6 +634,13 @@ impl LogFile {
             Some(self.header.start_frame_no + self.header.frame_count - 1)
         }
     }
+
+    fn reset(self) -> anyhow::Result<Self> {
+        let max_log_frame_count = self.max_log_frame_count;
+        // truncate file
+        self.file.set_len(0)?;
+        Self::new(self.file, max_log_frame_count)
+    }
 }
 
 #[cfg(target_os = "macos")]
@@ -680,16 +698,21 @@ pub struct LogFileHeader {
     pub start_frame_no: FrameNo,
     /// entry count in file
     pub frame_count: u64,
-    /// Wal file version number, currently: 1
+    /// Wal file version number, currently: 2
     pub version: u32,
     /// page size: 4096
     pub page_size: i32,
-    pub _pad: u64,
+    /// sqld version when creating this log
+    pub sqld_version: [u16; 4],
 }
 
 impl LogFileHeader {
     pub fn last_frame_no(&self) -> FrameNo {
         self.start_frame_no + self.frame_count
+    }
+
+    fn sqld_version(&self) -> Version {
+        Version(self.sqld_version)
     }
 }
 
@@ -720,26 +743,85 @@ pub struct ReplicationLogger {
 impl ReplicationLogger {
     pub fn open(db_path: &Path, max_log_size: u64) -> anyhow::Result<Self> {
         let log_path = db_path.join("wallog");
+        let data_path = db_path.join("data");
+
+        let fresh = !log_path.exists();
+
         let file = OpenOptions::new()
             .create(true)
             .write(true)
             .read(true)
             .open(log_path)?;
+
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
         let log_file = LogFile::new(file, max_log_frame_count)?;
+        let header = log_file.header();
 
-        let header = log_file.header;
+        let should_recover = if header.version < 2 || header.sqld_version() != Version::current() {
+            tracing::info!("replication log version not compatible with current sqld version, recovering from database file.");
+            true
+        } else if fresh && data_path.exists() {
+            tracing::info!("replication log not found, recovering from database file.");
+            true
+        } else {
+            false
+        };
+
+        if should_recover {
+            Self::recover(log_file, data_path)
+        } else {
+            Self::from_log_file(db_path.to_path_buf(), log_file)
+        }
+    }
+
+    fn from_log_file(db_path: PathBuf, log_file: LogFile) -> anyhow::Result<Self> {
+        let header = log_file.header();
         let generation_start_frame_no = header.start_frame_no + header.frame_count;
 
         let (new_frame_notifier, _) = watch::channel(generation_start_frame_no);
 
         Ok(Self {
             generation: Generation::new(generation_start_frame_no),
-            compactor: LogCompactor::new(db_path, log_file.header.db_id)?,
+            compactor: LogCompactor::new(&db_path, log_file.header.db_id)?,
             log_file: RwLock::new(log_file),
-            db_path: db_path.to_owned(),
+            db_path,
             new_frame_notifier,
         })
+    }
+
+    fn recover(log_file: LogFile, mut data_path: PathBuf) -> anyhow::Result<Self> {
+        // It is necessary to checkpoint before we restore the replication log, since the WAL may
+        // contain pages that are not in the database file.
+        checkpoint_db(&data_path)?;
+        let mut log_file = log_file.reset()?;
+        let snapshot_path = data_path.parent().unwrap().join("snapshots");
+        // best effort, there may be no snapshots
+        let _ = remove_dir_all(snapshot_path);
+
+        let data_file = File::open(&data_path)?;
+        let size = data_path.metadata()?.len();
+        assert!(
+            size % WAL_PAGE_SIZE as u64 == 0,
+            "database file size is not a multiple of page size"
+        );
+        let num_page = size / WAL_PAGE_SIZE as u64;
+        let mut buf = [0; WAL_PAGE_SIZE as usize];
+        let mut page_no = 1; // page numbering starts at 1
+        for i in 0..num_page {
+            data_file.read_exact_at(&mut buf, i * WAL_PAGE_SIZE as u64)?;
+            log_file.push_page(&WalPage {
+                page_no,
+                size_after: if i == num_page - 1 { num_page as _ } else { 0 },
+                data: Bytes::copy_from_slice(&buf),
+            })?;
+            log_file.commit()?;
+
+            page_no += 1;
+        }
+
+        assert!(data_path.pop());
+
+        Self::from_log_file(data_path, log_file)
     }
 
     pub fn database_id(&self) -> anyhow::Result<Uuid> {
@@ -788,6 +870,39 @@ impl ReplicationLogger {
     pub fn get_frame(&self, frame_no: FrameNo) -> Result<Frame, LogReadError> {
         self.log_file.read().frame(frame_no)
     }
+}
+
+fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
+    unsafe {
+        let conn = rusqlite::Connection::open(data_path)?;
+        conn.pragma_query(None, "page_size", |row| {
+            let page_size = row.get::<_, i32>(0).unwrap();
+            assert_eq!(
+                page_size, WAL_PAGE_SIZE,
+                "invalid database file, expected page size to be {}, but found {} instead",
+                WAL_PAGE_SIZE, page_size
+            );
+            Ok(())
+        })?;
+        let mut num_checkpointed: c_int = 0;
+        let rc = rusqlite::ffi::sqlite3_wal_checkpoint_v2(
+            conn.handle(),
+            std::ptr::null(),
+            SQLITE_CHECKPOINT_TRUNCATE,
+            &mut num_checkpointed as *mut _,
+            std::ptr::null_mut(),
+        );
+
+        // TODO: ensure correct page size
+        ensure!(
+            rc == 0 && num_checkpointed >= 0,
+            "failed to checkpoint database while recovering replication log"
+        );
+
+        conn.execute("VACUUM", ())?;
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
