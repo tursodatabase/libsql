@@ -11,6 +11,7 @@ pub use rusqlite::ffi::{
 
 pub use rusqlite::ffi::libsql_pghdr as PgHdr;
 pub use rusqlite::ffi::libsql_wal as Wal;
+pub use rusqlite::ffi::*;
 
 pub struct PageHdrIter {
     current_ptr: *const PgHdr,

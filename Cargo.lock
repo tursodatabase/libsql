@@ -1702,18 +1702,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "getset"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e45727250e75cc04ff2846a66397da8ef2b3db8e40e0cef4df67950a07621eb9"
-dependencies = [
- "proc-macro-error",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "ghost"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2277,7 +2265,7 @@ dependencies = [
 [[package]]
 name = "libsqlite3-sys"
 version = "0.26.0"
-source = "git+https://github.com/psarna/rusqlite?rev=f4fbb1a17b7387#f4fbb1a17b7387a8d0c2f73b260f8fb221e79032"
+source = "git+https://github.com/psarna/rusqlite?rev=d9a97c0f25#d9a97c0f25d48272c91d3f8d93d46cb405c39037"
 dependencies = [
  "bindgen",
  "cc",
@@ -2898,30 +2886,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "proc-macro-error"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
-dependencies = [
- "proc-macro-error-attr",
- "proc-macro2",
- "quote",
- "syn 1.0.109",
- "version_check",
-]
-
-[[package]]
-name = "proc-macro-error-attr"
-version = "1.0.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1be40180e52ecc98ad80b184934baf3d0d29f979574e439af5a55274b35f869"
-dependencies = [
- "proc-macro2",
- "quote",
- "version_check",
-]
-
-[[package]]
 name = "proc-macro2"
 version = "1.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3231,7 +3195,7 @@ dependencies = [
 [[package]]
 name = "rusqlite"
 version = "0.29.0"
-source = "git+https://github.com/psarna/rusqlite?rev=f4fbb1a17b7387#f4fbb1a17b7387a8d0c2f73b260f8fb221e79032"
+source = "git+https://github.com/psarna/rusqlite?rev=d9a97c0f25#d9a97c0f25d48272c91d3f8d93d46cb405c39037"
 dependencies = [
  "bitflags 2.3.1",
  "fallible-iterator",
