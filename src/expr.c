@@ -6030,6 +6030,13 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 
     case TK_OR:
     case TK_AND:
+      /* Both sides of an AND or OR must separately imply non-NULL row.
+      ** Consider these cases:
+      **    1.  NOT (x AND y)
+      **    2.  x OR y
+      ** If only one of x or y is non-null-row, then the overall expression
+      ** can be true if the other arm is false (case 1) or true (case 2).
+      */
       testcase( pExpr->op==TK_OR );
       testcase( pExpr->op==TK_AND );
       if( pWalker->eCode==0 ){
