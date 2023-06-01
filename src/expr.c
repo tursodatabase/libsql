@@ -5991,6 +5991,20 @@ int sqlite3ExprImpliesExpr(
   return 0;
 }
 
+/* This is a helper functino to impliesNotNullRow().  In this routine,
+** set pWalker->eCode to one only if *both* of the input expressions
+** separately have the implies-not-null-row property.
+*/
+static void bothImplyNotNullRow(Walker *pWalker, Expr *pE1, Expr *pE2){
+  if( pWalker->eCode==0 ){
+    sqlite3WalkExpr(pWalker, pE1);
+    if( pWalker->eCode ){
+      pWalker->eCode = 0;
+      sqlite3WalkExpr(pWalker, pE2);
+    }
+  }
+}
+
 /*
 ** This is the Expr node callback for sqlite3ExprImpliesNonNullRow().
 ** If the expression node requires that the table at pWalker->iCur
@@ -6030,7 +6044,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 
     case TK_OR:
     case TK_AND:
-      /* Both sides of an AND or OR must separately imply non-NULL row.
+      /* Both sides of an AND or OR must separately imply non-null-row.
       ** Consider these cases:
       **    1.  NOT (x AND y)
       **    2.  x OR y
@@ -6039,22 +6053,37 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       */
       testcase( pExpr->op==TK_OR );
       testcase( pExpr->op==TK_AND );
-      if( pWalker->eCode==0 ){
-        sqlite3WalkExpr(pWalker, pExpr->pLeft);
-        if( pWalker->eCode ){
-          pWalker->eCode = 0;
-          sqlite3WalkExpr(pWalker, pExpr->pRight);
-        }
-      }
+      bothImplyNotNullRow(pWalker, pExpr->pLeft, pExpr->pRight);
       return WRC_Prune;
 
     case TK_CASE:
-    case TK_IN:
-    case TK_BETWEEN:
-      testcase( pExpr->op==TK_CASE );
-      testcase( pExpr->op==TK_IN );
-      testcase( pExpr->op==TK_BETWEEN );
+      /* In "CASE x WHEN y THEN ..." the overall expression is non-null-row
+      ** if either x or y is non-null-row.  If the neither x nor y is
+      ** non-null-row, assume the whole expression is not, to be safe. */
+      assert( ExprUseXList(pExpr) );
+      assert( pExpr->x.pList->nExpr>0 );
       sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      sqlite3WalkExpr(pWalker, pExpr->x.pList->a[0].pExpr);
+      return WRC_Prune;
+        
+    case TK_IN:
+      /* Beware of "x NOT IN ()" and "x NOT IN (SELECT 1 WHERE false)",
+      ** both of which can be true.  But apart from these cases, if
+      ** the left-hand side of the IN is NULL then the IN itself will be
+      ** NULL. */
+      if( ExprUseXList(pExpr) && pExpr->x.pList->nExpr>0 ){
+        sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      }
+      return WRC_Prune;
+
+    case TK_BETWEEN:
+      /* In "x NOT BETWEEN y AND z" either x must be non-null-row or else
+      ** both y and z must be non-null row */
+      assert( ExprUseXList(pExpr) );
+      assert( pExpr->x.pList->nExpr==2 );
+      sqlite3WalkExpr(pWalker, pExpr->pLeft);
+      bothImplyNotNullRow(pWalker, pExpr->x.pList->a[0].pExpr,
+                                   pExpr->x.pList->a[1].pExpr);
       return WRC_Prune;
 
     /* Virtual tables are allowed to use constraints like x=NULL.  So
