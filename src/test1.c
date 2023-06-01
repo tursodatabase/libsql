@@ -7417,6 +7417,26 @@ static int testLocaltime(const void *aliasT, void *aliasTM){
 }
 
 /*
+** .treetrace N
+*/
+static int SQLITE_TCLAPI test_treetrace(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  unsigned int v = 0;
+  if( objc>=2 ){
+    if( Tcl_GetIntFromObj(interp, objv[1], (int*)&v)==TCL_OK ){
+      sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 1, &v);
+    }
+  }
+  sqlite3_test_control(SQLITE_TESTCTRL_TRACEFLAGS, 0, &v);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj((int)v));
+  return TCL_OK;
+}
+
+/*
 ** sqlite3_test_control VERB ARGS...
 */
 static int SQLITE_TCLAPI test_test_control(
@@ -8967,6 +8987,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "print_explain_query_plan", test_print_eqp, 0  },
 #endif
      { "sqlite3_test_control", test_test_control },
+     { ".treetrace",           test_treetrace    },
 #if SQLITE_OS_UNIX
      { "getrusage", test_getrusage },
 #endif

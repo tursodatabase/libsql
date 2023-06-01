@@ -6017,7 +6017,7 @@ static void bothImplyNotNullRow(Walker *pWalker, Expr *pE1, Expr *pE2){
 static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
   testcase( pExpr->op==TK_AGG_COLUMN );
   testcase( pExpr->op==TK_AGG_FUNCTION );
-  if( ExprHasProperty(pExpr, EP_OuterON) ) return WRC_Prune;
+  if( ExprHasProperty(pExpr, EP_OuterON|EP_InnerON) ) return WRC_Prune;
   switch( pExpr->op ){
     case TK_ISNOT:
     case TK_ISNULL:

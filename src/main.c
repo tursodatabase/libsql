@@ -4446,7 +4446,7 @@ int sqlite3_test_control(int op, ...){
     **
     **   op==0       Store the current sqlite3TreeTrace in *ptr
     **   op==1       Set sqlite3TreeTrace to the value *ptr
-    **   op==3       Store the current sqlite3WhereTrace in *ptr
+    **   op==2       Store the current sqlite3WhereTrace in *ptr
     **   op==3       Set sqlite3WhereTrace to the value *ptr
     */
     case SQLITE_TESTCTRL_TRACEFLAGS: {

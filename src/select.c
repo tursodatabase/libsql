@@ -7222,16 +7222,52 @@ int sqlite3Select(
     ** to a real table */
     assert( pTab!=0 );
 
-    /* Convert LEFT JOIN into JOIN if there are terms of the right table
-    ** of the LEFT JOIN used in the WHERE clause.
+    /* Try to simplify joins:
+    **
+    **      LEFT JOIN  ->  JOIN
+    **     RIGHT JOIN  ->  JOIN
+    **      FULL JOIN  ->  RIGHT JOIN
+    **
+    ** If terms of the i-th table are used in the WHERE clause in such a
+    ** way that the i-th table cannot be the NULL row of a join, then
+    ** perform the appropriate simplification. This is called
+    ** "OUTER JOIN strength reduction" in the SQLite documentation.
     */
-    if( (pItem->fg.jointype & (JT_LEFT|JT_RIGHT))==JT_LEFT
+    if( (pItem->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
      && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
      && OptimizationEnabled(db, SQLITE_SimplifyJoin)
     ){
-      TREETRACE(0x1000,pParse,p,
-                ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
-      pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+      if( pItem->fg.jointype & JT_LEFT ){
+        if( pItem->fg.jointype & JT_RIGHT ){
+          TREETRACE(0x1000,pParse,p,
+                    ("FULL-JOIN simplifies to RIGHT-JOIN on term %d\n",i));
+          pItem->fg.jointype &= ~JT_LEFT;
+        }else{
+          TREETRACE(0x1000,pParse,p,
+                    ("LEFT-JOIN simplifies to JOIN on term %d\n",i));
+          pItem->fg.jointype &= ~(JT_LEFT|JT_OUTER);
+        }
+      }
+      if( pItem->fg.jointype & JT_LTORJ ){
+        for(j=i+1; j<pTabList->nSrc; j++){
+          SrcItem *pI2 = &pTabList->a[j];
+          if( pI2->fg.jointype & JT_RIGHT ){
+            if( pI2->fg.jointype & JT_LEFT ){
+              TREETRACE(0x1000,pParse,p,
+                        ("FULL-JOIN simplifies to LEFT-JOIN on term %d\n",j));
+              pI2->fg.jointype &= ~JT_RIGHT;
+            }else{
+              TREETRACE(0x1000,pParse,p,
+                        ("RIGHT-JOIN simplifies to JOIN on term %d\n",j));
+              pI2->fg.jointype &= ~(JT_RIGHT|JT_OUTER);
+            }
+          }
+        }
+        for(j=pTabList->nSrc-1; j>=i; j--){
+          pTabList->a[j].fg.jointype &= ~JT_LTORJ;
+          if( pTabList->a[j].fg.jointype & JT_RIGHT ) break;
+        }
+      }
       assert( pItem->iCursor>=0 );
       unsetJoinExpr(p->pWhere, pItem->iCursor,
                     pTabList->a[0].fg.jointype & JT_LTORJ);
