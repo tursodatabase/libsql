@@ -591,6 +591,10 @@ static int sqlite3LoadExtension(
   ** See https://sqlite.org/forum/forumpost/24083b579d.
   */
   if( nMsg>SQLITE_MAX_PATHLEN ) goto extension_not_found;
+
+  /* Do not allow sqlite3_load_extension() to link to a copy of the
+  ** running application, by passing in an empty filename. */
+  if( nMsg==0 ) goto extension_not_found;
     
   handle = sqlite3OsDlOpen(pVfs, zFile);
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN

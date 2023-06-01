@@ -1,5 +1,5 @@
-C Add\san\sALWAYS()\son\san\sunreachable\sbranch.
-D 2023-06-01T00:28:11.164
+C If\sthe\sfilename\sargument\sto\ssqlite3_load_extension()\sis\san\sempty\sstring,\sthen\nraise\san\serror.\s\sIt\sturns\sout\sthat\sif\sdlopen()\sis\scalled\swith\san\sempty\nfilename,\sit\stries\sto\sload\sthe\scurrent\sexecutable.\s\sAnd\sthen\sif\sthe\scaller\nrequests\ssome\sother\sfunction\sfrom\sthe\scurrent\sexecutable,\smischief\scan\sresult.
+D 2023-06-01T16:40:28.030
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c a8de1db43335fc4946370a7a7e47d89975ad678ddb15078a150e993ba2fb37d4
 F src/json.c 39b1c7527f3111923e65f168a87b03b591f12a41400a63d05c119794bee36620
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
-F src/loadext.c be5af440f3192c58681b5d43167dbca3ccbfce394d89faa22378a14264781136
+F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 035be2e9ba2a0fc1701a8ab1880af3001a968a24556433538a6c073558ee4341
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -2072,8 +2072,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 96c72dde79d4069f6c2f81467a35b617633f86f7a7dcafbda991affdaa1f8537
-R 40ac9a38209c3dcd8c11c72579ce41b0
+P a00928d48061c1169d5564996e19e7d7c2b962842100bb119846d0f696123c23
+R c8967c78f434ef2509738e62135df025
 U drh
-Z 6c162dfd8f6d4fb3cc66b56b381f7dc7
+Z 1cc3ad466999e676142d799de6799c56
 # Remove this line to create a well-formed Fossil manifest.
