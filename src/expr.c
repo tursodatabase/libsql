@@ -6071,7 +6071,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       ** both of which can be true.  But apart from these cases, if
       ** the left-hand side of the IN is NULL then the IN itself will be
       ** NULL. */
-      if( ExprUseXList(pExpr) && pExpr->x.pList->nExpr>0 ){
+      if( ExprUseXList(pExpr) && ALWAYS(pExpr->x.pList->nExpr>0) ){
         sqlite3WalkExpr(pWalker, pExpr->pLeft);
       }
       return WRC_Prune;
