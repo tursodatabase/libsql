@@ -11,7 +11,8 @@ RUN cargo build -p sqld --release
 # runtime
 FROM debian:bullseye-slim
 COPY --from=builder /target/release/sqld /bin/sqld
-RUN adduser --system --home /var/lib/sqld --uid 666 sqld 
+RUN groupadd --system --gid 666 sqld
+RUN adduser --system --home /var/lib/sqld --uid 666 --gid 666 sqld
 RUN apt-get update && apt-get install -y ca-certificates
 COPY docker-entrypoint.sh /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

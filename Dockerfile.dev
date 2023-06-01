@@ -28,7 +28,8 @@ COPY docker-entrypoint.sh /usr/local/bin
 
 VOLUME [ "/var/lib/sqld" ]
 
-RUN adduser --system --home /var/lib/sqld --uid 666 sqld 
+RUN groupadd --system --gid 666 sqld
+RUN adduser --system --home /var/lib/sqld --uid 666 --gid 666 sqld
 USER sqld
 WORKDIR /var/lib/sqld
 
