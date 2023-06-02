@@ -12220,8 +12220,12 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-bail")==0 ){
       bail_on_error = 1;
     }else if( cli_strcmp(z,"-nonce")==0 ){
-      free(data.zNonce);
-      data.zNonce = strdup(argv[++i]);
+      if( data.zNonce ) free(data.zNonce);
+      if( i+1 < argc ) data.zNonce = strdup(argv[++i]);
+      else{
+        data.zNonce = 0;
+        break;
+      }
     }else if( cli_strcmp(z,"-unsafe-testing")==0 ){
       ShellSetFlag(&data,SHFLG_TestingMode);
     }else if( cli_strcmp(z,"-safe")==0 ){
