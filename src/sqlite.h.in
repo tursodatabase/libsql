@@ -2735,6 +2735,7 @@ sqlite3_int64 sqlite3_total_changes64(sqlite3*);
 **
 ** ^The [sqlite3_is_interrupted(D)] interface can be used to determine whether
 ** or not an interrupt is currently in effect for [database connection] D.
+** It returns 1 if an interrupt is currently in effect, or 0 otherwise.
 */
 void sqlite3_interrupt(sqlite3*);
 int sqlite3_is_interrupted(sqlite3*);

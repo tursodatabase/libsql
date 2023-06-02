@@ -1,5 +1,5 @@
-C Restore\sthe\sLEFT\sJOIN\sstrength\sreduction\sthat\swas\spartially\slost\sin\n[d747afda5683ca5f]\swhen\sstrength\sreduction\swas\sgeneralized\sto\sall\sOUTER\sJOINs.
-D 2023-06-02T18:05:54.277
+C Clarify\ssqlite3_is_interrupted()\sreturn.\sNo\scode\schange.
+D 2023-06-02T21:31:15.372
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -639,7 +639,7 @@ F src/resolve.c 3e53e02ce87c9582bd7e7d22f13f4094a271678d9dc72820fa257a2abb5e4032
 F src/rowset.c ba9515a922af32abe1f7d39406b9d35730ed65efab9443dc5702693b60854c92
 F src/select.c a42b88d8bb9e824f45ccea16e7dfc5a812a32e2b8a0c5727b893734a14d83ade
 F src/shell.c.in 6915835eee0775c02ea1fb474da19f07ed76acbfc92444aef09e16b963abb46f
-F src/sqlite.h.in 03515ff55fafc0ba9ec75adbee250905cb59275f1714f0b6562e0bd466776334
+F src/sqlite.h.in 6296fa5886cdf6f337d7b95da962791e352ce4c8b6aa53eff84137c1db62a79e
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
 F src/sqliteInt.h a531b7f352a0db457b5e0c56f41a3905273252ec8646526f8f897f0815519182
@@ -2072,8 +2072,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a1823b297616bc2bd64eda9df4850fb460d8da8959ae3728195db896d1f89e7b
-R a573527528f24d1895ad95759b6c42d0
-U drh
-Z 2b72f92c0c9e7979e6a3e950cbc9cc6f
+P 2d962b84dd8ac2d0968f0283f8f082c1c2a7a1f99b59053b2ad8f58745396447
+R bb96499807291badc8caa68a15102a55
+U larrybr
+Z d7565eecc2be24c461e09bd23272a099
 # Remove this line to create a well-formed Fossil manifest.
