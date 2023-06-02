@@ -6026,6 +6026,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
     case TK_VECTOR:
     case TK_FUNCTION:
     case TK_TRUTH:
+    case TK_CASE:
       testcase( pExpr->op==TK_ISNOT );
       testcase( pExpr->op==TK_ISNULL );
       testcase( pExpr->op==TK_NOTNULL );
@@ -6033,6 +6034,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_VECTOR );
       testcase( pExpr->op==TK_FUNCTION );
       testcase( pExpr->op==TK_TRUTH );
+      testcase( pExpr->op==TK_CASE );
       return WRC_Prune;
 
     case TK_COLUMN:
@@ -6054,16 +6056,6 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_OR );
       testcase( pExpr->op==TK_AND );
       bothImplyNotNullRow(pWalker, pExpr->pLeft, pExpr->pRight);
-      return WRC_Prune;
-
-    case TK_CASE:
-      /* In "CASE x WHEN y THEN ..." the overall expression is non-null-row
-      ** if either x or y is non-null-row.  If the neither x nor y is
-      ** non-null-row, assume the whole expression is not, to be safe. */
-      assert( ExprUseXList(pExpr) );
-      assert( pExpr->x.pList->nExpr>0 );
-      sqlite3WalkExpr(pWalker, pExpr->pLeft);
-      sqlite3WalkExpr(pWalker, pExpr->x.pList->a[0].pExpr);
       return WRC_Prune;
         
     case TK_IN:
