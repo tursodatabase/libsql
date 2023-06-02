@@ -528,13 +528,17 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
 
         let stats = Stats::new(&config.db_path)?;
 
-        if config.heartbeat_url.is_some() {
-            join_set.spawn(run_storage_monitor(config.db_path.clone(), stats.clone()));
+        match config.writer_rpc_addr {
+            Some(_) => {
+                start_replica(&config, &mut join_set, idle_shutdown_layer, stats.clone()).await?
+            }
+            None => {
+                start_primary(&config, &mut join_set, idle_shutdown_layer, stats.clone()).await?
+            }
         }
 
-        match config.writer_rpc_addr {
-            Some(_) => start_replica(&config, &mut join_set, idle_shutdown_layer, stats).await?,
-            None => start_primary(&config, &mut join_set, idle_shutdown_layer, stats).await?,
+        if config.heartbeat_url.is_some() {
+            join_set.spawn(run_storage_monitor(config.db_path.clone(), stats));
         }
 
         let reset = HARD_RESET.clone();
