@@ -1,4 +1,4 @@
-///! Typedefs for virtual function signatures.
+//! Typedefs for virtual function signatures.
 use std::ffi::{c_char, c_int, c_uint, c_void};
 
 use super::{libsql_wal_methods, sqlite3_file, sqlite3_vfs, PgHdr, Wal};
