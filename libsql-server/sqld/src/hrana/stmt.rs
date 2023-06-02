@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 
 use super::result_builder::SingleStatementBuilder;
@@ -48,9 +48,13 @@ pub async fn execute_stmt(
     query: Query,
 ) -> Result<proto::StmtResult> {
     let builder = SingleStatementBuilder::default();
-    let (stmt_result, _) = db.execute_batch(vec![query], auth, builder).await?;
-
-    Ok(stmt_result.into_ret()?)
+    let (stmt_res, _) = db.execute_batch(vec![query], auth, builder).await?;
+    stmt_res
+        .into_ret()
+        .map_err(|sqld_error| match stmt_error_from_sqld_error(sqld_error) {
+            Ok(stmt_error) => anyhow!(stmt_error),
+            Err(sqld_error) => anyhow!(sqld_error),
+        })
 }
 
 pub async fn describe_stmt(

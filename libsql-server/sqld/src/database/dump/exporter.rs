@@ -1,4 +1,4 @@
-///! port of dump from `shell.c`
+//! port of dump from `shell.c`
 use std::ffi::CString;
 use std::fmt::{Display, Write as _};
 use std::io::Write;
