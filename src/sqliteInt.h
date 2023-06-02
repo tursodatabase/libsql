@@ -4169,6 +4169,7 @@ struct Walker {
   void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
   int walkerDepth;                          /* Number of subqueries */
   u16 eCode;                                /* A small processing code */
+  u16 mWFlags;                              /* Use-dependent flags */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                         /* Naming context */
     int n;                                    /* A counter */
@@ -4879,7 +4880,7 @@ int sqlite3ExprCompare(const Parse*,const Expr*,const Expr*, int);
 int sqlite3ExprCompareSkip(Expr*,Expr*,int);
 int sqlite3ExprListCompare(const ExprList*,const ExprList*, int);
 int sqlite3ExprImpliesExpr(const Parse*,const Expr*,const Expr*, int);
-int sqlite3ExprImpliesNonNullRow(Expr*,int);
+int sqlite3ExprImpliesNonNullRow(Expr*,int,int);
 void sqlite3AggInfoPersistWalkerInit(Walker*,Parse*);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);

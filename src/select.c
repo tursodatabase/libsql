@@ -7234,7 +7234,8 @@ int sqlite3Select(
     ** "OUTER JOIN strength reduction" in the SQLite documentation.
     */
     if( (pItem->fg.jointype & (JT_LEFT|JT_LTORJ))!=0
-     && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor)
+     && sqlite3ExprImpliesNonNullRow(p->pWhere, pItem->iCursor,
+                                     pItem->fg.jointype & JT_LTORJ)
      && OptimizationEnabled(db, SQLITE_SimplifyJoin)
     ){
       if( pItem->fg.jointype & JT_LEFT ){

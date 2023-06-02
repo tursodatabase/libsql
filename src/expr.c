@@ -4131,7 +4131,7 @@ static int exprCodeInlineFunction(
       pA1 = pFarg->a[1].pExpr;
       if( pA1->op==TK_COLUMN ){
         sqlite3VdbeAddOp2(v, OP_Integer, 
-           sqlite3ExprImpliesNonNullRow(pFarg->a[0].pExpr,pA1->iTable),
+           sqlite3ExprImpliesNonNullRow(pFarg->a[0].pExpr,pA1->iTable,1),
            target);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
@@ -6010,6 +6010,10 @@ static void bothImplyNotNullRow(Walker *pWalker, Expr *pE1, Expr *pE2){
 ** If the expression node requires that the table at pWalker->iCur
 ** have one or more non-NULL column, then set pWalker->eCode to 1 and abort.
 **
+** pWalker->mWFlags is non-zero if this inquiry is being undertaking on
+** behalf of a RIGHT JOIN (or FULL JOIN).  That makes a difference when
+** evaluting terms in the ON claue of an inner join.
+**
 ** This routine controls an optimization.  False positives (setting
 ** pWalker->eCode to 1 when it should not be) are deadly, but false-negatives
 ** (never setting pWalker->eCode) is a harmless missed optimization.
@@ -6017,7 +6021,15 @@ static void bothImplyNotNullRow(Walker *pWalker, Expr *pE1, Expr *pE2){
 static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
   testcase( pExpr->op==TK_AGG_COLUMN );
   testcase( pExpr->op==TK_AGG_FUNCTION );
-  if( ExprHasProperty(pExpr, EP_OuterON|EP_InnerON) ) return WRC_Prune;
+  if( ExprHasProperty(pExpr, EP_OuterON) ) return WRC_Prune;
+  if( ExprHasProperty(pExpr, EP_InnerON) && pWalker->mWFlags ){
+    /* If iCur is used in an inner-join ON clause to the left of a
+    ** RIGHT JOIN, that does *not* mean that the table must be non-null.
+    ** But it is difficult to check for that condition precisely.
+    ** To keep things simple, any use of iCur from any inner-join is
+    ** ignored while attempting to simplify a RIGHT JOIN. */
+    return WRC_Prune;
+  }
   switch( pExpr->op ){
     case TK_ISNOT:
     case TK_ISNULL:
@@ -6137,7 +6149,7 @@ static int impliesNotNullRow(Walker *pWalker, Expr *pExpr){
 ** be non-NULL, then the LEFT JOIN can be safely converted into an
 ** ordinary join.
 */
-int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
+int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab, int isRJ){
   Walker w;
   p = sqlite3ExprSkipCollateAndLikely(p);
   if( p==0 ) return 0;
@@ -6145,7 +6157,7 @@ int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
     p = p->pLeft;
   }else{
     while( p->op==TK_AND ){
-      if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab) ) return 1;
+      if( sqlite3ExprImpliesNonNullRow(p->pLeft, iTab, isRJ) ) return 1;
       p = p->pRight;
     }
   }
@@ -6153,6 +6165,7 @@ int sqlite3ExprImpliesNonNullRow(Expr *p, int iTab){
   w.xSelectCallback = 0;
   w.xSelectCallback2 = 0;
   w.eCode = 0;
+  w.mWFlags = isRJ!=0;
   w.u.iCur = iTab;
   sqlite3WalkExpr(&w, p);
   return w.eCode;
