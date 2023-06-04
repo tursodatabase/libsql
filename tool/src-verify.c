@@ -2,6 +2,16 @@
 ** This utility program reads the "manifest" and "manifest.uuid" files
 ** of the SQLite source tree and uses the content therein to verify that
 ** all of the other files in the source tree are correct.
+**
+** Limitations:
+**
+**    *   Does not handle special characters in the filenames.  The
+**        SQLite source tree has no filenames containing special
+**        characters, so that should not be an issue.
+**
+**    *   Filename length is limited to 1000 characters.  The SQLite
+**        source tree has no files more than 100 characters in length
+**        so that also should not be an issue.
 */
 #include <stdio.h>
 #include <string.h>
@@ -717,8 +727,7 @@ void sha1sum_file(const char *zFilename, char *zCksum){
 */
 static void errorMsg(int *pnErr, const char *zVers, const char *zFile){
   if( *pnErr==0 ){
-    printf("Derived from version %s\n", zVers);
-    printf("Files that are modified or omitted:\n");
+    printf("Derived from %.25s with changes to:\n", zVers);
   }
   printf("    %s\n", zFile);
   (*pnErr)++;
@@ -797,6 +806,7 @@ int main(int argc, char **argv){
     SHA3Update(&ctx3, (unsigned char*)zLine, strlen(zLine));
   }
   DigestToBase16(SHA3Final(&ctx3), zVers, 32);
+ 
   rewind(in);
   while( fgets(zLine, sizeof(zLine), in) ){
     if( zLine[0]!='F' ) continue;
@@ -838,7 +848,20 @@ int main(int argc, char **argv){
     }
   }
   fclose(in);
+  in = 0;
+  memcpy(&zFile[nDir], "manifest.uuid", 14);
+  if( access(zFile, R_OK)!=0
+   || (in = fopen(zFile,"rb"))==0
+   || fgets(zLine, sizeof(zLine), in)==0
+   || strlen(zLine)!=65
+   || zLine[64]!='\n'
+   || memcmp(zLine, zVers, 64)!=0
+  ){
+    errorMsg(&nErr, zVers, &zFile[nDir]);
+  }
+  if( in ) fclose(in); 
+    
   if( nErr ) return nErr;
-  printf("Version %s\n", zVers);
+  printf("OK %.25s\n", zVers);
   return 0;
 }
