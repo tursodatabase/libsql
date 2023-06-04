@@ -566,6 +566,12 @@ srcck1$(EXE):	$(TOP)/tool/srcck1.c
 sourcetest:	srcck1$(EXE) sqlite3.c
 	./srcck1 sqlite3.c
 
+src-verify:	$(TOP)/tool/src-verify.c
+	$(BCC) -o src-verify$(EXE) $(TOP)/tool/src-verify.c
+
+verify-source:	./src-verify
+	./src-verify $(TOP)
+
 fuzzershell$(EXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(TCCX) -o fuzzershell$(EXE) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION \
 	  $(FUZZERSHELL_OPT) $(TOP)/tool/fuzzershell.c sqlite3.c \
@@ -1117,3 +1123,4 @@ clean:
 	rm -f fts5.* fts5parse.*
 	rm -f lsm.h lsm1.c
 	rm -f threadtest5
+	rm -f src-verify

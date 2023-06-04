@@ -1,11 +1,11 @@
-C Clarify\ssqlite3_is_interrupted()\sreturn.\sNo\scode\schange.
-D 2023-06-02T21:31:15.372
+C Add\sa\sprototype\simplementation\sfor\sthe\s"verify-source"\sMakefile\starget.
+D 2023-06-04T22:41:52.198
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 764f2e3e8fb4ae1c8dfe03e65b2b3b01bd1fc57edf78ec2cab3a1301e90e1905
+F Makefile.in 3b155551e8c78751622bc5ce903b1a91beaa6e4c04710161ae51858bbd9e2edc
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc ce7bea7931e1ef96b0f44c0362074a8bb62e61a0e7cfdb05afebd928adaacc2b
+F Makefile.msc e539b0fefc7b25e43ccc1bf8fbd362614a171ddccd63a1398719a9553dfab213
 F README.md e05bd8fcb45da04ab045c37f79a98654e8aa3b3b8f302cfbba80a0d510df75f7
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -556,7 +556,7 @@ F ext/wasm/wasmfs.make cf9a68162d92ca2bcb0b9528b244cb36d5cc2d84ccc9c2d398461927d
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
-F main.mk ac6b13f8ecc43f377e9912380ea4cf366051d7f784cf61c8886e03e1cf0fbefa
+F main.mk 14bdf404d42ffee34b637369afd305c8dbc283cab233ca5d27bb104024d7f5b7
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -2040,6 +2040,7 @@ F tool/sqldiff.c 2a693b4e7c1818c23f871f82f0c3fe67d80b67e3f087893089d33da29c1e387
 F tool/sqlite3_analyzer.c.in f88615bf33098945e0a42f17733f472083d150b58bdaaa5555a7129d0a51621c
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
+F tool/src-verify.c 9c4b55bdc51c8a490e530b0f0f631a59fee4fdee0278bd9097f948f307ed36af
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
@@ -2072,8 +2073,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2d962b84dd8ac2d0968f0283f8f082c1c2a7a1f99b59053b2ad8f58745396447
-R bb96499807291badc8caa68a15102a55
-U larrybr
-Z d7565eecc2be24c461e09bd23272a099
+P b6c2d3d203100a34335aeba23a8fb82a13297b65eed494d5044ade3bed683bc3
+R 7131dcbde84d84c042e61b5c7bb9292b
+U drh
+Z 4617e8d9f477cb4cf350e326572c6bfc
 # Remove this line to create a well-formed Fossil manifest.

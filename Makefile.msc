@@ -1807,6 +1807,12 @@ srcck1.exe:	$(TOP)\tool\srcck1.c
 sourcetest:	srcck1.exe $(SQLITE3C)
 	srcck1.exe $(SQLITE3C)
 
+src-verify.exe:	$(TOP)\tool\src-verify.c
+	$(LTLINK) $(NO_WARN) $(TOP)/tool/src-verify.c
+
+verify-source:	src-verify.exe
+	src-verify.exe $(TOP)
+
 fuzzershell.exe:	$(TOP)\tool\fuzzershell.c $(SQLITE3C) $(SQLITE3H)
 	$(LTLINK) $(NO_WARN) $(FUZZERSHELL_COMPILE_OPTS) $(TOP)\tool\fuzzershell.c $(SQLITE3C) /link $(LDFLAGS) $(LTLINKOPTS)
 
@@ -2661,4 +2667,5 @@ clean:
 	del /Q showshm.exe sqlite3_checker.* sqlite3_expert.exe 2>NUL
 	del /Q fts5.* fts5parse.* 2>NUL
 	del /Q lsm.h lsm1.c 2>NUL
+	del /q src-verify.exe 2>NUL
 # <</mark>>
