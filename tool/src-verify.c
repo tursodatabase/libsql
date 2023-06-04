@@ -684,7 +684,7 @@ void sha3sum_file(const char *zFilename, char *zCksum){
   }
   SHA3Init(&ctx, 256);
   for(;;){
-    int n;
+    size_t n;
     n = fread(zBuf, 1, sizeof(zBuf), in);
     if( n<=0 ) break;
     SHA3Update(&ctx, (unsigned char*)zBuf, (unsigned)n);
@@ -712,7 +712,7 @@ void sha1sum_file(const char *zFilename, char *zCksum){
   }
   SHA1Init(&ctx);
   for(;;){
-    int n;
+    size_t n;
     n = fread(zBuf, 1, sizeof(zBuf), in);
     if( n<=0 ) break;
     SHA1Update(&ctx, (unsigned char*)zBuf, (unsigned)n);
@@ -803,7 +803,7 @@ int main(int argc, char **argv){
   SHA3Init(&ctx3, 256);
   while( fgets(zLine, sizeof(zLine), in) ){
     if( zLine[0]=='#' ) break;
-    SHA3Update(&ctx3, (unsigned char*)zLine, strlen(zLine));
+    SHA3Update(&ctx3, (unsigned char*)zLine, (int)strlen(zLine));
   }
   DigestToBase16(SHA3Final(&ctx3), zVers, 32);
  
