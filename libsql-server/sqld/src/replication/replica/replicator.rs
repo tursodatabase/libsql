@@ -29,10 +29,16 @@ pub struct Replicator {
     injector: Option<FrameInjectorHandle>,
     current_frame_no: FrameNo,
     pub current_frame_no_notifier: watch::Sender<FrameNo>,
+    allow_replica_overwrite: bool,
 }
 
 impl Replicator {
-    pub fn new(db_path: PathBuf, channel: Channel, uri: tonic::transport::Uri) -> Self {
+    pub fn new(
+        db_path: PathBuf,
+        channel: Channel,
+        uri: tonic::transport::Uri,
+        allow_replica_overwrite: bool,
+    ) -> Self {
         let client = Client::with_origin(channel, uri);
         let (applied_frame_notifier, _) = watch::channel(FrameNo::MAX);
         Self {
@@ -41,6 +47,7 @@ impl Replicator {
             injector: None,
             current_frame_no: FrameNo::MAX,
             current_frame_no_notifier: applied_frame_notifier,
+            allow_replica_overwrite,
         }
     }
 
@@ -74,8 +81,12 @@ impl Replicator {
                     if let Some(applicator) = self.injector.take() {
                         applicator.shutdown().await?;
                     }
-                    let (injector, last_applied_frame_no) =
-                        FrameInjectorHandle::new(self.db_path.clone(), hello).await?;
+                    let (injector, last_applied_frame_no) = FrameInjectorHandle::new(
+                        self.db_path.clone(),
+                        hello,
+                        self.allow_replica_overwrite,
+                    )
+                    .await?;
                     self.update_current_frame_no(last_applied_frame_no);
                     self.injector.replace(injector);
                     return Ok(());

@@ -91,6 +91,7 @@ pub struct Config {
     pub heartbeat_period: Duration,
     pub soft_heap_limit_mb: Option<usize>,
     pub hard_heap_limit_mb: Option<usize>,
+    pub allow_replica_overwrite: bool,
 }
 
 async fn run_service<D: Database>(
@@ -251,7 +252,12 @@ async fn start_replica(
     stats: Stats,
 ) -> anyhow::Result<()> {
     let (channel, uri) = configure_rpc(config)?;
-    let replicator = Replicator::new(config.db_path.clone(), channel.clone(), uri.clone());
+    let replicator = Replicator::new(
+        config.db_path.clone(),
+        channel.clone(),
+        uri.clone(),
+        config.allow_replica_overwrite,
+    );
     let applied_frame_no_receiver = replicator.current_frame_no_notifier.subscribe();
 
     join_set.spawn(replicator.run());
