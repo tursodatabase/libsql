@@ -307,8 +307,8 @@ describes its purpose and role within the larger system.
 ## Verifying Code Authenticity
 
 The `manifest` file at the root directory of the source tree
-contains either a SHA3-256 hash (for newer files) or a SHA1 hash (for
-older files) for every source file in the repository.
+contains either a SHA3-256 hash or a SHA1 hash
+for every source file in the repository.
 The name of the version of the entire source tree is just the
 SHA3-256 hash of the `manifest` file itself, possibly with the
 last line of that file omitted if the last line begins with
@@ -316,10 +316,21 @@ last line of that file omitted if the last line begins with
 The `manifest.uuid` file should contain the SHA3-256 hash of the
 `manifest` file. If all of the above hash comparisons are correct, then
 you can be confident that your source tree is authentic and unadulterated.
+Details on the format for the `manifest` files are available
+[on the Fossil website](https://fossil-scm.org/fossil/doc/trunk/www/fileformat.wiki#manifest).
 
-The format of the `manifest` file should be mostly self-explanatory, but
-if you want details, they are available
-[here](https://fossil-scm.org/fossil/doc/trunk/www/fileformat.wiki#manifest).
+The process of checking source code authenticity is automated by the 
+makefile:
+
+>   make verify-source
+
+Or on windows:
+
+>   nmake /f Makefile.msc verify-source
+
+Using the makefile to verify source integrity is good for detecting
+accidental changes to the source tree, but malecious changes could be
+hidden by also modifying the makefiles.
 
 ## Contacts
 

@@ -1,12 +1,12 @@
-C Remove\sextraneous\sconsole\strace\soutput\sfrom\sprevious\scheck-in.
-D 2023-06-05T11:30:50.531
+C Update\sthe\sREADME.md\sfile\sto\stalk\sabout\sthe\sverify-source\smakefile\starget.
+D 2023-06-05T13:57:37.010
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 3b155551e8c78751622bc5ce903b1a91beaa6e4c04710161ae51858bbd9e2edc
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 9c032cabd86fc0468167459b714478be7fe77e47ce43fdf1bfaf2e48e829a112
-F README.md e05bd8fcb45da04ab045c37f79a98654e8aa3b3b8f302cfbba80a0d510df75f7
+F README.md 6f942c2e542d53202dc75b114b0617e9e02f8a6a777508fc23c3d8297951c478
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2073,8 +2073,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5dfaf0bce83c3e15ad605e3f07291ce219f1a2726ce77be27779897088ee13d5
-R 24895132f932d28d1fbf21fb3ad724f8
-U stephan
-Z 8cb9e4826ff5723987a4be236192bd78
+P c9f6e36d59fc8bf2bcef6fc14ff2e9ad3dfd972de94d4a71ff3f56134810a8ef
+R e91c88c8e46445d9eca494cc1fdddcf5
+U drh
+Z 3888741ff2c2850220d9e06ebbda1c5d
 # Remove this line to create a well-formed Fossil manifest.
