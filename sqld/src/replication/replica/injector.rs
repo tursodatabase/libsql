@@ -26,8 +26,9 @@ fn injector_loop(
     hello: HelloResponse,
     mut receiver: mpsc::Receiver<FrameApplyOp>,
     init_ret: mpsc::Sender<anyhow::Result<FrameNo>>,
+    allow_replica_overwrite: bool,
 ) -> anyhow::Result<()> {
-    let mut ctx = InjectorHookCtx::new_from_hello(db_path, hello)?;
+    let mut ctx = InjectorHookCtx::new_from_hello(db_path, hello, allow_replica_overwrite)?;
     let mut injector = FrameInjector::init(db_path, &mut ctx)?;
 
     init_ret.try_send(Ok(injector.ctx.inner.borrow().meta.current_frame_no()))?;
@@ -43,7 +44,11 @@ fn injector_loop(
 }
 
 impl FrameInjectorHandle {
-    pub async fn new(db_path: PathBuf, hello: HelloResponse) -> anyhow::Result<(Self, FrameNo)> {
+    pub async fn new(
+        db_path: PathBuf,
+        hello: HelloResponse,
+        allow_replica_overwrite: bool,
+    ) -> anyhow::Result<(Self, FrameNo)> {
         let (sender, receiver) = mpsc::channel(16);
         // this ret thing is a bit convoluted: we want to collect the initialization result and
         // then run the loop. This channel with only ever receive one message, but we collect the
@@ -51,7 +56,13 @@ impl FrameInjectorHandle {
         // If someone has a nicer solution that does not involve many matches, go ahead :)
         let (ret, mut init_ok) = mpsc::channel(1);
         let handle = tokio::task::spawn_blocking(move || {
-            if let Err(e) = injector_loop(&db_path, hello, receiver, ret.clone()) {
+            if let Err(e) = injector_loop(
+                &db_path,
+                hello,
+                receiver,
+                ret.clone(),
+                allow_replica_overwrite,
+            ) {
                 let _ = ret.try_send(Err(e));
             }
         });
@@ -89,13 +100,23 @@ pub struct FrameInjector<'a> {
 }
 
 impl InjectorHookCtx {
-    pub fn new_from_hello(db_path: &Path, hello: HelloResponse) -> anyhow::Result<Self> {
+    pub fn new_from_hello(
+        db_path: &Path,
+        hello: HelloResponse,
+        allow_replica_overwrite: bool,
+    ) -> anyhow::Result<Self> {
         let (meta, file) = WalIndexMeta::read_from_path(db_path)?;
         let meta = match meta {
             Some(meta) => match meta.merge_from_hello(hello) {
                 Ok(meta) => meta,
                 Err(e @ ReplicationError::Lagging) => {
                     tracing::error!("Replica ahead of primary: hard-reseting replica");
+                    HARD_RESET.notify_waiters();
+
+                    anyhow::bail!(e);
+                }
+                Err(e @ ReplicationError::DbIncompatible) if allow_replica_overwrite => {
+                    tracing::error!("Primary is attempting to replicate a different database, overwriting replica.");
                     HARD_RESET.notify_waiters();
 
                     anyhow::bail!(e);
