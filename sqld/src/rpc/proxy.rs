@@ -9,7 +9,9 @@ use uuid::Uuid;
 use crate::auth::{Authenticated, Authorized};
 use crate::database::factory::DbFactory;
 use crate::database::{Database, Program};
-use crate::query_result_builder::{Column, QueryResultBuilder, QueryResultBuilderError};
+use crate::query_result_builder::{
+    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
+};
 use crate::replication::FrameNo;
 
 use self::rpc::proxy_server::Proxy;
@@ -268,37 +270,33 @@ impl<D: Database> ProxyService<D> {
     }
 }
 
+#[derive(Debug, Default)]
 struct ExecuteResultBuilder {
     results: Vec<QueryResult>,
     current_rows: Vec<Row>,
     current_row: rpc::Row,
     current_col_description: Vec<rpc::Column>,
     current_err: Option<crate::error::Error>,
-}
-
-impl ExecuteResultBuilder {
-    fn new() -> Self {
-        Self {
-            results: Vec::new(),
-            current_rows: Vec::new(),
-            current_row: rpc::Row { values: Vec::new() },
-            current_col_description: Vec::new(),
-            current_err: None,
-        }
-    }
+    max_size: u64,
+    current_size: u64,
+    current_step_size: u64,
 }
 
 impl QueryResultBuilder for ExecuteResultBuilder {
     type Ret = Vec<QueryResult>;
 
-    fn init(&mut self) -> Result<(), QueryResultBuilderError> {
-        *self = Self::new();
+    fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
+        *self = Self {
+            max_size: config.max_size.unwrap_or(u64::MAX),
+            ..Default::default()
+        };
         Ok(())
     }
 
     fn begin_step(&mut self) -> Result<(), QueryResultBuilderError> {
         assert!(self.current_err.is_none());
         assert!(self.current_rows.is_empty());
+        self.current_step_size = 0;
         Ok(())
     }
 
@@ -307,6 +305,7 @@ impl QueryResultBuilder for ExecuteResultBuilder {
         affected_row_count: u64,
         last_insert_rowid: Option<i64>,
     ) -> Result<(), QueryResultBuilderError> {
+        self.current_size += self.current_step_size;
         match self.current_err.take() {
             Some(err) => {
                 self.current_rows.clear();
@@ -335,6 +334,12 @@ impl QueryResultBuilder for ExecuteResultBuilder {
 
     fn step_error(&mut self, error: crate::error::Error) -> Result<(), QueryResultBuilderError> {
         assert!(self.current_err.is_none());
+        let error_size = error.to_string().len() as u64;
+        if self.current_size + error_size > self.max_size {
+            return Err(QueryResultBuilderError::ResponseTooLarge(self.max_size));
+        }
+        self.current_step_size = error_size;
+
         self.current_err = Some(error);
 
         Ok(())
@@ -347,6 +352,13 @@ impl QueryResultBuilder for ExecuteResultBuilder {
         assert!(self.current_col_description.is_empty());
         for col in cols {
             let col = col.into();
+            let col_len =
+                (col.decl_ty.map(|s| s.len()).unwrap_or_default() + col.name.len()) as u64;
+            if col_len + self.current_step_size + self.current_size > self.max_size {
+                return Err(QueryResultBuilderError::ResponseTooLarge(self.max_size));
+            }
+            self.current_step_size += col_len;
+
             let col = rpc::Column {
                 name: col.name.to_owned(),
                 decltype: col.decl_ty.map(ToString::to_string),
@@ -370,12 +382,19 @@ impl QueryResultBuilder for ExecuteResultBuilder {
         &mut self,
         v: rusqlite::types::ValueRef,
     ) -> Result<(), QueryResultBuilderError> {
-        let value = rpc::Value {
-            data: bincode::serialize(
-                &crate::query::Value::try_from(v).map_err(QueryResultBuilderError::from_any)?,
-            )
-            .map_err(QueryResultBuilderError::from_any)?,
-        };
+        let data = bincode::serialize(
+            &crate::query::Value::try_from(v).map_err(QueryResultBuilderError::from_any)?,
+        )
+        .map_err(QueryResultBuilderError::from_any)?;
+
+        if data.len() as u64 + self.current_step_size + self.current_size > self.max_size {
+            return Err(QueryResultBuilderError::ResponseTooLarge(self.max_size));
+        }
+
+        self.current_step_size += data.len() as u64;
+
+        let value = rpc::Value { data };
+
         self.current_row.values.push(value);
 
         Ok(())
@@ -445,7 +464,7 @@ impl<D: Database> Proxy for ProxyService<D> {
         };
 
         tracing::debug!("executing request for {client_id}");
-        let builder = ExecuteResultBuilder::new();
+        let builder = ExecuteResultBuilder::default();
         let (results, state) = db
             .execute_program(pgm, auth, builder)
             .await

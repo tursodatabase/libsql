@@ -11,7 +11,9 @@ use crate::auth::{Authenticated, Authorized};
 use crate::error::Error;
 use crate::query::Value;
 use crate::query_analysis::State;
-use crate::query_result_builder::{Column, QueryResultBuilder, QueryResultBuilderError};
+use crate::query_result_builder::{
+    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
+};
 use crate::replication::FrameNo;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
@@ -29,6 +31,7 @@ pub struct WriteProxyDbFactory {
     extensions: Vec<PathBuf>,
     stats: Stats,
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
+    max_response_size: u64,
 }
 
 impl WriteProxyDbFactory {
@@ -39,6 +42,7 @@ impl WriteProxyDbFactory {
         uri: tonic::transport::Uri,
         stats: Stats,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
+        max_response_size: u64,
     ) -> Self {
         let client = ProxyClient::with_origin(channel, uri);
         Self {
@@ -47,6 +51,7 @@ impl WriteProxyDbFactory {
             extensions,
             stats,
             applied_frame_no_receiver,
+            max_response_size,
         }
     }
 }
@@ -61,6 +66,9 @@ impl DbFactory for WriteProxyDbFactory {
             self.extensions.clone(),
             self.stats.clone(),
             self.applied_frame_no_receiver.clone(),
+            QueryBuilderConfig {
+                max_size: Some(self.max_response_size),
+            },
         )
         .await?;
         Ok(db)
@@ -78,13 +86,15 @@ pub struct WriteProxyDatabase {
     last_write_frame_no: PMutex<FrameNo>,
     /// Notifier from the repliator of the currently applied frameno
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
+    builder_config: QueryBuilderConfig,
 }
 
 fn execute_results_to_builder<B: QueryResultBuilder>(
     execute_result: ExecuteResults,
     mut builder: B,
+    config: &QueryBuilderConfig,
 ) -> Result<B> {
-    builder.init()?;
+    builder.init(config)?;
     for result in execute_result.results {
         match result.row_result {
             Some(RowResult::Row(rows)) => {
@@ -131,8 +141,17 @@ impl WriteProxyDatabase {
         extensions: Vec<PathBuf>,
         stats: Stats,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
+        builder_config: QueryBuilderConfig,
     ) -> Result<Self> {
-        let read_db = LibSqlDb::new(path, extensions, &TRANSPARENT_METHODS, (), stats).await?;
+        let read_db = LibSqlDb::new(
+            path,
+            extensions,
+            &TRANSPARENT_METHODS,
+            (),
+            stats,
+            builder_config,
+        )
+        .await?;
         Ok(Self {
             read_db,
             write_proxy,
@@ -140,6 +159,7 @@ impl WriteProxyDatabase {
             client_id: Uuid::new_v4(),
             last_write_frame_no: PMutex::new(FrameNo::MAX),
             applied_frame_no_receiver,
+            builder_config,
         })
     }
 
@@ -166,7 +186,8 @@ impl WriteProxyDatabase {
                 let execute_result = r.into_inner();
                 *state = execute_result.state().into();
                 let current_frame_no = execute_result.current_frame_no;
-                let builder = execute_results_to_builder(execute_result, builder)?;
+                let builder =
+                    execute_results_to_builder(execute_result, builder, &self.builder_config)?;
                 self.update_last_write_frame_no(current_frame_no);
 
                 Ok((builder, *state))
@@ -279,7 +300,7 @@ pub mod test {
             data.try_fill(&mut rand::thread_rng()).unwrap();
             let mut un = Unstructured::new(&data);
             let res = ExecuteResults::arbitrary(&mut un).unwrap();
-            execute_results_to_builder(res, b)
+            execute_results_to_builder(res, b, &QueryBuilderConfig::default())
         });
     }
 }

@@ -805,6 +805,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "bytesize"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38fcc2979eff34a4b84e1cf9a1e3da42a7d44b3b690a40cdcb23e3d556cfb2e5"
+
+[[package]]
 name = "cap-fs-ext"
 version = "0.26.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3609,6 +3615,7 @@ dependencies = [
  "bottomless",
  "bytemuck",
  "bytes 1.4.0",
+ "bytesize",
  "clap",
  "console-subscriber",
  "crc",

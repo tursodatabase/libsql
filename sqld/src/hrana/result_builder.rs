@@ -1,8 +1,13 @@
+use std::fmt::{self, Write as _};
+use std::io;
+
 use bytes::Bytes;
 use rusqlite::types::ValueRef;
 
 use crate::hrana::stmt::{proto_error_from_stmt_error, stmt_error_from_sqld_error};
-use crate::query_result_builder::{Column, QueryResultBuilder, QueryResultBuilderError};
+use crate::query_result_builder::{
+    Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
+};
 
 use super::proto;
 
@@ -14,13 +19,53 @@ pub struct SingleStatementBuilder {
     err: Option<crate::error::Error>,
     affected_row_count: u64,
     last_insert_rowid: Option<i64>,
+    current_size: u64,
+    max_response_size: u64,
+}
+
+struct SizeFormatter(u64);
+
+impl io::Write for SizeFormatter {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.0 += buf.len() as u64;
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl fmt::Write for SizeFormatter {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.0 += s.len() as u64;
+        Ok(())
+    }
+}
+
+fn value_json_size(v: &ValueRef) -> u64 {
+    let mut f = SizeFormatter(0);
+    match v {
+        ValueRef::Null => write!(&mut f, r#"{{"type":"null"}}"#).unwrap(),
+        ValueRef::Integer(i) => {
+            write!(&mut f, r#"{{"type":"integer", "value": "{}"}}"#, i).unwrap()
+        }
+        ValueRef::Real(_) => write!(&mut f, r#"{{"type":"integer","value}}"#).unwrap(),
+        ValueRef::Text(_) => write!(&mut f, r#"{{"type":"null"}}"#).unwrap(),
+        ValueRef::Blob(_) => write!(&mut f, r#"{{"type":"null"}}"#).unwrap(),
+    }
+
+    f.0
 }
 
 impl QueryResultBuilder for SingleStatementBuilder {
     type Ret = Result<proto::StmtResult, crate::error::Error>;
 
-    fn init(&mut self) -> Result<(), QueryResultBuilderError> {
-        *self = Default::default();
+    fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
+        *self = Self {
+            max_response_size: config.max_size.unwrap_or(u64::MAX),
+            ..Default::default()
+        };
         Ok(())
     }
 
@@ -44,6 +89,9 @@ impl QueryResultBuilder for SingleStatementBuilder {
 
     fn step_error(&mut self, error: crate::error::Error) -> Result<(), QueryResultBuilderError> {
         assert!(self.err.is_none());
+        let mut f = SizeFormatter(0);
+        write!(&mut f, "{error}").unwrap();
+        self.current_size = f.0;
 
         self.err = Some(error);
 
@@ -57,11 +105,22 @@ impl QueryResultBuilder for SingleStatementBuilder {
         assert!(self.err.is_none());
         assert!(self.cols.is_empty());
 
-        self.cols
-            .extend(cols.into_iter().map(Into::into).map(|c| proto::Col {
+        let mut cols_size = 0;
+
+        self.cols.extend(cols.into_iter().map(Into::into).map(|c| {
+            cols_size += estimate_cols_json_size(&c);
+            proto::Col {
                 name: Some(c.name.to_owned()),
                 decltype: c.decl_ty.map(ToString::to_string),
-            }));
+            }
+        }));
+
+        self.current_size += cols_size;
+        if self.current_size > self.max_response_size {
+            return Err(QueryResultBuilderError::ResponseTooLarge(
+                self.max_response_size,
+            ));
+        }
 
         Ok(())
     }
@@ -80,6 +139,15 @@ impl QueryResultBuilder for SingleStatementBuilder {
 
     fn add_row_value(&mut self, v: ValueRef) -> Result<(), QueryResultBuilderError> {
         assert!(self.err.is_none());
+        let estimate_size = value_json_size(&v);
+        if self.current_size + estimate_size > self.max_response_size {
+            return Err(QueryResultBuilderError::ResponseTooLarge(
+                self.max_response_size,
+            ));
+        }
+
+        self.current_size += estimate_size;
+
         let val = match v {
             ValueRef::Null => proto::Value::Null,
             ValueRef::Integer(value) => proto::Value::Integer { value },
@@ -129,18 +197,35 @@ impl QueryResultBuilder for SingleStatementBuilder {
     }
 }
 
+fn estimate_cols_json_size(c: &Column) -> u64 {
+    let mut f = SizeFormatter(0);
+    write!(
+        &mut f,
+        r#"{{"name":"{}","decltype":"{}"}}"#,
+        c.name,
+        c.decl_ty.unwrap_or("null")
+    )
+    .unwrap();
+    f.0
+}
+
 #[derive(Debug, Default)]
 pub struct HranaBatchProtoBuilder {
     step_results: Vec<Option<proto::StmtResult>>,
     step_errors: Vec<Option<crate::hrana::proto::Error>>,
     stmt_builder: SingleStatementBuilder,
+    current_size: u64,
+    max_response_size: u64,
 }
 
 impl QueryResultBuilder for HranaBatchProtoBuilder {
     type Ret = proto::BatchResult;
 
-    fn init(&mut self) -> Result<(), QueryResultBuilderError> {
-        *self = Default::default();
+    fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
+        *self = Self {
+            max_response_size: config.max_size.unwrap_or(u64::MAX),
+            ..Default::default()
+        };
         Ok(())
     }
 
@@ -155,8 +240,14 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
     ) -> Result<(), QueryResultBuilderError> {
         self.stmt_builder
             .finish_step(affected_row_count, last_insert_rowid)?;
+        self.current_size += self.stmt_builder.current_size;
 
-        match std::mem::take(&mut self.stmt_builder).into_ret() {
+        let new_builder = SingleStatementBuilder {
+            current_size: self.current_size,
+            max_response_size: self.max_response_size,
+            ..Default::default()
+        };
+        match std::mem::replace(&mut self.stmt_builder, new_builder).into_ret() {
             Ok(res) => {
                 self.step_results.push(Some(res));
                 self.step_errors.push(None);
