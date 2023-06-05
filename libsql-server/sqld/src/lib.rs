@@ -92,6 +92,7 @@ pub struct Config {
     pub soft_heap_limit_mb: Option<usize>,
     pub hard_heap_limit_mb: Option<usize>,
     pub allow_replica_overwrite: bool,
+    pub max_response_size: u64,
 }
 
 async fn run_service<D: Database>(
@@ -271,6 +272,7 @@ async fn start_replica(
         uri,
         stats.clone(),
         applied_frame_no_receiver,
+        config.max_response_size,
     )
     .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT));
 
@@ -429,6 +431,7 @@ async fn start_primary(
         },
         stats.clone(),
         valid_extensions,
+        config.max_response_size,
     )
     .await?
     .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT))

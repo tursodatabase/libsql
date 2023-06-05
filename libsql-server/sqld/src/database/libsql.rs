@@ -12,7 +12,7 @@ use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
 use crate::query::Query;
 use crate::query_analysis::{State, Statement, StmtKind};
-use crate::query_result_builder::QueryResultBuilder;
+use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::stats::Stats;
 use crate::Result;
 
@@ -31,6 +31,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     ctx_builder: Box<dyn Fn() -> W::Context + Sync + Send + 'static>,
     stats: Stats,
     extensions: Vec<PathBuf>,
+    max_response_size: u64,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlDb>,
@@ -47,6 +48,7 @@ where
         ctx_builder: F,
         stats: Stats,
         extensions: Vec<PathBuf>,
+        max_response_size: u64,
     ) -> Result<Self>
     where
         F: Fn() -> W::Context + Sync + Send + 'static,
@@ -57,6 +59,7 @@ where
             ctx_builder: Box::new(ctx_builder),
             stats,
             extensions,
+            max_response_size,
             _db: None,
         };
 
@@ -102,6 +105,9 @@ where
             self.hook,
             (self.ctx_builder)(),
             self.stats.clone(),
+            QueryBuilderConfig {
+                max_size: Some(self.max_response_size),
+            },
         )
         .await
     }
@@ -190,6 +196,7 @@ impl LibSqlDb {
         wal_hook: &'static WalMethodsHook<W>,
         hook_ctx: W::Context,
         stats: Stats,
+        builder_config: QueryBuilderConfig,
     ) -> crate::Result<Self>
     where
         W: WalHook,
@@ -200,17 +207,23 @@ impl LibSqlDb {
 
         tokio::task::spawn_blocking(move || {
             let mut ctx = hook_ctx;
-            let mut connection =
-                match Connection::new(path.as_ref(), extensions, wal_hook, &mut ctx, stats) {
-                    Ok(conn) => {
-                        let Ok(_) = init_sender.send(Ok(())) else { return };
-                        conn
-                    }
-                    Err(e) => {
-                        let _ = init_sender.send(Err(e));
-                        return;
-                    }
-                };
+            let mut connection = match Connection::new(
+                path.as_ref(),
+                extensions,
+                wal_hook,
+                &mut ctx,
+                stats,
+                builder_config,
+            ) {
+                Ok(conn) => {
+                    let Ok(_) = init_sender.send(Ok(())) else { return };
+                    conn
+                }
+                Err(e) => {
+                    let _ = init_sender.send(Err(e));
+                    return;
+                }
+            };
 
             loop {
                 let exec = match connection.state.deadline() {
@@ -255,6 +268,7 @@ struct Connection<'a> {
     conn: sqld_libsql_bindings::Connection<'a>,
     timed_out: bool,
     stats: Stats,
+    builder_config: QueryBuilderConfig,
 }
 
 impl<'a> Connection<'a> {
@@ -264,12 +278,14 @@ impl<'a> Connection<'a> {
         wal_methods: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
         stats: Stats,
+        builder_config: QueryBuilderConfig,
     ) -> Result<Self> {
         let this = Self {
             conn: open_db(path, wal_methods, hook_ctx, None)?,
             state: ConnectionState::initial(),
             timed_out: false,
             stats,
+            builder_config,
         };
 
         for ext in extensions {
@@ -289,7 +305,7 @@ impl<'a> Connection<'a> {
     fn run<B: QueryResultBuilder>(&mut self, pgm: Program, mut builder: B) -> Result<B> {
         let mut results = Vec::with_capacity(pgm.steps.len());
 
-        builder.init()?;
+        builder.init(&self.builder_config)?;
 
         for step in pgm.steps() {
             let res = self.execute_step(step, &results, &mut builder)?;
@@ -562,6 +578,7 @@ mod test {
             conn: sqld_libsql_bindings::Connection::test(ctx),
             timed_out: false,
             stats: Stats::default(),
+            builder_config: QueryBuilderConfig::default(),
         };
 
         let stmts = std::iter::once("create table test (x)")

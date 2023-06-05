@@ -1,14 +1,17 @@
+use std::io;
+use std::ops::{Deref, DerefMut};
+
 use rusqlite::types::ValueRef;
 use serde::{Serialize, Serializer};
 use serde_json::ser::{CompactFormatter, Formatter};
 
 use crate::query_result_builder::{
-    Column, JsonFormatter, QueryResultBuilder, QueryResultBuilderError,
+    Column, JsonFormatter, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
 
 pub struct JsonHttpPayloadBuilder {
     formatter: JsonFormatter<CompactFormatter>,
-    buffer: Vec<u8>,
+    buffer: LimitBuffer,
     checkpoint: usize,
     /// number of steps
     step_count: usize,
@@ -20,13 +23,60 @@ pub struct JsonHttpPayloadBuilder {
     is_step_empty: bool,
 }
 
+#[derive(Default)]
+struct LimitBuffer {
+    buffer: Vec<u8>,
+    limit: u64,
+}
+
+impl LimitBuffer {
+    fn new(limit: u64) -> Self {
+        Self {
+            buffer: Vec::new(),
+            limit,
+        }
+    }
+}
+
+impl Deref for LimitBuffer {
+    type Target = Vec<u8>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.buffer
+    }
+}
+
+impl DerefMut for LimitBuffer {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.buffer
+    }
+}
+
+impl io::Write for LimitBuffer {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        if (self.buffer.len() + buf.len()) as u64 > self.limit {
+            return Err(io::Error::new(
+                io::ErrorKind::OutOfMemory,
+                QueryResultBuilderError::ResponseTooLarge(self.limit),
+            ));
+        }
+        self.buffer.extend(buf);
+
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 struct HttpJsonValueSerializer<'a>(&'a ValueRef<'a>);
 
 impl JsonHttpPayloadBuilder {
     pub fn new() -> Self {
         Self {
             formatter: JsonFormatter(CompactFormatter),
-            buffer: Vec::new(),
+            buffer: LimitBuffer::new(0),
             checkpoint: 0,
             step_count: 0,
             row_value_count: 0,
@@ -74,8 +124,11 @@ impl<'a> Serialize for HttpJsonValueSerializer<'a> {
 impl QueryResultBuilder for JsonHttpPayloadBuilder {
     type Ret = Vec<u8>;
 
-    fn init(&mut self) -> Result<(), QueryResultBuilderError> {
-        *self = Self::new();
+    fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
+        *self = Self {
+            buffer: LimitBuffer::new(config.max_size.unwrap_or(u64::MAX)),
+            ..Self::new()
+        };
         // write fragment: `[`
         self.formatter.begin_array(&mut self.buffer)?;
         Ok(())
@@ -171,6 +224,7 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
         self.formatter
             .begin_array_value(&mut self.buffer, self.step_row_count == 0)?;
         self.formatter.begin_array(&mut self.buffer)?;
+
         Ok(())
     }
 
@@ -209,11 +263,12 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
 
     fn finish(&mut self) -> Result<(), QueryResultBuilderError> {
         self.formatter.end_array(&mut self.buffer)?;
+
         Ok(())
     }
 
     fn into_ret(self) -> Self::Ret {
-        self.buffer
+        self.buffer.buffer
     }
 }
 

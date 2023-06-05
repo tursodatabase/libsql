@@ -1,18 +1,56 @@
-use std::io;
+use std::fmt;
+use std::io::{self, ErrorKind};
 use std::ops::{Deref, DerefMut};
 
-use anyhow::anyhow;
+use bytesize::ByteSize;
 use rusqlite::types::ValueRef;
 use serde::Serialize;
 use serde_json::ser::Formatter;
 
-#[derive(Debug, thiserror::Error)]
-#[error(transparent)]
-pub struct QueryResultBuilderError(#[from] anyhow::Error);
+#[derive(Debug)]
+pub enum QueryResultBuilderError {
+    ResponseTooLarge(u64),
+    Internal(anyhow::Error),
+}
+
+impl fmt::Display for QueryResultBuilderError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            QueryResultBuilderError::ResponseTooLarge(s) => {
+                write!(f, "query response exceeds the maximum size of {}. Try reducing the number of queried rows.", ByteSize(*s))
+            }
+            QueryResultBuilderError::Internal(e) => e.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for QueryResultBuilderError {}
+
+impl From<anyhow::Error> for QueryResultBuilderError {
+    fn from(value: anyhow::Error) -> Self {
+        Self::Internal(value)
+    }
+}
 
 impl QueryResultBuilderError {
     pub fn from_any<E: Into<anyhow::Error>>(e: E) -> Self {
-        Self(e.into())
+        Self::Internal(e.into())
+    }
+}
+
+impl From<io::Error> for QueryResultBuilderError {
+    fn from(value: io::Error) -> Self {
+        if value.kind() == ErrorKind::OutOfMemory
+            && value.get_ref().is_some()
+            && value.get_ref().unwrap().is::<QueryResultBuilderError>()
+        {
+            return *value
+                .into_inner()
+                .unwrap()
+                .downcast::<QueryResultBuilderError>()
+                .unwrap();
+        }
+        Self::Internal(value.into())
     }
 }
 
@@ -38,11 +76,16 @@ impl<'a> From<&'a rusqlite::Column<'a>> for Column<'a> {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct QueryBuilderConfig {
+    pub max_size: Option<u64>,
+}
+
 pub trait QueryResultBuilder: Send + 'static {
     type Ret: Sized + Send + 'static;
 
     /// (Re)initialize the builder. This method can be called multiple times.
-    fn init(&mut self) -> Result<(), QueryResultBuilderError>;
+    fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError>;
     /// start serializing new step
     fn begin_step(&mut self) -> Result<(), QueryResultBuilderError>;
     /// finish serializing current step
@@ -183,12 +226,6 @@ impl<F> DerefMut for JsonFormatter<F> {
     }
 }
 
-impl From<io::Error> for QueryResultBuilderError {
-    fn from(value: io::Error) -> Self {
-        Self(anyhow!(value))
-    }
-}
-
 #[derive(Debug)]
 pub enum StepResult {
     Ok,
@@ -206,7 +243,7 @@ pub struct StepResultsBuilder {
 impl QueryResultBuilder for StepResultsBuilder {
     type Ret = Vec<StepResult>;
 
-    fn init(&mut self) -> Result<(), QueryResultBuilderError> {
+    fn init(&mut self, _config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
         *self = Default::default();
         Ok(())
     }
@@ -281,7 +318,7 @@ pub struct IgnoreResult;
 impl QueryResultBuilder for IgnoreResult {
     type Ret = ();
 
-    fn init(&mut self) -> Result<(), QueryResultBuilderError> {
+    fn init(&mut self, _config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
         Ok(())
     }
 
@@ -351,9 +388,9 @@ impl<B> Take<B> {
 impl<B: QueryResultBuilder> QueryResultBuilder for Take<B> {
     type Ret = B::Ret;
 
-    fn init(&mut self) -> Result<(), QueryResultBuilderError> {
+    fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
         self.count = 0;
-        self.inner.init()
+        self.inner.init(config)
     }
 
     fn begin_step(&mut self) -> Result<(), QueryResultBuilderError> {
@@ -567,7 +604,7 @@ pub mod test {
         trace.push(state);
         loop {
             match state {
-                Init => b.init().unwrap(),
+                Init => b.init(&QueryBuilderConfig::default()).unwrap(),
                 BeginStep => b.begin_step().unwrap(),
                 FinishStep => b
                     .finish_step(
@@ -661,7 +698,7 @@ pub mod test {
                 // < 0.1% change to generate error
                 if val < 0.001 {
                     self.state = BuilderError;
-                    Err(anyhow!("dummy"))?;
+                    Err(anyhow::anyhow!("dummy"))?;
                 }
             }
 
@@ -672,7 +709,7 @@ pub mod test {
     impl QueryResultBuilder for FsmQueryBuilder {
         type Ret = ();
 
-        fn init(&mut self) -> Result<(), QueryResultBuilderError> {
+        fn init(&mut self, _config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
             self.maybe_inject_error()?;
             self.transition(Init)
         }
@@ -758,7 +795,7 @@ pub mod test {
     #[test]
     fn test_fsm_ok() {
         let mut builder = FsmQueryBuilder::new(false);
-        builder.init().unwrap();
+        builder.init(&QueryBuilderConfig::default()).unwrap();
 
         builder.begin_step().unwrap();
         builder.cols_description([("hello", None)]).unwrap();
@@ -782,11 +819,12 @@ pub mod test {
 
         builder.finish().unwrap();
     }
+
     #[test]
     #[should_panic]
     fn test_fsm_invalid() {
         let mut builder = FsmQueryBuilder::new(false);
-        builder.init().unwrap();
+        builder.init(&QueryBuilderConfig::default()).unwrap();
         builder.begin_step().unwrap();
         builder.begin_rows().unwrap();
     }
