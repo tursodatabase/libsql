@@ -748,26 +748,26 @@ void sha1sum_file(const char *zFilename, char *zCksum){
 ** Decode a fossilized string in-place.
 */
 void defossilize(char *z){
-  int i, j, c;
+  int i, j, cc;
   char *zSlash = strchr(z, '\\');
   if( zSlash==0 ) return;
   i = zSlash - z;
-  for(j=i; (c=z[i])!=0; i++){
-    if( c=='\\' && z[i+1] ){
+  for(j=i; (cc=z[i])!=0; i++){
+    if( cc=='\\' && z[i+1] ){
       i++;
       switch( z[i] ){
-        case 'n':  c = '\n';  break;
-        case 's':  c = ' ';   break;
-        case 't':  c = '\t';  break;
-        case 'r':  c = '\r';  break;
-        case 'v':  c = '\v';  break;
-        case 'f':  c = '\f';  break;
-        case '0':  c = 0;     break;
-        case '\\': c = '\\';  break;
-        default:   c = z[i];  break;
+        case 'n':  cc = '\n';  break;
+        case 's':  cc = ' ';   break;
+        case 't':  cc = '\t';  break;
+        case 'r':  cc = '\r';  break;
+        case 'v':  cc = '\v';  break;
+        case 'f':  cc = '\f';  break;
+        case '0':  cc = 0;     break;
+        case '\\': cc = '\\';  break;
+        default:   cc = z[i];  break;
       }
     }
-    z[j++] = c;
+    z[j++] = cc;
   }
   if( z[j] ) z[j] = 0;
 }
