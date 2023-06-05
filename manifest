@@ -1,5 +1,5 @@
-C Minor\scosmetic\snormalizations\sfor\sthe\sMSVC\smakefile.
-D 2023-06-05T00:57:38.649
+C Generalize\sthe\ssrc-verify.c\sutility\sprogram\sand\sprovide\sadditional\sdocumentation\nin\sthe\sheader\scomment.
+D 2023-06-05T01:05:46.192
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2040,7 +2040,7 @@ F tool/sqldiff.c 2a693b4e7c1818c23f871f82f0c3fe67d80b67e3f087893089d33da29c1e387
 F tool/sqlite3_analyzer.c.in f88615bf33098945e0a42f17733f472083d150b58bdaaa5555a7129d0a51621c
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
-F tool/src-verify.c efdc92df3139dedeba0b1875d39760e477259949dbdb2ef44ce2524a94dc51b6
+F tool/src-verify.c 8991969de8edcee688af869901f0b6aef69abde34a06956207e77674004366cf
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
@@ -2073,8 +2073,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0e79ee97b18792dba9213bd9961f53e2bae765ac92df7963703d08857da74fd1
-R c1008182b8d7d2429ca6242c5570d28d
-U mistachkin
-Z 16274bc3b88a1f11be3e7fc9f78070cc
+P c9fda8d6dba36841415d0f445b4081b051bfaa70428b605ac0b9ca4ae98f7d49
+R e7690e0368ac1bfdeb0f14274f730ca3
+U drh
+Z 811356101b2366481e1c6bca269b4085
 # Remove this line to create a well-formed Fossil manifest.

@@ -1,17 +1,39 @@
 /*
 ** This utility program reads the "manifest" and "manifest.uuid" files
-** of the SQLite source tree and uses the content therein to verify that
-** all of the other files in the source tree are correct.
+** in a Fossil-generated source tree (where the repository has the
+** "manifest" setting turned on - this is true for SQLite and Fossil itself)
+** and verifies that the source code files are complete and unaltered by
+** checking the SHA1 and SHA3 hashes of the source files contained in the
+** "manifest" file.
 **
-** Limitations:
+** On success it prints:  "OK $HASH" where $HASH is the SHA3-256 hash of
+** the check-in for the source tree.  If it finds any discrepencies, it
+** prints "Derived from $HASH with changes to:" followed by a list of files
+** which have been altered.
 **
-**    *   Does not handle special characters in the filenames.  The
-**        SQLite source tree has no filenames containing special
-**        characters, so that should not be an issue.
+** USAGE:
 **
-**    *   Filename length is limited to 1000 characters.  The SQLite
-**        source tree has no files more than 100 characters in length
-**        so that also should not be an issue.
+**     src-verify $(ROOT)
+**
+** Where ROOT is the root of the source tree - the directory that contains
+** the "manifest" and "manifest.uuid" files.  Add the "-v" option for
+** some debugging output.  Additional debugging options:
+**
+**     src-verify --sha1 FILE ...
+**     src-verify --sha3 FILE ...
+**
+** Compute the SHA1 or SHA3-256 hashes for all of the FILEs named
+**
+** COMPILING:
+**
+** This utility is self-contained.  It uses only the standard library.
+** There are no other dependencies.  Just compile it and run it.
+**
+** LIMITATIONS:
+**
+**   *   This utility assumes that the check-in hash uses SHA3-256.
+**       It is ok for individual file hashes to be SHA1, but the
+**       check-in itself must use a SHA3-256 hash.
 */
 #include <stdio.h>
 #include <string.h>
@@ -721,6 +743,34 @@ void sha1sum_file(const char *zFilename, char *zCksum){
   SHA1Final(zResult, &ctx);
   DigestToBase16(zResult, zCksum, 20);
 }
+	
+/*
+** Decode a fossilized string in-place.
+*/
+void defossilize(char *z){
+  int i, j, c;
+  char *zSlash = strchr(z, '\\');
+  if( zSlash==0 ) return;
+  i = zSlash - z;
+  for(j=i; (c=z[i])!=0; i++){
+    if( c=='\\' && z[i+1] ){
+      i++;
+      switch( z[i] ){
+        case 'n':  c = '\n';  break;
+        case 's':  c = ' ';   break;
+        case 't':  c = '\t';  break;
+        case 'r':  c = '\r';  break;
+        case 'v':  c = '\v';  break;
+        case 'f':  c = '\f';  break;
+        case '0':  c = 0;     break;
+        case '\\': c = '\\';  break;
+        default:   c = z[i];  break;
+      }
+    }
+    z[j++] = c;
+  }
+  if( z[j] ) z[j] = 0;
+}
 
 /*
 ** Report that a single file is incorrect.
@@ -744,8 +794,8 @@ int main(int argc, char **argv){
   char zHash[100];
   char zCk[100];
   char zVers[100];
-  char zLine[4000];
-  char zFile[2000];
+  char zLine[40000];
+  char zFile[40000];
   if( argc>=3 && strcmp(argv[1],"--sha1")==0 ){
     /* For testing purposes, if the first argument is --sha1, then simply
     ** compute and print the SHA1 checksum of all subsequent arguments. */
@@ -816,6 +866,7 @@ int main(int argc, char **argv){
     }
     if( j<sizeof(zFile) ) zFile[j] = 0;
     zFile[sizeof(zFile)-1] = 0;
+    defossilize(&zFile[nDir]);
     if( zLine[i]!=' ' ){
       errorMsg(&nErr, zVers, "manifest");
       return 1;
