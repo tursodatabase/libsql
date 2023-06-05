@@ -1808,7 +1808,7 @@ sourcetest:	srcck1.exe $(SQLITE3C)
 	srcck1.exe $(SQLITE3C)
 
 src-verify.exe:	$(TOP)\tool\src-verify.c
-	$(LTLINK) $(NO_WARN) $(TOP)/tool/src-verify.c
+	$(LTLINK) $(NO_WARN) $(TOP)\tool\src-verify.c
 
 verify-source:	src-verify.exe
 	src-verify.exe $(TOP)
@@ -2232,8 +2232,8 @@ SHELL_SRC = \
 	$(TOP)\src\shell.c.in \
 	$(TOP)\ext\misc\appendvfs.c \
 	$(TOP)\ext\misc\completion.c \
-        $(TOP)\ext\misc\base64.c \
-        $(TOP)\ext\misc\base85.c \
+	$(TOP)\ext\misc\base64.c \
+	$(TOP)\ext\misc\base85.c \
 	$(TOP)\ext\misc\decimal.c \
 	$(TOP)\ext\misc\fileio.c \
 	$(TOP)\ext\misc\ieee754.c \
@@ -2244,9 +2244,9 @@ SHELL_SRC = \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
-	$(TOP)/ext/recover/dbdata.c \
-	$(TOP)/ext/recover/sqlite3recover.c \
-	$(TOP)/ext/recover/sqlite3recover.h \
+	$(TOP)\ext\recover\dbdata.c \
+	$(TOP)\ext\recover\sqlite3recover.c \
+	$(TOP)\ext\recover\sqlite3recover.h \
 	$(TOP)\src\test_windirent.c
 
 # If use of zlib is enabled, add the "zipfile.c" source file.
@@ -2493,7 +2493,7 @@ devtest:	testfixture.exe fuzztest testrunner
 # Testing for a release
 #
 releasetest: testfixture.exe fuzztest
-	testfixture.exe $(TOP)/test/testrunner.tcl release
+	testfixture.exe $(TOP)\test\testrunner.tcl release
 
 
 smoketest:	$(TESTPROGS)
@@ -2521,14 +2521,14 @@ sqlite3_expert.exe: $(SQLITE3C) $(TOP)\ext\expert\sqlite3expert.h $(TOP)\ext\exp
 	$(LTLINK) $(NO_WARN)	$(TOP)\ext\expert\sqlite3expert.c $(TOP)\ext\expert\expert.c $(SQLITE3C) $(TLIBS)
 
 CHECKER_DEPS =\
-  $(TOP)/tool/mkccode.tcl \
+  $(TOP)\tool\mkccode.tcl \
   sqlite3.c \
-  $(TOP)/src/tclsqlite.c \
-  $(TOP)/ext/repair/sqlite3_checker.tcl \
-  $(TOP)/ext/repair/checkindex.c \
-  $(TOP)/ext/repair/checkfreelist.c \
-  $(TOP)/ext/misc/btreeinfo.c \
-  $(TOP)/ext/repair/sqlite3_checker.c.in
+  $(TOP)\src\tclsqlite.c \
+  $(TOP)\ext\repair\sqlite3_checker.tcl \
+  $(TOP)\ext\repair\checkindex.c \
+  $(TOP)\ext\repair\checkfreelist.c \
+  $(TOP)\ext\misc\btreeinfo.c \
+  $(TOP)\ext\repair\sqlite3_checker.c.in
 
 sqlite3_checker.c:	$(CHECKER_DEPS)
 	$(TCLSH_CMD) $(TOP)\tool\mkccode.tcl $(TOP)\ext\repair\sqlite3_checker.c.in > $@
