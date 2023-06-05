@@ -3015,7 +3015,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
         // with the exception that that post uses "external content"
         // for the FTS index.
-        const db = new sqlite3.oo1.DB(':memory:','wt');
+        const db = new sqlite3.oo1.DB();//(':memory:','wt');
         db.exec([
           "create virtual table f using fts5 (path);",
           "insert into f(path) values('abc'),('def'),('ghi');"
