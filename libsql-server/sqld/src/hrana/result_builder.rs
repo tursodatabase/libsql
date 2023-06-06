@@ -47,12 +47,15 @@ fn value_json_size(v: &ValueRef) -> u64 {
     let mut f = SizeFormatter(0);
     match v {
         ValueRef::Null => write!(&mut f, r#"{{"type":"null"}}"#).unwrap(),
-        ValueRef::Integer(i) => {
-            write!(&mut f, r#"{{"type":"integer", "value": "{}"}}"#, i).unwrap()
+        ValueRef::Integer(i) => write!(&mut f, r#"{{"type":"integer", "value": "{i}"}}"#).unwrap(),
+        ValueRef::Real(x) => write!(&mut f, r#"{{"type":"integer","value": {x}"}}"#).unwrap(),
+        ValueRef::Text(s) => {
+            // error will be caught later.
+            if let Ok(s) = std::str::from_utf8(s) {
+                write!(&mut f, r#"{{"type":"text","value":"{s}"}}"#).unwrap()
+            }
         }
-        ValueRef::Real(_) => write!(&mut f, r#"{{"type":"integer","value}}"#).unwrap(),
-        ValueRef::Text(_) => write!(&mut f, r#"{{"type":"null"}}"#).unwrap(),
-        ValueRef::Blob(_) => write!(&mut f, r#"{{"type":"null"}}"#).unwrap(),
+        ValueRef::Blob(b) => return b.len() as u64,
     }
 
     f.0
@@ -66,6 +69,7 @@ impl QueryResultBuilder for SingleStatementBuilder {
             max_response_size: config.max_size.unwrap_or(u64::MAX),
             ..Default::default()
         };
+
         Ok(())
     }
 
@@ -226,6 +230,7 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
             max_response_size: config.max_size.unwrap_or(u64::MAX),
             ..Default::default()
         };
+        self.stmt_builder.init(config)?;
         Ok(())
     }
 
@@ -243,8 +248,8 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
         self.current_size += self.stmt_builder.current_size;
 
         let new_builder = SingleStatementBuilder {
-            current_size: self.current_size,
-            max_response_size: self.max_response_size,
+            current_size: 0,
+            max_response_size: self.max_response_size - self.current_size,
             ..Default::default()
         };
         match std::mem::replace(&mut self.stmt_builder, new_builder).into_ret() {
