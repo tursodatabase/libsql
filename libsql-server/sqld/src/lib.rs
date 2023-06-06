@@ -417,11 +417,13 @@ async fn start_primary(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
+    db_is_dirty: bool,
 ) -> anyhow::Result<()> {
     let is_fresh_db = check_fresh_db(&config.db_path);
     let logger = Arc::new(ReplicationLogger::open(
         &config.db_path,
         config.max_log_size,
+        db_is_dirty,
     )?);
 
     #[cfg(feature = "bottomless")]
@@ -539,6 +541,24 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Stats) -> anyhow::Result<(
     Ok(())
 }
 
+fn sentinel_file_path(path: &Path) -> PathBuf {
+    path.join(".sentinel")
+}
+/// initialize the sentinel file. This file is created at the beginning of the process, and is
+/// deleted at the end, on a clean exit. If the file is present when we start the process, this
+/// means that the database was not shutdown properly, and might need repair. This function return
+/// `true` if the database is dirty and needs repair.
+fn init_sentinel_file(path: &Path) -> anyhow::Result<bool> {
+    let path = sentinel_file_path(path);
+    if path.try_exists()? {
+        return Ok(true);
+    }
+
+    std::fs::File::create(path)?;
+
+    Ok(false)
+}
+
 pub async fn run_server(config: Config) -> anyhow::Result<()> {
     tracing::trace!("Backend: {:?}", config.backend);
 
@@ -566,10 +586,31 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         }
         let mut join_set = JoinSet::new();
 
-        let shutdown_notify: Arc<Notify> = Arc::new(Notify::new());
+        let (shutdown_sender, mut shutdown_receiver) = tokio::sync::mpsc::channel::<()>(1);
+
+        join_set.spawn({
+            let shutdown_sender = shutdown_sender.clone();
+            async move {
+                loop {
+                    tokio::signal::ctrl_c()
+                        .await
+                        .expect("failed to listen to CTRL-C");
+                    tracing::info!(
+                        "received CTRL-C, shutting down gracefully... This may take some time"
+                    );
+                    shutdown_sender
+                        .send(())
+                        .await
+                        .expect("failed to shutdown gracefully");
+                }
+            }
+        });
+
+        let db_is_dirty = init_sentinel_file(&config.db_path)?;
+
         let idle_shutdown_layer = config
             .idle_shutdown_timeout
-            .map(|d| IdleShutdownLayer::new(d, shutdown_notify.clone()));
+            .map(|d| IdleShutdownLayer::new(d, shutdown_sender.clone()));
 
         let stats = Stats::new(&config.db_path)?;
 
@@ -578,7 +619,14 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
                 start_replica(&config, &mut join_set, idle_shutdown_layer, stats.clone()).await?
             }
             None => {
-                start_primary(&config, &mut join_set, idle_shutdown_layer, stats.clone()).await?
+                start_primary(
+                    &config,
+                    &mut join_set,
+                    idle_shutdown_layer,
+                    stats.clone(),
+                    db_is_dirty,
+                )
+                .await?
             }
         }
 
@@ -593,8 +641,10 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
                     hard_reset(&config, join_set).await?;
                     break;
                 },
-                _ = shutdown_notify.notified() => {
+                _ = shutdown_receiver.recv() => {
                     join_set.shutdown().await;
+                    // clean shutdown, remove sentinel file
+                    std::fs::remove_file(sentinel_file_path(&config.db_path))?;
                     return Ok(())
                 }
                 Some(res) = join_set.join_next() => {

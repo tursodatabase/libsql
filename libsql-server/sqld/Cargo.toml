@@ -45,7 +45,7 @@ sqld-libsql-bindings = { version = "0", path = "../sqld-libsql-bindings" }
 sqlite3-parser = { version = "0.8.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.3.0"
 thiserror = "1.0.38"
-tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs"] }
+tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.19"
 tonic = { version = "0.8.3", features = ["tls"] }

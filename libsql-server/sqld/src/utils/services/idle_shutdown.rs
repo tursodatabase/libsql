@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use tokio::sync::{watch, Notify};
+use tokio::sync::{mpsc, watch};
 use tokio::time::timeout;
 use tower::{Layer, Service};
 
@@ -11,7 +11,7 @@ pub struct IdleShutdownLayer {
 }
 
 impl IdleShutdownLayer {
-    pub fn new(idle_timeout: Duration, shutdown_notifier: Arc<Notify>) -> Self {
+    pub fn new(idle_timeout: Duration, shutdown_notifier: mpsc::Sender<()>) -> Self {
         let (sender, mut receiver) = watch::channel(());
         tokio::spawn(async move {
             loop {
@@ -25,7 +25,10 @@ impl IdleShutdownLayer {
                         tracing::info!(
                             "Idle timeout, no new connection in {idle_timeout:.0?}. Shutting down.",
                         );
-                        shutdown_notifier.notify_waiters();
+                        shutdown_notifier
+                            .send(())
+                            .await
+                            .expect("failed to shutdown gracefully");
                     }
                 }
             }
