@@ -62,4 +62,7 @@ pub enum ProtocolError {
         what: &'static str,
         min_version: Version,
     },
+
+    #[error("{0}")]
+    ResponseTooLarge(String),
 }

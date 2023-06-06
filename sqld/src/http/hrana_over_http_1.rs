@@ -118,6 +118,15 @@ where
             err.downcast::<hrana::ProtocolError>()
                 .map(protocol_error_response)
         })
+        .or_else(|err| match err.downcast::<crate::Error>() {
+            Ok(crate::Error::BuilderError(
+                e @ crate::query_result_builder::QueryResultBuilderError::ResponseTooLarge(_),
+            )) => Ok(protocol_error_response(
+                hrana::ProtocolError::ResponseTooLarge(e.to_string()),
+            )),
+            Ok(e) => Err(anyhow!(e)),
+            Err(e) => Err(e),
+        })
 }
 
 fn response_error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
