@@ -11,9 +11,9 @@ description = "Command-line interface for bottomless replication for libSQL"
 
 [dependencies]
 anyhow = "1.0.66"
-aws-config = "0.52.0"
-aws-sdk-s3 = "0.22.0"
-aws-smithy-types = "0.52.0"
+aws-config = "0.55"
+aws-sdk-s3 = "0.28"
+aws-smithy-types = "0.55"
 bottomless = { version = "0", path = "../bottomless" }
 chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }

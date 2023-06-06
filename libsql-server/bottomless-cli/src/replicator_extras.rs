@@ -1,4 +1,7 @@
 use anyhow::Result;
+use aws_sdk_s3::error::SdkError;
+use aws_sdk_s3::types::ObjectAttributes;
+use aws_smithy_types::date_time::Format;
 
 pub(crate) struct Replicator {
     inner: bottomless::replicator::Replicator,
@@ -41,7 +44,7 @@ impl Replicator {
             .get_object_attributes()
             .bucket(&self.bucket)
             .key(format!("{}-{}/db.gz", self.db_name, generation))
-            .object_attributes(aws_sdk_s3::model::ObjectAttributes::ObjectSize)
+            .object_attributes(ObjectAttributes::ObjectSize)
             .send()
             .await
         {
@@ -52,14 +55,12 @@ impl Replicator {
                     "\t\tlast modified: {}",
                     attrs
                         .last_modified()
-                        .map(|s| s
-                            .fmt(aws_smithy_types::date_time::Format::DateTime)
-                            .unwrap_or_else(|e| e.to_string()))
+                        .map(|s| s.fmt(Format::DateTime).unwrap_or_else(|e| e.to_string()))
                         .as_deref()
                         .unwrap_or("never")
                 );
             }
-            Err(aws_sdk_s3::types::SdkError::ServiceError(err)) if err.err().is_no_such_key() => {
+            Err(SdkError::ServiceError(err)) if err.err().is_no_such_key() => {
                 println!("\tno main database snapshot file found")
             }
             Err(e) => println!("\tfailed to fetch main database snapshot info: {e}"),

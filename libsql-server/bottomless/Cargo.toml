@@ -11,8 +11,8 @@ description = "Bottomless replication for libSQL"
 [dependencies]
 anyhow = "1.0.66"
 async-compression = { version = "0.3.15", features = ["tokio", "gzip"] }
-aws-config = { version = "0.52.0" }
-aws-sdk-s3 = { version = "0.22.0" }
+aws-config = { version = "0.55" }
+aws-sdk-s3 = { version = "0.28" }
 bytes = "1"
 crc = "3.0.0"
 futures = { version = "0.3.25" }

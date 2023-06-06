@@ -254,7 +254,18 @@ fn config_from_args(args: Cli) -> Result<Config> {
         rpc_server_key: args.grpc_key_file,
         rpc_server_ca_cert: args.grpc_ca_cert_file,
         #[cfg(feature = "bottomless")]
-        enable_bottomless_replication: args.enable_bottomless_replication,
+        bottomless_replication: if args.enable_bottomless_replication {
+            Some(bottomless::replicator::Options {
+                create_bucket_if_not_exists: true,
+                verify_crc: false,
+                use_compression: false,
+                aws_endpoint: env::var("LIBSQL_BOTTOMLESS_ENDPOINT").ok(),
+                bucket_name: env::var("LIBSQL_BOTTOMLESS_BUCKET")
+                    .unwrap_or_else(|_| "bottomless".to_string()),
+            })
+        } else {
+            None
+        },
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
         load_from_dump: args.load_from_dump,
         max_log_size: args.max_log_size,

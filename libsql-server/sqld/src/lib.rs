@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::RecvTimeoutError;
 use std::sync::Arc;
@@ -42,6 +42,8 @@ mod query_result_builder;
 mod replication;
 pub mod rpc;
 mod stats;
+#[cfg(test)]
+mod test;
 mod utils;
 
 const MAX_CONCCURENT_DBS: usize = 128;
@@ -61,6 +63,7 @@ type Result<T, E = Error> = std::result::Result<T, E>;
 /// /!\ use with caution.
 pub(crate) static HARD_RESET: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
 
+#[derive(Debug, Clone)]
 pub struct Config {
     pub db_path: PathBuf,
     pub extensions_path: Option<PathBuf>,
@@ -82,7 +85,7 @@ pub struct Config {
     pub rpc_server_key: Option<PathBuf>,
     pub rpc_server_ca_cert: Option<PathBuf>,
     #[cfg(feature = "bottomless")]
-    pub enable_bottomless_replication: bool,
+    pub bottomless_replication: Option<bottomless::replicator::Options>,
     pub idle_shutdown_timeout: Option<Duration>,
     pub load_from_dump: Option<PathBuf>,
     pub max_log_size: u64,
@@ -93,6 +96,44 @@ pub struct Config {
     pub hard_heap_limit_mb: Option<usize>,
     pub allow_replica_overwrite: bool,
     pub max_response_size: u64,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            db_path: "data.sqld".into(),
+            extensions_path: None,
+            http_addr: Some(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8080)),
+            enable_http_console: false,
+            http_auth: None,
+            http_self_url: None,
+            hrana_addr: None,
+            auth_jwt_key: None,
+            backend: Backend::Libsql,
+            writer_rpc_addr: None,
+            writer_rpc_tls: false,
+            writer_rpc_cert: None,
+            writer_rpc_key: None,
+            writer_rpc_ca_cert: None,
+            rpc_server_addr: None,
+            rpc_server_tls: false,
+            rpc_server_cert: None,
+            rpc_server_key: None,
+            rpc_server_ca_cert: None,
+            #[cfg(feature = "bottomless")]
+            bottomless_replication: None,
+            idle_shutdown_timeout: None,
+            load_from_dump: None,
+            max_log_size: 200,
+            heartbeat_url: None,
+            heartbeat_auth: None,
+            heartbeat_period: Duration::from_secs(30),
+            soft_heap_limit_mb: None,
+            hard_heap_limit_mb: None,
+            allow_replica_overwrite: false,
+            max_response_size: 10 * 1024 * 1024, // 10MiB
+        }
+    }
 }
 
 async fn run_service<D: Database>(
@@ -340,15 +381,10 @@ fn validate_extensions(extensions_path: Option<PathBuf>) -> anyhow::Result<Vec<P
 #[cfg(feature = "bottomless")]
 pub async fn init_bottomless_replicator(
     path: impl AsRef<std::path::Path>,
+    options: bottomless::replicator::Options,
 ) -> anyhow::Result<bottomless::replicator::Replicator> {
     tracing::debug!("Initializing bottomless replication");
-    let mut replicator =
-        bottomless::replicator::Replicator::create(bottomless::replicator::Options {
-            create_bucket_if_not_exists: true,
-            verify_crc: false,
-            use_compression: false,
-        })
-        .await?;
+    let mut replicator = bottomless::replicator::Replicator::create(options).await?;
 
     // NOTICE: LIBSQL_BOTTOMLESS_DATABASE_ID env variable can be used
     // to pass an additional prefix for the database identifier
@@ -389,9 +425,9 @@ async fn start_primary(
     )?);
 
     #[cfg(feature = "bottomless")]
-    let bottomless_replicator = if config.enable_bottomless_replication {
+    let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
         Some(Arc::new(std::sync::Mutex::new(
-            init_bottomless_replicator(config.db_path.join("data")).await?,
+            init_bottomless_replicator(config.db_path.join("data"), options.clone()).await?,
         )))
     } else {
         None
@@ -507,7 +543,7 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
     tracing::trace!("Backend: {:?}", config.backend);
 
     #[cfg(feature = "bottomless")]
-    if config.enable_bottomless_replication {
+    if config.bottomless_replication.is_some() {
         bottomless::static_init::register_bottomless_methods();
     }
 
