@@ -41,12 +41,6 @@ static int sqlite3TestExtInit(sqlite3 *db){
 ** Forward declarations of external module initializer functions
 ** for modules that need them.
 */
-#ifdef SQLITE_ENABLE_FTS1
-int sqlite3Fts1Init(sqlite3*);
-#endif
-#ifdef SQLITE_ENABLE_FTS2
-int sqlite3Fts2Init(sqlite3*);
-#endif
 #ifdef SQLITE_ENABLE_FTS5
 int sqlite3Fts5Init(sqlite3*);
 #endif
@@ -59,12 +53,6 @@ int sqlite3StmtVtabInit(sqlite3*);
 ** built-in extensions.
 */
 static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
-#ifdef SQLITE_ENABLE_FTS1
-  sqlite3Fts1Init,
-#endif
-#ifdef SQLITE_ENABLE_FTS2
-  sqlite3Fts2Init,
-#endif
 #ifdef SQLITE_ENABLE_FTS3
   sqlite3Fts3Init,
 #endif

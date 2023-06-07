@@ -15,7 +15,7 @@
 ** The canonical source code to this file ("parse.y") is a Lemon grammar 
 ** file that specifies the input grammar and actions to take while parsing.
 ** That input file is processed by Lemon to generate a C-language 
-** implementation of a parser for the given grammer.  You might be reading
+** implementation of a parser for the given grammar.  You might be reading
 ** this comment as part of the translated C-code.  Edits should be made
 ** to the original parse.y sources.
 */
@@ -267,7 +267,7 @@ columnname(A) ::= nm(A) typetoken(Y). {sqlite3AddColumn(pParse,A,Y);}
 %wildcard ANY.
 
 // Define operator precedence early so that this is the first occurrence
-// of the operator tokens in the grammer.  Keeping the operators together
+// of the operator tokens in the grammar.  Keeping the operators together
 // causes them to be assigned integer values that are close together,
 // which keeps parser tables smaller.
 //

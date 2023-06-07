@@ -5021,7 +5021,7 @@ act_like_temp_file:
 
 /*
 ** Return the sqlite3_file for the main database given the name
-** of the corresonding WAL or Journal name as passed into
+** of the corresponding WAL or Journal name as passed into
 ** xOpen.
 */
 sqlite3_file *sqlite3_database_file_object(const char *zName){

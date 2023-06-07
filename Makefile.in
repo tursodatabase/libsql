@@ -1528,6 +1528,7 @@ clean:
 	rm -f fts5.* fts5parse.*
 	rm -f threadtest5
 	rm -f src-verify
+	rm -f custom.rws
 
 distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc \

@@ -2880,7 +2880,7 @@ static int whereLoopAddBtreeIndex(
   Index *pProbe,                  /* An index on pSrc */
   LogEst nInMul                   /* log(Number of iterations due to IN) */
 ){
-  WhereInfo *pWInfo = pBuilder->pWInfo;  /* WHERE analyse context */
+  WhereInfo *pWInfo = pBuilder->pWInfo;  /* WHERE analyze context */
   Parse *pParse = pWInfo->pParse;        /* Parsing context */
   sqlite3 *db = pParse->db;       /* Database connection malloc context */
   WhereLoop *pNew;                /* Template WhereLoop under construction */

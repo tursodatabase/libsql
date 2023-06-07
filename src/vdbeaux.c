@@ -1280,7 +1280,7 @@ void sqlite3VdbeJumpHereOrPopInst(Vdbe *p, int addr){
 
 /*
 ** If the input FuncDef structure is ephemeral, then free it.  If
-** the FuncDef is not ephermal, then do nothing.
+** the FuncDef is not ephemeral, then do nothing.
 */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef){
   assert( db!=0 );

@@ -869,7 +869,7 @@ static void codeOffset(
 **     The returned value in this case is a copy of parameter iTab.
 **
 **   WHERE_DISTINCT_ORDERED:
-**     In this case rows are being delivered sorted order. The ephermal
+**     In this case rows are being delivered sorted order. The ephemeral
 **     table is not required. Instead, the current set of values
 **     is compared against previous row. If they match, the new row
 **     is not distinct and control jumps to VM address addrRepeat. Otherwise,
@@ -4723,8 +4723,7 @@ static int flattenSubquery(
     }
   }
 
-  /* Finially, delete what is left of the subquery and return
-  ** success.
+  /* Finally, delete what is left of the subquery and return success.
   */
   sqlite3AggInfoPersistWalkerInit(&w, pParse);
   sqlite3WalkSelect(&w,pSub1);

@@ -9071,7 +9071,7 @@ static int btreeOverwriteContent(
 ){
   int nData = pX->nData - iOffset;
   if( nData<=0 ){
-    /* Overwritting with zeros */
+    /* Overwriting with zeros */
     int i;
     for(i=0; i<iAmt && pDest[i]==0; i++){}
     if( i<iAmt ){
@@ -9107,7 +9107,7 @@ static int btreeOverwriteContent(
 ** cell.
 */
 static SQLITE_NOINLINE int btreeOverwriteOverflowCell(
-  BtCursor *pCur,                     /* Cursor pointing to cell to ovewrite */
+  BtCursor *pCur,                     /* Cursor pointing to cell to overwrite */
   const BtreePayload *pX              /* Content to write into the cell */
 ){
   int iOffset;                        /* Next byte of pX->pData to write */

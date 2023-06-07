@@ -858,7 +858,7 @@ int sqlite3_like_count = 0;
 
 /*
 ** Implementation of the like() SQL function.  This function implements
-** the build-in LIKE operator.  The first argument to the function is the
+** the built-in LIKE operator.  The first argument to the function is the
 ** pattern and the second argument is the string.  So, the SQL statements:
 **
 **       A LIKE B
@@ -1244,7 +1244,7 @@ static int strContainsChar(const u8 *zStr, int nStr, u32 ch){
 ** decoded and returned as a blob.
 **
 ** If there is only a single argument, then it must consist only of an
-** even number of hexadeximal digits. Otherwise, return NULL.
+** even number of hexadecimal digits. Otherwise, return NULL.
 **
 ** Or, if there is a second argument, then any character that appears in
 ** the second argument is also allowed to appear between pairs of hexadecimal

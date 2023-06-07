@@ -2785,7 +2785,7 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 **   IN_INDEX_INDEX_ASC  - The cursor was opened on an ascending index.
 **   IN_INDEX_INDEX_DESC - The cursor was opened on a descending index.
 **   IN_INDEX_EPH        - The cursor was opened on a specially created and
-**                         populated epheremal table.
+**                         populated ephemeral table.
 **   IN_INDEX_NOOP       - No cursor was allocated.  The IN operator must be
 **                         implemented as a sequence of comparisons.
 **
@@ -2810,12 +2810,12 @@ static int sqlite3InRhsIsConstant(Expr *pIn){
 **
 ** When IN_INDEX_LOOP is used (and the b-tree will be used to iterate
 ** through the set members) then the b-tree must not contain duplicates.
-** An epheremal table will be created unless the selected columns are guaranteed
+** An ephemeral table will be created unless the selected columns are guaranteed
 ** to be unique - either because it is an INTEGER PRIMARY KEY or due to
 ** a UNIQUE constraint or index.
 **
 ** When IN_INDEX_MEMBERSHIP is used (and the b-tree will be used
-** for fast set membership tests) then an epheremal table must
+** for fast set membership tests) then an ephemeral table must
 ** be used unless <columns> is a single INTEGER PRIMARY KEY column or an
 ** index can be found with the specified <columns> as its left-most.
 **
@@ -4307,7 +4307,7 @@ expr_code_doover:
       if( ExprHasProperty(pExpr, EP_FixedCol) ){
         /* This COLUMN expression is really a constant due to WHERE clause
         ** constraints, and that constant is coded by the pExpr->pLeft
-        ** expresssion.  However, make sure the constant has the correct
+        ** expression.  However, make sure the constant has the correct
         ** datatype by applying the Affinity of the table column to the
         ** constant.
         */
@@ -5991,7 +5991,7 @@ int sqlite3ExprImpliesExpr(
   return 0;
 }
 
-/* This is a helper functino to impliesNotNullRow().  In this routine,
+/* This is a helper function to impliesNotNullRow().  In this routine,
 ** set pWalker->eCode to one only if *both* of the input expressions
 ** separately have the implies-not-null-row property.
 */

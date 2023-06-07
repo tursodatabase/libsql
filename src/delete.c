@@ -268,7 +268,7 @@ Expr *sqlite3LimitWhere(
       pOrderBy,0,pLimit
   );
 
-  /* now generate the new WHERE rowid IN clause for the DELETE/UDPATE */
+  /* now generate the new WHERE rowid IN clause for the DELETE/UPDATE */
   pInClause = sqlite3PExpr(pParse, TK_IN, pLhs, 0);
   sqlite3PExprAddSelect(pParse, pInClause, pSelect);
   return pInClause;

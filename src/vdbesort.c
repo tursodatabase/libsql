@@ -85,7 +85,7 @@
 ** The threshold for the amount of main memory to use before flushing
 ** records to a PMA is roughly the same as the limit configured for the
 ** page-cache of the main database. Specifically, the threshold is set to
-** the value returned by "PRAGMA main.page_size" multipled by
+** the value returned by "PRAGMA main.page_size" multiplied by
 ** that returned by "PRAGMA main.cache_size", in bytes.
 **
 ** If the sorter is running in single-threaded mode, then all PMAs generated

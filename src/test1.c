@@ -3459,10 +3459,10 @@ bad_args:
 /*
 ** Usage:         sqlite3_test_errstr <err code>
 **
-** Test that the english language string equivalents for sqlite error codes
+** Test that the English language string equivalents for sqlite error codes
 ** are sane. The parameter is an integer representing an sqlite error code.
 ** The result is a list of two elements, the string representation of the
-** error code and the english language explanation.
+** error code and the English language explanation.
 */
 static int SQLITE_TCLAPI test_errstr(
   void * clientData,

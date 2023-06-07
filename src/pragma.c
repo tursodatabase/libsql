@@ -1632,7 +1632,7 @@ void sqlite3Pragma(
   ** The "quick_check" is reduced version of
   ** integrity_check designed to detect most database corruption
   ** without the overhead of cross-checking indexes.  Quick_check
-  ** is linear time wherease integrity_check is O(NlogN).
+  ** is linear time whereas integrity_check is O(NlogN).
   **
   ** The maximum number of errors is 100 by default.  A different default
   ** can be specified using a numeric parameter N.

@@ -1574,7 +1574,7 @@ struct WindowCsrAndReg {
 **
 **     (ORDER BY a, b GROUPS BETWEEN 2 PRECEDING AND 2 FOLLOWING)
 **
-**   The windows functions implmentation caches the input rows in a temp
+**   The windows functions implementation caches the input rows in a temp
 **   table, sorted by "a, b" (it actually populates the cache lazily, and
 **   aggressively removes rows once they are no longer required, but that's
 **   a mere detail). It keeps three cursors open on the temp table. One

@@ -2082,7 +2082,7 @@ static int identLength(const char *z){
 ** to the specified offset in the buffer and updates *pIdx to refer
 ** to the first byte after the last byte written before returning.
 **
-** If the string zSignedIdent consists entirely of alpha-numeric
+** If the string zSignedIdent consists entirely of alphanumeric
 ** characters, does not begin with a digit and is not an SQL keyword,
 ** then it is copied to the output buffer exactly as it is. Otherwise,
 ** it is quoted using double-quotes.

@@ -151,7 +151,7 @@
 ** NULL if there are no frames for page P in the WAL prior to M.
 **
 ** The wal-index consists of a header region, followed by an one or
-** more index blocks. 
+** more index blocks.
 **
 ** The wal-index header contains the total number of frames within the WAL
 ** in the mxFrame field.
@@ -241,7 +241,7 @@
 ** if no values greater than K0 had ever been inserted into the hash table
 ** in the first place - which is what reader one wants.  Meanwhile, the
 ** second reader using K1 will see additional values that were inserted
-** later, which is exactly what reader two wants. 
+** later, which is exactly what reader two wants.
 **
 ** When a rollback occurs, the value of K is decreased. Hash table entries
 ** that correspond to frames greater than the new K value are removed
@@ -316,7 +316,7 @@ typedef struct WalCkptInfo WalCkptInfo;
 **
 ** The szPage value can be any power of 2 between 512 and 32768, inclusive.
 ** Or it can be 1 to represent a 65536-byte page.  The latter case was
-** added in 3.7.1 when support for 64K pages was added. 
+** added in 3.7.1 when support for 64K pages was added.
 */
 struct WalIndexHdr {
   u32 iVersion;                   /* Wal-index version */
@@ -543,7 +543,7 @@ struct Wal {
 ** Candidate values for Wal.exclusiveMode.
 */
 #define WAL_NORMAL_MODE     0
-#define WAL_EXCLUSIVE_MODE  1    
+#define WAL_EXCLUSIVE_MODE  1
 #define WAL_HEAPMEMORY_MODE 2
 
 /*
@@ -941,7 +941,7 @@ static const char *walLockName(int lockIdx){
   }
 }
 #endif /*defined(SQLITE_TEST) || defined(SQLITE_DEBUG) */
-   
+
 
 /*
 ** Set or release locks on the WAL.  Locks are either shared or exclusive.
@@ -1121,7 +1121,7 @@ static void walCleanupHash(Wal *pWal){
       sLoc.aHash[i] = 0;
     }
   }
- 
+
   /* Zero the entries in the aPgno array that correspond to frames with
   ** frame numbers greater than pWal->hdr.mxFrame.
   */
@@ -1167,7 +1167,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
 
     idx = iFrame - sLoc.iZero;
     assert( idx <= HASHTABLE_NSLOT/2 + 1 );
-   
+
     /* If this is the first entry to be added to this hash-table, zero the
     ** entire hash table and aPgno[] array before proceeding.
     */
@@ -1349,7 +1349,7 @@ static int walIndexRecover(Wal *pWal){
       assert( aShare!=0 || rc!=SQLITE_OK );
       if( aShare==0 ) break;
       pWal->apWiData[iPg] = aPrivate;
-     
+
       for(iFrame=iFirst; iFrame<=iLast; iFrame++){
         i64 iOffset = walFrameOffset(iFrame, szPage);
         u32 pgno;                 /* Database page number for frame */
@@ -1851,7 +1851,7 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
       }
       aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[sLoc.iZero];
       sLoc.iZero++;
- 
+
       for(j=0; j<nEntry; j++){
         aIndex[j] = (ht_slot)j;
       }
@@ -2045,7 +2045,7 @@ static void walRestartHdr(Wal *pWal, u32 salt1){
 ** database file.
 **
 ** This routine uses and updates the nBackfill field of the wal-index header.
-** This is the only routine that will increase the value of nBackfill. 
+** This is the only routine that will increase the value of nBackfill.
 ** (A WAL reset or recovery will revert nBackfill to zero, but not increase
 ** its value.)
 **
@@ -2358,7 +2358,7 @@ static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** give false-positive warnings about these accesses because the tools do not
   ** account for the double-read and the memory barrier. The use of mutexes
   ** here would be problematic as the memory being accessed is potentially
-  ** shared among multiple processes and not all mutex implementions work
+  ** shared among multiple processes and not all mutex implementations work
   ** reliably in that environment.
   */
   aHdr = walIndexHdr(pWal);
@@ -2368,7 +2368,7 @@ static SQLITE_NO_TSAN int walIndexTryHdr(Wal *pWal, int *pChanged){
 
   if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
     return 1;   /* Dirty read */
-  } 
+  }
   if( h1.isInit==0 ){
     return 1;   /* Malformed header - probably all zeros */
   }
@@ -3373,7 +3373,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   if( ALWAYS(pWal->writeLock) ){
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
- 
+
     /* Restore the clients cache of the wal-index header to the state it
     ** was in before the client began writing to the database.
     */
@@ -3685,7 +3685,7 @@ int sqlite3WalFrames(
     walChecksumBytes(1, aWalHdr, WAL_HDRSIZE-2*4, 0, aCksum);
     sqlite3Put4byte(&aWalHdr[24], aCksum[0]);
     sqlite3Put4byte(&aWalHdr[28], aCksum[1]);
-   
+
     pWal->szPage = szPage;
     pWal->hdr.bigEndCksum = SQLITE_BIGENDIAN;
     pWal->hdr.aFrameCksum[0] = aCksum[0];
