@@ -2736,7 +2736,7 @@ static int SQLITE_TCLAPI test_atomic_batch_write(
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
-** Return the next statment in sequence after STMT.
+** Return the next statement in sequence after STMT.
 */
 static int SQLITE_TCLAPI test_next_stmt(
   void * clientData,
@@ -6115,7 +6115,7 @@ static int SQLITE_TCLAPI vfs_unlink_test(
   assert( sqlite3_vfs_find("__two")==&two );
 
   /* Calling sqlite_vfs_register with non-zero second parameter changes the
-  ** default VFS, even if the 1st parameter is an existig VFS that is
+  ** default VFS, even if the 1st parameter is an existing VFS that is
   ** previously registered as the non-default.
   */
   sqlite3_vfs_register(&one, 1);

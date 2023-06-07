@@ -25,20 +25,20 @@
 **                                  used on lines of code that actually
 **                                  implement parts of coverage testing.
 **
-**    OPTIMIZATION-IF-TRUE        - This branch is allowed to alway be false
+**    OPTIMIZATION-IF-TRUE        - This branch is allowed to always be false
 **                                  and the correct answer is still obtained,
 **                                  though perhaps more slowly.
 **
-**    OPTIMIZATION-IF-FALSE       - This branch is allowed to alway be true
+**    OPTIMIZATION-IF-FALSE       - This branch is allowed to always be true
 **                                  and the correct answer is still obtained,
 **                                  though perhaps more slowly.
 **
 **    PREVENTS-HARMLESS-OVERREAD  - This branch prevents a buffer overread
 **                                  that would be harmless and undetectable
-**                                  if it did occur.  
+**                                  if it did occur.
 **
 ** In all cases, the special comment must be enclosed in the usual
-** slash-asterisk...asterisk-slash comment marks, with no spaces between the 
+** slash-asterisk...asterisk-slash comment marks, with no spaces between the
 ** asterisks and the comment text.
 */
 
@@ -182,7 +182,7 @@
 #endif
 
 /* Optionally #include a user-defined header, whereby compilation options
-** may be set prior to where they take effect, but after platform setup. 
+** may be set prior to where they take effect, but after platform setup.
 ** If SQLITE_CUSTOM_INCLUDE=? is defined, its value names the #include
 ** file.
 */
@@ -230,7 +230,7 @@
 #ifndef __has_extension
 # define __has_extension(x) 0     /* compatibility with non-clang compilers */
 #endif
-#if GCC_VERSION>=4007000 || __has_extension(c_atomic) 
+#if GCC_VERSION>=4007000 || __has_extension(c_atomic)
 # define SQLITE_ATOMIC_INTRINSICS 1
 # define AtomicLoad(PTR)       __atomic_load_n((PTR),__ATOMIC_RELAXED)
 # define AtomicStore(PTR,VAL)  __atomic_store_n((PTR),(VAL),__ATOMIC_RELAXED)
@@ -722,7 +722,7 @@
 #endif
 
 /*
-** The compile-time options SQLITE_MMAP_READWRITE and 
+** The compile-time options SQLITE_MMAP_READWRITE and
 ** SQLITE_ENABLE_BATCH_ATOMIC_WRITE are not compatible with one another.
 ** You must choose one or the other (or neither) but not both.
 */
@@ -1124,7 +1124,7 @@ struct BusyHandler {
 /*
 ** Name of table that holds the database schema.
 **
-** The PREFERRED names are used whereever possible.  But LEGACY is also
+** The PREFERRED names are used wherever possible.  But LEGACY is also
 ** used for backwards compatibility.
 **
 **  1.  Queries can use either the PREFERRED or the LEGACY names
@@ -1342,7 +1342,7 @@ typedef int VList;
 /*
 ** Default synchronous levels.
 **
-** Note that (for historcal reasons) the PAGER_SYNCHRONOUS_* macros differ
+** Note that (for historical reasons) the PAGER_SYNCHRONOUS_* macros differ
 ** from the SQLITE_DEFAULT_SYNCHRONOUS value by 1.
 **
 **           PAGER_SYNCHRONOUS       DEFAULT_SYNCHRONOUS
@@ -1381,7 +1381,7 @@ struct Db {
 ** An instance of the following structure stores a database schema.
 **
 ** Most Schema objects are associated with a Btree.  The exception is
-** the Schema for the TEMP databaes (sqlite3.aDb[1]) which is free-standing.
+** the Schema for the TEMP database (sqlite3.aDb[1]) which is free-standing.
 ** In shared cache mode, a single Schema object can be shared by multiple
 ** Btrees that refer to the same underlying BtShared object.
 **
@@ -1492,7 +1492,7 @@ struct Lookaside {
   LookasideSlot *pInit;   /* List of buffers not previously used */
   LookasideSlot *pFree;   /* List of available buffers */
 #ifndef SQLITE_OMIT_TWOSIZE_LOOKASIDE
-  LookasideSlot *pSmallInit; /* List of small buffers not prediously used */
+  LookasideSlot *pSmallInit; /* List of small buffers not previously used */
   LookasideSlot *pSmallFree; /* List of available small buffers */
   void *pMiddle;          /* First byte past end of full-size buffers and
                           ** the first byte of LOOKASIDE_SMALL buffers */
@@ -1509,7 +1509,7 @@ struct LookasideSlot {
 #define EnableLookaside   db->lookaside.bDisable--;\
    db->lookaside.sz=db->lookaside.bDisable?0:db->lookaside.szTrue
 
-/* Size of the smaller allocations in two-size lookside */
+/* Size of the smaller allocations in two-size lookaside */
 #ifdef SQLITE_OMIT_TWOSIZE_LOOKASIDE
 #  define LOOKASIDE_SMALL           0
 #else
@@ -1937,7 +1937,7 @@ struct FuncDestructor {
 **
 ** Note that even though SQLITE_FUNC_UNSAFE and SQLITE_INNOCUOUS have the
 ** same bit value, their meanings are inverted.  SQLITE_FUNC_UNSAFE is
-** used internally and if set means tha the function has side effects.
+** used internally and if set means that the function has side effects.
 ** SQLITE_INNOCUOUS is used by application code and means "not unsafe".
 ** See multiple instances of tag-20230109-1.
 */
@@ -1970,7 +1970,7 @@ struct FuncDestructor {
 #define INLINEFUNC_coalesce             0
 #define INLINEFUNC_implies_nonnull_row  1
 #define INLINEFUNC_expr_implies_expr    2
-#define INLINEFUNC_expr_compare         3      
+#define INLINEFUNC_expr_compare         3
 #define INLINEFUNC_affinity             4
 #define INLINEFUNC_iif                  5
 #define INLINEFUNC_sqlite_offset        6
@@ -2019,7 +2019,7 @@ struct FuncDestructor {
 **   PURE_DATE(zName, nArg, iArg, bNC, xFunc)
 **     Used for "pure" date/time functions, this macro is like DFUNCTION
 **     except that it does set the SQLITE_FUNC_CONSTANT flags.  iArg is
-**     ignored and the user-data for these functions is set to an 
+**     ignored and the user-data for these functions is set to an
 **     arbitrary non-NULL pointer.  The bNC parameter is not used.
 **
 **   AGGREGATE(zName, nArg, iArg, bNC, xStep, xFinal)
@@ -2527,7 +2527,7 @@ struct FKey {
 ** foreign key.
 **
 ** The OE_Default value is a place holder that means to use whatever
-** conflict resolution algorthm is required from context.
+** conflict resolution algorithm is required from context.
 **
 ** The following symbolic values are used to record which type
 ** of conflict resolution action to take.
@@ -2814,7 +2814,7 @@ struct AggInfo {
 /*
 ** Macros to compute aCol[] and aFunc[] register numbers.
 **
-** These macros should not be used prior to the call to 
+** These macros should not be used prior to the call to
 ** assignAggregateRegisters() that computes the value of pAggInfo->iFirstReg.
 ** The assert()s that are part of this macro verify that constraint.
 */
@@ -2941,7 +2941,7 @@ struct Expr {
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old
                          ** EP_Unlikely:  134217728 times likelihood
-                         ** TK_IN: ephemerial table holding RHS
+                         ** TK_IN: ephemeral table holding RHS
                          ** TK_SELECT_COLUMN: Number of columns on the LHS
                          ** TK_SELECT: 1st register of result vector */
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
@@ -3211,7 +3211,7 @@ struct SrcItem {
     unsigned notCte :1;        /* This item may not match a CTE */
     unsigned isUsing :1;       /* u3.pUsing is valid */
     unsigned isOn :1;          /* u3.pOn was once valid and non-NULL */
-    unsigned isSynthUsing :1;  /* u3.pUsing is synthensized from NATURAL */
+    unsigned isSynthUsing :1;  /* u3.pUsing is synthesized from NATURAL */
     unsigned isNestedFrom :1;  /* pSelect is a SF_NestedFrom subquery */
   } fg;
   int iCursor;      /* The VDBE cursor number used to access this table */
@@ -3376,7 +3376,7 @@ struct NameContext {
 ** conflict-target clause.)  The pUpsertTargetWhere is the optional
 ** WHERE clause used to identify partial unique indexes.
 **
-** pUpsertSet is the list of column=expr terms of the UPDATE statement. 
+** pUpsertSet is the list of column=expr terms of the UPDATE statement.
 ** The pUpsertSet field is NULL for a ON CONFLICT DO NOTHING.  The
 ** pUpsertWhere is the WHERE clause for the UPDATE and is NULL if the
 ** WHERE clause is omitted.
@@ -3897,7 +3897,7 @@ struct AuthContext {
 #define OPFLAG_SAVEPOSITION  0x02    /* OP_Delete/Insert: save cursor pos */
 #define OPFLAG_AUXDELETE     0x04    /* OP_Delete: index in a DELETE op */
 #define OPFLAG_NOCHNG_MAGIC  0x6d    /* OP_MakeRecord: serialtype 10 is ok */
-#define OPFLAG_PREFORMAT     0x80    /* OP_Insert uses preformatted cell */ 
+#define OPFLAG_PREFORMAT     0x80    /* OP_Insert uses preformatted cell */
 
 /*
 ** Each trigger present in the database schema is stored as an instance of
@@ -4057,7 +4057,7 @@ typedef struct {
 /* Tuning parameters are set using SQLITE_TESTCTRL_TUNE and are controlled
 ** on debug-builds of the CLI using ".testctrl tune ID VALUE".  Tuning
 ** parameters are for temporary use during development, to help find
-** optimial values for parameters in the query planner.  The should not
+** optimal values for parameters in the query planner.  The should not
 ** be used on trunk check-ins.  They are a temporary mechanism available
 ** for transient development builds only.
 **
@@ -5228,10 +5228,10 @@ int sqlite3KeyInfoIsWriteable(KeyInfo*);
 #endif
 int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *,
   void (*)(sqlite3_context*,int,sqlite3_value **),
-  void (*)(sqlite3_context*,int,sqlite3_value **), 
+  void (*)(sqlite3_context*,int,sqlite3_value **),
   void (*)(sqlite3_context*),
   void (*)(sqlite3_context*),
-  void (*)(sqlite3_context*,int,sqlite3_value **), 
+  void (*)(sqlite3_context*,int,sqlite3_value **),
   FuncDestructor *pDestructor
 );
 void sqlite3NoopDestructor(void*);

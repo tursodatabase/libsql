@@ -149,7 +149,7 @@ struct VdbeCursor {
 ** When a sub-program is executed (OP_Program), a structure of this type
 ** is allocated to store the current value of the program counter, as
 ** well as the current memory cell array and various other frame specific
-** values stored in the Vdbe struct. When the sub-program is finished, 
+** values stored in the Vdbe struct. When the sub-program is finished,
 ** these values are copied back to the Vdbe from the VdbeFrame structure,
 ** restoring the state of the VM to as it was before the sub-program
 ** began executing.
@@ -263,7 +263,7 @@ struct sqlite3_value {
 **
 **  *  MEM_Blob|MEM_Zero       A blob in Mem.z of length Mem.n plus
 **                             MEM.u.i extra 0x00 bytes at the end.
-**                                       
+**
 **  *  MEM_Int                 Integer stored in Mem.u.i.
 **
 **  *  MEM_Real                Real stored in Mem.u.r.
@@ -277,7 +277,7 @@ struct sqlite3_value {
 ** If the MEM_Str flag is set then Mem.z points at a string representation.
 ** Usually this is encoded in the same unicode encoding as the main
 ** database (see below for exceptions). If the MEM_Term flag is also
-** set, then the string is nul terminated. The MEM_Int and MEM_Real 
+** set, then the string is nul terminated. The MEM_Int and MEM_Real
 ** flags may coexist with the MEM_Str flag.
 */
 #define MEM_Undefined 0x0000   /* Value is undefined */
@@ -330,7 +330,7 @@ struct sqlite3_value {
 ** Return true if a memory cell has been initialized and is valid.
 ** is for use inside assert() statements only.
 **
-** A Memory cell is initialized if at least one of the 
+** A Memory cell is initialized if at least one of the
 ** MEM_Null, MEM_Str, MEM_Int, MEM_Real, MEM_Blob, or MEM_IntReal bits
 ** is set.  It is "undefined" if all those bits are zero.
 */
@@ -339,7 +339,7 @@ struct sqlite3_value {
 #endif
 
 /*
-** Each auxiliary data pointer stored by a user defined function 
+** Each auxiliary data pointer stored by a user defined function
 ** implementation calling sqlite3_set_auxdata() is stored in an instance
 ** of this structure. All such structures associated with a single VM
 ** are stored in a linked list headed at Vdbe.pAuxData. All are destroyed
@@ -388,7 +388,7 @@ typedef unsigned bft;  /* Bit Field Type */
 ** sqlite3_stmt_scanstatus() interface.
 **
 ** aAddrRange[]:
-**   This array is used by ScanStatus elements associated with EQP 
+**   This array is used by ScanStatus elements associated with EQP
 **   notes that make an SQLITE_SCANSTAT_NCYCLE value available. It is
 **   an array of up to 3 ranges of VM addresses for which the Vdbe.anCycle[]
 **   values should be summed to calculate the NCYCLE value. Each pair of
@@ -505,7 +505,7 @@ struct Vdbe {
 #define VDBE_HALT_STATE     3   /* Finished.  Need reset() or finalize() */
 
 /*
-** Structure used to store the context required by the 
+** Structure used to store the context required by the
 ** sqlite3_preupdate_*() API functions.
 */
 struct PreUpdate {
@@ -521,7 +521,7 @@ struct PreUpdate {
   i64 iKey1;                      /* First key value passed to hook */
   i64 iKey2;                      /* Second key value passed to hook */
   Mem *aNew;                      /* Array of new.* values */
-  Table *pTab;                    /* Schema object being upated */          
+  Table *pTab;                    /* Schema object being updated */
   Index *pPk;                     /* PK index if pTab is WITHOUT ROWID */
 };
 
@@ -667,7 +667,7 @@ void sqlite3VdbeValueListFree(void*);
 # define sqlite3VdbeAssertAbortable(V)
 #endif
 
-#if !defined(SQLITE_OMIT_SHARED_CACHE) 
+#if !defined(SQLITE_OMIT_SHARED_CACHE)
   void sqlite3VdbeEnter(Vdbe*);
 #else
 # define sqlite3VdbeEnter(X)

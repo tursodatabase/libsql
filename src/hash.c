@@ -97,7 +97,7 @@ static void insertElement(
 }
 
 
-/* Resize the hash table so that it cantains "new_size" buckets.
+/* Resize the hash table so that it contains "new_size" buckets.
 **
 ** The hash table might fail to resize if sqlite3_malloc() fails or
 ** if the new size is the same as the prior size.

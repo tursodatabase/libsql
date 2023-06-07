@@ -608,7 +608,7 @@ void sqlite3ParseObjectReset(Parse *pParse){
 ** immediately.
 **
 ** Use this mechanism for uncommon cleanups.  There is a higher setup
-** cost for this mechansim (an extra malloc), so it should not be used
+** cost for this mechanism (an extra malloc), so it should not be used
 ** for common cleanups that happen on most calls.  But for less
 ** common cleanups, we save a single NULL-pointer comparison in
 ** sqlite3ParseObjectReset(), which reduces the total CPU cycle count.

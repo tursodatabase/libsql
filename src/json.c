@@ -628,7 +628,7 @@ static void jsonRenderNode(
 }
 
 /*
-** Return a JsonNode and all its descendents as a JSON string.
+** Return a JsonNode and all its descendants as a JSON string.
 */
 static void jsonReturnJson(
   JsonNode *pNode,            /* Node to return */

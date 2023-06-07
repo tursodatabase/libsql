@@ -271,7 +271,7 @@ static int numberOfCachePages(PCache *p){
     return p->szCache;
   }else{
     i64 n;
-    /* IMPLEMANTATION-OF: R-59858-46238 If the argument N is negative, then the
+    /* IMPLEMENTATION-OF: R-59858-46238 If the argument N is negative, then the
     ** number of cache pages is adjusted to be a number of pages that would
     ** use approximately abs(N*1024) bytes of memory based on the current
     ** page size. */
@@ -759,7 +759,7 @@ static PgHdr *pcacheMergeDirtyList(PgHdr *pA, PgHdr *pB){
 }
 
 /*
-** Sort the list of pages in accending order by pgno.  Pages are
+** Sort the list of pages in ascending order by pgno.  Pages are
 ** connected by pDirty pointers.  The pDirtyPrev pointers are
 ** corrupted by this sort.
 **

@@ -29,7 +29,7 @@ typedef struct echo_cursor echo_cursor;
 
 /*
 ** The test module defined in this file uses four global Tcl variables to
-** commicate with test-scripts:
+** communicate with test-scripts:
 **
 **     $::echo_module
 **     $::echo_module_sync_fail
