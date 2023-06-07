@@ -1,5 +1,5 @@
-C Remove\sunused,\slegacy\sshell\sscript\s"mkso.sh"\sfrom\sthe\sroot\sof\sthe\srepo.
-D 2023-06-07T14:47:29.936
+C Remove\sadditional\straces\sof\sFTS1\sand\sFTS2\sthat\swere\smissed\sby\s[2bb50d5aedef0fd2]
+D 2023-06-07T15:00:54.470
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -599,7 +599,7 @@ F src/insert.c a8de1db43335fc4946370a7a7e47d89975ad678ddb15078a150e993ba2fb37d4
 F src/json.c 39b1c7527f3111923e65f168a87b03b591f12a41400a63d05c119794bee36620
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
-F src/main.c 8024bdacd452fc114e34a6bc9d75d1b33ac64c40222d2aa82d3edd1a1a58f976
+F src/main.c fc470d4e05d31a5f7e76127bf72ce08e5e0101ddc5bc4d70191f020a949225f8
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c12a42539b1ba105e3707d0e628ad70e611040d8f5e38cf942cee30c867083de
@@ -660,7 +660,7 @@ F src/test_backup.c bf5da90c9926df0a4b941f2d92825a01bbe090a0
 F src/test_bestindex.c 68c62586d2ae9f032903fe53be743657d0c2aac0a850b880938b668e1161d516
 F src/test_blob.c ae4a0620b478548afb67963095a7417cd06a4ec0a56adb453542203bfdcb31ce
 F src/test_btree.c 8b2dc8b8848cf3a4db93f11578f075e82252a274
-F src/test_config.c 8264637b06a3c1f0727c88d1ea32dcf7986b9e7e358a970cae87cdac8a5b2708
+F src/test_config.c f0cc1f517deaa96dd384822ae2bb91534fa56aa458528b439830d709941d3932
 F src/test_delete.c e2fe07646dff6300b48d49b2fee2fe192ed389e834dd635e3b3bac0ce0bf9f8f
 F src/test_demovfs.c 38a459d1c78fd9afa770445b224c485e079018d6ac07332ff9bd07b54d2b8ce9
 F src/test_devsym.c aff2255ea290d7718da08af30cdf18e470ff7325a5eff63e0057b1496ed66593
@@ -1014,40 +1014,6 @@ F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
-F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
-F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
-F test/fts1c.test 85a525ce7428907469b4cce13d5563ce542ce64c
-F test/fts1d.test a73deace5c18df4a549b12908bade4f05dcf1a2f
-F test/fts1e.test 77244843e925560b5a0b70069c3e7ab62f181ed2
-F test/fts1f.test 2d6cb10d8b7a4e6edc321bbdb3982f1f48774714
-F test/fts1i.test 6bfe08cdfdced063a39a50c8601da65e6274d879
-F test/fts1j.test e3797475796043a161e348c46a309664cac83f7f
-F test/fts1k.test 65d3b41487b9f738d11b0f00eca375c0ca6bd970
-F test/fts1l.test 15c119ed2362b2b28d5300c0540a6a43eab66c36
-F test/fts1m.test 2d9ca67b095d49f037a914087cc0a61e89da4f0c
-F test/fts1n.test a2317dcd27b1d087ee3878b30e0a59c593c98b7a
-F test/fts1o.test d1554caede42bba2c82fe613bcc921856c196b752449ead0470fac52a20fd3b8
-F test/fts1porter.test d86e9c3e0c7f8ff95add6582b4b585fb4e02b96d
-F test/fts2.test e3fb95f96a650411574efc136f3fb10eef479ed7
-F test/fts2a.test 473a5c8b473a4e21a8e3fddaed1e59666e0c6ab7
-F test/fts2b.test 964abc0236c849c07ca1ae496bb25c268ae94816
-F test/fts2c.test ffb5a35230ac72c4354535c547965ce6824537c0
-F test/fts2d.test b7eaa671ca9a16997f3e5b158ee777ae21052b0b
-F test/fts2e.test 2da13dbc2d009105f42196845c1e1ce136c03d38
-F test/fts2f.test cf84096235991709c1e61caa389632aa0a4f976d
-F test/fts2g.test 3d26fe171bda6133ebf5a380731d70eaa2ef2f6f73d79769cf8946e622b6d597
-F test/fts2h.test 223af921323b409d4b5b18ff4e51619541b174bb
-F test/fts2i.test 1b22451d1f13f7c509baec620dc3a4a754885dd6
-F test/fts2j.test 298fa1670aa21cd445b282d139b70c72e7ade12b
-F test/fts2k.test c7ebf4a4937594aa07459e3e1bca1251c1be8659
-F test/fts2l.test 3333336621524cf7d60bb62d6ef6ab69647866ed
-F test/fts2m.test 4b30142ead6f3ed076e880a2a464064c5ad58c51
-F test/fts2n.test 12b9c5352128cebd1c6b8395e43788d4b09087c2
-F test/fts2o.test 4054ac7433eb5440f1b1d200cfa449342dc4aabd991759139813e17c73e5bf9a
-F test/fts2p.test 4b48c35c91e6a7dbf5ac8d1e5691823cc999aafb
-F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
-F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
-F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
 F test/fts3_common.tcl dffad248f9ce090800e272017d2898005c28ee6314fc1dd5550643a02666907a
 F test/fts3aa.test 814d60a1ba30b4a71d8f9306a6564bc7b636dd6efacd2ad80306f9b23ef3ebee
@@ -2072,8 +2038,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2d58c77448cfaaf12887b60bcfea039d3410a750ac8955a817c45be85c00eb9e
-R 7a2285e0d448f6afe90657dde8f7aa5e
+P 57f75e48690bdeb9b6bb3f46eee39021e3eb8cc0c488d2584177baa11ac984e5
+R 8c49a17aac51846f7845b86202ebf5a3
 U drh
-Z a3a9583ae8f7029fe7489a9e17318767
+Z 964a3bf027f7a3b198b82aa573575b71
 # Remove this line to create a well-formed Fossil manifest.
