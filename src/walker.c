@@ -220,7 +220,7 @@ int sqlite3WalkSelect(Walker *pWalker, Select *p){
 }
 
 /* Increase the walkerDepth when entering a subquery, and
-** descrease when leaving the subquery.
+** decrease when leaving the subquery.
 */
 int sqlite3WalkerDepthIncrease(Walker *pWalker, Select *pSelect){
   UNUSED_PARAMETER(pSelect);

@@ -2736,7 +2736,7 @@ static int SQLITE_TCLAPI test_atomic_batch_write(
 /*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
-** Return the next statment in sequence after STMT.
+** Return the next statement in sequence after STMT.
 */
 static int SQLITE_TCLAPI test_next_stmt(
   void * clientData,
@@ -3459,10 +3459,10 @@ bad_args:
 /*
 ** Usage:         sqlite3_test_errstr <err code>
 **
-** Test that the english language string equivalents for sqlite error codes
+** Test that the English language string equivalents for sqlite error codes
 ** are sane. The parameter is an integer representing an sqlite error code.
 ** The result is a list of two elements, the string representation of the
-** error code and the english language explanation.
+** error code and the English language explanation.
 */
 static int SQLITE_TCLAPI test_errstr(
   void * clientData,
@@ -6115,7 +6115,7 @@ static int SQLITE_TCLAPI vfs_unlink_test(
   assert( sqlite3_vfs_find("__two")==&two );
 
   /* Calling sqlite_vfs_register with non-zero second parameter changes the
-  ** default VFS, even if the 1st parameter is an existig VFS that is
+  ** default VFS, even if the 1st parameter is an existing VFS that is
   ** previously registered as the non-default.
   */
   sqlite3_vfs_register(&one, 1);

@@ -38,12 +38,12 @@ static struct Wrapped {
   sqlite3_mem_methods     mem;
   sqlite3_mutex_methods   mutex;
 
-  int mem_init;                /* True if mem subsystem is initalized */
-  int mem_fail;                /* True to fail mem subsystem inialization */
-  int mutex_init;              /* True if mutex subsystem is initalized */
-  int mutex_fail;              /* True to fail mutex subsystem inialization */
-  int pcache_init;             /* True if pcache subsystem is initalized */
-  int pcache_fail;             /* True to fail pcache subsystem inialization */
+  int mem_init;              /* True if mem subsystem is initialized */
+  int mem_fail;              /* True to fail mem subsystem initialization */
+  int mutex_init;            /* True if mutex subsystem is initialized */
+  int mutex_fail;            /* True to fail mutex subsystem initialization */
+  int pcache_init;           /* True if pcache subsystem is initialized */
+  int pcache_fail;           /* True to fail pcache subsystem initialization */
 } wrapped;
 
 static int wrMemInit(void *pAppData){

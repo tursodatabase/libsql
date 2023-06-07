@@ -1238,7 +1238,7 @@ static void dateFunc(
 **   %M  minute 00-59
 **   %s  seconds since 1970-01-01
 **   %S  seconds 00-59
-**   %w  day of week 0-6  sunday==0
+**   %w  day of week 0-6  Sunday==0
 **   %W  week of year 00-53
 **   %Y  year 0000-9999
 **   %%  %

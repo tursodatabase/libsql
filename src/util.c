@@ -23,8 +23,8 @@
 
 /*
 ** Calls to sqlite3FaultSim() are used to simulate a failure during testing,
-** or to bypass normal error detection during testing in order to let 
-** execute proceed futher downstream.
+** or to bypass normal error detection during testing in order to let
+** execute proceed further downstream.
 **
 ** In deployment, sqlite3FaultSim() *always* return SQLITE_OK (0).  The
 ** sqlite3FaultSim() function only returns non-zero during testing.
@@ -82,7 +82,7 @@ int sqlite3Strlen30(const char *z){
 }
 
 /*
-** Return the declared type of a column.  Or return zDflt if the column 
+** Return the declared type of a column.  Or return zDflt if the column
 ** has no declared type.
 **
 ** The column type is an extra string stored after the zero-terminator on
@@ -421,7 +421,7 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
     if( E==0 ) break;
     x *= x;
   }
-  return r; 
+  return r;
 #endif
 }
 
@@ -438,7 +438,7 @@ static LONGDOUBLE_TYPE sqlite3Pow10(int E){
 **      1          =>  The input string is a pure integer
 **      2 or more  =>  The input has a decimal point or eNNN clause
 **      0 or less  =>  The input string is not a valid number
-**     -1          =>  Not a valid number, but has a valid prefix which 
+**     -1          =>  Not a valid number, but has a valid prefix which
 **                     includes a decimal point and/or an eNNN clause
 **
 ** Valid numbers are in one of these formats:
@@ -539,7 +539,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     eValid = 0;
     eType++;
 
-    /* This branch is needed to avoid a (harmless) buffer overread.  The 
+    /* This branch is needed to avoid a (harmless) buffer overread.  The
     ** special comment alerts the mutation tester that the correct answer
     ** is obtained even if the branch is omitted */
     if( z>=zEnd ) goto do_atof_calc;              /*PREVENTS-HARMLESS-OVERREAD*/
@@ -635,7 +635,7 @@ do_atof_calc:
   /* store the result */
   *pResult = result;
 
-  /* return true if number and no extra non-whitespace chracters after */
+  /* return true if number and no extra non-whitespace characters after */
   if( z==zEnd && nDigit>0 && eValid && eType>0 ){
     return eType;
   }else if( eType>=2 && (eType==3 || eValid) && nDigit>0 ){
@@ -771,7 +771,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     /* This test and assignment is needed only to suppress UB warnings
     ** from clang and -fsanitize=undefined.  This test and assignment make
     ** the code a little larger and slower, and no harm comes from omitting
-    ** them, but we must appaise the undefined-behavior pharisees. */
+    ** them, but we must appease the undefined-behavior pharisees. */
     *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
   }else if( neg ){
     *pNum = -(i64)u;
@@ -986,7 +986,7 @@ static int SQLITE_NOINLINE putVarint64(unsigned char *p, u64 v){
       v >>= 7;
     }
     return 9;
-  }    
+  }   
   n = 0;
   do{
     buf[n++] = (u8)((v & 0x7f) | 0x80);
@@ -1186,8 +1186,8 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
 ** If the varint stored in p[0] is larger than can fit in a 32-bit unsigned
 ** integer, then set *v to 0xffffffff.
 **
-** A MACRO version, getVarint32, is provided which inlines the 
-** single-byte case.  All code should use the MACRO version as 
+** A MACRO version, getVarint32, is provided which inlines the
+** single-byte case.  All code should use the MACRO version as
 ** this function assumes the single-byte case has already been handled.
 */
 u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
@@ -1404,7 +1404,7 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
 ** argument.  The zType is a word like "NULL" or "closed" or "invalid".
 */
 static void logBadConnection(const char *zType){
-  sqlite3_log(SQLITE_MISUSE, 
+  sqlite3_log(SQLITE_MISUSE,
      "API call with %s database connection pointer",
      zType
   );
@@ -1456,7 +1456,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
 }
 
 /*
-** Attempt to add, substract, or multiply the 64-bit signed value iB against
+** Attempt to add, subtract, or multiply the 64-bit signed value iB against
 ** the other 64-bit signed integer at *pA and store the result in *pA.
 ** Return 0 on success.  Or if the operation would have resulted in an
 ** overflow, leave *pA unchanged and return 1.
@@ -1478,7 +1478,7 @@ int sqlite3AddInt64(i64 *pA, i64 iB){
     if( iA<0 && -(iA + LARGEST_INT64) > iB + 1 ) return 1;
   }
   *pA += iB;
-  return 0; 
+  return 0;
 #endif
 }
 int sqlite3SubInt64(i64 *pA, i64 iB){
@@ -1519,7 +1519,7 @@ int sqlite3MulInt64(i64 *pA, i64 iB){
 }
 
 /*
-** Compute the absolute value of a 32-bit signed integer, of possible.  Or 
+** Compute the absolute value of a 32-bit signed integer, of possible.  Or
 ** if the integer has a value of -2147483648, return +2147483647
 */
 int sqlite3AbsInt32(int x){
@@ -1559,11 +1559,11 @@ void sqlite3FileSuffix3(const char *zBaseFilename, char *z){
 }
 #endif
 
-/* 
+/*
 ** Find (an approximate) sum of two LogEst values.  This computation is
 ** not a simple "+" operator because LogEst is stored as a logarithmic
 ** value.
-** 
+**
 */
 LogEst sqlite3LogEstAdd(LogEst a, LogEst b){
   static const unsigned char x[] = {
@@ -1661,8 +1661,8 @@ u64 sqlite3LogEstToInt(LogEst x){
 ** Conceptually:
 **
 **    struct VList {
-**      int nAlloc;   // Number of allocated slots 
-**      int nUsed;    // Number of used slots 
+**      int nAlloc;   // Number of allocated slots
+**      int nUsed;    // Number of used slots
 **      struct VListEntry {
 **        int iValue;    // Value for this entry
 **        int nSlot;     // Slots used by this entry
@@ -1671,7 +1671,7 @@ u64 sqlite3LogEstToInt(LogEst x){
 **    }
 **
 ** During code generation, pointers to the variable names within the
-** VList are taken.  When that happens, nAlloc is set to zero as an 
+** VList are taken.  When that happens, nAlloc is set to zero as an
 ** indication that the VList may never again be enlarged, since the
 ** accompanying realloc() would invalidate the pointers.
 */
@@ -1747,6 +1747,6 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
 */
 #if defined(VDBE_PROFILE)  \
  || defined(SQLITE_PERFORMANCE_TRACE) \
- || defined(SQLITE_ENABLE_STMT_SCANSTATUS) 
+ || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 # include "hwtime.h"
 #endif

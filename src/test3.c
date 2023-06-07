@@ -422,7 +422,7 @@ static int SQLITE_TCLAPI btree_payload_size(
 ** routines, both for accuracy and for speed.
 **
 ** An integer is written using putVarint() and read back with
-** getVarint() and varified to be unchanged.  This repeats COUNT
+** getVarint() and verified to be unchanged.  This repeats COUNT
 ** times.  The first integer is START*MULTIPLIER.  Each iteration
 ** increases the integer by INCREMENT.
 **

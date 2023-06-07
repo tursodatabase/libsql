@@ -13,8 +13,8 @@
 ** This file contains a VFS "shim" - a layer that sits in between the
 ** pager and the real VFS.
 **
-** This particular shim enforces a multiplex system on DB files.  
-** This shim shards/partitions a single DB file into smaller 
+** This particular shim enforces a multiplex system on DB files. 
+** This shim shards/partitions a single DB file into smaller
 ** "chunks" such that the total DB file size may exceed the maximum
 ** file size of the underlying file system.
 **
@@ -33,14 +33,14 @@
 **   shim.
 **
 ** MULTIPLEX_CTRL_SET_CHUNK_SIZE:
-**   This file control is used to set the maximum allowed chunk 
-**   size for a multiplex file set.  The chunk size should be 
+**   This file control is used to set the maximum allowed chunk
+**   size for a multiplex file set.  The chunk size should be
 **   a multiple of SQLITE_MAX_PAGE_SIZE, and will be rounded up
 **   if not.
 **
 ** MULTIPLEX_CTRL_SET_MAX_CHUNKS:
 **   This file control is used to set the maximum number of chunks
-**   allowed to be used for a mutliplex file set.
+**   allowed to be used for a multiplex file set.
 */
 #define MULTIPLEX_CTRL_ENABLE          214014
 #define MULTIPLEX_CTRL_SET_CHUNK_SIZE  214015
@@ -53,26 +53,26 @@ extern "C" {
 /*
 ** CAPI: Initialize the multiplex VFS shim - sqlite3_multiplex_initialize()
 **
-** Use the VFS named zOrigVfsName as the VFS that does the actual work.  
-** Use the default if zOrigVfsName==NULL.  
+** Use the VFS named zOrigVfsName as the VFS that does the actual work. 
+** Use the default if zOrigVfsName==NULL. 
 **
 ** The multiplex VFS shim is named "multiplex".  It will become the default
 ** VFS if makeDefault is non-zero.
 **
-** An auto-extension is registered which will make the function 
+** An auto-extension is registered which will make the function
 ** multiplex_control() available to database connections.  This
-** function gives access to the xFileControl interface of the 
+** function gives access to the xFileControl interface of the
 ** multiplex VFS shim.
 **
 ** SELECT multiplex_control(<op>,<val>);
-** 
+**
 **   <op>=1 MULTIPLEX_CTRL_ENABLE
 **   <val>=0 disable
 **   <val>=1 enable
-** 
+**
 **   <op>=2 MULTIPLEX_CTRL_SET_CHUNK_SIZE
 **   <val> int, chunk size
-** 
+**
 **   <op>=3 MULTIPLEX_CTRL_SET_MAX_CHUNKS
 **   <val> int, max chunks
 **

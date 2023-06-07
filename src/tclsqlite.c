@@ -1780,7 +1780,7 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
 
 /*
 ** If using Tcl version 8.6 or greater, use the NR functions to avoid
-** recursive evalution of scripts by the [db eval] and [db trans]
+** recursive evaluation of scripts by the [db eval] and [db trans]
 ** commands. Even if the headers used while compiling the extension
 ** are 8.6 or newer, the code still tests the Tcl version at runtime.
 ** This allows stubs-enabled builds to be used with older Tcl libraries.
@@ -2441,7 +2441,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   **
   ** This command usage is equivalent to the sqlite2.x COPY statement,
   ** which imports file data into a table using the PostgreSQL COPY file format:
-  **   $db copy $conflit_algo $table_name $filename \t \\N
+  **   $db copy $conflict_algorithm $table_name $filename \t \\N
   */
   case DB_COPY: {
     char *zTable;               /* Insert data into this table */
@@ -3427,7 +3427,7 @@ deserialize_error:
   ** Start a new transaction (if we are not already in the midst of a
   ** transaction) and execute the TCL script SCRIPT.  After SCRIPT
   ** completes, either commit the transaction or roll it back if SCRIPT
-  ** throws an exception.  Or if no new transation was started, do nothing.
+  ** throws an exception.  Or if no new transaction was started, do nothing.
   ** pass the exception on up the stack.
   **
   ** This command was inspired by Dave Thomas's talk on Ruby at the
