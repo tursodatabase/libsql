@@ -220,6 +220,7 @@ pub struct HranaBatchProtoBuilder {
     stmt_builder: SingleStatementBuilder,
     current_size: u64,
     max_response_size: u64,
+    step_empty: bool,
 }
 
 impl QueryResultBuilder for HranaBatchProtoBuilder {
@@ -235,6 +236,7 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
     }
 
     fn begin_step(&mut self) -> Result<(), QueryResultBuilderError> {
+        self.step_empty = true;
         self.stmt_builder.begin_step()
     }
 
@@ -254,7 +256,7 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
         };
         match std::mem::replace(&mut self.stmt_builder, new_builder).into_ret() {
             Ok(res) => {
-                self.step_results.push(Some(res));
+                self.step_results.push((!self.step_empty).then_some(res));
                 self.step_errors.push(None);
             }
             Err(e) => {
@@ -276,6 +278,7 @@ impl QueryResultBuilder for HranaBatchProtoBuilder {
         &mut self,
         cols: impl IntoIterator<Item = impl Into<Column<'a>>>,
     ) -> Result<(), QueryResultBuilderError> {
+        self.step_empty = false;
         self.stmt_builder.cols_description(cols)
     }
 
