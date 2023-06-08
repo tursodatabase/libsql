@@ -118,7 +118,7 @@ if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
   puts $out "** The content in this amalgamation comes from Fossil check-in"
   puts -nonewline $out "** [string range [lindex $res 0] 1 35]"
   if {[llength $res]==1} {
-    puts "."
+    puts $out "."
   } else {
     puts $out " with changes in files:\n**"
     foreach f [lrange $res 1 end] {
