@@ -10,6 +10,7 @@ use anyhow::Context;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use hyper::body::to_bytes;
+use hyper::server::conn::AddrIncoming;
 use hyper::{Body, Method, Request, Response, StatusCode};
 use serde::Serialize;
 use serde_json::Number;
@@ -281,7 +282,10 @@ pub async fn run_http<D: Database>(
             )
         });
 
-    let server = hyper::server::Server::try_bind(&addr)?.serve(tower::make::Shared::new(service));
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
+    let server = hyper::server::Server::builder(AddrIncoming::from_listener(listener)?)
+        .tcp_nodelay(true)
+        .serve(tower::make::Shared::new(service));
 
     server.await.context("Http server exited with an error")?;
 
