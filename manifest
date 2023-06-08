@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\ssrc-verify.c\sutility\sprogram\sso\sthat\sit\scontinues\sto\nmuddle\sthrough\sa\scorrupt\smanifest\sfile,\smaking\sthe\smost\ssense\sof\sit\sthat\sit\ncan\sand\sreporting\s"manifest"\shas\shaving\schanged\sat\sthe\send.
-D 2023-06-08T16:19:21.284
+C Remove\sSQLITE_EXTENSION_INIT\smacros\sfrom\sdbdata.c.
+D 2023-06-08T20:49:25.974
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -376,7 +376,7 @@ F ext/rbu/rbuvacuum4.test ffccd22f67e2d0b380d2889685742159dfe0d19a3880ca3d2d1d69
 F ext/rbu/sqlite3rbu.c d4ddf8f0e93772556e452a6c2814063cf47efb760a0834391a9d0cd9859fa4b9
 F ext/rbu/sqlite3rbu.h 9d923eb135c5d04aa6afd7c39ca47b0d1d0707c100e02f19fdde6a494e414304
 F ext/rbu/test_rbu.c ee6ede75147bc081fe9bc3931e6b206277418d14d3fbceea6fdc6216d9b47055
-F ext/recover/dbdata.c e5ad2bd4e87df0ebefd773ea6b8188233a70db935cd8508d1b6428a199ba63eb
+F ext/recover/dbdata.c 81661e3a98cabb70be8f2760a67a8d6d5bf7aaa7a4055a53ff915ac884221a64
 F ext/recover/recover1.test c484d01502239f11b61f23c1cee9f5dd19fa17617f8974e42e74d64639c524cf
 F ext/recover/recover_common.tcl a61306c1eb45c0c3fc45652c35b2d4ec19729e340bdf65a272ce4c229cefd85a
 F ext/recover/recoverbuild.test c74170e0f7b02456af41838afeb5353fdb985a48cc2331d661bbabbca7c6b8e3
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f502610d03a1362eea936129abd03390835b7e47ba25e6799b2e7880de540640
-R 99e2fb823a987daff7bdbda52d841cbf
-U drh
-Z de727eb2047d1189fb6632ba63933d87
+P 157b5d25e0c99eabfa3c32cb867fe7e3c05031c12354f734d2cd8a4062b9439c
+R fd6d21412985b1945f5582d66d783118
+U dan
+Z bb3a1dd8e6d17e8c766f86f2b38d20ee
 # Remove this line to create a well-formed Fossil manifest.
