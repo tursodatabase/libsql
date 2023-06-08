@@ -1,5 +1,5 @@
-C Fix\sthe\samagamation\sgenerator\sso\sthat\sit\sworks\sone\sa\sclean\ssource\stree.
-D 2023-06-08T15:30:10.762
+C Improvements\sto\sthe\ssrc-verify.c\sutility\sprogram\sso\sthat\sit\scontinues\sto\nmuddle\sthrough\sa\scorrupt\smanifest\sfile,\smaking\sthe\smost\ssense\sof\sit\sthat\sit\ncan\sand\sreporting\s"manifest"\shas\shaving\schanged\sat\sthe\send.
+D 2023-06-08T16:19:21.284
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2007,7 +2007,7 @@ F tool/sqldiff.c 2a693b4e7c1818c23f871f82f0c3fe67d80b67e3f087893089d33da29c1e387
 F tool/sqlite3_analyzer.c.in f88615bf33098945e0a42f17733f472083d150b58bdaaa5555a7129d0a51621c
 F tool/sqltclsh.c.in 1bcc2e9da58fadf17b0bf6a50e68c1159e602ce057210b655d50bad5aaaef898
 F tool/sqltclsh.tcl 862f4cf1418df5e1315b5db3b5ebe88969e2a784525af5fbf9596592f14ed848
-F tool/src-verify.c b7b26f1ae4acbf20d1fd8d013dc621d52cda310b1432a39c3b5f34fca42806a7
+F tool/src-verify.c f0cef434a8d8629c4928a02a644fb85e33c8b875a7f2352ba68cc50965a7d213
 F tool/srcck1.c 371de5363b70154012955544f86fdee8f6e5326f
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/stripccomments.c 20b8aabc4694d0d4af5566e42da1f1a03aff057689370326e9269a9ddcffdc37
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e3eb5af9050aae1db6887d17a560a24e4ca58f232ad7ac7c283c861ea4944f0b
-R 4bab1374d9b75a8ff9e4a8520d8c45f2
+P f502610d03a1362eea936129abd03390835b7e47ba25e6799b2e7880de540640
+R 99e2fb823a987daff7bdbda52d841cbf
 U drh
-Z faf1ce1a345e37a86669b32b075b5901
+Z de727eb2047d1189fb6632ba63933d87
 # Remove this line to create a well-formed Fossil manifest.

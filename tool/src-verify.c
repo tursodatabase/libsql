@@ -801,6 +801,7 @@ int main(int argc, char **argv){
   FILE *in;
   int bDebug = 0;
   int bNonHuman = 0;
+  int bSeenManifestErr = 0;
   int nErr = 0;
   SHA3Context ctx3;
   const char *zDir = 0;
@@ -874,7 +875,7 @@ int main(int argc, char **argv){
   }
   in = fopen(zFile, "rb");
   if( in==0 ){
-    printf("missing manifest: \"%s\"\n", zFile);
+    fprintf(stderr, "missing manifest: \"%s\"\n", zFile);
     return 1;
   }
   SHA3Init(&ctx3, 256);
@@ -895,8 +896,8 @@ int main(int argc, char **argv){
     zFile[sizeof(zFile)-1] = 0;
     defossilize(&zFile[nDir]);
     if( zLine[i]!=' ' ){
-      xErr(&nErr, zVers, "manifest");
-      return 1;
+      bSeenManifestErr = 1;
+      continue;
     }
     for(i++, j=0; zLine[i]>='0' && zLine[i]<='f'; i++, j++){
       if( j<sizeof(zHash) ) zHash[j] = zLine[i];
@@ -921,12 +922,13 @@ int main(int argc, char **argv){
         xErr(&nErr, zVers, &zFile[nDir]);
       }
     }else{
-      xErr(&nErr, zVers, "manifest");
-      return 1;
+      bSeenManifestErr = 1;
+      xErr(&nErr, zVers, &zFile[nDir]);
     }
   }
   fclose(in);
   in = 0;
+  if( bSeenManifestErr ) xErr(&nErr, zVers, "manifest");
   memcpy(&zFile[nDir], "manifest.uuid", 14);
   if( access(zFile, R_OK)!=0
    || (in = fopen(zFile,"rb"))==0
@@ -938,7 +940,7 @@ int main(int argc, char **argv){
     xErr(&nErr, zVers, &zFile[nDir]);
   }
   if( in ) fclose(in); 
-    
+   
   if( bNonHuman ){
     if( nErr ) return 0;
     printf("%s\n", zVers);
