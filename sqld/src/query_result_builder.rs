@@ -112,7 +112,7 @@ pub trait QueryResultBuilder: Send + 'static {
     fn finish_row(&mut self) -> Result<(), QueryResultBuilderError>;
     /// end adding rows
     fn finish_rows(&mut self) -> Result<(), QueryResultBuilderError>;
-    /// finish serialization
+    /// finish serialization.
     fn finish(&mut self) -> Result<(), QueryResultBuilderError>;
     /// returns the inner ret
     fn into_ret(self) -> Self::Ret;

@@ -11,7 +11,7 @@ use crate::auth::{Authenticated, Authorized};
 use crate::error::Error;
 use crate::libsql::wal_hook::WalHook;
 use crate::query::Query;
-use crate::query_analysis::{State, Statement, StmtKind};
+use crate::query_analysis::{State, StmtKind};
 use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::stats::Stats;
 use crate::Result;
@@ -19,7 +19,7 @@ use crate::Result;
 use super::factory::DbFactory;
 use super::{
     Cond, Database, DescribeCol, DescribeParam, DescribeResponse, DescribeResult, Program, Step,
-    TXN_TIMEOUT_SECS,
+    TXN_TIMEOUT,
 };
 
 /// Internal message used to communicate between the database thread and the `LibSqlDb` handle.
@@ -131,45 +131,6 @@ pub struct LibSqlDb {
     sender: crossbeam::channel::Sender<ExecCallback>,
 }
 
-struct ConnectionState {
-    state: State,
-    timeout_deadline: Option<Instant>,
-}
-
-impl ConnectionState {
-    fn initial() -> Self {
-        Self {
-            state: State::Init,
-            timeout_deadline: None,
-        }
-    }
-
-    fn deadline(&self) -> Option<Instant> {
-        self.timeout_deadline
-    }
-
-    fn reset(&mut self) {
-        self.state.reset();
-        self.timeout_deadline.take();
-    }
-
-    fn step(&mut self, stmt: &Statement) {
-        let old_state = self.state;
-
-        self.state.step(stmt.kind);
-
-        match (old_state, self.state) {
-            (State::Init, State::Txn) => {
-                self.timeout_deadline
-                    .replace(Instant::now() + Duration::from_secs(TXN_TIMEOUT_SECS));
-            }
-            (State::Txn, State::Init) => self.reset(),
-            (_, State::Invalid) => panic!("invalid state"),
-            _ => (),
-        }
-    }
-}
-
 pub fn open_db<'a, W>(
     path: &Path,
     wal_methods: &'static WalMethodsHook<W>,
@@ -226,14 +187,14 @@ impl LibSqlDb {
             };
 
             loop {
-                let exec = match connection.state.deadline() {
+                let exec = match connection.timeout_deadline {
                     Some(deadline) => match receiver.recv_deadline(deadline) {
                         Ok(msg) => msg,
                         Err(RecvTimeoutError::Timeout) => {
                             warn!("transaction timed out");
                             connection.rollback();
                             connection.timed_out = true;
-                            connection.state.reset();
+                            connection.timeout_deadline = None;
                             continue;
                         }
                         Err(RecvTimeoutError::Disconnected) => break,
@@ -264,7 +225,7 @@ impl LibSqlDb {
 }
 
 struct Connection<'a> {
-    state: ConnectionState,
+    timeout_deadline: Option<Instant>,
     conn: sqld_libsql_bindings::Connection<'a>,
     timed_out: bool,
     stats: Stats,
@@ -282,7 +243,7 @@ impl<'a> Connection<'a> {
     ) -> Result<Self> {
         let this = Self {
             conn: open_db(path, wal_methods, hook_ctx, None)?,
-            state: ConnectionState::initial(),
+            timeout_deadline: None,
             timed_out: false,
             stats,
             builder_config,
@@ -306,10 +267,16 @@ impl<'a> Connection<'a> {
         let mut results = Vec::with_capacity(pgm.steps.len());
 
         builder.init(&self.builder_config)?;
+        let is_autocommit_before = self.conn.is_autocommit();
 
         for step in pgm.steps() {
             let res = self.execute_step(step, &results, &mut builder)?;
             results.push(res);
+        }
+
+        // A transaction is still open, set up a timeout
+        if is_autocommit_before && !self.conn.is_autocommit() {
+            self.timeout_deadline = Some(Instant::now() + TXN_TIMEOUT)
         }
 
         builder.finish()?;
@@ -356,22 +323,6 @@ impl<'a> Connection<'a> {
     }
 
     fn execute_query(
-        &mut self,
-        query: &Query,
-        builder: &mut impl QueryResultBuilder,
-    ) -> Result<(u64, Option<i64>)> {
-        let result = self.execute_query_inner(query, builder);
-
-        // We drive the connection state on success. This is how we keep track of whether
-        // a transaction timeouts
-        if result.is_ok() {
-            self.state.step(&query.stmt)
-        }
-
-        result
-    }
-
-    fn execute_query_inner(
         &self,
         query: &Query,
         builder: &mut impl QueryResultBuilder,
@@ -425,9 +376,7 @@ impl<'a> Connection<'a> {
     }
 
     fn rollback(&self) {
-        self.conn
-            .execute("ROLLBACK", ())
-            .expect("failed to rollback");
+        let _ = self.conn.execute("ROLLBACK", ());
     }
 
     fn update_stats(&self, stmt: &rusqlite::Statement) {
@@ -531,7 +480,16 @@ impl Database for LibSqlDb {
         check_program_auth(auth, &pgm)?;
         let (resp, receiver) = oneshot::channel();
         let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
-            let res = maybe_conn.and_then(|c| Ok((c.run(pgm, builder)?, c.state.state)));
+            let res = maybe_conn.and_then(|c| {
+                let b = c.run(pgm, builder)?;
+                let state = if c.conn.is_autocommit() {
+                    State::Init
+                } else {
+                    State::Txn
+                };
+
+                Ok((b, state))
+            });
 
             if resp.send(res).is_err() {
                 anyhow::bail!("connection closed");
@@ -574,7 +532,7 @@ mod test {
 
     fn setup_test_conn(ctx: &mut ()) -> Connection {
         let mut conn = Connection {
-            state: ConnectionState::initial(),
+            timeout_deadline: None,
             conn: sqld_libsql_bindings::Connection::test(ctx),
             timed_out: false,
             stats: Stats::default(),

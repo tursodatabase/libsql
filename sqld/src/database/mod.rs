@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::auth::Authenticated;
 use crate::query::{Params, Query};
@@ -11,7 +12,7 @@ pub mod factory;
 pub mod libsql;
 pub mod write_proxy;
 
-const TXN_TIMEOUT_SECS: u64 = 5;
+const TXN_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Clone)]
 pub struct Program {
