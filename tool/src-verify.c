@@ -13,11 +13,16 @@
 **
 ** USAGE:
 **
-**     src-verify $(ROOT)
+**     src-verify [-x] [-v] $(ROOT)
 **
 ** Where ROOT is the root of the source tree - the directory that contains
 ** the "manifest" and "manifest.uuid" files.  Add the "-v" option for
-** some debugging output.  Additional debugging options:
+** some debugging output.  With the -x option, the output is in a format
+** that is intended to be read by a script rather by a human.  The -x output
+** format always has the SHA3 hash of the source check-in on the first line
+** and lists files that have changed on subsequent lines.
+**
+** Additional debugging options:
 **
 **     src-verify --sha1 FILE ...
 **     src-verify --sha3 FILE ...
@@ -782,46 +787,68 @@ static void errorMsg(int *pnErr, const char *zVers, const char *zFile){
   printf("    %s\n", zFile);
   (*pnErr)++;
 }
+static void errorMsgNH(int *pnErr, const char *zVers, const char *zFile){
+  if( *pnErr==0 ){
+    printf("%s\n", zVers);
+  }
+  printf("%s\n", zFile);
+  (*pnErr)++;
+}
 
 int main(int argc, char **argv){
   int i, j;
   int nDir;
   FILE *in;
   int bDebug = 0;
+  int bNonHuman = 0;
   int nErr = 0;
   SHA3Context ctx3;
-  const char *zDir;
+  const char *zDir = 0;
+  void (*xErr)(int*,const char*,const char*);
   char zHash[100];
   char zCk[100];
   char zVers[100];
   char zLine[40000];
   char zFile[40000];
-  if( argc>=3 && strcmp(argv[1],"--sha1")==0 ){
-    /* For testing purposes, if the first argument is --sha1, then simply
-    ** compute and print the SHA1 checksum of all subsequent arguments. */
-    for(i=2; i<argc; i++){
-      sha1sum_file(argv[i], zHash);
-      printf("%s  %s\n", zHash, argv[i]);
+  xErr = errorMsg;
+  for(i=1; i<argc; i++){
+    const char *z = argv[i];
+    if( z[0]!='-' ){
+      if( zDir!=0 ){
+        fprintf(stderr, "bad argument: %s\n", z);
+        return 1;
+      }
+      zDir = z;
+      continue;
     }
-    return 0;
-  }
-  if( argc>=3 && strcmp(argv[1], "--sha3")==0 ){
-    /* For testing purposes, if the first argument is --sha3, then simply
-    ** compute and print the SHA3-256 checksum of all subsequent arguments. */
-    for(i=2; i<argc; i++){
-      sha3sum_file(argv[i], zHash);
-      printf("%s  %s\n", zHash, argv[i]);
+    if( z[1]=='-' && z[2]!=0 ) z++;
+    if( strcmp(argv[1],"-sha1")==0 ){
+      /* For testing purposes, if the first argument is --sha1, then simply
+      ** compute and print the SHA1 checksum of all subsequent arguments. */
+      for(i++; i<argc; i++){
+        sha1sum_file(argv[i], zHash);
+        printf("%s  %s\n", zHash, argv[i]);
+      }
+      return 0;
     }
-    return 0;
-  }
-  if( argc==3 && strcmp(argv[0], "-v")==0 ){
-    bDebug = 1;
-    zDir = argv[2];
-    argc = 2;
-  }else{
-    zDir = argv[1];
-  }
-  if( argc!=2 ){
+    if( strcmp(argv[1], "-sha3")==0 ){
+      /* For testing purposes, if the first argument is --sha3, then simply
+      ** compute and print the SHA3-256 checksum of all subsequent arguments. */
+      for(i++; i<argc; i++){
+        sha3sum_file(argv[i], zHash);
+        printf("%s  %s\n", zHash, argv[i]);
+      }
+      return 0;
+    }
+    if( strcmp(z,"-v")==0 ){
+      bDebug = 1;
+      continue;
+    }
+    if( strcmp(z,"-x")==0 ){
+      bNonHuman = 1;
+      xErr = errorMsgNH;
+      continue;
+    }
     fprintf(stderr, "Usage: %s DIRECTORY\n"
                     "   or: %s --sha1 FILE ...\n"
                     "   or: %s --sha3 FILE ...\n",
@@ -829,12 +856,12 @@ int main(int argc, char **argv){
     return 1;
   }
   if( strlen(zDir)>1000 ){
-    fprintf(stderr, "First argument too big: [%s]\n", zDir);
+    fprintf(stderr, "Directory argument too big: [%s]\n", zDir);
     return 1;
   }
   nDir = (int)strlen(zDir);
   if( nDir<0 ){
-    fprintf(stderr, "First argument too short.\n");
+    fprintf(stderr, "Directory argument too short.\n");
     return 1;
   }
   memcpy(zFile, zDir, nDir);
@@ -868,7 +895,7 @@ int main(int argc, char **argv){
     zFile[sizeof(zFile)-1] = 0;
     defossilize(&zFile[nDir]);
     if( zLine[i]!=' ' ){
-      errorMsg(&nErr, zVers, "manifest");
+      xErr(&nErr, zVers, "manifest");
       return 1;
     }
     for(i++, j=0; zLine[i]>='0' && zLine[i]<='f'; i++, j++){
@@ -880,21 +907,21 @@ int main(int argc, char **argv){
       printf("%s %s\n", zFile, zHash);
     }
     if( access(zFile, R_OK)!=0 ){
-      errorMsg(&nErr, zVers, &zFile[nDir]);
+      xErr(&nErr, zVers, &zFile[nDir]);
       continue;
     }
     if( strlen(zHash)==40 ){
       sha1sum_file(zFile, zCk);
       if( strcmp(zHash, zCk)!=0 ){
-        errorMsg(&nErr, zVers, &zFile[nDir]);
+        xErr(&nErr, zVers, &zFile[nDir]);
       }
     }else if( strlen(zHash)==64 ){
       sha3sum_file(zFile, zCk);
       if( strcmp(zHash, zCk)!=0 ){
-        errorMsg(&nErr, zVers, &zFile[nDir]);
+        xErr(&nErr, zVers, &zFile[nDir]);
       }
     }else{
-      errorMsg(&nErr, zVers, "manifest");
+      xErr(&nErr, zVers, "manifest");
       return 1;
     }
   }
@@ -908,11 +935,16 @@ int main(int argc, char **argv){
    || zLine[64]!='\n'
    || memcmp(zLine, zVers, 64)!=0
   ){
-    errorMsg(&nErr, zVers, &zFile[nDir]);
+    xErr(&nErr, zVers, &zFile[nDir]);
   }
   if( in ) fclose(in); 
     
-  if( nErr ) return nErr;
-  printf("OK %.25s\n", zVers);
+  if( bNonHuman ){
+    if( nErr ) return 0;
+    printf("%s\n", zVers);
+  }else{
+    if( nErr ) return nErr;
+    printf("OK %.25s\n", zVers);
+  }
   return 0;
 }
