@@ -1,5 +1,5 @@
-C Remove\sSQLITE_EXTENSION_INIT\smacros\sfrom\sdbdata.c.
-D 2023-06-08T20:49:25.974
+C Simplify\sa\smemcpy()\sin\sdefragmentPage().\s\sIt\snow\smight\scopy\smore\scontent\sthan\nis\sstrictly\snecessary,\sbut\sruns\sfaster\sand\suses\sless\scode\sspace.\s\sPossible\nreasons\sfor\sthe\simproved\sperformance:\n(1)\sthe\scopy\sis\snow\salways\s8-byte\saligned,\n(2)\sfewer\sintermediate\sresults\sare\srequired\swhich\smeans\sless\sregister\npressure\swhich\shelps\sthe\scompiler\sto\soptimize\sthe\ssubroutine.
+D 2023-06-09T15:54:18.890
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 030e6b7b6c3d6241a23a7e62200653cfabdfc08782f9d0d781c29a372efb8d64
+F src/btree.c 82fea54a5ef95a6e2a878c075e2205618392bec7b83e9ae04a5d8c16d83049a6
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h 3b4eff7155c0cea6971dc51f62e3529934a15a6640ec607dd42a767e379cb3a9
 F src/build.c cb54df6fd018a18e940a251c5e31780ffba8bc6c7a01e670b96a489adcbfb3b4
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 157b5d25e0c99eabfa3c32cb867fe7e3c05031c12354f734d2cd8a4062b9439c
-R fd6d21412985b1945f5582d66d783118
-U dan
-Z bb3a1dd8e6d17e8c766f86f2b38d20ee
+P 106ec745766ac59131f975d5ab5487c8a24b9c3be1766411c018b42c6ae4672a
+R 5f47c38115b80cdbaff55ee9719d7a8c
+U drh
+Z cf1468719b1ee116b23ef9644015946f
 # Remove this line to create a well-formed Fossil manifest.
