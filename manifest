@@ -1,5 +1,5 @@
-C Enhance\sfuzzcheck\sso\sthat\sit\sunderstand\sthe\ssqlite3_db_config()\sand\noptimization\ssettings\sfrom\sunused\sbits\sin\sthe\sdatabase\sheader,\swhich\ndbsqlfuzz\sis\snow\susing.
-D 2023-06-10T10:37:49.042
+C Extra\sspace\sto\sprevent\sa\sbuffer\soverread\son\scorrupt\sSTAT4\srecords.\ndbsqlfuzz\s7128d1b41ce9df2c007f9c24c1e89e2f1b2590ca.
+D 2023-06-10T17:05:05.973
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -569,7 +569,7 @@ F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c f1c686e7325a7449c5a0ebc16207186f52e1b6673da699392caa1de39f219511
-F src/analyze.c a1f3061af16c99f73aed0362160176c31a6452de1b02ada1d68f6839f2a37df0
+F src/analyze.c d4cc28738c29e009640ec20ebb6936ba6fcefff0d11aa93398d9bb9a5ead6c1f
 F src/attach.c cc9d00d30da916ff656038211410ccf04ed784b7564639b9b61d1839ed69fd39
 F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6e5607ae4d872954483a8d7a5c866aa41e4af70fae9652fb7eb211b316ab724d
-R d3a5ecce607d4bbc2c448a05b7d47aaa
+P 918708c6dea5bffab4bb1c15d655ac7356bae97b84def905479dfcf491db6c5f
+R 66b1961aee52684a421f5e6d2ab92f25
 U drh
-Z d86f179d950e64ee18c739416c21a69b
+Z 45b50f5159d3508cc396ca14de4bdb0e
 # Remove this line to create a well-formed Fossil manifest.
