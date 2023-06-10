@@ -4231,6 +4231,15 @@ static int vdbeRecordCompareDebug(
     if( d1+(u64)serial_type1+2>(u64)nKey1
      && d1+(u64)sqlite3VdbeSerialTypeLen(serial_type1)>(u64)nKey1
     ){
+      if( serial_type1>=1
+       && serial_type1<=7
+       && d1+(u64)sqlite3VdbeSerialTypeLen(serial_type1)<=(u64)nKey1+8
+       && CORRUPT_DB
+      ){
+        return 1;  /* corrupt record not detected by
+                   ** sqlite3VdbeRecordCompareWithSkip().  Return true
+                   ** to avoid firing the assert() */
+      }
       break;
     }
 

@@ -377,4 +377,23 @@ do_execsql_test analyze-6.1 {
   SELECT tbl FROM sqlite_stat1 WHERE idx IS NULL ORDER BY tbl;
 } {SQLiteDemo2 sqliteDemo t1}
 
+# The following caused a small buffer overread in STAT4 processing prior
+# to check-in [b99135288b157044].
+#
+ifcapable stat4 {
+  reset_db
+  database_may_be_corrupt
+  do_execsql_test analyze-7.1 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b INTEGER);
+    INSERT INTO t1 VALUES(1, 7223372036854775);
+    INSERT INTO t1 VALUES(2, 7223372036854776);
+    INSERT INTO t1 VALUES(3, 7223372036854777);
+    CREATE INDEX i1 ON t1(b);
+    ANALYZE;
+    UPDATE sqlite_stat4 SET sample = substr(sample, 0, 4);
+    ANALYZE sqlite_schema;
+    SELECT * FROM t1 WHERE b>7223372036854775
+  } {2 7223372036854776 3 7223372036854777}
+}
+
 finish_test
