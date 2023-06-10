@@ -1,5 +1,5 @@
-C Simplify\sa\smemcpy()\sin\sdefragmentPage().\s\sIt\snow\smight\scopy\smore\scontent\sthan\nis\sstrictly\snecessary,\sbut\sruns\sfaster\sand\suses\sless\scode\sspace.\s\sPossible\nreasons\sfor\sthe\simproved\sperformance:\n(1)\sthe\scopy\sis\snow\salways\s8-byte\saligned,\n(2)\sfewer\sintermediate\sresults\sare\srequired\swhich\smeans\sless\sregister\npressure\swhich\shelps\sthe\scompiler\sto\soptimize\sthe\ssubroutine.
-D 2023-06-09T15:54:18.890
+C Enhance\sfuzzcheck\sso\sthat\sit\sunderstand\sthe\ssqlite3_db_config()\sand\noptimization\ssettings\sfrom\sunused\sbits\sin\sthe\sdatabase\sheader,\swhich\ndbsqlfuzz\sis\snow\susing.
+D 2023-06-10T10:37:49.042
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1121,7 +1121,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c 0d90cee9fd7ebecdfbdbe5bdc6fad92fa32410c48ccad747cd9e0ac603b9130c
+F test/fuzzcheck.c 29a2f0237553375498f891c9487a2ef3267b47deecc5d5b4335fa37f904cb8d3
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 106ec745766ac59131f975d5ab5487c8a24b9c3be1766411c018b42c6ae4672a
-R 5f47c38115b80cdbaff55ee9719d7a8c
+P 6e5607ae4d872954483a8d7a5c866aa41e4af70fae9652fb7eb211b316ab724d
+R d3a5ecce607d4bbc2c448a05b7d47aaa
 U drh
-Z cf1468719b1ee116b23ef9644015946f
+Z d86f179d950e64ee18c739416c21a69b
 # Remove this line to create a well-formed Fossil manifest.
