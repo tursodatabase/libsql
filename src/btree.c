@@ -3339,7 +3339,6 @@ static int lockBtree(BtShared *pBt){
     ){
       goto page1_init_failed;
     }
-    pBt->btsFlags |= BTS_PAGESIZE_FIXED;
     assert( (pageSize & 7)==0 );
     /* EVIDENCE-OF: R-59310-51205 The "reserved space" size in the 1-byte
     ** integer at offset 20 is the number of bytes of space at the end of
@@ -3378,6 +3377,7 @@ static int lockBtree(BtShared *pBt){
     if( usableSize<480 ){
       goto page1_init_failed;
     }
+    pBt->btsFlags |= BTS_PAGESIZE_FIXED;
     pBt->pageSize = pageSize;
     pBt->usableSize = usableSize;
 #ifndef SQLITE_OMIT_AUTOVACUUM

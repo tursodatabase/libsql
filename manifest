@@ -1,5 +1,5 @@
-C Fix\san\sassert\sthat\scan\sgo\sbad\sif\sSTAT4\scontent\sis\scorrupt.\s\sThis\sis\sa\nfollow-up\sto\sthe\sprevious\scheck-in.
-D 2023-06-10T18:40:20.363
+C Defer\ssetting\sthe\sBTS_PAGESIZE_FIXED\sflag\suntil\safter\swe\sare\scertain\sthere\nare\sno\serrors\sand\sthe\spage\ssize\shas\sbeen\sset.
+D 2023-06-10T19:33:02.847
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -575,7 +575,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 82fea54a5ef95a6e2a878c075e2205618392bec7b83e9ae04a5d8c16d83049a6
+F src/btree.c 6cbc425c1bd946ceec055dfd57141a8e397e6db0192831a1122bd25c7ac0d9f0
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h 3b4eff7155c0cea6971dc51f62e3529934a15a6640ec607dd42a767e379cb3a9
 F src/build.c cb54df6fd018a18e940a251c5e31780ffba8bc6c7a01e670b96a489adcbfb3b4
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b99135288b157044e2319833e8632c89483778f876aa45ee66e46ffb6ae42ab2
-R ae8f3d0da9a7e9ccc67e1f24a75359b6
+P ac1d3860af4eb30e4a7444b01d7b5afc91a4b1f5e3fe5414a491c6edc7ff1631
+R 838fdd5b776c2494497dd1802cc3163b
 U drh
-Z 21c162342a73d526a274dda43071946a
+Z d49175acb3bb5ce67db0eb3e3a6c2e40
 # Remove this line to create a well-formed Fossil manifest.
