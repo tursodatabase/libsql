@@ -1431,6 +1431,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
     }
   
     pRec->nField = p->iVal+1;
+    sqlite3VdbeMemSetNull(&pRec->aMem[p->iVal]);
     return &pRec->aMem[p->iVal];
   }
 #else
