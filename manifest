@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sbloom\sfilters\sto\sbe\sused\sless\sefficiently\sthan\sthey\smight\sbe.\sProblem\sreported\sby\sforum\spost\s[forum:/info/06c3f01da6\s|\s06c3f01da6].
-D 2023-06-12T13:49:37.074
+C Initialize\sa\slocal\svariable\sin\sFTS3\sto\savoid\sa\sGCC\scompiler\swarning.
+D 2023-06-12T18:22:34.021
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -76,7 +76,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c c1de4ae28356ad98ccb8b2e3388a7fdcce7607b5523738c9afb6275dab765154
 F ext/fts3/fts3_unicode.c de426ff05c1c2e7bce161cf6b706638419c3a1d9c2667de9cb9dc0458c18e226
 F ext/fts3/fts3_unicode2.c 416eb7e1e81142703520d284b768ca2751d40e31fa912cae24ba74860532bf0f
-F ext/fts3/fts3_write.c 33d2d0db4dd4e7a7a7e9a7f790414293277f9e7682a2fd9d61c713bfc37cd8b6
+F ext/fts3/fts3_write.c d28d9ef383ef848a7b77df4b9964abcc90d67a2b584120c0ad465972dce416e6
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/tool/fts3cov.sh c331d006359456cf6f8f953e37f2b9c7d568f3863f00bb5f7eb87fea4ac01b73
 F ext/fts3/tool/fts3view.c 413c346399159df81f86c4928b7c4a455caab73bfbc8cd68f950f632e5751674
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 30dcc872eb1c9549708009c86357826c4f15ffa17e379dab5cd4aec596643728
-R 8fa511ba4ba667879117ad7eb3fe3aed
-U dan
-Z ade47def489e35af0b5e22db38de72cb
+P 56d9bb7aa63043f5db4a1e5e8eefe46762dba433145807c6e27a8316f1d03d7a
+R 8fa7f071c843431d341c04b5f54d842f
+U drh
+Z 7056ecfd0821d02702a7f5f171a36595
 # Remove this line to create a well-formed Fossil manifest.
