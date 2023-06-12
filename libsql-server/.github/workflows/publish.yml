@@ -1,16 +1,17 @@
-name: Create and publish a Docker image
+name: Create and publish sqld binaried and Docker image
 
 on:
   push:
     branches: ['main']
     tags:
-      - v*
+      - v*.*.*
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # docker image build and upload to ghcr
   build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
@@ -43,3 +44,174 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  build_binaries:
+    strategy:
+      matrix:
+        #unless we want windows binaries as well, keep the matrix as is
+        os: [ubuntu-latest, macos-latest]
+        #os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      #for windows only, use correct newlines
+      - name: Set git to use LF
+        if: matrix.os == 'windows-latest'
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
+      - uses: actions/checkout@v3
+
+      - name: Get Rust toolchain version from rust-toolchain.toml
+        id: getrustver
+        run: |
+          echo "RUST_VER=$(grep channel ./rust-toolchain.toml | awk '{print $NF}' | tr -d '"')" >> $GITHUB_ENV
+
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VER }}
+
+      # Check Cargo.toml in sqld sbdir has the correct tag
+      - name: Verify sqld/Cargo.toml version is same as git tag
+        if: ${{ startsWith(github.ref, 'refs/tags/') }} && ${{ matrix.os }} == ubuntu-latest
+        id: check-tag
+        run: |
+          VER=$(echo ${{ github.ref_name }}|tr -d "v")
+          pushd sqld
+          CARGOVER=$(cargo metadata --no-deps | jq '.packages | .[] | select(.name == "sqld") | .version'|tr -d '"')
+          popd
+          if [[ "$VER" != "$CARGOVER" ]]; then 
+            echo "FAILED_TAG=1" >> $GITHUB_OUTPUT
+          else
+            echo "FAILED_TAG=0" >> $GITHUB_OUTPUT
+          fi
+
+          # TODO: old bash-y check, delete if the above method works ok on all platforms
+          # FLAG=0
+          # FAILED_TAG=0
+          # CARGOVER=""
+          # IFS=
+          # while read -r line; do
+          #   echo "Cargo.toml: $line"
+          #   if [[ "$line" =~ ^"[package]" ]]; then FLAG=1; fi
+          #   if [[ "$FLAG" == 1 ]]; then
+          #     if [[ "$line" =~ ^"version =" ]]; then
+          #       CARGOVER=$(echo $line|awk '{ print $NF }'|tr -d '"')
+          #       echo "_cargover = $CARGOVER"
+          #       if [[ "$CARGOVER" != "$VER" ]]; then
+          #         FLAG=2
+          #       else
+          #         FLAG=0
+          #       fi
+          #     fi
+          #   fi
+          # done < sqld/Cargo.toml
+          # if [[ "$FLAG" == 2 ]]; then
+          #   echo "FAILED_TAG=1" >> $GITHUB_OUTPUT
+          # else
+          #   echo "FAILED_TAG=0" >> $GITHUB_OUTPUT
+          # fi
+          # echo "cargover = $CARGOVER"
+          # echo "failed tag = $FAILED_TAG"
+          # echo "ver = $VER"
+
+      # If the tag is wrong, fail the job
+      - name: Check for failed tag
+        if: steps.check-tag.outputs.FAILED_TAG == 1 && matrix.os == 'ubuntu-latest'
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('ERROR: sqld/Cargo.toml version section has not been updated to the release tag. Failing the release build.')
+        
+      - name: setup msys2 for windows
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          install: mingw-w64-x86_64-toolchain mingw-w64-x86_64-sqlite3 gcc make base-devel mingw-w64-x86_64-rust zip
+          msystem: mingw64
+          path-type: inherit
+
+      - name: Build sqld (windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          export CARGO_BIN="$(which cargo)"
+          cargo build --release
+        shell: msys2 {0}
+
+      - name: Zip artifact for deployment (windows)
+        if: matrix.os == 'windows-latest'
+        #run: zip sqld-${{ github.event.inputs.tag }}-${{ matrix.os }}.zip ./target/release/sqld
+        run: |
+          cd ./target/release
+          zip ../../sqld-${{ github.ref_name }}-${{ matrix.os }}.zip sqld
+          cd ../../
+        shell: msys2 {0}
+
+      - name: install dependencies (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt install --yes \
+            bundler \
+            libpq-dev \
+            libsqlite3-dev \
+            nodejs \
+            protobuf-compiler
+
+      - name: install dependencies (macos)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install llvm
+          brew install pkg-config
+          brew install protobuf
+
+      - name: Build sqld (linux/macos)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cargo -V
+          git status
+          git describe --tags
+          cargo build --release
+
+      - name: Zip artifact for deployment (linux)
+        if: matrix.os == 'ubuntu-latest'
+        #run: zip sqld-${{ github.event.inputs.tag }}-${{ matrix.os }}.zip ./target/release/sqld
+        run: |
+          pushd ./target/release
+          #zip ../../sqld-${{ github.ref_name }}-linux-x86_64.zip sqld
+          tar czvf ../../sqld-${{ github.ref_name }}-linux-x86_64.tar.gz sqld
+          popd
+
+      - name: Zip artifact for deployment (macos)
+        if: matrix.os == 'macos-latest'
+        run: |
+          uname -a
+          pushd ./target/release
+          zip ../../sqld-${{ github.ref_name }}-darwin-x86.zip sqld
+          popd
+
+#      - uses: actions/upload-artifact@v3
+#        if: matrix.os == 'macos-latest'
+#        with:
+#          name: sqld-${{ github.ref_name }}-darwin-x86
+#          path: sqld-${{ github.ref_name }}-darwin-x86.zip
+#          retention-days: 1
+#
+#      - uses: actions/upload-artifact@v3
+#        if: matrix.os == 'ubuntu-latest'
+#        with:
+#          name: sqld-${{ github.ref_name }}
+#          path: |
+#            sqld-${{ github.ref_name }}-linux-x86_64.tar.gz
+#          retention-days: 1
+  
+
+      - name: Push artefacts into release draft
+        uses: softprops/action-gh-release@v1
+        if: ${{startsWith(github.ref, 'refs/tags/') }}
+        with:
+          fail_on_unmatched_files: false
+          files: |
+            sqld-${{ github.ref_name }}-linux-x86_64.tar.gz
+            sqld-${{ github.ref_name }}-darwin-x86.zip
+
