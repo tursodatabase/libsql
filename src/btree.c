@@ -3358,6 +3358,7 @@ static int lockBtree(BtShared *pBt){
       releasePageOne(pPage1);
       pBt->usableSize = usableSize;
       pBt->pageSize = pageSize;
+      pBt->btsFlags |= BTS_PAGESIZE_FIXED;
       freeTempSpace(pBt);
       rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize,
                                    pageSize-usableSize);
