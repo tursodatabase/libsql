@@ -250,7 +250,7 @@ pub async fn run_http<D: Database>(
     tracing::info!("listening for HTTP requests on {addr}");
 
     fn trace_request<B>(req: &Request<B>, _span: &Span) {
-        tracing::info!("got request: {} {}", req.method(), req.uri());
+        tracing::debug!("got request: {} {}", req.method(), req.uri());
     }
     let service = ServiceBuilder::new()
         .option_layer(idle_shutdown_layer)
