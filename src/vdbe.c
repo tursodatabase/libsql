@@ -8509,7 +8509,7 @@ case OP_FilterAdd: {
     printf("hash: %llu modulo %d -> %u\n", h, pIn1->n, (int)(h%pIn1->n));
   }
 #endif
-  h %= pIn1->n;
+  h %= (pIn1->n*8);
   pIn1->z[h/8] |= 1<<(h&7);
   break;
 }
@@ -8545,7 +8545,7 @@ case OP_Filter: {          /* jump */
     printf("hash: %llu modulo %d -> %u\n", h, pIn1->n, (int)(h%pIn1->n));
   }
 #endif
-  h %= pIn1->n;
+  h %= (pIn1->n*8);
   if( (pIn1->z[h/8] & (1<<(h&7)))==0 ){
     VdbeBranchTaken(1, 2);
     p->aCounter[SQLITE_STMTSTATUS_FILTER_HIT]++;
