@@ -4840,7 +4840,9 @@ static void fts5DoSecureDelete(
           iOff += sqlite3Fts5PutVarint(&aPg[iOff], nPrefix);
         }
         iOff += sqlite3Fts5PutVarint(&aPg[iOff], nSuffix);
-        if( nPrefix2>nPrefix ){
+        if( nPrefix2>pSeg->term.n ){
+          p->rc = FTS5_CORRUPT;
+        }else if( nPrefix2>nPrefix ){
           memcpy(&aPg[iOff], &pSeg->term.p[nPrefix], nPrefix2-nPrefix);
           iOff += (nPrefix2-nPrefix);
         }
