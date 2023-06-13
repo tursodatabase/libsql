@@ -891,6 +891,15 @@ void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p){
 #endif /* SQLITE_MAX_EXPR_DEPTH>0 */
 
 /*
+** Set the error offset for an Expr node, if possible.
+*/
+void sqlite3ExprSetErrorOffset(Expr *pExpr, int iOfst){
+  if( pExpr==0 ) return;
+  if( NEVER(ExprUseWJoin(pExpr)) ) return;
+  pExpr->w.iOfst = iOfst;
+}
+
+/*
 ** This routine is the core allocator for Expr nodes.
 **
 ** Construct a new expression node and return a pointer to it.  Memory

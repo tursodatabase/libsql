@@ -6108,10 +6108,16 @@ static int selectExpander(Walker *pWalker, Select *p){
         ** expanded. */
         int tableSeen = 0;      /* Set to 1 when TABLE matches */
         char *zTName = 0;       /* text of name of TABLE */
+        int iErrOfst;
         if( pE->op==TK_DOT ){
           assert( pE->pLeft!=0 );
           assert( !ExprHasProperty(pE->pLeft, EP_IntValue) );
           zTName = pE->pLeft->u.zToken;
+          assert( ExprUseWOfst(pE->pLeft) );
+          iErrOfst = pE->pRight->w.iOfst;
+        }else{
+          assert( ExprUseWOfst(pE) );
+          iErrOfst = pE->w.iOfst;
         }
         for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
           Table *pTab = pFrom->pTab;   /* Table for this data source */
@@ -6148,6 +6154,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             for(ii=0; ii<pUsing->nId; ii++){
               const char *zUName = pUsing->a[ii].zName;
               pRight = sqlite3Expr(db, TK_ID, zUName);
+              sqlite3ExprSetErrorOffset(pRight, iErrOfst);
               pNew = sqlite3ExprListAppend(pParse, pNew, pRight);
               if( pNew ){
                 struct ExprList_item *pX = &pNew->a[pNew->nExpr-1];
@@ -6220,6 +6227,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             }else{
               pExpr = pRight;
             }
+            sqlite3ExprSetErrorOffset(pExpr, iErrOfst);
             pNew = sqlite3ExprListAppend(pParse, pNew, pExpr);
             if( pNew==0 ){
               break;  /* OOM */

@@ -3023,6 +3023,8 @@ struct Expr {
 */
 #define ExprUseUToken(E)    (((E)->flags&EP_IntValue)==0)
 #define ExprUseUValue(E)    (((E)->flags&EP_IntValue)!=0)
+#define ExprUseWOfst(E)     (((E)->flags&(EP_InnerON|EP_OuterON))==0)
+#define ExprUseWJoin(E)     (((E)->flags&(EP_InnerON|EP_OuterON))!=0)
 #define ExprUseXList(E)     (((E)->flags&EP_xIsSelect)==0)
 #define ExprUseXSelect(E)   (((E)->flags&EP_xIsSelect)!=0)
 #define ExprUseYTab(E)      (((E)->flags&(EP_WinFunc|EP_Subrtn))==0)
@@ -5491,6 +5493,7 @@ void sqlite3ExprSetHeightAndFlags(Parse *pParse, Expr *p);
   #define sqlite3SelectExprHeight(x) 0
   #define sqlite3ExprCheckHeight(x,y)
 #endif
+void sqlite3ExprSetErrorOffset(Expr*,int);
 
 u32 sqlite3Get4byte(const u8*);
 void sqlite3Put4byte(u8*, u32);

@@ -655,14 +655,17 @@ selcollist(A) ::= sclp(A) scanpt(B) expr(X) scanpt(Z) as(Y).     {
    if( Y.n>0 ) sqlite3ExprListSetName(pParse, A, &Y, 1);
    sqlite3ExprListSetSpan(pParse,A,B,Z);
 }
-selcollist(A) ::= sclp(A) scanpt STAR. {
+selcollist(A) ::= sclp(A) scanpt STAR(X). {
   Expr *p = sqlite3Expr(pParse->db, TK_ASTERISK, 0);
+  sqlite3ExprSetErrorOffset(p, (int)(X.z - pParse->zTail));
   A = sqlite3ExprListAppend(pParse, A, p);
 }
-selcollist(A) ::= sclp(A) scanpt nm(X) DOT STAR. {
-  Expr *pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0);
-  Expr *pLeft = tokenExpr(pParse, TK_ID, X);
-  Expr *pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
+selcollist(A) ::= sclp(A) scanpt nm(X) DOT STAR(Y). {
+  Expr *pRight, *pLeft, *pDot;
+  pRight = sqlite3PExpr(pParse, TK_ASTERISK, 0, 0);
+  sqlite3ExprSetErrorOffset(pRight, (int)(Y.z - pParse->zTail));
+  pLeft = tokenExpr(pParse, TK_ID, X);
+  pDot = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight);
   A = sqlite3ExprListAppend(pParse,A, pDot);
 }
 
