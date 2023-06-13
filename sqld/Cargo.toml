@@ -14,7 +14,7 @@ bottomless = { version = "0", path = "../bottomless", features = ["libsql_linked
 bytemuck = { version = "1.13.0", features = ["derive"] }
 bytes = { version = "1.2.1", features = ["serde"] }
 bytesize = "1.2.0"
-clap = { version = "4.0.23", features = [ "derive", "env"] }
+clap = { version = "4.0.23", features = [ "derive", "env", "string" ] }
 console-subscriber = { version = "0.1.9", optional = true }
 crc = "3.0.0"
 crossbeam = "0.8.2"
