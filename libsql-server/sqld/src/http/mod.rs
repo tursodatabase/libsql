@@ -32,6 +32,7 @@ use crate::query_analysis::{predict_final_state, State, Statement};
 use crate::query_result_builder::QueryResultBuilder;
 use crate::stats::Stats;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
+use crate::version;
 
 use self::result_builder::JsonHttpPayloadBuilder;
 use self::types::QueryObject;
@@ -231,8 +232,8 @@ async fn handle_request<D: Database>(
 }
 
 fn handle_version() -> Response<Body> {
-    let version = env!("CARGO_PKG_VERSION");
-    Response::new(Body::from(version.as_bytes()))
+    let version = version::version();
+    Response::new(Body::from(version))
 }
 
 // TODO: refactor

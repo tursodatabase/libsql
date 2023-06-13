@@ -9,7 +9,7 @@ use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use mimalloc::MiMalloc;
-use sqld::{database::dump::exporter::export_dump, Config};
+use sqld::{database::dump::exporter::export_dump, version::Version, Config};
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -21,7 +21,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 /// SQL daemon
 #[derive(Debug, Parser)]
 #[command(name = "sqld")]
-#[command(about = "SQL daemon", version, long_about = None)]
+#[command(about = "SQL daemon", version = Version::default(), long_about = None)]
 struct Cli {
     #[clap(long, short, default_value = "data.sqld", env = "SQLD_DB_PATH")]
     db_path: PathBuf,
