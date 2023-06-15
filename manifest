@@ -1,12 +1,12 @@
-C Fix\sharmless\stypo\sin\sa\scomment.
-D 2023-06-15T15:43:08.269
+C Updates\sto\sthe\sREADME.md\sfile.
+D 2023-06-15T16:02:19.084
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 4b75bbccdbdd1d4953f67f93ec7fd6dbc31d0f5eeab432ad0dc56d70b8aff0d5
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
 F Makefile.msc 82b56254cedf800b3388ce54b4b271ae1a47f5a9332866b25e21689049eb3c09
-F README.md 6f942c2e542d53202dc75b114b0617e9e02f8a6a777508fc23c3d8297951c478
+F README.md 8ff80689b9cb9f6e9b842edf31a3358ff53bc538c351799e03dd3e5455e637e5
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aebdbcbebff1319dd00551c9fb9ad4b08859f10e87f097295d564ae1ba188c02
-R 0a512593589ff90f07342e2ae611cea4
+P 6937986a687e4afea39168702f3a29aef0d60cebff024edab30d1aecfe159065
+R e1b72416938244e2dcaed8362cccd982
 U drh
-Z c0a891dd520b42b40473b524fa2bd6c0
+Z a4d53ad11b0af40e07ac8fdc927f8b7c
 # Remove this line to create a well-formed Fossil manifest.

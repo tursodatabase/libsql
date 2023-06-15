@@ -25,7 +25,29 @@ If you pulled your SQLite source code from a secondary source and want to
 verify its integrity, there are hints on how to do that in the
 [Verifying Code Authenticity](#vauth) section below.
 
-## Obtaining The Code
+## Contacting The SQLite Developers
+
+The preferred way to ask questions or make comments about SQLite or to
+report bugs against SQLite is to visit the 
+[SQLite Forum](https://sqlite.org/forum) at <https://sqlite.org/forum/>.
+Anonymous postings are permitted.
+
+If you think you have found a bug that has security implications and
+you do not want to report it on the public forum, you can send a private
+email to drh at sqlite dot org.
+
+## Public Domain
+
+The SQLite source code is in the public domain.  See
+<https://sqlite.org/copyright.html> for details. 
+
+Because SQLite is in the public domain,
+we cannot accept pull requests, because
+if we did accept a pull request, the changes in that pull request would
+carry a copyright and the SQLite source code would no longer be fully in
+the public domain.
+
+## Obtaining The SQLite Source Code
 
 If you do not want to use Fossil, you can download tarballs or ZIP
 archives or [SQLite archives](https://sqlite.org/cli.html#sqlar) as follows:
@@ -290,15 +312,12 @@ Key files:
      is not part of the core SQLite library.  But as most of the tests in this
      repository are written in Tcl, the Tcl language bindings are important.
 
-  *  **test*.c** - Files in the src/ folder that begin with "test" go into
+  *  **test\*.c** - Files in the src/ folder that begin with "test" go into
      building the "testfixture.exe" program.  The testfixture.exe program is
      an enhanced Tcl shell.  The testfixture.exe program runs scripts in the
      test/ folder to validate the core SQLite code.  The testfixture program
      (and some other test programs too) is built and run when you type
      "make test".
-
-  *  **ext/misc/json1.c** - This file implements the various JSON functions
-     that are built into SQLite.
 
 There are many other source files.  Each has a succinct header comment that
 describes its purpose and role within the larger system.
@@ -334,7 +353,7 @@ hidden by also modifying the makefiles.
 
 ## Contacts
 
-The main SQLite website is [http://www.sqlite.org/](http://www.sqlite.org/)
+The main SQLite website is [http:/sqlite.org/](http://sqlite.org/)
 with geographically distributed backups at
 [http://www2.sqlite.org/](http://www2.sqlite.org) and
 [http://www3.sqlite.org/](http://www3.sqlite.org).
