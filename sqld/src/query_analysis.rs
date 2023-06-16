@@ -47,6 +47,7 @@ fn write_if_not_reserved(name: &QualifiedName) -> Option<StmtKind> {
 impl StmtKind {
     fn kind(cmd: &Cmd) -> Option<Self> {
         match cmd {
+            Cmd::Explain(Stmt::Pragma(name, body)) => Self::pragma_kind(name, body.as_ref()),
             Cmd::Explain(_) => Some(Self::Other),
             Cmd::ExplainQueryPlan(_) => Some(Self::Other),
             Cmd::Stmt(Stmt::Begin { .. }) => Some(Self::TxnBegin),
