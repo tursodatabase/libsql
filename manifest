@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sREADME.md\sfile.
-D 2023-06-15T16:02:19.084
+C Fix\sthe\spager\ssuch\sthat\sif\sthe\sxOpen()\smessage\ssends\sback\sthe\sSQLITE_OPEN_MEMORY\nflag,\sthe\spager\sis\sopened\sin\sjournal-mode\sMEMORY,\seven\sif\scompiled\swith\nSQLITE_OMIT_DESERIALIZE.\s\sNo\schanges\sto\sthe\slogic\sas\slong\sas\sthat\sOMIT\sflag\nis\somitted.\s\sWe\sneed\sto\sbetter\sdocument\sthe\sbehavior\sof\sxOpen\sto\sdescribe\sthis.
+D 2023-06-16T11:05:49.710
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -623,7 +623,7 @@ F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d87210
 F src/os_unix.c 95b407307deb902a3bd9a5d5666c7838709cccb337baeee6ef0a53f512d3673e
 F src/os_win.c 79ff2345aafe92be324e8d9062050c6c5ae714c2db6b4b5334d7d28e70ea81e6
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
-F src/pager.c 0dfe6a9c76ca8ad8eb91a3867dd20ba1f5c854bc5e9cd9cde62112bdee1822be
+F src/pager.c 30adfa7f9316dd0e925e48fa17a87fce72370e49cd18cac990f1d356e8857c48
 F src/pager.h f82e9844166e1585f5786837ddc7709966138ced17f568c16af7ccf946c2baa3
 F src/parse.y b1ac02e59fdd76d7613c4d75855fb51854f6566c5aa2c372f94023a12d7945f7
 F src/pcache.c 4cd4a0043167da9ba7e19b4d179a0e6354e7fe32c16f781ecf9bf0a5ff63b40b
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6937986a687e4afea39168702f3a29aef0d60cebff024edab30d1aecfe159065
-R e1b72416938244e2dcaed8362cccd982
+P fa5cb6dab52dcf853854ad12922a125b9a5f898362e883bb31b2f789c632288b
+R 1e00351adb0d3a10f3ec45aa365fd7b0
 U drh
-Z a4d53ad11b0af40e07ac8fdc927f8b7c
+Z 963464765e856b8e7087ddeaacf625ce
 # Remove this line to create a well-formed Fossil manifest.
