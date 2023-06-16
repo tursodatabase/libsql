@@ -2658,6 +2658,8 @@ int sqlite3OpenTableAndIndices(
 
   assert( op==OP_OpenRead || op==OP_OpenWrite );
   assert( op==OP_OpenWrite || p5==0 );
+  assert( piDataCur!=0 );
+  assert( piIdxCur!=0 );
   if( IsVirtual(pTab) ){
     /* This routine is a no-op for virtual tables. Leave the output
     ** variables *piDataCur and *piIdxCur set to illegal cursor numbers
@@ -2670,18 +2672,18 @@ int sqlite3OpenTableAndIndices(
   assert( v!=0 );
   if( iBase<0 ) iBase = pParse->nTab;
   iDataCur = iBase++;
-  if( piDataCur ) *piDataCur = iDataCur;
+  *piDataCur = iDataCur;
   if( HasRowid(pTab) && (aToOpen==0 || aToOpen[0]) ){
     sqlite3OpenTable(pParse, iDataCur, iDb, pTab, op);
   }else{
     sqlite3TableLock(pParse, iDb, pTab->tnum, op==OP_OpenWrite, pTab->zName);
   }
-  if( piIdxCur ) *piIdxCur = iBase;
+  *piIdxCur = iBase;
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     int iIdxCur = iBase++;
     assert( pIdx->pSchema==pTab->pSchema );
     if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
-      if( piDataCur ) *piDataCur = iIdxCur;
+      *piDataCur = iIdxCur;
       p5 = 0;
     }
     if( aToOpen==0 || aToOpen[i+1] ){

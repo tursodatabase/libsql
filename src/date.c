@@ -913,7 +913,7 @@ static int parseModifier(
         }
       }
       if( sqlite3AtoF(z, &r, n, SQLITE_UTF8)<=0 ){
-        rc = 1;
+        assert( rc==1 );
         break;
       }
       if( z[n]=='-' ){
@@ -993,7 +993,7 @@ static int parseModifier(
       if( n>10 || n<3 ) break;
       if( sqlite3UpperToLower[(u8)z[n-1]]=='s' ) n--;
       computeJD(p);
-      rc = 1;
+      assert( rc==1 );
       rRounder = r<0 ? -0.5 : +0.5;
       for(i=0; i<ArraySize(aXformType); i++){
         if( aXformType[i].nName==n
@@ -1437,13 +1437,14 @@ static void cdateFunc(
 */
 static void timediffFunc(
   sqlite3_context *context,
-  int argc,
+  int NotUsed1,
   sqlite3_value **argv
 ){
   char sign;
   int Y, M;
   DateTime d1, d2;
   sqlite3_str sRes;
+  UNUSED_PARAMETER(NotUsed1);
   if( isDate(context, 1, &argv[0], &d1) ) return;
   if( isDate(context, 1, &argv[1], &d2) ) return;
   computeYMD_HMS(&d1);

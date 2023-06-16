@@ -1448,9 +1448,8 @@ void sqlite3FkDelete(sqlite3 *db, Table *pTab){
       if( pFKey->pPrevTo ){
         pFKey->pPrevTo->pNextTo = pFKey->pNextTo;
       }else{
-        void *p = (void *)pFKey->pNextTo;
-        const char *z = (p ? pFKey->pNextTo->zTo : pFKey->zTo);
-        sqlite3HashInsert(&pTab->pSchema->fkeyHash, z, p);
+        const char *z = (pFKey->pNextTo ? pFKey->pNextTo->zTo : pFKey->zTo);
+        sqlite3HashInsert(&pTab->pSchema->fkeyHash, z, pFKey->pNextTo);
       }
       if( pFKey->pNextTo ){
         pFKey->pNextTo->pPrevTo = pFKey->pPrevTo;

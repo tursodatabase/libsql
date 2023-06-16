@@ -3343,7 +3343,7 @@ static int winLock(sqlite3_file *id, int locktype){
   */
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
-    res = winUnlockReadLock(pFile);
+    (void)winUnlockReadLock(pFile);
     res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
     if( res ){

@@ -554,12 +554,11 @@ select(A) ::= WITH wqlist(W) selectnowith(X). {A = attachWithToSelect(pParse,X,W
 select(A) ::= WITH RECURSIVE wqlist(W) selectnowith(X).
                                               {A = attachWithToSelect(pParse,X,W);}
 %endif /* SQLITE_OMIT_CTE */
-select(A) ::= selectnowith(X). {
-  Select *p = X;
+select(A) ::= selectnowith(A). {
+  Select *p = A;
   if( p ){
     parserDoubleLinkSelect(pParse, p);
   }
-  A = p; /*A-overwrites-X*/
 }
 
 selectnowith(A) ::= oneselect(A).
@@ -1761,7 +1760,7 @@ wqlist(A) ::= wqlist(A) COMMA wqitem(X). {
 %ifndef SQLITE_OMIT_WINDOWFUNC
 %type windowdefn_list {Window*}
 %destructor windowdefn_list {sqlite3WindowListDelete(pParse->db, $$);}
-windowdefn_list(A) ::= windowdefn(Z). { A = Z; }
+windowdefn_list(A) ::= windowdefn(A).
 windowdefn_list(A) ::= windowdefn_list(Y) COMMA windowdefn(Z). {
   assert( Z!=0 );
   sqlite3WindowChain(pParse, Z, Y);
@@ -1817,9 +1816,7 @@ window(A) ::= ORDER BY sortlist(Y) frame_opt(Z). {
 window(A) ::= nm(W) ORDER BY sortlist(Y) frame_opt(Z). {
   A = sqlite3WindowAssemble(pParse, Z, 0, Y, &W);
 }
-window(A) ::= frame_opt(Z). {
-  A = Z;
-}
+window(A) ::= frame_opt(A).
 window(A) ::= nm(W) frame_opt(Z). {
   A = sqlite3WindowAssemble(pParse, Z, 0, 0, &W);
 }

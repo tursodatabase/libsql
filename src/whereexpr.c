@@ -229,7 +229,7 @@ static int isLikeOrGlob(
     ** range search. The third is because the caller assumes that the pattern
     ** consists of at least one character after all escapes have been
     ** removed.  */
-    if( cnt!=0 && 255!=(u8)z[cnt-1] && (cnt>1 || z[0]!=wc[3]) ){
+    if( (cnt>1 || (cnt>0 && z[0]!=wc[3])) && 255!=(u8)z[cnt-1] ){
       Expr *pPrefix;
 
       /* A "complete" match if the pattern ends with "*" or "%" */

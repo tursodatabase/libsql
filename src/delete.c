@@ -497,7 +497,7 @@ void sqlite3DeleteFrom(
     if( HasRowid(pTab) ){
       /* For a rowid table, initialize the RowSet to an empty set */
       pPk = 0;
-      nPk = 1;
+      assert( nPk==1 );
       iRowSet = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
     }else{

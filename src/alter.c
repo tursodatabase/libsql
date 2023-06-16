@@ -542,7 +542,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   pNew->u.tab.pDfltList = sqlite3ExprListDup(db, pTab->u.tab.pDfltList, 0);
   pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->u.tab.addColOffset = pTab->u.tab.addColOffset;
-  pNew->nTabRef = 1;
+  assert( pNew->nTabRef==1 );
 
 exit_begin_add_column:
   sqlite3SrcListDelete(db, pSrc);

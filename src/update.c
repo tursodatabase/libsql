@@ -813,6 +813,8 @@ void sqlite3Update(
 
     if( !isView ){
       int addrOnce = 0;
+      int iNotUsed1 = 0;
+      int iNotUsed2 = 0;
 
       /* Open every index that needs updating. */
       if( eOnePass!=ONEPASS_OFF ){
@@ -824,7 +826,7 @@ void sqlite3Update(
         addrOnce = sqlite3VdbeAddOp0(v, OP_Once); VdbeCoverage(v);
       }
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, 0, iBaseCur,
-                                 aToOpen, 0, 0);
+                                 aToOpen, &iNotUsed1, &iNotUsed2);
       if( addrOnce ){
         sqlite3VdbeJumpHereOrPopInst(v, addrOnce);
       }
