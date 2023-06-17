@@ -1,5 +1,5 @@
-C In\sdate/time\sfunctions,\sfix\sthe\srendering\sof\s"subsecond"\sand\sthe\ncomputeHMS()\sroutine\sto\sbetter\sdeal\swith\sfloating\spoint\nrounding\serrors\sthat\sarise\son\ssome\s32-bit\ssystems.
-D 2023-06-17T15:22:00.451
+C Fix\sharmless\scompiler\swarnings\sthat\sshow\sup\son\s32-bit\sRaspberryPI\sbuilds.
+D 2023-06-17T15:42:44.843
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -404,7 +404,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 971e0b5bd9adaf0811feb8c0842a310811159da10319eb0e74fdb42bf26b99ca
-F ext/rtree/rtree.c 33d6642fcf956e62ca0e4aa06631c3529e3a9ac9bb4108542d81ac2bd0a8d24a
+F ext/rtree/rtree.c fb36e05027505f2c0dab24564e1d58ca4b789a6dfa48cf51aeee570018cf4814
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 877d40b8b61b1f88cec9d4dc0ff8334f5b05299fac12a35141532e2881860e9d
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -645,8 +645,8 @@ F src/sqliteInt.h 51409a4f9456865fe7b15a9c0563bcf193d52f8a1c4f7a951ee988160ed265
 F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
-F src/tclsqlite.c 9952874a1f1bb9fa6406b334cadf748c273cd2f2d4501152022a95dd37dc7958
-F src/test1.c 8ae514d6a0d030f7953a99ff5dca6419cb7a5ad1a1c392d1fdf0f069e6ca792b
+F src/tclsqlite.c ecbc3c99c0d0c3ed122a913f143026c26d38d57f33e06bb71185dd5c1efe37cd
+F src/test1.c e6ab4a00671f052366a01bcb7fdf2e2f6bb4aa884cd01e738c5590dcf47a99ca
 F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
 F src/test3.c e5178558c41ff53236ae0271e9acb3d6885a94981d2eb939536ee6474598840e
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 365caf2f97e8f15842f52536e8d05d359e9d6e863182e020ce14a9a9f27ee057
-R 73503eeccae824219370676594eff77d
+P e46a00ae880dd12df090105498a85017d1367f88bf27d86f0b0200cf0536a906
+R 1b8658aac7e36fa40ad4f47b9571b01d
 U drh
-Z bc326b4113337a90f4cbc022d068432e
+Z 543e3b677c39317978e53df057f78234
 # Remove this line to create a well-formed Fossil manifest.
