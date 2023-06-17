@@ -448,55 +448,21 @@ static void computeYMD(DateTime *p){
   p->validYMD = 1;
 }
 
-/* GCC (and sometimes Clang too) will sometimes be off by 1 millisecond
-** in computeHMS() on 32-bit platforms with optimization enabled.
-** I don't know if this is a compiler bug or a bug in the code.  It is hard
-** to debug because with optimization enabled, gdb skips around so much
-** you cannot see what is happening, and if you try adding debug printf()s
-** to the code, the problem goes away.
-**
-** For now, I will work around the problem by disabling optimizations in
-** the computeHMS() routine.
-**
-** Problem seen using gcc-5.4.0, gcc-9.4.0, clang-10.  Works ok on
-** MSVC, clang-3.4, and clang-6.0.
-**
-** Whatever the problem is, it causes some answers to be off by one
-** millisecond.  So we get results like "2021-03-05 03:04:05.599" instead
-** of the desired result of "2021-03-05 03:04:05.600".
-**
-** To reproduce the problem using TH3:
-**
-**    ./th3make debug.rc -O1 -m32 cfg/c1.cfg cov1/date8.test
-*/
-#if SQLITE_PTRSIZE==4 && GCC_VERSION>0
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-#endif
-
 /*
 ** Compute the Hour, Minute, and Seconds from the julian day number.
 */
 static void computeHMS(DateTime *p){
-  int s;
+  int day_ms, day_min; /* milliseconds, minutes into the day */
   if( p->validHMS ) return;
   computeJD(p);
-  s = (int)((p->iJD + 43200000) % 86400000);
-  p->s = s/1000.0;
-  s = (int)p->s;
-  p->s -= s;
-  p->h = s/3600;
-  s -= p->h*3600;
-  p->m = s/60;
-  p->s += s - p->m*60;
+  day_ms = (int)((p->iJD + 43200000) % 86400000);
+  p->s = (day_ms % 60000)/1000.0;
+  day_min = day_ms/60000;
+  p->m = day_min % 60;
+  p->h = day_min / 60;
   p->rawS = 0;
   p->validHMS = 1;
 }
-
-/* Reactivate GCC optimization */
-#if SQLITE_PTRSIZE==4 && GCC_VERSION>0
-#pragma GCC pop_options
-#endif
 
 /*
 ** Compute both YMD and HMS
@@ -1160,7 +1126,7 @@ static void datetimeFunc(
     zBuf[16] = '0' + (x.m)%10;
     zBuf[17] = ':';
     if( x.useSubsec ){
-      s = (int)1000.0*x.s;
+      s = (int)(1000.0*x.s + 0.5);
       zBuf[18] = '0' + (s/10000)%10;
       zBuf[19] = '0' + (s/1000)%10;
       zBuf[20] = '.';
@@ -1207,7 +1173,7 @@ static void timeFunc(
     zBuf[4] = '0' + (x.m)%10;
     zBuf[5] = ':';
     if( x.useSubsec ){
-      s = (int)1000.0*x.s;
+      s = (int)(1000.0*x.s + 0.5);
       zBuf[6] = '0' + (s/10000)%10;
       zBuf[7] = '0' + (s/1000)%10;
       zBuf[8] = '.';

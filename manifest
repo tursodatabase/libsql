@@ -1,5 +1,5 @@
-C Address\svarious\sharmless\scompiler\swarnings\sfrom\n[forum:/forumpost/d526da8ee4|forum\spost\sd526da8ee4].
-D 2023-06-16T14:39:21.991
+C In\sdate/time\sfunctions,\sfix\sthe\srendering\sof\s"subsecond"\sand\sthe\ncomputeHMS()\sroutine\sto\sbetter\sdeal\swith\sfloating\spoint\nrounding\serrors\sthat\sarise\son\ssome\s32-bit\ssystems.
+D 2023-06-17T15:22:00.451
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -582,7 +582,7 @@ F src/build.c cb54df6fd018a18e940a251c5e31780ffba8bc6c7a01e670b96a489adcbfb3b4
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c 36dfd2525c5544dbb246084e93839b839366e2204e7fb4a1a68a50f4344d32bc
+F src/date.c 62e7936bc31a6a78ad93d36e5261c41113a4c1cad7f043c77790a5ffc8c63e2d
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 092d745aa08969204a351711193e7f34de449ea57755eacbd11f1c316e9f7673
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P da1252b29852191eccbea98e0314408c75bb83a51f9d68d589705d4971a23850
-R bd866507ab2ad9c1d16b6b41135b6999
+P 365caf2f97e8f15842f52536e8d05d359e9d6e863182e020ce14a9a9f27ee057
+R 73503eeccae824219370676594eff77d
 U drh
-Z 3cd810c8278f3d496fd739b853fdc856
+Z bc326b4113337a90f4cbc022d068432e
 # Remove this line to create a well-formed Fossil manifest.
