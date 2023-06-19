@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sthat\sshow\sup\son\s32-bit\sRaspberryPI\sbuilds.
-D 2023-06-17T15:42:44.843
+C Fix\slarge\sinteger\sconstants\sso\sthat\sthey\swork\son\solder\sC\scompilers.
+D 2023-06-19T13:09:16.199
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -309,7 +309,7 @@ F ext/misc/regexp.c 4bdd0045912f81c84908bd535ec5ad3b1c8540b4287c70ab840709636240
 F ext/misc/remember.c add730f0f7e7436cd15ea3fd6a90fd83c3f706ab44169f7f048438b7d6baa69c
 F ext/misc/rot13.c 51ac5f51e9d5fd811db58a9c23c628ad5f333c173f1fc53c8491a3603d38556c
 F ext/misc/scrub.c 2a44b0d44c69584c0580ad2553f6290a307a49df4668941d2812135bfb96a946
-F ext/misc/series.c d4001360b2b05a831bbad378e131bd585b29499482e3f2557e86dbd3e2367f25
+F ext/misc/series.c dde5ba69cb9053ff32b5afd64e8d202472325bc052301e31e4d9c0d87e4fff50
 F ext/misc/sha1.c 4011aef176616872b2a0d5bccf0ecfb1f7ce3fe5c3d107f3a8e949d8e1e3f08d
 F ext/misc/shathree.c 543af7ce71d391cd3a9ab6924a6a1124efc63211fd0f2e240dc4b56077ba88ac
 F ext/misc/showauth.c 732578f0fe4ce42d577e1c86dc89dd14a006ab52
@@ -582,7 +582,7 @@ F src/build.c cb54df6fd018a18e940a251c5e31780ffba8bc6c7a01e670b96a489adcbfb3b4
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
 F src/ctime.c 20507cc0b0a6c19cd882fcd0eaeda32ae6a4229fb4b024cfdf3183043d9b703d
-F src/date.c 62e7936bc31a6a78ad93d36e5261c41113a4c1cad7f043c77790a5ffc8c63e2d
+F src/date.c f73f203b3877cef866c60ab402aec2bf89597219b60635cf50cbe3c5e4533e94
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c 092d745aa08969204a351711193e7f34de449ea57755eacbd11f1c316e9f7673
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e46a00ae880dd12df090105498a85017d1367f88bf27d86f0b0200cf0536a906
-R 1b8658aac7e36fa40ad4f47b9571b01d
+P bc4d20f362925e4ce5c79f0d7a27a8e9bbac92525bd4cea2ae983798e3f8c37d
+R 4f624e24f6c2ab94a4c616a97b2a4cbc
 U drh
-Z 543e3b677c39317978e53df057f78234
+Z d7b617717e187efbbfc027ed7ee0c3f2
 # Remove this line to create a well-formed Fossil manifest.

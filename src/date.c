@@ -1448,7 +1448,7 @@ static void timediffFunc(
       computeJD(&d2);
     }
     d1.iJD -= d2.iJD;
-    d1.iJD += 148699540800000;
+    d1.iJD += (u64)1486995408 * (u64)100000;
   }else /* d1<d2 */{
     sign = '-';
     Y = d2.Y - d1.Y;
@@ -1482,7 +1482,7 @@ static void timediffFunc(
       computeJD(&d2);
     }
     d1.iJD = d2.iJD - d1.iJD;
-    d1.iJD += 148699540800000;
+    d1.iJD += (u64)1486995408 * (u64)100000;
   }
   d1.validYMD = 0;
   d1.validHMS = 0;
