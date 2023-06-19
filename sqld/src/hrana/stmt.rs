@@ -40,6 +40,9 @@ pub enum StmtError {
         message: String,
         offset: i32,
     },
+
+    #[error("Operation was blocked{}", .reason.as_ref().map(|msg| format!(": {}", msg)).unwrap_or_default())]
+    Blocked { reason: Option<String> },
 }
 
 pub async fn execute_stmt(
@@ -188,6 +191,7 @@ pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, Sq
         SqldError::LibSqlInvalidQueryParams(source) => StmtError::ArgsInvalid { source },
         SqldError::LibSqlTxTimeout => StmtError::TransactionTimeout,
         SqldError::LibSqlTxBusy => StmtError::TransactionBusy,
+        SqldError::Blocked(reason) => StmtError::Blocked { reason },
         SqldError::RusqliteError(rusqlite_error) => match rusqlite_error {
             rusqlite::Error::SqliteFailure(sqlite_error, Some(message)) => StmtError::SqliteError {
                 source: sqlite_error,
@@ -232,6 +236,7 @@ impl StmtError {
             Self::TransactionBusy => "TRANSACTION_BUSY",
             Self::SqliteError { source, .. } => sqlite_error_code(source.code),
             Self::SqlInputError { .. } => "SQL_INPUT_ERROR",
+            Self::Blocked { .. } => "BLOCKED",
         }
     }
 }

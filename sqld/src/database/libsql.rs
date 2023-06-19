@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crossbeam::channel::RecvTimeoutError;
@@ -16,6 +17,7 @@ use crate::query_result_builder::{QueryBuilderConfig, QueryResultBuilder};
 use crate::stats::Stats;
 use crate::Result;
 
+use super::config::DatabaseConfigStore;
 use super::factory::DbFactory;
 use super::{
     Cond, Database, DescribeCol, DescribeParam, DescribeResponse, DescribeResult, Program, Step,
@@ -30,6 +32,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     hook: &'static WalMethodsHook<W>,
     ctx_builder: Box<dyn Fn() -> W::Context + Sync + Send + 'static>,
     stats: Stats,
+    config_store: Arc<DatabaseConfigStore>,
     extensions: Vec<PathBuf>,
     max_response_size: u64,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
@@ -47,6 +50,7 @@ where
         hook: &'static WalMethodsHook<W>,
         ctx_builder: F,
         stats: Stats,
+        config_store: Arc<DatabaseConfigStore>,
         extensions: Vec<PathBuf>,
         max_response_size: u64,
     ) -> Result<Self>
@@ -58,6 +62,7 @@ where
             hook,
             ctx_builder: Box::new(ctx_builder),
             stats,
+            config_store,
             extensions,
             max_response_size,
             _db: None,
@@ -105,6 +110,7 @@ where
             self.hook,
             (self.ctx_builder)(),
             self.stats.clone(),
+            self.config_store.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
             },
@@ -157,6 +163,7 @@ impl LibSqlDb {
         wal_hook: &'static WalMethodsHook<W>,
         hook_ctx: W::Context,
         stats: Stats,
+        config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
     ) -> crate::Result<Self>
     where
@@ -174,6 +181,7 @@ impl LibSqlDb {
                 wal_hook,
                 &mut ctx,
                 stats,
+                config_store,
                 builder_config,
             ) {
                 Ok(conn) => {
@@ -229,6 +237,7 @@ struct Connection<'a> {
     conn: sqld_libsql_bindings::Connection<'a>,
     timed_out: bool,
     stats: Stats,
+    config_store: Arc<DatabaseConfigStore>,
     builder_config: QueryBuilderConfig,
 }
 
@@ -239,6 +248,7 @@ impl<'a> Connection<'a> {
         wal_methods: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
         stats: Stats,
+        config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
     ) -> Result<Self> {
         let this = Self {
@@ -246,6 +256,7 @@ impl<'a> Connection<'a> {
             timeout_deadline: None,
             timed_out: false,
             stats,
+            config_store,
             builder_config,
         };
 
@@ -328,6 +339,16 @@ impl<'a> Connection<'a> {
         builder: &mut impl QueryResultBuilder,
     ) -> Result<(u64, Option<i64>)> {
         tracing::trace!("executing query: {}", query.stmt.stmt);
+
+        let config = self.config_store.get();
+        let blocked = match query.stmt.kind {
+            StmtKind::Read | StmtKind::TxnBegin | StmtKind::Other => config.block_reads,
+            StmtKind::Write => config.block_reads || config.block_writes,
+            StmtKind::TxnEnd => false,
+        };
+        if blocked {
+            return Err(Error::Blocked(config.block_reason.clone()));
+        }
 
         let mut stmt = self.conn.prepare(&query.stmt.stmt)?;
 
@@ -536,6 +557,7 @@ mod test {
             conn: sqld_libsql_bindings::Connection::test(ctx),
             timed_out: false,
             stats: Stats::default(),
+            config_store: Arc::new(DatabaseConfigStore::new_test()),
             builder_config: QueryBuilderConfig::default(),
         };
 

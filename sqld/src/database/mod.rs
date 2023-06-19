@@ -7,6 +7,7 @@ use crate::query_analysis::{State, Statement};
 use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
 use crate::Result;
 
+pub mod config;
 pub mod dump;
 pub mod factory;
 pub mod libsql;

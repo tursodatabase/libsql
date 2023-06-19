@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use parking_lot::Mutex as PMutex;
 use rusqlite::types::ValueRef;
@@ -21,6 +22,7 @@ use crate::rpc::proxy::rpc::{DisconnectMessage, ExecuteResults};
 use crate::stats::Stats;
 use crate::Result;
 
+use super::config::DatabaseConfigStore;
 use super::Program;
 use super::{factory::DbFactory, libsql::LibSqlDb, Database, DescribeResult};
 
@@ -30,17 +32,20 @@ pub struct WriteProxyDbFactory {
     db_path: PathBuf,
     extensions: Vec<PathBuf>,
     stats: Stats,
+    config_store: Arc<DatabaseConfigStore>,
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
     max_response_size: u64,
 }
 
 impl WriteProxyDbFactory {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         db_path: PathBuf,
         extensions: Vec<PathBuf>,
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Stats,
+        config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
         max_response_size: u64,
     ) -> Self {
@@ -50,6 +55,7 @@ impl WriteProxyDbFactory {
             db_path,
             extensions,
             stats,
+            config_store,
             applied_frame_no_receiver,
             max_response_size,
         }
@@ -65,6 +71,7 @@ impl DbFactory for WriteProxyDbFactory {
             self.db_path.clone(),
             self.extensions.clone(),
             self.stats.clone(),
+            self.config_store.clone(),
             self.applied_frame_no_receiver.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
@@ -140,6 +147,7 @@ impl WriteProxyDatabase {
         path: PathBuf,
         extensions: Vec<PathBuf>,
         stats: Stats,
+        config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
         builder_config: QueryBuilderConfig,
     ) -> Result<Self> {
@@ -149,6 +157,7 @@ impl WriteProxyDatabase {
             &TRANSPARENT_METHODS,
             (),
             stats,
+            config_store,
             builder_config,
         )
         .await?;
