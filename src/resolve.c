@@ -2017,7 +2017,8 @@ int sqlite3ResolveExprNames(
     return SQLITE_ERROR;
   }
 #endif
-  sqlite3WalkExpr(&w, pExpr);
+  assert( pExpr!=0 );
+  sqlite3WalkExprNN(&w, pExpr);
 #if SQLITE_MAX_EXPR_DEPTH>0
   w.pParse->nHeight -= pExpr->nHeight;
 #endif
@@ -2059,7 +2060,7 @@ int sqlite3ResolveExprListNames(
       return WRC_Abort;
     }
 #endif
-    sqlite3WalkExpr(&w, pExpr);
+    sqlite3WalkExprNN(&w, pExpr);
 #if SQLITE_MAX_EXPR_DEPTH>0
     w.pParse->nHeight -= pExpr->nHeight;
 #endif

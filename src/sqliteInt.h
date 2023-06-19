@@ -4211,6 +4211,7 @@ struct DbFixer {
 
 /* Forward declarations */
 int sqlite3WalkExpr(Walker*, Expr*);
+int sqlite3WalkExprNN(Walker*, Expr*);
 int sqlite3WalkExprList(Walker*, ExprList*);
 int sqlite3WalkSelect(Walker*, Select*);
 int sqlite3WalkSelectExpr(Walker*, Select*);
