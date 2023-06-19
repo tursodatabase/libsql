@@ -505,7 +505,8 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       return i;
     }
     case CC_KYWD0: {
-      for(i=1; aiClass[z[i]]<=CC_KYWD; i++){}
+      if( aiClass[z[1]]>CC_KYWD ){ i = 1;  break; }
+      for(i=2; aiClass[z[i]]<=CC_KYWD; i++){}
       if( IdChar(z[i]) ){
         /* This token started out using characters that can appear in keywords,
         ** but z[i] is a character not allowed within keywords, so this must
