@@ -137,7 +137,8 @@ fn response_error_response(err: ResponseError) -> hyper::Response<hyper::Body> {
             | StmtError::SqlNoStmt
             | StmtError::SqlManyStmts
             | StmtError::ArgsInvalid { .. }
-            | StmtError::SqlInputError { .. } => hyper::StatusCode::BAD_REQUEST,
+            | StmtError::SqlInputError { .. }
+            | StmtError::Blocked { .. } => hyper::StatusCode::BAD_REQUEST,
             StmtError::ArgsBothPositionalAndNamed => hyper::StatusCode::NOT_IMPLEMENTED,
             StmtError::TransactionTimeout | StmtError::TransactionBusy => {
                 hyper::StatusCode::SERVICE_UNAVAILABLE

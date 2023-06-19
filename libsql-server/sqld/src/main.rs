@@ -40,9 +40,13 @@ struct Cli {
     #[clap(long)]
     enable_http_console: bool,
 
-    /// The address and port the Hrana server listens to.
+    /// Address and port for the legacy, Web-Socket-only Hrana server.
     #[clap(long, short = 'l', env = "SQLD_HRANA_LISTEN_ADDR")]
     hrana_listen_addr: Option<SocketAddr>,
+
+    /// The address and port for the admin HTTP API.
+    #[clap(long, env = "SQLD_ADMIN_LISTEN_ADDR")]
+    admin_listen_addr: Option<SocketAddr>,
 
     /// Path to a file with a JWT decoding key used to authenticate clients in the Hrana and HTTP
     /// APIs. The key is either a PKCS#8-encoded Ed25519 public key in PEM, or just plain bytes of
@@ -239,6 +243,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         http_addr: Some(args.http_listen_addr),
         enable_http_console: args.enable_http_console,
         hrana_addr: args.hrana_listen_addr,
+        admin_addr: args.admin_listen_addr,
         auth_jwt_key,
         http_auth: args.http_auth,
         http_self_url: args.http_self_url,

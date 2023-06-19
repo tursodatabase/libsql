@@ -33,6 +33,10 @@ pub enum Error {
     DbCreateTimeout,
     #[error(transparent)]
     BuilderError(#[from] QueryResultBuilderError),
+    #[error("Operation was blocked{}", .0.as_ref().map(|msg| format!(": {}", msg)).unwrap_or_default())]
+    Blocked(Option<String>),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {

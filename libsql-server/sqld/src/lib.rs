@@ -14,6 +14,7 @@ use tokio::task::JoinSet;
 use tonic::transport::Channel;
 use utils::services::idle_shutdown::IdleShutdownLayer;
 
+use self::database::config::DatabaseConfigStore;
 use self::database::dump::loader::DumpLoader;
 use self::database::factory::DbFactory;
 use self::database::libsql::{open_db, LibSqlDbFactory};
@@ -30,6 +31,7 @@ use sha256::try_digest;
 
 pub use sqld_libsql_bindings as libsql;
 
+mod admin_api;
 mod auth;
 pub mod database;
 mod error;
@@ -73,6 +75,7 @@ pub struct Config {
     pub http_auth: Option<String>,
     pub http_self_url: Option<String>,
     pub hrana_addr: Option<SocketAddr>,
+    pub admin_addr: Option<SocketAddr>,
     pub auth_jwt_key: Option<String>,
     pub backend: Backend,
     pub writer_rpc_addr: Option<String>,
@@ -109,6 +112,7 @@ impl Default for Config {
             http_auth: None,
             http_self_url: None,
             hrana_addr: None,
+            admin_addr: None,
             auth_jwt_key: None,
             backend: Backend::Libsql,
             writer_rpc_addr: None,
@@ -143,6 +147,7 @@ async fn run_service<D: Database>(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
+    db_config_store: Arc<DatabaseConfigStore>,
 ) -> anyhow::Result<()> {
     let auth = get_auth(config)?;
 
@@ -193,6 +198,10 @@ async fn run_service<D: Database>(
                 .await
                 .context("Hrana listener failed")
         });
+    }
+
+    if let Some(addr) = config.admin_addr {
+        join_set.spawn(admin_api::run_admin_api(addr, db_config_store));
     }
 
     match &config.heartbeat_url {
@@ -293,6 +302,7 @@ async fn start_replica(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
+    db_config_store: Arc<DatabaseConfigStore>,
 ) -> anyhow::Result<()> {
     let (channel, uri) = configure_rpc(config)?;
     let replicator = Replicator::new(
@@ -313,6 +323,7 @@ async fn start_replica(
         channel,
         uri,
         stats.clone(),
+        db_config_store.clone(),
         applied_frame_no_receiver,
         config.max_response_size,
     )
@@ -324,6 +335,7 @@ async fn start_replica(
         join_set,
         idle_shutdown_layer,
         stats,
+        db_config_store,
     )
     .await?;
 
@@ -418,6 +430,7 @@ async fn start_primary(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
+    db_config_store: Arc<DatabaseConfigStore>,
     db_is_dirty: bool,
 ) -> anyhow::Result<()> {
     let is_fresh_db = check_fresh_db(&config.db_path);
@@ -469,6 +482,7 @@ async fn start_primary(
             }
         },
         stats.clone(),
+        db_config_store.clone(),
         valid_extensions,
         config.max_response_size,
     )
@@ -489,7 +503,15 @@ async fn start_primary(
         ));
     }
 
-    run_service(db_factory, config, join_set, idle_shutdown_layer, stats).await?;
+    run_service(
+        db_factory,
+        config,
+        join_set,
+        idle_shutdown_layer,
+        stats,
+        db_config_store,
+    )
+    .await?;
 
     Ok(())
 }
@@ -615,9 +637,20 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
 
         let stats = Stats::new(&config.db_path)?;
 
+        let db_config_store = Arc::new(
+            DatabaseConfigStore::load(&config.db_path).context("Could not load database config")?,
+        );
+
         match config.writer_rpc_addr {
             Some(_) => {
-                start_replica(&config, &mut join_set, idle_shutdown_layer, stats.clone()).await?
+                start_replica(
+                    &config,
+                    &mut join_set,
+                    idle_shutdown_layer,
+                    stats.clone(),
+                    db_config_store,
+                )
+                .await?
             }
             None => {
                 start_primary(
@@ -625,6 +658,7 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
                     &mut join_set,
                     idle_shutdown_layer,
                     stats.clone(),
+                    db_config_store,
                     db_is_dirty,
                 )
                 .await?
