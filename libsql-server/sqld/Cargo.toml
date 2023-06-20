@@ -64,7 +64,7 @@ insta = { version = "1.26.0", features = ["json"] }
 arbitrary = { version = "1.3.0", features = ["derive_arbitrary"] }
 libsql-client = { version = "0.6.5", default-features = false, features = ["reqwest_backend"] }
 url = "2.3"
-tracing-test = "0.2"
+env_logger = "0.10"
 aws-config = "0.55"
 aws-sdk-s3 = "0.28"
 

@@ -1,23 +1,25 @@
 use crate::{run_server, Config};
 use anyhow::Result;
-use libsql_client::{Connection, QueryResult, Value};
+use libsql_client::{Connection, QueryResult, Statement, Value};
 use reqwest::StatusCode;
 use std::net::ToSocketAddrs;
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::time::sleep;
-use tracing_test::traced_test;
 use url::Url;
 
+const MINIO_URL: &str = "http://localhost:9000/"; // or 172.17.0.2
+
 #[tokio::test]
-#[traced_test]
 async fn backup_restore() {
+    let _ = env_logger::builder().is_test(true).try_init();
     const BUCKET: &str = "testbackuprestore";
     const PATH: &str = "backup_restore.sqld";
     const PORT: u16 = 15001;
+    const OPS: usize = 100;
 
     // assert that MinIO (S3 mockup) is up and doesn't keep data from previous test run
-    assert_minio_ready().await;
+    //assert_minio_ready().await;
     let _ = S3BucketCleaner::new(BUCKET).await;
     assert_bucket_occupancy(BUCKET, true).await;
 
@@ -30,8 +32,8 @@ async fn backup_restore() {
     let db_config = Config {
         bottomless_replication: Some(bottomless::replicator::Options {
             create_bucket_if_not_exists: true,
-            verify_crc: false,
-            use_compression: false,
+            verify_crc: true,
+            use_compression: true,
             bucket_name: BUCKET.to_string(),
             ..Default::default()
         }),
@@ -49,10 +51,22 @@ async fn backup_restore() {
 
         let _ = sql(
             &connection_addr,
-            ["CREATE TABLE t(id)", "INSERT INTO t VALUES (42)"],
+            ["CREATE TABLE t(id INT PRIMARY KEY, name TEXT);"],
         )
         .await
         .unwrap();
+
+        let stmts: Vec<_> = (0u32..OPS as u32)
+            .map(|i| {
+                format!(
+                    "INSERT INTO t(id, name) VALUES({}, '{}') ON CONFLICT (id) DO UPDATE SET name = '{}';",
+                    i % 10,
+                    i,
+                    i
+                )
+            })
+            .collect();
+        let _ = sql(&connection_addr, stmts).await.unwrap();
 
         sleep(Duration::from_millis(100)).await;
 
@@ -71,37 +85,60 @@ async fn backup_restore() {
 
         sleep(Duration::from_secs(2)).await;
 
-        let result = sql(&connection_addr, ["SELECT id FROM t"]).await.unwrap();
+        let result = sql(&connection_addr, ["SELECT id, name FROM t ORDER BY id;"])
+            .await
+            .unwrap();
         let rs = result
             .into_iter()
             .next()
             .unwrap()
             .into_result_set()
             .unwrap();
-        assert_eq!(rs.rows.len(), 1);
-        assert_eq!(rs.rows[0].cells["id"], Value::Integer(42));
+        const OPS_CEIL: usize = (OPS + 9) / 10;
+        assert_eq!(rs.rows.len(), OPS_CEIL, "unexpected number of rows");
+        let base = if OPS < 10 { 0 } else { OPS - 10 } as i64;
+        for (i, row) in rs.rows.iter().enumerate() {
+            let i = i as i64;
+            let id = row.cells["id"].clone();
+            let name = row.cells["name"].clone();
+            assert_eq!(
+                (id, name),
+                (Value::Integer(i), Value::Text((base + i).to_string())),
+                "unexpected values for row {}",
+                i
+            );
+        }
 
         db_job.abort();
     }
 }
 
-async fn sql<I: IntoIterator<Item = &'static str>>(
-    url: &Url,
-    stmts: I,
-) -> Result<Vec<QueryResult>> {
+async fn sql<I, S>(url: &Url, stmts: I) -> Result<Vec<QueryResult>>
+where
+    I: IntoIterator<Item = S>,
+    S: Into<Statement>,
+{
     let db = libsql_client::reqwest::Connection::connect_from_url(url)?;
     db.batch(stmts).await
 }
 
 /// Verify that MinIO (S3 local stub) is up.
+#[allow(dead_code)]
 async fn assert_minio_ready() {
-    const MINIO_URL: &str = "http://127.0.0.1:9090/";
-
-    let status = reqwest::get(format!("{}/minio/health/ready", MINIO_URL))
-        .await
-        .expect("couldn't reach minio health check")
-        .status();
-    assert_eq!(status, StatusCode::OK);
+    let mut success = false;
+    for _ in 0..3 {
+        let status = reqwest::get(format!("{}/minio/health/ready", MINIO_URL))
+            .await
+            .ok()
+            .map(|resp| resp.status());
+        if status == Some(StatusCode::OK) {
+            success = true;
+            break;
+        } else {
+            sleep(Duration::from_secs(1)).await;
+        }
+    }
+    assert!(success, "failed to reach minio ready health check")
 }
 
 /// Checks if the corresponding bucket is empty (has any elements) or not.
@@ -109,7 +146,7 @@ async fn assert_minio_ready() {
 async fn assert_bucket_occupancy(bucket: &str, expect_empty: bool) {
     use aws_sdk_s3::Client;
 
-    let loader = aws_config::from_env().endpoint_url("http://127.0.0.1:9000/");
+    let loader = aws_config::from_env().endpoint_url(MINIO_URL);
     let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
         .force_path_style(true)
         .build();
@@ -159,7 +196,7 @@ impl S3BucketCleaner {
         use aws_sdk_s3::types::{Delete, ObjectIdentifier};
         use aws_sdk_s3::Client;
 
-        let loader = aws_config::from_env().endpoint_url("http://127.0.0.1:9000/");
+        let loader = aws_config::from_env().endpoint_url(MINIO_URL);
         let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
             .force_path_style(true)
             .build();

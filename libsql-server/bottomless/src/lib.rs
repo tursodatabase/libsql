@@ -4,7 +4,10 @@
 
 mod ffi;
 
+mod read;
 pub mod replicator;
+mod wal;
+mod write;
 
 use crate::ffi::{
     bottomless_methods, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs, PgHdr, Wal,
@@ -79,15 +82,6 @@ pub extern "C" fn xOpen(
         }
     };
 
-    let replicator = block_on!(runtime, replicator::Replicator::new());
-    let mut replicator = match replicator {
-        Ok(repl) => repl,
-        Err(e) => {
-            tracing::error!("Failed to initialize replicator: {}", e);
-            return ffi::SQLITE_CANTOPEN;
-        }
-    };
-
     let path = unsafe {
         match std::ffi::CStr::from_ptr(wal_name).to_str() {
             Ok(path) if path.len() >= 4 => &path[..path.len() - 4],
@@ -99,7 +93,15 @@ pub extern "C" fn xOpen(
         }
     };
 
-    replicator.register_db(path);
+    let replicator = block_on!(runtime, replicator::Replicator::new(path));
+    let mut replicator = match replicator {
+        Ok(repl) => repl,
+        Err(e) => {
+            tracing::error!("Failed to initialize replicator: {}", e);
+            return ffi::SQLITE_CANTOPEN;
+        }
+    };
+
     let rc = block_on!(runtime, try_restore(&mut replicator));
     if rc != ffi::SQLITE_OK {
         return rc;
@@ -254,9 +256,8 @@ pub extern "C" fn xFrames(
             tracing::error!("{}", e);
             return ffi::SQLITE_IOERR_WRITE;
         }
-        for (pgno, data) in ffi::PageHdrIter::new(page_headers, page_size as usize) {
-            ctx.replicator.write(pgno, data);
-        }
+        let frame_count = ffi::PageHdrIter::new(page_headers, page_size as usize).count();
+        ctx.replicator.submit_frames(frame_count as u32);
 
         // TODO: flushing can be done even if is_commit == 0, in order to drain
         // the local cache and free its memory. However, that complicates rollbacks (xUndo),
@@ -264,13 +265,16 @@ pub extern "C" fn xFrames(
         // location. It's not complicated, but potentially costly in terms of latency,
         // so for now it is not yet implemented.
         if is_commit != 0 {
-            last_consistent_frame = match block_on!(ctx.runtime, ctx.replicator.flush()) {
-                Ok(frame) => frame,
-                Err(e) => {
-                    tracing::error!("Failed to replicate: {}", e);
-                    return ffi::SQLITE_IOERR_WRITE;
-                }
-            };
+            let frame_no = ctx.replicator.next_frame_no() - 1;
+            ctx.replicator.request_flush();
+            last_consistent_frame =
+                match block_on!(ctx.runtime, ctx.replicator.wait_until_committed(frame_no)) {
+                    Ok(frame) => frame,
+                    Err(e) => {
+                        tracing::error!("Failed to replicate: {}", e);
+                        return ffi::SQLITE_IOERR_WRITE;
+                    }
+                };
         }
     }
 
@@ -291,12 +295,12 @@ pub extern "C" fn xFrames(
 
     let ctx = get_replicator_context(wal);
     if is_commit != 0 {
-        let frame_checksum = unsafe { (*wal).hdr.aFrameCksum };
+        let _frame_checksum: [u8; 8] = unsafe { std::mem::transmute((*wal).hdr.aFrameCksum) };
+        ctx.replicator.request_flush();
 
         if let Err(e) = block_on!(
             ctx.runtime,
-            ctx.replicator
-                .finalize_commit(last_consistent_frame, frame_checksum)
+            ctx.replicator.wait_until_committed(last_consistent_frame)
         ) {
             tracing::error!("Failed to finalize replication: {}", e);
             return ffi::SQLITE_IOERR_WRITE;
@@ -366,7 +370,7 @@ pub extern "C" fn xCheckpoint(
     }
 
     let ctx = get_replicator_context(wal);
-    if ctx.replicator.commits_in_current_generation == 0 {
+    if ctx.replicator.commits_in_current_generation() == 0 {
         tracing::debug!("No commits happened in this generation, not snapshotting");
         return ffi::SQLITE_OK;
     }
@@ -486,12 +490,15 @@ pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, path: *const
 
     let replicator = block_on!(
         runtime,
-        replicator::Replicator::create(replicator::Options {
-            create_bucket_if_not_exists: true,
-            verify_crc: true,
-            use_compression: false,
-            ..Options::default()
-        })
+        replicator::Replicator::with_options(
+            path,
+            replicator::Options {
+                create_bucket_if_not_exists: true,
+                verify_crc: true,
+                use_compression: false,
+                ..Options::default()
+            }
+        )
     );
     let mut replicator = match replicator {
         Ok(repl) => repl,
@@ -500,8 +507,6 @@ pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, path: *const
             return ffi::SQLITE_CANTOPEN;
         }
     };
-
-    replicator.register_db(path);
     block_on!(runtime, try_restore(&mut replicator))
 }
 

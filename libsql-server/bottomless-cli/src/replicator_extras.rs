@@ -1,6 +1,7 @@
 use anyhow::Result;
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::types::ObjectAttributes;
+use aws_sdk_s3::Client;
 use aws_smithy_types::date_time::Format;
 
 pub(crate) struct Replicator {
@@ -31,11 +32,32 @@ fn uuid_to_datetime(uuid: &uuid::Uuid) -> chrono::NaiveDateTime {
         .unwrap_or(chrono::NaiveDateTime::MIN)
 }
 
+pub(crate) async fn detect_db(client: &Client, bucket: &str, db_name: &str) -> Option<String> {
+    let response = match client
+        .list_objects()
+        .bucket(bucket)
+        .set_delimiter(Some("/".to_string()))
+        .prefix(db_name)
+        .send()
+        .await
+    {
+        Ok(resp) => resp,
+        Err(_) => return None,
+    };
+
+    let prefix = response.common_prefixes()?.first()?.prefix()?;
+    // 38 is the length of the uuid part
+    if let Some('-') = prefix.chars().nth(prefix.len().saturating_sub(38)) {
+        Some(prefix[..prefix.len().saturating_sub(38)].to_owned())
+    } else {
+        None
+    }
+}
+
 impl Replicator {
-    pub(crate) async fn new() -> Result<Self> {
-        Ok(Self {
-            inner: bottomless::replicator::Replicator::new().await?,
-        })
+    pub async fn new(db: String) -> Result<Self> {
+        let inner = bottomless::replicator::Replicator::new(db).await?;
+        Ok(Replicator { inner })
     }
 
     pub(crate) async fn print_snapshot_summary(&self, generation: &uuid::Uuid) -> Result<()> {
@@ -116,12 +138,15 @@ impl Replicator {
                     println!("{uuid}");
                     if verbose {
                         let counter = self.get_remote_change_counter(&uuid).await?;
-                        let (consistent_frame, checksum) =
-                            self.get_last_consistent_frame(&uuid).await?;
+                        let consistent_frame = self.get_last_consistent_frame(&uuid).await?;
+                        let m = self.get_metadata(&uuid).await?;
                         println!("\tcreated at (UTC):     {datetime}");
                         println!("\tchange counter:       {counter:?}");
                         println!("\tconsistent WAL frame: {consistent_frame}");
-                        println!("\tWAL frame checksum:   {checksum:x}");
+                        if let Some((page_size, checksum)) = m {
+                            println!("\tpage size:            {page_size}");
+                            println!("\tWAL frame checksum:   {checksum:x}");
+                        }
                         self.print_snapshot_summary(&uuid).await?;
                         println!()
                     }
@@ -260,36 +285,17 @@ impl Replicator {
             })?;
 
         let counter = self.get_remote_change_counter(&generation).await?;
-        let (consistent_frame, checksum) = self.get_last_consistent_frame(&generation).await?;
+        let consistent_frame = self.get_last_consistent_frame(&generation).await?;
+        let meta = self.get_metadata(&generation).await?;
         println!("Generation {} for {}", generation, self.db_name);
         println!("\tcreated at:           {}", uuid_to_datetime(&generation));
         println!("\tchange counter:       {counter:?}");
         println!("\tconsistent WAL frame: {consistent_frame}");
-        println!("\tWAL frame checksum:   {checksum:x}");
+        if let Some((page_size, checksum)) = meta {
+            println!("\tpage size:            {page_size}");
+            println!("\tWAL frame checksum:   {checksum:x}");
+        }
         self.print_snapshot_summary(&generation).await?;
         Ok(())
-    }
-
-    pub(crate) async fn detect_db(&self) -> Option<String> {
-        let response = match self
-            .client
-            .list_objects()
-            .bucket(&self.bucket)
-            .set_delimiter(Some("/".to_string()))
-            .prefix(&self.db_name)
-            .send()
-            .await
-        {
-            Ok(resp) => resp,
-            Err(_) => return None,
-        };
-
-        let prefix = response.common_prefixes()?.first()?.prefix()?;
-        // 38 is the length of the uuid part
-        if let Some('-') = prefix.chars().nth(prefix.len().saturating_sub(38)) {
-            Some(prefix[..prefix.len().saturating_sub(38)].to_owned())
-        } else {
-            None
-        }
     }
 }

@@ -263,10 +263,11 @@ fn config_from_args(args: Cli) -> Result<Config> {
             Some(bottomless::replicator::Options {
                 create_bucket_if_not_exists: true,
                 verify_crc: false,
-                use_compression: false,
+                use_compression: true,
                 aws_endpoint: env::var("LIBSQL_BOTTOMLESS_ENDPOINT").ok(),
                 bucket_name: env::var("LIBSQL_BOTTOMLESS_BUCKET")
                     .unwrap_or_else(|_| "bottomless".to_string()),
+                ..bottomless::replicator::Options::default()
             })
         } else {
             None
