@@ -219,6 +219,35 @@ static void test_addop_breakpoint(int pc, Op *pOp){
 #endif
 
 /*
+** Slow paths for sqlite3VdbeAddOp3() and sqlite3VdbeAddOp4Int() for the
+** unusual case when we need to increase the size of the Vdbe.aOp[] array
+** before adding the new opcode.
+*/
+static SQLITE_NOINLINE int growOp3(Vdbe *p, int op, int p1, int p2, int p3){
+  assert( p->nOpAlloc<=p->nOp );
+  if( growOpArray(p, 1) ) return 1;
+  assert( p->nOpAlloc>p->nOp );
+  return sqlite3VdbeAddOp3(p, op, p1, p2, p3);
+}
+static SQLITE_NOINLINE int addOp4IntSlow(
+  Vdbe *p,            /* Add the opcode to this VM */
+  int op,             /* The new opcode */
+  int p1,             /* The P1 operand */
+  int p2,             /* The P2 operand */
+  int p3,             /* The P3 operand */
+  int p4              /* The P4 operand as an integer */
+){
+  int addr = sqlite3VdbeAddOp3(p, op, p1, p2, p3);
+  if( p->db->mallocFailed==0 ){
+    VdbeOp *pOp = &p->aOp[addr];
+    pOp->p4type = P4_INT32;
+    pOp->p4.i = p4;
+  }
+  return addr;
+}
+
+
+/*
 ** Add a new instruction to the list of instructions current in the
 ** VDBE.  Return the address of the new instruction.
 **
@@ -228,17 +257,16 @@ static void test_addop_breakpoint(int pc, Op *pOp){
 **
 **    op              The opcode for this instruction
 **
-**    p1, p2, p3      Operands
-**
-** Use the sqlite3VdbeResolveLabel() function to fix an address and
-** the sqlite3VdbeChangeP4() function to change the value of the P4
-** operand.
+**    p1, p2, p3, p4  Operands
 */
-static SQLITE_NOINLINE int growOp3(Vdbe *p, int op, int p1, int p2, int p3){
-  assert( p->nOpAlloc<=p->nOp );
-  if( growOpArray(p, 1) ) return 1;
-  assert( p->nOpAlloc>p->nOp );
-  return sqlite3VdbeAddOp3(p, op, p1, p2, p3);
+int sqlite3VdbeAddOp0(Vdbe *p, int op){
+  return sqlite3VdbeAddOp3(p, op, 0, 0, 0);
+}
+int sqlite3VdbeAddOp1(Vdbe *p, int op, int p1){
+  return sqlite3VdbeAddOp3(p, op, p1, 0, 0);
+}
+int sqlite3VdbeAddOp2(Vdbe *p, int op, int p1, int p2){
+  return sqlite3VdbeAddOp3(p, op, p1, p2, 0);
 }
 int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   int i;
@@ -261,6 +289,9 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p3 = p3;
   pOp->p4.p = 0;
   pOp->p4type = P4_NOTUSED;
+
+  /* Replicate this logic in sqlite3VdbeAddOp4Int()
+  ** vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv   */
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   pOp->zComment = 0;
 #endif
@@ -277,16 +308,59 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #ifdef SQLITE_VDBE_COVERAGE
   pOp->iSrcLine = 0;
 #endif
+  /* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  ** Replicate in sqlite3VdbeAddOp4Int() */
+
   return i;
 }
-int sqlite3VdbeAddOp0(Vdbe *p, int op){
-  return sqlite3VdbeAddOp3(p, op, 0, 0, 0);
-}
-int sqlite3VdbeAddOp1(Vdbe *p, int op, int p1){
-  return sqlite3VdbeAddOp3(p, op, p1, 0, 0);
-}
-int sqlite3VdbeAddOp2(Vdbe *p, int op, int p1, int p2){
-  return sqlite3VdbeAddOp3(p, op, p1, p2, 0);
+int sqlite3VdbeAddOp4Int(
+  Vdbe *p,            /* Add the opcode to this VM */
+  int op,             /* The new opcode */
+  int p1,             /* The P1 operand */
+  int p2,             /* The P2 operand */
+  int p3,             /* The P3 operand */
+  int p4              /* The P4 operand as an integer */
+){
+  int i;
+  VdbeOp *pOp;
+
+  i = p->nOp;
+  if( p->nOpAlloc<=i ){
+    return addOp4IntSlow(p, op, p1, p2, p3, p4);
+  }
+  p->nOp++;
+  pOp = &p->aOp[i];
+  assert( pOp!=0 );
+  pOp->opcode = (u8)op;
+  pOp->p5 = 0;
+  pOp->p1 = p1;
+  pOp->p2 = p2;
+  pOp->p3 = p3;
+  pOp->p4.i = p4;
+  pOp->p4type = P4_INT32;
+
+  /* Replicate this logic in sqlite3VdbeAddOp3()
+  ** vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv   */
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+  pOp->zComment = 0;
+#endif
+#if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
+  pOp->nExec = 0;
+  pOp->nCycle = 0;
+#endif
+#ifdef SQLITE_DEBUG
+  if( p->db->flags & SQLITE_VdbeAddopTrace ){
+    sqlite3VdbePrintOp(0, i, &p->aOp[i]);
+    test_addop_breakpoint(i, &p->aOp[i]);
+  }
+#endif
+#ifdef SQLITE_VDBE_COVERAGE
+  pOp->iSrcLine = 0;
+#endif
+  /* ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  ** Replicate in sqlite3VdbeAddOp3() */
+
+  return i;
 }
 
 /* Generate code for an unconditional jump to instruction iDest
@@ -492,26 +566,6 @@ void sqlite3VdbeAddParseSchemaOp(Vdbe *p, int iDb, char *zWhere, u16 p5){
   sqlite3VdbeChangeP5(p, p5);
   for(j=0; j<p->db->nDb; j++) sqlite3VdbeUsesBtree(p, j);
   sqlite3MayAbort(p->pParse);
-}
-
-/*
-** Add an opcode that includes the p4 value as an integer.
-*/
-int sqlite3VdbeAddOp4Int(
-  Vdbe *p,            /* Add the opcode to this VM */
-  int op,             /* The new opcode */
-  int p1,             /* The P1 operand */
-  int p2,             /* The P2 operand */
-  int p3,             /* The P3 operand */
-  int p4              /* The P4 operand as an integer */
-){
-  int addr = sqlite3VdbeAddOp3(p, op, p1, p2, p3);
-  if( p->db->mallocFailed==0 ){
-    VdbeOp *pOp = &p->aOp[addr];
-    pOp->p4type = P4_INT32;
-    pOp->p4.i = p4;
-  }
-  return addr;
 }
 
 /* Insert the end of a co-routine

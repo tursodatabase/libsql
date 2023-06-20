@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\sNULL\spointer\schecks\son\scalls\sto\ssqlite3WalkExpr().
-D 2023-06-19T23:27:22.681
+C Performance\soptimization\sin\ssqlite3VdbeAddOp4Int().
+D 2023-06-20T11:46:32.054
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -710,7 +710,7 @@ F src/vdbe.c 6c0de640ef3be08cf2992d588a7501aee0f1003027bc952a6916a35f6e33b4cf
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 7bd49eef8f89c1a271fbf12d80a206bf56c876814c5fc6bee340f4e1907095ae
 F src/vdbeapi.c de9703f8705afc393cc2864669ce28cf9516983c8331d59aa2b978de01634365
-F src/vdbeaux.c 85627cd1d2fb6e069567128001b55824a170efbc30c2fb1b85261ac30d001b38
+F src/vdbeaux.c 4d5e68a3850d0b193a692eca6442d7afe35252aaf29728a67adcb542ecabd9ce
 F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2ce
 F src/vdbemem.c 710119a8e35e47813681c48703d65a80ba22792192de90bc51dc0d6366f2a79e
 F src/vdbesort.c 0d40dca073c94e158ead752ef4225f4fee22dee84145e8c00ca2309afb489015
@@ -2040,8 +2040,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6b3d25b7982623ab4b25161aff9ab44778e136069043ab425543597c42c98ae5
-R 13a078be5369fb5c24d6e73a016aeb7f
+P 73d86a12fb068456a884c030fddd87020d6ec9d56376de541cf082b2104174d3
+R e345b05058b93b72d8898bf3dab13eb9
 U drh
-Z 1aa9d3621a4b2b26b188c794eda5ac16
+Z 7f6eefa040de5107043d546e2fa46ab7
 # Remove this line to create a well-formed Fossil manifest.
