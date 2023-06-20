@@ -33,7 +33,7 @@ Table *sqlite3SrcListLookup(Parse *pParse, SrcList *pSrc){
   Table *pTab;
   assert( pItem && pSrc->nSrc>=1 );
   pTab = sqlite3LocateTableItem(pParse, 0, pItem);
-  sqlite3DeleteTable(pParse->db, pItem->pTab);
+  if( pItem->pTab ) sqlite3DeleteTable(pParse->db, pItem->pTab);
   pItem->pTab = pTab;
   pItem->fg.notCte = 1;
   if( pTab ){
