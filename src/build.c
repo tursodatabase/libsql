@@ -234,15 +234,17 @@ void sqlite3FinishCoding(Parse *pParse){
     pParse->nVtabLock = 0;
 #endif
 
+#ifndef SQLITE_OMIT_SHARED_CACHE
     /* Once all the cookies have been verified and transactions opened,
     ** obtain the required table-locks. This is a no-op unless the
     ** shared-cache feature is enabled.
     */
-    codeTableLocks(pParse);
+    if( pParse->nTableLock ) codeTableLocks(pParse);
+#endif
 
     /* Initialize any AUTOINCREMENT data structures required.
     */
-    sqlite3AutoincrementBegin(pParse);
+    if( pParse->pAinc ) sqlite3AutoincrementBegin(pParse);
 
     /* Code constant expressions that where factored out of inner loops.
     **

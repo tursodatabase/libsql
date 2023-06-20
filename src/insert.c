@@ -35,8 +35,10 @@ void sqlite3OpenTable(
   assert( pParse->pVdbe!=0 );
   v = pParse->pVdbe;
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
-  sqlite3TableLock(pParse, iDb, pTab->tnum,
-                   (opcode==OP_OpenWrite)?1:0, pTab->zName);
+  if( !pParse->db->noSharedCache ){
+    sqlite3TableLock(pParse, iDb, pTab->tnum,
+                     (opcode==OP_OpenWrite)?1:0, pTab->zName);
+  }
   if( HasRowid(pTab) ){
     sqlite3VdbeAddOp4Int(v, opcode, iCur, pTab->tnum, iDb, pTab->nNVCol);
     VdbeComment((v, "%s", pTab->zName));
@@ -2675,7 +2677,7 @@ int sqlite3OpenTableAndIndices(
   *piDataCur = iDataCur;
   if( HasRowid(pTab) && (aToOpen==0 || aToOpen[0]) ){
     sqlite3OpenTable(pParse, iDataCur, iDb, pTab, op);
-  }else{
+  }else if( pParse->db->noSharedCache==0 ){
     sqlite3TableLock(pParse, iDb, pTab->tnum, op==OP_OpenWrite, pTab->zName);
   }
   *piIdxCur = iBase;
