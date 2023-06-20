@@ -1117,8 +1117,10 @@ void sqlite3Update(
     sqlite3VdbeAddOp2(v, OP_AddImm, regRowCount, 1);
   }
 
-  sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges,
-      TRIGGER_AFTER, pTab, regOldRowid, onError, labelContinue);
+  if( pTrigger ){
+    sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges,
+        TRIGGER_AFTER, pTab, regOldRowid, onError, labelContinue);
+  }
 
   /* Repeat the above with the next record to be updated, until
   ** all record selected by the WHERE clause have been updated.
