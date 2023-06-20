@@ -1,40 +1,52 @@
+use crate::read::BatchReader;
+use crate::wal::WalFileReader;
+use crate::write::BatchWriter;
+use anyhow::anyhow;
+use arc_swap::ArcSwap;
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
 use aws_sdk_s3::operation::list_objects::builders::ListObjectsFluentBuilder;
+use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
-use aws_sdk_s3::Client;
-use bytes::{Bytes, BytesMut};
-use std::cmp::Ordering;
+use aws_sdk_s3::{Client, Config};
+use bytes::{Buf, Bytes, BytesMut};
 use std::collections::BTreeMap;
+use std::io::SeekFrom;
+use std::ops::{Deref, Range};
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
+use tokio::io::{AsyncReadExt, AsyncSeekExt};
+use tokio::sync::watch::{channel, Receiver, Sender};
+use tokio::time::{timeout_at, Instant};
+use uuid::Uuid;
 
 pub type Result<T> = anyhow::Result<T>;
-
-const CRC_64: crc::Crc<u64> = crc::Crc::<u64>::new(&crc::CRC_64_ECMA_182);
-
-#[derive(Debug)]
-struct Frame {
-    pgno: u32,
-    bytes: BytesMut,
-    crc: u64,
-}
 
 #[derive(Debug)]
 pub struct Replicator {
     pub client: Client,
-    write_buffer: BTreeMap<u32, Frame>,
+
+    /// Frame number, incremented whenever a new frame is written from SQLite.
+    next_frame_no: Arc<AtomicU32>,
+    /// Last frame which has been requested to be sent to S3.
+    /// Always: [last_sent_frame_no] <= [next_frame_no].
+    last_sent_frame_no: Arc<AtomicU32>,
+    /// Last frame which has been confirmed as sent to S3.
+    /// Always: [last_committed_frame_no] <= [last_sent_frame_no].
+    last_committed_frame_no: Receiver<Result<u32>>,
+    flush_trigger: Sender<()>,
 
     pub page_size: usize,
-    generation: uuid::Uuid,
-    pub commits_in_current_generation: u32,
-    next_frame: u32,
+    generation: Arc<ArcSwap<Uuid>>,
+    pub commits_in_current_generation: Arc<AtomicU32>,
     verify_crc: bool,
-    last_frame_crc: u64,
-    last_transaction_crc: u64,
     pub bucket: String,
     pub db_path: String,
     pub db_name: String,
 
     use_compression: bool,
+    max_frames_per_batch: usize,
 }
 
 #[derive(Debug)]
@@ -47,7 +59,7 @@ pub struct FetchedResults {
 pub enum RestoreAction {
     None,
     SnapshotMainDbFile,
-    ReuseGeneration(uuid::Uuid),
+    ReuseGeneration(Uuid),
 }
 
 #[derive(Clone, Debug)]
@@ -56,7 +68,22 @@ pub struct Options {
     pub verify_crc: bool,
     pub use_compression: bool,
     pub aws_endpoint: Option<String>,
+    pub db_id: Option<String>,
     pub bucket_name: String,
+    pub max_frames_per_batch: usize,
+    pub max_batch_interval: Duration,
+}
+
+impl Options {
+    pub async fn client_config(&self) -> Config {
+        let mut loader = aws_config::from_env();
+        if let Some(endpoint) = self.aws_endpoint.as_deref() {
+            loader = loader.endpoint_url(endpoint);
+        }
+        aws_sdk_s3::config::Builder::from(&loader.load().await)
+            .force_path_style(true)
+            .build()
+    }
 }
 
 impl Default for Options {
@@ -64,10 +91,14 @@ impl Default for Options {
         let aws_endpoint = std::env::var("LIBSQL_BOTTOMLESS_ENDPOINT").ok();
         let bucket_name =
             std::env::var("LIBSQL_BOTTOMLESS_BUCKET").unwrap_or_else(|_| "bottomless".to_string());
+        let db_id = std::env::var("LIBSQL_BOTTOMLESS_DATABASE_ID").ok();
         Options {
             create_bucket_if_not_exists: false,
-            verify_crc: true,
-            use_compression: false,
+            verify_crc: false,
+            use_compression: true,
+            max_batch_interval: Duration::from_secs(15),
+            max_frames_per_batch: 64,
+            db_id,
             aws_endpoint,
             bucket_name,
         }
@@ -77,23 +108,16 @@ impl Default for Options {
 impl Replicator {
     pub const UNSET_PAGE_SIZE: usize = usize::MAX;
 
-    pub async fn new() -> Result<Self> {
-        Self::create(Options::default()).await
+    pub async fn new<S: Into<String>>(db_path: S) -> Result<Self> {
+        Self::with_options(db_path, Options::default()).await
     }
 
-    pub async fn create(options: Options) -> Result<Self> {
-        let write_buffer = BTreeMap::new();
-        let mut loader = aws_config::from_env();
-        if let Some(endpoint) = options.aws_endpoint.as_deref() {
-            loader = loader.endpoint_url(endpoint);
-        }
+    pub async fn with_options<S: Into<String>>(db_path: S, options: Options) -> Result<Self> {
+        let config = options.client_config().await;
+        let client = Client::from_conf(config);
         let bucket = options.bucket_name.clone();
-        let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
-            .force_path_style(true)
-            .build();
-        let client = Client::from_conf(conf);
-        let generation = Self::generate_generation();
-        tracing::debug!("Generation {}", generation);
+        let generation = Arc::new(ArcSwap::new(Arc::new(Self::generate_generation())));
+        tracing::debug!("Generation {}", generation.load());
 
         match client.head_bucket().bucket(&bucket).send().await {
             Ok(_) => tracing::info!("Bucket {} exists and is accessible", bucket),
@@ -112,21 +136,112 @@ impl Replicator {
             }
         }
 
+        let db_path = db_path.into();
+        let db_name = {
+            let db_id = options.db_id.unwrap_or_default();
+            let name = match db_path.rfind('/') {
+                Some(index) => &db_path[index + 1..],
+                None => &db_path,
+            };
+            db_id + name
+        };
+
+        let (flush_trigger, mut flush_trigger_rx) = channel(());
+        let (last_committed_frame_no_sender, last_committed_frame_no) = channel(Ok(0));
+
+        let next_frame_no = Arc::new(AtomicU32::new(1));
+        let last_sent_frame_no = Arc::new(AtomicU32::new(0));
+        let commits_in_current_generation = Arc::new(AtomicU32::new(0));
+
+        let _backup_job = {
+            let mut flush_manager = FlushManager {
+                wal: None,
+                client: client.clone(),
+                use_compression: options.use_compression,
+                max_frames_per_batch: options.max_frames_per_batch,
+                wal_path: format!("{}-wal", &db_path),
+                bucket: bucket.clone(),
+                db_name: db_name.clone(),
+                generation: generation.clone(),
+                commits_in_current_generation: commits_in_current_generation.clone(),
+            };
+            let next_frame_no = next_frame_no.clone();
+            let last_sent_frame_no = last_sent_frame_no.clone();
+            let batch_interval = options.max_batch_interval;
+            tokio::spawn(async move {
+                loop {
+                    let timeout = Instant::now() + batch_interval;
+                    let trigger = match timeout_at(timeout, flush_trigger_rx.changed()).await {
+                        Ok(Ok(())) => true,
+                        Ok(Err(_)) => {
+                            return;
+                        }
+                        Err(_) => true, // timeout reached
+                    };
+                    if trigger {
+                        let next_frame = next_frame_no.load(Ordering::Acquire);
+                        let last_sent_frame =
+                            last_sent_frame_no.swap(next_frame - 1, Ordering::Acquire);
+                        let frames = (last_sent_frame + 1)..next_frame;
+                        let res = flush_manager.flush(frames).await;
+                        if last_committed_frame_no_sender.send(res).is_err() {
+                            return;
+                        }
+                    }
+                }
+            })
+        };
+
         Ok(Self {
             client,
-            write_buffer,
             bucket,
             page_size: Self::UNSET_PAGE_SIZE,
             generation,
-            commits_in_current_generation: 0,
-            next_frame: 1,
+            commits_in_current_generation,
+            next_frame_no,
+            last_sent_frame_no,
+            flush_trigger,
+            last_committed_frame_no,
             verify_crc: options.verify_crc,
-            last_frame_crc: 0,
-            last_transaction_crc: 0,
-            db_path: String::new(),
-            db_name: String::new(),
+            db_path,
+            db_name,
             use_compression: options.use_compression,
+            max_frames_per_batch: options.max_frames_per_batch,
         })
+    }
+
+    pub fn next_frame_no(&self) -> u32 {
+        self.next_frame_no.load(Ordering::Acquire)
+    }
+
+    pub fn last_sent_frame_no(&self) -> u32 {
+        self.last_sent_frame_no.load(Ordering::Acquire)
+    }
+
+    /// Waits until the commit for a given frame_no or higher was given.
+    pub async fn wait_until_committed(&mut self, frame_no: u32) -> Result<u32> {
+        loop {
+            {
+                let last_committed = self.last_committed_frame_no.borrow();
+                match last_committed.deref() {
+                    Ok(last_committed) if *last_committed >= frame_no => {
+                        return Ok(*last_committed)
+                    }
+                    Ok(_) => {}
+                    Err(e) => return Err(anyhow!("Failed to flush frames: {}", e)),
+                }
+            }
+            self.last_committed_frame_no.changed().await?;
+        }
+    }
+
+    pub fn commits_in_current_generation(&self) -> u32 {
+        self.commits_in_current_generation.load(Ordering::Acquire)
+    }
+
+    /// Returns number of frames waiting to be replicated.
+    pub fn pending_frames(&self) -> u32 {
+        self.next_frame_no() - self.last_sent_frame_no() - 1
     }
 
     // The database can use different page size - as soon as it's known,
@@ -157,16 +272,23 @@ impl Replicator {
         self.client.list_objects().bucket(&self.bucket)
     }
 
+    fn reset_frames(&mut self, frame_no: u32) {
+        let last_sent = self.last_sent_frame_no();
+        self.next_frame_no.store(frame_no + 1, Ordering::Release);
+        self.last_sent_frame_no
+            .store(last_sent.min(frame_no), Ordering::Release);
+    }
+
     // Generates a new generation UUID v7, which contains a timestamp and is binary-sortable.
     // This timestamp goes back in time - that allows us to list newest generations
     // first in the S3-compatible bucket, under the assumption that fetching newest generations
     // is the most common operation.
     // NOTICE: at the time of writing, uuid v7 is an unstable feature of the uuid crate
-    fn generate_generation() -> uuid::Uuid {
+    fn generate_generation() -> Uuid {
         let (seconds, nanos) = uuid::timestamp::Timestamp::now(uuid::NoContext).to_unix();
         let (seconds, nanos) = (253370761200 - seconds, 999999999 - nanos);
         let synthetic_ts = uuid::Timestamp::from_unix(uuid::NoContext, seconds, nanos);
-        uuid::Uuid::new_v7(synthetic_ts)
+        Uuid::new_v7(synthetic_ts)
     }
 
     // Starts a new generation for this replicator instance
@@ -178,173 +300,58 @@ impl Replicator {
     // Sets a generation for this replicator instance. This function
     // should be called if a generation number from S3-compatible storage
     // is reused in this session.
-    pub fn set_generation(&mut self, generation: uuid::Uuid) {
-        self.generation = generation;
-        self.commits_in_current_generation = 0;
-        self.next_frame = 1; // New generation marks a new WAL
+    pub fn set_generation(&mut self, generation: Uuid) {
+        self.generation.swap(Arc::new(generation));
+        self.commits_in_current_generation
+            .store(0, Ordering::Release);
+        self.reset_frames(0);
         tracing::debug!("Generation set to {}", self.generation);
-    }
-
-    // Registers a database path for this replicator.
-    pub fn register_db(&mut self, db_path: impl Into<String>) {
-        let db_path = db_path.into();
-        // An optional prefix to differentiate between databases with the same filename
-        let db_id = std::env::var("LIBSQL_BOTTOMLESS_DATABASE_ID").unwrap_or_default();
-        let name = match db_path.rfind('/') {
-            Some(index) => &db_path[index + 1..],
-            None => &db_path,
-        };
-        self.db_name = db_id + name;
-        self.db_path = db_path;
-        tracing::trace!("Registered {} (full path: {})", self.db_name, self.db_path);
-    }
-
-    // Returns the next free frame number for the replicated log
-    fn next_frame(&mut self) -> u32 {
-        self.next_frame += 1;
-        self.next_frame - 1
     }
 
     // Returns the current last valid frame in the replicated log
     pub fn peek_last_valid_frame(&self) -> u32 {
-        self.next_frame.saturating_sub(1)
+        self.next_frame_no().saturating_sub(1)
     }
 
     // Sets the last valid frame in the replicated log.
     pub fn register_last_valid_frame(&mut self, frame: u32) {
-        if frame != self.peek_last_valid_frame() {
-            if self.next_frame != 1 {
+        let last_valid_frame = self.peek_last_valid_frame();
+        if frame != last_valid_frame {
+            if last_valid_frame != 0 {
                 tracing::error!(
                     "[BUG] Local max valid frame is {}, while replicator thinks it's {}",
                     frame,
-                    self.peek_last_valid_frame()
+                    last_valid_frame
                 );
             }
-            self.next_frame = frame + 1
+            self.reset_frames(frame);
         }
     }
 
-    // Writes pages to a local in-memory buffer
-    pub fn write(&mut self, pgno: u32, data: &[u8]) {
-        let frame = self.next_frame();
-        let mut crc = CRC_64.digest_with_initial(self.last_frame_crc);
-        crc.update(data);
-        let crc = crc.finalize();
-        tracing::trace!(
-            "Writing page {}:{} at frame {}, crc: {}",
-            pgno,
-            data.len(),
-            frame,
-            crc
-        );
-        let mut bytes = BytesMut::new();
-        bytes.extend_from_slice(data);
-        self.write_buffer.insert(frame, Frame { pgno, bytes, crc });
-        self.last_frame_crc = crc;
+    /// Submit next `frame_count` of frames to be replicated.
+    pub fn submit_frames(&mut self, frame_count: u32) {
+        let prev = self.next_frame_no.fetch_add(frame_count, Ordering::SeqCst);
+        let last_sent = self.last_sent_frame_no();
+        let last_known = prev + frame_count - 1;
+        if last_known - last_sent >= self.max_frames_per_batch as u32 {
+            tracing::trace!("Triggering flush for frames {}..{}", last_sent, last_known);
+            self.request_flush();
+        }
     }
 
-    // Sends pages participating in current transaction to S3.
-    // Returns the frame number holding the last flushed page.
-    pub async fn flush(&mut self) -> Result<u32> {
-        if self.write_buffer.is_empty() {
-            tracing::trace!("Attempting to flush an empty buffer");
-            return Ok(0);
-        }
-        tracing::trace!("Flushing {} frames", self.write_buffer.len());
-        self.commits_in_current_generation += 1;
-        let mut tasks = vec![];
-        // FIXME: instead of batches processed in bursts, better to allow X concurrent tasks with a semaphore
-        const CONCURRENCY: usize = 64;
-        let last_frame_in_transaction_crc = self.write_buffer.iter().last().unwrap().1.crc;
-        let write_buffer = std::mem::take(&mut self.write_buffer);
-        for (frame, Frame { pgno, bytes, crc }) in write_buffer.into_iter() {
-            let data = bytes;
-            if data.len() != self.page_size {
-                tracing::warn!("Unexpected truncated page of size {}", data.len())
-            }
-
-            let key = format!(
-                "{}-{}/{:012}-{:012}-{:016x}",
-                self.db_name, self.generation, frame, pgno, crc
-            );
-
-            let body = if self.use_compression {
-                let mut compressor = async_compression::tokio::bufread::GzipEncoder::new(&data[..]);
-                let mut compressed: Vec<u8> = Vec::with_capacity(self.page_size);
-                tokio::io::copy(&mut compressor, &mut compressed).await?;
-                tracing::trace!("Flushing {} (compressed size: {})", key, compressed.len());
-                ByteStream::from(compressed)
-            } else {
-                ByteStream::from(data.freeze())
-            };
-
-            tasks.push(
-                self.client
-                    .put_object()
-                    .bucket(&self.bucket)
-                    .key(key)
-                    .body(body)
-                    .send(),
-            );
-            if tasks.len() >= CONCURRENCY {
-                futures::future::try_join_all(std::mem::take(&mut tasks)).await?;
-                tasks.clear();
-            }
-        }
-        if !tasks.is_empty() {
-            futures::future::try_join_all(tasks).await?;
-        }
-        self.last_transaction_crc = last_frame_in_transaction_crc;
-        tracing::trace!("Last transaction crc: {}", self.last_transaction_crc);
-        Ok(self.next_frame - 1)
-    }
-
-    // Marks all recently flushed pages as committed and updates the frame number
-    // holding the newest consistent committed transaction.
-    pub async fn finalize_commit(&mut self, last_frame: u32, checksum: [u32; 2]) -> Result<()> {
-        // Last consistent frame is persisted in S3 in order to be able to recover
-        // from failured that happen in the middle of a commit, when only some
-        // of the pages that belong to a transaction are replicated.
-        let last_consistent_frame_key = format!("{}-{}/.consistent", self.db_name, self.generation);
-        tracing::trace!("Finalizing frame: {}, checksum: {:?}", last_frame, checksum);
-        // Information kept in this entry: [last consistent frame number: 4 bytes][last checksum: 8 bytes]
-        let mut consistent_info = BytesMut::with_capacity(12);
-        consistent_info.extend_from_slice(&last_frame.to_be_bytes());
-        consistent_info.extend_from_slice(&checksum[0].to_be_bytes());
-        consistent_info.extend_from_slice(&checksum[1].to_be_bytes());
-        self.client
-            .put_object()
-            .bucket(&self.bucket)
-            .key(last_consistent_frame_key)
-            .body(ByteStream::from(Bytes::from(consistent_info)))
-            .send()
-            .await?;
-        tracing::trace!("Commit successful");
-        Ok(())
+    pub fn request_flush(&self) {
+        let _ = self.flush_trigger.send(());
     }
 
     // Drops uncommitted frames newer than given last valid frame
     pub fn rollback_to_frame(&mut self, last_valid_frame: u32) {
         // NOTICE: O(size), can be optimized to O(removed) if ever needed
-        self.write_buffer.retain(|&k, _| k <= last_valid_frame);
-        self.next_frame = last_valid_frame + 1;
-        self.last_frame_crc = self
-            .write_buffer
-            .iter()
-            .next_back()
-            .map(|entry| entry.1.crc)
-            .unwrap_or(self.last_transaction_crc);
-        tracing::debug!(
-            "Rolled back to {}, crc {} (last transaction crc = {})",
-            self.next_frame - 1,
-            self.last_frame_crc,
-            self.last_transaction_crc,
-        );
+        self.reset_frames(last_valid_frame);
+        tracing::debug!("Rolled back to {}", last_valid_frame);
     }
 
     // Tries to read the local change counter from the given database file
     async fn read_change_counter(reader: &mut tokio::fs::File) -> Result<[u8; 4]> {
-        use tokio::io::{AsyncReadExt, AsyncSeekExt};
         let mut counter = [0u8; 4];
         reader.seek(std::io::SeekFrom::Start(24)).await?;
         reader.read_exact(&mut counter).await?;
@@ -353,8 +360,7 @@ impl Replicator {
 
     // Tries to read the local page size from the given database file
     async fn read_page_size(reader: &mut tokio::fs::File) -> Result<usize> {
-        use tokio::io::{AsyncReadExt, AsyncSeekExt};
-        reader.seek(std::io::SeekFrom::Start(16)).await?;
+        reader.seek(SeekFrom::Start(16)).await?;
         let page_size = reader.read_u16().await?;
         if page_size == 1 {
             Ok(65536)
@@ -383,57 +389,34 @@ impl Replicator {
     // file is present, it was already detected to be newer than its
     // remote counterpart.
     pub async fn maybe_replicate_wal(&mut self) -> Result<()> {
-        use tokio::io::{AsyncReadExt, AsyncSeekExt};
-        let mut wal_file = match tokio::fs::File::open(&format!("{}-wal", &self.db_path)).await {
-            Ok(file) => file,
-            Err(_) => {
+        let mut wal_file = match WalFileReader::open(&format!("{}-wal", &self.db_path)).await {
+            Ok(Some(file)) => file,
+            _ => {
                 tracing::info!("Local WAL not present - not replicating");
                 return Ok(());
             }
         };
-        let len = match wal_file.metadata().await {
-            Ok(metadata) => metadata.len(),
-            Err(_) => 0,
-        };
-        if len < 32 {
-            tracing::info!("Local WAL is empty, not replicating");
-            return Ok(());
-        }
-        if self.page_size == Self::UNSET_PAGE_SIZE {
-            tracing::trace!("Page size not detected yet, not replicated");
-            return Ok(());
-        }
 
-        tracing::trace!("Local WAL pages: {}", (len - 32) / self.page_size as u64);
-        wal_file.seek(tokio::io::SeekFrom::Start(24)).await?;
-        let checksum: [u32; 2] = [wal_file.read_u32().await?, wal_file.read_u32().await?];
-        tracing::trace!("Local WAL checksum: {:?}", checksum);
-        let mut last_written_frame = 0;
-        for offset in (32..len).step_by(self.page_size + 24) {
-            wal_file.seek(tokio::io::SeekFrom::Start(offset)).await?;
-            let pgno = wal_file.read_u32().await?;
-            let size_after = wal_file.read_u32().await?;
-            tracing::trace!("Size after transaction for {}: {}", pgno, size_after);
-            wal_file
-                .seek(tokio::io::SeekFrom::Start(offset + 24))
-                .await?;
-            let mut data = vec![0u8; self.page_size];
-            wal_file.read_exact(&mut data).await?;
-            self.write(pgno, &data);
-            // In multi-page transactions, only the last page in the transaction contains
-            // the size_after_transaction field. If it's zero, it means it's an uncommited
-            // page.
-            if size_after != 0 {
-                last_written_frame = self.flush().await?;
+        self.store_metadata(wal_file.page_size(), wal_file.checksum())
+            .await?;
+        let frame_count = wal_file.frame_count().await;
+        tracing::trace!("Local WAL pages: {}", frame_count);
+        let checksum = wal_file.checksum();
+        tracing::trace!("Local WAL checksum: {}", checksum);
+        for i in 0..frame_count {
+            wal_file.seek_frame(i).await?;
+            let header = wal_file.read_frame_header().await?;
+            self.submit_frames(1);
+            if header.is_committed() {
+                self.request_flush();
             }
         }
-        if last_written_frame > 0 {
-            self.finalize_commit(last_written_frame, checksum).await?;
+        let last_written_frame = self.wait_until_committed(frame_count - 1).await?;
+        tracing::info!("Backed up WAL frames up to {}", last_written_frame);
+        let pending_frames = self.pending_frames();
+        if pending_frames != 0 {
+            tracing::warn!("Uncommited WAL entries: {}", pending_frames);
         }
-        if !self.write_buffer.is_empty() {
-            tracing::warn!("Uncommited WAL entries: {}", self.write_buffer.len());
-        }
-        self.write_buffer.clear();
         tracing::info!("Local WAL replicated");
         Ok(())
     }
@@ -507,7 +490,7 @@ impl Replicator {
     // FIXME: assumes that this bucket stores *only* generations for databases,
     // it should be more robust and continue looking if the first item does not
     // match the <db-name>-<generation-uuid>/ pattern.
-    pub async fn find_newest_generation(&self) -> Option<uuid::Uuid> {
+    pub async fn find_newest_generation(&self) -> Option<Uuid> {
         let prefix = format!("{}-", self.db_name);
         let response = self
             .list_objects()
@@ -523,12 +506,11 @@ impl Replicator {
             None => key,
         };
         tracing::debug!("Generation candidate: {}", key);
-        uuid::Uuid::parse_str(key).ok()
+        Uuid::parse_str(key).ok()
     }
 
     // Tries to fetch the remote database change counter from given generation
-    pub async fn get_remote_change_counter(&self, generation: &uuid::Uuid) -> Result<[u8; 4]> {
-        use bytes::Buf;
+    pub async fn get_remote_change_counter(&self, generation: &Uuid) -> Result<[u8; 4]> {
         let mut remote_change_counter = [0u8; 4];
         if let Ok(response) = self
             .get_object(format!("{}-{}/.changecounter", self.db_name, generation))
@@ -544,120 +526,34 @@ impl Replicator {
         Ok(remote_change_counter)
     }
 
-    // Tries to fetch the last consistent frame number stored in the remote generation
-    pub async fn get_last_consistent_frame(&self, generation: &uuid::Uuid) -> Result<(u32, u64)> {
-        use bytes::Buf;
-        Ok(
-            match self
-                .get_object(format!("{}-{}/.consistent", self.db_name, generation))
-                .send()
-                .await
-                .ok()
-            {
-                Some(response) => {
-                    let mut collected = response.body.collect().await?;
-                    (collected.get_u32(), collected.get_u64())
-                }
-                None => (0, 0),
-            },
-        )
-    }
-
     // Returns the number of pages stored in the local WAL file, or 0, if there aren't any.
     async fn get_local_wal_page_count(&mut self) -> u32 {
-        use tokio::io::{AsyncReadExt, AsyncSeekExt};
-        match tokio::fs::File::open(&format!("{}-wal", &self.db_path)).await {
-            Ok(mut file) => {
-                let metadata = match file.metadata().await {
-                    Ok(metadata) => metadata,
-                    Err(_) => return 0,
-                };
-                let len = metadata.len();
-                if len >= 32 {
-                    // Page size is stored in WAL file at offset [8-12)
-                    if file.seek(tokio::io::SeekFrom::Start(8)).await.is_err() {
-                        return 0;
-                    };
-                    let page_size = match file.read_u32().await {
-                        Ok(size) => size,
-                        Err(_) => return 0,
-                    };
-                    if self.set_page_size(page_size as usize).is_err() {
-                        return 0;
-                    }
-                    // Each WAL file consists of a 32-byte WAL header and N entries of size (page size + 24)
-                    (len / (self.page_size + 24) as u64) as u32
-                } else {
-                    0
+        match WalFileReader::open(&format!("{}-wal", &self.db_path)).await {
+            Ok(None) => 0,
+            Ok(Some(wal)) => {
+                let page_size = wal.page_size();
+                if self.set_page_size(page_size as usize).is_err() {
+                    return 0;
                 }
+                wal.frame_count().await
             }
             Err(_) => 0,
         }
     }
 
     // Parses the frame and page number from given key.
-    // Format: <db-name>-<generation>/<frame-number>-<page-number>-<crc64>
-    fn parse_frame_page_crc(key: &str) -> Option<(u32, i32, u64)> {
-        let checksum_delim = key.rfind('-')?;
-        let page_delim = key[0..checksum_delim].rfind('-')?;
-        let frame_delim = key[0..page_delim].rfind('/')?;
-        let frameno = key[frame_delim + 1..page_delim].parse::<u32>().ok()?;
-        let pgno = key[page_delim + 1..checksum_delim].parse::<i32>().ok()?;
-        let crc = u64::from_str_radix(&key[checksum_delim + 1..], 16).ok()?;
-        tracing::debug!(frameno, pgno, crc);
-        Some((frameno, pgno, crc))
-    }
-
-    async fn restore_frame(
-        &mut self,
-        pgno: i32,
-        crc: u64,
-        prev_crc: u64,
-        page_buffer: &mut Vec<u8>,
-        main_db_writer: &mut (impl tokio::io::AsyncWriteExt
-                  + tokio::io::AsyncSeekExt
-                  + std::marker::Unpin),
-        reader: &mut (impl tokio::io::AsyncRead + std::marker::Unpin),
-    ) -> Result<()> {
-        // If page size is unknown *or* crc verification is performed,
-        // a page needs to be loaded to memory first
-        if self.verify_crc || self.page_size == Self::UNSET_PAGE_SIZE {
-            let page_size = tokio::io::copy(reader, page_buffer).await?;
-            if self.verify_crc {
-                let mut expected_crc = CRC_64.digest_with_initial(prev_crc);
-                expected_crc.update(page_buffer);
-                let expected_crc = expected_crc.finalize();
-                tracing::debug!(crc, expected_crc);
-                if crc != expected_crc {
-                    tracing::warn!(
-                        "CRC check failed: {:016x} != {:016x} (expected)",
-                        crc,
-                        expected_crc
-                    );
-                }
-            };
-            self.set_page_size(page_size as usize)?;
-            let offset = (pgno - 1) as u64 * page_size;
-            main_db_writer
-                .seek(tokio::io::SeekFrom::Start(offset))
-                .await?;
-            tokio::io::copy(&mut &page_buffer[..], main_db_writer).await?;
-            page_buffer.clear();
-        } else {
-            let offset = (pgno - 1) as u64 * self.page_size as u64;
-            main_db_writer
-                .seek(tokio::io::SeekFrom::Start(offset))
-                .await?;
-            // FIXME: we only need to overwrite with the newest page,
-            // no need to replay the whole WAL
-            tokio::io::copy(reader, main_db_writer).await?;
-        }
-        main_db_writer.flush().await?;
-        Ok(())
+    // Format: <db-name>-<generation>/<first-frame-no>-<last-frame-no>
+    fn parse_frame_range(key: &str) -> Option<(u32, u32)> {
+        let frame_delim = key.rfind('/')?;
+        let frame_suffix = &key[(frame_delim + 1)..];
+        let last_frame_delim = frame_suffix.rfind('-')?;
+        let first_frame_no = frame_suffix[..last_frame_delim].parse::<u32>().ok()?;
+        let last_frame_no = frame_suffix[(last_frame_delim + 1)..].parse::<u32>().ok()?;
+        Some((first_frame_no, last_frame_no))
     }
 
     // Restores the database state from given remote generation
-    pub async fn restore_from(&mut self, generation: uuid::Uuid) -> Result<RestoreAction> {
+    pub async fn restore_from(&mut self, generation: Uuid) -> Result<RestoreAction> {
         use tokio::io::AsyncWriteExt;
 
         // Check if the database needs to be restored by inspecting the database
@@ -677,41 +573,37 @@ impl Replicator {
         let remote_counter = self.get_remote_change_counter(&generation).await?;
         tracing::debug!("Counters: l={:?}, r={:?}", local_counter, remote_counter);
 
-        let (last_consistent_frame, checksum) = self.get_last_consistent_frame(&generation).await?;
-        tracing::debug!(
-            "Last consistent remote frame: {}; checksum: {:x}",
-            last_consistent_frame,
-            checksum
-        );
+        let last_consistent_frame = self.get_last_consistent_frame(&generation).await?;
+        tracing::debug!("Last consistent remote frame: {}.", last_consistent_frame);
 
         let wal_pages = self.get_local_wal_page_count().await;
         match local_counter.cmp(&remote_counter) {
-            Ordering::Equal => {
+            std::cmp::Ordering::Equal => {
                 tracing::debug!(
                     "Consistent: {}; wal pages: {}",
                     last_consistent_frame,
                     wal_pages
                 );
                 match wal_pages.cmp(&last_consistent_frame) {
-                    Ordering::Equal => {
+                    std::cmp::Ordering::Equal => {
                         tracing::info!(
                             "Remote generation is up-to-date, reusing it in this session"
                         );
-                        self.next_frame = wal_pages + 1;
+                        self.reset_frames(wal_pages + 1);
                         return Ok(RestoreAction::ReuseGeneration(generation));
                     }
-                    Ordering::Greater => {
+                    std::cmp::Ordering::Greater => {
                         tracing::info!("Local change counter matches the remote one, but local WAL contains newer data, which needs to be replicated");
                         return Ok(RestoreAction::SnapshotMainDbFile);
                     }
-                    Ordering::Less => (),
+                    std::cmp::Ordering::Less => (),
                 }
             }
-            Ordering::Greater => {
+            std::cmp::Ordering::Greater => {
                 tracing::info!("Local change counter is larger than its remote counterpart - a new snapshot needs to be replicated");
                 return Ok(RestoreAction::SnapshotMainDbFile);
             }
-            Ordering::Less => (),
+            std::cmp::Ordering::Less => (),
         }
 
         tokio::fs::rename(&self.db_path, format!("{}.bottomless.backup", self.db_path))
@@ -737,8 +629,11 @@ impl Replicator {
                 tokio::io::copy(&mut body_reader, &mut main_db_writer).await?;
             }
             main_db_writer.flush().await?;
+
+            let page_size = Self::read_page_size(&mut main_db_writer).await?;
+            self.set_page_size(page_size)?;
+            tracing::info!("Restored the main database file");
         }
-        tracing::info!("Restored the main database file");
 
         let mut next_marker = None;
         let prefix = format!("{}-{}/", self.db_name, generation);
@@ -751,83 +646,96 @@ impl Replicator {
             .ok();
 
         let mut applied_wal_frame = false;
-        loop {
-            let mut list_request = self.list_objects().prefix(&prefix);
-            if let Some(marker) = next_marker {
-                list_request = list_request.marker(marker);
-            }
-            let response = list_request.send().await?;
-            let objs = match response.contents() {
-                Some(objs) => objs,
-                None => {
-                    tracing::debug!("No objects found in generation {}", generation);
-                    break;
+        if let Some((page_size, mut checksum)) = self.get_metadata(&generation).await? {
+            self.set_page_size(page_size as usize)?;
+            loop {
+                let mut list_request = self.list_objects().prefix(&prefix);
+                if let Some(marker) = next_marker {
+                    list_request = list_request.marker(marker);
                 }
-            };
-            let mut prev_crc = 0;
-            let mut page_buffer = Vec::with_capacity(65536); // best guess for the page size - it will certainly not be more than 64KiB
-            for obj in objs {
-                let key = obj
-                    .key()
-                    .ok_or_else(|| anyhow::anyhow!("Failed to get key for an object"))?;
-                tracing::debug!("Loading {}", key);
-                let frame = self.get_object(key.into()).send().await?;
-
-                let (frameno, pgno, crc) = match Self::parse_frame_page_crc(key) {
-                    Some(result) => result,
+                let response = list_request.send().await?;
+                let objs = match response.contents() {
+                    Some(objs) => objs,
                     None => {
-                        if !key.ends_with(".gz")
-                            && !key.ends_with(".db")
-                            && !key.ends_with(".consistent")
-                            && !key.ends_with(".changecounter")
-                        {
-                            tracing::warn!("Failed to parse frame/page from key {}", key);
-                        }
-                        continue;
+                        tracing::debug!("No objects found in generation {}", generation);
+                        break;
                     }
                 };
-                if frameno > last_consistent_frame {
-                    tracing::warn!("Remote log contains frame {} larger than last consistent frame ({}), stopping the restoration process",
-                                frameno, last_consistent_frame);
+                let mut pending_pages = BTreeMap::new();
+                for obj in objs {
+                    let key = obj
+                        .key()
+                        .ok_or_else(|| anyhow::anyhow!("Failed to get key for an object"))?;
+                    tracing::debug!("Loading {}", key);
+                    let frame = self.get_object(key.into()).send().await?;
+
+                    let (first_frame_no, last_frame_no) = match Self::parse_frame_range(key) {
+                        Some(result) => result,
+                        None => {
+                            if !key.ends_with(".gz")
+                                && !key.ends_with(".db")
+                                && !key.ends_with(".meta")
+                                && !key.ends_with(".changecounter")
+                            {
+                                tracing::warn!("Failed to parse frame/page from key {}", key);
+                            }
+                            continue;
+                        }
+                    };
+                    if last_frame_no > last_consistent_frame {
+                        tracing::warn!("Remote log contains frame {} larger than last consistent frame ({}), stopping the restoration process",
+                                last_frame_no, last_consistent_frame);
+                        break;
+                    }
+                    let mut frameno = first_frame_no;
+                    let mut reader =
+                        BatchReader::new(frameno, frame.body, self.page_size, self.use_compression);
+                    while let Some(frame) = reader.next_frame_header().await? {
+                        let pgno = frame.pgno();
+                        tracing::debug!(
+                            "Restoring next frame {} as main db page {}",
+                            frameno,
+                            pgno
+                        );
+                        let page_size = self.page_size;
+                        let buf = pending_pages.entry(pgno).or_insert_with(|| {
+                            let mut v = Vec::with_capacity(page_size);
+                            v.spare_capacity_mut();
+                            unsafe { v.set_len(page_size) };
+                            v
+                        });
+                        reader.next_page(buf.as_mut()).await?;
+                        if self.verify_crc {
+                            checksum = frame.verify(checksum, buf)?;
+                        }
+                        if frame.is_committed() {
+                            let pending_pages = std::mem::take(&mut pending_pages);
+                            let page_count = pending_pages.len();
+                            for (pgno, data) in pending_pages {
+                                let offset = (pgno - 1) as u64 * (page_size as u64);
+                                main_db_writer.seek(SeekFrom::Start(offset)).await?;
+                                main_db_writer.write_all(&data).await?;
+                                // should we flush here? In theory if we don't recover fully we scrap
+                                // anyway
+                            }
+                            tracing::debug!("Restored {} pages into main DB file.", page_count);
+                        }
+                        frameno += 1;
+                    }
+                    main_db_writer.flush().await?;
+                    applied_wal_frame = true;
+                }
+                next_marker = response
+                    .is_truncated()
+                    .then(|| objs.last().map(|elem| elem.key().unwrap().to_string()))
+                    .flatten();
+                if next_marker.is_none() {
+                    tracing::trace!("Restored DB from S3 backup using generation {}", generation);
                     break;
                 }
-                let mut body_reader = frame.body.into_async_read();
-                if self.use_compression {
-                    let mut compressed_reader = async_compression::tokio::bufread::GzipDecoder::new(
-                        tokio::io::BufReader::new(body_reader),
-                    );
-                    self.restore_frame(
-                        pgno,
-                        crc,
-                        prev_crc,
-                        &mut page_buffer,
-                        &mut main_db_writer,
-                        &mut compressed_reader,
-                    )
-                    .await?;
-                } else {
-                    self.restore_frame(
-                        pgno,
-                        crc,
-                        prev_crc,
-                        &mut page_buffer,
-                        &mut main_db_writer,
-                        &mut body_reader,
-                    )
-                    .await?;
-                };
-                tracing::debug!("Written frame {} as main db page {}", frameno, pgno);
-
-                prev_crc = crc;
-                applied_wal_frame = true;
             }
-            next_marker = response
-                .is_truncated()
-                .then(|| objs.last().map(|elem| elem.key().unwrap().to_string()))
-                .flatten();
-            if next_marker.is_none() {
-                break;
-            }
+        } else {
+            tracing::info!(".meta object not found, skipping WAL restore.");
         }
 
         if applied_wal_frame {
@@ -850,9 +758,150 @@ impl Replicator {
         tracing::info!("Restoring from generation {}", newest_generation);
         self.restore_from(newest_generation).await
     }
+
+    pub async fn get_last_consistent_frame(&self, generation: &Uuid) -> Result<u32> {
+        let prefix = format!("{}-{}/", self.db_name, generation);
+        let mut marker: Option<String> = None;
+        let mut last_frame = 0;
+        while {
+            let mut list_objects = self.list_objects().prefix(&prefix);
+            if let Some(marker) = marker.take() {
+                list_objects = list_objects.marker(marker);
+            }
+            let response = list_objects.send().await?;
+            marker = Self::try_get_last_frame_no(response, &mut last_frame);
+            marker.is_some()
+        } {}
+        Ok(last_frame)
+    }
+
+    fn try_get_last_frame_no(response: ListObjectsOutput, frame_no: &mut u32) -> Option<String> {
+        let objs = response.contents()?;
+        let last = objs.last()?;
+        let key = last.key()?;
+        if let Some((_, last_frame_no)) = Self::parse_frame_range(key) {
+            *frame_no = last_frame_no;
+        }
+        Some(key.to_string())
+    }
+
+    pub async fn store_metadata(&self, page_size: u32, crc: u64) -> Result<()> {
+        let key = format!("{}-{}/.meta", self.db_name, self.generation.load());
+        put_metadata_obj(&self.client, &self.bucket, key, page_size, crc).await
+    }
+
+    pub async fn get_metadata(&self, generation: &Uuid) -> Result<Option<(u32, u64)>> {
+        let key = format!("{}-{}/.meta", self.db_name, generation);
+        if let Ok(obj) = self
+            .client
+            .get_object()
+            .bucket(&self.bucket)
+            .key(key)
+            .send()
+            .await
+        {
+            let mut data = obj.body.collect().await?;
+            let page_size = data.get_u32();
+            let crc = data.get_u64();
+            Ok(Some((page_size, crc)))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+async fn put_metadata_obj(
+    client: &Client,
+    bucket: &str,
+    key: String,
+    page_size: u32,
+    crc: u64,
+) -> Result<()> {
+    tracing::debug!(
+        "Storing metadata at '{}': page size - {}, crc - {}",
+        key,
+        page_size,
+        crc
+    );
+    let mut body = BytesMut::with_capacity(12);
+    body.extend_from_slice(page_size.to_be_bytes().as_slice());
+    body.extend_from_slice(crc.to_be_bytes().as_slice());
+    let _ = client
+        .put_object()
+        .bucket(bucket)
+        .key(key)
+        .body(ByteStream::from(body.freeze()))
+        .send()
+        .await?;
+    Ok(())
 }
 
 pub struct Context {
     pub replicator: Replicator,
     pub runtime: tokio::runtime::Runtime,
+}
+
+struct FlushManager {
+    wal: Option<WalFileReader>,
+    client: Client,
+    use_compression: bool,
+    max_frames_per_batch: usize,
+    wal_path: String,
+    bucket: String,
+    db_name: String,
+    generation: Arc<ArcSwap<Uuid>>,
+    commits_in_current_generation: Arc<AtomicU32>,
+}
+
+impl FlushManager {
+    async fn flush(&mut self, frames: Range<u32>) -> Result<u32> {
+        if frames.is_empty() {
+            tracing::trace!("Trying to flush empty frame range");
+            return Ok(frames.start - 1);
+        }
+        let wal_file = {
+            if self.wal.is_none() {
+                self.wal = WalFileReader::open(&self.wal_path).await?;
+            }
+            if let Some(wal) = self.wal.as_mut() {
+                wal
+            } else {
+                return Err(anyhow!("WAL file not found: {}", self.wal_path));
+            }
+        };
+        let generation = self.generation.load().clone();
+        if frames.start == 1 {
+            // before writing the first batch of frames - store .meta object with basic info
+            let key = format!("{}-{}/.meta", self.db_name, &generation);
+            let page_size = wal_file.page_size();
+            let crc = wal_file.checksum();
+            put_metadata_obj(&self.client, &self.bucket, key, page_size, crc).await?;
+        }
+        tracing::trace!("Flushing {} frames", frames.len());
+        self.commits_in_current_generation
+            .fetch_add(1, Ordering::SeqCst);
+        //wal_file.verify().await?;
+        for start in frames.clone().step_by(self.max_frames_per_batch) {
+            let end = (start + self.max_frames_per_batch as u32).min(frames.end);
+            let mut writer = BatchWriter::new(self.use_compression, start..end);
+            if let Some(body) = writer.read_frames(wal_file).await? {
+                let key = format!(
+                    "{}-{}/{:012}-{:012}",
+                    self.db_name,
+                    &generation,
+                    start,
+                    end - 1
+                );
+                self.client
+                    .put_object()
+                    .bucket(&self.bucket)
+                    .key(key)
+                    .body(body.into())
+                    .send()
+                    .await?;
+                tracing::trace!("Frame range [{}..{}) has been sent to S3", start, end);
+            }
+        }
+        Ok(frames.end - 1)
+    }
 }

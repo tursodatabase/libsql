@@ -79,7 +79,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
         #[cfg(feature = "bottomless")]
         let last_valid_frame = wal.hdr.mxFrame;
         #[cfg(feature = "bottomless")]
-        let frame_checksum = wal.hdr.aFrameCksum;
+        let _frame_checksum = wal.hdr.aFrameCksum;
         let ctx = Self::wal_extract_ctx(wal);
 
         for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
@@ -90,39 +90,6 @@ unsafe impl WalHook for ReplicationLoggerHook {
             // returning IO_ERR ensure that xUndo will be called by sqlite.
             return SQLITE_IOERR;
         }
-
-        // FIXME: instead of block_on, we should consider replicating asynchronously in the background,
-        // e.g. by sending the data to another fiber by an unbounded channel (which allows sync insertions).
-        #[allow(clippy::await_holding_lock)] // uncontended -> only gets called under a libSQL write lock
-        #[cfg(feature = "bottomless")]
-        let last_consistent_frame = {
-            let runtime = tokio::runtime::Handle::current();
-            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
-                match runtime.block_on(async move {
-                    let mut replicator = replicator.lock().unwrap();
-                    replicator.register_last_valid_frame(last_valid_frame);
-                    // In theory it's enough to set the page size only once, but in practice
-                    // it's a very cheap operation anyway, and the page is not always known
-                    // upfront and can change dynamically.
-                    // FIXME: changing the page size in the middle of operation is *not*
-                    // supported by bottomless storage.
-                    replicator.set_page_size(page_size as usize)?;
-                    for (pgno, data) in PageHdrIter::new(page_headers, page_size as usize) {
-                        replicator.write(pgno, data);
-                    }
-
-                    replicator.flush().await
-                }) {
-                    Ok(last_consistent_frame) => last_consistent_frame,
-                    Err(e) => {
-                        tracing::error!("error writing to bottomless: {e}");
-                        return SQLITE_IOERR_WRITE;
-                    }
-                }
-            } else {
-                0
-            }
-        };
 
         let rc = unsafe {
             orig(
@@ -135,24 +102,43 @@ unsafe impl WalHook for ReplicationLoggerHook {
             )
         };
 
-        if is_commit != 0 && rc == 0 {
-            #[allow(clippy::await_holding_lock)] // uncontended -> only gets called under a libSQL write lock
-            #[cfg(feature = "bottomless")]
-            {
-                let runtime = tokio::runtime::Handle::current();
-                if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
-                    if let Err(e) = runtime.block_on(async move {
-                        let mut replicator = replicator.lock().unwrap();
+        // FIXME: instead of block_on, we should consider replicating asynchronously in the background,
+        // e.g. by sending the data to another fiber by an unbounded channel (which allows sync insertions).
+        #[allow(clippy::await_holding_lock)] // uncontended -> only gets called under a libSQL write lock
+        #[cfg(feature = "bottomless")]
+        if rc == 0 {
+            let runtime = tokio::runtime::Handle::current();
+            if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
+                match runtime.block_on(async move {
+                    let mut replicator = replicator.lock().unwrap();
+                    replicator.register_last_valid_frame(last_valid_frame);
+                    // In theory it's enough to set the page size only once, but in practice
+                    // it's a very cheap operation anyway, and the page is not always known
+                    // upfront and can change dynamically.
+                    // FIXME: changing the page size in the middle of operation is *not*
+                    // supported by bottomless storage.
+                    replicator.set_page_size(page_size as usize)?;
+                    let frame_count = PageHdrIter::new(page_headers, page_size as usize).count();
+                    replicator.submit_frames(frame_count as u32);
+                    let last_consistent_frame = last_valid_frame + frame_count as u32;
+                    if is_commit != 0 {
+                        replicator.request_flush();
                         replicator
-                            .finalize_commit(last_consistent_frame, frame_checksum)
-                            .await
-                    }) {
+                            .wait_until_committed(last_consistent_frame)
+                            .await?;
+                    }
+                    Ok::<(), anyhow::Error>(())
+                }) {
+                    Ok(()) => {}
+                    Err(e) => {
                         tracing::error!("error writing to bottomless: {e}");
                         return SQLITE_IOERR_WRITE;
                     }
                 }
             }
+        }
 
+        if is_commit != 0 && rc == 0 {
             if let Err(e) = ctx.commit() {
                 // If we reach this point, it means that we have commited a transaction to sqlite wal,
                 // but failed to commit it to the shadow WAL, which leaves us in an inconsistent state.
@@ -272,7 +258,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
             let runtime = tokio::runtime::Handle::current();
             if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
                 let mut replicator = replicator.lock().unwrap();
-                if replicator.commits_in_current_generation == 0 {
+                if replicator.commits_in_current_generation() == 0 {
                     tracing::debug!("No commits happened in this generation, not snapshotting");
                     return SQLITE_OK;
                 }

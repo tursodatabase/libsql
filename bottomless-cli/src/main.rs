@@ -1,7 +1,9 @@
 use anyhow::Result;
+use aws_sdk_s3::Client;
 use clap::{Parser, Subcommand};
 
 mod replicator_extras;
+use crate::replicator_extras::detect_db;
 use replicator_extras::Replicator;
 
 #[derive(Debug, Parser)]
@@ -78,20 +80,28 @@ async fn run() -> Result<()> {
     tracing_subscriber::fmt::init();
     let options = Cli::parse();
 
-    if let Some(ep) = options.endpoint {
+    if let Some(ep) = options.endpoint.as_deref() {
         std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", ep)
     }
 
-    if let Some(bucket) = options.bucket {
+    if let Some(bucket) = options.bucket.as_deref() {
         std::env::set_var("LIBSQL_BOTTOMLESS_BUCKET", bucket)
     }
 
-    let mut client = Replicator::new().await?;
-
-    let database = match options.database {
+    let database = match options.database.clone() {
         Some(db) => db,
         None => {
-            match client.detect_db().await {
+            let client = Client::from_conf({
+                let mut loader = aws_config::from_env();
+                if let Some(endpoint) = options.endpoint.clone() {
+                    loader = loader.endpoint_url(endpoint);
+                }
+                aws_sdk_s3::config::Builder::from(&loader.load().await)
+                    .force_path_style(true)
+                    .build()
+            });
+            let bucket = options.bucket.as_deref().unwrap_or("bottomless");
+            match detect_db(&client, bucket, "").await {
                 Some(db) => db,
                 None => {
                     println!("Could not autodetect the database. Please pass it explicitly with -d option");
@@ -102,7 +112,7 @@ async fn run() -> Result<()> {
     };
     tracing::info!("Database: {}", database);
 
-    client.register_db(database);
+    let mut client = Replicator::new(database).await?;
 
     match options.command {
         Commands::Ls {

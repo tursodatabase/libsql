@@ -88,6 +88,18 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Run Tests
+    services:
+      minio:
+        image: lazybit/minio
+        ports:
+          - 9000:9000
+          - 9090:9090
+        env:
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin
+        volumes:
+          - /data
+        options: --name=minio --health-cmd "curl http://localhost:9000/minio/health/live"
     steps:
     - name: Make some room available
       run: "sudo rm -rf /usr/local/lib/android && sudo rm -rf /usr/share/dotnet"
@@ -115,7 +127,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --verbose
+        args: --verbose -F bottomless
+      env:
+        AWS_ACCESS_KEY_ID: minioadmin
+        AWS_SECRET_ACCESS_KEY: minioadmin
+        AWS_DEFAULT_REGION: eu-central-2
+        LIBSQL_BOTTOMLESS_BUCKET: bottomless
+        LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
 
   check-openssl:
     runs-on: ubuntu-latest

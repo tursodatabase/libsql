@@ -366,7 +366,7 @@ pub extern "C" fn sqlite3_reset(_stmt: *mut sqlite3_stmt) -> c_int {
 
 #[no_mangle]
 pub extern "C" fn sqlite3_step(stmt: *mut sqlite3_stmt) -> c_int {
-    let mut stmt = unsafe { &mut (*stmt).inner };
+    let stmt = unsafe { &mut (*stmt).inner };
     trace!(
         "TRACE sqlite3_step [sql = {}, state = {:?}]",
         stmt.sql,

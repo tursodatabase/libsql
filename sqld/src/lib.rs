@@ -397,16 +397,12 @@ pub async fn init_bottomless_replicator(
     options: bottomless::replicator::Options,
 ) -> anyhow::Result<bottomless::replicator::Replicator> {
     tracing::debug!("Initializing bottomless replication");
-    let mut replicator = bottomless::replicator::Replicator::create(options).await?;
-
-    // NOTICE: LIBSQL_BOTTOMLESS_DATABASE_ID env variable can be used
-    // to pass an additional prefix for the database identifier
-    replicator.register_db(
-        path.as_ref()
-            .to_str()
-            .ok_or_else(|| anyhow::anyhow!("Invalid db path"))?
-            .to_owned(),
-    );
+    let path = path
+        .as_ref()
+        .to_str()
+        .ok_or_else(|| anyhow::anyhow!("Invalid db path"))?
+        .to_owned();
+    let mut replicator = bottomless::replicator::Replicator::with_options(path, options).await?;
 
     match replicator.restore().await? {
         bottomless::replicator::RestoreAction::None => (),
