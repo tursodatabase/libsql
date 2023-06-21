@@ -2244,6 +2244,7 @@ SHELL_SRC = \
 	$(TOP)\ext\expert\sqlite3expert.c \
 	$(TOP)\ext\expert\sqlite3expert.h \
 	$(TOP)\ext\misc\memtrace.c \
+	$(TOP)\ext\misc\pcachetrace.c \
 	$(TOP)\ext\recover\dbdata.c \
 	$(TOP)\ext\recover\sqlite3recover.c \
 	$(TOP)\ext\recover\sqlite3recover.h \
