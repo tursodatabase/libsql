@@ -242,7 +242,6 @@ pub extern "C" fn xFrames(
     is_commit: i32,
     sync_flags: i32,
 ) -> i32 {
-    let mut last_consistent_frame = 0;
     if !is_local() {
         let ctx = get_replicator_context(wal);
         let last_valid_frame = unsafe { (*wal).hdr.mxFrame };
@@ -258,24 +257,6 @@ pub extern "C" fn xFrames(
         }
         let frame_count = ffi::PageHdrIter::new(page_headers, page_size as usize).count();
         ctx.replicator.submit_frames(frame_count as u32);
-
-        // TODO: flushing can be done even if is_commit == 0, in order to drain
-        // the local cache and free its memory. However, that complicates rollbacks (xUndo),
-        // because the flushed-but-not-committed pages should be removed from the remote
-        // location. It's not complicated, but potentially costly in terms of latency,
-        // so for now it is not yet implemented.
-        if is_commit != 0 {
-            let frame_no = ctx.replicator.next_frame_no() - 1;
-            ctx.replicator.request_flush();
-            last_consistent_frame =
-                match block_on!(ctx.runtime, ctx.replicator.wait_until_committed(frame_no)) {
-                    Ok(frame) => frame,
-                    Err(e) => {
-                        tracing::error!("Failed to replicate: {}", e);
-                        return ffi::SQLITE_IOERR_WRITE;
-                    }
-                };
-        }
     }
 
     let orig_methods = get_orig_methods(wal);
@@ -291,20 +272,6 @@ pub extern "C" fn xFrames(
     };
     if is_local() || rc != ffi::SQLITE_OK {
         return rc;
-    }
-
-    let ctx = get_replicator_context(wal);
-    if is_commit != 0 {
-        let _frame_checksum: [u8; 8] = unsafe { std::mem::transmute((*wal).hdr.aFrameCksum) };
-        ctx.replicator.request_flush();
-
-        if let Err(e) = block_on!(
-            ctx.runtime,
-            ctx.replicator.wait_until_committed(last_consistent_frame)
-        ) {
-            tracing::error!("Failed to finalize replication: {}", e);
-            return ffi::SQLITE_IOERR_WRITE;
-        }
     }
 
     ffi::SQLITE_OK
@@ -373,6 +340,16 @@ pub extern "C" fn xCheckpoint(
     if ctx.replicator.commits_in_current_generation() == 0 {
         tracing::debug!("No commits happened in this generation, not snapshotting");
         return ffi::SQLITE_OK;
+    }
+
+    let last_known_frame = ctx.replicator.next_frame_no() - 1;
+    ctx.replicator.request_flush();
+    if let Err(e) = block_on!(
+        ctx.runtime,
+        ctx.replicator.wait_until_committed(last_known_frame)
+    ) {
+        tracing::error!("Failed to finalize replication: {}", e);
+        return ffi::SQLITE_IOERR_WRITE;
     }
 
     ctx.replicator.new_generation();

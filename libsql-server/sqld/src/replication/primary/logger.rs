@@ -120,13 +120,6 @@ unsafe impl WalHook for ReplicationLoggerHook {
                     replicator.set_page_size(page_size as usize)?;
                     let frame_count = PageHdrIter::new(page_headers, page_size as usize).count();
                     replicator.submit_frames(frame_count as u32);
-                    let last_consistent_frame = last_valid_frame + frame_count as u32;
-                    if is_commit != 0 {
-                        replicator.request_flush();
-                        replicator
-                            .wait_until_committed(last_consistent_frame)
-                            .await?;
-                    }
                     Ok::<(), anyhow::Error>(())
                 }) {
                     Ok(()) => {}
@@ -261,6 +254,17 @@ unsafe impl WalHook for ReplicationLoggerHook {
                 if replicator.commits_in_current_generation() == 0 {
                     tracing::debug!("No commits happened in this generation, not snapshotting");
                     return SQLITE_OK;
+                }
+                let last_known_frame = replicator.next_frame_no() - 1;
+                replicator.request_flush();
+                if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame))
+                {
+                    tracing::error!(
+                        "Failed to wait for S3 replicator to confirm {} frames backup: {}",
+                        last_known_frame,
+                        e
+                    );
+                    return SQLITE_IOERR_WRITE;
                 }
                 replicator.new_generation();
                 if let Err(e) =
