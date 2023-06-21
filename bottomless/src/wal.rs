@@ -176,10 +176,13 @@ impl WalFileReader {
     /// responsible for.
     ///
     /// For reading specific frame use [WalFileReader::seek_frame] before calling this method.
-    pub async fn read_frame_header(&mut self) -> Result<WalFrameHeader> {
-        let mut buf = [0u8; WalFrameHeader::SIZE];
-        self.file.read_exact(buf.as_mut()).await?;
-        Ok(WalFrameHeader::from(buf))
+    pub async fn read_frame_header(&mut self) -> Result<Option<WalFrameHeader>> {
+        let mut header = [0u8; WalFrameHeader::SIZE];
+        match self.file.read_exact(header.as_mut()).await {
+            Ok(_) => Ok(Some(WalFrameHeader::from(header))),
+            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => Ok(None),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Reads a range of next consecutive frames, including headers, into given buffer.
@@ -207,14 +210,11 @@ impl WalFileReader {
     #[allow(dead_code)]
     pub async fn next_frame(&mut self, page: &mut [u8]) -> Result<Option<WalFrameHeader>> {
         debug_assert_eq!(page.len(), self.page_size() as usize);
-        let mut header = [0u8; WalFrameHeader::SIZE];
-        let header = match self.file.read_exact(header.as_mut()).await {
-            Ok(_) => WalFrameHeader::from(header),
-            Err(e) if e.kind() == std::io::ErrorKind::UnexpectedEof => return Ok(None),
-            Err(e) => return Err(e.into()),
-        };
-        self.file.read_exact(page).await?;
-        Ok(Some(header))
+        let header = self.read_frame_header().await?;
+        if header.is_some() {
+            self.file.read_exact(page).await?;
+        }
+        Ok(header)
     }
 }
 

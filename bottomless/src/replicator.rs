@@ -179,13 +179,24 @@ impl Replicator {
                         Err(_) => true, // timeout reached
                     };
                     if trigger {
-                        let next_frame = next_frame_no.load(Ordering::Acquire);
-                        let last_sent_frame =
-                            last_sent_frame_no.swap(next_frame - 1, Ordering::Acquire);
-                        let frames = (last_sent_frame + 1)..next_frame;
-                        let res = flush_manager.flush(frames).await;
-                        if last_committed_frame_no_sender.send(res).is_err() {
-                            return;
+                        loop {
+                            let next_frame = next_frame_no.load(Ordering::Acquire);
+                            let last_sent_frame =
+                                last_sent_frame_no.swap(next_frame - 1, Ordering::Acquire);
+                            let frames = (last_sent_frame + 1)..next_frame;
+
+                            if !frames.is_empty() {
+                                let res = flush_manager.flush(frames).await;
+                                if last_committed_frame_no_sender.send(res).is_err() {
+                                    // Replicator was probably dropped and therefore corresponding
+                                    // receiver has been closed
+                                    return;
+                                }
+                                // while flush was pending, next batch of frames may have arrived
+                                // so try to drain them up in the next loop iteration
+                            } else {
+                                break;
+                            }
                         }
                     }
                 }
@@ -225,7 +236,12 @@ impl Replicator {
                 let last_committed = self.last_committed_frame_no.borrow();
                 match last_committed.deref() {
                     Ok(last_committed) if *last_committed >= frame_no => {
-                        return Ok(*last_committed)
+                        tracing::debug!(
+                            "Confirmed commit of frame no. {} (waited for >= {})",
+                            last_committed,
+                            frame_no
+                        );
+                        return Ok(*last_committed);
                     }
                     Ok(_) => {}
                     Err(e) => return Err(anyhow!("Failed to flush frames: {}", e)),
@@ -332,9 +348,9 @@ impl Replicator {
     pub fn submit_frames(&mut self, frame_count: u32) {
         let prev = self.next_frame_no.fetch_add(frame_count, Ordering::SeqCst);
         let last_sent = self.last_sent_frame_no();
-        let last_known = prev + frame_count - 1;
-        if last_known - last_sent >= self.max_frames_per_batch as u32 {
-            tracing::trace!("Triggering flush for frames {}..{}", last_sent, last_known);
+        let most_recent = prev + frame_count - 1;
+        if most_recent - last_sent >= self.max_frames_per_batch as u32 {
+            tracing::trace!("Triggering flush for frames {}..{}", last_sent, most_recent);
             self.request_flush();
         }
     }
@@ -389,7 +405,7 @@ impl Replicator {
     // file is present, it was already detected to be newer than its
     // remote counterpart.
     pub async fn maybe_replicate_wal(&mut self) -> Result<()> {
-        let mut wal_file = match WalFileReader::open(&format!("{}-wal", &self.db_path)).await {
+        let wal_file = match WalFileReader::open(&format!("{}-wal", &self.db_path)).await {
             Ok(Some(file)) => file,
             _ => {
                 tracing::info!("Local WAL not present - not replicating");
@@ -403,14 +419,8 @@ impl Replicator {
         tracing::trace!("Local WAL pages: {}", frame_count);
         let checksum = wal_file.checksum();
         tracing::trace!("Local WAL checksum: {}", checksum);
-        for i in 0..frame_count {
-            wal_file.seek_frame(i).await?;
-            let header = wal_file.read_frame_header().await?;
-            self.submit_frames(1);
-            if header.is_committed() {
-                self.request_flush();
-            }
-        }
+        self.submit_frames(frame_count);
+        self.request_flush();
         let last_written_frame = self.wait_until_committed(frame_count - 1).await?;
         tracing::info!("Backed up WAL frames up to {}", last_written_frame);
         let pending_frames = self.pending_frames();

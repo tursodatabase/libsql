@@ -25,4 +25,3 @@ data.sqld/
 sqld/data.sqld/
 packages/golang/libsql-client/test.db
 .idea/
-minio-mnt/
