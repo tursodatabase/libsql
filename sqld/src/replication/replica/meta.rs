@@ -58,10 +58,6 @@ impl WalIndexMeta {
         Ok(meta)
     }
 
-    pub fn current_frame_no(&self) -> FrameNo {
-        self.post_commit_frame_no
-    }
-
     /// attempts to merge two meta files.
     pub fn merge_from_hello(mut self, hello: HelloResponse) -> Result<Self, ReplicationError> {
         let hello_db_id = Uuid::from_str(&hello.database_id)
