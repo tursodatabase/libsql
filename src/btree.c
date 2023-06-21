@@ -2321,7 +2321,8 @@ Pgno sqlite3BtreeLastPage(Btree *p){
 **
 ** If pCur!=0 then the page is being fetched as part of a moveToChild()
 ** call.  Do additional sanity checking on the page in this case.
-** And if the fetch fails, this routine must decrement pCur->iPage.
+** And if that additional sanity checking fails, adjust the state of
+** the cursor so that the fetch is effectively "undone".
 **
 ** The page is fetched as read-write unless pCur is not NULL and is
 ** a read-only cursor.
