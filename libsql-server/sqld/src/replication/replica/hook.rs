@@ -1,8 +1,6 @@
-use std::ffi::CStr;
-use std::os::unix::prelude::FileExt;
-use std::{cell::RefCell, ffi::c_int, fs::File, rc::Rc};
+use std::ffi::{c_int, CStr};
+use std::marker::PhantomData;
 
-use bytemuck::bytes_of;
 use rusqlite::ffi::{PgHdr, SQLITE_ERROR};
 use sqld_libsql_bindings::ffi::Wal;
 use sqld_libsql_bindings::init_static_wal_method;
@@ -11,8 +9,11 @@ use sqld_libsql_bindings::{ffi::types::XWalFrameFn, wal_hook::WalHook};
 use crate::replication::frame::{Frame, FrameBorrowed};
 use crate::replication::{FrameNo, WAL_PAGE_SIZE};
 
-use super::meta::WalIndexMeta;
 use super::snapshot::TempSnapshot;
+
+// Those are custom error codes returned by the replicator hook.
+pub const SQLITE_EXIT_REPLICATION: c_int = 200;
+pub const SQLITE_CONTINUE_REPLICATION: c_int = 201;
 
 #[derive(Debug)]
 pub enum Frames {
@@ -20,8 +21,41 @@ pub enum Frames {
     Snapshot(TempSnapshot),
 }
 
+pub struct Headers<'a> {
+    ptr: *mut PgHdr,
+    _pth: PhantomData<&'a ()>,
+}
+
+impl<'a> Headers<'a> {
+    // safety: ptr is guaranteed to be valid for 'a
+    unsafe fn new(ptr: *mut PgHdr) -> Self {
+        Self {
+            ptr,
+            _pth: PhantomData,
+        }
+    }
+
+    fn as_ptr(&mut self) -> *mut PgHdr {
+        self.ptr
+    }
+
+    fn all_applied(&self) -> bool {
+        all_applied(self.ptr)
+    }
+}
+
+impl Drop for Headers<'_> {
+    fn drop(&mut self) {
+        let mut current = self.ptr;
+        while !current.is_null() {
+            let h: Box<PgHdr> = unsafe { Box::from_raw(current as _) };
+            current = h.pDirty;
+        }
+    }
+}
+
 impl Frames {
-    fn to_headers(&self) -> (*mut PgHdr, u64, u32) {
+    fn to_headers(&self) -> (Headers, u64, u32) {
         match self {
             Frames::Vec(frames) => make_page_header(frames.iter().map(|f| &**f)),
             Frames::Snapshot(snap) => make_page_header(snap.iter()),
@@ -38,96 +72,68 @@ init_static_wal_method!(INJECTOR_METHODS, InjectorHook);
 /// result on the injection with `take_result`
 pub enum InjectorHook {}
 
-#[derive(Clone, Debug)]
 pub struct InjectorHookCtx {
-    pub inner: Rc<RefCell<InjectorHookInner>>,
+    /// slot for the frames to be applied by the next call to xframe
+    receiver: tokio::sync::mpsc::Receiver<Frames>,
+    /// currently in a txn
+    pub is_txn: bool,
+    /// invoked before injecting frames
+    pre_commit: Box<dyn Fn(FrameNo) -> anyhow::Result<()>>,
+    /// invoked after injecting frames
+    post_commit: Box<dyn Fn(FrameNo) -> anyhow::Result<()>>,
 }
 
 impl InjectorHookCtx {
-    pub fn new(meta_file: File, meta: WalIndexMeta) -> Self {
+    pub fn new(
+        receiver: tokio::sync::mpsc::Receiver<Frames>,
+        pre_commit: impl Fn(FrameNo) -> anyhow::Result<()> + 'static + Send,
+        post_commit: impl Fn(FrameNo) -> anyhow::Result<()> + 'static + Send,
+    ) -> Self {
         Self {
-            inner: Rc::new(RefCell::new(InjectorHookInner {
-                current_frames: None,
-                result: None,
-                meta_file,
-                meta,
-            })),
+            receiver,
+            is_txn: false,
+            pre_commit: Box::new(pre_commit),
+            post_commit: Box::new(post_commit),
         }
     }
 
-    fn with_inner_mut<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&mut InjectorHookInner) -> R,
-    {
-        f(&mut self.inner.borrow_mut())
-    }
-
-    /// Set the hook's current frames
-    pub fn set_frames(&self, frames: Frames) {
-        self.with_inner_mut(|this| this.current_frames.replace(frames));
-    }
-
-    /// Take the result currently held by the hook.
-    /// Panics if there is no result
-    pub fn take_result(&self) -> anyhow::Result<FrameNo> {
-        self.with_inner_mut(|this| this.result.take().expect("no result to take"))
-    }
-}
-
-#[derive(Debug)]
-pub struct InjectorHookInner {
-    /// slot for the frames to be applied by the next call to xframe
-    current_frames: Option<Frames>,
-    /// slot to store the result of the call to xframes.
-    /// On success, returns the last applied frame_no
-    result: Option<anyhow::Result<FrameNo>>,
-    meta_file: File,
-    pub meta: WalIndexMeta,
-}
-
-impl InjectorHookInner {
-    unsafe fn inject_pages(
+    fn inject_pages(
         &mut self,
-        page_headers: *mut PgHdr,
+        mut page_headers: Headers,
         last_frame_no: u64,
         size_after: u32,
         sync_flags: i32,
         orig: XWalFrameFn,
         wal: *mut Wal,
     ) -> anyhow::Result<()> {
-        self.pre_commit(last_frame_no)
-            .expect("failed to write pre-commit frame_no");
-        let ret = orig(wal, WAL_PAGE_SIZE, page_headers, size_after, 1, sync_flags);
+        self.is_txn = true;
+        if size_after != 0 {
+            (self.pre_commit)(last_frame_no)?;
+        }
+
+        let ret = unsafe {
+            orig(
+                wal,
+                WAL_PAGE_SIZE,
+                page_headers.as_ptr(),
+                size_after,
+                (size_after != 0) as _,
+                sync_flags,
+            )
+        };
 
         if ret == 0 {
-            debug_assert!(all_applied(page_headers));
-            self.post_commit()
-                .expect("failed to write post-commit frame_no");
-            // remove commited entries.
+            debug_assert!(page_headers.all_applied());
+            if size_after != 0 {
+                (self.post_commit)(last_frame_no)?;
+                self.is_txn = false;
+            }
             tracing::trace!("applied frame batch");
 
             Ok(())
         } else {
             anyhow::bail!("failed to apply pages");
         }
-    }
-
-    /// Set the pre-commit frame_no, and flush the meta file
-    fn pre_commit(&mut self, frame_no: u64) -> anyhow::Result<()> {
-        self.meta.pre_commit_frame_no = frame_no;
-        self.flush_meta()
-    }
-
-    /// Set the post-commit value to the pre-commit value.
-    fn post_commit(&mut self) -> anyhow::Result<()> {
-        self.meta.post_commit_frame_no = self.meta.pre_commit_frame_no;
-        self.flush_meta()
-    }
-
-    fn flush_meta(&self) -> anyhow::Result<()> {
-        self.meta_file.write_all_at(bytes_of(&self.meta), 0)?;
-
-        Ok(())
     }
 }
 
@@ -145,33 +151,35 @@ unsafe impl WalHook for InjectorHook {
     ) -> c_int {
         let wal_ptr = wal as *mut _;
         let ctx = Self::wal_extract_ctx(wal);
-        ctx.with_inner_mut(|this| {
-            let frames = this
-                .current_frames
-                .take()
-                .expect("should not have been called with no frames");
+        loop {
+            match ctx.receiver.blocking_recv() {
+                Some(frames) => {
+                    let (headers, last_frame_no, size_after) = frames.to_headers();
 
-            let (headers, last_frame_no, size_after) = frames.to_headers();
+                    let ret = ctx.inject_pages(
+                        headers,
+                        last_frame_no,
+                        size_after,
+                        sync_flags,
+                        orig,
+                        wal_ptr,
+                    );
 
-            // SAFETY: frame headers are valid for the duration of the call of apply_pages
-            let result = unsafe {
-                this.inject_pages(
-                    headers,
-                    last_frame_no,
-                    size_after,
-                    sync_flags,
-                    orig,
-                    wal_ptr,
-                )
-            };
+                    if let Err(e) = ret {
+                        tracing::error!("replication error: {e}");
+                        return SQLITE_ERROR;
+                    }
 
-            free_page_header(headers);
-
-            let result = result.map(|_| last_frame_no);
-            this.result.replace(result);
-
-            SQLITE_ERROR
-        })
+                    if !ctx.is_txn {
+                        return SQLITE_CONTINUE_REPLICATION;
+                    }
+                }
+                None => {
+                    tracing::warn!("replication channel closed");
+                    return SQLITE_EXIT_REPLICATION;
+                }
+            }
+        }
     }
 
     fn name() -> &'static CStr {
@@ -182,7 +190,9 @@ unsafe impl WalHook for InjectorHook {
 /// Turn a list of `WalFrame` into a list of PgHdr.
 /// The caller has the responsibility to free the returned headers.
 /// return (headers, last_frame_no, size_after)
-fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (*mut PgHdr, u64, u32) {
+fn make_page_header<'a>(
+    frames: impl Iterator<Item = &'a FrameBorrowed>,
+) -> (Headers<'a>, u64, u32) {
     let mut current_pg = std::ptr::null_mut();
     let mut last_frame_no = 0;
     let mut size_after = 0;
@@ -214,16 +224,8 @@ fn make_page_header<'a>(frames: impl Iterator<Item = &'a FrameBorrowed>) -> (*mu
 
     tracing::trace!("built {headers_count} page headers");
 
-    (current_pg, last_frame_no, size_after)
-}
-
-/// frees the `PgHdr` list pointed at by `h`.
-fn free_page_header(h: *const PgHdr) {
-    let mut current = h;
-    while !current.is_null() {
-        let h: Box<PgHdr> = unsafe { Box::from_raw(current as _) };
-        current = h.pDirty;
-    }
+    let headers = unsafe { Headers::new(current_pg) };
+    (headers, last_frame_no, size_after)
 }
 
 /// Debug assertion. Make sure that all the pages have been applied

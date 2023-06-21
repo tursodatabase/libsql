@@ -310,8 +310,8 @@ async fn start_replica(
         channel.clone(),
         uri.clone(),
         config.allow_replica_overwrite,
-    );
-    let applied_frame_no_receiver = replicator.current_frame_no_notifier.subscribe();
+    )?;
+    let applied_frame_no_receiver = replicator.current_frame_no_notifier.clone();
 
     join_set.spawn(replicator.run());
 

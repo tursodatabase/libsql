@@ -1,21 +1,28 @@
+use std::os::unix::prelude::FileExt;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::bail;
+use bytemuck::bytes_of;
 use futures::StreamExt;
-use tokio::sync::watch;
+use parking_lot::Mutex;
+use tokio::sync::{mpsc, watch};
 use tonic::transport::Channel;
 
 use crate::replication::frame::Frame;
+use crate::replication::replica::error::ReplicationError;
 use crate::replication::replica::snapshot::TempSnapshot;
 use crate::replication::FrameNo;
 use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, LogOffset,
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
+use crate::HARD_RESET;
 
-use super::hook::Frames;
-use super::injector::FrameInjectorHandle;
+use super::hook::{Frames, InjectorHookCtx};
+use super::injector::FrameInjector;
+use super::meta::WalIndexMeta;
 
 const HANDSHAKE_MAX_RETRIES: usize = 100;
 
@@ -26,10 +33,10 @@ type Client = ReplicationLogClient<Channel>;
 pub struct Replicator {
     client: Client,
     db_path: PathBuf,
-    injector: Option<FrameInjectorHandle>,
-    current_frame_no: FrameNo,
-    pub current_frame_no_notifier: watch::Sender<FrameNo>,
+    meta: Arc<Mutex<Option<WalIndexMeta>>>,
+    pub current_frame_no_notifier: watch::Receiver<FrameNo>,
     allow_replica_overwrite: bool,
+    frames_sender: mpsc::Sender<Frames>,
 }
 
 impl Replicator {
@@ -38,34 +45,78 @@ impl Replicator {
         channel: Channel,
         uri: tonic::transport::Uri,
         allow_replica_overwrite: bool,
-    ) -> Self {
+    ) -> anyhow::Result<Self> {
         let client = Client::with_origin(channel, uri);
-        let (applied_frame_notifier, _) = watch::channel(FrameNo::MAX);
-        Self {
+        let (meta, meta_file) = WalIndexMeta::read_from_path(&db_path)?;
+        let meta_file = Arc::new(meta_file);
+        let (applied_frame_notifier, current_frame_no_notifier) =
+            watch::channel(meta.map(|m| m.post_commit_frame_no).unwrap_or(FrameNo::MAX));
+        let meta = Arc::new(Mutex::new(meta));
+        let (frames_sender, receiver) = tokio::sync::mpsc::channel(1);
+
+        let pre_commit = {
+            let meta = meta.clone();
+            let meta_file = meta_file.clone();
+            move |fno| {
+                let mut lock = meta.lock();
+                let meta = lock
+                    .as_mut()
+                    .expect("commit called before meta inialization");
+                meta.pre_commit_frame_no = fno;
+                meta_file.write_all_at(bytes_of(meta), 0)?;
+
+                Ok(())
+            }
+        };
+
+        let post_commit = {
+            let meta = meta.clone();
+            let meta_file = meta_file;
+            let notifier = applied_frame_notifier;
+            move |fno| {
+                let mut lock = meta.lock();
+                let meta = lock
+                    .as_mut()
+                    .expect("commit called before meta inialization");
+                assert_eq!(meta.pre_commit_frame_no, fno);
+                meta.post_commit_frame_no = fno;
+                meta_file.write_all_at(bytes_of(meta), 0)?;
+                let _ = notifier.send(fno);
+
+                Ok(())
+            }
+        };
+
+        tokio::task::spawn_blocking({
+            let db_path = db_path.clone();
+            move || -> anyhow::Result<()> {
+                let mut ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
+                let mut injector = FrameInjector::new(&db_path, &mut ctx)?;
+
+                while injector.step()? {}
+
+                Ok(())
+            }
+        });
+
+        Ok(Self {
             client,
             db_path,
-            injector: None,
-            current_frame_no: FrameNo::MAX,
-            current_frame_no_notifier: applied_frame_notifier,
+            current_frame_no_notifier,
             allow_replica_overwrite,
-        }
+            meta,
+            frames_sender,
+        })
     }
 
     pub async fn run(mut self) -> anyhow::Result<()> {
         loop {
-            if self.injector.is_none() {
-                self.try_perform_handshake().await?;
-            }
+            self.try_perform_handshake().await?;
 
             if let Err(e) = self.replicate().await {
                 // Replication encountered an error. We log the error, and then shut down the
                 // injector and propagate a potential panic from there.
                 tracing::warn!("replication error: {e}");
-                if let Some(injector) = self.injector.take() {
-                    if let Err(e) = injector.shutdown().await {
-                        tracing::warn!("error shutting down frame injector: {e}");
-                    }
-                }
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
@@ -78,18 +129,36 @@ impl Replicator {
             match self.client.hello(HelloRequest {}).await {
                 Ok(resp) => {
                     let hello = resp.into_inner();
-                    if let Some(applicator) = self.injector.take() {
-                        applicator.shutdown().await?;
-                    }
-                    let (injector, last_applied_frame_no) = FrameInjectorHandle::new(
-                        self.db_path.clone(),
-                        hello,
-                        self.allow_replica_overwrite,
-                    )
-                    .await?;
-                    self.update_current_frame_no(last_applied_frame_no);
-                    self.injector.replace(injector);
-                    return Ok(());
+                    return tokio::task::block_in_place(|| {
+                        let mut lock = self.meta.lock();
+                        let meta = match *lock {
+                            Some(meta) => match meta.merge_from_hello(hello) {
+                                Ok(meta) => meta,
+                                Err(e @ ReplicationError::Lagging) => {
+                                    tracing::error!(
+                                        "Replica ahead of primary: hard-reseting replica"
+                                    );
+                                    HARD_RESET.notify_waiters();
+
+                                    anyhow::bail!(e);
+                                }
+                                Err(e @ ReplicationError::DbIncompatible)
+                                    if self.allow_replica_overwrite =>
+                                {
+                                    tracing::error!("Primary is attempting to replicate a different database, overwriting replica.");
+                                    HARD_RESET.notify_waiters();
+
+                                    anyhow::bail!(e);
+                                }
+                                Err(e) => anyhow::bail!(e),
+                            },
+                            None => WalIndexMeta::new_from_hello(hello)?,
+                        };
+
+                        *lock = Some(meta);
+
+                        Ok(())
+                    });
                 }
                 Err(e) if !error_printed => {
                     tracing::error!("error connecting to primary. retrying. error: {e}");
@@ -103,12 +172,8 @@ impl Replicator {
         bail!("couldn't connect to primary after {HANDSHAKE_MAX_RETRIES} tries.");
     }
 
-    fn update_current_frame_no(&mut self, new_frame_no: FrameNo) {
-        self.current_frame_no = new_frame_no;
-        self.current_frame_no_notifier.send_replace(new_frame_no);
-    }
-
     async fn replicate(&mut self) -> anyhow::Result<()> {
+        const MAX_REPLICA_REPLICATION_BUFFER_LEN: usize = 10_000_000 / 4096; // ~10MB
         let offset = LogOffset {
             // if current == FrameNo::Max then it means that we're starting fresh
             next_offset: self.next_offset(),
@@ -121,15 +186,24 @@ impl Replicator {
                 Some(Ok(frame)) => {
                     let frame = Frame::try_from_bytes(frame.data)?;
                     buffer.push(frame.clone());
-                    if frame.header().size_after != 0 {
-                        self.flush_txn(std::mem::take(&mut buffer)).await?;
+                    if frame.header().size_after != 0
+                        || buffer.len() > MAX_REPLICA_REPLICATION_BUFFER_LEN
+                    {
+                        let _ = self
+                            .frames_sender
+                            .send(Frames::Vec(std::mem::take(&mut buffer)))
+                            .await;
                     }
                 }
                 Some(Err(err))
                     if err.code() == tonic::Code::FailedPrecondition
                         && err.message() == NEED_SNAPSHOT_ERROR_MSG =>
                 {
-                    return self.load_snapshot().await;
+                    tracing::debug!("loading snapshot");
+                    // remove any outstanding frames in the buffer that are not part of a
+                    // transaction: they are now part of the snapshot.
+                    buffer.clear();
+                    self.load_snapshot().await?;
                 }
                 Some(Err(e)) => return Err(e.into()),
                 None => return Ok(()),
@@ -138,11 +212,10 @@ impl Replicator {
     }
 
     async fn load_snapshot(&mut self) -> anyhow::Result<()> {
+        let next_offset = self.next_offset();
         let frames = self
             .client
-            .snapshot(LogOffset {
-                next_offset: self.next_offset(),
-            })
+            .snapshot(LogOffset { next_offset })
             .await?
             .into_inner();
 
@@ -151,34 +224,18 @@ impl Replicator {
             Err(e) => anyhow::bail!(e),
         });
         let snap = TempSnapshot::from_stream(&self.db_path, stream).await?;
-        self.current_frame_no = self
-            .injector
-            .as_mut()
-            .unwrap()
-            .apply_frames(Frames::Snapshot(snap))
-            .await?;
+
+        let _ = self.frames_sender.send(Frames::Snapshot(snap)).await;
 
         Ok(())
     }
 
-    async fn flush_txn(&mut self, frames: Vec<Frame>) -> anyhow::Result<()> {
-        let new_frame_no = self
-            .injector
-            .as_mut()
-            .expect("invalid state")
-            .apply_frames(Frames::Vec(frames))
-            .await?;
-
-        self.update_current_frame_no(new_frame_no);
-
-        Ok(())
-    }
-
-    fn next_offset(&self) -> FrameNo {
+    fn next_offset(&mut self) -> FrameNo {
         self.current_frame_no().map(|x| x + 1).unwrap_or(0)
     }
 
-    fn current_frame_no(&self) -> Option<FrameNo> {
-        (self.current_frame_no != FrameNo::MAX).then_some(self.current_frame_no)
+    fn current_frame_no(&mut self) -> Option<FrameNo> {
+        let current = *self.current_frame_no_notifier.borrow_and_update();
+        (current != FrameNo::MAX).then_some(current)
     }
 }
