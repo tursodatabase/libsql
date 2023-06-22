@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\senhancements\sinto\sthe\soctet_length\sbranch.
-D 2023-06-22T13:01:02.269
+C basic\stest\scases\sfor\soctet_length().
+D 2023-06-22T15:26:52.207
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1107,7 +1107,7 @@ F test/fts4umlaut.test fcaca4471de7e78c9d1f7e8976e3e8704d7d8ad979d57a739d00f3f75
 F test/fts4unicode.test 82a9c16b68ba2f358a856226bb2ee02f81583797bc4744061c54401bf1a0f4c9
 F test/fts4upfrom.test f25835162c989dffd5e2ef91ec24c4848cc9973093e2d492d1c7b32afac1b49d
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test 4be8bed4be235e333f1e0ea31e32f5be3c9f456c30780363e7fcb15e3ff3e6bc
+F test/func.test cdebc080122807254173b942bd0aa9464eb859f7a057a0791136072462fb5bcb
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 600a632c305a88f3946d38f9a51efe145c989b2e13bd2b2a488db47fe76bab6a
 F test/func4.test 2285fb5792d593fef442358763f0fd9de806eda47dbc7a5934df57ffdc484c31
@@ -2041,8 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2db989c8635f7e89b3ea58d1fde94787fced039ac1a118d9b6362811eda73f87 2e9734c2335d8c06fedc9f4cca02baaf326f7fa276bd464f3214f383715a48d6
-R d43f11a3feddb582ed42e587867b1c68
+P d35c214811aac7dec0000ca2aa77231f74a7963dd0c53cf25a65ade5ef0f8dc0
+R 8c6d298ce12abacfac45cb129a4abead
 U drh
-Z 334a980403de1f76059a91f69a29a042
+Z 76a1041231189a51ed5ec99201fa5223
 # Remove this line to create a well-formed Fossil manifest.
