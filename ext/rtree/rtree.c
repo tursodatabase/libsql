@@ -96,6 +96,11 @@ typedef unsigned int u32;
 #endif
 #endif /* !defined(SQLITE_AMALGAMATION) */
 
+/* Macro to check for 4-byte alignment.  Only used inside of assert() */
+#ifdef SQLITE_DEBUG
+# define FOUR_BYTE_ALIGNED(X)  ((((char*)(X) - (char*)0) & 3)==0)
+#endif
+
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -502,7 +507,7 @@ static int readInt16(u8 *p){
   return (p[0]<<8) + p[1];
 }
 static void readCoord(u8 *p, RtreeCoord *pCoord){
-  assert( (((sqlite3_uint64)p)&3)==0 );  /* p is always 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(p) );
 #if SQLITE_BYTEORDER==1234 && MSVC_VERSION>=1300
   pCoord->u = _byteswap_ulong(*(u32*)p);
 #elif SQLITE_BYTEORDER==1234 && GCC_VERSION>=4003000
@@ -556,7 +561,7 @@ static void writeInt16(u8 *p, int i){
 }
 static int writeCoord(u8 *p, RtreeCoord *pCoord){
   u32 i;
-  assert( (((sqlite3_uint64)p)&3)==0 );  /* p is always 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(p) );
   assert( sizeof(RtreeCoord)==4 );
   assert( sizeof(u32)==4 );
 #if SQLITE_BYTEORDER==1234 && GCC_VERSION>=4003000
@@ -1284,7 +1289,7 @@ static void rtreeNonleafConstraint(
   assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
       || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_TRUE
       || p->op==RTREE_FALSE );
-  assert( (((sqlite3_uint64)pCellData)&3)==0 );  /* 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(pCellData) );
   switch( p->op ){
     case RTREE_TRUE:  return;   /* Always satisfied */
     case RTREE_FALSE: break;    /* Never satisfied */
@@ -1337,7 +1342,7 @@ static void rtreeLeafConstraint(
       || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_TRUE
       || p->op==RTREE_FALSE );
   pCellData += 8 + p->iCoord*4;
-  assert( (((sqlite3_uint64)pCellData)&3)==0 );  /* 4-byte aligned */
+  assert( FOUR_BYTE_ALIGNED(pCellData) );
   RTREE_DECODE_COORD(eInt, pCellData, xN);
   switch( p->op ){
     case RTREE_TRUE:  return;   /* Always satisfied */

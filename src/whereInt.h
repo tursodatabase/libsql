@@ -37,7 +37,7 @@ typedef struct WhereRightJoin WhereRightJoin;
 
 /*
 ** This object is a header on a block of allocated memory that will be
-** automatically freed when its WInfo oject is destructed.
+** automatically freed when its WInfo object is destructed.
 */
 struct WhereMemBlock {
   WhereMemBlock *pNext;      /* Next block in the chain */
@@ -98,7 +98,7 @@ struct WhereLevel {
         int iCur;              /* The VDBE cursor used by this IN operator */
         int addrInTop;         /* Top of the IN loop */
         int iBase;             /* Base register of multi-key index record */
-        int nPrefix;           /* Number of prior entires in the key */
+        int nPrefix;           /* Number of prior entries in the key */
         u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
       } *aInLoop;           /* Information about each nested IN operator */
     } in;                 /* Used when pWLoop->wsFlags&WHERE_IN_ABLE */
@@ -167,7 +167,7 @@ struct WhereLoop {
 
 /* This object holds the prerequisites and the cost of running a
 ** subquery on one operand of an OR operator in the WHERE clause.
-** See WhereOrSet for additional information 
+** See WhereOrSet for additional information
 */
 struct WhereOrCost {
   Bitmask prereq;     /* Prerequisites */
@@ -219,7 +219,7 @@ struct WherePath {
 ** clause subexpression is separated from the others by AND operators,
 ** usually, or sometimes subexpressions separated by OR.
 **
-** All WhereTerms are collected into a single WhereClause structure.  
+** All WhereTerms are collected into a single WhereClause structure. 
 ** The following identity holds:
 **
 **        WhereTerm.pWC->a[WhereTerm.idx] == WhereTerm
@@ -348,7 +348,7 @@ struct WhereClause {
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   int nBase;               /* Number of terms through the last non-Virtual */
-  WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
+  WhereTerm *a;            /* Each a[] describes a term of the WHERE clause */
 #if defined(SQLITE_SMALL_STACK)
   WhereTerm aStatic[1];    /* Initial static space for a[] */
 #else
@@ -377,8 +377,8 @@ struct WhereAndInfo {
 ** An instance of the following structure keeps track of a mapping
 ** between VDBE cursor numbers and bits of the bitmasks in WhereTerm.
 **
-** The VDBE cursor numbers are small integers contained in 
-** SrcItem.iCursor and Expr.iTable fields.  For any given WHERE 
+** The VDBE cursor numbers are small integers contained in
+** SrcItem.iCursor and Expr.iTable fields.  For any given WHERE
 ** clause, the cursor numbers might not begin with 0 and they might
 ** contain gaps in the numbering sequence.  But we want to make maximum
 ** use of the bits in our bitmasks.  This structure provides a mapping

@@ -665,39 +665,38 @@ int main(int argc, char **argv){
   printf("static int keywordCode(const char *z, int n, int *pType){\n");
   printf("  int i, j;\n");
   printf("  const char *zKW;\n");
-  printf("  if( n>=2 ){\n");
-  printf("    i = ((charMap(z[0])*%d) %c", HASH_C0, HASH_CC);
+  printf("  assert( n>=2 );\n");
+  printf("  i = ((charMap(z[0])*%d) %c", HASH_C0, HASH_CC);
   printf(" (charMap(z[n-1])*%d) %c", HASH_C1, HASH_CC);
   printf(" n*%d) %% %d;\n", HASH_C2, bestSize);
-  printf("    for(i=(int)aKWHash[i]; i>0; i=aKWNext[i]){\n");
-  printf("      if( aKWLen[i]!=n ) continue;\n");
-  printf("      zKW = &zKWText[aKWOffset[i]];\n");
+  printf("  for(i=(int)aKWHash[i]; i>0; i=aKWNext[i]){\n");
+  printf("    if( aKWLen[i]!=n ) continue;\n");
+  printf("    zKW = &zKWText[aKWOffset[i]];\n");
   printf("#ifdef SQLITE_ASCII\n");
-  printf("      if( (z[0]&~0x20)!=zKW[0] ) continue;\n");
-  printf("      if( (z[1]&~0x20)!=zKW[1] ) continue;\n");
-  printf("      j = 2;\n");
-  printf("      while( j<n && (z[j]&~0x20)==zKW[j] ){ j++; }\n");
+  printf("    if( (z[0]&~0x20)!=zKW[0] ) continue;\n");
+  printf("    if( (z[1]&~0x20)!=zKW[1] ) continue;\n");
+  printf("    j = 2;\n");
+  printf("    while( j<n && (z[j]&~0x20)==zKW[j] ){ j++; }\n");
   printf("#endif\n");
   printf("#ifdef SQLITE_EBCDIC\n");
-  printf("      if( toupper(z[0])!=zKW[0] ) continue;\n");
-  printf("      if( toupper(z[1])!=zKW[1] ) continue;\n");
-  printf("      j = 2;\n");
-  printf("      while( j<n && toupper(z[j])==zKW[j] ){ j++; }\n");
+  printf("    if( toupper(z[0])!=zKW[0] ) continue;\n");
+  printf("    if( toupper(z[1])!=zKW[1] ) continue;\n");
+  printf("    j = 2;\n");
+  printf("    while( j<n && toupper(z[j])==zKW[j] ){ j++; }\n");
   printf("#endif\n");
-  printf("      if( j<n ) continue;\n");
+  printf("    if( j<n ) continue;\n");
   for(i=0; i<nKeyword; i++){
-    printf("      testcase( i==%d ); /* %s */\n",
+    printf("    testcase( i==%d ); /* %s */\n",
            i+1, aKeywordTable[i].zOrigName);
   }
-  printf("      *pType = aKWCode[i];\n");
-  printf("      break;\n");
-  printf("    }\n");
+  printf("    *pType = aKWCode[i];\n");
+  printf("    break;\n");
   printf("  }\n");
   printf("  return n;\n");
   printf("}\n");
   printf("int sqlite3KeywordCode(const unsigned char *z, int n){\n");
   printf("  int id = TK_ID;\n");
-  printf("  keywordCode((char*)z, n, &id);\n");
+  printf("  if( n>=2 ) keywordCode((char*)z, n, &id);\n");
   printf("  return id;\n");
   printf("}\n");
   printf("#define SQLITE_N_KEYWORD %d\n", nKeyword);

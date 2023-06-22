@@ -599,7 +599,7 @@ SHELL_OPT += -DSQLITE_ENABLE_DBPAGE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_DBSTAT_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_BYTECODE_VTAB
 SHELL_OPT += -DSQLITE_ENABLE_OFFSET_SQL_FUNC
-FUZZERSHELL_OPT = 
+FUZZERSHELL_OPT =
 FUZZCHECK_OPT += -I$(TOP)/test
 FUZZCHECK_OPT += -I$(TOP)/ext/recover
 FUZZCHECK_OPT += \
@@ -690,6 +690,12 @@ srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 sourcetest:	srcck1$(BEXE) sqlite3.c
 	./srcck1 sqlite3.c
 
+src-verify:	$(TOP)/tool/src-verify.c
+	$(BCC) -o src-verify$(BEXE) $(TOP)/tool/src-verify.c
+
+verify-source:	./src-verify
+	./src-verify $(TOP)
+
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
 	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
@@ -775,7 +781,7 @@ mptest:	mptester$(TEXE)
 	cp fts5.c fts5.h tsrc
 	touch .target_source
 
-sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
+sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl src-verify
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
 	cp tsrc/sqlite3ext.h .
 	cp $(TOP)/ext/session/sqlite3session.h .
@@ -1133,6 +1139,7 @@ SHELL_SRC = \
 	$(TOP)/ext/expert/sqlite3expert.h \
 	$(TOP)/ext/misc/zipfile.c \
 	$(TOP)/ext/misc/memtrace.c \
+	$(TOP)/ext/misc/pcachetrace.c \
 	$(TOP)/ext/recover/dbdata.c \
 	$(TOP)/ext/recover/sqlite3recover.c \
 	$(TOP)/ext/recover/sqlite3recover.h \
@@ -1521,6 +1528,8 @@ clean:
 	rm -f dbhash dbhash.exe
 	rm -f fts5.* fts5parse.*
 	rm -f threadtest5
+	rm -f src-verify
+	rm -f custom.rws
 
 distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc \
@@ -1549,3 +1558,21 @@ sqlite3.dll: $(REAL_LIBOBJ) sqlite3.def
 #
 fiddle: sqlite3.c shell.c
 	make -C ext/wasm fiddle emcc_opt=-Os
+
+#
+# Spell-checking for source comments
+# The sources checked are either C sources or C source templates.
+# Their comments are extracted and processed through aspell using
+# a custom dictionary that contains scads of odd identifiers that
+# find their way into the comments.
+#
+# Currently, this target is setup to be "made" in-tree only.
+# The output is ephemeral. Redirect it to guide spelling fixups,
+# either to correct spelling or add words to tool/custom.txt.
+#
+./custom.rws: ./tool/custom.txt
+	@echo 'Updating custom dictionary from tool/custom.txt'
+	aspell --lang=en create master ./custom.rws < $<
+
+misspell: ./custom.rws
+	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in

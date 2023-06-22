@@ -137,7 +137,7 @@ int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
     /* Faults are not injected into COMMIT_PHASETWO because, assuming SQLite
     ** is using a regular VFS, it is called after the corresponding
     ** transaction has been committed. Injecting a fault at this point
-    ** confuses the test scripts - the COMMIT comand returns SQLITE_NOMEM
+    ** confuses the test scripts - the COMMIT command returns SQLITE_NOMEM
     ** but the transaction is committed anyway.
     **
     ** The core must call OsFileControl() though, not OsFileControlHint(),
@@ -279,7 +279,7 @@ int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
   }else{
     return pVfs->xRandomness(pVfs, nByte, zBufOut);
   }
-  
+
 }
 int sqlite3OsSleep(sqlite3_vfs *pVfs, int nMicro){
   return pVfs->xSleep(pVfs, nMicro);

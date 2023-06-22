@@ -45,7 +45,7 @@ struct sqlite3_mutex {
 /* State variables */
 static struct test_mutex_globals {
   int isInstalled;           /* True if installed */
-  int disableInit;           /* True to cause sqlite3_initalize() to fail */
+  int disableInit;           /* True to cause sqlite3_initialize() to fail */
   int disableTry;            /* True to force sqlite3_mutex_try() to fail */
   int isInit;                /* True if initialized */
   sqlite3_mutex_methods m;   /* Interface to "real" mutex system */

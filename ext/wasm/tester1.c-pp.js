@@ -98,6 +98,7 @@ self.sqlite3InitModule = sqlite3InitModule;
         logTarget.append(ln);
       };
       const cbReverse = document.querySelector('#cb-log-reverse');
+      //cbReverse.setAttribute('checked','checked');
       const cbReverseKey = 'tester1:cb-log-reverse';
       const cbReverseIt = ()=>{
         logTarget.classList[cbReverse.checked ? 'add' : 'remove']('reverse');
@@ -3006,6 +3007,45 @@ self.sqlite3InitModule = sqlite3InitModule;
       }
     })/*session API sanity tests*/
   ;/*end of session API group*/;
+  ////////////////////////////////////////////////////////////////////////
+  T.g('Bug Reports')
+    .t({
+      name: 'Delete via bound parameter in subquery',
+      test: function(sqlite3){
+        // Testing https://sqlite.org/forum/forumpost/40ce55bdf5
+        // with the exception that that post uses "external content"
+        // for the FTS index.
+        const db = new sqlite3.oo1.DB();//(':memory:','wt');
+        db.exec([
+          "create virtual table f using fts5 (path);",
+          "insert into f(path) values('abc'),('def'),('ghi');"
+        ]);
+        const fetchEm = ()=> db.exec({
+          sql: "SELECT * FROM f order by path",
+          rowMode: 'array'
+        });
+        const dump = function(lbl){
+          let rc = fetchEm();
+          log((lbl ? (lbl+' results') : ''),rc);
+        };
+        //dump('Full fts table');
+        let rc = fetchEm();
+        T.assert(3===rc.length);
+        db.exec(`
+          delete from f where rowid in (
+          select rowid from f where path = :path
+           )`,
+          {bind: {":path": "def"}}
+        );
+        //dump('After deleting one entry via subquery');
+        rc = fetchEm();
+        T.assert(2===rc.length)
+          .assert('abcghi'===rc.join(''));
+        //log('rc =',rc);
+        db.close();
+      }
+    })
+  ;/*end of Bug Reports group*/;
 
   ////////////////////////////////////////////////////////////////////////
   log("Loading and initializing sqlite3 WASM module...");

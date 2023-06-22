@@ -110,8 +110,8 @@ struct DateTime {
 */
 static int getDigits(const char *zDate, const char *zFormat, ...){
   /* The aMx[] array translates the 3rd character of each format
-  ** spec into a max size:    a   b   c   d   e     f */
-  static const u16 aMx[] = { 12, 14, 24, 31, 59, 9999 };
+  ** spec into a max size:    a   b   c   d   e      f */
+  static const u16 aMx[] = { 12, 14, 24, 31, 59, 14712 };
   va_list ap;
   int cnt = 0;
   char nextC;
@@ -452,17 +452,14 @@ static void computeYMD(DateTime *p){
 ** Compute the Hour, Minute, and Seconds from the julian day number.
 */
 static void computeHMS(DateTime *p){
-  int s;
+  int day_ms, day_min; /* milliseconds, minutes into the day */
   if( p->validHMS ) return;
   computeJD(p);
-  s = (int)((p->iJD + 43200000) % 86400000);
-  p->s = s/1000.0;
-  s = (int)p->s;
-  p->s -= s;
-  p->h = s/3600;
-  s -= p->h*3600;
-  p->m = s/60;
-  p->s += s - p->m*60;
+  day_ms = (int)((p->iJD + 43200000) % 86400000);
+  p->s = (day_ms % 60000)/1000.0;
+  day_min = day_ms/60000;
+  p->m = day_min % 60;
+  p->h = day_min / 60;
   p->rawS = 0;
   p->validHMS = 1;
 }
@@ -872,13 +869,17 @@ static int parseModifier(
       int i;
       int Y,M,D,h,m,x;
       const char *z2 = z;
+      char z0 = z[0];
       for(n=1; z[n]; n++){
         if( z[n]==':' ) break;
         if( sqlite3Isspace(z[n]) ) break;
-        if( z[n]=='-' && n==5 && getDigits(&z[1], "40f", &Y)==1 ) break;
+        if( z[n]=='-' ){
+          if( n==5 && getDigits(&z[1], "40f", &Y)==1 ) break;
+          if( n==6 && getDigits(&z[1], "50f", &Y)==1 ) break;
+        }
       }
       if( sqlite3AtoF(z, &r, n, SQLITE_UTF8)<=0 ){
-        rc = 1;
+        assert( rc==1 );
         break;
       }
       if( z[n]=='-' ){
@@ -886,14 +887,19 @@ static int parseModifier(
         ** specified number of years, months, and days.  MM is limited to
         ** the range 0-11 and DD is limited to 0-30.
         */
-        if( z[0]!='+' && z[0]!='-' ) break;  /* Must start with +/- */
-        if( NEVER(n!=5) ) break;             /* Must be 4-digit YYYY */
-        if( getDigits(&z[1], "40f-20a-20d", &Y, &M, &D)!=3 ) break;
+        if( z0!='+' && z0!='-' ) break;  /* Must start with +/- */
+        if( n==5 ){
+          if( getDigits(&z[1], "40f-20a-20d", &Y, &M, &D)!=3 ) break;
+        }else{
+          assert( n==6 );
+          if( getDigits(&z[1], "50f-20a-20d", &Y, &M, &D)!=3 ) break;
+          z++;
+        }
         if( M>=12 ) break;                   /* M range 0..11 */
         if( D>=31 ) break;                   /* D range 0..30 */
         computeYMD_HMS(p);
         p->validJD = 0;
-        if( z[0]=='-' ){
+        if( z0=='-' ){
           p->Y -= Y;
           p->M -= M;
           D = -D;
@@ -937,7 +943,7 @@ static int parseModifier(
         tx.iJD -= 43200000;
         day = tx.iJD/86400000;
         tx.iJD -= day*86400000;
-        if( z[0]=='-' ) tx.iJD = -tx.iJD;
+        if( z0=='-' ) tx.iJD = -tx.iJD;
         computeJD(p);
         clearYMD_HMS_TZ(p);
         p->iJD += tx.iJD;
@@ -953,7 +959,7 @@ static int parseModifier(
       if( n>10 || n<3 ) break;
       if( sqlite3UpperToLower[(u8)z[n-1]]=='s' ) n--;
       computeJD(p);
-      rc = 1;
+      assert( rc==1 );
       rRounder = r<0 ? -0.5 : +0.5;
       for(i=0; i<ArraySize(aXformType); i++){
         if( aXformType[i].nName==n
@@ -1120,7 +1126,7 @@ static void datetimeFunc(
     zBuf[16] = '0' + (x.m)%10;
     zBuf[17] = ':';
     if( x.useSubsec ){
-      s = (int)1000.0*x.s;
+      s = (int)(1000.0*x.s + 0.5);
       zBuf[18] = '0' + (s/10000)%10;
       zBuf[19] = '0' + (s/1000)%10;
       zBuf[20] = '.';
@@ -1167,7 +1173,7 @@ static void timeFunc(
     zBuf[4] = '0' + (x.m)%10;
     zBuf[5] = ':';
     if( x.useSubsec ){
-      s = (int)1000.0*x.s;
+      s = (int)(1000.0*x.s + 0.5);
       zBuf[6] = '0' + (s/10000)%10;
       zBuf[7] = '0' + (s/1000)%10;
       zBuf[8] = '.';
@@ -1238,7 +1244,7 @@ static void dateFunc(
 **   %M  minute 00-59
 **   %s  seconds since 1970-01-01
 **   %S  seconds 00-59
-**   %w  day of week 0-6  sunday==0
+**   %w  day of week 0-6  Sunday==0
 **   %W  week of year 00-53
 **   %Y  year 0000-9999
 **   %%  %
@@ -1397,14 +1403,15 @@ static void cdateFunc(
 */
 static void timediffFunc(
   sqlite3_context *context,
-  int argc,
+  int NotUsed1,
   sqlite3_value **argv
 ){
   char sign;
   int Y, M;
   DateTime d1, d2;
   sqlite3_str sRes;
-  if( isDate(context, 1, argv, &d1)     ) return;
+  UNUSED_PARAMETER(NotUsed1);
+  if( isDate(context, 1, &argv[0], &d1) ) return;
   if( isDate(context, 1, &argv[1], &d2) ) return;
   computeYMD_HMS(&d1);
   computeYMD_HMS(&d2);
@@ -1426,7 +1433,7 @@ static void timediffFunc(
       d2.validJD = 0;
       computeJD(&d2);
     }
-    if( d1.iJD<d2.iJD ){
+    while( d1.iJD<d2.iJD ){
       M--;
       if( M<0 ){
         M = 11;
@@ -1441,8 +1448,8 @@ static void timediffFunc(
       computeJD(&d2);
     }
     d1.iJD -= d2.iJD;
-    d1.iJD += 148699540800000;
-  }else{
+    d1.iJD += (u64)1486995408 * (u64)100000;
+  }else /* d1<d2 */{
     sign = '-';
     Y = d2.Y - d1.Y;
     if( Y ){
@@ -1460,7 +1467,7 @@ static void timediffFunc(
       d2.validJD = 0;
       computeJD(&d2);
     }
-    if( d1.iJD>d2.iJD ){
+    while( d1.iJD>d2.iJD ){
       M--;
       if( M<0 ){
         M = 11;
@@ -1475,7 +1482,7 @@ static void timediffFunc(
       computeJD(&d2);
     }
     d1.iJD = d2.iJD - d1.iJD;
-    d1.iJD += 148699540800000;
+    d1.iJD += (u64)1486995408 * (u64)100000;
   }
   d1.validYMD = 0;
   d1.validHMS = 0;

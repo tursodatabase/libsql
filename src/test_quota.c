@@ -999,7 +999,7 @@ size_t sqlite3_quota_fwrite(
   const void *pBuf,      /* Take content to write from here */
   size_t size,           /* Size of each element */
   size_t nmemb,          /* Number of elements */
-  quota_FILE *p          /* Write to this quota_FILE objecct */
+  quota_FILE *p          /* Write to this quota_FILE object */
 ){
   sqlite3_int64 iOfst;
   sqlite3_int64 iEnd;
@@ -1876,7 +1876,7 @@ static int SQLITE_TCLAPI test_quota_glob(
   Tcl_Obj *CONST objv[]
 ){
   const char *zPattern;          /* The glob pattern */
-  const char *zText;             /* Text to compare agains the pattern */
+  const char *zText;             /* Text to compare against the pattern */
   int rc;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "PATTERN TEXT");

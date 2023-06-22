@@ -96,4 +96,33 @@ set r 137438953475
   db close
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  BEGIN;
+    INSERT INTO t1 VALUES('abc');
+    INSERT INTO t1 VALUES('b d d d');
+  COMMIT;
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', 1);
+}
+
+execsql_pp {
+  SELECT id, quote(block) FROM t1_data
+}
+
+do_execsql_test 2.1 {
+  SELECT quote(block) FROM t1_data WHERE id > 10;
+}        {X'0000001A04306162630102020101620202020101640206030303040806'}
+
+do_execsql_test 2.2 {
+  UPDATE t1_data SET 
+    block=X'0000001A04306162630102025501620202020101640206030303040806'
+  WHERE id>10
+}
+
+do_catchsql_test 2.3 {
+  DELETE FROM t1 WHERE rowid = 1
+} {1 {database disk image is malformed}}
+
 finish_test
