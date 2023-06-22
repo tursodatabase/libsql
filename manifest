@@ -1,5 +1,5 @@
-C Improved\scomment\son\sthe\sgetAndInitPage()\sin\sbtree.c.\s\sNo\scode\schanges.
-D 2023-06-21T21:47:09.597
+C Simplification\sto\sthe\sgetAndInitPage()\sroutine\sthat\sresults\sin\simproved\nperformance.
+D 2023-06-22T01:03:39.798
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -576,7 +576,7 @@ F src/auth.c 19b7ccacae3dfba23fc6f1d0af68134fa216e9040e53b0681b4715445ea030b4
 F src/backup.c 5c97e8023aab1ce14a42387eb3ae00ba5a0644569e3476f38661fa6f824c3523
 F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
-F src/btree.c 2ae7a720dc7af3327663ca5a1a4f4131301d040ef6058e1fb2fd5a7c743148d8
+F src/btree.c c0c93b6cb4dc133b528c1290bb4ad0f2414452f9a5758ff2b106af718874f39e
 F src/btree.h aa354b9bad4120af71e214666b35132712b8f2ec11869cb2315c52c81fad45cc
 F src/btreeInt.h 3b4eff7155c0cea6971dc51f62e3529934a15a6640ec607dd42a767e379cb3a9
 F src/build.c a8ae3b32d9aa9bbd2c0e97d7c0dd80def9fbca408425de1608f57ee6f47f45f4
@@ -2041,8 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 61dfa92b44ad38a7aac76a09e167819ce5d0acace3e06ba9ed17b3264cc043c1
-R 8109896f8dcaf1ac50fc102421edb592
+P dc468cfdb825083b3a4b6cb95c913961e9312e22103c5a0cd923b75c83c65e13
+R 61e892d0fc1ac1905da44ab1762c00e7
 U drh
-Z ee9fa6c5886a3987a472fa73645af4d3
+Z c0e995c2a64328b6123221956a5cefda
 # Remove this line to create a well-formed Fossil manifest.

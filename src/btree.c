@@ -2318,69 +2318,41 @@ Pgno sqlite3BtreeLastPage(Btree *p){
 
 /*
 ** Get a page from the pager and initialize it.
-**
-** If pCur!=0 then the page is being fetched as part of a moveToChild()
-** call.  Do additional sanity checking on the page in this case.
-** And if that additional sanity checking fails, adjust the state of
-** the cursor so that the fetch is effectively "undone".
-**
-** The page is fetched as read-write unless pCur is not NULL and is
-** a read-only cursor.
-**
-** If an error occurs, then *ppPage is undefined. It
-** may remain unchanged, or it may be set to an invalid value.
 */
 static int getAndInitPage(
   BtShared *pBt,                  /* The database file */
   Pgno pgno,                      /* Number of the page to get */
   MemPage **ppPage,               /* Write the page pointer here */
-  BtCursor *pCur,                 /* Cursor to receive the page, or NULL */
   int bReadOnly                   /* True for a read-only page */
 ){
   int rc;
   DbPage *pDbPage;
+  MemPage *pPage;
   assert( sqlite3_mutex_held(pBt->mutex) );
-  assert( pCur==0 || ppPage==&pCur->pPage );
-  assert( pCur==0 || bReadOnly==pCur->curPagerFlags );
-  assert( pCur==0 || pCur->iPage>0 );
 
   if( pgno>btreePagecount(pBt) ){
-    rc = SQLITE_CORRUPT_BKPT;
-    goto getAndInitPage_error1;
+    *ppPage = 0;
+    return SQLITE_CORRUPT_BKPT;
   }
   rc = sqlite3PagerGet(pBt->pPager, pgno, (DbPage**)&pDbPage, bReadOnly);
   if( rc ){
-    goto getAndInitPage_error1;
+    *ppPage = 0;
+    return rc;
   }
-  *ppPage = (MemPage*)sqlite3PagerGetExtra(pDbPage);
-  if( (*ppPage)->isInit==0 ){
+  pPage = (MemPage*)sqlite3PagerGetExtra(pDbPage);
+  if( pPage->isInit==0 ){
     btreePageFromDbPage(pDbPage, pgno, pBt);
-    rc = btreeInitPage(*ppPage);
+    rc = btreeInitPage(pPage);
     if( rc!=SQLITE_OK ){
-      goto getAndInitPage_error2;
+      releasePage(pPage);
+      *ppPage = 0;
+      return rc;
     }
   }
-  assert( (*ppPage)->pgno==pgno || CORRUPT_DB );
-  assert( (*ppPage)->aData==sqlite3PagerGetData(pDbPage) );
-
-  /* If obtaining a child page for a cursor, we must verify that the page is
-  ** compatible with the root page. */
-  if( pCur && ((*ppPage)->nCell<1 || (*ppPage)->intKey!=pCur->curIntKey) ){
-    rc = SQLITE_CORRUPT_PGNO(pgno);
-    goto getAndInitPage_error2;
-  }
+  assert( pPage->pgno==pgno || CORRUPT_DB );
+  assert( pPage->aData==sqlite3PagerGetData(pDbPage) );
+  *ppPage = pPage;
   return SQLITE_OK;
-
-getAndInitPage_error2:
-  releasePage(*ppPage);
-getAndInitPage_error1:
-  if( pCur ){
-    pCur->iPage--;
-    pCur->pPage = pCur->apPage[pCur->iPage];
-  }
-  testcase( pgno==0 );
-  assert( pgno!=0 || rc!=SQLITE_OK );
-  return rc;
 }
 
 /*
@@ -5354,6 +5326,7 @@ const void *sqlite3BtreePayloadFetch(BtCursor *pCur, u32 *pAmt){
 ** vice-versa).
 */
 static int moveToChild(BtCursor *pCur, u32 newPgno){
+  int rc;
   assert( cursorOwnsBtShared(pCur) );
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->iPage<BTCURSOR_MAX_DEPTH );
@@ -5367,8 +5340,17 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   pCur->apPage[pCur->iPage] = pCur->pPage;
   pCur->ix = 0;
   pCur->iPage++;
-  return getAndInitPage(pCur->pBt, newPgno, &pCur->pPage, pCur,
-                        pCur->curPagerFlags);
+  rc = getAndInitPage(pCur->pBt, newPgno, &pCur->pPage, pCur->curPagerFlags);
+  if( rc==SQLITE_OK
+   && (pCur->pPage->nCell<1 || pCur->pPage->intKey!=pCur->curIntKey)
+  ){
+    releasePage(pCur->pPage);
+    rc = SQLITE_CORRUPT_PGNO(newPgno);
+  }
+  if( rc ){
+    pCur->pPage = pCur->apPage[--pCur->iPage];
+  }
+  return rc;
 }
 
 #ifdef SQLITE_DEBUG
@@ -5475,7 +5457,7 @@ static int moveToRoot(BtCursor *pCur){
       sqlite3BtreeClearCursor(pCur);
     }
     rc = getAndInitPage(pCur->pBt, pCur->pgnoRoot, &pCur->pPage,
-                        0, pCur->curPagerFlags);
+                        pCur->curPagerFlags);
     if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
       return rc;
@@ -6088,10 +6070,36 @@ bypass_moveto_root:
     }else{
       chldPg = get4byte(findCell(pPage, lwr));
     }
-    pCur->ix = (u16)lwr;
-    rc = moveToChild(pCur, chldPg);
-    if( rc ) break;
-  }
+
+    /* This block is similar to an in-lined version of:
+    **
+    **    pCur->ix = (u16)lwr;
+    **    rc = moveToChild(pCur, chldPg);
+    **    if( rc ) break;
+    */
+    pCur->info.nSize = 0;
+    pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
+    if( pCur->iPage>=(BTCURSOR_MAX_DEPTH-1) ){
+      return SQLITE_CORRUPT_BKPT;
+    }
+    pCur->aiIdx[pCur->iPage] = (u16)lwr;
+    pCur->apPage[pCur->iPage] = pCur->pPage;
+    pCur->ix = 0;
+    pCur->iPage++;
+    rc = getAndInitPage(pCur->pBt, chldPg, &pCur->pPage, pCur->curPagerFlags);
+    if( rc==SQLITE_OK
+     && (pCur->pPage->nCell<1 || pCur->pPage->intKey!=pCur->curIntKey)
+    ){
+      releasePage(pCur->pPage);
+      rc = SQLITE_CORRUPT_PGNO(chldPg);
+    }
+    if( rc ){
+      pCur->pPage = pCur->apPage[--pCur->iPage];
+      break;
+    }
+    /*
+    ***** End of in-lined moveToChild() call */
+ }
 moveto_index_finish:
   pCur->info.nSize = 0;
   assert( (pCur->curFlags & BTCF_ValidOvfl)==0 );
@@ -8145,7 +8153,7 @@ static int balance_nonroot(
   pgno = get4byte(pRight);
   while( 1 ){
     if( rc==SQLITE_OK ){
-      rc = getAndInitPage(pBt, pgno, &apOld[i], 0, 0);
+      rc = getAndInitPage(pBt, pgno, &apOld[i], 0);
     }
     if( rc ){
       memset(apOld, 0, (i+1)*sizeof(MemPage*));
@@ -10030,7 +10038,7 @@ static int clearDatabasePage(
   if( pgno>btreePagecount(pBt) ){
     return SQLITE_CORRUPT_BKPT;
   }
-  rc = getAndInitPage(pBt, pgno, &pPage, 0, 0);
+  rc = getAndInitPage(pBt, pgno, &pPage, 0);
   if( rc ) return rc;
   if( (pBt->openFlags & BTREE_SINGLE)==0
    && sqlite3PagerPageRefcount(pPage->pDbPage) != (1 + (pgno==1))
