@@ -4668,10 +4668,10 @@ expr_code_doover:
           r1 = sqlite3GetTempRange(pParse, nFarg);
         }
 
-        /* For length() and typeof() functions with a column argument,
+        /* For length() and typeof() and octet_length() functions,
         ** set the P5 parameter to the OP_Column opcode to OPFLAG_LENGTHARG
-        ** or OPFLAG_TYPEOFARG respectively, to avoid unnecessary data
-        ** loading.
+        ** or OPFLAG_TYPEOFARG or OPFLAG_BYTELENARG respectively, to avoid
+        ** unnecessary data loading.
         */
         if( (pDef->funcFlags & (SQLITE_FUNC_LENGTH|SQLITE_FUNC_TYPEOF))!=0 ){
           u8 exprOp;
@@ -4681,9 +4681,12 @@ expr_code_doover:
           if( exprOp==TK_COLUMN || exprOp==TK_AGG_COLUMN ){
             assert( SQLITE_FUNC_LENGTH==OPFLAG_LENGTHARG );
             assert( SQLITE_FUNC_TYPEOF==OPFLAG_TYPEOFARG );
-            testcase( pDef->funcFlags & OPFLAG_LENGTHARG );
-            pFarg->a[0].pExpr->op2 =
-                  pDef->funcFlags & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG);
+            assert( SQLITE_FUNC_BYTELEN==OPFLAG_BYTELENARG );
+            assert( (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG)==OPFLAG_BYTELENARG );
+            testcase( (pDef->funcFlags & OPFLAG_BYTELENARG)==OPFLAG_LENGTHARG );
+            testcase( (pDef->funcFlags & OPFLAG_BYTELENARG)==OPFLAG_TYPEOFARG );
+            testcase( (pDef->funcFlags & OPFLAG_BYTELENARG)==OPFLAG_BYTELENARG);
+            pFarg->a[0].pExpr->op2 = pDef->funcFlags & OPFLAG_BYTELENARG;
           }
         }
 
