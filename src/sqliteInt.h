@@ -1930,6 +1930,7 @@ struct FuncDestructor {
 **     SQLITE_FUNC_ANYORDER    ==  NC_OrderAgg       == SF_OrderByReqd
 **     SQLITE_FUNC_LENGTH      ==  OPFLAG_LENGTHARG
 **     SQLITE_FUNC_TYPEOF      ==  OPFLAG_TYPEOFARG
+**     SQLITE_FUNC_BYTELEN     ==  OPFLAG_BYTELENARG
 **     SQLITE_FUNC_CONSTANT    ==  SQLITE_DETERMINISTIC from the API
 **     SQLITE_FUNC_DIRECT      ==  SQLITE_DIRECTONLY from the API
 **     SQLITE_FUNC_UNSAFE      ==  SQLITE_INNOCUOUS  -- opposite meanings!!!
@@ -1948,6 +1949,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_NEEDCOLL 0x0020 /* sqlite3GetFuncCollSeq() might be called*/
 #define SQLITE_FUNC_LENGTH   0x0040 /* Built-in length() function */
 #define SQLITE_FUNC_TYPEOF   0x0080 /* Built-in typeof() function */
+#define SQLITE_FUNC_BYTELEN  0x00c0 /* Built-in octet_length() function */
 #define SQLITE_FUNC_COUNT    0x0100 /* Built-in count(*) aggregate */
 /*                           0x0200 -- available for reuse */
 #define SQLITE_FUNC_UNLIKELY 0x0400 /* Built-in unlikely() function */
@@ -3891,6 +3893,7 @@ struct AuthContext {
 #define OPFLAG_ISNOOP        0x40    /* OP_Delete does pre-update-hook only */
 #define OPFLAG_LENGTHARG     0x40    /* OP_Column only used for length() */
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
+#define OPFLAG_BYTELENARG    0xc0    /* OP_Column only for octet_length() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
 #define OPFLAG_SEEKEQ        0x02    /* OP_Open** cursor uses EQ seek only */
 #define OPFLAG_FORDELETE     0x08    /* OP_Open should use BTREE_FORDELETE */

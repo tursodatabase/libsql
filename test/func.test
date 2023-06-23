@@ -42,6 +42,9 @@ do_test func-0.1 {
 do_test func-1.0 {
   execsql {SELECT length(t1) FROM tbl1 ORDER BY t1}
 } {4 2 7 8 4}
+do_execsql_test func-1.0b {
+  SELECT octet_length(t1) FROM tbl1 ORDER BY t1;
+} {4 2 7 8 4}
 do_test func-1.1 {
   set r [catch {execsql {SELECT length(*) FROM tbl1 ORDER BY t1}} msg]
   lappend r $msg
@@ -57,9 +60,29 @@ do_test func-1.3 {
 do_test func-1.4 {
   execsql {SELECT coalesce(length(a),-1) FROM t2}
 } {1 -1 3 -1 5}
+do_execsql_test func-1.5 {
+  SELECT octet_length(12345);
+} {5}
+db null NULL
+do_execsql_test func-1.6 {
+  SELECT octet_length(NULL);
+} {NULL}
+do_execsql_test func-1.7 {
+  SELECT octet_length(7.5);
+} {3}
+do_execsql_test func-1.8 {
+  SELECT octet_length(x'30313233');
+} {4}
+do_execsql_test func-1.9 {
+  WITH c(x) AS (VALUES(char(350,351,352,353,354)))
+  SELECT length(x), octet_length(x) FROM c;
+} {5 10}
+
+
 
 # Check out the substr() function
 #
+db null {}
 do_test func-2.0 {
   execsql {SELECT substr(t1,1,2) FROM tbl1 ORDER BY t1}
 } {fr is pr so th}
