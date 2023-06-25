@@ -348,7 +348,7 @@ Or on windows:
 >   nmake /f Makefile.msc verify-source
 
 Using the makefile to verify source integrity is good for detecting
-accidental changes to the source tree, but malecious changes could be
+accidental changes to the source tree, but malicious changes could be
 hidden by also modifying the makefiles.
 
 ## Contacts
