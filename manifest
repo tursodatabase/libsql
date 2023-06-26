@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sREADME.md\sfile.
-D 2023-06-25T20:23:51.872
+C Replace\ssome\sJS\s'self'\sreferences\swith\s'globalThis',\sas\sreported\svia\sthe\snpm\ssubproject.
+D 2023-06-26T07:05:05.347
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -513,7 +513,7 @@ F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css 0ff15602a3ab2bad8aef2c3bd120c7ee3fd1c2054ad2ace7e214187ae68d926f
-F ext/wasm/common/whwasmutil.js 749a1f81f85835e9a384e9706f2a955a7158f2b8cc9da33f41105cac7775a305
+F ext/wasm/common/whwasmutil.js 03407d7b61b817fd135c82401987e56688a45ee4d6b9c0eced160c0000d6e4c2
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js ebae30756585bca655b4ab2553ec9236a87c23ad24fc8652115dcedb06d28df6
@@ -532,7 +532,7 @@ F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html 22379774f0ad4edcaaa8cf9c674c82e794cc557719a8addabed74eb8069d412e
 F ext/wasm/index.html dd900891844caebd9cadbddd704f66bd841d7c12fd69ce5af490e2c10fb49f45
-F ext/wasm/jaccwabyt/jaccwabyt.js 8287c0537fa0750414edbe75ce64668a81c8716df5ec4c3e6bb4f11bd1c36031
+F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
 F ext/wasm/module-symbols.html 841de62fc198988b8330e238c260e70ec93028b096e1a1234db31b187a899d10
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
@@ -2041,8 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa5f77862c0fe0189aa4246a1e55bb7c537c28c436ec10b75f5fa141e5e4aff0
-R 209f1d7a455802d9c3d89f6da1e84306
-U drh
-Z f132f370d38c3e99c2395e2d7f0807b7
+P 6d435d1dace1be52bdb920168e629412b9adf55dbe59cf3db8f169c26f6e6b81
+R fad6594133ee06df5657ec838c87bb99
+U stephan
+Z 4d28c7204684da4ba4d91e62d6c46a18
 # Remove this line to create a well-formed Fossil manifest.

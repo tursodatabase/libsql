@@ -174,7 +174,7 @@
 globalThis.WhWasmUtilInstaller = function(target){
   'use strict';
   if(undefined===target.bigIntEnabled){
-    target.bigIntEnabled = !!self['BigInt64Array'];
+    target.bigIntEnabled = !!globalThis['BigInt64Array'];
   }
 
   /** Throws a new Error, the message of which is the concatenation of
@@ -355,8 +355,8 @@ globalThis.WhWasmUtilInstaller = function(target){
           break;
         default:
           if(target.bigIntEnabled){
-            if(n===self['BigUint64Array']) return c.HEAP64U;
-            else if(n===self['BigInt64Array']) return c.HEAP64;
+            if(n===globalThis['BigUint64Array']) return c.HEAP64U;
+            else if(n===globalThis['BigInt64Array']) return c.HEAP64;
             break;
           }
     }
