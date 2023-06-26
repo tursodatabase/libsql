@@ -1,5 +1,5 @@
-C Use\sideas\sfrom\sT.\sJ.\sDekker\sin\s"A\sFloating-Point\sTechnique\sfor\sExtending\sthe\nAvailable\sPrecision"\s(1971-07-26)\sto\senhance\sthe\saccuracy\sof\sthe\sSUM()\naggregate\sfunction\sin\scases\swhere\sinput\smagnitudes\svary\swildly.
-D 2023-06-26T19:35:20.158
+C Simple\stest\scases\sfor\sthe\senhanced\sSUM()\sfunction.
+D 2023-06-26T19:57:23.253
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1107,7 +1107,7 @@ F test/fts4umlaut.test fcaca4471de7e78c9d1f7e8976e3e8704d7d8ad979d57a739d00f3f75
 F test/fts4unicode.test 82a9c16b68ba2f358a856226bb2ee02f81583797bc4744061c54401bf1a0f4c9
 F test/fts4upfrom.test f25835162c989dffd5e2ef91ec24c4848cc9973093e2d492d1c7b32afac1b49d
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test cdebc080122807254173b942bd0aa9464eb859f7a057a0791136072462fb5bcb
+F test/func.test 14ec60fd0cc4182e285e403b91e916e6c45597786347d9d5e59415cb4b130942
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 600a632c305a88f3946d38f9a51efe145c989b2e13bd2b2a488db47fe76bab6a
 F test/func4.test 2285fb5792d593fef442358763f0fd9de806eda47dbc7a5934df57ffdc484c31
@@ -2041,11 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6d435d1dace1be52bdb920168e629412b9adf55dbe59cf3db8f169c26f6e6b81
-R f74da51d29fcf2c05921dbb5a3d43871
-T *branch * extended-precision-fp
-T *sym-extended-precision-fp *
-T -sym-trunk *
+P 439fc00fee62b4db3751860485e21a99cae4fd1f5d911b2c08651a1466245ecc
+R 8463c5b0b92c650d275f9738ce6de95a
 U drh
-Z 7310b50e02498c4843be57e74e725ca2
+Z 784302c1094e04b5404dc9080db2bdf7
 # Remove this line to create a well-formed Fossil manifest.
