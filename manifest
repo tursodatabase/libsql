@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sREADME.md\sfile.
-D 2023-06-25T20:23:51.872
+C Use\sideas\sfrom\sT.\sJ.\sDekker\sin\s"A\sFloating-Point\sTechnique\sfor\sExtending\sthe\nAvailable\sPrecision"\s(1971-07-26)\sto\senhance\sthe\saccuracy\sof\sthe\sSUM()\naggregate\sfunction\sin\scases\swhere\sinput\smagnitudes\svary\swildly.
+D 2023-06-26T19:35:20.158
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,7 +590,7 @@ F src/delete.c cd5f5cd06ed0b6a882ec1a8c2a0d73b3cecb28479ad19e9931c4706c5e2182be
 F src/expr.c 8d1656b65e26af3e34f78e947ac423f0d20c214ed25a67486e433bf16ca6b543
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
-F src/func.c ee064b524ac7077939febc2d57a5b4243c9bf0ab69893b0d336ec15d101b96b6
+F src/func.c 8ada46d362a153b8dfb5385c3aaa9a7d75ebf306b33d2e663aa03920126a1bc3
 F src/global.c bd0892ade7289f6e20bff44c07d06371f2ff9b53cea359e7854b9b72f65adc30
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -642,7 +642,7 @@ F src/shell.c.in bdd1fdfc77a67651cdc5a158bc9107cf3c2cf3ddb62d7a4da06c6eaaa5e7203
 F src/sqlite.h.in 3076d78836b6dac53b3ab0875fc8fd15bca8077aad4d33c85336e05af6aef8c7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
-F src/sqliteInt.h 44353825a42fec1f2740a2a54de328c46d3dc3014be139341d42b4ad9ca2b7d9
+F src/sqliteInt.h f7e904f7fdeccfd5606ca4457122e647dcbaf307ed8615ac4865f8b5f536f77b
 F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -705,7 +705,7 @@ F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
 F src/update.c 0aa36561167a7c40d01163238c297297962f31a15a8d742216b3c37cdf25f731
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c 6f9d2f278dcc8d41c618980cd3cfe88e1bafc0626209b917c6773d8202d29ef6
+F src/util.c 649837c4156ac0d94a5720a08c98266c7ae5d9020c60254e15de9e68f20202de
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c c993304c609326cf625b4ad30cbb0e15a3f64c941cf2c9713d0c360b4abbaa98
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
@@ -2041,8 +2041,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fa5f77862c0fe0189aa4246a1e55bb7c537c28c436ec10b75f5fa141e5e4aff0
-R 209f1d7a455802d9c3d89f6da1e84306
+P 6d435d1dace1be52bdb920168e629412b9adf55dbe59cf3db8f169c26f6e6b81
+R f74da51d29fcf2c05921dbb5a3d43871
+T *branch * extended-precision-fp
+T *sym-extended-precision-fp *
+T -sym-trunk *
 U drh
-Z f132f370d38c3e99c2395e2d7f0807b7
+Z 7310b50e02498c4843be57e74e725ca2
 # Remove this line to create a well-formed Fossil manifest.
