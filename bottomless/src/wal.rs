@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Result};
 use std::io::SeekFrom;
 use std::path::Path;
-use tokio::io::{AsyncReadExt, AsyncSeekExt};
+use tokio::fs::File;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWrite};
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -118,13 +119,13 @@ impl From<[u8; WalHeader::SIZE as usize]> for WalHeader {
 
 #[derive(Debug)]
 pub(crate) struct WalFileReader {
-    file: tokio::fs::File,
+    file: File,
     header: WalHeader,
 }
 
 impl WalFileReader {
     pub async fn open<P: AsRef<Path>>(fpath: P) -> Result<Option<Self>> {
-        let mut file = tokio::fs::File::open(fpath).await?;
+        let mut file = File::open(fpath).await?;
         let len = file.metadata().await.map(|m| m.len()).unwrap_or(0);
         if len < WalHeader::SIZE {
             return Ok(None);
@@ -151,7 +152,7 @@ impl WalFileReader {
     }
 
     /// Returns an offset in a WAL file, where the data of a frame with given number starts.
-    pub fn offset_in_wal(&self, frame_no: u32) -> u64 {
+    pub fn offset(&self, frame_no: u32) -> u64 {
         WalHeader::SIZE + ((frame_no - 1) as u64) * self.frame_size()
     }
 
@@ -167,7 +168,7 @@ impl WalFileReader {
 
     /// Sets a file cursor at the beginning of a frame with given number.
     pub async fn seek_frame(&mut self, frame_no: u32) -> Result<()> {
-        let offset = self.offset_in_wal(frame_no);
+        let offset = self.offset(frame_no);
         self.file.seek(SeekFrom::Start(offset)).await?;
         Ok(())
     }
@@ -185,6 +186,19 @@ impl WalFileReader {
         }
     }
 
+    pub async fn copy_frames<W>(&mut self, w: &mut W, frame_count: usize) -> Result<()>
+    where
+        W: AsyncWrite + Unpin,
+    {
+        //TODO - specialize non-compressed file cloning:
+        //   libc::copy_file_range(wal.as_mut(), wal.offset(frame), out, 0, len)
+        let len = (frame_count as u64) * self.frame_size();
+        let h = self.file.try_clone().await?;
+        let mut range = h.take(len);
+        tokio::io::copy(&mut range, w).await?;
+        Ok(())
+    }
+
     /// Reads a range of next consecutive frames, including headers, into given buffer.
     /// Returns a number of frames read this way.
     ///
@@ -194,6 +208,7 @@ impl WalFileReader {
     /// It will return an error if provided `buf` length is not multiplication of an underlying
     /// WAL frame size.
     /// It will return an error if at least one frame was not fully read.
+    #[allow(dead_code)]
     pub async fn read_frame_range(&mut self, buf: &mut [u8]) -> Result<usize> {
         let frame_size = self.frame_size() as usize;
         if buf.len() % frame_size != 0 {
@@ -215,6 +230,12 @@ impl WalFileReader {
             self.file.read_exact(page).await?;
         }
         Ok(header)
+    }
+}
+
+impl AsMut<File> for WalFileReader {
+    fn as_mut(&mut self) -> &mut File {
+        &mut self.file
     }
 }
 

@@ -255,7 +255,7 @@ unsafe impl WalHook for ReplicationLoggerHook {
                     tracing::debug!("No commits happened in this generation, not snapshotting");
                     return SQLITE_OK;
                 }
-                let last_known_frame = replicator.next_frame_no() - 1;
+                let last_known_frame = replicator.last_known_frame();
                 replicator.request_flush();
                 if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame))
                 {

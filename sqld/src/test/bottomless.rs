@@ -30,8 +30,9 @@ async fn backup_restore() {
         bottomless_replication: Some(bottomless::replicator::Options {
             create_bucket_if_not_exists: true,
             verify_crc: true,
-            use_compression: true,
+            use_compression: bottomless::replicator::CompressionKind::Gzip,
             bucket_name: BUCKET.to_string(),
+            max_batch_interval: Duration::from_millis(250),
             ..Default::default()
         }),
         db_path: PATH.into(),
@@ -65,7 +66,7 @@ async fn backup_restore() {
             .collect();
         let _ = sql(&connection_addr, stmts).await.unwrap();
 
-        sleep(Duration::from_millis(100)).await;
+        sleep(Duration::from_secs(2)).await;
 
         db_job.abort();
         drop(cleaner); // drop database files
@@ -131,7 +132,18 @@ async fn assert_bucket_occupancy(bucket: &str, expect_empty: bool) {
     let client = Client::from_conf(conf);
     if let Ok(out) = client.list_objects().bucket(bucket).send().await {
         let contents = out.contents().unwrap_or_default();
-        assert_eq!(contents.is_empty(), expect_empty);
+        if expect_empty {
+            assert!(
+                contents.is_empty(),
+                "expected S3 bucket to be empty but {} were found",
+                contents.len()
+            );
+        } else {
+            assert!(
+                !contents.is_empty(),
+                "expected S3 bucket to be filled with backup data but it was empty"
+            );
+        }
     } else if !expect_empty {
         panic!("bucket '{}' doesn't exist", bucket);
     }

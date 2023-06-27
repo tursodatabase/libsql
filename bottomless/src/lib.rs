@@ -4,15 +4,15 @@
 
 mod ffi;
 
+mod backup;
 mod read;
 pub mod replicator;
 mod wal;
-mod write;
 
 use crate::ffi::{
     bottomless_methods, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs, PgHdr, Wal,
 };
-use crate::replicator::Options;
+use crate::replicator::{CompressionKind, Options};
 use std::ffi::{c_char, c_void};
 
 // Just heuristics, but should work for ~100% of cases
@@ -342,7 +342,7 @@ pub extern "C" fn xCheckpoint(
         return ffi::SQLITE_OK;
     }
 
-    let last_known_frame = ctx.replicator.next_frame_no() - 1;
+    let last_known_frame = ctx.replicator.last_known_frame();
     ctx.replicator.request_flush();
     if let Err(e) = block_on!(
         ctx.runtime,
@@ -472,7 +472,7 @@ pub extern "C" fn xPreMainDbOpen(_methods: *mut libsql_wal_methods, path: *const
             replicator::Options {
                 create_bucket_if_not_exists: true,
                 verify_crc: true,
-                use_compression: false,
+                use_compression: CompressionKind::Gzip,
                 ..Options::default()
             }
         )

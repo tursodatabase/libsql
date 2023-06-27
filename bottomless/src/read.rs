@@ -1,3 +1,4 @@
+use crate::replicator::CompressionKind;
 use crate::wal::WalFrameHeader;
 use anyhow::Result;
 use async_compression::tokio::bufread::GzipDecoder;
@@ -19,17 +20,18 @@ impl BatchReader {
         init_frame_no: u32,
         content: ByteStream,
         page_size: usize,
-        use_compression: bool,
+        use_compression: CompressionKind,
     ) -> Self {
         let reader =
             BufReader::with_capacity(page_size + WalFrameHeader::SIZE, StreamReader::new(content));
         BatchReader {
             next_frame_no: init_frame_no,
-            reader: if use_compression {
-                let gzip = GzipDecoder::new(reader);
-                Box::pin(gzip)
-            } else {
-                Box::pin(reader)
+            reader: match use_compression {
+                CompressionKind::None => Box::pin(reader),
+                CompressionKind::Gzip => {
+                    let gzip = GzipDecoder::new(reader);
+                    Box::pin(gzip)
+                }
             },
         }
     }
