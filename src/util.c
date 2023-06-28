@@ -1750,3 +1750,43 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
  || defined(SQLITE_ENABLE_STMT_SCANSTATUS)
 # include "hwtime.h"
 #endif
+
+/***************************************************************************
+** Double-Double arithmetic.
+**
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
+*/
+
+/* Compute z = (i64)x */
+void sqlite3DDFromInt(i64 x, double *z){
+  z[0] = (double)x;
+  z[1] = (double)(x - (i64)z[0]);
+}
+
+/* Compute z = x + y */
+void sqlite3DDAdd(double x, double xx, double y, double yy, double *z){
+  double r, s;
+  r = x + y;
+  if( fabs(x)>fabs(y) ){
+    s = x - r + y + yy + xx;
+  }else{
+    s = y - r + x + xx + yy;
+  }
+  z[0] = r+s;
+  z[1] = r - z[0] + s;
+}
+
+/* Compute z = x - y */
+void sqlite3DDSub(double x, double xx, double y, double yy, double *z){
+  double r, s;
+  r = x - y;
+  if( fabs(x)>fabs(y) ){
+    s = x - r - y - yy + xx;
+  }else{
+    s = -y - r + x + xx - yy;
+  }
+  z[0] = r+s;
+  z[1] = r - z[0] + s;
+}

@@ -1543,6 +1543,22 @@ do_execsql_test func-36.110 {
   SELECT 123 ->> 456
 } {123->>456}
 
-
+# 2023-06-26
+# Enhanced precision of SUM().
+#
+reset_db
+do_execsql_test func-37.100 {
+  WITH c(x) AS (VALUES(9223372036854775807),(9223372036854775807),
+                      (123),(-9223372036854775807),(-9223372036854775807))
+  SELECT sum(x) FROM c;
+} {123}
+do_catchsql_test func-37.110 {
+  WITH c(x) AS (VALUES(9223372036854775807),(1))
+  SELECT sum(x) FROM c;
+} {1 {integer overflow}}
+do_catchsql_test func-37.120 {
+  WITH c(x) AS (VALUES(9223372036854775807),(100),(-101))
+  SELECT sum(x) FROM c;
+} {0 9223372036854775806}
 
 finish_test
