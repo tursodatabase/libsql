@@ -1520,8 +1520,8 @@ static int sqlite3WalOpen(
     }
     *ppWal = pRet;
     WALTRACE(("WAL%d: opened\n", pRet));
+    pRet->pMethods = pMethods;
   }
-  pRet->pMethods = pMethods;
   return rc;
 }
 
