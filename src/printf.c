@@ -598,13 +598,13 @@ void sqlite3_str_vappendf(
 
           /* Normalize realvalue to within 10.0 > realvalue >= 1.0 */
           if( ALWAYS(realvalue>0.0) ){
-            LONGDOUBLE_TYPE scale = 1.0;
-            while( realvalue>=1e100*scale && exp<=350){ scale*=1e100;exp+=100;}
-            while( realvalue>=1e10*scale && exp<=350 ){ scale*=1e10; exp+=10; }
-            while( realvalue>=10.0*scale && exp<=350 ){ scale *= 10.0; exp++; }
+            LONGDOUBLE_TYPE scale = 1.0L;
+            while( realvalue>=1e100*scale && exp<=350){ scale*=1e100L;exp+=100;}
+            while( realvalue>=1e10*scale && exp<=350 ){ scale*=1e10L; exp+=10; }
+            while( realvalue>=10.0*scale && exp<=350 ){ scale*=10.0L; exp++; }
             realvalue /= scale;
-            while( realvalue<1e-8 ){ realvalue *= 1e8; exp-=8; }
-            while( realvalue<1.0 ){ realvalue *= 10.0; exp--; }
+            while( realvalue<1e-8 ){ realvalue *= 1e8L; exp-=8; }
+            while( realvalue<1.0 ){ realvalue *= 10.0L; exp--; }
             if( exp>350 ){
               if( flag_zeropad ){
                 realvalue = 9.0;
