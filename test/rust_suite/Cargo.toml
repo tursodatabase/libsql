@@ -6,8 +6,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dev-dependencies]
-rusqlite = { version = "0.28", features = ["buildtime_bindgen"] }
-libsqlite3-sys = "0.25"
+rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev = "d9a97c0f25", default-features = false, features = [ 
+    "buildtime_bindgen",
+    "libsql-experimental",
+    "column_decltype",
+    "load_extension"
+] }
+
 itertools = "0.10"
 tempfile = "3.3"
 wabt = "0.10.0"
@@ -16,4 +21,5 @@ hex = "0.4.3"
 [features]
 default = []
 udf = []
-full = ["udf"]
+wasm = ["rusqlite/libsql-wasm-experimental"]
+full = ["udf", "wasm"]
