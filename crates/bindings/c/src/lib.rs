@@ -35,7 +35,13 @@ pub unsafe extern "C" fn libsql_close(db: libsql_database_t) {
 #[no_mangle]
 pub unsafe extern "C" fn libsql_connect(db: libsql_database_t) -> libsql_connection_t {
     let db = db.get_ref();
-    let conn = libsql_core::Connection::connect(db.url.clone());
+    let conn = match libsql_core::Connection::connect(db.url.clone()) {
+        Ok(conn) => conn,
+        Err(err) => {
+            println!("error: {}", err);
+            return libsql_connection_t::null();
+        }
+    };
     let conn = Box::leak(Box::new(libsql_connection { conn }));
     libsql_connection_t::from(conn)
 }

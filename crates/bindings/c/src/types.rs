@@ -91,7 +91,7 @@ impl From<&mut libsql_connection> for libsql_connection_t {
 }
 
 pub struct libsql_result {
-    pub(crate) result: libsql_core::Result,
+    pub(crate) result: libsql_core::ResultSet,
 }
 
 #[derive(Clone, Debug)]
@@ -111,12 +111,12 @@ impl libsql_result_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql_core::Result {
+    pub fn get_ref(&self) -> &libsql_core::ResultSet {
         &unsafe { &*(self.ptr) }.result
     }
 
     #[allow(clippy::mut_from_t)]
-    pub fn get_ref_mut(&self) -> &mut libsql_core::Result {
+    pub fn get_ref_mut(&self) -> &mut libsql_core::ResultSet {
         let ptr_mut = self.ptr as *mut libsql_result;
         &mut unsafe { &mut (*ptr_mut) }.result
     }

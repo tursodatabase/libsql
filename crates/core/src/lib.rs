@@ -1,3 +1,9 @@
+pub mod errors;
+
+use errors::Error;
+
+type Result<T> = std::result::Result<T, Error>;
+
 pub struct Database {
     pub url: String,
 }
@@ -18,7 +24,7 @@ pub struct Connection {
 unsafe impl Send for Connection {} // TODO: is this safe?
 
 impl Connection {
-    pub fn connect(url: String) -> Connection {
+    pub fn connect(url: String) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
         let err = unsafe {
             sqlite3_sys::sqlite3_open_v2(
@@ -31,10 +37,10 @@ impl Connection {
         match err {
             sqlite3_sys::SQLITE_OK => {}
             _ => {
-                panic!("sqlite3_open_v2 failed: {}", err);
+                return Err(Error::ConnectionFailed(url.clone()));
             }
         }
-        Connection { raw }
+        Ok(Connection { raw })
     }
 
     pub fn disconnect(&self) {
@@ -43,15 +49,15 @@ impl Connection {
         }
     }
 
-    pub fn execute(&self, sql: String) -> Result {
-        Result {}
+    pub fn execute(&self, sql: String) -> ResultSet {
+        ResultSet {}
     }
 }
 
-pub struct Result {
+pub struct ResultSet {
 }
 
-impl Result {
+impl ResultSet {
     pub fn row_count(&self) -> i32 {
         0
     }
