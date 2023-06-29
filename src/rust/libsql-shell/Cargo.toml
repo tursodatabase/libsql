@@ -15,7 +15,7 @@ clap = { version = "4.1.8", features = [ "derive", "env"] }
 home = "0.5.4"
 rusqlite = "0.28.0"
 rustyline = "11.0.0"
-tabled = "0.10.0"
+tabled = "0.12.2"
 tracing-subscriber = "0.3.16"
 
 [[bin]]

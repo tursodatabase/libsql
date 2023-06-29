@@ -8,6 +8,7 @@ use rustyline::{DefaultEditor, Editor};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::PathBuf;
+use tabled::settings::Style;
 
 #[derive(Debug, Parser)]
 #[command(name = "libsql")]
@@ -195,7 +196,7 @@ impl Shell {
             echo: false,
             eqp: false,
             explain: ExplainMode::Auto,
-            headers: false,
+            headers: true,
             mode: OutputMode::Column,
             stats: StatsMode::Off,
             width: [0; 5],
@@ -214,10 +215,29 @@ impl Shell {
                     return;
                 }
                 match args[0].to_lowercase().as_str() {
-                    "on" | "1" => self.echo = true,
-                    "off" | "0" => self.echo = false,
+                    "on" | "true" => self.echo = true,
+                    "off" | "false" => self.echo = false,
                     txt => {
                         self.echo = false;
+                        writeln!(
+                            self.out,
+                            "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
+                            txt
+                        )
+                        .unwrap()
+                    }
+                }
+            }
+            ".headers" => {
+                if args.len() != 1 {
+                    writeln!(self.out, "Usage: .headers on|off").unwrap();
+                    return;
+                }
+                match args[0].to_lowercase().as_str() {
+                    "on" | "true" => self.headers = true,
+                    "off" | "false" => self.headers = false,
+                    txt => {
+                        self.headers = false;
                         writeln!(
                             self.out,
                             "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
@@ -293,7 +313,7 @@ impl Shell {
         }
     }
 
-    fn run_statement(&self, statement: String) {
+    fn run_statement(&self, statement: String, is_command: bool) {
         for str_statement in get_str_statements(statement) {
             let mut stmt = match self.db.prepare(&str_statement) {
                 Ok(stmt) => stmt,
@@ -313,14 +333,26 @@ impl Shell {
                 continue;
             }
             let mut builder = tabled::builder::Builder::new();
-            if self.headers {
-                builder.set_columns(stmt.column_names());
+            // TODO: switch style based on mode.
+            let style = Style::ascii();
+            if self.headers && !is_command {
+                // if we use a SQL statement to execute a command, don't include the headers.
+                // affected commands: .tables
+                builder.set_header(stmt.column_names());
             }
             for row in rows {
-                builder.add_record(row);
+                builder.push_record(row);
             }
             let mut table = builder.build();
-            table.with(tabled::Style::psql());
+            if is_command {
+                table.with(Style::blank());
+            } else {
+                if self.headers {
+                    table.with(style);
+                } else {
+                    table.with(style.remove_horizontals());
+                }
+            }
             println!("{table}")
         }
     }
@@ -349,12 +381,9 @@ impl Shell {
                     }
                     if line.starts_with('.') {
                         let split = line.split_whitespace().collect::<Vec<&str>>();
-                        let prev_header_settings = self.headers;
-                        self.headers = false;
                         self.run_command(split[0], &split[1..]);
-                        self.headers = prev_header_settings;
                     } else {
-                        self.run_statement(line)
+                        self.run_statement(line, false)
                     }
                 }
                 Err(ReadlineError::Interrupted) => {
@@ -382,7 +411,7 @@ impl Shell {
             Some(p) => statement.push_str(format!("AND name LIKE {p};").as_str()),
             None => statement.push(';'),
         }
-        self.run_statement(statement)
+        self.run_statement(statement, true)
     }
 
     // TODO: implement `-all` option: print detailed flags for each command
@@ -468,8 +497,6 @@ fn main() -> Result<()> {
     let mut history = home::home_dir().unwrap_or_default();
     history.push(".libsql_history");
     rl.load_history(history.as_path()).ok();
-
-    // TODO: load settings
 
     println!("libSQL version 0.2.0");
     let shell = Shell::new(args.db_path);
