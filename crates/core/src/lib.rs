@@ -52,17 +52,26 @@ impl Connection {
     }
 
     pub fn execute(&self, sql: String) -> ResultSet {
-        // TODO: submit execution to a work queue
-        ResultSet { }
+        ResultSet { sql }
     }
 }
 
 pub struct ResultSet {
+    sql: String,
+}
+
+impl futures::Future for ResultSet {
+    type Output = Result<()>;
+
+    fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
+        // TODO: call sqlite3_sys::sqlite3_exec()
+        std::task::Poll::Ready(Ok(()))
+    }
 }
 
 impl ResultSet {
-    pub fn wait(&self) {
-        // TODO: wait for execution to complete
+    pub fn wait(&mut self) -> Result<()> {
+        Ok(futures::executor::block_on(self)?)
     }
 
     pub fn row_count(&self) -> i32 {

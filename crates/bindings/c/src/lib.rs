@@ -75,8 +75,8 @@ pub unsafe extern "C" fn libsql_execute(
 
 #[no_mangle]
 pub unsafe extern "C" fn libsql_wait_result(res: libsql_result_t) {
-    let res = res.get_ref();
-    res.wait()
+    let res = res.get_ref_mut();
+    res.wait().unwrap();
 }
 
 #[no_mangle]
