@@ -29,7 +29,9 @@ void libsql_disconnect(libsql_connection_t conn);
 
 libsql_result_t libsql_execute(libsql_connection_t _conn, const char *_sql);
 
-void libsql_destroy_result(libsql_result_t _res);
+void libsql_wait_result(libsql_result_t _res);
+
+void libsql_destroy_result(libsql_result_t res);
 
 int libsql_row_count(libsql_result_t res);
 

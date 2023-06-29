@@ -59,8 +59,14 @@ pub unsafe extern "C" fn libsql_execute(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_destroy_result(_res: libsql_result_t) {
-    todo!();
+pub unsafe extern "C" fn libsql_wait_result(_res: libsql_result_t) {}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_destroy_result(res: libsql_result_t) {
+    if res.is_null() {
+        return;
+    }
+    let _ = unsafe { Box::from_raw(res.get_ref_mut()) };
 }
 
 #[no_mangle]

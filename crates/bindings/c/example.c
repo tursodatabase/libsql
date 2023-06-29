@@ -19,6 +19,10 @@ int main(int argc, char *argv[])
 		assert(0);
 	}
 	result = libsql_execute(conn, "SELECT 1");
+	if (!result) {
+		assert(0);
+	}
+	libsql_wait_result(result);
 	for (int row = 0; row < libsql_row_count(result); row++) {
 		for (int col = 0; col < libsql_column_count(result); col++) {
 			if (col > 0) {
@@ -28,6 +32,7 @@ int main(int argc, char *argv[])
 			printf("%s", value);
 		}
 	}
+	libsql_destroy_result(result);
 	libsql_disconnect(conn);
 	libsql_close(db);
 }
