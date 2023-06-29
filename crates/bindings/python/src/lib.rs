@@ -8,7 +8,7 @@ fn to_py_err(error: libsql_core::errors::Error) -> PyErr {
 #[pyfunction]
 fn connect(url: String) -> PyResult<Connection> {
     let db = libsql_core::Database::open(url);
-    let conn = libsql_core::Connection::connect(db.url.clone()).map_err(to_py_err)?;
+    let conn = libsql_core::Connection::connect(&db).map_err(to_py_err)?;
     Ok(Connection { db, conn })
 }
 

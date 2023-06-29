@@ -24,8 +24,9 @@ pub struct Connection {
 unsafe impl Send for Connection {} // TODO: is this safe?
 
 impl Connection {
-    pub fn connect(url: String) -> Result<Connection> {
+    pub fn connect(db: &Database) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
+        let url = db.url.clone();
         let err = unsafe {
             // FIXME: switch to libsql_sys
             sqlite3_sys::sqlite3_open_v2(
