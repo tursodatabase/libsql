@@ -20,34 +20,6 @@ struct Cli {
     db_path: Option<String>,
 }
 
-// Presents libSQL values in human-readable form
-fn format_value(v: ValueRef) -> String {
-    match v {
-        ValueRef::Null => "null".to_owned(),
-        ValueRef::Integer(i) => format!("{i}"),
-        ValueRef::Real(r) => format!("{r}"),
-        ValueRef::Text(s) => std::str::from_utf8(s).unwrap().to_owned(),
-        ValueRef::Blob(b) => format!("0x{}", general_purpose::STANDARD_NO_PAD.encode(b)),
-    }
-}
-
-// Executes a libSQL statement
-// TODO: introduce paging for presenting large results, get rid of Vec
-fn execute<P>(stmt: &mut Statement, params: P) -> Result<Vec<Vec<String>>>
-where
-    P: Params,
-{
-    let column_count = stmt.column_count();
-
-    let rows = stmt.query_map(params, |row| {
-        let row = (0..column_count)
-            .map(|idx| format_value(row.get_ref(idx).unwrap()))
-            .collect::<Vec<String>>();
-        Ok(row)
-    })?;
-    Ok(rows.map(|r| r.unwrap()).collect())
-}
-
 struct StrStatements {
     value: String,
 }
@@ -216,6 +188,73 @@ impl Shell {
         }
     }
 
+    fn run(mut self, rl: &mut Editor<(), FileHistory>) -> Result<()> {
+        let mut leftovers = String::new();
+        loop {
+            let prompt = if leftovers.is_empty() {
+                self.main_prompt.as_str()
+            } else {
+                self.continuation_prompt.as_str()
+            };
+            let readline = rl.readline(prompt);
+            match readline {
+                Ok(line) => {
+                    let line = leftovers + line.trim_end();
+                    if line.ends_with(';') || line.starts_with('.') {
+                        leftovers = String::new();
+                    } else {
+                        leftovers = line + " ";
+                        continue;
+                    };
+                    rl.add_history_entry(&line).ok();
+                    if self.echo {
+                        writeln!(self.out, "{}", line).unwrap();
+                    }
+                    if line.starts_with('.') {
+                        // split line on whitespace, but not inside quotes.
+                        let mut split = vec![];
+                        for (i, chunk) in line.split_terminator(&['\'', '"']).enumerate() {
+                            if i % 2 != 0 {
+                                split.push(chunk);
+                            } else {
+                                split.extend(chunk.split_whitespace())
+                            }
+                        }
+                        self.run_command(split[0], &split[1..]);
+                    } else {
+                        for str_statement in get_str_statements(line) {
+                            let table = self.run_statement(str_statement, (), false);
+                            match table {
+                                Ok(table) => {
+                                    if table.count_rows() == 0 {
+                                        continue;
+                                    }
+                                    writeln!(self.out, "{}", table)?;
+                                }
+                                Err(e) => {
+                                    println!("Error: {}", e);
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(ReadlineError::Interrupted) => {
+                    println!("^C");
+                    leftovers.clear();
+                }
+                Err(ReadlineError::Eof) => {
+                    println!("^D");
+                    break;
+                }
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    break;
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn run_command(&mut self, command: &str, args: &[&str]) {
         let mut result = None;
         match command {
@@ -336,7 +375,7 @@ impl Shell {
                     return;
                 }
                 table.with(Style::blank());
-                println!("{}", table);
+                _ = writeln!(self.out, "{}", table);
             }
             Some(Err(e)) => {
                 println!("Error: {e}");
@@ -350,7 +389,19 @@ impl Shell {
         P: Params,
     {
         let mut stmt: Statement<'_> = self.db.prepare(&statement)?;
-        let rows = execute(&mut stmt, params)?;
+        // TODO: introduce paging for presenting large results, get rid of Vec
+        let rows: Vec<Vec<String>> = {
+            let column_count = stmt.column_count();
+
+            let rows = stmt.query_map(params, |row| {
+                let row = (0..column_count)
+                    .map(|idx| self.format_value(row.get_ref(idx).unwrap()))
+                    .collect::<Vec<String>>();
+                Ok(row)
+            })?;
+
+            rows.map(|r| r.unwrap()).collect()
+        };
 
         let mut builder = tabled::builder::Builder::new();
         // TODO: switch style based on mode.
@@ -368,72 +419,19 @@ impl Shell {
         Ok(table)
     }
 
-    fn run(mut self, rl: &mut Editor<(), FileHistory>) -> Result<()> {
-        let mut leftovers = String::new();
-        loop {
-            let prompt = if leftovers.is_empty() {
-                self.main_prompt.as_str()
-            } else {
-                self.continuation_prompt.as_str()
-            };
-            let readline = rl.readline(prompt);
-            match readline {
-                Ok(line) => {
-                    let line = leftovers + line.trim_end();
-                    if line.ends_with(';') || line.starts_with('.') {
-                        leftovers = String::new();
-                    } else {
-                        leftovers = line + " ";
-                        continue;
-                    };
-                    rl.add_history_entry(&line).ok();
-                    if self.echo {
-                        writeln!(self.out, "{}", line).unwrap();
-                    }
-                    if line.starts_with('.') {
-                        // split line on whitespace, but not inside quotes.
-                        let mut split = vec![];
-                        for (i, chunk) in line.split_terminator(&['\'', '"']).enumerate() {
-                            if i % 2 != 0 {
-                                split.push(chunk);
-                            } else {
-                                split.extend(chunk.split_whitespace())
-                            }
-                        }
-                        self.run_command(split[0], &split[1..]);
-                    } else {
-                        for str_statement in get_str_statements(line) {
-                            let table = self.run_statement(str_statement, (), false);
-                            match table {
-                                Ok(table) => {
-                                    if table.count_rows() == 0 {
-                                        continue;
-                                    }
-                                    println!("{}", table);
-                                }
-                                Err(e) => {
-                                    println!("Error: {}", e);
-                                }
-                            }
-                        }
-                    }
-                }
-                Err(ReadlineError::Interrupted) => {
-                    println!("^C");
-                    leftovers.clear();
-                }
-                Err(ReadlineError::Eof) => {
-                    println!("^D");
-                    break;
-                }
-                Err(err) => {
-                    println!("Error: {:?}", err);
-                    break;
-                }
-            }
+    // helper functions
+
+    // Presents libSQL values in human-readable form
+    fn format_value(&self, v: ValueRef) -> String {
+        match v {
+            ValueRef::Null => self.null_value.clone(),
+            ValueRef::Integer(i) => format!("{i}"),
+            ValueRef::Real(r) => format!("{r}"),
+            ValueRef::Text(s) => std::str::from_utf8(s).unwrap().to_owned(),
+            ValueRef::Blob(b) => format!("0x{}", general_purpose::STANDARD_NO_PAD.encode(b)),
         }
-        Ok(())
     }
+    // COMMANDS
 
     fn list_tables(&self, pattern: Option<&str>, is_index: bool) -> Result<Table> {
         let mut statement =
@@ -461,8 +459,9 @@ impl Shell {
 
     // TODO: implement `-all` option: print detailed flags for each command
     // TODO: implement `?PATTERN?` : allow narrowing using prefix search.
-    fn show_help(&self, _args: &[&str]) {
-        println!(
+    fn show_help(&mut self, _args: &[&str]) {
+        _ = writeln!(
+            self.out,
             r#"
 .auth ON|OFF             Show authorizer callbacks
 .backup ?DB? FILE        Backup DB (default "main") to FILE
@@ -529,7 +528,7 @@ impl Shell {
 .vfsname ?AUX?           Print the name of the VFS stack
 .width NUM1 NUM2 ...     Set minimum column widths for columnar output
 "#
-        )
+        );
     }
 }
 
