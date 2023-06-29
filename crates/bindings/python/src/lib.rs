@@ -1,12 +1,17 @@
 use pyo3::prelude::*;
+use std::sync::{Arc, Mutex};
 
 #[pyfunction]
 fn connect(url: String) -> PyResult<Connection> {
-    Ok(Connection{})
+    let db = libsql_core::Database::open(url);
+    let conn = libsql_core::Connection::connect(db.url.clone());
+    Ok(Connection { db, conn })
 }
 
 #[pyclass]
 pub struct Connection {
+    db: libsql_core::Database,
+    conn: libsql_core::Connection,
 }
 
 #[pymethods]

@@ -15,6 +15,8 @@ pub struct Connection {
     raw: *mut sqlite3_sys::sqlite3,
 }
 
+unsafe impl Send for Connection {} // TODO: is this safe?
+
 impl Connection {
     pub fn connect(url: String) -> Connection {
         let mut raw = std::ptr::null_mut();

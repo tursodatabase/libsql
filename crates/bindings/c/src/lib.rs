@@ -18,7 +18,7 @@ pub unsafe extern "C" fn libsql_open_ext(url: *const std::ffi::c_char) -> libsql
             return libsql_database_t::null();
         }
     };
-    let db = libsql::Database::open(url.to_string());
+    let db = libsql_core::Database::open(url.to_string());
     let db = Box::leak(Box::new(libsql_database { db }));
     libsql_database_t::from(db)
 }
@@ -35,7 +35,7 @@ pub unsafe extern "C" fn libsql_close(db: libsql_database_t) {
 #[no_mangle]
 pub unsafe extern "C" fn libsql_connect(db: libsql_database_t) -> libsql_connection_t {
     let db = db.get_ref();
-    let conn = libsql::Connection::connect(db.url.clone());
+    let conn = libsql_core::Connection::connect(db.url.clone());
     let conn = Box::leak(Box::new(libsql_connection { conn }));
     libsql_connection_t::from(conn)
 }

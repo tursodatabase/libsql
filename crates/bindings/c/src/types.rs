@@ -1,5 +1,5 @@
 pub struct libsql_database {
-    pub(crate) db: libsql::Database,
+    pub(crate) db: libsql_core::Database,
 }
 
 #[derive(Clone, Debug)]
@@ -19,12 +19,12 @@ impl libsql_database_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql::Database {
+    pub fn get_ref(&self) -> &libsql_core::Database {
         &unsafe { &*(self.ptr) }.db
     }
 
     #[allow(clippy::mut_from_t)]
-    pub fn get_ref_mut(&self) -> &mut libsql::Database {
+    pub fn get_ref_mut(&self) -> &mut libsql_core::Database {
         let ptr_mut = self.ptr as *mut libsql_database;
         &mut unsafe { &mut (*ptr_mut) }.db
     }
@@ -45,7 +45,7 @@ impl From<&mut libsql_database> for libsql_database_t {
 }
 
 pub struct libsql_connection {
-    pub(crate) conn: libsql::Connection,
+    pub(crate) conn: libsql_core::Connection,
 }
 
 #[derive(Clone, Debug)]
@@ -65,12 +65,12 @@ impl libsql_connection_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql::Connection {
+    pub fn get_ref(&self) -> &libsql_core::Connection {
         &unsafe { &*(self.ptr) }.conn
     }
 
     #[allow(clippy::mut_from_t)]
-    pub fn get_ref_mut(&self) -> &mut libsql::Connection {
+    pub fn get_ref_mut(&self) -> &mut libsql_core::Connection {
         let ptr_mut = self.ptr as *mut libsql_connection;
         &mut unsafe { &mut (*ptr_mut) }.conn
     }
@@ -91,7 +91,7 @@ impl From<&mut libsql_connection> for libsql_connection_t {
 }
 
 pub struct libsql_result {
-    pub(crate) result: libsql::Result,
+    pub(crate) result: libsql_core::Result,
 }
 
 #[derive(Clone, Debug)]
@@ -111,12 +111,12 @@ impl libsql_result_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql::Result {
+    pub fn get_ref(&self) -> &libsql_core::Result {
         &unsafe { &*(self.ptr) }.result
     }
 
     #[allow(clippy::mut_from_t)]
-    pub fn get_ref_mut(&self) -> &mut libsql::Result {
+    pub fn get_ref_mut(&self) -> &mut libsql_core::Result {
         let ptr_mut = self.ptr as *mut libsql_result;
         &mut unsafe { &mut (*ptr_mut) }.result
     }
