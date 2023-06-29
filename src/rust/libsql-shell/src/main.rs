@@ -5,6 +5,7 @@ use rusqlite::{types::ValueRef, Connection, Statement};
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
 use rustyline::{DefaultEditor, Editor};
+use std::fmt::Display;
 use std::io::Write;
 use std::path::PathBuf;
 
@@ -89,7 +90,6 @@ struct Shell {
     headers: bool,
     mode: OutputMode,
     null_value: String,
-    output: PathBuf,
     stats: StatsMode,
     width: [usize; 5],
     filename: PathBuf,
@@ -100,21 +100,30 @@ struct Shell {
 
 enum Out {
     Stdout,
-    File(std::fs::File),
+    File(std::fs::File, PathBuf),
 }
 
 impl Write for Out {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         match self {
             Out::Stdout => std::io::stdout().write(buf),
-            Out::File(file) => file.write(buf),
+            Out::File(file, _) => file.write(buf),
         }
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
         match self {
             Out::Stdout => std::io::stdout().flush(),
-            Out::File(file) => file.flush(),
+            Out::File(file, _) => file.flush(),
+        }
+    }
+}
+
+impl Display for Out {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Out::Stdout => write!(f, "stdout"),
+            Out::File(_, path) => write!(f, "{}", path.display()),
         }
     }
 }
@@ -191,7 +200,6 @@ impl Shell {
             stats: StatsMode::Off,
             width: [0; 5],
             null_value: String::new(),
-            output: PathBuf::new(),
             filename: PathBuf::from(db_path.unwrap_or_else(|| ":memory:".to_string())),
             colseparator: String::new(),
             rowseparator: String::new(),
@@ -220,11 +228,23 @@ impl Shell {
                 }
             }
             ".help" => self.show_help(args),
+            ".nullvalue" => {
+                if args.len() != 1 {
+                    writeln!(self.out, "Usage: .nullvalue STRING").unwrap();
+                    return;
+                }
+                self.null_value = args[0].to_string();
+            }
             ".print" => {
                 writeln!(self.out, "{}", args.join(" ")).unwrap();
             }
             ".quit" => std::process::exit(0),
             ".show" => {
+                if args.len() != 0 {
+                    writeln!(self.out, "Usage: .show").unwrap();
+                    return;
+                }
+                let out_name = format!("{}", self.out);
                 _ = writeln!(
                     self.out,
                     "{:>12}: {}
@@ -232,8 +252,8 @@ impl Shell {
 {:>12}: {:?}
 {:>12}: {}
 {:>12}: {:?}
+{:>12}: \"{}\"
 {:>12}: {}
-{:>12}: {:?}
 {:>12}: {}
 {:>12}: {}
 {:>12}: {:?}
@@ -252,7 +272,7 @@ impl Shell {
                     "nullvalue",
                     self.null_value,
                     "output",
-                    self.output,
+                    out_name,
                     "colseparator",
                     self.colseparator,
                     "rowseparator",
