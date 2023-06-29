@@ -1,6 +1,7 @@
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
+use rusqlite::Params;
 use rusqlite::{types::ValueRef, Connection, Statement};
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
@@ -9,6 +10,7 @@ use std::fmt::Display;
 use std::io::Write;
 use std::path::PathBuf;
 use tabled::settings::Style;
+use tabled::Table;
 
 #[derive(Debug, Parser)]
 #[command(name = "libsql")]
@@ -31,10 +33,13 @@ fn format_value(v: ValueRef) -> String {
 
 // Executes a libSQL statement
 // TODO: introduce paging for presenting large results, get rid of Vec
-fn execute(stmt: &mut Statement) -> Result<Vec<Vec<String>>> {
+fn execute<P>(stmt: &mut Statement, params: P) -> Result<Vec<Vec<String>>>
+where
+    P: Params,
+{
     let column_count = stmt.column_count();
 
-    let rows = stmt.query_map((), |row| {
+    let rows = stmt.query_map(params, |row| {
         let row = (0..column_count)
             .map(|idx| format_value(row.get_ref(idx).unwrap()))
             .collect::<Vec<String>>();
@@ -212,6 +217,7 @@ impl Shell {
     }
 
     fn run_command(&mut self, command: &str, args: &[&str]) {
+        let mut result = None;
         match command {
             ".echo" => {
                 if args.len() != 1 {
@@ -317,56 +323,45 @@ impl Shell {
                     self.filename.display()
                 );
             }
-            ".tables" => self.list_tables(args.get(0).copied()),
+            ".tables" => result = Some(self.list_tables(args.get(0).copied())),
             _ => println!(
                 "Error: unknown command or invalid arguments: \"{}\". Enter \".help\" for help",
                 command
             ),
         }
+        match result {
+            Some(Ok(mut table)) => {
+                table.with(Style::blank());
+                println!("{}", table);
+            }
+            Some(Err(e)) => {
+                println!("Error: {e}");
+            }
+            None => {}
+        }
     }
 
-    fn run_statement(&self, statement: String, is_command: bool) {
-        for str_statement in get_str_statements(statement) {
-            let mut stmt = match self.db.prepare(&str_statement) {
-                Ok(stmt) => stmt,
-                Err(e) => {
-                    println!("Error: {e}");
-                    continue;
-                }
-            };
-            let rows = match execute(&mut stmt) {
-                Ok(rows) => rows,
-                Err(e) => {
-                    println!("Error: {e}");
-                    continue;
-                }
-            };
-            if rows.is_empty() {
-                continue;
-            }
-            let mut builder = tabled::builder::Builder::new();
-            // TODO: switch style based on mode.
-            let style = Style::ascii();
-            if self.headers && !is_command {
-                // if we use a SQL statement to execute a command, don't include the headers.
-                // affected commands: .tables
-                builder.set_header(stmt.column_names());
-            }
-            for row in rows {
-                builder.push_record(row);
-            }
-            let mut table = builder.build();
-            if is_command {
-                table.with(Style::blank());
-            } else {
-                if self.headers {
-                    table.with(style);
-                } else {
-                    table.with(style.remove_horizontals());
-                }
-            }
-            println!("{table}")
+    fn run_statement<P>(&self, statement: String, params: P, is_command: bool) -> Result<Table>
+    where
+        P: Params,
+    {
+        let mut stmt: Statement<'_> = self.db.prepare(&statement)?;
+        let rows = execute(&mut stmt, params)?;
+
+        let mut builder = tabled::builder::Builder::new();
+        // TODO: switch style based on mode.
+        let style = Style::ascii();
+        if self.headers && !is_command {
+            // if we use a SQL statement to execute a command, don't include the headers.
+            // affected commands: .tables
+            builder.set_header(stmt.column_names());
         }
+        for row in rows {
+            builder.push_record(row);
+        }
+        let mut table = builder.build();
+        table.with(style);
+        Ok(table)
     }
 
     fn run(mut self, rl: &mut Editor<(), FileHistory>) -> Result<()> {
@@ -403,7 +398,17 @@ impl Shell {
                         }
                         self.run_command(split[0], &split[1..]);
                     } else {
-                        self.run_statement(line, false)
+                        for str_statement in get_str_statements(line) {
+                            let table = self.run_statement(str_statement, (), false);
+                            match table {
+                                Ok(table) => {
+                                    println!("{}", table);
+                                }
+                                Err(e) => {
+                                    println!("Error: {}", e);
+                                }
+                            }
+                        }
                     }
                 }
                 Err(ReadlineError::Interrupted) => {
@@ -423,15 +428,20 @@ impl Shell {
         Ok(())
     }
 
-    fn list_tables(&self, pattern: Option<&str>) {
+    fn list_tables(&self, pattern: Option<&str>) -> Result<Table> {
         let mut statement = String::from(
-            "SELECT name FROM sqlite_schema WHERE type ='table' AND name NOT LIKE 'sqlite_%'",
+            "SELECT name FROM sqlite_schema WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'",
         );
         match pattern {
-            Some(p) => statement.push_str(format!("AND name LIKE {p};").as_str()),
-            None => statement.push(';'),
+            Some(p) => {
+                statement.push_str("AND name LIKE :name;");
+                self.run_statement(statement, &[(":name", p)], true)
+            }
+            None => {
+                statement.push(';');
+                self.run_statement(statement, (), true)
+            }
         }
-        self.run_statement(statement, true)
     }
 
     // TODO: implement `-all` option: print detailed flags for each command
