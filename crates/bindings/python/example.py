@@ -1,6 +1,6 @@
 import libsql
 
-con = libsql.connect("libsq://penberg.turso.io")
+con = libsql.connect(":memory:")
 
 cur = con.cursor()
 

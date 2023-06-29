@@ -27,7 +27,7 @@ libsql_connection_t libsql_connect(libsql_database_t db);
 
 void libsql_disconnect(libsql_connection_t conn);
 
-libsql_result_t libsql_execute(libsql_connection_t _conn, const char *_sql);
+libsql_result_t libsql_execute(libsql_connection_t conn, const char *sql);
 
 void libsql_wait_result(libsql_result_t _res);
 

@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 	libsql_result_t result;
 	libsql_database_t db;
 
-	db = libsql_open_ext("libsql://penberg.turso.io");
+	db = libsql_open_ext(":memory:");
 	if (!db) {
 		assert(0);
 	}

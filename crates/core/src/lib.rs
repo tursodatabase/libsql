@@ -1,11 +1,23 @@
 pub struct Database {
-    raw: *mut sqlite3_sys::sqlite3,
+    pub url: String,
 }
 
 impl Database {
-    pub fn open(url: &str) -> Database {
+    pub fn open(url: String) -> Database {
+        Database { url }
+    }
+
+    pub fn close(&self) {
+    }
+}
+
+pub struct Connection {
+    raw: *mut sqlite3_sys::sqlite3,
+}
+
+impl Connection {
+    pub fn connect(url: String) -> Connection {
         let mut raw = std::ptr::null_mut();
-        /*
         let err = unsafe {
             sqlite3_sys::sqlite3_open_v2(
                 url.as_ptr() as *const i8,
@@ -20,21 +32,17 @@ impl Database {
                 panic!("sqlite3_open_v2 failed: {}", err);
             }
         }
-        */
-        Database { raw }
+        Connection { raw }
     }
 
-    pub fn close(&self) {
-        println!("Closing database");
-    }
-}
-
-pub struct Connection {
-}
-
-impl Connection {
     pub fn disconnect(&self) {
-        println!("Disconnecting");
+        unsafe {
+            sqlite3_sys::sqlite3_close_v2(self.raw);
+        }
+    }
+
+    pub fn execute(&self, sql: String) -> Result {
+        Result {}
     }
 }
 

@@ -1,6 +1,6 @@
 var libsql = require('./pkg');
 
-var db = new libsql.Database('libsql://penberg.turso.io');
+var db = new libsql.Database(':memory:');
 
 db.all('SELECT 1', function(err, res) {
   if (err) {
