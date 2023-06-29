@@ -58,41 +58,24 @@ static void decimal_free(Decimal *p){
 }
 
 /*
-** Allocate a new Decimal object.  Initialize it to the number given
-** by the input string.
+** Allocate a new Decimal object initialized to the text in zIn[].
+** Return NULL if any kind of error occurs.
 */
-static Decimal *decimal_new(
-  sqlite3_context *pCtx,
-  sqlite3_value *pIn,
-  int nAlt,
-  const unsigned char *zAlt
-){
-  Decimal *p;
-  int n, i;
-  const unsigned char *zIn;
+static Decimal *decimalNewFromText(const char *zIn, int n){
+  Decimal *p = 0;
+  int i;
   int iExp = 0;
+
   p = sqlite3_malloc( sizeof(*p) );
-  if( p==0 ) goto new_no_mem;
+  if( p==0 ) goto new_from_text_failed;
   p->sign = 0;
   p->oom = 0;
   p->isInit = 1;
   p->isNull = 0;
   p->nDigit = 0;
   p->nFrac = 0;
-  if( zAlt ){
-    n = nAlt,
-    zIn = zAlt;
-  }else{
-    if( sqlite3_value_type(pIn)==SQLITE_NULL ){
-      p->a = 0;
-      p->isNull = 1;
-      return p;
-    }
-    n = sqlite3_value_bytes(pIn);
-    zIn = sqlite3_value_text(pIn);
-  }
   p->a = sqlite3_malloc64( n+1 );
-  if( p->a==0 ) goto new_no_mem;
+  if( p->a==0 ) goto new_from_text_failed;
   for(i=0; isspace(zIn[i]); i++){}
   if( zIn[i]=='-' ){
     p->sign = 1;
@@ -143,7 +126,7 @@ static Decimal *decimal_new(
     }
     if( iExp>0 ){   
       p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
-      if( p->a==0 ) goto new_no_mem;
+      if( p->a==0 ) goto new_from_text_failed;
       memset(p->a+p->nDigit, 0, iExp);
       p->nDigit += iExp;
     }
@@ -162,7 +145,7 @@ static Decimal *decimal_new(
     }
     if( iExp>0 ){
       p->a = sqlite3_realloc64(p->a, p->nDigit + iExp + 1 );
-      if( p->a==0 ) goto new_no_mem;
+      if( p->a==0 ) goto new_from_text_failed;
       memmove(p->a+iExp, p->a, p->nDigit);
       memset(p->a, 0, iExp);
       p->nDigit += iExp;
@@ -171,7 +154,76 @@ static Decimal *decimal_new(
   }
   return p;
 
-new_no_mem:
+new_from_text_failed:
+  if( p ){
+    if( p->a ) sqlite3_free(p->a);
+    sqlite3_free(p);
+  }
+  return 0;
+}
+
+/* Forward reference */
+static Decimal *decimalFromDouble(double);
+
+/*
+** Allocate a new Decimal object from an sqlite3_value.  Return a pointer
+** to the new object, or NULL if there is an error.  If the pCtx argument
+** is not NULL, then errors are reported on it as well.
+**
+** If the pIn argument is SQLITE_TEXT or SQLITE_INTEGER, it is converted
+** directly into a Decimal.  For SQLITE_FLOAT or for SQLITE_BLOB of length
+** 8 bytes, the resulting double value is expanded into its decimal equivalent.
+** If pIn is NULL or if it is a BLOB that is not exactly 8 bytes in length,
+** then NULL is returned.
+*/
+static Decimal *decimal_new(
+  sqlite3_context *pCtx,       /* Report error here, if not null */
+  sqlite3_value *pIn,          /* Construct the decimal object from this */
+  int bTextOnly                /* Always interpret pIn as text if true */
+){
+  Decimal *p = 0;
+  int eType = sqlite3_value_type(pIn);
+  if( bTextOnly && (eType==SQLITE_FLOAT || eType==SQLITE_BLOB) ){
+    eType = SQLITE_TEXT;
+  }
+  switch( eType ){
+    case SQLITE_TEXT:
+    case SQLITE_INTEGER: {
+      const char *zIn = (const char*)sqlite3_value_text(pIn);
+      int n = sqlite3_value_bytes(pIn);
+      p = decimalNewFromText(zIn, n);
+      if( p==0 ) goto new_failed;
+      break;
+    }
+
+    case SQLITE_FLOAT: {
+      p = decimalFromDouble(sqlite3_value_double(pIn));
+      break;
+    }
+
+    case SQLITE_BLOB: {
+      const unsigned char *x;
+      unsigned int i;
+      sqlite3_uint64 v = 0;
+      double r;
+
+      if( sqlite3_value_bytes(pIn)!=sizeof(r) ) break;
+      x = sqlite3_value_blob(pIn);
+      for(i=0; i<sizeof(r); i++){
+        v = (v<<8) | x[i];
+      }
+      memcpy(&r, &v, sizeof(r));
+      p = decimalFromDouble(r);
+      break;
+    }
+
+    case SQLITE_NULL: {
+      break;
+    }
+  }
+  return p;
+
+new_failed:
   if( pCtx ) sqlite3_result_error_nomem(pCtx);
   sqlite3_free(p);
   return 0;
@@ -341,9 +393,9 @@ static void decimalCmpFunc(
   int rc;
 
   UNUSED_PARAMETER(argc);
-  pA = decimal_new(context, argv[0], 0, 0);
+  pA = decimal_new(context, argv[0], 1);
   if( pA==0 || pA->isNull ) goto cmp_done;
-  pB = decimal_new(context, argv[1], 0, 0);
+  pB = decimal_new(context, argv[1], 1);
   if( pB==0 || pB->isNull ) goto cmp_done;
   rc = decimal_cmp(pA, pB);
   if( rc<0 ) rc = -1;
@@ -512,14 +564,14 @@ static Decimal *decimalPow2(int N){
   Decimal *pA = 0;      /* The result to be returned */
   Decimal *pX = 0;      /* Multiplier */
   if( N<-20000 || N>20000 ) goto pow2_fault;
-  pA = decimal_new(0, 0, 3, (unsigned char*)"1.0");
+  pA = decimalNewFromText("1.0", 3);
   if( pA==0 || pA->oom ) goto pow2_fault;
   if( N==0 ) return pA;
   if( N>0 ){
-    pX = decimal_new(0, 0, 3, (unsigned char*)"2.0");
+    pX = decimalNewFromText("2.0", 3);
   }else{
     N = -N;
-    pX = decimal_new(0, 0, 3, (unsigned char*)"0.5");
+    pX = decimalNewFromText("0.5", 3);
   }
   if( pX==0 || pX->oom ) goto pow2_fault;
   while( 1 /* Exit by break */ ){
@@ -581,7 +633,7 @@ static Decimal *decimalFromDouble(double r){
 
   /* At this point m is the integer significand and e is the exponent */
   sqlite3_snprintf(sizeof(zNum), zNum, "%lld", m);
-  pA = decimal_new(0, 0, (int)strlen(zNum), (unsigned char*)zNum);
+  pA = decimalNewFromText(zNum, (int)strlen(zNum));
   pX = decimalPow2(e);
   decimalMul(pA, pX);
   decimal_free(pX);
@@ -590,52 +642,24 @@ static Decimal *decimalFromDouble(double r){
 
 /*
 ** SQL Function:   decimal(X)
+** OR:             decimal_sci(X)
 **
 ** Convert input X into decimal and then back into text.
 **
-** If X is originally a float, then a full decoding of that floating
+** If X is originally a float, then a full decimal expansion of that floating
 ** point value is done.  Or if X is an 8-byte blob, it is interpreted
 ** as a float and similarly expanded.
+**
+** The decimal_sci(X) function returns the result in scientific notation.
+** decimal(X) returns a complete decimal, without the e+NNN at the end.
 */
 static void decimalFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  Decimal *p = 0;
+  Decimal *p =  decimal_new(context, argv[0], 0);
   UNUSED_PARAMETER(argc);
-  switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_TEXT:
-    case SQLITE_INTEGER: {
-      p = decimal_new(context, argv[0], 0, 0);
-      break;
-    }
-
-    case SQLITE_FLOAT: {
-      p = decimalFromDouble(sqlite3_value_double(argv[0]));
-      break;
-    }
-
-    case SQLITE_BLOB: {
-      const unsigned char *x;
-      unsigned int i;
-      sqlite3_uint64 v = 0;
-      double r;
-
-      if( sqlite3_value_bytes(argv[0])!=sizeof(r) ) break;
-      x = sqlite3_value_blob(argv[0]);
-      for(i=0; i<sizeof(r); i++){
-        v = (v<<8) | x[i];
-      }
-      memcpy(&r, &v, sizeof(r));
-      p = decimalFromDouble(r);
-      break;
-    }
-
-    case SQLITE_NULL: {
-      break;
-    }
-  }
   if( p ){
     if( sqlite3_user_data(context)!=0 ){
       decimal_result_sci(context, p);
@@ -656,8 +680,8 @@ static int decimalCollFunc(
 ){
   const unsigned char *zA = (const unsigned char*)pKey1;
   const unsigned char *zB = (const unsigned char*)pKey2;
-  Decimal *pA = decimal_new(0, 0, nKey1, zA);
-  Decimal *pB = decimal_new(0, 0, nKey2, zB);
+  Decimal *pA = decimalNewFromText((const char*)zA, nKey1);
+  Decimal *pB = decimalNewFromText((const char*)zB, nKey2);
   int rc;
   UNUSED_PARAMETER(notUsed);
   if( pA==0 || pB==0 ){
@@ -682,8 +706,8 @@ static void decimalAddFunc(
   int argc,
   sqlite3_value **argv
 ){
-  Decimal *pA = decimal_new(context, argv[0], 0, 0);
-  Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  Decimal *pA = decimal_new(context, argv[0], 1);
+  Decimal *pB = decimal_new(context, argv[1], 1);
   UNUSED_PARAMETER(argc);
   decimal_add(pA, pB);
   decimal_result(context, pA);
@@ -695,8 +719,8 @@ static void decimalSubFunc(
   int argc,
   sqlite3_value **argv
 ){
-  Decimal *pA = decimal_new(context, argv[0], 0, 0);
-  Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  Decimal *pA = decimal_new(context, argv[0], 1);
+  Decimal *pB = decimal_new(context, argv[1], 1);
   UNUSED_PARAMETER(argc);
   if( pB ){
     pB->sign = !pB->sign;
@@ -734,7 +758,7 @@ static void decimalSumStep(
     p->nFrac = 0;
   }
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  pArg = decimal_new(context, argv[0], 0, 0);
+  pArg = decimal_new(context, argv[0], 1);
   decimal_add(p, pArg);
   decimal_free(pArg);
 }
@@ -749,7 +773,7 @@ static void decimalSumInverse(
   p = sqlite3_aggregate_context(context, sizeof(*p));
   if( p==0 ) return;
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
-  pArg = decimal_new(context, argv[0], 0, 0);
+  pArg = decimal_new(context, argv[0], 1);
   if( pArg ) pArg->sign = !pArg->sign;
   decimal_add(p, pArg);
   decimal_free(pArg);
@@ -776,8 +800,8 @@ static void decimalMulFunc(
   int argc,
   sqlite3_value **argv
 ){
-  Decimal *pA = decimal_new(context, argv[0], 0, 0);
-  Decimal *pB = decimal_new(context, argv[1], 0, 0);
+  Decimal *pA = decimal_new(context, argv[0], 1);
+  Decimal *pB = decimal_new(context, argv[1], 1);
   UNUSED_PARAMETER(argc);
   if( pA==0 || pA->oom || pA->isNull
    || pB==0 || pB->oom || pB->isNull 
@@ -829,11 +853,11 @@ int sqlite3_decimal_init(
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
     { "decimal",       1, 0,  decimalFunc        },
+    { "decimal_sci",   1, 1,  decimalFunc        },
     { "decimal_cmp",   2, 0,  decimalCmpFunc     },
     { "decimal_add",   2, 0,  decimalAddFunc     },
     { "decimal_sub",   2, 0,  decimalSubFunc     },
     { "decimal_mul",   2, 0,  decimalMulFunc     },
-    { "decimal_sci",   1, 1,  decimalFunc        },
     { "decimal_pow2",  1, 0,  decimalPow2Func    },
   };
   unsigned int i;
