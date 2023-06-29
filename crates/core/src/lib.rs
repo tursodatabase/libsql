@@ -51,7 +51,8 @@ impl Connection {
     }
 
     pub fn execute(&self, sql: String) -> ResultSet {
-        ResultSet {}
+        // TODO: submit execution to a work queue
+        ResultSet { }
     }
 }
 
@@ -59,6 +60,10 @@ pub struct ResultSet {
 }
 
 impl ResultSet {
+    pub fn wait(&self) {
+        // TODO: wait for execution to complete
+    }
+
     pub fn row_count(&self) -> i32 {
         0
     }
