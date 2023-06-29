@@ -220,6 +220,9 @@ impl Shell {
                 }
             }
             ".help" => self.show_help(args),
+            ".print" => {
+                writeln!(self.out, "{}", args.join(" ")).unwrap();
+            }
             ".quit" => std::process::exit(0),
             ".show" => {
                 _ = writeln!(
