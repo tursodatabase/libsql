@@ -200,6 +200,25 @@ impl Shell {
 
     fn run_command(&mut self, command: &str, args: &[&str]) {
         match command {
+            ".echo" => {
+                if args.len() != 1 {
+                    writeln!(self.out, "Usage: .echo on|off").unwrap();
+                    return;
+                }
+                match args[0].to_lowercase().as_str() {
+                    "on" | "1" => self.echo = true,
+                    "off" | "0" => self.echo = false,
+                    txt => {
+                        self.echo = false;
+                        writeln!(
+                            self.out,
+                            "ERROR: Not a boolean value: \"{}\". Assuming \"no\"",
+                            txt
+                        )
+                        .unwrap()
+                    }
+                }
+            }
             ".help" => self.show_help(args),
             ".quit" => std::process::exit(0),
             ".show" => {
@@ -302,6 +321,9 @@ impl Shell {
                         continue;
                     };
                     rl.add_history_entry(&line).ok();
+                    if self.echo {
+                        writeln!(self.out, "{}", line).unwrap();
+                    }
                     if line.starts_with('.') {
                         let split = line.split_whitespace().collect::<Vec<&str>>();
                         let prev_header_settings = self.headers;
