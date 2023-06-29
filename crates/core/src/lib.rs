@@ -27,6 +27,7 @@ impl Connection {
     pub fn connect(url: String) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
         let err = unsafe {
+            // FIXME: switch to libsql_sys
             sqlite3_sys::sqlite3_open_v2(
                 url.as_ptr() as *const i8,
                 &mut raw,
