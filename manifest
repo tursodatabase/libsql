@@ -1,5 +1,5 @@
-C CLI\senhancements\sto\sfacilitate\sSQLite\score\stesting:\n(1)\sAdd\sbuilt-in\sfunctions\sstrtod()\sand\sdtostr()\sthat\sconvert\stext\sto\nfloating\spoint\sand\sback\susing\sC-library\sroutines.\n(2)\sDo\snot\sdisable\sall\sof\s".testctrl"\swithout\s--unsafe-testing,\sbut\sonly\nthose\ssubcommands\sof\s.testctrl\sthat\sare\sactually\sdangerous.
-D 2023-06-29T12:14:10.203
+C Add\sthe\sdecimal_sci(X)\sfunction\sto\sthe\sDecimal\sextension\sfor\sshowing\sa\sdecimal\nvalue\sin\sscientific\snotation:\s\s+D.DDDDDe+DD
+D 2023-06-29T14:49:23.326
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -287,7 +287,7 @@ F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8b
 F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
 F ext/misc/csv.c ca8d6dafc5469639de81937cb66ae2e6b358542aba94c4f791910d355a8e7f73
 F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f823e01
-F ext/misc/decimal.c 57d85fa20a5a74d3b0dfc78ab7934ae6c9f5aa8eed915faa2b5246bec87ddc6d
+F ext/misc/decimal.c 17303ac06f50d750fdb635c8be1f8eb820fa95896fd08c08af332b62fe8bcfce
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 0086fab288d4352ea638cf40ac382aad3b0dc5e845a1ea829a694c015fd970fe
 F ext/misc/fileio.c 4e7f7cd30de8df4820c552f14af3c9ca451c5ffe1f2e7bef34d598a12ebfb720
@@ -2041,8 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a915f15a916af698e0cef46c8b3e7ed11bda19349179d2d414073cd39c4cce24
-R 0ff1aaf83c3a4b2103ba6e2bba60a2a8
+P 669996a8ddcbf35f3de66cf466508fc1e6dd09ab269aba395ac86a11b2ec238c
+R 090cbc96cc5b169f2dbe66c47db5bae8
 U drh
-Z f9cb0e945d7f18774016bacc44534d0c
+Z d52f599d2e14938fb14fb03c95733f3a
 # Remove this line to create a well-formed Fossil manifest.

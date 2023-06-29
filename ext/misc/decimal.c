@@ -231,6 +231,67 @@ static void decimal_result(sqlite3_context *pCtx, Decimal *p){
 }
 
 /*
+** Make the given Decimal the result in an format similar to  '%+#e'.
+** In other words, show exponential notation with leading and trailing
+** zeros omitted.
+*/
+static void decimal_result_sci(sqlite3_context *pCtx, Decimal *p){
+  char *z;       /* The output buffer */
+  int i;         /* Loop counter */
+  int nZero;     /* Number of leading zeros */
+  int nDigit;    /* Number of digits not counting trailing zeros */
+  int nFrac;     /* Digits to the right of the decimal point */
+  int exp;       /* Exponent value */
+  signed char zero;     /* Zero value */
+  signed char *a;       /* Array of digits */
+
+  if( p==0 || p->oom ){
+    sqlite3_result_error_nomem(pCtx);
+    return;
+  }
+  if( p->isNull ){
+    sqlite3_result_null(pCtx);
+    return;
+  }
+  for(nDigit=p->nDigit; nDigit>0 && p->a[nDigit-1]==0; nDigit--){}
+  for(nZero=0; nZero<nDigit && p->a[nZero]==0; nZero++){}
+  nFrac = p->nFrac + (nDigit - p->nDigit);
+  nDigit -= nZero;
+  z = sqlite3_malloc( nDigit+20 );
+  if( z==0 ){
+    sqlite3_result_error_nomem(pCtx);
+    return;
+  }
+  if( nDigit==0 ){
+    zero = 0;
+    a = &zero;
+    nDigit = 1;
+    nFrac = 0;
+  }else{
+    a = &p->a[nZero];
+  }
+  if( p->sign && nDigit>0 ){
+    z[0] = '-';
+  }else{
+    z[0] = '+';
+  }
+  z[1] = a[0]+'0';
+  z[2] = '.';
+  if( nDigit==1 ){
+    z[3] = '0';
+    i = 4;
+  }else{
+    for(i=1; i<nDigit; i++){
+      z[2+i] = a[i]+'0';
+    }
+    i = nDigit+2;
+  }
+  exp = nDigit - nFrac - 1;
+  sqlite3_snprintf(nDigit+20-i, &z[i], "e%+03d", exp);
+  sqlite3_result_text(pCtx, z, -1, sqlite3_free);
+}
+
+/*
 ** SQL Function:   decimal(X)
 **
 ** Convert input X into decimal and then back into text
@@ -591,6 +652,21 @@ mul_end:
   decimal_free(pB);
 }
 
+/*
+** SQL Function:   decimal_sci(X)
+**
+** Convert decimal number X into scientific notation ("+N.NNNe+NN").
+*/
+static void decimalSciFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  Decimal *pA = decimal_new(context, argv[0], 0, 0);
+  decimal_result_sci(context, pA);
+  decimal_free(pA);
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -610,6 +686,7 @@ int sqlite3_decimal_init(
     { "decimal_add",   2,   decimalAddFunc     },
     { "decimal_sub",   2,   decimalSubFunc     },
     { "decimal_mul",   2,   decimalMulFunc     },
+    { "decimal_sci",   1,   decimalSciFunc     },
   };
   unsigned int i;
   (void)pzErrMsg;  /* Unused parameter */
