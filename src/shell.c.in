@@ -1238,7 +1238,7 @@ static void shellDtostr(
 ){
   double r = sqlite3_value_double(apVal[0]);
   char z[200];
-  sprintf(z, "%#+.70e", r);
+  sprintf(z, "%#+.26e", r);
   sqlite3_result_text(pCtx, z, -1, SQLITE_TRANSIENT);
 }
 
