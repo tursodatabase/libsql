@@ -12,6 +12,7 @@ categories = ["external-ffi-bindings"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+default-env = "0.1.1"
 
 [build-dependencies]
 bindgen = "0.66.1"

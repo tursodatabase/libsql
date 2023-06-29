@@ -2,9 +2,16 @@ use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    let src_dir = PathBuf::from(
-        env::var("LIBSQL_SRC_DIR").expect("LIBSQL_SRC_DIR must be defined at compile time"),
-    );
+    let src_dir = match env::var("LIBSQL_SRC_DIR") {
+        Ok(dir) => PathBuf::from(dir),
+        Err(_) => {
+            println!("cargo:warning=Using precompiled bindings: bindings.rs");
+            println!(
+                "cargo:warning=Specify LIBSQL_SRC_DIR env variable to regenerate bindings first."
+            );
+            return;
+        }
+    };
     let bindings = bindgen::Builder::default()
         .header(
             src_dir
