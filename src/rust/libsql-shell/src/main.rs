@@ -97,6 +97,8 @@ struct Shell {
 
     colseparator: String,
     rowseparator: String,
+    main_prompt: String,
+    continuation_prompt: String,
 }
 
 enum Out {
@@ -204,6 +206,8 @@ impl Shell {
             filename: PathBuf::from(db_path.unwrap_or_else(|| ":memory:".to_string())),
             colseparator: String::new(),
             rowseparator: String::new(),
+            main_prompt: "libsql> ".to_string(),
+            continuation_prompt: "   ...> ".to_string(),
         }
     }
 
@@ -257,6 +261,14 @@ impl Shell {
             }
             ".print" => {
                 writeln!(self.out, "{}", args.join(" ")).unwrap();
+            }
+            ".prompt" => {
+                if args.len() > 0 {
+                    self.main_prompt = args[0].to_string();
+                }
+                if args.len() > 1 {
+                    self.continuation_prompt = args[1].to_string();
+                }
             }
             ".quit" => std::process::exit(0),
             ".show" => {
@@ -361,9 +373,9 @@ impl Shell {
         let mut leftovers = String::new();
         loop {
             let prompt = if leftovers.is_empty() {
-                "libsql> "
+                self.main_prompt.as_str()
             } else {
-                "...   > "
+                self.continuation_prompt.as_str()
             };
             let readline = rl.readline(prompt);
             match readline {
@@ -380,7 +392,15 @@ impl Shell {
                         writeln!(self.out, "{}", line).unwrap();
                     }
                     if line.starts_with('.') {
-                        let split = line.split_whitespace().collect::<Vec<&str>>();
+                        // split line on whitespace, but not inside quotes.
+                        let mut split = vec![];
+                        for (i, chunk) in line.split_terminator(&['\'', '"']).enumerate() {
+                            if i % 2 != 0 {
+                                split.push(chunk);
+                            } else {
+                                split.extend(chunk.split_whitespace())
+                            }
+                        }
                         self.run_command(split[0], &split[1..]);
                     } else {
                         self.run_statement(line, false)
