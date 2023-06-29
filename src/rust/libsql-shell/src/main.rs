@@ -258,6 +258,7 @@ impl Shell {
                 }
             }
             ".help" => self.show_help(args),
+            ".indexes" => result = Some(self.list_tables(args.get(0).copied(), true)),
             ".nullvalue" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .nullvalue STRING").unwrap();
@@ -323,7 +324,7 @@ impl Shell {
                     self.filename.display()
                 );
             }
-            ".tables" => result = Some(self.list_tables(args.get(0).copied())),
+            ".tables" => result = Some(self.list_tables(args.get(0).copied(), false)),
             _ => println!(
                 "Error: unknown command or invalid arguments: \"{}\". Enter \".help\" for help",
                 command
@@ -331,6 +332,9 @@ impl Shell {
         }
         match result {
             Some(Ok(mut table)) => {
+                if table.count_rows() == 0 {
+                    return;
+                }
                 table.with(Style::blank());
                 println!("{}", table);
             }
@@ -402,6 +406,9 @@ impl Shell {
                             let table = self.run_statement(str_statement, (), false);
                             match table {
                                 Ok(table) => {
+                                    if table.count_rows() == 0 {
+                                        continue;
+                                    }
                                     println!("{}", table);
                                 }
                                 Err(e) => {
@@ -428,13 +435,21 @@ impl Shell {
         Ok(())
     }
 
-    fn list_tables(&self, pattern: Option<&str>) -> Result<Table> {
-        let mut statement = String::from(
-            "SELECT name FROM sqlite_schema WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'",
-        );
+    fn list_tables(&self, pattern: Option<&str>, is_index: bool) -> Result<Table> {
+        let mut statement =
+            String::from("SELECT name FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%'");
+        if is_index {
+            statement.push_str("AND type='index' ")
+        } else {
+            statement.push_str("AND type IN ('table','view') ")
+        }
         match pattern {
             Some(p) => {
-                statement.push_str("AND name LIKE :name;");
+                if is_index {
+                    statement.push_str("AND tbl_name LIKE :name;");
+                } else {
+                    statement.push_str("AND name NOT LIKE 'sqlite_%' AND name LIKE :name;");
+                }
                 self.run_statement(statement, &[(":name", p)], true)
             }
             None => {
