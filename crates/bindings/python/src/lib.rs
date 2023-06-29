@@ -21,29 +21,27 @@ pub struct Connection {
 #[pymethods]
 impl Connection {
     fn cursor(self_: PyRef<'_, Self>) -> PyResult<Cursor> {
-      Ok(Cursor{})
+        Ok(Cursor {})
     }
 }
 
 #[pyclass]
-pub struct Cursor {
-}
+pub struct Cursor {}
 
 #[pymethods]
 impl Cursor {
     fn execute(self_: PyRef<'_, Self>, sql: String) -> PyResult<Result> {
-      Ok(Result{})
+        Ok(Result {})
     }
 }
 
 #[pyclass]
-pub struct Result {
-}
+pub struct Result {}
 
 #[pymethods]
 impl Result {
     fn fetchone(self_: PyRef<'_, Self>) -> PyResult<()> {
-      Ok(())
+        Ok(())
     }
 }
 

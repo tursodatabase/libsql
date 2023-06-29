@@ -13,8 +13,7 @@ impl Database {
         Database { url }
     }
 
-    pub fn close(&self) {
-    }
+    pub fn close(&self) {}
 }
 
 pub struct Connection {
@@ -52,20 +51,40 @@ impl Connection {
     }
 
     pub fn execute(&self, sql: String) -> ResultSet {
-        ResultSet { sql }
+        ResultSet { raw: self.raw, sql }
     }
 }
 
 pub struct ResultSet {
+    raw: *mut sqlite3_sys::sqlite3,
     sql: String,
 }
 
 impl futures::Future for ResultSet {
     type Output = Result<()>;
 
-    fn poll(self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Self::Output> {
-        // TODO: call sqlite3_sys::sqlite3_exec()
-        std::task::Poll::Ready(Ok(()))
+    fn poll(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        let err = unsafe {
+            sqlite3_sys::sqlite3_exec(
+                self.raw,
+                self.sql.as_ptr() as *const i8,
+                None,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
+        let ret = match err {
+            sqlite3_sys::SQLITE_OK => {
+                Ok(())
+            }
+            _ => {
+                Err(Error::QueryFailed(self.sql.clone()))
+            }
+        };
+        std::task::Poll::Ready(ret)
     }
 }
 
