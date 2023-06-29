@@ -5,6 +5,7 @@ pub struct Database {
 impl Database {
     pub fn open(url: &str) -> Database {
         let mut raw = std::ptr::null_mut();
+        /*
         let err = unsafe {
             sqlite3_sys::sqlite3_open_v2(
                 url.as_ptr() as *const i8,
@@ -19,6 +20,33 @@ impl Database {
                 panic!("sqlite3_open_v2 failed: {}", err);
             }
         }
+        */
         Database { raw }
+    }
+
+    pub fn close(&self) {
+        println!("Closing database");
+    }
+}
+
+pub struct Connection {
+}
+
+impl Connection {
+    pub fn disconnect(&self) {
+        println!("Disconnecting");
+    }
+}
+
+pub struct Result {
+}
+
+impl Result {
+    pub fn row_count(&self) -> i32 {
+        0
+    }
+
+    pub fn column_count(&self) -> i32 {
+        0
     }
 }

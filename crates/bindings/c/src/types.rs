@@ -4,13 +4,13 @@ pub struct libsql_database {
 
 #[derive(Clone, Debug)]
 #[repr(transparent)]
-pub struct libsql_database_ref {
+pub struct libsql_database_t {
     ptr: *const libsql_database,
 }
 
-impl libsql_database_ref {
-    pub fn null() -> libsql_database_ref {
-        libsql_database_ref {
+impl libsql_database_t {
+    pub fn null() -> libsql_database_t {
+        libsql_database_t {
             ptr: std::ptr::null(),
         }
     }
@@ -23,7 +23,7 @@ impl libsql_database_ref {
         &unsafe { &*(self.ptr) }.db
     }
 
-    #[allow(clippy::mut_from_ref)]
+    #[allow(clippy::mut_from_t)]
     pub fn get_ref_mut(&self) -> &mut libsql::Database {
         let ptr_mut = self.ptr as *mut libsql_database;
         &mut unsafe { &mut (*ptr_mut) }.db
@@ -31,15 +31,107 @@ impl libsql_database_ref {
 }
 
 #[allow(clippy::from_over_into)]
-impl From<&libsql_database> for libsql_database_ref {
+impl From<&libsql_database> for libsql_database_t {
     fn from(value: &libsql_database) -> Self {
         Self { ptr: value }
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl From<&mut libsql_database> for libsql_database_ref {
+impl From<&mut libsql_database> for libsql_database_t {
     fn from(value: &mut libsql_database) -> Self {
+        Self { ptr: value }
+    }
+}
+
+pub struct libsql_connection {
+    pub(crate) conn: libsql::Connection,
+}
+
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct libsql_connection_t {
+    ptr: *const libsql_connection,
+}
+
+impl libsql_connection_t {
+    pub fn null() -> libsql_connection_t {
+        libsql_connection_t {
+            ptr: std::ptr::null(),
+        }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.ptr.is_null()
+    }
+
+    pub fn get_ref(&self) -> &libsql::Connection {
+        &unsafe { &*(self.ptr) }.conn
+    }
+
+    #[allow(clippy::mut_from_t)]
+    pub fn get_ref_mut(&self) -> &mut libsql::Connection {
+        let ptr_mut = self.ptr as *mut libsql_connection;
+        &mut unsafe { &mut (*ptr_mut) }.conn
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&libsql_connection> for libsql_connection_t {
+    fn from(value: &libsql_connection) -> Self {
+        Self { ptr: value }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&mut libsql_connection> for libsql_connection_t {
+    fn from(value: &mut libsql_connection) -> Self {
+        Self { ptr: value }
+    }
+}
+
+pub struct libsql_result {
+    pub(crate) result: libsql::Result,
+}
+
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct libsql_result_t {
+    ptr: *const libsql_result,
+}
+
+impl libsql_result_t {
+    pub fn null() -> libsql_result_t {
+        libsql_result_t {
+            ptr: std::ptr::null(),
+        }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.ptr.is_null()
+    }
+
+    pub fn get_ref(&self) -> &libsql::Result {
+        &unsafe { &*(self.ptr) }.result
+    }
+
+    #[allow(clippy::mut_from_t)]
+    pub fn get_ref_mut(&self) -> &mut libsql::Result {
+        let ptr_mut = self.ptr as *mut libsql_result;
+        &mut unsafe { &mut (*ptr_mut) }.result
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&libsql_result> for libsql_result_t {
+    fn from(value: &libsql_result) -> Self {
+        Self { ptr: value }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&mut libsql_result> for libsql_result_t {
+    fn from(value: &mut libsql_result) -> Self {
         Self { ptr: value }
     }
 }
