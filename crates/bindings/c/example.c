@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 			printf("%s", value);
 		}
 	}
-	libsql_destroy_result(result);
+	libsql_free_result(result);
 	libsql_disconnect(conn);
 	libsql_close(db);
 }

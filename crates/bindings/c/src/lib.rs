@@ -62,7 +62,7 @@ pub unsafe extern "C" fn libsql_execute(
 pub unsafe extern "C" fn libsql_wait_result(_res: libsql_result_t) {}
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_destroy_result(res: libsql_result_t) {
+pub unsafe extern "C" fn libsql_free_result(res: libsql_result_t) {
     if res.is_null() {
         return;
     }
