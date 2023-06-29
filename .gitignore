@@ -61,3 +61,6 @@ libsql
 /src/rust/libsql-shell/target/
 /src/rust/wasmtime-bindings/Cargo.lock
 /src/rust/wasmtime-bindings/Cargo.lock
+/bindings.rs
+/src/rust/libsql-sys/target
+/src/rust/libsql-sys/Cargo.lock
