@@ -2,3 +2,6 @@
 name = "libsql"
 version = "0.0.0"
 edition = "2021"
+
+[dependencies]
+sqlite3-sys = "0.15.2"

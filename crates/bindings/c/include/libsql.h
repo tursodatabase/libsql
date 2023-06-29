@@ -11,7 +11,7 @@ typedef const libsql_database *libsql_database_ref;
 extern "C" {
 #endif // __cplusplus
 
-libsql_database_ref libsql_open(const char *_path);
+libsql_database_ref libsql_open_ext(const char *path);
 
 void libsql_close(libsql_database_ref db);
 

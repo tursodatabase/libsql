@@ -1,4 +1,4 @@
-/* gcc -I include example.c ../../target/debug/libsql_experimental.a && ./a.out */
+/* gcc -I include example.c ../../target/debug/libsql_experimental.a ../../../.libs/libsqlite3.a && ./a.out */
 
 #include "libsql.h"
 #include <assert.h>
@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
 {
 	libsql_database_ref database;
 
-	database = libsql_open(":memory:");
+	database = libsql_open_ext(":memory:");
 	if (!database) {
 		assert(0);
 	}
