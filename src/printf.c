@@ -559,7 +559,7 @@ void sqlite3_str_vappendf(
         exp = 0;
         if( xtype==etGENERIC && precision>0 ) precision--;
         testcase( precision>0xfff );
-        if( realvalue<1.0e+16
+        if( realvalue<9.22e+18
          && realvalue==(LONGDOUBLE_TYPE)(longvalue = (u64)realvalue)
         ){
           /* Number is a pure integer that can be represented as u64 */
