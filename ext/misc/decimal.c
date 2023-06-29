@@ -663,6 +663,7 @@ static void decimalSciFunc(
   sqlite3_value **argv
 ){
   Decimal *pA = decimal_new(context, argv[0], 0, 0);
+  UNUSED_PARAMETER(argc);
   decimal_result_sci(context, pA);
   decimal_free(pA);
 }

@@ -1220,6 +1220,7 @@ static void shellStrtod(
   sqlite3_value **apVal
 ){
   char *z = (char*)sqlite3_value_text(apVal[0]);
+  UNUSED_PARAMETER(nVal);
   if( z==0 ) return;
   sqlite3_result_double(pCtx, strtod(z,0));
 }
