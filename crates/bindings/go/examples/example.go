@@ -13,4 +13,6 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
+	db.QueryRow("SELECT 1")
 }

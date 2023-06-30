@@ -1,8 +1,13 @@
+//go:build cgo
+// +build cgo
+
 package libsql
 
 /*
 #cgo CFLAGS: -I../c/include
-#cgo LDFLAGS: -L../../target/debug -lsql_experimental
+#cgo LDFLAGS: ../../../target/debug/libsql_experimental.a
+#cgo LDFLAGS: ../../../../.libs/libsqlite3.a
+#cgo LDFLAGS: -lm
 #include <libsql.h>
 */
 import "C"
@@ -10,6 +15,7 @@ import "C"
 import (
 	"database/sql"
 	"database/sql/driver"
+	"fmt"
 )
 
 func init() {
@@ -24,5 +30,20 @@ func (d Driver) Open(dataSourceName string) (driver.Conn, error) {
 
 	_ = C.libsql_open_ext(connectionString)
 
-	return nil, nil
+	return &conn{}, nil
+}
+
+type conn struct {
+}
+
+func (c *conn) Close() error {
+	return nil
+}
+
+func (c *conn) Prepare(query string) (driver.Stmt, error) {
+	return nil, fmt.Errorf("Prepare() is not implemented")
+}
+
+func (c *conn) Begin() (driver.Tx, error) {
+	return nil, fmt.Errorf("Begin() is not implemented")
 }
