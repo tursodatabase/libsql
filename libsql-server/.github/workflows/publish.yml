@@ -6,6 +6,10 @@ on:
     tags:
       - v*.*.*
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to rebuild"
+        default: "v0.0.0"
 
 env:
   REGISTRY: ghcr.io
@@ -61,7 +65,13 @@ jobs:
           git config --global core.eol lf
 
       - uses: actions/checkout@v3
-
+        if: ${{ github.event.inputs.tag }} == "v0.0.0"
+        with:
+          ref: ${{ github.event.inputs.tag }}
+      
+      - uses: actions/checkout@v3
+        if: ${{ github.event.inputs.tag }} != "v0.0.0"
+          
       - name: Get Rust toolchain version from rust-toolchain.toml
         id: getrustver
         run: |
