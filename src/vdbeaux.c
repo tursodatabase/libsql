@@ -538,7 +538,7 @@ int sqlite3VdbeExplain(Parse *pParse, u8 bPush, const char *zFmt, ...){
     if( bPush){
       pParse->addrExplain = iThis;
     }
-    sqlite3VdbeScanStatus(v, iThis, 0, 0, 0, 0);
+    sqlite3VdbeScanStatus(v, iThis, -1, -1, 0, 0);
   }
   return addr;
 }
@@ -1250,8 +1250,8 @@ void sqlite3VdbeScanStatusCounters(
       pScan = 0;
     }
     if( pScan ){
-      pScan->addrLoop = addrLoop;
-      pScan->addrVisit = addrVisit;
+      if( addrLoop>0 ) pScan->addrLoop = addrLoop;
+      if( addrVisit>0 ) pScan->addrVisit = addrVisit;
     }
   }
 }
