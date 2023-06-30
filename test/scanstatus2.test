@@ -304,6 +304,30 @@ QUERY (nCycle=nnn)
 --USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
 }
 
+set sql {
+  WITH xy(x, y) AS ( SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1)
+  SELECT * FROM xy WHERE x=1
+}
+do_graph_test 6.2 $sql {
+QUERY (nCycle=nnn)
+--CO-ROUTINE xy
+----SCAN t1 (nCycle=nnn)
+----USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
+--SCAN xy (nCycle=nnn)
+}
+
+do_graph_test 6.3 {
+  WITH xy(x, y) AS ( SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1)
+  SELECT * FROM xy, xy AS xy2
+} {
+QUERY (nCycle=nnn)
+--MATERIALIZE xy (nCycle=nnn)
+----SCAN t1 (nCycle=nnn)
+----USE TEMP B-TREE FOR GROUP BY (nCycle=nnn)
+--SCAN xy (nCycle=nnn)
+--SCAN xy2 (nCycle=nnn)
+}
+
 #explain_i { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }
 #puts_debug_info { SELECT (a % 2), group_concat(b) FROM t1 GROUP BY 1 }
 

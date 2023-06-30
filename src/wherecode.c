@@ -315,6 +315,12 @@ void sqlite3WhereAddScanStatus(
       if( wsFlags & WHERE_INDEXED ){
         sqlite3VdbeScanStatusRange(v, addrExplain, -1, pLvl->iIdxCur);
       }
+    }else{
+      int addr = pSrclist->a[pLvl->iFrom].addrFillSub;
+      VdbeOp *pOp = sqlite3VdbeGetOp(v, addr-1);
+      assert( sqlite3VdbeDb(v)->mallocFailed || pOp->opcode==OP_InitCoroutine );
+      assert( sqlite3VdbeDb(v)->mallocFailed || pOp->p2>addr );
+      sqlite3VdbeScanStatusRange(v, addrExplain, addr, pOp->p2-1);
     }
   }
 }

@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\ssqlite3_stmt_scanstatus_v2()\sprofiling\sof\sGROUP\sBY\sclauses\sthat\suse\sa\stemp\sb-tree.
-D 2023-06-30T17:14:36.762
+C Improve\ssupport\sfor\ssqlite3_stmt_scanstatus_v2()\sprofiling\sof\ssub-queries\simplemented\sas\sco-routines.
+D 2023-06-30T18:23:53.159
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -724,7 +724,7 @@ F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 2dc708cf8b6a691fb79f16bbc46567497ee6f991043318d421e294b2da114d93
 F src/whereInt.h c7d19902863beadec1d04e66aca39c0bcd60b74f05f0eaa7422c7005dfc5d51a
-F src/wherecode.c bff0bc56cb1a382de266c2db3a691135c18a4360b6ad5e069e5c415d57eb0c38
+F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
 F src/window.c b7ad9cff3ce8ae6f8cc25e18e1a258426cb6bd2999aace6f5248d781b2a74098
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
@@ -1425,7 +1425,7 @@ F test/savepoint6.test f41279c5e137139fa5c21485773332c7adb98cd7
 F test/savepoint7.test cde525ea3075283eb950cdcdefe23ead4f700daa
 F test/savepointfault.test f044eac64b59f09746c7020ee261734de82bf9b2
 F test/scanstatus.test b249328caf4d317e71058006872b8012598a5fa045b30bf24a81eeff650ab49e
-F test/scanstatus2.test 97ebdac082f9d313aaf0f8ff25d4ea0552b2c2928c00006f12858d72157b927c
+F test/scanstatus2.test d0434bc3b356fb9d948f3417846b2ed5bbc4bd4cc49bddb38ac86469f754bfb0
 F test/schema.test 5dd11c96ba64744de955315d2e4f8992e447533690153b93377dffb2a5ef5431
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/schema3.test 8ed4ae66e082cdd8b1b1f22d8549e1e7a0db4527a8e6ee8b6193053ee1e5c9ce
@@ -2041,11 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f936f101406069b29218c89a36581b4497226fb61906782ea368f12d943c901c
-R 67483c89b8d8a571047f048e0b9782e8
-T *branch * scanstatus-exp
-T *sym-scanstatus-exp *
-T -sym-trunk *
+P 796eadcc50e7ea9ec348b1f7e2d6a5a3de78c675a07f665078309e6d81479e7d
+R 4da01a7efae23c104b98c2eba70ec2ef
 U dan
-Z aa893d30c01b934263e5d84c28eae25f
+Z e1e8646809ad68f9453d46be315451b3
 # Remove this line to create a well-formed Fossil manifest.
