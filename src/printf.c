@@ -516,7 +516,7 @@ void sqlite3_str_vappendf(
           break;
         }
         if( flag_prefix ){
-          prefix = flag_prefix;
+          prefix = s.sign;
         }else if( s.sign=='-' ){
           prefix = '-';
         }else{
