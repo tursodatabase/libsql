@@ -1,7 +1,29 @@
 use std::env;
 use std::path::PathBuf;
 
+fn maybe_link() {
+    println!("cargo:rerun-if-env-changed=LIBSQL_LIB_DIR");
+    println!("cargo:rerun-if-env-changed=LIBSQL_STATIC_LIB_DIR");
+    println!("cargo:rerun-if-env-changed=LIBSQL_DYNAMIC_LIB_DIR");
+
+    if let Ok(dir) = env::var("LIBSQL_STATIC_LIB_DIR") {
+        println!("cargo:rustc-link-search={dir}");
+        println!("cargo:rustc-link-lib=static=libsql");
+    } else if let Ok(dir) = env::var("LIBSQL_DYNAMIC_LIB_DIR") {
+        println!("cargo:rustc-link-search={dir}");
+        println!("cargo:rustc-link-lib=dylib=libsql");
+    } else if let Ok(dir) = env::var("LIBSQL_LIB_DIR") {
+        println!("cargo:rustc-link-search={dir}");
+        println!("cargo:rustc-link-lib=libsql");
+    } else {
+        println!("cargo:warning=not linking libSQL: set LIBSQL_LIB_DIR, LIBSQL_STATIC_LIB_DIR or LIBSQL_DYNAMIC_LIB_DIR to link automatically");
+    }
+}
+
 fn main() {
+    maybe_link();
+
+    println!("cargo:rerun-if-env-changed=LIBSQL_SRC_DIR");
     let src_dir = match env::var("LIBSQL_SRC_DIR") {
         Ok(dir) => PathBuf::from(dir),
         Err(_) => {
