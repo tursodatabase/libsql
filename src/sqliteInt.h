@@ -5037,14 +5037,6 @@ int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);
 int sqlite3FixTriggerStep(DbFixer*, TriggerStep*);
 
-
-/* Representation of an extended precision floating point value.
-** The actual value is the sum r and rr.  See the dbldbl.c file.
-*/
-void sqlite3DDFromInt(i64,double*);
-void sqlite3DDAdd(double,double,double,double,double*);
-void sqlite3DDSub(double,double,double,double,double*);
-
 int sqlite3RealSameAsInt(double,sqlite3_int64);
 i64 sqlite3RealToI64(double);
 int sqlite3Int64ToText(i64,char*);

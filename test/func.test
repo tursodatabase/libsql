@@ -862,30 +862,13 @@ do_test func-18.11 {
   }
 } integer
 ifcapable floatingpoint {
-  do_test func-18.12 {
-    catchsql {
-      INSERT INTO t6 VALUES(1<<62);
-      SELECT sum(x) - ((1<<62)*2.0+1) from t6;
-    }
+  do_catchsql_test func-18.12 {
+    INSERT INTO t6 VALUES(1<<62);
+    SELECT sum(x) - ((1<<62)*2.0+1) from t6;
   } {1 {integer overflow}}
-  do_test func-18.13 {
-    execsql {
-      SELECT total(x) - ((1<<62)*2.0+1) FROM t6
-    }
-  } 0.0
-}
-ifcapable !floatingpoint {
-  do_test func-18.12 {
-    catchsql {
-      INSERT INTO t6 VALUES(1<<62);
-      SELECT sum(x) - ((1<<62)*2+1) from t6;
-    }
-  } {1 {integer overflow}}
-  do_test func-18.13 {
-    execsql {
-      SELECT total(x) - ((1<<62)*2+1) FROM t6
-    }
-  } 0.0
+  do_catchsql_test func-18.13 {
+    SELECT total(x) - ((1<<62)*2.0+1) FROM t6
+  } {0 0.0}
 }
 if {[working_64bit_int]} {
   do_test func-18.14 {
@@ -910,7 +893,7 @@ if {[working_64bit_int]} {
          (SELECT 9223372036854775807 AS x UNION ALL
           SELECT -10 AS x);
     }
-  } {1 {integer overflow}}
+  } {0 9223372036854775797}
   do_test func-18.17 {
     catchsql {
       SELECT sum(x) FROM 
@@ -1547,11 +1530,11 @@ do_execsql_test func-36.110 {
 # Enhanced precision of SUM().
 #
 reset_db
-do_execsql_test func-37.100 {
+do_catchsql_test func-37.100 {
   WITH c(x) AS (VALUES(9223372036854775807),(9223372036854775807),
                       (123),(-9223372036854775807),(-9223372036854775807))
   SELECT sum(x) FROM c;
-} {123}
+} {1 {integer overflow}}
 do_catchsql_test func-37.110 {
   WITH c(x) AS (VALUES(9223372036854775807),(1))
   SELECT sum(x) FROM c;
