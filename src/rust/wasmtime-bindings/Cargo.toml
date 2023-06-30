@@ -1,6 +1,6 @@
 [package]
 name = "libsql-wasmtime-bindings"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license = "Apache-2.0"
 description = "Wasmtime bindings for libSQL user-defined functions"
@@ -9,8 +9,8 @@ keywords = ["libSQL", "Wasmtime", "Wasm", "WebAssembly", "SQLite"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-wasmtime = "3.0"
-wasmtime-wasi = "3.0"
+wasmtime = "9.0"
+wasmtime-wasi = "9.0"
 
 [lib]
 name = "libsql_wasm"
