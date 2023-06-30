@@ -3332,17 +3332,11 @@ static int scanStatsHeight(sqlite3_stmt *p, int iEntry){
 }
 #endif
 
-/*
-** Display scan stats.
-*/
-static void display_scanstats(
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+static void display_explain_scanstats(
   sqlite3 *db,                    /* Database to query */
   ShellState *pArg                /* Pointer to ShellState */
 ){
-#ifndef SQLITE_ENABLE_STMT_SCANSTATUS
-  UNUSED_PARAMETER(db);
-  UNUSED_PARAMETER(pArg);
-#else
   static const int f = SQLITE_SCANSTAT_COMPLEX;
   sqlite3_stmt *p = pArg->pStmt;
   int ii = 0;
@@ -3414,6 +3408,37 @@ static void display_scanstats(
   }
 
   eqp_render(pArg, nTotal);
+}
+#endif
+
+static void exec_prepared_stmt(ShellState*, sqlite3_stmt*);
+
+/*
+** Display scan stats.
+*/
+static void display_scanstats(
+  sqlite3 *db,                    /* Database to query */
+  ShellState *pArg                /* Pointer to ShellState */
+){
+#ifndef SQLITE_ENABLE_STMT_SCANSTATUS
+  UNUSED_PARAMETER(db);
+  UNUSED_PARAMETER(pArg);
+#else
+  if( pArg->scanstatsOn==3 ){
+    int rc = SQLITE_OK;
+    sqlite3_stmt *pStmt = 0;
+    rc = sqlite3_prepare_v2(db, "SELECT * FROM bytecode(?)", -1, &pStmt, 0);
+    if( rc==SQLITE_OK ){
+      sqlite3_stmt *pSave = pArg->pStmt;
+      pArg->pStmt = pStmt;
+      sqlite3_bind_pointer(pStmt, 1, pSave, "stmt-pointer", 0);
+      exec_prepared_stmt(pArg, pStmt);
+      sqlite3_finalize(pStmt);
+      pArg->pStmt = pSave;
+    }
+  }else{
+    display_explain_scanstats(db, pArg);
+  }
 #endif
 }
 
@@ -9933,6 +9958,9 @@ static int do_meta_command(char *zLine, ShellState *p){
 
   if( c=='s' && cli_strncmp(azArg[0], "scanstats", n)==0 ){
     if( nArg==2 ){
+      if( cli_strcmp(azArg[1], "vm")==0 ){
+        p->scanstatsOn = 3;
+      }else
       if( cli_strcmp(azArg[1], "est")==0 ){
         p->scanstatsOn = 2;
       }else{

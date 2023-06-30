@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\sprevious\scommit\son\sthis\sbranch.
-D 2023-06-30T19:13:27.228
+C Add\sexperimental\s".scanstats\svm"\scommand\sto\sthe\sshell\stool.
+D 2023-06-30T19:14:35.552
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -638,7 +638,7 @@ F src/random.c 606b00941a1d7dd09c381d3279a058d771f406c5213c9932bbd93d5587be4b9c
 F src/resolve.c 37953a5f36c60bea413c3c04efcd433b6177009f508ef2ace0494728912fe2e9
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c 3ab1186290a311a8ceed1286c0e286209f7fe97b2d02c7593258004ce295dd88
-F src/shell.c.in 2c02c819349de410d63fcc0217763dfe5a42dbe58f2d68046d4ea8a376d12c26
+F src/shell.c.in 6266eac6a51f1b931d72b3ea95b9f688f390cad7b43bbdb465f216b39eaaa0d3
 F src/sqlite.h.in 3076d78836b6dac53b3ab0875fc8fd15bca8077aad4d33c85336e05af6aef8c7
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h da473ce2b3d0ae407a6300c4a164589b9a6bfdbec9462688a8593ff16f3bb6e4
@@ -2041,8 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f7b163a319bee9e935a4abf0bd87e16c9974cba5ae75b0cbba63c9da168f2006
-R 24e32cd4f6a370917cd11359ca963cf5
+P 47c11ca90f98ffc4d91f07e2ab35826a604a2c903008eeddf8b814bb984971f2
+R 1fc4f436f0d8b18e387b07b97d0465bf
 U dan
-Z dd437f2b1d92b46f41dc47026405c30b
+Z 39b6ffde042c1822fbacb7543ed0038f
 # Remove this line to create a well-formed Fossil manifest.
