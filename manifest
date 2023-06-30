@@ -1,5 +1,5 @@
-C Add\sthe\s"nexec"\sand\s"ncycle"\scolumns\sto\sthe\sbytecode\svirtual\stable.\sFor\saccessing\scounters\scollected\swhen\sSQLITE_DBCONFIG_STMT_SCANSTATUS\sis\senabled.
-D 2023-06-30T18:59:10.790
+C Fix\san\serror\sin\sthe\sprevious\scommit\son\sthis\sbranch.
+D 2023-06-30T19:13:27.228
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -716,7 +716,7 @@ F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2c
 F src/vdbemem.c aed58a560caab12540f7c14c43ee188636017814e21247a97902f78de2d43117
 F src/vdbesort.c 0d40dca073c94e158ead752ef4225f4fee22dee84145e8c00ca2309afb489015
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
-F src/vdbevtab.c c3085edc48b123ca1c30d478f2a7cb326b5e4c2960b65ca8f0f0d6ebf497140a
+F src/vdbevtab.c 57fa8f56478e5b5cb558cb425e7878515e0a105c54f96f1d1bbf4b9433529254
 F src/vtab.c 1ecf8c3745d29275688d583e12822fa984d421e0286b5ef50c137bc3bf6d7a64
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c cbfeeb7415baa545efa244dd34bb5af4ae953a206fed720c6fa7f1ef763ec122
@@ -2041,11 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7afad1f759f7ceda873c6d869422fd56fe4399c2d24d47ad9bc3b84b06d830d1
-R 4dba3e78e9c48b15e9dce867cfd3b67a
-T *branch * scanstatus-exp
-T *sym-scanstatus-exp *
-T -sym-trunk *
+P f7b163a319bee9e935a4abf0bd87e16c9974cba5ae75b0cbba63c9da168f2006
+R 24e32cd4f6a370917cd11359ca963cf5
 U dan
-Z 262a3b7e30cd989cb3c51edc832f13b0
+Z dd437f2b1d92b46f41dc47026405c30b
 # Remove this line to create a well-formed Fossil manifest.
