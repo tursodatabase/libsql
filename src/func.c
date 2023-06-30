@@ -2371,6 +2371,23 @@ static void signFunc(
   sqlite3_result_int(context, x<0.0 ? -1 : x>0.0 ? +1 : 0);
 }
 
+
+#if 1 /* Temporary prototyping logic */
+static void fpdecodeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  double r = sqlite3_value_double(argv[0]);
+  FpDecode s;
+  char zBuf[50];
+  UNUSED_PARAMETER(argc);
+  sqlite3FpDecode(&s, r);
+  sqlite3_snprintf(sizeof(zBuf), zBuf, "%c%.*s/%d", s.sign, s.n, s.z, s.iDP);
+  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+}
+#endif /* Temporary prototyping logic */
+
 /*
 ** All of the FuncDef structures in the aBuiltinFunc[] array above
 ** to the global function hash table.  This occurs at start-time (as
@@ -2442,6 +2459,11 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
+
+#if 1  /* Temporary prototyping function */
+    FUNCTION(fpdecode,           1, 0, 0, fpdecodeFunc     ),
+#endif
+  
 #ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
     FUNCTION(round,              2, 0, 0, roundFunc        ),

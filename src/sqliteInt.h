@@ -1239,6 +1239,7 @@ typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
 typedef struct FKey FKey;
+typedef struct FpDecode FpDecode;
 typedef struct FuncDestructor FuncDestructor;
 typedef struct FuncDef FuncDef;
 typedef struct FuncDefHash FuncDefHash;
@@ -4597,6 +4598,20 @@ struct PrintfArguments {
   sqlite3_value **apArg;   /* The argument values */
 };
 
+/*
+** An instance of this object receives the decoding of a floating point
+** value into an approximate decimal representation.
+*/
+struct FpDecode {
+  char sign;           /* '+' or '-' */
+  char isNan;          /* True if not-a-number */
+  char isInf;          /* True if infinity */
+  int n;               /* Significant digits in the decode */
+  int iDP;             /* Location of the decimal point */
+  char z[24];          /* Significiant digits */
+};
+
+void sqlite3FpDecode(FpDecode*,double);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
