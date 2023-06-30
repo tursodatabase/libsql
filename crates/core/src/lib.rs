@@ -54,7 +54,14 @@ impl Connection {
         }
     }
 
-    pub fn execute<S: Into<String>>(&self, sql: S) -> ResultSet {
+    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<ResultSet> {
+        // TODO: optimize by avoiding future allocation
+        let mut rs = self.execute_async(sql.into());
+        rs.wait()?;
+        Ok(rs)
+    }
+
+    pub fn execute_async<S: Into<String>>(&self, sql: S) -> ResultSet {
         ResultSet { raw: self.raw, sql: sql.into() }
     }
 }
