@@ -23,7 +23,7 @@ impl libsql_database_t {
         &unsafe { &*(self.ptr) }.db
     }
 
-    #[allow(clippy::mut_from_t)]
+    #[allow(clippy::mut_from_ref)]
     pub fn get_ref_mut(&self) -> &mut libsql_core::Database {
         let ptr_mut = self.ptr as *mut libsql_database;
         &mut unsafe { &mut (*ptr_mut) }.db
@@ -69,7 +69,7 @@ impl libsql_connection_t {
         &unsafe { &*(self.ptr) }.conn
     }
 
-    #[allow(clippy::mut_from_t)]
+    #[allow(clippy::mut_from_ref)]
     pub fn get_ref_mut(&self) -> &mut libsql_core::Connection {
         let ptr_mut = self.ptr as *mut libsql_connection;
         &mut unsafe { &mut (*ptr_mut) }.conn
@@ -115,7 +115,7 @@ impl libsql_result_t {
         &unsafe { &*(self.ptr) }.result
     }
 
-    #[allow(clippy::mut_from_t)]
+    #[allow(clippy::mut_from_ref)]
     pub fn get_ref_mut(&self) -> &mut libsql_core::ResultSet {
         let ptr_mut = self.ptr as *mut libsql_result;
         &mut unsafe { &mut (*ptr_mut) }.result

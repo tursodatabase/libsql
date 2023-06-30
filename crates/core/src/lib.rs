@@ -38,7 +38,7 @@ impl Connection {
         match err {
             sqlite3_sys::SQLITE_OK => {}
             _ => {
-                return Err(Error::ConnectionFailed(url.clone()));
+                return Err(Error::ConnectionFailed(url));
             }
         }
         Ok(Connection { raw })
@@ -65,7 +65,7 @@ impl futures::Future for ResultSet {
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
-        cx: &mut std::task::Context<'_>,
+        _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let err = unsafe {
             sqlite3_sys::sqlite3_exec(
@@ -90,7 +90,7 @@ impl futures::Future for ResultSet {
 
 impl ResultSet {
     pub fn wait(&mut self) -> Result<()> {
-        Ok(futures::executor::block_on(self)?)
+        futures::executor::block_on(self)
     }
 
     pub fn row_count(&self) -> i32 {

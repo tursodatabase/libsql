@@ -1,3 +1,4 @@
+#![allow(clippy::missing_safety_doc)]
 #![allow(non_camel_case_types)]
 
 mod errors;
@@ -35,7 +36,7 @@ pub unsafe extern "C" fn libsql_close(db: libsql_database_t) {
 #[no_mangle]
 pub unsafe extern "C" fn libsql_connect(db: libsql_database_t) -> libsql_connection_t {
     let db = db.get_ref();
-    let conn = match libsql_core::Connection::connect(&db) {
+    let conn = match libsql_core::Connection::connect(db) {
         Ok(conn) => conn,
         Err(err) => {
             println!("error: {}", err);
@@ -84,7 +85,8 @@ pub unsafe extern "C" fn libsql_free_result(res: libsql_result_t) {
     if res.is_null() {
         return;
     }
-    let _ = unsafe { Box::from_raw(res.get_ref_mut()) };
+    let mut res = unsafe { Box::from_raw(res.get_ref_mut()) };
+    res.wait().unwrap();
 }
 
 #[no_mangle]

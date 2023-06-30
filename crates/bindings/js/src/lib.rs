@@ -10,7 +10,7 @@ impl Database {
         Database {}
     }
 
-    pub fn all(&self, sql: String, f: &js_sys::Function) {
+    pub fn all(&self, _sql: String, f: &js_sys::Function) {
         let this = JsValue::null();
         let _ = f.call0(&this);
     }
