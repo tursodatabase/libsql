@@ -1,6 +1,7 @@
 pub mod errors;
 
 use errors::Error;
+use std::ffi::c_int;
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -21,7 +22,7 @@ impl Database {
 }
 
 pub struct Connection {
-    raw: *mut sqlite3_sys::sqlite3,
+    raw: *mut libsql_sys::sqlite3,
 }
 
 unsafe impl Send for Connection {} // TODO: is this safe?
@@ -32,15 +33,16 @@ impl Connection {
         let url = db.url.clone();
         let err = unsafe {
             // FIXME: switch to libsql_sys
-            sqlite3_sys::sqlite3_open_v2(
+            libsql_sys::sqlite3_open_v2(
                 url.as_ptr() as *const i8,
                 &mut raw,
-                sqlite3_sys::SQLITE_OPEN_READWRITE | sqlite3_sys::SQLITE_OPEN_CREATE,
+                libsql_sys::SQLITE_OPEN_READWRITE as c_int
+                    | libsql_sys::SQLITE_OPEN_CREATE as c_int,
                 std::ptr::null(),
             )
         };
-        match err {
-            sqlite3_sys::SQLITE_OK => {}
+        match err as u32 {
+            libsql_sys::SQLITE_OK => {}
             _ => {
                 return Err(Error::ConnectionFailed(url));
             }
@@ -50,7 +52,7 @@ impl Connection {
 
     pub fn disconnect(&self) {
         unsafe {
-            sqlite3_sys::sqlite3_close_v2(self.raw);
+            libsql_sys::sqlite3_close_v2(self.raw);
         }
     }
 
@@ -62,12 +64,15 @@ impl Connection {
     }
 
     pub fn execute_async<S: Into<String>>(&self, sql: S) -> ResultSet {
-        ResultSet { raw: self.raw, sql: sql.into() }
+        ResultSet {
+            raw: self.raw,
+            sql: sql.into(),
+        }
     }
 }
 
 pub struct ResultSet {
-    raw: *mut sqlite3_sys::sqlite3,
+    raw: *mut libsql_sys::sqlite3,
     sql: String,
 }
 
@@ -79,7 +84,7 @@ impl futures::Future for ResultSet {
         _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let err = unsafe {
-            sqlite3_sys::sqlite3_exec(
+            libsql_sys::sqlite3_exec(
                 self.raw,
                 self.sql.as_ptr() as *const i8,
                 None,
@@ -87,8 +92,8 @@ impl futures::Future for ResultSet {
                 std::ptr::null_mut(),
             )
         };
-        let ret = match err {
-            sqlite3_sys::SQLITE_OK => Ok(()),
+        let ret = match err as u32 {
+            libsql_sys::SQLITE_OK => Ok(()),
             _ => Err(Error::QueryFailed(self.sql.clone())),
         };
         std::task::Poll::Ready(ret)

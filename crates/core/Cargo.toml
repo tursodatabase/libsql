@@ -5,5 +5,5 @@ edition = "2021"
 
 [dependencies]
 futures = "0.3.28"
-sqlite3-sys = "0.15.2"
+libsql-sys = "0.1.1"
 thiserror = "1.0.40"
