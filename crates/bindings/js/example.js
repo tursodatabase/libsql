@@ -1,4 +1,4 @@
-var libsql = require('./pkg');
+var libsql = require('.');
 
 var db = new libsql.Database(':memory:');
 

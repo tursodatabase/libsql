@@ -1,17 +1,28 @@
-use wasm_bindgen::prelude::*;
+use libsql_core;
+use neon::prelude::*;
 
-#[wasm_bindgen]
-pub struct Database {}
+struct Database {
+    _db: libsql_core::Database,
+}
 
-#[wasm_bindgen]
+impl Finalize for Database {}
+
 impl Database {
-    #[wasm_bindgen(constructor)]
-    pub fn new() -> Database {
-        Database {}
+    fn new(db: libsql_core::Database) -> Self {
+        Database { _db: db }
     }
 
-    pub fn all(&self, _sql: String, f: &js_sys::Function) {
-        let this = JsValue::null();
-        let _ = f.call0(&this);
+    fn js_new(mut cx: FunctionContext) -> JsResult<JsBox<Database>> {
+        let url = cx.argument::<JsString>(0)?.value(&mut cx);
+        let db = libsql_core::Database::open(url);
+        let db = Database::new(db);
+        Ok(cx.boxed(db))
     }
+
+}
+
+#[neon::main]
+fn main(mut cx: ModuleContext) -> NeonResult<()> {
+    cx.export_function("databaseNew", Database::js_new)?;
+    Ok(())
 }

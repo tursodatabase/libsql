@@ -2,7 +2,7 @@
 
 ## Developing
 
-```
-wasm-pack build --target nodejs
-node example.js
+```sh
+$ npm install
+$ node example.js
 ```

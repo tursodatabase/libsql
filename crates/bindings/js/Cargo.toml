@@ -1,11 +1,17 @@
 [package]
 name = "libsql-js"
 version = "0.1.0"
-edition = "2021"
+license = "ISC"
+edition = "2018"
+exclude = ["index.node"]
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-js-sys = "0.3.64"
-wasm-bindgen = "0.2"
+libsql_core = { path = "../../core" }
+
+[dependencies.neon]
+version = "0.10"
+default-features = false
+features = ["napi-6"]
