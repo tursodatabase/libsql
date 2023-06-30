@@ -1,5 +1,5 @@
-C Completely\sunwind\sthe\senhanced\sprecision\ssum()\sfrom\s[a915f15a916af698]\sso\nas\snot\sto\soffend\sUBSAN\sand\sOSS-Fuzz.
-D 2023-06-30T14:01:09.017
+C Add\sextra\sdebugging\scode\sfor\ssqlite3_stmt_scanstatus_v2()\sto\stest1.c.
+D 2023-06-30T16:16:51.838
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -647,7 +647,7 @@ F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ecbc3c99c0d0c3ed122a913f143026c26d38d57f33e06bb71185dd5c1efe37cd
-F src/test1.c e6ab4a00671f052366a01bcb7fdf2e2f6bb4aa884cd01e738c5590dcf47a99ca
+F src/test1.c 64b8462099618a6243f63ba701eea8913046cd7377a7a77a7e3a0ada42219275
 F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
 F src/test3.c e5178558c41ff53236ae0271e9acb3d6885a94981d2eb939536ee6474598840e
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
@@ -2041,8 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 625820e8ebfdcf513c81b1b632bbe2aa882a8fbba52001113dc6f56270fa5ceb
-R 1a82418c3ef4ddd94ec77caee044b5a7
-U drh
-Z aca079c870f1ae7b8c8d668c5fe69525
+P 85be05b66ef975f02a3e7b2984bcab97d9280c7f3b6ee1e16718de549f240d46
+R 433a85e7cf1b4578b68ff0f431f95f42
+U dan
+Z 30a28df351ab36975e3c1ccdb855302c
 # Remove this line to create a well-formed Fossil manifest.

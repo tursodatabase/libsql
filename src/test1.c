@@ -2216,6 +2216,7 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
   int flags = 0;
   int iSelectId = 0;
   int iParentId = 0;
+  int bDebug = 0;
 
   if( objc==5 ){
     struct Flag {
@@ -2223,6 +2224,7 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
       int flag;
     } aTbl[] = {
       {"complex", SQLITE_SCANSTAT_COMPLEX},
+      {"debug", -1},
       {0, 0}
     };
 
@@ -2239,7 +2241,11 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
           interp, aFlag[ii], aTbl, sizeof(aTbl[0]), "flag", 0, &iVal
       );
       if( res ) return TCL_ERROR;
-      flags |= aTbl[iVal].flag;
+      if( aTbl[iVal].flag==-1 ){
+        bDebug = 1;
+      }else{
+        flags |= aTbl[iVal].flag;
+      }
     }
   }
 
@@ -2250,6 +2256,13 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
   if( getStmtPointer(interp, Tcl_GetString(objv[objc-2]), &pStmt) 
    || Tcl_GetIntFromObj(interp, objv[objc-1], &idx)
   ){
+    return TCL_ERROR;
+  }
+
+  if( bDebug && 0==(flags & SQLITE_SCANSTAT_COMPLEX) ){
+    Tcl_SetObjResult(interp, 
+        Tcl_NewStringObj("may not specify debug without complex", -1)
+    );
     return TCL_ERROR;
   }
 
@@ -2299,6 +2312,36 @@ static int SQLITE_TCLAPI test_stmt_scanstatus(
           pStmt, idx, SQLITE_SCANSTAT_NCYCLE, flags, (void*)&nCycle);
       Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("nCycle", -1));
       Tcl_ListObjAppendElement(0, pRet, Tcl_NewWideIntObj(nCycle));
+
+      if( bDebug ){
+        int ii;
+        ScanStatus *pScan = &((Vdbe*)pStmt)->aScan[idx];
+        Tcl_Obj *pRange = Tcl_NewObj();
+        Tcl_Obj *pCsr = Tcl_NewObj();
+
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("debug_loop", -1));
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(pScan->addrLoop));
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("debug_visit", -1));
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(pScan->addrVisit));
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("debug_explain",-1));
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(pScan->addrExplain));
+        for(ii=0; ii<ArraySize(pScan->aAddrRange)/2; ii++){
+          int iStart = pScan->aAddrRange[ii*2];
+          int iEnd = pScan->aAddrRange[ii*2+1];
+          if( iStart>0 ){
+            Tcl_ListObjAppendElement(0, pRange, Tcl_NewIntObj(iStart));
+            Tcl_ListObjAppendElement(0, pRange, Tcl_NewIntObj(iEnd));
+          }else if( iStart<0 ){
+            Tcl_ListObjAppendElement(0, pCsr, Tcl_NewIntObj(iEnd));
+          }
+        }
+
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("debug_range", -1));
+        Tcl_ListObjAppendElement(0, pRet, pRange);
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("debug_csr", -1));
+        Tcl_ListObjAppendElement(0, pRet, pCsr);
+      }
+
       Tcl_SetObjResult(interp, pRet);
     }else{
       Tcl_ResetResult(interp);
