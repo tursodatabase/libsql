@@ -18,7 +18,6 @@ impl Database {
         let db = Database::new(db);
         Ok(cx.boxed(db))
     }
-
 }
 
 #[neon::main]

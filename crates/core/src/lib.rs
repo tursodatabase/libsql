@@ -9,11 +9,15 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn open(url: String) -> Database {
-        Database { url }
+    pub fn open<S: Into<String>>(url: S) -> Database {
+        Database { url: url.into() }
     }
 
     pub fn close(&self) {}
+
+    pub fn connect(&self) -> Result<Connection> {
+        Connection::connect(self)
+    }
 }
 
 pub struct Connection {
@@ -23,7 +27,7 @@ pub struct Connection {
 unsafe impl Send for Connection {} // TODO: is this safe?
 
 impl Connection {
-    pub fn connect(db: &Database) -> Result<Connection> {
+    pub(crate) fn connect(db: &Database) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
         let url = db.url.clone();
         let err = unsafe {
@@ -77,12 +81,8 @@ impl futures::Future for ResultSet {
             )
         };
         let ret = match err {
-            sqlite3_sys::SQLITE_OK => {
-                Ok(())
-            }
-            _ => {
-                Err(Error::QueryFailed(self.sql.clone()))
-            }
+            sqlite3_sys::SQLITE_OK => Ok(()),
+            _ => Err(Error::QueryFailed(self.sql.clone())),
         };
         std::task::Poll::Ready(ret)
     }

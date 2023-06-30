@@ -36,7 +36,7 @@ pub unsafe extern "C" fn libsql_close(db: libsql_database_t) {
 #[no_mangle]
 pub unsafe extern "C" fn libsql_connect(db: libsql_database_t) -> libsql_connection_t {
     let db = db.get_ref();
-    let conn = match libsql_core::Connection::connect(db) {
+    let conn = match db.connect() {
         Ok(conn) => conn,
         Err(err) => {
             println!("error: {}", err);
