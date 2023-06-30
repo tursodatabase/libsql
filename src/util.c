@@ -949,6 +949,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound){
     p->n = 1;
     p->iDP = 1;
     p->z[0] = '0';
+    p->isNan = 0;
+    p->isInf = 0;
     return;
   }else{
     p->sign = '+';
@@ -973,6 +975,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound){
     p->iDP = 3;
     return;
   }
+  p->isNan = p->isInf = 0;
+
   /* At this point, r is positive (non-zero) and is not Inf or NaN.
   ** The strategy is to multiple or divide r by powers of 10 until
   ** it is in between 1.0e+17 and 1.0e+19.  Then convert r into
