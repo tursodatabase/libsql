@@ -8009,9 +8009,13 @@ int sqlite3Select(
         int nCol;
         int nGroupBy;
 
-        explainTempTable(pParse,
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+        int addrExp;              /* Address of OP_Explain instruction */
+#endif
+        ExplainQueryPlan2(addrExp, (pParse, 0, "USE TEMP B-TREE FOR %s",
             (sDistinct.isTnct && (p->selFlags&SF_Distinct)==0) ?
-                    "DISTINCT" : "GROUP BY");
+                    "DISTINCT" : "GROUP BY"
+        ));
 
         groupBySort = 1;
         nGroupBy = pGroupBy->nExpr;
@@ -8036,18 +8040,23 @@ int sqlite3Select(
         }
         pAggInfo->directMode = 0;
         regRecord = sqlite3GetTempReg(pParse);
+        sqlite3VdbeScanStatusCounters(v, addrExp, 0, sqlite3VdbeCurrentAddr(v));
         sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regRecord);
         sqlite3VdbeAddOp2(v, OP_SorterInsert, pAggInfo->sortingIdx, regRecord);
+        sqlite3VdbeScanStatusRange(v, addrExp, sqlite3VdbeCurrentAddr(v)-2, -1);
         sqlite3ReleaseTempReg(pParse, regRecord);
         sqlite3ReleaseTempRange(pParse, regBase, nCol);
         TREETRACE(0x2,pParse,p,("WhereEnd\n"));
         sqlite3WhereEnd(pWInfo);
         pAggInfo->sortingIdxPTab = sortPTab = pParse->nTab++;
         sortOut = sqlite3GetTempReg(pParse);
+        sqlite3VdbeScanStatusCounters(v, addrExp, sqlite3VdbeCurrentAddr(v), 0);
         sqlite3VdbeAddOp3(v, OP_OpenPseudo, sortPTab, sortOut, nCol);
         sqlite3VdbeAddOp2(v, OP_SorterSort, pAggInfo->sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort")); VdbeCoverage(v);
         pAggInfo->useSortingIdx = 1;
+        sqlite3VdbeScanStatusRange(v, addrExp, -1, sortPTab);
+        sqlite3VdbeScanStatusRange(v, addrExp, -1, pAggInfo->sortingIdx);
       }
 
       /* If there are entries in pAgggInfo->aFunc[] that contain subexpressions

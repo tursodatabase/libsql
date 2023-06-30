@@ -5851,7 +5851,7 @@ case OP_SorterCompare: {
 ** parameter P3.  Clearing the P3 column cache as part of this opcode saves
 ** us from having to issue a separate NullRow instruction to clear that cache.
 */
-case OP_SorterData: {
+case OP_SorterData: {       /* ncycle */
   VdbeCursor *pC;
 
   pOut = &aMem[pOp->p2];
@@ -6126,8 +6126,8 @@ case OP_IfSmaller: {        /* jump */
 ** regression tests can determine whether or not the optimizer is
 ** correctly optimizing out sorts.
 */
-case OP_SorterSort:    /* jump */
-case OP_Sort: {        /* jump */
+case OP_SorterSort:    /* jump ncycle */
+case OP_Sort: {        /* jump ncycle */
 #ifdef SQLITE_TEST
   sqlite3_sort_count++;
   sqlite3_search_count--;
