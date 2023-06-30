@@ -1,5 +1,5 @@
-C Make\sthe\ssum()\sfunction\sless\sprecise\sand\sslower\sin\sorder\sto\savoid\nharmless\ssigned\sinteger\soverflow\sUBSAN\swarnings\sfrom\sOSS-Fuzz.
-D 2023-06-30T11:51:36.400
+C Omit\sthe\sdoubleToReal()\sfunction\sin\svdbemem.c.\s\sUse\sthe\nequivalent\ssqlite3RealToI64()\sfunction\sin\sits\splace.
+D 2023-06-30T12:59:06.847
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -713,7 +713,7 @@ F src/vdbeInt.h 7bd49eef8f89c1a271fbf12d80a206bf56c876814c5fc6bee340f4e1907095ae
 F src/vdbeapi.c de9703f8705afc393cc2864669ce28cf9516983c8331d59aa2b978de01634365
 F src/vdbeaux.c 4d5e68a3850d0b193a692eca6442d7afe35252aaf29728a67adcb542ecabd9ce
 F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2ce
-F src/vdbemem.c 710119a8e35e47813681c48703d65a80ba22792192de90bc51dc0d6366f2a79e
+F src/vdbemem.c aed58a560caab12540f7c14c43ee188636017814e21247a97902f78de2d43117
 F src/vdbesort.c 0d40dca073c94e158ead752ef4225f4fee22dee84145e8c00ca2309afb489015
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -2041,8 +2041,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5124481663eb8e74a9f861be98adb7075ea911fcff0216d98c658e955acadf14
-R 77794eb101d1ce0bdf15ea60fb4ced31
+P 1be0646a2c352dbf03d2af87fd48b6f9edfd68666790ac6863144ac95f3e0621
+R 433d7f96031a2f928de4e9c58b9e4bd0
 U drh
-Z b3abc59caff200e4a3d3dc249d24e32e
+Z f4a55ebc41939ba1135c9f87891a74c4
 # Remove this line to create a well-formed Fossil manifest.

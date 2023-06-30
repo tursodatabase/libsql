@@ -576,36 +576,6 @@ void sqlite3VdbeMemReleaseMalloc(Mem *p){
 }
 
 /*
-** Convert a 64-bit IEEE double into a 64-bit signed integer.
-** If the double is out of range of a 64-bit signed integer then
-** return the closest available 64-bit signed integer.
-*/
-static SQLITE_NOINLINE i64 doubleToInt64(double r){
-#ifdef SQLITE_OMIT_FLOATING_POINT
-  /* When floating-point is omitted, double and int64 are the same thing */
-  return r;
-#else
-  /*
-  ** Many compilers we encounter do not define constants for the
-  ** minimum and maximum 64-bit integers, or they define them
-  ** inconsistently.  And many do not understand the "LL" notation.
-  ** So we define our own static constants here using nothing
-  ** larger than a 32-bit integer constant.
-  */
-  static const i64 maxInt = LARGEST_INT64;
-  static const i64 minInt = SMALLEST_INT64;
-
-  if( r<=(double)minInt ){
-    return minInt;
-  }else if( r>=(double)maxInt ){
-    return maxInt;
-  }else{
-    return (i64)r;
-  }
-#endif
-}
-
-/*
 ** Return some kind of integer value which is the best we can do
 ** at representing the value that *pMem describes as an integer.
 ** If pMem is an integer, then the value is exact.  If pMem is
@@ -631,7 +601,7 @@ i64 sqlite3VdbeIntValue(const Mem *pMem){
     testcase( flags & MEM_IntReal );
     return pMem->u.i;
   }else if( flags & MEM_Real ){
-    return doubleToInt64(pMem->u.r);
+    return sqlite3RealToI64(pMem->u.r);
   }else if( (flags & (MEM_Str|MEM_Blob))!=0 && pMem->z!=0 ){
     return memIntValue(pMem);
   }else{
@@ -693,7 +663,7 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   if( pMem->flags & MEM_IntReal ){
     MemSetTypeFlag(pMem, MEM_Int);
   }else{
-    i64 ix = doubleToInt64(pMem->u.r);
+    i64 ix = sqlite3RealToI64(pMem->u.r);
 
     /* Only mark the value as an integer if
     **
