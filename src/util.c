@@ -1761,8 +1761,14 @@ int sqlite3VListNameToNum(VList *pIn, const char *zName, int nName){
 
 /* Compute z = (i64)x */
 void sqlite3DDFromInt(i64 x, double *z){
-  z[0] = (double)x;
-  z[1] = (double)(x - (i64)z[0]);
+  if( x > -4503599627370496L && x < 4503599627370496 ){
+    z[0] = (double)x;
+    z[1] = 0.0;
+  }else{
+    i64 y = x % 2048;
+    z[0] = (double)(x - y);
+    z[1] = (double)(x - (i64)z[0]);
+  }
 }
 
 /* Compute z = x + y */

@@ -1740,8 +1740,13 @@ static void sumFinalize(sqlite3_context *context){
     if( p->approx ){
       sqlite3_result_double(context, p->rSum[0]+p->rSum[1]);
     }else{
-      i64 v = (i64)p->rSum[0] + (i64)p->rSum[1];
+      double r = p->rSum[0] + p->rSum[1];
+      i64 v;
       double y[2], z[2];
+      v = sqlite3RealToI64(p->rSum[0]);
+      if( sqlite3AddInt64(&v, sqlite3RealToI64(p->rSum[1])) ){
+        v = 0;
+      }
       sqlite3DDFromInt(v, y);
       sqlite3DDSub(y[0], y[1], p->rSum[0], p->rSum[1], z);
       if( z[0] + z[1] != 0.0 ){

@@ -910,7 +910,7 @@ if {[working_64bit_int]} {
          (SELECT 9223372036854775807 AS x UNION ALL
           SELECT -10 AS x);
     }
-  } {0 9223372036854775797}
+  } {1 {integer overflow}}
   do_test func-18.17 {
     catchsql {
       SELECT sum(x) FROM 
@@ -1557,8 +1557,8 @@ do_catchsql_test func-37.110 {
   SELECT sum(x) FROM c;
 } {1 {integer overflow}}
 do_catchsql_test func-37.120 {
-  WITH c(x) AS (VALUES(9223372036854775807),(100),(-101))
+  WITH c(x) AS (VALUES(9223372036854775807),(10000),(-10010))
   SELECT sum(x) FROM c;
-} {0 9223372036854775806}
+} {1 {integer overflow}}
 
 finish_test
