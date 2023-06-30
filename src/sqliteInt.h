@@ -4611,7 +4611,7 @@ struct FpDecode {
   char z[24];          /* Significiant digits */
 };
 
-void sqlite3FpDecode(FpDecode*,double);
+void sqlite3FpDecode(FpDecode*,double,int);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)

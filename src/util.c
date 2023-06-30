@@ -931,8 +931,13 @@ int sqlite3Atoi(const char *z){
 /*
 ** Decode a floating-point value into an approximate decimal
 ** representation.
+**
+** Round the decimal representation to n significant digits if
+** n is positive.  Or round to -n signficant digits after the
+** decimal point if n is negative.  No rounding is performed if
+** n is zero.
 */
-void sqlite3FpDecode(FpDecode *p, double r){
+void sqlite3FpDecode(FpDecode *p, double r, int iRound){
   int i;
   u64 v;
   int e, exp = 0;
@@ -983,10 +988,31 @@ void sqlite3FpDecode(FpDecode *p, double r){
     while( r<1.0e+17   ){ exp--;    r *= 10.0;     }
   }
   v = (u64)r;
-  i = sizeof(p->z);
+  i = sizeof(p->z)-1;
   while( v ){  p->z[i--] = (v%10) + '0'; v /= 10; }
-  p->n = sizeof(p->z) - i;
+  p->n = sizeof(p->z) - 1 - i;
   p->iDP = p->n + exp;
+  if( iRound<0 ) iRound = p->iDP - iRound;
+  if( iRound>0 && iRound<p->n ){
+    char *z = &p->z[i+1];
+    p->n = iRound;
+    if( z[iRound]>='5' ){
+      int j = iRound-1;
+      while( 1 /*exit-by-break*/ ){
+        z[j]++;
+        if( z[j]<='9' ) break;
+        z[j] = '0';
+        if( j==0 ){
+          p->z[i--] = '1';
+          p->n++;
+          p->iDP++;
+          break;
+        }else{
+          j--;
+        }
+      }
+    }
+  }
   memmove(p->z, &p->z[i+1], p->n);
   while( p->n>0 && p->z[p->n-1]=='0' ){ p->n--; }
 }

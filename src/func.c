@@ -2379,10 +2379,12 @@ static void fpdecodeFunc(
   sqlite3_value **argv
 ){
   double r = sqlite3_value_double(argv[0]);
+  int n = 15;
   FpDecode s;
   char zBuf[50];
-  UNUSED_PARAMETER(argc);
-  sqlite3FpDecode(&s, r);
+
+  if( argc>=2 ) n = sqlite3_value_int(argv[1]);
+  sqlite3FpDecode(&s, r, n);
   sqlite3_snprintf(sizeof(zBuf), zBuf, "%c%.*s/%d", s.sign, s.n, s.z, s.iDP);
   sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
 }
@@ -2462,6 +2464,7 @@ void sqlite3RegisterBuiltinFunctions(void){
 
 #if 1  /* Temporary prototyping function */
     FUNCTION(fpdecode,           1, 0, 0, fpdecodeFunc     ),
+    FUNCTION(fpdecode,           2, 0, 0, fpdecodeFunc     ),
 #endif
   
 #ifndef SQLITE_OMIT_FLOATING_POINT
