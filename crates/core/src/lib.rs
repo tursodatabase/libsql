@@ -54,8 +54,8 @@ impl Connection {
         }
     }
 
-    pub fn execute(&self, sql: String) -> ResultSet {
-        ResultSet { raw: self.raw, sql }
+    pub fn execute<S: Into<String>>(&self, sql: S) -> ResultSet {
+        ResultSet { raw: self.raw, sql: sql.into() }
     }
 }
 
