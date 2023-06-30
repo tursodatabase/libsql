@@ -163,11 +163,10 @@ jobs:
             protobuf-compiler
 
       - name: install dependencies (macos)
+        uses: ConorMacBride/install-package@v1
         if: startsWith(matrix.os, 'macos')
-        run: |
-          brew install llvm
-          brew install pkg-config
-          brew install protobuf
+        with:
+          brew: jq llvm pkg-config protobuf
 
       - name: Build sqld (linux/macos)
         if: matrix.os != 'windows-latest'
