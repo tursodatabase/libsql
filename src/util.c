@@ -937,15 +937,16 @@ int sqlite3Atoi(const char *z){
 ** decimal point if n is negative.  No rounding is performed if
 ** n is zero.
 */
-void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
+void sqlite3FpDecode(FpDecode *p, double rr, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
+  long double r;
   p->isSpecial = 0;
-  if( r<0.0 ){
+  if( rr<0.0 ){
     p->sign = '-';
-    r = -r;
-  }else if( r==0.0 ){
+    rr = -rr;
+  }else if( rr==0.0 ){
     p->sign = '+';
     p->n = 1;
     p->iDP = 1;
@@ -954,7 +955,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   }else{
     p->sign = '+';
   }
-  memcpy(&v,&r,8);
+  memcpy(&v,&rr,8);
   e = v>>52;
   if( (e&0x7ff)==0x7ff ){
     p->isSpecial = 1 + (v!=0x7ff0000000000000L);
@@ -962,6 +963,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     p->iDP = 0;
     return;
   }
+  r = rr;
 
   /* At this point, r is positive (non-zero) and is not Inf or NaN.
   ** The strategy is to multiple or divide r by powers of 10 until
@@ -969,13 +971,13 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   ** an unsigned 64-bit integer v, and extract digits from v.
   */
   if( r>=1.0e+19 ){
-    while( r>=1.0e+119 ){ exp+=100; r /= 1.0e+100; }
-    while( r>=1.0e+29  ){ exp+=10;  r /= 1.0e+10;  }
-    while( r>=1.0e+19  ){ exp++;    r /= 10.0;     }
+    while( r>=1.0e+119L ){ exp+=100; r *= 1.0e-100L; }
+    while( r>=1.0e+29L  ){ exp+=10;  r *= 1.0e-10L;  }
+    while( r>=1.0e+19L  ){ exp++;    r *= 1.0e-1L;   }
   }else{
-    while( r<1.0e-97   ){ exp-=100; r *= 1.0e+100; }
-    while( r<1.0e+07   ){ exp-=10;  r *= 1.0e+10;  }
-    while( r<1.0e+17   ){ exp--;    r *= 10.0;     }
+    while( r<1.0e-97L   ){ exp-=100; r *= 1.0e+100L; }
+    while( r<1.0e+07L   ){ exp-=10;  r *= 1.0e+10L;  }
+    while( r<1.0e+17L   ){ exp--;    r *= 1.0e+1L;   }
   }
   v = (u64)r;
   i = sizeof(p->z)-1;
