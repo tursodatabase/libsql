@@ -4,7 +4,7 @@
 mod errors;
 mod types;
 
-use errors::libsql_error;
+
 use types::{
     libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_result,
     libsql_result_t,
