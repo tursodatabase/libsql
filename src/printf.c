@@ -502,7 +502,7 @@ void sqlite3_str_vappendf(
         }else{
           iRound = precision+1;
         }
-        sqlite3FpDecode(&s, realvalue, iRound);
+        sqlite3FpDecode(&s, realvalue, iRound, flag_altform2 ? 26 : 16);
         if( s.isSpecial ){
           if( s.isSpecial==2 ){
             bufpt = flag_zeropad ? "null" : "NaN";

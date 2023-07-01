@@ -937,7 +937,7 @@ int sqlite3Atoi(const char *z){
 ** decimal point if n is negative.  No rounding is performed if
 ** n is zero.
 */
-void sqlite3FpDecode(FpDecode *p, double r, int iRound){
+void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
@@ -972,7 +972,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound){
     while( r>=1.0e+119 ){ exp+=100; r /= 1.0e+100; }
     while( r>=1.0e+29  ){ exp+=10;  r /= 1.0e+10;  }
     while( r>=1.0e+19  ){ exp++;    r /= 10.0;     }
-  }else if( r<1.0e+17 ){
+  }else{
     while( r<1.0e-97   ){ exp-=100; r *= 1.0e+100; }
     while( r<1.0e+07   ){ exp-=10;  r *= 1.0e+10;  }
     while( r<1.0e+17   ){ exp--;    r *= 10.0;     }
@@ -991,8 +991,9 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound){
       p->iDP++;
     }
   }
-  if( iRound>0 && iRound<p->n ){
+  if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
     char *z = &p->z[i+1];
+    if( iRound>mxRound ) iRound = mxRound;
     p->n = iRound;
     if( z[iRound]>='5' ){
       int j = iRound-1;
