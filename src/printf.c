@@ -202,7 +202,6 @@ void sqlite3_str_vappendf(
   int nOut;                  /* Size of the rendering buffer */
   char *zExtra = 0;          /* Malloced memory used by some conversion */
   int exp, e2;               /* exponent of real numbers */
-  int j;                     /* Number of significant digits returned */
   etByte flag_dp;            /* True if decimal point should be shown */
   etByte flag_rtz;           /* True if trailing zeros should be removed */
 
@@ -483,6 +482,7 @@ void sqlite3_str_vappendf(
       case etGENERIC: {
         FpDecode s;
         int iRound;
+        int j;
 
         if( bArgList ){
           realvalue = getDoubleArg(pArgList);

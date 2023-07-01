@@ -2371,6 +2371,37 @@ static void signFunc(
   sqlite3_result_int(context, x<0.0 ? -1 : x>0.0 ? +1 : 0);
 }
 
+#ifdef SQLITE_DEBUG
+/*
+** Implementation of fpdecode(x,y,z) function.
+**
+** x is a real number that is to be decoded.  y is the precision.
+** z is the maximum real precision.
+*/
+static void fpdecodeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  FpDecode s;
+  double x;
+  int y, z;
+  char zBuf[100];
+  UNUSED_PARAMETER(argc);
+  assert( argc==3 );
+  x = sqlite3_value_double(argv[0]);
+  y = sqlite3_value_int(argv[1]);
+  z = sqlite3_value_int(argv[2]);
+  sqlite3FpDecode(&s, x, y, z);
+  if( s.isSpecial==2 ){
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "NaN");
+  }else{
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "%c%.*s/%d", s.sign, s.n, s.z, s.iDP);
+  }
+  sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
+}
+#endif /* SQLITE_DEBUG */
+
 /*
 ** All of the FuncDef structures in the aBuiltinFunc[] array above
 ** to the global function hash table.  This occurs at start-time (as
@@ -2442,6 +2473,9 @@ void sqlite3RegisterBuiltinFunctions(void){
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
+#ifdef SQLITE_DEBUG
+    FUNCTION(fpdecode,           3, 0, 0, fpdecodeFunc     ),
+#endif
 #ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
     FUNCTION(round,              2, 0, 0, roundFunc        ),
