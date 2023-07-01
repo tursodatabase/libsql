@@ -957,7 +957,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound){
   }
   memcpy(&v,&r,8);
   e = v>>52;
-  if( e==0x7ff ){
+  if( (e&0x7ff)==0x7ff ){
     if( v==0x7ff0000000000000L ){
       p->isInf = 1;
       p->isNan = 0;
@@ -996,7 +996,15 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound){
   while( v ){  p->z[i--] = (v%10) + '0'; v /= 10; }
   p->n = sizeof(p->z) - 1 - i;
   p->iDP = p->n + exp;
-  if( iRound<0 ) iRound = p->iDP - iRound;
+  if( iRound<0 ){
+    iRound = p->iDP - iRound;
+    if( iRound==0 && p->z[i+1]>='5' ){
+      iRound = 1;
+      p->z[i--] = '0';
+      p->n++;
+      p->iDP++;
+    }
+  }
   if( iRound>0 && iRound<p->n ){
     char *z = &p->z[i+1];
     p->n = iRound;

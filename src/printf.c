@@ -494,7 +494,11 @@ void sqlite3_str_vappendf(
           precision = SQLITE_FP_PRECISION_LIMIT;
         }
 #endif
-        sqlite3FpDecode(&s, realvalue, xtype==etFLOAT ? -precision : precision);
+        switch( xtype ){
+          case etFLOAT:    sqlite3FpDecode(&s, realvalue, -precision);  break;
+          case etGENERIC:  sqlite3FpDecode(&s, realvalue, precision);   break;
+          case etEXP:      sqlite3FpDecode(&s, realvalue, precision+1); break;
+        }
         if( s.isNan ){
           if( flag_zeropad ){
             bufpt = "null";
@@ -509,18 +513,19 @@ void sqlite3_str_vappendf(
           if( s.sign=='-' ){
             bufpt = "-Inf";
             length = 4;
+          }else if( flag_prefix=='+' ){
+            bufpt = "+Inf";
+            length = 4;
           }else{
             bufpt = "Inf";
             length = 3;
           }
           break;
         }
-        if( flag_prefix ){
-          prefix = s.sign;
-        }else if( s.sign=='-' ){
+        if( s.sign=='-' ){
           prefix = '-';
         }else{
-          prefix = 0;
+          prefix = flag_prefix;
         }
 
         exp = s.iDP-1;
@@ -568,7 +573,7 @@ void sqlite3_str_vappendf(
           *(bufpt++) = '0';
         }else{
           for(; e2>=0; e2--){
-            *(bufpt++) = s.z[j++];
+            *(bufpt++) = j<s.n ? s.z[j++] : '0';
             if( cThousand && (e2%3)==0 && e2>1 ) *(bufpt++) = ',';
           }
         }
