@@ -4604,8 +4604,7 @@ struct PrintfArguments {
 */
 struct FpDecode {
   char sign;           /* '+' or '-' */
-  char isNan;          /* True if not-a-number */
-  char isInf;          /* True if infinity */
+  char isSpecial;      /* 1: Infinity  2: NaN */
   int n;               /* Significant digits in the decode */
   int iDP;             /* Location of the decimal point */
   char z[24];          /* Significiant digits */

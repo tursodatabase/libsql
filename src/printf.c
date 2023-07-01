@@ -482,6 +482,7 @@ void sqlite3_str_vappendf(
       case etEXP:
       case etGENERIC: {
         FpDecode s;
+        int iRound;
 
         if( bArgList ){
           realvalue = getDoubleArg(pArgList);
@@ -494,33 +495,36 @@ void sqlite3_str_vappendf(
           precision = SQLITE_FP_PRECISION_LIMIT;
         }
 #endif
-        switch( xtype ){
-          case etFLOAT:    sqlite3FpDecode(&s, realvalue, -precision);  break;
-          case etGENERIC:  sqlite3FpDecode(&s, realvalue, precision);   break;
-          case etEXP:      sqlite3FpDecode(&s, realvalue, precision+1); break;
+        if( xtype==etFLOAT ){
+          iRound = -precision;
+        }else if( xtype==etGENERIC ){
+          iRound = precision;
+        }else{
+          iRound = precision+1;
         }
-        if( s.isNan ){
-          if( flag_zeropad ){
-            bufpt = "null";
-            length = 4;
+        sqlite3FpDecode(&s, realvalue, iRound);
+        if( s.isSpecial ){
+          if( s.isSpecial==2 ){
+            bufpt = flag_zeropad ? "null" : "NaN";
+            length = sqlite3Strlen30(bufpt);
+            break;
+          }else if( flag_zeropad ){
+            s.z[0] = '9';
+            s.iDP = 1000;
+            s.n = 1;
           }else{
-            bufpt = "NaN";
-            length = 3;
+            memcpy(buf, "-Inf", 5);
+            bufpt = buf;
+            if( s.sign=='-' ){
+              /* no-op */
+            }else if( flag_prefix ){
+              buf[0] = flag_prefix;
+            }else{
+              bufpt++;
+            }
+            length = sqlite3Strlen30(bufpt);
+            break;
           }
-          break;
-        }
-        if( s.isInf ){
-          if( s.sign=='-' ){
-            bufpt = "-Inf";
-            length = 4;
-          }else if( flag_prefix=='+' ){
-            bufpt = "+Inf";
-            length = 4;
-          }else{
-            bufpt = "Inf";
-            length = 3;
-          }
-          break;
         }
         if( s.sign=='-' ){
           prefix = '-';
