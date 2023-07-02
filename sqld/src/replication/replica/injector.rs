@@ -26,6 +26,7 @@ impl<'a> FrameInjector<'a> {
     }
 
     pub fn step(&mut self) -> anyhow::Result<bool> {
+        self.conn.pragma_update(None, "writable_schema", "on")?;
         let res = self.conn.execute("create table __dummy__ (dummy);", ());
 
         match res {
@@ -33,6 +34,7 @@ impl<'a> FrameInjector<'a> {
             Err(e) => {
                 if let Some(e) = e.sqlite_error() {
                     if e.extended_code == SQLITE_EXIT_REPLICATION {
+                        self.conn.pragma_update(None, "writable_schema", "reset")?;
                         return Ok(false);
                     }
                     if e.extended_code == SQLITE_CONTINUE_REPLICATION {
