@@ -193,11 +193,13 @@ unsafe impl WalHook for InjectorHook {
 fn make_page_header<'a>(
     frames: impl Iterator<Item = &'a FrameBorrowed>,
 ) -> (Headers<'a>, u64, u32) {
-    let mut current_pg = std::ptr::null_mut();
+    let mut first_pg: *mut PgHdr = std::ptr::null_mut();
+    let mut current_pg;
     let mut last_frame_no = 0;
     let mut size_after = 0;
 
     let mut headers_count = 0;
+    let mut prev_pg: *mut PgHdr = std::ptr::null_mut();
     for frame in frames {
         if frame.header().frame_no > last_frame_no {
             last_frame_no = frame.header().frame_no;
@@ -209,22 +211,31 @@ fn make_page_header<'a>(
             pData: frame.page().as_ptr() as _,
             pExtra: std::ptr::null_mut(),
             pCache: std::ptr::null_mut(),
-            pDirty: current_pg,
+            pDirty: std::ptr::null_mut(),
             pPager: std::ptr::null_mut(),
             pgno: frame.header().page_no,
             pageHash: 0,
-            flags: 0,
+            flags: 0x02, // PGHDR_DIRTY - it works without the flag, but why risk it
             nRef: 0,
             pDirtyNext: std::ptr::null_mut(),
             pDirtyPrev: std::ptr::null_mut(),
         };
         headers_count += 1;
         current_pg = Box::into_raw(Box::new(page));
+        if first_pg.is_null() {
+            first_pg = current_pg;
+        }
+        if !prev_pg.is_null() {
+            unsafe {
+                (*prev_pg).pDirty = current_pg;
+            }
+        }
+        prev_pg = current_pg;
     }
 
     tracing::trace!("built {headers_count} page headers");
 
-    let headers = unsafe { Headers::new(current_pg) };
+    let headers = unsafe { Headers::new(first_pg) };
     (headers, last_frame_no, size_after)
 }
 
