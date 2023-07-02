@@ -376,6 +376,9 @@ SRC += \
 #
 WBTOP = $(TOP)/src/rust/wasmtime-bindings
 
+# Path to Rust bindings
+BINDTOP = $(TOP)/src/rust/libsql-sys
+
 # Source code of the wasm bindings
 #
 WBSRC = \
@@ -385,14 +388,16 @@ WBSRC = \
 ifeq ($(OPT_WASM_RUNTIME),y)
 OPT_WASM_RUNTIME_LIBRARY_TARGET=liblibsql_wasm
 OPT_WASM_RUNTIME_INSTALL_TARGET=liblibsql_wasm_install
-TLIBS += $(WBTOP)/target/release/liblibsql_wasm.a
+OPT_STATIC_LIBLIBSQL_WASM=$(TOP)/.libs/liblibsql_wasm.a
 else ifeq ($(OPT_WASM_RUNTIME),d)
 OPT_WASM_RUNTIME_LIBRARY_TARGET=liblibsql_wasm
 OPT_WASM_RUNTIME_INSTALL_TARGET=liblibsql_wasm_install
 TLIBS += -L$(WBTOP)/target/release -llibsql_wasm
+OPT_STATIC_LIBLIBSQL_WASM=
 else
 OPT_WASM_RUNTIME_LIBRARY_TARGET=
 OPT_WASM_RUNTIME_INSTALL_TARGET=
+OPT_STATIC_LIBLIBSQL_WASM=
 endif
 
 # Source code to the test files.
@@ -682,7 +687,7 @@ SQLITE3_SHELL_TARGET   = $(SQLITE3_SHELL_TARGET_@HAVE_WASI_SDK@)
 # are what get build when you type just "make" with no arguments.
 #
 all:	sqlite3.h libsqlite3.la liblibsql.la $(SQLITE3_SHELL_TARGET) \
-  $(HAVE_TCL:1=libtclsqlite3.la)
+  $(HAVE_TCL:1=libtclsqlite3.la) rust_bindings
 
 Makefile: $(TOP)/Makefile.in
 	./config.status
@@ -711,20 +716,20 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 sqlite3$(TEXE):	shell.c sqlite3.c $(OPT_WASM_RUNTIME_LIBRARY_TARGET)
 	$(LTLINK) $(READLINE_FLAGS) $(SHELL_OPT) -o $@ \
 		shell.c sqlite3.c \
-		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
+		$(LIBREADLINE) $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM) -rpath "$(libdir)"
 
 libsql$(TEXE):	sqlite3$(TEXE)
 		cp sqlite3$(TEXE) libsql$(TEXE)
 
 sqldiff$(TEXE):	$(TOP)/tool/sqldiff.c sqlite3.lo sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/tool/sqldiff.c sqlite3.lo $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 dbhash$(TEXE):	$(TOP)/tool/dbhash.c sqlite3.lo sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/tool/dbhash.c sqlite3.lo $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 scrub$(TEXE):	$(TOP)/ext/misc/scrub.c sqlite3.lo
 	$(LTLINK) -o $@ -I. -DSCRUB_STANDALONE \
-		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS)
+		$(TOP)/ext/misc/scrub.c sqlite3.lo $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 srcck1$(BEXE):	$(TOP)/tool/srcck1.c
 	$(BCC) -o srcck1$(BEXE) $(TOP)/tool/srcck1.c
@@ -734,23 +739,23 @@ sourcetest:	srcck1$(BEXE) sqlite3.c
 
 fuzzershell$(TEXE):	$(TOP)/tool/fuzzershell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZERSHELL_OPT) \
-	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS)
+	  $(TOP)/tool/fuzzershell.c sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 fuzzcheck$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
+	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 fuzzcheck-asan$(TEXE):	$(FUZZCHECK_SRC) sqlite3.c sqlite3.h $(FUZZCHECK_DEP)
-	$(LTLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS)
+	$(LTLINK) -o $@ -fsanitize=address $(FUZZCHECK_OPT) $(FUZZCHECK_SRC) sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 ossshell$(TEXE):	$(TOP)/test/ossfuzz.c $(TOP)/test/ossshell.c sqlite3.c sqlite3.h
 	$(LTLINK) -o $@ $(FUZZCHECK_OPT) $(TOP)/test/ossshell.c \
-             $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS)
+             $(TOP)/test/ossfuzz.c sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 sessionfuzz$(TEXE):	$(TOP)/test/sessionfuzz.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS)
+	$(LTLINK) -o $@ $(TOP)/test/sessionfuzz.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 dbfuzz$(TEXE):	$(TOP)/test/dbfuzz.c sqlite3.c sqlite3.h
-	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS)
+	$(LTLINK) -o $@ $(DBFUZZ_OPT) $(TOP)/test/dbfuzz.c sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 
 DBFUZZ2_OPTS = \
   -DSQLITE_THREADSAFE=0 \
@@ -765,27 +770,27 @@ DBFUZZ2_OPTS = \
 dbfuzz2$(TEXE):	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	$(CC) $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
 		-DSTANDALONE -o dbfuzz2 \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
+		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 
 dbfuzz2-asan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
 		-fsanitize=fuzzer,undefined,address -o dbfuzz2-asan \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
+		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 
 dbfuzz2-msan:	$(TOP)/test/dbfuzz2.c sqlite3.c sqlite3.h
 	clang-6.0 $(OPT_FEATURE_FLAGS) $(OPTS) -I. -g -O0 \
 		-fsanitize=fuzzer,undefined,memory -o dbfuzz2-msan \
-		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS)
+		$(DBFUZZ2_OPTS) $(TOP)/test/dbfuzz2.c sqlite3.c $(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM)
 	mkdir -p dbfuzz2-dir
 	cp $(TOP)/test/dbfuzz2-seed* dbfuzz2-dir
 
 mptester$(TEXE):	sqlite3.lo $(TOP)/mptest/mptest.c
 	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.lo \
-		$(TLIBS) -rpath "$(libdir)"
+		$(TLIBS) $(OPT_STATIC_LIBLIBSQL_WASM) -rpath "$(libdir)"
 
 MPTEST1=./mptester$(TEXE) mptest.db $(TOP)/mptest/crash01.test --repeat 20
 MPTEST2=./mptester$(TEXE) mptest.db $(TOP)/mptest/multiwrite01.test --repeat 20
@@ -819,6 +824,9 @@ mptest:	mptester$(TEXE)
 
 liblibsql_wasm:	$(WBSRC)
 	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp target/release/liblibsql_wasm.* $(TOP)/.libs/
+
+rust_bindings: sqlite3.h
+	cd $(BINDTOP) && LIBSQL_SRC_DIR=$(TOP) cargo build --release --lib
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
@@ -1365,11 +1373,13 @@ releasetest: testfixture$(TEXE)
 quicktest:	./testfixture$(TEXE)
 	./testfixture$(TEXE) $(TOP)/test/extraquick.test $(TESTOPTS)
 
-rusttest:	sqlite3.h libsqlite3.la
-	( cd test/rust_suite; LD_LIBRARY_PATH=../../.libs cargo test )
+rusttest:	sqlite3.h liblibsql.la
+	( cd test/rust_suite; SQLITE3_STATIC=1 SQLITE3_INCLUDE_DIR=$(TOP) LD_LIBRARY_PATH=$(TOP)/.libs \
+		SQLITE3_LIB_DIR=$(TOP)/.libs cargo test )
 
-rusttestwasm:	sqlite3.h libsqlite3.la sqlite3
-	( cd test/rust_suite; LD_LIBRARY_PATH=../../.libs cargo test --features udf )
+rusttestwasm:	sqlite3.h liblibsql.la liblibsql_wasm
+	( cd test/rust_suite; SQLITE3_STATIC=1 SQLITE3_INCLUDE_DIR=$(TOP) LD_LIBRARY_PATH=$(TOP)/.libs \
+		SQLITE3_LIB_DIR=$(TOP)/.libs cargo test --features wasm,udf )
 
 # This is the common case.  Run many tests that do not take too long,
 # including fuzzcheck, sqlite3_analyzer, and sqldiff tests.
@@ -1588,6 +1598,7 @@ clean:
 	rm -f threadtest5
 	rm -f libsql*.tar.gz
 	rm -rf $(WBTOP)/target
+	rm -f bindings.rs
 
 distclean:	clean
 	rm -f sqlite_cfg.h config.log config.status libtool Makefile sqlite3.pc libsql.pc sqlite3session.h \

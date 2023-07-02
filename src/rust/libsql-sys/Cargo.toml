@@ -1,0 +1,18 @@
+[package]
+name = "libsql-sys"
+version = "0.1.1"
+edition = "2021"
+license = "MIT"
+description = "Native bindings to libSQL"
+repository = "https://github.com/libsql/libsql"
+build = "build.rs"
+keywords = ["libsql", "sqlite", "ffi", "bindings", "database"]
+categories = ["external-ffi-bindings"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+default-env = "0.1.1"
+
+[build-dependencies]
+bindgen = "0.66.1"
