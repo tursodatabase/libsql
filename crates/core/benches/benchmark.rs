@@ -15,6 +15,11 @@ fn bench(c: &mut Criterion) {
     group.bench_function("select 1", |b| {
         b.iter(|| conn.execute("SELECT 1").unwrap());
     });
+
+    let stmt = conn.prepare("SELECT 1").unwrap();
+    group.bench_function("select 1 (prepared)", |b| {
+        b.iter(|| stmt.execute().unwrap());
+    });
 }
 
 criterion_group! {
