@@ -1,5 +1,6 @@
 use crate::{connection::Connection, Result};
 
+// A libSQL database.
 pub struct Database {
     pub url: String,
 }

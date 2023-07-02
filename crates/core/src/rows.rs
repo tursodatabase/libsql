@@ -1,5 +1,6 @@
 use crate::{Error, Result};
 
+/// Query result rows.
 pub struct Rows {}
 
 impl Rows {

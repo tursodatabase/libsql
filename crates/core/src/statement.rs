@@ -1,5 +1,6 @@
 use crate::{Error, Result, Rows};
 
+/// A prepared statement.
 pub struct Statement {
     raw: *mut libsql_sys::sqlite3_stmt,
 }

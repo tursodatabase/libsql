@@ -2,6 +2,7 @@ use crate::{Database, Error, Result, Rows, RowsFuture, Statement};
 
 use std::ffi::c_int;
 
+/// A connection to a libSQL database.
 pub struct Connection {
     pub(crate) raw: *mut libsql_sys::sqlite3,
 }
