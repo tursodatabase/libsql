@@ -38,9 +38,11 @@ impl Connection {
     }
 
     pub fn execute<S: Into<String>>(&self, sql: S) -> Result<ResultSet> {
-        // TODO: optimize by avoiding future allocation
-        let mut rs = self.execute_async(sql.into());
-        rs.wait()?;
+        let rs = ResultSet {
+            raw: self.raw,
+            sql: sql.into(),
+        };
+        rs.execute()?;
         Ok(rs)
     }
 
@@ -64,6 +66,13 @@ impl futures::Future for ResultSet {
         self: std::pin::Pin<&mut Self>,
         _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
+        let ret = self.execute();
+        std::task::Poll::Ready(ret)
+    }
+}
+
+impl ResultSet {
+    fn execute(&self) -> Result<()> {
         let err = unsafe {
             libsql_sys::sqlite3_exec(
                 self.raw,
@@ -73,15 +82,12 @@ impl futures::Future for ResultSet {
                 std::ptr::null_mut(),
             )
         };
-        let ret = match err as u32 {
+        match err as u32 {
             libsql_sys::SQLITE_OK => Ok(()),
-            _ => Err(Error::QueryFailed(self.sql.clone())),
-        };
-        std::task::Poll::Ready(ret)
+            _ => Err(Error::QueryFailed(self.sql.to_owned())),
+        }
     }
-}
 
-impl ResultSet {
     pub fn wait(&mut self) -> Result<()> {
         futures::executor::block_on(self)
     }
