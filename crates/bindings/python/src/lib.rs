@@ -8,32 +8,33 @@ fn to_py_err(error: libsql_core::errors::Error) -> PyErr {
 #[pyfunction]
 fn connect(url: String) -> PyResult<Connection> {
     let db = libsql_core::Database::open(url);
-    let conn = db.connect().map_err(to_py_err)?;
     Ok(Connection {
-        _db: db,
-        _conn: conn,
+        db,
     })
 }
 
 #[pyclass]
 pub struct Connection {
-    _db: libsql_core::Database,
-    _conn: libsql_core::Connection,
+    db: libsql_core::Database,
 }
 
 #[pymethods]
 impl Connection {
-    fn cursor(_self: PyRef<'_, Self>) -> PyResult<Cursor> {
-        Ok(Cursor {})
+    fn cursor(self_: PyRef<'_, Self>) -> PyResult<Cursor> {
+        let conn = self_.db.connect().map_err(to_py_err)?;
+        Ok(Cursor { conn })
     }
 }
 
 #[pyclass]
-pub struct Cursor {}
+pub struct Cursor {
+    conn: libsql_core::Connection,
+}
 
 #[pymethods]
 impl Cursor {
-    fn execute(_self: PyRef<'_, Self>, _sql: String) -> PyResult<Result> {
+    fn execute(self_: PyRef<'_, Self>, _sql: String) -> PyResult<Result> {
+        self_.conn.execute(_sql).map_err(to_py_err)?;
         Ok(Result {})
     }
 }
