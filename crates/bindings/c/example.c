@@ -7,7 +7,7 @@
 int main(int argc, char *argv[])
 {
 	libsql_connection_t conn;
-	libsql_result_t result;
+	libsql_rows_t rows;
 	libsql_database_t db;
 
 	db = libsql_open_ext(":memory:");
@@ -18,20 +18,20 @@ int main(int argc, char *argv[])
 	if (!conn) {
 		assert(0);
 	}
-	result = libsql_execute(conn, "SELECT 1");
-	if (!result) {
+	rows = libsql_execute(conn, "SELECT 1");
+	if (!rows) {
 		assert(0);
 	}
-	for (int row = 0; row < libsql_row_count(result); row++) {
-		for (int col = 0; col < libsql_column_count(result); col++) {
+	for (int row = 0; row < libsql_row_count(rows); row++) {
+		for (int col = 0; col < libsql_column_count(rows); col++) {
 			if (col > 0) {
 				printf(", ");
 			}
-			const char *value = libsql_value_text(result, row, col);
+			const char *value = libsql_value_text(rows, row, col);
 			printf("%s", value);
 		}
 	}
-	libsql_free_result(result);
+	libsql_free_rows(rows);
 	libsql_disconnect(conn);
 	libsql_close(db);
 }

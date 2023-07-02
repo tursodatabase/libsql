@@ -90,19 +90,19 @@ impl From<&mut libsql_connection> for libsql_connection_t {
     }
 }
 
-pub struct libsql_result {
+pub struct libsql_rows {
     pub(crate) result: libsql_core::Rows,
 }
 
 #[derive(Clone, Debug)]
 #[repr(transparent)]
-pub struct libsql_result_t {
-    ptr: *const libsql_result,
+pub struct libsql_rows_t {
+    ptr: *const libsql_rows,
 }
 
-impl libsql_result_t {
-    pub fn null() -> libsql_result_t {
-        libsql_result_t {
+impl libsql_rows_t {
+    pub fn null() -> libsql_rows_t {
+        libsql_rows_t {
             ptr: std::ptr::null(),
         }
     }
@@ -117,38 +117,38 @@ impl libsql_result_t {
 
     #[allow(clippy::mut_from_ref)]
     pub fn get_ref_mut(&self) -> &mut libsql_core::Rows {
-        let ptr_mut = self.ptr as *mut libsql_result;
+        let ptr_mut = self.ptr as *mut libsql_rows;
         &mut unsafe { &mut (*ptr_mut) }.result
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl From<&libsql_result> for libsql_result_t {
-    fn from(value: &libsql_result) -> Self {
+impl From<&libsql_rows> for libsql_rows_t {
+    fn from(value: &libsql_rows) -> Self {
         Self { ptr: value }
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl From<&mut libsql_result> for libsql_result_t {
-    fn from(value: &mut libsql_result) -> Self {
+impl From<&mut libsql_rows> for libsql_rows_t {
+    fn from(value: &mut libsql_rows) -> Self {
         Self { ptr: value }
     }
 }
 
-pub struct libsql_result_future {
+pub struct libsql_rows_future {
     pub(crate) result: libsql_core::RowsFuture,
 }
 
 #[derive(Clone, Debug)]
 #[repr(transparent)]
-pub struct libsql_result_future_t {
-    ptr: *const libsql_result_future,
+pub struct libsql_rows_future_t {
+    ptr: *const libsql_rows_future,
 }
 
-impl libsql_result_future_t {
-    pub fn null() -> libsql_result_future_t {
-        libsql_result_future_t {
+impl libsql_rows_future_t {
+    pub fn null() -> libsql_rows_future_t {
+        libsql_rows_future_t {
             ptr: std::ptr::null(),
         }
     }
@@ -163,21 +163,21 @@ impl libsql_result_future_t {
 
     #[allow(clippy::mut_from_ref)]
     pub fn get_ref_mut(&self) -> &mut libsql_core::RowsFuture {
-        let ptr_mut = self.ptr as *mut libsql_result_future;
+        let ptr_mut = self.ptr as *mut libsql_rows_future;
         &mut unsafe { &mut (*ptr_mut) }.result
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl From<&libsql_result_future> for libsql_result_future_t {
-    fn from(value: &libsql_result_future) -> Self {
+impl From<&libsql_rows_future> for libsql_rows_future_t {
+    fn from(value: &libsql_rows_future) -> Self {
         Self { ptr: value }
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl From<&mut libsql_result_future> for libsql_result_future_t {
-    fn from(value: &mut libsql_result_future) -> Self {
+impl From<&mut libsql_rows_future> for libsql_rows_future_t {
+    fn from(value: &mut libsql_rows_future) -> Self {
         Self { ptr: value }
     }
 }
