@@ -91,7 +91,7 @@ impl From<&mut libsql_connection> for libsql_connection_t {
 }
 
 pub struct libsql_result {
-    pub(crate) result: libsql_core::ResultSet,
+    pub(crate) result: libsql_core::Rows,
 }
 
 #[derive(Clone, Debug)]
@@ -111,12 +111,12 @@ impl libsql_result_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql_core::ResultSet {
+    pub fn get_ref(&self) -> &libsql_core::Rows {
         &unsafe { &*(self.ptr) }.result
     }
 
     #[allow(clippy::mut_from_ref)]
-    pub fn get_ref_mut(&self) -> &mut libsql_core::ResultSet {
+    pub fn get_ref_mut(&self) -> &mut libsql_core::Rows {
         let ptr_mut = self.ptr as *mut libsql_result;
         &mut unsafe { &mut (*ptr_mut) }.result
     }
@@ -132,6 +132,52 @@ impl From<&libsql_result> for libsql_result_t {
 #[allow(clippy::from_over_into)]
 impl From<&mut libsql_result> for libsql_result_t {
     fn from(value: &mut libsql_result) -> Self {
+        Self { ptr: value }
+    }
+}
+
+pub struct libsql_result_future {
+    pub(crate) result: libsql_core::RowsFuture,
+}
+
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct libsql_result_future_t {
+    ptr: *const libsql_result_future,
+}
+
+impl libsql_result_future_t {
+    pub fn null() -> libsql_result_future_t {
+        libsql_result_future_t {
+            ptr: std::ptr::null(),
+        }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.ptr.is_null()
+    }
+
+    pub fn get_ref(&self) -> &libsql_core::RowsFuture {
+        &unsafe { &*(self.ptr) }.result
+    }
+
+    #[allow(clippy::mut_from_ref)]
+    pub fn get_ref_mut(&self) -> &mut libsql_core::RowsFuture {
+        let ptr_mut = self.ptr as *mut libsql_result_future;
+        &mut unsafe { &mut (*ptr_mut) }.result
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&libsql_result_future> for libsql_result_future_t {
+    fn from(value: &libsql_result_future) -> Self {
+        Self { ptr: value }
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl From<&mut libsql_result_future> for libsql_result_future_t {
+    fn from(value: &mut libsql_result_future) -> Self {
         Self { ptr: value }
     }
 }

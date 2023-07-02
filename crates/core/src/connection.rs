@@ -37,59 +37,35 @@ impl Connection {
         }
     }
 
-    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<ResultSet> {
-        let rs = ResultSet {
-            raw: self.raw,
-            sql: sql.into(),
-        };
-        rs.execute()?;
-        Ok(rs)
+    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<Rows> {
+        Rows::execute(self.raw, sql.into().as_str())
     }
 
-    pub fn execute_async<S: Into<String>>(&self, sql: S) -> ResultSet {
-        ResultSet {
+    pub fn execute_async<S: Into<String>>(&self, sql: S) -> RowsFuture {
+        RowsFuture {
             raw: self.raw,
             sql: sql.into(),
         }
     }
 }
 
-pub struct ResultSet {
-    raw: *mut libsql_sys::sqlite3,
-    sql: String,
-}
+pub struct Rows {}
 
-impl futures::Future for ResultSet {
-    type Output = Result<()>;
-
-    fn poll(
-        self: std::pin::Pin<&mut Self>,
-        _cx: &mut std::task::Context<'_>,
-    ) -> std::task::Poll<Self::Output> {
-        let ret = self.execute();
-        std::task::Poll::Ready(ret)
-    }
-}
-
-impl ResultSet {
-    fn execute(&self) -> Result<()> {
+impl Rows {
+    fn execute(raw: *mut libsql_sys::sqlite3, sql: &str) -> Result<Rows> {
         let err = unsafe {
             libsql_sys::sqlite3_exec(
-                self.raw,
-                self.sql.as_ptr() as *const i8,
+                raw,
+                sql.as_ptr() as *const i8,
                 None,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
             )
         };
         match err as u32 {
-            libsql_sys::SQLITE_OK => Ok(()),
-            _ => Err(Error::QueryFailed(self.sql.to_owned())),
+            libsql_sys::SQLITE_OK => Ok(Rows {}),
+            _ => Err(Error::QueryFailed(sql.to_owned())),
         }
-    }
-
-    pub fn wait(&mut self) -> Result<()> {
-        futures::executor::block_on(self)
     }
 
     pub fn row_count(&self) -> i32 {
@@ -98,5 +74,28 @@ impl ResultSet {
 
     pub fn column_count(&self) -> i32 {
         0
+    }
+}
+
+pub struct RowsFuture {
+    raw: *mut libsql_sys::sqlite3,
+    sql: String,
+}
+
+impl RowsFuture {
+    pub fn wait(&mut self) -> Result<Rows> {
+        futures::executor::block_on(self)
+    }
+}
+
+impl futures::Future for RowsFuture {
+    type Output = Result<Rows>;
+
+    fn poll(
+        self: std::pin::Pin<&mut Self>,
+        _cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        let ret = Rows::execute(self.raw, &self.sql);
+        std::task::Poll::Ready(ret)
     }
 }

@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
 	if (!result) {
 		assert(0);
 	}
-	libsql_wait_result(result);
 	for (int row = 0; row < libsql_row_count(result); row++) {
 		for (int col = 0; col < libsql_column_count(result); col++) {
 			if (col > 0) {

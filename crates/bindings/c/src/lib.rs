@@ -4,10 +4,9 @@
 mod errors;
 mod types;
 
-
 use types::{
     libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_result,
-    libsql_result_t,
+    libsql_result_future, libsql_result_future_t, libsql_result_t,
 };
 
 #[no_mangle]
@@ -69,15 +68,9 @@ pub unsafe extern "C" fn libsql_execute(
         }
     };
     let conn = conn.get_ref();
-    let result = conn.execute_async(sql.to_string());
+    let result = conn.execute(sql.to_string()).unwrap();
     let result = Box::leak(Box::new(libsql_result { result }));
     libsql_result_t::from(result)
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn libsql_wait_result(res: libsql_result_t) {
-    let res = res.get_ref_mut();
-    res.wait().unwrap();
 }
 
 #[no_mangle]
@@ -85,7 +78,39 @@ pub unsafe extern "C" fn libsql_free_result(res: libsql_result_t) {
     if res.is_null() {
         return;
     }
+    let _ = unsafe { Box::from_raw(res.get_ref_mut()) };
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_execute_async(
+    conn: libsql_connection_t,
+    sql: *const std::ffi::c_char,
+) -> libsql_result_future_t {
+    let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
+    let sql = match sql.to_str() {
+        Ok(sql) => sql,
+        Err(_) => {
+            todo!("bad string");
+        }
+    };
+    let conn = conn.get_ref();
+    let result = conn.execute_async(sql.to_string());
+    let result = Box::leak(Box::new(libsql_result_future { result }));
+    libsql_result_future_t::from(result)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_free_result_future(res: libsql_result_future_t) {
+    if res.is_null() {
+        return;
+    }
     let mut res = unsafe { Box::from_raw(res.get_ref_mut()) };
+    res.wait().unwrap();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_wait_result(res: libsql_result_future_t) {
+    let res = res.get_ref_mut();
     res.wait().unwrap();
 }
 

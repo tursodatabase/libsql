@@ -1,4 +1,4 @@
-use crate::{Result, connection::Connection};
+use crate::{connection::Connection, Result};
 
 pub struct Database {
     pub url: String,
