@@ -1,0 +1,13 @@
+[package]
+name = "libsql_replication"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+prost = "0.11.3"
+tonic = { version = "0.8.3", features = ["tls"] }
+tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
+
+[build-dependencies]
+prost-build = "0.11.4"
+tonic-build = "0.8.4"

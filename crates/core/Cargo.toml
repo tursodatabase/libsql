@@ -7,6 +7,7 @@ edition = "2021"
 futures = "0.3.28"
 libsql-sys = "0.1.1"
 thiserror = "1.0.40"
+libsql_replication = { path = "../replication" }
 
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports", "async", "async_futures"] }

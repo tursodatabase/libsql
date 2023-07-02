@@ -5,6 +5,7 @@ members = [
   "bindings/c",
   "bindings/js",
   "bindings/python",
+  "replication",
 ]
 
 [profile.release]
