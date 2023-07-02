@@ -5,6 +5,6 @@
 ```
 python3 -m venv .env
 source .env/bin/activate
-pip3 install maturin
+pip3 install maturin pyperf
 maturin develop
 ```
