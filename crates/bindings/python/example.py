@@ -4,6 +4,7 @@ con = libsql.connect(":memory:")
 
 cur = con.cursor()
 
-res = cur.execute("SELECT 1")
+cur.execute("CREATE TABLE users (id INTEGER, email TEXT);")
+cur.execute("INSERT INTO users VALUES (1, 'penberg@iki.fi')")
 
-print(res.fetchone())
+print(cur.execute("SELECT * FROM users").fetchone())

@@ -56,8 +56,24 @@ impl Result {
                 let row = rows.next().map_err(to_py_err)?;
                 match row {
                     Some(row) => {
-                        let value = row.get::<i32>(0).map_err(to_py_err)?;
-                        let elements: Vec<Py<PyAny>> = vec![value.into_py(self_.py())];
+                        let mut elements: Vec<Py<PyAny>> = vec![];
+                        for col_idx in 0..rows.column_count() {
+                            let col_type = row.column_type(col_idx).map_err(to_py_err)?;
+                            let value = match col_type {
+                                libsql_core::rows::ValueType::Integer => {
+                                    let value = row.get::<i32>(col_idx).map_err(to_py_err)?;
+                                    value.into_py(self_.py())
+                                }
+                                libsql_core::rows::ValueType::Float => todo!(),
+                                libsql_core::rows::ValueType::Blob => todo!(),
+                                libsql_core::rows::ValueType::Text => {
+                                    let value = row.get::<&str>(col_idx).map_err(to_py_err)?;
+                                    value.into_py(self_.py())
+                                }
+                                libsql_core::rows::ValueType::Null => todo!(),
+                            };
+                            elements.push(value);
+                        }
                         Ok(Some(PyTuple::new(self_.py(), elements)))
                     }
                     None => Ok(None),

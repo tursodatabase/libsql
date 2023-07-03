@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell};
 
 use crate::{errors, Error, Result, Statement};
 
@@ -91,6 +91,26 @@ impl Row {
         let val = unsafe { libsql_sys::sqlite3_column_value(self.raw, idx) };
         T::from_sql(val)
     }
+
+    pub fn column_type(&self, idx: i32) -> Result<ValueType> {
+        let val = unsafe { libsql_sys::sqlite3_column_type(self.raw, idx) };
+        match val as u32 {
+            libsql_sys::SQLITE_INTEGER => Ok(ValueType::Integer),
+            libsql_sys::SQLITE_FLOAT => Ok(ValueType::Float),
+            libsql_sys::SQLITE_BLOB => Ok(ValueType::Blob),
+            libsql_sys::SQLITE_TEXT => Ok(ValueType::Text),
+            libsql_sys::SQLITE_NULL => Ok(ValueType::Null),
+            _ => Err(Error::UnknownColumnType(idx, val)),
+        }
+    }
+}
+
+pub enum ValueType {
+    Integer,
+    Float,
+    Blob,
+    Text,
+    Null,    
 }
 
 pub trait FromValue {
@@ -102,6 +122,15 @@ pub trait FromValue {
 impl FromValue for i32 {
     fn from_sql(val: *mut libsql_sys::sqlite3_value) -> Result<Self> {
         let ret = unsafe { libsql_sys::sqlite3_value_int(val) };
+        Ok(ret)
+    }
+}
+
+impl FromValue for &str {
+    fn from_sql(val: *mut libsql_sys::sqlite3_value) -> Result<Self> {
+        let ret = unsafe { libsql_sys::sqlite3_value_text(val) };
+        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const i8) };
+        let ret = ret.to_str().unwrap();
         Ok(ret)
     }
 }
