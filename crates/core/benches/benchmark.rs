@@ -13,12 +13,20 @@ fn bench(c: &mut Criterion) {
     let db = bench_db();
     let conn = db.connect().unwrap();
     group.bench_function("select 1", |b| {
-        b.iter(|| conn.execute("SELECT 1").unwrap());
+        b.iter(|| {
+            let rows = conn.execute("SELECT 1").unwrap().unwrap();
+            let row = rows.next().unwrap().unwrap();
+            assert_eq!(row.get::<i32>(0).unwrap(), 1);
+        });
     });
 
     let stmt = conn.prepare("SELECT 1").unwrap();
     group.bench_function("select 1 (prepared)", |b| {
-        b.iter(|| stmt.execute().unwrap());
+        b.iter(|| {
+            let rows = stmt.execute().unwrap();
+            let row = rows.next().unwrap().unwrap();
+            assert_eq!(row.get::<i32>(0).unwrap(), 1);
+        });
     });
 }
 
