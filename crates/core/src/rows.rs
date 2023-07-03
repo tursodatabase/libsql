@@ -9,7 +9,6 @@ pub struct Rows {
 impl Rows {
     pub fn next(&self) -> Result<Option<Row>> {
         let err = unsafe { libsql_sys::sqlite3_step(self.raw_stmt) };
-        println!("step says = {}", err);
         match err as u32 {
             libsql_sys::SQLITE_ROW => Ok(Some(Row { raw: self.raw_stmt })),
             libsql_sys::SQLITE_DONE => Ok(None),

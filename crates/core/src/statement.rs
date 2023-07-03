@@ -8,7 +8,6 @@ pub struct Statement {
 
 impl Statement {
     pub(crate) fn prepare(raw: *mut libsql_sys::sqlite3, sql: &str) -> Result<Statement> {
-        println!("prepare: {} (len = {})", sql, sql.len());
         let mut raw_stmt = std::ptr::null_mut();
         let err = unsafe {
             libsql_sys::sqlite3_prepare_v2(
@@ -19,7 +18,6 @@ impl Statement {
                 std::ptr::null_mut(),
             )
         };
-        println!("prepare says = {}", err);
         match err as u32 {
             libsql_sys::SQLITE_OK => Ok(Statement { raw, raw_stmt }),
             _ => Err(Error::QueryFailed(format!(
