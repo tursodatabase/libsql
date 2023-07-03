@@ -8,9 +8,11 @@
 //!
 //! To get started, you first need to create a [`Database`] object and then open a [`Connection`] to it, which you use to query:
 //!
-//! ```rust
-//! let db = libsql::Database::open(":memory:");
-//! let conn = db.connect();
+//! ```rust,no_run
+//! use libsql_core::Database;
+//!
+//! let db = Database::open(":memory:");
+//! let conn = db.connect().unwrap();
 //! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)") .unwrap();
 //! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')").unwrap();
 //! ```
@@ -22,10 +24,12 @@
 //!
 //! You can open an embedded replica by passing an URL to the [`Database::open()`] method and calling the [`Database::sync()`] method to synchronize the replica with the primary:
 //!
-//! ```rust
-//! let db = libsql::Database::open("libsql://database.example.org");
+//! ```rust,no_run
+//! use libsql_core::Database;
+//!
+//! let db = Database::open("libsql://database.example.org");
 //! db.sync();
-//! let conn = db.connect();
+//! let conn = db.connect().unwrap();
 //! conn.execute("SELECT * FROM users").unwrap();
 //! ```
 //!
