@@ -85,14 +85,16 @@ impl WalCopier {
         tracing::trace!("Flushing {} frames locally.", frames.len());
 
         for start in frames.clone().step_by(self.max_frames_per_batch) {
+            let timestamp = chrono::Utc::now().timestamp() as u64;
             let end = (start + self.max_frames_per_batch as u32).min(frames.end);
             let len = (end - start) as usize;
             let fdesc = format!(
-                "{}-{}/{:012}-{:012}.{}",
+                "{}-{}/{:012}-{:012}-{}.{}",
                 self.db_name,
                 generation,
                 start,
                 end - 1,
+                timestamp, // generally timestamps fit in 10 chars but don't make assumptions
                 self.use_compression
             );
             let mut out = tokio::fs::File::create(&format!("{}/{}", self.bucket, fdesc)).await?;
