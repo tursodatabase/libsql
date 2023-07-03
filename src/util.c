@@ -386,43 +386,34 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
-/*
-** Compute 10 to the E-th power.  Examples:  E==1 results in 10.
-** E==2 results in 100.  E==50 results in 1.0e50.
+/* Double-Double multiplication.  *(z,zz) = (x,xx) * (y,yy)
 **
-** This routine only works for values of E between 1 and 341.
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
 */
-static LONGDOUBLE_TYPE sqlite3Pow10(int E){
-#if defined(_MSC_VER)
-  static const LONGDOUBLE_TYPE x[] = {
-    1.0e+001L,
-    1.0e+002L,
-    1.0e+004L,
-    1.0e+008L,
-    1.0e+016L,
-    1.0e+032L,
-    1.0e+064L,
-    1.0e+128L,
-    1.0e+256L
-  };
-  LONGDOUBLE_TYPE r = 1.0;
-  int i;
-  assert( E>=0 && E<=307 );
-  for(i=0; E!=0; i++, E >>=1){
-    if( E & 1 ) r *= x[i];
-  }
-  return r;
-#else
-  LONGDOUBLE_TYPE x = 10.0;
-  LONGDOUBLE_TYPE r = 1.0;
-  while(1){
-    if( E & 1 ) r *= x;
-    E >>= 1;
-    if( E==0 ) break;
-    x *= x;
-  }
-  return r;
-#endif
+static void dekkerMul2(
+  double x,  double xx,
+  double y,  double yy,
+  double *z, double *zz
+){
+  double hx, tx, hy, ty, p, q, c, cc;
+  u64 m;
+  memcpy(&m, &x, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hx, &m, 8);
+  tx = x - hx;
+  memcpy(&m, &y, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hy, &m, 8);
+  ty = y - hy;
+  p = hx*hy;
+  q = hx*ty + tx*hy;
+  c = p+q;
+  cc = p - c + q + tx*ty;
+  cc = x*yy + xx*y + cc;
+  *z = c + cc;
+  *zz = c - *z + cc;
 }
 
 /*
@@ -463,12 +454,11 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   const char *zEnd;
   /* sign * significand * (10 ^ (esign * exponent)) */
   int sign = 1;    /* sign of significand */
-  i64 s = 0;       /* significand */
+  u64 s = 0;       /* significand */
   int d = 0;       /* adjust exponent for shifting decimal point */
   int esign = 1;   /* sign of exponent */
   int e = 0;       /* exponent */
   int eValid = 1;  /* True exponent is either not used or is well-formed */
-  LONGDOUBLE_TYPE result;
   int nDigit = 0;  /* Number of digits processed */
   int eType = 1;   /* 1: pure integer,  2+: fractional  -1 or less: bad UTF16 */
 
@@ -508,7 +498,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   while( z<zEnd && sqlite3Isdigit(*z) ){
     s = s*10 + (*z - '0');
     z+=incr; nDigit++;
-    if( s>=((LARGEST_INT64-9)/10) ){
+    if( s>=((LARGEST_UINT64-9)/10) ){
       /* skip non-significant significand digits
       ** (increase exponent by d to shift decimal left) */
       while( z<zEnd && sqlite3Isdigit(*z) ){ z+=incr; d++; }
@@ -523,7 +513,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     /* copy digits from after decimal to significand
     ** (decrease exponent by d to shift decimal right) */
     while( z<zEnd && sqlite3Isdigit(*z) ){
-      if( s<((LARGEST_INT64-9)/10) ){
+      if( s<((LARGEST_UINT64-9)/10) ){
         s = s*10 + (*z - '0');
         d--;
         nDigit++;
@@ -563,78 +553,79 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   while( z<zEnd && sqlite3Isspace(*z) ) z+=incr;
 
 do_atof_calc:
+  /* Zero is a special case */
+  if( s==0 ){
+    *pResult = sign<0 ? -0.0 : +0.0;
+    goto atof_return;
+  }
+
   /* adjust exponent by d, and update sign */
   e = (e*esign) + d;
-  if( e<0 ) {
-    esign = -1;
-    e *= -1;
-  } else {
-    esign = 1;
+
+  /* Try to adjust the exponent to make it smaller */
+  while( e>0 && s<(LARGEST_UINT64/10) ){
+    s *= 10;
+    e--;
+  }
+  while( e<0 && (s%10)==0 ){
+    s /= 10;
+    e++;
   }
 
-  if( s==0 ) {
-    /* In the IEEE 754 standard, zero is signed. */
-    result = sign<0 ? -(double)0 : (double)0;
-  } else {
-    /* Attempt to reduce exponent.
-    **
-    ** Branches that are not required for the correct answer but which only
-    ** help to obtain the correct answer faster are marked with special
-    ** comments, as a hint to the mutation tester.
-    */
-    while( e>0 ){                                       /*OPTIMIZATION-IF-TRUE*/
-      if( esign>0 ){
-        if( s>=(LARGEST_INT64/10) ) break;             /*OPTIMIZATION-IF-FALSE*/
-        s *= 10;
-      }else{
-        if( s%10!=0 ) break;                           /*OPTIMIZATION-IF-FALSE*/
-        s /= 10;
-      }
-      e--;
-    }
-
-    /* adjust the sign of significand */
-    s = sign<0 ? -s : s;
-
-    if( e==0 ){                                         /*OPTIMIZATION-IF-TRUE*/
-      result = (LONGDOUBLE_TYPE)s;
+  if( e==0 ){
+    *pResult = s;
+  }else if( sqlite3Config.bUseLongDouble ){
+    LONGDOUBLE_TYPE r = (LONGDOUBLE_TYPE)s;
+    if( e>0 ){
+      while( e>=100  ){ e-=100; r *= 1.0e+100L; }
+      while( e>=10   ){ e-=10;  r *= 1.0e+10L;  }
+      while( e>=1    ){ e-=1;   r *= 1.0e+01L;  }
     }else{
-      /* attempt to handle extremely small/large numbers better */
-      if( e>307 ){                                      /*OPTIMIZATION-IF-TRUE*/
-        if( e<342 ){                                    /*OPTIMIZATION-IF-TRUE*/
-          LONGDOUBLE_TYPE scale = sqlite3Pow10(e-308);
-          if( esign<0 ){
-            result = s / scale;
-            result /= 1.0e+308L;
-          }else{
-            result = s * scale;
-            result *= 1.0e+308L;
-          }
-        }else{ assert( e>=342 );
-          if( esign<0 ){
-            result = 0.0*s;
-          }else{
-#ifdef INFINITY
-            result = INFINITY*s;
-#else
-            result = 1e308*1e308*s;  /* Infinity */
-#endif
-          }
-        }
-      }else{
-        LONGDOUBLE_TYPE scale = sqlite3Pow10(e);
-        if( esign<0 ){
-          result = s / scale;
-        }else{
-          result = s * scale;
-        }
+      while( e<=-100 ){ e+=100; r *= 1.0e-100L; }
+      while( e<=-10  ){ e+=10;  r *= 1.0e-10L;  }
+      while( e<=-1   ){ e+=1;   r *= 1.0e-01L;  }
+    }
+    *pResult = r;
+  }else{
+    double r, rr;
+    u64 s2;
+    r = (double)s;
+    s2 = (u64)r;
+    rr = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+    if( e>0 ){
+      while( e>=100  ){
+        e -= 100;
+        dekkerMul2(r, rr, 1.0e+100, -1.5902891109759918046e+83, &r, &rr);
+      }
+      while( e>=10   ){
+        e -= 10;
+        dekkerMul2(r, rr, 1.0e+10, 0.0, &r, &rr);
+      }
+      while( e>=1    ){
+        e -= 1;
+        dekkerMul2(r, rr, 1.0e+01, 0.0, &r, &rr);
+      }
+    }else{
+      while( e<=-100 ){
+        e += 100;
+        dekkerMul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
+      }
+      while( e<=-10  ){
+        e += 10;
+        dekkerMul2(r,rr, 1.0e-10, -3.6432197315497741579e-27, &r, &rr);
+      }
+      while( e<=-1   ){
+        e += 1;
+        dekkerMul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
       }
     }
+    *pResult = r+rr;
+    if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
   }
+  if( sign<0 ) *pResult = -*pResult;
+  assert( !sqlite3IsNaN(*pResult) );
 
-  /* store the result */
-  *pResult = result;
-
+atof_return:
   /* return true if number and no extra non-whitespace characters after */
   if( z==zEnd && nDigit>0 && eValid && eType>0 ){
     return eType;
@@ -926,36 +917,6 @@ int sqlite3Atoi(const char *z){
   int x = 0;
   sqlite3GetInt32(z, &x);
   return x;
-}
-
-/* Double-Double multiplication.  *(z,zz) = (x,xx) * (y,yy)
-**
-** Reference:
-**   T. J. Dekker, "A Floating-Point Technique for Extending the
-**   Available Precision".  1971-07-26.
-*/
-static void dekkerMul2(
-  double x,  double xx,
-  double y,  double yy,
-  double *z, double *zz
-){
-  double hx, tx, hy, ty, p, q, c, cc;
-  u64 m;
-  memcpy(&m, &x, 8);
-  m &= 0xfffffffffc000000L;
-  memcpy(&hx, &m, 8);
-  tx = x - hx;
-  memcpy(&m, &y, 8);
-  m &= 0xfffffffffc000000L;
-  memcpy(&hy, &m, 8);
-  ty = y - hy;
-  p = hx*hy;
-  q = hx*ty + tx*hy;
-  c = p+q;
-  cc = p - c + q + tx*ty;
-  cc = x*yy + xx*y + cc;
-  *z = c + cc;
-  *zz = c - *z + cc;
 }
 
 /*
