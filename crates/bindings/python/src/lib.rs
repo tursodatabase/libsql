@@ -57,7 +57,7 @@ impl Result {
                 match row {
                     Some(row) => {
                         let value = row.get::<i32>(0).map_err(to_py_err)?;
-                        let elements: Vec<i32> = vec![value];
+                        let elements: Vec<Py<PyAny>> = vec![value.into_py(self_.py())];
                         Ok(Some(PyTuple::new(self_.py(), elements)))
                     }
                     None => Ok(None),
