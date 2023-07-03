@@ -260,7 +260,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         rpc_server_ca_cert: args.grpc_ca_cert_file,
         #[cfg(feature = "bottomless")]
         bottomless_replication: if args.enable_bottomless_replication {
-            Some(bottomless::replicator::Options::from_env())
+            Some(bottomless::replicator::Options::from_env()?)
         } else {
             None
         },
