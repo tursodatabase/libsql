@@ -51,10 +51,10 @@ for {set i 1} {$i<20000} {incr i} {
     set y [db eval {SELECT $x=CAST(quote($x) AS real)}]
     if {!$y} {
       db eval {SELECT real2hex($x) a, real2hex(CAST(quote($x) AS real)) b} {}
-      puts "\nIN:    $a $xf"
-      puts [format {QUOTE: %16s %s} {} [db eval {SELECT quote($x)}]]
+      puts "\n!IN:    $a $xf"
+      puts [format {!QUOTE: %16s %s} {} [db eval {SELECT quote($x)}]]
       db eval {SELECT CAST(quote($x) AS real) c} {}
-      puts "OUT:   $b [format %.32e $c]"
+      puts "!OUT:   $b [format %.32e $c]"
     }
     set y
   } {1}

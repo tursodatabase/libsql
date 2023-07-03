@@ -928,6 +928,31 @@ int sqlite3Atoi(const char *z){
   return x;
 }
 
+/* Double-Double multiplication.  *(z,zz) = (x,xx) * (y,yy)
+**
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
+*/
+static void mul2(
+  double x,  double xx,
+  double y,  double yy,
+  double *z, double *zz
+){
+  double hx, tx, hy, ty, p, q, c, cc;
+  p = 67108865.0 * x;
+  hx = x - p + p; tx = x - hx;
+  p = 67108865.0 * y;
+  hy = y - p + p; ty = y - hy;
+  p = hx*hy;
+  q = hx*ty + tx*hy;
+  c = p+q;
+  cc = p - c + q + tx*ty;
+  cc = x*yy + xx*y + cc;
+  *z = c + cc;
+  *zz = c - *z + cc;
+}
+
 /*
 ** Decode a floating-point value into an approximate decimal
 ** representation.
@@ -969,10 +994,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   /* Multiply r by powers of ten until it lands somewhere in between
   ** 1.0e+19 and 1.0e+17.
   */
-  if( sizeof(long double)>8
-   || (v & 0x0000000000ffffffLL)==0
-   || (v & 0xffffffffff000000LL)==0
-  ){
+  if( sizeof(long double)>8 && 0 ){
     long double rr = r;
     if( rr>=1.0e+19 ){
       while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
@@ -985,23 +1007,40 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     }
     v = (u64)rr;
   }else{
-    double r2, r3;
-    v &= 0xffffffffff000000LL;
-    memcpy(&r2, &v, 8);
-    assert( r2<r );
-    assert( r2>0.0 );
-    r3 = r - r2;
-    assert( r3>0.0 );
-    if( r2>=1.0e+19 ){
-      while( r2>=1.0e+119L ){ exp+=100; r2 *= 1.0e-100; r3 *= 1.0e-100; }
-      while( r2>=1.0e+29L  ){ exp+=10;  r2 *= 1.0e-10;  r3 *= 1.0e-10;  }
-      while( r2>=1.0e+19L  ){ exp++;    r2 *= 1.0e-1;   r3 *= 1.0e-1;   }
+    double rr = 0.0;
+    if( r>=1.0e+19 ){
+      while( r>=1.0e+119 ){
+        if( r>=1.0e+300 ){
+          exp += 300;
+          r *= 1.0e-300;
+          break;
+        }
+        exp += 100;
+        mul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
+      }
+      while( r>=1.0e+29 ){
+        exp += 10;
+        mul2(r,rr, 1.0e-10, -3.6432197315497741579e-27, &r, &rr);
+      }
+      while( r>=1.0e+19 ){
+        exp += 1;
+        mul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
+      }
     }else{
-      while( r2<1.0e-97L   ){ exp-=100; r2 *= 1.0e+100; r3 *= 1.0e+100; }
-      while( r2<1.0e+07L   ){ exp-=10;  r2 *= 1.0e+10;  r3 *= 1.0e+10;  }
-      while( r2<1.0e+17L   ){ exp--;    r2 *= 1.0e+1;   r3 *= 1.0e+1;   }
+      while( r<1.0e-98  ){
+        exp -= 100;
+        mul2(r, rr, 1.0e+100, -1.5902891109759918046, &r, &rr);
+      }
+      while( r<1.0e+08  ){
+        exp -= 10;
+        mul2(r, rr, 1.0e+10, 0.0, &r, &rr);
+      }
+      while( r<1.0e+18  ){
+        exp -= 1;
+        mul2(r, rr, 1.0e+01, 0.0, &r, &rr);
+      }
     }
-    v = (u64)(r2+r3);
+    v = (u64)(r)+(u64)(rr);
   }
 
 
