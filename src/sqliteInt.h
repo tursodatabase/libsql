@@ -4090,6 +4090,7 @@ struct Sqlite3Config {
   u8 bUseCis;                       /* Use covering indices for full-scans */
   u8 bSmallMalloc;                  /* Avoid large memory allocations if true */
   u8 bExtraSchemaChecks;            /* Verify type,name,tbl_name in schema */
+  u8 bUseLongDouble;                /* Make use of long double */
   int mxStrlen;                     /* Maximum string length */
   int neverCorrupt;                 /* Database is always well-formed */
   int szLookaside;                  /* Default lookaside buffer size */

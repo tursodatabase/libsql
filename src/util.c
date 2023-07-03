@@ -999,7 +999,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   /* Multiply r by powers of ten until it lands somewhere in between
   ** 1.0e+19 and 1.0e+17.
   */
-  if( sizeof(LONGDOUBLE_TYPE)>8 ){
+  if( sqlite3Config.bUseLongDouble ){
     LONGDOUBLE_TYPE rr = r;
     if( rr>=1.0e+19 ){
       while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
@@ -1049,7 +1049,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         dekkerMul2(r, rr, 1.0e+01, 0.0, &r, &rr);
       }
     }
-    v = (u64)(r)+(u64)(rr);
+    v = rr<0.0 ? (u64)r-(u64)(-rr) : (u64)r+(u64)rr;
   }
 
 
@@ -1089,7 +1089,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     }
   }
   memmove(p->z, &p->z[i+1], p->n);
-  while( p->n>0 && p->z[p->n-1]=='0' ){ p->n--; }
+  while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
 }
 
 /*
