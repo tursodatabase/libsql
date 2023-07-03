@@ -21,6 +21,7 @@ static const char zHelp[] =
   "  --memdb             Use an in-memory database\n"
   "  --mmap SZ           MMAP the first SZ bytes of the database file\n"
   "  --multithread       Set multithreaded mode\n"
+  "  --nolongdouble      Disable the use of long double\n"
   "  --nomemstat         Disable memory statistics\n"
   "  --nomutex           Open db with SQLITE_OPEN_NOMUTEX\n"
   "  --nosync            Set PRAGMA synchronous=OFF\n"
@@ -2307,6 +2308,10 @@ int main(int argc, char **argv){
         ARGC_VALUE_CHECK(1);
         mmapSize = integerValue(argv[++i]);
  #endif
+      }else if( strcmp(z,"nolongdouble")==0 ){
+#ifdef SQLITE_TESTCTRL_USELONGDOUBLE
+        sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, 0);
+#endif       
       }else if( strcmp(z,"nomutex")==0 ){
         openFlags |= SQLITE_OPEN_NOMUTEX;
       }else if( strcmp(z,"nosync")==0 ){
