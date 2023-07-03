@@ -42,8 +42,16 @@ impl Connection {
         Statement::prepare(self.raw, sql.into().as_str())
     }
 
-    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<Rows> {
-        Rows::execute(self.raw, sql.into().as_str())
+    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<()> {
+        let stmt = Statement::prepare(self.raw, sql.into().as_str())?;
+        let rows = stmt.execute()?;
+        loop {
+            match rows.next()? {
+                Some(_) => {}
+                None => break,
+            }
+        }
+        Ok(())
     }
 
     pub fn execute_async<S: Into<String>>(&self, sql: S) -> RowsFuture {

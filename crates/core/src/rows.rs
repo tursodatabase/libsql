@@ -1,22 +1,20 @@
-use crate::{Error, Result};
+use crate::{errors, Error, Result, Statement};
 
 /// Query result rows.
-pub struct Rows {}
+pub struct Rows {
+    pub(crate) raw: *mut libsql_sys::sqlite3,
+    pub(crate) raw_stmt: *mut libsql_sys::sqlite3_stmt,
+}
 
 impl Rows {
-    pub(crate) fn execute(raw: *mut libsql_sys::sqlite3, sql: &str) -> Result<Rows> {
-        let err = unsafe {
-            libsql_sys::sqlite3_exec(
-                raw,
-                sql.as_ptr() as *const i8,
-                None,
-                std::ptr::null_mut(),
-                std::ptr::null_mut(),
-            )
-        };
+    pub fn next(&self) -> Result<Option<Row>> {
+        let err = unsafe { libsql_sys::sqlite3_step(std::ptr::null_mut()) };
+        println!("step says = {}", err);
         match err as u32 {
-            libsql_sys::SQLITE_OK => Ok(Rows {}),
-            _ => Err(Error::QueryFailed(sql.to_owned())),
+            libsql_sys::SQLITE_ROW => Ok(Some(Row { raw: self.raw_stmt })),
+            libsql_sys::SQLITE_DONE => Ok(None),
+            libsql_sys::SQLITE_OK => Ok(None),
+            _ => Err(Error::QueryFailed(format!("Failed to fetch next row: {}", errors::sqlite_error_message(self.raw)))),
         }
     }
 
@@ -47,7 +45,12 @@ impl futures::Future for RowsFuture {
         self: std::pin::Pin<&mut Self>,
         _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
-        let ret = Rows::execute(self.raw, &self.sql);
+        let stmt = Statement::prepare(self.raw, &self.sql)?;
+        let ret = stmt.execute();
         std::task::Poll::Ready(ret)
     }
+}
+
+pub struct Row {
+    pub(crate) raw: *mut libsql_sys::sqlite3_stmt,
 }

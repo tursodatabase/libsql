@@ -59,7 +59,7 @@ pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
 pub unsafe extern "C" fn libsql_execute(
     conn: libsql_connection_t,
     sql: *const std::ffi::c_char,
-) -> libsql_rows_t {
+) {
     let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
     let sql = match sql.to_str() {
         Ok(sql) => sql,
@@ -68,9 +68,7 @@ pub unsafe extern "C" fn libsql_execute(
         }
     };
     let conn = conn.get_ref();
-    let result = conn.execute(sql.to_string()).unwrap();
-    let result = Box::leak(Box::new(libsql_rows { result }));
-    libsql_rows_t::from(result)
+    conn.execute(sql.to_string()).unwrap();
 }
 
 #[no_mangle]

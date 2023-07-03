@@ -31,7 +31,7 @@ libsql_connection_t libsql_connect(libsql_database_t db);
 
 void libsql_disconnect(libsql_connection_t conn);
 
-libsql_rows_t libsql_execute(libsql_connection_t conn, const char *sql);
+void libsql_execute(libsql_connection_t conn, const char *sql);
 
 void libsql_free_rows(libsql_rows_t res);
 
