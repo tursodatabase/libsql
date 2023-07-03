@@ -1,5 +1,5 @@
-C Add\sthe\s--nolongdouble\soption\sto\sspeedtest1.c.
-D 2023-07-03T15:11:28.795
+C Store\sthe\sfp-speed-1.c\stest\sprogram\sused\sto\smeasure\srelative\sperformance\sof\nSQLite\sversus\sthe\sstandard\slibrary,\sin\sthe\stest/\sdirectory.\s\sA\sheader\scomment\nexplains\show\sto\suse\sit.
+D 2023-07-03T15:30:50.934
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1014,6 +1014,7 @@ F test/fkey8.test 51deda7f1a1448bca95875e4a6e1a3a75b4bd7215e924e845bd60de60e4d84
 F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/fordelete.test ba98f14446b310f9c9d935b97ec748753d0144a28b356ba30d1f4f6958fdde5c
 F test/format4.test eeae341953db8b6bda7f549044797c3278a6cc345d11ada81471671b654f8ef4
+F test/fp-speed-1.c ca95152d579530c967240ead1387dc1208052d310dfa22bc9ebded56d4e6c026
 F test/fpconv1.test d5d8aa0c427533006c112fb1957cdd1ea68c1d0709470dabb9ca02c2e4c06ad8
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts3.test 672a040ea57036fb4b6fdc09027c18d7d24ab654
@@ -2042,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 32befb224b254639e756fd493f300507ff60c5222e00a7338dbcd39140133964
-R c8e7dd74f6b9c42320f5944043a97c25
+P 6bf6018a00d61c5f0e53b37b00befaf5ad1d85323f41cf0cea25d8c6c1017096
+R ef72dab00177aafb299a3d17bab4eff5
 U drh
-Z 6df861edb8bc9863ba30116d69bbe800
+Z b2aa398ed798c317f62bc01949c71c6b
 # Remove this line to create a well-formed Fossil manifest.
