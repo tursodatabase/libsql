@@ -1,5 +1,6 @@
 use anyhow::Result;
 use aws_sdk_s3::Client;
+use chrono::Utc;
 use clap::{Parser, Subcommand};
 
 mod replicator_extras;
@@ -60,6 +61,12 @@ enum Commands {
             long_help = "Generation to restore from.\nSkip this parameter to restore from the newest generation."
         )]
         generation: Option<uuid::Uuid>,
+        #[clap(
+            long,
+            short,
+            long_help = "UTC timestamp which is an upper bound for the transactions to be restored."
+        )]
+        utc_time: Option<chrono::DateTime<Utc>>,
     },
     #[clap(about = "Remove given generation from remote storage")]
     Rm {
@@ -129,11 +136,11 @@ async fn run() -> Result<()> {
                     .await?
             }
         },
-        Commands::Restore { generation } => {
-            match generation {
-                Some(gen) => client.restore_from(gen).await?,
-                None => client.restore().await?,
-            };
+        Commands::Restore {
+            generation,
+            utc_time,
+        } => {
+            client.restore(generation, utc_time).await?;
         }
         Commands::Rm {
             generation,

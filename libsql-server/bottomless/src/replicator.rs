@@ -5,11 +5,13 @@ use anyhow::anyhow;
 use arc_swap::ArcSwap;
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
+use aws_sdk_s3::operation::get_object::GetObjectOutput;
 use aws_sdk_s3::operation::list_objects::builders::ListObjectsFluentBuilder;
 use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes, BytesMut};
+use chrono::{DateTime, Utc};
 use std::collections::BTreeMap;
 use std::io::SeekFrom;
 use std::ops::Deref;
@@ -17,10 +19,10 @@ use std::path::Path;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::io::{AsyncReadExt, AsyncSeekExt};
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::watch::{channel, Receiver, Sender};
 use tokio::time::{timeout_at, Instant};
-use uuid::Uuid;
+use uuid::{NoContext, Uuid};
 
 pub type Result<T> = anyhow::Result<T>;
 
@@ -100,24 +102,59 @@ impl Options {
             .force_path_style(true)
             .build()
     }
+
+    pub fn from_env() -> Self {
+        let mut options = Self::default();
+        if let Ok(key) = std::env::var("LIBSQL_BOTTOMLESS_ENDPOINT") {
+            options.aws_endpoint = Some(key);
+        }
+        if let Ok(bucket_name) = std::env::var("LIBSQL_BOTTOMLESS_BUCKET") {
+            options.bucket_name = bucket_name;
+        }
+        if let Ok(seconds) = std::env::var("LIBSQL_BOTTOMLESS_BATCH_INTERVAL_SECS") {
+            if let Ok(seconds) = seconds.parse::<u64>() {
+                options.max_batch_interval = Duration::from_secs(seconds);
+            }
+        }
+        if let Ok(count) = std::env::var("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES") {
+            if let Ok(count) = count.parse::<usize>() {
+                options.max_frames_per_batch = count;
+            }
+        }
+        if let Ok(parallelism) = std::env::var("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX") {
+            if let Ok(parallelism) = parallelism.parse::<usize>() {
+                options.s3_upload_max_parallelism = parallelism;
+            }
+        }
+        if let Ok(compression) = std::env::var("LIBSQL_BOTTOMLESS_COMPRESSION") {
+            if let Ok(compression) = CompressionKind::parse(&compression) {
+                options.use_compression = compression;
+            }
+        }
+        if let Ok(verify) = std::env::var("LIBSQL_BOTTOMLESS_VERIFY_CRC") {
+            match verify.to_lowercase().as_ref() {
+                "yes" | "true" | "1" | "y" | "t" => options.verify_crc = true,
+                "no" | "false" | "0" | "n" | "f" => options.verify_crc = false,
+                _ => { /* unknown option */ }
+            }
+        }
+        options
+    }
 }
 
 impl Default for Options {
     fn default() -> Self {
-        let aws_endpoint = std::env::var("LIBSQL_BOTTOMLESS_ENDPOINT").ok();
-        let bucket_name =
-            std::env::var("LIBSQL_BOTTOMLESS_BUCKET").unwrap_or_else(|_| "bottomless".to_string());
         let db_id = std::env::var("LIBSQL_BOTTOMLESS_DATABASE_ID").ok();
         Options {
-            create_bucket_if_not_exists: false,
-            verify_crc: false,
-            use_compression: CompressionKind::Gzip,
+            create_bucket_if_not_exists: true,
+            verify_crc: true,
+            use_compression: CompressionKind::None,
             max_batch_interval: Duration::from_secs(15),
-            max_frames_per_batch: 1024, // with 4KiB pages => 4MiB batches (uncompressed)
+            max_frames_per_batch: 500, // basically half of the default SQLite checkpoint size
             s3_upload_max_parallelism: 32,
             db_id,
-            aws_endpoint,
-            bucket_name,
+            aws_endpoint: None,
+            bucket_name: "bottomless".to_string(),
         }
     }
 }
@@ -126,7 +163,7 @@ impl Replicator {
     pub const UNSET_PAGE_SIZE: usize = usize::MAX;
 
     pub async fn new<S: Into<String>>(db_path: S) -> Result<Self> {
-        Self::with_options(db_path, Options::default()).await
+        Self::with_options(db_path, Options::from_env()).await
     }
 
     pub async fn with_options<S: Into<String>>(db_path: S, options: Options) -> Result<Self> {
@@ -317,6 +354,9 @@ impl Replicator {
     // so verifying that it hasn't changed is a panic check. Perhaps in the future
     // it will be useful, if WAL ever allows changing the page size.
     pub fn set_page_size(&mut self, page_size: usize) -> Result<()> {
+        if self.page_size != page_size {
+            tracing::trace!("Setting page size to: {}", page_size);
+        }
         if self.page_size != Self::UNSET_PAGE_SIZE && self.page_size != page_size {
             return Err(anyhow::anyhow!(
                 "Cannot set page size to {}, it was already set to {}",
@@ -351,7 +391,12 @@ impl Replicator {
     // is the most common operation.
     // NOTICE: at the time of writing, uuid v7 is an unstable feature of the uuid crate
     fn generate_generation() -> Uuid {
-        let (seconds, nanos) = uuid::timestamp::Timestamp::now(uuid::NoContext).to_unix();
+        let ts = uuid::timestamp::Timestamp::now(uuid::NoContext);
+        Self::generation_from_timestamp(ts)
+    }
+
+    fn generation_from_timestamp(ts: uuid::Timestamp) -> Uuid {
+        let (seconds, nanos) = ts.to_unix();
         let (seconds, nanos) = (253370761200 - seconds, 999999999 - nanos);
         let synthetic_ts = uuid::Timestamp::from_unix(uuid::NoContext, seconds, nanos);
         Uuid::new_v7(synthetic_ts)
@@ -438,13 +483,17 @@ impl Replicator {
     // Returns the compressed database file path and its change counter, extracted
     // from the header of page1 at offset 24..27 (as per SQLite documentation).
     pub async fn compress_main_db_file(&self) -> Result<(&'static str, [u8; 4])> {
-        use tokio::io::AsyncWriteExt;
         let compressed_db = "db.gz";
         let mut reader = tokio::fs::File::open(&self.db_path).await?;
         let mut writer = async_compression::tokio::write::GzipEncoder::new(
             tokio::fs::File::create(compressed_db).await?,
         );
-        tokio::io::copy(&mut reader, &mut writer).await?;
+        let size = tokio::io::copy(&mut reader, &mut writer).await?;
+        tracing::trace!(
+            "Compressed database file ({} bytes) into {}",
+            size,
+            compressed_db
+        );
         writer.shutdown().await?;
         let change_counter = Self::read_change_counter(&mut reader).await?;
         Ok((compressed_db, change_counter))
@@ -527,6 +576,7 @@ impl Replicator {
                     .body(ByteStream::from_path(compressed_db_path).await?)
                     .send()
                     .await?;
+                let _ = tokio::fs::remove_file(compressed_db_path).await;
                 change_counter
             }
         };
@@ -553,23 +603,54 @@ impl Replicator {
     // FIXME: assumes that this bucket stores *only* generations for databases,
     // it should be more robust and continue looking if the first item does not
     // match the <db-name>-<generation-uuid>/ pattern.
-    pub async fn find_newest_generation(&self) -> Option<Uuid> {
+    pub async fn latest_generation_before(
+        &self,
+        timestamp: Option<&DateTime<Utc>>,
+    ) -> Option<Uuid> {
+        let mut next_marker: Option<String> = None;
         let prefix = format!("{}-", self.db_name);
-        let response = self
-            .list_objects()
-            .prefix(prefix)
-            .max_keys(1)
-            .send()
-            .await
-            .ok()?;
-        let objs = response.contents()?;
-        let key = objs.first()?.key()?;
-        let key = match key.find('/') {
-            Some(index) => &key[self.db_name.len() + 1..index],
-            None => key,
-        };
-        tracing::debug!("Generation candidate: {}", key);
-        Uuid::parse_str(key).ok()
+        let timestamp = timestamp.map(|ts| {
+            let ts = uuid::Timestamp::from_unix(NoContext, ts.timestamp() as u64, 0);
+            Self::generation_from_timestamp(ts)
+        });
+        loop {
+            let mut request = self.list_objects().prefix(prefix.clone());
+            if timestamp.is_none() {
+                request = request.max_keys(1);
+            }
+            if let Some(marker) = next_marker.take() {
+                request = request.marker(marker);
+            }
+            let response = request.send().await.ok()?;
+            let objs = response.contents()?;
+            if objs.is_empty() {
+                break;
+            }
+            let mut last_key = None;
+            for obj in objs {
+                let key = obj.key();
+                last_key = key;
+                if let Some(key) = last_key {
+                    tracing::trace!("Generation candidate: {}", key);
+                    let key = match key.find('/') {
+                        Some(index) => &key[self.db_name.len() + 1..index],
+                        None => key,
+                    };
+                    if let Ok(generation) = Uuid::parse_str(key) {
+                        match timestamp.as_ref() {
+                            None => return Some(generation),
+                            // since our UUIDs have reverse order, we check for first generation
+                            // higher than provided timestamp in order to get the first one that
+                            // happened before it
+                            Some(ts) if &generation >= ts => return Some(generation),
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            next_marker = last_key.map(String::from);
+        }
+        None
     }
 
     // Tries to fetch the remote database change counter from given generation
@@ -615,18 +696,17 @@ impl Replicator {
         let last_frame_no = frame_suffix[(last_frame_delim + 1)..compression_delim]
             .parse::<u32>()
             .ok()?;
-        let compression_kind = match &frame_suffix[(compression_delim + 1)..] {
-            "gz" => CompressionKind::Gzip,
-            "raw" => CompressionKind::None,
-            _ => return None,
-        };
+        let compression_kind =
+            CompressionKind::parse(&frame_suffix[(compression_delim + 1)..]).ok()?;
         Some((first_frame_no, last_frame_no, compression_kind))
     }
 
     // Restores the database state from given remote generation
-    pub async fn restore_from(&mut self, generation: Uuid) -> Result<RestoreAction> {
-        use tokio::io::AsyncWriteExt;
-
+    pub async fn restore_from(
+        &mut self,
+        generation: Uuid,
+        utc_time: Option<DateTime<Utc>>,
+    ) -> Result<RestoreAction> {
         // first check if there are any remaining files that we didn't manage to upload
         // on time in the last run
         self.upload_remaining_files(&generation).await?;
@@ -649,7 +729,11 @@ impl Replicator {
         tracing::debug!("Counters: l={:?}, r={:?}", local_counter, remote_counter);
 
         let last_consistent_frame = self.get_last_consistent_frame(&generation).await?;
-        tracing::debug!("Last consistent remote frame: {}.", last_consistent_frame);
+        tracing::debug!(
+            "Last consistent remote frame in generation {}: {}.",
+            generation,
+            last_consistent_frame
+        );
 
         let wal_pages = self.get_local_wal_page_count().await;
         match local_counter.cmp(&remote_counter) {
@@ -684,7 +768,12 @@ impl Replicator {
         tokio::fs::rename(&self.db_path, format!("{}.bottomless.backup", self.db_path))
             .await
             .ok(); // Best effort
-        let mut main_db_writer = tokio::fs::File::create(&self.db_path).await?;
+        let mut main_db_writer = tokio::fs::OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(&self.db_path)
+            .await?;
         // If the db file is not present, the database could have been empty
 
         let main_db_path = match self.use_compression {
@@ -694,22 +783,22 @@ impl Replicator {
 
         if let Ok(db_file) = self.get_object(main_db_path).send().await {
             let mut body_reader = db_file.body.into_async_read();
-            match self.use_compression {
+            let db_size = match self.use_compression {
                 CompressionKind::None => {
-                    tokio::io::copy(&mut body_reader, &mut main_db_writer).await?;
+                    tokio::io::copy(&mut body_reader, &mut main_db_writer).await?
                 }
                 CompressionKind::Gzip => {
                     let mut decompress_reader = async_compression::tokio::bufread::GzipDecoder::new(
                         tokio::io::BufReader::new(body_reader),
                     );
-                    tokio::io::copy(&mut decompress_reader, &mut main_db_writer).await?;
+                    tokio::io::copy(&mut decompress_reader, &mut main_db_writer).await?
                 }
-            }
+            };
             main_db_writer.flush().await?;
 
             let page_size = Self::read_page_size(&mut main_db_writer).await?;
             self.set_page_size(page_size)?;
-            tracing::info!("Restored the main database file");
+            tracing::info!("Restored the main database file ({} bytes)", db_size);
         }
 
         let mut next_marker = None;
@@ -725,7 +814,7 @@ impl Replicator {
         let mut applied_wal_frame = false;
         if let Some((page_size, mut checksum)) = self.get_metadata(&generation).await? {
             self.set_page_size(page_size as usize)?;
-            loop {
+            'restore_wal: loop {
                 let mut list_request = self.list_objects().prefix(&prefix);
                 if let Some(marker) = next_marker {
                     list_request = list_request.marker(marker);
@@ -745,7 +834,6 @@ impl Replicator {
                         .key()
                         .ok_or_else(|| anyhow::anyhow!("Failed to get key for an object"))?;
                     tracing::debug!("Loading {}", key);
-                    let frame = self.get_object(key.into()).send().await?;
 
                     let (first_frame_no, last_frame_no, compression_kind) =
                         match Self::parse_frame_range(key) {
@@ -771,16 +859,19 @@ impl Replicator {
                                 last_frame_no, last_consistent_frame);
                         break;
                     }
+                    let frame = match self.get_frame(key, utc_time.as_ref()).await? {
+                        Some(frame) => frame,
+                        None => {
+                            let ts = utc_time.unwrap_or_default();
+                            tracing::trace!("Requested frame object {} has timestamp more recent than expected {}. Stopping recovery.", key, ts.to_rfc3339());
+                            break 'restore_wal;
+                        }
+                    };
                     let mut frameno = first_frame_no;
                     let mut reader =
                         BatchReader::new(frameno, frame.body, self.page_size, compression_kind);
                     while let Some(frame) = reader.next_frame_header().await? {
                         let pgno = frame.pgno();
-                        tracing::trace!(
-                            "Restoring next frame {} as main db page {}",
-                            frameno,
-                            pgno
-                        );
                         let page_size = self.page_size;
                         let buf = pending_pages.entry(pgno).or_insert_with(|| {
                             let mut v = Vec::with_capacity(page_size);
@@ -794,21 +885,20 @@ impl Replicator {
                         }
                         if frame.is_committed() {
                             let pending_pages = std::mem::take(&mut pending_pages);
-                            let page_count = pending_pages.len();
                             for (pgno, data) in pending_pages {
                                 let offset = (pgno - 1) as u64 * (page_size as u64);
                                 main_db_writer.seek(SeekFrom::Start(offset)).await?;
                                 main_db_writer.write_all(&data).await?;
                                 // should we flush here? In theory if we don't recover fully we scrap
                                 // anyway
+                                applied_wal_frame = true;
+                                tracing::trace!("Restored page no. {}", pgno);
                             }
-                            tracing::trace!("Restored {} pages into main DB file.", page_count);
                         }
                         frameno += 1;
                         last_received_frame_no += 1;
                     }
                     main_db_writer.flush().await?;
-                    applied_wal_frame = true;
                 }
                 next_marker = response
                     .is_truncated()
@@ -823,25 +913,36 @@ impl Replicator {
             tracing::info!(".meta object not found, skipping WAL restore.");
         }
 
+        main_db_writer.shutdown().await?;
+        tracing::info!("Finished database restoration");
+
         if applied_wal_frame {
             Ok::<_, anyhow::Error>(RestoreAction::SnapshotMainDbFile)
         } else {
-            Ok::<_, anyhow::Error>(RestoreAction::None)
+            // since WAL was not applied, we can reuse the latest generation
+            Ok::<_, anyhow::Error>(RestoreAction::ReuseGeneration(generation))
         }
     }
 
     // Restores the database state from newest remote generation
-    pub async fn restore(&mut self) -> Result<RestoreAction> {
-        let newest_generation = match self.find_newest_generation().await {
+    pub async fn restore(
+        &mut self,
+        generation: Option<Uuid>,
+        timestamp: Option<DateTime<Utc>>,
+    ) -> Result<RestoreAction> {
+        let generation = match generation {
             Some(gen) => gen,
-            None => {
-                tracing::debug!("No generation found, nothing to restore");
-                return Ok(RestoreAction::SnapshotMainDbFile);
-            }
+            None => match self.latest_generation_before(timestamp.as_ref()).await {
+                Some(gen) => gen,
+                None => {
+                    tracing::debug!("No generation found, nothing to restore");
+                    return Ok(RestoreAction::SnapshotMainDbFile);
+                }
+            },
         };
 
-        tracing::info!("Restoring from generation {}", newest_generation);
-        self.restore_from(newest_generation).await
+        tracing::info!("Restoring from generation {}", generation);
+        self.restore_from(generation, timestamp).await
     }
 
     pub async fn get_last_consistent_frame(&self, generation: &Uuid) -> Result<u32> {
@@ -862,12 +963,16 @@ impl Replicator {
 
     fn try_get_last_frame_no(response: ListObjectsOutput, frame_no: &mut u32) -> Option<String> {
         let objs = response.contents()?;
-        let last = objs.last()?;
-        let key = last.key()?;
-        if let Some((_, last_frame_no, _)) = Self::parse_frame_range(key) {
-            *frame_no = last_frame_no;
+        let mut last_key = None;
+        for obj in objs.iter() {
+            last_key = Some(obj.key()?);
+            if let Some(key) = last_key {
+                if let Some((_, last_frame_no, _)) = Self::parse_frame_range(key) {
+                    *frame_no = last_frame_no;
+                }
+            }
         }
-        Some(key.to_string())
+        last_key.map(String::from)
     }
 
     async fn upload_remaining_files(&self, generation: &Uuid) -> Result<()> {
@@ -912,6 +1017,36 @@ impl Replicator {
             }
         }
         Ok(())
+    }
+
+    async fn get_frame(
+        &self,
+        key: &str,
+        timestamp: Option<&DateTime<Utc>>,
+    ) -> Result<Option<GetObjectOutput>> {
+        let mut frame_req = self.get_object(key.into());
+        if let Some(timestamp) =
+            timestamp.map(|t| aws_sdk_s3::primitives::DateTime::from_secs(t.timestamp()))
+        {
+            frame_req = frame_req.if_unmodified_since(timestamp);
+        }
+        match frame_req.send().await {
+            Ok(frame) => Ok(Some(frame)),
+            Err(e) => {
+                // check if request for unmodified since returned HTTP status code
+                // 412: Precondition failed
+                let precondition_failed = match &e {
+                    SdkError::ResponseError(e) => e.raw().http().status().as_u16() == 412,
+                    SdkError::ServiceError(e) => e.raw().http().status().as_u16() == 412,
+                    _ => false,
+                };
+                if precondition_failed {
+                    Ok(None)
+                } else {
+                    Err(e.into())
+                }
+            }
+        }
     }
 
     fn fpath_to_key<'a>(fpath: &'a Path, dir: &str) -> Option<&'a str> {
@@ -984,6 +1119,16 @@ pub enum CompressionKind {
     #[default]
     None,
     Gzip,
+}
+
+impl CompressionKind {
+    pub fn parse(kind: &str) -> std::result::Result<Self, &str> {
+        match kind {
+            "gz" | "gzip" => Ok(CompressionKind::Gzip),
+            "raw" | "" => Ok(CompressionKind::None),
+            other => Err(other),
+        }
+    }
 }
 
 impl std::fmt::Display for CompressionKind {
