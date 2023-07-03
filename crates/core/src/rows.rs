@@ -3,7 +3,6 @@ use std::cell::RefCell;
 
 /// Query result rows.
 pub struct Rows {
-    pub(crate) status: RefCell<Option<i32>>,
     pub(crate) raw: *mut libsql_sys::sqlite3,
     pub(crate) raw_stmt: *mut libsql_sys::sqlite3_stmt,
 }
