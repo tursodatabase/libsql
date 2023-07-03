@@ -1027,7 +1027,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
         mul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
       }
     }else{
-      while( r<1.0e-98  ){
+      while( r<1.0e-82  ){
         exp -= 100;
         mul2(r, rr, 1.0e+100, -1.5902891109759918046, &r, &rr);
       }
