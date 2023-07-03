@@ -928,6 +928,36 @@ int sqlite3Atoi(const char *z){
   return x;
 }
 
+/* Double-Double multiplication.  *(z,zz) = (x,xx) * (y,yy)
+**
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
+*/
+static void mul2(
+  double x,  double xx,
+  double y,  double yy,
+  double *z, double *zz
+){
+  double hx, tx, hy, ty, p, q, c, cc;
+  u64 m;
+  memcpy(&m, &x, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hx, &m, 8);
+  tx = x - hx;
+  memcpy(&m, &y, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hy, &m, 8);
+  ty = y - hy;
+  p = hx*hy;
+  q = hx*ty + tx*hy;
+  c = p+q;
+  cc = p - c + q + tx*ty;
+  cc = x*yy + xx*y + cc;
+  *z = c + cc;
+  *zz = c - *z + cc;
+}
+
 /*
 ** Decode a floating-point value into an approximate decimal
 ** representation.
@@ -937,16 +967,18 @@ int sqlite3Atoi(const char *z){
 ** decimal point if n is negative.  No rounding is performed if
 ** n is zero.
 */
-void sqlite3FpDecode(FpDecode *p, double rr, int iRound, int mxRound){
+void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
-  long double r;
   p->isSpecial = 0;
-  if( rr<0.0 ){
+
+  /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
+  ** NaN. */
+  if( r<0.0 ){
     p->sign = '-';
-    rr = -rr;
-  }else if( rr==0.0 ){
+    r = -r;
+  }else if( r==0.0 ){
     p->sign = '+';
     p->n = 1;
     p->iDP = 1;
@@ -955,7 +987,7 @@ void sqlite3FpDecode(FpDecode *p, double rr, int iRound, int mxRound){
   }else{
     p->sign = '+';
   }
-  memcpy(&v,&rr,8);
+  memcpy(&v,&r,8);
   e = v>>52;
   if( (e&0x7ff)==0x7ff ){
     p->isSpecial = 1 + (v!=0x7ff0000000000000L);
@@ -963,23 +995,65 @@ void sqlite3FpDecode(FpDecode *p, double rr, int iRound, int mxRound){
     p->iDP = 0;
     return;
   }
-  r = rr;
 
-  /* At this point, r is positive (non-zero) and is not Inf or NaN.
-  ** The strategy is to multiple or divide r by powers of 10 until
-  ** it is in between 1.0e+17 and 1.0e+19.  Then convert r into
-  ** an unsigned 64-bit integer v, and extract digits from v.
+  /* Multiply r by powers of ten until it lands somewhere in between
+  ** 1.0e+19 and 1.0e+17.
   */
-  if( r>=1.0e+19 ){
-    while( r>=1.0e+119L ){ exp+=100; r *= 1.0e-100L; }
-    while( r>=1.0e+29L  ){ exp+=10;  r *= 1.0e-10L;  }
-    while( r>=1.0e+19L  ){ exp++;    r *= 1.0e-1L;   }
+  if( sizeof(LONGDOUBLE_TYPE)>8 ){
+    LONGDOUBLE_TYPE rr = r;
+    if( rr>=1.0e+19 ){
+      while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
+      while( rr>=1.0e+29L  ){ exp+=10;  rr *= 1.0e-10L;  }
+      while( rr>=1.0e+19L  ){ exp++;    rr *= 1.0e-1L;   }
+    }else{
+      while( rr<1.0e-97L   ){ exp-=100; rr *= 1.0e+100L; }
+      while( rr<1.0e+07L   ){ exp-=10;  rr *= 1.0e+10L;  }
+      while( rr<1.0e+17L   ){ exp--;    rr *= 1.0e+1L;   }
+    }
+    v = (u64)rr;
   }else{
-    while( r<1.0e-97L   ){ exp-=100; r *= 1.0e+100L; }
-    while( r<1.0e+07L   ){ exp-=10;  r *= 1.0e+10L;  }
-    while( r<1.0e+17L   ){ exp--;    r *= 1.0e+1L;   }
+    /* If high-precision floating point is not available using "long double",
+    ** then use Dekker-style double-double computation to increase the
+    ** precision.
+    **
+    ** The error terms on constants like 1.0e+100 computed using the
+    ** decimal extension, for example as follows:
+    **
+    **   SELECT decimal_sci(decimal_sub('1.0e+100',decimal(1.0e+100)));
+    */
+    double rr = 0.0;
+    if( r>1.84e+19 ){
+      while( r>1.84e+119 ){
+        exp += 100;
+        mul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
+      }
+      while( r>1.84e+29 ){
+        exp += 10;
+        mul2(r,rr, 1.0e-10, -3.6432197315497741579e-27, &r, &rr);
+      }
+      while( r>1.84e+19 ){
+        exp += 1;
+        mul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
+      }
+    }else{
+      while( r<1.84e-82  ){
+        exp -= 100;
+        mul2(r, rr, 1.0e+100, -1.5902891109759918046e+83, &r, &rr);
+      }
+      while( r<1.84e+08  ){
+        exp -= 10;
+        mul2(r, rr, 1.0e+10, 0.0, &r, &rr);
+      }
+      while( r<1.84e+18  ){
+        exp -= 1;
+        mul2(r, rr, 1.0e+01, 0.0, &r, &rr);
+      }
+    }
+    v = (u64)(r)+(u64)(rr);
   }
-  v = (u64)r;
+
+
+  /* Extract significant digits. */
   i = sizeof(p->z)-1;
   while( v ){  p->z[i--] = (v%10) + '0'; v /= 10; }
   p->n = sizeof(p->z) - 1 - i;
