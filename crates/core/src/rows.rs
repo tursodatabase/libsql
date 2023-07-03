@@ -1,9 +1,12 @@
+use std::cell::RefCell;
+
 use crate::{errors, Error, Result, Statement};
 
 /// Query result rows.
 pub struct Rows {
     pub(crate) raw: *mut libsql_sys::sqlite3,
     pub(crate) raw_stmt: *mut libsql_sys::sqlite3_stmt,
+    err: RefCell<Option<i32>>,
 }
 
 unsafe impl Send for Rows {} // TODO: is this safe?
@@ -18,17 +21,24 @@ impl Rows {
             libsql_sys::SQLITE_OK => None,
             libsql_sys::SQLITE_DONE => None,
             _ => {
-                unsafe { libsql_sys::sqlite3_reset(raw_stmt) };
                 return Some(Rows {
                     raw,
                     raw_stmt,
+                    err: RefCell::new(Some(err)),
                 });
             }
         }
     }
 
     pub fn next(&self) -> Result<Option<Row>> {
-        let err = unsafe { libsql_sys::sqlite3_step(self.raw_stmt) };
+        let err = match self.err.take() {
+            Some(err) => {
+                err
+            }
+            None => {
+                unsafe { libsql_sys::sqlite3_step(self.raw_stmt) }
+            }
+        };
         match err as u32 {
             libsql_sys::SQLITE_OK => Ok(None),
             libsql_sys::SQLITE_DONE => Ok(None),
