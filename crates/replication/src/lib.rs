@@ -21,7 +21,7 @@ impl Replicator {
                 rpc::replication_log_client::ReplicationLogClient::connect(self.url.to_owned())
                     .await
                     .unwrap();
-            let response =client.hello(rpc::HelloRequest {}).await;
+            let response = client.hello(rpc::HelloRequest {}).await;
             println!("RESPONSE={:?}", response);
         });
     }

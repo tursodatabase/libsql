@@ -8,9 +8,7 @@ fn to_py_err(error: libsql_core::errors::Error) -> PyErr {
 #[pyfunction]
 fn connect(url: String) -> PyResult<Connection> {
     let db = libsql_core::Database::open(url);
-    Ok(Connection {
-        db,
-    })
+    Ok(Connection { db })
 }
 
 #[pyclass]
