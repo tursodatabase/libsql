@@ -110,12 +110,6 @@ pub unsafe extern "C" fn libsql_wait_result(res: libsql_rows_future_t) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_row_count(res: libsql_rows_t) -> std::ffi::c_int {
-    let res = res.get_ref();
-    res.row_count()
-}
-
-#[no_mangle]
 pub unsafe extern "C" fn libsql_column_count(res: libsql_rows_t) -> std::ffi::c_int {
     let res = res.get_ref();
     res.column_count()

@@ -43,12 +43,8 @@ impl Rows {
         }
     }
 
-    pub fn row_count(&self) -> i32 {
-        0
-    }
-
     pub fn column_count(&self) -> i32 {
-        0
+        unsafe { libsql_sys::sqlite3_column_count(self.raw_stmt) }
     }
 }
 

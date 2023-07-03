@@ -41,8 +41,6 @@ void libsql_free_rows_future(libsql_rows_future_t res);
 
 void libsql_wait_result(libsql_rows_future_t res);
 
-int libsql_row_count(libsql_rows_t res);
-
 int libsql_column_count(libsql_rows_t res);
 
 const char *libsql_value_text(libsql_rows_t _res, int _row, int _col);
