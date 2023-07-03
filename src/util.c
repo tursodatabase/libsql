@@ -1013,29 +1013,29 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     v = (u64)rr;
   }else{
     double rr = 0.0;
-    if( r>=1.0e+19 ){
-      while( r>=1.0e+119 ){
+    if( r>1.84e+19 ){
+      while( r>1.84e+119 ){
         exp += 100;
         mul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
       }
-      while( r>=1.0e+29 ){
+      while( r>1.84e+29 ){
         exp += 10;
         mul2(r,rr, 1.0e-10, -3.6432197315497741579e-27, &r, &rr);
       }
-      while( r>=1.0e+19 ){
+      while( r>1.84e+19 ){
         exp += 1;
         mul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
       }
     }else{
-      while( r<1.0e-82  ){
+      while( r<1.84e-82  ){
         exp -= 100;
         mul2(r, rr, 1.0e+100, -1.5902891109759918046, &r, &rr);
       }
-      while( r<1.0e+08  ){
+      while( r<1.84e+08  ){
         exp -= 10;
         mul2(r, rr, 1.0e+10, 0.0, &r, &rr);
       }
-      while( r<1.0e+18  ){
+      while( r<1.84e+18  ){
         exp -= 1;
         mul2(r, rr, 1.0e+01, 0.0, &r, &rr);
       }
