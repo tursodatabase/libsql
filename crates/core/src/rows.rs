@@ -1,5 +1,4 @@
 use crate::{errors, Error, Result, Statement};
-use std::cell::RefCell;
 
 /// Query result rows.
 pub struct Rows {
@@ -19,9 +18,8 @@ impl Rows {
             libsql_sys::SQLITE_OK => None,
             libsql_sys::SQLITE_DONE => None,
             _ => {
-                let status = unsafe { libsql_sys::sqlite3_reset(raw_stmt) };
+                unsafe { libsql_sys::sqlite3_reset(raw_stmt) };
                 return Some(Rows {
-                    status: RefCell::new(Some(status)),
                     raw,
                     raw_stmt,
                 });
