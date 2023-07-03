@@ -4,10 +4,20 @@ use libsql_client::{Connection, QueryResult, Statement, Value};
 use std::net::ToSocketAddrs;
 use std::path::PathBuf;
 use std::time::Duration;
+use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use url::Url;
 
 const S3_URL: &str = "http://localhost:9000/";
+
+fn start_db(step: u32, config: &Config) -> JoinHandle<()> {
+    let db_config = config.clone();
+    tokio::spawn(async move {
+        if let Err(e) = run_server(db_config).await {
+            panic!("Failed step {}: {}", step, e);
+        }
+    })
+}
 
 #[tokio::test]
 async fn backup_restore() {
@@ -33,7 +43,7 @@ async fn backup_restore() {
             use_compression: bottomless::replicator::CompressionKind::Gzip,
             bucket_name: BUCKET.to_string(),
             max_batch_interval: Duration::from_millis(250),
-            ..Default::default()
+            ..bottomless::replicator::Options::from_env()
         }),
         db_path: PATH.into(),
         http_addr: Some(listener_addr),
@@ -41,15 +51,17 @@ async fn backup_restore() {
     };
 
     {
-        // 1: create a local database, fill it with data, wait for WAL backup
+        tracing::info!(
+            "---STEP 1: create a local database, fill it with data, wait for WAL backup---"
+        );
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = tokio::spawn(run_server(db_config.clone()));
+        let db_job = start_db(1, &db_config);
 
         sleep(Duration::from_secs(2)).await;
 
         let _ = sql(
             &connection_addr,
-            ["CREATE TABLE t(id INT PRIMARY KEY, name TEXT);"],
+            ["CREATE TABLE IF NOT EXISTS t(id INT PRIMARY KEY, name TEXT);"],
         )
         .await
         .unwrap();
@@ -69,7 +81,7 @@ async fn backup_restore() {
         sleep(Duration::from_secs(2)).await;
 
         db_job.abort();
-        drop(cleaner); // drop database files
+        drop(cleaner);
     }
 
     // make sure that db file doesn't exist, and that the bucket contains backup
@@ -77,9 +89,11 @@ async fn backup_restore() {
     assert_bucket_occupancy(BUCKET, false).await;
 
     {
-        // 2: recreate the database, wait for restore from backup
-        let _ = DbFileCleaner::new(PATH);
-        let db_job = tokio::spawn(run_server(db_config));
+        tracing::info!(
+            "---STEP 2: recreate the database from WAL - create a snapshot at the end---"
+        );
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(2, &db_config);
 
         sleep(Duration::from_secs(2)).await;
 
@@ -108,6 +122,72 @@ async fn backup_restore() {
         }
 
         db_job.abort();
+        drop(cleaner);
+    }
+
+    assert!(!std::path::Path::new(PATH).exists());
+
+    {
+        tracing::info!("---STEP 3: recreate database from snapshot alone---");
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(3, &db_config);
+
+        sleep(Duration::from_secs(2)).await;
+
+        // override existing entries, this will generate WAL
+        let stmts: Vec<_> = (0u32..OPS as u32)
+            .map(|i| {
+                format!(
+                    "INSERT INTO t(id, name) VALUES({}, '{}-x') ON CONFLICT (id) DO UPDATE SET name = '{}-x';",
+                    i % 10,
+                    i,
+                    i
+                )
+            })
+            .collect();
+        let _ = sql(&connection_addr, stmts).await.unwrap();
+
+        // wait for WAL to backup
+        sleep(Duration::from_secs(2)).await;
+        db_job.abort();
+        drop(cleaner);
+    }
+
+    assert!(!std::path::Path::new(PATH).exists());
+
+    {
+        tracing::info!("---STEP 4: recreate the database from snapshot + WAL---");
+        let cleaner = DbFileCleaner::new(PATH);
+        let db_job = start_db(4, &db_config);
+
+        sleep(Duration::from_secs(2)).await;
+
+        let result = sql(&connection_addr, ["SELECT id, name FROM t ORDER BY id;"])
+            .await
+            .unwrap();
+        let rs = result
+            .into_iter()
+            .next()
+            .unwrap()
+            .into_result_set()
+            .unwrap();
+        const OPS_CEIL: usize = (OPS + 9) / 10;
+        assert_eq!(rs.rows.len(), OPS_CEIL, "unexpected number of rows");
+        let base = if OPS < 10 { 0 } else { OPS - 10 } as i64;
+        for (i, row) in rs.rows.iter().enumerate() {
+            let i = i as i64;
+            let id = row.cells["id"].clone();
+            let name = row.cells["name"].clone();
+            assert_eq!(
+                (id, name),
+                (Value::Integer(i), Value::Text(format!("{}-x", base + i))),
+                "unexpected values for row {}",
+                i
+            );
+        }
+
+        db_job.abort();
+        drop(cleaner);
     }
 }
 

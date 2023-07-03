@@ -404,7 +404,7 @@ pub async fn init_bottomless_replicator(
         .to_owned();
     let mut replicator = bottomless::replicator::Replicator::with_options(path, options).await?;
 
-    match replicator.restore().await? {
+    match replicator.restore(None, None).await? {
         bottomless::replicator::RestoreAction::None => (),
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
             replicator.new_generation();
