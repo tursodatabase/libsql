@@ -8,11 +8,11 @@ The libSQL API a batteries-included wrapper around the SQLite C API to support t
 
 The libSQL API supports the following programming languages:
 
-* [Rust](crates/core)
-* [JavaScript](crates/bindings/js)
-* [Python](crates/bindings/python)
-* [Go](crates/bindings/go)
-* [C](crates/bindings/c)
+* ✅ [Rust](crates/core) 
+* ✅ [Python](crates/bindings/python)
+* 👷 [JavaScript](crates/bindings/js)
+* 👷 [Go](crates/bindings/go)
+* 👷 [C](crates/bindings/c)
 
 ## Developing
 
