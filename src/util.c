@@ -940,10 +940,15 @@ static void mul2(
   double *z, double *zz
 ){
   double hx, tx, hy, ty, p, q, c, cc;
-  p = 67108865.0 * x;
-  hx = x - p + p; tx = x - hx;
-  p = 67108865.0 * y;
-  hy = y - p + p; ty = y - hy;
+  u64 m;
+  memcpy(&m, &x, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hx, &m, 8);
+  tx = x - hx;
+  memcpy(&m, &y, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hy, &m, 8);
+  ty = y - hy;
   p = hx*hy;
   q = hx*ty + tx*hy;
   c = p+q;
@@ -1010,11 +1015,6 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     double rr = 0.0;
     if( r>=1.0e+19 ){
       while( r>=1.0e+119 ){
-        if( r>=1.0e+300 ){
-          exp += 300;
-          r *= 1.0e-300;
-          break;
-        }
         exp += 100;
         mul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
       }
