@@ -1,5 +1,5 @@
-C This\scheck-in\sadds\sthe\suse\sof\s"long\sdouble"\sto\ssqlite3FpDecode()\swhich\swhen\nrun\son\sx86\susing\sa\scompiler\sthat\stranslates\s"long\sdouble"\sinto\sbinary80,\ncauses\sall\slegacy\stests\sto\spass.\s\sBut\son\sa\ssystem\swhere\s"long\sdouble"\sis\sjust\nan\salias\sfor\s"double",\ssome\sof\sthe\stests\sare\sstill\sfailing.
-D 2023-07-01T20:21:27.087
+C An\sidea\sfor\simproving\saccuracy\sof\sfp-to-decimal\sconversion\sfor\ssystems\sthat\ndo\snot\shave\s"long\sdouble".\s\sDoes\snot\squite\swork.\s\sRetained\sonly\sfor\ndocumentation\spurposes.
+D 2023-07-03T00:40:37.359
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -705,7 +705,7 @@ F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
 F src/update.c 0aa36561167a7c40d01163238c297297962f31a15a8d742216b3c37cdf25f731
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c d68692390be083744bd0dfafc797472b0d304743040220e18b93bc9bad8c8d6e
+F src/util.c 12741de9969af5134488b7c89a97ecc22144f93f62c6255f797abb9b3121608a
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c 74282a947234513872a83b0bab1b8c644ece64b3e27b053ef17677c8ff9c81e0
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
@@ -2041,8 +2041,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07eab52e0801bb0e4743b304a06ad16e18cdf8eaa18c0faf8d47a1f5d8576ea0
-R c4051b06b266c29a490b4cec354913fc
+P ce06982f880339cf46704e95c907249827c3e44af2b9420005200ca8abd3f371
+R ae7783ab51788007ac81a8600cb6b0a8
+T *branch * fp-to-decimal-branch1
+T *sym-fp-to-decimal-branch1 *
+T -sym-fp-to-decimal-refactor *
 U drh
-Z 95eef79511e3e10371b4b76031a5a06d
+Z 0f216e6dd96bccb8187eb2a64c983082
 # Remove this line to create a well-formed Fossil manifest.
