@@ -999,8 +999,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   /* Multiply r by powers of ten until it lands somewhere in between
   ** 1.0e+19 and 1.0e+17.
   */
-  if( sizeof(long double)>8 && 0 ){
-    long double rr = r;
+  if( sizeof(LONGDOUBLE_TYPE)>8 ){
+    LONGDOUBLE_TYPE rr = r;
     if( rr>=1.0e+19 ){
       while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
       while( rr>=1.0e+29L  ){ exp+=10;  rr *= 1.0e-10L;  }
@@ -1012,6 +1012,15 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     }
     v = (u64)rr;
   }else{
+    /* If high-precision floating point is not available using "long double",
+    ** then use Dekker-style double-double computation to increase the
+    ** precision.
+    **
+    ** The error terms on constants like 1.0e+100 computed using the
+    ** decimal extension, for example as follows:
+    **
+    **   SELECT decimal_sci(decimal_sub('1.0e+100',decimal(1.0e+100)));
+    */
     double rr = 0.0;
     if( r>1.84e+19 ){
       while( r>1.84e+119 ){
@@ -1029,7 +1038,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     }else{
       while( r<1.84e-82  ){
         exp -= 100;
-        mul2(r, rr, 1.0e+100, -1.5902891109759918046, &r, &rr);
+        mul2(r, rr, 1.0e+100, -1.5902891109759918046e+83, &r, &rr);
       }
       while( r<1.84e+08  ){
         exp -= 10;
