@@ -928,6 +928,170 @@ int sqlite3Atoi(const char *z){
   return x;
 }
 
+/* Double-Double multiplication.  *(z,zz) = (x,xx) * (y,yy)
+**
+** Reference:
+**   T. J. Dekker, "A Floating-Point Technique for Extending the
+**   Available Precision".  1971-07-26.
+*/
+static void dekkerMul2(
+  double x,  double xx,
+  double y,  double yy,
+  double *z, double *zz
+){
+  double hx, tx, hy, ty, p, q, c, cc;
+  u64 m;
+  memcpy(&m, &x, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hx, &m, 8);
+  tx = x - hx;
+  memcpy(&m, &y, 8);
+  m &= 0xfffffffffc000000L;
+  memcpy(&hy, &m, 8);
+  ty = y - hy;
+  p = hx*hy;
+  q = hx*ty + tx*hy;
+  c = p+q;
+  cc = p - c + q + tx*ty;
+  cc = x*yy + xx*y + cc;
+  *z = c + cc;
+  *zz = c - *z + cc;
+}
+
+/*
+** Decode a floating-point value into an approximate decimal
+** representation.
+**
+** Round the decimal representation to n significant digits if
+** n is positive.  Or round to -n signficant digits after the
+** decimal point if n is negative.  No rounding is performed if
+** n is zero.
+*/
+void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
+  int i;
+  u64 v;
+  int e, exp = 0;
+  p->isSpecial = 0;
+
+  /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
+  ** NaN. */
+  if( r<0.0 ){
+    p->sign = '-';
+    r = -r;
+  }else if( r==0.0 ){
+    p->sign = '+';
+    p->n = 1;
+    p->iDP = 1;
+    p->z[0] = '0';
+    return;
+  }else{
+    p->sign = '+';
+  }
+  memcpy(&v,&r,8);
+  e = v>>52;
+  if( (e&0x7ff)==0x7ff ){
+    p->isSpecial = 1 + (v!=0x7ff0000000000000L);
+    p->n = 0;
+    p->iDP = 0;
+    return;
+  }
+
+  /* Multiply r by powers of ten until it lands somewhere in between
+  ** 1.0e+19 and 1.0e+17.
+  */
+  if( sqlite3Config.bUseLongDouble ){
+    LONGDOUBLE_TYPE rr = r;
+    if( rr>=1.0e+19 ){
+      while( rr>=1.0e+119L ){ exp+=100; rr *= 1.0e-100L; }
+      while( rr>=1.0e+29L  ){ exp+=10;  rr *= 1.0e-10L;  }
+      while( rr>=1.0e+19L  ){ exp++;    rr *= 1.0e-1L;   }
+    }else{
+      while( rr<1.0e-97L   ){ exp-=100; rr *= 1.0e+100L; }
+      while( rr<1.0e+07L   ){ exp-=10;  rr *= 1.0e+10L;  }
+      while( rr<1.0e+17L   ){ exp--;    rr *= 1.0e+1L;   }
+    }
+    v = (u64)rr;
+  }else{
+    /* If high-precision floating point is not available using "long double",
+    ** then use Dekker-style double-double computation to increase the
+    ** precision.
+    **
+    ** The error terms on constants like 1.0e+100 computed using the
+    ** decimal extension, for example as follows:
+    **
+    **   SELECT decimal_sci(decimal_sub('1.0e+100',decimal(1.0e+100)));
+    */
+    double rr = 0.0;
+    if( r>1.84e+19 ){
+      while( r>1.84e+119 ){
+        exp += 100;
+        dekkerMul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
+      }
+      while( r>1.84e+29 ){
+        exp += 10;
+        dekkerMul2(r,rr, 1.0e-10, -3.6432197315497741579e-27, &r, &rr);
+      }
+      while( r>1.84e+19 ){
+        exp += 1;
+        dekkerMul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
+      }
+    }else{
+      while( r<1.84e-82  ){
+        exp -= 100;
+        dekkerMul2(r, rr, 1.0e+100, -1.5902891109759918046e+83, &r, &rr);
+      }
+      while( r<1.84e+08  ){
+        exp -= 10;
+        dekkerMul2(r, rr, 1.0e+10, 0.0, &r, &rr);
+      }
+      while( r<1.84e+18  ){
+        exp -= 1;
+        dekkerMul2(r, rr, 1.0e+01, 0.0, &r, &rr);
+      }
+    }
+    v = rr<0.0 ? (u64)r-(u64)(-rr) : (u64)r+(u64)rr;
+  }
+
+
+  /* Extract significant digits. */
+  i = sizeof(p->z)-1;
+  while( v ){  p->z[i--] = (v%10) + '0'; v /= 10; }
+  p->n = sizeof(p->z) - 1 - i;
+  p->iDP = p->n + exp;
+  if( iRound<0 ){
+    iRound = p->iDP - iRound;
+    if( iRound==0 && p->z[i+1]>='5' ){
+      iRound = 1;
+      p->z[i--] = '0';
+      p->n++;
+      p->iDP++;
+    }
+  }
+  if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
+    char *z = &p->z[i+1];
+    if( iRound>mxRound ) iRound = mxRound;
+    p->n = iRound;
+    if( z[iRound]>='5' ){
+      int j = iRound-1;
+      while( 1 /*exit-by-break*/ ){
+        z[j]++;
+        if( z[j]<='9' ) break;
+        z[j] = '0';
+        if( j==0 ){
+          p->z[i--] = '1';
+          p->n++;
+          p->iDP++;
+          break;
+        }else{
+          j--;
+        }
+      }
+    }
+  }
+  memmove(p->z, &p->z[i+1], p->n);
+  while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
+}
+
 /*
 ** Try to convert z into an unsigned 32-bit integer.  Return true on
 ** success and false if there is an error.

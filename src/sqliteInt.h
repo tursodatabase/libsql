@@ -1239,6 +1239,7 @@ typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
 typedef struct FKey FKey;
+typedef struct FpDecode FpDecode;
 typedef struct FuncDestructor FuncDestructor;
 typedef struct FuncDef FuncDef;
 typedef struct FuncDefHash FuncDefHash;
@@ -4089,6 +4090,7 @@ struct Sqlite3Config {
   u8 bUseCis;                       /* Use covering indices for full-scans */
   u8 bSmallMalloc;                  /* Avoid large memory allocations if true */
   u8 bExtraSchemaChecks;            /* Verify type,name,tbl_name in schema */
+  u8 bUseLongDouble;                /* Make use of long double */
   int mxStrlen;                     /* Maximum string length */
   int neverCorrupt;                 /* Database is always well-formed */
   int szLookaside;                  /* Default lookaside buffer size */
@@ -4597,6 +4599,19 @@ struct PrintfArguments {
   sqlite3_value **apArg;   /* The argument values */
 };
 
+/*
+** An instance of this object receives the decoding of a floating point
+** value into an approximate decimal representation.
+*/
+struct FpDecode {
+  char sign;           /* '+' or '-' */
+  char isSpecial;      /* 1: Infinity  2: NaN */
+  int n;               /* Significant digits in the decode */
+  int iDP;             /* Location of the decimal point */
+  char z[24];          /* Significiant digits */
+};
+
+void sqlite3FpDecode(FpDecode*,double,int,int);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 #if defined(SQLITE_DEBUG) || defined(SQLITE_HAVE_OS_TRACE)
