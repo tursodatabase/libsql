@@ -28,10 +28,7 @@ impl Statement {
         }
     }
 
-    pub fn execute(&self) -> Result<Rows> {
-        Ok(Rows {
-            raw: self.raw,
-            raw_stmt: self.raw_stmt,
-        })
+    pub fn execute(&self) -> Option<Rows> {
+        Rows::execute(self.raw, self.raw_stmt)
     }
 }

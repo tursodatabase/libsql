@@ -1,5 +1,6 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
+use pyo3::types::PyTuple;
 
 fn to_py_err(error: libsql_core::errors::Error) -> PyErr {
     PyValueError::new_err(format!("{}", error))
@@ -37,18 +38,33 @@ pub struct Cursor {
 #[pymethods]
 impl Cursor {
     fn execute(self_: PyRef<'_, Self>, _sql: String) -> PyResult<Result> {
-        self_.conn.execute(_sql).map_err(to_py_err)?;
-        Ok(Result {})
+        let rows = self_.conn.execute(_sql).map_err(to_py_err)?;
+        Ok(Result { rows })
     }
 }
 
 #[pyclass]
-pub struct Result {}
+pub struct Result {
+    rows: Option<libsql_core::Rows>,
+}
 
 #[pymethods]
 impl Result {
-    fn fetchone(_self: PyRef<'_, Self>) -> PyResult<()> {
-        Ok(())
+    fn fetchone(self_: PyRef<'_, Self>) -> PyResult<Option<&PyTuple>> {
+        match self_.rows {
+            Some(ref rows) => {
+                let row = rows.next().map_err(to_py_err)?;
+                match row {
+                    Some(row) => {
+                        let value = row.get::<i32>(0).map_err(to_py_err)?;
+                        let elements: Vec<i32> = vec![value];
+                        Ok(Some(PyTuple::new(self_.py(), elements)))
+                    }
+                    None => Ok(None),
+                }
+            }
+            None => Ok(None),
+        }
     }
 }
 

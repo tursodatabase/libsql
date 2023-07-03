@@ -1,4 +1,4 @@
-use crate::{Database, Error, Result, RowsFuture, Statement};
+use crate::{Database, Error, Result, Rows, RowsFuture, Statement};
 
 use std::ffi::c_int;
 
@@ -41,16 +41,9 @@ impl Connection {
         Statement::prepare(self.raw, sql.into().as_str())
     }
 
-    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<()> {
+    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<Option<Rows>> {
         let stmt = Statement::prepare(self.raw, sql.into().as_str())?;
-        let rows = stmt.execute()?;
-        loop {
-            match rows.next()? {
-                Some(_) => {}
-                None => break,
-            }
-        }
-        Ok(())
+        Ok(stmt.execute())
     }
 
     pub fn execute_async<S: Into<String>>(&self, sql: S) -> RowsFuture {

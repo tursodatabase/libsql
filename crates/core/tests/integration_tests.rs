@@ -4,7 +4,7 @@ fn simple_usage() {
     let conn = db.connect().unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)")
         .unwrap();
-    conn.execute("INSERT INTO users (name) VALUES ('Alice')")
+    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Alice')")
         .unwrap();
     let stmt = conn.prepare("SELECT * FROM users").unwrap();
     let rows = stmt.execute().unwrap();

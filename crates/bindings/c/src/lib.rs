@@ -56,10 +56,7 @@ pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_execute(
-    conn: libsql_connection_t,
-    sql: *const std::ffi::c_char,
-) {
+pub unsafe extern "C" fn libsql_execute(conn: libsql_connection_t, sql: *const std::ffi::c_char) {
     let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
     let sql = match sql.to_str() {
         Ok(sql) => sql,
