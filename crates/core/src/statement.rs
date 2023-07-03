@@ -21,7 +21,7 @@ impl Statement {
         };
         println!("prepare says = {}", err);
         match err as u32 {
-            libsql_sys::SQLITE_OK => Ok(Statement { raw, raw_stmt}),
+            libsql_sys::SQLITE_OK => Ok(Statement { raw, raw_stmt }),
             _ => Err(Error::QueryFailed(format!(
                 "Failed to prepare statement: `{}`: {}",
                 sql,
@@ -31,6 +31,9 @@ impl Statement {
     }
 
     pub fn execute(&self) -> Result<Rows> {
-        Ok(Rows { raw: self.raw, raw_stmt: self.raw_stmt })
+        Ok(Rows {
+            raw: self.raw,
+            raw_stmt: self.raw_stmt,
+        })
     }
 }

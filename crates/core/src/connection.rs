@@ -1,4 +1,4 @@
-use crate::{Database, Error, Result, Rows, RowsFuture, Statement};
+use crate::{Database, Error, Result, RowsFuture, Statement};
 
 use std::ffi::c_int;
 
