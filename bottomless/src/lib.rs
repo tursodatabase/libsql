@@ -7,6 +7,7 @@ mod ffi;
 mod backup;
 mod read;
 pub mod replicator;
+mod transaction_cache;
 mod wal;
 
 use crate::ffi::{
