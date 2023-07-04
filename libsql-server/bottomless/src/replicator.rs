@@ -1,5 +1,6 @@
 use crate::backup::WalCopier;
 use crate::read::BatchReader;
+use crate::transaction_cache::TransactionPageCache;
 use crate::wal::WalFileReader;
 use anyhow::anyhow;
 use arc_swap::ArcSwap;
@@ -11,7 +12,6 @@ use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes, BytesMut};
 use chrono::{DateTime, LocalResult, TimeZone, Utc};
-use std::collections::BTreeMap;
 use std::io::SeekFrom;
 use std::ops::Deref;
 use std::path::Path;
@@ -40,6 +40,8 @@ pub struct Replicator {
     flush_trigger: Sender<()>,
 
     pub page_size: usize,
+    restore_transaction_page_swap_after: u32,
+    restore_transaction_cache_fpath: Arc<str>,
     generation: Arc<ArcSwap<Uuid>>,
     pub commits_in_current_generation: Arc<AtomicU32>,
     verify_crc: bool,
@@ -89,6 +91,12 @@ pub struct Options {
     pub max_batch_interval: Duration,
     /// Maximum number of S3 file upload requests that may happen in parallel.
     pub s3_upload_max_parallelism: usize,
+    /// When recovering a transaction, if number of affected pages is greater than page swap,
+    /// start flushing these pages on disk instead of keeping them in memory.
+    pub restore_transaction_page_swap_after: u32,
+    /// When recovering a transaction, when its page cache needs to be swapped onto local file,
+    /// this field contains a path for a file to be used.
+    pub restore_transaction_cache_fpath: String,
 }
 
 impl Options {
@@ -137,6 +145,20 @@ impl Options {
                 }
             }
         }
+        if let Ok(swap_after) = std::env::var("LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD") {
+            match swap_after.parse::<u32>() {
+                Ok(swap_after) => options.restore_transaction_page_swap_after = swap_after,
+                Err(e) => {
+                    return Err(anyhow!(
+                    "Invalid LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD environment variable: {}",
+                    e
+                ))
+                }
+            }
+        }
+        if let Ok(fpath) = std::env::var("LIBSQL_BOTTOMLESS_RESTORE_TXN_FILE") {
+            options.restore_transaction_cache_fpath = fpath;
+        }
         if let Ok(compression) = std::env::var("LIBSQL_BOTTOMLESS_COMPRESSION") {
             match CompressionKind::parse(&compression) {
                 Ok(compression) => options.use_compression = compression,
@@ -174,8 +196,10 @@ impl Default for Options {
             max_batch_interval: Duration::from_secs(15),
             max_frames_per_batch: 500, // basically half of the default SQLite checkpoint size
             s3_upload_max_parallelism: 32,
+            restore_transaction_page_swap_after: 1000,
             db_id,
             aws_endpoint: None,
+            restore_transaction_cache_fpath: ".bottomless.restore".to_string(),
             bucket_name: "bottomless".to_string(),
         }
     }
@@ -320,6 +344,8 @@ impl Replicator {
             verify_crc: options.verify_crc,
             db_path,
             db_name,
+            restore_transaction_page_swap_after: options.restore_transaction_page_swap_after,
+            restore_transaction_cache_fpath: options.restore_transaction_cache_fpath.into(),
             use_compression: options.use_compression,
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
@@ -868,6 +894,12 @@ impl Replicator {
         let mut applied_wal_frame = false;
         if let Some((page_size, mut checksum)) = self.get_metadata(&generation).await? {
             self.set_page_size(page_size as usize)?;
+            let mut page_buf = {
+                let mut v = Vec::with_capacity(page_size as usize);
+                v.spare_capacity_mut();
+                unsafe { v.set_len(page_size as usize) };
+                v
+            };
             'restore_wal: loop {
                 let mut list_request = self.list_objects().prefix(&prefix);
                 if let Some(marker) = next_marker {
@@ -881,7 +913,11 @@ impl Replicator {
                         break;
                     }
                 };
-                let mut pending_pages = BTreeMap::new();
+                let mut pending_pages = TransactionPageCache::new(
+                    self.restore_transaction_page_swap_after,
+                    page_size,
+                    self.restore_transaction_cache_fpath.clone(),
+                );
                 let mut last_received_frame_no = 0;
                 for obj in objs {
                     let key = obj
@@ -934,27 +970,22 @@ impl Replicator {
                     while let Some(frame) = reader.next_frame_header().await? {
                         let pgno = frame.pgno();
                         let page_size = self.page_size;
-                        let buf = pending_pages.entry(pgno).or_insert_with(|| {
-                            let mut v = Vec::with_capacity(page_size);
-                            v.spare_capacity_mut();
-                            unsafe { v.set_len(page_size) };
-                            v
-                        });
-                        reader.next_page(buf.as_mut()).await?;
+                        reader.next_page(&mut page_buf).await?;
                         if self.verify_crc {
-                            checksum = frame.verify(checksum, buf)?;
+                            checksum = frame.verify(checksum, &page_buf)?;
                         }
+                        pending_pages.insert(pgno, &page_buf).await?;
                         if frame.is_committed() {
-                            let pending_pages = std::mem::take(&mut pending_pages);
-                            for (pgno, data) in pending_pages {
-                                let offset = (pgno - 1) as u64 * (page_size as u64);
-                                main_db_writer.seek(SeekFrom::Start(offset)).await?;
-                                main_db_writer.write_all(&data).await?;
-                                // should we flush here? In theory if we don't recover fully we scrap
-                                // anyway
-                                applied_wal_frame = true;
-                                tracing::trace!("Restored page no. {}", pgno);
-                            }
+                            let pending_pages = std::mem::replace(
+                                &mut pending_pages,
+                                TransactionPageCache::new(
+                                    self.restore_transaction_page_swap_after,
+                                    page_size as u32,
+                                    self.restore_transaction_cache_fpath.clone(),
+                                ),
+                            );
+                            pending_pages.flush(&mut main_db_writer).await?;
+                            applied_wal_frame = true;
                         }
                         frameno += 1;
                         last_received_frame_no += 1;
