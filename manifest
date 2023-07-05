@@ -1,5 +1,5 @@
-C Improved\scomments\son\sthe\swork-around\sto\sthe\sGCC\sx86\sfloating\spoint\swonkiness.
-D 2023-07-05T19:56:14.847
+C This\sis\salternative\swork-around\sfor\sthe\sx86\sfloat-point\sproblem\sthat\suses\n"volatile"\srather\sthan\scompile-specific\s#pragmas.
+D 2023-07-05T22:05:18.339
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -705,7 +705,7 @@ F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
 F src/update.c 0aa36561167a7c40d01163238c297297962f31a15a8d742216b3c37cdf25f731
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c 49a7335c225a7019d4b81606d65d105856a181ed122f25338d2323174a6e4a93
+F src/util.c eac357cf07fd9be14e467e9f38e9888acf2bec8d6221903c5e57136725170880
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c 74282a947234513872a83b0bab1b8c644ece64b3e27b053ef17677c8ff9c81e0
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
@@ -2043,8 +2043,11 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d9e9364808793d65925d4efbfde0f4246df258758f15e8ce1105070d1018fe6
-R 721b48a97d77f38539bb9af05ab5869d
+P 7b4c16731e7bf6f03f5adf4fcb2008c0b19be473fb1b90b405c217c08916586a
+R edd6abc545b6b11f65503dd16b4a34c2
+T *branch * fix-dekker-with-volatile
+T *sym-fix-dekker-with-volatile *
+T -sym-trunk *
 U drh
-Z c80d89ca100028001e859be8d9af6fed
+Z 5a39b72d20727cda14b03b5876342c08
 # Remove this line to create a well-formed Fossil manifest.
