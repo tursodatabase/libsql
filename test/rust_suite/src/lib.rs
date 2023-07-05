@@ -119,7 +119,7 @@ mod tests {
         );
         assert_eq!(
             get_read_written(&conn, "INSERT INTO test(id) SELECT id FROM test"),
-            (34, 17)
+            (34, 34)
         );
         assert_eq!(
             get_read_written(&conn, "INSERT INTO test VALUES (1), (2), (3), (4)"),
