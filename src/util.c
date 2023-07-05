@@ -409,7 +409,8 @@ static void dekkerMul2(double *x, double y, double yy){
   cc = p - c + q + tx*ty;
   cc = x[0]*yy + x[1]*y + cc;
   x[0] = c + cc;
-  x[1] = c - x[0] + cc;
+  x[1] = c - x[0];
+  x[1] += cc;
 }
 
 /*
