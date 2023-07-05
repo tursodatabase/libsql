@@ -386,6 +386,16 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
+/*
+** Work around an apparent bug in GCC.
+** https://sqlite.org/forum/info/ee7278611394034c
+*/
+#ifdef i386
+#pragma GCC push_options
+#pragma GCC optimize("float-store")
+#endif
+
+
 /* Double-Double multiplication.  (x[0],x[1]) *= (y,yy)
 **
 ** Reference:
@@ -412,6 +422,11 @@ static void dekkerMul2(double *x, double y, double yy){
   x[1] = c - x[0];
   x[1] += cc;
 }
+
+/* End of the GCC bug work-around */
+#ifdef i386
+#pragma GCC pop_options
+#endif
 
 /*
 ** The string z[] is an text representation of a real number.
