@@ -3,7 +3,7 @@ use std::ffi::{c_int, CString};
 use std::marker::PhantomData;
 
 pub struct Connection<'a> {
-    conn: *mut crate::ffi::sqlite3,
+    pub conn: *mut crate::ffi::sqlite3,
     _pth: PhantomData<&'a mut ()>,
 }
 
