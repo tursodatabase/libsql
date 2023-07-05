@@ -386,23 +386,19 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
-/* Double-Double multiplication.  *(z,zz) = (x,xx) * (y,yy)
+/* Double-Double multiplication.  (x[0],x[1]) *= (y,yy)
 **
 ** Reference:
 **   T. J. Dekker, "A Floating-Point Technique for Extending the
 **   Available Precision".  1971-07-26.
 */
-static void dekkerMul2(
-  double x,  double xx,
-  double y,  double yy,
-  double *z, double *zz
-){
+static void dekkerMul2(double *x, double y, double yy){
   double hx, tx, hy, ty, p, q, c, cc;
   u64 m;
-  memcpy(&m, &x, 8);
+  memcpy(&m, &x[0], 8);
   m &= 0xfffffffffc000000L;
   memcpy(&hx, &m, 8);
-  tx = x - hx;
+  tx = x[0] - hx;
   memcpy(&m, &y, 8);
   m &= 0xfffffffffc000000L;
   memcpy(&hy, &m, 8);
@@ -411,9 +407,9 @@ static void dekkerMul2(
   q = hx*ty + tx*hy;
   c = p+q;
   cc = p - c + q + tx*ty;
-  cc = x*yy + xx*y + cc;
-  *z = c + cc;
-  *zz = c - *z + cc;
+  cc = x[0]*yy + x[1]*y + cc;
+  x[0] = c + cc;
+  x[1] = c - x[0] + cc;
 }
 
 /*
@@ -587,39 +583,39 @@ do_atof_calc:
     }
     *pResult = r;
   }else{
-    double r, rr;
+    double rr[2];
     u64 s2;
-    r = (double)s;
-    s2 = (u64)r;
-    rr = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
+    rr[0] = (double)s;
+    s2 = (u64)rr[0];
+    rr[1] = s>=s2 ? (double)(s - s2) : -(double)(s2 - s);
     if( e>0 ){
       while( e>=100  ){
         e -= 100;
-        dekkerMul2(r, rr, 1.0e+100, -1.5902891109759918046e+83, &r, &rr);
+        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
       }
       while( e>=10   ){
         e -= 10;
-        dekkerMul2(r, rr, 1.0e+10, 0.0, &r, &rr);
+        dekkerMul2(rr, 1.0e+10, 0.0);
       }
       while( e>=1    ){
         e -= 1;
-        dekkerMul2(r, rr, 1.0e+01, 0.0, &r, &rr);
+        dekkerMul2(rr, 1.0e+01, 0.0);
       }
     }else{
       while( e<=-100 ){
         e += 100;
-        dekkerMul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
+        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
       }
       while( e<=-10  ){
         e += 10;
-        dekkerMul2(r,rr, 1.0e-10, -3.6432197315497741579e-27, &r, &rr);
+        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
       }
       while( e<=-1   ){
         e += 1;
-        dekkerMul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
+        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
       }
     }
-    *pResult = r+rr;
+    *pResult = rr[0]+rr[1];
     if( sqlite3IsNaN(*pResult) ) *pResult = 1e300*1e300;
   }
   if( sign<0 ) *pResult = -*pResult;
@@ -982,35 +978,37 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     **
     **   SELECT decimal_sci(decimal_sub('1.0e+100',decimal(1.0e+100)));
     */
-    double rr = 0.0;
-    if( r>1.84e+19 ){
-      while( r>1.84e+119 ){
+    double rr[2];
+    rr[0] = r;
+    rr[1] = 0.0;
+    if( rr[0]>1.84e+19 ){
+      while( rr[0]>1.84e+119 ){
         exp += 100;
-        dekkerMul2(r, rr, 1.0e-100, -1.99918998026028836196e-117, &r, &rr);
+        dekkerMul2(rr, 1.0e-100, -1.99918998026028836196e-117);
       }
-      while( r>1.84e+29 ){
+      while( rr[0]>1.84e+29 ){
         exp += 10;
-        dekkerMul2(r,rr, 1.0e-10, -3.6432197315497741579e-27, &r, &rr);
+        dekkerMul2(rr, 1.0e-10, -3.6432197315497741579e-27);
       }
-      while( r>1.84e+19 ){
+      while( rr[0]>1.84e+19 ){
         exp += 1;
-        dekkerMul2(r,rr, 1.0e-01, -5.5511151231257827021e-18, &r, &rr);
+        dekkerMul2(rr, 1.0e-01, -5.5511151231257827021e-18);
       }
     }else{
-      while( r<1.84e-82  ){
+      while( rr[0]<1.84e-82  ){
         exp -= 100;
-        dekkerMul2(r, rr, 1.0e+100, -1.5902891109759918046e+83, &r, &rr);
+        dekkerMul2(rr, 1.0e+100, -1.5902891109759918046e+83);
       }
-      while( r<1.84e+08  ){
+      while( rr[0]<1.84e+08  ){
         exp -= 10;
-        dekkerMul2(r, rr, 1.0e+10, 0.0, &r, &rr);
+        dekkerMul2(rr, 1.0e+10, 0.0);
       }
-      while( r<1.84e+18  ){
+      while( rr[0]<1.84e+18  ){
         exp -= 1;
-        dekkerMul2(r, rr, 1.0e+01, 0.0, &r, &rr);
+        dekkerMul2(rr, 1.0e+01, 0.0);
       }
     }
-    v = rr<0.0 ? (u64)r-(u64)(-rr) : (u64)r+(u64)rr;
+    v = rr[1]<0.0 ? (u64)rr[0]-(u64)(-rr[1]) : (u64)rr[0]+(u64)rr[1];
   }
 
 
