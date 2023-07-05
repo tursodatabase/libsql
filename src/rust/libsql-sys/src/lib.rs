@@ -8,10 +8,10 @@ pub mod ffi {
     ));
 }
 
-mod connection;
-mod error;
-mod types;
-mod wal_hook;
+pub mod connection;
+pub mod error;
+pub mod types;
+pub mod wal_hook;
 
 pub use connection::Connection;
 pub use error::{Error, Result};
