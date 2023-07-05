@@ -9,7 +9,7 @@ pub struct Connection<'a> {
 
 impl<'a> Connection<'a> {
     /// returns a dummy, in-memory connection. For testing purposes only
-    pub fn test() -> Self {
+    pub fn test(_: &mut ()) -> Self {
         let mut conn: *mut crate::ffi::sqlite3 = std::ptr::null_mut();
         let rc = unsafe {
             crate::ffi::sqlite3_open(":memory:\0".as_ptr() as *const _, &mut conn as *mut _)
