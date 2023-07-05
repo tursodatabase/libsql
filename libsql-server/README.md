@@ -65,8 +65,8 @@ replication, the database state is continuously backed up to S3-compatible
 storage. Each backup session is called a "generation" and consists of the main
 database file snapshot and replicates [SQLite WAL] pages.
 
-In order to enable automatic replication to S3 storage, run `sqld` with
-`--enable-bottomless-replication` parameter:
+In order to enable automatic replication to S3 storage, compile `sqld` with `-F bottomless` flag
+and run `sqld` with `--enable-bottomless-replication` parameter:
 
 ```bash
 sqld --http-listen-addr=127.0.0.1:8000 --enable-bottomless-replication
