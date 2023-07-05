@@ -387,9 +387,20 @@ u8 sqlite3StrIHash(const char *z){
 }
 
 /*
-** Work around an apparent bug in GCC.
+** Work around an issue in GCC where it generates code that stores
+** intermediate results to a higher precision than binary64.  This
+** messes up the Dekker algorithm.  See the discussion at
 ** https://sqlite.org/forum/info/ee7278611394034c
+**
+** By adding the -ffloat-store option, it forces GCC to truncate
+** intermediate results to the correct precision.  The GCC devs
+** recommended -fexcess-precision=standard or -std=c99.  Those options
+** work too, from the command-line, but I could not get them to work
+** as a #pragma.  We want the "sqlite3.c" to "just work" without
+** requiring any special compiler-options, so we continue to use
+** the -ffloat-store method of working around the issue.
 */
+
 #ifdef i386
 #pragma GCC push_options
 #pragma GCC optimize("float-store")
@@ -423,7 +434,7 @@ static void dekkerMul2(double *x, double y, double yy){
   x[1] += cc;
 }
 
-/* End of the GCC bug work-around */
+/* End of the GCC x86 floating-point work-around */
 #ifdef i386
 #pragma GCC pop_options
 #endif
