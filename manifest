@@ -1,5 +1,5 @@
-C A\smore\sprecise\simplementation\sof\ssqlite3RealToI64().
-D 2023-07-06T18:29:15.324
+C Improved\shandling\sof\sinteger\sinputs\sto\sthe\snew\ssum()\simplementation.
+D 2023-07-06T20:34:06.486
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,7 +590,7 @@ F src/delete.c cd5f5cd06ed0b6a882ec1a8c2a0d73b3cecb28479ad19e9931c4706c5e2182be
 F src/expr.c 8d1656b65e26af3e34f78e947ac423f0d20c214ed25a67486e433bf16ca6b543
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
-F src/func.c 994a3a30d36c079c6e26d6653d770153675590daa549d3692eb38c5ac05dc663
+F src/func.c b2325dc2fb0b43874fa5f2ae4e83262bdda952fc317b294dfca5ce70d5049bcd
 F src/global.c a16553245e315ee0cda8f9b0bf744efef9dc99f86e9d77f58975ea58824ded92
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ad2e39626e6115fd322ef9495ae3bcd91343d7131a725f1bf24211a51a21dcc2
-R baabd38e9d5c12b3770d5c6b7a3756f9
+P 8813317cb52990d90bd48de163b6e35ddcad2b6f3187aa28b28e2e088b4489ce
+R 9348b4da86b2dc5770e5a3e29f969bb8
 U drh
-Z 154e4a90dc9247c0b7fc14085e7b1665
+Z 9ba3e2bfbcb059fcdee5f10217aa5809
 # Remove this line to create a well-formed Fossil manifest.

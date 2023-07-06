@@ -1704,11 +1704,14 @@ static void kahanBabuskaNeumaierStep(
 ** Add a (possibly large) integer to the running sum.
 */
 static void kahanBabuskaNeumaierStepInt64(volatile SumCtx *pSum, i64 iVal){
-  volatile double rVal = (double)iVal;
-  kahanBabuskaNeumaierStep(pSum, rVal);
   if( iVal<=-4503599627370496 || iVal>=+4503599627370496 ){
-    double rDiff = (double)(iVal - (i64)rVal);
-    kahanBabuskaNeumaierStep(pSum, rDiff);
+    i64 iBig, iSm;
+    iSm = iVal % 16384;
+    iBig = iVal - iSm;
+    kahanBabuskaNeumaierStep(pSum, iBig);
+    kahanBabuskaNeumaierStep(pSum, iSm);
+  }else{
+    kahanBabuskaNeumaierStep(pSum, (double)iVal);
   }
 }
 
@@ -1716,11 +1719,17 @@ static void kahanBabuskaNeumaierStepInt64(volatile SumCtx *pSum, i64 iVal){
 ** Initialize the Kahan-Babaska-Neumaier sum from a 64-bit integer
 */
 static void kahanBabuskaNeumaierInit(
-  volatile SumCtx *pSum,
+  volatile SumCtx *p,
   i64 iVal
 ){
-  pSum->rSum = (double)iVal;
-  pSum->rErr = (double)(iVal - (i64)pSum->rSum);
+  if( iVal<=-4503599627370496 || iVal>=+4503599627370496 ){
+    i64 iSm = iVal % 16384;
+    p->rSum = (double)(iVal - iSm);
+    p->rErr = (double)iSm;
+  }else{
+    p->rSum = (double)iVal;
+    p->rErr = 0.0;
+  }
 }
 
 /*
