@@ -3,6 +3,7 @@ use std::cell::RefCell;
 use crate::{errors, Error, Params, Result, Statement};
 
 /// Query result rows.
+#[derive(Debug)]
 pub struct Rows {
     pub(crate) raw: *mut libsql_sys::ffi::sqlite3,
     pub(crate) raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
@@ -20,13 +21,11 @@ impl Rows {
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => None,
             libsql_sys::ffi::SQLITE_DONE => None,
-            _ => {
-                Some(Rows {
-                    raw,
-                    raw_stmt,
-                    err: RefCell::new(Some(err)),
-                })
-            }
+            _ => Some(Rows {
+                raw,
+                raw_stmt,
+                err: RefCell::new(Some(err)),
+            }),
         }
     }
 

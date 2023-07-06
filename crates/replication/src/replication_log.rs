@@ -138,3 +138,15 @@ impl ReplicationLog for ReplicationLogService {
         }
     }
 }
+
+// TODO: original code accepted a config file and a bunch of TLS params, we need that here as well
+pub fn configure_rpc(writer_rpc_addr: impl Into<String>) -> anyhow::Result<(tonic::transport::Channel, tonic::transport::Uri)> {
+    let writer_rpc_addr = writer_rpc_addr.into();
+    let endpoint = tonic::transport::Channel::from_shared(writer_rpc_addr.clone())?;
+
+    let channel = endpoint.connect_lazy();
+    let uri = tonic::transport::Uri::from_maybe_shared(writer_rpc_addr)?;
+
+    Ok((channel, uri))
+}
+
