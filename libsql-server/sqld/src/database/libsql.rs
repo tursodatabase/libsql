@@ -401,10 +401,15 @@ impl<'a> Connection<'a> {
     }
 
     fn update_stats(&self, stmt: &rusqlite::Statement) {
-        self.stats
-            .inc_rows_read(stmt.get_status(StatementStatus::RowsRead) as u64);
-        self.stats
-            .inc_rows_written(stmt.get_status(StatementStatus::RowsWritten) as u64);
+        let rows_read = stmt.get_status(StatementStatus::RowsRead);
+        let rows_written = stmt.get_status(StatementStatus::RowsWritten);
+        let rows_read = if rows_read == 0 && rows_written == 0 {
+            1
+        } else {
+            rows_read
+        };
+        self.stats.inc_rows_read(rows_read as u64);
+        self.stats.inc_rows_written(rows_written as u64);
     }
 
     fn describe(&self, sql: &str) -> DescribeResult {
