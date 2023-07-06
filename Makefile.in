@@ -374,10 +374,10 @@ SRC += \
 
 # Path to the Rust crate with wasm bindings
 #
-WBTOP = $(TOP)/src/rust/wasmtime-bindings
+WBTOP = $(TOP)/crates/wasmtime-bindings
 
 # Path to Rust bindings
-BINDTOP = $(TOP)/src/rust/libsql-sys
+BINDTOP = $(TOP)/crates/libsql-sys
 
 # Source code of the wasm bindings
 #
@@ -392,7 +392,7 @@ OPT_STATIC_LIBLIBSQL_WASM=$(TOP)/.libs/liblibsql_wasm.a
 else ifeq ($(OPT_WASM_RUNTIME),d)
 OPT_WASM_RUNTIME_LIBRARY_TARGET=liblibsql_wasm
 OPT_WASM_RUNTIME_INSTALL_TARGET=liblibsql_wasm_install
-TLIBS += -L$(WBTOP)/target/release -llibsql_wasm
+TLIBS += -L$(WBTOP)/../target/release -llibsql_wasm
 OPT_STATIC_LIBLIBSQL_WASM=
 else
 OPT_WASM_RUNTIME_LIBRARY_TARGET=
@@ -823,7 +823,7 @@ mptest:	mptester$(TEXE)
 	touch .target_source
 
 liblibsql_wasm:	$(WBSRC)
-	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp target/release/liblibsql_wasm.* $(TOP)/.libs/
+	cd $(WBTOP) && cargo build --release --lib && mkdir -p $(TOP)/.libs && cp ../target/release/liblibsql_wasm.* $(TOP)/.libs/
 
 rust_bindings: sqlite3.h
 	cd $(BINDTOP) && LIBSQL_SRC_DIR=$(TOP) cargo build --release --lib
@@ -1537,8 +1537,8 @@ threadtest5: sqlite3.c $(TOP)/test/threadtest5.c
 #
 liblibsql_wasm_install:	liblibsql_wasm
 	$(INSTALL) -d $(DESTDIR)$(libdir)
-	$(INSTALL) -m 0644 $(WBTOP)/target/release/liblibsql_wasm.so $(DESTDIR)$(libdir)/liblibsql_wasm.so.0.0
-	$(INSTALL) -m 0644 $(WBTOP)/target/release/liblibsql_wasm.a $(DESTDIR)$(libdir)/liblibsql_wasm.a
+	$(INSTALL) -m 0644 $(WBTOP)/../target/release/liblibsql_wasm.so $(DESTDIR)$(libdir)/liblibsql_wasm.so.0.0
+	$(INSTALL) -m 0644 $(WBTOP)/../target/release/liblibsql_wasm.a $(DESTDIR)$(libdir)/liblibsql_wasm.a
 	ln -fs $(DESTDIR)$(libdir)/liblibsql_wasm.so.0.0 $(DESTDIR)$(libdir)/liblibsql_wasm.so.0
 	ln -fs $(DESTDIR)$(libdir)/liblibsql_wasm.so.0.0 $(DESTDIR)$(libdir)/liblibsql_wasm.so
 

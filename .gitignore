@@ -58,9 +58,9 @@ test-out.txt
 /test/rust_suite/Cargo.lock
 testfixture
 libsql
-/src/rust/libsql-shell/target/
-/src/rust/wasmtime-bindings/Cargo.lock
-/src/rust/wasmtime-bindings/Cargo.lock
+/crates/libsql-shell/target/
+/crates/wasmtime-bindings/Cargo.lock
+/crates/wasmtime-bindings/Cargo.lock
 /bindings.rs
-/src/rust/libsql-sys/target
-/src/rust/libsql-sys/Cargo.lock
+/crates/libsql-sys/target
+/crates/libsql-sys/Cargo.lock
