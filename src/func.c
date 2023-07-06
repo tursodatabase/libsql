@@ -1690,11 +1690,12 @@ static void kahanBabuskaNeumaierStep(
   volatile SumCtx *pSum,
   volatile double r
 ){
-  volatile double t = pSum->rSum + r;
-  if( fabs(pSum->rSum) > fabs(r) ){
-    pSum->rErr += (pSum->rSum - t) + r;
+  volatile double s = pSum->rSum;
+  volatile double t = s + r;
+  if( fabs(s) > fabs(r) ){
+    pSum->rErr += (s - t) + r;
   }else{
-    pSum->rErr += (r - t) + pSum->rSum;
+    pSum->rErr += (r - t) + s;
   }
   pSum->rSum = t;
 }
@@ -1706,7 +1707,7 @@ static void kahanBabuskaNeumaierStepInt64(volatile SumCtx *pSum, i64 iVal){
   volatile double rVal = (double)iVal;
   kahanBabuskaNeumaierStep(pSum, rVal);
   if( iVal<=-4503599627370496 || iVal>=+4503599627370496 ){
-    double rDiff = (double)(iVal - (double)rVal);
+    double rDiff = (double)(iVal - (i64)rVal);
     kahanBabuskaNeumaierStep(pSum, rDiff);
   }
 }
@@ -1788,8 +1789,8 @@ static void sumInverse(sqlite3_context *context, int argc, sqlite3_value**argv){
       if( iVal!=SMALLEST_INT64 ){
         kahanBabuskaNeumaierStepInt64(p, -iVal);
       }else{
-        kahanBabuskaNeumaierStepInt64(p, LARGEST_INT64/2);
-        kahanBabuskaNeumaierStepInt64(p, LARGEST_INT64/2+1);
+        kahanBabuskaNeumaierStepInt64(p, LARGEST_INT64);
+        kahanBabuskaNeumaierStepInt64(p, 1);
       }       
     }else{
       kahanBabuskaNeumaierStep(p, -sqlite3_value_double(argv[0]));
