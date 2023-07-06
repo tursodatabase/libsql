@@ -1,4 +1,4 @@
-use crate::{errors, Error, Result, Rows};
+use crate::{errors, Error, Params, Result, Rows, Value};
 
 /// A prepared statement.
 pub struct Statement {
@@ -28,8 +28,50 @@ impl Statement {
         }
     }
 
-    pub fn execute(&self) -> Option<Rows> {
+    pub fn bind(&self, params: &Params) {
+        match params {
+            Params::None => {}
+            Params::Positional(params) => {
+                for (i, param) in params.iter().enumerate() {
+                    let i = i as i32 + 1;
+                    match param {
+                        Value::Null => unsafe {
+                            libsql_sys::sqlite3_bind_null(self.raw_stmt, i);
+                        },
+                        Value::Integer(value) => unsafe {
+                            libsql_sys::sqlite3_bind_int64(self.raw_stmt, i, *value);
+                        },
+                        Value::Float(value) => unsafe {
+                            libsql_sys::sqlite3_bind_double(self.raw_stmt, i, *value);
+                        },
+                        Value::Text(value) => unsafe {
+                            let value = value.as_bytes();
+                            libsql_sys::sqlite3_bind_text(
+                                self.raw_stmt,
+                                i,
+                                value.as_ptr() as *const i8,
+                                value.len() as i32,
+                                None,
+                            );
+                        },
+                        Value::Blob(value) => unsafe {
+                            libsql_sys::sqlite3_bind_blob(
+                                self.raw_stmt,
+                                i,
+                                value.as_ptr() as *const std::ffi::c_void,
+                                value.len() as i32,
+                                None,
+                            );
+                        },
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn execute(&self, params: &Params) -> Option<Rows> {
         unsafe { libsql_sys::sqlite3_reset(self.raw_stmt) };
+        self.bind(&params);
         Rows::execute(self.raw, self.raw_stmt)
     }
 }

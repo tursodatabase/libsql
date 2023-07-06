@@ -1,6 +1,6 @@
-use std::{cell::RefCell};
+use std::cell::RefCell;
 
-use crate::{errors, Error, Result, Statement};
+use crate::{errors, Error, Params, Result, Statement};
 
 /// Query result rows.
 pub struct Rows {
@@ -32,12 +32,8 @@ impl Rows {
 
     pub fn next(&self) -> Result<Option<Row>> {
         let err = match self.err.take() {
-            Some(err) => {
-                err
-            }
-            None => {
-                unsafe { libsql_sys::sqlite3_step(self.raw_stmt) }
-            }
+            Some(err) => err,
+            None => unsafe { libsql_sys::sqlite3_step(self.raw_stmt) },
         };
         match err as u32 {
             libsql_sys::SQLITE_OK => Ok(None),
@@ -58,6 +54,7 @@ impl Rows {
 pub struct RowsFuture {
     pub(crate) raw: *mut libsql_sys::sqlite3,
     pub(crate) sql: String,
+    pub(crate) params: Params,
 }
 
 impl RowsFuture {
@@ -74,7 +71,7 @@ impl futures::Future for RowsFuture {
         _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let stmt = Statement::prepare(self.raw, &self.sql)?;
-        let ret = stmt.execute();
+        let ret = stmt.execute(&self.params);
         std::task::Poll::Ready(Ok(ret))
     }
 }
@@ -110,7 +107,7 @@ pub enum ValueType {
     Float,
     Blob,
     Text,
-    Null,    
+    Null,
 }
 
 pub trait FromValue {

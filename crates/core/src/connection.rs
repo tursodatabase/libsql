@@ -1,4 +1,4 @@
-use crate::{Database, Error, Result, Rows, RowsFuture, Statement};
+use crate::{Database, Error, Params, Result, Rows, RowsFuture, Statement};
 
 use std::ffi::c_int;
 
@@ -54,9 +54,14 @@ impl Connection {
     /// However, for SQL query statements, the method blocks only until the
     /// first row is available. To fetch all rows, you need to call `Rows::next()`
     /// consecutively.
-    pub fn execute<S: Into<String>>(&self, sql: S) -> Result<Option<Rows>> {
+    pub fn execute<S, P>(&self, sql: S, params: P) -> Result<Option<Rows>>
+    where
+        S: Into<String>,
+        P: Into<Params>,
+    {
         let stmt = Statement::prepare(self.raw, sql.into().as_str())?;
-        Ok(stmt.execute())
+        let params = params.into();
+        Ok(stmt.execute(&params))
     }
 
     /// Execute the SQL statement synchronously.
@@ -64,10 +69,15 @@ impl Connection {
     /// This method never blocks the thread until, but instead returns a
     /// `RowsFuture` object immediately that can be used to deferredly
     /// execute the statement.
-    pub fn execute_async<S: Into<String>>(&self, sql: S) -> RowsFuture {
+    pub fn execute_async<S, P>(&self, sql: S, params: P) -> RowsFuture
+    where
+        S: Into<String>,
+        P: Into<Params>,
+    {
         RowsFuture {
             raw: self.raw,
             sql: sql.into(),
+            params: params.into(),
         }
     }
 }

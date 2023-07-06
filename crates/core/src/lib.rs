@@ -13,8 +13,8 @@
 //!
 //! let db = Database::open(":memory:");
 //! let conn = db.connect().unwrap();
-//! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)") .unwrap();
-//! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')").unwrap();
+//! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ()) .unwrap();
+//! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).unwrap();
 //! ```
 //!
 //! ## Embedded Replicas
@@ -30,7 +30,7 @@
 //! let db = Database::open("libsql://database.example.org");
 //! db.sync();
 //! let conn = db.connect().unwrap();
-//! conn.execute("SELECT * FROM users").unwrap();
+//! conn.execute("SELECT * FROM users", ()).unwrap();
 //! ```
 //!
 //! ## Examples
@@ -40,6 +40,7 @@
 pub mod connection;
 pub mod database;
 pub mod errors;
+pub mod params;
 pub mod rows;
 pub mod statement;
 
@@ -48,6 +49,8 @@ pub type Result<T> = std::result::Result<T, errors::Error>;
 pub use connection::Connection;
 pub use database::Database;
 pub use errors::Error;
+pub use params::Params;
+pub use params::Value;
 pub use rows::Rows;
 pub use rows::RowsFuture;
 pub use statement::Statement;
