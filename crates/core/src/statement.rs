@@ -71,7 +71,7 @@ impl Statement {
 
     pub fn execute(&self, params: &Params) -> Option<Rows> {
         unsafe { libsql_sys::ffi::sqlite3_reset(self.raw_stmt) };
-        self.bind(&params);
+        self.bind(params);
         Rows::execute(self.raw, self.raw_stmt)
     }
 }

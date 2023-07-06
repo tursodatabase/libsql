@@ -13,8 +13,8 @@ impl Database {
         let url = url.into();
         if url.starts_with("libsql:") {
             let url = url.replace("libsql:", "http:");
-            let filename = format!("file:tmp.db");
-            let replicator = Some(Replicator::new(url.clone()));
+            let filename = "file:tmp.db".to_string();
+            let replicator = Some(Replicator::new(url));
             Database::new(filename, replicator)
         } else {
             Database::new(url, None)

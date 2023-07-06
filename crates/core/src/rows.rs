@@ -21,11 +21,11 @@ impl Rows {
             libsql_sys::ffi::SQLITE_OK => None,
             libsql_sys::ffi::SQLITE_DONE => None,
             _ => {
-                return Some(Rows {
+                Some(Rows {
                     raw,
                     raw_stmt,
                     err: RefCell::new(Some(err)),
-                });
+                })
             }
         }
     }

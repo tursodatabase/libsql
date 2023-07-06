@@ -11,9 +11,6 @@ pub enum Error {
 pub fn sqlite_error_message(raw: *mut libsql_sys::ffi::sqlite3) -> String {
     let error = unsafe { libsql_sys::ffi::sqlite3_errmsg(raw) };
     let error = unsafe { std::ffi::CStr::from_ptr(error) };
-    let error = match error.to_str() {
-        Ok(error) => error,
-        Err(_) => "N/A",
-    };
+    let error = error.to_str().unwrap_or("N/A");
     format!("{}", error)
 }
