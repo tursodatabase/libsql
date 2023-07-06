@@ -65,7 +65,7 @@ pub unsafe extern "C" fn libsql_execute(conn: libsql_connection_t, sql: *const s
         }
     };
     let conn = conn.get_ref();
-    conn.execute(sql.to_string()).unwrap();
+    conn.execute(sql.to_string(), ()).unwrap();
 }
 
 #[no_mangle]
@@ -89,7 +89,7 @@ pub unsafe extern "C" fn libsql_execute_async(
         }
     };
     let conn = conn.get_ref();
-    let result = conn.execute_async(sql.to_string());
+    let result = conn.execute_async(sql.to_string(), ());
     let result = Box::leak(Box::new(libsql_rows_future { result }));
     libsql_rows_future_t::from(result)
 }

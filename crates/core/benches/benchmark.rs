@@ -30,9 +30,11 @@ fn bench(c: &mut Criterion) {
         });
     });
 
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)").unwrap();
+    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)")
+        .unwrap();
     for _ in 0..1000 {
-        conn.execute("INSERT INTO users (name) VALUES ('FOO')").unwrap();
+        conn.execute("INSERT INTO users (name) VALUES ('FOO')")
+            .unwrap();
     }
 
     let stmt = conn.prepare("SELECT * FROM users LIMIT 1").unwrap();

@@ -38,7 +38,7 @@ pub struct Cursor {
 #[pymethods]
 impl Cursor {
     fn execute(self_: PyRef<'_, Self>, _sql: String) -> PyResult<Result> {
-        let rows = self_.conn.execute(_sql).map_err(to_py_err)?;
+        let rows = self_.conn.execute(_sql, ()).map_err(to_py_err)?;
         Ok(Result { rows })
     }
 }
