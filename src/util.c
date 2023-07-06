@@ -386,37 +386,25 @@ u8 sqlite3StrIHash(const char *z){
   return h;
 }
 
-/*
-** Work around an issue in GCC where it generates code that stores
-** intermediate results to a higher precision than binary64.  This
-** messes up the Dekker algorithm.  See the discussion at
-** https://sqlite.org/forum/info/ee7278611394034c
-**
-** By adding the -ffloat-store option, it forces GCC to truncate
-** intermediate results to the correct precision.  The GCC devs
-** recommended -fexcess-precision=standard or -std=c99.  Those options
-** work too, from the command-line, but I could not get them to work
-** as a #pragma.  We want the "sqlite3.c" to "just work" without
-** requiring any special compiler-options, so we continue to use
-** the -ffloat-store method of working around the issue.
-*/
-
-#ifdef i386
-#pragma GCC push_options
-#pragma GCC optimize("float-store")
-#endif
-
-
 /* Double-Double multiplication.  (x[0],x[1]) *= (y,yy)
 **
 ** Reference:
 **   T. J. Dekker, "A Floating-Point Technique for Extending the
 **   Available Precision".  1971-07-26.
 */
-static void dekkerMul2(double *x, double y, double yy){
-  double hx, tx, hy, ty, p, q, c, cc;
+static void dekkerMul2(volatile double *x, double y, double yy){
+  /*
+  ** The "volatile" keywords on parameter x[] and on local variables
+  ** below are needed force intermediate results to be truncated to
+  ** binary64 rather than be carried around in an extended-precision
+  ** format.  The truncation is necessary for the Dekker algorithm to
+  ** work.  Intel x86 floating point might omit the truncation without
+  ** the use of volatile. 
+  */
+  volatile double tx, ty, p, q, c, cc;
+  double hx, hy;
   u64 m;
-  memcpy(&m, &x[0], 8);
+  memcpy(&m, (void*)&x[0], 8);
   m &= 0xfffffffffc000000L;
   memcpy(&hx, &m, 8);
   tx = x[0] - hx;
@@ -433,11 +421,6 @@ static void dekkerMul2(double *x, double y, double yy){
   x[1] = c - x[0];
   x[1] += cc;
 }
-
-/* End of the GCC x86 floating-point work-around */
-#ifdef i386
-#pragma GCC pop_options
-#endif
 
 /*
 ** The string z[] is an text representation of a real number.
