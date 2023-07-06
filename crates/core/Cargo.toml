@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 futures = "0.3.28"
-libsql-sys = "0.1.1"
+libsql-sys = { path = "../libsql-sys" }
 thiserror = "1.0.40"
 libsql_replication = { path = "../replication" }
 

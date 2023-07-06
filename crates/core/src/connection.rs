@@ -4,7 +4,7 @@ use std::ffi::c_int;
 
 /// A connection to a libSQL database.
 pub struct Connection {
-    pub(crate) raw: *mut libsql_sys::sqlite3,
+    pub(crate) raw: *mut libsql_sys::ffi::sqlite3,
 }
 
 unsafe impl Send for Connection {} // TODO: is this safe?
@@ -15,16 +15,16 @@ impl Connection {
         let mut raw = std::ptr::null_mut();
         let url = db.url.clone();
         let err = unsafe {
-            libsql_sys::sqlite3_open_v2(
+            libsql_sys::ffi::sqlite3_open_v2(
                 url.as_ptr() as *const i8,
                 &mut raw,
-                libsql_sys::SQLITE_OPEN_READWRITE as c_int
-                    | libsql_sys::SQLITE_OPEN_CREATE as c_int,
+                libsql_sys::ffi::SQLITE_OPEN_READWRITE as c_int
+                    | libsql_sys::ffi::SQLITE_OPEN_CREATE as c_int,
                 std::ptr::null(),
             )
         };
         match err as u32 {
-            libsql_sys::SQLITE_OK => {}
+            libsql_sys::ffi::SQLITE_OK => {}
             _ => {
                 return Err(Error::ConnectionFailed(url));
             }
@@ -35,7 +35,7 @@ impl Connection {
     /// Disconnect from the database.
     pub fn disconnect(&self) {
         unsafe {
-            libsql_sys::sqlite3_close_v2(self.raw);
+            libsql_sys::ffi::sqlite3_close_v2(self.raw);
         }
     }
 
