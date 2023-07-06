@@ -6,6 +6,9 @@ members = [
   "bindings/js",
   "bindings/python",
   "replication",
+  "libsql-sys",
+  "libsql-shell",
+  "wasmtime-bindings",
 ]
 
 [profile.release]
