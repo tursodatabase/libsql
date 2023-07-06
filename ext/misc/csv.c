@@ -280,6 +280,7 @@ static char *csv_read_one_field(CsvReader *p){
     }
     p->cTerm = (char)c;
   }
+  assert( p->z==0 || p->n<p->nAlloc );
   if( p->z ) p->z[p->n] = 0;
   p->bNotFirst = 1;
   return p->z;
@@ -750,7 +751,7 @@ static int csvtabNext(sqlite3_vtab_cursor *cur){
       i++;
     }
   }while( pCur->rdr.cTerm==',' );
-  if( z==0 || (pCur->rdr.cTerm==EOF && i<pTab->nCol) ){
+  if( z==0 && i==0 ){
     pCur->iRowid = -1;
   }else{
     pCur->iRowid++;
@@ -811,6 +812,12 @@ static int csvtabFilter(
   CsvCursor *pCur = (CsvCursor*)pVtabCursor;
   CsvTable *pTab = (CsvTable*)pVtabCursor->pVtab;
   pCur->iRowid = 0;
+
+  /* Ensure the field buffer is always allocated. Otherwise, if the
+  ** first field is zero bytes in size, this may be mistaken for an OOM
+  ** error in csvtabNext(). */
+  if( csv_append(&pCur->rdr, 0) ) return SQLITE_NOMEM;
+
   if( pCur->rdr.in==0 ){
     assert( pCur->rdr.zIn==pTab->zData );
     assert( pTab->iStart>=0 );
@@ -941,7 +948,7 @@ int sqlite3_csv_init(
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
 ){
-#ifndef SQLITE_OMIT_VIRTUALTABLE	
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   int rc;
   SQLITE_EXTENSION_INIT2(pApi);
   rc = sqlite3_create_module(db, "csv", &CsvModule, 0);

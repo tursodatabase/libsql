@@ -1,0 +1,180 @@
+# 2011 March 07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix sessionnoop2
+
+foreach {tn wo} {
+  1 ""
+  2 " WITHOUT ROWID "
+} {
+  reset_db
+  eval [string map [list %WO% $wo] {
+do_execsql_test $tn.1.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c) %WO%;
+  INSERT INTO t1 VALUES('a', 'A', 'AAA');
+  INSERT INTO t1 VALUES('b', 'B', 'BBB');
+  INSERT INTO t1 VALUES('c', 'C', 'CCC');
+  INSERT INTO t1 VALUES('d', 'D', 'DDD');
+  INSERT INTO t1 VALUES('e', 'E', 'EEE');
+}
+
+forcedelete test.db2
+sqlite3 db2 test.db2
+
+do_execsql_test -db db2 $tn.1.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c) %WO%;
+  INSERT INTO t1 VALUES('a', 'A', 'AAA');
+  INSERT INTO t1 VALUES('b', 'B', '123');
+  INSERT INTO t1 VALUES('c', 'C', 'CCC');
+  INSERT INTO t1 VALUES('e', 'E', 'EEE');
+  INSERT INTO t1 VALUES('f', 'F', 'FFF');
+}
+
+set C [changeset_from_sql {
+  UPDATE t1 SET c='123' WHERE a='b';
+  DELETE FROM t1 WHERE a='d';
+  INSERT INTO t1 VALUES('f', 'F', 'FFF');
+}]
+
+
+set ::conflict_list [list]
+proc xConflict {args} {
+  lappend ::conflict_list $args
+  return "OMIT"
+}
+do_test $tn.1.2 {
+  sqlite3changeset_apply_v2 db2 $C xConflict
+  set ::conflict_list
+} [list {*}{
+  {UPDATE t1 DATA {t b {} {} t BBB} {{} {} {} {} t 123} {t b t B t 123}}
+  {INSERT t1 CONFLICT {t f t F t FFF} {t f t F t FFF}}
+  {DELETE t1 NOTFOUND {t d t D t DDD}}
+}]
+do_test $tn.1.3 {
+  set ::conflict_list [list]
+  sqlite3changeset_apply_v2 db2 $C xConflict
+  set ::conflict_list
+} [list {*}{
+  {UPDATE t1 DATA {t b {} {} t BBB} {{} {} {} {} t 123} {t b t B t 123}}
+  {INSERT t1 CONFLICT {t f t F t FFF} {t f t F t FFF}}
+  {DELETE t1 NOTFOUND {t d t D t DDD}}
+}]
+
+do_test $tn.1.4 {
+  set ::conflict_list [list]
+  sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+  set ::conflict_list
+} {}
+
+do_execsql_test -db db2 1.5 {
+  UPDATE t1 SET b='G' WHERE a='f';
+  UPDATE t1 SET c='456' WHERE a='b';
+}
+
+do_test $tn.1.6 {
+  set ::conflict_list [list]
+  sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+  set ::conflict_list
+} [list {*}{
+  {UPDATE t1 DATA {t b {} {} t BBB} {{} {} {} {} t 123} {t b t B t 456}}
+  {INSERT t1 CONFLICT {t f t F t FFF} {t f t G t FFF}}
+}]
+
+db2 close
+
+#--------------------------------------------------------------------------
+
+reset_db
+forcedelete test.db2
+sqlite3 db2 test.db2
+do_execsql_test $tn.2.0 {
+  CREATE TABLE t1(a PRIMARY KEY, b) %WO%;
+}
+do_execsql_test -db db2 $tn.2.1 {
+  CREATE TABLE t1(a PRIMARY KEY, b, c DEFAULT 'val') %WO%;
+}
+
+do_test $tn.2.2 {
+  do_then_apply_sql -ignorenoop {
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  do_then_apply_sql -ignorenoop {
+    UPDATE t1 SET b=2 WHERE a=1
+  }
+} {}
+
+db2 close
+
+}]
+}
+
+
+#-------------------------------------------------------------------------
+reset_db
+forcedelete test.db2
+do_execsql_test 3.0 {
+  CREATE TABLE xyz(a, b, c, PRIMARY KEY(a, b), UNIQUE(c));
+  ANALYZE;
+  WITH s(i) AS (
+    VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO xyz SELECT i, i, i FROM s;
+  VACUUM INTO 'test.db2';
+}
+
+set C [changeset_from_sql { ANALYZE }]
+sqlite3 db2 test.db2
+
+set ::conflict_list [list]
+proc xConflict {args} { lappend ::conflict_list $args ; return "OMIT" }
+do_test 3.1 {
+  sqlite3changeset_apply_v2 db2 $C xConflict
+  set ::conflict_list
+} {}
+
+do_test 3.2 {
+  sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+  set ::conflict_list
+} {}
+
+do_test 3.3 {
+  sqlite3changeset_apply_v2 db2 $C xConflict
+  set ::conflict_list
+} [list {*}{
+  {INSERT sqlite_stat1 CONFLICT {t xyz t sqlite_autoindex_xyz_1 t {100 1 1}} {t xyz t sqlite_autoindex_xyz_1 t {100 1 1}}} 
+  {INSERT sqlite_stat1 CONFLICT {t xyz t sqlite_autoindex_xyz_2 t {100 1}} {t xyz t sqlite_autoindex_xyz_2 t {100 1}}}
+}]
+
+do_execsql_test -db db2 3.4 {
+  UPDATE sqlite_stat1 SET stat='200 1 1' WHERE idx='sqlite_autoindex_xyz_1';
+}
+
+do_test 3.5 {
+  set ::conflict_list [list]
+  sqlite3changeset_apply_v2 -ignorenoop db2 $C xConflict
+  set ::conflict_list
+} [list {*}{
+  {INSERT sqlite_stat1 CONFLICT {t xyz t sqlite_autoindex_xyz_1 t {100 1 1}} {t xyz t sqlite_autoindex_xyz_1 t {200 1 1}}} 
+}]
+
+
+
+finish_test
+

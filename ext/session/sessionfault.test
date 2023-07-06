@@ -44,7 +44,7 @@ do_faultsim_test 1.1 -faults oom-* -prep {
   faultsim_restore_and_reopen
   sqlite3 db2 test.db2
 } -body {
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     INSERT INTO t1 VALUES('a string value', 8, 9);
     UPDATE t1 SET c = 10 WHERE a = 1;
     DELETE FROM t1 WHERE a = 4;

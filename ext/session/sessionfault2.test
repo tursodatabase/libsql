@@ -132,7 +132,7 @@ do_faultsim_test 1.1 -faults oom-* -prep {
   faultsim_restore_and_reopen
   sqlite3 db2 test.db2
 } -body {
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     INSERT INTO sqlite_stat1 VALUES('x', 'y', 45);
     UPDATE sqlite_stat1 SET stat = 123 WHERE tbl='t1' AND idx='i1';
     UPDATE sqlite_stat1 SET stat = 456 WHERE tbl='t2';

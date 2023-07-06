@@ -41,7 +41,7 @@ typedef sqlite3_int64 i64;
 
 
 /*
-** Used as an fts3ExprIterate() context when loading phrase doclists to
+** Used as an sqlite3Fts3ExprIterate() context when loading phrase doclists to
 ** Fts3Expr.aDoclist[]/nDoclist.
 */
 typedef struct LoadDoclistCtx LoadDoclistCtx;
@@ -85,7 +85,7 @@ struct SnippetFragment {
 };
 
 /*
-** This type is used as an fts3ExprIterate() context object while 
+** This type is used as an sqlite3Fts3ExprIterate() context object while 
 ** accumulating the data returned by the matchinfo() function.
 */
 typedef struct MatchInfo MatchInfo;
@@ -138,9 +138,8 @@ static MatchinfoBuffer *fts3MIBufferNew(size_t nElem, const char *zMatchinfo){
                            + sizeof(MatchinfoBuffer);
   sqlite3_int64 nStr = strlen(zMatchinfo);
 
-  pRet = sqlite3_malloc64(nByte + nStr+1);
+  pRet = sqlite3Fts3MallocZero(nByte + nStr+1);
   if( pRet ){
-    memset(pRet, 0, nByte);
     pRet->aMatchinfo[0] = (u8*)(&pRet->aMatchinfo[1]) - (u8*)pRet;
     pRet->aMatchinfo[1+nElem] = pRet->aMatchinfo[0]
                                       + sizeof(u32)*((int)nElem+1);
@@ -245,7 +244,7 @@ static void fts3GetDeltaPosition(char **pp, i64 *piPos){
 }
 
 /*
-** Helper function for fts3ExprIterate() (see below).
+** Helper function for sqlite3Fts3ExprIterate() (see below).
 */
 static int fts3ExprIterate2(
   Fts3Expr *pExpr,                /* Expression to iterate phrases of */
@@ -279,7 +278,7 @@ static int fts3ExprIterate2(
 ** Otherwise, SQLITE_OK is returned after a callback has been made for
 ** all eligible phrase nodes.
 */
-static int fts3ExprIterate(
+int sqlite3Fts3ExprIterate(
   Fts3Expr *pExpr,                /* Expression to iterate phrases of */
   int (*x)(Fts3Expr*,int,void*),  /* Callback function to invoke for phrases */
   void *pCtx                      /* Second argument to pass to callback */
@@ -288,10 +287,9 @@ static int fts3ExprIterate(
   return fts3ExprIterate2(pExpr, &iPhrase, x, pCtx);
 }
 
-
 /*
-** This is an fts3ExprIterate() callback used while loading the doclists
-** for each phrase into Fts3Expr.aDoclist[]/nDoclist. See also
+** This is an sqlite3Fts3ExprIterate() callback used while loading the 
+** doclists for each phrase into Fts3Expr.aDoclist[]/nDoclist. See also
 ** fts3ExprLoadDoclists().
 */
 static int fts3ExprLoadDoclistsCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
@@ -323,9 +321,9 @@ static int fts3ExprLoadDoclists(
   int *pnToken                    /* OUT: Number of tokens in query */
 ){
   int rc;                         /* Return Code */
-  LoadDoclistCtx sCtx = {0,0,0};  /* Context for fts3ExprIterate() */
+  LoadDoclistCtx sCtx = {0,0,0};  /* Context for sqlite3Fts3ExprIterate() */
   sCtx.pCsr = pCsr;
-  rc = fts3ExprIterate(pCsr->pExpr, fts3ExprLoadDoclistsCb, (void *)&sCtx);
+  rc = sqlite3Fts3ExprIterate(pCsr->pExpr,fts3ExprLoadDoclistsCb,(void*)&sCtx);
   if( pnPhrase ) *pnPhrase = sCtx.nPhrase;
   if( pnToken ) *pnToken = sCtx.nToken;
   return rc;
@@ -338,7 +336,7 @@ static int fts3ExprPhraseCountCb(Fts3Expr *pExpr, int iPhrase, void *ctx){
 }
 static int fts3ExprPhraseCount(Fts3Expr *pExpr){
   int nPhrase = 0;
-  (void)fts3ExprIterate(pExpr, fts3ExprPhraseCountCb, (void *)&nPhrase);
+  (void)sqlite3Fts3ExprIterate(pExpr, fts3ExprPhraseCountCb, (void *)&nPhrase);
   return nPhrase;
 }
 
@@ -466,8 +464,9 @@ static void fts3SnippetDetails(
 }
 
 /*
-** This function is an fts3ExprIterate() callback used by fts3BestSnippet().
-** Each invocation populates an element of the SnippetIter.aPhrase[] array.
+** This function is an sqlite3Fts3ExprIterate() callback used by
+** fts3BestSnippet().  Each invocation populates an element of the
+** SnippetIter.aPhrase[] array.
 */
 static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
   SnippetIter *p = (SnippetIter *)ctx;
@@ -544,11 +543,10 @@ static int fts3BestSnippet(
   ** the required space using malloc().
   */
   nByte = sizeof(SnippetPhrase) * nList;
-  sIter.aPhrase = (SnippetPhrase *)sqlite3_malloc64(nByte);
+  sIter.aPhrase = (SnippetPhrase *)sqlite3Fts3MallocZero(nByte);
   if( !sIter.aPhrase ){
     return SQLITE_NOMEM;
   }
-  memset(sIter.aPhrase, 0, nByte);
 
   /* Initialize the contents of the SnippetIter object. Then iterate through
   ** the set of phrases in the expression to populate the aPhrase[] array.
@@ -558,7 +556,9 @@ static int fts3BestSnippet(
   sIter.nSnippet = nSnippet;
   sIter.nPhrase = nList;
   sIter.iCurrent = -1;
-  rc = fts3ExprIterate(pCsr->pExpr, fts3SnippetFindPositions, (void*)&sIter);
+  rc = sqlite3Fts3ExprIterate(
+      pCsr->pExpr, fts3SnippetFindPositions, (void*)&sIter
+  );
   if( rc==SQLITE_OK ){
 
     /* Set the *pmSeen output variable. */
@@ -919,10 +919,10 @@ static int fts3ExprLHitGather(
 }
 
 /*
-** fts3ExprIterate() callback used to collect the "global" matchinfo stats
-** for a single query. 
+** sqlite3Fts3ExprIterate() callback used to collect the "global" matchinfo
+** stats for a single query. 
 **
-** fts3ExprIterate() callback to load the 'global' elements of a
+** sqlite3Fts3ExprIterate() callback to load the 'global' elements of a
 ** FTS3_MATCHINFO_HITS matchinfo array. The global stats are those elements 
 ** of the matchinfo array that are constant for all rows returned by the 
 ** current query.
@@ -957,7 +957,7 @@ static int fts3ExprGlobalHitsCb(
 }
 
 /*
-** fts3ExprIterate() callback used to collect the "local" part of the
+** sqlite3Fts3ExprIterate() callback used to collect the "local" part of the
 ** FTS3_MATCHINFO_HITS array. The local stats are those elements of the 
 ** array that are different for each row returned by the query.
 */
@@ -1112,10 +1112,12 @@ static int fts3MatchinfoLcsCb(
 ** position list for the next column.
 */
 static int fts3LcsIteratorAdvance(LcsIterator *pIter){
-  char *pRead = pIter->pRead;
+  char *pRead;
   sqlite3_int64 iRead;
   int rc = 0;
 
+  if( NEVER(pIter==0) ) return 1;
+  pRead = pIter->pRead;
   pRead += sqlite3Fts3GetVarint(pRead, &iRead);
   if( iRead==0 || iRead==1 ){
     pRead = 0;
@@ -1149,10 +1151,9 @@ static int fts3MatchinfoLcs(Fts3Cursor *pCsr, MatchInfo *pInfo){
   /* Allocate and populate the array of LcsIterator objects. The array
   ** contains one element for each matchable phrase in the query.
   **/
-  aIter = sqlite3_malloc64(sizeof(LcsIterator) * pCsr->nPhrase);
+  aIter = sqlite3Fts3MallocZero(sizeof(LcsIterator) * pCsr->nPhrase);
   if( !aIter ) return SQLITE_NOMEM;
-  memset(aIter, 0, sizeof(LcsIterator) * pCsr->nPhrase);
-  (void)fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
+  (void)sqlite3Fts3ExprIterate(pCsr->pExpr, fts3MatchinfoLcsCb, (void*)aIter);
 
   for(i=0; i<pInfo->nPhrase; i++){
     LcsIterator *pIter = &aIter[i];
@@ -1329,11 +1330,11 @@ static int fts3MatchinfoValues(
             rc = fts3MatchinfoSelectDoctotal(pTab, &pSelect, &pInfo->nDoc,0,0);
             if( rc!=SQLITE_OK ) break;
           }
-          rc = fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
+          rc = sqlite3Fts3ExprIterate(pExpr, fts3ExprGlobalHitsCb,(void*)pInfo);
           sqlite3Fts3EvalTestDeferred(pCsr, &rc);
           if( rc!=SQLITE_OK ) break;
         }
-        (void)fts3ExprIterate(pExpr, fts3ExprLocalHitsCb,(void*)pInfo);
+        (void)sqlite3Fts3ExprIterate(pExpr, fts3ExprLocalHitsCb,(void*)pInfo);
         break;
       }
     }
@@ -1556,7 +1557,7 @@ struct TermOffsetCtx {
 };
 
 /*
-** This function is an fts3ExprIterate() callback used by sqlite3Fts3Offsets().
+** This function is an sqlite3Fts3ExprIterate() callback used by sqlite3Fts3Offsets().
 */
 static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   TermOffsetCtx *p = (TermOffsetCtx *)ctx;
@@ -1612,7 +1613,7 @@ void sqlite3Fts3Offsets(
   if( rc!=SQLITE_OK ) goto offsets_out;
 
   /* Allocate the array of TermOffset iterators. */
-  sCtx.aTerm = (TermOffset *)sqlite3_malloc64(sizeof(TermOffset)*nToken);
+  sCtx.aTerm = (TermOffset *)sqlite3Fts3MallocZero(sizeof(TermOffset)*nToken);
   if( 0==sCtx.aTerm ){
     rc = SQLITE_NOMEM;
     goto offsets_out;
@@ -1633,13 +1634,15 @@ void sqlite3Fts3Offsets(
     const char *zDoc;
     int nDoc;
 
-    /* Initialize the contents of sCtx.aTerm[] for column iCol. There is 
-    ** no way that this operation can fail, so the return code from
-    ** fts3ExprIterate() can be discarded.
+    /* Initialize the contents of sCtx.aTerm[] for column iCol. This 
+    ** operation may fail if the database contains corrupt records.
     */
     sCtx.iCol = iCol;
     sCtx.iTerm = 0;
-    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprTermOffsetInit, (void*)&sCtx);
+    rc = sqlite3Fts3ExprIterate(
+        pCsr->pExpr, fts3ExprTermOffsetInit, (void*)&sCtx
+    );
+    if( rc!=SQLITE_OK ) goto offsets_out;
 
     /* Retreive the text stored in column iCol. If an SQL NULL is stored 
     ** in column iCol, jump immediately to the next iteration of the loop.

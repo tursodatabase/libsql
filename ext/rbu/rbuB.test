@@ -12,6 +12,7 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 set ::testprefix rbuB
 
 db close
@@ -48,7 +49,7 @@ do_test 1.2 {
 
 do_test 1.3 {
   set ::errlog
-} {SQLITE_NOTICE_RECOVER_WAL SQLITE_INTERNAL}
+} {SQLITE_NOTICE_RECOVER_WAL SQLITE_NOTICE_RBU}
 
 do_execsql_test 1.4 {
   SELECT * FROM t1

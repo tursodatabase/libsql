@@ -15,6 +15,7 @@ source $testdir/tester.tcl
 set testprefix e_wal
 
 db close
+forcedelete test.db-shm 
 testvfs oldvfs -iversion 1
 
 

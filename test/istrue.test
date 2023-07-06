@@ -143,20 +143,22 @@ foreach {tn val} [list 1 NaN 2 -NaN 3 NaN0 4 -NaN0 5 Inf 6 -Inf] {
   } {0}
 }
 
-do_execsql_test istrue-700 {
-  CREATE TABLE t7(
-    a INTEGER PRIMARY KEY,
-    b BOOLEAN DEFAULT false,
-    c BOOLEAN DEFAULT true
-  );
-  INSERT INTO t7(a) VALUES(1);
-  INSERT INTO t7(a,b,c) VALUES(2,true,false);
-  ALTER TABLE t7 ADD COLUMN d BOOLEAN DEFAULT false;
-  ALTER TABLE t7 ADD COLUMN e BOOLEAN DEFAULT true;
-  INSERT INTO t7(a,b,c) VALUES(3,true,false);
-  INSERT INTO t7 VALUES(4,false,true,true,false);
-  SELECT *,'x' FROM t7 ORDER BY a;
-} {1 0 1 0 1 x 2 1 0 0 1 x 3 1 0 0 1 x 4 0 1 1 0 x}
+ifcapable altertable {
+  do_execsql_test istrue-700 {
+    CREATE TABLE t7(
+      a INTEGER PRIMARY KEY,
+      b BOOLEAN DEFAULT false,
+      c BOOLEAN DEFAULT true
+    );
+    INSERT INTO t7(a) VALUES(1);
+    INSERT INTO t7(a,b,c) VALUES(2,true,false);
+    ALTER TABLE t7 ADD COLUMN d BOOLEAN DEFAULT false;
+    ALTER TABLE t7 ADD COLUMN e BOOLEAN DEFAULT true;
+    INSERT INTO t7(a,b,c) VALUES(3,true,false);
+    INSERT INTO t7 VALUES(4,false,true,true,false);
+    SELECT *,'x' FROM t7 ORDER BY a;
+  } {1 0 1 0 1 x 2 1 0 0 1 x 3 1 0 0 1 x 4 0 1 1 0 x}
+}
 
 do_execsql_test istrue-710 {
   SELECT 0.5 IS TRUE COLLATE NOCASE;

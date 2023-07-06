@@ -43,10 +43,10 @@ do_test shell2-1.1.1 {
 # Shell silently ignores extra parameters.
 # Ticket [f5cb008a65].
 do_test shell2-1.2.1 {
-  set rc [catch { eval exec $CLI \":memory:\" \"select+3\" \"select+4\" } msg]
-  list $rc $msg
+  catchcmdex {:memory: "select+3" "select+4"}
 } {0 {3
-4}}
+4
+}}
 
 # Test a problem reported on the mailing list. The shell was at one point
 # returning the generic SQLITE_ERROR message ("SQL error or missing database")
@@ -63,7 +63,7 @@ do_test shell2-1.3 {
 
     UPDATE OR REPLACE t5 SET a = 4 WHERE a = 1;
   }
-} {1 {Error: near line 9: too many levels of trigger recursion}}
+} {1 {Runtime error near line 9: too many levels of trigger recursion}}
 
 
 
@@ -123,7 +123,7 @@ SELECT * FROM foo;}
 # NB. whitespace is important
 do_test shell2-1.4.5 {
   forcedelete foo.db
-  catchcmd "foo.db" {.echo ON
+  catchcmdex "foo.db" {.echo ON
 CREATE TABLE foo1(a);
 INSERT INTO foo1(a) VALUES(1);
 CREATE TABLE foo2(b);
@@ -136,16 +136,13 @@ SELECT * FROM foo1; SELECT * FROM foo2;
 INSERT INTO foo1(a) VALUES(1);
 CREATE TABLE foo2(b);
 INSERT INTO foo2(b) VALUES(1);
-SELECT * FROM foo1;
+SELECT * FROM foo1; SELECT * FROM foo2;
 1
-SELECT * FROM foo2;
 1
-INSERT INTO foo1(a) VALUES(2);
-INSERT INTO foo2(b) VALUES(2);
-SELECT * FROM foo1;
+INSERT INTO foo1(a) VALUES(2); INSERT INTO foo2(b) VALUES(2);
+SELECT * FROM foo1; SELECT * FROM foo2;
 1
 2
-SELECT * FROM foo2;
 1
 2
 }}
@@ -155,7 +152,7 @@ SELECT * FROM foo2;
 # NB. whitespace is important
 do_test shell2-1.4.6 {
   forcedelete foo.db
-  catchcmd "foo.db" {.echo ON
+  catchcmdex "foo.db" {.echo ON
 .headers ON
 CREATE TABLE foo1(a);
 INSERT INTO foo1(a) VALUES(1);
@@ -170,22 +167,109 @@ CREATE TABLE foo1(a);
 INSERT INTO foo1(a) VALUES(1);
 CREATE TABLE foo2(b);
 INSERT INTO foo2(b) VALUES(1);
-SELECT * FROM foo1;
+SELECT * FROM foo1; SELECT * FROM foo2;
 a
 1
-SELECT * FROM foo2;
 b
 1
-INSERT INTO foo1(a) VALUES(2);
-INSERT INTO foo2(b) VALUES(2);
-SELECT * FROM foo1;
+INSERT INTO foo1(a) VALUES(2); INSERT INTO foo2(b) VALUES(2);
+SELECT * FROM foo1; SELECT * FROM foo2;
 a
 1
 2
-SELECT * FROM foo2;
 b
 1
 2
 }}
+
+# Test for rejection of incomplete input at EOF.
+# Reported at https://sqlite.org/forum/forumpost/718f489a43be3197
+do_test shell2-1.4.7 {
+  catchcmd ":memory:" {
+ SELECT 'unclosed;}
+} {1 {Parse error near line 2: unrecognized token: "'unclosed;"
+  SELECT 'unclosed;
+         ^--- error here}}
+
+# Verify that safe mode rejects certain UDFs
+# Reported at https://sqlite.org/forum/forumpost/07beac8056151b2f
+do_test shell2-1.4.8 {
+  catchcmd "-safe :memory:" {
+ SELECT edit('DoNotCare');}
+} {1 {line 2: cannot use the edit() function in safe mode}}
+do_test shell2-1.4.9 {
+  catchcmd "-safe :memory:" {
+ SELECT writefile('DoNotCare', x'');}
+} {1 {line 2: cannot use the writefile() function in safe mode}}
+
+# Verify that .clone handles sequence table.
+# See https://sqlite.org/forum/forumpost/71ff9e6c4c
+do_test shell2-1.4.9 {
+  forcedelete clone.db
+  set res [catchcmd :memory: [string trim {
+ CREATE TABLE t(id INTEGER PRIMARY KEY AUTOINCREMENT);
+ INSERT INTO t VALUES (1),(2);
+.clone clone.db
+.open clone.db
+ SELECT max(seq) FROM sqlite_sequence;}]]
+} {0 {t... done
+done
+2}}
+
+# Verify that generate_series stays sane near 64-bit range boundaries.
+# See overflow report at https://sqlite.org/forum/forumpost/5d34ce5280
+do_test shell2-1.4.10 {
+ set res [catchcmd :memory: [string trim {
+ SELECT * FROM generate_series(9223372036854775807,9223372036854775807,1);
+ SELECT * FROM generate_series(9223372036854775807,9223372036854775807,-1);
+ SELECT avg(rowid),min(value),max(value) FROM generate_series(
+  -9223372036854775808,9223372036854775807,1085102592571150095);
+ SELECT * FROM generate_series(-9223372036854775808,9223372036854775807,
+  9223372036854775807);
+ SELECT value,rowid FROM generate_series(-4611686018427387904,
+  4611686018427387904, 4611686018427387904) ORDER BY value DESC;
+ SELECT * FROM generate_series(0,-2,-1);
+ SELECT * FROM generate_series(0,-2);
+ SELECT * FROM generate_series(0,2) LIMIT 3;}]]
+} {0 {9223372036854775807
+9223372036854775807
+9.5|-9223372036854775808|9223372036854775807
+-9223372036854775808
+-1
+9223372036854775806
+4611686018427387904|3
+0|2
+-4611686018427387904|1
+0
+-1
+-2
+0
+1
+2}}
+
+# Bug discovered while messing around, .import hangs with
+# bit 7 set in column separator.
+do_test shell2-1.4.11 {
+  forcedelete dummy.csv
+  set df [open dummy.csv w]
+  puts $df dog,cat
+  close $df
+  set res [catchcmd :memory: [string trim {
+ CREATE TABLE t(line text);
+.mode ascii
+.separator "\377" "\n"
+.import dummy.csv t
+ SELECT count(*) FROM t;}]]
+} {0 1}
+
+# Bug from forum post 7cbe081746dd3803
+# Keywords as column names were producing an error message.
+do_test shell2-1.4.12 {
+  set res [catchcmd :memory: [string trim {
+ CREATE TABLE "group"("order" text);
+ INSERT INTO "group" VALUES ('ABC');
+.sha3sum}]]
+} {0 ca08bc02b7e95c7df431a3a4b1cc0f8d8743914793473f55b5558e03}
+
 
 finish_test

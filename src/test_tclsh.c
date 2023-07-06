@@ -64,7 +64,6 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   extern int Sqlitetest4_Init(Tcl_Interp*);
   extern int Sqlitetest5_Init(Tcl_Interp*);
   extern int Sqlitetest6_Init(Tcl_Interp*);
-  extern int Sqlitetest7_Init(Tcl_Interp*);
   extern int Sqlitetest8_Init(Tcl_Interp*);
   extern int Sqlitetest9_Init(Tcl_Interp*);
   extern int Sqlitetestasync_Init(Tcl_Interp*);
@@ -87,6 +86,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   extern int Sqlitetestintarray_Init(Tcl_Interp*);
   extern int Sqlitetestvfs_Init(Tcl_Interp *);
   extern int Sqlitetestrtree_Init(Tcl_Interp*);
+  extern int Sqlitetestrtreedoc_Init(Tcl_Interp*);
   extern int Sqlitequota_Init(Tcl_Interp*);
   extern int Sqlitemultiplex_Init(Tcl_Interp*);
   extern int SqliteSuperlock_Init(Tcl_Interp*);
@@ -107,6 +107,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   extern int TestExpert_Init(Tcl_Interp*);
   extern int Sqlitetest_window_Init(Tcl_Interp *);
   extern int Sqlitetestvdbecov_Init(Tcl_Interp *);
+  extern int TestRecover_Init(Tcl_Interp*);
 
   Tcl_CmdInfo cmdInfo;
 
@@ -134,7 +135,6 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   Sqlitetest4_Init(interp);
   Sqlitetest5_Init(interp);
   Sqlitetest6_Init(interp);
-  Sqlitetest7_Init(interp);
   Sqlitetest8_Init(interp);
   Sqlitetest9_Init(interp);
   Sqlitetestasync_Init(interp);
@@ -156,6 +156,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   Sqlitetestintarray_Init(interp);
   Sqlitetestvfs_Init(interp);
   Sqlitetestrtree_Init(interp);
+  Sqlitetestrtreedoc_Init(interp);
   Sqlitequota_Init(interp);
   Sqlitemultiplex_Init(interp);
   SqliteSuperlock_Init(interp);
@@ -173,6 +174,7 @@ const char *sqlite3TestInit(Tcl_Interp *interp){
   TestExpert_Init(interp);
   Sqlitetest_window_Init(interp);
   Sqlitetestvdbecov_Init(interp);
+  TestRecover_Init(interp);
 
   Tcl_CreateObjCommand(
       interp, "load_testfixture_extensions", load_testfixture_extensions,0,0

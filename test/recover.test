@@ -39,8 +39,9 @@ proc compare_dbs {db1 db2} {
   }
 }
 
-proc do_recover_test {tn {tsql {}} {res {}}} {
-  set fd [open "|$::CLI test.db .recover"]
+proc recover_with_opts {opts} {
+  set cmd ".recover $opts"
+  set fd [open [list |$::CLI test.db $cmd]]
   fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
   set sql [read $fd]
@@ -49,6 +50,13 @@ proc do_recover_test {tn {tsql {}} {res {}}} {
   forcedelete test.db2
   sqlite3 db2 test.db2
   execsql $sql db2
+  db2 close
+}
+
+proc do_recover_test {tn {tsql {}} {res {}}} {
+  recover_with_opts ""
+
+  sqlite3 db2 test.db2
   if {$tsql==""} {
     uplevel [list do_test $tn [list compare_dbs db db2] {}]
   } else {
@@ -130,5 +138,42 @@ do_recover_test 2.4.1 {
 #-------------------------------------------------------------------------
 reset_db
 do_recover_test 3.0
+
+#-------------------------------------------------------------------------
+reset_db 
+execsql { PRAGMA secure_delete = 0 }
+execsql { PRAGMA auto_vacuum = 0 }
+do_execsql_test 4.0 {
+  CREATE TABLE t1(a, b, c);
+  CREATE TABLE t2(d, e, f);
+  CREATE TABLE t3(g, h, i);
+
+  INSERT INTO t2 VALUES(1, 2, 3);
+  INSERT INTO t2 VALUES('a', 'b', 'c');
+
+  INSERT INTO t3 VALUES('one', 'two', 'three');
+  DROP TABLE t1;
+  DROP TABLE t2;
+}
+
+recover_with_opts ""
+sqlite3 db2 test.db2
+do_execsql_test -db db2 4.1.1 {
+  SELECT name FROM sqlite_schema
+} {t3 lost_and_found}
+do_execsql_test -db db2 4.1.2 {
+  SELECT id, c0, c1, c2 FROM lost_and_found
+} {1 1 2 3    2 a b c}
+db2 close
+
+recover_with_opts -ignore-freelist
+sqlite3 db2 test.db2
+do_execsql_test -db db2 4.2.1 {
+  SELECT name FROM sqlite_schema
+} {t3}
+do_execsql_test -db db2 4.2.2 {
+  SELECT * FROM t3
+} {one two three}
+db2 close
 
 finish_test

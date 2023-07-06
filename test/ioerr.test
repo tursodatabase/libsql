@@ -334,6 +334,7 @@ do_ioerr_test ioerr-12 -ckrefcount true -erc 1 -tclprep {
 }
 sqlite3_simulate_device -char {} -sectorsize 0
 catch {db close}
+unregister_devsim
 
 do_ioerr_test ioerr-13 -ckrefcount true -erc 1 -sqlprep {
   PRAGMA auto_vacuum = incremental;

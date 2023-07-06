@@ -1,0 +1,69 @@
+body {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+textarea {
+    font-family: monospace;
+}
+header {
+    font-size: 130%;
+    font-weight: bold;
+}
+.hidden, .initially-hidden {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    display: none !important;
+}
+fieldset.options {
+    font-size: 75%;
+}
+fieldset > legend {
+    padding: 0 0.5em;
+}
+span.labeled-input {
+    padding: 0.25em;
+    margin: 0.25em 0.5em;
+    border-radius: 0.25em;
+    white-space: nowrap;
+    background: #0002;
+}
+.center { text-align: center; }
+.error {
+    color: red;
+    background-color: yellow;
+}
+.strong { font-weight: 700 }
+.warning { color: firebrick; }
+.green { color: darkgreen; }
+.tests-pass { background-color: green; color: white }
+.tests-fail { background-color: red; color: yellow }
+.faded { opacity: 0.5; }
+.group-start { color: blue; }
+.group-end { color: blue; }
+.input-wrapper {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+#test-output {
+  border: 1px inset;
+  border-radius: 0.25em;
+  padding: 0.25em;
+  /*max-height: 30em;*/
+  overflow: auto;
+  white-space: break-spaces;
+  display: flex; flex-direction: column;
+  font-family: monospace;
+}
+#test-output.reverse {
+  flex-direction: column-reverse;
+}
+label[for] { cursor: pointer }
+
+h1 {
+  border-radius: 0.25em;
+  padding: 0.15em 0.25em;
+}
+h1:first-of-type {margin: 0 0 0.5em 0;}

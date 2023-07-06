@@ -292,4 +292,43 @@ do_faultsim_test 12 -faults oom* -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 13.0 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a, b);
+  INSERT INTO t1 VALUES(1, '1', 'a');
+  INSERT INTO t1 VALUES(2, '22', 'b');
+  INSERT INTO t1 VALUES(3, '333', 'c');
+  INSERT INTO t1 VALUES(4, '4444', 'dddd');
+  INSERT INTO t1 VALUES(5, '55555', 'e');
+  INSERT INTO t1 VALUES(6, '666666', 'f');
+  INSERT INTO t1 VALUES(7, '7777777', 'gggggggggg');
+} {}
+
+set queryres [list {*}{
+  1b22
+  1b22c333
+  22c333dddd4444 
+  333dddd4444e55555 
+  4444e55555f666666
+  55555f666666gggggggggg7777777 
+  666666gggggggggg7777777
+}]
+do_execsql_test 13.1 {
+  SELECT group_concat(a, b) OVER (
+    ORDER BY id RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+  ) FROM t1
+} $queryres
+
+do_faultsim_test 13 -faults oom* -prep {
+} -body {
+  execsql {
+    SELECT group_concat(a, b) OVER (
+        ORDER BY id RANGE BETWEEN 1 PRECEDING AND 1 FOLLOWING
+    ) FROM t1
+  }
+} -test {
+  faultsim_test_result [list 0 $::queryres]
+}
+
 finish_test

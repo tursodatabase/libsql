@@ -22,14 +22,6 @@
 # "fulltest"). The program may be invoked as follows:
 #
 set USAGE {
-$argv0 platforms
-    List available platforms.
-
-$argv0 tests ?-nodebug? PLATFORM
-    List tests in a specified platform. If the -nodebug switch is 
-    specified, synthetic debug/ndebug configurations are omitted. Each
-    test is a combination of a configuration and a makefile target.
-
 $argv0 script ?-msvc? CONFIGURATION TARGET
     Given a configuration and make target, return a bash (or, if -msvc
     is specified, batch) script to execute the test. The first argument
@@ -37,6 +29,14 @@ $argv0 script ?-msvc? CONFIGURATION TARGET
 
 $argv0 configurations
     List available configurations.
+
+$argv0 platforms
+    List available platforms.
+
+$argv0 tests ?-nodebug? PLATFORM
+    List tests in a specified platform. If the -nodebug switch is 
+    specified, synthetic debug/ndebug configurations are omitted. Each
+    test is a combination of a configuration and a makefile target.
 }
 
 # Omit comments (text between # and \n) in a long multi-line string.
@@ -51,6 +51,7 @@ array set ::Configs [strip_comments {
     -O2
     --disable-amalgamation --disable-shared
     --enable-session
+    -DSQLITE_ENABLE_RBU
   }
   "Sanitize" {
     CC=clang -fsanitize=address,undefined
@@ -99,7 +100,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_STMT_SCANSTATUS
     -DSQLITE_LIKE_DOESNT_MATCH_BLOBS
     -DSQLITE_ENABLE_CURSOR_HINTS
-    --enable-json1
   }
   "Check-Symbols" {
     -DSQLITE_MEMDEBUG=1
@@ -117,7 +117,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
     -DSQLITE_ENABLE_STAT4
     -DSQLITE_ENABLE_STMT_SCANSTATUS
-    --enable-json1 --enable-fts5 --enable-session
+    --enable-fts5 --enable-session
   }
   "Debug-One" {
     --disable-shared
@@ -134,7 +134,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_MAX_ATTACHED=125
     -DSQLITE_MUTATION_TEST
-    --enable-fts5 --enable-json1
+    --enable-fts5
   }
   "Debug-Two" {
     -DSQLITE_DEFAULT_MEMSTATUS=0
@@ -170,7 +170,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_VIRTUALTABLE=1
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DSQLITE_TEMP_STORE=3
-    --enable-json1
   }
   "Device-Two" {
     -DSQLITE_4_BYTE_ALIGNED_MALLOC=1
@@ -188,7 +187,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_OMIT_TRACE=1
     -DSQLITE_TEMP_STORE=3
     -DSQLITE_THREADSAFE=2
-    --enable-json1 --enable-fts5 --enable-session
+    --enable-fts5 --enable-session
   }
   "Locking-Style" {
     -O2
@@ -232,7 +231,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_WRITE_WALFRAME_PREBUFFERED=1
     -DUSE_GUARDED_FD=1
     -DUSE_PREAD=1
-    --enable-json1 --enable-fts5
+    --enable-fts5
   }
   "Extra-Robustness" {
     -DSQLITE_ENABLE_OVERSIZE_CELL_CHECK=1
@@ -247,7 +246,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS4_PARENTHESIS
     -DSQLITE_DISABLE_FTS4_DEFERRED
     -DSQLITE_ENABLE_RTREE
-    --enable-json1 --enable-fts5
+    --enable-fts5
   }
   "No-lookaside" {
     -DSQLITE_TEST_REALLOC_STRESS=1
@@ -259,7 +258,6 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_RTREE
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
     -DCONFIG_SLOWDOWN_FACTOR=8.0
-    --enable-json1
   }
 
   "Windows-Memdebug" {
@@ -289,56 +287,61 @@ if {$tcl_platform(os)=="Darwin"} {
 
 array set ::Platforms [strip_comments {
   Linux-x86_64 {
-    "Check-Symbols*"          checksymbols
-    "Fast-One"                "QUICKTEST_INCLUDE=rbu.test fuzztest test"
-    "Debug-One"               "mptest test"
-    "Debug-Two"               "test"
-    "Have-Not"                test
-    "Secure-Delete"           test
-    "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
-    "User-Auth"               tcltest
-    "Update-Delete-Limit"     test
-    "Extra-Robustness"        test
-    "Device-Two"              "threadtest test"
-    "No-lookaside"            test
-    "Devkit"                  test
-    "Apple"                   test
-    "Sanitize"                test
-    "Device-One"              fulltest
-    "Default"                 "threadtest fulltest"
-    "Valgrind*"               valgrindtest
+    "Check-Symbols*"          "" checksymbols
+    "Fast-One"                QUICKTEST_INCLUDE=rbu.test "fuzztest test"
+    "Debug-One"               "" "mptest test"
+    "Debug-Two"               "" test
+    "Have-Not"                "" test
+    "Secure-Delete"           "" test
+    "Unlock-Notify"           QUICKTEST_INCLUDE=notify2.test test
+    "User-Auth"               "" tcltest
+    "Update-Delete-Limit"     "" test
+    "Extra-Robustness"        "" test
+    "Device-Two"              "" "threadtest test"
+    "No-lookaside"            "" test
+    "Devkit"                  "" test
+    "Apple"                   "" test
+    "Sanitize*"               "" test
+    "Device-One"              "" alltest
+    "Default"                 "" "threadtest fuzztest alltest"
+    "Valgrind*"               "" valgrindtest
   }
   Linux-i686 {
-    "Devkit"                  test
-    "Have-Not"                test
-    "Unlock-Notify"           "QUICKTEST_INCLUDE=notify2.test test"
-    "Device-One"              test
-    "Device-Two"              test
-    "Default"                 "threadtest fulltest"
+    "Devkit"                  "" test
+    "Have-Not"                "" test
+    "Unlock-Notify"           QUICKTEST_INCLUDE=notify2.test test
+    "Device-One"              "" test
+    "Device-Two"              "" test
+    "Default"                 "" "threadtest fuzztest alltest"
   }
   Darwin-i386 {
-    "Locking-Style"           "mptest test"
-    "Have-Not"                test
-    "Apple"                   "threadtest fulltest"
+    "Locking-Style"           "" "mptest test"
+    "Have-Not"                "" test
+    "Apple"                   "" "threadtest fuzztest alltest"
   }
   Darwin-x86_64 {
-    "Locking-Style"           "mptest test"
-    "Have-Not"                test
-    "Apple"                   "threadtest fulltest"
+    "Locking-Style"           "" "mptest test"
+    "Have-Not"                "" test
+    "Apple"                   "" "threadtest fuzztest alltest"
+  }
+  Darwin-arm64 {
+    "Locking-Style"           "" "mptest test"
+    "Have-Not"                "" test
+    "Apple"                   "" "threadtest fuzztest alltest"
   }
   "Windows NT-intel" {
-    "Stdcall"                 test
-    "Have-Not"                test
-    "Windows-Memdebug*"       test
-    "Windows-Win32Heap*"      test
-    "Default"                 "mptest fulltestonly"
+    "Stdcall"                 "" test
+    "Have-Not"                "" test
+    "Windows-Memdebug*"       "" test
+    "Windows-Win32Heap*"      "" test
+    "Default"                 "" "mptest fulltestonly"
   }
   "Windows NT-amd64" {
-    "Stdcall"                 test
-    "Have-Not"                test
-    "Windows-Memdebug*"       test
-    "Windows-Win32Heap*"      test
-    "Default"                 "mptest fulltestonly"
+    "Stdcall"                 "" test
+    "Have-Not"                "" test
+    "Windows-Memdebug*"       "" test
+    "Windows-Win32Heap*"      "" test
+    "Default"                 "" "mptest fulltestonly"
   }
 
   # The Failure-Detection platform runs various tests that deliberately
@@ -346,13 +349,13 @@ array set ::Platforms [strip_comments {
   # correctly identifies failures.
   #
   Failure-Detection {
-    Fail0*     "TEST_FAILURE=0 test"
-    Sanitize*  "TEST_FAILURE=1 test"
-    Fail2*     "TEST_FAILURE=2 valgrindtest"
-    Fail3*     "TEST_FAILURE=3 valgrindtest"
-    Fail4*     "TEST_FAILURE=4 test"
-    FuzzFail1* "TEST_FAILURE=5 test"
-    FuzzFail2* "TEST_FAILURE=5 valgrindtest"
+    Fail0*     "TEST_FAILURE=0" test
+    Sanitize*  "TEST_FAILURE=1" test
+    Fail2*     "TEST_FAILURE=2" valgrindtest
+    Fail3*     "TEST_FAILURE=3" valgrindtest
+    Fail4*     "TEST_FAILURE=4" test
+    FuzzFail1* "TEST_FAILURE=5" test
+    FuzzFail2* "TEST_FAILURE=5" valgrindtest
   }
 }]
 
@@ -368,7 +371,7 @@ array set ::Platforms [strip_comments {
 # specified for each platforms exists.
 #
 foreach {key value} [array get ::Platforms] {
-  foreach {v t} $value {
+  foreach {v vars t} $value {
     if {[string range $v end end]=="*"} {
       set v [string range $v 0 end-1]
     }
@@ -439,6 +442,7 @@ proc main_script {args} {
     lappend opts -DSQLITE_EXTRA_IFNULLROW
     set config [string range $config 0 end-6]
   }
+  regexp {^(.*)-[0-9]+} $config -> config
 
   # Ensure that the named configuration exists.
   #
@@ -474,6 +478,7 @@ proc main_script {args} {
     if {$bRemoveDebug} {
       if {$param=="-DSQLITE_DEBUG" || $param=="-DSQLITE_DEBUG=1"
        || $param=="-DSQLITE_MEMDEBUG" || $param=="-DSQLITE_MEMDEBUG=1"
+       || $param=="--enable-debug"
       } {
         continue
       }
@@ -495,9 +500,6 @@ proc main_script {args} {
           }
           --enable-fts5 {
             lappend opts -DSQLITE_ENABLE_FTS5
-          } 
-          --enable-json1 {
-            lappend opts -DSQLITE_ENABLE_JSON1
           } 
           --enable-shared {
             lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
@@ -568,6 +570,174 @@ proc main_script {args} {
   }
 }
 
+proc main_trscript {args} {
+  set bMsvc 0
+  set nArg [llength $args]
+  if {$nArg==3} {
+    if {![is_prefix [lindex $args 0] -msvc 2]} usage
+    set bMsvc 1
+  } elseif {$nArg<2 || $nArg>3} {
+    usage
+  }
+  set config [lindex $args end-1]
+  set srcdir [lindex $args end]
+
+  set opts       [list]                         ;# OPTS value
+  set cflags     [expr {$bMsvc ? "-Zi" : "-g"}] ;# CFLAGS value
+  set makeOpts   [list]                         ;# Extra args for [make]
+  set configOpts [list]                         ;# Extra args for [configure]
+
+  if {$::tcl_platform(platform)=="windows" || $bMsvc} {
+    lappend opts -DSQLITE_OS_WIN=1
+  } else {
+    lappend opts -DSQLITE_OS_UNIX=1
+  }
+
+  # Figure out if this is a synthetic ndebug or debug configuration.
+  #
+  set bRemoveDebug 0
+  if {[string match *-ndebug $config]} {
+    set bRemoveDebug 1
+    set config [string range $config 0 end-7]
+  }
+  if {[string match *-debug $config]} {
+    lappend opts -DSQLITE_DEBUG
+    lappend opts -DSQLITE_EXTRA_IFNULLROW
+    set config [string range $config 0 end-6]
+  }
+  regexp {^(.*)-[0-9]+} $config -> config
+
+  # Ensure that the named configuration exists.
+  #
+  if {![info exists ::Configs($config)]} {
+    puts stderr "No such config: $config"
+    exit 1
+  }
+
+  # Loop through the parameters of the nominated configuration, updating
+  # $opts, $cflags, $makeOpts and $configOpts along the way. Rules are as
+  # follows:
+  #
+  #   1. If the parameter begins with a "*", discard it.
+  #
+  #   2. If $bRemoveDebug is set and the parameter is -DSQLITE_DEBUG or
+  #      -DSQLITE_DEBUG=1, discard it
+  #
+  #   3. If the parameter begins with "-D", add it to $opts.
+  #
+  #   4. If the parameter begins with "--" add it to $configOpts. Unless
+  #      this command is preparing a script for MSVC - then add an 
+  #      equivalent to $makeOpts or $opts.
+  #
+  #   5. If the parameter begins with "-" add it to $cflags. If in MSVC
+  #      mode and the parameter is an -O<integer> option, instead add
+  #      an OPTIMIZATIONS=<integer> switch to $makeOpts.
+  #
+  #   6. If none of the above apply, add the parameter to $makeOpts
+  #
+  foreach param $::Configs($config) {
+    if {[string range $param 0 0]=="*"} continue
+
+    if {$bRemoveDebug} {
+      if {$param=="-DSQLITE_DEBUG" || $param=="-DSQLITE_DEBUG=1"
+       || $param=="-DSQLITE_MEMDEBUG" || $param=="-DSQLITE_MEMDEBUG=1"
+       || $param=="--enable-debug"
+      } {
+        continue
+      }
+    }
+
+    if {[string range $param 0 1]=="-D"} {
+      lappend opts $param
+      continue
+    }
+
+    if {[string range $param 0 1]=="--"} {
+      if {$bMsvc} {
+        switch -- $param {
+          --disable-amalgamation {
+            lappend makeOpts USE_AMALGAMATION=0
+          }
+          --disable-shared {
+            lappend makeOpts USE_CRT_DLL=0 DYNAMIC_SHELL=0
+          }
+          --enable-fts5 {
+            lappend opts -DSQLITE_ENABLE_FTS5
+          } 
+          --enable-shared {
+            lappend makeOpts USE_CRT_DLL=1 DYNAMIC_SHELL=1
+          }
+          --enable-session {
+            lappend opts -DSQLITE_ENABLE_PREUPDATE_HOOK
+            lappend opts -DSQLITE_ENABLE_SESSION
+          }
+          default {
+            error "Cannot translate $param for MSVC"
+          }
+        }
+      } else {
+        lappend configOpts $param
+      }
+
+      continue
+    }
+
+    if {[string range $param 0 0]=="-"} {
+      if {$bMsvc && [regexp -- {^-O(\d+)$} $param -> level]} {
+        lappend makeOpts OPTIMIZATIONS=$level
+      } else {
+        lappend cflags $param
+      }
+      continue
+    }
+
+    lappend makeOpts $param
+  }
+
+  # Some configurations specify -DHAVE_USLEEP=0. For all others, add
+  # -DHAVE_USLEEP=1.
+  #
+  if {[lsearch $opts "-DHAVE_USLEEP=0"]<0} {
+    lappend opts -DHAVE_USLEEP=1
+  }
+
+  if {$bMsvc==0} {
+    puts {set -e}
+    puts {}
+    puts {if [ "$#" -ne 1 ] ; then}
+    puts {  echo "Usage: $0 <target>" }
+    puts {  exit -1 }
+    puts {fi }
+    puts "SRCDIR=\"$srcdir\""
+    puts {}
+    puts "TCL=\"[::tcl::pkgconfig get libdir,install]\""
+
+    puts {if [ ! -f Makefile ] ; then}
+    puts "  \$SRCDIR/configure --with-tcl=\$TCL $configOpts"
+    puts {fi}
+    puts {}
+    puts {OPTS="      -DSQLITE_NO_SYNC=1"}
+    foreach o $opts { 
+      puts "OPTS=\"\$OPTS $o\"" 
+    }
+    puts {}
+    puts "CFLAGS=\"$cflags\""
+    puts {}
+    puts "make \$1 \"CFLAGS=\$CFLAGS\" \"OPTS=\$OPTS\" $makeOpts"
+  } else {
+
+    set srcdir [file nativename [file normalize $srcdir]]
+    # set srcdir [string map [list "\\" "\\\\"] $srcdir]
+
+    puts {set TARGET=%1}
+    set makecmd    "nmake /f $srcdir\\Makefile.msc TOP=\"$srcdir\" %TARGET% "
+    append makecmd "\"CFLAGS=$cflags\" \"OPTS=$opts\" $makeOpts"
+
+    puts "set TMP=%CD%"
+    puts $makecmd
+  }
+}
+
 proc main_tests {args} {
   set bNodebug 0
   set nArg [llength $args]
@@ -586,32 +756,57 @@ proc main_tests {args} {
     exit 1
   }
 
-  foreach {config target} $::Platforms($p) {
-    set bNosynthetic 0
+  set lTest [list]
+
+  foreach {config vars target} $::Platforms($p) {
     if {[string range $config end end]=="*"} {
-      set bNosynthetic 1
       set config [string range $config 0 end-1]
+    } elseif {$bNodebug==0} {
+      set dtarget test
+      if {[lsearch $target fuzztest]<0 && [lsearch $target test]<0} {
+        set dtarget tcltest
+      }
+      if {$vars!=""} { set dtarget "$vars $dtarget" }
+
+      if {[string first SQLITE_DEBUG $::Configs($config)]>=0
+       || [string first --enable-debug $::Configs($config)]>=0
+      } {
+        lappend lTest "$config-ndebug \"$dtarget\""
+      } else {
+        lappend lTest "$config-debug \"$dtarget\""
+      }
     }
-    puts "$config \"$target\""
-    if {$bNodebug==0 && $bNosynthetic==0} {
-      set iHas [string first SQLITE_DEBUG $::Configs($config)]
-      set dtarget [list]
-      set iQTI [lsearch -glob $target QUICKTEST_*]
-      if {$iQTI>=0} {
-        lappend dtarget [lindex $target $iQTI]
-      }
-      if {[lsearch $target tcltest]>=0} {
-        lappend dtarget tcltest
-      } else {
-        lappend dtarget test
-      }
-      if {$iHas>=0} {
-        puts "$config-ndebug \"$dtarget\""
-      } else {
-        puts "$config-debug \"$dtarget\""
+
+    if {[llength $target]==1 && ([string match "*TEST_FAILURE*" $vars] || (
+        [lsearch $target "valgrindtest"]<0
+     && [lsearch $target "alltest"]<0
+     && [lsearch $target "fulltestonly"]<0
+     && ![string match Sanitize* $config]
+    ))} {
+      if {$vars!=""} { set target "$vars $target" }
+      lappend lTest "$config \"$target\""
+    } else {
+      set idir -1
+      foreach t $target {
+        if {$t=="valgrindtest" || $t=="alltest" || $t=="fulltestonly"
+         || [string match Sanitize* $config]
+        } {
+          if {$vars!=""} { set t "$vars $t" }
+          for {set ii 1} {$ii<=4} {incr ii} {
+            lappend lTest "$config-[incr idir] \"TCLTEST_PART=$ii/4 $t\""
+          }
+        } else {
+          if {$vars!=""} { set t "$vars $t" }
+          lappend lTest "$config-[incr idir] \"$t\""
+        }
       }
     }
   }
+
+  foreach l $lTest {
+    puts $l
+  }
+
 }
 
 if {[llength $argv]==0} { usage }
@@ -621,6 +816,8 @@ if {[string match ${cmd}* configurations] && $n==0} {
   main_configurations 
 } elseif {[string match ${cmd}* script]} {
   main_script {*}[lrange $argv 1 end]
+} elseif {[string match ${cmd}* trscript]} {
+  main_trscript {*}[lrange $argv 1 end]
 } elseif {[string match ${cmd}* platforms] && $n==0} {
   main_platforms
 } elseif {[string match ${cmd}* tests]} {

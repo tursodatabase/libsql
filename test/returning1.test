@@ -212,13 +212,13 @@ do_execsql_test 10.2 {
   END;
 }
 
-do_catchsql_test 10.3 {
+do_catchsql_test 10.3a {
   INSERT INTO t1(a, b) VALUES(1234, 5678) RETURNING rowid;
-} {1 {no such column: rowid}}
+} {1 {no such column: new.rowid}}
 
-do_catchsql_test 10.3 {
+do_catchsql_test 10.3b {
   UPDATE t1 SET a='z' WHERE b='y' RETURNING rowid;
-} {1 {no such column: rowid}}
+} {1 {no such column: new.rowid}}
 
 do_execsql_test 10.4 {
   SELECT * FROM log;
@@ -332,5 +332,111 @@ do_execsql_test 13.1 {
   RETURNING (SELECT b FROM t2);
 } {{}}
 } ;# end ifcapable rtree
+
+# 2021-12-01 Forum post https://sqlite.org/forum/forumpost/793beaf322
+# Need to report foreign key constraint errors prior to RETURNING
+#
+reset_db
+do_execsql_test 14.0 {
+  PRAGMA foreign_keys(1);
+  CREATE TABLE Parent(id INTEGER PRIMARY KEY);
+  CREATE TABLE Child(id INTEGER PRIMARY KEY, parent_id INTEGER REFERENCES Parent(id));
+} {}
+do_catchsql_test 14.1 {
+  INSERT INTO child(parent_id) VALUES(123) RETURNING id;
+} {1 {FOREIGN KEY constraint failed}}
+
+# 2021-12-28 Forum post https://sqlite.org/forum/forumpost/e0c7574ab2
+# Incorrect affinity for REAL values that can be represented as integers.
+#
+reset_db
+sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
+do_execsql_test 15.0 {
+  CREATE TABLE t1(x REAL);
+  INSERT INTO t1(x) VALUES(5.0) RETURNING x, affinity(x);
+} {5.0 real}
+do_execsql_test 15.1 {
+  UPDATE t1 SET x=x+1 RETURNING x, affinity(x);
+} {6.0 real}
+do_execsql_test 15.2 {
+  DELETE FROM t1 RETURNING x, affinity(x);
+} {6.0 real}
+
+# 2022-02-28 Forum post https://sqlite.org/forum/forumpost/595e132f71
+# RETURNING with the xfer optimization
+#
+reset_db
+do_execsql_test 16.0 {
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1 VALUES(1,2,3),('a','b','c');
+  CREATE TEMP TABLE t2(x,y,z);
+  INSERT INTO t2 SELECT * FROM t1 RETURNING *;
+} {1 2 3 a b c}
+do_execsql_test 16.1 {
+  SELECT * FROM t2;
+} {1 2 3 a b c}
+
+
+foreach {tn temp} {
+  1 ""
+  2 TEMP
+} {
+  reset_db
+  do_execsql_test 17.$tn.0 "
+    CREATE $temp TABLE foo (
+      fooid INTEGER PRIMARY KEY,
+      fooval INTEGER NOT NULL UNIQUE,
+      refcnt INTEGER NOT NULL DEFAULT 1
+    );
+  "
+  do_execsql_test 17.$tn.1 {
+    INSERT INTO foo (fooval) VALUES (17), (4711), (17)
+      ON CONFLICT DO
+      UPDATE SET refcnt = refcnt+1
+    RETURNING fooid;
+  } {
+    1 2 1
+  }
+}
+
+# 2022-01-13 https://sqlite.org/forum/forumpost/d010a26798
+#
+reset_db
+do_execsql_test 17.0 {
+  CREATE TABLE bug(id INTEGER PRIMARY KEY NOT NULL, x);
+  INSERT INTO bug(id,x) VALUES(20, NULL);
+  UPDATE bug SET x=NULL WHERE id = 20 RETURNING quote(x), x IS NULL;
+} {NULL 1}
+
+# 2023-03-08 https://sqlite.org/forum/forumpost/f5a2b1db87
+# NULL pointer dereference following an error.
+#
+do_execsql_test 18.0 {
+  CREATE TABLE v0(c1 INT);
+  CREATE VIEW view_2(c1) AS SELECT CASE WHEN c1 COLLATE TRUE THEN TRUE ELSE TRUE END FROM v0;
+  CREATE TRIGGER x1 INSTEAD OF INSERT ON view_2 BEGIN SELECT true; END;
+}
+do_catchsql_test 18.1 {
+  INSERT INTO view_2 DEFAULT VALUES RETURNING *;
+} {1 {no such collation sequence: TRUE}}
+
+# 2023-03-16 
+# https://sqlite.org/forum/forumpost/c99d6e0329
+# ticket d15b3a4ea901ef0d
+# ticket 89d259d45b855a0d
+#
+# A RETURNING clause on an IF NOT EXISTS trigger does not generate
+# an error if the trigger already exists.
+#
+do_execsql_test 19.0 {
+  DROP TABLE IF EXISTS t1;CREATE TABLE t1(a);
+  CREATE TRIGGER r1 AFTER UPDATE ON t1 BEGIN VALUES(0); END;
+} {}
+do_catchsql_test 19.1 {
+  CREATE TRIGGER IF NOT EXISTS r1 AFTER DELETE ON t1 BEGIN
+    INSERT  INTO t1(a) VALUES (1) RETURNING FALSE;
+    INSERT  INTO t1(a) VALUES (2) RETURNING TRUE;
+  END;
+} {0 {}}
 
 finish_test

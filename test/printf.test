@@ -16,7 +16,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-
 do_test printf-1.1.1 {
   sqlite3_mprintf_int {abc: %d %x %o :xyz}\
        1 1 1
@@ -3785,5 +3784,53 @@ foreach ::iRepeat {0 1} {
 do_execsql_test printf-16.1 {
   SELECT printf('%.*g',2147483647,0.01);
 } {0.01}
+
+# 2023-02-23 https://sqlite.org/forum/forumpost/d1387c3979c7f557
+# Loss of precision when doing floating-point to decimal
+# conversions on values that have no factional part.
+#
+do_execsql_test printf-17.1 {
+  SELECT format('%!.20g', 13.0);
+} 13.0
+do_execsql_test printf-17.2 {
+  SELECT format('%.3e', 199990000.0);
+} 2.000e+08
+do_execsql_test printf-17.3 {
+  SELECT format('%.3f', 199990000.0);
+} 199990000.000
+do_execsql_test printf-17.4 {
+  SELECT format('%.3g', 199990000.0);
+} 2e+08
+do_execsql_test printf-17.5 {
+  SELECT format('%.4e', 199990000.0);
+} 1.9999e+08
+do_execsql_test printf-17.6 {
+  SELECT format('%.4f', 199990000.0);
+} 199990000.0000
+do_execsql_test printf-17.7 {
+  SELECT format('%.4g', 199990000.0);
+} 2e+08
+do_execsql_test printf-17.8 {
+  SELECT format('%.5e', 199990000.0);
+} 1.99990e+08
+do_execsql_test printf-17.9 {
+  SELECT format('%.5f', 199990000.0);
+} 199990000.00000
+do_execsql_test printf-17.10 {
+  SELECT format('%.5g', 199990000.0);
+} 1.9999e+08
+do_execsql_test printf-17.11 {
+  SELECT format('%.30f',1.0000000000000000076e-50);
+} 0.000000000000000000000000000000
+
+#-------------------------------------------------------------------------
+# dbsqlfuzz ad651aad4bb2100f3a724129a555d8d773366d46
+#
+db close
+sqlite3 db test.db
+sqlite3_db_config_lookaside db 0 0 0
+do_execsql_test printf-18.1 {
+  SELECT length( format('%,.249f', -5.0e-300) );
+} {252}
 
 finish_test

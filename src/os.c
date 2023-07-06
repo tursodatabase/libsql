@@ -106,9 +106,11 @@ int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
 }
 int sqlite3OsLock(sqlite3_file *id, int lockType){
   DO_OS_MALLOC_TEST(id);
+  assert( lockType>=SQLITE_LOCK_SHARED && lockType<=SQLITE_LOCK_EXCLUSIVE );
   return id->pMethods->xLock(id, lockType);
 }
 int sqlite3OsUnlock(sqlite3_file *id, int lockType){
+  assert( lockType==SQLITE_LOCK_NONE || lockType==SQLITE_LOCK_SHARED );
   return id->pMethods->xUnlock(id, lockType);
 }
 int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
@@ -135,7 +137,7 @@ int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
     /* Faults are not injected into COMMIT_PHASETWO because, assuming SQLite
     ** is using a regular VFS, it is called after the corresponding
     ** transaction has been committed. Injecting a fault at this point
-    ** confuses the test scripts - the COMMIT comand returns SQLITE_NOMEM
+    ** confuses the test scripts - the COMMIT command returns SQLITE_NOMEM
     ** but the transaction is committed anyway.
     **
     ** The core must call OsFileControl() though, not OsFileControlHint(),
@@ -161,6 +163,7 @@ int sqlite3OsSectorSize(sqlite3_file *id){
   return (xSectorSize ? xSectorSize(id) : SQLITE_DEFAULT_SECTOR_SIZE);
 }
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
+  if( NEVER(id->pMethods==0) ) return 0;
   return id->pMethods->xDeviceCharacteristics(id);
 }
 #ifndef SQLITE_OMIT_WAL
@@ -222,6 +225,7 @@ int sqlite3OsOpen(
   ** down into the VFS layer.  Some SQLITE_OPEN_ flags (for example,
   ** SQLITE_OPEN_FULLMUTEX or SQLITE_OPEN_SHAREDCACHE) are blocked before
   ** reaching the VFS. */
+  assert( zPath || (flags & SQLITE_OPEN_EXCLUSIVE) );
   rc = pVfs->xOpen(pVfs, zPath, pFile, flags & 0x1087f7f, pFlagsOut);
   assert( rc==SQLITE_OK || pFile->pMethods==0 );
   return rc;
@@ -275,7 +279,7 @@ int sqlite3OsRandomness(sqlite3_vfs *pVfs, int nByte, char *zBufOut){
   }else{
     return pVfs->xRandomness(pVfs, nByte, zBufOut);
   }
-  
+
 }
 int sqlite3OsSleep(sqlite3_vfs *pVfs, int nMicro){
   return pVfs->xSleep(pVfs, nMicro);
@@ -315,12 +319,15 @@ int sqlite3OsOpenMalloc(
     rc = sqlite3OsOpen(pVfs, zFile, pFile, flags, pOutFlags);
     if( rc!=SQLITE_OK ){
       sqlite3_free(pFile);
+      *ppFile = 0;
     }else{
       *ppFile = pFile;
     }
   }else{
+    *ppFile = 0;
     rc = SQLITE_NOMEM_BKPT;
   }
+  assert( *ppFile!=0 || rc!=SQLITE_OK );
   return rc;
 }
 void sqlite3OsCloseFree(sqlite3_file *pFile){

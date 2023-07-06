@@ -23361,4 +23361,28 @@ do_eqp_test where7-3.2 {
   `--USE TEMP B-TREE FOR ORDER BY
 }
 
+# 2022-03-03 https://sqlite.org/forum/forumpost/36937b197273d403
+#
+# In the multi-index OR, if there is an auxiliary WHERE clause term
+# that includes a subquery and that subquery is pushed down into the
+# OR-clause subqueries, WHERE subquery might get coded as a subroutine.
+# In that case, the covering-index optimizer will attempt to change
+# table-references into index-references.  But it will do so for the
+# index of the OR branch in which the subquery is coded.  If the
+# subquery subroutine is called from a different OR branch, the
+# index might be different and the index-reference will no longer
+# work.  tag-20220303a
+#
+reset_db
+do_execsql_test 4.1 {
+  CREATE TABLE t0(w);
+  INSERT INTO t0(w) VALUES(1);
+  CREATE TABLE t1(x INT, y INT PRIMARY KEY, z); 
+  INSERT INTO t1 VALUES(0,111,222);
+  CREATE INDEX t1zxy ON t1(z,x,y);
+  SELECT y FROM t1
+   WHERE (z=222 OR y=111)
+     AND (false OR EXISTS(SELECT 1 FROM t0 WHERE t1.y));
+} {111}
+
 finish_test

@@ -10,42 +10,42 @@
 **
 *************************************************************************
 **
-** This file contains the public interface for the RBU extension. 
+** This file contains the public interface for the RBU extension.
 */
 
 /*
 ** SUMMARY
 **
-** Writing a transaction containing a large number of operations on 
+** Writing a transaction containing a large number of operations on
 ** b-tree indexes that are collectively larger than the available cache
-** memory can be very inefficient. 
+** memory can be very inefficient.
 **
 ** The problem is that in order to update a b-tree, the leaf page (at least)
 ** containing the entry being inserted or deleted must be modified. If the
-** working set of leaves is larger than the available cache memory, then a 
-** single leaf that is modified more than once as part of the transaction 
+** working set of leaves is larger than the available cache memory, then a
+** single leaf that is modified more than once as part of the transaction
 ** may be loaded from or written to the persistent media multiple times.
 ** Additionally, because the index updates are likely to be applied in
-** random order, access to pages within the database is also likely to be in 
+** random order, access to pages within the database is also likely to be in
 ** random order, which is itself quite inefficient.
 **
 ** One way to improve the situation is to sort the operations on each index
 ** by index key before applying them to the b-tree. This leads to an IO
 ** pattern that resembles a single linear scan through the index b-tree,
-** and all but guarantees each modified leaf page is loaded and stored 
+** and all but guarantees each modified leaf page is loaded and stored
 ** exactly once. SQLite uses this trick to improve the performance of
 ** CREATE INDEX commands. This extension allows it to be used to improve
 ** the performance of large transactions on existing databases.
 **
-** Additionally, this extension allows the work involved in writing the 
-** large transaction to be broken down into sub-transactions performed 
-** sequentially by separate processes. This is useful if the system cannot 
-** guarantee that a single update process will run for long enough to apply 
-** the entire update, for example because the update is being applied on a 
-** mobile device that is frequently rebooted. Even after the writer process 
+** Additionally, this extension allows the work involved in writing the
+** large transaction to be broken down into sub-transactions performed
+** sequentially by separate processes. This is useful if the system cannot
+** guarantee that a single update process will run for long enough to apply
+** the entire update, for example because the update is being applied on a
+** mobile device that is frequently rebooted. Even after the writer process
 ** has committed one or more sub-transactions, other database clients continue
-** to read from the original database snapshot. In other words, partially 
-** applied transactions are not visible to other clients. 
+** to read from the original database snapshot. In other words, partially
+** applied transactions are not visible to other clients.
 **
 ** "RBU" stands for "Resumable Bulk Update". As in a large database update
 ** transmitted via a wireless network to a mobile device. A transaction
@@ -61,9 +61,9 @@
 **
 **   * INSERT statements may not use any default values.
 **
-**   * UPDATE and DELETE statements must identify their target rows by 
+**   * UPDATE and DELETE statements must identify their target rows by
 **     non-NULL PRIMARY KEY values. Rows with NULL values stored in PRIMARY
-**     KEY fields may not be updated or deleted. If the table being written 
+**     KEY fields may not be updated or deleted. If the table being written
 **     has no PRIMARY KEY, affected rows must be identified by rowid.
 **
 **   * UPDATE statements may not modify PRIMARY KEY columns.
@@ -80,10 +80,10 @@
 ** PREPARATION
 **
 ** An "RBU update" is stored as a separate SQLite database. A database
-** containing an RBU update is an "RBU database". For each table in the 
+** containing an RBU update is an "RBU database". For each table in the
 ** target database to be updated, the RBU database should contain a table
 ** named "data_<target name>" containing the same set of columns as the
-** target table, and one more - "rbu_control". The data_% table should 
+** target table, and one more - "rbu_control". The data_% table should
 ** have no PRIMARY KEY or UNIQUE constraints, but each column should have
 ** the same type as the corresponding column in the target database.
 ** The "rbu_control" column should have no type at all. For example, if
@@ -98,22 +98,22 @@
 ** The order of the columns in the data_% table does not matter.
 **
 ** Instead of a regular table, the RBU database may also contain virtual
-** tables or view named using the data_<target> naming scheme. 
+** tables or views named using the data_<target> naming scheme.
 **
-** Instead of the plain data_<target> naming scheme, RBU database tables 
+** Instead of the plain data_<target> naming scheme, RBU database tables
 ** may also be named data<integer>_<target>, where <integer> is any sequence
 ** of zero or more numeric characters (0-9). This can be significant because
-** tables within the RBU database are always processed in order sorted by 
+** tables within the RBU database are always processed in order sorted by
 ** name. By judicious selection of the <integer> portion of the names
 ** of the RBU tables the user can therefore control the order in which they
 ** are processed. This can be useful, for example, to ensure that "external
 ** content" FTS4 tables are updated before their underlying content tables.
 **
 ** If the target database table is a virtual table or a table that has no
-** PRIMARY KEY declaration, the data_% table must also contain a column 
-** named "rbu_rowid". This column is mapped to the tables implicit primary 
-** key column - "rowid". Virtual tables for which the "rowid" column does 
-** not function like a primary key value cannot be updated using RBU. For 
+** PRIMARY KEY declaration, the data_% table must also contain a column
+** named "rbu_rowid". This column is mapped to the table's implicit primary
+** key column - "rowid". Virtual tables for which the "rowid" column does
+** not function like a primary key value cannot be updated using RBU. For
 ** example, if the target db contains either of the following:
 **
 **   CREATE VIRTUAL TABLE x1 USING fts3(a, b);
@@ -136,35 +136,35 @@
 **   CREATE TABLE data_ft1(a, b, langid, rbu_rowid, rbu_control);
 **   CREATE TABLE data_ft1(a, b, rbu_rowid, rbu_control);
 **
-** For each row to INSERT into the target database as part of the RBU 
+** For each row to INSERT into the target database as part of the RBU
 ** update, the corresponding data_% table should contain a single record
 ** with the "rbu_control" column set to contain integer value 0. The
-** other columns should be set to the values that make up the new record 
-** to insert. 
+** other columns should be set to the values that make up the new record
+** to insert.
 **
-** If the target database table has an INTEGER PRIMARY KEY, it is not 
-** possible to insert a NULL value into the IPK column. Attempting to 
+** If the target database table has an INTEGER PRIMARY KEY, it is not
+** possible to insert a NULL value into the IPK column. Attempting to
 ** do so results in an SQLITE_MISMATCH error.
 **
-** For each row to DELETE from the target database as part of the RBU 
+** For each row to DELETE from the target database as part of the RBU
 ** update, the corresponding data_% table should contain a single record
 ** with the "rbu_control" column set to contain integer value 1. The
 ** real primary key values of the row to delete should be stored in the
 ** corresponding columns of the data_% table. The values stored in the
 ** other columns are not used.
 **
-** For each row to UPDATE from the target database as part of the RBU 
+** For each row to UPDATE from the target database as part of the RBU
 ** update, the corresponding data_% table should contain a single record
 ** with the "rbu_control" column set to contain a value of type text.
-** The real primary key values identifying the row to update should be 
+** The real primary key values identifying the row to update should be
 ** stored in the corresponding columns of the data_% table row, as should
-** the new values of all columns being update. The text value in the 
+** the new values of all columns being update. The text value in the
 ** "rbu_control" column must contain the same number of characters as
 ** there are columns in the target database table, and must consist entirely
-** of 'x' and '.' characters (or in some special cases 'd' - see below). For 
+** of 'x' and '.' characters (or in some special cases 'd' - see below). For
 ** each column that is being updated, the corresponding character is set to
 ** 'x'. For those that remain as they are, the corresponding character of the
-** rbu_control value should be set to '.'. For example, given the tables 
+** rbu_control value should be set to '.'. For example, given the tables
 ** above, the update statement:
 **
 **   UPDATE t1 SET c = 'usa' WHERE a = 4;
@@ -178,30 +178,30 @@
 ** target table with the value stored in the corresponding data_% column, the
 ** user-defined SQL function "rbu_delta()" is invoked and the result stored in
 ** the target table column. rbu_delta() is invoked with two arguments - the
-** original value currently stored in the target table column and the 
+** original value currently stored in the target table column and the
 ** value specified in the data_xxx table.
 **
 ** For example, this row:
 **
 **   INSERT INTO data_t1(a, b, c, rbu_control) VALUES(4, NULL, 'usa', '..d');
 **
-** is similar to an UPDATE statement such as: 
+** is similar to an UPDATE statement such as:
 **
 **   UPDATE t1 SET c = rbu_delta(c, 'usa') WHERE a = 4;
 **
-** Finally, if an 'f' character appears in place of a 'd' or 's' in an 
+** Finally, if an 'f' character appears in place of a 'd' or 's' in an
 ** ota_control string, the contents of the data_xxx table column is assumed
 ** to be a "fossil delta" - a patch to be applied to a blob value in the
 ** format used by the fossil source-code management system. In this case
-** the existing value within the target database table must be of type BLOB. 
+** the existing value within the target database table must be of type BLOB.
 ** It is replaced by the result of applying the specified fossil delta to
 ** itself.
 **
 ** If the target database table is a virtual table or a table with no PRIMARY
-** KEY, the rbu_control value should not include a character corresponding 
+** KEY, the rbu_control value should not include a character corresponding
 ** to the rbu_rowid value. For example, this:
 **
-**   INSERT INTO data_ft1(a, b, rbu_rowid, rbu_control) 
+**   INSERT INTO data_ft1(a, b, rbu_rowid, rbu_control)
 **       VALUES(NULL, 'usa', 12, '.x');
 **
 ** causes a result similar to:
@@ -543,6 +543,34 @@ SQLITE_API void sqlite3rbu_bp_progress(sqlite3rbu *pRbu, int *pnOne, int*pnTwo);
 #define SQLITE_RBU_STATE_ERROR      5
 
 SQLITE_API int sqlite3rbu_state(sqlite3rbu *pRbu);
+
+/*
+** As part of applying an RBU update or performing an RBU vacuum operation,
+** the system must at one point move the *-oal file to the equivalent *-wal
+** path. Normally, it does this by invoking POSIX function rename(2) directly.
+** Except on WINCE platforms, where it uses win32 API MoveFileW(). This 
+** function may be used to register a callback that the RBU module will invoke
+** instead of one of these APIs. 
+**
+** If a callback is registered with an RBU handle, it invokes it instead
+** of rename(2) when it needs to move a file within the file-system. The
+** first argument passed to the xRename() callback is a copy of the second
+** argument (pArg) passed to this function. The second is the full path
+** to the file to move and the third the full path to which it should be
+** moved. The callback function should return SQLITE_OK to indicate 
+** success. If an error occurs, it should return an SQLite error code.
+** In this case the RBU operation will be abandoned and the error returned
+** to the RBU user.
+**
+** Passing a NULL pointer in place of the xRename argument to this function
+** restores the default behaviour.
+*/
+SQLITE_API void sqlite3rbu_rename_handler(
+  sqlite3rbu *pRbu, 
+  void *pArg,
+  int (*xRename)(void *pArg, const char *zOld, const char *zNew)
+);
+
 
 /*
 ** Create an RBU VFS named zName that accesses the underlying file-system

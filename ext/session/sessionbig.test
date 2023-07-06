@@ -43,7 +43,7 @@ do_execsql_test -db db2 1.1 {
 }
 
 do_test 1.2 {
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     INSERT INTO t1(b) VALUES( zeroblob(100*1000*1000) );
     INSERT INTO t1(b) VALUES( zeroblob(100*1000*1000) );
     INSERT INTO t1(b) VALUES( zeroblob(100*1000*1000) );
@@ -71,7 +71,7 @@ do_test 1.3 {
 
 do_test 1.4 {
   set rc [catch {
-  do_then_apply_sql {
+  do_then_apply_sql -ignorenoop {
     INSERT INTO t1(b) VALUES( zeroblob(100*1000*1000) );
     INSERT INTO t1(b) VALUES( zeroblob(100*1000*1000) );
     INSERT INTO t1(b) VALUES( zeroblob(100*1000*1000) );

@@ -24,6 +24,11 @@ if {[run_thread_tests]==0} { finish_test ; return }
 db close
 set ::testprefix sharedB
 
+ifcapable !shared_cache {
+  finish_test
+  return
+}
+
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 
 #-------------------------------------------------------------------------

@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <title>sqlite3 Module Symbols</title>
+    <style>
+      body {
+          font-size: 12.5pt;
+          padding-bottom: 1em;
+      }
+      </style>
+  </head>
+  <body>
+<div class="fossil-doc" data-title="sqlite3 Module Symbols"><!-- EXTRACT_BEGIN -->
+<!--
+    The part of this doc wrapped in div.fossil-doc gets snipped out
+    from the canonical copy in the main tree (ext/wasm/module-symbols.html)
+    and added to the wasm docs repository, where it's served from
+    fossil.
+-->
+  <style>
+    .pseudolist {
+        column-count: auto;
+        column-width: 12rem;
+        column-gap: 1.5em;
+        width: 90%;
+        margin: auto;
+    }
+    .pseudolist.wide {
+        column-width: 21rem;
+    }
+    .pseudolist.wide2 {
+        column-width: 25rem;
+    }
+    .pseudolist > span {
+        font-family: monospace;
+        margin: 0.25em 0;
+        display: block;
+    }
+    .pseudolist.wrap-anywhere {
+        overflow-wrap: anywhere;
+    }
+    .warning { color: firebrick }
+    .error { color: firebrick; background-color: yellow}
+    .hidden, .initially-hidden {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        display: none !important;
+    }
+    h1::before, h2::before, h3::before, h4::before {
+        /* Remove automatic numbering */
+        content: "" !important;
+        background-color: transparent !important;
+        margin: 0 !important;
+        border: 0 !important;
+        padding: 0 !important;
+    }
+    .func-wasm {
+        
+    }
+    .func-wasm::after {
+        content: "WASM";
+        color: saddlebrown;
+        /* ^^^^ the color must be legible in both "bright" and "dark"
+           s    ite themes. */
+        font-size: 0.65em;
+    /* baseline-shift: super; */
+        vertical-align: super;
+    }
+  </style>
+  <p id='module-load-status'><strong>Loading WASM module...</strong>
+    If this takes "a long time" it may have failed and the browser's
+    dev console may contain hints as to why.
+  </p>
+
+  <p>
+    This page lists the SQLite3 APIs exported
+    by <code>sqlite3.wasm</code> and exposed to clients
+    by <code>sqlite3.js</code>. These lists are generated dynamically
+    by loading the JS/WASM module and introspecting it, with the following
+    caveats:
+  </p>
+
+  <ul>
+    <li>Some APIs are explicitly filtered out of these lists because
+      they are strictly for internal use within the JS/WASM APIs and
+      its own test code.
+    </li>
+    <li>This page runs in the main UI thread so cannot see features
+      which are only available in a Worker thread. If this page were
+      to function via a Worker, it would not be able to see
+      functionality only available in the main thread. Either way, it
+      would be missing certain APIs.
+    </li>
+  </ul>
+
+  <div class='initially-hidden'>
+
+    <p>This page exposes a global symbol named <code>sqlite3</code>
+      which can be inspected using the browser's dev tools.
+    </p>
+
+    <p>Jump to...</p>
+    <ul>
+      <li><a href='#sqlite3-namespace'><code>sqlite3</code> namespace</a></li>
+      <li><a href='#sqlite3-version'><code>sqlite3.version</code> object</a></li>
+      <li><a href='#sqlite3-functions'><code>sqlite3_...()</code> functions</a></li>
+      <li><a href='#sqlite3-constants'><code>SQLITE_...</code> constants</a></li>
+      <li><a href='#sqlite3.oo1'><code>sqlite3.oo1</code> namespace</a>
+        <!--ul>
+          <li><a href='#sqlite3.oo1.DB'><code>sqlite3.oo1.DB</code></a></li>
+          <li><a href='#sqlite3.oo1.Stmt'><code>sqlite3.oo1.Stmt</code></a></li>
+        </ul-->
+      </li>
+      <li><a href='#sqlite3.wasm'><code>sqlite3.wasm</code> namespace</a></li>
+      <li><a href='#sqlite3.wasm.pstack'><code>sqlite3.wasm.pstack</code> namespace</a></li>
+      <li><a href='#compile-options'>Compilation options used in this module build</a></li>
+    </ul>
+
+    <a id="sqlite3-namespace"></a>
+    <h1><code>sqlite3</code> Namespace</h1>
+    <p>
+      The <code>sqlite3</code> namespace object exposes the following...
+    </p>
+    <div id='list-namespace' class='pseudolist'></div>
+
+    <a id="sqlite3-version"></a>
+    <h1><code>sqlite3.version</code> Object</h1>
+    <p>
+      The <code>sqlite3.version</code> object exposes the following...
+    </p>
+    <div id='list-version' class='pseudolist wide wrap-anywhere'></div>
+
+    <a id="sqlite3-functions"></a>
+    <h1><code>sqlite3_...()</code> Function List</h1>
+
+    <p>The <code>sqlite3.capi</code> namespace exposes the following
+      <a href='https://sqlite.org/c3ref/funclist.html'><code>sqlite3_...()</code>
+        functions</a>...
+    </p>
+    <div id='list-functions' class='pseudolist wide'></div>
+    <p>
+      <code class='func-wasm'></code> = function is specific to the JS/WASM
+      bindings, not part of the C API.
+    </p>
+
+    <a id="sqlite3-constants"></a>
+    <h1><code>SQLITE_...</code> Constants</h1>
+
+    <p>The <code>sqlite3.capi</code> namespace exposes the following
+      <a href='https://sqlite.org/c3ref/constlist.html'><code>SQLITE_...</code>
+        constants</a>...
+    </p>
+    <div id='list-constants' class='pseudolist wide'></div>
+
+    <a id="sqlite3.oo1"></a>
+    <h1><code>sqlite3.oo1</code> Namespace</h1>
+    <p>
+      The <code>sqlite3.oo1</code> namespace exposes the following...
+    </p>
+    <div id='list-oo1' class='pseudolist'></div>
+
+    <a id="sqlite3.wasm"></a>
+    <h1><code>sqlite3.wasm</code> Namespace</h1>
+    <p>
+      The <code>sqlite3.wasm</code> namespace exposes the
+      following...
+    </p>
+    <div id='list-wasm' class='pseudolist'></div>
+
+    <a id="sqlite3.wasm.pstack"></a>
+    <h1><code>sqlite3.wasm.pstack</code> Namespace</h1>
+    <p>
+      The <code>sqlite3.wasm.pstack</code> namespace exposes the
+      following...
+    </p>
+    <div id='list-wasm-pstack' class='pseudolist'></div>
+
+    <a id="compile-options"></a>
+    <h1>Compilation Options</h1>
+    <p>
+      <code>SQLITE_...</code> compilation options used in this build
+      of <code>sqlite3.wasm</code>...
+    </p>
+    <div id='list-compile-options' class='pseudolist wide2'></div>
+
+  </div><!-- .initially-hidden -->
+  <script src="jswasm/sqlite3.js">/* This tag MUST be inside the
+  fossil-doc block so that this part can work without modification in
+  the wasm docs repo.  */</script>
+  <script>(async function(){
+    const apiLinks = Object.assign(Object.create(null),{
+        sqlite3_aggregate_context: 'www:/c3ref/aggregate_context.html',
+        sqlite3_auto_extension: 'wasm:/api-c-style.md#auto-extension',
+        sqlite3_bind_blob: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_double: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_int: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_int64: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_null: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_parameter_count: 'www:/c3ref/bind_parameter_count.html',
+        sqlite3_bind_parameter_index: 'www:/c3ref/bind_parameter_index.html',
+        sqlite3_bind_pointer: 'www:/c3ref/bind_blob.html',
+        sqlite3_bind_text: 'www:/c3ref/bind_blob.html',
+        sqlite3_busy_handler: 'www:/c3ref/busy_handler.html',
+        sqlite3_busy_timeout: 'www:/c3ref/busy_timeout.html',
+        sqlite3_cancel_auto_extension: 'wasm:/api-c-style.md#auto-extension',
+        sqlite3_changes: 'www:/c3ref/changes.html',
+        sqlite3_changes64: 'www:/c3ref/changes.html',
+        sqlite3_clear_bindings: 'www:/c3ref/clear_bindings.html',
+        sqlite3_close_v2: 'www:/c3ref/close.html',
+        sqlite3_collation_needed: 'www:/c3ref/collation_needed.html',
+        sqlite3_column_blob: 'www:/c3ref/column_blob.html',
+        sqlite3_column_bytes: 'www:/c3ref/column.html',
+        sqlite3_column_count: 'www:/c3ref/column_count.html',
+        sqlite3_column_double: 'www:/c3ref/column_blob.html',
+        sqlite3_column_int: 'www:/c3ref/column_blob.html',
+        sqlite3_column_int64: 'www:/c3ref/column_blob.html',
+        sqlite3_column_name: 'www:/c3ref/column_name.html',
+        sqlite3_column_text: 'www:/c3ref/column_blob.html',
+        sqlite3_column_type: 'www:/c3ref/column_blob.html',
+        sqlite3_column_value: 'www:/c3ref/column_blob.html',
+        sqlite3_commit_hook: 'wasm:/api-c-style.md#hook-api',
+        sqlite3_compileoption_get: 'www:/c3ref/compileoption_get.html',
+        sqlite3_compileoption_used: 'www:/c3ref/compileoption_get.html',
+        sqlite3_complete: 'www:/c3ref/complete.html',
+        sqlite3_config: 'www:/c3ref/config.html',
+        sqlite3_context_db_handle: 'www:/c3ref/context_db_handle.html',
+        sqlite3_create_collation: 'www:/c3ref/create_collation.html',
+        sqlite3_create_collation_v2: 'www:/c3ref/create_collation.html',
+        sqlite3_create_function: 'wasm:/api-c-style.md#sqlite3_create_function',
+        sqlite3_create_function_v2: 'wasm:/api-c-style.md#sqlite3_create_function',
+        sqlite3_create_module: 'www:/c3ref/create_module.html',
+        sqlite3_create_module_v2: 'www:/c3ref/create_module.html',
+        sqlite3_create_window_function: 'wasm:/api-c-style.md#sqlite3_create_function',
+        sqlite3_db_config: 'wasm:/api-c-style.md#sqlite3_db_config',
+        sqlite3_data_count: 'www:/c3ref/data_count.html',
+        sqlite3_db_filename: 'www:/c3ref/db_filename.html',
+        sqlite3_db_handle: 'www:/c3ref/db_handle.html',
+        sqlite3_db_name: 'www:/c3ref/db_name.html',
+        sqlite3_db_status: 'www:/c3ref/db_status.html',
+        sqlite3_declare_vtab: 'www:/c3ref/declare_vtab.html',
+        sqlite3_deserialize: 'wasm:/api-c-style.md#sqlite3_deserialize',
+        sqlite3_drop_modules: 'www:/c3ref/drop_modules.html',
+        sqlite3_errcode: 'www:/c3ref/errcode.html',
+        sqlite3_errmsg: 'www:/c3ref/errcode.html',
+        sqlite3_error_offset: 'www:/c3ref/error_offset.html',
+        sqlite3_errstr: 'www:/c3ref/errcode.html',
+        sqlite3_exec: 'wasm:/api-c-style.md#sqlite3_exec',
+        sqlite3_expanded_sql: 'www:/c3ref/expanded_sql.html',
+        sqlite3_extended_errcode: 'www:/c3ref/errcode.html',
+        sqlite3_extended_result_codes: 'www:/c3ref/extended_result_codes.html',
+        sqlite3_file_control: 'www:/c3ref/file_control.html',
+        sqlite3_finalize: 'www:/c3ref/finalize.html',
+        sqlite3_free: 'www:/c3ref/free.html',
+        sqlite3_get_auxdata: 'www:/c3ref/get_auxdata.html',
+        sqlite3_initialize: 'www:/c3ref/initialize.html',
+        sqlite3_keyword_check: 'www:/c3ref/keyword_check.html',
+        sqlite3_keyword_count: 'www:/c3ref/keyword_check.html',
+        sqlite3_keyword_name: 'www:/c3ref/keyword_check.html',
+        sqlite3_last_insert_rowid: 'www:/c3ref/last_insert_rowid.html',
+        sqlite3_libversion: 'www:/c3ref/libversion.html',
+        sqlite3_libversion_number: 'www:/c3ref/libversion.html',
+        sqlite3_limit: 'www:/c3ref/limit.html',
+        sqlite3_malloc: 'www:/c3ref/free.html',
+        sqlite3_malloc64: 'www:/c3ref/free.html',
+        sqlite3_msize: 'www:/c3ref/free.html',
+        sqlite3_open: 'www:/c3ref/open.html',
+        sqlite3_open_v2: 'www:/c3ref/open.html',
+        sqlite3_overload_function: 'www:/c3ref/overload_function.html',
+        sqlite3_prepare_v2: 'wasm:/api-c-style.md#sqlite3_prepare_v2',
+        sqlite3_prepare_v3: 'wasm:/api-c-style.md#sqlite3_prepare_v2',
+        sqlite3_progress_handler: 'www:/c3ref/progress_handler.html',
+        sqlite3_randomness: 'wasm:/api-c-style.md#sqlite3_randomness',
+        sqlite3_realloc: 'www:/c3ref/free.html',
+        sqlite3_realloc64: 'www:/c3ref/free.html',
+        sqlite3_reset: 'www:/c3ref/reset.html',
+        sqlite3_reset_auto_extension: 'wasm:/api-c-style.md#auto-extension',
+        sqlite3_result_blob: 'www:/c3ref/result_blob.html',
+        sqlite3_result_double: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error_code: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error_nomem: 'www:/c3ref/result_blob.html',
+        sqlite3_result_error_toobig: 'www:/c3ref/result_blob.html',
+        sqlite3_result_int: 'www:/c3ref/result_blob.html',
+        sqlite3_result_int64: 'www:/c3ref/result_blob.html',
+        sqlite3_result_null: 'www:/c3ref/result_blob.html',
+        sqlite3_result_pointer: 'www:/c3ref/result_blob.html',
+        sqlite3_result_subtype: 'www:/c3ref/result_subtype.html',
+        sqlite3_result_text: 'www:/c3ref/result_blob.html',
+        sqlite3_result_zeroblob: 'www:/c3ref/result_blob.html',
+        sqlite3_result_zeroblob64: 'www:/c3ref/result_blob.html',
+        sqlite3_rollback_hook: 'wasm:/api-c-style.md#hook-api',
+        sqlite3_serialize: 'www:/c3ref/serialize.html',
+        sqlite3_set_authorizer: 'wasm:/api-c-style.md#sqlite3_set_authorizer',
+        sqlite3_set_auxdata: 'www:/c3ref/get_auxdata.html',
+        sqlite3_set_last_insert_rowid: 'www:/c3ref/set_last_insert_rowid',
+        sqlite3_shutdown: 'www:/c3ref/initialize.html',
+        sqlite3_sourceid: 'www:/c3ref/libversion.html',
+        sqlite3_sql: 'www:/c3ref/expanded_sql.html',
+        sqlite3_status: 'www:/c3ref/status.html',
+        sqlite3_status64: 'www:/c3ref/status.html',
+        sqlite3_step: 'www:/c3ref/step.html',
+        sqlite3_stmt_isexplain: 'www:/c3ref/stmt_isexplain.html',
+        sqlite3_stmt_readonly: 'www:/c3ref/stmt_readonly.html',
+        sqlite3_stmt_status: 'www:/c3ref/stmt_status.html',
+        sqlite3_strglob: 'www:/c3ref/strglob.html',
+        sqlite3_stricmp: 'www:/c3ref/stricmp.html',
+        sqlite3_strlike: 'www:/c3ref/strlike.html',
+        sqlite3_strnicmp: 'www:/c3ref/strnicmp.html',
+        sqlite3_table_column_metadata: 'www:/c3ref/table_column_metadata.html',
+        sqlite3_total_changes: 'www:/c3ref/total_changes.html',
+        sqlite3_total_changes64: 'www:/c3ref/total_changes.html',
+        sqlite3_trace_v2: 'www:/c3ref/trace_v2.html',
+        sqlite3_txn_state: 'www:/c3ref/txn_state.html',
+        sqlite3_update_hook: 'wasm:/api-c-style.md#hook-api',
+        sqlite3_uri_boolean: 'www:/c3ref/uri_boolean.html',
+        sqlite3_uri_int64: 'www:/c3ref/uri_boolean.html',
+        sqlite3_uri_key: 'www:/c3ref/uri_boolean.html',
+        sqlite3_uri_parameter: 'www:/c3ref/uri_boolean.html',
+        sqlite3_user_data: 'www:/c3ref/user_data.html',
+        sqlite3_value_blob: 'www:/c3ref/value_blob.html',
+        sqlite3_value_bytes: 'www:/c3ref/value_blob.html',
+        sqlite3_value_double: 'www:/c3ref/value_blob.html',
+        sqlite3_value_dup: 'www:/c3ref/value_dup.html',
+        sqlite3_value_free: 'www:/c3ref/value_dup.html',
+        sqlite3_value_frombind: 'www:/c3ref/value_blob.html',
+        sqlite3_value_int: 'www:/c3ref/value_blob.html',
+        sqlite3_value_int64: 'www:/c3ref/value_blob.html',
+        sqlite3_value_nochange: 'www:/c3ref/value_blob.html',
+        sqlite3_value_numeric_type: 'www:/c3ref/value_blob.html',
+        sqlite3_value_pointer: 'www:/c3ref/value_blob.html',
+        sqlite3_value_subtype: 'www:/c3ref/value_subtype.html',
+        sqlite3_value_text: 'www:/c3ref/value_blob.html',
+        sqlite3_value_type: 'www:/c3ref/value_blob.html',
+        sqlite3_vfs_find: 'www:/c3ref/vfs_find.html',
+        sqlite3_vfs_register: 'www:/c3ref/vfs_find.html',
+        sqlite3_vfs_unregister: 'www:/c3ref/vfs_find.html',
+        sqlite3_vtab_collation: 'www:/c3ref/vtab_collation.html',
+        sqlite3_vtab_config: 'www:/c3ref/vtab_config.html',
+        sqlite3_vtab_distinct: 'www:/c3ref/vtab_distinct.html',
+        sqlite3_vtab_in: 'www:/c3ref/vtab_in.html',
+        sqlite3_vtab_in_first: 'www:/c3ref/vtab_in_first.html',
+        sqlite3_vtab_in_next: 'www:/c3ref/vtab_in_next.html',
+        sqlite3_vtab_nochange: 'www:/c3ref/vtab_nochange.html',
+        sqlite3_vtab_on_conflict: 'www:/c3ref/vtab_on_conflict.html',
+        sqlite3_vtab_rhs_value: 'www:/c3ref/vtab_rhs_value.html',
+
+        sqlite3_column_js: 'wasm:/api-c-style.md#sqlite3_column_js',
+        sqlite3_js_aggregate_context: 'wasm:/api-c-style.md#sqlite3_js_aggregate_context',
+        sqlite3_js_db_export: 'wasm:/api-c-style.md#sqlite3_js_db_export',
+        sqlite3_js_db_uses_vfs: 'wasm:/api-c-style.md#sqlite3_js_db_uses_vfs',
+        sqlite3_js_db_vfs: 'wasm:/api-c-style.md#sqlite3_js_db_vfs',
+        sqlite3_js_kvvfs_clear: 'wasm:/api-c-style.md#sqlite3_js_kvvfs',
+        sqlite3_js_kvvfs_size: 'wasm:/api-c-style.md#sqlite3_js_kvvfs',
+        sqlite3_js_rc_str: 'wasm:/api-c-style.md#sqlite3_js_rc_str',
+        sqlite3_js_vfs_create_file: 'wasm:/api-c-style.md#sqlite3_js_vfs_create_file',
+        sqlite3_js_vfs_list: 'wasm:/api-c-style.md#sqlite3_js_vfs_list',
+        sqlite3_result_error_js: 'wasm:/api-c-style.md#sqlite3_result_error_js',
+        sqlite3_result_js: 'wasm:/api-c-style.md#sqlite3_result_js',
+        sqlite3_value_to_js: 'wasm:/api-c-style.md#sqlite3_value_to_js',
+        sqlite3_values_to_js: 'wasm:/api-c-style.md#sqlite3_values_to_js',
+        
+        xform: (v)=>{
+            if(v){
+                return v.replace('www:','https://sqlite.org')
+                    .replace('wasm:','https://sqlite.org/wasm/doc/trunk');
+            }else{
+                return undefined;
+            }
+        }
+    });
+    const eNew = (tag,parent)=>{
+        const e = document.createElement(tag);
+        if(parent) parent.appendChild(e);
+        return e;
+    };
+    const eLi = (label,parent)=>{
+        const e = eNew('span',parent);
+        e.innerText = label;
+        return e;
+    };
+    const eLink = (label,url,parent)=>{
+        const w = eNew('span',parent);
+        const e = eNew('a',w);
+        if(url){
+            e.href = url;
+            e.target = 'sqlite3-api-docs';
+        }
+        e.innerText = label;
+        return w;
+    };
+    const E = (sel)=>document.querySelector(sel);
+    const EAll = (sel)=>document.querySelectorAll(sel);
+    const eFuncs = E('#list-functions'),
+          eConst = E('#list-constants');
+    const renderConst = function(name){
+        eLi(name, eConst);
+    };
+    const renderFunc = function(name){
+        let lbl = name+'()';
+        const e = eLink(lbl, apiLinks.xform(apiLinks[name]), eFuncs);
+        if(name.indexOf('_js')>0
+           || name.indexOf('_wasm')>0){
+            e.classList.add('func-wasm');
+        }
+    };
+    const renderGeneric = function(name,value,eParent){
+        let lbl;
+        if(value instanceof Function) lbl = name+'()';
+        else{
+            switch(typeof value){
+                case 'number': case 'boolean': case 'string':
+                    lbl = name+' = '+JSON.stringify(value);
+                    break;
+                default:
+                    lbl = name + ' ['+(typeof value)+']';
+            }
+        }
+        const e = eLi(lbl, eParent);
+        if(name.startsWith('sqlite3_wasm')){
+            e.classList.add('func-wasm');
+        }
+    };
+    const renderIt = async function(sqlite3){
+        self.sqlite3 = sqlite3;
+        console.warn("sqlite3 installed as global symbol self.sqlite3.");
+        const capi = sqlite3.capi, wasm = sqlite3.wasm;
+        const cmpIcase = (a,b)=>a.toLowerCase().localeCompare(b.toLowerCase());
+        const renderX = function(tgtElem, container, keys){
+            for(const k of keys.sort(cmpIcase)){
+                renderGeneric(k, container[k], tgtElem);
+            }
+        };
+        
+        const excludeNamespace = ['scriptInfo','StructBinder'];
+        renderX(
+            E('#list-namespace'), sqlite3,
+            Object.keys(sqlite3)
+                .filter((v)=>excludeNamespace.indexOf(v)<0)
+        );
+        renderX(
+            E('#list-version'), sqlite3.version,
+            Object.keys(sqlite3.version)
+        );
+
+        /* sqlite3_...() and SQLITE_... */
+        const lists = {c: [/*constants*/], f: [/*functions*/],
+                       s: [/*structs*/]};
+        /* Exclude these from the function list... */
+        const excludeCapi = [
+            // WASMFS stuff:
+            'sqlite3_wasmfs_filename_is_persistent',
+            'sqlite3_wasmfs_opfs_dir'
+        ];
+        for(const [k,v] of Object.entries(capi)){
+            if(k.startsWith('SQLITE_')){
+                lists.c.push(k);
+            }else if(k.startsWith('sqlite3_')){
+                if(excludeCapi.indexOf(k)>=0) continue;
+                if(v.structInfo){
+                    // assume this is a StructType-type.
+                    continue;
+                }
+                lists.f.push(k);
+            }
+        }
+        lists.c.sort().forEach(renderConst);
+        lists.f.sort().forEach(renderFunc);
+        lists.c = lists.f = null;
+
+        renderX(E('#list-oo1'), sqlite3.oo1,
+                Object.keys(sqlite3.oo1) );
+
+        const excludeWasm = ['ctype'];
+        renderX(E('#list-wasm'),
+                wasm, Object.keys(wasm).filter((v)=>{
+                    return !v.startsWith('sqlite3_wasm_')
+                        && excludeWasm.indexOf(v)<0;
+                }));
+        const psKeys = Object.keys(wasm.pstack);
+        psKeys.push('pointer','quota','remaining');
+        renderX(E('#list-wasm-pstack'), wasm.pstack, psKeys);
+
+        const cou = wasm.compileOptionUsed();
+        //const cou2 = Object.create(null);
+        //Object.entries(cou).forEach((e)=>cou2['SQLITE_'+e[0]] = e[1]);
+        renderX(E('#list-compile-options'), cou, Object.keys(cou));
+    };
+
+    /**
+       This is a module object for use with the emscripten-installed
+       sqlite3InitModule() factory function.
+    */
+    const myModule = {
+        print: (...args)=>{console.log(...args)},
+        printErr: (...args)=>{console.error(...args)},
+        /**
+           Called by the Emscripten module init bits to report loading
+           progress. It gets passed an empty argument when loading is done
+           (after onRuntimeInitialized() and any this.postRun callbacks
+           have been run).
+        */
+        setStatus: function f(text){
+            if(!f.last){
+                f.last = { text: '', step: 0 };
+                f.ui = {
+                    status: E('#module-load-status')
+                };
+            }
+            if(text === f.last.text) return;
+            f.last.text = text;
+            ++f.last.step;
+            if(text) {
+                f.ui.status.classList.remove('hidden');
+                f.ui.status.innerText = text;
+            }else{
+                f.ui.status.classList.add('hidden');
+                EAll('.initially-hidden').forEach((e)=>{
+                    e.classList.remove('initially-hidden');
+                });
+            }
+        }
+    }/*myModule*/;
+    self.sqlite3InitModule(myModule).then(renderIt);
+})();</script>
+</div><!-- .fossil-doc EXTRACT_END -->
+</body></html>

@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the use of indices in WHERE clases.
 #
-# $Id: where.test,v 1.50 2008/11/03 09:06:06 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -546,6 +545,7 @@ do_test where-6.1 {
     CREATE INDEX t3acb ON t3(a,c,b);
     INSERT INTO t3 SELECT w, 101-w, y FROM t1;
     SELECT count(*), sum(a), sum(b), sum(c) FROM t3;
+    ANALYZE;
   }
 } {100 5050 5050 348550}
 do_test where-6.2 {
@@ -1348,15 +1348,24 @@ do_execsql_test where-18.1 {
   INSERT INTO t181 VALUES(1);
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c IS NULL;
 } {1}
+do_execsql_test where-18.1rj {
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY c IS NULL;
+} {1}
 do_execsql_test where-18.2 {
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
 } {1}
 do_execsql_test where-18.3 {
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c;
 } {1}
+do_execsql_test where-18.3rj {
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY c;
+} {1}
 do_execsql_test where-18.4 {
   INSERT INTO t181 VALUES(1),(1),(1),(1);
   SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
+} {1}
+do_execsql_test where-18.4rj {
+  SELECT DISTINCT a FROM t182 RIGHT JOIN t181 ON a=b ORDER BY +c;
 } {1}
 do_execsql_test where-18.5 {
   INSERT INTO t181 VALUES(2);
@@ -1576,14 +1585,123 @@ do_execsql_test where-26.8 {
 # floating point values that are near 9223372036854775807 in the
 # OP_SeekGE opcode (and similar).
 #
+# Valgrind documentation acknowledges that under valgrind, FP calculations
+# may not be as accurate as on x86/amd64 hardware. This seems to be causing
+# these tests to fail.
+#
+#   https://valgrind.org/docs/manual/manual-core.html#manual-core.limits
+#
+if {[permutation]!="valgrind"} {
+  reset_db
+  do_execsql_test where-27.1 {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY);
+    INSERT INTO t1(a) VALUES(9223372036854775807);
+    SELECT 1 FROM t1 WHERE a>=(9223372036854775807+1);
+  } {}
+  do_execsql_test where-27.2 {
+    SELECT a>=9223372036854775807+1 FROM t1;
+  } {0}
+}
+
+# 2022-05-10 dbsqlfuzz 4c5e3e89bc251d28378be88233f531b84ec66901
+# 
 reset_db
-do_execsql_test where-27.1 {
-  CREATE TABLE t1(a INTEGER PRIMARY KEY);
-  INSERT INTO t1(a) VALUES(9223372036854775807);
-  SELECT 1 FROM t1 WHERE a>=(9223372036854775807+1);
-} {}
-do_execsql_test where-27.2 {
-  SELECT a>=9223372036854775807+1 FROM t1;
-} {0}
+do_execsql_test where-28.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT);
+  CREATE INDEX t1b ON t1(b,b,b,b,b,b,b,b,b,b,b,b,b);
+  INSERT INTO t1(a,b) VALUES(1,1),(15,2),(19,5);
+  UPDATE t1 SET b=999 WHERE a IN (SELECT 15) AND b IN (1,2);
+  SELECT * FROM t1;
+} {
+ 1  1
+ 15 999
+ 19 5
+}
+
+# 2022-12-07 Yong Heng [https://sqlite.org/forum/forumpost/dfe8084751]
+#
+ifcapable vtab {
+  do_execsql_test where-29.1 {
+    SELECT DISTINCT 'xyz' FROM pragma_cache_size
+      WHERE rowid OR abs(0)
+      ORDER BY
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1;
+  } {xyz}
+}
+
+# 2023-01-30
+# Tests case for the query planner performance issue reported by
+# https://sqlite.org/forum/forumpost/1d571c0296
+#
+# The fix was to adjust the cost of computing an automatic index for
+# ephemeral tables, to help ensure that they are generated if they are
+# needed.  The test case below only looks at the query plan.  But 12x
+# improved performance has been verified by populating the "raw" table
+# with 100K rows of random data and running actual speed tests.
+#
+do_test where-30.1 {
+  unset -nocomplain res
+  set res {}
+  db eval {CREATE TABLE raw(country,date,total,delta, UNIQUE(country,date));}
+  db eval {
+    EXPLAIN QUERY PLAN
+    WITH
+      -- Find the country and min/max date
+      init(country, date, fin) AS (SELECT country, min(date), max(date)
+         FROM raw WHERE total > 0 GROUP BY country),
+    
+      -- Generate the date stream for each country
+      src(country, date) AS (SELECT raw.country, raw.date
+          FROM raw JOIN init i on raw.country = i.country AND raw.date > i.date
+          ORDER BY raw.country, raw.date),
+    
+      -- Generate the x & y for each entry in the country/date stream
+      vals(country, date, x, y) AS (SELECT src.country, src.date,
+                julianday(raw.date) - julianday(src.date), log(delta+1)
+          FROM src JOIN raw on raw.country = src.country
+                        AND raw.date > date(src.date,'-7 days')
+                        AND raw.date <= src.date AND delta >= 0),
+    
+      -- Accumulate the data we need
+      sums(country, date, x2, x, n, xy, y) AS (SELECT country, date,
+              sum(x*x*1.0), sum(x*1.0), sum(1.0), sum(x*y*1.0), sum(y*1.0)
+         FROM vals GROUP BY 1, 2),
+    
+      -- use these to calculate to divisor for the inverse matrix
+      mult(country, date, m) AS (SELECT country, date, 1.0/(x2 * n - x * x)
+         FROM sums),
+    
+      -- Build the inverse matrix
+      inv(country, date, a,b,c,d) AS (SELECT mult.country, mult.date, n * m,
+                -x * m, -x * m, x2 * m
+          FROM mult JOIN sums on sums.country=mult.country
+                         AND mult.date=sums.date),
+    
+      -- Calculate the coefficients for the least squares fit
+      fit(country, date, a, b) AS (SELECT inv.country, inv.date,
+               a * xy + b * y, c * xy + d * y
+          FROM inv
+          JOIN mult on mult.country = inv.country AND mult.date = inv.date
+          JOIN sums on sums.country = mult.country AND sums.date = mult.date
+    )
+    SELECT *, nFin/nPrev - 1 AS growth, log(2)/log(nFin/nPrev) AS doubling
+      FROM (SELECT f.*, exp(b) - 1 AS nFin, exp(a* (-1) + b) - 1 AS nPrev
+              FROM fit f JOIN init i on i.country = f.country
+                          AND f.date <= date(i.fin,'-3 days'))
+     WHERE nPrev > 0 AND nFin > 0;
+  } {
+    if {$parent!=0} continue
+    if {![string match SCAN* $detail]} continue
+    lappend res SCAN
+  }
+  set res
+} {SCAN}
+# ^^^^^^-- there should only be one top-level table scan in the query plan.
 
 finish_test

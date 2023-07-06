@@ -420,8 +420,17 @@ static void *memsys5Realloc(void *pPrior, int nBytes){
 */
 static int memsys5Roundup(int n){
   int iFullSz;
-  if( n > 0x40000000 ) return 0;
-  for(iFullSz=mem5.szAtom; iFullSz<n; iFullSz *= 2);
+  if( n<=mem5.szAtom*2 ){
+    if( n<=mem5.szAtom ) return mem5.szAtom;
+    return mem5.szAtom*2;
+  }
+  if( n>0x10000000 ){
+    if( n>0x40000000 ) return 0;
+    if( n>0x20000000 ) return 0x40000000;
+    return 0x20000000;
+  }
+  for(iFullSz=mem5.szAtom*8; iFullSz<n; iFullSz *= 4);
+  if( (iFullSz/2)>=(i64)n ) return iFullSz/2;
   return iFullSz;
 }
 

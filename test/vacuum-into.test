@@ -100,4 +100,91 @@ do_test vacuum-into-510 {
 db2 close
 db close
 
+# Change the page-size on a VACUUM INTO even if the original
+# database is in WAL mode.
+#
+if {[wal_is_capable]} {
+  forcedelete test.db
+  forcedelete test.db2
+  do_test vacuum-into-600 {
+    sqlite3 db test.db
+    db eval {
+      PRAGMA page_size=4096;
+      PRAGMA journal_mode=WAL;
+      CREATE TABLE t1(a);
+      INSERT INTO t1 VALUES(19);
+      CREATE INDEX t1a ON t1(a);
+      PRAGMA integrity_check;
+    }
+  } {wal ok}
+  do_execsql_test vacuum-into-610 {
+    PRAGMA page_size;
+  } {4096}
+  do_execsql_test vacuum-into-620 {
+    PRAGMA page_size=1024;
+    VACUUM INTO 'test.db2';
+  } {}
+  do_test vacuum-into-630 {
+    sqlite3 db test.db2
+    db eval {
+      PRAGMA page_size;
+      PRAGMA integrity_check;
+    }
+  } {1024 ok}
+}
+
+#-------------------------------------------------------------------------
+
+testvfs tvfs -default 1
+tvfs filter xSync
+tvfs script xSyncCb
+proc xSyncCb {method file fileid flags} {
+  incr ::sync($flags)
+}
+
+reset_db
+
+do_execsql_test vacuum-into-700 {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+}
+
+foreach {tn pragma res} {
+  710 {
+    PRAGMA synchronous = normal
+  } {normal 2}
+  720 {
+    PRAGMA synchronous = full
+  } {normal 3}
+  730 {
+    PRAGMA synchronous = off
+  } {}
+  740 {
+    PRAGMA synchronous = extra;
+  } {normal 3}
+  750 {
+    PRAGMA fullfsync = 1;
+    PRAGMA synchronous = full;
+  } {full|dataonly 1 full 2}
+} {
+
+  forcedelete test.db2
+  array unset ::sync
+  do_execsql_test vacuum-into-$tn.1 "
+    $pragma ;
+    VACUUM INTO 'test.db2'
+  "
+
+  do_test vacuum-into-$tn.2 {
+    array get ::sync
+  } $res
+}
+
+db close
+tvfs delete
+
+
 finish_test
+
+
+

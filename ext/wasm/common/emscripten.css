@@ -1,0 +1,24 @@
+/* emscripten-related styling, used during the module load/intialization processes... */
+.emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+div.emscripten { text-align: center; }
+div.emscripten_border { border: 1px solid black; }
+#module-spinner { overflow: visible; }
+#module-spinner > * {
+    margin-top: 1em;
+}
+.spinner {
+    height: 50px;
+    width: 50px;
+    margin: 0px auto;
+    animation: rotation 0.8s linear infinite;
+    border-left: 10px solid rgb(0,150,240);
+    border-right: 10px solid rgb(0,150,240);
+    border-bottom: 10px solid rgb(0,150,240);
+    border-top: 10px solid rgb(100,0,200);
+    border-radius: 100%;
+    background-color: rgb(200,100,250);
+}
+@keyframes rotation {
+    from {transform: rotate(0deg);}
+    to {transform: rotate(360deg);}
+}

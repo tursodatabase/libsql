@@ -18,10 +18,12 @@
 #   shell1-1.*: Basic command line option handling.
 #   shell1-2.*: Basic "dot" command token parsing.
 #   shell1-3.*: Basic test that "dot" command can be called.
+#   shell1-{4-8}.*: Test various "dot" commands's functionality.
+#   shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
@@ -51,7 +53,7 @@ do_test shell1-1.1.2 {
 # error on extra options
 do_test shell1-1.1.3 {
   catchcmd "test.db FOO test.db BAD" ".quit"
-} {1 {Error: near "FOO": syntax error}}
+} {/1 .Error: in prepare, near "FOO": syntax error*/}
 
 # -help
 do_test shell1-1.2.1 {
@@ -76,7 +78,7 @@ do_test shell1-1.3.2 {
 } {0 {}}
 do_test shell1-1.3.3 {
   catchcmd "-init FOO test.db BAD .quit" ""
-} {1 {Error: near "BAD": syntax error}}
+} {/1 .Error: in prepare, near "BAD": syntax error*/}
 
 # -echo                print commands before execution
 do_test shell1-1.4.1 {
@@ -173,6 +175,16 @@ do_test shell1-1.16.1 {
   set x [catchcmd "-version test.db" ""]
 } {/3.[0-9.]+ 20\d\d-[01]\d-\d\d \d\d:\d\d:\d\d [0-9a-f]+/}
 
+# Handle no-more-options option
+forcedelete ./--db
+do_test shell1-1.17.1 {
+  catchcmd {-- --db "CREATE TABLE T(c1);"}
+} {0 {}}
+do_test shell1-1.17.2 {
+  catchcmd {-- --db "SELECT name from sqlite_schema;"}
+} {0 T}
+forcedelete ./--db
+
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
 #
@@ -203,10 +215,10 @@ do_test shell1-2.2.4 {
 } {0 {}}
 do_test shell1-2.2.5 {
   catchcmd "test.db" ".mode \"insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-2.2.6 {
   catchcmd "test.db" ".mode \'insert FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 
 # check multiple tokens, and quoted tokens
 do_test shell1-2.3.1 {
@@ -234,13 +246,18 @@ do_test shell1-2.3.7 {
 # check quoted args are unquoted
 do_test shell1-2.4.1 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
 do_test shell1-2.4.2 {
   catchcmd "test.db" ".mode \"csv\""
 } {0 {}}
+
+# check that certain quoted arg escapes work
+do_test shell1-2.5.1 {
+  catchcmd ":memory:" ".print \"\\060\\077 \\x3f\\x30 \\a\\t\""
+} [list 0 "0? ?0 \a\t"]
 
 
 #----------------------------------------------------------------------------
@@ -435,7 +452,7 @@ do_test shell1-3.13.1 {
 } {0 {current output mode: list}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
+} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown qbox quote table tabs tcl}}
 do_test shell1-3.13.3 {
   catchcmd "test.db" ".mode csv"
 } {0 {}}
@@ -463,17 +480,6 @@ do_test shell1-3.13.10 {
 do_test shell1-3.13.11 {
   # extra arguments ignored
   catchcmd "test.db" ".mode tcl BAD"
-} {0 {}}
-
-# don't allow partial mode type matches
-do_test shell1-3.13.12 {
-  catchcmd "test.db" ".mode l"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
-do_test shell1-3.13.13 {
-  catchcmd "test.db" ".mode li"
-} {1 {Error: mode should be one of: ascii box column csv html insert json line list markdown quote table tabs tcl}}
-do_test shell1-3.13.14 {
-  catchcmd "test.db" ".mode lin"
 } {0 {}}
 
 # .nullvalue STRING      Print STRING in place of NULL values
@@ -602,7 +608,8 @@ CREATE VIEW v2 AS SELECT x+1 AS y FROM t1
 /* v2(y) */;
 CREATE VIEW v1 AS SELECT y+1 FROM v2
 /* v1("y+1") */;}}
-db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
+
+  catch {db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}}
 }
 
 # .separator STRING  Change column separator used by output and .import
@@ -1022,6 +1029,12 @@ do_test shell1-4.6 {
 ";"
 "$"} 7}
 
+# Test the output of ".mode quote"
+#
+do_test shell1-4.7 {
+  catchcmd test.db ".mode quote\nselect x'0123456789ABCDEF';"
+} {0 X'0123456789abcdef'}
+
 # Test using arbitrary byte data with the shell via standard input/output.
 #
 do_test shell1-5.0 {
@@ -1223,5 +1236,52 @@ do_test shell1-8.4 {
 +------------------+-----+
 | 6683623321994527 | -47 |
 +------------------+-----+}}
+do_test shell1-8.5 {
+  catchcmd ":memory: --box" {
+create table t(a text, b int);
+insert into t values ('too long for one line', 1), ('shorter', NULL);
+.header on
+.width 10 10
+.nullvalue NADA
+select * from t;}
+} {0 {┌────────────┬────────────┐
+│     a      │     b      │
+├────────────┼────────────┤
+│ too long f │ 1          │
+│ or one lin │            │
+│ e          │            │
+├────────────┼────────────┤
+│ shorter    │ NADA       │
+└────────────┴────────────┘}}
+
+#----------------------------------------------------------------------------
+# Test cases shell1-9.*: Basic test that "dot" commands and SQL intermix ok.
+#
+do_test shell1-9.1 {
+  catchcmd :memory: {
+.mode csv
+/*
+x */ select 1,2; --x
+ -- .nada
+;
+.mode csv
+--x
+select 2,1; select 3,4;
+}
+} {0 {1,2
+2,1
+3,4}}
+
+#----------------------------------------------------------------------------
+# Test cases shell1-10.*: Test that certain static extensions are there.
+#
+do_test shell1-10.1 {
+  catchcmd :memory: {
+.mode list
+.header off
+select base64(base64(cast('digity-doo' as blob))),
+ base85(base85(cast('digity-doo' as blob)));
+}
+} {0 digity-doo|digity-doo}
 
 finish_test

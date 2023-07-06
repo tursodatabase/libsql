@@ -153,18 +153,12 @@ SQLite. Documentation follows.
     the ICU extension LIKE operator is 50000, defined in source 
     file "icu.c".
 
-  3.3 Collation Sequence Security Issue
+  3.3 Collation Sequence Security
 
     Internally, SQLite assumes that indices stored in database files
     are sorted according to the collation sequence indicated by the
     SQL schema. Changing the definition of a collation sequence after
     an index has been built is therefore equivalent to database
-    corruption. The SQLite library is not very well tested under
-    these conditions, and may contain potential buffer overruns
-    or other programming errors that could be exploited by a malicious
-    programmer.
-
-    If the ICU extension is used in an environment where potentially
-    malicious users may execute arbitrary SQL (i.e. gears), they
-    should be prevented from invoking the icu_load_collation() function,
-    possibly using the authorisation callback.
+    corruption. The SQLite library is well tested for robustness in
+    the fact of database corruption.  Database corruption may well
+    lead to incorrect answers, but should not cause memory errors.

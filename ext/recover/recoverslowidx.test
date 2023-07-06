@@ -1,0 +1,87 @@
+# 2022 September 25
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Tests for the SQLITE_RECOVER_SLOWINDEXES option.
+#
+
+source [file join [file dirname [info script]] recover_common.tcl]
+set testprefix recoverslowidx
+
+do_execsql_test 1.0 {
+  PRAGMA auto_vacuum = 0;
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a);
+  INSERT INTO t1 VALUES(1, 1), (2, 2), (3, 3), (4, 4);
+}
+
+proc my_sql_hook {sql} {
+  lappend ::lSql $sql
+  return 0
+}
+
+do_test 1.1 {
+  set lSql [list]
+  set R [sqlite3_recover_init_sql db main my_sql_hook]
+  while {[$R step]==0} { }
+  $R finish
+} {}
+
+do_test 1.2 {
+  set lSql
+} [list {*}{
+  {BEGIN}
+  {PRAGMA writable_schema = on}
+  {PRAGMA encoding = 'UTF-8'}
+  {PRAGMA page_size = '1024'}
+  {PRAGMA auto_vacuum = '0'}
+  {PRAGMA user_version = '0'}
+  {PRAGMA application_id = '0'}
+  {CREATE TABLE t1(a, b)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (1, 1, 1)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (2, 2, 2)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (3, 3, 3)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (4, 4, 4)}
+  {CREATE INDEX i1 ON t1(a)}
+  {PRAGMA writable_schema = off}
+  {COMMIT}
+}]
+
+do_test 1.3 {
+  set lSql [list]
+  set R [sqlite3_recover_init_sql db main my_sql_hook]
+  $R config slowindexes 1
+  while {[$R step]==0} { }
+  $R finish
+} {}
+
+do_test 1.4 {
+  set lSql
+} [list {*}{
+  {BEGIN}
+  {PRAGMA writable_schema = on}
+  {PRAGMA encoding = 'UTF-8'}
+  {PRAGMA page_size = '1024'}
+  {PRAGMA auto_vacuum = '0'}
+  {PRAGMA user_version = '0'}
+  {PRAGMA application_id = '0'}
+  {CREATE TABLE t1(a, b)}
+  {CREATE INDEX i1 ON t1(a)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (1, 1, 1)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (2, 2, 2)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (3, 3, 3)}
+  {INSERT OR IGNORE INTO 't1'(_rowid_, 'a', 'b') VALUES (4, 4, 4)}
+  {PRAGMA writable_schema = off}
+  {COMMIT}
+}]
+
+
+finish_test
+

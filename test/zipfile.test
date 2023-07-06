@@ -853,6 +853,35 @@ do_execsql_test 17.1 {
   )
   SELECT DISTINCT typeof(zipfile(0,0,x,0)) FROM vlist;
 } {blob}
-  
+
+# 2023-01-04
+# https://sqlite.org/forum/forumpost/d1c96a9032e564f8
+# Call to fopen() with a NULL filename.
+#
+do_catchsql_test 18.1 {
+  SELECT * FROM zipfile(NULL);
+} {1 {cannot open file: }}
+
+# 2023-05-03 https://sqlite.org/forum/info/f03f1e4c5a5c9959
+#
+do_test 19.1 {
+  sqlite3 db :memory:
+  load_static_extension db zipfile
+  forcedelete zipfile19.zip
+  db eval {
+    CREATE VIRTUAL TABLE t1 USING zipfile('zipfile19.zip');
+    INSERT INTO t1 DEFAULT VALUES;
+  }
+  db close
+  sqlite3 db :memory:
+  load_static_extension db zipfile
+  db eval {
+    CREATE VIRTUAL TABLE v0 USING zipfile('zipfile19.zip');
+    SAVEPOINT y;
+    DELETE FROM v0 WHERE 9;
+    INSERT INTO v0 DEFAULT VALUES;
+  }
+} {}
+forcedelete zipfile19.zip
 
 finish_test

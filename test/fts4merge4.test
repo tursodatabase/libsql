@@ -16,7 +16,7 @@ source $testdir/tester.tcl
 source $testdir/fts3_common.tcl
 set ::testprefix fts4merge4
 
-ifcapable !fts3 {
+ifcapable !fts3||!shared_cache {
   finish_test
   return
 }

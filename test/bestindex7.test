@@ -28,7 +28,11 @@ proc vtab_command {src method args} {
     }
 
     xBestIndex {
-      set clist [lindex $args 0]
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      set mask [$hdl mask]
+      
       set iCons 0
       set ret [list]
       foreach cons $clist {

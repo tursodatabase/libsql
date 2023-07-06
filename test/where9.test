@@ -378,9 +378,9 @@ ifcapable explain {
     |--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
     `--MULTI-INDEX OR
        |--INDEX 1
-       |  `--SEARCH t2 USING INDEX t2d (d=?)
+       |  `--SEARCH t2 USING INDEX t2d (d=?) LEFT-JOIN
        `--INDEX 2
-          `--SEARCH t2 USING COVERING INDEX t2f (f=?)
+          `--SEARCH t2 USING COVERING INDEX t2f (f=?) LEFT-JOIN
   }]
 } 
 

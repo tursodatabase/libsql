@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <title>sqlite3 WASM Demo Page Index</title>
+  </head>
+  <body>
+    <style>
+      body {
+          display: flex;
+          flex-direction: column;
+          flex-wrap: wrap;
+      }
+      textarea {
+          font-family: monospace;
+      }
+      header {
+          font-size: 130%;
+          font-weight: bold;
+          background: #044a64;
+          color: white;
+          padding: 0.5em;
+          border-radius: 0.25em;
+      }
+      .hidden, .initially-hidden {
+          position: absolute !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          display: none !important;
+      }
+      .warning { color: firebrick; }
+    </style>
+    <header id='titlebar'><span>sqlite3 WASM demo pages</span></header>
+    <hr>
+    <div>Below is the list of demo pages for the sqlite3 WASM
+      builds. The intent is that <em>this</em> page be run
+      using the functional equivalent of:</div>
+    <blockquote><pre><a href='https://sqlite.org/althttpd'>althttpd</a> -enable-sab -page index.html</pre></blockquote>
+    <div>and the individual pages be started in their own tab.
+      Warnings and Caveats:
+      <ul class='warning'>
+        <li>All of these pages must be served via an HTTP
+          server. Browsers do not support loading WASM files via
+          file:// URLs.</li>
+        <li>Any OPFS-related pages or tests require:
+          <ul>
+            <li>That the web server emit the so-called
+              <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Opener-Policy'>COOP</a>
+              and
+              <a href='https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Embedder-Policy'>COEP</a>
+              headers. <a href='https://sqlite.org/althttpd'>althttpd</a> requires the
+              <code>-enable-sab</code> flag for that.
+            </li>
+            <li>A very recent version of a Chromium-based browser
+              (v102 at least, possibly newer). OPFS support in the
+              other major browsers is pending. Development and testing
+              is currently done against a dev-channel release of
+              Chrome (v111 as of 2023-02-10).
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div>The tests and demos...
+      <ul id='test-list'>
+        <li>Core-most tests
+          <ul>
+            <li><a href='tester1.html'>tester1</a>: Core unit and
+              regression tests for the various APIs and surrounding
+              utility code.</li>
+            <li><a href='tester1-worker.html'>tester1-worker</a>: same thing
+              but running in a Worker.</li>
+            <li><a href='tester1-esm.html'>tester1-esm</a>: same as
+              <code>tester1</code> but loads sqlite3 in the main thread via
+              an ES6 module.
+            </li>
+            <li><a href='tester1-worker.html?esm'>tester1-worker?esm</a>:
+              same as <code>tester1-esm</code> but loads a Worker Module which
+              then loads the sqlite3 API via an ES6 module. Note that
+              not all browsers permit loading modules in Worker
+              threads.
+            </li>
+          </ul>
+        </li>
+        <li>Higher-level apps and demos...
+          <ul>
+            <li><a href='demo-123.html'>demo-123</a> provides a
+              no-nonsense example of adding sqlite3 support to a web
+              page in the UI thread.</li>
+            <li><a href='demo-123-worker.html'>demo-123-worker</a> is
+              the same as <code>demo-123</code> but loads and runs
+              sqlite3 from a Worker thread.</li>
+            <li><a href='demo-jsstorage.html'>demo-jsstorage</a>: very basic
+              demo of using the key-value VFS for storing a persistent db
+              in JS <code>localStorage</code> or <code>sessionStorage</code>.</li>
+            <li><a href='demo-worker1.html'>demo-worker1</a>:
+              Worker-based wrapper of the OO API #1. Its Promise-based
+              wrapper is significantly easier to use, however.</li>
+            <li><a href='demo-worker1-promiser.html'>demo-worker1-promiser</a>:
+              a demo of the Promise-based wrapper of the Worker1 API.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <style>
+      #test-list { font-size: 120%; }
+    </style>
+    <script>//Assign a distinct target tab name for each test page...
+      document.querySelectorAll('a').forEach(function(e){
+          e.target = e.href;
+      });
+    </script>
+  </body>
+</html>

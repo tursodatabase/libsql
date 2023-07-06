@@ -239,4 +239,97 @@ do_execsql_test regexp1-2.22 {
   SELECT 'abc$¢€xyz' REGEXP '^abc[^\u0025-X][^ -\u007f][^\u20ab]xyz$'
 } {1}
 
+# 2022-07-03
+# https://sqlite.org/forum/forumpost/96692f8ba5
+# The REGEXP extension mishandles the prefix search optimization when
+# the prefix contains 3-byte UTF8 characters.
+#
+reset_db
+load_static_extension db regexp
+do_execsql_test regexp1-3.1 {
+  CREATE TABLE t1(id INTEGER PRIMARY KEY, a TEXT);
+  INSERT INTO t1(id, a) VALUES(1, '日本語');
+  SELECT a, hex(a), length(a) FROM t1;
+} {日本語 E697A5E69CACE8AA9E 3}
+do_execsql_test regexp1-3.2 {
+  SELECT * FROM t1 WHERE a='日本語';
+} {1 日本語}
+do_execsql_test regexp1-3.3 {
+  SELECT * FROM t1 WHERE a LIKE '日本語';
+} {1 日本語}
+do_execsql_test regexp1-3.4 {
+  SELECT * FROM t1 wHERE a REGEXP '日本語';
+} {1 日本語}
+
+# 2022-07-03
+# https://sqlite.org/forum/forumpost/96692f8ba5  Issue #2
+# The '$' token in REGEXP contained within other elements.
+#
+do_execsql_test regexp1-4.1 {SELECT 'xab' REGEXP 'a(b$|cd)';} {1}
+do_execsql_test regexp1-4.1b {SELECT 'xab' REGEXP '(b$|cd)';} {1}
+do_execsql_test regexp1-4.2 {SELECT 'xaby' REGEXP 'a(b$|cd)';} {0}
+do_execsql_test regexp1-4.3 {SELECT 'xacd' REGEXP 'a(b$|cd)';} {1}
+do_execsql_test regexp1-4.4 {SELECT 'xacdy' REGEXP 'a(b$|cd)';} {1}
+do_execsql_test regexp1-4.5 {SELECT 'xab' REGEXP 'a(cd|b$)';} {1}
+do_execsql_test regexp1-4.6 {SELECT 'xaby' REGEXP 'a(cd|b$)';} {0}
+do_execsql_test regexp1-4.7 {SELECT 'xacd' REGEXP 'a(cd|b$)';} {1}
+do_execsql_test regexp1-4.8 {SELECT 'xacdy' REGEXP 'a(cd|b$)';} {1}
+do_execsql_test regexp1-4.9 {SELECT 'xab' REGEXP 'a(cd|b$|e)';} {1}
+do_execsql_test regexp1-4.10 {SELECT 'xaby' REGEXP 'a(cd|b$|e)';} {0}
+do_execsql_test regexp1-4.11 {SELECT 'xacd' REGEXP 'a(cd|b$|e)';} {1}
+do_execsql_test regexp1-4.12 {SELECT 'xacdy' REGEXP 'a(cd|b$|e)';} {1}
+
+# 2022-07-18
+# https://sqlite.org/forum/forumpost/57cbaf1d0e
+# Incorrect bytecode for {M,N} when M is zero.
+#
+do_execsql_test regexp1-5.1 {SELECT 'fooX' REGEXP '^[a-z][a-z0-9]{0,30}$';} {0}
+do_execsql_test regexp1-5.2 {SELECT 'fooX' REGEXP '^[a-z][a-z0-9]{0,30}X$';} {1}
+do_execsql_test regexp1-5.3 {SELECT 'fooX' REGEXP '^[a-z][a-z0-9]{0,2}X$';} {1}
+do_execsql_test regexp1-5.4 {SELECT 'foooX' REGEXP '^[a-z][a-z0-9]{0,2}X$';} {0}
+do_execsql_test regexp1-5.5 {SELECT 'foooX' REGEXP '^[a-z][a-z0-9]{0,3}X$';} {1}
+
+# 2022-07-18
+# https://sqlite.org/forum/forumpost/18f87fdcdf
+# Allow "^" to occur inside of "(..)"
+#
+do_execsql_test regexp1-6.1 {SELECT 'foo' REGEXP '[a-z]';} {1}
+do_execsql_test regexp1-6.2 {SELECT 'foo' REGEXP '^[a-z]+$';} {1}
+do_execsql_test regexp1-6.3 {SELECT 'foo' REGEXP '^([a-z]+)$';} {1}
+do_execsql_test regexp1-6.4 {SELECT 'foo' REGEXP '(^[a-z]+)$';} {1}
+do_execsql_test regexp1-6.5 {SELECT 'foo' REGEXP '(^[a-z]+$)';} {1}
+do_execsql_test regexp1-6.6 {SELECT 'abc' REGEXP '(^abc|def)';} {1}
+do_execsql_test regexp1-6.7 {SELECT 'xabc' REGEXP '(^abc|def)';} {0}
+do_execsql_test regexp1-6.8 {SELECT 'def' REGEXP '(^abc|def)';} {1}
+do_execsql_test regexp1-6.9 {SELECT 'xdef' REGEXP '(^abc|def)';} {1}
+
+# 2022-11-17
+# https://sqlite.org/forum/forumpost/3ffe058b04
+#
+do_execsql_test regexp1-7.1 {
+  SELECT char(0x61,0x7ff,0x62) REGEXP char(0x7ff);
+} 1
+do_execsql_test regexp1-7.2 {
+  SELECT char(0x61,0x800,0x62) REGEXP char(0x800);
+} 1
+do_execsql_test regexp1-7.3 {
+  SELECT char(0x61,0xabc,0x62) REGEXP char(0xabc);
+} 1
+do_execsql_test regexp1-7.4 {
+  SELECT char(0x61,0xfff,0x62) REGEXP char(0xfff);
+} 1
+do_execsql_test regexp1-7.5 {
+  SELECT char(0x61,0x1000,0x62) REGEXP char(0x1000);
+} 1
+do_execsql_test regexp1-7.10 {
+  SELECT char(0x61,0xffff,0x62) REGEXP char(0xffff);
+} 1
+do_execsql_test regexp1-7.11 {
+  SELECT char(0x61,0x10000,0x62) REGEXP char(0x10000);
+} 1
+do_execsql_test regexp1-7.12 {
+  SELECT char(0x61,0x10ffff,0x62) REGEXP char(0x10ffff);
+} 1
+
+
 finish_test

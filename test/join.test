@@ -250,6 +250,19 @@ do_test join-2.1 {
   }
 } {1 2 3 4 2 3 4 5 3 4 5 {}}
 
+# EVIDENCE-OF: R-52129-05406 you can say things like "OUTER LEFT NATURAL
+# JOIN" which means the same as "NATURAL LEFT OUTER JOIN".
+do_test join-2.1b {
+  execsql {
+    SELECT * FROM t1 OUTER LEFT NATURAL JOIN t2;
+  }
+} {1 2 3 4 2 3 4 5 3 4 5 {}}
+do_test join-2.1c {
+  execsql {
+    SELECT * FROM t1 NATURAL LEFT OUTER JOIN t2;
+  }
+} {1 2 3 4 2 3 4 5 3 4 5 {}}
+
 # ticket #3522
 do_test join-2.1.1 {
   execsql2 {
@@ -272,11 +285,13 @@ do_test join-2.2 {
     SELECT * FROM t2 NATURAL LEFT OUTER JOIN t1;
   }
 } {1 2 3 {} 2 3 4 1 3 4 5 2}
-do_test join-2.3 {
-  catchsql {
-    SELECT * FROM t1 NATURAL RIGHT OUTER JOIN t2;
-  }
-} {1 {RIGHT and FULL OUTER JOINs are not currently supported}}
+
+#do_test join-2.3 {
+#  catchsql {
+#    SELECT * FROM t1 NATURAL RIGHT OUTER JOIN t2;
+#  }
+#} {1 {RIGHT and FULL OUTER JOINs are not currently supported}}
+
 do_test join-2.4 {
   execsql {
     SELECT * FROM t1 LEFT JOIN t2 ON t1.a=t2.d
@@ -307,7 +322,7 @@ do_test join-3.3 {
   catchsql {
     SELECT * FROM t1 JOIN t2 ON t1.a=t2.b USING(b);
   }
-} {1 {cannot have both ON and USING clauses in the same join}}
+} {1 {near "USING": syntax error}}
 do_test join-3.4.1 {
   catchsql {
     SELECT * FROM t1 JOIN t2 USING(a);
@@ -326,36 +341,39 @@ do_test join-3.6 {
     SELECT * FROM t1 JOIN t2 ON t3.a=t2.b;
   }
 } {1 {no such column: t3.a}}
+
+# EVIDENCE-OF: R-47973-48020 you cannot say "INNER OUTER JOIN", because
+# that would be contradictory.
 do_test join-3.7 {
   catchsql {
     SELECT * FROM t1 INNER OUTER JOIN t2;
   }
-} {1 {unknown or unsupported join type: INNER OUTER}}
+} {1 {unknown join type: INNER OUTER}}
 do_test join-3.8 {
   catchsql {
     SELECT * FROM t1 INNER OUTER CROSS JOIN t2;
   }
-} {1 {unknown or unsupported join type: INNER OUTER CROSS}}
+} {1 {unknown join type: INNER OUTER CROSS}}
 do_test join-3.9 {
   catchsql {
     SELECT * FROM t1 OUTER NATURAL INNER JOIN t2;
   }
-} {1 {unknown or unsupported join type: OUTER NATURAL INNER}}
+} {1 {unknown join type: OUTER NATURAL INNER}}
 do_test join-3.10 {
   catchsql {
     SELECT * FROM t1 LEFT BOGUS JOIN t2;
   }
-} {1 {unknown or unsupported join type: LEFT BOGUS}}
+} {1 {unknown join type: LEFT BOGUS}}
 do_test join-3.11 {
   catchsql {
     SELECT * FROM t1 INNER BOGUS CROSS JOIN t2;
   }
-} {1 {unknown or unsupported join type: INNER BOGUS CROSS}}
+} {1 {unknown join type: INNER BOGUS CROSS}}
 do_test join-3.12 {
   catchsql {
     SELECT * FROM t1 NATURAL AWK SED JOIN t2;
   }
-} {1 {unknown or unsupported join type: NATURAL AWK SED}}
+} {1 {unknown join type: NATURAL AWK SED}}
 
 do_test join-4.1 {
   execsql {
@@ -439,6 +457,7 @@ do_test join-5.1 {
 # A test for ticket #247.
 #
 do_test join-7.1 {
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   execsql {
     CREATE TABLE t7 (x, y);
     INSERT INTO t7 VALUES ("pa1", 1);
@@ -743,7 +762,37 @@ do_execsql_test join-14.4 {
   CREATE TABLE t1(c PRIMARY KEY, a TEXT(10000), b TEXT(10000));
   SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1) GROUP BY 1;
 } {111 {}}
+do_execsql_test join-14.4b {
+  SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1);
+} {111 {}}
 do_execsql_test join-14.5 {
+  SELECT * FROM (SELECT 111 AS x UNION ALL SELECT 222)
+                LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y GROUP BY 1;
+} {111 {} 222 {}}
+do_execsql_test join-14.5b {
+  SELECT count(*)
+    FROM (SELECT 111 AS x UNION ALL SELECT 222)
+         LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y;
+} {2}
+do_execsql_test join-14.5c {
+  SELECT count(*)
+    FROM (SELECT c+333 AS y FROM t1)
+         RIGHT JOIN (SELECT 111 AS x UNION ALL SELECT 222) ON x=y;
+} {2}
+do_execsql_test join-14.6 {
+  SELECT * FROM (SELECT 111 AS x UNION ALL SELECT 111)
+                LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y GROUP BY 1;
+} {111 {}}
+do_execsql_test join-14.7 {
+  SELECT * FROM (SELECT 111 AS x UNION ALL SELECT 111 UNION ALL SELECT 222)
+                LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y GROUP BY 1;
+} {111 {} 222 {}}
+do_execsql_test join-14.8 {
+  INSERT INTO t1(c) VALUES(-111);
+  SELECT * FROM (SELECT 111 AS x UNION ALL SELECT 111 UNION ALL SELECT 222)
+                LEFT JOIN (SELECT c+333 AS y FROM t1) ON x=y GROUP BY 1;
+} {111 {} 222 222}
+do_execsql_test join-14.9 {
   DROP TABLE IF EXISTS t1;
   CREATE TABLE t1(c PRIMARY KEY) WITHOUT ROWID;
   SELECT * FROM (SELECT 111) LEFT JOIN (SELECT c+222 FROM t1) GROUP BY 1;
@@ -989,18 +1038,56 @@ do_execsql_test join-22.10 {
 } {11}
 
 # 2019-12-22 ticket 7929c1efb2d67e98
+# Verification of testtag-20230227a
+#
+# 2023-02-27 https://sqlite.org/forum/forumpost/422e635f3beafbf6
+# Verification of testtag-20230227a, testtag-20230227b, and testtag-20230227c
 #
 reset_db
 ifcapable vtab {
-do_execsql_test join-23.10 {
-  CREATE TABLE t0(c0);
-  INSERT INTO t0(c0) VALUES(123);
-  CREATE VIEW v0(c0) AS SELECT 0 GROUP BY 1;
-  SELECT t0.c0, v0.c0, vt0.name
-   FROM v0, t0 LEFT JOIN pragma_table_info('t0') AS vt0
-     ON vt0.name LIKE 'c0'
-   WHERE v0.c0 == 0;
-} {123 0 c0}
+  do_execsql_test join-23.10 {
+    CREATE TABLE t0(c0);
+    INSERT INTO t0(c0) VALUES(123);
+    CREATE VIEW v0(c0) AS SELECT 0 GROUP BY 1;
+    SELECT t0.c0, v0.c0, vt0.name
+     FROM v0, t0 LEFT JOIN pragma_table_info('t0') AS vt0
+       ON vt0.name LIKE 'c0'
+     WHERE v0.c0 == 0;
+  } {123 0 c0}
+  do_execsql_test join-23.20 {
+    CREATE TABLE a(value TEXT);
+    INSERT INTO a(value) SELECT value FROM json_each('["a", "b", null]');
+    CREATE TABLE b(value TEXT);
+    INSERT INTO b(value) SELECT value FROM json_each('["a", "c", null]');
+    SELECT a.value, b.value FROM a RIGHT JOIN b ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.21 {
+    SELECT a.value, b.value FROM b LEFT JOIN a ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.22 {
+    SELECT a.value, b.value 
+      FROM json_each('["a", "c", null]') AS b
+           LEFT JOIN
+           json_each('["a", "b", null]') AS a ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.23 {
+    SELECT a.value, b.value 
+      FROM json_each('["a", "b", null]') AS a
+           RIGHT JOIN
+           json_each('["a", "c", null]') AS b ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.24 {
+    SELECT a.value, b.value 
+      FROM json_each('["a", "b", null]') AS a
+           RIGHT JOIN
+           b ON a.value = b.value;
+  } {a a {} c {} {}}
+  do_execsql_test join-23.25 {
+    SELECT a.value, b.value 
+      FROM a
+           RIGHT JOIN
+           json_each('["a", "c", null]') AS b ON a.value = b.value;
+  } {a a {} c {} {}}
 }
 
 #-------------------------------------------------------------------------
@@ -1038,5 +1125,168 @@ do_execsql_test join-25.1 {
   SELECT count(*)  FROM v0 LEFT JOIN t0 ON v0.c0;
 } {1}
 
+# 2022-04-21 Parser issue detected by dbsqlfuzz
+#
+reset_db
+do_catchsql_test join-26.1 {
+  CREATE TABLE t4(a,b);
+  CREATE TABLE t5(a,c);
+  CREATE TABLE t6(a,d);
+  SELECT * FROM t5 JOIN ((t4 JOIN (t5 JOIN t6)) t7);
+} {/1 {.*}/}
+
+# 2022-06-09 Invalid subquery flattening caused by
+# check-in 3f45007d544e5f78 and detected by dbsqlfuzz
+#
+reset_db
+do_execsql_test join-27.1 {
+  CREATE TABLE t1(a INT,b INT,c INT);  INSERT INTO t1 VALUES(NULL,NULL,NULL);
+  CREATE TABLE t2(d INT,e INT);        INSERT INTO t2 VALUES(NULL,NULL);
+  CREATE INDEX x2 ON t1(c,b);
+  CREATE TABLE t3(x INT);              INSERT INTO t3 VALUES(NULL);
+}
+do_execsql_test join-27.2 {
+  WITH t99(b) AS MATERIALIZED (
+    SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT 5 FROM t2 JOIN t99 ON b IN (1,2,3);
+} {}
+do_execsql_test join-27.3 {
+  WITH t99(b) AS NOT MATERIALIZED (
+    SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT 5 FROM t2 JOIN t99 ON b IN (1,2,3);
+} {}
+do_execsql_test join-27.4 {
+  WITH t99(b) AS (SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3))
+  SELECT 5 FROM t2 JOIN t99 ON b IN (1,2,3);
+} {}
+do_execsql_test join-27.5 {
+  SELECT 5
+    FROM t2 JOIN (
+       SELECT b FROM t2 LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+    ) AS t99 ON b IN (1,2,3);
+} {}
+
+db null NULL
+do_execsql_test join-27.6 {
+  INSERT INTO t1 VALUES(3,4,NULL);
+  INSERT INTO t2 VALUES(1,2);
+  WITH t99(b) AS (
+    SELECT coalesce(b,3) FROM t2 AS x LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT d, e, b FROM t2 JOIN t99 ON b IN (1,2,3) ORDER BY +d;
+} {NULL NULL 3 NULL NULL 3 1 2 3 1 2 3}
+do_execsql_test join-27.7 {
+  SELECT d, e, b2
+    FROM t2 
+         JOIN (SELECT coalesce(b,3) AS b2 FROM t2 AS x LEFT JOIN t1
+                ON c IN (SELECT x FROM t3)) AS t99
+            ON b2 IN (1,2,3) ORDER BY +d;
+} {NULL NULL 3 NULL NULL 3 1 2 3 1 2 3}
+
+do_execsql_test join-27.8 {
+  DELETE FROM t1;
+  DELETE FROM t2 WHERE d IS NOT NULL;
+  DELETE FROM t3;
+  SELECT * FROM t2 JOIN (SELECT b FROM t2 LEFT JOIN t1
+                       ON c IN (SELECT x FROM t3)) AS t99 ON b IN (1,2,3);
+} {}
+
+do_execsql_test join-27.9 {
+  DELETE FROM t1;
+  DELETE FROM t2;
+  DELETE FROM t3;
+  INSERT INTO t1 VALUES(4,3,5);
+  INSERT INTO t2 VALUES(1,2);
+  INSERT INTO t3 VALUES(5);
+  SELECT * FROM t2 JOIN (SELECT b FROM t2 LEFT JOIN t1
+                       ON c IN (SELECT x FROM t3)) AS t99 ON b IS NULL;
+} {}
+do_execsql_test join-27.10 {
+  WITH t99(b) AS (
+    SELECT b FROM t2 AS x LEFT JOIN t1 ON c IN (SELECT x FROM t3)
+  )
+  SELECT d, e, b FROM t2 JOIN t99 ON b IS NULL;
+} {}
+
+
+# 2022-09-19 https://sqlite.org/forum/forumpost/96b9e5709cf47cda
+# Performance regression relative to version 3.38.0 that resulted from
+# a new query flattener restriction that was added to fixes the join-27.*
+# tests above.  The restriction needed to be removed and the join-27.*
+# problem fixed another way.
+#
+reset_db
+do_execsql_test join-28.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT, c INT);
+  CREATE TABLE t2(d INTEGER PRIMARY KEY, e INT);
+  CREATE VIEW t3(a,b,c,d,e) AS SELECT * FROM t1 LEFT JOIN t2 ON d=c;
+  CREATE TABLE t4(x INT, y INT);
+  INSERT INTO t1 VALUES(1,2,3);
+  INSERT INTO t2 VALUES(1,5);
+  INSERT INTO t4 VALUES(1,4);
+  SELECT a, b, y FROM t4 JOIN t3 ON a=x;
+} {1 2 4}
+do_eqp_test join-28.2 {
+  SELECT a, b, y FROM t4 JOIN t3 ON a=x;
+} {
+  QUERY PLAN
+  |--SCAN t4
+  `--SEARCH t1 USING INTEGER PRIMARY KEY (rowid=?)
+}
+# ^^^^^^^ Without the fix (if the query flattening optimization does not
+# run) the query plan above would look like this:
+#
+#   QUERY PLAN
+#   |--MATERIALIZE t3
+#   |  |--SCAN t1
+#   |  `--SEARCH t2 USING INTEGER PRIMARY KEY (rowid=?) LEFT-JOIN
+#   |--SCAN t4
+#   `--SEARCH t3 USING AUTOMATIC COVERING INDEX (a=?)
+
+
+# 2023-05-01 https://sqlite.org/forum/forumpost/96cd4a7e9e
+#
+reset_db
+db null NULL
+do_execsql_test join-29.1 {
+  CREATE TABLE t0(a INT); INSERT INTO t0(a) VALUES (1);
+  CREATE TABLE t1(b INT); INSERT INTO t1(b) VALUES (2);
+  CREATE VIEW v2(c) AS SELECT 3 FROM t1;
+  SELECT * FROM t1 JOIN v2 ON 0     FULL OUTER JOIN t0 ON true;
+} {NULL NULL 1}
+do_execsql_test join-29.2 {
+  SELECT * FROM t1 JOIN v2 ON 1=0   FULL OUTER JOIN t0 ON true;
+} {NULL NULL 1}
+do_execsql_test join-29.3 {
+  SELECT * FROM t1 JOIN v2 ON false FULL OUTER JOIN t0 ON true;
+} {NULL NULL 1}
+
+# 2023-05-11 https://sqlite.org/forum/forumpost/49f2c7f690
+# Verify that omit-noop-join optimization does not apply if the table
+# to be omitted has an inner-join constraint and there is a RIGHT JOIN
+# anywhere in the query.
+#
+reset_db
+db null NULL
+do_execsql_test join-30.1 {
+  CREATE TABLE t0(z INT);         INSERT INTO t0 VALUES(1),(2);
+  CREATE TABLE t1(a INT);         INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(b INT);         INSERT INTO t2 VALUES(2);
+  CREATE TABLE t3(c INT, d INT);  INSERT INTO t3 VALUES(3,4);
+  CREATE TABLE t4(e INT);         INSERT INTO t4 VALUES(5);
+  CREATE VIEW v5(x,y) AS SELECT c, d FROM t3 LEFT JOIN t4 ON false;
+}
+do_execsql_test join-30.2 {
+  SELECT DISTINCT a, b
+    FROM t1 RIGHT JOIN t2 ON a=b LEFT JOIN v5 ON false
+   WHERE x <= y;
+} {}
+do_execsql_test join-30.3 {
+  SELECT DISTINCT a, b
+    FROM t0 JOIN t1 ON z=a RIGHT JOIN t2 ON a=b LEFT JOIN v5 ON false
+   WHERE x <= y;
+} {}
 
 finish_test

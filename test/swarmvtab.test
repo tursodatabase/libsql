@@ -209,8 +209,8 @@ db func fetch_db fetch_db
 do_catchsql_test 3.1 {
   CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(
     'VALUES
-        ("test.db1", "t1", 1, 10),
-        ("test.db2", "t1", 11, 20)
+        (''test.db1'', ''t1'', 1, 10),
+        (''test.db2'', ''t1'', 11, 20)
     ', 'fetch_db_no_such_function'
   );
 } {1 {sql error: no such function: fetch_db_no_such_function}}
@@ -218,8 +218,8 @@ do_catchsql_test 3.1 {
 do_catchsql_test 3.2 {
   CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(
     'VALUES
-        ("test.db1", "t1", 1, 10),
-        ("test.db2", "t1", 11, 20)
+        (''test.db1'', ''t1'', 1, 10),
+        (''test.db2'', ''t1'', 11, 20)
     ', 'fetch_db'
   );
 } {1 {fetch_db error!}}
@@ -233,8 +233,8 @@ do_execsql_test 3.3.1 {
   DETACH aux;
   CREATE VIRTUAL TABLE temp.xyz USING swarmvtab(
     'VALUES
-        ("test.db1", "t1", 1, 10),
-        ("test.db2", "t1", 11, 20)
+        (''test.db1'', ''t1'', 1, 10),
+        (''test.db2'', ''t1'', 11, 20)
     ', 'fetch_db'
   );
 } {}

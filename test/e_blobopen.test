@@ -14,6 +14,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix e_blobopen
 
+ifcapable !incrblob {
+  finish_test
+  return
+}
+
 forcedelete test.db2
 
 do_execsql_test 1.0 {

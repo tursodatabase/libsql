@@ -54,4 +54,53 @@ do_faultsim_test 1 -prep {
   faultsim_integrity_check
 }
 
+#-------------------------------------------------------------------------
+# dbsqlfuzz crash-6ef3cd3b18ccc5de86120950a0498641acd90a33.txt
+#
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(i INTEGER PRIMARY KEY, a, b);
+  CREATE INDEX i1 ON t1(b);
+  CREATE TABLE t2(x, y);
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO t1 VALUES(25, 25, 25);
+  INSERT INTO t2 VALUES(25, 'a'), (25, 'b'), (25, 'c');
+}
+
+faultsim_save
+do_test 2.2 {
+  set res [list]
+  db eval {
+    SELECT x, y FROM t1 CROSS JOIN t2 WHERE t2.x=t1.i AND +t1.i=25 ORDER BY b
+  } {
+    lappend res $x $y
+    if {$y=="b"} {
+      db eval { DELETE FROM t1 WHERE i=25 }
+    }
+  }
+  set res
+} {25 a 25 b}
+
+do_faultsim_test 2 -faults oom-t* -prep {
+  faultsim_restore_and_reopen
+  db eval {SELECT * FROM sqlite_master}
+} -body {
+  set ::myres [list]
+  db eval {
+    SELECT x, y FROM t1 CROSS JOIN t2 WHERE t2.x=t1.i AND +t1.i=25 ORDER BY b
+  } {
+    lappend ::myres $x $y
+    if {$y=="b"} {
+      db eval { DELETE FROM t1 WHERE i=25 }
+    }
+  }
+  set ::myres
+} -test {
+  faultsim_test_result {0 {25 a 25 b}} 
+}
+
+
 finish_test

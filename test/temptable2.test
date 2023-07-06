@@ -8,6 +8,9 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+#
+# TESTRUNNER: slow
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

@@ -148,6 +148,7 @@ do_execsql_test 5.5 {
 #
 
 ifcapable !icu {
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   do_execsql_test 6.0 {
     SELECT LIKE('!', '', '!') x WHERE x;
   } {}

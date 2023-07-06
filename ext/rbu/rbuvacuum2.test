@@ -15,6 +15,7 @@
 #
 
 source [file join [file dirname [info script]] rbu_common.tcl]
+if_no_rbu_support { finish_test ; return }
 
 foreach {step} {0 1} {
 foreach {ttt state} {
@@ -198,7 +199,11 @@ if {$::tcl_platform(platform)=="unix"} {
     } {SQLITE_OK}
 
     do_test 5.$tn.2 { file exists test.db-vacuum } 1
-    do_test 5.$tn.3 { file attributes test.db-vacuum -permissions} $perm
+    # The result pattern might be 00xxx or 0oxxx depending on which
+    # version of TCL is being used.  So make perm2 into a regexp that
+    # will match either
+    regsub {^00} $perm {0.} perm2
+    do_test 5.$tn.3 { file attributes test.db-vacuum -permissions} /$perm2/
     rbu close
   }
 }
@@ -223,10 +228,11 @@ do_test 6.1 {
   rbu close
 } {SQLITE_OK}
 
-do_execsql_test 6.2 {
-  SELECT 1 FROM sqlite_master LIMIT 1;
-  PRAGMA wal_checkpoint;
-} {1 0 4 4}
+do_test 6.2 {
+  execsql { SELECT 1 FROM sqlite_master LIMIT 1 }
+  execsql { PRAGMA wal_checkpoint }
+  execsql { SELECT 1 FROM sqlite_master LIMIT 1 }
+} {1}
 
 do_test 6.3 {
   sqlite3rbu_vacuum rbu test.db test.db2

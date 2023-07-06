@@ -34,13 +34,13 @@ do_test tkt3935.3 {
 
 do_test tkt3935.4 {
   catchsql { SELECT a FROM (t1) AS t ON b USING(a) }
-} {1 {a JOIN clause is required before ON}}
+} {1 {near "USING": syntax error}}
 do_test tkt3935.5 {
   catchsql { SELECT a FROM (t1) AS t ON b }
 } {1 {a JOIN clause is required before ON}}
 do_test tkt3935.6 {
   catchsql { SELECT a FROM (SELECT * FROM t1) AS t ON b USING(a) }
-} {1 {a JOIN clause is required before ON}}
+} {1 {near "USING": syntax error}}
 do_test tkt3935.7 {
   catchsql { SELECT a FROM (SELECT * FROM t1) AS t ON b }
 } {1 {a JOIN clause is required before ON}}
@@ -49,7 +49,7 @@ do_test tkt3935.8 {
 } {1 {a JOIN clause is required before ON}}
 do_test tkt3935.9 {
   catchsql { SELECT a FROM t1 AS t ON b USING(a) }
-} {1 {a JOIN clause is required before ON}}
+} {1 {near "USING": syntax error}}
 do_test tkt3935.10 {
   catchsql { SELECT a FROM t1 AS t USING(a) }
 } {1 {a JOIN clause is required before USING}}

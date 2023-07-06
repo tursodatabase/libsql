@@ -129,6 +129,8 @@ REM SET __ECHO2=ECHO
 REM SET __ECHO3=ECHO
 IF NOT DEFINED _AECHO (SET _AECHO=REM)
 IF NOT DEFINED _CECHO (SET _CECHO=REM)
+IF NOT DEFINED _CECHO2 (SET _CECHO2=REM)
+IF NOT DEFINED _CECHO3 (SET _CECHO3=REM)
 IF NOT DEFINED _VECHO (SET _VECHO=REM)
 
 SET REDIRECT=^>
@@ -177,6 +179,7 @@ REM
 REM NOTE: Change the current directory to the root of the source tree, saving
 REM       the current directory on the directory stack.
 REM
+%_CECHO2% PUSHD "%ROOT%"
 %__ECHO2% PUSHD "%ROOT%"
 
 IF ERRORLEVEL 1 (
@@ -524,6 +527,7 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM
         REM NOTE: Attempt to setup the MSVC environment for this platform.
         REM
+        %_CECHO3% CALL "%VCVARSALL%" %%P
         %__ECHO3% CALL "%VCVARSALL%" %%P
 
         IF ERRORLEVEL 1 (
@@ -749,6 +753,7 @@ FOR %%P IN (%PLATFORMS%) DO (
 REM
 REM NOTE: Restore the saved current directory from the directory stack.
 REM
+%_CECHO2% POPD
 %__ECHO2% POPD
 
 IF ERRORLEVEL 1 (

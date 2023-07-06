@@ -416,4 +416,28 @@ do_execsql_test delete-11.1 {
 } {6 2 12 4 18 6 19 23 20 40}
 
 
+# 2023-03-15
+# https://sqlite.org/forum/forumpost/e61252062c9d286d
+#
+# When the WHERE clause of a DELETE statement contains a subquery
+# which uses the table that is being deleted from and there is a
+# short-circuit operator of some kind in the WHERE clause such that
+# the subquery might not run right away, then the subquery might
+# run after one or more rows have been deleted, which can change
+# the result of the subquery, and result in the wrong answer.
+#
+# Similar problem for UPDATE tested by update-21.4
+# https://sqlite.org/forum/forumpost/0007d1fdb1
+#
+reset_db
+do_execsql_test delete-12.0 {
+  CREATE TABLE t0(vkey INTEGER, pkey INTEGER,c1 INTEGER);
+  INSERT INTO t0 VALUES(2,1,-20),(2,2,NULL),(2,3,0),(8,4,95);
+  DELETE FROM t0 WHERE NOT (
+    (t0.vkey <= t0.c1) AND
+    (t0.vkey <> (SELECT vkey FROM t0 ORDER BY vkey LIMIT 1 OFFSET 2))
+  );
+  SELECT * FROM t0;
+} {8 4 95}
+
 finish_test

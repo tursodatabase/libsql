@@ -178,7 +178,7 @@ int sqlite3BtreeHoldsMutex(Btree *p){
 **
 ** There is a corresponding leave-all procedures.
 **
-** Enter the mutexes in accending order by BtShared pointer address
+** Enter the mutexes in ascending order by BtShared pointer address
 ** to avoid the possibility of deadlock when two threads with
 ** two or more btrees in common both try to lock all their btrees
 ** at the same instant.
@@ -252,6 +252,7 @@ int sqlite3BtreeHoldsAllMutexes(sqlite3 *db){
 int sqlite3SchemaMutexHeld(sqlite3 *db, int iDb, Schema *pSchema){
   Btree *p;
   assert( db!=0 );
+  if( db->pVfs==0 && db->nDb==0 ) return 1;
   if( pSchema ) iDb = sqlite3SchemaToIndex(db, pSchema);
   assert( iDb>=0 && iDb<db->nDb );
   if( !sqlite3_mutex_held(db->mutex) ) return 0;

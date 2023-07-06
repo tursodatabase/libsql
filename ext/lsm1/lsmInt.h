@@ -44,6 +44,8 @@
 # endif
 #endif
 
+/* #define LSM_DEBUG_EXPENSIVE 1 */
+
 /*
 ** Default values for various data structure parameters. These may be
 ** overridden by calls to lsm_config().
@@ -405,7 +407,7 @@ struct Segment {
   LsmPgno iFirst;                  /* First page of this run */
   LsmPgno iLastPg;                 /* Last page of this run */
   LsmPgno iRoot;                   /* Root page number (if any) */
-  int nSize;                       /* Size of this run in pages */
+  LsmPgno nSize;                   /* Size of this run in pages */
 
   Redirect *pRedirect;             /* Block redirects (or NULL) */
 };
@@ -852,6 +854,8 @@ int lsmVarintPut32(u8 *, int);
 int lsmVarintGet32(u8 *, int *);
 int lsmVarintPut64(u8 *aData, i64 iVal);
 int lsmVarintGet64(const u8 *aData, i64 *piVal);
+
+int lsmVarintLen64(i64);
 
 int lsmVarintLen32(int);
 int lsmVarintSize(u8 c);

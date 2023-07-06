@@ -36,7 +36,7 @@ do_execsql_test rtree9-1.4 {
   DELETE FROM rt;
 } {}
 
-
+unset -nocomplain x
 for {set i 0} {$i < 1000} {incr i} {
   set x [expr $i%10]
   set y [expr ($i/10)%10]

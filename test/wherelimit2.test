@@ -299,5 +299,35 @@ do_test 5.5 {
   set ::log
 } {ax a bx b cx c dx d ex a}
 
+#-----------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE TABLE t2(x);  
+  INSERT INTO t2(x) VALUES(1),(2),(3),(5),(8),(13);
+} {}
+
+do_execsql_test 6.1 {
+  WITH t2 AS MATERIALIZED (VALUES(5))
+  DELETE FROM t2 ORDER BY rank()OVER() LIMIT 2;
+}
+
+do_execsql_test 6.2 {
+  SELECT * FROM t2;
+} {3 5 8 13}
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 7.0 {
+  CREATE TABLE t1(a INT); INSERT INTO t1(a) VALUES(0);
+} {}
+
+do_execsql_test 7.1 {
+  WITH t1(b) AS (SELECT * FROM (SELECT * FROM (VALUES(2))))
+  UPDATE t1 SET a=3 LIMIT 1;
+}
+
+do_execsql_test 7.2 {
+  SELECT * FROM t1;
+} {3}
 
 finish_test

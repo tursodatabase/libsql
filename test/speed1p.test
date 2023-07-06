@@ -16,12 +16,14 @@
 # $Id: speed1p.test,v 1.7 2009/04/09 01:23:49 drh Exp $
 #
 
+catch { db close }
 sqlite3_shutdown
 #sqlite3_config_scratch 29000 1
 set old_lookaside [sqlite3_config_lookaside 2048 300]
 #sqlite3_config_pagecache 1024 11000
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+reset_db
 speed_trial_init speed1
 
 sqlite3_memdebug_vfs_oom_test 0

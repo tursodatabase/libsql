@@ -646,6 +646,16 @@ do_execsql_test 14.2 {
   SELECT min(a) FROM t14 WHERE b='2' AND a>'50';
 } {100}
 
-
+# 2021-08-21.  https://sqlite.org/forum/forumpost/cfcb4b461d
+# 
+reset_db
+do_execsql_test 15.1 {
+  CREATE TABLE t1(a);
+  CREATE TABLE t2(b);
+  CREATE TABLE t3(c);
+  INSERT INTO t1 VALUES(0);
+  INSERT INTO t2 VALUES(5);
+  SELECT MIN((SELECT b FROM t2 UNION SELECT x FROM (SELECT x FROM (SELECT 1 AS x WHERE t1.a=1) UNION ALL SELECT c FROM t3))) FROM t1;
+} {5}
 
 finish_test

@@ -260,11 +260,23 @@ do_catchsql_test 11.8 {
 #
 do_execsql_test 12.1 {
   DROP TABLE IF EXISTS t1;
-  CREATE TABLE t1(a,b); INSERT INTO t1 VALUES(1,2);
+  CREATE TABLE t1(a INT,b INT); INSERT INTO t1 VALUES(1,2);
   DROP TABLE IF EXISTS t2;
-  CREATE TABLE t2(x,y); INSERT INTO t2 VALUES(3,4);
+  CREATE TABLE t2(x INT,y INT); INSERT INTO t2 VALUES(3,4);
   SELECT *,'x' FROM t1 LEFT JOIN t2 ON (a,b)=(x,y);
 } {1 2 {} {} x}
+db null -
+do_execsql_test 12.2 {
+  SELECT t1.*, t2.* FROM t2 RIGHT JOIN t1 ON (a,b)=(x,y);
+} {1 2 - -}
+do_execsql_test 12.3 {
+  SELECT t1.*, t2.* FROM t1 FULL JOIN t2 ON (a,b)=(x,y)
+   ORDER BY coalesce(a,x);
+} {
+  1 2 - -
+  - - 3 4
+}
+db null {}
 
 
 foreach {tn sql} {
@@ -540,7 +552,7 @@ do_execsql_test 19.36 {
   SELECT * FROM t1 WHERE (3,32)>=(a,b) ORDER BY a DESC;
 } {2 22 1 11}
 
-# 2018-02-18: Memory leak nexted row-value.  Detected by OSSFuzz.
+# 2018-02-18: Memory leak nested row-value.  Detected by OSSFuzz.
 #
 do_catchsql_test 20.1 {
   SELECT 1 WHERE (2,(2,0)) IS (2,(2,0));
@@ -632,9 +644,15 @@ do_execsql_test 26.10 {
 do_execsql_test 26.20 {
   SELECT 2 FROM t1 LEFT JOIN t0 ON (c0, x'') != (NULL, 0);
 } {2}
+do_execsql_test 26.21 {
+  SELECT 21 FROM t0 RIGHT JOIN t1 ON (c0, x'') != (NULL, 0);
+} {21}
 do_execsql_test 26.30 {
   SELECT 3 FROM t1 LEFT JOIN t0 WHERE (c0, x'') != (NULL, 0);
 } {3}
+do_execsql_test 26.31 {
+  SELECT 31 FROM t0 RIGHT JOIN t1 WHERE (c0, x'') != (NULL, 0);
+} {31}
 
 # 2019-12-30 ticket 892575cdba4e1e36
 #
@@ -692,6 +710,76 @@ do_execsql_test 30.3 {
   UPDATE t2 SET (d,d,a)=(SELECT EXISTS(SELECT 1 IN(SELECT max( 1 IN(SELECT x ORDER BY 1)) OVER(PARTITION BY sum((SELECT y FROM t1 UNION SELECT x ORDER BY 1)))INTERSECT SELECT EXISTS(SELECT 1 FROM t1 UNION SELECT x ORDER BY 1) ORDER BY 1) ORDERa)|9 AS blob, 2, 3) FROM t1 WHERE x<a;
 }
 
+# 2022-01-21 https://sqlite.org/forum/forumpost/ab95010d410a0a55
+reset_db
+do_execsql_test 31.1 {
+  CREATE TABLE a(a1 PRIMARY KEY,a2);
+  INSERT INTO a VALUES(1,5);
+  CREATE TABLE b(b1 UNIQUE,b2);
+  SELECT * FROM a LEFT JOIN b ON b2=NULL AND b2=5 WHERE (b1,substr(b.b1,1,1))==(SELECT 1024,'b');
+} {}
+do_execsql_test 31.1b {
+  SELECT * FROM b RIGHT JOIN a ON b2=NULL AND b2=5 WHERE (b1,substr(b.b1,1,1))==(SELECT 1024,'b');
+} {}
+do_execsql_test 31.2 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(0);
+  CREATE TABLE t2(b,c,d);
+  INSERT INTO t2 VALUES(NULL,123,456);
+  SELECT * FROM t1 LEFT JOIN t2 ON b=NULL WHERE (c,d)==(SELECT 123, 456+a);
+} {}
+do_execsql_test 31.2b {
+  SELECT * FROM t2 RIGHT JOIN t1 ON b=NULL WHERE (c,d)==(SELECT 123, 456+a);
+} {}
 
+# 2022-02-03 dbsqlfuzz 80a9fade844b4fb43564efc972bcb2c68270f5d1
+reset_db
+do_execsql_test 32.1 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT, c INT);
+  CREATE TABLE t2(d INTEGER PRIMARY KEY);
+  INSERT INTO t1(a,b,c) VALUES(500,654,456);
+  INSERT INTO t1(a,b,c) VALUES(501,655,456);
+  INSERT INTO t1(a,b,c) VALUES(502,654,122);
+  INSERT INTO t1(a,b,c) VALUES(503,654,221);
+  INSERT INTO t1(a,b,c) VALUES(601,654,122);
+  INSERT INTO t2(d) VALUES(456);
+  INSERT INTO t2(d) VALUES(122);
+  SELECT a FROM (
+    SELECT t1.a FROM t2, t1 
+    WHERE (987, t1.b) = ( SELECT 987, 654 ) AND t2.d=t1.c
+  ) AS t3
+  WHERE a=1234 OR a<=567;
+} {500 502}
+
+# 2022-07-15
+# https://sqlite.org/forum/forumpost/3607259d3c
+#
+reset_db
+do_execsql_test 33.1 {
+  CREATE TABLE t1(a INT, b INT PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t1(a, b) VALUES (0, 1),(15,-7),(3,100);
+  ANALYZE;
+} {}
+do_execsql_test 33.2 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (0,5) AND (99,-2);
+} {0 1}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (-8,5) AND (0,-2);
+} {15 -7}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (3,5) AND (100,4);
+} {3 100}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (b,a) BETWEEN (3,5) AND (100,2);
+} {}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (-2,99) AND (1,0);
+} {0 1}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (14,99) AND (16,0);
+} {15 -7}
+do_execsql_test 33.3 {
+  SELECT * FROM t1 WHERE (a,b) BETWEEN (2,99) AND (4,0);
+} {3 100}
 
 finish_test

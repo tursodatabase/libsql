@@ -109,6 +109,7 @@ static int memdbTruncate(sqlite3_file*, sqlite3_int64 size);
 static int memdbSync(sqlite3_file*, int flags);
 static int memdbFileSize(sqlite3_file*, sqlite3_int64 *pSize);
 static int memdbLock(sqlite3_file*, int);
+static int memdbUnlock(sqlite3_file*, int);
 /* static int memdbCheckReservedLock(sqlite3_file*, int *pResOut);// not used */
 static int memdbFileControl(sqlite3_file*, int op, void *pArg);
 /* static int memdbSectorSize(sqlite3_file*); // not used */
@@ -167,7 +168,7 @@ static const sqlite3_io_methods memdb_io_methods = {
   memdbSync,                       /* xSync */
   memdbFileSize,                   /* xFileSize */
   memdbLock,                       /* xLock */
-  memdbLock,                       /* xUnlock - same as xLock in this case */ 
+  memdbUnlock,                     /* xUnlock */
   0, /* memdbCheckReservedLock, */ /* xCheckReservedLock */
   memdbFileControl,                /* xFileControl */
   0, /* memdbSectorSize,*/         /* xSectorSize */
@@ -272,7 +273,7 @@ static int memdbRead(
 */
 static int memdbEnlarge(MemStore *p, sqlite3_int64 newSz){
   unsigned char *pNew;
-  if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 || p->nMmap>0 ){
+  if( (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)==0 || NEVER(p->nMmap>0) ){
     return SQLITE_FULL;
   }
   if( newSz>p->szMax ){
@@ -331,8 +332,9 @@ static int memdbTruncate(sqlite3_file *pFile, sqlite_int64 size){
   MemStore *p = ((MemFile*)pFile)->pStore;
   int rc = SQLITE_OK;
   memdbEnter(p);
-  if( NEVER(size>p->sz) ){
-    rc = SQLITE_FULL;
+  if( size>p->sz ){
+    /* This can only happen with a corrupt wal mode db */
+    rc = SQLITE_CORRUPT;
   }else{
     p->sz = size; 
   }
@@ -367,39 +369,81 @@ static int memdbLock(sqlite3_file *pFile, int eLock){
   MemFile *pThis = (MemFile*)pFile;
   MemStore *p = pThis->pStore;
   int rc = SQLITE_OK;
-  if( eLock==pThis->eLock ) return SQLITE_OK;
+  if( eLock<=pThis->eLock ) return SQLITE_OK;
   memdbEnter(p);
-  if( eLock>SQLITE_LOCK_SHARED ){
-    if( p->mFlags & SQLITE_DESERIALIZE_READONLY ){
-      rc = SQLITE_READONLY;
-    }else if( pThis->eLock<=SQLITE_LOCK_SHARED ){
-      if( p->nWrLock ){
-        rc = SQLITE_BUSY;
-      }else{
-        p->nWrLock = 1;
+
+  assert( p->nWrLock==0 || p->nWrLock==1 );
+  assert( pThis->eLock<=SQLITE_LOCK_SHARED || p->nWrLock==1 );
+  assert( pThis->eLock==SQLITE_LOCK_NONE || p->nRdLock>=1 );
+
+  if( eLock>SQLITE_LOCK_SHARED && (p->mFlags & SQLITE_DESERIALIZE_READONLY) ){
+    rc = SQLITE_READONLY;
+  }else{
+    switch( eLock ){
+      case SQLITE_LOCK_SHARED: {
+        assert( pThis->eLock==SQLITE_LOCK_NONE );
+        if( p->nWrLock>0 ){
+          rc = SQLITE_BUSY;
+        }else{
+          p->nRdLock++;
+        }
+        break;
+      };
+  
+      case SQLITE_LOCK_RESERVED:
+      case SQLITE_LOCK_PENDING: {
+        assert( pThis->eLock>=SQLITE_LOCK_SHARED );
+        if( ALWAYS(pThis->eLock==SQLITE_LOCK_SHARED) ){
+          if( p->nWrLock>0 ){
+            rc = SQLITE_BUSY;
+          }else{
+            p->nWrLock = 1;
+          }
+        }
+        break;
+      }
+  
+      default: {
+        assert(  eLock==SQLITE_LOCK_EXCLUSIVE );
+        assert( pThis->eLock>=SQLITE_LOCK_SHARED );
+        if( p->nRdLock>1 ){
+          rc = SQLITE_BUSY;
+        }else if( pThis->eLock==SQLITE_LOCK_SHARED ){
+          p->nWrLock = 1;
+        }
+        break;
       }
     }
-  }else if( eLock==SQLITE_LOCK_SHARED ){
-    if( pThis->eLock > SQLITE_LOCK_SHARED ){
-      assert( p->nWrLock==1 );
-      p->nWrLock = 0;
-    }else if( p->nWrLock ){
-      rc = SQLITE_BUSY;
-    }else{
-      p->nRdLock++;
-    }
-  }else{
-    assert( eLock==SQLITE_LOCK_NONE );
-    if( pThis->eLock>SQLITE_LOCK_SHARED ){    
-      assert( p->nWrLock==1 );
-      p->nWrLock = 0;
-    }
-    assert( p->nRdLock>0 );
-    p->nRdLock--;
   }
   if( rc==SQLITE_OK ) pThis->eLock = eLock;
   memdbLeave(p);
   return rc;
+}
+
+/*
+** Unlock an memdb-file.
+*/
+static int memdbUnlock(sqlite3_file *pFile, int eLock){
+  MemFile *pThis = (MemFile*)pFile;
+  MemStore *p = pThis->pStore;
+  if( eLock>=pThis->eLock ) return SQLITE_OK;
+  memdbEnter(p);
+
+  assert( eLock==SQLITE_LOCK_SHARED || eLock==SQLITE_LOCK_NONE );
+  if( eLock==SQLITE_LOCK_SHARED ){
+    if( ALWAYS(pThis->eLock>SQLITE_LOCK_SHARED) ){
+      p->nWrLock--;
+    }
+  }else{
+    if( pThis->eLock>SQLITE_LOCK_SHARED ){
+      p->nWrLock--;
+    }
+    p->nRdLock--;
+  }
+
+  pThis->eLock = eLock;
+  memdbLeave(p);
+  return SQLITE_OK;
 }
 
 #if 0
@@ -471,7 +515,7 @@ static int memdbFetch(
 ){
   MemStore *p = ((MemFile*)pFile)->pStore;
   memdbEnter(p);
-  if( iOfst+iAmt>p->sz ){
+  if( iOfst+iAmt>p->sz || (p->mFlags & SQLITE_DESERIALIZE_RESIZEABLE)!=0 ){
     *pp = 0;
   }else{
     p->nMmap++;
@@ -505,12 +549,11 @@ static int memdbOpen(
   MemFile *pFile = (MemFile*)pFd;
   MemStore *p = 0;
   int szName;
-  if( (flags & SQLITE_OPEN_MAIN_DB)==0 ){
-    return ORIGVFS(pVfs)->xOpen(ORIGVFS(pVfs), zName, pFd, flags, pOutFlags);
-  }
-  memset(pFile, 0, sizeof(*p));
+  UNUSED_PARAMETER(pVfs);
+
+  memset(pFile, 0, sizeof(*pFile));
   szName = sqlite3Strlen30(zName);
-  if( szName>1 && zName[0]=='/' ){
+  if( szName>1 && (zName[0]=='/' || zName[0]=='\\') ){
     int i;
 #ifndef SQLITE_MUTEX_OMIT
     sqlite3_mutex *pVfsMutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_VFS1);
@@ -567,8 +610,9 @@ static int memdbOpen(
     p->szMax = sqlite3GlobalConfig.mxMemdbSize;
   }
   pFile->pStore = p;
-  assert( pOutFlags!=0 );  /* True because flags==SQLITE_OPEN_MAIN_DB */
-  *pOutFlags = flags | SQLITE_OPEN_MEMORY;
+  if( pOutFlags!=0 ){
+    *pOutFlags = flags | SQLITE_OPEN_MEMORY;
+  }
   pFd->pMethods = &memdb_io_methods;
   memdbLeave(p);
   return SQLITE_OK;
@@ -854,6 +898,13 @@ end_deserialize:
   }
   sqlite3_mutex_leave(db->mutex);
   return rc;
+}
+
+/*
+** Return true if the VFS is the memvfs.
+*/
+int sqlite3IsMemdb(const sqlite3_vfs *pVfs){
+  return pVfs==&memdb_vfs;
 }
 
 /* 

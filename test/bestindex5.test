@@ -14,7 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix bestindex4
+set testprefix bestindex5
 
 ifcapable !vtab {
   finish_test
@@ -44,7 +44,10 @@ proc vtab_cmd {method args} {
     }
 
     xBestIndex {
-      foreach {clist orderby mask} $args {}
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      set mask [$hdl mask]
 
       set cost 1000000.0
       set ret [list]

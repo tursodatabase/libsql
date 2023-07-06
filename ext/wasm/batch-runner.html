@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>sqlite3-api batch SQL runner</title>
+  </head>
+  <body>
+    <header id='titlebar'><span>sqlite3-api batch SQL runner</span></header>
+    <!-- emscripten bits -->
+    <figure id="module-spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="module-status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+    </div><!-- /emscripten bits -->
+    <p>
+      This page is for batch-running extracts from the output
+      of <tt>speedtest1 --script</tt>, as well as other standalone SQL
+      scripts.
+    </p>
+    <p id='warn-list' class='warning'>ACHTUNG: this file requires a generated input list
+      file. Run "make batch" from this directory to generate it.
+    </p>
+    <p id='warn-opfs' class='warning hidden'>WARNING: if the WASMFS/OPFS layer crashes, this page may
+      become completely unresponsive and need to be closed and reloaded to recover.
+    </p>
+    <p id='warn-websql' class='warning hidden'>WARNING: WebSQL's limited API requires that
+      this app split up SQL batches into separate statements for execution. That will
+      only work so long as semicolon characters are <em>only</em> used to terminate
+      SQL statements, and not used within string literals or the like.
+    </p>
+    <hr>
+    <fieldset id='toolbar'>
+      <div>
+        <select class='disable-during-eval' id='sql-select'>
+          <option disabled selected>Populated via script code</option>
+        </select>
+        <button class='disable-during-eval' id='sql-run'>Run selected SQL</button>
+        <button class='disable-during-eval' id='sql-run-next'>Run next...</button>
+        <button class='disable-during-eval' id='sql-run-remaining'>Run all remaining...</button>
+        <button class='disable-during-eval' id='export-metrics' disabled>Export metrics (WIP)<br>(broken by refactoring)</button>
+        <button class='disable-during-eval' id='db-reset'>Reset db</button>
+        <button id='output-clear'>Clear output</button>
+        <span class='input-wrapper flex-col'>
+          <label for='select-impl'>Storage impl:</label>
+          <select id='select-impl'>
+            <option value='virtualfs'>Virtual filesystem</option>
+            <option value='memdb'>:memory:</option>
+            <option value='wasmfs-opfs'>WASMFS OPFS</option>
+            <option value='websql'>WebSQL</option>
+          </select>
+        </span>
+      </fieldset>
+    </div>
+    <hr>
+      <span class='input-wrapper'>
+        <input type='checkbox' class='disable-during-eval' id='cb-reverse-log-order' checked></input>
+        <label for='cb-reverse-log-order'>Reverse log order (newest first)</label>
+      </span>
+    <div id='test-output'></div>
+    <script src="jswasm/sqlite3.js"></script>
+    <script src="common/SqliteTestUtil.js"></script>
+    <script src="batch-runner.js"></script>
+    <style>
+      .flex-col {
+          display: flex;
+          flex-direction: column;
+      }
+      #toolbar > div {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+      }
+      #toolbar > div > * {
+          margin: 0.25em;
+      }
+    </style>
+  </body>
+</html>

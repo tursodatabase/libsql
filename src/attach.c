@@ -85,7 +85,7 @@ static void attachFunc(
   char *zErr = 0;
   unsigned int flags;
   Db *aNew;                 /* New array of Db pointers */
-  Db *pNew;                 /* Db object for the newly attached database */
+  Db *pNew = 0;             /* Db object for the newly attached database */
   char *zErrDyn = 0;
   sqlite3_vfs *pVfs;
 
@@ -105,13 +105,26 @@ static void attachFunc(
     /* This is not a real ATTACH.  Instead, this routine is being called
     ** from sqlite3_deserialize() to close database db->init.iDb and
     ** reopen it as a MemDB */
+    Btree *pNewBt = 0;
     pVfs = sqlite3_vfs_find("memdb");
     if( pVfs==0 ) return;
-    pNew = &db->aDb[db->init.iDb];
-    if( pNew->pBt ) sqlite3BtreeClose(pNew->pBt);
-    pNew->pBt = 0;
-    pNew->pSchema = 0;
-    rc = sqlite3BtreeOpen(pVfs, "x\0", db, &pNew->pBt, 0, SQLITE_OPEN_MAIN_DB);
+    rc = sqlite3BtreeOpen(pVfs, "x\0", db, &pNewBt, 0, SQLITE_OPEN_MAIN_DB);
+    if( rc==SQLITE_OK ){
+      Schema *pNewSchema = sqlite3SchemaGet(db, pNewBt);
+      if( pNewSchema ){
+        /* Both the Btree and the new Schema were allocated successfully.
+        ** Close the old db and update the aDb[] slot with the new memdb
+        ** values.  */
+        pNew = &db->aDb[db->init.iDb];
+        if( ALWAYS(pNew->pBt) ) sqlite3BtreeClose(pNew->pBt);
+        pNew->pBt = pNewBt;
+        pNew->pSchema = pNewSchema;
+      }else{
+        sqlite3BtreeClose(pNewBt);
+        rc = SQLITE_NOMEM;
+      }
+    }
+    if( rc ) goto attach_error;
   }else{
     /* This is a real ATTACH
     **
@@ -224,7 +237,7 @@ static void attachFunc(
   }
 #endif
   if( rc ){
-    if( !REOPEN_AS_MEMDB(db) ){
+    if( ALWAYS(!REOPEN_AS_MEMDB(db)) ){
       int iDb = db->nDb - 1;
       assert( iDb>=2 );
       if( db->aDb[iDb].pBt ){
@@ -341,22 +354,25 @@ static void codeAttach(
   sqlite3* db = pParse->db;
   int regArgs;
 
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto attach_end;
+
   if( pParse->nErr ) goto attach_end;
   memset(&sName, 0, sizeof(NameContext));
   sName.pParse = pParse;
 
   if( 
-      SQLITE_OK!=(rc = resolveAttachExpr(&sName, pFilename)) ||
-      SQLITE_OK!=(rc = resolveAttachExpr(&sName, pDbname)) ||
-      SQLITE_OK!=(rc = resolveAttachExpr(&sName, pKey))
+      SQLITE_OK!=resolveAttachExpr(&sName, pFilename) ||
+      SQLITE_OK!=resolveAttachExpr(&sName, pDbname) ||
+      SQLITE_OK!=resolveAttachExpr(&sName, pKey)
   ){
     goto attach_end;
   }
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  if( pAuthArg ){
+  if( ALWAYS(pAuthArg) ){
     char *zAuthArg;
     if( pAuthArg->op==TK_STRING ){
+      assert( !ExprHasProperty(pAuthArg, EP_IntValue) );
       zAuthArg = pAuthArg->u.zToken;
     }else{
       zAuthArg = 0;
@@ -479,7 +495,11 @@ static int fixSelectCb(Walker *p, Select *pSelect){
       pItem->fg.fromDDL = 1;
     }
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
-    if( sqlite3WalkExpr(&pFix->w, pList->a[i].pOn) ) return WRC_Abort;
+    if( pList->a[i].fg.isUsing==0
+     && sqlite3WalkExpr(&pFix->w, pList->a[i].u3.pOn)
+    ){
+      return WRC_Abort;
+    }
 #endif
   }
   if( pSelect->pWith ){

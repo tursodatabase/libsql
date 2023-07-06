@@ -100,8 +100,32 @@ proc test_is_readonly {testname sql truth} {
     sqlite3_finalize $STMT
     set rc
   } $sql] $truth
+
+  # EVIDENCE-OF: R-61212-30018 If prepared statement X is an EXPLAIN or
+  # EXPLAIN QUERY PLAN statement, then sqlite3_stmt_readonly(X) returns
+  # the same value as if the EXPLAIN or EXPLAIN QUERY PLAN prefix were
+  # omitted.
+  #
+  do_test $testname.explain [format {
+    set DB [sqlite3_connection_pointer db]
+    set STMT [sqlite3_prepare $DB {EXPLAIN %s} -1 TAIL]
+    set rc [sqlite3_stmt_readonly $STMT]
+    sqlite3_finalize $STMT
+    set rc
+  } $sql] $truth
+  do_test $testname.eqp [format {
+    set DB [sqlite3_connection_pointer db]
+    set STMT [sqlite3_prepare $DB {EXPLAIN QUERY PLAN %s} -1 TAIL]
+    set rc [sqlite3_stmt_readonly $STMT]
+    sqlite3_finalize $STMT
+    set rc
+  } $sql] $truth
 }
 
+# EVIDENCE-OF: R-23332-64992 The sqlite3_stmt_readonly(X) interface
+# returns true (non-zero) if and only if the prepared statement X makes
+# no direct changes to the content of the database file.
+#
 test_is_readonly capi3d-2.1 {SELECT * FROM sqlite_master} 1
 test_is_readonly capi3d-2.2 {CREATE TABLE t1(x)} 0
 db eval {CREATE TABLE t1(x)}
@@ -119,6 +143,68 @@ do_test capi3-2.49 {
   sqlite3_stmt_readonly 0
 } 1
 
+
+# EVIDENCE-OF: R-04929-09147 This routine returns false if there is any
+# possibility that the statement might change the database file.
+#
+# EVIDENCE-OF: R-13288-53765 A false return does not guarantee that the
+# statement will change the database file.
+#
+# EVIDENCE-OF: R-22182-18548 For example, an UPDATE statement might have
+# a WHERE clause that makes it a no-op, but the sqlite3_stmt_readonly()
+# result would still be false.
+#
+# EVIDENCE-OF: R-50998-48593 Similarly, a CREATE TABLE IF NOT EXISTS
+# statement is a read-only no-op if the table already exists, but
+# sqlite3_stmt_readonly() still returns false for such a statement.
+#
+db eval {
+  CREATE TABLE t2(a,b,c);
+  INSERT INTO t2 VALUES(1,2,3);
+}
+test_is_readonly capi3d-2.11 {UPDATE t2 SET a=a+1 WHERE false} 0
+test_is_readonly capi3d-2.12 {CREATE TABLE IF NOT EXISTS t2(x,y)} 0
+
+
+# EVIDENCE-OF: R-37014-01401 The ATTACH and DETACH statements also cause
+# sqlite3_stmt_readonly() to return true since, while those statements
+# change the configuration of a database connection, they do not make
+# changes to the content of the database files on disk.
+#
+test_is_readonly capi3d-2.13 {ATTACH ':memory:' AS mem1} 1
+db eval {ATTACH ':memory:' AS mem1}
+test_is_readonly capi3d-2.14 {DETACH mem1} 1
+db eval {DETACH mem1}
+
+# EVIDENCE-OF: R-07474-04783 Transaction control statements such as
+# BEGIN, COMMIT, ROLLBACK, SAVEPOINT, and RELEASE cause
+# sqlite3_stmt_readonly() to return true, since the statements
+# themselves do not actually modify the database but rather they control
+# the timing of when other statements modify the database.
+#
+test_is_readonly capi3d-2.15 {BEGIN} 1
+test_is_readonly capi3d-2.16 {COMMIT} 1
+test_is_readonly capi3d-2.17 {SAVEPOINT one} 1
+test_is_readonly capi3d-2.18 {RELEASE one} 1
+
+# EVIDENCE-OF: R-36961-63052 The sqlite3_stmt_readonly() interface
+# returns true for BEGIN since BEGIN merely sets internal flags, but the
+# BEGIN IMMEDIATE and BEGIN EXCLUSIVE commands do touch the database and
+# so sqlite3_stmt_readonly() returns false for those commands.
+#
+test_is_readonly capi3d-2.19 {BEGIN IMMEDIATE} 0
+test_is_readonly capi3d-2.20 {BEGIN EXCLUSIVE} 0
+
+# EVIDENCE-OF: R-21769-42523 For example, if an application defines a
+# function "eval()" that calls sqlite3_exec(), then the following SQL
+# statement would change the database file through side-effects: SELECT
+# eval('DELETE FROM t1') FROM t2; But because the SELECT statement does
+# not change the database file directly, sqlite3_stmt_readonly() would
+# still return true.
+#
+proc evalsql {sql} {db eval $sql}
+db func eval evalsql
+test_is_readonly capi3d-2.21 {SELECT eval('DELETE FROM t1') FROM t2} 1
 
 # Tests for the is-explain interface.
 #

@@ -372,7 +372,7 @@ integrity_check fuzz-7.5.integrity
 #----------------------------------------------------------------
 # Many CREATE and DROP TABLE statements:
 #
-set E [list table duplicate {no such col} {ambiguous column name} {use DROP}]
+set E [list table view duplicate {no such col} {ambiguous column name} {use DROP}]
 do_fuzzy_test fuzz-8.1 -template {[CreateOrDropTableOrView]} -errorlist $E
 
 close $::log

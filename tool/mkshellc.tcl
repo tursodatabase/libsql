@@ -34,11 +34,11 @@ set in [open $topdir/src/shell.c.in]
 fconfigure $in -translation binary
 proc omit_redundant_typedefs {line} {
   global typedef_seen
-  if {[regexp {^typedef .*;} $line]} {
-    if {[info exists typedef_seen($line)]} {
-      return "/* $line */"
+  if {[regexp {^typedef .*\y([a-zA-Z0-9_]+);} $line all typename]} {
+    if {[info exists typedef_seen($typename)]} {
+      return "/* [string map {/* // */ //} $line] */"
     }
-    set typedef_seen($line) 1
+    set typedef_seen($typename) 1
   }
   return $line
 }
@@ -55,7 +55,7 @@ while {1} {
     fconfigure $in2 -translation binary
     while {![eof $in2]} {
       set lx [omit_redundant_typedefs [gets $in2]]
-      if {[regexp {^#include "sqlite} $lx]} {
+      if {[regexp {^# *include "sqlite} $lx]} {
         set lx "/* $lx */"
       }
       if {[regexp {^# *include "test_windirent.h"} $lx]} {

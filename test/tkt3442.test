@@ -38,6 +38,7 @@ do_test tkt3442-1.1 {
 # SELECT referenced in ticket #3442 (both '5000' and "5000") 
 # and verify that the query plan is the same.
 #
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_eqp_test tkt3442-1.2 {
   SELECT node FROM listhash WHERE id='5000' LIMIT 1;
 } {SEARCH listhash USING INDEX ididx (id=?)}

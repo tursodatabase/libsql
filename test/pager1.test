@@ -21,6 +21,10 @@ if {[atomic_batch_write test.db]} {
   finish_test
   return
 }
+ifcapable !incrblob {
+  finish_test
+  return
+}
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -1940,20 +1944,22 @@ do_test pager1-18.4 {
 } {1 {database disk image is malformed}}
 db2 close
 extra_schema_checks 0
-do_test pager1-18.5 {
-  sqlite3 db ""
-  sqlite3_db_config db DEFENSIVE 0
-  execsql {
-    CREATE TABLE t1(a, b);
-    CREATE TABLE t2(a, b);
-    PRAGMA writable_schema = 1;
-    UPDATE sqlite_master SET rootpage=5 WHERE tbl_name = 't1';
-    PRAGMA writable_schema = 0;
-    ALTER TABLE t1 RENAME TO x1;
-  }
-  catchsql { SELECT * FROM x1 }
-} {1 {database disk image is malformed}}
-db close
+ifcapable altertable {
+  do_test pager1-18.5 {
+    sqlite3 db ""
+      sqlite3_db_config db DEFENSIVE 0
+      execsql {
+        CREATE TABLE t1(a, b);
+        CREATE TABLE t2(a, b);
+        PRAGMA writable_schema = 1;
+        UPDATE sqlite_master SET rootpage=5 WHERE tbl_name = 't1';
+        PRAGMA writable_schema = 0;
+        ALTER TABLE t1 RENAME TO x1;
+      }
+    catchsql { SELECT * FROM x1 }
+  } {1 {database disk image is malformed}}
+  db close
+}
 extra_schema_checks 1
 
 do_test pager1-18.6 {
@@ -2918,5 +2924,33 @@ do_test 43.3 {
   db eval { SELECT * FROM t3 }
   sqlite3_db_status db CACHE_MISS 0
 } {0 1 0}
+
+# 2022-03-01 Forum post https://sqlite.org/forum/forumpost/3b9e894312
+# Ensure that max_page_count gets adjusted upward, if needed, on a
+# ROLLBACK.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test 44.1 {
+  PRAGMA page_size=4096;
+  PRAGMA auto_vacuum=FULL;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b ANY);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<50)
+  INSERT INTO t1(a,b) SELECT x, zeroblob(1000) FROM c;
+  CREATE TABLE t2 AS SELECT * FROM t1;
+  PRAGMA page_count;
+} {31}
+do_execsql_test 44.2 {
+  BEGIN;
+  DROP TABLE t2;
+  PRAGMA incremental_vacuum=50;
+  PRAGMA page_count;
+  PRAGMA max_page_count=2;
+} {16 16}
+do_execsql_test 44.3 {
+  ROLLBACK;
+  PRAGMA page_count;
+  PRAGMA max_page_count;
+} {31 31}
 
 finish_test

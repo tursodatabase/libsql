@@ -182,6 +182,11 @@ do_test multiplex-2.1.3 { file size [multiplex_name test.x 0] } {4096}
 do_test multiplex-2.1.4 {
   execsql { INSERT INTO t1 VALUES(3, randomblob(1100)) }
 } {}
+do_execsql_test multiplex-2.1.5 {
+  PRAGMA multiplex_enabled;
+  PRAGMA multiplex_filecount;
+  PRAGMA multiplex_chunksize;
+} {1 1 2147418112}
 
 do_test multiplex-2.2.1 {
   execsql { INSERT INTO t1 VALUES(3, randomblob(1100)) }
@@ -267,6 +272,18 @@ do_test multiplex-2.5.8 {
 
 do_test multiplex-2.5.9 { file size [multiplex_name test.x 0] } [list $g_chunk_size]
 do_test multiplex-2.5.10 { file size [multiplex_name test.x 1] } [list $g_chunk_size]
+do_execsql_test multiplex-2.5.11 {
+  PRAGMA multiplex_enabled;
+  PRAGMA multiplex_filecount;
+  PRAGMA multiplex_chunksize;
+} {1 3 65536}
+sqlite3 db test.x
+do_execsql_test multiplex-2.5.12 {
+  PRAGMA multiplex_filecount;
+  PRAGMA multiplex_chunksize;
+} {3 65536}
+
+
 
 do_test multiplex-2.5.99 {
   db close

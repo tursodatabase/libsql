@@ -428,7 +428,7 @@ do_test index-13.1 {
 } {1 2.0 3}
 do_test index-13.2 {
   set ::idxlist [execsql {
-    SELECT name FROM sqlite_master WHERE type="index" AND tbl_name="t5";
+    SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='t5';
   }]
   llength $::idxlist
 } {3}

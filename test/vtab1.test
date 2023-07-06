@@ -1572,4 +1572,22 @@ do_catchsql_test 25.0 {
   UPDATE t1 SET (a,a) = (SELECT 1, 0) FROM t3;
 } {0 {}}
 
+#--------------------------------------------------------------------------
+#
+reset_db
+load_static_extension db wholenumber
+do_execsql_test 26.1 {
+  CREATE VIRTUAL TABLE t1 USING wholenumber;
+  CREATE TABLE tx(a, b, c);
+}
+do_test 26.2 {
+  sqlite3 db2 test.db
+  db2 eval { CREATE TABLE ty(x, y) }
+  db2 close
+} {}
+do_execsql_test 26.3 {
+  SELECT value FROM t1 WHERE value<5
+} {1 2 3 4}
+
+
 finish_test

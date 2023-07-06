@@ -295,7 +295,7 @@ static void MD5DigestToBase16(unsigned char *digest, char *zBuf){
 
 
 /*
-** Convert a 128-bit MD5 digest into sequency of eight 5-digit integers
+** Convert a 128-bit MD5 digest into sequences of eight 5-digit integers
 ** each representing 16 bits of the digest and separated from each
 ** other by a "-" character.
 */

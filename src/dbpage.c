@@ -72,8 +72,13 @@ static int dbpageConnect(
 ){
   DbpageTable *pTab = 0;
   int rc = SQLITE_OK;
+  (void)pAux;
+  (void)argc;
+  (void)argv;
+  (void)pzErr;
 
   sqlite3_vtab_config(db, SQLITE_VTAB_DIRECTONLY);
+  sqlite3_vtab_config(db, SQLITE_VTAB_USES_ALL_SCHEMAS);
   rc = sqlite3_declare_vtab(db, 
           "CREATE TABLE x(pgno INTEGER PRIMARY KEY, data BLOB, schema HIDDEN)");
   if( rc==SQLITE_OK ){
@@ -110,6 +115,7 @@ static int dbpageDisconnect(sqlite3_vtab *pVtab){
 static int dbpageBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int i;
   int iPlan = 0;
+  (void)tab;
 
   /* If there is a schema= constraint, it must be honored.  Report a
   ** ridiculously large estimated cost if the schema= constraint is
@@ -224,6 +230,8 @@ static int dbpageFilter(
   sqlite3 *db = pTab->db;
   Btree *pBt;
 
+  (void)idxStr;
+  
   /* Default setting is no rows of result */
   pCsr->pgno = 1; 
   pCsr->mxPgno = 0;
@@ -238,7 +246,7 @@ static int dbpageFilter(
     pCsr->iDb = 0;
   }
   pBt = db->aDb[pCsr->iDb].pBt;
-  if( pBt==0 ) return SQLITE_OK;
+  if( NEVER(pBt==0) ) return SQLITE_OK;
   pCsr->pPager = sqlite3BtreePager(pBt);
   pCsr->szPage = sqlite3BtreeGetPageSize(pBt);
   pCsr->mxPgno = sqlite3BtreeLastPage(pBt);
@@ -273,12 +281,18 @@ static int dbpageColumn(
     }
     case 1: {           /* data */
       DbPage *pDbPage = 0;
-      rc = sqlite3PagerGet(pCsr->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
-      if( rc==SQLITE_OK ){
-        sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pCsr->szPage,
-                            SQLITE_TRANSIENT);
+      if( pCsr->pgno==((PENDING_BYTE/pCsr->szPage)+1) ){
+        /* The pending byte page. Assume it is zeroed out. Attempting to
+        ** request this page from the page is an SQLITE_CORRUPT error. */
+        sqlite3_result_zeroblob(ctx, pCsr->szPage);
+      }else{
+        rc = sqlite3PagerGet(pCsr->pPager, pCsr->pgno, (DbPage**)&pDbPage, 0);
+        if( rc==SQLITE_OK ){
+          sqlite3_result_blob(ctx, sqlite3PagerGetData(pDbPage), pCsr->szPage,
+              SQLITE_TRANSIENT);
+        }
+        sqlite3PagerUnref(pDbPage);
       }
-      sqlite3PagerUnref(pDbPage);
       break;
     }
     default: {          /* schema */
@@ -287,7 +301,7 @@ static int dbpageColumn(
       break;
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 static int dbpageRowid(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
@@ -313,6 +327,7 @@ static int dbpageUpdate(
   Pager *pPager;
   int szPage;
 
+  (void)pRowid;
   if( pTab->db->flags & SQLITE_Defensive ){
     zErr = "read-only";
     goto update_fail;
@@ -322,18 +337,20 @@ static int dbpageUpdate(
     goto update_fail;
   }
   pgno = sqlite3_value_int(argv[0]);
-  if( (Pgno)sqlite3_value_int(argv[1])!=pgno ){
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL
+   || (Pgno)sqlite3_value_int(argv[1])!=pgno
+  ){
     zErr = "cannot insert";
     goto update_fail;
   }
   zSchema = (const char*)sqlite3_value_text(argv[4]);
-  iDb = zSchema ? sqlite3FindDbName(pTab->db, zSchema) : -1;
-  if( iDb<0 ){
+  iDb = ALWAYS(zSchema) ? sqlite3FindDbName(pTab->db, zSchema) : -1;
+  if( NEVER(iDb<0) ){
     zErr = "no such schema";
     goto update_fail;
   }
   pBt = pTab->db->aDb[iDb].pBt;
-  if( pgno<1 || pBt==0 || pgno>(int)sqlite3BtreeLastPage(pBt) ){
+  if( NEVER(pgno<1) || NEVER(pBt==0) || NEVER(pgno>sqlite3BtreeLastPage(pBt)) ){
     zErr = "bad page number";
     goto update_fail;
   }
@@ -347,11 +364,12 @@ static int dbpageUpdate(
   pPager = sqlite3BtreePager(pBt);
   rc = sqlite3PagerGet(pPager, pgno, (DbPage**)&pDbPage, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3PagerWrite(pDbPage);
-    if( rc==SQLITE_OK ){
-      memcpy(sqlite3PagerGetData(pDbPage),
-             sqlite3_value_blob(argv[3]),
-             szPage);
+    const void *pData = sqlite3_value_blob(argv[3]);
+    assert( pData!=0 || pTab->db->mallocFailed );
+    if( pData
+     && (rc = sqlite3PagerWrite(pDbPage))==SQLITE_OK
+    ){
+      memcpy(sqlite3PagerGetData(pDbPage), pData, szPage);
     }
   }
   sqlite3PagerUnref(pDbPage);
@@ -373,7 +391,7 @@ static int dbpageBegin(sqlite3_vtab *pVtab){
   int i;
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
-    if( pBt ) sqlite3BtreeBeginTrans(pBt, 1, 0);
+    if( pBt ) (void)sqlite3BtreeBeginTrans(pBt, 1, 0);
   }
   return SQLITE_OK;
 }

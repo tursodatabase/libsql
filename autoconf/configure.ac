@@ -174,21 +174,6 @@ fi
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
-#   --enable-json1
-#
-AC_ARG_ENABLE(json1, [AS_HELP_STRING(
-  [--enable-json1], [include json1 support [default=yes]])], 
-  [],[enable_json1=yes])
-AC_MSG_CHECKING([JSON functions])
-if test x"$enable_json1" = "xyes"; then
-  BUILD_CFLAGS="$BUILD_CFLAGS -DSQLITE_ENABLE_JSON1"
-  AC_MSG_RESULT([enabled])
-else
-  AC_MSG_RESULT([disabled])
-fi
-#-----------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
 #   --enable-rtree
 #
 AC_ARG_ENABLE(rtree, [AS_HELP_STRING(

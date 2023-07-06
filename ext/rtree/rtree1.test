@@ -57,9 +57,12 @@ ifcapable !rtree {
 do_test rtree-1.1.1 {
   execsql { CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2, y1, y2) }
 } {}
-do_test rtree-1.1.2 {
+do_test rtree-1.1.2a {
   execsql { SELECT name FROM sqlite_master ORDER BY name }
 } {t1 t1_node t1_parent t1_rowid}
+do_execsql_test rtree-1.1.2b {
+  SELECT name FROM pragma_table_list WHERE type='shadow' ORDER BY name;
+} {t1_node t1_parent t1_rowid}
 do_test rtree-1.1.3 {
   execsql { 
     DROP TABLE t1; 
@@ -729,5 +732,56 @@ do_execsql_test 19.0 {
 do_execsql_test 19.1 {
   SELECT v0.x FROM v0, rt0 WHERE v0.x = rt0.b;
 } {0.0}
+
+# 2022-06-20 https://sqlite.org/forum/forumpost/57bdf2217d
+#
+reset_db
+do_execsql_test 20.0 {
+  CREATE VIRTUAL TABLE rt0 USING rtree(id, x0, x1);
+  CREATE TABLE t0(a INT);
+  CREATE TABLE t1(b INT);
+  INSERT INTO rt0 VALUES(0, 0, 0);
+}
+do_catchsql_test 20.1 {
+  SELECT * FROM t1 JOIN t0 ON x0>a RIGHT JOIN rt0 ON true WHERE +x0 = 0;
+} {1 {ON clause references tables to its right}}
+do_catchsql_test 20.2 {
+  SELECT * FROM t1 JOIN t0 ON x0>a RIGHT JOIN rt0 ON true WHERE x0 = 0;
+} {1 {ON clause references tables to its right}}
+db null -
+do_execsql_test 20.3 {
+  SELECT * FROM t1 JOIN t0 ON true RIGHT JOIN rt0 ON x0>a WHERE +x0 = 0;
+} {- - 0 0.0 0.0}
+do_execsql_test 20.4 {
+  SELECT * FROM t1 JOIN t0 ON true RIGHT JOIN rt0 ON x0>a WHERE x0 = 0;
+} {- - 0 0.0 0.0}
+
+# 2023-05-19 https://sqlite.org/forum/forumpost/da61c4a1b5b4af19
+# Do not omit constraints that involve equality comparisons of
+# floating-point values.
+#
+reset_db
+do_execsql_test 21.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree(id, x0, x1);
+  INSERT INTO t1 VALUES(0, 1, 9223372036854775807);
+  SELECT count(*) FROM t1 WHERE x1=9223372036854775807;
+} {0}
+do_execsql_test 21.1 {
+ SELECT x1=9223372036854775807 FROM t1;
+} {0}
+
+# 2023-05-22 https://sqlite.org/forum/forumpost/da70ee0d0d
+# Round-off error associated with using large integer constraints on
+# a rtree search.
+#
+reset_db
+do_execsql_test 22.0 {
+  CREATE VIRTUAL TABLE t1 USING rtree ( id, x0, x1 );  
+  INSERT INTO t1 VALUES (123, 9223372036854775799, 9223372036854775800);
+  SELECT id FROM t1 WHERE x0 > 9223372036854775807;
+} {123}
+do_execsql_test 22.1 {
+  SELECT id, x0 > 9223372036854775807 AS 'a0' FROM t1;
+} {123 1}
 
 finish_test

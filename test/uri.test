@@ -194,6 +194,7 @@ foreach {tn mode create_ok write_ok readonly_ok} {
   } $A($readonly_ok)
 }
 
+ifcapable shared_cache {
 set orig [sqlite3_enable_shared_cache]
 foreach {tn options sc_default is_shared} {
   1    ""                1   1
@@ -223,6 +224,7 @@ foreach {tn options sc_default is_shared} {
 
   db2 close
 }
+} ;# end ifcapable shared_cache
 
 do_test 4.3.1 {
   list [catch {sqlite3 db "file:test.db?mode=rc"} msg] $msg

@@ -19,6 +19,7 @@ if {![info exists testdir]} {
 source [file join [file dirname [info script]] session_common.tcl]
 source $testdir/tester.tcl
 ifcapable !session {finish_test; return}
+ifcapable !incrblob {finish_test; return}
 
 set testprefix session6
 

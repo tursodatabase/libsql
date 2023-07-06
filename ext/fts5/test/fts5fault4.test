@@ -16,11 +16,15 @@ source [file join [file dirname [info script]] fts5_common.tcl]
 source $testdir/malloc_common.tcl
 set testprefix fts5fault4
 
-# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+# If SQLITE_ENABLE_FTS5 is not defined, omit this file.
 ifcapable !fts5 {
   finish_test
   return
 }
+
+set ::TMPDBERROR [list 1 \
+  {unable to open a temporary database file for storing temporary tables}
+]
 
 #-------------------------------------------------------------------------
 # An OOM while dropping an fts5 table.
@@ -391,7 +395,7 @@ do_faultsim_test 14.1 -faults oom-t* -prep {
 } -body {
   db eval { ALTER TABLE "tbl one" RENAME TO "tbl two" }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 finish_test

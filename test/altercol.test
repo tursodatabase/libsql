@@ -553,8 +553,9 @@ do_execsql_test 13.1.3 {
 
 sqlite3_db_config db DEFENSIVE 0
 do_execsql_test 13.1.4 {
-  PRAGMA writable_schema = 1;
+  PRAGMA writable_schema = ON;
   UPDATE sqlite_master SET sql = 'CREATE INDEX x1i ON x1(j)' WHERE name='x1i';
+  PRAGMA writable_schema = OFF;
 } {}
 
 do_catchsql_test 13.1.5 {
@@ -562,7 +563,9 @@ do_catchsql_test 13.1.5 {
 } {1 {error in index x1i: no such column: j}}
 
 do_execsql_test 13.1.6 {
+  PRAGMA writable_schema = ON;
   UPDATE sqlite_master SET sql = '' WHERE name='x1i';
+  PRAGMA writable_schema = OFF;
 } {}
 
 do_catchsql_test 13.1.7 {
@@ -570,7 +573,9 @@ do_catchsql_test 13.1.7 {
 } {1 {error in index x1i: }}
 
 do_execsql_test 13.1.8 {
+  PRAGMA writable_schema = ON;
   DELETE FROM sqlite_master WHERE name = 'x1i';
+  PRAGMA writable_schema = OFF;
 }
 
 do_execsql_test 13.2.0 {
@@ -838,6 +843,8 @@ do_execsql_test 22.0 {
 #-------------------------------------------------------------------------
 #
 reset_db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_execsql_test 22.0 {
   CREATE TABLE t1(a, b);
   CREATE INDEX x1 on t1("c"=b);
@@ -859,5 +866,69 @@ do_execsql_test 23.0 {
 
 } {ok {CREATE TABLE t1("x" "b",c)}}
 
+# 2022-02-04
+# Do not complain about syntax errors in the schema if
+# in PRAGMA writable_schema=ON mode.
+#
+reset_db
+do_execsql_test 23.0 {
+  CREATE TABLE t1(a INT, b REAL, c TEXT, d BLOB, e ANY);
+  CREATE INDEX t1abx ON t1(a, b, a+b) WHERE c IS NOT NULL;
+  CREATE VIEW t2 AS SELECT a+10, b*5.0, xyz FROM t1; -- unknown column "xyz"
+  CREATE TABLE schema_copy(name TEXT, sql TEXT);
+  INSERT INTO schema_copy(name,sql) SELECT name, sql FROM sqlite_schema WHERE sql IS NOT NULL;
+} {}
+do_catchsql_test 23.1 {
+  ALTER TABLE t1 RENAME COLUMN e TO eeee;
+} {1 {error in view t2: no such column: xyz}}
+do_execsql_test 23.2 {
+  SELECT name, sql FROM sqlite_master
+    EXCEPT SELECT name, sql FROM schema_copy;
+} {}
+do_execsql_test 23.3 {
+  BEGIN;
+  PRAGMA writable_schema=ON;
+  ALTER TABLE t1 RENAME COLUMN e TO eeee;
+  PRAGMA writable_schema=OFF;
+  SELECT name FROM sqlite_master
+     WHERE (name, sql) NOT IN (SELECT name, sql FROM schema_copy);
+  ROLLBACK;
+} {t1}
+do_execsql_test 23.10 {
+  DROP VIEW t2;
+  CREATE TRIGGER r3 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t3(x,y) VALUES(new.a, new.b);
+    INSERT INTO t4(p) VALUES(new.c);    -- no such table "t4"
+  END;
+  DELETE FROM schema_copy;
+  INSERT INTO schema_copy(name,sql) SELECT name, sql FROM sqlite_schema WHERE sql IS NOT NULL;
+} {}
+do_catchsql_test 23.11 {
+  ALTER TABLE t1 RENAME COLUMN e TO eeee;
+} {1 {error in trigger r3: no such table: main.t3}}
+do_execsql_test 23.12 {
+  SELECT name, sql FROM sqlite_master
+    EXCEPT SELECT name, sql FROM schema_copy;
+} {}
+do_execsql_test 23.13 {
+  BEGIN;
+  PRAGMA writable_schema=ON;
+  ALTER TABLE t1 RENAME COLUMN e TO eeee;
+  PRAGMA writable_schema=OFF;
+  SELECT name FROM sqlite_master
+     WHERE (name, sql) NOT IN (SELECT name, sql FROM schema_copy);
+  ROLLBACK;
+} {t1}
+do_execsql_test 23.20 {
+  CREATE TABLE t4(id INTEGER PRIMARY KEY, c1 INT, c2 INT);
+  CREATE VIEW t4v1 AS SELECT id, c1, c99 FROM t4;
+  DELETE FROM schema_copy;
+  INSERT INTO schema_copy SELECT name, sql FROM sqlite_schema;
+  BEGIN;
+  PRAGMA writable_schema=ON;
+  ALTER TABLE t4 RENAME to t4new;
+  SELECT name FROM sqlite_schema WHERE (name,sql) NOT IN (SELECT * FROM schema_copy);
+  ROLLBACK;
+} {t4new}
 
 finish_test

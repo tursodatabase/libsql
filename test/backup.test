@@ -969,4 +969,36 @@ foreach {tn file rc} {
   db2 close
 }
 
+# 2021-01-31 https://sqlite.org/forum/forumpost/8b39fbf3e7
+#
+do_test backup-11.1 {
+  sqlite3 db1 :memory:
+  sqlite3 db2 :memory:
+  sqlite3_backup B db1 main db2 temp
+  B finish
+} {SQLITE_OK}
+db1 close
+db2 close
+
+#-------------------------------------------------------------------------
+do_test backup-12.1 {
+  sqlite3 db1 :memory:
+  sqlite3 db2 :memory:
+  db1 eval {
+    PRAGMA page_size = 8192;
+    CREATE TABLE t1(x);
+  }
+  db2 eval {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t2(x);
+  }
+
+  sqlite3_backup B db1 main db2 temp
+  B step 100
+  B finish
+} {SQLITE_READONLY}
+
+
+
+
 finish_test

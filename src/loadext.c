@@ -483,6 +483,36 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.36.1 and later */
   sqlite3_changes64,
   sqlite3_total_changes64,
+  /* Version 3.37.0 and later */
+  sqlite3_autovacuum_pages,
+  /* Version 3.38.0 and later */
+  sqlite3_error_offset,
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  sqlite3_vtab_rhs_value,
+  sqlite3_vtab_distinct,
+  sqlite3_vtab_in,
+  sqlite3_vtab_in_first,
+  sqlite3_vtab_in_next,
+#else
+  0,
+  0,
+  0,
+  0,
+  0,
+#endif
+  /* Version 3.39.0 and later */
+#ifndef SQLITE_OMIT_DESERIALIZE
+  sqlite3_deserialize,
+  sqlite3_serialize,
+#else
+  0,
+  0,
+#endif
+  sqlite3_db_name,
+  /* Version 3.40.0 and later */
+  sqlite3_value_encoding,
+  /* Version 3.41.0 and later */
+  sqlite3_is_interrupted
 };
 
 /* True if x is the directory separator character
@@ -555,15 +585,25 @@ static int sqlite3LoadExtension(
   /* tag-20210611-1.  Some dlopen() implementations will segfault if given
   ** an oversize filename.  Most filesystems have a pathname limit of 4K,
   ** so limit the extension filename length to about twice that.
-  ** https://sqlite.org/forum/forumpost/08a0d6d9bf */
+  ** https://sqlite.org/forum/forumpost/08a0d6d9bf
+  **
+  ** Later (2023-03-25): Save an extra 6 bytes for the filename suffix.
+  ** See https://sqlite.org/forum/forumpost/24083b579d.
+  */
   if( nMsg>SQLITE_MAX_PATHLEN ) goto extension_not_found;
+
+  /* Do not allow sqlite3_load_extension() to link to a copy of the
+  ** running application, by passing in an empty filename. */
+  if( nMsg==0 ) goto extension_not_found;
     
   handle = sqlite3OsDlOpen(pVfs, zFile);
 #if SQLITE_OS_UNIX || SQLITE_OS_WIN
   for(ii=0; ii<ArraySize(azEndings) && handle==0; ii++){
     char *zAltFile = sqlite3_mprintf("%s.%s", zFile, azEndings[ii]);
     if( zAltFile==0 ) return SQLITE_NOMEM_BKPT;
-    handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    if( nMsg+strlen(azEndings[ii])+1<=SQLITE_MAX_PATHLEN ){
+      handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    }
     sqlite3_free(zAltFile);
   }
 #endif

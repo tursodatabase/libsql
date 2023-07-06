@@ -34,7 +34,10 @@ proc vtab_cmd {bOmit method args} {
     }
 
     xBestIndex {
-      foreach {clist orderby mask} $args {}
+      set hdl [lindex $args 0]
+      set clist [$hdl constraints]
+      set orderby [$hdl orderby]
+      set mask [$hdl mask]
 
       set ret [list]
       set use use

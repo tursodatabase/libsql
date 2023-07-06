@@ -96,7 +96,7 @@ do_join_test e_select-0.1.3 {
 } {9}
 do_catchsql_test e_select-0.1.4 {
   SELECT count(*) FROM t1, t2 ON (t1.a=t2.a) USING (a)
-} {1 {cannot have both ON and USING clauses in the same join}}
+} {1 {near "USING": syntax error}}
 do_catchsql_test e_select-0.1.5 {
   SELECT count(*) FROM t1, t2 USING (a) ON (t1.a=t2.a)
 } {1 {near "ON": syntax error}}
@@ -618,11 +618,12 @@ foreach {tn select res} {
 } {
   do_join_test e_select-1.7.$tn $select $res
 }
-# EVIDENCE-OF: R-42531-52874 If the join-operator is a "LEFT JOIN" or
+
+# EVIDENCE-OF: R-24610-05866 If the join-operator is a "LEFT JOIN" or
 # "LEFT OUTER JOIN", then after the ON or USING filtering clauses have
 # been applied, an extra row is added to the output for each row in the
-# original left-hand input dataset that corresponds to no rows at all in
-# the composite dataset (if any).
+# original left-hand input dataset that does not match any row in the
+# right-hand dataset.
 #
 do_execsql_test e_select-1.8.0 {
   CREATE TABLE t7(a, b, c);

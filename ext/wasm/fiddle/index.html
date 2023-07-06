@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>SQLite3 Fiddle</title>
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <!-- to add a togglable terminal-style view, uncomment the following
+         two lines and ensure that these files are on the web server. -->
+    <!--script src="jqterm/jqterm-bundle.min.js"></script>
+    <link rel="stylesheet" href="jqterm/jquery.terminal.min.css"/-->
+    <link rel="stylesheet" href="emscripten.css"/>
+    <style>
+      /* The following styles are for app-level use. */
+      :root {
+          --sqlite-blue: #044a64;
+          --textarea-color1: #044a64;
+          --textarea-color2: white;
+      }
+      textarea {
+          font-family: monospace;
+          flex: 1 1 auto;
+          background-color: var(--textarea-color1);
+          color: var(--textarea-color2);
+      }
+      textarea#input {
+          color: var(--textarea-color1);
+          background-color: var(--textarea-color2);
+      }
+      header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: var(--sqlite-blue);
+          color: white;
+          font-size: 120%;
+          font-weight: bold;
+          border-radius: 0.25em;
+          padding: 0.2em 0.5em;
+      }
+      header > .powered-by {
+          font-size: 80%;
+      }
+      header a, header a:visited, header a:hover {
+          color: inherit;
+      }
+      #main-wrapper {
+          display: flex;
+          flex-direction: column-reverse;
+          flex: 1 1 auto;
+          margin: 0.5em 0;
+          overflow: hidden;
+      }
+      #main-wrapper.side-by-side {
+          flex-direction: row;
+      }
+      #main-wrapper.side-by-side > fieldset {
+          margin-left: 0.25em;
+          margin-right: 0.25em;
+      }
+      #main-wrapper:not(.side-by-side) > fieldset {
+          margin-bottom: 0.25em;
+      }
+      #main-wrapper.swapio {
+          flex-direction: column;
+      }
+      #main-wrapper.side-by-side.swapio {
+          flex-direction: row-reverse;
+      }
+      .zone-wrapper{
+          display: flex;
+          margin: 0;
+          flex: 1 1 0%;
+          border-radius: 0.5em;
+          min-width: inherit/*important: resolves inability to scroll fieldset child element!*/;
+          padding: 0.35em 0 0 0;
+      }
+      .zone-wrapper textarea {
+          border-radius: 0.5em;
+          flex: 1 1 auto;
+          /*min/max width resolve an inexplicable margin on the RHS.  The -1em
+            is for the padding, else we overlap the parent boundaries.*/
+          /*min-width: calc(100% - 1em);
+          max-width: calc(100% - 1em);
+          padding: 0 0.5em;*/
+      }
+
+      .zone-wrapper.input { flex: 10 1 auto; }
+      .zone-wrapper.output { flex: 20 1 auto; }
+      .zone-wrapper > div {
+          display:flex;
+          flex: 1 1 0%;
+      }
+      .zone-wrapper.output {}
+      .button-bar {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          align-content: space-between;
+          justify-content: flex-start;
+      }
+      .button-bar > * {
+          margin: 0.05em 0.5em 0.05em 0;
+          flex: 0 1 auto;
+          align-self: auto;
+      }
+      label[for] {
+          cursor: pointer;
+      }
+      .error {
+          color: red;
+          background-color: yellow;
+      }
+      .hidden, .initially-hidden {
+          position: absolute !important;
+          opacity: 0 !important;
+          pointer-events: none !important;
+          display: none !important;
+      }
+      fieldset {
+          border-radius: 0.5em;
+          border: 1px inset;
+          padding: 0.25em;
+      }
+      fieldset.options {
+          font-size: 80%;
+          margin-top: 0.5em;
+      }
+      fieldset:not(.options) > legend {
+          font-size: 80%;
+      }
+      fieldset.options > div {
+          display: flex;
+          flex-wrap: wrap;
+      }
+      fieldset button {
+          font-size: inherit;
+      }
+      fieldset.collapsible > legend > .fieldset-toggle::after {
+          content: " [hide]";
+          position: relative;
+      }
+      fieldset.collapsible.collapsed > legend > .fieldset-toggle::after {
+          content: " [show]";
+          position: relative;
+      }
+      span.labeled-input {
+          padding: 0.25em;
+          margin: 0.05em 0.25em;
+          border-radius: 0.25em;
+          white-space: nowrap;
+          background: #0002;
+          display: flex;
+          align-items: center;
+      }
+      span.labeled-input > *:nth-child(2) {
+          margin-left: 0.3em;
+      }
+      .center { text-align: center; }
+      body.terminal-mode {
+          max-height: calc(100% - 2em);
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+      }
+      #view-terminal {}
+      .app-view {
+          flex: 20 1 auto;
+      }
+      #view-split {
+          display: flex;
+          flex-direction: column-reverse;
+      }
+    </style>
+  </head>
+  <body>
+    <header id='titlebar'>
+      <span>SQLite3 Fiddle</span>
+      <span class='powered-by'>Powered by
+        <a href='https://sqlite.org'>SQLite3</a></span>
+    </header>
+    <!-- emscripten bits -->
+    <figure id="module-spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="module-status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
+    </div><!-- /emscripten bits -->
+
+    <div id='view-terminal' class='app-view hidden initially-hidden'>
+      This is a placeholder for a terminal-like view which is not in
+      the default build.
+    </div>
+
+    <div id='view-split' class='app-view initially-hidden'>
+      <fieldset class='options collapsible'>
+        <legend><button class='fieldset-toggle'>Options</button></legend>
+        <div class=''>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-sbs'
+                   data-csstgt='#main-wrapper'
+                   data-cssclass='side-by-side'
+                   data-config='sideBySide'>
+            <label for='opt-cb-sbs'>Side-by-side</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-swapio'
+                   data-csstgt='#main-wrapper'
+                   data-cssclass='swapio'
+                   data-config='swapInOut'>
+            <label for='opt-cb-swapio'>Swap in/out</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-autoscroll'
+                   data-config='autoScrollOutput'>
+            <label for='opt-cb-autoscroll'>Auto-scroll output</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='checkbox' id='opt-cb-autoclear'
+                   data-config='autoClearOutput'>
+            <label for='opt-cb-autoclear'>Auto-clear output</label>
+          </span>
+          <span class='labeled-input'>
+            <input type='file' id='load-db' class='hidden'/>
+            <button id='btn-load-db'>Load DB...</button>
+          </span>
+          <span class='labeled-input'>
+            <button id='btn-export'>Download DB</button>
+          </span>
+          <span class='labeled-input'>
+            <button id='btn-reset'>Reset DB</button>
+          </span>
+        </div>
+      </fieldset><!-- .options -->
+      <div id='main-wrapper' class=''>
+        <fieldset class='zone-wrapper input'>
+          <legend><div class='button-bar'>
+            <button id='btn-shell-exec'>Run</button>
+            <button id='btn-clear'>Clear Input</button>
+            <!--button data-cmd='.help'>Help</button-->
+            <select id='select-examples'></select>
+          </div></legend>
+          <div><textarea id="input"
+                         placeholder="Shell input. Ctrl-enter/shift-enter runs it.">
+-- ==================================================
+-- Use ctrl-enter or shift-enter to execute sqlite3
+-- shell commands and SQL.
+-- If a subset of the text is currently selected,
+-- only that part is executed.
+-- ==================================================
+.nullvalue NULL
+.headers on
+</textarea></div>
+        </fieldset>
+        <fieldset class='zone-wrapper output'>
+          <legend><div class='button-bar'>
+            <button id='btn-clear-output'>Clear Output</button>
+            <button id='btn-interrupt' class='hidden' disabled>Interrupt</button>
+            <!-- interruption cannot work in the current configuration
+                 because we cannot send an interrupt message when work
+                 is currently underway. At that point the Worker is
+                 tied up and will not receive the message. -->
+          </div></legend>
+          <div><textarea id="output" readonly
+                         placeholder="Shell output."></textarea></div>
+        </fieldset>
+      </div>
+    </div> <!-- #view-split -->
+    <script src="fiddle.js"></script>
+  </body>
+</html>

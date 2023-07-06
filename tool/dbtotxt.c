@@ -10,7 +10,18 @@
 **
 ** Usage:
 **
-**         dbtotxt [--pagesize N] FILENAME
+**         dbtotxt [OPTIONS] FILENAME
+**
+** where OPTIONS are zero or more of:
+**
+**    --for-cli          prepending '.open --hexdb' to the output
+**
+**    --script           The input file is expected to start with a
+**                       zero-terminated SQL string.  Output the
+**                       ".open --hexdb" header, then the database
+**                       then the SQL.
+**
+**    --pagesize N       set the database page size for later reading
 **
 ** The translation of the database appears on standard output.  If the
 ** --pagesize command-line option is omitted, then the page size is taken
@@ -38,17 +49,21 @@ static int allZero(unsigned char *aLine){
 
 int main(int argc, char **argv){
   int pgsz = 0;               /* page size */
+  int forCli = 0;             /* whether to prepend with .open */
+  int bSQL = 0;               /* Expect and SQL prefix */
   long szFile;                /* Size of the input file in bytes */
   FILE *in;                   /* Input file */
+  int nSQL;                   /* Number of bytes of script */
   int i, j;                   /* Loop counters */
   int nErr = 0;               /* Number of errors */
   const char *zInputFile = 0; /* Name of the input file */
   const char *zBaseName = 0;  /* Base name of the file */
   int lastPage = 0;           /* Last page number shown */
   int iPage;                  /* Current page number */
-  unsigned char aLine[16];    /* A single line of the file */
-  unsigned char aHdr[100];    /* File header */
-  unsigned char bShow[256];      /* Characters ok to display */
+  unsigned char *aData = 0;   /* All data */
+  unsigned char *aLine;       /* A single line of the file */
+  unsigned char *aHdr;        /* File header */
+  unsigned char bShow[256];   /* Characters ok to display */
   memset(bShow, '.', sizeof(bShow));
   for(i=' '; i<='~'; i++){
     if( i!='{' && i!='}' && i!='"' && i!='\\' ) bShow[i] = (unsigned char)i;
@@ -67,6 +82,13 @@ int main(int argc, char **argv){
           nErr++;
         }
         continue;
+      }else if( strcmp(z,"for-cli")==0 ){
+        forCli = 1;
+        continue;
+      }else if( strcmp(z,"script")==0 ){
+        forCli = 1;
+        bSQL = 1;
+        continue;
       }
       fprintf(stderr, "Unknown option: %s\n", argv[i]);
       nErr++;
@@ -82,7 +104,8 @@ int main(int argc, char **argv){
     nErr++;
   }
   if( nErr ){
-    fprintf(stderr, "Usage: %s [--pagesize N] FILENAME\n", argv[0]);
+    fprintf(stderr, 
+       "Usage: %s [--pagesize N] [--script] [--for-cli] FILENAME\n", argv[0]);
     exit(1);
   }
   in = fopen(zInputFile, "rb");
@@ -97,11 +120,32 @@ int main(int argc, char **argv){
     fprintf(stderr, "File too short. Minimum size is 100 bytes.\n");
     exit(1);
   }
-  if( fread(aHdr, 100, 1, in)!=1 ){
-    fprintf(stderr, "Cannot read file header\n");
+  aData = malloc( szFile+16 );
+  if( aData==0 ){
+    fprintf(stderr, "Failed to allocate %ld bytes\n", szFile);
     exit(1);
   }
-  rewind(in);
+  if( fread(aData, szFile, 1, in)!=1 ){
+    fprintf(stderr, "Cannot read file info memory\n");
+    exit(1);
+  }
+  memset(aData+szFile, 0, 16);
+  fclose(in);
+  if( bSQL ){
+    for(i=0; i<szFile && aData[i]!=0; i++){}
+    if( i==szFile ){
+      fprintf(stderr, "No zero terminator on SQL script\n");
+      exit(1);
+    }
+    nSQL = i+1;
+    if( szFile - nSQL<100 ){
+      fprintf(stderr, "Less than 100 bytes in the database\n");
+      exit(1);
+    }
+  }else{
+    nSQL = 0;
+  }
+  aHdr = aData + nSQL;
   if( pgsz==0 ){
     pgsz = (aHdr[16]<<8) | aHdr[17];
     if( pgsz==1 ) pgsz = 65536;
@@ -114,17 +158,12 @@ int main(int argc, char **argv){
   for(i=0; zInputFile[i]; i++){
     if( zInputFile[i]=='/' && zInputFile[i+1]!=0 ) zBaseName = zInputFile+i+1;
   }
+  if( forCli ){
+    printf(".open --hexdb\n");
+  }
   printf("| size %d pagesize %d filename %s\n",(int)szFile,pgsz,zBaseName);
-  for(i=0; i<szFile; i+=16){
-    int got = (int)fread(aLine, 1, 16, in);
-    if( got!=16 ){
-      static int once = 1;
-      if( once ){
-        fprintf(stderr, "Could not read input file starting at byte %d\n",
-                         i+got);
-      }
-      memset(aLine+got, 0, 16-got);
-    }
+  for(i=nSQL; i<szFile; i+=16){
+    aLine = aData+i;
     if( allZero(aLine) ) continue;
     iPage = i/pgsz + 1;
     if( lastPage!=iPage ){
@@ -140,7 +179,10 @@ int main(int argc, char **argv){
     }
     fputc('\n', stdout);
   }
-  fclose(in);
   printf("| end %s\n", zBaseName);
+  if( nSQL>0 ){
+    printf("%s\n", aData);
+  }
+  free( aData );
   return 0;
 }

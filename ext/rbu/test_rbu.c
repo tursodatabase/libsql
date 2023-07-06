@@ -26,6 +26,14 @@
 #  endif
 #endif
 #include <assert.h>
+#include <string.h>
+
+typedef struct TestRbu TestRbu;
+struct TestRbu {
+  sqlite3rbu *pRbu;
+  Tcl_Interp *interp;
+  Tcl_Obj *xRename;
+};
 
 /* From main.c */ 
 extern const char *sqlite3ErrName(int);
@@ -55,6 +63,20 @@ void test_rbu_delta(sqlite3_context *pCtx, int nArg, sqlite3_value **apVal){
   Tcl_DecrRefCount(pScript);
 }
 
+static int xRenameCallback(void *pArg, const char *zOld, const char *zNew){
+  int rc = SQLITE_OK;
+  TestRbu *pTest = (TestRbu*)pArg;
+  Tcl_Obj *pEval = Tcl_DuplicateObj(pTest->xRename);
+
+  Tcl_IncrRefCount(pEval);
+  Tcl_ListObjAppendElement(pTest->interp, pEval, Tcl_NewStringObj(zOld, -1));
+  Tcl_ListObjAppendElement(pTest->interp, pEval, Tcl_NewStringObj(zNew, -1));
+
+  rc = Tcl_EvalObjEx(pTest->interp, pEval, TCL_GLOBAL_ONLY);
+  Tcl_DecrRefCount(pEval);
+
+  return rc ? SQLITE_IOERR : SQLITE_OK;
+}
 
 static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
   ClientData clientData,
@@ -63,7 +85,8 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
   Tcl_Obj *CONST objv[]
 ){
   int ret = TCL_OK;
-  sqlite3rbu *pRbu = (sqlite3rbu*)clientData;
+  TestRbu *pTest = (TestRbu*)clientData;
+  sqlite3rbu *pRbu = pTest->pRbu;
   struct RbuCmd {
     const char *zName;
     int nArg;
@@ -82,6 +105,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
     {"temp_size_limit", 3, "LIMIT"}, /* 10 */
     {"temp_size", 2, ""},            /* 11 */
     {"dbRbu_eval", 3, "SQL"},        /* 12 */
+    {"rename_handler", 3, "SCRIPT"},/* 13 */
     {0,0,0}
   };
   int iCmd;
@@ -127,6 +151,8 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
         }
         ret = TCL_ERROR;
       }
+      if( pTest->xRename ) Tcl_DecrRefCount(pTest->xRename);
+      ckfree(pTest);
       break;
     }
 
@@ -214,12 +240,37 @@ static int SQLITE_TCLAPI test_sqlite3rbu_cmd(
       break;
     }
 
+    case 13: /* rename_handler */ {
+      Tcl_Obj *pScript = objv[2];
+      assert( !sqlite3_stricmp(aCmd[13].zName, "rename_handler") );
+      if( Tcl_GetCharLength(pScript)==0 ){
+        sqlite3rbu_rename_handler(pRbu, 0, 0);
+      }else{
+        pTest->xRename = Tcl_DuplicateObj(pScript);
+        Tcl_IncrRefCount(pTest->xRename);
+        sqlite3rbu_rename_handler(pRbu, pTest, xRenameCallback);
+      }
+      break;
+    }
+
     default: /* seems unlikely */
       assert( !"cannot happen" );
       break;
   }
 
   return ret;
+}
+
+static void createRbuWrapper(
+  Tcl_Interp *interp,
+  const char *zCmd,
+  sqlite3rbu *pRbu
+){
+  TestRbu *pTest = (TestRbu*)ckalloc(sizeof(TestRbu));
+  memset(pTest, 0, sizeof(TestRbu));
+  pTest->pRbu = pRbu;
+  pTest->interp = interp;
+  Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pTest, 0);
 }
 
 /*
@@ -247,7 +298,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu(
   if( objc==5 ) zStateDb = Tcl_GetString(objv[4]);
 
   pRbu = sqlite3rbu_open(zTarget, zRbu, zStateDb);
-  Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);
+  createRbuWrapper(interp, zCmd, pRbu);
   Tcl_SetObjResult(interp, objv[1]);
   return TCL_OK;
 }
@@ -276,7 +327,7 @@ static int SQLITE_TCLAPI test_sqlite3rbu_vacuum(
   if( zStateDb && zStateDb[0]=='\0' ) zStateDb = 0;
 
   pRbu = sqlite3rbu_vacuum(zTarget, zStateDb);
-  Tcl_CreateObjCommand(interp, zCmd, test_sqlite3rbu_cmd, (ClientData)pRbu, 0);
+  createRbuWrapper(interp, zCmd, pRbu);
   Tcl_SetObjResult(interp, objv[1]);
   return TCL_OK;
 }

@@ -40,7 +40,7 @@ struct PgHdr {
   ** private to pcache.c and should not be accessed by other modules.
   ** pCache is grouped with the public elements for efficiency.
   */
-  i16 nRef;                      /* Number of users of this page */
+  i64 nRef;                      /* Number of users of this page */
   PgHdr *pDirtyNext;             /* Next element in list of dirty pages */
   PgHdr *pDirtyPrev;             /* Previous element in list of dirty pages */
                           /* NB: pDirtyNext and pDirtyPrev are undefined if the
@@ -121,12 +121,12 @@ void sqlite3PcacheClearSyncFlags(PCache *);
 void sqlite3PcacheClear(PCache*);
 
 /* Return the total number of outstanding page references */
-int sqlite3PcacheRefCount(PCache*);
+i64 sqlite3PcacheRefCount(PCache*);
 
 /* Increment the reference count of an existing page */
 void sqlite3PcacheRef(PgHdr*);
 
-int sqlite3PcachePageRefcount(PgHdr*);
+i64 sqlite3PcachePageRefcount(PgHdr*);
 
 /* Return the total number of pages stored in the cache */
 int sqlite3PcachePagecount(PCache*);

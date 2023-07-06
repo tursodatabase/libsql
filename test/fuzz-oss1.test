@@ -329,6 +329,8 @@ ifcapable !fts3 {
 db close
 forcedelete test.db
 sqlite3 db test.db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_test fuzz-oss1-gnomeshell {
   db eval {
 CREATE TABLE Resource (ID INTEGER NOT NULL PRIMARY KEY, Uri TEXT NOT

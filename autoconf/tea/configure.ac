@@ -2,11 +2,9 @@
 dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
-#
-# RCS: @(#) $Id: configure.in,v 1.43 2005/07/26 19:17:05 mdejong Exp $
 
 #-----------------------------------------------------------------------
-# Sample configure.in for Tcl Extensions.  The only places you should
+# Sample configure.ac for Tcl Extensions.  The only places you should
 # need to modify this file are marked by the string __CHANGE__
 #-----------------------------------------------------------------------
 
@@ -17,9 +15,11 @@ dnl	to configure the system for the local environment.
 # This initializes the environment with PACKAGE_NAME and PACKAGE_VERSION
 # set as provided.  These will also be added as -D defs in your Makefile
 # so you can encode the package version directly into the source files.
+# This will also define a special symbol for Windows (BUILD_<PACKAGE_NAME>
+# so that we create the export library with the dll.
 #-----------------------------------------------------------------------
 
-AC_INIT([sqlite], [3.32.0])
+AC_INIT([sqlite],[3.42.0])
 
 #--------------------------------------------------------------------
 # Call TEA_INIT as the first TEA_ macro to set up initial vars.
@@ -27,7 +27,7 @@ AC_INIT([sqlite], [3.32.0])
 # as well as PKG_LIB_FILE and PKG_STUB_LIB_FILE.
 #--------------------------------------------------------------------
 
-TEA_INIT([3.9])
+TEA_INIT()
 
 AC_CONFIG_AUX_DIR(tclconfig)
 
@@ -55,8 +55,8 @@ TEA_PREFIX
 #-----------------------------------------------------------------------
 # Standard compiler checks.
 # This sets up CC by using the CC env var, or looks for gcc otherwise.
-# This also calls AC_PROG_CC, AC_PROG_INSTALL and a few others to create
-# the basic setup necessary to compile executables.
+# This also calls AC_PROG_CC and a few others to create the basic setup
+# necessary to compile executables.
 #-----------------------------------------------------------------------
 
 TEA_SETUP_COMPILER
@@ -73,11 +73,19 @@ TEA_SETUP_COMPILER
 
 TEA_ADD_SOURCES([tclsqlite3.c])
 TEA_ADD_HEADERS([])
-TEA_ADD_INCLUDES([-I\"`\${CYGPATH} \${srcdir}/generic`\"])
+TEA_ADD_INCLUDES([])
 TEA_ADD_LIBS([])
 TEA_ADD_CFLAGS([-DSQLITE_ENABLE_FTS3=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_FTS4=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_FTS5=1])
 TEA_ADD_CFLAGS([-DSQLITE_3_SUFFIX_ONLY=1])
 TEA_ADD_CFLAGS([-DSQLITE_ENABLE_RTREE=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_GEOPOLY=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_MATH_FUNCTIONS=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_DESERIALIZE=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_DBPAGE_VTAB=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_BYTECODE_VTAB=1])
+TEA_ADD_CFLAGS([-DSQLITE_ENABLE_DBSTAT_VTAB=1])
 TEA_ADD_STUB_SOURCES([])
 TEA_ADD_TCL_SOURCES([])
 
@@ -97,6 +105,31 @@ if test x$with_system_sqlite != xno; then
    [AC_CHECK_LIB([sqlite3],[sqlite3_initialize],
      [AC_DEFINE(USE_SYSTEM_SQLITE)
       LIBS="$LIBS -lsqlite3"])])
+fi
+
+#--------------------------------------------------------------------
+# __CHANGE__
+#
+# You can add more files to clean if your extension creates any extra
+# files by extending CLEANFILES.
+# Add pkgIndex.tcl if it is generated in the Makefile instead of ./configure
+# and change Makefile.in to move it from CONFIG_CLEAN_FILES to BINARIES var.
+#
+# A few miscellaneous platform-specific items:
+# TEA_ADD_* any platform specific compiler/build info here.
+#--------------------------------------------------------------------
+
+#CLEANFILES="$CLEANFILES pkgIndex.tcl"
+if test "${TEA_PLATFORM}" = "windows" ; then
+    # Ensure no empty if clauses
+    :
+    #TEA_ADD_SOURCES([win/winFile.c])
+    #TEA_ADD_INCLUDES([-I\"$(${CYGPATH} ${srcdir}/win)\"])
+else
+    # Ensure no empty else clauses
+    :
+    #TEA_ADD_SOURCES([unix/unixFile.c])
+    #TEA_ADD_LIBS([-lsuperfly])
 fi
 
 #--------------------------------------------------------------------
@@ -152,28 +185,6 @@ TEA_CONFIG_CFLAGS
 TEA_ENABLE_SYMBOLS
 
 #--------------------------------------------------------------------
-# Everyone should be linking against the Tcl stub library.  If you
-# can't for some reason, remove this definition.  If you aren't using
-# stubs, you also need to modify the SHLIB_LD_LIBS setting below to
-# link against the non-stubbed Tcl library.  Add Tk too if necessary.
-#--------------------------------------------------------------------
-
-AC_DEFINE(USE_TCL_STUBS, 1, [Use Tcl stubs])
-#AC_DEFINE(USE_TK_STUBS, 1, [Use Tk stubs])
-
-
-#--------------------------------------------------------------------
-# Redefine fdatasync as fsync on systems that lack fdatasync
-#--------------------------------------------------------------------
-#
-#AC_CHECK_FUNC(fdatasync, , AC_DEFINE(fdatasync, fsync))
-# Check for library functions that SQLite can optionally use.
-AC_CHECK_FUNCS([fdatasync usleep fullfsync localtime_r gmtime_r])
-
-AC_FUNC_STRERROR_R
-
-
-#--------------------------------------------------------------------
 # This macro generates a line to use when building a library.  It
 # depends on values set by the TEA_ENABLE_SHARED, TEA_ENABLE_SYMBOLS,
 # and TEA_LOAD_TCLCONFIG macros above.
@@ -193,9 +204,24 @@ TEA_PROG_TCLSH
 #TEA_PROG_WISH
 
 #--------------------------------------------------------------------
-# Finally, substitute all of the various values into the Makefile.
-# You may alternatively have a special pkgIndex.tcl.in or other files
-# which require substituting th AC variables in.  Include these here.
+# Setup a *Config.sh.in configuration file.
 #--------------------------------------------------------------------
 
-AC_OUTPUT([Makefile pkgIndex.tcl])
+#TEA_EXPORT_CONFIG([sample])
+#AC_SUBST(SAMPLE_VAR)
+
+#--------------------------------------------------------------------
+# Specify files to substitute AC variables in. You may alternatively
+# have a special pkgIndex.tcl.in or other files which require
+# substituting the AC variables in. Include these here.
+#--------------------------------------------------------------------
+
+AC_CONFIG_FILES([Makefile pkgIndex.tcl])
+#AC_CONFIG_FILES([sampleConfig.sh])
+
+#--------------------------------------------------------------------
+# Finally, substitute all of the various values into the files
+# specified with AC_CONFIG_FILES.
+#--------------------------------------------------------------------
+
+AC_OUTPUT

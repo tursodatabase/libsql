@@ -17,7 +17,7 @@
 #define SQLITE_HWTIME_H
 
 /*
-** The following routine only works on pentium-class (or newer) processors.
+** The following routine only works on Pentium-class (or newer) processors.
 ** It uses the RDTSC opcode to read the cycle count value out of the
 ** processor and returns that value.  This can be used for high-res
 ** profiling.
@@ -48,9 +48,9 @@
 #elif !defined(__STRICT_ANSI__) && (defined(__GNUC__) && defined(__x86_64__))
 
   __inline__ sqlite_uint64 sqlite3Hwtime(void){
-      unsigned long val;
-      __asm__ __volatile__ ("rdtsc" : "=A" (val));
-      return val;
+     unsigned int lo, hi;
+     __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+     return (sqlite_uint64)hi << 32 | lo;
   }
  
 #elif !defined(__STRICT_ANSI__) && (defined(__GNUC__) && defined(__ppc__))

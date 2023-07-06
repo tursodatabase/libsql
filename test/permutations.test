@@ -91,12 +91,15 @@ foreach f [glob -nocomplain            \
     $testdir/../ext/fts5/test/*.test   \
     $testdir/../ext/expert/*.test      \
     $testdir/../ext/lsm1/test/*.test   \
+    $testdir/../ext/recover/*.test     \
+    $testdir/../ext/rbu/*.test         \
 ] {
   lappend alltests $f 
 }
 foreach f [glob -nocomplain $testdir/../ext/session/*.test] { 
   lappend alltests $f 
 }
+unset f
 
 if {$::tcl_platform(platform)!="unix"} {
   set alltests [test_set $alltests -exclude crash.test crash2.test]
@@ -113,7 +116,7 @@ set allquicktests [test_set $alltests -exclude {
   corruptC.test crash.test crash2.test crash3.test crash4.test crash5.test
   crash6.test crash7.test delete3.test e_fts3.test fts3rnd.test
   fkey_malloc.test fuzz.test fuzz3.test fuzz_malloc.test in2.test loadext.test
-  misc7.test mutex2.test notify2.test onefile.test pagerfault2.test 
+  misc7.test mutex2.test onefile.test pagerfault2.test 
   savepoint4.test savepoint6.test select9.test 
   speed1.test speed1p.test speed2.test speed3.test speed4.test 
   speed4p.test sqllimits1.test tkt2686.test thread001.test thread002.test
@@ -129,9 +132,14 @@ set allquicktests [test_set $alltests -exclude {
   fts4merge5.test
   fts3cov.test fts3snippet.test fts3corrupt2.test fts3an.test
   fts3defer.test fts4langid.test fts3sort.test fts5unicode.test
+  recovercorrupt.test
 
   rtree4.test
   sessionbig.test
+
+  writecrash.test view3.test 
+  fts5dlidx.test fts5ac.test fts4merge3.test fts5prefix.test
+  sessionB.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -184,7 +192,7 @@ test_suite "veryquick" -prefix "" -description {
   that test malloc and IO errors are omitted.
 } -files [
   test_set $allquicktests -exclude *malloc* *ioerr* *fault* *bigfile* *_err* \
-      *fts5corrupt* *fts5big* *fts5aj*
+      *fts5corrupt* *fts5big* *fts5aj* *rbucrash*
 ]
 
 test_suite "shell" -prefix "" -description {
@@ -217,7 +225,8 @@ test_suite "valgrind" -prefix "" -description {
   fail under valgrind) omitted.
 } -files [
   test_set $allquicktests -exclude *malloc* *ioerr* *fault* *_err* wal.test \
-              shell*.test crash8.test atof1.test selectG.test \
+              shell2.test shell6.test shell7.test \
+              crash8.test atof1.test selectG.test \
               tkt-fc62af4523.test numindex1.test corruptK.test
 ] -initialize {
   set ::G(valgrind) 1
@@ -776,6 +785,7 @@ test_suite "inmemory_journal" -description {
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
   journal3.test 8_3_names.test shmlock.test
+  pendingrace.test
 
   pager1.test async4.test corrupt.test filefmt.test pager2.test
   corrupt5.test corruptA.test pageropt.test
@@ -799,6 +809,8 @@ test_suite "inmemory_journal" -description {
   # This test depends on a successful recovery from the pager error 
   # state. Which is not possible with an in-memory journal
   fts5fault1.test
+
+  recoverpgsz.test
 }]
 
 ifcapable mem3 {
@@ -905,6 +917,8 @@ ifcapable threadsafe {
     autoinstall_test_functions
   } -shutdown {
     catch {db close}
+    catch {db2 close}
+    catch {db3 close}
     sqlite3_shutdown
     install_mutex_counters 0
     sqlite3_initialize
@@ -1050,7 +1064,7 @@ test_suite "session_strm" -description {
 test_suite "rbu" -description {
   RBU tests.
 } -files [
-  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] -exclude rbu.test
+  test_set [glob -nocomplain $::testdir/../ext/rbu/*.test] 
 ]
 
 test_suite "no_optimization" -description {
@@ -1138,7 +1152,14 @@ proc run_tests {name args} {
   set ::G(perm:dbconfig)     $options(-dbconfig)
   set ::G(perm:presql)       $options(-presql)
 
-  foreach file [lsort $options(-files)] {
+  set filelist [lsort $options(-files)]
+  if {[info exists ::env(TCLTEST_PART)]} {
+    regexp {^([0-9]*)/([0-9]*)$} $::env(TCLTEST_PART) -> A B
+    set nFile [expr {([llength $filelist]+$B-1)/$B}]
+    set filelist [lrange $filelist [expr ($A-1)*$nFile] [expr $A*$nFile-1]]
+  }
+
+  foreach file $filelist {
     if {[file tail $file] == $file} { set file [file join $::testdir $file] }
 
     if {[info exists ::env(SQLITE_TEST_PATTERN_LIST)]} {
@@ -1212,6 +1233,7 @@ if {[file tail $argv0] == "permutations.test"} {
         set S $::testspec($suite)
         set i 1
       } else {
+        set suite default
         set S [list]
         set i 0
       }
@@ -1232,9 +1254,10 @@ if {[file tail $argv0] == "permutations.test"} {
         set extra [list -files $files]
       }
 
-      eval run_tests $suite $S $extra
+      eval [list run_tests $suite] $S $extra
     }
   }
   main $argv
+  set argv {}
   finish_test
 }

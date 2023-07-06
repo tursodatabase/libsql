@@ -355,7 +355,7 @@ do_execsql_test 8.5 {
 reset_db
 do_catchsql_test 8.6 {
   CREATE TABLE t0(c0);
-  CREATE INDEX i0 ON t0(LIKELIHOOD(1,2) AND 0);
+  CREATE INDEX i0 ON t0(likelihood(1,2) AND 0);
   ALTER TABLE t0 RENAME TO t1;
   SELECT sql FROM sqlite_master WHERE name='i0';
 } {1 {error in index i0: second argument to likelihood() must be a constant between 0.0 and 1.0}}

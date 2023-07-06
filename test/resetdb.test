@@ -255,4 +255,46 @@ do_execsql_test 740 {
   PRAGMA integrity_check;
 } {1 ok}
 
+#-------------------------------------------------------------------------
+ifcapable utf16 {
+  reset_db
+  do_execsql_test 800 {
+    PRAGMA encoding = 'utf8';
+    CREATE TABLE t1(a, b);
+    PRAGMA encoding;
+  } {UTF-8}
+  
+  db close
+  sqlite3 db test.db
+
+  sqlite3 db2 test.db
+  do_execsql_test -db db2 810 {
+    CREATE TEMP TABLE t2(x);
+    INSERT INTO t2 VALUES('hello world');
+    SELECT name FROM sqlite_schema;
+  } {t1}
+  do_test 820 {
+    db eval "PRAGMA encoding = 'utf16'"
+    sqlite3_db_config db RESET_DB 1
+  } {1}
+  do_test 830 {
+    db eval VACUUM
+    sqlite3_db_config db RESET_DB 0
+  } {0}
+  do_test 840 {
+    string range [db eval {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES('one', 'two');
+      PRAGMA encoding;
+    }] 0 5
+  } {UTF-16}
+
+  do_test 850 {
+    catchsql { SELECT * FROM t1; } db2 
+  } {1 {attached databases must use the same text encoding as main database}}
+  do_test 860 {
+    catchsql { SELECT * FROM t2; } db2 
+  } {1 {attached databases must use the same text encoding as main database}}
+}
+
 finish_test

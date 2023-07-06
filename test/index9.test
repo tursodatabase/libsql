@@ -34,6 +34,7 @@ do_execsql_test 1.0 {
   CREATE TABLE t1(x, y);
   CREATE INDEX t1x ON t1(x) WHERE y=45;
 }
+unset -nocomplain a
 set y [expr 45]
 do_sqluses_test 1.1 { SELECT * FROM t1 WHERE x=? AND y=$y } {t1 t1x}
 set y [expr 45.1]

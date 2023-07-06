@@ -36,8 +36,10 @@ do_execsql_test stat-0.0 {
 } {/0 name TEXT .* 1 path TEXT .* 9 pgsize INTEGER/}
 
 # Attempts to drop an eponymous virtual table are a no-op.
-do_execsql_test stat-0.1 {
+do_catchsql_test stat-0.1a {
   DROP TABLE dbstat;
+} {1 {table dbstat may not be dropped}}
+do_execsql_test stat-0.1b {
   PRAGMA table_info=dbstat;
 } {/0 name TEXT .* 1 path TEXT .* 9 pgsize INTEGER/}
 
@@ -314,5 +316,13 @@ do_execsql_test 8.4 {
 do_execsql_test 8.5 {
   SELECT * FROM st4 WHERE schema = NULL;
 } {}
+
+#-------------------------------------------------------------------------
+reset_db
+breakpoint
+do_catchsql_test 9.1 {
+  CREATE TABLE dbstat(x, y);
+  DROP TABLE nosuchdb.dbstat;
+} {/1 {(no such table: nosuchdb.dbstat|table dbstat may not be dropped)}/}
 
 finish_test

@@ -65,7 +65,7 @@ while {![eof stdin]} {
 #
 set vlist {}
 set seenDecl 0
-set namechars {abcdefghijklmnopqrstuvwxyz}
+set namechars {abcefghjklmnopqrstuvwxyz}
 set nnc [string length $namechars]
 while {![eof stdin]} {
   set line [gets stdin]

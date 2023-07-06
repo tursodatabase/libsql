@@ -420,7 +420,7 @@ static int fts3tokRowidMethod(
 ** Register the fts3tok module with database connection db. Return SQLITE_OK
 ** if successful or an error code if sqlite3_create_module() fails.
 */
-int sqlite3Fts3InitTok(sqlite3 *db, Fts3Hash *pHash){
+int sqlite3Fts3InitTok(sqlite3 *db, Fts3Hash *pHash, void(*xDestroy)(void*)){
   static const sqlite3_module fts3tok_module = {
      0,                           /* iVersion      */
      fts3tokConnectMethod,        /* xCreate       */
@@ -449,7 +449,9 @@ int sqlite3Fts3InitTok(sqlite3 *db, Fts3Hash *pHash){
   };
   int rc;                         /* Return code */
 
-  rc = sqlite3_create_module(db, "fts3tokenize", &fts3tok_module, (void*)pHash);
+  rc = sqlite3_create_module_v2(
+      db, "fts3tokenize", &fts3tok_module, (void*)pHash, xDestroy
+  );
   return rc;
 }
 

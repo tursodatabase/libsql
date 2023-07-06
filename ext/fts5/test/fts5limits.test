@@ -1,0 +1,47 @@
+# 2023 May 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5limits
+return_if_no_fts5
+
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x);
+}
+
+# Default limit for expression depth is 256
+#
+foreach {tn nRepeat op bErr} {
+  1  200  AND  0
+  2  200  NOT  0
+  3  200  OR   0
+
+  4  260  AND  0
+  5  260  NOT  1
+  6  260  OR   0
+} {
+  set L [string repeat "abc " $nRepeat]
+  set Q [join $L " $op "]
+
+  set res {0 {}}
+  if {$bErr} {
+    set res "1 {fts5 expression tree is too large (maximum depth 256)}"
+  }
+
+  do_catchsql_test 1.$tn {
+    SELECT * FROM ft($Q)
+  } $res
+}
+
+finish_test
+

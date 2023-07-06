@@ -61,7 +61,7 @@ do_execsql_test tabfunc01-1.8 {
 } {30 25 20 15 10 5 0}
 do_execsql_test tabfunc01-1.9 {
   SELECT rowid, * FROM generate_series(0,32,5) ORDER BY value DESC;
-} {1 30 2 25 3 20 4 15 5 10 6 5 7 0}
+} {7 30 6 25 5 20 4 15 3 10 2 5 1 0}
 do_execsql_test tabfunc01-1.10 {
   SELECT rowid, * FROM generate_series(0,32,5) ORDER BY +value DESC;
 } {7 30 6 25 5 20 4 15 3 10 2 5 1 0}
@@ -116,6 +116,51 @@ do_execsql_test tabfunc01-2.50 {
 do_execsql_test tabfunc01-3.1 {
   SELECT DISTINCT value FROM generate_series(1,x), t1 ORDER BY 1;
 } {1 2 3}
+
+do_eqp_test tabfunc01-3.10 {
+  SELECT value FROM generate_series(1,10) ORDER BY value;
+} {
+  QUERY PLAN
+  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+}
+do_eqp_test tabfunc01-3.11 {
+  SELECT value FROM generate_series(1,10) ORDER BY +value;
+} {
+  QUERY PLAN
+  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  `--USE TEMP B-TREE FOR ORDER BY
+}
+do_eqp_test tabfunc01-3.12 {
+  SELECT value FROM generate_series(1,10) ORDER BY value, stop;
+} {
+  QUERY PLAN
+  `--SCAN generate_series VIRTUAL TABLE INDEX 19:
+}
+do_eqp_test tabfunc01-3.13 {
+  SELECT value FROM generate_series(1,10) ORDER BY stop, value;
+} {
+  QUERY PLAN
+  |--SCAN generate_series VIRTUAL TABLE INDEX 3:
+  `--USE TEMP B-TREE FOR ORDER BY
+}
+
+
+do_eqp_test tabfunc01-3.20 {
+  WITH t1(a) AS (
+    SELECT value FROM generate_series(0,10,2)
+    UNION ALL
+    SELECT value FROM generate_series(9,18,3)
+  )
+  SELECT * FROM t1 ORDER BY a;
+} {
+  QUERY PLAN
+  `--MERGE (UNION ALL)
+     |--LEFT
+     |  `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+     `--RIGHT
+        `--SCAN generate_series VIRTUAL TABLE INDEX 23:
+}
+  
 
 # Eponymous virtual table exists in all schemas.
 #
@@ -225,6 +270,7 @@ do_test tabfunc01-750 {
 } {5.0 x5 | 7.0 x7 | 13.0 x13 | 17.0 x17 | 23.0 x23 |}
 
 # ticket https://www.sqlite.org/src/info/2ae0c599b735d59e
+# Verification of testtag-20230227a
 do_test tabfunc01-751 {
   db eval {
     SELECT aa.value, bb.value, '|'

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="../../../common/testing.css"/>
+    <title>sqlite3 OPFS Worker concurrency tester</title>
+    <style>
+      body { display: revert; }
+      body > * {}
+      #test-output {
+          font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1></h1>
+    <p>
+      OPFS concurrency tester using multiple independent Workers.
+      Disclaimer: concurrency in OPFS is currently a pain point!
+    </p>
+    <p>
+      URL flags: pass a number of workers using
+      the <code>workers=N</code> URL flag. Set the time between each
+      workload with <code>interval=N</code> (milliseconds). Set the
+      number of worker iterations with <code>iterations=N</code>.
+      Enable OPFS VFS verbosity with <code>verbose=1-3</code> (output
+      goes to the dev console). Disable/enable "unlock ASAP" mode
+      (higher concurrency, lower speed) with <code>unlock-asap=0-1</code>.
+    </p>
+    <p>Achtung: if it does not start to do anything within a couple of
+      seconds, check the dev console: Chrome sometimes fails to load
+      the wasm module due to "cannot allocate WasmMemory." Closing and
+      re-opening the tab usually resolves it, but sometimes restarting
+      the browser is required.
+    </p>
+    <div class='input-wrapper'>
+      <input type='checkbox' id='cb-log-reverse'>
+      <label for='cb-log-reverse'>Reverse log order?</label>
+    </div>
+    <div id='test-output'></div>
+    <script>(function(){
+      document.querySelector('h1').innerHTML =
+        document.querySelector('title').innerHTML;
+    })();</script>
+    <script src="test.js?sqlite3.dir=../../../jswasm"></script>
+  </body>
+</html>

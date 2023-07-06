@@ -41,30 +41,6 @@ proc scksum {db dbname} {
   return [md5 $txt]
 }
 
-proc do_diff_test {tn setup} {
-  reset_db
-  forcedelete test.db2
-  execsql { ATTACH 'test.db2' AS aux }
-  execsql $setup
-
-  sqlite3session S db main
-  foreach tbl [db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
-    S attach $tbl
-    S diff aux $tbl
-  }
-
-  set C [S changeset]
-  S delete
-
-  sqlite3 db2 test.db2
-  sqlite3changeset_apply db2 $C ""
-  uplevel do_test $tn.1 [list {execsql { PRAGMA integrity_check } db2}] ok
-  db2 close
-
-  set cksum [scksum db main]
-  uplevel do_test $tn.2 [list {scksum db aux}] [list $cksum]
-}
-
 # Ensure that the diff produced by comparing the current contents of [db]
 # with itself is empty.
 proc do_empty_diff_test {tn} {

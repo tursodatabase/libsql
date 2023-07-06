@@ -241,5 +241,46 @@ do_execsql_test 7.2 {
   PRAGMA foreign_key_check;
 } {}
 
+# 2021-12-31 forum https://sqlite.org/forum/forumpost/24bd1fef7e9323ef
+# Memory leak caused by sqlite3NestedParse() running on a corrupt system
+# table.  Discovered by Jingzhou Fu.
+#
+reset_db
+do_execsql_test 8.1 {
+  PRAGMA writable_schema=ON;
+  PRAGMA foreign_keys = ON;
+  CREATE TABLE sqlite_stat1 (tbl INTEGER PRIMARY KEY DESC, idx UNIQUE DEFAULT NULL) WITHOUT ROWID;
+  PRAGMA writable_schema=OFF;
+  CREATE TABLE sqlsim4(stat PRIMARY KEY);;
+  CREATE TABLE t1(sqlsim7 REFERENCES sqlite_stat1 ON DELETE CASCADE);
+  DROP table "sqlsim4";
+} {}
+# 2022-01-01 dbsqlfuzz 1c57440219f6f0aedf5e8f72a8ddd75f15aea381
+# Follow-up case to the above.  Assertion is not true if the schema
+# is corrupt.
+reset_db
+database_may_be_corrupt
+do_execsql_test 8.2 {
+  CREATE TABLE t1(a REFERENCES sqlite_stat1 ON DELETE CASCADE);
+  CREATE TABLE t2(a TEXT PRIMARY KEY);
+  PRAGMA writable_schema=ON;
+  CREATE TABLE sqlite_stat1(tbl INTEGER PRIMARY KEY DESC, idx UNIQUE DEFAULT NULL) WITHOUT ROWID;
+  UPDATE sqlite_schema SET name='sqlite_autoindex_sqlite_stat1_1' WHERE name='sqlite_autoindex_sqlite_stat1_2';
+  PRAGMA writable_schema=RESET;
+} {}
+do_catchsql_test 8.3 {
+  REINDEX;
+} {1 {database disk image is malformed}}
+
+# 2023-04-13 https://bugs.chromium.org/p/chromium/issues/detail?id=1405220
+# Avoid double-de-quoting of table names when processing foreign keys.
+#
+reset_db
+do_execsql_test 9.1 {
+  PRAGMA foreign_keys = ON;
+  CREATE TABLE """1"("""2", """3" PRIMARY KEY);
+  CREATE TABLE """4"("""5" REFERENCES """1" ON DELETE RESTRICT);
+  DELETE FROM """1";
+}
 
 finish_test

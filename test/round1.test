@@ -10,6 +10,7 @@
 #***********************************************************************
 # Test cases for rounding behavior of floating point values.
 #
+# TESTRUNNER: slow
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,8 +34,8 @@ for {set iTest 1} {$iTest<=50000} {incr iTest} {
    set r2 $x1.$x4
    set ans [string trimright $r2 0]
    if {[string match *. $ans]} {set ans ${ans}0}
-   do_test $iTest/$n/${r}5=>$ans {
-     set x [db one "SELECT round(${r}5,$n)"]
+   do_test $iTest/$n/${r}6=>$ans {
+     set x [db one "SELECT round(${r}6,$n)"]
    } $ans
 }
 

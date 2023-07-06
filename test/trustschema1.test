@@ -247,5 +247,16 @@ do_execsql_test 3.131 {
   SELECT * FROM t2;
 } {}
 
+# 2023-01-09 https://sqlite.org/forum/forumpost/c88a671ad083d153
+#
+do_execsql_test 4.1 {
+  PRAGMA trusted_schema=OFF;
+  CREATE VIEW test41(x) AS SELECT json_extract('{"a":123}','$.a');
+  SELECT * FROM test41;
+} 123
+do_execsql_test 4.2 {
+  PRAGMA trusted_schema=ON;
+  SELECT * FROM test41;
+} 123
 
 finish_test

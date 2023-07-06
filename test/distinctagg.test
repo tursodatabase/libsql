@@ -184,6 +184,7 @@ foreach {tn use_t3 sql res} {
  10 1 "SELECT count(DISTINCT x) FROM t1 LEFT JOIN t3 ON (t3.x=0)"  0
 
 } {
+  unset -nocomplain a
   do_test 5.$tn.1 {
     set bUse 0
     db eval "EXPLAIN $sql" a {

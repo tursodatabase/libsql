@@ -281,12 +281,13 @@ do_test in-7.8.2 {
   db status step
 } {0}
 
-do_test in-8.1 {
+do_test in-8.3 {
   execsql {
     SELECT b FROM t1 WHERE a IN ('hello','there')
   }
 } {world}
-do_test in-8.2 {
+do_test in-8.4 {
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   execsql {
     SELECT b FROM t1 WHERE a IN ("hello",'there')
   }
@@ -796,5 +797,67 @@ do_execsql_test in-19.40 {
 do_execsql_test in-20.1 {
   SELECT (1 IN (2 IS TRUE));
 } {1}
+
+# Forum post: https://sqlite.org/forum/forumpost/5782619992.
+#
+reset_db
+do_execsql_test in-21.1 {
+  CREATE TABLE t0(c0);
+  SELECT COUNT(*) FROM t0 ORDER BY (t0.c0 IN ());
+} {0}
+
+# Ignore extra parentheses around a subquery on the RHS of an IN operator,
+# because that is what PostgreSQL does.
+#
+do_execsql_test in-22.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x INT PRIMARY KEY, y INT);
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<8)
+    INSERT INTO t1(x,y) SELECT x, x*100 FROM c;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t2(a INT);
+  INSERT INTO t2 VALUES(2),(4),(6);
+  SELECT * FROM t1 WHERE x IN (SELECT a FROM t2);
+} {2 200 4 400 6 600}
+do_execsql_test in-22.2 {
+  SELECT * FROM t1 WHERE x IN ((SELECT a FROM t2));
+} {2 200 4 400 6 600}
+do_execsql_test in-22.3 {
+  SELECT * FROM t1 WHERE x IN (((SELECT a FROM t2)));
+} {2 200 4 400 6 600}
+do_execsql_test in-22.4 {
+  SELECT * FROM t1 WHERE x IN ((((((SELECT a FROM t2))))));
+} {2 200 4 400 6 600}
+
+# 2023-04-04 https://sqlite.org/forum/forumpost/dc16ec63d3
+# Faulty assert() statement in the IN optimization.
+#
+do_execsql_test in-23.0 {
+  DROP TABLE IF EXISTS t4;
+  CREATE TABLE t4(a TEXT, b INT);
+  INSERT INTO t4(a,b) VALUES('abc',0),('ABC',1),('def',2);
+  CREATE INDEX t4x ON t4(a, +a COLLATE NOCASE);
+  SELECT a0.a, group_concat(a1.a) AS b
+    FROM t4 AS a0 JOIN t4 AS a1
+   GROUP BY a0.a
+  HAVING (SELECT sum( (a1.a == +a0.a COLLATE NOCASE) IN (SELECT b FROM t4)));
+} {ABC abc,ABC,def abc abc,ABC,def def abc,ABC,def}
+do_execsql_test in-23.0-b {
+  SELECT a0.a, group_concat(a1.a) AS b
+    FROM t4 AS a0 JOIN t4 AS a1
+   GROUP BY a0.a
+  HAVING (SELECT sum( (a1.a GLOB +a0.a COLLATE NOCASE) IN (SELECT b FROM t4)));
+} {ABC abc,ABC,def abc abc,ABC,def def abc,ABC,def}
+#
+# Follow-up forum/forumpost/0713a16a44
+#
+do_execsql_test in-23.1 {
+  CREATE VIEW t5 AS
+    SELECT 1 AS b
+     WHERE (SELECT count(0=NOT+a COLLATE NOCASE IN (SELECT 0))
+              FROM t4
+             GROUP BY a);
+  SELECT * FROM t5;
+} 1
 
 finish_test

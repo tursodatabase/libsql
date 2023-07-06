@@ -118,6 +118,7 @@ ifcapable threadsafe1&&shared_cache {
     do_test mutex1.2.$mode.1 {
       catch {db close}
       sqlite3_shutdown
+      sqlite3_config_memstatus 1
       sqlite3_config $mode
     } SQLITE_OK
 

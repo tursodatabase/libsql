@@ -83,7 +83,7 @@ for {set i 0} {$i < 255} {incr i} {
 
 do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE e1 USING fts5(text, tokenize = 'porter unicode61');
-  INSERT INTO e1 VALUES ("just a few words with a / inside");
+  INSERT INTO e1 VALUES ('just a few words with a / inside');
 }
 do_execsql_test 3.1 {
   SELECT rowid, bm25(e1) FROM e1 WHERE e1 MATCH '"just"' ORDER BY rank;

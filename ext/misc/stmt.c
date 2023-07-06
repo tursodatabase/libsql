@@ -30,6 +30,16 @@ SQLITE_EXTENSION_INIT1
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
+
+#define STMT_NUM_INTEGER_COLUMN 10
+typedef struct StmtRow StmtRow;
+struct StmtRow {
+  sqlite3_int64 iRowid;                /* Rowid value */
+  char *zSql;                          /* column "sql" */
+  int aCol[STMT_NUM_INTEGER_COLUMN+1]; /* all other column values */
+  StmtRow *pNext;                      /* Next row to return */
+};
+
 /* stmt_vtab is a subclass of sqlite3_vtab which will
 ** serve as the underlying representation of a stmt virtual table
 */
@@ -47,8 +57,7 @@ typedef struct stmt_cursor stmt_cursor;
 struct stmt_cursor {
   sqlite3_vtab_cursor base;  /* Base class - must be first */
   sqlite3 *db;               /* Database connection for this cursor */
-  sqlite3_stmt *pStmt;       /* Statement cursor is currently pointing at */
-  sqlite3_int64 iRowid;      /* The rowid */
+  StmtRow *pRow;             /* Current row */
 };
 
 /*
@@ -88,11 +97,15 @@ static int stmtConnect(
 #define STMT_COLUMN_MEM    10   /* SQLITE_STMTSTATUS_MEMUSED */
 
 
+  (void)pAux;
+  (void)argc;
+  (void)argv;
+  (void)pzErr;
   rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
                     "reprep,run,mem)");
   if( rc==SQLITE_OK ){
-    pNew = sqlite3_malloc( sizeof(*pNew) );
+    pNew = sqlite3_malloc64( sizeof(*pNew) );
     *ppVtab = (sqlite3_vtab*)pNew;
     if( pNew==0 ) return SQLITE_NOMEM;
     memset(pNew, 0, sizeof(*pNew));
@@ -114,7 +127,7 @@ static int stmtDisconnect(sqlite3_vtab *pVtab){
 */
 static int stmtOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   stmt_cursor *pCur;
-  pCur = sqlite3_malloc( sizeof(*pCur) );
+  pCur = sqlite3_malloc64( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   pCur->db = ((stmt_vtab*)p)->db;
@@ -122,10 +135,21 @@ static int stmtOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
   return SQLITE_OK;
 }
 
+static void stmtCsrReset(stmt_cursor *pCur){
+  StmtRow *pRow = 0;
+  StmtRow *pNext = 0;
+  for(pRow=pCur->pRow; pRow; pRow=pNext){
+    pNext = pRow->pNext;
+    sqlite3_free(pRow);
+  }
+  pCur->pRow = 0;
+}
+
 /*
 ** Destructor for a stmt_cursor.
 */
 static int stmtClose(sqlite3_vtab_cursor *cur){
+  stmtCsrReset((stmt_cursor*)cur);
   sqlite3_free(cur);
   return SQLITE_OK;
 }
@@ -136,8 +160,9 @@ static int stmtClose(sqlite3_vtab_cursor *cur){
 */
 static int stmtNext(sqlite3_vtab_cursor *cur){
   stmt_cursor *pCur = (stmt_cursor*)cur;
-  pCur->iRowid++;
-  pCur->pStmt = sqlite3_next_stmt(pCur->db, pCur->pStmt);
+  StmtRow *pNext = pCur->pRow->pNext;
+  sqlite3_free(pCur->pRow);
+  pCur->pRow = pNext;
   return SQLITE_OK;
 }
 
@@ -151,39 +176,11 @@ static int stmtColumn(
   int i                       /* Which column to return */
 ){
   stmt_cursor *pCur = (stmt_cursor*)cur;
-  switch( i ){
-    case STMT_COLUMN_SQL: {
-      sqlite3_result_text(ctx, sqlite3_sql(pCur->pStmt), -1, SQLITE_TRANSIENT);
-      break;
-    }
-    case STMT_COLUMN_NCOL: {
-      sqlite3_result_int(ctx, sqlite3_column_count(pCur->pStmt));
-      break;
-    }
-    case STMT_COLUMN_RO: {
-      sqlite3_result_int(ctx, sqlite3_stmt_readonly(pCur->pStmt));
-      break;
-    }
-    case STMT_COLUMN_BUSY: {
-      sqlite3_result_int(ctx, sqlite3_stmt_busy(pCur->pStmt));
-      break;
-    }
-    default: {
-      assert( i==STMT_COLUMN_MEM );
-      i = SQLITE_STMTSTATUS_MEMUSED + 
-            STMT_COLUMN_NSCAN - SQLITE_STMTSTATUS_FULLSCAN_STEP;
-      /* Fall thru */
-    }
-    case STMT_COLUMN_NSCAN:
-    case STMT_COLUMN_NSORT:
-    case STMT_COLUMN_NAIDX:
-    case STMT_COLUMN_NSTEP:
-    case STMT_COLUMN_REPREP:
-    case STMT_COLUMN_RUN: {
-      sqlite3_result_int(ctx, sqlite3_stmt_status(pCur->pStmt,
-                      i-STMT_COLUMN_NSCAN+SQLITE_STMTSTATUS_FULLSCAN_STEP, 0));
-      break;
-    }
+  StmtRow *pRow = pCur->pRow;
+  if( i==STMT_COLUMN_SQL ){
+    sqlite3_result_text(ctx, pRow->zSql, -1, SQLITE_TRANSIENT);
+  }else{
+    sqlite3_result_int(ctx, pRow->aCol[i]);
   }
   return SQLITE_OK;
 }
@@ -194,7 +191,7 @@ static int stmtColumn(
 */
 static int stmtRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
   stmt_cursor *pCur = (stmt_cursor*)cur;
-  *pRowid = pCur->iRowid;
+  *pRowid = pCur->pRow->iRowid;
   return SQLITE_OK;
 }
 
@@ -204,7 +201,7 @@ static int stmtRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
 */
 static int stmtEof(sqlite3_vtab_cursor *cur){
   stmt_cursor *pCur = (stmt_cursor*)cur;
-  return pCur->pStmt==0;
+  return pCur->pRow==0;
 }
 
 /*
@@ -219,9 +216,57 @@ static int stmtFilter(
   int argc, sqlite3_value **argv
 ){
   stmt_cursor *pCur = (stmt_cursor *)pVtabCursor;
-  pCur->pStmt = 0;
-  pCur->iRowid = 0;
-  return stmtNext(pVtabCursor);
+  sqlite3_stmt *p = 0;
+  sqlite3_int64 iRowid = 1;
+  StmtRow **ppRow = 0;
+
+  (void)idxNum;
+  (void)idxStr;
+  (void)argc;
+  (void)argv;
+  stmtCsrReset(pCur);
+  ppRow = &pCur->pRow;
+  for(p=sqlite3_next_stmt(pCur->db, 0); p; p=sqlite3_next_stmt(pCur->db, p)){
+    const char *zSql = sqlite3_sql(p);
+    sqlite3_int64 nSql = zSql ? strlen(zSql)+1 : 0;
+    StmtRow *pNew = (StmtRow*)sqlite3_malloc64(sizeof(StmtRow) + nSql);
+
+    if( pNew==0 ) return SQLITE_NOMEM;
+    memset(pNew, 0, sizeof(StmtRow));
+    if( zSql ){
+      pNew->zSql = (char*)&pNew[1];
+      memcpy(pNew->zSql, zSql, nSql);
+    }
+    pNew->aCol[STMT_COLUMN_NCOL] = sqlite3_column_count(p);
+    pNew->aCol[STMT_COLUMN_RO] = sqlite3_stmt_readonly(p);
+    pNew->aCol[STMT_COLUMN_BUSY] = sqlite3_stmt_busy(p);
+    pNew->aCol[STMT_COLUMN_NSCAN] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_FULLSCAN_STEP, 0
+    );
+    pNew->aCol[STMT_COLUMN_NSORT] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_SORT, 0
+    );
+    pNew->aCol[STMT_COLUMN_NAIDX] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_AUTOINDEX, 0
+    );
+    pNew->aCol[STMT_COLUMN_NSTEP] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_VM_STEP, 0
+    );
+    pNew->aCol[STMT_COLUMN_REPREP] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_REPREPARE, 0
+    );
+    pNew->aCol[STMT_COLUMN_RUN] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_RUN, 0
+    );
+    pNew->aCol[STMT_COLUMN_MEM] = sqlite3_stmt_status(
+        p, SQLITE_STMTSTATUS_MEMUSED, 0
+    );
+    pNew->iRowid = iRowid++;
+    *ppRow = pNew;
+    ppRow = &pNew->pNext;
+  }
+
+  return SQLITE_OK;
 }
 
 /*
@@ -234,6 +279,7 @@ static int stmtBestIndex(
   sqlite3_vtab *tab,
   sqlite3_index_info *pIdxInfo
 ){
+  (void)tab;
   pIdxInfo->estimatedCost = (double)500;
   pIdxInfo->estimatedRows = 500;
   return SQLITE_OK;

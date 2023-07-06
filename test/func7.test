@@ -60,6 +60,12 @@ do_execsql_test func7-pg-170 {
 do_execsql_test func7-pg-180 {
   SELECT log10(1000.0)
 } {3.0}
+do_execsql_test func7-pg-181 {
+  SELECT format('%.30f', log10(100.0) );
+} {2.000000000000000000000000000000}
+do_execsql_test func7-pg-182 {
+  SELECT format('%.30f', ln(exp(2.0)) );
+} {2.000000000000000000000000000000}
 do_execsql_test func7-pg-190 {
   SELECT log(2.0, 64.0)
 } {6.0}

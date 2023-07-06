@@ -32,6 +32,7 @@ ifcapable !utf16 {
 do_test utf16align-1.0 {
   set unaligned_string_counter 0
   add_alignment_test_collations [sqlite3_connection_pointer db]
+  sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
   execsql {
     PRAGMA encoding=UTF16;
     CREATE TABLE t1(

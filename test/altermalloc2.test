@@ -26,6 +26,11 @@ do_execsql_test 1.0 {
 }
 faultsim_save_and_close
 
+set ::TMPDBERROR [list 1 \
+  {unable to open a temporary database file for storing temporary tables}
+]
+
+
 do_faultsim_test 1 -prep {
   faultsim_restore_and_reopen
 } -body {
@@ -33,7 +38,7 @@ do_faultsim_test 1 -prep {
     ALTER TABLE t1 RENAME abcd TO dcba
   }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 catch {db close}
@@ -52,7 +57,7 @@ do_faultsim_test 2 -prep {
     ALTER TABLE t1 RENAME abcd TO dcba
   }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 
@@ -70,7 +75,7 @@ do_faultsim_test 3 -prep {
     ALTER TABLE t1 RENAME abcd TO dcba
   }
 } -test {
-  faultsim_test_result {0 {}}
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 reset_db
@@ -95,7 +100,7 @@ do_faultsim_test 4 -faults oom-* -prep {
     ALTER TABLE rr RENAME a TO c;
   }
 } -test {
-  faultsim_test_result {0 {}} 
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 reset_db
@@ -116,7 +121,7 @@ do_faultsim_test 5 -faults oom-* -prep {
     ALTER TABLE rr RENAME TO c;
   }
 } -test {
-  faultsim_test_result {0 {}} 
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 finish_test

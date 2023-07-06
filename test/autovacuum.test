@@ -9,9 +9,8 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
-# focus of this file is testing the SELECT statement.
+# focus of this file is testing the autovacuum feature.
 #
-# $Id: autovacuum.test,v 1.29 2009/04/06 17:50:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

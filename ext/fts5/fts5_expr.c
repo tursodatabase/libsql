@@ -17,6 +17,10 @@
 #include "fts5Int.h"
 #include "fts5parse.h"
 
+#ifndef SQLITE_FTS5_MAX_EXPR_DEPTH
+# define SQLITE_FTS5_MAX_EXPR_DEPTH 256
+#endif
+
 /*
 ** All token types in the generated fts5parse.h file are greater than 0.
 */
@@ -57,11 +61,17 @@ struct Fts5Expr {
 **       FTS5_NOT                 (nChild, apChild valid)
 **       FTS5_STRING              (pNear valid)
 **       FTS5_TERM                (pNear valid)
+**
+** iHeight:
+**   Distance from this node to furthest leaf. This is always 0 for nodes
+**   of type FTS5_STRING and FTS5_TERM. For all other nodes it is one 
+**   greater than the largest child value.
 */
 struct Fts5ExprNode {
   int eType;                      /* Node type */
   int bEof;                       /* True at EOF */
   int bNomatch;                   /* True if entry is not a match */
+  int iHeight;                    /* Distance to tree leaf nodes */
 
   /* Next method for this node. */
   int (*xNext)(Fts5Expr*, Fts5ExprNode*, int, i64);
@@ -130,6 +140,31 @@ struct Fts5Parse {
   Fts5ExprNode *pExpr;            /* Result of a successful parse */
   int bPhraseToAnd;               /* Convert "a+b" to "a AND b" */
 };
+
+/*
+** Check that the Fts5ExprNode.iHeight variables are set correctly in
+** the expression tree passed as the only argument.
+*/
+#ifndef NDEBUG
+static void assert_expr_depth_ok(int rc, Fts5ExprNode *p){
+  if( rc==SQLITE_OK ){
+    if( p->eType==FTS5_TERM || p->eType==FTS5_STRING || p->eType==0 ){
+      assert( p->iHeight==0 );
+    }else{
+      int ii;
+      int iMaxChild = 0;
+      for(ii=0; ii<p->nChild; ii++){
+        Fts5ExprNode *pChild = p->apChild[ii];
+        iMaxChild = MAX(iMaxChild, pChild->iHeight);
+        assert_expr_depth_ok(SQLITE_OK, pChild);
+      }
+      assert( p->iHeight==iMaxChild+1 );
+    }
+  }
+}
+#else
+# define assert_expr_depth_ok(rc, p)
+#endif
 
 void sqlite3Fts5ParseError(Fts5Parse *pParse, const char *zFmt, ...){
   va_list ap;
@@ -245,6 +280,8 @@ int sqlite3Fts5ExprNew(
   }while( sParse.rc==SQLITE_OK && t!=FTS5_EOF );
   sqlite3Fts5ParserFree(pEngine, fts5ParseFree);
 
+  assert_expr_depth_ok(sParse.rc, sParse.pExpr);
+
   /* If the LHS of the MATCH expression was a user column, apply the
   ** implicit column-filter.  */
   if( iCol<pConfig->nCol && sParse.pExpr && sParse.rc==SQLITE_OK ){
@@ -290,6 +327,19 @@ int sqlite3Fts5ExprNew(
 }
 
 /*
+** Assuming that buffer z is at least nByte bytes in size and contains a
+** valid utf-8 string, return the number of characters in the string.
+*/
+static int fts5ExprCountChar(const char *z, int nByte){
+  int nRet = 0;
+  int ii;
+  for(ii=0; ii<nByte; ii++){
+    if( (z[ii] & 0xC0)!=0x80 ) nRet++;
+  }
+  return nRet;
+}
+
+/*
 ** This function is only called when using the special 'trigram' tokenizer.
 ** Argument zText contains the text of a LIKE or GLOB pattern matched
 ** against column iCol. This function creates and compiles an FTS5 MATCH
@@ -326,7 +376,8 @@ int sqlite3Fts5ExprPattern(
       if( i==nText 
        || zText[i]==aSpec[0] || zText[i]==aSpec[1] || zText[i]==aSpec[2] 
       ){
-        if( i-iFirst>=3 ){
+
+        if( fts5ExprCountChar(&zText[iFirst], i-iFirst)>=3 ){
           int jj;
           zExpr[iOut++] = '"';
           for(jj=iFirst; jj<i; jj++){
@@ -393,7 +444,7 @@ int sqlite3Fts5ExprAnd(Fts5Expr **pp1, Fts5Expr *p2){
   Fts5Parse sParse;
   memset(&sParse, 0, sizeof(sParse));
 
-  if( *pp1 ){
+  if( *pp1 && p2 ){
     Fts5Expr *p1 = *pp1;
     int nPhrase = p1->nPhrase + p2->nPhrase;
 
@@ -418,7 +469,7 @@ int sqlite3Fts5ExprAnd(Fts5Expr **pp1, Fts5Expr *p2){
     }
     sqlite3_free(p2->apExprPhrase);
     sqlite3_free(p2);
-  }else{
+  }else if( p2 ){
     *pp1 = p2;
   }
 
@@ -434,6 +485,7 @@ static i64 fts5ExprSynonymRowid(Fts5ExprTerm *pTerm, int bDesc, int *pbEof){
   int bRetValid = 0;
   Fts5ExprTerm *p;
 
+  assert( pTerm );
   assert( pTerm->pSynonym );
   assert( bDesc==0 || bDesc==1 );
   for(p=pTerm; p; p=p->pSynonym){
@@ -1626,6 +1678,9 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
   }else{
     if( pRet->nPhrase>0 ){
       Fts5ExprPhrase *pLast = pRet->apPhrase[pRet->nPhrase-1];
+      assert( pParse!=0 );
+      assert( pParse->apPhrase!=0 );
+      assert( pParse->nPhrase>=2 );
       assert( pLast==pParse->apPhrase[pParse->nPhrase-2] );
       if( pPhrase->nTerm==0 ){
         fts5ExprPhraseFree(pPhrase);
@@ -1874,7 +1929,7 @@ int sqlite3Fts5ExprClonePhrase(
     sCtx.pPhrase = sqlite3Fts5MallocZero(&rc, sizeof(Fts5ExprPhrase));
   }
 
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && ALWAYS(sCtx.pPhrase) ){
     /* All the allocations succeeded. Put the expression object together. */
     pNew->pIndex = pExpr->pIndex;
     pNew->pConfig = pExpr->pConfig;
@@ -2188,6 +2243,7 @@ static void fts5ExprAssignXNext(Fts5ExprNode *pNode){
 }
 
 static void fts5ExprAddChildren(Fts5ExprNode *p, Fts5ExprNode *pSub){
+  int ii = p->nChild;
   if( p->eType!=FTS5_NOT && pSub->eType==p->eType ){
     int nByte = sizeof(Fts5ExprNode*) * pSub->nChild;
     memcpy(&p->apChild[p->nChild], pSub->apChild, nByte);
@@ -2195,6 +2251,9 @@ static void fts5ExprAddChildren(Fts5ExprNode *p, Fts5ExprNode *pSub){
     sqlite3_free(pSub);
   }else{
     p->apChild[p->nChild++] = pSub;
+  }
+  for( ; ii<p->nChild; ii++){
+    p->iHeight = MAX(p->iHeight, p->apChild[ii]->iHeight + 1);
   }
 }
 
@@ -2226,6 +2285,7 @@ static Fts5ExprNode *fts5ParsePhraseToAnd(
   if( pRet ){
     pRet->eType = FTS5_AND;
     pRet->nChild = nTerm;
+    pRet->iHeight = 1;
     fts5ExprAssignXNext(pRet);
     pParse->nPhrase--;
     for(ii=0; ii<nTerm; ii++){
@@ -2331,6 +2391,14 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
         }else{
           fts5ExprAddChildren(pRet, pLeft);
           fts5ExprAddChildren(pRet, pRight);
+          if( pRet->iHeight>SQLITE_FTS5_MAX_EXPR_DEPTH ){
+            sqlite3Fts5ParseError(pParse, 
+                "fts5 expression tree is too large (maximum depth %d)", 
+                SQLITE_FTS5_MAX_EXPR_DEPTH
+            );
+            sqlite3_free(pRet);
+            pRet = 0;
+          }
         }
       }
     }
@@ -2855,6 +2923,15 @@ struct Fts5PoslistPopulator {
   int bMiss;
 };
 
+/*
+** Clear the position lists associated with all phrases in the expression
+** passed as the first argument. Argument bLive is true if the expression
+** might be pointing to a real entry, otherwise it has just been reset.
+**
+** At present this function is only used for detail=col and detail=none
+** fts5 tables. This implies that all phrases must be at most 1 token
+** in size, as phrase matches are not supported without detail=full.
+*/
 Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr, int bLive){
   Fts5PoslistPopulator *pRet;
   pRet = sqlite3_malloc64(sizeof(Fts5PoslistPopulator)*pExpr->nPhrase);
@@ -2864,7 +2941,7 @@ Fts5PoslistPopulator *sqlite3Fts5ExprClearPoslists(Fts5Expr *pExpr, int bLive){
     for(i=0; i<pExpr->nPhrase; i++){
       Fts5Buffer *pBuf = &pExpr->apExprPhrase[i]->poslist;
       Fts5ExprNode *pNode = pExpr->apExprPhrase[i]->pNode;
-      assert( pExpr->apExprPhrase[i]->nTerm==1 );
+      assert( pExpr->apExprPhrase[i]->nTerm<=1 );
       if( bLive && 
           (pBuf->n==0 || pNode->iRowid!=pExpr->pRoot->iRowid || pNode->bEof)
       ){

@@ -241,4 +241,18 @@ do_catchsql_test upsert1-1000 {
     ON CONFLICT(c2) DO UPDATE SET c1 = c0;
 } {1 {NOT NULL constraint failed: t0.c0}}
 
+# 2021-12-29 forum post https://sqlite.org/forum/forumpost/06b16b8b29f8c8c3
+# By Jingzhou Fu. When there is both an INTEGER PRIMARY KEY ON CONFLICT REPLACE
+# and an upsert on a constraint other than the INTEGER PRIMARY KEY, the
+# constraint checking logic generates invalid bytecode which might result
+# in a NULL pointer dereference.
+#
+reset_db
+do_execsql_test upsert1-1100 {
+  CREATE TABLE t1(a INTEGER PRIMARY KEY ON CONFLICT REPLACE, b UNIQUE);
+  INSERT INTO t1(b) VALUES(22);
+  INSERT INTO t1 VALUES(2,22) ON CONFLICT (b) DO NOTHING;
+  SELECT * FROM t1;
+} {1 22}
+
 finish_test

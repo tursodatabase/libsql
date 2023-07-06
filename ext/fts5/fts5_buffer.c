@@ -66,7 +66,6 @@ void sqlite3Fts5BufferAppendBlob(
   u32 nData, 
   const u8 *pData
 ){
-  assert_nc( *pRc || nData>=0 );
   if( nData ){
     if( fts5BufferGrow(pRc, pBuf, nData) ) return;
     memcpy(&pBuf->p[pBuf->n], pData, nData);
@@ -178,7 +177,6 @@ int sqlite3Fts5PoslistNext64(
     i64 iOff = *piOff;
     u32 iVal;
     fts5FastGetVarint32(a, i, iVal);
-    assert( iVal>=0 );
     if( iVal<=1 ){
       if( iVal==0 ){
         *pi = i;

@@ -38,6 +38,9 @@ integrity_check without_rowid1-1.0ic
 do_execsql_test_if_vtab without_rowid1-1.0ixi {
   SELECT name, key FROM pragma_index_xinfo('t1');
 } {c 1 a 1 b 0 d 0}
+do_execsql_test_if_vtab without_rowid1-1.0tl {
+  SELECT wr FROM pragma_table_list('t1');
+} {1}
 
 do_execsql_test without_rowid1-1.1 {
   SELECT *, '|' FROM t1 ORDER BY +c, a;
@@ -455,15 +458,33 @@ do_execsql_test 13.10 {
 
 # 2021-05-13 https://sqlite.org/forum/forumpost/6c8960f545
 reset_db
-do_execsql_test 14.1 {
-  CREATE TABLE t1(a INT PRIMARY KEY) WITHOUT ROWID;
-  INSERT INTO t1(a) VALUES(10);
-  ALTER TABLE t1 ADD COLUMN b INT;
-  SELECT * FROM t1 WHERE a=20 OR (a=10 AND b=10);
-} {}
-do_execsql_test 14.2 {
-  CREATE TABLE dual AS SELECT 'X' AS dummy;
-  EXPLAIN QUERY PLAN SELECT * FROM dual, t1 WHERE a=10 AND b=10;
-} {~/b=/}
-  
+ifcapable altertable {
+  do_execsql_test 14.1 {
+    CREATE TABLE t1(a INT PRIMARY KEY) WITHOUT ROWID;
+    INSERT INTO t1(a) VALUES(10);
+    ALTER TABLE t1 ADD COLUMN b INT;
+    SELECT * FROM t1 WHERE a=20 OR (a=10 AND b=10);
+  } {}
+  do_execsql_test 14.2 {
+    CREATE TABLE dual AS SELECT 'X' AS dummy;
+    EXPLAIN QUERY PLAN SELECT * FROM dual, t1 WHERE a=10 AND b=10;
+  } {~/b=/}
+}
+
+# 2022-01-01 https://sqlite.org/forum/forumpost/b03d86f951 PoC #1
+# Omit an assert() from 2013 that no longer serves any purpose and
+# is no longer always true.
+#
+ifcapable altertable {
+  reset_db
+  do_execsql_test 15.1 {
+    PRAGMA writable_schema=ON;
+    CREATE TABLE sqlite_sequence (name PRIMARY KEY) WITHOUT ROWID;
+    PRAGMA writable_schema=OFF;
+    CREATE TABLE c1(x);
+    INSERT INTO sqlite_sequence(name) VALUES('c0'),('c1'),('c2');
+    ALTER TABLE c1 RENAME TO a;
+    SELECT name FROM sqlite_sequence ORDER BY +name;
+  } {a c0 c2}
+}
 finish_test

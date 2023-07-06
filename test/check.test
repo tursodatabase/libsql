@@ -21,6 +21,8 @@ ifcapable !check {
   finish_test
   return
 }
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 
 do_test check-1.1 {
   execsql {
@@ -138,6 +140,8 @@ do_test check-2.2 {
 } {1 2.2 three}
 db close
 sqlite3 db test.db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_test check-2.3 {
   execsql {
     INSERT INTO t2 VALUES(NULL, NULL, NULL);

@@ -89,7 +89,7 @@ ifcapable analyze {
     SELECT * FROM cnt, y1 WHERE i=a
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--MATERIALIZE cnt
+    |--CO-ROUTINE cnt
     |  |--SETUP
     |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
@@ -103,12 +103,13 @@ ifcapable analyze {
     SELECT * FROM cnt, y1 WHERE i=a
   } [string map {"\n  " \n} {
     QUERY PLAN
-    |--MATERIALIZE cnt
+    |--CO-ROUTINE cnt
     |  |--SETUP
     |  |  `--SCAN CONSTANT ROW
     |  `--RECURSIVE STEP
     |     `--SCAN cnt
     |--SCAN y1
+    |--BLOOM FILTER ON cnt (i=?)
     `--SEARCH cnt USING AUTOMATIC COVERING INDEX (i=?)
   }]
 }
@@ -125,14 +126,14 @@ do_eqp_test 3.2.2 {
      WHERE c.id=w2.pk AND c.id=w1.pk;
 } {
   QUERY PLAN
-  |--MATERIALIZE c
+  |--CO-ROUTINE c
   |  |--SETUP
   |  |  |--SCAN CONSTANT ROW
   |  |  `--SCALAR SUBQUERY xxxxxx
   |  |     `--SCAN w2
   |  `--RECURSIVE STEP
-  |     |--SCAN w1
-  |     `--SCAN c
+  |     |--SCAN c
+  |     `--SCAN w1
   |--SCAN c
   |--SEARCH w2 USING INTEGER PRIMARY KEY (rowid=?)
   `--SEARCH w1 USING INTEGER PRIMARY KEY (rowid=?)

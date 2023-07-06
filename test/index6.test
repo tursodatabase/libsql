@@ -320,7 +320,7 @@ do_eqp_test index6-8.1 {
 } {
   QUERY PLAN
   |--SCAN t8a
-  `--SEARCH t8b USING INDEX i8c (y=?)
+  `--SEARCH t8b USING INDEX i8c (y=?) LEFT-JOIN
 }
 
 do_execsql_test index6-8.2 {
@@ -507,5 +507,25 @@ do_execsql_test index6-18.1 {
   CREATE UNIQUE INDEX t1b ON t1(b) WHERE a>NULL;
   SELECT * FROM t1 WHERE a IS NOT NULL;
 } {10 10}
+
+# 2022-06-09
+# https://sqlite.org/forum/forumpost/c4676c4956
+# Cannot do a scan of a partial index on the left table of a RIGHT JOIN
+# since that will cause extra rows to appear in the output during the
+# right-join no-match loop.  The following testcase is verify using
+# PostgreSQL 14.
+#
+reset_db
+do_execsql_test index6-19.1 {
+  CREATE TABLE t1(a INT, b INT);
+  INSERT INTO t1(a) VALUES(2);
+  CREATE TABLE t2(c INT);
+  CREATE INDEX i0 ON t2(c) WHERE c=3;
+  CREATE TABLE t3(d INT);
+  INSERT INTO t3 VALUES(1);
+}
+do_execsql_test index6-19.2 {
+  SELECT * FROM t2 RIGHT JOIN t3 ON d<>0 LEFT JOIN t1 ON c=3 WHERE t1.a<>0;
+} {}
 
 finish_test

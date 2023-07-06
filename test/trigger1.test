@@ -827,4 +827,15 @@ do_execsql_test trigger1-22.10 {
   SELECT a, CASE WHEN typeof(b)='text' THEN quote(b) ELSE '<blob>' END, '|' FROM t1;
 } {1 <blob> | 2 'X' | 3 'Z' |}
 
+# 2022-03-06 https://sqlite.org/forum/forumpost/2024e94071
+# Harmless assertion fault following a syntax error.
+#
+reset_db
+do_catchsql_test trigger1-23.1 {
+  CREATE TABLE t1(a INT);
+  CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN
+    INSERT INTO t1 SELECT e_master LIMIT 1,#1;
+  END;
+} {1 {near "#1": syntax error}}
+
 finish_test

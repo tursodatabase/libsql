@@ -32,11 +32,20 @@ do_execsql_test autoindex4-1.1 {
 do_execsql_test autoindex4-1.2 {
   SELECT *, '|' FROM t1 LEFT JOIN t2 ON a=234 AND x=555;
 } {123 abc {} {} | 234 def {} {} | 234 ghi {} {} | 345 jkl {} {} |}
+do_execsql_test autoindex4-1.2-rj {
+  SELECT t1.*, t2.*, '|' FROM t2 RIGHT JOIN t1 ON a=234 AND x=555;
+} {123 abc {} {} | 234 def {} {} | 234 ghi {} {} | 345 jkl {} {} |}
 do_execsql_test autoindex4-1.3 {
   SELECT *, '|' FROM t1 LEFT JOIN t2 ON x=555 WHERE a=234;
 } {234 def {} {} | 234 ghi {} {} |}
+do_execsql_test autoindex4-1.3-rj {
+  SELECT t1.*, t2.*, '|' FROM t2 RIGHT JOIN t1 ON x=555 WHERE a=234;
+} {234 def {} {} | 234 ghi {} {} |}
 do_execsql_test autoindex4-1.4 {
   SELECT *, '|' FROM t1 LEFT JOIN t2 WHERE a=234 AND x=555;
+} {}
+do_execsql_test autoindex4-1.4-rj {
+  SELECT t1.*, t2.*, '|' FROM t2 RIGHT JOIN t1 WHERE a=234 AND x=555;
 } {}
 
 
@@ -69,6 +78,14 @@ do_execsql_test autoindex4-3.0 {
     ORDER BY Items.ItemName;
 } {Item1 Item2}
 do_execsql_test autoindex4-3.1 {
+  SELECT Items.ItemName
+    FROM A
+      RIGHT JOIN Items ON (A.Name = Items.ItemName and Items.ItemName = 'dummy')
+      LEFT JOIN B ON (B.Name = Items.ItemName)
+    WHERE Items.Name = 'Parent'
+    ORDER BY Items.ItemName;
+} {Item1 Item2}
+do_execsql_test autoindex4-3.10 {
   CREATE INDEX Items_x1 ON Items(ItemName,Name) WHERE ItemName = 'dummy';
   
   SELECT Items.ItemName
@@ -78,6 +95,129 @@ do_execsql_test autoindex4-3.1 {
     WHERE Items.Name = 'Parent'
     ORDER BY Items.ItemName;
 } {Item1 Item2}
+do_execsql_test autoindex4-3.11 {
+  SELECT Items.ItemName
+    FROM A
+      RIGHT JOIN Items ON (A.Name = Items.ItemName and Items.ItemName = 'dummy')
+      LEFT JOIN B ON (B.Name = Items.ItemName)
+    WHERE Items.Name = 'Parent'
+    ORDER BY Items.ItemName;
+} {Item1 Item2}
+
+# 2021-11-30 - Enhancement to help the automatic index mechanism to
+# create a partial index more often.
+#
+unset -nocomplain id data1 data2 jointype onclause whereclause answer
+foreach {id data1 data2 jointype onclause whereclause answer} {
+  1
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y=4 OR y IS NULL}
+  {3 4 3 4}
+
+  2
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {1 2 {} {} 3 4 3 4}
+
+  3
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {JOIN}
+  {a=x}
+  {y=4 OR y IS NULL}
+  {3 4 3 4}
+
+  4
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {3 4 3 4}
+
+  5.1
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y=4 OR y IS NULL}
+  {3 4 3 4 {} 4 {} {}}
+
+  5.2
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y NOT IN ()}
+  {1 2 1 2 3 4 3 4 {} 4 {} {}}
+
+  5.3
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4)
+  {LEFT JOIN}
+  a=x
+  {y NOT IN (SELECT 1 WHERE false)}
+  {1 2 1 2 3 4 3 4 {} 4 {} {}}
+
+  6
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4),(NULL,4)
+  {LEFT JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {1 2 {} {} 3 4 3 4}
+
+  7
+  VALUES(1,2),(3,4),(NULL,4)
+  VALUES(1,2),(3,4),(NULL,4)
+  {JOIN}
+  {a=x}
+  {y=4 OR y IS NULL}
+  {3 4 3 4}
+
+  8
+  VALUES(1,2),(3,4)
+  VALUES(1,2),(3,4)
+  {JOIN}
+  {a=x AND y=4}
+  {coalesce(y,4)==4}
+  {3 4 3 4}
+} {
+  do_test autoindex4-4.$id.0 {
+    db eval {
+       DROP TABLE IF EXISTS t1;
+       CREATE TABLE t1(a INT, b INT);
+       DROP TABLE IF EXISTS t2;
+       CREATE TABLE t2(x INT, y INT);
+    }
+    db eval "INSERT INTO t1(a,b) $data1;"
+    db eval "INSERT INTO t2(x,y) $data2;"
+  } {}
+  set sql "SELECT * FROM t1 $jointype t2 ON $onclause WHERE $whereclause"
+  # puts "sql = $sql"
+  do_test autoindex4-4.$id.1 {
+    db eval {PRAGMA automatic_index=ON;}
+    db eval $sql
+  } $answer
+  do_test autoindex4-4.$id.2 {
+    db eval {PRAGMA automatic_index=OFF;}
+    db eval $sql
+  } $answer
+  do_test autoindex4-4.$id.3 {
+    db eval {PRAGMA automatic_index=ON;}
+    optimization_control db all 0
+    db eval $sql
+  } $answer
+  optimization_control db all 1
+}
+
+
 
 
 finish_test

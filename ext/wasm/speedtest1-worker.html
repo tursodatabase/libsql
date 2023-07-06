@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <link rel="stylesheet" href="common/emscripten.css"/>
+    <link rel="stylesheet" href="common/testing.css"/>
+    <title>speedtest1.wasm Worker</title>
+  </head>
+  <body>
+    <header id='titlebar'>speedtest1.wasm Worker</header>
+    <div>See also: <a href='speedtest1.html'>A main-thread variant of this page.</a></div>
+    <!-- emscripten bits -->
+    <figure id="module-spinner">
+      <div class="spinner"></div>
+      <div class='center'><strong>Initializing app...</strong></div>
+      <div class='center'>
+        On a slow internet connection this may take a moment.  If this
+        message displays for "a long time", intialization may have
+        failed and the JavaScript console may contain clues as to why.
+      </div>
+    </figure>
+    <div class="emscripten" id="module-status">Downloading...</div>
+    <div class="emscripten">
+      <progress value="0" max="100" id="module-progress" hidden='1'></progress>
+    </div><!-- /emscripten bits -->
+    <fieldset id='ui-controls' class='hidden'>
+      <legend>Options</legend>
+      <div id='toolbar'>
+        <div id='toolbar-select'>
+          <select id='select-flags' size='10' multiple></select>
+          <div>The following flags can be passed as URL parameters:
+            vfs=NAME, size=N, journal=MODE, cachesize=SIZE
+          </div>
+        </div>
+        <div class='toolbar-inner-vertical'>
+          <div id='toolbar-selected-flags'></div>
+          <div class='toolbar-inner-vertical'>
+            <span>&rarr; <a id='link-main-thread' href='#' target='speedtest-main'
+                            title='Start speedtest1.html with the selected flags'>speedtest1</a>
+            </span>
+            <span class='hidden'>&rarr; <a id='link-wasmfs' href='#' target='speedtest-wasmfs'
+                            title='Start speedtest1-wasmfs.html with the selected flags'>speedtest1-wasmfs</a>
+            </span>
+            <span>&rarr; <a id='link-kvvfs' href='#' target='speedtest-kvvfs'
+                            title='Start kvvfs speedtest1 with the selected flags'>speedtest1-kvvfs</a>
+            </span>
+          </div>
+        </div>
+        <div class='toolbar-inner-vertical' id='toolbar-runner-controls'>
+          <button id='btn-reset-flags'>Reset Flags</button>
+          <button id='btn-output-clear'>Clear output</button>
+          <button id='btn-run'>Run</button>
+        </div>
+      </div>
+    </fieldset>
+    <div>
+      <span class='input-wrapper'>
+        <input type='checkbox' class='disable-during-eval' id='cb-reverse-log-order' checked></input>
+        <label for='cb-reverse-log-order' id='lbl-reverse-log-order'>Reverse log order</label>
+      </span>
+    </div>
+    <div id='test-output'>
+    </div>
+    <div id='tips'>
+      <strong>Tips:</strong>
+      <ul>
+        <li>Control-click the flags to (de)select multiple flags.</li>
+        <li>The <tt>--big-transactions</tt> flag is important for two
+          of the bigger tests. Without it, those tests create many
+          thousands of implicit transactions, reducing the affected
+          tests to an absolute crawl, in particular with OPFS.
+        </li>
+        <li>The easiest way to try different optimization levels is,
+          from this directory:
+          <pre>$ rm -f jswasm/speedtest1.js; make -e emcc_opt='-O2' speedtest1</pre>
+          Then reload this page. -O2 seems to consistently produce the fastest results.
+        </li>
+        </ul>
+    </div>
+    <style>
+      #test-output {
+          white-space: break-spaces;
+          overflow: auto;
+      }
+      div#tips { margin-top: 1em; }
+      #toolbar {
+          display: flex;
+          flex-direction: row;
+          flex-wrap: wrap;
+      }
+      #toolbar > * {
+          margin: 0 0.5em;
+      }
+      .toolbar-inner-vertical {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+      }
+      #toolbar-select {
+          display: flex;
+          flex-direction: column;
+      }
+      .toolbar-inner-vertical > *, #toolbar-select > * {
+          margin: 0.2em 0;
+      }
+      #select-flags > option {
+          white-space: pre;
+          font-family: monospace;
+      }
+      fieldset {
+          border-radius: 0.5em;
+      }
+      #toolbar-runner-controls { flex-grow: 1 }
+      #toolbar-runner-controls > * { flex: 1 0 auto }
+      #toolbar-selected-flags::before {
+        font-family: initial;
+        content:"Selected flags: ";
+      }
+      #toolbar-selected-flags {
+        display: flex;
+        flex-direction: column;
+        font-family: monospace;
+        justify-content: flex-start;
+      }
+    </style>
+    <script>(function(){
+    'use strict';
+    const E = (sel)=>document.querySelector(sel);
+    const eOut = E('#test-output');
+    const log2 = function(cssClass,...args){
+        let ln;
+        if(1 || cssClass){
+            ln = document.createElement('div');
+            if(cssClass) ln.classList.add(cssClass);
+            ln.append(document.createTextNode(args.join(' ')));
+        }else{
+            // This doesn't work with the "reverse order" option!
+            ln = document.createTextNode(args.join(' ')+'\n');
+        }
+        eOut.append(ln);
+    };
+    const log = (...args)=>{
+        //console.log(...args);
+        log2('', ...args);
+    };
+    const logErr = function(...args){
+        console.error(...args);
+        log2('error', ...args);
+    };
+    const logWarn = function(...args){
+        console.warn(...args);
+        log2('warning', ...args);
+    };
+
+    const spacePad = function(str,len=21){
+        if(str.length===len) return str;
+        else if(str.length>len) return str.substr(0,len);
+        const a = []; a.length = len - str.length;
+        return str+a.join(' ');
+    };
+    // OPTION elements seem to ignore white-space:pre, so do this the hard way...
+    const nbspPad = function(str,len=21){
+        if(str.length===len) return str;
+        else if(str.length>len) return str.substr(0,len);
+        const a = []; a.length = len - str.length;
+        return str+a.join('&nbsp;');
+    };
+
+    const urlParams = new URL(self.location.href).searchParams;
+    const W = new Worker(
+        "speedtest1-worker.js?sqlite3.dir=jswasm"+
+            (urlParams.has('opfs-verbose') ? '&opfs-verbose' : '')
+    );
+    const mPost = function(msgType,payload){
+        W.postMessage({type: msgType, data: payload});
+    };
+
+    const eFlags = E('#select-flags');
+    const eSelectedFlags = E('#toolbar-selected-flags');
+    const eLinkMainThread = E('#link-main-thread');
+    const eLinkWasmfs = E('#link-wasmfs');
+    const eLinkKvvfs = E('#link-kvvfs');
+    const getSelectedFlags = ()=>{
+        const f = Array.prototype.map.call(eFlags.selectedOptions, (v)=>v.value);
+        [
+            'size', 'vfs', 'journal', 'cachesize'
+        ].forEach(function(k){
+            if(urlParams.has(k)) f.push('--'+k, urlParams.get(k));
+        });
+        return f;
+    };
+    const updateSelectedFlags = function(){
+        eSelectedFlags.innerText = '';
+        const flags = getSelectedFlags();
+        flags.forEach(function(f){
+            const e = document.createElement('span');
+            e.innerText = f;
+            eSelectedFlags.appendChild(e);
+        });
+        const rxStripDash = /^(-+)?/;
+        const comma = flags.join(',');
+        eLinkMainThread.setAttribute('target', 'speedtest1-main-'+comma);
+        eLinkMainThread.href = 'speedtest1.html?flags='+comma;
+        eLinkWasmfs.setAttribute('target', 'speedtest1-wasmfs-'+comma);
+        eLinkWasmfs.href = 'speedtest1-wasmfs.html?flags='+comma;
+        eLinkKvvfs.setAttribute('target', 'speedtest1-kvvfs-'+comma);
+        eLinkKvvfs.href = 'speedtest1.html?vfs=kvvfs&flags='+comma;
+    };
+    eFlags.addEventListener('change', updateSelectedFlags );
+    {
+        const flags = Object.create(null);
+        /* TODO? Flags which require values need custom UI
+           controls and some of them make little sense here
+           (e.g. --script FILE). */
+        flags["--autovacuum"] = "Enable AUTOVACUUM mode";
+        flags["--big-transactions"] = "Important for tests 410 and 510!";
+        //flags["--cachesize"] = "N       Set the cache size to N pages";
+        flags["--checkpoint"] = "Run PRAGMA wal_checkpoint after each test case";
+        flags["--exclusive"] = "Enable locking_mode=EXCLUSIVE";
+        flags["--explain"] = "Like --sqlonly but with added EXPLAIN keywords";
+        //flags["--heap"] = "SZ MIN       Memory allocator uses SZ bytes & min allocation MIN";
+        flags["--incrvacuum"] = "Enable incremenatal vacuum mode";
+        //flags["--journal"] = "M         Set the journal_mode to M";
+        //flags["--key"] = "KEY           Set the encryption key to KEY";
+        //flags["--lookaside"] = "N SZ    Configure lookaside for N slots of SZ bytes each";
+        flags["--memdb"] = "Use an in-memory database";
+        //flags["--mmap"] = "SZ           MMAP the first SZ bytes of the database file";
+        flags["--multithread"] = "Set multithreaded mode";
+        flags["--nomemstat"] = "Disable memory statistics";
+        flags["--nomutex"] = "Open db with SQLITE_OPEN_NOMUTEX";
+        flags["--nosync"] = "Set PRAGMA synchronous=OFF";
+        flags["--notnull"] = "Add NOT NULL constraints to table columns";
+        //flags["--output"] = "FILE       Store SQL output in FILE";
+        //flags["--pagesize"] = "N        Set the page size to N";
+        //flags["--pcache"] = "N SZ       Configure N pages of pagecache each of size SZ bytes";
+        //flags["--primarykey"] = "Use PRIMARY KEY instead of UNIQUE where appropriate";
+        //flags["--repeat"] = "N          Repeat each SELECT N times (default: 1)";
+        flags["--reprepare"] = "Reprepare each statement upon every invocation";
+        //flags["--reserve"] = "N         Reserve N bytes on each database page";
+        //flags["--script"] = "FILE       Write an SQL script for the test into FILE";
+        flags["--serialized"] = "Set serialized threading mode";
+        flags["--singlethread"] = "Set single-threaded mode - disables all mutexing";
+        flags["--sqlonly"] = "No-op.  Only show the SQL that would have been run.";
+        flags["--shrink-memory"] = "Invoke sqlite3_db_release_memory() frequently.";
+        //flags["--size"] = "N            Relative test size.  Default=100";
+        flags["--strict"] = "Use STRICT table where appropriate";
+        flags["--stats"] = "Show statistics at the end";
+        //flags["--temp"] = "N            N from 0 to 9.  0: no temp table. 9: all temp tables";
+        //flags["--testset"] = "T         Run test-set T (main, cte, rtree, orm, fp, debug)";
+        flags["--trace"] = "Turn on SQL tracing";
+        //flags["--threads"] = "N         Use up to N threads for sorting";
+        /*
+          The core API's WASM build does not support UTF16, but in
+          this app it's not an issue because the data are not crossing
+          JS/WASM boundaries.
+        */
+        flags["--utf16be"] = "Set text encoding to UTF-16BE";
+        flags["--utf16le"] = "Set text encoding to UTF-16LE";
+        flags["--verify"] = "Run additional verification steps.";
+        flags["--without"] = "rowid     Use WITHOUT ROWID where appropriate";
+        const preselectedFlags = [
+            '--big-transactions',
+            '--singlethread'
+        ];
+        if(urlParams.has('flags')){
+            preselectedFlags.push(...urlParams.get('flags').split(','));
+        }
+        if('opfs'!==urlParams.get('vfs')){
+            preselectedFlags.push('--memdb');
+        }
+        Object.keys(flags).sort().forEach(function(f){
+            const opt = document.createElement('option');
+            eFlags.appendChild(opt);
+            const lbl = nbspPad(f)+flags[f];
+            //opt.innerText = lbl;
+            opt.innerHTML = lbl;
+            opt.value = f;
+            if(preselectedFlags.indexOf(f) >= 0) opt.selected = true;
+        });    
+        const cbReverseLog = E('#cb-reverse-log-order');
+        const lblReverseLog = E('#lbl-reverse-log-order');
+        if(cbReverseLog.checked){
+            lblReverseLog.classList.add('warning');
+            eOut.classList.add('reverse');
+        }
+        cbReverseLog.addEventListener('change', function(){
+            if(this.checked){
+                eOut.classList.add('reverse');
+                lblReverseLog.classList.add('warning');
+            }else{
+                eOut.classList.remove('reverse');
+                lblReverseLog.classList.remove('warning');
+            }
+        }, false);
+        updateSelectedFlags();
+    }
+    E('#btn-output-clear').addEventListener('click', ()=>{
+        eOut.innerText = '';
+    });
+    E('#btn-reset-flags').addEventListener('click',()=>{
+        eFlags.value = '';
+        updateSelectedFlags();
+    });
+    E('#btn-run').addEventListener('click',function(){
+        log("Running speedtest1. UI controls will be disabled until it completes.");
+        mPost('run', getSelectedFlags());
+    });
+
+    const eControls = E('#ui-controls');
+    /** Update Emscripten-related UI elements while loading the module. */
+    const updateLoadStatus = function f(text){
+        if(!f.last){
+            f.last = { text: '', step: 0 };
+            const E = (cssSelector)=>document.querySelector(cssSelector);
+            f.ui = {
+                status: E('#module-status'),
+                progress: E('#module-progress'),
+                spinner: E('#module-spinner')
+            };
+        }
+        if(text === f.last.text) return;
+        f.last.text = text;
+        if(f.ui.progress){
+            f.ui.progress.value = f.last.step;
+            f.ui.progress.max = f.last.step + 1;
+        }
+        ++f.last.step;
+        if(text) {
+            f.ui.status.classList.remove('hidden');
+            f.ui.status.innerText = text;
+        }else{
+            if(f.ui.progress){
+                f.ui.progress.remove();
+                f.ui.spinner.remove();
+                delete f.ui.progress;
+                delete f.ui.spinner;
+            }
+            f.ui.status.classList.add('hidden');
+        }
+    };
+
+    W.onmessage = function(msg){
+        msg = msg.data;
+        switch(msg.type){
+            case 'ready':
+                log("Worker is ready.");
+                eControls.classList.remove('hidden');
+                break;
+            case 'stdout': log(msg.data); break;
+            case 'stdout': logErr(msg.data); break;
+            case 'run-start':
+                eControls.disabled = true;
+                log("Running speedtest1 with argv =",msg.data.join(' '));
+                break;
+            case 'run-end':
+                log("speedtest1 finished.");
+                eControls.disabled = false;
+                // app output is in msg.data
+                break;
+            case 'error': logErr(msg.data); break;
+            case 'load-status': updateLoadStatus(msg.data); break;
+            default:
+                logErr("Unhandled worker message type:",msg);
+                break;
+        }
+    };
+})();</script>
+  </body>
+</html>

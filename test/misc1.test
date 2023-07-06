@@ -592,6 +592,9 @@ do_test misc1-18.1 {
   set n [sqlite3_sleep 100]
   expr {$n>=100}
 } {1}
+do_test misc1-18.2 {
+  sqlite3_sleep -100
+} {0}
 
 # 2014-01-10:  In a CREATE TABLE AS, if one or more of the column names
 # are an empty string, that is still OK.
@@ -605,14 +608,17 @@ do_execsql_test misc1-19.2 {
   SELECT * FROM t19b;
 } {4 5 6}
 
-# 2015-05-20:  CREATE TABLE AS should not store INT value is a TEXT
+# 2015-05-20:  CREATE TABLE AS should not store INT value in a TEXT
 # column.
+#
+# 2022-12-14:  Change:  The column is not TEXT if the AS SELECT is
+# a compound with different types on each arm.
 #
 do_execsql_test misc1-19.3 {
   CREATE TABLE t19c(x TEXT);
   CREATE TABLE t19d AS SELECT * FROM t19c UNION ALL SELECT 1234;
   SELECT x, typeof(x) FROM t19d;
-} {1234 text}
+} {1234 integer}
 
 # 2014-05-16:  Tests for the SQLITE_TESTCTRL_FAULT_INSTALL feature.
 #
@@ -622,11 +628,11 @@ proc fault_callback {n} {
   lappend ::fault_callbacks $n
   return 0
 }
-do_test misc1-19.1 {
+do_test misc1-19.11 {
   sqlite3_test_control_fault_install fault_callback
   set fault_callbacks
 } {0}
-do_test misc1-19.2 {
+do_test misc1-19.12 {
   sqlite3_test_control_fault_install
   set fault_callbacks
 } {0}
@@ -652,7 +658,7 @@ do_catchsql_test misc1-21.2 {
 
 # 2015-04-15
 do_execsql_test misc1-22.1 {
-  SELECT ""+3 FROM (SELECT ""+5);
+  SELECT ''+3 FROM (SELECT ''+5);
 } {3}
 
 # 2015-04-19: NULL pointer dereference on a corrupt schema

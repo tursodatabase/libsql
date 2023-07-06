@@ -36,18 +36,28 @@ proc do_scanstatus_test {tn res} {
   while {1} {
     set r [sqlite3_stmt_scanstatus $stmt $idx]
     if {[llength $r]==0} break
-    lappend ret {*}$r
+    foreach v {nLoop nVisit nEst zName zExplain} {
+      lappend ret $v [dict get $r $v]
+    }
     incr idx
   }
 
   uplevel [list do_test $tn [list set {} $ret] [list {*}$res]]
 }
 
-do_execsql_test 1.1 { SELECT count(*) FROM t1, t2; } 6
-do_scanstatus_test 1.2 {
+do_execsql_test 1.1a { SELECT count(*) FROM t1, t2; } 6
+do_scanstatus_test 1.1b { 
   nLoop 1 nVisit 2 nEst 1048576.0 zName t1 zExplain {SCAN t1}
   nLoop 2 nVisit 6 nEst 1048576.0 zName t2 zExplain {SCAN t2}
 }
+
+sqlite3_db_config db STMT_SCANSTATUS 0
+
+do_execsql_test 1.2a { SELECT count(*) FROM t1, t2; } 6
+do_scanstatus_test 1.2b { 
+}
+
+sqlite3_db_config db STMT_SCANSTATUS 1
 
 do_execsql_test 1.3 {
   ANALYZE;
@@ -92,6 +102,7 @@ do_scanstatus_test 1.10 {
 # Try a few different types of scans.
 #
 reset_db
+sqlite3_db_config db STMT_SCANSTATUS 1
 do_execsql_test 2.1 {
   CREATE TABLE x1(i INTEGER PRIMARY KEY, j);
   INSERT INTO x1 VALUES(1, 'one');
@@ -275,6 +286,7 @@ do_scanstatus_test 4.2.2 {
 # Further tests of different scan types.
 #
 reset_db
+sqlite3_db_config db STMT_SCANSTATUS 1
 proc tochar {i} {
   set alphabet {a b c d e f g h i j k l m n o p q r s t u v w x y z}
   return [lindex $alphabet [expr $i % [llength $alphabet]]]
@@ -311,11 +323,13 @@ do_execsql_test 5.0 {
 do_execsql_test 5.1.1 {
   SELECT count(*) FROM t1 WHERE a IN (SELECT b FROM t1 AS ii)
 } {2}
-do_scanstatus_test 5.1.2 { 
-  nLoop 1 nVisit 10 nEst 10.0 zName t1bc 
-  zExplain {SCAN ii USING COVERING INDEX t1bc}
-  nLoop 1 nVisit 2 nEst 8.0 zName sqlite_autoindex_t1_1
-  zExplain {SEARCH t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
+ifcapable stat4 {
+  do_scanstatus_test 5.1.2 { 
+    nLoop 1 nVisit 10 nEst 10.0 zName t1
+    zExplain {SCAN ii}
+    nLoop 1 nVisit 2 nEst 8.0 zName sqlite_autoindex_t1_1
+    zExplain {SEARCH t1 USING COVERING INDEX sqlite_autoindex_t1_1 (a=?)}
+  }
 }
 
 do_execsql_test 5.2.1 {
@@ -337,21 +351,23 @@ do_scanstatus_test 5.3.3 {
   {SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
 }
 
-do_eqp_test 5.4.1 {
-  SELECT count(*) FROM t1, t2 WHERE y = c;
-} {
-  QUERY PLAN
-  |--SCAN t1 USING COVERING INDEX t1bc
-  `--SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)
-}
-do_execsql_test 5.4.2 {
-  SELECT count(*) FROM t1, t2 WHERE y = c;
-} {200}
-do_scanstatus_test 5.4.3 { 
-  nLoop 1 nVisit 10 nEst 10.0 zName t1bc 
-  zExplain {SCAN t1 USING COVERING INDEX t1bc}
-  nLoop 10 nVisit 200 nEst 56.0 zName t2xy 
-  zExplain {SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+ifcapable stat4 {
+  do_eqp_test 5.4.1 {
+    SELECT count(*) FROM t1, t2 WHERE y = c;
+  } {
+    QUERY PLAN
+      |--SCAN t1
+      `--SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)
+  }
+  do_execsql_test 5.4.2 {
+    SELECT count(*) FROM t1, t2 WHERE y = c;
+  } {200}
+  do_scanstatus_test 5.4.3 { 
+    nLoop 1 nVisit 10 nEst 10.0 zName t1
+      zExplain {SCAN t1}
+    nLoop 10 nVisit 200 nEst 56.0 zName t2xy 
+      zExplain {SEARCH t2 USING COVERING INDEX t2xy (ANY(x) AND y=?)}
+  }
 }
 
 do_eqp_test 5.5.1 {
@@ -359,6 +375,7 @@ do_eqp_test 5.5.1 {
 } {
   QUERY PLAN
   |--SCAN t3
+  |--BLOOM FILTER ON t1 (c=?)
   `--SEARCH t1 USING AUTOMATIC COVERING INDEX (c=?)
 }
 do_execsql_test 5.5.2 {

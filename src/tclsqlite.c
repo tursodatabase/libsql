@@ -55,6 +55,25 @@
 # include <string.h>
 # include <assert.h>
   typedef unsigned char u8;
+# ifndef SQLITE_PTRSIZE
+#   if defined(__SIZEOF_POINTER__)
+#     define SQLITE_PTRSIZE __SIZEOF_POINTER__
+#   elif defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+         defined(_M_ARM)   || defined(__arm__)    || defined(__x86)   ||    \
+        (defined(__APPLE__) && defined(__POWERPC__)) ||                     \
+        (defined(__TOS_AIX__) && !defined(__64BIT__))
+#     define SQLITE_PTRSIZE 4
+#   else
+#     define SQLITE_PTRSIZE 8
+#   endif
+# endif /* SQLITE_PTRSIZE */
+# if defined(HAVE_STDINT_H)
+    typedef uintptr_t uptr;
+# elif SQLITE_PTRSIZE==4
+    typedef unsigned int uptr;
+# else
+    typedef sqlite3_uint64 uptr;
+# endif
 #endif
 #include <ctype.h>
 
@@ -181,6 +200,7 @@ struct SqliteDb {
   int nVMStep;               /* Another statistic for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
   int openFlags;             /* Flags used to open.  (SQLITE_OPEN_URI) */
+  int nRef;                  /* Delete object when this reaches 0 */
 #ifdef SQLITE_TEST
   int bLegacyPrepare;        /* True to use sqlite3_prepare() */
 #endif
@@ -518,63 +538,83 @@ static void flushStmtCache(SqliteDb *pDb){
 }
 
 /*
+** Increment the reference counter on the SqliteDb object. The reference
+** should be released by calling delDatabaseRef().
+*/
+static void addDatabaseRef(SqliteDb *pDb){
+  pDb->nRef++;
+}
+
+/*
+** Decrement the reference counter associated with the SqliteDb object.
+** If it reaches zero, delete the object.
+*/
+static void delDatabaseRef(SqliteDb *pDb){
+  assert( pDb->nRef>0 );
+  pDb->nRef--;
+  if( pDb->nRef==0 ){
+    flushStmtCache(pDb);
+    closeIncrblobChannels(pDb);
+    sqlite3_close(pDb->db);
+    while( pDb->pFunc ){
+      SqlFunc *pFunc = pDb->pFunc;
+      pDb->pFunc = pFunc->pNext;
+      assert( pFunc->pDb==pDb );
+      Tcl_DecrRefCount(pFunc->pScript);
+      Tcl_Free((char*)pFunc);
+    }
+    while( pDb->pCollate ){
+      SqlCollate *pCollate = pDb->pCollate;
+      pDb->pCollate = pCollate->pNext;
+      Tcl_Free((char*)pCollate);
+    }
+    if( pDb->zBusy ){
+      Tcl_Free(pDb->zBusy);
+    }
+    if( pDb->zTrace ){
+      Tcl_Free(pDb->zTrace);
+    }
+    if( pDb->zTraceV2 ){
+      Tcl_Free(pDb->zTraceV2);
+    }
+    if( pDb->zProfile ){
+      Tcl_Free(pDb->zProfile);
+    }
+    if( pDb->zBindFallback ){
+      Tcl_Free(pDb->zBindFallback);
+    }
+    if( pDb->zAuth ){
+      Tcl_Free(pDb->zAuth);
+    }
+    if( pDb->zNull ){
+      Tcl_Free(pDb->zNull);
+    }
+    if( pDb->pUpdateHook ){
+      Tcl_DecrRefCount(pDb->pUpdateHook);
+    }
+    if( pDb->pPreUpdateHook ){
+      Tcl_DecrRefCount(pDb->pPreUpdateHook);
+    }
+    if( pDb->pRollbackHook ){
+      Tcl_DecrRefCount(pDb->pRollbackHook);
+    }
+    if( pDb->pWalHook ){
+      Tcl_DecrRefCount(pDb->pWalHook);
+    }
+    if( pDb->pCollateNeeded ){
+      Tcl_DecrRefCount(pDb->pCollateNeeded);
+    }
+    Tcl_Free((char*)pDb);
+  }
+}
+
+/*
 ** TCL calls this procedure when an sqlite3 database command is
 ** deleted.
 */
 static void SQLITE_TCLAPI DbDeleteCmd(void *db){
   SqliteDb *pDb = (SqliteDb*)db;
-  flushStmtCache(pDb);
-  closeIncrblobChannels(pDb);
-  sqlite3_close(pDb->db);
-  while( pDb->pFunc ){
-    SqlFunc *pFunc = pDb->pFunc;
-    pDb->pFunc = pFunc->pNext;
-    assert( pFunc->pDb==pDb );
-    Tcl_DecrRefCount(pFunc->pScript);
-    Tcl_Free((char*)pFunc);
-  }
-  while( pDb->pCollate ){
-    SqlCollate *pCollate = pDb->pCollate;
-    pDb->pCollate = pCollate->pNext;
-    Tcl_Free((char*)pCollate);
-  }
-  if( pDb->zBusy ){
-    Tcl_Free(pDb->zBusy);
-  }
-  if( pDb->zTrace ){
-    Tcl_Free(pDb->zTrace);
-  }
-  if( pDb->zTraceV2 ){
-    Tcl_Free(pDb->zTraceV2);
-  }
-  if( pDb->zProfile ){
-    Tcl_Free(pDb->zProfile);
-  }
-  if( pDb->zBindFallback ){
-    Tcl_Free(pDb->zBindFallback);
-  }
-  if( pDb->zAuth ){
-    Tcl_Free(pDb->zAuth);
-  }
-  if( pDb->zNull ){
-    Tcl_Free(pDb->zNull);
-  }
-  if( pDb->pUpdateHook ){
-    Tcl_DecrRefCount(pDb->pUpdateHook);
-  }
-  if( pDb->pPreUpdateHook ){
-    Tcl_DecrRefCount(pDb->pPreUpdateHook);
-  }
-  if( pDb->pRollbackHook ){
-    Tcl_DecrRefCount(pDb->pRollbackHook);
-  }
-  if( pDb->pWalHook ){
-    Tcl_DecrRefCount(pDb->pWalHook);
-  }
-  if( pDb->pCollateNeeded ){
-    Tcl_DecrRefCount(pDb->pCollateNeeded);
-  }
-  Tcl_Free((char*)pDb);
+  delDatabaseRef(pDb);
 }
 
 /*
@@ -654,7 +694,7 @@ static int DbTraceV2Handler(
       pCmd = Tcl_NewStringObj(pDb->zTraceV2, -1);
       Tcl_IncrRefCount(pCmd);
       Tcl_ListObjAppendElement(pDb->interp, pCmd,
-                               Tcl_NewWideIntObj((Tcl_WideInt)pStmt));
+                               Tcl_NewWideIntObj((Tcl_WideInt)(uptr)pStmt));
       Tcl_ListObjAppendElement(pDb->interp, pCmd,
                                Tcl_NewStringObj(zSql, -1));
       Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
@@ -669,7 +709,7 @@ static int DbTraceV2Handler(
       pCmd = Tcl_NewStringObj(pDb->zTraceV2, -1);
       Tcl_IncrRefCount(pCmd);
       Tcl_ListObjAppendElement(pDb->interp, pCmd,
-                               Tcl_NewWideIntObj((Tcl_WideInt)pStmt));
+                               Tcl_NewWideIntObj((Tcl_WideInt)(uptr)pStmt));
       Tcl_ListObjAppendElement(pDb->interp, pCmd,
                                Tcl_NewWideIntObj((Tcl_WideInt)ns));
       Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
@@ -683,7 +723,7 @@ static int DbTraceV2Handler(
       pCmd = Tcl_NewStringObj(pDb->zTraceV2, -1);
       Tcl_IncrRefCount(pCmd);
       Tcl_ListObjAppendElement(pDb->interp, pCmd,
-                               Tcl_NewWideIntObj((Tcl_WideInt)pStmt));
+                               Tcl_NewWideIntObj((Tcl_WideInt)(uptr)pStmt));
       Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
       Tcl_DecrRefCount(pCmd);
       Tcl_ResetResult(pDb->interp);
@@ -695,7 +735,7 @@ static int DbTraceV2Handler(
       pCmd = Tcl_NewStringObj(pDb->zTraceV2, -1);
       Tcl_IncrRefCount(pCmd);
       Tcl_ListObjAppendElement(pDb->interp, pCmd,
-                               Tcl_NewWideIntObj((Tcl_WideInt)db));
+                               Tcl_NewWideIntObj((Tcl_WideInt)(uptr)db));
       Tcl_EvalObjEx(pDb->interp, pCmd, TCL_EVAL_DIRECT);
       Tcl_DecrRefCount(pCmd);
       Tcl_ResetResult(pDb->interp);
@@ -1246,6 +1286,7 @@ static int SQLITE_TCLAPI DbTransPostCmd(
   }
   pDb->disableAuth--;
 
+  delDatabaseRef(pDb);
   return rc;
 }
 
@@ -1579,6 +1620,7 @@ static void dbEvalInit(
     Tcl_IncrRefCount(pArray);
   }
   p->evalFlags = evalFlags;
+  addDatabaseRef(p->pDb);
 }
 
 /*
@@ -1719,6 +1761,7 @@ static void dbEvalFinalize(DbEvalContext *p){
   }
   Tcl_DecrRefCount(p->pSql);
   dbReleaseColumnNames(p);
+  delDatabaseRef(p->pDb);
 }
 
 /*
@@ -1756,7 +1799,7 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
 
 /*
 ** If using Tcl version 8.6 or greater, use the NR functions to avoid
-** recursive evalution of scripts by the [db eval] and [db trans]
+** recursive evaluation of scripts by the [db eval] and [db trans]
 ** commands. Even if the headers used while compiling the extension
 ** are 8.6 or newer, the code still tests the Tcl version at runtime.
 ** This allows stubs-enabled builds to be used with older Tcl libraries.
@@ -1919,15 +1962,16 @@ static int SQLITE_TCLAPI DbObjCmd(
     "close",                  "collate",               "collation_needed",
     "commit_hook",            "complete",              "config",
     "copy",                   "deserialize",           "enable_load_extension",
-    "errorcode",              "eval",                  "exists",
-    "function",               "incrblob",              "interrupt",
-    "last_insert_rowid",      "nullvalue",             "onecolumn",
-    "preupdate",              "profile",               "progress",
-    "rekey",                  "restore",               "rollback_hook",
-    "serialize",              "status",                "timeout",
-    "total_changes",          "trace",                 "trace_v2",
-    "transaction",            "unlock_notify",         "update_hook",
-    "version",                "wal_hook",              0
+    "errorcode",              "erroroffset",           "eval",
+    "exists",                 "function",              "incrblob",
+    "interrupt",              "last_insert_rowid",     "nullvalue",
+    "onecolumn",              "preupdate",             "profile",
+    "progress",               "rekey",                 "restore",
+    "rollback_hook",          "serialize",             "status",
+    "timeout",                "total_changes",         "trace",
+    "trace_v2",               "transaction",           "unlock_notify",
+    "update_hook",            "version",               "wal_hook",
+    0                        
   };
   enum DB_enum {
     DB_AUTHORIZER,            DB_BACKUP,               DB_BIND_FALLBACK,
@@ -1935,15 +1979,15 @@ static int SQLITE_TCLAPI DbObjCmd(
     DB_CLOSE,                 DB_COLLATE,              DB_COLLATION_NEEDED,
     DB_COMMIT_HOOK,           DB_COMPLETE,             DB_CONFIG,
     DB_COPY,                  DB_DESERIALIZE,          DB_ENABLE_LOAD_EXTENSION,
-    DB_ERRORCODE,             DB_EVAL,                 DB_EXISTS,
-    DB_FUNCTION,              DB_INCRBLOB,             DB_INTERRUPT,
-    DB_LAST_INSERT_ROWID,     DB_NULLVALUE,            DB_ONECOLUMN,
-    DB_PREUPDATE,             DB_PROFILE,              DB_PROGRESS,
-    DB_REKEY,                 DB_RESTORE,              DB_ROLLBACK_HOOK,
-    DB_SERIALIZE,             DB_STATUS,               DB_TIMEOUT,
-    DB_TOTAL_CHANGES,         DB_TRACE,                DB_TRACE_V2,
-    DB_TRANSACTION,           DB_UNLOCK_NOTIFY,        DB_UPDATE_HOOK,
-    DB_VERSION,               DB_WAL_HOOK             
+    DB_ERRORCODE,             DB_ERROROFFSET,          DB_EVAL,
+    DB_EXISTS,                DB_FUNCTION,             DB_INCRBLOB,
+    DB_INTERRUPT,             DB_LAST_INSERT_ROWID,    DB_NULLVALUE,
+    DB_ONECOLUMN,             DB_PREUPDATE,            DB_PROFILE,
+    DB_PROGRESS,              DB_REKEY,                DB_RESTORE,
+    DB_ROLLBACK_HOOK,         DB_SERIALIZE,            DB_STATUS,
+    DB_TIMEOUT,               DB_TOTAL_CHANGES,        DB_TRACE,
+    DB_TRACE_V2,              DB_TRANSACTION,          DB_UNLOCK_NOTIFY,
+    DB_UPDATE_HOOK,           DB_VERSION,              DB_WAL_HOOK,
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -2416,7 +2460,7 @@ static int SQLITE_TCLAPI DbObjCmd(
   **
   ** This command usage is equivalent to the sqlite2.x COPY statement,
   ** which imports file data into a table using the PostgreSQL COPY file format:
-  **   $db copy $conflit_algo $table_name $filename \t \\N
+  **   $db copy $conflict_algorithm $table_name $filename \t \\N
   */
   case DB_COPY: {
     char *zTable;               /* Insert data into this table */
@@ -2623,8 +2667,10 @@ static int SQLITE_TCLAPI DbObjCmd(
     for(i=2; i<objc-1; i++){
       const char *z = Tcl_GetString(objv[i]);
       if( strcmp(z,"-maxsize")==0 && i<objc-2 ){
-        rc = Tcl_GetWideIntFromObj(interp, objv[++i], &mxSize);
+        Tcl_WideInt x;
+        rc = Tcl_GetWideIntFromObj(interp, objv[++i], &x);
         if( rc ) goto deserialize_error;
+        mxSize = x;
         continue;
       }
       if( strcmp(z,"-readonly")==0 && i<objc-2 ){
@@ -2701,6 +2747,17 @@ deserialize_error:
   */
   case DB_ERRORCODE: {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_errcode(pDb->db)));
+    break;
+  }
+
+  /*
+  **    $db erroroffset
+  **
+  ** Return the numeric error code that was returned by the most recent
+  ** call to sqlite3_exec().
+  */
+  case DB_ERROROFFSET: {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_error_offset(pDb->db)));
     break;
   }
 
@@ -2927,7 +2984,7 @@ deserialize_error:
     }
 
     if( objc==(6+isReadonly) ){
-      zDb = Tcl_GetString(objv[2]);
+      zDb = Tcl_GetString(objv[2+isReadonly]);
     }
     zTable = Tcl_GetString(objv[objc-3]);
     zColumn = Tcl_GetString(objv[objc-2]);
@@ -3016,6 +3073,9 @@ deserialize_error:
       if( pDb->zProgress ){
         Tcl_AppendResult(interp, pDb->zProgress, (char*)0);
       }
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+      sqlite3_progress_handler(pDb->db, 0, 0, 0);
+#endif
     }else if( objc==4 ){
       char *zProgress;
       int len;
@@ -3386,7 +3446,7 @@ deserialize_error:
   ** Start a new transaction (if we are not already in the midst of a
   ** transaction) and execute the TCL script SCRIPT.  After SCRIPT
   ** completes, either commit the transaction or roll it back if SCRIPT
-  ** throws an exception.  Or if no new transation was started, do nothing.
+  ** throws an exception.  Or if no new transaction was started, do nothing.
   ** pass the exception on up the stack.
   **
   ** This command was inspired by Dave Thomas's talk on Ruby at the
@@ -3435,6 +3495,7 @@ deserialize_error:
     ** opened above. If not using NRE, evaluate the script directly, then
     ** call function DbTransPostCmd() to commit (or rollback) the transaction
     ** or savepoint.  */
+    addDatabaseRef(pDb);          /* DbTransPostCmd() calls delDatabaseRef() */
     if( DbUseNre() ){
       Tcl_NRAddCallback(interp, DbTransPostCmd, cd, 0, 0, 0);
       (void)Tcl_NREvalObj(interp, pScript, 0);
@@ -3842,6 +3903,7 @@ static int SQLITE_TCLAPI DbMain(
   }else{
     Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
   }
+  p->nRef = 1;
   return TCL_OK;
 }
 
@@ -3949,7 +4011,9 @@ static const char *tclsh_main_loop(void){
   return zMainloop;
 }
 
-#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
+#ifndef TCLSH_MAIN
+# define TCLSH_MAIN main
+#endif
 int SQLITE_CDECL TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
   int i;

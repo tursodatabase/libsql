@@ -21,7 +21,7 @@
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 db close
 forcedelete test.db test.db-journal test.db-wal
 
@@ -88,8 +88,9 @@ do_test shell5-1.4.2 {
   forcedelete shell5.csv
   set in [open shell5.csv w]
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1
-SELECT COUNT(*) FROM t1;}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import -schema test shell5.csv t1
+SELECT COUNT(*) FROM test.t1;}]
 } {0 0}
 
 # import file with 1 row, 1 column (expecting 2 cols)
@@ -97,7 +98,8 @@ do_test shell5-1.4.3 {
   set in [open shell5.csv w]
   puts $in "1"
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import -schema test shell5.csv t1}]
 } {1 {shell5.csv:1: expected 2 columns but found 1 - filling the rest with NULL}}
 
 # import file with 1 row, 3 columns (expecting 2 cols)
@@ -105,7 +107,8 @@ do_test shell5-1.4.4 {
   set in [open shell5.csv w]
   puts $in "1|2|3"
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import --schema test shell5.csv t1}]
 } {1 {shell5.csv:1: expected 2 columns but found 3 - extras ignored}}
 
 # import file with 1 row, 2 columns
@@ -126,8 +129,9 @@ do_test shell5-1.4.6 {
   puts $in "2|3"
   puts $in "3|4"
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1
-SELECT COUNT(*) FROM t1;}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.import -schema test shell5.csv t1
+SELECT COUNT(*) FROM test.t1;}]
 } {0 3}
 
 # import file with 1 row, 2 columns, using a comma
@@ -135,9 +139,10 @@ do_test shell5-1.4.7 {
   set in [open shell5.csv w]
   puts $in "4,5"
   close $in
-  set res [catchcmd "test.db" {.separator ,
-.import shell5.csv t1
-SELECT COUNT(*) FROM t1;}]
+  set res [catchcmd ":memory:" {ATTACH 'test.db' AS test;
+.separator ,
+.import --schema test shell5.csv t1
+SELECT COUNT(*) FROM test.t1;}]
 } {0 4}
 
 # import file with 1 row, 2 columns, text data
@@ -257,7 +262,7 @@ do_test shell5-1.7.1 {
 SELECT COUNT(*) FROM t3;}]
 } [list 0 $rows]
 
-# Inport from a pipe.  (Unix only, as it requires "awk")
+# Import from a pipe.  (Unix only, as it requires "awk")
 if {$tcl_platform(platform)=="unix"} {
   do_test shell5-1.8 {
     forcedelete test.db
@@ -455,5 +460,114 @@ CREATE TABLE t7(a, b, c);
   }]
   db eval { SELECT * FROM t7 ORDER BY a }
 } {1 2 3 4 5 {} 6 7 8}
+
+do_test shell5-4.3 {
+  forcedelete shell5.csv
+  set fd [open shell5.csv w]
+  puts $fd ",,"
+  puts $fd "1,2,3"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t8(a, b, c);
+.import -skip 1 shell5.csv t8
+.nullvalue #
+  }]
+  db eval { SELECT * FROM t8 }
+} {1 2 3}
+
+do_test shell5-4.4 {
+  forcedelete shell5.csv
+  set fd [open shell5.csv w]
+  puts $fd "1,2,3"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TEMP TABLE t8(a, b, c);
+.import shell5.csv t8
+.nullvalue #
+SELECT * FROM temp.t8
+  }]
+} {0 1,2,3}
+
+#----------------------------------------------------------------------------
+# Tests for the shell automatic column rename.
+#
+db close
+
+# Import columns containing duplicates
+do_test shell5-5.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {"","x","x","y","z","z_0","z_5","z"}
+  puts $out {0,"x2","x3","y4","z5","z6","z7","z8"}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {1 {    ? = 0
+ x_02 = x2
+ x_03 = x3
+    y = y4
+ z_05 = z5
+  z_0 = z6
+  z_5 = z7
+ z_08 = z8
+Columns renamed during .import shell5.csv due to duplicates:
+"x" to "x_02",
+"x" to "x_03",
+"z" to "z_05",
+"z" to "z_08"}}
+
+do_test shell5-5.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {"COW","cow","CoW","cOw"}
+  puts $out {"uuu","lll","ulu","lul"}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {1 {COW_1 = uuu
+cow_2 = lll
+CoW_3 = ulu
+cOw_4 = lul
+Columns renamed during .import shell5.csv due to duplicates:
+"COW" to "COW_1",
+"cow" to "cow_2",
+"CoW" to "CoW_3",
+"cOw" to "cOw_4"}}
+
+#----------------------------------------------------------------------------
+# Tests for preserving utf-8 that is not also ASCII.
+#
+
+do_test shell5-6.1 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {あい,うえお}
+  puts $out {1,2}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {0 {   あい = 1
+うえお = 2}}
+
+do_test shell5-6.2 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {1,2}
+  puts $out {あい,うえお}
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.import -csv shell5.csv t1
+.mode line
+SELECT * FROM t1;}
+} {0 {    1 = あい
+    2 = うえお}}
 
 finish_test

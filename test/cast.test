@@ -483,5 +483,78 @@ do_execsql_test cast-9.0 {
   SELECT v1.c0 FROM v1, t0 WHERE v1.c0=0; 
 } {0.0}
 
+# Set the 2022-12-10 "reopen" of ticket [https://sqlite.org/src/tktview/57c47526c3]
+#
+do_execsql_test cast-9.1 {
+  CREATE TABLE dual(dummy TEXT);
+  INSERT INTO dual VALUES('X');
+  SELECT CAST(4 AS NUMERIC);
+} {4}
+do_execsql_test cast-9.2 {
+  SELECT CAST(4.0 AS NUMERIC);
+} {4.0}
+do_execsql_test cast-9.3 {
+  SELECT CAST(4.5 AS NUMERIC);
+} {4.5}
+do_execsql_test cast-9.4 {
+  SELECT x, typeof(x) FROM (SELECT CAST(4 AS NUMERIC) AS x) JOIN dual;
+} {4 integer}
+do_execsql_test cast-9.5 {
+  SELECT x, typeof(x) FROM dual CROSS JOIN (SELECT CAST(4 AS NUMERIC) AS x);
+} {4 integer}
+do_execsql_test cast-9.10 {
+  SELECT x, typeof(x) FROM (SELECT CAST(4.0 AS NUMERIC) AS x) JOIN dual;
+} {4.0 real}
+do_execsql_test cast-9.11 {
+  SELECT x, typeof(x) FROM dual CROSS JOIN (SELECT CAST(4.0 AS NUMERIC) AS x);
+} {4.0 real}
+do_execsql_test cast-9.12 {
+  SELECT x, typeof(x) FROM (SELECT CAST(4.5 AS NUMERIC) AS x) JOIN dual;
+} {4.5 real}
+do_execsql_test cast-9.13 {
+  SELECT x, typeof(x) FROM dual CROSS JOIN (SELECT CAST(4.5 AS NUMERIC) AS x);
+} {4.5 real}
+
+# 2022-12-15 dbsqlfuzz c9ee6f9a0a8b8fefb02cf69de2a8b67ca39525c8
+#
+# Added a new SQLITE_AFF_FLEXNUM that does not try to convert int to real or
+# real to int.
+#
+do_execsql_test cast-10.1 {
+  VALUES(CAST(44 AS REAL)),(55);
+} {44.0 55}
+do_execsql_test cast-10.2 {
+  SELECT CAST(44 AS REAL) AS 'm' UNION ALL SELECT 55;
+} {44.0 55}
+do_execsql_test cast-10.3 {
+  SELECT * FROM (VALUES(CAST(44 AS REAL)),(55));
+} {44.0 55}
+do_execsql_test cast-10.4 {
+  SELECT * FROM (SELECT CAST(44 AS REAL) AS 'm' UNION ALL SELECT 55);
+} {44.0 55}
+do_execsql_test cast-10.5 {
+  SELECT * FROM dual CROSS JOIN (VALUES(CAST(44 AS REAL)),(55));
+} {X 44.0 X 55}
+do_execsql_test cast-10.6 {
+  SELECT * FROM dual CROSS JOIN (SELECT CAST(44 AS REAL) AS 'm'
+                                 UNION ALL SELECT 55);
+} {X 44.0 X 55}
+ifcapable vtab {
+  do_execsql_test cast-10.7 {
+    DROP VIEW v1;
+    CREATE VIEW v1 AS SELECT CAST(44 AS REAL) AS 'm' UNION ALL SELECT 55;
+    SELECT name, type FROM pragma_table_info('v1');
+  } {m NUM}
+  do_execsql_test cast-10.8 {
+    CREATE VIEW v2 AS VALUES(CAST(44 AS REAL)),(55);
+    SELECT type FROM pragma_table_info('v2');
+  } {NUM}
+  do_execsql_test cast-10.9 {
+    SELECT * FROM v1;
+  } {44.0 55}
+  do_execsql_test cast-10.10 {
+    SELECT * FROM v2;
+  } {44.0 55}
+}
 
 finish_test

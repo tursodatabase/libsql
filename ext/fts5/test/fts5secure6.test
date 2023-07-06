@@ -1,0 +1,55 @@
+# 2023 Feb 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+ifcapable !fts5 { finish_test ; return }
+set ::testprefix fts5secure6
+
+db progress 1 progress_handler
+set ::PHC 0
+proc progress_handler {args} {
+  incr ::PHC
+  if {($::PHC % 100000)==0}  breakpoint
+  return 0
+}
+
+proc setup {} {
+  db eval {
+    DROP TABLE IF EXISTS t1;
+    CREATE VIRTUAL TABLE t1 USING fts5(x);
+    WITH s(i) AS (
+      VALUES(1) UNION ALL SELECT i+1 FROM s WHERE i<1000
+    )
+    INSERT INTO t1 SELECT 'a b c d e f g h i j k' FROM s;
+  }
+}
+
+foreach {tn sd} {
+  1 0 
+  2 1
+} {
+  setup
+  do_execsql_test 1.$tn.0 { 
+    INSERT INTO t1(t1, rank) VALUES('secure-delete', $sd) 
+  }
+  set PHC 0
+  do_execsql_test 1.$tn.1 { DELETE FROM t1; }
+  set phc($tn) $PHC
+}
+
+do_test 1.3 {
+  expr $phc(1)*5 < $phc(2)
+} {1}
+
+
+finish_test
+

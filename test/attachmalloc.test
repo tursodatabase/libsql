@@ -61,17 +61,18 @@ do_malloc_test attachmalloc-2 -tclprep {
   ATTACH 'test2.db' AS db1;
 }
 
-set enable_shared_cache [sqlite3_enable_shared_cache 1]
-sqlite3 dbaux test3.db
-dbaux eval {SELECT * FROM sqlite_master}
-do_malloc_test attachmalloc-3 -sqlbody {
-  SELECT * FROM sqlite_master;
-  ATTACH 'test3.db' AS three;
-} -cleanup {
-  db eval { DETACH three }
+ifcapable shared_cache {
+  set enable_shared_cache [sqlite3_enable_shared_cache 1]
+  sqlite3 dbaux test3.db
+  dbaux eval {SELECT * FROM sqlite_master}
+  do_malloc_test attachmalloc-3 -sqlbody {
+    SELECT * FROM sqlite_master;
+    ATTACH 'test3.db' AS three;
+  } -cleanup {
+    db eval { DETACH three }
+  }
+  dbaux close
+  sqlite3_enable_shared_cache $enable_shared_cache
 }
-dbaux close
-sqlite3_enable_shared_cache $enable_shared_cache
-
 
 finish_test

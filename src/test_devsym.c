@@ -187,7 +187,7 @@ static int devsymDeviceCharacteristics(sqlite3_file *pFile){
 }
 
 /*
-** Shared-memory methods are all pass-thrus.
+** Shared-memory methods are all pass-throughs.
 */
 static int devsymShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   devsym_file *p = (devsym_file *)pFile;

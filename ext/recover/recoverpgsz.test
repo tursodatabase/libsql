@@ -1,0 +1,100 @@
+# 2022 October 14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+source [file join [file dirname [info script]] recover_common.tcl]
+
+db close
+sqlite3_test_control_pending_byte 0x1000000
+
+set testprefix recoverpgsz
+
+foreach {pgsz bOverflow} {
+  512 0 1024 0 2048 0 4096 0 8192 0 16384 0 32768 0 65536 0
+  512 1 1024 1 2048 1 4096 1 8192 1 16384 1 32768 1 65536 1
+} {
+  reset_db
+  execsql "PRAGMA page_size = $pgsz"
+  execsql "PRAGMA auto_vacuum = 0"
+  do_execsql_test 1.$pgsz.$bOverflow.1 {
+    CREATE TABLE t1(a, b, c);
+    CREATE INDEX i1 ON t1(b, a, c);
+    INSERT INTO t1(a, b) VALUES(1, 2), (3, 4), (5, 6);
+    DELETE FROM t1 WHERE a=3;
+  }
+  if {$bOverflow} {
+    do_execsql_test 1.$pgsz.$bOverflow.1a {
+      UPDATE t1 SET c = randomblob(100000);
+    }
+  }
+  db close
+
+
+  set fd [open test.db]
+  fconfigure $fd -encoding binary -translation binary
+  seek $fd $pgsz
+  set pg1 [read $fd $pgsz]
+  set pg2 [read $fd $pgsz]
+  close $fd
+
+  set fd2 [open test.db2 w]
+  fconfigure $fd2 -encoding binary -translation binary
+  seek $fd2 $pgsz
+  puts -nonewline $fd2 $pg1
+  close $fd2
+
+  sqlite3 db2 test.db2
+  do_test 1.$pgsz.$bOverflow.2 {
+    set R [sqlite3_recover_init db2 main test.db3]
+    $R run
+    $R finish
+  } {}
+
+  sqlite3 db3 test.db3
+  do_test 1.$pgsz.$bOverflow.3 {
+    db3 eval { SELECT * FROM sqlite_schema }
+    db3 eval { PRAGMA page_size } 
+  } $pgsz
+
+  db2 close
+  db3 close
+
+  forcedelete test.db3
+  forcedelete test.db2
+
+  set fd2 [open test.db2 w]
+  fconfigure $fd2 -encoding binary -translation binary
+  seek $fd2 $pgsz
+  puts -nonewline $fd2 $pg2
+  close $fd2
+
+  sqlite3 db2 test.db2
+  do_test 1.$pgsz.$bOverflow.4 {
+    set R [sqlite3_recover_init db2 main test.db3]
+    $R run
+    $R finish
+  } {}
+
+  sqlite3 db3 test.db3
+  do_test 1.$pgsz.$bOverflow.5 {
+    db3 eval { SELECT * FROM sqlite_schema }
+    db3 eval { PRAGMA page_size } 
+  } $pgsz
+
+  db2 close
+  db3 close
+}
+
+
+finish_test
+
+
+

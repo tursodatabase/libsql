@@ -146,7 +146,7 @@ do_execsql_test 2.2 {
 } {31 10}
 
 do_execsql_test 2.3 {
-  SELECT CASE WHEN DeliveredQty=10 THEN "TEST PASSED!" ELSE "TEST FAILED!" END 
+  SELECT CASE WHEN DeliveredQty=10 THEN 'TEST PASSED!' ELSE 'TEST FAILED!' END 
   FROM InventoryControl WHERE SKU=31; 
 } {{TEST PASSED!}}
 

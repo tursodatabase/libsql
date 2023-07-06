@@ -14,11 +14,6 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !json1 {
-  finish_test
-  return
-}
-
 do_execsql_test json103-100 {
   CREATE TABLE t1(a,b,c);
   WITH RECURSIVE c(x) AS (VALUES(1) UNION SELECT x+1 FROM c WHERE x<100)

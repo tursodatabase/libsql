@@ -17,7 +17,16 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix alterqf
 
+# If SQLITE_OMIT_ALTERTABLE is defined, omit this file.
+ifcapable !altertable {
+  finish_test
+  return
+}
+
+
 sqlite3_test_control SQLITE_TESTCTRL_INTERNAL_FUNCTIONS db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 
 do_execsql_test 1.0 {
   CREATE TABLE t1(a, b, c);
@@ -54,8 +63,7 @@ foreach {tn before after} {
  10 {CREATE TABLE t2(abc, xyz CHECK (xyz != "123"))} 
     {CREATE TABLE t2(abc, xyz CHECK (xyz != '123'))} 
 
- 11 {
-    CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
+ 11 {CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
       SELECT max("str", new."a") FROM t1 
           WHERE group_concat("b", ",") OVER (ORDER BY c||"str");
       UPDATE t1 SET c= b + "str";
@@ -63,8 +71,7 @@ foreach {tn before after} {
         SELECT 1 FROM t1 AS o WHERE o."a" = "o.a" AND t1.b IN("t1.b")
       );
     END;
- } {
-    CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
+ } {CREATE TRIGGER ott AFTER UPDATE ON t1 BEGIN 
       SELECT max('str', new."a") FROM t1 
           WHERE group_concat("b", ',') OVER (ORDER BY c||'str');
       UPDATE t1 SET c= b + 'str';
@@ -82,6 +89,8 @@ foreach {tn before after} {
 
 #-------------------------------------------------------------------------
 reset_db
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DDL 1
+sqlite3_db_config db SQLITE_DBCONFIG_DQS_DML 1
 do_execsql_test 2.0 {
   CREATE TABLE x1(
       one, two, three, PRIMARY KEY(one), 

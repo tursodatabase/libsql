@@ -18,13 +18,15 @@
 #
 #   shell3-1.*: Basic tests for running SQL statments from command line.
 #   shell3-2.*: Basic tests for running SQL file from command line.
+#   shell3-3.*: Basic tests for processing odd SQL constructs.
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set CLI [test_find_cli]
+set CLI [test_cli_invocation]
 db close
 forcedelete test.db test.db-journal test.db-wal
 sqlite3 db test.db
+
 
 # There are inconsistencies in command-line argument quoting on Windows.
 # In particular, individual applications are responsible for command-line
@@ -66,7 +68,7 @@ do_test shell3-1.6 {
 } {0 {}}
 do_test shell3-1.7 {
   catchcmd "foo.db \"CREATE TABLE\""
-} {1 {Error: incomplete input}}
+} {1 {Error: in prepare, incomplete input}}
 
 #----------------------------------------------------------------------------
 #   shell3-2.*: Basic tests for running SQL file from command line.
@@ -96,6 +98,41 @@ do_test shell3-2.6 {
 } {0 {}}
 do_test shell3-2.7 {
   catchcmd "foo.db" "CREATE TABLE"
-} {1 {Error: near line 1: incomplete input}}
+} {1 {Parse error near line 1: incomplete input}}
+
+
+#----------------------------------------------------------------------------
+#   shell3-3.*: Basic tests for processing odd SQL constructs.
+#
+
+# Run combinations of odd identifiers, comments, semicolon placement
+do_test shell3-3.1 {
+  forcedelete foo.db
+  set rc [ catchcmd "foo.db" {CREATE TABLE t1("
+a--.
+" --x
+); CREATE TABLE t2("a[""b""]");
+.header on
+INSERT INTO t1 VALUES ('
+x''y');
+INSERT INTO t2 VALUES ('
+/*.
+.*/ x
+''y');
+SELECT * from t1 limit 1;
+SELECT * from t2 limit 1;
+} ]
+  set fexist [file exist foo.db]
+  list $rc $fexist
+} {{0 {
+a--.
+
+
+x'y
+a["b"]
+
+/*.
+.*/ x
+'y}} 1}
 
 finish_test

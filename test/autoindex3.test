@@ -86,6 +86,7 @@ do_eqp_test 220 {
 } {
   QUERY PLAN
   |--SEARCH v USING INDEX ve (e>?)
+  |--BLOOM FILTER ON u (b=?)
   `--SEARCH u USING AUTOMATIC COVERING INDEX (b=?)
 }
 

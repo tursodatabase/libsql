@@ -18,6 +18,10 @@ set ::testprefix fts3fault
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
 
+set ::TMPDBERROR [list 1 \
+  {unable to open a temporary database file for storing temporary tables}
+]
+
 # Test error handling in the sqlite3Fts3Init() function. This is the 
 # function that registers the FTS3 module and various support functions
 # with SQLite.
@@ -49,7 +53,7 @@ do_faultsim_test 2 -prep {
 } -body {
   execsql { ALTER TABLE t1 RENAME TO t2 }
 } -test {
-  faultsim_test_result {0 {}} 
+  faultsim_test_result {0 {}} $::TMPDBERROR
 }
 
 # Test error handling in the special case where a single prefix query 
@@ -194,7 +198,7 @@ do_faultsim_test 8.2 -faults oom-t* -prep {
 } -body {
   execsql { SELECT mit(matchinfo(t8, 's')) FROM t8 WHERE t8 MATCH 'a b c' }
 } -test {
-  faultsim_test_result {0 3}
+  faultsim_test_result {0 3} $::TMPDBERROR
 }
 do_faultsim_test 8.3 -prep { 
   faultsim_restore_and_reopen

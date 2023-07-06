@@ -129,4 +129,28 @@ for {set i 1} {$i<=31} {incr i} {
   } {ok}
 }
 
+# 2022-03-06 OSSFuzz issue 45329
+# An assertion fault due to the failure to clear a flag in an optimization
+# committed last night.
+#
+# When the stay-on-last page optimization of sqlite3BtreeIndexMoveto() is
+# invoked, it needs to clear the BTCF_ValidOvfl flag.
+#
+db close
+sqlite3 db :memory:
+do_execsql_test btree01-2.1 {
+  PRAGMA page_size=1024;
+  CREATE TABLE t1(a INT PRIMARY KEY, b BLOB, c INT) WITHOUT ROWID;
+  WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100)
+    INSERT INTO t1(a,b,c) SELECT x*2, zeroblob(100), x FROM c;
+  UPDATE t1 SET b=zeroblob(1000) WHERE a=198;
+  CREATE TABLE t2(x INTEGER PRIMARY KEY, y INT);
+  INSERT INTO t2(y) VALUES(198),(187),(100);
+  SELECT y, c FROM t2 LEFT JOIN t1 ON y=a ORDER BY x;
+} {198 99 187 {} 100 50}
+do_execsql_test btree01-2.2 {
+  SELECT y, c FROM t1 RIGHT JOIN t2 ON y=a ORDER BY x;
+} {198 99 187 {} 100 50}
+
+
 finish_test

@@ -1,0 +1,44 @@
+# 2023-07-03
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# This file contains a test that attempts to verify the claim that the
+# floatpoint-to-text conversion routines built into SQLite maintain at
+# least 15 significant digits of accuracy.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+if {[catch {load_static_extension db decimal} error]} {
+  puts "Skipping decimal tests, hit load error: $error"
+  finish_test; return
+}
+
+sqlite3_create_function db
+do_execsql_test fpconv1-1.0 {
+  WITH RECURSIVE
+       /* Number of random floating-point values to try.
+       ** On a circa 2016 x64 linux box, this test runs at
+       ** about 80000 cases per second  -------------------vvvvvv */
+    c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c WHERE x<100000),
+    fp(y) AS MATERIALIZED (
+       SELECT CAST( format('%+d.%019d0e%+03d',
+                           random()%10,abs(random()),random()%200) AS real)
+        FROM c
+    )
+  SELECT y FROM fp
+   WHERE -log10(abs(decimal_sub(dtostr(y,24),format('%!.24e',y))/y))<15.0;
+                     /* Number of digits of accuracy required -------^^^^ */
+} {}
+#  ^---- Expect a empty set as the result.  The output is all tested numbers
+#        that fail to preserve at least 15 significant digits of accuracy.
+
+finish_test
