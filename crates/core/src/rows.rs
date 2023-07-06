@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Query result rows.
+#[derive(Debug)]
 pub struct Rows {
     pub(crate) stmt: Rc<raw::Statement>,
     pub(crate) err: RefCell<Option<i32>>,

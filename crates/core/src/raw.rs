@@ -4,6 +4,7 @@ pub type Error = i32;
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+#[derive(Debug)]
 pub struct Statement {
     pub(crate) raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
 }

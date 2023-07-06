@@ -2,7 +2,7 @@ use libsql_core::{Database, Params};
 
 #[test]
 fn simple_usage() {
-    let db = Database::open(":memory:");
+    let db = Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)", ())
         .unwrap();
@@ -17,7 +17,7 @@ fn simple_usage() {
 
 #[test]
 fn params() {
-    let db = libsql_core::Database::open(":memory:");
+    let db = libsql_core::Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
     conn.execute(
         "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)",
@@ -38,7 +38,7 @@ fn params() {
 
 #[test]
 fn nulls() {
-    let db = libsql_core::Database::open(":memory:");
+    let db = libsql_core::Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)", ())
         .unwrap();

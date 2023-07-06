@@ -92,9 +92,7 @@ impl Replicator {
             move || -> anyhow::Result<()> {
                 let mut ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
                 let mut injector = FrameInjector::new(&db_path, &mut ctx)?;
-
                 while injector.step()? {}
-
                 Ok(())
             }
         });
