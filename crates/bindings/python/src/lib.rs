@@ -37,8 +37,32 @@ pub struct Cursor {
 
 #[pymethods]
 impl Cursor {
-    fn execute(self_: PyRef<'_, Self>, _sql: String) -> PyResult<Result> {
-        let rows = self_.conn.execute(_sql, ()).map_err(to_py_err)?;
+    fn execute(
+        self_: PyRef<'_, Self>,
+        sql: String,
+        parameters: Option<&PyTuple>,
+    ) -> PyResult<Result> {
+        let params: libsql_core::Params = match parameters {
+            Some(parameters) => {
+                let mut params = vec![];
+                for parameter in parameters.iter() {
+                    let param = match parameter.extract::<i32>() {
+                        Ok(value) => libsql_core::Value::Integer(value as i64),
+                        Err(_) => match parameter.extract::<f64>() {
+                            Ok(value) => libsql_core::Value::Float(value),
+                            Err(_) => match parameter.extract::<&str>() {
+                                Ok(value) => libsql_core::Value::Text(value.to_string()),
+                                Err(_) => todo!(),
+                            },
+                        },
+                    };
+                    params.push(param);
+                }
+                libsql_core::Params::Positional(params)
+            }
+            None => libsql_core::Params::None,
+        };
+        let rows = self_.conn.execute(sql, params).map_err(to_py_err)?;
         Ok(Result { rows })
     }
 }

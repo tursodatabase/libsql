@@ -13,6 +13,15 @@ def test_basic(provider):
     res = cur.execute("SELECT * FROM users")
     assert (1, 'alice@example.com') == res.fetchone()
 
+@pytest.mark.parametrize("provider", ["libsql", "sqlite"])
+def test_params(provider):
+    conn = connect(provider, ":memory:")
+    cur = conn.cursor()
+    cur.execute("CREATE TABLE users (id INTEGER, email TEXT)")
+    cur.execute("INSERT INTO users VALUES (?, ?)", (1, 'alice@example.com'))
+    res = cur.execute("SELECT * FROM users")
+    assert (1, 'alice@example.com') == res.fetchone()
+
 def connect(provider, database):
     if provider == "libsql":
         return libsql.connect(database)
