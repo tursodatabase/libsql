@@ -1,5 +1,5 @@
-C Fix\soctet_length()\stest\scases\sso\sthat\sthey\swork\swhen\sthe\sdatabase\sencoding\nis\sutf16.
-D 2023-07-06T17:14:47.377
+C A\smore\sprecise\simplementation\sof\ssqlite3RealToI64().
+D 2023-07-06T18:29:15.324
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -713,7 +713,7 @@ F src/vdbeInt.h 7bd49eef8f89c1a271fbf12d80a206bf56c876814c5fc6bee340f4e1907095ae
 F src/vdbeapi.c de9703f8705afc393cc2864669ce28cf9516983c8331d59aa2b978de01634365
 F src/vdbeaux.c b5e3f7e158518b4eca6f166ac43900640a3fe9735c710e12bfa119af21059339
 F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2ce
-F src/vdbemem.c aed58a560caab12540f7c14c43ee188636017814e21247a97902f78de2d43117
+F src/vdbemem.c cf4a1556dd5b18c071cf7c243373c29ce752eb516022e3ad49ba72f08b785033
 F src/vdbesort.c 0d40dca073c94e158ead752ef4225f4fee22dee84145e8c00ca2309afb489015
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c63e26e705f5e967e14ef6aea8ce226548293ad8d25066069f29fa89673913d2
-R 53ca4618f6c32fdbf6e515373f138d99
+P ad2e39626e6115fd322ef9495ae3bcd91343d7131a725f1bf24211a51a21dcc2
+R baabd38e9d5c12b3770d5c6b7a3756f9
 U drh
-Z fbdc8f38e0cbbe60844dd0d57718e977
+Z 154e4a90dc9247c0b7fc14085e7b1665
 # Remove this line to create a well-formed Fossil manifest.
