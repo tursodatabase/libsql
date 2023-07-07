@@ -39,3 +39,10 @@ Running the benchmarks:
 ```sh
 cargo test
 ```
+
+Run benchmarks and generate flamegraphs:
+
+```console
+echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+cargo bench --bench benchmark -- --profile-time=5
+```
