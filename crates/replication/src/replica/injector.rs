@@ -58,9 +58,9 @@ impl<'a> FrameInjector<'a> {
                         std::ptr::null_mut(),
                     );
                 }
-                return Ok(false);
+                Ok(false)
             }
-            LIBSQL_CONTINUE_REPLICATION => return Ok(true),
+            LIBSQL_CONTINUE_REPLICATION => Ok(true),
             _ => panic!("unexpected error code: {}", rc),
         }
     }

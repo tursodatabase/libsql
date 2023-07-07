@@ -18,9 +18,9 @@ pub struct WalIndexMeta {
     /// Generation Uuid
     /// This number is generated on each primary restart. This let's us know that the primary, and
     /// we need to make sure that we are not ahead of the primary.
-    generation_id: u128,
+    pub generation_id: u128,
     /// Uuid of the database this instance is a replica of
-    database_id: u128,
+    pub database_id: u128,
 }
 
 impl WalIndexMeta {
