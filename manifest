@@ -1,5 +1,5 @@
-C Add\soption\s2\sto\sSQLITE_TESTCTRL_USELONGDOUBLE\sto\smove\sthe\ssetting\sto\sits\ndefaults.\s\sEnhance\sthe\sCLI\sand\stestfixture\sto\smake\suse\sof\sthis\svalue.\nBase\sthe\sdefault\son\ssizeof(LONGDOUBLE_TYPE)\srather\sthan\son\ssizeof(long\sdouble).
-D 2023-07-07T12:08:22.335
+C For\sthe\s"Valgrind"\stest\sscenario,\sset\sLONGDOUBLE_TYPE=double\sas\svalgrind\ndoes\snot\scorrectly\semulated\sextended\sprecision\son\sx64.
+D 2023-07-07T12:18:26.936
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1393,7 +1393,7 @@ F test/recover.test fd5199f928757cb308661b5fdca1abc19398a798ff7f24b57c3071e9f8e0
 F test/regexp1.test 8f2a8bc1569666e29a4cee6c1a666cd224eb6d50e2470d1dc1df995170f3e0f1
 F test/regexp2.test 55ed41da802b0e284ac7e2fe944be3948f93ff25abbca0361a609acfed1368b5
 F test/reindex.test cd9d6021729910ece82267b4f5e1b5ac2911a7566c43b43c176a6a4732e2118d
-F test/releasetest_data.tcl b550dd1b122a9c969df794d05ea272df535f10ff1a245062e7ba080822378016
+F test/releasetest_data.tcl c8cf85aeb313a771e18dae01396f5ca70e85d4574df681990629b1103f185afe
 F test/resetdb.test 54c06f18bc832ac6d6319e5ab23d5c8dd49fdbeec7c696d791682a8006bd5fc3
 F test/resolver01.test f4022acafda7f4d40eca94dbf16bc5fc4ac30ceb
 F test/returning1.test db532cde29d6aebbc48c6ddc3149b30476f8e69ca7a2c4b53986c7635e6fd8ec
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 31561c63bde6af2210296810fd66232b935033b4d26273a6b8a52142c54b4e12
-R 93932f9b54cd2edf248071527cdd4d5f
+P 64e6bd1c25d8e1dbfe511cba1921ff052c0fa4fe410fc9ce4435700a70cb88b1
+R 938acc948a8d28aa6e5bbb237d21a380
 U drh
-Z ab5ae8b4443bc292d3ee2bd813aeff61
+Z 95c647057214d80d38fbb5e9ad4c9cbc
 # Remove this line to create a well-formed Fossil manifest.

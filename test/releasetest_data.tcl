@@ -257,6 +257,7 @@ array set ::Configs [strip_comments {
     -DSQLITE_ENABLE_FTS4
     -DSQLITE_ENABLE_RTREE
     -DSQLITE_ENABLE_HIDDEN_COLUMNS
+    -DLONGDOUBLE_TYPE=double
     -DCONFIG_SLOWDOWN_FACTOR=8.0
   }
 
