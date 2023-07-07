@@ -1,8 +1,5 @@
-mod error;
-mod hook;
-mod injector;
-mod meta;
-mod replicator;
-mod snapshot;
-
-pub use replicator::Replicator;
+pub mod error;
+pub mod hook;
+pub mod injector;
+pub mod meta;
+pub mod snapshot;

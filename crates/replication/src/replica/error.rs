@@ -1,4 +1,5 @@
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum ReplicationError {
     #[error("Replica is ahead of primary")]
     Lagging,

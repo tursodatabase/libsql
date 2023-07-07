@@ -3,25 +3,18 @@ use std::io::ErrorKind;
 use std::mem::size_of;
 use std::os::unix::prelude::FileExt;
 use std::path::Path;
-use std::str::FromStr;
 
-use anyhow::Context;
 use bytemuck::{try_pod_read_unaligned, Pod, Zeroable};
-use uuid::Uuid;
-
-use crate::{replication_log::rpc::HelloResponse, FrameNo};
-
-use super::error::ReplicationError;
 
 #[repr(C)]
 #[derive(Debug, Pod, Zeroable, Clone, Copy)]
 pub struct WalIndexMeta {
     /// This is the anticipated next frame_no to request
-    pub pre_commit_frame_no: FrameNo,
+    pub pre_commit_frame_no: crate::FrameNo,
     /// After we have written the frames back to the wal, we set this value to the same value as
     /// pre_commit_index
     /// On startup we check this value against the pre-commit value to check for consistency
-    pub post_commit_frame_no: FrameNo,
+    pub post_commit_frame_no: crate::FrameNo,
     /// Generation Uuid
     /// This number is generated on each primary restart. This let's us know that the primary, and
     /// we need to make sure that we are not ahead of the primary.
@@ -56,45 +49,5 @@ impl WalIndexMeta {
         };
 
         Ok(meta)
-    }
-
-    /// attempts to merge two meta files.
-    pub fn merge_from_hello(mut self, hello: HelloResponse) -> Result<Self, ReplicationError> {
-        let hello_db_id = Uuid::from_str(&hello.database_id)
-            .context("invalid database id from primary")?
-            .as_u128();
-        let hello_gen_id = Uuid::from_str(&hello.generation_id)
-            .context("invalid generation id from primary")?
-            .as_u128();
-
-        if hello_db_id != self.database_id {
-            return Err(ReplicationError::DbIncompatible);
-        }
-
-        if self.generation_id == hello_gen_id {
-            Ok(self)
-        } else if self.pre_commit_frame_no <= hello.generation_start_index {
-            // Ok: generation changed, but we aren't ahead of primary
-            self.generation_id = hello_gen_id;
-            Ok(self)
-        } else {
-            Err(ReplicationError::Lagging)
-        }
-    }
-
-    pub fn new_from_hello(hello: HelloResponse) -> anyhow::Result<WalIndexMeta> {
-        let database_id = Uuid::from_str(&hello.database_id)
-            .context("invalid database id from primary")?
-            .as_u128();
-        let generation_id = Uuid::from_str(&hello.generation_id)
-            .context("invalid generation id from primary")?
-            .as_u128();
-
-        Ok(Self {
-            pre_commit_frame_no: FrameNo::MAX,
-            post_commit_frame_no: FrameNo::MAX,
-            generation_id,
-            database_id,
-        })
     }
 }
