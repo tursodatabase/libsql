@@ -126,6 +126,9 @@ impl FromValue for i32 {
 impl FromValue for &str {
     fn from_sql(val: *mut libsql_sys::ffi::sqlite3_value) -> Result<Self> {
         let ret = unsafe { libsql_sys::ffi::sqlite3_value_text(val) };
+        if ret.is_null() {
+            return Err(Error::NullValue);
+        }
         let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const i8) };
         let ret = ret.to_str().unwrap();
         Ok(ret)
