@@ -1,4 +1,4 @@
-use libsql_core::{Database, Value};
+use libsql_core::{Database, Params};
 
 #[test]
 fn simple_usage() {
@@ -9,7 +9,7 @@ fn simple_usage() {
     conn.execute("INSERT INTO users (id, name) VALUES (1, 'Alice')", ())
         .unwrap();
     let stmt = conn.prepare("SELECT * FROM users").unwrap();
-    let rows = stmt.execute(libsql_core::Params::None).unwrap();
+    let rows = stmt.execute(&Params::None).unwrap();
     let row = rows.next().unwrap().unwrap();
     assert_eq!(row.get::<i32>(0).unwrap(), 1);
     assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
@@ -30,7 +30,7 @@ fn params() {
     conn.execute("INSERT INTO users (id, name) VALUES (?1, ?2)", params)
         .unwrap();
     let stmt = conn.prepare("SELECT * FROM users").unwrap();
-    let rows = stmt.execute(()).unwrap();
+    let rows = stmt.execute(&Params::None).unwrap();
     let row = rows.next().unwrap().unwrap();
     assert_eq!(row.get::<i32>(0).unwrap(), 1);
     assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
