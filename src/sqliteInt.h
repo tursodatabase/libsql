@@ -4608,7 +4608,8 @@ struct FpDecode {
   char isSpecial;      /* 1: Infinity  2: NaN */
   int n;               /* Significant digits in the decode */
   int iDP;             /* Location of the decimal point */
-  char z[24];          /* Significiant digits */
+  char *z;             /* Start of significant digits */
+  char zBuf[24];       /* Storage for significant digits */
 };
 
 void sqlite3FpDecode(FpDecode*,double,int,int);

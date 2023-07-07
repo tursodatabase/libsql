@@ -939,6 +939,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   u64 v;
   int e, exp = 0;
   p->isSpecial = 0;
+  p->z = p->zBuf;
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
   ** NaN. */
@@ -949,7 +950,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     p->sign = '+';
     p->n = 1;
     p->iDP = 1;
-    p->z[0] = '0';
+    p->z = "0";
     return;
   }else{
     p->sign = '+';
@@ -1023,21 +1024,23 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
 
   /* Extract significant digits. */
-  i = sizeof(p->z)-1;
-  while( v ){  p->z[i--] = (v%10) + '0'; v /= 10; }
-  p->n = sizeof(p->z) - 1 - i;
+  i = sizeof(p->zBuf)-1;
+  while( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
+  assert( i>=0 );
+  p->n = sizeof(p->zBuf) - 1 - i;
+  assert( p->n<sizeof(p->zBuf) );
   p->iDP = p->n + exp;
   if( iRound<0 ){
     iRound = p->iDP - iRound;
     if( iRound==0 && p->z[i+1]>='5' ){
       iRound = 1;
-      p->z[i--] = '0';
+      p->zBuf[i--] = '0';
       p->n++;
       p->iDP++;
     }
   }
   if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
-    char *z = &p->z[i+1];
+    char *z = &p->zBuf[i+1];
     if( iRound>mxRound ) iRound = mxRound;
     p->n = iRound;
     if( z[iRound]>='5' ){
@@ -1057,7 +1060,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       }
     }
   }
-  memmove(p->z, &p->z[i+1], p->n);
+  p->z = &p->zBuf[i+1];
   while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
 }
 
