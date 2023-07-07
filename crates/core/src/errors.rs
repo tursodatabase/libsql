@@ -6,6 +6,8 @@ pub enum Error {
     QueryFailed(String),
     #[error("Unknown column type for index `{0}`: `{1}`")]
     UnknownColumnType(i32, i32),
+    #[error("The value is NULL")]
+    NullValue,
 }
 
 pub fn sqlite_error_message(raw: *mut libsql_sys::ffi::sqlite3) -> String {
