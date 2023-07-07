@@ -12,6 +12,7 @@ use bytes::{Bytes, BytesMut};
 use parking_lot::RwLock;
 use sqld_libsql_bindings::init_static_wal_method;
 use tokio::sync::watch;
+use tokio::time::{Duration, Instant};
 use uuid::Uuid;
 
 #[cfg(feature = "bottomless")]
@@ -23,7 +24,9 @@ use crate::libsql::ffi::{
 };
 use crate::libsql::wal_hook::WalHook;
 use crate::replication::frame::{Frame, FrameHeader};
-use crate::replication::snapshot::{find_snapshot_file, LogCompactor, SnapshotFile};
+use crate::replication::snapshot::{
+    find_snapshot_file, LogCompactor, SnapshotCallback, SnapshotFile,
+};
 use crate::replication::{FrameNo, CRC_64_GO_ISO, WAL_MAGIC, WAL_PAGE_SIZE};
 
 init_static_wal_method!(REPLICATION_METHODS, ReplicationLoggerHook);
@@ -345,6 +348,11 @@ pub struct LogFile {
     pub header: LogFileHeader,
     /// the maximum number of frames this log is allowed to contain before it should be compacted.
     max_log_frame_count: u64,
+    /// the maximum duration before the log should be compacted.
+    max_log_duration: Option<Duration>,
+    /// the time of the last compaction
+    last_compact_instant: Instant,
+
     /// number of frames in the log that have not been commited yet. On commit the header's frame
     /// count is incremented by that ammount. New pages are written after the last
     /// header.frame_count + uncommit_frame_count.
@@ -371,14 +379,18 @@ impl LogFile {
     /// size of a single frame
     pub const FRAME_SIZE: usize = size_of::<FrameHeader>() + WAL_PAGE_SIZE as usize;
 
-    pub fn new(file: File, max_log_frame_count: u64) -> anyhow::Result<Self> {
+    pub fn new(
+        file: File,
+        max_log_frame_count: u64,
+        max_log_duration: Option<Duration>,
+    ) -> anyhow::Result<Self> {
         // FIXME: we should probably take a lock on this file, to prevent anybody else to write to
         // it.
         let file_end = file.metadata()?.len();
 
-        if file_end == 0 {
+        let header = if file_end == 0 {
             let db_id = Uuid::new_v4();
-            let header = LogFileHeader {
+            LogFileHeader {
                 version: 2,
                 start_frame_no: 0,
                 magic: WAL_MAGIC,
@@ -387,44 +399,36 @@ impl LogFile {
                 db_id: db_id.as_u128(),
                 frame_count: 0,
                 sqld_version: Version::current().0,
-            };
-
-            let mut this = Self {
-                file,
-                header,
-                max_log_frame_count,
-                uncommitted_frame_count: 0,
-                uncommitted_checksum: 0,
-                commited_checksum: 0,
-            };
-
-            this.write_header()?;
-
-            Ok(this)
-        } else {
-            let header = Self::read_header(&file)?;
-            let mut this = Self {
-                file,
-                header,
-                max_log_frame_count,
-                uncommitted_frame_count: 0,
-                uncommitted_checksum: 0,
-                commited_checksum: 0,
-            };
-
-            if let Some(last_commited) = this.last_commited_frame_no() {
-                // file is not empty, the starting checksum is the checksum from the last entry
-                let last_frame = this.frame(last_commited)?;
-                this.commited_checksum = last_frame.header().checksum;
-                this.uncommitted_checksum = last_frame.header().checksum;
-            } else {
-                // file contains no entry, start with the initial checksum from the file header.
-                this.commited_checksum = this.header.start_checksum;
-                this.uncommitted_checksum = this.header.start_checksum;
             }
+        } else {
+            Self::read_header(&file)?
+        };
 
-            Ok(this)
+        let mut this = Self {
+            file,
+            header,
+            max_log_frame_count,
+            max_log_duration,
+            last_compact_instant: Instant::now(),
+            uncommitted_frame_count: 0,
+            uncommitted_checksum: 0,
+            commited_checksum: 0,
+        };
+
+        if file_end == 0 {
+            this.write_header()?;
+        } else if let Some(last_commited) = this.last_commited_frame_no() {
+            // file is not empty, the starting checksum is the checksum from the last entry
+            let last_frame = this.frame(last_commited)?;
+            this.commited_checksum = last_frame.header().checksum;
+            this.uncommitted_checksum = last_frame.header().checksum;
+        } else {
+            // file contains no entry, start with the initial checksum from the file header.
+            this.commited_checksum = this.header.start_checksum;
+            this.uncommitted_checksum = this.header.start_checksum;
         }
+
+        Ok(this)
     }
 
     pub fn read_header(file: &File) -> anyhow::Result<LogFileHeader> {
@@ -566,17 +570,27 @@ impl LogFile {
         Ok(frame)
     }
 
+    fn should_compact(&self) -> bool {
+        let mut compact = false;
+        compact |= self.header.frame_count > self.max_log_frame_count;
+        if let Some(max_log_duration) = self.max_log_duration {
+            compact |= self.last_compact_instant.elapsed() > max_log_duration;
+        }
+        compact &= self.uncommitted_frame_count == 0;
+        compact
+    }
+
     fn maybe_compact(
         &mut self,
         compactor: LogCompactor,
         size_after: u32,
         path: &Path,
     ) -> anyhow::Result<()> {
-        if self.header.frame_count > self.max_log_frame_count {
-            return self.do_compaction(compactor, size_after, path);
+        if self.should_compact() {
+            self.do_compaction(compactor, size_after, path)
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 
     fn do_compaction(
@@ -585,6 +599,8 @@ impl LogFile {
         size_after: u32,
         path: &Path,
     ) -> anyhow::Result<()> {
+        assert_eq!(self.uncommitted_frame_count, 0);
+
         tracing::info!("performing log compaction");
         let temp_log_path = path.join("temp_log");
         let file = OpenOptions::new()
@@ -592,7 +608,7 @@ impl LogFile {
             .write(true)
             .create(true)
             .open(&temp_log_path)?;
-        let mut new_log_file = LogFile::new(file, self.max_log_frame_count)?;
+        let mut new_log_file = LogFile::new(file, self.max_log_frame_count, self.max_log_duration)?;
         let new_header = LogFileHeader {
             start_frame_no: self.header.start_frame_no + self.header.frame_count,
             frame_count: 0,
@@ -627,9 +643,10 @@ impl LogFile {
 
     fn reset(self) -> anyhow::Result<Self> {
         let max_log_frame_count = self.max_log_frame_count;
+        let max_log_duration = self.max_log_duration;
         // truncate file
         self.file.set_len(0)?;
-        Self::new(self.file, max_log_frame_count)
+        Self::new(self.file, max_log_frame_count, max_log_duration)
     }
 }
 
@@ -731,7 +748,13 @@ pub struct ReplicationLogger {
 }
 
 impl ReplicationLogger {
-    pub fn open(db_path: &Path, max_log_size: u64, dirty: bool) -> anyhow::Result<Self> {
+    pub fn open(
+        db_path: &Path,
+        max_log_size: u64,
+        max_log_duration: Option<Duration>,
+        dirty: bool,
+        callback: SnapshotCallback,
+    ) -> anyhow::Result<Self> {
         let log_path = db_path.join("wallog");
         let data_path = db_path.join("data");
 
@@ -744,7 +767,7 @@ impl ReplicationLogger {
             .open(log_path)?;
 
         let max_log_frame_count = max_log_size * 1_000_000 / LogFile::FRAME_SIZE as u64;
-        let log_file = LogFile::new(file, max_log_frame_count)?;
+        let log_file = LogFile::new(file, max_log_frame_count, max_log_duration)?;
         let header = log_file.header();
 
         let should_recover = if dirty {
@@ -761,13 +784,17 @@ impl ReplicationLogger {
         };
 
         if should_recover {
-            Self::recover(log_file, data_path)
+            Self::recover(log_file, data_path, callback)
         } else {
-            Self::from_log_file(db_path.to_path_buf(), log_file)
+            Self::from_log_file(db_path.to_path_buf(), log_file, callback)
         }
     }
 
-    fn from_log_file(db_path: PathBuf, log_file: LogFile) -> anyhow::Result<Self> {
+    fn from_log_file(
+        db_path: PathBuf,
+        log_file: LogFile,
+        callback: SnapshotCallback,
+    ) -> anyhow::Result<Self> {
         let header = log_file.header();
         let generation_start_frame_no = header.start_frame_no + header.frame_count;
 
@@ -775,14 +802,18 @@ impl ReplicationLogger {
 
         Ok(Self {
             generation: Generation::new(generation_start_frame_no),
-            compactor: LogCompactor::new(&db_path, log_file.header.db_id)?,
+            compactor: LogCompactor::new(&db_path, log_file.header.db_id, callback)?,
             log_file: RwLock::new(log_file),
             db_path,
             new_frame_notifier,
         })
     }
 
-    fn recover(log_file: LogFile, mut data_path: PathBuf) -> anyhow::Result<Self> {
+    fn recover(
+        log_file: LogFile,
+        mut data_path: PathBuf,
+        callback: SnapshotCallback,
+    ) -> anyhow::Result<Self> {
         // It is necessary to checkpoint before we restore the replication log, since the WAL may
         // contain pages that are not in the database file.
         checkpoint_db(&data_path)?;
@@ -814,7 +845,7 @@ impl ReplicationLogger {
 
         assert!(data_path.pop());
 
-        Self::from_log_file(data_path, log_file)
+        Self::from_log_file(data_path, log_file, callback)
     }
 
     pub fn database_id(&self) -> anyhow::Result<Uuid> {
@@ -863,6 +894,29 @@ impl ReplicationLogger {
     pub fn get_frame(&self, frame_no: FrameNo) -> Result<Frame, LogReadError> {
         self.log_file.read().frame(frame_no)
     }
+
+    pub fn maybe_compact(&self) -> anyhow::Result<bool> {
+        let mut log_file = self.log_file.write();
+        if !log_file.should_compact() {
+            // compaction is not necessary or impossible, so exit early
+            return Ok(false);
+        }
+
+        let last_frame = {
+            let mut frames_iter = log_file.rev_frames_iter()?;
+            let Some(last_frame_res) = frames_iter.next() else {
+                // the log file is empty, nothing to compact
+                return Ok(false)
+            };
+            last_frame_res?
+        };
+
+        let size_after = last_frame.header().size_after;
+        assert!(size_after != 0);
+
+        log_file.do_compaction(self.compactor.clone(), size_after, &self.db_path)?;
+        Ok(true)
+    }
 }
 
 fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
@@ -905,7 +959,8 @@ mod test {
     #[test]
     fn write_and_read_from_frame_log() {
         let dir = tempfile::tempdir().unwrap();
-        let logger = ReplicationLogger::open(dir.path(), 0, false).unwrap();
+        let logger =
+            ReplicationLogger::open(dir.path(), 0, None, false, Box::new(|_| Ok(()))).unwrap();
 
         let frames = (0..10)
             .map(|i| WalPage {
@@ -933,7 +988,8 @@ mod test {
     #[test]
     fn index_out_of_bounds() {
         let dir = tempfile::tempdir().unwrap();
-        let logger = ReplicationLogger::open(dir.path(), 0, false).unwrap();
+        let logger =
+            ReplicationLogger::open(dir.path(), 0, None, false, Box::new(|_| Ok(()))).unwrap();
         let log_file = logger.log_file.write();
         assert!(matches!(log_file.frame(1), Err(LogReadError::Ahead)));
     }
@@ -942,7 +998,8 @@ mod test {
     #[should_panic]
     fn incorrect_frame_size() {
         let dir = tempfile::tempdir().unwrap();
-        let logger = ReplicationLogger::open(dir.path(), 0, false).unwrap();
+        let logger =
+            ReplicationLogger::open(dir.path(), 0, None, false, Box::new(|_| Ok(()))).unwrap();
         let entry = WalPage {
             page_no: 0,
             size_after: 0,
@@ -956,7 +1013,7 @@ mod test {
     #[test]
     fn log_file_test_rollback() {
         let f = tempfile::tempfile().unwrap();
-        let mut log_file = LogFile::new(f, 100).unwrap();
+        let mut log_file = LogFile::new(f, 100, None).unwrap();
         (0..5)
             .map(|i| WalPage {
                 page_no: i,

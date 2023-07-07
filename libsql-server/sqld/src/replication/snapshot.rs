@@ -165,8 +165,10 @@ pub struct LogCompactor {
     sender: crossbeam::channel::Sender<(LogFile, PathBuf, u32)>,
 }
 
+pub type SnapshotCallback = Box<dyn Fn(&Path) -> anyhow::Result<()> + Send>;
+
 impl LogCompactor {
-    pub fn new(db_path: &Path, db_id: u128) -> anyhow::Result<Self> {
+    pub fn new(db_path: &Path, db_id: u128, callback: SnapshotCallback) -> anyhow::Result<Self> {
         // we create a 0 sized channel, in order to create backpressure when we can't
         // keep up with snapshop creation: if there isn't any ongoind comptaction task processing,
         // the compact does not block, and the log is compacted in the background. Otherwise, the
@@ -174,11 +176,19 @@ impl LogCompactor {
         let (sender, receiver) = bounded::<(LogFile, PathBuf, u32)>(0);
         let mut merger = SnapshotMerger::new(db_path, db_id)?;
         let db_path = db_path.to_path_buf();
+        let snapshot_dir_path = snapshot_dir_path(&db_path);
         let _handle = std::thread::spawn(move || {
             while let Ok((file, log_path, size_after)) = receiver.recv() {
                 match perform_compaction(&db_path, file, db_id) {
                     Ok((snapshot_name, snapshot_frame_count)) => {
                         tracing::info!("snapshot `{snapshot_name}` successfully created");
+
+                        let snapshot_file = snapshot_dir_path.join(&snapshot_name);
+                        if let Err(e) = (*callback)(&snapshot_file) {
+                            tracing::error!("failed to call snapshot callback: {e}");
+                            break;
+                        }
+
                         if let Err(e) = merger.register_snapshot(
                             snapshot_name,
                             snapshot_frame_count,
@@ -464,7 +474,7 @@ mod test {
     #[test]
     fn compact_file_create_snapshot() {
         let temp = tempfile::NamedTempFile::new().unwrap();
-        let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0).unwrap();
+        let mut log_file = LogFile::new(temp.as_file().try_clone().unwrap(), 0, None).unwrap();
         let db_id = Uuid::new_v4();
         log_file.header.db_id = db_id.as_u128();
         log_file.write_header().unwrap();
@@ -485,7 +495,8 @@ mod test {
         log_file.commit().unwrap();
 
         let dump_dir = tempdir().unwrap();
-        let compactor = LogCompactor::new(dump_dir.path(), db_id.as_u128()).unwrap();
+        let compactor =
+            LogCompactor::new(dump_dir.path(), db_id.as_u128(), Box::new(|_| Ok(()))).unwrap();
         compactor
             .compact(log_file, temp.path().to_path_buf(), 25)
             .unwrap();
