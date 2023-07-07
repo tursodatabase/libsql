@@ -132,6 +132,11 @@ struct Cli {
     /// defaults to 200MB.
     #[clap(long, env = "SQLD_MAX_LOG_SIZE", default_value = "200")]
     max_log_size: u64,
+    /// Maximum duration before the replication log is compacted (in seconds).
+    /// By default, the log is compacted only if it grows above the limit specified with
+    /// `--max-log-size`.
+    #[clap(long, env = "SQLD_MAX_LOG_DURATION")]
+    max_log_duration: Option<f32>,
 
     #[clap(subcommand)]
     utils: Option<UtilsSubcommands>,
@@ -169,6 +174,10 @@ struct Cli {
     /// Set the maximum size for a response. e.g 5KB, 10MB...
     #[clap(long, env = "SQLD_MAX_RESPONSE_SIZE", default_value = "10MB")]
     max_response_size: ByteSize,
+
+    /// Set a command to execute when a snapshot file is generated.
+    #[clap(long, env = "SQLD_SNAPSHOT_EXEC")]
+    snapshot_exec: Option<String>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -267,6 +276,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
         load_from_dump: args.load_from_dump,
         max_log_size: args.max_log_size,
+        max_log_duration: args.max_log_duration,
         heartbeat_url: args.heartbeat_url,
         heartbeat_auth: args.heartbeat_auth,
         heartbeat_period: Duration::from_secs(args.heartbeat_period_s),
@@ -274,6 +284,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         hard_heap_limit_mb: args.hard_heap_limit_mb,
         allow_replica_overwrite: args.allow_replica_overwrite,
         max_response_size: args.max_response_size.0,
+        snapshot_exec: args.snapshot_exec,
     })
 }
 
