@@ -1,35 +1,17 @@
-use std::cell::RefCell;
-
 use crate::{errors, Error, Params, Result, Statement};
+
+use std::cell::RefCell;
 
 /// Query result rows.
 pub struct Rows {
     pub(crate) raw: *mut libsql_sys::ffi::sqlite3,
     pub(crate) raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
-    err: RefCell<Option<i32>>,
+    pub(crate) err: RefCell<Option<i32>>,
 }
 
 unsafe impl Send for Rows {} // TODO: is this safe?
 
 impl Rows {
-    pub fn execute(
-        raw: *mut libsql_sys::ffi::sqlite3,
-        raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
-    ) -> Option<Rows> {
-        let err = unsafe { libsql_sys::ffi::sqlite3_step(raw_stmt) };
-        match err as u32 {
-            libsql_sys::ffi::SQLITE_OK => None,
-            libsql_sys::ffi::SQLITE_DONE => None,
-            _ => {
-                Some(Rows {
-                    raw,
-                    raw_stmt,
-                    err: RefCell::new(Some(err)),
-                })
-            }
-        }
-    }
-
     pub fn next(&self) -> Result<Option<Row>> {
         let err = match self.err.take() {
             Some(err) => err,
@@ -86,6 +68,7 @@ impl Row {
         T: FromValue,
     {
         let val = unsafe { libsql_sys::ffi::sqlite3_column_value(self.raw, idx) };
+        let val = Value { inner: val };
         T::from_sql(val)
     }
 
@@ -110,22 +93,26 @@ pub enum ValueType {
     Null,
 }
 
+pub struct Value {
+    inner: *mut libsql_sys::ffi::sqlite3_value,
+}
+
 pub trait FromValue {
-    fn from_sql(val: *mut libsql_sys::ffi::sqlite3_value) -> Result<Self>
+    fn from_sql(val: Value) -> Result<Self>
     where
         Self: Sized;
 }
 
 impl FromValue for i32 {
-    fn from_sql(val: *mut libsql_sys::ffi::sqlite3_value) -> Result<Self> {
-        let ret = unsafe { libsql_sys::ffi::sqlite3_value_int(val) };
+    fn from_sql(val: Value) -> Result<Self> {
+        let ret = unsafe { libsql_sys::ffi::sqlite3_value_int(val.inner) };
         Ok(ret)
     }
 }
 
 impl FromValue for &str {
-    fn from_sql(val: *mut libsql_sys::ffi::sqlite3_value) -> Result<Self> {
-        let ret = unsafe { libsql_sys::ffi::sqlite3_value_text(val) };
+    fn from_sql(val: Value) -> Result<Self> {
+        let ret = unsafe { libsql_sys::ffi::sqlite3_value_text(val.inner) };
         if ret.is_null() {
             return Err(Error::NullValue);
         }

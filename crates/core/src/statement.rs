@@ -1,5 +1,7 @@
 use crate::{errors, Error, Params, Result, Rows, Value};
 
+use std::cell::RefCell;
+
 /// A prepared statement.
 pub struct Statement {
     raw: *mut libsql_sys::ffi::sqlite3,
@@ -72,6 +74,15 @@ impl Statement {
     pub fn execute(&self, params: &Params) -> Option<Rows> {
         unsafe { libsql_sys::ffi::sqlite3_reset(self.raw_stmt) };
         self.bind(params);
-        Rows::execute(self.raw, self.raw_stmt)
+        let err = unsafe { libsql_sys::ffi::sqlite3_step(self.raw_stmt) };
+        match err as u32 {
+            libsql_sys::ffi::SQLITE_OK => None,
+            libsql_sys::ffi::SQLITE_DONE => None,
+            _ => Some(Rows {
+                raw: self.raw,
+                raw_stmt: self.raw_stmt,
+                err: RefCell::new(Some(err)),
+            }),
+        }
     }
 }
