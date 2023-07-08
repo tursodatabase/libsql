@@ -10,9 +10,8 @@ pub enum Error {
     NullValue,
 }
 
-pub fn sqlite_error_message(raw: *mut libsql_sys::ffi::sqlite3) -> String {
+pub(crate) fn sqlite_error_message(raw: *mut libsql_sys::ffi::sqlite3) -> String {
     let error = unsafe { libsql_sys::ffi::sqlite3_errmsg(raw) };
     let error = unsafe { std::ffi::CStr::from_ptr(error) };
-    let error = error.to_str().unwrap_or("N/A");
-    format!("{}", error)
+    error.to_str().unwrap_or("N/A").to_owned()
 }
