@@ -933,6 +933,11 @@ int sqlite3Atoi(const char *z){
 ** n is positive.  Or round to -n signficant digits after the
 ** decimal point if n is negative.  No rounding is performed if
 ** n is zero.
+**
+** The significant digits of the decimal representation are
+** stored in p->z[] which is a often (but not always) a pointer
+** into the middle of p->zBuf[].  There are p->n significant digits.
+** The p->z[] array is *not* zero-terminated.
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
@@ -1025,14 +1030,16 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
   /* Extract significant digits. */
   i = sizeof(p->zBuf)-1;
+  assert( v>0 );
   while( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
-  assert( i>=0 );
+  assert( i>=0 && i<sizeof(p->zBuf)-1 );
   p->n = sizeof(p->zBuf) - 1 - i;
+  assert( p->n>0 );
   assert( p->n<sizeof(p->zBuf) );
   p->iDP = p->n + exp;
   if( iRound<0 ){
     iRound = p->iDP - iRound;
-    if( iRound==0 && p->z[i+1]>='5' ){
+    if( iRound==0 && p->zBuf[i+1]>='5' ){
       iRound = 1;
       p->zBuf[i--] = '0';
       p->n++;
@@ -1061,6 +1068,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     }
   }
   p->z = &p->zBuf[i+1];
+  assert( i+p->n < sizeof(p->zBuf) );
   while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
 }
 
