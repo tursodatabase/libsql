@@ -405,11 +405,11 @@ static void dekkerMul2(volatile double *x, double y, double yy){
   double hx, hy;
   u64 m;
   memcpy(&m, (void*)&x[0], 8);
-  m &= 0xfffffffffc000000L;
+  m &= 0xfffffffffc000000LL;
   memcpy(&hx, &m, 8);
   tx = x[0] - hx;
   memcpy(&m, &y, 8);
-  m &= 0xfffffffffc000000L;
+  m &= 0xfffffffffc000000LL;
   memcpy(&hy, &m, 8);
   ty = y - hy;
   p = hx*hy;
@@ -963,7 +963,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   memcpy(&v,&r,8);
   e = v>>52;
   if( (e&0x7ff)==0x7ff ){
-    p->isSpecial = 1 + (v!=0x7ff0000000000000L);
+    p->isSpecial = 1 + (v!=0x7ff0000000000000LL);
     p->n = 0;
     p->iDP = 0;
     return;

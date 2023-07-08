@@ -1704,7 +1704,7 @@ static void kahanBabuskaNeumaierStep(
 ** Add a (possibly large) integer to the running sum.
 */
 static void kahanBabuskaNeumaierStepInt64(volatile SumCtx *pSum, i64 iVal){
-  if( iVal<=-4503599627370496 || iVal>=+4503599627370496 ){
+  if( iVal<=-4503599627370496LL || iVal>=+4503599627370496LL ){
     i64 iBig, iSm;
     iSm = iVal % 16384;
     iBig = iVal - iSm;
@@ -1722,7 +1722,7 @@ static void kahanBabuskaNeumaierInit(
   volatile SumCtx *p,
   i64 iVal
 ){
-  if( iVal<=-4503599627370496 || iVal>=+4503599627370496 ){
+  if( iVal<=-4503599627370496LL || iVal>=+4503599627370496LL ){
     i64 iSm = iVal % 16384;
     p->rSum = (double)(iVal - iSm);
     p->rErr = (double)iSm;
