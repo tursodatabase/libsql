@@ -70,6 +70,7 @@ impl Stats {
 fn spawn_stats_persist_thread(stats: Arc<StatsInner>, mut file: File) {
     std::thread::spawn(move || loop {
         if file.rewind().is_ok() {
+            file.set_len(0).unwrap();
             let _ = serde_json::to_writer(&mut file, &stats);
         }
         std::thread::sleep(Duration::from_secs(5));
