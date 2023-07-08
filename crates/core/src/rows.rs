@@ -86,6 +86,7 @@ impl Row {
         T: FromValue,
     {
         let val = unsafe { libsql_sys::ffi::sqlite3_column_value(self.raw, idx) };
+        let val = Value { inner: val };
         T::from_sql(val)
     }
 
@@ -110,22 +111,26 @@ pub enum ValueType {
     Null,
 }
 
+pub struct Value {
+    inner: *mut libsql_sys::ffi::sqlite3_value,
+}
+
 pub trait FromValue {
-    fn from_sql(val: *mut libsql_sys::ffi::sqlite3_value) -> Result<Self>
+    fn from_sql(val: Value) -> Result<Self>
     where
         Self: Sized;
 }
 
 impl FromValue for i32 {
-    fn from_sql(val: *mut libsql_sys::ffi::sqlite3_value) -> Result<Self> {
-        let ret = unsafe { libsql_sys::ffi::sqlite3_value_int(val) };
+    fn from_sql(val: Value) -> Result<Self> {
+        let ret = unsafe { libsql_sys::ffi::sqlite3_value_int(val.inner) };
         Ok(ret)
     }
 }
 
 impl FromValue for &str {
-    fn from_sql(val: *mut libsql_sys::ffi::sqlite3_value) -> Result<Self> {
-        let ret = unsafe { libsql_sys::ffi::sqlite3_value_text(val) };
+    fn from_sql(val: Value) -> Result<Self> {
+        let ret = unsafe { libsql_sys::ffi::sqlite3_value_text(val.inner) };
         if ret.is_null() {
             return Err(Error::NullValue);
         }
