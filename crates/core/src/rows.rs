@@ -1,11 +1,12 @@
 use crate::{errors, Error, Params, Result, Statement};
+use crate::statement::StatementInner;
 
 use std::cell::RefCell;
+use std::rc::Rc;
 
 /// Query result rows.
 pub struct Rows {
-    pub(crate) raw: *mut libsql_sys::ffi::sqlite3,
-    pub(crate) raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
+    pub(crate) stmt: Rc<StatementInner>,
     pub(crate) err: RefCell<Option<i32>>,
 }
 
@@ -15,21 +16,21 @@ impl Rows {
     pub fn next(&self) -> Result<Option<Row>> {
         let err = match self.err.take() {
             Some(err) => err,
-            None => unsafe { libsql_sys::ffi::sqlite3_step(self.raw_stmt) },
+            None => unsafe { libsql_sys::ffi::sqlite3_step(self.stmt.raw_stmt) },
         };
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => Ok(None),
             libsql_sys::ffi::SQLITE_DONE => Ok(None),
-            libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row { raw: self.raw_stmt })),
+            libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row { raw: self.stmt.raw_stmt })),
             _ => Err(Error::QueryFailed(format!(
                 "Failed to fetch next row: {}",
-                errors::sqlite_error_message(self.raw)
+                errors::sqlite_error_message(self.stmt.raw)
             ))),
         }
     }
 
     pub fn column_count(&self) -> i32 {
-        unsafe { libsql_sys::ffi::sqlite3_column_count(self.raw_stmt) }
+        unsafe { libsql_sys::ffi::sqlite3_column_count(self.stmt.raw_stmt) }
     }
 }
 
