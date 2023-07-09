@@ -1,11 +1,24 @@
 use crate::{errors, Error, Params, Result, Rows, Value};
 
+use std::rc::Rc;
 use std::cell::RefCell;
 
 /// A prepared statement.
 pub struct Statement {
-    raw: *mut libsql_sys::ffi::sqlite3,
-    raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
+    inner: Rc<StatementInner>,
+}
+
+pub(crate) struct StatementInner {
+    pub(crate) raw: *mut libsql_sys::ffi::sqlite3,
+    pub(crate) raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
+}
+
+impl Drop for StatementInner {
+    fn drop(&mut self) {
+        if !self.raw_stmt.is_null() {
+            unsafe { libsql_sys::ffi::sqlite3_finalize(self.raw_stmt); }
+        }
+    }
 }
 
 impl Statement {
@@ -21,7 +34,7 @@ impl Statement {
             )
         };
         match err as u32 {
-            libsql_sys::ffi::SQLITE_OK => Ok(Statement { raw, raw_stmt }),
+            libsql_sys::ffi::SQLITE_OK => Ok(Statement { inner: Rc::new(StatementInner { raw, raw_stmt }) }),
             _ => Err(Error::QueryFailed(format!(
                 "Failed to prepare statement: `{}`: {}",
                 sql,
@@ -38,18 +51,18 @@ impl Statement {
                     let i = i as i32 + 1;
                     match param {
                         Value::Null => unsafe {
-                            libsql_sys::ffi::sqlite3_bind_null(self.raw_stmt, i);
+                            libsql_sys::ffi::sqlite3_bind_null(self.inner.raw_stmt, i);
                         },
                         Value::Integer(value) => unsafe {
-                            libsql_sys::ffi::sqlite3_bind_int64(self.raw_stmt, i, *value);
+                            libsql_sys::ffi::sqlite3_bind_int64(self.inner.raw_stmt, i, *value);
                         },
                         Value::Float(value) => unsafe {
-                            libsql_sys::ffi::sqlite3_bind_double(self.raw_stmt, i, *value);
+                            libsql_sys::ffi::sqlite3_bind_double(self.inner.raw_stmt, i, *value);
                         },
                         Value::Text(value) => unsafe {
                             let value = value.as_bytes();
                             libsql_sys::ffi::sqlite3_bind_text(
-                                self.raw_stmt,
+                                self.inner.raw_stmt,
                                 i,
                                 value.as_ptr() as *const i8,
                                 value.len() as i32,
@@ -58,7 +71,7 @@ impl Statement {
                         },
                         Value::Blob(value) => unsafe {
                             libsql_sys::ffi::sqlite3_bind_blob(
-                                self.raw_stmt,
+                                self.inner.raw_stmt,
                                 i,
                                 value.as_ptr() as *const std::ffi::c_void,
                                 value.len() as i32,
@@ -73,13 +86,12 @@ impl Statement {
 
     pub fn execute(&self, params: &Params) -> Option<Rows> {
         self.bind(params);
-        let err = unsafe { libsql_sys::ffi::sqlite3_step(self.raw_stmt) };
+        let err = unsafe { libsql_sys::ffi::sqlite3_step(self.inner.raw_stmt) };
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => None,
             libsql_sys::ffi::SQLITE_DONE => None,
             _ => Some(Rows {
-                raw: self.raw,
-                raw_stmt: self.raw_stmt,
+                stmt: self.inner.clone(),
                 err: RefCell::new(Some(err)),
             }),
         }
@@ -87,6 +99,6 @@ impl Statement {
 
     /// Reset the prepared statement to initial state for reuse.
     pub fn reset(&self) {
-        unsafe { libsql_sys::ffi::sqlite3_reset(self.raw_stmt) };
+        unsafe { libsql_sys::ffi::sqlite3_reset(self.inner.raw_stmt) };
     }
 }
