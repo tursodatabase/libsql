@@ -72,7 +72,6 @@ impl Statement {
     }
 
     pub fn execute(&self, params: &Params) -> Option<Rows> {
-        unsafe { libsql_sys::ffi::sqlite3_reset(self.raw_stmt) };
         self.bind(params);
         let err = unsafe { libsql_sys::ffi::sqlite3_step(self.raw_stmt) };
         match err as u32 {
@@ -84,5 +83,10 @@ impl Statement {
                 err: RefCell::new(Some(err)),
             }),
         }
+    }
+
+    /// Reset the prepared statement to initial state for reuse.
+    pub fn reset(&self) {
+        unsafe { libsql_sys::ffi::sqlite3_reset(self.raw_stmt) };
     }
 }
