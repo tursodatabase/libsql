@@ -27,6 +27,7 @@ fn bench(c: &mut Criterion) {
             let rows = stmt.execute(&Params::None).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
+            stmt.reset();
         });
     });
 
@@ -43,6 +44,7 @@ fn bench(c: &mut Criterion) {
             let rows = stmt.execute(&Params::None).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
+            stmt.reset();
         });
     });
 
@@ -52,6 +54,7 @@ fn bench(c: &mut Criterion) {
             let rows = stmt.execute(&Params::None).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
+            stmt.reset();
         });
     });
 }
