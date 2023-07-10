@@ -10,23 +10,13 @@ pub struct Statement {
 
 impl Statement {
     pub(crate) fn prepare(raw: *mut libsql_sys::ffi::sqlite3, sql: &str) -> Result<Statement> {
-        let mut raw_stmt = std::ptr::null_mut();
-        let err = unsafe {
-            libsql_sys::ffi::sqlite3_prepare_v2(
-                raw,
-                sql.as_ptr() as *const i8,
-                sql.len() as i32,
-                &mut raw_stmt,
-                std::ptr::null_mut(),
-            )
-        };
-        match err as u32 {
-            libsql_sys::ffi::SQLITE_OK => Ok(Statement {
-                inner: Rc::new(raw::Statement { raw_stmt }),
+        match unsafe { raw::prepare_stmt(raw, sql) } {
+            Ok(stmt) => Ok(Statement {
+                inner: Rc::new(stmt),
             }),
-            _ => Err(Error::PrepareFailed(
+            Err(err) => Err(Error::PrepareFailed(
                 sql.to_string(),
-                errors::sqlite_error_message(raw),
+                errors::sqlite_code_to_error(err),
             )),
         }
     }
