@@ -51,7 +51,7 @@ impl Statement {
 
     pub fn execute(&self, params: &Params) -> Option<Rows> {
         self.bind(params);
-        let err = unsafe { libsql_sys::ffi::sqlite3_step(self.inner.raw_stmt) };
+        let err = self.inner.step();
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => None,
             libsql_sys::ffi::SQLITE_DONE => None,
