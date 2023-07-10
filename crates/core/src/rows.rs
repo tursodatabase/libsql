@@ -1,5 +1,5 @@
-use crate::{errors, Error, Params, Result, Statement};
 use crate::statement::StatementInner;
+use crate::{errors, Error, Params, Result, Statement};
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -21,11 +21,10 @@ impl Rows {
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => Ok(None),
             libsql_sys::ffi::SQLITE_DONE => Ok(None),
-            libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row { raw: self.stmt.raw_stmt })),
-            _ => Err(Error::QueryFailed(format!(
-                "Failed to fetch next row: {}",
-                errors::sqlite_error_message(self.stmt.raw)
-            ))),
+            libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
+                raw: self.stmt.raw_stmt,
+            })),
+            _ => Err(Error::FetchRowFailed(errors::sqlite_code_to_error(err))),
         }
     }
 
