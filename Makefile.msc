@@ -402,6 +402,13 @@ EXT_FEATURE_FLAGS =
 !ENDIF
 !ENDIF
 
+# Include USE_SEH=1 on the nmake command-line to activate the 
+# structured exception handling logic.
+#
+!IF $(USE_SEH)!=0
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_USE_SEH
+!ENDIF
+
 ###############################################################################
 ############################### END OF OPTIONS ################################
 ###############################################################################

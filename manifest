@@ -1,11 +1,11 @@
-C Fix\sa\swarning.\s\sUnclear\syet\sif\sthe\scode\sis\scorrect\sthis\sway\sor\snot.
-D 2023-07-10T18:16:49.671
+C Compile\sfor\sSEH\sif\sthe\sUSE_SEH=1\soption\sis\sspecified\son\sthe\snmake\scommand\sline.
+D 2023-07-10T19:13:40.460
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 0f4cb3955aaff8a40ec3857ba1784bd98b69802e51eff979f874b65713b627b2
 F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
-F Makefile.msc 7248d860f71ab164b4cec3c415e6cc1bd9fee860c370d65bd8bb49e9572521e2
+F Makefile.msc 3cd72b65de28d1355dd5bf496c190dc50578b77b0cfe080986abaef3abfb21c8
 F README.md c1c4218efcc4071a6e26db2b517fdbc1035696a29b370edd655faddbef02b224
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f655d08d019bab0c578886e91ca24fd956d1b3dea9b9c9104812b3cf62e5e556
-R 7d2a7db7a45657e046a46b76cd581cc4
+P 2df4fd76ef48bb63389df8d783059af6b8f2cbb2c11d07953b408e71f50b625b
+R 023694c34457958614951e26d46dca77
 U drh
-Z 908a871ddbc8b91ee09e4dbf74793fad
+Z 96490a1ad3ea195c140b420d8f7d8322
 # Remove this line to create a well-formed Fossil manifest.
