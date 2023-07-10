@@ -73,6 +73,15 @@ impl Statement {
     pub fn column_count(&self) -> i32 {
         unsafe { libsql_sys::ffi::sqlite3_column_count(self.raw_stmt) }
     }
+
+    pub fn column_value(&self, idx: i32) -> Value {
+        let raw_value = unsafe { libsql_sys::ffi::sqlite3_column_value(self.raw_stmt, idx) };
+        Value { raw_value }
+    }
+
+    pub fn column_type(&self, idx: i32) -> i32 {
+        unsafe { libsql_sys::ffi::sqlite3_column_type(self.raw_stmt, idx) }
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut libsql_sys::ffi::sqlite3, sql: &str) -> Result<Statement> {
@@ -89,5 +98,19 @@ pub unsafe fn prepare_stmt(raw: *mut libsql_sys::ffi::sqlite3, sql: &str) -> Res
     match err as u32 {
         libsql_sys::ffi::SQLITE_OK => Ok(Statement { raw_stmt }),
         _ => Err(err),
+    }
+}
+
+pub struct Value {
+    raw_value: *mut libsql_sys::ffi::sqlite3_value,
+}
+
+impl Value {
+    pub fn int(&self) -> i32 {
+        unsafe { libsql_sys::ffi::sqlite3_value_int(self.raw_value) }
+    }
+
+    pub fn text(&self) -> *const u8 {
+        unsafe { libsql_sys::ffi::sqlite3_value_text(self.raw_value) }
     }
 }
