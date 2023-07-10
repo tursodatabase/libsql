@@ -422,11 +422,11 @@ static void dekkerMul2(volatile double *x, double y, double yy){
   double hx, hy;
   u64 m;
   memcpy(&m, (void*)&x[0], 8);
-  m &= 0xfffffffffc000000L;
+  m &= 0xfffffffffc000000LL;
   memcpy(&hx, &m, 8);
   tx = x[0] - hx;
   memcpy(&m, &y, 8);
-  m &= 0xfffffffffc000000L;
+  m &= 0xfffffffffc000000LL;
   memcpy(&hy, &m, 8);
   ty = y - hy;
   p = hx*hy;
@@ -950,12 +950,18 @@ int sqlite3Atoi(const char *z){
 ** n is positive.  Or round to -n signficant digits after the
 ** decimal point if n is negative.  No rounding is performed if
 ** n is zero.
+**
+** The significant digits of the decimal representation are
+** stored in p->z[] which is a often (but not always) a pointer
+** into the middle of p->zBuf[].  There are p->n significant digits.
+** The p->z[] array is *not* zero-terminated.
 */
 void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   int i;
   u64 v;
   int e, exp = 0;
   p->isSpecial = 0;
+  p->z = p->zBuf;
 
   /* Convert negative numbers to positive.  Deal with Infinity, 0.0, and
   ** NaN. */
@@ -966,7 +972,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     p->sign = '+';
     p->n = 1;
     p->iDP = 1;
-    p->z[0] = '0';
+    p->z = "0";
     return;
   }else{
     p->sign = '+';
@@ -974,7 +980,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
   memcpy(&v,&r,8);
   e = v>>52;
   if( (e&0x7ff)==0x7ff ){
-    p->isSpecial = 1 + (v!=0x7ff0000000000000L);
+    p->isSpecial = 1 + (v!=0x7ff0000000000000LL);
     p->n = 0;
     p->iDP = 0;
     return;
@@ -1040,21 +1046,25 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
 
 
   /* Extract significant digits. */
-  i = sizeof(p->z)-1;
-  while( v ){  p->z[i--] = (v%10) + '0'; v /= 10; }
-  p->n = sizeof(p->z) - 1 - i;
+  i = sizeof(p->zBuf)-1;
+  assert( v>0 );
+  while( v ){  p->zBuf[i--] = (v%10) + '0'; v /= 10; }
+  assert( i>=0 && i<sizeof(p->zBuf)-1 );
+  p->n = sizeof(p->zBuf) - 1 - i;
+  assert( p->n>0 );
+  assert( p->n<sizeof(p->zBuf) );
   p->iDP = p->n + exp;
   if( iRound<0 ){
     iRound = p->iDP - iRound;
-    if( iRound==0 && p->z[i+1]>='5' ){
+    if( iRound==0 && p->zBuf[i+1]>='5' ){
       iRound = 1;
-      p->z[i--] = '0';
+      p->zBuf[i--] = '0';
       p->n++;
       p->iDP++;
     }
   }
   if( iRound>0 && (iRound<p->n || p->n>mxRound) ){
-    char *z = &p->z[i+1];
+    char *z = &p->zBuf[i+1];
     if( iRound>mxRound ) iRound = mxRound;
     p->n = iRound;
     if( z[iRound]>='5' ){
@@ -1074,7 +1084,8 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
       }
     }
   }
-  memmove(p->z, &p->z[i+1], p->n);
+  p->z = &p->zBuf[i+1];
+  assert( i+p->n < sizeof(p->zBuf) );
   while( ALWAYS(p->n>0) && p->z[p->n-1]=='0' ){ p->n--; }
 }
 

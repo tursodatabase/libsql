@@ -7099,11 +7099,14 @@ static int SQLITE_TCLAPI extra_schema_checks(
 }
 
 /*
-** tclcmd:  use_long_double INT
+** tclcmd:  use_long_double BOOLEAN|"default"
 **
-** Enable or disable the use of long double.   Enable if the argument is
-** positive.  Disable if the argument is zero.  No-op if the argument is
-** negative.
+** If no argument, report the current value of the use-long-double flag.
+**
+** If argument is "default", set the use-long-double flag to the default
+** value for this build, based on the size of LONGDOUBLE_TYPE.
+**
+** If argument is a boolean, set the use-long-double flag accordingly.
 **
 ** Return the new setting.
 */
@@ -7115,7 +7118,11 @@ static int SQLITE_TCLAPI use_long_double(
 ){
   int i = -1;
   if( objc==2 ){
-    if( Tcl_GetBooleanFromObj(interp,objv[1],&i) ) return TCL_ERROR;
+    if( strcmp(Tcl_GetString(objv[1]),"default")==0 ){
+      i = 2;
+    }else{
+      if( Tcl_GetBooleanFromObj(interp,objv[1],&i) ) return TCL_ERROR;
+    }
   }
   i = sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, i);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(i));

@@ -731,8 +731,8 @@ int sqlite3RealSameAsInt(double r1, sqlite3_int64 i){
 ** from UBSAN.
 */
 i64 sqlite3RealToI64(double r){
-  if( r<=(double)SMALLEST_INT64 ) return SMALLEST_INT64;
-  if( r>=(double)LARGEST_INT64) return LARGEST_INT64;
+  if( r<-9223372036854774784.0 ) return SMALLEST_INT64;
+  if( r>+9223372036854774784.0 ) return LARGEST_INT64;
   return (i64)r;
 }
 

@@ -4472,11 +4472,14 @@ int sqlite3_test_control(int op, ...){
 
     /* sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, int X);
     **
-    ** Enable long double usage if X>0.  Disable if X==0.  No-op if X<0.
-    ** Return the status of long double usage afterwards.
+    **   X<0     Make no changes to the bUseLongDouble.  Just report value.
+    **   X==0    Disable bUseLongDouble
+    **   X==1    Enable bUseLongDouble
+    **   X==2    Set bUseLongDouble to its default value for this platform
     */
     case SQLITE_TESTCTRL_USELONGDOUBLE: {
       int b = va_arg(ap, int);
+      if( b==2 ) b = sizeof(LONGDOUBLE_TYPE)>8;
       if( b>=0 ) sqlite3Config.bUseLongDouble = b>0;
       rc = sqlite3Config.bUseLongDouble!=0;
       break;

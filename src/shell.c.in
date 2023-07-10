@@ -10876,7 +10876,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     {"seek_count",         SQLITE_TESTCTRL_SEEK_COUNT,  0, ""               },
     {"sorter_mmap",        SQLITE_TESTCTRL_SORTER_MMAP, 0, "NMAX"           },
     {"tune",               SQLITE_TESTCTRL_TUNE,        1, "ID VALUE"       },
-    {"uselongdouble",      SQLITE_TESTCTRL_USELONGDOUBLE,0,"BOOLEAN"        },
+    {"uselongdouble",    SQLITE_TESTCTRL_USELONGDOUBLE,0,"?BOOLEAN|\"default\"?"},
     };
     int testctrl = -1;
     int iCtrl = -1;
@@ -11000,7 +11000,14 @@ static int do_meta_command(char *zLine, ShellState *p){
 
         /* sqlite3_test_control(int, int) */
         case SQLITE_TESTCTRL_USELONGDOUBLE: {
-          int opt = nArg==3 ? booleanValue(azArg[2]) : -1;
+          int opt = -1;
+          if( nArg==3 ){
+            if( cli_strcmp(azArg[2],"default")==0 ){
+              opt = 2;
+            }else{
+              opt = booleanValue(azArg[2]);
+            }
+          }
           rc2 = sqlite3_test_control(testctrl, opt);
           isOk = 1;
           break;

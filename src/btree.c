@@ -5341,6 +5341,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
   pCur->ix = 0;
   pCur->iPage++;
   rc = getAndInitPage(pCur->pBt, newPgno, &pCur->pPage, pCur->curPagerFlags);
+  assert( pCur->pPage!=0 || rc!=SQLITE_OK );
   if( rc==SQLITE_OK
    && (pCur->pPage->nCell<1 || pCur->pPage->intKey!=pCur->curIntKey)
   ){
@@ -5569,7 +5570,7 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
     *pRes = 0;
     rc = moveToLeftmost(pCur);
   }else if( rc==SQLITE_EMPTY ){
-    assert( pCur->pgnoRoot==0 || pCur->pPage->nCell==0 );
+    assert( pCur->pgnoRoot==0 || (pCur->pPage!=0 && pCur->pPage->nCell==0) );
     *pRes = 1;
     rc = SQLITE_OK;
   }
