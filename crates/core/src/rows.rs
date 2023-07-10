@@ -1,12 +1,11 @@
-use crate::statement::StatementInner;
-use crate::{errors, Error, Params, Result, Statement};
+use crate::{errors, raw, Error, Params, Result, Statement};
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Query result rows.
 pub struct Rows {
-    pub(crate) stmt: Rc<StatementInner>,
+    pub(crate) stmt: Rc<raw::Statement>,
     pub(crate) err: RefCell<Option<i32>>,
 }
 
@@ -16,7 +15,7 @@ impl Rows {
     pub fn next(&self) -> Result<Option<Row>> {
         let err = match self.err.take() {
             Some(err) => err,
-            None => unsafe { libsql_sys::ffi::sqlite3_step(self.stmt.raw_stmt) },
+            None => self.stmt.step(),
         };
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => Ok(None),
@@ -29,7 +28,7 @@ impl Rows {
     }
 
     pub fn column_count(&self) -> i32 {
-        unsafe { libsql_sys::ffi::sqlite3_column_count(self.stmt.raw_stmt) }
+        self.stmt.column_count()
     }
 }
 

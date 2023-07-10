@@ -12,11 +12,6 @@ pub enum Error {
     NullValue,
 }
 
-pub(crate) fn sqlite_error_message(raw: *mut libsql_sys::ffi::sqlite3) -> String {
-    let errmsg = unsafe { libsql_sys::ffi::sqlite3_errmsg(raw) };
-    sqlite_errmsg_to_string(errmsg)
-}
-
 pub(crate) fn sqlite_code_to_error(code: i32) -> String {
     let errmsg = unsafe { libsql_sys::ffi::sqlite3_errstr(code) };
     sqlite_errmsg_to_string(errmsg)
