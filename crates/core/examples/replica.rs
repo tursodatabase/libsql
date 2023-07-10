@@ -1,5 +1,5 @@
 use libsql_core::Database;
-use libsql_replication::{Context, Frame, FrameHeader, Frames, Replicator};
+use libsql_replication::{Frame, FrameHeader, Frames, Replicator};
 
 fn frame_data_offset(frame_no: u64) -> u64 {
     tracing::debug!(
@@ -39,21 +39,7 @@ fn main() {
     let db = Database::open("data.libsql/data");
     let conn = db.connect().unwrap();
 
-    let Context {
-        mut hook_ctx,
-        frames_sender,
-        current_frame_no_notifier,
-        meta: _,
-    } = Replicator::create_context("data.libsql").unwrap();
-
-    // Initialize the replicator
-    let mut replicator = libsql_replication::Replicator::new(
-        "data.libsql",
-        &mut hook_ctx,
-        frames_sender,
-        current_frame_no_notifier,
-    )
-    .unwrap();
+    let mut replicator = Replicator::new("data.libsql").unwrap();
 
     let sync_result = replicator.sync(Frames::Vec(vec![test_frame(1), test_frame(2)]));
     println!("sync result: {:?}", sync_result);

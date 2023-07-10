@@ -26,22 +26,11 @@
 //!
 //! ```rust,no_run
 //! use libsql_core::Database;
-//! use libsql_replication::{Context, Frame, Frames, Replicator};
+//! use libsql_replication::{Frame, Frames, Replicator};
 //!
 //! let db = Database::open("/tmp/test.db");
-//! let Context {
-//!     mut hook_ctx,
-//!     frames_sender,
-//!     current_frame_no_notifier,
-//!     meta: _,
-//! } = Replicator::create_context("data.libsql").unwrap();
 //!
-//! let mut replicator = libsql_replication::Replicator::new(
-//!     "data.libsql",
-//!     &mut hook_ctx,
-//!     frames_sender,
-//!     current_frame_no_notifier,
-//! ).unwrap();
+//! let mut replicator = libsql_replication::Replicator::new("data.libsql").unwrap();
 //! let frames: Frames = Frames::Vec(vec![]);
 //! replicator.sync(frames).unwrap();
 //! let conn = db.connect().unwrap();

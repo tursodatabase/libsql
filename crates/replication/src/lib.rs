@@ -14,21 +14,18 @@ use std::os::unix::prelude::FileExt;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-pub struct Context {
-    pub hook_ctx: InjectorHookCtx,
+pub struct Replicator {
     pub frames_sender: Sender<Frames>,
     pub current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
+    // The hook context needs to live as long as the injector and have a stable memory address.
+    // Safety: it must never ever be used directly! Ever. Really.
+    _hook_ctx: Arc<parking_lot::Mutex<InjectorHookCtx>>,
     pub meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
+    pub injector: replica::injector::FrameInjector<'static>,
 }
 
-pub struct Replicator<'a> {
-    pub frames_sender: Sender<Frames>,
-    pub current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
-    pub injector: replica::injector::FrameInjector<'a>,
-}
-
-impl<'a> Replicator<'a> {
-    pub fn create_context(db_path: impl AsRef<std::path::Path>) -> anyhow::Result<Context> {
+impl Replicator {
+    pub fn new(db_path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
         let db_path = db_path.as_ref();
         let (meta, meta_file) = replica::meta::WalIndexMeta::read_from_path(db_path)?;
         let meta_file = Arc::new(meta_file);
@@ -95,29 +92,23 @@ impl<'a> Replicator<'a> {
             }
         };
 
-        let hook_ctx = replica::hook::InjectorHookCtx::new(receiver, pre_commit, post_commit);
-
-        Ok(Context {
-            hook_ctx,
-            frames_sender,
-            current_frame_no_notifier,
-            meta,
-        })
-    }
-
-    //  create a new Replicator from Context reference and Frame sender
-    pub fn new(
-        db_path: impl AsRef<std::path::Path>,
-        ctx: &'a mut InjectorHookCtx,
-        frames_sender: Sender<Frames>,
-        current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
-    ) -> anyhow::Result<Self> {
-        let db_path = db_path.as_ref();
-        let injector = replica::injector::FrameInjector::new(db_path, ctx)?;
+        let hook_ctx = Arc::new(parking_lot::Mutex::new(
+            replica::hook::InjectorHookCtx::new(receiver, pre_commit, post_commit),
+        ));
+        // Safety: hook ctx reference is kept alive by the Arc<>, and is never used directly.
+        let hook_ctx_ref = unsafe {
+            std::mem::transmute::<
+                &mut replica::hook::InjectorHookCtx,
+                &'static mut replica::hook::InjectorHookCtx,
+            >(&mut *hook_ctx.lock())
+        };
+        let injector = replica::injector::FrameInjector::new(db_path, hook_ctx_ref)?;
 
         Ok(Self {
             frames_sender,
             current_frame_no_notifier,
+            _hook_ctx: hook_ctx,
+            meta,
             injector,
         })
     }
