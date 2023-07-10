@@ -65,6 +65,10 @@ impl Statement {
     pub fn step(&self) -> Error {
         unsafe { libsql_sys::ffi::sqlite3_step(self.raw_stmt) }
     }
+
+    pub fn reset(&self) -> Error {
+        unsafe { libsql_sys::ffi::sqlite3_reset(self.raw_stmt) }
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut libsql_sys::ffi::sqlite3, sql: &str) -> Result<Statement> {

@@ -64,6 +64,6 @@ impl Statement {
 
     /// Reset the prepared statement to initial state for reuse.
     pub fn reset(&self) {
-        unsafe { libsql_sys::ffi::sqlite3_reset(self.inner.raw_stmt) };
+        self.inner.reset();
     }
 }
