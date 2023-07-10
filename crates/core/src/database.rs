@@ -1,11 +1,8 @@
 use crate::{connection::Connection, Result};
 
-use libsql_replication::Replicator;
-
 // A libSQL database.
 pub struct Database {
     pub url: String,
-    pub replicator: Option<Replicator>,
 }
 
 impl Database {
@@ -13,28 +10,21 @@ impl Database {
         let url = url.into();
         if url.starts_with("libsql:") {
             let url = url.replace("libsql:", "http:");
-            let filename = "file:tmp.db".to_string();
-            let replicator = Some(Replicator::new(url));
-            Database::new(filename, replicator)
+            tracing::info!("Absolutely ignoring libsql URL: {url}");
+            let filename = "data.libsql/data".to_string();
+            Database::new(filename)
         } else {
-            Database::new(url, None)
+            Database::new(url)
         }
     }
 
-    pub fn new(url: String, replicator: Option<Replicator>) -> Database {
-        Database { url, replicator }
+    pub fn new(url: String) -> Database {
+        Database { url }
     }
 
     pub fn close(&self) {}
 
     pub fn connect(&self) -> Result<Connection> {
         Connection::connect(self)
-    }
-
-    pub fn sync(&self) -> Result<()> {
-        if let Some(replicator) = &self.replicator {
-            replicator.sync();
-        }
-        Ok(())
     }
 }

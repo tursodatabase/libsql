@@ -6,7 +6,23 @@ edition = "2021"
 [dependencies]
 prost = "0.11.3"
 tonic = { version = "0.8.3", features = ["tls"] }
-tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
+tokio = { version = "1.22.2", default-features=false, features = ["fs", "sync"] }
+anyhow = "1.0.71"
+futures = "0.3.28"
+bytemuck = { version = "1.13.1", features = ["derive"] }
+bytes = "1.4.0"
+thiserror = "1.0.41"
+libsql-sys = { path = "../libsql-sys" }
+uuid = { version = "1.4.0", features = ["v4"] }
+parking_lot = "0.12.1"
+tempfile = "3.6.0"
+memmap = "0.7.0"
+tracing = "0.1.37"
+crossbeam = "0.8.2"
+once_cell = "1.18.0"
+nix = "0.26.2"
+tokio-stream = "0.1.14"
+regex = "1.9.0"
 
 [build-dependencies]
 prost-build = "0.11.4"

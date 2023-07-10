@@ -16,7 +16,10 @@ impl Connection {
         let url = db.url.clone();
         let err = unsafe {
             libsql_sys::ffi::sqlite3_open_v2(
-                url.as_ptr() as *const i8,
+                std::ffi::CString::new(url.as_str())
+                    .unwrap()
+                    .as_c_str()
+                    .as_ptr() as *const _,
                 &mut raw,
                 libsql_sys::ffi::SQLITE_OPEN_READWRITE as c_int
                     | libsql_sys::ffi::SQLITE_OPEN_CREATE as c_int,
