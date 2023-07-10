@@ -1,18 +1,67 @@
-# LibSQL API for Rust
-
-LibSQL is an embeddable SQL database engine based on SQLite.
-This Rust API is a batteries-included wrapper around the SQLite C API to support transparent replication while retaining compatibility with the SQLite ecosystem, such as the SQL dialect and extensions. If you are building an application in Rust, this is the crate you should use.
-There are also libSQL language bindings of this Rust crate to other languages such as [JavaScript](../bindings/js), [Python](../bindings/python), [Go](../bindings/go), and [C](../bindings/c).
+# libSQL API for Rust
 
 ## Getting Started
 
-To get started, you first need to create a [`Database`] object and then open a [`Connection`] to it, which you use to query:
+#### Connecting to a database
 
 ```rust
 use libsql_core::Database;
 
-let db = Database::open(":memory:");
+let db = Database::open("hello.db");
+
 let conn = db.connect().unwrap();
-conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)") .unwrap();
-conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')").unwrap();
+```
+
+#### Creating a table
+
+```rust
+conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ()).unwrap();
+```
+
+#### Inserting rows into a table
+
+```rust
+conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).unwrap();
+```
+
+#### Querying rows from a table
+
+```rust
+let rows = conn.execute("SELECT * FROM users WHERE email = ?", params!["alice@example.org"]).unwrap().unwrap();
+let row = rows.next().unwrap().unwrap();
+// prints "alice@example.org"
+println!("{}", row.get::<&str>(0).unwrap());
+```
+
+## Developing
+
+Setting up the environment:
+
+```sh
+export LIBSQL_STATIC_LIB_DIR=$(pwd)/../../.libs
+```
+
+Building the APIs:
+
+```sh
+cargo build
+```
+
+Running the tests:
+
+```sh
+cargo test
+```
+
+Running the benchmarks:
+
+```sh
+cargo bench
+```
+
+Run benchmarks and generate flamegraphs:
+
+```console
+echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
+cargo bench --bench benchmark -- --profile-time=5
 ```
