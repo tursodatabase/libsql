@@ -1,4 +1,4 @@
-use libsql_core::{Connection, Database, Params};
+use libsql_core::{params, Connection, Database, Params};
 
 fn setup() -> Connection {
     let db = Database::open(":memory:");
@@ -26,6 +26,11 @@ fn prepare_and_execute() {
         &conn,
         "INSERT INTO users (id, name) VALUES (1, 'Alice')",
         ().into(),
+    );
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES (?1, ?2)",
+        params![1, "Alice"],
     );
     check_insert(
         &conn,
