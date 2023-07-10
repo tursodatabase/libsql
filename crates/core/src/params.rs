@@ -3,6 +3,16 @@ pub enum Params {
     Positional(Vec<Value>),
 }
 
+#[macro_export]
+macro_rules! params {
+    () => {
+        Params::None
+    };
+    ($($value:expr),* $(,)?) => {
+        Params::Positional(vec![$($value.into()),*])
+    };
+}
+
 impl From<()> for Params {
     fn from(_: ()) -> Params {
         Params::None
