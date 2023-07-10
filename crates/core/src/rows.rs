@@ -15,7 +15,7 @@ impl Rows {
     pub fn next(&self) -> Result<Option<Row>> {
         let err = match self.err.take() {
             Some(err) => err,
-            None => unsafe { libsql_sys::ffi::sqlite3_step(self.stmt.raw_stmt) },
+            None => self.stmt.step(),
         };
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => Ok(None),
