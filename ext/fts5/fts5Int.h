@@ -154,6 +154,10 @@ typedef struct Fts5Config Fts5Config;
 **   attempt to merge together. A value of 1 sets the object to use the 
 **   compile time default. Zero disables auto-merge altogether.
 **
+** bContentlessDelete:
+**   True if the contentless_delete option was present in the CREATE 
+**   VIRTUAL TABLE statement.
+**
 ** zContent:
 **
 ** zContentRowid:
@@ -188,6 +192,7 @@ struct Fts5Config {
   int nPrefix;                    /* Number of prefix indexes */
   int *aPrefix;                   /* Sizes in bytes of nPrefix prefix indexes */
   int eContent;                   /* An FTS5_CONTENT value */
+  int bContentlessDelete;         /* "contentless_delete=" option (dflt==0) */
   char *zContent;                 /* content table */ 
   char *zContentRowid;            /* "content_rowid=" option value */ 
   int bColumnsize;                /* "columnsize=" option value (dflt==1) */
@@ -530,6 +535,9 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge);
 int sqlite3Fts5IndexReset(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
+
+int sqlite3Fts5IndexGetLocation(Fts5Index *p, i64 *piLoc);
+int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iLoc, i64 iRowid);
 
 /*
 ** End of interface to code in fts5_index.c.

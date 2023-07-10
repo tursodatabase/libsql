@@ -56,6 +56,8 @@
 
 #define FTS5_MAX_LEVEL 64
 
+#define FTS5_STRUCTURE_V2 "\xFF\x00\x00\x01"
+
 /*
 ** Details:
 **
@@ -91,6 +93,11 @@
 **         + segment id (always > 0)
 **         + first leaf page number (often 1, always greater than 0)
 **         + final leaf page number
+**
+**      Then, for V2 structures only:
+**
+**         + lower location counter value,
+**         + upper location counter value
 **
 ** 2. The Averages Record:
 **
@@ -241,6 +248,8 @@
 #define FTS5_SEGMENT_ROWID(segid, pgno)       fts5_dri(segid, 0, 0, pgno)
 #define FTS5_DLIDX_ROWID(segid, height, pgno) fts5_dri(segid, 1, height, pgno)
 
+#define FTS5_TOMBSTONE_ROWID(segid) fts5_dri(segid + (1<<16), 0, 0, 0)
+
 #ifdef SQLITE_DEBUG
 int sqlite3Fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
 #endif
@@ -295,6 +304,7 @@ struct Fts5Index {
 
   /* State used by the fts5DataXXX() functions. */
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
+  sqlite3_stmt *pReaderOpt;
   sqlite3_stmt *pWriter;          /* "INSERT ... %_data VALUES(?,?)" */
   sqlite3_stmt *pDeleter;         /* "DELETE FROM %_data ... id>=? AND id<=?" */
   sqlite3_stmt *pIdxWriter;       /* "INSERT ... %_idx VALUES(?,?,?,?)" */
@@ -323,11 +333,20 @@ struct Fts5DoclistIter {
 ** The contents of the "structure" record for each index are represented
 ** using an Fts5Structure record in memory. Which uses instances of the 
 ** other Fts5StructureXXX types as components.
+**
+** nLocCounter:
+**   This value is set to non-zero for structure records created for
+**   contentlessdelete=1 tables only. In that case it represents the
+**   location value to apply to the next top-level segment created.
 */
 struct Fts5StructureSegment {
   int iSegid;                     /* Segment id */
   int pgnoFirst;                  /* First leaf page number in segment */
   int pgnoLast;                   /* Last leaf page number in segment */
+
+  /* contentlessdelete=1 tables only: */
+  u64 iLoc1;
+  u64 iLoc2;
 };
 struct Fts5StructureLevel {
   int nMerge;                     /* Number of segments in incr-merge */
@@ -337,6 +356,7 @@ struct Fts5StructureLevel {
 struct Fts5Structure {
   int nRef;                       /* Object reference count */
   u64 nWriteCounter;              /* Total leaves written to level 0 */
+  u64 nLocCounter;
   int nSegment;                   /* Total segments in this structure */
   int nLevel;                     /* Number of levels in this index */
   Fts5StructureLevel aLevel[1];   /* Array of nLevel level objects */
@@ -433,6 +453,7 @@ struct Fts5SegIter {
   Fts5Data *pLeaf;                /* Current leaf data */
   Fts5Data *pNextLeaf;            /* Leaf page (iLeafPgno+1) */
   i64 iLeafOffset;                /* Byte offset within current leaf */
+  Fts5Data *pTombstone;
 
   /* Next method */
   void (*xNext)(Fts5Index*, Fts5SegIter*, int*);
@@ -626,6 +647,7 @@ void sqlite3Fts5IndexCloseReader(Fts5Index *p){
   }
 }
 
+
 /*
 ** Retrieve a record from the %_data table.
 **
@@ -740,6 +762,40 @@ static int fts5IndexPrepareStmt(
   return p->rc;
 }
 
+static Fts5Data *fts5DataReadOpt(Fts5Index *p, i64 iRowid){
+  Fts5Data *pRet = 0;
+  int rc2 = SQLITE_OK;
+
+  if( p->pReaderOpt==0 ){
+    Fts5Config *pConfig = p->pConfig;
+    fts5IndexPrepareStmt(p, &p->pReaderOpt, sqlite3_mprintf(
+          "SELECT block FROM '%q'.'%q_data' WHERE id=?",
+          pConfig->zDb, pConfig->zName
+    ));
+  }
+
+  if( p->rc==SQLITE_OK ){
+    sqlite3_bind_int64(p->pReaderOpt, 1, iRowid);
+    if( SQLITE_ROW==sqlite3_step(p->pReaderOpt) ){
+      int nByte = sqlite3_column_bytes(p->pReaderOpt, 0);
+      const u8 *aByte = (const u8*)sqlite3_column_blob(p->pReaderOpt, 0);
+      i64 nAlloc = sizeof(Fts5Data) + nByte + FTS5_DATA_PADDING;
+
+      pRet = (Fts5Data*)sqlite3_malloc64(nAlloc);
+      if( pRet==0 ){
+        p->rc = SQLITE_NOMEM;
+      }else{
+        pRet->nn = nByte;
+        pRet->p = (u8*)&pRet[1];
+        memcpy(pRet->p, aByte, nByte);
+      }
+    }
+    rc2 = sqlite3_reset(p->pReaderOpt);
+    if( p->rc==SQLITE_OK ) p->rc = rc2;
+  }
+
+  return pRet;
+}
 
 /*
 ** INSERT OR REPLACE a record into the %_data table.
@@ -793,6 +849,10 @@ static void fts5DataRemoveSegment(Fts5Index *p, int iSegid){
   i64 iFirst = FTS5_SEGMENT_ROWID(iSegid, 0);
   i64 iLast = FTS5_SEGMENT_ROWID(iSegid+1, 0)-1;
   fts5DataDelete(p, iFirst, iLast);
+  if( p->pConfig->bContentlessDelete ){
+    i64 iTomb = FTS5_TOMBSTONE_ROWID(iSegid);
+    fts5DataDelete(p, iTomb, iTomb);
+  }
   if( p->pIdxDeleter==0 ){
     Fts5Config *pConfig = p->pConfig;
     fts5IndexPrepareStmt(p, &p->pIdxDeleter, sqlite3_mprintf(
@@ -903,10 +963,17 @@ static int fts5StructureDecode(
   int nSegment = 0;
   sqlite3_int64 nByte;            /* Bytes of space to allocate at pRet */
   Fts5Structure *pRet = 0;        /* Structure object to return */
+  int bStructureV2 = 0;           /* True for FTS5_STRUCTURE_V2 */
+  i64 nLocCounter = 0;
 
   /* Grab the cookie value */
   if( piCookie ) *piCookie = sqlite3Fts5Get32(pData);
   i = 4;
+
+  if( 0==memcmp(&pData[i], FTS5_STRUCTURE_V2, 4) ){
+    i += 4;
+    bStructureV2 = 1;
+  }
 
   /* Read the total number of levels and segments from the start of the
   ** structure record.  */
@@ -958,6 +1025,11 @@ static int fts5StructureDecode(
           i += fts5GetVarint32(&pData[i], pSeg->iSegid);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoFirst);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoLast);
+          if( bStructureV2 ){
+            i += fts5GetVarint(&pData[i], &pSeg->iLoc1);
+            i += fts5GetVarint(&pData[i], &pSeg->iLoc2);
+            nLocCounter = MAX(nLocCounter, pSeg->iLoc2);
+          }
           if( pSeg->pgnoLast<pSeg->pgnoFirst ){
             rc = FTS5_CORRUPT;
             break;
@@ -968,6 +1040,9 @@ static int fts5StructureDecode(
       }
     }
     if( nSegment!=0 && rc==SQLITE_OK ) rc = FTS5_CORRUPT;
+    if( bStructureV2 ){
+      pRet->nLocCounter = nLocCounter+1;
+    }
 
     if( rc!=SQLITE_OK ){
       fts5StructureRelease(pRet);
@@ -1180,6 +1255,7 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
     Fts5Buffer buf;               /* Buffer to serialize record into */
     int iLvl;                     /* Used to iterate through levels */
     int iCookie;                  /* Cookie value to store */
+    int nHdr = (pStruct->nLocCounter>0 ? (4+4+9+9+9) : (4+9+9));
 
     assert( pStruct->nSegment==fts5StructureCountSegments(pStruct) );
     memset(&buf, 0, sizeof(Fts5Buffer));
@@ -1188,9 +1264,12 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
     iCookie = p->pConfig->iCookie;
     if( iCookie<0 ) iCookie = 0;
 
-    if( 0==sqlite3Fts5BufferSize(&p->rc, &buf, 4+9+9+9) ){
+    if( 0==sqlite3Fts5BufferSize(&p->rc, &buf, nHdr) ){
       sqlite3Fts5Put32(buf.p, iCookie);
       buf.n = 4;
+      if( pStruct->nLocCounter>0 ){
+        fts5BufferSafeAppendBlob(&buf, FTS5_STRUCTURE_V2, 4);
+      }
       fts5BufferSafeAppendVarint(&buf, pStruct->nLevel);
       fts5BufferSafeAppendVarint(&buf, pStruct->nSegment);
       fts5BufferSafeAppendVarint(&buf, (i64)pStruct->nWriteCounter);
@@ -1207,6 +1286,10 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoFirst);
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoLast);
+        if( pStruct->nLocCounter>0 ){
+          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iLoc1);
+          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iLoc2);
+        }
       }
     }
 
@@ -1729,6 +1812,11 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
   }
 }
 
+static void fts5SegIterLoadTombstone(Fts5Index *p, Fts5SegIter *pIter){
+  i64 iRowid = FTS5_TOMBSTONE_ROWID(pIter->pSeg->iSegid);
+  pIter->pTombstone = fts5DataReadOpt(p, iRowid);
+}
+
 /*
 ** Initialize the iterator object pIter to iterate through the entries in
 ** segment pSeg. The iterator is left pointing to the first entry when 
@@ -1771,6 +1859,8 @@ static void fts5SegIterInit(
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
   }
+
+  fts5SegIterLoadTombstone(p, pIter);
 }
 
 /*
@@ -2471,6 +2561,7 @@ static void fts5SegIterSeekInit(
   }
 
   fts5SegIterSetNext(p, pIter);
+  fts5SegIterLoadTombstone(p, pIter);
 
   /* Either:
   **
@@ -2558,6 +2649,7 @@ static void fts5SegIterClear(Fts5SegIter *pIter){
   fts5BufferFree(&pIter->term);
   fts5DataRelease(pIter->pLeaf);
   fts5DataRelease(pIter->pNextLeaf);
+  fts5DataRelease(pIter->pTombstone);
   fts5DlidxIterFree(pIter->pDlidx);
   sqlite3_free(pIter->aRowidOffset);
   memset(pIter, 0, sizeof(Fts5SegIter));
@@ -2895,6 +2987,43 @@ static void fts5MultiIterSetEof(Fts5Iter *pIter){
   pIter->iSwitchRowid = pSeg->iRowid;
 }
 
+static u64 fts5GetU64(u8 *a){
+  return ((u64)a[0] << 56)
+       + ((u64)a[1] << 48)
+       + ((u64)a[2] << 40)
+       + ((u64)a[3] << 32)
+       + ((u64)a[4] << 24)
+       + ((u64)a[5] << 16)
+       + ((u64)a[6] << 8)
+       + ((u64)a[7] << 0);
+}
+
+static void fts5PutU64(u8 *a, u64 iVal){
+  a[0] = ((iVal >> 56) & 0xFF);
+  a[1] = ((iVal >> 48) & 0xFF);
+  a[2] = ((iVal >> 40) & 0xFF);
+  a[3] = ((iVal >> 32) & 0xFF);
+  a[4] = ((iVal >> 24) & 0xFF);
+  a[5] = ((iVal >> 16) & 0xFF);
+  a[6] = ((iVal >>  8) & 0xFF);
+  a[7] = ((iVal >>  0) & 0xFF);
+}
+
+static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
+  int iFirst = pIter->aFirst[1].iFirst;
+  Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
+
+  if( pSeg->pTombstone ){
+    int ii;
+    for(ii=0; ii<pSeg->pTombstone->nn; ii+=8){
+      i64 iVal = (i64)fts5GetU64(&pSeg->pTombstone->p[ii]);
+      if( iVal==pSeg->iRowid ) return 1;
+    }
+  }
+
+  return 0;
+}
+
 /*
 ** Move the iterator to the next entry. 
 **
@@ -2932,7 +3061,9 @@ static void fts5MultiIterNext(
 
     fts5AssertMultiIterSetup(p, pIter);
     assert( pSeg==&pIter->aSeg[pIter->aFirst[1].iFirst] && pSeg->pLeaf );
-    if( pIter->bSkipEmpty==0 || pSeg->nPos ){
+    if( (pIter->bSkipEmpty==0 || pSeg->nPos) 
+      && 0==fts5MultiIterIsDeleted(pIter)
+    ){
       pIter->xSetOutputs(pIter, pSeg);
       return;
     }
@@ -2964,7 +3095,7 @@ static void fts5MultiIterNext2(
       }
       fts5AssertMultiIterSetup(p, pIter);
 
-    }while( fts5MultiIterIsEmpty(p, pIter) );
+    }while( fts5MultiIterIsEmpty(p, pIter) || fts5MultiIterIsDeleted(pIter) );
   }
 }
 
@@ -3519,7 +3650,9 @@ static void fts5MultiIterNew(
     fts5MultiIterSetEof(pNew);
     fts5AssertMultiIterSetup(p, pNew);
 
-    if( pNew->bSkipEmpty && fts5MultiIterIsEmpty(p, pNew) ){
+    if( (pNew->bSkipEmpty && fts5MultiIterIsEmpty(p, pNew))
+     || fts5MultiIterIsDeleted(pNew)
+    ){
       fts5MultiIterNext(p, pNew, 0, 0);
     }else if( pNew->base.bEof==0 ){
       Fts5SegIter *pSeg = &pNew->aSeg[pNew->aFirst[1].iFirst];
@@ -4334,6 +4467,12 @@ static void fts5IndexMergeLevel(
 
     /* Read input from all segments in the input level */
     nInput = pLvl->nSeg;
+
+    /* Set the range of locations that will go into the output segment */
+    if( pStruct->nLocCounter>0 ){
+      pSeg->iLoc1 = pLvl->aSeg[0].iLoc1;
+      pSeg->iLoc2 = pLvl->aSeg[pLvl->nSeg-1].iLoc2;
+    }
   }
   bOldest = (pLvlOut->nSeg==1 && pStruct->nLevel==iLvl+2);
 
@@ -5150,6 +5289,11 @@ static void fts5FlushOneHash(Fts5Index *p){
         pSeg->iSegid = iSegid;
         pSeg->pgnoFirst = 1;
         pSeg->pgnoLast = pgnoLast;
+        if( pStruct->nLocCounter>0 ){
+          pSeg->iLoc1 = pStruct->nLocCounter;
+          pSeg->iLoc2 = pStruct->nLocCounter;
+          pStruct->nLocCounter++;
+        }
         pStruct->nSegment++;
       }
       fts5StructurePromote(p, 0, pStruct);
@@ -5212,6 +5356,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
     pNew->nLevel = MIN(pStruct->nLevel+1, FTS5_MAX_LEVEL);
     pNew->nRef = 1;
     pNew->nWriteCounter = pStruct->nWriteCounter;
+    pNew->nLocCounter = pStruct->nLocCounter;
     pLvl = &pNew->aLevel[pNew->nLevel-1];
     pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&p->rc, nByte);
     if( pLvl->aSeg ){
@@ -5830,6 +5975,9 @@ int sqlite3Fts5IndexReinit(Fts5Index *p){
   fts5StructureInvalidate(p);
   fts5IndexDiscardData(p);
   memset(&s, 0, sizeof(Fts5Structure));
+  if( p->pConfig->bContentlessDelete ){
+    s.nLocCounter = 1;
+  }
   fts5DataWrite(p, FTS5_AVERAGES_ROWID, (const u8*)"", 0);
   fts5StructureWrite(p, &s);
   return fts5IndexReturn(p);
@@ -5889,6 +6037,7 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
     assert( p->pReader==0 );
     fts5StructureInvalidate(p);
     sqlite3_finalize(p->pWriter);
+    sqlite3_finalize(p->pReaderOpt);
     sqlite3_finalize(p->pDeleter);
     sqlite3_finalize(p->pIdxWriter);
     sqlite3_finalize(p->pIdxDeleter);
@@ -6221,6 +6370,70 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
   return fts5IndexReturn(p);
 }
 
+int sqlite3Fts5IndexGetLocation(Fts5Index *p, i64 *piLoc){
+  Fts5Structure *pStruct;
+  pStruct = fts5StructureRead(p);
+  if( pStruct ){
+    *piLoc = pStruct->nLocCounter;
+    fts5StructureRelease(pStruct);
+  }
+  return fts5IndexReturn(p);
+}
+
+static void fts5IndexTombstoneAdd(
+  Fts5Index *p, 
+  Fts5StructureSegment *pSeg, 
+  i64 iRowid
+){
+  Fts5Data *pHash = 0;
+  u8 *aNew = 0;
+  int nNew = 0;
+
+  pHash = fts5DataReadOpt(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid));
+  if( p->rc ) return;
+
+  if( pHash ){
+    nNew = 8 + pHash->nn;
+  }else{
+    nNew = 8;
+  }
+  aNew = sqlite3_malloc(nNew);
+  if( aNew==0 ){
+    p->rc = SQLITE_NOMEM;
+  }else{
+    if( pHash ){
+      memcpy(aNew, pHash->p, pHash->nn);
+    }
+    fts5PutU64(&aNew[nNew-8], iRowid);
+    fts5DataWrite(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid), aNew, nNew);
+  }
+
+  sqlite3_free(aNew);
+  fts5DataRelease(pHash);
+}
+
+/*
+** Add iRowid to the tombstone list of the segment or segments that contain
+** rows from location iLoc.
+*/
+int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iLoc, i64 iRowid){
+  Fts5Structure *pStruct;
+  pStruct = fts5StructureRead(p);
+  if( pStruct ){
+    int iLvl;
+    for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+      int iSeg;
+      for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
+        Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
+        if( pSeg->iLoc1<=iLoc && pSeg->iLoc2>=iLoc ){
+          fts5IndexTombstoneAdd(p, pSeg, iRowid);
+        }
+      }
+    }
+    fts5StructureRelease(pStruct);
+  }
+  return fts5IndexReturn(p);
+}
 
 /*************************************************************************
 **************************************************************************
@@ -6832,9 +7045,15 @@ static void fts5DebugStructure(
     );
     for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
       Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " {id=%d leaves=%d..%d}", 
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " {id=%d leaves=%d..%d",
           pSeg->iSegid, pSeg->pgnoFirst, pSeg->pgnoLast
       );
+      if( pSeg->iLoc1>0 ){
+        sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " loc=%lld..%lld",
+            pSeg->iLoc1, pSeg->iLoc2
+        );
+      }
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
     }
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
   }
@@ -7237,6 +7456,224 @@ static void fts5RowidFunction(
 }
 #endif /* SQLITE_TEST */
 
+#ifdef SQLITE_TEST
+
+typedef struct Fts5StructVtab Fts5StructVtab;
+struct Fts5StructVtab {
+  sqlite3_vtab base;
+};
+
+typedef struct Fts5StructVcsr Fts5StructVcsr;
+struct Fts5StructVcsr {
+  sqlite3_vtab_cursor base;
+  Fts5Structure *pStruct;
+  int iLevel;
+  int iSeg;
+  int iRowid;
+};
+
+/*
+** Create a new fts5_structure() table-valued function.
+*/
+static int fts5structConnectMethod(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  Fts5StructVtab *pNew = 0;
+  int rc = SQLITE_OK;
+
+  rc = sqlite3_declare_vtab(db, 
+      "CREATE TABLE xyz("
+          "level, segment, merge, segid, leaf1, leaf2, loc1, loc2,"
+      "struct HIDDEN);"
+  );
+  if( rc==SQLITE_OK ){
+    pNew = sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
+  }
+
+  *ppVtab = (sqlite3_vtab*)pNew;
+  return rc;
+}
+
+/*
+** We must have a single struct=? constraint that will be passed through
+** into the xFilter method.  If there is no valid stmt=? constraint,
+** then return an SQLITE_CONSTRAINT error.
+*/
+static int fts5structBestIndexMethod(
+  sqlite3_vtab *tab,
+  sqlite3_index_info *pIdxInfo
+){
+  int i;
+  int rc = SQLITE_CONSTRAINT;
+  struct sqlite3_index_constraint *p;
+  pIdxInfo->estimatedCost = (double)100;
+  pIdxInfo->estimatedRows = 100;
+  pIdxInfo->idxNum = 0;
+  for(i=0, p=pIdxInfo->aConstraint; i<pIdxInfo->nConstraint; i++, p++){
+    if( p->usable==0 ) continue;
+    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==8 ){
+      rc = SQLITE_OK;
+      pIdxInfo->aConstraintUsage[i].omit = 1;
+      pIdxInfo->aConstraintUsage[i].argvIndex = 1;
+      break;
+    }
+  }
+  return rc;
+}
+
+/*
+** This method is the destructor for bytecodevtab objects.
+*/
+static int fts5structDisconnectMethod(sqlite3_vtab *pVtab){
+  Fts5StructVtab *p = (Fts5StructVtab*)pVtab;
+  sqlite3_free(p);
+  return SQLITE_OK;
+}
+
+/*
+** Constructor for a new bytecodevtab_cursor object.
+*/
+static int fts5structOpenMethod(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCsr){
+  int rc = SQLITE_OK;
+  Fts5StructVcsr *pNew = 0;
+
+  pNew = sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
+  *ppCsr = (sqlite3_vtab_cursor*)pNew;
+
+  return SQLITE_OK;
+}
+
+/*
+** Destructor for a bytecodevtab_cursor.
+*/
+static int fts5structCloseMethod(sqlite3_vtab_cursor *cur){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  fts5StructureRelease(pCsr->pStruct);
+  sqlite3_free(pCsr);
+  return SQLITE_OK;
+}
+
+
+/*
+** Advance a bytecodevtab_cursor to its next row of output.
+*/
+static int fts5structNextMethod(sqlite3_vtab_cursor *cur){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+
+  assert( pCsr->pStruct );
+  pCsr->iSeg++;
+  pCsr->iRowid++;
+  while( pCsr->iSeg>=pCsr->pStruct->aLevel[pCsr->iLevel].nSeg ){
+    pCsr->iLevel++;
+    pCsr->iSeg = 0;
+  }
+  if( pCsr->iLevel>=pCsr->pStruct->nLevel ){
+    fts5StructureRelease(pCsr->pStruct);
+    pCsr->pStruct = 0;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Return TRUE if the cursor has been moved off of the last
+** row of output.
+*/
+static int fts5structEofMethod(sqlite3_vtab_cursor *cur){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  return pCsr->pStruct==0;
+}
+
+static int fts5structRowidMethod(
+  sqlite3_vtab_cursor *cur, 
+  sqlite_int64 *piRowid
+){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  *piRowid = pCsr->iRowid;
+  return SQLITE_OK;
+}
+
+/*
+** Return values of columns for the row at which the bytecodevtab_cursor
+** is currently pointing.
+*/
+static int fts5structColumnMethod(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  Fts5Structure *p = pCsr->pStruct;
+  Fts5StructureSegment *pSeg = &p->aLevel[pCsr->iLevel].aSeg[pCsr->iSeg];
+
+  switch( i ){
+    case 0: /* level */
+      sqlite3_result_int(ctx, pCsr->iLevel);
+      break;
+    case 1: /* segment */
+      sqlite3_result_int(ctx, pCsr->iSeg);
+      break;
+    case 2: /* merge */
+      sqlite3_result_int(ctx, pCsr->iSeg < p->aLevel[pCsr->iLevel].nMerge);
+      break;
+    case 3: /* segid */
+      sqlite3_result_int(ctx, pSeg->iSegid);
+      break;
+    case 4: /* leaf1 */
+      sqlite3_result_int(ctx, pSeg->pgnoFirst);
+      break;
+    case 5: /* leaf2 */
+      sqlite3_result_int(ctx, pSeg->pgnoLast);
+      break;
+    case 6: /* loc1 */
+      sqlite3_result_int(ctx, pSeg->iLoc1);
+      break;
+    case 7: /* loc2 */
+      sqlite3_result_int(ctx, pSeg->iLoc2);
+      break;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Initialize a cursor.
+**
+**    idxNum==0     means show all subprograms
+**    idxNum==1     means show only the main bytecode and omit subprograms.
+*/
+static int fts5structFilterMethod(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  int idxNum, const char *idxStr,
+  int argc, sqlite3_value **argv
+){
+  Fts5StructVcsr *pCsr = (Fts5StructVcsr *)pVtabCursor;
+  int rc = SQLITE_OK;
+
+  const u8 *aBlob = 0;
+  int nBlob = 0;
+
+  assert( argc==1 );
+  fts5StructureRelease(pCsr->pStruct);
+  pCsr->pStruct = 0;
+
+  nBlob = sqlite3_value_bytes(argv[0]);
+  aBlob = (const u8*)sqlite3_value_blob(argv[0]);
+  rc = fts5StructureDecode(aBlob, nBlob, 0, &pCsr->pStruct);
+  if( rc==SQLITE_OK ){
+    pCsr->iLevel = 0;
+    pCsr->iRowid = 0;
+    pCsr->iSeg = -1;
+    rc = fts5structNextMethod(pVtabCursor);
+  }
+
+  return rc;
+}
+
+#endif /* SQLITE_TEST */
+
 /*
 ** This is called as part of registering the FTS5 module with database
 ** connection db. It registers several user-defined scalar functions useful
@@ -7262,6 +7699,36 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
     rc = sqlite3_create_function(
         db, "fts5_rowid", -1, SQLITE_UTF8, 0, fts5RowidFunction, 0, 0
     );
+  }
+
+  if( rc==SQLITE_OK ){
+    static const sqlite3_module fts5structure_module = {
+      0,                           /* iVersion      */
+      0,                           /* xCreate       */
+      fts5structConnectMethod,     /* xConnect      */
+      fts5structBestIndexMethod,   /* xBestIndex    */
+      fts5structDisconnectMethod,  /* xDisconnect   */
+      0,                           /* xDestroy      */
+      fts5structOpenMethod,        /* xOpen         */
+      fts5structCloseMethod,       /* xClose        */
+      fts5structFilterMethod,      /* xFilter       */
+      fts5structNextMethod,        /* xNext         */
+      fts5structEofMethod,         /* xEof          */
+      fts5structColumnMethod,      /* xColumn       */
+      fts5structRowidMethod,       /* xRowid        */
+      0,                           /* xUpdate       */
+      0,                           /* xBegin        */
+      0,                           /* xSync         */
+      0,                           /* xCommit       */
+      0,                           /* xRollback     */
+      0,                           /* xFindFunction */
+      0,                           /* xRename       */
+      0,                           /* xSavepoint    */
+      0,                           /* xRelease      */
+      0,                           /* xRollbackTo   */
+      0                            /* xShadowName   */
+    };
+    rc = sqlite3_create_module(db, "fts5_structure", &fts5structure_module, 0);
   }
   return rc;
 #else

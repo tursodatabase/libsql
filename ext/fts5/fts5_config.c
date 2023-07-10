@@ -352,6 +352,16 @@ static int fts5ConfigParseSpecial(
     return rc;
   }
 
+  if( sqlite3_strnicmp("contentless_delete", zCmd, nCmd)==0 ){
+    if( (zArg[0]!='0' && zArg[0]!='1') || zArg[1]!='\0' ){
+      *pzErr = sqlite3_mprintf("malformed contentless_delete=... directive");
+      rc = SQLITE_ERROR;
+    }else{
+      pConfig->bContentlessDelete = (zArg[0]=='1');
+    }
+    return rc;
+  }
+
   if( sqlite3_strnicmp("content_rowid", zCmd, nCmd)==0 ){
     if( pConfig->zContentRowid ){
       *pzErr = sqlite3_mprintf("multiple content_rowid=... directives");
@@ -594,6 +604,28 @@ int sqlite3Fts5ConfigParse(
 
     sqlite3_free(zOne);
     sqlite3_free(zTwo);
+  }
+
+  /* We only allow contentless_delete=1 if the table is indeed contentless. */
+  if( rc==SQLITE_OK 
+   && pRet->bContentlessDelete 
+   && pRet->eContent!=FTS5_CONTENT_NONE 
+  ){
+    *pzErr = sqlite3_mprintf(
+        "contentless_delete=1 requires a contentless table"
+    );
+    rc = SQLITE_ERROR;
+  }
+
+  /* We only allow contentless_delete=1 if columnsize=0 is not present. 
+  **
+  ** This restriction may be removed at some point. 
+  */
+  if( rc==SQLITE_OK && pRet->bContentlessDelete && pRet->bColumnsize==0 ){
+    *pzErr = sqlite3_mprintf(
+        "contentless_delete=1 is incompatible with columnsize=0"
+    );
+    rc = SQLITE_ERROR;
   }
 
   /* If a tokenizer= option was successfully parsed, the tokenizer has

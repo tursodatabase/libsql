@@ -1624,7 +1624,6 @@ static int fts5UpdateMethod(
   int eType0;                     /* value_type() of apVal[0] */
   int rc = SQLITE_OK;             /* Return code */
   int bUpdateOrDelete = 0;
-  
 
   /* A transaction must be open when this is called. */
   assert( pTab->ts.eState==1 || pTab->ts.eState==2 );
