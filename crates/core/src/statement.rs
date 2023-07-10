@@ -1,25 +1,11 @@
-use crate::{errors, Error, Params, Result, Rows, Value};
+use crate::{errors, raw, Error, Params, Result, Rows, Value};
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// A prepared statement.
 pub struct Statement {
-    inner: Rc<StatementInner>,
-}
-
-pub(crate) struct StatementInner {
-    pub(crate) raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
-}
-
-impl Drop for StatementInner {
-    fn drop(&mut self) {
-        if !self.raw_stmt.is_null() {
-            unsafe {
-                libsql_sys::ffi::sqlite3_finalize(self.raw_stmt);
-            }
-        }
-    }
+    inner: Rc<raw::Statement>,
 }
 
 impl Statement {
@@ -36,7 +22,7 @@ impl Statement {
         };
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => Ok(Statement {
-                inner: Rc::new(StatementInner { raw_stmt }),
+                inner: Rc::new(raw::Statement { raw_stmt }),
             }),
             _ => Err(Error::PrepareFailed(
                 sql.to_string(),

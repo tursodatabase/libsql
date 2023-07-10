@@ -1,12 +1,11 @@
-use crate::statement::StatementInner;
-use crate::{errors, Error, Params, Result, Statement};
+use crate::{errors, raw, Error, Params, Result, Statement};
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
 /// Query result rows.
 pub struct Rows {
-    pub(crate) stmt: Rc<StatementInner>,
+    pub(crate) stmt: Rc<raw::Statement>,
     pub(crate) err: RefCell<Option<i32>>,
 }
 
