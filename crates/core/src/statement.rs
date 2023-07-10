@@ -28,34 +28,21 @@ impl Statement {
                 for (i, param) in params.iter().enumerate() {
                     let i = i as i32 + 1;
                     match param {
-                        Value::Null => unsafe {
-                            libsql_sys::ffi::sqlite3_bind_null(self.inner.raw_stmt, i);
-                        },
-                        Value::Integer(value) => unsafe {
-                            libsql_sys::ffi::sqlite3_bind_int64(self.inner.raw_stmt, i, *value);
-                        },
-                        Value::Float(value) => unsafe {
-                            libsql_sys::ffi::sqlite3_bind_double(self.inner.raw_stmt, i, *value);
-                        },
-                        Value::Text(value) => unsafe {
-                            let value = value.as_bytes();
-                            libsql_sys::ffi::sqlite3_bind_text(
-                                self.inner.raw_stmt,
-                                i,
-                                value.as_ptr() as *const i8,
-                                value.len() as i32,
-                                None,
-                            );
-                        },
-                        Value::Blob(value) => unsafe {
-                            libsql_sys::ffi::sqlite3_bind_blob(
-                                self.inner.raw_stmt,
-                                i,
-                                value.as_ptr() as *const std::ffi::c_void,
-                                value.len() as i32,
-                                None,
-                            );
-                        },
+                        Value::Null => {
+                            self.inner.bind_null(i);
+                        }
+                        Value::Integer(value) => {
+                            self.inner.bind_int64(i, *value);
+                        }
+                        Value::Float(value) => {
+                            self.inner.bind_double(i, *value);
+                        }
+                        Value::Text(value) => {
+                            self.inner.bind_text(i, value);
+                        }
+                        Value::Blob(value) => {
+                            self.inner.bind_blob(i, &value[..]);
+                        }
                     }
                 }
             }
