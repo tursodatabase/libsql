@@ -666,7 +666,7 @@ static void sehInjectFault(Wal *pWal){
     aArg[0] = 0;
     aArg[1] = 0;
     aArg[2] = (ULONG)res;
-    RaiseException(EXCEPTION_IN_PAGE_ERROR, 0, 3, (const ULONG*)aArg);
+    RaiseException(EXCEPTION_IN_PAGE_ERROR, 0, 3, (const ULONG_PTR*)aArg);
   }
 }
 

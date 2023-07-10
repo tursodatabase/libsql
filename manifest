@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\swal-shm-exceptions\sbranch.
-D 2023-07-10T18:05:23.333
+C Fix\sa\swarning.\s\sUnclear\syet\sif\sthe\scode\sis\scorrect\sthis\sway\sor\snot.
+D 2023-07-10T18:16:49.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -719,7 +719,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
 F src/vtab.c 1ecf8c3745d29275688d583e12822fa984d421e0286b5ef50c137bc3bf6d7a64
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c df70125aa233626b8aa56dd6be7cbbe7234e10e01a0610152e583b65eeebc474
+F src/wal.c b4668b94644c79bd9e44ba0aacaeb32631413d1ccee72e67606443a30cc6e56e
 F src/wal.h 04a9e53121d5076f2a173b0f2facb39d33047093fee71bd3bbe6b1f6f1f5fd4b
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 2dc708cf8b6a691fb79f16bbc46567497ee6f991043318d421e294b2da114d93
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e59cea2d851be68559e7d01a01cb05684c44d151d022ea9790ce99671016ab00 07d95ed60f0a17ea13b4bc19c2ab2ec9052fedd27c9e1e57a1ec6e3a6470e5b7
-R ccbc614d43527056706e7e54f93af172
+P f655d08d019bab0c578886e91ca24fd956d1b3dea9b9c9104812b3cf62e5e556
+R 7d2a7db7a45657e046a46b76cd581cc4
 U drh
-Z da656ee3765bdd3f9ae04fb3fd79cf86
+Z 908a871ddbc8b91ee09e4dbf74793fad
 # Remove this line to create a well-formed Fossil manifest.
