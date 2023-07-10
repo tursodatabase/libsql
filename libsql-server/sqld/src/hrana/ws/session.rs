@@ -52,6 +52,8 @@ pub enum ResponseError {
     SqlTooMany { count: usize },
     #[error(transparent)]
     Stmt(stmt::StmtError),
+    #[error(transparent)]
+    Batch(batch::BatchError),
 }
 
 pub(super) fn handle_initial_hello<D: Database>(
@@ -207,7 +209,9 @@ pub(super) async fn handle_request<DB: Database>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = batch::execute_batch(db, auth, pgm).await?;
+                let result = batch::execute_batch(db, auth, pgm)
+                    .await
+                    .map_err(catch_batch_error)?;
                 Ok(proto::Response::Batch(proto::BatchResp { result }))
             });
         }
@@ -229,7 +233,8 @@ pub(super) async fn handle_request<DB: Database>(
                 let db = get_stream_db!(stream, stream_id);
                 batch::execute_sequence(db, auth, pgm)
                     .await
-                    .map_err(catch_stmt_error)?;
+                    .map_err(catch_stmt_error)
+                    .map_err(catch_batch_error)?;
                 Ok(proto::Response::Sequence(proto::SequenceResp {}))
             });
         }
@@ -317,6 +322,13 @@ fn catch_stmt_error(err: anyhow::Error) -> anyhow::Error {
     }
 }
 
+fn catch_batch_error(err: anyhow::Error) -> anyhow::Error {
+    match err.downcast::<batch::BatchError>() {
+        Ok(batch_err) => anyhow!(ResponseError::Batch(batch_err)),
+        Err(err) => err,
+    }
+}
+
 impl ResponseError {
     pub fn code(&self) -> &'static str {
         match self {
@@ -324,6 +336,7 @@ impl ResponseError {
             Self::SqlTooMany { .. } => "SQL_STORE_TOO_MANY",
             Self::StreamNotOpen { .. } => "STREAM_NOT_OPEN",
             Self::Stmt(err) => err.code(),
+            Self::Batch(err) => err.code(),
         }
     }
 }

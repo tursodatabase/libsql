@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use crate::auth::Authenticated;
 use crate::database::{Cond, Database, Program, Step};
+use crate::error::Error as SqldError;
 use crate::hrana::stmt::StmtError;
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
@@ -12,6 +13,14 @@ use crate::query_result_builder::{QueryResultBuilder, StepResult, StepResultsBui
 use super::result_builder::HranaBatchProtoBuilder;
 use super::stmt::{proto_stmt_to_query, stmt_error_from_sqld_error};
 use super::{proto, ProtocolError, Version};
+
+#[derive(thiserror::Error, Debug)]
+pub enum BatchError {
+    #[error("Transaction timed out")]
+    TransactionTimeout,
+    #[error("Server cannot handle additional transactions")]
+    TransactionBusy,
+}
 
 fn proto_cond_to_cond(cond: &proto::BatchCond, max_step_i: usize) -> Result<Cond> {
     let try_convert_step = |step: i32| -> Result<usize, ProtocolError> {
@@ -76,7 +85,10 @@ pub async fn execute_batch(
     pgm: Program,
 ) -> Result<proto::BatchResult> {
     let batch_builder = HranaBatchProtoBuilder::default();
-    let (builder, _state) = db.execute_program(pgm, auth, batch_builder).await?;
+    let (builder, _state) = db
+        .execute_program(pgm, auth, batch_builder)
+        .await
+        .map_err(catch_batch_error)?;
 
     Ok(builder.into_ret())
 }
@@ -109,7 +121,10 @@ pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
 
 pub async fn execute_sequence(db: &impl Database, auth: Authenticated, pgm: Program) -> Result<()> {
     let builder = StepResultsBuilder::default();
-    let (builder, _state) = db.execute_program(pgm, auth, builder).await?;
+    let (builder, _state) = db
+        .execute_program(pgm, auth, builder)
+        .await
+        .map_err(catch_batch_error)?;
     builder
         .into_ret()
         .into_iter()
@@ -121,4 +136,28 @@ pub async fn execute_sequence(db: &impl Database, auth: Authenticated, pgm: Prog
             },
             StepResult::Skipped => Err(anyhow!("Statement in sequence was not executed")),
         })
+}
+
+fn catch_batch_error(sqld_error: SqldError) -> anyhow::Error {
+    match batch_error_from_sqld_error(sqld_error) {
+        Ok(stmt_error) => anyhow!(stmt_error),
+        Err(sqld_error) => anyhow!(sqld_error),
+    }
+}
+
+fn batch_error_from_sqld_error(sqld_error: SqldError) -> Result<BatchError, SqldError> {
+    Ok(match sqld_error {
+        SqldError::LibSqlTxTimeout => BatchError::TransactionTimeout,
+        SqldError::LibSqlTxBusy => BatchError::TransactionBusy,
+        sqld_error => return Err(sqld_error),
+    })
+}
+
+impl BatchError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::TransactionTimeout => "TRANSACTION_TIMEOUT",
+            Self::TransactionBusy => "TRANSACTION_BUSY",
+        }
+    }
 }

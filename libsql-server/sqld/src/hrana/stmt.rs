@@ -51,13 +51,11 @@ pub async fn execute_stmt(
     query: Query,
 ) -> Result<proto::StmtResult> {
     let builder = SingleStatementBuilder::default();
-    let (stmt_res, _) = db.execute_batch(vec![query], auth, builder).await?;
-    stmt_res
-        .into_ret()
-        .map_err(|sqld_error| match stmt_error_from_sqld_error(sqld_error) {
-            Ok(stmt_error) => anyhow!(stmt_error),
-            Err(sqld_error) => anyhow!(sqld_error),
-        })
+    let (stmt_res, _) = db
+        .execute_batch(vec![query], auth, builder)
+        .await
+        .map_err(catch_stmt_error)?;
+    stmt_res.into_ret().map_err(catch_stmt_error)
 }
 
 pub async fn describe_stmt(
@@ -183,6 +181,13 @@ fn proto_describe_result_from_describe_response(
             .collect(),
         is_explain: response.is_explain,
         is_readonly: response.is_readonly,
+    }
+}
+
+fn catch_stmt_error(sqld_error: SqldError) -> anyhow::Error {
+    match stmt_error_from_sqld_error(sqld_error) {
+        Ok(stmt_error) => anyhow!(stmt_error),
+        Err(sqld_error) => anyhow!(sqld_error),
     }
 }
 
