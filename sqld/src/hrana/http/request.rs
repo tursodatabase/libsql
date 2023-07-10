@@ -12,6 +12,8 @@ pub enum StreamResponseError {
     SqlTooMany { count: usize },
     #[error(transparent)]
     Stmt(stmt::StmtError),
+    #[error(transparent)]
+    Batch(batch::BatchError),
 }
 
 pub async fn handle<D: Database>(
@@ -57,7 +59,9 @@ async fn try_handle<D: Database>(
             let db = stream_guard.get_db()?;
             let sqls = stream_guard.sqls();
             let pgm = batch::proto_batch_to_program(&req.batch, sqls, Version::Hrana2)?;
-            let result = batch::execute_batch(db, auth, pgm).await?;
+            let result = batch::execute_batch(db, auth, pgm)
+                .await
+                .map_err(catch_batch_error)?;
             proto::StreamResponse::Batch(proto::BatchStreamResp { result })
         }
         proto::StreamRequest::Sequence(req) => {
@@ -68,7 +72,8 @@ async fn try_handle<D: Database>(
             let pgm = batch::proto_sequence_to_program(sql).map_err(catch_stmt_error)?;
             batch::execute_sequence(db, auth, pgm)
                 .await
-                .map_err(catch_stmt_error)?;
+                .map_err(catch_stmt_error)
+                .map_err(catch_batch_error)?;
             proto::StreamResponse::Sequence(proto::SequenceStreamResp {})
         }
         proto::StreamRequest::Describe(req) => {
@@ -109,11 +114,19 @@ fn catch_stmt_error(err: anyhow::Error) -> anyhow::Error {
     }
 }
 
+fn catch_batch_error(err: anyhow::Error) -> anyhow::Error {
+    match err.downcast::<batch::BatchError>() {
+        Ok(batch_err) => anyhow!(StreamResponseError::Batch(batch_err)),
+        Err(err) => err,
+    }
+}
+
 impl StreamResponseError {
     pub fn code(&self) -> &'static str {
         match self {
             Self::SqlTooMany { .. } => "SQL_STORE_TOO_MANY",
             Self::Stmt(err) => err.code(),
+            Self::Batch(err) => err.code(),
         }
     }
 }
