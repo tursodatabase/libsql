@@ -73,6 +73,14 @@ impl Statement {
     pub fn column_count(&self) -> i32 {
         unsafe { libsql_sys::ffi::sqlite3_column_count(self.raw_stmt) }
     }
+
+    pub fn column_value(&self, idx: i32) -> *mut libsql_sys::ffi::sqlite3_value {
+        unsafe { libsql_sys::ffi::sqlite3_column_value(self.raw_stmt, idx) }
+    }
+
+    pub fn column_type(&self, idx: i32) -> i32 {
+        unsafe { libsql_sys::ffi::sqlite3_column_type(self.raw_stmt, idx) }
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut libsql_sys::ffi::sqlite3, sql: &str) -> Result<Statement> {

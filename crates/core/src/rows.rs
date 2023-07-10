@@ -21,7 +21,7 @@ impl Rows {
             libsql_sys::ffi::SQLITE_OK => Ok(None),
             libsql_sys::ffi::SQLITE_DONE => Ok(None),
             libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
-                raw: self.stmt.raw_stmt,
+                stmt: self.stmt.clone(),
             })),
             _ => Err(Error::FetchRowFailed(errors::sqlite_code_to_error(err))),
         }
@@ -58,7 +58,7 @@ impl futures::Future for RowsFuture {
 }
 
 pub struct Row {
-    pub(crate) raw: *mut libsql_sys::ffi::sqlite3_stmt,
+    pub(crate) stmt: Rc<raw::Statement>,
 }
 
 impl Row {
@@ -66,13 +66,13 @@ impl Row {
     where
         T: FromValue,
     {
-        let val = unsafe { libsql_sys::ffi::sqlite3_column_value(self.raw, idx) };
+        let val = self.stmt.column_value(idx);
         let val = Value { inner: val };
         T::from_sql(val)
     }
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
-        let val = unsafe { libsql_sys::ffi::sqlite3_column_type(self.raw, idx) };
+        let val = self.stmt.column_type(idx);
         match val as u32 {
             libsql_sys::ffi::SQLITE_INTEGER => Ok(ValueType::Integer),
             libsql_sys::ffi::SQLITE_FLOAT => Ok(ValueType::Float),
