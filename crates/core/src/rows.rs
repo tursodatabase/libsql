@@ -28,7 +28,7 @@ impl Rows {
     }
 
     pub fn column_count(&self) -> i32 {
-        unsafe { libsql_sys::ffi::sqlite3_column_count(self.stmt.raw_stmt) }
+        self.stmt.column_count()
     }
 }
 
