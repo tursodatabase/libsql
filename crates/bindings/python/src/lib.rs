@@ -19,11 +19,6 @@ pub struct Connection {
 
 #[pymethods]
 impl Connection {
-    fn sync(self_: PyRef<'_, Self>) -> PyResult<()> {
-        self_.db.sync().map_err(to_py_err)?;
-        Ok(())
-    }
-
     fn cursor(self_: PyRef<'_, Self>) -> PyResult<Cursor> {
         let conn = self_.db.connect().map_err(to_py_err)?;
         Ok(Cursor { conn })
