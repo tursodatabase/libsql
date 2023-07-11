@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -9,11 +10,14 @@ use tower::{Layer, Service};
 #[derive(Clone)]
 pub struct IdleShutdownLayer {
     watcher: Arc<watch::Sender<()>>,
+    connected_replicas: Arc<AtomicUsize>,
 }
 
 impl IdleShutdownLayer {
     pub fn new(idle_timeout: Duration, shutdown_notifier: mpsc::Sender<()>) -> Self {
         let (sender, mut receiver) = watch::channel(());
+        let connected_replicas = Arc::new(AtomicUsize::new(0));
+        let connected_replicas_clone = connected_replicas.clone();
         tokio::spawn(async move {
             loop {
                 // FIXME: if we measure that this is causing performance issues, we may want to
@@ -23,6 +27,9 @@ impl IdleShutdownLayer {
                     Ok(Ok(_)) => continue,
                     Ok(Err(_)) => break,
                     Err(_) => {
+                        if connected_replicas_clone.load(Ordering::SeqCst) > 0 {
+                            continue;
+                        }
                         tracing::info!(
                             "Idle timeout, no new connection in {idle_timeout:.0?}. Shutting down.",
                         );
@@ -39,7 +46,16 @@ impl IdleShutdownLayer {
 
         Self {
             watcher: Arc::new(sender),
+            connected_replicas,
         }
+    }
+
+    pub fn add_connected_replica(&mut self) {
+        self.connected_replicas.fetch_add(1, Ordering::SeqCst);
+    }
+
+    pub fn remove_connected_replica(&mut self) {
+        self.connected_replicas.fetch_sub(1, Ordering::SeqCst);
     }
 
     pub fn into_kicker(self) -> IdleKicker {
