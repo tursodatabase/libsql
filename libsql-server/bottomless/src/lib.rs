@@ -256,7 +256,10 @@ pub extern "C" fn xFrames(
             return ffi::SQLITE_IOERR_WRITE;
         }
         let frame_count = ffi::PageHdrIter::new(page_headers, page_size as usize).count();
-        ctx.replicator.submit_frames(frame_count as u32);
+        if size_after != 0 {
+            // only submit frames from committed transactions
+            ctx.replicator.submit_frames(frame_count as u32);
+        }
     }
 
     let orig_methods = get_orig_methods(wal);

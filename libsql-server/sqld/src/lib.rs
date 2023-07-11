@@ -90,7 +90,6 @@ pub struct Config {
     pub rpc_server_cert: Option<PathBuf>,
     pub rpc_server_key: Option<PathBuf>,
     pub rpc_server_ca_cert: Option<PathBuf>,
-    #[cfg(feature = "bottomless")]
     pub bottomless_replication: Option<bottomless::replicator::Options>,
     pub idle_shutdown_timeout: Option<Duration>,
     pub load_from_dump: Option<PathBuf>,
@@ -129,7 +128,6 @@ impl Default for Config {
             rpc_server_cert: None,
             rpc_server_key: None,
             rpc_server_ca_cert: None,
-            #[cfg(feature = "bottomless")]
             bottomless_replication: None,
             idle_shutdown_timeout: None,
             load_from_dump: None,
@@ -397,7 +395,6 @@ fn validate_extensions(extensions_path: Option<PathBuf>) -> anyhow::Result<Vec<P
     Ok(valid_extensions)
 }
 
-#[cfg(feature = "bottomless")]
 pub async fn init_bottomless_replicator(
     path: impl AsRef<std::path::Path>,
     options: bottomless::replicator::Options,
@@ -447,7 +444,6 @@ async fn start_primary(
 
     join_set.spawn(run_periodic_compactions(logger.clone()));
 
-    #[cfg(feature = "bottomless")]
     let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
         Some(Arc::new(std::sync::Mutex::new(
             init_bottomless_replicator(config.db_path.join("data"), options.clone()).await?,
@@ -460,7 +456,6 @@ async fn start_primary(
     let dump_loader = DumpLoader::new(
         config.db_path.clone(),
         logger.clone(),
-        #[cfg(feature = "bottomless")]
         bottomless_replicator.clone(),
     )
     .await?;
@@ -478,15 +473,8 @@ async fn start_primary(
         &REPLICATION_METHODS,
         {
             let logger = logger.clone();
-            #[cfg(feature = "bottomless")]
             let bottomless_replicator = bottomless_replicator.clone();
-            move || {
-                ReplicationLoggerHookCtx::new(
-                    logger.clone(),
-                    #[cfg(feature = "bottomless")]
-                    bottomless_replicator.clone(),
-                )
-            }
+            move || ReplicationLoggerHookCtx::new(logger.clone(), bottomless_replicator.clone())
         },
         stats.clone(),
         db_config_store.clone(),
@@ -610,7 +598,6 @@ fn init_sentinel_file(path: &Path) -> anyhow::Result<bool> {
 pub async fn run_server(config: Config) -> anyhow::Result<()> {
     tracing::trace!("Backend: {:?}", config.backend);
 
-    #[cfg(feature = "bottomless")]
     if config.bottomless_replication.is_some() {
         bottomless::static_init::register_bottomless_methods();
     }
