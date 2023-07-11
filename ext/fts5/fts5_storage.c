@@ -481,12 +481,9 @@ static int fts5StorageContentlessDelete(Fts5Storage *p, i64 iDel){
       iLoc = sqlite3_column_int64(pLookup, 1);
     }
     rc = sqlite3_reset(pLookup);
-    if( rc==SQLITE_OK && iLoc==0 ){
-      rc = FTS5_CORRUPT;
-    }
   }
 
-  if( rc==SQLITE_OK ){
+  if( rc==SQLITE_OK && iLoc!=0 ){
     rc = sqlite3Fts5IndexContentlessDelete(p->pIndex, iLoc, iDel);
   }
 

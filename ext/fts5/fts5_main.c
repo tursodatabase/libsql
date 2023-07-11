@@ -1670,7 +1670,7 @@ static int fts5UpdateMethod(
     ** Cases 3 and 4 may violate the rowid constraint.
     */
     int eConflict = SQLITE_ABORT;
-    if( pConfig->eContent==FTS5_CONTENT_NORMAL ){
+    if( pConfig->eContent==FTS5_CONTENT_NORMAL || pConfig->bContentlessDelete ){
       eConflict = sqlite3_vtab_on_conflict(pConfig->db);
     }
 

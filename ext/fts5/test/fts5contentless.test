@@ -173,6 +173,8 @@ do_execsql_test 5.0 {
   INSERT INTO ft(rowid, x) VALUES(1, 'one two three');
   INSERT INTO ft(rowid, x) VALUES(2, 'one two four');
   INSERT INTO ft(rowid, x) VALUES(3, 'one two five');
+  INSERT INTO ft(rowid, x) VALUES(4, 'one two seven');
+  INSERT INTO ft(rowid, x) VALUES(5, 'one two eight');
 }
 
 do_execsql_test 5.1 {
@@ -181,12 +183,25 @@ do_execsql_test 5.1 {
 
 do_execsql_test 5.2 {
   SELECT rowid FROM ft
-} {1 3}
+} {1 3 4 5}
 
 do_catchsql_test 5.3 {
   UPDATE ft SET x='four six' WHERE rowid=3
 } {1 {cannot UPDATE contentless fts5 table: ft}}
 
+do_execsql_test 5.4 {
+  SELECT rowid FROM ft('one');
+} {1 3 4 5}
+
+do_execsql_test 5.5 {
+  REPLACE INTO ft(rowid, x) VALUES(3, 'four six');
+  SELECT rowid FROM ft('one');
+} {1 4 5}
+
+do_execsql_test 5.6 {
+  REPLACE INTO ft(rowid, x) VALUES(6, 'one two eleven');
+  SELECT rowid FROM ft('one');
+} {1 4 5 6}
 
 finish_test
 
