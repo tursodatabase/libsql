@@ -15,6 +15,7 @@ use tonic::Status;
 
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
+use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
@@ -22,16 +23,21 @@ use self::rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
 pub struct ReplicationLogService {
     logger: Arc<ReplicationLogger>,
     replicas_with_hello: RwLock<HashSet<SocketAddr>>,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
 }
 
 pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
 pub const NEED_SNAPSHOT_ERROR_MSG: &str = "NEED_SNAPSHOT";
 
 impl ReplicationLogService {
-    pub fn new(logger: Arc<ReplicationLogger>) -> Self {
+    pub fn new(
+        logger: Arc<ReplicationLogger>,
+        idle_shutdown_layer: Option<IdleShutdownLayer>,
+    ) -> Self {
         Self {
             logger,
             replicas_with_hello: RwLock::new(HashSet::<SocketAddr>::new()),
+            idle_shutdown_layer,
         }
     }
 }
@@ -56,6 +62,42 @@ fn map_frame_stream_output(
     }
 }
 
+pub struct StreamGuard<S> {
+    s: S,
+    idle_shutdown_layer: Option<IdleShutdownLayer>,
+}
+
+impl<S> StreamGuard<S> {
+    fn new(s: S, mut idle_shutdown_layer: Option<IdleShutdownLayer>) -> Self {
+        if let Some(isl) = idle_shutdown_layer.as_mut() {
+            isl.add_connected_replica()
+        }
+        Self {
+            s,
+            idle_shutdown_layer,
+        }
+    }
+}
+
+impl<S> Drop for StreamGuard<S> {
+    fn drop(&mut self) {
+        if let Some(isl) = self.idle_shutdown_layer.as_mut() {
+            isl.remove_connected_replica()
+        }
+    }
+}
+
+impl<S: futures::stream::Stream + Unpin> futures::stream::Stream for StreamGuard<S> {
+    type Item = S::Item;
+
+    fn poll_next(
+        self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Option<Self::Item>> {
+        self.get_mut().s.poll_next_unpin(cx)
+    }
+}
+
 #[tonic::async_trait]
 impl ReplicationLog for ReplicationLogService {
     type LogEntriesStream = BoxStream<'static, Result<Frame, Status>>;
@@ -75,9 +117,12 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let stream = FrameStream::new(self.logger.clone(), req.into_inner().next_offset)
-            .map(map_frame_stream_output)
-            .boxed();
+        let stream = StreamGuard::new(
+            FrameStream::new(self.logger.clone(), req.into_inner().next_offset),
+            self.idle_shutdown_layer.clone(),
+        )
+        .map(map_frame_stream_output)
+        .boxed();
 
         Ok(tonic::Response::new(stream))
     }
