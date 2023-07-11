@@ -10,6 +10,7 @@ use crate::frame::{Frame, FrameBorrowed};
 pub struct TempSnapshot {
     path: PathBuf,
     map: memmap::Mmap,
+    delete_on_drop: bool,
 }
 
 // Transplanted directly from sqld: replication/snapshot.rs
@@ -41,6 +42,7 @@ impl TempSnapshot {
         Ok(Self {
             path: path.to_owned(),
             map,
+            delete_on_drop: false,
         })
     }
 
@@ -65,7 +67,11 @@ impl TempSnapshot {
 
         let map = unsafe { memmap::Mmap::map(&file)? };
 
-        Ok(Self { path, map })
+        Ok(Self {
+            path,
+            map,
+            delete_on_drop: true,
+        })
     }
 
     pub fn path(&self) -> &Path {
@@ -79,7 +85,9 @@ impl TempSnapshot {
 
 impl Drop for TempSnapshot {
     fn drop(&mut self) {
-        let path = std::mem::take(&mut self.path);
-        let _ = std::fs::remove_file(path);
+        if self.delete_on_drop {
+            let path = std::mem::take(&mut self.path);
+            let _ = std::fs::remove_file(path);
+        }
     }
 }

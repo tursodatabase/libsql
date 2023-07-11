@@ -35,20 +35,9 @@ impl Replicator {
             let meta = meta.clone();
             move |fno| {
                 let mut lock = meta.lock();
-                let meta = match lock.as_mut() {
+                let meta: &mut replica::meta::WalIndexMeta = match lock.as_mut() {
                     Some(meta) => meta,
-                    None => {
-                        tracing::warn!(
-                            "sync called before meta inialization; filling with dummy metadata"
-                        );
-                        *lock = Some(replica::meta::WalIndexMeta {
-                            pre_commit_frame_no: 1,
-                            post_commit_frame_no: 1,
-                            generation_id: 1,
-                            database_id: 1,
-                        });
-                        lock.as_mut().unwrap()
-                    }
+                    None => anyhow::bail!("sync called before meta inialization"),
                 };
                 meta.pre_commit_frame_no = fno;
                 // FIXME: consider how we want to enable storing metadata - in a file, like below? Or in an internal table?
@@ -65,18 +54,7 @@ impl Replicator {
                 let mut lock = meta.lock();
                 let meta = match lock.as_mut() {
                     Some(meta) => meta,
-                    None => {
-                        tracing::warn!(
-                            "sync called before meta inialization; filling with dummy metadata"
-                        );
-                        *lock = Some(replica::meta::WalIndexMeta {
-                            pre_commit_frame_no: 1,
-                            post_commit_frame_no: 1,
-                            generation_id: 1,
-                            database_id: 1,
-                        });
-                        lock.as_mut().unwrap()
-                    }
+                    None => anyhow::bail!("sync called before meta inialization"),
                 };
                 assert_eq!(meta.pre_commit_frame_no, fno);
                 meta.post_commit_frame_no = fno;
@@ -122,8 +100,33 @@ impl Replicator {
         file.read_exact(&mut buf)?;
         let snapshot_header: SnapshotFileHeader = bytemuck::pod_read_unaligned(&buf);
 
+        let mut meta = self.meta.lock();
+
+        if let Some(meta) = &*meta {
+            if meta.post_commit_frame_no != snapshot_header.start_frame_no {
+                tracing::warn!(
+                    "Snapshot header frame number {} does not match post-commit frame number {}",
+                    snapshot_header.start_frame_no,
+                    meta.post_commit_frame_no
+                );
+                anyhow::bail!(
+                    "Snapshot header frame number {} does not match post-commit frame number {}",
+                    snapshot_header.start_frame_no,
+                    meta.post_commit_frame_no
+                )
+            }
+        } else if snapshot_header.start_frame_no != 0 {
+            tracing::warn!(
+                "Cannot initialize metadata from snapshot header with frame number {} instead of 0",
+                snapshot_header.start_frame_no
+            );
+            anyhow::bail!(
+                "Cannot initialize metadata from snapshot header with frame number {} instead of 0",
+                snapshot_header.start_frame_no
+            )
+        }
         // Metadata is loaded straight from the snapshot header and overwrites any previous values
-        *self.meta.lock() = Some(replica::meta::WalIndexMeta {
+        *meta = Some(replica::meta::WalIndexMeta {
             pre_commit_frame_no: snapshot_header.start_frame_no,
             post_commit_frame_no: snapshot_header.start_frame_no,
             generation_id: 1, // FIXME: where to obtain generation id from? Do we need it?
