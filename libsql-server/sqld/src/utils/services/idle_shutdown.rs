@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use hyper::http;
 use tokio::sync::{mpsc, watch};
 use tokio::time::timeout;
 use tower::{Layer, Service};
@@ -76,9 +77,9 @@ pub struct IdleShutdownService<S> {
     watcher: Arc<watch::Sender<()>>,
 }
 
-impl<Req, S> Service<Req> for IdleShutdownService<S>
+impl<B, S> Service<http::request::Request<B>> for IdleShutdownService<S>
 where
-    S: Service<Req>,
+    S: Service<http::request::Request<B>>,
 {
     type Response = S::Response;
 
@@ -93,8 +94,14 @@ where
         self.inner.poll_ready(cx)
     }
 
-    fn call(&mut self, req: Req) -> Self::Future {
-        let _ = self.watcher.send(());
+    fn call(&mut self, req: http::request::Request<B>) -> Self::Future {
+        if should_extend_lifetime(req.uri().path()) {
+            let _ = self.watcher.send(());
+        }
         self.inner.call(req)
     }
+}
+
+fn should_extend_lifetime(path: &str) -> bool {
+    path != "/health"
 }
