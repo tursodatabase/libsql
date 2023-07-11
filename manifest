@@ -1,5 +1,5 @@
-C Always\suse\sthe\s"LL"\ssuffix\son\s64-bit\sinteger\sliterals.
-D 2023-07-08T17:42:24.748
+C Reduce\sdivergence\sbetween\sbranches:\strunk\sand\swal-shm-exceptions.
+D 2023-07-11T19:54:17.575
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -719,7 +719,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
 F src/vtab.c 1ecf8c3745d29275688d583e12822fa984d421e0286b5ef50c137bc3bf6d7a64
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c cbfeeb7415baa545efa244dd34bb5af4ae953a206fed720c6fa7f1ef763ec122
+F src/wal.c dd843f619ac60d5dadab7109cf402432ba74dde0c301505fd1c202add07659e3
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 2dc708cf8b6a691fb79f16bbc46567497ee6f991043318d421e294b2da114d93
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P beab3c98639be531744e60440223bb9ee76bc15234aff05e5efb273c8241dfd8
-R 0aeac1606c7bbc75dfae0a73d28601e5
+P 07d95ed60f0a17ea13b4bc19c2ab2ec9052fedd27c9e1e57a1ec6e3a6470e5b7
+R 9ba462c35151490c11339704cc10d776
 U drh
-Z 7fe2cdb685f595b3ff5ea313f1ff0511
+Z 72367f42719b51ed960b0f45070bb83e
 # Remove this line to create a well-formed Fossil manifest.
