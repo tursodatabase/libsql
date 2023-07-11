@@ -1678,8 +1678,12 @@ static int fts5UpdateMethod(
     assert( nArg!=1 || eType0==SQLITE_INTEGER );
 
     /* Filter out attempts to run UPDATE or DELETE on contentless tables.
-    ** This is not suported.  */
-    if( eType0==SQLITE_INTEGER && fts5IsContentless(pTab) ){
+    ** This is not suported. Except - DELETE is supported if the CREATE
+    ** VIRTUAL TABLE statement contained "contentless_delete=1". */
+    if( eType0==SQLITE_INTEGER 
+     && pConfig->eContent==FTS5_CONTENT_NONE 
+     && (nArg>1 || pConfig->bContentlessDelete==0)
+    ){
       pTab->p.base.zErrMsg = sqlite3_mprintf(
           "cannot %s contentless fts5 table: %s", 
           (nArg>1 ? "UPDATE" : "DELETE from"), pConfig->zName
