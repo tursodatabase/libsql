@@ -22,17 +22,16 @@
 //! Embedded replica is libSQL database that's running in your application process, which keeps a local copy of a remote database.
 //! They are useful if you want to move data in the memory space of your application for fast access.
 //!
-//! You can open an embedded read-only replica by instantiating a [`Replicator`] and setting it up to replicate a remote database:
+//! You can open an embedded read-only replica by using the [`Database::with_replicator`] constructor:
 //!
 //! ```rust,no_run
 //! use libsql_core::Database;
 //! use libsql_replication::{Frame, Frames, Replicator};
 //!
-//! let db = Database::open("/tmp/test.db");
+//! let mut db = Database::with_replicator("/tmp/test.db");
 //!
-//! let mut replicator = libsql_replication::Replicator::new("data.libsql").unwrap();
 //! let frames: Frames = Frames::Vec(vec![]);
-//! replicator.sync(frames).unwrap();
+//! db.sync(frames).unwrap();
 //! let conn = db.connect().unwrap();
 //! conn.execute("SELECT * FROM users", ()).unwrap();
 //! ```

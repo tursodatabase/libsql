@@ -36,12 +36,10 @@ fn main() {
     std::fs::create_dir("data.libsql").ok();
     std::fs::copy("tests/template.db", "data.libsql/data").unwrap();
 
-    let db = Database::open("data.libsql/data");
+    let mut db = Database::with_replicator("data.libsql/data");
     let conn = db.connect().unwrap();
 
-    let mut replicator = Replicator::new("data.libsql").unwrap();
-
-    let sync_result = replicator.sync(Frames::Vec(vec![test_frame(1), test_frame(2)]));
+    let sync_result = db.sync(Frames::Vec(vec![test_frame(1), test_frame(2)]));
     println!("sync result: {:?}", sync_result);
     let rows = conn
         .execute("SELECT * FROM sqlite_master", ())

@@ -1,13 +1,12 @@
 use libsql_core::Database;
-use libsql_replication::{Frames, Replicator, TempSnapshot};
+use libsql_replication::{Frames, TempSnapshot};
 
 fn main() {
     tracing_subscriber::fmt::init();
 
-    //    std::fs::create_dir("data.libsql").ok();
-    //    std::fs::copy("tests/template.db", "data.libsql/data").unwrap();
+    std::fs::create_dir("data.libsql").ok();
 
-    let db = Database::open("data.libsql/data");
+    let mut db = Database::with_replicator("data.libsql/data");
     let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();
@@ -16,10 +15,9 @@ fn main() {
         return;
     }
     let snapshot_path = args.get(1).unwrap();
-    let mut replicator = Replicator::new("data.libsql").unwrap();
     let snapshot = TempSnapshot::from_snapshot_file(snapshot_path.as_ref()).unwrap();
 
-    replicator.sync(Frames::Snapshot(snapshot)).unwrap();
+    db.sync(Frames::Snapshot(snapshot)).unwrap();
 
     let rows = conn
         .execute("SELECT * FROM sqlite_master", ())
