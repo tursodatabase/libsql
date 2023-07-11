@@ -17,6 +17,9 @@ jobs:
     - name: get TCL
       run: sudo apt-get install -y tcl8.6-dev
 
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v2
+
     - name: configure
       run: ./configure
       
@@ -25,3 +28,6 @@ jobs:
 
     - name: Run Rust tests
       run: make rusttest
+
+    - name: Run API tests
+      run: make libsqlapi
