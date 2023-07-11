@@ -190,6 +190,9 @@ async fn handle_request<D: Database>(
         return Ok(handle_upgrade(&upgrade_tx, req).await);
     }
 
+    if req.method() == Method::GET && req.uri().path() == "/health" {
+        return Ok(handle_health());
+    }
     let auth_header = req.headers().get(hyper::header::AUTHORIZATION);
     let auth = match auth.authenticate_http(auth_header) {
         Ok(auth) => auth,
@@ -205,7 +208,6 @@ async fn handle_request<D: Database>(
         (&Method::POST, "/") => handle_query(req, auth, db_factory.clone()).await,
         (&Method::GET, "/version") => Ok(handle_version()),
         (&Method::GET, "/console") if enable_console => show_console().await,
-        (&Method::GET, "/health") => Ok(handle_health()),
         (&Method::GET, "/v1/stats") => Ok(stats::handle_stats(&stats)),
 
         (&Method::GET, "/v1") => hrana_over_http_1::handle_index(req).await,
