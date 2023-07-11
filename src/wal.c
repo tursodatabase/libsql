@@ -528,15 +528,13 @@ struct Wal {
   u32 iReCksum;              /* On commit, recalculate checksums from here */
   const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
-# ifdef SQLITE_DEBUG
-  int nSehTry;               /* Number of nested SEH_TRY{} blocks */
-# endif
 #ifdef SQLITE_USE_SEH
   u32 lockMask;              /* Mask of locks held */
   void *pFree;               /* Pointer to sqlite3_free() if exception thrown */
   int iSysErrno;             /* System error code following exception */
 #endif
 #ifdef SQLITE_DEBUG
+  int nSehTry;               /* Number of nested SEH_TRY{} blocks */
   u8 lockError;              /* True if a locking error has occurred */
 #endif
 #ifdef SQLITE_ENABLE_SNAPSHOT
@@ -618,19 +616,32 @@ struct WalIterator {
     sizeof(ht_slot)*HASHTABLE_NSLOT + HASHTABLE_NPAGE*sizeof(u32) \
 )
 
+/*
+** Structured Exception Handling (SEH) is a Windows-specific technique
+** for catching exceptions raised while accessing memory-mapped files.
+**
+** The -DSQLITE_USE_SEH compile-time option means to use SEH to catch and
+** deal with system-level errors that arise during WAL -shm file processing.
+** Without this compile-time option, any system-level faults that appear
+** while accessing the memory-mapped -shm file will cause a process-wide
+** signal to be deliver, which will more than likely cause the entire
+** process to exit.
+*/
 #ifdef SQLITE_USE_SEH
-
 #include <Windows.h>
 
+/* Beginning of a block of code in which an exception might occur */
 # define SEH_TRY    __try { \
    assert( walAssertLockmask(pWal) && pWal->nSehTry==0 ); \
    VVA_ONLY(pWal->nSehTry++);
 
+/* The end of a block of code in which an exception might occur */
 # define SEH_EXCEPT(X) \
    VVA_ONLY(pWal->nSehTry--); \
    assert( pWal->nSehTry==0 ); \
    } __except( sehExceptionFilter(pWal, GetExceptionCode(), GetExceptionInformation() ) ){ X }
 
+/* Simulate a memory-mapping fault in the -shm file for testing purposes */
 # define SEH_INJECT_FAULT sehInjectFault(pWal) 
 
 /*
@@ -662,10 +673,10 @@ static void sehInjectFault(Wal *pWal){
 
   res = sqlite3FaultSim(650);
   if( res!=0 ){
-    ULONG aArg[3];
+    ULONG_PTR aArg[3];
     aArg[0] = 0;
     aArg[1] = 0;
-    aArg[2] = (ULONG)res;
+    aArg[2] = (ULONG_PTR)res;
     RaiseException(EXCEPTION_IN_PAGE_ERROR, 0, 3, (const ULONG_PTR*)aArg);
   }
 }
