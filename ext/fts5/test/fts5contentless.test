@@ -164,11 +164,21 @@ foreach v {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z} {
   do_test 4.6.$v { set L1 } $L2
 }
 
-execsql_pp {
-  SELECT fts5_decode(id, block) FROM ft_data
+#execsql_pp { SELECT fts5_decode(id, block) FROM ft_data }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft(rowid, x) VALUES(1, 'one two three');
+  INSERT INTO ft(rowid, x) VALUES(2, 'one two four');
+  INSERT INTO ft(rowid, x) VALUES(3, 'one two five');
 }
 
-
+breakpoint
+do_execsql_test 5.1 {
+  INSERT INTO ft(ft, rowid) VALUES('delete', 2);
+}
 
 
 finish_test

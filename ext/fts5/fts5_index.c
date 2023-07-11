@@ -583,6 +583,41 @@ static u16 fts5GetU16(const u8 *aIn){
   return ((u16)aIn[0] << 8) + aIn[1];
 } 
 
+static u64 fts5GetU64(u8 *a){
+  return ((u64)a[0] << 56)
+       + ((u64)a[1] << 48)
+       + ((u64)a[2] << 40)
+       + ((u64)a[3] << 32)
+       + ((u64)a[4] << 24)
+       + ((u64)a[5] << 16)
+       + ((u64)a[6] << 8)
+       + ((u64)a[7] << 0);
+}
+
+static void fts5PutU64(u8 *a, u64 iVal){
+  a[0] = ((iVal >> 56) & 0xFF);
+  a[1] = ((iVal >> 48) & 0xFF);
+  a[2] = ((iVal >> 40) & 0xFF);
+  a[3] = ((iVal >> 32) & 0xFF);
+  a[4] = ((iVal >> 24) & 0xFF);
+  a[5] = ((iVal >> 16) & 0xFF);
+  a[6] = ((iVal >>  8) & 0xFF);
+  a[7] = ((iVal >>  0) & 0xFF);
+}
+
+static u32 fts5GetU32(const u8 *a){
+  return ((u32)a[0] << 24)
+       + ((u32)a[1] << 16)
+       + ((u32)a[2] << 8)
+       + ((u32)a[3] << 0);
+} 
+static void fts5PutU32(u8 *a, u32 iVal){
+  a[0] = ((iVal >> 24) & 0xFF);
+  a[1] = ((iVal >> 16) & 0xFF);
+  a[2] = ((iVal >>  8) & 0xFF);
+  a[3] = ((iVal >>  0) & 0xFF);
+}
+
 /*
 ** Allocate and return a buffer at least nByte bytes in size.
 **
@@ -2987,26 +3022,26 @@ static void fts5MultiIterSetEof(Fts5Iter *pIter){
   pIter->iSwitchRowid = pSeg->iRowid;
 }
 
-static u64 fts5GetU64(u8 *a){
-  return ((u64)a[0] << 56)
-       + ((u64)a[1] << 48)
-       + ((u64)a[2] << 40)
-       + ((u64)a[3] << 32)
-       + ((u64)a[4] << 24)
-       + ((u64)a[5] << 16)
-       + ((u64)a[6] << 8)
-       + ((u64)a[7] << 0);
-}
+static int fts5IndexTombstoneQuery(u8 *aHash, int nHash, u64 iRowid){
+  int szKey = aHash[3] ? 8 : 4;
+  int nSlot = (nHash - 8) / szKey;
+  int iSlot = iRowid % nSlot;
 
-static void fts5PutU64(u8 *a, u64 iVal){
-  a[0] = ((iVal >> 56) & 0xFF);
-  a[1] = ((iVal >> 48) & 0xFF);
-  a[2] = ((iVal >> 40) & 0xFF);
-  a[3] = ((iVal >> 32) & 0xFF);
-  a[4] = ((iVal >> 24) & 0xFF);
-  a[5] = ((iVal >> 16) & 0xFF);
-  a[6] = ((iVal >>  8) & 0xFF);
-  a[7] = ((iVal >>  0) & 0xFF);
+  if( szKey==4 ){
+    u32 *aSlot = (u32*)&aHash[8];
+    while( aSlot[iSlot] ){
+      if( fts5GetU32((u8*)&aSlot[iSlot])==iRowid ) return 1;
+      iSlot = (iSlot+1)%nSlot;
+    }
+  }else{
+    u64 *aSlot = (u64*)&aHash[8];
+    while( aSlot[iSlot] ){
+      if( fts5GetU64((u8*)&aSlot[iSlot])==iRowid ) return 1;
+      iSlot = (iSlot+1)%nSlot;
+    }
+  }
+
+  return 0;
 }
 
 static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
@@ -3014,11 +3049,9 @@ static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
   Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
 
   if( pSeg->pTombstone ){
-    int ii;
-    for(ii=0; ii<pSeg->pTombstone->nn; ii+=8){
-      i64 iVal = (i64)fts5GetU64(&pSeg->pTombstone->p[ii]);
-      if( iVal==pSeg->iRowid ) return 1;
-    }
+    return fts5IndexTombstoneQuery(
+        pSeg->pTombstone->p, pSeg->pTombstone->nn, pSeg->iRowid
+    );
   }
 
   return 0;
@@ -6380,35 +6413,103 @@ int sqlite3Fts5IndexGetLocation(Fts5Index *p, i64 *piLoc){
   return fts5IndexReturn(p);
 }
 
+/*
+** Add a tombstone for rowid iRowid to segment pSeg.
+**
+** All tombstones for a single segment are stored in a blob formatted to 
+** contain a hash table. The format is:
+**
+**   * 32-bit integer. 1 for 64-bit unsigned keys, 0 for 32-bit unsigned keys.
+**   * 32-bit integer. The number of entries currently in the hash table.
+**
+** Then an array of entries. The number of entries can be calculated based
+** on the size of the blob in the database and the size of the keys as 
+** specified by the first 32-bit field of the hash table header.
+**
+** All values in the hash table are stored as big-endian integers.
+*/
 static void fts5IndexTombstoneAdd(
   Fts5Index *p, 
   Fts5StructureSegment *pSeg, 
-  i64 iRowid
+  u64 iRowid
 ){
   Fts5Data *pHash = 0;
+  u8 *aFree = 0;
   u8 *aNew = 0;
   int nNew = 0;
+  int szKey = 0;
+  int nSlot = 0;
+  int bKey64 = (iRowid>0xFFFFFFFF);
+  u32 nHash = 0;
 
+  /* Load the current hash table, if any */
   pHash = fts5DataReadOpt(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid));
   if( p->rc ) return;
 
   if( pHash ){
-    nNew = 8 + pHash->nn;
-  }else{
-    nNew = 8;
+    szKey = pHash->p[3] ? 8 : 4;
+    nSlot = (pHash->nn - 8) / szKey;
+    nHash = fts5GetU32(&pHash->p[4]);
   }
-  aNew = sqlite3_malloc(nNew);
-  if( aNew==0 ){
-    p->rc = SQLITE_NOMEM;
-  }else{
-    if( pHash ){
-      memcpy(aNew, pHash->p, pHash->nn);
+
+  /* Check if the current hash table needs to be rebuilt. Either because
+  ** (a) it does not yet exist, (b) it is full, or (c) it is using the
+  ** wrong sized keys. */
+  if( pHash==0 || nSlot<=(nHash*2) || (bKey64 && szKey==4) ){
+    int szNewKey = (bKey64 || szKey==8) ? 8 : 4;
+    int nNewSlot = (nSlot ? nSlot*2 : 16);
+
+    nNew = 8 + (nNewSlot * szNewKey);
+    aFree = aNew = (u8*)sqlite3Fts5MallocZero(&p->rc, nNew);
+    if( aNew ){
+      int iSlot = 0;
+      int ii;
+      fts5PutU32(aNew, (szNewKey==8 ? 1 : 0));
+      for(ii=0; ii<nSlot; ii++){
+        u64 iVal = 0;
+        if( szKey==4 ){
+          iVal = (u64)fts5GetU32(&pHash->p[8 + ii*szKey]);
+        }else{
+          iVal = fts5GetU64(&pHash->p[8 + ii*szKey]);
+        }
+
+        iSlot = iVal % nNewSlot;
+        if( szNewKey==4 ){
+          u32 *aSlot = (u32*)&aNew[8];
+          while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nNewSlot;
+          fts5PutU32((u8*)&aSlot[iSlot], (u32)iVal);
+        }else{
+          u64 *aSlot = (u64*)&aNew[8];
+          while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nNewSlot;
+          fts5PutU64((u8*)&aSlot[iSlot], iRowid);
+        }
+      }
     }
-    fts5PutU64(&aNew[nNew-8], iRowid);
+    szKey = szNewKey;
+    nSlot = nNewSlot;
+  }else{
+    aNew = pHash->p;
+    nNew = pHash->nn;
+  }
+
+  if( aNew ){
+    int iSlot = (iRowid % nSlot);
+    if( szKey==4 ){
+      u32 *aSlot = (u32*)&aNew[8];
+      while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nSlot;
+      fts5PutU32((u8*)&aSlot[iSlot], (u32)iRowid);
+    }else{
+      u64 *aSlot = (u64*)&aNew[8];
+      while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nSlot;
+      fts5PutU64((u8*)&aSlot[iSlot], iRowid);
+    }
+
+    fts5PutU32((u8*)&aNew[4], nHash+1);
+    assert( nNew>8 );
     fts5DataWrite(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid), aNew, nNew);
   }
 
-  sqlite3_free(aNew);
+  sqlite3_free(aFree);
   fts5DataRelease(pHash);
 }
 
