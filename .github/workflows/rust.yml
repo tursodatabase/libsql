@@ -127,7 +127,7 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
-        args: --verbose -F bottomless
+        args: --verbose
       env:
         AWS_ACCESS_KEY_ID: minioadmin
         AWS_SECRET_ACCESS_KEY: minioadmin

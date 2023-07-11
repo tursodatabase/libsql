@@ -114,7 +114,6 @@ struct Cli {
     /// Don't display welcome message
     #[clap(long)]
     no_welcome: bool,
-    #[cfg(feature = "bottomless")]
     #[clap(long, env = "SQLD_ENABLE_BOTTOMLESS_REPLICATION")]
     enable_bottomless_replication: bool,
     /// The duration, in second, after which to shutdown the server if no request have been
@@ -267,7 +266,6 @@ fn config_from_args(args: Cli) -> Result<Config> {
         rpc_server_cert: args.grpc_cert_file,
         rpc_server_key: args.grpc_key_file,
         rpc_server_ca_cert: args.grpc_ca_cert_file,
-        #[cfg(feature = "bottomless")]
         bottomless_replication: if args.enable_bottomless_replication {
             Some(bottomless::replicator::Options::from_env()?)
         } else {
