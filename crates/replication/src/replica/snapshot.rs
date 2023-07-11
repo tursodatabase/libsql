@@ -12,7 +12,38 @@ pub struct TempSnapshot {
     map: memmap::Mmap,
 }
 
+// Transplanted directly from sqld: replication/snapshot.rs
+#[derive(Debug, Copy, Clone, PartialEq, bytemuck::Pod, bytemuck::Zeroable, Eq)]
+#[repr(C)]
+pub struct SnapshotFileHeader {
+    /// id of the database
+    pub db_id: u128,
+    /// first frame in the snapshot
+    pub start_frame_no: u64,
+    /// end frame in the snapshot
+    pub end_frame_no: u64,
+    /// number of frames in the snapshot
+    pub frame_count: u64,
+    /// safe of the database after applying the snapshot
+    pub size_after: u32,
+    pub _pad: u32,
+}
+// end of transplant
+
 impl TempSnapshot {
+    pub fn from_snapshot_file(path: &Path) -> anyhow::Result<Self> {
+        let file = std::fs::File::open(path).unwrap();
+        let mut map_options = memmap::MmapOptions::new();
+        // Skip the snapshot file header
+        map_options.offset(std::mem::size_of::<SnapshotFileHeader>() as u64);
+        let map = unsafe { map_options.map(&file)? };
+
+        Ok(Self {
+            path: path.to_owned(),
+            map,
+        })
+    }
+
     pub async fn from_stream(
         db_path: &Path,
         mut s: impl Stream<Item = anyhow::Result<Frame>> + Unpin,
@@ -35,6 +66,10 @@ impl TempSnapshot {
         let map = unsafe { memmap::Mmap::map(&file)? };
 
         Ok(Self { path, map })
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &FrameBorrowed> {

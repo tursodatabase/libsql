@@ -8,6 +8,8 @@ pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
 pub type FrameNo = u64;
 pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
+use replica::snapshot::SnapshotFileHeader;
+pub use replica::snapshot::TempSnapshot;
 
 use bytemuck::bytes_of;
 use std::os::unix::prelude::FileExt;
@@ -113,7 +115,37 @@ impl Replicator {
         })
     }
 
+    pub fn update_metadata_from_snapshot_header(
+        &self,
+        path: impl AsRef<std::path::Path>,
+    ) -> anyhow::Result<()> {
+        // FIXME: I guess we should consider allowing async reads here
+        use std::io::Read;
+        let path = path.as_ref();
+        let mut file = std::fs::File::open(path)?;
+        let mut buf: [u8; std::mem::size_of::<SnapshotFileHeader>()] =
+            [0; std::mem::size_of::<SnapshotFileHeader>()];
+        file.read_exact(&mut buf)?;
+        let snapshot_header: SnapshotFileHeader = bytemuck::pod_read_unaligned(&buf);
+
+        // Metadata is loaded straight from the snapshot header and overwrites any previous values
+        *self.meta.lock() = Some(replica::meta::WalIndexMeta {
+            pre_commit_frame_no: snapshot_header.start_frame_no,
+            post_commit_frame_no: snapshot_header.start_frame_no,
+            generation_id: 1, // FIXME: where to obtain generation id from? Do we need it?
+            database_id: snapshot_header.db_id,
+        });
+        Ok(())
+    }
+
     pub fn sync(&mut self, frames: Frames) -> anyhow::Result<()> {
+        if let Frames::Snapshot(snapshot) = &frames {
+            tracing::debug!(
+                "Updating metadata from snapshot header {}",
+                snapshot.path().display()
+            );
+            self.update_metadata_from_snapshot_header(snapshot.path())?;
+        }
         let _ = self.frames_sender.blocking_send(frames);
         self.injector.step()?;
         Ok(())
