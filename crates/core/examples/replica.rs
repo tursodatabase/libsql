@@ -1,5 +1,5 @@
 use libsql_core::Database;
-use libsql_replication::{Frame, FrameHeader, Frames, Replicator};
+use libsql_replication::{Frame, FrameHeader, Frames};
 
 fn frame_data_offset(frame_no: u64) -> u64 {
     tracing::debug!(

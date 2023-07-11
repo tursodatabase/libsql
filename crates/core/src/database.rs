@@ -29,11 +29,9 @@ impl Database {
     }
 
     pub fn with_replicator(url: impl Into<String>) -> Database {
-        Database {
-            url: url.into(),
-            // FIXME: we probably shouldn't hardcode this part
-            replicator: Some(Replicator::new("data.libsql").unwrap()),
-        }
+        let url = url.into();
+        let replicator = Some(Replicator::new(&url).unwrap());
+        Database { url, replicator }
     }
 
     pub fn close(&self) {}

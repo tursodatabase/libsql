@@ -11,8 +11,6 @@ pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
 
-use bytemuck::bytes_of;
-use std::os::unix::prelude::FileExt;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
@@ -27,19 +25,14 @@ pub struct Replicator {
 }
 
 impl Replicator {
-    pub fn new(db_path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
-        let db_path = db_path.as_ref();
-        let (meta, meta_file) = replica::meta::WalIndexMeta::read_from_path(db_path)?;
-        let meta_file = Arc::new(meta_file);
-        let (applied_frame_notifier, current_frame_no_notifier) = tokio::sync::watch::channel(
-            meta.map(|m| m.post_commit_frame_no).unwrap_or(FrameNo::MAX),
-        );
-        let meta = Arc::new(parking_lot::Mutex::new(meta));
+    pub fn new(path: impl AsRef<std::path::Path>) -> anyhow::Result<Self> {
+        let (applied_frame_notifier, current_frame_no_notifier) =
+            tokio::sync::watch::channel(FrameNo::MAX);
+        let meta = Arc::new(parking_lot::Mutex::new(None));
         let (frames_sender, receiver) = tokio::sync::mpsc::channel(1);
 
         let pre_commit = {
             let meta = meta.clone();
-            let meta_file = meta_file.clone();
             move |fno| {
                 let mut lock = meta.lock();
                 let meta = match lock.as_mut() {
@@ -58,7 +51,8 @@ impl Replicator {
                     }
                 };
                 meta.pre_commit_frame_no = fno;
-                meta_file.write_all_at(bytes_of(meta), 0)?;
+                // FIXME: consider how we want to enable storing metadata - in a file, like below? Or in an internal table?
+                //meta_file.write_all_at(bytes_of(meta), 0)?;
 
                 Ok(())
             }
@@ -66,7 +60,6 @@ impl Replicator {
 
         let post_commit = {
             let meta = meta.clone();
-            let meta_file = meta_file;
             let notifier = applied_frame_notifier;
             move |fno| {
                 let mut lock = meta.lock();
@@ -87,7 +80,8 @@ impl Replicator {
                 };
                 assert_eq!(meta.pre_commit_frame_no, fno);
                 meta.post_commit_frame_no = fno;
-                meta_file.write_all_at(bytes_of(meta), 0)?;
+                // FIXME: consider how we want to enable storing metadata - in a file, like below? Or in an internal table?
+                //meta_file.write_all_at(bytes_of(meta), 0)?;
                 let _ = notifier.send(fno);
 
                 Ok(())
@@ -104,7 +98,7 @@ impl Replicator {
                 &'static mut replica::hook::InjectorHookCtx,
             >(&mut *hook_ctx.lock())
         };
-        let injector = replica::injector::FrameInjector::new(db_path, hook_ctx_ref)?;
+        let injector = replica::injector::FrameInjector::new(path.as_ref(), hook_ctx_ref)?;
 
         Ok(Self {
             frames_sender,

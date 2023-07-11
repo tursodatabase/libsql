@@ -4,9 +4,7 @@ use libsql_replication::{Frames, TempSnapshot};
 fn main() {
     tracing_subscriber::fmt::init();
 
-    std::fs::create_dir("data.libsql").ok();
-
-    let mut db = Database::with_replicator("data.libsql/data");
+    let mut db = Database::with_replicator("test.db");
     let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();
