@@ -1,4 +1,6 @@
 Cargo.lock
 target
 data.libsql
-
+test.db
+test.db-shm
+test.db-wal

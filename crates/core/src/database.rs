@@ -1,8 +1,11 @@
 use crate::{connection::Connection, Result};
+use libsql_replication::Replicator;
+pub use libsql_replication::{Frames, TempSnapshot};
 
 // A libSQL database.
 pub struct Database {
     pub url: String,
+    pub replicator: Option<Replicator>,
 }
 
 impl Database {
@@ -19,12 +22,34 @@ impl Database {
     }
 
     pub fn new(url: String) -> Database {
-        Database { url }
+        Database {
+            url,
+            replicator: None,
+        }
+    }
+
+    pub fn with_replicator(url: impl Into<String>) -> Database {
+        let url = url.into();
+        let replicator = Some(Replicator::new(&url).unwrap());
+        Database { url, replicator }
     }
 
     pub fn close(&self) {}
 
     pub fn connect(&self) -> Result<Connection> {
         Connection::connect(self)
+    }
+
+    pub fn sync(&mut self, frames: Frames) -> Result<()> {
+        if let Some(replicator) = &mut self.replicator {
+            replicator
+                .sync(frames)
+                .map_err(|e| crate::errors::Error::ConnectionFailed(format!("{e}")))
+        } else {
+            Err(crate::errors::Error::Misuse(
+                "No replicator available. Use Database::with_replicator() to enable replication"
+                    .to_string(),
+            ))
+        }
     }
 }

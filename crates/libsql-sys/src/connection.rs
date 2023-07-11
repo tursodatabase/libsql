@@ -22,7 +22,7 @@ impl<'a> Connection<'a> {
         }
     }
 
-    /// Opens a database with the regular wal methods in the directory pointed to by path
+    /// Opens a database with the regular wal methods, given a path to the database file.
     pub fn open<W: WalHook>(
         path: impl AsRef<std::path::Path>,
         flags: c_int,
@@ -31,7 +31,7 @@ impl<'a> Connection<'a> {
         _wal_hook: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
     ) -> Result<Self, crate::Error> {
-        let path = path.as_ref().join("data");
+        let path = path.as_ref();
         tracing::trace!(
             "Opening a connection with regular WAL at {}",
             path.display()

@@ -10,6 +10,8 @@ pub enum Error {
     UnknownColumnType(i32, i32),
     #[error("The value is NULL")]
     NullValue,
+    #[error("Library misuse: `{0}`")]
+    Misuse(String),
 }
 
 pub(crate) fn sqlite_code_to_error(code: i32) -> String {
