@@ -1,48 +1,36 @@
-# LibSQL API
+# libSQL API
 
-LibSQL is an embeddable SQL database engine based on SQLite.
+[![Twitter badge][]][Twitter URL] [![Discord badge][]][Discord URL]
 
-The libSQL API a batteries-included wrapper around the SQLite C API to support transparent replication while retaining compatibility with the SQLite ecosystem, such as the SQL dialect and extensions.
+_libSQL is an embeddable SQL database engine based on SQLite._
+
+This libSQL API is an experimental, batteries-included library built on top of SQLite to support replication while retaining compatibility with the SQLite ecosystem, such as the SQL dialect and extensions.
+
+## Features
+
+* **Embedded replicas** that allow you to have replicated database inside your app.
+* Supports **Rust**, **JavaScript**, **Python**, **Go**, and more.
 
 ## Getting Started
 
-The libSQL API supports the following programming languages:
+* [Rust](core) 
+* [Python](bindings/python)
+* [JavaScript](bindings/js) (wip)
+* [Go](bindings/go) (wip)
+* [C](bindings/c) (wip)
 
-* ✅ [Rust](core) 
-* ✅ [Python](bindings/python)
-* 👷 [JavaScript](bindings/js)
-* 👷 [Go](bindings/go)
-* 👷 [C](bindings/c)
+## License
 
-## Developing
+This project is licensed under the [MIT license].
 
-Setting up the environment:
+### Contribution
 
-```sh
-export LIBSQL_STATIC_LIB_DIR=$(pwd)/../.libs
-```
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in libSQL by you, shall be licensed as MIT, without any additional
+terms or conditions.
 
-Building the APIs:
-
-```sh
-cargo build
-```
-
-Running the tests:
-
-```sh
-cargo test
-```
-
-Running the benchmarks:
-
-```sh
-cargo test
-```
-
-Run benchmarks and generate flamegraphs:
-
-```console
-echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-cargo bench --bench benchmark -- --profile-time=5
-```
+[Twitter badge]: https://img.shields.io/twitter/follow/libsqlhq.svg?style=social&label=Follow
+[Twitter URL]: https://twitter.com/intent/follow?screen_name=libsqlhq
+[Discord badge]: https://img.shields.io/discord/1026540227218640906?color=5865F2&label=discord&logo=discord&logoColor=8a9095
+[Discord URL]: https://discord.gg/TxwbQTWHSr
+[MIT license]: https://github.com/libsql/libsql/blob/main/LICENSE.md

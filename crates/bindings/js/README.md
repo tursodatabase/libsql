@@ -1,4 +1,4 @@
-# LibSQL JavaScript bindings
+# libSQL API for JavaScript
 
 ## Developing
 
