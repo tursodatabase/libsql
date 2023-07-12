@@ -53,7 +53,7 @@
 
    - `memory`[^1]: optional WebAssembly.Memory object, defaulting to
      `exports.memory`. In Emscripten environments this should be set
-     to `Module.wasmMemory` if the build uses `-sIMPORT_MEMORY`, or be
+     to `Module.wasmMemory` if the build uses `-sIMPORTED_MEMORY`, or be
      left undefined/falsy to default to `exports.memory` when using
      WASM-exported memory.
 
@@ -809,7 +809,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       || toss3("Missing API config.exports (WASM module exports)."),
 
     /**
-       When Emscripten compiles with `-sIMPORT_MEMORY`, it
+       When Emscripten compiles with `-sIMPORTED_MEMORY`, it
        initalizes the heap and imports it into wasm, as opposed to
        the other way around. In this case, the memory is not
        available via this.exports.memory.
