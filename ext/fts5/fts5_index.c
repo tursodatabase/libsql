@@ -3127,7 +3127,9 @@ static void fts5MultiIterNext2(
       }
       fts5AssertMultiIterSetup(p, pIter);
 
-    }while( fts5MultiIterIsEmpty(p, pIter) || fts5MultiIterIsDeleted(pIter) );
+    }while( (fts5MultiIterIsEmpty(p, pIter) || fts5MultiIterIsDeleted(pIter)) 
+         && (p->rc==SQLITE_OK)
+    );
   }
 }
 
