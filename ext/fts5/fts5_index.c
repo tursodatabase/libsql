@@ -7086,7 +7086,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
 ** function only.
 */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** Decode a segment-data rowid from the %_data table. This function is
 ** the opposite of macro FTS5_SEGMENT_ROWID().
@@ -7109,9 +7109,9 @@ static void fts5DecodeRowid(
 
   *piSegid = (int)(iRowid & (((i64)1 << FTS5_DATA_ID_B) - 1));
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
   int iSegid, iHeight, iPgno, bDlidx;       /* Rowid compenents */
   fts5DecodeRowid(iKey, &iSegid, &bDlidx, &iHeight, &iPgno);
@@ -7129,9 +7129,9 @@ static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
     );
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugStructure(
   int *pRc,                       /* IN/OUT: error code */
   Fts5Buffer *pBuf,
@@ -7159,9 +7159,9 @@ static void fts5DebugStructure(
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** This is part of the fts5_decode() debugging aid.
 **
@@ -7186,9 +7186,9 @@ static void fts5DecodeStructure(
   fts5DebugStructure(pRc, pBuf, p);
   fts5StructureRelease(p);
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** This is part of the fts5_decode() debugging aid.
 **
@@ -7211,9 +7211,9 @@ static void fts5DecodeAverages(
     zSpace = " ";
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** Buffer (a/n) is assumed to contain a list of serialized varints. Read
 ** each varint and append its string representation to buffer pBuf. Return
@@ -7230,9 +7230,9 @@ static int fts5DecodePoslist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
   }
   return iOff;
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** The start of buffer (a/n) contains the start of a doclist. The doclist
 ** may or may not finish within the buffer. This function appends a text
@@ -7265,9 +7265,9 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
 
   return iOff;
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** This function is part of the fts5_decode() debugging function. It is 
 ** only ever used with detail=none tables.
@@ -7308,9 +7308,9 @@ static void fts5DecodeRowidList(
     sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " %lld%s", iRowid, zApp);
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 /*
 ** The implementation of user-defined scalar function fts5_decode().
 */
@@ -7519,9 +7519,9 @@ static void fts5DecodeFunction(
   }
   fts5BufferFree(&s);
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST 
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG) 
 /*
 ** The implementation of user-defined scalar function fts5_rowid().
 */
@@ -7555,9 +7555,9 @@ static void fts5RowidFunction(
     }
   }
 }
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 
 typedef struct Fts5StructVtab Fts5StructVtab;
 struct Fts5StructVtab {
@@ -7773,7 +7773,7 @@ static int fts5structFilterMethod(
   return rc;
 }
 
-#endif /* SQLITE_TEST */
+#endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
 /*
 ** This is called as part of registering the FTS5 module with database
@@ -7784,7 +7784,7 @@ static int fts5structFilterMethod(
 ** SQLite error code is returned instead.
 */
 int sqlite3Fts5IndexInit(sqlite3 *db){
-#ifdef SQLITE_TEST
+#if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
   int rc = sqlite3_create_function(
       db, "fts5_decode", 2, SQLITE_UTF8, 0, fts5DecodeFunction, 0, 0
   );
