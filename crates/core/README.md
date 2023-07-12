@@ -1,5 +1,16 @@
 # libSQL API for Rust
 
+This repository contains the libSQL API for Rust.
+
+## Installation
+
+The library is available on [crates.io](https://crates.io/crates/libsql). To use it in your application, add the following to the `Cargo.toml` of your project:
+
+```toml
+[dependencies]
+libsql = "0.1.1"
+```
+
 ## Getting Started
 
 #### Connecting to a database
@@ -7,9 +18,13 @@
 ```rust
 use libsql::Database;
 
-let db = Database::open("hello.db");
-
-let conn = db.connect().unwrap();
+fn main() {
+    let db = Database::open("hello.db");
+    let conn = db.connect().unwrap();
+    let rows = conn.execute("SELECT 'hello, world!'", ()).unwrap().unwrap();
+    let row = rows.next().unwrap().unwrap();
+    println!("{}", row.get::<&str>(0).unwrap());
+}
 ```
 
 #### Creating a table
@@ -29,39 +44,21 @@ conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).unwra
 ```rust
 let rows = conn.execute("SELECT * FROM users WHERE email = ?", params!["alice@example.org"]).unwrap().unwrap();
 let row = rows.next().unwrap().unwrap();
-// prints "alice@example.org"
 println!("{}", row.get::<&str>(0).unwrap());
 ```
 
 ## Developing
 
-Setting up the environment:
+See [DEVELOPING.md](DEVELOPING.md) for more information.
 
-```sh
-export LIBSQL_STATIC_LIB_DIR=$(pwd)/../../.libs
-```
+## License
 
-Building the APIs:
+This project is licensed under the [MIT license].
 
-```sh
-cargo build
-```
+### Contribution
 
-Running the tests:
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in libSQL by you, shall be licensed as MIT, without any additional
+terms or conditions.
 
-```sh
-cargo test
-```
-
-Running the benchmarks:
-
-```sh
-cargo bench
-```
-
-Run benchmarks and generate flamegraphs:
-
-```console
-echo -1 | sudo tee /proc/sys/kernel/perf_event_paranoid
-cargo bench --bench benchmark -- --profile-time=5
-```
+[MIT license]: https://github.com/libsql/libsql/blob/main/LICENSE.md
