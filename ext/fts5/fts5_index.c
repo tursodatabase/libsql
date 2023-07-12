@@ -1893,9 +1893,8 @@ static void fts5SegIterInit(
     pIter->iPgidxOff = pIter->pLeaf->szLeaf+1;
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
+    fts5SegIterLoadTombstone(p, pIter);
   }
-
-  fts5SegIterLoadTombstone(p, pIter);
 }
 
 /*

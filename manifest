@@ -1,5 +1,5 @@
-C Get\saccess\sto\sSQL\sfunctions\sand\svirtual\stables\sused\sfor\sdebugging\sand\sanalysis\nof\sFTS5\susing\sSQLITE_FTS5_DEBUG\sand\swithout\sthe\sneed\sfor\sSQLITE_TEST.
-D 2023-07-12T18:38:47.529
+C Fix\sa\scrash\sthat\smay\soccur\swhen\shandling\scorrupt\srecords\sin\scontentless_delete=1\smode.
+D 2023-07-12T19:34:32.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 010fabcc0aaa0dfa76b19146e8bddf7de368933eeac01e294af6607447500caa
 F ext/fts5/fts5_expr.c 2473c13542f463cae4b938c498d6193c90d38ea1a2a4f9849c0479736e50d24d
 F ext/fts5/fts5_hash.c d4fb70940359f2120ccd1de7ffe64cc3efe65de9e8995b822cd536ff64c96982
-F ext/fts5/fts5_index.c 05415638e4cb77cda7ead90e3cdc5f8c0dd91770e6596da9ba8e4068395a3490
+F ext/fts5/fts5_index.c 508abd2340e138c7de07b180748f011927553f14f3329f1499e71302183c38d3
 F ext/fts5/fts5_main.c c036530bbd39935b4b91fddb9d1b9d456e95c3685509aa975c87fc35445a9722
 F ext/fts5/fts5_storage.c 9a84d28154cb570773b26eb9645f8670089dee45c95afebf7a041e414266b3c3
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2f553a660e00564e51bc4209c92bd3628fb1266f4a52832792fbf91e4234a0ba
-R 25b067c7b898a5633244bd9d8061a59f
-U drh
-Z 48c04c5430ca6d0e76f1576b44c1f771
+P 383de8e2259adb3f8881a618b8b5e06c1f3b2bd7ac274bd047410ad7d2a18f0f
+R 1327e4474941bd216c5977cab00c437b
+U dan
+Z ed477a224293640a589dbee38d43f3b4
 # Remove this line to create a well-formed Fossil manifest.
