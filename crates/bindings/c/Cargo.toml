@@ -11,4 +11,4 @@ doc = false
 cbindgen = "0.24.0"
 
 [dependencies]
-libsql_core = { path = "../../core" }
+libsql = { path = "../../core" }

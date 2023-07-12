@@ -1,6 +1,6 @@
 [package]
-name = "libsql_core"
-version = "0.0.1"
+name = "libsql"
+version = "0.1.1"
 edition = "2021"
 description = "libSQL library: the main gateway for interacting with the database"
 repository = "https://github.com/libsql/libsql"
@@ -10,7 +10,7 @@ license = "MIT"
 futures = "0.3.28"
 libsql-sys = { version = "0", path = "../libsql-sys" }
 thiserror = "1.0.40"
-libsql_replication = { version = "0", path = "../replication" }
+libsql_replication = { version = "0", path = "../replication", optional = true }
 tokio = { version = "1.29.1", features = ["macros"] }
 tracing-subscriber = "0.3.17"
 tracing = "0.1.37"
@@ -18,6 +18,10 @@ tracing = "0.1.37"
 [dev-dependencies]
 criterion = { version = "0.4", features = ["html_reports", "async", "async_futures"] }
 pprof = { version = "0.11.1", features = ["criterion", "flamegraph"] }
+
+[features]
+default = ["replication"]
+replication = ["dep:libsql_replication"]
 
 [[bench]]
 name = "benchmark"

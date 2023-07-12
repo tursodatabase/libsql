@@ -9,7 +9,7 @@ exclude = ["index.node"]
 crate-type = ["cdylib"]
 
 [dependencies]
-libsql_core = { path = "../../core" }
+libsql = { path = "../../core" }
 
 [dependencies.neon]
 version = "0.10"

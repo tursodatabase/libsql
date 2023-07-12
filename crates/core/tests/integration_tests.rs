@@ -1,4 +1,4 @@
-use libsql_core::{params, Connection, Database, Params};
+use libsql::{params, Connection, Database, Params};
 
 fn setup() -> Connection {
     let db = Database::open(":memory:");

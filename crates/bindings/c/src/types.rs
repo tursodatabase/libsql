@@ -1,5 +1,5 @@
 pub struct libsql_database {
-    pub(crate) db: libsql_core::Database,
+    pub(crate) db: libsql::Database,
 }
 
 #[derive(Clone, Debug)]
@@ -19,12 +19,12 @@ impl libsql_database_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql_core::Database {
+    pub fn get_ref(&self) -> &libsql::Database {
         &unsafe { &*(self.ptr) }.db
     }
 
     #[allow(clippy::mut_from_ref)]
-    pub fn get_ref_mut(&self) -> &mut libsql_core::Database {
+    pub fn get_ref_mut(&self) -> &mut libsql::Database {
         let ptr_mut = self.ptr as *mut libsql_database;
         &mut unsafe { &mut (*ptr_mut) }.db
     }
@@ -45,7 +45,7 @@ impl From<&mut libsql_database> for libsql_database_t {
 }
 
 pub struct libsql_connection {
-    pub(crate) conn: libsql_core::Connection,
+    pub(crate) conn: libsql::Connection,
 }
 
 #[derive(Clone, Debug)]
@@ -65,12 +65,12 @@ impl libsql_connection_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql_core::Connection {
+    pub fn get_ref(&self) -> &libsql::Connection {
         &unsafe { &*(self.ptr) }.conn
     }
 
     #[allow(clippy::mut_from_ref)]
-    pub fn get_ref_mut(&self) -> &mut libsql_core::Connection {
+    pub fn get_ref_mut(&self) -> &mut libsql::Connection {
         let ptr_mut = self.ptr as *mut libsql_connection;
         &mut unsafe { &mut (*ptr_mut) }.conn
     }
@@ -91,7 +91,7 @@ impl From<&mut libsql_connection> for libsql_connection_t {
 }
 
 pub struct libsql_rows {
-    pub(crate) result: libsql_core::Rows,
+    pub(crate) result: libsql::Rows,
 }
 
 #[derive(Clone, Debug)]
@@ -111,12 +111,12 @@ impl libsql_rows_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql_core::Rows {
+    pub fn get_ref(&self) -> &libsql::Rows {
         &unsafe { &*(self.ptr) }.result
     }
 
     #[allow(clippy::mut_from_ref)]
-    pub fn get_ref_mut(&self) -> &mut libsql_core::Rows {
+    pub fn get_ref_mut(&self) -> &mut libsql::Rows {
         let ptr_mut = self.ptr as *mut libsql_rows;
         &mut unsafe { &mut (*ptr_mut) }.result
     }
@@ -137,7 +137,7 @@ impl From<&mut libsql_rows> for libsql_rows_t {
 }
 
 pub struct libsql_rows_future {
-    pub(crate) result: libsql_core::RowsFuture,
+    pub(crate) result: libsql::RowsFuture,
 }
 
 #[derive(Clone, Debug)]
@@ -157,12 +157,12 @@ impl libsql_rows_future_t {
         self.ptr.is_null()
     }
 
-    pub fn get_ref(&self) -> &libsql_core::RowsFuture {
+    pub fn get_ref(&self) -> &libsql::RowsFuture {
         &unsafe { &*(self.ptr) }.result
     }
 
     #[allow(clippy::mut_from_ref)]
-    pub fn get_ref_mut(&self) -> &mut libsql_core::RowsFuture {
+    pub fn get_ref_mut(&self) -> &mut libsql::RowsFuture {
         let ptr_mut = self.ptr as *mut libsql_rows_future;
         &mut unsafe { &mut (*ptr_mut) }.result
     }

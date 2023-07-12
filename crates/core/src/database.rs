@@ -1,10 +1,13 @@
 use crate::{connection::Connection, Result};
+#[cfg(feature = "replication")]
 use libsql_replication::Replicator;
+#[cfg(feature = "replication")]
 pub use libsql_replication::{Frames, TempSnapshot};
 
 // A libSQL database.
 pub struct Database {
     pub url: String,
+    #[cfg(feature = "replication")]
     pub replicator: Option<Replicator>,
 }
 
@@ -24,10 +27,12 @@ impl Database {
     pub fn new(url: String) -> Database {
         Database {
             url,
+            #[cfg(feature = "replication")]
             replicator: None,
         }
     }
 
+    #[cfg(feature = "replication")]
     pub fn with_replicator(url: impl Into<String>) -> Database {
         let url = url.into();
         let replicator = Some(Replicator::new(&url).unwrap());
@@ -40,6 +45,7 @@ impl Database {
         Connection::connect(self)
     }
 
+    #[cfg(feature = "replication")]
     pub fn sync(&mut self, frames: Frames) -> Result<()> {
         if let Some(replicator) = &mut self.replicator {
             replicator

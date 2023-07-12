@@ -5,7 +5,7 @@
 #### Connecting to a database
 
 ```rust
-use libsql_core::Database;
+use libsql::Database;
 
 let db = Database::open("hello.db");
 

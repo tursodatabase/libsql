@@ -1,4 +1,4 @@
-use libsql_core::Database;
+use libsql::Database;
 
 fn main() {
     let db = Database::open(":memory:");

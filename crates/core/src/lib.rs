@@ -9,7 +9,7 @@
 //! To get started, you first need to create a [`Database`] object and then open a [`Connection`] to it, which you use to query:
 //!
 //! ```rust,no_run
-//! use libsql_core::Database;
+//! use libsql::Database;
 //!
 //! let db = Database::open(":memory:");
 //! let conn = db.connect().unwrap();
@@ -25,7 +25,7 @@
 //! You can open an embedded read-only replica by using the [`Database::with_replicator`] constructor:
 //!
 //! ```rust,no_run
-//! use libsql_core::Database;
+//! use libsql::Database;
 //! use libsql_replication::{Frame, Frames, Replicator};
 //!
 //! let mut db = Database::with_replicator("/tmp/test.db");

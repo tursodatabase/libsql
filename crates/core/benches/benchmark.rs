@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion, Throughput};
-use libsql_core::{Database, Params};
+use libsql::{Database, Params};
 use pprof::criterion::{Output, PProfProfiler};
 
 fn bench_db() -> Database {

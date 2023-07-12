@@ -1,4 +1,4 @@
-use libsql_core::Database;
+use libsql::Database;
 use libsql_replication::{Frames, TempSnapshot};
 
 fn main() {
