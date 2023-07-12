@@ -1,5 +1,5 @@
-C Reduce\sdivergence\sbetween\sbranches:\strunk\sand\swal-shm-exceptions.
-D 2023-07-11T19:54:17.575
+C Correct\shandling\sof\sthe\sspeedtest1\s--without-rowid\sflag\sin\sthe\sHTML\sfront-end\sto\sspeedtest1.wasm.\sReduce\sdefault\sspeedtest1-with-OPFS\sworkload\ssize\sin\sext/wasm/index.html\sto\sspeed\sup\smanual\stesting.
+D 2023-07-12T09:16:18.602
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -531,14 +531,14 @@ F ext/wasm/fiddle/fiddle-worker.js 163d6139a93fab4bcb72064923df050d4e7c0ff0d8aa0
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html 22379774f0ad4edcaaa8cf9c674c82e794cc557719a8addabed74eb8069d412e
-F ext/wasm/index.html dd900891844caebd9cadbddd704f66bd841d7c12fd69ce5af490e2c10fb49f45
+F ext/wasm/index.html bba92ca0c173b579356533226a85a28797d1789e893c9b483fc0623842842a0f
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
 F ext/wasm/module-symbols.html 841de62fc198988b8330e238c260e70ec93028b096e1a1234db31b187a899d10
 F ext/wasm/scratchpad-wasmfs-main.html 20cf6f1a8f368e70d01e8c17200e3eaa90f1c8e1029186d836d14b83845fbe06
 F ext/wasm/scratchpad-wasmfs-main.js 4c140457f4d6da9d646a49addd91edb6e9ad1643c6c48e3258b5bce24725dc18
 F ext/wasm/speedtest1-wasmfs.html 7a301f4f5b6ad4f5d37fd6e7ca03a2f5d5547fd289da60a39075a93d7646d354
-F ext/wasm/speedtest1-worker.html 82869822e641c1bef3ec0cd2d7d2b6a42d0b4f68a7b160fb2e1dd0b523940a9b
+F ext/wasm/speedtest1-worker.html 97c2bf5f8534091ce718de05801090d5a80c3f13575996f095ba23638e1bdca0
 F ext/wasm/speedtest1-worker.js 13b57c4a41729678a1194014afec2bd5b94435dcfc8d1039dfa9a533ac819ee1
 F ext/wasm/speedtest1.html ff048b4a623aa192e83e143e48f1ce2a899846dd42c023fdedc8772b6e3f07da
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 07d95ed60f0a17ea13b4bc19c2ab2ec9052fedd27c9e1e57a1ec6e3a6470e5b7
-R 9ba462c35151490c11339704cc10d776
-U drh
-Z 72367f42719b51ed960b0f45070bb83e
+P d38ed6b1fc6b572997d520c36f256c11404fb1bd5f28acab07466bfc96554a8f
+R eae9af4d4222dea3bda054d259796f22
+U stephan
+Z 73b3cb1c198f637825060346ee535239
 # Remove this line to create a well-formed Fossil manifest.
