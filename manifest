@@ -1,5 +1,5 @@
-C Get\sspeedtest1\swasmfs\svariant\srunning\sagain.
-D 2023-07-13T16:33:45.070
+C More\swork\son\sthe\swasmfs\sbuild\sand\sits\stest\sapps.
+D 2023-07-13T17:27:05.753
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -530,14 +530,14 @@ F ext/wasm/fiddle/fiddle-worker.js 163d6139a93fab4bcb72064923df050d4e7c0ff0d8aa0
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
 F ext/wasm/fiddle/index.html 5daf54e8f3d7777cbb1ca4f93affe28858dbfff25841cb4ab81d694efed28ec2
 F ext/wasm/index-dist.html 22379774f0ad4edcaaa8cf9c674c82e794cc557719a8addabed74eb8069d412e
-F ext/wasm/index.html bba92ca0c173b579356533226a85a28797d1789e893c9b483fc0623842842a0f
+F ext/wasm/index.html b768e8659b4fe311912e54d42906449d51c0f84b7f036cca47ec1f93bf3f91de
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
 F ext/wasm/module-symbols.html 841de62fc198988b8330e238c260e70ec93028b096e1a1234db31b187a899d10
-F ext/wasm/scratchpad-wasmfs-main.html bf23812d059da37399b34e27d6b4c5980e2e1fb2153e5d3318d39b41aa854c32
-F ext/wasm/scratchpad-wasmfs-main.js 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
-F ext/wasm/speedtest1-wasmfs.html ce92a78f745e4fb837742624300a733046150507b1cac5c1aca81f396a8f46db
-F ext/wasm/speedtest1-wasmfs.mjs 934417fea36e7c8b41bad24fe5550aa2903140e2c2195d876215d6c902961cd2
+F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96 w ext/wasm/scratchpad-wasmfs-main.html
+F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63 w ext/wasm/scratchpad-wasmfs-main.js
+F ext/wasm/speedtest1-wasmfs.html dc930dd767ee95cecbfa82fe89b173b51fee41a9ed4dbe7652fb9508a5041cd6
+F ext/wasm/speedtest1-wasmfs.mjs ac5cadbf4ffe69e9eaac8b45e8523f030521e02bb67d654c6eb5236d9c456cbe
 F ext/wasm/speedtest1-worker.html 97c2bf5f8534091ce718de05801090d5a80c3f13575996f095ba23638e1bdca0
 F ext/wasm/speedtest1-worker.js 13b57c4a41729678a1194014afec2bd5b94435dcfc8d1039dfa9a533ac819ee1
 F ext/wasm/speedtest1.html ff048b4a623aa192e83e143e48f1ce2a899846dd42c023fdedc8772b6e3f07da
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 215c37fce38cf647e073480689b79d952af7eb8165ae08c7f5caed27003fecfc
-R 65bf4d4d1cc787c57405349531ba9382
+P 0f77e031daf0121f7603409cedf57f138edbb43083cbbcf00d2a423e16de25a7
+R 54c0b78e867c7b454fcac7e3ab24c1a6
 U stephan
-Z 63407a73d630f95e1718b20fb63b6e0d
+Z ca283ae8d24ff869453a63347ea884df
 # Remove this line to create a well-formed Fossil manifest.

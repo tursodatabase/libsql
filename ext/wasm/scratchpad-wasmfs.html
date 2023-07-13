@@ -19,13 +19,9 @@
     <p>All stuff on this page happens in the dev console.</p>
     <hr>
     <div id='test-output'></div>
-    <!--script src="jswasm/sqlite3-wasmfs.js"></script-->
-    <!--script src="common/SqliteTestUtil.js"></script-->
-    <!--script src="scratchpad-wasmfs-main.js"></script-->
-    <!--script src="scratchpad-wasmfs-main.js" type="module"></script-->
     <script>
       (function(){
-          const W = new Worker('scratchpad-wasmfs-main.js',{
+          const W = new Worker('scratchpad-wasmfs.mjs',{
               type: 'module'
           });
       })();

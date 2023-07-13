@@ -37,7 +37,8 @@
               console.error(...args);
               log2('error',...args);
           };
-          const W = new Worker('speedtest1-wasmfs.mjs',{
+          const W = new Worker(
+              'speedtest1-wasmfs.mjs'+globalThis.location.search,{
               type: 'module'
           });
           log("Starting up...");

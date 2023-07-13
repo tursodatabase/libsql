@@ -1,6 +1,5 @@
 import sqlite3InitModule from './jswasm/speedtest1-wasmfs.mjs';
 const wMsg = (type,...args)=>{
-  console.log("wMsg(",type,...args,")");
   postMessage({type, args});
 };
 wMsg('log',"speedtest1-wasmfs starting...");
@@ -80,7 +79,7 @@ const runTests = function(sqlite3){
     wasm.xCall('wasm_main', argv.length,
                wasm.scopedAllocMainArgv(argv));
     wasm.scopedAllocPop(scope);
-    //if(pDir) unlink(dbFile);
+    if(pDir) unlink(dbFile);
     log("Done running native main()");
   }, 25);
 }/*runTests()*/;
