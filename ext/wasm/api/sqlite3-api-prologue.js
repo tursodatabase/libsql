@@ -1172,24 +1172,26 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /** State for sqlite3_wasmfs_opfs_dir(). */
   let __wasmfsOpfsDir = undefined;
   /**
-     2022-12-17: incompatible WASMFS changes have made WASMFS+OPFS
-     unavailable from the main thread, which eliminates the most
-     significant benefit of supporting WASMFS. This function is now a
-     no-op which always returns a falsy value. Before that change,
-     this function behaved as documented below (and how it will again
-     if we can find a compelling reason to support it).
-
      If the wasm environment has a WASMFS/OPFS-backed persistent
      storage directory, its path is returned by this function. If it
      does not then it returns "" (noting that "" is a falsy value).
 
      The first time this is called, this function inspects the current
      environment to determine whether persistence support is available
-     and, if it is, enables it (if needed).
+     and, if it is, enables it (if needed). After the first call it
+     always returns the cached result.
 
-     This function currently only recognizes the WASMFS/OPFS storage
-     combination and its path refers to storage rooted in the
-     Emscripten-managed virtual filesystem.
+     If the returned string is not empty, any files stored under the
+     given path (recursively) are housed in OPFS storage. If the
+     returned string is empty, this particular persistent storage
+     option is not available on the client.
+
+     Though the mount point name returned by this function is intended
+     to remain stable, clients should not hard-coded it anywhere. Always call this function to get the path.
+
+     Note that this function is a no-op in must builds of this
+     library, as the WASMFS capability requires a custom
+     build.
   */
   capi.sqlite3_wasmfs_opfs_dir = function(){
     if(undefined !== __wasmfsOpfsDir) return __wasmfsOpfsDir;
@@ -1216,8 +1218,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Experimental and subject to change or removal.
-
      Returns true if sqlite3.capi.sqlite3_wasmfs_opfs_dir() is a
      non-empty string and the given name starts with (that string +
      '/'), else returns false.
@@ -1226,13 +1226,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     const p = capi.sqlite3_wasmfs_opfs_dir();
     return (p && name) ? name.startsWith(p+'/') : false;
   };
-
-  // This bit is highly arguable and is incompatible with the fiddle shell.
-  if(false && 0===wasm.exports.sqlite3_vfs_find(0)){
-    /* Assume that sqlite3_initialize() has not yet been called.
-       This will be the case in an SQLITE_OS_KV build. */
-    wasm.exports.sqlite3_initialize();
-  }
 
   /**
      Given an `sqlite3*`, an sqlite3_vfs name, and an optional db name

@@ -833,22 +833,19 @@ const installOpfsVfs = function callee(options){
         /* If it turns out that we need to adjust for timezone, see:
            https://stackoverflow.com/a/11760121/1458521 */
         wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
-                         'double');
+                  'double');
         return 0;
       },
       xCurrentTimeInt64: function(pVfs,pOut){
-        // TODO: confirm that this calculation is correct
         wasm.poke(pOut, (2440587.5 * 86400000) + new Date().getTime(),
-                         'i64');
+                  'i64');
         return 0;
       },
       xDelete: function(pVfs, zName, doSyncDir){
         mTimeStart('xDelete');
-        opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
-        /* We're ignoring errors because we cannot yet differentiate
-           between harmless and non-harmless failures. */
+        const rc = opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
         mTimeEnd();
-        return 0;
+        return rc;
       },
       xFullPathname: function(pVfs,zName,nOut,pOut){
         /* Until/unless we have some notion of "current dir"
