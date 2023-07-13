@@ -3057,6 +3057,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       error: ()=>{}
     }
   }
+//#ifnot target=es6-module
   if(!globalThis.sqlite3InitModule && !isUIThread()){
     /* Vanilla worker, as opposed to an ES6 module worker */
     /*
@@ -3080,6 +3081,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }
     importScripts(sqlite3Js);
   }
+//#endif
   globalThis.sqlite3InitModule.__isUnderTest =
     true /* disables certain API-internal cleanup so that we can
             test internal APIs from here */;

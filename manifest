@@ -1,5 +1,5 @@
-C More\swork\son\sthe\swasmfs\sbuild.\sResolve\sthe\sinconsistent\sargument\stype\spassed\sto\ssqlite3InitModule()\sin\ssuch\sbuilds.
-D 2023-07-13T10:41:41.226
+C Significant\ssurgery\son\sthe\swasm\sbuild\son\sthe\sway\sto\sincorporating\swasmfs\sas\sa\sfirst-class\sbuild\soption.
+D 2023-07-13T14:08:30.624
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -482,7 +482,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile daedd26bdc97f705d72213733573630d38c3fbbec0ba722a93c5302a12e7685f
+F ext/wasm/GNUmakefile fec1dd8ad46a35d817f273d470a4f062a58c2445bc9b7d022826fa578dbbeedb
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md ef39861aa21632fdbca0bdd469f78f0096f6449a720f3f39642594af503030e9
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
@@ -512,7 +512,7 @@ F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css 0ff15602a3ab2bad8aef2c3bd120c7ee3fd1c2054ad2ace7e214187ae68d926f
-F ext/wasm/common/whwasmutil.js 03407d7b61b817fd135c82401987e56688a45ee4d6b9c0eced160c0000d6e4c2
+F ext/wasm/common/whwasmutil.js ae263dec9d7384f4c530f324b99d00516a4d6f26424372daee65031e00eb49b3
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js ebae30756585bca655b4ab2553ec9236a87c23ad24fc8652115dcedb06d28df6
@@ -547,12 +547,12 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js f09266873e1a34d9bdb6d3981ec8c9e382f31f215c9fd2f9016d2394b8ae9b7b
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js 439a1264bc3224b90bc722833568cc36fc77ed0ba6d2e4379b40ea7c417c97ab
+F ext/wasm/tester1.c-pp.js 4420eb97b6b4fc79e4e156b4b8010dd9f373365f4230dd76d823fb04ce28ffde
 F ext/wasm/tests/opfs/concurrency/index.html 0802373d57034d51835ff6041cda438c7a982deea6079efd98098d3e42fbcbc1
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
-F ext/wasm/wasmfs.make 95e5ee1d67db75561872dfab9b2ebc65084eb807808d863308c405bba3e1a4e1
+F ext/wasm/wasmfs.make 6cfe6cb04859ca7aa611f71f6e770811d023a519a7fb4cc4de1419189594c2a8
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
@@ -2042,8 +2042,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f64477f21040c265061ad9b7f601e74159fd6141e7e4b122c80bf244ab6ddb76
-R 30150ab9b0833aa41ada6fa807ec2755
+P 4850a9e2d2b41b91e91b9ef99a6d26ddf11a161b4c970fc00d2d095606729a04
+R 68d56fe3eae005ed95f6c7df371b3baf
 U stephan
-Z 8daba6a2f84ceed3306c658c6f269c02
+Z a358a57a699b604bd4cd582e774f0d4e
 # Remove this line to create a well-formed Fossil manifest.
