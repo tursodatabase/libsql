@@ -78,9 +78,9 @@ pub struct InjectorHookCtx {
     /// currently in a txn
     pub is_txn: bool,
     /// invoked before injecting frames
-    pre_commit: Box<dyn Fn(FrameNo) -> anyhow::Result<()>>,
+    pre_commit: Box<dyn Fn(FrameNo) -> anyhow::Result<()> + Send>,
     /// invoked after injecting frames
-    post_commit: Box<dyn Fn(FrameNo) -> anyhow::Result<()>>,
+    post_commit: Box<dyn Fn(FrameNo) -> anyhow::Result<()> + Send>,
 }
 
 impl InjectorHookCtx {
