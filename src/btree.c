@@ -1534,7 +1534,7 @@ static void ptrmapPutOvflPtr(MemPage *pPage, MemPage *pSrc, u8 *pCell,int *pRC){
   pPage->xParseCell(pPage, pCell, &info);
   if( info.nLocal<info.nPayload ){
     Pgno ovfl;
-    if( SQLITE_WITHIN(pSrc->aDataEnd, pCell, pCell+info.nLocal) ){
+    if( SQLITE_OVERFLOW(pSrc->aDataEnd, pCell, pCell+info.nLocal) ){
       testcase( pSrc!=pPage );
       *pRC = SQLITE_CORRUPT_BKPT;
       return;
@@ -8695,7 +8695,7 @@ static int balance_nonroot(
     assert( iOvflSpace <= (int)pBt->pageSize );
     for(k=0; ALWAYS(k<NB*2) && b.ixNx[k]<=j; k++){}
     pSrcEnd = b.apEnd[k];
-    if( SQLITE_WITHIN(pSrcEnd, pCell, pCell+sz) ){
+    if( SQLITE_OVERFLOW(pSrcEnd, pCell, pCell+sz) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto balance_cleanup;
     }
