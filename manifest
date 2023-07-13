@@ -1,5 +1,5 @@
-C Get\swasmfs\sbuild\sand\sits\sbare-bones\stest\sapp\sworking\sagain,\salbeit\scurrently\sin\sES6\smode\sonly.
-D 2023-07-13T04:26:13.675
+C Minor\scleanups\sin\sthe\swasmfs\sbuild.
+D 2023-07-13T04:54:18.496
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F ext/wasm/tests/opfs/concurrency/index.html 0802373d57034d51835ff6041cda438c7a9
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
-F ext/wasm/wasmfs.make 4d34310493108e297b46084959ae06f634ac21446898fc464223ca33cd05a508
+F ext/wasm/wasmfs.make e7e1af321302e390b854a9940c16514c755070a2225a830d51e84eb9fea47222
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
@@ -2042,11 +2042,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 53eeffc9b1ea8c3ee7d7cdcc220997ed893403e45b35d8ea10805ea3b0435587
-R 6632e735d7b6678fb19e864586c8977f
-T *branch * wasmfs-2023
-T *sym-wasmfs-2023 *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 647761ed422f196f94facc88bbddd7219a2c1a6301a5f847b0a32d3e405233a7
+R e7ab42412381a677950ba361ea3eaf82
 U stephan
-Z 18788228280efa16edd900f1ed072054
+Z 333900e3d11fac56a338fcc42eb12fb0
 # Remove this line to create a well-formed Fossil manifest.

@@ -85,9 +85,10 @@ define SQLITE3-WASMFS.xJS.RECIPE
       $(pre-post-sqlite3-wasmfs.flags.$(1)) \
      $(sqlite3-wasm.c)
 	@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,$(if $(filter %.mjs,$@),1,))
-	chmod -x $(sqlite3-wasmfs.wasm)
-	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)
-	@ls -la $(sqlite3-wasmfs.wasm) $(dir.wasmfs)/sqlite3-wasmfs*js
+	@dotwasm=$(basename $@).wasm; \
+	chmod -x $$dotwasm; \
+	$(maybe-wasm-strip) $$dotwasm; \
+	ls -la $$dotwasm $@
 endef
 ########################################################################
 # Build quirk: we cannot build BOTH .js and .mjs with our current
@@ -96,19 +97,21 @@ endef
 # ($(sqlite3-wasmfs.{js,mjs})) hard-coded in them.  Thus the last one
 # to get built gets the *.worker.js files mapped to it. In order to
 # build both modes they would need to have distinct base names or
-# output directories.
+# output directories. "The problem" with giving them distinct base
+# names is that it means that the corresponding .wasm file is also
+# built/saved multiple times.
 #
 wasmfs.build.ext := mjs
-ifeq (js,$(wasmfs.build.mode))
 $(sqlite3-wasmfs.js):
 	$(call SQLITE3-WASMFS.xJS.RECIPE,vanilla)
-$(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.js)
-wasmfs: $(sqlite3-wasmfs.js)
-else
-$(sqlite3-wasmfs.mjs): # $(sqlite3-wasmfs.js)
+$(sqlite3-wasmfs.mjs):
 	$(call SQLITE3-WASMFS.xJS.RECIPE,esm)
-$(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.mjs)
-wasmfs: $(sqlite3-wasmfs.mjs)
+ifeq (js,$(wasmfs.build.ext))
+  $(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.js)
+  wasmfs: $(sqlite3-wasmfs.js)
+else
+  $(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.mjs)
+  wasmfs: $(sqlite3-wasmfs.mjs)
 endif
 #all: wasmfs
 
