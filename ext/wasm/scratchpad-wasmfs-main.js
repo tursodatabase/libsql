@@ -14,6 +14,9 @@
   main JS thread and sqlite3.js must have been loaded before it.
 */
 'use strict';
+//importScripts('jswasm/sqlite3-wasmfs.js');
+import sqlite3InitModule from './jswasm/sqlite3-wasmfs.mjs';
+//console.log('sqlite3InitModule =',sqlite3InitModule);
 (function(){
   const toss = function(...args){throw new Error(args.join(' '))};
   const log = console.log.bind(console),
@@ -38,6 +41,7 @@
     const capi = sqlite3.capi,
           oo = sqlite3.oo1,
           wasm = sqlite3.wasm;
+    stdout("Loaded module:",sqlite3);
     stdout("Loaded sqlite3:",capi.sqlite3_libversion(), capi.sqlite3_sourceid());
     const persistentDir = capi.sqlite3_wasmfs_opfs_dir();
     if(persistentDir){
@@ -66,5 +70,15 @@
     stdout("Total test time:",(performance.now() - startTime),"ms");
   };
 
-  sqlite3InitModule(self.sqlite3TestModule).then(runTests);
+  sqlite3InitModule(globalThis.sqlite3TestModule).then((X)=>{
+    /*
+      2023-07-13: we're passed the Emscripten Module object here
+      instead of the sqlite3 object. This differs from the canonical
+      build and is a side effect of WASMFS's requirement
+      that the module init function (i.e. sqlite3InitModule())
+      return its initial arrgument (the Emscripten Module).
+    */
+    stdout("then() got",X.sqlite3,X);
+    runTests(X.sqlite3 || X);
+  });
 })();

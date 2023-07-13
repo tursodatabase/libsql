@@ -92,8 +92,8 @@
      currently work due to incompatible Emscripten-side changes made
      in the WASMFS+OPFS combination. This option is currently ignored.
 
-   [^1] = This property may optionally be a function, in which case this
-          function re-assigns calls that function to fetch the value,
+   [^1] = This property may optionally be a function, in which case
+          this function calls that function to fetch the value,
           enabling delayed evaluation.
 
    The returned object is the top-level sqlite3 namespace object.
@@ -149,11 +149,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       config[k] = config[k]();
     }
   });
-  config.wasmOpfsDir =
-    /* 2022-12-17: WASMFS+OPFS can no longer be activated from the
-       main thread (aborts via a failed assert() if it's attempted),
-       which eliminates any(?) benefit to supporting it. */  false;
-
   /**
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
@@ -1200,8 +1195,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     if(undefined !== __wasmfsOpfsDir) return __wasmfsOpfsDir;
     // If we have no OPFS, there is no persistent dir
     const pdir = config.wasmfsOpfsDir;
-    console.error("sqlite3_wasmfs_opfs_dir() can no longer work due "+
-                  "to incompatible WASMFS changes. It will be removed.");
     if(!pdir
        || !globalThis.FileSystemHandle
        || !globalThis.FileSystemDirectoryHandle

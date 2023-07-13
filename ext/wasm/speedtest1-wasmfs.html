@@ -91,7 +91,7 @@
     };
 
     const runTests = function(sqlite3){
-        console.log("Module inited.");
+        console.log("Module inited.",sqlite3);
         const wasm = sqlite3.wasm;
         const __unlink = wasm.xWrap("sqlite3_wasm_vfs_unlink", "int", ["*","string"]);
         const unlink = (fn)=>__unlink(0,fn);

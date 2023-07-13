@@ -6,14 +6,10 @@
 # GNUMakefile.
 ########################################################################
 MAKEFILE.wasmfs := $(lastword $(MAKEFILE_LIST))
+$(warning The WASMFS build is currently incomplete.)
 
-# Maintenance reminder: these particular files cannot be built into a
-# subdirectory because loading of the auxiliary
-# sqlite3-wasmfs.worker.js file it creates fails if sqlite3-wasmfs.js
-# is loaded from any directory other than the one in which the
-# containing HTML lives. Similarly, they cannot be loaded from a
-# Worker to an Emscripten quirk regarding loading nested Workers.
-dir.wasmfs := $(dir.wasm)
+#dir.wasmfs := $(dir.wasm)
+dir.wasmfs := $(dir.dout)
 sqlite3-wasmfs.js     := $(dir.wasmfs)/sqlite3-wasmfs.js
 sqlite3-wasmfs.mjs    := $(dir.wasmfs)/sqlite3-wasmfs.mjs
 sqlite3-wasmfs.wasm   := $(dir.wasmfs)/sqlite3-wasmfs.wasm
@@ -38,7 +34,6 @@ emcc.flags.sqlite3-wasmfs += --no-entry
 emcc.flags.sqlite3-wasmfs += --minify 0
 emcc.flags.sqlite3-wasmfs += -sMODULARIZE
 emcc.flags.sqlite3-wasmfs += -sEXPORT_NAME=$(sqlite3.js.init-func)
-emcc.flags.sqlite3-wasmfs += -sSTRICT_JS
 emcc.flags.sqlite3-wasmfs += -sDYNAMIC_EXECUTION=0
 emcc.flags.sqlite3-wasmfs += -sNO_POLYFILL
 emcc.flags.sqlite3-wasmfs += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
@@ -68,8 +63,8 @@ emcc.flags.sqlite3-wasmfs += $(sqlite3-wasmfs.fsflags)
 # And, indeed, it runs slowly if memory is permitted to grow.
 emcc.flags.sqlite3-wasmfs.vanilla :=
 emcc.flags.sqlite3-wasmfs.esm := -sEXPORT_ES6 -sUSE_ES6_IMPORT_META
-$(eval $(call call-make-pre-js,sqlite3-wasmfs,vanilla))
-$(eval $(call call-make-pre-js,sqlite3-wasmfs,esm))
+$(eval $(call call-make-pre-post,sqlite3-wasmfs,vanilla))
+$(eval $(call call-make-pre-post,sqlite3-wasmfs,esm))
 Xemcc.flags.sqlite3-wasmfs.vanilla += \
   $(pre-post-common.flags.vanilla) \
   $(pre-post-sqlite3-wasmfs.flags.vanilla)
@@ -89,17 +84,32 @@ define SQLITE3-WASMFS.xJS.RECIPE
       $(emcc.flags.sqlite3-wasmfs) $(emcc.flags.sqlite3-wasmfs.$(1)) \
       $(pre-post-sqlite3-wasmfs.flags.$(1)) \
      $(sqlite3-wasm.c)
-	@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,$(1))
+	@$(call SQLITE3.xJS.ESM-EXPORT-DEFAULT,$(if $(filter %.mjs,$@),1,))
 	chmod -x $(sqlite3-wasmfs.wasm)
 	$(maybe-wasm-strip) $(sqlite3-wasmfs.wasm)
-	@ls -la $(sqlite3-wasmfs.wasm) sqlite3-wasmfs*js
+	@ls -la $(sqlite3-wasmfs.wasm) $(dir.wasmfs)/sqlite3-wasmfs*js
 endef
+########################################################################
+# Build quirk: we cannot build BOTH .js and .mjs with our current
+# build infrastructure because the supplemental *.worker.js files get
+# generated with the name of the main module file
+# ($(sqlite3-wasmfs.{js,mjs})) hard-coded in them.  Thus the last one
+# to get built gets the *.worker.js files mapped to it. In order to
+# build both modes they would need to have distinct base names or
+# output directories.
+#
+wasmfs.build.ext := mjs
+ifeq (js,$(wasmfs.build.mode))
 $(sqlite3-wasmfs.js):
 	$(call SQLITE3-WASMFS.xJS.RECIPE,vanilla)
-$(sqlite3-wasmfs.mjs): $(sqlite3-wasmfs.js)
-	$(call SQLITE3-WASMFS.xJS.RECIPE,esm)
 $(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.js)
-wasmfs: $(sqlite3-wasmfs.js) $(sqlite3-wasmfs.mjs)
+wasmfs: $(sqlite3-wasmfs.js)
+else
+$(sqlite3-wasmfs.mjs): # $(sqlite3-wasmfs.js)
+	$(call SQLITE3-WASMFS.xJS.RECIPE,esm)
+$(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.mjs)
+wasmfs: $(sqlite3-wasmfs.mjs)
+endif
 #all: wasmfs
 
 ########################################################################
@@ -124,8 +134,7 @@ $(speedtest1-wasmfs.js): $(speedtest1.cses) $(sqlite3-wasmfs.js) \
 	$(maybe-wasm-strip) $(speedtest1-wasmfs.wasm)
 	ls -la $@ $(speedtest1-wasmfs.wasm)
 
-#speedtest1: $(speedtest1-wasmfs.js)
-wasmfs: $(speedtest1-wasmfs.js)
+#wasmfs: $(speedtest1-wasmfs.js)
 CLEAN_FILES += $(speedtest1-wasmfs.js) $(speedtest1-wasmfs.wasm) \
      $(subst .js,.worker.js,$(speedtest1-wasmfs.js))
 # end speedtest1.js

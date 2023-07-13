@@ -655,7 +655,8 @@ sqlite3-wasm.cses := $(sqlite3-wasm.c) $(sqlite3_wasm_extra_init.c)
 # SQLITE3.xJS.EXPORT-DEFAULT is part of SQLITE3-WASMFS.xJS.RECIPE and
 # SETUP_LIB_BUILD_MODE, factored into a separate piece to avoid code
 # duplication. $1 is 1 if the build mode needs this workaround (esm,
-# bundler-friendly) and 0 if not (vanilla).
+# bundler-friendly) and 0 if not (vanilla). $2 must be empty for all
+# builds except sqlite3-wasmfs.mjs, in which case it must be 1.
 #
 # Reminder for ESM builds: even if we use -sEXPORT_ES6=0, emcc _still_
 # adds:
@@ -673,9 +674,11 @@ define SQLITE3.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
 		echo "Fragile workaround for an Emscripten annoyance. See SQLITE3.xJS.RECIPE."; \
 		sed -i -e '0,/^export default/{/^export default/d;}' $@ || exit $$?; \
-		if ! grep -q '^export default' $@; then \
-			echo "Cannot find export default." 1>&2; \
-			exit 1; \
+		if [ x != x$(2) ]; then \
+			if ! grep -q '^export default' $@; then \
+				echo "Cannot find export default." 1>&2; \
+				exit 1; \
+			fi; \
 		fi; \
 fi
 endef
@@ -981,6 +984,8 @@ include fiddle.make
 ifneq (,$(filter wasmfs,$(MAKECMDGOALS)))
 wasmfs.enable ?= 1
 else
+# Unconditionally enable wasmfs for [dist]clean so that the wasmfs
+# sub-make can clean up.
 wasmfs.enable ?= $(if $(filter %clean,$(MAKECMDGOALS)),1,0)
 endif
 ifeq (1,$(wasmfs.enable))
