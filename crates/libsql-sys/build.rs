@@ -25,7 +25,7 @@ fn maybe_link() {
             path.display()
         );
         println!("cargo:rustc-link-search={}", path.display());
-        println!("cargo:rustc-link-lib=libsql");
+        println!("cargo:rustc-link-lib=static=libsql");
     } else if cfg!(target_arch = "aarch64") {
         let path = std::env::current_dir()
             .unwrap_or_default()
@@ -35,6 +35,8 @@ fn maybe_link() {
             "cargo:warning=linking with bundled liblibsql.a from {}",
             path.display()
         );
+        println!("cargo:rustc-link-search={}", path.display());
+        println!("cargo:rustc-link-lib=static=libsql");
     } else {
         println!("cargo:warning=not linking libSQL: set LIBSQL_LIB_DIR, LIBSQL_STATIC_LIB_DIR or LIBSQL_DYNAMIC_LIB_DIR to link automatically");
     }
