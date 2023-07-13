@@ -38,7 +38,7 @@ emcc.flags.sqlite3-wasmfs += -sDYNAMIC_EXECUTION=0
 emcc.flags.sqlite3-wasmfs += -sNO_POLYFILL
 emcc.flags.sqlite3-wasmfs += -sWASM_BIGINT=$(emcc.WASM_BIGINT)
 emcc.flags.sqlite3-wasmfs += -sEXPORTED_FUNCTIONS=@$(abspath $(dir.api)/EXPORTED_FUNCTIONS.sqlite3-api)
-emcc.flags.sqlite3-wasmfs += -sEXPORTED_RUNTIME_METHODS=FS,wasmMemory,allocateUTF8OnStack
+emcc.flags.sqlite3-wasmfs += -sEXPORTED_RUNTIME_METHODS=wasmMemory,allocateUTF8OnStack
                           # wasmMemory ==> for -sIMPORTED_MEMORY
                           # allocateUTF8OnStack ==> wasmfs internals
 emcc.flags.sqlite3-wasmfs += -sUSE_CLOSURE_COMPILER=0
@@ -102,9 +102,9 @@ endef
 # built/saved multiple times.
 #
 wasmfs.build.ext := mjs
-$(sqlite3-wasmfs.js):
+$(sqlite3-wasmfs.js): $(SOAP.js.bld)
 	$(call SQLITE3-WASMFS.xJS.RECIPE,vanilla)
-$(sqlite3-wasmfs.mjs):
+$(sqlite3-wasmfs.mjs): $(SOAP.js.bld)
 	$(call SQLITE3-WASMFS.xJS.RECIPE,esm)
 ifeq (js,$(wasmfs.build.ext))
   $(sqlite3-wasmfs.wasm): $(sqlite3-wasmfs.js)

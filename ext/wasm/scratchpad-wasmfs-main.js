@@ -15,6 +15,7 @@
 */
 'use strict';
 //importScripts('jswasm/sqlite3-wasmfs.js');
+//importScripts('common/SqliteTestUtil.js');
 import sqlite3InitModule from './jswasm/sqlite3-wasmfs.mjs';
 //console.log('sqlite3InitModule =',sqlite3InitModule);
 (function(){
@@ -70,15 +71,5 @@ import sqlite3InitModule from './jswasm/sqlite3-wasmfs.mjs';
     stdout("Total test time:",(performance.now() - startTime),"ms");
   };
 
-  sqlite3InitModule(globalThis.sqlite3TestModule).then((X)=>{
-    /*
-      2023-07-13: we're passed the Emscripten Module object here
-      instead of the sqlite3 object. This differs from the canonical
-      build and is a side effect of WASMFS's requirement
-      that the module init function (i.e. sqlite3InitModule())
-      return its initial arrgument (the Emscripten Module).
-    */
-    stdout("then() got",X.sqlite3,X);
-    runTests(X.sqlite3 || X);
-  });
+  sqlite3InitModule().then(runTests);
 })();

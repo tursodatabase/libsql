@@ -381,18 +381,14 @@ sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
-# "External" API files which are part of our distribution
+# SOAP.js is an external API file which is part of our distribution
 # but not part of the sqlite3-api.js amalgamation.
 SOAP.js := $(dir.api)/sqlite3-opfs-async-proxy.js
-# COPY_XAPI = a $(call)able function to copy $1 to $(dir.dout), where
-# $1 must be one of the "external" JS API files.
-define COPY_XAPI
-sqlite3-api.ext.jses += $$(dir.dout)/$$(notdir $(1))
-$$(dir.dout)/$$(notdir $(1)): $(1) $$(MAKEFILE)
-	cp $$< $$@
-endef
-$(foreach X,$(SOAP.js),\
-  $(eval $(call COPY_XAPI,$(X))))
+SOAP.js.bld := $(dir.dout)/$(notdir $(SOAP.js))
+sqlite3-api.ext.jses += $(SOAP.js.bld)
+$(SOAP.js.bld): $(SOAP.js)
+	cp $< $@
+
 all quick: $(sqlite3-api.ext.jses)
 q: quick
 

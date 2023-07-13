@@ -63,18 +63,16 @@ const toExportForESM =
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
       if('undefined'!==typeof WorkerGlobalScope &&
-         (EmscriptenModule['ENVIRONMENT_IS_PTHREAD']
-          || EmscriptenModule['_pthread_self']
-          || 'function'===typeof threadAlert
-          || globalThis?.location?.pathname?.endsWith?.('.worker.js')
-         )){
+         EmscriptenModule['ENVIRONMENT_IS_PTHREAD']){
         /** Workaround for wasmfs-generated worker, which calls this
             routine from each individual thread and requires that its
-            argument be returned. All of the criteria above are fragile,
-            based solely on inspection of the offending code, not public
-            Emscripten details. */
+            argument be returned. The conditional criteria above are
+            fragile, based solely on inspection of the offending code,
+            not public Emscripten details. */
+        //console.warn("sqlite3InitModule() returning E-module.",EmscriptenModule);
         return EmscriptenModule;
       }
+      //console.warn("sqlite3InitModule() returning sqlite3 object.");
       const s = EmscriptenModule.sqlite3;
       s.scriptInfo = initModuleState;
       //console.warn("sqlite3.scriptInfo =",s.scriptInfo);
