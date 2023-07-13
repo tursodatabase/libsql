@@ -7,6 +7,9 @@ pub struct Connection<'a> {
     _pth: PhantomData<&'a mut ()>,
 }
 
+/// The `Connection` struct is `Send` because `sqlite3` is thread-safe.
+unsafe impl<'a> Send for Connection<'a> {}
+
 impl<'a> Connection<'a> {
     /// returns a dummy, in-memory connection. For testing purposes only
     pub fn test(_: &mut ()) -> Self {
