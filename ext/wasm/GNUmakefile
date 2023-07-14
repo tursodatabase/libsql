@@ -68,13 +68,6 @@ ifeq (,$(emcc.version))
 else
   $(info using emcc version [$(emcc.version)])
 endif
-emcc.version := $(shell "$(emcc.bin)" --version | sed -n 1p \
-                  | sed -e 's/^.* \([3-9][^ ]*\) .*$$/\1/;')
-ifeq (,$(emcc.version))
-  $(warning Cannot determine emcc version. This might unduly impact build flags.)
-else
-  $(info using emcc version [$(emcc.version)])
-endif
 
 wasm-strip ?= $(shell which wasm-strip 2>/dev/null)
 ifeq (,$(filter clean,$(MAKECMDGOALS)))

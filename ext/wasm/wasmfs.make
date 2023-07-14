@@ -40,7 +40,7 @@ emcc.flags.sqlite3-wasmfs += -sMEMORY64=0
 emcc.flags.sqlite3-wasmfs += -sINITIAL_MEMORY=$(emcc.INITIAL_MEMORY.128)
 # ^^^^ 64MB is not enough for WASMFS/OPFS test runs using batch-runner.js
 sqlite3-wasmfs.fsflags := -pthread -sWASMFS \
-    -sPTHREAD_POOL_SIZE=2 \
+    -sPTHREAD_POOL_SIZE=1 \
     -sERROR_ON_UNDEFINED_SYMBOLS=0 -sLLD_REPORT_UNDEFINED
 # ^^^^^ why undefined symbols are necessary for the wasmfs build is anyone's guess.
 emcc.flags.sqlite3-wasmfs += $(sqlite3-wasmfs.fsflags)

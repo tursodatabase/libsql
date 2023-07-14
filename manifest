@@ -1,5 +1,5 @@
-C Reintroduce\sWASMFS+OPFS\ssupport,\salbeit\sas\sa\sseparate\s(less\sportable)\sWASM\sbuild.
-D 2023-07-13T18:35:48.455
+C Minor\swasm\sbuild\scleanups.
+D 2023-07-14T12:21:05.262
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -482,7 +482,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile e5973aedcdb82798fdf814a69bacc17212a4143ff519c023c92d36104aaf4ae5
+F ext/wasm/GNUmakefile 74e351ff45b4061cfed8df237d301819a04182ae304a99118883b064baa25fc2
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md ef39861aa21632fdbca0bdd469f78f0096f6449a720f3f39642594af503030e9
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
@@ -534,9 +534,9 @@ F ext/wasm/index.html b768e8659b4fe311912e54d42906449d51c0f84b7f036cca47ec1f93bf
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
 F ext/wasm/module-symbols.html 841de62fc198988b8330e238c260e70ec93028b096e1a1234db31b187a899d10
-F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96 w ext/wasm/scratchpad-wasmfs-main.html
-F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63 w ext/wasm/scratchpad-wasmfs-main.js
-F ext/wasm/speedtest1-wasmfs.html dc930dd767ee95cecbfa82fe89b173b51fee41a9ed4dbe7652fb9508a5041cd6
+F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
+F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
+F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
 F ext/wasm/speedtest1-wasmfs.mjs ac5cadbf4ffe69e9eaac8b45e8523f030521e02bb67d654c6eb5236d9c456cbe
 F ext/wasm/speedtest1-worker.html 97c2bf5f8534091ce718de05801090d5a80c3f13575996f095ba23638e1bdca0
 F ext/wasm/speedtest1-worker.js 13b57c4a41729678a1194014afec2bd5b94435dcfc8d1039dfa9a533ac819ee1
@@ -553,7 +553,7 @@ F ext/wasm/tests/opfs/concurrency/index.html 0802373d57034d51835ff6041cda438c7a9
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
 F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
-F ext/wasm/wasmfs.make 4562e01ae0f5d753afbef241354e9d772bbcea2b9bec9c12148385c50a06656a
+F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966f1bc16a
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 5ade0bc977aa135e79e3faaea894d5671b26107cc91e70783aa7dc83f22f3ba0
@@ -2043,9 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ce6793e954f291b6f5c29175baf730ce217328de1f0601b8935daac62af5f448 6918a927b5ecd1df5916b70d52d8d5ce289869c3f323e577b7dfc7c939084400
-R d30a9daa35bcdde0e18bf21352198964
-T +closed 6918a927b5ecd1df5916b70d52d8d5ce289869c3f323e577b7dfc7c939084400 Closed\sby\sintegrate-merge.
+P 7e4c594e9591101f6b727212c99f561498444e86d3d059e5864a717c614f903a
+R 89dbe48e9eca5e9ba6f8df40d8a13ba2
 U stephan
-Z 299699e1e3b9d4e621427d8076548f64
+Z 1733e004f5d1965ff0844de07a9f2984
 # Remove this line to create a well-formed Fossil manifest.
