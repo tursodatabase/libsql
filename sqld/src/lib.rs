@@ -92,6 +92,7 @@ pub struct Config {
     pub rpc_server_ca_cert: Option<PathBuf>,
     pub bottomless_replication: Option<bottomless::replicator::Options>,
     pub idle_shutdown_timeout: Option<Duration>,
+    pub initial_idle_shutdown_timeout: Option<Duration>,
     pub load_from_dump: Option<PathBuf>,
     pub max_log_size: u64,
     pub max_log_duration: Option<f32>,
@@ -130,6 +131,7 @@ impl Default for Config {
             rpc_server_ca_cert: None,
             bottomless_replication: None,
             idle_shutdown_timeout: None,
+            initial_idle_shutdown_timeout: None,
             load_from_dump: None,
             max_log_size: 200,
             max_log_duration: None,
@@ -655,9 +657,13 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
             Ok(())
         });
 
-        let idle_shutdown_layer = config
-            .idle_shutdown_timeout
-            .map(|d| IdleShutdownLayer::new(d, shutdown_sender.clone()));
+        let idle_shutdown_layer = config.idle_shutdown_timeout.map(|d| {
+            IdleShutdownLayer::new(
+                d,
+                config.initial_idle_shutdown_timeout,
+                shutdown_sender.clone(),
+            )
+        });
 
         let stats = Stats::new(&config.db_path)?;
 
