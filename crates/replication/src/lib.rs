@@ -14,6 +14,13 @@ pub use replica::snapshot::TempSnapshot;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+pub mod rpc {
+    #![allow(clippy::all)]
+    tonic::include_proto!("wal_log");
+
+    pub use tonic::transport::Endpoint;
+    pub type Client = replication_log_client::ReplicationLogClient<tonic::transport::Channel>;
+}
 pub struct Replicator {
     pub frames_sender: Sender<Frames>,
     pub current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
@@ -22,6 +29,11 @@ pub struct Replicator {
     _hook_ctx: Arc<parking_lot::Mutex<InjectorHookCtx>>,
     pub meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
     pub injector: replica::injector::FrameInjector<'static>,
+}
+
+pub struct Client {
+    pub inner: rpc::Client,
+    pub stream: Option<tonic::Streaming<rpc::Frame>>,
 }
 
 impl Replicator {
@@ -145,6 +157,127 @@ impl Replicator {
         }
         let _ = self.frames_sender.blocking_send(frames);
         self.injector.step()?;
+        Ok(())
+    }
+
+    pub async fn connect_to_rpc(
+        addr: impl Into<tonic::transport::Endpoint>,
+    ) -> anyhow::Result<(Client, replica::meta::WalIndexMeta)> {
+        let mut client = rpc::Client::connect(addr).await?;
+        let response = client.hello(rpc::HelloRequest {}).await?.into_inner();
+        let client = Client {
+            inner: client,
+            stream: None,
+        };
+        // FIXME: not that simple, we need to figure out if we always start from frame 1?
+        let meta = replica::meta::WalIndexMeta {
+            pre_commit_frame_no: 0,
+            post_commit_frame_no: 0,
+            generation_id: response.generation_id.parse::<uuid::Uuid>()?.to_u128_le(),
+            database_id: response.database_id.parse::<uuid::Uuid>()?.to_u128_le(),
+        };
+        tracing::debug!("Hello response: {response:?}");
+        Ok((client, meta))
+    }
+
+    // Syncs frames from RPC, returns true if it succeeded in applying a whole transaction
+    async fn sync_from_rpc_internal(&mut self, client: &mut Client) -> anyhow::Result<bool> {
+        use futures::StreamExt;
+        const MAX_REPLICA_REPLICATION_BUFFER_LEN: usize = 10_000_000 / 4096; // ~10MB
+        tracing::trace!("Syncing frames from RPC");
+        // Reuse the stream if it exists, otherwise create a new one
+        let stream = match &mut client.stream {
+            Some(stream) => stream,
+            None => {
+                tracing::trace!("Creating new stream");
+                // FIXME: sqld code uses the frame_no_notifier here - investigate if so should we
+                let next_offset = self.meta.lock().unwrap().pre_commit_frame_no;
+                client.stream = Some(
+                    client
+                        .inner
+                        .log_entries(rpc::LogOffset { next_offset })
+                        .await?
+                        .into_inner(),
+                );
+                client.stream.as_mut().unwrap()
+            }
+        };
+
+        let mut buffer = Vec::new();
+        loop {
+            match stream.next().await {
+                Some(Ok(frame)) => {
+                    let frame = Frame::try_from_bytes(frame.data)?;
+                    tracing::trace!(
+                        "Received frame {frame:?}, buffer has {} frames, size_after={}",
+                        buffer.len(),
+                        frame.header().size_after
+                    );
+                    buffer.push(frame.clone());
+                    if frame.header().size_after != 0
+                        || buffer.len() > MAX_REPLICA_REPLICATION_BUFFER_LEN
+                    {
+                        tracing::trace!("Sending {} frames to the injector", buffer.len());
+                        let _ = self
+                            .frames_sender
+                            .send(Frames::Vec(std::mem::take(&mut buffer)))
+                            .await;
+                        // Let's return here to indicate that we made progress.
+                        // There may be more data in the stream and it's fine, the user would just ask to sync again.
+                        return Ok(frame.header().size_after != 0);
+                    }
+                }
+                Some(Err(err))
+                    if err.code() == tonic::Code::FailedPrecondition
+                        && err.message() == "NEED_SNAPSHOT" =>
+                {
+                    tracing::info!("loading snapshot");
+                    // remove any outstanding frames in the buffer that are not part of a
+                    // transaction: they are now part of the snapshot.
+                    buffer.clear();
+                    let _ = stream;
+                    self.sync_from_snapshot(client).await?;
+                    return Ok(true);
+                }
+                Some(Err(e)) => return Err(e.into()),
+                None => return Ok(true),
+            }
+        }
+    }
+
+    pub fn sync_from_rpc(&mut self, client: &mut Client) -> anyhow::Result<()> {
+        let runtime = tokio::runtime::Handle::current();
+        loop {
+            let done = runtime.block_on(self.sync_from_rpc_internal(client))?;
+            tracing::trace!("Injecting frames");
+            self.injector.step()?;
+            tracing::trace!("Injected frames");
+            if done {
+                break;
+            }
+        }
+        Ok(())
+    }
+
+    async fn sync_from_snapshot(&mut self, client: &mut Client) -> anyhow::Result<()> {
+        use futures::StreamExt;
+
+        let next_offset = self.meta.lock().unwrap().pre_commit_frame_no;
+        let frames = client
+            .inner
+            .snapshot(rpc::LogOffset { next_offset })
+            .await?
+            .into_inner();
+
+        let stream = frames.map(|data| match data {
+            Ok(frame) => Frame::try_from_bytes(frame.data),
+            Err(e) => anyhow::bail!(e),
+        });
+        // FIXME: do not hardcode the temporary path for downloading snapshots
+        let snap = TempSnapshot::from_stream("data.sqld".as_ref(), stream).await?;
+
+        let _ = self.frames_sender.send(Frames::Snapshot(snap)).await;
+
         Ok(())
     }
 }
