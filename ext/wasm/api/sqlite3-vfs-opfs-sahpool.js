@@ -130,9 +130,13 @@ const installOpfsVfs = async function(sqlite3){
       'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
     );
 
-    const VState = Object.assign(Object.create(null),{
+    const getFilename = function(ndx){
+      return 'sahpool-'+('00'+ndx).substr(-3);
+    }
+
+    const SAHPool = Object.assign(Object.create(null),{
       /* OPFS dir in which VFS metadata is stored. */
-      vfsDir: ".sqlite3-sahpool",
+      vfsDir: ".sqlite3-opfs-sahpool",
       dirHandle: undefined,
       /* Maps OPFS access handles to their opaque file names. */
       mapAH2Name: new Map(),
@@ -142,10 +146,20 @@ const installOpfsVfs = async function(sqlite3){
       getCapacity: function(){return this.mapAH2Name.size},
       getFileCount: function(){return this.mapPath2AH.size},
       addCapacity: async function(n){
-        for(let i = 0; i < n; ++i){
-          const name = Math.random().toString(36).replace('0.','');
+        const cap = this.getCapacity();
+        for(let i = cap; i < cap+n; ++i){
+          const name = getFilename(i);
           const h = await this.dirHandle.getFileHandle(name, {create:true});
-          const ah = await h.createSyncAccessHandle();
+          let ah = await h.createSyncAccessHandle();
+          if(0===i){
+            /* Ensure that this client has the "all-synchronous"
+               OPFS API and fail if they don't. */
+            if(undefined !== ah.close()){
+              toss("OPFS API is too old for opfs-sahpool:",
+                   "it has an async close() method.");
+            }
+            ah = await h.createSyncAccessHandle();
+          }
           this.mapAH2Name.set(ah,name);
           this.setAssociatedPath(ah, '', 0);
         }
@@ -175,8 +189,8 @@ const installOpfsVfs = async function(sqlite3){
         await this.acquireAccessHandles();
       }
       // much more TODO
-    })/*VState*/;
-
+    })/*SAHPool*/;
+    sqlite3.SAHPool = SAHPool/*only for testing*/;
     // Much, much more TODO...
     /**
        Impls for the sqlite3_io_methods methods. Maintenance reminder:
@@ -287,22 +301,16 @@ const installOpfsVfs = async function(sqlite3){
       };
     }
 
-    try{
+    SAHPool.isReady = SAHPool.reset().then(async ()=>{
+      if(0===SAHPool.getCapacity()){
+        await SAHPool.addCapacity(DEFAULT_CAPACITY);
+      }
       log("vfs list:",capi.sqlite3_js_vfs_list());
       sqlite3.vfs.installVfs({
         io: {struct: opfsIoMethods, methods: ioSyncWrappers},
         vfs: {struct: opfsVfs, methods: vfsSyncWrappers}
       });
       log("vfs list:",capi.sqlite3_js_vfs_list());
-    }catch(e){
-      promiseReject(e);
-      return;
-    }
-
-    VState.isReady = VState.reset().then(async ()=>{
-      if(0===VState.getCapacity()){
-        await VState.addCapacity(DEFAULT_CAPACITY);
-      }
       log("opfs-sahpool VFS initialized.");
       promiseResolve(sqlite3);
     }).catch(promiseReject);
