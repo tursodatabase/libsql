@@ -82,10 +82,6 @@ async fn handle_ws<D: Database>(
     };
 
     loop {
-        if let Some(kicker) = conn.server.idle_kicker.as_ref() {
-            kicker.kick();
-        }
-
         tokio::select! {
             Some(client_msg_res) = conn.ws.recv() => {
                 let client_msg = client_msg_res
@@ -121,6 +117,10 @@ async fn handle_ws<D: Database>(
                 send_msg(&mut conn, &response_msg).await?;
             },
             else => break,
+        }
+
+        if let Some(kicker) = conn.server.idle_kicker.as_ref() {
+            kicker.kick();
         }
     }
 

@@ -50,10 +50,6 @@ pub async fn serve(
 
     let mut join_set = tokio::task::JoinSet::new();
     loop {
-        if let Some(kicker) = server.idle_kicker.as_ref() {
-            kicker.kick();
-        }
-
         tokio::select! {
             Some(accept) = accept_rx.recv() => {
                 let conn_id = server.next_conn_id.fetch_add(1, Ordering::AcqRel);
@@ -84,6 +80,10 @@ pub async fn serve(
                 tracing::error!("hrana server loop exited");
                 return Ok(())
             }
+        }
+
+        if let Some(kicker) = server.idle_kicker.as_ref() {
+            kicker.kick();
         }
     }
 }

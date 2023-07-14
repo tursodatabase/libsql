@@ -122,6 +122,12 @@ struct Cli {
     #[clap(long, env = "SQLD_IDLE_SHUTDOWN_TIMEOUT_S")]
     idle_shutdown_timeout_s: Option<u64>,
 
+    /// Like idle_shutdown_timeout_s but used only once after the server is started.
+    /// After that server either is shut down because it does not receive any requests
+    /// or idle_shutdown_timeout_s is used moving forward.
+    #[clap(long, env = "SQLD_INITIAL_IDLE_SHUTDOWN_TIMEOUT_S")]
+    initial_idle_shutdown_timeout_s: Option<u64>,
+
     /// Load the dump at the provided path.
     /// Requires that the node is not in replica mode
     #[clap(long, env = "SQLD_LOAD_DUMP_PATH", conflicts_with = "primary_grpc_url")]
@@ -272,6 +278,9 @@ fn config_from_args(args: Cli) -> Result<Config> {
             None
         },
         idle_shutdown_timeout: args.idle_shutdown_timeout_s.map(Duration::from_secs),
+        initial_idle_shutdown_timeout: args
+            .initial_idle_shutdown_timeout_s
+            .map(Duration::from_secs),
         load_from_dump: args.load_from_dump,
         max_log_size: args.max_log_size,
         max_log_duration: args.max_log_duration,
