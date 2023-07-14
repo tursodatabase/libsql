@@ -118,11 +118,11 @@ const installOpfsVfs = function callee(options){
     options.proxyUri = options.proxyUri();
   }
   const thePromise = new Promise(function(promiseResolve_, promiseReject_){
-    const loggers = {
-      0:sqlite3.config.error,
-      1:sqlite3.config.warn,
-      2:sqlite3.config.log
-    };
+    const loggers = [
+      sqlite3.config.error,
+      sqlite3.config.warn,
+      sqlite3.config.log
+    ];
     const logImpl = (level,...args)=>{
       if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
     };
@@ -191,8 +191,9 @@ const installOpfsVfs = function callee(options){
         s.count = s.time = 0;
       }
     }/*metrics*/;
-    const opfsVfs = new sqlite3_vfs();
     const opfsIoMethods = new sqlite3_io_methods();
+    const opfsVfs = new sqlite3_vfs()
+          .addOnDispose( ()=>opfsIoMethods.dispose());
     let promiseWasRejected = undefined;
     const promiseReject = (err)=>{
       promiseWasRejected = true;
@@ -241,11 +242,10 @@ const installOpfsVfs = function callee(options){
     opfsVfs.$zName = wasm.allocCString("opfs");
     // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
     opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
-    opfsVfs.ondispose = [
+    opfsVfs.addOnDispose(
       '$zName', opfsVfs.$zName,
-      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null),
-      'cleanup opfsIoMethods', ()=>opfsIoMethods.dispose()
-    ];
+      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
+    );
     /**
        Pedantic sidebar about opfsVfs.ondispose: the entries in that array
        are items to clean up when opfsVfs.dispose() is called, but in this
