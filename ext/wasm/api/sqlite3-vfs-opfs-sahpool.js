@@ -79,7 +79,7 @@ const installOpfsVfs = async function(sqlite3){
       sqlite3.config.log
     ];
     const logImpl = (level,...args)=>{
-      if(verbosity>level) loggers[level]("OPFS syncer:",...args);
+      if(verbosity>level) loggers[level]("opfs-sahpool:",...args);
     };
     const log =    (...args)=>logImpl(2, ...args);
     const warn =   (...args)=>logImpl(1, ...args);
@@ -117,13 +117,14 @@ const installOpfsVfs = async function(sqlite3){
                                   unavailable in the WASM build.*/;
     const pDVfs = capi.sqlite3_vfs_find(null)/*default VFS*/;
     const dVfs = pDVfs
-          ? new sqlite3_vfs(pDVfs)
+          ? new capi.sqlite3_vfs(pDVfs)
           : null /* dVfs will be null when sqlite3 is built with
                     SQLITE_OS_OTHER. */;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
     opfsVfs.$mxPathname = HEADER_MAX_PATH_SIZE;
     opfsVfs.$zName = wasm.allocCString("opfs-sahpool");
+    log('opfsVfs.$zName =',opfsVfs.$zName);
     opfsVfs.addOnDispose(
       '$zName', opfsVfs.$zName,
       'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
@@ -143,9 +144,9 @@ const installOpfsVfs = async function(sqlite3){
       addCapacity: async function(n){
         for(let i = 0; i < n; ++i){
           const name = Math.random().toString(36).replace('0.','');
-          const h = await this.dirHandle.getFileName(name, {create:true});
+          const h = await this.dirHandle.getFileHandle(name, {create:true});
           const ah = await h.createSyncAccessHandle();
-          this.mapAH2Name(ah,name);
+          this.mapAH2Name.set(ah,name);
           this.setAssociatedPath(ah, '', 0);
         }
       },
@@ -280,21 +281,29 @@ const installOpfsVfs = async function(sqlite3){
         return i;
       };
     }
+    if(!opfsVfs.$xSleep){
+      vfsSyncWrappers.xSleep = function(pVfs,ms){
+        return 0;
+      };
+    }
 
     try{
+      log("vfs list:",capi.sqlite3_js_vfs_list());
       sqlite3.vfs.installVfs({
         io: {struct: opfsIoMethods, methods: ioSyncWrappers},
         vfs: {struct: opfsVfs, methods: vfsSyncWrappers}
       });
+      log("vfs list:",capi.sqlite3_js_vfs_list());
     }catch(e){
       promiseReject(e);
       return;
     }
 
     VState.isReady = VState.reset().then(async ()=>{
-      if(0===VState.getCapacity())[
+      if(0===VState.getCapacity()){
         await VState.addCapacity(DEFAULT_CAPACITY);
       }
+      log("opfs-sahpool VFS initialized.");
       promiseResolve(sqlite3);
     }).catch(promiseReject);
   })/*thePromise*/;

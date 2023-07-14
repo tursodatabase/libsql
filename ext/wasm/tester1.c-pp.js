@@ -1288,7 +1288,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       if(1){
         const vfsList = capi.sqlite3_js_vfs_list();
         T.assert(vfsList.length>1);
-        //log("vfsList =",vfsList);
+        log("vfsList =",vfsList);
         wasm.scopedAllocCall(()=>{
           const vfsArg = (v)=>wasm.xWrap.testConvertArg('sqlite3_vfs*',v);
           for(const v of vfsList){
