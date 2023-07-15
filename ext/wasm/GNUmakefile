@@ -46,12 +46,12 @@
 #    $(eval), or at least centralize the setup of the numerous vars
 #    related to each build variant $(JS_BUILD_MODES).
 #
+#default: all
+default: quick
 SHELL := $(shell which bash 2>/dev/null)
 MAKEFILE := $(lastword $(MAKEFILE_LIST))
 CLEAN_FILES :=
 DISTCLEAN_FILES := ./--dummy--
-default: all
-#default: quick
 release: oz
 # JS_BUILD_MODES exists solely to reduce repetition in documentation
 # below.

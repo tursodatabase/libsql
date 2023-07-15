@@ -63,15 +63,14 @@
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 const installOpfsVfs = async function(sqlite3){
-  const pToss = (...args)=>Promise.reject(new Error(args.join(' ')));
   if(!globalThis.FileSystemHandle ||
      !globalThis.FileSystemDirectoryHandle ||
      !globalThis.FileSystemFileHandle ||
      !globalThis.FileSystemFileHandle.prototype.createSyncAccessHandle ||
      !navigator?.storage?.getDirectory){
-    return pToss("Missing required OPFS APIs.");
+    return Promise.reject(new Error("Missing required OPFS APIs."));
   }
-  const thePromise = new Promise(function(promiseResolve, promiseReject_){
+  return new Promise(async function(promiseResolve, promiseReject_){
     const verbosity = 3;
     const loggers = [
       sqlite3.config.error,
@@ -130,10 +129,13 @@ const installOpfsVfs = async function(sqlite3){
       'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
     );
 
-    const getFilename = function(ndx){
-      return 'sahpool-'+('00'+ndx).substr(-3);
-    }
+    const getFilename = false
+          ? (ndx)=>'sahpool-'+('00'+ndx).substr(-3)
+          : ()=>Math.random().toString(36).slice(2)
 
+    /**
+       All state for the VFS.
+    */
     const SAHPool = Object.assign(Object.create(null),{
       /* OPFS dir in which VFS metadata is stored. */
       vfsDir: ".sqlite3-opfs-sahpool",
@@ -148,24 +150,33 @@ const installOpfsVfs = async function(sqlite3){
       addCapacity: async function(n){
         const cap = this.getCapacity();
         for(let i = cap; i < cap+n; ++i){
-          const name = getFilename(i);
+          const name = getFilename(i)
+          /* Reminder: because of how removeCapacity() works, we
+             really want random names. At this point in the dev
+             process that fills up the OPFS with randomly-named files
+             each time the page is reloaded, so delay the return to
+             random names until we've gotten far enough to eliminate
+             that problem. */;
           const h = await this.dirHandle.getFileHandle(name, {create:true});
-          let ah = await h.createSyncAccessHandle();
-          if(0===i){
-            /* Ensure that this client has the "all-synchronous"
-               OPFS API and fail if they don't. */
-            if(undefined !== ah.close()){
-              toss("OPFS API is too old for opfs-sahpool:",
-                   "it has an async close() method.");
-            }
-            ah = await h.createSyncAccessHandle();
-          }
+          const ah = await h.createSyncAccessHandle();
           this.mapAH2Name.set(ah,name);
           this.setAssociatedPath(ah, '', 0);
         }
       },
-      setAssociatedPath: function(accessHandle, path, flags){
-        // TODO
+      removeCapacity: async function(n){
+        let nRm = 0;
+        for(const ah of Array.from(this.availableAH)){
+          if(nRm === n || this.getFileCount() === this.getCapacity()){
+            break;
+          }
+          const name = this.mapAH2Name.get(ah);
+          ah.close();
+          await this.dirHandle.removeEntry(name);
+          this.mapAH2Name.delete(ah);
+          this.availableAH.delete(ah);
+          ++nRm;
+        }
+        return nRm;
       },
       releaseAccessHandles: function(){
         for(const ah of this.mapAH2Name.keys()) ah.close();
@@ -174,7 +185,98 @@ const installOpfsVfs = async function(sqlite3){
         this.availableAH.clear();
       },
       acquireAccessHandles: async function(){
-        // TODO
+        const files = [];
+        for await (const [name,h] of this.dirHandle){
+          if('file'===h.kind){
+            files.push([name,h]);
+          }
+        }
+        await Promise.all(files.map(async ([name,h])=>{
+          const ah = await h.createSyncAccessHandle()
+            /*TODO: clean up and fail vfs init on error*/;
+          this.mapAH2Name.set(ah, name);
+          const path = this.getAssociatedPath(ah);
+          if(path){
+            this.mapPath2AH.set(path, ah);
+          }else{
+            this.availableAH.add(ah);
+          }
+        }));
+      },
+      gapBody: new Uint8Array(HEADER_CORPUS_SIZE),
+      textDecoder: new TextDecoder(),
+      getAssociatedPath: function(sah){
+        const body = this.gapBody;
+        sah.read(body, {at: 0});
+        // Delete any unexpected files left over by previous
+        // untimely errors...
+        const dv = new DataView(body.buffer, body.byteOffset);
+        const flags = dv.getUint32(HEADER_OFFSET_FLAGS);
+        if(body[0] &&
+           ((flags & capi.SQLITE_OPEN_DELETEONCLOSE) ||
+            (flags & PERSISTENT_FILE_TYPES)===0)){
+          warn(`Removing file with unexpected flags ${flags.toString(16)}`);
+          this.setAssociatedPath(sah, '', 0);
+          return '';
+        }
+
+        const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
+        sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
+        const compDigest = this.computeDigest(body);
+        if(fileDigest.every((v,i) => v===compDigest[i])){
+          // Valid digest
+          const pathBytes = body.findIndex((v)=>0===v);
+          if(0===pathBytes){
+            // This file is unassociated, so ensure that it's empty
+            // to avoid leaving stale db data laying around.
+            sah.truncate(HEADER_OFFSET_DATA);
+          }
+          return this.textDecoder.decode(body.subarray(0,pathBytes));
+        }else{
+          // Invalid digest
+          warn('Disassociating file with bad digest.');
+          this.setAssociatedPath(sah, '', 0);
+          return '';
+        }
+      },
+      textEncoder: new TextEncoder(),
+      setAssociatedPath: function(sah, path, flags){
+        const body = this.gapBody;
+        const enc = this.textEncoder.encodeInto(path, body);
+        if(HEADER_MAX_PATH_SIZE <= enc.written){
+          toss("Path too long:",path);
+        }
+
+        const dv = new DataView(body.buffer, body.byteOffset);
+        dv.setUint32(HEADER_OFFSET_FLAGS, flags);
+
+        const digest = this.computeDigest(body);
+        sah.write(body, {at: 0});
+        sah.write(digest, {at: HEADER_OFFSET_DIGEST});
+        sah.flush();
+
+        if(path){
+          this.mapPath2AH.set(path, sah);
+          this.availableAH.delete(sah);
+        }else{
+          // This is not a persistent file, so eliminate the contents.
+          sah.truncate(HEADER_OFFSET_DATA);
+          this.mapPath2AH.delete(path);
+          this.availableAH.add(sah);
+        }
+      },
+      computeDigest: function(byteArray){
+        if(!byteArray[0]){
+          // Deleted file
+          return new Uint32Array([0xfecc5f80, 0xaccec037]);
+        }
+        let h1 = 0xdeadbeef;
+        let h2 = 0x41c6ce57;
+        for(const v of byteArray){
+          h1 = 31 * h1 + (v * 307);
+          h2 = 31 * h2 + (v * 307);
+        }
+        return new Uint32Array([h1>>>0, h2>>>0]);
       },
       reset: async function(){
         await this.isReady;
@@ -187,8 +289,20 @@ const installOpfsVfs = async function(sqlite3){
         this.dirHandle = h;
         this.releaseAccessHandles();
         await this.acquireAccessHandles();
+      },
+      getPath: function(arg) {
+        if(wasm.isPtr(arg)) arg = wasm.cstrToJs(arg);
+        return ((arg instanceof URL)
+                ? arg
+                : new URL(arg, 'file://localhost/')).pathname;
+      },
+      deletePath: function(path) {
+        const sah = this.mapPath2AH.get(path);
+        if(sah) {
+          // Un-associate the SQLite path from the OPFS file.
+          this.setAssociatedPath(sah, '', 0);
+        }
       }
-      // much more TODO
     })/*SAHPool*/;
     sqlite3.SAHPool = SAHPool/*only for testing*/;
     // Much, much more TODO...
@@ -201,8 +315,21 @@ const installOpfsVfs = async function(sqlite3){
         return 0;
       },
       xClose: function(pFile){
-        let rc = 0;
-        return rc;
+        const file = SAHPool.mapId2File.get(pFile);
+        if(file) {
+          try{
+            log(`xClose ${file.path}`);
+            file.sah.flush();
+            SAHPool.mapId2File.delete(pFIle);
+            if(file.flags & capi.SQLITE_OPEN_DELETEONCLOSE){
+              SAHPool.deletePath(file.path);
+            }
+          }catch(e){
+            error("xClose() failed:",e.message);
+            return capi.SQLITE_IOERR;
+          }
+        }
+        return 0;
       },
       xDeviceCharacteristics: function(pFile){
         return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
@@ -211,32 +338,74 @@ const installOpfsVfs = async function(sqlite3){
         return capi.SQLITE_NOTFOUND;
       },
       xFileSize: function(pFile,pSz64){
-        let rc = 0;
-        return rc;
+        const file = SAHPool.mapId2File(pFile);
+        const size = file.sah.getSize() - HEADER_OFFSET_DATA;
+        //log(`xFileSize ${file.path} ${size}`);
+        wasm.poke64(pSz64, BigInt(size));
+        return 0;
       },
       xLock: function(pFile,lockType){
-        let rc = capi.SQLITE_IOERR_LOCK;
+        let rc = capi.SQLITE_IOERR;
         return rc;
       },
       xRead: function(pFile,pDest,n,offset64){
-        let rc = capi.SQLITE_IOERR_READ;
-        return rc;
+        const file = SAHPool.mapId2File.get(pFile);
+        log(`xRead ${file.path} ${n} ${offset64}`);
+        try {
+          const nRead = file.sah.read(
+            pDest, {at: HEADER_OFFSET_DATA + offset64}
+          );
+          if(nRead < n){
+            wasm.heap8u().fill(0, pDest + nRead, pDest + n);
+            return capi.SQLITE_IOERR_SHORT_READ;
+          }
+          return 0;
+        }catch(e){
+          error("xRead() failed:",e.message);
+          return capi.SQLITE_IOERR;
+        }
+      },
+      xSectorSize: function(pFile){
+        return SECTOR_SIZE;
       },
       xSync: function(pFile,flags){
-        let rc = capi.SQLITE_IOERR_FSYNC;
-        return rc;
+        const file = SAHPool.mapId2File.get(pFile);
+        //log(`xSync ${file.path} ${flags}`);
+        try{
+          file.sah.flush();
+          return 0;
+        }catch(e){
+          error("xSync() failed:",e.message);
+          return capi.SQLITE_IOERR;
+        }
       },
       xTruncate: function(pFile,sz64){
-        let rc = capi.SQLITE_IOERR_TRUNCATE;
-        return rc;
+        const file = SAHPool.mapId2File.get(pFile);
+        //log(`xTruncate ${file.path} ${iSize}`);
+        try{
+          file.sah.truncate(HEADER_OFFSET_DATA + Number(sz64));
+          return 0;
+        }catch(e){
+          error("xTruncate() failed:",e.message);
+          return capi.SQLITE_IOERR;
+        }
       },
-      xUnlock: function(pFile,lockType){
-        let rc = capi.SQLITE_IOERR_UNLOCK;
-        return rc;
-      },
+      /**xUnlock: function(pFile,lockType){
+        return capi.SQLITE_IOERR;
+      },*/
       xWrite: function(pFile,pSrc,n,offset64){
-        let rc = capi.SQLITE_IOERR_WRITE;
-        return rc;
+        const file = SAHPool.mapId2File(pFile);
+        //log(`xWrite ${file.path} ${n} ${offset64}`);
+        try{
+          const nBytes = file.sah.write(
+            pSrc, { at: HEADER_OFFSET_DATA + Number(offset64) }
+          );
+          return nBytes === n ? 0 : capi.SQLITE_IOERR;
+          return 0;
+        }catch(e){
+          error("xWrite() failed:",e.message);
+          return capi.SQLITE_IOERR;
+        }
       }
     }/*ioSyncWrappers*/;
 
@@ -246,8 +415,9 @@ const installOpfsVfs = async function(sqlite3){
     */
     const vfsSyncWrappers = {
       xAccess: function(pVfs,zName,flags,pOut){
-        const rc = capi.SQLITE_ERROR;
-        return rc;
+        const name = this.getPath(zName);
+        wasm.poke32(pOut, SAHPool.mapPath2AH.has(name) ? 1 : 0);
+        return 0;
       },
       xCurrentTime: function(pVfs,pOut){
         wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
@@ -260,8 +430,13 @@ const installOpfsVfs = async function(sqlite3){
         return 0;
       },
       xDelete: function(pVfs, zName, doSyncDir){
-        const rc = capi.SQLITE_ERROR;
-        return rc;
+        try{
+          SAHPool.deletePath(SAHPool.getPath(zName));
+          return 0;
+        }catch(e){
+          error("Error xDelete()ing file:",e.message);
+          return capi.SQLITE_IOERR_DELETE;
+        }
       },
       xFullPathname: function(pVfs,zName,nOut,pOut){
         const i = wasm.cstrncpy(pOut, zName, nOut);
@@ -301,6 +476,31 @@ const installOpfsVfs = async function(sqlite3){
       };
     }
 
+    /**
+       Ensure that the client has a "fully-sync" SAH impl,
+       else reject the promise. Returns true on success,
+       else false.
+    */
+    const affirmHasSyncAPI = async function(){
+      try {
+        const dh = await navigator.storage.getDirectory();
+        const fn = '.opfs-sahpool-sync-check-'+Math.random().toString(36).slice(2);
+        const fh = await dh.getFileHandle(fn, { create: true });
+        const ah = await fh.createSyncAccessHandle();
+        const close = ah.close();
+        await close;
+        await dh.removeEntry(fn);
+        if(close?.then){
+          toss("The local OPFS API is too old for opfs-sahpool:",
+               "it has an async FileSystemSyncAccessHandle.close() method.");
+        }
+        return true;
+      }catch(e){
+        promiseReject(e);
+        return false;
+      }
+    };
+    if(!(await affirmHasSyncAPI())) return;
     SAHPool.isReady = SAHPool.reset().then(async ()=>{
       if(0===SAHPool.getCapacity()){
         await SAHPool.addCapacity(DEFAULT_CAPACITY);
@@ -314,8 +514,7 @@ const installOpfsVfs = async function(sqlite3){
       log("opfs-sahpool VFS initialized.");
       promiseResolve(sqlite3);
     }).catch(promiseReject);
-  })/*thePromise*/;
-  return thePromise;
+  })/*return Promise*/;
 }/*installOpfsVfs()*/;
 
 globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
