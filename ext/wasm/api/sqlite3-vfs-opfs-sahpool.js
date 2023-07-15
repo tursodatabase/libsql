@@ -162,7 +162,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
   */
   const SAHPool = Object.assign(Object.create(null),{
     /* OPFS dir in which VFS metadata is stored. */
-    vfsDir: sqlite3.config['vfs:opfs-sahpool:dir']
+    vfsDir: sqlite3.config['opfs-sahpool.dir']
       || ".sqlite3-opfs-sahpool",
     /* Directory handle to this.vfsDir. */
     dirHandle: undefined,
@@ -241,7 +241,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
       await Promise.all(files.map(async ([name,h])=>{
         try{
           const ah = await h.createSyncAccessHandle()
-          /*TODO: clean up and fail vfs init on error*/;
           this.mapSAHToName.set(ah, name);
           const path = this.getAssociatedPath(ah);
           if(path){
@@ -251,6 +250,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
           }
         }catch(e){
           SAHPool.storeErr(e);
+          this.releaseAccessHandles();
           throw e;
         }
       }));
@@ -334,10 +334,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
        returns it as a two-element Uint32Array.
     */
     computeDigest: function(byteArray){
-      if(!byteArray[0]){
-        // Deleted file
-        return new Uint32Array([0xfecc5f80, 0xaccec037]);
-      }
       let h1 = 0xdeadbeef;
       let h2 = 0x41c6ce57;
       for(const v of byteArray){
@@ -346,6 +342,10 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
       }
       return new Uint32Array([h1>>>0, h2>>>0]);
     },
+    /**
+       Re-initializes the state of the SAH pool,
+       releasing and re-acquiring all handles.
+    */
     reset: async function(){
       await this.isReady;
       let h = await navigator.storage.getDirectory();
@@ -470,13 +470,12 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         return 0;
       }catch(e){
         SAHPool.storeErr(e);
-        error("xRead() failed:",e.message);
         return capi.SQLITE_IOERR;
       }
     },
-    /*xSectorSize: function(pFile){
+    xSectorSize: function(pFile){
       return SECTOR_SIZE;
-    },*/
+    },
     xSync: function(pFile,flags){
       log(`xSync ${flags}`);
       SAHPool.storeErr();
@@ -487,7 +486,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         return 0;
       }catch(e){
         SAHPool.storeErr(e);
-        error("xSync() failed:",e.message);
         return capi.SQLITE_IOERR;
       }
     },
@@ -501,7 +499,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         return 0;
       }catch(e){
         SAHPool.storeErr(e);
-        error("xTruncate() failed:",e.message);
         return capi.SQLITE_IOERR;
       }
     },
@@ -523,7 +520,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         return nBytes === n ? 0 : capi.SQLITE_IOERR;
       }catch(e){
         SAHPool.storeErr(e);
-        error("xWrite() failed:",e.message);
         return capi.SQLITE_IOERR;
       }
     }
@@ -563,7 +559,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         return 0;
       }catch(e){
         SAHPool.storeErr(e);
-        error("Error xDelete()ing file:",e.message);
         return capi.SQLITE_IOERR_DELETE;
       }
     },

@@ -107,10 +107,8 @@
     const S = globalThis.S = sqlite3;
     log("Loaded speedtest1 module. Setting up...");
     if(S.installOpfsSAHPoolVfs){
-      await S.installOpfsSAHPoolVfs().then(()=>{
-        log("Loaded SAHPool.");
-      }).catch(e=>{
-        logErr("Error setting up SAHPool:",e.message);
+      await S.installOpfsSAHPoolVfs().catch(e=>{
+        logErr("Error setting up opfs-sahpool:",e.message);
       });
     }
     App.vfsUnlink = function(pDb, fname){
