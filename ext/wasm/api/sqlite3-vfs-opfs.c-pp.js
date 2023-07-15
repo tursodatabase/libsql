@@ -236,6 +236,7 @@ const installOpfsVfs = function callee(options){
           ? new sqlite3_vfs(pDVfs)
           : null /* dVfs will be null when sqlite3 is built with
                     SQLITE_OS_OTHER. */;
+    opfsIoMethods.$iVersion = 1;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
     opfsVfs.$mxPathname = 1024/*sure, why not?*/;

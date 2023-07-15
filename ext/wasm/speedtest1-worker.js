@@ -71,11 +71,30 @@
   self.onmessage = function(msg){
     msg = msg.data;
     switch(msg.type){
-        case 'run': runSpeedtest(msg.data || []); break;
+        case 'run':
+          try {
+            runSpeedtest(msg.data || []);
+          }catch(e){
+            mPost('error',e);
+          }
+          break;
         default:
           logErr("Unhandled worker message type:",msg.type);
           break;
     }
+  };
+
+  const sahpSanityChecks = function(sqlite3){
+    log("Attempting OpfsSAHPoolDb sanity checks...");
+    const db = new sqlite3.oo1.OpfsSAHPoolDb('opfs-sahpoool.db');
+    const fn = db.filename;
+    db.exec([
+      'create table t(a);',
+      'insert into t(a) values(1),(2),(3);'
+    ]);
+    db.close();
+    sqlite3.wasm.sqlite3_wasm_vfs_unlink(sqlite3_vfs_find("opfs-sahpool"), fn);
+    log("SAH sanity checks done.");
   };
 
   const EmscriptenModule = {
@@ -83,8 +102,17 @@
     printErr: logErr,
     setStatus: (text)=>mPost('load-status',text)
   };
-  self.sqlite3InitModule(EmscriptenModule).then((sqlite3)=>{
-    const S = sqlite3;
+  log("Initializing speedtest1 module...");
+  self.sqlite3InitModule(EmscriptenModule).then(async (sqlite3)=>{
+    const S = globalThis.S = sqlite3;
+    log("Loaded speedtest1 module. Setting up...");
+    if(S.installOpfsSAHPoolVfs){
+      await S.installOpfsSAHPoolVfs().then(()=>{
+        log("Loaded SAHPool.");
+      }).catch(e=>{
+        logErr("Error setting up SAHPool:",e.message);
+      });
+    }
     App.vfsUnlink = function(pDb, fname){
       const pVfs = S.wasm.sqlite3_wasm_db_vfs(pDb, 0);
       if(pVfs) S.wasm.sqlite3_wasm_vfs_unlink(pVfs, fname||0);
@@ -95,5 +123,10 @@
     //else log("Using transient storage.");
     mPost('ready',true);
     log("Registered VFSes:", ...S.capi.sqlite3_js_vfs_list());
+    if(0 && S.installOpfsSAHPoolVfs){
+      sahpSanityChecks(S);
+    }
+  }).catch(e=>{
+    logErr(e);
   });
 })();
