@@ -88,9 +88,24 @@
      can be replaced with (e.g.) empty functions to squelch all such
      output.
 
-   - `wasmfsOpfsDir`[^1]: As of 2022-12-17, this feature does not
-     currently work due to incompatible Emscripten-side changes made
-     in the WASMFS+OPFS combination. This option is currently ignored.
+   - `wasmfsOpfsDir`[^1]: Specifies the "mount point" of the OPFS-backed
+     filesystem in WASMFS-capable builds.
+
+   - `opfs-sahpool.dir`[^1]: Specifies the OPFS directory name in
+     which to store metadata for the `"opfs-sahpool"` sqlite3_vfs.
+     Changing this name will effectively orphan any databases stored
+     under previous names. The default is unspecified but descriptive.
+     This option may contain multiple path elements,
+     e.g. "foo/bar/baz", and they are created automatically.  In
+     practice there should be no driving need to change this.
+
+   - `opfs-sahpool.defaultCapacity`[^1]: Specifies the default
+     capacity of the `"opfs-sahpool"` VFS. This should not be set
+     unduly high because the VFS has to open (and keep open) a file
+     for each entry in the pool. This setting only has an effect when
+     the pool is initially empty. It does not have any effect if a
+     pool already exists.
+
 
    [^1] = This property may optionally be a function, in which case
           this function calls that function to fetch the value,
@@ -125,11 +140,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     log: console.log.bind(console),
     wasmfsOpfsDir: '/opfs',
     /**
-       useStdAlloc is just for testing an allocator discrepancy. The
+       useStdAlloc is just for testing allocator discrepancies. The
        docs guarantee that this is false in the canonical builds. For
        99% of purposes it doesn't matter which allocators we use, but
-       it becomes significant with, e.g., sqlite3_deserialize()
-       and certain wasm.xWrap.resultAdapter()s.
+       it becomes significant with, e.g., sqlite3_deserialize() and
+       certain wasm.xWrap.resultAdapter()s.
     */
     useStdAlloc: false
   }, apiConfig || {});
@@ -143,7 +158,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   [
     // If any of these config options are functions, replace them with
     // the result of calling that function...
-    'exports', 'memory', 'wasmfsOpfsDir'
+    'exports', 'memory', 'wasmfsOpfsDir',
+    'opfs-sahpool.dir', 'opfs-sahpool.defaultCapacity'
   ].forEach((k)=>{
     if('function' === typeof config[k]){
       config[k] = config[k]();
