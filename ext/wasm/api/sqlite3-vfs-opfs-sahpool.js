@@ -170,7 +170,7 @@ const installOpfsVfs = async function(sqlite3){
          files. Returns a Promise resolving to the number of
          removed files.
       */
-      removeCapacity: async function(n){
+      reduceCapacity: async function(n){
         let nRm = 0;
         for(const ah of Array.from(this.availableSAH)){
           if(nRm === n || this.getFileCount() === this.getCapacity()){
@@ -645,7 +645,7 @@ const installOpfsVfs = async function(sqlite3){
         };
         OpfsSAHPoolDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
         OpfsSAHPoolDb.addPoolCapacity = async (n)=>SAHPool.addCapacity(n);
-        OpfsSAHPoolDb.removePoolCapacity = async (n)=>SAHPool.removeCapacity(n);
+        OpfsSAHPoolDb.reducePoolCapacity = async (n)=>SAHPool.reduceCapacity(n);
         OpfsSAHPoolDb.getPoolCapacity = ()=>SAHPool.getCapacity();
         OpfsSAHPoolDb.getPoolUsage = ()=>SAHPool.getFileCount();
         sqlite3.oo1.OpfsSAHPoolDb = OpfsSAHPoolDb;
