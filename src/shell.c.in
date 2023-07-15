@@ -3453,8 +3453,6 @@ static int str_in_array(const char *zStr, const char **azArray){
 **       and "Goto" by 2 spaces.
 */
 static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
-  const char *zSql;               /* The text of the SQL statement */
-  const char *z;                  /* Used to check if this is an EXPLAIN */
   int *abYield = 0;               /* True if op is an OP_Yield */
   int nAlloc = 0;                 /* Allocated size of p->aiIndent[], abYield */
   int iOp;                        /* Index of operation in p->aiIndent[] */
@@ -3471,10 +3469,7 @@ static void explain_data_prepare(ShellState *p, sqlite3_stmt *pSql){
     p->cMode = p->mode;
     return;
   }
-  zSql = sqlite3_sql(pSql);
-  if( zSql==0 ) return;
-  for(z=zSql; *z==' ' || *z=='\t' || *z=='\n' || *z=='\f' || *z=='\r'; z++);
-  if( sqlite3_strnicmp(z, "explain", 7) ){
+  if( sqlite3_stmt_isexplain(pSql)!=1 ){
     p->cMode = p->mode;
     return;
   }
@@ -4332,16 +4327,15 @@ static int shell_exec(
       /* Show the EXPLAIN QUERY PLAN if .eqp is on */
       if( pArg && pArg->autoEQP && sqlite3_stmt_isexplain(pStmt)==0 ){
         sqlite3_stmt *pExplain;
-        char *zEQP;
         int triggerEQP = 0;
         disable_debug_trace_modes();
         sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, -1, &triggerEQP);
         if( pArg->autoEQP>=AUTOEQP_trigger ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 1, 0);
         }
-        zEQP = sqlite3_mprintf("EXPLAIN QUERY PLAN %s", zStmtSql);
-        shell_check_oom(zEQP);
-        rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
+        pExplain = pStmt;
+        sqlite3_reset(pExplain);
+        rc = sqlite3_stmt_explain(pExplain, 2);
         if( rc==SQLITE_OK ){
           while( sqlite3_step(pExplain)==SQLITE_ROW ){
             const char *zEQPLine = (const char*)sqlite3_column_text(pExplain,3);
@@ -4353,29 +4347,22 @@ static int shell_exec(
           }
           eqp_render(pArg, 0);
         }
-        sqlite3_finalize(pExplain);
-        sqlite3_free(zEQP);
         if( pArg->autoEQP>=AUTOEQP_full ){
           /* Also do an EXPLAIN for ".eqp full" mode */
-          zEQP = sqlite3_mprintf("EXPLAIN %s", zStmtSql);
-          shell_check_oom(zEQP);
-          rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
+          sqlite3_reset(pExplain);
+          rc = sqlite3_stmt_explain(pExplain, 1);
           if( rc==SQLITE_OK ){
             pArg->cMode = MODE_Explain;
             explain_data_prepare(pArg, pExplain);
             exec_prepared_stmt(pArg, pExplain);
             explain_data_delete(pArg);
           }
-          sqlite3_finalize(pExplain);
-          sqlite3_free(zEQP);
         }
         if( pArg->autoEQP>=AUTOEQP_trigger && triggerEQP==0 ){
           sqlite3_db_config(db, SQLITE_DBCONFIG_TRIGGER_EQP, 0, 0);
-          /* Reprepare pStmt before reactivating trace modes */
-          sqlite3_finalize(pStmt);
-          sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-          if( pArg ) pArg->pStmt = pStmt;
         }
+        sqlite3_reset(pStmt);
+        sqlite3_stmt_explain(pStmt, 0);
         restore_debug_trace_modes();
       }
 
