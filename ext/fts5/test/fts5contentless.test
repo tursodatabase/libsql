@@ -122,6 +122,7 @@ set nRow 1000
 do_execsql_test 4.0 {
   CREATE TABLE t1(x);
   CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 100);
 }
 do_test 4.1 {
   for {set ii 0} {$ii < $nRow} {incr ii} {
@@ -202,6 +203,49 @@ do_execsql_test 5.6 {
   REPLACE INTO ft(rowid, x) VALUES(6, 'one two eleven');
   SELECT rowid FROM ft('one');
 } {1 4 5 6}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft(rowid, x) VALUES(1, 'one two three');
+  INSERT INTO ft(rowid, x) VALUES(2, 'one two four');
+}
+
+do_test 6.1 {
+  db eval { SELECT rowid FROM ft('one two') } {
+    if {$rowid==1} {
+      db eval { INSERT INTO ft(rowid, x) VALUES(3, 'one two four') }
+    }
+  }
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+}
+
+set lRowid [list -450 0 1 2 42]
+
+do_test 7.1 {
+  execsql BEGIN
+  foreach r $lRowid {
+    execsql { INSERT INTO ft(rowid, x) VALUES($r, 'one one one'); }
+  }
+  execsql COMMIT
+} {}
+
+do_test 7.2 {
+  execsql BEGIN
+  foreach r $lRowid {
+    execsql { REPLACE INTO ft(rowid, x) VALUES($r, 'two two two'); }
+  }
+  execsql COMMIT
+} {}
+
+do_execsql_test 7.3 { SELECT rowid FROM ft('one'); } {}
+do_execsql_test 7.4 { SELECT rowid FROM ft('two'); } $lRowid
 
 finish_test
 

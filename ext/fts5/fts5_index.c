@@ -248,7 +248,7 @@
 #define FTS5_SEGMENT_ROWID(segid, pgno)       fts5_dri(segid, 0, 0, pgno)
 #define FTS5_DLIDX_ROWID(segid, height, pgno) fts5_dri(segid, 1, height, pgno)
 
-#define FTS5_TOMBSTONE_ROWID(segid) fts5_dri(segid + (1<<16), 0, 0, 0)
+#define FTS5_TOMBSTONE_ROWID(segid,ipg) fts5_dri(segid + (1<<16), 0, 0, ipg)
 
 #ifdef SQLITE_DEBUG
 int sqlite3Fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
@@ -334,7 +334,7 @@ struct Fts5DoclistIter {
 ** using an Fts5Structure record in memory. Which uses instances of the 
 ** other Fts5StructureXXX types as components.
 **
-** nLocCounter:
+** nOriginCntr:
 **   This value is set to non-zero for structure records created for
 **   contentlessdelete=1 tables only. In that case it represents the
 **   location value to apply to the next top-level segment created.
@@ -345,8 +345,9 @@ struct Fts5StructureSegment {
   int pgnoLast;                   /* Last leaf page number in segment */
 
   /* contentlessdelete=1 tables only: */
-  u64 iLoc1;
-  u64 iLoc2;
+  u64 iOrigin1;
+  u64 iOrigin2;
+  int nPgTombstone;               /* Number of tombstone hash table pages */
 };
 struct Fts5StructureLevel {
   int nMerge;                     /* Number of segments in incr-merge */
@@ -356,7 +357,7 @@ struct Fts5StructureLevel {
 struct Fts5Structure {
   int nRef;                       /* Object reference count */
   u64 nWriteCounter;              /* Total leaves written to level 0 */
-  u64 nLocCounter;
+  u64 nOriginCntr;
   int nSegment;                   /* Total segments in this structure */
   int nLevel;                     /* Number of levels in this index */
   Fts5StructureLevel aLevel[1];   /* Array of nLevel level objects */
@@ -453,7 +454,8 @@ struct Fts5SegIter {
   Fts5Data *pLeaf;                /* Current leaf data */
   Fts5Data *pNextLeaf;            /* Leaf page (iLeafPgno+1) */
   i64 iLeafOffset;                /* Byte offset within current leaf */
-  Fts5Data *pTombstone;
+  Fts5Data **apTombstone;         /* Array of tombstone pages */
+  int nTombstone;
 
   /* Next method */
   void (*xNext)(Fts5Index*, Fts5SegIter*, int*);
@@ -797,41 +799,6 @@ static int fts5IndexPrepareStmt(
   return p->rc;
 }
 
-static Fts5Data *fts5DataReadOpt(Fts5Index *p, i64 iRowid){
-  Fts5Data *pRet = 0;
-  int rc2 = SQLITE_OK;
-
-  if( p->pReaderOpt==0 ){
-    Fts5Config *pConfig = p->pConfig;
-    fts5IndexPrepareStmt(p, &p->pReaderOpt, sqlite3_mprintf(
-          "SELECT block FROM '%q'.'%q_data' WHERE id=?",
-          pConfig->zDb, pConfig->zName
-    ));
-  }
-
-  if( p->rc==SQLITE_OK ){
-    sqlite3_bind_int64(p->pReaderOpt, 1, iRowid);
-    if( SQLITE_ROW==sqlite3_step(p->pReaderOpt) ){
-      int nByte = sqlite3_column_bytes(p->pReaderOpt, 0);
-      const u8 *aByte = (const u8*)sqlite3_column_blob(p->pReaderOpt, 0);
-      i64 nAlloc = sizeof(Fts5Data) + nByte + FTS5_DATA_PADDING;
-
-      pRet = (Fts5Data*)sqlite3_malloc64(nAlloc);
-      if( pRet==0 ){
-        p->rc = SQLITE_NOMEM;
-      }else{
-        pRet->nn = nByte;
-        pRet->p = (u8*)&pRet[1];
-        memcpy(pRet->p, aByte, nByte);
-      }
-    }
-    rc2 = sqlite3_reset(p->pReaderOpt);
-    if( p->rc==SQLITE_OK ) p->rc = rc2;
-  }
-
-  return pRet;
-}
-
 /*
 ** INSERT OR REPLACE a record into the %_data table.
 */
@@ -880,13 +847,16 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
 /*
 ** Remove all records associated with segment iSegid.
 */
-static void fts5DataRemoveSegment(Fts5Index *p, int iSegid){
+static void fts5DataRemoveSegment(Fts5Index *p, Fts5StructureSegment *pSeg){
+  int iSegid = pSeg->iSegid;
   i64 iFirst = FTS5_SEGMENT_ROWID(iSegid, 0);
   i64 iLast = FTS5_SEGMENT_ROWID(iSegid+1, 0)-1;
   fts5DataDelete(p, iFirst, iLast);
-  if( p->pConfig->bContentlessDelete ){
-    i64 iTomb = FTS5_TOMBSTONE_ROWID(iSegid);
-    fts5DataDelete(p, iTomb, iTomb);
+
+  if( pSeg->nPgTombstone ){
+    i64 iTomb1 = FTS5_TOMBSTONE_ROWID(iSegid, 0);
+    i64 iTomb2 = FTS5_TOMBSTONE_ROWID(iSegid, pSeg->nPgTombstone-1);
+    fts5DataDelete(p, iTomb1, iTomb2);
   }
   if( p->pIdxDeleter==0 ){
     Fts5Config *pConfig = p->pConfig;
@@ -999,7 +969,7 @@ static int fts5StructureDecode(
   sqlite3_int64 nByte;            /* Bytes of space to allocate at pRet */
   Fts5Structure *pRet = 0;        /* Structure object to return */
   int bStructureV2 = 0;           /* True for FTS5_STRUCTURE_V2 */
-  i64 nLocCounter = 0;
+  u64 nOriginCntr = 0;
 
   /* Grab the cookie value */
   if( piCookie ) *piCookie = sqlite3Fts5Get32(pData);
@@ -1061,9 +1031,10 @@ static int fts5StructureDecode(
           i += fts5GetVarint32(&pData[i], pSeg->pgnoFirst);
           i += fts5GetVarint32(&pData[i], pSeg->pgnoLast);
           if( bStructureV2 ){
-            i += fts5GetVarint(&pData[i], &pSeg->iLoc1);
-            i += fts5GetVarint(&pData[i], &pSeg->iLoc2);
-            nLocCounter = MAX(nLocCounter, pSeg->iLoc2);
+            i += fts5GetVarint(&pData[i], &pSeg->iOrigin1);
+            i += fts5GetVarint(&pData[i], &pSeg->iOrigin2);
+            i += fts5GetVarint32(&pData[i], pSeg->nPgTombstone);
+            nOriginCntr = MAX(nOriginCntr, pSeg->iOrigin2);
           }
           if( pSeg->pgnoLast<pSeg->pgnoFirst ){
             rc = FTS5_CORRUPT;
@@ -1076,7 +1047,7 @@ static int fts5StructureDecode(
     }
     if( nSegment!=0 && rc==SQLITE_OK ) rc = FTS5_CORRUPT;
     if( bStructureV2 ){
-      pRet->nLocCounter = nLocCounter+1;
+      pRet->nOriginCntr = nOriginCntr+1;
     }
 
     if( rc!=SQLITE_OK ){
@@ -1290,7 +1261,7 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
     Fts5Buffer buf;               /* Buffer to serialize record into */
     int iLvl;                     /* Used to iterate through levels */
     int iCookie;                  /* Cookie value to store */
-    int nHdr = (pStruct->nLocCounter>0 ? (4+4+9+9+9) : (4+9+9));
+    int nHdr = (pStruct->nOriginCntr>0 ? (4+4+9+9+9) : (4+9+9));
 
     assert( pStruct->nSegment==fts5StructureCountSegments(pStruct) );
     memset(&buf, 0, sizeof(Fts5Buffer));
@@ -1302,7 +1273,7 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
     if( 0==sqlite3Fts5BufferSize(&p->rc, &buf, nHdr) ){
       sqlite3Fts5Put32(buf.p, iCookie);
       buf.n = 4;
-      if( pStruct->nLocCounter>0 ){
+      if( pStruct->nOriginCntr>0 ){
         fts5BufferSafeAppendBlob(&buf, FTS5_STRUCTURE_V2, 4);
       }
       fts5BufferSafeAppendVarint(&buf, pStruct->nLevel);
@@ -1321,9 +1292,10 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoFirst);
         fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoLast);
-        if( pStruct->nLocCounter>0 ){
-          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iLoc1);
-          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iLoc2);
+        if( pStruct->nOriginCntr>0 ){
+          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iOrigin1);
+          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iOrigin2);
+          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].nPgTombstone);
         }
       }
     }
@@ -1848,8 +1820,15 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
 }
 
 static void fts5SegIterLoadTombstone(Fts5Index *p, Fts5SegIter *pIter){
-  i64 iRowid = FTS5_TOMBSTONE_ROWID(pIter->pSeg->iSegid);
-  pIter->pTombstone = fts5DataReadOpt(p, iRowid);
+  const int nTomb = pIter->pSeg->nPgTombstone;
+  if( nTomb>0 ){
+    Fts5Data **apTomb = 0;
+    apTomb = (Fts5Data**)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5Data)*nTomb);
+    if( apTomb ){
+      pIter->apTombstone = apTomb;
+      pIter->nTombstone = nTomb;
+    }
+  }
 }
 
 /*
@@ -2680,10 +2659,14 @@ static void fts5SegIterHashInit(
 ** Zero the iterator passed as the only argument.
 */
 static void fts5SegIterClear(Fts5SegIter *pIter){
+  int ii;
   fts5BufferFree(&pIter->term);
   fts5DataRelease(pIter->pLeaf);
   fts5DataRelease(pIter->pNextLeaf);
-  fts5DataRelease(pIter->pTombstone);
+  for(ii=0; ii<pIter->nTombstone; ii++){
+    fts5DataRelease(pIter->apTombstone[ii]);
+  }
+  sqlite3_free(pIter->apTombstone);
   fts5DlidxIterFree(pIter->pDlidx);
   sqlite3_free(pIter->aRowidOffset);
   memset(pIter, 0, sizeof(Fts5SegIter));
@@ -3021,19 +3004,31 @@ static void fts5MultiIterSetEof(Fts5Iter *pIter){
   pIter->iSwitchRowid = pSeg->iRowid;
 }
 
-static int fts5IndexTombstoneQuery(u8 *aHash, int nHash, u64 iRowid){
-  int szKey = aHash[3] ? 8 : 4;
-  int nSlot = (nHash - 8) / szKey;
-  int iSlot = iRowid % nSlot;
+#define TOMBSTONE_KEYSIZE(pPg) (pPg->p[0]==4 ? 4 : 8)
 
-  if( szKey==4 ){
-    u32 *aSlot = (u32*)&aHash[8];
+/*
+** Query a single tombstone hash table for rowid iRowid. The tombstone hash
+** table is one of nHashTable tables.
+*/
+static int fts5IndexTombstoneQuery(
+  Fts5Data *pHash,
+  int nHashTable,
+  u64 iRowid
+){
+  int szKey = TOMBSTONE_KEYSIZE(pHash);
+  int nSlot = (pHash->nn - 8) / szKey;
+  int iSlot = (iRowid / nHashTable) % nSlot;
+
+  if( iRowid==0 ){
+    return pHash->p[1];
+  }else if( szKey==4 ){
+    u32 *aSlot = (u32*)&pHash->p[8];
     while( aSlot[iSlot] ){
       if( fts5GetU32((u8*)&aSlot[iSlot])==iRowid ) return 1;
       iSlot = (iSlot+1)%nSlot;
     }
   }else{
-    u64 *aSlot = (u64*)&aHash[8];
+    u64 *aSlot = (u64*)&pHash->p[8];
     while( aSlot[iSlot] ){
       if( fts5GetU64((u8*)&aSlot[iSlot])==iRowid ) return 1;
       iSlot = (iSlot+1)%nSlot;
@@ -3047,9 +3042,21 @@ static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
   int iFirst = pIter->aFirst[1].iFirst;
   Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
 
-  if( pSeg->pTombstone ){
+  if( pSeg->nTombstone ){
+    /* Figure out which page the rowid might be present on. */
+    int iPg = pSeg->iRowid % pSeg->nTombstone;
+
+    if( pSeg->apTombstone[iPg]==0 ){
+      pSeg->apTombstone[iPg] = fts5DataRead(pIter->pIndex,
+          FTS5_TOMBSTONE_ROWID(pSeg->pSeg->iSegid, iPg)
+      );
+      if( pSeg->apTombstone[iPg]==0 ) return 0;
+    }
+
     return fts5IndexTombstoneQuery(
-        pSeg->pTombstone->p, pSeg->pTombstone->nn, pSeg->iRowid
+        pSeg->apTombstone[iPg],
+        pSeg->nTombstone,
+        pSeg->iRowid
     );
   }
 
@@ -4503,9 +4510,9 @@ static void fts5IndexMergeLevel(
     nInput = pLvl->nSeg;
 
     /* Set the range of locations that will go into the output segment */
-    if( pStruct->nLocCounter>0 ){
-      pSeg->iLoc1 = pLvl->aSeg[0].iLoc1;
-      pSeg->iLoc2 = pLvl->aSeg[pLvl->nSeg-1].iLoc2;
+    if( pStruct->nOriginCntr>0 ){
+      pSeg->iOrigin1 = pLvl->aSeg[0].iOrigin1;
+      pSeg->iOrigin2 = pLvl->aSeg[pLvl->nSeg-1].iOrigin2;
     }
   }
   bOldest = (pLvlOut->nSeg==1 && pStruct->nLevel==iLvl+2);
@@ -4567,7 +4574,7 @@ static void fts5IndexMergeLevel(
 
     /* Remove the redundant segments from the %_data table */
     for(i=0; i<nInput; i++){
-      fts5DataRemoveSegment(p, pLvl->aSeg[i].iSegid);
+      fts5DataRemoveSegment(p, &pLvl->aSeg[i]);
     }
 
     /* Remove the redundant segments from the input level */
@@ -5323,10 +5330,10 @@ static void fts5FlushOneHash(Fts5Index *p){
         pSeg->iSegid = iSegid;
         pSeg->pgnoFirst = 1;
         pSeg->pgnoLast = pgnoLast;
-        if( pStruct->nLocCounter>0 ){
-          pSeg->iLoc1 = pStruct->nLocCounter;
-          pSeg->iLoc2 = pStruct->nLocCounter;
-          pStruct->nLocCounter++;
+        if( pStruct->nOriginCntr>0 ){
+          pSeg->iOrigin1 = pStruct->nOriginCntr;
+          pSeg->iOrigin2 = pStruct->nOriginCntr;
+          pStruct->nOriginCntr++;
         }
         pStruct->nSegment++;
       }
@@ -5390,7 +5397,7 @@ static Fts5Structure *fts5IndexOptimizeStruct(
     pNew->nLevel = MIN(pStruct->nLevel+1, FTS5_MAX_LEVEL);
     pNew->nRef = 1;
     pNew->nWriteCounter = pStruct->nWriteCounter;
-    pNew->nLocCounter = pStruct->nLocCounter;
+    pNew->nOriginCntr = pStruct->nOriginCntr;
     pLvl = &pNew->aLevel[pNew->nLevel-1];
     pLvl->aSeg = (Fts5StructureSegment*)sqlite3Fts5MallocZero(&p->rc, nByte);
     if( pLvl->aSeg ){
@@ -6010,7 +6017,7 @@ int sqlite3Fts5IndexReinit(Fts5Index *p){
   fts5IndexDiscardData(p);
   memset(&s, 0, sizeof(Fts5Structure));
   if( p->pConfig->bContentlessDelete ){
-    s.nLocCounter = 1;
+    s.nOriginCntr = 1;
   }
   fts5DataWrite(p, FTS5_AVERAGES_ROWID, (const u8*)"", 0);
   fts5StructureWrite(p, &s);
@@ -6408,11 +6415,201 @@ int sqlite3Fts5IndexGetLocation(Fts5Index *p, i64 *piLoc){
   Fts5Structure *pStruct;
   pStruct = fts5StructureRead(p);
   if( pStruct ){
-    *piLoc = pStruct->nLocCounter;
+    *piLoc = pStruct->nOriginCntr;
     fts5StructureRelease(pStruct);
   }
   return fts5IndexReturn(p);
 }
+
+/*
+** Buffer pPg contains a page of a tombstone hash table - one of nPg.
+*/
+static int fts5IndexTombstoneAddToPage(Fts5Data *pPg, int nPg, u64 iRowid){
+  int szKey = TOMBSTONE_KEYSIZE(pPg);
+  int nSlot = (pPg->nn - 8) / szKey;
+  int iSlot = (iRowid / nPg) % nSlot;
+  int nElem = fts5GetU32(&pPg->p[4]);
+
+  if( szKey==4 && iRowid>0xFFFFFFFF ) return 2;
+  if( iRowid==0 ){
+    pPg->p[1] = 0x01;
+    return 0;
+  }
+
+  fts5PutU32(&pPg->p[4], nElem+1);
+  if( szKey==4 ){
+    u32 *aSlot = (u32*)&pPg->p[8];
+    while( aSlot[iSlot] ) iSlot = (iSlot + 1) % nSlot;
+    fts5PutU32((u8*)&aSlot[iSlot], (u32)iRowid);
+  }else{
+    u64 *aSlot = (u64*)&pPg->p[8];
+    while( aSlot[iSlot] ) iSlot = (iSlot + 1) % nSlot;
+    fts5PutU64((u8*)&aSlot[iSlot], iRowid);
+  }
+
+  return nElem >= (nSlot/2);
+}
+
+/*
+** Return 0 if the hash is successfully rebuilt using nOut pages. Or 
+** non-zero if it is not. In this case the caller should retry with a 
+** larger nOut parameter.
+*/
+static int fts5IndexTombstoneRehash(
+  Fts5Index *p,
+  Fts5StructureSegment *pSeg,     /* Segment to rebuild hash of */
+  Fts5Data *pData1,               /* One page of current hash - or NULL */
+  int iPg1,                       /* Which page of the current hash is pData1 */
+  int szKey,                      /* 4 or 8, the keysize */
+  int nOut,                       /* Number of output pages */
+  Fts5Data **apOut                /* Array of output hash pages */
+){
+  int ii;
+  int res = 0;
+
+  /* Initialize the headers of all the output pages */
+  for(ii=0; ii<nOut; ii++){
+    apOut[ii]->p[0] = szKey;
+    fts5PutU32(&apOut[ii]->p[4], 0);
+  }
+
+  /* Loop through the current pages of the hash table. */ 
+  for(ii=0; res==0 && ii<pSeg->nPgTombstone; ii++){
+    Fts5Data *pData = 0;          /* Page ii of the current hash table */
+    Fts5Data *pFree = 0;          /* Free this at the end of the loop */
+
+    if( iPg1==ii ){
+      pData = pData1;
+    }else{
+      pFree = pData = fts5DataRead(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid, ii));
+    }
+
+    if( pData ){
+      int szKeyIn = pData->p[3] ? 8 : 4;
+      int nSlotIn = (pData->nn - 8) / szKeyIn;
+      int iIn;
+      for(iIn=0; iIn<nSlotIn; iIn++){
+        u64 iVal = 0;
+
+        /* Read the value from slot iIn of the input page into iVal. */
+        if( szKeyIn==4 ){
+          u32 *aSlot = (u32*)&pData->p[8];
+          if( aSlot[iIn] ) iVal = fts5GetU32((u8*)&aSlot[iIn]);
+        }else{
+          u64 *aSlot = (u64*)&pData->p[8];
+          if( aSlot[iIn] ) iVal = fts5GetU64((u8*)&aSlot[iIn]);
+        }
+
+        /* If iVal is not 0 at this point, insert it into the new hash table */
+        if( iVal ){
+          Fts5Data *pPg = apOut[(iVal % nOut)];
+          res = fts5IndexTombstoneAddToPage(pPg, nOut, iVal);
+          if( res ) break;
+        }
+      }
+
+      /* If this is page 0 of the old hash, copy the rowid-0-flag from the
+      ** old hash to the new.  */
+      if( ii==0 ){
+        apOut[0]->p[1] = pData->p[1];
+      }
+    }
+    fts5DataRelease(pFree);
+  }
+
+  return res;
+}
+
+static void fts5IndexTombstoneFreeArray(Fts5Data **ap, int n){
+  int ii;
+  for(ii=0; ii<n; ii++){
+    fts5DataRelease(ap[ii]);
+  }
+  sqlite3_free(ap);
+}
+
+/*
+** This is called to rebuild the hash table belonging to segment pSeg.
+*/
+static void fts5IndexTombstoneRebuild(
+  Fts5Index *p,
+  Fts5StructureSegment *pSeg,     /* Segment to rebuild hash of */
+  Fts5Data *pData1,               /* One page of current hash - or NULL */
+  int iPg1,                       /* Which page of the current hash is pData1 */
+  int szKey,                      /* 4 or 8, the keysize */
+  int *pnOut,                     /* OUT: Number of output pages */
+  Fts5Data ***papOut              /* OUT: Output hash pages */
+){
+  const int MINSLOT = 32;
+  int nSlotPerPage = (p->pConfig->pgsz - 8) / szKey;
+  int nSlot = MINSLOT;            /* Number of slots in each output page */
+  int nOut = 0;
+
+  /* Figure out how many output pages (nOut) and how many slots per 
+  ** page (nSlot).  */
+  if( pSeg->nPgTombstone==0 ){
+    nOut = 1;
+    nSlot = MINSLOT;
+  }else if( pSeg->nPgTombstone==1 ){
+    int nElem = (int)fts5GetU32(&pData1->p[4]);
+    assert( pData1 && iPg1==0 );
+
+    nOut = 1;
+    while( nSlot<nElem*2 ){
+      nSlot = nSlot * 2;
+      if( nSlot>nSlotPerPage ){ 
+        nOut = 0; 
+        break;
+      }
+    }
+    if( nOut && nSlot>nSlotPerPage/2 ){
+      nSlot = nSlotPerPage;
+    }
+  }
+  if( nOut==0 ){
+    nOut = (pSeg->nPgTombstone * 2 + 1);
+    nSlot = nSlotPerPage;
+  }
+
+  /* Allocate the required array and output pages */
+  while( 1 ){
+    int res = 0;
+    int ii = 0;
+    int szPage = 0;
+    Fts5Data **apOut = 0;
+
+    apOut = (Fts5Data**)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5Data*) * nOut);
+    szPage = 8 + nSlot*szKey;
+    for(ii=0; ii<nOut; ii++){
+      Fts5Data *pNew = (Fts5Data*)sqlite3Fts5MallocZero(&p->rc, 
+          sizeof(Fts5Data)+szPage
+      );
+      if( pNew ){
+        pNew->nn = szPage;
+        pNew->p = (u8*)&pNew[1];
+      }
+      apOut[ii] = pNew;
+    }
+
+    res = fts5IndexTombstoneRehash(p, pSeg, pData1, iPg1, szKey, nOut, apOut);
+    if( res==0 ){
+      if( p->rc ){
+        fts5IndexTombstoneFreeArray(apOut, nOut);
+        apOut = 0;
+        nOut = 0;
+      }
+      *pnOut = nOut;
+      *papOut = apOut;
+      break;
+    }
+    assert( p->rc==SQLITE_OK );
+
+    fts5IndexTombstoneFreeArray(apOut, nOut);
+    nSlot = nSlotPerPage;
+    nOut = nOut*2 + 1;
+  }
+}
+
 
 /*
 ** Add a tombstone for rowid iRowid to segment pSeg.
@@ -6420,8 +6617,12 @@ int sqlite3Fts5IndexGetLocation(Fts5Index *p, i64 *piLoc){
 ** All tombstones for a single segment are stored in a blob formatted to 
 ** contain a hash table. The format is:
 **
-**   * 32-bit integer. 1 for 64-bit unsigned keys, 0 for 32-bit unsigned keys.
-**   * 32-bit integer. The number of entries currently in the hash table.
+**   * Key-size: 1 byte. Either 4 or 8.
+**   * rowid-0-flag: 1 byte. Either 0 or 1.
+**   * UNUSED: 2 bytes.
+**   * 32-bit big-endian integer. The number of entries currently in the hash
+**     table. This does not change when the rowid-0-flag is set - it only
+**     includes entries in the hash table.
 **
 ** Then an array of entries. The number of entries can be calculated based
 ** on the size of the blob in the database and the size of the keys as 
@@ -6434,84 +6635,51 @@ static void fts5IndexTombstoneAdd(
   Fts5StructureSegment *pSeg, 
   u64 iRowid
 ){
-  Fts5Data *pHash = 0;
-  u8 *aFree = 0;
-  u8 *aNew = 0;
-  int nNew = 0;
+  Fts5Data *pPg = 0;
+  int iPg = -1;
   int szKey = 0;
-  int nSlot = 0;
-  int bKey64 = (iRowid>0xFFFFFFFF);
-  u32 nHash = 0;
 
-  /* Load the current hash table, if any */
-  pHash = fts5DataReadOpt(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid));
-  if( p->rc ) return;
+  int nHash = 0;
+  Fts5Data **apHash = 0;
 
-  if( pHash ){
-    szKey = pHash->p[3] ? 8 : 4;
-    nSlot = (pHash->nn - 8) / szKey;
-    nHash = fts5GetU32(&pHash->p[4]);
-  }
-
-  /* Check if the current hash table needs to be rebuilt. Either because
-  ** (a) it does not yet exist, (b) it is full, or (c) it is using the
-  ** wrong sized keys. */
-  if( pHash==0 || nSlot<=(nHash*2) || (bKey64 && szKey==4) ){
-    int szNewKey = (bKey64 || szKey==8) ? 8 : 4;
-    int nNewSlot = (nSlot ? nSlot*2 : 16);
-
-    nNew = 8 + (nNewSlot * szNewKey);
-    aFree = aNew = (u8*)sqlite3Fts5MallocZero(&p->rc, nNew);
-    if( aNew ){
-      int iSlot = 0;
-      int ii;
-      fts5PutU32(aNew, (szNewKey==8 ? 1 : 0));
-      for(ii=0; ii<nSlot; ii++){
-        u64 iVal = 0;
-        if( szKey==4 ){
-          iVal = (u64)fts5GetU32(&pHash->p[8 + ii*szKey]);
-        }else{
-          iVal = fts5GetU64(&pHash->p[8 + ii*szKey]);
-        }
-
-        iSlot = iVal % nNewSlot;
-        if( szNewKey==4 ){
-          u32 *aSlot = (u32*)&aNew[8];
-          while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nNewSlot;
-          fts5PutU32((u8*)&aSlot[iSlot], (u32)iVal);
-        }else{
-          u64 *aSlot = (u64*)&aNew[8];
-          while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nNewSlot;
-          fts5PutU64((u8*)&aSlot[iSlot], iRowid);
-        }
-      }
-    }
-    szKey = szNewKey;
-    nSlot = nNewSlot;
-  }else{
-    aNew = pHash->p;
-    nNew = pHash->nn;
-  }
-
-  if( aNew ){
-    int iSlot = (iRowid % nSlot);
-    if( szKey==4 ){
-      u32 *aSlot = (u32*)&aNew[8];
-      while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nSlot;
-      fts5PutU32((u8*)&aSlot[iSlot], (u32)iRowid);
-    }else{
-      u64 *aSlot = (u64*)&aNew[8];
-      while( aSlot[iSlot]!=0 ) iSlot = (iSlot+1) % nSlot;
-      fts5PutU64((u8*)&aSlot[iSlot], iRowid);
+  if( pSeg->nPgTombstone>0 ){
+    iPg = iRowid % pSeg->nPgTombstone;
+    pPg = fts5DataRead(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid,iPg));
+    if( pPg==0 ){
+      assert( p->rc!=SQLITE_OK );
+      return;
     }
 
-    fts5PutU32((u8*)&aNew[4], nHash+1);
-    assert( nNew>8 );
-    fts5DataWrite(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid), aNew, nNew);
+    if( 0==fts5IndexTombstoneAddToPage(pPg, pSeg->nPgTombstone, iRowid) ){
+      fts5DataWrite(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid,iPg), pPg->p, pPg->nn);
+      fts5DataRelease(pPg);
+      return;
+    }
   }
 
-  sqlite3_free(aFree);
-  fts5DataRelease(pHash);
+  /* Have to rebuild the hash table. First figure out the key-size (4 or 8). */
+  szKey = pPg ? TOMBSTONE_KEYSIZE(pPg) : 4;
+  if( iRowid>0xFFFFFFFF ) szKey = 8;
+
+  /* Rebuild the hash table */
+  fts5IndexTombstoneRebuild(p, pSeg, pPg, iPg, szKey, &nHash, &apHash);
+  assert( p->rc==SQLITE_OK || (nHash==0 && apHash==0) );
+
+  /* If all has succeeded, write the new rowid into one of the new hash
+  ** table pages, then write them all out to disk. */
+  if( nHash ){
+    int ii = 0;
+    fts5IndexTombstoneAddToPage(apHash[iRowid % nHash], nHash, iRowid);
+    for(ii=0; ii<nHash; ii++){
+      i64 iTombstoneRowid = FTS5_TOMBSTONE_ROWID(pSeg->iSegid, ii);
+      fts5DataWrite(p, iTombstoneRowid, apHash[ii]->p, apHash[ii]->nn);
+    }
+    pSeg->nPgTombstone = nHash;
+    fts5StructureWrite(p, p->pStruct);
+  }
+
+  fts5DataRelease(pPg);
+  fts5IndexTombstoneFreeArray(apHash, nHash);
 }
 
 /*
@@ -6527,7 +6695,7 @@ int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iLoc, i64 iRowid){
       int iSeg;
       for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
         Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
-        if( pSeg->iLoc1<=iLoc && pSeg->iLoc2>=iLoc ){
+        if( pSeg->iOrigin1<=(u64)iLoc && pSeg->iOrigin2>=(u64)iLoc ){
           fts5IndexTombstoneAdd(p, pSeg, iRowid);
         }
       }
@@ -7094,6 +7262,7 @@ int sqlite3Fts5IndexIntegrityCheck(Fts5Index *p, u64 cksum, int bUseCksum){
 */
 static void fts5DecodeRowid(
   i64 iRowid,                     /* Rowid from %_data table */
+  int *pbTombstone,               /* OUT: Tombstone hash flag */
   int *piSegid,                   /* OUT: Segment id */
   int *pbDlidx,                   /* OUT: Dlidx flag */
   int *piHeight,                  /* OUT: Height */
@@ -7109,13 +7278,16 @@ static void fts5DecodeRowid(
   iRowid >>= FTS5_DATA_DLI_B;
 
   *piSegid = (int)(iRowid & (((i64)1 << FTS5_DATA_ID_B) - 1));
+  iRowid >>= FTS5_DATA_ID_B;
+
+  *pbTombstone = (int)(iRowid & 0x0001);
 }
 #endif /* SQLITE_TEST || SQLITE_FTS5_DEBUG */
 
 #if defined(SQLITE_TEST) || defined(SQLITE_FTS5_DEBUG)
 static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
-  int iSegid, iHeight, iPgno, bDlidx;       /* Rowid compenents */
-  fts5DecodeRowid(iKey, &iSegid, &bDlidx, &iHeight, &iPgno);
+  int iSegid, iHeight, iPgno, bDlidx, bTomb;     /* Rowid compenents */
+  fts5DecodeRowid(iKey, &bTomb, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   if( iSegid==0 ){
     if( iKey==FTS5_AVERAGES_ROWID ){
@@ -7125,8 +7297,10 @@ static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
     }
   }
   else{
-    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "{%ssegid=%d h=%d pgno=%d}",
-        bDlidx ? "dlidx " : "", iSegid, iHeight, iPgno
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "{%s%ssegid=%d h=%d pgno=%d}",
+        bDlidx ? "dlidx " : "", 
+        bTomb ? "tombstone " : "", 
+        iSegid, iHeight, iPgno
     );
   }
 }
@@ -7150,9 +7324,9 @@ static void fts5DebugStructure(
       sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " {id=%d leaves=%d..%d",
           pSeg->iSegid, pSeg->pgnoFirst, pSeg->pgnoLast
       );
-      if( pSeg->iLoc1>0 ){
-        sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " loc=%lld..%lld",
-            pSeg->iLoc1, pSeg->iLoc2
+      if( pSeg->iOrigin1>0 ){
+        sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " origin=%lld..%lld",
+            pSeg->iOrigin1, pSeg->iOrigin2
         );
       }
       sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
@@ -7322,6 +7496,7 @@ static void fts5DecodeFunction(
 ){
   i64 iRowid;                     /* Rowid for record being decoded */
   int iSegid,iHeight,iPgno,bDlidx;/* Rowid components */
+  int bTomb;
   const u8 *aBlob; int n;         /* Record to decode */
   u8 *a = 0;
   Fts5Buffer s;                   /* Build up text to return here */
@@ -7344,7 +7519,7 @@ static void fts5DecodeFunction(
   if( a==0 ) goto decode_out;
   if( n>0 ) memcpy(a, aBlob, n);
 
-  fts5DecodeRowid(iRowid, &iSegid, &bDlidx, &iHeight, &iPgno);
+  fts5DecodeRowid(iRowid, &bTomb, &iSegid, &bDlidx, &iHeight, &iPgno);
 
   fts5DebugRowid(&rc, &s, iRowid);
   if( bDlidx ){
@@ -7363,6 +7538,9 @@ static void fts5DecodeFunction(
           " %d(%lld)", lvl.iLeafPgno, lvl.iRowid
       );
     }
+  }else if( bTomb ){
+    u32 nElem  = fts5GetU32(&a[4]);
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, " nElem=%d", (int)nElem);
   }else if( iSegid==0 ){
     if( iRowid==FTS5_AVERAGES_ROWID ){
       fts5DecodeAverages(&rc, &s, a, n);
@@ -7731,10 +7909,10 @@ static int fts5structColumnMethod(
       sqlite3_result_int(ctx, pSeg->pgnoLast);
       break;
     case 6: /* loc1 */
-      sqlite3_result_int(ctx, pSeg->iLoc1);
+      sqlite3_result_int(ctx, pSeg->iOrigin1);
       break;
     case 7: /* loc2 */
-      sqlite3_result_int(ctx, pSeg->iLoc2);
+      sqlite3_result_int(ctx, pSeg->iOrigin2);
       break;
   }
   return SQLITE_OK;
