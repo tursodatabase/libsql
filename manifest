@@ -1,5 +1,5 @@
-C Rename\sopfs-sahpool\sremoveCapacity()\sto\sreduceCapacity().
-D 2023-07-15T11:37:34.991
+C speedtest1\sJS:\sonly\sadd\s--memdb\sflag\sby\sdefault\sif\sno\s--vfs\sis\sprovided.
+D 2023-07-15T16:30:46.383
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -539,7 +539,7 @@ F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
 F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
 F ext/wasm/speedtest1-wasmfs.mjs ac5cadbf4ffe69e9eaac8b45e8523f030521e02bb67d654c6eb5236d9c456cbe
-F ext/wasm/speedtest1-worker.html 97c2bf5f8534091ce718de05801090d5a80c3f13575996f095ba23638e1bdca0
+F ext/wasm/speedtest1-worker.html bbcf1e7fd79541040c1a7ca2ebf1cb7793ddaf9900d6bde1784148f11b807c34
 F ext/wasm/speedtest1-worker.js 13b57c4a41729678a1194014afec2bd5b94435dcfc8d1039dfa9a533ac819ee1
 F ext/wasm/speedtest1.html ff048b4a623aa192e83e143e48f1ce2a899846dd42c023fdedc8772b6e3f07da
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5d92d5f4d8ac4cfa37ba473e5cc861628b783bbf1ae4d138bcae8b9d6cc6e798
-R e8317151b75d57cc72a3267fda8db77e
+P fff68e9f25a57045e9d636b02ffa073cf1b984b2587d4fce10f6e35c9988469c
+R 30945b34df9134e0f98668ba08cfc13f
 U stephan
-Z 8ef36dab6f79c3b7f36e55e6d2cf608f
+Z 32f9fd4e9e8f1a70cce170b39e2a4458
 # Remove this line to create a well-formed Fossil manifest.

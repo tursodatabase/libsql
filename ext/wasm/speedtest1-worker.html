@@ -267,7 +267,7 @@
         if(urlParams.has('flags')){
             preselectedFlags.push(...urlParams.get('flags').split(','));
         }
-        if('opfs'!==urlParams.get('vfs')){
+        if(!urlParams.get('vfs')){
             preselectedFlags.push('--memdb');
         }
         Object.keys(flags).sort().forEach(function(f){
