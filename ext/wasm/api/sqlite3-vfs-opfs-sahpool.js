@@ -136,7 +136,10 @@ let isPromiseReady;
 
   Synchronously reads the contents of the given file into a Uint8Array
   and returns it. This will throw if the given name is not currently
-  in active use or on I/O error.
+  in active use or on I/O error. Note that the given name is _not_
+  visible directly in OPFS (or, if it is, it's not from this VFS). The
+  reason for that is that this VFS manages name-to-file mappings in
+  a roundabout way in order to maintain its list of SAHs.
 
 - number getCapacity()
 
@@ -904,7 +907,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
         sqlite3.oo1.DB.dbCtorHelper.call(this, opt);
       };
       OpfsSAHPoolDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
-      OpfsSAHPoolDb.PoolUtil;
+      OpfsSAHPoolDb.PoolUtil = PoolUtil;
       sqlite3.oo1.OpfsSAHPoolDb = OpfsSAHPoolDb;
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
