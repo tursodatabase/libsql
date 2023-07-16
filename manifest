@@ -1,5 +1,5 @@
-C Micro-optimizations\sin\sopfs-sahpool.
-D 2023-07-16T11:49:18.318
+C During\s"opfs"\sVFS\sinit,\scheck\sfor\sURL\sparam\sopfs-disable\sand,\sif\sset,\sdo\snot\sinstall\sthe\sVFS.\sAdded\sper\sforum\ssuggestion\sto\sprovide\sa\sway\sto\shelp\srule\sout\smisinteraction\sbetween\sthe\s"opfs"\sand\s"opfs-sahpool"\sVFSes.
+D 2023-07-16T12:02:37.445
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -503,7 +503,7 @@ F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d299
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
 F ext/wasm/api/sqlite3-v-helper.js e5c202a9ecde9ef818536d3f5faf26c03a1a9f5192b1ddea8bdabf30d75ef487
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.js ba799928d945e35c97696005c4911c32f38ba4290168a1fcf0109aea6a2ba19b
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js a5c3195203e6085d7aa89fae4b84cf3f3eec4ff4f928c6d0e5d3ef8b14cbc1c0
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 842d55b35a871ee5483cc5e0cf067a968362b4d61321f08c71aab5505c72f556
 F ext/wasm/api/sqlite3-wasm.c 12a096d8e58a0af0589142bae5a3c27a0c7e19846755a1a37d2c206352fbedda
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc06df0d599e625bde6a10a394e326dc68da9ff07fa5404354580f81566e591f
 F ext/wasm/api/sqlite3-worker1.c-pp.js da509469755035e919c015deea41b4514b5e84c12a1332e6cc8d42cb2cc1fb75
@@ -539,7 +539,7 @@ F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d
 F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
 F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
 F ext/wasm/speedtest1-wasmfs.mjs ac5cadbf4ffe69e9eaac8b45e8523f030521e02bb67d654c6eb5236d9c456cbe
-F ext/wasm/speedtest1-worker.html bbcf1e7fd79541040c1a7ca2ebf1cb7793ddaf9900d6bde1784148f11b807c34
+F ext/wasm/speedtest1-worker.html e33e2064bda572c0c3ebaec7306c35aa758d9d27e245d67e807f8cc4a9351cc5
 F ext/wasm/speedtest1-worker.js faa4a06ec21921aaa0e0b672a94b56037da837e16732bdd6545b99f1cadbb32e
 F ext/wasm/speedtest1.html ff048b4a623aa192e83e143e48f1ce2a899846dd42c023fdedc8772b6e3f07da
 F ext/wasm/split-speedtest1-script.sh a3e271938d4d14ee49105eb05567c6a69ba4c1f1293583ad5af0cd3a3779e205 x
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 809c6f4de3653ad7a7751af45a7a0d6cb20c3ee3be80c69833c729242227d970
-R 025c645f0a348eef018e7d822fdbac9d
+P 52f23db948ae9694df69c00177b85cb569e9b211350a4a2dbf249e7cd8de700c
+R e0c8363b212a784e3aba23833aa919e5
 U stephan
-Z a785870b274d18ca6df0df66a08dd418
+Z 6a5be95b2a13778a907aeca05fd3977d
 # Remove this line to create a well-formed Fossil manifest.
