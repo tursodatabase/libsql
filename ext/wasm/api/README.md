@@ -83,15 +83,18 @@ browser client:
   helpers for use by downstream code which creates `sqlite3_vfs`
   and `sqlite3_module` implementations.
 - **`sqlite3-vfs-opfs.c-pp.js`**\  
-  is an sqlite3 VFS implementation which supports Google Chrome's
-  Origin-Private FileSystem (OPFS) as a storage layer to provide
-  persistent storage for database files in a browser. It requires...
+  is an sqlite3 VFS implementation which supports the Origin-Private
+  FileSystem (OPFS) as a storage layer to provide persistent storage
+  for database files in a browser. It requires...
     - **`sqlite3-opfs-async-proxy.js`**\  
       is the asynchronous backend part of the OPFS proxy. It speaks
       directly to the (async) OPFS API and channels those results back
       to its synchronous counterpart. This file, because it must be
       started in its own Worker, is not part of the amalgamation.
-- **`api/sqlite3-api-cleanup.js`**\  
+- **`sqlite3-vfs-opfs-sahpool.js`**\  
+  is another sqlite3 VFS supporting the OPFS, but uses a completely
+  different approach that the above-listed one.
+- **`sqlite3-api-cleanup.js`**\  
   The previous files do not immediately extend the library. Instead
   they add callback functions to be called during its
   bootstrapping. Some also temporarily create global objects in order
@@ -152,8 +155,8 @@ Preprocessing of Source Files
 ------------------------------------------------------------------------
 
 Certain files in the build require preprocessing to filter in/out
-parts which differ between vanilla JS builds and ES6 Module
-(a.k.a. esm) builds. The preprocessor application itself is in
+parts which differ between vanilla JS, ES6 Modules, and node.js
+builds. The preprocessor application itself is in
 [`c-pp.c`](/file/ext/wasm/c-pp.c) and the complete technical details
 of such preprocessing are maintained in
 [`GNUMakefile`](/file/ext/wasm/GNUmakefile).
