@@ -275,32 +275,33 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
        returns an empty string.
     */
     getAssociatedPath: function(sah){
-      const body = this.apBody;
-      sah.read(body, {at: 0});
+      sah.read(this.apBody, {at: 0});
       // Delete any unexpected files left over by previous
       // untimely errors...
-      const dv = new DataView(body.buffer, body.byteOffset);
-      const flags = dv.getUint32(HEADER_OFFSET_FLAGS);
-      if(body[0] &&
+      const flags = this.dvBody.getUint32(HEADER_OFFSET_FLAGS);
+      if(this.apBody[0] &&
          ((flags & capi.SQLITE_OPEN_DELETEONCLOSE) ||
           (flags & PERSISTENT_FILE_TYPES)===0)){
-        warn(`Removing file with unexpected flags ${flags.toString(16)}`);
+        warn(`Removing file with unexpected flags ${flags.toString(16)}`,
+            this.apBody);
         this.setAssociatedPath(sah, '', 0);
         return '';
       }
 
       const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
       sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
-      const compDigest = this.computeDigest(body);
+      const compDigest = this.computeDigest(this.apBody);
       if(fileDigest.every((v,i) => v===compDigest[i])){
         // Valid digest
-        const pathBytes = body.findIndex((v)=>0===v);
+        const pathBytes = this.apBody.findIndex((v)=>0===v);
         if(0===pathBytes){
           // This file is unassociated, so truncate it to avoid
           // leaving stale db data laying around.
           sah.truncate(HEADER_OFFSET_DATA);
         }
-        return this.textDecoder.decode(body.subarray(0,pathBytes));
+        return pathBytes
+          ? this.textDecoder.decode(this.apBody.subarray(0,pathBytes))
+          : '';
       }else{
         // Invalid digest
         warn('Disassociating file with bad digest.');
@@ -313,17 +314,15 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
        flags into the given SAH.
     */
     setAssociatedPath: function(sah, path, flags){
-      const body = this.apBody;
-      const enc = this.textEncoder.encodeInto(path, body);
+      const enc = this.textEncoder.encodeInto(path || '\0', this.apBody);
       if(HEADER_MAX_PATH_SIZE <= enc.written){
         toss("Path too long:",path);
       }
 
-      const dv = new DataView(body.buffer, body.byteOffset);
-      dv.setUint32(HEADER_OFFSET_FLAGS, flags);
+      this.dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
 
-      const digest = this.computeDigest(body);
-      sah.write(body, {at: 0});
+      const digest = this.computeDigest(this.apBody);
+      sah.write(this.apBody, {at: 0});
       sah.write(digest, {at: HEADER_OFFSET_DIGEST});
       sah.flush();
 
@@ -414,6 +413,8 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
     }
 
   })/*SAHPool*/;
+  SAHPool.dvBody =
+    new DataView(SAHPool.apBody.buffer, SAHPool.apBody.byteOffset);
   //sqlite3.SAHPool = SAHPool/*only for testing*/;
   /**
      Impls for the sqlite3_io_methods methods. Maintenance reminder:
