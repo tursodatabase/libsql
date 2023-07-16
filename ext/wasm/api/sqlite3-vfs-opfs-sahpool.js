@@ -90,9 +90,10 @@ let isPromiseReady;
 
    The options, in alphabetical order:
 
-   - `clearOnInit`: if truthy, as each SAH is acquired during
-     initalization of the VFS, its contents and filename name mapping
-     are removed, leaving the VFS's storage in a pristine state.
+   - `clearOnInit`: if truthy, contents and filename mapping are
+     removed from each SAH it is acquired during initalization of the
+     VFS, leaving the VFS's storage in a pristine state. Use this only
+     for databases which need not survive a page reload.
 
    - `defaultCapacity`: Specifies the default capacity of the
      VFS. This should not be set unduly high because the VFS has to
