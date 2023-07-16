@@ -55,11 +55,16 @@
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 const toss = sqlite3.util.toss;
 let vfsRegisterResult = undefined;
+/** The PoolUtil object will be the result of the
+    resolved Promise. */
+const PoolUtil = Object.create(null);
+let isPromiseReady;
+
 /**
    installOpfsSAHPoolVfs() asynchronously initializes the OPFS
-   SyncAccessHandle Pool VFS. It returns a Promise which either
-   resolves to a utility object described below or rejects with an
-   Error value.
+   SyncAccessHandle (a.k.a. SAH) Pool VFS. It returns a Promise which
+   either resolves to a utility object described below or rejects with
+   an Error value.
 
    Initialization of this VFS is not automatic because its
    registration requires that it lock all resources it
@@ -72,18 +77,113 @@ let vfsRegisterResult = undefined;
    due to OPFS locking errors.
 
    On calls after the first this function immediately returns a
-   resolved or rejected Promise. If called while the first call is
-   still pending resolution, a rejected promise with a descriptive
-   error is returned.
+   pending, resolved, or rejected Promise, depending on the state
+   of the first call's Promise.
 
    On success, the resulting Promise resolves to a utility object
-   which can be used to query and manipulate the pool. Its API is...
+   which can be used to query and manipulate the pool. Its API is
+   described at the end of these docs.
 
-   TODO
+   This function accepts an options object to configure certain
+   parts but it is only acknowledged for the very first call and
+   ignored for all subsequent calls.
+
+   The options, in alphabetical order:
+
+   - `clearOnInit`: if truthy, as each SAH is acquired during
+     initalization of the VFS, its contents and filename name mapping
+     are removed, leaving the VFS's storage in a pristine state.
+
+   - `defaultCapacity`: Specifies the default capacity of the
+     VFS. This should not be set unduly high because the VFS has to
+     open (and keep open) a file for each entry in the pool. This
+     setting only has an effect when the pool is initially empty. It
+     does not have any effect if a pool already exists.
+
+   - `directory`: Specifies the OPFS directory name in which to store
+     metadata for the `"opfs-sahpool"` sqlite3_vfs.  Only 1 instance
+     of this VFS can be installed per JavaScript engine, and any two
+     engines with the same storage directory name will collide with
+     each other, leading to locking errors and the inability to
+     register the VFS in the second and subsequent engine. Using a
+     different directory name for each application enables different
+     engines in the same HTTP origin to co-exist, but their data are
+     invisible to each other. Changing this name will effectively
+     orphan any databases stored under previous names. The default is
+     unspecified but descriptive.  This option may contain multiple
+     path elements, e.g. "foo/bar/baz", and they are created
+     automatically.  In practice there should be no driving need to
+     change this.
+
+
+   API for the utility object passed on by this function's Promise, in
+   alphabetical order...
+
+- [async] addCapacity(n)
+
+  Adds `n` entries to the current pool. This change is persistent
+  across sessions so should not be called automatically at each app
+  startup (but see `reserveMinimumCapacity()`). Its returned Promise
+  resolves to the new capacity.  Because this operation is necessarily
+  asynchronous, the C-level VFS API cannot call this on its own as
+  needed.
+
+- byteArray exportFile(name)
+
+  Synchronously reads the contents of the given file into a Uint8Array
+  and returns it. This will throw if the given name is not currently
+  in active use or on I/O error.
+
+- number getCapacity()
+
+  Returns the number of files currently contained
+  in the SAH pool. The default capacity is only large enough for one
+  or two databases and their associated temp files.
+
+- number getActiveFileCount()
+
+  Returns the number of files from the pool currently in use.
+
+- importDb(name, byteArray)
+
+  Imports the contents of an SQLite database, provided as a byte
+  array, under the given name, overwriting any existing
+  content. Throws if the pool has no available file slots, on I/O
+  error, or if the input does not appear to be a database. In the
+  latter case, only a cursory examination is made.  Note that this
+  routine is _only_ for importing database files, not arbitrary files,
+  the reason being that this VFS will automatically clean up any
+  non-database files so importing them is pointless.
+
+- [async] number reduceCapacity(n)
+
+  Removes up to `n` entries from the pool, with the caveat that it can
+  only remove currently-unused entries. It returns a Promise which
+  resolves to the number of entries actually removed.
+
+- [async] number reserveMinimumCapacity(min)
+
+  If the current capacity is less than `min`, the capacity is
+  increased to `min`, else this returns with no side effects. The
+  resulting Promise resolves to the new capacity.
+
+- boolean unlink(filename)
+
+  If a virtual file exists with the given name, disassociates it from
+  the pool and returns true, else returns false without side
+  effects. Results are undefined if the file is currently in active
+  use.
+
+- [async] wipeFiles()
+
+  Clears all client-defined state of all SAHs and makes all of them
+  available for re-use by the pool. Results are undefined if any such
+  handles are currently in use, e.g. by an sqlite3 db.
 
 */
-sqlite3.installOpfsSAHPoolVfs = async function(){
-  if(sqlite3===vfsRegisterResult) return Promise.resolve(sqlite3);
+sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
+  if(PoolUtil===vfsRegisterResult) return Promise.resolve(PoolUtil);
+  else if(isPromiseReady) return isPromiseReady;
   else if(undefined!==vfsRegisterResult){
     return Promise.reject(vfsRegisterResult);
   }
@@ -94,7 +194,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
      !navigator?.storage?.getDirectory){
     return Promise.reject(vfsRegisterResult = new Error("Missing required OPFS APIs."));
   }
-  vfsRegisterResult = new Error("VFS initialization still underway.");
+  vfsRegisterResult = new Error("opfs-sahpool initialization still underway.");
   const verbosity = 2 /*3+ == everything*/;
   const loggers = [
     sqlite3.config.error,
@@ -118,9 +218,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
     vfsRegisterResult = err;
     return Promise.reject(err);
   };
-  /** The PoolUtil object will be the result of the
-      resolved Promise. */
-  const PoolUtil = Object.create(null);
   const promiseResolve =
         ()=>Promise.resolve(vfsRegisterResult = PoolUtil);
   // Config opts for the VFS...
@@ -133,7 +230,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
   const HEADER_OFFSET_DIGEST = HEADER_CORPUS_SIZE;
   const HEADER_OFFSET_DATA = SECTOR_SIZE;
   const DEFAULT_CAPACITY =
-        sqlite3.config['opfs-sahpool.defaultCapacity'] || 6;
+        options.defaultCapacity || 6;
   /* Bitmask of file types which may persist across sessions.
      SQLITE_OPEN_xyz types not listed here may be inadvertently
      left in OPFS but are treated as transient by this VFS and
@@ -171,14 +268,13 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
   */
   const SAHPool = Object.assign(Object.create(null),{
     /* OPFS dir in which VFS metadata is stored. */
-    vfsDir: sqlite3.config['opfs-sahpool.dir']
-      || ".sqlite3-opfs-sahpool",
+    vfsDir: options.directory || ".sqlite3-opfs-sahpool",
     /* Directory handle to this.vfsDir. */
     dirHandle: undefined,
     /* Maps SAHs to their opaque file names. */
     mapSAHToName: new Map(),
     /* Maps client-side file names to SAHs. */
-    mapPathToSAH: new Map(),
+    mapFilenameToSAH: new Map(),
     /* Set of currently-unused SAHs. */
     availableSAH: new Set(),
     /* Maps (sqlite3_file*) to xOpen's file objects. */
@@ -186,7 +282,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
     /* Current pool capacity. */
     getCapacity: function(){return this.mapSAHToName.size},
     /* Current number of in-use files from pool. */
-    getFileCount: function(){return this.mapPathToSAH.size},
+    getFileCount: function(){return this.mapFilenameToSAH.size},
     /**
        Adds n files to the pool's capacity. This change is
        persistent across settings. Returns a Promise which resolves
@@ -229,7 +325,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
     releaseAccessHandles: function(){
       for(const ah of this.mapSAHToName.keys()) ah.close();
       this.mapSAHToName.clear();
-      this.mapPathToSAH.clear();
+      this.mapFilenameToSAH.clear();
       this.availableSAH.clear();
     },
     /**
@@ -238,8 +334,13 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
        but completes once all SAHs are acquired. If acquiring an SAH
        throws, SAHPool.$error will contain the corresponding
        exception.
+
+
+       If clearFiles is true, the client-stored state of each file is
+       cleared when its handle is acquired, including its name, flags,
+       and any data stored after the metadata block.
     */
-    acquireAccessHandles: async function(){
+    acquireAccessHandles: async function(clearFiles){
       const files = [];
       for await (const [name,h] of this.dirHandle){
         if('file'===h.kind){
@@ -250,11 +351,16 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         try{
           const ah = await h.createSyncAccessHandle()
           this.mapSAHToName.set(ah, name);
-          const path = this.getAssociatedPath(ah);
-          if(path){
-            this.mapPathToSAH.set(path, ah);
+          if(clearFiles){
+            ah.truncate(HEADER_OFFSET_DATA);
+            this.setAssociatedPath(ah, '', 0);
           }else{
-            this.availableSAH.add(ah);
+            const path = this.getAssociatedPath(ah);
+            if(path){
+              this.mapFilenameToSAH.set(path, ah);
+            }else{
+              this.availableSAH.add(ah);
+            }
           }
         }catch(e){
           SAHPool.storeErr(e);
@@ -327,12 +433,12 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
       sah.flush();
 
       if(path){
-        this.mapPathToSAH.set(path, sah);
+        this.mapFilenameToSAH.set(path, sah);
         this.availableSAH.delete(sah);
       }else{
         // This is not a persistent file, so eliminate the contents.
         sah.truncate(HEADER_OFFSET_DATA);
-        this.mapPathToSAH.delete(path);
+        this.mapFilenameToSAH.delete(path);
         this.availableSAH.add(sah);
       }
     },
@@ -352,9 +458,12 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
     /**
        Re-initializes the state of the SAH pool,
        releasing and re-acquiring all handles.
+
+       See acquireAccessHandles() for the specifics of the clearFiles
+       argument.
     */
-    reset: async function(){
-      await this.isReady;
+    reset: async function(clearFiles){
+      await isPromiseReady;
       let h = await navigator.storage.getDirectory();
       for(const d of this.vfsDir.split('/')){
         if(d){
@@ -363,7 +472,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
       }
       this.dirHandle = h;
       this.releaseAccessHandles();
-      await this.acquireAccessHandles();
+      await this.acquireAccessHandles(clearFiles);
     },
     /**
        Returns the pathname part of the given argument,
@@ -381,14 +490,17 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
     },
     /**
        Removes the association of the given client-specified file
-       name (JS string) from the pool.
+       name (JS string) from the pool. Returns true if a mapping
+       is found, else false.
     */
     deletePath: function(path) {
-      const sah = this.mapPathToSAH.get(path);
+      const sah = this.mapFilenameToSAH.get(path);
       if(sah) {
-        // Un-associate the SQLite path from the OPFS file.
+        // Un-associate the name from the SAH.
+        this.mapFilenameToSAH.delete(path);
         this.setAssociatedPath(sah, '', 0);
       }
+      return !!sah;
     },
     /**
        Sets e as this object's current error. Pass a falsy
@@ -549,7 +661,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
       SAHPool.storeErr();
       try{
         const name = this.getPath(zName);
-        wasm.poke32(pOut, SAHPool.mapPathToSAH.has(name) ? 1 : 0);
+        wasm.poke32(pOut, SAHPool.mapFilenameToSAH.has(name) ? 1 : 0);
       }catch(e){
         /*ignored*/;
       }
@@ -606,7 +718,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         const path = (zName && wasm.peek8(zName))
               ? SAHPool.getPath(zName)
               : getRandomName();
-        let sah = SAHPool.mapPathToSAH.get(path);
+        let sah = SAHPool.mapFilenameToSAH.get(path);
         if(!sah && (flags & capi.SQLITE_OPEN_CREATE)) {
           // File not found so try to create it.
           if(SAHPool.getFileCount() < SAHPool.getCapacity()) {
@@ -701,7 +813,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
      not currently in active use or on I/O error.
   */
   PoolUtil.exportFile = function(name){
-    const sah = SAHPool.mapPathToSAH.get(name) || toss("File not found:",name);
+    const sah = SAHPool.mapFilenameToSAH.get(name) || toss("File not found:",name);
     const n = sah.getSize() - HEADER_OFFSET_DATA;
     const b = new Uint8Array(n>=0 ? n : 0);
     if(n>0) sah.read(b, {at: HEADER_OFFSET_DATA});
@@ -734,14 +846,33 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
         toss("Input does not contain an SQLite database header.");
       }
     }
-    const sah = SAHPool.mapPathToSAH.get(name)
+    const sah = SAHPool.mapFilenameToSAH.get(name)
           || SAHPool.nextAvailableSAH()
           || toss("No available handles to import to.");
     sah.write(bytes, {at: HEADER_OFFSET_DATA});
     SAHPool.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
   };
+  /**
+     Clears all client-defined state of all SAHs and makes all of them
+     available for re-use by the pool. Results are undefined if any
+     such handles are currently in use, e.g. by an sqlite3 db.
+  */
+  PoolUtil.wipeFiles = async ()=>SAHPool.reset(true);
 
-  return SAHPool.isReady = SAHPool.reset().then(async ()=>{
+  /**
+     If a virtual file exists with the given name, disassociates it
+     from the pool and returns true, else returns false without side
+     effects.
+  */
+  PoolUtil.unlink = (filename)=>SAHPool.deletePath(filename);
+
+  /**
+     PoolUtil TODOs:
+
+     - function to wipe out all traces of the VFS from storage.
+   */
+
+  return isPromiseReady = SAHPool.reset(!!options.clearOnInit).then(async ()=>{
     if(SAHPool.$error){
       throw SAHPool.$error;
     }

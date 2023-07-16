@@ -61,7 +61,11 @@
          && !App.sqlite3.$SAHPoolUtil
          && cliFlagsArray.indexOf('opfs-sahpool')>=0){
         log("Installing opfs-sahpool...");
-        await App.sqlite3.installOpfsSAHPoolVfs().then(PoolUtil=>{
+        await App.sqlite3.installOpfsSAHPoolVfs({
+          directory: '.speedtest1-sahpool',
+          defaultCapacity: 3,
+          clearOnInit: true
+        }).then(PoolUtil=>{
           log("opfs-sahpool successfully installed.");
           App.sqlite3.$SAHPoolUtil = PoolUtil;
         });
@@ -122,9 +126,6 @@
     //else log("Using transient storage.");
     mPost('ready',true);
     log("Registered VFSes:", ...S.capi.sqlite3_js_vfs_list());
-    if(0 && S.installOpfsSAHPoolVfs){
-      sahpSanityChecks(S);
-    }
   }).catch(e=>{
     logErr(e);
   });
