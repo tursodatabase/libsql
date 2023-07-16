@@ -5,7 +5,7 @@
   if(urlParams.has('sqlite3.dir')){
     speedtestJs = urlParams.get('sqlite3.dir') + '/' + speedtestJs;
   }
-  importScripts('common/whwasmutil.js', speedtestJs);
+  importScripts(speedtestJs);
   /**
      If this environment contains OPFS, this function initializes it and
      returns the name of the dir on which OPFS is mounted, else it returns
