@@ -689,6 +689,12 @@ sqlite3.installOpfsSAHPoolVfs = async function(){
   PoolUtil.reduceCapacity = async (n)=>SAHPool.reduceCapacity(n);
   PoolUtil.getCapacity = SAHPool.getCapacity.bind(SAHPool);
   PoolUtil.getActiveFileCount = SAHPool.getFileCount.bind(SAHPool);
+  /** If capacity is < min, increase capacity to min, else do
+      nothing. Resolves to the new capacity. */
+  PoolUtil.reserveMinimumCapacity = async (min)=>{
+    const c = SAHPool.getCapacity();
+    return (c < min) ? SAHPool.addCapacity(min - c) : c;
+  };
   /**
      Synchronously reads the contents of the given file into a
      Uint8Array and returns it. This will throw if the given name is

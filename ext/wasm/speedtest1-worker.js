@@ -48,7 +48,7 @@
   const log = (...args)=>logMsg('stdout',args);
   const logErr = (...args)=>logMsg('stderr',args);
 
-  const runSpeedtest = function(cliFlagsArray){
+  const runSpeedtest = async function(cliFlagsArray){
     const scope = App.wasm.scopedAllocPush();
     const dbFile = App.pDir+"/speedtest1.sqlite3";
     try{
@@ -57,6 +57,15 @@
       ];
       App.logBuffer.length = 0;
       mPost('run-start', [...argv]);
+      if(App.sqlite3.installOpfsSAHPoolVfs
+         && !App.sqlite3.$SAHPoolUtil
+         && cliFlagsArray.indexOf('opfs-sahpool')>=0){
+        log("Installing opfs-sahpool...");
+        await App.sqlite3.installOpfsSAHPoolVfs().then(PoolUtil=>{
+          log("opfs-sahpool successfully installed.");
+          App.sqlite3.$SAHPoolUtil = PoolUtil;
+        });
+      }
       App.wasm.xCall('wasm_main', argv.length,
                      App.wasm.scopedAllocMainArgv(argv));
     }catch(e){
@@ -72,11 +81,8 @@
     msg = msg.data;
     switch(msg.type){
         case 'run':
-          try {
-            runSpeedtest(msg.data || []);
-          }catch(e){
-            mPost('error',e);
-          }
+          runSpeedtest(msg.data || [])
+            .catch(e=>mPost('error',e));
           break;
         default:
           logErr("Unhandled worker message type:",msg.type);
@@ -104,16 +110,8 @@
   };
   log("Initializing speedtest1 module...");
   self.sqlite3InitModule(EmscriptenModule).then(async (sqlite3)=>{
-    const S = globalThis.S = sqlite3;
+    const S = globalThis.S = App.sqlite3 = sqlite3;
     log("Loaded speedtest1 module. Setting up...");
-    if(S.installOpfsSAHPoolVfs){
-      await S.installOpfsSAHPoolVfs().then(P=>{
-        S.SAHPoolUtil = P;
-        //return P.addCapacity(5).then(log("pool capacity:",P.getCapacity()));;
-      }).catch(e=>{
-        logErr("Error setting up opfs-sahpool:",e.message);
-      });
-    }
     App.vfsUnlink = function(pDb, fname){
       const pVfs = S.wasm.sqlite3_wasm_db_vfs(pDb, 0);
       if(pVfs) S.wasm.sqlite3_wasm_vfs_unlink(pVfs, fname||0);
