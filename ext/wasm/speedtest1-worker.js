@@ -107,7 +107,10 @@
     const S = globalThis.S = sqlite3;
     log("Loaded speedtest1 module. Setting up...");
     if(S.installOpfsSAHPoolVfs){
-      await S.installOpfsSAHPoolVfs().catch(e=>{
+      await S.installOpfsSAHPoolVfs().then(P=>{
+        S.SAHPoolUtil = P;
+        //return P.addCapacity(5).then(log("pool capacity:",P.getCapacity()));;
+      }).catch(e=>{
         logErr("Error setting up opfs-sahpool:",e.message);
       });
     }
