@@ -170,10 +170,10 @@ let isPromiseReady;
 
 - [async] boolean removeVfs()
 
-  Unregisters the opfs-sahpool VFS and removes its directory
-  from OPFS. After calling this, the VFS may no longer be used
-  and there is no way to re-add it aside from reloading the
-  current JavaScript context.
+  Unregisters the opfs-sahpool VFS and removes its directory from OPFS
+  (which means that _all client content_ is removed). After calling
+  this, the VFS may no longer be used and there is no way to re-add it
+  aside from reloading the current JavaScript context.
 
   Results are undefined if a database is currently in use with this
   VFS.
@@ -182,7 +182,7 @@ let isPromiseReady;
   and false if the VFS was not installed.
 
   If the VFS has a multi-level directory, e.g. "/foo/bar/baz", _only_
-  the bottom-most level is removed because this VFS cannot know for
+  the bottom-most directory is removed because this VFS cannot know for
   certain whether the higher-level directories contain data which
   should be removed.
 
