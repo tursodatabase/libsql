@@ -101,7 +101,7 @@ let isPromiseReady;
      does not have any effect if a pool already exists.
 
    - `directory`: Specifies the OPFS directory name in which to store
-     metadata for the `"opfs-sahpool"` sqlite3_vfs.  Only 1 instance
+     metadata for the `"opfs-sahpool"` sqlite3_vfs.  Only one instance
      of this VFS can be installed per JavaScript engine, and any two
      engines with the same storage directory name will collide with
      each other, leading to locking errors and the inability to
@@ -113,13 +113,16 @@ let isPromiseReady;
      unspecified but descriptive.  This option may contain multiple
      path elements, e.g. "foo/bar/baz", and they are created
      automatically.  In practice there should be no driving need to
-     change this.
+     change this. ACHTUNG: all files in this directory are assumed to
+     be managed by the VFS. Do not place other files in that
+     directory, as they may be deleted or otherwise modified by the
+     VFS.
 
 
-   API for the utility object passed on by this function's Promise, in
-   alphabetical order...
+   The API for the utility object passed on by this function's
+   Promise, in alphabetical order...
 
-- [async] addCapacity(n)
+- [async] number addCapacity(n)
 
   Adds `n` entries to the current pool. This change is persistent
   across sessions so should not be called automatically at each app
@@ -144,7 +147,7 @@ let isPromiseReady;
 
   Returns the number of files from the pool currently in use.
 
-- importDb(name, byteArray)
+- void importDb(name, byteArray)
 
   Imports the contents of an SQLite database, provided as a byte
   array, under the given name, overwriting any existing
@@ -161,6 +164,25 @@ let isPromiseReady;
   only remove currently-unused entries. It returns a Promise which
   resolves to the number of entries actually removed.
 
+- [async] boolean removeVfs()
+
+  Unregisters the opfs-sahpool VFS and removes its directory
+  from OPFS. After calling this, the VFS may no longer be used
+  and there is no way to re-add it aside from reloading the
+  current JavaScript context.
+
+  Results are undefined if a database is currently in use with this
+  VFS.
+
+  The returned Promise resolves to true if it performed the removal
+  and false if the VFS was not installed.
+
+  If the VFS has a multi-level directory, e.g. "/foo/bar/baz", _only_
+  the bottom-most level is removed because this VFS cannot know for
+  certain whether the higher-level directories contain data which
+  should be removed.
+
+
 - [async] number reserveMinimumCapacity(min)
 
   If the current capacity is less than `min`, the capacity is
@@ -174,7 +196,7 @@ let isPromiseReady;
   effects. Results are undefined if the file is currently in active
   use.
 
-- [async] wipeFiles()
+- [async] void wipeFiles()
 
   Clears all client-defined state of all SAHs and makes all of them
   available for re-use by the pool. Results are undefined if any such
@@ -271,6 +293,9 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
     vfsDir: options.directory || ".sqlite3-opfs-sahpool",
     /* Directory handle to this.vfsDir. */
     dirHandle: undefined,
+    /* Directory handle to this.dirHandle's parent dir. Needed
+       for a VFS-wipe op. */
+    parentDirHandle: undefined,
     /* Maps SAHs to their opaque file names. */
     mapSAHToName: new Map(),
     /* Maps client-side file names to SAHs. */
@@ -465,12 +490,15 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
     reset: async function(clearFiles){
       await isPromiseReady;
       let h = await navigator.storage.getDirectory();
+      let prev, prevName;
       for(const d of this.vfsDir.split('/')){
         if(d){
+          prev = h;
           h = await h.getDirectoryHandle(d,{create:true});
         }
       }
       this.dirHandle = h;
+      this.parentDirHandle = prev;
       this.releaseAccessHandles();
       await this.acquireAccessHandles(clearFiles);
     },
@@ -801,17 +829,11 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
   PoolUtil.reduceCapacity = async (n)=>SAHPool.reduceCapacity(n);
   PoolUtil.getCapacity = SAHPool.getCapacity.bind(SAHPool);
   PoolUtil.getActiveFileCount = SAHPool.getFileCount.bind(SAHPool);
-  /** If capacity is < min, increase capacity to min, else do
-      nothing. Resolves to the new capacity. */
   PoolUtil.reserveMinimumCapacity = async (min)=>{
     const c = SAHPool.getCapacity();
     return (c < min) ? SAHPool.addCapacity(min - c) : c;
   };
-  /**
-     Synchronously reads the contents of the given file into a
-     Uint8Array and returns it. This will throw if the given name is
-     not currently in active use or on I/O error.
-  */
+
   PoolUtil.exportFile = function(name){
     const sah = SAHPool.mapFilenameToSAH.get(name) || toss("File not found:",name);
     const n = sah.getSize() - HEADER_OFFSET_DATA;
@@ -820,21 +842,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
     return b;
   };
 
-  /**
-     The counterpart of exportFile(), this imports the contents of an
-     SQLite database, provided as a byte array, under the given name,
-     overwriting any existing content. Throws if the pool has no
-     available file slots, on I/O error, or if the input does not
-     appear to be a database. In the latter case, only a cursory
-     examination is made.
-
-     Note that this routine is _only_ for importing database files,
-     not arbitrary files, the reason being that this VFS will
-     automatically clean up any non-database files so importing them
-     is pointless.
-
-     Returns undefined.
-  */
   PoolUtil.importDb = function(name, bytes){
     const n = bytes.byteLength;
     if(n<512 || n%512!=0){
@@ -852,25 +859,28 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
     sah.write(bytes, {at: HEADER_OFFSET_DATA});
     SAHPool.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
   };
-  /**
-     Clears all client-defined state of all SAHs and makes all of them
-     available for re-use by the pool. Results are undefined if any
-     such handles are currently in use, e.g. by an sqlite3 db.
-  */
-  PoolUtil.wipeFiles = async ()=>SAHPool.reset(true);
 
-  /**
-     If a virtual file exists with the given name, disassociates it
-     from the pool and returns true, else returns false without side
-     effects.
-  */
+  PoolUtil.wipeFiles = async ()=>SAHPool.reset(true);
   PoolUtil.unlink = (filename)=>SAHPool.deletePath(filename);
 
-  /**
-     PoolUtil TODOs:
-
-     - function to wipe out all traces of the VFS from storage.
-   */
+  PoolUtil.removeVfs = async function(){
+    if(!opfsVfs.pointer) return false;
+    capi.sqlite3_vfs_unregister(opfsVfs.pointer);
+    opfsVfs.dispose();
+    try{
+      SAHPool.releaseAccessHandles();
+      if(SAHPool.parentDirHandle){
+        await SAHPool.parentDirHandle.removeEntry(
+          SAHPool.dirHandle.name, {recursive: true}
+        );
+        SAHPool.dirHandle = SAHPool.parentDirHandle = undefined;
+      }
+    }catch(e){
+      warn("removeVfs() failed:",e);
+      /*but otherwise ignored*/
+    }
+    return true;
+  };
 
   return isPromiseReady = SAHPool.reset(!!options.clearOnInit).then(async ()=>{
     if(SAHPool.$error){
