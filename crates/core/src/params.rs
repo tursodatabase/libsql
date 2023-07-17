@@ -1,4 +1,4 @@
-use crate::raw;
+use libsql_sys::ValueType;
 
 pub enum Params {
     None,
@@ -47,13 +47,13 @@ impl From<&str> for Value {
     }
 }
 
-impl From<raw::Value> for Value {
-    fn from(value: raw::Value) -> Value {
+impl From<libsql_sys::Value> for Value {
+    fn from(value: libsql_sys::Value) -> Value {
         match value.value_type() {
-            crate::rows::ValueType::Null => Value::Null,
-            crate::rows::ValueType::Integer => Value::Integer(value.int().into()),
-            crate::rows::ValueType::Float => todo!(),
-            crate::rows::ValueType::Text => {
+            ValueType::Null => Value::Null,
+            ValueType::Integer => Value::Integer(value.int().into()),
+            ValueType::Float => todo!(),
+            ValueType::Text => {
                 let v = value.text();
                 if v.is_null() {
                     Value::Null
@@ -63,7 +63,7 @@ impl From<raw::Value> for Value {
                     Value::Text(v.to_owned())
                 }
             }
-            crate::rows::ValueType::Blob => todo!(),
+            ValueType::Blob => todo!(),
         }
     }
 }
