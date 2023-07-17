@@ -10,7 +10,7 @@ pub struct Database {
 impl Database {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Database {
-        Database { inner: libsql::Database::open(":memory:") }
+        Database { inner: libsql::Database::open(":memory:").unwrap() }
     }
 
     pub fn all(&self, sql: String, f: &js_sys::Function) {

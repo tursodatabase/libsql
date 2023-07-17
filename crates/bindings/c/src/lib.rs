@@ -18,7 +18,7 @@ pub unsafe extern "C" fn libsql_open_ext(url: *const std::ffi::c_char) -> libsql
             return libsql_database_t::null();
         }
     };
-    let db = libsql::Database::open(url.to_string());
+    let db = libsql::Database::open(url.to_string()).unwrap();
     let db = Box::leak(Box::new(libsql_database { db }));
     libsql_database_t::from(db)
 }

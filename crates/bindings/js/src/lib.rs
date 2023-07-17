@@ -17,7 +17,7 @@ impl Database {
 
     fn js_new(mut cx: FunctionContext) -> JsResult<JsBox<Database>> {
         let url = cx.argument::<JsString>(0)?.value(&mut cx);
-        let db = libsql::Database::open(url.clone());
+        let db = libsql::Database::open(url.clone()).unwrap();
         let conn = db.connect().unwrap();
         let db = Database::new(db, conn);
         Ok(cx.boxed(db))
