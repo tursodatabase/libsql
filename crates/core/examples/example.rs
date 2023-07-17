@@ -1,7 +1,7 @@
 use libsql::Database;
 
 fn main() {
-    let db = Database::open(":memory:");
+    let db = Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
     conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ())
         .unwrap();

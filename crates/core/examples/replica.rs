@@ -7,7 +7,8 @@ async fn main() {
     std::fs::create_dir("data.libsql").ok();
     std::fs::copy("tests/template.db", "data.libsql/data").unwrap();
 
-    let db = Database::with_replicator("http://localhost:5001", "test.db")
+    let opts = libsql::Opts::with_rpc_sync("http://localhost:5001".to_owned());
+    let db = Database::open_with_opts("test.db", opts)
         .await
         .unwrap();
     let conn = db.connect().unwrap();

@@ -13,10 +13,10 @@ impl Connection {
     /// Connect to the database.
     pub(crate) fn connect(db: &Database) -> Result<Connection> {
         let mut raw = std::ptr::null_mut();
-        let url = db.url.clone();
+        let db_path = db.db_path.clone();
         let err = unsafe {
             libsql_sys::ffi::sqlite3_open_v2(
-                std::ffi::CString::new(url.as_str())
+                std::ffi::CString::new(db_path.as_str())
                     .unwrap()
                     .as_c_str()
                     .as_ptr() as *const _,
@@ -29,7 +29,7 @@ impl Connection {
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => {}
             _ => {
-                return Err(Error::ConnectionFailed(url));
+                return Err(Error::ConnectionFailed(db_path));
             }
         }
         Ok(Connection { raw })
