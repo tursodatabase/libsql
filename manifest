@@ -1,5 +1,5 @@
-C Remove\san\sextraneous\sJS\sscript\simport.
-D 2023-07-16T21:07:01.718
+C Change\swasm\sbuild's\s-DSQLITE_TEMP_STORE=3\sto\s-DSQLITE_TEMP_STORE=2,\sprimarily\sso\sthat\sclients\scan\soptionally\sshift\stemp\sfiles\sfrom\smemory\sto\sOPFS\sstorage.
+D 2023-07-17T07:13:44.233
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -504,7 +504,7 @@ F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256
 F ext/wasm/api/sqlite3-v-helper.js e5c202a9ecde9ef818536d3f5faf26c03a1a9f5192b1ddea8bdabf30d75ef487
 F ext/wasm/api/sqlite3-vfs-opfs-sahpool.js c1d6244ebc3a12bc6c2f6b8056113b30176d82d4e69b59adf80ec1fd527ae13c
 F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 842d55b35a871ee5483cc5e0cf067a968362b4d61321f08c71aab5505c72f556
-F ext/wasm/api/sqlite3-wasm.c 12a096d8e58a0af0589142bae5a3c27a0c7e19846755a1a37d2c206352fbedda
+F ext/wasm/api/sqlite3-wasm.c 8867f1d41c112fb4a2cfe22ff224eccaf309fcdea266cee0ec554f85db72ef0f
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc06df0d599e625bde6a10a394e326dc68da9ff07fa5404354580f81566e591f
 F ext/wasm/api/sqlite3-worker1.c-pp.js da509469755035e919c015deea41b4514b5e84c12a1332e6cc8d42cb2cc1fb75
 F ext/wasm/batch-runner.html 4deeed44fe41496dc6898d9fb17938ea3291f40f4bfb977e29d0cef96fbbe4c8
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 58d05201042804c682a417495f13ab47a535e353da6cc307f9d726a289e71ca2
-R adf708d1e44ca386b9dfb73d1670c35b
+P 5a205b25912f3feea594a2161a4b8f3955bd29163b39cb0e621b3abdb81fc24d
+R 20740462df16b4bb4e845e220cae17b6
 U stephan
-Z 20b4588b247bbe89f1dcafce271a338a
+Z 01e26e5888d09bb4530f76d3fff6e86b
 # Remove this line to create a well-formed Fossil manifest.
