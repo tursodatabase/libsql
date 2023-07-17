@@ -21,6 +21,7 @@ pub enum Frames {
     Snapshot(TempSnapshot),
 }
 
+#[derive(Debug)]
 pub struct Headers<'a> {
     ptr: *mut PgHdr,
     _pth: PhantomData<&'a ()>,
@@ -152,10 +153,10 @@ unsafe impl WalHook for InjectorHook {
         let wal_ptr = wal as *mut _;
         let ctx = Self::wal_extract_ctx(wal);
         loop {
+            tracing::trace!("Waiting for a frame");
             match ctx.receiver.blocking_recv() {
                 Some(frames) => {
                     let (headers, last_frame_no, size_after) = frames.to_headers();
-
                     let ret = ctx.inject_pages(
                         headers,
                         last_frame_no,
