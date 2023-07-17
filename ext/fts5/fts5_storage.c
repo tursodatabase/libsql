@@ -411,7 +411,7 @@ static int fts5StorageDeleteFromIndex(
 ){
   Fts5Config *pConfig = p->pConfig;
   sqlite3_stmt *pSeek = 0;        /* SELECT to read row iDel from %_data */
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
   int rc2;                        /* sqlite3_reset() return code */
   int iCol;
   Fts5InsertCtx ctx;
@@ -427,7 +427,6 @@ static int fts5StorageDeleteFromIndex(
 
   ctx.pStorage = p;
   ctx.iCol = -1;
-  rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 1, iDel);
   for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
     if( pConfig->abUnindexed[iCol-1]==0 ){
       const char *zText;
@@ -582,6 +581,10 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel, sqlite3_value **apVal){
   rc = fts5StorageLoadTotals(p, 1);
 
   /* Delete the index records */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 1, iDel);
+  }
+
   if( rc==SQLITE_OK ){
     if( p->pConfig->bContentlessDelete ){
       rc = fts5StorageContentlessDelete(p, iDel);
