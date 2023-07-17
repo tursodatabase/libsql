@@ -14,4 +14,16 @@ impl std::fmt::Display for Error {
     }
 }
 
+impl From<i32> for Error {
+    fn from(e: i32) -> Self {
+        Self::LibError(e as std::ffi::c_int)
+    }
+}
+
+impl From<u32> for Error {
+    fn from(e: u32) -> Self {
+        Self::LibError(e as std::ffi::c_int)
+    }
+}
+
 pub type Result<T> = std::result::Result<T, Error>;

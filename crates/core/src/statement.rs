@@ -1,23 +1,26 @@
-use crate::{errors, raw, Error, Params, Result, Rows, Value};
+use crate::{errors, Error, Params, Result, Rows, Value};
 
 use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 /// A prepared statement.
 pub struct Statement {
-    inner: Arc<raw::Statement>,
+    inner: Arc<libsql_sys::Statement>,
 }
 
 impl Statement {
     pub(crate) fn prepare(raw: *mut libsql_sys::ffi::sqlite3, sql: &str) -> Result<Statement> {
-        match unsafe { raw::prepare_stmt(raw, sql) } {
+        match unsafe { libsql_sys::prepare_stmt(raw, sql) } {
             Ok(stmt) => Ok(Statement {
                 inner: Arc::new(stmt),
             }),
-            Err(err) => Err(Error::PrepareFailed(
+            Err(libsql_sys::Error::LibError(err)) => Err(Error::PrepareFailed(
                 sql.to_string(),
                 errors::sqlite_code_to_error(err),
             )),
+            Err(err) => Err(Error::Misuse(format!(
+                "Unexpected error while preparing statement: {err}"
+            ))),
         }
     }
 

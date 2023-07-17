@@ -1,4 +1,5 @@
-use crate::{errors, raw, Error, Params, Result, Statement, Value};
+use crate::{errors, Error, Params, Result, Statement, Value};
+use libsql_sys::ValueType;
 
 use std::cell::RefCell;
 use std::sync::Arc;
@@ -6,7 +7,7 @@ use std::sync::Arc;
 /// Query result rows.
 #[derive(Debug)]
 pub struct Rows {
-    pub(crate) stmt: Arc<raw::Statement>,
+    pub(crate) stmt: Arc<libsql_sys::Statement>,
     pub(crate) err: RefCell<Option<i32>>,
 }
 
@@ -63,7 +64,7 @@ impl futures::Future for RowsFuture {
 }
 
 pub struct Row {
-    pub(crate) stmt: Arc<raw::Statement>,
+    pub(crate) stmt: Arc<libsql_sys::Statement>,
 }
 
 impl Row {
@@ -97,42 +98,21 @@ impl Row {
     }
 }
 
-pub enum ValueType {
-    Integer,
-    Float,
-    Blob,
-    Text,
-    Null,
-}
-
-impl ValueType {
-    pub(crate) fn from(val_type: i32) -> ValueType {
-        match val_type as u32 {
-            libsql_sys::ffi::SQLITE_INTEGER => ValueType::Integer,
-            libsql_sys::ffi::SQLITE_FLOAT => ValueType::Float,
-            libsql_sys::ffi::SQLITE_BLOB => ValueType::Blob,
-            libsql_sys::ffi::SQLITE_TEXT => ValueType::Text,
-            libsql_sys::ffi::SQLITE_NULL => ValueType::Null,
-            _ => todo!(),
-        }
-    }
-}
-
 pub trait FromValue {
-    fn from_sql(val: raw::Value) -> Result<Self>
+    fn from_sql(val: libsql_sys::Value) -> Result<Self>
     where
         Self: Sized;
 }
 
 impl FromValue for i32 {
-    fn from_sql(val: raw::Value) -> Result<Self> {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
         let ret = val.int();
         Ok(ret)
     }
 }
 
 impl FromValue for &str {
-    fn from_sql(val: raw::Value) -> Result<Self> {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
         let ret = val.text();
         if ret.is_null() {
             return Err(Error::NullValue);

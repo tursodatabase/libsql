@@ -44,7 +44,6 @@ pub mod connection;
 pub mod database;
 pub mod errors;
 pub mod params;
-pub mod raw;
 pub mod rows;
 pub mod statement;
 
