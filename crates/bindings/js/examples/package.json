@@ -1,0 +1,8 @@
+{
+  "name": "libsql-examples",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "libsql-js": "^0.0.1"
+  }
+}

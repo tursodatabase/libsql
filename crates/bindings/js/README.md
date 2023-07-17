@@ -3,6 +3,7 @@
 ## Developing
 
 ```sh
-$ npm install
+$ cargo build
+$ npm link
 $ node example.js
 ```

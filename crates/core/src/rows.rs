@@ -1,12 +1,12 @@
-use crate::{errors, raw, Error, Params, Result, Statement};
+use crate::{errors, raw, Error, Params, Result, Statement, Value};
 
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::Arc;
 
 /// Query result rows.
 #[derive(Debug)]
 pub struct Rows {
-    pub(crate) stmt: Rc<raw::Statement>,
+    pub(crate) stmt: Arc<raw::Statement>,
     pub(crate) err: RefCell<Option<i32>>,
 }
 
@@ -30,6 +30,10 @@ impl Rows {
 
     pub fn column_count(&self) -> i32 {
         self.stmt.column_count()
+    }
+
+    pub fn column_name(&self, idx: i32) -> &str {
+        self.stmt.column_name(idx)
     }
 }
 
@@ -59,7 +63,7 @@ impl futures::Future for RowsFuture {
 }
 
 pub struct Row {
-    pub(crate) stmt: Rc<raw::Statement>,
+    pub(crate) stmt: Arc<raw::Statement>,
 }
 
 impl Row {
@@ -69,6 +73,11 @@ impl Row {
     {
         let val = self.stmt.column_value(idx);
         T::from_sql(val)
+    }
+
+    pub fn get_value(&self, idx: i32) -> Result<Value> {
+        let val = self.stmt.column_value(idx);
+        Ok(val.into())
     }
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
@@ -82,6 +91,10 @@ impl Row {
             _ => Err(Error::UnknownColumnType(idx, val)),
         }
     }
+
+    pub fn column_name(&self, idx: i32) -> &str {
+        self.stmt.column_name(idx)
+    }
 }
 
 pub enum ValueType {
@@ -90,6 +103,19 @@ pub enum ValueType {
     Blob,
     Text,
     Null,
+}
+
+impl ValueType {
+    pub(crate) fn from(val_type: i32) -> ValueType {
+        match val_type as u32 {
+            libsql_sys::ffi::SQLITE_INTEGER => ValueType::Integer,
+            libsql_sys::ffi::SQLITE_FLOAT => ValueType::Float,
+            libsql_sys::ffi::SQLITE_BLOB => ValueType::Blob,
+            libsql_sys::ffi::SQLITE_TEXT => ValueType::Text,
+            libsql_sys::ffi::SQLITE_NULL => ValueType::Null,
+            _ => todo!(),
+        }
+    }
 }
 
 pub trait FromValue {
