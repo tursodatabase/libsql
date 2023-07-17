@@ -95,7 +95,7 @@ let isPromiseReady;
      VFS, leaving the VFS's storage in a pristine state. Use this only
      for databases which need not survive a page reload.
 
-   - `defaultCapacity`: Specifies the default capacity of the
+   - `initialCapacity`: Specifies the default capacity of the
      VFS. This should not be set unduly high because the VFS has to
      open (and keep open) a file for each entry in the pool. This
      setting only has an effect when the pool is initially empty. It
@@ -256,7 +256,7 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
   const HEADER_OFFSET_DIGEST = HEADER_CORPUS_SIZE;
   const HEADER_OFFSET_DATA = SECTOR_SIZE;
   const DEFAULT_CAPACITY =
-        options.defaultCapacity || 6;
+        options.initialCapacity || 6;
   /* Bitmask of file types which may persist across sessions.
      SQLITE_OPEN_xyz types not listed here may be inadvertently
      left in OPFS but are treated as transient by this VFS and
@@ -467,7 +467,6 @@ sqlite3.installOpfsSAHPoolVfs = async function(options=Object.create(null)){
       }else{
         // This is not a persistent file, so eliminate the contents.
         sah.truncate(HEADER_OFFSET_DATA);
-        this.mapFilenameToSAH.delete(path);
         this.availableSAH.add(sah);
       }
     },

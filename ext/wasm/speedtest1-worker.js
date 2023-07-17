@@ -63,7 +63,7 @@
         log("Installing opfs-sahpool...");
         await App.sqlite3.installOpfsSAHPoolVfs({
           directory: '.speedtest1-sahpool',
-          defaultCapacity: 3,
+          initialCapacity: 3,
           clearOnInit: true
         }).then(PoolUtil=>{
           log("opfs-sahpool successfully installed.");
