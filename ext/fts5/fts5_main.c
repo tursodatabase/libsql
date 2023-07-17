@@ -1653,7 +1653,14 @@ static int fts5UpdateMethod(
     if( pConfig->eContent!=FTS5_CONTENT_NORMAL 
       && 0==sqlite3_stricmp("delete", z) 
     ){
-      rc = fts5SpecialDelete(pTab, apVal);
+      if( pConfig->bContentlessDelete ){
+        fts5SetVtabError(pTab, 
+            "'delete' may not be used with a contentless_delete=1 table"
+        );
+        rc = SQLITE_ERROR;
+      }else{
+        rc = fts5SpecialDelete(pTab, apVal);
+      }
     }else{
       rc = fts5SpecialInsert(pTab, z, apVal[2 + pConfig->nCol + 1]);
     }

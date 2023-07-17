@@ -536,8 +536,8 @@ int sqlite3Fts5IndexReset(Fts5Index *p);
 
 int sqlite3Fts5IndexLoadConfig(Fts5Index *p);
 
-int sqlite3Fts5IndexGetLocation(Fts5Index *p, i64 *piLoc);
-int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iLoc, i64 iRowid);
+int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin);
+int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid);
 
 /*
 ** End of interface to code in fts5_index.c.

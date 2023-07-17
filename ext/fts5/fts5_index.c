@@ -96,8 +96,8 @@
 **
 **      Then, for V2 structures only:
 **
-**         + lower location counter value,
-**         + upper location counter value
+**         + lower origin counter value,
+**         + upper origin counter value
 **
 ** 2. The Averages Record:
 **
@@ -337,7 +337,7 @@ struct Fts5DoclistIter {
 ** nOriginCntr:
 **   This value is set to non-zero for structure records created for
 **   contentlessdelete=1 tables only. In that case it represents the
-**   location value to apply to the next top-level segment created.
+**   origin value to apply to the next top-level segment created.
 */
 struct Fts5StructureSegment {
   int iSegid;                     /* Segment id */
@@ -4509,7 +4509,7 @@ static void fts5IndexMergeLevel(
     /* Read input from all segments in the input level */
     nInput = pLvl->nSeg;
 
-    /* Set the range of locations that will go into the output segment */
+    /* Set the range of origins that will go into the output segment */
     if( pStruct->nOriginCntr>0 ){
       pSeg->iOrigin1 = pLvl->aSeg[0].iOrigin1;
       pSeg->iOrigin2 = pLvl->aSeg[pLvl->nSeg-1].iOrigin2;
@@ -6411,11 +6411,11 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
   return fts5IndexReturn(p);
 }
 
-int sqlite3Fts5IndexGetLocation(Fts5Index *p, i64 *piLoc){
+int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin){
   Fts5Structure *pStruct;
   pStruct = fts5StructureRead(p);
   if( pStruct ){
-    *piLoc = pStruct->nOriginCntr;
+    *piOrigin = pStruct->nOriginCntr;
     fts5StructureRelease(pStruct);
   }
   return fts5IndexReturn(p);
@@ -6684,9 +6684,9 @@ static void fts5IndexTombstoneAdd(
 
 /*
 ** Add iRowid to the tombstone list of the segment or segments that contain
-** rows from location iLoc.
+** rows from origin iOrigin.
 */
-int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iLoc, i64 iRowid){
+int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid){
   Fts5Structure *pStruct;
   pStruct = fts5StructureRead(p);
   if( pStruct ){
@@ -6695,7 +6695,7 @@ int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iLoc, i64 iRowid){
       int iSeg;
       for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
         Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
-        if( pSeg->iOrigin1<=(u64)iLoc && pSeg->iOrigin2>=(u64)iLoc ){
+        if( pSeg->iOrigin1<=(u64)iOrigin && pSeg->iOrigin2>=(u64)iOrigin ){
           fts5IndexTombstoneAdd(p, pSeg, iRowid);
         }
       }

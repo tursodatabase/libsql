@@ -51,7 +51,7 @@ foreach {tn sql bError} {
   execsql { ROLLBACK }
 }
 
-# Check that if contentless_delete=1 is specified, then the "location" 
+# Check that if contentless_delete=1 is specified, then the "origin" 
 # column is added to the %_docsize table.
 reset_db
 do_execsql_test 3.0 {
@@ -62,7 +62,7 @@ do_execsql_test 3.1 {
   SELECT sql FROM sqlite_schema WHERE name IN ('x1_docsize', 'x2_docsize');
 } {
   {CREATE TABLE 'x1_docsize'(id INTEGER PRIMARY KEY, sz BLOB)} 
-  {CREATE TABLE 'x2_docsize'(id INTEGER PRIMARY KEY, sz BLOB, location INTEGER)}
+  {CREATE TABLE 'x2_docsize'(id INTEGER PRIMARY KEY, sz BLOB, origin INTEGER)}
 }
 
 do_execsql_test 3.2.1 {
@@ -77,7 +77,7 @@ do_execsql_test 3.3 {
   INSERT INTO x2 VALUES('second text');
 }
 do_execsql_test 3.4 {
-  SELECT id, location FROM x2_docsize
+  SELECT id, origin FROM x2_docsize
 } {1 1 2 2}
 do_execsql_test 3.5 {
   SELECT level, segment, loc1, loc2 FROM fts5_structure(
@@ -246,6 +246,19 @@ do_test 7.2 {
 
 do_execsql_test 7.3 { SELECT rowid FROM ft('one'); } {}
 do_execsql_test 7.4 { SELECT rowid FROM ft('two'); } $lRowid
+
+#-------------------------------------------------------------------------
+reset_db
+
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft VALUES('hello world');
+}
+
+do_catchsql_test 8.1 {
+  INSERT INTO ft(ft, rowid, x) VALUES('delete', 1, 'hello world');
+} {1 {'delete' may not be used with a contentless_delete=1 table}}
 
 finish_test
 

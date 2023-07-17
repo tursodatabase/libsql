@@ -136,7 +136,7 @@ static int fts5StorageGetStmt(
 
       case FTS5_STMT_LOOKUP_DOCSIZE: 
         zSql = sqlite3_mprintf(azStmt[eStmt], 
-            (pC->bContentlessDelete ? ",location" : ""),
+            (pC->bContentlessDelete ? ",origin" : ""),
             pC->zDb, pC->zName
         );
         break;
@@ -332,7 +332,7 @@ int sqlite3Fts5StorageOpen(
     if( rc==SQLITE_OK && pConfig->bColumnsize ){
       const char *zCols = "id INTEGER PRIMARY KEY, sz BLOB";
       if( pConfig->bContentlessDelete ){
-        zCols = "id INTEGER PRIMARY KEY, sz BLOB, location INTEGER";
+        zCols = "id INTEGER PRIMARY KEY, sz BLOB, origin INTEGER";
       }
       rc = sqlite3Fts5CreateTable(pConfig, "docsize", zCols, 0, pzErr);
     }
@@ -472,7 +472,7 @@ static int fts5StorageContentlessDelete(Fts5Storage *p, i64 iDel){
   assert( p->pConfig->bContentlessDelete );
   assert( p->pConfig->eContent==FTS5_CONTENT_NONE );
 
-  /* Look up the location of the document in the %_docsize table. Store
+  /* Look up the origin of the document in the %_docsize table. Store
   ** this in stack variable iLoc.  */
   rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup, 0);
   if( rc==SQLITE_OK ){
@@ -510,9 +510,9 @@ static int fts5StorageInsertDocsize(
     if( rc==SQLITE_OK ){
       sqlite3_bind_int64(pReplace, 1, iRowid);
       if( p->pConfig->bContentlessDelete ){
-        i64 iLoc = 0;
-        rc = sqlite3Fts5IndexGetLocation(p->pIndex, &iLoc);
-        sqlite3_bind_int64(pReplace, 3, iLoc);
+        i64 iOrigin = 0;
+        rc = sqlite3Fts5IndexGetOrigin(p->pIndex, &iOrigin);
+        sqlite3_bind_int64(pReplace, 3, iOrigin);
       }
       if( rc==SQLITE_OK ){
         sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
