@@ -81,17 +81,17 @@ impl Result {
                         for col_idx in 0..rows.column_count() {
                             let col_type = row.column_type(col_idx).map_err(to_py_err)?;
                             let value = match col_type {
-                                libsql_core::rows::ValueType::Integer => {
+                                libsql_core::ValueType::Integer => {
                                     let value = row.get::<i32>(col_idx).map_err(to_py_err)?;
                                     value.into_py(self_.py())
                                 }
-                                libsql_core::rows::ValueType::Float => todo!(),
-                                libsql_core::rows::ValueType::Blob => todo!(),
-                                libsql_core::rows::ValueType::Text => {
+                                libsql_core::ValueType::Float => todo!(),
+                                libsql_core::ValueType::Blob => todo!(),
+                                libsql_core::ValueType::Text => {
                                     let value = row.get::<&str>(col_idx).map_err(to_py_err)?;
                                     value.into_py(self_.py())
                                 }
-                                libsql_core::rows::ValueType::Null => todo!(),
+                                libsql_core::ValueType::Null => todo!(),
                             };
                             elements.push(value);
                         }
