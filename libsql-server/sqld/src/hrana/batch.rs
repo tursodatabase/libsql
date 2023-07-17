@@ -8,7 +8,9 @@ use crate::error::Error as SqldError;
 use crate::hrana::stmt::StmtError;
 use crate::query::{Params, Query};
 use crate::query_analysis::Statement;
-use crate::query_result_builder::{QueryResultBuilder, StepResult, StepResultsBuilder};
+use crate::query_result_builder::{
+    QueryResultBuilder, QueryResultBuilderError, StepResult, StepResultsBuilder,
+};
 
 use super::result_builder::HranaBatchProtoBuilder;
 use super::stmt::{proto_stmt_to_query, stmt_error_from_sqld_error};
@@ -20,6 +22,8 @@ pub enum BatchError {
     TransactionTimeout,
     #[error("Server cannot handle additional transactions")]
     TransactionBusy,
+    #[error("Response is too large")]
+    ResponseTooLarge,
 }
 
 fn proto_cond_to_cond(cond: &proto::BatchCond, max_step_i: usize) -> Result<Cond> {
@@ -149,6 +153,9 @@ fn batch_error_from_sqld_error(sqld_error: SqldError) -> Result<BatchError, Sqld
     Ok(match sqld_error {
         SqldError::LibSqlTxTimeout => BatchError::TransactionTimeout,
         SqldError::LibSqlTxBusy => BatchError::TransactionBusy,
+        SqldError::BuilderError(QueryResultBuilderError::ResponseTooLarge(_)) => {
+            BatchError::ResponseTooLarge
+        }
         sqld_error => return Err(sqld_error),
     })
 }
@@ -158,6 +165,7 @@ impl BatchError {
         match self {
             Self::TransactionTimeout => "TRANSACTION_TIMEOUT",
             Self::TransactionBusy => "TRANSACTION_BUSY",
+            Self::ResponseTooLarge => "RESPONSE_TOO_LARGE",
         }
     }
 }
