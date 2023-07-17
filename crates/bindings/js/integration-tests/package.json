@@ -1,0 +1,15 @@
+{
+  "name": "libsql-js-integration-tests",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "ava"
+  },
+  "devDependencies": {
+    "ava": "^5.3.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^8.4.0",
+    "libsql-js": "^0"
+  }
+}

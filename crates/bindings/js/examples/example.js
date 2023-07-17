@@ -1,4 +1,4 @@
-var libsql = require('.');
+import libsql from 'libsql-js';
 
 var db = new libsql.Database(':memory:');
 

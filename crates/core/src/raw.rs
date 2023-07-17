@@ -9,6 +9,12 @@ pub struct Statement {
     pub(crate) raw_stmt: *mut libsql_sys::ffi::sqlite3_stmt,
 }
 
+// Safety: works as long as libSQL is compiled and set up with SERIALIZABLE threading model, which is the default.
+unsafe impl Sync for Statement {}
+
+// Safety: works as long as libSQL is compiled and set up with SERIALIZABLE threading model, which is the default.
+unsafe impl Send for Statement {}
+
 impl Drop for Statement {
     fn drop(&mut self) {
         if !self.raw_stmt.is_null() {
@@ -83,6 +89,13 @@ impl Statement {
     pub fn column_type(&self, idx: i32) -> i32 {
         unsafe { libsql_sys::ffi::sqlite3_column_type(self.raw_stmt, idx) }
     }
+
+    pub fn column_name(&self, idx: i32) -> &str {
+        let raw_name = unsafe { libsql_sys::ffi::sqlite3_column_name(self.raw_stmt, idx) };
+        let raw_name = unsafe { std::ffi::CStr::from_ptr(raw_name as *const i8) };
+        let raw_name = raw_name.to_str().unwrap();
+        raw_name
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut libsql_sys::ffi::sqlite3, sql: &str) -> Result<Statement> {
@@ -107,6 +120,11 @@ pub struct Value {
 }
 
 impl Value {
+    pub fn value_type(&self) -> crate::rows::ValueType {
+        let raw_type = unsafe { libsql_sys::ffi::sqlite3_value_type(self.raw_value) };
+        crate::rows::ValueType::from(raw_type)
+    }
+
     pub fn int(&self) -> i32 {
         unsafe { libsql_sys::ffi::sqlite3_value_int(self.raw_value) }
     }
