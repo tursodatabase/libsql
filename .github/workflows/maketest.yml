@@ -32,8 +32,7 @@ jobs:
     - name: Run tests
       run: make test
 
-    - name: Run Rust tests
-      run: make rusttest
+    # Rust tests are run under maketestwasm
 
     - name: Run API tests
       run: make libsqlapi
