@@ -3038,13 +3038,19 @@ static int fts5IndexTombstoneQuery(
   return 0;
 }
 
+/*
+** Return true if the iterator passed as the only argument points
+** to an segment entry for which there is a tombstone. Return false
+** if there is no tombstone or if the iterator is already at EOF.
+*/
 static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
   int iFirst = pIter->aFirst[1].iFirst;
   Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
 
-  if( pSeg->nTombstone ){
+  if( pSeg->pLeaf && pSeg->nTombstone ){
     /* Figure out which page the rowid might be present on. */
-    int iPg = pSeg->iRowid % pSeg->nTombstone;
+    int iPg = ((u64)pSeg->iRowid) % pSeg->nTombstone;
+    assert( iPg>=0 );
 
     if( pSeg->apTombstone[iPg]==0 ){
       pSeg->apTombstone[iPg] = fts5DataRead(pIter->pIndex,
@@ -6428,7 +6434,12 @@ int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin){
 /*
 ** Buffer pPg contains a page of a tombstone hash table - one of nPg.
 */
-static int fts5IndexTombstoneAddToPage(Fts5Data *pPg, int nPg, u64 iRowid){
+static int fts5IndexTombstoneAddToPage(
+  Fts5Data *pPg, 
+  int bForce,
+  int nPg, 
+  u64 iRowid
+){
   int szKey = TOMBSTONE_KEYSIZE(pPg);
   int nSlot = (pPg->nn - 8) / szKey;
   int iSlot = (iRowid / nPg) % nSlot;
@@ -6438,6 +6449,10 @@ static int fts5IndexTombstoneAddToPage(Fts5Data *pPg, int nPg, u64 iRowid){
   if( iRowid==0 ){
     pPg->p[1] = 0x01;
     return 0;
+  }
+
+  if( bForce==0 && nElem>=(nSlot/2) ){
+    return 1;
   }
 
   fts5PutU32(&pPg->p[4], nElem+1);
@@ -6451,7 +6466,7 @@ static int fts5IndexTombstoneAddToPage(Fts5Data *pPg, int nPg, u64 iRowid){
     fts5PutU64((u8*)&aSlot[iSlot], iRowid);
   }
 
-  return nElem >= (nSlot/2);
+  return 0;
 }
 
 /*
@@ -6489,7 +6504,7 @@ static int fts5IndexTombstoneRehash(
     }
 
     if( pData ){
-      int szKeyIn = pData->p[3] ? 8 : 4;
+      int szKeyIn = TOMBSTONE_KEYSIZE(pData);
       int nSlotIn = (pData->nn - 8) / szKeyIn;
       int iIn;
       for(iIn=0; iIn<nSlotIn; iIn++){
@@ -6507,7 +6522,7 @@ static int fts5IndexTombstoneRehash(
         /* If iVal is not 0 at this point, insert it into the new hash table */
         if( iVal ){
           Fts5Data *pPg = apOut[(iVal % nOut)];
-          res = fts5IndexTombstoneAddToPage(pPg, nOut, iVal);
+          res = fts5IndexTombstoneAddToPage(pPg, 0, nOut, iVal);
           if( res ) break;
         }
       }
@@ -6642,7 +6657,6 @@ static void fts5IndexTombstoneAdd(
   Fts5Data *pPg = 0;
   int iPg = -1;
   int szKey = 0;
-
   int nHash = 0;
   Fts5Data **apHash = 0;
 
@@ -6654,7 +6668,7 @@ static void fts5IndexTombstoneAdd(
       return;
     }
 
-    if( 0==fts5IndexTombstoneAddToPage(pPg, pSeg->nPgTombstone, iRowid) ){
+    if( 0==fts5IndexTombstoneAddToPage(pPg, 0, pSeg->nPgTombstone, iRowid) ){
       fts5DataWrite(p, FTS5_TOMBSTONE_ROWID(pSeg->iSegid,iPg), pPg->p, pPg->nn);
       fts5DataRelease(pPg);
       return;
@@ -6673,7 +6687,7 @@ static void fts5IndexTombstoneAdd(
   ** table pages, then write them all out to disk. */
   if( nHash ){
     int ii = 0;
-    fts5IndexTombstoneAddToPage(apHash[iRowid % nHash], nHash, iRowid);
+    fts5IndexTombstoneAddToPage(apHash[iRowid % nHash], 1, nHash, iRowid);
     for(ii=0; ii<nHash; ii++){
       i64 iTombstoneRowid = FTS5_TOMBSTONE_ROWID(pSeg->iSegid, ii);
       fts5DataWrite(p, iTombstoneRowid, apHash[ii]->p, apHash[ii]->nn);
@@ -7544,7 +7558,26 @@ static void fts5DecodeFunction(
     }
   }else if( bTomb ){
     u32 nElem  = fts5GetU32(&a[4]);
+    int szKey = (aBlob[0]==4 || aBlob[0]==8) ? aBlob[0] : 8;
+    int nSlot = (n - 8) / szKey;
+    int ii;
     sqlite3Fts5BufferAppendPrintf(&rc, &s, " nElem=%d", (int)nElem);
+    if( aBlob[1] ){
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, " 0");
+    }
+    for(ii=0; ii<nSlot; ii++){
+      u64 iVal = 0;
+      if( szKey==4 ){
+        u32 *aSlot = (u32*)&aBlob[8];
+        if( aSlot[ii] ) iVal = fts5GetU32((u8*)&aSlot[ii]);
+      }else{
+        u64 *aSlot = (u64*)&aBlob[8];
+        if( aSlot[ii] ) iVal = fts5GetU64((u8*)&aSlot[ii]);
+      }
+      if( iVal!=0 ){
+        sqlite3Fts5BufferAppendPrintf(&rc, &s, " %lld", (i64)iVal);
+      }
+    }
   }else if( iSegid==0 ){
     if( iRowid==FTS5_AVERAGES_ROWID ){
       fts5DecodeAverages(&rc, &s, a, n);
