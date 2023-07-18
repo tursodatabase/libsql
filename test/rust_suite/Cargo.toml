@@ -9,6 +9,7 @@ edition = "2021"
 rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev = "d9a97c0f25", default-features = false, features = [ 
     "buildtime_bindgen",
     "libsql-experimental",
+    "libsql-wasm-experimental",
     "column_decltype",
     "load_extension"
 ] }
@@ -21,5 +22,5 @@ hex = "0.4.3"
 [features]
 default = []
 udf = []
-wasm = ["rusqlite/libsql-wasm-experimental"]
+wasm = []
 full = ["udf", "wasm"]
