@@ -4838,6 +4838,10 @@ static void fts5SecureDeleteOverflow(
         aIdx = sqlite3Fts5MallocZero(&p->rc, (pLeaf->nn-pLeaf->szLeaf)+2);
         if( aIdx==0 ) break;
         i1 += fts5GetVarint32(&aPg[i1], iFirst);
+        if( iFirst<iNext ){
+          p->rc = FTS5_CORRUPT;
+          break;
+        }
         i2 = sqlite3Fts5PutVarint(aIdx, iFirst-nShift);
         if( i1<pLeaf->nn ){
           memcpy(&aIdx[i2], &aPg[i1], pLeaf->nn-i1);
