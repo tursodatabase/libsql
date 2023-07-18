@@ -56,18 +56,26 @@
         "speedtest1.wasm", ...cliFlagsArray, dbFile
       ];
       App.logBuffer.length = 0;
+      const ndxSahPool = argv.indexOf('opfs-sahpool');
+      const realSahName = 'opfs-sahpool-speedtest1';
+      if(ndxSahPool>0){
+        argv[ndxSahPool] = realSahName;
+        log("Updated argv for opfs-sahpool: --vfs",realSahName);
+      }
       mPost('run-start', [...argv]);
       if(App.sqlite3.installOpfsSAHPoolVfs
          && !App.sqlite3.$SAHPoolUtil
-         && cliFlagsArray.indexOf('opfs-sahpool')>=0){
-        log("Installing opfs-sahpool...");
+         && ndxSahPool>0){
+        log("Installing opfs-sahpool as",realSahName,"...");
         await App.sqlite3.installOpfsSAHPoolVfs({
-          directory: '.speedtest1-sahpool',
+          name: realSahName,
           initialCapacity: 3,
-          clearOnInit: true
+          clearOnInit: true,
+          verbosity: 2
         }).then(PoolUtil=>{
-          log("opfs-sahpool successfully installed.");
+          log("opfs-sahpool successfully installed as",realSahName);
           App.sqlite3.$SAHPoolUtil = PoolUtil;
+          //console.log("sqlite3.oo1.OpfsSAHPoolDb =", App.sqlite3.oo1.OpfsSAHPoolDb);
         });
       }
       App.wasm.xCall('wasm_main', argv.length,
