@@ -24,7 +24,7 @@ jobs:
     - name: Install Wasmpack
       uses: jetli/wasm-pack-action@v0.4.0
       with:
-      version: 'latest'
+        version: 'latest'
 
     - name: configure
       run: ./configure
