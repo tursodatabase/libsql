@@ -160,12 +160,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       return this.getCapacity();
     }
-    /**
-       Removes n entries from the pool's current capacity
-       if possible. It can only remove currently-unallocated
-       files. Returns a Promise resolving to the number of
-       removed files.
-    */
     async reduceCapacity(n){
       let nRm = 0;
       for(const ah of Array.from(this.availableSAH)){
@@ -424,7 +418,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     getCapacity(){
       return this.#p.getCapacity(this.#p);
     }
-    getActiveFileCount(){
+    getFileCount(){
       return this.#p.getFileCount();
     }
     async reserveMinimumCapacity(min){
@@ -610,9 +604,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      in the SAH pool. The default capacity is only large enough for one
      or two databases and their associated temp files.
 
-     - number getActiveFileCount()
+     - number getFileCount()
 
-     Returns the number of files from the pool currently in use.
+     Returns the number of files from the pool currently allocated to
+     slots. This is not the same as the files being "opened".
 
      - void importDb(name, byteArray)
 

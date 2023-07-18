@@ -2784,18 +2784,32 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                      can have more than the initial capacity on the next
                      run. */)
           .assert(u1.getCapacity() + 2 === (await u2.addCapacity(2)))
+          .assert(2 === (await u2.reduceCapacity(2)))
           .assert(sqlite3.oo1.OpfsSAHPool.default instanceof Function)
           .assert(sqlite3.oo1.OpfsSAHPool.default ===
                   sqlite3.oo1.OpfsSAHPool[sahPoolConfig.name])
           .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) >= 0);
 
-        const db = new sqlite3.oo1.OpfsSAHPool.default("foo.db");
+        T.assert(0 === u1.getFileCount());
+        const DbCtor = sqlite3.oo1.OpfsSAHPool.default;
+        const dbName = '/foo.db';
+        let db = new DbCtor(dbName);
+        T.assert(1 === u1.getFileCount());
         db.exec([
           'create table t(a);',
           'insert into t(a) values(1),(2),(3)'
         ]);
+        T.assert(1 === u1.getFileCount());
         T.assert(3 === db.selectValue('select count(*) from t'));
         db.close();
+        T.assert(1 === u1.getFileCount());
+        db = new DbCtor(dbName);
+        T.assert(1 === u1.getFileCount());
+        db.close();
+        T.assert(1 === u1.getFileCount())
+          .assert(true === u1.unlink(dbName))
+          .assert(false === u1.unlink(dbName))
+          .assert(0 === u1.getFileCount());
 
         T.assert(true === await u2.removeVfs())
           .assert(false === await u1.removeVfs())
