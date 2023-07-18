@@ -8,9 +8,7 @@ async fn main() {
     std::fs::copy("tests/template.db", "data.libsql/data").unwrap();
 
     let opts = libsql::Opts::with_rpc_sync("http://localhost:5001".to_owned());
-    let db = Database::open_with_opts("test.db", opts)
-        .await
-        .unwrap();
+    let db = Database::open_with_opts("test.db", opts).await.unwrap();
     let conn = db.connect().unwrap();
 
     let db = std::sync::Arc::new(parking_lot::Mutex::new(db));
