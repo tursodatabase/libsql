@@ -999,18 +999,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         //log("vfs list:",capi.sqlite3_js_vfs_list());
         if(sqlite3.oo1){
           const oo1 = sqlite3.oo1;
-          const OpfsthePoolDb = function(...args){
+          const OpfsSAHPoolDb = function(...args){
             const opt = oo1.DB.dbCtorHelper.normalizeArgs(...args);
             opt.vfs = opfsVfs.$zName;
             oo1.DB.dbCtorHelper.call(this, opt);
           };
-          OpfsthePoolDb.prototype = Object.create(oo1.DB.prototype);
-          OpfsthePoolDb.PoolUtil = poolUtil;
-          if(!oo1.OpfsthePoolDb){
-            oo1.OpfsthePoolDb = Object.create(null);
-            oo1.OpfsthePoolDb.default = OpfsthePoolDb;
+          OpfsSAHPoolDb.prototype = Object.create(oo1.DB.prototype);
+          OpfsSAHPoolDb.PoolUtil = poolUtil;
+          if(!oo1.OpfsSAHPool){
+            oo1.OpfsSAHPool = Object.create(null);
+            oo1.OpfsSAHPool.default = OpfsSAHPoolDb;
           }
-          oo1.OpfsthePoolDb[vfsName] = OpfsthePoolDb;
+          oo1.OpfsSAHPool[vfsName] = OpfsSAHPoolDb;
           oo1.DB.dbCtorHelper.setVfsPostOpenSql(
             opfsVfs.pointer,
             function(oo1Db, sqlite3){

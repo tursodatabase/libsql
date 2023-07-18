@@ -2779,10 +2779,25 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
         T.assert(u1 === u2)
           .assert(sahPoolConfig.name === u1.vfsName)
           .assert(sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
-          .assert(u1.getCapacity() === sahPoolConfig.initialCapacity)
-          .assert(5 === (await u2.addCapacity(2)))
-          .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) >= 0)
-          .assert(true === await u2.removeVfs())
+          .assert(u1.getCapacity() >= sahPoolConfig.initialCapacity
+                  /* If a test fails before we get to nuke the VFS, we
+                     can have more than the initial capacity on the next
+                     run. */)
+          .assert(u1.getCapacity() + 2 === (await u2.addCapacity(2)))
+          .assert(sqlite3.oo1.OpfsSAHPool.default instanceof Function)
+          .assert(sqlite3.oo1.OpfsSAHPool.default ===
+                  sqlite3.oo1.OpfsSAHPool[sahPoolConfig.name])
+          .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) >= 0);
+
+        const db = new sqlite3.oo1.OpfsSAHPool.default("foo.db");
+        db.exec([
+          'create table t(a);',
+          'insert into t(a) values(1),(2),(3)'
+        ]);
+        T.assert(3 === db.selectValue('select count(*) from t'));
+        db.close();
+
+        T.assert(true === await u2.removeVfs())
           .assert(false === await u1.removeVfs())
           .assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name));
 
