@@ -1876,26 +1876,28 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        then it must be called by client-level code, which must not use
        the library until the returned promise resolves.
 
-       Bug: if called while a prior call is still resolving, the 2nd
-       call will resolve prematurely, before the 1st call has finished
-       resolving. The current build setup precludes that possibility,
-       so it's only a hypothetical problem if/when this function
-       ever needs to be invoked by clients.
+       If called multiple times it will return the same promise on
+       subsequent calls. The current build setup precludes that
+       possibility, so it's only a hypothetical problem if/when this
+       function ever needs to be invoked by clients.
 
        In Emscripten-based builds, this function is called
        automatically and deleted from this object.
     */
-    asyncPostInit: async function(){
+    asyncPostInit: function ff(){
+      if(ff.ready instanceof Promise) return ff.ready;
       let lip = sqlite3ApiBootstrap.initializersAsync;
       delete sqlite3ApiBootstrap.initializersAsync;
-      if(!lip || !lip.length) return Promise.resolve(sqlite3);
+      if(!lip || !lip.length){
+        return ff.ready = Promise.resolve(sqlite3);
+      }
       lip = lip.map((f)=>{
-        const p = (f instanceof Promise) ? f : f(sqlite3);
-        return p.catch((e)=>{
-          console.error("an async sqlite3 initializer failed:",e);
-          throw e;
-        });
+        return (f instanceof Promise) ? f : f(sqlite3);
       });
+      const catcher = (e)=>{
+        config.error("an async sqlite3 initializer failed:",e);
+        throw e;
+      };
       const postInit = ()=>{
         if(!sqlite3.__isUnderTest){
           /* Delete references to internal-only APIs which are used by
@@ -1911,16 +1913,16 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         return sqlite3;
       };
       if(1){
-        /* Run all initializers in sequence. The advantage is that it
-           allows us to have post-init cleanup defined outside of this
-           routine at the end of the list and have it run at a
-           well-defined time. */
+        /* Run all initializers in the sequence they were added. The
+           advantage is that it allows us to have post-init cleanup
+           defined outside of this routine at the end of the list and
+           have it run at a well-defined time. */
         let p = lip.shift();
         while(lip.length) p = p.then(lip.shift());
-        return p.then(postInit);
+        return ff.ready = p.then(postInit).catch(catcher);
       }else{
         /* Run them in an arbitrary order. */
-        return Promise.all(lip).then(postInit);
+        return ff.ready = Promise.all(lip).then(postInit).catch(catcher);
       }
     },
     /**

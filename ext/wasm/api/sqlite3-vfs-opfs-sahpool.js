@@ -52,7 +52,7 @@
   is not detected, the VFS is not registered.
 */
 'use strict';
-globalThis.sqlite3ApiBootstrap.initializersAsync.push(async function(sqlite3){
+globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss = sqlite3.util.toss;
   const toss3 = sqlite3.util.toss3;
   const initPromises = Object.create(null);
@@ -400,46 +400,47 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async function(sqlite3){
 
 
   /**
-     A SAHPoolUtil instance is exposed to clients in order to
-     manipulate an OpfsSAHPool object without directly exposing that
+     A SAHPoolUtil instance is exposed to clients in order to manipulate an OpfsSAHPool object without directly exposing that
      object and allowing for some semantic changes compared to that
      class.
+
+     Class docs are in the client-level docs for installOpfsSAHPoolVfs().
   */
   class SAHPoolUtil {
+    /* This object's associated OpfsSAHPool. */
+    #p;
 
     constructor(sahPool){
-      /* TODO: move the this-to-sahPool mapping into an external
-         WeakMap so as to not expose it to downstream clients. */
-      this.$p = sahPool;
+      this.#p = sahPool;
       this.vfsName = sahPool.vfsName;
     }
 
-    addCapacity = async function(n){
-      return this.$p.addCapacity(n);
+    async addCapacity(n){
+      return this.#p.addCapacity(n);
     }
-    reduceCapacity = async function(n){
-      return this.$p.reduceCapacity(n);
+    async reduceCapacity(n){
+      return this.#p.reduceCapacity(n);
     }
-    getCapacity = function(){
-      return this.$p.getCapacity(this.$p);
+    getCapacity(){
+      return this.#p.getCapacity(this.#p);
     }
-    getActiveFileCount = function(){
-      return this.$p.getFileCount();
+    getActiveFileCount(){
+      return this.#p.getFileCount();
     }
-    reserveMinimumCapacity = async function(min){
-      const c = this.$p.getCapacity();
-      return (c < min) ? this.$p.addCapacity(min - c) : c;
+    async reserveMinimumCapacity(min){
+      const c = this.#p.getCapacity();
+      return (c < min) ? this.#p.addCapacity(min - c) : c;
     }
 
-    exportFile = function(name){
-      const sah = this.$p.mapFilenameToSAH.get(name) || toss("File not found:",name);
+    exportFile(name){
+      const sah = this.#p.mapFilenameToSAH.get(name) || toss("File not found:",name);
       const n = sah.getSize() - HEADER_OFFSET_DATA;
       const b = new Uint8Array(n>=0 ? n : 0);
       if(n>0) sah.read(b, {at: HEADER_OFFSET_DATA});
       return b;
     }
 
-    importDb = function(name, bytes){
+    importDb(name, bytes){
       const n = bytes.byteLength;
       if(n<512 || n%512!=0){
         toss("Byte array size is invalid for an SQLite db.");
@@ -450,35 +451,33 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async function(sqlite3){
           toss("Input does not contain an SQLite database header.");
         }
       }
-      const sah = this.$p.mapFilenameToSAH.get(name)
-            || this.$p.nextAvailableSAH()
+      const sah = this.#p.mapFilenameToSAH.get(name)
+            || this.#p.nextAvailableSAH()
             || toss("No available handles to import to.");
       sah.write(bytes, {at: HEADER_OFFSET_DATA});
-      this.$p.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+      this.#p.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
     }
 
-    wipeFiles = async function(){
-      return this.$p.reset(true);
+    async wipeFiles(){return this.#p.reset(true)}
+
+    unlink(filename){
+      return this.#p.deletePath(filename);
     }
 
-    unlink = function(filename){
-      return this.$p.deletePath(filename);
-    }
-
-    removeVfs = async function(){
-      if(!this.$p.cVfs.pointer) return false;
-      capi.sqlite3_vfs_unregister(this.$p.cVfs.pointer);
-      this.$p.cVfs.dispose();
+    async removeVfs(){
+      if(!this.#p.cVfs.pointer) return false;
+      capi.sqlite3_vfs_unregister(this.#p.cVfs.pointer);
+      this.#p.cVfs.dispose();
       try{
-        this.$p.releaseAccessHandles();
-        if(this.$p.parentDirHandle){
-          await this.$p.parentDirHandle.removeEntry(
-            this.$p.dirHandle.name, {recursive: true}
+        this.#p.releaseAccessHandles();
+        if(this.#p.parentDirHandle){
+          await this.#p.parentDirHandle.removeEntry(
+            this.#p.dirHandle.name, {recursive: true}
           );
-          this.$p.dirHandle = this.$p.parentDirHandle = undefined;
+          this.#p.dirHandle = this.#p.parentDirHandle = undefined;
         }
       }catch(e){
-        console.error(this.$p.vfsName,"removeVfs() failed:",e);
+        sqlite3.config.error(this.#p.vfsName,"removeVfs() failed:",e);
         /*otherwise ignored - there is no recovery strategy*/
       }
       return true;
@@ -679,7 +678,7 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async function(sqlite3){
       throw new Error("Just testing rejection.");
     }
     if(initPromises[vfsName]){
-      //console.warn("Returning same OpfsSAHPool result",vfsName,initPromises[vfsName]);
+      console.warn("Returning same OpfsSAHPool result",options,vfsName,initPromises[vfsName]);
       return initPromises[vfsName];
     }
     if(!globalThis.FileSystemHandle ||
@@ -743,6 +742,9 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async function(sqlite3){
        ensues.
     */
     return initPromises[vfsName] = apiVersionCheck().then(async function(){
+      if(options.$testThrowInInit){
+        throw options.$testThrowInInit;
+      }
       const thePool = new OpfsSAHPool(opfsVfs, options);
       return thePool.isReady.then(async()=>{
         /**
@@ -1025,4 +1027,4 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async function(sqlite3){
       });
     }).catch(promiseReject);
   }/*installOpfsSAHPoolVfs()*/;
-}/*sqlite3ApiBootstrap.initializersAsync*/);
+}/*sqlite3ApiBootstrap.initializers*/);

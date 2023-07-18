@@ -59,7 +59,7 @@ const toExportForESM =
     initModuleState.sqlite3Dir = li.join('/') + '/';
   }
 
-  globalThis.sqlite3InitModule = function ff(...args){
+  globalThis.sqlite3InitModule = async function ff(...args){
     //console.warn("Using replaced sqlite3InitModule()",globalThis.location);
     return originalInit(...args).then((EmscriptenModule)=>{
       if('undefined'!==typeof WorkerGlobalScope &&

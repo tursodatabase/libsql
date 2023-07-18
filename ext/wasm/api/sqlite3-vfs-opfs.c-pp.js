@@ -23,7 +23,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    installOpfsVfs() returns a Promise which, on success, installs an
    sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
    which accept a VFS. It is intended to be called via
-   sqlite3ApiBootstrap.initializersAsync or an equivalent mechanism.
+   sqlite3ApiBootstrap.initializers or an equivalent mechanism.
 
    The installed VFS uses the Origin-Private FileSystem API for
    all file storage. On error it is rejected with an exception
