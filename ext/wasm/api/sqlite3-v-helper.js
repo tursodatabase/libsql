@@ -608,7 +608,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      This is to facilitate creation of those methods inline in the
      passed-in object without requiring the client to explicitly get a
      reference to one of them in order to assign it to the other
-     one. 
+     one.
 
      The `catchExceptions`-installed handlers will account for
      identical references to the above functions and will install the
