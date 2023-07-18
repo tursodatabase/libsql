@@ -5125,6 +5125,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( iLoop==0 && (pWLoop->wsFlags & WHERE_VIEWSCAN)!=0 ){
           rCost += -10;
           nOut += -30;
+          WHERETRACE(0x80,("VIEWSCAN cost reduction for %c\n",pWLoop->cId));
         }
 
         /* Check to see if pWLoop should be added to the set of

@@ -1,5 +1,5 @@
-C Fix\smemory\sleak\sin\sfts5\sintroduced\sby\s[def41225].
-D 2023-07-18T16:29:34.926
+C Improved\s".wheretrace"\sfor\sthe\sVIEWSCAN\soptimization.
+D 2023-07-18T20:41:09.317
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -722,7 +722,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c dd843f619ac60d5dadab7109cf402432ba74dde0c301505fd1c202add07659e3
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 2dc708cf8b6a691fb79f16bbc46567497ee6f991043318d421e294b2da114d93
+F src/where.c e551d13d4aff9176690368ae1b3acff10ede1f451652c75e9dfc9bb2d85d5970
 F src/whereInt.h c7d19902863beadec1d04e66aca39c0bcd60b74f05f0eaa7422c7005dfc5d51a
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P def41225b2f10b0294ab506f28bc87873688d4030f7056839298ff18e058ece5
-R e9300e0dc9583f0f9cd6aefb60fd68d9
-U dan
-Z 5551f44d2ee1d451fc303b92968039b5
+P 4dcad2db743fdb9ef72871ca5a4d1384f76cb697161b0f5110e2670a83a18e8a
+R 226cc4c3c153723bae524ae831eeb8ad
+U drh
+Z 09fb8db5361f1b823e48611e4afd0f28
 # Remove this line to create a well-formed Fossil manifest.
