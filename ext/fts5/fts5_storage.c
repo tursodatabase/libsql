@@ -463,8 +463,14 @@ static int fts5StorageDeleteFromIndex(
   return rc;
 }
 
+/*
+** This function is called to process a DELETE on a contentless_delete=1
+** table. It adds the tombstone required to delete the entry with rowid 
+** iDel. If successful, SQLITE_OK is returned. Or, if an error occurs,
+** an SQLite error code.
+*/
 static int fts5StorageContentlessDelete(Fts5Storage *p, i64 iDel){
-  i64 iLoc = 0;
+  i64 iOrigin = 0;
   sqlite3_stmt *pLookup = 0;
   int rc = SQLITE_OK;
 
@@ -472,18 +478,18 @@ static int fts5StorageContentlessDelete(Fts5Storage *p, i64 iDel){
   assert( p->pConfig->eContent==FTS5_CONTENT_NONE );
 
   /* Look up the origin of the document in the %_docsize table. Store
-  ** this in stack variable iLoc.  */
+  ** this in stack variable iOrigin.  */
   rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pLookup, 1, iDel);
     if( SQLITE_ROW==sqlite3_step(pLookup) ){
-      iLoc = sqlite3_column_int64(pLookup, 1);
+      iOrigin = sqlite3_column_int64(pLookup, 1);
     }
     rc = sqlite3_reset(pLookup);
   }
 
-  if( rc==SQLITE_OK && iLoc!=0 ){
-    rc = sqlite3Fts5IndexContentlessDelete(p->pIndex, iLoc, iDel);
+  if( rc==SQLITE_OK && iOrigin!=0 ){
+    rc = sqlite3Fts5IndexContentlessDelete(p->pIndex, iOrigin, iDel);
   }
 
   return rc;

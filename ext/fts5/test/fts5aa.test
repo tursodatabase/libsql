@@ -50,7 +50,6 @@ do_execsql_test 2.1 {
   INSERT INTO t1 VALUES('a b c', 'd e f');
 }
 
-breakpoint
 do_test 2.2 {
   execsql { SELECT fts5_decode(id, block) FROM t1_data WHERE id==10 }
 } {/{{structure} {lvl=0 nMerge=0 nSeg=1 {id=[0123456789]* leaves=1..1}}}/}

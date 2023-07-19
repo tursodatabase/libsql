@@ -56,6 +56,22 @@
 
 #define FTS5_MAX_LEVEL 64
 
+/*
+** There are two versions of the format used for the structure record:
+**
+**   1. the legacy format, that may be read by all fts5 versions, and
+**
+**   2. the V2 format, which is used by contentless_delete=1 databases.
+**
+** Both begin with a 4-byte "configuration cookie" value. Then, a legacy
+** format structure record contains a varint - the number of levels in
+** the structure. Whereas a V2 structure record contains the constant
+** 4 bytes [0xff 0x00 0x00 0x01]. This is unambiguous as the value of a
+** varint has to be at least 16256 to begin with "0xFF". And the default
+** maximum number of levels is 64. 
+**
+** See below for more on structure record formats.
+*/
 #define FTS5_STRUCTURE_V2 "\xFF\x00\x00\x01"
 
 /*
@@ -65,7 +81,7 @@
 **
 **     CREATE TABLE %_data(id INTEGER PRIMARY KEY, block BLOB);
 **
-** , contains the following 5 types of records. See the comments surrounding
+** , contains the following 6 types of records. See the comments surrounding
 ** the FTS5_*_ROWID macros below for a description of how %_data rowids are 
 ** assigned to each fo them.
 **
@@ -73,13 +89,13 @@
 **
 **   The set of segments that make up an index - the index structure - are
 **   recorded in a single record within the %_data table. The record consists
-**   of a single 32-bit configuration cookie value followed by a list of 
-**   SQLite varints. If the FTS table features more than one index (because
-**   there are one or more prefix indexes), it is guaranteed that all share
-**   the same cookie value.
+**   of a single 32-bit configuration cookie value followed by a list of
+**   SQLite varints. 
 **
-**   Immediately following the configuration cookie, the record begins with
-**   three varints:
+**   If the structure record is a V2 record, the configuration cookie is 
+**   followed by the following 4 bytes: [0xFF 0x00 0x00 0x01]. 
+**
+**   Next, the record continues with three varints:
 **
 **     + number of levels,
 **     + total number of segments on all levels,
@@ -97,7 +113,8 @@
 **      Then, for V2 structures only:
 **
 **         + lower origin counter value,
-**         + upper origin counter value
+**         + upper origin counter value,
+**         + the number of tombstone hash pages.
 **
 ** 2. The Averages Record:
 **
@@ -214,6 +231,38 @@
 **     * A list of delta-encoded varints - the first rowid on each subsequent
 **       child page. 
 **
+** 6. Tombstone Hash Page
+**
+**   These records are only ever present in contentless_delete=1 tables. 
+**   There are zero or more of these associated with each segment. They
+**   are used to store the tombstone rowids for rows contained in the
+**   associated segments.
+**
+**   The set of nHashPg tombstone hash pages associated with a single 
+**   segment together form a single hash table containing tombstone rowids.
+**   To find the page of the hash on which a key might be stored:
+**
+**       iPg = (rowid % nHashPg)
+**
+**   Then, within page iPg, which has nSlot slots:
+**
+**       iSlot = (rowid / nHashPg) % nSlot
+**
+**   Each tombstone hash page begins with an 8 byte header: 
+**
+**     1-byte:  Key-size (the size in bytes of each slot). Either 4 or 8.
+**     1-byte:  rowid-0-tombstone flag. This flag is only valid on the 
+**              first tombstone hash page for each segment (iPg=0). If set,
+**              the hash table contains rowid 0. If clear, it does not.
+**              Rowid 0 is handled specially.
+**     2-bytes: unused.
+**     4-bytes: Big-endian integer containing number of entries on page.
+**
+**   Following this are nSlot 4 or 8 byte slots (depending on the key-size
+**   in the first byte of the page header). The number of slots may be
+**   determined based on the size of the page record and the key-size:
+**
+**     nSlot = (nByte - 8) / key-size
 */
 
 /*
@@ -247,8 +296,7 @@
 
 #define FTS5_SEGMENT_ROWID(segid, pgno)       fts5_dri(segid, 0, 0, pgno)
 #define FTS5_DLIDX_ROWID(segid, height, pgno) fts5_dri(segid, 1, height, pgno)
-
-#define FTS5_TOMBSTONE_ROWID(segid,ipg) fts5_dri(segid + (1<<16), 0, 0, ipg)
+#define FTS5_TOMBSTONE_ROWID(segid,ipg)       fts5_dri(segid+(1<<16), 0, 0, ipg)
 
 #ifdef SQLITE_DEBUG
 int sqlite3Fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
@@ -304,7 +352,6 @@ struct Fts5Index {
 
   /* State used by the fts5DataXXX() functions. */
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
-  sqlite3_stmt *pReaderOpt;
   sqlite3_stmt *pWriter;          /* "INSERT ... %_data VALUES(?,?)" */
   sqlite3_stmt *pDeleter;         /* "DELETE FROM %_data ... id>=? AND id<=?" */
   sqlite3_stmt *pIdxWriter;       /* "INSERT ... %_idx VALUES(?,?,?,?)" */
@@ -357,7 +404,7 @@ struct Fts5StructureLevel {
 struct Fts5Structure {
   int nRef;                       /* Object reference count */
   u64 nWriteCounter;              /* Total leaves written to level 0 */
-  u64 nOriginCntr;
+  u64 nOriginCntr;                /* Origin value for next top-level segment */
   int nSegment;                   /* Total segments in this structure */
   int nLevel;                     /* Number of levels in this index */
   Fts5StructureLevel aLevel[1];   /* Array of nLevel level objects */
@@ -446,6 +493,13 @@ struct Fts5CResult {
 **
 ** iTermIdx:
 **     Index of current term on iTermLeafPgno.
+**
+** apTombstone/nTombstone:
+**     These are used for contentless_delete=1 tables only. When the cursor
+**     is first allocated, the apTombstone[] array is allocated so that it
+**     is large enough for all tombstones hash pages associated with the
+**     segment. The pages themselves are loaded lazily from the database as
+**     they are required.
 */
 struct Fts5SegIter {
   Fts5StructureSegment *pSeg;     /* Segment to iterate through */
@@ -585,6 +639,11 @@ static u16 fts5GetU16(const u8 *aIn){
   return ((u16)aIn[0] << 8) + aIn[1];
 } 
 
+/*
+** The only argument points to a buffer at least 8 bytes in size. This
+** function interprets the first 8 bytes of the buffer as a 64-bit big-endian
+** unsigned integer and returns the result.
+*/
 static u64 fts5GetU64(u8 *a){
   return ((u64)a[0] << 56)
        + ((u64)a[1] << 48)
@@ -596,6 +655,22 @@ static u64 fts5GetU64(u8 *a){
        + ((u64)a[7] << 0);
 }
 
+/*
+** The only argument points to a buffer at least 4 bytes in size. This
+** function interprets the first 4 bytes of the buffer as a 32-bit big-endian
+** unsigned integer and returns the result.
+*/
+static u32 fts5GetU32(const u8 *a){
+  return ((u32)a[0] << 24)
+       + ((u32)a[1] << 16)
+       + ((u32)a[2] << 8)
+       + ((u32)a[3] << 0);
+} 
+
+/*
+** Write iVal, formated as a 64-bit big-endian unsigned integer, to the
+** buffer indicated by the first argument.
+*/
 static void fts5PutU64(u8 *a, u64 iVal){
   a[0] = ((iVal >> 56) & 0xFF);
   a[1] = ((iVal >> 48) & 0xFF);
@@ -607,12 +682,10 @@ static void fts5PutU64(u8 *a, u64 iVal){
   a[7] = ((iVal >>  0) & 0xFF);
 }
 
-static u32 fts5GetU32(const u8 *a){
-  return ((u32)a[0] << 24)
-       + ((u32)a[1] << 16)
-       + ((u32)a[2] << 8)
-       + ((u32)a[3] << 0);
-} 
+/*
+** Write iVal, formated as a 32-bit big-endian unsigned integer, to the
+** buffer indicated by the first argument.
+*/
 static void fts5PutU32(u8 *a, u32 iVal){
   a[0] = ((iVal >> 24) & 0xFF);
   a[1] = ((iVal >> 16) & 0xFF);
@@ -683,7 +756,6 @@ void sqlite3Fts5IndexCloseReader(Fts5Index *p){
     sqlite3_blob_close(pReader);
   }
 }
-
 
 /*
 ** Retrieve a record from the %_data table.
@@ -798,6 +870,7 @@ static int fts5IndexPrepareStmt(
   sqlite3_free(zSql);
   return p->rc;
 }
+
 
 /*
 ** INSERT OR REPLACE a record into the %_data table.
@@ -969,12 +1042,13 @@ static int fts5StructureDecode(
   sqlite3_int64 nByte;            /* Bytes of space to allocate at pRet */
   Fts5Structure *pRet = 0;        /* Structure object to return */
   int bStructureV2 = 0;           /* True for FTS5_STRUCTURE_V2 */
-  u64 nOriginCntr = 0;
+  u64 nOriginCntr = 0;            /* Largest origin value seen so far */
 
   /* Grab the cookie value */
   if( piCookie ) *piCookie = sqlite3Fts5Get32(pData);
   i = 4;
 
+  /* Check if this is a V2 structure record. Set bStructureV2 if it is. */
   if( 0==memcmp(&pData[i], FTS5_STRUCTURE_V2, 4) ){
     i += 4;
     bStructureV2 = 1;
@@ -1819,7 +1893,12 @@ static void fts5SegIterSetNext(Fts5Index *p, Fts5SegIter *pIter){
   }
 }
 
-static void fts5SegIterLoadTombstone(Fts5Index *p, Fts5SegIter *pIter){
+/*
+** Allocate a tombstone hash page array (pIter->apTombstone) for the 
+** iterator passed as the second argument. If an OOM error occurs, leave
+** an error in the Fts5Index object.
+*/
+static void fts5SegIterAllocTombstone(Fts5Index *p, Fts5SegIter *pIter){
   const int nTomb = pIter->pSeg->nPgTombstone;
   if( nTomb>0 ){
     Fts5Data **apTomb = 0;
@@ -1872,7 +1951,7 @@ static void fts5SegIterInit(
     pIter->iPgidxOff = pIter->pLeaf->szLeaf+1;
     fts5SegIterLoadTerm(p, pIter, 0);
     fts5SegIterLoadNPos(p, pIter);
-    fts5SegIterLoadTombstone(p, pIter);
+    fts5SegIterAllocTombstone(p, pIter);
   }
 }
 
@@ -2574,7 +2653,7 @@ static void fts5SegIterSeekInit(
   }
 
   fts5SegIterSetNext(p, pIter);
-  fts5SegIterLoadTombstone(p, pIter);
+  fts5SegIterAllocTombstone(p, pIter);
 
   /* Either:
   **
@@ -2656,17 +2735,25 @@ static void fts5SegIterHashInit(
 }
 
 /*
+** Array ap[] contains n elements. Release each of these elements using
+** fts5DataRelease(). Then free the array itself using sqlite3_free().
+*/
+static void fts5IndexFreeArray(Fts5Data **ap, int n){
+  int ii;
+  for(ii=0; ii<n; ii++){
+    fts5DataRelease(ap[ii]);
+  }
+  sqlite3_free(ap);
+}
+
+/*
 ** Zero the iterator passed as the only argument.
 */
 static void fts5SegIterClear(Fts5SegIter *pIter){
-  int ii;
   fts5BufferFree(&pIter->term);
   fts5DataRelease(pIter->pLeaf);
   fts5DataRelease(pIter->pNextLeaf);
-  for(ii=0; ii<pIter->nTombstone; ii++){
-    fts5DataRelease(pIter->apTombstone[ii]);
-  }
-  sqlite3_free(pIter->apTombstone);
+  fts5IndexFreeArray(pIter->apTombstone, pIter->nTombstone);
   fts5DlidxIterFree(pIter->pDlidx);
   sqlite3_free(pIter->aRowidOffset);
   memset(pIter, 0, sizeof(Fts5SegIter));
@@ -3004,16 +3091,21 @@ static void fts5MultiIterSetEof(Fts5Iter *pIter){
   pIter->iSwitchRowid = pSeg->iRowid;
 }
 
+/*
+** The argument to this macro must be an Fts5Data structure containing a
+** tombstone hash page. This macro returns the key-size of the hash-page.
+*/
 #define TOMBSTONE_KEYSIZE(pPg) (pPg->p[0]==4 ? 4 : 8)
 
 /*
-** Query a single tombstone hash table for rowid iRowid. The tombstone hash
-** table is one of nHashTable tables.
+** Query a single tombstone hash table for rowid iRowid. Return true if
+** it is found or false otherwise. The tombstone hash table is one of
+** nHashTable tables.
 */
 static int fts5IndexTombstoneQuery(
-  Fts5Data *pHash,
-  int nHashTable,
-  u64 iRowid
+  Fts5Data *pHash,                /* Hash table page to query */
+  int nHashTable,                 /* Number of pages attached to segment */
+  u64 iRowid                      /* Rowid to query hash for */
 ){
   int szKey = TOMBSTONE_KEYSIZE(pHash);
   int nSlot = (pHash->nn - 8) / szKey;
@@ -3052,6 +3144,8 @@ static int fts5MultiIterIsDeleted(Fts5Iter *pIter){
     int iPg = ((u64)pSeg->iRowid) % pSeg->nTombstone;
     assert( iPg>=0 );
 
+    /* If tombstone hash page iPg has not yet been loaded from the 
+    ** database, load it now. */
     if( pSeg->apTombstone[iPg]==0 ){
       pSeg->apTombstone[iPg] = fts5DataRead(pIter->pIndex,
           FTS5_TOMBSTONE_ROWID(pSeg->pSeg->iSegid, iPg)
@@ -6088,7 +6182,6 @@ int sqlite3Fts5IndexClose(Fts5Index *p){
     assert( p->pReader==0 );
     fts5StructureInvalidate(p);
     sqlite3_finalize(p->pWriter);
-    sqlite3_finalize(p->pReaderOpt);
     sqlite3_finalize(p->pDeleter);
     sqlite3_finalize(p->pIdxWriter);
     sqlite3_finalize(p->pIdxDeleter);
@@ -6421,6 +6514,13 @@ int sqlite3Fts5IndexLoadConfig(Fts5Index *p){
   return fts5IndexReturn(p);
 }
 
+/*
+** Retrieve the origin value that will be used for the segment currently
+** being accumulated in the in-memory hash table when it is flushed to
+** disk. If successful, SQLITE_OK is returned and (*piOrigin) set to
+** the queried value. Or, if an error occurs, an error code is returned
+** and the final value of (*piOrigin) is undefined.
+*/
 int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin){
   Fts5Structure *pStruct;
   pStruct = fts5StructureRead(p);
@@ -6432,7 +6532,15 @@ int sqlite3Fts5IndexGetOrigin(Fts5Index *p, i64 *piOrigin){
 }
 
 /*
-** Buffer pPg contains a page of a tombstone hash table - one of nPg.
+** Buffer pPg contains a page of a tombstone hash table - one of nPg pages
+** associated with the same segment. This function adds rowid iRowid to
+** the hash table. The caller is required to guarantee that there is at
+** least one free slot on the page.
+**
+** If parameter bForce is false and the hash table is deemed to be full
+** (more than half of the slots are occupied), then non-zero is returned
+** and iRowid not inserted. Or, if bForce is true or if the hash table page
+** is not full, iRowid is inserted and zero returned.
 */
 static int fts5IndexTombstoneAddToPage(
   Fts5Data *pPg, 
@@ -6470,9 +6578,16 @@ static int fts5IndexTombstoneAddToPage(
 }
 
 /*
-** Return 0 if the hash is successfully rebuilt using nOut pages. Or 
-** non-zero if it is not. In this case the caller should retry with a 
-** larger nOut parameter.
+** This function attempts to build a new hash containing all the keys 
+** currently in the tombstone hash table for segment pSeg. The new
+** hash will be stored in the nOut buffers passed in array apOut[].
+** All pages of the new hash use key-size szKey (4 or 8).
+**
+** Return 0 if the hash is successfully rebuilt into the nOut pages. 
+** Or non-zero if it is not (because one page became overfull). In this 
+** case the caller should retry with a larger nOut parameter.
+**
+** Parameter pData1 is page iPg1 of the hash table being rebuilt.
 */
 static int fts5IndexTombstoneRehash(
   Fts5Index *p,
@@ -6539,16 +6654,19 @@ static int fts5IndexTombstoneRehash(
   return res;
 }
 
-static void fts5IndexTombstoneFreeArray(Fts5Data **ap, int n){
-  int ii;
-  for(ii=0; ii<n; ii++){
-    fts5DataRelease(ap[ii]);
-  }
-  sqlite3_free(ap);
-}
-
 /*
 ** This is called to rebuild the hash table belonging to segment pSeg.
+** If parameter pData1 is not NULL, then one page of the existing hash table
+** has already been loaded - pData1, which is page iPg1. The key-size for
+** the new hash table is szKey (4 or 8).
+**
+** If successful, the new hash table is not written to disk. Instead, 
+** output parameter (*pnOut) is set to the number of pages in the new
+** hash table, and (*papOut) to point to an array of buffers containing
+** the new page data.
+**
+** If an error occurs, an error code is left in the Fts5Index object and
+** both output parameters set to 0 before returning.
 */
 static void fts5IndexTombstoneRebuild(
   Fts5Index *p,
@@ -6565,11 +6683,28 @@ static void fts5IndexTombstoneRebuild(
   int nOut = 0;
 
   /* Figure out how many output pages (nOut) and how many slots per 
-  ** page (nSlot).  */
+  ** page (nSlot).  There are three possibilities: 
+  **
+  **   1. The hash table does not yet exist. In this case the new hash
+  **      table will consist of a single page with MINSLOT slots.
+  **
+  **   2. The hash table exists but is currently a single page. In this
+  **      case an attempt is made to grow the page to accommodate the new
+  **      entry. The page is allowed to grow up to nSlotPerPage (see above)
+  **      slots.
+  **
+  **   3. The hash table already consists of more than one page, or of
+  **      a single page already so large that it cannot be grown. In this
+  **      case the new hash consists of (nPg*2+1) pages of nSlotPerPage
+  **      slots each, where nPg is the current number of pages in the 
+  **      hash table.
+  */
   if( pSeg->nPgTombstone==0 ){
+    /* Case 1. */
     nOut = 1;
     nSlot = MINSLOT;
   }else if( pSeg->nPgTombstone==1 ){
+    /* Case 2. */
     int nElem = (int)fts5GetU32(&pData1->p[4]);
     assert( pData1 && iPg1==0 );
 
@@ -6586,6 +6721,7 @@ static void fts5IndexTombstoneRebuild(
     }
   }
   if( nOut==0 ){
+    /* Case 3. */
     nOut = (pSeg->nPgTombstone * 2 + 1);
     nSlot = nSlotPerPage;
   }
@@ -6597,6 +6733,7 @@ static void fts5IndexTombstoneRebuild(
     int szPage = 0;
     Fts5Data **apOut = 0;
 
+    /* Allocate space for the new hash table */
     apOut = (Fts5Data**)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5Data*) * nOut);
     szPage = 8 + nSlot*szKey;
     for(ii=0; ii<nOut; ii++){
@@ -6610,10 +6747,11 @@ static void fts5IndexTombstoneRebuild(
       apOut[ii] = pNew;
     }
 
+    /* Rebuild the hash table. */
     res = fts5IndexTombstoneRehash(p, pSeg, pData1, iPg1, szKey, nOut, apOut);
     if( res==0 ){
       if( p->rc ){
-        fts5IndexTombstoneFreeArray(apOut, nOut);
+        fts5IndexFreeArray(apOut, nOut);
         apOut = 0;
         nOut = 0;
       }
@@ -6621,9 +6759,11 @@ static void fts5IndexTombstoneRebuild(
       *papOut = apOut;
       break;
     }
+    
+    /* If control flows to here, it was not possible to rebuild the hash
+    ** table. Free all buffers and then try again with more pages. */
     assert( p->rc==SQLITE_OK );
-
-    fts5IndexTombstoneFreeArray(apOut, nOut);
+    fts5IndexFreeArray(apOut, nOut);
     nSlot = nSlotPerPage;
     nOut = nOut*2 + 1;
   }
@@ -6632,22 +6772,6 @@ static void fts5IndexTombstoneRebuild(
 
 /*
 ** Add a tombstone for rowid iRowid to segment pSeg.
-**
-** All tombstones for a single segment are stored in a blob formatted to 
-** contain a hash table. The format is:
-**
-**   * Key-size: 1 byte. Either 4 or 8.
-**   * rowid-0-flag: 1 byte. Either 0 or 1.
-**   * UNUSED: 2 bytes.
-**   * 32-bit big-endian integer. The number of entries currently in the hash
-**     table. This does not change when the rowid-0-flag is set - it only
-**     includes entries in the hash table.
-**
-** Then an array of entries. The number of entries can be calculated based
-** on the size of the blob in the database and the size of the keys as 
-** specified by the first 32-bit field of the hash table header.
-**
-** All values in the hash table are stored as big-endian integers.
 */
 static void fts5IndexTombstoneAdd(
   Fts5Index *p, 
@@ -6697,12 +6821,13 @@ static void fts5IndexTombstoneAdd(
   }
 
   fts5DataRelease(pPg);
-  fts5IndexTombstoneFreeArray(apHash, nHash);
+  fts5IndexFreeArray(apHash, nHash);
 }
 
 /*
 ** Add iRowid to the tombstone list of the segment or segments that contain
-** rows from origin iOrigin.
+** rows from origin iOrigin. Return SQLITE_OK if successful, or an SQLite
+** error code otherwise.
 */
 int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid){
   Fts5Structure *pStruct;
