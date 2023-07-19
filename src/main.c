@@ -1234,6 +1234,10 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
     db->trace.xV2(SQLITE_TRACE_CLOSE, db->pTraceArg, db, 0);
   }
 
+  if (db->xCloseCallback) {
+    db->xCloseCallback(db->pCloseArg, db);
+  }
+
   /* Force xDisconnect calls on all virtual tables */
   disconnectAllVtab(db);
 
@@ -2350,6 +2354,24 @@ void *sqlite3_preupdate_hook(
   return pRet;
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+/*
+** Register a callback to be invoked when the connection is closed.
+*/
+void *libsql_close_hook(
+  sqlite3 *db,              /* Attach the hook to this connection */
+  void(*xCallback)(         /* Callback function */
+    void*,sqlite3*),
+  void *pArg                /* First callback argument */
+){
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pCloseArg;
+  db->xCloseCallback = xCallback;
+  db->pCloseArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
+  return pRet;
+}
 
 /*
 ** Register a function to be invoked prior to each autovacuum that

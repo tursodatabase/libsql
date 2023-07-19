@@ -8,6 +8,16 @@ mod user_defined_functions_src;
 
 #[cfg(test)]
 mod tests {
+    extern "C" {
+        fn libsql_close_hook(
+            db: *mut rusqlite::ffi::sqlite3,
+            callback: Option<
+                unsafe fn(arg: *mut std::ffi::c_void, db: *mut rusqlite::ffi::sqlite3),
+            >,
+            arg: *mut std::ffi::c_void,
+        );
+    }
+
     use rusqlite::Connection;
 
     #[derive(Debug, PartialEq)]
@@ -125,5 +135,25 @@ mod tests {
             get_read_written(&conn, "INSERT INTO test VALUES (1), (2), (3), (4)"),
             (0, 4)
         );
+    }
+
+    #[test]
+    fn test_close_hook() {
+        let conn = Connection::open_in_memory().unwrap();
+        let mut closed = false;
+        unsafe {
+            libsql_close_hook(
+                conn.handle(),
+                Some(|closed, _db| {
+                    println!("Close hook called!");
+                    let closed = &mut *(closed as *mut bool);
+                    *closed = true;
+                }),
+                &mut closed as *mut _ as *mut _,
+            );
+        }
+        assert!(!closed);
+        drop(conn);
+        assert!(closed);
     }
 }

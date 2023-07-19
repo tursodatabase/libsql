@@ -1746,6 +1746,10 @@ struct sqlite3 {
 #endif
   libsql_wal_methods* pWalMethods; /* Custom WAL methods */
   void* pWalMethodsData;           /* optional data for WAL methods */
+  void *pCloseArg;                 /* First argument to xCloseCallback */
+  void (*xCloseCallback)(          /* Registered using sqlite3_close_hook() */
+    void*, sqlite3*
+  );
 };
 
 /*
