@@ -92,8 +92,326 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     directory: undefined /* derived from .name */,
     initialCapacity: 6,
     clearOnInit: false,
-    verbosity: 2 /*3+ == everything, 2 == warnings+errors, 1 == errors only*/
+    /* Logging verbosity 3+ == everything, 2 == warnings+errors, 1 ==
+       errors only. */
+    verbosity: 2
   });
+
+  /** Logging routines, from most to least serious. */
+  const loggers = [
+    sqlite3.config.error,
+    sqlite3.config.warn,
+    sqlite3.config.log
+  ];
+  const log = sqlite3.config.log;
+  const warn = sqlite3.config.warn;
+  const error = sqlite3.config.error;
+
+  /* Maps (sqlite3_vfs*) to OpfsSAHPool instances */
+  const __mapVfsToPool = new Map();
+  const getPoolForVfs = (pVfs)=>__mapVfsToPool.get(pVfs);
+  const setPoolForVfs = (pVfs,pool)=>{
+    if(pool) __mapVfsToPool.set(pVfs, pool);
+    else __mapVfsToPool.delete(pVfs);
+  };
+  /* Maps (sqlite3_file*) to OpfsSAHPool instances */
+  const __mapSqlite3File = new Map();
+  const getPoolForPFile = (pFile)=>__mapSqlite3File.get(pFile);
+  const setPoolForPFile = (pFile,pool)=>{
+    if(pool) __mapSqlite3File.set(pFile, pool);
+    else __mapSqlite3File.delete(pFile);
+  };
+
+  /**
+     Impls for the sqlite3_io_methods methods. Maintenance reminder:
+     members are in alphabetical order to simplify finding them.
+  */
+  const ioMethods = {
+    xCheckReservedLock: function(pFile,pOut){
+      const pool = getPoolForPFile(pFile);
+      pool.log('xCheckReservedLock');
+      pool.storeErr();
+      wasm.poke32(pOut, 1);
+      return 0;
+    },
+    xClose: function(pFile){
+      const pool = getPoolForPFile(pFile);
+      pool.storeErr();
+      const file = pool.getFileForPtr(pFile);
+      if(file) {
+        try{
+          pool.log(`xClose ${file.path}`);
+          pool.setFileForPtr(pFile, false);
+          file.sah.flush();
+          if(file.flags & capi.SQLITE_OPEN_DELETEONCLOSE){
+            pool.deletePath(file.path);
+          }
+        }catch(e){
+          pool.storeErr(e);
+          return capi.SQLITE_IOERR;
+        }
+      }
+      return 0;
+    },
+    xDeviceCharacteristics: function(pFile){
+      return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
+    },
+    xFileControl: function(pFile, opId, pArg){
+      return capi.SQLITE_NOTFOUND;
+    },
+    xFileSize: function(pFile,pSz64){
+      const pool = getPoolForPFile(pFile);
+      pool.log(`xFileSize`);
+      const file = pool.getFileForPtr(pFile);
+      const size = file.sah.getSize() - HEADER_OFFSET_DATA;
+      //log(`xFileSize ${file.path} ${size}`);
+      wasm.poke64(pSz64, BigInt(size));
+      return 0;
+    },
+    xLock: function(pFile,lockType){
+      const pool = getPoolForPFile(pFile);
+      pool.log(`xLock ${lockType}`);
+      pool.storeErr();
+      const file = pool.getFileForPtr(pFile);
+      file.lockType = lockType;
+      return 0;
+    },
+    xRead: function(pFile,pDest,n,offset64){
+      const pool = getPoolForPFile(pFile);
+      pool.storeErr();
+      const file = pool.getFileForPtr(pFile);
+      pool.log(`xRead ${file.path} ${n} @ ${offset64}`);
+      try {
+        const nRead = file.sah.read(
+          wasm.heap8u().subarray(pDest, pDest+n),
+          {at: HEADER_OFFSET_DATA + Number(offset64)}
+        );
+        if(nRead < n){
+          wasm.heap8u().fill(0, pDest + nRead, pDest + n);
+          return capi.SQLITE_IOERR_SHORT_READ;
+        }
+        return 0;
+      }catch(e){
+        pool.storeErr(e);
+        return capi.SQLITE_IOERR;
+      }
+    },
+    xSectorSize: function(pFile){
+      return SECTOR_SIZE;
+    },
+    xSync: function(pFile,flags){
+      const pool = getPoolForPFile(pFile);
+      pool.log(`xSync ${flags}`);
+      pool.storeErr();
+      const file = pool.getFileForPtr(pFile);
+      //log(`xSync ${file.path} ${flags}`);
+      try{
+        file.sah.flush();
+        return 0;
+      }catch(e){
+        pool.storeErr(e);
+        return capi.SQLITE_IOERR;
+      }
+    },
+    xTruncate: function(pFile,sz64){
+      const pool = getPoolForPFile(pFile);
+      pool.log(`xTruncate ${sz64}`);
+      pool.storeErr();
+      const file = pool.getFileForPtr(pFile);
+      //log(`xTruncate ${file.path} ${iSize}`);
+      try{
+        file.sah.truncate(HEADER_OFFSET_DATA + Number(sz64));
+        return 0;
+      }catch(e){
+        pool.storeErr(e);
+        return capi.SQLITE_IOERR;
+      }
+    },
+    xUnlock: function(pFile,lockType){
+      const pool = getPoolForPFile(pFile);
+      pool.log('xUnlock');
+      const file = pool.getFileForPtr(pFile);
+      file.lockType = lockType;
+      return 0;
+    },
+    xWrite: function(pFile,pSrc,n,offset64){
+      const pool = getPoolForPFile(pFile);
+      pool.storeErr();
+      const file = pool.getFileForPtr(pFile);
+      pool.log(`xWrite ${file.path} ${n} ${offset64}`);
+      try{
+        const nBytes = file.sah.write(
+          wasm.heap8u().subarray(pSrc, pSrc+n),
+          { at: HEADER_OFFSET_DATA + Number(offset64) }
+        );
+        return nBytes === n ? 0 : capi.SQLITE_IOERR;
+      }catch(e){
+        pool.storeErr(e);
+        return capi.SQLITE_IOERR;
+      }
+    }
+  }/*ioMethods*/;
+
+  const opfsIoMethods = new capi.sqlite3_io_methods();
+  opfsIoMethods.$iVersion = 1;
+  sqlite3.vfs.installVfs({
+    io: {struct: opfsIoMethods, methods: ioMethods}
+  });
+
+  /**
+     Impls for the sqlite3_vfs methods. Maintenance reminder: members
+     are in alphabetical order to simplify finding them.
+  */
+  const vfsMethods = {
+    xAccess: function(pVfs,zName,flags,pOut){
+      //log(`xAccess ${wasm.cstrToJs(zName)}`);
+      const pool = getPoolForVfs(pVfs);
+      pool.storeErr();
+      try{
+        const name = pool.getPath(zName);
+        wasm.poke32(pOut, pool.hasFilename(name) ? 1 : 0);
+      }catch(e){
+        /*ignored*/
+        wasm.poke32(pOut, 0);
+      }
+      return 0;
+    },
+    xCurrentTime: function(pVfs,pOut){
+      wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
+                'double');
+      return 0;
+    },
+    xCurrentTimeInt64: function(pVfs,pOut){
+      wasm.poke(pOut, (2440587.5 * 86400000) + new Date().getTime(),
+                'i64');
+      return 0;
+    },
+    xDelete: function(pVfs, zName, doSyncDir){
+      const pool = getPoolForVfs(pVfs);
+      pool.log(`xDelete ${wasm.cstrToJs(zName)}`);
+      pool.storeErr();
+      try{
+        pool.deletePath(pool.getPath(zName));
+        return 0;
+      }catch(e){
+        pool.storeErr(e);
+        return capi.SQLITE_IOERR_DELETE;
+      }
+    },
+    xFullPathname: function(pVfs,zName,nOut,pOut){
+      //const pool = getPoolForVfs(pVfs);
+      //pool.log(`xFullPathname ${wasm.cstrToJs(zName)}`);
+      const i = wasm.cstrncpy(pOut, zName, nOut);
+      return i<nOut ? 0 : capi.SQLITE_CANTOPEN;
+    },
+    xGetLastError: function(pVfs,nOut,pOut){
+      const pool = getPoolForVfs(pVfs);
+      pool.log(`xGetLastError ${nOut}`);
+      const e = pool.popErr();
+      if(e){
+        const scope = wasm.scopedAllocPush();
+        try{
+          const [cMsg, n] = wasm.scopedAllocCString(e.message, true);
+          wasm.cstrncpy(pOut, cMsg, nOut);
+          if(n > nOut) wasm.poke8(pOut + nOut - 1, 0);
+        }catch(e){
+          return capi.SQLITE_NOMEM;
+        }finally{
+          wasm.scopedAllocPop(scope);
+        }
+      }
+      return 0;
+    },
+    //xSleep is optionally defined below
+    xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
+      const pool = getPoolForVfs(pVfs);
+      try{
+        pool.log(`xOpen ${wasm.cstrToJs(zName)} ${flags}`);
+        // First try to open a path that already exists in the file system.
+        const path = (zName && wasm.peek8(zName))
+              ? pool.getPath(zName)
+              : getRandomName();
+        let sah = pool.getSAHForPath(path);
+        if(!sah && (flags & capi.SQLITE_OPEN_CREATE)) {
+          // File not found so try to create it.
+          if(pool.getFileCount() < pool.getCapacity()) {
+            // Choose an unassociated OPFS file from the pool.
+            sah = pool.nextAvailableSAH();
+            pool.setAssociatedPath(sah, path, flags);
+          }else{
+            // File pool is full.
+            toss('SAH pool is full. Cannot create file',path);
+          }
+        }
+        if(!sah){
+          toss('file not found:',path);
+        }
+        // Subsequent I/O methods are only passed the sqlite3_file
+        // pointer, so map the relevant info we need to that pointer.
+        const file = {path, flags, sah};
+        pool.setFileForPtr(pFile, file);
+        file.lockType = capi.SQLITE_LOCK_NONE;
+        const sq3File = new capi.sqlite3_file(pFile);
+        sq3File.$pMethods = opfsIoMethods.pointer;
+        sq3File.dispose();
+        wasm.poke32(pOutFlags, flags);
+        return 0;
+      }catch(e){
+        pool.storeErr(e);
+        return capi.SQLITE_CANTOPEN;
+      }
+    }/*xOpen()*/
+  }/*vfsMethods*/;
+
+  /**
+     Creates and initializes an sqlite3_vfs instance for an
+     OpfsSAHPool. The argument is the VFS's name (JS string).
+
+     Maintenance reminder: the only detail about the returned object
+     which is specific to any given OpfsSAHPool instance is the $zName
+     member. All other state is identical.
+  */
+  const createOpfsVfs = function(vfsName){
+    const opfsVfs = new capi.sqlite3_vfs();
+    /* We fetch the default VFS so that we can inherit some
+       methods from it. */
+    const pDVfs = capi.sqlite3_vfs_find(null);
+    const dVfs = pDVfs
+          ? new capi.sqlite3_vfs(pDVfs)
+          : null /* dVfs will be null when sqlite3 is built with
+                    SQLITE_OS_OTHER. */;
+    opfsVfs.$iVersion = 2/*yes, two*/;
+    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
+    opfsVfs.$mxPathname = HEADER_MAX_PATH_SIZE;
+    opfsVfs.addOnDispose(
+      opfsVfs.$zName = wasm.allocCString(vfsName),
+      ()=>setPoolForVfs(opfsVfs.pointer, 0)
+    );
+
+    if(dVfs){
+      /* Inherit certain VFS members from the default VFS,
+         if available. */
+      opfsVfs.$xRandomness = dVfs.$xRandomness;
+      opfsVfs.$xSleep = dVfs.$xSleep;
+      dVfs.dispose();
+    }
+    if(!opfsVfs.$xRandomness && !vfsMethods.xRandomness){
+      /* If the default VFS has no xRandomness(), add a basic JS impl... */
+      vfsMethods.xRandomness = function(pVfs, nOut, pOut){
+        const heap = wasm.heap8u();
+        let i = 0;
+        for(; i < nOut; ++i) heap[pOut + i] = (Math.random()*255000) & 0xFF;
+        return i;
+      };
+    }
+    if(!opfsVfs.$xSleep && !vfsMethods.xSleep){
+      vfsMethods.xSleep = (pVfs,ms)=>0;
+    }
+    sqlite3.vfs.installVfs({
+      vfs: {struct: opfsVfs, methods: vfsMethods}
+    });
+    return opfsVfs;
+  };
 
   /**
      Class for managing OPFS-related state for the
@@ -103,31 +421,40 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* OPFS dir in which VFS metadata is stored. */
     vfsDir;
     /* Directory handle to this.vfsDir. */
-    dirHandle;
-    /* Directory handle to this.dirHandle's parent dir. Needed
+    #dhVfsRoot;
+    /* Directory handle to this.dhVfsRoot's parent dir. Needed
        for a VFS-wipe op. */
-    parentDirHandle;
+    #dhVfsParent;
     /* Maps SAHs to their opaque file names. */
-    mapSAHToName = new Map();
+    #mapSAHToName = new Map();
     /* Maps client-side file names to SAHs. */
-    mapFilenameToSAH = new Map();
+    #mapFilenameToSAH = new Map();
     /* Set of currently-unused SAHs. */
-    availableSAH = new Set();
+    #availableSAH = new Set();
     /* Maps (sqlite3_file*) to xOpen's file objects. */
-    mapIdToFile = new Map();
+    #mapSqlite3FileToFile = new Map();
 
     /** Buffer used by [sg]etAssociatedPath(). */
-    apBody = new Uint8Array(HEADER_CORPUS_SIZE);
+    #apBody = new Uint8Array(HEADER_CORPUS_SIZE);
+    #dvBody;
 
-    constructor(vfsObject, options = Object.create(null)){
+    // associated sqlite3_vfs instance
+    #cVfs;
+
+    // Logging verbosity. See optionDefaults.verbosity.
+    #verbosity;
+
+    constructor(options = Object.create(null)){
       this.vfsName = options.name || optionDefaults.name;
       if( sqlite3.capi.sqlite3_vfs_find(this.vfsName)){
         toss3("VFS name is already registered:", this.vfsName);
       }
-      this.cVfs = vfsObject;
+      this.#verbosity = options.verbosity ?? optionDefaults.verbosity;
+      this.#cVfs = createOpfsVfs(this.vfsName);
+      setPoolForVfs(this.#cVfs.pointer, this);
       this.vfsDir = options.directory || ("."+this.vfsName);
-      this.dvBody =
-        new DataView(this.apBody.buffer, this.apBody.byteOffset);
+      this.#dvBody =
+        new DataView(this.#apBody.buffer, this.#apBody.byteOffset);
       this.isReady = this
         .reset(!!(options.clearOnInit ?? optionDefaults.clearOnInit))
         .then(()=>{
@@ -139,11 +466,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         });
     }
 
+    #logImpl(level,...args){
+      if(this.#verbosity>level) loggers[level](this.vfsName+":",...args);
+    };
+    log(...args){this.#logImpl(2, ...args)};
+    warn(...args){this.#logImpl(1, ...args)};
+    error(...args){this.#logImpl(0, ...args)};
+
+    getVfs(){return this.#cVfs}
+
     /* Current pool capacity. */
-    getCapacity(){return this.mapSAHToName.size}
+    getCapacity(){return this.#mapSAHToName.size}
 
     /* Current number of in-use files from pool. */
-    getFileCount(){return this.mapFilenameToSAH.size}
+    getFileCount(){return this.#mapFilenameToSAH.size}
 
     /**
        Adds n files to the pool's capacity. This change is
@@ -153,24 +489,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     async addCapacity(n){
       for(let i = 0; i < n; ++i){
         const name = getRandomName();
-        const h = await this.dirHandle.getFileHandle(name, {create:true});
+        const h = await this.#dhVfsRoot.getFileHandle(name, {create:true});
         const ah = await h.createSyncAccessHandle();
-        this.mapSAHToName.set(ah,name);
+        this.#mapSAHToName.set(ah,name);
         this.setAssociatedPath(ah, '', 0);
       }
       return this.getCapacity();
     }
+
     async reduceCapacity(n){
       let nRm = 0;
-      for(const ah of Array.from(this.availableSAH)){
+      for(const ah of Array.from(this.#availableSAH)){
         if(nRm === n || this.getFileCount() === this.getCapacity()){
           break;
         }
-        const name = this.mapSAHToName.get(ah);
+        const name = this.#mapSAHToName.get(ah);
         ah.close();
-        await this.dirHandle.removeEntry(name);
-        this.mapSAHToName.delete(ah);
-        this.availableSAH.delete(ah);
+        await this.#dhVfsRoot.removeEntry(name);
+        this.#mapSAHToName.delete(ah);
+        this.#availableSAH.delete(ah);
         ++nRm;
       }
       return nRm;
@@ -180,14 +517,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Releases all currently-opened SAHs.
     */
     releaseAccessHandles(){
-      for(const ah of this.mapSAHToName.keys()) ah.close();
-      this.mapSAHToName.clear();
-      this.mapFilenameToSAH.clear();
-      this.availableSAH.clear();
+      for(const ah of this.#mapSAHToName.keys()) ah.close();
+      this.#mapSAHToName.clear();
+      this.#mapFilenameToSAH.clear();
+      this.#availableSAH.clear();
     }
 
     /**
-       Opens all files under this.vfsDir/this.dirHandle and acquires
+       Opens all files under this.vfsDir/this.#dhVfsRoot and acquires
        a SAH for each. returns a Promise which resolves to no value
        but completes once all SAHs are acquired. If acquiring an SAH
        throws, SAHPool.$error will contain the corresponding
@@ -199,7 +536,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     async acquireAccessHandles(clearFiles){
       const files = [];
-      for await (const [name,h] of this.dirHandle){
+      for await (const [name,h] of this.#dhVfsRoot){
         if('file'===h.kind){
           files.push([name,h]);
         }
@@ -207,16 +544,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return Promise.all(files.map(async([name,h])=>{
         try{
           const ah = await h.createSyncAccessHandle()
-          this.mapSAHToName.set(ah, name);
+          this.#mapSAHToName.set(ah, name);
           if(clearFiles){
             ah.truncate(HEADER_OFFSET_DATA);
             this.setAssociatedPath(ah, '', 0);
           }else{
             const path = this.getAssociatedPath(ah);
             if(path){
-              this.mapFilenameToSAH.set(path, ah);
+              this.#mapFilenameToSAH.set(path, ah);
             }else{
-              this.availableSAH.add(ah);
+              this.#availableSAH.add(ah);
             }
           }
         }catch(e){
@@ -235,32 +572,32 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        returns an empty string.
     */
     getAssociatedPath(sah){
-      sah.read(this.apBody, {at: 0});
+      sah.read(this.#apBody, {at: 0});
       // Delete any unexpected files left over by previous
       // untimely errors...
-      const flags = this.dvBody.getUint32(HEADER_OFFSET_FLAGS);
-      if(this.apBody[0] &&
+      const flags = this.#dvBody.getUint32(HEADER_OFFSET_FLAGS);
+      if(this.#apBody[0] &&
          ((flags & capi.SQLITE_OPEN_DELETEONCLOSE) ||
           (flags & PERSISTENT_FILE_TYPES)===0)){
         warn(`Removing file with unexpected flags ${flags.toString(16)}`,
-             this.apBody);
+             this.#apBody);
         this.setAssociatedPath(sah, '', 0);
         return '';
       }
 
       const fileDigest = new Uint32Array(HEADER_DIGEST_SIZE / 4);
       sah.read(fileDigest, {at: HEADER_OFFSET_DIGEST});
-      const compDigest = this.computeDigest(this.apBody);
+      const compDigest = this.computeDigest(this.#apBody);
       if(fileDigest.every((v,i) => v===compDigest[i])){
         // Valid digest
-        const pathBytes = this.apBody.findIndex((v)=>0===v);
+        const pathBytes = this.#apBody.findIndex((v)=>0===v);
         if(0===pathBytes){
           // This file is unassociated, so truncate it to avoid
           // leaving stale db data laying around.
           sah.truncate(HEADER_OFFSET_DATA);
         }
         return pathBytes
-          ? textDecoder.decode(this.apBody.subarray(0,pathBytes))
+          ? textDecoder.decode(this.#apBody.subarray(0,pathBytes))
           : '';
       }else{
         // Invalid digest
@@ -277,25 +614,25 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        in the metadata.
     */
     setAssociatedPath(sah, path, flags){
-      const enc = textEncoder.encodeInto(path, this.apBody);
+      const enc = textEncoder.encodeInto(path, this.#apBody);
       if(HEADER_MAX_PATH_SIZE <= enc.written){
         toss("Path too long:",path);
       }
 
-      this.dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
+      this.#dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
 
-      const digest = this.computeDigest(this.apBody);
-      sah.write(this.apBody, {at: 0});
+      const digest = this.computeDigest(this.#apBody);
+      sah.write(this.#apBody, {at: 0});
       sah.write(digest, {at: HEADER_OFFSET_DIGEST});
       sah.flush();
 
       if(path){
-        this.mapFilenameToSAH.set(path, sah);
-        this.availableSAH.delete(sah);
+        this.#mapFilenameToSAH.set(path, sah);
+        this.#availableSAH.delete(sah);
       }else{
         // This is not a persistent file, so eliminate the contents.
         sah.truncate(HEADER_OFFSET_DATA);
-        this.availableSAH.add(sah);
+        this.#availableSAH.add(sah);
       }
     }
 
@@ -314,8 +651,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Re-initializes the state of the SAH pool,
-       releasing and re-acquiring all handles.
+       Re-initializes the state of the SAH pool, releasing and
+       re-acquiring all handles.
 
        See acquireAccessHandles() for the specifics of the clearFiles
        argument.
@@ -330,8 +667,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           h = await h.getDirectoryHandle(d,{create:true});
         }
       }
-      this.dirHandle = h;
-      this.parentDirHandle = prev;
+      this.#dhVfsRoot = h;
+      this.#dhVfsParent = prev;
       this.releaseAccessHandles();
       return this.acquireAccessHandles(clearFiles);
     }
@@ -357,10 +694,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        is found, else false.
     */
     deletePath(path) {
-      const sah = this.mapFilenameToSAH.get(path);
+      const sah = this.#mapFilenameToSAH.get(path);
       if(sah) {
         // Un-associate the name from the SAH.
-        this.mapFilenameToSAH.delete(path);
+        this.#mapFilenameToSAH.delete(path);
         this.setAssociatedPath(sah, '', 0);
       }
       return !!sah;
@@ -370,7 +707,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Sets e as this object's current error. Pass a falsy
        (or no) value to clear it.
     */
-    storeErr(e){return this.$error = e;}
+    storeErr(e){
+      if(e) this.error(e);
+      return this.$error = e;
+    }
     /**
        Pops this object's Error object and returns
        it (a falsy value if no error is set).
@@ -386,25 +726,79 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        it from the set.
     */
     nextAvailableSAH(){
-      const [rc] = this.availableSAH.keys();
+      const [rc] = this.#availableSAH.keys();
       return rc;
     }
 
     getFileForPtr(ptr){
-      return this.mapIdToFile.get(ptr);
+      return this.#mapSqlite3FileToFile.get(ptr);
     }
-    setFileForPtr(ptr,file){
-      if(file) this.mapIdToFile.set(ptr, file);
-      else this.mapIdToFile.delete(ptr);
+    /**
+       Maps or unmaps (if file is falsy) the given (sqlite3_file*)
+       to an xOpen file object and to this pool object.
+    */
+    setFileForPtr(pFile,file){
+      if(file){
+        this.#mapSqlite3FileToFile.set(pFile, file);
+        setPoolForPFile(pFile, this);
+      }else{
+        this.#mapSqlite3FileToFile.delete(pFile);
+        setPoolForPFile(pFile, false);
+      }
     }
-
     hasFilename(name){
-      return this.mapFilenameToSAH.has(name)
+      return this.#mapFilenameToSAH.has(name)
     }
 
     getSAHForPath(path){
-      return this.mapFilenameToSAH.get(path);
+      return this.#mapFilenameToSAH.get(path);
     }
+
+    async removeVfs(){
+      if(!this.#cVfs.pointer) return false;
+      capi.sqlite3_vfs_unregister(this.#cVfs.pointer);
+      this.#cVfs.dispose();
+      try{
+        this.releaseAccessHandles();
+        if(this.#dhVfsParent){
+          await this.#dhVfsParent.removeEntry(
+            this.#dhVfsRoot.name, {recursive: true}
+          );
+          this.#dhVfsRoot = this.#dhVfsParent = undefined;
+        }
+      }catch(e){
+        sqlite3.config.error(this.vfsName,"removeVfs() failed:",e);
+        /*otherwise ignored - there is no recovery strategy*/
+      }
+      return true;
+    }
+
+    exportFile(name){
+      const sah = this.#mapFilenameToSAH.get(name) || toss("File not found:",name);
+      const n = sah.getSize() - HEADER_OFFSET_DATA;
+      const b = new Uint8Array(n>=0 ? n : 0);
+      if(n>0) sah.read(b, {at: HEADER_OFFSET_DATA});
+      return b;
+    }
+
+    importDb(name, bytes){
+      const n = bytes.byteLength;
+      if(n<512 || n%512!=0){
+        toss("Byte array size is invalid for an SQLite db.");
+      }
+      const header = "SQLite format 3";
+      for(let i = 0; i < header.length; ++i){
+        if( header.charCodeAt(i) !== bytes[i] ){
+          toss("Input does not contain an SQLite database header.");
+        }
+      }
+      const sah = this.#mapFilenameToSAH.get(name)
+            || this.nextAvailableSAH()
+            || toss("No available handles to import to.");
+      sah.write(bytes, {at: HEADER_OFFSET_DATA});
+      this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+    }
+
   }/*class OpfsSAHPool*/;
 
 
@@ -441,31 +835,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return (c < min) ? this.#p.addCapacity(min - c) : c;
     }
 
-    exportFile(name){
-      const sah = this.#p.mapFilenameToSAH.get(name) || toss("File not found:",name);
-      const n = sah.getSize() - HEADER_OFFSET_DATA;
-      const b = new Uint8Array(n>=0 ? n : 0);
-      if(n>0) sah.read(b, {at: HEADER_OFFSET_DATA});
-      return b;
-    }
+    exportFile(name){ return this.#p.exportFile(name) }
 
-    importDb(name, bytes){
-      const n = bytes.byteLength;
-      if(n<512 || n%512!=0){
-        toss("Byte array size is invalid for an SQLite db.");
-      }
-      const header = "SQLite format 3";
-      for(let i = 0; i < header.length; ++i){
-        if( header.charCodeAt(i) !== bytes[i] ){
-          toss("Input does not contain an SQLite database header.");
-        }
-      }
-      const sah = this.#p.mapFilenameToSAH.get(name)
-            || this.#p.nextAvailableSAH()
-            || toss("No available handles to import to.");
-      sah.write(bytes, {at: HEADER_OFFSET_DATA});
-      this.#p.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
-    }
+    importDb(name, bytes){ return this.#p.importDb(name,bytes) }
 
     async wipeFiles(){return this.#p.reset(true)}
 
@@ -473,24 +845,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return this.#p.deletePath(filename);
     }
 
-    async removeVfs(){
-      if(!this.#p.cVfs.pointer) return false;
-      capi.sqlite3_vfs_unregister(this.#p.cVfs.pointer);
-      this.#p.cVfs.dispose();
-      try{
-        this.#p.releaseAccessHandles();
-        if(this.#p.parentDirHandle){
-          await this.#p.parentDirHandle.removeEntry(
-            this.#p.dirHandle.name, {recursive: true}
-          );
-          this.#p.dirHandle = this.#p.parentDirHandle = undefined;
-        }
-      }catch(e){
-        sqlite3.config.error(this.#p.vfsName,"removeVfs() failed:",e);
-        /*otherwise ignored - there is no recovery strategy*/
-      }
-      return true;
-    }
+    async removeVfs(){return this.#p.removeVfs()}
 
   }/* class SAHPoolUtil */;
 
@@ -595,8 +950,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - Paths given to it _must_ be absolute. Relative paths will not
      be properly recognized. This is arguably a bug but correcting it
-     requires some hoop-jumping and memory allocation in routines
-     which should not be allocating.
+     requires some hoop-jumping in routines which have no business
+     doing tricks.
+
+     - It is possible to install multiple instances under different
+     names, each sandboxed from one another inside their own private
+     directory.  This feature exists primarily as a way for disparate
+     applications within a given HTTP origin to use this VFS without
+     introducing locking issues between them.
 
 
      The API for the utility object passed on by this function's
@@ -616,9 +977,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Synchronously reads the contents of the given file into a Uint8Array
      and returns it. This will throw if the given name is not currently
      in active use or on I/O error. Note that the given name is _not_
-     visible directly in OPFS (or, if it is, it's not from this VFS). The
-     reason for that is that this VFS manages name-to-file mappings in
-     a roundabout way in order to maintain its list of SAHs.
+     visible directly in OPFS (or, if it is, it's not from this VFS).
 
      - number getCapacity()
 
@@ -705,37 +1064,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        !navigator?.storage?.getDirectory){
       return (initPromises[vfsName] = Promise.reject(new Error("Missing required OPFS APIs.")));
     }
-    const verbosity = options.verbosity ?? optionDefaults.verbosity;
-    const loggers = [
-      sqlite3.config.error,
-      sqlite3.config.warn,
-      sqlite3.config.log
-    ];
-    const logImpl = (level,...args)=>{
-      if(verbosity>level) loggers[level](vfsName+":",...args);
-    };
-    const log =    (...args)=>logImpl(2, ...args);
-    const warn =   (...args)=>logImpl(1, ...args);
-    const error =  (...args)=>logImpl(0, ...args);
-    const opfsIoMethods = new capi.sqlite3_io_methods();
-    const opfsVfs = new capi.sqlite3_vfs()
-          .addOnDispose(()=>opfsIoMethods.dispose());
-
-    /* We fetch the default VFS so that we can inherit some
-       methods from it. */
-    const pDVfs = capi.sqlite3_vfs_find(null);
-    const dVfs = pDVfs
-          ? new capi.sqlite3_vfs(pDVfs)
-          : null /* dVfs will be null when sqlite3 is built with
-                    SQLITE_OS_OTHER. */;
-    opfsIoMethods.$iVersion = 1;
-    opfsVfs.$iVersion = 2/*yes, two*/;
-    opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
-    opfsVfs.$mxPathname = HEADER_MAX_PATH_SIZE;
-    opfsVfs.addOnDispose(
-      opfsVfs.$zName = wasm.allocCString(vfsName),
-      ()=>(dVfs ? dVfs.dispose() : null)
-    );
 
     /**
        Maintenance reminder: the order of ASYNC ops in this function
@@ -755,264 +1083,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       if(options.$testThrowInInit){
         throw options.$testThrowInInit;
       }
-      const thePool = new OpfsSAHPool(opfsVfs, options);
+      const thePool = new OpfsSAHPool(options);
       return thePool.isReady.then(async()=>{
-        /**
-           Impls for the sqlite3_io_methods methods. Maintenance reminder:
-           members are in alphabetical order to simplify finding them.
-        */
-        const ioMethods = {
-          xCheckReservedLock: function(pFile,pOut){
-            log('xCheckReservedLock');
-            thePool.storeErr();
-            wasm.poke32(pOut, 1);
-            return 0;
-          },
-          xClose: function(pFile){
-            thePool.storeErr();
-            const file = thePool.getFileForPtr(pFile);
-            if(file) {
-              try{
-                log(`xClose ${file.path}`);
-                if(file.sq3File) file.sq3File.dispose();
-                file.sah.flush();
-                thePool.setFileForPtr(pFile,0);
-                if(file.flags & capi.SQLITE_OPEN_DELETEONCLOSE){
-                  thePool.deletePath(file.path);
-                }
-              }catch(e){
-                thePool.storeErr(e);
-                return capi.SQLITE_IOERR;
-              }
-            }
-            return 0;
-          },
-          xDeviceCharacteristics: function(pFile){
-            return capi.SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
-          },
-          xFileControl: function(pFile, opId, pArg){
-            return capi.SQLITE_NOTFOUND;
-          },
-          xFileSize: function(pFile,pSz64){
-            log(`xFileSize`);
-            const file = thePool.getFileForPtr(pFile);
-            const size = file.sah.getSize() - HEADER_OFFSET_DATA;
-            //log(`xFileSize ${file.path} ${size}`);
-            wasm.poke64(pSz64, BigInt(size));
-            return 0;
-          },
-          xLock: function(pFile,lockType){
-            log(`xLock ${lockType}`);
-            thePool.storeErr();
-            const file = thePool.getFileForPtr(pFile);
-            file.lockType = lockType;
-            return 0;
-          },
-          xRead: function(pFile,pDest,n,offset64){
-            log(`xRead ${n}@${offset64}`);
-            thePool.storeErr();
-            const file = thePool.getFileForPtr(pFile);
-            log(`xRead ${file.path} ${n} ${offset64}`);
-            try {
-              const nRead = file.sah.read(
-                wasm.heap8u().subarray(pDest, pDest+n),
-                {at: HEADER_OFFSET_DATA + Number(offset64)}
-              );
-              if(nRead < n){
-                wasm.heap8u().fill(0, pDest + nRead, pDest + n);
-                return capi.SQLITE_IOERR_SHORT_READ;
-              }
-              return 0;
-            }catch(e){
-              thePool.storeErr(e);
-              return capi.SQLITE_IOERR;
-            }
-          },
-          xSectorSize: function(pFile){
-            return SECTOR_SIZE;
-          },
-          xSync: function(pFile,flags){
-            log(`xSync ${flags}`);
-            thePool.storeErr();
-            const file = thePool.getFileForPtr(pFile);
-            //log(`xSync ${file.path} ${flags}`);
-            try{
-              file.sah.flush();
-              return 0;
-            }catch(e){
-              thePool.storeErr(e);
-              return capi.SQLITE_IOERR;
-            }
-          },
-          xTruncate: function(pFile,sz64){
-            log(`xTruncate ${sz64}`);
-            thePool.storeErr();
-            const file = thePool.getFileForPtr(pFile);
-            //log(`xTruncate ${file.path} ${iSize}`);
-            try{
-              file.sah.truncate(HEADER_OFFSET_DATA + Number(sz64));
-              return 0;
-            }catch(e){
-              thePool.storeErr(e);
-              return capi.SQLITE_IOERR;
-            }
-          },
-          xUnlock: function(pFile,lockType){
-            log('xUnlock');
-            const file = thePool.getFileForPtr(pFile);
-            file.lockType = lockType;
-            return 0;
-          },
-          xWrite: function(pFile,pSrc,n,offset64){
-            thePool.storeErr();
-            const file = thePool.getFileForPtr(pFile);
-            log(`xWrite ${file.path} ${n} ${offset64}`);
-            try{
-              const nBytes = file.sah.write(
-                wasm.heap8u().subarray(pSrc, pSrc+n),
-                { at: HEADER_OFFSET_DATA + Number(offset64) }
-              );
-              return nBytes === n ? 0 : capi.SQLITE_IOERR;
-            }catch(e){
-              thePool.storeErr(e);
-              return capi.SQLITE_IOERR;
-            }
-          }
-        }/*ioMethods*/;
-        /**
-           Impls for the sqlite3_vfs methods. Maintenance reminder: members
-           are in alphabetical order to simplify finding them.
-        */
-        const vfsMethods = {
-          xAccess: function(pVfs,zName,flags,pOut){
-            //log(`xAccess ${wasm.cstrToJs(zName)}`);
-            thePool.storeErr();
-            try{
-              const name = thePool.getPath(zName);
-              wasm.poke32(pOut, thePool.hasFilename(name) ? 1 : 0);
-            }catch(e){
-              /*ignored*/
-              wasm.poke32(pOut, 0);
-            }
-            return 0;
-          },
-          xCurrentTime: function(pVfs,pOut){
-            wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
-                      'double');
-            return 0;
-          },
-          xCurrentTimeInt64: function(pVfs,pOut){
-            wasm.poke(pOut, (2440587.5 * 86400000) + new Date().getTime(),
-                      'i64');
-            return 0;
-          },
-          xDelete: function(pVfs, zName, doSyncDir){
-            log(`xDelete ${wasm.cstrToJs(zName)}`);
-            thePool.storeErr();
-            try{
-              thePool.deletePath(thePool.getPath(zName));
-              return 0;
-            }catch(e){
-              thePool.storeErr(e);
-              return capi.SQLITE_IOERR_DELETE;
-            }
-          },
-          xFullPathname: function(pVfs,zName,nOut,pOut){
-            log(`xFullPathname ${wasm.cstrToJs(zName)}`);
-            const i = wasm.cstrncpy(pOut, zName, nOut);
-            return i<nOut ? 0 : capi.SQLITE_CANTOPEN;
-          },
-          xGetLastError: function(pVfs,nOut,pOut){
-            log(`xGetLastError ${nOut}`);
-            const e = thePool.popErr();
-            if(e){
-              const scope = wasm.scopedAllocPush();
-              try{
-                const [cMsg, n] = wasm.scopedAllocCString(e.message, true);
-                wasm.cstrncpy(pOut, cMsg, nOut);
-                if(n > nOut) wasm.poke8(pOut + nOut - 1, 0);
-              }catch(e){
-                return capi.SQLITE_NOMEM;
-              }finally{
-                wasm.scopedAllocPop(scope);
-              }
-            }
-            return 0;
-          },
-          //xSleep is optionally defined below
-          xOpen: function f(pVfs, zName, pFile, flags, pOutFlags){
-            log(`xOpen ${wasm.cstrToJs(zName)} ${flags}`);
-            try{
-              // First try to open a path that already exists in the file system.
-              const path = (zName && wasm.peek8(zName))
-                    ? thePool.getPath(zName)
-                    : getRandomName();
-              let sah = thePool.getSAHForPath(path);
-              if(!sah && (flags & capi.SQLITE_OPEN_CREATE)) {
-                // File not found so try to create it.
-                if(thePool.getFileCount() < thePool.getCapacity()) {
-                  // Choose an unassociated OPFS file from the pool.
-                  sah = thePool.nextAvailableSAH();
-                  thePool.setAssociatedPath(sah, path, flags);
-                }else{
-                  // File pool is full.
-                  toss('SAH pool is full. Cannot create file',path);
-                }
-              }
-              if(!sah){
-                toss('file not found:',path);
-              }
-              // Subsequent methods are only passed the file pointer, so
-              // map the relevant info we need to that pointer.
-              const file = {path, flags, sah};
-              thePool.setFileForPtr(pFile, file);
-              wasm.poke32(pOutFlags, flags);
-              file.sq3File = new capi.sqlite3_file(pFile);
-              file.sq3File.$pMethods = opfsIoMethods.pointer;
-              file.lockType = capi.SQLITE_LOCK_NONE;
-              return 0;
-            }catch(e){
-              thePool.storeErr(e);
-              return capi.SQLITE_CANTOPEN;
-            }
-          }/*xOpen()*/
-        }/*vfsMethods*/;
-
-        if(dVfs){
-          /* Inherit certain VFS members from the default VFS,
-             if available. */
-          opfsVfs.$xRandomness = dVfs.$xRandomness;
-          opfsVfs.$xSleep = dVfs.$xSleep;
-        }
-        if(!opfsVfs.$xRandomness){
-          /* If the default VFS has no xRandomness(), add a basic JS impl... */
-          vfsMethods.xRandomness = function(pVfs, nOut, pOut){
-            const heap = wasm.heap8u();
-            let i = 0;
-            for(; i < nOut; ++i) heap[pOut + i] = (Math.random()*255000) & 0xFF;
-            return i;
-          };
-        }
-        if(!opfsVfs.$xSleep){
-          vfsMethods.xSleep = (pVfs,ms)=>0;
-        }
-
         /** The poolUtil object will be the result of the
             resolved Promise. */
         const poolUtil = new SAHPoolUtil(thePool);
 
-        //log("vfs list:",capi.sqlite3_js_vfs_list());
-        sqlite3.vfs.installVfs({
-          io: {struct: opfsIoMethods, methods: ioMethods},
-          vfs: {struct: opfsVfs, methods: vfsMethods}
-        });
-        //log("opfsVfs",opfsVfs,"opfsIoMethods",opfsIoMethods);
-        //log("vfs list:",capi.sqlite3_js_vfs_list());
         if(sqlite3.oo1){
           const oo1 = sqlite3.oo1;
+          const theVfs = thePool.getVfs();
           const OpfsSAHPoolDb = function(...args){
             const opt = oo1.DB.dbCtorHelper.normalizeArgs(...args);
-            opt.vfs = opfsVfs.$zName;
+            opt.vfs = theVfs.$zName;
             oo1.DB.dbCtorHelper.call(this, opt);
           };
           OpfsSAHPoolDb.prototype = Object.create(oo1.DB.prototype);
@@ -1023,7 +1105,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           }
           oo1.OpfsSAHPool[vfsName] = OpfsSAHPoolDb;
           oo1.DB.dbCtorHelper.setVfsPostOpenSql(
-            opfsVfs.pointer,
+            theVfs.pointer,
             function(oo1Db, sqlite3){
               sqlite3.capi.sqlite3_exec(oo1Db, [
                 /* See notes in sqlite3-vfs-opfs.js */
@@ -1033,12 +1115,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             }
           );
         }/*extend sqlite3.oo1*/
-        log("VFS initialized.");
+        thePool.log("VFS initialized.");
         return poolUtil;
+      }).catch(async (e)=>{
+        await thePool.removeVfs().catch(()=>{});
+        return e;
       });
     }).catch((err)=>{
-      error("rejecting promise:",err);
-      opfsVfs.dispose();
+      //error("rejecting promise:",err);
       return initPromises[vfsName] = Promise.reject(err);
     });
   }/*installOpfsSAHPoolVfs()*/;

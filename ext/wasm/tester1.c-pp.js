@@ -296,7 +296,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                      roundMs(then-now),'ms');
           }
           logClass(['green','group-end'],
-                   //"Group #"+this.number+":",
+                   "#"+this.number+":",
                    (TestUtil.counter - assertCount),
                    "assertion(s) in",roundMs(runtime),"ms");
           if(0 && skipped.length){

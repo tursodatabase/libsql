@@ -61,6 +61,7 @@ span.labeled-input {
   margin-left: 3em;
 }
 .skipping-test, .skipping-group {
+  padding: 0.25em 0.5em;
   background-color: #ffff73;
 }
 .skipping-test {

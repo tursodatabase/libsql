@@ -295,7 +295,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      - If `struct.$zName` is falsy and the entry has a string-type
        `name` property, `struct.$zName` is set to the C-string form of
-       that `name` value before registerVfs() is called.
+       that `name` value before registerVfs() is called. That string
+       gets added to the on-dispose state of the struct.
 
      On success returns this object. Throws on error.
   */
