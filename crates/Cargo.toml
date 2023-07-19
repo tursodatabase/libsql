@@ -3,7 +3,6 @@ resolver = "2"
 members = [
   "core",
   "bindings/c",
-  "bindings/js",
   "bindings/python",
   "bindings/wasm",
   "replication",
