@@ -48,8 +48,9 @@
   incompatible with that VFS.
 
   - This VFS requires the "semi-fully-sync" FileSystemSyncAccessHandle
-  (hereafter "SAH") APIs released with Chrome v108. If that API
-  is not detected, the VFS is not registered.
+  (hereafter "SAH") APIs released with Chrome v108 (and all other
+  major browsers released since March 2023). If that API is not
+  detected, the VFS is not registered.
 */
 'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
@@ -137,11 +138,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xClose: function(pFile){
       const pool = getPoolForPFile(pFile);
       pool.storeErr();
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       if(file) {
         try{
           pool.log(`xClose ${file.path}`);
-          pool.setFileForPtr(pFile, false);
+          pool.mapSFileToOFile(pFile, false);
           file.sah.flush();
           if(file.flags & capi.SQLITE_OPEN_DELETEONCLOSE){
             pool.deletePath(file.path);
@@ -162,7 +163,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xFileSize: function(pFile,pSz64){
       const pool = getPoolForPFile(pFile);
       pool.log(`xFileSize`);
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       const size = file.sah.getSize() - HEADER_OFFSET_DATA;
       //log(`xFileSize ${file.path} ${size}`);
       wasm.poke64(pSz64, BigInt(size));
@@ -172,14 +173,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log(`xLock ${lockType}`);
       pool.storeErr();
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       file.lockType = lockType;
       return 0;
     },
     xRead: function(pFile,pDest,n,offset64){
       const pool = getPoolForPFile(pFile);
       pool.storeErr();
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       pool.log(`xRead ${file.path} ${n} @ ${offset64}`);
       try {
         const nRead = file.sah.read(
@@ -203,7 +204,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log(`xSync ${flags}`);
       pool.storeErr();
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       //log(`xSync ${file.path} ${flags}`);
       try{
         file.sah.flush();
@@ -217,7 +218,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log(`xTruncate ${sz64}`);
       pool.storeErr();
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       //log(`xTruncate ${file.path} ${iSize}`);
       try{
         file.sah.truncate(HEADER_OFFSET_DATA + Number(sz64));
@@ -230,14 +231,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xUnlock: function(pFile,lockType){
       const pool = getPoolForPFile(pFile);
       pool.log('xUnlock');
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       file.lockType = lockType;
       return 0;
     },
     xWrite: function(pFile,pSrc,n,offset64){
       const pool = getPoolForPFile(pFile);
       pool.storeErr();
-      const file = pool.getFileForPtr(pFile);
+      const file = pool.getOFileForSFile(pFile);
       pool.log(`xWrite ${file.path} ${n} ${offset64}`);
       try{
         const nBytes = file.sah.write(
@@ -349,7 +350,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         // Subsequent I/O methods are only passed the sqlite3_file
         // pointer, so map the relevant info we need to that pointer.
         const file = {path, flags, sah};
-        pool.setFileForPtr(pFile, file);
+        pool.mapSFileToOFile(pFile, file);
         file.lockType = capi.SQLITE_LOCK_NONE;
         const sq3File = new capi.sqlite3_file(pFile);
         sq3File.$pMethods = opfsIoMethods.pointer;
@@ -436,6 +437,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     /** Buffer used by [sg]etAssociatedPath(). */
     #apBody = new Uint8Array(HEADER_CORPUS_SIZE);
+    // DataView for this.#apBody
     #dvBody;
 
     // associated sqlite3_vfs instance
@@ -497,6 +499,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return this.getCapacity();
     }
 
+    /**
+       Reduce capacity by n, but can only reduce up to the limit
+       of currently-available SAHs. Returns a Promise which resolves
+       to the number of slots really removed.
+    */
     async reduceCapacity(n){
       let nRm = 0;
       for(const ah of Array.from(this.#availableSAH)){
@@ -514,7 +521,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Releases all currently-opened SAHs.
+       Releases all currently-opened SAHs. The only legal
+       operation after this is acquireAccessHandles().
     */
     releaseAccessHandles(){
       for(const ah of this.#mapSAHToName.keys()) ah.close();
@@ -637,8 +645,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Computes a digest for the given byte array and
-       returns it as a two-element Uint32Array.
+       Computes a digest for the given byte array and returns it as a
+       two-element Uint32Array. This digest gets stored in the
+       metadata for each file as a validation check. Changing this
+       algorithm invalidates all existing databases for this VFS, so
+       don't do that.
     */
     computeDigest(byteArray){
       let h1 = 0xdeadbeef;
@@ -730,14 +741,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return rc;
     }
 
-    getFileForPtr(ptr){
+    /**
+       Given an (sqlite3_file*), returns the mapped
+       xOpen file object.
+    */
+    getOFileForSFile(ptr){
       return this.#mapSqlite3FileToFile.get(ptr);
     }
     /**
        Maps or unmaps (if file is falsy) the given (sqlite3_file*)
        to an xOpen file object and to this pool object.
     */
-    setFileForPtr(pFile,file){
+    mapSFileToOFile(pFile,file){
       if(file){
         this.#mapSqlite3FileToFile.set(pFile, file);
         setPoolForPFile(pFile, this);
@@ -746,14 +761,34 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         setPoolForPFile(pFile, false);
       }
     }
+
+    /**
+       Returns true if the given client-defined file name is in this
+       object's name-to-SAH map.
+    */
     hasFilename(name){
       return this.#mapFilenameToSAH.has(name)
     }
 
+    /**
+       Returns the SAH associated with the given
+       client-defined file name.
+    */
     getSAHForPath(path){
       return this.#mapFilenameToSAH.get(path);
     }
 
+    /**
+       Removes this object's sqlite3_vfs registration and shuts down
+       this object, releasing all handles, mappings, and whatnot,
+       including deleting its data directory. There is currently no
+       way to "revive" the object and reaquire its resources.
+
+       This function is intended primarily for testing.
+
+       Resolves to true if it did its job, false if the
+       VFS has already been shut down.
+    */
     async removeVfs(){
       if(!this.#cVfs.pointer) return false;
       capi.sqlite3_vfs_unregister(this.#cVfs.pointer);
@@ -773,6 +808,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return true;
     }
 
+    //! Documented elsewhere in this file.
     exportFile(name){
       const sah = this.#mapFilenameToSAH.get(name) || toss("File not found:",name);
       const n = sah.getSize() - HEADER_OFFSET_DATA;
@@ -781,6 +817,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return b;
     }
 
+    //! Documented elsewhere in this file.
     importDb(name, bytes){
       const n = bytes.byteLength;
       if(n<512 || n%512!=0){
@@ -803,13 +840,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
 
   /**
-     A SAHPoolUtil instance is exposed to clients in order to manipulate an OpfsSAHPool object without directly exposing that
+     A OpfsSAHPoolUtil instance is exposed to clients in order to
+     manipulate an OpfsSAHPool object without directly exposing that
      object and allowing for some semantic changes compared to that
      class.
 
-     Class docs are in the client-level docs for installOpfsSAHPoolVfs().
+     Class docs are in the client-level docs for
+     installOpfsSAHPoolVfs().
   */
-  class SAHPoolUtil {
+  class OpfsSAHPoolUtil {
     /* This object's associated OpfsSAHPool. */
     #p;
 
@@ -818,18 +857,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       this.vfsName = sahPool.vfsName;
     }
 
-    async addCapacity(n){
-      return this.#p.addCapacity(n);
-    }
-    async reduceCapacity(n){
-      return this.#p.reduceCapacity(n);
-    }
-    getCapacity(){
-      return this.#p.getCapacity(this.#p);
-    }
-    getFileCount(){
-      return this.#p.getFileCount();
-    }
+    async addCapacity(n){ return this.#p.addCapacity(n) }
+
+    async reduceCapacity(n){ return this.#p.reduceCapacity(n) }
+
+    getCapacity(){ return this.#p.getCapacity(this.#p) }
+
+    getFileCount(){ return this.#p.getFileCount() }
+
     async reserveMinimumCapacity(min){
       const c = this.#p.getCapacity();
       return (c < min) ? this.#p.addCapacity(min - c) : c;
@@ -839,20 +874,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
     importDb(name, bytes){ return this.#p.importDb(name,bytes) }
 
-    async wipeFiles(){return this.#p.reset(true)}
+    async wipeFiles(){ return this.#p.reset(true) }
 
-    unlink(filename){
-      return this.#p.deletePath(filename);
-    }
+    unlink(filename){ return this.#p.deletePath(filename) }
 
-    async removeVfs(){return this.#p.removeVfs()}
+    async removeVfs(){ return this.#p.removeVfs() }
 
-  }/* class SAHPoolUtil */;
+  }/* class OpfsSAHPoolUtil */;
 
   /**
-     Ensure that the client has a "fully-sync" SAH impl,
-     else reject the promise. Returns true on success,
-     throws on error.
+     Returns a resolved Promise if the current environment
+     has a "fully-sync" SAH impl, else a rejected Promise.
   */
   const apiVersionCheck = async ()=>{
     const dh = await navigator.storage.getDirectory();
@@ -1087,7 +1119,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return thePool.isReady.then(async()=>{
         /** The poolUtil object will be the result of the
             resolved Promise. */
-        const poolUtil = new SAHPoolUtil(thePool);
+        const poolUtil = new OpfsSAHPoolUtil(thePool);
 
         if(sqlite3.oo1){
           const oo1 = sqlite3.oo1;
