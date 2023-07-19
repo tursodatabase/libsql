@@ -36,6 +36,3 @@ jobs:
 
     - name: Run API tests
       run: make libsqlapi
-
-    - name: Build libSQL API wasm bindings
-      run: cd crates/bindings/wasm && wasm-pack build --target nodejs
