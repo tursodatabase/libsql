@@ -154,7 +154,8 @@ unsafe impl WalHook for InjectorHook {
         let ctx = Self::wal_extract_ctx(wal);
         loop {
             tracing::trace!("Waiting for a frame");
-            match ctx.receiver.blocking_recv() {
+            let x = tokio::task::block_in_place(|| { ctx.receiver.blocking_recv() });
+            match x {
                 Some(frames) => {
                     let (headers, last_frame_no, size_after) = frames.to_headers();
                     let ret = ctx.inject_pages(
