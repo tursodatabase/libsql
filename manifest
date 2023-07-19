@@ -1,5 +1,5 @@
-C Two\sminor\simprovements\sto\ssum(),\sone\sof\swhich\swas\sinspired\sby\n[forum:/forumpost/af5be98dbc|forum\spost\saf5be98dbc].
-D 2023-07-19T09:52:10.467
+C Performance\soptimization\sfor\sparsing\slarge\sJSONs\sthat\scontain\slots\sof\stext.
+D 2023-07-19T13:50:31.934
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -597,7 +597,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 14c474fb1249a46eb44e878e2361f36abfe686b134039b0d1883d93d61505b4a
+F src/json.c a1e70adf94131e29cdaabc19523a92b2df72ef6305b80d5493369e278267dfe6
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76152ad2ffe56034f2fd93d9a1ce9358e1677a7e9cd3dcd9f3a34a5c956a463e
-R 47d8d8ca9ec8151ad0210262a08ac711
+P a0d3e7571aded8d1e03908059d2d5aa5d62ec49bff099cb38f6f35df5e4b18b5
+R 35635814f4d35d8abae453f3c0b6b67f
 U drh
-Z b98de7129167c58b9385610fbdec3119
+Z a4b178ad01a69bfb9f8e963eafa3e384
 # Remove this line to create a well-formed Fossil manifest.

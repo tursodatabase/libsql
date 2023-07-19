@@ -1235,15 +1235,9 @@ json_parse_restart:
     jnFlags = 0;
   parse_string:
     cDelim = z[i];
-    j = i+1;
-    for(;;){
-      c = z[j];
-      if( (c & ~0x1f)==0 ){
-        /* Control characters are not allowed in strings */
-        pParse->iErr = j;
-        return -1;
-      }
-      if( c=='\\' ){
+    for(j=i+1; 1; j++){
+      unsigned char uc = (unsigned char)z[j];
+      if( uc=='\\' ){
         c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
            || c=='n' || c=='r' || c=='t'
@@ -1263,10 +1257,15 @@ json_parse_restart:
           pParse->iErr = j;
           return -1;
         }
-      }else if( c==cDelim ){
+      }else if( uc>'\'' ){
+        continue;
+      }else if( uc==cDelim ){
         break;
+      }else if( uc<=0x1f ){
+        /* Control characters are not allowed in strings */
+        pParse->iErr = j;
+        return -1;
       }
-      j++;
     }
     jsonParseAddNode(pParse, JSON_STRING | (jnFlags<<8), j+1-i, &z[i]);
     return j+1;
