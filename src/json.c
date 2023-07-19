@@ -218,12 +218,35 @@ static int jsonGrow(JsonString *p, u32 N){
 
 /* Append N bytes from zIn onto the end of the JsonString string.
 */
-static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
-  if( N==0 ) return;
-  if( (N+p->nUsed >= p->nAlloc) && jsonGrow(p,N)!=0 ) return;
+static SQLITE_NOINLINE void jsonAppendExpand(
+  JsonString *p,
+  const char *zIn,
+  u32 N
+){
+  assert( N>0 );
+  if( jsonGrow(p,N) ) return;
   memcpy(p->zBuf+p->nUsed, zIn, N);
   p->nUsed += N;
 }
+static void jsonAppendRaw(JsonString *p, const char *zIn, u32 N){
+  if( N==0 ) return;
+  if( N+p->nUsed >= p->nAlloc ){
+    jsonAppendExpand(p,zIn,N);
+  }else{
+    memcpy(p->zBuf+p->nUsed, zIn, N);
+    p->nUsed += N;
+  }
+}
+static void jsonAppendRawNZ(JsonString *p, const char *zIn, u32 N){
+  assert( N>0 );
+  if( N+p->nUsed >= p->nAlloc ){
+    jsonAppendExpand(p,zIn,N);
+  }else{
+    memcpy(p->zBuf+p->nUsed, zIn, N);
+    p->nUsed += N;
+  }
+}
+
 
 /* Append formatted text (not to exceed N bytes) to the JsonString.
 */
@@ -238,9 +261,16 @@ static void jsonPrintf(int N, JsonString *p, const char *zFormat, ...){
 
 /* Append a single character
 */
-static void jsonAppendChar(JsonString *p, char c){
-  if( p->nUsed>=p->nAlloc && jsonGrow(p,1)!=0 ) return;
+static SQLITE_NOINLINE void jsonAppendCharExpand(JsonString *p, char c){
+  if( jsonGrow(p,1) ) return;
   p->zBuf[p->nUsed++] = c;
+}
+static void jsonAppendChar(JsonString *p, char c){
+  if( p->nUsed>=p->nAlloc ){
+    jsonAppendCharExpand(p,c);
+  }else{
+    p->zBuf[p->nUsed++] = c;
+  }
 }
 
 /* Append a comma separator to the output buffer, if the previous
@@ -250,7 +280,8 @@ static void jsonAppendSeparator(JsonString *p){
   char c;
   if( p->nUsed==0 ) return;
   c = p->zBuf[p->nUsed-1];
-  if( c!='[' && c!='{' ) jsonAppendChar(p, ',');
+  if( c=='[' || c=='{' ) return;
+  jsonAppendChar(p, ',');
 }
 
 /* Append the N-byte string in zIn to the end of the JsonString string
@@ -310,7 +341,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
   while( N>0 ){
     for(i=0; i<N && zIn[i]!='\\'; i++){}
     if( i>0 ){
-      jsonAppendRaw(p, zIn, i);
+      jsonAppendRawNZ(p, zIn, i);
       zIn += i;
       N -= i;
       if( N==0 ) break;     
@@ -321,16 +352,16 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
         jsonAppendChar(p, '\'');
         break;
       case 'v':
-        jsonAppendRaw(p, "\\u0009", 6);
+        jsonAppendRawNZ(p, "\\u0009", 6);
         break;
       case 'x':
-        jsonAppendRaw(p, "\\u00", 4);
-        jsonAppendRaw(p, &zIn[2], 2);
+        jsonAppendRawNZ(p, "\\u00", 4);
+        jsonAppendRawNZ(p, &zIn[2], 2);
         zIn += 2;
         N -= 2;
         break;
       case '0':
-        jsonAppendRaw(p, "\\u0000", 6);
+        jsonAppendRawNZ(p, "\\u0000", 6);
         break;
       case '\r':
         if( zIn[2]=='\n' ){
@@ -348,7 +379,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
         N -= 2;
         break;
       default:
-        jsonAppendRaw(p, zIn, 2);
+        jsonAppendRawNZ(p, zIn, 2);
         break;
     }
     zIn += 2;
@@ -378,11 +409,12 @@ static void jsonAppendNormalizedInt(JsonString *p, const char *zIn, u32 N){
       jsonPrintf(100,p,"%lld",i);
     }else{
       assert( rc==2 );
-      jsonAppendRaw(p, "9.0e999", 7);
+      jsonAppendRawNZ(p, "9.0e999", 7);
     }
     return;
   }
-  jsonAppendRaw(p, zIn, N);
+  assert( N>0 );
+  jsonAppendRawNZ(p, zIn, N);
 }
 
 /*
@@ -414,7 +446,7 @@ static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
     }
   }
   if( N>0 ){
-    jsonAppendRaw(p, zIn, N);
+    jsonAppendRawNZ(p, zIn, N);
   }
 }
 
@@ -430,7 +462,7 @@ static void jsonAppendValue(
 ){
   switch( sqlite3_value_type(pValue) ){
     case SQLITE_NULL: {
-      jsonAppendRaw(p, "null", 4);
+      jsonAppendRawNZ(p, "null", 4);
       break;
     }
     case SQLITE_FLOAT: {
@@ -538,15 +570,15 @@ static void jsonRenderNode(
   switch( pNode->eType ){
     default: {
       assert( pNode->eType==JSON_NULL );
-      jsonAppendRaw(pOut, "null", 4);
+      jsonAppendRawNZ(pOut, "null", 4);
       break;
     }
     case JSON_TRUE: {
-      jsonAppendRaw(pOut, "true", 4);
+      jsonAppendRawNZ(pOut, "true", 4);
       break;
     }
     case JSON_FALSE: {
-      jsonAppendRaw(pOut, "false", 5);
+      jsonAppendRawNZ(pOut, "false", 5);
       break;
     }
     case JSON_STRING: {
@@ -562,7 +594,8 @@ static void jsonRenderNode(
       }else if( pNode->jnFlags & JNODE_JSON5 ){
         jsonAppendNormalizedString(pOut, pNode->u.zJContent, pNode->n);
       }else{
-        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+        assert( pNode->n>0 );
+        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
       }
       break;
     }
@@ -571,7 +604,8 @@ static void jsonRenderNode(
       if( pNode->jnFlags & JNODE_JSON5 ){
         jsonAppendNormalizedReal(pOut, pNode->u.zJContent, pNode->n);
       }else{
-        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+        assert( pNode->n>0 );
+        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
       }
       break;
     }
@@ -580,7 +614,8 @@ static void jsonRenderNode(
       if( pNode->jnFlags & JNODE_JSON5 ){
         jsonAppendNormalizedInt(pOut, pNode->u.zJContent, pNode->n);
       }else{
-        jsonAppendRaw(pOut, pNode->u.zJContent, pNode->n);
+        assert( pNode->n>0 );
+        jsonAppendRawNZ(pOut, pNode->u.zJContent, pNode->n);
       }
       break;
     }
@@ -882,7 +917,8 @@ static int jsonParseAddNode(
   const char *zContent      /* Content */
 ){
   JsonNode *p;
-  if( pParse->aNode==0 || pParse->nNode>=pParse->nAlloc ){
+  assert( pParse->aNode!=0 || pParse->nNode>=pParse->nAlloc );
+  if( pParse->nNode>=pParse->nAlloc ){
     return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
   p = &pParse->aNode[pParse->nNode];
@@ -2002,12 +2038,12 @@ static void jsonParseFunc(
     assert( x.aNode[i].eU==0 || x.aNode[i].eU==1 );
     if( x.aNode[i].u.zJContent!=0 ){
       assert( x.aNode[i].eU==1 );
-      jsonAppendRaw(&s, " ", 1);
+      jsonAppendChar(&s, ' ');
       jsonAppendRaw(&s, x.aNode[i].u.zJContent, x.aNode[i].n);
     }else{
       assert( x.aNode[i].eU==0 );
     }
-    jsonAppendRaw(&s, "\n", 1);
+    jsonAppendChar(&s, '\n');
   }
   jsonParseReset(&x);
   jsonResult(&s);
@@ -2174,11 +2210,11 @@ static void jsonExtractFunc(
         */
         jsonInit(&jx, ctx);
         if( sqlite3Isdigit(zPath[0]) ){
-          jsonAppendRaw(&jx, "$[", 2);
+          jsonAppendRawNZ(&jx, "$[", 2);
           jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
-          jsonAppendRaw(&jx, "]", 2);
+          jsonAppendRawNZ(&jx, "]", 2);
         }else{
-          jsonAppendRaw(&jx, "$.", 1 + (zPath[0]!='['));
+          jsonAppendRawNZ(&jx, "$.", 1 + (zPath[0]!='['));
           jsonAppendRaw(&jx, zPath, (int)strlen(zPath));
           jsonAppendChar(&jx, 0);
         }
@@ -2213,7 +2249,7 @@ static void jsonExtractFunc(
       if( pNode ){
         jsonRenderNode(pNode, &jx, 0);
       }else{
-        jsonAppendRaw(&jx, "null", 4);
+        jsonAppendRawNZ(&jx, "null", 4);
       }
     }
     if( i==argc ){
