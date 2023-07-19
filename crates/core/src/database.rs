@@ -94,13 +94,14 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn sync(&self) -> Result<()> {
+    pub async fn sync(&self) -> Result<()> {
         if let Some(ctx) = self.replication_ctx.as_ref() {
             if let Some(client) = ctx.client.as_ref() {
                 let mut client = client.borrow_mut();
                 let mut replicator = ctx.replicator.borrow_mut();
                 replicator
                     .sync_from_rpc(&mut client)
+                    .await
                     .map_err(|e| ConnectionFailed(format!("{e}")))
             } else {
                 Ok(())

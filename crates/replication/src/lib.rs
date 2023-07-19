@@ -245,10 +245,9 @@ impl Replicator {
         }
     }
 
-    pub fn sync_from_rpc(&mut self, client: &mut Client) -> anyhow::Result<()> {
-        let runtime = tokio::runtime::Handle::current();
+    pub async fn sync_from_rpc(&mut self, client: &mut Client) -> anyhow::Result<()> {
         loop {
-            let done = runtime.block_on(self.sync_from_rpc_internal(client))?;
+            let done = self.sync_from_rpc_internal(client).await?;
             tracing::trace!("Injecting frames");
             self.injector.step()?;
             tracing::trace!("Injected frames");
