@@ -5122,9 +5122,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
         /* TUNING:  A full-scan of a VIEW or subquery in the outer loop
         ** is not so bad. */
-        if( iLoop==0 && (pWLoop->wsFlags & WHERE_VIEWSCAN)!=0 ){
+        if( iLoop==0 && (pWLoop->wsFlags & WHERE_VIEWSCAN)!=0 && nLoop>1 ){
           rCost += -10;
           nOut += -30;
+          WHERETRACE(0x80,("VIEWSCAN cost reduction for %c\n",pWLoop->cId));
         }
 
         /* Check to see if pWLoop should be added to the set of
