@@ -1,6 +1,8 @@
 use prost_build::Config;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    std::env::set_var("PROTOC", protobuf_src::protoc());
+
     let mut config = Config::new();
     config.bytes([".wal_log"]);
     tonic_build::configure()
