@@ -100,7 +100,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      ACHTUNG: because we cannot generically know how to transform JS
      exceptions into result codes, the installed functions do no
-     automatic catching of exceptions. It is critical, to avoid 
+     automatic catching of exceptions. It is critical, to avoid
      undefined behavior in the C layer, that methods mapped via
      this function do not throw. The exception, as it were, to that
      rule is...

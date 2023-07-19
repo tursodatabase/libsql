@@ -2635,199 +2635,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
   ;/* end kvvfs tests */
 
   ////////////////////////////////////////////////////////////////////////
-  T.g('OPFS: Origin-Private File System',
-      (sqlite3)=>(sqlite3.capi.sqlite3_vfs_find("opfs")
-                  || 'requires "opfs" VFS'))
-    .t({
-      name: 'OPFS db sanity checks',
-      test: async function(sqlite3){
-        const filename = this.opfsDbFile = 'sqlite3-tester1.db';
-        const pVfs = this.opfsVfs = capi.sqlite3_vfs_find('opfs');
-        T.assert(pVfs);
-        const unlink = this.opfsUnlink =
-              (fn=filename)=>{wasm.sqlite3_wasm_vfs_unlink(pVfs,fn)};
-        unlink();
-        let db = new sqlite3.oo1.OpfsDb(filename);
-        try {
-          db.exec([
-            'create table p(a);',
-            'insert into p(a) values(1),(2),(3)'
-          ]);
-          T.assert(3 === db.selectValue('select count(*) from p'));
-          db.close();
-          db = new sqlite3.oo1.OpfsDb(filename);
-          db.exec('insert into p(a) values(4),(5),(6)');
-          T.assert(6 === db.selectValue('select count(*) from p'));
-          this.opfsDbExport = capi.sqlite3_js_db_export(db);
-          T.assert(this.opfsDbExport instanceof Uint8Array)
-            .assert(this.opfsDbExport.byteLength>0
-                    && 0===this.opfsDbExport.byteLength % 512);
-        }finally{
-          db.close();
-          unlink();
-        }
-      }
-    }/*OPFS db sanity checks*/)
-    .t({
-      name: 'OPFS export/import',
-      test: async function(sqlite3){
-        let db;
-        try {
-          const exp = this.opfsDbExport;
-          delete this.opfsDbExport;
-          capi.sqlite3_js_vfs_create_file("opfs", this.opfsDbFile, exp);
-          const db = new sqlite3.oo1.OpfsDb(this.opfsDbFile);
-          T.assert(6 === db.selectValue('select count(*) from p'));
-        }finally{
-          if(db) db.close();
-        }
-      }
-    }/*OPFS export/import*/)
-    .t({
-      name: 'OPFS utility APIs and sqlite3_js_vfs_create_file()',
-      test: async function(sqlite3){
-        const filename = this.opfsDbFile;
-        const pVfs = this.opfsVfs;
-        const unlink = this.opfsUnlink;
-        T.assert(filename && pVfs && !!unlink);
-        delete this.opfsDbFile;
-        delete this.opfsVfs;
-        delete this.opfsUnlink;
-        unlink();
-        // Sanity-test sqlite3_js_vfs_create_file()...
-        /**************************************************************
-           ATTENTION CLIENT-SIDE USERS: sqlite3.opfs is NOT intended
-           for client-side use. It is only for this project's own
-           internal use. Its APIs are subject to change or removal at
-           any time.
-        ***************************************************************/
-        const opfs = sqlite3.opfs;
-        const fSize = 1379;
-        let sh;
-        try{
-          T.assert(!(await opfs.entryExists(filename)));
-          capi.sqlite3_js_vfs_create_file(
-            pVfs, filename, null, fSize
-          );
-          T.assert(await opfs.entryExists(filename));
-          let fh = await opfs.rootDirectory.getFileHandle(filename);
-          sh = await fh.createSyncAccessHandle();
-          T.assert(fSize === await sh.getSize());
-          await sh.close();
-          sh = undefined;
-          unlink();
-          T.assert(!(await opfs.entryExists(filename)));
-
-          const ba = new Uint8Array([1,2,3,4,5]);
-          capi.sqlite3_js_vfs_create_file(
-            "opfs", filename, ba
-          );
-          T.assert(await opfs.entryExists(filename));
-          fh = await opfs.rootDirectory.getFileHandle(filename);
-          sh = await fh.createSyncAccessHandle();
-          T.assert(ba.byteLength === await sh.getSize());
-          await sh.close();
-          sh = undefined;
-          unlink();
-
-          T.mustThrowMatching(()=>{
-            capi.sqlite3_js_vfs_create_file(
-              "no-such-vfs", filename, ba
-            );
-          }, "SQLITE_NOTFOUND: Unknown sqlite3_vfs name: no-such-vfs");
-        }finally{
-          if(sh) await sh.close();
-          unlink();
-        }
-
-        // Some sanity checks of the opfs utility functions...
-        const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
-        const aDir = testDir+'/test/dir';
-        T.assert(await opfs.mkdir(aDir), "mkdir failed")
-          .assert(await opfs.mkdir(aDir), "mkdir must pass if the dir exists")
-          .assert(!(await opfs.unlink(testDir+'/test')), "delete 1 should have failed (dir not empty)")
-          .assert((await opfs.unlink(testDir+'/test/dir')), "delete 2 failed")
-          .assert(!(await opfs.unlink(testDir+'/test/dir')),
-                  "delete 2b should have failed (dir already deleted)")
-          .assert((await opfs.unlink(testDir, true)), "delete 3 failed")
-          .assert(!(await opfs.entryExists(testDir)),
-                  "entryExists(",testDir,") should have failed");
-      }
-    }/*OPFS util sanity checks*/)
-  ;/* end OPFS tests */
-
-  ////////////////////////////////////////////////////////////////////////
-  T.g('OPFS SyncAccessHandle Pool VFS',
-      (sqlite3)=>(hasOpfs() || "requires OPFS APIs"))
-    .t({
-      name: 'SAH sanity checks',
-      test: async function(sqlite3){
-        T.assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
-          .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) < 0)
-        const inst = sqlite3.installOpfsSAHPoolVfs,
-              catcher = (e)=>{
-                error("Cannot load SAH pool VFS.",
-                      "This might not be a problem,",
-                      "depending on the environment.");
-                return false;
-              };
-        let u1, u2;
-        const P1 = inst(sahPoolConfig).then(u=>u1 = u).catch(catcher),
-              P2 = inst(sahPoolConfig).then(u=>u2 = u).catch(catcher);
-        await Promise.all([P1, P2]);
-        if(!P1) return;
-        T.assert(u1 === u2)
-          .assert(sahPoolConfig.name === u1.vfsName)
-          .assert(sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
-          .assert(u1.getCapacity() >= sahPoolConfig.initialCapacity
-                  /* If a test fails before we get to nuke the VFS, we
-                     can have more than the initial capacity on the next
-                     run. */)
-          .assert(u1.getCapacity() + 2 === (await u2.addCapacity(2)))
-          .assert(2 === (await u2.reduceCapacity(2)))
-          .assert(sqlite3.oo1.OpfsSAHPool.default instanceof Function)
-          .assert(sqlite3.oo1.OpfsSAHPool.default ===
-                  sqlite3.oo1.OpfsSAHPool[sahPoolConfig.name])
-          .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) >= 0);
-
-        T.assert(0 === u1.getFileCount());
-        const DbCtor = sqlite3.oo1.OpfsSAHPool.default;
-        const dbName = '/foo.db';
-        let db = new DbCtor(dbName);
-        T.assert(1 === u1.getFileCount());
-        db.exec([
-          'create table t(a);',
-          'insert into t(a) values(1),(2),(3)'
-        ]);
-        T.assert(1 === u1.getFileCount());
-        T.assert(3 === db.selectValue('select count(*) from t'));
-        db.close();
-        T.assert(1 === u1.getFileCount());
-        db = new DbCtor(dbName);
-        T.assert(1 === u1.getFileCount());
-        db.close();
-        T.assert(1 === u1.getFileCount())
-          .assert(true === u1.unlink(dbName))
-          .assert(false === u1.unlink(dbName))
-          .assert(0 === u1.getFileCount());
-
-        T.assert(true === await u2.removeVfs())
-          .assert(false === await u1.removeVfs())
-          .assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name));
-
-        let cErr, u3;
-        const conf2 = JSON.parse(JSON.stringify(sahPoolConfig));
-        conf2.$testThrowInInit = new Error("Testing throwing during init.");
-        conf2.name = sahPoolConfig.name+'-err';
-        const P3 = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
-        T.assert(P3 === conf2.$testThrowInInit)
-          .assert(cErr === P3)
-          .assert(undefined === u3)
-          .assert(!sqlite3.capi.sqlite3_vfs_find(conf2.name));
-      }
-    }/*OPFS SAH Pool sanity checks*/)
-
-  ////////////////////////////////////////////////////////////////////////
   T.g('Hook APIs')
     .t({
       name: "sqlite3_commit/rollback/update_hook()",
@@ -3096,6 +2903,200 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
       }
     })/*session API sanity tests*/
   ;/*end of session API group*/;
+
+  ////////////////////////////////////////////////////////////////////////
+  T.g('OPFS: Origin-Private File System',
+      (sqlite3)=>(sqlite3.capi.sqlite3_vfs_find("opfs")
+                  || 'requires "opfs" VFS'))
+    .t({
+      name: 'OPFS db sanity checks',
+      test: async function(sqlite3){
+        const filename = this.opfsDbFile = 'sqlite3-tester1.db';
+        const pVfs = this.opfsVfs = capi.sqlite3_vfs_find('opfs');
+        T.assert(pVfs);
+        const unlink = this.opfsUnlink =
+              (fn=filename)=>{wasm.sqlite3_wasm_vfs_unlink(pVfs,fn)};
+        unlink();
+        let db = new sqlite3.oo1.OpfsDb(filename);
+        try {
+          db.exec([
+            'create table p(a);',
+            'insert into p(a) values(1),(2),(3)'
+          ]);
+          T.assert(3 === db.selectValue('select count(*) from p'));
+          db.close();
+          db = new sqlite3.oo1.OpfsDb(filename);
+          db.exec('insert into p(a) values(4),(5),(6)');
+          T.assert(6 === db.selectValue('select count(*) from p'));
+          this.opfsDbExport = capi.sqlite3_js_db_export(db);
+          T.assert(this.opfsDbExport instanceof Uint8Array)
+            .assert(this.opfsDbExport.byteLength>0
+                    && 0===this.opfsDbExport.byteLength % 512);
+        }finally{
+          db.close();
+          unlink();
+        }
+      }
+    }/*OPFS db sanity checks*/)
+    .t({
+      name: 'OPFS export/import',
+      test: async function(sqlite3){
+        let db;
+        try {
+          const exp = this.opfsDbExport;
+          delete this.opfsDbExport;
+          capi.sqlite3_js_vfs_create_file("opfs", this.opfsDbFile, exp);
+          const db = new sqlite3.oo1.OpfsDb(this.opfsDbFile);
+          T.assert(6 === db.selectValue('select count(*) from p'));
+        }finally{
+          if(db) db.close();
+        }
+      }
+    }/*OPFS export/import*/)
+    .t({
+      name: 'OPFS utility APIs and sqlite3_js_vfs_create_file()',
+      test: async function(sqlite3){
+        const filename = this.opfsDbFile;
+        const pVfs = this.opfsVfs;
+        const unlink = this.opfsUnlink;
+        T.assert(filename && pVfs && !!unlink);
+        delete this.opfsDbFile;
+        delete this.opfsVfs;
+        delete this.opfsUnlink;
+        unlink();
+        // Sanity-test sqlite3_js_vfs_create_file()...
+        /**************************************************************
+           ATTENTION CLIENT-SIDE USERS: sqlite3.opfs is NOT intended
+           for client-side use. It is only for this project's own
+           internal use. Its APIs are subject to change or removal at
+           any time.
+        ***************************************************************/
+        const opfs = sqlite3.opfs;
+        const fSize = 1379;
+        let sh;
+        try{
+          T.assert(!(await opfs.entryExists(filename)));
+          capi.sqlite3_js_vfs_create_file(
+            pVfs, filename, null, fSize
+          );
+          T.assert(await opfs.entryExists(filename));
+          let fh = await opfs.rootDirectory.getFileHandle(filename);
+          sh = await fh.createSyncAccessHandle();
+          T.assert(fSize === await sh.getSize());
+          await sh.close();
+          sh = undefined;
+          unlink();
+          T.assert(!(await opfs.entryExists(filename)));
+
+          const ba = new Uint8Array([1,2,3,4,5]);
+          capi.sqlite3_js_vfs_create_file(
+            "opfs", filename, ba
+          );
+          T.assert(await opfs.entryExists(filename));
+          fh = await opfs.rootDirectory.getFileHandle(filename);
+          sh = await fh.createSyncAccessHandle();
+          T.assert(ba.byteLength === await sh.getSize());
+          await sh.close();
+          sh = undefined;
+          unlink();
+
+          T.mustThrowMatching(()=>{
+            capi.sqlite3_js_vfs_create_file(
+              "no-such-vfs", filename, ba
+            );
+          }, "SQLITE_NOTFOUND: Unknown sqlite3_vfs name: no-such-vfs");
+        }finally{
+          if(sh) await sh.close();
+          unlink();
+        }
+
+        // Some sanity checks of the opfs utility functions...
+        const testDir = '/sqlite3-opfs-'+opfs.randomFilename(12);
+        const aDir = testDir+'/test/dir';
+        T.assert(await opfs.mkdir(aDir), "mkdir failed")
+          .assert(await opfs.mkdir(aDir), "mkdir must pass if the dir exists")
+          .assert(!(await opfs.unlink(testDir+'/test')), "delete 1 should have failed (dir not empty)")
+          .assert((await opfs.unlink(testDir+'/test/dir')), "delete 2 failed")
+          .assert(!(await opfs.unlink(testDir+'/test/dir')),
+                  "delete 2b should have failed (dir already deleted)")
+          .assert((await opfs.unlink(testDir, true)), "delete 3 failed")
+          .assert(!(await opfs.entryExists(testDir)),
+                  "entryExists(",testDir,") should have failed");
+      }
+    }/*OPFS util sanity checks*/)
+  ;/* end OPFS tests */
+
+  ////////////////////////////////////////////////////////////////////////
+  T.g('OPFS SyncAccessHandle Pool VFS',
+      (sqlite3)=>(hasOpfs() || "requires OPFS APIs"))
+    .t({
+      name: 'SAH sanity checks',
+      test: async function(sqlite3){
+        T.assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
+          .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) < 0)
+        const inst = sqlite3.installOpfsSAHPoolVfs,
+              catcher = (e)=>{
+                error("Cannot load SAH pool VFS.",
+                      "This might not be a problem,",
+                      "depending on the environment.");
+                return false;
+              };
+        let u1, u2;
+        const P1 = inst(sahPoolConfig).then(u=>u1 = u).catch(catcher),
+              P2 = inst(sahPoolConfig).then(u=>u2 = u).catch(catcher);
+        await Promise.all([P1, P2]);
+        if(!P1) return;
+        T.assert(u1 === u2)
+          .assert(sahPoolConfig.name === u1.vfsName)
+          .assert(sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
+          .assert(u1.getCapacity() >= sahPoolConfig.initialCapacity
+                  /* If a test fails before we get to nuke the VFS, we
+                     can have more than the initial capacity on the next
+                     run. */)
+          .assert(u1.getCapacity() + 2 === (await u2.addCapacity(2)))
+          .assert(2 === (await u2.reduceCapacity(2)))
+          .assert(sqlite3.oo1.OpfsSAHPool.default instanceof Function)
+          .assert(sqlite3.oo1.OpfsSAHPool.default ===
+                  sqlite3.oo1.OpfsSAHPool[sahPoolConfig.name])
+          .assert(sqlite3.capi.sqlite3_js_vfs_list().indexOf(sahPoolConfig.name) >= 0);
+
+        T.assert(0 === u1.getFileCount());
+        const DbCtor = sqlite3.oo1.OpfsSAHPool.default;
+        const dbName = '/foo.db';
+        let db = new DbCtor(dbName);
+        T.assert(1 === u1.getFileCount());
+        db.exec([
+          'create table t(a);',
+          'insert into t(a) values(1),(2),(3)'
+        ]);
+        T.assert(1 === u1.getFileCount());
+        T.assert(3 === db.selectValue('select count(*) from t'));
+        db.close();
+        T.assert(1 === u1.getFileCount());
+        db = new DbCtor(dbName);
+        T.assert(1 === u1.getFileCount());
+        db.close();
+        T.assert(1 === u1.getFileCount())
+          .assert(true === u1.unlink(dbName))
+          .assert(false === u1.unlink(dbName))
+          .assert(0 === u1.getFileCount());
+
+        T.assert(true === await u2.removeVfs())
+          .assert(false === await u1.removeVfs())
+          .assert(!sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name));
+
+        let cErr, u3;
+        const conf2 = JSON.parse(JSON.stringify(sahPoolConfig));
+        conf2.$testThrowInInit = new Error("Testing throwing during init.");
+        conf2.name = sahPoolConfig.name+'-err';
+        const P3 = await inst(conf2).then(u=>u3 = u).catch((e)=>cErr=e);
+        T.assert(P3 === conf2.$testThrowInInit)
+          .assert(cErr === P3)
+          .assert(undefined === u3)
+          .assert(!sqlite3.capi.sqlite3_vfs_find(conf2.name));
+      }
+    }/*OPFS SAH Pool sanity checks*/)
+
   ////////////////////////////////////////////////////////////////////////
   T.g('Bug Reports')
     .t({

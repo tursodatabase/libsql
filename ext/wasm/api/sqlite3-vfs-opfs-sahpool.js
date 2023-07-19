@@ -89,7 +89,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
   const optionDefaults = Object.assign(Object.create(null),{
     name: 'opfs-sahpool',
-    directory: undefined,
+    directory: undefined /* derived from .name */,
     initialCapacity: 6,
     clearOnInit: false,
     verbosity: 2 /*3+ == everything, 2 == warnings+errors, 1 == errors only*/
@@ -390,6 +390,21 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return rc;
     }
 
+    getFileForPtr(ptr){
+      return this.mapIdToFile.get(ptr);
+    }
+    setFileForPtr(ptr,file){
+      if(file) this.mapIdToFile.set(ptr, file);
+      else this.mapIdToFile.delete(ptr);
+    }
+
+    hasFilename(name){
+      return this.mapFilenameToSAH.has(name)
+    }
+
+    getSAHForPath(path){
+      return this.mapFilenameToSAH.get(path);
+    }
   }/*class OpfsSAHPool*/;
 
 
@@ -576,6 +591,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      the default directory. If no directory is explicitly provided
      then a directory name is synthesized from the `name` option.
 
+     Peculiarities of this VFS:
+
+     - Paths given to it _must_ be absolute. Relative paths will not
+     be properly recognized. This is arguably a bug but correcting it
+     requires some hoop-jumping and memory allocation in routines
+     which should not be allocating.
+
 
      The API for the utility object passed on by this function's
      Promise, in alphabetical order...
@@ -673,7 +695,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       throw new Error("Just testing rejection.");
     }
     if(initPromises[vfsName]){
-      console.warn("Returning same OpfsSAHPool result",options,vfsName,initPromises[vfsName]);
+      //console.warn("Returning same OpfsSAHPool result",options,vfsName,initPromises[vfsName]);
       return initPromises[vfsName];
     }
     if(!globalThis.FileSystemHandle ||
@@ -698,13 +720,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     const opfsIoMethods = new capi.sqlite3_io_methods();
     const opfsVfs = new capi.sqlite3_vfs()
           .addOnDispose(()=>opfsIoMethods.dispose());
-
-    const promiseReject = (err)=>{
-      error("rejecting promise:",err);
-      opfsVfs.dispose();
-      initPromises[vfsName] = Promise.reject(err);
-      throw err;
-    };
 
     /* We fetch the default VFS so that we can inherit some
        methods from it. */
@@ -755,13 +770,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           },
           xClose: function(pFile){
             thePool.storeErr();
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             if(file) {
               try{
                 log(`xClose ${file.path}`);
                 if(file.sq3File) file.sq3File.dispose();
                 file.sah.flush();
-                thePool.mapIdToFile.delete(pFile);
+                thePool.setFileForPtr(pFile,0);
                 if(file.flags & capi.SQLITE_OPEN_DELETEONCLOSE){
                   thePool.deletePath(file.path);
                 }
@@ -780,7 +795,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           },
           xFileSize: function(pFile,pSz64){
             log(`xFileSize`);
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             const size = file.sah.getSize() - HEADER_OFFSET_DATA;
             //log(`xFileSize ${file.path} ${size}`);
             wasm.poke64(pSz64, BigInt(size));
@@ -789,14 +804,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           xLock: function(pFile,lockType){
             log(`xLock ${lockType}`);
             thePool.storeErr();
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             file.lockType = lockType;
             return 0;
           },
           xRead: function(pFile,pDest,n,offset64){
             log(`xRead ${n}@${offset64}`);
             thePool.storeErr();
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             log(`xRead ${file.path} ${n} ${offset64}`);
             try {
               const nRead = file.sah.read(
@@ -819,7 +834,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           xSync: function(pFile,flags){
             log(`xSync ${flags}`);
             thePool.storeErr();
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             //log(`xSync ${file.path} ${flags}`);
             try{
               file.sah.flush();
@@ -832,7 +847,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           xTruncate: function(pFile,sz64){
             log(`xTruncate ${sz64}`);
             thePool.storeErr();
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             //log(`xTruncate ${file.path} ${iSize}`);
             try{
               file.sah.truncate(HEADER_OFFSET_DATA + Number(sz64));
@@ -844,13 +859,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           },
           xUnlock: function(pFile,lockType){
             log('xUnlock');
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             file.lockType = lockType;
             return 0;
           },
           xWrite: function(pFile,pSrc,n,offset64){
             thePool.storeErr();
-            const file = thePool.mapIdToFile.get(pFile);
+            const file = thePool.getFileForPtr(pFile);
             log(`xWrite ${file.path} ${n} ${offset64}`);
             try{
               const nBytes = file.sah.write(
@@ -870,13 +885,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         */
         const vfsMethods = {
           xAccess: function(pVfs,zName,flags,pOut){
-            log(`xAccess ${wasm.cstrToJs(zName)}`);
+            //log(`xAccess ${wasm.cstrToJs(zName)}`);
             thePool.storeErr();
             try{
-              const name = this.getPath(zName);
-              wasm.poke32(pOut, thePool.mapFilenameToSAH.has(name) ? 1 : 0);
+              const name = thePool.getPath(zName);
+              wasm.poke32(pOut, thePool.hasFilename(name) ? 1 : 0);
             }catch(e){
-              /*ignored*/;
+              /*ignored*/
+              wasm.poke32(pOut, 0);
             }
             return 0;
           },
@@ -931,7 +947,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               const path = (zName && wasm.peek8(zName))
                     ? thePool.getPath(zName)
                     : getRandomName();
-              let sah = thePool.mapFilenameToSAH.get(path);
+              let sah = thePool.getSAHForPath(path);
               if(!sah && (flags & capi.SQLITE_OPEN_CREATE)) {
                 // File not found so try to create it.
                 if(thePool.getFileCount() < thePool.getCapacity()) {
@@ -949,7 +965,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
               // Subsequent methods are only passed the file pointer, so
               // map the relevant info we need to that pointer.
               const file = {path, flags, sah};
-              thePool.mapIdToFile.set(pFile, file);
+              thePool.setFileForPtr(pFile, file);
               wasm.poke32(pOutFlags, flags);
               file.sq3File = new capi.sqlite3_file(pFile);
               file.sq3File.$pMethods = opfsIoMethods.pointer;
@@ -1020,6 +1036,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         log("VFS initialized.");
         return poolUtil;
       });
-    }).catch(promiseReject);
+    }).catch((err)=>{
+      error("rejecting promise:",err);
+      opfsVfs.dispose();
+      return initPromises[vfsName] = Promise.reject(err);
+    });
   }/*installOpfsSAHPoolVfs()*/;
 }/*sqlite3ApiBootstrap.initializers*/);
