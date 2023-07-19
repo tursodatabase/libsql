@@ -167,8 +167,6 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     /** Running total of the number of tests run via
         this API. */
     counter: 0,
-    /* Separator line for log messages. */
-    separator: '------------------------------------------------------------',
     /**
        If expr is a function, it is called and its result
        is returned, coerced to a bool, else expr, coerced to
@@ -256,13 +254,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           return this;
         },
         run: async function(sqlite3){
-          log(TestUtil.separator);
           logClass('group-start',"Group #"+this.number+':',this.name);
-          const indent = '    ';
           if(this.predicate){
             const p = this.predicate(sqlite3);
             if(!p || 'string'===typeof p){
-              logClass('warning',indent,
+              logClass(['warning','skipping-group'],
                        "SKIPPING group:", p ? p : "predicate says to" );
               return;
             }
@@ -274,11 +270,11 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
           for(const t of this.tests){
             ++i;
             const n = this.number+"."+i;
-              log(indent, n+":", t.name);
+            logClass('one-test-line', n+":", t.name);
             if(t.predicate){
               const p = t.predicate(sqlite3);
               if(!p || 'string'===typeof p){
-                logClass('warning',indent,
+                logClass(['warning','skipping-test'],
                          "SKIPPING:", p ? p : "predicate says to" );
                 skipped.push( n+': '+t.name );
                 continue;
@@ -295,12 +291,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             await rc;
             const then = performance.now();
             runtime += then - now;
-            logClass('faded',indent, indent,
+            logClass(['faded','one-test-summary'],
                      TestUtil.counter - tc, 'assertion(s) in',
                      roundMs(then-now),'ms');
           }
-          logClass('green',
-                   "Group #"+this.number+":",(TestUtil.counter - assertCount),
+          logClass(['green','group-end'],
+                   //"Group #"+this.number+":",
+                   (TestUtil.counter - assertCount),
                    "assertion(s) in",roundMs(runtime),"ms");
           if(0 && skipped.length){
             logClass('warning',"SKIPPED test(s) in group",this.number+":",skipped);
@@ -336,8 +333,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
             await g.run(sqlite3);
             runtime += performance.now() - now;
           }
-          log(TestUtil.separator);
-          logClass(['strong','green'],
+          logClass(['strong','green','full-test-summary'],
                    "Done running tests.",TestUtil.counter,"assertions in",
                    roundMs(runtime),'ms');
           pok();
@@ -3042,10 +3038,13 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
                 return false;
               };
         let u1, u2;
+        // Ensure that two immediately-consecutive installations
+        // resolve to the same Promise instead of triggering
+        // a locking error.
         const P1 = inst(sahPoolConfig).then(u=>u1 = u).catch(catcher),
               P2 = inst(sahPoolConfig).then(u=>u2 = u).catch(catcher);
         await Promise.all([P1, P2]);
-        if(!P1) return;
+        if(!(await P1)) return;
         T.assert(u1 === u2)
           .assert(sahPoolConfig.name === u1.vfsName)
           .assert(sqlite3.capi.sqlite3_vfs_find(sahPoolConfig.name))
@@ -3201,7 +3200,7 @@ globalThis.sqlite3InitModule = sqlite3InitModule;
     }else{
       logClass('warning',"sqlite3_wasm_test_...() APIs unavailable.");
     }
-    log("registered vfs list =",capi.sqlite3_js_vfs_list());
+    log("registered vfs list =",capi.sqlite3_js_vfs_list().join(', '));
     TestUtil.runTests(sqlite3);
   });
 })(self);
