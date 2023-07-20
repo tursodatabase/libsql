@@ -3109,9 +3109,10 @@ static int fts5IndexTombstoneQuery(
   int nHashTable,                 /* Number of pages attached to segment */
   u64 iRowid                      /* Rowid to query hash for */
 ){
-  int szKey = TOMBSTONE_KEYSIZE(pHash);
-  int nSlot = (pHash->nn - 8) / szKey;
+  const int szKey = TOMBSTONE_KEYSIZE(pHash);
+  const int nSlot = (pHash->nn - 8) / szKey;
   int iSlot = (iRowid / nHashTable) % nSlot;
+  int nCollide = nSlot;
 
   if( iRowid==0 ){
     return pHash->p[1];
@@ -3119,12 +3120,14 @@ static int fts5IndexTombstoneQuery(
     u32 *aSlot = (u32*)&pHash->p[8];
     while( aSlot[iSlot] ){
       if( fts5GetU32((u8*)&aSlot[iSlot])==iRowid ) return 1;
+      if( nCollide--==0 ) break;
       iSlot = (iSlot+1)%nSlot;
     }
   }else{
     u64 *aSlot = (u64*)&pHash->p[8];
     while( aSlot[iSlot] ){
       if( fts5GetU64((u8*)&aSlot[iSlot])==iRowid ) return 1;
+      if( nCollide--==0 ) break;
       iSlot = (iSlot+1)%nSlot;
     }
   }
@@ -6550,10 +6553,11 @@ static int fts5IndexTombstoneAddToPage(
   int nPg, 
   u64 iRowid
 ){
-  int szKey = TOMBSTONE_KEYSIZE(pPg);
-  int nSlot = (pPg->nn - 8) / szKey;
+  const int szKey = TOMBSTONE_KEYSIZE(pPg);
+  const int nSlot = (pPg->nn - 8) / szKey;
+  const int nElem = fts5GetU32(&pPg->p[4]);
   int iSlot = (iRowid / nPg) % nSlot;
-  int nElem = fts5GetU32(&pPg->p[4]);
+  int nCollide = nSlot;
 
   if( szKey==4 && iRowid>0xFFFFFFFF ) return 2;
   if( iRowid==0 ){
@@ -6568,11 +6572,17 @@ static int fts5IndexTombstoneAddToPage(
   fts5PutU32(&pPg->p[4], nElem+1);
   if( szKey==4 ){
     u32 *aSlot = (u32*)&pPg->p[8];
-    while( aSlot[iSlot] ) iSlot = (iSlot + 1) % nSlot;
+    while( aSlot[iSlot] ){
+      iSlot = (iSlot + 1) % nSlot;
+      if( nCollide--==0 ) return 0;
+    }
     fts5PutU32((u8*)&aSlot[iSlot], (u32)iRowid);
   }else{
     u64 *aSlot = (u64*)&pPg->p[8];
-    while( aSlot[iSlot] ) iSlot = (iSlot + 1) % nSlot;
+    while( aSlot[iSlot] ){
+      iSlot = (iSlot + 1) % nSlot;
+      if( nCollide--==0 ) return 0;
+    }
     fts5PutU64((u8*)&aSlot[iSlot], iRowid);
   }
 

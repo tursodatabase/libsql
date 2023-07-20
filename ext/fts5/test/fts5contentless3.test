@@ -1,0 +1,76 @@
+# 2023 July 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests for the content= and content_rowid= options.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5contentless3
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content=, contentless_delete=1);
+  BEGIN;
+    INSERT INTO ft VALUES('one one one');
+    INSERT INTO ft VALUES('two two two');
+    INSERT INTO ft VALUES('three three three');
+    INSERT INTO ft VALUES('four four four');
+    INSERT INTO ft VALUES('five five five');
+  COMMIT;
+
+  DELETE FROM ft WHERE rowid=3;
+}
+
+proc myhex {hex} { binary decode hex $hex }
+db func myhex myhex
+
+do_execsql_test 1.1 {
+  UPDATE ft_data SET block = 
+    myhex('04000000 00000001'                   ||
+          '01020304 01020304 01020304 01020304' ||
+          '01020304 01020304 01020304 01020304'
+    )
+  WHERE id = (SELECT max(id) FROM ft_data);
+}
+
+do_execsql_test 1.2 {
+  DELETE FROM ft WHERE rowid=1
+}
+
+do_execsql_test 1.3 {
+  SELECT rowid FROM ft('two');
+} {2}
+
+do_execsql_test 1.3 {
+  UPDATE ft_data SET block = 
+    myhex('08000000 00000001'                                               ||
+      '0000000001020304 0000000001020304 0000000001020304 0000000001020304' ||
+      '0000000001020304 0000000001020304 0000000001020304 0000000001020304'
+    )
+  WHERE id = (SELECT max(id) FROM ft_data);
+}
+
+do_execsql_test 1.4 {
+  SELECT rowid FROM ft('two');
+} {2}
+
+do_execsql_test 1.5 {
+  DELETE FROM ft WHERE rowid=4
+}
+
+
+finish_test
+
