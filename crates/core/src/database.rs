@@ -1,21 +1,19 @@
-use std::cell::RefCell;
-
 use crate::{connection::Connection, errors::Error::ConnectionFailed, Result};
 #[cfg(feature = "replication")]
 use libsql_replication::Replicator;
 #[cfg(feature = "replication")]
-pub use libsql_replication::{rpc, Client, Frames, TempSnapshot};
+pub use libsql_replication::{Frames, TempSnapshot};
 
 #[cfg(feature = "replication")]
 pub struct ReplicationContext {
-    pub replicator: RefCell<Replicator>,
-    pub client: Option<RefCell<Client>>,
+    pub replicator: Replicator,
+    pub endpoint: String,
 }
 
 #[cfg(feature = "replication")]
 pub(crate) enum Sync {
     Frame,
-    Rpc { url: String },
+    Http { endpoint: String },
 }
 
 #[cfg(feature = "replication")]
@@ -29,9 +27,11 @@ impl Opts {
         Opts { sync: Sync::Frame }
     }
 
-    pub fn with_rpc_sync(url: impl Into<String>) -> Opts {
+    pub fn with_http_sync(endpoint: impl Into<String>) -> Opts {
         Opts {
-            sync: Sync::Rpc { url: url.into() },
+            sync: Sync::Http {
+                endpoint: endpoint.into(),
+            },
         }
     }
 }
@@ -61,21 +61,19 @@ impl Database {
         let db_path = db_path.into();
         let mut db = Database::open(&db_path)?;
         let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
-        let client = match opts.sync {
-            Sync::Rpc { url } => {
-                let (client, meta) = Replicator::connect_to_rpc(
-                    rpc::Endpoint::from_shared(url.clone())
-                        .map_err(|e| ConnectionFailed(format!("{e}")))?,
-                )
-                .await
-                .map_err(|e| ConnectionFailed(format!("{e}")))?;
+        match opts.sync {
+            Sync::Http { endpoint } => {
+                let meta = Replicator::init_metadata(&endpoint)
+                    .await
+                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
                 *replicator.meta.lock() = Some(meta);
-                Some(RefCell::new(client))
+                db.replication_ctx = Some(ReplicationContext {
+                    replicator,
+                    endpoint,
+                });
             }
-            Sync::Frame => None,
+            _ => (),
         };
-        let replicator = RefCell::new(replicator);
-        db.replication_ctx = Some(ReplicationContext { replicator, client });
         Ok(db)
     }
 
@@ -94,18 +92,12 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub async fn sync(&self) -> Result<()> {
-        if let Some(ctx) = self.replication_ctx.as_ref() {
-            if let Some(client) = ctx.client.as_ref() {
-                let mut client = client.borrow_mut();
-                let mut replicator = ctx.replicator.borrow_mut();
-                replicator
-                    .sync_from_rpc(&mut client)
-                    .await
-                    .map_err(|e| ConnectionFailed(format!("{e}")))
-            } else {
-                Ok(())
-            }
+    pub async fn sync(&self) -> Result<usize> {
+        if let Some(ctx) = &self.replication_ctx {
+            ctx.replicator
+                .sync_from_http(&ctx.endpoint)
+                .await
+                .map_err(|e| ConnectionFailed(format!("{e}")))
         } else {
             Err(crate::errors::Error::Misuse(
                 "No replicator available. Use Database::with_replicator() to enable replication"
@@ -117,8 +109,7 @@ impl Database {
     #[cfg(feature = "replication")]
     pub fn sync_frames(&self, frames: Frames) -> Result<()> {
         if let Some(ctx) = self.replication_ctx.as_ref() {
-            let mut replicator = ctx.replicator.borrow_mut();
-            replicator
+            ctx.replicator
                 .sync(frames)
                 .map_err(|e| ConnectionFailed(format!("{e}")))
         } else {

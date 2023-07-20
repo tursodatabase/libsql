@@ -24,7 +24,7 @@ impl<'a> FrameInjector<'a> {
         Ok(Self { conn })
     }
 
-    pub fn step(&mut self) -> anyhow::Result<bool> {
+    pub fn step(&self) -> anyhow::Result<bool> {
         // pragma writable_schema=on
         unsafe {
             libsql_sys::ffi::sqlite3_exec(

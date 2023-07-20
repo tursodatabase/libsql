@@ -7,21 +7,21 @@ async fn main() {
     std::fs::create_dir("data.libsql").ok();
     std::fs::copy("tests/template.db", "data.libsql/data").unwrap();
 
-    let opts = libsql::Opts::with_rpc_sync("http://localhost:5001".to_owned());
+    let opts = libsql::Opts::with_http_sync("http://localhost:8081".to_owned());
     let db = Database::open_with_opts("test.db", opts).await.unwrap();
     let conn = db.connect().unwrap();
 
     let db = std::sync::Arc::new(parking_lot::Mutex::new(db));
     loop {
-        if let Err(e) = tokio::task::spawn_blocking({
-            let db = db.clone();
-            move || db.lock().sync()
-        })
-        .await
-        {
-            println!("Error: {e}");
-            break;
-        };
+        match db.lock().sync().await {
+            Ok(frames_applied) => {
+                println!("Applied {frames_applied} frames");
+            }
+            Err(e) => {
+                println!("Error: {e}");
+                break;
+            }
+        }
         let response = conn.execute("SELECT * FROM sqlite_master", ()).unwrap();
         let rows = match response {
             Some(rows) => rows,
