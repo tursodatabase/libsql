@@ -1,3 +1,4 @@
+//#ifnot target=node
 /*
   2023-07-14
 
@@ -52,8 +53,8 @@
   major browsers released since March 2023). If that API is not
   detected, the VFS is not registered.
 */
-'use strict';
 globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
+  'use strict';
   const toss = sqlite3.util.toss;
   const toss3 = sqlite3.util.toss3;
   const initPromises = Object.create(null);
@@ -78,6 +79,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         capi.SQLITE_OPEN_SUPER_JOURNAL |
         capi.SQLITE_OPEN_WAL /* noting that WAL support is
                                 unavailable in the WASM build.*/;
+
+  /** Subdirectory of the VFS's space where "opaque" (randomly-named)
+      files are stored. Changing this effectively invalidates the data
+      stored under older names (orphaning it), so don't do that. */
+  const OPAQUE_DIR_NAME = ".opaque";
 
   /**
      Returns short a string of random alphanumeric characters
@@ -423,6 +429,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     vfsDir;
     /* Directory handle to this.vfsDir. */
     #dhVfsRoot;
+    /* Directory handle to the subdir of this.#dhVfsRoot which holds
+       the randomly-named "opaque" files. This subdir exists in the
+       hope that we can eventually support client-created files in
+       this.#dhVfsRoot. */
+    #dhOpaque;
     /* Directory handle to this.dhVfsRoot's parent dir. Needed
        for a VFS-wipe op. */
     #dhVfsParent;
@@ -447,11 +458,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     #verbosity;
 
     constructor(options = Object.create(null)){
+      this.#verbosity = options.verbosity ?? optionDefaults.verbosity;
       this.vfsName = options.name || optionDefaults.name;
       if( sqlite3.capi.sqlite3_vfs_find(this.vfsName)){
         toss3("VFS name is already registered:", this.vfsName);
       }
-      this.#verbosity = options.verbosity ?? optionDefaults.verbosity;
       this.#cVfs = createOpfsVfs(this.vfsName);
       setPoolForVfs(this.#cVfs.pointer, this);
       this.vfsDir = options.directory || ("."+this.vfsName);
@@ -491,7 +502,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     async addCapacity(n){
       for(let i = 0; i < n; ++i){
         const name = getRandomName();
-        const h = await this.#dhVfsRoot.getFileHandle(name, {create:true});
+        const h = await this.#dhOpaque.getFileHandle(name, {create:true});
         const ah = await h.createSyncAccessHandle();
         this.#mapSAHToName.set(ah,name);
         this.setAssociatedPath(ah, '', 0);
@@ -512,7 +523,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         }
         const name = this.#mapSAHToName.get(ah);
         ah.close();
-        await this.#dhVfsRoot.removeEntry(name);
+        await this.#dhOpaque.removeEntry(name);
         this.#mapSAHToName.delete(ah);
         this.#availableSAH.delete(ah);
         ++nRm;
@@ -532,7 +543,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     }
 
     /**
-       Opens all files under this.vfsDir/this.#dhVfsRoot and acquires
+       Opens all files under this.vfsDir/this.#dhOpaque and acquires
        a SAH for each. returns a Promise which resolves to no value
        but completes once all SAHs are acquired. If acquiring an SAH
        throws, SAHPool.$error will contain the corresponding
@@ -544,7 +555,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     async acquireAccessHandles(clearFiles){
       const files = [];
-      for await (const [name,h] of this.#dhVfsRoot){
+      for await (const [name,h] of this.#dhOpaque){
         if('file'===h.kind){
           files.push([name,h]);
         }
@@ -680,6 +691,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       }
       this.#dhVfsRoot = h;
       this.#dhVfsParent = prev;
+      this.#dhOpaque = await this.#dhVfsRoot.getDirectoryHandle(
+        OPAQUE_DIR_NAME,{create:true}
+      );
       this.releaseAccessHandles();
       return this.acquireAccessHandles(clearFiles);
     }
@@ -691,6 +705,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        - a URL object
        - A JS string representing a file name
        - Wasm C-string representing a file name
+
+       All "../" parts and duplicate slashes are resolve/removed from
+       the returned result.
     */
     getPath(arg) {
       if(wasm.isPtr(arg)) arg = wasm.cstrToJs(arg);
@@ -790,17 +807,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        VFS has already been shut down.
     */
     async removeVfs(){
-      if(!this.#cVfs.pointer) return false;
+      if(!this.#cVfs.pointer || !this.#dhOpaque) return false;
       capi.sqlite3_vfs_unregister(this.#cVfs.pointer);
       this.#cVfs.dispose();
       try{
         this.releaseAccessHandles();
-        if(this.#dhVfsParent){
-          await this.#dhVfsParent.removeEntry(
-            this.#dhVfsRoot.name, {recursive: true}
-          );
-          this.#dhVfsRoot = this.#dhVfsParent = undefined;
-        }
+        await this.#dhVfsRoot.removeEntry(OPAQUE_DIR_NAME, {recursive: true});
+        this.#dhOpaque = undefined;
+        await this.#dhVfsParent.removeEntry(
+          this.#dhVfsRoot.name, {recursive: true}
+        );
+        this.#dhVfsRoot = this.#dhVfsParent = undefined;
       }catch(e){
         sqlite3.config.error(this.vfsName,"removeVfs() failed:",e);
         /*otherwise ignored - there is no recovery strategy*/
@@ -1120,7 +1137,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         /** The poolUtil object will be the result of the
             resolved Promise. */
         const poolUtil = new OpfsSAHPoolUtil(thePool);
-
         if(sqlite3.oo1){
           const oo1 = sqlite3.oo1;
           const theVfs = thePool.getVfs();
@@ -1130,12 +1146,8 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
             oo1.DB.dbCtorHelper.call(this, opt);
           };
           OpfsSAHPoolDb.prototype = Object.create(oo1.DB.prototype);
-          OpfsSAHPoolDb.PoolUtil = poolUtil;
-          if(!oo1.OpfsSAHPool){
-            oo1.OpfsSAHPool = Object.create(null);
-            oo1.OpfsSAHPool.default = OpfsSAHPoolDb;
-          }
-          oo1.OpfsSAHPool[vfsName] = OpfsSAHPoolDb;
+          // yes or no? OpfsSAHPoolDb.PoolUtil = poolUtil;
+          poolUtil.OpfsSAHPoolDb = OpfsSAHPoolDb;
           oo1.DB.dbCtorHelper.setVfsPostOpenSql(
             theVfs.pointer,
             function(oo1Db, sqlite3){
@@ -1159,3 +1171,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     });
   }/*installOpfsSAHPoolVfs()*/;
 }/*sqlite3ApiBootstrap.initializers*/);
+//#else
+/*
+  The OPFS SAH Pool VFS parts are elided from builds targeting
+  node.js.
+*/
+//#endif target=node

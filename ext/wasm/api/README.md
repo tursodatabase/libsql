@@ -91,7 +91,7 @@ browser client:
       directly to the (async) OPFS API and channels those results back
       to its synchronous counterpart. This file, because it must be
       started in its own Worker, is not part of the amalgamation.
-- **`sqlite3-vfs-opfs-sahpool.js`**\  
+- **`sqlite3-vfs-opfs-sahpool.c-pp.js`**\  
   is another sqlite3 VFS supporting the OPFS, but uses a completely
   different approach that the above-listed one.
 - **`sqlite3-api-cleanup.js`**\  
@@ -111,13 +111,15 @@ browser client:
 with `c-pp`](#c-pp), noting that such preprocessing may be applied
 after all of the relevant files are concatenated. That extension is
 used primarily to keep the code maintainers cognisant of the fact that
-those files contain constructs which will not run as-is in JavaScript.
+those files contain constructs which may not run as-is in any given
+JavaScript environment.
 
 The build process glues those files together, resulting in
-`sqlite3-api.js`, which is everything except for the `post-js-*.js`
-files, and `sqlite3.js`, which is the Emscripten-generated amalgamated
-output and includes the `post-js-*.js` parts, as well as the
-Emscripten-provided module loading pieces.
+`sqlite3-api.js`, which is everything except for the
+`pre/post-js-*.js` files, and `sqlite3.js`, which is the
+Emscripten-generated amalgamated output and includes the
+`pre/post-js-*.js` parts, as well as the Emscripten-provided module
+loading pieces.
 
 The non-JS outlier file is `sqlite3-wasm.c`: it is a proxy for
 `sqlite3.c` which `#include`'s that file and adds a couple more

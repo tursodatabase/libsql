@@ -376,7 +376,7 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
-sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.js
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 # SOAP.js is an external API file which is part of our distribution

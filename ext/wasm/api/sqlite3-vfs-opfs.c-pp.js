@@ -1,3 +1,4 @@
+//#ifnot target=node
 /*
   2022-09-18
 
@@ -1370,3 +1371,6 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
   }
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);
+//#else
+/* The OPFS VFS parts are elided from builds targeting node.js. */
+//#endif target=node
