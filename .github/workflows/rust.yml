@@ -24,10 +24,6 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -48,10 +44,6 @@ jobs:
           toolchain: stable
           components: clippy
           override: true
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -72,10 +64,6 @@ jobs:
           toolchain: stable
           components: rustfmt
           override: true
-      - name: Install Protoc
-        uses: arduino/setup-protoc@v1
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -114,10 +102,6 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Install foundationdb-clients
       run: wget https://github.com/apple/foundationdb/releases/download/7.1.25/foundationdb-clients_7.1.25-1_amd64.deb && sudo dpkg -i foundationdb-clients_7.1.25-1_amd64.deb
     - uses: actions/checkout@v3
@@ -145,10 +129,6 @@ jobs:
         profile: minimal
         toolchain: stable
         override: true
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v1
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Checkout
       uses: actions/checkout@v3
       with:

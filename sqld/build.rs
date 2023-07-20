@@ -4,6 +4,8 @@ use vergen::EmitBuilder;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     EmitBuilder::builder().git_sha(false).all_build().emit()?;
 
+    std::env::set_var("PROTOC", protobuf_src::protoc());
+
     let mut config = Config::new();
     config.bytes([".wal_log"]);
     tonic_build::configure()
