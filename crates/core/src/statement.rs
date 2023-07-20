@@ -14,9 +14,9 @@ impl Statement {
             Ok(stmt) => Ok(Statement {
                 inner: Arc::new(stmt),
             }),
-            Err(libsql_sys::Error::LibError(err)) => Err(Error::PrepareFailed(
+            Err(libsql_sys::Error::LibError(_err)) => Err(Error::PrepareFailed(
                 sql.to_string(),
-                errors::sqlite_code_to_error(err),
+                errors::error_from_handle(raw),
             )),
             Err(err) => Err(Error::Misuse(format!(
                 "Unexpected error while preparing statement: {err}"

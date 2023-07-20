@@ -25,7 +25,7 @@ impl Rows {
             libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
                 stmt: self.stmt.clone(),
             })),
-            _ => Err(Error::FetchRowFailed(errors::sqlite_code_to_error(err))),
+            _ => Err(Error::FetchRowFailed(errors::error_from_code(err))),
         }
     }
 
