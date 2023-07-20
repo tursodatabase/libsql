@@ -66,7 +66,7 @@ pub fn fib_src() -> String {
 }
 
 pub fn contains_src() -> String {
-  const CONTAINS_SRC: &[u8] = include_bytes!("./wasm/contains.wasm");
+    const CONTAINS_SRC: &[u8] = include_bytes!("./wasm/contains.wasm");
     hex::encode(CONTAINS_SRC)
 }
 
