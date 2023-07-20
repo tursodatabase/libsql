@@ -23,6 +23,7 @@ pub struct Replicator {
     _hook_ctx: Arc<parking_lot::Mutex<InjectorHookCtx>>,
     pub meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
     pub injector: replica::injector::FrameInjector<'static>,
+    pub client: reqwest::Client,
     pub next_offset: AtomicU64,
 }
 
@@ -105,6 +106,7 @@ impl Replicator {
             _hook_ctx: hook_ctx,
             meta,
             injector,
+            client: reqwest::Client::builder().build()?,
             next_offset: AtomicU64::new(1),
         })
     }
@@ -197,10 +199,8 @@ impl Replicator {
     pub async fn sync_from_http(&self, endpoint: impl AsRef<str>) -> anyhow::Result<usize> {
         tracing::trace!("Syncing frames from HTTP");
         let endpoint = endpoint.as_ref();
-
-        // FIXME: client should be reused to avoid severing the connection each time
-        let client = reqwest::Client::builder().build()?;
-        let response = client
+        let response = self
+            .client
             .post(format!("{endpoint}/frames"))
             .body(
                 serde_json::json!({"next_offset": self.next_offset.load(Ordering::Relaxed)})
