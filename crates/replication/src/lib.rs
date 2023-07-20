@@ -207,12 +207,21 @@ impl Replicator {
                     .to_string(),
             )
             .send()
-            .await?
-            .text()
             .await?;
+        if response.status() == reqwest::StatusCode::NO_CONTENT {
+            tracing::trace!("No new frames");
+            return Ok(0);
+        }
+        if response.status() != reqwest::StatusCode::OK {
+            anyhow::bail!("HTTP request failed with status {}", response.status());
+        }
+        let response = response.text().await?;
+
         let frames = serde_json::from_str::<ReplicationFrames>(&response)?;
         let len = frames.frames.len();
+        self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
         self.frames_sender.send(Frames::Vec(frames.frames)).await?;
+        self.injector.step()?;
         Ok(len)
     }
 }

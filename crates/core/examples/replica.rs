@@ -15,6 +15,10 @@ async fn main() {
     loop {
         match db.lock().sync().await {
             Ok(frames_applied) => {
+                if frames_applied == 0 {
+                    println!("No more frames at the moment! See you later");
+                    break;
+                }
                 println!("Applied {frames_applied} frames");
             }
             Err(e) => {
