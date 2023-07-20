@@ -2739,11 +2739,13 @@ static void fts5SegIterHashInit(
 ** fts5DataRelease(). Then free the array itself using sqlite3_free().
 */
 static void fts5IndexFreeArray(Fts5Data **ap, int n){
-  int ii;
-  for(ii=0; ii<n; ii++){
-    fts5DataRelease(ap[ii]);
+  if( ap ){
+    int ii;
+    for(ii=0; ii<n; ii++){
+      fts5DataRelease(ap[ii]);
+    }
+    sqlite3_free(ap);
   }
-  sqlite3_free(ap);
 }
 
 /*
@@ -6707,18 +6709,9 @@ static void fts5IndexTombstoneRebuild(
     /* Case 2. */
     int nElem = (int)fts5GetU32(&pData1->p[4]);
     assert( pData1 && iPg1==0 );
-
     nOut = 1;
-    while( nSlot<nElem*2 ){
-      nSlot = nSlot * 2;
-      if( nSlot>nSlotPerPage ){ 
-        nOut = 0; 
-        break;
-      }
-    }
-    if( nOut && nSlot>nSlotPerPage/2 ){
-      nSlot = nSlotPerPage;
-    }
+    nSlot = MAX(nElem*4, MINSLOT);
+    if( nSlot>nSlotPerPage ) nOut = 0; 
   }
   if( nOut==0 ){
     /* Case 3. */
@@ -6743,12 +6736,14 @@ static void fts5IndexTombstoneRebuild(
       if( pNew ){
         pNew->nn = szPage;
         pNew->p = (u8*)&pNew[1];
+        apOut[ii] = pNew;
       }
-      apOut[ii] = pNew;
     }
 
     /* Rebuild the hash table. */
-    res = fts5IndexTombstoneRehash(p, pSeg, pData1, iPg1, szKey, nOut, apOut);
+    if( p->rc==SQLITE_OK ){
+      res = fts5IndexTombstoneRehash(p, pSeg, pData1, iPg1, szKey, nOut, apOut);
+    }
     if( res==0 ){
       if( p->rc ){
         fts5IndexFreeArray(apOut, nOut);
