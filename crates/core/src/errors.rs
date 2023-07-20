@@ -14,7 +14,12 @@ pub enum Error {
     Misuse(String),
 }
 
-pub(crate) fn sqlite_code_to_error(code: i32) -> String {
+pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
+    let errmsg = unsafe { libsql_sys::ffi::sqlite3_errmsg(raw) };
+    sqlite_errmsg_to_string(errmsg)
+}
+
+pub(crate) fn error_from_code(code: i32) -> String {
     let errmsg = unsafe { libsql_sys::ffi::sqlite3_errstr(code) };
     sqlite_errmsg_to_string(errmsg)
 }
