@@ -5,8 +5,10 @@ package libsql
 
 /*
 #cgo CFLAGS: -I../c/include
-#cgo LDFLAGS: ../../../target/debug/libsql_experimental.a
-#cgo LDFLAGS: ../../../../.libs/libsqlite3.a
+#cgo LDFLAGS: -L../../target/debug
+#cgo LDFLAGS: -lsql_experimental
+#cgo LDFLAGS: -L../../../.libs
+#cgo LDFLAGS: -lsqlite3
 #cgo LDFLAGS: -lm
 #include <libsql.h>
 */
