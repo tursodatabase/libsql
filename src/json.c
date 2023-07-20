@@ -59,6 +59,7 @@ static const char jsonIsSpace[] = {
 typedef struct JsonString JsonString;
 typedef struct JsonNode JsonNode;
 typedef struct JsonParse JsonParse;
+typedef struct JsonTask JsonTask;
 
 /* An instance of this object represents a JSON string
 ** under construction.  Really, this is a generic string accumulator
@@ -72,6 +73,15 @@ struct JsonString {
   u8 bStatic;              /* True if zBuf is static space */
   u8 bErr;                 /* True if an error has been encountered */
   char zSpace[100];        /* Initial static space */
+};
+
+/* A deferred cleanup task.  A list of JsonTask objects might be
+** run when the JsonParse object is destroyed.
+*/
+struct JsonTask {
+  JsonTask *pJTNext;       /* Next in a list */
+  void (*xOp)(void*);      /* Routine to run */
+  void *pArg;              /* Argument to xOp() */
 };
 
 /* JSON type values
@@ -123,6 +133,7 @@ struct JsonNode {
   } u;
 };
 
+
 /* A completely parsed JSON string
 */
 struct JsonParse {
@@ -131,10 +142,13 @@ struct JsonParse {
   JsonNode *aNode;   /* Array of nodes containing the parse */
   const char *zJson; /* Original JSON string */
   u32 *aUp;          /* Index of parent of each node */
+  JsonTask *pClean;  /* Cleanup operations prior to freeing this object */
   u16 iDepth;        /* Nesting depth */
   u8 nErr;           /* Number of errors seen */
   u8 oom;            /* Set to true if out of memory */
   u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
+  u8 nJPRef;         /* Number of references to this object */
+  u8 bIgnoreEdits;   /* Ignore edit marks during search */
   int nJson;         /* Length of the zJson string in bytes */
   u32 iErr;          /* Error location in zJson[] */
   u32 iHold;         /* Replace cache line with the lowest iHold value */
@@ -531,6 +545,8 @@ static u32 jsonNodeSize(JsonNode *pNode){
 ** delete the JsonParse object itself.
 */
 static void jsonParseReset(JsonParse *pParse){
+  assert( pParse->pClean==0 );
+  assert( pParse->nJPRef<=1 );
   sqlite3_free(pParse->aNode);
   pParse->aNode = 0;
   pParse->nNode = 0;
@@ -543,6 +559,16 @@ static void jsonParseReset(JsonParse *pParse){
 ** Free a JsonParse object that was obtained from sqlite3_malloc().
 */
 static void jsonParseFree(JsonParse *pParse){
+  if( pParse->nJPRef>1 ){
+    pParse->nJPRef--;
+    return;
+  }
+  while( pParse->pClean ){
+    JsonTask *pTask = pParse->pClean;
+    pParse->pClean = pTask->pJTNext;
+    pTask->xOp(pTask->pArg);
+    sqlite3_free(pTask);
+  }
   jsonParseReset(pParse);
   sqlite3_free(pParse);
 }
