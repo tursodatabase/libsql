@@ -9,7 +9,7 @@ license = "MIT"
 [dependencies]
 prost = "0.11.3"
 tonic = { version = "0.8.3", features = ["tls"] }
-tokio = { version = "1.22.2", default-features=false, features = ["fs", "sync"] }
+tokio = { version = "1.22.2", default-features=false, features = ["rt-multi-thread", "fs", "sync"] }
 anyhow = "1.0.71"
 futures = "0.3.28"
 bytemuck = { version = "1.13.1", features = ["derive"] }
