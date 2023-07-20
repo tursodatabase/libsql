@@ -1861,6 +1861,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     client: undefined,
 
     /**
+       This function is not part of the public interface, but a
+       piece of internal bootstrapping infrastructure.
+
        Performs any optional asynchronous library-level initialization
        which might be required. This function returns a Promise which
        resolves to the sqlite3 namespace object. Any error in the
@@ -1884,15 +1887,15 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        In Emscripten-based builds, this function is called
        automatically and deleted from this object.
     */
-    asyncPostInit: function ff(){
-      if(ff.ready instanceof Promise) return ff.ready;
+    asyncPostInit: async function ff(){
+      if(ff.isReady instanceof Promise) return ff.isReady;
       let lip = sqlite3ApiBootstrap.initializersAsync;
       delete sqlite3ApiBootstrap.initializersAsync;
       if(!lip || !lip.length){
-        return ff.ready = Promise.resolve(sqlite3);
+        return ff.isReady = Promise.resolve(sqlite3);
       }
       lip = lip.map((f)=>{
-        return (f instanceof Promise) ? f : f(sqlite3);
+        return (f instanceof Function) ? async x=>f(sqlite3) : f;
       });
       const catcher = (e)=>{
         config.error("an async sqlite3 initializer failed:",e);
@@ -1907,7 +1910,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           /* It's conceivable that we might want to expose
              StructBinder to client-side code, but it's only useful if
              clients build their own sqlite3.wasm which contains their
-             one C struct types. */
+             own C struct types. */
           delete sqlite3.StructBinder;
         }
         return sqlite3;
@@ -1917,12 +1920,12 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
            advantage is that it allows us to have post-init cleanup
            defined outside of this routine at the end of the list and
            have it run at a well-defined time. */
-        let p = lip.shift();
+        let p = Promise.resolve(sqlite3);
         while(lip.length) p = p.then(lip.shift());
-        return ff.ready = p.then(postInit).catch(catcher);
+        return ff.isReady = p.then(postInit).catch(catcher);
       }else{
         /* Run them in an arbitrary order. */
-        return ff.ready = Promise.all(lip).then(postInit).catch(catcher);
+        return ff.isReady = Promise.all(lip).then(postInit).catch(catcher);
       }
     },
     /**
@@ -1983,7 +1986,7 @@ globalThis.sqlite3ApiBootstrap.initializers = [];
   specifically for initializers which are asynchronous. All entries in
   this list must be either async functions, non-async functions which
   return a Promise, or a Promise. Each function in the list is called
-  with the sqlite3 ojbect as its only argument.
+  with the sqlite3 object as its only argument.
 
   The resolved value of any Promise is ignored and rejection will kill
   the asyncPostInit() process (at an indeterminate point because all

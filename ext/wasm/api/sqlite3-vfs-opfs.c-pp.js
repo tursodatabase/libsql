@@ -1367,7 +1367,7 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
     });
   }catch(e){
     sqlite3.config.error("installOpfsVfs() exception:",e);
-    throw e;
+    return Promise.reject(e);
   }
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);

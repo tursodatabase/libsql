@@ -1,5 +1,5 @@
-C Filter\sthe\sOPFS\sVFSes\sout\sof\sthe\ssqlite3-node.mjs\sbuild.\sAdd\sanother\slevel\sof\ssubdirectory\sto\sthe\ssahpool\sto\slater\senable\stransparent\ssupport\sof\sclient-provided\sfiles\sunder\sthe\sVFS's\sroot\sdir.\sRework\sthe\sawkward\ssahpool-via-oo1\smapping.
-D 2023-07-20T09:06:42.459
+C Minor\sinternal\scleanups\sin\sJS\scode.
+D 2023-07-20T23:25:32.031
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -489,7 +489,7 @@ F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md 5eb44fa02e9c693a1884a3692428647894b0380b24bca120866b7a24c8786134
-F ext/wasm/api/extern-post-js.c-pp.js 80f288131f9f4486a66e79dbf42d4402dc23e3cb4ef605377ae69f0545a6b8e6
+F ext/wasm/api/extern-post-js.c-pp.js 116749b7e55b7519129de06d3d353e19df68cfb24b12204aa4dc30c9a83023fe
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js cd0a8ec768501d9bd45d325ab0442037fb0e33d1f3b4f08902f15c34720ee4a1
 F ext/wasm/api/post-js-header.js 47b6b281f39ad59fa6e8b658308cd98ea292c286a68407b35ff3ed9cfd281a62
@@ -497,13 +497,13 @@ F ext/wasm/api/pre-js.c-pp.js ad906703f7429590f2fbf5e6498513bf727a1a4f0ebfa057af
 F ext/wasm/api/sqlite3-api-cleanup.js 23ceec5ef74a0e649b19694ca985fd89e335771e21f24f50df352a626a8c81bf
 F ext/wasm/api/sqlite3-api-glue.js f1b2dcb944de5138bb5bd9a1559d2e76a4f3ec25260963d709e8237476688803
 F ext/wasm/api/sqlite3-api-oo1.js 9678dc4d9a5d39632b6ffe6ea94a023119260815bf32f265bf5f6c36c9516db8
-F ext/wasm/api/sqlite3-api-prologue.js d747cbb379e13881c9edf39dce019cbbbae860c456ababe9d550b4b27666a1c9
+F ext/wasm/api/sqlite3-api-prologue.js fdd8b72323f09684a7addfb622d427477a58cd5a35523f150ce77236b56352a7
 F ext/wasm/api/sqlite3-api-worker1.js 9f32af64df1a031071912eea7a201557fe39b1738645c0134562bb84e88e2fec
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
 F ext/wasm/api/sqlite3-v-helper.js 7daa0eab0a513a25b05e9abae7b5beaaa39209b3ed12f86aeae9ef8d2719ed25
-F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js d9abf3cde87aea55ea901e80f70e55b36055e8e5120ed47321af35afb9facdaa w ext/wasm/api/sqlite3-vfs-opfs-sahpool.js
-F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js 7b6aa73e8af0379f96d17eb874bc02ed13e901c6924aa3804a075f7bc58c3146
+F ext/wasm/api/sqlite3-vfs-opfs-sahpool.c-pp.js d9abf3cde87aea55ea901e80f70e55b36055e8e5120ed47321af35afb9facdaa
+F ext/wasm/api/sqlite3-vfs-opfs.c-pp.js e7a690e0e78ff4d563f2eca468f91db69f001ff4b79c6d2304cbb6f62dca437d
 F ext/wasm/api/sqlite3-wasm.c 8867f1d41c112fb4a2cfe22ff224eccaf309fcdea266cee0ec554f85db72ef0f
 F ext/wasm/api/sqlite3-worker1-promiser.c-pp.js bc06df0d599e625bde6a10a394e326dc68da9ff07fa5404354580f81566e591f
 F ext/wasm/api/sqlite3-worker1.c-pp.js da509469755035e919c015deea41b4514b5e84c12a1332e6cc8d42cb2cc1fb75
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 64ccf6177a019eab46fb3345ad1e8ba80eaf2c9da55767031f9f04ccd16afb4d
-R 9b88832176f0fa72b79f47fe01f46afd
+P 080a4d0aba30d8f3802b49be4a113205f069b3bdea8cebf525d654055642ff62
+R 729d5d7f424013b7282496b5ada001e8
 U stephan
-Z 925e0249217422a96f201bda7e782884
+Z fa107c664214632c0e2de6d34ddd182b
 # Remove this line to create a well-formed Fossil manifest.
