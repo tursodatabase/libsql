@@ -3099,6 +3099,9 @@ static void fts5MultiIterSetEof(Fts5Iter *pIter){
 */
 #define TOMBSTONE_KEYSIZE(pPg) (pPg->p[0]==4 ? 4 : 8)
 
+#define TOMBSTONE_NSLOT(pPg)   \
+  ((pPg->nn > 16) ? ((pPg->nn-8) / TOMBSTONE_KEYSIZE(pPg)) : 1)
+
 /*
 ** Query a single tombstone hash table for rowid iRowid. Return true if
 ** it is found or false otherwise. The tombstone hash table is one of
@@ -3110,7 +3113,7 @@ static int fts5IndexTombstoneQuery(
   u64 iRowid                      /* Rowid to query hash for */
 ){
   const int szKey = TOMBSTONE_KEYSIZE(pHash);
-  const int nSlot = (pHash->nn - 8) / szKey;
+  const int nSlot = TOMBSTONE_NSLOT(pHash);
   int iSlot = (iRowid / nHashTable) % nSlot;
   int nCollide = nSlot;
 
@@ -6554,7 +6557,7 @@ static int fts5IndexTombstoneAddToPage(
   u64 iRowid
 ){
   const int szKey = TOMBSTONE_KEYSIZE(pPg);
-  const int nSlot = (pPg->nn - 8) / szKey;
+  const int nSlot = TOMBSTONE_NSLOT(pPg);
   const int nElem = fts5GetU32(&pPg->p[4]);
   int iSlot = (iRowid / nPg) % nSlot;
   int nCollide = nSlot;

@@ -29,6 +29,10 @@ do_execsql_test 1.0 {
     INSERT INTO ft VALUES('three three three');
     INSERT INTO ft VALUES('four four four');
     INSERT INTO ft VALUES('five five five');
+    INSERT INTO ft VALUES('six six six');
+    INSERT INTO ft VALUES('seven seven seven');
+    INSERT INTO ft VALUES('eight eight eight');
+    INSERT INTO ft VALUES('nine nine nine');
   COMMIT;
 
   DELETE FROM ft WHERE rowid=3;
@@ -70,6 +74,22 @@ do_execsql_test 1.4 {
 do_execsql_test 1.5 {
   DELETE FROM ft WHERE rowid=4
 }
+
+do_execsql_test 1.6 {
+  UPDATE ft_data SET block = myhex('04000000 00000000')
+    WHERE id = (SELECT max(id) FROM ft_data);
+}
+do_execsql_test 1.7 {
+  SELECT rowid FROM ft('two');
+} {2}
+
+do_execsql_test 1.8 {
+  UPDATE ft_data SET block = myhex('04000000 00000000')
+    WHERE id = (SELECT max(id) FROM ft_data);
+}
+do_execsql_test 1.9 {
+  DELETE FROM ft WHERE rowid=8
+} {}
 
 
 finish_test
