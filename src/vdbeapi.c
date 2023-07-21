@@ -517,7 +517,7 @@ void sqlite3_result_text64(
     if( xDel==sqlite3_free && enc==SQLITE_UTF8 ){
       Mem *pOut = pCtx->pOut;
       if( pOut->z==z 
-       && sqlite3_msize(pOut->z)>=pOut->n+1
+       && sqlite3_msize(pOut->z) >= (sqlite3_uint64)(pOut->n+1)
        && pOut->z[n]==0
       ){
         pOut->flags |= MEM_Term;
