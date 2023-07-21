@@ -1889,19 +1889,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     */
     asyncPostInit: async function ff(){
       if(ff.isReady instanceof Promise) return ff.isReady;
-      let lip = sqlite3ApiBootstrap.initializersAsync;
+      let lia = sqlite3ApiBootstrap.initializersAsync;
       delete sqlite3ApiBootstrap.initializersAsync;
-      if(!lip || !lip.length){
-        return ff.isReady = Promise.resolve(sqlite3);
-      }
-      lip = lip.map((f)=>{
-        return (f instanceof Function) ? async x=>f(sqlite3) : f;
-      });
-      const catcher = (e)=>{
-        config.error("an async sqlite3 initializer failed:",e);
-        throw e;
-      };
-      const postInit = ()=>{
+      const postInit = async ()=>{
         if(!sqlite3.__isUnderTest){
           /* Delete references to internal-only APIs which are used by
              some initializers. Retain them when running in test mode
@@ -1915,18 +1905,20 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
         }
         return sqlite3;
       };
-      if(1){
-        /* Run all initializers in the sequence they were added. The
-           advantage is that it allows us to have post-init cleanup
-           defined outside of this routine at the end of the list and
-           have it run at a well-defined time. */
-        let p = Promise.resolve(sqlite3);
-        while(lip.length) p = p.then(lip.shift());
-        return ff.isReady = p.then(postInit).catch(catcher);
-      }else{
-        /* Run them in an arbitrary order. */
-        return ff.isReady = Promise.all(lip).then(postInit).catch(catcher);
+      const catcher = (e)=>{
+        config.error("an async sqlite3 initializer failed:",e);
+        throw e;
+      };
+      if(!lia || !lia.length){
+        return ff.isReady = postInit().catch(catcher);
       }
+      lia = lia.map((f)=>{
+        return (f instanceof Function) ? async x=>f(sqlite3) : f;
+      });
+      lia.push(postInit);
+      let p = Promise.resolve(sqlite3);
+      while(lia.length) p = p.then(lia.shift());
+      return ff.isReady = p.catch(catcher);
     },
     /**
        scriptInfo ideally gets injected into this object by the

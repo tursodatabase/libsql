@@ -1,5 +1,5 @@
-C Minor\sinternal\scleanups\sin\sJS\scode.
-D 2023-07-20T23:25:32.031
+C Internal\scleanups\sin\sthe\sasync\spart\sof\sthe\sJS\slibrary\sbootstrap\sphase.
+D 2023-07-21T09:10:42.614
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -497,7 +497,7 @@ F ext/wasm/api/pre-js.c-pp.js ad906703f7429590f2fbf5e6498513bf727a1a4f0ebfa057af
 F ext/wasm/api/sqlite3-api-cleanup.js 23ceec5ef74a0e649b19694ca985fd89e335771e21f24f50df352a626a8c81bf
 F ext/wasm/api/sqlite3-api-glue.js f1b2dcb944de5138bb5bd9a1559d2e76a4f3ec25260963d709e8237476688803
 F ext/wasm/api/sqlite3-api-oo1.js 9678dc4d9a5d39632b6ffe6ea94a023119260815bf32f265bf5f6c36c9516db8
-F ext/wasm/api/sqlite3-api-prologue.js fdd8b72323f09684a7addfb622d427477a58cd5a35523f150ce77236b56352a7
+F ext/wasm/api/sqlite3-api-prologue.js cbd7d6ba185f3a844a8b0020e954b49bbc2ca78b305d117bec2ceca21431795a
 F ext/wasm/api/sqlite3-api-worker1.js 9f32af64df1a031071912eea7a201557fe39b1738645c0134562bb84e88e2fec
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 080a4d0aba30d8f3802b49be4a113205f069b3bdea8cebf525d654055642ff62
-R 729d5d7f424013b7282496b5ada001e8
+P 21a2ca9fc46bf746874579897872e2a45cb07f278abb670dd22b122f7d6a9a6c
+R 29a8f4f8ea37e0c15f874df4805828de
 U stephan
-Z fa107c664214632c0e2de6d34ddd182b
+Z 8b913efdb9ce5e9239da5b5f12183785
 # Remove this line to create a well-formed Fossil manifest.
