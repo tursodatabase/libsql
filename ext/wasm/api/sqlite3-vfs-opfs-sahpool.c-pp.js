@@ -144,11 +144,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xClose: function(pFile){
       const pool = getPoolForPFile(pFile);
       pool.storeErr();
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       if(file) {
         try{
           pool.log(`xClose ${file.path}`);
-          pool.mapSFileToOFile(pFile, false);
+          pool.mapS3FileToOFile(pFile, false);
           file.sah.flush();
           if(file.flags & capi.SQLITE_OPEN_DELETEONCLOSE){
             pool.deletePath(file.path);
@@ -169,7 +169,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xFileSize: function(pFile,pSz64){
       const pool = getPoolForPFile(pFile);
       pool.log(`xFileSize`);
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       const size = file.sah.getSize() - HEADER_OFFSET_DATA;
       //log(`xFileSize ${file.path} ${size}`);
       wasm.poke64(pSz64, BigInt(size));
@@ -179,14 +179,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log(`xLock ${lockType}`);
       pool.storeErr();
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       file.lockType = lockType;
       return 0;
     },
     xRead: function(pFile,pDest,n,offset64){
       const pool = getPoolForPFile(pFile);
       pool.storeErr();
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       pool.log(`xRead ${file.path} ${n} @ ${offset64}`);
       try {
         const nRead = file.sah.read(
@@ -210,7 +210,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log(`xSync ${flags}`);
       pool.storeErr();
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       //log(`xSync ${file.path} ${flags}`);
       try{
         file.sah.flush();
@@ -224,7 +224,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const pool = getPoolForPFile(pFile);
       pool.log(`xTruncate ${sz64}`);
       pool.storeErr();
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       //log(`xTruncate ${file.path} ${iSize}`);
       try{
         file.sah.truncate(HEADER_OFFSET_DATA + Number(sz64));
@@ -237,14 +237,14 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     xUnlock: function(pFile,lockType){
       const pool = getPoolForPFile(pFile);
       pool.log('xUnlock');
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       file.lockType = lockType;
       return 0;
     },
     xWrite: function(pFile,pSrc,n,offset64){
       const pool = getPoolForPFile(pFile);
       pool.storeErr();
-      const file = pool.getOFileForSFile(pFile);
+      const file = pool.getOFileForS3File(pFile);
       pool.log(`xWrite ${file.path} ${n} ${offset64}`);
       try{
         const nBytes = file.sah.write(
@@ -356,7 +356,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         // Subsequent I/O methods are only passed the sqlite3_file
         // pointer, so map the relevant info we need to that pointer.
         const file = {path, flags, sah};
-        pool.mapSFileToOFile(pFile, file);
+        pool.mapS3FileToOFile(pFile, file);
         file.lockType = capi.SQLITE_LOCK_NONE;
         const sq3File = new capi.sqlite3_file(pFile);
         sq3File.$pMethods = opfsIoMethods.pointer;
@@ -374,11 +374,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Creates and initializes an sqlite3_vfs instance for an
      OpfsSAHPool. The argument is the VFS's name (JS string).
 
+     Throws if the VFS name is already registered or if something
+     goes terribly wrong via sqlite3.vfs.installVfs().
+
      Maintenance reminder: the only detail about the returned object
      which is specific to any given OpfsSAHPool instance is the $zName
      member. All other state is identical.
   */
   const createOpfsVfs = function(vfsName){
+    if( sqlite3.capi.sqlite3_vfs_find(vfsName)){
+      toss3("VFS name is already registered:", vfsName);
+    }
     const opfsVfs = new capi.sqlite3_vfs();
     /* We fetch the default VFS so that we can inherit some
        methods from it. */
@@ -444,7 +450,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Set of currently-unused SAHs. */
     #availableSAH = new Set();
     /* Maps (sqlite3_file*) to xOpen's file objects. */
-    #mapSqlite3FileToFile = new Map();
+    #mapS3FileToOFile_ = new Map();
+
+    /* Maps SAH to an abstract File Object which contains
+       various metadata about that handle. */
+    //#mapSAHToMeta = new Map();
 
     /** Buffer used by [sg]etAssociatedPath(). */
     #apBody = new Uint8Array(HEADER_CORPUS_SIZE);
@@ -460,9 +470,6 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     constructor(options = Object.create(null)){
       this.#verbosity = options.verbosity ?? optionDefaults.verbosity;
       this.vfsName = options.name || optionDefaults.name;
-      if( sqlite3.capi.sqlite3_vfs_find(this.vfsName)){
-        toss3("VFS name is already registered:", this.vfsName);
-      }
       this.#cVfs = createOpfsVfs(this.vfsName);
       setPoolForVfs(this.#cVfs.pointer, this);
       this.vfsDir = options.directory || ("."+this.vfsName);
@@ -494,6 +501,17 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Current number of in-use files from pool. */
     getFileCount(){return this.#mapFilenameToSAH.size}
 
+//    #createFileObject(sah,clientName,opaqueName){
+//      const f = Object.assign(Object.create(null),{
+//        clientName, opaqueName
+//      });
+//      this.#mapSAHToMeta.set(sah, f);
+//      return f;
+//    }
+//    #unmapFileObject(sah){
+//      this.#mapSAHToMeta.delete(sah);
+//    }
+
     /**
        Adds n files to the pool's capacity. This change is
        persistent across settings. Returns a Promise which resolves
@@ -506,6 +524,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
         const ah = await h.createSyncAccessHandle();
         this.#mapSAHToName.set(ah,name);
         this.setAssociatedPath(ah, '', 0);
+        //this.#createFileObject(ah,undefined,name);
       }
       return this.getCapacity();
     }
@@ -522,6 +541,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           break;
         }
         const name = this.#mapSAHToName.get(ah);
+        //this.#unmapFileObject(ah);
         ah.close();
         await this.#dhOpaque.removeEntry(name);
         this.#mapSAHToName.delete(ah);
@@ -762,19 +782,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
        Given an (sqlite3_file*), returns the mapped
        xOpen file object.
     */
-    getOFileForSFile(ptr){
-      return this.#mapSqlite3FileToFile.get(ptr);
+    getOFileForS3File(pFile){
+      return this.#mapS3FileToOFile_.get(pFile);
     }
     /**
        Maps or unmaps (if file is falsy) the given (sqlite3_file*)
        to an xOpen file object and to this pool object.
     */
-    mapSFileToOFile(pFile,file){
+    mapS3FileToOFile(pFile,file){
       if(file){
-        this.#mapSqlite3FileToFile.set(pFile, file);
+        this.#mapS3FileToOFile_.set(pFile, file);
         setPoolForPFile(pFile, this);
       }else{
-        this.#mapSqlite3FileToFile.delete(pFile);
+        this.#mapS3FileToOFile_.delete(pFile);
         setPoolForPFile(pFile, false);
       }
     }
