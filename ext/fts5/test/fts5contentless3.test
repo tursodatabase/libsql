@@ -91,6 +91,53 @@ do_execsql_test 1.9 {
   DELETE FROM ft WHERE rowid=8
 } {}
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content=, contentless_delete=1);
+    INSERT INTO ft VALUES('one one one');
+    INSERT INTO ft VALUES('two two two');
+    INSERT INTO ft VALUES('three three three');
+    INSERT INTO ft VALUES('four four four');
+    INSERT INTO ft VALUES('five five five');
+    INSERT INTO ft VALUES('six six six');
+    INSERT INTO ft VALUES('seven seven seven');
+    INSERT INTO ft VALUES('eight eight eight');
+    INSERT INTO ft VALUES('nine nine nine');
+}
+
+do_execsql_test 2.1 {
+  INSERT INTO ft(ft) VALUES('optimize');
+}
+do_execsql_test 2.2 {
+  SELECT count(*) FROM ft_data
+} {3}
+do_execsql_test 2.3 {
+  DELETE FROM ft WHERE rowid=5
+}
+do_execsql_test 2.4 {
+  SELECT count(*) FROM ft_data
+} {4}
+
+# Check that an 'optimize' works (rewrites the index) if there is a single
+# segment with one or more tombstone hash pages.
+do_execsql_test 2.5 {
+  INSERT INTO ft(ft) VALUES('optimize');
+}
+do_execsql_test 2.6 {
+  SELECT count(*) FROM ft_data
+} {3}
+
+# Check that an 'optimize' is a no-op if there is a single segment
+# and no tombstone hash pages.
+do_execsql_test 2.7 {
+  INSERT INTO ft(ft) VALUES('optimize');
+  SELECT rowid FROM ft_data;
+} [db eval {SELECT rowid FROM ft_data}]
+
+
+
+
 
 finish_test
 

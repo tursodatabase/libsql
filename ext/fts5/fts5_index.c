@@ -5483,17 +5483,22 @@ static Fts5Structure *fts5IndexOptimizeStruct(
   /* Figure out if this structure requires optimization. A structure does
   ** not require optimization if either:
   **
-  **  + it consists of fewer than two segments, or 
-  **  + all segments are on the same level, or
-  **  + all segments except one are currently inputs to a merge operation.
+  **  1. it consists of fewer than two segments, or 
+  **  2. all segments are on the same level, or
+  **  3. all segments except one are currently inputs to a merge operation.
   **
-  ** In the first case, return NULL. In the second, increment the ref-count
-  ** on *pStruct and return a copy of the pointer to it.
+  ** In the first case, if there are no tombstone hash pages, return NULL. In
+  ** the second, increment the ref-count on *pStruct and return a copy of the
+  ** pointer to it.
   */
-  if( nSeg<2 ) return 0;
+  if( nSeg==0 ) return 0;
   for(i=0; i<pStruct->nLevel; i++){
     int nThis = pStruct->aLevel[i].nSeg;
-    if( nThis==nSeg || (nThis==nSeg-1 && pStruct->aLevel[i].nMerge==nThis) ){
+    int nMerge = pStruct->aLevel[i].nMerge;
+    if( nThis>0 && (nThis==nSeg || (nThis==nSeg-1 && nMerge==nThis)) ){
+      if( nSeg==1 && nThis==1 && pStruct->aLevel[i].aSeg[0].nPgTombstone==0 ){
+        return 0;
+      }
       fts5StructureRef(pStruct);
       return pStruct;
     }
