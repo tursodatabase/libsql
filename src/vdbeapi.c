@@ -514,15 +514,7 @@ void sqlite3_result_text64(
     (void)invokeValueDestructor(z, xDel, pCtx);
   }else{
     setResultStrOrError(pCtx, z, (int)n, enc, xDel);
-    if( xDel==sqlite3_free && enc==SQLITE_UTF8 ){
-      Mem *pOut = pCtx->pOut;
-      if( pOut->z==z 
-       && sqlite3_msize(pOut->z) >= (sqlite3_uint64)(pOut->n+1)
-       && pOut->z[n]==0
-      ){
-        pOut->flags |= MEM_Term;
-      }
-    }
+    sqlite3VdbeMemZeroTerminateIfAble(pCtx->pOut);
   }
 }
 #ifndef SQLITE_OMIT_UTF16
