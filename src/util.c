@@ -846,7 +846,9 @@ int sqlite3DecOrHexToI64(const char *z, i64 *pOut){
   }else
 #endif /* SQLITE_OMIT_HEX_INTEGER */
   {
-    return sqlite3Atoi64(z, pOut, sqlite3Strlen30(z), SQLITE_UTF8);
+    int n = (int)(0x3fffffff&strspn(z,"+- \n\t0123456789"));
+    if( z[n] ) n++;
+    return sqlite3Atoi64(z, pOut, n, SQLITE_UTF8);
   }
 }
 
