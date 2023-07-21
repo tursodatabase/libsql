@@ -61,19 +61,17 @@ impl Database {
         let db_path = db_path.into();
         let mut db = Database::open(&db_path)?;
         let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
-        match opts.sync {
-            Sync::Http { endpoint } => {
-                let meta = Replicator::init_metadata(&endpoint)
-                    .await
-                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
-                *replicator.meta.lock() = Some(meta);
-                db.replication_ctx = Some(ReplicationContext {
-                    replicator,
-                    endpoint,
-                });
-            }
-            _ => (),
+        if let Sync::Http { endpoint } = opts.sync {
+            let meta = Replicator::init_metadata(&endpoint)
+                .await
+                .map_err(|e| ConnectionFailed(format!("{e}")))?;
+            *replicator.meta.lock() = Some(meta);
+            db.replication_ctx = Some(ReplicationContext {
+                replicator,
+                endpoint,
+            });
         };
+
         Ok(db)
     }
 

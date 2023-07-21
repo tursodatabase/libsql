@@ -13,9 +13,8 @@ async fn main() {
         .unwrap();
     let conn = db.connect().unwrap();
 
-    let db = std::sync::Arc::new(parking_lot::Mutex::new(db));
     loop {
-        match db.lock().sync().await {
+        match db.sync().await {
             Ok(frames_applied) => {
                 if frames_applied == 0 {
                     println!("No more frames at the moment! See you later");

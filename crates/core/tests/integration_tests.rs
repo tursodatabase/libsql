@@ -1,7 +1,7 @@
 use libsql::{params, Connection, Database, Params};
 
 fn setup() -> Connection {
-    let db = Database::open(":memory:");
+    let db = Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
     conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)", ())
         .unwrap();

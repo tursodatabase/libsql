@@ -6,7 +6,7 @@ async fn main() {
     tracing_subscriber::fmt::init();
 
     let opts = libsql::Opts::with_sync();
-    let mut db = Database::open_with_opts("test.db", opts).await.unwrap();
+    let db = Database::open_with_opts("test.db", opts).await.unwrap();
     let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();

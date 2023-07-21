@@ -3,7 +3,7 @@ use libsql::{Database, Params};
 use pprof::criterion::{Output, PProfProfiler};
 
 fn bench_db() -> Database {
-    Database::open(":memory:")
+    Database::open(":memory:").unwrap()
 }
 
 fn bench(c: &mut Criterion) {
