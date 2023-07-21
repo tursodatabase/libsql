@@ -27,7 +27,7 @@ pub struct FrameHeader {
     pub size_after: u32,
 }
 
-#[derive(Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 /// The owned version of a replication frame.
 /// Cloning this is cheap.
 pub struct Frame {

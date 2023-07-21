@@ -153,10 +153,9 @@ unsafe impl WalHook for InjectorHook {
         let wal_ptr = wal as *mut _;
         let ctx = Self::wal_extract_ctx(wal);
         loop {
-            tracing::trace!("Waiting for a frame");
-            let x = tokio::task::block_in_place(|| { ctx.receiver.blocking_recv() });
-            match x {
-                Some(frames) => {
+            tracing::trace!("Receiving a frame");
+            match ctx.receiver.try_recv() {
+                Ok(frames) => {
                     let (headers, last_frame_no, size_after) = frames.to_headers();
                     let ret = ctx.inject_pages(
                         headers,
@@ -176,7 +175,7 @@ unsafe impl WalHook for InjectorHook {
                         return LIBSQL_CONTINUE_REPLICATION as c_int;
                     }
                 }
-                None => {
+                _ => {
                     tracing::warn!("replication channel closed");
                     return LIBSQL_EXIT_REPLICATION as c_int;
                 }
