@@ -4759,6 +4759,8 @@ static int fts5IndexMerge(
     if( p->rc==SQLITE_OK && pStruct->aLevel[iBestLvl].nMerge==0 ){
       fts5StructurePromote(p, iBestLvl+1, pStruct);
     }
+
+    if( nMin==1 ) nMin = 2;
   }
   *ppStruct = pStruct;
   return bRet;
@@ -5582,7 +5584,7 @@ int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
       Fts5Structure *pNew = fts5IndexOptimizeStruct(p, pStruct);
       fts5StructureRelease(pStruct);
       pStruct = pNew;
-      nMin = 2;
+      nMin = 1;
       nMerge = nMerge*-1;
     }
     if( pStruct && pStruct->nLevel ){
@@ -6698,8 +6700,8 @@ static void fts5IndexTombstoneRebuild(
   Fts5Data ***papOut              /* OUT: Output hash pages */
 ){
   const int MINSLOT = 32;
-  int nSlotPerPage = (p->pConfig->pgsz - 8) / szKey;
-  int nSlot = MINSLOT;            /* Number of slots in each output page */
+  int nSlotPerPage = MAX(MINSLOT, (p->pConfig->pgsz - 8) / szKey);
+  int nSlot = 0;                  /* Number of slots in each output page */
   int nOut = 0;
 
   /* Figure out how many output pages (nOut) and how many slots per 
@@ -6745,6 +6747,7 @@ static void fts5IndexTombstoneRebuild(
     Fts5Data **apOut = 0;
 
     /* Allocate space for the new hash table */
+    assert( nSlot>=MINSLOT );
     apOut = (Fts5Data**)sqlite3Fts5MallocZero(&p->rc, sizeof(Fts5Data*) * nOut);
     szPage = 8 + nSlot*szKey;
     for(ii=0; ii<nOut; ii++){
@@ -7942,8 +7945,8 @@ static int fts5structConnectMethod(
 
   rc = sqlite3_declare_vtab(db, 
       "CREATE TABLE xyz("
-          "level, segment, merge, segid, leaf1, leaf2, loc1, loc2,"
-      "struct HIDDEN);"
+          "level, segment, merge, segid, leaf1, leaf2, loc1, loc2, "
+          "npgtombstone, struct HIDDEN);"
   );
   if( rc==SQLITE_OK ){
     pNew = sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
@@ -7970,7 +7973,7 @@ static int fts5structBestIndexMethod(
   pIdxInfo->idxNum = 0;
   for(i=0, p=pIdxInfo->aConstraint; i<pIdxInfo->nConstraint; i++, p++){
     if( p->usable==0 ) continue;
-    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==8 ){
+    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==9 ){
       rc = SQLITE_OK;
       pIdxInfo->aConstraintUsage[i].omit = 1;
       pIdxInfo->aConstraintUsage[i].argvIndex = 1;
@@ -8088,6 +8091,9 @@ static int fts5structColumnMethod(
       break;
     case 7: /* loc2 */
       sqlite3_result_int(ctx, pSeg->iOrigin2);
+      break;
+    case 8: /* npgtombstone */
+      sqlite3_result_int(ctx, pSeg->nPgTombstone);
       break;
   }
   return SQLITE_OK;

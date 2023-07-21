@@ -95,15 +95,15 @@ do_execsql_test 1.9 {
 reset_db
 do_execsql_test 2.0 {
   CREATE VIRTUAL TABLE ft USING fts5(x, content=, contentless_delete=1);
-    INSERT INTO ft VALUES('one one one');
-    INSERT INTO ft VALUES('two two two');
-    INSERT INTO ft VALUES('three three three');
-    INSERT INTO ft VALUES('four four four');
-    INSERT INTO ft VALUES('five five five');
-    INSERT INTO ft VALUES('six six six');
-    INSERT INTO ft VALUES('seven seven seven');
-    INSERT INTO ft VALUES('eight eight eight');
-    INSERT INTO ft VALUES('nine nine nine');
+  INSERT INTO ft VALUES('one one one');
+  INSERT INTO ft VALUES('two two two');
+  INSERT INTO ft VALUES('three three three');
+  INSERT INTO ft VALUES('four four four');
+  INSERT INTO ft VALUES('five five five');
+  INSERT INTO ft VALUES('six six six');
+  INSERT INTO ft VALUES('seven seven seven');
+  INSERT INTO ft VALUES('eight eight eight');
+  INSERT INTO ft VALUES('nine nine nine');
 }
 
 do_execsql_test 2.1 {
@@ -135,7 +135,61 @@ do_execsql_test 2.7 {
   SELECT rowid FROM ft_data;
 } [db eval {SELECT rowid FROM ft_data}]
 
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content=, contentless_delete=1);
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 64);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO ft(rowid, x) SELECT i, i||' '||i||' '||i||' '||i FROM s;
+  INSERT INTO ft(ft) VALUES('optimize');
+}
 
+do_execsql_test 3.1 {
+  SELECT count(*) FROM ft_data
+} {200}
+
+do_execsql_test 3.2 {
+  DELETE FROM ft WHERE (rowid % 50)==0;
+  SELECT count(*) FROM ft_data;
+} {203}
+
+do_execsql_test 3.3 {
+  INSERT INTO ft(ft, rank) VALUES('merge', 500);
+  SELECT rowid FROM ft_data;
+} [db eval {SELECT rowid FROM ft_data}]
+
+do_execsql_test 3.4 {
+  INSERT INTO ft(ft, rank) VALUES('merge', -1000);
+  SELECT count(*) FROM ft_data;
+} {197}
+
+do_execsql_test 3.5 {
+  DELETE FROM ft WHERE (rowid % 50)==1;
+  SELECT count(*) FROM ft_data;
+} {200}
+
+do_execsql_test 3.6 {
+  SELECT level, segment, npgtombstone FROM fts5_structure(
+    (SELECT block FROM ft_data WHERE id=10)
+  )
+} {1 0 3}
+
+do_test 3.6 {
+  while 1 {
+    set nChange [db total_changes]
+    execsql { INSERT INTO ft(ft, rank) VALUES('merge', -5) }
+    if {([db total_changes] - $nChange)<2} break
+  }
+} {}
+
+do_execsql_test 3.7 {
+  SELECT level, segment, npgtombstone FROM fts5_structure(
+    (SELECT block FROM ft_data WHERE id=10)
+  )
+} {2 0 0}
 
 
 
