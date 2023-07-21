@@ -324,7 +324,7 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
   if( (pMem->flags & (MEM_Str|MEM_Term))!=MEM_Str ) return;
   if( pMem->enc!=SQLITE_UTF8 ) return;
-  if( pMem->z==0 ) return;
+  if( NEVER(pMem->z==0) ) return;
   if( pMem->flags & MEM_Dyn ){
     if( pMem->xDel==sqlite3_free
      && sqlite3_msize(pMem->z) >= (u64)(pMem->n+1)
