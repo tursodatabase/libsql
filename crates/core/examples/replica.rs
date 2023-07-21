@@ -4,11 +4,13 @@ use libsql::Database;
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    std::fs::create_dir("data.libsql").ok();
-    std::fs::copy("tests/template.db", "data.libsql/data").unwrap();
+    let db_file = tempfile::NamedTempFile::new().unwrap();
+    println!("Database {}", db_file.path().display());
 
     let opts = libsql::Opts::with_http_sync("http://localhost:8081".to_owned());
-    let db = Database::open_with_opts("test.db", opts).await.unwrap();
+    let db = Database::open_with_opts(db_file.path().to_str().unwrap(), opts)
+        .await
+        .unwrap();
     let conn = db.connect().unwrap();
 
     let db = std::sync::Arc::new(parking_lot::Mutex::new(db));
