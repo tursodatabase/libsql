@@ -501,7 +501,8 @@ static void jsonAppendValue(
 */
 static void jsonResult(JsonString *p){
   if( p->bErr==0 ){
-    sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed, 
+    if( p->nAlloc>=p->nUsed+1 ) p->zBuf[p->nUsed] = 0;
+    sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
                           p->bStatic ? SQLITE_TRANSIENT : sqlite3_free,
                           SQLITE_UTF8);
     jsonZero(p);

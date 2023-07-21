@@ -1,5 +1,5 @@
-C Performance\senhancements\sto\sthe\sJSON\sparser\sand\scode\sgenerator.
-D 2023-07-19T23:02:45.962
+C Multiple\soptimizations\sthat\stry\sto\spreserve\sor\sinfer\sthe\szero-terminated\nproperty\sof\sTEXT\svalues.\s\sAvoid\sunnecessary\scopying\sof\stext\svalues\sdestined\nto\sbecome\sfunction\sparameters.\s\sAll\schanges\shelp\simprove\sperformance\sof\ndoing\sUPDATEs\son\slarge\sJSON\svalues\sthat\sare\sindexed\smultiple\sways.
+D 2023-07-21T15:01:53.046
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -587,7 +587,7 @@ F src/date.c f73f203b3877cef866c60ab402aec2bf89597219b60635cf50cbe3c5e4533e94
 F src/dbpage.c f3eea5f7ec47e09ee7da40f42b25092ecbe961fc59566b8e5f705f34335b2387
 F src/dbstat.c ec92074baa61d883de58c945162d9e666c13cd7cf3a23bc38b4d1c4d0b2c2bef
 F src/delete.c cd5f5cd06ed0b6a882ec1a8c2a0d73b3cecb28479ad19e9931c4706c5e2182be
-F src/expr.c 8d1656b65e26af3e34f78e947ac423f0d20c214ed25a67486e433bf16ca6b543
+F src/expr.c ef4a81822da6f767696bd7f4b9983328af061158958138540142285a5b1181b7
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
 F src/func.c 25f2e0204c011be56fc3c9a180534b68ca4866c61ec19806880136450434112d
@@ -597,7 +597,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c e48136fce64e5004b1b8be76624cc9a4ac9ff6ae630a97df187c0ea4b9692d1b
+F src/json.c 2bf3223892b4b9be39d701a5d349efcce5f5eebf71baaf91ba5866e10127e839
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
@@ -707,10 +707,10 @@ F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c fea6fffdee3cdae917a66b70deec59d4f238057cfd6de623d15cf990c196940d
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
-F src/vdbe.c 74282a947234513872a83b0bab1b8c644ece64b3e27b053ef17677c8ff9c81e0
+F src/vdbe.c 4cda877d413a18fa07346b08d6959b3d18ce982357921e7acb9649fca2534a12
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
 F src/vdbeInt.h 7bd49eef8f89c1a271fbf12d80a206bf56c876814c5fc6bee340f4e1907095ae
-F src/vdbeapi.c de9703f8705afc393cc2864669ce28cf9516983c8331d59aa2b978de01634365
+F src/vdbeapi.c 1b17d1a53c3b88eb8bf2534f4f3557957f59f9431e5283734452b191cd45898d
 F src/vdbeaux.c b5e3f7e158518b4eca6f166ac43900640a3fe9735c710e12bfa119af21059339
 F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2ce
 F src/vdbemem.c cf4a1556dd5b18c071cf7c243373c29ce752eb516022e3ad49ba72f08b785033
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bee9e403ae47103938aabb9a7a7e120dfa741b464875965e58788a51fa56a8fe 144c8ccf6e5bb2527dd98742f0d67e0a16c627e7c67f754ce8ed4c4fb5b8d8b6
-R af54725f832c177294e9e511cdacd53d
+P 0a745897d66e9f36ea6e787fad54f0c413d52c226dc96fad36ccd33a0aa1930e
+R ad6898efbc6819851ab380be79271f0e
 U drh
-Z 1c679f829efc53f4f55993e30939aa14
+Z ecdcb9c56dec3594bcd0055088d236ad
 # Remove this line to create a well-formed Fossil manifest.
