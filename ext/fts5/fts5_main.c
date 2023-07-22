@@ -1777,8 +1777,7 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
   pTab->p.pConfig->pzErrmsg = &pTab->p.base.zErrMsg;
-  fts5TripCursors(pTab);
-  rc = sqlite3Fts5StorageSync(pTab->pStorage);
+  rc = sqlite3Fts5FlushToDisk(&pTab->p);
   pTab->p.pConfig->pzErrmsg = 0;
   return rc;
 }

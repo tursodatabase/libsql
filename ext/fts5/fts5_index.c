@@ -56,6 +56,8 @@
 
 #define FTS5_MAX_LEVEL 64
 
+#define FTS5_MERGE_TOMBSTONE_WEIGHT 5
+
 /*
 ** There are two versions of the format used for the structure record:
 **
@@ -332,6 +334,12 @@ struct Fts5Data {
 
 /*
 ** One object per %_data table.
+**
+** nContentlessDelete:
+**   The number of contentless delete operations since the most recent
+**   call to fts5IndexFlush() or fts5IndexDiscardData(). This is tracked
+**   so that extra auto-merge work can be done by fts5IndexFlush() to
+**   account for the delete operations.
 */
 struct Fts5Index {
   Fts5Config *pConfig;            /* Virtual table configuration */
@@ -346,6 +354,7 @@ struct Fts5Index {
   int nPendingData;               /* Current bytes of pending data */
   i64 iWriteRowid;                /* Rowid for current doc being written */
   int bDelete;                    /* Current write is a delete */
+  int nContentlessDelete;         /* Number of contentless delete ops */
 
   /* Error state. */
   int rc;                         /* Current error code */
@@ -3980,6 +3989,7 @@ static void fts5IndexDiscardData(Fts5Index *p){
     sqlite3Fts5HashClear(p->pHash);
     p->nPendingData = 0;
   }
+  p->nContentlessDelete = 0;
 }
 
 /*
@@ -4722,6 +4732,7 @@ static int fts5IndexMerge(
   int nRem = nPg;
   int bRet = 0;
   Fts5Structure *pStruct = *ppStruct;
+  int bTombstone = 0;
   while( nRem>0 && p->rc==SQLITE_OK ){
     int iLvl;                   /* To iterate through levels */
     int iBestLvl = 0;           /* Level offering the most input segments */
@@ -4731,6 +4742,7 @@ static int fts5IndexMerge(
     assert( pStruct->nLevel>0 );
     for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
       Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
+      int nThisSeg = 0;
       if( pLvl->nMerge ){
         if( pLvl->nMerge>nBest ){
           iBestLvl = iLvl;
@@ -4738,8 +4750,20 @@ static int fts5IndexMerge(
         }
         break;
       }
-      if( pLvl->nSeg>nBest ){
-        nBest = pLvl->nSeg;
+      nThisSeg = pLvl->nSeg;
+      if( bTombstone && nThisSeg ){
+        int iSeg;
+        int nPg = 0;
+        int nTomb = 0;
+        for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
+          Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
+          nPg += pSeg->pgnoLast;
+          nTomb += pSeg->nPgTombstone;
+        }
+        nThisSeg += ((nTomb*FTS5_MERGE_TOMBSTONE_WEIGHT) / nPg);
+      }
+      if( nThisSeg>nBest ){
+        nBest = nThisSeg;
         iBestLvl = iLvl;
       }
     }
@@ -4752,7 +4776,12 @@ static int fts5IndexMerge(
 #endif
 
     if( nBest<nMin && pStruct->aLevel[iBestLvl].nMerge==0 ){
-      break;
+      if( bTombstone || p->pConfig->bContentlessDelete==0 ){
+        break;
+      }else{
+        bTombstone = 1;
+        continue;
+      }
     }
     bRet = 1;
     fts5IndexMergeLevel(p, &pStruct, iBestLvl, &nRem);
@@ -5273,192 +5302,195 @@ static void fts5FlushOneHash(Fts5Index *p){
   /* Obtain a reference to the index structure and allocate a new segment-id
   ** for the new level-0 segment.  */
   pStruct = fts5StructureRead(p);
-  iSegid = fts5AllocateSegid(p, pStruct);
   fts5StructureInvalidate(p);
 
-  if( iSegid ){
-    const int pgsz = p->pConfig->pgsz;
-    int eDetail = p->pConfig->eDetail;
-    int bSecureDelete = p->pConfig->bSecureDelete;
-    Fts5StructureSegment *pSeg;   /* New segment within pStruct */
-    Fts5Buffer *pBuf;             /* Buffer in which to assemble leaf page */
-    Fts5Buffer *pPgidx;           /* Buffer in which to assemble pgidx */
-
-    Fts5SegWriter writer;
-    fts5WriteInit(p, &writer, iSegid);
-
-    pBuf = &writer.writer.buf;
-    pPgidx = &writer.writer.pgidx;
-
-    /* fts5WriteInit() should have initialized the buffers to (most likely)
-    ** the maximum space required. */
-    assert( p->rc || pBuf->nSpace>=(pgsz + FTS5_DATA_PADDING) );
-    assert( p->rc || pPgidx->nSpace>=(pgsz + FTS5_DATA_PADDING) );
-
-    /* Begin scanning through hash table entries. This loop runs once for each
-    ** term/doclist currently stored within the hash table. */
-    if( p->rc==SQLITE_OK ){
-      p->rc = sqlite3Fts5HashScanInit(pHash, 0, 0);
-    }
-    while( p->rc==SQLITE_OK && 0==sqlite3Fts5HashScanEof(pHash) ){
-      const char *zTerm;          /* Buffer containing term */
-      int nTerm;                  /* Size of zTerm in bytes */
-      const u8 *pDoclist;         /* Pointer to doclist for this term */
-      int nDoclist;               /* Size of doclist in bytes */
-
-      /* Get the term and doclist for this entry. */
-      sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
-      nTerm = (int)strlen(zTerm);
-      if( bSecureDelete==0 ){
-        fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
-        if( p->rc!=SQLITE_OK ) break;
-        assert( writer.bFirstRowidInPage==0 );
+  if( sqlite3Fts5HashIsEmpty(pHash)==0 ){
+    iSegid = fts5AllocateSegid(p, pStruct);
+    if( iSegid ){
+      const int pgsz = p->pConfig->pgsz;
+      int eDetail = p->pConfig->eDetail;
+      int bSecureDelete = p->pConfig->bSecureDelete;
+      Fts5StructureSegment *pSeg; /* New segment within pStruct */
+      Fts5Buffer *pBuf;           /* Buffer in which to assemble leaf page */
+      Fts5Buffer *pPgidx;         /* Buffer in which to assemble pgidx */
+  
+      Fts5SegWriter writer;
+      fts5WriteInit(p, &writer, iSegid);
+  
+      pBuf = &writer.writer.buf;
+      pPgidx = &writer.writer.pgidx;
+  
+      /* fts5WriteInit() should have initialized the buffers to (most likely)
+      ** the maximum space required. */
+      assert( p->rc || pBuf->nSpace>=(pgsz + FTS5_DATA_PADDING) );
+      assert( p->rc || pPgidx->nSpace>=(pgsz + FTS5_DATA_PADDING) );
+  
+      /* Begin scanning through hash table entries. This loop runs once for each
+      ** term/doclist currently stored within the hash table. */
+      if( p->rc==SQLITE_OK ){
+        p->rc = sqlite3Fts5HashScanInit(pHash, 0, 0);
       }
-
-      if( !bSecureDelete && pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
-        /* The entire doclist will fit on the current leaf. */
-        fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
-      }else{
-        int bTermWritten = !bSecureDelete;
-        i64 iRowid = 0;
-        i64 iPrev = 0;
-        int iOff = 0;
-
-        /* The entire doclist will not fit on this leaf. The following 
-        ** loop iterates through the poslists that make up the current 
-        ** doclist.  */
-        while( p->rc==SQLITE_OK && iOff<nDoclist ){
-          u64 iDelta = 0;
-          iOff += fts5GetVarint(&pDoclist[iOff], &iDelta);
-          iRowid += iDelta;
-
-          /* If in secure delete mode, and if this entry in the poslist is
-          ** in fact a delete, then edit the existing segments directly
-          ** using fts5FlushSecureDelete().  */
-          if( bSecureDelete ){
-            if( eDetail==FTS5_DETAIL_NONE ){
-              if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
-                fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
-                iOff++;
+      while( p->rc==SQLITE_OK && 0==sqlite3Fts5HashScanEof(pHash) ){
+        const char *zTerm;        /* Buffer containing term */
+        int nTerm;                /* Size of zTerm in bytes */
+        const u8 *pDoclist;       /* Pointer to doclist for this term */
+        int nDoclist;             /* Size of doclist in bytes */
+  
+        /* Get the term and doclist for this entry. */
+        sqlite3Fts5HashScanEntry(pHash, &zTerm, &pDoclist, &nDoclist);
+        nTerm = (int)strlen(zTerm);
+        if( bSecureDelete==0 ){
+          fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
+          if( p->rc!=SQLITE_OK ) break;
+          assert( writer.bFirstRowidInPage==0 );
+        }
+  
+        if( !bSecureDelete && pgsz>=(pBuf->n + pPgidx->n + nDoclist + 1) ){
+          /* The entire doclist will fit on the current leaf. */
+          fts5BufferSafeAppendBlob(pBuf, pDoclist, nDoclist);
+        }else{
+          int bTermWritten = !bSecureDelete;
+          i64 iRowid = 0;
+          i64 iPrev = 0;
+          int iOff = 0;
+  
+          /* The entire doclist will not fit on this leaf. The following 
+          ** loop iterates through the poslists that make up the current 
+          ** doclist.  */
+          while( p->rc==SQLITE_OK && iOff<nDoclist ){
+            u64 iDelta = 0;
+            iOff += fts5GetVarint(&pDoclist[iOff], &iDelta);
+            iRowid += iDelta;
+  
+            /* If in secure delete mode, and if this entry in the poslist is
+            ** in fact a delete, then edit the existing segments directly
+            ** using fts5FlushSecureDelete().  */
+            if( bSecureDelete ){
+              if( eDetail==FTS5_DETAIL_NONE ){
                 if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
+                  fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
                   iOff++;
-                  nDoclist = 0;
-                }else{
+                  if( iOff<nDoclist && pDoclist[iOff]==0x00 ){
+                    iOff++;
+                    nDoclist = 0;
+                  }else{
+                    continue;
+                  }
+                }
+              }else if( (pDoclist[iOff] & 0x01) ){
+                fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
+                if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
+                  iOff++;
                   continue;
                 }
               }
-            }else if( (pDoclist[iOff] & 0x01) ){
-              fts5FlushSecureDelete(p, pStruct, zTerm, iRowid);
-              if( p->rc!=SQLITE_OK || pDoclist[iOff]==0x01 ){
-                iOff++;
-                continue;
-              }
             }
-          }
-
-          if( p->rc==SQLITE_OK && bTermWritten==0 ){
-            fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
-            bTermWritten = 1;
-            assert( p->rc!=SQLITE_OK || writer.bFirstRowidInPage==0 );
-          }
-          
-          if( writer.bFirstRowidInPage ){
-            fts5PutU16(&pBuf->p[0], (u16)pBuf->n);   /* first rowid on page */
-            pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
-            writer.bFirstRowidInPage = 0;
-            fts5WriteDlidxAppend(p, &writer, iRowid);
-          }else{
-            pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid-iPrev);
-          }
-          if( p->rc!=SQLITE_OK ) break;
-          assert( pBuf->n<=pBuf->nSpace );
-          iPrev = iRowid;
-
-          if( eDetail==FTS5_DETAIL_NONE ){
-            if( iOff<nDoclist && pDoclist[iOff]==0 ){
-              pBuf->p[pBuf->n++] = 0;
-              iOff++;
+  
+            if( p->rc==SQLITE_OK && bTermWritten==0 ){
+              fts5WriteAppendTerm(p, &writer, nTerm, (const u8*)zTerm);
+              bTermWritten = 1;
+              assert( p->rc!=SQLITE_OK || writer.bFirstRowidInPage==0 );
+            }
+            
+            if( writer.bFirstRowidInPage ){
+              fts5PutU16(&pBuf->p[0], (u16)pBuf->n);   /* first rowid on page */
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid);
+              writer.bFirstRowidInPage = 0;
+              fts5WriteDlidxAppend(p, &writer, iRowid);
+            }else{
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowid-iPrev);
+            }
+            if( p->rc!=SQLITE_OK ) break;
+            assert( pBuf->n<=pBuf->nSpace );
+            iPrev = iRowid;
+  
+            if( eDetail==FTS5_DETAIL_NONE ){
               if( iOff<nDoclist && pDoclist[iOff]==0 ){
                 pBuf->p[pBuf->n++] = 0;
                 iOff++;
+                if( iOff<nDoclist && pDoclist[iOff]==0 ){
+                  pBuf->p[pBuf->n++] = 0;
+                  iOff++;
+                }
               }
-            }
-            if( (pBuf->n + pPgidx->n)>=pgsz ){
-              fts5WriteFlushLeaf(p, &writer);
-            }
-          }else{
-            int bDummy;
-            int nPos;
-            int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
-            nCopy += nPos;
-            if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
-              /* The entire poslist will fit on the current leaf. So copy
-              ** it in one go. */
-              fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
+              if( (pBuf->n + pPgidx->n)>=pgsz ){
+                fts5WriteFlushLeaf(p, &writer);
+              }
             }else{
-              /* The entire poslist will not fit on this leaf. So it needs
-              ** to be broken into sections. The only qualification being
-              ** that each varint must be stored contiguously.  */
-              const u8 *pPoslist = &pDoclist[iOff];
-              int iPos = 0;
-              while( p->rc==SQLITE_OK ){
-                int nSpace = pgsz - pBuf->n - pPgidx->n;
-                int n = 0;
-                if( (nCopy - iPos)<=nSpace ){
-                  n = nCopy - iPos;
-                }else{
-                  n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+              int bDummy;
+              int nPos;
+              int nCopy = fts5GetPoslistSize(&pDoclist[iOff], &nPos, &bDummy);
+              nCopy += nPos;
+              if( (pBuf->n + pPgidx->n + nCopy) <= pgsz ){
+                /* The entire poslist will fit on the current leaf. So copy
+                ** it in one go. */
+                fts5BufferSafeAppendBlob(pBuf, &pDoclist[iOff], nCopy);
+              }else{
+                /* The entire poslist will not fit on this leaf. So it needs
+                ** to be broken into sections. The only qualification being
+                ** that each varint must be stored contiguously.  */
+                const u8 *pPoslist = &pDoclist[iOff];
+                int iPos = 0;
+                while( p->rc==SQLITE_OK ){
+                  int nSpace = pgsz - pBuf->n - pPgidx->n;
+                  int n = 0;
+                  if( (nCopy - iPos)<=nSpace ){
+                    n = nCopy - iPos;
+                  }else{
+                    n = fts5PoslistPrefix(&pPoslist[iPos], nSpace);
+                  }
+                  assert( n>0 );
+                  fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
+                  iPos += n;
+                  if( (pBuf->n + pPgidx->n)>=pgsz ){
+                    fts5WriteFlushLeaf(p, &writer);
+                  }
+                  if( iPos>=nCopy ) break;
                 }
-                assert( n>0 );
-                fts5BufferSafeAppendBlob(pBuf, &pPoslist[iPos], n);
-                iPos += n;
-                if( (pBuf->n + pPgidx->n)>=pgsz ){
-                  fts5WriteFlushLeaf(p, &writer);
-                }
-                if( iPos>=nCopy ) break;
               }
+              iOff += nCopy;
             }
-            iOff += nCopy;
           }
         }
+  
+        /* TODO2: Doclist terminator written here. */
+        /* pBuf->p[pBuf->n++] = '\0'; */
+        assert( pBuf->n<=pBuf->nSpace );
+        if( p->rc==SQLITE_OK ) sqlite3Fts5HashScanNext(pHash);
       }
-
-      /* TODO2: Doclist terminator written here. */
-      /* pBuf->p[pBuf->n++] = '\0'; */
-      assert( pBuf->n<=pBuf->nSpace );
-      if( p->rc==SQLITE_OK ) sqlite3Fts5HashScanNext(pHash);
-    }
-    sqlite3Fts5HashClear(pHash);
-    fts5WriteFinish(p, &writer, &pgnoLast);
-
-    assert( p->rc!=SQLITE_OK || bSecureDelete || pgnoLast>0 );
-    if( pgnoLast>0 ){
-      /* Update the Fts5Structure. It is written back to the database by the
-      ** fts5StructureRelease() call below.  */
-      if( pStruct->nLevel==0 ){
-        fts5StructureAddLevel(&p->rc, &pStruct);
-      }
-      fts5StructureExtendLevel(&p->rc, pStruct, 0, 1, 0);
-      if( p->rc==SQLITE_OK ){
-        pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
-        pSeg->iSegid = iSegid;
-        pSeg->pgnoFirst = 1;
-        pSeg->pgnoLast = pgnoLast;
-        if( pStruct->nOriginCntr>0 ){
-          pSeg->iOrigin1 = pStruct->nOriginCntr;
-          pSeg->iOrigin2 = pStruct->nOriginCntr;
-          pStruct->nOriginCntr++;
+      sqlite3Fts5HashClear(pHash);
+      fts5WriteFinish(p, &writer, &pgnoLast);
+  
+      assert( p->rc!=SQLITE_OK || bSecureDelete || pgnoLast>0 );
+      if( pgnoLast>0 ){
+        /* Update the Fts5Structure. It is written back to the database by the
+        ** fts5StructureRelease() call below.  */
+        if( pStruct->nLevel==0 ){
+          fts5StructureAddLevel(&p->rc, &pStruct);
         }
-        pStruct->nSegment++;
+        fts5StructureExtendLevel(&p->rc, pStruct, 0, 1, 0);
+        if( p->rc==SQLITE_OK ){
+          pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
+          pSeg->iSegid = iSegid;
+          pSeg->pgnoFirst = 1;
+          pSeg->pgnoLast = pgnoLast;
+          if( pStruct->nOriginCntr>0 ){
+            pSeg->iOrigin1 = pStruct->nOriginCntr;
+            pSeg->iOrigin2 = pStruct->nOriginCntr;
+            pStruct->nOriginCntr++;
+          }
+          pStruct->nSegment++;
+        }
+        fts5StructurePromote(p, 0, pStruct);
       }
-      fts5StructurePromote(p, 0, pStruct);
     }
   }
 
-  fts5IndexAutomerge(p, &pStruct, pgnoLast);
+  fts5IndexAutomerge(p, &pStruct, pgnoLast + p->nContentlessDelete);
   fts5IndexCrisismerge(p, &pStruct);
   fts5StructureWrite(p, pStruct);
   fts5StructureRelease(pStruct);
+  p->nContentlessDelete = 0;
 }
 
 /*
@@ -5466,7 +5498,7 @@ static void fts5FlushOneHash(Fts5Index *p){
 */
 static void fts5IndexFlush(Fts5Index *p){
   /* Unless it is empty, flush the hash table to disk */
-  if( p->nPendingData ){
+  if( p->nPendingData || (p->nContentlessDelete && p->pConfig->nAutomerge>0) ){
     assert( p->pHash );
     p->nPendingData = 0;
     fts5FlushOneHash(p);
@@ -6799,6 +6831,8 @@ static void fts5IndexTombstoneAdd(
   int szKey = 0;
   int nHash = 0;
   Fts5Data **apHash = 0;
+
+  p->nContentlessDelete++;
 
   if( pSeg->nPgTombstone>0 ){
     iPg = iRowid % pSeg->nPgTombstone;

@@ -623,6 +623,11 @@ int sqlite3Fts5HashWrite(
 */
 void sqlite3Fts5HashClear(Fts5Hash*);
 
+/*
+** Return true if the hash is empty, false otherwise.
+*/
+int sqlite3Fts5HashIsEmpty(Fts5Hash*);
+
 int sqlite3Fts5HashQuery(
   Fts5Hash*,                      /* Hash table to query */
   int nPre,
@@ -642,6 +647,7 @@ void sqlite3Fts5HashScanEntry(Fts5Hash *,
   const u8 **ppDoclist,           /* OUT: pointer to doclist */
   int *pnDoclist                  /* OUT: size of doclist in bytes */
 );
+
 
 
 /*

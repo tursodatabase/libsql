@@ -529,6 +529,13 @@ int sqlite3Fts5HashScanInit(
   return fts5HashEntrySort(p, pTerm, nTerm, &p->pScan);
 }
 
+/*
+** Return true if the hash table is empty, false otherwise.
+*/
+int sqlite3Fts5HashIsEmpty(Fts5Hash *pHash){
+  return pHash->nEntry==0;
+}
+
 void sqlite3Fts5HashScanNext(Fts5Hash *p){
   assert( !sqlite3Fts5HashScanEof(p) );
   p->pScan = p->pScan->pScanNext;
