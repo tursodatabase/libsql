@@ -40,8 +40,41 @@ span.labeled-input {
 .tests-pass { background-color: green; color: white }
 .tests-fail { background-color: red; color: yellow }
 .faded { opacity: 0.5; }
-.group-start { color: blue; }
-.group-end { color: blue; }
+.group-start {
+  color: blue;
+  background-color: skyblue;
+  font-weight: bold;
+  border-top: 1px dotted blue;
+  padding: 0.5em;
+  margin-top: 0.5em;
+}
+.group-end {
+  padding: 0.5em;
+  margin-bottom: 0.25em;
+  /*border-bottom: 1px dotted blue;*/
+}
+.group-end.green {
+  background: lightgreen;
+  border-bottom: 1px dotted green;
+}
+.one-test-line, .skipping-group {
+  margin-left: 3em;
+}
+.skipping-test, .skipping-group {
+  padding: 0.25em 0.5em;
+  background-color: #ffff73;
+}
+.skipping-test {
+  margin-left: 6em;
+}
+.one-test-summary {
+  margin-left: 6em;
+}
+.full-test-summary {
+  padding-bottom: 0.5em;
+  padding-top: 0.5em;
+  border-top: 1px solid black;
+}
 .input-wrapper {
   white-space: nowrap;
   display: flex;

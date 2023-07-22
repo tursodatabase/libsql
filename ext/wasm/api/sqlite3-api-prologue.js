@@ -88,9 +88,9 @@
      can be replaced with (e.g.) empty functions to squelch all such
      output.
 
-   - `wasmfsOpfsDir`[^1]: As of 2022-12-17, this feature does not
-     currently work due to incompatible Emscripten-side changes made
-     in the WASMFS+OPFS combination. This option is currently ignored.
+   - `wasmfsOpfsDir`[^1]: Specifies the "mount point" of the OPFS-backed
+     filesystem in WASMFS-capable builds.
+
 
    [^1] = This property may optionally be a function, in which case
           this function calls that function to fetch the value,
@@ -125,11 +125,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     log: console.log.bind(console),
     wasmfsOpfsDir: '/opfs',
     /**
-       useStdAlloc is just for testing an allocator discrepancy. The
+       useStdAlloc is just for testing allocator discrepancies. The
        docs guarantee that this is false in the canonical builds. For
        99% of purposes it doesn't matter which allocators we use, but
-       it becomes significant with, e.g., sqlite3_deserialize()
-       and certain wasm.xWrap.resultAdapter()s.
+       it becomes significant with, e.g., sqlite3_deserialize() and
+       certain wasm.xWrap.resultAdapter()s.
     */
     useStdAlloc: false
   }, apiConfig || {});
@@ -1861,6 +1861,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     client: undefined,
 
     /**
+       This function is not part of the public interface, but a
+       piece of internal bootstrapping infrastructure.
+
        Performs any optional asynchronous library-level initialization
        which might be required. This function returns a Promise which
        resolves to the sqlite3 namespace object. Any error in the
@@ -1876,27 +1879,19 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        then it must be called by client-level code, which must not use
        the library until the returned promise resolves.
 
-       Bug: if called while a prior call is still resolving, the 2nd
-       call will resolve prematurely, before the 1st call has finished
-       resolving. The current build setup precludes that possibility,
-       so it's only a hypothetical problem if/when this function
-       ever needs to be invoked by clients.
+       If called multiple times it will return the same promise on
+       subsequent calls. The current build setup precludes that
+       possibility, so it's only a hypothetical problem if/when this
+       function ever needs to be invoked by clients.
 
        In Emscripten-based builds, this function is called
        automatically and deleted from this object.
     */
-    asyncPostInit: async function(){
-      let lip = sqlite3ApiBootstrap.initializersAsync;
+    asyncPostInit: async function ff(){
+      if(ff.isReady instanceof Promise) return ff.isReady;
+      let lia = sqlite3ApiBootstrap.initializersAsync;
       delete sqlite3ApiBootstrap.initializersAsync;
-      if(!lip || !lip.length) return Promise.resolve(sqlite3);
-      lip = lip.map((f)=>{
-        const p = (f instanceof Promise) ? f : f(sqlite3);
-        return p.catch((e)=>{
-          console.error("an async sqlite3 initializer failed:",e);
-          throw e;
-        });
-      });
-      const postInit = ()=>{
+      const postInit = async ()=>{
         if(!sqlite3.__isUnderTest){
           /* Delete references to internal-only APIs which are used by
              some initializers. Retain them when running in test mode
@@ -1905,23 +1900,25 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           /* It's conceivable that we might want to expose
              StructBinder to client-side code, but it's only useful if
              clients build their own sqlite3.wasm which contains their
-             one C struct types. */
+             own C struct types. */
           delete sqlite3.StructBinder;
         }
         return sqlite3;
       };
-      if(1){
-        /* Run all initializers in sequence. The advantage is that it
-           allows us to have post-init cleanup defined outside of this
-           routine at the end of the list and have it run at a
-           well-defined time. */
-        let p = lip.shift();
-        while(lip.length) p = p.then(lip.shift());
-        return p.then(postInit);
-      }else{
-        /* Run them in an arbitrary order. */
-        return Promise.all(lip).then(postInit);
+      const catcher = (e)=>{
+        config.error("an async sqlite3 initializer failed:",e);
+        throw e;
+      };
+      if(!lia || !lia.length){
+        return ff.isReady = postInit().catch(catcher);
       }
+      lia = lia.map((f)=>{
+        return (f instanceof Function) ? async x=>f(sqlite3) : f;
+      });
+      lia.push(postInit);
+      let p = Promise.resolve(sqlite3);
+      while(lia.length) p = p.then(lia.shift());
+      return ff.isReady = p.catch(catcher);
     },
     /**
        scriptInfo ideally gets injected into this object by the
@@ -1981,7 +1978,7 @@ globalThis.sqlite3ApiBootstrap.initializers = [];
   specifically for initializers which are asynchronous. All entries in
   this list must be either async functions, non-async functions which
   return a Promise, or a Promise. Each function in the list is called
-  with the sqlite3 ojbect as its only argument.
+  with the sqlite3 object as its only argument.
 
   The resolved value of any Promise is ignored and rejection will kill
   the asyncPostInit() process (at an indeterminate point because all
