@@ -328,8 +328,8 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
   if( pMem->flags & MEM_Dyn ){
     if( pMem->xDel==sqlite3_free
      && sqlite3_msize(pMem->z) >= (u64)(pMem->n+1)
-     && pMem->z[pMem->n]==0 
     ){
+      pMem->z[pMem->n] = 0;
       pMem->flags |= MEM_Term;
       return;
     }
