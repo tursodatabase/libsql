@@ -1,5 +1,5 @@
-C Performance\senhancements\sfor\squeries\susing\svery\slarge\sstring\svalues.
-D 2023-07-21T22:28:34.848
+C Fix\sa\sharmless\suse-of-initialized-value\swarning\sfrom\sOSSFuzz\sthat\sresults\nfrom\srecent\slarge\sstring\soptmizations.
+D 2023-07-22T15:21:41.842
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -590,7 +590,7 @@ F src/delete.c cd5f5cd06ed0b6a882ec1a8c2a0d73b3cecb28479ad19e9931c4706c5e2182be
 F src/expr.c ef4a81822da6f767696bd7f4b9983328af061158958138540142285a5b1181b7
 F src/fault.c 460f3e55994363812d9d60844b2a6de88826e007
 F src/fkey.c a7fcbf7e66d14dbb73cf49f31489ebf66d0e6006c62b95246924a3bae9f37b36
-F src/func.c 25f2e0204c011be56fc3c9a180534b68ca4866c61ec19806880136450434112d
+F src/func.c cc1da67fd643a43cfe691784158ec656d8ec6d13bb17e67018b01b38b3e4f5ab
 F src/global.c 29f56a330ed9d1b5cd9b79ac0ca36f97ac3afc730ff8bfa987b0db9e559d684d
 F src/hash.c 9ee4269fb1d6632a6fecfb9479c93a1f29271bddbbaf215dd60420bcb80c7220
 F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
@@ -2043,8 +2043,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a745897d66e9f36ea6e787fad54f0c413d52c226dc96fad36ccd33a0aa1930e 414a4d660c3b505640227066b468db1268fcb1bd3fad931644a769617c6c00cd
-R f650c894c3b7e9fe01bf709dbdf65d35
+P 3661b9cd98565ea23b0cafd030668f09885dcbd54eb12b7b3cd85c289aef4c3c
+R 7861df33493b30fd58a73dc8ed59a062
 U drh
-Z 591aef3c08eb8a7097f1d29488b469be
+Z 08afe3692a916f7ae05aca68accdd5b2
 # Remove this line to create a well-formed Fossil manifest.
