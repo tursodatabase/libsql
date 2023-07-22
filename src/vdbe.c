@@ -6123,6 +6123,7 @@ case OP_Last: {              /* jump, ncycle */
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
   if( rc ) goto abort_due_to_error;
+  p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE]++;
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
     if( res ) goto jump_to_p2;
