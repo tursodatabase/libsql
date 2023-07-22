@@ -43,9 +43,9 @@ func (c *conn) Close() error {
 }
 
 func (c *conn) Prepare(query string) (driver.Stmt, error) {
-	return nil, fmt.Errorf("Prepare() is not implemented")
+	return nil, fmt.Errorf("prepare() is not implemented")
 }
 
 func (c *conn) Begin() (driver.Tx, error) {
-	return nil, fmt.Errorf("Begin() is not implemented")
+	return nil, fmt.Errorf("begin() is not implemented")
 }
