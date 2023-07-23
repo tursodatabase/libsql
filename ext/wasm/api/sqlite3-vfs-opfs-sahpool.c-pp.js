@@ -654,10 +654,10 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     */
     setAssociatedPath(sah, path, flags){
       const enc = textEncoder.encodeInto(path, this.#apBody);
-      if(HEADER_MAX_PATH_SIZE <= enc.written){
+      if(HEADER_MAX_PATH_SIZE <= enc.written + 1/*NUL byte*/){
         toss("Path too long:",path);
       }
-
+      this.#apBody.fill(0, enc.written, HEADER_MAX_PATH_SIZE);
       this.#dvBody.setUint32(HEADER_OFFSET_FLAGS, flags);
 
       const digest = this.computeDigest(this.#apBody);
