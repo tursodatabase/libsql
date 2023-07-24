@@ -11,8 +11,8 @@ use crate::replication::{FrameNo, LogReadError, ReplicationLogger};
 /// Streams frames from the replication log starting at `current_frame_no`.
 /// Only stops if the current frame is not in the log anymore.
 pub struct FrameStream {
-    current_frame_no: FrameNo,
-    max_available_frame_no: FrameNo,
+    pub(crate) current_frame_no: FrameNo,
+    pub(crate) max_available_frame_no: FrameNo,
     logger: Arc<ReplicationLogger>,
     state: FrameStreamState,
 }

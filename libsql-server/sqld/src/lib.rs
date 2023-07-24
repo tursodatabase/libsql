@@ -104,6 +104,7 @@ pub struct Config {
     pub allow_replica_overwrite: bool,
     pub max_response_size: u64,
     pub snapshot_exec: Option<String>,
+    pub http_replication_addr: Option<SocketAddr>,
 }
 
 impl Default for Config {
@@ -143,6 +144,7 @@ impl Default for Config {
             allow_replica_overwrite: false,
             max_response_size: 10 * 1024 * 1024, // 10MiB
             snapshot_exec: None,
+            http_replication_addr: None,
         }
     }
 }
@@ -495,9 +497,15 @@ async fn start_primary(
             config.rpc_server_key.clone(),
             config.rpc_server_ca_cert.clone(),
             db_factory.clone(),
-            logger,
+            logger.clone(),
             idle_shutdown_layer.clone(),
         ));
+    }
+
+    if let Some(ref addr) = config.http_replication_addr {
+        // FIXME: let's bring it back once I figure out how Axum works
+        // let auth = get_auth(config)?;
+        join_set.spawn(replication::http::run(*addr, logger));
     }
 
     run_service(

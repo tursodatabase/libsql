@@ -1,4 +1,5 @@
 pub mod frame;
+pub mod http;
 pub mod primary;
 pub mod replica;
 mod snapshot;
