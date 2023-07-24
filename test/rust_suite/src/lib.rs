@@ -120,6 +120,10 @@ mod tests {
             (16, 0)
         );
         assert_eq!(
+            get_read_written(&conn, "SELECT * FROM test WHERE id = 2 ORDER BY rowid DESC"),
+            (16, 0)
+        );
+        assert_eq!(
             get_read_written(&conn, "SELECT * FROM test WHERE rowid = 1"),
             (1, 0)
         );
