@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\senhancements\sinto\sthe\sjson-opt\sbranch.
-D 2023-07-24T12:37:23.834
+C Incremental\sprogress\stoward\simproved\scaching\sof\sparsed\sJSON.
+D 2023-07-24T17:59:25.604
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -598,7 +598,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c d34d10ea1520bb71ee69c500deb4a20847a57b4c59c1ecb807c935f53c870885
+F src/json.c 3584f5fb0ff48009ebabb34704328c2086d924fc2403fdf0e48afce5b9f22777
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1955e66cfc4614df97b8d68b0e662f309513d62dc8aeec71af5a54e66b79c707 c1b080e39397c983c13a5e79303223827de7b4946c18a79396851ec1814782f3
-R 2ab9518ef262a1aca9fe7f6a2ac934e0
+P 00bfc4918be49ac74a3e7851c88ab7ec226e6a37853f8ad4c77f758751960456
+R 831d8993ebdb0e60bc4ab13513e5d282
 U drh
-Z 40e6676e6b6212e46c825865d3333a87
+Z 8cedb8d1881aa5ce4f4f5c5fea73c221
 # Remove this line to create a well-formed Fossil manifest.
