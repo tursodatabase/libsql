@@ -39,6 +39,20 @@ fn prepare_and_execute() {
     );
 }
 
+#[test]
+fn prepare_and_dont_execute() {
+    // TODO: how can we check that we've cleaned up the statement?
+
+    let conn = setup();
+
+    conn.prepare("INSERT INTO users (id, name) VALUES (?1, ?2)")
+        .unwrap();
+
+    // Drop the connection explicitly here to show that we want to drop
+    // it while the above statment has not been executed.
+    drop(conn);
+}
+
 fn check_insert(conn: &Connection, sql: &str, params: Params) {
     conn.execute(sql, params).unwrap();
     let rows = conn.execute("SELECT * FROM users", ()).unwrap().unwrap();
