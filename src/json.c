@@ -733,10 +733,12 @@ static void jsonReturnJson(
     sqlite3_result_error_nomem(pCtx);
     return;
   }
-  jsonInit(&s, pCtx);
-  jsonRenderNode(pParse, pNode, &s);
-  jsonResult(&s);
-  sqlite3_result_subtype(pCtx, JSON_SUBTYPE);
+  if( pParse->nErr==0 ){
+    jsonInit(&s, pCtx);
+    jsonRenderNode(pParse, pNode, &s);
+    jsonResult(&s);
+    sqlite3_result_subtype(pCtx, JSON_SUBTYPE);
+  }
 }
 
 /*
@@ -2703,6 +2705,11 @@ static void jsonReplaceNode(
         pPatch->nJPRef++;
         jsonParseAddCleanup(p, (void(*)(void*))jsonParseFree, pPatch);
       }
+      break;
+    }
+    case SQLITE_BLOB: {
+      sqlite3_result_error(pCtx, "JSON cannot hold BLOB values", -1);
+      p->nErr++;
       break;
     }
   }
