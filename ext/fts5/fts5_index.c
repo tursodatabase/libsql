@@ -56,8 +56,6 @@
 
 #define FTS5_MAX_LEVEL 64
 
-#define FTS5_MERGE_TOMBSTONE_WEIGHT 5
-
 /*
 ** There are two versions of the format used for the structure record:
 **
@@ -355,6 +353,7 @@ struct Fts5Index {
   i64 iWriteRowid;                /* Rowid for current doc being written */
   int bDelete;                    /* Current write is a delete */
   int nContentlessDelete;         /* Number of contentless delete ops */
+  int nPendingRow;                /* Number of INSERT in hash table */
 
   /* Error state. */
   int rc;                         /* Current error code */
@@ -404,6 +403,8 @@ struct Fts5StructureSegment {
   u64 iOrigin1;
   u64 iOrigin2;
   int nPgTombstone;               /* Number of tombstone hash table pages */
+  i64 nEntryTombstone;            /* Number of tombstone entries that "count" */
+  i64 nEntry;                     /* Number of rows in this segment */
 };
 struct Fts5StructureLevel {
   int nMerge;                     /* Number of segments in incr-merge */
@@ -1117,6 +1118,8 @@ static int fts5StructureDecode(
             i += fts5GetVarint(&pData[i], &pSeg->iOrigin1);
             i += fts5GetVarint(&pData[i], &pSeg->iOrigin2);
             i += fts5GetVarint32(&pData[i], pSeg->nPgTombstone);
+            i += fts5GetVarint(&pData[i], &pSeg->nEntryTombstone);
+            i += fts5GetVarint(&pData[i], &pSeg->nEntry);
             nOriginCntr = MAX(nOriginCntr, pSeg->iOrigin2);
           }
           if( pSeg->pgnoLast<pSeg->pgnoFirst ){
@@ -1372,13 +1375,16 @@ static void fts5StructureWrite(Fts5Index *p, Fts5Structure *pStruct){
       assert( pLvl->nMerge<=pLvl->nSeg );
 
       for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
-        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
-        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoFirst);
-        fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].pgnoLast);
+        Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
+        fts5BufferAppendVarint(&p->rc, &buf, pSeg->iSegid);
+        fts5BufferAppendVarint(&p->rc, &buf, pSeg->pgnoFirst);
+        fts5BufferAppendVarint(&p->rc, &buf, pSeg->pgnoLast);
         if( pStruct->nOriginCntr>0 ){
-          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iOrigin1);
-          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iOrigin2);
-          fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].nPgTombstone);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->iOrigin1);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->iOrigin2);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->nPgTombstone);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->nEntryTombstone);
+          fts5BufferAppendVarint(&p->rc, &buf, pSeg->nEntry);
         }
       }
     }
@@ -3988,6 +3994,7 @@ static void fts5IndexDiscardData(Fts5Index *p){
   if( p->pHash ){
     sqlite3Fts5HashClear(p->pHash);
     p->nPendingData = 0;
+    p->nPendingRow = 0;
   }
   p->nContentlessDelete = 0;
 }
@@ -4627,7 +4634,7 @@ static void fts5IndexMergeLevel(
     /* Read input from all segments in the input level */
     nInput = pLvl->nSeg;
 
-    /* Set the range of origins that will go into the output segment */
+    /* Set the range of origins that will go into the output segment. */
     if( pStruct->nOriginCntr>0 ){
       pSeg->iOrigin1 = pLvl->aSeg[0].iOrigin1;
       pSeg->iOrigin2 = pLvl->aSeg[pLvl->nSeg-1].iOrigin2;
@@ -4691,8 +4698,11 @@ static void fts5IndexMergeLevel(
     int i;
 
     /* Remove the redundant segments from the %_data table */
+    assert( pSeg->nEntry==0 );
     for(i=0; i<nInput; i++){
-      fts5DataRemoveSegment(p, &pLvl->aSeg[i]);
+      Fts5StructureSegment *pOld = &pLvl->aSeg[i];
+      pSeg->nEntry += (pOld->nEntry - pOld->nEntryTombstone);
+      fts5DataRemoveSegment(p, pOld);
     }
 
     /* Remove the redundant segments from the input level */
@@ -4719,6 +4729,43 @@ static void fts5IndexMergeLevel(
 }
 
 /*
+** If this is not a contentless_delete=1 table, or if the 'delete-automerge'
+** configuration option is set to 0, then this function always returns -1.
+** Otherwise, it searches the structure object passed as the second argument
+** for a level suitable for merging due to having a large number of 
+** tombstones in the tombstone hash. If one is found, its index is returned.
+** Otherwise, if there is no suitable level, -1.
+*/
+static int fts5IndexFindDeleteMerge(Fts5Index *p, Fts5Structure *pStruct){
+  Fts5Config *pConfig = p->pConfig;
+  int iRet = -1;
+  if( pConfig->bContentlessDelete && pConfig->nDeleteAutomerge>0 ){
+    int ii;
+    int nBest = 0;
+
+    for(ii=0; ii<pStruct->nLevel; ii++){
+      Fts5StructureLevel *pLvl = &pStruct->aLevel[ii];
+      i64 nEntry = 0;
+      i64 nTomb = 0;
+      int iSeg;
+      for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
+        nEntry += pLvl->aSeg[iSeg].nEntry;
+        nTomb += pLvl->aSeg[iSeg].nEntryTombstone;
+      }
+      assert( nEntry>0 || pLvl->nSeg==0 );
+      if( nEntry>0 ){
+        int nPercent = (nTomb * 100) / nEntry;
+        if( nPercent>=pConfig->nDeleteAutomerge && nPercent>nBest ){
+          iRet = ii;
+          nBest = nPercent;
+        }
+      }
+    }
+  }
+  return iRet;
+}
+
+/*
 ** Do up to nPg pages of automerge work on the index.
 **
 ** Return true if any changes were actually made, or false otherwise.
@@ -4738,51 +4785,28 @@ static int fts5IndexMerge(
     int iBestLvl = 0;           /* Level offering the most input segments */
     int nBest = 0;              /* Number of input segments on best level */
 
-    /* Set iBestLvl to the level to read input segments from. */
+    /* Set iBestLvl to the level to read input segments from. Or to -1 if
+    ** there is no level suitable to merge segments from.  */
     assert( pStruct->nLevel>0 );
     for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
       Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
-      int nThisSeg = 0;
       if( pLvl->nMerge ){
         if( pLvl->nMerge>nBest ){
           iBestLvl = iLvl;
-          nBest = pLvl->nMerge;
+          nBest = nMin;
         }
         break;
       }
-      nThisSeg = pLvl->nSeg;
-      if( bTombstone && nThisSeg ){
-        int iSeg;
-        int nPg = 0;
-        int nTomb = 0;
-        for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
-          Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
-          nPg += pSeg->pgnoLast;
-          nTomb += pSeg->nPgTombstone;
-        }
-        nThisSeg += ((nTomb*FTS5_MERGE_TOMBSTONE_WEIGHT) / nPg);
-      }
-      if( nThisSeg>nBest ){
-        nBest = nThisSeg;
+      if( pLvl->nSeg>nBest ){
+        nBest = pLvl->nSeg;
         iBestLvl = iLvl;
       }
     }
-
-    /* If nBest is still 0, then the index must be empty. */
-#ifdef SQLITE_DEBUG
-    for(iLvl=0; nBest==0 && iLvl<pStruct->nLevel; iLvl++){
-      assert( pStruct->aLevel[iLvl].nSeg==0 );
+    if( nBest<nMin ){
+      iBestLvl = fts5IndexFindDeleteMerge(p, pStruct);
     }
-#endif
 
-    if( nBest<nMin && pStruct->aLevel[iBestLvl].nMerge==0 ){
-      if( bTombstone || p->pConfig->bContentlessDelete==0 ){
-        break;
-      }else{
-        bTombstone = 1;
-        continue;
-      }
-    }
+    if( iBestLvl<0 ) break;
     bRet = 1;
     fts5IndexMergeLevel(p, &pStruct, iBestLvl, &nRem);
     if( p->rc==SQLITE_OK && pStruct->aLevel[iBestLvl].nMerge==0 ){
@@ -5477,6 +5501,7 @@ static void fts5FlushOneHash(Fts5Index *p){
           if( pStruct->nOriginCntr>0 ){
             pSeg->iOrigin1 = pStruct->nOriginCntr;
             pSeg->iOrigin2 = pStruct->nOriginCntr;
+            pSeg->nEntry = p->nPendingRow;
             pStruct->nOriginCntr++;
           }
           pStruct->nSegment++;
@@ -5498,10 +5523,11 @@ static void fts5FlushOneHash(Fts5Index *p){
 */
 static void fts5IndexFlush(Fts5Index *p){
   /* Unless it is empty, flush the hash table to disk */
-  if( p->nPendingData || (p->nContentlessDelete && p->pConfig->nAutomerge>0) ){
+  if( p->nPendingData || p->nContentlessDelete ){
     assert( p->pHash );
-    p->nPendingData = 0;
     fts5FlushOneHash(p);
+    p->nPendingData = 0;
+    p->nPendingRow = 0;
   }
 }
 
@@ -5579,6 +5605,7 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
 
   assert( p->rc==SQLITE_OK );
   fts5IndexFlush(p);
+  assert( p->nContentlessDelete==0 );
   pStruct = fts5StructureRead(p);
   fts5StructureInvalidate(p);
 
@@ -5608,7 +5635,10 @@ int sqlite3Fts5IndexOptimize(Fts5Index *p){
 ** INSERT command.
 */
 int sqlite3Fts5IndexMerge(Fts5Index *p, int nMerge){
-  Fts5Structure *pStruct = fts5StructureRead(p);
+  Fts5Structure *pStruct = 0;
+
+  fts5IndexFlush(p);
+  pStruct = fts5StructureRead(p);
   if( pStruct ){
     int nMin = p->pConfig->nUsermerge;
     fts5StructureInvalidate(p);
@@ -6130,6 +6160,9 @@ int sqlite3Fts5IndexBeginWrite(Fts5Index *p, int bDelete, i64 iRowid){
 
   p->iWriteRowid = iRowid;
   p->bDelete = bDelete;
+  if( bDelete==0 ){
+    p->nPendingRow++;
+  }
   return fts5IndexReturn(p);
 }
 
@@ -6883,12 +6916,17 @@ int sqlite3Fts5IndexContentlessDelete(Fts5Index *p, i64 iOrigin, i64 iRowid){
   Fts5Structure *pStruct;
   pStruct = fts5StructureRead(p);
   if( pStruct ){
+    int bFound = 0;               /* True after pSeg->nEntryTombstone incr. */
     int iLvl;
-    for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
+    for(iLvl=pStruct->nLevel-1; iLvl>=0; iLvl--){
       int iSeg;
-      for(iSeg=0; iSeg<pStruct->aLevel[iLvl].nSeg; iSeg++){
+      for(iSeg=pStruct->aLevel[iLvl].nSeg-1; iSeg>=0; iSeg--){
         Fts5StructureSegment *pSeg = &pStruct->aLevel[iLvl].aSeg[iSeg];
         if( pSeg->iOrigin1<=(u64)iOrigin && pSeg->iOrigin2>=(u64)iOrigin ){
+          if( bFound==0 ){
+            pSeg->nEntryTombstone++;
+            bFound = 1;
+          }
           fts5IndexTombstoneAdd(p, pSeg, iRowid);
         }
       }
@@ -7980,7 +8018,7 @@ static int fts5structConnectMethod(
   rc = sqlite3_declare_vtab(db, 
       "CREATE TABLE xyz("
           "level, segment, merge, segid, leaf1, leaf2, loc1, loc2, "
-          "npgtombstone, struct HIDDEN);"
+          "npgtombstone, nentrytombstone, nentry, struct HIDDEN);"
   );
   if( rc==SQLITE_OK ){
     pNew = sqlite3Fts5MallocZero(&rc, sizeof(*pNew));
@@ -8007,7 +8045,7 @@ static int fts5structBestIndexMethod(
   pIdxInfo->idxNum = 0;
   for(i=0, p=pIdxInfo->aConstraint; i<pIdxInfo->nConstraint; i++, p++){
     if( p->usable==0 ) continue;
-    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==9 ){
+    if( p->op==SQLITE_INDEX_CONSTRAINT_EQ && p->iColumn==11 ){
       rc = SQLITE_OK;
       pIdxInfo->aConstraintUsage[i].omit = 1;
       pIdxInfo->aConstraintUsage[i].argvIndex = 1;
@@ -8120,14 +8158,20 @@ static int fts5structColumnMethod(
     case 5: /* leaf2 */
       sqlite3_result_int(ctx, pSeg->pgnoLast);
       break;
-    case 6: /* loc1 */
-      sqlite3_result_int(ctx, pSeg->iOrigin1);
+    case 6: /* origin1 */
+      sqlite3_result_int64(ctx, pSeg->iOrigin1);
       break;
-    case 7: /* loc2 */
-      sqlite3_result_int(ctx, pSeg->iOrigin2);
+    case 7: /* origin2 */
+      sqlite3_result_int64(ctx, pSeg->iOrigin2);
       break;
     case 8: /* npgtombstone */
       sqlite3_result_int(ctx, pSeg->nPgTombstone);
+      break;
+    case 9: /* nentrytombstone */
+      sqlite3_result_int64(ctx, pSeg->nEntryTombstone);
+      break;
+    case 10: /* nentry */
+      sqlite3_result_int64(ctx, pSeg->nEntry);
       break;
   }
   return SQLITE_OK;

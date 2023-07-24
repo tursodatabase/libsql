@@ -39,19 +39,36 @@ do_execsql_test 1.0 {
   )
   INSERT INTO ft SELECT document(12) FROM s;
 }
+
 do_execsql_test 1.1 {
   INSERT INTO ft(ft) VALUES('optimize');
 }
 
 do_execsql_test 1.2 {
+  SELECT level, segment, nentry, nentrytombstone FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {0 0 1000 0}
+
+do_execsql_test 1.3 {
+  DELETE FROM ft WHERE rowid < 50
+}
+
+do_execsql_test 1.4 {
+  SELECT level, segment, nentry, nentrytombstone FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {0 0 1000 49}
+
+do_execsql_test 1.5 {
   DELETE FROM ft WHERE rowid < 1000
 }
 
-execsql_pp {
-  SELECT * FROM fts5_structure((
+do_execsql_test 1.6 {
+  SELECT level, segment, nentry, nentrytombstone FROM fts5_structure((
     SELECT block FROM ft_data WHERE id=10
   ))
-}
+} {1 0 1 0}
 
 finish_test
 

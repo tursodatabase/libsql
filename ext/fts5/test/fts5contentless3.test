@@ -192,6 +192,5 @@ do_execsql_test 3.7 {
 } {2 0 0}
 
 
-
 finish_test
 

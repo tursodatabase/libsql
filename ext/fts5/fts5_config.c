@@ -22,6 +22,8 @@
 #define FTS5_DEFAULT_CRISISMERGE   16
 #define FTS5_DEFAULT_HASHSIZE    (1024*1024)
 
+#define FTS5_DEFAULT_DELETE_AUTOMERGE 10      /* default 10% */
+
 /* Maximum allowed page size */
 #define FTS5_MAX_PAGE_SIZE (64*1024)
 
@@ -922,6 +924,18 @@ int sqlite3Fts5ConfigSetValue(
     }
   }
 
+  else if( 0==sqlite3_stricmp(zKey, "delete-automerge") ){
+    int nVal = -1;
+    if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
+      nVal = sqlite3_value_int(pVal);
+    }else{
+      *pbBadkey = 1;
+    }
+    if( nVal<0 ) nVal = FTS5_DEFAULT_DELETE_AUTOMERGE;
+    if( nVal>100 ) nVal = 0;
+    pConfig->nDeleteAutomerge = nVal;
+  }
+
   else if( 0==sqlite3_stricmp(zKey, "rank") ){
     const char *zIn = (const char*)sqlite3_value_text(pVal);
     char *zRank;
@@ -970,6 +984,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   pConfig->nUsermerge = FTS5_DEFAULT_USERMERGE;
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
   pConfig->nHashSize = FTS5_DEFAULT_HASHSIZE;
+  pConfig->nDeleteAutomerge = FTS5_DEFAULT_DELETE_AUTOMERGE;
 
   zSql = sqlite3Fts5Mprintf(&rc, zSelect, pConfig->zDb, pConfig->zName);
   if( zSql ){
