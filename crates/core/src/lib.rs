@@ -11,7 +11,7 @@
 //! ```rust,no_run
 //! use libsql::Database;
 //!
-//! let db = Database::open(":memory:");
+//! let db = Database::open(":memory:").unwrap();
 //! let conn = db.connect().unwrap();
 //! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ()) .unwrap();
 //! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).unwrap();
@@ -25,15 +25,17 @@
 //! You can open an embedded read-only replica by using the [`Database::with_replicator`] constructor:
 //!
 //! ```rust,no_run
-//! use libsql::Database;
+//! # async fn run() {
+//! use libsql::{Database, Opts};
 //! use libsql_replication::{Frame, Frames, Replicator};
 //!
-//! let mut db = Database::with_replicator("/tmp/test.db");
+//! let mut db = Database::open_with_opts("/tmp/test.db", Opts::with_sync()).await.unwrap();
 //!
-//! let frames: Frames = Frames::Vec(vec![]);
-//! db.sync(frames).unwrap();
+//! let frames = Frames::Vec(vec![]);
+//! db.sync_frames(frames).unwrap();
 //! let conn = db.connect().unwrap();
 //! conn.execute("SELECT * FROM users", ()).unwrap();
+//! # }
 //! ```
 //!
 //! ## Examples
