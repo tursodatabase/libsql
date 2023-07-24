@@ -295,7 +295,7 @@ impl ReplicationLoggerHookCtx {
 
     fn commit(&self) -> anyhow::Result<()> {
         let new_frame_no = self.logger.commit()?;
-        let _ = self.logger.new_frame_notifier.send(new_frame_no);
+        self.logger.new_frame_notifier.send_replace(new_frame_no);
         Ok(())
     }
 

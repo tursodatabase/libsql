@@ -183,6 +183,10 @@ struct Cli {
     /// Set a command to execute when a snapshot file is generated.
     #[clap(long, env = "SQLD_SNAPSHOT_EXEC")]
     snapshot_exec: Option<String>,
+
+    /// The address and port for the replication HTTP API.
+    #[clap(long, env = "SQLD_HTTP_REPLICATION_LISTEN_ADDR")]
+    http_replication_listen_addr: Option<SocketAddr>,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -292,6 +296,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         allow_replica_overwrite: args.allow_replica_overwrite,
         max_response_size: args.max_response_size.0,
         snapshot_exec: args.snapshot_exec,
+        http_replication_addr: args.http_replication_listen_addr,
     })
 }
 
