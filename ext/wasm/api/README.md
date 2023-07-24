@@ -83,15 +83,18 @@ browser client:
   helpers for use by downstream code which creates `sqlite3_vfs`
   and `sqlite3_module` implementations.
 - **`sqlite3-vfs-opfs.c-pp.js`**\  
-  is an sqlite3 VFS implementation which supports Google Chrome's
-  Origin-Private FileSystem (OPFS) as a storage layer to provide
-  persistent storage for database files in a browser. It requires...
+  is an sqlite3 VFS implementation which supports the Origin-Private
+  FileSystem (OPFS) as a storage layer to provide persistent storage
+  for database files in a browser. It requires...
     - **`sqlite3-opfs-async-proxy.js`**\  
       is the asynchronous backend part of the OPFS proxy. It speaks
       directly to the (async) OPFS API and channels those results back
       to its synchronous counterpart. This file, because it must be
       started in its own Worker, is not part of the amalgamation.
-- **`api/sqlite3-api-cleanup.js`**\  
+- **`sqlite3-vfs-opfs-sahpool.c-pp.js`**\  
+  is another sqlite3 VFS supporting the OPFS, but uses a completely
+  different approach that the above-listed one.
+- **`sqlite3-api-cleanup.js`**\  
   The previous files do not immediately extend the library. Instead
   they add callback functions to be called during its
   bootstrapping. Some also temporarily create global objects in order
@@ -108,13 +111,15 @@ browser client:
 with `c-pp`](#c-pp), noting that such preprocessing may be applied
 after all of the relevant files are concatenated. That extension is
 used primarily to keep the code maintainers cognisant of the fact that
-those files contain constructs which will not run as-is in JavaScript.
+those files contain constructs which may not run as-is in any given
+JavaScript environment.
 
 The build process glues those files together, resulting in
-`sqlite3-api.js`, which is everything except for the `post-js-*.js`
-files, and `sqlite3.js`, which is the Emscripten-generated amalgamated
-output and includes the `post-js-*.js` parts, as well as the
-Emscripten-provided module loading pieces.
+`sqlite3-api.js`, which is everything except for the
+`pre/post-js-*.js` files, and `sqlite3.js`, which is the
+Emscripten-generated amalgamated output and includes the
+`pre/post-js-*.js` parts, as well as the Emscripten-provided module
+loading pieces.
 
 The non-JS outlier file is `sqlite3-wasm.c`: it is a proxy for
 `sqlite3.c` which `#include`'s that file and adds a couple more
@@ -152,8 +157,8 @@ Preprocessing of Source Files
 ------------------------------------------------------------------------
 
 Certain files in the build require preprocessing to filter in/out
-parts which differ between vanilla JS builds and ES6 Module
-(a.k.a. esm) builds. The preprocessor application itself is in
+parts which differ between vanilla JS, ES6 Modules, and node.js
+builds. The preprocessor application itself is in
 [`c-pp.c`](/file/ext/wasm/c-pp.c) and the complete technical details
 of such preprocessing are maintained in
 [`GNUMakefile`](/file/ext/wasm/GNUmakefile).

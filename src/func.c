@@ -1227,6 +1227,7 @@ static void charFunc(
       *zOut++ = 0x80 + (u8)(c & 0x3F);
     }                                                    \
   }
+  *zOut = 0;
   sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
 }
 

@@ -38,7 +38,7 @@ dist-name := $(dist-name-prefix)-TEMP
 # date. Our general policy is that we want the smallest binaries for
 # dist zip files, so use the oz build unless there is a compelling
 # reason not to.
-dist.build ?= qoz
+dist.build ?= oz
 
 dist-dir.top := $(dist-name)
 dist-dir.jswasm := $(dist-dir.top)/$(notdir $(dir.dout))

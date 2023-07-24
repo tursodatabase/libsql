@@ -25,3 +25,15 @@ of the SQLite JSON parser.
 
   2.  Run "`sh json-speed-check-1.sh x1`".  The profile output will appear
       in jout-x1.txt.  Substitute any label you want in place of "x1".
+
+  3.  Run the script shown below in the CLI.
+      Divide 2500 by the real elapse time from this test
+      to get an estimate for number of MB/s that the JSON parser is
+      able to process.
+
+> ~~~~
+.open json100mb.db
+.timer on
+WITH RECURSIVE c(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM c WHERE n<25)
+SELECT sum(json_valid(x)) FROM c, data1;
+~~~~
