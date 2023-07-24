@@ -1945,7 +1945,6 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
   p->nSegment = nSegment;
   aTmp = (ht_slot*)&(((u8*)p)[nByte]);
   SEH_FREE_ON_ERROR(0, p);
-
   for(i=walFramePage(nBackfill+1); rc==SQLITE_OK && i<nSegment; i++){
     WalHashLoc sLoc;
 
@@ -1973,7 +1972,6 @@ static int walIteratorInit(Wal *pWal, u32 nBackfill, WalIterator **pp){
       p->aSegment[i].aPgno = (u32 *)sLoc.aPgno;
     }
   }
-
   if( rc!=SQLITE_OK ){
     SEH_FREE_ON_ERROR(p, 0);
     walIteratorFree(p);

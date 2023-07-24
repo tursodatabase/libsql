@@ -53,7 +53,7 @@
 
    - `memory`[^1]: optional WebAssembly.Memory object, defaulting to
      `exports.memory`. In Emscripten environments this should be set
-     to `Module.wasmMemory` if the build uses `-sIMPORT_MEMORY`, or be
+     to `Module.wasmMemory` if the build uses `-sIMPORTED_MEMORY`, or be
      left undefined/falsy to default to `exports.memory` when using
      WASM-exported memory.
 
@@ -88,12 +88,12 @@
      can be replaced with (e.g.) empty functions to squelch all such
      output.
 
-   - `wasmfsOpfsDir`[^1]: As of 2022-12-17, this feature does not
-     currently work due to incompatible Emscripten-side changes made
-     in the WASMFS+OPFS combination. This option is currently ignored.
+   - `wasmfsOpfsDir`[^1]: Specifies the "mount point" of the OPFS-backed
+     filesystem in WASMFS-capable builds.
 
-   [^1] = This property may optionally be a function, in which case this
-          function re-assigns calls that function to fetch the value,
+
+   [^1] = This property may optionally be a function, in which case
+          this function calls that function to fetch the value,
           enabling delayed evaluation.
 
    The returned object is the top-level sqlite3 namespace object.
@@ -125,11 +125,11 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     log: console.log.bind(console),
     wasmfsOpfsDir: '/opfs',
     /**
-       useStdAlloc is just for testing an allocator discrepancy. The
+       useStdAlloc is just for testing allocator discrepancies. The
        docs guarantee that this is false in the canonical builds. For
        99% of purposes it doesn't matter which allocators we use, but
-       it becomes significant with, e.g., sqlite3_deserialize()
-       and certain wasm.xWrap.resultAdapter()s.
+       it becomes significant with, e.g., sqlite3_deserialize() and
+       certain wasm.xWrap.resultAdapter()s.
     */
     useStdAlloc: false
   }, apiConfig || {});
@@ -149,11 +149,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       config[k] = config[k]();
     }
   });
-  config.wasmOpfsDir =
-    /* 2022-12-17: WASMFS+OPFS can no longer be activated from the
-       main thread (aborts via a failed assert() if it's attempted),
-       which eliminates any(?) benefit to supporting it. */  false;
-
   /**
       The main sqlite3 binding API gets installed into this object,
       mimicking the C API as closely as we can. The numerous members
@@ -809,7 +804,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       || toss3("Missing API config.exports (WASM module exports)."),
 
     /**
-       When Emscripten compiles with `-sIMPORT_MEMORY`, it
+       When Emscripten compiles with `-sIMPORTED_MEMORY`, it
        initalizes the heap and imports it into wasm, as opposed to
        the other way around. In this case, the memory is not
        available via this.exports.memory.
@@ -1177,31 +1172,31 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   /** State for sqlite3_wasmfs_opfs_dir(). */
   let __wasmfsOpfsDir = undefined;
   /**
-     2022-12-17: incompatible WASMFS changes have made WASMFS+OPFS
-     unavailable from the main thread, which eliminates the most
-     significant benefit of supporting WASMFS. This function is now a
-     no-op which always returns a falsy value. Before that change,
-     this function behaved as documented below (and how it will again
-     if we can find a compelling reason to support it).
-
      If the wasm environment has a WASMFS/OPFS-backed persistent
      storage directory, its path is returned by this function. If it
      does not then it returns "" (noting that "" is a falsy value).
 
      The first time this is called, this function inspects the current
      environment to determine whether persistence support is available
-     and, if it is, enables it (if needed).
+     and, if it is, enables it (if needed). After the first call it
+     always returns the cached result.
 
-     This function currently only recognizes the WASMFS/OPFS storage
-     combination and its path refers to storage rooted in the
-     Emscripten-managed virtual filesystem.
+     If the returned string is not empty, any files stored under the
+     given path (recursively) are housed in OPFS storage. If the
+     returned string is empty, this particular persistent storage
+     option is not available on the client.
+
+     Though the mount point name returned by this function is intended
+     to remain stable, clients should not hard-coded it anywhere. Always call this function to get the path.
+
+     Note that this function is a no-op in must builds of this
+     library, as the WASMFS capability requires a custom
+     build.
   */
   capi.sqlite3_wasmfs_opfs_dir = function(){
     if(undefined !== __wasmfsOpfsDir) return __wasmfsOpfsDir;
     // If we have no OPFS, there is no persistent dir
     const pdir = config.wasmfsOpfsDir;
-    console.error("sqlite3_wasmfs_opfs_dir() can no longer work due "+
-                  "to incompatible WASMFS changes. It will be removed.");
     if(!pdir
        || !globalThis.FileSystemHandle
        || !globalThis.FileSystemDirectoryHandle
@@ -1223,8 +1218,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Experimental and subject to change or removal.
-
      Returns true if sqlite3.capi.sqlite3_wasmfs_opfs_dir() is a
      non-empty string and the given name starts with (that string +
      '/'), else returns false.
@@ -1233,13 +1226,6 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     const p = capi.sqlite3_wasmfs_opfs_dir();
     return (p && name) ? name.startsWith(p+'/') : false;
   };
-
-  // This bit is highly arguable and is incompatible with the fiddle shell.
-  if(false && 0===wasm.exports.sqlite3_vfs_find(0)){
-    /* Assume that sqlite3_initialize() has not yet been called.
-       This will be the case in an SQLITE_OS_KV build. */
-    wasm.exports.sqlite3_initialize();
-  }
 
   /**
      Given an `sqlite3*`, an sqlite3_vfs name, and an optional db name
@@ -1875,6 +1861,9 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     client: undefined,
 
     /**
+       This function is not part of the public interface, but a
+       piece of internal bootstrapping infrastructure.
+
        Performs any optional asynchronous library-level initialization
        which might be required. This function returns a Promise which
        resolves to the sqlite3 namespace object. Any error in the
@@ -1890,27 +1879,19 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        then it must be called by client-level code, which must not use
        the library until the returned promise resolves.
 
-       Bug: if called while a prior call is still resolving, the 2nd
-       call will resolve prematurely, before the 1st call has finished
-       resolving. The current build setup precludes that possibility,
-       so it's only a hypothetical problem if/when this function
-       ever needs to be invoked by clients.
+       If called multiple times it will return the same promise on
+       subsequent calls. The current build setup precludes that
+       possibility, so it's only a hypothetical problem if/when this
+       function ever needs to be invoked by clients.
 
        In Emscripten-based builds, this function is called
        automatically and deleted from this object.
     */
-    asyncPostInit: async function(){
-      let lip = sqlite3ApiBootstrap.initializersAsync;
+    asyncPostInit: async function ff(){
+      if(ff.isReady instanceof Promise) return ff.isReady;
+      let lia = sqlite3ApiBootstrap.initializersAsync;
       delete sqlite3ApiBootstrap.initializersAsync;
-      if(!lip || !lip.length) return Promise.resolve(sqlite3);
-      lip = lip.map((f)=>{
-        const p = (f instanceof Promise) ? f : f(sqlite3);
-        return p.catch((e)=>{
-          console.error("an async sqlite3 initializer failed:",e);
-          throw e;
-        });
-      });
-      const postInit = ()=>{
+      const postInit = async ()=>{
         if(!sqlite3.__isUnderTest){
           /* Delete references to internal-only APIs which are used by
              some initializers. Retain them when running in test mode
@@ -1919,23 +1900,25 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
           /* It's conceivable that we might want to expose
              StructBinder to client-side code, but it's only useful if
              clients build their own sqlite3.wasm which contains their
-             one C struct types. */
+             own C struct types. */
           delete sqlite3.StructBinder;
         }
         return sqlite3;
       };
-      if(1){
-        /* Run all initializers in sequence. The advantage is that it
-           allows us to have post-init cleanup defined outside of this
-           routine at the end of the list and have it run at a
-           well-defined time. */
-        let p = lip.shift();
-        while(lip.length) p = p.then(lip.shift());
-        return p.then(postInit);
-      }else{
-        /* Run them in an arbitrary order. */
-        return Promise.all(lip).then(postInit);
+      const catcher = (e)=>{
+        config.error("an async sqlite3 initializer failed:",e);
+        throw e;
+      };
+      if(!lia || !lia.length){
+        return ff.isReady = postInit().catch(catcher);
       }
+      lia = lia.map((f)=>{
+        return (f instanceof Function) ? async x=>f(sqlite3) : f;
+      });
+      lia.push(postInit);
+      let p = Promise.resolve(sqlite3);
+      while(lia.length) p = p.then(lia.shift());
+      return ff.isReady = p.catch(catcher);
     },
     /**
        scriptInfo ideally gets injected into this object by the
@@ -1995,7 +1978,7 @@ globalThis.sqlite3ApiBootstrap.initializers = [];
   specifically for initializers which are asynchronous. All entries in
   this list must be either async functions, non-async functions which
   return a Promise, or a Promise. Each function in the list is called
-  with the sqlite3 ojbect as its only argument.
+  with the sqlite3 object as its only argument.
 
   The resolved value of any Promise is ignored and rejection will kill
   the asyncPostInit() process (at an indeterminate point because all

@@ -10,20 +10,6 @@
   </head>
   <body>
     <header id='titlebar'><span>sqlite3 WASMFS/OPFS Main-thread Scratchpad</span></header>
-    <!-- emscripten bits -->
-    <figure id="module-spinner">
-      <div class="spinner"></div>
-      <div class='center'><strong>Initializing app...</strong></div>
-      <div class='center'>
-        On a slow internet connection this may take a moment.  If this
-        message displays for "a long time", intialization may have
-        failed and the JavaScript console may contain clues as to why.
-      </div>
-    </figure>
-    <div class="emscripten" id="module-status">Downloading...</div>
-    <div class="emscripten">
-      <progress value="0" max="100" id="module-progress" hidden='1'></progress>  
-    </div><!-- /emscripten bits -->
     <p>Scratchpad/test app for the WASMF/OPFS integration in the
       main window thread. This page requires that the sqlite3 API have
       been built with WASMFS support. If OPFS support is available then
@@ -33,8 +19,12 @@
     <p>All stuff on this page happens in the dev console.</p>
     <hr>
     <div id='test-output'></div>
-    <script src="sqlite3-wasmfs.js"></script>
-    <script src="common/SqliteTestUtil.js"></script>
-    <script src="scratchpad-wasmfs-main.js"></script>
+    <script>
+      (function(){
+          const W = new Worker('scratchpad-wasmfs.mjs',{
+              type: 'module'
+          });
+      })();
+    </script>
   </body>
 </html>

@@ -889,8 +889,31 @@ typedef INT16_TYPE LogEst;
 ** the end of buffer S.  This macro returns true if P points to something
 ** contained within the buffer S.
 */
-#define SQLITE_WITHIN(P,S,E) (((uptr)(P)>=(uptr)(S))&&((uptr)(P)<(uptr)(E)))
+#define SQLITE_WITHIN(P,S,E)   (((uptr)(P)>=(uptr)(S))&&((uptr)(P)<(uptr)(E)))
 
+/*
+** P is one byte past the end of a large buffer. Return true if a span of bytes
+** between S..E crosses the end of that buffer.  In other words, return true
+** if the sub-buffer S..E-1 overflows the buffer show last byte is P-1.
+**
+** S is the start of the span.  E is one byte past the end of end of span.
+**
+**                        P
+**     |-----------------|                FALSE
+**               |-------|
+**               S        E
+**
+**                        P
+**     |-----------------|
+**                    |-------|           TRUE
+**                    S        E
+**
+**                        P
+**     |-----------------|               
+**                        |-------|       FALSE
+**                        S        E
+*/
+#define SQLITE_OVERFLOW(P,S,E) (((uptr)(S)<(uptr)(P))&&((uptr)(E)>(uptr)(P)))
 
 /*
 ** Macros to determine whether the machine is big or little endian,

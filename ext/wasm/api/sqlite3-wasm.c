@@ -151,7 +151,7 @@
 /**********************************************************************/
 /* SQLITE_T... */
 #ifndef SQLITE_TEMP_STORE
-# define SQLITE_TEMP_STORE 3
+# define SQLITE_TEMP_STORE 2
 #endif
 #ifndef SQLITE_THREADSAFE
 # define SQLITE_THREADSAFE 0

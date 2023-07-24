@@ -1,3 +1,4 @@
+//#ifnot target=node
 /*
   2022-09-18
 
@@ -23,7 +24,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    installOpfsVfs() returns a Promise which, on success, installs an
    sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
    which accept a VFS. It is intended to be called via
-   sqlite3ApiBootstrap.initializersAsync or an equivalent mechanism.
+   sqlite3ApiBootstrap.initializers or an equivalent mechanism.
 
    The installed VFS uses the Origin-Private FileSystem API for
    all file storage. On error it is rejected with an exception
@@ -101,6 +102,10 @@ const installOpfsVfs = function callee(options){
     options = Object.create(null);
   }
   const urlParams = new URL(globalThis.location.href).searchParams;
+  if(urlParams.has('opfs-disable')){
+    //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
+    return Promise.resolve(sqlite3);
+  }
   if(undefined===options.verbose){
     options.verbose = urlParams.has('opfs-verbose')
       ? (+urlParams.get('opfs-verbose') || 2) : 1;
@@ -118,11 +123,11 @@ const installOpfsVfs = function callee(options){
     options.proxyUri = options.proxyUri();
   }
   const thePromise = new Promise(function(promiseResolve_, promiseReject_){
-    const loggers = {
-      0:sqlite3.config.error,
-      1:sqlite3.config.warn,
-      2:sqlite3.config.log
-    };
+    const loggers = [
+      sqlite3.config.error,
+      sqlite3.config.warn,
+      sqlite3.config.log
+    ];
     const logImpl = (level,...args)=>{
       if(options.verbose>level) loggers[level]("OPFS syncer:",...args);
     };
@@ -191,17 +196,18 @@ const installOpfsVfs = function callee(options){
         s.count = s.time = 0;
       }
     }/*metrics*/;
-    const opfsVfs = new sqlite3_vfs();
     const opfsIoMethods = new sqlite3_io_methods();
+    const opfsVfs = new sqlite3_vfs()
+          .addOnDispose( ()=>opfsIoMethods.dispose());
     let promiseWasRejected = undefined;
     const promiseReject = (err)=>{
       promiseWasRejected = true;
       opfsVfs.dispose();
       return promiseReject_(err);
     };
-    const promiseResolve = (value)=>{
+    const promiseResolve = ()=>{
       promiseWasRejected = false;
-      return promiseResolve_(value);
+      return promiseResolve_(sqlite3);
     };
     const W =
 //#if target=es6-bundler-friendly
@@ -235,17 +241,17 @@ const installOpfsVfs = function callee(options){
           ? new sqlite3_vfs(pDVfs)
           : null /* dVfs will be null when sqlite3 is built with
                     SQLITE_OS_OTHER. */;
+    opfsIoMethods.$iVersion = 1;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
     opfsVfs.$mxPathname = 1024/*sure, why not?*/;
     opfsVfs.$zName = wasm.allocCString("opfs");
     // All C-side memory of opfsVfs is zeroed out, but just to be explicit:
     opfsVfs.$xDlOpen = opfsVfs.$xDlError = opfsVfs.$xDlSym = opfsVfs.$xDlClose = null;
-    opfsVfs.ondispose = [
+    opfsVfs.addOnDispose(
       '$zName', opfsVfs.$zName,
-      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null),
-      'cleanup opfsIoMethods', ()=>opfsIoMethods.dispose()
-    ];
+      'cleanup default VFS wrapper', ()=>(dVfs ? dVfs.dispose() : null)
+    );
     /**
        Pedantic sidebar about opfsVfs.ondispose: the entries in that array
        are items to clean up when opfsVfs.dispose() is called, but in this
@@ -298,6 +304,7 @@ const installOpfsVfs = function callee(options){
        lock contention to free up.
     */
     state.asyncIdleWaitTime = 150;
+
     /**
        Whether the async counterpart should log exceptions to
        the serialization channel. That produces a great deal of
@@ -832,22 +839,19 @@ const installOpfsVfs = function callee(options){
         /* If it turns out that we need to adjust for timezone, see:
            https://stackoverflow.com/a/11760121/1458521 */
         wasm.poke(pOut, 2440587.5 + (new Date().getTime()/86400000),
-                         'double');
+                  'double');
         return 0;
       },
       xCurrentTimeInt64: function(pVfs,pOut){
-        // TODO: confirm that this calculation is correct
         wasm.poke(pOut, (2440587.5 * 86400000) + new Date().getTime(),
-                         'i64');
+                  'i64');
         return 0;
       },
       xDelete: function(pVfs, zName, doSyncDir){
         mTimeStart('xDelete');
-        opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
-        /* We're ignoring errors because we cannot yet differentiate
-           between harmless and non-harmless failures. */
+        const rc = opRun('xDelete', wasm.cstrToJs(zName), doSyncDir, false);
         mTimeEnd();
-        return 0;
+        return rc;
       },
       xFullPathname: function(pVfs,zName,nOut,pOut){
         /* Until/unless we have some notion of "current dir"
@@ -1089,7 +1093,7 @@ const installOpfsVfs = function callee(options){
        propagate any exception on error, rather than returning false.
     */
     opfsUtil.unlink = async function(fsEntryName, recursive = false,
-                                          throwOnError = false){
+                                     throwOnError = false){
       try {
         const [hDir, filenamePart] =
               await opfsUtil.getDirForFilename(fsEntryName, false);
@@ -1186,19 +1190,23 @@ const installOpfsVfs = function callee(options){
              contention. */
           sqlite3.capi.sqlite3_busy_timeout(oo1Db, 10000);
           sqlite3.capi.sqlite3_exec(oo1Db, [
-            /* Truncate journal mode is faster than delete for
-               this vfs, per speedtest1. That gap seems to have closed with
-               Chrome version 108 or 109, but "persist" is very roughly 5-6%
-               faster than truncate in initial tests.
+            /* As of July 2023, the PERSIST journal mode on OPFS is
+               somewhat slower than DELETE or TRUNCATE (it was faster
+               before Chrome version 108 or 109). TRUNCATE and DELETE
+               have very similar performance on OPFS.
 
-               For later analysis: Roy Hashimoto notes that TRUNCATE
-               and PERSIST modes may decrease OPFS concurrency because
-               multiple connections can open the journal file in those
-               modes:
+               Roy Hashimoto notes that TRUNCATE and PERSIST modes may
+               decrease OPFS concurrency because multiple connections
+               can open the journal file in those modes:
 
                https://github.com/rhashimoto/wa-sqlite/issues/68
+
+               Given that, and the fact that testing has not revealed
+               any appreciable difference between performance of
+               TRUNCATE and DELETE modes on OPFS, we currently (as of
+               2023-07-13) default to DELETE mode.
             */
-            "pragma journal_mode=persist;",
+            "pragma journal_mode=DELETE;",
             /*
               This vfs benefits hugely from cache on moderate/large
               speedtest1 --size 50 and --size 100 workloads. We
@@ -1319,10 +1327,10 @@ const installOpfsVfs = function callee(options){
                   sqlite3.opfs = opfsUtil;
                   opfsUtil.rootDirectory = d;
                   log("End of OPFS sqlite3_vfs setup.", opfsVfs);
-                  promiseResolve(sqlite3);
+                  promiseResolve();
                 }).catch(promiseReject);
               }else{
-                promiseResolve(sqlite3);
+                promiseResolve();
               }
             }catch(e){
               error(e);
@@ -1359,7 +1367,10 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
     });
   }catch(e){
     sqlite3.config.error("installOpfsVfs() exception:",e);
-    throw e;
+    return Promise.reject(e);
   }
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);
+//#else
+/* The OPFS VFS parts are elided from builds targeting node.js. */
+//#endif target=node
