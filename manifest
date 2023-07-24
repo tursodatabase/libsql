@@ -1,5 +1,5 @@
-C Rework\sthe\sJSON\sparse\sstructure\sto\sfacilitate\sbetter\scaching.\s\sPasses\sall\ntests.
-D 2023-07-24T22:34:26.093
+C Clean\sup\ssome\s#defines\sin\sjson.
+D 2023-07-24T22:45:59.601
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -598,7 +598,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c e743eb83ad6d581bdfd355aee1d0f2c3025e955ec1799706ec4542b46e3af7f2
+F src/json.c a12c5517137b9ab77183b4a15084da264c32190f834fd3d45fda1eb77d9e327a
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f2c063884685a79d5a787590447c292f51e898a98c9508159c788f505227ba85
-R fee4083d53f0bb74692c3aad54ce5646
+P ecdcb1ded76e9a0591bf7a2009679f49fc3aa639d3cc12406c6d29243ed8e1c5
+R c1e40d83b9a43b4c127658e4fcf06fd6
 U drh
-Z 5a89ce2654bac729f780024f319554e3
+Z 6091135e309dfa309be3fb90139aabae
 # Remove this line to create a well-formed Fossil manifest.

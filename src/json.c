@@ -109,14 +109,13 @@ static const char * const jsonType[] = {
 
 /* Bit values for the JsonNode.jnFlag field
 */
-#define JNODE_RAW     0x01         /* Content is raw, not JSON encoded */
-#define JNODE_ESCAPE  0x02         /* Content is text with \ escapes */
-#define JNODE_REMOVE  0x04         /* Do not output */
-#define JNODE_REPLACE 0x08         /* Target of a JSON_SUBST node */
-                  /*  0x10         Available for reuse */
-#define JNODE_APPEND  0x20         /* More ARRAY/OBJECT entries at u.iAppend */
-#define JNODE_LABEL   0x40         /* Is a label of an object */
-#define JNODE_JSON5   0x80         /* Node contains JSON5 enhancements */
+#define JNODE_RAW     0x01  /* Content is raw, not JSON encoded */
+#define JNODE_ESCAPE  0x02  /* Content is text with \ escapes */
+#define JNODE_REMOVE  0x04  /* Do not output */
+#define JNODE_REPLACE 0x08  /* Target of a JSON_SUBST node */
+#define JNODE_APPEND  0x10  /* More ARRAY/OBJECT entries at u.iAppend */
+#define JNODE_LABEL   0x20  /* Is a label of an object */
+#define JNODE_JSON5   0x40  /* Node contains JSON5 enhancements */
 
 
 /* A single node of parsed JSON
