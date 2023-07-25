@@ -832,7 +832,7 @@ rust_bindings: sqlite3.h
 	cd $(BINDTOP) && LIBSQL_SRC_DIR=$(TOP) cargo build --release --lib
 
 libsqlapi: sqlite3.h
-	cd $(APITOP) && LIBSQL_SRC_DIR=$(TOP) cargo test --release --lib
+	cd $(APITOP) && LIBSQL_SRC_DIR=$(TOP) cargo test --all --release --lib
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
