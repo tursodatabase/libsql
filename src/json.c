@@ -530,7 +530,7 @@ static void jsonResult(JsonString *p){
                             (void(*)(void*))sqlite3RCStrUnref,
                             SQLITE_UTF8);
     }
-  }else{
+  }else if( p->bErr==1 ){
     sqlite3_result_error_nomem(p->pCtx);
   }
   jsonReset(p);
