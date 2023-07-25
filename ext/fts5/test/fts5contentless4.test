@@ -195,5 +195,54 @@ do_execsql_test 3.12 {
   ))
 } {0 6}
 
+#-------------------------------------------------------------------------
+reset_db
+db func document document
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO x1(x1, rank) VALUES('usermerge', 16);
+  INSERT INTO x1(x1, rank) VALUES('deletemerge', 40);
+  INSERT INTO x1 VALUES('one');
+  INSERT INTO x1 VALUES('two');
+  INSERT INTO x1 VALUES('three');
+  INSERT INTO x1 VALUES('four');
+  INSERT INTO x1 VALUES('five');
+  INSERT INTO x1 VALUES('six');
+  INSERT INTO x1 VALUES('seven');
+  INSERT INTO x1 VALUES('eight');
+  INSERT INTO x1 VALUES('nine');
+  INSERT INTO x1 VALUES('ten');
+}
+
+do_execsql_test 4.1 {
+  SELECT level, segment FROM fts5_structure((
+    SELECT block FROM x1_data WHERE id=10
+  ))
+} {
+  0 0 0 1 0 2 0 3 0 4 0 5 0 6 0 7 0 8 0 9
+}
+
+for {set ii 1} {$ii < 4} {incr ii} {
+  do_execsql_test 4.2.$ii {
+    DELETE FROM x1 WHERE rowid = $ii;
+    INSERT INTO x1(x1, rank) VALUES('merge', 5);
+    SELECT level, segment FROM fts5_structure((
+          SELECT block FROM x1_data WHERE id=10
+    ))
+  } {
+    0 0 0 1 0 2 0 3 0 4 0 5 0 6 0 7 0 8 0 9
+  }
+}
+
+do_execsql_test 4.3 {
+  DELETE FROM x1 WHERE rowid = $ii;
+  INSERT INTO x1(x1, rank) VALUES('merge', 5);
+  SELECT level, segment, nentry FROM fts5_structure((
+        SELECT block FROM x1_data WHERE id=10
+  ))
+} {
+  1 0   6
+}
+
 finish_test
 

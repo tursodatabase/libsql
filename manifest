@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\sfts5\s'delete-automerge'\soption\sto\s'deletemerge'.\sAnd\sadd\stests\sfor\sit.
-D 2023-07-25T15:48:58.767
+C Add\sextra\stest\sfor\s'deletemerge'.
+D 2023-07-25T16:48:54.280
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -135,7 +135,7 @@ F ext/fts5/test/fts5content.test 213506436fb2c87567b8e31f6d43ab30aab99354cec74ed
 F ext/fts5/test/fts5contentless.test 9a42a86822670792ba632f5c57459addeb774d93b29d5e6ddae08faa64c2b6d9
 F ext/fts5/test/fts5contentless2.test 12c778d134a121b8bad000fbf3ae900d53226fee840ce36fe941b92737f1fda7
 F ext/fts5/test/fts5contentless3.test 487dce16b6677f68b44d7cbd158b9b7275d25e2c14d713f9188d9645bb699286
-F ext/fts5/test/fts5contentless4.test 52aad02fe9eb1bfa9272ee35ac95f6dc31eab57ba470c2df0ed63f0bfbe95bc2
+F ext/fts5/test/fts5contentless4.test 0f43ededc2874f65d7da99b641a82239854d98d3fa43db729f284b723f23b69f
 F ext/fts5/test/fts5corrupt.test 77ae6f41a7eba10620efb921cf7dbe218b0ef232b04519deb43581cb17a57ebe
 F ext/fts5/test/fts5corrupt2.test 7453752ba12ce91690c469a6449d412561cc604b1dec994e16ab132952e7805f
 F ext/fts5/test/fts5corrupt3.test 7da9895dafa404efd20728f66ff4b94399788bdc042c36fe2689801bba2ccd78
@@ -2048,8 +2048,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ca26c7a37a7e680be633f43be28f8877bdf9917448ea51c3bedc9b2352a00601
-R 4c7400d78b496d9cb420c06c5a4d6bad
+P 1079300db2a7d1fbc86a01c215c234a3af64889c5396e6da63ff4f3c7efae4c5
+R 5e50972831b0957645434d1b66948061
 U dan
-Z a03778de7e1285f066cc1d73e2bb1632
+Z 17e8bfe851f3a2d36e6b484a74a5eecf
 # Remove this line to create a well-formed Fossil manifest.
