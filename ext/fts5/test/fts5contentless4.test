@@ -129,5 +129,71 @@ for {set ii 1} {$ii <= 5000} {incr ii 10} {
   } 5000
 }
 
+#-------------------------------------------------------------------------
+reset_db
+db func document document
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO ft SELECT document(12) FROM s;
+}
+
+do_catchsql_test 3.1 {
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 'text');
+} {1 {SQL logic error}}
+do_catchsql_test 3.2 {
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 50);
+} {0 {}}
+do_execsql_test 3.3 {
+  SELECT * FROM ft_config WHERE k='deletemerge'
+} {deletemerge 50}
+do_catchsql_test 3.4 {
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 101);
+} {0 {}}
+do_execsql_test 3.5 {
+  SELECT * FROM ft_config WHERE k='deletemerge'
+} {deletemerge 101}
+
+do_execsql_test 3.6 {
+  DELETE FROM ft WHERE rowid<95
+}
+
+do_execsql_test 3.7 {
+  SELECT nentrytombstone, nentry FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {94 100}
+
+do_execsql_test 3.8 {
+  DELETE FROM ft WHERE rowid=95
+}
+
+do_execsql_test 3.9 {
+  SELECT nentrytombstone, nentry FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {95 100}
+
+do_execsql_test 3.10 {
+  DELETE FROM ft;
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO ft SELECT document(12) FROM s;
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 50);
+}
+
+do_execsql_test 3.11 {
+  DELETE FROM ft WHERE rowid<95
+}
+
+do_execsql_test 3.12 {
+  SELECT nentrytombstone, nentry FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {0 6}
+
 finish_test
 

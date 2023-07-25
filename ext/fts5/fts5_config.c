@@ -924,7 +924,7 @@ int sqlite3Fts5ConfigSetValue(
     }
   }
 
-  else if( 0==sqlite3_stricmp(zKey, "delete-automerge") ){
+  else if( 0==sqlite3_stricmp(zKey, "deletemerge") ){
     int nVal = -1;
     if( SQLITE_INTEGER==sqlite3_value_numeric_type(pVal) ){
       nVal = sqlite3_value_int(pVal);
@@ -933,7 +933,7 @@ int sqlite3Fts5ConfigSetValue(
     }
     if( nVal<0 ) nVal = FTS5_DEFAULT_DELETE_AUTOMERGE;
     if( nVal>100 ) nVal = 0;
-    pConfig->nDeleteAutomerge = nVal;
+    pConfig->nDeleteMerge = nVal;
   }
 
   else if( 0==sqlite3_stricmp(zKey, "rank") ){
@@ -984,7 +984,7 @@ int sqlite3Fts5ConfigLoad(Fts5Config *pConfig, int iCookie){
   pConfig->nUsermerge = FTS5_DEFAULT_USERMERGE;
   pConfig->nCrisisMerge = FTS5_DEFAULT_CRISISMERGE;
   pConfig->nHashSize = FTS5_DEFAULT_HASHSIZE;
-  pConfig->nDeleteAutomerge = FTS5_DEFAULT_DELETE_AUTOMERGE;
+  pConfig->nDeleteMerge = FTS5_DEFAULT_DELETE_AUTOMERGE;
 
   zSql = sqlite3Fts5Mprintf(&rc, zSelect, pConfig->zDb, pConfig->zName);
   if( zSql ){

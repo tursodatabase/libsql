@@ -4729,7 +4729,7 @@ static void fts5IndexMergeLevel(
 }
 
 /*
-** If this is not a contentless_delete=1 table, or if the 'delete-automerge'
+** If this is not a contentless_delete=1 table, or if the 'deletemerge'
 ** configuration option is set to 0, then this function always returns -1.
 ** Otherwise, it searches the structure object passed as the second argument
 ** for a level suitable for merging due to having a large number of 
@@ -4739,7 +4739,7 @@ static void fts5IndexMergeLevel(
 static int fts5IndexFindDeleteMerge(Fts5Index *p, Fts5Structure *pStruct){
   Fts5Config *pConfig = p->pConfig;
   int iRet = -1;
-  if( pConfig->bContentlessDelete && pConfig->nDeleteAutomerge>0 ){
+  if( pConfig->bContentlessDelete && pConfig->nDeleteMerge>0 ){
     int ii;
     int nBest = 0;
 
@@ -4755,7 +4755,7 @@ static int fts5IndexFindDeleteMerge(Fts5Index *p, Fts5Structure *pStruct){
       assert( nEntry>0 || pLvl->nSeg==0 );
       if( nEntry>0 ){
         int nPercent = (nTomb * 100) / nEntry;
-        if( nPercent>=pConfig->nDeleteAutomerge && nPercent>nBest ){
+        if( nPercent>=pConfig->nDeleteMerge && nPercent>nBest ){
           iRet = ii;
           nBest = nPercent;
         }
