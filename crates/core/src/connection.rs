@@ -1,10 +1,11 @@
 use crate::{Database, Error, Params, Result, Rows, RowsFuture, Statement};
 
+use libsql_sys::ffi;
 use std::ffi::c_int;
 
 /// A connection to a libSQL database.
 pub struct Connection {
-    pub(crate) raw: *mut libsql_sys::ffi::sqlite3,
+    pub(crate) raw: *mut ffi::sqlite3,
 }
 
 unsafe impl Send for Connection {} // TODO: is this safe?
@@ -15,19 +16,18 @@ impl Connection {
         let mut raw = std::ptr::null_mut();
         let db_path = db.db_path.clone();
         let err = unsafe {
-            libsql_sys::ffi::sqlite3_open_v2(
+            ffi::sqlite3_open_v2(
                 std::ffi::CString::new(db_path.as_str())
                     .unwrap()
                     .as_c_str()
                     .as_ptr() as *const _,
                 &mut raw,
-                libsql_sys::ffi::SQLITE_OPEN_READWRITE as c_int
-                    | libsql_sys::ffi::SQLITE_OPEN_CREATE as c_int,
+                ffi::SQLITE_OPEN_READWRITE as c_int | ffi::SQLITE_OPEN_CREATE as c_int,
                 std::ptr::null(),
             )
         };
         match err as u32 {
-            libsql_sys::ffi::SQLITE_OK => {}
+            ffi::SQLITE_OK => {}
             _ => {
                 return Err(Error::ConnectionFailed(db_path));
             }
@@ -36,14 +36,14 @@ impl Connection {
     }
 
     /// Get a raw handle to the underlying libSQL connection
-    pub fn handle(&self) -> *mut libsql_sys::ffi::sqlite3 {
+    pub fn handle(&self) -> *mut ffi::sqlite3 {
         self.raw
     }
 
     /// Disconnect from the database.
     pub fn disconnect(&self) {
         unsafe {
-            libsql_sys::ffi::sqlite3_close_v2(self.raw);
+            ffi::sqlite3_close_v2(self.raw);
         }
     }
 
@@ -86,6 +86,26 @@ impl Connection {
             raw: self.raw,
             sql: sql.into(),
             params: params.into(),
+        }
+    }
+}
+
+// Automatically drop all dangling statements when the connection is dropped.
+impl Drop for Connection {
+    fn drop(&mut self) {
+        unsafe {
+            let db = self.raw;
+            if db.is_null() {
+                return;
+            }
+            let mut stmt = ffi::sqlite3_next_stmt(db, std::ptr::null_mut());
+            while !stmt.is_null() {
+                let rc = ffi::sqlite3_finalize(stmt);
+                if rc != ffi::SQLITE_OK as i32 {
+                    tracing::error!("Failed to finalize a dangling statement: {rc}")
+                }
+                stmt = ffi::sqlite3_next_stmt(db, stmt);
+            }
         }
     }
 }
