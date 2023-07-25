@@ -191,7 +191,7 @@ static void jsonInit(JsonString *p, sqlite3_context *pCtx){
 ** initial state.
 */
 static void jsonReset(JsonString *p){
-  if( !p->bStatic ) sqlite3_free(p->zBuf);
+  if( !p->bStatic ) sqlite3RCStrUnref(p->zBuf);
   jsonZero(p);
 }
 
@@ -212,7 +212,7 @@ static int jsonGrow(JsonString *p, u32 N){
   char *zNew;
   if( p->bStatic ){
     if( p->bErr ) return 1;
-    zNew = sqlite3_malloc64(nTotal);
+    zNew = sqlite3RCStrNew(nTotal);
     if( zNew==0 ){
       jsonOom(p);
       return SQLITE_NOMEM;
@@ -221,12 +221,12 @@ static int jsonGrow(JsonString *p, u32 N){
     p->zBuf = zNew;
     p->bStatic = 0;
   }else{
-    zNew = sqlite3_realloc64(p->zBuf, nTotal);
-    if( zNew==0 ){
-      jsonOom(p);
+    p->zBuf = sqlite3RCStrResize(p->zBuf, nTotal);
+    if( p->zBuf==0 ){
+      p->bErr = 1;
+      jsonZero(p);
       return SQLITE_NOMEM;
     }
-    p->zBuf = zNew;
   }
   p->nAlloc = nTotal;
   return SQLITE_OK;
@@ -514,16 +514,26 @@ static void jsonAppendValue(
 
 
 /* Make the JSON in p the result of the SQL function.
+**
+** The JSON string is reset.
 */
 static void jsonResult(JsonString *p){
   if( p->bErr==0 ){
-    jsonAppendChar(p, 0);
-    sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed-1,
-                          p->bStatic ? SQLITE_TRANSIENT : sqlite3_free,
-                          SQLITE_UTF8);
-    jsonZero(p);
+    if( p->bStatic ){
+      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed, SQLITE_TRANSIENT,
+                            SQLITE_UTF8);
+    }else{
+      jsonAppendChar(p, 0);
+      p->nUsed--;
+      sqlite3RCStrRef(p->zBuf);
+      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
+                            (void(*)(void*))sqlite3RCStrUnref,
+                            SQLITE_UTF8);
+    }
+  }else{
+    sqlite3_result_error_nomem(p->pCtx);
   }
-  assert( p->bStatic );
+  jsonReset(p);
 }
 
 /**************************************************************************
@@ -1885,7 +1895,7 @@ static JsonNode *jsonLookupStep(
   JsonNode *pRoot = &pParse->aNode[iRoot];
   while( (pRoot->jnFlags & JNODE_REPLACE)!=0 ){
     u32 idx = (u32)(pRoot - pParse->aNode);
-    u32 i = pParse->iSubst;
+    i = pParse->iSubst;
     while( 1 /*exit-by-break*/ ){
       assert( i<pParse->nNode );
       assert( pParse->aNode[i].eType==JSON_SUBST );
@@ -2950,7 +2960,8 @@ static void jsonArrayCompute(sqlite3_context *ctx, int isFinal){
       assert( pStr->bStatic );
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
-                          pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
+                          pStr->bStatic ? SQLITE_TRANSIENT :
+                              (void(*)(void*))sqlite3RCStrUnref);
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);
@@ -3058,7 +3069,8 @@ static void jsonObjectCompute(sqlite3_context *ctx, int isFinal){
       assert( pStr->bStatic );
     }else if( isFinal ){
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed,
-                          pStr->bStatic ? SQLITE_TRANSIENT : sqlite3_free);
+                          pStr->bStatic ? SQLITE_TRANSIENT :
+                          (void(*)(void*))sqlite3RCStrUnref);
       pStr->bStatic = 1;
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, (int)pStr->nUsed, SQLITE_TRANSIENT);

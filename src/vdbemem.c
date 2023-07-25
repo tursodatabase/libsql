@@ -333,6 +333,11 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
       pMem->flags |= MEM_Term;
       return;
     }
+    if( pMem->xDel==(void(*)(void*))sqlite3RCStrUnref ){
+      /* Blindly assume that all RCStr objects are zero-terminated */
+      pMem->flags |= MEM_Term;
+      return;
+    }
   }else if( pMem->szMalloc>0 && pMem->szMalloc >= pMem->n+1 ){
     pMem->z[pMem->n] = 0;
     pMem->flags |= MEM_Term;
@@ -1361,6 +1366,24 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
     return 0;
   }
   return valueToText(pVal, enc);
+}
+
+/* Return true if sqlit3_value object pVal is a string or blob value
+** that uses the destructor specified in the second argument.
+**
+** TODO:  Maybe someday promote this interface into a published API so
+** that third-party extensions can get access to it?
+*/
+int sqlite3ValueIsOfClass(const sqlite3_value *pVal, void(*xFree)(void*)){
+  if( ALWAYS(pVal!=0)
+   && (pVal->flags & (MEM_Str|MEM_Blob))!=0
+   && (pVal->flags & MEM_Dyn)!=0
+   && pVal->xDel==xFree
+  ){
+    return 1;
+  }else{
+    return 0;
+  }
 }
 
 /*

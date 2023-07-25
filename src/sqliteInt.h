@@ -1281,6 +1281,7 @@ typedef struct Parse Parse;
 typedef struct ParseCleanup ParseCleanup;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
+typedef struct RCStr RCStr;
 typedef struct RenameToken RenameToken;
 typedef struct Returning Returning;
 typedef struct RowSet RowSet;
@@ -4061,6 +4062,47 @@ struct sqlite3_str {
 
 #define isMalloced(X)  (((X)->printfFlags & SQLITE_PRINTF_MALLOCED)!=0)
 
+/*
+** The following object is the header for an "RCStr" or "reference-counted
+** string".  An RCStr is passed around and used like any other char*
+** that has been dynamically allocated.  The important interface
+** difference is that it uses sqlite3RCStrUnref() as its destructor
+** rather than sqlite3_free().  Other than that the two are interchangeable.
+**
+** Thus to return an RCStr object as the result of an SQL function use:
+** 
+**    sqlite3_result_text64(ctx,z,sz,sqlite3RCStrUnref,SQLITE_UTF8)
+**                                   ^^^^^^^^^^^^^^^^^
+**                                   Instead of sqlite3_free() or similar
+**
+** An SQL function can check its arguments to see if they are RCStr
+** strings using the sqlite3ValueIsOfClass() function:
+**
+**    sqlite3ValueIsOfClass(argv[i], sqlite3RCStrUnref);
+**
+** An RCStr string might be better than an ordinary string in some cases
+** because:
+**
+**    (1)  You can duplicate it using sqlite3RCStrRef(x).
+**
+**    (2)  You can also add an associated object to the string.  For
+**         example, if the string is JSON, perhaps the associated object
+**         is a parse of that JSON.
+**
+** Methods for an RCStr string begin with "sqlite3RCStr...".
+*/
+struct RCStr {
+  u32 nRCRef;            /* Number of references */
+#ifdef SQLITE_DEBUG
+  u32 uMagic;            /* Magic number for sanity checking */
+#endif
+  void *pAttach;         /* Attachment to this string */
+  void (*xFree)(void*);  /* Destructor for the attachment */
+};
+
+/* The Magic number used by RCStr for sanity checking.  SQLITE_DEBUG only. */
+#define SQLITE_RCSTR_MAGIC 0x3dc05d54
+
 
 /*
 ** A pointer to this structure is used to communicate information
@@ -5180,6 +5222,7 @@ void sqlite3FileSuffix3(const char*, char*);
 u8 sqlite3GetBoolean(const char *z,u8);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
+int sqlite3ValueIsOfClass(const sqlite3_value*, void(*)(void*));
 int sqlite3ValueBytes(sqlite3_value*, u8);
 void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
                         void(*)(void*));
@@ -5286,6 +5329,15 @@ void *sqlite3OomFault(sqlite3*);
 void sqlite3OomClear(sqlite3*);
 int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
+
+char *sqlite3RCStrRef(char*);
+void sqlite3RCStrUnref(char*);
+char *sqlite3RCStrNew(u64);
+u64 sqlite3RCStrSize(char*);
+char *sqlite3RCStrResize(char*,u64);
+int sqlite3RCStrIsWriteable(char*);
+void sqlite3RCStrAttach(char*, void*, void(*)(void*));
+void *sqlite3RCStrGetAttachment(char*,void(*)(void*));
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 int sqlite3StrAccumEnlarge(StrAccum*, i64);

@@ -1366,3 +1366,146 @@ void sqlite3_str_appendf(StrAccum *p, const char *zFormat, ...){
   sqlite3_str_vappendf(p, zFormat, ap);
   va_end(ap);
 }
+
+
+/*****************************************************************************
+** Reference counted string storage
+*****************************************************************************/
+
+/*
+** Increase the reference count of the string by one.
+**
+** The input parameter is returned.
+*/
+char *sqlite3RCStrRef(char *z){
+  RCStr *p = (RCStr*)z;
+  assert( p!=0 );
+  p--;
+  p->nRCRef++;
+  return z;
+}
+
+/*
+** Decrease the reference count by one.  Free the string when the
+** reference count reaches zero.
+*/
+void sqlite3RCStrUnref(char *z){
+  RCStr *p = (RCStr*)z;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef>0 );
+  assert( p->uMagic==SQLITE_RCSTR_MAGIC );
+  if( p->nRCRef>=2 ){
+    p->nRCRef--;
+  }else{
+    if( p->xFree ) p->xFree(p->pAttach);
+#ifdef SQLITE_DEBUG
+    p->uMagic = 0;
+#endif
+    sqlite3_free(p);
+  }
+}
+
+/*
+** Return true if the reference count on the string is exactly one, meaning
+** that the string can be modified.  Return false if the reference count
+** is greater than one.
+*/
+int sqlite3RCStrIsWriteable(char *z){
+  RCStr *p = (RCStr*)z;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef>0 );
+  assert( p->uMagic==SQLITE_RCSTR_MAGIC );
+  return p->nRCRef==1;
+}
+
+/*
+** Create a new string that is capable of holding N bytes of text, not counting
+** the zero byte at the end.  The string is uninitialized.
+**
+** The reference count is initially 1.  Call sqlite3RCStrUnref() to free the
+** newly allocated string.
+**
+** This routine returns 0 on an OOM.
+*/
+char *sqlite3RCStrNew(u64 N){
+  RCStr *p = sqlite3_malloc64( N + sizeof(*p) );
+  if( p==0 ) return 0;
+  p->nRCRef = 1;
+  p->xFree = 0;
+  p->pAttach = 0;
+#ifdef SQLITE_DEBUG
+  p->uMagic = SQLITE_RCSTR_MAGIC;
+#endif
+  return (char*)&p[1];
+}
+
+/*
+** Return the number of bytes allocated to the string.  The value returned
+** does not include the space for the zero-terminator at the end.
+*/
+u64 sqlite3RCStrSize(char *z){
+  RCStr *p = (RCStr*)z;
+  u64 N;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef>0 );
+  assert( p->uMagic==SQLITE_RCSTR_MAGIC );
+  N = sqlite3_msize(p);
+  N -= sizeof(p) + 1;
+  return N;
+}
+
+/*
+** Change the size of the string so that it is able to hold N bytes.
+** The string might be reallocated, so return the new allocation.
+*/
+char *sqlite3RCStrResize(char *z, u64 N){
+  RCStr *p = (RCStr*)z;
+  RCStr *pNew;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef==1 );
+  assert( p->uMagic==SQLITE_RCSTR_MAGIC );
+  pNew = sqlite3_realloc64(p, N+sizeof(RCStr)+1);
+  if( pNew==0 ){
+    sqlite3_free(p);
+    return 0;
+  }else{
+    return (char*)&pNew[1];
+  }
+}
+
+/*
+** Add a new attachment to the string.
+**
+** A string may have no more than one attachment.  When a new attachment
+** is added, any prior attachment is destroyed.  Remove an attachment
+** by adding a zero-attachment.
+*/
+void sqlite3RCStrAttach(char *z, void *pAttach, void(*xFree)(void*)){
+  RCStr *p = (RCStr*)z;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef>0 );
+  assert( p->uMagic==SQLITE_RCSTR_MAGIC );
+  if( p->xFree ) p->xFree(p->pAttach);
+  p->xFree = xFree;
+  p->pAttach = pAttach;
+}
+  
+/*
+** Return the attachment associated with a string if the attachment
+** has the destructure specified in the second argument.  If the
+** string has no attachment or if the destructor does not match,
+** then return a NULL pointr.
+*/
+void *sqlite3RCStrGetAttachment(char *z, void(*xFree)(void*)){
+  RCStr *p = (RCStr*)z;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef>0 );
+  assert( p->uMagic==SQLITE_RCSTR_MAGIC );
+  return p->xFree==xFree ? p->pAttach : 0;
+}
