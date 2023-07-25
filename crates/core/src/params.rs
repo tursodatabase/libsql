@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use libsql_sys::ValueType;
 
 pub enum Params {
