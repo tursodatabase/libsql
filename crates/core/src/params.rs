@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use libsql_sys::ValueType;
 
 pub enum Params {
     None,
     Positional(Vec<Value>),
+    Named(Vec<(String, Value)>),
 }
 
 #[macro_export]
@@ -15,6 +18,16 @@ macro_rules! params {
     };
 }
 
+#[macro_export]
+macro_rules! named_params {
+    () => {
+        Params::None
+    };
+    ($($param_name:literal: $value:expr),* $(,)?) => {
+        Params::Named(vec![$(($param_name.to_string(), crate::params::Value::from($value))),*])
+    };
+}
+
 impl From<()> for Params {
     fn from(_: ()) -> Params {
         Params::None
@@ -24,6 +37,12 @@ impl From<()> for Params {
 impl From<Vec<Value>> for Params {
     fn from(values: Vec<Value>) -> Params {
         Params::Positional(values)
+    }
+}
+
+impl From<Vec<(String, Value)>> for Params {
+    fn from(values: Vec<(String, Value)>) -> Params {
+        Params::Named(values)
     }
 }
 

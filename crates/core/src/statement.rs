@@ -30,23 +30,16 @@ impl Statement {
             Params::Positional(params) => {
                 for (i, param) in params.iter().enumerate() {
                     let i = i as i32 + 1;
-                    match param {
-                        Value::Null => {
-                            self.inner.bind_null(i);
-                        }
-                        Value::Integer(value) => {
-                            self.inner.bind_int64(i, *value);
-                        }
-                        Value::Float(value) => {
-                            self.inner.bind_double(i, *value);
-                        }
-                        Value::Text(value) => {
-                            self.inner.bind_text(i, value);
-                        }
-                        Value::Blob(value) => {
-                            self.inner.bind_blob(i, &value[..]);
-                        }
-                    }
+
+                    self.bind_value(i, param);
+                }
+            }
+
+            Params::Named(params) => {
+                for (name, param) in params {
+                    let i = self.inner.bind_parameter_index(&name);
+
+                    self.bind_value(i, param);
                 }
             }
         }
@@ -68,5 +61,25 @@ impl Statement {
     /// Reset the prepared statement to initial state for reuse.
     pub fn reset(&self) {
         self.inner.reset();
+    }
+
+    fn bind_value(&self, i: i32, param: &Value) {
+        match param {
+            Value::Null => {
+                self.inner.bind_null(i);
+            }
+            Value::Integer(value) => {
+                self.inner.bind_int64(i, *value);
+            }
+            Value::Float(value) => {
+                self.inner.bind_double(i, *value);
+            }
+            Value::Text(value) => {
+                self.inner.bind_text(i, value);
+            }
+            Value::Blob(value) => {
+                self.inner.bind_blob(i, &value[..]);
+            }
+        }
     }
 }

@@ -94,6 +94,12 @@ impl Statement {
         let raw_name = raw_name.to_str().unwrap();
         raw_name
     }
+
+    pub fn bind_parameter_index(&self, name: &str) -> i32 {
+        let raw_name = std::ffi::CString::new(name).unwrap();
+
+        unsafe { crate::ffi::sqlite3_bind_parameter_index(self.raw_stmt, raw_name.as_ptr()) }
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<Statement> {
