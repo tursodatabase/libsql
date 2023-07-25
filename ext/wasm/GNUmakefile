@@ -18,8 +18,6 @@
 #  quick, q = do just a minimal build (sqlite3.js/wasm, tester1) for
 #      faster development-mode turnaround.
 #
-#  qo2, qoz = a combination of quick+o2/oz.
-#
 #  dist = create end user deliverables. Add dist.build=oX to build
 #      with a specific optimization level, where oX is one of the
 #      above-listed o? or qo? target names.
@@ -46,11 +44,12 @@
 #    $(eval), or at least centralize the setup of the numerous vars
 #    related to each build variant $(JS_BUILD_MODES).
 #
+default: all
+#default: quick
 SHELL := $(shell which bash 2>/dev/null)
 MAKEFILE := $(lastword $(MAKEFILE_LIST))
 CLEAN_FILES :=
 DISTCLEAN_FILES := ./--dummy--
-default: all
 release: oz
 # JS_BUILD_MODES exists solely to reduce repetition in documentation
 # below.
@@ -182,7 +181,7 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_SHARED_CACHE \
   -DSQLITE_OMIT_WAL \
   -DSQLITE_THREADSAFE=0 \
-  -DSQLITE_TEMP_STORE=3 \
+  -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_OS_KV_OPTIONAL=1 \
   '-DSQLITE_DEFAULT_UNIX_VFS="unix-none"' \
   -DSQLITE_USE_URI=1 \
@@ -375,6 +374,7 @@ sqlite3-api.jses += $(dir.api)/sqlite3-api-oo1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-worker1.js
 sqlite3-api.jses += $(dir.api)/sqlite3-v-helper.js
 sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs.c-pp.js
+sqlite3-api.jses += $(dir.api)/sqlite3-vfs-opfs-sahpool.c-pp.js
 sqlite3-api.jses += $(dir.api)/sqlite3-api-cleanup.js
 
 # SOAP.js is an external API file which is part of our distribution
@@ -677,10 +677,15 @@ sqlite3-wasmfs.cfiles := $(sqlite3-wasm.cfiles)
 #
 # Upstream RFE:
 # https://github.com/emscripten-core/emscripten/issues/18237
+#
+# Maintenance reminder: Mac sed -i works differently than GNU sed, so
+# don't use that flag here.
 define SQLITE3.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
 		echo "Fragile workaround for emscripten/issues/18237. See SQLITE3.xJS.RECIPE."; \
-		sed -i -e '0,/^export default/{/^export default/d;}' $@ || exit $$?; \
+		{\
+			sed -e '0,/^export default/{/^export default/d;}' $@ > $@.tmp && mv $@.tmp $@; \
+		} || exit $$?; \
 		if [ x != x$(2) ]; then \
 			if ! grep -q '^export default' $@; then \
 				echo "Cannot find export default." 1>&2; \
@@ -754,7 +759,7 @@ $(5): $(4) $$(MAKEFILE) $$(sqlite3-wasm.cfiles) $$(EXPORTED_FUNCTIONS.api) $$(pr
 	esac; \
 	ls -la $$$$dotwasm $$@
 all: $(5)
-quick: $(5)
+#quick: $(5)
 CLEAN_FILES += $(4) $(5)
 endef
 # ^^^ /SETUP_LIB_BUILD_MODE
@@ -959,6 +964,7 @@ tester1: tester1.js tester1.mjs tester1.html tester1-esm.html
 # Note that we do not include $(sqlite3-bundler-friendly.mjs) in this
 # because bundlers are client-specific.
 all quick: tester1
+quick: $(sqlite3.js)
 
 ########################################################################
 # Convenience rules to rebuild with various -Ox levels. Much
@@ -978,8 +984,6 @@ o1: clean
 	$(MAKE) -e "emcc_opt=-O1 $(o-xtra)"
 o2: clean
 	$(MAKE) -j2 -e "emcc_opt=-O2 $(o-xtra)"
-qo2: clean
-	$(MAKE) -j2 -e "emcc_opt=-O2 $(o-xtra)" quick
 o3: clean
 	$(MAKE) -e "emcc_opt=-O3 $(o-xtra)"
 os: clean
@@ -987,8 +991,6 @@ os: clean
 	$(MAKE) -e "emcc_opt=-Os $(o-xtra)"
 oz: clean
 	$(MAKE) -j2 -e "emcc_opt=-Oz $(o-xtra)"
-qoz: clean
-	$(MAKE) -j2 -e "emcc_opt=-Oz $(o-xtra)" quick
 
 ########################################################################
 # Sub-makes...

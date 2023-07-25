@@ -1,3 +1,4 @@
+//#ifnot target=node
 /*
   2022-09-18
 
@@ -23,7 +24,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
    installOpfsVfs() returns a Promise which, on success, installs an
    sqlite3_vfs named "opfs", suitable for use with all sqlite3 APIs
    which accept a VFS. It is intended to be called via
-   sqlite3ApiBootstrap.initializersAsync or an equivalent mechanism.
+   sqlite3ApiBootstrap.initializers or an equivalent mechanism.
 
    The installed VFS uses the Origin-Private FileSystem API for
    all file storage. On error it is rejected with an exception
@@ -101,6 +102,10 @@ const installOpfsVfs = function callee(options){
     options = Object.create(null);
   }
   const urlParams = new URL(globalThis.location.href).searchParams;
+  if(urlParams.has('opfs-disable')){
+    //sqlite3.config.warn('Explicitly not installing "opfs" VFS due to opfs-disable flag.');
+    return Promise.resolve(sqlite3);
+  }
   if(undefined===options.verbose){
     options.verbose = urlParams.has('opfs-verbose')
       ? (+urlParams.get('opfs-verbose') || 2) : 1;
@@ -200,9 +205,9 @@ const installOpfsVfs = function callee(options){
       opfsVfs.dispose();
       return promiseReject_(err);
     };
-    const promiseResolve = (value)=>{
+    const promiseResolve = ()=>{
       promiseWasRejected = false;
-      return promiseResolve_(value);
+      return promiseResolve_(sqlite3);
     };
     const W =
 //#if target=es6-bundler-friendly
@@ -236,6 +241,7 @@ const installOpfsVfs = function callee(options){
           ? new sqlite3_vfs(pDVfs)
           : null /* dVfs will be null when sqlite3 is built with
                     SQLITE_OS_OTHER. */;
+    opfsIoMethods.$iVersion = 1;
     opfsVfs.$iVersion = 2/*yes, two*/;
     opfsVfs.$szOsFile = capi.sqlite3_file.structInfo.sizeof;
     opfsVfs.$mxPathname = 1024/*sure, why not?*/;
@@ -1321,10 +1327,10 @@ const installOpfsVfs = function callee(options){
                   sqlite3.opfs = opfsUtil;
                   opfsUtil.rootDirectory = d;
                   log("End of OPFS sqlite3_vfs setup.", opfsVfs);
-                  promiseResolve(sqlite3);
+                  promiseResolve();
                 }).catch(promiseReject);
               }else{
-                promiseResolve(sqlite3);
+                promiseResolve();
               }
             }catch(e){
               error(e);
@@ -1361,7 +1367,10 @@ globalThis.sqlite3ApiBootstrap.initializersAsync.push(async (sqlite3)=>{
     });
   }catch(e){
     sqlite3.config.error("installOpfsVfs() exception:",e);
-    throw e;
+    return Promise.reject(e);
   }
 });
 }/*sqlite3ApiBootstrap.initializers.push()*/);
+//#else
+/* The OPFS VFS parts are elided from builds targeting node.js. */
+//#endif target=node

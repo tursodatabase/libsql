@@ -556,6 +556,9 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, StrAccum *pStr){
       sqlite3_str_appendchar(pStr, 1, (c>=0x20&&c<=0x7f) ? c : '.');
     }
     sqlite3_str_appendf(pStr, "]%s", encnames[pMem->enc]);
+    if( f & MEM_Term ){
+      sqlite3_str_appendf(pStr, "(0-term)");
+    }
   }
 }
 #endif
@@ -3085,6 +3088,9 @@ op_column_restart:
       rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, aOffset[p2], len, pDest);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
       sqlite3VdbeSerialGet((const u8*)pDest->z, t, pDest);
+      if( (t&1)!=0 && encoding==SQLITE_UTF8 ){
+        pDest->flags |= MEM_Term;
+      }
       pDest->flags &= ~MEM_Ephem;
     }
   }
