@@ -35,6 +35,11 @@ impl Connection {
         Ok(Connection { raw })
     }
 
+    /// Get a raw handle to the underlying libSQL connection
+    pub fn handle(&self) -> *mut libsql_sys::ffi::sqlite3 {
+        self.raw
+    }
+
     /// Disconnect from the database.
     pub fn disconnect(&self) {
         unsafe {
