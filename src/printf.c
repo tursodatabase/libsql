@@ -1430,7 +1430,7 @@ int sqlite3RCStrIsWriteable(char *z){
 ** This routine returns 0 on an OOM.
 */
 char *sqlite3RCStrNew(u64 N){
-  RCStr *p = sqlite3_malloc64( N + sizeof(*p) );
+  RCStr *p = sqlite3_malloc64( N + sizeof(*p) + 1 );
   if( p==0 ) return 0;
   p->nRCRef = 1;
   p->xFree = 0;

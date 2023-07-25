@@ -171,6 +171,17 @@ struct JsonParse {
 ** Utility routines for dealing with JsonString objects
 **************************************************************************/
 
+#if 0
+/*
+** This is a destructor for JSON strings.  We make it a separate function
+** so that the sqlite3ValueIsOfClass() function can be used to unambiguously
+** identify sqlite3_value objects that are known JSON strings.
+*/
+static void jsonStringClass(void *p){
+  sqlite3RCStrUnref((char*)p);
+}
+#endif
+
 /* Set the JsonString object to an empty string
 */
 static void jsonZero(JsonString *p){
@@ -1700,16 +1711,27 @@ json_parse_restart:
 ** pParse.
 **
 ** pParse is uninitialized when this routine is called.
+**
+** pParse->nJPRef set to 1.  The caller becomes the owner of the 
+** the JsonParse object.
+**
+** pParse->bOwnsJson is to bTakeJson.  If bTakeJson is 1, the newly initialized
+** JsonParse object will become the own the zJson input string.  If bTakeJson
+** is 0, then the caller is responsible for preserving zJson for the lifetime
+** of the JsonParse object.
 */
 static int jsonParse(
   JsonParse *pParse,           /* Initialize and fill this JsonParse object */
   sqlite3_context *pCtx,       /* Report errors here */
-  char *zJson                  /* Input JSON text to be parsed */
+  char *zJson,                 /* Input JSON text to be parsed */
+  int bTakeJson                /* Assume ownership of zJson if true */
 ){
   int i;
   memset(pParse, 0, sizeof(*pParse));
   if( zJson==0 ) return 1;
   pParse->zJson = zJson;
+  pParse->bOwnsJson = bTakeJson;
+  pParse->nJPRef = 1;
   i = jsonParseValue(pParse, 0);
   if( pParse->oom ) i = -1;
   if( i>0 ){
@@ -1738,120 +1760,6 @@ static int jsonParse(
   return 0;
 }
 
-#if 0
-/*
-** This is a destructor for JSON strings.  We make it a separate function
-** so that the sqlite3ValueIsOfClass() function can be used to unambiguously
-** identify sqlite3_value objects that are known JSON strings.
-*/
-static void jsonClass(void *p){
-  sqlite3RCStrUnref((char*)p);
-}
-#endif
-
-#if 0
-/*
-** Process SQL function argument pJson as a JSON string.  Return a pointer
-** to its parse.
-**
-** If any error is encountered, return a NULL pointer and leave an error
-** message in pCtx.
-*/
-static JsonParse *jsonParseFromFunctionArg(
-  sqlite3_value *pJson,       /* An SQL function argument containing JSON */
-  sqlite3_context *pCtx,      /* For accessing the cache */
-  sqlite3_context *pErrCtx,   /* For reporting errors */
-  int bUnchng                 /* Only accept cached parse that are unchanged */
-){
-  JsonParse *pParse;
-  char *zJson;
-  int nJson;
-  JsonParse *pMatch = 0;
-  int iKey;
-  int iMinKey = 0;
-  u32 iMinHold = 0xffffffff;
-  u32 iMaxHold = 0;
-
-  char *zJson = (char*)sqlite3_value_text(pJson);
-  int nJson = sqlite3_value_bytes(pJson);
-  if( zJson==0 ) goto json_parse_value_nomem;
-  if( sqlite3ValueIsOfClass(pJson, jsonClass) ){
-    assert( zJson!=0 );
-    (void)sqlite3RCStrRef(zJson);
-    pParse = sqlite3RCStrGetAttachment(zJson, (void(*)(void*)jsonParseFree);
-    if( pParse ){
-      return pParse;
-    }
-  }else{
-    char *z = zJson;
-    zJson = sqlite3RCStrNew( nJson );
-    if( zJson==0 ) goto json_parse_value_nomem;
-    assert( strlen(z)==nJson );
-    memcpy(zJson, z, nJson+1);
-  }
-
-  /* At this point zJson is an RCStr object that does not yet have a
-  ** parse.  This procedure is holding its own reference to that zJson
-  ** and needs to release it, or hand it off, prior to returning.
-  **
-  ** The next step is to try to find a parse of the JSON that already
-  ** exists in cache.
-  */
-  for(iKey=0; iKey<JSON_CACHE_SZ; iKey++){
-    JsonParse *p;
-    p = (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID+iKey);
-    if( p==0 ){
-      iMinKey = iKey;
-      break;
-    }
-    if( pMatch==0
-     && p->nJson==nJson
-     && (p->isMod==0 || bUnchng==0)
-     && memcmp(p->zJson,zJson,nJson)==0
-    ){
-      p->nErr = 0;
-      pMatch = p;
-    }else if( p->iHold<iMinHold ){
-      iMinHold = p->iHold;
-      iMinKey = iKey;
-    }
-    if( p->iHold>iMaxHold ){
-      iMaxHold = p->iHold;
-    }
-  }
-
-  if( pMatch ){
-    pParse = pMatch;
-    pParse->iHold = iMaxHold+1;
-  }else{
-    /* No parse of zJson could be found in cache.  So parse it afresh.
-    */
-    pParse = sqlite3_malloc64( sizeof(JsonParse) );
-    if( pParse==0 ) goto json_parse_value_nomem;
-    if( jsonParse(pParse, pCtx, zJson) ){
-      sqlite3_free(pParse);
-      sqlite3RCStrUnref(zJson);
-      return 0;
-    }
-    pParse->bOwnsJson = 1;
-    pParse->nJson = nJson;
-    pParse->nJPRef = 1;
-    pParse->iHold = iMaxHold+1;
-    sqlite3_set_auxdata(pCtx, JSON_CACHE_ID+iMinKey, pParse,
-                        (void(*)(void*))jsonParseFree);
-    pParse = (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID+iMinKey);
-  }
-  if( pParse ){
-    pParse->nJPRef++;  /* The caller will own this object */
-  }
-  return pParse;
-
-json_parse_value_nomem:
-  if( zJson ) sqlite3RCStrUnref(zJson);
-  if( pErrCtx ) sqlite3_result_error_nomem(pCtx);
-  return 0;
-}
-#endif
 
 /* Mark node i of pParse as being a child of iParent.  Call recursively
 ** to fill in all the descendants of node i.
@@ -1905,18 +1813,28 @@ static int jsonParseFindParents(JsonParse *pParse){
 ** Obtain a complete parse of the JSON found in the first argument
 ** of the argv array.  Use the sqlite3_get_auxdata() cache for this
 ** parse if it is available.  If the cache is not available or if it
-** is no longer valid, parse the JSON again and return the new parse,
-** and also register the new parse so that it will be available for
+** is no longer valid, parse the JSON again and return the new parse.
+** Also register the new parse so that it will be available for
 ** future sqlite3_get_auxdata() calls.
 **
 ** If an error occurs and pErrCtx!=0 then report the error on pErrCtx
 ** and return NULL.
 **
-** If an error occurs and pErrCtx==0 then return the Parse object with
-** JsonParse.nErr non-zero.  If the caller invokes this routine with
-** pErrCtx==0 and it gets back a JsonParse with nErr!=0, then the caller
-** is responsible for invoking jsonParseFree() on the returned value.
-** But the caller may invoke jsonParseFree() *only* if pParse->nErr!=0.
+** The returned pointer (if it is not NULL) is owned by the cache in
+** most cases, not the caller.  The caller does NOT need to invoke
+** jsonParseFree(), in most cases.
+**
+** Except, if an error occurs and pErrCtx==0 then return the JsonParse
+** object with JsonParse.nErr non-zero and the caller will own the JsonParse
+** object.  In that case, it will be the responsibility of the caller to
+** invoke jsonParseFree().  To summarize:
+**
+**   pErrCtx!=0 || p->nErr==0      ==>   Return value p is owned by the
+**                                       cache.  Call does not need to
+**                                       free it.
+**
+**   pErrCtx==0 && p->nErr!=0      ==>   Return value is owned by the caller
+**                                       and so the caller must free it.
 */
 static JsonParse *jsonParseCached(
   sqlite3_context *pCtx,
@@ -1931,6 +1849,7 @@ static JsonParse *jsonParseCached(
   int iMinKey = 0;
   u32 iMinHold = 0xffffffff;
   u32 iMaxHold = 0;
+
   if( zJson==0 ) return 0;
   for(iKey=0; iKey<JSON_CACHE_SZ; iKey++){
     p = (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID+iKey);
@@ -1955,27 +1874,35 @@ static JsonParse *jsonParseCached(
   if( pMatch ){
     pMatch->nErr = 0;
     pMatch->iHold = iMaxHold+1;
+    assert( pMatch->nJPRef>0 ); /* pMatch is owned by the cache */
     return pMatch;
   }
-  p = sqlite3_malloc64( sizeof(*p) + nJson + 1 );
+  p = sqlite3_malloc64( sizeof(*p) );
   if( p==0 ){
     sqlite3_result_error_nomem(pCtx);
     return 0;
   }
   memset(p, 0, sizeof(*p));
-  p->zJson = (char*)&p[1];
-  memcpy((char*)p->zJson, zJson, nJson+1);
-  if( jsonParse(p, pErrCtx, p->zJson) ){
-    if( pErrCtx==0 ){
-      p->nErr = 1;
-      return p;
-    }
+  p->zJson = sqlite3RCStrNew( nJson );
+  if( p->zJson==0 ){
     sqlite3_free(p);
+    sqlite3_result_error_nomem(pCtx);
     return 0;
   }
-  p->nJPRef = 1;
+  memcpy(p->zJson, zJson, nJson);
+  p->zJson[nJson] = 0;
+  if( jsonParse(p, pErrCtx, p->zJson, 1) ){
+    if( pErrCtx==0 ){
+      p->nErr = 1;
+      assert( p->nJPRef==1 ); /* Caller will own the new JsonParse object p */
+      return p;
+    }
+    jsonParseFree(p);
+    return 0;
+  }
   p->nJson = nJson;
   p->iHold = iMaxHold+1;
+  /* Transfer ownership of the new JsonParse to the cache */
   sqlite3_set_auxdata(pCtx, JSON_CACHE_ID+iMinKey, p,
                       (void(*)(void*))jsonParseFree);
   return (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID+iMinKey);
@@ -2357,7 +2284,7 @@ static void jsonParseFunc(
   u32 i;
 
   assert( argc==1 );
-  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0]), 0) ) return;
   jsonParseFindParents(&x);
   jsonInit(&s, ctx);
   for(i=0; i<x.nNode; i++){
@@ -2681,8 +2608,8 @@ static void jsonPatchFunc(
   JsonNode *pResult;   /* The result of the merge */
 
   UNUSED_PARAMETER(argc);
-  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0])) ) return;
-  if( jsonParse(&y, ctx, (char*)sqlite3_value_text(argv[1])) ){
+  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0]), 0) ) return;
+  if( jsonParse(&y, ctx, (char*)sqlite3_value_text(argv[1]), 0) ){
     jsonParseReset(&x);
     return;
   }
@@ -2758,7 +2685,7 @@ static void jsonRemoveFunc(
   u32 i;
 
   if( argc<1 ) return;
-  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0]), 0) ) return;
   assert( x.nNode );
   for(i=1; i<(u32)argc; i++){
     zPath = (const char*)sqlite3_value_text(argv[i]);
@@ -2880,7 +2807,7 @@ static void jsonReplaceFunc(
     jsonWrongNumArgs(ctx, "replace");
     return;
   }
-  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0]), 0) ) return;
   assert( x.nNode );
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
@@ -2926,7 +2853,7 @@ static void jsonSetFunc(
     jsonWrongNumArgs(ctx, bIsSet ? "set" : "insert");
     return;
   }
-  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0]), 0) ) return;
   assert( x.nNode );
   for(i=1; i<(u32)argc; i+=2){
     zPath = (const char*)sqlite3_value_text(argv[i]);
@@ -3046,7 +2973,7 @@ static void jsonErrorFunc(
   }else{
     int n = 1;
     u32 i;
-    const char *z = p->zJson;
+    const char *z = (const char*)sqlite3_value_text(argv[0]);
     for(i=0; i<p->iErr && ALWAYS(z[i]); i++){
       if( (z[i]&0xc0)!=0x80 ) n++;
     }
@@ -3639,7 +3566,7 @@ static int jsonEachFilter(
   p->zJson = sqlite3_malloc64( n+1 );
   if( p->zJson==0 ) return SQLITE_NOMEM;
   memcpy(p->zJson, z, (size_t)n+1);
-  if( jsonParse(&p->sParse, 0, p->zJson) ){
+  if( jsonParse(&p->sParse, 0, p->zJson, 0) ){
     int rc = SQLITE_NOMEM;
     if( p->sParse.oom==0 ){
       sqlite3_free(cur->pVtab->zErrMsg);
