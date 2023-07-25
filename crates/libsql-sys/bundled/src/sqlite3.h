@@ -10366,6 +10366,22 @@ SQLITE_API int sqlite3_preupdate_blobwrite(sqlite3 *);
 #endif
 
 /*
+** CAPI3REF: The close hook.
+** METHOD: sqlite3
+**
+** ^The [libsql_close_hook()] interface registers a callback function
+** that is invoked prior to closing the database connection.
+** ^At most one close hook may be registered at a time on a single
+** [database connection]; each call to [libsql_close_hook()] overrides
+** the previous setting.
+** ^The close hook is disabled by invoking [libsql_close_hook()]
+** with a NULL pointer as the second parameter.
+** ^The third parameter to [libsql_close_hook()] is passed through as
+** the first parameter to callbacks.
+*/
+SQLITE_API void *libsql_close_hook(sqlite3 *db, void (*xClose)(void *pCtx, sqlite3 *db), void *arg);
+
+/*
 ** CAPI3REF: Low-level system error code
 ** METHOD: sqlite3
 **
