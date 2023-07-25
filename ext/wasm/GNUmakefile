@@ -677,10 +677,15 @@ sqlite3-wasmfs.cfiles := $(sqlite3-wasm.cfiles)
 #
 # Upstream RFE:
 # https://github.com/emscripten-core/emscripten/issues/18237
+#
+# Maintenance reminder: Mac sed -i works differently than GNU sed, so
+# don't use that flag here.
 define SQLITE3.xJS.ESM-EXPORT-DEFAULT
 if [ x1 = x$(1) ]; then \
 		echo "Fragile workaround for emscripten/issues/18237. See SQLITE3.xJS.RECIPE."; \
-		sed -i -e '0,/^export default/{/^export default/d;}' $@ || exit $$?; \
+		{\
+			sed -e '0,/^export default/{/^export default/d;}' $@ > $@.tmp && mv $@.tmp $@; \
+		} || exit $$?; \
 		if [ x != x$(2) ]; then \
 			if ! grep -q '^export default' $@; then \
 				echo "Cannot find export default." 1>&2; \
