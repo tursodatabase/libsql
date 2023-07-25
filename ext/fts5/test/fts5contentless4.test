@@ -70,9 +70,64 @@ do_execsql_test 1.6 {
   ))
 } {1 0 1 0}
 
-finish_test
+#--------------------------------------------------------------------------
+reset_db
+db func document document
 
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+}
 
+do_test 2.1 {
+  for {set ii 0} {$ii < 5000} {incr ii} {
+    execsql { INSERT INTO ft VALUES( document(12) ) }
+  }
+} {}
+
+do_execsql_test 2.2 {
+  SELECT sum(nentry) - sum(nentrytombstone) FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {5000}
+
+for {set ii 5000} {$ii >= 0} {incr ii -100} {
+  do_execsql_test 2.3.$ii {
+    DELETE FROM ft WHERE rowid > $ii
+  }
+  do_execsql_test 2.3.$ii.2 {
+    SELECT 
+      CAST((total(nentry) - total(nentrytombstone)) AS integer) 
+    FROM 
+      fts5_structure( (SELECT block FROM ft_data WHERE id=10) )
+  } $ii
+}
+
+execsql_pp {
+  SELECT * FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+}
+
+do_test 2.4 {
+  for {set ii 0} {$ii < 5000} {incr ii} {
+    execsql { INSERT INTO ft VALUES( document(12) ) }
+  }
+} {}
+
+for {set ii 1} {$ii <= 5000} {incr ii 10} {
+  do_execsql_test 2.3.$ii {
+    DELETE FROM ft WHERE rowid = $ii;
+    INSERT INTO ft VALUES( document(12) );
+    INSERT INTO ft(ft, rank) VALUES('merge', -10);
+  }
+
+  do_execsql_test 2.3.$ii.2 {
+    SELECT 
+      CAST((total(nentry) - total(nentrytombstone)) AS integer) 
+    FROM 
+      fts5_structure( (SELECT block FROM ft_data WHERE id=10) )
+  } 5000
+}
 
 finish_test
 
