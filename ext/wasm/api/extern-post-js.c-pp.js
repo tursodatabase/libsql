@@ -119,5 +119,6 @@ const toExportForESM =
   return globalThis.sqlite3InitModule /* required for ESM */;
 })();
 //#if target=es6-module
-export { toExportForESM as default, toExportForESM as sqlite3InitModule }
+sqlite3InitModule = toExportForESM;
+export default sqlite3InitModule;
 //#endif

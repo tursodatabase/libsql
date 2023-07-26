@@ -1,5 +1,5 @@
-C Add\sthe\sconcept\sof\san\sRCStr\sstring\s-\sa\s"Reference\sCounted\sString".\s\sUse\nthese\sto\skeep\strack\sof\sbig\sJSON\sstrings\sthat\smight\sneed\sto\sbe\sused\sin\nmultiple\splaces\sat\sthe\ssame\stime\swith\sdifferent\slifetimes.\s\sAdd\stwo\ndifferent\sJSON\sstring\svalues\sto\seach\sparse\s-\sone\swith\sand\sone\swithout\nchanges.\s\sThe\snet\sresult\sis\sa\slarge\sreduction\sin\sthe\snumber\sof\sparses\nthat\soccur\swhen\sdoing\san\sUPDATE\sof\sa\sindexed\sJSON\sfield\susing\njson_replace()\sor\ssimilar.
-D 2023-07-26T01:12:08.723
+C Merge\sthe\slatest\strunk\sfixes\sinto\sthe\sjson-opt\sbranch.
+D 2023-07-26T01:15:34.571
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -475,21 +475,21 @@ F ext/session/sessionrowid.test 85187c2f1b38861a5844868126f69f9ec62223a03449a98a
 F ext/session/sessionsize.test 8fcf4685993c3dbaa46a24183940ab9f5aa9ed0d23e5fb63bfffbdb56134b795
 F ext/session/sessionstat1.test b039e38e2ba83767b464baf39b297cc0b1cc6f3292255cb467ea7e12d0d0280c
 F ext/session/sessionwor.test 6fd9a2256442cebde5b2284936ae9e0d54bde692d0f5fd009ecef8511f4cf3fc
-F ext/session/sqlite3session.c e50a9218ee360db0a25298adc6614162d80ebe65d3f6a5b0a021e0902f6536a1
+F ext/session/sqlite3session.c 1971b61ca45babf0d9e4bb669a65b0903135e9828af2fcd4f0c8f1b7acf36b6f
 F ext/session/sqlite3session.h 653e9d49c4edae231df8a4c8d69c2145195aedb32462d4b44229dbee7d2680fb
 F ext/session/test_session.c 5285482f83cd92b4c1fe12fcf88210566a18312f4f2aa110f6399dae46aeccbb
 F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 4e8260d05c52d9924b853efbdfe052bd483cfe42f055567c1bbf29d274794b22
+F ext/wasm/GNUmakefile a3e316bf51d8915a49d4728e0d41f19ec4c3ead3409d1171989a4fe163ec2214
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md 0895244c0539ae68cf8c70d59c2de512532fd47cfba313268e2b672e6359112e
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
 F ext/wasm/api/README.md 5eb44fa02e9c693a1884a3692428647894b0380b24bca120866b7a24c8786134
-F ext/wasm/api/extern-post-js.c-pp.js 116749b7e55b7519129de06d3d353e19df68cfb24b12204aa4dc30c9a83023fe
+F ext/wasm/api/extern-post-js.c-pp.js e7257ea56d4077d0773d7537fcb8eade59aad0c118dab92497c27939edca41cb
 F ext/wasm/api/extern-pre-js.js cc61c09c7a24a07dbecb4c352453c3985170cec12b4e7e7e7a4d11d43c5c8f41
 F ext/wasm/api/post-js-footer.js cd0a8ec768501d9bd45d325ab0442037fb0e33d1f3b4f08902f15c34720ee4a1
 F ext/wasm/api/post-js-header.js 47b6b281f39ad59fa6e8b658308cd98ea292c286a68407b35ff3ed9cfd281a62
@@ -516,7 +516,7 @@ F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a7
 F ext/wasm/common/whwasmutil.js ae263dec9d7384f4c530f324b99d00516a4d6f26424372daee65031e00eb49b3
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
-F ext/wasm/demo-123.js ebae30756585bca655b4ab2553ec9236a87c23ad24fc8652115dcedb06d28df6
+F ext/wasm/demo-123.js 38aa8faec4d0ace1c973bc8a7a1533584463ebeecd4c420daa7d9687beeb9cb5
 F ext/wasm/demo-jsstorage.html 409c4be4af5f207fb2877160724b91b33ea36a3cd8c204e8da1acb828ffe588e
 F ext/wasm/demo-jsstorage.js 44e3ae7ec2483b6c511384c3c290beb6f305c721186bcf5398ca4e00004a06b8
 F ext/wasm/demo-worker1-promiser.html 1de7c248c7c2cfd4a5783d2aa154bce62d74c6de98ab22f5786620b3354ed15f
@@ -2044,9 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 28c6e964b1e2257527df02b352f02e135f7c4b764b8b41eda6461f9538f5d042 2dbb22c75e86f2e3ced38ac14b4943570d5c2f86cd5e37e875bf0c863be28836
-R 80113afdab5484e027b5180529a678b7
-T +closed 2dbb22c75e86f2e3ced38ac14b4943570d5c2f86cd5e37e875bf0c863be28836
+P a4c1af616e672a0d4d04f2652e645617758231598fb7161b956883512303ae87 54b3c43fdfdaca6b129a5f0ee93c34eb001663775d33c087066650f5e164d1c1
+R 31a2d8c82324ae8c8feb0c4037e19a24
 U drh
-Z b150fbb50a544ff974ea79d1ca7ea6fb
+Z df17bf2cf88062fccaa06a3f8068b84c
 # Remove this line to create a well-formed Fossil manifest.
