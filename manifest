@@ -1,5 +1,5 @@
-C Update\sthe\slatest\strunk\senhancements\sinto\sthe\swal-shm-exceptions\sbranch.
-D 2023-07-24T12:59:53.689
+C Add\sa\scomment\sdescribing\sthe\scontents\sof\sthe\sExceptionInformation[]\sarray\sfor\swin32\sEXCEPTION_IN_PAGE_ERROR\sexceptions.\sNo\schanges\sto\scode.
+D 2023-07-26T18:34:34.647
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -535,8 +535,8 @@ F ext/wasm/index.html b4e55de741be9fb7656445ea55085f703a784aebde620e1c4852fa21c1
 F ext/wasm/jaccwabyt/jaccwabyt.js 1264710db3cfbcb6887d95665b7aeba60c1126eaef789ca4cf1a4a17d5bc7f54
 F ext/wasm/jaccwabyt/jaccwabyt.md 37911f00db12cbcca73aa1ed72594430365f30aafae2fa9c886961de74e5e0eb
 F ext/wasm/module-symbols.html 841de62fc198988b8330e238c260e70ec93028b096e1a1234db31b187a899d10
-F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96 w ext/wasm/scratchpad-wasmfs-main.html
-F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63 w ext/wasm/scratchpad-wasmfs-main.js
+F ext/wasm/scratchpad-wasmfs.html a3d7388f3c4b263676b58b526846e9d02dfcb4014ff29d3a5040935286af5b96
+F ext/wasm/scratchpad-wasmfs.mjs 66034b9256b218de59248aad796760a1584c1dd842231505895eff00dbd57c63
 F ext/wasm/speedtest1-wasmfs.html 0e9d335a9b5b5fafe6e1bc8dc0f0ca7e22e6eb916682a2d7c36218bb7d67379d
 F ext/wasm/speedtest1-wasmfs.mjs ac5cadbf4ffe69e9eaac8b45e8523f030521e02bb67d654c6eb5236d9c456cbe
 F ext/wasm/speedtest1-worker.html e33e2064bda572c0c3ebaec7306c35aa758d9d27e245d67e807f8cc4a9351cc5
@@ -720,7 +720,7 @@ F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf8
 F src/vdbevtab.c aae4bd769410eb7e1d02c42613eec961d514459b1c3c1c63cfc84e92a137daac
 F src/vtab.c 1ecf8c3745d29275688d583e12822fa984d421e0286b5ef50c137bc3bf6d7a64
 F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
-F src/wal.c 17a7ec957bd66e46a7d6403a8d55ce92518fb382ec598a5f50e2326de0206a80
+F src/wal.c 02e10f033a6972bc7d50122b400318003199c504cda48f61ad404564505f4e89
 F src/wal.h 04a9e53121d5076f2a173b0f2facb39d33047093fee71bd3bbe6b1f6f1f5fd4b
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
 F src/where.c 477fcc5e561ef169e6002499602af6b805156c2aae6b2f5c2c93ef8c1cd64768
@@ -2045,8 +2045,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ff492277ed00c1f637a5b4ccd6d8193ea22f6781f90073861588a2b7d5c045b7 c1b080e39397c983c13a5e79303223827de7b4946c18a79396851ec1814782f3
-R 2d227170a4d38cef4891eb7e41ae2e61
-U drh
-Z bee2c2751faa3281b3853d97c12aa683
+P 3187ee3f69fc28a259ba0e951ac10a65c07ef2c3866acbefaf9544333a930cc6
+R 7f170a7bcc2480971e636112d216d36a
+U dan
+Z abd48397a81b9e2e4bef4b928510bd64
 # Remove this line to create a well-formed Fossil manifest.

@@ -654,6 +654,11 @@ static int sehExceptionFilter(Wal *pWal, int eCode, EXCEPTION_POINTERS *p){
   VVA_ONLY(pWal->nSehTry--);
   if( eCode==EXCEPTION_IN_PAGE_ERROR ){
     if( p && p->ExceptionRecord && p->ExceptionRecord->NumberParameters>=3 ){
+      /* From MSDN: For this type of exception, the first element of the
+      ** ExceptionInformation[] array is a read-write flag - 0 if the exception
+      ** was thrown while reading, 1 if while writing. The second element is
+      ** the virtual address being accessed. The "third array element specifies
+      ** the underlying NTSTATUS code that resulted in the exception". */
       pWal->iSysErrno = (int)p->ExceptionRecord->ExceptionInformation[2];
     }
     return EXCEPTION_EXECUTE_HANDLER;
