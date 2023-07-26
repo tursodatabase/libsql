@@ -451,6 +451,13 @@ emcc.exportedRuntimeMethods := \
 emcc.jsflags += $(emcc.exportedRuntimeMethods)
 emcc.jsflags += -sUSE_CLOSURE_COMPILER=0
 emcc.jsflags += -sIMPORTED_MEMORY
+#emcc.jsflags += -sASYNCIFY=2
+# ^^^ ASYNCIFY=2 is for experimental JSPI support
+# (https://v8.dev/blog/jspi), but enabling it causes the lib-level
+# init code to throw inexplicable complaints about C-level function
+# signatures not matching what we expect them to be. JSPI requires, as of
+# this writing, requires an experimental Chrome flag:
+# chrome://flags/#enable-experimental-webassembly-stack-switching
 emcc.jsflags += -sSTRICT_JS=0
 # STRICT_JS disabled due to:
 #   https://github.com/emscripten-core/emscripten/issues/18610
@@ -863,7 +870,7 @@ clean-batch:
 # a regular basis with different -Ox flags and rebuilding the batch
 # pieces each time is an unnecessary time sink.
 batch: batch-runner.list
-all: batch
+#all: batch
 # end batch-runner.js
 ########################################################################
 # Wasmified speedtest1 is our primary benchmarking tool.
