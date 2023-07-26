@@ -248,16 +248,6 @@ static int jsonGrow(JsonString *p, u32 N){
   return SQLITE_OK;
 }
 
-/* Try to force the string to be an RCStr string, rather than a
-** static string.  Return true on success.  The only reason this
-** might fail is due to an OOM fault.
-*/
-static int jsonForceRCStr(JsonString *p){
-  if( p->bStatic==0 ) return 1;
-  jsonGrow(p, p->nAlloc+1);
-  return p->bStatic==0;
-}
-
 /* Append N bytes from zIn onto the end of the JsonString string.
 */
 static SQLITE_NOINLINE void jsonAppendExpand(
@@ -314,6 +304,22 @@ static void jsonAppendChar(JsonString *p, char c){
     p->zBuf[p->nUsed++] = c;
   }
 }
+
+/* Try to force the string to be a zero-terminated RCStr string.
+**
+** Return true on success.  Return false if an OOM prevents this
+** from happening.
+*/
+static int jsonForceRCStr(JsonString *p){
+  jsonAppendChar(p, 0);
+  if( p->bErr ) return 0;
+  p->nUsed--;
+  if( p->bStatic==0 ) return 1;
+  p->nAlloc = 0;
+  jsonGrow(p, p->nUsed);
+  return p->bStatic==0;
+}
+
 
 /* Append a comma separator to the output buffer, if the previous
 ** character is not '[' or '{'.
@@ -798,8 +804,6 @@ static void jsonReturnJson(
     jsonInit(&s, pCtx);
     jsonRenderNode(pParse, pNode, &s);
     if( bGenerateAlt && pParse->zAlt==0 && jsonForceRCStr(&s) ){
-      jsonAppendChar(&s, 0);
-      s.nUsed--;
       pParse->zAlt = sqlite3RCStrRef(s.zBuf);
       pParse->nAlt = s.nUsed;
     }
