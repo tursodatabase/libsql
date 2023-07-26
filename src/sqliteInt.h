@@ -4066,43 +4066,21 @@ struct sqlite3_str {
 ** The following object is the header for an "RCStr" or "reference-counted
 ** string".  An RCStr is passed around and used like any other char*
 ** that has been dynamically allocated.  The important interface
-** difference is that it uses sqlite3RCStrUnref() as its destructor
-** rather than sqlite3_free().  Other than that the two are interchangeable.
+** differences:
 **
-** Thus to return an RCStr object as the result of an SQL function use:
-** 
-**    sqlite3_result_text64(ctx,z,sz,sqlite3RCStrUnref,SQLITE_UTF8)
-**                                   ^^^^^^^^^^^^^^^^^
-**                                   Instead of sqlite3_free() or similar
+**   1.  RCStr strings are reference counted.  They are deallocated
+**       when the reference count reaches zero.
 **
-** An SQL function can check its arguments to see if they are RCStr
-** strings using the sqlite3ValueIsOfClass() function:
+**   2.  Use sqlite3RCStrUnref() to free an RCStr string rather than
+**       sqlite3_free()
 **
-**    sqlite3ValueIsOfClass(argv[i], sqlite3RCStrUnref);
-**
-** An RCStr string might be better than an ordinary string in some cases
-** because:
-**
-**    (1)  You can duplicate it using sqlite3RCStrRef(x).
-**
-**    (2)  You can also add an associated object to the string.  For
-**         example, if the string is JSON, perhaps the associated object
-**         is a parse of that JSON.
-**
-** Methods for an RCStr string begin with "sqlite3RCStr...".
+**   3.  Make a (read-only) copy of a read-only RCStr string using
+**       sqlite3RCStrRef().
 */
 struct RCStr {
-  u32 nRCRef;            /* Number of references */
-#ifdef SQLITE_DEBUG
-  u32 uMagic;            /* Magic number for sanity checking */
-#endif
-  void *pAttach;         /* Attachment to this string */
-  void (*xFree)(void*);  /* Destructor for the attachment */
+  u64 nRCRef;            /* Number of references */
+  /* Total structure size should be a multiple of 8 bytes for alignment */
 };
-
-/* The Magic number used by RCStr for sanity checking.  SQLITE_DEBUG only. */
-#define SQLITE_RCSTR_MAGIC 0x3dc05d54
-
 
 /*
 ** A pointer to this structure is used to communicate information
@@ -5222,7 +5200,6 @@ void sqlite3FileSuffix3(const char*, char*);
 u8 sqlite3GetBoolean(const char *z,u8);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
-//int sqlite3ValueIsOfClass(const sqlite3_value*, void(*)(void*));
 int sqlite3ValueBytes(sqlite3_value*, u8);
 void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
                         void(*)(void*));
@@ -5333,11 +5310,7 @@ int sqlite3OpenTempDatabase(Parse *);
 char *sqlite3RCStrRef(char*);
 void sqlite3RCStrUnref(char*);
 char *sqlite3RCStrNew(u64);
-//u64 sqlite3RCStrSize(char*);
 char *sqlite3RCStrResize(char*,u64);
-//int sqlite3RCStrIsWriteable(char*);
-//void sqlite3RCStrAttach(char*, void*, void(*)(void*));
-//void *sqlite3RCStrGetAttachment(char*,void(*)(void*));
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 int sqlite3StrAccumEnlarge(StrAccum*, i64);
