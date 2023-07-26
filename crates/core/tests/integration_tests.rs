@@ -1,4 +1,4 @@
-use libsql::{params, Connection, Database, Params};
+use libsql::{named_params, params, Connection, Database, Params};
 
 fn setup() -> Connection {
     let db = Database::open(":memory:").unwrap();
@@ -11,11 +11,11 @@ fn setup() -> Connection {
 #[test]
 fn execute() {
     let conn = setup();
-    conn.execute("INSERT INTO users (id, name) VALUES (1, 'Alice')", ())
+    conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
         .unwrap();
     let rows = conn.execute("SELECT * FROM users", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<i32>(0).unwrap(), 1);
+    assert_eq!(row.get::<i32>(0).unwrap(), 2);
     assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
 }
 
@@ -24,18 +24,42 @@ fn prepare_and_execute() {
     let conn = setup();
     check_insert(
         &conn,
-        "INSERT INTO users (id, name) VALUES (1, 'Alice')",
+        "INSERT INTO users (id, name) VALUES (2, 'Alice')",
         ().into(),
     );
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (?1, ?2)",
-        params![1, "Alice"],
+        params![2, "Alice"],
     );
     check_insert(
         &conn,
         "INSERT INTO users (id, name) VALUES (?1, ?2)",
-        vec![1.into(), "Alice".into()].into(),
+        (vec![2.into(), "Alice".into()] as Vec<params::Value>).into(),
+    );
+}
+
+#[test]
+fn prepare_and_execute_named_params() {
+    let conn = setup();
+
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES (:a, :b)",
+        vec![
+            (":a".to_string(), 2.into()),
+            (":b".to_string(), "Alice".into()),
+        ]
+        .into(),
+    );
+
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES (:a, :b)",
+        named_params! {
+            ":a": 2,
+            ":b": "Alice",
+        },
     );
 }
 
@@ -57,7 +81,9 @@ fn check_insert(conn: &Connection, sql: &str, params: Params) {
     conn.execute(sql, params).unwrap();
     let rows = conn.execute("SELECT * FROM users", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<i32>(0).unwrap(), 1);
+    // Use two since if you forget to insert an id it will automatically
+    // be set to 1 which defeats the purpose of checking it here.
+    assert_eq!(row.get::<i32>(0).unwrap(), 2);
     assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
 }
 
