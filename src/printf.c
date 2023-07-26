@@ -1406,6 +1406,7 @@ void sqlite3RCStrUnref(char *z){
   }
 }
 
+#if 0
 /*
 ** Return true if the reference count on the string is exactly one, meaning
 ** that the string can be modified.  Return false if the reference count
@@ -1419,6 +1420,7 @@ int sqlite3RCStrIsWriteable(char *z){
   assert( p->uMagic==SQLITE_RCSTR_MAGIC );
   return p->nRCRef==1;
 }
+#endif
 
 /*
 ** Create a new string that is capable of holding N bytes of text, not counting
@@ -1441,6 +1443,7 @@ char *sqlite3RCStrNew(u64 N){
   return (char*)&p[1];
 }
 
+#if 0
 /*
 ** Return the number of bytes allocated to the string.  The value returned
 ** does not include the space for the zero-terminator at the end.
@@ -1456,6 +1459,7 @@ u64 sqlite3RCStrSize(char *z){
   N -= sizeof(p) + 1;
   return N;
 }
+#endif
 
 /*
 ** Change the size of the string so that it is able to hold N bytes.
@@ -1477,6 +1481,7 @@ char *sqlite3RCStrResize(char *z, u64 N){
   }
 }
 
+#if 0
 /*
 ** Add a new attachment to the string.
 **
@@ -1494,7 +1499,9 @@ void sqlite3RCStrAttach(char *z, void *pAttach, void(*xFree)(void*)){
   p->xFree = xFree;
   p->pAttach = pAttach;
 }
-  
+#endif
+
+#if 0
 /*
 ** Return the attachment associated with a string if the attachment
 ** has the destructure specified in the second argument.  If the
@@ -1509,3 +1516,4 @@ void *sqlite3RCStrGetAttachment(char *z, void(*xFree)(void*)){
   assert( p->uMagic==SQLITE_RCSTR_MAGIC );
   return p->xFree==xFree ? p->pAttach : 0;
 }
+#endif

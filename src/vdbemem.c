@@ -1368,6 +1368,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   return valueToText(pVal, enc);
 }
 
+#if 0
 /* Return true if sqlit3_value object pVal is a string or blob value
 ** that uses the destructor specified in the second argument.
 **
@@ -1385,6 +1386,7 @@ int sqlite3ValueIsOfClass(const sqlite3_value *pVal, void(*xFree)(void*)){
     return 0;
   }
 }
+#endif
 
 /*
 ** Create a new sqlite3_value object.

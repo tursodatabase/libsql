@@ -5222,7 +5222,7 @@ void sqlite3FileSuffix3(const char*, char*);
 u8 sqlite3GetBoolean(const char *z,u8);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
-int sqlite3ValueIsOfClass(const sqlite3_value*, void(*)(void*));
+//int sqlite3ValueIsOfClass(const sqlite3_value*, void(*)(void*));
 int sqlite3ValueBytes(sqlite3_value*, u8);
 void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
                         void(*)(void*));
@@ -5333,11 +5333,11 @@ int sqlite3OpenTempDatabase(Parse *);
 char *sqlite3RCStrRef(char*);
 void sqlite3RCStrUnref(char*);
 char *sqlite3RCStrNew(u64);
-u64 sqlite3RCStrSize(char*);
+//u64 sqlite3RCStrSize(char*);
 char *sqlite3RCStrResize(char*,u64);
-int sqlite3RCStrIsWriteable(char*);
-void sqlite3RCStrAttach(char*, void*, void(*)(void*));
-void *sqlite3RCStrGetAttachment(char*,void(*)(void*));
+//int sqlite3RCStrIsWriteable(char*);
+//void sqlite3RCStrAttach(char*, void*, void(*)(void*));
+//void *sqlite3RCStrGetAttachment(char*,void(*)(void*));
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 int sqlite3StrAccumEnlarge(StrAccum*, i64);
