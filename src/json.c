@@ -59,7 +59,7 @@ static const char jsonIsSpace[] = {
 typedef struct JsonString JsonString;
 typedef struct JsonNode JsonNode;
 typedef struct JsonParse JsonParse;
-typedef struct JsonTask JsonTask;
+typedef struct JsonCleanup JsonCleanup;
 
 /* An instance of this object represents a JSON string
 ** under construction.  Really, this is a generic string accumulator
@@ -75,11 +75,11 @@ struct JsonString {
   char zSpace[100];        /* Initial static space */
 };
 
-/* A deferred cleanup task.  A list of JsonTask objects might be
+/* A deferred cleanup task.  A list of JsonCleanup objects might be
 ** run when the JsonParse object is destroyed.
 */
-struct JsonTask {
-  JsonTask *pJTNext;       /* Next in a list */
+struct JsonCleanup {
+  JsonCleanup *pJCNext;    /* Next in a list */
   void (*xOp)(void*);      /* Routine to run */
   void *pArg;              /* Argument to xOp() */
 };
@@ -136,29 +136,50 @@ struct JsonNode {
 };
 
 
-/* A completely parsed JSON string
+/* A parsed and possibly edited JSON string.  Lifecycle:
+**
+**   1.  JSON comes in and is parsed into an array aNode[].  The original
+**       JSON text is stored in zJson.  This object may or may not be the
+**       owner of the input JSON - the bOwnsJson variables determines which.
+**
+**   2.  Zero or more changes are made (via json_remove() or json_replace()
+**       or similar) to the aNode[] array.
+**
+**   3.  A new, edited and mimified JSON string is generated from aNode
+**       and stored in zAlt.  The JsonParse object always owns zAlt.
+**
+** Step 1 always happens.  Step 2 and 3 may or may not happen, depending
+** on the operation.
+**
+** aNode[].u.zJContent entries typically point into zJson.  Hence zJson
+** must remain valid for the lifespan of the parse.  For edits,
+** aNode[].u.zJContent might point to malloced space other than zJson.
+** Entries in pClup are responsible for freeing that extra malloced space.
+**
+** When walking the parse tree in aNode[], edits are ignored if useMod is
+** false.
 */
 struct JsonParse {
   u32 nNode;         /* Number of slots of aNode[] used */
   u32 nAlloc;        /* Number of slots of aNode[] allocated */
   JsonNode *aNode;   /* Array of nodes containing the parse */
   char *zJson;       /* Original JSON string (before edits) */
-  char *zAlt;        /* Revised JSON after edits applied.  Maybe NULL */
+  char *zAlt;        /* Revised and/or mimified JSON */
   u32 *aUp;          /* Index of parent of each node */
-  JsonTask *pClean;  /* Cleanup operations prior to freeing this object */
+  JsonCleanup *pClup;/* Cleanup operations prior to freeing this object */
   u16 iDepth;        /* Nesting depth */
   u8 nErr;           /* Number of errors seen */
   u8 oom;            /* Set to true if out of memory */
   u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
-  u8 nJPRef;         /* Number of references to this object */
   u8 bOwnsJson;      /* This object owns zJson and response for freeing it */
   u8 useMod;         /* Actually use the edits contain inside aNode */
   u8 hasMod;         /* aNode contains edits from the original zJson */
+  u32 nJPRef;        /* Number of references to this object */
   int nJson;         /* Length of the zJson string in bytes */
   int nAlt;          /* Length of alternative JSON string zAlt, in bytes */
   u32 iErr;          /* Error location in zJson[] */
-  u32 iSubst;        /* Last known JSON_SUBST node */
-  u32 iHold;         /* Replace cache line with the lowest iHold value */
+  u32 iSubst;        /* Last JSON_SUBST entry in aNode[] */
+  u32 iHold;         /* Age of this entry in the cache for LRU replacement */
 };
 
 /*
@@ -173,17 +194,6 @@ struct JsonParse {
 /**************************************************************************
 ** Utility routines for dealing with JsonString objects
 **************************************************************************/
-
-#if 0
-/*
-** This is a destructor for JSON strings.  We make it a separate function
-** so that the sqlite3ValueIsOfClass() function can be used to unambiguously
-** identify sqlite3_value objects that are known JSON strings.
-*/
-static void jsonStringClass(void *p){
-  sqlite3RCStrUnref((char*)p);
-}
-#endif
 
 /* Set the JsonString object to an empty string
 */
@@ -202,7 +212,6 @@ static void jsonInit(JsonString *p, sqlite3_context *pCtx){
   jsonZero(p);
 }
 
-
 /* Free all allocated memory and reset the JsonString object back to its
 ** initial state.
 */
@@ -211,8 +220,7 @@ static void jsonReset(JsonString *p){
   jsonZero(p);
 }
 
-
-/* Report an out-of-memory (OOM) condition 
+/* Report an out-of-memory (OOM) condition
 */
 static void jsonOom(JsonString *p){
   p->bErr = 1;
@@ -316,7 +324,9 @@ static int jsonForceRCStr(JsonString *p){
   p->nUsed--;
   if( p->bStatic==0 ) return 1;
   p->nAlloc = 0;
+  p->nUsed++;
   jsonGrow(p, p->nUsed);
+  p->nUsed--;
   return p->bStatic==0;
 }
 
@@ -392,7 +402,7 @@ static void jsonAppendNormalizedString(JsonString *p, const char *zIn, u32 N){
       jsonAppendRawNZ(p, zIn, i);
       zIn += i;
       N -= i;
-      if( N==0 ) break;     
+      if( N==0 ) break;
     }
     assert( zIn[0]=='\\' );
     switch( (u8)zIn[1] ){
@@ -501,7 +511,7 @@ static void jsonAppendNormalizedReal(JsonString *p, const char *zIn, u32 N){
 
 
 /*
-** Append a function parameter value to the JSON string under 
+** Append a function parameter value to the JSON string under
 ** construction.
 */
 static void jsonAppendValue(
@@ -550,18 +560,11 @@ static void jsonAppendValue(
 ** The JSON string is reset.
 */
 static void jsonResult(JsonString *p){
-  if( p->bErr==0 ){
-    if( p->bStatic ){
-      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed, SQLITE_TRANSIENT,
-                            SQLITE_UTF8);
-    }else{
-      jsonAppendChar(p, 0);
-      p->nUsed--;
-      sqlite3RCStrRef(p->zBuf);
-      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
-                            (void(*)(void*))sqlite3RCStrUnref,
-                            SQLITE_UTF8);
-    }
+  if( p->bErr==0 && jsonForceRCStr(p) ){
+    sqlite3RCStrRef(p->zBuf);
+    sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
+                          (void(*)(void*))sqlite3RCStrUnref,
+                          SQLITE_UTF8);
   }else if( p->bErr==1 ){
     sqlite3_result_error_nomem(p->pCtx);
   }
@@ -590,9 +593,9 @@ static u32 jsonNodeSize(JsonNode *pNode){
 ** delete the JsonParse object itself.
 */
 static void jsonParseReset(JsonParse *pParse){
-  while( pParse->pClean ){
-    JsonTask *pTask = pParse->pClean;
-    pParse->pClean = pTask->pJTNext;
+  while( pParse->pClup ){
+    JsonCleanup *pTask = pParse->pClup;
+    pParse->pClup = pTask->pJCNext;
     pTask->xOp(pTask->pArg);
     sqlite3_free(pTask);
   }
@@ -608,17 +611,13 @@ static void jsonParseReset(JsonParse *pParse){
     pParse->aUp = 0;
   }
   if( pParse->zAlt ){
-    char *z = pParse->zAlt;
+    sqlite3RCStrUnref(pParse->zAlt);
     pParse->zAlt = 0;
-    sqlite3RCStrUnref(z);
   }
   if( pParse->bOwnsJson ){
-    /* Order operations so that if the destructor for pParse->zJson
-    ** invokes jsonParseFree(), the recursion will terminate harmlessly */
-    char *z = pParse->zJson;
-    pParse->zJson = 0;
     pParse->bOwnsJson = 0;
-    sqlite3RCStrUnref(z);
+    sqlite3RCStrUnref(pParse->zJson);
+    pParse->zJson = 0;
   }
 }
 
@@ -650,14 +649,14 @@ static int jsonParseAddCleanup(
   void(*xOp)(void*),          /* The cleanup task */
   void *pArg                  /* Argument to the cleanup */
 ){
-  JsonTask *pTask = sqlite3_malloc64( sizeof(*pTask) );
+  JsonCleanup *pTask = sqlite3_malloc64( sizeof(*pTask) );
   if( pTask==0 ){
     pParse->oom = 1;
     xOp(pArg);
     return SQLITE_ERROR;
   }
-  pTask->pJTNext = pParse->pClean;
-  pParse->pClean = pTask;
+  pTask->pJCNext = pParse->pClup;
+  pParse->pClup = pTask;
   pTask->xOp = xOp;
   pTask->pArg = pArg;
   return SQLITE_OK;
@@ -870,8 +869,7 @@ static void jsonReturn(
       int rc;
       int bNeg = 0;
       const char *z;
-     
-   
+
       assert( pNode->eU==1 );
       z = pNode->u.zJContent;
       if( z[0]=='-' ){ z++; bNeg = 1; }
@@ -1458,23 +1456,23 @@ json_parse_restart:
     cDelim = z[i];
     for(j=i+1; 1; j++){
       static const char aOk[256] = {
-      	  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-      	  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-      	  1, 1, 0, 1, 1, 1, 1, 0,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 0, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+          1, 1, 0, 1, 1, 1, 1, 0,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 0, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
 
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      	  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
       };
       if( aOk[(unsigned char)z[j]] ) continue;
       c = z[j];
@@ -1740,18 +1738,18 @@ json_parse_restart:
 
 /*
 ** Parse a complete JSON string.  Return 0 on success or non-zero if there
-** are any errors.  If an error occurs, free all memory associated with
-** pParse.
+** are any errors.  If an error occurs, free all memory held by pParse,
+** but not pParse itself.
 **
 ** pParse is uninitialized when this routine is called.
 **
-** pParse->nJPRef set to 1.  The caller becomes the owner of the 
+** pParse->nJPRef set to 1.  The caller becomes the owner of the
 ** the JsonParse object.
 **
-** pParse->bOwnsJson is to bTakeJson.  If bTakeJson is 1, the newly initialized
-** JsonParse object will become the own the zJson input string.  If bTakeJson
-** is 0, then the caller is responsible for preserving zJson for the lifetime
-** of the JsonParse object.
+** pParse->bOwnsJson is set to bTakeJson.  If bTakeJson is 1, the newly
+** initialized JsonParse object will become the owner of the zJson input
+** string.  If bTakeJson is 0, then the caller is responsible for
+** preserving zJson for the lifetime of the JsonParse object.
 */
 static int jsonParse(
   JsonParse *pParse,           /* Initialize and fill this JsonParse object */
@@ -2129,7 +2127,7 @@ static JsonNode *jsonLookupStep(
     zPath += j + 1;
     j = 1;
     for(;;){
-      while( j<=pRoot->n 
+      while( j<=pRoot->n
          && (i>0 || ((pRoot[j].jnFlags & JNODE_REMOVE)!=0 && pParse->useMod))
       ){
         if( (pRoot[j].jnFlags & JNODE_REMOVE)==0 || pParse->useMod==0 ) i--;
@@ -2255,7 +2253,7 @@ static void jsonWrongNumArgs(
   char *zMsg = sqlite3_mprintf("json_%s() needs an odd number of arguments",
                                zFuncName);
   sqlite3_result_error(pCtx, zMsg, -1);
-  sqlite3_free(zMsg);     
+  sqlite3_free(zMsg);
 }
 
 /*
@@ -2391,7 +2389,7 @@ static void jsonTest1Func(
 
 /*
 ** Implementation of the json_QUOTE(VALUE) function.  Return a JSON value
-** corresponding to the SQL value input.  Mostly this means putting 
+** corresponding to the SQL value input.  Mostly this means putting
 ** double-quotes around strings and returning the unquoted string "null"
 ** when given a NULL input.
 */
@@ -2438,7 +2436,7 @@ static void jsonArrayFunc(
 ** json_array_length(JSON)
 ** json_array_length(JSON, PATH)
 **
-** Return the number of elements in the top-level JSON array.  
+** Return the number of elements in the top-level JSON array.
 ** Return 0 if the input is not a well-formed JSON array.
 */
 static void jsonArrayLengthFunc(
@@ -2752,7 +2750,7 @@ static void jsonRemoveFunc(
 
   if( argc<1 ) return;
   pParse = jsonParseCached(ctx, argv[0], ctx, argc>1);
-  if( pParse==0 ) return;  
+  if( pParse==0 ) return;
   for(i=1; i<(u32)argc; i++){
     zPath = (const char*)sqlite3_value_text(argv[i]);
     if( zPath==0 ) goto remove_done;
@@ -2854,7 +2852,7 @@ static void jsonReplaceNode(
     }
   }
 }
-  
+
 /*
 ** json_replace(JSON, PATH, VALUE, ...)
 **
@@ -3269,7 +3267,7 @@ static int jsonEachConnect(
   UNUSED_PARAMETER(argv);
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(pAux);
-  rc = sqlite3_declare_vtab(db, 
+  rc = sqlite3_declare_vtab(db,
      "CREATE TABLE x(key,value,type,atom,id,parent,fullkey,path,"
                     "json HIDDEN,root HIDDEN)");
   if( rc==SQLITE_OK ){
@@ -3481,7 +3479,7 @@ static int jsonEachColumn(
       break;
     }
     case JEACH_ID: {
-      sqlite3_result_int64(ctx, 
+      sqlite3_result_int64(ctx,
          (sqlite3_int64)p->i + ((pThis->jnFlags & JNODE_LABEL)!=0));
       break;
     }
@@ -3581,8 +3579,8 @@ static int jsonEachBestIndex(
       idxMask |= iMask;
     }
   }
-  if( pIdxInfo->nOrderBy>0 
-   && pIdxInfo->aOrderBy[0].iColumn<0 
+  if( pIdxInfo->nOrderBy>0
+   && pIdxInfo->aOrderBy[0].iColumn<0
    && pIdxInfo->aOrderBy[0].desc==0
   ){
     pIdxInfo->orderByConsumed = 1;
@@ -3782,10 +3780,10 @@ void sqlite3RegisterJsonFunctions(void){
     JFUNCTION(json_parse,         1, 0,  jsonParseFunc),
     JFUNCTION(json_test1,         1, 0,  jsonTest1Func),
 #endif
-    WAGGREGATE(json_group_array,  1, 0, 0, 
+    WAGGREGATE(json_group_array,  1, 0, 0,
        jsonArrayStep, jsonArrayFinal, jsonArrayValue, jsonGroupInverse,
        SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC),
-    WAGGREGATE(json_group_object, 2, 0, 0, 
+    WAGGREGATE(json_group_object, 2, 0, 0,
        jsonObjectStep, jsonObjectFinal, jsonObjectValue, jsonGroupInverse,
        SQLITE_SUBTYPE|SQLITE_UTF8|SQLITE_DETERMINISTIC)
   };
