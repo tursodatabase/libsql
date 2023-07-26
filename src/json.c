@@ -2852,7 +2852,7 @@ static void jsonReplaceNode(
       }
       break;
     }
-    case SQLITE_BLOB: {
+    default: {
       jsonParseAddNode(p, JSON_NULL, 0, 0);
       sqlite3_result_error(pCtx, "JSON cannot hold BLOB values", -1);
       p->nErr++;
