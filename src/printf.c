@@ -1366,3 +1366,72 @@ void sqlite3_str_appendf(StrAccum *p, const char *zFormat, ...){
   sqlite3_str_vappendf(p, zFormat, ap);
   va_end(ap);
 }
+
+
+/*****************************************************************************
+** Reference counted string storage
+*****************************************************************************/
+
+/*
+** Increase the reference count of the string by one.
+**
+** The input parameter is returned.
+*/
+char *sqlite3RCStrRef(char *z){
+  RCStr *p = (RCStr*)z;
+  assert( p!=0 );
+  p--;
+  p->nRCRef++;
+  return z;
+}
+
+/*
+** Decrease the reference count by one.  Free the string when the
+** reference count reaches zero.
+*/
+void sqlite3RCStrUnref(char *z){
+  RCStr *p = (RCStr*)z;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef>0 );
+  if( p->nRCRef>=2 ){
+    p->nRCRef--;
+  }else{
+    sqlite3_free(p);
+  }
+}
+
+/*
+** Create a new string that is capable of holding N bytes of text, not counting
+** the zero byte at the end.  The string is uninitialized.
+**
+** The reference count is initially 1.  Call sqlite3RCStrUnref() to free the
+** newly allocated string.
+**
+** This routine returns 0 on an OOM.
+*/
+char *sqlite3RCStrNew(u64 N){
+  RCStr *p = sqlite3_malloc64( N + sizeof(*p) + 1 );
+  if( p==0 ) return 0;
+  p->nRCRef = 1;
+  return (char*)&p[1];
+}
+
+/*
+** Change the size of the string so that it is able to hold N bytes.
+** The string might be reallocated, so return the new allocation.
+*/
+char *sqlite3RCStrResize(char *z, u64 N){
+  RCStr *p = (RCStr*)z;
+  RCStr *pNew;
+  assert( p!=0 );
+  p--;
+  assert( p->nRCRef==1 );
+  pNew = sqlite3_realloc64(p, N+sizeof(RCStr)+1);
+  if( pNew==0 ){
+    sqlite3_free(p);
+    return 0;
+  }else{
+    return (char*)&pNew[1];
+  }
+}
