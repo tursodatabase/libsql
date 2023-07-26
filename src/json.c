@@ -144,8 +144,7 @@ struct JsonNode {
 /* A parsed and possibly edited JSON string.  Lifecycle:
 **
 **   1.  JSON comes in and is parsed into an array aNode[].  The original
-**       JSON text is stored in zJson.  This object may or may not be the
-**       owner of the input JSON - the bOwnsJson variables determines which.
+**       JSON text is stored in zJson.
 **
 **   2.  Zero or more changes are made (via json_remove() or json_replace()
 **       or similar) to the aNode[] array.
@@ -176,7 +175,6 @@ struct JsonParse {
   u8 nErr;           /* Number of errors seen */
   u8 oom;            /* Set to true if out of memory */
   u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
-  u8 bOwnsJson;      /* This object owns zJson and response for freeing it */
   u8 useMod;         /* Actually use the edits contain inside aNode */
   u8 hasMod;         /* aNode contains edits from the original zJson */
   u32 nJPRef;        /* Number of references to this object */
@@ -618,11 +616,6 @@ static void jsonParseReset(JsonParse *pParse){
   if( pParse->zAlt ){
     sqlite3RCStrUnref(pParse->zAlt);
     pParse->zAlt = 0;
-  }
-  if( pParse->bOwnsJson ){
-    pParse->bOwnsJson = 0;
-    sqlite3RCStrUnref(pParse->zJson);
-    pParse->zJson = 0;
   }
 }
 
@@ -1759,14 +1752,12 @@ json_parse_restart:
 static int jsonParse(
   JsonParse *pParse,           /* Initialize and fill this JsonParse object */
   sqlite3_context *pCtx,       /* Report errors here */
-  char *zJson,                 /* Input JSON text to be parsed */
-  int bTakeJson                /* Assume ownership of zJson if true */
+  char *zJson                  /* Input JSON text to be parsed */
 ){
   int i;
   memset(pParse, 0, sizeof(*pParse));
   if( zJson==0 ) return 1;
   pParse->zJson = zJson;
-  pParse->bOwnsJson = bTakeJson;
   pParse->nJPRef = 1;
   i = jsonParseValue(pParse, 0);
   if( pParse->oom ) i = -1;
@@ -1933,21 +1924,16 @@ static JsonParse *jsonParseCached(
   /* The input JSON was not found anywhere in the cache.  We will need
   ** to parse it ourselves and generate a new JsonParse object.
   */
-  p = sqlite3_malloc64( sizeof(*p) );
+  p = sqlite3_malloc64( sizeof(*p) + nJson + 1 );
   if( p==0 ){
     sqlite3_result_error_nomem(pCtx);
     return 0;
   }
   memset(p, 0, sizeof(*p));
-  p->zJson = sqlite3RCStrNew( nJson );
-  if( p->zJson==0 ){
-    sqlite3_free(p);
-    sqlite3_result_error_nomem(pCtx);
-    return 0;
-  }
+  p->zJson = (char*)&p[1];
   memcpy(p->zJson, zJson, nJson);
   p->zJson[nJson] = 0;
-  if( jsonParse(p, pErrCtx, p->zJson, 1) ){
+  if( jsonParse(p, pErrCtx, p->zJson) ){
     if( pErrCtx==0 ){
       p->nErr = 1;
       assert( p->nJPRef==1 ); /* Caller will own the new JsonParse object p */
@@ -2365,7 +2351,6 @@ static void jsonParseFunc(
   printf("nErr      = %u\n", p->nErr);
   printf("oom       = %u\n", p->oom);
   printf("hasNonstd = %u\n", p->hasNonstd);
-  printf("bOwnsJson = %u\n", p->bOwnsJson);
   printf("useMod    = %u\n", p->useMod);
   printf("hasMod    = %u\n", p->hasMod);
   printf("nJPRef    = %u\n", p->nJPRef);
@@ -2677,8 +2662,8 @@ static void jsonPatchFunc(
   JsonNode *pResult;   /* The result of the merge */
 
   UNUSED_PARAMETER(argc);
-  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0]), 0) ) return;
-  if( jsonParse(&y, ctx, (char*)sqlite3_value_text(argv[1]), 0) ){
+  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0])) ) return;
+  if( jsonParse(&y, ctx, (char*)sqlite3_value_text(argv[1])) ){
     jsonParseReset(&x);
     return;
   }
@@ -3645,7 +3630,7 @@ static int jsonEachFilter(
   p->zJson = sqlite3_malloc64( n+1 );
   if( p->zJson==0 ) return SQLITE_NOMEM;
   memcpy(p->zJson, z, (size_t)n+1);
-  if( jsonParse(&p->sParse, 0, p->zJson, 0) ){
+  if( jsonParse(&p->sParse, 0, p->zJson) ){
     int rc = SQLITE_NOMEM;
     if( p->sParse.oom==0 ){
       sqlite3_free(cur->pVtab->zErrMsg);
