@@ -1841,9 +1841,10 @@ static int jsonParseFindParents(JsonParse *pParse){
 #define JSON_CACHE_SZ  4          /* Max number of cache entries */
 
 /*
-** Obtain a complete parse of the JSON found in the first argument
-** of the argv array.  Use the sqlite3_get_auxdata() cache for this
-** parse if it is available.  If the cache is not available or if it
+** Obtain a complete parse of the JSON found in the pJson argument
+**
+** Use the sqlite3_get_auxdata() cache to find a preexisting parse
+** if it is available.  If the cache is not available or if it
 ** is no longer valid, parse the JSON again and return the new parse.
 ** Also register the new parse so that it will be available for
 ** future sqlite3_get_auxdata() calls.
@@ -2003,7 +2004,9 @@ static JsonNode *jsonLookupStep(
 ){
   u32 i, j, nKey;
   const char *zKey;
-  JsonNode *pRoot = &pParse->aNode[iRoot];
+  JsonNode *pRoot;
+  if( pParse->oom ) return 0;
+  pRoot = &pParse->aNode[iRoot];
   while( (pRoot->jnFlags & JNODE_REPLACE)!=0 && pParse->useMod ){
     u32 idx = (u32)(pRoot - pParse->aNode);
     i = pParse->iSubst;
