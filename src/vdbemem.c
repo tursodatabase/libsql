@@ -333,6 +333,11 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
       pMem->flags |= MEM_Term;
       return;
     }
+    if( pMem->xDel==(void(*)(void*))sqlite3RCStrUnref ){
+      /* Blindly assume that all RCStr objects are zero-terminated */
+      pMem->flags |= MEM_Term;
+      return;
+    }
   }else if( pMem->szMalloc>0 && pMem->szMalloc >= pMem->n+1 ){
     pMem->z[pMem->n] = 0;
     pMem->flags |= MEM_Term;
