@@ -2828,14 +2828,17 @@ static void jsonReplaceNode(
          break;
       }
       if( sqlite3_value_subtype(pValue)!=JSON_SUBTYPE ){
-        int k = jsonParseAddNode(p, JSON_STRING, n, z);
         char *zCopy = sqlite3DbStrDup(0, z);
-        if( k>0 ) p->aNode[k].jnFlags |= JNODE_RAW;
+        int k;
         if( zCopy ){
           jsonParseAddCleanup(p, sqlite3_free, zCopy);
-        }else{
+       }else{
+          p->oom = 1;
           sqlite3_result_error_nomem(pCtx);
         }
+        k = jsonParseAddNode(p, JSON_STRING, n, zCopy);
+        assert( k>0 || p->oom );
+        if( p->oom==0 ) p->aNode[k].jnFlags |= JNODE_RAW;
       }else{
         JsonParse *pPatch = jsonParseCached(pCtx, pValue, pCtx, 1);
         if( pPatch==0 ){
