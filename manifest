@@ -1,5 +1,5 @@
-C More\scomment\simprovements\sin\sjson.c.\s\sDo\snot\srun\sjsonLookup()\sfollowing\nan\sOOM\serror.
-D 2023-07-26T11:53:14.698
+C Change\sthe\sdebugging\s"json_parse(X)"\sfunction\sso\sthat\sit\sshows\sa\smore\ncomplete\sdescription\sof\sthe\sJsonParse\sobject\son\sstandard\soutput\sand\sreturns\nthe\smimified\sJSON.\s\sFormer\sbehavior\swas\sto\sreturn\sthe\stext\sof\sa\sdecode\nof\sthe\saNode\sarray.
+D 2023-07-26T13:17:43.116
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -598,7 +598,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c c784b923a8aaa5cb514c135a74d77aec1b5c9e1cbd63764adb10d44cc678bb6e
+F src/json.c 512bc389b42c68b34571ca532afb0f4bb235b1fc11ea5c9a4f6850c64fa12ab4
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
@@ -1131,7 +1131,7 @@ F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5b
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
 F test/fuzzdata4.db b502c7d5498261715812dd8b3c2005bad08b3a26e6489414bd13926cd3e42ed2
 F test/fuzzdata5.db e35f64af17ec48926481cfaf3b3855e436bd40d1cfe2d59a9474cb4b748a52a5
-F test/fuzzdata6.db 92a80e4afc172c24f662a10a612d188fb272de4a9bd19e017927c95f737de6d7
+F test/fuzzdata6.db b8725a5f5cf7a3b7241a9038e57ca7e7cc8c3f4d86b44bd770617bda245ab2b0
 F test/fuzzdata7.db 0166b56fd7a6b9636a1d60ef0a060f86ddaecf99400a666bb6e5bbd7199ad1f2
 F test/fuzzdata8.db f6c2f2af4deaaae0ddb3310d509c2659990794aa653dc501b80a0534c3493f80
 F test/fuzzer1.test 3d4c4b7e547aba5e5511a2991e3e3d07166cfbb8
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bac953a80d1a541e7a12aef00c86c002133859237143ad670b39ea19799a8900
-R 968cb2bde9a2ab88d10bb801ca2ea188
+P cd5fda8c2e354da7458b7c1a82ff18c5946f8dab16095bb0293bec57f6804f17
+R ecfa3d900e8af899b83f6d4944c0b5ca
 U drh
-Z 8edd1e3712b3e1a50841b71b7e4dc709
+Z 621bef24d346a4651dc554beab6ec135
 # Remove this line to create a well-formed Fossil manifest.

@@ -118,7 +118,12 @@ static const char * const jsonType[] = {
 #define JNODE_JSON5   0x40  /* Node contains JSON5 enhancements */
 
 
-/* A single node of parsed JSON
+/* A single node of parsed JSON.  An array of these nodes describes
+** a parse of JSON + edits.
+**
+** Use the json_parse() SQL function (available when compiled with
+** -DSQLITE_DEBUG) to see a dump of complete JsonParse objects, including
+** a complete listing and decoding of the array of JsonNodes.
 */
 struct JsonNode {
   u8 eType;              /* One of the JSON_ type values */
@@ -2283,7 +2288,7 @@ static void jsonRemoveAllNulls(JsonNode *pNode){
 ** SQL functions used for testing and debugging
 ****************************************************************************/
 
-#if 0  /* One for debugging.  zero normally */
+#if SQLITE_DEBUG
 /*
 ** Print N node entries.
 */
@@ -2299,12 +2304,15 @@ static void jsonDebugPrintNodeEntries(
     }else{
       zType = jsonType[aNode[i].eType];
     }
+    printf("node %4u: %-7s n=%-5d", i, zType, aNode[i].n);
     if( (aNode[i].jnFlags & ~JNODE_LABEL)!=0 ){
-      printf("node %4u: %-7s %02x n=%-5d",
-             i, zType, aNode[i].jnFlags, aNode[i].n);
-    }else{
-      printf("node %4u: %-7s    n=%-5d",
-             i, zType, aNode[i].n);
+      u8 f = aNode[i].jnFlags;
+      if( f & JNODE_RAW )     printf(" RAW");
+      if( f & JNODE_ESCAPE )  printf(" ESCAPE");
+      if( f & JNODE_REMOVE )  printf(" REMOVE");
+      if( f & JNODE_REPLACE ) printf(" REPLACE");
+      if( f & JNODE_APPEND )  printf(" APPEND");
+      if( f & JNODE_JSON5 )   printf(" JSON5");
     }
     switch( aNode[i].eU ){
       case 1:  printf(" zJContent=[%.*s]\n",
@@ -2316,6 +2324,10 @@ static void jsonDebugPrintNodeEntries(
     }
   }
 }
+#endif /* SQLITE_DEBUG */
+
+
+#if 0  /* 1 for debugging.  0 normally.  Requires -DSQLITE_DEBUG too */
 static void jsonDebugPrintParse(JsonParse *p){
   jsonDebugPrintNodeEntries(p->aNode, p->nNode);
 }
@@ -2330,45 +2342,37 @@ static void jsonDebugPrintNode(JsonNode *pNode){
 
 #ifdef SQLITE_DEBUG
 /*
-** The json_parse(JSON) function returns a string which describes
-** a parse of the JSON provided.  Or it returns NULL if JSON is not
-** well-formed.
+** SQL function:   json_parse(JSON)
+**
+** Parse JSON using jsonParseCached().  Then print a dump of that
+** parse on standard output.  Return the mimified JSON result, just
+** like the json() function.
 */
 static void jsonParseFunc(
   sqlite3_context *ctx,
   int argc,
   sqlite3_value **argv
 ){
-  JsonString s;       /* Output string - not real JSON */
-  JsonParse x;        /* The parse */
-  u32 i;
+  JsonParse *p;        /* The parse */
 
   assert( argc==1 );
-  if( jsonParse(&x, ctx, (char*)sqlite3_value_text(argv[0]), 0) ) return;
-  jsonParseFindParents(&x);
-  jsonInit(&s, ctx);
-  for(i=0; i<x.nNode; i++){
-    const char *zType;
-    if( x.aNode[i].jnFlags & JNODE_LABEL ){
-      assert( x.aNode[i].eType==JSON_STRING );
-      zType = "label";
-    }else{
-      zType = jsonType[x.aNode[i].eType];
-    }
-    jsonPrintf(100, &s,"node %3u: %7s n=%-4d up=%-4d",
-               i, zType, x.aNode[i].n, x.aUp[i]);
-    assert( x.aNode[i].eU==0 || x.aNode[i].eU==1 );
-    if( x.aNode[i].u.zJContent!=0 ){
-      assert( x.aNode[i].eU==1 );
-      jsonAppendChar(&s, ' ');
-      jsonAppendRaw(&s, x.aNode[i].u.zJContent, x.aNode[i].n);
-    }else{
-      assert( x.aNode[i].eU==0 );
-    }
-    jsonAppendChar(&s, '\n');
-  }
-  jsonParseReset(&x);
-  jsonResult(&s);
+  p = jsonParseCached(ctx, argv[0], ctx, 0);
+  if( p==0 ) return;
+  printf("nNode     = %u\n", p->nNode);
+  printf("nAlloc    = %u\n", p->nAlloc);
+  printf("nJson     = %d\n", p->nJson);
+  printf("nAlt      = %d\n", p->nAlt);
+  printf("nErr      = %u\n", p->nErr);
+  printf("oom       = %u\n", p->oom);
+  printf("hasNonstd = %u\n", p->hasNonstd);
+  printf("bOwnsJson = %u\n", p->bOwnsJson);
+  printf("useMod    = %u\n", p->useMod);
+  printf("hasMod    = %u\n", p->hasMod);
+  printf("nJPRef    = %u\n", p->nJPRef);
+  printf("iSubst    = %u\n", p->iSubst);
+  printf("iHold     = %u\n", p->iHold);
+  jsonDebugPrintNodeEntries(p->aNode, p->nNode);
+  jsonReturnJson(p, p->aNode, ctx, 1);
 }
 
 /*
