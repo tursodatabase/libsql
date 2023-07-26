@@ -69,6 +69,8 @@ static int bytecodevtabConnect(
       "p5 INT,"
       "comment TEXT,"
       "subprog TEXT," 
+      "nexec INT,"
+      "ncycle INT,"
       "stmt HIDDEN"
     ");",
 
@@ -231,7 +233,7 @@ static int bytecodevtabColumn(
           }
         }
       }
-      i += 10;
+      i += 20;
     }
   }
   switch( i ){
@@ -281,16 +283,31 @@ static int bytecodevtabColumn(
       }
       break;
     }
-    case 10:  /* tables_used.type */
+
+#ifdef SQLITE_ENABLE_STMT_SCANSTATUS
+    case 9:     /* nexec */
+      sqlite3_result_int(ctx, pOp->nExec);
+      break;
+    case 10:    /* ncycle */
+      sqlite3_result_int(ctx, pOp->nCycle);
+      break;
+#else
+    case 9:     /* nexec */
+    case 10:    /* ncycle */
+      sqlite3_result_int(ctx, 0);
+      break;
+#endif
+
+    case 20:  /* tables_used.type */
       sqlite3_result_text(ctx, pCur->zType, -1, SQLITE_STATIC);
       break;
-    case 11:  /* tables_used.schema */
+    case 21:  /* tables_used.schema */
       sqlite3_result_text(ctx, pCur->zSchema, -1, SQLITE_STATIC);
       break;
-    case 12:  /* tables_used.name */
+    case 22:  /* tables_used.name */
       sqlite3_result_text(ctx, pCur->zName, -1, SQLITE_STATIC);
       break;
-    case 13:  /* tables_used.wr */
+    case 23:  /* tables_used.wr */
       sqlite3_result_int(ctx, pOp->opcode==OP_OpenWrite);
       break;
   }
@@ -364,7 +381,7 @@ static int bytecodevtabBestIndex(
   int rc = SQLITE_CONSTRAINT;
   struct sqlite3_index_constraint *p;
   bytecodevtab *pVTab = (bytecodevtab*)tab;
-  int iBaseCol = pVTab->bTablesUsed ? 4 : 8;
+  int iBaseCol = pVTab->bTablesUsed ? 4 : 10;
   pIdxInfo->estimatedCost = (double)100;
   pIdxInfo->estimatedRows = 100;
   pIdxInfo->idxNum = 0;
