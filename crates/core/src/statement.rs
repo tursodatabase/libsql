@@ -85,10 +85,10 @@ impl Statement {
 }
 
 // NOTICE: Column is blatantly copy-pasted from rusqlite
-
+#[cfg_attr(test, derive(arbitrary::Arbitrary))]
 pub struct Column<'stmt> {
-    name: &'stmt str,
-    decl_type: Option<&'stmt str>,
+    pub name: &'stmt str,
+    pub decl_type: Option<&'stmt str>,
 }
 
 impl Column<'_> {
