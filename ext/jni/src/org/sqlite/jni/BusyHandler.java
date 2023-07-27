@@ -21,6 +21,9 @@ public abstract class BusyHandler {
      Must function as documented for the sqlite3_busy_handler()
      callback argument, minus the (void*) argument the C-level
      function requires.
+
+     Any exceptions thrown by this callback are suppressed in order to
+     retain the C-style API semantics of the JNI bindings.
   */
   public abstract int xCallback(int n);
 

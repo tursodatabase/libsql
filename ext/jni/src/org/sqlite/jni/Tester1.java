@@ -642,24 +642,48 @@ public class Tester1 {
 
   private static void testBusy(){
     outln("testBusy()...");
-    final sqlite3 db = createNewDb();
+    final String dbName = "_busy-handler.db";
+    final sqlite3 db1 = new sqlite3();
+    final sqlite3 db2 = new sqlite3();
+
+    int rc = sqlite3_open(dbName, db1);
+    myassert( 0 == rc );
+    execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
+    rc = sqlite3_open(dbName, db2);
+    myassert( 0 == rc );
+
     final ValueHolder<Boolean> xDestroyed = new ValueHolder<>(false);
+    final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
     BusyHandler handler = new BusyHandler(){
         @Override public int xCallback(int n){
-          /* How do we conveniently test this? */
-          return 0;
+          //outln("busy handler #"+n);
+          return n > 2 ? 0 : ++xBusyCalled.value;
         }
         @Override public void xDestroy(){
           xDestroyed.value = true;
         }
       };
-    outln("setting busy handler...");
-    int rc = sqlite3_busy_handler(db, handler);
-    outln("set busy handler");
+    rc = sqlite3_busy_handler(db2, handler);
     myassert(0 == rc);
+
+    // Force a locked condition...
+    execSql(db1, "BEGIN EXCLUSIVE");
     myassert( false == xDestroyed.value );
-    sqlite3_close_v2(db);
+    sqlite3_stmt stmt = new sqlite3_stmt();
+    rc = sqlite3_prepare(db2, "SELECT * from t", stmt);
+    myassert( SQLITE_BUSY == rc);
+    myassert( 3 == xBusyCalled.value );
+    sqlite3_finalize(stmt);
+    sqlite3_close(db1);
+    myassert( false == xDestroyed.value );
+    sqlite3_close(db2);
     myassert( true == xDestroyed.value );
+    try{
+      final java.io.File f = new java.io.File(dbName);
+      f.delete();
+    }catch(Exception e){
+      /* ignore */
+    }
   }
 
   private static void testMisc(){

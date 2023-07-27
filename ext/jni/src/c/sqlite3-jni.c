@@ -154,6 +154,7 @@
 #define EXCEPTION_CLEAR (*env)->ExceptionClear(env)
 #define EXCEPTION_REPORT (*env)->ExceptionDescribe(env)
 #define IFTHREW_REPORT IFTHREW EXCEPTION_REPORT
+#define IFTHREW_CLEAR IFTHREW EXCEPTION_CLEAR
 
 
 #define PtrGet_sqlite3(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3)
@@ -415,7 +416,7 @@ static void BusyHandlerJni_clear(BusyHandlerJni * const s){
       (*env)->GetMethodID(env, s->klazz, "xDestroy", "()V");
     if(method){
       (*env)->CallVoidMethod(env, s->jObj, method);
-      EXCEPTION_IGNORE;
+      IFTHREW_CLEAR;
     }else{
       EXCEPTION_CLEAR;
     }
@@ -1279,6 +1280,7 @@ static int s3jni_busy_handler(void* pState, int n){
     JNIEnv * const env = pS->env;
     rc = (*env)->CallIntMethod(env, pS->busyHandler.jObj,
                                pS->busyHandler.jmidxCallback, (jint)n);
+    IFTHREW_CLEAR;
   }
   return rc;
 }
@@ -1550,10 +1552,10 @@ JDECL(jint,1initialize)(JENV_JSELF){
 }
 
 JDECL(jint,1finalize)(JENV_JSELF, jobject jpStmt){
-  if(jpStmt){
+  if( jpStmt ){
     sqlite3_stmt * pStmt = PtrGet_sqlite3_stmt(jpStmt);
     setNativePointer(env, jpStmt, 0, ClassNames.sqlite3_stmt);
-    sqlite3_finalize(pStmt);
+    if( pStmt ) sqlite3_finalize(pStmt);
   }
   return 0;
 }
