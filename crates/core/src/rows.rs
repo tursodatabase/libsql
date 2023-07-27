@@ -111,9 +111,23 @@ impl FromValue for i32 {
     }
 }
 
+impl FromValue for u32 {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.int() as u32;
+        Ok(ret)
+    }
+}
+
 impl FromValue for i64 {
     fn from_sql(val: libsql_sys::Value) -> Result<Self> {
         let ret = val.int64();
+        Ok(ret)
+    }
+}
+
+impl FromValue for u64 {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.int64() as u64;
         Ok(ret)
     }
 }
