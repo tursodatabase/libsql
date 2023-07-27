@@ -124,6 +124,10 @@ impl Statement {
     pub fn is_explain(&self) -> i32 {
         unsafe { crate::ffi::sqlite3_stmt_isexplain(self.raw_stmt) }
     }
+
+    pub fn readonly(&self) -> bool {
+        unsafe { crate::ffi::sqlite3_stmt_readonly(self.raw_stmt) != 0 }
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<Statement> {

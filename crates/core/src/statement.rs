@@ -58,6 +58,10 @@ impl Statement {
         self.inner.is_explain()
     }
 
+    pub fn readonly(&self) -> bool {
+        self.inner.readonly()
+    }
+
     pub fn execute(&self, params: &Params) -> Option<Rows> {
         self.bind(params);
         let err = self.inner.step();
