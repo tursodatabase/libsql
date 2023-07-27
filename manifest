@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\smemory\sallocations\swhen\sparsing\sJSON.
-D 2023-07-26T23:22:32.813
+C Fix\sa\sperformance\sregression\sin\sJSON\sassociated\swith\sgenerating\ssmall\nsnippets\sof\sJSON\sfrom\sa\slarger\sJSON\sstring.
+D 2023-07-27T00:21:59.567
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -598,7 +598,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c bea467f5bb75311759f2a5f8a7bbf517384f6489bcbe85a41b7c39e8faeea698
+F src/json.c c992d2a87a6888bf16a5c7270ef523eb838cf49e6643420c3cf917124f41f97f
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec8b43382e5402e15d9f2dda3cf21ac8be8c1589ddbe6c9433c33eef0036f764
-R 60fa67ed7b82b4d2c0db2475f139f2f9
+P 9edd67162113df57dae21d4683f9495611e2cf4717c6d12f5b7b8e44156d5fe3
+R 2d6be27c61998a8da52821b68136a1e9
 U drh
-Z 0d5cf9ec935b3fe18206d9fca33e2d88
+Z 453c25d31204436e7cf8e11e8d84051c
 # Remove this line to create a well-formed Fossil manifest.

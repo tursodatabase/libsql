@@ -563,12 +563,18 @@ static void jsonAppendValue(
 ** The JSON string is reset.
 */
 static void jsonResult(JsonString *p){
-  if( p->bErr==0 && jsonForceRCStr(p) ){
-    sqlite3RCStrRef(p->zBuf);
-    sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
-                          (void(*)(void*))sqlite3RCStrUnref,
-                          SQLITE_UTF8);
-  }else if( p->bErr==1 ){
+  if( p->bErr==0 ){
+    if( p->bStatic ){
+      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
+                            SQLITE_TRANSIENT, SQLITE_UTF8);
+    }else if( jsonForceRCStr(p) ){
+      sqlite3RCStrRef(p->zBuf);
+      sqlite3_result_text64(p->pCtx, p->zBuf, p->nUsed,
+                            (void(*)(void*))sqlite3RCStrUnref,
+                            SQLITE_UTF8);
+    }
+  }
+  if( p->bErr==1 ){
     sqlite3_result_error_nomem(p->pCtx);
   }
   jsonReset(p);
