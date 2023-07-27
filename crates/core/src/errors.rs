@@ -12,6 +12,10 @@ pub enum Error {
     NullValue,
     #[error("Library misuse: `{0}`")]
     Misuse(String),
+    #[error("Invalid column name: {0}")]
+    InvalidColumnName(String),
+    #[error("libSQL error {0}")]
+    LibError(std::ffi::c_int),
 }
 
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
@@ -19,12 +23,12 @@ pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
     sqlite_errmsg_to_string(errmsg)
 }
 
-pub(crate) fn error_from_code(code: i32) -> String {
+pub fn error_from_code(code: i32) -> String {
     let errmsg = unsafe { libsql_sys::ffi::sqlite3_errstr(code) };
     sqlite_errmsg_to_string(errmsg)
 }
 
-pub(crate) fn sqlite_errmsg_to_string(errmsg: *const std::ffi::c_char) -> String {
+pub fn sqlite_errmsg_to_string(errmsg: *const std::ffi::c_char) -> String {
     let errmsg = unsafe { std::ffi::CStr::from_ptr(errmsg) }.to_bytes();
     String::from_utf8_lossy(errmsg).to_string()
 }

@@ -16,7 +16,7 @@ fn maybe_link() {
     } else if let Ok(dir) = env::var("LIBSQL_LIB_DIR") {
         println!("cargo:rustc-link-search={dir}");
         println!("cargo:rustc-link-lib=libsql");
-    } else if let Err(_) = env::var("LIBSQL_NO_AMALGAMATION_PLZ") {
+    } else if env::var("LIBSQL_NO_AMALGAMATION_PLZ").is_err() {
         compile();
         println!("cargo:rustc-link-search={out_dir}");
         println!("cargo:rustc-link-lib=static=libsql");

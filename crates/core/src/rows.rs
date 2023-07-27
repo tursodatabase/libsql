@@ -96,6 +96,10 @@ impl Row {
     pub fn column_name(&self, idx: i32) -> &str {
         self.stmt.column_name(idx)
     }
+
+    pub fn get_ref(&self, idx: i32) -> Result<crate::params::ValueRef<'_>> {
+        Ok(crate::Statement::value_ref(&self.stmt, idx as usize))
+    }
 }
 
 pub trait FromValue {
@@ -107,6 +111,68 @@ pub trait FromValue {
 impl FromValue for i32 {
     fn from_sql(val: libsql_sys::Value) -> Result<Self> {
         let ret = val.int();
+        Ok(ret)
+    }
+}
+
+impl FromValue for u32 {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.int() as u32;
+        Ok(ret)
+    }
+}
+
+impl FromValue for i64 {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.int64();
+        Ok(ret)
+    }
+}
+
+impl FromValue for u64 {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.int64() as u64;
+        Ok(ret)
+    }
+}
+
+impl FromValue for f64 {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.double();
+        Ok(ret)
+    }
+}
+
+impl FromValue for Vec<u8> {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.blob();
+        if ret.is_null() {
+            return Err(Error::NullValue);
+        }
+        let ret = unsafe { std::slice::from_raw_parts(ret as *const u8, val.bytes() as usize) };
+        Ok(ret.to_vec())
+    }
+}
+
+impl FromValue for String {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.text();
+        if ret.is_null() {
+            return Err(Error::NullValue);
+        }
+        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const i8) };
+        let ret = ret.to_str().unwrap();
+        Ok(ret.to_string())
+    }
+}
+
+impl FromValue for &[u8] {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        let ret = val.blob();
+        if ret.is_null() {
+            return Err(Error::NullValue);
+        }
+        let ret = unsafe { std::slice::from_raw_parts(ret as *const u8, val.bytes() as usize) };
         Ok(ret)
     }
 }

@@ -1,5 +1,3 @@
-use libsql_sys::ffi::sqlite3_stmt;
-
 use crate::{Database, Error, Params, Result, Rows, RowsFuture, Statement};
 
 use libsql_sys::ffi;
@@ -94,6 +92,18 @@ impl Connection {
             sql: sql.into(),
             params: params.into(),
         }
+    }
+
+    pub fn is_autocommit(&self) -> bool {
+        unsafe { ffi::sqlite3_get_autocommit(self.raw) != 0 }
+    }
+
+    pub fn changes(&self) -> u64 {
+        unsafe { ffi::sqlite3_changes64(self.raw) as u64 }
+    }
+
+    pub fn last_insert_rowid(&self) -> i64 {
+        unsafe { ffi::sqlite3_last_insert_rowid(self.raw) }
     }
 }
 

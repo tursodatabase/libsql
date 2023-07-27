@@ -1,5 +1,4 @@
 use wasm_bindgen::prelude::*;
-use libsql;
 
 #[wasm_bindgen]
 pub struct Database {
@@ -10,10 +9,12 @@ pub struct Database {
 impl Database {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Database {
-        Database { inner: libsql::Database::open(":memory:").unwrap() }
+        Database {
+            inner: libsql::Database::open(":memory:").unwrap(),
+        }
     }
 
-    pub fn all(&self, sql: String, f: &js_sys::Function) {
+    pub fn all(&self, _sql: String, f: &js_sys::Function) {
         let this = JsValue::null();
         let _ = f.call0(&this);
     }

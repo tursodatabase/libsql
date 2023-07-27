@@ -297,7 +297,7 @@ impl Shell {
                 }
             }
             ".help" => self.show_help(args),
-            ".indexes" => result = Some(self.list_tables(args.get(0).copied(), true)),
+            ".indexes" => result = Some(self.list_tables(args.first().copied(), true)),
             ".nullvalue" => {
                 if args.len() != 1 {
                     writeln!(self.out, "Usage: .nullvalue STRING").unwrap();
@@ -309,7 +309,7 @@ impl Shell {
                 writeln!(self.out, "{}", args.join(" ")).unwrap();
             }
             ".prompt" => {
-                if args.len() > 0 {
+                if !args.is_empty() {
                     self.main_prompt = args[0].to_string();
                 }
                 if args.len() > 1 {
@@ -318,7 +318,7 @@ impl Shell {
             }
             ".quit" => std::process::exit(0),
             ".show" => {
-                if args.len() != 0 {
+                if !args.is_empty() {
                     writeln!(self.out, "Usage: .show").unwrap();
                     return;
                 }
@@ -363,7 +363,7 @@ impl Shell {
                     self.filename.display()
                 );
             }
-            ".tables" => result = Some(self.list_tables(args.get(0).copied(), false)),
+            ".tables" => result = Some(self.list_tables(args.first().copied(), false)),
             _ => println!(
                 "Error: unknown command or invalid arguments: \"{}\". Enter \".help\" for help",
                 command
