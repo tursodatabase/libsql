@@ -1,5 +1,5 @@
-C Merge\strunk\sinto\sjni\sbranch\sfor\scompiler\swarning\sfixes.
-D 2023-07-27T20:12:48.495
+C Replace\ssome\swww:\sinterwiki\sreferences\sin\sthe\sJNI\sreadme\swith\stheir\sfull\sURLs\sto\smake\sthe\sdoc\smore\sportable.
+D 2023-07-27T20:32:16.722
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -231,7 +231,7 @@ F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f4
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile 56a014dbff9516774d895ec1ae9df0ed442765b556f79a0fc0b5bc438217200d
-F ext/jni/README.md 5ce36c6f64208a2d8e7641e7ac255400a99f378f726fa44943a008bcb403aeb0
+F ext/jni/README.md 042762dbf047667783a5bd0aec303535140f302debfbd259c612edf856661623
 F ext/jni/src/c/sqlite3-jni.c 55bf5624beee849b1c063bf929e6066dc95437564c3212d30e672280bec45da8
 F ext/jni/src/c/sqlite3-jni.h ef862321bb153135472ebe6be6df9db3e47448ae3ef6bb3cb7953c54971efcf8
 F ext/jni/src/org/sqlite/jni/Collation.java 8dffbb00938007ad0967b2ab424d3c908413af1bbd3d212b9c9899910f1218d1
@@ -2066,8 +2066,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b5374b9ef58fa0be80aefccde0721f5599fb820464b13940b6361b9aa09a59d5 bf71faa2a1d29ea762c4d2485522d6f4f8a5a7166981a92d3ba9c96ccbbe1213
-R 7dd86993b43278424be52f48d5e5f4e4
+P 0514fd340ae15a95760d50c747d6fb9eae5109cb5045eeabc2bc199be0a5ae35
+R fbc3a722616dae826b754c2990ee20ad
 U stephan
-Z 1238bb2bb995ce156bfcc94eb1fcf862
+Z 82e6c4339ed3624b75f36686218f69e5
 # Remove this line to create a well-formed Fossil manifest.

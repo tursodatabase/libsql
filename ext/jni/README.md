@@ -4,7 +4,7 @@ SQLite3 via JNI
 This repository houses a Java Native Interface (JNI) binding for the
 sqlite3 API.
 
-> **FOREWARNING:** this project is very much in development and
+> **FOREWARNING:** this subproject is very much in development and
   subject to any number of changes. Please do not rely on any
   information about its API until this disclaimer is removed.
 
@@ -12,7 +12,7 @@ Project goals/requirements:
 
 - A [1-to-1(-ish) mapping of the C API](#1to1ish) to Java via JNI,
   insofar as cross-language semantics allow for. A closely-related
-  goal is that [the C documentation](www:/c3ref/intro.html)
+  goal is that [the C documentation](https://sqlite.org/c3ref/intro.html)
   should be usable as-is, insofar as possible, for the JNI binding.
 
 - Support Java as far back as version 8 (2014).
@@ -107,7 +107,7 @@ demonstration of where such changes are "really necessary"...
 
 A prime example of where interface changes for Java are necessary for
 usability is [registration of a custom
-collation](www:/c3ref/create_collation.html):
+collation](https://sqlite.org/c3ref/create_collation.html):
 
 ```
 // C:
@@ -183,7 +183,7 @@ Noting that:
 
 ### User-defined SQL Functions (a.k.a. UDFs)
 
-The [`sqlite3_create_function()`](www:/c3ref/create_function.html)
+The [`sqlite3_create_function()`](https://sqlite.org/c3ref/create_function.html)
 family of APIs make heavy use of function pointers to provide
 client-defined callbacks, necessitating interface changes in the JNI
 binding. The Jav API has only one core function-registration function:
