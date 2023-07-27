@@ -111,7 +111,8 @@
      of `target.instance` (a WebAssembly.Module instance) and it must
      contain the symbols exported by the WASM module associated with
      this code. In an Enscripten environment it must be set to
-     `Module['asm']`. The exports object must contain a minimum of the
+     `Module['asm']` (versions <=3.1.43) or `wasmExports` (versions
+     >=3.1.44). The exports object must contain a minimum of the
      following symbols:
 
      - `memory`: a WebAssembly.Memory object representing the WASM
