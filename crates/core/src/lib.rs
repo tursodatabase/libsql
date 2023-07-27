@@ -51,6 +51,7 @@ pub mod statement;
 
 pub type Result<T> = std::result::Result<T, errors::Error>;
 
+pub use libsql_sys::ffi;
 pub use libsql_sys::ValueType;
 
 pub use connection::Connection;
