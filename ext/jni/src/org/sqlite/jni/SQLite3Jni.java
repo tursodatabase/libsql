@@ -133,7 +133,14 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_bind_zeroblob64(@NotNull sqlite3_stmt stmt, int ndx, long n);
 
-  //TODO? public static native int sqlite3_busy_handler(sqlite3*,int(*)(void*,int),void*);
+  /**
+     As for the C-level function of the same name, with a BusyHandler
+     instance in place of a callback function. Pass it a null handler
+     to clear the busy handler. Calling this multiple times with the
+     same object is a no-op on the second and subsequent calls.
+  */
+  public static native int sqlite3_busy_handler(@NotNull sqlite3 db,
+                                                @Nullable BusyHandler handler);
 
   public static native int sqlite3_busy_timeout(@NotNull sqlite3 db, int ms);
 

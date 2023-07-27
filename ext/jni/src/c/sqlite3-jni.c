@@ -317,6 +317,17 @@ static void JNIEnvCache_clear(JNIEnvCache * p){
 }
 
 /**
+   State for binding Java-side busy handlers.
+*/
+typedef struct {
+  JNIEnv * env;         /* env registered from */;
+  jobject jObj          /* BusyHandlerJni instance */;
+  jclass klazz          /* jObj's class */;
+  jmethodID jmidxCallback;
+} BusyHandlerJni;
+
+
+/**
    Per-(sqlite3*) state for bindings which do not have their own
    finalizer functions, e.g. tracing and commit/rollback hooks.  This
    state is allocated as needed, cleaned up in sqlite3_close(_v2)(),
@@ -328,12 +339,12 @@ static void JNIEnvCache_clear(JNIEnvCache * p){
    data (since they can(?) hypothetically be set via multiple JNIEnv
    objects)?
 */
-typedef struct PerDbState PerDbState;
-struct PerDbState {
+typedef struct PerDbStateJni PerDbStateJni;
+struct PerDbStateJni {
   JNIEnv *env;
   sqlite3 * pDb;
-  PerDbState * pNext;
-  PerDbState * pPrev;
+  PerDbStateJni * pNext;
+  PerDbStateJni * pPrev;
   struct {
     jobject jObj;
     jmethodID midCallback;
@@ -350,6 +361,7 @@ struct PerDbState {
     jobject jObj;
     jmethodID midCallback;
   } rollbackHook;
+  BusyHandlerJni busyHandler;
 };
 
 static struct {
@@ -367,8 +379,8 @@ static struct {
   JavaVM * jvm;
   struct JNIEnvCache envCache;
   struct {
-    PerDbState * aUsed;
-    PerDbState * aFree;
+    PerDbStateJni * aUsed;
+    PerDbStateJni * aFree;
   } perDb;
 } S3Global;
 
@@ -389,13 +401,57 @@ static void * s3jni_malloc(JNIEnv *env, size_t n){
 static void s3jni_free(void * p){
   if(p) sqlite3_free(p);
 }
+
 /**
-   Extracts the new PerDbState instance from the free-list, or
+   Clears s's state, releasing any Java references. Before doing so,
+   it calls s's xDestroy() method, ignoring the lack of that method or
+   any exceptions it throws. This is a no-op of s has no current
+   state.
+*/
+static void BusyHandlerJni_clear(BusyHandlerJni * const s){
+  if(s->jObj){
+    JNIEnv * const env = s->env;
+    const jmethodID method =
+      (*env)->GetMethodID(env, s->klazz, "xDestroy", "()V");
+    if(method){
+      (*env)->CallVoidMethod(env, s->jObj, method);
+      EXCEPTION_IGNORE;
+    }else{
+      EXCEPTION_CLEAR;
+    }
+    UNREF_G(s->jObj);
+    UNREF_G(s->klazz);
+    memset(s, 0, sizeof(BusyHandlerJni));
+  }
+}
+
+/**
+   Initializes s to wrap BusyHandlerJni-type object jObject, clearning
+   any current state of s beforehand. Returns 0 on success, non-0 on
+   error. On error, s's state is cleared.
+*/
+static int BusyHandlerJni_init(JNIEnv * const env, BusyHandlerJni * const s,
+                               jobject jObj){
+  const char * zSig = "(I)I" /* callback signature */;
+  if(s->jObj) BusyHandlerJni_clear(s);
+  s->env = env;
+  s->jObj = REF_G(jObj);
+  s->klazz = REF_G((*env)->GetObjectClass(env, jObj));
+  s->jmidxCallback = (*env)->GetMethodID(env, s->klazz, "xCallback", zSig);
+  IFTHREW {
+    BusyHandlerJni_clear(s);
+    return SQLITE_ERROR;
+  }
+  return 0;
+}
+
+/**
+   Extracts the new PerDbStateJni instance from the free-list, or
    allocates one if needed, associats it with pDb, and returns.
    Returns NULL on OOM.
 */
-static PerDbState * PerDbState_alloc(JNIEnv *env, sqlite3 *pDb){
-  PerDbState * rv;
+static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb){
+  PerDbStateJni * rv;
   assert( pDb );
   if(S3Global.perDb.aFree){
     rv = S3Global.perDb.aFree;
@@ -407,18 +463,18 @@ static PerDbState * PerDbState_alloc(JNIEnv *env, sqlite3 *pDb){
       rv->pNext = 0;
     }
   }else{
-    rv = s3jni_malloc(env, sizeof(PerDbState));
+    rv = s3jni_malloc(env, sizeof(PerDbStateJni));
     if(rv){
-      memset(rv, 0, sizeof(PerDbState));
-      rv->pNext = S3Global.perDb.aUsed;
-      S3Global.perDb.aUsed = rv;
-      if(rv->pNext){
-        assert(!rv->pNext->pPrev);
-        rv->pNext->pPrev = rv;
-      }
+      memset(rv, 0, sizeof(PerDbStateJni));
     }
   }
   if(rv){
+    rv->pNext = S3Global.perDb.aUsed;
+    S3Global.perDb.aUsed = rv;
+    if(rv->pNext){
+      assert(!rv->pNext->pPrev);
+      rv->pNext->pPrev = rv;
+    }
     rv->pDb = pDb;
     rv->env = env;
   }
@@ -429,7 +485,7 @@ static PerDbState * PerDbState_alloc(JNIEnv *env, sqlite3 *pDb){
    Clears s's state and moves it to the free-list.
 */
 FIXME_THREADING
-static void PerDbState_set_aside(PerDbState *s){
+static void PerDbStateJni_set_aside(PerDbStateJni *s){
   if(s){
     JNIEnv * const env = s->env;
     assert(s->pDb && "Else this object is already in the free-list.");
@@ -443,27 +499,38 @@ static void PerDbState_set_aside(PerDbState *s){
     UNREF_G(s->progress.jObj);
     UNREF_G(s->commitHook.jObj);
     UNREF_G(s->rollbackHook.jObj);
-    s->env = 0;
-    s->pDb = 0;
-    s->pPrev = 0;
+    BusyHandlerJni_clear(&s->busyHandler);
+    memset(s, 0, sizeof(PerDbStateJni));
     s->pNext = S3Global.perDb.aFree;
     S3Global.perDb.aFree = s;
   }
 }
 
+static void PerDbStateJni_dump(PerDbStateJni *s){
+  MARKER(("PerDbStateJni->env @ %p\n", s->env));
+  MARKER(("PerDbStateJni->pDb @ %p\n", s->pDb));
+  MARKER(("PerDbStateJni->trace.jObj @ %p\n", s->trace.jObj));
+  MARKER(("PerDbStateJni->progress.jObj @ %p\n", s->progress.jObj));
+  MARKER(("PerDbStateJni->commitHook.jObj @ %p\n", s->commitHook.jObj));
+  MARKER(("PerDbStateJni->rollbackHook.jObj @ %p\n", s->rollbackHook.jObj));
+  MARKER(("PerDbStateJni->busyHandler.env @ %p\n", s->busyHandler.env));
+  MARKER(("PerDbStateJni->busyHandler.jObj @ %p\n", s->busyHandler.jObj));
+  MARKER(("PerDbStateJni->env @ %p\n", s->env));
+}
+
 /**
-   Returns the PerDbState object for the given db. If allocIfNeeded is
+   Returns the PerDbStateJni object for the given db. If allocIfNeeded is
    true then a new instance will be allocated if no mapping currently
    exists, else NULL is returned if no mapping is found.
 
 */
 FIXME_THREADING
-static PerDbState * PerDbState_for_db(JNIEnv *env, sqlite3 *pDb, int allocIfNeeded){
-  PerDbState * s = S3Global.perDb.aUsed;
+static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, sqlite3 *pDb, int allocIfNeeded){
+  PerDbStateJni * s = S3Global.perDb.aUsed;
   for( ; s; s = s->pNext){
     if(s->pDb == pDb) return s;
   }
-  if(allocIfNeeded) s = PerDbState_alloc(env, pDb);
+  if(allocIfNeeded) s = PerDbStateJni_alloc(env, pDb);
   return s;
 }
 
@@ -471,12 +538,12 @@ static PerDbState * PerDbState_for_db(JNIEnv *env, sqlite3 *pDb, int allocIfNeed
    Cleans up and frees all state in S3Global.perDb.
 */
 FIXME_THREADING
-static void PerDbState_free_all(void){
-  PerDbState * pS = S3Global.perDb.aUsed;
-  PerDbState * pSNext = 0;
+static void PerDbStateJni_free_all(void){
+  PerDbStateJni * pS = S3Global.perDb.aUsed;
+  PerDbStateJni * pSNext = 0;
   for( ; pS; pS = pSNext ){
     pSNext = pS->pNext;
-    PerDbState_set_aside(pS);
+    PerDbStateJni_set_aside(pS);
     assert(pSNext ? !pSNext->pPrev : 1);
   }
   assert( 0==S3Global.perDb.aUsed );
@@ -1205,8 +1272,50 @@ JDECL(jint,1bind_1zeroblob64)(JENV_JSELF, jobject jpStmt,
   return (jint)sqlite3_bind_zeroblob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (sqlite3_uint64)n);
 }
 
-JDECL(jint,1busy_1timeout)(JENV_JSELF, jobject pDb, jint ms){
-  return sqlite3_busy_timeout(PtrGet_sqlite3(pDb), (int)ms);
+static int s3jni_busy_handler(void* pState, int n){
+  PerDbStateJni * const pS = (PerDbStateJni *)pState;
+  int rc = 0;
+  if( pS->busyHandler.jObj ){
+    JNIEnv * const env = pS->env;
+    rc = (*env)->CallIntMethod(env, pS->busyHandler.jObj,
+                               pS->busyHandler.jmidxCallback, (jint)n);
+  }
+  return rc;
+}
+
+JDECL(jint,1busy_1handler)(JENV_JSELF, jobject jDb, jobject jBusy){
+  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
+  PerDbStateJni * const pS = PerDbStateJni_for_db(env, pDb, 1);
+  int rc;
+  if(!pS) return (jint)SQLITE_NOMEM;
+  if(jBusy){
+    if(pS->busyHandler.jObj &&
+       (*env)->IsSameObject(env, pS->busyHandler.jObj, jBusy)){
+      /* Same object - this is a no-op. */
+      return 0;
+    }
+    rc = BusyHandlerJni_init(env, &pS->busyHandler, jBusy);
+    if(rc){
+      assert(!pS->busyHandler.jObj);
+      return (jint)rc;
+    }
+    assert(pS->busyHandler.jObj && pS->busyHandler.klazz);
+    assert( (*env)->IsSameObject(env, pS->busyHandler.jObj, jBusy) );
+  }else{
+    BusyHandlerJni_clear(&pS->busyHandler);
+  }
+  return jBusy
+    ? sqlite3_busy_handler(pDb, s3jni_busy_handler, pS)
+    : sqlite3_busy_handler(pDb, 0, 0);
+}
+
+JDECL(jint,1busy_1timeout)(JENV_JSELF, jobject jDb, jint ms){
+  sqlite3* const pDb = PtrGet_sqlite3(jDb);
+  PerDbStateJni * const pS = PerDbStateJni_for_db(env, pDb, 0);
+  if( pS && pS->busyHandler.jObj ){
+    BusyHandlerJni_clear(&pS->busyHandler);
+  }
+  return sqlite3_busy_timeout(pDb, (int)ms);
 }
 
 /**
@@ -1215,13 +1324,19 @@ JDECL(jint,1busy_1timeout)(JENV_JSELF, jobject pDb, jint ms){
 static jint s3jni_close_db(JNIEnv *env, jobject jDb, int version){
   sqlite3 * pDb;
   int rc = 0;
-  PerDbState * pS;
+  PerDbStateJni * pS = 0;
   assert(version == 1 || version == 2);
+  if(0){
+    PerDbStateJni * s = S3Global.perDb.aUsed;
+    for( ; s; s = s->pNext){
+      PerDbStateJni_dump(s);
+    }
+  }
   pDb = PtrGet_sqlite3(jDb);
   if(!pDb) return rc;
-  pS = PerDbState_for_db(env, pDb, 0);
+  pS = PerDbStateJni_for_db(env, pDb, 0);
   rc = 1==version ? (jint)sqlite3_close(pDb) : (jint)sqlite3_close_v2(pDb);
-  if(pS) PerDbState_set_aside(pS)
+  if(pS) PerDbStateJni_set_aside(pS)
            /* MUST come after close() because of pS->trace. */;
   setNativePointer(env, jDb, 0, ClassNames.sqlite3);
   return (jint)rc;
@@ -1706,7 +1821,7 @@ JDECL(void,1set_1last_1insert_1rowid)(JENV_JSELF, jobject jpDb, jlong rowId){
 }
 
 JDECL(jint,1shutdown)(JENV_JSELF){
-  PerDbState_free_all();
+  PerDbStateJni_free_all();
   JNIEnvCache_clear(&S3Global.envCache);
   /* Do not clear S3Global.jvm: it's legal to call
      sqlite3_initialize() again to restart the lib. */
@@ -1714,7 +1829,7 @@ JDECL(jint,1shutdown)(JENV_JSELF){
 }
 
 static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
-  PerDbState * const ps = (PerDbState *)pC;
+  PerDbStateJni * const ps = (PerDbStateJni *)pC;
   JNIEnv * const env = ps->env;
   jobject jX = NULL;
   JNIEnvCacheLine * const pEcl = S3Global_env_cache(env);
@@ -1752,12 +1867,12 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
 
 JDECL(jint,1trace_1v2)(JENV_JSELF,jobject jDb, jint traceMask, jobject jTracer){
   sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbState * ps;
+  PerDbStateJni * ps;
   jclass klazz;
   if( !traceMask || !jTracer ){
     return (jint)sqlite3_trace_v2(pDb, 0, 0, 0);
   }
-  ps = PerDbState_for_db(env, pDb, 1);
+  ps = PerDbStateJni_for_db(env, pDb, 1);
   if(!ps) return SQLITE_NOMEM;
   klazz = (*env)->GetObjectClass(env, jTracer);
   ps->trace.midCallback = (*env)->GetMethodID(env, klazz, "xCallback",

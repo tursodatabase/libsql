@@ -640,6 +640,28 @@ public class Tester1 {
     myassert( 7 == counter.value );
   }
 
+  private static void testBusy(){
+    outln("testBusy()...");
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Boolean> xDestroyed = new ValueHolder<>(false);
+    BusyHandler handler = new BusyHandler(){
+        @Override public int xCallback(int n){
+          /* How do we conveniently test this? */
+          return 0;
+        }
+        @Override public void xDestroy(){
+          xDestroyed.value = true;
+        }
+      };
+    outln("setting busy handler...");
+    int rc = sqlite3_busy_handler(db, handler);
+    outln("set busy handler");
+    myassert(0 == rc);
+    myassert( false == xDestroyed.value );
+    sqlite3_close_v2(db);
+    myassert( true == xDestroyed.value );
+  }
+
   private static void testMisc(){
     outln("Sleeping...");
     sqlite3_sleep(500);
@@ -666,6 +688,7 @@ public class Tester1 {
     testUdfAggregate();
     testUdfWindow();
     testTrace();
+    testBusy();
     testMisc();
     if(liArgs.indexOf("-v")>0){
       listBoundMethods();

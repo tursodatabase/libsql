@@ -845,6 +845,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1zeroblob64
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_busy_handler
+ * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/BusyHandler;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1busy_1handler
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_busy_timeout
  * Signature: (Lorg/sqlite/jni/sqlite3;I)I
  */
