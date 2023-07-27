@@ -82,6 +82,10 @@ impl Statement {
             }
         }
     }
+
+    pub fn get_status(&self, status: i32) -> i32 {
+        self.inner.get_status(status)
+    }
 }
 
 // NOTICE: Column is blatantly copy-pasted from rusqlite

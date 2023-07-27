@@ -100,6 +100,10 @@ impl Statement {
 
         unsafe { crate::ffi::sqlite3_bind_parameter_index(self.raw_stmt, raw_name.as_ptr()) }
     }
+
+    pub fn get_status(&self, status: i32) -> i32 {
+        unsafe { crate::ffi::sqlite3_stmt_status(self.raw_stmt, status as i32, 0) }
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<Statement> {
