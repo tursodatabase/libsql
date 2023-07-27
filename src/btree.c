@@ -4826,7 +4826,6 @@ void sqlite3BtreeCursorUnpin(BtCursor *pCur){
   pCur->curFlags &= ~BTCF_Pinned;
 }
 
-#ifdef SQLITE_ENABLE_OFFSET_SQL_FUNC
 /*
 ** Return the offset into the database file for the start of the
 ** payload to which the cursor is pointing.
@@ -4838,7 +4837,6 @@ i64 sqlite3BtreeOffset(BtCursor *pCur){
   return (i64)pCur->pBt->pageSize*((i64)pCur->pPage->pgno - 1) +
          (i64)(pCur->info.pPayload - pCur->pPage->aData);
 }
-#endif /* SQLITE_ENABLE_OFFSET_SQL_FUNC */
 
 /*
 ** Return the number of bytes of payload for the entry that pCur is
