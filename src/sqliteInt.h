@@ -5200,6 +5200,7 @@ void sqlite3FileSuffix3(const char*, char*);
 u8 sqlite3GetBoolean(const char *z,u8);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
+int sqlite3ValueIsOfClass(const sqlite3_value*, void(*)(void*));
 int sqlite3ValueBytes(sqlite3_value*, u8);
 void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
                         void(*)(void*));

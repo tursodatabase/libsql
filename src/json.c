@@ -174,6 +174,7 @@ struct JsonParse {
   u16 iDepth;        /* Nesting depth */
   u8 nErr;           /* Number of errors seen */
   u8 oom;            /* Set to true if out of memory */
+  u8 bJsonIsRCStr;   /* True if zJson is an RCStr */
   u8 hasNonstd;      /* True if input uses non-standard features like JSON5 */
   u8 useMod;         /* Actually use the edits contain inside aNode */
   u8 hasMod;         /* aNode contains edits from the original zJson */
@@ -618,6 +619,11 @@ static void jsonParseReset(JsonParse *pParse){
   if( pParse->aUp ){
     sqlite3_free(pParse->aUp);
     pParse->aUp = 0;
+  }
+  if( pParse->bJsonIsRCStr ){
+    sqlite3RCStrUnref(pParse->zJson);
+    pParse->zJson = 0;
+    pParse->bJsonIsRCStr = 0;
   }
   if( pParse->zAlt ){
     sqlite3RCStrUnref(pParse->zAlt);
@@ -1884,6 +1890,8 @@ static JsonParse *jsonParseCached(
   int iMinKey = 0;
   u32 iMinHold = 0xffffffff;
   u32 iMaxHold = 0;
+  int bJsonRCStr;
+  int rc;
 
   if( zJson==0 ) return 0;
   for(iKey=0; iKey<JSON_CACHE_SZ; iKey++){
@@ -1895,7 +1903,7 @@ static JsonParse *jsonParseCached(
     if( pMatch==0
      && p->nJson==nJson
      && (p->hasMod==0 || bUnedited==0)
-     && memcmp(p->zJson,zJson,nJson)==0
+     && (p->zJson==zJson || memcmp(p->zJson,zJson,nJson)==0)
     ){
       p->nErr = 0;
       p->useMod = 0;
@@ -1930,16 +1938,22 @@ static JsonParse *jsonParseCached(
   /* The input JSON was not found anywhere in the cache.  We will need
   ** to parse it ourselves and generate a new JsonParse object.
   */
-  p = sqlite3_malloc64( sizeof(*p) + nJson + 1 );
+  bJsonRCStr = sqlite3ValueIsOfClass(pJson,(void(*)(void*))sqlite3RCStrUnref);
+  p = sqlite3_malloc64( sizeof(*p) + (bJsonRCStr ? 0 : nJson+1) );
   if( p==0 ){
     sqlite3_result_error_nomem(pCtx);
     return 0;
   }
   memset(p, 0, sizeof(*p));
-  p->zJson = (char*)&p[1];
-  memcpy(p->zJson, zJson, nJson);
-  p->zJson[nJson] = 0;
-  if( jsonParse(p, pErrCtx, p->zJson) ){
+  if( bJsonRCStr ){
+    p->zJson = sqlite3RCStrRef(zJson);
+  }else{
+    p->zJson = (char*)&p[1];
+    memcpy(p->zJson, zJson, nJson+1);
+  }
+  rc = jsonParse(p, pErrCtx, p->zJson);
+  p->bJsonIsRCStr = bJsonRCStr;
+  if( rc ){
     if( pErrCtx==0 ){
       p->nErr = 1;
       assert( p->nJPRef==1 ); /* Caller will own the new JsonParse object p */

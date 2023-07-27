@@ -1368,6 +1368,24 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   return valueToText(pVal, enc);
 }
 
+/* Return true if sqlit3_value object pVal is a string or blob value
+** that uses the destructor specified in the second argument.
+**
+** TODO:  Maybe someday promote this interface into a published API so
+** that third-party extensions can get access to it?
+*/
+int sqlite3ValueIsOfClass(const sqlite3_value *pVal, void(*xFree)(void*)){
+  if( ALWAYS(pVal!=0)
+   && (pVal->flags & (MEM_Str|MEM_Blob))!=0
+   && (pVal->flags & MEM_Dyn)!=0
+   && pVal->xDel==xFree
+  ){
+    return 1;
+  }else{
+    return 0;
+  }
+}
+
 /*
 ** Create a new sqlite3_value object.
 */
