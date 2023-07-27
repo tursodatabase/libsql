@@ -88,10 +88,10 @@ impl Statement {
         self.inner.get_status(status)
     }
 
-    pub fn value_ref(&self, col: usize) -> ValueRef<'_> {
-        let raw = self.inner.raw_stmt;
+    pub fn value_ref(inner: &libsql_sys::Statement, col: usize) -> ValueRef<'_> {
+        let raw = inner.raw_stmt;
 
-        match self.inner.column_type(col as i32) as u32 {
+        match inner.column_type(col as i32) as u32 {
             crate::ffi::SQLITE_NULL => ValueRef::Null,
             crate::ffi::SQLITE_INTEGER => {
                 ValueRef::Integer(unsafe { crate::ffi::sqlite3_column_int64(raw, col as c_int) })

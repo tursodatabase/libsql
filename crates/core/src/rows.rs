@@ -96,6 +96,10 @@ impl Row {
     pub fn column_name(&self, idx: i32) -> &str {
         self.stmt.column_name(idx)
     }
+
+    pub fn get_ref(&self, idx: i32) -> Result<crate::params::ValueRef<'_>> {
+        Ok(crate::Statement::value_ref(&self.stmt, idx as usize))
+    }
 }
 
 pub trait FromValue {
