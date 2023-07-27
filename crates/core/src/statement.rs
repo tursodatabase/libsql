@@ -46,12 +46,20 @@ impl Statement {
         }
     }
 
+    pub fn parameter_count(&self) -> usize {
+        self.inner.bind_parameter_count()
+    }
+
+    pub fn parameter_name(&self, index: i32) -> Option<&str> {
+        self.inner.bind_parameter_name(index)
+    }
+
     pub fn execute(&self, params: &Params) -> Option<Rows> {
         self.bind(params);
         let err = self.inner.step();
         match err as u32 {
-            libsql_sys::ffi::SQLITE_OK => None,
-            libsql_sys::ffi::SQLITE_DONE => None,
+            crate::ffi::SQLITE_OK => None,
+            crate::ffi::SQLITE_DONE => None,
             _ => Some(Rows {
                 stmt: self.inner.clone(),
                 err: RefCell::new(Some(err)),

@@ -101,6 +101,22 @@ impl Statement {
         unsafe { crate::ffi::sqlite3_bind_parameter_index(self.raw_stmt, raw_name.as_ptr()) }
     }
 
+    pub fn bind_parameter_count(&self) -> usize {
+        unsafe { crate::ffi::sqlite3_bind_parameter_count(self.raw_stmt) as usize }
+    }
+
+    pub fn bind_parameter_name(&self, index: i32) -> Option<&str> {
+        unsafe {
+            let name = crate::ffi::sqlite3_bind_parameter_name(self.raw_stmt, index);
+            if name.is_null() {
+                None
+            } else {
+                // NOTICE: unwrap(), because SQLite promises it's valid UTF-8
+                Some(std::ffi::CStr::from_ptr(name).to_str().unwrap())
+            }
+        }
+    }
+
     pub fn get_status(&self, status: i32) -> i32 {
         unsafe { crate::ffi::sqlite3_stmt_status(self.raw_stmt, status as i32, 0) }
     }
