@@ -133,7 +133,7 @@ pub fn libsql_run_wasm(
     let module = unsafe { &*module };
 
     let run_wasm = |engine: &Engine, module: &Module| -> Result<(), String> {
-        let mut linker = Linker::new(&engine);
+        let mut linker = Linker::new(engine);
         wasmtime_wasi::add_to_linker(&mut linker, |s| s)
             .map_err(|e| format!("Add WASI failed: {}", e))?;
         let wasi = WasiCtxBuilder::new()
@@ -141,7 +141,7 @@ pub fn libsql_run_wasm(
             .args(&[])
             .map_err(|e| format!("Creating WasiCtx failed: {}", e))?
             .build();
-        let mut store = Store::new(&engine, wasi);
+        let mut store = Store::new(engine, wasi);
 
         let instance = linker
             .instantiate(&mut store, module)
@@ -212,7 +212,7 @@ pub fn libsql_run_wasm(
                         instance.get_func(&mut store, func_name).ok_or_else(|| {
                             format!("Function {} not found in Wasm module", func_name)
                         })?;
-                    let params = [Val::I32((blob_len_i32 + 5) as i32)];
+                    let params = [Val::I32(blob_len_i32 + 5)];
                     let mut result = Val::null();
                     func_malloc
                         .call(&mut store, &params, std::slice::from_mut(&mut result))

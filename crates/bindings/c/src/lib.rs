@@ -5,7 +5,7 @@ mod errors;
 mod types;
 
 use types::{
-    libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_rows,
+    libsql_connection, libsql_connection_t, libsql_database, libsql_database_t,
     libsql_rows_future, libsql_rows_future_t, libsql_rows_t,
 };
 
