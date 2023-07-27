@@ -46,7 +46,7 @@ impl Cursor {
                     let param = match parameter.extract::<i32>() {
                         Ok(value) => libsql_core::Value::Integer(value as i64),
                         Err(_) => match parameter.extract::<f64>() {
-                            Ok(value) => libsql_core::Value::Float(value),
+                            Ok(value) => libsql_core::Value::Real(value),
                             Err(_) => match parameter.extract::<&str>() {
                                 Ok(value) => libsql_core::Value::Text(value.to_string()),
                                 Err(_) => todo!(),
@@ -85,7 +85,7 @@ impl Result {
                                     let value = row.get::<i32>(col_idx).map_err(to_py_err)?;
                                     value.into_py(self_.py())
                                 }
-                                libsql_core::ValueType::Float => todo!(),
+                                libsql_core::ValueType::Real => todo!(),
                                 libsql_core::ValueType::Blob => todo!(),
                                 libsql_core::ValueType::Text => {
                                     let value = row.get::<&str>(col_idx).map_err(to_py_err)?;

@@ -2,7 +2,7 @@
 
 pub enum ValueType {
     Integer,
-    Float,
+    Real,
     Blob,
     Text,
     Null,
@@ -12,7 +12,7 @@ impl ValueType {
     pub fn from(val_type: i32) -> ValueType {
         match val_type as u32 {
             crate::ffi::SQLITE_INTEGER => ValueType::Integer,
-            crate::ffi::SQLITE_FLOAT => ValueType::Float,
+            crate::ffi::SQLITE_FLOAT => ValueType::Real,
             crate::ffi::SQLITE_BLOB => ValueType::Blob,
             crate::ffi::SQLITE_TEXT => ValueType::Text,
             crate::ffi::SQLITE_NULL => ValueType::Null,

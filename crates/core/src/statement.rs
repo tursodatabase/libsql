@@ -71,7 +71,7 @@ impl Statement {
             Value::Integer(value) => {
                 self.inner.bind_int64(i, *value);
             }
-            Value::Float(value) => {
+            Value::Real(value) => {
                 self.inner.bind_double(i, *value);
             }
             Value::Text(value) => {

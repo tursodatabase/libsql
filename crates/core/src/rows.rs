@@ -85,7 +85,7 @@ impl Row {
         let val = self.stmt.column_type(idx);
         match val as u32 {
             libsql_sys::ffi::SQLITE_INTEGER => Ok(ValueType::Integer),
-            libsql_sys::ffi::SQLITE_FLOAT => Ok(ValueType::Float),
+            libsql_sys::ffi::SQLITE_FLOAT => Ok(ValueType::Real),
             libsql_sys::ffi::SQLITE_BLOB => Ok(ValueType::Blob),
             libsql_sys::ffi::SQLITE_TEXT => Ok(ValueType::Text),
             libsql_sys::ffi::SQLITE_NULL => Ok(ValueType::Null),

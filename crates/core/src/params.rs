@@ -47,7 +47,7 @@ impl From<Vec<(String, Value)>> for Params {
 pub enum Value {
     Null,
     Integer(i64),
-    Float(f64),
+    Real(f64),
     Text(String),
     Blob(Vec<u8>),
 }
@@ -69,7 +69,7 @@ impl From<libsql_sys::Value> for Value {
         match value.value_type() {
             ValueType::Null => Value::Null,
             ValueType::Integer => Value::Integer(value.int().into()),
-            ValueType::Float => todo!(),
+            ValueType::Real => todo!(),
             ValueType::Text => {
                 let v = value.text();
                 if v.is_null() {
