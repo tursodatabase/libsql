@@ -22,7 +22,7 @@ macro_rules! named_params {
         Params::None
     };
     ($($param_name:literal: $value:expr),* $(,)?) => {
-        Params::Named(vec![$(($param_name.to_string(), crate::params::Value::from($value))),*])
+        Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::from($value))),*])
     };
 }
 

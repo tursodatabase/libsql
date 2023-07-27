@@ -37,7 +37,7 @@ impl Statement {
 
             Params::Named(params) => {
                 for (name, param) in params {
-                    let i = self.inner.bind_parameter_index(&name);
+                    let i = self.inner.bind_parameter_index(name);
 
                     self.bind_value(i, param);
                 }
