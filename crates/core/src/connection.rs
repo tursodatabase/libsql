@@ -95,7 +95,11 @@ impl Connection {
     }
 
     pub fn is_autocommit(&self) -> bool {
-        unsafe { ffi::sqlite3_get_autocommit(self.raw) != 0 } 
+        unsafe { ffi::sqlite3_get_autocommit(self.raw) != 0 }
+    }
+
+    pub fn changes(&self) -> u64 {
+        unsafe { ffi::sqlite3_changes64(self.raw) as u64 }
     }
 }
 
