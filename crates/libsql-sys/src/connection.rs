@@ -74,6 +74,10 @@ impl<'a> Connection<'a> {
             _pth: PhantomData,
         })
     }
+
+    pub fn is_autocommit(&self) -> bool {
+        unsafe { crate::ffi::sqlite3_get_autocommit(self.conn) != 0 }
+    }
 }
 
 impl Drop for Connection<'_> {
