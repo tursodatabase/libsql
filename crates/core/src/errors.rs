@@ -16,6 +16,8 @@ pub enum Error {
     InvalidColumnName(String),
     #[error("libSQL error {0}")]
     LibError(std::ffi::c_int),
+    #[error("Query returned no rows")]
+    QueryReturnedNoRows,
 }
 
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {

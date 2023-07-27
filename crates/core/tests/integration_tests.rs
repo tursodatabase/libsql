@@ -20,6 +20,40 @@ fn execute() {
 }
 
 #[test]
+fn query() {
+    let conn = setup();
+    conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
+        .unwrap();
+
+    let params = Params::from(vec![libsql::Value::from(2)]);
+
+    let stmt = conn.prepare("SELECT * FROM users WHERE id = ?1").unwrap();
+
+    let rows = stmt.query(&params).unwrap();
+    let row = rows.next().unwrap().unwrap();
+
+    assert_eq!(row.get::<i32>(0).unwrap(), 2);
+    assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
+
+    stmt.reset();
+
+    let row = stmt.query_row(&params).unwrap();
+
+    assert_eq!(row.get::<i32>(0).unwrap(), 2);
+    assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
+
+    stmt.reset();
+
+    let mut names = stmt
+        .query_map(&params, |r| r.get::<&str>(1).map(str::to_owned))
+        .unwrap();
+
+    let name = names.next().unwrap().unwrap();
+
+    assert_eq!(name, "Alice");
+}
+
+#[test]
 fn prepare_and_execute() {
     let conn = setup();
     check_insert(
