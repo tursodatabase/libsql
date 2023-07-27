@@ -60,7 +60,7 @@ pub use database::Database;
 pub use database::Opts;
 pub use errors::Error;
 pub use params::Params;
-pub use params::Value;
+pub use params::{Value, ValueRef};
 pub use rows::Rows;
 pub use rows::RowsFuture;
 pub use statement::{Column, Statement};

@@ -1,6 +1,7 @@
-use crate::{errors, Error, Params, Result, Rows, Value};
+use crate::{errors, Error, Params, Result, Rows, Value, ValueRef};
 
 use std::cell::RefCell;
+use std::ffi::c_int;
 use std::sync::Arc;
 
 /// A prepared statement.
@@ -85,6 +86,64 @@ impl Statement {
 
     pub fn get_status(&self, status: i32) -> i32 {
         self.inner.get_status(status)
+    }
+
+    pub fn value_ref(&self, col: usize) -> ValueRef<'_> {
+        let raw = self.inner.raw_stmt;
+
+        match self.inner.column_type(col as i32) as u32 {
+            crate::ffi::SQLITE_NULL => ValueRef::Null,
+            crate::ffi::SQLITE_INTEGER => {
+                ValueRef::Integer(unsafe { crate::ffi::sqlite3_column_int64(raw, col as c_int) })
+            }
+            crate::ffi::SQLITE_FLOAT => {
+                ValueRef::Real(unsafe { crate::ffi::sqlite3_column_double(raw, col as c_int) })
+            }
+            crate::ffi::SQLITE_TEXT => {
+                let s = unsafe {
+                    // Quoting from "Using SQLite" book:
+                    // To avoid problems, an application should first extract the desired type using
+                    // a sqlite3_column_xxx() function, and then call the
+                    // appropriate sqlite3_column_bytes() function.
+                    let text = crate::ffi::sqlite3_column_text(raw, col as c_int);
+                    let len = crate::ffi::sqlite3_column_bytes(raw, col as c_int);
+                    assert!(
+                        !text.is_null(),
+                        "unexpected SQLITE_TEXT column type with NULL data"
+                    );
+                    std::slice::from_raw_parts(text.cast::<u8>(), len as usize)
+                };
+
+                ValueRef::Text(s)
+            }
+            crate::ffi::SQLITE_BLOB => {
+                let (blob, len) = unsafe {
+                    (
+                        crate::ffi::sqlite3_column_blob(raw, col as c_int),
+                        crate::ffi::sqlite3_column_bytes(raw, col as c_int),
+                    )
+                };
+
+                assert!(
+                    len >= 0,
+                    "unexpected negative return from sqlite3_column_bytes"
+                );
+                if len > 0 {
+                    assert!(
+                        !blob.is_null(),
+                        "unexpected SQLITE_BLOB column type with NULL data"
+                    );
+                    ValueRef::Blob(unsafe {
+                        std::slice::from_raw_parts(blob.cast::<u8>(), len as usize)
+                    })
+                } else {
+                    // The return value from sqlite3_column_blob() for a zero-length BLOB
+                    // is a NULL pointer.
+                    ValueRef::Blob(&[])
+                }
+            }
+            _ => unreachable!("sqlite3_column_type returned invalid value"),
+        }
     }
 }
 
