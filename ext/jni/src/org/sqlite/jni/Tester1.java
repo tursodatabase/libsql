@@ -10,8 +10,6 @@
 **
 *************************************************************************
 ** This file contains a set of tests for the sqlite3 JNI bindings.
-** They make heavy use of assert(), so must be run with java's -ea
-** (enble assert) flag.
 */
 package org.sqlite.jni;
 import static org.sqlite.jni.SQLite3Jni.*;
@@ -28,10 +26,10 @@ public class Tester1 {
     System.out.println(val);
   }
 
-  private static int assertCount = 0;
-  private static void myassert(Boolean v){
-    ++assertCount;
-    assert( v );
+  private static int affirmCount = 0;
+  private static void affirm(Boolean v){
+    ++affirmCount;
+    if( !v ) throw new RuntimeException("Assertion failed.");
   }
 
   private static void test1(){
@@ -41,10 +39,10 @@ public class Tester1 {
           + sqlite3_libversion()
           + "\n"
           + SQLITE_SOURCE_ID);
-    myassert(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
+    affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
     //outln("threadsafe = "+sqlite3_threadsafe());
-    myassert(SQLITE_MAX_LENGTH > 0);
-    myassert(SQLITE_MAX_TRIGGER_DEPTH>0);
+    affirm(SQLITE_MAX_LENGTH > 0);
+    affirm(SQLITE_MAX_TRIGGER_DEPTH>0);
   }
 
   private static void testCompileOption(){
@@ -74,12 +72,12 @@ public class Tester1 {
         }
         if( 0==sqlChunk.length ) break;
         int rc = sqlite3_prepare_v2(db, sqlChunk, stmt, oTail);
-        myassert(0 == rc);
+        affirm(0 == rc);
         pos = oTail.getValue();
-        myassert(0 != stmt.getNativePointer());
+        affirm(0 != stmt.getNativePointer());
         rc = sqlite3_step(stmt);
         sqlite3_finalize(stmt);
-        myassert(0 == stmt.getNativePointer());
+        affirm(0 == stmt.getNativePointer());
         if(0!=rc && SQLITE_ROW!=rc && SQLITE_DONE!=rc){
           throw new RuntimeException("db op failed with rc="+rc);
         }
@@ -87,34 +85,34 @@ public class Tester1 {
   }
   private static void testOpenDb1(){
       sqlite3 db = new sqlite3();
-      myassert(0 == db.getNativePointer());
+      affirm(0 == db.getNativePointer());
       int rc = sqlite3_open(":memory:", db);
-      myassert(0 == rc);
-      myassert(0 < db.getNativePointer());
+      affirm(0 == rc);
+      affirm(0 < db.getNativePointer());
       sqlite3_close(db);
-      myassert(0 == db.getNativePointer());
+      affirm(0 == db.getNativePointer());
   }
 
   private static void testOpenDb2(){
     sqlite3 db = new sqlite3();
-    myassert(0 == db.getNativePointer());
+    affirm(0 == db.getNativePointer());
     int rc = sqlite3_open_v2(":memory:", db,
                              SQLITE_OPEN_READWRITE
                              | SQLITE_OPEN_CREATE, null);
-    myassert(0 == rc);
-    myassert(0 < db.getNativePointer());
+    affirm(0 == rc);
+    affirm(0 < db.getNativePointer());
     sqlite3_close_v2(db);
-    myassert(0 == db.getNativePointer());
+    affirm(0 == db.getNativePointer());
   }
 
   private static sqlite3 createNewDb(){
     sqlite3 db = new sqlite3();
-    myassert(0 == db.getNativePointer());
+    affirm(0 == db.getNativePointer());
     int rc = sqlite3_open(":memory:", db);
-    myassert(0 == rc);
-    myassert(0 != db.getNativePointer());
+    affirm(0 == rc);
+    affirm(0 != db.getNativePointer());
     rc = sqlite3_busy_timeout(db, 2000);
-    myassert( 0 == rc );
+    affirm( 0 == rc );
     return db;
   }
 
@@ -122,14 +120,14 @@ public class Tester1 {
     sqlite3 db = createNewDb();
     int rc;
     sqlite3_stmt stmt = new sqlite3_stmt();
-    myassert(0 == stmt.getNativePointer());
+    affirm(0 == stmt.getNativePointer());
     rc = sqlite3_prepare(db, "CREATE TABLE t1(a);", stmt);
-    myassert(0 == rc);
-    myassert(0 != stmt.getNativePointer());
+    affirm(0 == rc);
+    affirm(0 != stmt.getNativePointer());
     rc = sqlite3_step(stmt);
-    myassert(SQLITE_DONE == rc);
+    affirm(SQLITE_DONE == rc);
     sqlite3_finalize(stmt);
-    myassert(0 == stmt.getNativePointer());
+    affirm(0 == stmt.getNativePointer());
 
     { /* Demonstrate how to use the "zTail" option of
          sqlite3_prepare() family of functions. */
@@ -146,33 +144,33 @@ public class Tester1 {
         //outln("SQL chunk #"+n+" length = "+sqlChunk.length+", pos = "+pos);
         if( 0==sqlChunk.length ) break;
         rc = sqlite3_prepare_v2(db, sqlChunk, stmt, oTail);
-        myassert(0 == rc);
+        affirm(0 == rc);
         pos = oTail.getValue();
         /*outln("SQL tail pos = "+pos+". Chunk = "+
               (new String(Arrays.copyOfRange(sqlChunk,0,pos),
               StandardCharsets.UTF_8)));*/
         switch(n){
-          case 1: myassert(19 == pos); break;
-          case 2: myassert(36 == pos); break;
-          default: myassert( false /* can't happen */ );
+          case 1: affirm(19 == pos); break;
+          case 2: affirm(36 == pos); break;
+          default: affirm( false /* can't happen */ );
 
         }
         ++n;
-        myassert(0 != stmt.getNativePointer());
+        affirm(0 != stmt.getNativePointer());
         rc = sqlite3_step(stmt);
-        myassert(SQLITE_DONE == rc);
+        affirm(SQLITE_DONE == rc);
         sqlite3_finalize(stmt);
-        myassert(0 == stmt.getNativePointer());
+        affirm(0 == stmt.getNativePointer());
       }
     }
 
 
     rc = sqlite3_prepare_v3(db, "INSERT INTO t2(a) VALUES(1),(2),(3)",
                             SQLITE_PREPARE_NORMALIZE, stmt);
-    myassert(0 == rc);
-    myassert(0 != stmt.getNativePointer());
+    affirm(0 == rc);
+    affirm(0 != stmt.getNativePointer());
     sqlite3_finalize(stmt);
-    myassert(0 == stmt.getNativePointer() );
+    affirm(0 == stmt.getNativePointer() );
     sqlite3_close_v2(db);
   }
 
@@ -182,10 +180,10 @@ public class Tester1 {
 
     sqlite3_stmt stmt = new sqlite3_stmt();
     int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(:a);", stmt);
-    myassert(0 == rc);
-    myassert(1 == sqlite3_bind_parameter_count(stmt));
+    affirm(0 == rc);
+    affirm(1 == sqlite3_bind_parameter_count(stmt));
     final int paramNdx = sqlite3_bind_parameter_index(stmt, ":a");
-    myassert(1 == paramNdx);
+    affirm(1 == paramNdx);
     int total1 = 0;
     long rowid = -1;
     int changes = sqlite3_changes(db);
@@ -195,34 +193,34 @@ public class Tester1 {
     for(int i = 99; i < 102; ++i ){
       total1 += i;
       rc = sqlite3_bind_int(stmt, paramNdx, i);
-      myassert(0 == rc);
+      affirm(0 == rc);
       rc = sqlite3_step(stmt);
       sqlite3_reset(stmt);
-      myassert(SQLITE_DONE == rc);
+      affirm(SQLITE_DONE == rc);
       long x = sqlite3_last_insert_rowid(db);
-      myassert(x > rowid);
+      affirm(x > rowid);
       rowid = x;
     }
     sqlite3_finalize(stmt);
-    myassert(total1 > 0);
-    myassert(sqlite3_changes(db) > changes);
-    myassert(sqlite3_total_changes(db) > changesT);
-    myassert(sqlite3_changes64(db) > changes64);
-    myassert(sqlite3_total_changes64(db) > changesT64);
+    affirm(total1 > 0);
+    affirm(sqlite3_changes(db) > changes);
+    affirm(sqlite3_total_changes(db) > changesT);
+    affirm(sqlite3_changes64(db) > changes64);
+    affirm(sqlite3_total_changes64(db) > changesT64);
     rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    myassert(0 == rc);
+    affirm(0 == rc);
     int total2 = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       total2 += sqlite3_column_int(stmt, 0);
       sqlite3_value sv = sqlite3_column_value(stmt, 0);
-      myassert( null != sv );
-      myassert( 0 != sv.getNativePointer() );
-      myassert( SQLITE_INTEGER == sqlite3_value_type(sv) );
+      affirm( null != sv );
+      affirm( 0 != sv.getNativePointer() );
+      affirm( SQLITE_INTEGER == sqlite3_value_type(sv) );
     }
     sqlite3_finalize(stmt);
-    myassert(total1 == total2);
+    affirm(total1 == total2);
     sqlite3_close_v2(db);
-    myassert(0 == db.getNativePointer());
+    affirm(0 == db.getNativePointer());
   }
 
   private static void testBindFetchInt64(){
@@ -239,13 +237,13 @@ public class Tester1 {
     }
     sqlite3_finalize(stmt);
     rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    myassert(0 == rc);
+    affirm(0 == rc);
     long total2 = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       total2 += sqlite3_column_int64(stmt, 0);
     }
     sqlite3_finalize(stmt);
-    myassert(total1 == total2);
+    affirm(total1 == total2);
     sqlite3_close_v2(db);
   }
 
@@ -263,16 +261,16 @@ public class Tester1 {
     }
     sqlite3_finalize(stmt);
     rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    myassert(0 == rc);
+    affirm(0 == rc);
     double total2 = 0;
     int counter = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       ++counter;
       total2 += sqlite3_column_double(stmt, 0);
     }
-    myassert(4 == counter);
+    affirm(4 == counter);
     sqlite3_finalize(stmt);
-    myassert(total2<=total1+0.01 && total2>=total1-0.01);
+    affirm(total2<=total1+0.01 && total2>=total1-0.01);
     sqlite3_close_v2(db);
   }
 
@@ -284,14 +282,14 @@ public class Tester1 {
     String list1[] = { "hell🤩", "w😃rld", "!" };
     for( String e : list1 ){
       rc = sqlite3_bind_text(stmt, 1, e);
-      myassert(0 == rc);
+      affirm(0 == rc);
       rc = sqlite3_step(stmt);
-      myassert(SQLITE_DONE==rc);
+      affirm(SQLITE_DONE==rc);
       sqlite3_reset(stmt);
     }
     sqlite3_finalize(stmt);
     rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    myassert(0 == rc);
+    affirm(0 == rc);
     StringBuffer sbuf = new StringBuffer();
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
@@ -301,8 +299,8 @@ public class Tester1 {
       ++n;
     }
     sqlite3_finalize(stmt);
-    myassert(3 == n);
-    myassert("w😃rldhell🤩!".equals(sbuf.toString()));
+    affirm(3 == n);
+    affirm("w😃rldhell🤩!".equals(sbuf.toString()));
     sqlite3_close_v2(db);
   }
 
@@ -314,25 +312,25 @@ public class Tester1 {
     byte list1[] = { 0x32, 0x33, 0x34 };
     rc = sqlite3_bind_blob(stmt, 1, list1);
     rc = sqlite3_step(stmt);
-    myassert(SQLITE_DONE == rc);
+    affirm(SQLITE_DONE == rc);
     sqlite3_finalize(stmt);
     rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    myassert(0 == rc);
+    affirm(0 == rc);
     int n = 0;
     int total = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       byte blob[] = sqlite3_column_blob(stmt, 0);
-      myassert(3 == blob.length);
+      affirm(3 == blob.length);
       int i = 0;
       for(byte b : blob){
-        myassert(b == list1[i++]);
+        affirm(b == list1[i++]);
         total += b;
       }
       ++n;
     }
     sqlite3_finalize(stmt);
-    myassert(1 == n);
-    myassert(total == 0x32 + 0x33 + 0x34);
+    affirm(1 == n);
+    affirm(total == 0x32 + 0x33 + 0x34);
     sqlite3_close_v2(db);
   }
 
@@ -365,7 +363,7 @@ public class Tester1 {
         }
       };
     int rc = sqlite3_create_collation(db, "reversi", SQLITE_UTF8, myCollation);
-    myassert(0 == rc);
+    affirm(0 == rc);
     sqlite3_stmt stmt = new sqlite3_stmt();
     sqlite3_prepare(db, "SELECT a FROM t ORDER BY a COLLATE reversi", stmt);
     int counter = 0;
@@ -374,12 +372,12 @@ public class Tester1 {
       ++counter;
       //outln("REVERSI'd row#"+counter+": "+val);
       switch(counter){
-        case 1: myassert("c".equals(val)); break;
-        case 2: myassert("b".equals(val)); break;
-        case 3: myassert("a".equals(val)); break;
+        case 1: affirm("c".equals(val)); break;
+        case 2: affirm("b".equals(val)); break;
+        case 3: affirm("a".equals(val)); break;
       }
     }
-    myassert(3 == counter);
+    affirm(3 == counter);
     sqlite3_finalize(stmt);
     sqlite3_prepare(db, "SELECT a FROM t ORDER BY a", stmt);
     counter = 0;
@@ -388,16 +386,16 @@ public class Tester1 {
       ++counter;
       //outln("Non-REVERSI'd row#"+counter+": "+val);
       switch(counter){
-        case 3: myassert("c".equals(val)); break;
-        case 2: myassert("b".equals(val)); break;
-        case 1: myassert("a".equals(val)); break;
+        case 3: affirm("c".equals(val)); break;
+        case 2: affirm("b".equals(val)); break;
+        case 1: affirm("a".equals(val)); break;
       }
     }
-    myassert(3 == counter);
+    affirm(3 == counter);
     sqlite3_finalize(stmt);
-    myassert(!xDestroyCalled.value);
+    affirm(!xDestroyCalled.value);
     sqlite3_close(db);
-    myassert(xDestroyCalled.value);
+    affirm(xDestroyCalled.value);
   }
 
   private static void testToUtf8(){
@@ -409,7 +407,7 @@ public class Tester1 {
     */
     final byte[] ba = "a \0 b".getBytes(StandardCharsets.UTF_8);
     //out("\"a NUL b\" via getBytes(): ");
-    myassert( 5 == ba.length /* as opposed to 6 in modified utf-8 */);
+    affirm( 5 == ba.length /* as opposed to 6 in modified utf-8 */);
     //for( byte b : ba ) out( ""+b );
     //outln("");
   }
@@ -430,7 +428,7 @@ public class Tester1 {
       // Java...
       new SQLFunction.Scalar(){
         public void xFunc(sqlite3_context cx, sqlite3_value args[]){
-          myassert(db.getNativePointer()
+          affirm(db.getNativePointer()
                    == sqlite3_context_db_handle(cx).getNativePointer());
           int result = 0;
           for( sqlite3_value v : args ) result += sqlite3_value_int(v);
@@ -445,13 +443,13 @@ public class Tester1 {
 
     // Register and use the function...
     int rc = sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func);
-    assert(0 == rc);
-    assert(0 == xFuncAccum.value);
+    affirm(0 == rc);
+    affirm(0 == xFuncAccum.value);
     execSql(db, "SELECT myfunc(1,2,3)");
-    assert(6 == xFuncAccum.value);
-    assert( !xDestroyCalled.value );
+    affirm(6 == xFuncAccum.value);
+    affirm( !xDestroyCalled.value );
     sqlite3_close(db);
-    assert( xDestroyCalled.value );
+    affirm( xDestroyCalled.value );
   }
 
   private static void testUdfJavaObject(){
@@ -463,22 +461,22 @@ public class Tester1 {
         }
       };
     int rc = sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func);
-    assert(0 == rc);
+    affirm(0 == rc);
     sqlite3_stmt stmt = new sqlite3_stmt();
     sqlite3_prepare(db, "select myfunc()", stmt);
-    assert( 0 != stmt.getNativePointer() );
+    affirm( 0 != stmt.getNativePointer() );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
       sqlite3_value v = sqlite3_column_value(stmt, 0);
-      assert( testResult.value == sqlite3_value_java_object(v) );
-      assert( testResult.value == sqlite3_value_java_casted(v, Long.class) );
-      assert( testResult.value ==
+      affirm( testResult.value == sqlite3_value_java_object(v) );
+      affirm( testResult.value == sqlite3_value_java_casted(v, Long.class) );
+      affirm( testResult.value ==
               sqlite3_value_java_casted(v, testResult.value.getClass()) );
-      assert( null == sqlite3_value_java_casted(v, Double.class) );
+      affirm( null == sqlite3_value_java_casted(v, Double.class) );
       ++n;
     }
     sqlite3_finalize(stmt);
-    assert( 1 == n );
+    affirm( 1 == n );
     sqlite3_close(db);
   }
 
@@ -496,14 +494,14 @@ public class Tester1 {
       };
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES(1),(2),(3)");
     int rc = sqlite3_create_function(db, "myfunc", 1, SQLITE_UTF8, func);
-    assert(0 == rc);
+    affirm(0 == rc);
     sqlite3_stmt stmt = new sqlite3_stmt();
     sqlite3_prepare(db, "select myfunc(a) from t", stmt);
-    assert( 0 != stmt.getNativePointer() );
+    affirm( 0 != stmt.getNativePointer() );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
       final int v = sqlite3_column_int(stmt, 0);
-      myassert( 6 == v );
+      affirm( 6 == v );
       ++n;
     }
     sqlite3_reset(stmt);
@@ -511,11 +509,11 @@ public class Tester1 {
     n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
       final int v = sqlite3_column_int(stmt, 0);
-      myassert( 6 == v );
+      affirm( 6 == v );
       ++n;
     }
     sqlite3_finalize(stmt);
-    assert( 1==n );
+    affirm( 1==n );
     sqlite3_close(db);
   }
 
@@ -546,7 +544,7 @@ public class Tester1 {
         }
       };
     int rc = sqlite3_create_function(db, "winsumint", 1, SQLITE_UTF8, func);
-    myassert( 0 == rc );
+    affirm( 0 == rc );
     execSql(db, new String[] {
         "CREATE TEMP TABLE twin(x, y); INSERT INTO twin VALUES",
         "('a', 4),('b', 5),('c', 3),('d', 8),('e', 1)"
@@ -557,22 +555,22 @@ public class Tester1 {
                          "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING"+
                          ") AS sum_y "+
                          "FROM twin ORDER BY x;", stmt);
-    myassert( 0 == rc );
+    affirm( 0 == rc );
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final String s = sqlite3_column_text(stmt, 0);
       final int i = sqlite3_column_int(stmt, 1);
       switch(++n){
-        case 1: myassert( "a".equals(s) && 9==i ); break;
-        case 2: myassert( "b".equals(s) && 12==i ); break;
-        case 3: myassert( "c".equals(s) && 16==i ); break;
-        case 4: myassert( "d".equals(s) && 12==i ); break;
-        case 5: myassert( "e".equals(s) && 9==i ); break;
-        default: myassert( false /* cannot happen */ );
+        case 1: affirm( "a".equals(s) && 9==i ); break;
+        case 2: affirm( "b".equals(s) && 12==i ); break;
+        case 3: affirm( "c".equals(s) && 16==i ); break;
+        case 4: affirm( "d".equals(s) && 12==i ); break;
+        case 5: affirm( "e".equals(s) && 9==i ); break;
+        default: affirm( false /* cannot happen */ );
       }
     }
     sqlite3_finalize(stmt);
-    myassert( 5 == n );
+    affirm( 5 == n );
     sqlite3_close(db);
   }
 
@@ -621,23 +619,23 @@ public class Tester1 {
           switch(traceFlag){
             case SQLITE_TRACE_STMT:
               // pNative ==> sqlite3_stmt
-              myassert(x instanceof String); break;
+              affirm(x instanceof String); break;
             case SQLITE_TRACE_PROFILE:
               // pNative ==> sqlite3_stmt
-              myassert(x instanceof Long); break;
+              affirm(x instanceof Long); break;
             case SQLITE_TRACE_ROW:
               // pNative ==> sqlite3_stmt
             case SQLITE_TRACE_CLOSE:
               // pNative ==> sqlite3
-              myassert(null == x);
+              affirm(null == x);
           }
           return 0;
         }
       });
     execSql(db, "SELECT 1; SELECT 2");
-    myassert( 6 == counter.value );
+    affirm( 6 == counter.value );
     sqlite3_close(db);
-    myassert( 7 == counter.value );
+    affirm( 7 == counter.value );
   }
 
   private static void testBusy(){
@@ -647,10 +645,10 @@ public class Tester1 {
     final sqlite3 db2 = new sqlite3();
 
     int rc = sqlite3_open(dbName, db1);
-    myassert( 0 == rc );
+    affirm( 0 == rc );
     execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
     rc = sqlite3_open(dbName, db2);
-    myassert( 0 == rc );
+    affirm( 0 == rc );
 
     final ValueHolder<Boolean> xDestroyed = new ValueHolder<>(false);
     final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
@@ -664,20 +662,20 @@ public class Tester1 {
         }
       };
     rc = sqlite3_busy_handler(db2, handler);
-    myassert(0 == rc);
+    affirm(0 == rc);
 
     // Force a locked condition...
     execSql(db1, "BEGIN EXCLUSIVE");
-    myassert( false == xDestroyed.value );
+    affirm( false == xDestroyed.value );
     sqlite3_stmt stmt = new sqlite3_stmt();
     rc = sqlite3_prepare(db2, "SELECT * from t", stmt);
-    myassert( SQLITE_BUSY == rc);
-    myassert( 3 == xBusyCalled.value );
+    affirm( SQLITE_BUSY == rc);
+    affirm( 3 == xBusyCalled.value );
     sqlite3_finalize(stmt);
     sqlite3_close(db1);
-    myassert( false == xDestroyed.value );
+    affirm( false == xDestroyed.value );
     sqlite3_close(db2);
-    myassert( true == xDestroyed.value );
+    affirm( true == xDestroyed.value );
     try{
       final java.io.File f = new java.io.File(dbName);
       f.delete();
@@ -686,9 +684,9 @@ public class Tester1 {
     }
   }
 
-  private static void testMisc(){
-    outln("Sleeping...");
-    sqlite3_sleep(500);
+  private static void testSleep(){
+    out("Sleeping briefly... ");
+    sqlite3_sleep(600);
     outln("Woke up.");
   }
 
@@ -713,10 +711,10 @@ public class Tester1 {
     testUdfWindow();
     testTrace();
     testBusy();
-    testMisc();
+    testSleep();
     if(liArgs.indexOf("-v")>0){
       listBoundMethods();
     }
-    outln("Tests done. "+assertCount+" assertion(s) checked.");
+    outln("Tests done. "+affirmCount+" assertion checked.");
   }
 }
