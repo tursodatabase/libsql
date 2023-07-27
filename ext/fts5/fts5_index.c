@@ -403,8 +403,8 @@ struct Fts5StructureSegment {
   u64 iOrigin1;
   u64 iOrigin2;
   int nPgTombstone;               /* Number of tombstone hash table pages */
-  i64 nEntryTombstone;            /* Number of tombstone entries that "count" */
-  i64 nEntry;                     /* Number of rows in this segment */
+  u64 nEntryTombstone;            /* Number of tombstone entries that "count" */
+  u64 nEntry;                     /* Number of rows in this segment */
 };
 struct Fts5StructureLevel {
   int nMerge;                     /* Number of segments in incr-merge */
@@ -4779,7 +4779,6 @@ static int fts5IndexMerge(
   int nRem = nPg;
   int bRet = 0;
   Fts5Structure *pStruct = *ppStruct;
-  int bTombstone = 0;
   while( nRem>0 && p->rc==SQLITE_OK ){
     int iLvl;                   /* To iterate through levels */
     int iBestLvl = 0;           /* Level offering the most input segments */
