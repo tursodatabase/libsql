@@ -120,6 +120,10 @@ impl Statement {
     pub fn get_status(&self, status: i32) -> i32 {
         unsafe { crate::ffi::sqlite3_stmt_status(self.raw_stmt, status as i32, 0) }
     }
+
+    pub fn is_explain(&self) -> i32 {
+        unsafe { crate::ffi::sqlite3_stmt_isexplain(self.raw_stmt) }
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<Statement> {

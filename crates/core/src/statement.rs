@@ -54,6 +54,10 @@ impl Statement {
         self.inner.bind_parameter_name(index)
     }
 
+    pub fn is_explain(&self) -> i32 {
+        self.inner.is_explain()
+    }
+
     pub fn execute(&self, params: &Params) -> Option<Rows> {
         self.bind(params);
         let err = self.inner.step();
