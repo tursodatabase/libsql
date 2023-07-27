@@ -136,8 +136,8 @@ impl From<&mut libsql_rows> for libsql_rows_t {
     }
 }
 
-pub struct libsql_rows_future {
-    pub(crate) result: libsql::RowsFuture,
+pub struct libsql_rows_future<'a> {
+    pub(crate) result: libsql::RowsFuture<'a>,
 }
 
 #[derive(Clone, Debug)]
