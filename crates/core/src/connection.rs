@@ -93,6 +93,10 @@ impl Connection {
             params: params.into(),
         }
     }
+
+    pub fn is_autocommit(&self) -> bool {
+        unsafe { ffi::sqlite3_get_autocommit(self.raw) != 0 } 
+    }
 }
 
 // Automatically drop all dangling statements when the connection is dropped.
