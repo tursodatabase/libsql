@@ -62,4 +62,4 @@ pub use params::Params;
 pub use params::Value;
 pub use rows::Rows;
 pub use rows::RowsFuture;
-pub use statement::Statement;
+pub use statement::{Column, Statement};

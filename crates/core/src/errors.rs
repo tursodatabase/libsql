@@ -12,6 +12,8 @@ pub enum Error {
     NullValue,
     #[error("Library misuse: `{0}`")]
     Misuse(String),
+    #[error("Invalid column name: {0}")]
+    InvalidColumnName(String),
 }
 
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {

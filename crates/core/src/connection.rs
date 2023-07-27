@@ -1,5 +1,3 @@
-use libsql_sys::ffi::sqlite3_stmt;
-
 use crate::{Database, Error, Params, Result, Rows, RowsFuture, Statement};
 
 use libsql_sys::ffi;
