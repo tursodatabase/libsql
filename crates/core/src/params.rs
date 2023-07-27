@@ -84,3 +84,76 @@ impl From<libsql_sys::Value> for Value {
         }
     }
 }
+
+// Heavily inspired by rusqlite's ValueRef
+pub enum ValueRef<'a> {
+    Null,
+    Integer(i64),
+    Real(f64),
+    Text(&'a [u8]),
+    Blob(&'a [u8]),
+}
+
+impl ValueRef<'_> {
+    pub fn data_type(&self) -> ValueType {
+        match *self {
+            ValueRef::Null => ValueType::Null,
+            ValueRef::Integer(_) => ValueType::Integer,
+            ValueRef::Real(_) => ValueType::Real,
+            ValueRef::Text(_) => ValueType::Text,
+            ValueRef::Blob(_) => ValueType::Blob,
+        }
+    }
+}
+
+impl From<ValueRef<'_>> for Value {
+    fn from(vr: ValueRef<'_>) -> Value {
+        match vr {
+            ValueRef::Null => Value::Null,
+            ValueRef::Integer(i) => Value::Integer(i),
+            ValueRef::Real(r) => Value::Real(r),
+            ValueRef::Text(s) => {
+                let s = std::str::from_utf8(s).expect("invalid UTF-8");
+                Value::Text(s.to_string())
+            }
+            ValueRef::Blob(b) => Value::Blob(b.to_vec()),
+        }
+    }
+}
+
+impl<'a> From<&'a str> for ValueRef<'a> {
+    fn from(s: &str) -> ValueRef<'_> {
+        ValueRef::Text(s.as_bytes())
+    }
+}
+
+impl<'a> From<&'a [u8]> for ValueRef<'a> {
+    fn from(s: &[u8]) -> ValueRef<'_> {
+        ValueRef::Blob(s)
+    }
+}
+
+impl<'a> From<&'a Value> for ValueRef<'a> {
+    fn from(v: &'a Value) -> ValueRef<'a> {
+        match *v {
+            Value::Null => ValueRef::Null,
+            Value::Integer(i) => ValueRef::Integer(i),
+            Value::Real(r) => ValueRef::Real(r),
+            Value::Text(ref s) => ValueRef::Text(s.as_bytes()),
+            Value::Blob(ref b) => ValueRef::Blob(b),
+        }
+    }
+}
+
+impl<'a, T> From<Option<T>> for ValueRef<'a>
+where
+    T: Into<ValueRef<'a>>,
+{
+    #[inline]
+    fn from(s: Option<T>) -> ValueRef<'a> {
+        match s {
+            Some(x) => x.into(),
+            None => ValueRef::Null,
+        }
+    }
+}
