@@ -147,7 +147,7 @@
   JFuncName(Suffix)
 /* First 2 parameters to all JNI bindings. */
 #define JENV_JSELF JNIEnv * env, jobject jSelf
-/* Helper to squelch -Xcheck:jni warnings about
+/* Helpers to squelch -Xcheck:jni warnings about
    not having checked for exceptions. */
 #define IFTHREW if((*env)->ExceptionCheck(env))
 #define EXCEPTION_IGNORE (void)((*env)->ExceptionCheck(env))
@@ -157,10 +157,14 @@
 #define IFTHREW_CLEAR IFTHREW EXCEPTION_CLEAR
 
 
+/** Helpers for extracting pointers from jobjects, noting that the
+    corresponding Java interfaces have already done the type-checking.
+ */
 #define PtrGet_sqlite3(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3)
 #define PtrGet_sqlite3_stmt(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3_stmt)
 #define PtrGet_sqlite3_value(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3_value)
 #define PtrGet_sqlite3_context(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3_context)
+/* Helpers for Java value reference management. */
 #define REF_G(VAR) (*env)->NewGlobalRef(env, VAR)
 /*#define REF_L(VAR) (*env)->NewLocalRef(env, VAR)*/
 #define UNREF_G(VAR) if(VAR) (*env)->DeleteGlobalRef(env, (VAR))
@@ -190,14 +194,15 @@ static const struct {
     return (jint)CName(); \
   }
 
+/** Create a trivial JNI wrapper for (int CName(int)). */
 #define WRAP_INT_INT(JniNameSuffix,CName)               \
   JDECL(jint,JniNameSuffix)(JNIEnv *env, jobject jSelf, jint arg){   \
     return (jint)CName((int)arg);                                    \
   }
 
 /** Create a trivial JNI wrapper for (const mutf8_string *
-    CName(void)). This is only value for functions which are known to
-    return ASCII or text compatible with Modified UTF8. */
+    CName(void)). This is only valid for functions which are known to
+    return ASCII or text which is equivalent in UTF-8 and MUTF-8. */
 #define WRAP_MUTF8_VOID(JniNameSuffix,CName)                             \
   JDECL(jstring,JniNameSuffix)(JENV_JSELF){                  \
     return (*env)->NewStringUTF( env, CName() );                        \
@@ -209,16 +214,6 @@ static const struct {
     EXCEPTION_IGNORE /* squelch -Xcheck:jni */;        \
     return rc; \
   }
-/** Create a trivial JNI wrapper for (int CName(sqlite3*)). */
-#define WRAP_INT_DB(JniNameSuffix,CName) \
-  JDECL(jint,JniNameSuffix)(JENV_JSELF, jobject pDb){   \
-    return (jint)CName(PtrGet_sqlite3(pDb)); \
-  }
-/** Create a trivial JNI wrapper for (int64 CName(sqlite3*)). */
-#define WRAP_INT64_DB(JniNameSuffix,CName) \
-  JDECL(jlong,JniNameSuffix)(JENV_JSELF, jobject pDb){   \
-    return (jlong)CName(PtrGet_sqlite3(pDb)); \
-  }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_stmt*,int)). */
 #define WRAP_INT_STMT_INT(JniNameSuffix,CName) \
   JDECL(jint,JniNameSuffix)(JENV_JSELF, jobject pStmt, jint n){ \
@@ -228,6 +223,16 @@ static const struct {
 #define WRAP_STR_STMT_INT(JniNameSuffix,CName) \
   JDECL(jstring,JniNameSuffix)(JENV_JSELF, jobject pStmt, jint ndx){ \
     return (*env)->NewStringUTF(env, CName(PtrGet_sqlite3_stmt(pStmt), (int)ndx));  \
+  }
+/** Create a trivial JNI wrapper for (int CName(sqlite3*)). */
+#define WRAP_INT_DB(JniNameSuffix,CName) \
+  JDECL(jint,JniNameSuffix)(JENV_JSELF, jobject pDb){   \
+    return (jint)CName(PtrGet_sqlite3(pDb)); \
+  }
+/** Create a trivial JNI wrapper for (int64 CName(sqlite3*)). */
+#define WRAP_INT64_DB(JniNameSuffix,CName) \
+  JDECL(jlong,JniNameSuffix)(JENV_JSELF, jobject pDb){   \
+    return (jlong)CName(PtrGet_sqlite3(pDb)); \
   }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_value*)). */
 #define WRAP_INT_SVALUE(JniNameSuffix,CName) \
@@ -248,7 +253,7 @@ enum {
   /**
      Size of the per-JNIEnv cache. We have no way of knowing how many
      distinct JNIEnv's will be used in any given run, but know that it
-     will normally be only 1. Perhaps (just speculating) differen
+     will normally be only 1. Perhaps (just speculating) different
      threads use separate JNIEnvs? If that's the case, we don't(?)
      have enough info to evict from the cache when those JNIEnvs
      expire.
@@ -261,26 +266,33 @@ enum {
     Need enough space for (only) the library's NativePointerHolder
     types, a fixed count known at build-time. If we add more than this
     a fatal error will be triggered with a reminder to increase this.
+    This value needs to be at least the number of entries in the
+    ClassNames object, as that value is our upper limit. The
+    ClassNames entries are the keys for this particular cache.
   */
-  NphCache_SIZE = 10
+  NphCache_SIZE = sizeof(ClassNames) / sizeof(char const *)
 };
 
 /**
-   Cache for NativePointerHolder lookups.
+   Cache entry for NativePointerHolder lookups.
 */
 typedef struct NphCacheLine NphCacheLine;
 struct NphCacheLine {
-  const char * zClassName /* "full/class/Name" */;
-  jclass klazz        /* global ref to concrete NPH class */;
-  jmethodID midSet    /* setNativePointer() */;
-  jmethodID midGet    /* getNativePointer() */;
-  jmethodID midCtor   /* constructor */;
-  jfieldID fidSetAgg   /* sqlite3_context::aggregateContext */;
+  const char * zClassName /* "full/class/Name". Must be a static string
+                             from the ClassNames struct. */;
+  jclass klazz        /* global ref to concrete NativePointerHolder class */;
+  jmethodID midCtor   /* klazz's constructor */;
+  jmethodID midSet    /* NativePointerHolder.setNativePointer() */;
+  jmethodID midGet    /* NativePointerHolder.getNativePointer() */;
+  jfieldID fidSetAgg  /* sqlite3_context::aggregateContext */;
 };
 
+/**
+   Cache for per-JNIEnv data.
+*/
 typedef struct JNIEnvCacheLine JNIEnvCacheLine;
 struct JNIEnvCacheLine {
-  JNIEnv *env;
+  JNIEnv *env            /* env in which this cache entry was created */;
   jclass globalClassObj  /* global ref to java.lang.Object */;
   jclass globalClassLong /* global ref to java.lang.Long */;
   jmethodID ctorLong1    /* the Long(long) constructor */;
@@ -298,7 +310,7 @@ static void NphCacheLine_clear(JNIEnv *env, NphCacheLine * p){
 }
 
 static void JNIEnvCacheLine_clear(JNIEnvCacheLine * p){
-  JNIEnv *env = p->env;
+  JNIEnv * const env = p->env;
   int i;
   if(env){
     UNREF_G(p->globalClassObj);
@@ -323,9 +335,9 @@ static void JNIEnvCache_clear(JNIEnvCache * p){
 */
 typedef struct {
   JNIEnv * env;         /* env registered from */;
-  jobject jObj          /* BusyHandlerJni instance */;
+  jobject jObj          /* BusyHandler instance */;
   jclass klazz          /* jObj's class */;
-  jmethodID jmidxCallback;
+  jmethodID jmidxCallback /* klazz's xCallback method */;
 } BusyHandlerJni;
 
 
