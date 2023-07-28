@@ -1,5 +1,5 @@
 use crate::rows::{MappedRows, Row};
-use crate::{errors, Connection, Error, Params, Result, Rows, Value, ValueRef};
+use crate::{errors, Connection, Error, Params, Result, Rows, ValueRef};
 
 use std::cell::RefCell;
 use std::ffi::c_int;
@@ -62,7 +62,7 @@ impl Statement<'_> {
                 for (i, param) in params.iter().enumerate() {
                     let i = i as i32 + 1;
 
-                    self.bind_value(i, param);
+                    self.bind_value(i, param.into());
                 }
             }
 
@@ -70,7 +70,7 @@ impl Statement<'_> {
                 for (name, param) in params {
                     let i = self.inner.bind_parameter_index(name);
 
-                    self.bind_value(i, param);
+                    self.bind_value(i, param.into());
                 }
             }
         }
@@ -110,21 +110,21 @@ impl Statement<'_> {
         self.inner.reset();
     }
 
-    pub fn bind_value(&self, i: i32, param: &Value) {
+    pub fn bind_value(&self, i: i32, param: ValueRef<'_>) {
         match param {
-            Value::Null => {
+            ValueRef::Null => {
                 self.inner.bind_null(i);
             }
-            Value::Integer(value) => {
-                self.inner.bind_int64(i, *value);
+            ValueRef::Integer(value) => {
+                self.inner.bind_int64(i, value);
             }
-            Value::Real(value) => {
-                self.inner.bind_double(i, *value);
+            ValueRef::Real(value) => {
+                self.inner.bind_double(i, value);
             }
-            Value::Text(value) => {
+            ValueRef::Text(value) => {
                 self.inner.bind_text(i, value);
             }
-            Value::Blob(value) => {
+            ValueRef::Blob(value) => {
                 self.inner.bind_blob(i, &value[..]);
             }
         }
