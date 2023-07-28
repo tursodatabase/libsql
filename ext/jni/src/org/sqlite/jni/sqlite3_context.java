@@ -15,39 +15,56 @@ package org.sqlite.jni;
 
 /**
    sqlite3_context instances are used in conjunction with user-defined
-   SQL functions (a.k.a. UDFs). They are opaque pointers.
-
-   The getAggregateContext() method corresponds to C's
-   sqlite3_aggregate_context(), with a slightly different interface in
-   order to account for cross-language differences. It serves the same
-   purposes in a slightly different way: it provides a key which is
-   stable across invocations of UDF xStep() and xFinal() pairs, to
-   which a UDF may map state across such calls (e.g. a numeric result
-   which is being accumulated).
+   SQL functions (a.k.a. UDFs).
 */
 public class sqlite3_context extends NativePointerHolder<sqlite3_context> {
   public sqlite3_context() {
     super();
   }
-  private long aggcx = 0;
 
   /**
-     If this object is being used in the context of an aggregate or
-     window UDF, the UDF binding layer will set a unique context value
-     here, else this will return 0. That value will be the same across
-     matching calls to the UDF callbacks. This value can be used as a
-     key to map state which needs to persist across such calls, noting
-     that such state should be cleaned up via xFinal().
-  */
-  public long getAggregateContext(){
-    return aggcx;
-  }
-
-  /**
-     For use only by the JNI layer. It's permitted to call this even
+     For use only by the JNI layer. It's permitted to set this even
      though it's private.
   */
-  private void setAggregateContext(long n){
-    aggcx = n;
+  private long aggregateContext = 0;
+
+  /**
+     getAggregateContext() corresponds to C's
+     sqlite3_aggregate_context(), with a slightly different interface
+     to account for cross-language differences. It serves the same
+     purposes in a slightly different way: it provides a key which is
+     stable across invocations of "matching sets" of a UDF's callbacks,
+     such that all calls into those callbacks can determine which "set"
+     of those calls they belong to.
+
+     If this object is being used in the context of an aggregate or
+     window UDF, this function returns a non-0 value which is distinct
+     for each set of UDF callbacks from a single invocation of the
+     UDF, otherwise it returns 0. The returned value is only only
+     valid within the context of execution of a single SQL statement,
+     and may be re-used by future invocations of the UDF in different
+     SQL statements.
+
+     Consider this SQL, where MYFUNC is a user-defined aggregate function:
+
+     SELECT MYFUNC(A), MYFUNC(B) FROM T;
+
+     The xStep() and xFinal() methods of the callback need to be able
+     to differentiate between those two invocations in order to
+     perform their work properly. The value returned by
+     getAggregateContext() will be distinct for each of those
+     invocations of MYFUNC() and is intended to be used as a lookup
+     key for mapping callback invocations to whatever client-defined
+     state is needed by the UDF.
+
+     There is one case where this will return 0 in the context of an
+     aggregate or window function: if the result set has no rows,
+     the UDF's xFinal() will be called without any other x...() members
+     having been called. In that one case, no aggregate context key will
+     have been generated. xFinal() implementations need to be prepared to
+     accept that condition as legal.
+  */
+  public long getAggregateContext(){
+    return aggregateContext;
   }
 }

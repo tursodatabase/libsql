@@ -35,11 +35,17 @@ public abstract class SQLFunction {
      such mappings.
 
      This class works by mapping
-     sqlite3_context::getAggregateContext() to a single piece of state
-     which persists across a "matching set" of the UDF's callbacks.
+     sqlite3_context.getAggregateContext() to a single piece of
+     state, of a client-defined type (the T part of this class), which
+     persists across a "matching set" of the UDF's callbacks.
+
+     This class is a helper providing commonly-needed functionality -
+     it is not required for use with aggregate or window functions.
+     Client UDFs are free to perform such mappings using custom
+     approaches.
   */
   public static final class ContextMap<T> {
-    private java.util.Map<Long,ValueHolder<T>> map
+    private final java.util.Map<Long,ValueHolder<T>> map
       = new java.util.HashMap<>();
 
     /**

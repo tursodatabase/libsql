@@ -275,7 +275,7 @@ struct NphCacheLine {
   jmethodID midSet    /* setNativePointer() */;
   jmethodID midGet    /* getNativePointer() */;
   jmethodID midCtor   /* constructor */;
-  jmethodID midSetAgg /* sqlite3_context::setAggregateContext() */;
+  jfieldID fidSetAgg   /* sqlite3_context::aggregateContext */;
 };
 
 typedef struct JNIEnvCacheLine JNIEnvCacheLine;
@@ -745,11 +745,14 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
    Requires that jCx be a Java-side sqlite3_context wrapper for pCx.
    This function calls sqlite3_aggregate_context() to allocate a tiny
    sliver of memory, the address of which is set in
-   jCx->setAggregateContext().  The memory is only used as a key for
-   mapping, client-side, results of aggregate result sets across
-   xStep() and xFinal() methods.
+   jCx->aggregateContext.  The memory is only used as a key for
+   mapping client-side results of aggregate result sets across
+   calls to the UDF's callbacks.
 
-   isFinal must be 1 for xFinal() calls and 0 for all others.
+   isFinal must be 1 for xFinal() calls and 0 for all others, the
+   difference being that the xFinal() invocation will not allocate
+   new memory if it was not already, resulting in a value of 0
+   for jCx->aggregateContext.
 
    Returns 0 on success. Returns SQLITE_NOMEM on allocation error,
    noting that it will not allocate when isFinal is true. It returns
@@ -759,35 +762,34 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
 static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
                                    sqlite3_context * pCx,
                                    int isFinal){
-  jmethodID setter;
+  jfieldID member;
   void * pAgg;
   int rc = 0;
   struct NphCacheLine * const cacheLine =
     S3Global_nph_cache(env, ClassNames.sqlite3_context);
-  if(cacheLine && cacheLine->klazz && cacheLine->midSetAgg){
-    setter = cacheLine->midSetAgg;
-    assert(setter);
+  if(cacheLine && cacheLine->klazz && cacheLine->fidSetAgg){
+    member = cacheLine->fidSetAgg;
+    assert(member);
   }else{
     jclass const klazz =
       cacheLine ? cacheLine->klazz : (*env)->GetObjectClass(env, jCx);
-    setter = (*env)->GetMethodID(env, klazz, "setAggregateContext", "(J)V");
+    member = (*env)->GetFieldID(env, klazz, "aggregateContext", "J");
+    if( !member ){
+      IFTHREW{ EXCEPTION_REPORT; EXCEPTION_CLEAR; }
+      return s3jni_db_error(sqlite3_context_db_handle(pCx),
+                            SQLITE_ERROR,
+                            "Internal error: cannot find "
+                            "sqlite3_context::aggregateContext field.");
+    }
     if(cacheLine){
       assert(cacheLine->klazz);
-      assert(!cacheLine->midSetAgg);
-      cacheLine->midSetAgg = setter;
+      assert(!cacheLine->fidSetAgg);
+      cacheLine->fidSetAgg = member;
     }
   }
   pAgg = sqlite3_aggregate_context(pCx, isFinal ? 0 : 4);
   if( pAgg || isFinal ){
-    (*env)->CallVoidMethod(env, jCx, setter, (jlong)pAgg);
-    IFTHREW {
-      EXCEPTION_REPORT;
-      EXCEPTION_CLEAR/*arguable, but so is propagation*/;
-      rc = s3jni_db_error(sqlite3_context_db_handle(pCx),
-                          SQLITE_ERROR,
-                          "sqlite3_context::setAggregateContext() "
-                          "unexpectedly threw.");
-    }
+    (*env)->SetLongField(env, jCx, member, (jlong)pAgg);
   }else{
     assert(!pAgg);
     rc = SQLITE_NOMEM;

@@ -656,7 +656,6 @@ public class Tester1 {
   }
 
   private static void testBusy(){
-    outln("testBusy()...");
     final String dbName = "_busy-handler.db";
     final sqlite3 db1 = new sqlite3();
     final sqlite3 db2 = new sqlite3();
