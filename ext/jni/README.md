@@ -203,7 +203,7 @@ one of its three subclasses:
 - `SQLFunction.Window` implements window functions using four
   callbacks.
 
-Search [`Tester1.java`](/file/src/org/sqlite/jni/Tester1.java) for
+Search [`Tester1.java`](/file/ext/jni/src/org/sqlite/jni/Tester1.java) for
 `SQLFunction` for how it's used.
 
 Reminder: see the disclaimer at the top of this document regarding the
