@@ -77,10 +77,10 @@ static int fts5StorageGetStmt(
       "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
       "REPLACE INTO %Q.'%q_content' VALUES(%s)",        /* REPLACE_CONTENT */
       "DELETE FROM %Q.'%q_content' WHERE id=?",         /* DELETE_CONTENT  */
-      "REPLACE INTO %Q.'%q_docsize' VALUES(?,?)",       /* REPLACE_DOCSIZE  */
+      "REPLACE INTO %Q.'%q_docsize' VALUES(?,?%s)",     /* REPLACE_DOCSIZE  */
       "DELETE FROM %Q.'%q_docsize' WHERE id=?",         /* DELETE_DOCSIZE  */
 
-      "SELECT sz FROM %Q.'%q_docsize' WHERE id=?",      /* LOOKUP_DOCSIZE  */
+      "SELECT sz%s FROM %Q.'%q_docsize' WHERE id=?",    /* LOOKUP_DOCSIZE  */
 
       "REPLACE INTO %Q.'%q_config' VALUES(?,?)",        /* REPLACE_CONFIG */
       "SELECT %s FROM %s AS T",                         /* SCAN */
@@ -127,6 +127,19 @@ static int fts5StorageGetStmt(
         }
         break;
       }
+
+      case FTS5_STMT_REPLACE_DOCSIZE: 
+        zSql = sqlite3_mprintf(azStmt[eStmt], pC->zDb, pC->zName,
+          (pC->bContentlessDelete ? ",?" : "")
+        );
+        break;
+
+      case FTS5_STMT_LOOKUP_DOCSIZE: 
+        zSql = sqlite3_mprintf(azStmt[eStmt], 
+            (pC->bContentlessDelete ? ",origin" : ""),
+            pC->zDb, pC->zName
+        );
+        break;
 
       default:
         zSql = sqlite3_mprintf(azStmt[eStmt], pC->zDb, pC->zName);
@@ -317,9 +330,11 @@ int sqlite3Fts5StorageOpen(
     }
 
     if( rc==SQLITE_OK && pConfig->bColumnsize ){
-      rc = sqlite3Fts5CreateTable(
-          pConfig, "docsize", "id INTEGER PRIMARY KEY, sz BLOB", 0, pzErr
-      );
+      const char *zCols = "id INTEGER PRIMARY KEY, sz BLOB";
+      if( pConfig->bContentlessDelete ){
+        zCols = "id INTEGER PRIMARY KEY, sz BLOB, origin INTEGER";
+      }
+      rc = sqlite3Fts5CreateTable(pConfig, "docsize", zCols, 0, pzErr);
     }
     if( rc==SQLITE_OK ){
       rc = sqlite3Fts5CreateTable(
@@ -396,7 +411,7 @@ static int fts5StorageDeleteFromIndex(
 ){
   Fts5Config *pConfig = p->pConfig;
   sqlite3_stmt *pSeek = 0;        /* SELECT to read row iDel from %_data */
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
   int rc2;                        /* sqlite3_reset() return code */
   int iCol;
   Fts5InsertCtx ctx;
@@ -412,7 +427,6 @@ static int fts5StorageDeleteFromIndex(
 
   ctx.pStorage = p;
   ctx.iCol = -1;
-  rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 1, iDel);
   for(iCol=1; rc==SQLITE_OK && iCol<=pConfig->nCol; iCol++){
     if( pConfig->abUnindexed[iCol-1]==0 ){
       const char *zText;
@@ -449,6 +463,37 @@ static int fts5StorageDeleteFromIndex(
   return rc;
 }
 
+/*
+** This function is called to process a DELETE on a contentless_delete=1
+** table. It adds the tombstone required to delete the entry with rowid 
+** iDel. If successful, SQLITE_OK is returned. Or, if an error occurs,
+** an SQLite error code.
+*/
+static int fts5StorageContentlessDelete(Fts5Storage *p, i64 iDel){
+  i64 iOrigin = 0;
+  sqlite3_stmt *pLookup = 0;
+  int rc = SQLITE_OK;
+
+  assert( p->pConfig->bContentlessDelete );
+  assert( p->pConfig->eContent==FTS5_CONTENT_NONE );
+
+  /* Look up the origin of the document in the %_docsize table. Store
+  ** this in stack variable iOrigin.  */
+  rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup, 0);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pLookup, 1, iDel);
+    if( SQLITE_ROW==sqlite3_step(pLookup) ){
+      iOrigin = sqlite3_column_int64(pLookup, 1);
+    }
+    rc = sqlite3_reset(pLookup);
+  }
+
+  if( rc==SQLITE_OK && iOrigin!=0 ){
+    rc = sqlite3Fts5IndexContentlessDelete(p->pIndex, iOrigin, iDel);
+  }
+
+  return rc;
+}
 
 /*
 ** Insert a record into the %_docsize table. Specifically, do:
@@ -469,10 +514,17 @@ static int fts5StorageInsertDocsize(
     rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace, 0);
     if( rc==SQLITE_OK ){
       sqlite3_bind_int64(pReplace, 1, iRowid);
-      sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
-      sqlite3_step(pReplace);
-      rc = sqlite3_reset(pReplace);
-      sqlite3_bind_null(pReplace, 2);
+      if( p->pConfig->bContentlessDelete ){
+        i64 iOrigin = 0;
+        rc = sqlite3Fts5IndexGetOrigin(p->pIndex, &iOrigin);
+        sqlite3_bind_int64(pReplace, 3, iOrigin);
+      }
+      if( rc==SQLITE_OK ){
+        sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
+        sqlite3_step(pReplace);
+        rc = sqlite3_reset(pReplace);
+        sqlite3_bind_null(pReplace, 2);
+      }
     }
   }
   return rc;
@@ -536,7 +588,15 @@ int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel, sqlite3_value **apVal){
 
   /* Delete the index records */
   if( rc==SQLITE_OK ){
-    rc = fts5StorageDeleteFromIndex(p, iDel, apVal);
+    rc = sqlite3Fts5IndexBeginWrite(p->pIndex, 1, iDel);
+  }
+
+  if( rc==SQLITE_OK ){
+    if( p->pConfig->bContentlessDelete ){
+      rc = fts5StorageContentlessDelete(p, iDel);
+    }else{
+      rc = fts5StorageDeleteFromIndex(p, iDel, apVal);
+    }
   }
 
   /* Delete the %_docsize record */

@@ -501,6 +501,15 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     /* Current number of in-use files from pool. */
     getFileCount(){return this.#mapFilenameToSAH.size}
 
+    /* Returns an array of the names of all
+       currently-opened client-specified filenames. */
+    getFileNames(){
+      const rc = [];
+      const iter = this.#mapFilenameToSAH.keys();
+      for(const n of iter) rc.push(n);
+      return rc;
+    }
+
 //    #createFileObject(sah,clientName,opaqueName){
 //      const f = Object.assign(Object.create(null),{
 //        clientName, opaqueName
@@ -901,6 +910,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     getCapacity(){ return this.#p.getCapacity(this.#p) }
 
     getFileCount(){ return this.#p.getFileCount() }
+    getFileNames(){ return this.#p.getFileNames() }
 
     async reserveMinimumCapacity(min){
       const c = this.#p.getCapacity();
@@ -1058,6 +1068,11 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
 
      Returns the number of files from the pool currently allocated to
      slots. This is not the same as the files being "opened".
+
+     - array getFileNames()
+
+     Returns an array of the names of the files currently allocated to
+     slots. This list is the same length as getFileCount().
 
      - void importDb(name, byteArray)
 

@@ -56,6 +56,9 @@ typedef struct VdbeSorter VdbeSorter;
 /* Elements of the linked list at Vdbe.pAuxData */
 typedef struct AuxData AuxData;
 
+/* A cache of large TEXT or BLOB values in a VdbeCursor */
+typedef struct VdbeTxtBlbCache VdbeTxtBlbCache;
+
 /* Types of VDBE cursors */
 #define CURTYPE_BTREE       0
 #define CURTYPE_SORTER      1
@@ -87,6 +90,7 @@ struct VdbeCursor {
   Bool useRandomRowid:1;  /* Generate new record numbers semi-randomly */
   Bool isOrdered:1;       /* True if the table is not BTREE_UNORDERED */
   Bool noReuse:1;         /* OpenEphemeral may not reuse this cursor */
+  Bool colCache:1;        /* pCache pointer is initialized and non-NULL */
   u16 seekHit;            /* See the OP_SeekHit and OP_IfNoHope opcodes */
   union {                 /* pBtx for isEphermeral.  pAltMap otherwise */
     Btree *pBtx;            /* Separate file holding temporary table */
@@ -127,6 +131,7 @@ struct VdbeCursor {
 #ifdef SQLITE_ENABLE_COLUMN_USED_MASK
   u64 maskUsed;           /* Mask of columns used by this cursor */
 #endif
+  VdbeTxtBlbCache *pCache; /* Cache of large TEXT or BLOB values */
 
   /* 2*nField extra array elements allocated for aType[], beyond the one
   ** static element declared in the structure.  nField total array slots for
@@ -139,11 +144,22 @@ struct VdbeCursor {
 #define IsNullCursor(P) \
   ((P)->eCurType==CURTYPE_PSEUDO && (P)->nullRow && (P)->seekResult==0)
 
-
 /*
 ** A value for VdbeCursor.cacheStatus that means the cache is always invalid.
 */
 #define CACHE_STALE 0
+
+/*
+** Large TEXT or BLOB values can be slow to load, so we want to avoid
+** loading them more than once.  For that reason, large TEXT and BLOB values
+** can be stored in a cache defined by this object, and attached to the
+** VdbeCursor using the pCache field.
+*/
+struct VdbeTxtBlbCache {
+  char *pCValue;        /* A RCStr buffer to hold the value */
+  i64 iOffset;          /* File offset of the row being cached */
+  int iCol;             /* Column for which the cache is valid */
+};
 
 /*
 ** When a sub-program is executed (OP_Program), a structure of this type
@@ -465,16 +481,18 @@ struct Vdbe {
   u32 nWrite;             /* Number of write operations that have occurred */
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
+  u16 nResAlloc;          /* Column slots allocated to aColName[] */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   u8 eVdbeState;          /* On of the VDBE_*_STATE values */
   bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
-  bft explain:2;          /* True if EXPLAIN present on SQL command */
+  bft explain:2;          /* 0: normal, 1: EXPLAIN, 2: EXPLAIN QUERY PLAN */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
+  bft haveEqpOps:1;       /* Bytecode supports EXPLAIN QUERY PLAN */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[9];        /* Counters used by sqlite3_stmt_status() */

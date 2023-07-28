@@ -1281,6 +1281,7 @@ typedef struct Parse Parse;
 typedef struct ParseCleanup ParseCleanup;
 typedef struct PreUpdate PreUpdate;
 typedef struct PrintfArguments PrintfArguments;
+typedef struct RCStr RCStr;
 typedef struct RenameToken RenameToken;
 typedef struct Returning Returning;
 typedef struct RowSet RowSet;
@@ -4061,6 +4062,25 @@ struct sqlite3_str {
 
 #define isMalloced(X)  (((X)->printfFlags & SQLITE_PRINTF_MALLOCED)!=0)
 
+/*
+** The following object is the header for an "RCStr" or "reference-counted
+** string".  An RCStr is passed around and used like any other char*
+** that has been dynamically allocated.  The important interface
+** differences:
+**
+**   1.  RCStr strings are reference counted.  They are deallocated
+**       when the reference count reaches zero.
+**
+**   2.  Use sqlite3RCStrUnref() to free an RCStr string rather than
+**       sqlite3_free()
+**
+**   3.  Make a (read-only) copy of a read-only RCStr string using
+**       sqlite3RCStrRef().
+*/
+struct RCStr {
+  u64 nRCRef;            /* Number of references */
+  /* Total structure size should be a multiple of 8 bytes for alignment */
+};
 
 /*
 ** A pointer to this structure is used to communicate information
@@ -5180,6 +5200,7 @@ void sqlite3FileSuffix3(const char*, char*);
 u8 sqlite3GetBoolean(const char *z,u8);
 
 const void *sqlite3ValueText(sqlite3_value*, u8);
+int sqlite3ValueIsOfClass(const sqlite3_value*, void(*)(void*));
 int sqlite3ValueBytes(sqlite3_value*, u8);
 void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
                         void(*)(void*));
@@ -5286,6 +5307,11 @@ void *sqlite3OomFault(sqlite3*);
 void sqlite3OomClear(sqlite3*);
 int sqlite3ApiExit(sqlite3 *db, int);
 int sqlite3OpenTempDatabase(Parse *);
+
+char *sqlite3RCStrRef(char*);
+void sqlite3RCStrUnref(char*);
+char *sqlite3RCStrNew(u64);
+char *sqlite3RCStrResize(char*,u64);
 
 void sqlite3StrAccumInit(StrAccum*, sqlite3*, char*, int, int);
 int sqlite3StrAccumEnlarge(StrAccum*, i64);
