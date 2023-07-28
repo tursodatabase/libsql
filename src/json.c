@@ -2672,10 +2672,11 @@ static void jsonPatchFunc(
   UNUSED_PARAMETER(argc);
   pX = jsonParseCached(ctx, argv[0], ctx, 1);
   if( pX==0 ) return;
+  assert( pX->hasMod==0 );
+  pX->hasMod = 1;
   pY = jsonParseCached(ctx, argv[1], ctx, 1);
   if( pY==0 ) return;
   pX->useMod = 1;
-  pX->hasMod = 1;
   pY->useMod = 1;
   pResult = jsonMergePatch(pX, 0, pY->aNode);
   assert( pResult!=0 || pX->oom );
