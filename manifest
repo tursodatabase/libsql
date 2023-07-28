@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sJSON\sperformance\stesting\sscripts\sand\sinstructions\sto\ncover\sthe\srecent\soptimizations\sinvolving\supdates\sto\slarge\sJSON\sstrings\nthat\sindexed.
-D 2023-07-28T14:20:31.825
+C Minor\stweaks\sto\sthe\sJSON\sperformance\smeasurement\sdocumentation.
+D 2023-07-28T16:12:39.671
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1228,7 +1228,7 @@ F test/journal3.test 7c3cf23ffc77db06601c1fcfc9743de8441cb77db9d1aa931863d94f5ff
 F test/jrnlmode.test 9b5bc01dac22223cb60ec2d5f97acf568d73820794386de5634dcadbea9e1946
 F test/jrnlmode2.test 8759a1d4657c064637f8b079592651530db738419e1d649c6df7048cd724363d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/json/README.md 3761f858e8069d006d9d863fee523f1cfaac5dd7181b196e16cabb6565bfe530
+F test/json/README.md 63e3e589e1df8fd3cc1588ba1faaff659214003f8b77a15af5c6452b35e30ee2
 F test/json/json-generator.tcl dc0dd0f393800c98658fc4c47eaa6af29d4e17527380cd28656fb261bddc8a3f
 F test/json/json-q1.txt 65f9d1cdcc4cffa9823fb73ed936aae5658700cd001fde448f68bfb91c807307
 F test/json/json-speed-check.sh 8b7babf530faa58bd59d6d362cec8e9036a68c5457ff46f3b1f1511d21af6737 x
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 771fe35074b50b8d4a6583e61c53871b2445f7a58c82f3fc3bf6776e562e63af
-R 77beac32848c1c5c4f785514dd4faeff
+P f9213289d09adfb0461d9644e80c7e889f4bae51563ae2e575a2c95336052bcb
+R fb3fd77e80d1642b3cf0d0d40a08f14e
 U drh
-Z 2c88551e17349d1f41ec2f4976d62002
+Z 4e3e52a362d42e532a27b931dd696fd5
 # Remove this line to create a well-formed Fossil manifest.
