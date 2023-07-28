@@ -110,7 +110,7 @@ impl Statement<'_> {
         self.inner.reset();
     }
 
-    fn bind_value(&self, i: i32, param: &Value) {
+    pub fn bind_value(&self, i: i32, param: &Value) {
         match param {
             Value::Null => {
                 self.inner.bind_null(i);
