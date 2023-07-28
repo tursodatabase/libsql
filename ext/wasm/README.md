@@ -90,7 +90,7 @@ features in the apps which use them.
   *  Remote: Install the SQLite source tree.  CD to ext/wasm
   *  Remote: "`make`" to build WASM
   *  Remote: `althttpd --enable-sab --port 8080 --popup`
-  *  Local:  `ssh -L 8180:remote:8080 remote`
+  *  Local:  `ssh -L 8180:localhost:8080 remote`
   *  Local:  Point your web-browser at http://localhost:8180/index.html
 
 In order to enable [SharedArrayBuffer][], the web-browser requires

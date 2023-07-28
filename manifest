@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\scompiler\swarnings\sin\sfts5_index.c.
-D 2023-07-27T20:08:44.624
+C Correct\sa\srecently-introduced\sfalsehood\sin\sext/wasm/README.md\sregarding\sssh\sport\sforwarding.
+D 2023-07-28T11:52:58.874
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -489,7 +489,7 @@ F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
 F ext/wasm/GNUmakefile ddf1aede4275e404c7eda782462c33b6406fcd2dd327241f6b22c0f7b80938e4
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
-F ext/wasm/README.md 0895244c0539ae68cf8c70d59c2de512532fd47cfba313268e2b672e6359112e
+F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
 F ext/wasm/api/EXPORTED_RUNTIME_METHODS.sqlite3-api 1ec3c73e7d66e95529c3c64ac3de2470b0e9e7fbf7a5b41261c367cf4f1b7287
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d66b182d2bc6ce0772e69401b7affe1adbc1b128c4631cb3c17f98dde72af00a
-R 67e5566856c21efabeaa9f30d61da2e8
-U dan
-Z 82b2d14bd5c4ac2218712be1054b30ff
+P bf71faa2a1d29ea762c4d2485522d6f4f8a5a7166981a92d3ba9c96ccbbe1213
+R 74b11dad85afdc2fb1c15f83a8016991
+U stephan
+Z 786f34221ec4345651338e5a3b199da2
 # Remove this line to create a well-formed Fossil manifest.
