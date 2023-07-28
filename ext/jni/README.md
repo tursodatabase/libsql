@@ -1,7 +1,7 @@
 SQLite3 via JNI
 ========================================================================
 
-This repository houses a Java Native Interface (JNI) binding for the
+This directory houses a Java Native Interface (JNI) binding for the
 sqlite3 API.
 
 > **FOREWARNING:** this subproject is very much in development and
@@ -85,7 +85,7 @@ UTF-8(-ish)
 SQLite internally uses UTF-8 encoding, whereas Java natively uses
 UTF-16.  Java JNI has routines for converting to and from UTF-8, _but_
 Java uses what its docs call "[modified UTF-8][modutf8]." Care must be
-taken when converting Java strings to UFF-8 to ensure that the proper
+taken when converting Java strings to UTF-8 to ensure that the proper
 conversion is performed. In short,
 `String.getBytes(StandardCharsets.UTF_8)` performs the proper
 conversion in Java, and there is no JNI C API for that conversion
@@ -94,7 +94,7 @@ conversion in Java, and there is no JNI C API for that conversion
 [modutf8]: https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
 
 
-Unweildy Constructs are Re-mapped
+Unwieldy Constructs are Re-mapped
 ------------------------------------------------------------------------
 
 Some constructs, when modelled 1-to-1 from C to Java, are unduly
@@ -186,7 +186,7 @@ Noting that:
 The [`sqlite3_create_function()`](https://sqlite.org/c3ref/create_function.html)
 family of APIs make heavy use of function pointers to provide
 client-defined callbacks, necessitating interface changes in the JNI
-binding. The Jav API has only one core function-registration function:
+binding. The Java API has only one core function-registration function:
 
 ```
 int sqlite3_create_function(sqlite3 db, String funcName, int nArgs,
