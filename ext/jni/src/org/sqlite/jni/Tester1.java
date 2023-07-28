@@ -482,6 +482,10 @@ public class Tester1 {
 
   private static void testUdfAggregate(){
     final sqlite3 db = createNewDb();
+    final ValueHolder<Boolean> xFinalNull =
+      // To confirm that xFinal() is called with no aggregate state
+      // when the corresponding result set is empty.
+      new ValueHolder<>(false);
     SQLFunction func = new SQLFunction.Aggregate<Integer>(){
         @Override
         public void xStep(sqlite3_context cx, sqlite3_value args[]){
@@ -490,8 +494,12 @@ public class Tester1 {
         @Override
         public void xFinal(sqlite3_context cx){
           final Integer v = this.takeAggregateState(cx);
-          if(null == v) sqlite3_result_null(cx);
-          else sqlite3_result_int(cx, v);
+          if(null == v){
+            xFinalNull.value = true;
+            sqlite3_result_null(cx);
+          }else{
+            sqlite3_result_int(cx, v);
+          }
         }
       };
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES(1),(2),(3)");
@@ -506,6 +514,7 @@ public class Tester1 {
       affirm( 6 == v );
       ++n;
     }
+    affirm( false == xFinalNull.value );
     sqlite3_reset(stmt);
     // Ensure that the accumulator is reset...
     n = 0;
@@ -529,7 +538,11 @@ public class Tester1 {
       affirm( 12 == c1 );
     }
     affirm( 1 == n );
+    affirm( false == xFinalNull.value );
     sqlite3_finalize(stmt);
+
+    execSql(db, "SELECT myfunc(1) WHERE 0");
+    affirm( true == xFinalNull.value );
     sqlite3_close(db);
   }
 

@@ -58,6 +58,9 @@ public abstract class SQLFunction {
        ValueHolder<T> which can be used to modify that state directly
        without requiring that the client update the underlying map's
        entry.
+
+       T must be of a type which can be legally stored as a value in
+       java.util.HashMap<KeyType,T>.
     */
     public ValueHolder<T> getAggregateState(sqlite3_context cx, T initialValue){
       ValueHolder<T> rc = map.get(cx.getAggregateContext());
