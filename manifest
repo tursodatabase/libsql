@@ -1,5 +1,5 @@
-C Remove\ssome\sunnecessary\sand\sincorrect\scode\sthat\swas\smistakenly\sadded\sin\sthe\nprevious\scheck-in.
-D 2023-07-28T00:54:38.146
+C Mark\san\sunreachable\sbranch\sas\sALWAYS().
+D 2023-07-28T11:30:07.088
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -714,7 +714,7 @@ F src/vdbeInt.h c30ef736774d876f923b42758b9210fe456104b39906e3901d21279443a17d47
 F src/vdbeapi.c dde6c4d0f87486f056b9db4d1ea185bb1d84a6839102b86e76316ba590d07cc7
 F src/vdbeaux.c 23f17d418d5b97138b7dbbd4c84d80c66dc7990653c705436c8162103b3cc9ba
 F src/vdbeblob.c 2516697b3ee8154eb8915f29466fb5d4f1ae39ee8b755ea909cefaf57ec5e2ce
-F src/vdbemem.c aee9ac636666616494d9a395d29efc3fe9e1404a9f043db81c82560b43b78f35
+F src/vdbemem.c adb5877dc54330865e45e0fba50f6455c1d9d8b83434c59f0e3d2d2a0b9f0e58
 F src/vdbesort.c 0d40dca073c94e158ead752ef4225f4fee22dee84145e8c00ca2309afb489015
 F src/vdbetrace.c fe0bc29ebd4e02c8bc5c1945f1d2e6be5927ec12c06d89b03ef2a4def34bf823
 F src/vdbevtab.c 57fa8f56478e5b5cb558cb425e7878515e0a105c54f96f1d1bbf4b9433529254
@@ -2044,8 +2044,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2ed9c59e6a51037e63485d0a92dae25443116beddfca1ac73d2f5d5be38d4ad3
-R 865864ade75427cea7a0ed386e21a96e
+P d3f458dcc379dd7648262f52579ec55ba931852065ed278367a0629228d0ed45
+R 7d9c43b78a4f1c2315778caf36cecb44
 U drh
-Z 7b84fe17156a3402b4d2c891447b8313
+Z c4502aa3c9cdb29d4cc267ca47a361d2
 # Remove this line to create a well-formed Fossil manifest.

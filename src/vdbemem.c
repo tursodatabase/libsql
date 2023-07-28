@@ -1376,7 +1376,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
 */
 int sqlite3ValueIsOfClass(const sqlite3_value *pVal, void(*xFree)(void*)){
   if( ALWAYS(pVal!=0)
-   && (pVal->flags & (MEM_Str|MEM_Blob))!=0
+   && ALWAYS((pVal->flags & (MEM_Str|MEM_Blob))!=0)
    && (pVal->flags & MEM_Dyn)!=0
    && pVal->xDel==xFree
   ){
