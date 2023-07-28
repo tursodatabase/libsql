@@ -14,6 +14,13 @@ pub struct Rows {
 unsafe impl Send for Rows {} // TODO: is this safe?
 
 impl Rows {
+    pub fn new(stmt: Arc<libsql_sys::Statement>) -> Rows {
+        Rows {
+            stmt,
+            err: RefCell::new(None),
+        }
+    }
+
     pub fn next(&self) -> Result<Option<Row>> {
         let err = match self.err.take() {
             Some(err) => err,
@@ -186,5 +193,32 @@ impl FromValue for &str {
         let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const i8) };
         let ret = ret.to_str().unwrap();
         Ok(ret)
+    }
+}
+
+pub struct MappedRows<F> {
+    rows: Rows,
+    map: F,
+}
+
+impl<F> MappedRows<F> {
+    pub fn new(rows: Rows, map: F) -> Self {
+        Self { rows, map }
+    }
+}
+
+impl<F, T> Iterator for MappedRows<F>
+where
+    F: FnMut(Row) -> Result<T>,
+{
+    type Item = Result<T>;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let map = &mut self.map;
+        self.rows
+            .next()
+            .transpose()
+            .map(|row_result| row_result.and_then(map))
     }
 }

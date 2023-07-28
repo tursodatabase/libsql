@@ -1,3 +1,4 @@
+use crate::rows::{MappedRows, Row};
 use crate::{errors, Connection, Error, Params, Result, Rows, Value, ValueRef};
 
 use std::cell::RefCell;
@@ -29,6 +30,29 @@ impl Statement<'_> {
                 "Unexpected error while preparing statement: {err}"
             ))),
         }
+    }
+
+    pub fn query_map<F, T>(&self, params: &Params, f: F) -> Result<MappedRows<F>>
+    where
+        F: FnMut(Row) -> Result<T>,
+    {
+        let rows = self.query(params)?;
+
+        Ok(MappedRows::new(rows, f))
+    }
+
+    pub fn query(&self, params: &Params) -> Result<Rows> {
+        self.bind(params);
+
+        Ok(Rows::new(self.inner.clone()))
+    }
+
+    pub fn query_row(&self, params: &Params) -> Result<Row> {
+        let rows = self.query(params)?;
+
+        let row = rows.next()?.ok_or(Error::QueryReturnedNoRows)?;
+
+        Ok(row)
     }
 
     pub fn bind(&self, params: &Params) {
