@@ -723,8 +723,10 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
    xStep() and xFinal() methods.
 
    isFinal must be 1 for xFinal() calls and 0 for all others.
+
+   Returns 0 on succes, SQLITE_NOMEM on allocation error.
 */
-static void setAggregateContext(JNIEnv * env, jobject jCx,
+static int s3jni_setAggregateContext(JNIEnv * env, jobject jCx,
                                 sqlite3_context * pCx,
                                 int isFinal){
   jmethodID setter;
@@ -745,8 +747,11 @@ static void setAggregateContext(JNIEnv * env, jobject jCx,
     }
   }
   pAgg = sqlite3_aggregate_context(pCx, isFinal ? 0 : 8);
-  (*env)->CallVoidMethod(env, jCx, setter, (jlong)pAgg);
-  IFTHREW_REPORT;
+  if( pAgg ){
+    (*env)->CallVoidMethod(env, jCx, setter, (jlong)pAgg);
+    IFTHREW_REPORT;
+  }
+  return pAgg ? (int)0 : SQLITE_NOMEM;
 }
 
 
@@ -1156,11 +1161,13 @@ static int udf_xFSI(sqlite3_context* pCx, int argc,
   if(rc) return rc;
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
   if( UDF_SCALAR != s->type ){
-    setAggregateContext(env, args.jcx, pCx, 0);
+    rc = s3jni_setAggregateContext(env, args.jcx, pCx, 0);
   }
-  (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
-  IFTHREW{
-    rc = udf_report_exception(pCx,s, zFuncType);
+  if( 0 == rc ){
+    (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
+    IFTHREW{
+      rc = udf_report_exception(pCx,s, zFuncType);
+    }
   }
   UNREF_L(args.jcx);
   UNREF_L(args.jargv);
@@ -1180,11 +1187,13 @@ static int udf_xFV(sqlite3_context* cx, UDFState * s,
   }
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
   if( UDF_SCALAR != s->type ){
-    setAggregateContext(env, jcx, cx, 1);
+    rc = s3jni_setAggregateContext(env, jcx, cx, 1);
   }
-  (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
-  IFTHREW{
-    rc = udf_report_exception(cx,s, zFuncType);
+  if( 0 == rc ){
+    (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
+    IFTHREW{
+      rc = udf_report_exception(cx,s, zFuncType);
+    }
   }
   UNREF_L(jcx);
   return rc;
