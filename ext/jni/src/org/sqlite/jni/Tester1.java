@@ -482,21 +482,23 @@ public class Tester1 {
 
   private static void testUdfAggregate(){
     final sqlite3 db = createNewDb();
-    SQLFunction func = new SQLFunction.Aggregate(){
-        private int accum = 0;
-        @Override public void xStep(sqlite3_context cx, sqlite3_value args[]){
-          this.accum += sqlite3_value_int(args[0]);
+    SQLFunction func = new SQLFunction.Aggregate<Integer>(){
+        @Override
+        public void xStep(sqlite3_context cx, sqlite3_value args[]){
+          this.getAggregateState(cx, 0).value += sqlite3_value_int(args[0]);
         }
-        @Override public void xFinal(sqlite3_context cx){
-          sqlite3_result_int(cx, this.accum);
-          this.accum = 0;
+        @Override
+        public void xFinal(sqlite3_context cx){
+          final Integer v = this.takeAggregateState(cx);
+          if(null == v) sqlite3_result_null(cx);
+          else sqlite3_result_int(cx, v);
         }
       };
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES(1),(2),(3)");
     int rc = sqlite3_create_function(db, "myfunc", 1, SQLITE_UTF8, func);
     affirm(0 == rc);
     sqlite3_stmt stmt = new sqlite3_stmt();
-    sqlite3_prepare(db, "select myfunc(a) from t", stmt);
+    sqlite3_prepare(db, "select myfunc(a), myfunc(a+10) from t", stmt);
     affirm( 0 != stmt.getNativePointer() );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
@@ -514,6 +516,20 @@ public class Tester1 {
     }
     sqlite3_finalize(stmt);
     affirm( 1==n );
+
+    rc = sqlite3_prepare(db, "select myfunc(a), myfunc(a+a) from t order by a",
+                         stmt);
+    affirm( 0 == rc );
+    n = 0;
+    while( SQLITE_ROW == sqlite3_step(stmt) ){
+      final int c0 = sqlite3_column_int(stmt, 0);
+      final int c1 = sqlite3_column_int(stmt, 1);
+      ++n;
+      affirm( 6 == c0 );
+      affirm( 12 == c1 );
+    }
+    affirm( 1 == n );
+    sqlite3_finalize(stmt);
     sqlite3_close(db);
   }
 
@@ -521,26 +537,27 @@ public class Tester1 {
     final sqlite3 db = createNewDb();
     /* Example window function, table, and results taken from:
        https://sqlite.org/windowfunctions.html#udfwinfunc */
-    final SQLFunction func = new SQLFunction.Window(){
-        private int accum = 0;
-        private void xStepInverse(int v){
-          this.accum += v;
-        }
-        private void xFinalValue(sqlite3_context cx){
-          sqlite3_result_int(cx, this.accum);
+    final SQLFunction func = new SQLFunction.Window<Integer>(){
+
+        private void xStepInverse(sqlite3_context cx, int v){
+          this.getAggregateState(cx,0).value += v;
         }
         @Override public void xStep(sqlite3_context cx, sqlite3_value[] args){
-          this.xStepInverse(sqlite3_value_int(args[0]));
+          this.xStepInverse(cx, sqlite3_value_int(args[0]));
         }
         @Override public void xInverse(sqlite3_context cx, sqlite3_value[] args){
-          this.xStepInverse(-sqlite3_value_int(args[0]));
+          this.xStepInverse(cx, -sqlite3_value_int(args[0]));
+        }
+
+        private void xFinalValue(sqlite3_context cx, Integer v){
+          if(null == v) sqlite3_result_null(cx);
+          else sqlite3_result_int(cx, v);
         }
         @Override public void xFinal(sqlite3_context cx){
-          this.xFinalValue(cx);
-          this.accum = 0;
+          xFinalValue(cx, this.takeAggregateState(cx));
         }
         @Override public void xValue(sqlite3_context cx){
-          this.xFinalValue(cx);
+          xFinalValue(cx, this.getAggregateState(cx,null).value);
         }
       };
     int rc = sqlite3_create_function(db, "winsumint", 1, SQLITE_UTF8, func);

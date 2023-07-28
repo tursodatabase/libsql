@@ -271,10 +271,11 @@ enum {
 typedef struct NphCacheLine NphCacheLine;
 struct NphCacheLine {
   const char * zClassName /* "full/class/Name" */;
-  jclass klazz      /* global ref to concrete NPH class */;
-  jmethodID midSet  /* setNativePointer() */;
-  jmethodID midGet  /* getNativePointer() */;
-  jmethodID midCtor /* constructor */;
+  jclass klazz        /* global ref to concrete NPH class */;
+  jmethodID midSet    /* setNativePointer() */;
+  jmethodID midGet    /* getNativePointer() */;
+  jmethodID midCtor   /* constructor */;
+  jmethodID midSetAgg /* sqlite3_context::setAggregateContext() */;
 };
 
 typedef struct JNIEnvCacheLine JNIEnvCacheLine;
@@ -713,6 +714,42 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
   }
 }
 
+/**
+   Requires that jCx be a Java-side sqlite3_context wrapper for pCx.
+   This function calls sqlite3_aggregate_context() to allocate a tiny
+   sliver of memory, the address of which is set in
+   jCx->setAggregateContext().  The memory is only used as a key for
+   mapping, client-side, results of aggregate result sets across
+   xStep() and xFinal() methods.
+
+   isFinal must be 1 for xFinal() calls and 0 for all others.
+*/
+static void setAggregateContext(JNIEnv * env, jobject jCx,
+                                sqlite3_context * pCx,
+                                int isFinal){
+  jmethodID setter;
+  void * pAgg;
+  struct NphCacheLine * const cacheLine =
+    S3Global_nph_cache(env, ClassNames.sqlite3_context);
+  if(cacheLine && cacheLine->klazz && cacheLine->midSetAgg){
+    setter = cacheLine->midSetAgg;
+    assert(setter);
+  }else{
+    jclass const klazz =
+      cacheLine ? cacheLine->klazz : (*env)->GetObjectClass(env, jCx);
+    setter = (*env)->GetMethodID(env, klazz, "setAggregateContext", "(J)V");
+    if(cacheLine){
+      assert(cacheLine->klazz);
+      assert(!cacheLine->midSetAgg);
+      cacheLine->midSetAgg = setter;
+    }
+  }
+  pAgg = sqlite3_aggregate_context(pCx, isFinal ? 0 : 8);
+  (*env)->CallVoidMethod(env, jCx, setter, (jlong)pAgg);
+  IFTHREW_REPORT;
+}
+
+
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own Java/JNI bindings.
@@ -1054,6 +1091,11 @@ typedef struct {
   jobjectArray jargv;
 } udf_jargs;
 
+/**
+   Converts the given (cx, argc, argv) into arguments for the given
+   UDF, placing the result in the final argument. Returns 0 on
+   success, SQLITE_NOMEM on allocation error.
+*/
 static int udf_args(sqlite3_context * const cx,
                     int argc, sqlite3_value**argv,
                     UDFState * const s,
@@ -1102,19 +1144,23 @@ static int udf_report_exception(sqlite3_context * cx, UDFState *s,
   return rc;
 }
 
-static int udf_xFSI(sqlite3_context* cx, int argc,
+static int udf_xFSI(sqlite3_context* pCx, int argc,
                     sqlite3_value** argv,
                     UDFState * s,
                     jmethodID xMethodID,
                     const char * zFuncType){
   udf_jargs args;
   JNIEnv * const env = s->env;
-  int rc = udf_args(cx, argc, argv, s, &args);
+  int rc = udf_args(pCx, argc, argv, s, &args);
+  //MARKER(("%s.%s() pCx = %p\n", s->zFuncName, zFuncType, pCx));
   if(rc) return rc;
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
+  if( UDF_SCALAR != s->type ){
+    setAggregateContext(env, args.jcx, pCx, 0);
+  }
   (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
   IFTHREW{
-    rc = udf_report_exception(cx,s, zFuncType);
+    rc = udf_report_exception(pCx,s, zFuncType);
   }
   UNREF_L(args.jcx);
   UNREF_L(args.jargv);
@@ -1127,11 +1173,15 @@ static int udf_xFV(sqlite3_context* cx, UDFState * s,
   JNIEnv * const env = s->env;
   jobject jcx = new_sqlite3_context_wrapper(s->env, cx);
   int rc = 0;
+  //MARKER(("%s.%s() cx = %p\n", s->zFuncName, zFuncType, cx));
   if(!jcx){
     sqlite3_result_error_nomem(cx);
     return SQLITE_NOMEM;
   }
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
+  if( UDF_SCALAR != s->type ){
+    setAggregateContext(env, jcx, cx, 1);
+  }
   (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
   IFTHREW{
     rc = udf_report_exception(cx,s, zFuncType);
