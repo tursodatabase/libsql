@@ -2535,7 +2535,7 @@ static WhereLoop **whereLoopFindLesser(
 
     /* If pTemplate is always better than p, then cause p to be overwritten
     ** with pTemplate.  pTemplate is better than p if:
-    **   (1)  pTemplate has no more dependences than p, and
+    **   (1)  pTemplate has no more dependencies than p, and
     **   (2)  pTemplate has an equal or lower cost than p.
     */
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq   /* (1)  */

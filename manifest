@@ -1,5 +1,5 @@
-C Do\snot\sallow\sthe\ssame\sJSON\sparse\sto\sbe\sinput\sto\sboth\sarguments\sto\sthe\njson_patch()\sroutine.
-D 2023-07-28T20:59:25.746
+C Fix\sdoc\serror\snoted\sin\s[forum:/forumpost/11fc7308d5e607f2|the\sforum]\sand\sa\smisspelling.
+D 2023-07-28T21:38:50.424
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -584,7 +584,7 @@ F src/bitvec.c 9eac5f42c11914d5ef00a75605bb205e934f435c579687f985f1f8b0995c8645
 F src/btmutex.c 79a43670447eacc651519a429f6ece9fd638563cf95b469d6891185ddae2b522
 F src/btree.c 7a37bdf09f338561880860681cb03499a60c3bb0869e539c58bc1d2cdd705ff2
 F src/btree.h 03e3356f5208bcab8eed4e094240fdac4a7f9f5ddf5e91045ce589f67d47c240
-F src/btreeInt.h 3b4eff7155c0cea6971dc51f62e3529934a15a6640ec607dd42a767e379cb3a9
+F src/btreeInt.h 91a9e0c41a0e71fa91a742ec285c63dd8dcb38b73d14fae0ed7209174ff0fdc1
 F src/build.c a8ae3b32d9aa9bbd2c0e97d7c0dd80def9fbca408425de1608f57ee6f47f45f4
 F src/callback.c db3a45e376deff6a16c0058163fe0ae2b73a2945f3f408ca32cf74960b28d490
 F src/complete.c a3634ab1e687055cd002e11b8f43eb75c17da23e
@@ -728,7 +728,7 @@ F src/vxworks.h d2988f4e5a61a4dfe82c6524dd3d6e4f2ce3cdb9
 F src/wal.c dd843f619ac60d5dadab7109cf402432ba74dde0c301505fd1c202add07659e3
 F src/wal.h c3aa7825bfa2fe0d85bef2db94655f99870a285778baa36307c0a16da32b226a
 F src/walker.c 7c7ea0115345851c3da4e04e2e239a29983b61fb5b038b94eede6aba462640e2
-F src/where.c 477fcc5e561ef169e6002499602af6b805156c2aae6b2f5c2c93ef8c1cd64768
+F src/where.c 6041f3cae99d6f4c4da7ea094508317900fcd61195fe4292e55ac4531650e70a
 F src/whereInt.h c7d19902863beadec1d04e66aca39c0bcd60b74f05f0eaa7422c7005dfc5d51a
 F src/wherecode.c 5d77db30a2a3dd532492ae882de114edba2fae672622056b1c7fd61f5917a8f1
 F src/whereexpr.c dc5096eca5ed503999be3bdee8a90c51361289a678d396a220912e9cb73b3c00
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0443c0ef85f8f6f3efdee68bf59126c9459f08a58458756f8cbeeaf043d43a86
-R 27732baf0d0d9b30551bea552c6f65a9
-U drh
-Z 335a5ef6b8de7fa701a34944faa875e0
+P 8e781c6742792b3899ca60efc49c7eaee1df9f6b03d27c254b0e148b82946e19
+R 726de7687ac63a00c396fd2bbb8e8024
+U larrybr
+Z bae19853764498aed46e03fa43d06926
 # Remove this line to create a well-formed Fossil manifest.
