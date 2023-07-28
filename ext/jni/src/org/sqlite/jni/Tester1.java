@@ -202,7 +202,7 @@ public class Tester1 {
       rowid = x;
     }
     sqlite3_finalize(stmt);
-    affirm(total1 > 0);
+    affirm(300 == total1);
     affirm(sqlite3_changes(db) > changes);
     affirm(sqlite3_total_changes(db) > changesT);
     affirm(sqlite3_changes64(db) > changes64);
@@ -279,7 +279,7 @@ public class Tester1 {
     execSql(db, "CREATE TABLE t(a)");
     sqlite3_stmt stmt = new sqlite3_stmt();
     int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(?);", stmt);
-    String list1[] = { "hell🤩", "w😃rld", "!" };
+    String[] list1 = { "hell🤩", "w😃rld", "!" };
     for( String e : list1 ){
       rc = sqlite3_bind_text(stmt, 1, e);
       affirm(0 == rc);
@@ -290,7 +290,7 @@ public class Tester1 {
     sqlite3_finalize(stmt);
     rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
     affirm(0 == rc);
-    StringBuffer sbuf = new StringBuffer();
+    StringBuilder sbuf = new StringBuilder();
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       String txt = sqlite3_column_text(stmt, 0);
@@ -309,7 +309,7 @@ public class Tester1 {
     execSql(db, "CREATE TABLE t(a)");
     sqlite3_stmt stmt = new sqlite3_stmt();
     int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(?);", stmt);
-    byte list1[] = { 0x32, 0x33, 0x34 };
+    byte[] list1 = { 0x32, 0x33, 0x34 };
     rc = sqlite3_bind_blob(stmt, 1, list1);
     rc = sqlite3_step(stmt);
     affirm(SQLITE_DONE == rc);
@@ -319,7 +319,7 @@ public class Tester1 {
     int n = 0;
     int total = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
-      byte blob[] = sqlite3_column_blob(stmt, 0);
+      byte[] blob = sqlite3_column_blob(stmt, 0);
       affirm(3 == blob.length);
       int i = 0;
       for(byte b : blob){
@@ -427,7 +427,7 @@ public class Tester1 {
       // result is possibly somewhat noisy for those not at home in
       // Java...
       new SQLFunction.Scalar(){
-        public void xFunc(sqlite3_context cx, sqlite3_value args[]){
+        public void xFunc(sqlite3_context cx, sqlite3_value[] args){
           affirm(db.getNativePointer()
                    == sqlite3_context_db_handle(cx).getNativePointer());
           int result = 0;
@@ -488,7 +488,7 @@ public class Tester1 {
       new ValueHolder<>(false);
     SQLFunction func = new SQLFunction.Aggregate<Integer>(){
         @Override
-        public void xStep(sqlite3_context cx, sqlite3_value args[]){
+        public void xStep(sqlite3_context cx, sqlite3_value[] args){
           this.getAggregateState(cx, 0).value += sqlite3_value_int(args[0]);
         }
         @Override
@@ -514,7 +514,7 @@ public class Tester1 {
       affirm( 6 == v );
       ++n;
     }
-    affirm( false == xFinalNull.value );
+    affirm(!xFinalNull.value);
     sqlite3_reset(stmt);
     // Ensure that the accumulator is reset...
     n = 0;
@@ -538,11 +538,11 @@ public class Tester1 {
       affirm( 12 == c1 );
     }
     affirm( 1 == n );
-    affirm( false == xFinalNull.value );
+    affirm(!xFinalNull.value);
     sqlite3_finalize(stmt);
 
     execSql(db, "SELECT myfunc(1) WHERE 0");
-    affirm( true == xFinalNull.value );
+    affirm(xFinalNull.value);
     sqlite3_close(db);
   }
 
@@ -695,16 +695,16 @@ public class Tester1 {
 
     // Force a locked condition...
     execSql(db1, "BEGIN EXCLUSIVE");
-    affirm( false == xDestroyed.value );
+    affirm(!xDestroyed.value);
     sqlite3_stmt stmt = new sqlite3_stmt();
     rc = sqlite3_prepare(db2, "SELECT * from t", stmt);
     affirm( SQLITE_BUSY == rc);
     affirm( 3 == xBusyCalled.value );
     sqlite3_finalize(stmt);
     sqlite3_close(db1);
-    affirm( false == xDestroyed.value );
+    affirm(!xDestroyed.value);
     sqlite3_close(db2);
-    affirm( true == xDestroyed.value );
+    affirm(xDestroyed.value);
     try{
       final java.io.File f = new java.io.File(dbName);
       f.delete();

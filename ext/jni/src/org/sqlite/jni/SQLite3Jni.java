@@ -200,7 +200,7 @@ public final class SQLite3Jni {
                                                  int ndx,
                                                  @NotNull Class<T> type){
     final Object o = sqlite3_column_java_object(stmt, ndx);
-    return (null!=o && type.isInstance(o)) ? (T)o : null;
+    return type.isInstance(o) ? (T)o : null;
   }
 
   public static native String sqlite3_column_origin_name(@NotNull sqlite3_stmt stmt, int ndx);
@@ -700,7 +700,7 @@ public final class SQLite3Jni {
   public static <T> T sqlite3_value_java_casted(@NotNull sqlite3_value v,
                                                 @NotNull Class<T> type){
     final Object o = sqlite3_value_java_object(v);
-    return (null!=o && type.isInstance(o)) ? (T)o : null;
+    return type.isInstance(o) ? (T)o : null;
   }
 
   /**
