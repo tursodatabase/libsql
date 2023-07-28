@@ -2979,10 +2979,6 @@ op_column_restart:
       ** dynamically allocated. */
       pC->aRow = 0;
       pC->szRow = 0;
-      if( pC->colCache && pC->pCache && pC->pCache->pCValue ){
-        sqlite3RCStrUnref(pC->pCache->pCValue);
-        pC->pCache->pCValue = 0;
-      }
 
       /* Make sure a corrupt database has not given us an oversize header.
       ** Do this now to avoid an oversize memory allocation.
