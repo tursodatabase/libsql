@@ -16,14 +16,14 @@ of the SQLite JSON parser.
 
   2.  Build the baseline sqlite3.c file.  ("`make sqlite3.c`")
 
-  3.  Run "`sh json-speed-check-1.sh trunk`".   This creates the baseline
+  3.  Run "`sh json-speed-check.sh trunk`".   This creates the baseline
       profile in "jout-trunk.txt".
 
 # 3.0 Testing
 
   1.  Build the sqlite3.c to be tested.
 
-  2.  Run "`sh json-speed-check-1.sh x1`".  The profile output will appear
+  2.  Run "`sh json-speed-check.sh x1`".  The profile output will appear
       in jout-x1.txt.  Substitute any label you want in place of "x1".
 
   3.  Run the script shown below in the CLI.
