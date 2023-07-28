@@ -1498,7 +1498,6 @@ void sqlite3VdbeReleaseRegisters(
 }
 #endif /* SQLITE_DEBUG */
 
-
 /*
 ** Change the value of the P4 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -2723,7 +2722,23 @@ void sqlite3VdbeMakeReady(
 void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx ) sqlite3VdbeFreeCursorNN(p,pCx);
 }
+static SQLITE_NOINLINE void freeCursorWithCache(Vdbe *p, VdbeCursor *pCx){
+  VdbeTxtBlbCache *pCache = pCx->pCache;
+  assert( pCx->colCache );
+  pCx->colCache = 0;
+  pCx->pCache = 0;
+  if( pCache->pCValue ){
+    sqlite3RCStrUnref(pCache->pCValue);
+    pCache->pCValue = 0;
+  }
+  sqlite3DbFree(p->db, pCache);
+  sqlite3VdbeFreeCursorNN(p, pCx);
+}
 void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
+  if( pCx->colCache ){
+    freeCursorWithCache(p, pCx);
+    return;
+  }
   switch( pCx->eCurType ){
     case CURTYPE_SORTER: {
       sqlite3VdbeSorterClose(p->db, pCx);

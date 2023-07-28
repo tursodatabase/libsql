@@ -695,6 +695,83 @@ static u64 filterHash(const Mem *aMem, const Op *pOp){
   return h;
 }
 
+
+/*
+** For OP_Column, factor out the case where content is loaded from
+** overflow pages, so that the code to implement this case is separate
+** the common case where all content fits on the page.  Factoring out
+** the code reduces register pressure and helps the common case
+** to run faster.
+*/
+static SQLITE_NOINLINE int vdbeColumnFromOverflow(
+  VdbeCursor *pC,       /* The BTree cursor from which we are reading */
+  int iCol,             /* The column to read */
+  int t,                /* The serial-type code for the column value */
+  i64 iOffset,          /* Offset to the start of the content value */
+  Mem *pDest            /* Store the value into this register. */
+){
+  int rc;
+  sqlite3 *db = pDest->db;
+  int encoding = pDest->enc;
+  int len = sqlite3VdbeSerialTypeLen(t);
+  assert( pC->eCurType==CURTYPE_BTREE );
+  if( len>db->aLimit[SQLITE_LIMIT_LENGTH] ) return SQLITE_TOOBIG;
+  if( len > 4000 ){
+    /* Cache large column values that are on overflow pages using
+    ** an RCStr (reference counted string) so that if they are reloaded,
+    ** that do not have to be copied a second time.  The overhead of
+    ** creating and managing the cache is such that this is only
+    ** profitable for larger TEXT and BLOB values.
+    */
+    VdbeTxtBlbCache *pCache;
+    char *pBuf;
+    if( pC->colCache==0 ){
+      pC->pCache = sqlite3DbMallocZero(db, sizeof(VdbeTxtBlbCache) );
+      if( pC->pCache==0 ) return SQLITE_NOMEM;
+      pC->colCache = 1;
+    }
+    pCache = pC->pCache;
+    if( pCache->pCValue==0
+     || pCache->iCol!=iCol
+     || pCache->iOffset!=sqlite3BtreeOffset(pC->uc.pCursor)
+    ){
+      if( pCache->pCValue ) sqlite3RCStrUnref(pCache->pCValue);
+      pBuf = pCache->pCValue = sqlite3RCStrNew( len+3 );
+      if( pBuf==0 ) return SQLITE_NOMEM;
+      rc = sqlite3BtreePayload(pC->uc.pCursor, iOffset, len, pBuf);
+      if( rc ) return rc;
+      pBuf[len] = 0;
+      pBuf[len+1] = 0;
+      pBuf[len+2] = 0;
+      pCache->iCol = iCol;
+      pCache->iOffset = sqlite3BtreeOffset(pC->uc.pCursor);
+    }else{
+      pBuf = pCache->pCValue;
+    }
+    assert( t>=12 );
+    sqlite3RCStrRef(pBuf);
+    if( t&1 ){
+      rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, encoding,
+                                (void(*)(void*))sqlite3RCStrUnref);
+      pDest->flags |= MEM_Term;
+    }else{
+      rc = sqlite3VdbeMemSetStr(pDest, pBuf, len, 0,
+                                (void(*)(void*))sqlite3RCStrUnref);
+    }
+  }else{
+    rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, iOffset, len, pDest);
+    if( rc ) return rc;
+    sqlite3VdbeSerialGet((const u8*)pDest->z, t, pDest);
+    if( (t&1)!=0 && encoding==SQLITE_UTF8 ){
+      pDest->z[len] = 0;
+      pDest->flags |= MEM_Term;
+    }
+  }
+  pDest->flags &= ~MEM_Ephem;
+  return rc;
+}
+
+
 /*
 ** Return the symbolic name for the data type of a pMem
 */
@@ -3061,6 +3138,7 @@ op_column_restart:
   }else{
     u8 p5;
     pDest->enc = encoding;
+    assert( pDest->db==db );
     /* This branch happens only when content is on overflow pages */
     if( ((p5 = (pOp->p5 & OPFLAG_BYTELENARG))!=0
           && (p5==OPFLAG_TYPEOFARG
@@ -3084,14 +3162,12 @@ op_column_restart:
       */
       sqlite3VdbeSerialGet((u8*)sqlite3CtypeMap, t, pDest);
     }else{
-      if( len>db->aLimit[SQLITE_LIMIT_LENGTH] ) goto too_big;
-      rc = sqlite3VdbeMemFromBtree(pC->uc.pCursor, aOffset[p2], len, pDest);
-      if( rc!=SQLITE_OK ) goto abort_due_to_error;
-      sqlite3VdbeSerialGet((const u8*)pDest->z, t, pDest);
-      if( (t&1)!=0 && encoding==SQLITE_UTF8 ){
-        pDest->flags |= MEM_Term;
+      rc = vdbeColumnFromOverflow(pC, p2, t, aOffset[p2], pDest);
+      if( rc ){
+        if( rc==SQLITE_NOMEM ) goto no_mem;
+        if( rc==SQLITE_TOOBIG ) goto too_big;
+        goto abort_due_to_error;
       }
-      pDest->flags &= ~MEM_Ephem;
     }
   }
 
