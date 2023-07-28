@@ -110,7 +110,7 @@ impl StmtKind {
             // always ok to be served by primary
             "foreign_keys" | "foreign_key_list" | "foreign_key_check" | "collation_list"
             | "data_version" | "freelist_count" | "integrity_check" | "legacy_file_format"
-            | "page_count" | "quick_check" | "stats" => Some(Self::Write),
+            | "page_count" | "quick_check" | "stats" | "user_version" => Some(Self::Write),
             // ok to be served by primary without args
             "analysis_limit"
             | "application_id"
@@ -142,7 +142,6 @@ impl StmtKind {
             | "temp_store"
             | "threads"
             | "trusted_schema"
-            | "user_version"
             | "wal_autocheckpoint" => {
                 match body {
                     Some(_) => None,
