@@ -42,9 +42,8 @@ impl Statement {
         }
     }
 
-    pub fn bind_text(&self, idx: i32, value: &str) {
+    pub fn bind_text(&self, idx: i32, value: &[u8]) {
         unsafe {
-            let value = value.as_bytes();
             crate::ffi::sqlite3_bind_text(
                 self.raw_stmt,
                 idx,
