@@ -34,11 +34,10 @@ public class sqlite3_context extends NativePointerHolder<sqlite3_context> {
   /**
      If this object is being used in the context of an aggregate or
      window UDF, the UDF binding layer will set a unique context value
-     here. That value will be the same across matching calls to the
-     xStep() and xFinal() routines, as well as xValue() and xInverse()
-     in window UDFs. This value can be used as a key to map state
-     which needs to persist across such calls, noting that such state
-     should be cleaned up via xFinal().
+     here, else this will return 0. That value will be the same across
+     matching calls to the UDF callbacks. This value can be used as a
+     key to map state which needs to persist across such calls, noting
+     that such state should be cleaned up via xFinal().
   */
   public long getAggregateContext(){
     return aggcx;

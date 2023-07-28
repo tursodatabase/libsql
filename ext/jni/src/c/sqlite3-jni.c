@@ -404,6 +404,33 @@ static void s3jni_free(void * p){
   if(p) sqlite3_free(p);
 }
 
+
+/*
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own Java/JNI bindings.
+**
+** For purposes of certain hand-crafted JNI function bindings, we
+** need a way of reporting errors which is consistent with the rest of
+** the C API, as opposed to throwing JS exceptions. To that end, this
+** internal-use-only function is a thin proxy around
+** sqlite3ErrorWithMessage(). The intent is that it only be used from
+** JNI bindings such as sqlite3_prepare_v2/v3(), and definitely not
+** from client code.
+**
+** Returns err_code.
+*/
+static int s3jni_db_error(sqlite3*db, int err_code, const char *zMsg){
+  if( db!=0 ){
+    if( 0!=zMsg ){
+      const int nMsg = sqlite3Strlen30(zMsg);
+      sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
+    }else{
+      sqlite3ErrorWithMsg(db, err_code, NULL);
+    }
+  }
+  return err_code;
+}
+
 /**
    Clears s's state, releasing any Java references. Before doing so,
    it calls s's xDestroy() method, ignoring the lack of that method or
@@ -724,13 +751,17 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
 
    isFinal must be 1 for xFinal() calls and 0 for all others.
 
-   Returns 0 on succes, SQLITE_NOMEM on allocation error.
+   Returns 0 on success. Returns SQLITE_NOMEM on allocation error,
+   noting that it will not allocate when isFinal is true. It returns
+   SQLITE_ERROR if there's a serious internal error in dealing with
+   the JNI state.
 */
-static int s3jni_setAggregateContext(JNIEnv * env, jobject jCx,
-                                sqlite3_context * pCx,
-                                int isFinal){
+static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
+                                   sqlite3_context * pCx,
+                                   int isFinal){
   jmethodID setter;
   void * pAgg;
+  int rc = 0;
   struct NphCacheLine * const cacheLine =
     S3Global_nph_cache(env, ClassNames.sqlite3_context);
   if(cacheLine && cacheLine->klazz && cacheLine->midSetAgg){
@@ -746,42 +777,23 @@ static int s3jni_setAggregateContext(JNIEnv * env, jobject jCx,
       cacheLine->midSetAgg = setter;
     }
   }
-  pAgg = sqlite3_aggregate_context(pCx, isFinal ? 0 : 8);
-  if( pAgg ){
+  pAgg = sqlite3_aggregate_context(pCx, isFinal ? 0 : 4);
+  if( pAgg || isFinal ){
     (*env)->CallVoidMethod(env, jCx, setter, (jlong)pAgg);
-    IFTHREW_REPORT;
-  }
-  return pAgg ? (int)0 : SQLITE_NOMEM;
-}
-
-
-/*
-** This function is NOT part of the sqlite3 public API. It is strictly
-** for use by the sqlite project's own Java/JNI bindings.
-**
-** For purposes of certain hand-crafted JNI function bindings, we
-** need a way of reporting errors which is consistent with the rest of
-** the C API, as opposed to throwing JS exceptions. To that end, this
-** internal-use-only function is a thin proxy around
-** sqlite3ErrorWithMessage(). The intent is that it only be used from
-** JNI bindings such as sqlite3_prepare_v2/v3(), and definitely not
-** from client code.
-**
-** Returns err_code.
-*/
-static int s3jni_db_error(sqlite3*db, int err_code, const char *zMsg){
-  if( db!=0 ){
-    if( 0!=zMsg ){
-      const int nMsg = sqlite3Strlen30(zMsg);
-      sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
-    }else{
-      sqlite3ErrorWithMsg(db, err_code, NULL);
+    IFTHREW {
+      EXCEPTION_REPORT;
+      EXCEPTION_CLEAR/*arguable, but so is propagation*/;
+      rc = s3jni_db_error(sqlite3_context_db_handle(pCx),
+                          SQLITE_ERROR,
+                          "sqlite3_context::setAggregateContext() "
+                          "unexpectedly threw.");
     }
+  }else{
+    assert(!pAgg);
+    rc = SQLITE_NOMEM;
   }
-  return err_code;
+  return rc;
 }
-
-
 
 /* Sets a native int32 value in OutputPointer.Int32 object ppOut. */
 static void setOutputInt32(JNIEnv * env, jobject ppOut, int v){
@@ -1161,7 +1173,7 @@ static int udf_xFSI(sqlite3_context* pCx, int argc,
   if(rc) return rc;
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
   if( UDF_SCALAR != s->type ){
-    rc = s3jni_setAggregateContext(env, args.jcx, pCx, 0);
+    rc = udf_setAggregateContext(env, args.jcx, pCx, 0);
   }
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
@@ -1187,7 +1199,7 @@ static int udf_xFV(sqlite3_context* cx, UDFState * s,
   }
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
   if( UDF_SCALAR != s->type ){
-    rc = s3jni_setAggregateContext(env, jcx, cx, 1);
+    rc = udf_setAggregateContext(env, jcx, cx, 1);
   }
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
