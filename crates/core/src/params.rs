@@ -64,6 +64,12 @@ impl From<&str> for Value {
     }
 }
 
+impl From<Vec<u8>> for Value {
+    fn from(value: Vec<u8>) -> Value {
+        Value::Blob(value)
+    }
+}
+
 impl From<libsql_sys::Value> for Value {
     fn from(value: libsql_sys::Value) -> Value {
         match value.value_type() {
@@ -80,7 +86,18 @@ impl From<libsql_sys::Value> for Value {
                     Value::Text(v.to_owned())
                 }
             }
-            ValueType::Blob => todo!(),
+            ValueType::Blob => {
+                let (len, blob) = (value.bytes(), value.blob());
+
+                assert!(len >= 0, "unexpected negative bytes value from sqlite3");
+
+                let mut v = Vec::with_capacity(len as usize);
+
+                let slice: &[u8] =
+                    unsafe { std::slice::from_raw_parts(blob as *const u8, len as usize) };
+                v.extend_from_slice(&slice);
+                Value::Blob(v)
+            }
         }
     }
 }
@@ -112,10 +129,7 @@ impl From<ValueRef<'_>> for Value {
             ValueRef::Null => Value::Null,
             ValueRef::Integer(i) => Value::Integer(i),
             ValueRef::Real(r) => Value::Real(r),
-            ValueRef::Text(s) => {
-                let s = std::str::from_utf8(s).expect("invalid UTF-8");
-                Value::Text(s.to_string())
-            }
+            ValueRef::Text(s) => Value::Text(String::from_utf8_lossy(s).to_string()),
             ValueRef::Blob(b) => Value::Blob(b.to_vec()),
         }
     }
@@ -154,6 +168,38 @@ where
         match s {
             Some(x) => x.into(),
             None => ValueRef::Null,
+        }
+    }
+}
+
+impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
+    fn from(value: libsql_sys::Value) -> ValueRef<'a> {
+        match value.value_type() {
+            ValueType::Null => ValueRef::Null,
+            ValueType::Integer => ValueRef::Integer(value.int().into()),
+            ValueType::Real => todo!(),
+            ValueType::Text => {
+                let v = value.text();
+                if v.is_null() {
+                    ValueRef::Null
+                } else {
+                    let v = unsafe { std::ffi::CStr::from_ptr(v as *const i8) };
+                    ValueRef::Text(v.to_bytes())
+                }
+            }
+            ValueType::Blob => {
+                let (len, blob) = (value.bytes(), value.blob());
+
+                assert!(len >= 0, "unexpected negative bytes value from sqlite3");
+
+                if len > 0 {
+                    let slice: &[u8] =
+                        unsafe { std::slice::from_raw_parts(blob as *const u8, len as usize) };
+                    ValueRef::Blob(slice)
+                } else {
+                    ValueRef::Blob(&[])
+                }
+            }
         }
     }
 }

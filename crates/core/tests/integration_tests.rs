@@ -1,4 +1,4 @@
-use libsql::{named_params, params, Connection, Database, Params};
+use libsql::{named_params, params, Connection, Database, Params, Value};
 
 fn setup() -> Connection {
     let db = Database::open(":memory:").unwrap();
@@ -96,4 +96,22 @@ fn nulls() {
     let row = rows.next().unwrap().unwrap();
     assert_eq!(row.get::<i32>(0).unwrap(), 1);
     assert!(row.get::<&str>(1).is_err());
+}
+
+#[test]
+fn blob() {
+    let conn = setup();
+    conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY, data BLOB)", ())
+        .unwrap();
+
+    let bytes = vec![2u8; 64];
+    let value = Value::from(bytes.clone());
+    conn.execute("INSERT INTO bbb (data) VALUES (?1)", vec![value])
+        .unwrap();
+
+    let rows = conn.execute("SELECT * FROM bbb", ()).unwrap().unwrap();
+    let row = rows.next().unwrap().unwrap();
+
+    let out = row.get::<Vec<u8>>(1).unwrap();
+    assert_eq!(&out, &bytes);
 }

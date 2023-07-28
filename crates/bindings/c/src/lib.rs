@@ -77,10 +77,10 @@ pub unsafe extern "C" fn libsql_free_rows(res: libsql_rows_t) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_execute_async(
-    conn: libsql_connection_t,
+pub unsafe extern "C" fn libsql_execute_async<'a>(
+    conn: &'a libsql_connection_t,
     sql: *const std::ffi::c_char,
-) -> libsql_rows_future_t {
+) -> libsql_rows_future_t<'a> {
     let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
     let sql = match sql.to_str() {
         Ok(sql) => sql,

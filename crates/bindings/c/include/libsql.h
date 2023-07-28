@@ -35,7 +35,7 @@ void libsql_execute(libsql_connection_t conn, const char *sql);
 
 void libsql_free_rows(libsql_rows_t res);
 
-libsql_rows_future_t libsql_execute_async(libsql_connection_t conn, const char *sql);
+libsql_rows_future_t libsql_execute_async(const libsql_connection_t *conn, const char *sql);
 
 void libsql_free_rows_future(libsql_rows_future_t res);
 
