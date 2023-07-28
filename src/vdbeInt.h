@@ -481,16 +481,18 @@ struct Vdbe {
   u32 nWrite;             /* Number of write operations that have occurred */
 #endif
   u16 nResColumn;         /* Number of columns in one row of the result set */
+  u16 nResAlloc;          /* Column slots allocated to aColName[] */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   u8 prepFlags;           /* SQLITE_PREPARE_* flags */
   u8 eVdbeState;          /* On of the VDBE_*_STATE values */
   bft expired:2;          /* 1: recompile VM immediately  2: when convenient */
-  bft explain:2;          /* True if EXPLAIN present on SQL command */
+  bft explain:2;          /* 0: normal, 1: EXPLAIN, 2: EXPLAIN QUERY PLAN */
   bft changeCntOn:1;      /* True to update the change-counter */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
   bft readOnly:1;         /* True for statements that do not write */
   bft bIsReader:1;        /* True for statements that read */
+  bft haveEqpOps:1;       /* Bytecode supports EXPLAIN QUERY PLAN */
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   u32 aCounter[9];        /* Counters used by sqlite3_stmt_status() */

@@ -700,7 +700,12 @@ static int sqlite3Prepare(
   sParse.pOuterParse = db->pParse;
   db->pParse = &sParse;
   sParse.db = db;
-  sParse.pReprepare = pReprepare;
+  if( pReprepare ){
+    sParse.pReprepare = pReprepare;
+    sParse.explain = sqlite3_stmt_isexplain((sqlite3_stmt*)pReprepare);
+  }else{
+    assert( sParse.pReprepare==0 );
+  }
   assert( ppStmt && *ppStmt==0 );
   if( db->mallocFailed ){
     sqlite3ErrorMsg(&sParse, "out of memory");
