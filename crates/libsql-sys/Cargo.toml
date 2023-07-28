@@ -1,6 +1,6 @@
 [package]
 name = "libsql-sys"
-version = "0.2.10"
+version = "0.2.11"
 edition = "2021"
 license = "MIT"
 description = "Native bindings to libSQL"
