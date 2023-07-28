@@ -3,7 +3,6 @@ resolver = "2"
 members = [
   "core",
   "bindings/c",
-  "bindings/python",
   "bindings/wasm",
   "replication",
   "libsql-sys",

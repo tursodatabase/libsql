@@ -1,4 +1,4 @@
-use crate::{errors, Error, Params, Result, Statement, Value};
+use crate::{errors, Connection, Error, Params, Result, Value};
 use libsql_sys::ValueType;
 
 use std::cell::RefCell;
@@ -45,26 +45,26 @@ impl Rows {
     }
 }
 
-pub struct RowsFuture {
-    pub(crate) raw: *mut libsql_sys::ffi::sqlite3,
+pub struct RowsFuture<'a> {
+    pub(crate) conn: &'a Connection,
     pub(crate) sql: String,
     pub(crate) params: Params,
 }
 
-impl RowsFuture {
+impl RowsFuture<'_> {
     pub fn wait(&mut self) -> Result<Option<Rows>> {
         futures::executor::block_on(self)
     }
 }
 
-impl futures::Future for RowsFuture {
+impl futures::Future for RowsFuture<'_> {
     type Output = Result<Option<Rows>>;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
         _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
-        let stmt = Statement::prepare(self.raw, &self.sql)?;
+        let stmt = self.conn.prepare(&self.sql)?;
         let ret = stmt.execute(&self.params);
         std::task::Poll::Ready(Ok(ret))
     }
