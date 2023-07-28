@@ -53,15 +53,16 @@ public abstract class SQLFunction {
        methods, passing it that method's first argument and an initial
        value for the persistent state. If there is currently no
        mapping for cx.getAggregateContext() within the map, one is
-       created using the given initial value, else an existing one is
-       use and the 2nd argument is ignored.  It returns a ValueHolder
-       which can be used to modify that state directly without
-       requiring that the user update the underlying map.
+       created using the given initial value, else the existing one is
+       used and the 2nd argument is ignored.  It returns a
+       ValueHolder<T> which can be used to modify that state directly
+       without requiring that the client update the underlying map's
+       entry.
     */
     public ValueHolder<T> getAggregateState(sqlite3_context cx, T initialValue){
       ValueHolder<T> rc = map.get(cx.getAggregateContext());
       if(null == rc){
-        map.put(cx.getAggregateContext(), rc = new ValueHolder<T>(initialValue));
+        map.put(cx.getAggregateContext(), rc = new ValueHolder<>(initialValue));
       }
       return rc;
     }
@@ -70,9 +71,10 @@ public abstract class SQLFunction {
        Should be called from a UDF's xFinal() method and passed that
        method's first argument. This function removes the value
        associated with cx.getAggregateContext() from the map and
-       returns it, returning null if no other UDF method has not been
-       called to set up such a mapping. That will be the case if an
-       aggregate is used in a statement which has no result rows.
+       returns it, returning null if no other UDF method has been
+       called to set up such a mapping. The latter condition will be
+       the case if an aggregate is used in a statement which has no
+       result rows.
     */
     public T takeAggregateState(sqlite3_context cx){
       final ValueHolder<T> h = map.remove(cx.getAggregateContext());
@@ -100,17 +102,17 @@ public abstract class SQLFunction {
     public abstract void xStep(sqlite3_context cx, sqlite3_value[] args);
     public abstract void xFinal(sqlite3_context cx);
 
-    //! See Scalar.xDestroy()
+    //! @see Scalar#xDestroy()
     public void xDestroy() {}
 
     private final ContextMap<T> map = new ContextMap<>();
 
-    //! See ContextMap<T>.getAggregateState().
+    //! @see ContextMap<T>#getAggregateState()
     protected final ValueHolder<T> getAggregateState(sqlite3_context cx, T initialValue){
       return map.getAggregateState(cx, initialValue);
     }
 
-    //! See ContextMap<T>.takeAggregateState().
+    //! @see ContextMap<T>#takeAggregateState()
     protected final T takeAggregateState(sqlite3_context cx){
       return map.takeAggregateState(cx);
     }
@@ -119,9 +121,9 @@ public abstract class SQLFunction {
   /**
      An SQLFunction subclass for creating window functions.  Note that
      Window<T> inherits from Aggregate<T> and each instance is
-     required to implemenat the inherited abstract methods from that
-     class. See Aggregate<T> for information on managing the call
-     state across matching calls of the UDF callbacks.
+     required to implement the inherited abstract methods from that
+     class. See Aggregate<T> for information on managing the UDF's
+     invocation-specific state.
   */
   public static abstract class Window<T> extends Aggregate<T> {
     public abstract void xInverse(sqlite3_context cx, sqlite3_value[] args);
