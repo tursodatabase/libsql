@@ -1877,10 +1877,9 @@ int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
     v->explain = eMode;
     rc = SQLITE_OK;
   }else{
-    int haveEqpOps = v->explain==2 || v->haveEqpOps;
     v->explain = eMode;
     rc = sqlite3Reprepare(v);
-    v->haveEqpOps = haveEqpOps!=0;
+    v->haveEqpOps = eMode==2;
   }
   if( v->explain ){
     v->nResColumn = 12 - 4*v->explain;
