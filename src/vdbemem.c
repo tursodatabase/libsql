@@ -322,7 +322,10 @@ int sqlite3VdbeMemClearAndResize(Mem *pMem, int szNew){
 ** this routine is a no-op.
 */
 void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
-  if( (pMem->flags & (MEM_Str|MEM_Term|MEM_Ephem))!=MEM_Str ) return;
+  if( (pMem->flags & (MEM_Str|MEM_Term|MEM_Ephem|MEM_Static))!=MEM_Str ){
+    /* pMem must be a string, and it cannot be an ephemeral or static string */
+    return;
+  }
   if( pMem->enc!=SQLITE_UTF8 ) return;
   if( NEVER(pMem->z==0) ) return;
   if( pMem->flags & MEM_Dyn ){
