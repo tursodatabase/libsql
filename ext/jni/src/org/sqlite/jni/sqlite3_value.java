@@ -13,8 +13,5 @@
 */
 package org.sqlite.jni;
 
-public class sqlite3_value extends NativePointerHolder<sqlite3_value> {
-  public sqlite3_value() {
-    super();
-  }
+public final class sqlite3_value extends NativePointerHolder<sqlite3_value> {
 }

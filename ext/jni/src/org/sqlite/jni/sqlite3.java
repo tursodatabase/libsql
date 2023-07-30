@@ -19,8 +19,5 @@ package org.sqlite.jni;
    simply provide a type-safe way to communicate it between Java
    and C via JNI.
 */
-public class sqlite3 extends NativePointerHolder<sqlite3> {
-  public sqlite3() {
-    super();
-  }
+public final class sqlite3 extends NativePointerHolder<sqlite3> {
 }

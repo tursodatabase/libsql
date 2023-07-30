@@ -24,10 +24,12 @@ package org.sqlite.jni;
 */
 public final class OutputPointer {
   public static final class Int32 {
+    //! Only set from the JNI layer.
     private int value;
     public final int getValue(){return value;}
   }
   public static final class Int64 {
+    //! Only set from the JNI layer.
     private long value;
     public final long getValue(){return value;}
   }

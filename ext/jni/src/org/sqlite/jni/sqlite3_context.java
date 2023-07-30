@@ -17,11 +17,7 @@ package org.sqlite.jni;
    sqlite3_context instances are used in conjunction with user-defined
    SQL functions (a.k.a. UDFs).
 */
-public class sqlite3_context extends NativePointerHolder<sqlite3_context> {
-  public sqlite3_context() {
-    super();
-  }
-
+public final class sqlite3_context extends NativePointerHolder<sqlite3_context> {
   /**
      For use only by the JNI layer. It's permitted to set this even
      though it's private.
