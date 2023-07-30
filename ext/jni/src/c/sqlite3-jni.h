@@ -1421,6 +1421,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1trace_1v2
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_update_hook
+ * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/UpdateHook;)Lorg/sqlite/jni/UpdateHook;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1update_1hook
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_value_blob
  * Signature: (Lorg/sqlite/jni/sqlite3_value;)[B
  */

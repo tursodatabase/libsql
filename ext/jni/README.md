@@ -91,6 +91,12 @@ conversion is performed. In short,
 conversion in Java, and there is no JNI C API for that conversion
 (JNI's `NewStringUTF()` returns MUTF-8).
 
+Known consequences and limitations of this discrepancy include:
+
+- Database and table names must not contain characters which differ
+  in MUTF-8 and UTF-8, or certain APIs will mis-translate them on
+  their way between languages.
+
 [modutf8]: https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
 
 

@@ -661,7 +661,7 @@ public final class SQLite3Jni {
   public static native int sqlite3_trace_v2(@NotNull sqlite3 db, int traceMask,
                                             @Nullable Tracer tracer);
 
-  //TODO void *sqlite3_update_hook(sqlite3*,  void(*)(void *,int ,char const *,char const *,sqlite3_int64), void*);
+  public static native UpdateHook sqlite3_update_hook(sqlite3 db, UpdateHook hook);
 
   public static native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);
 

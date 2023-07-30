@@ -800,6 +800,56 @@ public class Tester1 {
     sqlite3_close_v2(db);
   }
 
+  private static void testUpdateHook(){
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
+    final UpdateHook theHook = new UpdateHook(){
+        @SuppressWarnings("unchecked")
+        public void xUpdateHook(int opId, String dbName, String tableName, long rowId){
+          ++counter.value;
+          if( 0!=expectedOp.value ){
+            affirm( expectedOp.value == opId );
+          }
+        }
+      };
+    UpdateHook oldHook = sqlite3_update_hook(db, theHook);
+    affirm( null == oldHook );
+    expectedOp.value = SQLITE_INSERT;
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    affirm( 3 == counter.value );
+    expectedOp.value = SQLITE_UPDATE;
+    execSql(db, "update t set a='d' where a='c';");
+    affirm( 4 == counter.value );
+    oldHook = sqlite3_update_hook(db, theHook);
+    affirm( theHook == oldHook );
+    expectedOp.value = SQLITE_DELETE;
+    execSql(db, "DELETE FROM t where a='d'");
+    affirm( 5 == counter.value );
+    oldHook = sqlite3_update_hook(db, null);
+    affirm( theHook == oldHook );
+    execSql(db, "update t set a='e' where a='b';");
+    affirm( 5 == counter.value );
+    oldHook = sqlite3_update_hook(db, null);
+    affirm( null == oldHook );
+
+    final UpdateHook newHook = new UpdateHook(){
+        public void xUpdateHook(int opId, String dbName, String tableName, long rowId){
+        }
+      };
+    oldHook = sqlite3_update_hook(db, newHook);
+    affirm( null == oldHook );
+    execSql(db, "update t set a='h' where a='a'");
+    affirm( 5 == counter.value );
+    oldHook = sqlite3_update_hook(db, theHook);
+    affirm( newHook == oldHook );
+    expectedOp.value = SQLITE_UPDATE;
+    execSql(db, "update t set a='i' where a='h'");
+    affirm( 6 == counter.value );
+    sqlite3_close_v2(db);
+  }
+
+
   private static void testRollbackHook(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
@@ -863,6 +913,7 @@ public class Tester1 {
     testProgress();
     testCommitHook();
     testRollbackHook();
+    testUpdateHook();
     //testSleep();
     if(liArgs.indexOf("-v")>0){
       listBoundMethods();

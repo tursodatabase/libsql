@@ -340,12 +340,12 @@ typedef struct {
   jmethodID jmidxCallback /* klazz's xCallback method */;
 } BusyHandlerJni;
 
+/** State for various hook callbacks. */
 typedef struct JniHookState JniHookState;
 struct JniHookState{
   jobject jObj;
   jmethodID midCallback;
 };
-
 
 /**
    Per-(sqlite3*) state for bindings which do not have their own
@@ -369,6 +369,7 @@ struct PerDbStateJni {
   JniHookState progress;
   JniHookState commitHook;
   JniHookState rollbackHook;
+  JniHookState updateHook;
   BusyHandlerJni busyHandler;
 };
 
@@ -1562,6 +1563,8 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv *env,jobject jDb,
                                   isCommit ? "xCommitHook" : "xRollbackHook",
                                   isCommit ? "()I" : "()V");
   IFTHREW {
+    MARKER(("WARNING: callback MUST NOT THROW.\n"));
+    EXCEPTION_REPORT;
     EXCEPTION_CLEAR;
     s3jni_db_error(pDb, SQLITE_ERROR,
                    "Cannot not find matching callback on "
@@ -2096,6 +2099,82 @@ JDECL(jint,1trace_1v2)(JENV_JSELF,jobject jDb, jint traceMask, jobject jTracer){
   }
   ps->trace.jObj = REF_G(jTracer);
   return sqlite3_trace_v2(pDb, (unsigned)traceMask, s3jni_trace_impl, ps);
+}
+
+static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
+                                   const char *zTable, sqlite3_int64 nRowid){
+  PerDbStateJni * const ps = pState;
+  JNIEnv * const env = ps->env;
+  /* ACHTUNG: this will break if zDb or zTable contain chars which are
+     different in MUTF-8 than UTF-8. That seems like a low risk,
+     but it's possible. */
+  jstring jDbName;
+  jstring jTable;
+  jDbName  = (*env)->NewStringUTF(env, zDb);
+  jTable = jDbName ? (*env)->NewStringUTF(env, zTable) : 0;
+  IFTHREW {
+    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
+  }else{
+    (*env)->CallVoidMethod(env, ps->updateHook.jObj,
+                           ps->updateHook.midCallback,
+                           (jint)opId, jDbName, jTable, (jlong)nRowid);
+    IFTHREW{
+      MARKER(("WARNING: callback MUST NOT THROW.\n"));
+      EXCEPTION_REPORT;
+      EXCEPTION_CLEAR;
+      s3jni_db_error(ps->pDb, SQLITE_ERROR, "update hook callback threw.");
+    }
+  }
+  UNREF_L(jDbName);
+  UNREF_L(jTable);
+}
+
+
+JDECL(jobject,1update_1hook)(JENV_JSELF, jobject jDb, jobject jHook){
+  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, pDb, 1);
+  jclass klazz;
+  jobject pOld = 0;
+  jmethodID xCallback;
+  JniHookState * const pHook = &ps->updateHook;
+  if(!ps){
+    s3jni_db_error(pDb, SQLITE_NOMEM, 0);
+    return 0;
+  }
+  pOld = pHook->jObj;
+  if(pOld && jHook &&
+     (*env)->IsSameObject(env, pOld, jHook)){
+    return pOld;
+  }
+  if( !jHook ){
+    if(pOld){
+      jobject tmp = REF_L(pOld);
+      UNREF_G(pOld);
+      pOld = tmp;
+    }
+    memset(pHook, 0, sizeof(JniHookState));
+    sqlite3_update_hook(pDb, 0, 0);
+    return pOld;
+  }
+  klazz = (*env)->GetObjectClass(env, jHook);
+  xCallback = (*env)->GetMethodID(env, klazz, "xUpdateHook",
+                                  "(ILjava/lang/String;Ljava/lang/String;J)V");
+  IFTHREW {
+    EXCEPTION_CLEAR;
+    s3jni_db_error(pDb, SQLITE_ERROR,
+                   "Cannot not find matching callback on "
+                   "update hook object.");
+  }else{
+    pHook->midCallback = xCallback;
+    pHook->jObj = REF_G(jHook);
+    sqlite3_update_hook(pDb, s3jni_update_hook_impl, ps);
+    if(pOld){
+      jobject tmp = REF_L(pOld);
+      UNREF_G(pOld);
+      pOld = tmp;
+    }
+  }
+  return pOld;
 }
 
 
