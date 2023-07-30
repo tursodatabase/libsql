@@ -1029,6 +1029,14 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1context_1db_1h
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_commit_hook
+ * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/CommitHook;)Lorg/sqlite/jni/CommitHook;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1commit_1hook
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_compileoption_get
  * Signature: (I)Ljava/lang/String;
  */

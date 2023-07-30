@@ -166,7 +166,7 @@
 #define PtrGet_sqlite3_context(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3_context)
 /* Helpers for Java value reference management. */
 #define REF_G(VAR) (*env)->NewGlobalRef(env, VAR)
-/*#define REF_L(VAR) (*env)->NewLocalRef(env, VAR)*/
+#define REF_L(VAR) (*env)->NewLocalRef(env, VAR)
 #define UNREF_G(VAR) if(VAR) (*env)->DeleteGlobalRef(env, (VAR))
 #define UNREF_L(VAR) if(VAR) (*env)->DeleteLocalRef(env, (VAR))
 
@@ -1512,6 +1512,65 @@ JDECL(jobject,1column_1value)(JENV_JSELF, jobject jpStmt,
   return new_sqlite3_value_wrapper(env, sv);
 }
 
+static int s3jni_commit_hook_impl(void *pP){
+  PerDbStateJni * const ps = (PerDbStateJni *)pP;
+  JNIEnv * const env = ps->env;
+  int rc = (int)(*env)->CallIntMethod(env, ps->commitHook.jObj,
+                                      ps->commitHook.midCallback);
+  IFTHREW{
+    EXCEPTION_CLEAR;
+    rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
+                        "sqlite3_commit_hook() callback threw.");
+  }
+  return rc;
+}
+
+JDECL(jobject,1commit_1hook)(JENV_JSELF,jobject jDb, jobject jCommitHook){
+  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
+  PerDbStateJni * ps = PerDbStateJni_for_db(env, pDb, 1);
+  jclass klazz;
+  jobject pOld = 0;
+  jmethodID xCallback;
+  if(!ps){
+    s3jni_db_error(pDb, SQLITE_NOMEM, 0);
+    return 0;
+  }
+  pOld = ps->commitHook.jObj;
+  if(pOld && jCommitHook &&
+     (*env)->IsSameObject(env, pOld, jCommitHook)){
+    return pOld;
+  }
+  if( !jCommitHook ){
+    if(pOld){
+      jobject tmp = REF_L(pOld);
+      UNREF_G(pOld);
+      pOld = tmp;
+    }
+    memset(&ps->commitHook, 0, sizeof(ps->commitHook));
+    sqlite3_commit_hook(pDb, 0, 0);
+    return pOld;
+  }
+  klazz = (*env)->GetObjectClass(env, jCommitHook);
+  xCallback = (*env)->GetMethodID(env, klazz, "xCallback", "()I");
+  IFTHREW {
+    EXCEPTION_CLEAR;
+    s3jni_db_error(pDb, SQLITE_ERROR,
+                   "Cannot not find matching xCallback() on "
+                   "CommitHook object.");
+  }else{
+    ps->commitHook.midCallback = xCallback;
+    ps->commitHook.jObj = REF_G(jCommitHook);
+    sqlite3_commit_hook(pDb, s3jni_commit_hook_impl, ps);
+    if(pOld){
+      jobject tmp = REF_L(pOld);
+      UNREF_G(pOld);
+      pOld = tmp;
+    }
+  }
+  return pOld;
+}
+
+
 JDECL(jstring,1compileoption_1get)(JENV_JSELF, jint n){
   return (*env)->NewStringUTF( env, sqlite3_compileoption_get(n) );
 }
@@ -1744,6 +1803,7 @@ JDECL(void,1progress_1handler)(JENV_JSELF,jobject jDb, jint n, jobject jProgress
   sqlite3 * const pDb = PtrGet_sqlite3(jDb);
   PerDbStateJni * ps = PerDbStateJni_for_db(env, pDb, 1);
   jclass klazz;
+  jmethodID xCallback;
   if( n<1 || !jProgress ){
     if(ps){
       UNREF_G(ps->progress.jObj);
@@ -1757,13 +1817,15 @@ JDECL(void,1progress_1handler)(JENV_JSELF,jobject jDb, jint n, jobject jProgress
     return;
   }
   klazz = (*env)->GetObjectClass(env, jProgress);
-  ps->progress.midCallback = (*env)->GetMethodID(env, klazz, "xCallback", "()I");
+  xCallback = (*env)->GetMethodID(env, klazz, "xCallback", "()I");
   IFTHREW {
     EXCEPTION_CLEAR;
     s3jni_db_error(pDb, SQLITE_ERROR,
                    "Cannot not find matching xCallback() on "
                    "ProgressHandler object.");
   }else{
+    UNREF_G(ps->progress.jObj);
+    ps->progress.midCallback = xCallback;
     ps->progress.jObj = REF_G(jProgress);
     sqlite3_progress_handler(pDb, (int)n, s3jni_progress_handler_impl, ps);
   }

@@ -741,6 +741,50 @@ public class Tester1 {
     sqlite3_close_v2(db);
   }
 
+  private static void testCommitHook(){
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final CommitHook theHook = new CommitHook(){
+        public int xCallback(){
+          ++counter.value;
+          return 0;
+        }
+      };
+    CommitHook oldHook = sqlite3_commit_hook(db, theHook);
+    affirm( null == oldHook );
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    affirm( 2 == counter.value );
+    execSql(db, "BEGIN; SELECT 1; SELECT 2; COMMIT;");
+    affirm( 2 == counter.value /* NOT invoked if no changes are made */ );
+    execSql(db, "BEGIN; update t set a='d' where a='c'; COMMIT;");
+    affirm( 3 == counter.value );
+    oldHook = sqlite3_commit_hook(db, theHook);
+    affirm( theHook == oldHook );
+    execSql(db, "BEGIN; update t set a='e' where a='d'; COMMIT;");
+    affirm( 4 == counter.value );
+    oldHook = sqlite3_commit_hook(db, null);
+    affirm( theHook == oldHook );
+    execSql(db, "BEGIN; update t set a='f' where a='e'; COMMIT;");
+    affirm( 4 == counter.value );
+    oldHook = sqlite3_commit_hook(db, null);
+    affirm( null == oldHook );
+    execSql(db, "BEGIN; update t set a='g' where a='f'; COMMIT;");
+    affirm( 4 == counter.value );
+
+    final CommitHook newHook = new CommitHook(){
+        public int xCallback(){return 0;}
+      };
+    oldHook = sqlite3_commit_hook(db, newHook);
+    affirm( null == oldHook );
+    execSql(db, "BEGIN; update t set a='h' where a='g'; COMMIT;");
+    affirm( 4 == counter.value );
+    oldHook = sqlite3_commit_hook(db, theHook);
+    affirm( newHook == oldHook );
+    execSql(db, "BEGIN; update t set a='i' where a='h'; COMMIT;");
+    affirm( 5 == counter.value );
+    sqlite3_close_v2(db);
+  }
+
   private static void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);
@@ -770,6 +814,7 @@ public class Tester1 {
     testTrace();
     testBusy();
     testProgress();
+    testCommitHook();
     //testSleep();
     if(liArgs.indexOf("-v")>0){
       listBoundMethods();

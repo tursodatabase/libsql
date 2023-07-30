@@ -243,7 +243,7 @@ public final class SQLite3Jni {
 
   public static native sqlite3 sqlite3_context_db_handle(@NotNull sqlite3_context cx);
 
-  //TODO? void *sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
+  public static native CommitHook sqlite3_commit_hook(@NotNull sqlite3 db, @Nullable CommitHook hook);
 
   public static native String sqlite3_compileoption_get(int n);
 
@@ -286,8 +286,6 @@ public final class SQLite3Jni {
   public static native int sqlite3_initialize();
 
   public static native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);
-
-  //TODO? void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
   public static native String sqlite3_libversion();
 
@@ -396,6 +394,8 @@ public final class SQLite3Jni {
 
   public static native void sqlite3_progress_handler(@NotNull sqlite3 db, int n,
                                                      @Nullable ProgressHandler h);
+
+  //TODO??? void *sqlite3_preupdate_hook(...) and friends
 
   public static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
 
@@ -631,11 +631,7 @@ public final class SQLite3Jni {
     sqlite3_result_text64(cx, b, b.length, SQLITE_UTF16BE);
   }
 
-  /**
-  public static void sqlite3_result_text64(@NotNull sqlite3_context cx,
-                                           @Nullable byte[] text){
-    sqlite3_result_text64(cx, text, null==text ? 0 : text.length, SQLITE_UTF8);
-  }**/
+  //TODO void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
   public static native void sqlite3_set_last_insert_rowid(@NotNull sqlite3 db, long rowid);
 
@@ -663,6 +659,8 @@ public final class SQLite3Jni {
   */
   public static native int sqlite3_trace_v2(@NotNull sqlite3 db, int traceMask,
                                             @Nullable Tracer tracer);
+
+  //TODO void *sqlite3_update_hook(sqlite3*,  void(*)(void *,int ,char const *,char const *,sqlite3_int64), void*);
 
   public static native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);
 
