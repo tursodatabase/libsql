@@ -254,13 +254,6 @@ public final class SQLite3Jni {
                                                     int eTextRep,
                                                     @NotNull Collation col);
 
-  //! Convenience overload which assumes SQLITE_UTF8 encoding.
-  public static int sqlite3_create_collation(@NotNull sqlite3 db,
-                                             @NotNull String name,
-                                             @NotNull Collation col){
-    return sqlite3_create_collation(db, name, SQLITE_UTF8, col);
-  }
-
   public static native int sqlite3_create_function(@NotNull sqlite3 db,
                                                    @NotNull String functionName,
                                                    int nArg, int eTextRep,

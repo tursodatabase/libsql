@@ -366,6 +366,7 @@ typedef struct PerDbStateJni PerDbStateJni;
 struct PerDbStateJni {
   JNIEnv *env;
   sqlite3 * pDb;
+  jobject jDb /* the object which was passed to sqlite3_open(_v2)() */;
   PerDbStateJni * pNext;
   PerDbStateJni * pPrev;
   JniHookState trace;
@@ -482,117 +483,6 @@ static int BusyHandlerJni_init(JNIEnv * const env, BusyHandlerJni * const s,
     return SQLITE_ERROR;
   }
   return 0;
-}
-
-/**
-   Extracts the new PerDbStateJni instance from the free-list, or
-   allocates one if needed, associats it with pDb, and returns.
-   Returns NULL on OOM.
-*/
-static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb){
-  PerDbStateJni * rv;
-  assert( pDb );
-  if(S3Global.perDb.aFree){
-    rv = S3Global.perDb.aFree;
-    S3Global.perDb.aFree = rv->pNext;
-    if(rv->pNext){
-      assert(rv->pNext->pPrev == rv);
-      assert(rv->pNext == rv->pNext->pPrev);
-      rv->pNext->pPrev = 0;
-      rv->pNext = 0;
-    }
-  }else{
-    rv = s3jni_malloc(env, sizeof(PerDbStateJni));
-    if(rv){
-      memset(rv, 0, sizeof(PerDbStateJni));
-    }
-  }
-  if(rv){
-    rv->pNext = S3Global.perDb.aUsed;
-    S3Global.perDb.aUsed = rv;
-    if(rv->pNext){
-      assert(!rv->pNext->pPrev);
-      rv->pNext->pPrev = rv;
-    }
-    rv->pDb = pDb;
-    rv->env = env;
-  }
-  return rv;
-}
-
-/**
-   Clears s's state and moves it to the free-list.
-*/
-FIXME_THREADING
-static void PerDbStateJni_set_aside(PerDbStateJni * const s){
-  if(s){
-    JNIEnv * const env = s->env;
-    assert(s->pDb && "Else this object is already in the free-list.");
-    if(s->pNext) s->pNext->pPrev = s->pPrev;
-    if(s->pPrev) s->pPrev->pNext = s->pNext;
-    else if(S3Global.perDb.aUsed == s){
-      assert(!s->pPrev);
-      S3Global.perDb.aUsed = s->pNext;
-    }
-    UNREF_G(s->trace.jObj);
-    UNREF_G(s->progress.jObj);
-    UNREF_G(s->commitHook.jObj);
-    UNREF_G(s->rollbackHook.jObj);
-    BusyHandlerJni_clear(&s->busyHandler);
-    memset(s, 0, sizeof(PerDbStateJni));
-    s->pNext = S3Global.perDb.aFree;
-    S3Global.perDb.aFree = s;
-  }
-}
-
-static void PerDbStateJni_dump(PerDbStateJni *s){
-  MARKER(("PerDbStateJni->env @ %p\n", s->env));
-  MARKER(("PerDbStateJni->pDb @ %p\n", s->pDb));
-  MARKER(("PerDbStateJni->trace.jObj @ %p\n", s->trace.jObj));
-  MARKER(("PerDbStateJni->progress.jObj @ %p\n", s->progress.jObj));
-  MARKER(("PerDbStateJni->commitHook.jObj @ %p\n", s->commitHook.jObj));
-  MARKER(("PerDbStateJni->rollbackHook.jObj @ %p\n", s->rollbackHook.jObj));
-  MARKER(("PerDbStateJni->busyHandler.env @ %p\n", s->busyHandler.env));
-  MARKER(("PerDbStateJni->busyHandler.jObj @ %p\n", s->busyHandler.jObj));
-  MARKER(("PerDbStateJni->env @ %p\n", s->env));
-}
-
-/**
-   Returns the PerDbStateJni object for the given db. If allocIfNeeded is
-   true then a new instance will be allocated if no mapping currently
-   exists, else NULL is returned if no mapping is found.
-
-*/
-FIXME_THREADING
-static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, sqlite3 *pDb, int allocIfNeeded){
-  PerDbStateJni * s = S3Global.perDb.aUsed;
-  for( ; s; s = s->pNext){
-    if(s->pDb == pDb) return s;
-  }
-  if(allocIfNeeded) s = PerDbStateJni_alloc(env, pDb);
-  return s;
-}
-
-/**
-   Cleans up and frees all state in S3Global.perDb.
-*/
-FIXME_THREADING
-static void PerDbStateJni_free_all(void){
-  PerDbStateJni * pS = S3Global.perDb.aUsed;
-  PerDbStateJni * pSNext = 0;
-  for( ; pS; pS = pSNext ){
-    pSNext = pS->pNext;
-    PerDbStateJni_set_aside(pS);
-    assert(pSNext ? !pSNext->pPrev : 1);
-  }
-  assert( 0==S3Global.perDb.aUsed );
-  pS = S3Global.perDb.aFree;
-  S3Global.perDb.aFree = 0;
-  pSNext = 0;
-  for( ; pS; pS = pSNext ){
-    pSNext = pS->pNext;
-    s3jni_free(pSNext);
-  }
 }
 
 /**
@@ -748,6 +638,118 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
     rv = (void*)(*env)->CallLongMethod(env, pObj, getter);
     IFTHREW_REPORT;
     return rv;
+  }
+}
+
+/**
+   Extracts the new PerDbStateJni instance from the free-list, or
+   allocates one if needed, associats it with pDb, and returns.
+   Returns NULL on OOM.
+*/
+static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb){
+  PerDbStateJni * rv;
+  assert( pDb );
+  if(S3Global.perDb.aFree){
+    rv = S3Global.perDb.aFree;
+    S3Global.perDb.aFree = rv->pNext;
+    if(rv->pNext){
+      assert(rv->pNext->pPrev == rv);
+      assert(rv->pNext == rv->pNext->pPrev);
+      rv->pNext->pPrev = 0;
+      rv->pNext = 0;
+    }
+  }else{
+    rv = s3jni_malloc(env, sizeof(PerDbStateJni));
+    if(rv){
+      memset(rv, 0, sizeof(PerDbStateJni));
+    }
+  }
+  if(rv){
+    rv->pNext = S3Global.perDb.aUsed;
+    S3Global.perDb.aUsed = rv;
+    if(rv->pNext){
+      assert(!rv->pNext->pPrev);
+      rv->pNext->pPrev = rv;
+    }
+    rv->pDb = pDb;
+    rv->env = env;
+  }
+  return rv;
+}
+
+/**
+   Clears s's state and moves it to the free-list.
+*/
+FIXME_THREADING
+static void PerDbStateJni_set_aside(PerDbStateJni * const s){
+  if(s){
+    JNIEnv * const env = s->env;
+    assert(s->pDb && "Else this object is already in the free-list.");
+    if(s->pNext) s->pNext->pPrev = s->pPrev;
+    if(s->pPrev) s->pPrev->pNext = s->pNext;
+    else if(S3Global.perDb.aUsed == s){
+      assert(!s->pPrev);
+      S3Global.perDb.aUsed = s->pNext;
+    }
+    UNREF_G(s->trace.jObj);
+    UNREF_G(s->progress.jObj);
+    UNREF_G(s->commitHook.jObj);
+    UNREF_G(s->rollbackHook.jObj);
+    UNREF_G(s->jDb);
+    BusyHandlerJni_clear(&s->busyHandler);
+    memset(s, 0, sizeof(PerDbStateJni));
+    s->pNext = S3Global.perDb.aFree;
+    S3Global.perDb.aFree = s;
+  }
+}
+
+static void PerDbStateJni_dump(PerDbStateJni *s){
+  MARKER(("PerDbStateJni->env @ %p\n", s->env));
+  MARKER(("PerDbStateJni->pDb @ %p\n", s->pDb));
+  MARKER(("PerDbStateJni->trace.jObj @ %p\n", s->trace.jObj));
+  MARKER(("PerDbStateJni->progress.jObj @ %p\n", s->progress.jObj));
+  MARKER(("PerDbStateJni->commitHook.jObj @ %p\n", s->commitHook.jObj));
+  MARKER(("PerDbStateJni->rollbackHook.jObj @ %p\n", s->rollbackHook.jObj));
+  MARKER(("PerDbStateJni->busyHandler.env @ %p\n", s->busyHandler.env));
+  MARKER(("PerDbStateJni->busyHandler.jObj @ %p\n", s->busyHandler.jObj));
+  MARKER(("PerDbStateJni->env @ %p\n", s->env));
+}
+
+/**
+   Returns the PerDbStateJni object for the given db. If allocIfNeeded is
+   true then a new instance will be allocated if no mapping currently
+   exists, else NULL is returned if no mapping is found.
+
+*/
+FIXME_THREADING
+static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, sqlite3 *pDb, int allocIfNeeded){
+  PerDbStateJni * s = S3Global.perDb.aUsed;
+  for( ; s; s = s->pNext){
+    if(s->pDb == pDb) return s;
+  }
+  if(allocIfNeeded) s = PerDbStateJni_alloc(env, pDb);
+  return s;
+}
+
+/**
+   Cleans up and frees all state in S3Global.perDb.
+*/
+FIXME_THREADING
+static void PerDbStateJni_free_all(void){
+  PerDbStateJni * pS = S3Global.perDb.aUsed;
+  PerDbStateJni * pSNext = 0;
+  for( ; pS; pS = pSNext ){
+    pSNext = pS->pNext;
+    PerDbStateJni_set_aside(pS);
+    assert(pSNext ? !pSNext->pPrev : 1);
+  }
+  assert( 0==S3Global.perDb.aUsed );
+  pS = S3Global.perDb.aFree;
+  S3Global.perDb.aFree = 0;
+  pSNext = 0;
+  for( ; pS; pS = pSNext ){
+    pSNext = pS->pNext;
+    s3jni_free(pSNext);
   }
 }
 
