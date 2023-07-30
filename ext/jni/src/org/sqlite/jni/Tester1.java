@@ -353,7 +353,7 @@ public class Tester1 {
   }
 
   private static void testCollation(){
-    sqlite3 db = createNewDb();
+    final sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     final ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
     final Collation myCollation = new Collation() {
@@ -380,10 +380,19 @@ public class Tester1 {
           xDestroyCalled.value = true;
         }
       };
-    int rc = sqlite3_create_collation(db, "reversi", SQLITE_UTF8, myCollation);
-    affirm(0 == rc);
+    final CollationNeeded collLoader = new CollationNeeded(){
+        public int xCollationNeeded(sqlite3 dbArg, int eTextRep, String collationName){
+          affirm(dbArg == db/* as opposed to a temporary object*/);
+          return sqlite3_create_collation(dbArg, "reversi", eTextRep, myCollation);
+        }
+      };
+    int rc = sqlite3_collation_needed(db, collLoader);
+    affirm( 0 == rc );
+    rc = sqlite3_collation_needed(db, collLoader);
+    affirm( 0 == rc /* Installing the same object again is a no-op */);
     sqlite3_stmt stmt = new sqlite3_stmt();
-    sqlite3_prepare(db, "SELECT a FROM t ORDER BY a COLLATE reversi", stmt);
+    rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a COLLATE reversi", stmt);
+    affirm( 0 == rc );
     int counter = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final String val = sqlite3_column_text(stmt, 0);
@@ -412,6 +421,8 @@ public class Tester1 {
     affirm(3 == counter);
     sqlite3_finalize(stmt);
     affirm(!xDestroyCalled.value);
+    rc = sqlite3_collation_needed(db, null);
+    affirm( 0 == rc );
     sqlite3_close_v2(db);
     affirm(xDestroyCalled.value);
   }

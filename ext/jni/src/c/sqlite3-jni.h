@@ -1021,6 +1021,14 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1value
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_collation_needed
+ * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/CollationNeeded;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1collation_1needed
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_context_db_handle
  * Signature: (Lorg/sqlite/jni/sqlite3_context;)Lorg/sqlite/jni/sqlite3;
  */

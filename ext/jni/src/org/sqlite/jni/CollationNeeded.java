@@ -18,15 +18,13 @@ package org.sqlite.jni;
 */
 public interface CollationNeeded {
   /**
-     Works as documented for the sqlite3_create_collation() callback.
-     Must not throw.
+     Has the same semantics as the C-level sqlite3_create_collation()
+     callback.  Must not throw.
 
-     Achtung: the first argument to this function is not guaranteed to
-     be the same object upon which ealier DB operations have been
-     performed, e.g. not the one passed to sqlite3_collation_needed(),
-     but it will refer to the same underlying C-level database
-     pointer. This quirk is a side effect of how per-db state is
-     managed in the JNI layer.
+     Pedantic note: the first argument to this function will always be
+     the same object reference which was passed to sqlite3_open() or
+     sqlite3_open_v2(), even if the client has managed to create other
+     Java-side references to the same C-level object.
   */
   int xCollationNeeded(sqlite3 db, int eTextRep, String collationName);
 }

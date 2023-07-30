@@ -367,7 +367,13 @@ struct PerDbStateJni {
   JNIEnv *env;
   sqlite3 * pDb;
   jobject jDb /* a global ref of the object which was passed to
-                 sqlite3_open(_v2)() */;
+                 sqlite3_open(_v2)(). We need this in order to have an
+                 object to pass to sqlite3_collation_needed()'s
+                 callback, or else we have to dynamically create one
+                 for that purpose, which would be fine except that it
+                 would be a different instance (and maybe even a
+                 different class) than the one the user expects to
+                 receive. */;
   PerDbStateJni * pNext;
   PerDbStateJni * pPrev;
   JniHookState trace;
@@ -375,6 +381,7 @@ struct PerDbStateJni {
   JniHookState commitHook;
   JniHookState rollbackHook;
   JniHookState updateHook;
+  JniHookState collationNeeded;
   BusyHandlerJni busyHandler;
 };
 
@@ -744,6 +751,7 @@ static void PerDbStateJni_dump(PerDbStateJni *s){
 FIXME_THREADING
 static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, jobject jDb, sqlite3 *pDb, int allocIfNeeded){
   PerDbStateJni * s = S3Global.perDb.aUsed;
+  if(!jDb) return 0;
   assert(allocIfNeeded ? !!pDb : 1);
   if(!allocIfNeeded && !pDb){
     pDb = PtrGet_sqlite3_value(jDb);
@@ -1461,6 +1469,75 @@ JDECL(jint,1close)(JENV_JSELF, jobject pDb){
   return s3jni_close_db(env, pDb, 1);
 }
 
+/**
+   Assumes z is an array of unsigned short and returns the index in
+   that array of the first element with the value 0.
+*/
+static unsigned int s3jni_utf16_strlen(void const * z){
+  unsigned int i = 0;
+  const unsigned short * p = z;
+  while( p[i] ) ++i;
+  return i;
+}
+
+static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
+                                          int eTextRep, const void * z16Name){
+  PerDbStateJni * const ps = pState;
+  JNIEnv * const env = ps->env;
+  unsigned int const nName = s3jni_utf16_strlen(z16Name);
+  jstring jName;
+  jName  = (*env)->NewString(env, (jchar const *)z16Name, nName);
+  IFTHREW {
+    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
+  }else{
+    (*env)->CallVoidMethod(env, ps->collationNeeded.jObj,
+                           ps->collationNeeded.midCallback,
+                           ps->jDb, (jint)eTextRep, jName);
+    IFTHREW{
+      EXCEPTION_WARN_CALLBACK_THREW;
+      EXCEPTION_CLEAR;
+      s3jni_db_error(ps->pDb, SQLITE_ERROR, "collation-needed hook threw.");
+    }
+  }
+  UNREF_L(jName);
+}
+
+JDECL(jint,1collation_1needed)(JENV_JSELF, jobject jDb, jobject jHook){
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  jclass klazz;
+  jobject pOld = 0;
+  jmethodID xCallback;
+  JniHookState * const pHook = &ps->collationNeeded;
+  int rc;
+  if(!ps) return SQLITE_MISUSE;
+  pOld = pHook->jObj;
+  if(pOld && jHook &&
+     (*env)->IsSameObject(env, pOld, jHook)){
+    return 0;
+  }
+  if( !jHook ){
+    UNREF_G(pOld);
+    memset(pHook, 0, sizeof(JniHookState));
+    sqlite3_collation_needed(ps->pDb, 0, 0);
+    return 0;
+  }
+  klazz = (*env)->GetObjectClass(env, jHook);
+  xCallback = (*env)->GetMethodID(env, klazz, "xCollationNeeded",
+                                  "(Lorg/sqlite/jni/sqlite3;ILjava/lang/String;)I");
+  IFTHREW {
+    EXCEPTION_CLEAR;
+    rc = s3jni_db_error(ps->pDb, SQLITE_MISUSE,
+                        "Cannot not find matching callback on "
+                        "collation-needed hook object.");
+  }else{
+    pHook->midCallback = xCallback;
+    pHook->jObj = REF_G(jHook);
+    UNREF_G(pOld);
+    rc = sqlite3_collation_needed16(ps->pDb, ps, s3jni_collation_needed_impl16);
+  }
+  return rc;
+}
+
 JDECL(jbyteArray,1column_1blob)(JENV_JSELF, jobject jpStmt,
                                 jint ndx){
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
@@ -1753,6 +1830,11 @@ JDECL(jlong,1last_1insert_1rowid)(JENV_JSELF, jobject jpDb){
   return (jlong)sqlite3_last_insert_rowid(PtrGet_sqlite3(jpDb));
 }
 
+/**
+   Code common to both the sqlite3_open() and sqlite3_open_v2()
+   bindings. Allocates the PerDbStateJni for *ppDb if *ppDb is not
+   NULL.
+*/
 static int s3jni_open_post(JNIEnv *env, sqlite3 **ppDb, jobject jDb, int theRc){
   if(1 && *ppDb){
     PerDbStateJni * const s = PerDbStateJni_for_db(env, jDb, *ppDb, 1);
@@ -2173,7 +2255,7 @@ JDECL(jobject,1update_1hook)(JENV_JSELF, jobject jDb, jobject jHook){
   jmethodID xCallback;
   JniHookState * const pHook = &ps->updateHook;
   if(!ps){
-    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
+    s3jni_db_error(ps->pDb, SQLITE_MISUSE, 0);
     return 0;
   }
   pOld = pHook->jObj;

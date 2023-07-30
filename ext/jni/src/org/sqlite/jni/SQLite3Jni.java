@@ -235,8 +235,8 @@ public final class SQLite3Jni {
   public static native sqlite3_value sqlite3_column_value(@NotNull sqlite3_stmt stmt,
                                                           int ndx);
 
-  // TODO public static native int sqlite3_collation_needed(
-  //sqlite3 db, void(*)(void*,sqlite3*,int eTextRep,const char*))
+  public static native int sqlite3_collation_needed(@NotNull sqlite3 db,
+                                                    @Nullable CollationNeeded callback);
 
   //TODO public static native int sqlite3_collation_needed16(
   //  sqlite3 db, void(*)(void*,sqlite3*,int eTextRep,const void*)
@@ -284,6 +284,20 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_libversion_number();
 
+  /**
+     Works like its C counterpart and makes the native pointer of the
+     underling (sqlite3*) object available via
+     ppDb.getNativePointer(). That pointer is necessary for looking up
+     the JNI-side native, but clients need not pay it any
+     heed. Passing the object to sqlite3_close() or sqlite3_close_v2()
+     will clear that pointer mapping.
+
+     Pedantic note: though any number of Java-level sqlite3 objects
+     may refer to/wrap a single C-level (sqlite3*), the JNI internals
+     take a reference to the object which is passed to sqlite3_open()
+     or sqlite3_open_v2() so that they have a predictible object to
+     pass to, e.g., the sqlite3_collation_needed() callback.
+  */
   public static native int sqlite3_open(@Nullable String filename,
                                         @NotNull sqlite3 ppDb);
 

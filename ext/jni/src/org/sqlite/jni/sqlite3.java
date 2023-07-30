@@ -23,13 +23,4 @@ public class sqlite3 extends NativePointerHolder<sqlite3> {
   public sqlite3() {
     super();
   }
-  /**
-     Construct a new instance which refers to an existing
-     native (sqlite3*). The argument may be 0. Results are
-     undefined if it is not 0 and refers to a memory address
-     other than a valid (sqlite*).
-  */
-  public sqlite3(long nativePointer) {
-    super(nativePointer);
-  }
 }
