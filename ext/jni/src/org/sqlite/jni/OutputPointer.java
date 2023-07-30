@@ -25,12 +25,10 @@ package org.sqlite.jni;
 public final class OutputPointer {
   public static final class Int32 {
     private int value;
-    public final void setValue(int v){value = v;}
     public final int getValue(){return value;}
   }
   public static final class Int64 {
     private long value;
-    public final void setValue(long v){value = v;}
     public final long getValue(){return value;}
   }
 }

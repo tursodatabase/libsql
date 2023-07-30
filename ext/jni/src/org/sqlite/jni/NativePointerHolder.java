@@ -23,18 +23,11 @@ package org.sqlite.jni;
    NativePointerHolder is not inadvertently passed to an incompatible
    function signature.
 
-   These objects are not intended to _own_ the pointer they refer to.
-   They are intended to simply communicate that pointer between C and
-   Java.
+   These objects do not _own_ the pointer they refer to.  They are
+   intended simply to communicate that pointer between C and Java.
 */
 public class NativePointerHolder<ContextType> {
-  private long pointer;
-  public NativePointerHolder(long pointer){
-    this.pointer = pointer;
-  }
-  public NativePointerHolder(){
-    this.pointer = 0;
-  }
-  public final long getNativePointer(){ return pointer; }
-  public final void setNativePointer(long p){ pointer = p; }
+  //! Only set from JNI, where access permissions don't matter.
+  private long nativePointer = 0;
+  public final long getNativePointer(){ return nativePointer; }
 }

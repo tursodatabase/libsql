@@ -483,7 +483,7 @@ public class Tester1 {
 
   private static void testUdfJavaObject(){
     final sqlite3 db = createNewDb();
-    final ValueHolder<Long> testResult = new ValueHolder<>(42L);
+    final ValueHolder<sqlite3> testResult = new ValueHolder<>(db);
     SQLFunction func = new SQLFunction.Scalar(){
         public void xFunc(sqlite3_context cx, sqlite3_value args[]){
           sqlite3_result_java_object(cx, testResult.value);
@@ -494,14 +494,16 @@ public class Tester1 {
     sqlite3_stmt stmt = new sqlite3_stmt();
     sqlite3_prepare(db, "select myfunc()", stmt);
     affirm( 0 != stmt.getNativePointer() );
+    affirm( testResult.value == db );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
-      sqlite3_value v = sqlite3_column_value(stmt, 0);
+      final sqlite3_value v = sqlite3_column_value(stmt, 0);
       affirm( testResult.value == sqlite3_value_java_object(v) );
-      affirm( testResult.value == sqlite3_value_java_casted(v, Long.class) );
+      affirm( testResult.value == sqlite3_value_java_casted(v, sqlite3.class) );
       affirm( testResult.value ==
               sqlite3_value_java_casted(v, testResult.value.getClass()) );
-      affirm( null == sqlite3_value_java_casted(v, Double.class) );
+      affirm( testResult.value == sqlite3_value_java_casted(v, Object.class) );
+      affirm( null == sqlite3_value_java_casted(v, String.class) );
       ++n;
     }
     sqlite3_finalize(stmt);

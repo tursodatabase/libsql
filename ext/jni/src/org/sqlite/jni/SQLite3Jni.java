@@ -154,9 +154,6 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_close_v2(@NotNull sqlite3 db);
 
-  //TODO? public static native int sqlite3_collation_needed(sqlite3*,void*,void(*)(void*,sqlite3*,int eTextRep,const char*));
-  //TODO? public static native int sqlite3_collation_needed16(sqlite3*,void*,void(*)(void*,sqlite3*,int eTextRep,const void*));
-
   public static native byte[] sqlite3_column_blob(@NotNull sqlite3_stmt stmt, int ndx);
 
   public static native int sqlite3_column_bytes(@NotNull sqlite3_stmt stmt, int ndx);
@@ -214,7 +211,8 @@ public final class SQLite3Jni {
      the db if the db uses the default encoding of UTF-8.
 
      To extract _standard_ UTF-8, use sqlite3_column_text_utf8().
-     This API includes no functions for working with Modified UTF-8.
+     This API includes no functions for working with Java's Modified
+     UTF-8.
 
      [^1]: https://stackoverflow.com/questions/7921016
   */
@@ -226,8 +224,43 @@ public final class SQLite3Jni {
   */
   public static native byte[] sqlite3_column_text_utf8(@NotNull sqlite3_stmt stmt,
                                                        int ndx);
-  //TODO public static native ?type? sqlite3_column_text16(@NotNull sqlite3_stmt stmt, int ndx);
-  //TODO: public static Object sqlite3_column_to_java(@NotNull sqlite3_value v){...}
+
+  // The real utility of this function is questionable.
+  // /**
+  //    Returns a Java value representation based on the value of
+  //    sqlite_value_type(). For integer types it returns either Integer
+  //    or Long, depending on whether the value will fit in an
+  //    Integer. For floating-point values it always returns type Double.
+
+  //    If the column was bound using sqlite3_result_java_object() then
+  //    that value, as an Object, is returned.
+  // */
+  // public static Object sqlite3_column_to_java(@NotNull sqlite3_stmt stmt,
+  //                                             int ndx){
+  //   sqlite3_value v = sqlite3_column_value(stmt, ndx);
+  //   Object rv = null;
+  //   if(null == v) return v;
+  //   v = sqlite3_value_dup(v)/*need a protected value*/;
+  //   if(null == v) return v /* OOM error in C */;
+  //   if(112/* 'p' */ == sqlite3_value_subtype(v)){
+  //     rv = sqlite3_value_java_object(v);
+  //   }else{
+  //     switch(sqlite3_value_type(v)){
+  //       case SQLITE_INTEGER: {
+  //         final long i = sqlite3_value_int64(v);
+  //         rv = (i<=0x7fffffff && i>=-0x7fffffff-1)
+  //           ? new Integer((int)i) : new Long(i);
+  //         break;
+  //       }
+  //       case SQLITE_FLOAT: rv = new Double(sqlite3_value_double(v)); break;
+  //       case SQLITE_BLOB: rv = sqlite3_value_blob(v); break;
+  //       case SQLITE_TEXT: rv = sqlite3_value_text(v); break;
+  //       default: break;
+  //     }
+  //   }
+  //   sqlite3_value_free(v);
+  //   return rv;
+  // }
 
   public static native int sqlite3_column_type(@NotNull sqlite3_stmt stmt,
                                                int ndx);
@@ -476,6 +509,8 @@ public final class SQLite3Jni {
      allocate such strings and store them somewhere for long-term use
      (leaking them more likely than not). Even then, passing around a
      pointer via Java like that has little practical use.
+
+     Note that there is no sqlite3_bind_java_object() counterpart.
   */
   public static native void sqlite3_result_java_object(@NotNull sqlite3_context cx,
                                                        @NotNull Object o);

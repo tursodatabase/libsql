@@ -285,8 +285,7 @@ struct NphCacheLine {
                              from the ClassNames struct. */;
   jclass klazz        /* global ref to concrete NativePointerHolder class */;
   jmethodID midCtor   /* klazz's constructor */;
-  jmethodID midSet    /* NativePointerHolder.setNativePointer() */;
-  jmethodID midGet    /* NativePointerHolder.getNativePointer() */;
+  jfieldID fidValue   /* NativePointerHolder.nativePointer and OutputPointer.X.value */;
   jfieldID fidSetAgg  /* sqlite3_context::aggregateContext */;
 };
 
@@ -565,11 +564,12 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv *env, const char *zClassN
   for( i = 0; i < NphCache_SIZE; ++i ){
     cacheLine = &envRow->nph[i];
     if(zClassName == cacheLine->zClassName){
-#if 0
+#define DUMP_NPH_CACHES 0
+#if DUMP_NPH_CACHES
       static unsigned int n = 0;
-      MARKER(("Cache hit #%u %s klazz@%p getter@%p, setter@%p, ctor@%p\n",
-              ++n, zClassName, cacheLine->klazz, cacheLine->midGet,
-              cacheLine->midSet, cacheLine->midCtor));
+      MARKER(("Cache hit #%u %s klazz@%p nativePointer field@%p, ctor@%p\n",
+              ++n, zClassName, cacheLine->klazz, cacheLine->fidValue,
+              cacheLine->midCtor));
 #endif
       assert(cacheLine->klazz);
       return cacheLine;
@@ -580,16 +580,25 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv *env, const char *zClassN
   if(freeSlot){
     freeSlot->zClassName = zClassName;
     freeSlot->klazz = REF_G((*env)->FindClass(env, zClassName));
-#if 0
+#if DUMP_NPH_CACHES
     static unsigned int cacheMisses = 0;
-    MARKER(("Cache miss #%u %s klazz@%p getter@%p, setter@%p, ctor@%p\n",
+    MARKER(("Cache miss #%u %s klazz@%p nativePointer field@%p, ctor@%p\n",
             ++cacheMisses, zClassName, freeSlot->klazz,
-            freeSlot->midGet, freeSlot->midSet, freeSlot->midCtor));
+            freeSlot->fidValue, freeSlot->midCtor));
 #endif
+#undef DUMP_NPH_CACHES
   }else{
     (*env)->FatalError(env, "MAINTENANCE REQUIRED: NphCache_SIZE is too low.");
   }
   return freeSlot;
+}
+
+static jfieldID getNativePointerField(JNIEnv *env, jclass klazz){
+  jfieldID rv = (*env)->GetFieldID(env, klazz, "nativePointer", "J");
+  IFTHREW{
+    (*env)->FatalError(env, "Maintenance required: missing nativePointer field.");
+  }
+  return rv;
 }
 
 /**
@@ -599,24 +608,24 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv *env, const char *zClassN
 */
 static void setNativePointer(JNIEnv * env, jobject ppOut, void * p,
                              const char *zClassName){
-  jmethodID setter = 0;
+  jfieldID setter = 0;
   struct NphCacheLine * const cacheLine = S3Global_nph_cache(env, zClassName);
-  if(cacheLine && cacheLine->klazz && cacheLine->midSet){
+  if(cacheLine && cacheLine->klazz && cacheLine->fidValue){
     assert(zClassName == cacheLine->zClassName);
-    setter = cacheLine->midSet;
+    setter = cacheLine->fidValue;
     assert(setter);
   }else{
     jclass const klazz =
       cacheLine ? cacheLine->klazz : (*env)->GetObjectClass(env, ppOut);
-    setter = (*env)->GetMethodID(env, klazz, "setNativePointer", "(J)V");
+    setter = getNativePointerField(env, klazz);
     if(cacheLine){
       assert(cacheLine->klazz);
-      assert(!cacheLine->midSet);
+      assert(!cacheLine->fidValue);
       assert(zClassName == cacheLine->zClassName);
-      cacheLine->midSet = setter;
+      cacheLine->fidValue = setter;
     }
   }
-  (*env)->CallVoidMethod(env, ppOut, setter, (jlong)p);
+  (*env)->SetLongField(env, ppOut, setter, (jlong)p);
   IFTHREW_REPORT;
 }
 
@@ -628,22 +637,22 @@ static void setNativePointer(JNIEnv * env, jobject ppOut, void * p,
 static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassName){
   if( 0==pObj ) return 0;
   else{
-    jmethodID getter = 0;
+    jfieldID getter = 0;
     void * rv = 0;
     struct NphCacheLine * const cacheLine = S3Global_nph_cache(env, zClassName);
-    if(cacheLine && cacheLine->midGet){
-      getter = cacheLine->midGet;
+    if(cacheLine && cacheLine->fidValue){
+      getter = cacheLine->fidValue;
     }else{
       jclass const klazz =
         cacheLine ? cacheLine->klazz : (*env)->GetObjectClass(env, pObj);
-      getter = (*env)->GetMethodID(env, klazz, "getNativePointer", "()J");
+      getter = getNativePointerField(env, klazz);
       if(cacheLine){
         assert(cacheLine->klazz);
         assert(zClassName == cacheLine->zClassName);
-        cacheLine->midGet = getter;
+        cacheLine->fidValue = getter;
       }
     }
-    rv = (void*)(*env)->CallLongMethod(env, pObj, getter);
+    rv = (void*)(*env)->GetLongField(env, pObj, getter);
     IFTHREW_REPORT;
     return rv;
   }
@@ -845,33 +854,22 @@ static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
 
 /* Sets a native int32 value in OutputPointer.Int32 object ppOut. */
 static void setOutputInt32(JNIEnv * env, jobject ppOut, int v){
-  jmethodID setter = 0;
+  jfieldID setter = 0;
   struct NphCacheLine * const cacheLine =
     S3Global_nph_cache(env, ClassNames.OutputPointer_Int32);
-  if(cacheLine && cacheLine->klazz && cacheLine->midSet){
-    setter = cacheLine->midSet;
+  if(cacheLine && cacheLine->klazz && cacheLine->fidValue){
+    setter = cacheLine->fidValue;
   }else{
     const jclass klazz = (*env)->GetObjectClass(env, ppOut);
-    setter = (*env)->GetMethodID(env, klazz, "setValue", "(I)V");
+    setter = (*env)->GetFieldID(env, klazz, "value", "I");
     if(cacheLine){
-      assert(!cacheLine->midSet);
-      cacheLine->midSet = setter;
+      assert(!cacheLine->fidValue);
+      cacheLine->fidValue = setter;
     }
   }
-  (*env)->CallVoidMethod(env, ppOut, setter, (jint)v);
+  (*env)->SetIntField(env, ppOut, setter, (jint)v);
   IFTHREW_REPORT;
 }
-
-#if 0
-/* Fetches a native int32 value from OutputPointer.Int32 object pObj. */
-static int getOutputInt(JNIEnv * env, jobject pObj){
-  const jclass klazz = (*env)->GetObjectClass(env, pObj);
-  const jmethodID getter =
-    (*env)->GetMethodID(env, klazz, "getValue", "(V)I;");
-  return (int)(*env)->CallIntMethod(env, pObj, getter);
-}
-#define VAL_GET_INT(OBJ) getOutputInt(env, OBJ)
-#endif
 
 static int encodingTypeIsValid(int eTextRep){
   switch(eTextRep){
