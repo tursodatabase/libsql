@@ -20,8 +20,8 @@ import java.lang.annotation.ElementType;
 
 /**
    This annotation is for flagging parameters which may legally be
-   null, noting that they may behave different if passed null but are
-   prepared to expect null as a value.
+   null, noting that they may behave differently if passed null but
+   are prepared to expect null as a value.
 
    This annotation is solely for the reader's information.
 */
@@ -270,9 +270,6 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_collation_needed(@NotNull sqlite3 db,
                                                     @Nullable CollationNeeded callback);
-
-  //TODO public static native int sqlite3_collation_needed16(
-  //  sqlite3 db, void(*)(void*,sqlite3*,int eTextRep,const void*)
 
   public static native sqlite3 sqlite3_context_db_handle(@NotNull sqlite3_context cx);
 
