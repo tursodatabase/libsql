@@ -366,7 +366,8 @@ typedef struct PerDbStateJni PerDbStateJni;
 struct PerDbStateJni {
   JNIEnv *env;
   sqlite3 * pDb;
-  jobject jDb /* the object which was passed to sqlite3_open(_v2)() */;
+  jobject jDb /* a global ref of the object which was passed to
+                 sqlite3_open(_v2)() */;
   PerDbStateJni * pNext;
   PerDbStateJni * pPrev;
   JniHookState trace;
@@ -644,22 +645,29 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
 /**
    Extracts the new PerDbStateJni instance from the free-list, or
    allocates one if needed, associats it with pDb, and returns.
-   Returns NULL on OOM.
+   Returns NULL on OOM. pDb MUST be associated with jDb via
+   setNativePointer().
 */
-static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb){
+static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb, jobject jDb){
   PerDbStateJni * rv;
   assert( pDb );
   if(S3Global.perDb.aFree){
     rv = S3Global.perDb.aFree;
+    //MARKER(("state@%p for db allocating for db@%p from free-list\n", rv, pDb));
+    //MARKER(("%p->pPrev@%p, pNext@%p\n", rv, rv->pPrev, rv->pNext));
     S3Global.perDb.aFree = rv->pNext;
+    assert(rv->pNext != rv);
+    assert(rv->pPrev != rv);
+    assert(rv->pPrev ? (rv->pPrev!=rv->pNext) : 1);
     if(rv->pNext){
       assert(rv->pNext->pPrev == rv);
-      assert(rv->pNext == rv->pNext->pPrev);
+      assert(rv->pPrev ? (rv->pNext == rv->pPrev->pNext) : 1);
       rv->pNext->pPrev = 0;
       rv->pNext = 0;
     }
   }else{
     rv = s3jni_malloc(env, sizeof(PerDbStateJni));
+    //MARKER(("state@%p for db allocating for db@%p from heap\n", rv, pDb));
     if(rv){
       memset(rv, 0, sizeof(PerDbStateJni));
     }
@@ -671,6 +679,7 @@ static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb){
       assert(!rv->pNext->pPrev);
       rv->pNext->pPrev = rv;
     }
+    rv->jDb = REF_G(jDb);
     rv->pDb = pDb;
     rv->env = env;
   }
@@ -685,6 +694,10 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
   if(s){
     JNIEnv * const env = s->env;
     assert(s->pDb && "Else this object is already in the free-list.");
+    //MARKER(("state@%p for db@%p setting aside\n", s, s->pDb));
+    assert(s->pPrev != s);
+    assert(s->pNext != s);
+    assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
     if(s->pNext) s->pNext->pPrev = s->pPrev;
     if(s->pPrev) s->pPrev->pNext = s->pNext;
     else if(S3Global.perDb.aUsed == s){
@@ -699,7 +712,10 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
     BusyHandlerJni_clear(&s->busyHandler);
     memset(s, 0, sizeof(PerDbStateJni));
     s->pNext = S3Global.perDb.aFree;
+    if(s->pNext) s->pNext->pPrev = s;
     S3Global.perDb.aFree = s;
+    //MARKER(("%p->pPrev@%p, pNext@%p\n", s, s->pPrev, s->pNext));
+    //if(s->pNext) MARKER(("next: %p->pPrev@%p\n", s->pNext, s->pNext->pPrev));
   }
 }
 
@@ -720,14 +736,24 @@ static void PerDbStateJni_dump(PerDbStateJni *s){
    true then a new instance will be allocated if no mapping currently
    exists, else NULL is returned if no mapping is found.
 
+   The 3rd and 4th args should only be non-0 for
+   sqlite3_open(_v2)(). For all other cases, they must be 0, in which
+   case the db handle will be fished out of the jDb object and NULL is
+   returned if jDb does not have any associated PerDbStateJni.
 */
 FIXME_THREADING
-static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, sqlite3 *pDb, int allocIfNeeded){
+static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, jobject jDb, sqlite3 *pDb, int allocIfNeeded){
   PerDbStateJni * s = S3Global.perDb.aUsed;
-  for( ; s; s = s->pNext){
+  assert(allocIfNeeded ? !!pDb : 1);
+  if(!allocIfNeeded && !pDb){
+    pDb = PtrGet_sqlite3_value(jDb);
+  }
+  for( ; pDb && s; s = s->pNext){
     if(s->pDb == pDb) return s;
   }
-  if(allocIfNeeded) s = PerDbStateJni_alloc(env, pDb);
+  if(allocIfNeeded){
+    s = PerDbStateJni_alloc(env, pDb, jDb);
+  }
   return s;
 }
 
@@ -736,19 +762,19 @@ static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, sqlite3 *pDb, int alloc
 */
 FIXME_THREADING
 static void PerDbStateJni_free_all(void){
-  PerDbStateJni * pS = S3Global.perDb.aUsed;
+  PerDbStateJni * ps = S3Global.perDb.aUsed;
   PerDbStateJni * pSNext = 0;
-  for( ; pS; pS = pSNext ){
-    pSNext = pS->pNext;
-    PerDbStateJni_set_aside(pS);
+  for( ; ps; ps = pSNext ){
+    pSNext = ps->pNext;
+    PerDbStateJni_set_aside(ps);
     assert(pSNext ? !pSNext->pPrev : 1);
   }
   assert( 0==S3Global.perDb.aUsed );
-  pS = S3Global.perDb.aFree;
+  ps = S3Global.perDb.aFree;
   S3Global.perDb.aFree = 0;
   pSNext = 0;
-  for( ; pS; pS = pSNext ){
-    pSNext = pS->pNext;
+  for( ; ps; ps = pSNext ){
+    pSNext = ps->pNext;
     s3jni_free(pSNext);
   }
 }
@@ -1358,59 +1384,59 @@ JDECL(jint,1bind_1zeroblob64)(JENV_JSELF, jobject jpStmt,
 }
 
 static int s3jni_busy_handler(void* pState, int n){
-  PerDbStateJni * const pS = (PerDbStateJni *)pState;
+  PerDbStateJni * const ps = (PerDbStateJni *)pState;
   int rc = 0;
-  if( pS->busyHandler.jObj ){
-    JNIEnv * const env = pS->env;
-    rc = (*env)->CallIntMethod(env, pS->busyHandler.jObj,
-                               pS->busyHandler.jmidxCallback, (jint)n);
+  if( ps->busyHandler.jObj ){
+    JNIEnv * const env = ps->env;
+    rc = (*env)->CallIntMethod(env, ps->busyHandler.jObj,
+                               ps->busyHandler.jmidxCallback, (jint)n);
     IFTHREW_CLEAR;
   }
   return rc;
 }
 
 JDECL(jint,1busy_1handler)(JENV_JSELF, jobject jDb, jobject jBusy){
-  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * const pS = PerDbStateJni_for_db(env, pDb, 1);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
   int rc;
-  if(!pS) return (jint)SQLITE_NOMEM;
+  if(!ps) return (jint)SQLITE_NOMEM;
   if(jBusy){
-    if(pS->busyHandler.jObj &&
-       (*env)->IsSameObject(env, pS->busyHandler.jObj, jBusy)){
+    if(ps->busyHandler.jObj &&
+       (*env)->IsSameObject(env, ps->busyHandler.jObj, jBusy)){
       /* Same object - this is a no-op. */
       return 0;
     }
-    rc = BusyHandlerJni_init(env, &pS->busyHandler, jBusy);
+    rc = BusyHandlerJni_init(env, &ps->busyHandler, jBusy);
     if(rc){
-      assert(!pS->busyHandler.jObj);
+      assert(!ps->busyHandler.jObj);
       return (jint)rc;
     }
-    assert(pS->busyHandler.jObj && pS->busyHandler.klazz);
-    assert( (*env)->IsSameObject(env, pS->busyHandler.jObj, jBusy) );
+    assert(ps->busyHandler.jObj && ps->busyHandler.klazz);
+    assert( (*env)->IsSameObject(env, ps->busyHandler.jObj, jBusy) );
   }else{
-    BusyHandlerJni_clear(&pS->busyHandler);
+    BusyHandlerJni_clear(&ps->busyHandler);
   }
   return jBusy
-    ? sqlite3_busy_handler(pDb, s3jni_busy_handler, pS)
-    : sqlite3_busy_handler(pDb, 0, 0);
+    ? sqlite3_busy_handler(ps->pDb, s3jni_busy_handler, ps)
+    : sqlite3_busy_handler(ps->pDb, 0, 0);
 }
 
 JDECL(jint,1busy_1timeout)(JENV_JSELF, jobject jDb, jint ms){
-  sqlite3* const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * const pS = PerDbStateJni_for_db(env, pDb, 0);
-  if( pS && pS->busyHandler.jObj ){
-    BusyHandlerJni_clear(&pS->busyHandler);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  if( ps ){
+    if( ps->busyHandler.jObj ){
+      BusyHandlerJni_clear(&ps->busyHandler);
+    }
+    return sqlite3_busy_timeout(ps->pDb, (int)ms);
   }
-  return sqlite3_busy_timeout(pDb, (int)ms);
+  return SQLITE_MISUSE;
 }
 
 /**
    Wrapper for sqlite3_close(_v2)().
 */
 static jint s3jni_close_db(JNIEnv *env, jobject jDb, int version){
-  sqlite3 * pDb;
   int rc = 0;
-  PerDbStateJni * pS = 0;
+  PerDbStateJni * ps = 0;
   assert(version == 1 || version == 2);
   if(0){
     PerDbStateJni * s = S3Global.perDb.aUsed;
@@ -1418,12 +1444,11 @@ static jint s3jni_close_db(JNIEnv *env, jobject jDb, int version){
       PerDbStateJni_dump(s);
     }
   }
-  pDb = PtrGet_sqlite3(jDb);
-  if(!pDb) return rc;
-  pS = PerDbStateJni_for_db(env, pDb, 0);
-  rc = 1==version ? (jint)sqlite3_close(pDb) : (jint)sqlite3_close_v2(pDb);
-  if(pS) PerDbStateJni_set_aside(pS)
-           /* MUST come after close() because of pS->trace. */;
+  ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  if(!ps) return rc;
+  rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
+  if(ps) PerDbStateJni_set_aside(ps)
+           /* MUST come after close() because of ps->trace. */;
   setNativePointer(env, jDb, 0, ClassNames.sqlite3);
   return (jint)rc;
 }
@@ -1536,14 +1561,13 @@ static void s3jni_rollback_hook_impl(void *pP){
 
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv *env,jobject jDb,
                                           jobject jHook){
-  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * const ps = PerDbStateJni_for_db(env, pDb, 1);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
   jclass klazz;
   jobject pOld = 0;
   jmethodID xCallback;
   JniHookState * const pHook = isCommit ? &ps->commitHook : &ps->rollbackHook;
   if(!ps){
-    s3jni_db_error(pDb, SQLITE_NOMEM, 0);
+    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
     return 0;
   }
   pOld = pHook->jObj;
@@ -1558,8 +1582,8 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv *env,jobject jDb,
       pOld = tmp;
     }
     memset(pHook, 0, sizeof(JniHookState));
-    if( isCommit ) sqlite3_commit_hook(pDb, 0, 0);
-    else sqlite3_rollback_hook(pDb, 0, 0);
+    if( isCommit ) sqlite3_commit_hook(ps->pDb, 0, 0);
+    else sqlite3_rollback_hook(ps->pDb, 0, 0);
     return pOld;
   }
   klazz = (*env)->GetObjectClass(env, jHook);
@@ -1569,14 +1593,14 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv *env,jobject jDb,
   IFTHREW {
     EXCEPTION_REPORT;
     EXCEPTION_CLEAR;
-    s3jni_db_error(pDb, SQLITE_ERROR,
+    s3jni_db_error(ps->pDb, SQLITE_ERROR,
                    "Cannot not find matching callback on "
                    "hook object.");
   }else{
     pHook->midCallback = xCallback;
     pHook->jObj = REF_G(jHook);
-    if( isCommit ) sqlite3_commit_hook(pDb, s3jni_commit_hook_impl, ps);
-    else sqlite3_rollback_hook(pDb, s3jni_rollback_hook_impl, ps);
+    if( isCommit ) sqlite3_commit_hook(ps->pDb, s3jni_commit_hook_impl, ps);
+    else sqlite3_rollback_hook(ps->pDb, s3jni_rollback_hook_impl, ps);
     if(pOld){
       jobject tmp = REF_L(pOld);
       UNREF_G(pOld);
@@ -1729,27 +1753,39 @@ JDECL(jlong,1last_1insert_1rowid)(JENV_JSELF, jobject jpDb){
   return (jlong)sqlite3_last_insert_rowid(PtrGet_sqlite3(jpDb));
 }
 
+static int s3jni_open_post(JNIEnv *env, sqlite3 **ppDb, jobject jDb, int theRc){
+  if(1 && *ppDb){
+    PerDbStateJni * const s = PerDbStateJni_for_db(env, jDb, *ppDb, 1);
+    if(!s && 0==theRc){
+      sqlite3_close(*ppDb);
+      *ppDb = 0;
+      theRc = SQLITE_NOMEM;
+    }
+  }
+  setNativePointer(env, jDb, *ppDb, ClassNames.sqlite3);
+  return theRc;
+}
 
-JDECL(jint,1open)(JENV_JSELF, jstring strName, jobject ppOut){
+JDECL(jint,1open)(JENV_JSELF, jstring strName, jobject jOut){
   sqlite3 * pOut = 0;
   const char *zName = strName ? JSTR_TOC(strName) : 0;
   int nrc = sqlite3_open(zName, &pOut);
   //MARKER(("env=%p, *env=%p\n", env, *env));
-  setNativePointer(env, ppOut, pOut, ClassNames.sqlite3);
+  nrc = s3jni_open_post(env, &pOut, jOut, nrc);
   assert(nrc==0 ? pOut!=0 : 1);
   JSTR_RELEASE(strName, zName);
   return (jint)nrc;
 }
 
 JDECL(jint,1open_1v2)(JENV_JSELF, jstring strName,
-                      jobject ppOut, jint flags, jstring strVfs){
+                      jobject jOut, jint flags, jstring strVfs){
   sqlite3 * pOut = 0;
   const char *zName = strName ? JSTR_TOC(strName) : 0;
   const char *zVfs = strVfs ? JSTR_TOC(strVfs) : 0;
   int nrc = sqlite3_open_v2(zName, &pOut, (int)flags, zVfs);
   /*MARKER(("zName=%s, zVfs=%s, pOut=%p, flags=%d, nrc=%d\n",
     zName, zVfs, pOut, (int)flags, nrc));*/
-  setNativePointer(env, ppOut, pOut, ClassNames.sqlite3);
+  nrc = s3jni_open_post(env, &pOut, jOut, nrc);
   assert(nrc==0 ? pOut!=0 : 1);
   JSTR_RELEASE(strName, zName);
   JSTR_RELEASE(strVfs, zVfs);
@@ -1820,8 +1856,7 @@ static int s3jni_progress_handler_impl(void *pP){
 }
 
 JDECL(void,1progress_1handler)(JENV_JSELF,jobject jDb, jint n, jobject jProgress){
-  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * ps = PerDbStateJni_for_db(env, pDb, 1);
+  PerDbStateJni * ps = PerDbStateJni_for_db(env, jDb, 0, 0);
   jclass klazz;
   jmethodID xCallback;
   if( n<1 || !jProgress ){
@@ -1829,25 +1864,25 @@ JDECL(void,1progress_1handler)(JENV_JSELF,jobject jDb, jint n, jobject jProgress
       UNREF_G(ps->progress.jObj);
       memset(&ps->progress, 0, sizeof(ps->progress));
     }
-    sqlite3_progress_handler(pDb, 0, 0, 0);
+    sqlite3_progress_handler(ps->pDb, 0, 0, 0);
     return;
   }
   if(!ps){
-    s3jni_db_error(pDb, SQLITE_NOMEM, 0);
+    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
     return;
   }
   klazz = (*env)->GetObjectClass(env, jProgress);
   xCallback = (*env)->GetMethodID(env, klazz, "xCallback", "()I");
   IFTHREW {
     EXCEPTION_CLEAR;
-    s3jni_db_error(pDb, SQLITE_ERROR,
+    s3jni_db_error(ps->pDb, SQLITE_ERROR,
                    "Cannot not find matching xCallback() on "
                    "ProgressHandler object.");
   }else{
     UNREF_G(ps->progress.jObj);
     ps->progress.midCallback = xCallback;
     ps->progress.jObj = REF_G(jProgress);
-    sqlite3_progress_handler(pDb, (int)n, s3jni_progress_handler_impl, ps);
+    sqlite3_progress_handler(ps->pDb, (int)n, s3jni_progress_handler_impl, ps);
   }
 }
 
@@ -2081,15 +2116,14 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
 }
 
 JDECL(jint,1trace_1v2)(JENV_JSELF,jobject jDb, jint traceMask, jobject jTracer){
-  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * const ps = PerDbStateJni_for_db(env, pDb, 1);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
   jclass klazz;
   if( !traceMask || !jTracer ){
     if(ps){
       UNREF_G(ps->trace.jObj);
       memset(&ps->trace, 0, sizeof(ps->trace));
     }
-    return (jint)sqlite3_trace_v2(pDb, 0, 0, 0);
+    return (jint)sqlite3_trace_v2(ps->pDb, 0, 0, 0);
   }
   if(!ps) return SQLITE_NOMEM;
   klazz = (*env)->GetObjectClass(env, jTracer);
@@ -2097,11 +2131,11 @@ JDECL(jint,1trace_1v2)(JENV_JSELF,jobject jDb, jint traceMask, jobject jTracer){
                                               "(IJLjava/lang/Object;)I");
   IFTHREW {
     EXCEPTION_CLEAR;
-    return s3jni_db_error(pDb, SQLITE_ERROR,
+    return s3jni_db_error(ps->pDb, SQLITE_ERROR,
                           "Cannot not find matching xCallback() on Tracer object.");
   }
   ps->trace.jObj = REF_G(jTracer);
-  return sqlite3_trace_v2(pDb, (unsigned)traceMask, s3jni_trace_impl, ps);
+  return sqlite3_trace_v2(ps->pDb, (unsigned)traceMask, s3jni_trace_impl, ps);
 }
 
 static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
@@ -2133,14 +2167,13 @@ static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
 
 
 JDECL(jobject,1update_1hook)(JENV_JSELF, jobject jDb, jobject jHook){
-  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * const ps = PerDbStateJni_for_db(env, pDb, 1);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
   jclass klazz;
   jobject pOld = 0;
   jmethodID xCallback;
   JniHookState * const pHook = &ps->updateHook;
   if(!ps){
-    s3jni_db_error(pDb, SQLITE_NOMEM, 0);
+    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
     return 0;
   }
   pOld = pHook->jObj;
@@ -2155,7 +2188,7 @@ JDECL(jobject,1update_1hook)(JENV_JSELF, jobject jDb, jobject jHook){
       pOld = tmp;
     }
     memset(pHook, 0, sizeof(JniHookState));
-    sqlite3_update_hook(pDb, 0, 0);
+    sqlite3_update_hook(ps->pDb, 0, 0);
     return pOld;
   }
   klazz = (*env)->GetObjectClass(env, jHook);
@@ -2163,13 +2196,13 @@ JDECL(jobject,1update_1hook)(JENV_JSELF, jobject jDb, jobject jHook){
                                   "(ILjava/lang/String;Ljava/lang/String;J)V");
   IFTHREW {
     EXCEPTION_CLEAR;
-    s3jni_db_error(pDb, SQLITE_ERROR,
+    s3jni_db_error(ps->pDb, SQLITE_ERROR,
                    "Cannot not find matching callback on "
                    "update hook object.");
   }else{
     pHook->midCallback = xCallback;
     pHook->jObj = REF_G(jHook);
-    sqlite3_update_hook(pDb, s3jni_update_hook_impl, ps);
+    sqlite3_update_hook(ps->pDb, s3jni_update_hook_impl, ps);
     if(pOld){
       jobject tmp = REF_L(pOld);
       UNREF_G(pOld);
