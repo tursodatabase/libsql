@@ -433,11 +433,11 @@ static void s3jni_free(void * p){
 */
 static int s3jni_db_error(sqlite3*db, int err_code, const char *zMsg){
   if( db!=0 ){
-    if( 0!=zMsg ){
+    if( 0==zMsg ){
+      sqlite3Error(db, err_code);
+    }else{
       const int nMsg = sqlite3Strlen30(zMsg);
       sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
-    }else{
-      sqlite3ErrorWithMsg(db, err_code, NULL);
     }
   }
   return err_code;
@@ -526,7 +526,7 @@ static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb){
    Clears s's state and moves it to the free-list.
 */
 FIXME_THREADING
-static void PerDbStateJni_set_aside(PerDbStateJni *s){
+static void PerDbStateJni_set_aside(PerDbStateJni * const s){
   if(s){
     JNIEnv * const env = s->env;
     assert(s->pDb && "Else this object is already in the free-list.");
@@ -1726,6 +1726,50 @@ JDECL(jint,1prepare_1v3)(JNIEnv *env, jclass self, jobject jpDb, jbyteArray baSq
                                   prepFlags, outStmt, outTail);
 }
 
+
+static int s3jni_progress_handler_impl(void *pP){
+  PerDbStateJni * const ps = (PerDbStateJni *)pP;
+  JNIEnv * const env = ps->env;
+  int rc = (int)(*env)->CallIntMethod(env, ps->progress.jObj,
+                                      ps->progress.midCallback);
+  IFTHREW{
+    EXCEPTION_CLEAR;
+    rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
+                        "sqlite3_progress_handler() callback threw.");
+  }
+  return rc;
+}
+
+JDECL(void,1progress_1handler)(JENV_JSELF,jobject jDb, jint n, jobject jProgress){
+  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
+  PerDbStateJni * ps = PerDbStateJni_for_db(env, pDb, 1);
+  jclass klazz;
+  if( n<1 || !jProgress ){
+    if(ps){
+      UNREF_G(ps->progress.jObj);
+      memset(&ps->progress, 0, sizeof(ps->progress));
+    }
+    sqlite3_progress_handler(pDb, 0, 0, 0);
+    return;
+  }
+  if(!ps){
+    s3jni_db_error(pDb, SQLITE_NOMEM, 0);
+    return;
+  }
+  klazz = (*env)->GetObjectClass(env, jProgress);
+  ps->progress.midCallback = (*env)->GetMethodID(env, klazz, "xCallback", "()I");
+  IFTHREW {
+    EXCEPTION_CLEAR;
+    s3jni_db_error(pDb, SQLITE_ERROR,
+                   "Cannot not find matching xCallback() on "
+                   "ProgressHandler object.");
+  }else{
+    ps->progress.jObj = REF_G(jProgress);
+    sqlite3_progress_handler(pDb, (int)n, s3jni_progress_handler_impl, ps);
+  }
+}
+
+
 /* sqlite3_result_text/blob() and friends. */
 static void result_blob_text(int asBlob, int as64,
                              int eTextRep/*only for (asBlob=0)*/,
@@ -1945,30 +1989,31 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   UNREF_L(jX);
   IFTHREW{
     EXCEPTION_CLEAR;
-    return rc ? rc :
-      s3jni_db_error(ps->pDb, SQLITE_ERROR,
-                     "sqlite3_trace_v2() callback threw.");
+    rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
+                        "sqlite3_trace_v2() callback threw.");
   }
   return rc;
 }
 
 JDECL(jint,1trace_1v2)(JENV_JSELF,jobject jDb, jint traceMask, jobject jTracer){
   sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * ps;
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, pDb, 1);
   jclass klazz;
   if( !traceMask || !jTracer ){
+    if(ps){
+      UNREF_G(ps->trace.jObj);
+      memset(&ps->trace, 0, sizeof(ps->trace));
+    }
     return (jint)sqlite3_trace_v2(pDb, 0, 0, 0);
   }
-  ps = PerDbStateJni_for_db(env, pDb, 1);
   if(!ps) return SQLITE_NOMEM;
   klazz = (*env)->GetObjectClass(env, jTracer);
   ps->trace.midCallback = (*env)->GetMethodID(env, klazz, "xCallback",
                                               "(IJLjava/lang/Object;)I");
   IFTHREW {
-    /* Leave ps in place - it might contain other state. */
     EXCEPTION_CLEAR;
     return s3jni_db_error(pDb, SQLITE_ERROR,
-                          "Cannot not find matchin xCallback() on Tracer object.");
+                          "Cannot not find matching xCallback() on Tracer object.");
   }
   ps->trace.jObj = REF_G(jTracer);
   return sqlite3_trace_v2(pDb, (unsigned)traceMask, s3jni_trace_impl, ps);

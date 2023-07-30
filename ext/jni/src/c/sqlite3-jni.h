@@ -1197,6 +1197,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v3
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_progress_handler
+ * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/ProgressHandler;)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1progress_1handler
+  (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_reset
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)I
  */

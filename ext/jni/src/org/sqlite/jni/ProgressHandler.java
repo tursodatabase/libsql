@@ -18,6 +18,8 @@ package org.sqlite.jni;
 */
 public interface ProgressHandler {
   /**
+     Works as documented for the sqlite3_progress_handler() callback.
+     Must not throw.
   */
   int xCallback();
 }

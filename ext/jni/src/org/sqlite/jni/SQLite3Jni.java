@@ -394,8 +394,8 @@ public final class SQLite3Jni {
     return sqlite3_prepare_v3(db, utf8, utf8.length, prepFlags, outStmt, null);
   }
 
-
-  //TODO public static native void sqlite3_progress_handler(sqlite3 db, int n, ProgressHandler h);
+  public static native void sqlite3_progress_handler(@NotNull sqlite3 db, int n,
+                                                     @Nullable ProgressHandler h);
 
   public static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
 

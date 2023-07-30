@@ -17,6 +17,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class Tester1 {
+  private static final class Metrics {
+    int dbOpen;
+  }
+
+  static final Metrics metrics = new Metrics();
 
   private static <T> void out(T val){
     System.out.print(val);
@@ -87,9 +92,10 @@ public class Tester1 {
       sqlite3 db = new sqlite3();
       affirm(0 == db.getNativePointer());
       int rc = sqlite3_open(":memory:", db);
+      ++metrics.dbOpen;
       affirm(0 == rc);
       affirm(0 < db.getNativePointer());
-      sqlite3_close(db);
+      sqlite3_close_v2(db);
       affirm(0 == db.getNativePointer());
   }
 
@@ -99,6 +105,7 @@ public class Tester1 {
     int rc = sqlite3_open_v2(":memory:", db,
                              SQLITE_OPEN_READWRITE
                              | SQLITE_OPEN_CREATE, null);
+    ++metrics.dbOpen;
     affirm(0 == rc);
     affirm(0 < db.getNativePointer());
     sqlite3_close_v2(db);
@@ -109,6 +116,7 @@ public class Tester1 {
     sqlite3 db = new sqlite3();
     affirm(0 == db.getNativePointer());
     int rc = sqlite3_open(":memory:", db);
+    ++metrics.dbOpen;
     affirm(0 == rc);
     affirm(0 != db.getNativePointer());
     rc = sqlite3_busy_timeout(db, 2000);
@@ -394,7 +402,7 @@ public class Tester1 {
     affirm(3 == counter);
     sqlite3_finalize(stmt);
     affirm(!xDestroyCalled.value);
-    sqlite3_close(db);
+    sqlite3_close_v2(db);
     affirm(xDestroyCalled.value);
   }
 
@@ -448,7 +456,7 @@ public class Tester1 {
     execSql(db, "SELECT myfunc(1,2,3)");
     affirm(6 == xFuncAccum.value);
     affirm( !xDestroyCalled.value );
-    sqlite3_close(db);
+    sqlite3_close_v2(db);
     affirm( xDestroyCalled.value );
   }
 
@@ -477,7 +485,7 @@ public class Tester1 {
     }
     sqlite3_finalize(stmt);
     affirm( 1 == n );
-    sqlite3_close(db);
+    sqlite3_close_v2(db);
   }
 
   private static void testUdfAggregate(){
@@ -543,7 +551,7 @@ public class Tester1 {
 
     execSql(db, "SELECT myfunc(1) WHERE 0");
     affirm(xFinalNull.value);
-    sqlite3_close(db);
+    sqlite3_close_v2(db);
   }
 
   private static void testUdfWindow(){
@@ -601,7 +609,7 @@ public class Tester1 {
     }
     sqlite3_finalize(stmt);
     affirm( 5 == n );
-    sqlite3_close(db);
+    sqlite3_close_v2(db);
   }
 
   private static void listBoundMethods(){
@@ -664,7 +672,7 @@ public class Tester1 {
       });
     execSql(db, "SELECT 1; SELECT 2");
     affirm( 6 == counter.value );
-    sqlite3_close(db);
+    sqlite3_close_v2(db);
     affirm( 7 == counter.value );
   }
 
@@ -674,9 +682,11 @@ public class Tester1 {
     final sqlite3 db2 = new sqlite3();
 
     int rc = sqlite3_open(dbName, db1);
+    ++metrics.dbOpen;
     affirm( 0 == rc );
     execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
     rc = sqlite3_open(dbName, db2);
+    ++metrics.dbOpen;
     affirm( 0 == rc );
 
     final ValueHolder<Boolean> xDestroyed = new ValueHolder<>(false);
@@ -701,9 +711,9 @@ public class Tester1 {
     affirm( SQLITE_BUSY == rc);
     affirm( 3 == xBusyCalled.value );
     sqlite3_finalize(stmt);
-    sqlite3_close(db1);
+    sqlite3_close_v2(db1);
     affirm(!xDestroyed.value);
-    sqlite3_close(db2);
+    sqlite3_close_v2(db2);
     affirm(xDestroyed.value);
     try{
       final java.io.File f = new java.io.File(dbName);
@@ -713,6 +723,24 @@ public class Tester1 {
     }
   }
 
+  private static void testProgress(){
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    sqlite3_progress_handler(db, 1, new ProgressHandler(){
+        public int xCallback(){
+          ++counter.value;
+          return 0;
+        }
+      });
+    execSql(db, "SELECT 1; SELECT 2;");
+    affirm( counter.value > 0 );
+    int nOld = counter.value;
+    sqlite3_progress_handler(db, 0, null);
+    execSql(db, "SELECT 1; SELECT 2;");
+    affirm( nOld == counter.value );
+    sqlite3_close_v2(db);
+  }
+
   private static void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);
@@ -720,6 +748,7 @@ public class Tester1 {
   }
 
   public static void main(String[] args){
+    final long timeStart = System.nanoTime();
     test1();
     if(false) testCompileOption();
     final java.util.List<String> liArgs =
@@ -740,10 +769,16 @@ public class Tester1 {
     testUdfWindow();
     testTrace();
     testBusy();
-    testSleep();
+    testProgress();
+    //testSleep();
     if(liArgs.indexOf("-v")>0){
       listBoundMethods();
     }
-    outln("Tests done. "+affirmCount+" assertion checked.");
+    final long timeEnd = System.nanoTime();
+    outln("Tests done. Metrics:");
+    outln("\tAssertions checked: "+affirmCount);
+    outln("\tDatabases opened: "+metrics.dbOpen);
+    outln("\tTotal time = "
+          +((timeEnd - timeStart)/1000000.0)+"ms");
   }
 }
