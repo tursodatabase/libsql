@@ -1349,6 +1349,14 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1result_1text64
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_rollback_hook
+ * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/RollbackHook;)Lorg/sqlite/jni/RollbackHook;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1rollback_1hook
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_set_last_insert_rowid
  * Signature: (Lorg/sqlite/jni/sqlite3;J)V
  */

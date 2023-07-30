@@ -756,7 +756,7 @@ public class Tester1 {
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> hookResult = new ValueHolder<>(0);
     final CommitHook theHook = new CommitHook(){
-        public int xCallback(){
+        public int xCommitHook(){
           ++counter.value;
           return hookResult.value;
         }
@@ -783,7 +783,7 @@ public class Tester1 {
     affirm( 4 == counter.value );
 
     final CommitHook newHook = new CommitHook(){
-        public int xCallback(){return 0;}
+        public int xCommitHook(){return 0;}
       };
     oldHook = sqlite3_commit_hook(db, newHook);
     affirm( null == oldHook );
@@ -797,6 +797,38 @@ public class Tester1 {
     int rc = execSql(db, false, "BEGIN; update t set a='j' where a='i'; COMMIT;");
     affirm( SQLITE_CONSTRAINT == rc );
     affirm( 6 == counter.value );
+    sqlite3_close_v2(db);
+  }
+
+  private static void testRollbackHook(){
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final RollbackHook theHook = new RollbackHook(){
+        public void xRollbackHook(){
+          ++counter.value;
+        }
+      };
+    RollbackHook oldHook = sqlite3_rollback_hook(db, theHook);
+    affirm( null == oldHook );
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    affirm( 0 == counter.value );
+    execSql(db, false, "BEGIN; SELECT 1; SELECT 2; ROLLBACK;");
+    affirm( 1 == counter.value /* contra to commit hook, is invoked if no changes are made */ );
+
+    final RollbackHook newHook = new RollbackHook(){
+        public void xRollbackHook(){return;}
+      };
+    oldHook = sqlite3_rollback_hook(db, newHook);
+    affirm( theHook == oldHook );
+    execSql(db, false, "BEGIN; SELECT 1; ROLLBACK;");
+    affirm( 1 == counter.value );
+    oldHook = sqlite3_rollback_hook(db, theHook);
+    affirm( newHook == oldHook );
+    execSql(db, false, "BEGIN; SELECT 1; ROLLBACK;");
+    affirm( 2 == counter.value );
+    int rc = execSql(db, false, "BEGIN; SELECT 1; ROLLBACK;");
+    affirm( 0 == rc );
+    affirm( 3 == counter.value );
     sqlite3_close_v2(db);
   }
 
@@ -830,6 +862,7 @@ public class Tester1 {
     testBusy();
     testProgress();
     testCommitHook();
+    testRollbackHook();
     //testSleep();
     if(liArgs.indexOf("-v")>0){
       listBoundMethods();

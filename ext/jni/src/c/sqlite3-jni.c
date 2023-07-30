@@ -340,6 +340,12 @@ typedef struct {
   jmethodID jmidxCallback /* klazz's xCallback method */;
 } BusyHandlerJni;
 
+typedef struct JniHookState JniHookState;
+struct JniHookState{
+  jobject jObj;
+  jmethodID midCallback;
+};
+
 
 /**
    Per-(sqlite3*) state for bindings which do not have their own
@@ -359,22 +365,10 @@ struct PerDbStateJni {
   sqlite3 * pDb;
   PerDbStateJni * pNext;
   PerDbStateJni * pPrev;
-  struct {
-    jobject jObj;
-    jmethodID midCallback;
-  } trace;
-  struct {
-    jobject jObj;
-    jmethodID midCallback;
-  } progress;
-  struct {
-    jobject jObj;
-    jmethodID midCallback;
-  } commitHook;
-  struct {
-    jobject jObj;
-    jmethodID midCallback;
-  } rollbackHook;
+  JniHookState trace;
+  JniHookState progress;
+  JniHookState commitHook;
+  JniHookState rollbackHook;
   BusyHandlerJni busyHandler;
 };
 
@@ -1512,55 +1506,71 @@ JDECL(jobject,1column_1value)(JENV_JSELF, jobject jpStmt,
   return new_sqlite3_value_wrapper(env, sv);
 }
 
-static int s3jni_commit_hook_impl(void *pP){
-  PerDbStateJni * const ps = (PerDbStateJni *)pP;
+
+static int s3jni_commit_rollback_hook_impl(int isCommit, PerDbStateJni * const ps){
   JNIEnv * const env = ps->env;
-  int rc = (int)(*env)->CallIntMethod(env, ps->commitHook.jObj,
-                                      ps->commitHook.midCallback);
+  int rc = isCommit
+    ? (int)(*env)->CallIntMethod(env, ps->commitHook.jObj,
+                                 ps->commitHook.midCallback)
+    : (int)((*env)->CallVoidMethod(env, ps->rollbackHook.jObj,
+                                   ps->rollbackHook.midCallback), 0);
   IFTHREW{
     EXCEPTION_CLEAR;
-    rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
-                        "sqlite3_commit_hook() callback threw.");
+    rc = s3jni_db_error(ps->pDb, SQLITE_ERROR, "hook callback threw.");
   }
   return rc;
 }
 
-JDECL(jobject,1commit_1hook)(JENV_JSELF,jobject jDb, jobject jCommitHook){
+static int s3jni_commit_hook_impl(void *pP){
+  return s3jni_commit_rollback_hook_impl(1, pP);
+}
+
+static void s3jni_rollback_hook_impl(void *pP){
+  (void)s3jni_commit_rollback_hook_impl(0, pP);
+}
+
+static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv *env,jobject jDb,
+                                          jobject jHook){
   sqlite3 * const pDb = PtrGet_sqlite3(jDb);
-  PerDbStateJni * ps = PerDbStateJni_for_db(env, pDb, 1);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, pDb, 1);
   jclass klazz;
   jobject pOld = 0;
   jmethodID xCallback;
+  JniHookState * const pHook = isCommit ? &ps->commitHook : &ps->rollbackHook;
   if(!ps){
     s3jni_db_error(pDb, SQLITE_NOMEM, 0);
     return 0;
   }
-  pOld = ps->commitHook.jObj;
-  if(pOld && jCommitHook &&
-     (*env)->IsSameObject(env, pOld, jCommitHook)){
+  pOld = pHook->jObj;
+  if(pOld && jHook &&
+     (*env)->IsSameObject(env, pOld, jHook)){
     return pOld;
   }
-  if( !jCommitHook ){
+  if( !jHook ){
     if(pOld){
       jobject tmp = REF_L(pOld);
       UNREF_G(pOld);
       pOld = tmp;
     }
-    memset(&ps->commitHook, 0, sizeof(ps->commitHook));
-    sqlite3_commit_hook(pDb, 0, 0);
+    memset(pHook, 0, sizeof(JniHookState));
+    if( isCommit ) sqlite3_commit_hook(pDb, 0, 0);
+    else sqlite3_rollback_hook(pDb, 0, 0);
     return pOld;
   }
-  klazz = (*env)->GetObjectClass(env, jCommitHook);
-  xCallback = (*env)->GetMethodID(env, klazz, "xCallback", "()I");
+  klazz = (*env)->GetObjectClass(env, jHook);
+  xCallback = (*env)->GetMethodID(env, klazz,
+                                  isCommit ? "xCommitHook" : "xRollbackHook",
+                                  isCommit ? "()I" : "()V");
   IFTHREW {
     EXCEPTION_CLEAR;
     s3jni_db_error(pDb, SQLITE_ERROR,
-                   "Cannot not find matching xCallback() on "
-                   "CommitHook object.");
+                   "Cannot not find matching callback on "
+                   "hook object.");
   }else{
-    ps->commitHook.midCallback = xCallback;
-    ps->commitHook.jObj = REF_G(jCommitHook);
-    sqlite3_commit_hook(pDb, s3jni_commit_hook_impl, ps);
+    pHook->midCallback = xCallback;
+    pHook->jObj = REF_G(jHook);
+    if( isCommit ) sqlite3_commit_hook(pDb, s3jni_commit_hook_impl, ps);
+    else sqlite3_rollback_hook(pDb, s3jni_rollback_hook_impl, ps);
     if(pOld){
       jobject tmp = REF_L(pOld);
       UNREF_G(pOld);
@@ -1568,6 +1578,10 @@ JDECL(jobject,1commit_1hook)(JENV_JSELF,jobject jDb, jobject jCommitHook){
     }
   }
   return pOld;
+}
+
+JDECL(jobject,1commit_1hook)(JENV_JSELF,jobject jDb, jobject jHook){
+  return s3jni_commit_rollback_hook(1, env, jDb, jHook);
 }
 
 
@@ -2007,6 +2021,9 @@ JDECL(jint,1result_1zeroblob64)(JENV_JSELF, jobject jpCx, jlong v){
   return (jint)sqlite3_result_zeroblob64(PtrGet_sqlite3_context(jpCx), (sqlite3_int64)v);
 }
 
+JDECL(jobject,1rollback_1hook)(JENV_JSELF,jobject jDb, jobject jHook){
+  return s3jni_commit_rollback_hook(0, env, jDb, jHook);
+}
 
 JDECL(void,1set_1last_1insert_1rowid)(JENV_JSELF, jobject jpDb, jlong rowId){
   sqlite3_set_last_insert_rowid(PtrGet_sqlite3_context(jpDb),

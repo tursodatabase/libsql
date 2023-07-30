@@ -14,12 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback proxy for use with sqlite3_commit_hook().
+   Callback proxy for use with sqlite3_rollback_hook().
 */
-public interface CommitHook {
+public interface RollbackHook {
   /**
-     Works as documented for the sqlite3_commit_hook() callback.
+     Works as documented for the sqlite3_rollback_hook() callback.
      Must not throw.
   */
-  int xCommitHook();
+  void xRollbackHook();
 }

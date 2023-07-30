@@ -631,7 +631,8 @@ public final class SQLite3Jni {
     sqlite3_result_text64(cx, b, b.length, SQLITE_UTF16BE);
   }
 
-  //TODO void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
+  public static native RollbackHook sqlite3_rollback_hook(@NotNull sqlite3 db,
+                                                          @Nullable RollbackHook hook);
 
   public static native void sqlite3_set_last_insert_rowid(@NotNull sqlite3 db, long rowid);
 
