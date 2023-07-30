@@ -1,5 +1,5 @@
-C Do\snot\stry\sto\sadd\sMEM_Term\sto\san\sMEM_Static\sstring\seither.
-D 2023-07-29T22:58:47.914
+C Add\stests\sfor\sSAHPoolUtil.exportFile()\sand\simportDb().
+D 2023-07-30T03:54:10.966
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -554,7 +554,7 @@ F ext/wasm/test-opfs-vfs.html 1f2d672f3f3fce810dfd48a8d56914aba22e45c6834e262555
 F ext/wasm/test-opfs-vfs.js f09266873e1a34d9bdb6d3981ec8c9e382f31f215c9fd2f9016d2394b8ae9b7b
 F ext/wasm/tester1-worker.html ebc4b820a128963afce328ecf63ab200bd923309eb939f4110510ab449e9814c
 F ext/wasm/tester1.c-pp.html 1c1bc78b858af2019e663b1a31e76657b73dc24bede28ca92fbe917c3a972af2
-F ext/wasm/tester1.c-pp.js b9a493a764f2113f6a8205d4e5573a25731d6f965338005460920389ac0693e0
+F ext/wasm/tester1.c-pp.js b88dcad5424a652e8204c44a71bbc3deb22a4922c97ba792aedbabb7a6827b91
 F ext/wasm/tests/opfs/concurrency/index.html 0802373d57034d51835ff6041cda438c7a982deea6079efd98098d3e42fbcbc1
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2a378a66783ce4d749f7e1e7d08d8404a4aa78d47aeeefd6794b6753188438f6
-R f7430bcd5e0c8931ae75dccc5f40b292
-U drh
-Z 9911052f3d11a2b100418fc49117622a
+P 8920dcef1f75f578e3f274ab2b980a83d6ea6b761d99fc48410b26886170597b
+R 2a07b6b25484c6f82e9fa54454c86f83
+U stephan
+Z 94c05dabad5b9ba1d82742c493454088
 # Remove this line to create a well-formed Fossil manifest.
