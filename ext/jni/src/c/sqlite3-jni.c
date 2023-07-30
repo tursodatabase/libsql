@@ -346,8 +346,8 @@ struct JniHookState{
    look into consolidating this with JniHookState, perhaps adding the
    jclass member to that object.
 */
-typedef struct JniHookStateWithDtor JniHookStateWithDtor;
-struct JniHookStateWithDtor{
+typedef struct BusyHandlerJni BusyHandlerJni;
+struct BusyHandlerJni{
   JniHookState base;
   jclass klazz          /* jObj's class */;
 };
@@ -385,7 +385,7 @@ struct PerDbStateJni {
   JniHookState rollbackHook;
   JniHookState updateHook;
   JniHookState collationNeeded;
-  JniHookStateWithDtor busyHandler;
+  BusyHandlerJni busyHandler;
 };
 
 static struct {
@@ -459,7 +459,7 @@ static int s3jni_db_error(sqlite3*db, int err_code, const char *zMsg){
    any exceptions it throws. This is a no-op of s has no current
    state.
 */
-static void JniHookStateWithDtor_clear(JNIEnv *env, JniHookStateWithDtor * const s){
+static void BusyHandlerJni_clear(JNIEnv *env, BusyHandlerJni * const s){
   if(s->base.jObj){
     const jmethodID method =
       (*env)->GetMethodID(env, s->klazz, "xDestroy", "()V");
@@ -474,24 +474,24 @@ static void JniHookStateWithDtor_clear(JNIEnv *env, JniHookStateWithDtor * const
     }
     UNREF_G(s->base.jObj);
     UNREF_G(s->klazz);
-    memset(s, 0, sizeof(JniHookStateWithDtor));
+    memset(s, 0, sizeof(BusyHandlerJni));
   }
 }
 
 /**
-   Initializes s to wrap JniHookStateWithDtor-type object jObject, clearing
+   Initializes s to wrap BusyHandlerJni-type object jObject, clearing
    any current state of s beforehand. Returns 0 on success, non-0 on
    error. On error, s's state is cleared.
 */
-static int JniHookStateWithDtor_init(JNIEnv * const env, JniHookStateWithDtor * const s,
+static int BusyHandlerJni_init(JNIEnv * const env, BusyHandlerJni * const s,
                                jobject jObj){
   const char * zSig = "(I)I" /* callback signature */;
-  if(s->base.jObj) JniHookStateWithDtor_clear(env, s);
+  if(s->base.jObj) BusyHandlerJni_clear(env, s);
   s->base.jObj = REF_G(jObj);
   s->klazz = REF_G((*env)->GetObjectClass(env, jObj));
   s->base.midCallback = (*env)->GetMethodID(env, s->klazz, "xCallback", zSig);
   IFTHREW {
-    JniHookStateWithDtor_clear(env, s);
+    BusyHandlerJni_clear(env, s);
     return SQLITE_ERROR;
   }
   return 0;
@@ -738,7 +738,7 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
     UNHOOK(updateHook);
 #undef UNHOOK
     UNREF_G(s->jDb);
-    JniHookStateWithDtor_clear(env, &s->busyHandler);
+    BusyHandlerJni_clear(env, &s->busyHandler);
     memset(s, 0, sizeof(PerDbStateJni));
     s->pNext = S3Global.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
@@ -1423,7 +1423,7 @@ JDECL(jint,1busy_1handler)(JENV_JSELF, jobject jDb, jobject jBusy){
       /* Same object - this is a no-op. */
       return 0;
     }
-    rc = JniHookStateWithDtor_init(env, &ps->busyHandler, jBusy);
+    rc = BusyHandlerJni_init(env, &ps->busyHandler, jBusy);
     if(rc){
       assert(!ps->busyHandler.base.jObj);
       return (jint)rc;
@@ -1431,7 +1431,7 @@ JDECL(jint,1busy_1handler)(JENV_JSELF, jobject jDb, jobject jBusy){
     assert(ps->busyHandler.base.jObj && ps->busyHandler.klazz);
     assert( (*env)->IsSameObject(env, ps->busyHandler.base.jObj, jBusy) );
   }else{
-    JniHookStateWithDtor_clear(env, &ps->busyHandler);
+    BusyHandlerJni_clear(env, &ps->busyHandler);
   }
   return jBusy
     ? sqlite3_busy_handler(ps->pDb, s3jni_busy_handler, ps)
@@ -1442,7 +1442,7 @@ JDECL(jint,1busy_1timeout)(JENV_JSELF, jobject jDb, jint ms){
   PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
   if( ps ){
     if( ps->busyHandler.base.jObj ){
-      JniHookStateWithDtor_clear(env, &ps->busyHandler);
+      BusyHandlerJni_clear(env, &ps->busyHandler);
     }
     return sqlite3_busy_timeout(ps->pDb, (int)ms);
   }
