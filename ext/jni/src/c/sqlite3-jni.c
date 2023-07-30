@@ -153,6 +153,9 @@
 #define EXCEPTION_IGNORE (void)((*env)->ExceptionCheck(env))
 #define EXCEPTION_CLEAR (*env)->ExceptionClear(env)
 #define EXCEPTION_REPORT (*env)->ExceptionDescribe(env)
+#define EXCEPTION_WARN_CALLBACK_THREW \
+  MARKER(("WARNING: this routine MUST NOT THROW.\n"));  \
+  (*env)->ExceptionDescribe(env)
 #define IFTHREW_REPORT IFTHREW EXCEPTION_REPORT
 #define IFTHREW_CLEAR IFTHREW EXCEPTION_CLEAR
 
@@ -897,8 +900,7 @@ static void collation_xDestroy_proxy(void *pArg){
     //MARKER(("Calling Collation.xDestroy()...\n"));
     (*env)->CallVoidMethod(env, cs->oCollation, method);
     IFTHREW {
-      MARKER(("Collation.xDestroy() threw. Ignoring!\n"));
-      EXCEPTION_REPORT;
+      EXCEPTION_WARN_CALLBACK_THREW;
       EXCEPTION_CLEAR;
     }
     //MARKER(("Returned from Collation.xDestroy().\n"));
@@ -1563,7 +1565,6 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv *env,jobject jDb,
                                   isCommit ? "xCommitHook" : "xRollbackHook",
                                   isCommit ? "()I" : "()V");
   IFTHREW {
-    MARKER(("WARNING: callback MUST NOT THROW.\n"));
     EXCEPTION_REPORT;
     EXCEPTION_CLEAR;
     s3jni_db_error(pDb, SQLITE_ERROR,
@@ -2119,8 +2120,7 @@ static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
                            ps->updateHook.midCallback,
                            (jint)opId, jDbName, jTable, (jlong)nRowid);
     IFTHREW{
-      MARKER(("WARNING: callback MUST NOT THROW.\n"));
-      EXCEPTION_REPORT;
+      EXCEPTION_WARN_CALLBACK_THREW;
       EXCEPTION_CLEAR;
       s3jni_db_error(ps->pDb, SQLITE_ERROR, "update hook callback threw.");
     }
