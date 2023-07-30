@@ -64,19 +64,20 @@ public class Tester1 {
   private static void execSql(sqlite3 db, String[] sql){
     execSql(db, String.join("", sql));
   }
-  private static void execSql(sqlite3 db, String sql){
+  private static int execSql(sqlite3 db, boolean throwOnError, String sql){
       OutputPointer.Int32 oTail = new OutputPointer.Int32();
       final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
       int pos = 0, n = 1;
       byte[] sqlChunk = sqlUtf8;
       sqlite3_stmt stmt = new sqlite3_stmt();
+      int rc = 0;
       while(pos < sqlChunk.length){
         if(pos > 0){
           sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
                                         sqlChunk.length);
         }
         if( 0==sqlChunk.length ) break;
-        int rc = sqlite3_prepare_v2(db, sqlChunk, stmt, oTail);
+        rc = sqlite3_prepare_v2(db, sqlChunk, stmt, oTail);
         affirm(0 == rc);
         pos = oTail.getValue();
         affirm(0 != stmt.getNativePointer());
@@ -84,9 +85,18 @@ public class Tester1 {
         sqlite3_finalize(stmt);
         affirm(0 == stmt.getNativePointer());
         if(0!=rc && SQLITE_ROW!=rc && SQLITE_DONE!=rc){
-          throw new RuntimeException("db op failed with rc="+rc);
+          if(throwOnError){
+            throw new RuntimeException("db op failed with rc="+rc);
+          }else{
+            break;
+          }
         }
       }
+      if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
+      return rc;
+  }
+  private static void execSql(sqlite3 db, String sql){
+    execSql(db, true, sql);
   }
   private static void testOpenDb1(){
       sqlite3 db = new sqlite3();
@@ -744,10 +754,11 @@ public class Tester1 {
   private static void testCommitHook(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final ValueHolder<Integer> hookResult = new ValueHolder<>(0);
     final CommitHook theHook = new CommitHook(){
         public int xCallback(){
           ++counter.value;
-          return 0;
+          return hookResult.value;
         }
       };
     CommitHook oldHook = sqlite3_commit_hook(db, theHook);
@@ -782,6 +793,10 @@ public class Tester1 {
     affirm( newHook == oldHook );
     execSql(db, "BEGIN; update t set a='i' where a='h'; COMMIT;");
     affirm( 5 == counter.value );
+    hookResult.value = SQLITE_ERROR;
+    int rc = execSql(db, false, "BEGIN; update t set a='j' where a='i'; COMMIT;");
+    affirm( SQLITE_CONSTRAINT == rc );
+    affirm( 6 == counter.value );
     sqlite3_close_v2(db);
   }
 
