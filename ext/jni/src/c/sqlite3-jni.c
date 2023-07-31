@@ -453,6 +453,7 @@ static void s3jni_call_xDestroy(JNIEnv *env, jobject jObj, jclass klazz){
       assert(klazz);
     }
     method = (*env)->GetMethodID(env, klazz, "xDestroy", "()V");
+    //MARKER(("jObj=%p, klazz=%p, method=%p\n", jObj, klazz, method));
     if(method){
       (*env)->CallVoidMethod(env, jObj, method);
       IFTHREW{
@@ -1090,7 +1091,7 @@ static UDFState * UDFState_alloc(JNIEnv *env, jobject jObj){
 static void UDFState_free(UDFState * s){
   JNIEnv * const env = s->env;
   if(env){
-    //MARKER(("UDF cleanup...\n"));
+    //MARKER(("UDF cleanup: %s\n", s->zFuncName));
     s3jni_call_xDestroy(env, s->jObj, s->klazz);
     UNREF_G(s->jObj);
     UNREF_G(s->klazz);
@@ -1100,6 +1101,7 @@ static void UDFState_free(UDFState * s){
 }
 
 static void UDFState_finalizer(void * s){
+  //MARKER(("UDF finalizer @ %p\n", s));
   if(s) UDFState_free((UDFState*)s);
 }
 

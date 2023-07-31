@@ -474,7 +474,16 @@ public class Tester1 {
     int rc = sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func);
     affirm(0 == rc);
     affirm(0 == xFuncAccum.value);
-    execSql(db, "SELECT myfunc(1,2,3)");
+    final sqlite3_stmt stmt = new sqlite3_stmt();
+    rc = sqlite3_prepare(db, "SELECT myfunc(1,2,3)", stmt);
+    affirm( 0==rc );
+    int n = 0;
+    while( SQLITE_ROW == sqlite3_step(stmt) ){
+      affirm( 6 == sqlite3_column_int(stmt, 0) );
+      ++n;
+    }
+    sqlite3_finalize(stmt);
+    affirm(1 == n);
     affirm(6 == xFuncAccum.value);
     affirm( !xDestroyCalled.value );
     sqlite3_close_v2(db);
