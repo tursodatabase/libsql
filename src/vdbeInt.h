@@ -159,6 +159,8 @@ struct VdbeTxtBlbCache {
   char *pCValue;        /* A RCStr buffer to hold the value */
   i64 iOffset;          /* File offset of the row being cached */
   int iCol;             /* Column for which the cache is valid */
+  u32 cacheStatus;      /* Vdbe.cacheCtr value */
+  u32 colCacheCtr;      /* Column cache counter */
 };
 
 /*

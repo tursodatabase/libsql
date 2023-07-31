@@ -708,6 +708,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   int iCol,             /* The column to read */
   int t,                /* The serial-type code for the column value */
   i64 iOffset,          /* Offset to the start of the content value */
+  u32 cacheStatus,      /* Current Vdbe.cacheCtr value */
+  u32 colCacheCtr,      /* Current value of the column cache counter */
   Mem *pDest            /* Store the value into this register. */
 ){
   int rc;
@@ -733,6 +735,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     pCache = pC->pCache;
     if( pCache->pCValue==0
      || pCache->iCol!=iCol
+     || pCache->cacheStatus!=cacheStatus
+     || pCache->colCacheCtr!=colCacheCtr
      || pCache->iOffset!=sqlite3BtreeOffset(pC->uc.pCursor)
     ){
       if( pCache->pCValue ) sqlite3RCStrUnref(pCache->pCValue);
@@ -744,6 +748,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
       pBuf[len+1] = 0;
       pBuf[len+2] = 0;
       pCache->iCol = iCol;
+      pCache->cacheStatus = cacheStatus;
+      pCache->colCacheCtr = colCacheCtr;
       pCache->iOffset = sqlite3BtreeOffset(pC->uc.pCursor);
     }else{
       pBuf = pCache->pCValue;
@@ -814,6 +820,7 @@ int sqlite3VdbeExec(
   Mem *pIn2 = 0;             /* 2nd input operand */
   Mem *pIn3 = 0;             /* 3rd input operand */
   Mem *pOut = 0;             /* Output operand */
+  u32 colCacheCtr = 0;       /* Column cache counter */
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
   u64 *pnCycle = 0;
   int bStmtScanStatus = IS_STMT_SCANSTATUS(db)!=0;
@@ -3162,7 +3169,8 @@ op_column_restart:
       */
       sqlite3VdbeSerialGet((u8*)sqlite3CtypeMap, t, pDest);
     }else{
-      rc = vdbeColumnFromOverflow(pC, p2, t, aOffset[p2], pDest);
+      rc = vdbeColumnFromOverflow(pC, p2, t, aOffset[p2],
+                p->cacheCtr, colCacheCtr, pDest);
       if( rc ){
         if( rc==SQLITE_NOMEM ) goto no_mem;
         if( rc==SQLITE_TOOBIG ) goto too_big;
@@ -5700,6 +5708,7 @@ case OP_Insert: {
   );
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  colCacheCtr++;
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
@@ -5860,6 +5869,7 @@ case OP_Delete: {
 
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
+  colCacheCtr++;
   pC->seekResult = 0;
   if( rc ) goto abort_due_to_error;
 
@@ -6431,6 +6441,7 @@ case OP_IdxInsert: {        /* in2 */
       );
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
+  colCacheCtr++;
   if( rc) goto abort_due_to_error;
   break;
 }
@@ -6506,6 +6517,7 @@ case OP_IdxDelete: {
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
   pC->seekResult = 0;
+  colCacheCtr++;
   break;
 }
 
