@@ -145,6 +145,7 @@ $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
       $(sqlite3-jni.c) -shared -o $@
 all: $(sqlite3-jni.dll)
 
+test.flags ?= -v
 test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \

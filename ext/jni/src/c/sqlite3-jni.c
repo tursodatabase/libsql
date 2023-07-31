@@ -13,6 +13,17 @@
 ** org.sqlite.jni.SQLiteJni (from which sqlite3-jni.h is generated).
 */
 
+/**
+   If you found this comment by searching the code for
+   CallStaticObjectMethod then you're the victim of an OpenJDK bug:
+
+   https://bugs.openjdk.org/browse/JDK-8130659
+
+   It's known to happen with OpenJDK v8 but not with v19.
+
+   This code does not use JNI's CallStaticObjectMethod().
+*/
+
 /*
 ** Define any SQLITE_... config defaults we want if they aren't
 ** overridden by the builder. Please keep these alphabetized.
@@ -158,6 +169,10 @@
   (*env)->ExceptionDescribe(env)
 #define IFTHREW_REPORT IFTHREW EXCEPTION_REPORT
 #define IFTHREW_CLEAR IFTHREW EXCEPTION_CLEAR
+#define EXCEPTION_CANNOT_HAPPEN IFTHREW{\
+    EXCEPTION_REPORT; \
+    (*env)->FatalError(env,"This \"cannot happen\".");  \
+    }
 
 
 /** Helpers for extracting pointers from jobjects, noting that the
@@ -391,6 +406,20 @@ static struct {
     PerDbStateJni * aUsed;
     PerDbStateJni * aFree;
   } perDb;
+  struct {
+    unsigned nphCacheHits;
+    unsigned nphCacheMisses;
+    unsigned envCacheHits;
+    unsigned envCacheMisses;
+    unsigned nDestroy;
+    struct {
+      unsigned nFunc;
+      unsigned nStep;
+      unsigned nFinal;
+      unsigned nValue;
+      unsigned nInverse;
+    } udf;
+  } metrics;
 } S3Global;
 
 /**
@@ -455,6 +484,7 @@ static void s3jni_call_xDestroy(JNIEnv *env, jobject jObj, jclass klazz){
     method = (*env)->GetMethodID(env, klazz, "xDestroy", "()V");
     //MARKER(("jObj=%p, klazz=%p, method=%p\n", jObj, klazz, method));
     if(method){
+      ++S3Global.metrics.nDestroy;
       (*env)->CallVoidMethod(env, jObj, method);
       IFTHREW{
         EXCEPTION_WARN_CALLBACK_THREW;
@@ -472,7 +502,6 @@ static void s3jni_call_xDestroy(JNIEnv *env, jobject jObj, jclass klazz){
    insofar as possible. Calls (*env)->FatalError() if the cache
    fills up. That's hypothetically possible but "shouldn't happen."
    If it does, we can dynamically allocate these instead.
-
 */
 FIXME_THREADING
 static struct JNIEnvCacheLine * S3Global_env_cache(JNIEnv * env){
@@ -480,9 +509,13 @@ static struct JNIEnvCacheLine * S3Global_env_cache(JNIEnv * env){
   int i = 0;
   for( ; i < JNIEnvCache_SIZE; ++i ){
     row = &S3Global.envCache.lines[i];
-    if(row->env == env) return row;
+    if(row->env == env){
+      ++S3Global.metrics.envCacheHits;
+      return row;
+    }
     else if(!row->env) break;
   }
+  ++S3Global.metrics.envCacheMisses;
   if(i == JNIEnvCache_SIZE){
     (*env)->FatalError(env, "Maintenance required: JNIEnvCache is full.");
     return NULL;
@@ -510,8 +543,8 @@ static struct JNIEnvCacheLine * S3Global_env_cache(JNIEnv * env){
    zClassName must be a static string so we can use its address as a
    cache key.
 
-   This simple cache catches the overwhelming majority of searches
-   (>95%) in the current (2023-07-24) tests.
+   This simple cache catches >99% of searches in the current
+   (2023-07-31) tests.
 */
 FIXME_THREADING
 static struct NphCacheLine * S3Global_nph_cache(JNIEnv *env, const char *zClassName){
@@ -538,11 +571,11 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv *env, const char *zClassN
   for( i = 0; i < NphCache_SIZE; ++i ){
     cacheLine = &envRow->nph[i];
     if(zClassName == cacheLine->zClassName){
+      ++S3Global.metrics.nphCacheHits;
 #define DUMP_NPH_CACHES 0
 #if DUMP_NPH_CACHES
-      static unsigned int n = 0;
       MARKER(("Cache hit #%u %s klazz@%p nativePointer field@%p, ctor@%p\n",
-              ++n, zClassName, cacheLine->klazz, cacheLine->fidValue,
+              S3Global.metrics.nphCacheHits, zClassName, cacheLine->klazz, cacheLine->fidValue,
               cacheLine->midCtor));
 #endif
       assert(cacheLine->klazz);
@@ -554,10 +587,12 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv *env, const char *zClassN
   if(freeSlot){
     freeSlot->zClassName = zClassName;
     freeSlot->klazz = REF_G((*env)->FindClass(env, zClassName));
+    EXCEPTION_CANNOT_HAPPEN;
+    ++S3Global.metrics.nphCacheMisses;
 #if DUMP_NPH_CACHES
     static unsigned int cacheMisses = 0;
     MARKER(("Cache miss #%u %s klazz@%p nativePointer field@%p, ctor@%p\n",
-            ++cacheMisses, zClassName, freeSlot->klazz,
+            S3Global.metrics.nphCacheMisses, zClassName, freeSlot->klazz,
             freeSlot->fidValue, freeSlot->midCtor));
 #endif
 #undef DUMP_NPH_CACHES
@@ -756,7 +791,7 @@ static void PerDbStateJni_dump(PerDbStateJni *s){
    If called with a NULL jDb and non-NULL pDb then allocIfNeeded MUST
    be false and it will look for a matching db object. That usage is
    required for functions, like sqlite3_context_db_handle(), which
-   return a (sqlite3*).
+   return a (sqlite3*) but do not take one as an argument.
 */
 FIXME_THREADING
 static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, jobject jDb, sqlite3 *pDb, int allocIfNeeded){
@@ -1161,8 +1196,7 @@ static int udf_report_exception(sqlite3_context * cx, UDFState *s,
                                 const char *zFuncType){
   int rc;
   char * z =
-    sqlite3_mprintf("UDF %s.%s() threw. FIXME: extract "
-                    "Java-side exception message.",
+    sqlite3_mprintf("UDF %s.%s() threw. It should not do that.",
                     s->zFuncName, zFuncType);
   if(z){
     sqlite3_result_error(cx, z, -1);
@@ -1174,6 +1208,10 @@ static int udf_report_exception(sqlite3_context * cx, UDFState *s,
   return rc;
 }
 
+/**
+   Sets up the state for calling a Java-side xFunc/xStep/xInverse()
+   UDF, calls it, and returns 0 on success.
+*/
 static int udf_xFSI(sqlite3_context* pCx, int argc,
                     sqlite3_value** argv,
                     UDFState * s,
@@ -1199,6 +1237,10 @@ static int udf_xFSI(sqlite3_context* pCx, int argc,
   return rc;
 }
 
+/**
+   Sets up the state for calling a Java-side xFinal/xValue() UDF,
+   calls it, and returns 0 on success.
+*/
 static int udf_xFV(sqlite3_context* cx, UDFState * s,
                    jmethodID xMethodID,
                    const char *zFuncType){
@@ -1227,24 +1269,29 @@ static int udf_xFV(sqlite3_context* cx, UDFState * s,
 static void udf_xFunc(sqlite3_context* cx, int argc,
                       sqlite3_value** argv){
   UDFState * const s = (UDFState*)sqlite3_user_data(cx);
+  ++S3Global.metrics.udf.nFunc;
   udf_xFSI(cx, argc, argv, s, s->jmidxFunc, "xFunc");
 }
 static void udf_xStep(sqlite3_context* cx, int argc,
                       sqlite3_value** argv){
   UDFState * const s = (UDFState*)sqlite3_user_data(cx);
+  ++S3Global.metrics.udf.nStep;
   udf_xFSI(cx, argc, argv, s, s->jmidxStep, "xStep");
 }
 static void udf_xFinal(sqlite3_context* cx){
   UDFState * const s = (UDFState*)sqlite3_user_data(cx);
+  ++S3Global.metrics.udf.nFinal;
   udf_xFV(cx, s, s->jmidxFinal, "xFinal");
 }
 static void udf_xValue(sqlite3_context* cx){
   UDFState * const s = (UDFState*)sqlite3_user_data(cx);
+  ++S3Global.metrics.udf.nValue;
   udf_xFV(cx, s, s->jmidxValue, "xValue");
 }
 static void udf_xInverse(sqlite3_context* cx, int argc,
                          sqlite3_value** argv){
   UDFState * const s = (UDFState*)sqlite3_user_data(cx);
+  ++S3Global.metrics.udf.nInverse;
   udf_xFSI(cx, argc, argv, s, s->jmidxInverse, "xInverse");
 }
 
@@ -2374,12 +2421,26 @@ JDECL(jbyteArray,1value_1text16be)(JENV_JSELF, jobject jpSVal){
 
 JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
   MARKER(("\nVarious bits of internal info:\n"));
-#define SO(T) printf("sizeof(" #T ") = %u\n", (unsigned)sizeof(T))
+  puts("sizeofs:");
+#define SO(T) printf("\tsizeof(" #T ") = %u\n", (unsigned)sizeof(T))
   SO(void*);
   SO(JniHookState);
   SO(PerDbStateJni);
   SO(S3Global);
   SO(JNIEnvCache);
+  printf("Cache info:\n");
+  printf("\tNativePointerHolder cache: %u misses, %u hits\n",
+         S3Global.metrics.nphCacheMisses,
+         S3Global.metrics.nphCacheHits);
+  printf("\tJNIEnv cache               %u misses, %u hits\n",
+         S3Global.metrics.envCacheMisses,
+         S3Global.metrics.envCacheHits);
+  puts("UDF calls:");
+#define UDF(T) printf("\t%-8s = %u\n", #T, S3Global.metrics.udf.n##T)
+  UDF(Func); UDF(Step); UDF(Final); UDF(Value); UDF(Inverse);
+#undef UDF
+  printf("xDestroy calls across all callback types: %u\n",
+         S3Global.metrics.nDestroy);
 #undef SO
 }
 
@@ -2443,8 +2504,10 @@ Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv *env, jclass self, jobject sJni){
 
   for( pLimit = &aLimits[0]; pLimit->zName; ++pLimit ){
     fieldId = (*env)->GetStaticFieldID(env, klazz, pLimit->zName, "I");
+    EXCEPTION_CANNOT_HAPPEN;
     //MARKER(("Setting %s (field=%p) = %d\n", pLimit->zName, fieldId, pLimit->value));
     assert(fieldId);
     (*env)->SetStaticIntField(env, klazz, fieldId, (jint)pLimit->value);
+    EXCEPTION_CANNOT_HAPPEN;
   }
 }
