@@ -718,12 +718,16 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   int len = sqlite3VdbeSerialTypeLen(t);
   assert( pC->eCurType==CURTYPE_BTREE );
   if( len>db->aLimit[SQLITE_LIMIT_LENGTH] ) return SQLITE_TOOBIG;
-  if( len > 4000 ){
+  if( len > 4000 && pC->pKeyInfo==0 ){
     /* Cache large column values that are on overflow pages using
     ** an RCStr (reference counted string) so that if they are reloaded,
     ** that do not have to be copied a second time.  The overhead of
     ** creating and managing the cache is such that this is only
     ** profitable for larger TEXT and BLOB values.
+    **
+    ** Only do this on table-btrees so that writes to index-btrees do not
+    ** need to clear the cache.  This buys performance in the common case
+    ** in exchange for generality.
     */
     VdbeTxtBlbCache *pCache;
     char *pBuf;
@@ -6441,7 +6445,6 @@ case OP_IdxInsert: {        /* in2 */
       );
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
-  colCacheCtr++;
   if( rc) goto abort_due_to_error;
   break;
 }
@@ -6517,7 +6520,6 @@ case OP_IdxDelete: {
   assert( pC->deferredMoveto==0 );
   pC->cacheStatus = CACHE_STALE;
   pC->seekResult = 0;
-  colCacheCtr++;
   break;
 }
 
