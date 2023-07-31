@@ -367,8 +367,8 @@ struct BusyHandlerJni{
 */
 typedef struct PerDbStateJni PerDbStateJni;
 struct PerDbStateJni {
-  JNIEnv *env;
-  sqlite3 * pDb;
+  JNIEnv *env   /* The associated JNIEnv handle */;
+  sqlite3 *pDb /* The associated db handle */;
   jobject jDb /* a global ref of the object which was passed to
                  sqlite3_open(_v2)(). We need this in order to have an
                  object to pass to sqlite3_collation_needed()'s
@@ -377,8 +377,8 @@ struct PerDbStateJni {
                  would be a different instance (and maybe even a
                  different class) than the one the user expects to
                  receive. */;
-  PerDbStateJni * pNext;
-  PerDbStateJni * pPrev;
+  PerDbStateJni * pNext /* Next entry in the available/free list */;
+  PerDbStateJni * pPrev /* Previous entry in the available/free list */;
   JniHookState trace;
   JniHookState progress;
   JniHookState commitHook;
@@ -941,10 +941,13 @@ static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
                                    int nRhs, const void *rhs){
   CollationState * const cs = pArg;
   JNIEnv * env = cs->env;
-  jint rc;
+  jint rc = 0;
   jbyteArray jbaLhs = (*env)->NewByteArray(env, (jint)nLhs);
-  jbyteArray jbaRhs = (*env)->NewByteArray(env, (jint)nRhs);
+  jbyteArray jbaRhs = jbaLhs ? (*env)->NewByteArray(env, (jint)nRhs) : NULL;
   //MARKER(("native xCompare nLhs=%d nRhs=%d\n", nLhs, nRhs));
+  if(!jbaRhs){
+    (*env)->FatalError(env, "Out of memory. Cannot allocate arrays for collation.");
+  }
   (*env)->SetByteArrayRegion(env, jbaLhs, 0, (jint)nLhs, (const jbyte*)lhs);
   (*env)->SetByteArrayRegion(env, jbaRhs, 0, (jint)nRhs, (const jbyte*)rhs);
   rc = (*env)->CallIntMethod(env, cs->oCollation, cs->midCompare,
@@ -965,12 +968,21 @@ static void CollationState_xDestroy(void *pArg){
 /* State for sqlite3_result_java_object() and
    sqlite3_value_java_object(). */
 typedef struct {
-  /* POTENTIAL bug: the JNI docs say that the JNIEnv pointer
-     is guaranteed to resolve the same for the same contexts,
-     but the docs are unclear as to whether it's the (JNIEnv *env)
-     or (*env) which resolves consistently.
+  /* The JNI docs say:
 
-     This posts claims it's unsave to cache JNIEnv at all, even when
+     https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html
+
+     > The VM is guaranteed to pass the same interface pointer to a
+       native method when it makes multiple calls to the native method
+       from the same Java thread.
+
+     Per the accompanying diagram, the "interface pointer" is the
+     pointer-to-pointer which is passed to all JNI calls
+     (`JNIEnv *env`), implying that we need to be caching that. The
+     verbiage "interface pointer" implies, however, that we should be
+     storing the dereferenced `(*env)` pointer.
+
+     This posts claims it's unsafe to cache JNIEnv at all, even when
      it's always used in the same thread:
 
      https://stackoverflow.com/questions/12420463
