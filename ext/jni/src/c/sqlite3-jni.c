@@ -164,9 +164,11 @@
 #define EXCEPTION_IGNORE (void)((*env)->ExceptionCheck(env))
 #define EXCEPTION_CLEAR (*env)->ExceptionClear(env)
 #define EXCEPTION_REPORT (*env)->ExceptionDescribe(env)
-#define EXCEPTION_WARN_CALLBACK_THREW \
-  MARKER(("WARNING: this routine MUST NOT THROW.\n"));  \
+#define EXCEPTION_WARN_CALLBACK_THREW1(STR)             \
+  MARKER(("WARNING: " STR " MUST NOT THROW.\n"));  \
   (*env)->ExceptionDescribe(env)
+#define EXCEPTION_WARN_CALLBACK_THREW \
+   EXCEPTION_WARN_CALLBACK_THREW1("this routine")
 #define IFTHREW_REPORT IFTHREW EXCEPTION_REPORT
 #define IFTHREW_CLEAR IFTHREW EXCEPTION_CLEAR
 #define EXCEPTION_CANNOT_HAPPEN IFTHREW{\
@@ -313,6 +315,18 @@ struct JNIEnvCacheLine {
   jclass globalClassObj  /* global ref to java.lang.Object */;
   jclass globalClassLong /* global ref to java.lang.Long */;
   jmethodID ctorLong1    /* the Long(long) constructor */;
+  jobject currentStmt    /* Current Java sqlite3_stmt object being
+                            prepared, stepped, reset, or
+                            finalized. Needed for tracing, the
+                            alternative being that we create a new
+                            sqlite3_stmt wrapper object for every
+                            tracing call which needs a stmt
+                            object. This approach is rather invasive,
+                            however, and there may well be places
+                            tracing may trigger which we have no
+                            accounted for, so it may be best to
+                            redefine the tracing API rather than
+                            passing through the statement handles. */;
   struct NphCacheLine nph[NphCache_SIZE];
 };
 typedef struct JNIEnvCache JNIEnvCache;
@@ -1070,6 +1084,10 @@ static jobject new_sqlite3_context_wrapper(JNIEnv *env, sqlite3_context *sv){
   return new_NativePointerHolder_object(env, "org/sqlite/jni/sqlite3_context", sv);
 }
 
+static jobject new_sqlite3_stmt_wrapper(JNIEnv *env, sqlite3_stmt *sv){
+  return new_NativePointerHolder_object(env, "org/sqlite/jni/sqlite3_stmt", sv);
+}
+
 enum UDFType {
   UDF_SCALAR = 1,
   UDF_AGGREGATE,
@@ -1320,10 +1338,8 @@ WRAP_INT_STMT_INT(1column_1type,       sqlite3_column_type)
 WRAP_INT_STMT(1data_1count,            sqlite3_data_count)
 WRAP_MUTF8_VOID(1libversion,           sqlite3_libversion)
 WRAP_INT_VOID(1libversion_1number,     sqlite3_libversion_number)
-WRAP_INT_STMT(1reset,                  sqlite3_reset)
 WRAP_INT_INT(1sleep,                   sqlite3_sleep)
 WRAP_MUTF8_VOID(1sourceid,             sqlite3_sourceid)
-WRAP_INT_STMT(1step,                   sqlite3_step)
 WRAP_INT_VOID(1threadsafe,             sqlite3_threadsafe)
 WRAP_INT_DB(1total_1changes,           sqlite3_total_changes)
 WRAP_INT64_DB(1total_1changes64,       sqlite3_total_changes64)
@@ -1846,13 +1862,27 @@ JDECL(jint,1initialize)(JENV_JSELF){
   return sqlite3_initialize();
 }
 
+/**
+   Sets jc->currentStmt to the 2nd arugment and returns the previous value
+   of jc->currentStmt.
+*/
+static jobject stmt_set_current(JNIEnvCacheLine * const jc, jobject jStmt){
+  jobject const old = jc->currentStmt;
+  jc->currentStmt = jStmt;
+  return old;
+}
+
 JDECL(jint,1finalize)(JENV_JSELF, jobject jpStmt){
-  if( jpStmt ){
-    sqlite3_stmt * pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  int rc = 0;
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  if( pStmt ){
+    JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+    jobject const pPrev = stmt_set_current(jc, jpStmt);
+    rc = sqlite3_finalize(pStmt);
     setNativePointer(env, jpStmt, 0, ClassNames.sqlite3_stmt);
-    if( pStmt ) sqlite3_finalize(pStmt);
+    (void)stmt_set_current(jc, pPrev);
   }
-  return 0;
+  return rc;
 }
 
 
@@ -1908,10 +1938,12 @@ JDECL(jint,1open_1v2)(JENV_JSELF, jstring strName,
 static jint sqlite3_jni_prepare_v123(int prepVersion, JNIEnv *env, jclass self,
                                      jobject jpDb, jbyteArray baSql,
                                      jint nMax, jint prepFlags,
-                                     jobject outStmt, jobject outTail){
+                                     jobject jOutStmt, jobject outTail){
   sqlite3_stmt * pStmt = 0;
   const char * zTail = 0;
   jbyte * const pBuf = JBA_TOC(baSql);
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  jobject const pOldStmt = stmt_set_current(jc, jOutStmt);
   int rc = SQLITE_ERROR;
   assert(prepVersion==1 || prepVersion==2 || prepVersion==3);
   switch( prepVersion ){
@@ -1934,23 +1966,24 @@ static jint sqlite3_jni_prepare_v123(int prepVersion, JNIEnv *env, jclass self,
     assert(zTail ? (((int)((void*)zTail - (void*)pBuf)) >= 0) : 1);
     setOutputInt32(env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0));
   }
-  setNativePointer(env, outStmt, pStmt, ClassNames.sqlite3_stmt);
+  setNativePointer(env, jOutStmt, pStmt, ClassNames.sqlite3_stmt);
+  (void)stmt_set_current(jc, pOldStmt);
   return (jint)rc;
 }
 JDECL(jint,1prepare)(JNIEnv *env, jclass self, jobject jpDb, jbyteArray baSql,
-                     jint nMax, jobject outStmt, jobject outTail){
+                     jint nMax, jobject jOutStmt, jobject outTail){
   return sqlite3_jni_prepare_v123(1, env, self, jpDb, baSql, nMax, 0,
-                                  outStmt, outTail);
+                                  jOutStmt, outTail);
 }
 JDECL(jint,1prepare_1v2)(JNIEnv *env, jclass self, jobject jpDb, jbyteArray baSql,
-                         jint nMax, jobject outStmt, jobject outTail){
+                         jint nMax, jobject jOutStmt, jobject outTail){
   return sqlite3_jni_prepare_v123(2, env, self, jpDb, baSql, nMax, 0,
-                                  outStmt, outTail);
+                                  jOutStmt, outTail);
 }
 JDECL(jint,1prepare_1v3)(JNIEnv *env, jclass self, jobject jpDb, jbyteArray baSql,
-                         jint nMax, jint prepFlags, jobject outStmt, jobject outTail){
+                         jint nMax, jint prepFlags, jobject jOutStmt, jobject outTail){
   return sqlite3_jni_prepare_v123(3, env, self, jpDb, baSql, nMax,
-                                  prepFlags, outStmt, outTail);
+                                  prepFlags, jOutStmt, outTail);
 }
 
 
@@ -1998,6 +2031,18 @@ JDECL(void,1progress_1handler)(JENV_JSELF,jobject jDb, jint n, jobject jProgress
   }
 }
 
+
+JDECL(jint,1reset)(JENV_JSELF, jobject jpStmt){
+  int rc = 0;
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  if( pStmt ){
+    JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+    jobject const pPrev = stmt_set_current(jc, jpStmt);
+    rc = sqlite3_reset(pStmt);
+    (void)stmt_set_current(jc, pPrev);
+  }
+  return rc;
+}
 
 /* sqlite3_result_text/blob() and friends. */
 static void result_blob_text(int asBlob, int as64,
@@ -2191,38 +2236,71 @@ JDECL(jint,1shutdown)(JENV_JSELF){
   return sqlite3_shutdown();
 }
 
+JDECL(jint,1step)(JENV_JSELF,jobject jStmt){
+  jobject jPrevStmt = 0;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  int rc;
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
+  if(!pStmt) return SQLITE_MISUSE;
+  jPrevStmt = stmt_set_current(jc, jStmt);
+  rc = sqlite3_step(pStmt);
+  (void)stmt_set_current(jc, jPrevStmt);
+  return rc;
+}
+
 static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   PerDbStateJni * const ps = (PerDbStateJni *)pC;
   JNIEnv * const env = ps->env;
-  jobject jX = NULL;
-  JNIEnvCacheLine * const pEcl = S3Global_env_cache(env);
+  jobject jX = NULL  /* the tracer's X arg */;
+  jobject jP = NULL  /* the tracer's P arg */;
+  jobject jPUnref = NULL /* potentially a local ref to jP */;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
   int rc;
-  /**
-     TODO: convert pX depending on traceflag:
-
-     SQLITE_TRACE_STMT: String
-     SQLITE_TRACE_PROFILE: Long
-     others: null
-  */
   switch(traceflag){
-  case SQLITE_TRACE_STMT:
-    /* This is not _quite_ right: we're converting to MUTF-8.  It
-       should(?) suffice for purposes of tracing, though. */
-    jX = (*env)->NewStringUTF(env, (const char *)pX);
-    break;
-  case SQLITE_TRACE_PROFILE:
-    jX = (*env)->NewObject(env, pEcl->globalClassLong, pEcl->ctorLong1,
-                           (jlong)*((sqlite3_int64*)pX));
-    break;
+    case SQLITE_TRACE_STMT:
+      /* This is not _quite_ right: we're converting to MUTF-8.  It
+         should(?) suffice for purposes of tracing, though. */
+      jX = (*env)->NewStringUTF(env, (const char *)pX);
+      if(!jX) return SQLITE_NOMEM;
+      jP = jc->currentStmt;
+      break;
+    case SQLITE_TRACE_PROFILE:
+      jX = (*env)->NewObject(env, jc->globalClassLong, jc->ctorLong1,
+                             (jlong)*((sqlite3_int64*)pX));
+      // hmm. It really is zero.
+      // MARKER(("profile time = %llu\n", *((sqlite3_int64*)pX)));
+      jP = jc->currentStmt;
+      if(!jP){
+        jP = jPUnref = new_sqlite3_stmt_wrapper(env, pP);
+        if(!jP){
+          UNREF_L(jX);
+          return SQLITE_NOMEM;
+        }
+        MARKER(("WARNING: created new sqlite3_stmt wrapper for TRACE_PROFILE. stmt@%p\n"
+                "This means we have missed a route into the tracing API and it "
+                "needs the stmt_set_current() treatment littered around a handful "
+                "of other functions.\n", pP));
+      }
+      break;
+    case SQLITE_TRACE_ROW:
+      jP = jc->currentStmt;
+      break;
+    case SQLITE_TRACE_CLOSE:
+      jP = ps->jDb;
+      break;
+    default:
+      assert(!"cannot happen - unkown trace flag");
+      return SQLITE_ERROR;
   }
+  assert(jP);
   rc = (int)(*env)->CallIntMethod(env, ps->trace.jObj,
                                   ps->trace.midCallback,
-                                  (jint)traceflag, (jlong)pP, jX);
+                                  (jint)traceflag, jP, jX);
+  UNREF_L(jPUnref);
   UNREF_L(jX);
   IFTHREW{
-    EXCEPTION_CLEAR;
-    rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
-                        "sqlite3_trace_v2() callback threw.");
+    EXCEPTION_WARN_CALLBACK_THREW1("sqlite3_trace_v2() callback");
+    rc = SQLITE_ERROR;
   }
   return rc;
 }
@@ -2240,7 +2318,7 @@ JDECL(jint,1trace_1v2)(JENV_JSELF,jobject jDb, jint traceMask, jobject jTracer){
   if(!ps) return SQLITE_NOMEM;
   klazz = (*env)->GetObjectClass(env, jTracer);
   ps->trace.midCallback = (*env)->GetMethodID(env, klazz, "xCallback",
-                                              "(IJLjava/lang/Object;)I");
+                                              "(ILjava/lang/Object;Ljava/lang/Object;)I");
   IFTHREW {
     EXCEPTION_CLEAR;
     return s3jni_db_error(ps->pDb, SQLITE_ERROR,

@@ -644,7 +644,6 @@ public class Tester1 {
   }
 
   private static void listBoundMethods(){
-    //public static List<Field> getStatics(Class<?> clazz) {
     if(false){
       final java.lang.reflect.Field[] declaredFields =
         SQLite3Jni.class.getDeclaredFields();
@@ -682,26 +681,36 @@ public class Tester1 {
       db, SQLITE_TRACE_STMT | SQLITE_TRACE_PROFILE
           | SQLITE_TRACE_ROW | SQLITE_TRACE_CLOSE,
       new Tracer(){
-        public int xCallback(int traceFlag, long pNative, Object x){
+        public int xCallback(int traceFlag, Object pNative, Object x){
           ++counter.value;
-          //outln("Trace #"+counter.value+" flag="+traceFlag+": "+x);
           switch(traceFlag){
             case SQLITE_TRACE_STMT:
-              // pNative ==> sqlite3_stmt
-              affirm(x instanceof String); break;
+              affirm(pNative instanceof sqlite3_stmt);
+              affirm(x instanceof String);
+              //outln("TRACE_STMT sql = "+x);
+              break;
             case SQLITE_TRACE_PROFILE:
-              // pNative ==> sqlite3_stmt
-              affirm(x instanceof Long); break;
+              affirm(pNative instanceof sqlite3_stmt);
+              affirm(x instanceof Long);
+              //outln("TRACE_PROFILE time = "+x);
+              break;
             case SQLITE_TRACE_ROW:
-              // pNative ==> sqlite3_stmt
-            case SQLITE_TRACE_CLOSE:
-              // pNative ==> sqlite3
+              affirm(pNative instanceof sqlite3_stmt);
               affirm(null == x);
+              //outln("TRACE_ROW = "+sqlite3_column_text((sqlite3_stmt)pNative, 0));
+              break;
+            case SQLITE_TRACE_CLOSE:
+              affirm(pNative instanceof sqlite3);
+              affirm(null == x);
+              break;
+            default:
+              affirm(false /*cannot happen*/);
+              break;
           }
           return 0;
         }
       });
-    execSql(db, "SELECT 1; SELECT 2");
+    execSql(db, "SELECT coalesce(null,null,null,'hi'); SELECT 'world'");
     affirm( 6 == counter.value );
     sqlite3_close_v2(db);
     affirm( 7 == counter.value );

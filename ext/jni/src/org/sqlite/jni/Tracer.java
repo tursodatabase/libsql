@@ -18,6 +18,10 @@ package org.sqlite.jni;
 */
 public interface Tracer {
   /**
+     Achtung: this interface is subject to change because the current
+     approach to mapping the passed-in natives back to Java is
+     uncomfortably quirky.
+
      Called by sqlite3 for various tracing operations, as per
      sqlite3_trace_v2(). Note that this interface elides the 2nd
      argument to the native trace callback, as that role is better
@@ -37,10 +41,10 @@ public interface Tracer {
      depends on value of the first argument:
 
      - SQLITE_TRACE_STMT: pNative is a sqlite3_stmt. pX is a string
-       containing the prepared SQL, with one caveat/FIXME: JNI only
-       provides us with the ability to convert that string to MUTF-8,
-       as opposed to standard UTF-8, and is cannot be ruled out that
-       that difference may be significant for certain inputs. The
+       containing the prepared SQL, with one caveat: JNI only provides
+       us with the ability to convert that string to MUTF-8, as
+       opposed to standard UTF-8, and is cannot be ruled out that that
+       difference may be significant for certain inputs. The
        alternative would be that we first convert it to UTF-16 before
        passing it on, but there's no readily-available way to do that
        without calling back into the db to peform the conversion
@@ -54,5 +58,5 @@ public interface Tracer {
 
      - SQLITE_TRACE_CLOSE: pNative is a sqlite3. pX is null.
   */
-  int xCallback(int traceFlag, long pNative, Object pX);
+  int xCallback(int traceFlag, Object pNative, Object pX);
 }
