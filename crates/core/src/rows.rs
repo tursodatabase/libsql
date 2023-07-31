@@ -43,6 +43,10 @@ impl Rows {
     pub fn column_name(&self, idx: i32) -> &str {
         self.stmt.column_name(idx)
     }
+
+    pub fn column_type(&self, idx: i32) -> i32 {
+        self.stmt.column_type(idx)
+    }
 }
 
 pub struct RowsFuture<'a> {

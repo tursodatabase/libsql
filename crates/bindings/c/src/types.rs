@@ -1,3 +1,10 @@
+#[derive(Clone, Debug)]
+#[repr(C)]
+pub struct blob {
+    pub ptr: *const std::ffi::c_char,
+    pub len: std::ffi::c_int,
+}
+
 pub struct libsql_database {
     pub(crate) db: libsql::Database,
 }
@@ -178,6 +185,49 @@ impl<'a> From<&'a libsql_rows_future<'a>> for libsql_rows_future_t<'a> {
 #[allow(clippy::from_over_into)]
 impl<'a> From<&'a mut libsql_rows_future<'a>> for libsql_rows_future_t<'a> {
     fn from(value: &'a mut libsql_rows_future) -> Self {
+        Self { ptr: value }
+    }
+}
+pub struct libsql_row {
+    pub(crate) result: libsql::Row,
+}
+
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct libsql_row_t {
+    ptr: *const libsql_row,
+}
+
+impl libsql_row_t {
+    pub fn null() -> libsql_row_t {
+        libsql_row_t {
+            ptr: std::ptr::null(),
+        }
+    }
+
+    pub fn is_null(&self) -> bool {
+        self.ptr.is_null()
+    }
+
+    pub fn get_ref(&self) -> &libsql::Row {
+        &unsafe { &*(self.ptr) }.result
+    }
+
+    #[allow(clippy::mut_from_ref)]
+    pub fn get_ref_mut(&self) -> &mut libsql::Row {
+        let ptr_mut = self.ptr as *mut libsql_row;
+        &mut unsafe { &mut (*ptr_mut) }.result
+    }
+}
+
+impl From<&libsql_row> for libsql_row_t {
+    fn from(value: &libsql_row) -> Self {
+        Self { ptr: value }
+    }
+}
+
+impl From<&mut libsql_row> for libsql_row_t {
+    fn from(value: &mut libsql_row) -> Self {
         Self { ptr: value }
     }
 }

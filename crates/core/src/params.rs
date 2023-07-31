@@ -75,7 +75,7 @@ impl From<libsql_sys::Value> for Value {
         match value.value_type() {
             ValueType::Null => Value::Null,
             ValueType::Integer => Value::Integer(value.int().into()),
-            ValueType::Real => todo!(),
+            ValueType::Real => Value::Real(value.double()),
             ValueType::Text => {
                 let v = value.text();
                 if v.is_null() {
