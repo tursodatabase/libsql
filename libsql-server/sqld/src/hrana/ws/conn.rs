@@ -1,3 +1,6 @@
+//! This file contains functions to deal with the connection of the Hrana protocol
+//! over web sockets
+
 use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;

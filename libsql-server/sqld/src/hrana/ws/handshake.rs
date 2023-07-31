@@ -1,3 +1,5 @@
+//! This file handles web socket handshakes.
+
 use anyhow::{anyhow, bail, Context as _, Result};
 use futures::{SinkExt as _, StreamExt as _};
 use tokio_tungstenite::tungstenite;
