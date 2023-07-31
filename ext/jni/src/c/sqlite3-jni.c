@@ -454,17 +454,22 @@ static int s3jni_db_error(sqlite3*db, int err_code, const char *zMsg){
 }
 
 /**
-   Clears s's state, releasing any Java references. Before doing so,
-   it calls s's xDestroy() method, ignoring the lack of that method or
-   any exceptions it throws. This is a no-op of s has no current
-   state.
+   Extracts the (void xDestroy()) method from the given jclass and
+   applies it to jobj. If jobs is NULL, this is a no-op. If klazz is
+   NULL then it's derived from jobj. The lack of an xDestroy() method
+   is silently ignored and any exceptions thrown by the method trigger
+   a warning to stdout or stderr and then the exception is suppressed.
 */
-static void BusyHandlerJni_clear(JNIEnv *env, BusyHandlerJni * const s){
-  if(s->base.jObj){
-    const jmethodID method =
-      (*env)->GetMethodID(env, s->klazz, "xDestroy", "()V");
+static void s3jni_call_xDestroy(JNIEnv *env, jobject jobj, jclass klazz){
+  if(jobj){
+    jmethodID method;
+    if(!klazz){
+      klazz = (*env)->GetObjectClass(env, jobj);
+      assert(klazz);
+    }
+    method = (*env)->GetMethodID(env, klazz, "xDestroy", "()V");
     if(method){
-      (*env)->CallVoidMethod(env, s->base.jObj, method);
+      (*env)->CallVoidMethod(env, jobj, method);
       IFTHREW{
         EXCEPTION_WARN_CALLBACK_THREW;
         EXCEPTION_CLEAR;
@@ -472,6 +477,19 @@ static void BusyHandlerJni_clear(JNIEnv *env, BusyHandlerJni * const s){
     }else{
       EXCEPTION_CLEAR;
     }
+  }
+}
+
+
+/**
+   Clears s's state, releasing any Java references. Before doing so,
+   it calls s's xDestroy() method, ignoring the lack of that method or
+   any exceptions it throws. This is a no-op of s has no current
+   state.
+*/
+static void BusyHandlerJni_clear(JNIEnv *env, BusyHandlerJni * const s){
+  if(s->base.jObj){
+    s3jni_call_xDestroy(env, s->base.jObj, s->klazz);
     UNREF_G(s->base.jObj);
     UNREF_G(s->klazz);
     memset(s, 0, sizeof(BusyHandlerJni));
@@ -909,19 +927,19 @@ static CollationState * CollationState_alloc(void){
   return rc;
 }
 
-static void CollationState_free(CollationState * cs){
+static void CollationState_free(CollationState * const cs){
   JNIEnv * const env = cs->env;
   if(env){
     //MARKER(("Collation cleanup...\n"));
-    if(cs->oCollation) UNREF_G(cs->oCollation);
-    if(cs->klazz) UNREF_G(cs->klazz);
+    UNREF_G(cs->oCollation);
+    UNREF_G(cs->klazz);
   }
   sqlite3_free(cs);
 }
 
-static int collation_xCompare_proxy(void *pArg, int nLhs, const void *lhs,
-                                    int nRhs, const void *rhs){
-  CollationState * const cs = (CollationState*)pArg;
+static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
+                                   int nRhs, const void *rhs){
+  CollationState * const cs = pArg;
   JNIEnv * env = cs->env;
   jint rc;
   jbyteArray jbaLhs = (*env)->NewByteArray(env, (jint)nLhs);
@@ -937,20 +955,10 @@ static int collation_xCompare_proxy(void *pArg, int nLhs, const void *lhs,
   return (int)rc;
 }
 
-static void collation_xDestroy_proxy(void *pArg){
-  CollationState * const cs = (CollationState*)pArg;
-  if(cs->oCollation){
-    JNIEnv * const env = cs->env;
-    const jmethodID method = (*env)->GetMethodID(env, cs->klazz, "xDestroy",
-                                                 "()V");
-    //MARKER(("Calling Collation.xDestroy()...\n"));
-    (*env)->CallVoidMethod(env, cs->oCollation, method);
-    IFTHREW {
-      EXCEPTION_WARN_CALLBACK_THREW;
-      EXCEPTION_CLEAR;
-    }
-    //MARKER(("Returned from Collation.xDestroy().\n"));
-  }
+/* Collation finalizer for use by the sqlite3 internals. */
+static void CollationState_xDestroy(void *pArg){
+  CollationState * const cs = pArg;
+  s3jni_call_xDestroy(cs->env, cs->oCollation, cs->klazz);
   CollationState_free(cs);
 }
 
@@ -1132,19 +1140,8 @@ static UDFState * UDFState_alloc(JNIEnv *env, jobject jObj){
 static void UDFState_free(UDFState * s){
   JNIEnv * const env = s->env;
   if(env){
-    //MARKER(("Collation cleanup...\n"));
-    if(s->jObj){
-      const jmethodID method =
-        (*env)->GetMethodID(env, s->klazz, "xDestroy", "()V");
-      if(method){
-        //MARKER(("aCalling SQLFunction.xDestroy()...\n"));
-        (*env)->CallVoidMethod(env, s->jObj, method);
-        EXCEPTION_IGNORE;
-        //MARKER(("Returned from SQLFunction.xDestroy().\n"));
-      }else{
-        (*env)->ExceptionClear(env);
-      }
-    }
+    //MARKER(("UDF cleanup...\n"));
+    s3jni_call_xDestroy(env, s->jObj, s->klazz);
     UNREF_G(s->jObj);
     UNREF_G(s->klazz);
   }
@@ -1734,10 +1731,10 @@ JDECL(jint,1create_1collation)(JENV_JSELF, jobject jpDb,
                                     "([B[B)I");
   zName = JSTR_TOC(name);
   rc = sqlite3_create_collation_v2(PtrGet_sqlite3(jpDb), zName, (int)eTextRep,
-                                   cs, collation_xCompare_proxy,
-                                   collation_xDestroy_proxy);
+                                   cs, CollationState_xCompare,
+                                   CollationState_xDestroy);
   JSTR_RELEASE(name, zName);
-  if(0 != rc) collation_xDestroy_proxy(cs);
+  if(0 != rc) CollationState_xDestroy(cs);
   return (jint)rc;
 }
 
