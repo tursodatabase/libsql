@@ -9,6 +9,14 @@ fn setup() -> Connection {
 }
 
 #[test]
+fn connection_drops_before_statements() {
+    let db = Database::open(":memory:").unwrap();
+    let conn = db.connect().unwrap();
+    let _stmt = conn.prepare("SELECT 1").unwrap();
+    drop(conn);
+}
+
+#[test]
 fn execute() {
     let conn = setup();
     conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())

@@ -107,23 +107,3 @@ impl Connection {
         unsafe { ffi::sqlite3_last_insert_rowid(self.raw) }
     }
 }
-
-// Automatically drop all dangling statements when the connection is dropped.
-impl Drop for Connection {
-    fn drop(&mut self) {
-        unsafe {
-            let db = self.raw;
-            if db.is_null() {
-                return;
-            }
-            let mut stmt = ffi::sqlite3_next_stmt(db, std::ptr::null_mut());
-            while !stmt.is_null() {
-                let rc = ffi::sqlite3_finalize(stmt);
-                if rc != ffi::SQLITE_OK as i32 {
-                    tracing::error!("Failed to finalize a dangling statement: {rc}")
-                }
-                stmt = ffi::sqlite3_next_stmt(db, stmt);
-            }
-        }
-    }
-}
