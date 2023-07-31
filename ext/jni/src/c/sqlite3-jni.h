@@ -1603,6 +1603,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1subtype
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1shutdown
   (JNIEnv *, jclass);
 
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_do_something_for_developer
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1do_1something_1for_1developer
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif

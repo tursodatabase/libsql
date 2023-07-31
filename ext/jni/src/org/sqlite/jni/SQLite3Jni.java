@@ -779,6 +779,13 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_shutdown();
 
+  /**
+     This is NOT part of the public API. It exists solely as a place
+     to hook in arbitrary C-side code during development and testing
+     of this library.
+   */
+  public static native void sqlite3_do_something_for_developer();
+
   //////////////////////////////////////////////////////////////////////
   // SQLITE_... constants follow...
 

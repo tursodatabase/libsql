@@ -147,7 +147,8 @@ all: $(sqlite3-jni.dll)
 
 test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
-		$(java.flags) -cp $(classpath) org.sqlite.jni.Tester1
+		$(java.flags) -cp $(classpath) \
+		org.sqlite.jni.Tester1 $(if $(test.flags),-- $(test.flags),)
 
 $(package.jar): $(CLASS_FILES) $(MAKEFILE)
 	rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~

@@ -929,7 +929,8 @@ public class Tester1 {
     testUpdateHook();
     //testSleep();
     if(liArgs.indexOf("-v")>0){
-      listBoundMethods();
+      sqlite3_do_something_for_developer();
+      //listBoundMethods();
     }
     final long timeEnd = System.nanoTime();
     outln("Tests done. Metrics:");

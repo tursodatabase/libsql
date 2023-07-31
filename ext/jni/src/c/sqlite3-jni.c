@@ -345,29 +345,22 @@ struct JniHookState{
 };
 
 /**
-   Per-(sqlite3*) state for bindings which do not have their own
-   finalizer functions, e.g. tracing and commit/rollback hooks.  This
-   state is allocated as needed, cleaned up in sqlite3_close(_v2)(),
-   and recycled when possible. It is freed during sqlite3_shutdown().
-
-   Open questions:
-
-   - Do we need to do a (JNIEnv*) for the db and each set of binding
-   data (since they can(?) hypothetically be set via multiple JNIEnv
-   objects)?
+   Per-(sqlite3*) state for various JNI bindings.  This state is
+   allocated as needed, cleaned up in sqlite3_close(_v2)(), and
+   recycled when possible. It is freed during sqlite3_shutdown().
 */
 typedef struct PerDbStateJni PerDbStateJni;
 struct PerDbStateJni {
   JNIEnv *env   /* The associated JNIEnv handle */;
-  sqlite3 *pDb /* The associated db handle */;
-  jobject jDb /* a global ref of the object which was passed to
-                 sqlite3_open(_v2)(). We need this in order to have an
-                 object to pass to sqlite3_collation_needed()'s
-                 callback, or else we have to dynamically create one
-                 for that purpose, which would be fine except that it
-                 would be a different instance (and maybe even a
-                 different class) than the one the user expects to
-                 receive. */;
+  sqlite3 *pDb  /* The associated db handle */;
+  jobject jDb   /* A global ref of the object which was passed to
+                   sqlite3_open(_v2)(). We need this in order to have
+                   an object to pass to sqlite3_collation_needed()'s
+                   callback, or else we have to dynamically create one
+                   for that purpose, which would be fine except that
+                   it would be a different instance (and maybe even a
+                   different class) than the one the user may expect
+                   to receive. */;
   PerDbStateJni * pNext /* Next entry in the available/free list */;
   PerDbStateJni * pPrev /* Previous entry in the available/free list */;
   JniHookState busyHandler;
@@ -2369,6 +2362,16 @@ JDECL(jbyteArray,1value_1text16be)(JENV_JSELF, jobject jpSVal){
   return value_text16(SQLITE_UTF16BE, env, jpSVal);
 }
 
+JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
+  MARKER(("\nVarious bits of internal info:\n"));
+#define SO(T) printf("sizeof(" #T ") = %u\n", (unsigned)sizeof(T))
+  SO(void*);
+  SO(JniHookState);
+  SO(PerDbStateJni);
+  SO(S3Global);
+  SO(JNIEnvCache);
+#undef SO
+}
 
 
 ////////////////////////////////////////////////////////////////////////
