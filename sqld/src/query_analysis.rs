@@ -93,6 +93,12 @@ impl StmtKind {
             ) => Some(Self::Write),
             Cmd::Stmt(Stmt::Select { .. }) => Some(Self::Read),
             Cmd::Stmt(Stmt::Pragma(name, body)) => Self::pragma_kind(name, body.as_ref()),
+            // Creating regular views is OK, temporary views are bound to a connection
+            // and thus disallowed in sqld.
+            Cmd::Stmt(Stmt::CreateView {
+                temporary: false, ..
+            }) => Some(Self::Write),
+            Cmd::Stmt(Stmt::DropView { .. }) => Some(Self::Write),
             _ => None,
         }
     }
