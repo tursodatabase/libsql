@@ -748,18 +748,29 @@ static void PerDbStateJni_dump(PerDbStateJni *s){
    true then a new instance will be allocated if no mapping currently
    exists, else NULL is returned if no mapping is found.
 
-   The 3rd and 4th args should only be non-0 for
-   sqlite3_open(_v2)(). For all other cases, they must be 0, in which
+   The 3rd and 4th args should normally only be non-0 for
+   sqlite3_open(_v2)(). For most other cases, they must be 0, in which
    case the db handle will be fished out of the jDb object and NULL is
    returned if jDb does not have any associated PerDbStateJni.
+
+   If called with a NULL jDb and non-NULL pDb then allocIfNeeded MUST
+   be false and it will look for a matching db object. That usage is
+   required for functions, like sqlite3_context_db_handle(), which
+   return a (sqlite3*).
 */
 FIXME_THREADING
 static PerDbStateJni * PerDbStateJni_for_db(JNIEnv *env, jobject jDb, sqlite3 *pDb, int allocIfNeeded){
   PerDbStateJni * s = S3Global.perDb.aUsed;
-  if(!jDb) return 0;
+  if(!jDb){
+    if(pDb){
+      assert(!allocIfNeeded);
+    }else{
+      return 0;
+    }
+  }
   assert(allocIfNeeded ? !!pDb : 1);
   if(!allocIfNeeded && !pDb){
-    pDb = PtrGet_sqlite3_value(jDb);
+    pDb = PtrGet_sqlite3(jDb);
   }
   for( ; pDb && s; s = s->pNext){
     if(s->pDb == pDb) return s;
@@ -1022,10 +1033,6 @@ static jobject new_sqlite3_value_wrapper(JNIEnv *env, sqlite3_value *sv){
 
 static jobject new_sqlite3_context_wrapper(JNIEnv *env, sqlite3_context *sv){
   return new_NativePointerHolder_object(env, "org/sqlite/jni/sqlite3_context", sv);
-}
-
-static jobject new_sqlite3_wrapper(JNIEnv *env, sqlite3 *sv){
-  return new_NativePointerHolder_object(env, "org/sqlite/jni/sqlite3", sv);
 }
 
 enum UDFType {
@@ -1670,8 +1677,9 @@ JDECL(jboolean,1compileoption_1used)(JENV_JSELF, jstring name){
 }
 
 JDECL(jobject,1context_1db_1handle)(JENV_JSELF, jobject jpCx){
-  sqlite3 * const db = sqlite3_context_db_handle(PtrGet_sqlite3_context(jpCx));
-  return db ? new_sqlite3_wrapper(env, db) : NULL;
+  sqlite3 * const pDb = sqlite3_context_db_handle(PtrGet_sqlite3_context(jpCx));
+  PerDbStateJni * const ps = pDb ? PerDbStateJni_for_db(env, 0, pDb, 0) : 0;
+  return ps ? ps->jDb : 0;
 }
 
 JDECL(jint,1create_1collation)(JENV_JSELF, jobject jDb,

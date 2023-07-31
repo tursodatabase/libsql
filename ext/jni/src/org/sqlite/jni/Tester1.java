@@ -457,8 +457,7 @@ public class Tester1 {
       // Java...
       new SQLFunction.Scalar(){
         public void xFunc(sqlite3_context cx, sqlite3_value[] args){
-          affirm(db.getNativePointer()
-                   == sqlite3_context_db_handle(cx).getNativePointer());
+          affirm(db == sqlite3_context_db_handle(cx));
           int result = 0;
           for( sqlite3_value v : args ) result += sqlite3_value_int(v);
           xFuncAccum.value += result;// just for post-run testing

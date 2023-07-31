@@ -271,6 +271,10 @@ public final class SQLite3Jni {
   public static native int sqlite3_collation_needed(@NotNull sqlite3 db,
                                                     @Nullable CollationNeeded callback);
 
+  /**
+     Returns the db handle passed to sqlite3_open() or
+     sqlite3_open_v2(), as opposed to a new wrapper object.
+  */
   public static native sqlite3 sqlite3_context_db_handle(@NotNull sqlite3_context cx);
 
   public static native CommitHook sqlite3_commit_hook(@NotNull sqlite3 db, @Nullable CommitHook hook);
