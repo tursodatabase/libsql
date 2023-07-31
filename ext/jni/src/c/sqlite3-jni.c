@@ -337,6 +337,7 @@ typedef struct JniHookState JniHookState;
 struct JniHookState{
   jobject jObj            /* global ref to Java instance */;
   jmethodID midCallback   /* callback method */;
+  jclass klazz            /* jObj's class. Not needed by all types. */;
 };
 
 /**
@@ -384,6 +385,7 @@ struct PerDbStateJni {
   JniHookState commitHook;
   JniHookState rollbackHook;
   JniHookState updateHook;
+  JniHookState collation;
   JniHookState collationNeeded;
   BusyHandlerJni busyHandler;
 };
@@ -725,9 +727,13 @@ static PerDbStateJni * PerDbStateJni_alloc(JNIEnv *env, sqlite3 *pDb, jobject jD
   return rv;
 }
 
-static void JniHookState_unref(JNIEnv * const env, JniHookState * const s){
+static void JniHookState_unref(JNIEnv * const env, JniHookState * const s, int doXDestroy){
+  if(doXDestroy && s->klazz && s->jObj){
+    s3jni_call_xDestroy(env, s->jObj, s->klazz);
+  }
   UNREF_G(s->jObj);
-  //UNREF_G_(s->klazz);
+  UNREF_G(s->klazz);
+  memset(s, 0, sizeof(JniHookState));
 }
 
 /**
@@ -748,12 +754,14 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
       assert(!s->pPrev);
       S3Global.perDb.aUsed = s->pNext;
     }
-#define UNHOOK(MEMBER) JniHookState_unref(env, &s->MEMBER)
-    UNHOOK(trace);
-    UNHOOK(progress);
-    UNHOOK(commitHook);
-    UNHOOK(rollbackHook);
-    UNHOOK(updateHook);
+#define UNHOOK(MEMBER,XDESTROY) JniHookState_unref(env, &s->MEMBER, XDESTROY)
+    UNHOOK(trace, 0);
+    UNHOOK(progress, 0);
+    UNHOOK(commitHook, 0);
+    UNHOOK(rollbackHook, 0);
+    UNHOOK(updateHook, 0);
+    UNHOOK(collation, 1);
+    UNHOOK(collationNeeded, 1);
 #undef UNHOOK
     UNREF_G(s->jDb);
     BusyHandlerJni_clear(env, &s->busyHandler);
@@ -911,36 +919,10 @@ static int encodingTypeIsValid(int eTextRep){
   }
 }
 
-/**
-   State for binding Java-side collation sequences.
-*/
-typedef struct {
-  jclass klazz         /* Collation object's class */;
-  jobject oCollation   /* Collation instance */;
-  jmethodID midCompare /* cached xCompare */;
-  JNIEnv * env;        /* env registered from */;
-} CollationState;
-
-static CollationState * CollationState_alloc(void){
-  CollationState * rc = sqlite3_malloc(sizeof(CollationState));
-  if(rc) memset(rc, 0, sizeof(CollationState));
-  return rc;
-}
-
-static void CollationState_free(CollationState * const cs){
-  JNIEnv * const env = cs->env;
-  if(env){
-    //MARKER(("Collation cleanup...\n"));
-    UNREF_G(cs->oCollation);
-    UNREF_G(cs->klazz);
-  }
-  sqlite3_free(cs);
-}
-
 static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
                                    int nRhs, const void *rhs){
-  CollationState * const cs = pArg;
-  JNIEnv * env = cs->env;
+  PerDbStateJni * const ps = pArg;
+  JNIEnv * env = ps->env;
   jint rc = 0;
   jbyteArray jbaLhs = (*env)->NewByteArray(env, (jint)nLhs);
   jbyteArray jbaRhs = jbaLhs ? (*env)->NewByteArray(env, (jint)nRhs) : NULL;
@@ -950,7 +932,7 @@ static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
   }
   (*env)->SetByteArrayRegion(env, jbaLhs, 0, (jint)nLhs, (const jbyte*)lhs);
   (*env)->SetByteArrayRegion(env, jbaRhs, 0, (jint)nRhs, (const jbyte*)rhs);
-  rc = (*env)->CallIntMethod(env, cs->oCollation, cs->midCompare,
+  rc = (*env)->CallIntMethod(env, ps->collation.jObj, ps->collation.midCallback,
                              jbaLhs, jbaRhs);
   EXCEPTION_IGNORE;
   UNREF_L(jbaLhs);
@@ -960,9 +942,8 @@ static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
 
 /* Collation finalizer for use by the sqlite3 internals. */
 static void CollationState_xDestroy(void *pArg){
-  CollationState * const cs = pArg;
-  s3jni_call_xDestroy(cs->env, cs->oCollation, cs->klazz);
-  CollationState_free(cs);
+  PerDbStateJni * const ps = pArg;
+  JniHookState_unref( ps->env, &ps->collation, 1 );
 }
 
 /* State for sqlite3_result_java_object() and
@@ -1728,25 +1709,35 @@ JDECL(jobject,1context_1db_1handle)(JENV_JSELF, jobject jpCx){
   return db ? new_sqlite3_wrapper(env, db) : NULL;
 }
 
-JDECL(jint,1create_1collation)(JENV_JSELF, jobject jpDb,
+JDECL(jint,1create_1collation)(JENV_JSELF, jobject jDb,
                                jstring name, jint eTextRep,
                                jobject oCollation){
-  const jclass klazz = (*env)->GetObjectClass(env, oCollation);
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  jclass klazz;
   int rc;
   const char *zName;
-  CollationState * const cs = CollationState_alloc();
-  if(!cs) return (jint)SQLITE_NOMEM;
-  cs->env = env;
-  cs->oCollation = REF_G(oCollation);
-  cs->klazz = REF_G(klazz);
-  cs->midCompare = (*env)->GetMethodID(env, klazz, "xCompare",
-                                    "([B[B)I");
+  JniHookState * pHook;
+  if(!ps) return (jint)SQLITE_NOMEM;
+  pHook = &ps->collation;
+  klazz = (*env)->GetObjectClass(env, oCollation);
+  pHook->midCallback = (*env)->GetMethodID(env, klazz, "xCompare",
+                                           "([B[B)I");
+  IFTHREW{
+    EXCEPTION_REPORT;
+    return s3jni_db_error(ps->pDb, SQLITE_ERROR,
+                          "Could not get xCompare() method for object.");
+  }
   zName = JSTR_TOC(name);
-  rc = sqlite3_create_collation_v2(PtrGet_sqlite3(jpDb), zName, (int)eTextRep,
-                                   cs, CollationState_xCompare,
+  rc = sqlite3_create_collation_v2(ps->pDb, zName, (int)eTextRep,
+                                   ps, CollationState_xCompare,
                                    CollationState_xDestroy);
   JSTR_RELEASE(name, zName);
-  if(0 != rc) CollationState_xDestroy(cs);
+  if( 0==rc ){
+    pHook->jObj = REF_G(oCollation);
+    pHook->klazz = REF_G(klazz);
+  }else{
+    JniHookState_unref(env, pHook, 1);
+  }
   return (jint)rc;
 }
 
