@@ -447,7 +447,7 @@ impl Replicator {
         let (seconds, nanos) = ts.to_unix();
         let (seconds, nanos) = (253370761200 - seconds, 999999999 - nanos);
         let synthetic_ts = uuid::Timestamp::from_unix(uuid::NoContext, seconds, nanos);
-        Uuid::new_v7(synthetic_ts)
+        crate::uuid_utils::new_v7(synthetic_ts)
     }
 
     fn generation_to_timestamp(generation: &Uuid) -> Option<uuid::Timestamp> {
