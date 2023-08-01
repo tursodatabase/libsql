@@ -95,7 +95,10 @@ Known consequences and limitations of this discrepancy include:
 
 - Names of databases, tables, and collations must not contain
   characters which differ in MUTF-8 and UTF-8, or certain APIs will
-  mis-translate them on their way between languages.
+  mis-translate them on their way between languages. The
+  sqlite3_trace_v2() implementation is also currently affected by
+  this, in that it will necessarily translate traced SQL statements to
+  MUTF-8.
 
 [modutf8]: https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
 
