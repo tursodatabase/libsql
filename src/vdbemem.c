@@ -341,7 +341,7 @@ void sqlite3VdbeMemZeroTerminateIfAble(Mem *pMem){
       pMem->flags |= MEM_Term;
       return;
     }
-  }else if( pMem->szMalloc>0 && pMem->szMalloc >= pMem->n+1 ){
+  }else if( pMem->szMalloc >= pMem->n+1 ){
     pMem->z[pMem->n] = 0;
     pMem->flags |= MEM_Term;
     return;
