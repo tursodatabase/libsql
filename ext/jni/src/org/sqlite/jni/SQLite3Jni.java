@@ -288,6 +288,14 @@ public final class SQLite3Jni {
                                                     int eTextRep,
                                                     @NotNull Collation col);
 
+  /**
+     The Java counterpart to the C-native sqlite3_create_function(),
+     sqlite3_create_function_v2(), and
+     sqlite3_create_window_function(). Which one it behaves like
+     depends on which methods the final argument implements. See
+     SQLFunction's inner classes (Scalar, Aggregate<T>, and Window<T>)
+     for details.
+   */
   public static native int sqlite3_create_function(@NotNull sqlite3 db,
                                                    @NotNull String functionName,
                                                    int nArg, int eTextRep,

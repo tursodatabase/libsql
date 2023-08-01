@@ -2520,7 +2520,7 @@ JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
          S3Global.metrics.envCacheMisses,
          S3Global.metrics.envCacheHits);
   puts("UDF calls:");
-#define UDF(T) printf("\t%-8s = %u\n", #T, S3Global.metrics.udf.n##T)
+#define UDF(T) printf("\t%-8s = %u\n", "x" #T, S3Global.metrics.udf.n##T)
   UDF(Func); UDF(Step); UDF(Final); UDF(Value); UDF(Inverse);
 #undef UDF
   printf("xDestroy calls across all callback types: %u\n",
