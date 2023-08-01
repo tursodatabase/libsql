@@ -1,5 +1,5 @@
-C Filter\sthe\swasmfs-specific\sJS\smodule\sresult\stype\scheck\sout\sof\snon-wasmfs\sbuilds.
-D 2023-08-01T16:41:12.175
+C Avoid\sASAN\swarnings\swhen\sconverting\sover-sized\slong\sdouble\svalues\sinto\sdouble.
+D 2023-08-01T19:10:30.602
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -711,7 +711,7 @@ F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
 F src/update.c d5b755580a86d235b12faf10de81e60ad97c8117f8c3063d92c772df94455d44
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c c2aa170f2eb429235b1dddce8952770787ffa5124dc89d405bfbe8ebad8e7ebd
+F src/util.c d30e9f56550fed31c09e0443820552039f61431286e8dfc41175d066f33328b5
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c fe09ed1f6d66a6a9813b9a418ef388d8549d509a6fd2ea937f55d41094788faa
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6011bc26764760af750de68f1553f45382766dd2195633ae267bdb4f9ac75d0f
-R 2fd2b02f3e4d2308882c392cb9573200
-U stephan
-Z 3208b5e4494a8f516202976f4b53efb4
+P ef7c121049f77200ecc4da260a90776264af0e84122d0133b4986959aedc653a
+R c483adf60f57a6109b239d1712365b26
+U drh
+Z 2befc2bb54d1f8208d12f5236dacb8de
 # Remove this line to create a well-formed Fossil manifest.
