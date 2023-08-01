@@ -8009,6 +8009,7 @@ static int SQLITE_TCLAPI optimization_control(
     { "push-down",           SQLITE_PushDown       },
     { "balanced-merge",      SQLITE_BalancedMerge  },
     { "propagate-const",     SQLITE_PropagateConst },
+    { "one-pass",            SQLITE_OnePass        },
   };
 
   if( objc!=4 ){

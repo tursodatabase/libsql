@@ -741,7 +741,7 @@ void sqlite3Update(
        && !hasFK
        && !chngKey
        && !bReplace
-       && (sNC.ncFlags & NC_Subquery)==0
+       && (pWhere==0 || !ExprHasProperty(pWhere, EP_Subquery))
       ){
         flags |= WHERE_ONEPASS_MULTIROW;
       }

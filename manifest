@@ -1,5 +1,5 @@
-C Restrict\sthe\snew\scolumn\scache\sto\stable-btree,\swhich\sis\sthe\scommon\scase\sanyhow.\nThat\sway,\swrites\sto\sindexes\sdo\snot\sneed\sto\sclear\sthe\scolumn\scache.
-D 2023-07-31T22:03:24.497
+C Restore\spart\sof\sthe\sUPDATE\sone-pass\soptimization\sthat\swas\sremoved\sby\ncheck-in\s[2c56b984a0bd3be5]:\sonly\sdisable\sone-pass\sif\sthe\sWHERE\sclause\ncontains\sa\ssubquery.\s\sAllow\ssubqueries\sin\sthe\sSET\sexpressions.\nFix\sfor\sperformance\sproblem\sreported\sby\n[forum:/forumpost/8ab195fd44e75ed0|forum\s\spost\s8ab195fd44e75ed0].
+D 2023-08-01T00:34:03.764
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -653,7 +653,7 @@ F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ecbc3c99c0d0c3ed122a913f143026c26d38d57f33e06bb71185dd5c1efe37cd
-F src/test1.c dfd07574689ee7c57af219c5f627ff32dae65dba478c124ba0359a1bde9983be
+F src/test1.c ebba2473874a23add4a10881b90bd445cfa7f59f90749434938aec14239c6486
 F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
 F src/test3.c e5178558c41ff53236ae0271e9acb3d6885a94981d2eb939536ee6474598840e
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
@@ -708,7 +708,7 @@ F src/threads.c 4ae07fa022a3dc7c5beb373cf744a85d3c5c6c3c
 F src/tokenize.c 0fb405f9adf3f757c26bfc1ae6d58ac5dccbb918917ba9e5ef0e6673a06563d3
 F src/treeview.c 1d52fbc4e97161e65858d36e3424ea6e3fc045dd8a679c82b4b9593dc30de3bd
 F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
-F src/update.c 0aa36561167a7c40d01163238c297297962f31a15a8d742216b3c37cdf25f731
+F src/update.c d5b755580a86d235b12faf10de81e60ad97c8117f8c3063d92c772df94455d44
 F src/upsert.c 5303dc6c518fa7d4b280ec65170f465c7a70b7ac2b22491598f6d0b4875b3145
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
 F src/util.c c2aa170f2eb429235b1dddce8952770787ffa5124dc89d405bfbe8ebad8e7ebd
@@ -909,7 +909,7 @@ F test/corruptH.test 79801d97ec5c2f9f3c87739aa1ec2eb786f96454
 F test/corruptI.test 9d8cbf6214e492abe9e822e759b9751ae336cec0a6fe3ff3b37bfbd8ff9c22ca
 F test/corruptJ.test 4d5ccc4bf959464229a836d60142831ef76a5aa4
 F test/corruptK.test 5b4212fe346699831c5ad559a62c54e11c0611bdde1ea8423a091f9c01aa32af
-F test/corruptL.test b42978028afc5eefc8b51d8d7cd6a9344ba7362d7ed4511ee2070f56e06d5a1c
+F test/corruptL.test 504d90502d9993440226edc355d2275524b89064ea3df5ee5c27f7028ec59d07
 F test/corruptM.test 7d574320e08c1b36caa3e47262061f186367d593a7e305d35f15289cc2c3e067
 F test/corruptN.test 7c099d153a554001b4fb829c799b01f2ea6276cbc32479131e0db0da4efd9cc4
 F test/cost.test b11cdbf9f11ffe8ef99c9881bf390e61fe92baf2182bad1dbe6de59a7295c576
@@ -1770,7 +1770,7 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unique2.test 3674e9f2a3f1fbbfd4772ac74b7a97090d0f77d2
 F test/unixexcl.test d936ba2b06794018e136418addd59a2354eeae97
 F test/unordered.test 0edaf3411d300693bca595897c5201421c6c5ec787990a1dfe2f7f60ae93f1e2
-F test/update.test 90772ede84cfc779fc3d31884a84ec4c74deb501eeb09a1c6c91c03d8e94c0d8
+F test/update.test 85d3f46d0863033370bd881b1097f5694369a8730e53c5f85d96f32b7b310b47
 F test/update2.test 67455bc61fcbcf96923c45b3bc4f87bc72be7d67575ad35f134906148c7b06d3
 F test/upfrom1.tcl 8859d9d437f03b44174c4524a7a734a391fd4526fcff65be08285dafc9dc9041
 F test/upfrom1.test 8cb06689e99cd707d884faa16da0e8eb26ff658bb01c47ddf72fadade666e6e1
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec95e970fb737adf0fab3cb4363040b036949e5eb966fc2d030a20f95e2bde60
-R f1954af63b724ef20b8b6a182fa5296b
+P 659284ab0e22a4746c1337b3489e7b166d497fb7e5301e24dc115d2b0c4e097d
+R adb48f5cade02cad22a8983307eb1542
 U drh
-Z e3e6a4c3ded41277cd2f45eab47ca43e
+Z 613d91f81efce76b30d5894066c9df2d
 # Remove this line to create a well-formed Fossil manifest.
