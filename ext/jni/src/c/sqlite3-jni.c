@@ -2296,12 +2296,12 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   rc = (int)(*env)->CallIntMethod(env, ps->trace.jObj,
                                   ps->trace.midCallback,
                                   (jint)traceflag, jP, jX);
-  UNREF_L(jPUnref);
-  UNREF_L(jX);
   IFTHREW{
     EXCEPTION_WARN_CALLBACK_THREW1("sqlite3_trace_v2() callback");
     rc = SQLITE_ERROR;
   }
+  UNREF_L(jPUnref);
+  UNREF_L(jX);
   return rc;
 }
 

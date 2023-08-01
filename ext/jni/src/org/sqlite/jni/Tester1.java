@@ -433,12 +433,12 @@ public class Tester1 {
        encoding while also claiming to export using RFC 2279:
 
        https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html
+
+       Let's ensure that we can convert to standard UTF-8 in Java code
+       (noting that the JNI native API has no way to do this).
     */
     final byte[] ba = "a \0 b".getBytes(StandardCharsets.UTF_8);
-    //out("\"a NUL b\" via getBytes(): ");
     affirm( 5 == ba.length /* as opposed to 6 in modified utf-8 */);
-    //for( byte b : ba ) out( ""+b );
-    //outln("");
   }
 
   private static void testUdf1(){
@@ -452,9 +452,7 @@ public class Tester1 {
     SQLFunction func =
       // Each of the 3 subclasses requires a different set of
       // functions, all of which must be implemented.  Anonymous
-      // classes are a convenient way to implement these, though the
-      // result is possibly somewhat noisy for those not at home in
-      // Java...
+      // classes are a convenient way to implement these.
       new SQLFunction.Scalar(){
         public void xFunc(sqlite3_context cx, sqlite3_value[] args){
           affirm(db == sqlite3_context_db_handle(cx));
