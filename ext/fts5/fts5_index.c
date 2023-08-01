@@ -4752,7 +4752,7 @@ static int fts5IndexFindDeleteMerge(Fts5Index *p, Fts5Structure *pStruct){
         nEntry += pLvl->aSeg[iSeg].nEntry;
         nTomb += pLvl->aSeg[iSeg].nEntryTombstone;
       }
-      assert( nEntry>0 || pLvl->nSeg==0 );
+      assert_nc( nEntry>0 || pLvl->nSeg==0 );
       if( nEntry>0 ){
         int nPercent = (nTomb * 100) / nEntry;
         if( nPercent>=pConfig->nDeleteMerge && nPercent>nBest ){

@@ -1,5 +1,5 @@
-C Remove\sredundant\scomparison\soperator.
-D 2023-08-01T01:07:45.466
+C Fix\san\sassert()\sin\sfts5_index.c\sthat\smight\sfail\swhen\sdealing\swith\scorrupt\srecords.
+D 2023-08-01T11:03:06.505
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -92,7 +92,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 054359543566cbff1ba65a188330660a5457299513ac71c53b3a07d934c7b081
 F ext/fts5/fts5_expr.c 2473c13542f463cae4b938c498d6193c90d38ea1a2a4f9849c0479736e50d24d
 F ext/fts5/fts5_hash.c 65e7707bc8774706574346d18c20218facf87de3599b995963c3e6d6809f203d
-F ext/fts5/fts5_index.c 9f7a24e206072b9deda2b9b6eec8d162128486d1dfad2ada92116faecc623cc8
+F ext/fts5/fts5_index.c 93b4cd116b76b6adf224cd3d213f1e06cfe10ae0eb21d6372b1c53b8f0c382a3
 F ext/fts5/fts5_main.c 2f87ee44fdb21539c264541149f07f70e065d58f37420063e5ddef80ba0f5ede
 F ext/fts5/fts5_storage.c 3c9b41fce41b6410f2e8f82eb035c6a29b2560483f773e6dc98cf3cb2e4ddbb5
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42916af9fc0f379a608a08db894400bd735a28e26ab1ffd604d1fddfbdb3ec0c
-R 369ed1a1c6cada9c0a1698936766f3eb
-U drh
-Z cacf2fbc98de3d0e9dbbe6eaa60a2dd8
+P 018984329892c243b21adb10aa8efc7f49313ecf80477e6b61dc6365f62c489d
+R b6bc709a1f83885697109a49cbaa2f90
+U dan
+Z 735801ce1b2e44ee6011cd1fc8fe77e9
 # Remove this line to create a well-formed Fossil manifest.
