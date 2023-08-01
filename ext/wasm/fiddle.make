@@ -18,7 +18,7 @@ endif
 ifeq (,$(SHELL_SRC))
 $(error Could not parse SHELL_SRC from $(dir.top)/Makefile.)
 endif
-$(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl
+$(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl $(sqlite3.c)
 	$(MAKE) -C $(dir.top) shell.c
 # /shell.c
 ########################################################################
