@@ -4,9 +4,11 @@ use std::ops::{Deref, DerefMut};
 use rusqlite::types::ValueRef;
 use serde::{Serialize, Serializer};
 use serde_json::ser::{CompactFormatter, Formatter};
+use std::sync::atomic::Ordering;
 
 use crate::query_result_builder::{
     Column, JsonFormatter, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
+    TOTAL_RESPONSE_SIZE,
 };
 
 pub struct JsonHttpPayloadBuilder {
@@ -27,14 +29,21 @@ pub struct JsonHttpPayloadBuilder {
 struct LimitBuffer {
     buffer: Vec<u8>,
     limit: u64,
+    global_limit: u64,
 }
 
 impl LimitBuffer {
-    fn new(limit: u64) -> Self {
+    fn new(limit: u64, global_limit: u64) -> Self {
         Self {
             buffer: Vec::new(),
             limit,
+            global_limit,
         }
+    }
+
+    fn into_inner(mut self) -> Vec<u8> {
+        TOTAL_RESPONSE_SIZE.fetch_sub(self.buffer.len(), Ordering::Relaxed);
+        std::mem::take(&mut self.buffer)
     }
 }
 
@@ -54,6 +63,18 @@ impl DerefMut for LimitBuffer {
 
 impl io::Write for LimitBuffer {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        let total_size = TOTAL_RESPONSE_SIZE.fetch_add(buf.len(), Ordering::Relaxed);
+        if (total_size + buf.len()) as u64 > self.global_limit {
+            tracing::debug!(
+                "Total responses exceeded threshold: {}/{}, aborting query",
+                total_size + buf.len(),
+                self.global_limit
+            );
+            return Err(io::Error::new(
+                io::ErrorKind::OutOfMemory,
+                QueryResultBuilderError::ResponseTooLarge(self.global_limit),
+            ));
+        }
         if (self.buffer.len() + buf.len()) as u64 > self.limit {
             return Err(io::Error::new(
                 io::ErrorKind::OutOfMemory,
@@ -70,13 +91,19 @@ impl io::Write for LimitBuffer {
     }
 }
 
+impl Drop for LimitBuffer {
+    fn drop(&mut self) {
+        TOTAL_RESPONSE_SIZE.fetch_sub(self.buffer.len(), Ordering::Relaxed);
+    }
+}
+
 struct HttpJsonValueSerializer<'a>(&'a ValueRef<'a>);
 
 impl JsonHttpPayloadBuilder {
     pub fn new() -> Self {
         Self {
             formatter: JsonFormatter(CompactFormatter),
-            buffer: LimitBuffer::new(0),
+            buffer: LimitBuffer::new(0, 0),
             checkpoint: 0,
             step_count: 0,
             row_value_count: 0,
@@ -126,7 +153,10 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
 
     fn init(&mut self, config: &QueryBuilderConfig) -> Result<(), QueryResultBuilderError> {
         *self = Self {
-            buffer: LimitBuffer::new(config.max_size.unwrap_or(u64::MAX)),
+            buffer: LimitBuffer::new(
+                config.max_size.unwrap_or(u64::MAX),
+                config.max_total_size.unwrap_or(u64::MAX),
+            ),
             ..Self::new()
         };
         // write fragment: `[`
@@ -268,7 +298,7 @@ impl QueryResultBuilder for JsonHttpPayloadBuilder {
     }
 
     fn into_ret(self) -> Self::Ret {
-        self.buffer.buffer
+        self.buffer.into_inner()
     }
 }
 

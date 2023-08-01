@@ -51,7 +51,7 @@ mod test;
 mod utils;
 pub mod version;
 
-const MAX_CONCCURENT_DBS: usize = 128;
+const MAX_CONCCURENT_DBS: usize = 32;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
@@ -103,6 +103,7 @@ pub struct Config {
     pub hard_heap_limit_mb: Option<usize>,
     pub allow_replica_overwrite: bool,
     pub max_response_size: u64,
+    pub max_total_response_size: u64,
     pub snapshot_exec: Option<String>,
     pub http_replication_addr: Option<SocketAddr>,
 }
@@ -142,7 +143,8 @@ impl Default for Config {
             soft_heap_limit_mb: None,
             hard_heap_limit_mb: None,
             allow_replica_overwrite: false,
-            max_response_size: 10 * 1024 * 1024, // 10MiB
+            max_response_size: 10 * 1024 * 1024,       // 10MiB
+            max_total_response_size: 32 * 1024 * 1024, // 32MiB
             snapshot_exec: None,
             http_replication_addr: None,
         }
@@ -334,8 +336,13 @@ async fn start_replica(
         db_config_store.clone(),
         applied_frame_no_receiver,
         config.max_response_size,
+        config.max_total_response_size,
     )
-    .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT));
+    .throttled(
+        MAX_CONCCURENT_DBS,
+        Some(DB_CREATE_TIMEOUT),
+        config.max_total_response_size,
+    );
 
     run_service(
         Arc::new(factory),
@@ -484,9 +491,14 @@ async fn start_primary(
         db_config_store.clone(),
         valid_extensions,
         config.max_response_size,
+        config.max_total_response_size,
     )
     .await?
-    .throttled(MAX_CONCCURENT_DBS, Some(DB_CREATE_TIMEOUT))
+    .throttled(
+        MAX_CONCCURENT_DBS,
+        Some(DB_CREATE_TIMEOUT),
+        config.max_total_response_size,
+    )
     .into();
 
     if let Some(ref addr) = config.rpc_server_addr {
