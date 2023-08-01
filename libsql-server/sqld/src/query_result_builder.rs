@@ -6,6 +6,9 @@ use bytesize::ByteSize;
 use rusqlite::types::ValueRef;
 use serde::Serialize;
 use serde_json::ser::Formatter;
+use std::sync::atomic::AtomicUsize;
+
+pub static TOTAL_RESPONSE_SIZE: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug)]
 pub enum QueryResultBuilderError {
@@ -79,6 +82,7 @@ impl<'a> From<&'a rusqlite::Column<'a>> for Column<'a> {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct QueryBuilderConfig {
     pub max_size: Option<u64>,
+    pub max_total_size: Option<u64>,
 }
 
 pub trait QueryResultBuilder: Send + 'static {

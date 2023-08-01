@@ -35,6 +35,7 @@ pub struct WriteProxyDbFactory {
     config_store: Arc<DatabaseConfigStore>,
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
     max_response_size: u64,
+    max_total_response_size: u64,
 }
 
 impl WriteProxyDbFactory {
@@ -48,6 +49,7 @@ impl WriteProxyDbFactory {
         config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
         max_response_size: u64,
+        max_total_response_size: u64,
     ) -> Self {
         let client = ProxyClient::with_origin(channel, uri);
         Self {
@@ -58,6 +60,7 @@ impl WriteProxyDbFactory {
             config_store,
             applied_frame_no_receiver,
             max_response_size,
+            max_total_response_size,
         }
     }
 }
@@ -75,6 +78,7 @@ impl DbFactory for WriteProxyDbFactory {
             self.applied_frame_no_receiver.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
+                max_total_size: Some(self.max_total_response_size),
             },
         )
         .await?;

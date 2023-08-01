@@ -35,6 +35,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     config_store: Arc<DatabaseConfigStore>,
     extensions: Vec<PathBuf>,
     max_response_size: u64,
+    max_total_response_size: u64,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlDb>,
@@ -45,6 +46,7 @@ where
     W: WalHook + 'static + Sync + Send,
     W::Context: Send + 'static,
 {
+    #[allow(clippy::too_many_arguments)]
     pub async fn new<F>(
         db_path: PathBuf,
         hook: &'static WalMethodsHook<W>,
@@ -53,6 +55,7 @@ where
         config_store: Arc<DatabaseConfigStore>,
         extensions: Vec<PathBuf>,
         max_response_size: u64,
+        max_total_response_size: u64,
     ) -> Result<Self>
     where
         F: Fn() -> W::Context + Sync + Send + 'static,
@@ -65,6 +68,7 @@ where
             config_store,
             extensions,
             max_response_size,
+            max_total_response_size,
             _db: None,
         };
 
@@ -113,6 +117,7 @@ where
             self.config_store.clone(),
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
+                max_total_size: Some(self.max_total_response_size),
             },
         )
         .await

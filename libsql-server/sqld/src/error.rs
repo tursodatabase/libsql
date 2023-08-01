@@ -37,6 +37,8 @@ pub enum Error {
     Blocked(Option<String>),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+    #[error("Too many concurrent requests")]
+    TooManyRequests,
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {
