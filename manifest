@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sin\sfts5_index.c\sthat\smight\sfail\swhen\sdealing\swith\scorrupt\srecords.
-D 2023-08-01T11:03:06.505
+C Fix\spart\s1\sof\s2\sfor\s/fiddle\snot\srunning:\sbuild\sflags\swhich\swere\srenamed\sduring\srefactoring.
+D 2023-08-01T16:17:00.592
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -530,7 +530,7 @@ F ext/wasm/demo-worker1.html 2c178c1890a2beb5a5fecb1453e796d067a4b8d3d2a04d65ca2
 F ext/wasm/demo-worker1.js 836bece8615b17b1b572584f7b15912236a5947fe8c68b98d2737d7e287447ef
 F ext/wasm/dist.make 3a851858aad72e246a5d9c5aaf6b6a144305f1bf898ac1846760ea7bab95c9a3
 F ext/wasm/example_extra_init.c 2347cd69d19d839ef4e5e77b7855103a7fe3ef2af86f2e8c95839afd8b05862f
-F ext/wasm/fiddle.make dbe36b90b8907ae28ecb9c0e9fd8389dbdaecf117ea4fb2ea33864bdfa498a94
+F ext/wasm/fiddle.make 5059caa2683dda83448739b8e8f9f45330891d92a71f7708bde191ff8e0d1080
 F ext/wasm/fiddle/emscripten.css 3d253a6fdb8983a2ac983855bfbdd4b6fa1ff267c28d69513dd6ef1f289ada3f
 F ext/wasm/fiddle/fiddle-worker.js 163d6139a93fab4bcb72064923df050d4e7c0ff0d8aa061ce8776a6e75da8a10
 F ext/wasm/fiddle/fiddle.js 974b995119ac443685d7d94d3b3c58c6a36540e9eb3fed7069d5653284071715
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 018984329892c243b21adb10aa8efc7f49313ecf80477e6b61dc6365f62c489d
-R b6bc709a1f83885697109a49cbaa2f90
-U dan
-Z 735801ce1b2e44ee6011cd1fc8fe77e9
+P aa55c83f35c2ab134e0842201e46e021079283f9c65595c86664060b3aa8d715
+R cbb563045e455ed54ad88e12db1f1317
+U stephan
+Z 0d460b3d2880bf539ea1069e23b0bd35
 # Remove this line to create a well-formed Fossil manifest.
