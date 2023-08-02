@@ -5759,6 +5759,28 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
 }
 
 /*
+** Set the reverse-scan order mask to one for all tables in the query
+** with the exception of MATERIALIZED common table expressions that have
+** their own internal ORDER BY clauses.
+**
+** This implements the PRAGMA reverse_unordered_selects=ON setting.
+** (Also SQLITE_DBCONFIG_REVERSE_SCANORDER).
+*/
+static SQLITE_NOINLINE void whereReverseScanOrder(WhereInfo *pWInfo){
+  int ii;
+  for(ii=0; ii<pWInfo->pTabList->nSrc; ii++){
+    SrcItem *pItem = &pWInfo->pTabList->a[ii];
+    if( !pItem->fg.isCte
+     || pItem->u2.pCteUse->eM10d!=M10d_Yes
+     || NEVER(pItem->pSelect==0)
+     || pItem->pSelect->pOrderBy==0
+    ){
+      pWInfo->revMask |= MASKBIT(ii);
+    }
+  }
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -6122,8 +6144,9 @@ WhereInfo *sqlite3WhereBegin(
        if( db->mallocFailed ) goto whereBeginError;
     }
   }
+  assert( pWInfo->pTabList!=0 );
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
-     pWInfo->revMask = ALLBITS;
+    whereReverseScanOrder(pWInfo);
   }
   if( pParse->nErr ){
     goto whereBeginError;
