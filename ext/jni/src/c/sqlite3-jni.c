@@ -1904,10 +1904,15 @@ JDECL(jlong,1last_1insert_1rowid)(JENV_JSELF, jobject jpDb){
 /**
    Code common to both the sqlite3_open() and sqlite3_open_v2()
    bindings. Allocates the PerDbStateJni for *ppDb if *ppDb is not
-   NULL.
+   NULL. jDb must be the org.sqlite.jni.sqlite3 object which will hold
+   the db's native pointer. theRc must be the result code of the open
+   op(). If allocation of the PerDbStateJni object fails then *ppDb is
+   passed to sqlite3_close(), *ppDb is assigned to 0, and SQLITE_NOMEM
+   is returned, else theRc is returned. In in case, *ppDb is stored in
+   jDb's native pointer property (even if it's NULL).
 */
 static int s3jni_open_post(JNIEnv * const env, sqlite3 **ppDb, jobject jDb, int theRc){
-  if(1 && *ppDb){
+  if(*ppDb){
     PerDbStateJni * const s = PerDbStateJni_for_db(env, jDb, *ppDb, 1);
     if(!s && 0==theRc){
       sqlite3_close(*ppDb);
@@ -2004,6 +2009,7 @@ static int s3jni_progress_handler_impl(void *pP){
   int rc = (int)(*env)->CallIntMethod(env, ps->progress.jObj,
                                       ps->progress.midCallback);
   IFTHREW{
+    EXCEPTION_WARN_CALLBACK_THREW("sqlite3_progress_handler() callback");
     EXCEPTION_CLEAR;
     rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
                         "sqlite3_progress_handler() callback threw.");
@@ -2309,6 +2315,7 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
                                   (jint)traceflag, jP, jX);
   IFTHREW{
     EXCEPTION_WARN_CALLBACK_THREW("sqlite3_trace_v2() callback");
+    EXCEPTION_CLEAR;
     rc = SQLITE_ERROR;
   }
   UNREF_L(jPUnref);

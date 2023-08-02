@@ -1,5 +1,5 @@
-C Internal\sdoc\sadditions\sin\sthe\sJNI\sbits.
-D 2023-08-02T17:20:52.666
+C More\sJNI-internal\sdocs.\sCorrect\shandling\sof\sa\sJava\sexception\sif\sa\strace\scallback\sthrows.
+D 2023-08-02T17:29:18.781
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -232,7 +232,7 @@ F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile 3d1f106e7a08bb54279c12979b31492b3dea702a732eab445dbc765120995182
 F ext/jni/README.md 6ff7e1f4100dee980434a6ee37a199b653bceec62e233a6e2ccde6e7ae0c58bf
-F ext/jni/src/c/sqlite3-jni.c 18be9aa295f90d166499c72a13190878aec260a95be6d5f47981975b3a371ec3
+F ext/jni/src/c/sqlite3-jni.c e4ff3c044e72f6fcaee02e44603da28739c0ebdd3d88b9f23ca0642182760e82
 F ext/jni/src/c/sqlite3-jni.h 74aaf87e77f99857aa3afc013517c934cbc2c16618c83d8f5d6294351bc8e7b1
 F ext/jni/src/org/sqlite/jni/BusyHandler.java 1b1d3e5c86cd796a0580c81b6af6550ad943baa25e47ada0dcca3aff3ebe978c
 F ext/jni/src/org/sqlite/jni/Collation.java 8dffbb00938007ad0967b2ab424d3c908413af1bbd3d212b9c9899910f1218d1
@@ -2071,8 +2071,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d8e9bcee96b90d56701f7907a8bd48853211caf757e1aa8decc7ed25eece6770
-R 93d701bbf85c406f122f21e563c584fb
+P b56643644e065b03fe2c3545e02ed3b2f6fd9f77c39aa84a02a00d695e9a12dc
+R e3632815d093bec50f51fd9fc57e4268
 U stephan
-Z 293b70ee8959f9ac1b9bd9db9ccedd82
+Z 9bbd1b4ecbe75e7fd46dfd09cd4f460b
 # Remove this line to create a well-formed Fossil manifest.
