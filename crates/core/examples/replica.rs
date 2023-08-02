@@ -7,7 +7,7 @@ async fn main() {
     let db_file = tempfile::NamedTempFile::new().unwrap();
     println!("Database {}", db_file.path().display());
 
-    let opts = libsql::Opts::with_http_sync("http://localhost:8081".to_owned());
+    let opts = libsql::Opts::with_http_sync("http://localhost:8080".to_owned());
     let db = Database::open_with_opts(db_file.path().to_str().unwrap(), opts)
         .await
         .unwrap();
@@ -18,7 +18,8 @@ async fn main() {
             Ok(frames_applied) => {
                 if frames_applied == 0 {
                     println!("No more frames at the moment! See you later");
-                    break;
+                    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                    continue;
                 }
                 println!("Applied {frames_applied} frames");
             }

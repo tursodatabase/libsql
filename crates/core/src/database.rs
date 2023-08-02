@@ -60,9 +60,11 @@ impl Database {
     pub async fn open_with_opts(db_path: impl Into<String>, opts: Opts) -> Result<Database> {
         let db_path = db_path.into();
         let mut db = Database::open(&db_path)?;
-        let replicator = Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
+        let mut replicator =
+            Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
         if let Sync::Http { endpoint } = opts.sync {
-            let meta = Replicator::init_metadata(&endpoint)
+            let meta = replicator
+                .init_metadata(&endpoint)
                 .await
                 .map_err(|e| ConnectionFailed(format!("{e}")))?;
             *replicator.meta.lock() = Some(meta);
@@ -93,7 +95,7 @@ impl Database {
     pub async fn sync(&self) -> Result<usize> {
         if let Some(ctx) = &self.replication_ctx {
             ctx.replicator
-                .sync_from_http(&ctx.endpoint)
+                .sync_from_http()
                 .await
                 .map_err(|e| ConnectionFailed(format!("{e}")))
         } else {
