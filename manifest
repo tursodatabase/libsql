@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sin\sthe\sascii-to-floating-point\sconversion\sthat\nwas\sadded\sby\s[e989a37ff9d5b52e].
-D 2023-08-02T13:45:16.075
+C Performance\soptimization\sfor\sJSON\srendering\slogic.
+D 2023-08-02T16:06:02.660
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -603,7 +603,7 @@ F src/hash.h 3340ab6e1d13e725571d7cee6d3e3135f0779a7d8e76a9ce0a85971fa3953c51
 F src/hwtime.h f9c2dfb84dce7acf95ce6d289e46f5f9d3d1afd328e53da8f8e9008e3b3caae6
 F src/in-operator.md 10cd8f4bcd225a32518407c2fb2484089112fd71
 F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
-F src/json.c 0bcc2e033821feb3048b8434ade2b7d22267005a0990656f4ef4ee25b4ac47bc
+F src/json.c cea55234b99879a6c3be04cd01f32e83f760672356415b541929cdd16441ede3
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
 F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 354425f8d97437bd156265a6914f98cce91b42abc9e773453ef4d817e308dc9a
-R aa07c6b217b53d8658b8a233cbb6460f
+P c4347e4400e96f932ac12f8f22484a2ebce2a578d1b2181977954c432f117bfd
+R a3168d15b44149a629121fdff1d59acd
 U drh
-Z 99babb0a241aaf0b9de5cc7fdf7d857c
+Z 37bd268b83df81194e3e4e7be36a0655
 # Remove this line to create a well-formed Fossil manifest.
