@@ -591,10 +591,9 @@ do_atof_calc:
       while( e<=-10  ){ e+=10;  r *= 1.0e-10L;  }
       while( e<=-1   ){ e+=1;   r *= 1.0e-01L;  }
     }
+    assert( r>=0.0 );
     if( r>+1.7976931348623157081452742373e+308L ){
       *pResult = +INFINITY;
-    }else if( r<-1.7976931348623157081452742373e+308L ){
-      *pResult = -INFINITY;
     }else{
       *pResult = (double)r;
     }
