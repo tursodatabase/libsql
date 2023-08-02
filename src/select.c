@@ -7314,7 +7314,14 @@ int sqlite3Select(
     **            (a)  The outer query has a different ORDER BY clause
     **            (b)  The subquery is part of a join
     **          See forum post 062d576715d277c8
+    **
+    ** The above cases might get an incorrect result if ORDER BY is omitted.
+    ** The following constraints are not required for correct answers, but are
+    ** included in order to give developers more control over when a sort
+    ** occurs:
+    **
     **    (6)   The subquery is really a MATERIALIZED CTE
+    **    (7)   The OmitOrderBy optimization is disabled
     */
     if( pSub->pOrderBy!=0
      && (p->pOrderBy!=0 || pTabList->nSrc>1)      /* Condition (5) */
@@ -7322,7 +7329,7 @@ int sqlite3Select(
      && (pSub->selFlags & SF_OrderByReqd)==0      /* Condition (2) */
      && (p->selFlags & SF_OrderByReqd)==0         /* Condition (3) and (4) */
      && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes) /* (6) */
-     && OptimizationEnabled(db, SQLITE_OmitOrderBy)
+     && OptimizationEnabled(db, SQLITE_OmitOrderBy)                /* (7) */
     ){
       TREETRACE(0x800,pParse,p,
                 ("omit superfluous ORDER BY on %r FROM-clause subquery\n",i+1));
@@ -7356,6 +7363,11 @@ int sqlite3Select(
      && (pTabList->nSrc==1
          || (pTabList->a[1].fg.jointype&(JT_OUTER|JT_CROSS))!=0)
     ){
+      continue;
+    }
+
+    /* Do not flatten a MATERIALIZED CTE */
+    if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ){
       continue;
     }
 
