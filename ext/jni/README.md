@@ -202,6 +202,8 @@ int sqlite3_create_function(sqlite3 db, String funcName, int nArgs,
                             int encoding, SQLFunction func);
 ```
 
+> Design question: does the encoding argument serve any purpose in JS?
+
 `SQLFunction` is not used directly, but is instead instantiated via
 one of its three subclasses:
 

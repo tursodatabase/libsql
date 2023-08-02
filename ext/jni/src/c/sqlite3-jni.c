@@ -1869,8 +1869,13 @@ JDECL(jint,1initialize)(JENV_JSELF){
 }
 
 /**
-   Sets jc->currentStmt to the 2nd arugment and returns the previous value
-   of jc->currentStmt.
+   Sets jc->currentStmt to the 2nd arugment and returns the previous
+   value of jc->currentStmt. This must always be called in pairs: once
+   to replace the current statement with the call-local one, and once
+   to restore it. It must be used in any stmt-handling routines which
+   may lead to the tracing callback being called, as the current stmt
+   is needed for certain tracing flags. At a minumum those ops are:
+   step, reset, finalize, prepare.
 */
 static jobject stmt_set_current(JNIEnvCacheLine * const jc, jobject jStmt){
   jobject const old = jc->currentStmt;
@@ -2243,14 +2248,14 @@ JDECL(jint,1shutdown)(JENV_JSELF){
 }
 
 JDECL(jint,1step)(JENV_JSELF,jobject jStmt){
-  jobject jPrevStmt = 0;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
-  int rc;
+  int rc = SQLITE_MISUSE;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
-  if(!pStmt) return SQLITE_MISUSE;
-  jPrevStmt = stmt_set_current(jc, jStmt);
-  rc = sqlite3_step(pStmt);
-  (void)stmt_set_current(jc, jPrevStmt);
+  if(pStmt){
+    JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+    jobject const jPrevStmt = stmt_set_current(jc, jStmt);
+    rc = sqlite3_step(pStmt);
+    (void)stmt_set_current(jc, jPrevStmt);
+  }
   return rc;
 }
 
