@@ -7314,12 +7314,14 @@ int sqlite3Select(
     **            (a)  The outer query has a different ORDER BY clause
     **            (b)  The subquery is part of a join
     **          See forum post 062d576715d277c8
+    **    (6)   The subquery is really a MATERIALIZED CTE
     */
     if( pSub->pOrderBy!=0
      && (p->pOrderBy!=0 || pTabList->nSrc>1)      /* Condition (5) */
      && pSub->pLimit==0                           /* Condition (1) */
      && (pSub->selFlags & SF_OrderByReqd)==0      /* Condition (2) */
      && (p->selFlags & SF_OrderByReqd)==0         /* Condition (3) and (4) */
+     && (pItem->fg.isCte==0 || pItem->u2.pCteUse->eM10d!=M10d_Yes) /* (6) */
      && OptimizationEnabled(db, SQLITE_OmitOrderBy)
     ){
       TREETRACE(0x800,pParse,p,
