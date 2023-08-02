@@ -6122,8 +6122,27 @@ WhereInfo *sqlite3WhereBegin(
        if( db->mallocFailed ) goto whereBeginError;
     }
   }
+  assert( pWInfo->pTabList!=0 );
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
-     pWInfo->revMask = ALLBITS;
+    for(ii=0; ii<pWInfo->pTabList->nSrc; ii++){
+      /* The PRAGMA reverse_unordered_selects=ON setting (also accessible
+      ** using SQLITE_DBCONFIG_REVERSE_SCANORDER) means to reverse the scan
+      ** order for any table that is part of a query that does not have an
+      ** ORDER BY clause.
+      **
+      ** Except, do not reverse the output from MATERIALIZED common table
+      ** expression that has an internal ORDER BY clause, because a
+      ** MATERIALIZED common table expression is an optimization fence.
+      */
+      SrcItem *pItem = &pWInfo->pTabList->a[ii];
+      if( !pItem->fg.isCte
+       || pItem->u2.pCteUse->eM10d!=M10d_Yes
+       || NEVER(pItem->pSelect==0)
+       || pItem->pSelect->pOrderBy==0
+      ){
+        pWInfo->revMask |= MASKBIT(ii);
+      }
+    }
   }
   if( pParse->nErr ){
     goto whereBeginError;
