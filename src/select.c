@@ -4292,7 +4292,8 @@ static int compoundHasDifferentAffinities(Select *p){
 **        (27b) the subquery is a compound query and the RIGHT JOIN occurs
 **              in any arm of the compound query.  (See also (17g).)
 **
-**  (28)  The subquery is not a MATERIALIZED CTE.
+**  (28)  The subquery is not a MATERIALIZED CTE.  (This is handled
+**        in the caller before ever reaching this routine.)
 **
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
@@ -4402,9 +4403,9 @@ static int flattenSubquery(
   if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
     return 0;   /* Restriction (27a) */
   }
-  if( pSubitem->fg.isCte && pSubitem->u2.pCteUse->eM10d==M10d_Yes ){
-    return 0;       /* (28) */
-  }
+
+  /* Condition (28) is blocked by the caller */
+  assert( !pSubitem->fg.isCte || pSubitem->u2.pCteUse->eM10d!=M10d_Yes );
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
