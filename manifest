@@ -1,10 +1,10 @@
-C Performance\soptimization\sfor\sJSON\srendering\slogic.
-D 2023-08-02T16:06:02.660
+C Unix\sbuilds\snow\sassume\sthe\spresence\sof\snanosleep()\sin\sthe\sstandard\slibrary.\nThe\s-DHAVE_NANOSLEEP=0\scompile-time\soption\scan\sbe\sused\sto\sbuild\son\ssystems\n(if\sany\sstill\sexist)\swhere\sthis\sis\snot\sthe\scase.
+D 2023-08-03T12:41:30.503
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 0f4cb3955aaff8a40ec3857ba1784bd98b69802e51eff979f874b65713b627b2
-F Makefile.linux-gcc f609543700659711fbd230eced1f01353117621dccae7b9fb70daa64236c5241
+F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 7248d860f71ab164b4cec3c415e6cc1bd9fee860c370d65bd8bb49e9572521e2
 F README.md c1c4218efcc4071a6e26db2b517fdbc1035696a29b370edd655faddbef02b224
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
@@ -606,7 +606,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c cea55234b99879a6c3be04cd01f32e83f760672356415b541929cdd16441ede3
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
-F src/main.c 512b1d45bc556edf4471a845afb7ba79e64bd5b832ab222dc195c469534cd002
+F src/main.c 6577cd908f254de4d109df58323421f5934f674f5b7ee4b4b337a055458ecad3
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -627,7 +627,7 @@ F src/os.h 1ff5ae51d339d0e30d8a9d814f4b8f8e448169304d83a7ed9db66a65732f3e63
 F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e06
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
-F src/os_unix.c 95b407307deb902a3bd9a5d5666c7838709cccb337baeee6ef0a53f512d3673e
+F src/os_unix.c 2e8b12107f75d1bd16412f312b4c5d5103191807a37836d3b81beb26436ad81b
 F src/os_win.c 7038223a1cda0a47e2ab4db47f63bf1833fe53ba0542f0f283a062ea13894103
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 5ddf3a74c633a008ea6b2f5b3186167e88e2c8ca8a252ecab06ab3f1eb48e60f
@@ -1945,7 +1945,7 @@ F tool/GetFile.cs 47852aa0d806fe47ed1ac5138bdce7f000fe87aaa7f28107d0cb1e26682aeb
 F tool/GetTclKit.bat d84033c6a93dfe735d247f48ba00292a1cc284dcf69963e5e672444e04534bbf
 F tool/Replace.cs 02c67258801c2fb5f63231e0ac0f220b4b36ba91
 F tool/build-all-msvc.bat c817b716e0edeecaf265a6775b63e5f45c34a6544f1d4114a222701ed5ac79ab x
-F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
+F tool/build-shell.sh f193b5e3eb4afcb4abbf96bf1475be6cfb74763ee2e50c82bc7ca105e8a136c5
 F tool/cg_anno.tcl c1f875f5a4c9caca3d59937b16aff716f8b1883935f1b4c9ae23124705bc8099 x
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/custom.txt 6cdf298f43e1db4bb91406d14777669b8fb1df790837823fa6754c4308decc27
@@ -2026,7 +2026,7 @@ F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
-F tool/warnings.sh ab651bb82586c43ff8b560beceac959735bf917b44c5e0f67ba3426e474f29f8
+F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
 F vsixtest/App.xaml b76d3b48860e7454775c47ea38ffea9c4abe3e85
 F vsixtest/App.xaml.cpp 41158ee43269820136fa3bba00c0bd91b26cc38b650ee392aec2a8d823e54318
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c4347e4400e96f932ac12f8f22484a2ebce2a578d1b2181977954c432f117bfd
-R a3168d15b44149a629121fdff1d59acd
+P ea0b9aecbaca9a8e784fd2bcb50f78cbdcf4c5cfb45a7700bb222e4cc104c644
+R 31ad76526bf706e018f4fff70c0faaae
 U drh
-Z 37bd268b83df81194e3e4e7be36a0655
+Z ffe3b8625e4fbe0c7711c5e4b79ea34e
 # Remove this line to create a well-formed Fossil manifest.
