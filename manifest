@@ -1,5 +1,5 @@
-C Unix\sbuilds\snow\sassume\sthe\spresence\sof\snanosleep()\sin\sthe\sstandard\slibrary.\nThe\s-DHAVE_NANOSLEEP=0\scompile-time\soption\scan\sbe\sused\sto\sbuild\son\ssystems\n(if\sany\sstill\sexist)\swhere\sthis\sis\snot\sthe\scase.
-D 2023-08-03T12:41:30.503
+C Fix\sa\stest\scase\swhose\svalue\schanges\sunder\sthe\sno_optimization\spermutation\ndue\sto\sthe\srecent\schange\sto\sadd\sthe\sability\sfor\sSQLITE_TESTCTRL_OPTIMIZATION\nto\sdisable\sone-pass.
+D 2023-08-03T13:07:58.560
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1871,7 +1871,7 @@ F test/where3.test 5b4ffc0ac2ea0fe92f02b1244b7531522fe4d7bccf6fa8741d54e82c10e67
 F test/where4.test 4a371bfcc607f41d233701bdec33ac2972908ba8
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test 1c1bf436bf31b913d4764a2b62ac6e98b9681e5c7ae2b562605592a56b7e946b
+F test/where7.test 15041c7a5838f3bac98f3fb933709674a0b59367664e88fafaf105ff7416eb07
 F test/where8.test 461ca40265ed996a6305da99bb024b0e41602bb586acf544c08f95922358e49f
 F test/where9.test 2db942671a002621eff4f713e347bb25243295f79d8990297cd160bebcfde3f7
 F test/whereA.test 9d1077b117f1b68d5f739d94f36956c36cf995eb87bb19b77b2e81af020edd20
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ea0b9aecbaca9a8e784fd2bcb50f78cbdcf4c5cfb45a7700bb222e4cc104c644
-R 31ad76526bf706e018f4fff70c0faaae
+P 779d5dc8797ea246d0397f7e94b1be716b0baa735e8d9f5a6fc4cffd887a7420
+R 3418b5d1d9cfd0be016a4ba94e2517df
 U drh
-Z ffe3b8625e4fbe0c7711c5e4b79ea34e
+Z 9cbbb52059b4c8fcaaea8c508412b455
 # Remove this line to create a well-formed Fossil manifest.
