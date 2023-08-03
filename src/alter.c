@@ -1554,6 +1554,7 @@ static void renameColumnFunc(
       sCtx.pTab = sParse.pNewTable;
       if( bFKOnly==0 ){
         if( iCol<sParse.pNewTable->nCol ){
+          fprintf(stderr, "Calling on %s\n", sParse.pNewTable->aCol[iCol].zCnName);
           renameTokenFind(
               &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zCnName
           );
@@ -1633,6 +1634,132 @@ renameColumnFunc_done:
       sqlite3_result_value(context, argv[0]);
     }else if( sParse.zErrMsg ){
       renameColumnParseError(context, "", argv[1], argv[2], &sParse);
+    }else{
+      sqlite3_result_error_code(context, rc);
+    }
+  }
+
+  renameParseCleanup(&sParse);
+  renameTokenFree(db, sCtx.pList);
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
+  sqlite3BtreeLeaveAll(db);
+}
+
+/*
+** SQL function:
+**
+**     libsql_update_constraints(SQL,TYPE,OBJ,DB,TABLE,COL,NEWNAME,QUOTE,TEMP)
+**
+**   0. zSql:     SQL statement to rewrite
+**   1. Database: Database name (e.g. "main")
+**   2. Table:    Table name
+**   3. iCol:     Index of column to rename
+**   4. zNew:     New constraint clause to add, e.g. "x REFERENCES other_table(y)"
+**   5. bQuote:   Non-zero if the new column name should be quoted.
+**   6. bTemp:    True if zSql comes from temp schema
+**
+** Do a UPDATE CONSTRAINT operation on the CREATE statement given in zSql.
+** The iCol-th column (left-most is 0) of table zTable is translated from zCol
+** into zNew definition, which the new constraints.
+** The name should be quoted if bQuote is true.
+**
+** This function is used internally by the ALTER TABLE UPDATE CONSTRAINT command.
+** It is only accessible to SQL created using sqlite3NestedParse().  It is
+** not reachable from ordinary SQL passed into sqlite3_prepare() unless the
+** SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test setting is enabled.
+*/
+static void updateConstraintsFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  RenameCtx sCtx;
+  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
+  const char *zDb = (const char*)sqlite3_value_text(argv[1]);
+  const char *zTable = (const char*)sqlite3_value_text(argv[2]);
+  int iCol = sqlite3_value_int(argv[3]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[4]);
+  int bQuote = sqlite3_value_int(argv[5]);
+  int bTemp = sqlite3_value_int(argv[6]);
+  const char *zOld;
+  int rc;
+  Parse sParse;
+  Index *pIdx;
+  int i;
+  Table *pTab;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+#endif
+
+  UNUSED_PARAMETER(NotUsed);
+  if( zSql==0 ) return;
+  if( zTable==0 ) return;
+  if( zNew==0 ) return;
+  if( iCol<0 ) return;
+  sqlite3BtreeEnterAll(db);
+  pTab = sqlite3FindTable(db, zTable, zDb);
+  if( pTab==0 || iCol>=pTab->nCol ){
+    sqlite3BtreeLeaveAll(db);
+    return;
+  }
+  zOld = pTab->aCol[iCol].zCnName;
+  memset(&sCtx, 0, sizeof(sCtx));
+  sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = 0;
+#endif
+  rc = renameParseSql(&sParse, zDb, db, zSql, bTemp);
+
+  sCtx.pTab = pTab;
+  if( rc!=SQLITE_OK ) goto updateConstraintsFunc_done;
+  if( sParse.pNewTable ){
+    if( IsOrdinaryTable(sParse.pNewTable) ){
+      int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
+      FKey *pFKey;
+      sCtx.pTab = sParse.pNewTable;
+      if( bFKOnly==0 ){
+        if( iCol<sParse.pNewTable->nCol ){
+          Column *col = &sParse.pNewTable->aCol[iCol];
+          RenameToken *pCol = renameTokenFind(
+              &sParse, &sCtx, (void*)col->zCnName
+          );
+          // Expand the token until we find the end of the column definition
+          // FIXME: is "," and ")" enough, or can they occur within quotes?
+          while (pCol->t.z[pCol->t.n] != 0 && pCol->t.z[pCol->t.n] != ',' && pCol->t.z[pCol->t.n] != ')') pCol->t.n++;
+          fprintf(stderr, "Extended token to replace: %.*s\n", pCol->t.n, pCol->t.z);
+        }
+        if( sCtx.iCol<0 ){
+          renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
+        }
+      }
+    } else {
+      // FIXME: only applicable to tables
+    }
+  }else if( sParse.pNewIndex ){
+    // FIXME: not applicable to indexes
+  }else{
+    // FIXME: not applicable to triggers
+  }
+
+  assert( rc==SQLITE_OK );
+  rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
+
+updateConstraintsFunc_done:
+  if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_ERROR && sqlite3WritableSchema(db) ){
+      sqlite3_result_value(context, argv[0]);
+    }else if( sParse.zErrMsg ){
+        char *zErr = sqlite3MPrintf(sParse.db, "error in adding %s to %s: %s", 
+            zNew,
+            zTable,
+            sParse.zErrMsg
+        );
+        sqlite3_result_error(context, zErr, -1);
+        sqlite3DbFree(sParse.db, zErr);
     }else{
       sqlite3_result_error_code(context, rc);
     }
@@ -2295,6 +2422,8 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
+    // libSQL extensions
+    INTERNAL_FUNCTION(libsql_update_constraints, 7, updateConstraintsFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
