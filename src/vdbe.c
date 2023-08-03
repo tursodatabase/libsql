@@ -3156,7 +3156,7 @@ op_column_restart:
               || (t>=12 && ((t&1)==0 || p5==OPFLAG_BYTELENARG))
              )
         )
-     || (len = sqlite3VdbeSerialTypeLen(t))==0
+     || sqlite3VdbeSerialTypeLen(t)==0
     ){
       /* Content is irrelevant for
       **    1. the typeof() function,

@@ -1101,7 +1101,9 @@ static int jsonParseAddNode(
   if( pParse->nNode>=pParse->nAlloc ){
     return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
+  assert( pParse->aNode!=0 );
   p = &pParse->aNode[pParse->nNode];
+  assert( p!=0 );
   p->eType = (u8)(eType & 0xff);
   p->jnFlags = (u8)(eType >> 8);
   VVA( p->eU = zContent ? 1 : 0 );
@@ -1121,6 +1123,8 @@ static void jsonParseAddNodeArray(
   JsonNode *aNode,          /* Array of nodes to add */
   u32 nNode                 /* Number of elements in aNew */
 ){
+  assert( aNode!=0 );
+  assert( nNode>=1 );
   if( pParse->nNode + nNode > pParse->nAlloc ){
     u32 nNew = pParse->nNode + nNode;
     JsonNode *aNew = sqlite3_realloc64(pParse->aNode, nNew*sizeof(JsonNode));
