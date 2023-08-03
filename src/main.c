@@ -4160,10 +4160,12 @@ int sqlite3_test_control(int op, ...){
         sqlite3ShowSrcList(0);
         sqlite3ShowWith(0);
         sqlite3ShowUpsert(0);
+#ifndef SQLITE_OMIT_TRIGGER
         sqlite3ShowTriggerStep(0);
         sqlite3ShowTriggerStepList(0);
         sqlite3ShowTrigger(0);
         sqlite3ShowTriggerList(0);
+#endif
 #ifndef SQLITE_OMIT_WINDOWFUNC
         sqlite3ShowWindow(0);
         sqlite3ShowWinFunc(0);
@@ -4470,6 +4472,7 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+#if !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, int X);
     **
     **   X<0     Make no changes to the bUseLongDouble.  Just report value.
@@ -4484,6 +4487,7 @@ int sqlite3_test_control(int op, ...){
       rc = sqlite3Config.bUseLongDouble!=0;
       break;
     }
+#endif
 
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)

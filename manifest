@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\swhose\svalue\schanges\sunder\sthe\sno_optimization\spermutation\ndue\sto\sthe\srecent\schange\sto\sadd\sthe\sability\sfor\sSQLITE_TESTCTRL_OPTIMIZATION\nto\sdisable\sone-pass.
-D 2023-08-03T13:07:58.560
+C Fix\sbuild\sproblems\sassociated\swith\sSQLITE_OMIT_WSD\sand\sSQLITE_OMIT_TRIGGER.
+D 2023-08-03T13:30:00.596
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -606,7 +606,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c cea55234b99879a6c3be04cd01f32e83f760672356415b541929cdd16441ede3
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 176d6b2cb18a6ad73b133db17f6fc351c4d9a2d510deebdb76c22bde9cfd1465
-F src/main.c 6577cd908f254de4d109df58323421f5934f674f5b7ee4b4b337a055458ecad3
+F src/main.c fde8f13c876a658b4e8b74b77d875ca887915c174ea6a2f3122d80966f93d865
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2049,8 +2049,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 779d5dc8797ea246d0397f7e94b1be716b0baa735e8d9f5a6fc4cffd887a7420
-R 3418b5d1d9cfd0be016a4ba94e2517df
+P 976e39c6322f9e51054546e2d9bc135b683d141054c645c9098002cdc310c7c7
+R 40d68a1e2b5e7519a82f2b48f113678b
 U drh
-Z 9cbbb52059b4c8fcaaea8c508412b455
+Z 074a872d132d6de9725cc473b22a921e
 # Remove this line to create a well-formed Fossil manifest.
