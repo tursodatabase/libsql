@@ -677,6 +677,109 @@ void sqlite3AlterRenameColumn(
 }
 
 /*
+** Handles the following parser reduction:
+**
+**  cmd ::= ALTER TABLE pSrc UPDATE COLUMN pOld TO pNew
+*/
+void libsqlAlterUpdateColumn(
+  Parse *pParse,                  /* Parsing context */
+  SrcList *pSrc,                  /* Table being altered.  pSrc->nSrc==1 */
+  Token *pOld,                    /* Name of column being changed */
+  Token *pNew                     /* New column declaration */
+){
+  sqlite3 *db = pParse->db;       /* Database connection */
+  Table *pTab;                    /* Table being updated */
+  int iCol;                       /* Index of column being updated */
+  char *zOld = 0;                 /* Old column name */
+  char *zNew = 0;                 /* New column declaration */
+  const char *zDb;                /* Name of schema containing the table */
+  int iSchema;                    /* Index of the schema */
+  int bQuote;                     /* True to quote the new name */
+
+  /* Locate the table to be altered */
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
+  if( !pTab ) goto exit_update_column;
+
+  /* Cannot alter a system table */
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ) goto exit_update_column;
+  if( SQLITE_OK!=isRealTable(pParse, pTab, 0) ) goto exit_update_column;
+
+  /* Which schema holds the table to be altered */  
+  iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iSchema>=0 );
+  zDb = db->aDb[iSchema].zDbSName;
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  /* Invoke the authorization callback. */
+  if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
+    goto exit_update_column;
+  }
+#endif
+
+  /* Make sure the old name really is a column name in the table to be
+  ** altered.  Set iCol to be the index of the column being updated */
+  zOld = sqlite3NameFromToken(db, pOld);
+  if( !zOld ) goto exit_update_column;
+  for(iCol=0; iCol<pTab->nCol; iCol++){
+    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zCnName, zOld) ) break;
+  }
+  if( iCol==pTab->nCol ){
+    sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pOld);
+    goto exit_update_column;
+  }
+
+  /* Ensure the schema contains no double-quoted strings */
+  renameTestSchema(pParse, zDb, iSchema==1, "", 0);
+  renameFixQuotes(pParse, zDb, iSchema==1);
+
+  /* Do the update operation using a recursive UPDATE statement that
+  ** uses the sqlite_update_column() SQL function to compute the new
+  ** CREATE statement text for the sqlite_schema table.
+  */
+  sqlite3MayAbort(pParse);
+  if(pOld->n != pNew->n || sqlite3StrNICmp(pOld->z, pNew->z, pOld->n) != 0) {
+    sqlite3ErrorMsg(pParse, "UPDATE cannot also rename column: \"%T\" to \"%T\". Use ALTER TABLE RENAME instead", pOld, pNew);
+    goto exit_update_column;
+  }
+  // NOTICE: this is the main difference in UPDATE COLUMN compared to RENAME COLUMN,
+  // we just take the whole new column declaration as it is.
+  // FIXME: the semicolon can also appear in the middle of the declaration when it's quoted,
+  // so we should check from the end.
+  pNew->n = sqlite3Strlen30(pNew->z);
+  while (pNew->n > 0 && pNew->z[pNew->n - 1] == ';') pNew->n--;
+  zNew = sqlite3NameFromToken(db, pNew);
+  if( !zNew ) goto exit_update_column;
+  assert( pNew->n>0 );
+  bQuote = sqlite3Isquote(pNew->z[0]);
+  sqlite3NestedParse(pParse, 
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
+      "sql = libsql_update_column(sql, %Q, %Q, %d, %Q, %d, %d) "
+      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
+      " AND (type != 'index' OR tbl_name = %Q)",
+      zDb,
+      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
+      pTab->zName
+  );
+
+  sqlite3NestedParse(pParse, 
+      "UPDATE temp." LEGACY_SCHEMA_TABLE " SET "
+      "sql = libsql_update_column(sql, %Q, %Q, %d, %Q, %d, 1) "
+      "WHERE type IN ('trigger', 'view')",
+      zDb, pTab->zName, iCol, zNew, bQuote
+  );
+
+  /* Drop and reload the database schema. */
+  renameReloadSchema(pParse, iSchema, INITFLAG_AlterRename);
+  renameTestSchema(pParse, zDb, iSchema==1, "after update", 1);
+
+ exit_update_column:
+  sqlite3SrcListDelete(db, pSrc);
+  sqlite3DbFree(db, zOld);
+  sqlite3DbFree(db, zNew);
+  return;
+}
+
+/*
 ** Each RenameToken object maps an element of the parse tree into
 ** the token that generated that element.  The parse tree element
 ** might be one of:
@@ -1554,7 +1657,6 @@ static void renameColumnFunc(
       sCtx.pTab = sParse.pNewTable;
       if( bFKOnly==0 ){
         if( iCol<sParse.pNewTable->nCol ){
-          fprintf(stderr, "Calling on %s\n", sParse.pNewTable->aCol[iCol].zCnName);
           renameTokenFind(
               &sParse, &sCtx, (void*)sParse.pNewTable->aCol[iCol].zCnName
           );
@@ -1650,27 +1752,27 @@ renameColumnFunc_done:
 /*
 ** SQL function:
 **
-**     libsql_update_constraints(SQL,TYPE,OBJ,DB,TABLE,COL,NEWNAME,QUOTE,TEMP)
+**     libsql_update_column(SQL,TYPE,OBJ,DB,TABLE,COL,NEWNAME,QUOTE,TEMP)
 **
 **   0. zSql:     SQL statement to rewrite
 **   1. Database: Database name (e.g. "main")
 **   2. Table:    Table name
 **   3. iCol:     Index of column to rename
-**   4. zNew:     New constraint clause to add, e.g. "x REFERENCES other_table(y)"
+**   4. zNew:     New column clause to add, e.g. "x REFERENCES other_table(y)"
 **   5. bQuote:   Non-zero if the new column name should be quoted.
 **   6. bTemp:    True if zSql comes from temp schema
 **
-** Do a UPDATE CONSTRAINT operation on the CREATE statement given in zSql.
+** Do a ALTER TABLE UPDATE COLUMN operation on the CREATE statement given in zSql.
 ** The iCol-th column (left-most is 0) of table zTable is translated from zCol
 ** into zNew definition, which the new constraints.
 ** The name should be quoted if bQuote is true.
 **
-** This function is used internally by the ALTER TABLE UPDATE CONSTRAINT command.
+** This function is used internally by the ALTER TABLE UPDATE COLUMN command.
 ** It is only accessible to SQL created using sqlite3NestedParse().  It is
 ** not reachable from ordinary SQL passed into sqlite3_prepare() unless the
 ** SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test setting is enabled.
 */
-static void updateConstraintsFunc(
+static void updateColumnFunc(
   sqlite3_context *context,
   int NotUsed,
   sqlite3_value **argv
@@ -1715,22 +1817,31 @@ static void updateConstraintsFunc(
   rc = renameParseSql(&sParse, zDb, db, zSql, bTemp);
 
   sCtx.pTab = pTab;
-  if( rc!=SQLITE_OK ) goto updateConstraintsFunc_done;
+  if( rc!=SQLITE_OK ) goto updateColumnFunc_done;
   if( sParse.pNewTable ){
     if( IsOrdinaryTable(sParse.pNewTable) ){
       int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
       FKey *pFKey;
       sCtx.pTab = sParse.pNewTable;
       if( bFKOnly==0 ){
-        if( iCol<sParse.pNewTable->nCol ){
+        if (iCol<sParse.pNewTable->nCol) {
           Column *col = &sParse.pNewTable->aCol[iCol];
           RenameToken *pCol = renameTokenFind(
               &sParse, &sCtx, (void*)col->zCnName
           );
           // Expand the token until we find the end of the column definition
-          // FIXME: is "," and ")" enough, or can they occur within quotes?
-          while (pCol->t.z[pCol->t.n] != 0 && pCol->t.z[pCol->t.n] != ',' && pCol->t.z[pCol->t.n] != ')') pCol->t.n++;
-          fprintf(stderr, "Extended token to replace: %.*s\n", pCol->t.n, pCol->t.z);
+          // FIXME: corner cases we don't cover are expected here, like quoted identifiers
+          // and other kinds of parentheses, and they would result in an incorrect SQL statement being generated.
+          // What we want here is to expand to the whole definition, including constraints, types, etc.
+          int open_parens = 0;
+          while (pCol->t.z[pCol->t.n] != 0 && pCol->t.z[pCol->t.n] != ',') {
+            if (pCol->t.z[pCol->t.n] == '(') open_parens++;
+            if (pCol->t.z[pCol->t.n] == ')') open_parens--;
+            if (open_parens < 0) {
+              break;
+            }
+            pCol->t.n++;
+          }
         }
         if( sCtx.iCol<0 ){
           renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
@@ -1748,7 +1859,7 @@ static void updateConstraintsFunc(
   assert( rc==SQLITE_OK );
   rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
 
-updateConstraintsFunc_done:
+updateColumnFunc_done:
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_ERROR && sqlite3WritableSchema(db) ){
       sqlite3_result_value(context, argv[0]);
@@ -2423,7 +2534,7 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
     // libSQL extensions
-    INTERNAL_FUNCTION(libsql_update_constraints, 7, updateConstraintsFunc),
+    INTERNAL_FUNCTION(libsql_update_column, 7, updateColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
