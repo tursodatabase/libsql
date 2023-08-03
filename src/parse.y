@@ -1719,7 +1719,7 @@ add_column_fullname ::= fullname(X). {
   sqlite3AlterBeginAddColumn(pParse, X);
 }
 cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
-  libsqlAlterUpdateColumn(pParse, X, &Y, &Z);
+  sqlite3AlterRenameColumn(pParse, X, &Y, &Z);
 }
 
 cmd ::= ALTER TABLE fullname(X) UPDATE COLUMNKW columnname(Y) TO columnname(Z) carglist. {
