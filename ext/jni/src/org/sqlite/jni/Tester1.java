@@ -909,10 +909,19 @@ public class Tester1 {
     sqlite3_close_v2(db);
   }
 
-  private static void testFts1(){
-    Fts5ExtensionApi fea = Fts5ExtensionApi.getInstance();
-    affirm( null != fea );
-    affirm( fea.getNativePointer() != 0 );
+  @SuppressWarnings("unchecked")
+  private static void testFts5(){
+    try {
+      Class t = Class.forName("org.sqlite.jni.TesterFts5");
+      java.lang.reflect.Constructor ctor = t.getConstructor();
+      ctor.newInstance();
+    }catch(ClassNotFoundException e){
+      outln("FTS5 classes not loaded. Skipping FTS tests.");
+    }catch(NoSuchMethodException e){
+      outln("FTS5 tester ctor not found. Skipping FTS tests.");
+    }catch(Exception e){
+      outln("FTS5 tester cannot be instantiated. Skipping FTS tests.");
+    }
   }
 
   private static void testSleep(){
@@ -947,6 +956,7 @@ public class Tester1 {
     testCommitHook();
     testRollbackHook();
     testUpdateHook();
+    testFts5();
     //testSleep();
     if(liArgs.indexOf("-v")>0){
       sqlite3_do_something_for_developer();

@@ -206,6 +206,7 @@ static const struct {
 #ifdef SQLITE_ENABLE_FTS5
   const char * const Fts5Context;
   const char * const Fts5ExtensionApi;
+  const char * const fts5_api;
 #endif
 } S3ClassNames = {
   "org/sqlite/jni/sqlite3",
@@ -216,7 +217,7 @@ static const struct {
   "org/sqlite/jni/OutputPointer$Int64",
 #ifdef SQLITE_ENABLE_FTS5
   "org/sqlite/jni/Fts5Context",
-  "org/sqlite/jni/Fts5ExtensionApi"
+  "org/sqlite/jni/Fts5ExtensionApi",
   "org/sqlite/jni/fts5_api"
 #endif
 };
@@ -959,6 +960,7 @@ static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int32.value");
 }
 
+#ifdef SQLITE_ENABLE_FTS5
 /* Sets a native int64 value in OutputPointer.Int64 object jOut. */
 static void setOutputInt64(JNIEnv * env, jobject jOut, jlong v){
   jfieldID setter = 0;
@@ -977,6 +979,7 @@ static void setOutputInt64(JNIEnv * env, jobject jOut, jlong v){
   (*env)->SetIntField(env, jOut, setter, (jint)v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int64.value");
 }
+#endif /* SQLITE_ENABLE_FTS5 */
 
 static int encodingTypeIsValid(int eTextRep){
   switch(eTextRep){
@@ -2618,7 +2621,7 @@ static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
   JNIEnvCacheLine * const row = S3Global_env_cache(env);
   if( !row->jFtsExt ){
     row->jFtsExt = new_NativePointerHolder_object(env, S3ClassNames.Fts5ExtensionApi,
-                                                   s3jni_ftsext());
+                                                  s3jni_ftsext());
     if(row->jFtsExt) row->jFtsExt = REF_G(row->jFtsExt);
   }
   return row->jFtsExt;

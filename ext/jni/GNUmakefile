@@ -69,11 +69,12 @@ ifeq (1,$(enable.fts5))
     Fts5Context.java \
     Fts5ExtensionApi.java \
     Fts5Function.java \
+    TesterFts5.java \
   )
 endif
 CLASS_FILES :=
 define DOTCLASS_DEPS
-$(1).class: $(1).java
+$(1).class: $(1).java $(MAKEFILE)
 all: $(1).class
 CLASS_FILES += $(1).class
 endef
