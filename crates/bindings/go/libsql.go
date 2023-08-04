@@ -39,13 +39,26 @@ type Driver struct {
 	dbs map[string]*database
 }
 
+func libsqlError(message string, statusCode C.int, errMsg *C.char) error {
+	code := int(statusCode)
+	if errMsg != nil {
+		msg := C.GoString(errMsg)
+		C.libsql_free_string(errMsg)
+		return fmt.Errorf("%s\nerror code = %d: %v", message, code, msg)
+	} else {
+		return fmt.Errorf("%s\nerror code = %d", message, code)
+	}
+}
+
 func libsqlOpen(dataSourceName string) (C.libsql_database_t, error) {
 	connectionString := C.CString(dataSourceName)
 	defer C.free(unsafe.Pointer(connectionString))
 
-	db := C.libsql_open_ext(connectionString)
-	if db == nil {
-		return nil, fmt.Errorf("failed to open database")
+	var db C.libsql_database_t
+	var errMsg *C.char
+	statusCode := C.libsql_open_ext(connectionString, &db, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to open database ", dataSourceName), statusCode, errMsg)
 	}
 	return db, nil
 }

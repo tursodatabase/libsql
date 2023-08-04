@@ -44,6 +44,56 @@ func runMemoryAndFileTests(t *testing.T, test func(*testing.T, *sql.DB)) {
 	})
 }
 
+func TestErrorNonUtf8URL(t *testing.T) {
+	t.Parallel()
+	db, err := sql.Open("libsql", "a\xc5z")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	conn, err := db.Conn(context.Background())
+	if err == nil {
+		defer func() {
+			if err := conn.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		t.Fatal("expected error")
+	}
+	if err.Error() != "failed to open database a\xc5z\nerror code = 1: Wrong URL: invalid utf-8 sequence of 1 bytes from index 1" {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
+func TestErrorWrongURL(t *testing.T) {
+	t.Parallel()
+	db, err := sql.Open("libsql", "http://example.com/test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	conn, err := db.Conn(context.Background())
+	if err == nil {
+		defer func() {
+			if err := conn.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		t.Fatal("expected error")
+	}
+	if err.Error() != "failed to open database http://example.com/test\nerror code = 1: Error opening URL http://example.com/test: Failed to connect to database: `Unable to open remote database http://example.com/test with Database::open()`" {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
 func TestExec(t *testing.T) {
 	runMemoryAndFileTests(t, func(t *testing.T, db *sql.DB) {
 		if _, err := db.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER, name TEXT)"); err != nil {

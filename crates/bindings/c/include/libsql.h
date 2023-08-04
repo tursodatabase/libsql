@@ -32,7 +32,7 @@ typedef struct {
 extern "C" {
 #endif // __cplusplus
 
-libsql_database_t libsql_open_ext(const char *url);
+int libsql_open_ext(const char *url, libsql_database_t *out_db, const char **out_err_msg);
 
 void libsql_close(libsql_database_t db);
 

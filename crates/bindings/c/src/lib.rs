@@ -1,7 +1,6 @@
 #![allow(clippy::missing_safety_doc)]
 #![allow(non_camel_case_types)]
 
-mod errors;
 mod types;
 
 use types::{
@@ -9,18 +8,47 @@ use types::{
     libsql_row_t, libsql_rows, libsql_rows_future, libsql_rows_future_t, libsql_rows_t,
 };
 
+fn translate_string(s: String) -> *const std::ffi::c_char {
+    match std::ffi::CString::new(s) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null(),
+    }
+}
+
+unsafe fn set_err_msg(msg: String, output: *mut *const std::ffi::c_char) {
+    if !output.is_null() {
+        *output = translate_string(msg);
+    }
+}
+
 #[no_mangle]
-pub unsafe extern "C" fn libsql_open_ext(url: *const std::ffi::c_char) -> libsql_database_t {
+pub unsafe extern "C" fn libsql_open_ext(
+    url: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let url = unsafe { std::ffi::CStr::from_ptr(url) };
     let url = match url.to_str() {
         Ok(url) => url,
-        Err(_) => {
-            return libsql_database_t::null();
+        Err(e) => {
+            set_err_msg(format!("Wrong URL: {}", e.to_string()), out_err_msg);
+            return 1;
         }
     };
-    let db = libsql::Database::open(url.to_string()).unwrap();
-    let db = Box::leak(Box::new(libsql_database { db }));
-    libsql_database_t::from(db)
+    match libsql::Database::open(url.to_string()) {
+        Ok(db) => {
+            let db = Box::leak(Box::new(libsql_database { db }));
+            *out_db = libsql_database_t::from(db);
+            0
+        }
+        Err(e) => {
+            set_err_msg(
+                format!("Error opening URL {}: {}", url.to_string(), e.to_string()),
+                out_err_msg,
+            );
+            1
+        }
+    }
 }
 
 #[no_mangle]
@@ -183,10 +211,7 @@ pub unsafe extern "C" fn libsql_get_string(
 ) -> *const std::ffi::c_char {
     let res = res.get_ref();
     match res.get_value(col) {
-        Ok(libsql::params::Value::Text(s)) => match std::ffi::CString::new(s) {
-            Ok(s) => s.into_raw(),
-            Err(_) => std::ptr::null(),
-        },
+        Ok(libsql::params::Value::Text(s)) => translate_string(s),
         _ => std::ptr::null(),
     }
 }
