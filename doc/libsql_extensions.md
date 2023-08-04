@@ -2,6 +2,14 @@
 
 This document describes extensions to the library provided by libSQL, not available in upstream SQLite at the time of writing.
 
+## libsql\_close\_hook
+
+It was [reported](https://github.com/libsql/libsql/issues/62) that extensions have issues cleaning up after themselves,
+e.g. with regard to prepared statements they cache, because of the shutdown order incurred by libSQL.
+In order to allow users to customize what happens *before* a connection is closed, `libsql_close_hook` is introduced.
+There can only be one close hook per connection. The hook is executed before any internal cleanup routines are applied,
+which in particular makes it possible to terminate any outstanding cached prepared statements.
+
 ## RANDOM ROWID
 
 Regular tables use an implicitly defined, unique, 64-bit rowid column as its primary key.
