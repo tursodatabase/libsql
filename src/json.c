@@ -2022,20 +2022,25 @@ static JsonNode *jsonLookupStep(
   JsonNode *pRoot;
   if( pParse->oom ) return 0;
   pRoot = &pParse->aNode[iRoot];
-  while( (pRoot->jnFlags & JNODE_REPLACE)!=0 && pParse->useMod ){
-    u32 idx = (u32)(pRoot - pParse->aNode);
-    i = pParse->iSubst;
-    while( 1 /*exit-by-break*/ ){
-      assert( i<pParse->nNode );
-      assert( pParse->aNode[i].eType==JSON_SUBST );
-      assert( pParse->aNode[i].eU==4 );
-      assert( pParse->aNode[i].u.iPrev<i );
-      if( pParse->aNode[i].n==idx ){
-        pRoot = &pParse->aNode[i+1];
-        iRoot = i+1;
-        break;
+  if( pRoot->jnFlags & (JNODE_REPLACE|JNODE_REMOVE) && pParse->useMod ){
+    while( (pRoot->jnFlags & JNODE_REPLACE)!=0 ){
+      u32 idx = (u32)(pRoot - pParse->aNode);
+      i = pParse->iSubst;
+      while( 1 /*exit-by-break*/ ){
+        assert( i<pParse->nNode );
+        assert( pParse->aNode[i].eType==JSON_SUBST );
+        assert( pParse->aNode[i].eU==4 );
+        assert( pParse->aNode[i].u.iPrev<i );
+        if( pParse->aNode[i].n==idx ){
+          pRoot = &pParse->aNode[i+1];
+          iRoot = i+1;
+          break;
+        }
+        i = pParse->aNode[i].u.iPrev;
       }
-      i = pParse->aNode[i].u.iPrev;
+    }
+    if( pRoot->jnFlags & JNODE_REMOVE ){
+      return 0;
     }
   }
   if( zPath[0]==0 ) return pRoot;
