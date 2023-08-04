@@ -1,5 +1,5 @@
-C Fix\sharmless\sscan-build\swarnings.
-D 2023-08-03T18:14:09.385
+C Part\s2\sof\sthe\sfix\sfrom\s[a0f808363318c00fd1db78b].
+D 2023-08-04T08:41:55.716
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -518,7 +518,7 @@ F ext/wasm/c-pp.c 6d80d8569d85713effe8b0818a3cf51dc779e3f0bf8dc88771b8998552ee25
 F ext/wasm/common/SqliteTestUtil.js 7adaeffef757d8708418dc9190f72df22367b531831775804b31598b44f6aa51
 F ext/wasm/common/emscripten.css 11bd104b6c0d597c67d40cc8ecc0a60dae2b965151e3b6a37fa5708bac3acd15
 F ext/wasm/common/testing.css e97549bab24126c24e0daabfe2de9bb478fb0a69fdb2ddd0a73a992c091aad6f
-F ext/wasm/common/whwasmutil.js db6368ee57af90ee6691b6fb3ca97ee8064d12482e06a29113127c67b08f956e
+F ext/wasm/common/whwasmutil.js d7e07b1fc92ac19d341ef9522b1f5059bce1e7f5ee53381c66fda8d2f09803ae
 F ext/wasm/demo-123-worker.html a0b58d9caef098a626a1a1db567076fca4245e8d60ba94557ede8684350a81ed
 F ext/wasm/demo-123.html 8c70a412ce386bd3796534257935eb1e3ea5c581e5d5aea0490b8232e570a508
 F ext/wasm/demo-123.js 38aa8faec4d0ace1c973bc8a7a1533584463ebeecd4c420daa7d9687beeb9cb5
@@ -2049,8 +2049,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7b85c68fe252c0aa69724c82a95a4432e33ebdfb879b4b1b2ee2f9b98e9b792a
-R a96e12cc291a62ed113edd0653bd4bea
-U drh
-Z 67ca6292663d3822f9f5b8d1466985b4
+P 65a8716d8a1b7c5cffe9cdd25e4cbfa6528fcb146ff0fe67b0ce771b0537473d
+Q +ce0674b1925138f8f878b11aae0f8420bd968df0959f6dd7e208fb84bcbad07e
+R f31eaa202d402d0cb9f28c3fcacef5ec
+U stephan
+Z ae593bdf056165949851304ee1f109ec
 # Remove this line to create a well-formed Fossil manifest.
