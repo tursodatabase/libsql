@@ -263,7 +263,7 @@ struct Fts5PhraseIter {
 **   See xPhraseFirstColumn above.
 */
 struct Fts5ExtensionApi {
-  int iVersion;                   /* Currently always set to 3 */
+  int iVersion;                   /* Currently always set to 2 */
 
   void *(*xUserData)(Fts5Context*);
 
