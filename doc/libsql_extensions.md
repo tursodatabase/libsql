@@ -10,6 +10,15 @@ In order to allow users to customize what happens *before* a connection is close
 There can only be one close hook per connection. The hook is executed before any internal cleanup routines are applied,
 which in particular makes it possible to terminate any outstanding cached prepared statements.
 
+```c
+void *libsql_close_hook(
+  sqlite3 *db,              /* Attach the hook to this connection */
+  void(*xCallback)(         /* Callback function */
+    void*,sqlite3*),
+  void *pArg                /* First callback argument */
+);
+```
+
 ## RANDOM ROWID
 
 Regular tables use an implicitly defined, unique, 64-bit rowid column as its primary key.
