@@ -19,6 +19,54 @@ void *libsql_close_hook(
 );
 ```
 
+## Altering columns
+
+### Foreign keys
+
+Foreign keys in SQLite and libSQL requires a primary key column in one table and a foreign key constraint on another table.
+
+For example, if you have the following table:
+
+```console
+libsql> CREATE TABLE users (id INT);
+```
+
+To **add a foreign key constraint**, you first need to make the `id` column be the primary key:
+
+```
+libsql> ALTER TABLE users UPDATE COLUMN id TO id INT PRIMARY KEY;
+```
+
+You can then create another table:
+
+```
+libsql> CREATE TABLE emails (user_id INT, email TEXT);
+```
+
+and add a foreign key constraint from the `user_id` column to the `id` column of the `users` table:
+
+```
+libsql> ALTER TABLE emails UPDATE COLUMN user_id TO user_id INT REFERENCES users(id);
+```
+
+and now you have the following schema in your database:
+
+```
+libsql> .schema
+CREATE TABLE users (id INT PRIMARY KEY);
+CREATE TABLE emails (user_id INT REFERENCES users(id), email TEXT);
+```
+
+To **remove a foreign constraint**, you do the following:
+
+```console
+libsql> ALTER TABLE emails UPDATE COLUMN user_id TO user_id INT;
+libsql> ALTER TABLE users UPDATE COLUMN id TO id INT;
+libsql> .schema
+CREATE TABLE users (id INT);
+CREATE TABLE emails (user_id INT, email TEXT);
+```
+
 ## RANDOM ROWID
 
 Regular tables use an implicitly defined, unique, 64-bit rowid column as its primary key.
