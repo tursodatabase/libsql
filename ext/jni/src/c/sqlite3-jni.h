@@ -1642,11 +1642,19 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnCount
 
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xRowCount
- * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/OutputPointer/Int64;)I
+ * Method:    xColumnSize
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/Int32;)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowCount
-  (JNIEnv *, jobject, jobject, jobject);
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnSize
+  (JNIEnv *, jobject, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xColumnText
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/ByteArray;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnText
+  (JNIEnv *, jobject, jobject, jint, jobject);
 
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
@@ -1655,6 +1663,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowCount
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnTotalSize
   (JNIEnv *, jobject, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xInst
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xInst
+  (JNIEnv *, jobject, jobject, jint, jobject, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xInstCount
+ * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xInstCount
+  (JNIEnv *, jobject, jobject, jobject);
 
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
@@ -1671,6 +1695,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseCount
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseSize
   (JNIEnv *, jobject, jobject, jint);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xRowCount
+ * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/OutputPointer/Int64;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowCount
+  (JNIEnv *, jobject, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xRowid
+ * Signature: (Lorg/sqlite/jni/Fts5Context;)J
+ */
+JNIEXPORT jlong JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowid
+  (JNIEnv *, jobject, jobject);
 
 #ifdef __cplusplus
 }

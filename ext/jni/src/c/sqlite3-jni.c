@@ -203,6 +203,8 @@ static const struct {
   const char * const sqlite3_value;
   const char * const OutputPointer_Int32;
   const char * const OutputPointer_Int64;
+  const char * const OutputPointer_String;
+  const char * const OutputPointer_ByteArray;
 #ifdef SQLITE_ENABLE_FTS5
   const char * const Fts5Context;
   const char * const Fts5ExtensionApi;
@@ -215,6 +217,8 @@ static const struct {
   "org/sqlite/jni/sqlite3_value",
   "org/sqlite/jni/OutputPointer$Int32",
   "org/sqlite/jni/OutputPointer$Int64",
+  "org/sqlite/jni/OutputPointer$String",
+  "org/sqlite/jni/OutputPointer$ByteArray",
 #ifdef SQLITE_ENABLE_FTS5
   "org/sqlite/jni/Fts5Context",
   "org/sqlite/jni/Fts5ExtensionApi",
@@ -941,21 +945,33 @@ static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
   return rc;
 }
 
-/* Sets a native int32 value in OutputPointer.Int32 object jOut. */
-static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
+/**
+   Common init for setOutputInt32() and friends.
+*/
+static void setupOutputPointer(JNIEnv * env, const char *zClassName,
+                               const char *zTypeSig,
+                               jobject jOut, jfieldID * pSetter){
   jfieldID setter = 0;
   struct NphCacheLine * const cacheLine =
-    S3Global_nph_cache(env, S3ClassNames.OutputPointer_Int32);
+    S3Global_nph_cache(env, zClassName);
   if(cacheLine && cacheLine->klazz && cacheLine->fidValue){
     setter = cacheLine->fidValue;
   }else{
     const jclass klazz = (*env)->GetObjectClass(env, jOut);
-    setter = (*env)->GetFieldID(env, klazz, "value", "I");
+    setter = (*env)->GetFieldID(env, klazz, "value", zTypeSig);
+    EXCEPTION_IS_FATAL("setupOutputPointer() could not find OutputPointer.*.value");
     if(cacheLine){
       assert(!cacheLine->fidValue);
       cacheLine->fidValue = setter;
     }
   }
+  *pSetter = setter;
+}
+
+/* Sets a native int32 value in OutputPointer.Int32 object jOut. */
+static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
+  jfieldID setter = 0;
+  setupOutputPointer(env, S3ClassNames.OutputPointer_Int32, "I", jOut, &setter);
   (*env)->SetIntField(env, jOut, setter, (jint)v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int32.value");
 }
@@ -964,21 +980,34 @@ static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
 /* Sets a native int64 value in OutputPointer.Int64 object jOut. */
 static void setOutputInt64(JNIEnv * env, jobject jOut, jlong v){
   jfieldID setter = 0;
-  struct NphCacheLine * const cacheLine =
-    S3Global_nph_cache(env, S3ClassNames.OutputPointer_Int64);
-  if(cacheLine && cacheLine->klazz && cacheLine->fidValue){
-    setter = cacheLine->fidValue;
-  }else{
-    const jclass klazz = (*env)->GetObjectClass(env, jOut);
-    setter = (*env)->GetFieldID(env, klazz, "value", "I");
-    if(cacheLine){
-      assert(!cacheLine->fidValue);
-      cacheLine->fidValue = setter;
-    }
-  }
-  (*env)->SetIntField(env, jOut, setter, (jint)v);
+  setupOutputPointer(env, S3ClassNames.OutputPointer_Int64, "J", jOut, &setter);
+  (*env)->SetLongField(env, jOut, setter, v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int64.value");
 }
+static void setOutputByteArray(JNIEnv * env, jobject jOut, jbyteArray v){
+  jfieldID setter = 0;
+  setupOutputPointer(env, S3ClassNames.OutputPointer_ByteArray, "[B",
+                     jOut, &setter);
+  (*env)->SetObjectField(env, jOut, setter, v);
+  EXCEPTION_IS_FATAL("Cannot set OutputPointer.ByteArray.value");
+}
+#if 0
+/* Sets a String value in OutputPointer.String object jOut. */
+static void setOutputString(JNIEnv * env, jobject jOut, jstring v){
+  jfieldID setter = 0;
+  setupOutputPointer(env, S3ClassNames.OutputPointer_String, "Ljava/lang/String",
+                     jOut, &setter);
+  (*env)->SetObjectField(env, jOut, setter, v);
+  EXCEPTION_IS_FATAL("Cannot set OutputPointer.String.value");
+}
+static void setOutputString2(JNIEnv * env, jobject jOut, const char * zStr){
+  jstring const jStr = (*env)->NewStringUTF(env, zStr);
+  if(jStr){
+    setOutputString(env, jOut, jStr);
+    UNREF_L(jStr);
+  }
+}
+#endif
 #endif /* SQLITE_ENABLE_FTS5 */
 
 static int encodingTypeIsValid(int eTextRep){
@@ -2636,11 +2665,72 @@ JDECLFts(jint,xColumnCount)(JENV_JSELF,jobject jCtx){
   return (jint)fext->xColumnCount(PtrGet_Fts5Context(jCtx));
 }
 
+JDECLFts(jint,xColumnSize)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOut32){
+  Fts5ExtDecl;
+  int n1 = 0;
+  int const rc = fext->xColumnSize(PtrGet_Fts5Context(jCtx), (int)iIdx, &n1);
+  if( 0==rc ) setOutputInt32(env, jOut32, n1);
+  return rc;
+}
+
+JDECLFts(jint,xColumnText)(JENV_JSELF,jobject jCtx, jint iCol,
+                           jobject jOutBA){
+  Fts5ExtDecl;
+  const char *pz = 0;
+  int pn = 0;
+  int rc = fext->xColumnText(PtrGet_Fts5Context(jCtx), (int)iCol,
+                             &pz, &pn);
+  if( 0==rc ){
+    /* Two problems here:
+
+       1) JNI doesn't give us a way to create strings from standard
+       UTF-8.  We're converting the results to MUTF-8, which may
+       differ for exotic text.
+
+       2) JNI's NewStringUTF() (which treats its input as MUTF-8) does
+       not take a _length_ - it requires the string to be
+       NUL-terminated, which may not the case here.
+
+       So we use a byte array and convert it to UTF-8 Java-side.
+    */
+    jbyteArray const jba = (*env)->NewByteArray(env, (jint)pn);
+    if( jba ){
+      (*env)->SetByteArrayRegion(env, jba, 0, (jint)pn, (const jbyte*)pz);
+      setOutputByteArray(env, jOutBA, jba);
+      UNREF_L(jba)/*jOutBA has a reference*/;
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
+  return (jint)rc;
+}
+
 JDECLFts(jint,xColumnTotalSize)(JENV_JSELF,jobject jCtx, jint iCol, jobject jOut64){
   Fts5ExtDecl;
   sqlite3_int64 nOut = 0;
   int const rc = fext->xColumnTotalSize(PtrGet_Fts5Context(jCtx), (int)iCol, &nOut);
   if( 0==rc && jOut64 ) setOutputInt64(env, jOut64, (jlong)nOut);
+  return (jint)rc;
+}
+
+JDECLFts(jint,xInst)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOutPhrase,
+                    jobject jOutCol, jobject jOutOff){
+  Fts5ExtDecl;
+  int n1 = 0, n2 = 2, n3 = 0;
+  int const rc = fext->xInst(PtrGet_Fts5Context(jCtx), (int)iIdx, &n1, &n2, &n3);
+  if( 0==rc ){
+    setOutputInt32(env, jOutPhrase, n1);
+    setOutputInt32(env, jOutCol, n2);
+    setOutputInt32(env, jOutOff, n3);
+  }
+  return rc;
+}
+
+JDECLFts(jint,xInstCount)(JENV_JSELF,jobject jCtx, jobject jOut32){
+  Fts5ExtDecl;
+  int nOut = 0;
+  int const rc = fext->xInstCount(PtrGet_Fts5Context(jCtx), &nOut);
+  if( 0==rc && jOut32 ) setOutputInt32(env, jOut32, nOut);
   return (jint)rc;
 }
 
@@ -2660,6 +2750,11 @@ JDECLFts(jint,xRowCount)(JENV_JSELF,jobject jCtx, jobject jOut64){
   int const rc = fext->xRowCount(PtrGet_Fts5Context(jCtx), &nOut);
   if( 0==rc && jOut64 ) setOutputInt64(env, jOut64, (jlong)nOut);
   return (jint)rc;
+}
+
+JDECLFts(jlong,xRowid)(JENV_JSELF,jobject jCtx){
+  Fts5ExtDecl;
+  return (jlong)fext->xRowid(PtrGet_Fts5Context(jCtx));
 }
 
 

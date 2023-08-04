@@ -12,6 +12,7 @@
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni;
+import java.nio.charset.StandardCharsets;
 
 /**
    FAR FROM COMPLETE and the feasibility of binding this to Java
@@ -26,12 +27,34 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
 
   public static native Fts5ExtensionApi getInstance();
 
-  public native int xColumnCount(Fts5Context fcx);
-  public native int xRowCount(Fts5Context fcx, OutputPointer.Int64 nRow);
-  public native int xColumnTotalSize(Fts5Context fcx, int iCol, OutputPointer.Int64 pnToken);
-  public native int xPhraseCount(Fts5Context fcx);
-  public native int xPhraseSize(Fts5Context fcx, int iPhrase);
-  /**************************************************************
+  public native int xColumnCount(@NotNull Fts5Context fcx);
+  public native int xColumnSize(@NotNull Fts5Context cx, int iCol,
+                                @NotNull OutputPointer.Int32 pnToken);
+  public native int xColumnText(@NotNull Fts5Context cx, int iCol,
+                                @NotNull OutputPointer.ByteArray txt);
+  public int xColumnText(@NotNull Fts5Context cx, int iCol,
+                         @NotNull OutputPointer.String txt){
+    final OutputPointer.ByteArray out = new OutputPointer.ByteArray();
+    int rc = xColumnText(cx, iCol, out);
+    if( 0 == rc ){
+      txt.setValue( new String(out.getValue(), StandardCharsets.UTF_8) );
+    }
+    return rc;
+  }
+  public native int xColumnTotalSize(@NotNull Fts5Context fcx, int iCol,
+                                     @NotNull OutputPointer.Int64 pnToken);
+  public native int xInst(@NotNull Fts5Context cx, int iIdx,
+                          @NotNull OutputPointer.Int32 piPhrase,
+                          @NotNull OutputPointer.Int32 piCol,
+                          @NotNull OutputPointer.Int32 piOff);
+  public native int xInstCount(@NotNull Fts5Context fcx,
+                               @NotNull OutputPointer.Int32 pnInst);
+  public native int xPhraseCount(@NotNull Fts5Context fcx);
+  public native int xPhraseSize(@NotNull Fts5Context fcx, int iPhrase);
+  public native int xRowCount(@NotNull Fts5Context fcx,
+                              @NotNull OutputPointer.Int64 nRow);
+  public native long xRowid(@NotNull Fts5Context cx);
+/**************************************************************
   void *(*xUserData)(Fts5Context*);
 
   int (*xTokenize)(Fts5Context*,
@@ -40,15 +63,6 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
     int (*xToken)(void*, int, const char*, int, int, int)
   );
 
-  int (*xPhraseCount)(Fts5Context*);
-  int (*xPhraseSize)(Fts5Context*, int iPhrase);
-
-  int (*xInstCount)(Fts5Context*, int *pnInst);
-  int (*xInst)(Fts5Context*, int iIdx, int *piPhrase, int *piCol, int *piOff);
-
-  sqlite3_int64 (*xRowid)(Fts5Context*);
-  int (*xColumnText)(Fts5Context*, int iCol, const char **pz, int *pn);
-  int (*xColumnSize)(Fts5Context*, int iCol, int *pnToken);
 
   int (*xQueryPhrase)(Fts5Context*, int iPhrase, void *pUserData,
     int(*)(const Fts5ExtensionApi*,Fts5Context*,void*)
