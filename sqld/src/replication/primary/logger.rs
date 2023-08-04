@@ -906,6 +906,10 @@ fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
             std::ptr::null_mut(),
         );
 
+        if num_checkpointed < 0 {
+            tracing::error!("could not checkpoint database, make sure the database is in WAL mode and try again");
+        }
+
         // TODO: ensure correct page size
         ensure!(
             rc == 0 && num_checkpointed >= 0,
