@@ -613,8 +613,6 @@ globalThis.WhWasmUtilInstaller = function(target){
   target.installFunction = (func, sig)=>__installFunction(func, sig, false);
 
   /**
-     EXPERIMENTAL! DO NOT USE IN CLIENT CODE!
-
      Works exactly like installFunction() but requires that a
      scopedAllocPush() is active and uninstalls the given function
      when that alloc scope is popped via scopedAllocPop().
@@ -1722,7 +1720,18 @@ globalThis.WhWasmUtilInstaller = function(target){
               FuncPtrAdapter.debugOut("FuncPtrAdapter uninstalling", this,
                                       this.contextKey(argv,argIndex), '@'+pair[1], v);
             }
-            try{target.uninstallFunction(pair[1])}
+            try{
+              /* Because the pending native call might rely on the
+                 pointer we're replacing, e.g. as is normally the case
+                 with sqlite3's xDestroy() methods, we don't
+                 immediately uninstall but instead add its pointer to
+                 the scopedAlloc stack, which will be cleared when the
+                 xWrap() mechanism is done calling the native
+                 function. We're relying very much here on xWrap()
+                 having pushed an alloc scope.
+              */
+              cache.scopedAlloc[cache.scopedAlloc.length-1].push(pair[1]);
+            }
             catch(e){/*ignored*/}
           }
           pair[0] = v;
