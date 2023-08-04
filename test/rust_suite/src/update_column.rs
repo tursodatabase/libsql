@@ -92,3 +92,40 @@ fn test_update_references_foreign_key() {
         .execute("INSERT INTO t2 VALUES (3, 'c', 42)", ())
         .is_ok());
 }
+
+#[test]
+fn test_update_syntax_validation() {
+    let conn = Connection::open_in_memory().unwrap();
+
+    assert!(conn
+        .execute("ALTER TABLE t UPDATE COLUMN id TO id", ())
+        .is_err());
+    conn.execute("CREATE TABLE t(id)", ()).unwrap();
+    assert!(conn
+        .execute("ALTER TABLE t UPDATE COLUMN id TO id", ())
+        .is_ok());
+    assert!(conn
+        .execute("ALTER TABLE t UPDATE COLUMN id TO id 1 2 3", ())
+        .is_err());
+    assert!(conn
+        .execute("ALTER TABLE t UPDATE COLUMN id TO id2", ())
+        .is_err());
+    assert!(conn
+        .execute(
+            "ALTER TABLE t UPDATE COLUMN id TO id REFERENCES x(y) TEXT",
+            ()
+        ) // type affinity should go before REFERENCES
+        .is_err());
+
+    conn.execute("CREATE TABLE \";;)),\"(id, \"v,);\")", ())
+        .unwrap();
+    assert!(conn
+        .execute(
+            "ALTER TABLE \";;)),\" UPDATE COLUMN \"v,);\" TO \"v,);\" float",
+            ()
+        )
+        .is_ok());
+    assert!(conn
+        .execute("ALTER TABLE \";;)),\" UPDATE COLUMN \"v,);\" TO \"v,);\" REFERENCES \"x;;,)\"(\"y;,,,,\")", ())
+        .is_ok());
+}
