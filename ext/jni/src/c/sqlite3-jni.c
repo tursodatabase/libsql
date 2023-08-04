@@ -57,8 +57,10 @@
 #ifndef SQLITE_ENABLE_EXPLAIN_COMMENTS
 #  define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
 #endif
-#ifndef SQLITE_ENABLE_FTS4
-#  define SQLITE_ENABLE_FTS4 1
+#ifdef SQLITE_ENABLE_FTS5
+#  ifndef SQLITE_ENABLE_FTS4
+#    define SQLITE_ENABLE_FTS4 1
+#  endif
 #endif
 #ifndef SQLITE_ENABLE_MATH_FUNCTIONS
 #  define SQLITE_ENABLE_MATH_FUNCTIONS 1
@@ -180,10 +182,13 @@
 /** Helpers for extracting pointers from jobjects, noting that the
     corresponding Java interfaces have already done the type-checking.
  */
-#define PtrGet_sqlite3(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3)
-#define PtrGet_sqlite3_stmt(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3_stmt)
-#define PtrGet_sqlite3_value(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3_value)
-#define PtrGet_sqlite3_context(OBJ) getNativePointer(env,OBJ,ClassNames.sqlite3_context)
+#define PtrGet_sqlite3(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3)
+#define PtrGet_sqlite3_stmt(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_stmt)
+#define PtrGet_sqlite3_value(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_value)
+#define PtrGet_sqlite3_context(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_context)
+#ifdef SQLITE_ENABLE_FTS5
+#define PtrGet_Fts5Context(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Context)
+#endif
 /* Helpers for Java value reference management. */
 #define REF_G(VAR) (*env)->NewGlobalRef(env, VAR)
 #define REF_L(VAR) (*env)->NewLocalRef(env, VAR)
@@ -200,12 +205,20 @@ static const struct {
   const char * const sqlite3_context;
   const char * const sqlite3_value;
   const char * const OutputPointer_Int32;
-} ClassNames = {
+#ifdef SQLITE_ENABLE_FTS5
+  const char * const Fts5Context;
+  const char * const Fts5ExtensionApi;
+#endif
+} S3ClassNames = {
   "org/sqlite/jni/sqlite3",
   "org/sqlite/jni/sqlite3_stmt",
   "org/sqlite/jni/sqlite3_context",
   "org/sqlite/jni/sqlite3_value",
-  "org/sqlite/jni/OutputPointer$Int32"
+  "org/sqlite/jni/OutputPointer$Int32",
+#ifdef SQLITE_ENABLE_FTS5
+  "org/sqlite/jni/Fts5Context",
+  "org/sqlite/jni/Fts5ExtensionApi"
+#endif
 };
 
 /** Create a trivial JNI wrapper for (int CName(void)). */
@@ -286,11 +299,11 @@ enum {
     Need enough space for (only) the library's NativePointerHolder
     types, a fixed count known at build-time. If we add more than this
     a fatal error will be triggered with a reminder to increase this.
-    This value needs to be at least the number of entries in the
-    ClassNames object, as that value is our upper limit. The
-    ClassNames entries are the keys for this particular cache.
+    This value needs to be, at most, the number of entries in the
+    S3ClassNames object, as that value is our upper limit. The
+    S3ClassNames entries are the keys for this particular cache.
   */
-  NphCache_SIZE = sizeof(ClassNames) / sizeof(char const *)
+  NphCache_SIZE = sizeof(S3ClassNames) / sizeof(char const *)
 };
 
 /**
@@ -299,7 +312,7 @@ enum {
 typedef struct NphCacheLine NphCacheLine;
 struct NphCacheLine {
   const char * zClassName /* "full/class/Name". Must be a static string
-                             from the ClassNames struct. */;
+                             from the S3ClassNames struct. */;
   jclass klazz        /* global ref to concrete NativePointerHolder class */;
   jmethodID midCtor   /* klazz's constructor */;
   jfieldID fidValue   /* NativePointerHolder.nativePointer and OutputPointer.X.value */;
@@ -327,6 +340,9 @@ struct JNIEnvCacheLine {
                             accounted for, so it may be best to
                             redefine the tracing API rather than
                             passing through the statement handles. */;
+#ifdef SQLITE_ENABLE_FTS5
+  jobject jFts5Ext       /* Java singleton for the Fts5ExtensionApi instance. */;
+#endif
 #if 0
   /* TODO: refactor this cache as a linked list with malloc()'d entries,
      rather than a fixed-size array in S3Global.envCache */
@@ -525,7 +541,7 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj, jclass klazz){
    If it does, we can dynamically allocate these instead.
 */
 FIXME_THREADING
-static struct JNIEnvCacheLine * S3Global_env_cache(JNIEnv * env){
+static struct JNIEnvCacheLine * S3Global_env_cache(JNIEnv * const env){
   struct JNIEnvCacheLine * row = 0;
   int i = 0;
   for( ; i < JNIEnvCache_SIZE; ++i ){
@@ -541,6 +557,7 @@ static struct JNIEnvCacheLine * S3Global_env_cache(JNIEnv * env){
     (*env)->FatalError(env, "Maintenance required: JNIEnvCache is full.");
     return NULL;
   }
+  memset(row, 0, sizeof(JNIEnvCacheLine));
   row->env = env;
   row->globalClassObj = REF_G((*env)->FindClass(env,"java/lang/Object"));
   row->globalClassLong = REF_G((*env)->FindClass(env,"java/lang/Long"));
@@ -635,7 +652,7 @@ static jfieldID getNativePointerField(JNIEnv * const env, jclass klazz){
    zClassName must be a static string so we can use its address
    as a cache key.
 */
-static void setNativePointer(JNIEnv * env, jobject ppOut, void * p,
+static void setNativePointer(JNIEnv * env, jobject ppOut, const void * p,
                              const char *zClassName){
   jfieldID setter = 0;
   struct NphCacheLine * const cacheLine = S3Global_nph_cache(env, zClassName);
@@ -655,7 +672,7 @@ static void setNativePointer(JNIEnv * env, jobject ppOut, void * p,
     }
   }
   (*env)->SetLongField(env, ppOut, setter, (jlong)p);
-  IFTHREW_REPORT;
+  EXCEPTION_IS_FATAL("Could not set NativePointerHolder.nativePointer.");
 }
 
 /**
@@ -858,6 +875,7 @@ static void PerDbStateJni_free_all(void){
   }
 }
 
+
 /**
    Requires that jCx be a Java-side sqlite3_context wrapper for pCx.
    This function calls sqlite3_aggregate_context() to allocate a tiny
@@ -883,7 +901,7 @@ static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
   void * pAgg;
   int rc = 0;
   struct NphCacheLine * const cacheLine =
-    S3Global_nph_cache(env, ClassNames.sqlite3_context);
+    S3Global_nph_cache(env, S3ClassNames.sqlite3_context);
   if(cacheLine && cacheLine->klazz && cacheLine->fidSetAgg){
     member = cacheLine->fidSetAgg;
     assert(member);
@@ -914,23 +932,23 @@ static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
   return rc;
 }
 
-/* Sets a native int32 value in OutputPointer.Int32 object ppOut. */
-static void setOutputInt32(JNIEnv * env, jobject ppOut, int v){
+/* Sets a native int32 value in OutputPointer.Int32 object jOut. */
+static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
   jfieldID setter = 0;
   struct NphCacheLine * const cacheLine =
-    S3Global_nph_cache(env, ClassNames.OutputPointer_Int32);
+    S3Global_nph_cache(env, S3ClassNames.OutputPointer_Int32);
   if(cacheLine && cacheLine->klazz && cacheLine->fidValue){
     setter = cacheLine->fidValue;
   }else{
-    const jclass klazz = (*env)->GetObjectClass(env, ppOut);
+    const jclass klazz = (*env)->GetObjectClass(env, jOut);
     setter = (*env)->GetFieldID(env, klazz, "value", "I");
     if(cacheLine){
       assert(!cacheLine->fidValue);
       cacheLine->fidValue = setter;
     }
   }
-  (*env)->SetIntField(env, ppOut, setter, (jint)v);
-  IFTHREW_REPORT;
+  (*env)->SetIntField(env, jOut, setter, (jint)v);
+  EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int32.value");
 }
 
 static int encodingTypeIsValid(int eTextRep){
@@ -1053,7 +1071,7 @@ static void ResultJavaVal_finalizer(void *v){
    its address as a cache key.
 */
 static jobject new_NativePointerHolder_object(JNIEnv * const env, const char *zClassName,
-                                              void * pNative){
+                                              const void * pNative){
   jobject rv = 0;
   jclass klazz = 0;
   jmethodID ctor = 0;
@@ -1067,7 +1085,8 @@ static jobject new_NativePointerHolder_object(JNIEnv * const env, const char *zC
     klazz = cacheLine
       ? cacheLine->klazz
       : (*env)->FindClass(env, zClassName);
-    ctor = (*env)->GetMethodID(env, klazz, "<init>", "()V");
+    ctor = klazz ? (*env)->GetMethodID(env, klazz, "<init>", "()V") : 0;
+    EXCEPTION_IS_FATAL("Cannot find constructor for class.");
     if(cacheLine){
       assert(zClassName == cacheLine->zClassName);
       assert(cacheLine->klazz);
@@ -1078,21 +1097,42 @@ static jobject new_NativePointerHolder_object(JNIEnv * const env, const char *zC
   assert(klazz);
   assert(ctor);
   rv = (*env)->NewObject(env, klazz, ctor);
+  EXCEPTION_IS_FATAL("No-arg constructor threw.");
   if(rv) setNativePointer(env, rv, pNative, zClassName);
   return rv;
 }
 
 static jobject new_sqlite3_value_wrapper(JNIEnv * const env, sqlite3_value *sv){
-  return new_NativePointerHolder_object(env, "org/sqlite/jni/sqlite3_value", sv);
+  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_value, sv);
 }
 
 static jobject new_sqlite3_context_wrapper(JNIEnv * const env, sqlite3_context *sv){
-  return new_NativePointerHolder_object(env, "org/sqlite/jni/sqlite3_context", sv);
+  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_context, sv);
 }
 
 static jobject new_sqlite3_stmt_wrapper(JNIEnv * const env, sqlite3_stmt *sv){
-  return new_NativePointerHolder_object(env, "org/sqlite/jni/sqlite3_stmt", sv);
+  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_stmt, sv);
 }
+
+#if 0
+#ifdef SQLITE_ENABLE_FTS5
+static jobject new_Fts5Context_wrapper(JNIEnv * const env, Fts5Context *sv){
+  return new_NativePointerHolder_object(env, S3ClassNames.Fts5Context, sv);
+}
+#endif
+#endif
+
+#ifdef SQLITE_ENABLE_FTS5
+/*static*/ jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
+  JNIEnvCacheLine * const row = S3Global_env_cache(env);
+  if( !row->jFts5Ext ){
+    row->jFts5Ext = new_NativePointerHolder_object(env, S3ClassNames.Fts5ExtensionApi,
+                                                   &sFts5Api/*from sqlite3.c*/);
+    if(row->jFts5Ext) row->jFts5Ext = REF_G(row->jFts5Ext);
+  }
+  return row->jFts5Ext;
+}
+#endif
 
 enum UDFType {
   UDF_SCALAR = 1,
@@ -1498,7 +1538,7 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
   if(ps) PerDbStateJni_set_aside(ps)
            /* MUST come after close() because of ps->trace. */;
-  setNativePointer(env, jDb, 0, ClassNames.sqlite3);
+  setNativePointer(env, jDb, 0, S3ClassNames.sqlite3);
   return (jint)rc;
 }
 
@@ -1891,7 +1931,7 @@ JDECL(jint,1finalize)(JENV_JSELF, jobject jpStmt){
     JNIEnvCacheLine * const jc = S3Global_env_cache(env);
     jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_finalize(pStmt);
-    setNativePointer(env, jpStmt, 0, ClassNames.sqlite3_stmt);
+    setNativePointer(env, jpStmt, 0, S3ClassNames.sqlite3_stmt);
     (void)stmt_set_current(jc, pPrev);
   }
   return rc;
@@ -1921,7 +1961,7 @@ static int s3jni_open_post(JNIEnv * const env, sqlite3 **ppDb, jobject jDb, int 
       theRc = SQLITE_NOMEM;
     }
   }
-  setNativePointer(env, jDb, *ppDb, ClassNames.sqlite3);
+  setNativePointer(env, jDb, *ppDb, S3ClassNames.sqlite3);
   return theRc;
 }
 
@@ -1983,7 +2023,7 @@ static jint sqlite3_jni_prepare_v123(int prepVersion, JNIEnv * const env, jclass
     assert(zTail ? (((int)((void*)zTail - (void*)pBuf)) >= 0) : 1);
     setOutputInt32(env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0));
   }
-  setNativePointer(env, jOutStmt, pStmt, ClassNames.sqlite3_stmt);
+  setNativePointer(env, jOutStmt, pStmt, S3ClassNames.sqlite3_stmt);
   (void)stmt_set_current(jc, pOldStmt);
   return (jint)rc;
 }
@@ -2249,8 +2289,9 @@ JDECL(void,1set_1last_1insert_1rowid)(JENV_JSELF, jobject jpDb, jlong rowId){
 JDECL(jint,1shutdown)(JENV_JSELF){
   PerDbStateJni_free_all();
   JNIEnvCache_clear(&S3Global.envCache);
-  /* Do not clear S3Global.jvm: it's legal to call
-     sqlite3_initialize() again to restart the lib. */
+  /* Do not clear S3Global.jvm or the global refs to specific classes:
+     it's legal to call sqlite3_initialize() again to restart the
+     lib. */
   return sqlite3_shutdown();
 }
 

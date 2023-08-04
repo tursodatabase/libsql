@@ -794,6 +794,10 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_value_subtype(@NotNull sqlite3_value v);
 
+  /**
+     Cleans up all per-JNIEnv and per-db state managed by the library
+     then calls the C-native sqlite3_shutdown().
+  */
   public static native int sqlite3_shutdown();
 
   /**

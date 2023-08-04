@@ -35,10 +35,11 @@ sqlite3-jni.h := $(dir.src.c)/sqlite3-jni.h
 .NOTPARALLEL: $(sqlite3-jni.h)
 SQLite3Jni.java := src/org/sqlite/jni/SQLite3Jni.java
 SQLite3Jni.class := $(subst .java,.class,$(SQLite3Jni.java))
-#$(sqlite3-jni.h): $(SQLite3Jni.java) $(dir.bld.c)
-#	$(bin.javac) -h $(dir $@) $<
-#all: $(sqlite3-jni.h)
 
+########################################################################
+# The future of FTS5 customization in this API is as yet unclear.
+# It would be a real doozy to bind to JNI.
+enable.fts5 ?= 1
 
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
@@ -62,6 +63,13 @@ JAVA_FILES := $(patsubst %,$(dir.src.jni)/%,\
   UpdateHook.java \
   ValueHolder.java \
 )
+ifeq (1,$(enable.fts5))
+  JAVA_FILES += $(patsubst %,$(dir.src.jni)/%,\
+    Fts5Context.java \
+    Fts5ExtensionApi.java \
+    Fts5Function.java \
+  )
+endif
 CLASS_FILES :=
 define DOTCLASS_DEPS
 $(1).class: $(1).java
@@ -111,7 +119,6 @@ $(sqlite3.h):
 $(sqlite3.c): $(sqlite3.h)
 
 SQLITE_OPT := \
-  -DSQLITE_ENABLE_FTS5 \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
   -DSQLITE_ENABLE_UNKNOWN_SQL_FUNCTION \
@@ -132,6 +139,10 @@ SQLITE_OPT := \
 # -DSQLITE_DEBUG is just to work around a -Wall warning
 # for a var which gets set in all builds but only read
 # via assert().
+
+ifeq (1,$(enable.fts5))
+  SQLITE_OPT += -DSQLITE_ENABLE_FTS5
+endif
 
 sqlite3-jni.c := $(dir.src.c)/sqlite3-jni.c
 sqlite3-jni.o := $(dir.bld.c)/sqlite3-jni.o
@@ -160,7 +171,7 @@ sqlite3-jni.dll.cflags := \
 
 $(sqlite3-jni.h.in): $(dir.src.jni)/SQLite3Jni.class
 $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
-	cp -p $(sqlite3-jni.h.in) $@
+	cat $(sqlite3-jni.h.in) > $@
 $(sqlite3-jni.c): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
 $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
 	$(CC) $(sqlite3-jni.dll.cflags) $(SQLITE_OPT) \
