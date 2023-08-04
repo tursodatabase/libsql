@@ -776,14 +776,6 @@ public final class SQLite3Jni {
 
   public static native byte[] sqlite3_value_text16be(@NotNull sqlite3_value v);
 
-  //TODO: to_java() should return a closest-match type for the given
-  //value. The quirk is that it would need to return object-type values,
-  //e.g. Integer instead of int, and creating those is a bit of a nuisance
-  //from JNI.
-  //public static native Object sqlite3_value_to_java(@NotNull sqlite3_value v);
-  // Or we can just implement it in Java:
-  //public static Object sqlite3_value_to_java(@NotNull sqlite3_value v){...}
-
   public static native int sqlite3_value_type(@NotNull sqlite3_value v);
 
   public static native int sqlite3_value_numeric_type(@NotNull sqlite3_value v);

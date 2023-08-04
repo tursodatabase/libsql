@@ -877,7 +877,6 @@ public class Tester1 {
     sqlite3_close_v2(db);
   }
 
-
   private static void testRollbackHook(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
@@ -908,6 +907,12 @@ public class Tester1 {
     affirm( 0 == rc );
     affirm( 3 == counter.value );
     sqlite3_close_v2(db);
+  }
+
+  private static void testFts1(){
+    Fts5ExtensionApi fea = Fts5ExtensionApi.getInstance();
+    affirm( null != fea );
+    affirm( fea.getNativePointer() != 0 );
   }
 
   private static void testSleep(){

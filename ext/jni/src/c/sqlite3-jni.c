@@ -186,9 +186,6 @@
 #define PtrGet_sqlite3_stmt(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_stmt)
 #define PtrGet_sqlite3_value(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_value)
 #define PtrGet_sqlite3_context(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_context)
-#ifdef SQLITE_ENABLE_FTS5
-#define PtrGet_Fts5Context(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Context)
-#endif
 /* Helpers for Java value reference management. */
 #define REF_G(VAR) (*env)->NewGlobalRef(env, VAR)
 #define REF_L(VAR) (*env)->NewLocalRef(env, VAR)
@@ -205,6 +202,7 @@ static const struct {
   const char * const sqlite3_context;
   const char * const sqlite3_value;
   const char * const OutputPointer_Int32;
+  const char * const OutputPointer_Int64;
 #ifdef SQLITE_ENABLE_FTS5
   const char * const Fts5Context;
   const char * const Fts5ExtensionApi;
@@ -215,9 +213,11 @@ static const struct {
   "org/sqlite/jni/sqlite3_context",
   "org/sqlite/jni/sqlite3_value",
   "org/sqlite/jni/OutputPointer$Int32",
+  "org/sqlite/jni/OutputPointer$Int64",
 #ifdef SQLITE_ENABLE_FTS5
   "org/sqlite/jni/Fts5Context",
   "org/sqlite/jni/Fts5ExtensionApi"
+  "org/sqlite/jni/fts5_api"
 #endif
 };
 
@@ -335,13 +335,12 @@ struct JNIEnvCacheLine {
                             sqlite3_stmt wrapper object for every
                             tracing call which needs a stmt
                             object. This approach is rather invasive,
-                            however, and there may well be places
-                            tracing may trigger which we have no
-                            accounted for, so it may be best to
-                            redefine the tracing API rather than
-                            passing through the statement handles. */;
+                            however, requiring code in all stmt
+                            operations which can lead through the
+                            tracing API. */;
 #ifdef SQLITE_ENABLE_FTS5
-  jobject jFts5Ext       /* Java singleton for the Fts5ExtensionApi instance. */;
+  jobject jFtsExt       /* Global ref to Java singleton for the
+                           Fts5ExtensionApi instance. */;
 #endif
 #if 0
   /* TODO: refactor this cache as a linked list with malloc()'d entries,
@@ -368,6 +367,9 @@ static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
   if(env){
     UNREF_G(p->globalClassObj);
     UNREF_G(p->globalClassLong);
+#ifdef SQLITE_ENABLE_FTS5
+    UNREF_G(p->jFtsExt);
+#endif
     i = 0;
     for( ; i < NphCache_SIZE; ++i){
       NphCacheLine_clear(env, &p->nph[i]);
@@ -412,8 +414,9 @@ struct PerDbStateJni {
                    it would be a different instance (and maybe even a
                    different class) than the one the user may expect
                    to receive. */;
-  PerDbStateJni * pNext /* Next entry in the available/free list */;
-  PerDbStateJni * pPrev /* Previous entry in the available/free list */;
+#ifdef SQLITE_ENABLE_FTS5
+  jobject jFtsApi /* global ref to fts5_api object for the db. */;
+#endif
   JniHookState busyHandler;
   JniHookState collation;
   JniHookState collationNeeded;
@@ -422,6 +425,8 @@ struct PerDbStateJni {
   JniHookState rollbackHook;
   JniHookState trace;
   JniHookState updateHook;
+  PerDbStateJni * pNext /* Next entry in the available/free list */;
+  PerDbStateJni * pPrev /* Previous entry in the available/free list */;
 };
 
 static struct {
@@ -795,6 +800,9 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
     UNHOOK(busyHandler, 1);
 #undef UNHOOK
     UNREF_G(s->jDb);
+#ifdef SQLITE_ENABLE_FTS5
+    UNREF_G(s->jFtsApi);
+#endif
     memset(s, 0, sizeof(PerDbStateJni));
     s->pNext = S3Global.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
@@ -949,6 +957,25 @@ static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
   }
   (*env)->SetIntField(env, jOut, setter, (jint)v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int32.value");
+}
+
+/* Sets a native int64 value in OutputPointer.Int64 object jOut. */
+static void setOutputInt64(JNIEnv * env, jobject jOut, jlong v){
+  jfieldID setter = 0;
+  struct NphCacheLine * const cacheLine =
+    S3Global_nph_cache(env, S3ClassNames.OutputPointer_Int64);
+  if(cacheLine && cacheLine->klazz && cacheLine->fidValue){
+    setter = cacheLine->fidValue;
+  }else{
+    const jclass klazz = (*env)->GetObjectClass(env, jOut);
+    setter = (*env)->GetFieldID(env, klazz, "value", "I");
+    if(cacheLine){
+      assert(!cacheLine->fidValue);
+      cacheLine->fidValue = setter;
+    }
+  }
+  (*env)->SetIntField(env, jOut, setter, (jint)v);
+  EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int64.value");
 }
 
 static int encodingTypeIsValid(int eTextRep){
@@ -1113,26 +1140,6 @@ static jobject new_sqlite3_context_wrapper(JNIEnv * const env, sqlite3_context *
 static jobject new_sqlite3_stmt_wrapper(JNIEnv * const env, sqlite3_stmt *sv){
   return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_stmt, sv);
 }
-
-#if 0
-#ifdef SQLITE_ENABLE_FTS5
-static jobject new_Fts5Context_wrapper(JNIEnv * const env, Fts5Context *sv){
-  return new_NativePointerHolder_object(env, S3ClassNames.Fts5Context, sv);
-}
-#endif
-#endif
-
-#ifdef SQLITE_ENABLE_FTS5
-/*static*/ jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
-  JNIEnvCacheLine * const row = S3Global_env_cache(env);
-  if( !row->jFts5Ext ){
-    row->jFts5Ext = new_NativePointerHolder_object(env, S3ClassNames.Fts5ExtensionApi,
-                                                   &sFts5Api/*from sqlite3.c*/);
-    if(row->jFts5Ext) row->jFts5Ext = REF_G(row->jFts5Ext);
-  }
-  return row->jFts5Ext;
-}
-#endif
 
 enum UDFType {
   UDF_SCALAR = 1,
@@ -2582,10 +2589,82 @@ JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
 #undef SO
 }
 
+////////////////////////////////////////////////////////////////////////
+// End of the sqlite3_... API bindings. Next up, FTS5...
+////////////////////////////////////////////////////////////////////////
+#ifdef SQLITE_ENABLE_FTS5
 
+/* Creates a verbose JNI Fts5 function name. */
+#define JFuncNameFts5Ext(Suffix)                  \
+  Java_org_sqlite_jni_Fts5ExtensionApi_ ## Suffix
+
+#define JDECLFts(ReturnType,Suffix)             \
+  JNIEXPORT ReturnType JNICALL                  \
+  JFuncNameFts5Ext(Suffix)
+
+#define PtrGet_Fts5Context(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Context)
+static inline Fts5ExtensionApi const * s3jni_ftsext(void){
+  return &sFts5Api/*singleton from sqlite3.c*/;
+}
+#define Fts5ExtDecl Fts5ExtensionApi const * const fext = s3jni_ftsext()
+
+#if 0
+static jobject new_Fts5Context_wrapper(JNIEnv * const env, Fts5Context *sv){
+  return new_NativePointerHolder_object(env, S3ClassNames.Fts5Context, sv);
+}
+#endif
+
+static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
+  JNIEnvCacheLine * const row = S3Global_env_cache(env);
+  if( !row->jFtsExt ){
+    row->jFtsExt = new_NativePointerHolder_object(env, S3ClassNames.Fts5ExtensionApi,
+                                                   s3jni_ftsext());
+    if(row->jFtsExt) row->jFtsExt = REF_G(row->jFtsExt);
+  }
+  return row->jFtsExt;
+}
+
+JDECLFts(jobject,getInstance)(JENV_JSELF){
+  return s3jni_getFts5ExensionApi(env);
+}
+
+JDECLFts(jint,xColumnCount)(JENV_JSELF,jobject jCtx){
+  Fts5ExtDecl;
+  return (jint)fext->xColumnCount(PtrGet_Fts5Context(jCtx));
+}
+
+JDECLFts(jint,xColumnTotalSize)(JENV_JSELF,jobject jCtx, jint iCol, jobject jOut64){
+  Fts5ExtDecl;
+  sqlite3_int64 nOut = 0;
+  int const rc = fext->xColumnTotalSize(PtrGet_Fts5Context(jCtx), (int)iCol, &nOut);
+  if( 0==rc && jOut64 ) setOutputInt64(env, jOut64, (jlong)nOut);
+  return (jint)rc;
+}
+
+JDECLFts(jint,xPhraseCount)(JENV_JSELF,jobject jCtx){
+  Fts5ExtDecl;
+  return (jint)fext->xPhraseCount(PtrGet_Fts5Context(jCtx));
+}
+
+JDECLFts(jint,xPhraseSize)(JENV_JSELF,jobject jCtx, jint iPhrase){
+  Fts5ExtDecl;
+  return (jint)fext->xPhraseSize(PtrGet_Fts5Context(jCtx), (int)iPhrase);
+}
+
+JDECLFts(jint,xRowCount)(JENV_JSELF,jobject jCtx, jobject jOut64){
+  Fts5ExtDecl;
+  sqlite3_int64 nOut = 0;
+  int const rc = fext->xRowCount(PtrGet_Fts5Context(jCtx), &nOut);
+  if( 0==rc && jOut64 ) setOutputInt64(env, jOut64, (jlong)nOut);
+  return (jint)rc;
+}
+
+
+#endif /* SQLITE_ENABLE_FTS5 */
 ////////////////////////////////////////////////////////////////////////
 // End of the main API bindings. What follows are internal utilities.
 ////////////////////////////////////////////////////////////////////////
+
 
 /**
    Called during static init of the SQLite3Jni class to sync certain
