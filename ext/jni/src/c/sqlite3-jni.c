@@ -1797,14 +1797,12 @@ static jint create_function(JNIEnv * env, jobject jDb, jstring jFuncName,
   s = UDFState_alloc(env, jFunctor);
   if( !s ) return SQLITE_NOMEM;
   else if( UDF_UNKNOWN_TYPE==s->type ){
-    UDFState_free(s);
     rc = s3jni_db_error(pDb, SQLITE_MISUSE,
-                              "Cannot unambiguously determine function type.");
+                        "Cannot unambiguously determine function type.");
     goto error_cleanup;
   }
   zFuncName = JSTR_TOC(jFuncName);
   if(!zFuncName){
-    UDFState_free(s);
     rc = SQLITE_NOMEM;
     goto error_cleanup;
   }
@@ -1824,12 +1822,15 @@ static jint create_function(JNIEnv * env, jobject jDb, jstring jFuncName,
       xFinal = udf_xFinal;
     }
     rc = sqlite3_create_function_v2(pDb, zFuncName, nArg, eTextRep, s,
-                                    xFunc, xStep, xFinal,
-                                    UDFState_finalizer);
+                                    xFunc, xStep, xFinal, UDFState_finalizer);
   }
-  s->zFuncName = sqlite3_mprintf("%s", zFuncName);
-  if(!s->zFuncName){
-    rc = SQLITE_NOMEM;
+  if( 0==rc ){
+    s->zFuncName = sqlite3_mprintf("%s", zFuncName);
+    if( !s->zFuncName ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+  if( 0!=rc ){
     UDFState_free(s);
   }
 error_cleanup:

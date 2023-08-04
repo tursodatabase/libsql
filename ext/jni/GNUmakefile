@@ -39,7 +39,29 @@ SQLite3Jni.class := $(subst .java,.class,$(SQLite3Jni.java))
 #	$(bin.javac) -h $(dir $@) $<
 #all: $(sqlite3-jni.h)
 
-JAVA_FILES := $(wildcard $(dir.src.jni)/*.java)
+
+# Be explicit about which Java files to compile so that we can work on
+# in-progress files without requiring them to be in a compilable statae.
+JAVA_FILES := $(patsubst %,$(dir.src.jni)/%,\
+  BusyHandler.java \
+  Collation.java \
+  CollationNeeded.java \
+  CommitHook.java \
+  NativePointerHolder.java \
+  OutputPointer.java \
+  ProgressHandler.java \
+  RollbackHook.java \
+  SQLFunction.java \
+  sqlite3_context.java \
+  sqlite3.java \
+  SQLite3Jni.java \
+  sqlite3_stmt.java \
+  sqlite3_value.java \
+  Tester1.java \
+  Tracer.java \
+  UpdateHook.java \
+  ValueHolder.java \
+)
 CLASS_FILES :=
 define DOTCLASS_DEPS
 $(1).class: $(1).java
