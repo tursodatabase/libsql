@@ -23,16 +23,16 @@ public class Tester1 {
 
   static final Metrics metrics = new Metrics();
 
-  private static <T> void out(T val){
+  public static <T> void out(T val){
     System.out.print(val);
   }
 
-  private static <T> void outln(T val){
+  public static <T> void outln(T val){
     System.out.println(val);
   }
 
-  private static int affirmCount = 0;
-  private static void affirm(Boolean v){
+  static int affirmCount = 0;
+  public static void affirm(Boolean v){
     ++affirmCount;
     if( !v ) throw new RuntimeException("Assertion failed.");
   }
@@ -50,21 +50,23 @@ public class Tester1 {
     affirm(SQLITE_MAX_TRIGGER_DEPTH>0);
   }
 
-  private static void testCompileOption(){
-    int i = 0;
-    String optName;
-    outln("compile options:");
-    for( ; null != (optName = sqlite3_compileoption_get(i)); ++i){
-      outln("\t"+optName+"\t (used="+
-            sqlite3_compileoption_used(optName)+")");
-    }
-
+  public static sqlite3 createNewDb(){
+    sqlite3 db = new sqlite3();
+    affirm(0 == db.getNativePointer());
+    int rc = sqlite3_open(":memory:", db);
+    ++metrics.dbOpen;
+    affirm(0 == rc);
+    affirm(0 != db.getNativePointer());
+    rc = sqlite3_busy_timeout(db, 2000);
+    affirm( 0 == rc );
+    return db;
   }
 
-  private static void execSql(sqlite3 db, String[] sql){
+  public static void execSql(sqlite3 db, String[] sql){
     execSql(db, String.join("", sql));
   }
-  private static int execSql(sqlite3 db, boolean throwOnError, String sql){
+
+  public static int execSql(sqlite3 db, boolean throwOnError, String sql){
       OutputPointer.Int32 oTail = new OutputPointer.Int32();
       final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
       int pos = 0, n = 1;
@@ -95,9 +97,11 @@ public class Tester1 {
       if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
       return rc;
   }
-  private static void execSql(sqlite3 db, String sql){
+
+  public static void execSql(sqlite3 db, String sql){
     execSql(db, true, sql);
   }
+
   private static void testOpenDb1(){
       sqlite3 db = new sqlite3();
       affirm(0 == db.getNativePointer());
@@ -107,6 +111,17 @@ public class Tester1 {
       affirm(0 < db.getNativePointer());
       sqlite3_close_v2(db);
       affirm(0 == db.getNativePointer());
+  }
+
+  private static void testCompileOption(){
+    int i = 0;
+    String optName;
+    outln("compile options:");
+    for( ; null != (optName = sqlite3_compileoption_get(i)); ++i){
+      outln("\t"+optName+"\t (used="+
+            sqlite3_compileoption_used(optName)+")");
+    }
+
   }
 
   private static void testOpenDb2(){
@@ -120,18 +135,6 @@ public class Tester1 {
     affirm(0 < db.getNativePointer());
     sqlite3_close_v2(db);
     affirm(0 == db.getNativePointer());
-  }
-
-  private static sqlite3 createNewDb(){
-    sqlite3 db = new sqlite3();
-    affirm(0 == db.getNativePointer());
-    int rc = sqlite3_open(":memory:", db);
-    ++metrics.dbOpen;
-    affirm(0 == rc);
-    affirm(0 != db.getNativePointer());
-    rc = sqlite3_busy_timeout(db, 2000);
-    affirm( 0 == rc );
-    return db;
   }
 
   private static void testPrepare123(){
