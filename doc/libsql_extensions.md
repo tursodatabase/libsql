@@ -23,35 +23,29 @@ void *libsql_close_hook(
 
 ### Foreign keys
 
-Foreign keys in SQLite and libSQL requires a primary key column in one table and a foreign key constraint on another table.
+Foreign keys in SQLite and libSQL require an indexed column in one table (e.g. its primary key) and a foreign key constraint on another table.
 
 For example, if you have the following table:
 
-```console
-libsql> CREATE TABLE users (id INT);
-```
-
-To **add a foreign key constraint**, you first need to make the `id` column be the primary key:
-
-```
-libsql> ALTER TABLE users UPDATE COLUMN id TO id INT PRIMARY KEY;
+```sql
+libsql> CREATE TABLE users (id INT PRIMARY KEY);
 ```
 
 You can then create another table:
 
-```
+```sql
 libsql> CREATE TABLE emails (user_id INT, email TEXT);
 ```
 
 and add a foreign key constraint from the `user_id` column to the `id` column of the `users` table:
 
-```
+```sql
 libsql> ALTER TABLE emails UPDATE COLUMN user_id TO user_id INT REFERENCES users(id);
 ```
 
 and now you have the following schema in your database:
 
-```
+```sql
 libsql> .schema
 CREATE TABLE users (id INT PRIMARY KEY);
 CREATE TABLE emails (user_id INT REFERENCES users(id), email TEXT);
@@ -61,11 +55,42 @@ To **remove a foreign constraint**, you do the following:
 
 ```console
 libsql> ALTER TABLE emails UPDATE COLUMN user_id TO user_id INT;
-libsql> ALTER TABLE users UPDATE COLUMN id TO id INT;
 libsql> .schema
-CREATE TABLE users (id INT);
+CREATE TABLE users (id INT PRIMARY KEY);
 CREATE TABLE emails (user_id INT, email TEXT);
 ```
+
+### Other attributes
+
+All kind of column attributes, like type affinity, CHECK constraints, DEFAULT values, and so on,
+can be amended with `ALTER TABLE UPDATE COLUMN` as well:
+
+```sql
+libsql> CREATE TABLE t(id, v);
+```
+```sql
+libsql> ALTER TABLE t UPDATE COLUMN v TO v NOT NULL CHECK(v < 42);
+libsql> .schema t
+CREATE TABLE t(id, v NOT NULL CHECK(v < 42));
+```
+```sql
+libsql> ALTER TABLE t UPDATE COLUMN v TO v TEXT DEFAULT 'hai';
+libsql> .schema t
+CREATE TABLE t(id, v TEXT DEFAULT 'hai');
+```
+```sql
+libsql> ALTER TABLE t UPDATE COLUMN v TO v;
+libsql> .schema t
+CREATE TABLE t(id, v);
+```
+
+### Caveats
+
+Please note that altering constraints via ALTER TABLE UPDATE COLUMN only applies
+to newly inserted or updated data - existing rows are not rewritten or revalidated.
+
+It's also important to notice that foreign key constraints are disabled by default,
+and can be enabled with a `PRAGMA foreign_keys=ON` statement at runtime.
 
 ## RANDOM ROWID
 
