@@ -854,12 +854,18 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return true;
     }
 
+
     //! Documented elsewhere in this file.
     exportFile(name){
       const sah = this.#mapFilenameToSAH.get(name) || toss("File not found:",name);
       const n = sah.getSize() - HEADER_OFFSET_DATA;
-      const b = new Uint8Array(n>=0 ? n : 0);
-      if(n>0) sah.read(b, {at: HEADER_OFFSET_DATA});
+      const b = new Uint8Array(n>0 ? n : 0);
+      if(n>0){
+        const nRead = sah.read(b, {at: HEADER_OFFSET_DATA});
+        if(nRead != n){
+          toss("Expected to read "+n+" bytes but read "+nRead+".");
+        }
+      }
       return b;
     }
 
@@ -879,8 +885,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const sah = this.#mapFilenameToSAH.get(name)
             || this.nextAvailableSAH()
             || toss("No available handles to import to.");
-      sah.write(bytes, {at: HEADER_OFFSET_DATA});
-      this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+      const nWrote = sah.write(bytes, {at: HEADER_OFFSET_DATA});
+      if(nWrote != n){
+        this.setAssociatedPath(sah, '', 0);
+        toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
+      }else{
+        this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+      }
     }
 
   }/*class OpfsSAHPool*/;
@@ -1086,6 +1097,9 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      not arbitrary files, the reason being that this VFS will
      automatically clean up any non-database files so importing them
      is pointless.
+
+     On a write error, the handle is removed from the pool and made
+     available for re-use.
 
      - [async] number reduceCapacity(n)
 
