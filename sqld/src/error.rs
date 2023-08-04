@@ -1,4 +1,7 @@
-use crate::query_result_builder::QueryResultBuilderError;
+use axum::response::IntoResponse;
+use hyper::StatusCode;
+
+use crate::{auth::AuthError, query_result_builder::QueryResultBuilderError};
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, thiserror::Error)]
@@ -39,6 +42,52 @@ pub enum Error {
     Json(#[from] serde_json::Error),
     #[error("Too many concurrent requests")]
     TooManyRequests,
+    #[error("Failed to parse query: `{0}`")]
+    FailedToParse(String),
+    #[error("Query error: `{0}`")]
+    QueryError(String),
+    #[error("Unauthorized: `{0}`")]
+    AuthError(#[from] AuthError),
+    // Catch-all error since we use anyhow in certain places
+    #[error("Internal Error: `{0}`")]
+    Anyhow(#[from] anyhow::Error),
+}
+
+impl Error {
+    fn format_err(&self, status: StatusCode) -> axum::response::Response {
+        let json = serde_json::json!({ "error": self.to_string() });
+        (status, axum::Json(json)).into_response()
+    }
+}
+
+impl IntoResponse for Error {
+    fn into_response(self) -> axum::response::Response {
+        use Error::*;
+
+        match &self {
+            FailedToParse(_) => self.format_err(StatusCode::BAD_REQUEST),
+            AuthError(_) => self.format_err(StatusCode::UNAUTHORIZED),
+            Anyhow(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            LibSqlInvalidQueryParams(_) => self.format_err(StatusCode::BAD_REQUEST),
+            LibSqlTxTimeout => self.format_err(StatusCode::BAD_REQUEST),
+            LibSqlTxBusy => self.format_err(StatusCode::TOO_MANY_REQUESTS),
+            IOError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            RusqliteError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            RpcQueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
+            RpcQueryExecutionError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            DbValueError(_) => self.format_err(StatusCode::BAD_REQUEST),
+            Internal(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            InvalidBatchStep(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            NotAuthorized(_) => self.format_err(StatusCode::UNAUTHORIZED),
+            ReplicatorExited => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
+            DbCreateTimeout => self.format_err(StatusCode::SERVICE_UNAVAILABLE),
+            BuilderError(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Blocked(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            Json(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            TooManyRequests => self.format_err(StatusCode::TOO_MANY_REQUESTS),
+            QueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
+        }
+    }
 }
 
 impl From<tokio::sync::oneshot::error::RecvError> for Error {
