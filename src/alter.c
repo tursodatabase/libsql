@@ -747,10 +747,10 @@ void libsqlAlterUpdateColumn(
   // so we should check from the end.
   pNew->n = sqlite3Strlen30(pNew->z);
   while (pNew->n > 0 && pNew->z[pNew->n - 1] == ';') pNew->n--;
-  zNew = sqlite3NameFromToken(db, pNew);
+  zNew = sqlite3DbStrNDup(db, pNew->z, pNew->n);
   if( !zNew ) goto exit_update_column;
   assert( pNew->n>0 );
-  bQuote = sqlite3Isquote(pNew->z[0]);
+  bQuote = -1; // Contrary to RENAME, we leave quotes as is and not dequote them
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
       "sql = libsql_update_column(sql, %Q, %Q, %d, %Q, %d, %d) "
@@ -1286,7 +1286,7 @@ static int renameEditSql(
   RenameCtx *pRename,             /* Rename context */
   const char *zSql,               /* SQL statement to edit */
   const char *zNew,               /* New token text */
-  int bQuote                      /* True to always quote token */
+  int bQuote                      /* 1 to always quote token, -1 to never quote */
 ){
   i64 nNew = sqlite3Strlen30(zNew);
   i64 nSql = sqlite3Strlen30(zSql);
@@ -1335,7 +1335,7 @@ static int renameEditSql(
       RenameToken *pBest = renameColumnTokenNext(pRename);
 
       if( zNew ){
-        if( bQuote==0 && sqlite3IsIdChar(*pBest->t.z) ){
+        if( bQuote==-1 || (bQuote==0 && sqlite3IsIdChar(*pBest->t.z)) ){
           nReplace = nNew;
           zReplace = zNew;
         }else{
