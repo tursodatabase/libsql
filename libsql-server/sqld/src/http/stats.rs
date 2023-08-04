@@ -1,7 +1,11 @@
 use hyper::{Body, Response};
 use serde::Serialize;
 
+use axum::extract::State as AxumState;
+
 use crate::stats::Stats;
+
+use super::AppState;
 
 #[derive(Serialize)]
 pub struct StatsResponse {
@@ -26,7 +30,9 @@ impl From<Stats> for StatsResponse {
     }
 }
 
-pub fn handle_stats(stats: &Stats) -> Response<Body> {
+pub(crate) async fn handle_stats<D>(
+    AxumState(AppState { stats, .. }): AxumState<AppState<D>>,
+) -> Response<Body> {
     let resp: StatsResponse = stats.into();
 
     let payload = serde_json::to_vec(&resp).unwrap();

@@ -19,12 +19,6 @@ pub struct Server<D> {
     stream_state: Mutex<stream::ServerStreamState<D>>,
 }
 
-#[derive(Debug)]
-pub enum Route {
-    GetIndex,
-    PostPipeline,
-}
-
 impl<D: Database> Server<D> {
     pub fn new(db_factory: Arc<dyn DbFactory<Db = D>>, self_url: Option<String>) -> Self {
         Self {
@@ -39,29 +33,26 @@ impl<D: Database> Server<D> {
         stream::run_expire(self).await
     }
 
-    pub async fn handle(
+    pub async fn handle_pipeline(
         &self,
         auth: Authenticated,
-        route: Route,
         req: hyper::Request<hyper::Body>,
     ) -> Result<hyper::Response<hyper::Body>> {
-        let res = match route {
-            Route::GetIndex => handle_index(),
-            Route::PostPipeline => handle_pipeline(self, auth, req).await,
-        };
-        res.or_else(|err| {
-            err.downcast::<stream::StreamError>()
-                .map(stream_error_response)
-        })
-        .or_else(|err| err.downcast::<ProtocolError>().map(protocol_error_response))
+        handle_pipeline(self, auth, req)
+            .await
+            .or_else(|err| {
+                err.downcast::<stream::StreamError>()
+                    .map(stream_error_response)
+            })
+            .or_else(|err| err.downcast::<ProtocolError>().map(protocol_error_response))
     }
 }
 
-fn handle_index() -> Result<hyper::Response<hyper::Body>> {
-    Ok(text_response(
+pub(crate) async fn handle_index() -> hyper::Response<hyper::Body> {
+    text_response(
         hyper::StatusCode::OK,
         "Hello, this is HTTP API v2 (Hrana over HTTP)".into(),
-    ))
+    )
 }
 
 async fn handle_pipeline<D: Database>(
