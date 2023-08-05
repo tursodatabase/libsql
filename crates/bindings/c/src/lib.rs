@@ -61,17 +61,22 @@ pub unsafe extern "C" fn libsql_close(db: libsql_database_t) {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_connect(db: libsql_database_t) -> libsql_connection_t {
+pub unsafe extern "C" fn libsql_connect(
+    db: libsql_database_t,
+    out_conn: *mut libsql_connection_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let db = db.get_ref();
     let conn = match db.connect() {
         Ok(conn) => conn,
         Err(err) => {
-            println!("error: {}", err);
-            return libsql_connection_t::null();
+            set_err_msg(format!("Unable to connect: {}", err), out_err_msg);
+            return 1;
         }
     };
     let conn = Box::leak(Box::new(libsql_connection { conn }));
-    libsql_connection_t::from(conn)
+    *out_conn = libsql_connection_t::from(conn);
+    0
 }
 
 #[no_mangle]

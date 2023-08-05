@@ -94,6 +94,31 @@ func TestErrorWrongURL(t *testing.T) {
 	}
 }
 
+func TestErrorCanNotConnect(t *testing.T) {
+	t.Parallel()
+	db, err := sql.Open("libsql", "/root/test.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	conn, err := db.Conn(context.Background())
+	if err == nil {
+		defer func() {
+			if err := conn.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		t.Fatal("expected error")
+	}
+	if err.Error() != "failed to connect to database\nerror code = 1: Unable to connect: Failed to connect to database: `/root/test.db`" {
+		t.Fatal("unexpected error:", err)
+	}
+}
+
 func TestExec(t *testing.T) {
 	runMemoryAndFileTests(t, func(t *testing.T, db *sql.DB) {
 		if _, err := db.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER, name TEXT)"); err != nil {

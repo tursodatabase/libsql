@@ -64,9 +64,11 @@ func libsqlOpen(dataSourceName string) (C.libsql_database_t, error) {
 }
 
 func libsqlConnect(db C.libsql_database_t) (C.libsql_connection_t, error) {
-	conn := C.libsql_connect(db)
-	if conn == nil {
-		return nil, fmt.Errorf("failed to connect to database")
+	var conn C.libsql_connection_t
+	var errMsg *C.char
+	statusCode := C.libsql_connect(db, &conn, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError("failed to connect to database", statusCode, errMsg)
 	}
 	return conn, nil
 }

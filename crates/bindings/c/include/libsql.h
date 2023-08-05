@@ -36,7 +36,7 @@ int libsql_open_ext(const char *url, libsql_database_t *out_db, const char **out
 
 void libsql_close(libsql_database_t db);
 
-libsql_connection_t libsql_connect(libsql_database_t db);
+int libsql_connect(libsql_database_t db, libsql_connection_t *out_conn, const char **out_err_msg);
 
 void libsql_disconnect(libsql_connection_t conn);
 
