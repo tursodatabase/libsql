@@ -34,6 +34,8 @@ public class Tester1 {
   static int affirmCount = 0;
   public static void affirm(Boolean v){
     ++affirmCount;
+    assert( v /* prefer assert over exception if it's enabled because
+                 the JNI layer sometimes has to suppress exceptions. */);
     if( !v ) throw new RuntimeException("Assertion failed.");
   }
 
@@ -914,7 +916,7 @@ public class Tester1 {
   }
 
   @SuppressWarnings("unchecked")
-  private static void testFts5(){
+  private static void testFts5() throws Exception {
     Exception err = null;
     try {
       Class t = Class.forName("org.sqlite.jni.TesterFts5");
@@ -934,6 +936,7 @@ public class Tester1 {
     if( null != err ){
       outln("Exception: "+err);
       err.printStackTrace();
+      throw err;
     }
   }
 
@@ -943,7 +946,7 @@ public class Tester1 {
     outln("Woke up.");
   }
 
-  public static void main(String[] args){
+  public static void main(String[] args) throws Exception {
     final long timeStart = System.nanoTime();
     test1();
     if(false) testCompileOption();

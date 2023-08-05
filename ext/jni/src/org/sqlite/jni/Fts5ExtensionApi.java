@@ -90,9 +90,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte pText[],
                               @NotNull Fts5.xTokenizeCallback callback);
 
-  /**************************************************************
-  void *(*xUserData)(Fts5Context*);
-  ^^^ returns the pointer passed as the 3rd arg to
-  fts5_api::xCreateFunction.
-  **************************************************************/
+  public native Object xUserData(Fts5Context cx);
+  //^^^ returns the pointer passed as the 3rd arg to the C-level
+  // fts5_api::xCreateFunction.
 }

@@ -34,6 +34,7 @@ public class TesterFts5 {
         "INSERT INTO ft(rowid, a, b) VALUES(2, 'A Z', 'Y Y');"
       });
 
+    final String pUserData = "This is pUserData";
     ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
     ValueHolder<Integer> xFuncCount = new ValueHolder<>(0);
     fts5_api.fts5_extension_function func = new fts5_api.fts5_extension_function(){
@@ -41,6 +42,7 @@ public class TesterFts5 {
                               sqlite3_context pCx, sqlite3_value argv[]){
           int nCols = ext.xColumnCount(fCx);
           affirm( 2 == nCols );
+          affirm( ext.xUserData(fCx) == pUserData );
           if(false){
             OutputPointer.String op = new OutputPointer.String();
             for(int i = 0; i < nCols; ++i ){
@@ -56,7 +58,7 @@ public class TesterFts5 {
         }
       };
 
-    int rc = fApi.xCreateFunction("myaux", func);
+    int rc = fApi.xCreateFunction("myaux", pUserData, func);
     affirm( 0==rc );
 
     affirm( 0==xFuncCount.value );

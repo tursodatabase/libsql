@@ -2677,6 +2677,11 @@ typedef struct {
   JNIEnv * env;         /* env registered from */;
   jobject jObj          /* functor instance */;
   jclass klazz          /* jObj's class */;
+  jobject jUserData     /* 2nd arg to JNI binding of
+                           xCreateFunction(), ostensibly the 3rd arg
+                           to the lib-level xCreateFunction(), except
+                           that we necessarily use that slot for a
+                           Fts5JniAux instance. */;
   char * zFuncName      /* Only for error reporting and debug logging */;
   jmethodID jmid        /* callback member's method ID */;
 } Fts5JniAux;
@@ -2688,6 +2693,7 @@ static void Fts5JniAux_free(Fts5JniAux * const s){
     s3jni_call_xDestroy(env, s->jObj, s->klazz);
     UNREF_G(s->jObj);
     UNREF_G(s->klazz);
+    UNREF_G(s->jUserData);
   }
   sqlite3_free(s->zFuncName);
   sqlite3_free(s);
@@ -2879,7 +2885,8 @@ error_oom:
   return;
 }
 
-JDECLFtsApi(jint,xCreateFunction)(JENV_JSELF, jstring jName, jobject jFunc){
+JDECLFtsApi(jint,xCreateFunction)(JENV_JSELF, jstring jName,
+                                  jobject jUserData, jobject jFunc){
   fts5_api * const pApi = PtrGet_fts5_api(jSelf);
   int rc;
   char const * zName;
@@ -2896,8 +2903,9 @@ JDECLFtsApi(jint,xCreateFunction)(JENV_JSELF, jstring jName, jobject jFunc){
     rc = SQLITE_NOMEM;
   }
   if( 0==rc ){
-    pAux->zFuncName = sqlite3_mprintf("%s", zName);
-    /* OOM here is non-fatal. Ignore it. */
+    pAux->jUserData = jUserData ? REF_G(jUserData) : 0;
+    pAux->zFuncName = sqlite3_mprintf("%s", zName)
+      /* OOM here is non-fatal. Ignore it. */;
   }
   JSTR_RELEASE(jName, zName);
   return (jint)rc;
@@ -3258,6 +3266,13 @@ JDECLFtsTok(jint,xTokenize)(JENV_JSELF,jobject jFcx, jint tokFlags,
                             jbyteArray jbaText, jobject jCallback){
   return s3jni_fts5_xTokenize(env, jSelf, S3ClassNames.Fts5Tokenizer,
                               tokFlags, jFcx, jbaText, jCallback);
+}
+
+
+JDECLFtsXA(jobject,xUserData)(JENV_JSELF,jobject jFcx){
+  Fts5ExtDecl;
+  Fts5JniAux * const pAux = fext->xUserData(PtrGet_Fts5Context(jFcx));
+  return pAux ? pAux->jUserData : 0;
 }
 
 
