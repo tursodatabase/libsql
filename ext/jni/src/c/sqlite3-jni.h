@@ -84,9 +84,9 @@ extern "C" {
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_RECURSIVE
 #define org_sqlite_jni_SQLite3Jni_SQLITE_RECURSIVE 33L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_STATIC
-#define org_sqlite_jni_SQLite3Jni_SQLITE_STATIC 0L
+#define org_sqlite_jni_SQLite3Jni_SQLITE_STATIC 0LL
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_TRANSIENT
-#define org_sqlite_jni_SQLite3Jni_SQLITE_TRANSIENT -1L
+#define org_sqlite_jni_SQLite3Jni_SQLITE_TRANSIENT -1LL
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_CHANGESETSTART_INVERT
 #define org_sqlite_jni_SQLite3Jni_SQLITE_CHANGESETSTART_INVERT 2L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_CHANGESETAPPLY_NOSAVEPOINT

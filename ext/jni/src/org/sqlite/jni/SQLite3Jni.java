@@ -849,9 +849,11 @@ public final class SQLite3Jni {
   public static final int SQLITE_SAVEPOINT = 32;
   public static final int SQLITE_RECURSIVE = 33;
 
-  // blob finalizers:
-  public static final int SQLITE_STATIC = 0;
-  public static final int SQLITE_TRANSIENT = -1;
+  // blob finalizers: these should, because they are treated as
+  // special pointer values in C, ideally have the same sizeof() as
+  // the platform's (void*), but we can't know that size from here.
+  public static final long SQLITE_STATIC = 0;
+  public static final long SQLITE_TRANSIENT = -1;
 
   // changeset
   public static final int SQLITE_CHANGESETSTART_INVERT = 2;
