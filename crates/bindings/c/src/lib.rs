@@ -202,12 +202,23 @@ pub unsafe extern "C" fn libsql_column_name(
 pub unsafe extern "C" fn libsql_column_type(
     res: libsql_rows_t,
     col: std::ffi::c_int,
+    out_type: *mut std::ffi::c_int,
+    out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
     let res = res.get_ref();
     if col >= res.column_count() {
-        return -1;
+        set_err_msg(
+            format!(
+                "Column index too big - got index {} with {} columns",
+                col,
+                res.column_count()
+            ),
+            out_err_msg,
+        );
+        return 1;
     }
-    res.column_type(col)
+    *out_type = res.column_type(col);
+    0
 }
 
 #[no_mangle]

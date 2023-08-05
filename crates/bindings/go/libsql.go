@@ -183,8 +183,13 @@ func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 	columnCount := int(C.libsql_column_count(nativePtr))
 	columnTypes := make([]int, columnCount)
 	for i := 0; i < columnCount; i++ {
-		columnType := int(C.libsql_column_type(nativePtr, C.int(i)))
-		columnTypes[i] = columnType
+		var columnType C.int
+		var errMsg *C.char
+		statusCode := C.libsql_column_type(nativePtr, C.int(i), &columnType, &errMsg)
+		if statusCode != 0 {
+			return nil, libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
+		}
+		columnTypes[i] = int(columnType)
 	}
 	columns := make([]string, len(columnTypes))
 	for i := 0; i < len(columnTypes); i++ {
