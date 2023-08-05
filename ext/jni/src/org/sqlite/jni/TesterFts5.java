@@ -37,18 +37,21 @@ public class TesterFts5 {
     final String pUserData = "This is pUserData";
     ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
     ValueHolder<Integer> xFuncCount = new ValueHolder<>(0);
-    fts5_api.fts5_extension_function func = new fts5_api.fts5_extension_function(){
+    final fts5_extension_function func = new fts5_extension_function(){
         public void xFunction(Fts5ExtensionApi ext, Fts5Context fCx,
                               sqlite3_context pCx, sqlite3_value argv[]){
           int nCols = ext.xColumnCount(fCx);
           affirm( 2 == nCols );
+          affirm( nCols == argv.length );
           affirm( ext.xUserData(fCx) == pUserData );
-          if(false){
+          if(true){
             OutputPointer.String op = new OutputPointer.String();
             for(int i = 0; i < nCols; ++i ){
               int rc = ext.xColumnText(fCx, i, op);
               affirm( 0 == rc );
-              outln("xFunction col "+i+": "+op.getValue());
+              final String val = op.getValue();
+              affirm( val.equals(sqlite3_value_text(argv[i])) );
+              //outln("xFunction col "+i+": "+val);
             }
           }
           ++xFuncCount.value;

@@ -802,6 +802,11 @@ public final class SQLite3Jni {
   public static final String SQLITE_VERSION = sqlite3_libversion();
   public static final String SQLITE_SOURCE_ID = sqlite3_sourceid();
 
+  //! Feature flags which are initialized at lib startup. Necessarily
+  // non-final so that lib init can fill out the proper values,
+  // but modifying them from client code has no effect.
+  public static boolean SQLITE_ENABLE_FTS5 = false;
+
   // access
   public static final int SQLITE_ACCESS_EXISTS = 0;
   public static final int SQLITE_ACCESS_READWRITE = 1;

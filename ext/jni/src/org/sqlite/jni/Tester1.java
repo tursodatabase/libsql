@@ -915,22 +915,31 @@ public class Tester1 {
     sqlite3_close_v2(db);
   }
 
+  /**
+     If FTS5 is available, runs FTS5 tests, else returns with no side
+     effects. If it is available but loading of the FTS5 bits fails,
+     it throws.
+  */
   @SuppressWarnings("unchecked")
   private static void testFts5() throws Exception {
+    if( !SQLITE_ENABLE_FTS5 ){
+      outln("SQLITE_ENABLE_FTS5 is not set. Skipping FTS5 tests.");
+      return;
+    }
     Exception err = null;
     try {
       Class t = Class.forName("org.sqlite.jni.TesterFts5");
       java.lang.reflect.Constructor ctor = t.getConstructor();
       ctor.setAccessible(true);
-      ctor.newInstance();
+      ctor.newInstance() /* will run all tests */;
     }catch(ClassNotFoundException e){
-      outln("FTS5 classes not loaded. Skipping FTS tests.");
+      outln("FTS5 classes not loaded.");
       err = e;
     }catch(NoSuchMethodException e){
-      outln("FTS5 tester ctor not found. Skipping FTS tests.");
+      outln("FTS5 tester ctor not found.");
       err = e;
     }catch(Exception e){
-      outln("FTS5 tester cannot be instantiated. Skipping FTS tests.");
+      outln("Instantiation of FTS5 tester threw.");
       err = e;
     }
     if( null != err ){

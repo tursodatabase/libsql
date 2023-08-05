@@ -66,6 +66,7 @@ JAVA_FILES := $(patsubst %,$(dir.src.jni)/%,\
 ifeq (1,$(enable.fts5))
   JAVA_FILES += $(patsubst %,$(dir.src.jni)/%,\
     fts5_api.java \
+    fts5_extension_function.java \
     fts5_tokenizer.java \
     Fts5.java \
     Fts5Context.java \

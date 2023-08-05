@@ -32,20 +32,6 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
   */
   public static native fts5_api getInstanceForDb(@NotNull sqlite3 db);
 
-  public static abstract class fts5_extension_function {
-    // typedef void (*fts5_extension_function)(
-    //   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
-    //   Fts5Context *pFts,              /* First arg to pass to pApi functions */
-    //   sqlite3_context *pCtx,          /* Context for returning result/error */
-    //   int nVal,                       /* Number of values in apVal[] array */
-    //   sqlite3_value **apVal           /* Array of trailing arguments */
-    // );
-    public abstract void xFunction(Fts5ExtensionApi ext, Fts5Context fCx,
-                                   sqlite3_context pCx, sqlite3_value argv[]);
-    //! Optionally override
-    public void xDestroy(){}
-  }
-
   // int (*xCreateTokenizer)(
   //   fts5_api *pApi,
   //   const char *zName,

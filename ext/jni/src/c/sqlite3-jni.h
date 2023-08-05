@@ -1808,7 +1808,7 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_fts5_1api_getInstanceForDb
 /*
  * Class:     org_sqlite_jni_fts5_api
  * Method:    xCreateFunction
- * Signature: (Ljava/lang/String;Ljava/lang/Object;Lorg/sqlite/jni/fts5_api/fts5_extension_function;)I
+ * Signature: (Ljava/lang/String;Ljava/lang/Object;Lorg/sqlite/jni/fts5_extension_function;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_fts5_1api_xCreateFunction
   (JNIEnv *, jobject, jstring, jobject, jobject);
