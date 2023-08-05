@@ -64,7 +64,7 @@ int libsql_get_string(libsql_row_t res, int col, const char **out_value, const c
 
 void libsql_free_string(const char *ptr);
 
-long long libsql_get_int(libsql_row_t res, int col);
+int libsql_get_int(libsql_row_t res, int col, long long *out_value, const char **out_err_msg);
 
 double libsql_get_float(libsql_row_t res, int col);
 

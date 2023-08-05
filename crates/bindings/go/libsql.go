@@ -247,7 +247,13 @@ func (r *rows) Next(dest []driver.Value) error {
 		case TYPE_NULL:
 			dest[i] = nil
 		case TYPE_INT:
-			dest[i] = int64(C.libsql_get_int(row, C.int(i)))
+			var value C.longlong
+			var errMsg *C.char
+			statusCode := C.libsql_get_int(row, C.int(i), &value, &errMsg)
+			if statusCode != 0 {
+				return libsqlError(fmt.Sprint("failed to get integer for column ", i), statusCode, errMsg)
+			}
+			dest[i] = int64(value)
 		case TYPE_FLOAT:
 			dest[i] = float64(C.libsql_get_float(row, C.int(i)))
 		case TYPE_BLOB:
