@@ -37,7 +37,6 @@ public class TesterFts5 {
     ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
     ValueHolder<Integer> xFuncCount = new ValueHolder<>(0);
     fts5_api.fts5_extension_function func = new fts5_api.fts5_extension_function(){
-
         public void xFunction(Fts5ExtensionApi ext, Fts5Context fCx,
                               sqlite3_context pCx, sqlite3_value argv[]){
           int nCols = ext.xColumnCount(fCx);

@@ -71,6 +71,7 @@ ifeq (1,$(enable.fts5))
     Fts5Context.java \
     Fts5ExtensionApi.java \
     Fts5Function.java \
+    Fts5PhraseIter.java \
     Fts5Tokenizer.java \
     TesterFts5.java \
   )
