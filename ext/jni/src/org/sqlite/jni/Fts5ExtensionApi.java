@@ -27,10 +27,6 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   private Fts5ExtensionApi(){}
   private int iVersion = 2;
 
-  //! Callback type for use with xTokenize().
-  public static interface xTokenizeCallback {
-    int xToken(int tFlags, byte txt[], int iStart, int iEnd);
-  }
   public static interface xQueryPhraseCallback {
     int xCallback(Fts5ExtensionApi fapi, Fts5Context cx);
   }
@@ -68,7 +64,6 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
                                  @NotNull Fts5PhraseIter iter,
                                  @NotNull OutputPointer.Int32 iCol,
                                  @NotNull OutputPointer.Int32 iOff);
-
   public native int xPhraseFirstColumn(@NotNull Fts5Context cx, int iPhrase,
                                        @NotNull Fts5PhraseIter iter,
                                        @NotNull OutputPointer.Int32 iCol);
@@ -80,11 +75,8 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
                                        @NotNull Fts5PhraseIter iter,
                                        @NotNull OutputPointer.Int32 iCol);
   public native int xPhraseSize(@NotNull Fts5Context fcx, int iPhrase);
-
-
   public native int xQueryPhrase(@NotNull Fts5Context cx, int iPhrase,
                                  @NotNull xQueryPhraseCallback callback);
-
   public native int xRowCount(@NotNull Fts5Context fcx,
                               @NotNull OutputPointer.Int64 nRow);
   public native long xRowid(@NotNull Fts5Context cx);
@@ -95,11 +87,12 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
      the JNI layer will be relinquished regardless of whther pAux has
      an xDestroy() method. */
   public native int xSetAuxdata(@NotNull Fts5Context cx, @Nullable Object pAux);
-
   public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte pText[],
-                              @NotNull xTokenizeCallback callback);
+                              @NotNull Fts5.xTokenizeCallback callback);
 
   /**************************************************************
   void *(*xUserData)(Fts5Context*);
+  ^^^ returns the pointer passed as the 3rd arg to
+  fts5_api::xCreateFunction.
   **************************************************************/
 }

@@ -27,7 +27,45 @@ public class TesterFts5 {
     fts5_api fApi = fts5_api.getInstanceForDb(db);
     affirm( fApi != null );
     affirm( fApi == fts5_api.getInstanceForDb(db) /* singleton per db */ );
+
+    execSql(db, new String[] {
+        "CREATE VIRTUAL TABLE ft USING fts5(a, b);",
+        "INSERT INTO ft(rowid, a, b) VALUES(1, 'X Y', 'Y Z');",
+        "INSERT INTO ft(rowid, a, b) VALUES(2, 'A Z', 'Y Y');"
+      });
+
+    ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
+    ValueHolder<Integer> xFuncCount = new ValueHolder<>(0);
+    fts5_api.fts5_extension_function func = new fts5_api.fts5_extension_function(){
+
+        public void xFunction(Fts5ExtensionApi ext, Fts5Context fCx,
+                              sqlite3_context pCx, sqlite3_value argv[]){
+          int nCols = ext.xColumnCount(fCx);
+          affirm( 2 == nCols );
+          if(false){
+            OutputPointer.String op = new OutputPointer.String();
+            for(int i = 0; i < nCols; ++i ){
+              int rc = ext.xColumnText(fCx, i, op);
+              affirm( 0 == rc );
+              outln("xFunction col "+i+": "+op.getValue());
+            }
+          }
+          ++xFuncCount.value;
+        }
+        public void xDestroy(){
+          xDestroyCalled.value = true;
+        }
+      };
+
+    int rc = fApi.xCreateFunction("myaux", func);
+    affirm( 0==rc );
+
+    affirm( 0==xFuncCount.value );
+    execSql(db, "select myaux(ft,a,b) from ft;");
+    affirm( 2==xFuncCount.value );
+    affirm( !xDestroyCalled.value );
     sqlite3_close_v2(db);
+    affirm( xDestroyCalled.value );
   }
 
   public TesterFts5(){

@@ -66,9 +66,12 @@ JAVA_FILES := $(patsubst %,$(dir.src.jni)/%,\
 ifeq (1,$(enable.fts5))
   JAVA_FILES += $(patsubst %,$(dir.src.jni)/%,\
     fts5_api.java \
+    fts5_tokenizer.java \
+    Fts5.java \
     Fts5Context.java \
     Fts5ExtensionApi.java \
     Fts5Function.java \
+    Fts5Tokenizer.java \
     TesterFts5.java \
   )
 endif
@@ -142,6 +145,8 @@ SQLITE_OPT := \
 # for a var which gets set in all builds but only read
 # via assert().
 
+SQLITE_OPFS += -g -DDEBUG -UNDEBUG
+
 ifeq (1,$(enable.fts5))
   SQLITE_OPT += -DSQLITE_ENABLE_FTS5
 endif
@@ -152,7 +157,8 @@ sqlite3-jni.h.in := $(dir.bld.c)/org_sqlite_jni_SQLite3Jni.h
 ifeq (1,$(enable.fts5))
   sqlite3-jni.h.in += \
     $(dir.bld.c)/org_sqlite_jni_Fts5ExtensionApi.h \
-    $(dir.bld.c)/org_sqlite_jni_fts5_api.h
+    $(dir.bld.c)/org_sqlite_jni_fts5_api.h \
+    $(dir.bld.c)/org_sqlite_jni_fts5_tokenizer.h
 endif
 sqlite3-jni.h   := $(dir.src.c)/sqlite3-jni.h
 sqlite3-jni.dll := $(dir.bld.c)/libsqlite3-jni.so

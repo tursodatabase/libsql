@@ -209,6 +209,8 @@ static const struct {
   const char * const Fts5Context;
   const char * const Fts5ExtensionApi;
   const char * const fts5_api;
+  const char * const fts5_tokenizer;
+  const char * const Fts5Tokenizer;
 #endif
 } S3ClassNames = {
   "org/sqlite/jni/sqlite3",
@@ -222,7 +224,9 @@ static const struct {
 #ifdef SQLITE_ENABLE_FTS5
   "org/sqlite/jni/Fts5Context",
   "org/sqlite/jni/Fts5ExtensionApi",
-  "org/sqlite/jni/fts5_api"
+  "org/sqlite/jni/fts5_api",
+  "org/sqlite/jni/fts5_tokenizer",
+  "org/sqlite/jni/Fts5Tokenizer"
 #endif
 };
 
@@ -304,9 +308,9 @@ enum {
     Need enough space for (only) the library's NativePointerHolder
     types, a fixed count known at build-time. If we add more than this
     a fatal error will be triggered with a reminder to increase this.
-    This value needs to be, at most, the number of entries in the
-    S3ClassNames object, as that value is our upper limit. The
-    S3ClassNames entries are the keys for this particular cache.
+    This value needs to be exactly the number of entries in the
+    S3ClassNames object. The S3ClassNames entries are the keys for
+    this particular cache.
   */
   NphCache_SIZE = sizeof(S3ClassNames) / sizeof(char const *)
 };
@@ -358,6 +362,12 @@ struct JNIEnvCacheLine {
   JNIEnvCacheLine * pPrev /* Previous entry in the linked list */;
   JNIEnvCacheLine * pNext /* Next entry in the linked list */;
 #endif
+  /** TODO: NphCacheLine *pNphHit;
+
+      to help fast-track cache lookups, update this to point to the
+      most recent hit. That will speed up, e.g. the
+      sqlite3_value-to-Java-array loop.
+  */
   struct NphCacheLine nph[NphCache_SIZE];
 };
 typedef struct JNIEnvCache JNIEnvCache;
@@ -1268,49 +1278,55 @@ typedef struct {
    Converts the given (cx, argc, argv) into arguments for the given
    UDF, placing the result in the final argument. Returns 0 on
    success, SQLITE_NOMEM on allocation error.
+
+   TODO: see what we can do to optimize the
+   new_sqlite3_value_wrapper() call. e.g. find the ctor a single time
+   and call it here, rather than looking it up repeatedly.
 */
-static int udf_args(sqlite3_context * const cx,
+static int udf_args(JNIEnv *env,
+                    sqlite3_context * const cx,
                     int argc, sqlite3_value**argv,
-                    UDFState * const s,
-                    udf_jargs * const args){
+                    jobject * jCx, jobjectArray *jArgv){
   jobjectArray ja = 0;
-  JNIEnv * const env = s->env;
-  jobject jcx = new_sqlite3_context_wrapper(s->env, cx);
+  jobject jcx = new_sqlite3_context_wrapper(env, cx);
   jint i;
-  args->jcx = 0;
-  args->jargv = 0;
+  *jCx = 0;
+  *jArgv = 0;
   if(!jcx) goto error_oom;
-  ja = (*(s->env))->NewObjectArray(s->env, argc,
-                                   S3Global_env_cache(env)->globalClassObj,
-                                   NULL);
+  ja = (*env)->NewObjectArray(env, argc,
+                              S3Global_env_cache(env)->globalClassObj,
+                              NULL);
   if(!ja) goto error_oom;
   for(i = 0; i < argc; ++i){
-    jobject jsv = new_sqlite3_value_wrapper(s->env, argv[i]);
+    jobject jsv = new_sqlite3_value_wrapper(env, argv[i]);
     if(!jsv) goto error_oom;
     (*env)->SetObjectArrayElement(env, ja, i, jsv);
     UNREF_L(jsv)/*array has a ref*/;
   }
-  args->jcx = jcx;
-  args->jargv = ja;
+  *jCx = jcx;
+  *jArgv = ja;
   return 0;
 error_oom:
   sqlite3_result_error_nomem(cx);
   UNREF_L(jcx);
   UNREF_L(ja);
-  return 1;
+  return SQLITE_NOMEM;
 }
 
-static int udf_report_exception(sqlite3_context * cx, UDFState *s,
+static int udf_report_exception(sqlite3_context * cx,
+                                const char *zFuncName,
                                 const char *zFuncType){
   int rc;
   char * z =
-    sqlite3_mprintf("UDF %s.%s() threw. It should not do that.",
-                    s->zFuncName, zFuncType);
+    sqlite3_mprintf("Client-defined function %s.%s() threw. It should "
+                    "not do that.",
+                    zFuncName ? zFuncName : "<unnamed>", zFuncType);
   if(z){
     sqlite3_result_error(cx, z, -1);
     sqlite3_free(z);
     rc = SQLITE_ERROR;
   }else{
+    sqlite3_result_error_nomem(cx);
     rc = SQLITE_NOMEM;
   }
   return rc;
@@ -1325,9 +1341,9 @@ static int udf_xFSI(sqlite3_context* pCx, int argc,
                     UDFState * s,
                     jmethodID xMethodID,
                     const char * zFuncType){
-  udf_jargs args;
   JNIEnv * const env = s->env;
-  int rc = udf_args(pCx, argc, argv, s, &args);
+  udf_jargs args = {0,0};
+  int rc = udf_args(s->env, pCx, argc, argv, &args.jcx, &args.jargv);
   //MARKER(("%s.%s() pCx = %p\n", s->zFuncName, zFuncType, pCx));
   if(rc) return rc;
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
@@ -1337,7 +1353,7 @@ static int udf_xFSI(sqlite3_context* pCx, int argc,
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
     IFTHREW{
-      rc = udf_report_exception(pCx,s, zFuncType);
+      rc = udf_report_exception(pCx, s->zFuncName, zFuncType);
     }
   }
   UNREF_L(args.jcx);
@@ -1367,7 +1383,7 @@ static int udf_xFV(sqlite3_context* cx, UDFState * s,
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
     IFTHREW{
-      rc = udf_report_exception(cx,s, zFuncType);
+      rc = udf_report_exception(cx,s->zFuncName, zFuncType);
     }
   }
   UNREF_L(jcx);
@@ -2636,6 +2652,8 @@ JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
   Java_org_sqlite_jni_Fts5ExtensionApi_ ## Suffix
 #define JFuncNameFtsApi(Suffix)                  \
   Java_org_sqlite_jni_fts5_1api_ ## Suffix
+#define JFuncNameFtsTok(Suffix)                  \
+  Java_org_sqlite_jni_fts5_tokenizer_ ## Suffix
 
 #define JDECLFtsXA(ReturnType,Suffix)           \
   JNIEXPORT ReturnType JNICALL                  \
@@ -2643,22 +2661,82 @@ JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
 #define JDECLFtsApi(ReturnType,Suffix)          \
   JNIEXPORT ReturnType JNICALL                  \
   JFuncNameFtsApi(Suffix)
+#define JDECLFtsTok(ReturnType,Suffix)          \
+  JNIEXPORT ReturnType JNICALL                  \
+  JFuncNameFtsTok(Suffix)
 
+#define PtrGet_fts5_api(OBJ) getNativePointer(env,OBJ,S3ClassNames.fts5_api)
+#define PtrGet_fts5_tokenizer(OBJ) getNativePointer(env,OBJ,S3ClassNames.fts5_tokenizer)
 #define PtrGet_Fts5Context(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Context)
+#define PtrGet_Fts5Tokenizer(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Tokenizer)
+
+/**
+   State for binding Java-side FTS5 auxiliary functions.
+*/
+typedef struct {
+  JNIEnv * env;         /* env registered from */;
+  jobject jObj          /* functor instance */;
+  jclass klazz          /* jObj's class */;
+  char * zFuncName      /* Only for error reporting and debug logging */;
+  jmethodID jmid        /* callback member's method ID */;
+} Fts5JniAux;
+
+static void Fts5JniAux_free(Fts5JniAux * const s){
+  JNIEnv * const env = s->env;
+  if(env){
+    /*MARKER(("FTS5 aux function cleanup: %s\n", s->zFuncName));*/
+    s3jni_call_xDestroy(env, s->jObj, s->klazz);
+    UNREF_G(s->jObj);
+    UNREF_G(s->klazz);
+  }
+  sqlite3_free(s->zFuncName);
+  sqlite3_free(s);
+}
+
+static void Fts5JniAux_xDestroy(void *p){
+  if(p) Fts5JniAux_free(p);
+}
+
+static Fts5JniAux * Fts5JniAux_alloc(JNIEnv * const env, jobject jObj){
+  Fts5JniAux * s = sqlite3_malloc(sizeof(Fts5JniAux));
+  if(s){
+    const char * zSig =
+      "(Lorg/sqlite/jni/Fts5ExtensionApi;"
+      "Lorg/sqlite/jni/Fts5Context;"
+      "Lorg/sqlite/jni/sqlite3_context;"
+      "[Lorg/sqlite/jni/sqlite3_value;)V";
+    memset(s, 0, sizeof(Fts5JniAux));
+    s->env = env;
+    s->jObj = REF_G(jObj);
+    s->klazz = REF_G((*env)->GetObjectClass(env, jObj));
+    EXCEPTION_IS_FATAL("Cannot get class for FTS5 aux function object.");
+    s->jmid = (*env)->GetMethodID(env, s->klazz, "xFunction", zSig);
+    IFTHREW{
+      EXCEPTION_REPORT;
+      EXCEPTION_CLEAR;
+      Fts5JniAux_free(s);
+      s = 0;
+    }
+  }
+  return s;
+}
+
 static inline Fts5ExtensionApi const * s3jni_ftsext(void){
   return &sFts5Api/*singleton from sqlite3.c*/;
 }
 #define Fts5ExtDecl Fts5ExtensionApi const * const fext = s3jni_ftsext()
 
-#if 0
 static jobject new_Fts5Context_wrapper(JNIEnv * const env, Fts5Context *sv){
   return new_NativePointerHolder_object(env, S3ClassNames.Fts5Context, sv);
 }
-#endif
 static jobject new_fts5_api_wrapper(JNIEnv * const env, fts5_api *sv){
   return new_NativePointerHolder_object(env, S3ClassNames.fts5_api, sv);
 }
 
+/**
+   Returns a per-JNIEnv global ref to the Fts5ExtensionApi singleton
+   instance, or NULL on OOM.
+*/
 static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
   JNIEnvCacheLine * const row = S3Global_env_cache(env);
   if( !row->jFtsExt ){
@@ -2670,9 +2748,9 @@ static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
 }
 
 /*
-** Return a pointer to the fts5_api pointer for database connection db.
-** If an error occurs, return NULL and leave an error in the database
-** handle (accessible using sqlite3_errcode()/errmsg()).
+** Return a pointer to the fts5_api instance for database connection
+** db.  If an error occurs, return NULL and leave an error in the
+** database handle (accessible using sqlite3_errcode()/errmsg()).
 */
 static fts5_api *s3jni_fts5_api_from_db(sqlite3 *db){
   fts5_api *pRet = 0;
@@ -2758,6 +2836,73 @@ JDECLFtsXA(jint,xColumnTotalSize)(JENV_JSELF,jobject jCtx, jint iCol, jobject jO
   if( 0==rc && jOut64 ) setOutputInt64(env, jOut64, (jlong)nOut);
   return (jint)rc;
 }
+
+/**
+   Proxy for fts5_extension_function instances plugged in via
+   fts5_api::xCreateFunction().
+*/
+static void s3jni_fts5_extension_function(Fts5ExtensionApi const *pApi,
+                                          Fts5Context *pFts,
+                                          sqlite3_context *pCx,
+                                          int argc,
+                                          sqlite3_value **argv){
+  Fts5JniAux * const pAux = pApi->xUserData(pFts);
+  JNIEnv *env;
+  jobject jpCx = 0;
+  jobjectArray jArgv = 0;
+  jobject jpFts = 0;
+  jobject jFXA;
+  int rc;
+  assert(pAux);
+  env = pAux->env;
+  jFXA = s3jni_getFts5ExensionApi(env);
+  if( !jFXA ) goto error_oom;
+  jpFts = new_Fts5Context_wrapper(env, pFts);
+  if(!jpFts) goto error_oom;
+  rc = udf_args(env, pCx, argc, argv, &jpCx, &jArgv);
+  if(rc) goto error_oom;
+  (*env)->CallVoidMethod(env, pAux->jObj, pAux->jmid,
+                         jFXA, jpFts, jpCx, jArgv);
+  IFTHREW{
+    EXCEPTION_CLEAR;
+    udf_report_exception(pCx, pAux->zFuncName, "xFunction");
+  }
+  UNREF_L(jpFts);
+  UNREF_L(jpCx);
+  UNREF_L(jArgv);
+  return;
+error_oom:
+  assert( !jArgv );
+  assert( !jpCx );
+  UNREF_L(jpFts);
+  sqlite3_result_error_nomem(pCx);
+  return;
+}
+
+JDECLFtsApi(jint,xCreateFunction)(JENV_JSELF, jstring jName, jobject jFunc){
+  fts5_api * const pApi = PtrGet_fts5_api(jSelf);
+  int rc;
+  char const * zName;
+  Fts5JniAux * pAux;
+  assert(pApi);
+  zName = JSTR_TOC(jName);
+  if(!zName) return SQLITE_NOMEM;
+  pAux = Fts5JniAux_alloc(env, jFunc);
+  if( pAux ){
+    rc = pApi->xCreateFunction(pApi, zName, pAux,
+                               s3jni_fts5_extension_function,
+                               Fts5JniAux_xDestroy);
+  }else{
+    rc = SQLITE_NOMEM;
+  }
+  if( 0==rc ){
+    pAux->zFuncName = sqlite3_mprintf("%s", zName);
+    /* OOM here is non-fatal. Ignore it. */
+  }
+  JSTR_RELEASE(jName, zName);
+  return (jint)rc;
+}
+
 
 typedef struct s3jni_fts5AuxData s3jni_fts5AuxData;
 struct s3jni_fts5AuxData {
@@ -3022,10 +3167,7 @@ JDECLFtsXA(int,xSetAuxdata)(JENV_JSELF,jobject jCtx, jobject jAux){
 }
 
 /**
-   xToken() imp for xTokenize().
-
-   TODO: hold on to the byte array and avoid initializing
-   it if passed the same (z,nZ) as a previous call.
+   xToken() impl for xTokenize().
 */
 static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
                                   int nZ, int iStart, int iEnd){
@@ -3052,12 +3194,16 @@ static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
   return rc;
 }
 
-JDECLFtsXA(jint,xTokenize)(JENV_JSELF,jobject jFcx, jbyteArray jbaText,
-                           jobject jCallback){
+/**
+   Proxy for Fts5ExtensionApi.xTokenize() and fts5_tokenizer.xTokenize()
+*/
+static jint s3jni_fts5_xTokenize(JENV_JSELF, const char *zClassName,
+                                 jint tokFlags, jobject jFcx,
+                                 jbyteArray jbaText, jobject jCallback){
   Fts5ExtDecl;
   JNIEnvCacheLine * const jc = S3Global_env_cache(env);
   struct s3jni_xQueryPhraseState s;
-  int rc;
+  int rc = 0;
   jbyte * const pText = JBA_TOC(jbaText);
   jsize nText = (*env)->GetArrayLength(env, jbaText);
   jclass const klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
@@ -3082,15 +3228,36 @@ JDECLFtsXA(jint,xTokenize)(JENV_JSELF,jobject jFcx, jbyteArray jbaText,
   s.tok.jba = REF_L(jbaText);
   s.tok.zPrev = (const char *)pText;
   s.tok.nPrev = (int)nText;
-  rc = fext->xTokenize(PtrGet_Fts5Context(jFcx),
-                       (const char *)pText, (int)nText,
-                       &s, s3jni_xTokenize_xToken);
+  if( zClassName == S3ClassNames.Fts5ExtensionApi ){
+    rc = fext->xTokenize(PtrGet_Fts5Context(jFcx),
+                         (const char *)pText, (int)nText,
+                         &s, s3jni_xTokenize_xToken);
+  }else if( zClassName == S3ClassNames.fts5_tokenizer ){
+    fts5_tokenizer * const pTok = PtrGet_fts5_tokenizer(jSelf);
+    rc = pTok->xTokenize(PtrGet_Fts5Tokenizer(jFcx), &s, tokFlags,
+                         (const char *)pText, (int)nText,
+                         s3jni_xTokenize_xToken);
+  }else{
+    (*env)->FatalError(env, "This cannot happen. Maintenance required.");
+  }
   if(s.tok.jba){
     assert( s.tok.zPrev );
     UNREF_L(s.tok.jba);
   }
   JBA_RELEASE(jbaText, pText);
   return (jint)rc;
+}
+
+JDECLFtsXA(jint,xTokenize)(JENV_JSELF,jobject jFcx, jbyteArray jbaText,
+                           jobject jCallback){
+  return s3jni_fts5_xTokenize(env, jSelf, S3ClassNames.Fts5ExtensionApi,
+                              0, jFcx, jbaText, jCallback);
+}
+
+JDECLFtsTok(jint,xTokenize)(JENV_JSELF,jobject jFcx, jint tokFlags,
+                            jbyteArray jbaText, jobject jCallback){
+  return s3jni_fts5_xTokenize(env, jSelf, S3ClassNames.Fts5Tokenizer,
+                              tokFlags, jFcx, jbaText, jCallback);
 }
 
 

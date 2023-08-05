@@ -83,7 +83,8 @@ public class Tester1 {
         affirm(0 == rc);
         pos = oTail.getValue();
         affirm(0 != stmt.getNativePointer());
-        rc = sqlite3_step(stmt);
+        while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
+        }
         sqlite3_finalize(stmt);
         affirm(0 == stmt.getNativePointer());
         if(0!=rc && SQLITE_ROW!=rc && SQLITE_DONE!=rc){

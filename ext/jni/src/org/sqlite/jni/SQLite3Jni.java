@@ -288,11 +288,6 @@ public final class SQLite3Jni {
                                                     int eTextRep,
                                                     @NotNull Collation col);
 
-  //Potential TODO, if we can sensibly map the lower-level bits to Java:
-  //public static native int sqlite3_create_fts5_function(@NotNull sqlite3 db,
-  //                                                      @NotNull String functionName,
-  //                                                      @NotNull Fts5Function func);
-
   /**
      The Java counterpart to the C-native sqlite3_create_function(),
      sqlite3_create_function_v2(), and
