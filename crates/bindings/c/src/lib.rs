@@ -317,11 +317,23 @@ pub unsafe extern "C" fn libsql_get_int(
 pub unsafe extern "C" fn libsql_get_float(
     res: libsql_row_t,
     col: std::ffi::c_int,
-) -> std::ffi::c_double {
+    out_value: *mut std::ffi::c_double,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let res = res.get_ref();
     match res.get_value(col) {
-        Ok(libsql::params::Value::Real(f)) => f,
-        _ => 0.0,
+        Ok(libsql::params::Value::Real(f)) => {
+            *out_value = f;
+            0
+        }
+        Ok(_) => {
+            set_err_msg(format!("Value not a float"), out_err_msg);
+            1
+        }
+        Err(e) => {
+            set_err_msg(format!("Error fetching value: {}", e), out_err_msg);
+            2
+        }
     }
 }
 
