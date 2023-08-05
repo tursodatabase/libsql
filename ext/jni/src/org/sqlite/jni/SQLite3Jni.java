@@ -103,12 +103,13 @@ public final class SQLite3Jni {
      primarily for testing of the JNI bindings and is not information
      which client-level code should use to make any informed
      decisions.
-*/
+  */
   public static synchronized native boolean uncacheJniEnv();
 
   //////////////////////////////////////////////////////////////////////
-  // Maintenance reminder: please keep the functions alphabetized.
-  // The SQLITE_... values. on the other hand, are grouped by category.
+  // Maintenance reminder: please keep the sqlite3_.... functions
+  // alphabetized.  The SQLITE_... values. on the other hand, are
+  // grouped by category.
 
   public static int sqlite3_bind_blob(@NotNull sqlite3_stmt stmt, int ndx,
                                       @Nullable byte[] data){
@@ -724,6 +725,10 @@ public final class SQLite3Jni {
 
   public static native RollbackHook sqlite3_rollback_hook(@NotNull sqlite3 db,
                                                           @Nullable RollbackHook hook);
+
+  //! Sets or unsets (if auth is null) the current authorizer.
+  public static native int sqlite3_set_authorizer(@NotNull sqlite3 db,
+                                                  @Nullable Authorizer auth);
 
   public static native void sqlite3_set_last_insert_rowid(@NotNull sqlite3 db, long rowid);
 

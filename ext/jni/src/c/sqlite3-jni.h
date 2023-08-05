@@ -1373,6 +1373,14 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1rollback_1hook
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_set_authorizer
+ * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/Authorizer;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1set_1authorizer
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_set_last_insert_rowid
  * Signature: (Lorg/sqlite/jni/sqlite3;J)V
  */

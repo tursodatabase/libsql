@@ -412,6 +412,7 @@ struct PerDbStateJni {
   JniHookState rollbackHook;
   JniHookState trace;
   JniHookState updateHook;
+  JniHookState authHook;
 #ifdef SQLITE_ENABLE_FTS5
   jobject jFtsApi  /* global ref to s3jni_fts5_api_from_db() */;
 #endif
@@ -610,6 +611,7 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
     UNHOOK(commitHook, 0);
     UNHOOK(rollbackHook, 0);
     UNHOOK(updateHook, 0);
+    UNHOOK(authHook, 0);
     UNHOOK(collation, 1);
     UNHOOK(collationNeeded, 1);
     UNHOOK(busyHandler, 1);
@@ -2387,6 +2389,71 @@ JDECL(jint,1result_1zeroblob64)(JENV_JSELF, jobject jpCx, jlong v){
 JDECL(jobject,1rollback_1hook)(JENV_JSELF,jobject jDb, jobject jHook){
   return s3jni_commit_rollback_hook(0, env, jDb, jHook);
 }
+
+/* sqlite3_set_authorizer() callback proxy. */
+static int s3jni_xAuth(void* pState, int op,const char*z0, const char*z1,
+                       const char*z2,const char*z3){
+  PerDbStateJni * const ps = pState;
+  JNIEnv * const env = ps->env;
+  jstring const s0 = z0 ? (*env)->NewStringUTF(env, z0) : 0;
+  jstring const s1 = z1 ? (*env)->NewStringUTF(env, z1) : 0;
+  jstring const s2 = z2 ? (*env)->NewStringUTF(env, z2) : 0;
+  jstring const s3 = z3 ? (*env)->NewStringUTF(env, z3) : 0;
+  JniHookState const * const pHook = &ps->authHook;
+  int rc;
+
+  assert( pHook->jObj );
+  rc = (*env)->CallIntMethod(env, pHook->jObj, pHook->midCallback, (jint)op,
+                             s0, s1, s3, s3);
+  IFTHREW{
+    EXCEPTION_WARN_CALLBACK_THREW("sqlite3_set_authorizer() callback");
+    EXCEPTION_CLEAR;
+  }
+  UNREF_L(s0);
+  UNREF_L(s1);
+  UNREF_L(s2);
+  UNREF_L(s3);
+  return rc;
+}
+
+JDECL(jint,1set_1authorizer)(JENV_JSELF,jobject jDb, jobject jHook){
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  JniHookState * const pHook = ps ? &ps->authHook : 0;
+
+  if( !ps ) return SQLITE_MISUSE;
+  else if( !jHook ){
+    JniHookState_unref(env, pHook, 0);
+    return (jint)sqlite3_set_authorizer( ps->pDb, 0, 0 );
+  }else{
+    int rc = 0;
+    if( pHook->jObj ){
+      if( (*env)->IsSameObject(env, pHook->jObj, jHook) ){
+      /* Same object - this is a no-op. */
+        return 0;
+      }
+      JniHookState_unref(env, pHook, 0);
+    }
+    pHook->jObj = REF_G(jHook);
+    pHook->klazz = REF_G((*env)->GetObjectClass(env, jHook));
+    pHook->midCallback = (*env)->GetMethodID(env, pHook->klazz,
+                                             "xAuth",
+                                             "(I"
+                                             "Ljava/lang/String;"
+                                             "Ljava/lang/String;"
+                                             "Ljava/lang/String;"
+                                             "Ljava/lang/String;"
+                                             ")I");
+    IFTHREW {
+      JniHookState_unref(env, pHook, 0);
+      return s3jni_db_error(ps->pDb, SQLITE_ERROR,
+                            "Error setting up Java parts of authorizer hook.");
+    }
+    rc = sqlite3_set_authorizer(ps->pDb, s3jni_xAuth, ps);
+    if( rc ) JniHookState_unref(env, pHook, 0);
+    return rc;
+  }
+}
+
 
 JDECL(void,1set_1last_1insert_1rowid)(JENV_JSELF, jobject jpDb, jlong rowId){
   sqlite3_set_last_insert_rowid(PtrGet_sqlite3_context(jpDb),

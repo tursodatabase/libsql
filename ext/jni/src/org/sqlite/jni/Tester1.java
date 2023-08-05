@@ -82,7 +82,8 @@ public class Tester1 {
         }
         if( 0==sqlChunk.length ) break;
         rc = sqlite3_prepare_v2(db, sqlChunk, stmt, oTail);
-        affirm(0 == rc);
+        if(throwOnError) affirm(0 == rc);
+        else if( 0!=rc ) break;
         pos = oTail.getValue();
         affirm(0 != stmt.getNativePointer());
         while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
@@ -97,6 +98,7 @@ public class Tester1 {
           }
         }
       }
+      sqlite3_finalize(stmt);
       if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
       return rc;
   }
@@ -949,6 +951,28 @@ public class Tester1 {
     }
   }
 
+  private static void testAuthorizer(){
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final ValueHolder<Integer> authRc = new ValueHolder<>(0);
+    final Authorizer auth = new Authorizer(){
+        public int xAuth(int op, String s0, String s1, String s2, String s3){
+          ++counter.value;
+          //outln("xAuth(): "+s0+" "+s1+" "+s2+" "+s3);
+          return authRc.value;
+        }
+      };
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    sqlite3_set_authorizer(db, auth);
+    execSql(db, "UPDATE t SET a=1");
+    affirm( 1 == counter.value );
+    authRc.value = SQLITE_DENY;
+    int rc = execSql(db, false, "UPDATE t SET a=2");
+    affirm( SQLITE_AUTH==rc );
+    // TODO: expand these tests considerably
+    sqlite3_close(db);
+  }
+
   private static void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);
@@ -981,6 +1005,7 @@ public class Tester1 {
     testCommitHook();
     testRollbackHook();
     testUpdateHook();
+    testAuthorizer();
     testFts5();
     //testSleep();
     if(liArgs.indexOf("-v")>0){
