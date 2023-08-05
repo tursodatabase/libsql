@@ -346,6 +346,11 @@ struct JNIEnvCacheLine {
 #ifdef SQLITE_ENABLE_FTS5
   jobject jFtsExt       /* Global ref to Java singleton for the
                            Fts5ExtensionApi instance. */;
+  struct {
+    jclass klazz;
+    jfieldID fidA;
+    jfieldID fidB;
+  } jPhraseIter;
 #endif
 #if 0
   /* TODO: refactor this cache as a linked list with malloc()'d entries,
@@ -368,17 +373,18 @@ static void NphCacheLine_clear(JNIEnv * const env, NphCacheLine * const p){
 
 static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
   JNIEnv * const env = p->env;
-  int i;
   if(env){
+    int i;
     UNREF_G(p->globalClassObj);
     UNREF_G(p->globalClassLong);
 #ifdef SQLITE_ENABLE_FTS5
     UNREF_G(p->jFtsExt);
+    UNREF_G(p->jPhraseIter.klazz);
 #endif
-    i = 0;
-    for( ; i < NphCache_SIZE; ++i){
+    for( i = 0; i < NphCache_SIZE; ++i ){
       NphCacheLine_clear(env, &p->nph[i]);
     }
+    memset(p, 0, sizeof(JNIEnvCacheLine));
   }
 }
 
@@ -387,7 +393,6 @@ static void JNIEnvCache_clear(JNIEnvCache * const p){
   for( ; i < p->used; ++i ){
     JNIEnvCacheLine_clear( &p->lines[i] );
   }
-  memset(p, 0, sizeof(JNIEnvCache));
 }
 
 /** State for various hook callbacks. */
@@ -419,9 +424,6 @@ struct PerDbStateJni {
                    it would be a different instance (and maybe even a
                    different class) than the one the user may expect
                    to receive. */;
-#ifdef SQLITE_ENABLE_FTS5
-  jobject jFtsApi /* global ref to fts5_api object for the db. */;
-#endif
   JniHookState busyHandler;
   JniHookState collation;
   JniHookState collationNeeded;
@@ -771,9 +773,7 @@ static void JniHookState_unref(JNIEnv * const env, JniHookState * const s, int d
   }
   UNREF_G(s->jObj);
   UNREF_G(s->klazz);
-  s->jObj = 0;
-  s->klazz = 0;
-  s->midCallback = 0;
+  memset(s, 0, sizeof(*s));
 }
 
 /**
@@ -805,9 +805,6 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
     UNHOOK(busyHandler, 1);
 #undef UNHOOK
     UNREF_G(s->jDb);
-#ifdef SQLITE_ENABLE_FTS5
-    UNREF_G(s->jFtsApi);
-#endif
     memset(s, 0, sizeof(PerDbStateJni));
     s->pNext = S3Global.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
@@ -1029,7 +1026,9 @@ static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
   jbyteArray jbaRhs = jbaLhs ? (*env)->NewByteArray(env, (jint)nRhs) : NULL;
   //MARKER(("native xCompare nLhs=%d nRhs=%d\n", nLhs, nRhs));
   if(!jbaRhs){
-    (*env)->FatalError(env, "Out of memory. Cannot allocate arrays for collation.");
+    s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
+    return 0;
+    //(*env)->FatalError(env, "Out of memory. Cannot allocate arrays for collation.");
   }
   (*env)->SetByteArrayRegion(env, jbaLhs, 0, (jint)nLhs, (const jbyte*)lhs);
   (*env)->SetByteArrayRegion(env, jbaRhs, 0, (jint)nRhs, (const jbyte*)rhs);
@@ -2713,6 +2712,43 @@ JDECLFts(jint,xColumnTotalSize)(JENV_JSELF,jobject jCtx, jint iCol, jobject jOut
   return (jint)rc;
 }
 
+typedef struct s3jni_fts5AuxData s3jni_fts5AuxData;
+struct s3jni_fts5AuxData {
+  JNIEnv *env;
+  jobject jObj;
+};
+
+static void s3jni_fts5AuxData_xDestroy(void *x){
+  if(x){
+    s3jni_fts5AuxData * const p = x;
+    if(p->jObj){
+      JNIEnv *env = p->env;
+      s3jni_call_xDestroy(env, p->jObj, 0);
+      UNREF_G(p->jObj);
+    }
+    sqlite3_free(x);
+  }
+}
+
+JDECLFts(jobject,xGetAuxdata)(JENV_JSELF,jobject jCtx, jboolean bClear){
+  Fts5ExtDecl;
+  jobject rv = 0;
+  s3jni_fts5AuxData * const pAux = fext->xGetAuxdata(PtrGet_Fts5Context(jCtx), bClear);
+  if(pAux){
+    if(bClear){
+      if( pAux->jObj ){
+        rv = REF_L(pAux->jObj);
+        UNREF_G(pAux->jObj);
+      }
+      /* Note that we do not call xDestroy() in this case. */
+      sqlite3_free(pAux);
+    }else{
+      rv = pAux->jObj;
+    }
+  }
+  return rv;
+}
+
 JDECLFts(jint,xInst)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOutPhrase,
                     jobject jOutCol, jobject jOutOff){
   Fts5ExtDecl;
@@ -2739,10 +2775,171 @@ JDECLFts(jint,xPhraseCount)(JENV_JSELF,jobject jCtx){
   return (jint)fext->xPhraseCount(PtrGet_Fts5Context(jCtx));
 }
 
+/**
+   Initializes jc->jPhraseIter if it needed it.
+*/
+static void s3jni_phraseIter_init(JNIEnv *const env, JNIEnvCacheLine * const jc,
+                                  jobject jIter){
+  if(!jc->jPhraseIter.klazz){
+    jclass klazz = (*env)->GetObjectClass(env, jIter);
+    EXCEPTION_IS_FATAL("Cannot get class of Fts5PhraseIter object.");
+    jc->jPhraseIter.klazz = REF_G(klazz);
+    jc->jPhraseIter.fidA = (*env)->GetFieldID(env, klazz, "a", "J");
+    EXCEPTION_IS_FATAL("Cannot get Fts5PhraseIter.a field.");
+    jc->jPhraseIter.fidB = (*env)->GetFieldID(env, klazz, "a", "J");
+    EXCEPTION_IS_FATAL("Cannot get Fts5PhraseIter.b field.");
+  }
+}
+
+/* Copy the 'a' and 'b' fields from pSrc to Fts5PhraseIter object jIter. */
+static void s3jni_phraseIter_NToJ(JNIEnv *const env, JNIEnvCacheLine const * const jc,
+                                    Fts5PhraseIter const * const pSrc,
+                                    jobject jIter){
+  assert(jc->jPhraseIter.klazz);
+  (*env)->SetLongField(env, jIter, jc->jPhraseIter.fidA, (jlong)pSrc->a);
+  EXCEPTION_IS_FATAL("Cannot set Fts5PhraseIter.a field.");
+  (*env)->SetLongField(env, jIter, jc->jPhraseIter.fidB, (jlong)pSrc->b);
+  EXCEPTION_IS_FATAL("Cannot set Fts5PhraseIter.b field.");
+}
+
+/* Copy the 'a' and 'b' fields from Fts5PhraseIter object jIter to pDest. */
+static void s3jni_phraseIter_JToN(JNIEnv *const env, JNIEnvCacheLine const * const jc,
+                                  jobject jIter, Fts5PhraseIter * const pDest){
+  assert(jc->jPhraseIter.klazz);
+  pDest->a =
+    (const unsigned char *)(*env)->GetLongField(env, jIter, jc->jPhraseIter.fidA);
+  EXCEPTION_IS_FATAL("Cannot get Fts5PhraseIter.a field.");
+  pDest->b =
+    (const unsigned char *)(*env)->GetLongField(env, jIter, jc->jPhraseIter.fidB);
+  EXCEPTION_IS_FATAL("Cannot get Fts5PhraseIter.b field.");
+}
+
+JDECLFts(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
+                            jobject jIter, jobject jOutCol,
+                            jobject jOutOff){
+  Fts5ExtDecl;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  Fts5PhraseIter iter;
+  int rc, iCol = 0, iOff = 0;
+  s3jni_phraseIter_init(env, jc, jIter);
+  rc = fext->xPhraseFirst(PtrGet_Fts5Context(jCtx), (int)iPhrase,
+                         &iter, &iCol, &iOff);
+  if( 0==rc ){
+    setOutputInt32(env, jOutCol, iCol);
+    setOutputInt32(env, jOutOff, iOff);
+    s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
+  }
+  return rc;
+}
+
+JDECLFts(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
+                                  jobject jIter, jobject jOutCol){
+  Fts5ExtDecl;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  Fts5PhraseIter iter;
+  int rc, iCol = 0;
+  s3jni_phraseIter_init(env, jc, jIter);
+  rc = fext->xPhraseFirstColumn(PtrGet_Fts5Context(jCtx), (int)iPhrase,
+                                &iter, &iCol);
+  if( 0==rc ){
+    setOutputInt32(env, jOutCol, iCol);
+    s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
+  }
+  return rc;
+}
+
+JDECLFts(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
+                           jobject jOutCol, jobject jOutOff){
+  Fts5ExtDecl;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  Fts5PhraseIter iter;
+  int iCol = 0, iOff = 0;
+  if(!jc->jPhraseIter.klazz) return /*SQLITE_MISUSE*/;
+  s3jni_phraseIter_JToN(env, jc, jIter, &iter);
+  fext->xPhraseNext(PtrGet_Fts5Context(jCtx),
+                         &iter, &iCol, &iOff);
+  setOutputInt32(env, jOutCol, iCol);
+  setOutputInt32(env, jOutOff, iOff);
+  s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
+}
+
+JDECLFts(void,xPhraseNextColumn)(JENV_JSELF,jobject jCtx, jobject jIter,
+                                 jobject jOutCol){
+  Fts5ExtDecl;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  Fts5PhraseIter iter;
+  int iCol = 0;
+  if(!jc->jPhraseIter.klazz) return /*SQLITE_MISUSE*/;
+  s3jni_phraseIter_JToN(env, jc, jIter, &iter);
+  fext->xPhraseNextColumn(PtrGet_Fts5Context(jCtx), &iter, &iCol);
+  setOutputInt32(env, jOutCol, iCol);
+  s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
+}
+
+
 JDECLFts(jint,xPhraseSize)(JENV_JSELF,jobject jCtx, jint iPhrase){
   Fts5ExtDecl;
   return (jint)fext->xPhraseSize(PtrGet_Fts5Context(jCtx), (int)iPhrase);
 }
+
+/**
+   State for use with xQueryPhrase() and xTokenize().
+*/
+struct s3jni_xQueryPhraseState {
+  JNIEnv *env;
+  Fts5ExtensionApi const * fext;
+  JNIEnvCacheLine const * jc;
+  jmethodID midCallback;
+  jobject jCallback;
+  jobject jFcx;
+  /* State for xTokenize() */
+  struct {
+    const char * zPrev;
+    int nPrev;
+    jbyteArray jba;
+  } tok;
+};
+
+static int s3jni_xQueryPhrase(const Fts5ExtensionApi *xapi,
+                              Fts5Context * pFcx, void *pData){
+  /* TODO: confirm that the Fts5Context passed to this function is
+     guaranteed to be the same one passed to xQueryPhrase(). If it's
+     not, we'll have to create a new wrapper object on every call. */
+  struct s3jni_xQueryPhraseState const * s = pData;
+  JNIEnv * const env = s->env;
+  int rc = (int)(*env)->CallIntMethod(env, s->jCallback, s->midCallback,
+                                      s->jc->jFtsExt, s->jFcx);
+  IFTHREW{
+    EXCEPTION_WARN_CALLBACK_THREW("xQueryPhrase callback");
+    EXCEPTION_CLEAR;
+    rc = SQLITE_ERROR;
+  }
+  return rc;
+}
+
+JDECLFts(jint,xQueryPhrase)(JENV_JSELF,jobject jFcx, jint iPhrase,
+                            jobject jCallback){
+  Fts5ExtDecl;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  struct s3jni_xQueryPhraseState s;
+  jclass klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
+  if( !klazz ){
+    EXCEPTION_CLEAR;
+    return SQLITE_MISUSE;
+  }
+  s.env = env;
+  s.jc = jc;
+  s.jCallback = jCallback;
+  s.jFcx = jFcx;
+  s.fext = fext;
+  s.midCallback = (*env)->GetMethodID(env, klazz, "xCallback",
+                                      "(Lorg.sqlite.jni.Fts5ExtensionApi;"
+                                      "Lorg.sqlite.jni.Fts5Context;)I");
+  EXCEPTION_IS_FATAL("Could not extract xQueryPhraseCallback.xCallback method.");
+  return (jint)fext->xQueryPhrase(PtrGet_Fts5Context(jFcx), iPhrase, &s,
+                                  s3jni_xQueryPhrase);
+}
+
 
 JDECLFts(jint,xRowCount)(JENV_JSELF,jobject jCtx, jobject jOut64){
   Fts5ExtDecl;
@@ -2755,6 +2952,98 @@ JDECLFts(jint,xRowCount)(JENV_JSELF,jobject jCtx, jobject jOut64){
 JDECLFts(jlong,xRowid)(JENV_JSELF,jobject jCtx){
   Fts5ExtDecl;
   return (jlong)fext->xRowid(PtrGet_Fts5Context(jCtx));
+}
+
+JDECLFts(int,xSetAuxdata)(JENV_JSELF,jobject jCtx, jobject jAux){
+  Fts5ExtDecl;
+  int rc;
+  s3jni_fts5AuxData * pAux;
+  pAux = sqlite3_malloc(sizeof(*pAux));
+  if(!pAux){
+    if(jAux){
+      // Emulate how xSetAuxdata() behaves when it cannot alloc
+      // its auxdata wrapper.
+      s3jni_call_xDestroy(env, jAux, 0);
+    }
+    return SQLITE_NOMEM;
+  }
+  pAux->env = env;
+  pAux->jObj = REF_G(jAux);
+  rc = fext->xSetAuxdata(PtrGet_Fts5Context(jCtx), pAux,
+                         s3jni_fts5AuxData_xDestroy);
+  return rc;
+}
+
+/**
+   xToken() imp for xTokenize().
+
+   TODO: hold on to the byte array and avoid initializing
+   it if passed the same (z,nZ) as a previous call.
+*/
+static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
+                                  int nZ, int iStart, int iEnd){
+  int rc;
+  struct s3jni_xQueryPhraseState * const s = p;
+  JNIEnv * const env = s->env;
+  jbyteArray jba;
+  if( s->tok.zPrev == z && s->tok.nPrev == nZ ){
+    jba = s->tok.jba;
+  }else{
+    if(s->tok.jba){
+      UNREF_L(s->tok.jba);
+    }
+    s->tok.zPrev = z;
+    s->tok.nPrev = nZ;
+    s->tok.jba = (*env)->NewByteArray(env, (jint)nZ);
+    if( !s->tok.jba ) return SQLITE_NOMEM;
+    jba = s->tok.jba;
+    (*env)->SetByteArrayRegion(env, jba, 0, (jint)nZ, (const jbyte*)z);
+  }
+  rc = (int)(*env)->CallIntMethod(env, s->jCallback, s->midCallback,
+                                  (jint)tFlags, jba, (jint)iStart,
+                                  (jint)iEnd);
+  return rc;
+}
+
+JDECLFts(jint,xTokenize)(JENV_JSELF,jobject jFcx, jbyteArray jbaText,
+                         jobject jCallback){
+  Fts5ExtDecl;
+  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  struct s3jni_xQueryPhraseState s;
+  int rc;
+  jbyte * const pText = JBA_TOC(jbaText);
+  jsize nText = (*env)->GetArrayLength(env, jbaText);
+  jclass const klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
+  if( !klazz ){
+    EXCEPTION_CLEAR;
+    JBA_RELEASE(jbaText, pText);
+    return SQLITE_MISUSE;
+  }
+  memset(&s, 0, sizeof(s));
+  s.env = env;
+  s.jc = jc;
+  s.jCallback = jCallback;
+  s.jFcx = jFcx;
+  s.fext = fext;
+  s.midCallback = (*env)->GetMethodID(env, klazz, "xToken", "(I[BII)I");
+  IFTHREW {
+    EXCEPTION_REPORT;
+    EXCEPTION_CLEAR;
+    JBA_RELEASE(jbaText, pText);
+    return SQLITE_ERROR;
+  }
+  s.tok.jba = REF_L(jbaText);
+  s.tok.zPrev = (const char *)pText;
+  s.tok.nPrev = (int)nText;
+  rc = fext->xTokenize(PtrGet_Fts5Context(jFcx),
+                       (const char *)pText, (int)nText,
+                       &s, s3jni_xTokenize_xToken);
+  if(s.tok.jba){
+    assert( s.tok.zPrev );
+    UNREF_L(s.tok.jba);
+  }
+  JBA_RELEASE(jbaText, pText);
+  return (jint)rc;
 }
 
 

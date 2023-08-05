@@ -15,6 +15,8 @@ package org.sqlite.jni;
 import java.nio.charset.StandardCharsets;
 
 /**
+   COMPLETELY UNTESTED.
+
    FAR FROM COMPLETE and the feasibility of binding this to Java
    is still undetermined. This might be removed.
 
@@ -25,6 +27,17 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   private Fts5ExtensionApi(){}
   private int iVersion;
 
+  //! Callback type for use with xTokenize().
+  public static interface xTokenizeCallback {
+    int xToken(int tFlags, byte txt[], int iStart, int iEnd);
+  }
+  public static interface xQueryPhraseCallback {
+    int xCallback(Fts5ExtensionApi fapi, Fts5Context cx);
+  }
+
+  /**
+     Returns a singleton instance of this class.
+  */
   public static native Fts5ExtensionApi getInstance();
 
   public native int xColumnCount(@NotNull Fts5Context fcx);
@@ -43,6 +56,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   }
   public native int xColumnTotalSize(@NotNull Fts5Context fcx, int iCol,
                                      @NotNull OutputPointer.Int64 pnToken);
+  public native Object xGetAuxdata(@NotNull Fts5Context cx, boolean clearIt);
   public native int xInst(@NotNull Fts5Context cx, int iIdx,
                           @NotNull OutputPointer.Int32 piPhrase,
                           @NotNull OutputPointer.Int32 piCol,
@@ -50,30 +64,42 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   public native int xInstCount(@NotNull Fts5Context fcx,
                                @NotNull OutputPointer.Int32 pnInst);
   public native int xPhraseCount(@NotNull Fts5Context fcx);
+  public native int xPhraseFirst(@NotNull Fts5Context cx, int iPhrase,
+                                 @NotNull Fts5PhraseIter iter,
+                                 @NotNull OutputPointer.Int32 iCol,
+                                 @NotNull OutputPointer.Int32 iOff);
+
+  public native int xPhraseFirstColumn(@NotNull Fts5Context cx, int iPhrase,
+                                       @NotNull Fts5PhraseIter iter,
+                                       @NotNull OutputPointer.Int32 iCol);
+  public native void xPhraseNext(@NotNull Fts5Context cx,
+                                 @NotNull Fts5PhraseIter iter,
+                                 @NotNull OutputPointer.Int32 iCol,
+                                 @NotNull OutputPointer.Int32 iOff);
+  public native void xPhraseNextColumn(@NotNull Fts5Context cx,
+                                       @NotNull Fts5PhraseIter iter,
+                                       @NotNull OutputPointer.Int32 iCol);
   public native int xPhraseSize(@NotNull Fts5Context fcx, int iPhrase);
+
+
+  public native int xQueryPhrase(@NotNull Fts5Context cx, int iPhrase,
+                                 @NotNull xQueryPhraseCallback callback);
+
   public native int xRowCount(@NotNull Fts5Context fcx,
                               @NotNull OutputPointer.Int64 nRow);
   public native long xRowid(@NotNull Fts5Context cx);
-/**************************************************************
+  /* Note that this impl lacks the xDelete() callback
+     argument. Instead, if pAux has an xDestroy() method, it is called
+     if the FTS5 API finalizes the aux state (including if allocation
+     of storage for the auxdata fails). Any reference to pAux held by
+     the JNI layer will be relinquished regardless of whther pAux has
+     an xDestroy() method. */
+  public native int xSetAuxdata(@NotNull Fts5Context cx, @Nullable Object pAux);
+
+  public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte pText[],
+                              @NotNull xTokenizeCallback callback);
+
+  /**************************************************************
   void *(*xUserData)(Fts5Context*);
-
-  int (*xTokenize)(Fts5Context*,
-    const char *pText, int nText,
-    void *pCtx,
-    int (*xToken)(void*, int, const char*, int, int, int)
-  );
-
-
-  int (*xQueryPhrase)(Fts5Context*, int iPhrase, void *pUserData,
-    int(*)(const Fts5ExtensionApi*,Fts5Context*,void*)
-  );
-  int (*xSetAuxdata)(Fts5Context*, void *pAux, void(*xDelete)(void*));
-  void *(*xGetAuxdata)(Fts5Context*, int bClear);
-
-  int (*xPhraseFirst)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*, int*);
-  void (*xPhraseNext)(Fts5Context*, Fts5PhraseIter*, int *piCol, int *piOff);
-
-  int (*xPhraseFirstColumn)(Fts5Context*, int iPhrase, Fts5PhraseIter*, int*);
-  void (*xPhraseNextColumn)(Fts5Context*, Fts5PhraseIter*, int *piCol);
   **************************************************************/
 }

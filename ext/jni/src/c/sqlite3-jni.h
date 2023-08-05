@@ -1666,6 +1666,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnTotalSize
 
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xGetAuxdata
+ * Signature: (Lorg/sqlite/jni/Fts5Context;Z)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xGetAuxdata
+  (JNIEnv *, jobject, jobject, jboolean);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
  * Method:    xInst
  * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;)I
  */
@@ -1690,11 +1698,51 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseCount
 
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xPhraseFirst
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseFirst
+  (JNIEnv *, jobject, jobject, jint, jobject, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xPhraseFirstColumn
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseFirstColumn
+  (JNIEnv *, jobject, jobject, jint, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xPhraseNext
+ * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseNext
+  (JNIEnv *, jobject, jobject, jobject, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xPhraseNextColumn
+ * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseNextColumn
+  (JNIEnv *, jobject, jobject, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
  * Method:    xPhraseSize
  * Signature: (Lorg/sqlite/jni/Fts5Context;I)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseSize
   (JNIEnv *, jobject, jobject, jint);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xQueryPhrase
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5ExtensionApi/xQueryPhraseCallback;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xQueryPhrase
+  (JNIEnv *, jobject, jobject, jint, jobject);
 
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
@@ -1711,6 +1759,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowCount
  */
 JNIEXPORT jlong JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowid
   (JNIEnv *, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xSetAuxdata
+ * Signature: (Lorg/sqlite/jni/Fts5Context;Ljava/lang/Object;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xSetAuxdata
+  (JNIEnv *, jobject, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_Fts5ExtensionApi
+ * Method:    xTokenize
+ * Signature: (Lorg/sqlite/jni/Fts5Context;[BLorg/sqlite/jni/Fts5ExtensionApi/xTokenizeCallback;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xTokenize
+  (JNIEnv *, jobject, jobject, jbyteArray, jobject);
 
 #ifdef __cplusplus
 }
