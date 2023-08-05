@@ -914,16 +914,25 @@ public class Tester1 {
 
   @SuppressWarnings("unchecked")
   private static void testFts5(){
+    Exception err = null;
     try {
       Class t = Class.forName("org.sqlite.jni.TesterFts5");
       java.lang.reflect.Constructor ctor = t.getConstructor();
+      ctor.setAccessible(true);
       ctor.newInstance();
     }catch(ClassNotFoundException e){
       outln("FTS5 classes not loaded. Skipping FTS tests.");
+      err = e;
     }catch(NoSuchMethodException e){
       outln("FTS5 tester ctor not found. Skipping FTS tests.");
+      err = e;
     }catch(Exception e){
       outln("FTS5 tester cannot be instantiated. Skipping FTS tests.");
+      err = e;
+    }
+    if( null != err ){
+      outln("Exception: "+err);
+      err.printStackTrace();
     }
   }
 

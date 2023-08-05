@@ -432,6 +432,9 @@ struct PerDbStateJni {
   JniHookState rollbackHook;
   JniHookState trace;
   JniHookState updateHook;
+#ifdef SQLITE_ENABLE_FTS5
+  jobject jFtsApi  /* global ref to s3jni_fts5_api_from_db() */;
+#endif
   PerDbStateJni * pNext /* Next entry in the available/free list */;
   PerDbStateJni * pPrev /* Previous entry in the available/free list */;
 };
@@ -805,6 +808,9 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
     UNHOOK(busyHandler, 1);
 #undef UNHOOK
     UNREF_G(s->jDb);
+#ifdef SQLITE_ENABLE_FTS5
+    UNREF_G(s->jFtsApi);
+#endif
     memset(s, 0, sizeof(PerDbStateJni));
     s->pNext = S3Global.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
@@ -2626,12 +2632,17 @@ JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
 #ifdef SQLITE_ENABLE_FTS5
 
 /* Creates a verbose JNI Fts5 function name. */
-#define JFuncNameFts5Ext(Suffix)                  \
+#define JFuncNameFtsXA(Suffix)                  \
   Java_org_sqlite_jni_Fts5ExtensionApi_ ## Suffix
+#define JFuncNameFtsApi(Suffix)                  \
+  Java_org_sqlite_jni_fts5_1api_ ## Suffix
 
-#define JDECLFts(ReturnType,Suffix)             \
+#define JDECLFtsXA(ReturnType,Suffix)           \
   JNIEXPORT ReturnType JNICALL                  \
-  JFuncNameFts5Ext(Suffix)
+  JFuncNameFtsXA(Suffix)
+#define JDECLFtsApi(ReturnType,Suffix)          \
+  JNIEXPORT ReturnType JNICALL                  \
+  JFuncNameFtsApi(Suffix)
 
 #define PtrGet_Fts5Context(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Context)
 static inline Fts5ExtensionApi const * s3jni_ftsext(void){
@@ -2644,6 +2655,9 @@ static jobject new_Fts5Context_wrapper(JNIEnv * const env, Fts5Context *sv){
   return new_NativePointerHolder_object(env, S3ClassNames.Fts5Context, sv);
 }
 #endif
+static jobject new_fts5_api_wrapper(JNIEnv * const env, fts5_api *sv){
+  return new_NativePointerHolder_object(env, S3ClassNames.fts5_api, sv);
+}
 
 static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
   JNIEnvCacheLine * const row = S3Global_env_cache(env);
@@ -2655,16 +2669,49 @@ static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
   return row->jFtsExt;
 }
 
-JDECLFts(jobject,getInstance)(JENV_JSELF){
+/*
+** Return a pointer to the fts5_api pointer for database connection db.
+** If an error occurs, return NULL and leave an error in the database
+** handle (accessible using sqlite3_errcode()/errmsg()).
+*/
+static fts5_api *s3jni_fts5_api_from_db(sqlite3 *db){
+  fts5_api *pRet = 0;
+  sqlite3_stmt *pStmt = 0;
+  if( SQLITE_OK==sqlite3_prepare(db, "SELECT fts5(?1)", -1, &pStmt, 0) ){
+    sqlite3_bind_pointer(pStmt, 1, (void*)&pRet, "fts5_api_ptr", NULL);
+    sqlite3_step(pStmt);
+  }
+  sqlite3_finalize(pStmt);
+  return pRet;
+}
+
+JDECLFtsApi(jobject,getInstanceForDb)(JENV_JSELF,jobject jDb){
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  jobject rv = 0;
+  if(!ps) return 0;
+  else if(ps->jFtsApi){
+    rv = ps->jFtsApi;
+  }else{
+    fts5_api * const pApi = s3jni_fts5_api_from_db(ps->pDb);
+    if( pApi ){
+      rv = new_fts5_api_wrapper(env, pApi);
+      ps->jFtsApi = rv ? REF_G(rv) : 0;
+    }
+  }
+  return rv;
+}
+
+
+JDECLFtsXA(jobject,getInstance)(JENV_JSELF){
   return s3jni_getFts5ExensionApi(env);
 }
 
-JDECLFts(jint,xColumnCount)(JENV_JSELF,jobject jCtx){
+JDECLFtsXA(jint,xColumnCount)(JENV_JSELF,jobject jCtx){
   Fts5ExtDecl;
   return (jint)fext->xColumnCount(PtrGet_Fts5Context(jCtx));
 }
 
-JDECLFts(jint,xColumnSize)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOut32){
+JDECLFtsXA(jint,xColumnSize)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOut32){
   Fts5ExtDecl;
   int n1 = 0;
   int const rc = fext->xColumnSize(PtrGet_Fts5Context(jCtx), (int)iIdx, &n1);
@@ -2672,7 +2719,7 @@ JDECLFts(jint,xColumnSize)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOut32){
   return rc;
 }
 
-JDECLFts(jint,xColumnText)(JENV_JSELF,jobject jCtx, jint iCol,
+JDECLFtsXA(jint,xColumnText)(JENV_JSELF,jobject jCtx, jint iCol,
                            jobject jOutBA){
   Fts5ExtDecl;
   const char *pz = 0;
@@ -2704,7 +2751,7 @@ JDECLFts(jint,xColumnText)(JENV_JSELF,jobject jCtx, jint iCol,
   return (jint)rc;
 }
 
-JDECLFts(jint,xColumnTotalSize)(JENV_JSELF,jobject jCtx, jint iCol, jobject jOut64){
+JDECLFtsXA(jint,xColumnTotalSize)(JENV_JSELF,jobject jCtx, jint iCol, jobject jOut64){
   Fts5ExtDecl;
   sqlite3_int64 nOut = 0;
   int const rc = fext->xColumnTotalSize(PtrGet_Fts5Context(jCtx), (int)iCol, &nOut);
@@ -2730,7 +2777,7 @@ static void s3jni_fts5AuxData_xDestroy(void *x){
   }
 }
 
-JDECLFts(jobject,xGetAuxdata)(JENV_JSELF,jobject jCtx, jboolean bClear){
+JDECLFtsXA(jobject,xGetAuxdata)(JENV_JSELF,jobject jCtx, jboolean bClear){
   Fts5ExtDecl;
   jobject rv = 0;
   s3jni_fts5AuxData * const pAux = fext->xGetAuxdata(PtrGet_Fts5Context(jCtx), bClear);
@@ -2749,7 +2796,7 @@ JDECLFts(jobject,xGetAuxdata)(JENV_JSELF,jobject jCtx, jboolean bClear){
   return rv;
 }
 
-JDECLFts(jint,xInst)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOutPhrase,
+JDECLFtsXA(jint,xInst)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOutPhrase,
                     jobject jOutCol, jobject jOutOff){
   Fts5ExtDecl;
   int n1 = 0, n2 = 2, n3 = 0;
@@ -2762,7 +2809,7 @@ JDECLFts(jint,xInst)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOutPhrase,
   return rc;
 }
 
-JDECLFts(jint,xInstCount)(JENV_JSELF,jobject jCtx, jobject jOut32){
+JDECLFtsXA(jint,xInstCount)(JENV_JSELF,jobject jCtx, jobject jOut32){
   Fts5ExtDecl;
   int nOut = 0;
   int const rc = fext->xInstCount(PtrGet_Fts5Context(jCtx), &nOut);
@@ -2770,7 +2817,7 @@ JDECLFts(jint,xInstCount)(JENV_JSELF,jobject jCtx, jobject jOut32){
   return (jint)rc;
 }
 
-JDECLFts(jint,xPhraseCount)(JENV_JSELF,jobject jCtx){
+JDECLFtsXA(jint,xPhraseCount)(JENV_JSELF,jobject jCtx){
   Fts5ExtDecl;
   return (jint)fext->xPhraseCount(PtrGet_Fts5Context(jCtx));
 }
@@ -2814,7 +2861,7 @@ static void s3jni_phraseIter_JToN(JNIEnv *const env, JNIEnvCacheLine const * con
   EXCEPTION_IS_FATAL("Cannot get Fts5PhraseIter.b field.");
 }
 
-JDECLFts(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
+JDECLFtsXA(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
                             jobject jIter, jobject jOutCol,
                             jobject jOutOff){
   Fts5ExtDecl;
@@ -2832,7 +2879,7 @@ JDECLFts(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
   return rc;
 }
 
-JDECLFts(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
+JDECLFtsXA(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
                                   jobject jIter, jobject jOutCol){
   Fts5ExtDecl;
   JNIEnvCacheLine * const jc = S3Global_env_cache(env);
@@ -2848,7 +2895,7 @@ JDECLFts(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
   return rc;
 }
 
-JDECLFts(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
+JDECLFtsXA(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
                            jobject jOutCol, jobject jOutOff){
   Fts5ExtDecl;
   JNIEnvCacheLine * const jc = S3Global_env_cache(env);
@@ -2863,7 +2910,7 @@ JDECLFts(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
   s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
 }
 
-JDECLFts(void,xPhraseNextColumn)(JENV_JSELF,jobject jCtx, jobject jIter,
+JDECLFtsXA(void,xPhraseNextColumn)(JENV_JSELF,jobject jCtx, jobject jIter,
                                  jobject jOutCol){
   Fts5ExtDecl;
   JNIEnvCacheLine * const jc = S3Global_env_cache(env);
@@ -2877,7 +2924,7 @@ JDECLFts(void,xPhraseNextColumn)(JENV_JSELF,jobject jCtx, jobject jIter,
 }
 
 
-JDECLFts(jint,xPhraseSize)(JENV_JSELF,jobject jCtx, jint iPhrase){
+JDECLFtsXA(jint,xPhraseSize)(JENV_JSELF,jobject jCtx, jint iPhrase){
   Fts5ExtDecl;
   return (jint)fext->xPhraseSize(PtrGet_Fts5Context(jCtx), (int)iPhrase);
 }
@@ -2917,7 +2964,7 @@ static int s3jni_xQueryPhrase(const Fts5ExtensionApi *xapi,
   return rc;
 }
 
-JDECLFts(jint,xQueryPhrase)(JENV_JSELF,jobject jFcx, jint iPhrase,
+JDECLFtsXA(jint,xQueryPhrase)(JENV_JSELF,jobject jFcx, jint iPhrase,
                             jobject jCallback){
   Fts5ExtDecl;
   JNIEnvCacheLine * const jc = S3Global_env_cache(env);
@@ -2941,7 +2988,7 @@ JDECLFts(jint,xQueryPhrase)(JENV_JSELF,jobject jFcx, jint iPhrase,
 }
 
 
-JDECLFts(jint,xRowCount)(JENV_JSELF,jobject jCtx, jobject jOut64){
+JDECLFtsXA(jint,xRowCount)(JENV_JSELF,jobject jCtx, jobject jOut64){
   Fts5ExtDecl;
   sqlite3_int64 nOut = 0;
   int const rc = fext->xRowCount(PtrGet_Fts5Context(jCtx), &nOut);
@@ -2949,12 +2996,12 @@ JDECLFts(jint,xRowCount)(JENV_JSELF,jobject jCtx, jobject jOut64){
   return (jint)rc;
 }
 
-JDECLFts(jlong,xRowid)(JENV_JSELF,jobject jCtx){
+JDECLFtsXA(jlong,xRowid)(JENV_JSELF,jobject jCtx){
   Fts5ExtDecl;
   return (jlong)fext->xRowid(PtrGet_Fts5Context(jCtx));
 }
 
-JDECLFts(int,xSetAuxdata)(JENV_JSELF,jobject jCtx, jobject jAux){
+JDECLFtsXA(int,xSetAuxdata)(JENV_JSELF,jobject jCtx, jobject jAux){
   Fts5ExtDecl;
   int rc;
   s3jni_fts5AuxData * pAux;
@@ -3005,8 +3052,8 @@ static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
   return rc;
 }
 
-JDECLFts(jint,xTokenize)(JENV_JSELF,jobject jFcx, jbyteArray jbaText,
-                         jobject jCallback){
+JDECLFtsXA(jint,xTokenize)(JENV_JSELF,jobject jFcx, jbyteArray jbaText,
+                           jobject jCallback){
   Fts5ExtDecl;
   JNIEnvCacheLine * const jc = S3Global_env_cache(env);
   struct s3jni_xQueryPhraseState s;

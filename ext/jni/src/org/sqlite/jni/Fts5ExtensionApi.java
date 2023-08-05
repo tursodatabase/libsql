@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi> {
   //! Only called from JNI
   private Fts5ExtensionApi(){}
-  private int iVersion;
+  private int iVersion = 2;
 
   //! Callback type for use with xTokenize().
   public static interface xTokenizeCallback {

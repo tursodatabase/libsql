@@ -150,7 +150,9 @@ sqlite3-jni.c := $(dir.src.c)/sqlite3-jni.c
 sqlite3-jni.o := $(dir.bld.c)/sqlite3-jni.o
 sqlite3-jni.h.in := $(dir.bld.c)/org_sqlite_jni_SQLite3Jni.h
 ifeq (1,$(enable.fts5))
-  sqlite3-jni.h.in += $(dir.bld.c)/org_sqlite_jni_Fts5ExtensionApi.h
+  sqlite3-jni.h.in += \
+    $(dir.bld.c)/org_sqlite_jni_Fts5ExtensionApi.h \
+    $(dir.bld.c)/org_sqlite_jni_fts5_api.h
 endif
 sqlite3-jni.h   := $(dir.src.c)/sqlite3-jni.h
 sqlite3-jni.dll := $(dir.bld.c)/libsqlite3-jni.so

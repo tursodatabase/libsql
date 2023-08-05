@@ -22,6 +22,12 @@ public class TesterFts5 {
     affirm( null != fea );
     affirm( fea.getNativePointer() != 0 );
     affirm( fea == Fts5ExtensionApi.getInstance() )/*singleton*/;
+
+    sqlite3 db = createNewDb();
+    fts5_api fApi = fts5_api.getInstanceForDb(db);
+    affirm( fApi != null );
+    affirm( fApi == fts5_api.getInstanceForDb(db) /* singleton per db */ );
+    sqlite3_close_v2(db);
   }
 
   public TesterFts5(){
