@@ -227,7 +227,12 @@ func (r *rows) Next(dest []driver.Value) error {
 	if r.nativePtr == nil {
 		return io.EOF
 	}
-	row := C.libsql_next_row(r.nativePtr)
+	var row C.libsql_row_t
+	var errMsg *C.char
+	statusCode := C.libsql_next_row(r.nativePtr, &row, &errMsg)
+	if statusCode != 0 {
+		return libsqlError("failed to get next row", statusCode, errMsg)
+	}
 	if row == nil {
 		r.Close()
 		return io.EOF

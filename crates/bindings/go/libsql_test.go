@@ -5,10 +5,28 @@ import (
 	"database/sql"
 	"fmt"
 	"gotest.tools/assert"
-	"log"
 	"os"
 	"testing"
 )
+
+func runFileTest(t *testing.T, test func(*testing.T, *sql.DB)) {
+	t.Parallel()
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	db, err := sql.Open("libsql", dir+"/test.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	test(t, db)
+}
 
 func runMemoryAndFileTests(t *testing.T, test func(*testing.T, *sql.DB)) {
 	t.Parallel()
@@ -26,22 +44,7 @@ func runMemoryAndFileTests(t *testing.T, test func(*testing.T, *sql.DB)) {
 		test(t, db)
 	})
 	t.Run("File", func(t *testing.T) {
-		t.Parallel()
-		dir, err := os.MkdirTemp("", "libsql-*")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer os.RemoveAll(dir)
-		db, err := sql.Open("libsql", dir+"/test.db")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			if err := db.Close(); err != nil {
-				t.Fatal(err)
-			}
-		}()
-		test(t, db)
+		runFileTest(t, test)
 	})
 }
 
@@ -238,6 +241,51 @@ func TestQueryWithEmptyResult(t *testing.T) {
 		}
 		for rows.Next() {
 			t.Fatal("there should be no rows")
+		}
+	})
+}
+
+func TestErrorRowsNext(t *testing.T) {
+	runFileTest(t, func(t *testing.T, db *sql.DB) {
+		db.Exec("PRAGMA journal_mode=DELETE")
+		if _, err := db.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER)"); err != nil {
+			t.Fatal(err)
+		}
+		for i := 0; i < 10; i++ {
+			if _, err := db.ExecContext(context.Background(), "INSERT INTO test VALUES("+fmt.Sprint(i)+")"); err != nil {
+				t.Fatal(err)
+			}
+		}
+		c1, err := db.Conn(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c1.Close()
+		c1.ExecContext(context.Background(), "PRAGMA journal_mode=DELETE")
+		c2, err := db.Conn(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer c2.Close()
+		c2.ExecContext(context.Background(), "PRAGMA journal_mode=DELETE")
+		_, err = c1.ExecContext(context.Background(), "BEGIN EXCLUSIVE TRANSACTION")
+		if err != nil {
+			t.Fatal(err)
+		}
+		rows, err := c2.QueryContext(context.Background(), "SELECT id FROM test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+		if rows.Next() {
+			t.Fatal("there should be no rows")
+		}
+		err = rows.Err()
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if err.Error() != "failed to get next row\nerror code = 1: Error fetching next row: Failed to fetch row: `database is locked`" {
+			t.Fatal("unexpected error:", err)
 		}
 	})
 }

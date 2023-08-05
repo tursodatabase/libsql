@@ -222,17 +222,31 @@ pub unsafe extern "C" fn libsql_column_type(
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn libsql_next_row(res: libsql_rows_t) -> libsql_row_t {
+pub unsafe extern "C" fn libsql_next_row(
+    res: libsql_rows_t,
+    out_row: *mut libsql_row_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     if res.is_null() {
-        return libsql_row_t::null();
+        *out_row = libsql_row_t::null();
+        return 0;
     }
     let res = res.get_ref();
     match res.next() {
         Ok(Some(row)) => {
             let row = Box::leak(Box::new(libsql_row { result: row }));
-            libsql_row_t::from(row)
+            *out_row = libsql_row_t::from(row);
+            0
         }
-        _ => libsql_row_t::null(),
+        Ok(None) => {
+            *out_row = libsql_row_t::null();
+            0
+        }
+        Err(e) => {
+            *out_row = libsql_row_t::null();
+            set_err_msg(format!("Error fetching next row: {}", e), out_err_msg);
+            1
+        }
     }
 }
 

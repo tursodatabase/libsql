@@ -56,7 +56,7 @@ int libsql_column_name(libsql_rows_t res, int col, const char **out_name, const 
 
 int libsql_column_type(libsql_rows_t res, int col, int *out_type, const char **out_err_msg);
 
-libsql_row_t libsql_next_row(libsql_rows_t res);
+int libsql_next_row(libsql_rows_t res, libsql_row_t *out_row, const char **out_err_msg);
 
 void libsql_free_row(libsql_row_t res);
 
