@@ -52,7 +52,7 @@ void libsql_wait_result(libsql_rows_future_t res);
 
 int libsql_column_count(libsql_rows_t res);
 
-const char *libsql_column_name(libsql_rows_t res, int col);
+int libsql_column_name(libsql_rows_t res, int col, const char **out_name, const char **out_err_msg);
 
 int libsql_column_type(libsql_rows_t res, int col);
 

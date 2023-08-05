@@ -176,35 +176,38 @@ const (
 	TYPE_NULL
 )
 
-func newRows(nativePtr C.libsql_rows_t) *rows {
+func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
 	if nativePtr == nil {
-		return &rows{nil, nil}
+		return &rows{nil, nil, nil}, nil
 	}
 	columnCount := int(C.libsql_column_count(nativePtr))
-	columnTypes := make([]int, 0, columnCount)
+	columnTypes := make([]int, columnCount)
 	for i := 0; i < columnCount; i++ {
 		columnType := int(C.libsql_column_type(nativePtr, C.int(i)))
-		columnTypes = append(columnTypes, columnType)
+		columnTypes[i] = columnType
 	}
-	return &rows{nativePtr, columnTypes}
+	columns := make([]string, len(columnTypes))
+	for i := 0; i < len(columnTypes); i++ {
+		var ptr *C.char
+		var errMsg *C.char
+		statusCode := C.libsql_column_name(nativePtr, C.int(i), &ptr, &errMsg)
+		if statusCode != 0 {
+			return nil, libsqlError(fmt.Sprint("failed to get column name for index ", i), statusCode, errMsg)
+		}
+		columns[i] = C.GoString(ptr)
+		C.libsql_free_string(ptr)
+	}
+	return &rows{nativePtr, columnTypes, columns}, nil
 }
 
 type rows struct {
 	nativePtr   C.libsql_rows_t
 	columnTypes []int
+	columnNames []string
 }
 
 func (r *rows) Columns() []string {
-	if r.nativePtr == nil {
-		return nil
-	}
-	columns := make([]string, len(r.columnTypes))
-	for i := 0; i < len(r.columnTypes); i++ {
-		ptr := C.libsql_column_name(r.nativePtr, C.int(i))
-		columns[i] = C.GoString(ptr)
-		C.libsql_free_string(ptr)
-	}
-	return columns
+	return r.columnNames
 }
 
 func (r *rows) Close() error {
@@ -255,5 +258,5 @@ func (c *conn) QueryContext(ctx context.Context, query string, args []driver.Nam
 	if err != nil {
 		return nil, err
 	}
-	return newRows(rowsNativePtr), nil
+	return newRows(rowsNativePtr)
 }

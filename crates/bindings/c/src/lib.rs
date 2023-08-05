@@ -170,15 +170,31 @@ pub unsafe extern "C" fn libsql_column_count(res: libsql_rows_t) -> std::ffi::c_
 pub unsafe extern "C" fn libsql_column_name(
     res: libsql_rows_t,
     col: std::ffi::c_int,
-) -> *const std::ffi::c_char {
+    out_name: *mut *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let res = res.get_ref();
     if col >= res.column_count() {
-        return std::ptr::null();
+        set_err_msg(
+            format!(
+                "Column index too big - got index {} with {} columns",
+                col,
+                res.column_count()
+            ),
+            out_err_msg,
+        );
+        return 1;
     }
     let name = res.column_name(col);
     match std::ffi::CString::new(name) {
-        Ok(name) => name.into_raw(),
-        Err(_) => std::ptr::null(),
+        Ok(name) => {
+            *out_name = name.into_raw();
+            0
+        }
+        Err(e) => {
+            set_err_msg(format!("Invalid name: {}", e), out_err_msg);
+            1
+        }
     }
 }
 
