@@ -293,24 +293,13 @@ static const struct {
 
 enum {
   /**
-     Size of the per-JNIEnv cache. We have no way of knowing how many
-     distinct JNIEnv's will be used in any given run, but know that it
-     will normally be only 1. Perhaps (just speculating) different
-     threads use separate JNIEnvs? If that's the case, we don't(?)
-     have enough info to evict from the cache when those JNIEnvs
-     expire.
-
-     If this ever fills up, we can refactor this to dynamically
-     allocate them.
-  */
-  JNIEnvCache_SIZE = 10,
-  /**
-    Need enough space for (only) the library's NativePointerHolder
-    types, a fixed count known at build-time. If we add more than this
-    a fatal error will be triggered with a reminder to increase this.
-    This value needs to be exactly the number of entries in the
-    S3ClassNames object. The S3ClassNames entries are the keys for
-    this particular cache.
+     Size of the NativePointerHolder cache.  Need enough space for
+     (only) the library's NativePointerHolder types, a fixed count
+     known at build-time. If we add more than this a fatal error will
+     be triggered with a reminder to increase this.  This value needs
+     to be exactly the number of entries in the S3ClassNames
+     object. The S3ClassNames entries are the keys for this particular
+     cache.
   */
   NphCache_SIZE = sizeof(S3ClassNames) / sizeof(char const *)
 };
@@ -370,12 +359,8 @@ struct JNIEnvCacheLine {
     jfieldID fidB;
   } jPhraseIter;
 #endif
-#if 0
-  /* TODO: refactor this cache as a linked list with malloc()'d entries,
-     rather than a fixed-size array in S3Global.envCache */
   JNIEnvCacheLine * pPrev /* Previous entry in the linked list */;
   JNIEnvCacheLine * pNext /* Next entry in the linked list */;
-#endif
   /** TODO: NphCacheLine *pNphHit;
 
       to help fast-track cache lookups, update this to point to the
@@ -384,39 +369,10 @@ struct JNIEnvCacheLine {
   */
   struct NphCacheLine nph[NphCache_SIZE];
 };
-typedef struct JNIEnvCache JNIEnvCache;
-struct JNIEnvCache {
-  struct JNIEnvCacheLine lines[JNIEnvCache_SIZE];
-  unsigned int used;
-};
 
 static void NphCacheLine_clear(JNIEnv * const env, NphCacheLine * const p){
   UNREF_G(p->klazz);
   memset(p, 0, sizeof(NphCacheLine));
-}
-
-static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
-  JNIEnv * const env = p->env;
-  if(env){
-    int i;
-    UNREF_G(p->globalClassObj);
-    UNREF_G(p->globalClassLong);
-#ifdef SQLITE_ENABLE_FTS5
-    UNREF_G(p->jFtsExt);
-    UNREF_G(p->jPhraseIter.klazz);
-#endif
-    for( i = 0; i < NphCache_SIZE; ++i ){
-      NphCacheLine_clear(env, &p->nph[i]);
-    }
-    memset(p, 0, sizeof(JNIEnvCacheLine));
-  }
-}
-
-static void JNIEnvCache_clear(JNIEnvCache * const p){
-  unsigned int i = 0;
-  for( ; i < p->used; ++i ){
-    JNIEnvCacheLine_clear( &p->lines[i] );
-  }
 }
 
 /** State for various hook callbacks. */
@@ -476,7 +432,10 @@ static struct {
        JNIEnv when necessary.
   */
   JavaVM * jvm;
-  struct JNIEnvCache envCache;
+  struct {
+    JNIEnvCacheLine * aHead /* Linked list of in-use instances */;
+    JNIEnvCacheLine * aFree /* Linked list of free instances */;
+  } envCache;
   struct {
     PerDbStateJni * aUsed  /* Linked list of in-use instances */;
     PerDbStateJni * aFree  /* Linked list of free instances */;
@@ -511,11 +470,6 @@ static void * s3jni_malloc(JNIEnv * const env, size_t n){
   }
   return rv;
 }
-
-static void s3jni_free(void * const p){
-  if(p) sqlite3_free(p);
-}
-
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -575,36 +529,181 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj, jclass klazz){
 /**
    Fetches the S3Global.envCache row for the given env, allocing
    a row if needed. When a row is allocated, its state is initialized
-   insofar as possible. Calls (*env)->FatalError() if the cache
-   fills up. That's hypothetically possible but "shouldn't happen."
-   If it does, we can dynamically allocate these instead.
+   insofar as possible. Calls (*env)->FatalError() if allocation of
+   an entry fails. That's hypothetically possible but "shouldn't happen."
 */
 FIXME_THREADING
-static struct JNIEnvCacheLine * S3Global_env_cache(JNIEnv * const env){
-  struct JNIEnvCacheLine * row = 0;
-  int i = 0;
-  for( ; i < JNIEnvCache_SIZE; ++i ){
-    row = &S3Global.envCache.lines[i];
-    if(row->env == env){
+static JNIEnvCacheLine * S3Global_JNIEnvCache_cache(JNIEnv * const env){
+  struct JNIEnvCacheLine * row = S3Global.envCache.aHead;
+  for( ; row; row = row->pNext ){
+    if( row->env == env ){
       ++S3Global.metrics.envCacheHits;
       return row;
     }
-    else if(!row->env) break;
   }
   ++S3Global.metrics.envCacheMisses;
-  if(i == JNIEnvCache_SIZE){
-    (*env)->FatalError(env, "Maintenance required: JNIEnvCache is full.");
-    return NULL;
+  row = S3Global.envCache.aFree;
+  if( row ){
+    assert(!row->pPrev);
+    S3Global.envCache.aFree = row->pNext;
+    if( row->pNext ) row->pNext->pPrev = 0;
+  }else{
+    row = sqlite3_malloc(sizeof(JNIEnvCacheLine));
+    if( !row ){
+      (*env)->FatalError(env, "Maintenance required: JNIEnvCache is full.")
+        /* Does not return, but cc doesn't know that */;
+      return NULL;
+    }
   }
-  memset(row, 0, sizeof(JNIEnvCacheLine));
+  memset(row, 0, sizeof(*row));
+  row->pNext = S3Global.envCache.aHead;
+  if(row->pNext) row->pNext->pPrev = row;
+  S3Global.envCache.aHead = row;
   row->env = env;
   row->globalClassObj = REF_G((*env)->FindClass(env,"java/lang/Object"));
+  EXCEPTION_IS_FATAL("Error getting reference to Object class.");
   row->globalClassLong = REF_G((*env)->FindClass(env,"java/lang/Long"));
+  EXCEPTION_IS_FATAL("Error getting reference to Long class.");
   row->ctorLong1 = (*env)->GetMethodID(env, row->globalClassLong,
                                        "<init>", "(J)V");
-  ++S3Global.envCache.used;
-  //MARKER(("Added S3Global.envCache entry #%d.\n", S3Global.envCache.used));
+  EXCEPTION_IS_FATAL("Error getting reference to Long constructor.");
   return row;
+}
+
+/**
+   Removes any Java references from s and clears its state. If
+   doXDestroy is true and s->klazz and s->jObj are not NULL, s->jObj's
+   s is passed to s3jni_call_xDestroy() before any references are
+   cleared. It is legal to call this when the object has no Java
+   references.
+*/
+static void JniHookState_unref(JNIEnv * const env, JniHookState * const s, int doXDestroy){
+  if(doXDestroy && s->klazz && s->jObj){
+    s3jni_call_xDestroy(env, s->jObj, s->klazz);
+  }
+  UNREF_G(s->jObj);
+  UNREF_G(s->klazz);
+  memset(s, 0, sizeof(*s));
+}
+
+/**
+   Clears s's state and moves it to the free-list.
+*/
+FIXME_THREADING
+static void PerDbStateJni_set_aside(PerDbStateJni * const s){
+  if(s){
+    JNIEnv * const env = s->env;
+    assert(s->pDb && "Else this object is already in the free-list.");
+    //MARKER(("state@%p for db@%p setting aside\n", s, s->pDb));
+    assert(s->pPrev != s);
+    assert(s->pNext != s);
+    assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
+    if(s->pNext) s->pNext->pPrev = s->pPrev;
+    if(s->pPrev) s->pPrev->pNext = s->pNext;
+    else if(S3Global.perDb.aUsed == s){
+      assert(!s->pPrev);
+      S3Global.perDb.aUsed = s->pNext;
+    }
+#define UNHOOK(MEMBER,XDESTROY) JniHookState_unref(env, &s->MEMBER, XDESTROY)
+    UNHOOK(trace, 0);
+    UNHOOK(progress, 0);
+    UNHOOK(commitHook, 0);
+    UNHOOK(rollbackHook, 0);
+    UNHOOK(updateHook, 0);
+    UNHOOK(collation, 1);
+    UNHOOK(collationNeeded, 1);
+    UNHOOK(busyHandler, 1);
+#undef UNHOOK
+    UNREF_G(s->jDb);
+#ifdef SQLITE_ENABLE_FTS5
+    UNREF_G(s->jFtsApi);
+#endif
+    memset(s, 0, sizeof(PerDbStateJni));
+    s->pNext = S3Global.perDb.aFree;
+    if(s->pNext) s->pNext->pPrev = s;
+    S3Global.perDb.aFree = s;
+    //MARKER(("%p->pPrev@%p, pNext@%p\n", s, s->pPrev, s->pNext));
+    //if(s->pNext) MARKER(("next: %p->pPrev@%p\n", s->pNext, s->pNext->pPrev));
+  }
+}
+
+/**
+   Requires that p has been snipped from any linked list it is
+   in. Clears all Java refs p holds and zeroes out p.
+*/
+static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
+  JNIEnv * const env = p->env;
+  if(env){
+    int i;
+    UNREF_G(p->globalClassObj);
+    UNREF_G(p->globalClassLong);
+#ifdef SQLITE_ENABLE_FTS5
+    UNREF_G(p->jFtsExt);
+    UNREF_G(p->jPhraseIter.klazz);
+#endif
+    for( i = 0; i < NphCache_SIZE; ++i ){
+      NphCacheLine_clear(env, &p->nph[i]);
+    }
+    memset(p, 0, sizeof(JNIEnvCacheLine));
+  }
+}
+
+/**
+   Cleans up all state in S3Global.perDb for th given JNIEnv.
+   Results are undefined if a Java-side db uses the API
+   from the given JNIEnv after this call.
+*/
+FIXME_THREADING
+static void PerDbStateJni_free_for_env(JNIEnv *env){
+  PerDbStateJni * ps = S3Global.perDb.aUsed;
+  PerDbStateJni * pNext = 0;
+  for( ; ps; ps = pNext ){
+    pNext = ps->pNext;
+    if(ps->env == env){
+      PerDbStateJni * const pPrev = ps->pPrev;
+      PerDbStateJni_set_aside(ps);
+      assert(pPrev ? pPrev->pNext!=ps : 1);
+      pNext = pPrev;
+    }
+  }
+}
+
+/**
+   Uncache any state for the given JNIEnv, clearing all Java
+   references the cache owns. Returns true if env was cached and false
+   if it was not found in the cache.
+
+   Also passes env to PerDbStateJni_free_for_env() to free up
+   what would otherwise be stale references.
+*/
+static int S3Global_JNIEnvCache_uncache(JNIEnv * const env){
+  struct JNIEnvCacheLine * row = S3Global.envCache.aHead;
+  for( ; row; row = row->pNext ){
+    if( row->env == env ){
+      break;
+    }
+  }
+  if( !row ) return 0;
+  if( row->pNext ) row->pNext->pPrev = row->pPrev;
+  if( row->pPrev ) row->pPrev->pNext = row->pNext;
+  if( S3Global.envCache.aHead == row ){
+    assert( !row->pPrev );
+    S3Global.envCache.aHead = row->pNext;
+  }
+  JNIEnvCacheLine_clear(row);
+  assert( !row->pNext );
+  assert( !row->pPrev );
+  row->pNext = S3Global.envCache.aFree;
+  if( row->pNext ) row->pNext->pPrev = row;
+  S3Global.envCache.aFree = row;
+  PerDbStateJni_free_for_env(env);
+  return 1;
+}
+
+static void S3Global_JNIEnvCache_clear(void){
+  while( S3Global.envCache.aHead ){
+    S3Global_JNIEnvCache_uncache( S3Global.envCache.aHead->env );
+  }
 }
 
 /**
@@ -640,7 +739,7 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv * const env, const char *
      looking up class objects can be expensive, so they should be
      cached as well.
   */
-  struct JNIEnvCacheLine * const envRow = S3Global_env_cache(env);
+  struct JNIEnvCacheLine * const envRow = S3Global_JNIEnvCache_cache(env);
   struct NphCacheLine * freeSlot = 0;
   struct NphCacheLine * cacheLine = 0;
   int i;
@@ -787,63 +886,6 @@ static PerDbStateJni * PerDbStateJni_alloc(JNIEnv * const env, sqlite3 *pDb, job
   return rv;
 }
 
-/**
-   Removes any Java references from s and clears its state. If
-   doXDestroy is true and s->klazz and s->jObj are not NULL, s->jObj's
-   s is passed to s3jni_call_xDestroy() before any references are
-   cleared. It is legal to call this when the object has no Java
-   references.
-*/
-static void JniHookState_unref(JNIEnv * const env, JniHookState * const s, int doXDestroy){
-  if(doXDestroy && s->klazz && s->jObj){
-    s3jni_call_xDestroy(env, s->jObj, s->klazz);
-  }
-  UNREF_G(s->jObj);
-  UNREF_G(s->klazz);
-  memset(s, 0, sizeof(*s));
-}
-
-/**
-   Clears s's state and moves it to the free-list.
-*/
-FIXME_THREADING
-static void PerDbStateJni_set_aside(PerDbStateJni * const s){
-  if(s){
-    JNIEnv * const env = s->env;
-    assert(s->pDb && "Else this object is already in the free-list.");
-    //MARKER(("state@%p for db@%p setting aside\n", s, s->pDb));
-    assert(s->pPrev != s);
-    assert(s->pNext != s);
-    assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
-    if(s->pNext) s->pNext->pPrev = s->pPrev;
-    if(s->pPrev) s->pPrev->pNext = s->pNext;
-    else if(S3Global.perDb.aUsed == s){
-      assert(!s->pPrev);
-      S3Global.perDb.aUsed = s->pNext;
-    }
-#define UNHOOK(MEMBER,XDESTROY) JniHookState_unref(env, &s->MEMBER, XDESTROY)
-    UNHOOK(trace, 0);
-    UNHOOK(progress, 0);
-    UNHOOK(commitHook, 0);
-    UNHOOK(rollbackHook, 0);
-    UNHOOK(updateHook, 0);
-    UNHOOK(collation, 1);
-    UNHOOK(collationNeeded, 1);
-    UNHOOK(busyHandler, 1);
-#undef UNHOOK
-    UNREF_G(s->jDb);
-#ifdef SQLITE_ENABLE_FTS5
-    UNREF_G(s->jFtsApi);
-#endif
-    memset(s, 0, sizeof(PerDbStateJni));
-    s->pNext = S3Global.perDb.aFree;
-    if(s->pNext) s->pNext->pPrev = s;
-    S3Global.perDb.aFree = s;
-    //MARKER(("%p->pPrev@%p, pNext@%p\n", s, s->pPrev, s->pNext));
-    //if(s->pNext) MARKER(("next: %p->pPrev@%p\n", s->pNext, s->pNext->pPrev));
-  }
-}
-
 static void PerDbStateJni_dump(PerDbStateJni *s){
   MARKER(("PerDbStateJni->env @ %p\n", s->env));
   MARKER(("PerDbStateJni->pDb @ %p\n", s->pDb));
@@ -892,28 +934,6 @@ static PerDbStateJni * PerDbStateJni_for_db(JNIEnv * const env, jobject jDb,
     s = PerDbStateJni_alloc(env, pDb, jDb);
   }
   return s;
-}
-
-/**
-   Cleans up and frees all state in S3Global.perDb.
-*/
-FIXME_THREADING
-static void PerDbStateJni_free_all(void){
-  PerDbStateJni * ps = S3Global.perDb.aUsed;
-  PerDbStateJni * pSNext = 0;
-  for( ; ps; ps = pSNext ){
-    pSNext = ps->pNext;
-    PerDbStateJni_set_aside(ps);
-    assert(pSNext ? !pSNext->pPrev : 1);
-  }
-  assert( 0==S3Global.perDb.aUsed );
-  ps = S3Global.perDb.aFree;
-  S3Global.perDb.aFree = 0;
-  pSNext = 0;
-  for( ; ps; ps = pSNext ){
-    pSNext = ps->pNext;
-    s3jni_free(pSNext);
-  }
 }
 
 
@@ -1322,7 +1342,7 @@ static int udf_args(JNIEnv *env,
   *jArgv = 0;
   if(!jcx) goto error_oom;
   ja = (*env)->NewObjectArray(env, argc,
-                              S3Global_env_cache(env)->globalClassObj,
+                              S3Global_JNIEnvCache_cache(env)->globalClassObj,
                               NULL);
   if(!ja) goto error_oom;
   for(i = 0; i < argc; ++i){
@@ -2015,7 +2035,7 @@ JDECL(jint,1finalize)(JENV_JSELF, jobject jpStmt){
   int rc = 0;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   if( pStmt ){
-    JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
     jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_finalize(pStmt);
     setNativePointer(env, jpStmt, 0, S3ClassNames.sqlite3_stmt);
@@ -2086,7 +2106,7 @@ static jint sqlite3_jni_prepare_v123(int prepVersion, JNIEnv * const env, jclass
   sqlite3_stmt * pStmt = 0;
   const char * zTail = 0;
   jbyte * const pBuf = JBA_TOC(baSql);
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   jobject const pOldStmt = stmt_set_current(jc, jOutStmt);
   int rc = SQLITE_ERROR;
   assert(prepVersion==1 || prepVersion==2 || prepVersion==3);
@@ -2181,7 +2201,7 @@ JDECL(jint,1reset)(JENV_JSELF, jobject jpStmt){
   int rc = 0;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   if( pStmt ){
-    JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
     jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_reset(pStmt);
     (void)stmt_set_current(jc, pPrev);
@@ -2374,11 +2394,9 @@ JDECL(void,1set_1last_1insert_1rowid)(JENV_JSELF, jobject jpDb, jlong rowId){
 }
 
 JDECL(jint,1shutdown)(JENV_JSELF){
-  PerDbStateJni_free_all();
-  JNIEnvCache_clear(&S3Global.envCache);
-  /* Do not clear S3Global.jvm or the global refs to specific classes:
-     it's legal to call sqlite3_initialize() again to restart the
-     lib. */
+  S3Global_JNIEnvCache_clear();
+  /* Do not clear S3Global.jvm: it's legal to call
+     sqlite3_initialize() again to restart the lib. */
   return sqlite3_shutdown();
 }
 
@@ -2386,7 +2404,7 @@ JDECL(jint,1step)(JENV_JSELF,jobject jStmt){
   int rc = SQLITE_MISUSE;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
   if(pStmt){
-    JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
     jobject const jPrevStmt = stmt_set_current(jc, jStmt);
     rc = sqlite3_step(pStmt);
     (void)stmt_set_current(jc, jPrevStmt);
@@ -2400,7 +2418,7 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   jobject jX = NULL  /* the tracer's X arg */;
   jobject jP = NULL  /* the tracer's P arg */;
   jobject jPUnref = NULL /* potentially a local ref to jP */;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   int rc;
   switch(traceflag){
     case SQLITE_TRACE_STMT:
@@ -2660,7 +2678,6 @@ JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
   SO(JniHookState);
   SO(PerDbStateJni);
   SO(S3Global);
-  SO(JNIEnvCache);
   SO(S3ClassNames);
   printf("\t(^^^ %u NativePointerHolder subclasses)\n",
          (unsigned)(sizeof(S3ClassNames) / sizeof(const char *)));
@@ -2782,7 +2799,7 @@ static inline jobject new_fts5_api_wrapper(JNIEnv * const env, fts5_api *sv){
    instance, or NULL on OOM.
 */
 static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
-  JNIEnvCacheLine * const row = S3Global_env_cache(env);
+  JNIEnvCacheLine * const row = S3Global_JNIEnvCache_cache(env);
   if( !row->jFtsExt ){
     row->jFtsExt = new_NativePointerHolder_object(env, S3ClassNames.Fts5ExtensionApi,
                                                   s3jni_ftsext());
@@ -3056,7 +3073,7 @@ JDECLFtsXA(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
                             jobject jIter, jobject jOutCol,
                             jobject jOutOff){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   Fts5PhraseIter iter;
   int rc, iCol = 0, iOff = 0;
   s3jni_phraseIter_init(env, jc, jIter);
@@ -3073,7 +3090,7 @@ JDECLFtsXA(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
 JDECLFtsXA(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
                                   jobject jIter, jobject jOutCol){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   Fts5PhraseIter iter;
   int rc, iCol = 0;
   s3jni_phraseIter_init(env, jc, jIter);
@@ -3089,7 +3106,7 @@ JDECLFtsXA(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
 JDECLFtsXA(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
                            jobject jOutCol, jobject jOutOff){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   Fts5PhraseIter iter;
   int iCol = 0, iOff = 0;
   if(!jc->jPhraseIter.klazz) return /*SQLITE_MISUSE*/;
@@ -3104,7 +3121,7 @@ JDECLFtsXA(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
 JDECLFtsXA(void,xPhraseNextColumn)(JENV_JSELF,jobject jCtx, jobject jIter,
                                  jobject jOutCol){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   Fts5PhraseIter iter;
   int iCol = 0;
   if(!jc->jPhraseIter.klazz) return /*SQLITE_MISUSE*/;
@@ -3158,7 +3175,7 @@ static int s3jni_xQueryPhrase(const Fts5ExtensionApi *xapi,
 JDECLFtsXA(jint,xQueryPhrase)(JENV_JSELF,jobject jFcx, jint iPhrase,
                             jobject jCallback){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   struct s3jni_xQueryPhraseState s;
   jclass klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
   if( !klazz ){
@@ -3247,7 +3264,7 @@ static jint s3jni_fts5_xTokenize(JENV_JSELF, const char *zClassName,
                                  jint tokFlags, jobject jFcx,
                                  jbyteArray jbaText, jobject jCallback){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_env_cache(env);
+  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
   struct s3jni_xQueryPhraseState s;
   int rc = 0;
   jbyte * const pText = JBA_TOC(jbaText);
@@ -3327,32 +3344,7 @@ JDECLFtsXA(jobject,xUserData)(JENV_JSELF,jobject jFcx){
 */
 JNIEXPORT jboolean JNICALL
 Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JNIEnv * const env, jclass self){
-  struct JNIEnvCacheLine * row = 0;
-  int i;
-  for( i = 0; i < JNIEnvCache_SIZE; ++i ){
-    row = &S3Global.envCache.lines[i];
-    if(row->env == env){
-      break;
-    }
-  }
-  if( i==JNIEnvCache_SIZE ){
-    //MARKER(("The given JNIEnv is not currently cached.\n"));
-    return JNI_FALSE;
-  }
-  //MARKER(("Uncaching S3Global.envCache entry #%d.\n", i));
-  assert(S3Global.envCache.used >= i);
-  JNIEnvCacheLine_clear(row);
-  /**
-     Move all entries down one slot. memmove() would be faster.  We'll
-     eventually turn this cache into a dynamically-allocated linked
-     list, anyway, so this part will go away.
-  */
-  for( ++i ; i < JNIEnvCache_SIZE; ++i ){
-    S3Global.envCache.lines[i-i] = S3Global.envCache.lines[i];
-  }
-  memset(&S3Global.envCache.lines[i], 0, sizeof(JNIEnvCacheLine));
-  --S3Global.envCache.used;
-  return JNI_TRUE;
+  return S3Global_JNIEnvCache_uncache(env) ? JNI_TRUE : JNI_FALSE;
 }
 
 
@@ -3413,13 +3405,18 @@ Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv * const env, jclass self, jclass klaz
   //jclass const klazz = (*env)->GetObjectClass(env, sJni);
   const ConfigFlagEntry * pConfFlag;
   memset(&S3Global, 0, sizeof(S3Global));
-  (void)S3Global_env_cache(env);
-  assert( 1 == S3Global.envCache.used );
-  assert( env == S3Global.envCache.lines[0].env );
-  assert( 0 != S3Global.envCache.lines[0].globalClassObj );
   if( (*env)->GetJavaVM(env, &S3Global.jvm) ){
     (*env)->FatalError(env, "GetJavaVM() failure shouldn't be possible.");
+    return;
   }
+  (void)S3Global_JNIEnvCache_cache(env);
+  if( !S3Global.envCache.aHead ){
+    (*env)->FatalError(env, "Could not allocate JNIEnv-specific cache.");
+    return;
+  }
+  assert( 1 == S3Global.metrics.envCacheMisses );
+  assert( env == S3Global.envCache.aHead->env );
+  assert( 0 != S3Global.envCache.aHead->globalClassObj );
 
   for( pConfFlag = &aLimits[0]; pConfFlag->zName; ++pConfFlag ){
     char const * zSig = (JTYPE_BOOL == pConfFlag->jtype) ? "Z" : "I";

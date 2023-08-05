@@ -1,5 +1,5 @@
-C Add\sSQLite3Jni.uncacheJniEnv(),\sa\sway\sfor\sJava\sthreads\sto\sclear\stheir\sthread-specific\scached\sstate\sfrom\sthe\sJNI\sbindings\swhen\sthey're\sabout\sto\sterminate\s(or\sare\sotherwise\sdone\susing\sthe\slibrary).
-D 2023-08-05T20:19:45.125
+C Refactor\sthe\sper-JNIEnv\scache\sfrom\sa\sfixed-size\sstatic\sarray\sto\sa\slinked\slist\sof\sdynamically-allocated\sentries.\sUncache\sall\sper-db\sstate\s(which\sis\snecessarily\sJNIEnv-specific)\swhen\sthe\scorresponding\sJNIEnv\sis\suncached.
+D 2023-08-05T21:35:58.833
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -232,7 +232,7 @@ F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile bb4cd99bd8da534215cb6d278f05a626283eb5d2e8aebdb4d35e548637d35a9a
 F ext/jni/README.md 6ff7e1f4100dee980434a6ee37a199b653bceec62e233a6e2ccde6e7ae0c58bf
-F ext/jni/src/c/sqlite3-jni.c 17389f38639294b6ace3030e04a91f8b2e938e191f4c853075d4f55e94665a0c
+F ext/jni/src/c/sqlite3-jni.c a894cb1b6a7479d376d98f7df0e29a713d2b6b6cbc0d4543505b90eb38593592
 F ext/jni/src/c/sqlite3-jni.h cd9b6367a260f55a14833861ceb1d87cb729c5414ba5d26fbb8854b0f22c7249
 F ext/jni/src/org/sqlite/jni/BusyHandler.java 1b1d3e5c86cd796a0580c81b6af6550ad943baa25e47ada0dcca3aff3ebe978c
 F ext/jni/src/org/sqlite/jni/Collation.java 8dffbb00938007ad0967b2ab424d3c908413af1bbd3d212b9c9899910f1218d1
@@ -249,7 +249,7 @@ F ext/jni/src/org/sqlite/jni/OutputPointer.java 013f2b5fe569d0585a695f5cfa605a3b
 F ext/jni/src/org/sqlite/jni/ProgressHandler.java 5979450e996416d28543f1d42634d308439565a99332a8bd84e424af667116cc
 F ext/jni/src/org/sqlite/jni/RollbackHook.java b04c8abcc6ade44a8a57129e33765793f69df0ba909e49ba18d73f4268d92564
 F ext/jni/src/org/sqlite/jni/SQLFunction.java 09ce81c1c637e31c3a830d4c859cce95d65f5e02ff45f8bd1985b3479381bc46
-F ext/jni/src/org/sqlite/jni/SQLite3Jni.java 213e7dfae620767deb421020cd705a131fd8ad3774e2bc9461eab46d12bf240c
+F ext/jni/src/org/sqlite/jni/SQLite3Jni.java f8fec24eea4ff9a62467648f377391506883eff4bedfc50d69d8cb3dc78d1ab9
 F ext/jni/src/org/sqlite/jni/Tester1.java 868b5ea60b788a43f8b15c1b642015341fed8856abb1bb74e2eb4845ade50a4e
 F ext/jni/src/org/sqlite/jni/TesterFts5.java cf2d687baafffdeba219b77cf611fd47a0556248820ea794ae3e8259bfbdc5ee
 F ext/jni/src/org/sqlite/jni/Tracer.java a5cece9f947b0af27669b8baec300b6dd7ff859c3e6a6e4a1bd8b50f9714775d
@@ -2081,8 +2081,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7d4ac44ec419ed0474bdb9d237b97660cf0d8faba8fe686f6a914d7bc04dfa3b
-R 4e66fd3de8c1a8416110ff65fc063c39
+P 7468f8761bece58f7ced3d112bbe2fb454432d9c54c9b96cedb5a15bc2926d0f
+R c28f39c95821b6209d9e0ded55b1b7ca
 U stephan
-Z de9fd1b4a7e3cbc6e1092ca5c70548cf
+Z 6d5410b49d781e986fb3ebb97da80215
 # Remove this line to create a well-formed Fossil manifest.

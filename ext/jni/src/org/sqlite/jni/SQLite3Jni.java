@@ -79,9 +79,22 @@ public final class SQLite3Jni {
      library again after that "should" re-initialize the cache on
      demand, but that's untested.
 
+     This call forcibly wipes out all cached information for the
+     current JNIEnv, a side-effect of which is that behavior is
+     undefined if any database objects are (A) still active at the
+     time it is called _and_ (B) calls are subsequently made into the
+     library with such a database. Doing so will, at best, lead to a
+     crash.  It worst, it will lead to the db possibly misbehaving
+     because some of its Java-bound state has been cleared. There is
+     no immediate harm in (A) so long as condition (B) is not met.
+     This process does _not_ actually close any databases or finalize
+     any prepared statements.  For proper library behavior, and to
+     avoid C-side leaks, be sure to close them before calling this
+     function.
+
      Calling this from the main application thread is not strictly
      required but is "polite." Additional threads must call this
-     before ending or they will leak cache entries in the C memory,
+     before ending or they will leak cache entries in the C heap,
      which in turn may keep numerous Java-side global references
      active.
 
