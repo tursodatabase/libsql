@@ -262,11 +262,23 @@ pub unsafe extern "C" fn libsql_free_row(res: libsql_row_t) {
 pub unsafe extern "C" fn libsql_get_string(
     res: libsql_row_t,
     col: std::ffi::c_int,
-) -> *const std::ffi::c_char {
+    out_value: *mut *const std::ffi::c_char,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let res = res.get_ref();
     match res.get_value(col) {
-        Ok(libsql::params::Value::Text(s)) => translate_string(s),
-        _ => std::ptr::null(),
+        Ok(libsql::params::Value::Text(s)) => {
+            *out_value = translate_string(s);
+            0
+        }
+        Ok(_) => {
+            set_err_msg(format!("Value not a string"), out_err_msg);
+            1
+        }
+        Err(e) => {
+            set_err_msg(format!("Error fetching value: {}", e), out_err_msg);
+            2
+        }
     }
 }
 

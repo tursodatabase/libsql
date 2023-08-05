@@ -255,7 +255,12 @@ func (r *rows) Next(dest []driver.Value) error {
 			dest[i] = C.GoBytes(unsafe.Pointer(nativeBlob.ptr), C.int(nativeBlob.len))
 			C.libsql_free_blob(nativeBlob)
 		case TYPE_TEXT:
-			ptr := C.libsql_get_string(row, C.int(i))
+			var ptr *C.char
+			var errMsg *C.char
+			statusCode := C.libsql_get_string(row, C.int(i), &ptr, &errMsg)
+			if statusCode != 0 {
+				return libsqlError(fmt.Sprint("failed to get string for column ", i), statusCode, errMsg)
+			}
 			dest[i] = C.GoString(ptr)
 			C.libsql_free_string(ptr)
 		}

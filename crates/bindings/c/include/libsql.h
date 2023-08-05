@@ -60,7 +60,7 @@ int libsql_next_row(libsql_rows_t res, libsql_row_t *out_row, const char **out_e
 
 void libsql_free_row(libsql_row_t res);
 
-const char *libsql_get_string(libsql_row_t res, int col);
+int libsql_get_string(libsql_row_t res, int col, const char **out_value, const char **out_err_msg);
 
 void libsql_free_string(const char *ptr);
 
