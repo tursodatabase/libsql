@@ -40,7 +40,7 @@ int libsql_connect(libsql_database_t db, libsql_connection_t *out_conn, const ch
 
 void libsql_disconnect(libsql_connection_t conn);
 
-libsql_rows_t libsql_execute(libsql_connection_t conn, const char *sql);
+int libsql_execute(libsql_connection_t conn, const char *sql, libsql_rows_t *out_rows, const char **out_err_msg);
 
 void libsql_free_rows(libsql_rows_t res);
 

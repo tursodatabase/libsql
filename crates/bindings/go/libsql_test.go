@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"gotest.tools/assert"
 	"log"
 	"os"
 	"testing"
@@ -135,6 +136,18 @@ func TestExecWithQuery(t *testing.T) {
 	})
 }
 
+func TestErrorExec(t *testing.T) {
+	runMemoryAndFileTests(t, func(t *testing.T, db *sql.DB) {
+		_, err := db.ExecContext(context.Background(), "CREATE TABLES test (id INTEGER, name TEXT)")
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if err.Error() != "failed to execute query CREATE TABLES test (id INTEGER, name TEXT)\nerror code = 1: Error executing statement: Failed to prepare statement `CREATE TABLES test (id INTEGER, name TEXT)`: `near \"TABLES\": syntax error`" {
+			t.Fatal("unexpected error:", err)
+		}
+	})
+}
+
 func TestQuery(t *testing.T) {
 	runMemoryAndFileTests(t, func(t *testing.T, db *sql.DB) {
 		if _, err := db.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER, name TEXT, gpa REAL, cv BLOB)"); err != nil {
@@ -148,6 +161,18 @@ func TestQuery(t *testing.T) {
 		rows, err := db.QueryContext(context.Background(), "SELECT NULL, id, name, gpa, cv FROM test")
 		if err != nil {
 			t.Fatal(err)
+		}
+		columns, err := rows.Columns()
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.DeepEqual(t, columns, []string{"NULL", "id", "name", "gpa", "cv"})
+		types, err := rows.ColumnTypes()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(types) != 5 {
+			t.Fatal("types should be 5")
 		}
 		defer rows.Close()
 		idx := 0
@@ -176,6 +201,43 @@ func TestQuery(t *testing.T) {
 				t.Fatal("cv should be 10 bytes")
 			}
 			idx++
+		}
+	})
+}
+
+func TestErrorQuery(t *testing.T) {
+	runMemoryAndFileTests(t, func(t *testing.T, db *sql.DB) {
+		rows, err := db.QueryContext(context.Background(), "SELECT NULL, id, name, gpa, cv FROM test")
+		if rows != nil {
+			rows.Close()
+		}
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if err.Error() != "failed to execute query SELECT NULL, id, name, gpa, cv FROM test\nerror code = 1: Error executing statement: Failed to prepare statement `SELECT NULL, id, name, gpa, cv FROM test`: `no such table: test`" {
+			t.Fatal("unexpected error:", err)
+		}
+	})
+}
+
+func TestQueryWithEmptyResult(t *testing.T) {
+	runMemoryAndFileTests(t, func(t *testing.T, db *sql.DB) {
+		if _, err := db.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER, name TEXT, gpa REAL, cv BLOB)"); err != nil {
+			t.Fatal(err)
+		}
+		rows, err := db.QueryContext(context.Background(), "SELECT NULL, id, name, gpa, cv FROM test")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+		if columns, err := rows.Columns(); len(columns) > 0 || err != nil {
+			t.Fatal("columns should be nil")
+		}
+		if columnTypes, err := rows.ColumnTypes(); len(columnTypes) > 0 || err != nil {
+			t.Fatal("column types should be nil")
+		}
+		for rows.Next() {
+			t.Fatal("there should be no rows")
 		}
 	})
 }

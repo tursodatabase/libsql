@@ -144,15 +144,24 @@ func (c *conn) Begin() (driver.Tx, error) {
 	return nil, fmt.Errorf("begin() is not implemented")
 }
 
-func (c *conn) execute(query string) C.libsql_rows_t {
+func (c *conn) execute(query string) (C.libsql_rows_t, error) {
 	queryCString := C.CString(query)
 	defer C.free(unsafe.Pointer(queryCString))
 
-	return C.libsql_execute(c.nativePtr, queryCString)
+	var rows C.libsql_rows_t
+	var errMsg *C.char
+	statusCode := C.libsql_execute(c.nativePtr, queryCString, &rows, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to execute query ", query), statusCode, errMsg)
+	}
+	return rows, nil
 }
 
 func (c *conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	rows := c.execute(query)
+	rows, err := c.execute(query)
+	if err != nil {
+		return nil, err
+	}
 	if rows != nil {
 		C.libsql_free_rows(rows)
 	}
@@ -168,6 +177,9 @@ const (
 )
 
 func newRows(nativePtr C.libsql_rows_t) *rows {
+	if nativePtr == nil {
+		return &rows{nil, nil}
+	}
 	columnCount := int(C.libsql_column_count(nativePtr))
 	columnTypes := make([]int, 0, columnCount)
 	for i := 0; i < columnCount; i++ {
@@ -239,9 +251,9 @@ func (r *rows) Next(dest []driver.Value) error {
 }
 
 func (c *conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	rowsNativePtr := c.execute(query)
-	if rowsNativePtr == nil {
-		return nil, fmt.Errorf("failed to execute query")
+	rowsNativePtr, err := c.execute(query)
+	if err != nil {
+		return nil, err
 	}
 	return newRows(rowsNativePtr), nil
 }

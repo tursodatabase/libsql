@@ -92,23 +92,31 @@ pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
 pub unsafe extern "C" fn libsql_execute(
     conn: libsql_connection_t,
     sql: *const std::ffi::c_char,
-) -> libsql_rows_t {
+    out_rows: *mut libsql_rows_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
     let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
     let sql = match sql.to_str() {
         Ok(sql) => sql,
-        Err(_) => {
-            todo!("bad string");
+        Err(e) => {
+            set_err_msg(format!("Wrong SQL: {}", e), out_err_msg);
+            return 1;
         }
     };
     let conn = conn.get_ref();
-    let rows = conn.execute(sql.to_string(), ()).unwrap();
-    match rows {
-        Some(rows) => {
-            let rows = Box::leak(Box::new(libsql_rows { result: rows }));
-            libsql_rows_t::from(rows)
+    match conn.execute(sql.to_string(), ()) {
+        Ok(rows_opt) => {
+            if let Some(rows) = rows_opt {
+                let rows = Box::leak(Box::new(libsql_rows { result: rows }));
+                *out_rows = libsql_rows_t::from(rows);
+            }
         }
-        None => libsql_rows_t::null(),
-    }
+        Err(e) => {
+            set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
+            return 1;
+        }
+    };
+    0
 }
 
 #[no_mangle]
