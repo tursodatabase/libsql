@@ -68,7 +68,7 @@ int libsql_get_int(libsql_row_t res, int col, long long *out_value, const char *
 
 int libsql_get_float(libsql_row_t res, int col, double *out_value, const char **out_err_msg);
 
-blob libsql_get_blob(libsql_row_t res, int col);
+int libsql_get_blob(libsql_row_t res, int col, blob *out_blob, const char **out_err_msg);
 
 void libsql_free_blob(blob b);
 
