@@ -286,7 +286,7 @@ static const struct {
 #define JSTR_TOC(ARG) (*env)->GetStringUTFChars(env, ARG, NULL)
 #define JSTR_RELEASE(ARG,VAR) if(VAR) (*env)->ReleaseStringUTFChars(env, ARG, VAR)
 #define JBA_TOC(ARG) (*env)->GetByteArrayElements(env,ARG, NULL)
-#define JBA_RELEASE(ARG,VAR) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
+#define JBA_RELEASE(ARG,VAR) if(ARG) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
 
 /* Marker for code which needs(?) to be made thread-safe. */
 #define FIXME_THREADING
@@ -336,6 +336,14 @@ struct NphCacheLine {
 
 /**
    Cache for per-JNIEnv data.
+
+   Potential TODO: move the jclass entries to global space because,
+   per https://developer.android.com/training/articles/perf-jni:
+
+   > once you have a valid jclass global reference you can use it from
+     any attached thread.
+
+   Whereas we cache new refs for each thread.
 */
 typedef struct JNIEnvCacheLine JNIEnvCacheLine;
 struct JNIEnvCacheLine {
@@ -863,7 +871,8 @@ static void PerDbStateJni_dump(PerDbStateJni *s){
    return a (sqlite3*) but do not take one as an argument.
 */
 FIXME_THREADING
-static PerDbStateJni * PerDbStateJni_for_db(JNIEnv * const env, jobject jDb, sqlite3 *pDb, int allocIfNeeded){
+static PerDbStateJni * PerDbStateJni_for_db(JNIEnv * const env, jobject jDb,
+                                            sqlite3 *pDb, int allocIfNeeded){
   PerDbStateJni * s = S3Global.perDb.aUsed;
   if(!jDb){
     if(pDb){
@@ -3310,16 +3319,52 @@ JDECLFtsXA(jobject,xUserData)(JENV_JSELF,jobject jFcx){
 // End of the main API bindings. What follows are internal utilities.
 ////////////////////////////////////////////////////////////////////////
 
+/**
+   Uncaches the current JNIEnv from the S3Global state, clearing any
+   resources owned by that cache entry and making that slot available
+   for re-use. It is important that the Java-side decl of this
+   function be declared as synchronous.
+*/
+JNIEXPORT jboolean JNICALL
+Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JNIEnv * const env, jclass self){
+  struct JNIEnvCacheLine * row = 0;
+  int i;
+  for( i = 0; i < JNIEnvCache_SIZE; ++i ){
+    row = &S3Global.envCache.lines[i];
+    if(row->env == env){
+      break;
+    }
+  }
+  if( i==JNIEnvCache_SIZE ){
+    //MARKER(("The given JNIEnv is not currently cached.\n"));
+    return JNI_FALSE;
+  }
+  //MARKER(("Uncaching S3Global.envCache entry #%d.\n", i));
+  assert(S3Global.envCache.used >= i);
+  JNIEnvCacheLine_clear(row);
+  /**
+     Move all entries down one slot. memmove() would be faster.  We'll
+     eventually turn this cache into a dynamically-allocated linked
+     list, anyway, so this part will go away.
+  */
+  for( ++i ; i < JNIEnvCache_SIZE; ++i ){
+    S3Global.envCache.lines[i-i] = S3Global.envCache.lines[i];
+  }
+  memset(&S3Global.envCache.lines[i], 0, sizeof(JNIEnvCacheLine));
+  --S3Global.envCache.used;
+  return JNI_TRUE;
+}
+
 
 /**
    Called during static init of the SQLite3Jni class to sync certain
    compile-time constants to Java-space.
 
-   This routine is why we have to #include sqlite3.c instead of
-   sqlite3.h.
+   This routine is part of the reason why we have to #include
+   sqlite3.c instead of sqlite3.h.
 */
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv * const env, jclass self, jobject sJni){
+Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv * const env, jclass self, jclass klazzSjni){
   enum JType {
     JTYPE_INT,
     JTYPE_BOOL
@@ -3365,7 +3410,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv * const env, jclass self, jobject sJn
     {0,0}
   };
   jfieldID fieldId;
-  jclass const klazz = (*env)->GetObjectClass(env, sJni);
+  //jclass const klazz = (*env)->GetObjectClass(env, sJni);
   const ConfigFlagEntry * pConfFlag;
   memset(&S3Global, 0, sizeof(S3Global));
   (void)S3Global_env_cache(env);
@@ -3378,16 +3423,16 @@ Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv * const env, jclass self, jobject sJn
 
   for( pConfFlag = &aLimits[0]; pConfFlag->zName; ++pConfFlag ){
     char const * zSig = (JTYPE_BOOL == pConfFlag->jtype) ? "Z" : "I";
-    fieldId = (*env)->GetStaticFieldID(env, klazz, pConfFlag->zName, zSig);
+    fieldId = (*env)->GetStaticFieldID(env, klazzSjni, pConfFlag->zName, zSig);
     EXCEPTION_IS_FATAL("Missing an expected static member of the SQLite3Jni class.");
     //MARKER(("Setting %s (field=%p) = %d\n", pConfFlag->zName, fieldId, pConfFlag->value));
     assert(fieldId);
     switch(pConfFlag->jtype){
       case JTYPE_INT:
-        (*env)->SetStaticIntField(env, klazz, fieldId, (jint)pConfFlag->value);
+        (*env)->SetStaticIntField(env, klazzSjni, fieldId, (jint)pConfFlag->value);
         break;
       case JTYPE_BOOL:
-        (*env)->SetStaticBooleanField(env, klazz, fieldId,
+        (*env)->SetStaticBooleanField(env, klazzSjni, fieldId,
                                       pConfFlag->value ? JNI_TRUE : JNI_FALSE);
         break;
     }

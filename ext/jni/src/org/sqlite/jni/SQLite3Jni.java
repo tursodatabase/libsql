@@ -66,8 +66,32 @@ public final class SQLite3Jni {
   static {
     System.loadLibrary("sqlite3-jni");
   }
+  //! Not used
   private SQLite3Jni(){}
-  private static native void init(@NotNull SQLite3Jni s);
+  //! Called from static init code.
+  private static native void init(@NotNull Class<SQLite3Jni> c);
+
+  /**
+     Each thread which uses the SQLite3 JNI APIs should call
+     uncacheJniEnv() when it is done with the library - either right
+     before it terminates or when it is finished using the SQLite API.
+     This will clean up any cached per-JNIEnv info. Calling into the
+     library again after that "should" re-initialize the cache on
+     demand, but that's untested.
+
+     Calling this from the main application thread is not strictly
+     required but is "polite." Additional threads must call this
+     before ending or they will leak cache entries in the C memory,
+     which in turn may keep numerous Java-side global references
+     active.
+
+     This routine returns false without side effects if the current
+     JNIEnv is not cached, else returns true, but this information is
+     primarily for testing of the JNI bindings and is not information
+     which client-level code should use to make any informed
+     decisions.
+*/
+  public static synchronized native boolean uncacheJniEnv();
 
   //////////////////////////////////////////////////////////////////////
   // Maintenance reminder: please keep the functions alphabetized.
@@ -98,6 +122,9 @@ public final class SQLite3Jni {
   public static native int sqlite3_bind_parameter_count(@NotNull sqlite3_stmt stmt);
 
 
+  /** A level of indirection required to ensure that the input to the
+      C-level function of the same name is a NUL-terminated UTF-8
+      string. */
   private static native int sqlite3_bind_parameter_index(@NotNull sqlite3_stmt stmt,
                                                          byte[] paramName);
 
@@ -1264,6 +1291,6 @@ public final class SQLite3Jni {
   static {
     // This MUST come after the SQLITE_MAX_... values or else
     // attempting to modify them silently fails.
-    init(new SQLite3Jni());
+    init(SQLite3Jni.class);
   }
 }

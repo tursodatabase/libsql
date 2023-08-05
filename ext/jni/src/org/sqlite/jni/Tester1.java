@@ -988,6 +988,8 @@ public class Tester1 {
       //listBoundMethods();
     }
     final long timeEnd = System.nanoTime();
+    affirm( SQLite3Jni.uncacheJniEnv() );
+    affirm( !SQLite3Jni.uncacheJniEnv() );
     outln("Tests done. Metrics:");
     outln("\tAssertions checked: "+affirmCount);
     outln("\tDatabases opened: "+metrics.dbOpen);
