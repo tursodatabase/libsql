@@ -15,24 +15,23 @@ package org.sqlite.jni;
 import java.nio.charset.StandardCharsets;
 
 /**
-   COMPLETELY UNTESTED.
+   ALMOST COMPLETELY UNTESTED.
 
    FAR FROM COMPLETE and the feasibility of binding this to Java
    is still undetermined. This might be removed.
-
-   Reminder to self: the native Fts5ExtensionApi is a singleton.
 */
 public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi> {
   //! Only called from JNI
   private Fts5ExtensionApi(){}
   private int iVersion = 2;
 
+  /* Callback type for used by xQueryPhrase(). */
   public static interface xQueryPhraseCallback {
     int xCallback(Fts5ExtensionApi fapi, Fts5Context cx);
   }
 
   /**
-     Returns a singleton instance of this class.
+     Returns the singleton instance of this class.
   */
   public static synchronized native Fts5ExtensionApi getInstance();
 

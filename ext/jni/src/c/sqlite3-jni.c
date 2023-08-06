@@ -151,16 +151,19 @@
 #define JDECL(ReturnType,Suffix)                \
   JNIEXPORT ReturnType JNICALL                  \
   JFuncName(Suffix)
-/* First 2 parameters to all JNI bindings.
+/**
+   Shortcuts for the first 2 parameters to all JNI bindings.
 
-   Note that javac -h outputs jSelf as type jclass
-   but the docs:
+   The type of the jSelf arg differs, but no docs seem to mention
+   this: for static methods it's of type jclass and for non-static
+   it's jobject. jobject actually works for all funcs, in the sense
+   that it compiles and runs so long as we don't use jSelf (which is
+   only rarely needed in this code), but to be pedantically correct we
+   need the proper type in the signature.
+
+   Not even the official docs mention this discrepancy:
 
    https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#jni_interface_functions_and_pointers
-   https://www3.ntu.edu.sg/home/ehchua/programming/java/javanativeinterface.html
-
-   say that's a jobject referring to the "this" for the call, but for
-   static methods it's actually emitted as jclass.
 */
 #define JENV_OSELF JNIEnv * const env, jobject jSelf
 #define JENV_CSELF JNIEnv * const env, jclass jSelf
