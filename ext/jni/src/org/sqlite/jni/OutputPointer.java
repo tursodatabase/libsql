@@ -22,6 +22,20 @@ package org.sqlite.jni;
    autoboxing at that level.
 */
 public final class OutputPointer {
+  public static final class sqlite3 {
+    private org.sqlite.jni.sqlite3 value;
+    public sqlite3(){value = null;}
+    public void clear(){value = null;}
+    public final org.sqlite.jni.sqlite3 getValue(){return value;}
+  }
+
+  public static final class sqlite3_stmt {
+    private org.sqlite.jni.sqlite3_stmt value;
+    public sqlite3_stmt(){value = null;}
+    public void clear(){value = null;}
+    public final org.sqlite.jni.sqlite3_stmt getValue(){return value;}
+  }
+
   public static final class Int32 {
     private int value;
     public Int32(){this(0);}

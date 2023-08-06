@@ -20,4 +20,6 @@ package org.sqlite.jni;
    and C via JNI.
 */
 public final class sqlite3 extends NativePointerHolder<sqlite3> {
+  // Only invoked from JNI
+  private sqlite3(){}
 }

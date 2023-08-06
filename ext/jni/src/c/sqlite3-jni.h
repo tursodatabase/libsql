@@ -1104,7 +1104,7 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1filename
  * Method:    sqlite3_db_config
  * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/OutputPointer/Int32;)I
  */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_00024Int32_2
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_Int32_2
   (JNIEnv *, jclass, jobject, jint, jobject);
 
 /*
@@ -1206,7 +1206,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1libversion_1numbe
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_open
- * Signature: (Ljava/lang/String;Lorg/sqlite/jni/sqlite3;)I
+ * Signature: (Ljava/lang/String;Lorg/sqlite/jni/OutputPointer/sqlite3;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1open
   (JNIEnv *, jclass, jstring, jobject);
@@ -1214,7 +1214,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1open
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_open_v2
- * Signature: (Ljava/lang/String;Lorg/sqlite/jni/sqlite3;ILjava/lang/String;)I
+ * Signature: (Ljava/lang/String;Lorg/sqlite/jni/OutputPointer/sqlite3;ILjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1open_1v2
   (JNIEnv *, jclass, jstring, jobject, jint, jstring);
@@ -1222,7 +1222,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1open_1v2
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_prepare
- * Signature: (Lorg/sqlite/jni/sqlite3;[BILorg/sqlite/jni/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ * Signature: (Lorg/sqlite/jni/sqlite3;[BILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare
   (JNIEnv *, jclass, jobject, jbyteArray, jint, jobject, jobject);
@@ -1230,7 +1230,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_prepare_v2
- * Signature: (Lorg/sqlite/jni/sqlite3;[BILorg/sqlite/jni/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ * Signature: (Lorg/sqlite/jni/sqlite3;[BILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v2
   (JNIEnv *, jclass, jobject, jbyteArray, jint, jobject, jobject);
@@ -1238,7 +1238,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v2
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_prepare_v3
- * Signature: (Lorg/sqlite/jni/sqlite3;[BIILorg/sqlite/jni/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
+ * Signature: (Lorg/sqlite/jni/sqlite3;[BIILorg/sqlite/jni/OutputPointer/sqlite3_stmt;Lorg/sqlite/jni/OutputPointer/Int32;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v3
   (JNIEnv *, jclass, jobject, jbyteArray, jint, jint, jobject, jobject);

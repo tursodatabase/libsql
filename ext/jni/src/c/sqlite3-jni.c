@@ -189,10 +189,10 @@
 /** Helpers for extracting pointers from jobjects, noting that the
     corresponding Java interfaces have already done the type-checking.
  */
-#define PtrGet_sqlite3(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3)
-#define PtrGet_sqlite3_stmt(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_stmt)
-#define PtrGet_sqlite3_value(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_value)
-#define PtrGet_sqlite3_context(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_context)
+#define PtrGet_sqlite3(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.sqlite3)
+#define PtrGet_sqlite3_stmt(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.sqlite3_stmt)
+#define PtrGet_sqlite3_value(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.sqlite3_value)
+#define PtrGet_sqlite3_context(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.sqlite3_context)
 /* Helpers for Java value reference management. */
 static inline jobject new_global_ref(JNIEnv *env, jobject v){
   return v ? (*env)->NewGlobalRef(env, v) : NULL;
@@ -215,6 +215,8 @@ static const struct {
   const char * const OutputPointer_Int64;
   const char * const OutputPointer_String;
   const char * const OutputPointer_ByteArray;
+  const char * const OutputPointer_sqlite3;
+  const char * const OutputPointer_sqlite3_stmt;
 #ifdef SQLITE_ENABLE_FTS5
   const char * const Fts5Context;
   const char * const Fts5ExtensionApi;
@@ -231,6 +233,8 @@ static const struct {
   "org/sqlite/jni/OutputPointer$Int64",
   "org/sqlite/jni/OutputPointer$String",
   "org/sqlite/jni/OutputPointer$ByteArray",
+  "org/sqlite/jni/OutputPointer$sqlite3",
+  "org/sqlite/jni/OutputPointer$sqlite3_stmt",
 #ifdef SQLITE_ENABLE_FTS5
   "org/sqlite/jni/Fts5Context",
   "org/sqlite/jni/Fts5ExtensionApi",
@@ -296,7 +300,7 @@ static const struct {
 #define JSTR_TOC(ARG) (*env)->GetStringUTFChars(env, ARG, NULL)
 #define JSTR_RELEASE(ARG,VAR) if(VAR) (*env)->ReleaseStringUTFChars(env, ARG, VAR)
 #define JBA_TOC(ARG) (*env)->GetByteArrayElements(env,ARG, NULL)
-#define JBA_RELEASE(ARG,VAR) if(ARG) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
+#define JBA_RELEASE(ARG,VAR) if(VAR) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
 
 /* Marker for code which needs(?) to be made thread-safe. */
 #define FIXME_THREADING
@@ -948,7 +952,11 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv * const env, const char *
   return freeSlot;
 }
 
-static jfieldID getNativePointerField(JNIEnv * const env, jclass klazz){
+/**
+   Returns the ID of the "nativePointer" field from the given
+   NativePointerHolder<T> class.
+ */
+static jfieldID NativePointerHolder_getField(JNIEnv * const env, jclass klazz){
   jfieldID rv = (*env)->GetFieldID(env, klazz, "nativePointer", "J");
   EXCEPTION_IS_FATAL("Code maintenance required: missing nativePointer field.");
   return rv;
@@ -959,7 +967,7 @@ static jfieldID getNativePointerField(JNIEnv * const env, jclass klazz){
    zClassName must be a static string so we can use its address
    as a cache key.
 */
-static void setNativePointer(JNIEnv * env, jobject ppOut, const void * p,
+static void NativePointerHolder_set(JNIEnv * env, jobject ppOut, const void * p,
                              const char *zClassName){
   jfieldID setter = 0;
   struct NphCacheLine * const cacheLine = S3Global_nph_cache(env, zClassName);
@@ -970,7 +978,7 @@ static void setNativePointer(JNIEnv * env, jobject ppOut, const void * p,
   }else{
     jclass const klazz =
       cacheLine ? cacheLine->klazz : (*env)->GetObjectClass(env, ppOut);
-    setter = getNativePointerField(env, klazz);
+    setter = NativePointerHolder_getField(env, klazz);
     if(cacheLine){
       assert(cacheLine->klazz);
       assert(!cacheLine->fidValue);
@@ -987,9 +995,8 @@ static void setNativePointer(JNIEnv * env, jobject ppOut, const void * p,
    zClassName must be a static string so we can use its address as a
    cache key.
 */
-static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassName){
-  if( 0==pObj ) return 0;
-  else{
+static void * NativePointerHolder_get(JNIEnv * env, jobject pObj, const char *zClassName){
+  if( pObj ){
     jfieldID getter = 0;
     void * rv = 0;
     struct NphCacheLine * const cacheLine = S3Global_nph_cache(env, zClassName);
@@ -998,7 +1005,7 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
     }else{
       jclass const klazz =
         cacheLine ? cacheLine->klazz : (*env)->GetObjectClass(env, pObj);
-      getter = getNativePointerField(env, klazz);
+      getter = NativePointerHolder_getField(env, klazz);
       if(cacheLine){
         assert(cacheLine->klazz);
         assert(zClassName == cacheLine->zClassName);
@@ -1008,6 +1015,8 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
     rv = (void*)(*env)->GetLongField(env, pObj, getter);
     IFTHREW_REPORT;
     return rv;
+  }else{
+    return 0;
   }
 }
 
@@ -1015,7 +1024,7 @@ static void * getNativePointer(JNIEnv * env, jobject pObj, const char *zClassNam
    Extracts the new PerDbStateJni instance from the free-list, or
    allocates one if needed, associats it with pDb, and returns.
    Returns NULL on OOM. pDb MUST be associated with jDb via
-   setNativePointer().
+   NativePointerHolder_set().
 */
 static PerDbStateJni * PerDbStateJni_alloc(JNIEnv * const env, sqlite3 *pDb, jobject jDb){
   PerDbStateJni * rv;
@@ -1179,7 +1188,7 @@ static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
 }
 
 /**
-   Common init for setOutputInt32() and friends. zClassName must be a
+   Common init for OutputPointer_set_Int32() and friends. zClassName must be a
    pointer from S3ClassNames. jOut must be an instance of that
    class. Fetches the jfieldID for jOut's [value] property, which must
    be of the type represented by the JNI type signature zTypeSig, and
@@ -1213,17 +1222,35 @@ static void setupOutputPointer(JNIEnv * const env, const char *zClassName,
 
 /* Sets the value property of the OutputPointer.Int32 jOut object
    to v. */
-static void setOutputInt32(JNIEnv * const env, jobject const jOut, int v){
+static void OutputPointer_set_Int32(JNIEnv * const env, jobject const jOut, int v){
   jfieldID setter = 0;
   setupOutputPointer(env, S3ClassNames.OutputPointer_Int32, "I", jOut, &setter);
   (*env)->SetIntField(env, jOut, setter, (jint)v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int32.value");
 }
 
+static void OutputPointer_set_sqlite3(JNIEnv * const env, jobject const jOut,
+                              jobject jDb){
+  jfieldID setter = 0;
+  setupOutputPointer(env, S3ClassNames.OutputPointer_sqlite3,
+                     "Lorg/sqlite/jni/sqlite3;", jOut, &setter);
+  (*env)->SetObjectField(env, jOut, setter, jDb);
+  EXCEPTION_IS_FATAL("Cannot set OutputPointer.sqlite3.value");
+}
+
+static void OutputPointer_set_sqlite3_stmt(JNIEnv * const env, jobject const jOut,
+                                   jobject jStmt){
+  jfieldID setter = 0;
+  setupOutputPointer(env, S3ClassNames.OutputPointer_sqlite3_stmt,
+                     "Lorg/sqlite/jni/sqlite3_stmt;", jOut, &setter);
+  (*env)->SetObjectField(env, jOut, setter, jStmt);
+  EXCEPTION_IS_FATAL("Cannot set OutputPointer.sqlite3_stmt.value");
+}
+
 #ifdef SQLITE_ENABLE_FTS5
 /* Sets the value property of the OutputPointer.Int64 jOut object
    to v. */
-static void setOutputInt64(JNIEnv * const env, jobject const jOut, jlong v){
+static void OutputPointer_set_Int64(JNIEnv * const env, jobject const jOut, jlong v){
   jfieldID setter = 0;
   setupOutputPointer(env, S3ClassNames.OutputPointer_Int64, "J", jOut, &setter);
   (*env)->SetLongField(env, jOut, setter, v);
@@ -1232,7 +1259,7 @@ static void setOutputInt64(JNIEnv * const env, jobject const jOut, jlong v){
 #if 0
 /* Sets the value property of the OutputPointer.ByteArray jOut object
    to v. */
-static void setOutputByteArray(JNIEnv * const env, jobject const jOut,
+static void OutputPointer_set_ByteArray(JNIEnv * const env, jobject const jOut,
                                jbyteArray const v){
   jfieldID setter = 0;
   setupOutputPointer(env, S3ClassNames.OutputPointer_ByteArray, "[B",
@@ -1243,7 +1270,7 @@ static void setOutputByteArray(JNIEnv * const env, jobject const jOut,
 #endif
 /* Sets the value property of the OutputPointer.String jOut object
    to v. */
-static void setOutputString(JNIEnv * const env, jobject const jOut,
+static void OutputPointer_set_String(JNIEnv * const env, jobject const jOut,
                             jstring const v){
   jfieldID setter = 0;
   setupOutputPointer(env, S3ClassNames.OutputPointer_String,
@@ -1367,7 +1394,7 @@ static void ResultJavaVal_finalizer(void *v){
 /**
    Returns a new Java instance of the class named by zClassName, which
    MUST be interface-compatible with NativePointerHolder and MUST have
-   a no-arg constructor. Its setNativePointer() method is passed
+   a no-arg constructor. Its NativePointerHolder_set() method is passed
    pNative. Hypothetically returns NULL if Java fails to allocate, but
    the JNI docs are not entirely clear on that detail.
 
@@ -1402,20 +1429,21 @@ static jobject new_NativePointerHolder_object(JNIEnv * const env, const char *zC
   assert(ctor);
   rv = (*env)->NewObject(env, klazz, ctor);
   EXCEPTION_IS_FATAL("No-arg constructor threw.");
-  if(rv) setNativePointer(env, rv, pNative, zClassName);
+  if(rv) NativePointerHolder_set(env, rv, pNative, zClassName);
   return rv;
 }
 
-static inline jobject new_sqlite3_value_wrapper(JNIEnv * const env, sqlite3_value *sv){
-  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_value, sv);
+static inline jobject new_sqlite3_wrapper(JNIEnv * const env, sqlite3 *sv){
+  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3, sv);
 }
-
 static inline jobject new_sqlite3_context_wrapper(JNIEnv * const env, sqlite3_context *sv){
   return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_context, sv);
 }
-
 static inline jobject new_sqlite3_stmt_wrapper(JNIEnv * const env, sqlite3_stmt *sv){
   return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_stmt, sv);
+}
+static inline jobject new_sqlite3_value_wrapper(JNIEnv * const env, sqlite3_value *sv){
+  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3_value, sv);
 }
 
 enum UDFType {
@@ -1690,9 +1718,6 @@ WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 
 #if S3JNI_ENABLE_AUTOEXT
 /* auto-extension is very incomplete  */
-static inline jobject new_sqlite3_wrapper(JNIEnv * const env, sqlite3 *sv){
-  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3, sv);
-}
 /*static*/ int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
                                     const struct sqlite3_api_routines *pThunk){
   S3JniAutoExtension const * pAX = S3Global.autoExt.pHead;
@@ -1872,7 +1897,7 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
   if(ps) PerDbStateJni_set_aside(ps)
            /* MUST come after close() because of ps->trace. */;
-  setNativePointer(env, jDb, 0, S3ClassNames.sqlite3);
+  NativePointerHolder_set(env, jDb, 0, S3ClassNames.sqlite3);
   return (jint)rc;
 }
 
@@ -2177,7 +2202,7 @@ JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_
       int pOut = 0;
       rc = sqlite3_db_config( ps->pDb, (int)op, &pOut );
       if( 0==rc && jOut ){
-        setOutputInt32(env, jOut, pOut);
+        OutputPointer_set_Int32(env, jOut, pOut);
       }
       break;
     }
@@ -2346,7 +2371,7 @@ JDECL(jint,1finalize)(JENV_CSELF, jobject jpStmt){
     JNIEnvCache * const jc = S3Global_env_cache(env);
     jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_finalize(pStmt);
-    setNativePointer(env, jpStmt, 0, S3ClassNames.sqlite3_stmt);
+    NativePointerHolder_set(env, jpStmt, 0, S3ClassNames.sqlite3_stmt);
     (void)stmt_set_current(jc, pPrev);
   }
   return rc;
@@ -2367,16 +2392,19 @@ JDECL(jlong,1last_1insert_1rowid)(JENV_CSELF, jobject jpDb){
    is returned, else theRc is returned. In in case, *ppDb is stored in
    jDb's native pointer property (even if it's NULL).
 */
-static int s3jni_open_post(JNIEnv * const env, sqlite3 **ppDb, jobject jDb, int theRc){
+static int s3jni_open_post(JNIEnv * const env, sqlite3 **ppDb, jobject jOut, int theRc){
+  jobject jDb = 0;
   if(*ppDb){
-    PerDbStateJni * const s = PerDbStateJni_for_db(env, jDb, *ppDb, 1);
+    jDb = new_sqlite3_wrapper(env, *ppDb);
+    PerDbStateJni * const s = jDb ? PerDbStateJni_for_db(env, jDb, *ppDb, 1) : 0;
     if(!s && 0==theRc){
+      UNREF_L(jDb);
       sqlite3_close(*ppDb);
       *ppDb = 0;
       theRc = SQLITE_NOMEM;
     }
   }
-  setNativePointer(env, jDb, *ppDb, S3ClassNames.sqlite3);
+  OutputPointer_set_sqlite3(env, jOut, jDb);
   return theRc;
 }
 
@@ -2408,53 +2436,72 @@ JDECL(jint,1open_1v2)(JENV_CSELF, jstring strName,
 
 /* Proxy for the sqlite3_prepare[_v2/3]() family. */
 static jint sqlite3_jni_prepare_v123(int prepVersion, JNIEnv * const env, jclass self,
-                                     jobject jpDb, jbyteArray baSql,
+                                     jobject jDb, jbyteArray baSql,
                                      jint nMax, jint prepFlags,
                                      jobject jOutStmt, jobject outTail){
   sqlite3_stmt * pStmt = 0;
+  jobject jStmt = 0;
   const char * zTail = 0;
   jbyte * const pBuf = JBA_TOC(baSql);
   JNIEnvCache * const jc = S3Global_env_cache(env);
-  jobject const pOldStmt = stmt_set_current(jc, jOutStmt);
+  jobject const pOldStmt = stmt_set_current(jc, 0);
   int rc = SQLITE_ERROR;
   assert(prepVersion==1 || prepVersion==2 || prepVersion==3);
+  if( !pBuf ){
+     rc = baSql ? SQLITE_MISUSE : SQLITE_NOMEM;
+     goto end;
+  }
+  jStmt = new_sqlite3_stmt_wrapper(env, 0);
+  if( !jStmt ){
+    rc = SQLITE_NOMEM;
+    goto end;
+  }
   switch( prepVersion ){
-    case 1: rc = sqlite3_prepare(PtrGet_sqlite3(jpDb), (const char *)pBuf,
+    case 1: rc = sqlite3_prepare(PtrGet_sqlite3(jDb), (const char *)pBuf,
                                  (int)nMax, &pStmt, &zTail);
       break;
-    case 2: rc = sqlite3_prepare_v2(PtrGet_sqlite3(jpDb), (const char *)pBuf,
+    case 2: rc = sqlite3_prepare_v2(PtrGet_sqlite3(jDb), (const char *)pBuf,
                                     (int)nMax, &pStmt, &zTail);
       break;
-    case 3: rc = sqlite3_prepare_v3(PtrGet_sqlite3(jpDb), (const char *)pBuf,
+    case 3: rc = sqlite3_prepare_v3(PtrGet_sqlite3(jDb), (const char *)pBuf,
                                     (int)nMax, (unsigned int)prepFlags,
                                     &pStmt, &zTail);
       break;
     default:
       assert(0 && "Invalid prepare() version");
   }
+end:
   JBA_RELEASE(baSql,pBuf);
-  if( 0!=outTail ){
-    assert(zTail ? ((void*)zTail>=(void*)pBuf) : 1);
-    assert(zTail ? (((int)((void*)zTail - (void*)pBuf)) >= 0) : 1);
-    setOutputInt32(env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0));
+  if( 0==rc ){
+    if( 0!=outTail ){
+      /* Noting that pBuf is deallocated now but its address is all we need. */
+      assert(zTail ? ((void*)zTail>=(void*)pBuf) : 1);
+      assert(zTail ? (((int)((void*)zTail - (void*)pBuf)) >= 0) : 1);
+      OutputPointer_set_Int32(env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0));
+    }
+    NativePointerHolder_set(env, jStmt, pStmt, S3ClassNames.sqlite3_stmt);
+  }else{
+    UNREF_L(jStmt);
+    jStmt = 0;
   }
-  setNativePointer(env, jOutStmt, pStmt, S3ClassNames.sqlite3_stmt);
+  OutputPointer_set_sqlite3_stmt(env, jOutStmt, jStmt);
+  //NativePointerHolder_set(env, jOutStmt, pStmt, S3ClassNames.sqlite3_stmt);
   (void)stmt_set_current(jc, pOldStmt);
   return (jint)rc;
 }
-JDECL(jint,1prepare)(JNIEnv * const env, jclass self, jobject jpDb, jbyteArray baSql,
+JDECL(jint,1prepare)(JNIEnv * const env, jclass self, jobject jDb, jbyteArray baSql,
                      jint nMax, jobject jOutStmt, jobject outTail){
-  return sqlite3_jni_prepare_v123(1, env, self, jpDb, baSql, nMax, 0,
+  return sqlite3_jni_prepare_v123(1, env, self, jDb, baSql, nMax, 0,
                                   jOutStmt, outTail);
 }
-JDECL(jint,1prepare_1v2)(JNIEnv * const env, jclass self, jobject jpDb, jbyteArray baSql,
+JDECL(jint,1prepare_1v2)(JNIEnv * const env, jclass self, jobject jDb, jbyteArray baSql,
                          jint nMax, jobject jOutStmt, jobject outTail){
-  return sqlite3_jni_prepare_v123(2, env, self, jpDb, baSql, nMax, 0,
+  return sqlite3_jni_prepare_v123(2, env, self, jDb, baSql, nMax, 0,
                                   jOutStmt, outTail);
 }
-JDECL(jint,1prepare_1v3)(JNIEnv * const env, jclass self, jobject jpDb, jbyteArray baSql,
+JDECL(jint,1prepare_1v3)(JNIEnv * const env, jclass self, jobject jDb, jbyteArray baSql,
                          jint nMax, jint prepFlags, jobject jOutStmt, jobject outTail){
-  return sqlite3_jni_prepare_v123(3, env, self, jpDb, baSql, nMax,
+  return sqlite3_jni_prepare_v123(3, env, self, jDb, baSql, nMax,
                                   prepFlags, jOutStmt, outTail);
 }
 
@@ -2797,6 +2844,7 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
     case SQLITE_TRACE_STMT:
       jX = s3jni_utf8_to_jstring(jc, (const char *)pX, -1);
       if(!jX) return SQLITE_NOMEM;
+      /*MARKER(("TRACE_STMT@%p SQL=%p / %s\n", pP, jX, (const char *)pX));*/
       jP = jc->currentStmt;
       break;
     case SQLITE_TRACE_PROFILE:
@@ -2806,15 +2854,13 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
       // MARKER(("profile time = %llu\n", *((sqlite3_int64*)pX)));
       jP = jc->currentStmt;
       if(!jP){
+        // This will be the case during prepare() b/c we don't have the
+        // pointer in time to wrap it before tracing is triggered.
         jP = jPUnref = new_sqlite3_stmt_wrapper(env, pP);
         if(!jP){
           UNREF_L(jX);
           return SQLITE_NOMEM;
         }
-        MARKER(("WARNING: created new sqlite3_stmt wrapper for TRACE_PROFILE. stmt@%p\n"
-                "This means we have missed a route into the tracing API and it "
-                "needs the stmt_set_current() treatment which is littered around "
-                "a handful of other functions in this file.\n", pP));
       }
       break;
     case SQLITE_TRACE_ROW:
@@ -3092,10 +3138,10 @@ JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
   JNIEXPORT ReturnType JNICALL                  \
   JFuncNameFtsTok(Suffix)
 
-#define PtrGet_fts5_api(OBJ) getNativePointer(env,OBJ,S3ClassNames.fts5_api)
-#define PtrGet_fts5_tokenizer(OBJ) getNativePointer(env,OBJ,S3ClassNames.fts5_tokenizer)
-#define PtrGet_Fts5Context(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Context)
-#define PtrGet_Fts5Tokenizer(OBJ) getNativePointer(env,OBJ,S3ClassNames.Fts5Tokenizer)
+#define PtrGet_fts5_api(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.fts5_api)
+#define PtrGet_fts5_tokenizer(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.fts5_tokenizer)
+#define PtrGet_Fts5Context(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.Fts5Context)
+#define PtrGet_Fts5Tokenizer(OBJ) NativePointerHolder_get(env,OBJ,S3ClassNames.Fts5Tokenizer)
 #define Fts5ExtDecl Fts5ExtensionApi const * const fext = s3jni_ftsext()
 
 /**
@@ -3226,7 +3272,7 @@ JDECLFtsXA(jint,xColumnSize)(JENV_OSELF,jobject jCtx, jint iIdx, jobject jOut32)
   Fts5ExtDecl;
   int n1 = 0;
   int const rc = fext->xColumnSize(PtrGet_Fts5Context(jCtx), (int)iIdx, &n1);
-  if( 0==rc ) setOutputInt32(env, jOut32, n1);
+  if( 0==rc ) OutputPointer_set_Int32(env, jOut32, n1);
   return rc;
 }
 
@@ -3242,7 +3288,7 @@ JDECLFtsXA(jint,xColumnText)(JENV_OSELF,jobject jCtx, jint iCol,
     jstring jstr = pz ? s3jni_utf8_to_jstring(jc, pz, pn) : 0;
     if( pz ){
       if( jstr ){
-        setOutputString(env, jOut, jstr);
+        OutputPointer_set_String(env, jOut, jstr);
         UNREF_L(jstr)/*jOut has a reference*/;
       }else{
         rc = SQLITE_NOMEM;
@@ -3256,7 +3302,7 @@ JDECLFtsXA(jint,xColumnTotalSize)(JENV_OSELF,jobject jCtx, jint iCol, jobject jO
   Fts5ExtDecl;
   sqlite3_int64 nOut = 0;
   int const rc = fext->xColumnTotalSize(PtrGet_Fts5Context(jCtx), (int)iCol, &nOut);
-  if( 0==rc && jOut64 ) setOutputInt64(env, jOut64, (jlong)nOut);
+  if( 0==rc && jOut64 ) OutputPointer_set_Int64(env, jOut64, (jlong)nOut);
   return (jint)rc;
 }
 
@@ -3372,9 +3418,9 @@ JDECLFtsXA(jint,xInst)(JENV_OSELF,jobject jCtx, jint iIdx, jobject jOutPhrase,
   int n1 = 0, n2 = 2, n3 = 0;
   int const rc = fext->xInst(PtrGet_Fts5Context(jCtx), (int)iIdx, &n1, &n2, &n3);
   if( 0==rc ){
-    setOutputInt32(env, jOutPhrase, n1);
-    setOutputInt32(env, jOutCol, n2);
-    setOutputInt32(env, jOutOff, n3);
+    OutputPointer_set_Int32(env, jOutPhrase, n1);
+    OutputPointer_set_Int32(env, jOutCol, n2);
+    OutputPointer_set_Int32(env, jOutOff, n3);
   }
   return rc;
 }
@@ -3383,7 +3429,7 @@ JDECLFtsXA(jint,xInstCount)(JENV_OSELF,jobject jCtx, jobject jOut32){
   Fts5ExtDecl;
   int nOut = 0;
   int const rc = fext->xInstCount(PtrGet_Fts5Context(jCtx), &nOut);
-  if( 0==rc && jOut32 ) setOutputInt32(env, jOut32, nOut);
+  if( 0==rc && jOut32 ) OutputPointer_set_Int32(env, jOut32, nOut);
   return (jint)rc;
 }
 
@@ -3442,8 +3488,8 @@ JDECLFtsXA(jint,xPhraseFirst)(JENV_OSELF,jobject jCtx, jint iPhrase,
   rc = fext->xPhraseFirst(PtrGet_Fts5Context(jCtx), (int)iPhrase,
                          &iter, &iCol, &iOff);
   if( 0==rc ){
-    setOutputInt32(env, jOutCol, iCol);
-    setOutputInt32(env, jOutOff, iOff);
+    OutputPointer_set_Int32(env, jOutCol, iCol);
+    OutputPointer_set_Int32(env, jOutOff, iOff);
     s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
   }
   return rc;
@@ -3459,7 +3505,7 @@ JDECLFtsXA(jint,xPhraseFirstColumn)(JENV_OSELF,jobject jCtx, jint iPhrase,
   rc = fext->xPhraseFirstColumn(PtrGet_Fts5Context(jCtx), (int)iPhrase,
                                 &iter, &iCol);
   if( 0==rc ){
-    setOutputInt32(env, jOutCol, iCol);
+    OutputPointer_set_Int32(env, jOutCol, iCol);
     s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
   }
   return rc;
@@ -3475,8 +3521,8 @@ JDECLFtsXA(void,xPhraseNext)(JENV_OSELF,jobject jCtx, jobject jIter,
   s3jni_phraseIter_JToN(env, jc, jIter, &iter);
   fext->xPhraseNext(PtrGet_Fts5Context(jCtx),
                          &iter, &iCol, &iOff);
-  setOutputInt32(env, jOutCol, iCol);
-  setOutputInt32(env, jOutOff, iOff);
+  OutputPointer_set_Int32(env, jOutCol, iCol);
+  OutputPointer_set_Int32(env, jOutOff, iOff);
   s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
 }
 
@@ -3489,7 +3535,7 @@ JDECLFtsXA(void,xPhraseNextColumn)(JENV_OSELF,jobject jCtx, jobject jIter,
   if(!jc->jPhraseIter.klazz) return /*SQLITE_MISUSE*/;
   s3jni_phraseIter_JToN(env, jc, jIter, &iter);
   fext->xPhraseNextColumn(PtrGet_Fts5Context(jCtx), &iter, &iCol);
-  setOutputInt32(env, jOutCol, iCol);
+  OutputPointer_set_Int32(env, jOutCol, iCol);
   s3jni_phraseIter_NToJ(env, jc, &iter, jIter);
 }
 
@@ -3562,7 +3608,7 @@ JDECLFtsXA(jint,xRowCount)(JENV_OSELF,jobject jCtx, jobject jOut64){
   Fts5ExtDecl;
   sqlite3_int64 nOut = 0;
   int const rc = fext->xRowCount(PtrGet_Fts5Context(jCtx), &nOut);
-  if( 0==rc && jOut64 ) setOutputInt64(env, jOut64, (jlong)nOut);
+  if( 0==rc && jOut64 ) OutputPointer_set_Int64(env, jOut64, (jlong)nOut);
   return (jint)rc;
 }
 

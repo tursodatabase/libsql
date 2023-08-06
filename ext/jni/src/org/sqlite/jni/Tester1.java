@@ -22,6 +22,8 @@ public class Tester1 {
   }
 
   static final Metrics metrics = new Metrics();
+  private static final OutputPointer.sqlite3_stmt outStmt
+    = new OutputPointer.sqlite3_stmt();
 
   public static <T> void out(T val){
     System.out.print(val);
@@ -53,11 +55,11 @@ public class Tester1 {
   }
 
   public static sqlite3 createNewDb(){
-    sqlite3 db = new sqlite3();
-    affirm(0 == db.getNativePointer());
-    int rc = sqlite3_open(":memory:", db);
+    final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
+    int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
     affirm(0 == rc);
+    sqlite3 db = out.getValue();
     affirm(0 != db.getNativePointer());
     rc = sqlite3_busy_timeout(db, 2000);
     affirm( 0 == rc );
@@ -69,52 +71,63 @@ public class Tester1 {
   }
 
   public static int execSql(sqlite3 db, boolean throwOnError, String sql){
-      OutputPointer.Int32 oTail = new OutputPointer.Int32();
-      final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
-      int pos = 0, n = 1;
-      byte[] sqlChunk = sqlUtf8;
-      sqlite3_stmt stmt = new sqlite3_stmt();
-      int rc = 0;
-      while(pos < sqlChunk.length){
-        if(pos > 0){
-          sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
-                                        sqlChunk.length);
-        }
-        if( 0==sqlChunk.length ) break;
-        rc = sqlite3_prepare_v2(db, sqlChunk, stmt, oTail);
-        if(throwOnError) affirm(0 == rc);
-        else if( 0!=rc ) break;
-        pos = oTail.getValue();
-        affirm(0 != stmt.getNativePointer());
-        while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
-        }
-        sqlite3_finalize(stmt);
-        affirm(0 == stmt.getNativePointer());
-        if(0!=rc && SQLITE_ROW!=rc && SQLITE_DONE!=rc){
-          if(throwOnError){
-            throw new RuntimeException("db op failed with rc="+rc);
-          }else{
-            break;
-          }
-        }
+    OutputPointer.Int32 oTail = new OutputPointer.Int32();
+    final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
+    int pos = 0, n = 1;
+    byte[] sqlChunk = sqlUtf8;
+    int rc = 0;
+    sqlite3_stmt stmt = null;
+    while(pos < sqlChunk.length){
+      if(pos > 0){
+        sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
+                                      sqlChunk.length);
+      }
+      if( 0==sqlChunk.length ) break;
+      rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
+      if(throwOnError) affirm(0 == rc);
+      else if( 0!=rc ) break;
+      stmt = outStmt.getValue();
+      pos = oTail.getValue();
+      affirm(0 != stmt.getNativePointer());
+      while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
       }
       sqlite3_finalize(stmt);
-      if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
-      return rc;
+      affirm(0 == stmt.getNativePointer());
+      if(0!=rc && SQLITE_ROW!=rc && SQLITE_DONE!=rc){
+        if(throwOnError){
+          throw new RuntimeException("db op failed with rc="+rc);
+        }else{
+          break;
+        }
+      }
+    }
+    sqlite3_finalize(stmt);
+    if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
+    return rc;
   }
 
   public static void execSql(sqlite3 db, String sql){
     execSql(db, true, sql);
   }
 
+  public static sqlite3_stmt prepare(sqlite3 db, String sql){
+    outStmt.clear();
+    int rc = sqlite3_prepare(db, sql, outStmt);
+    affirm( 0 == rc );
+    final sqlite3_stmt rv = outStmt.getValue();
+    outStmt.clear();
+    affirm( 0 != rv.getNativePointer() );
+    return rv;
+  }
+
   private static void testOpenDb1(){
-      sqlite3 db = new sqlite3();
-      affirm(0 == db.getNativePointer());
-      int rc = sqlite3_open(":memory:", db);
-      ++metrics.dbOpen;
-      affirm(0 == rc);
-      affirm(0 < db.getNativePointer());
-      sqlite3_close_v2(db);
+    final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
+    int rc = sqlite3_open(":memory:", out);
+    ++metrics.dbOpen;
+    sqlite3 db = out.getValue();
+    affirm(0 == rc);
+    affirm(0 < db.getNativePointer());
+    sqlite3_close_v2(db);
       affirm(0 == db.getNativePointer());
   }
 
@@ -130,13 +143,13 @@ public class Tester1 {
   }
 
   private static void testOpenDb2(){
-    sqlite3 db = new sqlite3();
-    affirm(0 == db.getNativePointer());
-    int rc = sqlite3_open_v2(":memory:", db,
+    final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
+    int rc = sqlite3_open_v2(":memory:", out,
                              SQLITE_OPEN_READWRITE
                              | SQLITE_OPEN_CREATE, null);
     ++metrics.dbOpen;
     affirm(0 == rc);
+    sqlite3 db = out.getValue();
     affirm(0 < db.getNativePointer());
     sqlite3_close_v2(db);
     affirm(0 == db.getNativePointer());
@@ -145,10 +158,9 @@ public class Tester1 {
   private static void testPrepare123(){
     sqlite3 db = createNewDb();
     int rc;
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    affirm(0 == stmt.getNativePointer());
-    rc = sqlite3_prepare(db, "CREATE TABLE t1(a);", stmt);
+    rc = sqlite3_prepare(db, "CREATE TABLE t1(a);", outStmt);
     affirm(0 == rc);
+    sqlite3_stmt stmt = outStmt.getValue();
     affirm(0 != stmt.getNativePointer());
     rc = sqlite3_step(stmt);
     affirm(SQLITE_DONE == rc);
@@ -169,8 +181,9 @@ public class Tester1 {
         }
         //outln("SQL chunk #"+n+" length = "+sqlChunk.length+", pos = "+pos);
         if( 0==sqlChunk.length ) break;
-        rc = sqlite3_prepare_v2(db, sqlChunk, stmt, oTail);
+        rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
         affirm(0 == rc);
+        stmt = outStmt.getValue();
         pos = oTail.getValue();
         /*outln("SQL tail pos = "+pos+". Chunk = "+
               (new String(Arrays.copyOfRange(sqlChunk,0,pos),
@@ -192,8 +205,9 @@ public class Tester1 {
 
 
     rc = sqlite3_prepare_v3(db, "INSERT INTO t2(a) VALUES(1),(2),(3)",
-                            SQLITE_PREPARE_NORMALIZE, stmt);
+                            SQLITE_PREPARE_NORMALIZE, outStmt);
     affirm(0 == rc);
+    stmt = outStmt.getValue();
     affirm(0 != stmt.getNativePointer());
     sqlite3_finalize(stmt);
     affirm(0 == stmt.getNativePointer() );
@@ -204,9 +218,7 @@ public class Tester1 {
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
 
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(:a);", stmt);
-    affirm(0 == rc);
+    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(:a);");
     affirm(1 == sqlite3_bind_parameter_count(stmt));
     final int paramNdx = sqlite3_bind_parameter_index(stmt, ":a");
     affirm(1 == paramNdx);
@@ -216,6 +228,7 @@ public class Tester1 {
     int changesT = sqlite3_total_changes(db);
     long changes64 = sqlite3_changes64(db);
     long changesT64 = sqlite3_total_changes64(db);
+    int rc;
     for(int i = 99; i < 102; ++i ){
       total1 += i;
       rc = sqlite3_bind_int(stmt, paramNdx, i);
@@ -233,8 +246,7 @@ public class Tester1 {
     affirm(sqlite3_total_changes(db) > changesT);
     affirm(sqlite3_changes64(db) > changes64);
     affirm(sqlite3_total_changes64(db) > changesT64);
-    rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    affirm(0 == rc);
+    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     int total2 = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       total2 += sqlite3_column_int(stmt, 0);
@@ -252,8 +264,7 @@ public class Tester1 {
   private static void testBindFetchInt64(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(?);", stmt);
+    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
     long total1 = 0;
     for(long i = 0xffffffff; i < 0xffffffff + 3; ++i ){
       total1 += i;
@@ -262,8 +273,7 @@ public class Tester1 {
       sqlite3_reset(stmt);
     }
     sqlite3_finalize(stmt);
-    rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    affirm(0 == rc);
+    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     long total2 = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       total2 += sqlite3_column_int64(stmt, 0);
@@ -276,8 +286,7 @@ public class Tester1 {
   private static void testBindFetchDouble(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(?);", stmt);
+    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
     double total1 = 0;
     for(double i = 1.5; i < 5.0; i = i + 1.0 ){
       total1 += i;
@@ -286,8 +295,7 @@ public class Tester1 {
       sqlite3_reset(stmt);
     }
     sqlite3_finalize(stmt);
-    rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    affirm(0 == rc);
+    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     double total2 = 0;
     int counter = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
@@ -303,9 +311,9 @@ public class Tester1 {
   private static void testBindFetchText(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(?);", stmt);
+    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
     String[] list1 = { "hell🤩", "w😃rld", "!" };
+    int rc;
     for( String e : list1 ){
       rc = sqlite3_bind_text(stmt, 1, e);
       affirm(0 == rc);
@@ -314,8 +322,7 @@ public class Tester1 {
       sqlite3_reset(stmt);
     }
     sqlite3_finalize(stmt);
-    rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    affirm(0 == rc);
+    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     StringBuilder sbuf = new StringBuilder();
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
@@ -333,15 +340,14 @@ public class Tester1 {
   private static void testBindFetchBlob(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    int rc = sqlite3_prepare(db, "INSERT INTO t(a) VALUES(?);", stmt);
+    sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
     byte[] list1 = { 0x32, 0x33, 0x34 };
-    rc = sqlite3_bind_blob(stmt, 1, list1);
+    int rc = sqlite3_bind_blob(stmt, 1, list1);
+    affirm( 0==rc );
     rc = sqlite3_step(stmt);
     affirm(SQLITE_DONE == rc);
     sqlite3_finalize(stmt);
-    rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a DESC;", stmt);
-    affirm(0 == rc);
+    stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     int n = 0;
     int total = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
@@ -398,9 +404,7 @@ public class Tester1 {
     affirm( 0 == rc );
     rc = sqlite3_collation_needed(db, collLoader);
     affirm( 0 == rc /* Installing the same object again is a no-op */);
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    rc = sqlite3_prepare(db, "SELECT a FROM t ORDER BY a COLLATE reversi", stmt);
-    affirm( 0 == rc );
+    sqlite3_stmt stmt = prepare(db, "SELECT a FROM t ORDER BY a COLLATE reversi");
     int counter = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final String val = sqlite3_column_text(stmt, 0);
@@ -414,7 +418,7 @@ public class Tester1 {
     }
     affirm(3 == counter);
     sqlite3_finalize(stmt);
-    sqlite3_prepare(db, "SELECT a FROM t ORDER BY a", stmt);
+    stmt = prepare(db, "SELECT a FROM t ORDER BY a");
     counter = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final String val = sqlite3_column_text(stmt, 0);
@@ -479,9 +483,7 @@ public class Tester1 {
     int rc = sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func);
     affirm(0 == rc);
     affirm(0 == xFuncAccum.value);
-    final sqlite3_stmt stmt = new sqlite3_stmt();
-    rc = sqlite3_prepare(db, "SELECT myfunc(1,2,3)", stmt);
-    affirm( 0==rc );
+    final sqlite3_stmt stmt = prepare(db, "SELECT myfunc(1,2,3)");
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       affirm( 6 == sqlite3_column_int(stmt, 0) );
@@ -498,15 +500,14 @@ public class Tester1 {
   private static void testUdfJavaObject(){
     final sqlite3 db = createNewDb();
     final ValueHolder<sqlite3> testResult = new ValueHolder<>(db);
-    SQLFunction func = new SQLFunction.Scalar(){
+    final SQLFunction func = new SQLFunction.Scalar(){
         public void xFunc(sqlite3_context cx, sqlite3_value args[]){
           sqlite3_result_java_object(cx, testResult.value);
         }
       };
     int rc = sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func);
     affirm(0 == rc);
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    sqlite3_prepare(db, "select myfunc()", stmt);
+    final sqlite3_stmt stmt = prepare(db, "select myfunc()");
     affirm( 0 != stmt.getNativePointer() );
     affirm( testResult.value == db );
     int n = 0;
@@ -550,9 +551,7 @@ public class Tester1 {
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES(1),(2),(3)");
     int rc = sqlite3_create_function(db, "myfunc", 1, SQLITE_UTF8, func);
     affirm(0 == rc);
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    sqlite3_prepare(db, "select myfunc(a), myfunc(a+10) from t", stmt);
-    affirm( 0 != stmt.getNativePointer() );
+    sqlite3_stmt stmt = prepare(db, "select myfunc(a), myfunc(a+10) from t");
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
       final int v = sqlite3_column_int(stmt, 0);
@@ -571,9 +570,7 @@ public class Tester1 {
     sqlite3_finalize(stmt);
     affirm( 1==n );
 
-    rc = sqlite3_prepare(db, "select myfunc(a), myfunc(a+a) from t order by a",
-                         stmt);
-    affirm( 0 == rc );
+    stmt = prepare(db, "select myfunc(a), myfunc(a+a) from t order by a");
     n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       final int c0 = sqlite3_column_int(stmt, 0);
@@ -624,12 +621,11 @@ public class Tester1 {
         "CREATE TEMP TABLE twin(x, y); INSERT INTO twin VALUES",
         "('a', 4),('b', 5),('c', 3),('d', 8),('e', 1)"
       });
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    rc = sqlite3_prepare(db,
+    final sqlite3_stmt stmt = prepare(db,
                          "SELECT x, winsumint(y) OVER ("+
                          "ORDER BY x ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING"+
                          ") AS sum_y "+
-                         "FROM twin ORDER BY x;", stmt);
+                         "FROM twin ORDER BY x;");
     affirm( 0 == rc );
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
@@ -693,11 +689,12 @@ public class Tester1 {
       new Tracer(){
         public int xCallback(int traceFlag, Object pNative, Object x){
           ++counter.value;
+          //outln("TRACE "+traceFlag+" pNative = "+pNative.getClass().getName());
           switch(traceFlag){
             case SQLITE_TRACE_STMT:
               affirm(pNative instanceof sqlite3_stmt);
-              affirm(x instanceof String);
               //outln("TRACE_STMT sql = "+x);
+              affirm(x instanceof String);
               affirm( ((String)x).indexOf(nonBmpChar) > 0 );
               break;
             case SQLITE_TRACE_PROFILE:
@@ -730,16 +727,18 @@ public class Tester1 {
 
   private static void testBusy(){
     final String dbName = "_busy-handler.db";
-    final sqlite3 db1 = new sqlite3();
-    final sqlite3 db2 = new sqlite3();
+    final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
 
-    int rc = sqlite3_open(dbName, db1);
+    int rc = sqlite3_open(dbName, outDb);
     ++metrics.dbOpen;
     affirm( 0 == rc );
+    final sqlite3 db1 = outDb.getValue();
     execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
-    rc = sqlite3_open(dbName, db2);
+    rc = sqlite3_open(dbName, outDb);
     ++metrics.dbOpen;
     affirm( 0 == rc );
+    affirm( outDb.getValue() != db1 );
+    final sqlite3 db2 = outDb.getValue();
     rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
     affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
 
@@ -760,11 +759,10 @@ public class Tester1 {
     // Force a locked condition...
     execSql(db1, "BEGIN EXCLUSIVE");
     affirm(!xDestroyed.value);
-    sqlite3_stmt stmt = new sqlite3_stmt();
-    rc = sqlite3_prepare(db2, "SELECT * from t", stmt);
+    rc = sqlite3_prepare_v2(db2, "SELECT * from t", outStmt);
     affirm( SQLITE_BUSY == rc);
+    assert( null == outStmt.getValue() );
     affirm( 3 == xBusyCalled.value );
-    sqlite3_finalize(stmt);
     sqlite3_close_v2(db1);
     affirm(!xDestroyed.value);
     sqlite3_close_v2(db2);

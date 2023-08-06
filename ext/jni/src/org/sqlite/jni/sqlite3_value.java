@@ -14,4 +14,6 @@
 package org.sqlite.jni;
 
 public final class sqlite3_value extends NativePointerHolder<sqlite3_value> {
+  //! Invoked only from JNI.
+  private sqlite3_value(){}
 }
