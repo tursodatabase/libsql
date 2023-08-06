@@ -70,12 +70,12 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   public native int xRowCount(@NotNull Fts5Context fcx,
                               @NotNull OutputPointer.Int64 nRow);
   public native long xRowid(@NotNull Fts5Context cx);
-  /* Note that this impl lacks the xDelete() callback
-     argument. Instead, if pAux has an xDestroy() method, it is called
-     if the FTS5 API finalizes the aux state (including if allocation
-     of storage for the auxdata fails). Any reference to pAux held by
-     the JNI layer will be relinquished regardless of whther pAux has
-     an xDestroy() method. */
+  /* Note that the JNI binding lacks the C version's xDelete()
+     callback argument. Instead, if pAux has an xDestroy() method, it
+     is called if the FTS5 API finalizes the aux state (including if
+     allocation of storage for the auxdata fails). Any reference to
+     pAux held by the JNI layer will be relinquished regardless of
+     whether pAux has an xDestroy() method. */
   public native int xSetAuxdata(@NotNull Fts5Context cx, @Nullable Object pAux);
   public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte pText[],
                               @NotNull Fts5.xTokenizeCallback callback);

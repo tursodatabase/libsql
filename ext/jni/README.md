@@ -73,11 +73,12 @@ Golden Rule: _Never_ Throw from Callbacks
 ------------------------------------------------------------------------
 
 JNI bindings which accept client-defined functions _must never throw
-exceptions_. There are _no exceptions_ to this rule. Exceptions are
-reserved for higher-level bindings which are constructed to
-specifically deal with them and ensure that they do not leak C-level
-resources. Some of the JNI bindings are provided as Java functions
-which expect this rule to always hold.
+exceptions_ unless _very explicitly documented_ as being
+throw-safe. Exceptions are generally reserved for higher-level
+bindings which are constructed to specifically deal with them and
+ensure that they do not leak C-level resources. Some of the JNI
+bindings are provided as Java functions which expect this rule to
+always hold.
 
 UTF-8(-ish)
 ------------------------------------------------------------------------

@@ -14,7 +14,7 @@
 package org.sqlite.jni;
 
 /**
-   A wrapper for use with sqlite3_set_authorizer().
+   A callback for use with sqlite3_set_authorizer().
 */
 public interface Authorizer {
   /**

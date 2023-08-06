@@ -165,6 +165,26 @@ public final class SQLite3Jni {
   // alphabetized.  The SQLITE_... values. on the other hand, are
   // grouped by category.
 
+
+  // Auto-extensions cannot currently work properly in our setup
+  // for reasons explained in sqlite3-jni.c.
+  //
+  // /**
+  //    Functions almost as documented for the C API, with these
+  //    exceptions:
+  //
+  //    - The callback interface is more limited because of
+  //      cross-language differences.
+  //
+  //    - All of the auto-extension routines will fail without side
+  //      effects if invoked from within the execution of an
+  //      auto-extension.
+  //
+  //    See the AutoExtension class docs for more information.
+  // */
+  // private static native int sqlite3_auto_extension(@NotNull AutoExtension callback);
+
+
   public static int sqlite3_bind_blob(@NotNull sqlite3_stmt stmt, int ndx,
                                       @Nullable byte[] data){
     return (null == data)
@@ -911,7 +931,7 @@ public final class SQLite3Jni {
      to hook in arbitrary C-side code during development and testing
      of this library.
    */
-  public static native void sqlite3_do_something_for_developer();
+  static native void sqlite3_do_something_for_developer();
 
   //////////////////////////////////////////////////////////////////////
   // SQLITE_... constants follow...

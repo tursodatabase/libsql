@@ -393,6 +393,39 @@ static void NphCacheLine_clear(JNIEnv * const env, NphCacheLine * const p){
   memset(p, 0, sizeof(NphCacheLine));
 }
 
+#define S3JNI_ENABLE_AUTOEXT 0
+#if S3JNI_ENABLE_AUTOEXT
+/*
+  Whether auto extensions are feasible here is currently unknown due
+  to...
+
+  1) JNIEnv/threading issues.  A db instance is mapped to a specific
+  JNIEnv object but auto extensions may be added from any thread.  In
+  such contexts, which JNIEnv do we use for the JNI APIs?
+
+  2) a chicken/egg problem involving the Java/C mapping of the db:
+  when auto extensions are run, the db has not yet been connected to
+  Java. If we do that during the auto-ext, sqlite3_open(_v2)() will not behave
+  properly because they have a different jobject and the API
+  guarantees the user that _that_ object is the one the API will bind
+  the native to.
+
+  If we change the open(_v2()) interfaces to use OutputPointer.sqlite3
+  instead of the client passing in an instance, we could work around
+  (2).
+*/
+typedef struct S3JniAutoExtension S3JniAutoExtension;
+typedef void (*S3JniAutoExtension_xEntryPoint)(sqlite3*);
+struct S3JniAutoExtension {
+  JNIEnv * env;
+  jobject jObj;
+  jmethodID midFunc;
+  S3JniAutoExtension_xEntryPoint xEntryPoint;
+  S3JniAutoExtension *pNext  /* next linked-list entry */;
+  S3JniAutoExtension *pPrev  /* previous linked-list entry */;
+};
+#endif
+
 /** State for various hook callbacks. */
 typedef struct JniHookState JniHookState;
 struct JniHookState{
@@ -476,6 +509,12 @@ static struct {
       unsigned nInverse;
     } udf;
   } metrics;
+#if S3JNI_ENABLE_AUTOEXT
+  struct {
+    S3JniAutoExtension *pHead;
+    int isRunning;
+  } autoExt;
+#endif
 } S3Global;
 
 /**
@@ -1066,6 +1105,22 @@ static PerDbStateJni * PerDbStateJni_for_db(JNIEnv * const env, jobject jDb,
   return s;
 }
 
+#if 0
+/**
+   An alternative form which searches for the PerDbStateJni instance for
+   pDb with no JNIEnv-specific info. This can be (but _should_ it be?)
+   called from the context of a separate JNIEnv than the one mapped
+   to in the returned object. Returns 0 if no match is found.
+*/
+FIXME_THREADING
+static PerDbStateJni * PerDbStateJni_for_db2(sqlite3 *pDb){
+  PerDbStateJni * s = S3Global.perDb.aUsed;
+  for( ; pDb && s; s = s->pNext){
+    if(s->pDb == pDb) return s;
+  }
+  return 0;
+}
+#endif
 
 /**
    Requires that jCx be a Java-side sqlite3_context wrapper for pCx.
@@ -1632,6 +1687,50 @@ WRAP_INT_SVALUE(1value_1nochange,      sqlite3_value_nochange)
 WRAP_INT_SVALUE(1value_1numeric_1type, sqlite3_value_numeric_type)
 WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype)
 WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
+
+#if S3JNI_ENABLE_AUTOEXT
+/* auto-extension is very incomplete  */
+static inline jobject new_sqlite3_wrapper(JNIEnv * const env, sqlite3 *sv){
+  return new_NativePointerHolder_object(env, S3ClassNames.sqlite3, sv);
+}
+/*static*/ int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
+                                    const struct sqlite3_api_routines *pThunk){
+  S3JniAutoExtension const * pAX = S3Global.autoExt.pHead;
+  jobject jDb;
+  int rc;
+  JNIEnv * env = 0;
+  if(S3Global.autoExt.isRunning){
+    *pzErr = sqlite3_mprintf("Auto-extensions must not be triggered while "
+                             "auto-extensions are running.");
+    return SQLITE_MISUSE;
+  }
+  if( S3Global.jvm->GetEnv(S3Global.jvm, (void **)&env, JNI_VERSION_1_8) ){
+    *pzErr = sqlite3_mprintf("Could not get current JNIEnv.");
+    return SQLITE_ERROR;
+  }
+  S3Global.autoExt.isRunning = 1;
+  jDb = new_sqlite3_wrapper( env, pDb );
+  EXCEPTION_IS_FATAL("Cannot create sqlite3 wrapper object.");
+  // Now we need PerDbStateJni_for_db(env, jDb, pDb, 1)
+  // and rewire sqlite3_open(_v2()) to use OutputPointer.sqlite3
+  // so that they can have this same jobject.
+  for( ; pAX; pAX = pAX->pNext ){
+    JNIEnv * const env = pAX->env
+      /* ^^^ is this correct, or must we use the JavaVM::GetEnv()'s env
+         instead? */;
+    rc = (*env)->CallVoidMethod(env, pAX->jObj, pAX->midFunc, jDb);
+    IFTHREW {
+      *pzErr = sqlite3_mprintf("auto-extension threw. TODO: extract error message.");
+      rc = SQLITE_ERROR;
+      break;
+    }
+  }
+  UNREF_L(jDb);
+  S3Global.autoExt.isRunning = 0;
+  return rc;
+}
+JDECL(jint,1auto_1extension)(JENV_OSELF, jobject jAutoExt){}
+#endif /* S3JNI_ENABLE_AUTOEXT */
 
 JDECL(jint,1bind_1blob)(JENV_CSELF, jobject jpStmt,
                         jint ndx, jbyteArray baData, jint nMax){
