@@ -1675,7 +1675,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnSize
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
  * Method:    xColumnText
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/ByteArray;)I
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/String;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnText
   (JNIEnv *, jobject, jobject, jint, jobject);

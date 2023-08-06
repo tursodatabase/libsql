@@ -94,13 +94,6 @@ import java.lang.annotation.ElementType;
     APIs will mis-translate them on their way between languages
     (possibly leading to a crash).
 
-    - sqlite3_trace_v2() is also currently affected by this, in that
-      it requires that traced SQL statements be compatible with
-      MUTF-8.  The alternative would be to perform two extra layers of
-      conversion for that performance-sensitive function: one from
-      UTF-8 to a byte-array before passing the data from C to Java,
-      and then from byte-array to String in the tracer implementation.
-
   - C functions which take C-style strings without a length argument
     require special care when taking input from Java. In particular,
     Java strings converted to byte arrays for encoding purposes are

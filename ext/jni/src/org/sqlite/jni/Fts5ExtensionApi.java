@@ -40,20 +40,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   public native int xColumnSize(@NotNull Fts5Context cx, int iCol,
                                 @NotNull OutputPointer.Int32 pnToken);
   public native int xColumnText(@NotNull Fts5Context cx, int iCol,
-                                @NotNull OutputPointer.ByteArray txt);
-  /**
-     Convenience overload which converts the output byte array
-     to a UTF-8 string.
-  */
-  public int xColumnText(@NotNull Fts5Context cx, int iCol,
-                         @NotNull OutputPointer.String txt){
-    final OutputPointer.ByteArray out = new OutputPointer.ByteArray();
-    int rc = xColumnText(cx, iCol, out);
-    if( 0 == rc ){
-      txt.setValue( new String(out.getValue(), StandardCharsets.UTF_8) );
-    }
-    return rc;
-  }
+                                @NotNull OutputPointer.String txt);
   public native int xColumnTotalSize(@NotNull Fts5Context fcx, int iCol,
                                      @NotNull OutputPointer.Int64 pnToken);
   public native Object xGetAuxdata(@NotNull Fts5Context cx, boolean clearIt);

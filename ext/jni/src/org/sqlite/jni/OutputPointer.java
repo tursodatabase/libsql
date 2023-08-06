@@ -47,10 +47,10 @@ public final class OutputPointer {
   }
 
   public static final class ByteArray {
-    private byte value[];
+    private byte[] value;
     public ByteArray(){this(null);}
-    public ByteArray(byte v[]){value = v;}
+    public ByteArray(byte[] v){value = v;}
     public final byte[] getValue(){return value;}
-    public final void setValue(byte v[]){value = v;}
+    public final void setValue(byte[] v){value = v;}
   }
 }

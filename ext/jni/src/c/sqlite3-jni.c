@@ -1075,11 +1075,13 @@ static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
    stores it in pFieldId. Fails fatally if the property is not found,
    as that presents a serious internal misuse.
 
-   Property lookups are cached on a per-class basis.
+   Property lookups are cached on a per-zClassName basis. Do not use
+   this routine with the same zClassName but different zTypeSig: it
+   will misbehave.
 */
-static void setupOutputPointer(JNIEnv * env, const char *zClassName,
-                               const char *zTypeSig,
-                               jobject jOut, jfieldID * pFieldId){
+static void setupOutputPointer(JNIEnv * const env, const char *zClassName,
+                               const char * const zTypeSig,
+                               jobject const jOut, jfieldID * const pFieldId){
   jfieldID setter = 0;
   struct NphCacheLine * const cacheLine =
     S3Global_nph_cache(env, zClassName);
@@ -1087,6 +1089,7 @@ static void setupOutputPointer(JNIEnv * env, const char *zClassName,
     setter = cacheLine->fidValue;
   }else{
     const jclass klazz = (*env)->GetObjectClass(env, jOut);
+    //MARKER(("%s => %s\n", zClassName, zTypeSig));
     setter = (*env)->GetFieldID(env, klazz, "value", zTypeSig);
     EXCEPTION_IS_FATAL("setupOutputPointer() could not find OutputPointer.*.value");
     if(cacheLine){
@@ -1099,7 +1102,7 @@ static void setupOutputPointer(JNIEnv * env, const char *zClassName,
 
 /* Sets the value property of the OutputPointer.Int32 jOut object
    to v. */
-static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
+static void setOutputInt32(JNIEnv * const env, jobject const jOut, int v){
   jfieldID setter = 0;
   setupOutputPointer(env, S3ClassNames.OutputPointer_Int32, "I", jOut, &setter);
   (*env)->SetIntField(env, jOut, setter, (jint)v);
@@ -1109,40 +1112,34 @@ static void setOutputInt32(JNIEnv * env, jobject jOut, int v){
 #ifdef SQLITE_ENABLE_FTS5
 /* Sets the value property of the OutputPointer.Int64 jOut object
    to v. */
-static void setOutputInt64(JNIEnv * env, jobject jOut, jlong v){
+static void setOutputInt64(JNIEnv * const env, jobject const jOut, jlong v){
   jfieldID setter = 0;
   setupOutputPointer(env, S3ClassNames.OutputPointer_Int64, "J", jOut, &setter);
   (*env)->SetLongField(env, jOut, setter, v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int64.value");
 }
+#if 0
 /* Sets the value property of the OutputPointer.ByteArray jOut object
    to v. */
-static void setOutputByteArray(JNIEnv * env, jobject jOut, jbyteArray v){
+static void setOutputByteArray(JNIEnv * const env, jobject const jOut,
+                               jbyteArray const v){
   jfieldID setter = 0;
   setupOutputPointer(env, S3ClassNames.OutputPointer_ByteArray, "[B",
                      jOut, &setter);
   (*env)->SetObjectField(env, jOut, setter, v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.ByteArray.value");
 }
-#if 0
+#endif
 /* Sets the value property of the OutputPointer.String jOut object
    to v. */
-static void setOutputString(JNIEnv * env, jobject jOut, jstring v){
+static void setOutputString(JNIEnv * const env, jobject const jOut,
+                            jstring const v){
   jfieldID setter = 0;
-  setupOutputPointer(env, S3ClassNames.OutputPointer_String, "Ljava/lang/String",
-                     jOut, &setter);
+  setupOutputPointer(env, S3ClassNames.OutputPointer_String,
+                     "Ljava/lang/String;", jOut, &setter);
   (*env)->SetObjectField(env, jOut, setter, v);
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.String.value");
 }
-//! Bad: uses MUTF-8 encoding.
-static void setOutputString2(JNIEnv * env, jobject jOut, const char * zStr){
-  jstring const jStr = (*env)->NewStringUTF(env, zStr);
-  if(jStr){
-    setOutputString(env, jOut, jStr);
-    UNREF_L(jStr);
-  }
-}
-#endif
 #endif /* SQLITE_ENABLE_FTS5 */
 
 static int encodingTypeIsValid(int eTextRep){
@@ -3027,32 +3024,22 @@ JDECLFtsXA(jint,xColumnSize)(JENV_JSELF,jobject jCtx, jint iIdx, jobject jOut32)
 }
 
 JDECLFtsXA(jint,xColumnText)(JENV_JSELF,jobject jCtx, jint iCol,
-                           jobject jOutBA){
+                           jobject jOut){
   Fts5ExtDecl;
   const char *pz = 0;
   int pn = 0;
   int rc = fext->xColumnText(PtrGet_Fts5Context(jCtx), (int)iCol,
                              &pz, &pn);
   if( 0==rc ){
-    /* Two problems here:
-
-       1) JNI doesn't give us a way to create strings from standard
-       UTF-8.  We're converting the results to MUTF-8, which may
-       differ for exotic text.
-
-       2) JNI's NewStringUTF() (which treats its input as MUTF-8) does
-       not take a _length_ - it requires the string to be
-       NUL-terminated, which may not the case here.
-
-       So we use a byte array and convert it to UTF-8 Java-side.
-    */
-    jbyteArray const jba = (*env)->NewByteArray(env, (jint)pn);
-    if( jba ){
-      (*env)->SetByteArrayRegion(env, jba, 0, (jint)pn, (const jbyte*)pz);
-      setOutputByteArray(env, jOutBA, jba);
-      UNREF_L(jba)/*jOutBA has a reference*/;
-    }else{
-      rc = SQLITE_NOMEM;
+    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+    jstring jstr = pz ? s3jni_string_from_utf8(jc, pz, pn) : 0;
+    if( pz ){
+      if( jstr ){
+        setOutputString(env, jOut, jstr);
+        UNREF_L(jstr)/*jOut has a reference*/;
+      }else{
+        rc = SQLITE_NOMEM;
+      }
     }
   }
   return (jint)rc;
