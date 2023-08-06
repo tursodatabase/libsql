@@ -968,7 +968,7 @@ static jfieldID NativePointerHolder_getField(JNIEnv * const env, jclass klazz){
    as a cache key.
 */
 static void NativePointerHolder_set(JNIEnv * env, jobject ppOut, const void * p,
-                             const char *zClassName){
+                                    const char *zClassName){
   jfieldID setter = 0;
   struct NphCacheLine * const cacheLine = S3Global_nph_cache(env, zClassName);
   if(cacheLine && cacheLine->klazz && cacheLine->fidValue){
@@ -1026,9 +1026,9 @@ static void * NativePointerHolder_get(JNIEnv * env, jobject pObj, const char *zC
    Returns NULL on OOM. pDb MUST be associated with jDb via
    NativePointerHolder_set().
 */
-static PerDbStateJni * PerDbStateJni_alloc(JNIEnv * const env, sqlite3 *pDb, jobject jDb){
+static PerDbStateJni * PerDbStateJni_alloc(JNIEnv * const env, sqlite3 *pDb,
+                                           jobject jDb){
   PerDbStateJni * rv;
-  assert( pDb );
   if(S3Global.perDb.aFree){
     rv = S3Global.perDb.aFree;
     //MARKER(("state@%p for db allocating for db@%p from free-list\n", rv, pDb));
@@ -2382,56 +2382,90 @@ JDECL(jlong,1last_1insert_1rowid)(JENV_CSELF, jobject jpDb){
   return (jlong)sqlite3_last_insert_rowid(PtrGet_sqlite3(jpDb));
 }
 
-/**
-   Code common to both the sqlite3_open() and sqlite3_open_v2()
-   bindings. Allocates the PerDbStateJni for *ppDb if *ppDb is not
-   NULL. jDb must be the org.sqlite.jni.sqlite3 object which will hold
-   the db's native pointer. theRc must be the result code of the open
-   op(). If allocation of the PerDbStateJni object fails then *ppDb is
-   passed to sqlite3_close(), *ppDb is assigned to 0, and SQLITE_NOMEM
-   is returned, else theRc is returned. In in case, *ppDb is stored in
-   jDb's native pointer property (even if it's NULL).
-*/
-static int s3jni_open_post(JNIEnv * const env, sqlite3 **ppDb, jobject jOut, int theRc){
-  jobject jDb = 0;
-  if(*ppDb){
-    jDb = new_sqlite3_wrapper(env, *ppDb);
-    PerDbStateJni * const s = jDb ? PerDbStateJni_for_db(env, jDb, *ppDb, 1) : 0;
-    if(!s && 0==theRc){
-      UNREF_L(jDb);
-      sqlite3_close(*ppDb);
-      *ppDb = 0;
-      theRc = SQLITE_NOMEM;
-    }
+//! Pre-open() code common to sqlite3_open(_v2)().
+static int s3jni_open_pre(JNIEnv * const env, JNIEnvCache **jc,
+                          jstring jDbName, char **zDbName,
+                          PerDbStateJni ** ps, jobject *jDb){
+  *jc = S3Global_env_cache(env);
+  if(!*jc) return SQLITE_NOMEM;
+  *zDbName = jDbName ? s3jni_jstring_to_utf8(*jc, jDbName, 0) : 0;
+  if(jDbName && !*zDbName) return SQLITE_NOMEM;
+  *jDb = new_sqlite3_wrapper(env, 0);
+  if( !*jDb ){
+    sqlite3_free(*zDbName);
+    *zDbName = 0;
+    return SQLITE_NOMEM;
   }
-  OutputPointer_set_sqlite3(env, jOut, jDb);
+  *ps = PerDbStateJni_alloc(env, 0, *jDb);
+  return *ps ? 0 : SQLITE_NOMEM;
+}
+
+/**
+   Post-open() code common to both the sqlite3_open() and
+   sqlite3_open_v2() bindings. ps->jDb must be the
+   org.sqlite.jni.sqlite3 object which will hold the db's native
+   pointer. theRc must be the result code of the open() op. If
+   *ppDb is NULL then ps is set aside and its state cleared,
+   else ps is associated with *ppDb. If *ppDb is not NULL then
+   ps->jDb is stored in jOut (an OutputPointer.sqlite3 instance).
+
+   Returns theRc.
+*/
+static int s3jni_open_post(JNIEnv * const env, PerDbStateJni * ps,
+                           sqlite3 **ppDb, jobject jOut, int theRc){
+  if(*ppDb){
+    assert(ps->jDb);
+    ps->pDb = *ppDb;
+    NativePointerHolder_set(env, ps->jDb, *ppDb, S3ClassNames.sqlite3);
+  }else{
+    PerDbStateJni_set_aside(ps);
+    ps = 0;
+  }
+  OutputPointer_set_sqlite3(env, jOut, ps ? ps->jDb : 0);
   return theRc;
 }
 
 JDECL(jint,1open)(JENV_CSELF, jstring strName, jobject jOut){
   sqlite3 * pOut = 0;
-  const char *zName = strName ? JSTR_TOC(strName) : 0;
-  int nrc = sqlite3_open(zName, &pOut);
+  char *zName = 0;
+  jobject jDb = 0;
+  PerDbStateJni * ps = 0;
+  JNIEnvCache * jc = 0;
+  int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps, &jDb);
+  if( rc ) return rc;
+  rc = sqlite3_open(zName, &pOut);
   //MARKER(("env=%p, *env=%p\n", env, *env));
-  nrc = s3jni_open_post(env, &pOut, jOut, nrc);
-  assert(nrc==0 ? pOut!=0 : 1);
-  JSTR_RELEASE(strName, zName);
-  return (jint)nrc;
+  rc = s3jni_open_post(env, ps, &pOut, jOut, rc);
+  assert(rc==0 ? pOut!=0 : 1);
+  sqlite3_free(zName);
+  return (jint)rc;
 }
 
 JDECL(jint,1open_1v2)(JENV_CSELF, jstring strName,
                       jobject jOut, jint flags, jstring strVfs){
   sqlite3 * pOut = 0;
-  const char *zName = strName ? JSTR_TOC(strName) : 0;
-  const char *zVfs = strVfs ? JSTR_TOC(strVfs) : 0;
-  int nrc = sqlite3_open_v2(zName, &pOut, (int)flags, zVfs);
+  char *zName = 0;
+  jobject jDb = 0;
+  PerDbStateJni * ps = 0;
+  JNIEnvCache * jc = 0;
+  char *zVfs = 0;
+  int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps, &jDb);
+  if( 0==rc && strVfs ){
+    zVfs = s3jni_jstring_to_utf8(jc, strVfs, 0);
+    if( !zVfs ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+  if( 0==rc ){
+    rc = sqlite3_open_v2(zName, &pOut, (int)flags, zVfs);
+  }
   /*MARKER(("zName=%s, zVfs=%s, pOut=%p, flags=%d, nrc=%d\n",
     zName, zVfs, pOut, (int)flags, nrc));*/
-  nrc = s3jni_open_post(env, &pOut, jOut, nrc);
-  assert(nrc==0 ? pOut!=0 : 1);
-  JSTR_RELEASE(strName, zName);
-  JSTR_RELEASE(strVfs, zVfs);
-  return (jint)nrc;
+  rc = s3jni_open_post(env, ps, &pOut, jOut, rc);
+  assert(rc==0 ? pOut!=0 : 1);
+  sqlite3_free(zName);
+  sqlite3_free(zVfs);
+  return (jint)rc;
 }
 
 /* Proxy for the sqlite3_prepare[_v2/3]() family. */
