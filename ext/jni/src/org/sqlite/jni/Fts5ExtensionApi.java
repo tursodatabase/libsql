@@ -34,7 +34,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   /**
      Returns a singleton instance of this class.
   */
-  public static native Fts5ExtensionApi getInstance();
+  public static synchronized native Fts5ExtensionApi getInstance();
 
   public native int xColumnCount(@NotNull Fts5Context fcx);
   public native int xColumnSize(@NotNull Fts5Context cx, int iCol,

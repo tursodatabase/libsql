@@ -740,7 +740,7 @@ public class Tester1 {
     rc = sqlite3_open(dbName, db2);
     ++metrics.dbOpen;
     affirm( 0 == rc );
-    affirm( sqlite3_db_filename(db1, null).endsWith(dbName) );
+    affirm( sqlite3_db_filename(db1, "main").endsWith(dbName) );
 
     final ValueHolder<Boolean> xDestroyed = new ValueHolder<>(false);
     final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);

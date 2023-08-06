@@ -30,7 +30,7 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
      Returns the fts5_api instance associated with the given db, or
      null if something goes horribly wrong.
   */
-  public static native fts5_api getInstanceForDb(@NotNull sqlite3 db);
+  public static synchronized native fts5_api getInstanceForDb(@NotNull sqlite3 db);
 
   // int (*xCreateTokenizer)(
   //   fts5_api *pApi,

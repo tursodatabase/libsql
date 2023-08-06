@@ -37,11 +37,9 @@
 #if !defined(SQLITE_DEFAULT_PAGE_SIZE)
 # define SQLITE_DEFAULT_PAGE_SIZE 8192
 #endif
-#ifndef SQLITE_DEFAULT_UNIX_VFS
-# define SQLITE_DEFAULT_UNIX_VFS "unix"
+#ifndef SQLITE_DQS
+#  define SQLITE_DQS 0
 #endif
-#undef SQLITE_DQS
-#define SQLITE_DQS 0
 
 /**********************************************************************/
 /* SQLITE_ENABLE_... */
@@ -57,11 +55,6 @@
 #ifndef SQLITE_ENABLE_EXPLAIN_COMMENTS
 #  define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
 #endif
-#ifdef SQLITE_ENABLE_FTS5
-#  ifndef SQLITE_ENABLE_FTS4
-#    define SQLITE_ENABLE_FTS4 1
-#  endif
-#endif
 #ifndef SQLITE_ENABLE_MATH_FUNCTIONS
 #  define SQLITE_ENABLE_MATH_FUNCTIONS 1
 #endif
@@ -74,15 +67,15 @@
 #ifndef SQLITE_ENABLE_RTREE
 #  define SQLITE_ENABLE_RTREE 1
 #endif
-#ifndef SQLITE_ENABLE_SESSION
-#  define SQLITE_ENABLE_SESSION 1
-#endif
+//#ifndef SQLITE_ENABLE_SESSION
+//#  define SQLITE_ENABLE_SESSION 1
+//#endif
 #ifndef SQLITE_ENABLE_STMTVTAB
 #  define SQLITE_ENABLE_STMTVTAB 1
 #endif
-#ifndef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-#  define SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
-#endif
+//#ifndef SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+//#  define SQLITE_ENABLE_UNKNOWN_SQL_FUNCTION
+//#endif
 
 /**********************************************************************/
 /* SQLITE_M... */
@@ -160,8 +153,8 @@
   JFuncName(Suffix)
 /* First 2 parameters to all JNI bindings. */
 #define JENV_JSELF JNIEnv * const env, jobject jSelf
-/* Helpers to squelch -Xcheck:jni warnings about
-   not having checked for exceptions. */
+/* Helpers to account for -Xcheck:jni warnings about not having
+   checked for exceptions. */
 #define IFTHREW if((*env)->ExceptionCheck(env))
 #define EXCEPTION_IGNORE (void)((*env)->ExceptionCheck(env))
 #define EXCEPTION_CLEAR (*env)->ExceptionClear(env)
@@ -337,41 +330,41 @@ struct NphCacheLine {
 
    Whereas we cache new refs for each thread.
 */
-typedef struct JNIEnvCacheLine JNIEnvCacheLine;
-struct JNIEnvCacheLine {
+typedef struct JNIEnvCache JNIEnvCache;
+struct JNIEnvCache {
   JNIEnv *env            /* env in which this cache entry was created */;
   //! The various refs to global classes might be cacheable a single
   // time globally. Information online seems inconsistent on that
   // point.
   struct {
-    jclass cObj            /* global ref to java.lang.Object */;
-    jclass cLong           /* global ref to java.lang.Long */;
-    jclass cString         /* global ref to java.lang.String */;
-    jobject oCharsetUtf8   /* global ref to StandardCharset.UTF_8 */;
-    jmethodID ctorLong1    /* the Long(long) constructor */;
-    jmethodID ctorStringBA /* the String(byte[],Charset) constructor */;
+    jclass cObj              /* global ref to java.lang.Object */;
+    jclass cLong             /* global ref to java.lang.Long */;
+    jclass cString           /* global ref to java.lang.String */;
+    jobject oCharsetUtf8     /* global ref to StandardCharset.UTF_8 */;
+    jmethodID ctorLong1      /* the Long(long) constructor */;
+    jmethodID ctorStringBA   /* the String(byte[],Charset) constructor */;
+    jmethodID stringGetBytes /* the String.getBytes(Charset) method */;
   } g;
-  jobject currentStmt    /* Current Java sqlite3_stmt object being
-                            prepared, stepped, reset, or
-                            finalized. Needed for tracing, the
-                            alternative being that we create a new
-                            sqlite3_stmt wrapper object for every
-                            tracing call which needs a stmt
-                            object. This approach is rather invasive,
-                            however, requiring code in all stmt
-                            operations which can lead through the
-                            tracing API. */;
+  jobject currentStmt /* Current Java sqlite3_stmt object being
+                         prepared, stepped, reset, or
+                         finalized. Needed for tracing, the
+                         alternative being that we create a new
+                         sqlite3_stmt wrapper object for every tracing
+                         call which needs a stmt object. This approach
+                         is rather invasive, however, requiring code
+                         in all stmt operations which can lead through
+                         the tracing API. */;
 #ifdef SQLITE_ENABLE_FTS5
-  jobject jFtsExt       /* Global ref to Java singleton for the
-                           Fts5ExtensionApi instance. */;
+  jobject jFtsExt     /* Global ref to Java singleton for the
+                         Fts5ExtensionApi instance. */;
   struct {
     jclass klazz;
     jfieldID fidA;
     jfieldID fidB;
   } jPhraseIter;
 #endif
-  JNIEnvCacheLine * pPrev /* Previous entry in the linked list */;
-  JNIEnvCacheLine * pNext /* Next entry in the linked list */;
+  JNIEnvCache * pPrev /* Previous entry in the linked list */;
+  JNIEnvCache * pNext /* Next entry in the linked list */;
   /** TODO: NphCacheLine *pNphHit;
 
       to help fast-track cache lookups, update this to point to the
@@ -445,8 +438,8 @@ static struct {
   */
   JavaVM * jvm;
   struct {
-    JNIEnvCacheLine * aHead /* Linked list of in-use instances */;
-    JNIEnvCacheLine * aFree /* Linked list of free instances */;
+    JNIEnvCache * aHead /* Linked list of in-use instances */;
+    JNIEnvCache * aFree /* Linked list of free instances */;
   } envCache;
   struct {
     PerDbStateJni * aUsed  /* Linked list of in-use instances */;
@@ -550,14 +543,14 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj, jclass klazz){
    standard UTF-8 to a Java string, but JNI offers only algorithms for
    working with MUTF-8, not UTF-8.
 */
-static jstring s3jni_string_from_utf8(JNIEnvCacheLine * const jc,
-                                      const char * const z, int n){
+static jstring s3jni_utf8_to_jstring(JNIEnvCache * const jc,
+                                     const char * const z, int n){
   jstring rv = NULL;
   JNIEnv * const env = jc->env;
-  if( 0==n || (z && !z[0]) ){
-    /* Fast-track the empty-string case. We could hypothetically do
-       this for any strings where n<4 and z is NUL-terminated and none
-       of z[0..3] are NUL bytes. */
+  if( 0==n || (n<0 && z && !z[0]) ){
+    /* Fast-track the empty-string case via the MUTF-8 API. We could
+       hypothetically do this for any strings where n<4 and z is
+       NUL-terminated and none of z[0..3] are NUL bytes. */
     rv = (*env)->NewStringUTF(env, "");
   }else if( z ){
     jbyteArray jba;
@@ -574,14 +567,53 @@ static jstring s3jni_string_from_utf8(JNIEnvCacheLine * const jc,
 }
 
 /**
+   Converts the given java.lang.String object into a NUL-terminated
+   UTF-8 C-string by calling jstr.getBytes(StandardCharset.UTF_8).
+   Returns NULL if jstr is NULL or on allocation error. If jstr is not
+   NULL and nLen is not NULL then nLen is set to the length of the
+   returned string, not including the terminating NUL. If jstr is not
+   NULL and it returns NULL, this indicates an allocation error. In
+   that case, if nLen is not NULL then it is either set to 0 (if
+   fetching of jstr's bytes fails to allocate) or set to what would
+   have been the length of the string had C-string allocation
+   succeeded.
+*/
+static char * s3jni_jstring_to_utf8(JNIEnvCache * const jc,
+                                    jstring jstr, int *nLen){
+  JNIEnv * const env = jc->env;
+  jbyteArray jba;
+  jsize nBa;
+  char *rv;
+
+  if(!jstr) return 0;
+  jba = (*env)->CallObjectMethod(env, jstr, jc->g.stringGetBytes,
+                                 jc->g.oCharsetUtf8);
+  if( (*env)->ExceptionCheck(env) || !jba
+      /* order of these checks is significant for -Xlint:jni */ ) {
+    EXCEPTION_REPORT;
+    if( nLen ) *nLen = 0;
+    return 0;
+  }
+  nBa = (*env)->GetArrayLength(env, jba);
+  if( nLen ) *nLen = (int)nBa;
+  rv = sqlite3_malloc( nBa + 1 );
+  if( rv ){
+    (*env)->GetByteArrayRegion(env, jba, 0, nBa, (jbyte*)rv);
+    rv[nBa] = 0;
+  }
+  UNREF_L(jba);
+  return rv;
+}
+
+/**
    Fetches the S3Global.envCache row for the given env, allocing
    a row if needed. When a row is allocated, its state is initialized
    insofar as possible. Calls (*env)->FatalError() if allocation of
    an entry fails. That's hypothetically possible but "shouldn't happen."
 */
 FIXME_THREADING
-static JNIEnvCacheLine * S3Global_JNIEnvCache_cache(JNIEnv * const env){
-  struct JNIEnvCacheLine * row = S3Global.envCache.aHead;
+static JNIEnvCache * S3Global_env_cache(JNIEnv * const env){
+  struct JNIEnvCache * row = S3Global.envCache.aHead;
   for( ; row; row = row->pNext ){
     if( row->env == env ){
       ++S3Global.metrics.envCacheHits;
@@ -595,7 +627,7 @@ static JNIEnvCacheLine * S3Global_JNIEnvCache_cache(JNIEnv * const env){
     S3Global.envCache.aFree = row->pNext;
     if( row->pNext ) row->pNext->pPrev = 0;
   }else{
-    row = sqlite3_malloc(sizeof(JNIEnvCacheLine));
+    row = sqlite3_malloc(sizeof(JNIEnvCache));
     if( !row ){
       (*env)->FatalError(env, "Maintenance required: JNIEnvCache is full.")
         /* Does not return, but cc doesn't know that */;
@@ -624,6 +656,10 @@ static JNIEnvCacheLine * S3Global_JNIEnvCache_cache(JNIEnv * const env){
     (*env)->GetMethodID(env, row->g.cString,
                         "<init>", "([BLjava/nio/charset/Charset;)V");
   EXCEPTION_IS_FATAL("Error getting reference to String(byte[],Charset) ctor.");
+  row->g.stringGetBytes =
+    (*env)->GetMethodID(env, row->g.cString,
+                        "getBytes", "(Ljava/nio/charset/Charset;)[B");
+  EXCEPTION_IS_FATAL("Error getting reference to String.getBytes(Charset).");
 
   { /* StandardCharsets.UTF_8 */
     jfieldID fUtf8;
@@ -702,7 +738,7 @@ static void PerDbStateJni_set_aside(PerDbStateJni * const s){
    Requires that p has been snipped from any linked list it is
    in. Clears all Java refs p holds and zeroes out p.
 */
-static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
+static void JNIEnvCache_clear(JNIEnvCache * const p){
   JNIEnv * const env = p->env;
   if(env){
     int i;
@@ -718,7 +754,7 @@ static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
     for( i = 0; i < NphCache_SIZE; ++i ){
       NphCacheLine_clear(env, &p->nph[i]);
     }
-    memset(p, 0, sizeof(JNIEnvCacheLine));
+    memset(p, 0, sizeof(JNIEnvCache));
   }
 }
 
@@ -750,8 +786,8 @@ static void PerDbStateJni_free_for_env(JNIEnv *env){
    Also passes env to PerDbStateJni_free_for_env() to free up
    what would otherwise be stale references.
 */
-static int S3Global_JNIEnvCache_uncache(JNIEnv * const env){
-  struct JNIEnvCacheLine * row = S3Global.envCache.aHead;
+static int S3Global_env_uncache(JNIEnv * const env){
+  struct JNIEnvCache * row = S3Global.envCache.aHead;
   for( ; row; row = row->pNext ){
     if( row->env == env ){
       break;
@@ -764,7 +800,7 @@ static int S3Global_JNIEnvCache_uncache(JNIEnv * const env){
     assert( !row->pPrev );
     S3Global.envCache.aHead = row->pNext;
   }
-  JNIEnvCacheLine_clear(row);
+  JNIEnvCache_clear(row);
   assert( !row->pNext );
   assert( !row->pPrev );
   row->pNext = S3Global.envCache.aFree;
@@ -776,7 +812,7 @@ static int S3Global_JNIEnvCache_uncache(JNIEnv * const env){
 
 static void S3Global_JNIEnvCache_clear(void){
   while( S3Global.envCache.aHead ){
-    S3Global_JNIEnvCache_uncache( S3Global.envCache.aHead->env );
+    S3Global_env_uncache( S3Global.envCache.aHead->env );
   }
 }
 
@@ -813,7 +849,7 @@ static struct NphCacheLine * S3Global_nph_cache(JNIEnv * const env, const char *
      looking up class objects can be expensive, so they should be
      cached as well.
   */
-  struct JNIEnvCacheLine * const envRow = S3Global_JNIEnvCache_cache(env);
+  struct JNIEnvCache * const envRow = S3Global_env_cache(env);
   struct NphCacheLine * freeSlot = 0;
   struct NphCacheLine * cacheLine = 0;
   int i;
@@ -1413,7 +1449,7 @@ static int udf_args(JNIEnv *env,
   *jArgv = 0;
   if(!jcx) goto error_oom;
   ja = (*env)->NewObjectArray(env, argc,
-                              S3Global_JNIEnvCache_cache(env)->g.cObj,
+                              S3Global_env_cache(env)->g.cObj,
                               NULL);
   if(!ja) goto error_oom;
   for(i = 0; i < argc; ++i){
@@ -2063,41 +2099,25 @@ JDECL(jint,1create_1function)(JENV_JSELF, jobject jDb, jstring jFuncName,
 }
 
 
-JDECL(jbyteArray,1db_1filename)(JENV_JSELF, jobject jDb, jbyteArray jDbName){
-#if 1
+JDECL(jstring,1db_1filename)(JENV_JSELF, jobject jDb, jstring jDbName){
   PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
-  jbyte *zFilename = (ps && jDbName) ? JBA_TOC(jDbName) : 0;
-  const char *zRv;
-  jbyteArray jRv = 0;
+  JNIEnvCache * const jc = S3Global_env_cache(env);
+  char *zDbName;
+  jstring jRv = 0;
+  int nStr = 0;
 
-  if( !ps || (jDbName && !zFilename) ) return 0;
-  zRv = sqlite3_db_filename(ps->pDb, (const char *)zFilename);
-  if( zRv ){
-    const int n = sqlite3Strlen30(zRv);
-    jRv = (*env)->NewByteArray(env, (jint)n);
-    if( jRv ){
-      (*env)->SetByteArrayRegion(env, jRv, 0, (jint)n, (const jbyte *)zRv);
+  if( !ps || !jDbName ){
+    return 0;
+  }
+  zDbName = s3jni_jstring_to_utf8(jc, jDbName, &nStr);
+  if( zDbName ){
+    char const * zRv = sqlite3_db_filename(ps->pDb, zDbName);
+    sqlite3_free(zDbName);
+    if( zRv ){
+      jRv = s3jni_utf8_to_jstring(jc, zRv, -1);
     }
   }
-  JBA_RELEASE(jDbName, zFilename);
   return jRv;
-#else
-  /* For comparison, this impl expects a jstring jDbName and returns a
-     jstring for significant code savings but it's not
-     MUTF-8-safe. With this impl, the Java-side byte-array-using
-     sqlite3_db_filename() impl is unnecessary. */
-  JDECL(jstring,1db_1filename)(JENV_JSELF, jobject jDb, jstring jDbName){
-  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
-  const char *zFilename = (ps && jDbName) ? JSTR_TOC(jDbName) : 0;
-  const char *zRv;
-
-  if( !ps || (jDbName && !zFilename)) return 0;
-  zRv = sqlite3_db_filename(ps->pDb, zFilename ? zFilename : "main");
-  JSTR_RELEASE(jDbName, zFilename);
-  return zRv ? (*env)->NewStringUTF(env, zRv) : 0;
-}
-#endif
-
 }
 
 JDECL(jstring,1errmsg)(JENV_JSELF, jobject jpDb){
@@ -2127,7 +2147,7 @@ JDECL(jint,1initialize)(JENV_JSELF){
    is needed for certain tracing flags. At a minumum those ops are:
    step, reset, finalize, prepare.
 */
-static jobject stmt_set_current(JNIEnvCacheLine * const jc, jobject jStmt){
+static jobject stmt_set_current(JNIEnvCache * const jc, jobject jStmt){
   jobject const old = jc->currentStmt;
   jc->currentStmt = jStmt;
   return old;
@@ -2137,7 +2157,7 @@ JDECL(jint,1finalize)(JENV_JSELF, jobject jpStmt){
   int rc = 0;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   if( pStmt ){
-    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+    JNIEnvCache * const jc = S3Global_env_cache(env);
     jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_finalize(pStmt);
     setNativePointer(env, jpStmt, 0, S3ClassNames.sqlite3_stmt);
@@ -2208,7 +2228,7 @@ static jint sqlite3_jni_prepare_v123(int prepVersion, JNIEnv * const env, jclass
   sqlite3_stmt * pStmt = 0;
   const char * zTail = 0;
   jbyte * const pBuf = JBA_TOC(baSql);
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   jobject const pOldStmt = stmt_set_current(jc, jOutStmt);
   int rc = SQLITE_ERROR;
   assert(prepVersion==1 || prepVersion==2 || prepVersion==3);
@@ -2303,7 +2323,7 @@ JDECL(jint,1reset)(JENV_JSELF, jobject jpStmt){
   int rc = 0;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   if( pStmt ){
-    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+    JNIEnvCache * const jc = S3Global_env_cache(env);
     jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_reset(pStmt);
     (void)stmt_set_current(jc, pPrev);
@@ -2571,7 +2591,7 @@ JDECL(jint,1step)(JENV_JSELF,jobject jStmt){
   int rc = SQLITE_MISUSE;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
   if(pStmt){
-    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+    JNIEnvCache * const jc = S3Global_env_cache(env);
     jobject const jPrevStmt = stmt_set_current(jc, jStmt);
     rc = sqlite3_step(pStmt);
     (void)stmt_set_current(jc, jPrevStmt);
@@ -2585,11 +2605,11 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   jobject jX = NULL  /* the tracer's X arg */;
   jobject jP = NULL  /* the tracer's P arg */;
   jobject jPUnref = NULL /* potentially a local ref to jP */;
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   int rc;
   switch(traceflag){
     case SQLITE_TRACE_STMT:
-      jX = s3jni_string_from_utf8(jc, (const char *)pX, -1);
+      jX = s3jni_utf8_to_jstring(jc, (const char *)pX, -1);
       if(!jX) return SQLITE_NOMEM;
       jP = jc->currentStmt;
       break;
@@ -2841,6 +2861,7 @@ JDECL(void,1do_1something_1for_1developer)(JENV_JSELF){
 #define SO(T) printf("\tsizeof(" #T ") = %u\n", (unsigned)sizeof(T))
   SO(void*);
   SO(JniHookState);
+  SO(JNIEnvCache);
   SO(PerDbStateJni);
   SO(S3Global);
   SO(S3ClassNames);
@@ -2964,7 +2985,7 @@ static inline jobject new_fts5_api_wrapper(JNIEnv * const env, fts5_api *sv){
    instance, or NULL on OOM.
 */
 static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
-  JNIEnvCacheLine * const row = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const row = S3Global_env_cache(env);
   if( !row->jFtsExt ){
     row->jFtsExt = new_NativePointerHolder_object(env, S3ClassNames.Fts5ExtensionApi,
                                                   s3jni_ftsext());
@@ -3031,8 +3052,8 @@ JDECLFtsXA(jint,xColumnText)(JENV_JSELF,jobject jCtx, jint iCol,
   int rc = fext->xColumnText(PtrGet_Fts5Context(jCtx), (int)iCol,
                              &pz, &pn);
   if( 0==rc ){
-    JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
-    jstring jstr = pz ? s3jni_string_from_utf8(jc, pz, pn) : 0;
+    JNIEnvCache * const jc = S3Global_env_cache(env);
+    jstring jstr = pz ? s3jni_utf8_to_jstring(jc, pz, pn) : 0;
     if( pz ){
       if( jstr ){
         setOutputString(env, jOut, jstr);
@@ -3188,7 +3209,7 @@ JDECLFtsXA(jint,xPhraseCount)(JENV_JSELF,jobject jCtx){
 /**
    Initializes jc->jPhraseIter if it needed it.
 */
-static void s3jni_phraseIter_init(JNIEnv *const env, JNIEnvCacheLine * const jc,
+static void s3jni_phraseIter_init(JNIEnv *const env, JNIEnvCache * const jc,
                                   jobject jIter){
   if(!jc->jPhraseIter.klazz){
     jclass klazz = (*env)->GetObjectClass(env, jIter);
@@ -3202,7 +3223,7 @@ static void s3jni_phraseIter_init(JNIEnv *const env, JNIEnvCacheLine * const jc,
 }
 
 /* Copy the 'a' and 'b' fields from pSrc to Fts5PhraseIter object jIter. */
-static void s3jni_phraseIter_NToJ(JNIEnv *const env, JNIEnvCacheLine const * const jc,
+static void s3jni_phraseIter_NToJ(JNIEnv *const env, JNIEnvCache const * const jc,
                                     Fts5PhraseIter const * const pSrc,
                                     jobject jIter){
   assert(jc->jPhraseIter.klazz);
@@ -3213,7 +3234,7 @@ static void s3jni_phraseIter_NToJ(JNIEnv *const env, JNIEnvCacheLine const * con
 }
 
 /* Copy the 'a' and 'b' fields from Fts5PhraseIter object jIter to pDest. */
-static void s3jni_phraseIter_JToN(JNIEnv *const env, JNIEnvCacheLine const * const jc,
+static void s3jni_phraseIter_JToN(JNIEnv *const env, JNIEnvCache const * const jc,
                                   jobject jIter, Fts5PhraseIter * const pDest){
   assert(jc->jPhraseIter.klazz);
   pDest->a =
@@ -3228,7 +3249,7 @@ JDECLFtsXA(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
                             jobject jIter, jobject jOutCol,
                             jobject jOutOff){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   Fts5PhraseIter iter;
   int rc, iCol = 0, iOff = 0;
   s3jni_phraseIter_init(env, jc, jIter);
@@ -3245,7 +3266,7 @@ JDECLFtsXA(jint,xPhraseFirst)(JENV_JSELF,jobject jCtx, jint iPhrase,
 JDECLFtsXA(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
                                   jobject jIter, jobject jOutCol){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   Fts5PhraseIter iter;
   int rc, iCol = 0;
   s3jni_phraseIter_init(env, jc, jIter);
@@ -3261,7 +3282,7 @@ JDECLFtsXA(jint,xPhraseFirstColumn)(JENV_JSELF,jobject jCtx, jint iPhrase,
 JDECLFtsXA(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
                            jobject jOutCol, jobject jOutOff){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   Fts5PhraseIter iter;
   int iCol = 0, iOff = 0;
   if(!jc->jPhraseIter.klazz) return /*SQLITE_MISUSE*/;
@@ -3276,7 +3297,7 @@ JDECLFtsXA(void,xPhraseNext)(JENV_JSELF,jobject jCtx, jobject jIter,
 JDECLFtsXA(void,xPhraseNextColumn)(JENV_JSELF,jobject jCtx, jobject jIter,
                                  jobject jOutCol){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   Fts5PhraseIter iter;
   int iCol = 0;
   if(!jc->jPhraseIter.klazz) return /*SQLITE_MISUSE*/;
@@ -3298,7 +3319,7 @@ JDECLFtsXA(jint,xPhraseSize)(JENV_JSELF,jobject jCtx, jint iPhrase){
 struct s3jni_xQueryPhraseState {
   JNIEnv *env;
   Fts5ExtensionApi const * fext;
-  JNIEnvCacheLine const * jc;
+  JNIEnvCache const * jc;
   jmethodID midCallback;
   jobject jCallback;
   jobject jFcx;
@@ -3330,7 +3351,7 @@ static int s3jni_xQueryPhrase(const Fts5ExtensionApi *xapi,
 JDECLFtsXA(jint,xQueryPhrase)(JENV_JSELF,jobject jFcx, jint iPhrase,
                             jobject jCallback){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   struct s3jni_xQueryPhraseState s;
   jclass klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
   if( !klazz ){
@@ -3419,7 +3440,7 @@ static jint s3jni_fts5_xTokenize(JENV_JSELF, const char *zClassName,
                                  jint tokFlags, jobject jFcx,
                                  jbyteArray jbaText, jobject jCallback){
   Fts5ExtDecl;
-  JNIEnvCacheLine * const jc = S3Global_JNIEnvCache_cache(env);
+  JNIEnvCache * const jc = S3Global_env_cache(env);
   struct s3jni_xQueryPhraseState s;
   int rc = 0;
   jbyte * const pText = JBA_TOC(jbaText);
@@ -3485,8 +3506,8 @@ JDECLFtsXA(jobject,xUserData)(JENV_JSELF,jobject jFcx){
   return pAux ? pAux->jUserData : 0;
 }
 
-
 #endif /* SQLITE_ENABLE_FTS5 */
+
 ////////////////////////////////////////////////////////////////////////
 // End of the main API bindings. What follows are internal utilities.
 ////////////////////////////////////////////////////////////////////////
@@ -3499,7 +3520,7 @@ JDECLFtsXA(jobject,xUserData)(JENV_JSELF,jobject jFcx){
 */
 JNIEXPORT jboolean JNICALL
 Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JNIEnv * const env, jclass self){
-  return S3Global_JNIEnvCache_uncache(env) ? JNI_TRUE : JNI_FALSE;
+  return S3Global_env_uncache(env) ? JNI_TRUE : JNI_FALSE;
 }
 
 
@@ -3564,7 +3585,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv * const env, jclass self, jclass klaz
     (*env)->FatalError(env, "GetJavaVM() failure shouldn't be possible.");
     return;
   }
-  (void)S3Global_JNIEnvCache_cache(env);
+  (void)S3Global_env_cache(env);
   if( !S3Global.envCache.aHead ){
     (*env)->FatalError(env, "Could not allocate JNIEnv-specific cache.");
     return;

@@ -111,6 +111,7 @@ import java.lang.annotation.ElementType;
 
   - https://stackoverflow.com/questions/57419723
   - https://stackoverflow.com/questions/7921016
+  - https://itecnote.com/tecnote/java-getting-true-utf-8-characters-in-java-jni/
   - https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#unicode
   - https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
 
@@ -397,22 +398,8 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_data_count(@NotNull sqlite3_stmt stmt);
 
-  /** In order to support the full range of UTF-8 filenames, we
-      require an extra layer of conversion via a byte[]. */
-  private static native byte[] sqlite3_db_filename(@NotNull sqlite3 db,
-                                                   @NotNull byte dbName[]);
-
-  /**
-     As for the C API of the same name except that if dbName is null then
-     "main" is assumed.
-  */
-  public static String sqlite3_db_filename(@NotNull sqlite3 db,
-                                           @Nullable String dbName){
-    final byte[] bName =
-      (((null == dbName) ? "main" : dbName)+"\0").getBytes(StandardCharsets.UTF_8);
-    final byte[] rv = sqlite3_db_filename(db, bName);
-    return (null == rv) ? null : new String(rv, StandardCharsets.UTF_8);
-  }
+  public static native String sqlite3_db_filename(@NotNull sqlite3 db,
+                                                  @NotNull String dbName);
 
   public static native int sqlite3_errcode(@NotNull sqlite3 db);
 
