@@ -401,6 +401,23 @@ public final class SQLite3Jni {
   public static native String sqlite3_db_filename(@NotNull sqlite3 db,
                                                   @NotNull String dbName);
 
+  /**
+     Overload for sqlite3_db_config() calls which take (int,int*)
+     variadic arguments. Returns SQLITE_MISUSE if op is not one of the
+     SQLITE_DBCONFIG_... options which uses this call form.
+  */
+  public static native int sqlite3_db_config(@NotNull sqlite3 db, int op,
+                                             @Nullable OutputPointer.Int32 out);
+  /**
+     Overload for sqlite3_db_config() calls which take (int,const
+     char*) variadic arguments. As of SQLite3 v3.43 the only such
+     option is SQLITE_DBCONFIG_MAINDBNAME. Returns SQLITE_MISUSE if op
+     is not SQLITE_DBCONFIG_MAINDBNAME, but that set of options may be
+     extended in future versions.
+  */
+  public static native int sqlite3_db_config(@NotNull sqlite3 db, int op,
+                                             @NotNull String mainDbName);
+
   public static native int sqlite3_errcode(@NotNull sqlite3 db);
 
   public static native int sqlite3_extended_errcode(@NotNull sqlite3 db);

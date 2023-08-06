@@ -1101,6 +1101,22 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1filename
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_db_config
+ * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/OutputPointer/Int32;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_Int32_2
+  (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_db_config
+ * Signature: (Lorg/sqlite/jni/sqlite3;ILjava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2
+  (JNIEnv *, jclass, jobject, jint, jstring);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_errcode
  * Signature: (Lorg/sqlite/jni/sqlite3;)I
  */

@@ -153,17 +153,20 @@ endif
 
 sqlite3-jni.c := $(dir.src.c)/sqlite3-jni.c
 sqlite3-jni.o := $(dir.bld.c)/sqlite3-jni.o
-sqlite3-jni.h.in := $(dir.bld.c)/org_sqlite_jni_SQLite3Jni.h
-ifeq (1,$(enable.fts5))
-  sqlite3-jni.h.in += \
-    $(dir.bld.c)/org_sqlite_jni_Fts5ExtensionApi.h \
-    $(dir.bld.c)/org_sqlite_jni_fts5_api.h \
-    $(dir.bld.c)/org_sqlite_jni_fts5_tokenizer.h
-endif
 sqlite3-jni.h   := $(dir.src.c)/sqlite3-jni.h
 sqlite3-jni.dll := $(dir.bld.c)/libsqlite3-jni.so
-# ------------------------------^^^ lib prefix is requires
-# for java's System.loadLibrary().
+# All javac-generated .h files must be listed in $(sqlite3-jni.h.in):
+sqlite3-jni.h.in :=
+define ADD_JNI_H
+sqlite3-jni.h.in += $$(dir.bld.c)/org_sqlite_jni_$(1).h
+$$(dir.bld.c)/org_sqlite_jni_$(1).h: $$(dir.src.jni)/$(1).class
+endef
+$(eval $(call ADD_JNI_H,SQLite3Jni))
+ifeq (1,$(enable.fts5))
+  $(eval $(call ADD_JNI_H,Fts5ExtensionApi))
+  $(eval $(call ADD_JNI_H,fts5_api))
+  $(eval $(call ADD_JNI_H,fts5_tokenizer))
+endif
 #sqlite3-jni.dll.cfiles := $(dir.src.c)
 sqlite3-jni.dll.cflags := \
   -fPIC \
@@ -182,10 +185,9 @@ sqlite3-jni.dll.cflags := \
 # include path for client-level code.
 ########################################################################
 
-$(sqlite3-jni.h.in): $(dir.src.jni)/SQLite3Jni.class
 $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 	cat $(sqlite3-jni.h.in) > $@
-$(sqlite3-jni.c): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
+$(sqlite3-jni.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
 $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
 	$(CC) $(sqlite3-jni.dll.cflags) $(SQLITE_OPT) \
       $(sqlite3-jni.c) -shared -o $@
