@@ -343,12 +343,14 @@ struct JNIEnvCacheLine {
   //! The various refs to global classes might be cacheable a single
   // time globally. Information online seems inconsistent on that
   // point.
-  jclass globalClassObj  /* global ref to java.lang.Object */;
-  jclass globalClassLong /* global ref to java.lang.Long */;
-  jclass globalClassString /* global ref to java.lang.String */;
-  jobject globalClassCharsetUtf8 /* global ref to StandardCharset.UTF_8 */;
-  jmethodID ctorLong1    /* the Long(long) constructor */;
-  jmethodID ctorStringBA /* the String(byte[],Charset) constructor */;
+  struct {
+    jclass cObj            /* global ref to java.lang.Object */;
+    jclass cLong           /* global ref to java.lang.Long */;
+    jclass cString         /* global ref to java.lang.String */;
+    jobject oCharsetUtf8   /* global ref to StandardCharset.UTF_8 */;
+    jmethodID ctorLong1    /* the Long(long) constructor */;
+    jmethodID ctorStringBA /* the String(byte[],Charset) constructor */;
+  } g;
   jobject currentStmt    /* Current Java sqlite3_stmt object being
                             prepared, stepped, reset, or
                             finalized. Needed for tracing, the
@@ -537,6 +539,41 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj, jclass klazz){
 }
 
 /**
+   Uses the java.lang.String(byte[],Charset) constructor to create a
+   new String from UTF-8 string z. n is the number of bytes to
+   copy. If n<0 then sqlite3Strlen30() is used to calculate it.
+
+   Returns NULL if z is NULL or on OOM, else returns a new jstring
+   owned by the caller.
+
+   Sidebar: this is a painfully inefficient way to convert from
+   standard UTF-8 to a Java string, but JNI offers only algorithms for
+   working with MUTF-8, not UTF-8.
+*/
+static jstring s3jni_string_from_utf8(JNIEnvCacheLine * const jc,
+                                      const char * const z, int n){
+  jstring rv = NULL;
+  JNIEnv * const env = jc->env;
+  if( 0==n || (z && !z[0]) ){
+    /* Fast-track the empty-string case. We could hypothetically do
+       this for any strings where n<4 and z is NUL-terminated and none
+       of z[0..3] are NUL bytes. */
+    rv = (*env)->NewStringUTF(env, "");
+  }else if( z ){
+    jbyteArray jba;
+    if( n<0 ) n = sqlite3Strlen30(z);
+    jba = (*env)->NewByteArray(env, (jsize)n);
+    if( jba ){
+      (*env)->SetByteArrayRegion(env, jba, 0, n, (jbyte const *)z);
+      rv = (*env)->NewObject(env, jc->g.cString, jc->g.ctorStringBA,
+                             jba, jc->g.oCharsetUtf8);
+      UNREF_L(jba);
+    }
+  }
+  return rv;
+}
+
+/**
    Fetches the S3Global.envCache row for the given env, allocing
    a row if needed. When a row is allocated, its state is initialized
    insofar as possible. Calls (*env)->FatalError() if allocation of
@@ -570,19 +607,21 @@ static JNIEnvCacheLine * S3Global_JNIEnvCache_cache(JNIEnv * const env){
   if(row->pNext) row->pNext->pPrev = row;
   S3Global.envCache.aHead = row;
   row->env = env;
-  row->globalClassObj = REF_G((*env)->FindClass(env,"java/lang/Object"));
+
+  /* Grab references to various global classes and objects... */
+  row->g.cObj = REF_G((*env)->FindClass(env,"java/lang/Object"));
   EXCEPTION_IS_FATAL("Error getting reference to Object class.");
 
-  row->globalClassLong = REF_G((*env)->FindClass(env,"java/lang/Long"));
+  row->g.cLong = REF_G((*env)->FindClass(env,"java/lang/Long"));
   EXCEPTION_IS_FATAL("Error getting reference to Long class.");
-  row->ctorLong1 = (*env)->GetMethodID(env, row->globalClassLong,
-                                       "<init>", "(J)V");
+  row->g.ctorLong1 = (*env)->GetMethodID(env, row->g.cLong,
+                                         "<init>", "(J)V");
   EXCEPTION_IS_FATAL("Error getting reference to Long constructor.");
 
-  row->globalClassString = REF_G((*env)->FindClass(env,"java/lang/String"));
+  row->g.cString = REF_G((*env)->FindClass(env,"java/lang/String"));
   EXCEPTION_IS_FATAL("Error getting reference to String class.");
-  row->ctorStringBA =
-    (*env)->GetMethodID(env, row->globalClassString,
+  row->g.ctorStringBA =
+    (*env)->GetMethodID(env, row->g.cString,
                         "<init>", "([BLjava/nio/charset/Charset;)V");
   EXCEPTION_IS_FATAL("Error getting reference to String(byte[],Charset) ctor.");
 
@@ -594,7 +633,7 @@ static JNIEnvCacheLine * S3Global_JNIEnvCache_cache(JNIEnv * const env){
     fUtf8 = (*env)->GetStaticFieldID(env, klazzSC, "UTF_8",
                                      "Ljava/nio/charset/Charset;");
     EXCEPTION_IS_FATAL("Error getting StndardCharsets.UTF_8 field.");
-    row->globalClassCharsetUtf8 =
+    row->g.oCharsetUtf8 =
       REF_G((*env)->GetStaticObjectField(env, klazzSC, fUtf8));
     EXCEPTION_IS_FATAL("Error getting reference to StandardCharsets.UTF_8.");
   }
@@ -667,10 +706,10 @@ static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
   JNIEnv * const env = p->env;
   if(env){
     int i;
-    UNREF_G(p->globalClassObj);
-    UNREF_G(p->globalClassLong);
-    UNREF_G(p->globalClassString);
-    UNREF_G(p->globalClassCharsetUtf8);
+    UNREF_G(p->g.cObj);
+    UNREF_G(p->g.cLong);
+    UNREF_G(p->g.cString);
+    UNREF_G(p->g.oCharsetUtf8);
     UNREF_G(p->currentStmt);
 #ifdef SQLITE_ENABLE_FTS5
     UNREF_G(p->jFtsExt);
@@ -1377,7 +1416,7 @@ static int udf_args(JNIEnv *env,
   *jArgv = 0;
   if(!jcx) goto error_oom;
   ja = (*env)->NewObjectArray(env, argc,
-                              S3Global_JNIEnvCache_cache(env)->globalClassObj,
+                              S3Global_JNIEnvCache_cache(env)->g.cObj,
                               NULL);
   if(!ja) goto error_oom;
   for(i = 0; i < argc; ++i){
@@ -2553,16 +2592,14 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   int rc;
   switch(traceflag){
     case SQLITE_TRACE_STMT:
-      /* This is not _quite_ right: we're converting to MUTF-8.  It
-         should(?) suffice for purposes of tracing, though. */
-      jX = (*env)->NewStringUTF(env, (const char *)pX);
+      jX = s3jni_string_from_utf8(jc, (const char *)pX, -1);
       if(!jX) return SQLITE_NOMEM;
       jP = jc->currentStmt;
       break;
     case SQLITE_TRACE_PROFILE:
-      jX = (*env)->NewObject(env, jc->globalClassLong, jc->ctorLong1,
+      jX = (*env)->NewObject(env, jc->g.cLong, jc->g.ctorLong1,
                              (jlong)*((sqlite3_int64*)pX));
-      // hmm. It really is zero.
+      // hmm. ^^^ (*pX) really is zero.
       // MARKER(("profile time = %llu\n", *((sqlite3_int64*)pX)));
       jP = jc->currentStmt;
       if(!jP){
@@ -3547,7 +3584,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JNIEnv * const env, jclass self, jclass klaz
   }
   assert( 1 == S3Global.metrics.envCacheMisses );
   assert( env == S3Global.envCache.aHead->env );
-  assert( 0 != S3Global.envCache.aHead->globalClassObj );
+  assert( 0 != S3Global.envCache.aHead->g.cObj );
 
   for( pConfFlag = &aLimits[0]; pConfFlag->zName; ++pConfFlag ){
     char const * zSig = (JTYPE_BOOL == pConfFlag->jtype) ? "Z" : "I";

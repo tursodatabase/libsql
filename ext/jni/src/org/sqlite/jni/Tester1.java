@@ -683,6 +683,10 @@ public class Tester1 {
   private static void testTrace(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    /* Ensure that characters outside of the UTF BMP survive the trip
+       from Java to sqlite3 and back to Java. (At no small efficiency
+       penalty.) */
+    final String nonBmpChar = "😃";
     sqlite3_trace_v2(
       db, SQLITE_TRACE_STMT | SQLITE_TRACE_PROFILE
           | SQLITE_TRACE_ROW | SQLITE_TRACE_CLOSE,
@@ -694,6 +698,7 @@ public class Tester1 {
               affirm(pNative instanceof sqlite3_stmt);
               affirm(x instanceof String);
               //outln("TRACE_STMT sql = "+x);
+              affirm( ((String)x).indexOf(nonBmpChar) > 0 );
               break;
             case SQLITE_TRACE_PROFILE:
               affirm(pNative instanceof sqlite3_stmt);
@@ -716,7 +721,8 @@ public class Tester1 {
           return 0;
         }
       });
-    execSql(db, "SELECT coalesce(null,null,null,'hi'); SELECT 'world'");
+    execSql(db, "SELECT coalesce(null,null,'"+nonBmpChar+"'); "+
+            "SELECT 'w"+nonBmpChar+"orld'");
     affirm( 6 == counter.value );
     sqlite3_close_v2(db);
     affirm( 7 == counter.value );
