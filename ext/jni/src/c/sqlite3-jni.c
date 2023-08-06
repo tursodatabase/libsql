@@ -187,7 +187,10 @@
 #define PtrGet_sqlite3_value(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_value)
 #define PtrGet_sqlite3_context(OBJ) getNativePointer(env,OBJ,S3ClassNames.sqlite3_context)
 /* Helpers for Java value reference management. */
-#define REF_G(VAR) (*env)->NewGlobalRef(env, VAR)
+static inline jobject new_global_ref(JNIEnv *env, jobject v){
+  return v ? (*env)->NewGlobalRef(env, v) : NULL;
+}
+#define REF_G(VAR) new_global_ref(env, (VAR))
 #define REF_L(VAR) (*env)->NewLocalRef(env, VAR)
 #define UNREF_G(VAR) if(VAR) (*env)->DeleteGlobalRef(env, (VAR))
 #define UNREF_L(VAR) if(VAR) (*env)->DeleteLocalRef(env, (VAR))
@@ -337,9 +340,15 @@ struct NphCacheLine {
 typedef struct JNIEnvCacheLine JNIEnvCacheLine;
 struct JNIEnvCacheLine {
   JNIEnv *env            /* env in which this cache entry was created */;
+  //! The various refs to global classes might be cacheable a single
+  // time globally. Information online seems inconsistent on that
+  // point.
   jclass globalClassObj  /* global ref to java.lang.Object */;
   jclass globalClassLong /* global ref to java.lang.Long */;
+  jclass globalClassString /* global ref to java.lang.String */;
+  jobject globalClassCharsetUtf8 /* global ref to StandardCharset.UTF_8 */;
   jmethodID ctorLong1    /* the Long(long) constructor */;
+  jmethodID ctorStringBA /* the String(byte[],Charset) constructor */;
   jobject currentStmt    /* Current Java sqlite3_stmt object being
                             prepared, stepped, reset, or
                             finalized. Needed for tracing, the
@@ -563,11 +572,32 @@ static JNIEnvCacheLine * S3Global_JNIEnvCache_cache(JNIEnv * const env){
   row->env = env;
   row->globalClassObj = REF_G((*env)->FindClass(env,"java/lang/Object"));
   EXCEPTION_IS_FATAL("Error getting reference to Object class.");
+
   row->globalClassLong = REF_G((*env)->FindClass(env,"java/lang/Long"));
   EXCEPTION_IS_FATAL("Error getting reference to Long class.");
   row->ctorLong1 = (*env)->GetMethodID(env, row->globalClassLong,
                                        "<init>", "(J)V");
   EXCEPTION_IS_FATAL("Error getting reference to Long constructor.");
+
+  row->globalClassString = REF_G((*env)->FindClass(env,"java/lang/String"));
+  EXCEPTION_IS_FATAL("Error getting reference to String class.");
+  row->ctorStringBA =
+    (*env)->GetMethodID(env, row->globalClassString,
+                        "<init>", "([BLjava/nio/charset/Charset;)V");
+  EXCEPTION_IS_FATAL("Error getting reference to String(byte[],Charset) ctor.");
+
+  { /* StandardCharsets.UTF_8 */
+    jfieldID fUtf8;
+    jclass const klazzSC =
+      (*env)->FindClass(env,"java/nio/charset/StandardCharsets");
+    EXCEPTION_IS_FATAL("Error getting reference to StndardCharsets class.");
+    fUtf8 = (*env)->GetStaticFieldID(env, klazzSC, "UTF_8",
+                                     "Ljava/nio/charset/Charset;");
+    EXCEPTION_IS_FATAL("Error getting StndardCharsets.UTF_8 field.");
+    row->globalClassCharsetUtf8 =
+      REF_G((*env)->GetStaticObjectField(env, klazzSC, fUtf8));
+    EXCEPTION_IS_FATAL("Error getting reference to StandardCharsets.UTF_8.");
+  }
   return row;
 }
 
@@ -639,6 +669,9 @@ static void JNIEnvCacheLine_clear(JNIEnvCacheLine * const p){
     int i;
     UNREF_G(p->globalClassObj);
     UNREF_G(p->globalClassLong);
+    UNREF_G(p->globalClassString);
+    UNREF_G(p->globalClassCharsetUtf8);
+    UNREF_G(p->currentStmt);
 #ifdef SQLITE_ENABLE_FTS5
     UNREF_G(p->jFtsExt);
     UNREF_G(p->jPhraseIter.klazz);
@@ -1993,12 +2026,43 @@ JDECL(jint,1create_1function)(JENV_JSELF, jobject jDb, jstring jFuncName,
   return create_function(env, jDb, jFuncName, nArg, eTextRep, jFunctor);
 }
 
-/*
-JDECL(jint,1create_1window_1function)(JENV_JSELF, jstring jFuncName, jint nArg,
-                                      jint eTextRep, jobject jFunctor){
-  return create_function_mega(env, jFuncName, nArg, eTextRep, jFunctor);
+
+JDECL(jbyteArray,1db_1filename)(JENV_JSELF, jobject jDb, jbyteArray jDbName){
+#if 1
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  jbyte *zFilename = (ps && jDbName) ? JBA_TOC(jDbName) : 0;
+  const char *zRv;
+  jbyteArray jRv = 0;
+
+  if( !ps || (jDbName && !zFilename) ) return 0;
+  zRv = sqlite3_db_filename(ps->pDb, (const char *)zFilename);
+  if( zRv ){
+    const int n = sqlite3Strlen30(zRv);
+    jRv = (*env)->NewByteArray(env, (jint)n);
+    if( jRv ){
+      (*env)->SetByteArrayRegion(env, jRv, 0, (jint)n, (const jbyte *)zRv);
+    }
+  }
+  JBA_RELEASE(jDbName, zFilename);
+  return jRv;
+#else
+  /* For comparison, this impl expects a jstring jDbName and returns a
+     jstring for significant code savings but it's not
+     MUTF-8-safe. With this impl, the Java-side byte-array-using
+     sqlite3_db_filename() impl is unnecessary. */
+  JDECL(jstring,1db_1filename)(JENV_JSELF, jobject jDb, jstring jDbName){
+  PerDbStateJni * const ps = PerDbStateJni_for_db(env, jDb, 0, 0);
+  const char *zFilename = (ps && jDbName) ? JSTR_TOC(jDbName) : 0;
+  const char *zRv;
+
+  if( !ps || (jDbName && !zFilename)) return 0;
+  zRv = sqlite3_db_filename(ps->pDb, zFilename ? zFilename : "main");
+  JSTR_RELEASE(jDbName, zFilename);
+  return zRv ? (*env)->NewStringUTF(env, zRv) : 0;
 }
-*/
+#endif
+
+}
 
 JDECL(jstring,1errmsg)(JENV_JSELF, jobject jpDb){
   return (*env)->NewStringUTF(env, sqlite3_errmsg(PtrGet_sqlite3(jpDb)));

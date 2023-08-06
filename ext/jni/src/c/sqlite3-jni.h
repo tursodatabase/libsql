@@ -1093,6 +1093,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1data_1count
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_db_filename
+ * Signature: (Lorg/sqlite/jni/sqlite3;[B)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1filename
+  (JNIEnv *, jclass, jobject, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_errcode
  * Signature: (Lorg/sqlite/jni/sqlite3;)I
  */

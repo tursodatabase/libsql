@@ -60,7 +60,67 @@ import java.lang.annotation.ElementType;
 
   https://sqlite.org/c3ref/intro.html
 
-  A small handful of Java-specific APIs have been added.
+  A handful of Java-specific APIs have been added.
+
+
+  ******************************************************************
+  *** Warning regarding Java's Modified UTF-8 vs standard UTF-8: ***
+  ******************************************************************
+
+  SQLite internally uses UTF-8 encoding, whereas Java natively uses
+  UTF-16.  Java JNI has routines for converting to and from UTF-8,
+  _but_ JNI uses what its docs call modified UTF-8 (see links below)
+  Care must be taken when converting Java strings to or from standard
+  UTF-8 to ensure that the proper conversion is performed. In short,
+  Java's `String.getBytes(StandardCharsets.UTF_8)` performs the proper
+  conversion in Java, and there are no JNI C APIs for that conversion
+  (JNI's `NewStringUTF()` requires its input to be in MUTF-8).
+
+  The known consequences and limitations this discrepancy places on
+  the SQLite3 JNI binding include:
+
+  - Any functions which return client-side data from a database
+    take extra care to perform proper conversion, at the cost of
+    efficiency.
+
+  - Functions which return database identifiers require those
+    identifiers to have identical representations in UTF-8 and
+    MUTF-8. They do not perform such conversions (A) because of the
+    much lower risk of an encoding discrepancy and (B) to avoid
+    significant extra code involved (see both the Java- and C-side
+    implementations of sqlite3_db_filename() for an example).  Names
+    of databases, tables, columns, collations, and functions MUST NOT
+    contain characters which differ in MUTF-8 and UTF-8, or certain
+    APIs will mis-translate them on their way between languages
+    (possibly leading to a crash).
+
+    - sqlite3_trace_v2() is also currently affected by this, in that
+      it requires that traced SQL statements be compatible with
+      MUTF-8.  The alternative would be to perform two extra layers of
+      conversion for that performance-sensitive function: one from
+      UTF-8 to a byte-array before passing the data from C to Java,
+      and then from byte-array to String in the tracer implementation.
+
+  - C functions which take C-style strings without a length argument
+    require special care when taking input from Java. In particular,
+    Java strings converted to byte arrays for encoding purposes are
+    not NUL-terminated, and conversion to a Java byte array must be
+    careful to add one. Functions which take a length do not require
+    this. Search the SQLite3Jni class for "\0" for many examples.
+
+  - Similarly, C-side code which deals with strings which might not be
+    NUL-terminated (e.g. while tokenizing in FTS5-related code) cannot
+    use JNI's new-string functions to return them to Java because none
+    of those APIs take a string-length argument. Such cases must
+    return byte arrays instead of strings.
+
+  Further reading:
+
+  - https://stackoverflow.com/questions/57419723
+  - https://stackoverflow.com/questions/7921016
+  - https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#unicode
+  - https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
+
 */
 public final class SQLite3Jni {
   static {
@@ -84,7 +144,7 @@ public final class SQLite3Jni {
      undefined if any database objects are (A) still active at the
      time it is called _and_ (B) calls are subsequently made into the
      library with such a database. Doing so will, at best, lead to a
-     crash.  It worst, it will lead to the db possibly misbehaving
+     crash.  Azt worst, it will lead to the db possibly misbehaving
      because some of its Java-bound state has been cleared. There is
      no immediate harm in (A) so long as condition (B) is not met.
      This process does _not_ actually close any databases or finalize
@@ -343,6 +403,23 @@ public final class SQLite3Jni {
                                                    @NotNull SQLFunction func);
 
   public static native int sqlite3_data_count(@NotNull sqlite3_stmt stmt);
+
+  /** In order to support the full range of UTF-8 filenames, we
+      require an extra layer of conversion via a byte[]. */
+  private static native byte[] sqlite3_db_filename(@NotNull sqlite3 db,
+                                                   @NotNull byte dbName[]);
+
+  /**
+     As for the C API of the same name except that if dbName is null then
+     "main" is assumed.
+  */
+  public static String sqlite3_db_filename(@NotNull sqlite3 db,
+                                           @Nullable String dbName){
+    final byte[] bName =
+      (((null == dbName) ? "main" : dbName)+"\0").getBytes(StandardCharsets.UTF_8);
+    final byte[] rv = sqlite3_db_filename(db, bName);
+    return (null == rv) ? null : new String(rv, StandardCharsets.UTF_8);
+  }
 
   public static native int sqlite3_errcode(@NotNull sqlite3 db);
 
