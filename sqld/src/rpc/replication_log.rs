@@ -5,25 +5,28 @@ pub mod rpc {
 
 use std::collections::HashSet;
 use std::net::SocketAddr;
+use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
 use futures::stream::BoxStream;
-use futures::StreamExt;
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
+use tokio_stream::StreamExt;
 use tonic::Status;
 
+use crate::auth::Auth;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::rpc::replication_log_server::ReplicationLog;
-use self::rpc::{Frame, HelloRequest, HelloResponse, LogOffset};
+use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
 
 pub struct ReplicationLogService {
     logger: Arc<ReplicationLogger>,
     replicas_with_hello: RwLock<HashSet<SocketAddr>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
+    auth: Option<Arc<Auth>>,
 }
 
 pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
@@ -33,12 +36,22 @@ impl ReplicationLogService {
     pub fn new(
         logger: Arc<ReplicationLogger>,
         idle_shutdown_layer: Option<IdleShutdownLayer>,
+        auth: Option<Arc<Auth>>,
     ) -> Self {
         Self {
             logger,
             replicas_with_hello: RwLock::new(HashSet::<SocketAddr>::new()),
             idle_shutdown_layer,
+            auth,
         }
+    }
+
+    fn authenticate<T>(&self, req: &tonic::Request<T>) -> Result<(), Status> {
+        if let Some(auth) = &self.auth {
+            let _ = auth.authenticate_grpc(req)?;
+        }
+
+        Ok(())
     }
 }
 
@@ -94,7 +107,7 @@ impl<S: futures::stream::Stream + Unpin> futures::stream::Stream for StreamGuard
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Option<Self::Item>> {
-        self.get_mut().s.poll_next_unpin(cx)
+        Pin::new(&mut self.get_mut().s).poll_next(cx)
     }
 }
 
@@ -107,6 +120,8 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
+        self.authenticate(&req)?;
+
         let replica_addr = req
             .remote_addr()
             .ok_or(Status::internal("No remote RPC address"))?;
@@ -118,19 +133,47 @@ impl ReplicationLog for ReplicationLogService {
         }
 
         let stream = StreamGuard::new(
-            FrameStream::new(self.logger.clone(), req.into_inner().next_offset),
+            FrameStream::new(self.logger.clone(), req.into_inner().next_offset, true),
+            self.idle_shutdown_layer.clone(),
+        )
+        .map(map_frame_stream_output);
+
+        Ok(tonic::Response::new(Box::pin(stream)))
+    }
+
+    async fn batch_log_entries(
+        &self,
+        req: tonic::Request<LogOffset>,
+    ) -> Result<tonic::Response<Frames>, Status> {
+        self.authenticate(&req)?;
+
+        let replica_addr = req
+            .remote_addr()
+            .ok_or(Status::internal("No remote RPC address"))?;
+        {
+            let guard = self.replicas_with_hello.read().unwrap();
+            if !guard.contains(&replica_addr) {
+                return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
+            }
+        }
+
+        let frames = StreamGuard::new(
+            FrameStream::new(self.logger.clone(), req.into_inner().next_offset, false),
             self.idle_shutdown_layer.clone(),
         )
         .map(map_frame_stream_output)
-        .boxed();
+        .collect::<Result<Vec<_>, _>>()
+        .await?;
 
-        Ok(tonic::Response::new(stream))
+        Ok(tonic::Response::new(Frames { frames }))
     }
 
     async fn hello(
         &self,
         req: tonic::Request<HelloRequest>,
     ) -> Result<tonic::Response<HelloResponse>, Status> {
+        self.authenticate(&req)?;
+
         let replica_addr = req
             .remote_addr()
             .ok_or(Status::internal("No remote RPC address"))?;
@@ -151,6 +194,8 @@ impl ReplicationLog for ReplicationLogService {
         &self,
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
+        self.authenticate(&req)?;
+
         let (sender, receiver) = mpsc::channel(10);
         let logger = self.logger.clone();
         let offset = req.into_inner().next_offset;
@@ -177,7 +222,9 @@ impl ReplicationLog for ReplicationLogService {
                     }
                 });
 
-                Ok(tonic::Response::new(ReceiverStream::new(receiver).boxed()))
+                Ok(tonic::Response::new(Box::pin(ReceiverStream::new(
+                    receiver,
+                ))))
             }
             Ok(Ok(None)) => Err(Status::new(tonic::Code::Unavailable, "snapshot not found")),
             Err(e) => Err(Status::new(tonic::Code::Internal, e.to_string())),

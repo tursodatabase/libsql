@@ -1,4 +1,8 @@
 use anyhow::{bail, Context as _, Result};
+use axum::http::HeaderValue;
+use tonic::Status;
+
+static GRPC_AUTH_HEADER: &str = "x-authorization";
 
 /// Authentication that is required to access the server.
 #[derive(Default)]
@@ -82,6 +86,17 @@ impl Auth {
             }
             HttpAuthHeader::Bearer(token) => self.validate_jwt(&token),
         }
+    }
+
+    pub fn authenticate_grpc<T>(&self, req: &tonic::Request<T>) -> Result<Authenticated, Status> {
+        let metadata = req.metadata();
+
+        let auth = metadata
+            .get(GRPC_AUTH_HEADER)
+            .map(|v| v.to_bytes().expect("Auth should always be ASCII"))
+            .map(|v| HeaderValue::from_maybe_shared(v).expect("Should already be valid header"));
+
+        self.authenticate_http(auth.as_ref()).map_err(Into::into)
     }
 
     pub fn authenticate_jwt(&self, jwt: Option<&str>) -> Result<Authenticated, AuthError> {
@@ -210,6 +225,12 @@ impl AuthError {
             Self::JwtImmature => "AUTH_JWT_IMMATURE",
             Self::Other => "AUTH_FAILED",
         }
+    }
+}
+
+impl From<AuthError> for Status {
+    fn from(e: AuthError) -> Self {
+        Status::unauthenticated(format!("AuthError: {}", e))
     }
 }
 
