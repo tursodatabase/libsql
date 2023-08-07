@@ -105,7 +105,6 @@ pub struct Config {
     pub max_response_size: u64,
     pub max_total_response_size: u64,
     pub snapshot_exec: Option<String>,
-    pub http_replication_addr: Option<SocketAddr>,
 }
 
 impl Default for Config {
@@ -146,7 +145,6 @@ impl Default for Config {
             max_response_size: 10 * 1024 * 1024,       // 10MiB
             max_total_response_size: 32 * 1024 * 1024, // 32MiB
             snapshot_exec: None,
-            http_replication_addr: None,
         }
     }
 }
@@ -515,12 +513,6 @@ async fn start_primary(
             logger.clone(),
             idle_shutdown_layer.clone(),
         ));
-    }
-
-    if let Some(ref addr) = config.http_replication_addr {
-        // FIXME: let's bring it back once I figure out how Axum works
-        // let auth = get_auth(config)?;
-        join_set.spawn(replication::http::run(*addr, logger.clone()));
     }
 
     run_service(
