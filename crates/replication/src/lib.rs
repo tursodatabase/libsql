@@ -1,19 +1,34 @@
+mod client;
 pub mod frame;
 pub mod replica;
+
+mod pb {
+    #![allow(unreachable_pub)]
+    #![allow(missing_docs)]
+    include!("generated/wal_log.rs");
+
+    pub use replication_log_client::ReplicationLogClient;
+}
 
 pub const WAL_PAGE_SIZE: i32 = 4096;
 pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
 
 /// The frame uniquely identifying, monotonically increasing number
 pub type FrameNo = u64;
+use anyhow::Context;
 pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
+use tokio_stream::StreamExt;
+use uuid::Uuid;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
+
+use crate::client::H2cChannel;
+use crate::pb::HelloRequest;
 
 pub struct Replicator {
     pub frames_sender: Sender<Frames>,
@@ -23,7 +38,7 @@ pub struct Replicator {
     _hook_ctx: Arc<parking_lot::Mutex<InjectorHookCtx>>,
     pub meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
     pub injector: replica::injector::FrameInjector<'static>,
-    pub client: reqwest::Client,
+    pub client: Option<pb::ReplicationLogClient<H2cChannel>>,
     pub next_offset: AtomicU64,
 }
 
@@ -106,9 +121,56 @@ impl Replicator {
             _hook_ctx: hook_ctx,
             meta,
             injector,
-            client: reqwest::Client::builder().build()?,
+            client: None,
             next_offset: AtomicU64::new(1),
         })
+    }
+
+    pub async fn init_metadata(
+        &mut self,
+        endpoint: impl AsRef<str>,
+    ) -> anyhow::Result<replica::meta::WalIndexMeta> {
+        // TODO: Once fly fixes their proxy to correctly accept h2 we can drop
+        // the h2c client but for now lets keep this commented.
+        //
+        // let channel = Channel::builder(
+        //     endpoint
+        //         .as_ref()
+        //         .try_into()
+        //         .context("Unable to convert endpoint into a Uri")?,
+        // )
+        // .tls_config(ClientTlsConfig::new())?
+        // .connect_lazy();
+
+        let channel = H2cChannel::new();
+
+        let mut client = pb::ReplicationLogClient::with_origin(
+            channel,
+            http::Uri::try_from(endpoint.as_ref()).unwrap(),
+        );
+
+        let response = client
+            .hello(pb::HelloRequest::default())
+            .await
+            .context("Unable to fetch wal metadata")?
+            .into_inner();
+
+        let generation_id =
+            Uuid::try_parse(&response.generation_id).context("Unable to parse generation id")?;
+        let database_id =
+            Uuid::try_parse(&response.database_id).context("Unable to parse database id")?;
+
+        self.client = Some(client);
+
+        // FIXME: not that simple, we need to figure out if we always start from frame 1?
+        let meta = replica::meta::WalIndexMeta {
+            pre_commit_frame_no: 0,
+            post_commit_frame_no: 0,
+            generation_id: generation_id.to_u128_le(),
+            database_id: database_id.to_u128_le(),
+        };
+        tracing::debug!("Hello response: {response:?}");
+        Ok(meta)
     }
 
     pub fn update_metadata_from_snapshot_header(
@@ -172,56 +234,60 @@ impl Replicator {
         Ok(())
     }
 
-    pub async fn init_metadata(
-        endpoint: impl AsRef<str>,
-    ) -> anyhow::Result<replica::meta::WalIndexMeta> {
-        let endpoint = endpoint.as_ref();
-        // FIXME: client should be reused to avoid severing the connection each time
-        let response = reqwest::get(format!("{endpoint}/hello"))
-            .await?
-            .text()
-            .await?;
-
-        let response: Hello = serde_json::from_str(&response)?;
-
-        // FIXME: not that simple, we need to figure out if we always start from frame 1?
-        let meta = replica::meta::WalIndexMeta {
-            pre_commit_frame_no: 0,
-            post_commit_frame_no: 0,
-            generation_id: response.generation_id.to_u128_le(),
-            database_id: response.database_id.to_u128_le(),
-        };
-        tracing::debug!("Hello response: {response:?}");
-        Ok(meta)
-    }
-
     // Syncs frames from HTTP, returns how many frames were applied
-    pub async fn sync_from_http(&self, endpoint: impl AsRef<str>) -> anyhow::Result<usize> {
+    pub async fn sync_from_http(&self) -> anyhow::Result<usize> {
         tracing::trace!("Syncing frames from HTTP");
-        let endpoint = endpoint.as_ref();
-        let response = self
-            .client
-            .post(format!("{endpoint}/frames"))
-            .body(
-                serde_json::json!({"next_offset": self.next_offset.load(Ordering::Relaxed)})
-                    .to_string(),
-            )
-            .send()
-            .await?;
-        if response.status() == reqwest::StatusCode::NO_CONTENT {
-            tracing::trace!("No new frames");
-            return Ok(0);
-        }
-        if response.status() != reqwest::StatusCode::OK {
-            anyhow::bail!("HTTP request failed with status {}", response.status());
-        }
-        let response = response.text().await?;
 
-        let frames = serde_json::from_str::<ReplicationFrames>(&response)?;
-        let len = frames.frames.len();
+        let frames = match self.fetch_log_entries(false).await {
+            Ok(frames) => Ok(frames),
+            Err(e) => {
+                if let Some(status) = e.downcast_ref::<tonic::Status>() {
+                    if status.code() == tonic::Code::FailedPrecondition {
+                        self.fetch_log_entries(true).await
+                    } else {
+                        Err(e)
+                    }
+                } else {
+                    Err(e)
+                }
+            }
+        }?;
+
+        let len = frames.len();
         self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
-        self.frames_sender.send(Frames::Vec(frames.frames)).await?;
+        self.frames_sender.send(Frames::Vec(frames)).await?;
         self.injector.step()?;
         Ok(len)
+    }
+
+    async fn fetch_log_entries(&self, send_hello: bool) -> anyhow::Result<Vec<Frame>> {
+        let mut client = self
+            .client
+            .clone()
+            .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
+
+        if send_hello {
+            // TODO: Should we update wal metadata?
+            let _res = client.hello(HelloRequest {}).await?.into_inner();
+        }
+
+        let frames = client
+            .log_entries(pb::LogOffset {
+                next_offset: self.next_offset.load(Ordering::Relaxed),
+            })
+            .await
+            .context("Failed to fetch log entries")?
+            .into_inner();
+
+        let frames = frames
+            .map(|r| {
+                r.context("frame stream")
+                    .and_then(|f| Frame::try_from_bytes(f.data.into()))
+            })
+            .collect::<Result<Vec<_>, _>>()
+            .await
+            .context("frames stream")?;
+
+        Ok(frames)
     }
 }
