@@ -143,18 +143,18 @@ impl From<&mut libsql_rows> for libsql_rows_t {
     }
 }
 
-pub struct libsql_rows_future<'a> {
-    pub(crate) result: libsql::RowsFuture<'a>,
+pub struct libsql_rows_future {
+    pub(crate) result: libsql::RowsFuture,
 }
 
 #[derive(Clone, Debug)]
 #[repr(transparent)]
-pub struct libsql_rows_future_t<'a> {
-    ptr: *const libsql_rows_future<'a>,
+pub struct libsql_rows_future_t {
+    ptr: *const libsql_rows_future,
 }
 
-impl libsql_rows_future_t<'_> {
-    pub fn null<'a>() -> libsql_rows_future_t<'a> {
+impl libsql_rows_future_t {
+    pub fn null() -> libsql_rows_future_t {
         libsql_rows_future_t {
             ptr: std::ptr::null(),
         }
@@ -176,15 +176,15 @@ impl libsql_rows_future_t<'_> {
 }
 
 #[allow(clippy::from_over_into)]
-impl<'a> From<&'a libsql_rows_future<'a>> for libsql_rows_future_t<'a> {
-    fn from(value: &'a libsql_rows_future) -> Self {
+impl From<&libsql_rows_future> for libsql_rows_future_t {
+    fn from(value: &libsql_rows_future) -> Self {
         Self { ptr: value }
     }
 }
 
 #[allow(clippy::from_over_into)]
-impl<'a> From<&'a mut libsql_rows_future<'a>> for libsql_rows_future_t<'a> {
-    fn from(value: &'a mut libsql_rows_future) -> Self {
+impl From<&mut libsql_rows_future> for libsql_rows_future_t {
+    fn from(value: &mut libsql_rows_future) -> Self {
         Self { ptr: value }
     }
 }
