@@ -4,6 +4,9 @@
 
 --null NULL
 --- also ignored
+--testcase first
+input for the first
+command;
 --testcase second
 select 1
 --result /* ignored */

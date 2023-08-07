@@ -21,12 +21,15 @@ public class TestScript {
     return java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(filename));
   }
 
+  private void setContent(String c){
+    content = c;
+  }
   /**
      Initializes the script with the content of the given file.
   */
   public TestScript(String filename) throws IOException{
-    this.content = new String(readFile(filename),
-                              java.nio.charset.StandardCharsets.UTF_8);
+    setContent(new String(readFile(filename),
+                          java.nio.charset.StandardCharsets.UTF_8));
   }
 
   /**
@@ -34,16 +37,16 @@ public class TestScript {
      at construction-time.
   */
   public TestScript(StringBuffer content){
-    this.content = content.toString();
+    setContent(content.toString());
   }
 
   public void setVerbose(boolean b){
-    this.outer.setVerbose(b);
+    outer.setVerbose(b);
   }
 
   @SuppressWarnings("unchecked")
   private <T> TestScript verbose(T... vals){
-    this.outer.verbose(vals);
+    outer.verbose(vals);
     return this;
   }
 
@@ -53,43 +56,53 @@ public class TestScript {
      C-style comments from expected script output, which might or might not
      be a real problem.
    */
-  private String chunkContent(){
+  private List<String> chunkContent(String input){
     final String sCComment =
       "[/][*]([*](?![/])|[^*])*[*][/]"
       //"/\\*[^/*]*(?:(?!/\\*|\\*/)[/*][^/*]*)*\\*/"
       ;
-    final String s3Dash = "^---[^\\n]*\\n";
+    final String s3Dash = "^---+[^\\n]*\\n";
     final String sTclComment = "^#[^\\n]*\\n";
     final String sEmptyLine = "^\\n";
-    final String sCommand = "^--.*$";
     final List<String> lPats = new ArrayList<>();
     lPats.add(sCComment);
     lPats.add(s3Dash);
     lPats.add(sTclComment);
     lPats.add(sEmptyLine);
-    //lPats.add(sCommand);
-    verbose("Content:").verbose(content).verbose("<EOF>");
-    String tmp = content;
+    //verbose("Content:").verbose(input).verbose("<EOF>");
+    String tmp = input;
     for( String s : lPats ){
       final Pattern p = Pattern.compile(
         s, Pattern.MULTILINE
       );
       final Matcher m = p.matcher(tmp);
-      verbose("Pattern {{{",p.pattern(),"}}} with flags",
+      /*verbose("Pattern {{{",p.pattern(),"}}} with flags",
               ""+p.flags(),"matches:"
-      );
+              );*/
       int n = 0;
-      while(m.find()){
-        verbose("#"+(++n)+"\t",m.group(0).trim());
-      }
+      //while( m.find() ) verbose("#"+(++n)+"\t",m.group(0).trim());
       tmp = m.replaceAll("");
     }
-    //final Pattern patCComments = new Pattern();
-    //tmp = content.replace(sCComment,"");
-    //tmp = tmp.replace(s3Dash,"");
-    //tmp = tmp.replace(sTclComment,"");
-    //tmp = tmp.replace(sEmptyLine,"");
-    return tmp;
+    // Chunk the newly-stripped text into individual commands.
+    final String sCommand = "^--";
+    final List<String> rc = new ArrayList<>();
+    final Pattern p = Pattern.compile(
+      sCommand, Pattern.MULTILINE
+    );
+    final Matcher m = p.matcher(tmp);
+    int ndxPrev = 0, pos = 0;
+    String chunk;
+    while( m.find() ){
+      pos = m.start();
+      chunk = tmp.substring(ndxPrev, pos).trim();
+      if( !chunk.isEmpty() ) rc.add( chunk );
+      ndxPrev = pos + 2;
+    }
+    if( ndxPrev != pos + 2 ){
+      chunk = tmp.substring(ndxPrev, tmp.length()).trim();
+      if( !chunk.isEmpty() ) rc.add( chunk );
+    }
+    return rc;
   }
 
   /**
@@ -97,7 +110,12 @@ public class TestScript {
      in some form or other (possibly mangled from its original).
   */
   public void dump(){
-    String s = this.chunkContent();
-    this.verbose("chunked script:").verbose(s).verbose("<EOF>");
+    List<String> list = chunkContent(content);
+    verbose("script chunked by command:");
+    int n = 0;
+    for(String c : list){
+      verbose("#"+(++n),c);
+    }
+    verbose("<EOF>");
   }
 }
