@@ -229,7 +229,7 @@ pub async fn run_http<D: Database>(
     logger: Option<Arc<ReplicationLogger>>,
 ) -> anyhow::Result<()> {
     let state = AppState {
-        auth,
+        auth: auth.clone(),
         db_factory,
         upgrade_tx,
         hrana_http_srv,
@@ -278,7 +278,7 @@ pub async fn run_http<D: Database>(
 
     // Merge the grpc based axum router into our regular http router
     let router = if let Some(logger) = logger {
-        let logger_rpc = ReplicationLogService::new(logger, idle_shutdown_layer);
+        let logger_rpc = ReplicationLogService::new(logger, idle_shutdown_layer, Some(auth));
         let grpc_router = Server::builder()
             .add_service(crate::rpc::ReplicationLogServer::new(logger_rpc))
             .into_router();

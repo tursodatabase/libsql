@@ -15,16 +15,22 @@ pub struct FrameStream {
     pub(crate) max_available_frame_no: FrameNo,
     logger: Arc<ReplicationLogger>,
     state: FrameStreamState,
+    wait_for_more: bool,
 }
 
 impl FrameStream {
-    pub fn new(logger: Arc<ReplicationLogger>, current_frameno: FrameNo) -> Self {
+    pub fn new(
+        logger: Arc<ReplicationLogger>,
+        current_frameno: FrameNo,
+        wait_for_more: bool,
+    ) -> Self {
         let max_available_frame_no = *logger.new_frame_notifier.subscribe().borrow();
         Self {
             current_frame_no: current_frameno,
             max_available_frame_no,
             logger,
             state: FrameStreamState::Init,
+            wait_for_more,
         }
     }
 
@@ -84,6 +90,13 @@ impl Stream for FrameStream {
                 }
 
                 Err(LogReadError::Ahead) => {
+                    // If we don't wait to wait for more then lets end this stream
+                    // without subscribing for more frames
+                    if !self.wait_for_more {
+                        self.state = FrameStreamState::Closed;
+                        return Poll::Ready(None);
+                    }
+
                     let mut notifier = self.logger.new_frame_notifier.subscribe();
                     let max_available_frame_no = *notifier.borrow();
                     // check in case value has already changed, otherwise we'll be notified later
