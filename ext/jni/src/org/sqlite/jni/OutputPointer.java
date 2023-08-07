@@ -14,8 +14,7 @@
 package org.sqlite.jni;
 
 /**
-   Helper classes for handling JNI output pointers for primitive
-   types.
+   Helper classes for handling JNI output pointers.
 
    We do not use a generic OutputPointer<T> because working with those
    from the native JNI code is unduly quirky due to a lack of
