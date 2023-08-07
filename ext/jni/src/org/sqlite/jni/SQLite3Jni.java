@@ -475,6 +475,11 @@ public final class SQLite3Jni {
      heed. Passing the object to sqlite3_close() or sqlite3_close_v2()
      will clear that pointer mapping.
 
+     Recall that even if opening fails, the output pointer might be
+     non-null. Any error message about the failure will be in that
+     object and it is up to the caller to sqlite3_close() that
+     db handle.
+
      Pedantic note: though any number of Java-level sqlite3 objects
      may refer to/wrap a single C-level (sqlite3*), the JNI internals
      take a reference to the object which is passed to sqlite3_open()

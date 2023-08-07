@@ -1103,6 +1103,7 @@ static PerDbStateJni * PerDbStateJni_alloc(JNIEnv * const env, sqlite3 *pDb,
   return rv;
 }
 
+#if 0
 static void PerDbStateJni_dump(PerDbStateJni *s){
   MARKER(("PerDbStateJni->env @ %p\n", s->env));
   MARKER(("PerDbStateJni->pDb @ %p\n", s->pDb));
@@ -1113,6 +1114,7 @@ static void PerDbStateJni_dump(PerDbStateJni *s){
   MARKER(("PerDbStateJni->busyHandler.jObj @ %p\n", s->busyHandler.jObj));
   MARKER(("PerDbStateJni->env @ %p\n", s->env));
 }
+#endif
 
 /**
    Returns the PerDbStateJni object for the given db. If allocIfNeeded is
@@ -1554,7 +1556,8 @@ typedef void (*udf_xFinal_f)(sqlite3_context*);
 /**
    State for binding Java-side UDFs.
 */
-typedef struct {
+typedef struct UDFState UDFState;
+struct UDFState {
   JNIEnv * env;         /* env registered from */;
   jobject jObj          /* SQLFunction instance */;
   jclass klazz          /* jObj's class */;
@@ -1566,7 +1569,7 @@ typedef struct {
   jmethodID jmidxFinal;
   jmethodID jmidxValue;
   jmethodID jmidxInverse;
-} UDFState;
+};
 
 static UDFState * UDFState_alloc(JNIEnv * const env, jobject jObj){
   UDFState * const s = sqlite3_malloc(sizeof(UDFState));
@@ -2019,18 +2022,13 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   int rc = 0;
   PerDbStateJni * ps = 0;
   assert(version == 1 || version == 2);
-  if(0){
-    PerDbStateJni * s = S3Global.perDb.aUsed;
-    for( ; s; s = s->pNext){
-      PerDbStateJni_dump(s);
-    }
-  }
   ps = PerDbStateJni_for_db(env, jDb, 0, 0);
-  if(!ps) return rc;
-  rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
-  if(ps) PerDbStateJni_set_aside(ps)
-           /* MUST come after close() because of ps->trace. */;
-  NativePointerHolder_set(env, jDb, 0, S3ClassNames.sqlite3);
+  if(ps){
+    rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
+    PerDbStateJni_set_aside(ps)
+      /* MUST come after close() because of ps->trace. */;
+    NativePointerHolder_set(env, jDb, 0, S3ClassNames.sqlite3);
+  }
   return (jint)rc;
 }
 
@@ -2053,15 +2051,18 @@ static unsigned int s3jni_utf16_strlen(void const * z){
   return i;
 }
 
+/**
+   sqlite3_collation_needed16() hook impl.
+ */
 static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
                                           int eTextRep, const void * z16Name){
   PerDbStateJni * const ps = pState;
   JNIEnv * const env = ps->env;
   unsigned int const nName = s3jni_utf16_strlen(z16Name);
-  jstring jName;
-  jName  = (*env)->NewString(env, (jchar const *)z16Name, nName);
-  IFTHREW {
+  jstring jName = (*env)->NewString(env, (jchar const *)z16Name, nName);
+  IFTHREW{
     s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
+    EXCEPTION_CLEAR;
   }else{
     (*env)->CallVoidMethod(env, ps->collationNeeded.jObj,
                            ps->collationNeeded.midCallback,
@@ -2082,7 +2083,8 @@ JDECL(jint,1collation_1needed)(JENV_CSELF, jobject jDb, jobject jHook){
   jmethodID xCallback;
   JniHookState * const pHook = &ps->collationNeeded;
   int rc;
-  if(!ps) return SQLITE_MISUSE;
+
+  if( !ps ) return SQLITE_MISUSE;
   pOld = pHook->jObj;
   if(pOld && jHook &&
      (*env)->IsSameObject(env, pOld, jHook)){
@@ -3291,13 +3293,15 @@ JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
   puts("sizeofs:");
 #define SO(T) printf("\tsizeof(" #T ") = %u\n", (unsigned)sizeof(T))
   SO(void*);
-  SO(JniHookState);
   SO(JNIEnvCache);
+  SO(JniHookState);
   SO(PerDbStateJni);
-  SO(S3Global);
   SO(S3ClassNames);
   printf("\t(^^^ %u NativePointerHolder subclasses)\n",
          (unsigned)(sizeof(S3ClassNames) / sizeof(const char *)));
+  SO(S3Global);
+  SO(S3JniAutoExtension);
+  SO(UDFState);
   printf("Cache info:\n");
   printf("\tNativePointerHolder cache: %u misses, %u hits\n",
          S3Global.metrics.nphCacheMisses,

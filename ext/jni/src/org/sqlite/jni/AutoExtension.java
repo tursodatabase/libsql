@@ -21,9 +21,9 @@ public interface AutoExtension {
      Must function as described for the sqlite3_auto_extension(),
      with the caveat that the signature is more limited.
 
-     As an exception to the callbacks-must-not-throw rule,
-     AutoExtensions may do so and the exception's error
-     message will be set as the db's error string.
+     As an exception (as it were) to the callbacks-must-not-throw
+     rule, AutoExtensions may do so and the exception's error message
+     will be set as the db's error string.
   */
   int xEntryPoint(sqlite3 db);
 }

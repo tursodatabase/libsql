@@ -1076,6 +1076,26 @@ public class Tester1 {
     outln("Tests done. Metrics:");
     outln("\tAssertions checked: "+affirmCount);
     outln("\tDatabases opened: "+metrics.dbOpen);
+
+    int nMethods = 0;
+    int nNatives = 0;
+    final java.lang.reflect.Method[] declaredMethods =
+      SQLite3Jni.class.getDeclaredMethods();
+    for(java.lang.reflect.Method m : declaredMethods){
+      int mod = m.getModifiers();
+      if( 0!=(mod & java.lang.reflect.Modifier.STATIC) ){
+        final String name = m.getName();
+        if(name.startsWith("sqlite3_")){
+          ++nMethods;
+          if( 0!=(mod & java.lang.reflect.Modifier.NATIVE) ){
+            ++nNatives;
+          }
+        }
+      }
+    }
+    outln("\tSQLite3Jni sqlite3_*() methods: "+
+          nNatives+" native methods and "+
+          (nMethods - nNatives)+" Java impls");
     outln("\tTotal time = "
           +((timeEnd - timeStart)/1000000.0)+"ms");
   }
