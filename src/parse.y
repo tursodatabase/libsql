@@ -1722,7 +1722,7 @@ cmd ::= ALTER TABLE fullname(X) RENAME kwcolumn_opt nm(Y) TO nm(Z). {
   sqlite3AlterRenameColumn(pParse, X, &Y, &Z);
 }
 
-cmd ::= ALTER TABLE fullname(X) UPDATE COLUMNKW columnname(Y) TO columnname(Z) carglist. {
+cmd ::= ALTER TABLE fullname(X) ALTER COLUMNKW columnname(Y) TO columnname(Z) carglist. {
   libsqlAlterUpdateColumn(pParse, X, &Y, &Z);
 }
 

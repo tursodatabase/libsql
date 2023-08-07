@@ -6,7 +6,7 @@ fn test_update_column_check() {
 
     conn.execute("CREATE TABLE t(id)", ()).unwrap();
     conn.execute("INSERT INTO t VALUES (10)", ()).unwrap();
-    conn.execute("ALTER TABLE t UPDATE COLUMN id TO id CHECK(id < 5)", ())
+    conn.execute("ALTER TABLE t ALTER COLUMN id TO id CHECK(id < 5)", ())
         .unwrap();
     assert!(conn.execute("INSERT INTO t VALUES (10)", ()).is_err());
     assert!(conn.execute("INSERT INTO t VALUES (4)", ()).is_ok());
@@ -16,7 +16,7 @@ fn test_update_column_check() {
     assert!(conn
         .execute("UPDATE t SET id = 4 WHERE id = 10", ())
         .is_ok());
-    conn.execute("ALTER TABLE t UPDATE COLUMN id TO id", ())
+    conn.execute("ALTER TABLE t ALTER COLUMN id TO id", ())
         .unwrap();
     assert!(conn.execute("INSERT INTO t VALUES (10)", ()).is_ok());
 }
@@ -36,7 +36,7 @@ fn test_update_default_constraint() {
         .query_row("SELECT id FROM t WHERE id = 42", (), |_| Ok(()))
         .is_err());
 
-    conn.execute("ALTER TABLE t UPDATE COLUMN id TO id DEFAULT 42", ())
+    conn.execute("ALTER TABLE t ALTER COLUMN id TO id DEFAULT 42", ())
         .unwrap();
     assert!(conn.execute("INSERT INTO t DEFAULT VALUES", ()).is_ok());
     let row: Result<i64, _> =
@@ -50,7 +50,7 @@ fn test_update_not_null_constraint() {
 
     conn.execute("CREATE TABLE t(id)", ()).unwrap();
     assert!(conn.execute("INSERT INTO t VALUES (NULL)", ()).is_ok());
-    conn.execute("ALTER TABLE t UPDATE COLUMN id TO id INT NOT NULL", ())
+    conn.execute("ALTER TABLE t ALTER COLUMN id TO id INT NOT NULL", ())
         .unwrap();
     assert!(conn.execute("INSERT INTO t VALUES (NULL)", ()).is_err());
     assert!(conn.execute("INSERT INTO t DEFAULT VALUES", ()).is_err());
@@ -66,7 +66,7 @@ fn test_update_references_foreign_key() {
         .unwrap();
     conn.execute("INSERT INTO t1 VALUES (1)", ()).unwrap();
     conn.execute(
-        "ALTER TABLE t2 UPDATE COLUMN t1_id TO t1_id REFERENCES t1(id)",
+        "ALTER TABLE t2 ALTER COLUMN t1_id TO t1_id REFERENCES t1(id)",
         (),
     )
     .unwrap();
@@ -85,7 +85,7 @@ fn test_update_references_foreign_key() {
     assert!(conn
         .execute("UPDATE t1 SET t1_id = 42 WHERE t1_id = 1", ())
         .is_err());
-    conn.execute("ALTER TABLE t2 UPDATE COLUMN t1_id TO t1_id", ())
+    conn.execute("ALTER TABLE t2 ALTER COLUMN t1_id TO t1_id", ())
         .unwrap();
     // It's again ok to insert a row with a non-existent foreign key
     assert!(conn
@@ -98,21 +98,21 @@ fn test_update_syntax_validation() {
     let conn = Connection::open_in_memory().unwrap();
 
     assert!(conn
-        .execute("ALTER TABLE t UPDATE COLUMN id TO id", ())
+        .execute("ALTER TABLE t ALTER COLUMN id TO id", ())
         .is_err());
     conn.execute("CREATE TABLE t(id)", ()).unwrap();
     assert!(conn
-        .execute("ALTER TABLE t UPDATE COLUMN id TO id", ())
+        .execute("ALTER TABLE t ALTER COLUMN id TO id", ())
         .is_ok());
     assert!(conn
-        .execute("ALTER TABLE t UPDATE COLUMN id TO id 1 2 3", ())
+        .execute("ALTER TABLE t ALTER COLUMN id TO id 1 2 3", ())
         .is_err());
     assert!(conn
-        .execute("ALTER TABLE t UPDATE COLUMN id TO id2", ())
+        .execute("ALTER TABLE t ALTER COLUMN id TO id2", ())
         .is_err());
     assert!(conn
         .execute(
-            "ALTER TABLE t UPDATE COLUMN id TO id REFERENCES x(y) TEXT",
+            "ALTER TABLE t ALTER COLUMN id TO id REFERENCES x(y) TEXT",
             ()
         ) // type affinity should go before REFERENCES
         .is_err());
@@ -121,11 +121,11 @@ fn test_update_syntax_validation() {
         .unwrap();
     assert!(conn
         .execute(
-            "ALTER TABLE \";;)),\" UPDATE COLUMN \"v,);\" TO \"v,);\" float",
+            "ALTER TABLE \";;)),\" ALTER COLUMN \"v,);\" TO \"v,);\" float",
             ()
         )
         .is_ok());
     assert!(conn
-        .execute("ALTER TABLE \";;)),\" UPDATE COLUMN \"v,);\" TO \"v,);\" REFERENCES \"x;;,)\"(\"y;,,,,\")", ())
+        .execute("ALTER TABLE \";;)),\" ALTER COLUMN \"v,);\" TO \"v,);\" REFERENCES \"x;;,)\"(\"y;,,,,\")", ())
         .is_ok());
 }

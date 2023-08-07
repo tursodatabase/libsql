@@ -1,6 +1,6 @@
-mod random_rowid;
 #[cfg(test)]
-mod update_column;
+mod alter_column;
+mod random_rowid;
 mod virtual_wal;
 
 #[cfg(all(test, feature = "udf"))]

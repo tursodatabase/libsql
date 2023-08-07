@@ -40,7 +40,7 @@ libsql> CREATE TABLE emails (user_id INT, email TEXT);
 and add a foreign key constraint from the `user_id` column to the `id` column of the `users` table:
 
 ```sql
-libsql> ALTER TABLE emails UPDATE COLUMN user_id TO user_id INT REFERENCES users(id);
+libsql> ALTER TABLE emails ALTER COLUMN user_id TO user_id INT REFERENCES users(id);
 ```
 
 and now you have the following schema in your database:
@@ -54,7 +54,7 @@ CREATE TABLE emails (user_id INT REFERENCES users(id), email TEXT);
 To **remove a foreign constraint**, you do the following:
 
 ```console
-libsql> ALTER TABLE emails UPDATE COLUMN user_id TO user_id INT;
+libsql> ALTER TABLE emails ALTER COLUMN user_id TO user_id INT;
 libsql> .schema
 CREATE TABLE users (id INT PRIMARY KEY);
 CREATE TABLE emails (user_id INT, email TEXT);
@@ -63,30 +63,30 @@ CREATE TABLE emails (user_id INT, email TEXT);
 ### Other attributes
 
 All kind of column attributes, like type affinity, CHECK constraints, DEFAULT values, and so on,
-can be amended with `ALTER TABLE UPDATE COLUMN` as well:
+can be amended with `ALTER TABLE ALTER COLUMN` as well:
 
 ```sql
 libsql> CREATE TABLE t(id, v);
 ```
 ```sql
-libsql> ALTER TABLE t UPDATE COLUMN v TO v NOT NULL CHECK(v < 42);
+libsql> ALTER TABLE t ALTER COLUMN v TO v NOT NULL CHECK(v < 42);
 libsql> .schema t
 CREATE TABLE t(id, v NOT NULL CHECK(v < 42));
 ```
 ```sql
-libsql> ALTER TABLE t UPDATE COLUMN v TO v TEXT DEFAULT 'hai';
+libsql> ALTER TABLE t ALTER COLUMN v TO v TEXT DEFAULT 'hai';
 libsql> .schema t
 CREATE TABLE t(id, v TEXT DEFAULT 'hai');
 ```
 ```sql
-libsql> ALTER TABLE t UPDATE COLUMN v TO v;
+libsql> ALTER TABLE t ALTER COLUMN v TO v;
 libsql> .schema t
 CREATE TABLE t(id, v);
 ```
 
 ### Caveats
 
-Please note that altering constraints via ALTER TABLE UPDATE COLUMN only applies
+Please note that altering constraints via ALTER TABLE ALTER COLUMN only applies
 to newly inserted or updated data - existing rows are not rewritten or revalidated.
 
 It's also important to notice that foreign key constraints are disabled by default,

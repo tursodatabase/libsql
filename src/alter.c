@@ -679,7 +679,7 @@ void sqlite3AlterRenameColumn(
 /*
 ** Handles the following parser reduction:
 **
-**  cmd ::= ALTER TABLE pSrc UPDATE COLUMN pOld TO pNew
+**  cmd ::= ALTER TABLE pSrc ALTER COLUMN pOld TO pNew
 */
 void libsqlAlterUpdateColumn(
   Parse *pParse,                  /* Parsing context */
@@ -741,7 +741,7 @@ void libsqlAlterUpdateColumn(
     sqlite3ErrorMsg(pParse, "UPDATE cannot also rename column: \"%T\" to \"%T\". Use ALTER TABLE RENAME instead", pOld, pNew);
     goto exit_update_column;
   }
-  // NOTICE: this is the main difference in UPDATE COLUMN compared to RENAME COLUMN,
+  // NOTICE: this is the main difference in ALTER COLUMN compared to RENAME COLUMN,
   // we just take the whole new column declaration as it is.
   // FIXME: the semicolon can also appear in the middle of the declaration when it's quoted,
   // so we should check from the end.
@@ -1762,12 +1762,12 @@ renameColumnFunc_done:
 **   5. bQuote:   Non-zero if the new column name should be quoted.
 **   6. bTemp:    True if zSql comes from temp schema
 **
-** Do a ALTER TABLE UPDATE COLUMN operation on the CREATE statement given in zSql.
+** Do a ALTER TABLE ALTER COLUMN operation on the CREATE statement given in zSql.
 ** The iCol-th column (left-most is 0) of table zTable is translated from zCol
 ** into zNew definition, which the new constraints.
 ** The name should be quoted if bQuote is true.
 **
-** This function is used internally by the ALTER TABLE UPDATE COLUMN command.
+** This function is used internally by the ALTER TABLE ALTER COLUMN command.
 ** It is only accessible to SQL created using sqlite3NestedParse().  It is
 ** not reachable from ordinary SQL passed into sqlite3_prepare() unless the
 ** SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test setting is enabled.
