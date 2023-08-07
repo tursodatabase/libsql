@@ -6,17 +6,17 @@ use std::ffi::c_int;
 use std::sync::Arc;
 
 /// A prepared statement.
-pub struct Statement<'a> {
-    _conn: &'a Connection,
+pub struct Statement {
+    _conn: Connection,
     inner: Arc<libsql_sys::Statement>,
 }
 
-impl Statement<'_> {
-    pub(crate) fn prepare<'a>(
-        conn: &'a Connection,
+impl Statement {
+    pub(crate) fn prepare(
+        conn: Connection,
         raw: *mut libsql_sys::ffi::sqlite3,
         sql: &str,
-    ) -> Result<Statement<'a>> {
+    ) -> Result<Statement> {
         match unsafe { libsql_sys::prepare_stmt(raw, sql) } {
             Ok(stmt) => Ok(Statement {
                 _conn: conn,
@@ -212,7 +212,7 @@ impl Column<'_> {
     }
 }
 
-impl Statement<'_> {
+impl Statement {
     /// Get all the column names in the result set of the prepared statement.
     ///
     /// If associated DB schema can be altered concurrently, you should make

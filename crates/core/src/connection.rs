@@ -4,6 +4,7 @@ use libsql_sys::ffi;
 use std::ffi::c_int;
 
 /// A connection to a libSQL database.
+#[derive(Clone, Debug)]
 pub struct Connection {
     pub(crate) raw: *mut ffi::sqlite3,
 }
@@ -55,7 +56,7 @@ impl Connection {
 
     /// Prepare the SQL statement.
     pub fn prepare<S: Into<String>>(&self, sql: S) -> Result<Statement> {
-        Statement::prepare(self, self.raw, sql.into().as_str())
+        Statement::prepare(self.clone(), self.raw, sql.into().as_str())
     }
 
     /// Execute the SQL statement synchronously.
@@ -73,7 +74,7 @@ impl Connection {
         S: Into<String>,
         P: Into<Params>,
     {
-        let stmt = Statement::prepare(&self, self.raw, sql.into().as_str())?;
+        let stmt = Statement::prepare(self.clone(), self.raw, sql.into().as_str())?;
         let params = params.into();
         Ok(stmt.execute(&params))
     }
@@ -89,7 +90,7 @@ impl Connection {
         P: Into<Params>,
     {
         RowsFuture {
-            conn: &self,
+            conn: self.clone(),
             sql: sql.into(),
             params: params.into(),
         }
