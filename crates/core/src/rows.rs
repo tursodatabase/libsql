@@ -49,19 +49,19 @@ impl Rows {
     }
 }
 
-pub struct RowsFuture<'a> {
-    pub(crate) conn: &'a Connection,
+pub struct RowsFuture {
+    pub(crate) conn: Connection,
     pub(crate) sql: String,
     pub(crate) params: Params,
 }
 
-impl RowsFuture<'_> {
+impl RowsFuture {
     pub fn wait(&mut self) -> Result<Option<Rows>> {
         futures::executor::block_on(self)
     }
 }
 
-impl futures::Future for RowsFuture<'_> {
+impl futures::Future for RowsFuture {
     type Output = Result<Option<Rows>>;
 
     fn poll(
