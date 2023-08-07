@@ -1013,18 +1013,18 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1table_
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_column_text
+ * Method:    sqlite3_column_text16
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text16
   (JNIEnv *, jclass, jobject, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_column_text_utf8
+ * Method:    sqlite3_column_text
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text_1utf8
+JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text
   (JNIEnv *, jclass, jobject, jint);
 
 /*

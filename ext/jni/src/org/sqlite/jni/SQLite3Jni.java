@@ -326,25 +326,18 @@ public final class SQLite3Jni {
   public static native String sqlite3_column_table_name(@NotNull sqlite3_stmt stmt, int ndx);
 
   /**
-     Because Java strings use UTF-16 and JNI speaks Modified UTF-8
-     instead of standard UTF8[^1], this routine functions equivalently to
-     the native sqlite3_column_text16(), so requires conversion from
-     the db if the db uses the default encoding of UTF-8.
-
-     To extract _standard_ UTF-8, use sqlite3_column_text_utf8().
+     To extract _standard_ UTF-8, use sqlite3_column_text().
      This API includes no functions for working with Java's Modified
      UTF-8.
-
-     [^1]: https://stackoverflow.com/questions/7921016
   */
-  public static native String sqlite3_column_text(@NotNull sqlite3_stmt stmt, int ndx);
+  public static native String sqlite3_column_text16(@NotNull sqlite3_stmt stmt, int ndx);
 
   /**
-     Similar to sqlite3_column_text(), but the result is an array encoded
-     in standard UTF-8, not Modified UTF-8.
+     Returns the given column's contents as UTF-8-encoded (not MUTF-8) text.
+     Use sqlite3_column_text16() to fetch the text
   */
-  public static native byte[] sqlite3_column_text_utf8(@NotNull sqlite3_stmt stmt,
-                                                       int ndx);
+  public static native byte[] sqlite3_column_text(@NotNull sqlite3_stmt stmt,
+                                                  int ndx);
 
   // The real utility of this function is questionable.
   // /**
@@ -455,6 +448,9 @@ public final class SQLite3Jni {
 
   public static native String sqlite3_errstr(int resultCode);
 
+  /**
+     Note that the offset values assume UTF-8-encoded SQL.
+  */
   public static native int sqlite3_error_offset(@NotNull sqlite3 db);
 
   public static native int sqlite3_finalize(@NotNull sqlite3_stmt stmt);

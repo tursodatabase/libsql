@@ -331,7 +331,7 @@ public class Tester1 {
     StringBuilder sbuf = new StringBuilder();
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
-      String txt = sqlite3_column_text(stmt, 0);
+      String txt = sqlite3_column_text16(stmt, 0);
       //outln("txt = "+txt);
       sbuf.append( txt );
       ++n;
@@ -412,7 +412,7 @@ public class Tester1 {
     sqlite3_stmt stmt = prepare(db, "SELECT a FROM t ORDER BY a COLLATE reversi");
     int counter = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
-      final String val = sqlite3_column_text(stmt, 0);
+      final String val = sqlite3_column_text16(stmt, 0);
       ++counter;
       //outln("REVERSI'd row#"+counter+": "+val);
       switch(counter){
@@ -426,7 +426,7 @@ public class Tester1 {
     stmt = prepare(db, "SELECT a FROM t ORDER BY a");
     counter = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
-      final String val = sqlite3_column_text(stmt, 0);
+      final String val = sqlite3_column_text16(stmt, 0);
       ++counter;
       //outln("Non-REVERSI'd row#"+counter+": "+val);
       switch(counter){
@@ -634,7 +634,7 @@ public class Tester1 {
     affirm( 0 == rc );
     int n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
-      final String s = sqlite3_column_text(stmt, 0);
+      final String s = sqlite3_column_text16(stmt, 0);
       final int i = sqlite3_column_int(stmt, 1);
       switch(++n){
         case 1: affirm( "a".equals(s) && 9==i ); break;
@@ -710,7 +710,7 @@ public class Tester1 {
             case SQLITE_TRACE_ROW:
               affirm(pNative instanceof sqlite3_stmt);
               affirm(null == x);
-              //outln("TRACE_ROW = "+sqlite3_column_text((sqlite3_stmt)pNative, 0));
+              //outln("TRACE_ROW = "+sqlite3_column_text16((sqlite3_stmt)pNative, 0));
               break;
             case SQLITE_TRACE_CLOSE:
               affirm(pNative instanceof sqlite3);

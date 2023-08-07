@@ -600,6 +600,18 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj, jclass klazz){
 }
 
 /**
+   Creates a new jByteArray of length nP, copies p's contents into it, and
+   returns that byte array.
+ */
+static jbyteArray s3jni_new_jbyteArray(JNIEnv * const env, const unsigned char * const p, int nP){
+  jbyteArray jba = (*env)->NewByteArray(env, (jint)nP);
+  if(jba){
+    (*env)->SetByteArrayRegion(env, jba, 0, (jint)nP, (const jbyte*)p);
+  }
+  return jba;
+}
+
+/**
    Uses the java.lang.String(byte[],Charset) constructor to create a
    new String from UTF-8 string z. n is the number of bytes to
    copy. If n<0 then sqlite3Strlen30() is used to calculate it.
@@ -623,9 +635,8 @@ static jstring s3jni_utf8_to_jstring(JNIEnvCache * const jc,
   }else if( z ){
     jbyteArray jba;
     if( n<0 ) n = sqlite3Strlen30(z);
-    jba = (*env)->NewByteArray(env, (jsize)n);
+    jba = s3jni_new_jbyteArray(env, (unsigned const char *)z, (jsize)n);
     if( jba ){
-      (*env)->SetByteArrayRegion(env, jba, 0, n, (jbyte const *)z);
       rv = (*env)->NewObject(env, jc->g.cString, jc->g.ctorStringBA,
                              jba, jc->g.oCharsetUtf8);
       UNREF_L(jba);
@@ -674,6 +685,19 @@ static char * s3jni_jstring_to_utf8(JNIEnvCache * const jc,
   }
   UNREF_L(jba);
   return rv;
+}
+
+/**
+   Expects to be passed a pointer from sqlite3_column_text16() or
+   sqlite3_value_text16() and a byte-length value from
+   sqlite3_column_bytes16() or sqlite3_value_bytes16(). It creates a
+   Java String of exactly half that character length, returning NULL
+   if !p or (*env)->NewString() fails.
+*/
+static jstring s3jni_text16_to_jstring(JNIEnv * const env, const void * const p, int nP){
+  return p
+    ? (*env)->NewString(env, (const jchar *)p, (jsize)(nP/2))
+    : NULL;
 }
 
 /**
@@ -2141,45 +2165,20 @@ JDECL(jlong,1column_1int64)(JENV_CSELF, jobject jpStmt,
   return (jlong)sqlite3_column_int64(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
-/**
-   Expects to be passed a pointer from sqlite3_column_text16() or
-   sqlite3_value_text16() and a length value from
-   sqlite3_column_bytes16() or sqlite3_value_bytes16(). It creates a
-   Java String of exactly half that length, returning NULL if !p or
-   (*env)->NewString() fails.
-*/
-static jstring s3jni_text16_to_jstring(JNIEnv * const env, const void * const p, int nP){
-  return p
-    ? (*env)->NewString(env, (const jchar *)p, (jsize)(nP/2))
-    : NULL;
-}
-
-/**
-   Creates a new jByteArray of length nP, copies p's contents into it, and
-   returns that byte array.
- */
-static jbyteArray s3jni_new_jbyteArray(JNIEnv * const env, const unsigned char * const p, int nP){
-  jbyteArray jba = (*env)->NewByteArray(env, (jint)nP);
-  if(jba){
-    (*env)->SetByteArrayRegion(env, jba, 0, (jint)nP, (const jbyte*)p);
-  }
-  return jba;
-}
-
-JDECL(jstring,1column_1text)(JENV_CSELF, jobject jpStmt,
-                             jint ndx){
-  sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
-  const int n = sqlite3_column_bytes16(stmt, (int)ndx);
-  const void * const p = sqlite3_column_text16(stmt, (int)ndx);
-  return s3jni_text16_to_jstring(env, p, n);
-}
-
-JDECL(jbyteArray,1column_1text_1utf8)(JENV_CSELF, jobject jpStmt,
+JDECL(jbyteArray,1column_1text)(JENV_CSELF, jobject jpStmt,
                                       jint ndx){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
   const int n = sqlite3_column_bytes(stmt, (int)ndx);
   const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
   return s3jni_new_jbyteArray(env, p, n);
+}
+
+JDECL(jstring,1column_1text16)(JENV_CSELF, jobject jpStmt,
+                               jint ndx){
+  sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
+  const int n = sqlite3_column_bytes16(stmt, (int)ndx);
+  const void * const p = sqlite3_column_text16(stmt, (int)ndx);
+  return s3jni_text16_to_jstring(env, p, n);
 }
 
 JDECL(jobject,1column_1value)(JENV_CSELF, jobject jpStmt,
