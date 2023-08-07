@@ -1,3 +1,16 @@
+/*
+** 2023-08-08
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file contains the TestScript part of the SQLTester framework.
+*/
 package org.sqlite.jni.tester;
 import java.util.List;
 import java.util.ArrayList;
@@ -116,15 +129,30 @@ public class TestScript {
     final Matcher m = p.matcher(tmp);
     int ndxPrev = 0, pos = 0;
     String chunk;
+    int i = 0;
+    //verbose("Trimmed content:").verbose(tmp).verbose("<EOF>");
     while( m.find() ){
       pos = m.start();
       chunk = tmp.substring(ndxPrev, pos).trim();
-      if( !chunk.isEmpty() ) rc.add( chunk );
+      if( 0==ndxPrev && pos>ndxPrev ){
+        /* Initial chunk of non-command state. Skip it. */
+        ndxPrev = pos + 2;
+        continue;
+      }
+      if( !chunk.isEmpty() ){
+        ++i;
+        //verbose("CHUNK #"+i,""+ndxPrev,"..",""+pos,chunk);
+        rc.add( chunk );
+      }
       ndxPrev = pos + 2;
     }
-    if( ndxPrev != pos + 2 ){
+    if( ndxPrev < tmp.length() ){
       chunk = tmp.substring(ndxPrev, tmp.length()).trim();
-      if( !chunk.isEmpty() ) rc.add( chunk );
+      if( !chunk.isEmpty() ){
+        ++i;
+        //verbose("CHUNK #"+(++i),chunk);
+        rc.add( chunk );
+      }
     }
     return rc;
   }
@@ -133,16 +161,30 @@ public class TestScript {
      A debug-only function which dumps the content of the test script
      in some form or other (possibly mangled from its original).
   */
-  public void dump(){
+  public void run(SQLTester tester) throws Exception {
     if( null==chunks ){
       verbose("This contains content which forces it to be ignored.");
     }else{
       verbose("script commands:");
       int n = 0;
-      for(String c : chunks){
-        verbose("#"+(++n),c);
+      for(String chunk : chunks){
+        ++n;
+        //verbose("#"+n,c).verbose("<EOF>");
+        String[] parts = chunk.split("\\n", 2);
+        String[] argv = parts[0].split("\\s+");
+        Command cmd = CommandFactory.getCommandByName(tester, argv[0]);
+        verbose("Command #"+n,argv[0],":",
+                (null==cmd ? "null" : cmd.getClass().getName()));
+        if(null == cmd){
+          throw new IllegalArgumentException(
+            "No command handler found for '"+argv[0]+"'"
+          );
+        }
+        if( parts.length > 1 ){
+          verbose(parts[1]).verbose("<EOF>");
+        }
+        cmd.process(argv, parts.length>1 ? parts[1] : null);
       }
-      verbose("<EOF>");
     }
   }
 }

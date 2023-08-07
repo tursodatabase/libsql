@@ -2,6 +2,8 @@
 
 # this line is ignored
 
+junk
+
 --null NULL
 --- also ignored
 --testcase first
