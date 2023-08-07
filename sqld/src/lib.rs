@@ -158,6 +158,7 @@ async fn run_service<D: Database>(
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
     db_config_store: Arc<DatabaseConfigStore>,
+    logger: Option<Arc<ReplicationLogger>>,
 ) -> anyhow::Result<()> {
     let auth = get_auth(config)?;
 
@@ -195,6 +196,7 @@ async fn run_service<D: Database>(
             config.enable_http_console,
             idle_shutdown_layer,
             stats.clone(),
+            logger,
         ));
         join_set.spawn(async move {
             hrana_http_srv.run_expire().await;
@@ -351,6 +353,7 @@ async fn start_replica(
         idle_shutdown_layer,
         stats,
         db_config_store,
+        None,
     )
     .await?;
 
@@ -517,7 +520,7 @@ async fn start_primary(
     if let Some(ref addr) = config.http_replication_addr {
         // FIXME: let's bring it back once I figure out how Axum works
         // let auth = get_auth(config)?;
-        join_set.spawn(replication::http::run(*addr, logger));
+        join_set.spawn(replication::http::run(*addr, logger.clone()));
     }
 
     run_service(
@@ -527,6 +530,7 @@ async fn start_primary(
         idle_shutdown_layer,
         stats,
         db_config_store,
+        Some(logger),
     )
     .await?;
 
