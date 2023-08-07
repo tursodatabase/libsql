@@ -17,6 +17,8 @@ struct StatsInner {
     rows_written: AtomicU64,
     rows_read: AtomicU64,
     storage_bytes_used: AtomicU64,
+    // number of write requests delegated from a replica to primary
+    write_requests_delegated: AtomicU64,
 }
 
 impl Stats {
@@ -64,6 +66,17 @@ impl Stats {
     /// returns the total number of bytes used by the database (excluding uncheckpointed WAL entries)
     pub fn storage_bytes_used(&self) -> u64 {
         self.inner.storage_bytes_used.load(Ordering::Relaxed)
+    }
+
+    /// increments the number of the write requests which were delegated from a replica to primary
+    pub fn inc_write_requests_delegated(&self) {
+        self.inner
+            .write_requests_delegated
+            .fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn write_requests_delegated(&self) -> u64 {
+        self.inner.write_requests_delegated.load(Ordering::Relaxed)
     }
 }
 

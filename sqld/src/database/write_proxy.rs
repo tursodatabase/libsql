@@ -98,6 +98,7 @@ pub struct WriteProxyDatabase {
     /// Notifier from the repliator of the currently applied frameno
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
     builder_config: QueryBuilderConfig,
+    stats: Stats,
 }
 
 fn execute_results_to_builder<B: QueryResultBuilder>(
@@ -160,7 +161,7 @@ impl WriteProxyDatabase {
             extensions,
             &TRANSPARENT_METHODS,
             (),
-            stats,
+            stats.clone(),
             config_store,
             builder_config,
         )
@@ -173,6 +174,7 @@ impl WriteProxyDatabase {
             last_write_frame_no: PMutex::new(FrameNo::MAX),
             applied_frame_no_receiver,
             builder_config,
+            stats,
         })
     }
 
@@ -183,6 +185,7 @@ impl WriteProxyDatabase {
         auth: Authenticated,
         builder: B,
     ) -> Result<(B, State)> {
+        self.stats.inc_write_requests_delegated();
         let mut client = self.write_proxy.clone();
         let authorized: Option<i32> = match auth {
             Authenticated::Anonymous => None,
