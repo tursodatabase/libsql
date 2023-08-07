@@ -2,3 +2,9 @@
 
 # this line is ignored
 
+--null NULL
+--- also ignored
+--testcase second
+select 1
+--result /* ignored */
+1

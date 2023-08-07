@@ -12,39 +12,19 @@ import static org.sqlite.jni.SQLite3Jni.*;
 */
 public class SQLTester {
   //! List of input script files.
-  private java.util.List<String> listInFiles = new ArrayList<>();
-  private boolean isVerbose = true;
+  private final java.util.List<String> listInFiles = new ArrayList<>();
+  private final Outer outer = new Outer();
 
   public SQLTester(){
   }
 
   public void setVerbose(boolean b){
-    isVerbose = b;
-  }
-
-  public static <T> void out(T val){
-    System.out.print(val);
-  }
-
-  public static <T> void outln(T val){
-    System.out.println(val);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> void out(T... vals){
-    int n = 0;
-    for(T v : vals) out((n++>0 ? " " : "")+v);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> void outln(T... vals){
-    out(vals);
-    out("\n");
+    this.outer.setVerbose(b);
   }
 
   @SuppressWarnings("unchecked")
   private <T> void verbose(T... vals){
-    if(isVerbose) outln(vals);
+    this.outer.verbose(vals);
   }
 
   //! Adds the given test script to the to-test list.
@@ -58,6 +38,8 @@ public class SQLTester {
     for(String f : listInFiles){
       verbose("Running test script",f);
       final TestScript ts = new TestScript(f);
+      ts.setVerbose(this.outer.getVerbose());
+      ts.dump();
     }
   }
 

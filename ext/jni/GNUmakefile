@@ -81,6 +81,7 @@ ifeq (1,$(enable.fts5))
   )
 endif
 JAVA_FILES.tester := $(patsubst %,$(dir.src.jni.tester)/%,\
+  Outer.java \
   SQLTester.java \
   TestScript.java \
 )
