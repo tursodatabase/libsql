@@ -1,3 +1,4 @@
+mod h2c;
 mod hrana_over_http_1;
 mod result_builder;
 pub mod stats;
@@ -22,6 +23,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Number;
 use tokio::sync::{mpsc, oneshot};
+use tonic::transport::Server;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::{compression::CompressionLayer, cors};
 use tracing::{Level, Span};
@@ -35,6 +37,8 @@ use crate::http::types::HttpQuery;
 use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, State, Statement};
 use crate::query_result_builder::QueryResultBuilder;
+use crate::replication::ReplicationLogger;
+use crate::rpc::replication_log::ReplicationLogService;
 use crate::stats::Stats;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 use crate::version;
@@ -222,6 +226,7 @@ pub async fn run_http<D: Database>(
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
+    logger: Option<Arc<ReplicationLogger>>,
 ) -> anyhow::Result<()> {
     let state = AppState {
         auth,
@@ -250,11 +255,10 @@ pub async fn run_http<D: Database>(
         .route("/v1/batch", post(hrana_over_http_1::handle_batch))
         .route("/v2", get(crate::hrana::http::handle_index))
         .route("/v2/pipeline", post(handle_hrana_v2))
-        .fallback(handle_fallback)
         .with_state(state);
 
     let layered_app = app
-        .layer(option_layer(idle_shutdown_layer))
+        .layer(option_layer(idle_shutdown_layer.clone()))
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .on_request(trace_request)
@@ -272,12 +276,27 @@ pub async fn run_http<D: Database>(
                 .allow_origin(cors::Any),
         );
 
+    // Merge the grpc based axum router into our regular http router
+    let router = if let Some(logger) = logger {
+        let logger_rpc = ReplicationLogService::new(logger, idle_shutdown_layer);
+        let grpc_router = Server::builder()
+            .add_service(crate::rpc::ReplicationLogServer::new(logger_rpc))
+            .into_router();
+
+        layered_app.merge(grpc_router)
+    } else {
+        layered_app
+    };
+
+    let router = router.fallback(handle_fallback);
+    let h2c = h2c::H2cMaker::new(router);
+
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     hyper::server::Server::builder(AddrIncoming::from_listener(listener)?)
         .tcp_nodelay(true)
-        .serve(layered_app.into_make_service())
+        .serve(h2c)
         .await
-        .context("foo")?;
+        .context("http server")?;
 
     Ok(())
 }

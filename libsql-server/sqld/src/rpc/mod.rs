@@ -9,7 +9,7 @@ use crate::database::Database;
 use crate::replication::ReplicationLogger;
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
-use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
+pub use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
 use crate::rpc::replication_log::ReplicationLogService;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 

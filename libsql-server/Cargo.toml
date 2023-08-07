@@ -15,3 +15,9 @@ rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev
     "column_decltype",
     "load_extension"
 ] }
+
+# TODO(lucio): Remove this once tonic has released a new version with fixes
+[patch.crates-io]
+tonic = { git = "https://github.com/hyperium/tonic" }
+tonic-build = { git = "https://github.com/hyperium/tonic" }
+console-api = { git = "https://github.com/tokio-rs/console", branch = "lucio/tonic-fix" }
