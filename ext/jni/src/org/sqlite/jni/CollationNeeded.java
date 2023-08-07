@@ -19,12 +19,10 @@ package org.sqlite.jni;
 public interface CollationNeeded {
   /**
      Has the same semantics as the C-level sqlite3_create_collation()
-     callback.  Must not throw.
+     callback.
 
-     Pedantic note: the first argument to this function will always be
-     the same object reference which was passed to sqlite3_open() or
-     sqlite3_open_v2(), even if the client has managed to create other
-     Java-side references to the same C-level object.
+     If it throws, the exception message is passed on to the db and
+     the exception is suppressed.
   */
   int xCollationNeeded(sqlite3 db, int eTextRep, String collationName);
 }

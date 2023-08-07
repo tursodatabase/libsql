@@ -19,7 +19,9 @@ package org.sqlite.jni;
 public interface ProgressHandler {
   /**
      Works as documented for the sqlite3_progress_handler() callback.
-     Must not throw.
+
+     If it throws, the exception message is passed on to the db and
+     the exception is suppressed.
   */
   int xCallback();
 }

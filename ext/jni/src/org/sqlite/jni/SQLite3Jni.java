@@ -382,6 +382,10 @@ public final class SQLite3Jni {
   public static native sqlite3_value sqlite3_column_value(@NotNull sqlite3_stmt stmt,
                                                           int ndx);
 
+  /**
+     This functions like C's sqlite3_collation_needed16() because
+     Java's string type is compatible with that interface.
+  */
   public static native int sqlite3_collation_needed(@NotNull sqlite3 db,
                                                     @Nullable CollationNeeded callback);
 
