@@ -397,7 +397,7 @@ static void NphCacheLine_clear(JNIEnv * const env, NphCacheLine * const p){
   memset(p, 0, sizeof(NphCacheLine));
 }
 
-#define S3JNI_ENABLE_AUTOEXT 0
+#define S3JNI_ENABLE_AUTOEXT 1
 #if S3JNI_ENABLE_AUTOEXT
 /*
   Whether auto extensions are feasible here is currently unknown due
@@ -421,7 +421,6 @@ static void NphCacheLine_clear(JNIEnv * const env, NphCacheLine * const p){
 typedef struct S3JniAutoExtension S3JniAutoExtension;
 typedef void (*S3JniAutoExtension_xEntryPoint)(sqlite3*);
 struct S3JniAutoExtension {
-  JNIEnv * env;
   jobject jObj;
   jmethodID midFunc;
   S3JniAutoExtension_xEntryPoint xEntryPoint;
@@ -515,8 +514,18 @@ static struct {
   } metrics;
 #if S3JNI_ENABLE_AUTOEXT
   struct {
-    S3JniAutoExtension *pHead;
-    int isRunning;
+    S3JniAutoExtension *pHead  /* Head of the auto-extension list */;
+    PerDbStateJni * psOpening  /* handle to the being-opened db. We
+                                  need this so that auto extensions
+                                  can have a consistent view of the
+                                  cross-language db connection and
+                                  behave property if they call further
+                                  db APIs. */;
+    int isRunning              /* True while auto extensions are
+                                  running.  This is used to prohibit
+                                  manipulation of the auto-extension
+                                  list while extensions are
+                                  running. */;
   } autoExt;
 #endif
 } S3Global;
@@ -736,6 +745,36 @@ static JNIEnvCache * S3Global_env_cache(JNIEnv * const env){
     EXCEPTION_IS_FATAL("Error getting reference to StandardCharsets.UTF_8.");
   }
   return row;
+}
+
+/**
+   Requires jx to be a Throwable. Calls its getMessage() method and
+   returns its value converted to a UTF-8 string. The caller owns the
+   returned string and must eventually sqlite3_free() it.  Returns 0
+   if there is a problem fetching the info or on OOM.
+*/
+static char * s3jni_exception_error_msg(JNIEnv * const env, jthrowable jx ){
+  JNIEnvCache * const jc = S3Global_env_cache(env);
+  jmethodID mid;
+  jstring msg;
+  char * zMsg;
+  jclass const klazz = (*env)->GetObjectClass(env, jx);
+  EXCEPTION_IS_FATAL("Cannot get class of exception object.");
+  mid = (*env)->GetMethodID(env, klazz, "getMessage", "()Ljava/lang/String;");
+  IFTHREW{
+    EXCEPTION_REPORT;
+    EXCEPTION_CLEAR;
+    return 0;
+  }
+  msg = (*env)->CallObjectMethod(env, jx, mid);
+  IFTHREW{
+    EXCEPTION_REPORT;
+    EXCEPTION_CLEAR;
+    return 0;
+  }
+  zMsg = s3jni_jstring_to_utf8(jc, msg, 0);
+  UNREF_L(msg);
+  return zMsg;
 }
 
 /**
@@ -1130,6 +1169,59 @@ static PerDbStateJni * PerDbStateJni_for_db2(sqlite3 *pDb){
   return 0;
 }
 #endif
+
+#if S3JNI_ENABLE_AUTOEXT
+/**
+   Unlink ax from S3Global.autoExt and free it.
+*/
+static void S3JniAutoExtension_free(JNIEnv * const env,
+                                    S3JniAutoExtension * const ax){
+  if( ax ){
+    if( ax->pNext ) ax->pNext->pPrev = ax->pPrev;
+    if( ax == S3Global.autoExt.pHead ){
+      assert( !ax->pNext );
+      S3Global.autoExt.pHead = ax->pNext;
+    }else if( ax->pPrev ){
+      ax->pPrev->pNext = ax->pNext;
+    }
+    ax->pNext = ax->pPrev = 0;
+    UNREF_G(ax->jObj);
+    sqlite3_free(ax);
+  }
+}
+
+/**
+   Allocates a new auto extension and plugs it in to S3Global.autoExt.
+   Returns 0 on OOM or if there is an error collecting the required
+   state from jAutoExt (which must be an AutoExtension object).
+*/
+static S3JniAutoExtension * S3JniAutoExtension_alloc(JNIEnv *const env,
+                                                     jobject const jAutoExt){
+  S3JniAutoExtension * const ax = sqlite3_malloc(sizeof(*ax));
+  if( ax ){
+    jclass klazz;
+    memset(ax, 0, sizeof(*ax));
+    klazz = (*env)->GetObjectClass(env, jAutoExt);
+    EXCEPTION_IS_FATAL("Cannot get class of jAutoExt.");
+    if(!klazz){
+      S3JniAutoExtension_free(env, ax);
+      return 0;
+    }
+    ax->midFunc = (*env)->GetMethodID(env, klazz, "xEntryPoint",
+                                     "(Lorg/sqlite/jni/sqlite3;)I");
+    if(!ax->midFunc){
+      MARKER(("Error getting xEntryPoint(sqlite3) from object."));
+      S3JniAutoExtension_free(env, ax);
+      return 0;
+    }
+    ax->jObj = REF_G(jAutoExt);
+    ax->pNext = S3Global.autoExt.pHead;
+    if( ax->pNext ) ax->pNext->pPrev = ax;
+    S3Global.autoExt.pHead = ax;
+  }
+  return ax;
+}
+#endif /* S3JNI_ENABLE_AUTOEXT */
 
 /**
    Requires that jCx be a Java-side sqlite3_context wrapper for pCx.
@@ -1683,7 +1775,6 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
 // except for this macro-generated subset which are kept together here
 // at the front...
 ////////////////////////////////////////////////////////////////////////
-WRAP_INT_DB(1errcode,                  sqlite3_errcode)
 WRAP_INT_DB(1error_1offset,            sqlite3_error_offset)
 WRAP_INT_DB(1extended_1errcode,        sqlite3_extended_errcode)
 WRAP_INT_STMT(1bind_1parameter_1count, sqlite3_bind_parameter_count)
@@ -1717,44 +1808,71 @@ WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype)
 WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 
 #if S3JNI_ENABLE_AUTOEXT
-/* auto-extension is very incomplete  */
-/*static*/ int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
-                                    const struct sqlite3_api_routines *pThunk){
+/* Central auto-extension handler. */
+static int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
+                                const struct sqlite3_api_routines *ignored){
   S3JniAutoExtension const * pAX = S3Global.autoExt.pHead;
-  jobject jDb;
   int rc;
   JNIEnv * env = 0;
-  if(S3Global.autoExt.isRunning){
+  PerDbStateJni * const ps = S3Global.autoExt.psOpening;
+
+  S3Global.autoExt.psOpening = 0;
+  if( !pAX ){
+    assert( 0==S3Global.autoExt.isRunning );
+    return 0;
+  }else if( S3Global.autoExt.isRunning ){
     *pzErr = sqlite3_mprintf("Auto-extensions must not be triggered while "
                              "auto-extensions are running.");
     return SQLITE_MISUSE;
-  }
-  if( S3Global.jvm->GetEnv(S3Global.jvm, (void **)&env, JNI_VERSION_1_8) ){
+  }else if(!ps){
+    MARKER(("Internal error: cannot find PerDbStateJni for auto-extension\n"));
+    return SQLITE_ERROR;
+  }else if( (*S3Global.jvm)->GetEnv(S3Global.jvm, (void **)&env, JNI_VERSION_1_8) ){
+    assert(!"Cannot get JNIEnv");
     *pzErr = sqlite3_mprintf("Could not get current JNIEnv.");
     return SQLITE_ERROR;
   }
+  assert( !ps->pDb /* it's still being opened */ );
+  ps->pDb = pDb;
+  assert( ps->jDb );
+  NativePointerHolder_set(env, ps->jDb, pDb, S3ClassNames.sqlite3);
   S3Global.autoExt.isRunning = 1;
-  jDb = new_sqlite3_wrapper( env, pDb );
-  EXCEPTION_IS_FATAL("Cannot create sqlite3 wrapper object.");
-  // Now we need PerDbStateJni_for_db(env, jDb, pDb, 1)
-  // and rewire sqlite3_open(_v2()) to use OutputPointer.sqlite3
-  // so that they can have this same jobject.
   for( ; pAX; pAX = pAX->pNext ){
-    JNIEnv * const env = pAX->env
-      /* ^^^ is this correct, or must we use the JavaVM::GetEnv()'s env
-         instead? */;
-    rc = (*env)->CallVoidMethod(env, pAX->jObj, pAX->midFunc, jDb);
+    rc = (*env)->CallIntMethod(env, pAX->jObj, pAX->midFunc, ps->jDb);
     IFTHREW {
-      *pzErr = sqlite3_mprintf("auto-extension threw. TODO: extract error message.");
-      rc = SQLITE_ERROR;
+      jthrowable const ex = (*env)->ExceptionOccurred(env);
+      char * zMsg;
+      EXCEPTION_CLEAR;
+      zMsg = s3jni_exception_error_msg(env, ex);
+      UNREF_L(ex);
+      *pzErr = sqlite3_mprintf("auto-extension threw: %s", zMsg);
+      sqlite3_free(zMsg);
+      rc = rc ? rc : SQLITE_ERROR;
+      break;
+    }else if( rc ){
       break;
     }
   }
-  UNREF_L(jDb);
   S3Global.autoExt.isRunning = 0;
   return rc;
 }
-JDECL(jint,1auto_1extension)(JENV_OSELF, jobject jAutoExt){}
+
+JDECL(jint,1auto_1extension)(JENV_OSELF, jobject jAutoExt){
+  static int once = 0;
+  S3JniAutoExtension * ax;
+
+  if( !jAutoExt ) return SQLITE_MISUSE;
+  else if( 0==once && ++once ){
+    sqlite3_auto_extension( (void(*)(void))s3jni_auto_extension );
+  }
+  ax = S3Global.autoExt.pHead;
+  for( ; ax; ax = ax->pNext ){
+    if( (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
+      return 0 /* C API treats this as a no-op. */;
+    }
+  }
+  return S3JniAutoExtension_alloc(env, jAutoExt) ? 0 : SQLITE_NOMEM;
+}
 #endif /* S3JNI_ENABLE_AUTOEXT */
 
 JDECL(jint,1bind_1blob)(JENV_CSELF, jobject jpStmt,
@@ -1878,6 +1996,21 @@ JDECL(jint,1busy_1timeout)(JENV_CSELF, jobject jDb, jint ms){
   }
   return SQLITE_MISUSE;
 }
+
+#if S3JNI_ENABLE_AUTOEXT
+JDECL(jboolean,1cancel_1auto_1extension)(JENV_OSELF, jobject jAutoExt){
+  S3JniAutoExtension * ax;;
+  if( S3Global.autoExt.isRunning ) return JNI_FALSE;
+  for( ax = S3Global.autoExt.pHead; ax; ax = ax->pNext ){
+    if( (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
+      S3JniAutoExtension_free(env, ax);
+      return JNI_TRUE;
+    }
+  }
+  return JNI_FALSE;
+}
+#endif /* S3JNI_ENABLE_AUTOEXT */
+
 
 /**
    Wrapper for sqlite3_close(_v2)().
@@ -2331,12 +2464,21 @@ JDECL(jstring,1db_1filename)(JENV_CSELF, jobject jDb, jstring jDbName){
   return jRv;
 }
 
+JDECL(jint,1errcode)(JENV_CSELF, jobject jpDb){
+  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
+  return pDb ? sqlite3_errcode(pDb) : SQLITE_MISUSE;
+}
+
 JDECL(jstring,1errmsg)(JENV_CSELF, jobject jpDb){
-  return (*env)->NewStringUTF(env, sqlite3_errmsg(PtrGet_sqlite3(jpDb)));
+  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
+  JNIEnvCache * const jc = pDb ? S3Global_env_cache(env) : 0;
+  return jc ? s3jni_utf8_to_jstring(jc, sqlite3_errmsg(pDb), -1) : 0;
 }
 
 JDECL(jstring,1errstr)(JENV_CSELF, jint rcCode){
-  return (*env)->NewStringUTF(env, sqlite3_errstr((int)rcCode));
+  return (*env)->NewStringUTF(env, sqlite3_errstr((int)rcCode))
+    /* We know these values to be plain ASCII, so pose no
+       MUTF-8 incompatibility */;
 }
 
 JDECL(jboolean,1extended_1result_1codes)(JENV_CSELF, jobject jpDb,
@@ -2397,6 +2539,12 @@ static int s3jni_open_pre(JNIEnv * const env, JNIEnvCache **jc,
     return SQLITE_NOMEM;
   }
   *ps = PerDbStateJni_alloc(env, 0, *jDb);
+#if S3JNI_ENABLE_AUTOEXT
+  if(*ps){
+    assert(!S3Global.autoExt.psOpening);
+    S3Global.autoExt.psOpening = *ps;
+  }
+#endif
   return *ps ? 0 : SQLITE_NOMEM;
 }
 
@@ -2413,8 +2561,15 @@ static int s3jni_open_pre(JNIEnv * const env, JNIEnvCache **jc,
 */
 static int s3jni_open_post(JNIEnv * const env, PerDbStateJni * ps,
                            sqlite3 **ppDb, jobject jOut, int theRc){
+#if S3JNI_ENABLE_AUTOEXT
+  assert( S3Global.autoExt.pHead ? 0==S3Global.autoExt.psOpening : 1 );
+  S3Global.autoExt.psOpening = 0;
+#endif
   if(*ppDb){
     assert(ps->jDb);
+#if S3JNI_ENABLE_AUTOEXT
+    assert( S3Global.autoExt.pHead ? *ppDb==ps->pDb : 0==ps->pDb );
+#endif
     ps->pDb = *ppDb;
     NativePointerHolder_set(env, ps->jDb, *ppDb, S3ClassNames.sqlite3);
   }else{
@@ -2597,6 +2752,16 @@ JDECL(jint,1reset)(JENV_CSELF, jobject jpStmt){
   }
   return rc;
 }
+
+#if S3JNI_ENABLE_AUTOEXT
+JDECL(void,1reset_1auto_1extension)(JENV_CSELF){
+  if(!S3Global.autoExt.isRunning){
+    while( S3Global.autoExt.pHead ){
+      S3JniAutoExtension_free(env, S3Global.autoExt.pHead);
+    }
+  }
+}
+#endif /* S3JNI_ENABLE_AUTOEXT */
 
 /* sqlite3_result_text/blob() and friends. */
 static void result_blob_text(int asBlob, int as64,

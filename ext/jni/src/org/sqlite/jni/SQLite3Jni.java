@@ -166,24 +166,24 @@ public final class SQLite3Jni {
   // grouped by category.
 
 
-  // Auto-extensions cannot currently work properly in our setup
-  // for reasons explained in sqlite3-jni.c.
-  //
-  // /**
-  //    Functions almost as documented for the C API, with these
-  //    exceptions:
-  //
-  //    - The callback interface is more limited because of
-  //      cross-language differences.
-  //
-  //    - All of the auto-extension routines will fail without side
-  //      effects if invoked from within the execution of an
-  //      auto-extension.
-  //
-  //    See the AutoExtension class docs for more information.
-  // */
-  // private static native int sqlite3_auto_extension(@NotNull AutoExtension callback);
+  /**
+     Functions almost as documented for the C API, with these
+     exceptions:
 
+     - The callback interface is more limited because of
+       cross-language differences.
+
+     - All of the auto extension routines will fail without side
+       effects if invoked from within the execution of an
+       auto-extension. i.e. auto extensions can neither be
+       added, removed, nor cleared while one is running.
+
+     See the AutoExtension class docs for more information.
+
+     Achtung: it is as yet unknown whether auto extensions registered
+     from one JNIEnv (thread) can be safely called from another.
+  */
+  public static synchronized native int sqlite3_auto_extension(@NotNull AutoExtension callback);
 
   public static int sqlite3_bind_blob(@NotNull sqlite3_stmt stmt, int ndx,
                                       @Nullable byte[] data){
@@ -258,6 +258,12 @@ public final class SQLite3Jni {
                                                 @Nullable BusyHandler handler);
 
   public static native int sqlite3_busy_timeout(@NotNull sqlite3 db, int ms);
+
+  /**
+     Works like the C API except that it returns false, without side
+     effects, if auto extensions are currently running.
+  */
+  public static synchronized native boolean sqlite3_cancel_auto_extension(@NotNull AutoExtension ax);
 
   public static native int sqlite3_changes(@NotNull sqlite3 db);
 
@@ -583,6 +589,12 @@ public final class SQLite3Jni {
   //TODO??? void *sqlite3_preupdate_hook(...) and friends
 
   public static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
+
+  /**
+     Works like the C API except that it has no side effects if auto
+     extensions are currently running.
+  */
+  public static synchronized native void sqlite3_reset_auto_extension();
 
   public static native void sqlite3_result_double(@NotNull sqlite3_context cx, double v);
 

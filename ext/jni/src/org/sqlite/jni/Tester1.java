@@ -58,8 +58,13 @@ public class Tester1 {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
-    affirm(0 == rc);
     sqlite3 db = out.getValue();
+    if( 0!=rc ){
+      final String msg = db.getNativePointer()==0
+        ? sqlite3_errstr(rc)
+        : sqlite3_errmsg(db);
+      throw new RuntimeException("Opening db failed: "+msg);
+    }
     affirm(0 != db.getNativePointer());
     rc = sqlite3_busy_timeout(db, 2000);
     affirm( 0 == rc );
@@ -979,6 +984,52 @@ public class Tester1 {
     sqlite3_close(db);
   }
 
+  private static void testAutoExtension(){
+    final ValueHolder<Integer> val = new ValueHolder<>(0);
+    final ValueHolder<String> toss = new ValueHolder<>(null);
+    final AutoExtension ax = new AutoExtension(){
+        public synchronized int xEntryPoint(sqlite3 db){
+          ++val.value;
+          if( null!=toss.value ){
+            throw new RuntimeException(toss.value);
+          }
+          return 0;
+        }
+      };
+    int rc = sqlite3_auto_extension( ax );
+    affirm( 0==rc );
+    sqlite3_close(createNewDb());
+    affirm( 1==val.value );
+    sqlite3_close(createNewDb());
+    affirm( 2==val.value );
+    sqlite3_reset_auto_extension();
+    sqlite3_close(createNewDb());
+    affirm( 2==val.value );
+    rc = sqlite3_auto_extension( ax );
+    affirm( 0==rc );
+    // Must not add a new entry
+    rc = sqlite3_auto_extension( ax );
+    affirm( 0==rc );
+    sqlite3_close( createNewDb() );
+    affirm( 3==val.value );
+    affirm( sqlite3_cancel_auto_extension(ax) );
+    affirm( !sqlite3_cancel_auto_extension(ax) );
+    sqlite3_close(createNewDb());
+    affirm( 3==val.value );
+    rc = sqlite3_auto_extension( ax );
+    affirm( 0==rc );
+    Exception err = null;
+    toss.value = "Throwing from AutoExtension.";
+    try{
+      createNewDb();
+    }catch(Exception e){
+      err = e;
+    }
+    affirm( err!=null );
+    affirm( err.getMessage().indexOf(toss.value)>0 );
+    affirm( sqlite3_cancel_auto_extension(ax) );
+  }
+
   private static void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);
@@ -1013,6 +1064,7 @@ public class Tester1 {
     testUpdateHook();
     testAuthorizer();
     testFts5();
+    testAutoExtension();
     //testSleep();
     if(liArgs.indexOf("-v")>0){
       sqlite3_do_something_for_developer();
