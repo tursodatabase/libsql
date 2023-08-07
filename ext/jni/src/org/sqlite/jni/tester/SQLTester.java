@@ -36,9 +36,9 @@ public class SQLTester {
   public void runTests() throws Exception {
     // process each input file
     for(String f : listInFiles){
-      verbose("Running test script",f);
       final TestScript ts = new TestScript(f);
       ts.setVerbose(this.outer.getVerbose());
+      verbose("Test",ts.getName(),"...");
       ts.dump();
     }
   }

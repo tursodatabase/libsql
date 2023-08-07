@@ -17,7 +17,7 @@ script are deleted when the script finishes.
 ## Parsing Rules:
 
   1.   Ignore the entire script if the script does not contain the
-       string "SCRIPT_MODULE_NAME:".  
+       string "SCRIPT_MODULE_NAME:".
 
   2.   Ignore any script that contains the character sequence "\\n\|"
        (0x0a, 0x7c).  In other words, ignore scripts that contain the
@@ -37,14 +37,14 @@ script are deleted when the script finishes.
 
 ## Commands:
 
-Each command looks like an SQL comment.  The command begins at the left 
+Each command looks like an SQL comment.  The command begins at the left
 margin (no leading space) and starts with exactly 2 minus signs ("-").
 The command name consists of lowercase letters and maybe a "-" or two.
 Some commands have arguments.
 The arguments are separated from the command name by one or more spaces.
 
 Commands have access to the input buffer and might reset the input buffer.
-The command can also optionally read (and consume) additional text from 
+The command can also optionally read (and consume) additional text from
 script that comes after the command.
 
 Unknown or unrecognized commands should cause an error message to be
