@@ -39,21 +39,36 @@ type Driver struct {
 	dbs map[string]*database
 }
 
+func libsqlError(message string, statusCode C.int, errMsg *C.char) error {
+	code := int(statusCode)
+	if errMsg != nil {
+		msg := C.GoString(errMsg)
+		C.libsql_free_string(errMsg)
+		return fmt.Errorf("%s\nerror code = %d: %v", message, code, msg)
+	} else {
+		return fmt.Errorf("%s\nerror code = %d", message, code)
+	}
+}
+
 func libsqlOpen(dataSourceName string) (C.libsql_database_t, error) {
 	connectionString := C.CString(dataSourceName)
 	defer C.free(unsafe.Pointer(connectionString))
 
-	db := C.libsql_open_ext(connectionString)
-	if db == nil {
-		return nil, fmt.Errorf("failed to open database")
+	var db C.libsql_database_t
+	var errMsg *C.char
+	statusCode := C.libsql_open_ext(connectionString, &db, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to open database ", dataSourceName), statusCode, errMsg)
 	}
 	return db, nil
 }
 
 func libsqlConnect(db C.libsql_database_t) (C.libsql_connection_t, error) {
-	conn := C.libsql_connect(db)
-	if conn == nil {
-		return nil, fmt.Errorf("failed to connect to database")
+	var conn C.libsql_connection_t
+	var errMsg *C.char
+	statusCode := C.libsql_connect(db, &conn, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError("failed to connect to database", statusCode, errMsg)
 	}
 	return conn, nil
 }
@@ -129,15 +144,24 @@ func (c *conn) Begin() (driver.Tx, error) {
 	return nil, fmt.Errorf("begin() is not implemented")
 }
 
-func (c *conn) execute(query string) C.libsql_rows_t {
+func (c *conn) execute(query string) (C.libsql_rows_t, error) {
 	queryCString := C.CString(query)
 	defer C.free(unsafe.Pointer(queryCString))
 
-	return C.libsql_execute(c.nativePtr, queryCString)
+	var rows C.libsql_rows_t
+	var errMsg *C.char
+	statusCode := C.libsql_execute(c.nativePtr, queryCString, &rows, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprint("failed to execute query ", query), statusCode, errMsg)
+	}
+	return rows, nil
 }
 
 func (c *conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	rows := c.execute(query)
+	rows, err := c.execute(query)
+	if err != nil {
+		return nil, err
+	}
 	if rows != nil {
 		C.libsql_free_rows(rows)
 	}
@@ -152,32 +176,43 @@ const (
 	TYPE_NULL
 )
 
-func newRows(nativePtr C.libsql_rows_t) *rows {
-	columnCount := int(C.libsql_column_count(nativePtr))
-	columnTypes := make([]int, 0, columnCount)
-	for i := 0; i < columnCount; i++ {
-		columnType := int(C.libsql_column_type(nativePtr, C.int(i)))
-		columnTypes = append(columnTypes, columnType)
+func newRows(nativePtr C.libsql_rows_t) (*rows, error) {
+	if nativePtr == nil {
+		return &rows{nil, nil, nil}, nil
 	}
-	return &rows{nativePtr, columnTypes}
+	columnCount := int(C.libsql_column_count(nativePtr))
+	columnTypes := make([]int, columnCount)
+	for i := 0; i < columnCount; i++ {
+		var columnType C.int
+		var errMsg *C.char
+		statusCode := C.libsql_column_type(nativePtr, C.int(i), &columnType, &errMsg)
+		if statusCode != 0 {
+			return nil, libsqlError(fmt.Sprint("failed to get column type for index ", i), statusCode, errMsg)
+		}
+		columnTypes[i] = int(columnType)
+	}
+	columns := make([]string, len(columnTypes))
+	for i := 0; i < len(columnTypes); i++ {
+		var ptr *C.char
+		var errMsg *C.char
+		statusCode := C.libsql_column_name(nativePtr, C.int(i), &ptr, &errMsg)
+		if statusCode != 0 {
+			return nil, libsqlError(fmt.Sprint("failed to get column name for index ", i), statusCode, errMsg)
+		}
+		columns[i] = C.GoString(ptr)
+		C.libsql_free_string(ptr)
+	}
+	return &rows{nativePtr, columnTypes, columns}, nil
 }
 
 type rows struct {
 	nativePtr   C.libsql_rows_t
 	columnTypes []int
+	columnNames []string
 }
 
 func (r *rows) Columns() []string {
-	if r.nativePtr == nil {
-		return nil
-	}
-	columns := make([]string, len(r.columnTypes))
-	for i := 0; i < len(r.columnTypes); i++ {
-		ptr := C.libsql_column_name(r.nativePtr, C.int(i))
-		columns[i] = C.GoString(ptr)
-		C.libsql_free_string(ptr)
-	}
-	return columns
+	return r.columnNames
 }
 
 func (r *rows) Close() error {
@@ -192,7 +227,12 @@ func (r *rows) Next(dest []driver.Value) error {
 	if r.nativePtr == nil {
 		return io.EOF
 	}
-	row := C.libsql_next_row(r.nativePtr)
+	var row C.libsql_row_t
+	var errMsg *C.char
+	statusCode := C.libsql_next_row(r.nativePtr, &row, &errMsg)
+	if statusCode != 0 {
+		return libsqlError("failed to get next row", statusCode, errMsg)
+	}
 	if row == nil {
 		r.Close()
 		return io.EOF
@@ -207,15 +247,37 @@ func (r *rows) Next(dest []driver.Value) error {
 		case TYPE_NULL:
 			dest[i] = nil
 		case TYPE_INT:
-			dest[i] = int64(C.libsql_get_int(row, C.int(i)))
+			var value C.longlong
+			var errMsg *C.char
+			statusCode := C.libsql_get_int(row, C.int(i), &value, &errMsg)
+			if statusCode != 0 {
+				return libsqlError(fmt.Sprint("failed to get integer for column ", i), statusCode, errMsg)
+			}
+			dest[i] = int64(value)
 		case TYPE_FLOAT:
-			dest[i] = float64(C.libsql_get_float(row, C.int(i)))
+			var value C.double
+			var errMsg *C.char
+			statusCode := C.libsql_get_float(row, C.int(i), &value, &errMsg)
+			if statusCode != 0 {
+				return libsqlError(fmt.Sprint("failed to get float for column ", i), statusCode, errMsg)
+			}
+			dest[i] = float64(value)
 		case TYPE_BLOB:
-			nativeBlob := C.libsql_get_blob(row, C.int(i))
+			var nativeBlob C.blob
+			var errMsg *C.char
+			statusCode := C.libsql_get_blob(row, C.int(i), &nativeBlob, &errMsg)
+			if statusCode != 0 {
+				return libsqlError(fmt.Sprint("failed to get blob for column ", i), statusCode, errMsg)
+			}
 			dest[i] = C.GoBytes(unsafe.Pointer(nativeBlob.ptr), C.int(nativeBlob.len))
 			C.libsql_free_blob(nativeBlob)
 		case TYPE_TEXT:
-			ptr := C.libsql_get_string(row, C.int(i))
+			var ptr *C.char
+			var errMsg *C.char
+			statusCode := C.libsql_get_string(row, C.int(i), &ptr, &errMsg)
+			if statusCode != 0 {
+				return libsqlError(fmt.Sprint("failed to get string for column ", i), statusCode, errMsg)
+			}
 			dest[i] = C.GoString(ptr)
 			C.libsql_free_string(ptr)
 		}
@@ -224,9 +286,9 @@ func (r *rows) Next(dest []driver.Value) error {
 }
 
 func (c *conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	rowsNativePtr := c.execute(query)
-	if rowsNativePtr == nil {
-		return nil, fmt.Errorf("failed to execute query")
+	rowsNativePtr, err := c.execute(query)
+	if err != nil {
+		return nil, err
 	}
-	return newRows(rowsNativePtr), nil
+	return newRows(rowsNativePtr)
 }
