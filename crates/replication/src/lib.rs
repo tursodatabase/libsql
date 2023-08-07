@@ -122,7 +122,7 @@ impl Replicator {
             meta,
             injector,
             client: None,
-            next_offset: AtomicU64::new(1),
+            next_offset: AtomicU64::new(0),
         })
     }
 
