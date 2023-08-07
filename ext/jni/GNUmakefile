@@ -24,6 +24,7 @@ dir.src.c   := $(dir.src)/c
 dir.bld     := $(dir.jni)/bld
 dir.bld.c   := $(dir.bld)
 dir.src.jni := $(dir.src)/org/sqlite/jni
+dir.src.jni.tester := $(dir.src.jni)/tester
 $(dir.bld.c):
 	mkdir -p $@
 
@@ -34,7 +35,9 @@ DISTCLEAN_FILES := $(dir.jni)/*~ $(dir.src.c)/*~ $(dir.src.jni)/*~
 sqlite3-jni.h := $(dir.src.c)/sqlite3-jni.h
 .NOTPARALLEL: $(sqlite3-jni.h)
 SQLite3Jni.java := src/org/sqlite/jni/SQLite3Jni.java
-SQLite3Jni.class := $(subst .java,.class,$(SQLite3Jni.java))
+SQLTester.java := src/org/sqlite/jni/tester/SQLTester.java
+SQLite3Jni.class := $(SQLite3Jni.java:.java=.class)
+SQLTester.class := $(SQLTester.java:.java=.class)
 
 ########################################################################
 # The future of FTS5 customization in this API is as yet unclear.
@@ -43,7 +46,7 @@ enable.fts5 ?= 1
 
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
-JAVA_FILES := $(patsubst %,$(dir.src.jni)/%,\
+JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   BusyHandler.java \
   Collation.java \
   CollationNeeded.java \
@@ -64,7 +67,7 @@ JAVA_FILES := $(patsubst %,$(dir.src.jni)/%,\
   ValueHolder.java \
 )
 ifeq (1,$(enable.fts5))
-  JAVA_FILES += $(patsubst %,$(dir.src.jni)/%,\
+  JAVA_FILES.main += $(patsubst %,$(dir.src.jni)/%,\
     fts5_api.java \
     fts5_extension_function.java \
     fts5_tokenizer.java \
@@ -77,6 +80,16 @@ ifeq (1,$(enable.fts5))
     TesterFts5.java \
   )
 endif
+JAVA_FILES.tester := $(patsubst %,$(dir.src.jni.tester)/%,\
+  SQLTester.java \
+  TestScript.java \
+)
+
+CLASS_FILES.main := $(JAVA_FILES.main:.java=.class)
+CLASS_FILES.tester := $(JAVA_FILES.tester:.java=.class)
+
+JAVA_FILES += $(JAVA_FILES.main) $(JAVA_FILES.tester)
+
 CLASS_FILES :=
 define DOTCLASS_DEPS
 $(1).class: $(1).java $(MAKEFILE)
@@ -84,6 +97,7 @@ all: $(1).class
 CLASS_FILES += $(1).class
 endef
 $(foreach B,$(basename $(JAVA_FILES)),$(eval $(call DOTCLASS_DEPS,$(B))))
+$(CLASS_FILES.tester): $(CLASS_FILES.main)
 javac.flags ?= -Xlint:unchecked -Xlint:deprecation
 java.flags ?=
 jnicheck ?= 1
@@ -193,11 +207,20 @@ $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
       $(sqlite3-jni.c) -shared -o $@
 all: $(sqlite3-jni.dll)
 
+.PHONY: test
 test.flags ?= -v
 test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
 		org.sqlite.jni.Tester1 $(if $(test.flags),-- $(test.flags),)
+
+tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
+.PHONY: tester
+
+tester: $(CLASS_FILES.tester) $(sqlite3-jni.dll)
+	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
+		$(java.flags) -cp $(classpath) \
+		org.sqlite.jni.tester.SQLTester $(tester.scripts)
 
 $(package.jar): $(CLASS_FILES) $(MAKEFILE)
 	rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~
