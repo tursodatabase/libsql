@@ -29,6 +29,7 @@ public class SQLTester {
   private final java.util.List<String> listInFiles = new ArrayList<>();
   private final Outer outer = new Outer();
   private final StringBuilder inputBuffer = new StringBuilder();
+  private String nullView = "nil";
 
   public SQLTester(){
   }
@@ -68,9 +69,21 @@ public class SQLTester {
     this.inputBuffer.delete(0, this.inputBuffer.length());
   }
 
+  String getInputBuffer(){
+    return inputBuffer.toString();
+  }
+
+  String takeInputBuffer(){
+    final String rc = inputBuffer.toString();
+    resetInputBuffer();
+    return rc;
+  }
+
   void reset(){
     this.resetInputBuffer();
   }
+
+  void setNullValue(String v){nullView = v;}
 
   public static void main(String[] argv) throws Exception{
     final SQLTester t = new SQLTester();
@@ -91,42 +104,93 @@ public class SQLTester {
   }
 }
 
-abstract class Command {
-  private SQLTester tester;
+class Command {
+  protected SQLTester tester;
   Command(SQLTester t){tester = t;}
-  public SQLTester getTester(){return tester;}
 
-  public abstract void process(String[] argv, String content);
-}
+  protected final void badArg(String... msg){
+    StringBuilder sb = new StringBuilder();
+    int i = 0;
+    for(String s : msg) sb.append(((0==i++) ? "" : " ")+s);
+    throw new IllegalArgumentException(sb.toString());
+  }
 
-class NullCommand extends Command {
-  public NullCommand(SQLTester t){super(t);}
+  protected final void argcCheck(String[] argv, int min, int max){
+    int argc = argv.length-1;
+    if(argc<min || argc>max){
+      if( min==max ) badArg(argv[0],"requires exactly",""+min,"argument(s)");
+      else badArg(argv[0],"requires",""+min,"-",""+max,"arguments.");
+    }
+  }
 
-  public void process(String[] argv, String content){
+  protected final void argcCheck(String[] argv, int argc){
+    argcCheck(argv, argc, argc);
+  }
+
+  protected void affirmNoContent(String content){
+    if(null != content){
+      badArg(this.getClass().getName(),"does not accept content.");
+    }
   }
 }
 
-class TestCaseCommand extends Command {
-  public TestCaseCommand(SQLTester t){super(t);}
+class DbCommand extends Command {
+  public DbCommand(SQLTester t, String[] argv, String content){
+    super(t);
+    argcCheck(argv,1);
+    affirmNoContent(content);
+    //t.verbose(argv[0],argv[1]);
+  }
+}
 
-  public void process(String[] argv, String content){
+class NullCommand extends Command {
+  public NullCommand(SQLTester t, String[] argv, String content){
+    super(t);
+    argcCheck(argv,1);
+    affirmNoContent(content);
+    tester.setNullValue(argv[1]);
+    //t.verbose(argv[0],argv[1]);
   }
 }
 
 class ResultCommand extends Command {
-  public ResultCommand(SQLTester t){super(t);}
-
-  public void process(String[] argv, String content){
+  public ResultCommand(SQLTester t, String[] argv, String content){
+    super(t);
+    argcCheck(argv,0);
+    t.verbose(argv[0],"command is TODO");
   }
 }
 
-class CommandFactory {
-  static Command getCommandByName(SQLTester t, String name){
+class TestCaseCommand extends Command {
+  public TestCaseCommand(SQLTester t, String[] argv, String content){
+    super(t);
+    argcCheck(argv,1);
+    t.verbose(argv[0],argv[1]);
+  }
+}
+
+class CommandDispatcher {
+  static Class getCommandByName(String name){
     switch(name){
-      case "null": return new NullCommand(t);
-      case "result": return new ResultCommand(t);
-      case "testcase": return new TestCaseCommand(t);
+      case "db": return DbCommand.class;
+      case "null": return NullCommand.class;
+      case "result": return ResultCommand.class;
+      case "testcase": return TestCaseCommand.class;
       default: return null;
     }
+  }
+
+  @SuppressWarnings("unchecked")
+  static void dispatch(SQLTester tester, String[] argv, String content) throws Exception{
+    final Class cmdClass = getCommandByName(argv[0]);
+    if(null == cmdClass){
+      throw new IllegalArgumentException(
+        "No command handler found for '"+argv[0]+"'"
+      );
+    }
+    final java.lang.reflect.Constructor<Command> ctor =
+      cmdClass.getConstructor(SQLTester.class, String[].class, String.class);
+    tester.verbose("Running",cmdClass.getSimpleName(),"...");
+    ctor.newInstance(tester, argv, content);
   }
 }

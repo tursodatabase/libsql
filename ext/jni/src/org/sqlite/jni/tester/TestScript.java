@@ -165,25 +165,15 @@ public class TestScript {
     if( null==chunks ){
       verbose("This contains content which forces it to be ignored.");
     }else{
-      verbose("script commands:");
       int n = 0;
       for(String chunk : chunks){
         ++n;
         //verbose("#"+n,c).verbose("<EOF>");
-        String[] parts = chunk.split("\\n", 2);
-        String[] argv = parts[0].split("\\s+");
-        Command cmd = CommandFactory.getCommandByName(tester, argv[0]);
-        verbose("Command #"+n,argv[0],":",
-                (null==cmd ? "null" : cmd.getClass().getName()));
-        if(null == cmd){
-          throw new IllegalArgumentException(
-            "No command handler found for '"+argv[0]+"'"
-          );
-        }
-        if( parts.length > 1 ){
-          verbose(parts[1]).verbose("<EOF>");
-        }
-        cmd.process(argv, parts.length>1 ? parts[1] : null);
+        final String[] parts = chunk.split("\\n", 2);
+        final String[] argv = parts[0].split("\\s+");
+        CommandDispatcher.dispatch(
+          tester, argv, parts.length>1 ? parts[1] : null
+        );
       }
     }
   }
