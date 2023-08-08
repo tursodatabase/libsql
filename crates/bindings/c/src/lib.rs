@@ -104,7 +104,7 @@ pub unsafe extern "C" fn libsql_execute(
         }
     };
     let conn = conn.get_ref();
-    match conn.execute(sql.to_string(), ()) {
+    match conn.query(sql.to_string(), ()) {
         Ok(rows_opt) => {
             if let Some(rows) = rows_opt {
                 let rows = Box::leak(Box::new(libsql_rows { result: rows }));

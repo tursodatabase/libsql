@@ -18,6 +18,8 @@ pub enum Error {
     LibError(std::ffi::c_int),
     #[error("Query returned no rows")]
     QueryReturnedNoRows,
+    #[error("Execute returned rows")]
+    ExecuteReturnedRows,
 }
 
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
