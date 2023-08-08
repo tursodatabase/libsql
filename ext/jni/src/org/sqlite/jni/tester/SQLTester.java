@@ -25,6 +25,15 @@ class TestFailure extends RuntimeException {
     super(msg);
   }
 }
+
+class SkipTestRemainder extends RuntimeException {
+  public TestScript testScript;
+  public SkipTestRemainder(TestScript ts){
+    super("Skipping remainder of "+ts.getName());
+    testScript = ts;
+  }
+}
+
 /**
    This class provides an application which aims to implement the
    rudimentary SQL-driven test tool described in the accompanying
@@ -44,10 +53,12 @@ public class SQLTester {
   private String nullView;
   private int nTotalTest = 0;
   private int nTestFile = 0;
+  private int nAbortedScript = 0;
   private int nTest;
   private final sqlite3[] aDb = new sqlite3[7];
   private int iCurrentDb = 0;
   private final String initialDbName = "test.db";
+  private TestScript currentScript;
 
   public SQLTester(){
     reset();
@@ -86,17 +97,30 @@ public class SQLTester {
     openDb(0, initialDbName, true);
   }
 
+  TestScript getCurrentScript(){
+    return currentScript;
+  }
+
   public void runTests() throws Exception {
     // process each input file
-    outln("Verbose = ",outer.isVerbose());
-    for(String f : listInFiles){
-      reset();
-      setupInitialDb();
-      ++nTestFile;
-      final TestScript ts = new TestScript(f);
-      outln("---------> Test ",ts.getName()," ...");
-      ts.run(this);
-      outln("<--------- ",nTest," test(s) in ",f);
+    try {
+      for(String f : listInFiles){
+        reset();
+        setupInitialDb();
+        ++nTestFile;
+        final TestScript ts = new TestScript(f);
+        currentScript = ts;
+        outln("---------> Test ",ts.getName()," ...");
+        try{
+          ts.run(this);
+        }catch(SkipTestRemainder e){
+          /* not an error */
+          ++nAbortedScript;
+        }
+        outln("<--------- ",nTest," test(s) in ",f);
+      }
+    }finally{
+      currentScript = null;
     }
     Util.unlink(initialDbName);
   }
@@ -197,6 +221,16 @@ public class SQLTester {
 
   void setNullValue(String v){nullView = v;}
 
+  /**
+     If true, encountering an unknown command in a script causes the
+     remainder of the script to be skipped, rather than aborting the
+     whole script run.
+  */
+  boolean skipUnknownCommands(){
+    // Currently hard-coded. Potentially a flag someday.
+    return true;
+  }
+
   void incrementTestCounter(){ ++nTest; ++nTotalTest; }
 
   String escapeSqlValue(String v){
@@ -290,6 +324,7 @@ public class SQLTester {
         final String flag = a.replaceFirst("-+","");
         if( flag.equals("verbose") ){
           t.setVerbose(true);
+          t.outln("Verbose mode is on.");
         }else if( flag.equals("quiet") ) {
           t.setVerbose(false);
         }else{
@@ -300,7 +335,10 @@ public class SQLTester {
       t.addTestScript(a);
     }
     t.runTests();
-    t.outer.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
+    t.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
+    if( t.nAbortedScript > 0 ){
+      t.outln("Aborted ",t.nAbortedScript," script(s).");
+    }
   }
 }
 
@@ -366,7 +404,7 @@ class CloseDbCommand extends Command {
     if(argv.length>1){
       String arg = argv[1];
       if("all".equals(arg)){
-        t.verbose(argv[0]," all dbs");
+        //t.verbose(argv[0]," all dbs");
         t.closeAllDbs();
         return;
       }
@@ -377,7 +415,7 @@ class CloseDbCommand extends Command {
       id = t.getCurrentDbId();
     }
     t.closeDb(id);
-    t.verbose(argv[0]," db ",id);
+    //t.verbose(argv[0]," db ",id);
   }
 }
 
@@ -386,7 +424,7 @@ class DbCommand extends Command {
     argcCheck(argv,1);
     affirmNoContent(content);
     final sqlite3 db = t.setCurrentDb( Integer.parseInt(argv[1]) );
-    t.verbose(argv[0]," set db to ",db);
+    //t.verbose(argv[0]," set db to ",db);
   }
 }
 
@@ -410,7 +448,7 @@ class NewDbCommand extends Command {
     String fname = argv[1];
     Util.unlink(fname);
     final sqlite3 db = t.openDb(fname, true);
-    t.verbose(argv[0]," db ",db);
+    //t.verbose(argv[0]," db ",db);
   }
 }
 
@@ -440,7 +478,7 @@ class OpenDbCommand extends Command {
     affirmNoContent(content);
     String fname = argv[1];
     final sqlite3 db = t.openDb(fname, false);
-    t.verbose(argv[0]," db ",db);
+    //t.verbose(argv[0]," db ",db);
   }
 }
 
@@ -523,8 +561,15 @@ class CommandDispatcher {
   static void dispatch(SQLTester tester, String[] argv, String content) throws Exception{
     final Class cmdClass = getCommandByName(argv[0]);
     if(null == cmdClass){
+      final TestScript ts = tester.getCurrentScript();
+      if( tester.skipUnknownCommands() ){
+        tester.outln("WARNING: skipping remainder of ",ts.getName(),
+                     " because it contains unknown command '",argv[0],"'.");
+        throw new SkipTestRemainder(ts);
+      }
       Util.toss(IllegalArgumentException.class,
-           "No command handler found for '"+argv[0]+"'");
+                "No command handler found for '"+argv[0]+"' in ",
+                ts.getName());
     }
     final java.lang.reflect.Constructor<Command> ctor =
       cmdClass.getConstructor(SQLTester.class, String[].class, String.class);
@@ -532,7 +577,8 @@ class CommandDispatcher {
       //tester.verbose("Running ",argv[0]," with:\n", content);
       ctor.newInstance(tester, argv, content);
     }catch(java.lang.reflect.InvocationTargetException e){
-      throw (Exception)e.getCause();
+      Throwable t = e.getCause();
+      throw (t!=null && t instanceof Exception) ? (Exception)t : e;
     }
   }
 }
