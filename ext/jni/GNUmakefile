@@ -218,10 +218,12 @@ test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 .PHONY: tester
 
+tester.flags ?= --verbose
+
 tester: $(CLASS_FILES.tester) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.tester.SQLTester $(tester.scripts)
+		org.sqlite.jni.tester.SQLTester $(tester.flags) $(tester.scripts)
 
 $(package.jar): $(CLASS_FILES) $(MAKEFILE)
 	rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~

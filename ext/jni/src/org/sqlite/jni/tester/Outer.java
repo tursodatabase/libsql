@@ -13,8 +13,11 @@
 */
 package org.sqlite.jni.tester;
 
+/**
+   Console output utility class.
+*/
 class Outer {
-  public boolean isVerbose = true;
+  public boolean verbose = false;
 
   public static void out(Object val){
     System.out.print(val);
@@ -38,16 +41,14 @@ class Outer {
 
   @SuppressWarnings("unchecked")
   public Outer verbose(Object... vals){
-    if(isVerbose) outln(vals);
+    if(verbose) outln(vals);
     return this;
   }
 
   public void setVerbose(boolean b){
-    isVerbose = b;
+    verbose = b;
   }
 
-  public boolean getVerbose(){
-    return isVerbose;
-  }
+  public boolean isVerbose(){return verbose;}
 
 }

@@ -4,10 +4,11 @@
 
 junk
 
+--new SQLTester.db
 --null zilch
+--oom
 --print
 This is from the print command.
---db 1
 --- also ignored
 --testcase first
 input for the first
@@ -16,5 +17,8 @@ command;
 hello world
 --testcase second
 select 1
---result /* ignored */
-1
+--glob # /* ignored */
+--testcase second
+select 'a'
+--notglob #
+--close
