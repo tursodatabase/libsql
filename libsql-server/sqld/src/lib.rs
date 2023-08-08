@@ -51,7 +51,7 @@ mod test;
 mod utils;
 pub mod version;
 
-const MAX_CONCCURENT_DBS: usize = 32;
+const MAX_CONCURRENT_DBS: usize = 128;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
@@ -339,7 +339,7 @@ async fn start_replica(
         config.max_total_response_size,
     )
     .throttled(
-        MAX_CONCCURENT_DBS,
+        MAX_CONCURRENT_DBS,
         Some(DB_CREATE_TIMEOUT),
         config.max_total_response_size,
     );
@@ -496,7 +496,7 @@ async fn start_primary(
     )
     .await?
     .throttled(
-        MAX_CONCCURENT_DBS,
+        MAX_CONCURRENT_DBS,
         Some(DB_CREATE_TIMEOUT),
         config.max_total_response_size,
     )
