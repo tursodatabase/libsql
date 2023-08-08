@@ -32,7 +32,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-//use crate::client::H2cChannel;
+// use crate::client::H2cChannel;
 use crate::pb::HelloRequest;
 
 type RpcClient = pb::ReplicationLogClient<InterceptedService<Channel, AuthInterceptor>>;
@@ -295,8 +295,7 @@ impl Replicator {
             .frames
             .into_iter()
             .map(|f| Frame::try_from_bytes(f.data))
-            .collect::<Result<Vec<_>, _>>()
-            .await?;
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(frames)
     }

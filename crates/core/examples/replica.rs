@@ -7,7 +7,9 @@ async fn main() {
     let db_file = tempfile::NamedTempFile::new().unwrap();
     println!("Database {}", db_file.path().display());
 
-    let opts = libsql::Opts::with_http_sync("http://localhost:8080".to_owned());
+    let auth_token = std::env::var("TURSO_AUTH_TOKEN").expect("Expected a TURSO_AUTH_TOKEN");
+
+    let opts = libsql::Opts::with_http_sync("https://localhost:8080".to_owned(), auth_token);
     let db = Database::open_with_opts(db_file.path().to_str().unwrap(), opts)
         .await
         .unwrap();
@@ -28,7 +30,7 @@ async fn main() {
                 break;
             }
         }
-        let response = conn.execute("SELECT * FROM sqlite_master", ()).unwrap();
+        let response = conn.query("SELECT * FROM sqlite_master", ()).unwrap();
         let rows = match response {
             Some(rows) => rows,
             None => {
