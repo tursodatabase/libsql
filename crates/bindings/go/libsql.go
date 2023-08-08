@@ -18,7 +18,7 @@ import "C"
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
+	sqldriver "database/sql/driver"
 	"fmt"
 	"io"
 	"sync"
@@ -102,7 +102,7 @@ func (d *Driver) getConnection(dataSourceName string) (C.libsql_connection_t, er
 	return connNativePtr, nil
 }
 
-func (d *Driver) Open(dataSourceName string) (driver.Conn, error) {
+func (d *Driver) Open(dataSourceName string) (sqldriver.Conn, error) {
 	nativePtr, err := d.getConnection(dataSourceName)
 	if err != nil {
 		return nil, err
@@ -136,11 +136,11 @@ func (c *conn) Close() error {
 	return c.driver.CloseConnection(c.dataSourceName)
 }
 
-func (c *conn) Prepare(query string) (driver.Stmt, error) {
+func (c *conn) Prepare(query string) (sqldriver.Stmt, error) {
 	return nil, fmt.Errorf("prepare() is not implemented")
 }
 
-func (c *conn) Begin() (driver.Tx, error) {
+func (c *conn) Begin() (sqldriver.Tx, error) {
 	return nil, fmt.Errorf("begin() is not implemented")
 }
 
@@ -157,7 +157,7 @@ func (c *conn) execute(query string) (C.libsql_rows_t, error) {
 	return rows, nil
 }
 
-func (c *conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Result, error) {
 	rows, err := c.execute(query)
 	if err != nil {
 		return nil, err
@@ -223,7 +223,7 @@ func (r *rows) Close() error {
 	return nil
 }
 
-func (r *rows) Next(dest []driver.Value) error {
+func (r *rows) Next(dest []sqldriver.Value) error {
 	if r.nativePtr == nil {
 		return io.EOF
 	}
@@ -285,7 +285,7 @@ func (r *rows) Next(dest []driver.Value) error {
 	return nil
 }
 
-func (c *conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+func (c *conn) QueryContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Rows, error) {
 	rowsNativePtr, err := c.execute(query)
 	if err != nil {
 		return nil, err
