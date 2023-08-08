@@ -31,7 +31,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use crate::client::H2cChannel;
+//use crate::client::H2cChannel;
 use crate::pb::HelloRequest;
 
 type RpcClient = pb::ReplicationLogClient<InterceptedService<Channel, AuthInterceptor>>;
@@ -137,8 +137,7 @@ impl Replicator {
         endpoint: impl AsRef<str>,
         auth_token: impl AsRef<str>,
     ) -> anyhow::Result<replica::meta::WalIndexMeta> {
-        let auth_token = auth_token
-            .as_ref()
+        let auth_token = format!("Bearer {}", auth_token.as_ref())
             .try_into()
             .context("Invalid auth token must be ascii")?;
 
@@ -165,8 +164,7 @@ impl Replicator {
 
         let response = client
             .hello(pb::HelloRequest::default())
-            .await
-            .context("Unable to fetch wal metadata")?
+            .await?
             .into_inner();
 
         let generation_id =
@@ -299,8 +297,7 @@ impl Replicator {
                     .and_then(|f| Frame::try_from_bytes(f.data.into()))
             })
             .collect::<Result<Vec<_>, _>>()
-            .await
-            .context("frames stream")?;
+            .await?;
 
         Ok(frames)
     }
