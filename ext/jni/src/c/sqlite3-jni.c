@@ -4019,6 +4019,7 @@ JDECLFtsXA(jobject,xUserData)(JENV_OSELF,jobject jFcx){
 // End of the main API bindings. Start of SQLTester bits...
 ////////////////////////////////////////////////////////////////////////
 
+#ifdef S3JNI_ENABLE_SQLTester
 typedef struct SQLTesterJni SQLTesterJni;
 struct SQLTesterJni {
   sqlite3_int64 nDup;
@@ -4095,6 +4096,7 @@ Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JENV_CSELF){
   sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
 }
 
+#endif /* S3JNI_ENABLE_SQLTester */
 ////////////////////////////////////////////////////////////////////////
 // End of SQLTester bindings. Start of lower-level bits.
 ////////////////////////////////////////////////////////////////////////

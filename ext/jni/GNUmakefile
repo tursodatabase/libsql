@@ -43,6 +43,8 @@ SQLTester.class := $(SQLTester.java:.java=.class)
 # The future of FTS5 customization in this API is as yet unclear.
 # It would be a real doozy to bind to JNI.
 enable.fts5 ?= 1
+# If enable.tester is 0, the org/sqlite/jni/tester/* bits are elided.
+enable.tester ?= 1
 
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
@@ -90,7 +92,10 @@ JAVA_FILES.tester := $(patsubst %,$(dir.src.jni.tester)/%,\
 CLASS_FILES.main := $(JAVA_FILES.main:.java=.class)
 CLASS_FILES.tester := $(JAVA_FILES.tester:.java=.class)
 
-JAVA_FILES += $(JAVA_FILES.main) $(JAVA_FILES.tester)
+JAVA_FILES += $(JAVA_FILES.main)
+ifeq (1,$(enable.tester))
+  JAVA_FILES += $(JAVA_FILES.tester)
+endif
 
 CLASS_FILES :=
 define DOTCLASS_DEPS
@@ -183,8 +188,10 @@ ifeq (1,$(enable.fts5))
   $(eval $(call ADD_JNI_H,fts5_api))
   $(eval $(call ADD_JNI_H,fts5_tokenizer))
 endif
-sqlite3-jni.h.in += $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h
-$(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h: $(dir.src.jni.tester)/SQLTester.java
+ifeq (1,$(enable.tester))
+  sqlite3-jni.h.in += $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h
+  $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h: $(dir.src.jni.tester)/SQLTester.java
+endif
 #sqlite3-jni.dll.cfiles := $(dir.src.c)
 sqlite3-jni.dll.cflags := \
   -fPIC \
@@ -202,7 +209,9 @@ sqlite3-jni.dll.cflags := \
 # subdir which lives under $(JDK_HOME)/include and is a required
 # include path for client-level code.
 ########################################################################
-
+ifeq (1,$(enable.tester))
+  sqlite3-jni.dll.cflags += -DS3JNI_ENABLE_SQLTester
+endif
 $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 	cat $(sqlite3-jni.h.in) > $@
 $(sqlite3-jni.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
@@ -219,14 +228,17 @@ test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 		org.sqlite.jni.Tester1 $(if $(test.flags),-- $(test.flags),)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
-.PHONY: tester
-
 tester.flags ?= --verbose
-
+.PHONY: tester
+ifeq (1,$(enable.tester))
 tester: $(CLASS_FILES.tester) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
 		org.sqlite.jni.tester.SQLTester $(tester.flags) $(tester.scripts)
+else
+tester:
+	@echo "SQLTester support is disabled. Build with enable.tester=1 to enable it."
+endif
 
 $(package.jar): $(CLASS_FILES) $(MAKEFILE)
 	rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~
@@ -236,6 +248,7 @@ jar: $(package.jar)
 
 CLEAN_FILES += $(dir.bld.c)/* \
   $(dir.src.jni)/*.class \
+  $(dir.src.jni.tester)/*.class \
   $(sqlite3-jni.dll) \
   hs_err_pid*.log
 
