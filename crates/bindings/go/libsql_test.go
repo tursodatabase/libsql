@@ -51,18 +51,9 @@ func runMemoryAndFileTests(t *testing.T, test func(*testing.T, *sql.DB)) {
 func TestErrorNonUtf8URL(t *testing.T) {
 	t.Parallel()
 	db, err := sql.Open("libsql", "a\xc5z")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	conn, err := db.Conn(context.Background())
 	if err == nil {
 		defer func() {
-			if err := conn.Close(); err != nil {
+			if err := db.Close(); err != nil {
 				t.Fatal(err)
 			}
 		}()
@@ -76,18 +67,9 @@ func TestErrorNonUtf8URL(t *testing.T) {
 func TestErrorWrongURL(t *testing.T) {
 	t.Parallel()
 	db, err := sql.Open("libsql", "http://example.com/test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	conn, err := db.Conn(context.Background())
 	if err == nil {
 		defer func() {
-			if err := conn.Close(); err != nil {
+			if err := db.Close(); err != nil {
 				t.Fatal(err)
 			}
 		}()
