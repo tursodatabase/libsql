@@ -4030,6 +4030,17 @@ Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JENV_CSELF){
   return S3JniGlobal_env_uncache(env) ? JNI_TRUE : JNI_FALSE;
 }
 
+static int SQLTester_auto_extension(sqlite3 *pDb, const char **pzErr,
+                                    const struct sqlite3_api_routines *ignored){
+  //MARKER(("TODO: DUP() UDF\n"));
+  return 0;
+}
+
+
+JNIEXPORT void JNICALL
+Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JENV_CSELF){
+  sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
+}
 
 /**
    Called during static init of the SQLite3Jni class to sync certain

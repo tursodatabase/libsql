@@ -340,6 +340,18 @@ public class SQLTester {
       t.outln("Aborted ",t.nAbortedScript," script(s).");
     }
   }
+
+
+  private static native void installCustomExtensions();
+  static {
+    System.loadLibrary("sqlite3-jni")
+      /* Interestingly, when SQLTester is the main app, we have to
+         load that lib from here. The same load from SQLite3Jni does
+         not happen early enough. Without this,
+         installCustomExtensions() is an unresolved symbol. */;
+    installCustomExtensions();
+  }
+
 }
 
 /**
@@ -373,7 +385,7 @@ class Command {
     if(max<0) max = 99999999;
     if(argc<min || argc>max){
       if( min==max ) Util.badArg(argv[0],"requires exactly",min,"argument(s)");
-      else Util.badArg(argv[0],"requires",min,"-",max,"arguments.");
+      else Util.badArg(argv[0]," requires ",min,"-",max," arguments.");
     }
   }
 
@@ -504,7 +516,7 @@ class PrintCommand extends Command {
 
 class ResultCommand extends Command {
   public ResultCommand(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0,1);
+    argcCheck(argv,0,-1);
     affirmNoContent(content);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();

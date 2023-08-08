@@ -175,7 +175,7 @@ sqlite3-jni.dll := $(dir.bld.c)/libsqlite3-jni.so
 sqlite3-jni.h.in :=
 define ADD_JNI_H
 sqlite3-jni.h.in += $$(dir.bld.c)/org_sqlite_jni_$(1).h
-$$(dir.bld.c)/org_sqlite_jni_$(1).h: $$(dir.src.jni)/$(1).class
+$$(dir.bld.c)/org_sqlite_jni_$(1).h: $$(dir.src.jni)/$(1).java
 endef
 $(eval $(call ADD_JNI_H,SQLite3Jni))
 ifeq (1,$(enable.fts5))
@@ -183,6 +183,8 @@ ifeq (1,$(enable.fts5))
   $(eval $(call ADD_JNI_H,fts5_api))
   $(eval $(call ADD_JNI_H,fts5_tokenizer))
 endif
+sqlite3-jni.h.in += $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h
+$(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h: $(dir.src.jni.tester)/SQLTester.java
 #sqlite3-jni.dll.cfiles := $(dir.src.c)
 sqlite3-jni.dll.cflags := \
   -fPIC \
