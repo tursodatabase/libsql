@@ -16,22 +16,42 @@ script are deleted when the script finishes.
 
 ## Parsing Rules:
 
-  1.   Ignore the entire script if the script does not contain the
-       string "SCRIPT_MODULE_NAME:".
+  1.   The test script is read line by line, where a line is a sequence of
+       characters that runs up to the next '\\n' (0x0a) character or until
+       the end of the file.  There is never a need to read ahead past the
+       end of the current line.
 
-  2.   Ignore any script that contains the character sequence "\\n\|"
-       (0x0a, 0x7c).  In other words, ignore scripts that contain the
-       pipe character at the beginning of a line.  Such lines represent
-       test database file content in the "dbtotxt" format.  We might add
-       support for this later, but omit it for the first version.
+  2.   If any line contains the string " MODULE_NAME:" (with a space before
+       the initial "M") or "MIXED_MODULE_NAME:" then that test script is
+       incompatible with this spec.  Processing of the test script should
+       end immediately.  There is no need to read any more of the file.
+       In verbose mode, the interpreter might choose to emit an informational
+       messages saying that the test script was abandoned due to an
+       incompatible module type.
 
-  3.   Ignore individual lines that begin with '#'  (C-preprocessor lines).
+  3.   If any line contains the string "SCRIPT_MODULE_NAME:" then the input
+       script is known to be of the correct type for this specification and
+       processing may continue.  The "MODULE_NAME" checking in steps 2 and 3
+       may optionally be discontinued after sighting a "SCRIPT_MODULE_NAME".
 
-  4.   If a line begins with exactly two minus signs followed by a
+  4.   If any line begins with the "\|" (0x7c) character, that indicates that
+       the input script is not compatible with this specification.  Processing
+       of the script should stop immediately.  In verbose mode, the interpreter
+       might choose to emit an informational message indicating that the
+       test script was abandoned because it contained "a dbtotxt format database
+       specification".
+
+  5.   Any line that begins with "#" is a C-preprocessor line.  The interpreter
+       described by this spec does not know how to deal with C-preprocessor lines.
+       Hence, processing should be abandoned.  In verbose mode, the interpreter
+       might emit an informational message similar to
+       "script NAME abandoned due to C-preprocessor line: ..."
+
+  6.   If a line begins with exactly two minus signs followed by a
        lowercase letter, that is a command.  Process commands as described
        below.
 
-  5.   All other lines should be accumulated into the "input buffer".
+  7.   All other lines should be accumulated into the "input buffer".
        The various commands will have access to this input buffer.
        Some commands will reset the buffer.
 
@@ -67,8 +87,12 @@ Commands have access to the input buffer and might reset the input buffer.
 The command can also optionally read (and consume) additional text from
 script that comes after the command.
 
-Unknown or unrecognized commands should cause an error message to be
-printed and execution to stop.
+Unknown or unrecognized commands indicate that the script contains features
+that are not (yet) supported by this specification.  Processing of the
+script should terminate immediately.  When this happens and when the
+interpreter is in a "verbose" mode, the interpreter might choose to emit
+an informational message along the lines of "test script NAME abandoned
+due to unsupported command: --whatever".
 
 The initial implemention will only recognize a few commands.  Other
 commands may be added later.  The following is the initial set of
