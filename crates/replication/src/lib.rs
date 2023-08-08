@@ -20,7 +20,6 @@ pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
-use tokio_stream::StreamExt;
 use uuid::Uuid;
 
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -272,21 +271,18 @@ impl Replicator {
         }
 
         let frames = client
-            .log_entries(pb::LogOffset {
+            .batch_log_entries(pb::LogOffset {
                 next_offset: self.next_offset.load(Ordering::Relaxed),
             })
             .await
             .context("Failed to fetch log entries")?
             .into_inner();
-
-        let frames = frames
-            .map(|r| {
-                r.context("frame stream")
-                    .and_then(|f| Frame::try_from_bytes(f.data.into()))
+        let frames = frames.frames.iter()
+            .map(|f| {
+                Frame::try_from_bytes(f.data.clone())
             })
             .collect::<Result<Vec<_>, _>>()
-            .await
-            .context("frames stream")?;
+            .context("frames batch")?;
 
         Ok(frames)
     }
