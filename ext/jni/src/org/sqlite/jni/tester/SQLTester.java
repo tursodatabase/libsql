@@ -206,8 +206,9 @@ public class SQLTester {
 
   private void appendDbErr(sqlite3 db, StringBuilder sb, int rc){
     sb.append(org.sqlite.jni.ResultCode.getEntryForInt(rc))
-      .append(' ')
-      .append(escapeSqlValue(sqlite3_errmsg(db)));
+      .append(" {")
+      .append(escapeSqlValue(sqlite3_errmsg(db)))
+      .append("}");
   }
 
   public int execSql(sqlite3 db, boolean throwOnError,
@@ -220,6 +221,7 @@ public class SQLTester {
     byte[] sqlChunk = sqlUtf8;
     int rc = 0;
     sqlite3_stmt stmt = null;
+    int spacing = 0 /* emit a space for --result if>0 */ ;
     final StringBuilder sb = appendToResult ? resultBuffer : null;
     //outln("sqlChunk len= = ",sqlChunk.length);
     while(pos < sqlChunk.length){
@@ -249,7 +251,6 @@ public class SQLTester {
       if( null!=sb ){
         // Add the output to the result buffer...
         final int nCol = sqlite3_column_count(stmt);
-        int spacing = 0;
         while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
           for(int i = 0; i < nCol; ++i){
             if( spacing++ > 0 ) sb.append(' ');
