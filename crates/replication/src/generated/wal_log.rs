@@ -225,7 +225,7 @@ pub mod replication_log_server {
             request: tonic::Request<super::HelloRequest>,
         ) -> std::result::Result<tonic::Response<super::HelloResponse>, tonic::Status>;
         /// Server streaming response type for the LogEntries method.
-        type LogEntriesStream: futures_core::Stream<
+        type LogEntriesStream: tonic::codegen::tokio_stream::Stream<
                 Item = std::result::Result<super::Frame, tonic::Status>,
             >
             + Send
@@ -239,7 +239,7 @@ pub mod replication_log_server {
             request: tonic::Request<super::LogOffset>,
         ) -> std::result::Result<tonic::Response<super::Frames>, tonic::Status>;
         /// Server streaming response type for the Snapshot method.
-        type SnapshotStream: futures_core::Stream<
+        type SnapshotStream: tonic::codegen::tokio_stream::Stream<
                 Item = std::result::Result<super::Frame, tonic::Status>,
             >
             + Send
@@ -344,7 +344,9 @@ pub mod replication_log_server {
                             request: tonic::Request<super::HelloRequest>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).hello(request).await };
+                            let fut = async move {
+                                <T as ReplicationLog>::hello(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -389,7 +391,9 @@ pub mod replication_log_server {
                             request: tonic::Request<super::LogOffset>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).log_entries(request).await };
+                            let fut = async move {
+                                <T as ReplicationLog>::log_entries(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
@@ -432,7 +436,8 @@ pub mod replication_log_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                (*inner).batch_log_entries(request).await
+                                <T as ReplicationLog>::batch_log_entries(&inner, request)
+                                    .await
                             };
                             Box::pin(fut)
                         }
@@ -478,7 +483,9 @@ pub mod replication_log_server {
                             request: tonic::Request<super::LogOffset>,
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).snapshot(request).await };
+                            let fut = async move {
+                                <T as ReplicationLog>::snapshot(&inner, request).await
+                            };
                             Box::pin(fut)
                         }
                     }
