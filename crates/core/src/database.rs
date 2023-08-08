@@ -13,7 +13,10 @@ pub struct ReplicationContext {
 #[cfg(feature = "replication")]
 pub(crate) enum Sync {
     Frame,
-    Http { endpoint: String },
+    Http {
+        endpoint: String,
+        auth_token: String,
+    },
 }
 
 #[cfg(feature = "replication")]
@@ -27,10 +30,11 @@ impl Opts {
         Opts { sync: Sync::Frame }
     }
 
-    pub fn with_http_sync(endpoint: impl Into<String>) -> Opts {
+    pub fn with_http_sync(endpoint: impl Into<String>, auth_token: impl Into<String>) -> Opts {
         Opts {
             sync: Sync::Http {
                 endpoint: endpoint.into(),
+                auth_token: auth_token.into(),
             },
         }
     }
@@ -62,9 +66,13 @@ impl Database {
         let mut db = Database::open(&db_path)?;
         let mut replicator =
             Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
-        if let Sync::Http { endpoint } = opts.sync {
+        if let Sync::Http {
+            endpoint,
+            auth_token,
+        } = opts.sync
+        {
             let meta = replicator
-                .init_metadata(&endpoint)
+                .init_metadata(&endpoint, &auth_token)
                 .await
                 .map_err(|e| ConnectionFailed(format!("{e}")))?;
             *replicator.meta.lock() = Some(meta);

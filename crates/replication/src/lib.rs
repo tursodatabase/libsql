@@ -21,6 +21,10 @@ pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
 use tokio_stream::StreamExt;
+use tonic::codegen::InterceptedService;
+use tonic::metadata::{Ascii, MetadataValue};
+use tonic::service::Interceptor;
+use tonic::transport::Channel;
 use uuid::Uuid;
 
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -30,6 +34,8 @@ use tokio::sync::mpsc::Sender;
 use crate::client::H2cChannel;
 use crate::pb::HelloRequest;
 
+type RpcClient = pb::ReplicationLogClient<InterceptedService<Channel, AuthInterceptor>>;
+
 pub struct Replicator {
     pub frames_sender: Sender<Frames>,
     pub current_frame_no_notifier: tokio::sync::watch::Receiver<FrameNo>,
@@ -38,7 +44,7 @@ pub struct Replicator {
     _hook_ctx: Arc<parking_lot::Mutex<InjectorHookCtx>>,
     pub meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
     pub injector: replica::injector::FrameInjector<'static>,
-    pub client: Option<pb::ReplicationLogClient<H2cChannel>>,
+    pub client: Option<RpcClient>,
     pub next_offset: AtomicU64,
 }
 
@@ -129,23 +135,31 @@ impl Replicator {
     pub async fn init_metadata(
         &mut self,
         endpoint: impl AsRef<str>,
+        auth_token: impl AsRef<str>,
     ) -> anyhow::Result<replica::meta::WalIndexMeta> {
+        let auth_token = auth_token
+            .as_ref()
+            .try_into()
+            .context("Invalid auth token must be ascii")?;
+
         // TODO: Once fly fixes their proxy to correctly accept h2 we can drop
         // the h2c client but for now lets keep this commented.
         //
-        // let channel = Channel::builder(
-        //     endpoint
-        //         .as_ref()
-        //         .try_into()
-        //         .context("Unable to convert endpoint into a Uri")?,
-        // )
-        // .tls_config(ClientTlsConfig::new())?
-        // .connect_lazy();
+        let channel = Channel::builder(
+            endpoint
+                .as_ref()
+                .try_into()
+                .context("Unable to convert endpoint into a Uri")?,
+        )
+        .http2_keep_alive_interval(std::time::Duration::from_secs(5))
+        .keep_alive_while_idle(true)
+        .tls_config(tonic::transport::ClientTlsConfig::new())?
+        .connect_lazy();
 
-        let channel = H2cChannel::new();
+        // let channel = H2cChannel::new();
 
         let mut client = pb::ReplicationLogClient::with_origin(
-            channel,
+            InterceptedService::new(channel, AuthInterceptor(auth_token)),
             http::Uri::try_from(endpoint.as_ref()).unwrap(),
         );
 
@@ -289,5 +303,15 @@ impl Replicator {
             .context("frames stream")?;
 
         Ok(frames)
+    }
+}
+
+#[derive(Clone)]
+pub struct AuthInterceptor(MetadataValue<Ascii>);
+
+impl Interceptor for AuthInterceptor {
+    fn call(&mut self, mut req: tonic::Request<()>) -> Result<tonic::Request<()>, tonic::Status> {
+        req.metadata_mut().insert("x-authorization", self.0.clone());
+        Ok(req)
     }
 }
