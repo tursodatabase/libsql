@@ -371,15 +371,6 @@ struct S3JniEnvCache {
     jmethodID ctorStringBA   /* the String(byte[],Charset) constructor */;
     jmethodID stringGetBytes /* the String.getBytes(Charset) method */;
   } g /* refs to global Java state */;
-  jobject currentStmt /* Current Java sqlite3_stmt object being
-                         prepared, stepped, reset, or
-                         finalized. Needed for tracing, the
-                         alternative being that we create a new
-                         sqlite3_stmt wrapper object for every tracing
-                         call which needs a stmt object. This approach
-                         is rather invasive, however, requiring code
-                         in all stmt operations which can lead through
-                         the tracing API. */;
 #ifdef SQLITE_ENABLE_FTS5
   jobject jFtsExt     /* Global ref to Java singleton for the
                          Fts5ExtensionApi instance. */;
@@ -923,7 +914,6 @@ static void S3JniEnvCache_clear(S3JniEnvCache * const p){
     UNREF_G(p->g.cLong);
     UNREF_G(p->g.cString);
     UNREF_G(p->g.oCharsetUtf8);
-    UNREF_G(p->currentStmt);
 #ifdef SQLITE_ENABLE_FTS5
     UNREF_G(p->jFtsExt);
     UNREF_G(p->jPhraseIter.klazz);
@@ -2540,30 +2530,12 @@ JDECL(jint,1initialize)(JENV_CSELF){
   return sqlite3_initialize();
 }
 
-/**
-   Sets jc->currentStmt to the 2nd arugment and returns the previous
-   value of jc->currentStmt. This must always be called in pairs: once
-   to replace the current statement with the call-local one, and once
-   to restore it. It must be used in any stmt-handling routines which
-   may lead to the tracing callback being called, as the current stmt
-   is needed for certain tracing flags. At a minumum those ops are:
-   step, reset, finalize, prepare.
-*/
-static jobject stmt_set_current(S3JniEnvCache * const jc, jobject jStmt){
-  jobject const old = jc->currentStmt;
-  jc->currentStmt = jStmt;
-  return old;
-}
-
 JDECL(jint,1finalize)(JENV_CSELF, jobject jpStmt){
   int rc = 0;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   if( pStmt ){
-    S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
-    jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_finalize(pStmt);
     NativePointerHolder_set(env, jpStmt, 0, S3JniClassNames.sqlite3_stmt);
-    (void)stmt_set_current(jc, pPrev);
   }
   return rc;
 }
@@ -2681,8 +2653,6 @@ static jint sqlite3_jni_prepare_v123(int prepVersion, JNIEnv * const env, jclass
   jobject jStmt = 0;
   const char * zTail = 0;
   jbyte * const pBuf = JBA_TOC(baSql);
-  S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
-  jobject const pOldStmt = stmt_set_current(jc, 0);
   int rc = SQLITE_ERROR;
   assert(prepVersion==1 || prepVersion==2 || prepVersion==3);
   if( !pBuf ){
@@ -2734,7 +2704,6 @@ end:
   }
 #endif
   OutputPointer_set_sqlite3_stmt(env, jOutStmt, jStmt);
-  (void)stmt_set_current(jc, pOldStmt);
   return (jint)rc;
 }
 JDECL(jint,1prepare)(JNIEnv * const env, jclass self, jobject jDb, jbyteArray baSql,
@@ -2802,10 +2771,7 @@ JDECL(jint,1reset)(JENV_CSELF, jobject jpStmt){
   int rc = 0;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   if( pStmt ){
-    S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
-    jobject const pPrev = stmt_set_current(jc, jpStmt);
     rc = sqlite3_reset(pStmt);
-    (void)stmt_set_current(jc, pPrev);
   }
   return rc;
 }
@@ -3106,10 +3072,7 @@ JDECL(jint,1step)(JENV_CSELF,jobject jStmt){
   int rc = SQLITE_MISUSE;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
   if(pStmt){
-    S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
-    jobject const jPrevStmt = stmt_set_current(jc, jStmt);
     rc = sqlite3_step(pStmt);
-    (void)stmt_set_current(jc, jPrevStmt);
   }
   return rc;
 }
@@ -3122,31 +3085,24 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   jobject jPUnref = NULL /* potentially a local ref to jP */;
   S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
   int rc;
+  int createStmt = 0;
   switch(traceflag){
     case SQLITE_TRACE_STMT:
       jX = s3jni_utf8_to_jstring(jc, (const char *)pX, -1);
       if(!jX) return SQLITE_NOMEM;
       /*MARKER(("TRACE_STMT@%p SQL=%p / %s\n", pP, jX, (const char *)pX));*/
-      jP = jc->currentStmt;
+      createStmt = 1;
       break;
     case SQLITE_TRACE_PROFILE:
       jX = (*env)->NewObject(env, jc->g.cLong, jc->g.ctorLong1,
                              (jlong)*((sqlite3_int64*)pX));
       // hmm. ^^^ (*pX) really is zero.
       // MARKER(("profile time = %llu\n", *((sqlite3_int64*)pX)));
-      jP = jc->currentStmt;
-      if(!jP){
-        // This will be the case during prepare() b/c we don't have the
-        // pointer in time to wrap it before tracing is triggered.
-        jP = jPUnref = new_sqlite3_stmt_wrapper(env, pP);
-        if(!jP){
-          UNREF_L(jX);
-          return SQLITE_NOMEM;
-        }
-      }
+      if(!jX) return SQLITE_NOMEM;
+      createStmt = 1;
       break;
     case SQLITE_TRACE_ROW:
-      jP = jc->currentStmt;
+      createStmt = 1;
       break;
     case SQLITE_TRACE_CLOSE:
       jP = ps->jDb;
@@ -3154,6 +3110,13 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
     default:
       assert(!"cannot happen - unkown trace flag");
       return SQLITE_ERROR;
+  }
+  if( createStmt ){
+    jP = jPUnref = new_sqlite3_stmt_wrapper(env, pP);
+    if(!jP){
+      UNREF_L(jX);
+      return SQLITE_NOMEM;
+    }
   }
   assert(jP);
   rc = (int)(*env)->CallIntMethod(env, ps->trace.jObj,
