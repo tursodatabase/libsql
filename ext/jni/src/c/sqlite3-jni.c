@@ -2728,6 +2728,11 @@ end:
     UNREF_L(jStmt);
     jStmt = 0;
   }
+#if 0
+  if( 0!=rc ){
+    MARKER(("prepare rc = %d\n", rc));
+  }
+#endif
   OutputPointer_set_sqlite3_stmt(env, jOutStmt, jStmt);
   (void)stmt_set_current(jc, pOldStmt);
   return (jint)rc;

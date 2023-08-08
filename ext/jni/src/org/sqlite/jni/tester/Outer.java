@@ -29,8 +29,7 @@ class Outer {
 
   @SuppressWarnings("unchecked")
   public static void out(Object... vals){
-    int n = 0;
-    for(Object v : vals) out((n++>0 ? " " : "")+v);
+    for(Object v : vals) out(v);
   }
 
   @SuppressWarnings("unchecked")
@@ -41,7 +40,10 @@ class Outer {
 
   @SuppressWarnings("unchecked")
   public Outer verbose(Object... vals){
-    if(verbose) outln(vals);
+    if(verbose){
+      out("VERBOSE: ");
+      outln(vals);
+    }
     return this;
   }
 

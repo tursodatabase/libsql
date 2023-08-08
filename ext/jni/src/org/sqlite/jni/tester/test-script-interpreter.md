@@ -76,11 +76,11 @@ commands:
 
 ### The --testcase command
 
-Every test case starts with a --testcase command.  The --testcase command
-resets both the "input buffer" and the "result buffer".
-The argument to the --testcase command is the
-name of the test case.  That test case name is used for logging and debugging
-and when printing errors.
+Every test case starts with a --testcase command.  The --testcase
+command resets both the "input buffer" and the "result buffer".  The
+argument to the --testcase command is the name of the test case.  That
+test case name is used for logging and debugging and when printing
+errors. The input buffer is set to the body of the test case.
 
 ### The --result command
 

@@ -54,6 +54,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   NativePointerHolder.java \
   OutputPointer.java \
   ProgressHandler.java \
+  ResultCode.java \
   RollbackHook.java \
   SQLFunction.java \
   sqlite3_context.java \

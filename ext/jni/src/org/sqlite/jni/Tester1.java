@@ -102,23 +102,27 @@ public class Tester1 {
       rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
       if(throwOnError) affirm(0 == rc);
       else if( 0!=rc ) break;
-      stmt = outStmt.getValue();
       pos = oTail.getValue();
+      stmt = outStmt.getValue();
+      if( null == stmt ){
+        // empty statement was parsed.
+        continue;
+      }
       affirm(0 != stmt.getNativePointer());
       while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
       }
       sqlite3_finalize(stmt);
       affirm(0 == stmt.getNativePointer());
       if(0!=rc && SQLITE_ROW!=rc && SQLITE_DONE!=rc){
-        if(throwOnError){
-          throw new RuntimeException("db op failed with rc="+rc);
-        }else{
-          break;
-        }
+        break;
       }
     }
     sqlite3_finalize(stmt);
     if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
+    if( 0!=rc && throwOnError){
+      throw new RuntimeException("db op failed with rc="
+                                 +rc+": "+sqlite3_errmsg(db));
+    }
     return rc;
   }
 

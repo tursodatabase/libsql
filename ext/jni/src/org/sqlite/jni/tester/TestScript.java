@@ -84,7 +84,7 @@ class TestScript {
      (because it contains certain content which indicates such).
   */
   public static boolean shouldBeIgnored(String content){
-    return content.indexOf("SCRIPT_MODULE_NAME")>=0
+    return content.indexOf("SCRIPT_MODULE_NAME")<0
       || content.indexOf("\n|")>=0;
   }
 
@@ -123,16 +123,16 @@ class TestScript {
         s, Pattern.MULTILINE
       );
       final Matcher m = p.matcher(tmp);
-      /*verbose("Pattern {{{",p.pattern(),"}}} with flags",
-              ""+p.flags(),"matches:"
+      /*verbose("Pattern {{{ ",p.pattern()," }}} with flags ",
+              p.flags()," matches:"
               );*/
       int n = 0;
-      //while( m.find() ) verbose("#"+(++n)+"\t",m.group(0).trim());
+      //while( m.find() ) verbose("#",(++n),"\t",m.group(0).trim());
       tmp = m.replaceAll("");
     }
     // Chunk the newly-cleaned text into individual commands and their input...
     final List<String> rc = new ArrayList<>();
-    final Pattern p = Pattern.compile("^--", Pattern.MULTILINE);
+    final Pattern p = Pattern.compile("^--[a-z]", Pattern.MULTILINE);
     final Matcher m = p.matcher(tmp);
     int ndxPrev = 0, pos = 0, i = 0;
     String chunk;
@@ -147,7 +147,7 @@ class TestScript {
       }
       if( !chunk.isEmpty() ){
         ++i;
-        //verbose("CHUNK #"+i,""+ndxPrev,"..",""+pos,chunk);
+        //verbose("CHUNK #",i," ",+ndxPrev,"..",pos,chunk);
         rc.add( chunk );
       }
       ndxPrev = pos + 2;
@@ -157,7 +157,7 @@ class TestScript {
       chunk = tmp.substring(ndxPrev, tmp.length()).trim();
       if( !chunk.isEmpty() ){
         ++i;
-        //verbose("CHUNK #"+(++i),chunk);
+        //verbose("CHUNK #",(++i)," ",chunk);
         rc.add( chunk );
       }
     }
@@ -168,13 +168,14 @@ class TestScript {
      Runs this test script in the context of the given tester object.
   */
   public void run(SQLTester tester) throws Exception {
+    this.setVerbose(tester.isVerbose());
     if( null==chunks ){
-      verbose("This contains content which forces it to be ignored.");
+      outer.outln("This test contains content which forces it to be skipped.");
     }else{
       int n = 0;
       for(String chunk : chunks){
         ++n;
-        //verbose("#"+n,c).verbose("<EOF>");
+        //outer.verbose("CHUNK #",n," ",chunk,"<EOF>");
         final String[] parts = chunk.split("\\n", 2);
         final String[] argv = parts[0].split("\\s+");
         CommandDispatcher.dispatch(

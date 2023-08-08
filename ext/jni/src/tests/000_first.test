@@ -1,4 +1,8 @@
-/* A script for testing the org.sqlite.jni.tester infrastructure */
+/* A script for testing the org.sqlite.jni.tester infrastructure
+**
+** SCRIPT_MODULE_NAME:        000_first
+**
+*/
 
 # this line is ignored
 
@@ -6,15 +10,19 @@ junk
 
 --new SQLTester.db
 --null zilch
+--run
+select 1;
+select 2;
+-- comment
+intentional syntax error
 --oom
 --print
 This is from the print command.
 --- also ignored
 --testcase first
-input for the first
-command;
---result
-hello world
+select 'a', 'b';
+select 'a', 'b';
+--result a b a b
 --testcase second
 select 1
 --glob # /* ignored */
@@ -22,3 +30,6 @@ select 1
 select 'a'
 --notglob #
 --close
+--open SQLTester.db
+--print
+Re-opened db.

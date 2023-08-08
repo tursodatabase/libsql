@@ -15,9 +15,16 @@
 package org.sqlite.jni.tester;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 import org.sqlite.jni.*;
 import static org.sqlite.jni.SQLite3Jni.*;
 
+class TestFailure extends RuntimeException {
+  public TestFailure(String msg){
+    super(msg);
+  }
+}
 /**
    This class provides an application which aims to implement the
    rudimentary SQL-driven test tool described in the accompanying
@@ -40,6 +47,7 @@ public class SQLTester {
   private int nTest;
   private final sqlite3[] aDb = new sqlite3[7];
   private int iCurrentDb = 0;
+  private final String initialDbName = "test.db";
 
   public SQLTester(){
     reset();
@@ -47,6 +55,9 @@ public class SQLTester {
 
   public void setVerbose(boolean b){
     this.outer.setVerbose(b);
+  }
+  public boolean isVerbose(){
+    return this.outer.isVerbose();
   }
 
   @SuppressWarnings("unchecked")
@@ -67,42 +78,51 @@ public class SQLTester {
   //! Adds the given test script to the to-test list.
   public void addTestScript(String filename){
     listInFiles.add(filename);
-    verbose("Added file",filename);
+    verbose("Added file ",filename);
+  }
+
+  public void setupInitialDb() throws Exception {
+    Util.unlink(initialDbName);
+    openDb(0, initialDbName, true);
   }
 
   public void runTests() throws Exception {
     // process each input file
-    outln("Verbose =",outer.isVerbose());
+    outln("Verbose = ",outer.isVerbose());
     for(String f : listInFiles){
       reset();
+      setupInitialDb();
       ++nTestFile;
       final TestScript ts = new TestScript(f);
-      outln("---------> Test",ts.getName(),"...");
+      outln("---------> Test ",ts.getName()," ...");
       ts.run(this);
-      outln("<---------",nTest,"test(s) in",f);
+      outln("<--------- ",nTest," test(s) in ",f);
     }
+    Util.unlink(initialDbName);
   }
 
-  private StringBuilder resetBuffer(StringBuilder b){
+  private StringBuilder clearBuffer(StringBuilder b){
     b.delete(0, b.length());
     return b;
   }
 
-  StringBuilder resetInputBuffer(){
-    return resetBuffer(inputBuffer);
+  StringBuilder clearInputBuffer(){
+    return clearBuffer(inputBuffer);
   }
 
-  StringBuilder resetResultBuffer(){
-    return resetBuffer(resultBuffer);
+  StringBuilder clearResultBuffer(){
+    return clearBuffer(resultBuffer);
   }
 
   StringBuilder getInputBuffer(){ return inputBuffer; }
 
   String getInputBufferText(){ return inputBuffer.toString(); }
 
+  String getResultBufferText(){ return resultBuffer.toString(); }
+
   private String takeBuffer(StringBuilder b){
     final String rc = b.toString();
-    resetBuffer(b);
+    clearBuffer(b);
     return rc;
   }
 
@@ -152,9 +172,16 @@ public class SQLTester {
     if( 0!=rc ){
       final String msg = sqlite3_errmsg(db);
       sqlite3_close(db);
-      Util.toss("db open failed with code",rc,"and message:",msg);
+      Util.toss(TestFailure.class, "db open failed with code",
+                rc,"and message:",msg);
     }
     return aDb[iCurrentDb] = db;
+  }
+
+  sqlite3 openDb(int slot, String name, boolean createIfNeeded) throws Exception {
+    affirmDbId(slot);
+    iCurrentDb = slot;
+    return openDb(name, createIfNeeded);
   }
 
   /**
@@ -164,13 +191,96 @@ public class SQLTester {
   void reset(){
     nTest = 0;
     nullView = "nil";
-    resetInputBuffer();
+    clearInputBuffer();
     closeAllDbs();
   }
 
   void setNullValue(String v){nullView = v;}
 
   void incrementTestCounter(){ ++nTest; ++nTotalTest; }
+
+  String escapeSqlValue(String v){
+    // TODO: implement the escaping rules
+    return v;
+  }
+
+  private void appendDbErr(sqlite3 db, StringBuilder sb, int rc){
+    sb.append(org.sqlite.jni.ResultCode.getEntryForInt(rc))
+      .append(' ')
+      .append(escapeSqlValue(sqlite3_errmsg(db)));
+  }
+
+  public int execSql(sqlite3 db, boolean throwOnError,
+                     boolean appendToResult, String sql) throws Exception {
+    final OutputPointer.Int32 oTail = new OutputPointer.Int32();
+    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
+    final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
+    if( null==db ) db = getCurrentDb();
+    int pos = 0, n = 1;
+    byte[] sqlChunk = sqlUtf8;
+    int rc = 0;
+    sqlite3_stmt stmt = null;
+    final StringBuilder sb = appendToResult ? resultBuffer : null;
+    //outln("sqlChunk len= = ",sqlChunk.length);
+    while(pos < sqlChunk.length){
+      if(pos > 0){
+        sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
+                                      sqlChunk.length);
+      }
+      if( 0==sqlChunk.length ) break;
+      rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
+      /*outln("PREPARE rc ",rc," oTail=",oTail.getValue(),": ",
+        new String(sqlChunk,StandardCharsets.UTF_8),"\n<EOSQL>");*/
+      if( 0!=rc ){
+        if(throwOnError){
+          Util.toss(RuntimeException.class, "db op failed with rc="
+                    +rc+": "+sqlite3_errmsg(db));
+        }else if( null!=sb ){
+          appendDbErr(db, sb, rc);
+        }
+        break;
+      }
+      pos = oTail.getValue();
+      stmt = outStmt.getValue();
+      if( null == stmt ){
+        // empty statement was parsed.
+        continue;
+      }
+      if( null!=sb ){
+        // Add the output to the result buffer...
+        final int nCol = sqlite3_column_count(stmt);
+        int spacing = 0;
+        while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
+          for(int i = 0; i < nCol; ++i){
+            if( spacing++ > 0 ) sb.append(' ');
+            String val = sqlite3_column_text16(stmt, i);
+            if( null==val ){
+              sb.append( nullView );
+              continue;
+            }
+            sb.append( escapeSqlValue(val) );
+          }
+          //sb.append('\n');
+        }
+      }else{
+        while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){}
+      }
+      sqlite3_finalize(stmt);
+      if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
+      else if( rc!=0 ){
+        if( null!=sb ){
+          appendDbErr(db, sb, rc);
+        }
+        break;
+      }
+    }
+    sqlite3_finalize(stmt);
+    if( 0!=rc && throwOnError ){
+      Util.toss(RuntimeException.class, "db op failed with rc="
+                +rc+": "+sqlite3_errmsg(db));
+    }
+    return rc;
+  }
 
   public static void main(String[] argv) throws Exception{
     final SQLTester t = new SQLTester();
@@ -189,7 +299,7 @@ public class SQLTester {
       t.addTestScript(a);
     }
     t.runTests();
-    t.outer.outln("Processed",t.nTotalTest,"test(s) in",t.nTestFile,"file(s).");
+    t.outer.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
   }
 }
 
@@ -221,6 +331,7 @@ class Command {
 
   protected final void argcCheck(String[] argv, int min, int max) throws Exception{
     int argc = argv.length-1;
+    if(max<0) max = 99999999;
     if(argc<min || argc>max){
       if( min==max ) Util.badArg(argv[0],"requires exactly",min,"argument(s)");
       else Util.badArg(argv[0],"requires",min,"-",max,"arguments.");
@@ -254,7 +365,7 @@ class CloseDbCommand extends Command {
     if(argv.length>1){
       String arg = argv[1];
       if("all".equals(arg)){
-        t.verbose(argv[0],"all dbs");
+        t.verbose(argv[0]," all dbs");
         t.closeAllDbs();
         return;
       }
@@ -265,7 +376,7 @@ class CloseDbCommand extends Command {
       id = t.getCurrentDbId();
     }
     t.closeDb(id);
-    t.verbose(argv[0],"db",id);
+    t.verbose(argv[0]," db ",id);
   }
 }
 
@@ -274,7 +385,7 @@ class DbCommand extends Command {
     argcCheck(argv,1);
     affirmNoContent(content);
     final sqlite3 db = t.setCurrentDb( Integer.parseInt(argv[1]) );
-    t.verbose(argv[0],"set db to",db);
+    t.verbose(argv[0]," set db to ",db);
   }
 }
 
@@ -284,7 +395,7 @@ class GlobCommand extends Command {
     argcCheck(argv,1);
     affirmNoContent(content);
     final String glob = argv[1].replace("#","[0-9]");
-    t.verbose(argv[0],"is TODO. Pattern =",glob);
+    t.verbose(argv[0]," is TODO. Pattern = ",glob);
   }
   public GlobCommand(SQLTester t, String[] argv, String content) throws Exception{
     this(false, t, argv, content);
@@ -298,7 +409,7 @@ class NewDbCommand extends Command {
     String fname = argv[1];
     Util.unlink(fname);
     final sqlite3 db = t.openDb(fname, true);
-    t.verbose(argv[0],"db",db);
+    t.verbose(argv[0]," db ",db);
   }
 }
 
@@ -318,7 +429,7 @@ class NullCommand extends Command {
     argcCheck(argv,1);
     affirmNoContent(content);
     t.setNullValue(argv[1]);
-    //t.verbose(argv[0],argv[1]);
+    //t.verbose(argv[0]," ",argv[1]);
   }
 }
 
@@ -327,9 +438,8 @@ class OpenDbCommand extends Command {
     argcCheck(argv,1);
     affirmNoContent(content);
     String fname = argv[1];
-    Util.unlink(fname);
     final sqlite3 db = t.openDb(fname, false);
-    t.verbose(argv[0],"db",db);
+    t.verbose(argv[0]," db ",db);
   }
 }
 
@@ -343,9 +453,37 @@ class PrintCommand extends Command {
 
 class ResultCommand extends Command {
   public ResultCommand(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0);
-    //t.verbose(argv[0],"command is TODO");
+    argcCheck(argv,1,-1);
+    affirmNoContent(content);
     t.incrementTestCounter();
+    final String sql = t.takeInputBuffer();
+    //t.verbose(argv[0]," SQL =\n",sql);
+    int rc = t.execSql(null, true, true, sql);
+    final String result = t.getResultBufferText().trim();
+    StringBuilder sbExpect = new StringBuilder();
+    for(int i = 1; i < argv.length; ++i ){
+      if( i>1 ) sbExpect.append(" ");
+      sbExpect.append( argv[i] );
+    }
+    final String sArgs = sbExpect.toString();
+    //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
+    if( !result.equals(sArgs) ){
+      Util.toss(TestFailure.class, argv[0]," comparison failed.");
+    }
+  }
+}
+
+class RunCommand extends Command {
+  public RunCommand(SQLTester t, String[] argv, String content) throws Exception{
+    argcCheck(argv,0);
+    affirmHasContent(content);
+    int rc = t.execSql(null, false, false, content);
+    if( 0!=rc ){
+      sqlite3 db = t.getCurrentDb();
+      String msg = sqlite3_errmsg(db);
+      t.verbose(argv[0]," non-fatal command error #",rc,": ",
+                msg,"\nfor SQL:\n",content);
+    }
   }
 }
 
@@ -353,9 +491,10 @@ class TestCaseCommand extends Command {
   public TestCaseCommand(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmHasContent(content);
-    t.resetInputBuffer();
-    t.resetResultBuffer().append(content);
-    t.verbose(argv[0],"result buffer:",content);
+    // TODO: do something with the test name
+    t.clearResultBuffer();
+    t.clearInputBuffer().append(content);
+    //t.verbose(argv[0]," input buffer: ",content);
   }
 }
 
@@ -373,6 +512,7 @@ class CommandDispatcher {
       case "open":     return OpenDbCommand.class;
       case "print":    return PrintCommand.class;
       case "result":   return ResultCommand.class;
+      case "run":      return RunCommand.class;
       case "testcase": return TestCaseCommand.class;
       default: return null;
     }
@@ -382,14 +522,17 @@ class CommandDispatcher {
   static void dispatch(SQLTester tester, String[] argv, String content) throws Exception{
     final Class cmdClass = getCommandByName(argv[0]);
     if(null == cmdClass){
-      throw new IllegalArgumentException(
-        "No command handler found for '"+argv[0]+"'"
-      );
+      Util.toss(IllegalArgumentException.class,
+           "No command handler found for '"+argv[0]+"'");
     }
     final java.lang.reflect.Constructor<Command> ctor =
       cmdClass.getConstructor(SQLTester.class, String[].class, String.class);
-    //tester.verbose("Running",argv[0],"...");
-    ctor.newInstance(tester, argv, content);
+    try{
+      //tester.verbose("Running ",argv[0]," with:\n", content);
+      ctor.newInstance(tester, argv, content);
+    }catch(java.lang.reflect.InvocationTargetException e){
+      throw (Exception)e.getCause();
+    }
   }
 }
 
@@ -419,5 +562,4 @@ final class Util {
       /* ignore */
     }
   }
-
 }
