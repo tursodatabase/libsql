@@ -25,12 +25,23 @@ public class Tester1 {
   private static final OutputPointer.sqlite3_stmt outStmt
     = new OutputPointer.sqlite3_stmt();
 
-  public static <T> void out(T val){
+  public static void out(Object val){
     System.out.print(val);
   }
 
-  public static <T> void outln(T val){
+  public static void outln(Object val){
     System.out.println(val);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static void out(Object... vals){
+    int n = 0;
+    for(Object v : vals) out((n++>0 ? " " : "")+v);
+  }
+
+  @SuppressWarnings("unchecked")
+  public static void outln(Object... vals){
+    out(vals); out("\n");
   }
 
   static int affirmCount = 0;
@@ -42,8 +53,8 @@ public class Tester1 {
   }
 
   private static void test1(){
-    outln("libversion_number: "
-          + sqlite3_libversion_number()
+    outln("libversion_number:",
+          sqlite3_libversion_number()
           + "\n"
           + sqlite3_libversion()
           + "\n"

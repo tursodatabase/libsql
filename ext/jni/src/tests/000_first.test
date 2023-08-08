@@ -5,6 +5,8 @@
 junk
 
 --null zilch
+--print
+This is from the print command.
 --db 1
 --- also ignored
 --testcase first

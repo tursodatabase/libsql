@@ -90,7 +90,19 @@ class TestScript {
 
   /**
      Chop script up into chunks containing individual commands and
-     their inputs.
+     their inputs. The approach taken here is not as robust as
+     line-by-line parsing would be but the framework is structured
+     such that we could replace this part without unduly affecting the
+     evaluation bits. The potential problems with this approach
+     include:
+
+     - It's potentially possible that it will strip content out of a
+     testcase block.
+
+     - It loses all file location information, so we can't report line
+     numbers of errors.
+
+     If/when that becomes a problem, it can be refactored.
   */
   private List<String> chunkContent(){
     if( ignored ) return null;
