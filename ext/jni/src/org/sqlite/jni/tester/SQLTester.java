@@ -196,8 +196,8 @@ public class SQLTester {
     if( 0!=rc ){
       final String msg = sqlite3_errmsg(db);
       sqlite3_close(db);
-      Util.toss(TestFailure.class, "db open failed with code",
-                rc,"and message:",msg);
+      Util.toss(TestFailure.class, "db open failed with code ",
+                rc," and message: ",msg);
     }
     return aDb[iCurrentDb] = db;
   }
@@ -433,8 +433,20 @@ class GlobCommand extends Command {
                         String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
+
+    t.incrementTestCounter();
+    final String sql = t.takeInputBuffer();
+    //t.verbose(argv[0]," SQL =\n",sql);
+    int rc = t.execSql(null, true, true, sql);
+    final String result = t.getResultBufferText().trim();
+    final String sArgs = Util.argvToString(argv);
+    //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
     final String glob = argv[1].replace("#","[0-9]");
-    t.verbose(argv[0]," is TODO. Pattern = ",glob);
+    rc = sqlite3_strglob(glob, result);
+    if( (negate && 0==rc) || (!negate && 0!=rc) ){
+      Util.toss(TestFailure.class, this.getClass().getSimpleName(),
+                " glob mismatch: ",glob," vs input: ",result);
+    }
   }
   public GlobCommand(SQLTester t, String[] argv, String content) throws Exception{
     this(false, t, argv, content);
@@ -499,12 +511,7 @@ class ResultCommand extends Command {
     //t.verbose(argv[0]," SQL =\n",sql);
     int rc = t.execSql(null, true, true, sql);
     final String result = t.getResultBufferText().trim();
-    StringBuilder sbExpect = new StringBuilder();
-    for(int i = 1; i < argv.length; ++i ){
-      if( i>1 ) sbExpect.append(" ");
-      sbExpect.append( argv[i] );
-    }
-    final String sArgs = sbExpect.toString();
+    final String sArgs = Util.argvToString(argv);
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
     if( !result.equals(sArgs) ){
       Util.toss(TestFailure.class, argv[0]," comparison failed.");
@@ -586,8 +593,7 @@ class CommandDispatcher {
 final class Util {
   public static void toss(Class<? extends Exception> errorType, Object... msg) throws Exception {
     StringBuilder sb = new StringBuilder();
-    int i = 0;
-    for(Object s : msg) sb.append(((0==i++) ? "" : " ")+s);
+    for(Object s : msg) sb.append(s);
     final java.lang.reflect.Constructor<? extends Exception> ctor =
       errorType.getConstructor(String.class);
     throw ctor.newInstance(sb.toString());
@@ -608,5 +614,14 @@ final class Util {
     }catch(Exception e){
       /* ignore */
     }
+  }
+
+  public static String argvToString(String[] argv){
+    StringBuilder sb = new StringBuilder();
+    for(int i = 1; i < argv.length; ++i ){
+      if( i>1 ) sb.append(" ");
+      sb.append( argv[i] );
+    }
+    return sb.toString();
   }
 }

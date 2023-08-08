@@ -24,8 +24,8 @@ select 'a', 'b';
 select 'a', 'b';
 --result a b a b
 --testcase second
-select 1
---glob # /* ignored */
+select 123
+--glob #2#
 --testcase second
 select 'a'
 --notglob #

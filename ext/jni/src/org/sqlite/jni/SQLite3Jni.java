@@ -850,21 +850,28 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
-  private static native int sqlite3_strglob(@NotNull byte[] glob, @NotNull byte[] txt);
+  private static native int sqlite3_strglob(
+    @NotNull byte[] glob, @NotNull byte[] txt
+  );
 
   public static int sqlite3_strglob(@NotNull String glob, @NotNull String txt){
     return sqlite3_strglob(
-      glob.getBytes(StandardCharsets.UTF_8),
-      txt.getBytes(StandardCharsets.UTF_8)
+      (glob+"\0").getBytes(StandardCharsets.UTF_8),
+      (txt+"\0").getBytes(StandardCharsets.UTF_8)
     );
   }
 
-  private static native int sqlite3_strlike(@NotNull byte[] glob, @NotNull byte[] txt);
+  private static native int sqlite3_strlike(
+    @NotNull byte[] glob, @NotNull byte[] txt, int escChar
+  );
 
-  public static int sqlite3_strlike(@NotNull String glob, @NotNull String txt){
+  public static int sqlite3_strlike(
+    @NotNull String glob, @NotNull String txt, char escChar
+  ){
     return sqlite3_strlike(
-      glob.getBytes(StandardCharsets.UTF_8),
-      txt.getBytes(StandardCharsets.UTF_8)
+      (glob+"\0").getBytes(StandardCharsets.UTF_8),
+      (txt+"\0").getBytes(StandardCharsets.UTF_8),
+      (int)escChar
     );
   }
 

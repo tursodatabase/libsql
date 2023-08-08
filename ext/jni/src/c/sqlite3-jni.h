@@ -1470,10 +1470,10 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strglob
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_strlike
- * Signature: ([B[B)I
+ * Signature: ([B[BI)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strlike
-  (JNIEnv *, jclass, jbyteArray, jbyteArray);
+  (JNIEnv *, jclass, jbyteArray, jbyteArray, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

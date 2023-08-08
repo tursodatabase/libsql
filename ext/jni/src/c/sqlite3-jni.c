@@ -3070,24 +3070,29 @@ JDECL(void,1set_1last_1insert_1rowid)(JENV_CSELF, jobject jpDb, jlong rowId){
 }
 
 static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
-                               jbyteArray baG, jbyteArray baT){
+                              jbyteArray baG, jbyteArray baT, jint escLike){
   int rc = 0;
   jbyte * const pG = JBA_TOC(baG);
   jbyte * const pT = pG ? JBA_TOC(baT) : 0;
-
   OOM_CHECK(pT);
-  rc = sqlite3_strglob((const char *)pG, (const char *)pT);
+
+  /* Note that we're relying on the byte arrays having been
+     NUL-terminated on the Java side. */
+  rc = isLike
+    ? sqlite3_strlike((const char *)pG, (const char *)pT,
+                      (unsigned int)escLike)
+    : sqlite3_strglob((const char *)pG, (const char *)pT);
   JBA_RELEASE(baG, pG);
   JBA_RELEASE(baT, pT);
   return rc;
 }
 
 JDECL(int,1strglob)(JENV_CSELF, jbyteArray baG, jbyteArray baT){
-  return s3jni_strlike_glob(0, env, baG, baT);
+  return s3jni_strlike_glob(0, env, baG, baT, 0);
 }
 
-JDECL(int,1strlike)(JENV_CSELF, jbyteArray baG, jbyteArray baT){
-  return s3jni_strlike_glob(1, env, baG, baT);
+JDECL(int,1strlike)(JENV_CSELF, jbyteArray baG, jbyteArray baT, jint escChar){
+  return s3jni_strlike_glob(1, env, baG, baT, escChar);
 }
 
 JDECL(jint,1shutdown)(JENV_CSELF){
