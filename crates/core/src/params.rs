@@ -9,20 +9,20 @@ pub enum Params {
 #[macro_export]
 macro_rules! params {
     () => {
-        Params::None
+        $crate::Params::None
     };
     ($($value:expr),* $(,)?) => {
-        Params::Positional(vec![$($value.into()),*])
+        $crate::Params::Positional(vec![$($value.into()),*])
     };
 }
 
 #[macro_export]
 macro_rules! named_params {
     () => {
-        Params::None
+        $crate::Params::None
     };
     ($($param_name:literal: $value:expr),* $(,)?) => {
-        Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::from($value))),*])
+        $crate::Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::from($value))),*])
     };
 }
 
