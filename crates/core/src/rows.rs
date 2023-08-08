@@ -69,8 +69,8 @@ impl futures::Future for RowsFuture {
         _cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         let stmt = self.conn.prepare(&self.sql)?;
-        let ret = stmt.execute(&self.params);
-        std::task::Poll::Ready(Ok(ret))
+        let ret = stmt.query(&self.params)?;
+        std::task::Poll::Ready(Ok(Some(ret)))
     }
 }
 

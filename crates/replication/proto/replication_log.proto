@@ -20,8 +20,13 @@ message Frame {
     bytes data = 1;
 }
 
+message Frames {
+    repeated Frame frames = 1;
+}
+
 service ReplicationLog {
     rpc Hello(HelloRequest) returns (HelloResponse) {}
     rpc LogEntries(LogOffset) returns (stream Frame) {}
+    rpc BatchLogEntries(LogOffset) returns (Frames) {}
     rpc Snapshot(LogOffset) returns (stream Frame) {}
 }

@@ -25,6 +25,7 @@ use tonic::codegen::InterceptedService;
 use tonic::metadata::{Ascii, MetadataValue};
 use tonic::service::Interceptor;
 use tonic::transport::Channel;
+
 use uuid::Uuid;
 
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -284,18 +285,16 @@ impl Replicator {
         }
 
         let frames = client
-            .log_entries(pb::LogOffset {
+            .batch_log_entries(pb::LogOffset {
                 next_offset: self.next_offset.load(Ordering::Relaxed),
             })
             .await
             .context("Failed to fetch log entries")?
             .into_inner();
-
         let frames = frames
-            .map(|r| {
-                r.context("frame stream")
-                    .and_then(|f| Frame::try_from_bytes(f.data.into()))
-            })
+            .frames
+            .into_iter()
+            .map(|f| Frame::try_from_bytes(f.data))
             .collect::<Result<Vec<_>, _>>()
             .await?;
 

@@ -1,13 +1,12 @@
 use crate::rows::{MappedRows, Row};
 use crate::{errors, Connection, Error, Params, Result, Rows, ValueRef};
 
-use std::cell::RefCell;
 use std::ffi::c_int;
 use std::sync::Arc;
 
 /// A prepared statement.
 pub struct Statement {
-    _conn: Connection,
+    conn: Connection,
     inner: Arc<libsql_sys::Statement>,
 }
 
@@ -19,7 +18,7 @@ impl Statement {
     ) -> Result<Statement> {
         match unsafe { libsql_sys::prepare_stmt(raw, sql) } {
             Ok(stmt) => Ok(Statement {
-                _conn: conn,
+                conn,
                 inner: Arc::new(stmt),
             }),
             Err(libsql_sys::Error::LibError(_err)) => Err(Error::PrepareFailed(
@@ -92,16 +91,13 @@ impl Statement {
         self.inner.readonly()
     }
 
-    pub fn execute(&self, params: &Params) -> Option<Rows> {
+    pub fn execute(&self, params: &Params) -> Result<u64> {
         self.bind(params);
         let err = self.inner.step();
         match err as u32 {
-            crate::ffi::SQLITE_OK => None,
-            crate::ffi::SQLITE_DONE => None,
-            _ => Some(Rows {
-                stmt: self.inner.clone(),
-                err: RefCell::new(Some(err)),
-            }),
+            crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
+            crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
+            _ => Err(Error::LibError(err)),
         }
     }
 
