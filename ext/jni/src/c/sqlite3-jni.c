@@ -4016,8 +4016,89 @@ JDECLFtsXA(jobject,xUserData)(JENV_OSELF,jobject jFcx){
 #endif /* SQLITE_ENABLE_FTS5 */
 
 ////////////////////////////////////////////////////////////////////////
-// End of the main API bindings. What follows are internal utilities.
+// End of the main API bindings. Start of SQLTester bits...
 ////////////////////////////////////////////////////////////////////////
+
+typedef struct SQLTesterJni SQLTesterJni;
+struct SQLTesterJni {
+  sqlite3_int64 nDup;
+};
+static SQLTesterJni SQLTester = {
+  0
+};
+
+static void SQLTester_dup_destructor(void*pToFree){
+  u64 *p = (u64*)pToFree;
+  assert( p!=0 );
+  p--;
+  assert( p[0]==0x2bbf4b7c );
+  p[0] = 0;
+  p[1] = 0;
+  sqlite3_free(p);
+}
+
+/*
+** Implementation of
+**
+**         dup(TEXT)
+**
+** This SQL function simply makes a copy of its text argument.  But it
+** returns the result using a custom destructor, in order to provide
+** tests for the use of Mem.xDel() in the SQLite VDBE.
+*/
+static void SQLTester_dup_func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  u64 *pOut;
+  char *z;
+  int n = sqlite3_value_bytes(argv[0]);
+  SQLTesterJni * const p = (SQLTesterJni *)sqlite3_user_data(context);
+
+  ++p->nDup;
+  if( n>0 && (pOut = sqlite3_malloc( (n+16)&~7 ))!=0 ){
+    pOut[0] = 0x2bbf4b7c;
+    z = (char*)&pOut[1];
+    memcpy(z, sqlite3_value_text(argv[0]), n);
+    z[n] = 0;
+    sqlite3_result_text(context, z, n, SQLTester_dup_destructor);
+  }
+  return;
+}
+
+/*
+** Return the number of calls to the dup() SQL function since the
+** SQLTester context was opened or since the last dup_count() call.
+*/
+static void SQLTester_dup_count_func(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  SQLTesterJni * const p = (SQLTesterJni *)sqlite3_user_data(context);
+  sqlite3_result_int64(context, p->nDup);
+  p->nDup = 0;
+}
+
+static int SQLTester_auto_extension(sqlite3 *pDb, const char **pzErr,
+                                    const struct sqlite3_api_routines *ignored){
+  sqlite3_create_function(pDb, "dup", 1, SQLITE_UTF8, &SQLTester,
+                          SQLTester_dup_func, 0, 0);
+  sqlite3_create_function(pDb, "dup_count", 0, SQLITE_UTF8, &SQLTester,
+                          SQLTester_dup_count_func, 0, 0);
+  return 0;
+}
+
+JNIEXPORT void JNICALL
+Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JENV_CSELF){
+  sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
+}
+
+////////////////////////////////////////////////////////////////////////
+// End of SQLTester bindings. Start of lower-level bits.
+////////////////////////////////////////////////////////////////////////
+
 
 /**
    Uncaches the current JNIEnv from the S3JniGlobal state, clearing any
@@ -4028,18 +4109,6 @@ JDECLFtsXA(jobject,xUserData)(JENV_OSELF,jobject jFcx){
 JNIEXPORT jboolean JNICALL
 Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JENV_CSELF){
   return S3JniGlobal_env_uncache(env) ? JNI_TRUE : JNI_FALSE;
-}
-
-static int SQLTester_auto_extension(sqlite3 *pDb, const char **pzErr,
-                                    const struct sqlite3_api_routines *ignored){
-  //MARKER(("TODO: DUP() UDF\n"));
-  return 0;
-}
-
-
-JNIEXPORT void JNICALL
-Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JENV_CSELF){
-  sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
 }
 
 /**

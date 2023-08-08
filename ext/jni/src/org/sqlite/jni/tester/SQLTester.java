@@ -156,9 +156,9 @@ public class SQLTester {
 
   int getCurrentDbId(){ return iCurrentDb; }
 
-  SQLTester affirmDbId(int n) throws Exception{
+  SQLTester affirmDbId(int n) throws IndexOutOfBoundsException {
     if(n<0 || n>=aDb.length){
-      Util.toss(IllegalArgumentException.class,"illegal db number.");
+      throw new IndexOutOfBoundsException("illegal db number.");
     }
     return this;
   }
@@ -168,6 +168,10 @@ public class SQLTester {
   }
 
   sqlite3 getCurrentDb(){ return aDb[iCurrentDb]; }
+
+  sqlite3 getDbById(int id) throws Exception{
+    return affirmDbId(id).aDb[iCurrentDb];
+  }
 
   void closeDb(int id) throws Exception{
     final sqlite3 db = affirmDbId(id).aDb[id];
@@ -533,11 +537,12 @@ class ResultCommand extends Command {
 
 class RunCommand extends Command {
   public RunCommand(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0);
+    argcCheck(argv,0,1);
     affirmHasContent(content);
-    int rc = t.execSql(null, false, false, content);
+    final sqlite3 db = (1==argv.length)
+      ? t.getCurrentDb() : t.getDbById( Integer.parseInt(argv[1]) );
+    int rc = t.execSql(db, false, false, content);
     if( 0!=rc ){
-      sqlite3 db = t.getCurrentDb();
       String msg = sqlite3_errmsg(db);
       t.verbose(argv[0]," non-fatal command error #",rc,": ",
                 msg,"\nfor SQL:\n",content);
