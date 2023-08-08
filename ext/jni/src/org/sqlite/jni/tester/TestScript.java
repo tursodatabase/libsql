@@ -16,8 +16,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.io.*;
 import java.util.regex.*;
-//import java.util.List;
-//import java.util.ArrayList;
 
 /**
    This class represents a single test script. It handles (or delegates)
@@ -25,8 +23,7 @@ import java.util.regex.*;
    as-yet-non-existent, classes.
 
 */
-public class TestScript {
-  //! Test script content.
+class TestScript {
   private String name;
   private String content;
   private List<String> chunks = null;
@@ -44,6 +41,7 @@ public class TestScript {
   }
   /**
      Initializes the script with the content of the given file.
+     Throws if it cannot read the file or if tokenizing it fails.
   */
   public TestScript(String filename) throws Exception{
     setContent(new String(readFile(filename),
@@ -91,8 +89,8 @@ public class TestScript {
   }
 
   /**
-     A quick-and-dirty approach to chopping a script up into individual
-     commands and their inputs.
+     Chop script up into chunks containing individual commands and
+     their inputs.
   */
   private List<String> chunkContent(){
     if( ignored ) return null;
@@ -121,15 +119,11 @@ public class TestScript {
       tmp = m.replaceAll("");
     }
     // Chunk the newly-cleaned text into individual commands and their input...
-    final String sCommand = "^--";
     final List<String> rc = new ArrayList<>();
-    final Pattern p = Pattern.compile(
-      sCommand, Pattern.MULTILINE
-    );
+    final Pattern p = Pattern.compile("^--", Pattern.MULTILINE);
     final Matcher m = p.matcher(tmp);
-    int ndxPrev = 0, pos = 0;
+    int ndxPrev = 0, pos = 0, i = 0;
     String chunk;
-    int i = 0;
     //verbose("Trimmed content:").verbose(tmp).verbose("<EOF>");
     while( m.find() ){
       pos = m.start();
@@ -147,6 +141,7 @@ public class TestScript {
       ndxPrev = pos + 2;
     }
     if( ndxPrev < tmp.length() ){
+      // This all belongs to the final command
       chunk = tmp.substring(ndxPrev, tmp.length()).trim();
       if( !chunk.isEmpty() ){
         ++i;
@@ -158,8 +153,7 @@ public class TestScript {
   }
 
   /**
-     A debug-only function which dumps the content of the test script
-     in some form or other (possibly mangled from its original).
+     Runs this test script in the context of the given tester object.
   */
   public void run(SQLTester tester) throws Exception {
     if( null==chunks ){

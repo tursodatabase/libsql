@@ -10,6 +10,8 @@ junk
 --testcase first
 input for the first
 command;
+--result
+hello world
 --testcase second
 select 1
 --result /* ignored */

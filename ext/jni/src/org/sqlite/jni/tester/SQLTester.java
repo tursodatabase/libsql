@@ -29,9 +29,12 @@ public class SQLTester {
   private final java.util.List<String> listInFiles = new ArrayList<>();
   private final Outer outer = new Outer();
   private final StringBuilder inputBuffer = new StringBuilder();
-  private String nullView = "nil";
+  private String nullView;
+  private int totalTestCount = 0;
+  private int testCount;
 
   public SQLTester(){
+    reset();
   }
 
   public void setVerbose(boolean b){
@@ -39,13 +42,13 @@ public class SQLTester {
   }
 
   @SuppressWarnings("unchecked")
-  public <T> void verbose(T... vals){
-    this.outer.verbose(vals);
+  public void verbose(Object... vals){
+    outer.verbose(vals);
   }
 
   @SuppressWarnings("unchecked")
-  public <T> void outln(T... vals){
-    this.outer.outln(vals);
+  public void outln(Object... vals){
+    outer.outln(vals);
   }
 
   //! Adds the given test script to the to-test list.
@@ -57,16 +60,17 @@ public class SQLTester {
   public void runTests() throws Exception {
     // process each input file
     for(String f : listInFiles){
-      this.reset();
+      reset();
       final TestScript ts = new TestScript(f);
       ts.setVerbose(this.outer.getVerbose());
       verbose("Test",ts.getName(),"...");
       ts.run(this);
+      verbose("Ran",testCount,"test(s).");
     }
   }
 
   void resetInputBuffer(){
-    this.inputBuffer.delete(0, this.inputBuffer.length());
+    inputBuffer.delete(0, this.inputBuffer.length());
   }
 
   String getInputBuffer(){
@@ -80,10 +84,17 @@ public class SQLTester {
   }
 
   void reset(){
-    this.resetInputBuffer();
+    testCount = 0;
+    nullView = "nil";
+    resetInputBuffer();
   }
 
   void setNullValue(String v){nullView = v;}
+
+  void incrementTestCounter(){
+    ++testCount;
+    ++totalTestCount;
+  }
 
   public static void main(String[] argv) throws Exception{
     final SQLTester t = new SQLTester();
@@ -108,18 +119,18 @@ class Command {
   protected SQLTester tester;
   Command(SQLTester t){tester = t;}
 
-  protected final void badArg(String... msg){
+  protected final void badArg(Object... msg){
     StringBuilder sb = new StringBuilder();
     int i = 0;
-    for(String s : msg) sb.append(((0==i++) ? "" : " ")+s);
+    for(Object s : msg) sb.append(((0==i++) ? "" : " ")+s);
     throw new IllegalArgumentException(sb.toString());
   }
 
   protected final void argcCheck(String[] argv, int min, int max){
     int argc = argv.length-1;
     if(argc<min || argc>max){
-      if( min==max ) badArg(argv[0],"requires exactly",""+min,"argument(s)");
-      else badArg(argv[0],"requires",""+min,"-",""+max,"arguments.");
+      if( min==max ) badArg(argv[0],"requires exactly",min,"argument(s)");
+      else badArg(argv[0],"requires",min,"-",max,"arguments.");
     }
   }
 
@@ -148,7 +159,7 @@ class NullCommand extends Command {
     super(t);
     argcCheck(argv,1);
     affirmNoContent(content);
-    tester.setNullValue(argv[1]);
+    t.setNullValue(argv[1]);
     //t.verbose(argv[0],argv[1]);
   }
 }
@@ -158,6 +169,7 @@ class ResultCommand extends Command {
     super(t);
     argcCheck(argv,0);
     t.verbose(argv[0],"command is TODO");
+    t.incrementTestCounter();
   }
 }
 
@@ -190,7 +202,7 @@ class CommandDispatcher {
     }
     final java.lang.reflect.Constructor<Command> ctor =
       cmdClass.getConstructor(SQLTester.class, String[].class, String.class);
-    tester.verbose("Running",cmdClass.getSimpleName(),"...");
+    //tester.verbose("Running",argv[0],"...");
     ctor.newInstance(tester, argv, content);
   }
 }

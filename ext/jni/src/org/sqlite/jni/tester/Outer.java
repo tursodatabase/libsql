@@ -1,30 +1,43 @@
+/*
+** 2023-08-08
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file contains a utility class for generating console output.
+*/
 package org.sqlite.jni.tester;
 
-public class Outer {
+class Outer {
   public boolean isVerbose = true;
 
-  public static <T> void out(T val){
+  public static void out(Object val){
     System.out.print(val);
   }
 
-  public static <T> void outln(T val){
+  public static void outln(Object val){
     System.out.println(val);
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> void out(T... vals){
+  public static void out(Object... vals){
     int n = 0;
-    for(T v : vals) out((n++>0 ? " " : "")+v);
+    for(Object v : vals) out((n++>0 ? " " : "")+v);
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> void outln(T... vals){
+  public static void outln(Object... vals){
     out(vals);
     out("\n");
   }
 
   @SuppressWarnings("unchecked")
-  public <T> Outer verbose(T... vals){
+  public Outer verbose(Object... vals){
     if(isVerbose) outln(vals);
     return this;
   }
