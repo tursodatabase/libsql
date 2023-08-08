@@ -277,10 +277,10 @@ impl Replicator {
             .await
             .context("Failed to fetch log entries")?
             .into_inner();
-        let frames = frames.frames.iter()
-            .map(|f| {
-                Frame::try_from_bytes(f.data.clone())
-            })
+        let frames = frames
+            .frames
+            .into_iter()
+            .map(|f| Frame::try_from_bytes(f.data))
             .collect::<Result<Vec<_>, _>>()
             .context("frames batch")?;
 
