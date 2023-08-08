@@ -504,14 +504,14 @@ class PrintCommand extends Command {
 
 class ResultCommand extends Command {
   public ResultCommand(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,1,-1);
+    argcCheck(argv,0,1);
     affirmNoContent(content);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
     int rc = t.execSql(null, true, true, sql);
     final String result = t.getResultBufferText().trim();
-    final String sArgs = Util.argvToString(argv);
+    final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
     if( !result.equals(sArgs) ){
       Util.toss(TestFailure.class, argv[0]," comparison failed.");
