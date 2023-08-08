@@ -115,6 +115,10 @@ impl<F: DbFactory> DbFactory for ThrottledDbFactory<F> {
 
     async fn create(&self) -> Result<Self::Db, Error> {
         // If the memory pressure is high, request more units to reduce concurrency.
+        tracing::trace!(
+            "Available semaphore units: {}",
+            self.semaphore.available_permits()
+        );
         let units = self.units_to_take();
         let waiters_guard = WaitersGuard::new(&self.waiters);
         if waiters_guard.waiters.load(Ordering::Relaxed) >= 128 {
@@ -130,7 +134,7 @@ impl<F: DbFactory> DbFactory for ThrottledDbFactory<F> {
         let units = self.units_to_take();
         if units > 1 {
             tracing::debug!("Reacquiring {units} units due to high memory pressure");
-            let fut = self.semaphore.clone().acquire_many_owned(64);
+            let fut = self.semaphore.clone().acquire_many_owned(units);
             let mem_permit = match self.timeout {
                 Some(t) => timeout(t, fut).await.map_err(|_| Error::DbCreateTimeout)?,
                 None => fut.await,
