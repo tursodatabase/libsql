@@ -1,5 +1,5 @@
-C Correct\sJNI\ssqlite3_prepare()\sto\semit\sa\snull\sstmt\shandle\swhen\sthe\sC\scounterpart\ssucceeds\sbut\sresults\sin\sa\sNULL\spointer.
-D 2023-08-08T13:05:12.977
+C Add\sa\sfew\swords\sof\sclarification\son\show\sthe\sSQLite\sTest\sScript\sInterpreter\nshould\sbe\sinitialized\sto\sstart\seach\stest\sscript.
+D 2023-08-08T14:25:47.658
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -267,7 +267,7 @@ F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e8597
 F ext/jni/src/org/sqlite/jni/tester/Outer.java 07b5d68bdc4a01173f2515954a250dce6affcc4efb85b1ac50d24ad05b166bf4
 F ext/jni/src/org/sqlite/jni/tester/SQLTester.java 2261be136c31a432a7416fa86810b97a28a2ad8012463ae68f0975ceac38b42f
 F ext/jni/src/org/sqlite/jni/tester/TestScript.java 38652e01cab9c07b20741829f54ef2f4a5c25a73b2c77213dd9198d4268acc51
-F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md 99d2b8521af9362382ca57b19ae2f3f48db9909221aa9b20ae1a97255120760c
+F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md a37dd71d1bd24773699b6efaa7ee37e616ae6c2e6554e7d46e0f759dde71f3e3
 F ext/jni/src/tests/000_first.test f58d5f22e2db31b20c6e744a247d14222508c88ed876b03a723c89f540948518
 F ext/jni/src/tests/010_ignored.test ce2de6742ff1bf98d8976fda0f260ff3d280e8f8c0a99309fb59fcfef2556fcd
 F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
@@ -2089,8 +2089,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc823bf00f78e7cd626329220c42c46da12d565e3273a08eda5fb512c1d807c6
-R 0e2bbb50341a703c4c5553e3f675aa5d
-U stephan
-Z 290ed88efbcec0720b83e81f8130fc6f
+P 94628f88b5cc82832f0ca2b00fd5346bfe99323097c6e659c5ac818c4e31d3e9
+R 9b39d488601a6f92f9f4935ca5c0b938
+U drh
+Z 2b5a8bdcd64c73cfaa2188a49297111d
 # Remove this line to create a well-formed Fossil manifest.

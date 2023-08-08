@@ -35,6 +35,26 @@ script are deleted when the script finishes.
        The various commands will have access to this input buffer.
        Some commands will reset the buffer.
 
+## Initialization
+
+The initial state of the interpreter at the start of processing each script
+is as if the following command sequence had been run:
+
+> ~~~
+--close all
+--db 0
+--new test.db
+--null nil
+~~~
+
+In words, all database connections are closed except for connection 0 (the
+default) which is open on an empty database named "test.db".  The string
+"nil" is displayed for NULL column values.
+
+The only context carried forward after the evaluation of one test script
+into the evaluation of the next test script is the count of the number of
+tests run and the number of failures seen.
+
 ## Commands:
 
 Each command looks like an SQL comment.  The command begins at the left
