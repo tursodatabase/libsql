@@ -110,7 +110,7 @@ func (d *Driver) Open(dataSourceName string) (sqldriver.Conn, error) {
 	return &conn{d, nativePtr, dataSourceName}, nil
 }
 
-func (d *Driver) CloseConnection(name string) error {
+func (d *Driver) closeConnection(name string) error {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
@@ -133,7 +133,7 @@ type conn struct {
 }
 
 func (c *conn) Close() error {
-	return c.driver.CloseConnection(c.dataSourceName)
+	return c.driver.closeConnection(c.dataSourceName)
 }
 
 func (c *conn) Prepare(query string) (sqldriver.Stmt, error) {
