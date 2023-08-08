@@ -22,4 +22,16 @@ package org.sqlite.jni;
 public final class sqlite3 extends NativePointerHolder<sqlite3> {
   // Only invoked from JNI
   private sqlite3(){}
+
+  public String toString(){
+    long ptr = getNativePointer();
+    if( 0==ptr ){
+      return sqlite3.class.getSimpleName()+"@null";
+    }
+    String fn = SQLite3Jni.sqlite3_db_filename(this, "main");
+    return sqlite3.class.getSimpleName()
+      +"@"+String.format("0x%08x",ptr)
+      +"["+((null == fn) ? "<unnamed>" : fn)+"]"
+      ;
+  }
 }
