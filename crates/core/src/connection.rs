@@ -59,24 +59,31 @@ impl Connection {
         Statement::prepare(self.clone(), self.raw, sql.into().as_str())
     }
 
-    /// Execute the SQL statement synchronously.
-    ///
-    /// If you execute a SQL query statement (e.g. `SELECT` statement) that
-    /// returns rows, then this method returns `Some(Rows)`on success; otherwise
-    /// this method returns `None`.
-    ///
-    /// This method blocks the thread until the SQL statement is executed.
-    /// However, for SQL query statements, the method blocks only until the
-    /// first row is available. To fetch all rows, you need to call `Rows::next()`
-    /// consecutively.
-    pub fn execute<S, P>(&self, sql: S, params: P) -> Result<Option<Rows>>
+    pub fn query<S, P>(&self, sql: S, params: P) -> Result<Option<Rows>>
     where
         S: Into<String>,
         P: Into<Params>,
     {
         let stmt = Statement::prepare(self.clone(), self.raw, sql.into().as_str())?;
         let params = params.into();
-        Ok(stmt.execute(&params))
+        let ret = stmt.query(&params)?;
+        Ok(Some(ret))
+    }
+
+    /// Execute the SQL statement synchronously.
+    ///
+    /// If you execute a SQL query statement (e.g. `SELECT` statement) that
+    /// returns the number of rows changed.
+    ///
+    /// This method blocks the thread until the SQL statement is executed.
+    pub fn execute<S, P>(&self, sql: S, params: P) -> Result<u64>
+    where
+        S: Into<String>,
+        P: Into<Params>,
+    {
+        let stmt = Statement::prepare(self.clone(), self.raw, sql.into().as_str())?;
+        let params = params.into();
+        stmt.execute(&params)
     }
 
     /// Execute the SQL statement synchronously.
