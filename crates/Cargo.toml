@@ -13,3 +13,7 @@ members = [
 [profile.release]
 codegen-units = 1
 panic = "abort"
+
+[patch.crates-io]
+tonic = { git = "https://github.com/hyperium/tonic" }
+tonic-build = { git = "https://github.com/hyperium/tonic" }
