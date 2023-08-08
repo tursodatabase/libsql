@@ -543,6 +543,11 @@ static struct {
 #endif
 } S3JniGlobal;
 
+#define OOM_CHECK(VAR) if(!(VAR)) s3jni_oom(env)
+static void s3jni_oom(JNIEnv * const env){
+  (*env)->FatalError(env, "Out of memory.") /* does not return */;
+}
+
 /**
    sqlite3_malloc() proxy which fails fatally on OOM.  This should
    only be used for routines which manage global state and have no
@@ -551,9 +556,7 @@ static struct {
 */
 static void * s3jni_malloc(JNIEnv * const env, size_t n){
   void * const rv = sqlite3_malloc(n);
-  if(n && !rv){
-    (*env)->FatalError(env, "Out of memory.") /* does not return */;
-  }
+  if(n && !rv) s3jni_oom(env);
   return rv;
 }
 
@@ -3054,6 +3057,27 @@ JDECL(jint,1set_1authorizer)(JENV_CSELF,jobject jDb, jobject jHook){
 JDECL(void,1set_1last_1insert_1rowid)(JENV_CSELF, jobject jpDb, jlong rowId){
   sqlite3_set_last_insert_rowid(PtrGet_sqlite3_context(jpDb),
                                 (sqlite3_int64)rowId);
+}
+
+static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
+                               jbyteArray baG, jbyteArray baT){
+  int rc = 0;
+  jbyte * const pG = JBA_TOC(baG);
+  jbyte * const pT = pG ? JBA_TOC(baT) : 0;
+
+  OOM_CHECK(pT);
+  rc = sqlite3_strglob((const char *)pG, (const char *)pT);
+  JBA_RELEASE(baG, pG);
+  JBA_RELEASE(baT, pT);
+  return rc;
+}
+
+JDECL(int,1strglob)(JENV_CSELF, jbyteArray baG, jbyteArray baT){
+  return s3jni_strlike_glob(0, env, baG, baT);
+}
+
+JDECL(int,1strlike)(JENV_CSELF, jbyteArray baG, jbyteArray baT){
+  return s3jni_strlike_glob(1, env, baG, baT);
 }
 
 JDECL(jint,1shutdown)(JENV_CSELF){

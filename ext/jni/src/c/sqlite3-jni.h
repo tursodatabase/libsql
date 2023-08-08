@@ -1461,6 +1461,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1step
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_strglob
+ * Signature: ([B[B)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strglob
+  (JNIEnv *, jclass, jbyteArray, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_strlike
+ * Signature: ([B[B)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strlike
+  (JNIEnv *, jclass, jbyteArray, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_threadsafe
  * Signature: ()I
  */
