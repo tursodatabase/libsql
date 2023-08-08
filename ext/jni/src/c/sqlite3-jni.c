@@ -2717,13 +2717,18 @@ end:
       assert(zTail ? (((int)((void*)zTail - (void*)pBuf)) >= 0) : 1);
       OutputPointer_set_Int32(env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0));
     }
-    NativePointerHolder_set(env, jStmt, pStmt, S3JniClassNames.sqlite3_stmt);
+    if( pStmt ){
+      NativePointerHolder_set(env, jStmt, pStmt, S3JniClassNames.sqlite3_stmt);
+    }else{
+      /* Happens for comments and whitespace */
+      UNREF_L(jStmt);
+      jStmt = 0;
+    }
   }else{
     UNREF_L(jStmt);
     jStmt = 0;
   }
   OutputPointer_set_sqlite3_stmt(env, jOutStmt, jStmt);
-  //NativePointerHolder_set(env, jOutStmt, pStmt, S3JniClassNames.sqlite3_stmt);
   (void)stmt_set_current(jc, pOldStmt);
   return (jint)rc;
 }

@@ -1,5 +1,5 @@
-C Implement\sthe\snew/open/close\sSQLTester\scommands.
-D 2023-08-08T11:46:46.234
+C Correct\sJNI\ssqlite3_prepare()\sto\semit\sa\snull\sstmt\shandle\swhen\sthe\sC\scounterpart\ssucceeds\sbut\sresults\sin\sa\sNULL\spointer.
+D 2023-08-08T13:05:12.977
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -232,7 +232,7 @@ F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile 0d071597509ef4a9ac4b7712dac9ef29ded0db4819721c3b3c15e24d534827f6
 F ext/jni/README.md e965674505e105626127ad45e628e4d19fcd379cdafc4d23c814c1ac2c55681d
-F ext/jni/src/c/sqlite3-jni.c eb105982266523f4cd9c5007c3cc713855aca520a0f24fce138e4ecfd573fc20
+F ext/jni/src/c/sqlite3-jni.c d51d930573dc4b13a02a66da9281b3ef814aeabd4c294bf3d7fc499093237224
 F ext/jni/src/c/sqlite3-jni.h bc3ecd3f6e479fd45b80214f6256584cc599336ae222822fa1e603c22ff1fb19
 F ext/jni/src/org/sqlite/jni/Authorizer.java 1308988f7f40579ea0e4deeaec3c6be971630566bd021c31367fe3f5140db892
 F ext/jni/src/org/sqlite/jni/AutoExtension.java 3409ad8954d6466bf772e6be9379e0e337312b446b668287062845755a16844d
@@ -2089,8 +2089,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 456691649aa2a7672d5d110acdde92426a9d34552863db3e0c86b73d9c5d9aac
-R 4258bda3ec968b33da5f24ae8a1129aa
+P dc823bf00f78e7cd626329220c42c46da12d565e3273a08eda5fb512c1d807c6
+R 0e2bbb50341a703c4c5553e3f675aa5d
 U stephan
-Z 1a99f4c0beb5aad623e0f3c7cf22f4ec
+Z 290ed88efbcec0720b83e81f8130fc6f
 # Remove this line to create a well-formed Fossil manifest.
