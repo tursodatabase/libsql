@@ -195,7 +195,7 @@ class TestScript {
       final String[] parts = block.split("\\n", 2);
       chunk.argv = parts[0].split("\\s+");
       if( parts.length>1 && parts[1].length()>0 ){
-        chunk.content = parts[1];
+        chunk.content = parts[1].trim();
       }
       rc.add( chunk );
     }

@@ -47,6 +47,13 @@ enum ResultBufferMode {
   ASIS
 };
 
+enum ResultRowMode {
+  //! Keep all result rows on one line, space-separated.
+  ONELINE,
+  //! Add a newline between each result row.
+  NEWLINE
+};
+
 /**
    This class provides an application which aims to implement the
    rudimentary SQL-driven test tool described in the accompanying
@@ -159,9 +166,9 @@ public class SQLTester {
 
   StringBuilder getInputBuffer(){ return inputBuffer; }
 
-  String getInputBufferText(){ return inputBuffer.toString(); }
+  String getInputText(){ return inputBuffer.toString(); }
 
-  String getResultBufferText(){ return resultBuffer.toString(); }
+  String getResultText(){ return resultBuffer.toString(); }
 
   private String takeBuffer(StringBuilder b){
     final String rc = b.toString();
@@ -269,7 +276,9 @@ public class SQLTester {
   }
 
   public int execSql(sqlite3 db, boolean throwOnError,
-                     ResultBufferMode appendMode, String sql) throws Exception {
+                     ResultBufferMode appendMode,
+                     ResultRowMode lineMode,
+                     String sql) throws Exception {
     final OutputPointer.Int32 oTail = new OutputPointer.Int32();
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
@@ -328,7 +337,10 @@ public class SQLTester {
                 Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
             }
           }
-          //sb.append('\n');
+          if( ResultRowMode.NEWLINE == lineMode ){
+            spacing = 0;
+            sb.append('\n');
+          }
         }
       }else{
         while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){}
@@ -428,8 +440,9 @@ abstract class Command {
   protected final void argcCheck(String[] argv, int min, int max) throws Exception{
     int argc = argv.length-1;
     if(argc<min || (max>=0 && argc>max)){
-      if( min==max ) Util.badArg(argv[0],"requires exactly",min,"argument(s)");
-      else if(max>0){
+      if( min==max ){
+        Util.badArg(argv[0]," requires exactly ",min," argument(s)");
+      }else if(max>0){
         Util.badArg(argv[0]," requires ",min,"-",max," arguments.");
       }else{
         Util.badArg(argv[0]," requires at least ",min," arguments.");
@@ -447,20 +460,19 @@ abstract class Command {
   //! Throws if content is not null.
   protected void affirmNoContent(String content) throws Exception{
     if(null != content){
-      Util.badArg(this.getClass().getName(),"does not accept content.");
+      Util.badArg(this.getClass().getName()," does not accept content.");
     }
   }
 
   //! Throws if content is null.
   protected void affirmHasContent(String content) throws Exception{
     if(null == content){
-      Util.badArg(this.getClass().getName(),"requires content.");
+      Util.badArg(this.getClass().getName()," requires content.");
     }
   }
 }
 
 class CloseDbCommand extends Command {
-  public CloseDbCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,1);
     affirmNoContent(content);
@@ -485,7 +497,6 @@ class CloseDbCommand extends Command {
 
 //! --db command
 class DbCommand extends Command {
-  public DbCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
@@ -500,6 +511,13 @@ class GlobCommand extends Command {
   public GlobCommand(){}
   protected GlobCommand(boolean negate){ this.negate = negate; }
 
+  public static String globToStrglob(String g){
+    /* FIXME: '#' support needs to match 1+ digits, but
+       sqlite3_strglob() does not support that option. We'll
+       need a custom glob routine for that. */;
+    return g.replace("#","[0-9]").trim();
+  }
+
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
@@ -507,22 +525,22 @@ class GlobCommand extends Command {
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED, sql);
-    final String result = t.getResultBufferText().trim();
+    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
+                       ResultRowMode.ONELINE, sql);
+    final String result = t.getResultText().trim();
     final String sArgs = Util.argvToString(argv);
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
-    final String glob = argv[1].replace("#","[0-9]");
+    final String glob = globToStrglob(argv[1]);
     rc = sqlite3_strglob(glob, result);
     if( (negate && 0==rc) || (!negate && 0!=rc) ){
-      Util.toss(TestFailure.class, this.getClass().getSimpleName(),
-                " glob mismatch: ",glob," vs input: ",result);
+      Util.toss(TestFailure.class, argv[0], " mismatch: ",
+                glob," vs input: ",result);
     }
   }
 }
 
 //! --new command
 class NewDbCommand extends Command {
-  public NewDbCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
@@ -535,7 +553,6 @@ class NewDbCommand extends Command {
 
 //! Placeholder dummy/no-op command
 class NoopCommand extends Command {
-  public NoopCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
   }
 }
@@ -549,7 +566,6 @@ class NotGlobCommand extends GlobCommand {
 
 //! --null command
 class NullCommand extends Command {
-  public NullCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
@@ -560,7 +576,6 @@ class NullCommand extends Command {
 
 //! --open command
 class OpenDbCommand extends Command {
-  public OpenDbCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
@@ -572,7 +587,6 @@ class OpenDbCommand extends Command {
 
 //! --print command
 class PrintCommand extends Command {
-  public PrintCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     if( 1==argv.length && null==content ){
       Util.badArg(argv[0]," requires at least 1 argument or body content.");
@@ -583,15 +597,15 @@ class PrintCommand extends Command {
 }
 
 class ResultCommand extends Command {
-  public ResultCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,-1);
     affirmNoContent(content);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED, sql);
-    final String result = t.getResultBufferText().trim();
+    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
+                       ResultRowMode.ONELINE, sql);
+    final String result = t.getResultText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
     if( !result.equals(sArgs) ){
@@ -601,14 +615,14 @@ class ResultCommand extends Command {
 }
 
 class RunCommand extends Command {
-  public RunCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,1);
     affirmHasContent(content);
     final sqlite3 db = (1==argv.length)
       ? t.getCurrentDb() : t.getDbById( Integer.parseInt(argv[1]) );
-    int rc = t.execSql(db, false, ResultBufferMode.NONE, content);
-    if( 0!=rc ){
+    int rc = t.execSql(db, false, ResultBufferMode.NONE,
+                       ResultRowMode.ONELINE, content);
+    if( 0!=rc && t.isVerbose() ){
       String msg = sqlite3_errmsg(db);
       t.verbose(argv[0]," non-fatal command error #",rc,": ",
                 msg,"\nfor SQL:\n",content);
@@ -616,8 +630,39 @@ class RunCommand extends Command {
   }
 }
 
+class TableResultCommand extends Command {
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
+    argcCheck(argv,0);
+    affirmHasContent(content);
+    if( !content.endsWith("\n--end") ){
+      Util.toss(TestFailure.class, argv[0], " must be terminated with --end.");
+    }else{
+      int n = content.length();
+      content = content.substring(0, n-6);
+    }
+    final String[] globs = content.split("\s*\n\s*");
+    if( globs.length < 1 ){
+      Util.toss(TestFailure.class, argv[0], " requires 1 or more globs.");
+    }
+    final String sql = t.takeInputBuffer();
+    t.execSql(null, true, ResultBufferMode.ESCAPED, ResultRowMode.NEWLINE, sql);
+    final String rbuf = t.getResultText();
+    final String[] res = rbuf.split("\n");
+    if( res.length != globs.length ){
+      Util.toss(TestFailure.class, argv[0], " failure: input has ",
+                res.length," row(s) but expecting ",globs.length);
+    }
+    for(int i = 0; i < res.length; ++i){
+      final String glob = GlobCommand.globToStrglob(globs[i]).replaceAll("\s+"," ");
+      if( 0 != sqlite3_strglob(glob, res[i]) ){
+        Util.toss(TestFailure.class, argv[0], " glob {",glob,
+                  "} does not match: {",res[i],"}");
+      }
+    }
+  }
+}
+
 class TestCaseCommand extends Command {
-  public TestCaseCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmHasContent(content);
@@ -650,6 +695,7 @@ class CommandDispatcher {
       case "print":    rv = new PrintCommand(); break;
       case "result":   rv = new ResultCommand(); break;
       case "run":      rv = new RunCommand(); break;
+      case "tableresult": rv = new TableResultCommand(); break;
       case "testcase": rv = new TestCaseCommand(); break;
       default: rv = null; break;
     }

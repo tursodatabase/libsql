@@ -28,11 +28,18 @@ select 'a', 'b';
 --result a b a b
 --testcase second
 select 123
---glob #2#
---testcase second
+--glob ###
+--testcase third
 select 'a'
 --notglob #
 --close
 --open SQLTester.db
 --print Re-opened db.
+--testcase fourth
+SELECT 1, 2;
+SELECT 'b', 'c';
+--tableresult
+  [0-9] #
+  b   c
+--end
 --an-uknown-command
