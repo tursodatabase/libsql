@@ -681,7 +681,7 @@ void sqlite3AlterRenameColumn(
 **
 **  cmd ::= ALTER TABLE pSrc ALTER COLUMN pOld TO pNew
 */
-void libsqlAlterUpdateColumn(
+void libsqlAlterAlterColumn(
   Parse *pParse,                  /* Parsing context */
   SrcList *pSrc,                  /* Table being altered.  pSrc->nSrc==1 */
   Token *pOld,                    /* Name of column being changed */
@@ -753,7 +753,7 @@ void libsqlAlterUpdateColumn(
   bQuote = -1; // Contrary to RENAME, we leave quotes as is and not dequote them
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
-      "sql = libsql_update_column(sql, %Q, %Q, %d, %Q, %d, %d) "
+      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
       " AND (type != 'index' OR tbl_name = %Q)",
       zDb,
@@ -763,7 +763,7 @@ void libsqlAlterUpdateColumn(
 
   sqlite3NestedParse(pParse, 
       "UPDATE temp." LEGACY_SCHEMA_TABLE " SET "
-      "sql = libsql_update_column(sql, %Q, %Q, %d, %Q, %d, 1) "
+      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, 1) "
       "WHERE type IN ('trigger', 'view')",
       zDb, pTab->zName, iCol, zNew, bQuote
   );
@@ -1752,7 +1752,7 @@ renameColumnFunc_done:
 /*
 ** SQL function:
 **
-**     libsql_update_column(SQL,TYPE,OBJ,DB,TABLE,COL,NEWNAME,QUOTE,TEMP)
+**     libsql_alter_column(SQL,TYPE,OBJ,DB,TABLE,COL,NEWNAME,QUOTE,TEMP)
 **
 **   0. zSql:     SQL statement to rewrite
 **   1. Database: Database name (e.g. "main")
@@ -1772,7 +1772,7 @@ renameColumnFunc_done:
 ** not reachable from ordinary SQL passed into sqlite3_prepare() unless the
 ** SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test setting is enabled.
 */
-static void updateColumnFunc(
+static void alterColumnFunc(
   sqlite3_context *context,
   int NotUsed,
   sqlite3_value **argv
@@ -1817,7 +1817,7 @@ static void updateColumnFunc(
   rc = renameParseSql(&sParse, zDb, db, zSql, bTemp);
 
   sCtx.pTab = pTab;
-  if( rc!=SQLITE_OK ) goto updateColumnFunc_done;
+  if( rc!=SQLITE_OK ) goto alterColumnFunc_done;
   if( sParse.pNewTable ){
     if( IsOrdinaryTable(sParse.pNewTable) ){
       int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
@@ -1859,7 +1859,7 @@ static void updateColumnFunc(
   assert( rc==SQLITE_OK );
   rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
 
-updateColumnFunc_done:
+alterColumnFunc_done:
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_ERROR && sqlite3WritableSchema(db) ){
       sqlite3_result_value(context, argv[0]);
@@ -2534,7 +2534,7 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
     // libSQL extensions
-    INTERNAL_FUNCTION(libsql_update_column, 7, updateColumnFunc),
+    INTERNAL_FUNCTION(libsql_alter_column, 7, alterColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }
