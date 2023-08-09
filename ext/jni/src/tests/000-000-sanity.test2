@@ -1,10 +1,20 @@
   /*
 ** This is a comment. There are many like it but this one is mine.
 **
-  */
---command 1
+** SCRIPT_MODULE_NAME:      sanity-check
+** xMIXED_MODULE_NAME:       mixed-module
+** xMODULE_NAME:             module-name
+** xREQUIRED_PROPERTIES:      small fast reliable
+**
+*/
 
+/*#if foo*/
+/*---foo*/
+/* --print without flags dumps current input buffer */
+--print
 
---command 🤩😃
+non-command/non-directive text after --print is also emitted.
+--print 🤩😃
   SELECT 1;
   SELECT 2;
+--print the end

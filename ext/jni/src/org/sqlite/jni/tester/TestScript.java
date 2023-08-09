@@ -90,7 +90,7 @@ class TestScript {
   }
 
   @SuppressWarnings("unchecked")
-  private <T> TestScript verbose(T... vals){
+  private TestScript verbose(Object... vals){
     outer.verbose(vals);
     return this;
   }

@@ -80,7 +80,6 @@ public class SQLTester {
   private int iCurrentDb = 0;
   private final String initialDbName = "test.db";
   private TestScript currentScript;
-  private TestScript2 currentScript2;
 
   public SQLTester(){
     reset();
@@ -159,23 +158,23 @@ public class SQLTester {
 
   //! Not yet funcional
   private void runTests2() throws Exception {
-    try {
-      for(String f : listInFiles){
-        reset();
-        setupInitialDb();
-        ++nTestFile;
-        final TestScript2 ts = new TestScript2(f);
-        currentScript2 = ts;
-        try{
-          ts.run(this);
-        }catch(SkipTestRemainder e){
-          /* not an error */
-          ++nAbortedScript;
-        }
-        outln("<<<<<----- ",nTest," test(s) in ",ts.getFilename());
+    for(String f : listInFiles){
+      reset();
+      setupInitialDb();
+      ++nTestFile;
+      final TestScript2 ts = new TestScript2(f);
+      try{
+        ts.run(this);
+      }catch(SkipTestRemainder2 e){
+        /* not fatal */
+        outln(e);
+        ++nAbortedScript;
+      }catch(IncompatibleDirective e){
+        /* not fatal */
+        outln(e);
+        ++nAbortedScript;
       }
-    }finally{
-      currentScript2 = null;
+      outln("<<<<<----- ",nTest," test(s) in ",ts.getFilename());
     }
     Util.unlink(initialDbName);
   }
@@ -194,6 +193,16 @@ public class SQLTester {
   }
 
   StringBuilder getInputBuffer(){ return inputBuffer; }
+
+  void appendInput(String n, boolean addNL){
+    inputBuffer.append(n);
+    if(addNL) inputBuffer.append('\n');
+  }
+
+  void appendResult(String n, boolean addNL){
+    resultBuffer.append(n);
+    if(addNL) resultBuffer.append('\n');
+  }
 
   String getInputText(){ return inputBuffer.toString(); }
 
