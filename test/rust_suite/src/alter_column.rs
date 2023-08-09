@@ -178,3 +178,15 @@ fn test_update_forbidden() {
         .execute("ALTER TABLE t6 ALTER COLUMN id TO id GENERATED ALWAYS", ())
         .is_ok());
 }
+
+#[test]
+fn test_update_view_forbidden() {
+    let conn = Connection::open_in_memory().unwrap();
+
+    conn.execute("CREATE TABLE t(id)", ()).unwrap();
+    conn.execute("CREATE VIEW v AS SELECT * FROM t", ())
+        .unwrap();
+    assert!(conn
+        .execute("ALTER TABLE v ALTER COLUMN id TO id", ())
+        .is_err());
+}

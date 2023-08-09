@@ -1844,12 +1844,17 @@ static void alterColumnFunc(
         }
       }
     } else {
-      // FIXME: only applicable to tables
-    }
-  }else if( sParse.pNewIndex ){
-    // FIXME: not applicable to indexes
-  }else{
-    // FIXME: not applicable to triggers
+      rc = SQLITE_ERROR;
+      sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered, not ", IsView(sParse.pNewTable) ? "views" : "virtual tables");
+      goto alterColumnFunc_done;    }
+  } else if (sParse.pNewIndex) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered, not indexes");
+    goto alterColumnFunc_done;
+  } else {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered");
+    goto alterColumnFunc_done;
   }
 
   assert( rc==SQLITE_OK );
