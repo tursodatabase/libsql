@@ -1929,6 +1929,14 @@ extern "C" {
 #endif
 /*
  * Class:     org_sqlite_jni_tester_SQLTester
+ * Method:    strglob
+ * Signature: ([B[B)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_tester_SQLTester_strglob
+  (JNIEnv *, jclass, jbyteArray, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_tester_SQLTester
  * Method:    installCustomExtensions
  * Signature: ()V
  */

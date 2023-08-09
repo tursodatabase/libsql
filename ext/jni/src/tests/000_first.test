@@ -30,7 +30,7 @@ Also from the print command.
 --result {a b} c d e "{}" f "{\011}" g
 --testcase 2
   SELECT 123
---glob ###
+--glob 1#
 --testcase 3
   SELECT 'a'
 --notglob #
@@ -53,5 +53,14 @@ SELECT json_array(1,2,3)
 --json-block
 [1,2,3]
 {"a":1,"b":2}
+--end
+--testcase table-result-globs
+  SELECT 123;
+  SELECT 'aBc';
+  SELECT 456;
+--tableresult
+  #
+  [a-z][A-Z][a-z]
+  4#
 --end
 --an-uknown-command

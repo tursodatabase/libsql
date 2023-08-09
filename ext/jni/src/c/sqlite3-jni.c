@@ -3053,11 +3053,11 @@ static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
   return rc;
 }
 
-JDECL(int,1strglob)(JENV_CSELF, jbyteArray baG, jbyteArray baT){
+JDECL(jint,1strglob)(JENV_CSELF, jbyteArray baG, jbyteArray baT){
   return s3jni_strlike_glob(0, env, baG, baT, 0);
 }
 
-JDECL(int,1strlike)(JENV_CSELF, jbyteArray baG, jbyteArray baT, jint escChar){
+JDECL(jint,1strlike)(JENV_CSELF, jbyteArray baG, jbyteArray baT, jint escChar){
   return s3jni_strlike_glob(1, env, baG, baT, escChar);
 }
 
@@ -4044,6 +4044,125 @@ static void SQLTester_dup_count_func(
   sqlite3_result_int64(context, p->nDup);
   p->nDup = 0;
 }
+
+/*
+** Return non-zero if string z matches glob pattern zGlob and zero if the
+** pattern does not match.
+**
+** To repeat:
+**
+**         zero == no match
+**     non-zero == match
+**
+** Globbing rules:
+**
+**      '*'       Matches any sequence of zero or more characters.
+**
+**      '?'       Matches exactly one character.
+**
+**     [...]      Matches one character from the enclosed list of
+**                characters.
+**
+**     [^...]     Matches one character not in the enclosed list.
+**
+**      '#'       Matches any sequence of one or more digits with an
+**                optional + or - sign in front, or a hexadecimal
+**                literal of the form 0x...
+*/
+static int SQLTester_strnotglob(const char *zGlob, const char *z){
+  int c, c2;
+  int invert;
+  int seen;
+
+  while( (c = (*(zGlob++)))!=0 ){
+    if( c=='*' ){
+      while( (c=(*(zGlob++))) == '*' || c=='?' ){
+        if( c=='?' && (*(z++))==0 ) return 0;
+      }
+      if( c==0 ){
+        return 1;
+      }else if( c=='[' ){
+        while( *z && SQLTester_strnotglob(zGlob-1,z)==0 ){
+          z++;
+        }
+        return (*z)!=0;
+      }
+      while( (c2 = (*(z++)))!=0 ){
+        while( c2!=c ){
+          c2 = *(z++);
+          if( c2==0 ) return 0;
+        }
+        if( SQLTester_strnotglob(zGlob,z) ) return 1;
+      }
+      return 0;
+    }else if( c=='?' ){
+      if( (*(z++))==0 ) return 0;
+    }else if( c=='[' ){
+      int prior_c = 0;
+      seen = 0;
+      invert = 0;
+      c = *(z++);
+      if( c==0 ) return 0;
+      c2 = *(zGlob++);
+      if( c2=='^' ){
+        invert = 1;
+        c2 = *(zGlob++);
+      }
+      if( c2==']' ){
+        if( c==']' ) seen = 1;
+        c2 = *(zGlob++);
+      }
+      while( c2 && c2!=']' ){
+        if( c2=='-' && zGlob[0]!=']' && zGlob[0]!=0 && prior_c>0 ){
+          c2 = *(zGlob++);
+          if( c>=prior_c && c<=c2 ) seen = 1;
+          prior_c = 0;
+        }else{
+          if( c==c2 ){
+            seen = 1;
+          }
+          prior_c = c2;
+        }
+        c2 = *(zGlob++);
+      }
+      if( c2==0 || (seen ^ invert)==0 ) return 0;
+    }else if( c=='#' ){
+      if( z[0]=='0'
+       && (z[1]=='x' || z[1]=='X')
+       && sqlite3Isxdigit(z[2])
+      ){
+        z += 3;
+        while( sqlite3Isxdigit(z[0]) ){ z++; }
+      }else{
+        if( (z[0]=='-' || z[0]=='+') && sqlite3Isdigit(z[1]) ) z++;
+        if( !sqlite3Isdigit(z[0]) ) return 0;
+        z++;
+        while( sqlite3Isdigit(z[0]) ){ z++; }
+      }
+    }else{
+      if( c!=(*(z++)) ) return 0;
+    }
+  }
+  return *z==0;
+}
+
+JNIEXPORT jint JNICALL
+Java_org_sqlite_jni_tester_SQLTester_strglob(
+  JENV_CSELF, jbyteArray baG, jbyteArray baT
+){
+  int rc = 0;
+  jbyte * const pG = JBA_TOC(baG);
+  jbyte * const pT = pG ? JBA_TOC(baT) : 0;
+  OOM_CHECK(pT);
+
+  /* Note that we're relying on the byte arrays having been
+     NUL-terminated on the Java side. */
+  rc = !SQLTester_strnotglob((const char *)pG, (const char *)pT);
+  JBA_RELEASE(baG, pG);
+  JBA_RELEASE(baT, pT);
+  return rc;
+}
+
 
 static int SQLTester_auto_extension(sqlite3 *pDb, const char **pzErr,
                                     const struct sqlite3_api_routines *ignored){

@@ -850,6 +850,10 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
+  /**
+     Internal impl of the public sqlite3_strglob() method. Neither argument
+     may be NULL and both _MUST_ be NUL-terminated.
+  */
   private static native int sqlite3_strglob(
     @NotNull byte[] glob, @NotNull byte[] txt
   );
@@ -861,6 +865,10 @@ public final class SQLite3Jni {
     );
   }
 
+  /**
+     Internal impl of the public sqlite3_strlike() method. Neither
+     argument may be NULL and both _MUST_ be NUL-terminated.
+  */
   private static native int sqlite3_strlike(
     @NotNull byte[] glob, @NotNull byte[] txt, int escChar
   );

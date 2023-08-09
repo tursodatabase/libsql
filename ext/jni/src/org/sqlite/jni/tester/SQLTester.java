@@ -416,6 +416,25 @@ public class SQLTester {
     }
   }
 
+  /**
+     Internal impl of the public strglob() method. Neither argument
+     may be NULL and both _MUST_ be NUL-terminated.
+  */
+  private static native int strglob(byte[] glob, byte[] txt);
+
+  /**
+     Works essentially the same as sqlite3_strglob() except that the
+     glob character '#' matches a sequence of one or more digits.  It
+     does not match when it appears at the start or middle of a series
+     of digits, e.g. "#23" or "1#3", but will match at the end,
+     e.g. "12#".
+  */
+  public static int strglob(String glob, String txt){
+    return strglob(
+      (glob+"\0").getBytes(StandardCharsets.UTF_8),
+      (txt+"\0").getBytes(StandardCharsets.UTF_8)
+    );
+  }
 
   private static native void installCustomExtensions();
   static {
@@ -541,13 +560,6 @@ class GlobCommand extends Command {
   public GlobCommand(){}
   protected GlobCommand(boolean negate){ this.negate = negate; }
 
-  public static String globToStrglob(String g){
-    /* FIXME: '#' support needs to match 1+ digits, but
-       sqlite3_strglob() does not support that option. We'll
-       need a custom glob routine for that. */;
-    return g.replace("#","[0-9]").trim();
-  }
-
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
@@ -559,8 +571,8 @@ class GlobCommand extends Command {
     final String result = t.getResultText().trim();
     final String sArgs = Util.argvToString(argv);
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
-    final String glob = globToStrglob(argv[1]);
-    rc = sqlite3_strglob(glob, result);
+    final String glob = argv[1];
+    rc = SQLTester.strglob(glob, result);
     if( (negate && 0==rc) || (!negate && 0!=rc) ){
       Util.toss(TestFailure.class, argv[0], " mismatch: ",
                 glob," vs input: ",result);
@@ -649,7 +661,7 @@ class ResultCommand extends Command {
     int rc = t.execSql(null, true, bufferMode, ResultRowMode.ONELINE, sql);
     final String result = t.getResultText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
-    t.verbose(argv[0]," result buffer:\n", result,"\nargs:\n",sArgs);
+    //t.verbose(argv[0]," result buffer:\n", result,"\nargs:\n",sArgs);
     if( !result.equals(sArgs) ){
       Util.toss(TestFailure.class, argv[0]," comparison failed.");
     }
@@ -704,15 +716,14 @@ class TableResultCommand extends Command {
                 res.length," row(s) but expecting ",globs.length);
     }
     for(int i = 0; i < res.length; ++i){
-      final String glob = GlobCommand.globToStrglob(globs[i])
-        .replaceAll("\\s+"," ");
+      final String glob = globs[i].replaceAll("\\s+"," ");
       //t.verbose(argv[0]," <<",glob,">> vs <<",res[i],">>");
       if( jsonMode ){
         if( !glob.equals(res[i]) ){
           Util.toss(TestFailure.class, argv[0], " json <<",glob,
                   ">> does not match: <<",res[i],">>");
         }
-      }else if( 0 != sqlite3_strglob(glob, res[i]) ){
+      }else if( 0 != SQLTester.strglob(glob, res[i]) ){
         Util.toss(TestFailure.class, argv[0], " glob <<",glob,
                   ">> does not match: <<",res[i],">>");
       }
