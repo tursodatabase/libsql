@@ -8,6 +8,7 @@
 
 junk
 
+# --open nope.db /* must throw */
 --new SQLTester.db
 --null zilch
 --run

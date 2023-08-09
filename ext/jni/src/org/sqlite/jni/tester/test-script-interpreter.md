@@ -212,7 +212,7 @@ which database connection to use moving forward.
 
 ### The --close command
 
-The --close command causes an existing database connetion to close.
+The --close command causes an existing database connection to close.
 This command is a no-op if the database connection is not currently
 open.  There can be up to 7 different database connections, numbered 0
 through 6.  The number of the database connection to close is an

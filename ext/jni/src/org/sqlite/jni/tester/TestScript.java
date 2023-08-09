@@ -23,7 +23,8 @@ import java.util.regex.*;
    evaluation are delegated elsewhere.
 */
 class TestScript {
-  private String name;
+  private String name = null;
+  private String moduleName = null;
   private List<CommandChunk> chunks = null;
   private final Outer outer = new Outer();
   private boolean ignored = false;
@@ -39,18 +40,14 @@ class TestScript {
     return java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(filename));
   }
 
-  private void setContent(String c){
-    ignored = shouldBeIgnored(c);
-    if( !ignored ) chunks = chunkContent(c);
-  }
   /**
      Initializes the script with the content of the given file.
      Throws if it cannot read the file or if tokenizing it fails.
   */
   public TestScript(String filename) throws Exception{
+    name = filename;
     setContent(new String(readFile(filename),
                           java.nio.charset.StandardCharsets.UTF_8));
-    name = filename;
   }
 
   /**
@@ -61,12 +58,20 @@ class TestScript {
   */
   public TestScript(String virtualName, StringBuffer content)
     throws RuntimeException {
-    setContent(content.toString());
     name = virtualName;
+    setContent(content.toString());
+  }
+
+  private void setContent(String c){
+    this.chunks = chunkContent(c);
   }
 
   public String getName(){
     return name;
+  }
+
+  public String getModuleName(){
+    return moduleName;
   }
 
   public boolean isIgnored(){
@@ -87,9 +92,19 @@ class TestScript {
      Returns true if the given script content should be ignored
      (because it contains certain content which indicates such).
   */
-  public static boolean shouldBeIgnored(String content){
-    return content.indexOf("SCRIPT_MODULE_NAME")<0
+  public boolean shouldBeIgnored(String content){
+    return (null == moduleName)
       || content.indexOf("\n|")>=0;
+  }
+
+  private boolean findModuleName(String content){
+    final Pattern p = Pattern.compile(
+      "SCRIPT_MODULE_NAME:\\s+(\\S+)\\s*\n",
+      Pattern.MULTILINE
+    );
+    final Matcher m = p.matcher(content);
+    moduleName = m.find() ? m.group(1) : null;
+    return moduleName != null;
   }
 
   /**
@@ -109,7 +124,13 @@ class TestScript {
      If/when that becomes a problem, it can be refactored.
   */
   private List<CommandChunk> chunkContent(String content){
-    if( ignored ) return null;
+    findModuleName(content);
+    ignored = shouldBeIgnored(content);
+    if( ignored ){
+      chunks = null;
+      return null;
+    }
+
     // First, strip out any content which we know we can ignore...
     final String sCComment = "[/][*]([*](?![/])|[^*])*[*][/]";
     final String s3Dash = "^---+[^\\n]*\\n";

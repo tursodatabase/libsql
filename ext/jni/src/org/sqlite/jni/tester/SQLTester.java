@@ -123,9 +123,9 @@ public class SQLTester {
         ++nTestFile;
         final TestScript ts = new TestScript(f);
         currentScript = ts;
-        outln("----->>>>> Test [",ts.getName(),"]");
+        outln("----->>>>> ",ts.getModuleName()," [",ts.getName(),"]");
         if( ts.isIgnored() ){
-          outln("WARNING: skipping [",ts.getName(),"] because it contains ",
+          outln("WARNING: skipping [",ts.getModuleName(),"] because it contains ",
                 "content which requires that it be skipped.");
           continue;
         }else{
@@ -136,7 +136,7 @@ public class SQLTester {
             ++nAbortedScript;
           }
         }
-        outln("<<<<<----- ",nTest," test(s) in [",f,"]");
+        outln("<<<<<----- ",ts.getModuleName(),": ",nTest," test(s)");
       }
     }finally{
       currentScript = null;
@@ -663,8 +663,8 @@ class CommandDispatcher {
     if(null == cmd){
       final TestScript ts = tester.getCurrentScript();
       if( tester.skipUnknownCommands() ){
-        tester.outln("WARNING: skipping remainder of ",ts.getName(),
-                     " because it contains unknown command '",argv[0],"'.");
+        tester.outln("WARNING: skipping remainder of [",ts.getModuleName(),
+                     "] because it contains unknown command '",argv[0],"'.");
         throw new SkipTestRemainder(ts);
       }
       Util.toss(IllegalArgumentException.class,
