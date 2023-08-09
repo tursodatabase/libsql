@@ -87,6 +87,7 @@ JAVA_FILES.tester := $(patsubst %,$(dir.src.jni.tester)/%,\
   Outer.java \
   SQLTester.java \
   TestScript.java \
+  TestScript2.java \
 )
 
 CLASS_FILES.main := $(JAVA_FILES.main:.java=.class)

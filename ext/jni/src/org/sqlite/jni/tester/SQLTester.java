@@ -80,6 +80,7 @@ public class SQLTester {
   private int iCurrentDb = 0;
   private final String initialDbName = "test.db";
   private TestScript currentScript;
+  private TestScript2 currentScript2;
 
   public SQLTester(){
     reset();
@@ -155,8 +156,32 @@ public class SQLTester {
     Util.unlink(initialDbName);
   }
 
+
+  //! Not yet funcional
+  private void runTests2() throws Exception {
+    try {
+      for(String f : listInFiles){
+        reset();
+        setupInitialDb();
+        ++nTestFile;
+        final TestScript2 ts = new TestScript2(f);
+        currentScript2 = ts;
+        try{
+          ts.run(this);
+        }catch(SkipTestRemainder e){
+          /* not an error */
+          ++nAbortedScript;
+        }
+        outln("<<<<<----- ",nTest," test(s) in ",ts.getFilename());
+      }
+    }finally{
+      currentScript2 = null;
+    }
+    Util.unlink(initialDbName);
+  }
+
   private StringBuilder clearBuffer(StringBuilder b){
-    b.delete(0, b.length());
+    b.setLength(0);;
     return b;
   }
 
@@ -403,11 +428,14 @@ public class SQLTester {
 
   public static void main(String[] argv) throws Exception{
     final SQLTester t = new SQLTester();
+    boolean v2 = false;
     for(String a : argv){
       if(a.startsWith("-")){
         final String flag = a.replaceFirst("-+","");
         if( flag.equals("verbose") ){
           t.setVerbosity(t.getVerbosity() + 1);
+        }else if( flag.equals("2") ){
+          v2 = true;
         }else{
           throw new IllegalArgumentException("Unhandled flag: "+flag);
         }
@@ -415,7 +443,8 @@ public class SQLTester {
       }
       t.addTestScript(a);
     }
-    t.runTests();
+    if( v2 ) t.runTests2();
+    else t.runTests();
     t.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
     if( t.nAbortedScript > 0 ){
       t.outln("Aborted ",t.nAbortedScript," script(s).");
