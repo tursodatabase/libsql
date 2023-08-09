@@ -18,6 +18,7 @@ select 2;
 --oom
 --print These are args to the print command.
 This is from the print command's body.
+--print
 Also from the print command.
 --- also ignored
 --testcase first

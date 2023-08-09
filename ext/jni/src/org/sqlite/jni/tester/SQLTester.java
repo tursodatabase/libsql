@@ -574,6 +574,9 @@ class OpenDbCommand extends Command {
 class PrintCommand extends Command {
   public PrintCommand(){}
   public void process(SQLTester t, String[] argv, String content) throws Exception{
+    if( 1==argv.length && null==content ){
+      Util.badArg(argv[0]," requires at least 1 argument or body content.");
+    }
     if( argv.length > 1 ) t.outln("\t",Util.argvToString(argv));
     if( null!=content ) t.outln(content.replaceAll("(?m)^", "\t"));
   }

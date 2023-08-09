@@ -244,3 +244,8 @@ respectively.  The difference is that column values are appended to the
 result buffer literally, without every enclosing the values in `{...}` or
 `"..."` and without escaping any characters in the column value and comparison
 is always an exact strcmp() not a GLOB.
+
+### The --print command
+
+The --print command emits both its arguments and its body (if any) to
+stdout, indenting each line of output.
