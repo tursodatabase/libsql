@@ -80,21 +80,26 @@ public class SQLTester {
   private int iCurrentDb = 0;
   private final String initialDbName = "test.db";
   private TestScript currentScript;
+  private int verbosity = 0;
 
   public SQLTester(){
     reset();
   }
 
-  public void setVerbose(boolean b){
-    this.outer.setVerbose(b);
+  public void setVerbose(int level){
+    verbosity = level;
+    this.outer.setVerbose( level!=0 );
+  }
+  public int getVerbosity(){
+    return verbosity;
   }
   public boolean isVerbose(){
-    return this.outer.isVerbose();
+    return verbosity>0;
   }
 
   @SuppressWarnings("unchecked")
   public void verbose(Object... vals){
-    outer.verbose(vals);
+    if( verbosity > 0 ) outer.verbose(vals);
   }
 
   @SuppressWarnings("unchecked")
@@ -110,7 +115,7 @@ public class SQLTester {
   //! Adds the given test script to the to-test list.
   public void addTestScript(String filename){
     listInFiles.add(filename);
-    verbose("Added file ",filename);
+    //verbose("Added file ",filename);
   }
 
   public void setupInitialDb() throws Exception {
@@ -401,10 +406,7 @@ public class SQLTester {
       if(a.startsWith("-")){
         final String flag = a.replaceFirst("-+","");
         if( flag.equals("verbose") ){
-          t.setVerbose(true);
-          t.outln("Verbose mode is on.");
-        }else if( flag.equals("quiet") ) {
-          t.setVerbose(false);
+          ++t.verbosity;
         }else{
           throw new IllegalArgumentException("Unhandled flag: "+flag);
         }

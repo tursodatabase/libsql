@@ -155,10 +155,17 @@ class TestScript {
     final String sCComment = "[/][*]([*](?![/])|[^*])*[*][/]";
     final String s3Dash = "^---+[^\\n]*\\n";
     final String sEmptyLine = "^\\n";
+    final String sOom = "^--oom\\n"
+      /* Workaround: --oom is a top-level command in some contexts
+         and appears in --testcase blocks in others. We don't
+         do anything with --oom commands aside from ignore them, so
+         elide them all to fix the --testcase blocks which contain
+         them. */;
     final List<String> lPats = new ArrayList<>();
     lPats.add(sCComment);
     lPats.add(s3Dash);
     lPats.add(sEmptyLine);
+    lPats.add(sOom);
     //verbose("Content:").verbose(content).verbose("<EOF>");
     for( String s : lPats ){
       final Pattern p = Pattern.compile(
@@ -224,13 +231,21 @@ class TestScript {
      Runs this test script in the context of the given tester object.
   */
   public void run(SQLTester tester) throws Exception {
-    this.setVerbose(tester.isVerbose());
+    final int verbosity = tester.getVerbosity();
+    this.setVerbose(verbosity>0);
     if( null==chunks ){
       outer.outln("This test contains content which forces it to be skipped.");
     }else{
-      //int n = 0;
+      int n = 0;
       for(CommandChunk chunk : chunks){
-        //outer.verbose("CHUNK #",++n," ",chunk,"<EOF>");
+        if(verbosity>0){
+          outer.out("VERBOSE ",moduleName," #",++n," ",chunk.argv[0],
+                    " ",Util.argvToString(chunk.argv));
+          if(verbosity>1 && null!=chunk.content){
+            outer.out("\nwith content: ", chunk.content);
+          }
+          outer.out("\n");
+        }
         CommandDispatcher.dispatch(tester, chunk.argv, chunk.content);
       }
     }
