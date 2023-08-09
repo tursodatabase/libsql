@@ -15,7 +15,7 @@ fn bench(c: &mut Criterion) {
 
     group.bench_function("select 1", |b| {
         b.iter(|| {
-            let rows = conn.execute("SELECT 1", ()).unwrap().unwrap();
+            let rows = conn.query("SELECT 1", ()).unwrap().unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
         });
@@ -24,7 +24,7 @@ fn bench(c: &mut Criterion) {
     let stmt = conn.prepare("SELECT 1").unwrap();
     group.bench_function("select 1 (prepared)", |b| {
         b.iter(|| {
-            let rows = stmt.execute(&Params::None).unwrap();
+            let rows = stmt.query(&Params::None).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
             stmt.reset();
@@ -41,7 +41,7 @@ fn bench(c: &mut Criterion) {
     let stmt = conn.prepare("SELECT * FROM users LIMIT 1").unwrap();
     group.bench_function("SELECT * FROM users LIMIT 1", |b| {
         b.iter(|| {
-            let rows = stmt.execute(&Params::None).unwrap();
+            let rows = stmt.query(&Params::None).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
             stmt.reset();
@@ -51,7 +51,7 @@ fn bench(c: &mut Criterion) {
     let stmt = conn.prepare("SELECT * FROM users LIMIT 100").unwrap();
     group.bench_function("SELECT * FROM users LIMIT 100", |b| {
         b.iter(|| {
-            let rows = stmt.execute(&Params::None).unwrap();
+            let rows = stmt.query(&Params::None).unwrap();
             let row = rows.next().unwrap().unwrap();
             assert_eq!(row.get::<i32>(0).unwrap(), 1);
             stmt.reset();
