@@ -754,8 +754,7 @@ void libsqlAlterAlterColumn(
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
       "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, %d, %d) "
-      "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
-      " AND (type != 'index' OR tbl_name = %Q)",
+      "WHERE tbl_name = %Q",
       zDb,
       zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1, pTab->aCol[iCol].colFlags,
       pTab->zName

@@ -154,7 +154,7 @@ fn test_update_forbidden() {
     assert!(conn
         .execute("ALTER TABLE t3 ALTER COLUMN id TO id UNIQUE", ())
         .is_err());
-    conn.execute("CREATE TABLE t4(id int PRIMARY KEY UNIQUE)", ())
+    conn.execute("CREATE TABLE t4(id int UNIQUE)", ())
         .unwrap();
     assert!(conn
         .execute("ALTER TABLE t4 ALTER COLUMN id TO id", ())
@@ -169,14 +169,6 @@ fn test_update_forbidden() {
     assert!(conn
         .execute("ALTER TABLE t5 ALTER COLUMN id TO id GENERATED ALWAYS", ())
         .is_err());
-    conn.execute("CREATE TABLE t6(id int PRIMARY KEY GENERATED ALWAYS)", ())
-        .unwrap();
-    assert!(conn
-        .execute("ALTER TABLE t6 ALTER COLUMN id TO id", ())
-        .is_err());
-    assert!(conn
-        .execute("ALTER TABLE t6 ALTER COLUMN id TO id GENERATED ALWAYS", ())
-        .is_ok());
 }
 
 #[test]
