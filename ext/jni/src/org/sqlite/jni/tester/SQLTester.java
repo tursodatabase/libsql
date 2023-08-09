@@ -234,7 +234,7 @@ public class SQLTester {
   sqlite3 getCurrentDb(){ return aDb[iCurrentDb]; }
 
   sqlite3 getDbById(int id) throws Exception{
-    return affirmDbId(id).aDb[iCurrentDb];
+    return affirmDbId(id).aDb[id];
   }
 
   void closeDb(int id) throws Exception{

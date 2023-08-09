@@ -1,4 +1,4 @@
-  /*
+/*
 ** This is a comment. There are many like it but this one is mine.
 **
 ** SCRIPT_MODULE_NAME:      sanity-check
@@ -8,14 +8,35 @@
 ** REQUIRED_PROPERTIES:
 **
 */
-
-/*#if foo*/
-/*---foo*/
-/* --print without flags dumps current input buffer */
---print
-
-non-command/non-directive text after --print is also emitted.
---print 🤩😃
-  SELECT 1;
-  SELECT 2;
---print the end
+--close all
+--oom
+--db 0
+--new my.db
+--null zilch
+--testcase 1.0
+SELECT 1, null;
+--result 1 zilch
+--glob *zil*
+--notglob *ZIL*
+SELECT 1, 2;
+intentional error;
+--run
+--testcase json-1
+SELECT json_array(1,2,3)
+--json [1,2,3]
+--testcase tableresult-1
+  select 1, 'a';
+  select 2, 'b';
+--tableresult
+  # [a-z]
+  2 b
+--end
+--testcase json-block-1
+  select json_array(1,2,3);
+  select json_object('a',1,'b',2);
+--json-block
+  [1,2,3]
+  {"a":1,"b":2}
+--end
+--close
+--print 🤩😃 the end

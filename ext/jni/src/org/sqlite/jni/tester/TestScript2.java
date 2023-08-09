@@ -12,6 +12,8 @@
 ** This file contains the TestScript2 part of the SQLTester framework.
 */
 package org.sqlite.jni.tester;
+import static org.sqlite.jni.SQLite3Jni.*;
+import org.sqlite.jni.sqlite3;
 import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.*;
@@ -19,6 +21,12 @@ import java.util.regex.*;
 class SQLTestException extends RuntimeException {
   public SQLTestException(String msg){
     super(msg);
+  }
+}
+
+class TestScript2Failed extends SQLTestException {
+  public TestScript2Failed(TestScript2 ts, String msg){
+    super(ts.getOutputPrefix()+": "+msg);
   }
 }
 
@@ -73,20 +81,218 @@ abstract class Command2 {
   }
 }
 
+//! --close command
+class CloseDbCommand2 extends Command2 {
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,0,1);
+    Integer id;
+    if(argv.length>1){
+      String arg = argv[1];
+      if("all".equals(arg)){
+        t.closeAllDbs();
+        return;
+      }
+      else{
+        id = Integer.parseInt(arg);
+      }
+    }else{
+      id = t.getCurrentDbId();
+    }
+    t.closeDb(id);
+  }
+}
+
+//! --db command
+class DbCommand2 extends Command2 {
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,1);
+    t.setCurrentDb( Integer.parseInt(argv[1]) );
+  }
+}
+
+//! --glob command
+class GlobCommand2 extends Command2 {
+  private boolean negate = false;
+  public GlobCommand2(){}
+  protected GlobCommand2(boolean negate){ this.negate = negate; }
+
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,1);
+    t.incrementTestCounter();
+    final String sql = t.takeInputBuffer();
+    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
+                       ResultRowMode.ONELINE, sql);
+    final String result = t.getResultText();
+    final String sArgs = Util.argvToString(argv);
+    //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
+    final String glob = argv[1];
+    rc = SQLTester.strglob(glob, result);
+    if( (negate && 0==rc) || (!negate && 0!=rc) ){
+      ts.toss(argv[0], " mismatch: ", glob," vs input: ",result);
+    }
+  }
+}
+
+//! --json command
+class JsonCommand2 extends ResultCommand2 {
+  public JsonCommand2(){ super(ResultBufferMode.ASIS); }
+}
+
+//! --json-block command
+class JsonBlockCommand2 extends TableResultCommand2 {
+  public JsonBlockCommand2(){ super(true); }
+}
+
+//! --new command
+class NewDbCommand2 extends OpenDbCommand2 {
+  public NewDbCommand2(){ super(true); }
+}
+
+//! Placeholder dummy/no-op commands
+class NoopCommand2 extends Command2 {
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+  }
+}
+
+//! --notglob command
+class NotGlobCommand2 extends GlobCommand2 {
+  public NotGlobCommand2(){
+    super(true);
+  }
+}
+
+//! --null command
+class NullCommand2 extends Command2 {
+  public void process(
+    SQLTester st, TestScript2 ts, String[] argv
+  ) throws Exception{
+    argcCheck(argv,1);
+    st.setNullValue( argv[1] );
+  }
+}
+
+//! --open command
+class OpenDbCommand2 extends Command2 {
+  private boolean createIfNeeded = false;
+  public OpenDbCommand2(){}
+  protected OpenDbCommand2(boolean c){createIfNeeded = c;}
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,1);
+    t.openDb(argv[1], createIfNeeded);
+  }
+}
+
+//! --print command
 class PrintCommand2 extends Command2 {
   public void process(
     SQLTester st, TestScript2 ts, String[] argv
   ) throws Exception{
     st.out(ts.getOutputPrefix(),": ");
-    if( 1==argv.length ){
-      st.outln( st.getInputText() );
+    final String body = ts.fetchCommandBody();
+    if( 1==argv.length && null==body ){
+      st.out( st.getInputText() );
     }else{
       st.outln( Util.argvToString(argv) );
     }
-    final String body = ts.fetchCommandBody();
     if( null!=body ){
-      st.out(body,"\n");
+      st.out(body);
     }
+  }
+}
+
+//! --result command
+class ResultCommand2 extends Command2 {
+  private final ResultBufferMode bufferMode;
+  protected ResultCommand2(ResultBufferMode bm){ bufferMode = bm; }
+  public ResultCommand2(){ this(ResultBufferMode.ESCAPED); }
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,0,-1);
+    t.incrementTestCounter();
+    final String sql = t.takeInputBuffer();
+    //t.verbose(argv[0]," SQL =\n",sql);
+    int rc = t.execSql(null, false, bufferMode, ResultRowMode.ONELINE, sql);
+    final String result = t.getResultText().trim();
+    final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
+    if( !result.equals(sArgs) ){
+      t.outln(argv[0]," FAILED comparison. Result buffer:\n",
+              result,"\nargs:\n",sArgs);
+      ts.toss(argv[0]+" comparison failed.");
+    }
+  }
+}
+
+//! --run command
+class RunCommand2 extends Command2 {
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,0,1);
+    final sqlite3 db = (1==argv.length)
+      ? t.getCurrentDb() : t.getDbById( Integer.parseInt(argv[1]) );
+    final String sql = t.takeInputBuffer();
+    int rc = t.execSql(db, false, ResultBufferMode.NONE,
+                       ResultRowMode.ONELINE, sql);
+    if( 0!=rc && t.isVerbose() ){
+      String msg = sqlite3_errmsg(db);
+      t.verbose(argv[0]," non-fatal command error #",rc,": ",
+                msg,"\nfor SQL:\n",sql);
+    }
+  }
+}
+
+//! --tableresult command
+class TableResultCommand2 extends Command2 {
+  private final boolean jsonMode;
+  protected TableResultCommand2(boolean jsonMode){ this.jsonMode = jsonMode; }
+  public TableResultCommand2(){ this(false); }
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,0);
+    t.incrementTestCounter();
+    String body = ts.fetchCommandBody();
+    if( null==body ) ts.toss("Missing ",argv[0]," body.");
+    body = body.trim();
+    if( !body.endsWith("\n--end") ){
+      ts.toss(argv[0], " must be terminated with --end.");
+    }else{
+      int n = body.length();
+      body = body.substring(0, n-6);
+    }
+    final String[] globs = body.split("\\s*\\n\\s*");
+    if( globs.length < 1 ){
+      ts.toss(argv[0], " requires 1 or more ",
+              (jsonMode ? "json snippets" : "globs"),".");
+    }
+    final String sql = t.takeInputBuffer();
+    t.execSql(null, true,
+              jsonMode ? ResultBufferMode.ASIS : ResultBufferMode.ESCAPED,
+              ResultRowMode.NEWLINE, sql);
+    final String rbuf = t.getResultText();
+    final String[] res = rbuf.split("\n");
+    if( res.length != globs.length ){
+      ts.toss(argv[0], " failure: input has ", res.length,
+              " row(s) but expecting ",globs.length);
+    }
+    for(int i = 0; i < res.length; ++i){
+      final String glob = globs[i].replaceAll("\\s+"," ").trim();
+      //t.verbose(argv[0]," <<",glob,">> vs <<",res[i],">>");
+      if( jsonMode ){
+        if( !glob.equals(res[i]) ){
+          ts.toss(argv[0], " json <<",glob, ">> does not match: <<",
+                  res[i],">>");
+        }
+      }else if( 0 != SQLTester.strglob(glob, res[i]) ){
+        ts.toss(argv[0], " glob <<",glob,">> does not match: <<",res[i],">>");
+      }
+    }
+  }
+}
+
+//! --testcase command
+class TestCaseCommand2 extends Command2 {
+  public void process(SQLTester t, TestScript2 ts, String[] argv) throws Exception{
+    argcCheck(argv,1);
+    // TODO?: do something with the test name
+    final String body = ts.fetchCommandBody();
+    t.clearResultBuffer();
+    t.clearInputBuffer().append(null==body ? "" : body);
   }
 }
 
@@ -103,7 +309,21 @@ class CommandDispatcher2 {
     Command2 rv = commandMap.get(name);
     if( null!=rv ) return rv;
     switch(name){
+      case "close":       rv = new CloseDbCommand2(); break;
+      case "db":          rv = new DbCommand2(); break;
+      case "glob":        rv = new GlobCommand2(); break;
+      case "json":        rv = new JsonCommand2(); break;
+      case "json-block":  rv = new JsonBlockCommand2(); break;
+      case "new":         rv = new NewDbCommand2(); break;
+      case "notglob":     rv = new NotGlobCommand2(); break;
+      case "null":        rv = new NullCommand2(); break;
+      case "oom":         rv = new NoopCommand2(); break;
+      case "open":        rv = new OpenDbCommand2(); break;
       case "print":       rv = new PrintCommand2(); break;
+      case "result":      rv = new ResultCommand2(); break;
+      case "run":         rv = new RunCommand2(); break;
+      case "tableresult": rv = new TableResultCommand2(); break;
+      case "testcase":    rv = new TestCaseCommand2(); break;
       default: rv = null; break;
     }
     if( null!=rv ) commandMap.put(name, rv);
@@ -187,17 +407,19 @@ class TestScript2 {
     return "["+(moduleName==null ? filename : moduleName)+"] line "+
       cur.lineNo;
   }
-
   @SuppressWarnings("unchecked")
-  private TestScript2 verbose(Object... vals){
+  private TestScript2 verboseN(int level, Object... vals){
     final int verbosity = outer.getVerbosity();
-    if(verbosity>0){
+    if(verbosity>=level){
       outer.out("VERBOSE",(verbosity>1 ? "+ " : " "),
                 getOutputPrefix(),": ");
       outer.outln(vals);
     }
     return this;
   }
+
+  private TestScript2 verbose1(Object... vals){return verboseN(1,vals);}
+  private TestScript2 verbose2(Object... vals){return verboseN(2,vals);}
 
   @SuppressWarnings("unchecked")
   public TestScript2 warn(Object... vals){
@@ -355,7 +577,7 @@ class TestScript2 {
     if(line.startsWith("#")){
       throw new IncompatibleDirective(this, "C-preprocessor input: "+line);
     }else if(line.startsWith("---")){
-      new IncompatibleDirective(this, "Triple-dash: "+line);
+      new IncompatibleDirective(this, "triple-dash: "+line);
     }
     Matcher m = patternScriptModuleName.matcher(line);
     if( m.find() ){
@@ -370,12 +592,19 @@ class TestScript2 {
     if( m.find() ){
       throw new IncompatibleDirective(this, m.group(1)+": "+m.group(3));
     }
+    if( line.indexOf("\n|")>=0 ){
+      throw new IncompatibleDirective(this, "newline-pipe combination.");
+    }
     return;
   }
 
-  public boolean isCommandLine(String line){
+  public boolean isCommandLine(String line, boolean checkForImpl){
     final Matcher m = patternCommand.matcher(line);
-    return m.find();
+    boolean rc = m.find();
+    if( rc && checkForImpl ){
+      rc = null!=CommandDispatcher2.getCommandByName(m.group(2));
+    }
+    return rc;
   }
 
   /**
@@ -388,31 +617,43 @@ class TestScript2 {
   }
 
   /**
-     Fetches lines until the next command. Throws if
+     Fetches lines until the next recognized command. Throws if
      checkForDirective() does.  Returns null if there is no input or
-     it's only whitespace. The returned string is trim()'d of
-     leading/trailing whitespace.
+     it's only whitespace. The returned string retains all whitespace.
+
+     Note that "subcommands", --command-like constructs in the body
+     which do not match a known command name are considered to be
+     content, not commands.
   */
   public String fetchCommandBody(){
     final StringBuilder sb = new StringBuilder();
     String line;
     while( (null != (line = peekLine())) ){
       checkForDirective(line);
-      if( !isCommandLine(line) ){
+      if( !isCommandLine(line, true) ){
         sb.append(line).append("\n");
         consumePeeked();
       }else{
         break;
       }
     }
-    line = sb.toString().trim();
-    return line.isEmpty() ? null : line;
+    line = sb.toString();
+    return line.trim().isEmpty() ? null : line;
   }
 
   public void processCommand(SQLTester t, String[] argv) throws Exception{
-    //verbose("got argv: ",argv[0], " ", Util.argvToString(argv));
-    //verbose("Input buffer = ",t.getInputBuffer());
+    verbose1("running command: ",argv[0], " ", Util.argvToString(argv));
+    if(outer.getVerbosity()>1){
+      final String input = t.getInputText();
+      if( !input.isEmpty() ) verbose2("Input buffer = ",input);
+    }
     CommandDispatcher2.dispatch(t, this, argv);
+  }
+
+  public void toss(Object... msg) throws TestScript2Failed {
+    StringBuilder sb = new StringBuilder();
+    for(Object s : msg) sb.append(s);
+    throw new TestScript2Failed(this, sb.toString());
   }
 
   /**
