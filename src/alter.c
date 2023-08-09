@@ -1864,9 +1864,17 @@ static void alterColumnFunc(
   // TODO: figure out more illegal combinations to validate
   rc = renameParseSql(&sPostAlterParse, zDb, db, (const char *)sqlite3_value_text((sqlite3_value *)context->pOut), bTemp);
   Table *pNewTab = sPostAlterParse.pNewTable;
-  u16 primkey_differs = (iColFlags & COLFLAG_PRIMKEY) != (pNewTab->aCol[iCol].colFlags & COLFLAG_PRIMKEY);
-  u16 unique_differs = (iColFlags & COLFLAG_UNIQUE) != (pNewTab->aCol[iCol].colFlags & COLFLAG_UNIQUE);
-  u16 generated_differs = (iColFlags & COLFLAG_GENERATED) != (pNewTab->aCol[iCol].colFlags & COLFLAG_GENERATED);
+  int iNewCol;
+  for (iNewCol = 0; iNewCol < pNewTab->nCol; iNewCol++) {
+    if (sqlite3StrICmp(pNewTab->aCol[iNewCol].zCnName, zOld) == 0) break;
+  }
+  if (iNewCol == pNewTab->nCol) {
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "no such column: \"%T\"", zOld);
+    goto alterColumnFunc_done;
+  }
+  u16 primkey_differs = (iColFlags & COLFLAG_PRIMKEY) != (pNewTab->aCol[iNewCol].colFlags & COLFLAG_PRIMKEY);
+  u16 unique_differs = (iColFlags & COLFLAG_UNIQUE) != (pNewTab->aCol[iNewCol].colFlags & COLFLAG_UNIQUE);
+  u16 generated_differs = (iColFlags & COLFLAG_GENERATED) != (pNewTab->aCol[iNewCol].colFlags & COLFLAG_GENERATED);
   renameParseCleanup(&sPostAlterParse);
 
   if (primkey_differs) {
