@@ -753,19 +753,19 @@ void libsqlAlterAlterColumn(
   bQuote = -1; // Contrary to RENAME, we leave quotes as is and not dequote them
   sqlite3NestedParse(pParse, 
       "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
-      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, %d) "
+      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, %d, %d) "
       "WHERE name NOT LIKE 'sqliteX_%%' ESCAPE 'X' "
       " AND (type != 'index' OR tbl_name = %Q)",
       zDb,
-      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1,
+      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1, pTab->aCol[iCol].colFlags,
       pTab->zName
   );
 
   sqlite3NestedParse(pParse, 
       "UPDATE temp." LEGACY_SCHEMA_TABLE " SET "
-      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, 1) "
+      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, 1, %d) "
       "WHERE type IN ('trigger', 'view')",
-      zDb, pTab->zName, iCol, zNew, bQuote
+      zDb, pTab->zName, iCol, zNew, bQuote, pTab->aCol[iCol].colFlags
   );
 
   /* Drop and reload the database schema. */
@@ -1786,9 +1786,12 @@ static void alterColumnFunc(
   const char *zNew = (const char*)sqlite3_value_text(argv[4]);
   int bQuote = sqlite3_value_int(argv[5]);
   int bTemp = sqlite3_value_int(argv[6]);
+  u16 iColFlags = sqlite3_value_int(argv[7]);
+
   const char *zOld;
   int rc;
   Parse sParse;
+  Parse sPostAlterParse;
   Index *pIdx;
   int i;
   Table *pTab;
@@ -1858,6 +1861,29 @@ static void alterColumnFunc(
 
   assert( rc==SQLITE_OK );
   rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
+
+  // Validate flags - PRIMARY KEY, UNIQUE and GENERATED constrains are not allowed to be altered
+  // TODO: figure out more illegal combinations to validate
+  rc = renameParseSql(&sPostAlterParse, zDb, db, (const char *)sqlite3_value_text((sqlite3_value *)context->pOut), bTemp);
+  Table *pNewTab = sPostAlterParse.pNewTable;
+  u16 primkey_differs = (iColFlags & COLFLAG_PRIMKEY) != (pNewTab->aCol[iCol].colFlags & COLFLAG_PRIMKEY);
+  u16 unique_differs = (iColFlags & COLFLAG_UNIQUE) != (pNewTab->aCol[iCol].colFlags & COLFLAG_UNIQUE);
+  u16 generated_differs = (iColFlags & COLFLAG_GENERATED) != (pNewTab->aCol[iCol].colFlags & COLFLAG_GENERATED);
+  renameParseCleanup(&sPostAlterParse);
+
+  if (primkey_differs) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "PRIMARY KEY constraint cannot be altered");
+    goto alterColumnFunc_done;
+  } else if (unique_differs) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "UNIQUE constraint cannot be altered");
+    goto alterColumnFunc_done;
+  } else if (generated_differs) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "GENERATED constraint cannot be altered");
+    goto alterColumnFunc_done;
+  }
 
 alterColumnFunc_done:
   if( rc!=SQLITE_OK ){
@@ -2534,7 +2560,7 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
     // libSQL extensions
-    INTERNAL_FUNCTION(libsql_alter_column, 7, alterColumnFunc),
+    INTERNAL_FUNCTION(libsql_alter_column, 8, alterColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }

@@ -129,3 +129,52 @@ fn test_update_syntax_validation() {
         .execute("ALTER TABLE \";;)),\" ALTER COLUMN \"v,);\" TO \"v,);\" REFERENCES \"x;;,)\"(\"y;,,,,\")", ())
         .is_ok());
 }
+
+#[test]
+fn test_update_forbidden() {
+    let conn = Connection::open_in_memory().unwrap();
+
+    // PRIMARY KEY cannot be changed
+    conn.execute("CREATE TABLE t1(id)", ()).unwrap();
+    assert!(conn
+        .execute("ALTER TABLE t1 ALTER COLUMN id TO id PRIMARY KEY", ())
+        .is_err());
+    conn.execute("CREATE TABLE t2(id int PRIMARY KEY)", ())
+        .unwrap();
+    assert!(conn
+        .execute("ALTER TABLE t2 ALTER COLUMN id TO id", ())
+        .is_err());
+    assert!(conn
+        .execute("ALTER TABLE t2 ALTER COLUMN id TO id PRIMARY KEY", ())
+        .is_ok());
+
+    // UNIQUE property can't either
+    conn.execute("CREATE TABLE t3(id int PRIMARY KEY)", ())
+        .unwrap();
+    assert!(conn
+        .execute("ALTER TABLE t3 ALTER COLUMN id TO id UNIQUE", ())
+        .is_err());
+    conn.execute("CREATE TABLE t4(id int PRIMARY KEY UNIQUE)", ())
+        .unwrap();
+    assert!(conn
+        .execute("ALTER TABLE t4 ALTER COLUMN id TO id", ())
+        .is_err());
+    assert!(conn
+        .execute("ALTER TABLE t4 ALTER COLUMN id TO id UNIQUE", ())
+        .is_ok());
+
+    // Same for GENERATED
+    conn.execute("CREATE TABLE t5(id int PRIMARY KEY)", ())
+        .unwrap();
+    assert!(conn
+        .execute("ALTER TABLE t5 ALTER COLUMN id TO id GENERATED ALWAYS", ())
+        .is_err());
+    conn.execute("CREATE TABLE t6(id int PRIMARY KEY GENERATED ALWAYS)", ())
+        .unwrap();
+    assert!(conn
+        .execute("ALTER TABLE t6 ALTER COLUMN id TO id", ())
+        .is_err());
+    assert!(conn
+        .execute("ALTER TABLE t6 ALTER COLUMN id TO id GENERATED ALWAYS", ())
+        .is_ok());
+}
