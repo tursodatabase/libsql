@@ -1,6 +1,7 @@
 use crate::rows::{MappedRows, Row};
 use crate::{errors, Connection, Error, Params, Result, Rows, ValueRef};
 
+use std::cell::RefCell;
 use std::ffi::c_int;
 use std::sync::Arc;
 
@@ -42,8 +43,11 @@ impl Statement {
 
     pub fn query(&self, params: &Params) -> Result<Rows> {
         self.bind(params);
-
-        Ok(Rows::new(self.inner.clone()))
+        let err = self.inner.step();
+        Ok(Rows {
+            stmt: self.inner.clone(),
+            err: RefCell::new(Some(err)),
+        })
     }
 
     pub fn query_row(&self, params: &Params) -> Result<Row> {

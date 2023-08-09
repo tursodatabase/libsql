@@ -233,11 +233,17 @@ func TestQueryWithEmptyResult(t *testing.T) {
 			t.Fatal(err)
 		}
 		defer rows.Close()
-		if columns, err := rows.Columns(); len(columns) > 0 || err != nil {
-			t.Fatal("columns should be nil")
+		columns, err := rows.Columns()
+		if err != nil {
+			t.Fatal(err)
 		}
-		if columnTypes, err := rows.ColumnTypes(); len(columnTypes) > 0 || err != nil {
-			t.Fatal("column types should be nil")
+		assert.DeepEqual(t, columns, []string{"NULL", "id", "name", "gpa", "cv"})
+		types, err := rows.ColumnTypes()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(types) != 5 {
+			t.Fatal("types should be 5")
 		}
 		for rows.Next() {
 			t.Fatal("there should be no rows")
