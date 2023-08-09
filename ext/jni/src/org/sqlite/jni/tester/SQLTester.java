@@ -305,10 +305,13 @@ public class SQLTester {
   }
 
   private void appendDbErr(sqlite3 db, StringBuilder sb, int rc){
-    sb.append(org.sqlite.jni.ResultCode.getEntryForInt(rc))
-      .append(" {")
-      .append(escapeSqlValue(sqlite3_errmsg(db)))
-      .append("}");
+    sb.append(org.sqlite.jni.ResultCode.getEntryForInt(rc)).append(' ');
+    final String msg = escapeSqlValue(sqlite3_errmsg(db));
+    if( '{' == msg.charAt(0) ){
+      sb.append(msg);
+    }else{
+      sb.append('{').append(msg).append('}');
+    }
   }
 
   public int execSql(sqlite3 db, boolean throwOnError,
@@ -662,7 +665,7 @@ class ResultCommand extends Command {
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, true, bufferMode, ResultRowMode.ONELINE, sql);
+    int rc = t.execSql(null, false, bufferMode, ResultRowMode.ONELINE, sql);
     final String result = t.getResultText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
     if( !result.equals(sArgs) ){
