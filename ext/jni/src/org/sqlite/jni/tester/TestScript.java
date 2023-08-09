@@ -28,6 +28,7 @@ class TestScript {
   private List<CommandChunk> chunks = null;
   private final Outer outer = new Outer();
   private String ignoreReason = null;
+  private byte[] baScript = null;
 
   /* One "chunk" of input, representing a single command and
      its optional body content. */
@@ -46,8 +47,10 @@ class TestScript {
   */
   public TestScript(String filename) throws Exception{
     name = filename;
-    setContent(new String(readFile(filename),
-                          java.nio.charset.StandardCharsets.UTF_8));
+    baScript = readFile(filename);
+    setContent(new String(
+                 baScript, java.nio.charset.StandardCharsets.UTF_8
+               ));
   }
 
   /**
@@ -94,6 +97,8 @@ class TestScript {
 
   private static final Pattern patternHashLine =
     Pattern.compile("^#", Pattern.MULTILINE);
+  private static final Pattern patternRequiredProperties =
+    Pattern.compile("REQUIRED_PROPERTIES:[ \\t]*(\\S+\\s*)\\n");
   /**
      Returns true if the given script content should be ignored
      (because it contains certain content which indicates such).
@@ -105,14 +110,21 @@ class TestScript {
     }else if( content.indexOf("\n|")>=0 ){
       ignoreReason = "Contains newline-pipe combination.";
       return true;
-    }else if( content.indexOf(" MODULE_NAME:")>=0 ||
-              content.indexOf("MIXED_MODULE_NAME:")>=0 ){
-      ignoreReason = "Incompatible module script.";
+    }else if( content.indexOf(" MODULE_NAME:")>=0 ){
+      ignoreReason = "Contains MODULE_NAME.";
+      return true;
+    }else if( content.indexOf("MIXED_MODULE_NAME:")>=0 ){
+      ignoreReason = "Contains MIXED_MODULE_NAME.";
       return true;
     }
     Matcher m = patternHashLine.matcher(content);
     if( m.find() ){
       ignoreReason = "C-preprocessor line found.";
+      return true;
+    }
+    m = patternRequiredProperties.matcher(content);
+    if( m.find() ){
+      ignoreReason = "REQUIRED_PROPERTIES found: "+m.group(1).trim();
       return true;
     }
     return false;
