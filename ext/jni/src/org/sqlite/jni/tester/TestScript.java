@@ -18,26 +18,30 @@ import java.io.*;
 import java.util.regex.*;
 
 /**
-   This class represents a single test script. It handles (or delegates)
-   its input and parsing. Iteration and evalution are deferred to other,
-   as-yet-non-existent, classes.
-
+   This class represents a single test script. It handles (or
+   delegates) its the reading-in and parsing, but the details of
+   evaluation are delegated elsewhere.
 */
 class TestScript {
   private String name;
-  private String content;
-  private List<String> chunks = null;
+  private List<CommandChunk> chunks = null;
   private final Outer outer = new Outer();
   private boolean ignored = false;
+
+  /* One "chunk" of input, representing a single command and
+     its optional body content. */
+  private static final class CommandChunk {
+    public String[] argv = null;
+    public String content = null;
+  }
 
   private byte[] readFile(String filename) throws Exception {
     return java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(filename));
   }
 
   private void setContent(String c){
-    content = c;
     ignored = shouldBeIgnored(c);
-    chunks = chunkContent();
+    if( !ignored ) chunks = chunkContent(c);
   }
   /**
      Initializes the script with the content of the given file.
@@ -104,7 +108,7 @@ class TestScript {
 
      If/when that becomes a problem, it can be refactored.
   */
-  private List<String> chunkContent(){
+  private List<CommandChunk> chunkContent(String content){
     if( ignored ) return null;
     // First, strip out any content which we know we can ignore...
     final String sCComment = "[/][*]([*](?![/])|[^*])*[*][/]";
@@ -117,52 +121,62 @@ class TestScript {
     lPats.add(sTclComment);
     lPats.add(sEmptyLine);
     //verbose("Content:").verbose(content).verbose("<EOF>");
-    String tmp = content;
     for( String s : lPats ){
       final Pattern p = Pattern.compile(
         s, Pattern.MULTILINE
       );
-      final Matcher m = p.matcher(tmp);
+      final Matcher m = p.matcher(content);
       /*verbose("Pattern {{{ ",p.pattern()," }}} with flags ",
               p.flags()," matches:"
               );*/
       int n = 0;
       //while( m.find() ) verbose("#",(++n),"\t",m.group(0).trim());
-      tmp = m.replaceAll("");
+      content = m.replaceAll("");
     }
     // Chunk the newly-cleaned text into individual commands and their input...
-    final List<String> rc = new ArrayList<>();
+    // First split up the input into command-size blocks...
+    final List<String> blocks = new ArrayList<>();
     final Pattern p = Pattern.compile(
       "^--(?!end)[a-z]+", Pattern.MULTILINE
       // --end is a marker used by --tableresult and --(not)glob.
     );
-    final Matcher m = p.matcher(tmp);
+    final Matcher m = p.matcher(content);
     int ndxPrev = 0, pos = 0, i = 0;
-    String chunk;
-    //verbose("Trimmed content:").verbose(tmp).verbose("<EOF>");
+    //verbose("Trimmed content:").verbose(content).verbose("<EOF>");
     while( m.find() ){
       pos = m.start();
-      chunk = tmp.substring(ndxPrev, pos).trim();
+      final String block = content.substring(ndxPrev, pos).trim();
       if( 0==ndxPrev && pos>ndxPrev ){
-        /* Initial chunk of non-command state. Skip it. */
+        /* Initial block of non-command state. Skip it. */
         ndxPrev = pos + 2;
         continue;
       }
-      if( !chunk.isEmpty() ){
+      if( !block.isEmpty() ){
         ++i;
-        //verbose("CHUNK #",i," ",+ndxPrev,"..",pos,chunk);
-        rc.add( chunk );
+        //verbose("BLOCK #",i," ",+ndxPrev,"..",pos,block);
+        blocks.add( block );
       }
       ndxPrev = pos + 2;
     }
-    if( ndxPrev < tmp.length() ){
+    if( ndxPrev < content.length() ){
       // This all belongs to the final command
-      chunk = tmp.substring(ndxPrev, tmp.length()).trim();
-      if( !chunk.isEmpty() ){
+      final String block = content.substring(ndxPrev, content.length()).trim();
+      if( !block.isEmpty() ){
         ++i;
-        //verbose("CHUNK #",(++i)," ",chunk);
-        rc.add( chunk );
+        //verbose("BLOCK #",(++i)," ",block);
+        blocks.add( block );
       }
+    }
+    // Next, convert those blocks into higher-level CommandChunks...
+    final List<CommandChunk> rc = new ArrayList<>();
+    for( String block : blocks ){
+      final CommandChunk chunk = new CommandChunk();
+      final String[] parts = block.split("\\n", 2);
+      chunk.argv = parts[0].split("\\s+");
+      if( parts.length>1 && parts[1].length()>0 ){
+        chunk.content = parts[1];
+      }
+      rc.add( chunk );
     }
     return rc;
   }
@@ -175,15 +189,10 @@ class TestScript {
     if( null==chunks ){
       outer.outln("This test contains content which forces it to be skipped.");
     }else{
-      int n = 0;
-      for(String chunk : chunks){
-        ++n;
-        //outer.verbose("CHUNK #",n," ",chunk,"<EOF>");
-        final String[] parts = chunk.split("\\n", 2);
-        final String[] argv = parts[0].split("\\s+");
-        CommandDispatcher.dispatch(
-          tester, argv, parts.length>1 ? parts[1] : null
-        );
+      //int n = 0;
+      for(CommandChunk chunk : chunks){
+        //outer.verbose("CHUNK #",++n," ",chunk,"<EOF>");
+        CommandDispatcher.dispatch(tester, chunk.argv, chunk.content);
       }
     }
   }

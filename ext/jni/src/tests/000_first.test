@@ -16,8 +16,9 @@ select 2;
 -- comment
 -- uncomment to introduce intentional syntax error
 --oom
---print
-This is from the print command.
+--print These are args to the print command.
+This is from the print command's body.
+Also from the print command.
 --- also ignored
 --testcase first
 select 'a', 'b';
@@ -31,6 +32,5 @@ select 'a'
 --notglob #
 --close
 --open SQLTester.db
---print
-Re-opened db.
+--print Re-opened db.
 --an-uknown-command

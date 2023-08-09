@@ -124,11 +124,17 @@ public class SQLTester {
         final TestScript ts = new TestScript(f);
         currentScript = ts;
         outln("----->>>>> Test [",ts.getName(),"]");
-        try{
-          ts.run(this);
-        }catch(SkipTestRemainder e){
-          /* not an error */
-          ++nAbortedScript;
+        if( ts.isIgnored() ){
+          outln("WARNING: skipping [",ts.getName(),"] because it contains ",
+                "content which requires that it be skipped.");
+          continue;
+        }else{
+          try{
+            ts.run(this);
+          }catch(SkipTestRemainder e){
+            /* not an error */
+            ++nAbortedScript;
+          }
         }
         outln("<<<<<----- ",nTest," test(s) in [",f,"]");
       }
@@ -385,37 +391,55 @@ public class SQLTester {
    Base class for test script commands. It provides a set of utility
    APIs for concrete command implementations.
 
-   Each subclass must have a ctor with this signature:
+   Each subclass must have a public no-arg ctor and must implement
+   the process() method which is abstract in this class.
 
-   (SQLTester testContext, String[] argv, String content) throws Exception
-
-   argv is a list with the command name followed by any
-   arguments to that command. The argcCheck() method provides
-   very basic argc validation.
-
-   The content is any text content which was specified after the
-   command, or null if there is null. Any command which does not
-   permit content must pass that argument to affirmNoContent() in
-   their constructor. Similary, those which require content should
-   pass it to affirmHasContent().
-
-   For simplicity, instantiating the test is intended to execute it,
-   as opposed to delaying execution until a method devoted to that.
-
-   Tests must throw on error.
+   Commands are intended to be stateless, except perhaps for counters
+   and similar internals. No state which changes the behavior between
+   any two invocations of process() should be retained.
 */
-class Command {
+abstract class Command {
   protected Command(){}
 
+  /**
+     Must process one command-unit of work and either return
+     (on success) or throw (on error).
+
+     The first argument is the context of the test.
+
+     argv is a list with the command name followed by any arguments to
+     that command. The argcCheck() method from this class provides
+     very basic argc validation.
+
+     The content is any text content which was specified after the
+     command, or null if there is null. Any command which does not
+     permit content must pass that argument to affirmNoContent() in
+     their constructor (or perform an equivalent check). Similary,
+     those which require content must pass it to affirmHasContent()
+     (or equivalent).
+  */
+  public abstract void process(SQLTester tester, String[] argv, String content) throws Exception;
+
+  /**
+     If argv.length-1 (-1 because the command's name is in argv[0]) does not
+     fall in the inclusive range (min,max) then this function throws. Use
+     a max value of -1 to mean unlimited.
+  */
   protected final void argcCheck(String[] argv, int min, int max) throws Exception{
     int argc = argv.length-1;
-    if(max<0) max = 99999999;
-    if(argc<min || argc>max){
+    if(argc<min || (max>=0 && argc>max)){
       if( min==max ) Util.badArg(argv[0],"requires exactly",min,"argument(s)");
-      else Util.badArg(argv[0]," requires ",min,"-",max," arguments.");
+      else if(max>0){
+        Util.badArg(argv[0]," requires ",min,"-",max," arguments.");
+      }else{
+        Util.badArg(argv[0]," requires at least ",min," arguments.");
+      }
     }
   }
 
+  /**
+     Equivalent to argcCheck(argv,argc,argc).
+  */
   protected final void argcCheck(String[] argv, int argc) throws Exception{
     argcCheck(argv, argc, argc);
   }
@@ -436,7 +460,8 @@ class Command {
 }
 
 class CloseDbCommand extends Command {
-  public CloseDbCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public CloseDbCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,1);
     affirmNoContent(content);
     Integer id;
@@ -458,8 +483,10 @@ class CloseDbCommand extends Command {
   }
 }
 
+//! --db command
 class DbCommand extends Command {
-  public DbCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public DbCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
     final sqlite3 db = t.setCurrentDb( Integer.parseInt(argv[1]) );
@@ -467,9 +494,13 @@ class DbCommand extends Command {
   }
 }
 
+//! --glob command
 class GlobCommand extends Command {
-  protected GlobCommand(boolean negate, SQLTester t,
-                        String[] argv, String content) throws Exception{
+  private boolean negate = false;
+  public GlobCommand(){}
+  protected GlobCommand(boolean negate){ this.negate = negate; }
+
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
 
@@ -487,13 +518,12 @@ class GlobCommand extends Command {
                 " glob mismatch: ",glob," vs input: ",result);
     }
   }
-  public GlobCommand(SQLTester t, String[] argv, String content) throws Exception{
-    this(false, t, argv, content);
-  }
 }
 
+//! --new command
 class NewDbCommand extends Command {
-  public NewDbCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public NewDbCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
     String fname = argv[1];
@@ -503,19 +533,24 @@ class NewDbCommand extends Command {
   }
 }
 
+//! Placeholder dummy/no-op command
 class NoopCommand extends Command {
-  public NoopCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public NoopCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
   }
 }
 
+//! --notglob command
 class NotGlobCommand extends GlobCommand {
-  public NotGlobCommand(SQLTester t, String[] argv, String content) throws Exception{
-    super(true, t, argv, content);
+  public NotGlobCommand(){
+    super(true);
   }
 }
 
+//! --null command
 class NullCommand extends Command {
-  public NullCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public NullCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
     t.setNullValue(argv[1]);
@@ -523,8 +558,10 @@ class NullCommand extends Command {
   }
 }
 
+//! --open command
 class OpenDbCommand extends Command {
-  public OpenDbCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public OpenDbCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
     String fname = argv[1];
@@ -533,16 +570,18 @@ class OpenDbCommand extends Command {
   }
 }
 
-
+//! --print command
 class PrintCommand extends Command {
-  public PrintCommand(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0);
-    t.outln(content);
+  public PrintCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
+    if( argv.length > 1 ) t.outln("\t",Util.argvToString(argv));
+    if( null!=content ) t.outln(content.replaceAll("(?m)^", "\t"));
   }
 }
 
 class ResultCommand extends Command {
-  public ResultCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public ResultCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,-1);
     affirmNoContent(content);
     t.incrementTestCounter();
@@ -559,7 +598,8 @@ class ResultCommand extends Command {
 }
 
 class RunCommand extends Command {
-  public RunCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public RunCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,1);
     affirmHasContent(content);
     final sqlite3 db = (1==argv.length)
@@ -574,7 +614,8 @@ class RunCommand extends Command {
 }
 
 class TestCaseCommand extends Command {
-  public TestCaseCommand(SQLTester t, String[] argv, String content) throws Exception{
+  public TestCaseCommand(){}
+  public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmHasContent(content);
     // TODO: do something with the test name
@@ -586,28 +627,37 @@ class TestCaseCommand extends Command {
 
 class CommandDispatcher {
 
-  static Class getCommandByName(String name){
+  private static java.util.Map<String,Command> commandMap =
+    new java.util.HashMap<>();
+  static Command getCommandByName(String name){
+    // TODO? Do this dispatching using a custom annotation on
+    // Command impls. That requires a surprisingly huge amount
+    // of code, though.
+    Command rv = commandMap.get(name);
+    if( null!=rv ) return rv;
     switch(name){
-      case "close":    return CloseDbCommand.class;
-      case "db":       return DbCommand.class;
-      case "glob":     return GlobCommand.class;
-      case "new":      return NewDbCommand.class;
-      case "notglob":  return NotGlobCommand.class;
-      case "null":     return NullCommand.class;
-      case "oom":      return NoopCommand.class;
-      case "open":     return OpenDbCommand.class;
-      case "print":    return PrintCommand.class;
-      case "result":   return ResultCommand.class;
-      case "run":      return RunCommand.class;
-      case "testcase": return TestCaseCommand.class;
-      default: return null;
+      case "close":    rv = new CloseDbCommand(); break;
+      case "db":       rv = new DbCommand(); break;
+      case "glob":     rv = new GlobCommand(); break;
+      case "new":      rv = new NewDbCommand(); break;
+      case "notglob":  rv = new NotGlobCommand(); break;
+      case "null":     rv = new NullCommand(); break;
+      case "oom":      rv = new NoopCommand(); break;
+      case "open":     rv = new OpenDbCommand(); break;
+      case "print":    rv = new PrintCommand(); break;
+      case "result":   rv = new ResultCommand(); break;
+      case "run":      rv = new RunCommand(); break;
+      case "testcase": rv = new TestCaseCommand(); break;
+      default: rv = null; break;
     }
+    if( null!=rv ) commandMap.put(name, rv);
+    return rv;
   }
 
   @SuppressWarnings("unchecked")
   static void dispatch(SQLTester tester, String[] argv, String content) throws Exception{
-    final Class cmdClass = getCommandByName(argv[0]);
-    if(null == cmdClass){
+    final Command cmd = getCommandByName(argv[0]);
+    if(null == cmd){
       final TestScript ts = tester.getCurrentScript();
       if( tester.skipUnknownCommands() ){
         tester.outln("WARNING: skipping remainder of ",ts.getName(),
@@ -618,15 +668,8 @@ class CommandDispatcher {
                 "No command handler found for '"+argv[0]+"' in ",
                 ts.getName());
     }
-    final java.lang.reflect.Constructor<Command> ctor =
-      cmdClass.getConstructor(SQLTester.class, String[].class, String.class);
-    try{
-      //tester.verbose("Running ",argv[0]," with:\n", content);
-      ctor.newInstance(tester, argv, content);
-    }catch(java.lang.reflect.InvocationTargetException e){
-      Throwable t = e.getCause();
-      throw (t!=null && t instanceof Exception) ? (Exception)t : e;
-    }
+    //tester.verbose("Running ",argv[0]," with:\n", content);
+    cmd.process(tester, argv, content);
   }
 }
 
@@ -664,4 +707,5 @@ final class Util {
     }
     return sb.toString();
   }
+
 }
