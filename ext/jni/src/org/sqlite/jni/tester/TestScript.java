@@ -27,7 +27,7 @@ class TestScript {
   private String moduleName = null;
   private List<CommandChunk> chunks = null;
   private final Outer outer = new Outer();
-  private boolean ignored = false;
+  private String ignoreReason = null;
 
   /* One "chunk" of input, representing a single command and
      its optional body content. */
@@ -75,7 +75,11 @@ class TestScript {
   }
 
   public boolean isIgnored(){
-    return ignored;
+    return null!=ignoreReason;
+  }
+
+  public String getIgnoredReason(){
+    return ignoreReason;
   }
 
   public void setVerbose(boolean b){
@@ -88,13 +92,30 @@ class TestScript {
     return this;
   }
 
+  private static final Pattern patternHashLine =
+    Pattern.compile("^#", Pattern.MULTILINE);
   /**
      Returns true if the given script content should be ignored
      (because it contains certain content which indicates such).
   */
-  public boolean shouldBeIgnored(String content){
-    return (null == moduleName)
-      || content.indexOf("\n|")>=0;
+  private boolean shouldBeIgnored(String content){
+    if( null == moduleName ){
+      ignoreReason = "No module name.";
+      return true;
+    }else if( content.indexOf("\n|")>=0 ){
+      ignoreReason = "Contains newline-pipe combination.";
+      return true;
+    }else if( content.indexOf(" MODULE_NAME:")>=0 ||
+              content.indexOf("MIXED_MODULE_NAME:")>=0 ){
+      ignoreReason = "Incompatible module script.";
+      return true;
+    }
+    Matcher m = patternHashLine.matcher(content);
+    if( m.find() ){
+      ignoreReason = "C-preprocessor line found.";
+      return true;
+    }
+    return false;
   }
 
   private boolean findModuleName(String content){
@@ -125,8 +146,7 @@ class TestScript {
   */
   private List<CommandChunk> chunkContent(String content){
     findModuleName(content);
-    ignored = shouldBeIgnored(content);
-    if( ignored ){
+    if( shouldBeIgnored(content) ){
       chunks = null;
       return null;
     }
@@ -134,12 +154,10 @@ class TestScript {
     // First, strip out any content which we know we can ignore...
     final String sCComment = "[/][*]([*](?![/])|[^*])*[*][/]";
     final String s3Dash = "^---+[^\\n]*\\n";
-    final String sTclComment = "^#[^\\n]*\\n";
     final String sEmptyLine = "^\\n";
     final List<String> lPats = new ArrayList<>();
     lPats.add(sCComment);
     lPats.add(s3Dash);
-    lPats.add(sTclComment);
     lPats.add(sEmptyLine);
     //verbose("Content:").verbose(content).verbose("<EOF>");
     for( String s : lPats ){

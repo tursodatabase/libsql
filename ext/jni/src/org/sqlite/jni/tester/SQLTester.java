@@ -133,8 +133,8 @@ public class SQLTester {
         currentScript = ts;
         outln("----->>>>> ",ts.getModuleName()," [",ts.getName(),"]");
         if( ts.isIgnored() ){
-          outln("WARNING: skipping [",ts.getModuleName(),"] because it contains ",
-                "content which requires that it be skipped.");
+          outln("WARNING: skipping [",ts.getModuleName(),"]: ",
+                ts.getIgnoredReason());
           continue;
         }else{
           try{
@@ -272,6 +272,7 @@ public class SQLTester {
      spec doc.
   */
   String escapeSqlValue(String v){
+    if( "".equals(v) ) return "{}";
     Matcher m = patternPlain.matcher(v);
     if( !m.find() ){
       return v  /* no escaping needed */;
@@ -509,7 +510,8 @@ abstract class Command {
   //! Throws if content is not null.
   protected void affirmNoContent(String content) throws Exception{
     if(null != content){
-      Util.badArg(this.getClass().getName()," does not accept content.");
+      Util.badArg(this.getClass().getName()," does not accept content ",
+                  "but got:\n",content);
     }
   }
 
@@ -661,8 +663,9 @@ class ResultCommand extends Command {
     int rc = t.execSql(null, true, bufferMode, ResultRowMode.ONELINE, sql);
     final String result = t.getResultText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
-    //t.verbose(argv[0]," result buffer:\n", result,"\nargs:\n",sArgs);
     if( !result.equals(sArgs) ){
+      t.outln(argv[0]," FAILED comparison. Result buffer:\n",
+              result,"\nargs:\n",sArgs);
       Util.toss(TestFailure.class, argv[0]," comparison failed.");
     }
   }

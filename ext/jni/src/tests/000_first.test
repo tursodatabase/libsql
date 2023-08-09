@@ -4,11 +4,8 @@
 **
 */
 
-# this line is ignored
-
 junk
 
-# --open nope.db /* must throw */
 --new SQLTester.db
 --run
   SELECT 1;

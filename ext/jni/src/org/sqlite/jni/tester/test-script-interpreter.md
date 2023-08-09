@@ -118,13 +118,16 @@ appended to the result buffer according to the following rules:
       (In this way, all column values and all row values are separated from
       each other by a single space.)
 
-  *   If the sqlite3_column_text() returns NULL, then append "nil" - or
+  *   If sqlite3_column_text() returns NULL, then append "nil" - or
       some other text that is specified by the --null command - and skip
       all subsequent rules.
 
-  *   If sqlite3_column_text() does not contain any special characters,
-      append it to the result buffer without any formatting and skip all
-      subsequent rules.
+  *   If sqlite3_column_text() is an empty string, append `{}` to the
+      result buffer and skip all subsequent rules.
+
+  *   If sqlite3_column_text() does not contain any special characters
+      (non-word characters), append it to the result buffer without
+      any formatting and skip all subsequent rules.
 
   *   If sqlite3_column_text() does not contains curly braces, then put
       the text inside of `{...}` and append it and skip all subsequent rules.
