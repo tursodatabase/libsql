@@ -10,7 +10,6 @@ junk
 
 # --open nope.db /* must throw */
 --new SQLTester.db
---null zilch
 --run
   SELECT 1;
   SELECT 2;
@@ -44,6 +43,10 @@ Also from the print command.
   [0-9] #
   b   c
 --end
+--null zilch
+--testcase null-command
+  SELECT null;
+--result zilch
 --testcase json-array-1
 SELECT json_array(1,2,3)
 --json [1,2,3]
@@ -63,4 +66,4 @@ SELECT json_array(1,2,3)
   [a-z][A-Z][a-z]
   4#
 --end
---an-uknown-command
+--an-unknown-command
