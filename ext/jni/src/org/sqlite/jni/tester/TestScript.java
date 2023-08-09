@@ -249,7 +249,10 @@ class TestScript {
           }
           outer.out("\n");
         }
-        CommandDispatcher.dispatch(tester, chunk.argv, chunk.content);
+        CommandDispatcher.dispatch(
+          tester, chunk.argv,
+          (null==chunk.content) ? null : chunk.content.trim()
+        );
       }
     }
   }

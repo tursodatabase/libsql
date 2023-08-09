@@ -572,7 +572,7 @@ class GlobCommand extends Command {
     //t.verbose(argv[0]," SQL =\n",sql);
     int rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
                        ResultRowMode.ONELINE, sql);
-    final String result = t.getResultText().trim();
+    final String result = t.getResultText();
     final String sArgs = Util.argvToString(argv);
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
     final String glob = argv[1];

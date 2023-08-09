@@ -24,6 +24,7 @@ Also from the print command.
   SELECT '{}', 'f';
   SELECT '{	}', 'g';
   SELECT '(a-b-c)', '[a-b-c]';
+  -- this comment must not cause an error
 --result {a b} c d e "{}" f "{\011}" g (a-b-c) [a-b-c]
 --testcase 2
   SELECT 123
