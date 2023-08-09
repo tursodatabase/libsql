@@ -34,24 +34,30 @@ script are deleted when the script finishes.
        processing may continue.  The "MODULE_NAME" checking in steps 2 and 3
        may optionally be discontinued after sighting a "SCRIPT_MODULE_NAME".
 
-  4.   If any line begins with the "\|" (0x7c) character, that indicates that
+  4.   If any line contains "REQUIRED_PROPERTIES:" and that substring is followed
+       by any non-whitespace text, then the script is not compatible with this
+       spec.  Processing should stop immediately.  In verbose mode, the
+       interpreter might choose to emit an information message saying that the
+       test script was abandoned due to unsupported requirement properties.
+
+  5.   If any line begins with the "\|" (0x7c) character, that indicates that
        the input script is not compatible with this specification.  Processing
        of the script should stop immediately.  In verbose mode, the interpreter
        might choose to emit an informational message indicating that the
        test script was abandoned because it contained "a dbtotxt format database
        specification".
 
-  5.   Any line that begins with "#" is a C-preprocessor line.  The interpreter
+  6.   Any line that begins with "#" is a C-preprocessor line.  The interpreter
        described by this spec does not know how to deal with C-preprocessor lines.
        Hence, processing should be abandoned.  In verbose mode, the interpreter
        might emit an informational message similar to
        "script NAME abandoned due to C-preprocessor line: ..."
 
-  6.   If a line begins with exactly two minus signs followed by a
+  7.   If a line begins with exactly two minus signs followed by a
        lowercase letter, that is a command.  Process commands as described
        below.
 
-  7.   All other lines should be accumulated into the "input buffer".
+  8.   All other lines should be accumulated into the "input buffer".
        The various commands will have access to this input buffer.
        Some commands will reset the buffer.
 
