@@ -3,8 +3,7 @@ use libsql::{named_params, params, Connection, Database, Params, Value};
 fn setup() -> Connection {
     let db = Database::open(":memory:").unwrap();
     let conn = db.connect().unwrap();
-    conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)", ())
-        .unwrap();
+    let _ = conn.execute("CREATE TABLE users (id INTEGER, name TEXT)", ());
     conn
 }
 
@@ -17,20 +16,20 @@ fn connection_drops_before_statements() {
 }
 
 #[test]
-fn execute() {
+fn connection_query() {
     let conn = setup();
-    conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
+    let _ = conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
         .unwrap();
-    let rows = conn.execute("SELECT * FROM users", ()).unwrap().unwrap();
+    let rows = conn.query("SELECT * FROM users", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
     assert_eq!(row.get::<i32>(0).unwrap(), 2);
     assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
 }
 
 #[test]
-fn query() {
+fn statement_query() {
     let conn = setup();
-    conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
+    let _= conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
         .unwrap();
 
     let params = Params::from(vec![libsql::Value::from(2)]);
@@ -62,7 +61,7 @@ fn query() {
 }
 
 #[test]
-fn prepare_and_execute() {
+fn prepare_and_query() {
     let conn = setup();
     check_insert(
         &conn,
@@ -82,7 +81,7 @@ fn prepare_and_execute() {
 }
 
 #[test]
-fn prepare_and_execute_named_params() {
+fn prepare_and_query_named_params() {
     let conn = setup();
 
     check_insert(
@@ -106,7 +105,7 @@ fn prepare_and_execute_named_params() {
 }
 
 #[test]
-fn prepare_and_dont_execute() {
+fn prepare_and_dont_query() {
     // TODO: how can we check that we've cleaned up the statement?
 
     let conn = setup();
@@ -115,13 +114,13 @@ fn prepare_and_dont_execute() {
         .unwrap();
 
     // Drop the connection explicitly here to show that we want to drop
-    // it while the above statment has not been executed.
+    // it while the above statment has not been queryd.
     drop(conn);
 }
 
 fn check_insert(conn: &Connection, sql: &str, params: Params) {
-    conn.execute(sql, params).unwrap();
-    let rows = conn.execute("SELECT * FROM users", ()).unwrap().unwrap();
+    let _ = conn.execute(sql, params).unwrap();
+    let rows = conn.query("SELECT * FROM users", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
     // Use two since if you forget to insert an id it will automatically
     // be set to 1 which defeats the purpose of checking it here.
@@ -132,26 +131,26 @@ fn check_insert(conn: &Connection, sql: &str, params: Params) {
 #[test]
 fn nulls() {
     let conn = setup();
-    conn.execute("INSERT INTO users (id, name) VALUES (NULL, NULL)", ())
+    let _= conn.execute("INSERT INTO users (id, name) VALUES (NULL, NULL)", ())
         .unwrap();
-    let rows = conn.execute("SELECT * FROM users", ()).unwrap().unwrap();
+    let rows = conn.query("SELECT * FROM users", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<i32>(0).unwrap(), 1);
+    assert_eq!(row.get::<i32>(0).unwrap(), 0);
     assert!(row.get::<&str>(1).is_err());
 }
 
 #[test]
 fn blob() {
     let conn = setup();
-    conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY, data BLOB)", ())
+    let _= conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY, data BLOB)", ())
         .unwrap();
 
     let bytes = vec![2u8; 64];
     let value = Value::from(bytes.clone());
-    conn.execute("INSERT INTO bbb (data) VALUES (?1)", vec![value])
+    let _= conn.execute("INSERT INTO bbb (data) VALUES (?1)", vec![value])
         .unwrap();
 
-    let rows = conn.execute("SELECT * FROM bbb", ()).unwrap().unwrap();
+    let rows = conn.query("SELECT * FROM bbb", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
 
     let out = row.get::<Vec<u8>>(1).unwrap();

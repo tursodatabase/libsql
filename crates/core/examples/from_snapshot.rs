@@ -20,7 +20,7 @@ async fn main() {
     db.sync_frames(Frames::Snapshot(snapshot)).unwrap();
 
     let rows = conn
-        .execute("SELECT * FROM sqlite_master", ())
+        .query("SELECT * FROM sqlite_master", ())
         .unwrap()
         .unwrap();
     while let Ok(Some(row)) = rows.next() {
