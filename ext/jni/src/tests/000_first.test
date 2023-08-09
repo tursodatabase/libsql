@@ -23,9 +23,11 @@ This is from the print command's body.
 Also from the print command.
 --- also ignored
 --testcase 1
-  SELECT 'a', 'b';
-  SELECT 'a', 'b';
---result a b a b
+  SELECT 'a b', 'c';
+  SELECT 'd', 'e';
+  SELECT '{}', 'f';
+  SELECT '{	}', 'g'
+--result {a b} c d e "{}" f "{\011}" g
 --testcase 2
   SELECT 123
 --glob ###

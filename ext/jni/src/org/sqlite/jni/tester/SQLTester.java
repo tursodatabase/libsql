@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.*;
 import org.sqlite.jni.*;
 import static org.sqlite.jni.SQLite3Jni.*;
 
@@ -263,9 +264,38 @@ public class SQLTester {
 
   void incrementTestCounter(){ ++nTest; ++nTotalTest; }
 
+  static final Pattern patternPlain = Pattern.compile("[\\W]", Pattern.MULTILINE);
+  static final Pattern patternSquiggly = Pattern.compile("[{}]", Pattern.MULTILINE);
+
+  /**
+     Returns v or some escaped form of v, as defined in the tester's
+     spec doc.
+  */
   String escapeSqlValue(String v){
-    // TODO: implement the escaping rules
-    return v;
+    Matcher m = patternPlain.matcher(v);
+    if( !m.find() ){
+      return v  /* no escaping needed */;
+    }
+    m = patternSquiggly.matcher(v);
+    if( !m.find() ){
+      return "{"+v+"}";
+    }
+    final StringBuilder sb = new StringBuilder("\"");
+    final int n = v.length();
+    for(int i = 0; i < n; ++i){
+      final char ch = v.charAt(i);
+      switch(ch){
+        case '\\': sb.append("\\\\"); break;
+        case '"': sb.append("\\\""); break;
+        default:
+          //verbose("CHAR ",(int)ch," ",ch," octal=",String.format("\\%03o", (int)ch));
+          if( (int)ch < 32 ) sb.append(String.format("\\%03o", (int)ch));
+          else sb.append(ch);
+          break;
+      }
+    }
+    sb.append("\"");
+    return sb.toString();
   }
 
   private void appendDbErr(sqlite3 db, StringBuilder sb, int rc){
@@ -327,11 +357,11 @@ public class SQLTester {
               continue;
             }
             switch(appendMode){
-              case ESCAPED:
-                sb.append( escapeSqlValue(val) );
-                break;
               case ASIS:
                 sb.append( val );
+                break;
+              case ESCAPED:
+                sb.append( escapeSqlValue(val) );
                 break;
               default:
                 Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
@@ -619,7 +649,7 @@ class ResultCommand extends Command {
     int rc = t.execSql(null, true, bufferMode, ResultRowMode.ONELINE, sql);
     final String result = t.getResultText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
-    //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
+    t.verbose(argv[0]," result buffer:\n", result,"\nargs:\n",sArgs);
     if( !result.equals(sArgs) ){
       Util.toss(TestFailure.class, argv[0]," comparison failed.");
     }
@@ -658,13 +688,15 @@ class TableResultCommand extends Command {
       int n = content.length();
       content = content.substring(0, n-6);
     }
-    final String[] globs = content.split("\s*\n\s*");
+    final String[] globs = content.split("\\s*\\n\\s*");
     if( globs.length < 1 ){
       Util.toss(TestFailure.class, argv[0], " requires 1 or more ",
                 (jsonMode ? "json snippets" : "globs"),".");
     }
     final String sql = t.takeInputBuffer();
-    t.execSql(null, true, ResultBufferMode.ESCAPED, ResultRowMode.NEWLINE, sql);
+    t.execSql(null, true,
+              jsonMode ? ResultBufferMode.ASIS : ResultBufferMode.ESCAPED,
+              ResultRowMode.NEWLINE, sql);
     final String rbuf = t.getResultText();
     final String[] res = rbuf.split("\n");
     if( res.length != globs.length ){
@@ -672,7 +704,8 @@ class TableResultCommand extends Command {
                 res.length," row(s) but expecting ",globs.length);
     }
     for(int i = 0; i < res.length; ++i){
-      final String glob = GlobCommand.globToStrglob(globs[i]).replaceAll("\s+"," ");
+      final String glob = GlobCommand.globToStrglob(globs[i])
+        .replaceAll("\\s+"," ");
       //t.verbose(argv[0]," <<",glob,">> vs <<",res[i],">>");
       if( jsonMode ){
         if( !glob.equals(res[i]) ){

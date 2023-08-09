@@ -241,7 +241,7 @@ by that argument.
 
 The --json and --json-block commands work like --result and --tableresult,
 respectively.  The difference is that column values are appended to the
-result buffer literally, without every enclosing the values in `{...}` or
+result buffer literally, without ever enclosing the values in `{...}` or
 `"..."` and without escaping any characters in the column value and comparison
 is always an exact strcmp() not a GLOB.
 
