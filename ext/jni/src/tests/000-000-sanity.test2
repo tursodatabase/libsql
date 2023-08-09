@@ -5,6 +5,7 @@
 ** xMIXED_MODULE_NAME:       mixed-module
 ** xMODULE_NAME:             module-name
 ** xREQUIRED_PROPERTIES:      small fast reliable
+** REQUIRED_PROPERTIES:
 **
 */
 

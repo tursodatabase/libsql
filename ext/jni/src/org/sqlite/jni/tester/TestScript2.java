@@ -337,7 +337,7 @@ class TestScript2 {
   }
 
   private static final Pattern patternRequiredProperties =
-    Pattern.compile(" REQUIRED_PROPERTIES:[ \\t]*(.*+)\\s*$");
+    Pattern.compile(" REQUIRED_PROPERTIES:[ \\t]*(\\S.*)\\s*$");
   private static final Pattern patternScriptModuleName =
     Pattern.compile(" SCRIPT_MODULE_NAME:[ \\t]*(\\S+)\\s*$");
   private static final Pattern patternMixedModuleName =
