@@ -521,7 +521,6 @@ class GlobCommand extends Command {
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
     affirmNoContent(content);
-
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
@@ -539,6 +538,16 @@ class GlobCommand extends Command {
   }
 }
 
+//! --json command
+class JsonCommand extends ResultCommand {
+  public JsonCommand(){ super(ResultBufferMode.ASIS); }
+}
+
+//! --json-block command
+class JsonBlockCommand extends TableResultCommand {
+  public JsonBlockCommand(){ super(true); }
+}
+
 //! --new command
 class NewDbCommand extends Command {
   public void process(SQLTester t, String[] argv, String content) throws Exception{
@@ -551,7 +560,7 @@ class NewDbCommand extends Command {
   }
 }
 
-//! Placeholder dummy/no-op command
+//! Placeholder dummy/no-op commands
 class NoopCommand extends Command {
   public void process(SQLTester t, String[] argv, String content) throws Exception{
   }
@@ -596,15 +605,18 @@ class PrintCommand extends Command {
   }
 }
 
+//! --result command
 class ResultCommand extends Command {
+  private final ResultBufferMode bufferMode;
+  protected ResultCommand(ResultBufferMode bm){ bufferMode = bm; }
+  public ResultCommand(){ this(ResultBufferMode.ESCAPED); }
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,-1);
     affirmNoContent(content);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
-                       ResultRowMode.ONELINE, sql);
+    int rc = t.execSql(null, true, bufferMode, ResultRowMode.ONELINE, sql);
     final String result = t.getResultText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
@@ -614,6 +626,7 @@ class ResultCommand extends Command {
   }
 }
 
+//! --run command
 class RunCommand extends Command {
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0,1);
@@ -630,10 +643,15 @@ class RunCommand extends Command {
   }
 }
 
+//! --tableresult command
 class TableResultCommand extends Command {
+  private final boolean jsonMode;
+  protected TableResultCommand(boolean jsonMode){ this.jsonMode = jsonMode; }
+  public TableResultCommand(){ this(false); }
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,0);
     affirmHasContent(content);
+    t.incrementTestCounter();
     if( !content.endsWith("\n--end") ){
       Util.toss(TestFailure.class, argv[0], " must be terminated with --end.");
     }else{
@@ -642,7 +660,8 @@ class TableResultCommand extends Command {
     }
     final String[] globs = content.split("\s*\n\s*");
     if( globs.length < 1 ){
-      Util.toss(TestFailure.class, argv[0], " requires 1 or more globs.");
+      Util.toss(TestFailure.class, argv[0], " requires 1 or more ",
+                (jsonMode ? "json snippets" : "globs"),".");
     }
     final String sql = t.takeInputBuffer();
     t.execSql(null, true, ResultBufferMode.ESCAPED, ResultRowMode.NEWLINE, sql);
@@ -654,14 +673,21 @@ class TableResultCommand extends Command {
     }
     for(int i = 0; i < res.length; ++i){
       final String glob = GlobCommand.globToStrglob(globs[i]).replaceAll("\s+"," ");
-      if( 0 != sqlite3_strglob(glob, res[i]) ){
-        Util.toss(TestFailure.class, argv[0], " glob {",glob,
-                  "} does not match: {",res[i],"}");
+      //t.verbose(argv[0]," <<",glob,">> vs <<",res[i],">>");
+      if( jsonMode ){
+        if( !glob.equals(res[i]) ){
+          Util.toss(TestFailure.class, argv[0], " json <<",glob,
+                  ">> does not match: <<",res[i],">>");
+        }
+      }else if( 0 != sqlite3_strglob(glob, res[i]) ){
+        Util.toss(TestFailure.class, argv[0], " glob <<",glob,
+                  ">> does not match: <<",res[i],">>");
       }
     }
   }
 }
 
+//! --testcase command
 class TestCaseCommand extends Command {
   public void process(SQLTester t, String[] argv, String content) throws Exception{
     argcCheck(argv,1);
@@ -673,37 +699,48 @@ class TestCaseCommand extends Command {
   }
 }
 
+/**
+   Helper for dispatching Command instances.
+*/
 class CommandDispatcher {
 
   private static java.util.Map<String,Command> commandMap =
     new java.util.HashMap<>();
+
+  /**
+     Returns a (cached) instance mapped to name, or null if no match
+     is found.
+  */
   static Command getCommandByName(String name){
-    // TODO? Do this dispatching using a custom annotation on
-    // Command impls. That requires a surprisingly huge amount
-    // of code, though.
     Command rv = commandMap.get(name);
     if( null!=rv ) return rv;
     switch(name){
-      case "close":    rv = new CloseDbCommand(); break;
-      case "db":       rv = new DbCommand(); break;
-      case "glob":     rv = new GlobCommand(); break;
-      case "new":      rv = new NewDbCommand(); break;
-      case "notglob":  rv = new NotGlobCommand(); break;
-      case "null":     rv = new NullCommand(); break;
-      case "oom":      rv = new NoopCommand(); break;
-      case "open":     rv = new OpenDbCommand(); break;
-      case "print":    rv = new PrintCommand(); break;
-      case "result":   rv = new ResultCommand(); break;
-      case "run":      rv = new RunCommand(); break;
+      case "close":       rv = new CloseDbCommand(); break;
+      case "db":          rv = new DbCommand(); break;
+      case "glob":        rv = new GlobCommand(); break;
+      case "json":        rv = new JsonCommand(); break;
+      case "json-block":  rv = new JsonBlockCommand(); break;
+      case "new":         rv = new NewDbCommand(); break;
+      case "notglob":     rv = new NotGlobCommand(); break;
+      case "null":        rv = new NullCommand(); break;
+      case "oom":         rv = new NoopCommand(); break;
+      case "open":        rv = new OpenDbCommand(); break;
+      case "print":       rv = new PrintCommand(); break;
+      case "result":      rv = new ResultCommand(); break;
+      case "run":         rv = new RunCommand(); break;
       case "tableresult": rv = new TableResultCommand(); break;
-      case "testcase": rv = new TestCaseCommand(); break;
+      case "testcase":    rv = new TestCaseCommand(); break;
       default: rv = null; break;
     }
     if( null!=rv ) commandMap.put(name, rv);
     return rv;
   }
 
-  @SuppressWarnings("unchecked")
+  /**
+     Treats argv[0] as a command name, looks it up with
+     getCommandByName(), and calls process() on that instance, passing
+     it arguments given to this function.
+  */
   static void dispatch(SQLTester tester, String[] argv, String content) throws Exception{
     final Command cmd = getCommandByName(argv[0]);
     if(null == cmd){
@@ -722,7 +759,12 @@ class CommandDispatcher {
   }
 }
 
+/**
+   General utilities for the SQLTester bits.
+*/
 final class Util {
+
+  //! Throws a new T, appending all msg args into a string for the message.
   public static void toss(Class<? extends Exception> errorType, Object... msg) throws Exception {
     StringBuilder sb = new StringBuilder();
     for(Object s : msg) sb.append(s);
@@ -739,6 +781,7 @@ final class Util {
     toss(IllegalArgumentException.class, msg);
   }
 
+  //! Tries to delete the given file, silently ignoring failure.
   public static void unlink(String filename){
     try{
       final java.io.File f = new java.io.File(filename);
@@ -748,6 +791,11 @@ final class Util {
     }
   }
 
+  /**
+     Appends all entries in argv[1..end] into a space-separated
+     string, argv[0] is not included because it's expected to
+     be a command name.
+  */
   public static String argvToString(String[] argv){
     StringBuilder sb = new StringBuilder();
     for(int i = 1; i < argv.length; ++i ){

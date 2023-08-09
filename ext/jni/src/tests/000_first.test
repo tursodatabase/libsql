@@ -12,8 +12,8 @@ junk
 --new SQLTester.db
 --null zilch
 --run
-select 1;
-select 2;
+  SELECT 1;
+  SELECT 2;
 -- comment
 -- uncomment to introduce intentional syntax error
 --oom
@@ -22,24 +22,34 @@ This is from the print command's body.
 --print
 Also from the print command.
 --- also ignored
---testcase first
-select 'a', 'b';
-select 'a', 'b';
+--testcase 1
+  SELECT 'a', 'b';
+  SELECT 'a', 'b';
 --result a b a b
---testcase second
-select 123
+--testcase 2
+  SELECT 123
 --glob ###
---testcase third
-select 'a'
+--testcase 3
+  SELECT 'a'
 --notglob #
 --close
 --open SQLTester.db
 --print Re-opened db.
 --testcase fourth
-SELECT 1, 2;
-SELECT 'b', 'c';
+  SELECT 1, 2;
+  SELECT 'b', 'c';
 --tableresult
   [0-9] #
   b   c
+--end
+--testcase json-array-1
+SELECT json_array(1,2,3)
+--json [1,2,3]
+--testcase json-array-2
+  SELECT json_array(1,2,3);
+  SELECT json_object('a',1,'b',2);
+--json-block
+[1,2,3]
+{"a":1,"b":2}
 --end
 --an-uknown-command
