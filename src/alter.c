@@ -761,13 +761,6 @@ void libsqlAlterAlterColumn(
       pTab->zName
   );
 
-  sqlite3NestedParse(pParse, 
-      "UPDATE temp." LEGACY_SCHEMA_TABLE " SET "
-      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, 1, %d) "
-      "WHERE type IN ('trigger', 'view')",
-      zDb, pTab->zName, iCol, zNew, bQuote, pTab->aCol[iCol].colFlags
-  );
-
   /* Drop and reload the database schema. */
   renameReloadSchema(pParse, iSchema, INITFLAG_AlterRename);
   renameTestSchema(pParse, zDb, iSchema==1, "after update", 1);
