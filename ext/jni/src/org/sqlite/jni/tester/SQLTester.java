@@ -35,6 +35,19 @@ class SkipTestRemainder extends RuntimeException {
 }
 
 /**
+   Modes for how to handle SQLTester.execSql()'s
+   result output.
+ */
+enum ResultBufferMode {
+  //! Do not append to result buffer
+  NONE,
+  //! Append output escaped.
+  ESCAPED,
+  //! Append output as-is
+  ASIS
+};
+
+/**
    This class provides an application which aims to implement the
    rudimentary SQL-driven test tool described in the accompanying
    test-script-interpreter.md.
@@ -110,14 +123,14 @@ public class SQLTester {
         ++nTestFile;
         final TestScript ts = new TestScript(f);
         currentScript = ts;
-        outln("---------> Test ",ts.getName()," ...");
+        outln("----->>>>> Test [",ts.getName(),"]");
         try{
           ts.run(this);
         }catch(SkipTestRemainder e){
           /* not an error */
           ++nAbortedScript;
         }
-        outln("<--------- ",nTest," test(s) in ",f);
+        outln("<<<<<----- ",nTest," test(s) in [",f,"]");
       }
     }finally{
       currentScript = null;
@@ -250,7 +263,7 @@ public class SQLTester {
   }
 
   public int execSql(sqlite3 db, boolean throwOnError,
-                     boolean appendToResult, String sql) throws Exception {
+                     ResultBufferMode appendMode, String sql) throws Exception {
     final OutputPointer.Int32 oTail = new OutputPointer.Int32();
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
@@ -260,7 +273,8 @@ public class SQLTester {
     int rc = 0;
     sqlite3_stmt stmt = null;
     int spacing = 0 /* emit a space for --result if>0 */ ;
-    final StringBuilder sb = appendToResult ? resultBuffer : null;
+    final StringBuilder sb = (ResultBufferMode.NONE==appendMode)
+      ? null : resultBuffer;
     //outln("sqlChunk len= = ",sqlChunk.length);
     while(pos < sqlChunk.length){
       if(pos > 0){
@@ -297,7 +311,16 @@ public class SQLTester {
               sb.append( nullView );
               continue;
             }
-            sb.append( escapeSqlValue(val) );
+            switch(appendMode){
+              case ESCAPED:
+                sb.append( escapeSqlValue(val) );
+                break;
+              case ASIS:
+                sb.append( val );
+                break;
+              default:
+                Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
+            }
           }
           //sb.append('\n');
         }
@@ -453,7 +476,7 @@ class GlobCommand extends Command {
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, true, true, sql);
+    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED, sql);
     final String result = t.getResultBufferText().trim();
     final String sArgs = Util.argvToString(argv);
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
@@ -525,7 +548,7 @@ class ResultCommand extends Command {
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, true, true, sql);
+    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED, sql);
     final String result = t.getResultBufferText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
@@ -541,7 +564,7 @@ class RunCommand extends Command {
     affirmHasContent(content);
     final sqlite3 db = (1==argv.length)
       ? t.getCurrentDb() : t.getDbById( Integer.parseInt(argv[1]) );
-    int rc = t.execSql(db, false, false, content);
+    int rc = t.execSql(db, false, ResultBufferMode.NONE, content);
     if( 0!=rc ){
       String msg = sqlite3_errmsg(db);
       t.verbose(argv[0]," non-fatal command error #",rc,": ",

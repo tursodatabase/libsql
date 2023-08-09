@@ -132,7 +132,10 @@ class TestScript {
     }
     // Chunk the newly-cleaned text into individual commands and their input...
     final List<String> rc = new ArrayList<>();
-    final Pattern p = Pattern.compile("^--[a-z]", Pattern.MULTILINE);
+    final Pattern p = Pattern.compile(
+      "^--(?!end)[a-z]+", Pattern.MULTILINE
+      // --end is a marker used by --tableresult and --(not)glob.
+    );
     final Matcher m = p.matcher(tmp);
     int ndxPrev = 0, pos = 0, i = 0;
     String chunk;
