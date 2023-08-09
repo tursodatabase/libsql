@@ -82,8 +82,8 @@ class TestScript {
     return ignoreReason;
   }
 
-  public void setVerbose(boolean b){
-    outer.setVerbose(b);
+  public void setVerbosity(int level){
+    outer.setVerbosity(level);
   }
 
   @SuppressWarnings("unchecked")
@@ -220,7 +220,10 @@ class TestScript {
       final String[] parts = block.split("\\n", 2);
       chunk.argv = parts[0].split("\\s+");
       if( parts.length>1 && parts[1].length()>0 ){
-        chunk.content = parts[1].trim();
+        chunk.content = parts[1]
+          /* reminder: don't trim() here. It would be easier
+             for Command impls if we did but it makes debug
+             output look weird. */;
       }
       rc.add( chunk );
     }
@@ -232,17 +235,17 @@ class TestScript {
   */
   public void run(SQLTester tester) throws Exception {
     final int verbosity = tester.getVerbosity();
-    this.setVerbose(verbosity>0);
     if( null==chunks ){
       outer.outln("This test contains content which forces it to be skipped.");
     }else{
       int n = 0;
       for(CommandChunk chunk : chunks){
         if(verbosity>0){
-          outer.out("VERBOSE ",moduleName," #",++n," ",chunk.argv[0],
+          outer.out("VERBOSE",(verbosity>1 ? "+ " : " "),moduleName,
+                    " #",++n," ",chunk.argv[0],
                     " ",Util.argvToString(chunk.argv));
           if(verbosity>1 && null!=chunk.content){
-            outer.out("\nwith content: ", chunk.content);
+            outer.out("\n", chunk.content);
           }
           outer.out("\n");
         }

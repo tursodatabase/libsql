@@ -17,7 +17,7 @@ package org.sqlite.jni.tester;
    Console output utility class.
 */
 class Outer {
-  public boolean verbose = false;
+  public int verbosity = 0;
 
   public static void out(Object val){
     System.out.print(val);
@@ -40,17 +40,21 @@ class Outer {
 
   @SuppressWarnings("unchecked")
   public Outer verbose(Object... vals){
-    if(verbose){
-      out("VERBOSE: ");
+    if(verbosity>0){
+      out("VERBOSE",(verbosity>1 ? "+: " : ": "));
       outln(vals);
     }
     return this;
   }
 
-  public void setVerbose(boolean b){
-    verbose = b;
+  public void setVerbosity(int level){
+    verbosity = level;
   }
 
-  public boolean isVerbose(){return verbose;}
+  public int getVerbosity(){
+    return verbosity;
+  }
+
+  public boolean isVerbose(){return verbosity > 0;}
 
 }

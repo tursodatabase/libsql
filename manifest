@@ -1,5 +1,5 @@
-C Strip\s--oom\scommands\sfrom\sSQLTester\sinput\ssince\s(A)\swe\scan't\scurrently\sdo\sanything\swith\sthem\sand\s(B)\sthey\scan\sappear\sas\sbody\scontent\sof\s--testcase\scommands\sand\sthe\scurrent\sparser\scannot\sdeal\swith\sthat.\sIf\s--verbose\sis\sprovided\sonce,\semit\sthe\sname\sand\sargs\sof\seach\scommand\sas\sit's\srun.\sIf\s--verbose\sis\sused\stwice\sor\smore,\salso\semit\sthe\scommand's\sbody\stext,\sif\sany.
-D 2023-08-09T16:29:07.987
+C Tweak\sthe\sSQLTester\s--verbose\sand\sdouble-verbose\soutput\sa\sbit\sfor\slegibility.
+D 2023-08-09T16:56:42.764
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -265,9 +265,9 @@ F ext/jni/src/org/sqlite/jni/sqlite3.java 62b1b81935ccf3393472d17cb883dc5ff39c38
 F ext/jni/src/org/sqlite/jni/sqlite3_context.java d26573fc7b309228cb49786e9078597d96232257defa955a3425d10897bca810
 F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449322b0c93d1bd4e1616e76ed547ed9fc
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
-F ext/jni/src/org/sqlite/jni/tester/Outer.java 3d9c40f8ed58ec0df05ca160986ea06ec84ec1f338b069cfba9604bbba467a01
-F ext/jni/src/org/sqlite/jni/tester/SQLTester.java fbaaaf3f04451a66d8031a6792945fa7396be0e522774f364c2cf1520b38003a
-F ext/jni/src/org/sqlite/jni/tester/TestScript.java 91ee32908b837a561cd2820fa49476743823a7b5e13e43ea8fd577357900fd16
+F ext/jni/src/org/sqlite/jni/tester/Outer.java b06acf9c79e8dbc8fea4a98b00724a6a76e3ee4503eb114671d2885f8fb3df8b
+F ext/jni/src/org/sqlite/jni/tester/SQLTester.java d36900bd9d1b7c9ac07d23fe2344b1f422b6556ef40da7ab3f5de457f63a2cf8
+F ext/jni/src/org/sqlite/jni/tester/TestScript.java e0a4b523ba2b207e01684dc65ee8d0212bb1d60242dcdff99c4d8eb326b79628
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md 44449866970341076cec355193f89646825270a2f4f4073b55150cc4a55100d4
 F ext/jni/src/tests/000_first.test 66dd69f5412b87b063982d1aad6907fbe472bc627ca863ae33145e4f54499b8a
 F ext/jni/src/tests/010_ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
@@ -2090,8 +2090,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 217f6e0c9c09c576b09ea59fce085a53d1a133927046102b4d00fd58109efc93
-R cabb506465cd0b0ec946cd352f846b65
+P 0770e8467d4bb9490d9ed6e8a20766ffee7049cc3667db6d036c13fccbb6f3ab
+R b42664702ccf0865a1d128b95361cc2b
 U stephan
-Z 928111b17e4d371ea24b2ea94c9fa691
+Z a06e0ef26142b9f73cf2ce24e37e2e96
 # Remove this line to create a well-formed Fossil manifest.

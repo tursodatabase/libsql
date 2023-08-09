@@ -80,26 +80,24 @@ public class SQLTester {
   private int iCurrentDb = 0;
   private final String initialDbName = "test.db";
   private TestScript currentScript;
-  private int verbosity = 0;
 
   public SQLTester(){
     reset();
   }
 
-  public void setVerbose(int level){
-    verbosity = level;
-    this.outer.setVerbose( level!=0 );
+  public void setVerbosity(int level){
+    this.outer.setVerbosity( level );
   }
   public int getVerbosity(){
-    return verbosity;
+    return this.outer.getVerbosity();
   }
   public boolean isVerbose(){
-    return verbosity>0;
+    return this.outer.isVerbose();
   }
 
   @SuppressWarnings("unchecked")
   public void verbose(Object... vals){
-    if( verbosity > 0 ) outer.verbose(vals);
+    outer.verbose(vals);
   }
 
   @SuppressWarnings("unchecked")
@@ -406,7 +404,7 @@ public class SQLTester {
       if(a.startsWith("-")){
         final String flag = a.replaceFirst("-+","");
         if( flag.equals("verbose") ){
-          ++t.verbosity;
+          t.setVerbosity(t.getVerbosity() + 1);
         }else{
           throw new IllegalArgumentException("Unhandled flag: "+flag);
         }
@@ -546,7 +544,7 @@ class CloseDbCommand extends Command {
       id = t.getCurrentDbId();
     }
     t.closeDb(id);
-    //t.verbose(argv[0]," db ",id);
+    t.verbose(argv[0]," db ",id);
   }
 }
 
@@ -723,7 +721,7 @@ class TableResultCommand extends Command {
                 res.length," row(s) but expecting ",globs.length);
     }
     for(int i = 0; i < res.length; ++i){
-      final String glob = globs[i].replaceAll("\\s+"," ");
+      final String glob = globs[i].replaceAll("\\s+"," ").trim();
       //t.verbose(argv[0]," <<",glob,">> vs <<",res[i],">>");
       if( jsonMode ){
         if( !glob.equals(res[i]) ){
