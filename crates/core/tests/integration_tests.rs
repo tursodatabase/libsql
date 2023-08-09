@@ -156,3 +156,19 @@ fn blob() {
     let out = row.get::<Vec<u8>>(1).unwrap();
     assert_eq!(&out, &bytes);
 }
+
+#[test]
+fn transaction() {
+    let conn = setup();
+    conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
+        .unwrap();
+    let tx = conn.transaction().unwrap();
+    tx.execute("INSERT INTO users (id, name) VALUES (3, 'Bob')", ())
+        .unwrap();
+    tx.rollback().unwrap();
+    let rows = conn.query("SELECT * FROM users", ()).unwrap().unwrap();
+    let row = rows.next().unwrap().unwrap();
+    assert_eq!(row.get::<i32>(0).unwrap(), 2);
+    assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
+    assert!(rows.next().unwrap().is_none());
+}
