@@ -264,7 +264,9 @@ public class SQLTester {
 
   void incrementTestCounter(){ ++nTest; ++nTotalTest; }
 
-  static final Pattern patternPlain = Pattern.compile("[\\W]", Pattern.MULTILINE);
+  static final Pattern patternSpecial = Pattern.compile(
+    "[\\x00-\\x20\\x22\\x5c\\x7b\\x7d]", Pattern.MULTILINE
+  );
   static final Pattern patternSquiggly = Pattern.compile("[{}]", Pattern.MULTILINE);
 
   /**
@@ -273,7 +275,7 @@ public class SQLTester {
   */
   String escapeSqlValue(String v){
     if( "".equals(v) ) return "{}";
-    Matcher m = patternPlain.matcher(v);
+    Matcher m = patternSpecial.matcher(v);
     if( !m.find() ){
       return v  /* no escaping needed */;
     }

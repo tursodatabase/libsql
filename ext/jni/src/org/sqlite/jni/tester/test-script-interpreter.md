@@ -125,9 +125,11 @@ appended to the result buffer according to the following rules:
   *   If sqlite3_column_text() is an empty string, append `{}` to the
       result buffer and skip all subsequent rules.
 
-  *   If sqlite3_column_text() does not contain any special characters
-      (non-word characters), append it to the result buffer without
-      any formatting and skip all subsequent rules.
+  *   If sqlite3_column_text() does not contain any special
+      characters, append it to the result buffer without any
+      formatting and skip all subsequent rules. Special characters are:
+      0x00 to 0x20 (inclusive), double-quote (0x22), backslash (0x5c),
+      curly braces (0x7b and 0x7d).
 
   *   If sqlite3_column_text() does not contains curly braces, then put
       the text inside of `{...}` and append it and skip all subsequent rules.

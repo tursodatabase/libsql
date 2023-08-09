@@ -22,8 +22,9 @@ Also from the print command.
   SELECT 'a b', 'c';
   SELECT 'd', 'e';
   SELECT '{}', 'f';
-  SELECT '{	}', 'g'
---result {a b} c d e "{}" f "{\011}" g
+  SELECT '{	}', 'g';
+  SELECT '(a-b-c)', '[a-b-c]';
+--result {a b} c d e "{}" f "{\011}" g (a-b-c) [a-b-c]
 --testcase 2
   SELECT 123
 --glob 1#
