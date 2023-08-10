@@ -228,10 +228,13 @@ public class SQLTester {
   }
 
   private void setupInitialDb() throws DbException {
-    outln("setupInitialDb()");
-    closeDb(0);
-    Util.unlink(initialDbName);
-    openDb(0, initialDbName, true);
+    if( null==aDb[0] ){
+      Util.unlink(initialDbName);
+      openDb(0, initialDbName, true);
+    }else{
+      outln("WARNING: setupInitialDb() unexpectedly ",
+            "triggered while it is opened.");
+    }
   }
 
   static final String[] startEmoji = {
@@ -594,7 +597,6 @@ public class SQLTester {
     final AutoExtension ax = new AutoExtension() {
         private final SQLTester tester = t;
         public int xEntryPoint(sqlite3 db){
-          tester.outln("AutoExtension running db init code on ",db);
           final String init = tester.getDbInitSql();
           if( !init.isEmpty() ){
             tester.execSql(db, true, ResultBufferMode.NONE, null, init);

@@ -1889,11 +1889,14 @@ static int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
   if( !pAX ){
     assert( 0==S3JniGlobal.autoExt.isRunning );
     return 0;
-  }else if( S3JniGlobal.autoExt.isRunning ){
+  }
+  else if( S3JniGlobal.autoExt.isRunning ){
+    /* Necessary to avoid certain endless loop/stack overflow cases. */
     *pzErr = sqlite3_mprintf("Auto-extensions must not be triggered while "
                              "auto-extensions are running.");
     return SQLITE_MISUSE;
-  }else if(!ps){
+  }
+  else if(!ps){
     MARKER(("Internal error: cannot find S3JniDb for auto-extension\n"));
     return SQLITE_ERROR;
   }else if( (*S3JniGlobal.jvm)->GetEnv(S3JniGlobal.jvm, (void **)&env, JNI_VERSION_1_8) ){
@@ -1905,7 +1908,7 @@ static int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
   ps->pDb = pDb;
   assert( ps->jDb );
   NativePointerHolder_set(env, ps->jDb, pDb, S3JniClassNames.sqlite3);
-  S3JniGlobal.autoExt.isRunning = 1;
+  ++S3JniGlobal.autoExt.isRunning;
   for( ; pAX; pAX = pAX->pNext ){
     rc = (*env)->CallIntMethod(env, pAX->jObj, pAX->midFunc, ps->jDb);
     IFTHREW {
@@ -1922,7 +1925,7 @@ static int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
       break;
     }
   }
-  S3JniGlobal.autoExt.isRunning = 0;
+  --S3JniGlobal.autoExt.isRunning;
   return rc;
 }
 
@@ -2348,6 +2351,10 @@ JDECL(int,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2)(
 }
 
 /* sqlite3_db_config() for (int,int*) */
+/* ACHTUNG: openjdk v19 creates a different mangled name for this
+   function than openjdk v8 does. It is not yet know when that
+   incompatibility was introduced, so we cannot yet reliably #if it
+   here. */
 JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_Int32_2)(
   JENV_CSELF, jobject jDb, jint op, jobject jOut
 ){

@@ -1,5 +1,5 @@
-C Resolve\stwo\sassertions\sin\sthe\sauto-extension\sJNI\swhich\swere\striggered\svia\snew\sSQLTester\sinfrastructure.\sMove\sSQLTester's\sdb-init\sSQL\sinjection\sinto\san\sauto-extension.
-D 2023-08-10T12:36:40.522
+C Document\sthat\sauto-extensions\sregistered\svia\sJNI\swill\sfail\sif\sthey\sopen\sa\sdb\s(to\savoid\striggering\san\sendless\sloop\sin\sthe\sauto-extensions).\sDiscover\sthe\shard\sway\sthat\sJDKv19\screates\sdifferent\smangled\sJNI\snames\sfor\ssome\sfunctions\sthan\sJDKv8.\sStart\sreformatting\smuch\sof\sthe\sJNI\sAPI\sdecls\sin\sprep\sfor\smaking\sthem\seven\slonger.
+D 2023-08-10T13:10:25.060
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -233,7 +233,7 @@ F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile d69b26fb294b7a86a2f838012f4161311c06d607680b86ecdb1334f6f78c165c
 F ext/jni/README.md e965674505e105626127ad45e628e4d19fcd379cdafc4d23c814c1ac2c55681d
-F ext/jni/src/c/sqlite3-jni.c 12ac735b074d681694ecdbb27d99c66273ea21b8f1047b659b34581bd129a118
+F ext/jni/src/c/sqlite3-jni.c fa251d2033d2210a88ac6190db923f76681be609b97f840360318ab366f3cbdd
 F ext/jni/src/c/sqlite3-jni.h b19a104e0566440af566366cea72188bd994a96ba85c3f196acaa6f4a4609a55
 F ext/jni/src/org/sqlite/jni/Authorizer.java 1308988f7f40579ea0e4deeaec3c6be971630566bd021c31367fe3f5140db892
 F ext/jni/src/org/sqlite/jni/AutoExtension.java 18e83f6f463e306df60b2dceb65247d32af1f78af4bbbae9155411a8c6cdb093
@@ -253,7 +253,7 @@ F ext/jni/src/org/sqlite/jni/ProgressHandler.java 6f62053a828a572de809828b1ee495
 F ext/jni/src/org/sqlite/jni/ResultCode.java 7cdf993f2037ab7bd244c9a34dbaef2ace3beb5da5d7e7fda5c6f67634ceb647
 F ext/jni/src/org/sqlite/jni/RollbackHook.java b04c8abcc6ade44a8a57129e33765793f69df0ba909e49ba18d73f4268d92564
 F ext/jni/src/org/sqlite/jni/SQLFunction.java 09ce81c1c637e31c3a830d4c859cce95d65f5e02ff45f8bd1985b3479381bc46
-F ext/jni/src/org/sqlite/jni/SQLite3Jni.java 1291facf4e681a740c5cc8086ffa8a47d2b73f1faf660dab29c3527d6fba70f1
+F ext/jni/src/org/sqlite/jni/SQLite3Jni.java ca91d7fdd334989ce0514a612878e329cdced5d3697d2357f938c3cf1a68e54d
 F ext/jni/src/org/sqlite/jni/Tester1.java 22dca3ab0d93951382230f71e3cfb65898b80f12704a018c8ab9062df609b4fe
 F ext/jni/src/org/sqlite/jni/TesterFts5.java cf2d687baafffdeba219b77cf611fd47a0556248820ea794ae3e8259bfbdc5ee
 F ext/jni/src/org/sqlite/jni/Tracer.java a5cece9f947b0af27669b8baec300b6dd7ff859c3e6a6e4a1bd8b50f9714775d
@@ -266,7 +266,7 @@ F ext/jni/src/org/sqlite/jni/sqlite3.java 62b1b81935ccf3393472d17cb883dc5ff39c38
 F ext/jni/src/org/sqlite/jni/sqlite3_context.java d26573fc7b309228cb49786e9078597d96232257defa955a3425d10897bca810
 F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449322b0c93d1bd4e1616e76ed547ed9fc
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
-F ext/jni/src/org/sqlite/jni/tester/SQLTester.java e0b6c9c24176f6541baded998f7dda4328937d18c894f6d0bff36dec0c279ff2
+F ext/jni/src/org/sqlite/jni/tester/SQLTester.java f5b5ffdfeb6da35556b76f25694bdd862e67f101a88fe35cafb0b7f0af667067
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
 F ext/jni/src/tests/000-000-sanity.test cfe6dc1b950751d6096e3f5695becaadcdaa048bfe9567209d6eb676e693366d
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
@@ -2089,8 +2089,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a4e96c306c4c270f417243e7923d7e6c4f860528dd67990dfd8d9768a6c4873f
-R e78d561aec5cdd8a539cc739fbc7cee6
+P 2952906c30bc2b7987f2c39837d56bd121f5817dc094e6ccdb6d4eea5e9b8d17
+R fe775ba6683934b2a7e291141b4698f9
 U stephan
-Z e3784a9c8c2c97335fd71d5cd2d6fc99
+Z 7d86f8939429faf240f877bf8df863ce
 # Remove this line to create a well-formed Fossil manifest.
