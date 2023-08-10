@@ -70,8 +70,12 @@ class SQLTesterException extends RuntimeException {
 }
 
 class DbException extends SQLTesterException {
-  protected DbException(sqlite3 db, int rc){
+  DbException(sqlite3 db, int rc, boolean closeDb){
     super("DB error #"+rc+": "+sqlite3_errmsg(db),true);
+    if( closeDb ) sqlite3_close_v2(db);
+  }
+  DbException(sqlite3 db, int rc){
+    this(db, rc, false);
   }
 }
 
@@ -344,10 +348,7 @@ public class SQLTester {
                    null, dbInitSql.toString());
     }
     if( 0!=rc ){
-      final String msg = sqlite3_errmsg(db);
-      sqlite3_close(db);
-      throw new SQLTesterException("db open failed with code "+
-                                   rc+" and message: "+msg);
+      throw new DbException(db, rc, true);
     }
     return aDb[iCurrentDb] = db;
   }
