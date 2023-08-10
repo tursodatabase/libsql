@@ -741,7 +741,7 @@ void sqlite3Update(
        && !hasFK
        && !chngKey
        && !bReplace
-       && (sNC.ncFlags & NC_Subquery)==0
+       && (pWhere==0 || !ExprHasProperty(pWhere, EP_Subquery))
       ){
         flags |= WHERE_ONEPASS_MULTIROW;
       }
@@ -1259,7 +1259,9 @@ static void updateVirtualTable(
           sqlite3ExprDup(db, pChanges->a[aXRef[i]].pExpr, 0)
         );
       }else{
-        pList = sqlite3ExprListAppend(pParse, pList, exprRowColumn(pParse, i));
+        Expr *pRow = exprRowColumn(pParse, i);
+        if( pRow ) pRow->op2 = OPFLAG_NOCHNG;
+        pList = sqlite3ExprListAppend(pParse, pList, pRow);
       }
     }
 

@@ -188,11 +188,11 @@ do_execsql_test 5.2 {
 
 do_catchsql_test 5.3 {
   UPDATE ft SET x='four six' WHERE rowid=3
-} {1 {cannot UPDATE contentless fts5 table: ft}}
+} {0 {}}
 
 do_execsql_test 5.4 {
   SELECT rowid FROM ft('one');
-} {1 3 4 5}
+} {1 4 5}
 
 do_execsql_test 5.5 {
   REPLACE INTO ft(rowid, x) VALUES(3, 'four six');

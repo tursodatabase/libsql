@@ -854,17 +854,24 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return true;
     }
 
+
     //! Documented elsewhere in this file.
     exportFile(name){
       const sah = this.#mapFilenameToSAH.get(name) || toss("File not found:",name);
       const n = sah.getSize() - HEADER_OFFSET_DATA;
-      const b = new Uint8Array(n>=0 ? n : 0);
-      if(n>0) sah.read(b, {at: HEADER_OFFSET_DATA});
+      const b = new Uint8Array(n>0 ? n : 0);
+      if(n>0){
+        const nRead = sah.read(b, {at: HEADER_OFFSET_DATA});
+        if(nRead != n){
+          toss("Expected to read "+n+" bytes but read "+nRead+".");
+        }
+      }
       return b;
     }
 
     //! Documented elsewhere in this file.
     importDb(name, bytes){
+      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
       const n = bytes.byteLength;
       if(n<512 || n%512!=0){
         toss("Byte array size is invalid for an SQLite db.");
@@ -878,8 +885,13 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       const sah = this.#mapFilenameToSAH.get(name)
             || this.nextAvailableSAH()
             || toss("No available handles to import to.");
-      sah.write(bytes, {at: HEADER_OFFSET_DATA});
-      this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+      const nWrote = sah.write(bytes, {at: HEADER_OFFSET_DATA});
+      if(nWrote != n){
+        this.setAssociatedPath(sah, '', 0);
+        toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
+      }else{
+        this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+      }
     }
 
   }/*class OpfsSAHPool*/;
@@ -1074,16 +1086,20 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      Returns an array of the names of the files currently allocated to
      slots. This list is the same length as getFileCount().
 
-     - void importDb(name, byteArray)
+     - void importDb(name, bytes)
 
      Imports the contents of an SQLite database, provided as a byte
-     array, under the given name, overwriting any existing
-     content. Throws if the pool has no available file slots, on I/O
-     error, or if the input does not appear to be a database. In the
-     latter case, only a cursory examination is made.  Note that this
-     routine is _only_ for importing database files, not arbitrary files,
-     the reason being that this VFS will automatically clean up any
-     non-database files so importing them is pointless.
+     array or ArrayBuffer, under the given name, overwriting any
+     existing content. Throws if the pool has no available file slots,
+     on I/O error, or if the input does not appear to be a
+     database. In the latter case, only a cursory examination is made.
+     Note that this routine is _only_ for importing database files,
+     not arbitrary files, the reason being that this VFS will
+     automatically clean up any non-database files so importing them
+     is pointless.
+
+     On a write error, the handle is removed from the pool and made
+     available for re-use.
 
      - [async] number reduceCapacity(n)
 

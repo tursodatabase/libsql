@@ -87,7 +87,7 @@ set out [open $fname w]
 # Force the output to use unix line endings, even on Windows.
 fconfigure $out -translation lf
 set today [clock format [clock seconds] -format "%Y-%m-%d %H:%M:%S UTC" -gmt 1]
-puts $out \
+puts $out [subst \
 {/******************************************************************************
 ** This file is an amalgamation of many separate C source files from SQLite
 ** version $VERSION.  By combining all the individual C code files into this
@@ -106,7 +106,7 @@ puts $out \
 ** if you want a wrapper to interface SQLite with your choice of programming
 ** language. The code for the "sqlite3" command-line shell is also in a
 ** separate file. This file contains only code for the core SQLite library.
-**}
+**}]
 set srcroot [file dirname [file dirname [info script]]]
 if {$tcl_platform(platform)=="windows"} {
   set vsrcprog src-verify.exe

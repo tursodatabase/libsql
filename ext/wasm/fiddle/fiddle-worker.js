@@ -221,7 +221,7 @@
       f._();
     }
   };
-  
+
   self.onmessage = function f(ev){
     ev = ev.data;
     if(!f.cache){
@@ -371,12 +371,14 @@
   sqlite3InitModule(fiddleModule).then((_sqlite3)=>{
     sqlite3 = _sqlite3;
     console.warn("Installing sqlite3 module globally (in Worker)",
-                 "for use in the dev console.");
-    self.sqlite3 = sqlite3;
+                 "for use in the dev console.", sqlite3);
+    globalThis.sqlite3 = sqlite3;
     const dbVfs = sqlite3.wasm.xWrap('fiddle_db_vfs', "*", ['string']);
     fiddleModule.fsUnlink = (fn)=>{
       return sqlite3.wasm.sqlite3_wasm_vfs_unlink(dbVfs(0), fn);
     };
     wMsg('fiddle-ready');
-  })/*then()*/;
+  }).catch(e=>{
+    console.error("Fiddle worker init failed:",e);
+  });
 })();

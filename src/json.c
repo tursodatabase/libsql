@@ -30,24 +30,50 @@
 ** increase for the parser.  (Ubuntu14.10 gcc 4.8.4 x64 with -Os).
 */
 static const char jsonIsSpace[] = {
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 1, 1, 0, 0, 1, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  1, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0,     0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 1, 1, 0, 0, 1, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  1, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
 };
 #define fast_isspace(x) (jsonIsSpace[(unsigned char)x])
+
+/*
+** Characters that are special to JSON.  Control charaters,
+** '"' and '\\'.
+*/
+static const char jsonIsOk[256] = {
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
+  1, 1, 0, 1, 1, 1, 1, 0,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 0, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1
+};
+
 
 #if !defined(SQLITE_DEBUG) && !defined(SQLITE_COVERAGE_TEST)
 #  define VVA(X)
@@ -357,11 +383,16 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
   p->zBuf[p->nUsed++] = '"';
   for(i=0; i<N; i++){
     unsigned char c = ((unsigned const char*)zIn)[i];
-    if( c=='"' || c=='\\' ){
+    if( jsonIsOk[c] ){
+      p->zBuf[p->nUsed++] = c;
+    }else if( c=='"' || c=='\\' ){
       json_simple_escape:
       if( (p->nUsed+N+3-i > p->nAlloc) && jsonGrow(p,N+3-i)!=0 ) return;
       p->zBuf[p->nUsed++] = '\\';
-    }else if( c<=0x1f ){
+      p->zBuf[p->nUsed++] = c;
+    }else if( c=='\'' ){
+      p->zBuf[p->nUsed++] = c;
+    }else{
       static const char aSpecial[] = {
          0, 0, 0, 0, 0, 0, 0, 0, 'b', 't', 'n', 0, 'f', 'r', 0, 0,
          0, 0, 0, 0, 0, 0, 0, 0,   0,   0,   0, 0,   0,   0, 0, 0
@@ -372,6 +403,7 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
       assert( aSpecial['\n']=='n' );
       assert( aSpecial['\r']=='r' );
       assert( aSpecial['\t']=='t' );
+      assert( c>=0 && c<sizeof(aSpecial) );
       if( aSpecial[c] ){
         c = aSpecial[c];
         goto json_simple_escape;
@@ -381,10 +413,9 @@ static void jsonAppendString(JsonString *p, const char *zIn, u32 N){
       p->zBuf[p->nUsed++] = 'u';
       p->zBuf[p->nUsed++] = '0';
       p->zBuf[p->nUsed++] = '0';
-      p->zBuf[p->nUsed++] = '0' + (c>>4);
-      c = "0123456789abcdef"[c&0xf];
+      p->zBuf[p->nUsed++] = "0123456789abcdef"[c>>4];
+      p->zBuf[p->nUsed++] = "0123456789abcdef"[c&0xf];
     }
-    p->zBuf[p->nUsed++] = c;
   }
   p->zBuf[p->nUsed++] = '"';
   assert( p->nUsed<p->nAlloc );
@@ -1070,7 +1101,9 @@ static int jsonParseAddNode(
   if( pParse->nNode>=pParse->nAlloc ){
     return jsonParseAddNodeExpand(pParse, eType, n, zContent);
   }
+  assert( pParse->aNode!=0 );
   p = &pParse->aNode[pParse->nNode];
+  assert( p!=0 );
   p->eType = (u8)(eType & 0xff);
   p->jnFlags = (u8)(eType >> 8);
   VVA( p->eU = zContent ? 1 : 0 );
@@ -1090,6 +1123,8 @@ static void jsonParseAddNodeArray(
   JsonNode *aNode,          /* Array of nodes to add */
   u32 nNode                 /* Number of elements in aNew */
 ){
+  assert( aNode!=0 );
+  assert( nNode>=1 );
   if( pParse->nNode + nNode > pParse->nAlloc ){
     u32 nNew = pParse->nNode + nNode;
     JsonNode *aNew = sqlite3_realloc64(pParse->aNode, nNew*sizeof(JsonNode));
@@ -1465,26 +1500,7 @@ json_parse_restart:
   parse_string:
     cDelim = z[i];
     for(j=i+1; 1; j++){
-      static const char aOk[256] = {
-          0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-          0, 0, 0, 0, 0, 0, 0, 0,  0, 0, 0, 0, 0, 0, 0, 0,
-          1, 1, 0, 1, 1, 1, 1, 0,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 0, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-          1, 1, 1, 1, 1, 1, 1, 1,  1, 1, 1, 1, 1, 1, 1, 1,
-      };
-      if( aOk[(unsigned char)z[j]] ) continue;
+      if( jsonIsOk[(unsigned char)z[j]] ) continue;
       c = z[j];
       if( c==cDelim ){
         break;
@@ -2006,20 +2022,25 @@ static JsonNode *jsonLookupStep(
   JsonNode *pRoot;
   if( pParse->oom ) return 0;
   pRoot = &pParse->aNode[iRoot];
-  while( (pRoot->jnFlags & JNODE_REPLACE)!=0 && pParse->useMod ){
-    u32 idx = (u32)(pRoot - pParse->aNode);
-    i = pParse->iSubst;
-    while( 1 /*exit-by-break*/ ){
-      assert( i<pParse->nNode );
-      assert( pParse->aNode[i].eType==JSON_SUBST );
-      assert( pParse->aNode[i].eU==4 );
-      assert( pParse->aNode[i].u.iPrev<i );
-      if( pParse->aNode[i].n==idx ){
-        pRoot = &pParse->aNode[i+1];
-        iRoot = i+1;
-        break;
+  if( pRoot->jnFlags & (JNODE_REPLACE|JNODE_REMOVE) && pParse->useMod ){
+    while( (pRoot->jnFlags & JNODE_REPLACE)!=0 ){
+      u32 idx = (u32)(pRoot - pParse->aNode);
+      i = pParse->iSubst;
+      while( 1 /*exit-by-break*/ ){
+        assert( i<pParse->nNode );
+        assert( pParse->aNode[i].eType==JSON_SUBST );
+        assert( pParse->aNode[i].eU==4 );
+        assert( pParse->aNode[i].u.iPrev<i );
+        if( pParse->aNode[i].n==idx ){
+          pRoot = &pParse->aNode[i+1];
+          iRoot = i+1;
+          break;
+        }
+        i = pParse->aNode[i].u.iPrev;
       }
-      i = pParse->aNode[i].u.iPrev;
+    }
+    if( pRoot->jnFlags & JNODE_REMOVE ){
+      return 0;
     }
   }
   if( zPath[0]==0 ) return pRoot;
@@ -2672,10 +2693,11 @@ static void jsonPatchFunc(
   UNUSED_PARAMETER(argc);
   pX = jsonParseCached(ctx, argv[0], ctx, 1);
   if( pX==0 ) return;
+  assert( pX->hasMod==0 );
+  pX->hasMod = 1;
   pY = jsonParseCached(ctx, argv[1], ctx, 1);
   if( pY==0 ) return;
   pX->useMod = 1;
-  pX->hasMod = 1;
   pY->useMod = 1;
   pResult = jsonMergePatch(pX, 0, pY->aNode);
   assert( pResult!=0 || pX->oom );

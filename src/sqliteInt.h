@@ -894,7 +894,7 @@ typedef INT16_TYPE LogEst;
 /*
 ** P is one byte past the end of a large buffer. Return true if a span of bytes
 ** between S..E crosses the end of that buffer.  In other words, return true
-** if the sub-buffer S..E-1 overflows the buffer show last byte is P-1.
+** if the sub-buffer S..E-1 overflows the buffer whose last byte is P-1.
 **
 ** S is the start of the span.  E is one byte past the end of end of span.
 **
@@ -1257,7 +1257,6 @@ typedef struct Cte Cte;
 typedef struct CteUse CteUse;
 typedef struct Db Db;
 typedef struct DbFixer DbFixer;
-typedef struct DblDbl DblDbl;
 typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
@@ -1874,6 +1873,7 @@ struct sqlite3 {
 #define SQLITE_IndexedExpr    0x01000000 /* Pull exprs from index when able */
 #define SQLITE_Coroutines     0x02000000 /* Co-routines for subqueries */
 #define SQLITE_NullUnusedCols 0x04000000 /* NULL unused columns in subqueries */
+#define SQLITE_OnePass        0x08000000 /* Single-pass DELETE and UPDATE */
 #define SQLITE_AllOpts        0xffffffff /* All optimizations */
 
 /*
@@ -3777,6 +3777,9 @@ struct Parse {
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
   int nSelect;         /* Number of SELECT stmts. Counter for Select.selId */
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  u32 nProgressSteps;  /* xProgress steps taken during sqlite3_prepare() */
+#endif
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
@@ -3790,12 +3793,9 @@ struct Parse {
     int addrCrTab;         /* Address of OP_CreateBtree on CREATE TABLE */
     Returning *pReturning; /* The RETURNING clause */
   } u1;
-  u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  u32 nProgressSteps;  /* xProgress steps taken during sqlite3_prepare() */
-#endif
+  LogEst nQueryLoop;   /* Est number of iterations of a query (10*log2(N)) */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
   u8 bReturning;       /* Coding a RETURNING trigger */
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */

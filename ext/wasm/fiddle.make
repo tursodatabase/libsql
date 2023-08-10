@@ -18,7 +18,7 @@ endif
 ifeq (,$(SHELL_SRC))
 $(error Could not parse SHELL_SRC from $(dir.top)/Makefile.)
 endif
-$(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl
+$(dir.top)/shell.c: $(SHELL_SRC) $(dir.top)/tool/mkshellc.tcl $(sqlite3.c)
 	$(MAKE) -C $(dir.top) shell.c
 # /shell.c
 ########################################################################
@@ -61,9 +61,9 @@ $(fiddle.SOAP.js): $(SOAP.js)
 $(eval $(call call-make-pre-post,fiddle-module,vanilla))
 $(fiddle-module.js): $(MAKEFILE) $(MAKEFILE.fiddle) \
     $(EXPORTED_FUNCTIONS.fiddle) \
-    $(fiddle.cses) $(pre-post-fiddle-module.deps.vanilla) $(fiddle.SOAP.js)
+    $(fiddle.cses) $(pre-post-fiddle-module-vanilla.deps) $(fiddle.SOAP.js)
 	$(emcc.bin) -o $@ $(fiddle.emcc-flags) \
-    $(pre-post-fiddle-module.flags.vanilla) \
+    $(pre-post-fiddle-module-vanilla.flags) \
     $(fiddle.cses)
 	$(maybe-wasm-strip) $(fiddle-module.wasm)
 	gzip < $@ > $@.gz

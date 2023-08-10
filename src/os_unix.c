@@ -6715,12 +6715,17 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
 ** than the argument.
 */
 static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
-#if OS_VXWORKS || _POSIX_C_SOURCE >= 199309L
+#if !defined(HAVE_NANOSLEEP) || HAVE_NANOSLEEP+0
   struct timespec sp;
-
   sp.tv_sec = microseconds / 1000000;
   sp.tv_nsec = (microseconds % 1000000) * 1000;
+
+  /* Almost all modern unix systems support nanosleep().  But if you are
+  ** compiling for one of the rare exceptions, you can use
+  ** -DHAVE_NANOSLEEP=0 (perhaps in conjuction with -DHAVE_USLEEP if
+  ** usleep() is available) in order to bypass the use of nanosleep() */
   nanosleep(&sp, NULL);
+
   UNUSED_PARAMETER(NotUsed);
   return microseconds;
 #elif defined(HAVE_USLEEP) && HAVE_USLEEP

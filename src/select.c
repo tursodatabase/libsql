@@ -1298,6 +1298,16 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Fifo );
       testcase( eDest==SRT_DistFifo );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
+#if !defined(SQLITE_ENABLE_NULL_TRIM) && defined(SQLITE_DEBUG)
+      /* A destination of SRT_Table and a non-zero iSDParm2 parameter means
+      ** that this is an "UPDATE ... FROM" on a virtual table or view. In this
+      ** case set the p5 parameter of the OP_MakeRecord to OPFLAG_NOCHNG_MAGIC.
+      ** This does not affect operation in any way - it just allows MakeRecord
+      ** to process OPFLAG_NOCHANGE values without an assert() failing. */
+      if( eDest==SRT_Table && pDest->iSDParm2 ){
+        sqlite3VdbeChangeP5(v, OPFLAG_NOCHNG_MAGIC);
+      }
+#endif
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -4292,7 +4302,8 @@ static int compoundHasDifferentAffinities(Select *p){
 **        (27b) the subquery is a compound query and the RIGHT JOIN occurs
 **              in any arm of the compound query.  (See also (17g).)
 **
-**  (28)  The subquery is not a MATERIALIZED CTE.
+**  (28)  The subquery is not a MATERIALIZED CTE.  (This is handled
+**        in the caller before ever reaching this routine.)
 **
 **
 ** In this routine, the "p" parameter is a pointer to the outer query.
@@ -4402,9 +4413,9 @@ static int flattenSubquery(
   if( iFrom>0 && (pSubSrc->a[0].fg.jointype & JT_LTORJ)!=0 ){
     return 0;   /* Restriction (27a) */
   }
-  if( pSubitem->fg.isCte && pSubitem->u2.pCteUse->eM10d==M10d_Yes ){
-    return 0;       /* (28) */
-  }
+
+  /* Condition (28) is blocked by the caller */
+  assert( !pSubitem->fg.isCte || pSubitem->u2.pCteUse->eM10d!=M10d_Yes );
 
   /* Restriction (17): If the sub-query is a compound SELECT, then it must
   ** use only the UNION ALL operator. And none of the simple select queries
@@ -7285,6 +7296,14 @@ int sqlite3Select(
       goto select_end;
     }
 
+    /* Do not attempt the usual optimizations (flattening and ORDER BY
+    ** elimination) on a MATERIALIZED common table expression because
+    ** a MATERIALIZED common table expression is an optimization fence.
+    */
+    if( pItem->fg.isCte && pItem->u2.pCteUse->eM10d==M10d_Yes ){
+      continue;
+    }
+
     /* Do not try to flatten an aggregate subquery.
     **
     ** Flattening an aggregate subquery is only possible if the outer query
@@ -7314,6 +7333,8 @@ int sqlite3Select(
     **            (a)  The outer query has a different ORDER BY clause
     **            (b)  The subquery is part of a join
     **          See forum post 062d576715d277c8
+    **
+    ** Also retain the ORDER BY if the OmitOrderBy optimization is disabled.
     */
     if( pSub->pOrderBy!=0
      && (p->pOrderBy!=0 || pTabList->nSrc>1)      /* Condition (5) */

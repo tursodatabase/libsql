@@ -1863,19 +1863,23 @@ int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
 int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
   Vdbe *v = (Vdbe*)pStmt;
   int rc;
-  if( v->eVdbeState!=VDBE_READY_STATE ) return SQLITE_BUSY; 
-  if( v->explain==eMode ) return SQLITE_OK;
-  if( v->zSql==0 || eMode<0 || eMode>2 ) return SQLITE_ERROR;
   sqlite3_mutex_enter(v->db->mutex);
-  if( v->nMem>=10 && (eMode!=2 || v->haveEqpOps) ){
+  if( v->explain==eMode ){
+    rc = SQLITE_OK;
+  }else if( eMode<0 || eMode>2 ){
+    rc = SQLITE_ERROR;
+  }else if( (v->prepFlags & SQLITE_PREPARE_SAVESQL)==0 ){
+    rc = SQLITE_ERROR;
+  }else if( v->eVdbeState!=VDBE_READY_STATE ){
+    rc = SQLITE_BUSY;
+  }else if( v->nMem>=10 && (eMode!=2 || v->haveEqpOps) ){
     /* No reprepare necessary */
     v->explain = eMode;
     rc = SQLITE_OK;
   }else{
-    int haveEqpOps = v->explain==2 || v->haveEqpOps;
     v->explain = eMode;
     rc = sqlite3Reprepare(v);
-    v->haveEqpOps = haveEqpOps!=0;
+    v->haveEqpOps = eMode==2;
   }
   if( v->explain ){
     v->nResColumn = 12 - 4*v->explain;

@@ -708,6 +708,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   int iCol,             /* The column to read */
   int t,                /* The serial-type code for the column value */
   i64 iOffset,          /* Offset to the start of the content value */
+  u32 cacheStatus,      /* Current Vdbe.cacheCtr value */
+  u32 colCacheCtr,      /* Current value of the column cache counter */
   Mem *pDest            /* Store the value into this register. */
 ){
   int rc;
@@ -716,12 +718,16 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
   int len = sqlite3VdbeSerialTypeLen(t);
   assert( pC->eCurType==CURTYPE_BTREE );
   if( len>db->aLimit[SQLITE_LIMIT_LENGTH] ) return SQLITE_TOOBIG;
-  if( len > 4000 ){
+  if( len > 4000 && pC->pKeyInfo==0 ){
     /* Cache large column values that are on overflow pages using
     ** an RCStr (reference counted string) so that if they are reloaded,
     ** that do not have to be copied a second time.  The overhead of
     ** creating and managing the cache is such that this is only
     ** profitable for larger TEXT and BLOB values.
+    **
+    ** Only do this on table-btrees so that writes to index-btrees do not
+    ** need to clear the cache.  This buys performance in the common case
+    ** in exchange for generality.
     */
     VdbeTxtBlbCache *pCache;
     char *pBuf;
@@ -733,6 +739,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
     pCache = pC->pCache;
     if( pCache->pCValue==0
      || pCache->iCol!=iCol
+     || pCache->cacheStatus!=cacheStatus
+     || pCache->colCacheCtr!=colCacheCtr
      || pCache->iOffset!=sqlite3BtreeOffset(pC->uc.pCursor)
     ){
       if( pCache->pCValue ) sqlite3RCStrUnref(pCache->pCValue);
@@ -744,6 +752,8 @@ static SQLITE_NOINLINE int vdbeColumnFromOverflow(
       pBuf[len+1] = 0;
       pBuf[len+2] = 0;
       pCache->iCol = iCol;
+      pCache->cacheStatus = cacheStatus;
+      pCache->colCacheCtr = colCacheCtr;
       pCache->iOffset = sqlite3BtreeOffset(pC->uc.pCursor);
     }else{
       pBuf = pCache->pCValue;
@@ -814,6 +824,7 @@ int sqlite3VdbeExec(
   Mem *pIn2 = 0;             /* 2nd input operand */
   Mem *pIn3 = 0;             /* 3rd input operand */
   Mem *pOut = 0;             /* Output operand */
+  u32 colCacheCtr = 0;       /* Column cache counter */
 #if defined(SQLITE_ENABLE_STMT_SCANSTATUS) || defined(VDBE_PROFILE)
   u64 *pnCycle = 0;
   int bStmtScanStatus = IS_STMT_SCANSTATUS(db)!=0;
@@ -2349,10 +2360,10 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 ** opcodes are allowed to occur between this instruction and the previous
 ** OP_Lt or OP_Gt.
 **
-** If result of an OP_Eq comparison on the same two operands as the
-** prior OP_Lt or OP_Gt would have been true, then jump to P2.
-** If the result of an OP_Eq comparison on the two previous
-** operands would have been false or NULL, then fall through.
+** If the result of an OP_Eq comparison on the same two operands as
+** the prior OP_Lt or OP_Gt would have been true, then jump to P2.  If
+** the result of an OP_Eq comparison on the two previous operands
+** would have been false or NULL, then fall through.
 */
 case OP_ElseEq: {       /* same as TK_ESCAPE, jump */
 
@@ -2782,7 +2793,7 @@ case OP_IsType: {        /* jump */
 /* Opcode: ZeroOrNull P1 P2 P3 * *
 ** Synopsis: r[P2] = 0 OR NULL
 **
-** If all both registers P1 and P3 are NOT NULL, then store a zero in
+** If both registers P1 and P3 are NOT NULL, then store a zero in
 ** register P2.  If either registers P1 or P3 are NULL then put
 ** a NULL in register P2.
 */
@@ -3145,7 +3156,7 @@ op_column_restart:
               || (t>=12 && ((t&1)==0 || p5==OPFLAG_BYTELENARG))
              )
         )
-     || (len = sqlite3VdbeSerialTypeLen(t))==0
+     || sqlite3VdbeSerialTypeLen(t)==0
     ){
       /* Content is irrelevant for
       **    1. the typeof() function,
@@ -3162,7 +3173,8 @@ op_column_restart:
       */
       sqlite3VdbeSerialGet((u8*)sqlite3CtypeMap, t, pDest);
     }else{
-      rc = vdbeColumnFromOverflow(pC, p2, t, aOffset[p2], pDest);
+      rc = vdbeColumnFromOverflow(pC, p2, t, aOffset[p2],
+                p->cacheCtr, colCacheCtr, pDest);
       if( rc ){
         if( rc==SQLITE_NOMEM ) goto no_mem;
         if( rc==SQLITE_TOOBIG ) goto too_big;
@@ -5182,13 +5194,13 @@ case OP_IfNotOpen: {        /* jump */
 ** operands to OP_NotFound and OP_IdxGT.
 **
 ** This opcode is an optimization attempt only.  If this opcode always
-** falls through, the correct answer is still obtained, but extra works
+** falls through, the correct answer is still obtained, but extra work
 ** is performed.
 **
 ** A value of N in the seekHit flag of cursor P1 means that there exists
 ** a key P3:N that will match some record in the index.  We want to know
 ** if it is possible for a record P3:P4 to match some record in the
-** index.  If it is not possible, we can skips some work.  So if seekHit
+** index.  If it is not possible, we can skip some work.  So if seekHit
 ** is less than P4, attempt to find out if a match is possible by running
 ** OP_NotFound.
 **
@@ -5700,6 +5712,7 @@ case OP_Insert: {
   );
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
+  colCacheCtr++;
 
   /* Invoke the update-hook if required. */
   if( rc ) goto abort_due_to_error;
@@ -5753,10 +5766,10 @@ case OP_RowCell: {
 ** left in an undefined state.
 **
 ** If the OPFLAG_AUXDELETE bit is set on P5, that indicates that this
-** delete one of several associated with deleting a table row and all its
-** associated index entries.  Exactly one of those deletes is the "primary"
-** delete.  The others are all on OPFLAG_FORDELETE cursors or else are
-** marked with the AUXDELETE flag.
+** delete is one of several associated with deleting a table row and
+** all its associated index entries.  Exactly one of those deletes is
+** the "primary" delete.  The others are all on OPFLAG_FORDELETE
+** cursors or else are marked with the AUXDELETE flag.
 **
 ** If the OPFLAG_NCHANGE flag of P2 (NB: P2 not P5) is set, then the row
 ** change count is incremented (otherwise not).
@@ -5860,6 +5873,7 @@ case OP_Delete: {
 
   rc = sqlite3BtreeDelete(pC->uc.pCursor, pOp->p5);
   pC->cacheStatus = CACHE_STALE;
+  colCacheCtr++;
   pC->seekResult = 0;
   if( rc ) goto abort_due_to_error;
 
@@ -5927,7 +5941,7 @@ case OP_SorterCompare: {
 ** Write into register P2 the current sorter data for sorter cursor P1.
 ** Then clear the column header cache on cursor P3.
 **
-** This opcode is normally use to move a record out of the sorter and into
+** This opcode is normally used to move a record out of the sorter and into
 ** a register that is the source for a pseudo-table cursor created using
 ** OpenPseudo.  That pseudo-table cursor is the one that is identified by
 ** parameter P3.  Clearing the P3 column cache as part of this opcode saves
@@ -6736,7 +6750,7 @@ case OP_IdxGE:  {       /* jump, ncycle */
 ** file is given by P1.
 **
 ** The table being destroyed is in the main database file if P3==0.  If
-** P3==1 then the table to be clear is in the auxiliary database file
+** P3==1 then the table to be destroyed is in the auxiliary database file
 ** that is used to store tables create using CREATE TEMPORARY TABLE.
 **
 ** If AUTOVACUUM is enabled then it is possible that another root page
@@ -6796,8 +6810,8 @@ case OP_Destroy: {     /* out2 */
 ** in the database file is given by P1.  But, unlike Destroy, do not
 ** remove the table or index from the database file.
 **
-** The table being clear is in the main database file if P2==0.  If
-** P2==1 then the table to be clear is in the auxiliary database file
+** The table being cleared is in the main database file if P2==0.  If
+** P2==1 then the table to be cleared is in the auxiliary database file
 ** that is used to store tables create using CREATE TEMPORARY TABLE.
 **
 ** If the P3 value is non-zero, then the row change count is incremented
