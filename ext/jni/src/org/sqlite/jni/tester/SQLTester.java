@@ -424,6 +424,7 @@ public class SQLTester {
   }
 
   public static void main(String[] argv) throws Exception{
+    installCustomExtensions();
     final SQLTester t = new SQLTester();
     boolean v2 = false;
     for(String a : argv){
@@ -475,7 +476,6 @@ public class SQLTester {
          load that lib from here. The same load from SQLite3Jni does
          not happen early enough. Without this,
          installCustomExtensions() is an unresolved symbol. */;
-    installCustomExtensions();
   }
 
 }
