@@ -227,7 +227,9 @@ public class SQLTester {
     //verbose("Added file ",filename);
   }
 
-  private void setupInitialDb() throws Exception {
+  private void setupInitialDb() throws DbException {
+    outln("setupInitialDb()");
+    closeDb(0);
     Util.unlink(initialDbName);
     openDb(0, initialDbName, true);
   }
@@ -245,7 +247,6 @@ public class SQLTester {
   public void runTests() throws Exception {
     for(String f : listInFiles){
       reset();
-      setupInitialDb();
       ++nTestFile;
       final TestScript ts = new TestScript(f);
       outln(nextStartEmoji(), " starting [",f,"]");
@@ -289,13 +290,14 @@ public class SQLTester {
     if(addNL) resultBuffer.append('\n');
   }
 
-  void appendDbInitSql(String n) throws SQLTesterException {
+  void appendDbInitSql(String n) throws DbException {
     dbInitSql.append(n).append('\n');
     if( null!=getCurrentDb() ){
       //outln("RUNNING DB INIT CODE: ",n);
       execSql(null, true, ResultBufferMode.NONE, null, n);
     }
   }
+  String getDbInitSql(){ return dbInitSql.toString(); }
 
   String getInputText(){ return inputBuffer.toString(); }
 
@@ -330,7 +332,7 @@ public class SQLTester {
     return affirmDbId(id).aDb[id];
   }
 
-  void closeDb(int id) throws Exception{
+  void closeDb(int id) {
     final sqlite3 db = affirmDbId(id).aDb[id];
     if( null != db ){
       sqlite3_close_v2(db);
@@ -338,7 +340,7 @@ public class SQLTester {
     }
   }
 
-  void closeDb() throws Exception { closeDb(iCurrentDb); }
+  void closeDb() { closeDb(iCurrentDb); }
 
   void closeAllDbs(){
     for(int i = 0; i<aDb.length; ++i){
@@ -347,7 +349,7 @@ public class SQLTester {
     }
   }
 
-  sqlite3 openDb(String name, boolean createIfNeeded) throws Exception {
+  sqlite3 openDb(String name, boolean createIfNeeded) throws DbException {
     closeDb();
     int flags = SQLITE_OPEN_READWRITE;
     if( createIfNeeded ) flags |= SQLITE_OPEN_CREATE;
@@ -365,7 +367,7 @@ public class SQLTester {
     return aDb[iCurrentDb] = db;
   }
 
-  sqlite3 openDb(int slot, String name, boolean createIfNeeded) throws Exception {
+  sqlite3 openDb(int slot, String name, boolean createIfNeeded) throws DbException {
     affirmDbId(slot);
     iCurrentDb = slot;
     return openDb(name, createIfNeeded);
@@ -384,6 +386,7 @@ public class SQLTester {
     nullView = "nil";
     emitColNames = false;
     iCurrentDb = 0;
+    dbInitSql.append("SELECT 1;");
   }
 
   void setNullValue(String v){nullView = v;}
@@ -459,12 +462,19 @@ public class SQLTester {
 
      appendMode specifies how/whether to append results to the result
      buffer. lineMode specifies whether to output all results in a
-     single line or one line per row.
+     single line or one line per row. If appendMode is
+     ResultBufferMode.NONE then lineMode is ignored and may be null.
   */
   public int execSql(sqlite3 db, boolean throwOnError,
-                     ResultBufferMode appendMode,
-                     ResultRowMode lineMode,
+                     ResultBufferMode appendMode, ResultRowMode lineMode,
                      String sql) throws SQLTesterException {
+    if( null==db && null==aDb[0] ){
+      // Delay opening of the initial db to enable tests to change its
+      // name and inject on-connect code via, e.g., the MEMDB
+      // directive.  this setup as the potential to misinteract with
+      // auto-extension timing and must be done carefully.
+      setupInitialDb();
+    }
     final OutputPointer.Int32 oTail = new OutputPointer.Int32();
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
@@ -568,7 +578,6 @@ public class SQLTester {
   public static void main(String[] argv) throws Exception{
     installCustomExtensions();
     final SQLTester t = new SQLTester();
-    boolean v2 = false;
     for(String a : argv){
       if(a.startsWith("-")){
         final String flag = a.replaceFirst("-+","");
@@ -582,9 +591,22 @@ public class SQLTester {
       }
       t.addTestScript(a);
     }
+    final AutoExtension ax = new AutoExtension() {
+        private final SQLTester tester = t;
+        public int xEntryPoint(sqlite3 db){
+          tester.outln("AutoExtension running db init code on ",db);
+          final String init = tester.getDbInitSql();
+          if( !init.isEmpty() ){
+            tester.execSql(db, true, ResultBufferMode.NONE, null, init);
+          }
+          return 0;
+        }
+      };
+    sqlite3_auto_extension(ax);
     try {
       t.runTests();
     }finally{
+      sqlite3_cancel_auto_extension(ax);
       t.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
       if( t.nAbortedScript > 0 ){
         t.outln("Aborted ",t.nAbortedScript," script(s).");

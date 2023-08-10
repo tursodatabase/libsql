@@ -1877,13 +1877,14 @@ WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 
 #if S3JNI_ENABLE_AUTOEXT
 /* Central auto-extension handler. */
+FIXME_THREADING
 static int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
                                 const struct sqlite3_api_routines *ignored){
   S3JniAutoExtension const * pAX = S3JniGlobal.autoExt.pHead;
   int rc;
   JNIEnv * env = 0;
   S3JniDb * const ps = S3JniGlobal.autoExt.psOpening;
-
+  //MARKER(("auto-extension on open()ing ps@%p db@%p\n", ps, pDb));
   S3JniGlobal.autoExt.psOpening = 0;
   if( !pAX ){
     assert( 0==S3JniGlobal.autoExt.isRunning );
@@ -2089,6 +2090,7 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   assert(version == 1 || version == 2);
   ps = S3JniDb_for_db(env, jDb, 0, 0);
   if(ps){
+    //MARKER(("close()ing db@%p\n", ps->pDb));
     rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
     S3JniDb_set_aside(ps)
       /* MUST come after close() because of ps->trace. */;
@@ -2566,6 +2568,7 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnvCache **jc,
     S3JniGlobal.autoExt.psOpening = *ps;
   }
 #endif
+  //MARKER(("pre-open ps@%p\n", *ps));
   return *ps ? 0 : SQLITE_NOMEM;
 }
 
@@ -2582,14 +2585,17 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnvCache **jc,
 */
 static int s3jni_open_post(JNIEnv * const env, S3JniDb * ps,
                            sqlite3 **ppDb, jobject jOut, int theRc){
+  //MARKER(("post-open() ps@%p db@%p\n", ps, *ppDb));
 #if S3JNI_ENABLE_AUTOEXT
-  assert( S3JniGlobal.autoExt.pHead ? 0==S3JniGlobal.autoExt.psOpening : 1 );
+  assert( S3JniGlobal.autoExt.pHead ? ps!=S3JniGlobal.autoExt.psOpening : 1 );
   S3JniGlobal.autoExt.psOpening = 0;
 #endif
   if(*ppDb){
     assert(ps->jDb);
 #if S3JNI_ENABLE_AUTOEXT
-    assert( S3JniGlobal.autoExt.pHead ? *ppDb==ps->pDb : 0==ps->pDb );
+    //MARKER(("*autoExt.pHead=%p, ppDb=%p, ps->pDb=%p\n", S3JniGlobal.autoExt.pHead, *ppDb, ps->pDb));
+    // invalid when an autoext triggers another open():
+    // assert( S3JniGlobal.autoExt.pHead ? *ppDb==ps->pDb : 0==ps->pDb );
 #endif
     ps->pDb = *ppDb;
     NativePointerHolder_set(env, ps->jDb, *ppDb, S3JniClassNames.sqlite3);
@@ -2607,13 +2613,17 @@ JDECL(jint,1open)(JENV_CSELF, jstring strName, jobject jOut){
   jobject jDb = 0;
   S3JniDb * ps = 0;
   S3JniEnvCache * jc = 0;
+  S3JniDb * const prevOpening = S3JniGlobal.autoExt.psOpening;
   int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps, &jDb);
-  if( rc ) return rc;
-  rc = sqlite3_open(zName, &pOut);
-  //MARKER(("env=%p, *env=%p\n", env, *env));
-  rc = s3jni_open_post(env, ps, &pOut, jOut, rc);
-  assert(rc==0 ? pOut!=0 : 1);
-  sqlite3_free(zName);
+  if( 0==rc ){
+    rc = sqlite3_open(zName, &pOut);
+    //MARKER(("env=%p, *env=%p\n", env, *env));
+    //MARKER(("open() ps@%p db@%p\n", ps, pOut));
+    rc = s3jni_open_post(env, ps, &pOut, jOut, rc);
+    assert(rc==0 ? pOut!=0 : 1);
+    sqlite3_free(zName);
+  }
+  S3JniGlobal.autoExt.psOpening = prevOpening;
   return (jint)rc;
 }
 
@@ -2625,6 +2635,7 @@ JDECL(jint,1open_1v2)(JENV_CSELF, jstring strName,
   S3JniDb * ps = 0;
   S3JniEnvCache * jc = 0;
   char *zVfs = 0;
+  S3JniDb * const prevOpening = S3JniGlobal.autoExt.psOpening;
   int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps, &jDb);
   if( 0==rc && strVfs ){
     zVfs = s3jni_jstring_to_utf8(jc, strVfs, 0);
@@ -2635,12 +2646,14 @@ JDECL(jint,1open_1v2)(JENV_CSELF, jstring strName,
   if( 0==rc ){
     rc = sqlite3_open_v2(zName, &pOut, (int)flags, zVfs);
   }
+  //MARKER(("open_v2() ps@%p db@%p\n", ps, pOut));
   /*MARKER(("zName=%s, zVfs=%s, pOut=%p, flags=%d, nrc=%d\n",
     zName, zVfs, pOut, (int)flags, nrc));*/
   rc = s3jni_open_post(env, ps, &pOut, jOut, rc);
   assert(rc==0 ? pOut!=0 : 1);
   sqlite3_free(zName);
   sqlite3_free(zVfs);
+  S3JniGlobal.autoExt.psOpening = prevOpening;
   return (jint)rc;
 }
 

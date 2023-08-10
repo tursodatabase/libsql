@@ -24,6 +24,8 @@ public interface AutoExtension {
      As an exception (as it were) to the callbacks-must-not-throw
      rule, AutoExtensions may do so and the exception's error message
      will be set as the db's error string.
+
+     Results are undefined if db is closed by an auto-extension.
   */
   int xEntryPoint(sqlite3 db);
 }

@@ -188,22 +188,25 @@ public final class SQLite3Jni {
   */
   public static synchronized native int sqlite3_auto_extension(@NotNull AutoExtension callback);
 
-  public static int sqlite3_bind_blob(@NotNull sqlite3_stmt stmt, int ndx,
-                                      @Nullable byte[] data){
+  public static int sqlite3_bind_blob(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data
+  ){
     return (null == data)
       ? sqlite3_bind_null(stmt, ndx)
       : sqlite3_bind_blob(stmt, ndx, data, data.length);
   }
 
-  private static native int sqlite3_bind_blob(@NotNull sqlite3_stmt stmt,
-                                              int ndx, @Nullable byte[] data,
-                                              int n);
+  private static native int sqlite3_bind_blob(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int n
+  );
 
-  public static native int sqlite3_bind_double(@NotNull sqlite3_stmt stmt,
-                                               int ndx, double v);
+  public static native int sqlite3_bind_double(
+    @NotNull sqlite3_stmt stmt, int ndx, double v
+  );
 
-  public static native int sqlite3_bind_int(@NotNull sqlite3_stmt stmt,
-                                            int ndx, int v);
+  public static native int sqlite3_bind_int(
+    @NotNull sqlite3_stmt stmt, int ndx, int v
+  );
 
   public static native int sqlite3_bind_int64(@NotNull sqlite3_stmt stmt,
                                               int ndx, long v);
@@ -257,10 +260,10 @@ public final class SQLite3Jni {
      to clear the busy handler. Calling this multiple times with the
      same object is a no-op on the second and subsequent calls.
   */
-  public static native int sqlite3_busy_handler(@NotNull sqlite3 db,
+  public static native synchronized int sqlite3_busy_handler(@NotNull sqlite3 db,
                                                 @Nullable BusyHandler handler);
 
-  public static native int sqlite3_busy_timeout(@NotNull sqlite3 db, int ms);
+  public static native synchronized int sqlite3_busy_timeout(@NotNull sqlite3 db, int ms);
 
   /**
      Works like the C API except that it returns false, without side
@@ -489,12 +492,12 @@ public final class SQLite3Jni {
      or sqlite3_open_v2() so that they have a predictible object to
      pass to, e.g., the sqlite3_collation_needed() callback.
   */
-  public static native int sqlite3_open(@Nullable String filename,
-                                        @NotNull OutputPointer.sqlite3 ppDb);
+  public static native synchronized int sqlite3_open(@Nullable String filename,
+                                                     @NotNull OutputPointer.sqlite3 ppDb);
 
-  public static native int sqlite3_open_v2(@Nullable String filename,
-                                           @NotNull OutputPointer.sqlite3 ppDb,
-                                           int flags, @Nullable String zVfs);
+  public static native synchronized int sqlite3_open_v2(@Nullable String filename,
+                                                        @NotNull OutputPointer.sqlite3 ppDb,
+                                                        int flags, @Nullable String zVfs);
 
   /**
      The sqlite3_prepare() family of functions require slightly
