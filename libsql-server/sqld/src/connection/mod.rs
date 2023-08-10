@@ -1,57 +1,160 @@
-use std::{
-    sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc,
-    },
-    time::Duration,
-};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::time::Duration;
 
 use futures::Future;
 use tokio::{sync::Semaphore, time::timeout};
 
-use super::{Database, DescribeResult, Program};
-use crate::{
-    auth::Authenticated, error::Error, query_analysis::State,
-    query_result_builder::QueryResultBuilder,
-};
+use crate::auth::Authenticated;
+use crate::error::Error;
+use crate::query::{Params, Query};
+use crate::query_analysis::{State, Statement};
+use crate::query_result_builder::{IgnoreResult, QueryResultBuilder};
+use crate::Result;
+
+use self::program::{Cond, DescribeResult, Program, Step};
+
+pub mod config;
+pub mod dump;
+pub mod libsql;
+pub mod program;
+pub mod write_proxy;
+
+const TXN_TIMEOUT: Duration = Duration::from_secs(5);
 
 #[async_trait::async_trait]
-pub trait DbFactory: Send + Sync + 'static {
-    type Db: Database;
+pub trait Connection: Send + Sync + 'static {
+    /// Executes a query program
+    async fn execute_program<B: QueryResultBuilder>(
+        &self,
+        pgm: Program,
+        auth: Authenticated,
+        reponse_builder: B,
+    ) -> Result<(B, State)>;
 
-    async fn create(&self) -> Result<Self::Db, Error>;
+    /// Execute all the queries in the batch sequentially.
+    /// If an query in the batch fails, the remaining queries are ignores, and the batch current
+    /// transaction (if any) is rolledback.
+    async fn execute_batch_or_rollback<B: QueryResultBuilder>(
+        &self,
+        batch: Vec<Query>,
+        auth: Authenticated,
+        result_builder: B,
+    ) -> Result<(B, State)> {
+        let batch_len = batch.len();
+        let mut steps = make_batch_program(batch);
+
+        if !steps.is_empty() {
+            // We add a conditional rollback step if the last step was not sucessful.
+            steps.push(Step {
+                query: Query {
+                    stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
+                    params: Params::empty(),
+                    want_rows: false,
+                },
+                cond: Some(Cond::Not {
+                    cond: Box::new(Cond::Ok {
+                        step: steps.len() - 1,
+                    }),
+                }),
+            })
+        }
+
+        let pgm = Program::new(steps);
+
+        // ignore the rollback result
+        let builder = result_builder.take(batch_len);
+        let (builder, state) = self.execute_program(pgm, auth, builder).await?;
+
+        Ok((builder.into_inner(), state))
+    }
+
+    /// Execute all the queries in the batch sequentially.
+    /// If an query in the batch fails, the remaining queries are ignored
+    async fn execute_batch<B: QueryResultBuilder>(
+        &self,
+        batch: Vec<Query>,
+        auth: Authenticated,
+        result_builder: B,
+    ) -> Result<(B, State)> {
+        let steps = make_batch_program(batch);
+        let pgm = Program::new(steps);
+        self.execute_program(pgm, auth, result_builder).await
+    }
+
+    async fn rollback(&self, auth: Authenticated) -> Result<()> {
+        self.execute_batch(
+            vec![Query {
+                stmt: Statement::parse("ROLLBACK").next().unwrap().unwrap(),
+                params: Params::empty(),
+                want_rows: false,
+            }],
+            auth,
+            IgnoreResult,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    /// Parse the SQL statement and return information about it.
+    async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult>;
+}
+
+fn make_batch_program(batch: Vec<Query>) -> Vec<Step> {
+    let mut steps = Vec::with_capacity(batch.len());
+    for (i, query) in batch.into_iter().enumerate() {
+        let cond = if i > 0 {
+            // only execute if the previous step was a success
+            Some(Cond::Ok { step: i - 1 })
+        } else {
+            None
+        };
+
+        let step = Step { cond, query };
+        steps.push(step);
+    }
+    steps
+}
+
+#[async_trait::async_trait]
+pub trait MakeConnection: Send + Sync + 'static {
+    type Connection: Connection;
+
+    /// Create a new connection of type Self::Connection
+    async fn create(&self) -> Result<Self::Connection, Error>;
 
     fn throttled(
         self,
         conccurency: usize,
         timeout: Option<Duration>,
         max_total_response_size: u64,
-    ) -> ThrottledDbFactory<Self>
+    ) -> MakeThrottledConnection<Self>
     where
         Self: Sized,
     {
-        ThrottledDbFactory::new(conccurency, self, timeout, max_total_response_size)
+        MakeThrottledConnection::new(conccurency, self, timeout, max_total_response_size)
     }
 }
 
 #[async_trait::async_trait]
-impl<F, DB, Fut> DbFactory for F
+impl<F, C, Fut> MakeConnection for F
 where
     F: Fn() -> Fut + Send + Sync + 'static,
-    Fut: Future<Output = Result<DB, Error>> + Send,
-    DB: Database + Sync + Send + 'static,
+    Fut: Future<Output = Result<C, Error>> + Send,
+    C: Connection + Sync + Send + 'static,
 {
-    type Db = DB;
+    type Connection = C;
 
-    async fn create(&self) -> Result<Self::Db, Error> {
+    async fn create(&self) -> Result<Self::Connection, Error> {
         let db = (self)().await?;
         Ok(db)
     }
 }
 
-pub struct ThrottledDbFactory<F> {
+pub struct MakeThrottledConnection<F> {
     semaphore: Arc<Semaphore>,
-    factory: F,
+    connection_maker: F,
     timeout: Option<Duration>,
     // Max memory available for responses. High memory pressure
     // will result in reducing concurrency to prevent out-of-memory errors.
@@ -59,16 +162,16 @@ pub struct ThrottledDbFactory<F> {
     waiters: AtomicUsize,
 }
 
-impl<F> ThrottledDbFactory<F> {
+impl<F> MakeThrottledConnection<F> {
     fn new(
         conccurency: usize,
-        factory: F,
+        connection_maker: F,
         timeout: Option<Duration>,
         max_total_response_size: u64,
     ) -> Self {
         Self {
             semaphore: Arc::new(Semaphore::new(conccurency)),
-            factory,
+            connection_maker,
             timeout,
             max_total_response_size,
             waiters: AtomicUsize::new(0),
@@ -110,10 +213,10 @@ impl Drop for WaitersGuard<'_> {
 }
 
 #[async_trait::async_trait]
-impl<F: DbFactory> DbFactory for ThrottledDbFactory<F> {
-    type Db = TrackedDb<F::Db>;
+impl<F: MakeConnection> MakeConnection for MakeThrottledConnection<F> {
+    type Connection = TrackedConnection<F::Connection>;
 
-    async fn create(&self) -> Result<Self::Db, Error> {
+    async fn create(&self) -> Result<Self::Connection, Error> {
         // If the memory pressure is high, request more units to reduce concurrency.
         tracing::trace!(
             "Available semaphore units: {}",
@@ -143,19 +246,19 @@ impl<F: DbFactory> DbFactory for ThrottledDbFactory<F> {
             permit.merge(mem_permit);
         }
 
-        let inner = self.factory.create().await?;
-        Ok(TrackedDb { permit, inner })
+        let inner = self.connection_maker.create().await?;
+        Ok(TrackedConnection { permit, inner })
     }
 }
 
-pub struct TrackedDb<DB> {
+pub struct TrackedConnection<DB> {
     inner: DB,
     #[allow(dead_code)] // just hold on to it
     permit: tokio::sync::OwnedSemaphorePermit,
 }
 
 #[async_trait::async_trait]
-impl<DB: Database> Database for TrackedDb<DB> {
+impl<DB: Connection> Connection for TrackedConnection<DB> {
     #[inline]
     async fn execute_program<B: QueryResultBuilder>(
         &self,
@@ -179,7 +282,7 @@ mod test {
     struct DummyDb;
 
     #[async_trait::async_trait]
-    impl Database for DummyDb {
+    impl Connection for DummyDb {
         async fn execute_program<B: QueryResultBuilder>(
             &self,
             _pgm: Program,

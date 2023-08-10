@@ -1,3 +1,6 @@
+#![allow(clippy::type_complexity)]
+
+use std::convert::Infallible;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -6,27 +9,29 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
+use bytes::Bytes;
 use enclose::enclose;
 use futures::never::Never;
+use hyper::Request;
 use libsql::wal_hook::TRANSPARENT_METHODS;
-use once_cell::sync::Lazy;
-use rpc::run_rpc_server;
-use tokio::sync::{mpsc, Notify};
+use namespace::{
+    MakeNamespace, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
+    ReplicaNamespaceConfig, ReplicaNamespaceMaker,
+};
+use replication::{NamespacedSnapshotCallback, ReplicationLogger};
+use rpc::replication_log::ReplicationLogService;
+use rpc::{run_rpc_server, ReplicationLogServer};
+use tokio::sync::mpsc;
 use tokio::task::JoinSet;
+use tonic::body::BoxBody;
 use tonic::transport::Channel;
+use tower::Service;
 use utils::services::idle_shutdown::IdleShutdownLayer;
 
-use self::database::config::DatabaseConfigStore;
-use self::database::dump::loader::DumpLoader;
-use self::database::factory::DbFactory;
-use self::database::libsql::{open_db, LibSqlDbFactory};
-use self::database::write_proxy::WriteProxyDbFactory;
-use self::database::Database;
-use self::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
-use self::replication::{ReplicationLogger, SnapshotCallback};
+use self::connection::config::DatabaseConfigStore;
+use self::connection::libsql::open_db;
 use crate::auth::Auth;
 use crate::error::Error;
-use crate::replication::replica::Replicator;
 use crate::stats::Stats;
 
 use sha256::try_digest;
@@ -35,11 +40,13 @@ pub use sqld_libsql_bindings as libsql;
 
 mod admin_api;
 mod auth;
-pub mod database;
+pub mod connection;
+mod database;
 mod error;
 mod heartbeat;
 mod hrana;
 mod http;
+mod namespace;
 mod query;
 mod query_analysis;
 mod query_result_builder;
@@ -53,6 +60,7 @@ pub mod version;
 
 const MAX_CONCURRENT_DBS: usize = 128;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
+const DEFAULT_NAMESPACE_NAME: &str = "default";
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
@@ -60,13 +68,6 @@ pub enum Backend {
 }
 
 type Result<T, E = Error> = std::result::Result<T, E>;
-
-/// Trigger a hard database reset. This cause the database to be wiped, freshly restarted
-/// This is used for replicas that are left in an unrecoverabe state and should restart from a
-/// fresh state.
-///
-/// /!\ use with caution.
-pub(crate) static HARD_RESET: Lazy<Arc<Notify>> = Lazy::new(|| Arc::new(Notify::new()));
 
 #[derive(Debug, Clone)]
 pub struct Config {
@@ -101,10 +102,10 @@ pub struct Config {
     pub heartbeat_period: Duration,
     pub soft_heap_limit_mb: Option<usize>,
     pub hard_heap_limit_mb: Option<usize>,
-    pub allow_replica_overwrite: bool,
     pub max_response_size: u64,
     pub max_total_response_size: u64,
     pub snapshot_exec: Option<String>,
+    pub allow_default_namespace: bool,
 }
 
 impl Default for Config {
@@ -141,39 +142,50 @@ impl Default for Config {
             heartbeat_period: Duration::from_secs(30),
             soft_heap_limit_mb: None,
             hard_heap_limit_mb: None,
-            allow_replica_overwrite: false,
             max_response_size: 10 * 1024 * 1024,       // 10MiB
             max_total_response_size: 32 * 1024 * 1024, // 32MiB
             snapshot_exec: None,
+            allow_default_namespace: false,
         }
     }
 }
 
-async fn run_service<D: Database>(
-    db_factory: Arc<dyn DbFactory<Db = D>>,
+async fn run_service<F, S>(
+    namespaces: Arc<NamespaceStore<F>>,
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
     db_config_store: Arc<DatabaseConfigStore>,
-    logger: Option<Arc<ReplicationLogger>>,
-) -> anyhow::Result<()> {
+    replication_service: Option<S>,
+) -> anyhow::Result<()>
+where
+    F: MakeNamespace,
+    S: Service<Request<hyper::Body>, Error = Infallible, Response = hyper::Response<BoxBody>>
+        + Send
+        + Clone
+        + tonic::server::NamedService
+        + 'static,
+    S::Future: Send + 'static,
+{
     let auth = get_auth(config)?;
 
     let (hrana_accept_tx, hrana_accept_rx) = mpsc::channel(8);
     let (hrana_upgrade_tx, hrana_upgrade_rx) = mpsc::channel(8);
 
     if config.http_addr.is_some() || config.hrana_addr.is_some() {
-        let db_factory = db_factory.clone();
+        let namespaces = namespaces.clone();
         let auth = auth.clone();
         let idle_kicker = idle_shutdown_layer.clone().map(|isl| isl.into_kicker());
+        let allow_default_namespace = config.allow_default_namespace;
         join_set.spawn(async move {
             hrana::ws::serve(
-                db_factory,
                 auth,
                 idle_kicker,
                 hrana_accept_rx,
                 hrana_upgrade_rx,
+                namespaces,
+                allow_default_namespace,
             )
             .await
             .context("Hrana server failed")
@@ -181,20 +193,18 @@ async fn run_service<D: Database>(
     }
 
     if let Some(addr) = config.http_addr {
-        let hrana_http_srv = Arc::new(hrana::http::Server::new(
-            db_factory.clone(),
-            config.http_self_url.clone(),
-        ));
+        let hrana_http_srv = Arc::new(hrana::http::Server::new(config.http_self_url.clone()));
         join_set.spawn(http::run_http(
             addr,
             auth,
-            db_factory,
+            namespaces,
             hrana_upgrade_tx,
             hrana_http_srv.clone(),
             config.enable_http_console,
             idle_shutdown_layer,
             stats.clone(),
-            logger,
+            replication_service,
+            config.allow_default_namespace,
         ));
         join_set.spawn(async move {
             hrana_http_srv.run_expire().await;
@@ -267,23 +277,6 @@ fn get_auth(config: &Config) -> anyhow::Result<Arc<Auth>> {
     Ok(Arc::new(auth))
 }
 
-/// nukes current DB and start anew
-async fn hard_reset(
-    config: &Config,
-    mut join_set: JoinSet<anyhow::Result<()>>,
-) -> anyhow::Result<()> {
-    tracing::error!("received hard-reset command: reseting replica.");
-
-    tracing::info!("Shutting down all services...");
-    join_set.shutdown().await;
-    tracing::info!("All services have been shut down.");
-
-    let db_path = &config.db_path;
-    tokio::fs::remove_dir_all(db_path).await?;
-
-    Ok(())
-}
-
 fn configure_rpc(config: &Config) -> anyhow::Result<(Channel, tonic::transport::Uri)> {
     let mut endpoint = Channel::from_shared(config.writer_rpc_addr.clone().unwrap())?;
     if config.writer_rpc_tls {
@@ -315,43 +308,46 @@ async fn start_replica(
     db_config_store: Arc<DatabaseConfigStore>,
 ) -> anyhow::Result<()> {
     let (channel, uri) = configure_rpc(config)?;
-    let replicator = Replicator::new(
-        config.db_path.clone(),
-        channel.clone(),
-        uri.clone(),
-        config.allow_replica_overwrite,
-    )?;
-    let applied_frame_no_receiver = replicator.current_frame_no_notifier.clone();
-
-    join_set.spawn(replicator.run());
-
-    let valid_extensions = validate_extensions(config.extensions_path.clone())?;
-
-    let factory = WriteProxyDbFactory::new(
-        config.db_path.clone(),
-        valid_extensions,
+    let extensions = validate_extensions(config.extensions_path.clone())?;
+    let (hard_reset_snd, mut hard_reset_rcv) = mpsc::channel(1);
+    let conf = ReplicaNamespaceConfig {
+        base_path: config.db_path.to_owned(),
         channel,
         uri,
-        stats.clone(),
-        db_config_store.clone(),
-        applied_frame_no_receiver,
-        config.max_response_size,
-        config.max_total_response_size,
-    )
-    .throttled(
-        MAX_CONCURRENT_DBS,
-        Some(DB_CREATE_TIMEOUT),
-        config.max_total_response_size,
-    );
+        extensions,
+        stats: stats.clone(),
+        config_store: db_config_store.clone(),
+        max_response_size: config.max_response_size,
+        max_total_response_size: config.max_total_response_size,
+        hard_reset: hard_reset_snd,
+    };
+    let factory = ReplicaNamespaceMaker::new(conf);
+    let namespaces = Arc::new(NamespaceStore::new(factory));
+
+    // start the hard reset monitor
+    join_set.spawn({
+        let namespaces = namespaces.clone();
+        async move {
+            while let Some(ns) = hard_reset_rcv.recv().await {
+                tracing::warn!(
+                    "received reset signal for: {:?}",
+                    std::str::from_utf8(&ns).ok()
+                );
+                namespaces.reset(ns).await?;
+            }
+
+            Ok(())
+        }
+    });
 
     run_service(
-        Arc::new(factory),
+        namespaces,
         config,
         join_set,
         idle_shutdown_layer,
         stats,
         db_config_store,
-        None,
+        None::<ReplicationLogServer<ReplicationLogService>>,
     )
     .await?;
 
@@ -410,7 +406,7 @@ fn validate_extensions(extensions_path: Option<PathBuf>) -> anyhow::Result<Vec<P
 pub async fn init_bottomless_replicator(
     path: impl AsRef<std::path::Path>,
     options: bottomless::replicator::Options,
-) -> anyhow::Result<bottomless::replicator::Replicator> {
+) -> anyhow::Result<(bottomless::replicator::Replicator, bool)> {
     tracing::debug!("Initializing bottomless replication");
     let path = path
         .as_ref()
@@ -418,12 +414,13 @@ pub async fn init_bottomless_replicator(
         .ok_or_else(|| anyhow::anyhow!("Invalid db path"))?
         .to_owned();
     let mut replicator = bottomless::replicator::Replicator::with_options(path, options).await?;
+    let mut did_recover = false;
 
     match replicator.restore(None, None).await? {
         bottomless::replicator::RestoreAction::None => (),
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
             replicator.new_generation();
-            replicator.snapshot_main_db_file().await?;
+            did_recover = replicator.snapshot_main_db_file().await?;
             // Restoration process only leaves the local WAL file if it was
             // detected to be newer than its remote counterpart.
             replicator.maybe_replicate_wal().await?
@@ -433,7 +430,7 @@ pub async fn init_bottomless_replicator(
         }
     }
 
-    Ok(replicator)
+    Ok((replicator, did_recover))
 }
 
 async fn start_primary(
@@ -441,66 +438,27 @@ async fn start_primary(
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
-    db_config_store: Arc<DatabaseConfigStore>,
+    config_store: Arc<DatabaseConfigStore>,
     db_is_dirty: bool,
-    snapshot_callback: SnapshotCallback,
+    snapshot_callback: NamespacedSnapshotCallback,
 ) -> anyhow::Result<()> {
-    let is_fresh_db = check_fresh_db(&config.db_path);
-    let logger = Arc::new(ReplicationLogger::open(
-        &config.db_path,
-        config.max_log_size,
-        config.max_log_duration.map(Duration::from_secs_f32),
+    let extensions = validate_extensions(config.extensions_path.clone())?;
+    let conf = PrimaryNamespaceConfig {
+        base_path: config.db_path.to_owned(),
+        max_log_size: config.max_log_size,
         db_is_dirty,
+        max_log_duration: config.max_log_duration.map(Duration::from_secs_f32),
         snapshot_callback,
-    )?);
-
-    join_set.spawn(run_periodic_compactions(logger.clone()));
-
-    let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
-        Some(Arc::new(std::sync::Mutex::new(
-            init_bottomless_replicator(config.db_path.join("data"), options.clone()).await?,
-        )))
-    } else {
-        None
+        bottomless_replication: config.bottomless_replication.clone(),
+        extensions,
+        stats: stats.clone(),
+        config_store: config_store.clone(),
+        max_response_size: config.max_response_size,
+        load_from_dump: None,
+        max_total_response_size: config.max_total_response_size,
     };
-
-    // load dump is necessary
-    let dump_loader = DumpLoader::new(
-        config.db_path.clone(),
-        logger.clone(),
-        bottomless_replicator.clone(),
-    )
-    .await?;
-    if let Some(ref path) = config.load_from_dump {
-        if !is_fresh_db {
-            anyhow::bail!("cannot load from a dump if a database already exists.\nIf you're sure you want to load from a dump, delete your database folder at `{}`", config.db_path.display());
-        }
-        dump_loader.load_dump(path.into()).await?;
-    }
-
-    let valid_extensions = validate_extensions(config.extensions_path.clone())?;
-
-    let db_factory: Arc<_> = LibSqlDbFactory::new(
-        config.db_path.clone(),
-        &REPLICATION_METHODS,
-        {
-            let logger = logger.clone();
-            let bottomless_replicator = bottomless_replicator.clone();
-            move || ReplicationLoggerHookCtx::new(logger.clone(), bottomless_replicator.clone())
-        },
-        stats.clone(),
-        db_config_store.clone(),
-        valid_extensions,
-        config.max_response_size,
-        config.max_total_response_size,
-    )
-    .await?
-    .throttled(
-        MAX_CONCURRENT_DBS,
-        Some(DB_CREATE_TIMEOUT),
-        config.max_total_response_size,
-    )
-    .into();
+    let factory = PrimaryNamespaceMaker::new(conf);
+    let namespaces = Arc::new(NamespaceStore::new(factory));
 
     if let Some(ref addr) = config.rpc_server_addr {
         join_set.spawn(run_rpc_server(
@@ -509,20 +467,24 @@ async fn start_primary(
             config.rpc_server_cert.clone(),
             config.rpc_server_key.clone(),
             config.rpc_server_ca_cert.clone(),
-            db_factory.clone(),
-            logger.clone(),
             idle_shutdown_layer.clone(),
+            namespaces.clone(),
         ));
     }
 
+    let logger_service = ReplicationLogService::new(
+        namespaces.clone(),
+        idle_shutdown_layer.clone(),
+        Some(get_auth(config)?),
+    );
     run_service(
-        db_factory,
+        namespaces.clone(),
         config,
         join_set,
         idle_shutdown_layer,
         stats,
-        db_config_store,
-        Some(logger),
+        config_store,
+        Some(ReplicationLogServer::new(logger_service)),
     )
     .await?;
 
@@ -662,9 +624,10 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
         let db_is_dirty = init_sentinel_file(&config.db_path)?;
 
         let snapshot_exec = config.snapshot_exec.clone();
-        let snapshot_callback: SnapshotCallback = Box::new(move |snapshot_file| {
+        let snapshot_callback = Arc::new(move |snapshot_file: &Path, namespace: &Bytes| {
             if let Some(exec) = snapshot_exec.as_ref() {
-                let status = Command::new(exec).arg(snapshot_file).status()?;
+                let ns = std::str::from_utf8(namespace)?;
+                let status = Command::new(exec).arg(snapshot_file).arg(ns).status()?;
                 anyhow::ensure!(
                     status.success(),
                     "Snapshot exec process failed with status {status}"
@@ -716,13 +679,8 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
             join_set.spawn(run_storage_monitor(config.db_path.clone(), stats));
         }
 
-        let reset = HARD_RESET.clone();
         loop {
             tokio::select! {
-                _ = reset.notified() => {
-                    hard_reset(&config, join_set).await?;
-                    break;
-                },
                 _ = shutdown_receiver.recv() => {
                     join_set.shutdown().await;
                     // clean shutdown, remove sentinel file

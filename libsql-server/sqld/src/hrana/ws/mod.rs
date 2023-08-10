@@ -1,6 +1,5 @@
 use crate::auth::Auth;
-use crate::database::factory::DbFactory;
-use crate::database::Database;
+use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::utils::services::idle_shutdown::IdleKicker;
 use anyhow::{Context as _, Result};
 use enclose::enclose;
@@ -15,11 +14,12 @@ mod conn;
 mod handshake;
 mod session;
 
-struct Server<D> {
-    db_factory: Arc<dyn DbFactory<Db = D>>,
+struct Server<F: MakeNamespace> {
+    namespaces: Arc<NamespaceStore<F>>,
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
     next_conn_id: AtomicU64,
+    allow_default_namespace: bool,
 }
 
 #[derive(Debug)]
@@ -34,18 +34,20 @@ pub struct Upgrade {
     pub response_tx: oneshot::Sender<hyper::Response<hyper::Body>>,
 }
 
-pub async fn serve(
-    db_factory: Arc<dyn DbFactory<Db = impl Database>>,
+pub async fn serve<F: MakeNamespace>(
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
     mut accept_rx: mpsc::Receiver<Accept>,
     mut upgrade_rx: mpsc::Receiver<Upgrade>,
+    namespaces: Arc<NamespaceStore<F>>,
+    allow_default_namespace: bool,
 ) -> Result<()> {
     let server = Arc::new(Server {
-        db_factory,
         auth,
         idle_kicker,
         next_conn_id: AtomicU64::new(0),
+        namespaces,
+        allow_default_namespace,
     });
 
     let mut join_set = tokio::task::JoinSet::new();

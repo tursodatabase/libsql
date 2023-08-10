@@ -3,16 +3,16 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
-use tokio::sync::watch;
 use uuid::Uuid;
 
 use crate::auth::{Authenticated, Authorized};
-use crate::database::factory::DbFactory;
-use crate::database::{Database, Program};
+use crate::connection::libsql::LibSqlConnection;
+use crate::connection::{Connection, TrackedConnection};
+use crate::database::Database;
+use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::query_result_builder::{
     Column, QueryBuilderConfig, QueryResultBuilder, QueryResultBuilderError,
 };
-use crate::replication::FrameNo;
 
 use self::rpc::proxy_server::Proxy;
 use self::rpc::query_result::RowResult;
@@ -26,7 +26,7 @@ pub mod rpc {
     use anyhow::Context;
 
     use crate::query_analysis::Statement;
-    use crate::{database, error::Error as SqldError};
+    use crate::{connection, error::Error as SqldError};
 
     use self::{error::ErrorCode, execute_results::State};
     tonic::include_proto!("proxy");
@@ -124,7 +124,7 @@ pub mod rpc {
         }
     }
 
-    impl TryFrom<Program> for database::Program {
+    impl TryFrom<Program> for connection::program::Program {
         type Error = anyhow::Error;
 
         fn try_from(pgm: Program) -> Result<Self, Self::Error> {
@@ -138,7 +138,7 @@ pub mod rpc {
         }
     }
 
-    impl TryFrom<Step> for database::Step {
+    impl TryFrom<Step> for connection::program::Step {
         type Error = anyhow::Error;
 
         fn try_from(step: Step) -> Result<Self, Self::Error> {
@@ -149,7 +149,7 @@ pub mod rpc {
         }
     }
 
-    impl TryFrom<Cond> for database::Cond {
+    impl TryFrom<Cond> for connection::program::Cond {
         type Error = anyhow::Error;
 
         fn try_from(cond: Cond) -> Result<Self, Self::Error> {
@@ -197,8 +197,8 @@ pub mod rpc {
         }
     }
 
-    impl From<database::Program> for Program {
-        fn from(pgm: database::Program) -> Self {
+    impl From<connection::program::Program> for Program {
+        fn from(pgm: connection::program::Program) -> Self {
             // TODO: use unwrap_or_clone when stable
             let steps = match Arc::try_unwrap(pgm.steps) {
                 Ok(steps) => steps,
@@ -221,8 +221,8 @@ pub mod rpc {
         }
     }
 
-    impl From<database::Step> for Step {
-        fn from(step: database::Step) -> Self {
+    impl From<connection::program::Step> for Step {
+        fn from(step: connection::program::Step) -> Self {
             Self {
                 cond: step.cond.map(|c| c.into()),
                 query: Some(step.query.into()),
@@ -230,18 +230,22 @@ pub mod rpc {
         }
     }
 
-    impl From<database::Cond> for Cond {
-        fn from(cond: database::Cond) -> Self {
+    impl From<connection::program::Cond> for Cond {
+        fn from(cond: connection::program::Cond) -> Self {
             let cond = match cond {
-                database::Cond::Ok { step } => cond::Cond::Ok(OkCond { step: step as i64 }),
-                database::Cond::Err { step } => cond::Cond::Err(ErrCond { step: step as i64 }),
-                database::Cond::Not { cond } => cond::Cond::Not(Box::new(NotCond {
+                connection::program::Cond::Ok { step } => {
+                    cond::Cond::Ok(OkCond { step: step as i64 })
+                }
+                connection::program::Cond::Err { step } => {
+                    cond::Cond::Err(ErrCond { step: step as i64 })
+                }
+                connection::program::Cond::Not { cond } => cond::Cond::Not(Box::new(NotCond {
                     cond: Some(Box::new(Cond::from(*cond))),
                 })),
-                database::Cond::Or { conds } => cond::Cond::Or(OrCond {
+                connection::program::Cond::Or { conds } => cond::Cond::Or(OrCond {
                     conds: conds.into_iter().map(|c| c.into()).collect(),
                 }),
-                database::Cond::And { conds } => cond::Cond::And(AndCond {
+                connection::program::Cond::And { conds } => cond::Cond::And(AndCond {
                     conds: conds.into_iter().map(|c| c.into()).collect(),
                 }),
             };
@@ -251,21 +255,16 @@ pub mod rpc {
     }
 }
 
-pub struct ProxyService<D> {
-    clients: RwLock<HashMap<Uuid, Arc<D>>>,
-    factory: Arc<dyn DbFactory<Db = D>>,
-    new_frame_notifier: watch::Receiver<FrameNo>,
+pub struct ProxyService {
+    clients: RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>,
+    namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
 }
 
-impl<D: Database> ProxyService<D> {
-    pub fn new(
-        factory: Arc<dyn DbFactory<Db = D>>,
-        new_frame_notifier: watch::Receiver<FrameNo>,
-    ) -> Self {
+impl ProxyService {
+    pub fn new(namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>) -> Self {
         Self {
             clients: Default::default(),
-            factory,
-            new_frame_notifier,
+            namespaces,
         }
     }
 }
@@ -426,13 +425,13 @@ impl QueryResultBuilder for ExecuteResultBuilder {
 }
 
 #[tonic::async_trait]
-impl<D: Database> Proxy for ProxyService<D> {
+impl Proxy for ProxyService {
     async fn execute(
         &self,
         req: tonic::Request<rpc::ProgramReq>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
         let req = req.into_inner();
-        let pgm = Program::try_from(req.pgm.unwrap())
+        let pgm = crate::connection::program::Program::try_from(req.pgm.unwrap())
             .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument, e.to_string()))?;
         let client_id = Uuid::from_str(&req.client_id).unwrap();
         let auth = match req.authorized {
@@ -446,12 +445,23 @@ impl<D: Database> Proxy for ProxyService<D> {
             }
             None => Authenticated::Anonymous,
         };
+
+        let (connection_maker, new_frame_notifier) = self
+            .namespaces
+            .with(req.namespace.clone(), |ns| {
+                let connection_maker = ns.db.connection_maker();
+                let notifier = ns.db.logger.new_frame_notifier.subscribe();
+                (connection_maker, notifier)
+            })
+            .await
+            .unwrap();
+
         let lock = self.clients.upgradable_read().await;
         let db = match lock.get(&client_id) {
             Some(db) => db.clone(),
             None => {
                 tracing::debug!("connected: {client_id}");
-                match self.factory.create().await {
+                match connection_maker.create().await {
                     Ok(db) => {
                         let db = Arc::new(db);
                         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
@@ -464,14 +474,15 @@ impl<D: Database> Proxy for ProxyService<D> {
         };
 
         tracing::debug!("executing request for {client_id}");
+
         let builder = ExecuteResultBuilder::default();
         let (results, state) = db
             .execute_program(pgm, auth, builder)
             .await
             // TODO: this is no necessarily a permission denied error!
             .map_err(|e| tonic::Status::new(tonic::Code::PermissionDenied, e.to_string()))?;
-        let current_frame_no = *self.new_frame_notifier.borrow();
 
+        let current_frame_no = *new_frame_notifier.borrow();
         Ok(tonic::Response::new(ExecuteResults {
             current_frame_no,
             results: results.into_ret(),

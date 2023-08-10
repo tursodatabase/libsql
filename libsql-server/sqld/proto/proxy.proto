@@ -132,6 +132,7 @@ message ProgramReq {
     string client_id = 1;
     Program pgm = 2;
     optional Authorized authorized = 3;
+    bytes namespace = 4;
 }
 
 service Proxy {

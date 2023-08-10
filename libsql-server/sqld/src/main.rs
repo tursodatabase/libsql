@@ -9,7 +9,7 @@ use anyhow::{bail, Context as _, Result};
 use bytesize::ByteSize;
 use clap::Parser;
 use mimalloc::MiMalloc;
-use sqld::{database::dump::exporter::export_dump, version::Version, Config};
+use sqld::{connection::dump::exporter::export_dump, version::Version, Config};
 use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -171,11 +171,6 @@ struct Cli {
     #[clap(long, env = "SQLD_HARD_HEAP_LIMIT_MB")]
     hard_heap_limit_mb: Option<usize>,
 
-    /// Allow the replica to overwrite its data if the primary starts replicating a different
-    /// database. This is often the case when the primary goes through a recovery process.
-    #[clap(long, env = "SQLD_ALLOW_REPLICA_OVERWRITE")]
-    allow_replica_overwrite: bool,
-
     /// Set the maximum size for a response. e.g 5KB, 10MB...
     #[clap(long, env = "SQLD_MAX_RESPONSE_SIZE", default_value = "10MB")]
     max_response_size: ByteSize,
@@ -187,6 +182,9 @@ struct Cli {
     /// Set a command to execute when a snapshot file is generated.
     #[clap(long, env = "SQLD_SNAPSHOT_EXEC")]
     snapshot_exec: Option<String>,
+    /// All requests whose host cannot be parsed are routed to a default namespace `default`
+    #[clap(long)]
+    allow_default_namespace: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -195,6 +193,8 @@ enum UtilsSubcommands {
         #[clap(long)]
         /// Path at which to write the dump
         path: Option<PathBuf>,
+        #[clap(long)]
+        namespace: String,
     },
 }
 
@@ -293,10 +293,10 @@ fn config_from_args(args: Cli) -> Result<Config> {
         heartbeat_period: Duration::from_secs(args.heartbeat_period_s),
         soft_heap_limit_mb: args.soft_heap_limit_mb,
         hard_heap_limit_mb: args.hard_heap_limit_mb,
-        allow_replica_overwrite: args.allow_replica_overwrite,
         max_response_size: args.max_response_size.0,
         max_total_response_size: args.max_total_response_size.0,
         snapshot_exec: args.snapshot_exec,
+        allow_default_namespace: args.allow_default_namespace,
     })
 }
 
@@ -359,7 +359,7 @@ async fn main() -> Result<()> {
     let args = Cli::parse();
 
     match args.utils {
-        Some(UtilsSubcommands::Dump { path }) => {
+        Some(UtilsSubcommands::Dump { path, namespace }) => {
             if let Some(ref path) = path {
                 eprintln!(
                     "Dumping database {} to {}",
@@ -367,7 +367,12 @@ async fn main() -> Result<()> {
                     path.display()
                 );
             }
-            perform_dump(path.as_deref(), &args.db_path)
+            let db_path = args.db_path.join("dbs").join(&namespace);
+            if !db_path.exists() {
+                bail!("no database for namespace `{namespace}`");
+            }
+
+            perform_dump(path.as_deref(), &db_path)
         }
         None => {
             args.print_welcome_message();

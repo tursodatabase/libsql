@@ -1,16 +1,14 @@
 use anyhow::{anyhow, Context, Result};
-use axum::extract::State as AxumState;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 
 use crate::auth::Authenticated;
-use crate::database::factory::DbFactory;
-use crate::database::Database;
+use crate::connection::{Connection, MakeConnection};
 use crate::hrana;
 
-use super::AppState;
+use super::db_factory::MakeConnectionExtractor;
 
 #[derive(thiserror::Error, Debug)]
 enum ResponseError {
@@ -26,8 +24,8 @@ pub async fn handle_index() -> hyper::Response<hyper::Body> {
         .unwrap()
 }
 
-pub(crate) async fn handle_execute<D: Database>(
-    AxumState(AppState { db_factory, .. }): AxumState<AppState<D>>,
+pub(crate) async fn handle_execute<D: Connection>(
+    MakeConnectionExtractor(factory): MakeConnectionExtractor<D>,
     auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> crate::Result<hyper::Response<hyper::Body>> {
@@ -41,7 +39,7 @@ pub(crate) async fn handle_execute<D: Database>(
         result: hrana::proto::StmtResult,
     }
 
-    let res = handle_request(db_factory, req, |db, req_body: ReqBody| async move {
+    let res = handle_request(factory, req, |db, req_body: ReqBody| async move {
         let query = hrana::stmt::proto_stmt_to_query(
             &req_body.stmt,
             &HashMap::new(),
@@ -59,8 +57,8 @@ pub(crate) async fn handle_execute<D: Database>(
     Ok(res)
 }
 
-pub(crate) async fn handle_batch<D: Database>(
-    AxumState(AppState { db_factory, .. }): AxumState<AppState<D>>,
+pub(crate) async fn handle_batch<D: Connection>(
+    MakeConnectionExtractor(factory): MakeConnectionExtractor<D>,
     auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> crate::Result<hyper::Response<hyper::Body>> {
@@ -74,7 +72,7 @@ pub(crate) async fn handle_batch<D: Database>(
         result: hrana::proto::BatchResult,
     }
 
-    let res = handle_request(db_factory, req, |db, req_body: ReqBody| async move {
+    let res = handle_request(factory, req, |db, req_body: ReqBody| async move {
         let pgm = hrana::batch::proto_batch_to_program(
             &req_body.batch,
             &HashMap::new(),
@@ -99,9 +97,9 @@ async fn handle_request<ReqBody, RespBody, F, Fut, FT>(
 where
     ReqBody: DeserializeOwned,
     RespBody: Serialize,
-    F: FnOnce(FT::Db, ReqBody) -> Fut,
+    F: FnOnce(FT::Connection, ReqBody) -> Fut,
     Fut: Future<Output = Result<RespBody>>,
-    FT: DbFactory + ?Sized,
+    FT: MakeConnection + ?Sized,
 {
     let res: Result<_> = async move {
         let req_body = hyper::body::to_bytes(req.into_body()).await?;

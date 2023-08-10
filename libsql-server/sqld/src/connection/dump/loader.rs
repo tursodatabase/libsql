@@ -8,7 +8,7 @@ use anyhow::anyhow;
 use rusqlite::ErrorCode;
 use tokio::sync::{mpsc, oneshot};
 
-use crate::database::libsql::open_db;
+use crate::connection::libsql::open_db;
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
 use crate::replication::ReplicationLogger;
 

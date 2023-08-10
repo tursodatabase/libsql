@@ -4,9 +4,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tower::util::option_layer;
 
-use crate::database::factory::DbFactory;
-use crate::database::Database;
-use crate::replication::ReplicationLogger;
+use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::rpc::proxy::rpc::proxy_server::ProxyServer;
 use crate::rpc::proxy::ProxyService;
 pub use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
@@ -17,18 +15,18 @@ pub mod proxy;
 pub mod replication_log;
 
 #[allow(clippy::too_many_arguments)]
-pub async fn run_rpc_server<D: Database>(
+pub async fn run_rpc_server(
     addr: SocketAddr,
     tls: bool,
     cert_path: Option<PathBuf>,
     key_path: Option<PathBuf>,
     ca_cert_path: Option<PathBuf>,
-    factory: Arc<dyn DbFactory<Db = D>>,
-    logger: Arc<ReplicationLogger>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
+    namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
 ) -> anyhow::Result<()> {
-    let proxy_service = ProxyService::new(factory, logger.new_frame_notifier.subscribe());
-    let logger_service = ReplicationLogService::new(logger, idle_shutdown_layer.clone(), None);
+    let proxy_service = ProxyService::new(namespaces.clone());
+    let logger_service =
+        ReplicationLogService::new(namespaces.clone(), idle_shutdown_layer.clone(), None);
 
     tracing::info!("serving write proxy server at {addr}");
 

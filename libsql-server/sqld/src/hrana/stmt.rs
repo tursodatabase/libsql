@@ -4,7 +4,8 @@ use std::collections::HashMap;
 use super::result_builder::SingleStatementBuilder;
 use super::{proto, ProtocolError, Version};
 use crate::auth::Authenticated;
-use crate::database::{Database, DescribeResponse};
+use crate::connection::program::DescribeResponse;
+use crate::connection::Connection;
 use crate::error::Error as SqldError;
 use crate::hrana;
 use crate::query::{Params, Query, Value};
@@ -48,7 +49,7 @@ pub enum StmtError {
 }
 
 pub async fn execute_stmt(
-    db: &impl Database,
+    db: &impl Connection,
     auth: Authenticated,
     query: Query,
 ) -> Result<proto::StmtResult> {
@@ -61,7 +62,7 @@ pub async fn execute_stmt(
 }
 
 pub async fn describe_stmt(
-    db: &impl Database,
+    db: &impl Connection,
     auth: Authenticated,
     sql: String,
 ) -> Result<proto::DescribeResult> {

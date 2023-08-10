@@ -3,7 +3,7 @@ use anyhow::{anyhow, bail, Result};
 use super::super::{batch, stmt, ProtocolError, Version};
 use super::{proto, stream};
 use crate::auth::Authenticated;
-use crate::database::Database;
+use crate::connection::Connection;
 
 /// An error from executing a [`proto::StreamRequest`]
 #[derive(thiserror::Error, Debug)]
@@ -16,7 +16,7 @@ pub enum StreamResponseError {
     Batch(batch::BatchError),
 }
 
-pub async fn handle<D: Database>(
+pub async fn handle<D: Connection>(
     stream_guard: &mut stream::Guard<'_, D>,
     auth: Authenticated,
     request: proto::StreamRequest,
@@ -35,7 +35,7 @@ pub async fn handle<D: Database>(
     Ok(result)
 }
 
-async fn try_handle<D: Database>(
+async fn try_handle<D: Connection>(
     stream_guard: &mut stream::Guard<'_, D>,
     auth: Authenticated,
     request: proto::StreamRequest,
