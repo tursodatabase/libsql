@@ -208,14 +208,10 @@ class PrintCommand extends Command {
     SQLTester st, TestScript ts, String[] argv
   ) throws Exception{
     st.out(ts.getOutputPrefix(),": ");
-    final String body = ts.fetchCommandBody();
-    if( 1==argv.length && null==body ){
+    if( 1==argv.length ){
       st.out( st.getInputText() );
     }else{
       st.outln( Util.argvToString(argv) );
-    }
-    if( null!=body ){
-      st.out(body);
     }
   }
 }

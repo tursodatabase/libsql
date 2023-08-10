@@ -1,5 +1,5 @@
-C Replace\sthe\sSQLTester\sinfrastructure\swith\sa\sline-oriented,\snon-regex-heavy\sparser.\sAdd\s--column-names\scommand.
-D 2023-08-10T00:34:38.136
+C Remove\s--print's\sability\sto\sread\sahead.
+D 2023-08-10T00:58:48.754
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -267,10 +267,10 @@ F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
 F ext/jni/src/org/sqlite/jni/tester/Outer.java b06acf9c79e8dbc8fea4a98b00724a6a76e3ee4503eb114671d2885f8fb3df8b
 F ext/jni/src/org/sqlite/jni/tester/SQLTester.java e6e4a1f78291f9b76284035dacc3d77a85f8d1a8791d7acaf201deffd771d354
-F ext/jni/src/org/sqlite/jni/tester/TestScript.java 496b402c7faedf18be41542c6dc77c19f2735663821a5973639eb614e33aa707
+F ext/jni/src/org/sqlite/jni/tester/TestScript.java ad41031370cafe404baebb836db24b499f9b57f903646da7a70b3550e0dd8dd0
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md ab7169b08566a082ef55c9ef8a553827f99958ed3e076f31eef757563fae51ba
-F ext/jni/src/tests/000-000-sanity.test de89692155bee1bb35120aced6871dd6562014d0cd7c1dcf173297d8bbc03002 w ext/jni/src/tests/000-000-sanity.test2
-F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70 w ext/jni/src/tests/010_ignored.test
+F ext/jni/src/tests/000-000-sanity.test de89692155bee1bb35120aced6871dd6562014d0cd7c1dcf173297d8bbc03002
+F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
 F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
 F ext/lsm1/Makefile.msc f8c878b467232226de288da320e1ac71c131f5ec91e08b21f502303347260013
 F ext/lsm1/lsm-test/README 87ea529d2abe615e856d4714bfe8bb185e6c2771b8612aa6298588b7b43e6f86
@@ -2090,8 +2090,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0cf57e5b0f90779e450e9db1ca009610df5e6f4487337d49017636bde3bb02d6
-R aaacd016e2b2dfc7887fd83bed604d98
+P 88863908ee2059c2d18a095cbd91f41674c7b0d0a8864ec21715a5317054df4d
+R 952a45c93dc1bf5ba7d98bb1afbac238
 U stephan
-Z fb4c2d6a86f69138bd39103974c9d8cc
+Z 43582e6a6d71574c725ca1af2b5f7e0a
 # Remove this line to create a well-formed Fossil manifest.
