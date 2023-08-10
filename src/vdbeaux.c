@@ -1498,7 +1498,6 @@ void sqlite3VdbeReleaseRegisters(
 }
 #endif /* SQLITE_DEBUG */
 
-
 /*
 ** Change the value of the P4 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
@@ -2418,8 +2417,8 @@ int sqlite3VdbeList(
         sqlite3VdbeMemSetInt64(pMem, pOp->p1);
         sqlite3VdbeMemSetInt64(pMem+1, pOp->p2);
         sqlite3VdbeMemSetInt64(pMem+2, pOp->p3);
-        sqlite3VdbeMemSetStr(pMem+3, zP4, -1, SQLITE_UTF8, sqlite3_free);    
-        p->nResColumn = 4;
+        sqlite3VdbeMemSetStr(pMem+3, zP4, -1, SQLITE_UTF8, sqlite3_free);
+        assert( p->nResColumn==4 );
       }else{
         sqlite3VdbeMemSetInt64(pMem+0, i);
         sqlite3VdbeMemSetStr(pMem+1, (char*)sqlite3OpcodeName(pOp->opcode),
@@ -2438,7 +2437,7 @@ int sqlite3VdbeList(
         sqlite3VdbeMemSetNull(pMem+7);
 #endif
         sqlite3VdbeMemSetStr(pMem+5, zP4, -1, SQLITE_UTF8, sqlite3_free);
-        p->nResColumn = 8;
+        assert( p->nResColumn==8 );
       }
       p->pResultRow = pMem;
       if( db->mallocFailed ){
@@ -2652,26 +2651,9 @@ void sqlite3VdbeMakeReady(
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
   if( pParse->explain ){
-    static const char * const azColName[] = {
-       "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
-       "id", "parent", "notused", "detail"
-    };
-    int iFirst, mx, i;
     if( nMem<10 ) nMem = 10;
     p->explain = pParse->explain;
-    if( pParse->explain==2 ){
-      sqlite3VdbeSetNumCols(p, 4);
-      iFirst = 8;
-      mx = 12;
-    }else{
-      sqlite3VdbeSetNumCols(p, 8);
-      iFirst = 0;
-      mx = 8;
-    }
-    for(i=iFirst; i<mx; i++){
-      sqlite3VdbeSetColName(p, i-iFirst, COLNAME_NAME,
-                            azColName[i], SQLITE_STATIC);
-    }
+    p->nResColumn = 12 - 4*p->explain;
   }
   p->expired = 0;
 
@@ -2723,7 +2705,23 @@ void sqlite3VdbeMakeReady(
 void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx ) sqlite3VdbeFreeCursorNN(p,pCx);
 }
+static SQLITE_NOINLINE void freeCursorWithCache(Vdbe *p, VdbeCursor *pCx){
+  VdbeTxtBlbCache *pCache = pCx->pCache;
+  assert( pCx->colCache );
+  pCx->colCache = 0;
+  pCx->pCache = 0;
+  if( pCache->pCValue ){
+    sqlite3RCStrUnref(pCache->pCValue);
+    pCache->pCValue = 0;
+  }
+  sqlite3DbFree(p->db, pCache);
+  sqlite3VdbeFreeCursorNN(p, pCx);
+}
 void sqlite3VdbeFreeCursorNN(Vdbe *p, VdbeCursor *pCx){
+  if( pCx->colCache ){
+    freeCursorWithCache(p, pCx);
+    return;
+  }
   switch( pCx->eCurType ){
     case CURTYPE_SORTER: {
       sqlite3VdbeSorterClose(p->db, pCx);
@@ -2824,12 +2822,12 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   int n;
   sqlite3 *db = p->db;
 
-  if( p->nResColumn ){
-    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  if( p->nResAlloc ){
+    releaseMemArray(p->aColName, p->nResAlloc*COLNAME_N);
     sqlite3DbFree(db, p->aColName);
   }
   n = nResColumn*COLNAME_N;
-  p->nResColumn = (u16)nResColumn;
+  p->nResColumn = p->nResAlloc = (u16)nResColumn;
   p->aColName = (Mem*)sqlite3DbMallocRawNN(db, sizeof(Mem)*n );
   if( p->aColName==0 ) return;
   initMemArray(p->aColName, n, db, MEM_Null);
@@ -2854,14 +2852,14 @@ int sqlite3VdbeSetColName(
 ){
   int rc;
   Mem *pColName;
-  assert( idx<p->nResColumn );
+  assert( idx<p->nResAlloc );
   assert( var<COLNAME_N );
   if( p->db->mallocFailed ){
     assert( !zName || xDel!=SQLITE_DYNAMIC );
     return SQLITE_NOMEM_BKPT;
   }
   assert( p->aColName!=0 );
-  pColName = &(p->aColName[idx+var*p->nResColumn]);
+  pColName = &(p->aColName[idx+var*p->nResAlloc]);
   rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, xDel);
   assert( rc!=0 || !zName || (pColName->flags&MEM_Term)!=0 );
   return rc;
@@ -3685,7 +3683,7 @@ static void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   assert( db!=0 );
   assert( p->db==0 || p->db==db );
   if( p->aColName ){
-    releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+    releaseMemArray(p->aColName, p->nResAlloc*COLNAME_N);
     sqlite3DbNNFreeNN(db, p->aColName);
   }
   for(pSub=p->pProgram; pSub; pSub=pNext){

@@ -32,7 +32,6 @@ if test x`uname` = 'xLinux'; then
 echo '********** Android configuration ******************************'
 echo '**********    ' Options: $WARNING_ANDROID_OPTS
 gcc -c \
-  -DHAVE_USLEEP=1 \
   -DSQLITE_HAVE_ISNAN \
   -DSQLITE_DEFAULT_JOURNAL_SIZE_LIMIT=1048576 \
   -DSQLITE_THREADSAFE=2 \

@@ -1689,7 +1689,7 @@ static int fts5UpdateMethod(
     ** VIRTUAL TABLE statement contained "contentless_delete=1". */
     if( eType0==SQLITE_INTEGER 
      && pConfig->eContent==FTS5_CONTENT_NONE 
-     && (nArg>1 || pConfig->bContentlessDelete==0)
+     && pConfig->bContentlessDelete==0
     ){
       pTab->p.base.zErrMsg = sqlite3_mprintf(
           "cannot %s contentless fts5 table: %s", 
@@ -2544,6 +2544,12 @@ static int fts5ColumnMethod(
       sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
     pConfig->pzErrmsg = 0;
+  }else if( pConfig->bContentlessDelete && sqlite3_vtab_nochange(pCtx) ){
+    char *zErr = sqlite3_mprintf("cannot UPDATE a subset of "
+        "columns on fts5 contentless-delete table: %s", pConfig->zName
+    );
+    sqlite3_result_error(pCtx, zErr, -1);
+    sqlite3_free(zErr);
   }
   return rc;
 }

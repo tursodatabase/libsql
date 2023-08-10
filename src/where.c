@@ -2535,7 +2535,7 @@ static WhereLoop **whereLoopFindLesser(
 
     /* If pTemplate is always better than p, then cause p to be overwritten
     ** with pTemplate.  pTemplate is better than p if:
-    **   (1)  pTemplate has no more dependences than p, and
+    **   (1)  pTemplate has no more dependencies than p, and
     **   (2)  pTemplate has an equal or lower cost than p.
     */
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq   /* (1)  */
@@ -5003,7 +5003,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   ** For joins of 3 or more tables, track the 10 best paths */
   mxChoice = (nLoop<=1) ? 1 : (nLoop==2 ? 5 : 10);
   assert( nLoop<=pWInfo->pTabList->nSrc );
-  WHERETRACE(0x002, ("---- begin solver.  (nRowEst=%d)\n", nRowEst));
+  WHERETRACE(0x002, ("---- begin solver.  (nRowEst=%d, nQueryLoop=%d)\n",
+                     nRowEst, pParse->nQueryLoop));
 
   /* If nRowEst is zero and there is an ORDER BY clause, ignore it. In this
   ** case the purpose of this call is to estimate the number of rows returned
@@ -5758,6 +5759,28 @@ static SQLITE_NOINLINE void whereAddIndexedExpr(
 }
 
 /*
+** Set the reverse-scan order mask to one for all tables in the query
+** with the exception of MATERIALIZED common table expressions that have
+** their own internal ORDER BY clauses.
+**
+** This implements the PRAGMA reverse_unordered_selects=ON setting.
+** (Also SQLITE_DBCONFIG_REVERSE_SCANORDER).
+*/
+static SQLITE_NOINLINE void whereReverseScanOrder(WhereInfo *pWInfo){
+  int ii;
+  for(ii=0; ii<pWInfo->pTabList->nSrc; ii++){
+    SrcItem *pItem = &pWInfo->pTabList->a[ii];
+    if( !pItem->fg.isCte
+     || pItem->u2.pCteUse->eM10d!=M10d_Yes
+     || NEVER(pItem->pSelect==0)
+     || pItem->pSelect->pOrderBy==0
+    ){
+      pWInfo->revMask |= MASKBIT(ii);
+    }
+  }
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -6121,8 +6144,9 @@ WhereInfo *sqlite3WhereBegin(
        if( db->mallocFailed ) goto whereBeginError;
     }
   }
+  assert( pWInfo->pTabList!=0 );
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
-     pWInfo->revMask = ALLBITS;
+    whereReverseScanOrder(pWInfo);
   }
   if( pParse->nErr ){
     goto whereBeginError;
@@ -6222,6 +6246,7 @@ WhereInfo *sqlite3WhereBegin(
         0!=(wctrlFlags & WHERE_ONEPASS_MULTIROW)
      && !IsVirtual(pTabList->a[0].pTab)
      && (0==(wsFlags & WHERE_MULTI_OR) || (wctrlFlags & WHERE_DUPLICATES_OK))
+     && OptimizationEnabled(db, SQLITE_OnePass)
     )){
       pWInfo->eOnePass = bOnerow ? ONEPASS_SINGLE : ONEPASS_MULTI;
       if( HasRowid(pTabList->a[0].pTab) && (wsFlags & WHERE_IDX_ONLY) ){

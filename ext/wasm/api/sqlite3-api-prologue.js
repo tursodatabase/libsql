@@ -1645,7 +1645,8 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
          do not.
       */
       tgt.push(capi.sqlite3_value_to_js(
-        wasm.peekPtr(pArgv + (wasm.ptrSizeof * i))
+        wasm.peekPtr(pArgv + (wasm.ptrSizeof * i)),
+        throwIfCannotConvert
       ));
     }
     return tgt;

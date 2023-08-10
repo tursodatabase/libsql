@@ -525,7 +525,8 @@ void sqlite3DeleteFrom(
     if( pWInfo==0 ) goto delete_from_cleanup;
     eOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     assert( IsVirtual(pTab)==0 || eOnePass!=ONEPASS_MULTI );
-    assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF );
+    assert( IsVirtual(pTab) || bComplex || eOnePass!=ONEPASS_OFF
+            || OptimizationDisabled(db, SQLITE_OnePass) );
     if( eOnePass!=ONEPASS_SINGLE ) sqlite3MultiWrite(pParse);
     if( sqlite3WhereUsesDeferredSeek(pWInfo) ){
       sqlite3VdbeAddOp1(v, OP_FinishSeek, iTabCur);

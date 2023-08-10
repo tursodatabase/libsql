@@ -1127,7 +1127,8 @@ int sqlite3_aggregate_count(sqlite3_context *p){
 */
 int sqlite3_column_count(sqlite3_stmt *pStmt){
   Vdbe *pVm = (Vdbe *)pStmt;
-  return pVm ? pVm->nResColumn : 0;
+  if( pVm==0 ) return 0;
+  return pVm->nResColumn;
 }
 
 /*
@@ -1301,6 +1302,32 @@ int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
 }
 
 /*
+** Column names appropriate for EXPLAIN or EXPLAIN QUERY PLAN.
+*/
+static const char * const azExplainColNames8[] = {
+   "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",  /* EXPLAIN */
+   "id", "parent", "notused", "detail"                         /* EQP */
+};
+static const u16 azExplainColNames16data[] = {
+  /*   0 */  'a', 'd', 'd', 'r',                0,
+  /*   5 */  'o', 'p', 'c', 'o', 'd', 'e',      0,
+  /*  12 */  'p', '1',                          0, 
+  /*  15 */  'p', '2',                          0,
+  /*  18 */  'p', '3',                          0,
+  /*  21 */  'p', '4',                          0,
+  /*  24 */  'p', '5',                          0,
+  /*  27 */  'c', 'o', 'm', 'm', 'e', 'n', 't', 0,
+  /*  35 */  'i', 'd',                          0,
+  /*  38 */  'p', 'a', 'r', 'e', 'n', 't',      0,
+  /*  45 */  'n', 'o', 't', 'u', 's', 'e', 'd', 0,
+  /*  53 */  'd', 'e', 't', 'a', 'i', 'l',      0
+};
+static const u8 iExplainColNames16[] = {
+  0, 5, 12, 15, 18, 21, 24, 27,
+  35, 38, 45, 53
+};
+
+/*
 ** Convert the N-th element of pStmt->pColName[] into a string using
 ** xFunc() then return that string.  If N is out of range, return 0.
 **
@@ -1332,15 +1359,29 @@ static const void *columnName(
     return 0;
   }
 #endif
+  if( N<0 ) return 0;
   ret = 0;
   p = (Vdbe *)pStmt;
   db = p->db;
   assert( db!=0 );
-  n = sqlite3_column_count(pStmt);
-  if( N<n && N>=0 ){
+  sqlite3_mutex_enter(db->mutex);
+
+  if( p->explain ){
+    if( useType>0 ) goto columnName_end;
+    n = p->explain==1 ? 8 : 4;
+    if( N>=n ) goto columnName_end;
+    if( useUtf16 ){
+      int i = iExplainColNames16[N + 8*p->explain - 8];
+      ret = (void*)&azExplainColNames16data[i];
+    }else{
+      ret = (void*)azExplainColNames8[N + 8*p->explain - 8];
+    }
+    goto columnName_end;
+  }
+  n = p->nResColumn;
+  if( N<n ){
     u8 prior_mallocFailed = db->mallocFailed;
     N += useType*n;
-    sqlite3_mutex_enter(db->mutex);
 #ifndef SQLITE_OMIT_UTF16
     if( useUtf16 ){
       ret = sqlite3_value_text16((sqlite3_value*)&p->aColName[N]);
@@ -1357,8 +1398,9 @@ static const void *columnName(
       sqlite3OomClear(db);
       ret = 0;
     }
-    sqlite3_mutex_leave(db->mutex);
   }
+columnName_end:
+  sqlite3_mutex_leave(db->mutex);
   return ret;
 }
 
@@ -1813,6 +1855,39 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt){
   return pStmt ? ((Vdbe*)pStmt)->explain : 0;
+}
+
+/*
+** Set the explain mode for a statement.
+*/
+int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
+  Vdbe *v = (Vdbe*)pStmt;
+  int rc;
+  sqlite3_mutex_enter(v->db->mutex);
+  if( v->explain==eMode ){
+    rc = SQLITE_OK;
+  }else if( eMode<0 || eMode>2 ){
+    rc = SQLITE_ERROR;
+  }else if( (v->prepFlags & SQLITE_PREPARE_SAVESQL)==0 ){
+    rc = SQLITE_ERROR;
+  }else if( v->eVdbeState!=VDBE_READY_STATE ){
+    rc = SQLITE_BUSY;
+  }else if( v->nMem>=10 && (eMode!=2 || v->haveEqpOps) ){
+    /* No reprepare necessary */
+    v->explain = eMode;
+    rc = SQLITE_OK;
+  }else{
+    v->explain = eMode;
+    rc = sqlite3Reprepare(v);
+    v->haveEqpOps = eMode==2;
+  }
+  if( v->explain ){
+    v->nResColumn = 12 - 4*v->explain;
+  }else{
+    v->nResColumn = v->nResAlloc;
+  }
+  sqlite3_mutex_leave(v->db->mutex);
+  return rc;
 }
 
 /*

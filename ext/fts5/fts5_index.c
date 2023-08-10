@@ -4752,7 +4752,7 @@ static int fts5IndexFindDeleteMerge(Fts5Index *p, Fts5Structure *pStruct){
         nEntry += pLvl->aSeg[iSeg].nEntry;
         nTomb += pLvl->aSeg[iSeg].nEntryTombstone;
       }
-      assert( nEntry>0 || pLvl->nSeg==0 );
+      assert_nc( nEntry>0 || pLvl->nSeg==0 );
       if( nEntry>0 ){
         int nPercent = (nTomb * 100) / nEntry;
         if( nPercent>=pConfig->nDeleteMerge && nPercent>nBest ){
@@ -8092,15 +8092,16 @@ static int fts5structCloseMethod(sqlite3_vtab_cursor *cur){
 */
 static int fts5structNextMethod(sqlite3_vtab_cursor *cur){
   Fts5StructVcsr *pCsr = (Fts5StructVcsr*)cur;
+  Fts5Structure *p = pCsr->pStruct;
 
   assert( pCsr->pStruct );
   pCsr->iSeg++;
   pCsr->iRowid++;
-  while( pCsr->iSeg>=pCsr->pStruct->aLevel[pCsr->iLevel].nSeg ){
+  while( pCsr->iLevel<p->nLevel && pCsr->iSeg>=p->aLevel[pCsr->iLevel].nSeg ){
     pCsr->iLevel++;
     pCsr->iSeg = 0;
   }
-  if( pCsr->iLevel>=pCsr->pStruct->nLevel ){
+  if( pCsr->iLevel>=p->nLevel ){
     fts5StructureRelease(pCsr->pStruct);
     pCsr->pStruct = 0;
   }

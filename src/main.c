@@ -1665,9 +1665,9 @@ static int sqliteDefaultBusyCallback(
   void *ptr,               /* Database connection */
   int count                /* Number of times table has been busy */
 ){
-#if SQLITE_OS_WIN || HAVE_USLEEP
+#if SQLITE_OS_WIN || !defined(HAVE_NANOSLEEP) || HAVE_NANOSLEEP
   /* This case is for systems that have support for sleeping for fractions of
-  ** a second.  Examples:  All windows systems, unix systems with usleep() */
+  ** a second.  Examples:  All windows systems, unix systems with nanosleep() */
   static const u8 delays[] =
      { 1, 2, 5, 10, 15, 20, 25, 25,  25,  50,  50, 100 };
   static const u8 totals[] =
@@ -4160,10 +4160,12 @@ int sqlite3_test_control(int op, ...){
         sqlite3ShowSrcList(0);
         sqlite3ShowWith(0);
         sqlite3ShowUpsert(0);
+#ifndef SQLITE_OMIT_TRIGGER
         sqlite3ShowTriggerStep(0);
         sqlite3ShowTriggerStepList(0);
         sqlite3ShowTrigger(0);
         sqlite3ShowTriggerList(0);
+#endif
 #ifndef SQLITE_OMIT_WINDOWFUNC
         sqlite3ShowWindow(0);
         sqlite3ShowWinFunc(0);
@@ -4470,6 +4472,7 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+#if !defined(SQLITE_OMIT_WSD)
     /* sqlite3_test_control(SQLITE_TESTCTRL_USELONGDOUBLE, int X);
     **
     **   X<0     Make no changes to the bUseLongDouble.  Just report value.
@@ -4484,6 +4487,7 @@ int sqlite3_test_control(int op, ...){
       rc = sqlite3Config.bUseLongDouble!=0;
       break;
     }
+#endif
 
 
 #if defined(SQLITE_DEBUG) && !defined(SQLITE_OMIT_WSD)

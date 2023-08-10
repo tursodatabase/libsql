@@ -1269,6 +1269,7 @@ do_test 15.0 {
 }]} {}
 
 extra_schema_checks 0
+optimization_control db one-pass off
 do_catchsql_test 15.1 {
   PRAGMA cell_size_check = 0;
   UPDATE c1 SET c= NOT EXISTS(SELECT 1 FROM c1 ORDER BY (SELECT 1 FROM c1 ORDER BY a)) +10 WHERE d BETWEEN 4 AND 7;
