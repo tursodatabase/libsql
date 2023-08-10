@@ -34,7 +34,7 @@ impl Drop for Transaction {
             }
             DropBehavior::Ignore => {}
             DropBehavior::Panic => {
-                if !thread::panicking() {
+                if !std::thread::panicking() {
                     panic!("Transaction dropped without being committed or rolled back");
                 }
             }
