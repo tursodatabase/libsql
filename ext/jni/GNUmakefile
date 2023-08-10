@@ -17,6 +17,7 @@ package.version := 0.0.1
 package.jar := sqlite3-jni-$(package.version).jar
 
 dir.top := ../..
+dir.tool := ../../tool
 dir.jni := $(patsubst %/,%,$(dir $(MAKEFILE)))
 
 dir.src     := $(dir.jni)/src
@@ -134,9 +135,10 @@ all: $(SQLite3Jni.class)
 # $(sqlite3.canonical.c) must point to the sqlite3.c in
 # the sqlite3 canonical source tree, as that source file
 # is required for certain utility and test code.
-sqlite3.canonical.c := $(dir.top)/sqlite3.c
+sqlite3.canonical.c := $(firstword $(wildcard $(dir.src.c)/sqlite3.c $(dir.top)/sqlite3.c))
+sqlite3.canonical.h := $(firstword $(wildcard $(dir.src.c)/sqlite3.h $(dir.top)/sqlite3.h))
 sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
-sqlite3.h := $(dir.top)/sqlite3.h
+sqlite3.h := $(sqlite3.canonical.h)
 #ifeq (,$(shell grep sqlite3_activate_see $(sqlite3.c) 2>/dev/null))
 #  SQLITE_C_IS_SEE := 0
 #else
@@ -263,3 +265,52 @@ clean:
 distclean: clean
 	-rm -f $(DISTCLEAN_FILES)
 	-rm -fr $(dir.bld.c)
+
+########################################################################
+# disttribution bundle rules...
+
+ifeq (,$(filter snapshot,$(MAKECMDGOALS)))
+dist-name-prefix := sqlite-jni
+else
+dist-name-prefix := sqlite-jni-snapshot-$(shell /usr/bin/date +%Y%m%d)
+endif
+dist-name := $(dist-name-prefix)-TEMP
+
+
+dist-dir.top := $(dist-name)
+dist-dir.src := $(dist-dir.top)/src
+dist-dir.c := $(dist-dir.src)/c
+dist.top.extras := \
+  README.md
+
+.PHONY: dist snapshot
+
+dist: \
+    $(bin.version-info) $(sqlite3.canonical.c) \
+    $(MAKEFILE) $(MAKEFILE.dist)
+	@echo "Making end-user deliverables..."
+	@rm -fr $(dist-dir.top)
+	@mkdir -p $(dist-dir.top) $(dist-dir.c)
+	@cp -p $(dist.top.extras) $(dist-dir.top)/.
+	@cp -p $(dir.src.c)/*.[ch] $(dist-dir.c)/.
+	@cp -p $(sqlite3.canonical.c) $(sqlite3.canonical.h) $(dist-dir.c)/.
+	@cp -rp $(dir.src)/org $(dist-dir.src)
+	@set -e; \
+		vnum=$$($(bin.version-info) --download-version); \
+		vdir=$(dist-name-prefix)-$$vnum; \
+		arczip=$$vdir.zip; \
+		echo "Making $$arczip ..."; \
+		rm -fr $$arczip $$vdir; \
+		mv $(dist-dir.top) $$vdir; \
+		zip -qr $$arczip $$vdir -x '*.class' -x '*~'; \
+		rm -fr $$vdir; \
+		ls -la $$arczip; \
+		set +e; \
+		unzip -lv $$arczip || echo "Missing unzip app? Not fatal."
+
+snapshot: dist
+
+.PHONY: dist-clean
+clean: dist-clean
+dist-clean:
+	rm -fr $(dist-name) $(wildcard sqlite-jni-*.zip)
