@@ -1367,7 +1367,7 @@ static void setupOutputPointer(JNIEnv * const env, const char *zClassName,
     setter = pCache->fidValue;
   }else{
     const jclass klazz = (*env)->GetObjectClass(env, jOut);
-    //MARKER(("%s => %s\n", zClassName, zTypeSig));
+    /*MARKER(("%s => %s\n", zClassName, zTypeSig));*/
     setter = (*env)->GetFieldID(env, klazz, "value", zTypeSig);
     EXCEPTION_IS_FATAL("setupOutputPointer() could not find OutputPointer.*.value");
     if(pCache){
@@ -2352,15 +2352,12 @@ JDECL(int,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2)(
 
 /* sqlite3_db_config() for (int,int*) */
 /* ACHTUNG: openjdk v19 creates a different mangled name for this
-   function than openjdk v8 does. It is not yet know when that
-   incompatibility was introduced, so we cannot yet reliably #if it
-   here. */
-JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_Int32_2)(
-  JENV_CSELF, jobject jDb, jint op, jobject jOut
+   function than openjdk v8 does. */
+JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
+  JENV_CSELF, jobject jDb, jint op, jint onOff, jobject jOut
 ){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
   int rc;
-
   switch( ps ? op : 0 ){
     case SQLITE_DBCONFIG_ENABLE_FKEY:
     case SQLITE_DBCONFIG_ENABLE_TRIGGER:
@@ -2381,7 +2378,7 @@ JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_
     case SQLITE_DBCONFIG_STMT_SCANSTATUS:
     case SQLITE_DBCONFIG_REVERSE_SCANORDER: {
       int pOut = 0;
-      rc = sqlite3_db_config( ps->pDb, (int)op, &pOut );
+      rc = sqlite3_db_config( ps->pDb, (int)op, onOff, &pOut );
       if( 0==rc && jOut ){
         OutputPointer_set_Int32(env, jOut, pOut);
       }
@@ -2390,7 +2387,21 @@ JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILorg_sqlite_jni_OutputPointer_
     default:
       rc = SQLITE_MISUSE;
   }
-  return rc;
+  return (jint)rc;
+}
+
+/**
+   This is a workaround for openjdk v19 (and possibly others) encoding
+   this function's name differently than JDK v8 does. If we do not
+   install both names for this function then Java will not be able to
+   find the function in both environments.
+*/
+JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_00024Int32_2)(
+  JENV_CSELF, jobject jDb, jint op, jint onOff, jobject jOut
+){
+  return JFuncName(1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
+    env, jKlazz, jDb, op, onOff, jOut
+  );
 }
 
 JDECL(jobject,1context_1db_1handle)(JENV_CSELF, jobject jpCx){

@@ -147,8 +147,12 @@ public class Tester1 {
     sqlite3 db = out.getValue();
     affirm(0 == rc);
     affirm(0 < db.getNativePointer());
+    sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, 1, null)
+      /* This function has different mangled names in jdk8 vs jdk19,
+         and this call is here to ensure that the build fails
+         if it cannot find both names. */;
     sqlite3_close_v2(db);
-      affirm(0 == db.getNativePointer());
+    affirm(0 == db.getNativePointer());
   }
 
   private static void testCompileOption(){
