@@ -1,0 +1,40 @@
+name: Go bindings tests CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  merge_group:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: dtolnay/rust-toolchain@1.66.0
+    
+    - name: get TCL
+      run: sudo apt-get install -y tcl8.6-dev
+
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v2
+
+    - name: Install Wasmpack
+      uses: jetli/wasm-pack-action@v0.4.0
+      with:
+        version: 'latest'
+
+    - name: configure
+      run: ./configure
+
+    - name: Build
+      run: make
+
+    - name: Build crates
+      run: cd crates && cargo build
+
+    - name: Run Go bindings tests
+      run: cd crates/bindings/go && LD_LIBRARY_PATH=/home/runner/work/libsql/libsql/crates/target/debug go test
