@@ -780,7 +780,7 @@ class GlobCommand extends Command {
                        ResultRowMode.ONELINE, sql);
     final String result = t.getResultText();
     final String sArgs = Util.argvToString(argv);
-    //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
+    //t2.verbose2(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
     final String glob = Util.argvToString(argv);
     rc = SQLTester.strglob(glob, result);
     if( (negate && 0==rc) || (!negate && 0!=rc) ){
@@ -861,7 +861,7 @@ class ResultCommand extends Command {
     argcCheck(ts,argv,0,-1);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
-    //t.verbose(argv[0]," SQL =\n",sql);
+    //ts.verbose2(argv[0]," SQL =\n",sql);
     int rc = t.execSql(null, false, bufferMode, ResultRowMode.ONELINE, sql);
     final String result = t.getResultText().trim();
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
@@ -884,8 +884,8 @@ class RunCommand extends Command {
                        ResultRowMode.ONELINE, sql);
     if( 0!=rc && t.isVerbose() ){
       String msg = sqlite3_errmsg(db);
-      t.verbose(argv[0]," non-fatal command error #",rc,": ",
-                msg,"\nfor SQL:\n",sql);
+      ts.verbose1(argv[0]," non-fatal command error #",rc,": ",
+                  msg,"\nfor SQL:\n",sql);
     }
   }
 }
@@ -924,7 +924,7 @@ class TableResultCommand extends Command {
     }
     for(int i = 0; i < res.length; ++i){
       final String glob = globs[i].replaceAll("\\s+"," ").trim();
-      //t.verbose(argv[0]," <<",glob,">> vs <<",res[i],">>");
+      //ts.verbose2(argv[0]," <<",glob,">> vs <<",res[i],">>");
       if( jsonMode ){
         if( !glob.equals(res[i]) ){
           ts.toss(argv[0], " json <<",glob, ">> does not match: <<",
@@ -1085,20 +1085,20 @@ class TestScript {
     return rc + " line "+ cur.lineNo;
   }
 
+  static final String[] verboseLabel = {"🔈",/*"🔉",*/"🔊","📢"};
   //! Output vals only if level<=current verbosity level.
   private TestScript verboseN(int level, Object... vals){
     final int verbosity = outer.getVerbosity();
     if(verbosity>=level){
-      outer.out(
-        "VERBOSE", (verbosity>1 ? "+ " : " "), getOutputPrefix(), ": "
+      outer.out( verboseLabel[level-1], getOutputPrefix(), " ",level,": "
       ).outln(vals);
     }
     return this;
   }
 
-  private TestScript verbose1(Object... vals){return verboseN(1,vals);}
-  private TestScript verbose2(Object... vals){return verboseN(2,vals);}
-  private TestScript verbose3(Object... vals){return verboseN(3,vals);}
+  TestScript verbose1(Object... vals){return verboseN(1,vals);}
+  TestScript verbose2(Object... vals){return verboseN(2,vals);}
+  TestScript verbose3(Object... vals){return verboseN(3,vals);}
 
   private void reset(){
     testCaseName = null;
