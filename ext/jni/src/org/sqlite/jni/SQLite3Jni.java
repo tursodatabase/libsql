@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 
 /**
@@ -25,7 +26,8 @@ import java.lang.annotation.ElementType;
 
    This annotation is solely for the reader's information.
 */
-@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.PARAMETER)
 @interface Nullable{}
 
@@ -39,7 +41,8 @@ import java.lang.annotation.ElementType;
    is in place to programmatically ensure that NotNull is conformed to
    in client code.
 */
-@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.PARAMETER)
 @interface NotNull{}
 
