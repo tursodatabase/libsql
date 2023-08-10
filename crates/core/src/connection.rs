@@ -1,4 +1,4 @@
-use crate::{Database, Error, Params, Result, Rows, RowsFuture, Statement};
+use crate::{Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior};
 
 use libsql_sys::ffi;
 use std::ffi::c_int;
@@ -101,6 +101,19 @@ impl Connection {
             sql: sql.into(),
             params: params.into(),
         }
+    }
+
+    /// Begin a new transaction in DEFERRED mode, which is the default.
+    pub fn transaction(&self) -> Result<Transaction> {
+        self.transaction_with_behavior(TransactionBehavior::Deferred)
+    }
+
+    /// Begin a new transaction in the given mode.
+    pub fn transaction_with_behavior(
+        &self,
+        tx_behavior: TransactionBehavior,
+    ) -> Result<Transaction> {
+        Transaction::begin(self.clone(), tx_behavior)
     }
 
     pub fn is_autocommit(&self) -> bool {
