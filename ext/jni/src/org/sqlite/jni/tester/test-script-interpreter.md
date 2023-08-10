@@ -260,3 +260,10 @@ is always an exact strcmp() not a GLOB.
 
 The --print command emits both its arguments and its body (if any) to
 stdout, indenting each line of output.
+
+### The --column-names command
+
+The --column-names command requires 0 or 1 as an argument, to disable
+resp.  enable it, and modifies SQL execution to include column names
+in output. When this option is on, each column value emitted gets
+prefixed by its column name, with a single space between them.

@@ -232,13 +232,23 @@ public class SQLTester {
     openDb(0, initialDbName, true);
   }
 
+  static final String[] startEmoji = {
+    "🚴", "🏄", "🏇", "🤸", "⛹", "🏊", "⛷", "🧗", "🏋"
+  };
+  static final int nStartEmoji = startEmoji.length;
+  static int iStartEmoji = 0;
+
+  private static String nextStartEmoji(){
+    return startEmoji[iStartEmoji++ % nStartEmoji];
+  }
+
   public void runTests() throws Exception {
     for(String f : listInFiles){
       reset();
       setupInitialDb();
       ++nTestFile;
       final TestScript ts = new TestScript(f);
-      outln("----->>>>> running [",f,"]");
+      outln(nextStartEmoji(), " starting [",f,"]");
       try{
         ts.run(this);
       }catch(SQLTesterException e){
@@ -246,7 +256,7 @@ public class SQLTester {
         ++nAbortedScript;
         if( e.isFatal() ) throw e;
       }finally{
-        outln("<<<<<----- ",nTest," test(s) in ",ts.getFilename());
+        outln("🏁 ",nTest," test(s) in ",ts.getFilename());
       }
     }
     Util.unlink(initialDbName);
@@ -561,6 +571,7 @@ public class SQLTester {
       if(a.startsWith("-")){
         final String flag = a.replaceFirst("-+","");
         if( flag.equals("verbose") ){
+          // Use --verbose up to 3 times
           t.setVerbosity(t.getVerbosity() + 1);
         }else{
           throw new IllegalArgumentException("Unhandled flag: "+flag);
@@ -678,7 +689,9 @@ abstract class Command {
      Must process one command-unit of work and either return
      (on success) or throw (on error).
 
-     The first two arguments specify the context of the test.
+     The first two arguments specify the context of the test. The TestScript
+     provides the content of the test and the SQLTester providers the sandbox
+     in which that script is being evaluated.
 
      argv is a list with the command name followed by any arguments to
      that command. The argcCheck() method from this class provides
@@ -854,7 +867,7 @@ class ResultCommand extends Command {
     final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
     if( !result.equals(sArgs) ){
       t.outln(argv[0]," FAILED comparison. Result buffer:\n",
-              result,"\nargs:\n",sArgs);
+              result,"\nExpected result:\n",sArgs);
       ts.toss(argv[0]+" comparison failed.");
     }
   }
@@ -934,7 +947,15 @@ class TestCaseCommand extends Command {
   }
 }
 
-class CommandDispatcher2 {
+//! --verbosity command
+class VerbosityCommand extends Command {
+  public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
+    argcCheck(ts,argv,1);
+    ts.setVerbosity( Integer.parseInt(argv[1]) );
+  }
+}
+
+class CommandDispatcher {
 
   private static java.util.Map<String,Command> commandMap =
     new java.util.HashMap<>();
@@ -947,22 +968,23 @@ class CommandDispatcher2 {
     Command rv = commandMap.get(name);
     if( null!=rv ) return rv;
     switch(name){
-      case "close":       rv = new CloseDbCommand(); break;
-      case "column-names":rv = new ColumnNamesCommand(); break;
-      case "db":          rv = new DbCommand(); break;
-      case "glob":        rv = new GlobCommand(); break;
-      case "json":        rv = new JsonCommand(); break;
-      case "json-block":  rv = new JsonBlockCommand(); break;
-      case "new":         rv = new NewDbCommand(); break;
-      case "notglob":     rv = new NotGlobCommand(); break;
-      case "null":        rv = new NullCommand(); break;
-      case "oom":         rv = new NoopCommand(); break;
-      case "open":        rv = new OpenDbCommand(); break;
-      case "print":       rv = new PrintCommand(); break;
-      case "result":      rv = new ResultCommand(); break;
-      case "run":         rv = new RunCommand(); break;
-      case "tableresult": rv = new TableResultCommand(); break;
-      case "testcase":    rv = new TestCaseCommand(); break;
+      case "close":        rv = new CloseDbCommand(); break;
+      case "column-names": rv = new ColumnNamesCommand(); break;
+      case "db":           rv = new DbCommand(); break;
+      case "glob":         rv = new GlobCommand(); break;
+      case "json":         rv = new JsonCommand(); break;
+      case "json-block":   rv = new JsonBlockCommand(); break;
+      case "new":          rv = new NewDbCommand(); break;
+      case "notglob":      rv = new NotGlobCommand(); break;
+      case "null":         rv = new NullCommand(); break;
+      case "oom":          rv = new NoopCommand(); break;
+      case "open":         rv = new OpenDbCommand(); break;
+      case "print":        rv = new PrintCommand(); break;
+      case "result":       rv = new ResultCommand(); break;
+      case "run":          rv = new RunCommand(); break;
+      case "tableresult":  rv = new TableResultCommand(); break;
+      case "testcase":     rv = new TestCaseCommand(); break;
+      case "verbosity":    rv = new VerbosityCommand(); break;
       default: rv = null; break;
     }
     if( null!=rv ) commandMap.put(name, rv);
@@ -990,24 +1012,38 @@ class CommandDispatcher2 {
    evaluation are delegated elsewhere.
 */
 class TestScript {
+  //! input file
   private String filename = null;
+  //! Name pulled from the SCRIPT_MODULE_NAME directive of the file
   private String moduleName = null;
+  //! Content buffer state.
   private final Cursor cur = new Cursor();
+  //! Utility for console output.
   private final Outer outer = new Outer();
 
+  //! File content and parse state.
   private static final class Cursor {
     private final StringBuilder sb = new StringBuilder();
     byte[] src = null;
+    //! Current position in this.src.
     int pos = 0;
-    int putbackPos = 0;
-    int putbackLineNo = 0;
+    //! Current line number. Starts at 0 for internal reasons and will
+    // line up with 1-based reality once parsing starts.
     int lineNo = 0 /* yes, zero */;
+    //! Putback value for this.pos.
+    int putbackPos = 0;
+    //! Putback line number
+    int putbackLineNo = 0;
+    //! Peeked-to pos, used by peekLine() and consumePeeked().
     int peekedPos = 0;
+    //! Peeked-to line number.
     int peekedLineNo = 0;
-    boolean inComment = false;
 
-    void reset(){
-      sb.setLength(0); pos = 0; lineNo = 0/*yes, zero*/; inComment = false;
+    //! Restore parsing state to the start of the stream.
+    void rewind(){
+      sb.setLength(0);
+      pos = lineNo = putbackPos = putbackLineNo = peekedPos = peekedLineNo = 0
+        /* kinda missing memset() about now. */;
     }
   }
 
@@ -1033,6 +1069,10 @@ class TestScript {
     return moduleName;
   }
 
+  /**
+     Verbosity level 0 produces no debug/verbose output. Level 1 produces
+     some and level 2 produces more.
+   */
   public void setVerbosity(int level){
     outer.setVerbosity(level);
   }
@@ -1041,6 +1081,8 @@ class TestScript {
     return "["+(moduleName==null ? filename : moduleName)+"] line "+
       cur.lineNo;
   }
+
+  //! Output vals only if level<=current verbosity level.
   private TestScript verboseN(int level, Object... vals){
     final int verbosity = outer.getVerbosity();
     if(verbosity>=level){
@@ -1053,16 +1095,11 @@ class TestScript {
 
   private TestScript verbose1(Object... vals){return verboseN(1,vals);}
   private TestScript verbose2(Object... vals){return verboseN(2,vals);}
-
-  public TestScript warn(Object... vals){
-    outer.out("WARNING ", getOutputPrefix(),": ").outln(vals);
-    return this;
-  }
+  private TestScript verbose3(Object... vals){return verboseN(3,vals);}
 
   private void reset(){
-    cur.reset();
+    cur.rewind();
   }
-
 
   /**
      Returns the next line from the buffer, minus the trailing EOL.
@@ -1257,7 +1294,7 @@ class TestScript {
     final Matcher m = patternCommand.matcher(line);
     boolean rc = m.find();
     if( rc && checkForImpl ){
-      rc = null!=CommandDispatcher2.getCommandByName(m.group(2));
+      rc = null!=CommandDispatcher.getCommandByName(m.group(2));
     }
     return rc;
   }
@@ -1300,9 +1337,9 @@ class TestScript {
     verbose1("running command: ",argv[0], " ", Util.argvToString(argv));
     if(outer.getVerbosity()>1){
       final String input = t.getInputText();
-      if( !input.isEmpty() ) verbose2("Input buffer = ",input);
+      if( !input.isEmpty() ) verbose3("Input buffer = ",input);
     }
-    CommandDispatcher2.dispatch(t, this, argv);
+    CommandDispatcher.dispatch(t, this, argv);
   }
 
   void toss(Object... msg) throws TestScriptFailed {
@@ -1320,7 +1357,7 @@ class TestScript {
     String line, directive;
     String[] argv;
     while( null != (line = getLine()) ){
-      //verbose(line);
+      verbose3("input line: ",line);
       checkForDirective(tester, line);
       argv = getCommandArgv(line);
       if( null!=argv ){
