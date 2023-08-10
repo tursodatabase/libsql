@@ -166,7 +166,7 @@
    https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#jni_interface_functions_and_pointers
 */
 #define JENV_OSELF JNIEnv * const env, jobject jSelf
-#define JENV_CSELF JNIEnv * const env, jclass jSelf
+#define JENV_CSELF JNIEnv * const env, jclass jKlazz
 /* Helpers to account for -Xcheck:jni warnings about not having
    checked for exceptions. */
 #define IFTHREW if((*env)->ExceptionCheck(env))
@@ -4203,7 +4203,7 @@ Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JENV_CSELF){
    sqlite3.c instead of sqlite3.h.
 */
 JNIEXPORT void JNICALL
-Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF, jclass klazzSjni){
+Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
   enum JType {
     JTYPE_INT,
     JTYPE_BOOL
@@ -4266,16 +4266,16 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF, jclass klazzSjni){
 
   for( pConfFlag = &aLimits[0]; pConfFlag->zName; ++pConfFlag ){
     char const * zSig = (JTYPE_BOOL == pConfFlag->jtype) ? "Z" : "I";
-    fieldId = (*env)->GetStaticFieldID(env, klazzSjni, pConfFlag->zName, zSig);
+    fieldId = (*env)->GetStaticFieldID(env, jKlazz, pConfFlag->zName, zSig);
     EXCEPTION_IS_FATAL("Missing an expected static member of the SQLite3Jni class.");
     //MARKER(("Setting %s (field=%p) = %d\n", pConfFlag->zName, fieldId, pConfFlag->value));
     assert(fieldId);
     switch(pConfFlag->jtype){
       case JTYPE_INT:
-        (*env)->SetStaticIntField(env, klazzSjni, fieldId, (jint)pConfFlag->value);
+        (*env)->SetStaticIntField(env, jKlazz, fieldId, (jint)pConfFlag->value);
         break;
       case JTYPE_BOOL:
-        (*env)->SetStaticBooleanField(env, klazzSjni, fieldId,
+        (*env)->SetStaticBooleanField(env, jKlazz, fieldId,
                                       pConfFlag->value ? JNI_TRUE : JNI_FALSE);
         break;
     }

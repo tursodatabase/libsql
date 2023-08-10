@@ -47,27 +47,56 @@ enum ResultRowMode {
   NEWLINE
 };
 
+/**
+   Base exception type for test-related failures.
+*/
 class SQLTesterException extends RuntimeException {
-  public SQLTesterException(String msg){
+  private boolean bFatal = false;
+
+  SQLTesterException(String msg){
     super(msg);
   }
+
+  protected SQLTesterException(String msg, boolean fatal){
+    super(msg);
+    bFatal = fatal;
+  }
+
+  /**
+     Indicates whether the framework should consider this exception
+     type as immediately fatal to the test run or not.
+  */
+  final boolean isFatal(){ return bFatal; }
 }
 
+/**
+   Generic test-failed exception.
+ */
 class TestScriptFailed extends SQLTesterException {
   public TestScriptFailed(TestScript ts, String msg){
-    super(ts.getOutputPrefix()+": "+msg);
+    super(ts.getOutputPrefix()+": "+msg, true);
   }
 }
 
+/**
+   Thrown when an unknown test command is encountered in a script.
+*/
 class UnknownCommand extends SQLTesterException {
   public UnknownCommand(TestScript ts, String cmd){
-    super(ts.getOutputPrefix()+": unknown command: "+cmd);
+    super(ts.getOutputPrefix()+": unknown command: "+cmd, false);
   }
 }
 
+/**
+   Thrown when an "incompatible directive" is found in a script.  This
+   can be the presence of a C-preprocessor construct, specific
+   metadata tags within a test script's header, or specific test
+   constructs which are incompatible with this particular
+   implementation.
+*/
 class IncompatibleDirective extends SQLTesterException {
   public IncompatibleDirective(TestScript ts, String line){
-    super(ts.getOutputPrefix()+": incompatible directive: "+line);
+    super(ts.getOutputPrefix()+": incompatible directive: "+line, false);
   }
 }
 
@@ -124,6 +153,12 @@ class Outer {
    test-script-interpreter.md.
 
    This is a work in progress.
+
+
+   An instance of this application provides a core set of services
+   which TestScript instances use for processing testing logic.
+   TestScripts, in turn, delegate the concrete test work to Command
+   objects, which the TestScript parses on their behalf.
 */
 public class SQLTester {
   //! List of input script files.
@@ -205,17 +240,10 @@ public class SQLTester {
       outln("----->>>>> running [",f,"]");
       try{
         ts.run(this);
-      }catch(UnknownCommand e){
-        /* currently not fatal */
-        outln(e);
+      }catch(SQLTesterException e){
+        outln("EXCEPTION: ",e.getClass().getSimpleName(),": ",e.getMessage());
         ++nAbortedScript;
-      }catch(IncompatibleDirective e){
-        /* not fatal */
-        outln(e);
-        ++nAbortedScript;
-      }catch(Exception e){
-        ++nAbortedScript;
-        throw e;
+        if( e.isFatal() ) throw e;
       }finally{
         outln("<<<<<----- ",nTest," test(s) in ",ts.getFilename());
       }
@@ -266,7 +294,7 @@ public class SQLTester {
 
   SQLTester affirmDbId(int n) throws IndexOutOfBoundsException {
     if(n<0 || n>=aDb.length){
-      throw new IndexOutOfBoundsException("illegal db number.");
+      throw new IndexOutOfBoundsException("illegal db number: "+n);
     }
     return this;
   }
@@ -325,10 +353,13 @@ public class SQLTester {
      tracking running totals.
   */
   void reset(){
+    clearInputBuffer();
+    clearResultBuffer();
+    closeAllDbs();
     nTest = 0;
     nullView = "nil";
-    clearInputBuffer();
-    closeAllDbs();
+    emitColNames = false;
+    iCurrentDb = 0;
   }
 
   void setNullValue(String v){nullView = v;}

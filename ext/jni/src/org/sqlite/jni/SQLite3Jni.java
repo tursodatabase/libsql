@@ -126,7 +126,7 @@ public final class SQLite3Jni {
   //! Not used
   private SQLite3Jni(){}
   //! Called from static init code.
-  private static native void init(@NotNull Class<SQLite3Jni> c);
+  private static native void init();
 
   /**
      Each thread which uses the SQLite3 JNI APIs should call
@@ -1457,6 +1457,6 @@ public final class SQLite3Jni {
   static {
     // This MUST come after the SQLITE_MAX_... values or else
     // attempting to modify them silently fails.
-    init(SQLite3Jni.class);
+    init();
   }
 }

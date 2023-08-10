@@ -224,7 +224,7 @@ test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 		org.sqlite.jni.Tester1 $(if $(test.flags),-- $(test.flags),)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
-tester.flags ?= --verbose
+tester.flags ?= # --verbose
 .PHONY: tester
 ifeq (1,$(enable.tester))
 tester: $(CLASS_FILES.tester) $(sqlite3-jni.dll)

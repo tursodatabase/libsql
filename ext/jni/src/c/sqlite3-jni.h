@@ -758,10 +758,10 @@ extern "C" {
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    init
- * Signature: (Ljava/lang/Class;)V
+ * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_init
-  (JNIEnv *, jclass, jclass);
+  (JNIEnv *, jclass);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
