@@ -21,19 +21,6 @@ import java.util.regex.*;
 import org.sqlite.jni.*;
 import static org.sqlite.jni.SQLite3Jni.*;
 
-class TestFailure extends RuntimeException {
-  public TestFailure(String msg){
-    super(msg);
-  }
-}
-
-class SkipTestRemainder extends RuntimeException {
-  public TestScript testScript;
-  public SkipTestRemainder(TestScript ts){
-    super("Skipping remainder of "+ts.getName());
-    testScript = ts;
-  }
-}
 
 /**
    Modes for how to handle SQLTester.execSql()'s
@@ -54,6 +41,12 @@ enum ResultRowMode {
   //! Add a newline between each result row.
   NEWLINE
 };
+
+class SQLTesterException extends RuntimeException {
+  public SQLTesterException(String msg){
+    super(msg);
+  }
+}
 
 /**
    This class provides an application which aims to implement the
@@ -76,6 +69,7 @@ public class SQLTester {
   private int nTestFile = 0;
   private int nAbortedScript = 0;
   private int nTest;
+  private boolean emitColNames;
   private final sqlite3[] aDb = new sqlite3[7];
   private int iCurrentDb = 0;
   private final String initialDbName = "test.db";
@@ -94,6 +88,8 @@ public class SQLTester {
   public boolean isVerbose(){
     return this.outer.isVerbose();
   }
+
+  void outputColumnNames(boolean b){ emitColNames = b; }
 
   @SuppressWarnings("unchecked")
   public void verbose(Object... vals){
@@ -125,56 +121,29 @@ public class SQLTester {
     return currentScript;
   }
 
-  public void runTests() throws Exception {
-    // process each input file
-    try {
-      for(String f : listInFiles){
-        reset();
-        setupInitialDb();
-        ++nTestFile;
-        final TestScript ts = new TestScript(f);
-        currentScript = ts;
-        outln("----->>>>> ",ts.getModuleName()," [",ts.getName(),"]");
-        if( ts.isIgnored() ){
-          outln("WARNING: skipping [",ts.getModuleName(),"]: ",
-                ts.getIgnoredReason());
-          continue;
-        }else{
-          try{
-            ts.run(this);
-          }catch(SkipTestRemainder e){
-            /* not an error */
-            ++nAbortedScript;
-          }
-        }
-        outln("<<<<<----- ",ts.getModuleName(),": ",nTest," test(s)");
-      }
-    }finally{
-      currentScript = null;
-    }
-    Util.unlink(initialDbName);
-  }
-
-
-  //! Not yet funcional
-  private void runTests2() throws Exception {
+  private void runTests() throws Exception {
     for(String f : listInFiles){
       reset();
       setupInitialDb();
       ++nTestFile;
-      final TestScript2 ts = new TestScript2(f);
+      final TestScript ts = new TestScript(f);
+      outln("----->>>>> running [",f,"]");
       try{
         ts.run(this);
-      }catch(SkipTestRemainder2 e){
-        /* not fatal */
+      }catch(UnknownCommand e){
+        /* currently not fatal */
         outln(e);
         ++nAbortedScript;
       }catch(IncompatibleDirective e){
         /* not fatal */
         outln(e);
         ++nAbortedScript;
+      }catch(Exception e){
+        ++nAbortedScript;
+        throw e;
+      }finally{
+        outln("<<<<<----- ",nTest," test(s) in ",ts.getFilename());
       }
-      outln("<<<<<----- ",nTest," test(s) in ",ts.getFilename());
     }
     Util.unlink(initialDbName);
   }
@@ -264,7 +233,7 @@ public class SQLTester {
     if( 0!=rc ){
       final String msg = sqlite3_errmsg(db);
       sqlite3_close(db);
-      Util.toss(TestFailure.class, "db open failed with code ",
+      Util.toss(SQLTesterException.class, "db open failed with code ",
                 rc," and message: ",msg);
     }
     return aDb[iCurrentDb] = db;
@@ -364,70 +333,89 @@ public class SQLTester {
     final StringBuilder sb = (ResultBufferMode.NONE==appendMode)
       ? null : resultBuffer;
     //outln("sqlChunk len= = ",sqlChunk.length);
-    while(pos < sqlChunk.length){
-      if(pos > 0){
-        sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
-                                      sqlChunk.length);
-      }
-      if( 0==sqlChunk.length ) break;
-      rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
-      /*outln("PREPARE rc ",rc," oTail=",oTail.getValue(),": ",
-        new String(sqlChunk,StandardCharsets.UTF_8),"\n<EOSQL>");*/
-      if( 0!=rc ){
-        if(throwOnError){
-          Util.toss(RuntimeException.class, "db op failed with rc="
-                    +rc+": "+sqlite3_errmsg(db));
-        }else if( null!=sb ){
-          appendDbErr(db, sb, rc);
+    try{
+      while(pos < sqlChunk.length){
+        if(pos > 0){
+          sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
+                                        sqlChunk.length);
         }
-        break;
-      }
-      pos = oTail.getValue();
-      stmt = outStmt.getValue();
-      if( null == stmt ){
-        // empty statement was parsed.
-        continue;
-      }
-      if( null!=sb ){
-        // Add the output to the result buffer...
-        final int nCol = sqlite3_column_count(stmt);
-        while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
-          for(int i = 0; i < nCol; ++i){
-            if( spacing++ > 0 ) sb.append(' ');
-            String val = sqlite3_column_text16(stmt, i);
-            if( null==val ){
-              sb.append( nullView );
-              continue;
-            }
-            switch(appendMode){
-              case ASIS:
-                sb.append( val );
-                break;
-              case ESCAPED:
-                sb.append( escapeSqlValue(val) );
-                break;
-              default:
-                Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
-            }
+        if( 0==sqlChunk.length ) break;
+        rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
+        /*outln("PREPARE rc ",rc," oTail=",oTail.getValue(),": ",
+          new String(sqlChunk,StandardCharsets.UTF_8),"\n<EOSQL>");*/
+        if( 0!=rc ){
+          if(throwOnError){
+            Util.toss(RuntimeException.class, "db op failed with rc="
+                      +rc+": "+sqlite3_errmsg(db));
+          }else if( null!=sb ){
+            appendDbErr(db, sb, rc);
           }
-          if( ResultRowMode.NEWLINE == lineMode ){
-            spacing = 0;
-            sb.append('\n');
-          }
+          break;
         }
-      }else{
-        while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){}
-      }
-      sqlite3_finalize(stmt);
-      if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
-      else if( rc!=0 ){
+        pos = oTail.getValue();
+        stmt = outStmt.getValue();
+        if( null == stmt ){
+          // empty statement was parsed.
+          continue;
+        }
         if( null!=sb ){
-          appendDbErr(db, sb, rc);
+          // Add the output to the result buffer...
+          final int nCol = sqlite3_column_count(stmt);
+          String colName = null, val = null;
+          while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){
+            for(int i = 0; i < nCol; ++i){
+              if( spacing++ > 0 ) sb.append(' ');
+              if( emitColNames ){
+                colName = sqlite3_column_name(stmt, i);
+                switch(appendMode){
+                  case ASIS:
+                    sb.append( colName );
+                    break;
+                  case ESCAPED:
+                    sb.append( escapeSqlValue(colName) );
+                    break;
+                  default:
+                    Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
+                }
+                sb.append(' ');
+              }
+              val = sqlite3_column_text16(stmt, i);
+              if( null==val ){
+                sb.append( nullView );
+                continue;
+              }
+              switch(appendMode){
+                case ASIS:
+                  sb.append( val );
+                  break;
+                case ESCAPED:
+                  sb.append( escapeSqlValue(val) );
+                  break;
+                default:
+                  Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
+              }
+            }
+            if( ResultRowMode.NEWLINE == lineMode ){
+              spacing = 0;
+              sb.append('\n');
+            }
+          }
+        }else{
+          while( SQLITE_ROW == (rc = sqlite3_step(stmt)) ){}
         }
-        break;
+        sqlite3_finalize(stmt);
+        stmt = null;
+        if(SQLITE_ROW==rc || SQLITE_DONE==rc) rc = 0;
+        else if( rc!=0 ){
+          if( null!=sb ){
+            appendDbErr(db, sb, rc);
+          }
+          break;
+        }
       }
+    }finally{
+      sqlite3_finalize(stmt);
     }
-    sqlite3_finalize(stmt);
     if( 0!=rc && throwOnError ){
       Util.toss(RuntimeException.class, "db op failed with rc="
                 +rc+": "+sqlite3_errmsg(db));
@@ -443,8 +431,6 @@ public class SQLTester {
         final String flag = a.replaceFirst("-+","");
         if( flag.equals("verbose") ){
           t.setVerbosity(t.getVerbosity() + 1);
-        }else if( flag.equals("2") ){
-          v2 = true;
         }else{
           throw new IllegalArgumentException("Unhandled flag: "+flag);
         }
@@ -452,11 +438,13 @@ public class SQLTester {
       }
       t.addTestScript(a);
     }
-    if( v2 ) t.runTests2();
-    else t.runTests();
-    t.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
-    if( t.nAbortedScript > 0 ){
-      t.outln("Aborted ",t.nAbortedScript," script(s).");
+    try {
+      t.runTests();
+    }finally{
+      t.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
+      if( t.nAbortedScript > 0 ){
+        t.outln("Aborted ",t.nAbortedScript," script(s).");
+      }
     }
   }
 
@@ -490,363 +478,6 @@ public class SQLTester {
     installCustomExtensions();
   }
 
-}
-
-/**
-   Base class for test script commands. It provides a set of utility
-   APIs for concrete command implementations.
-
-   Each subclass must have a public no-arg ctor and must implement
-   the process() method which is abstract in this class.
-
-   Commands are intended to be stateless, except perhaps for counters
-   and similar internals. No state which changes the behavior between
-   any two invocations of process() should be retained.
-*/
-abstract class Command {
-  protected Command(){}
-
-  /**
-     Must process one command-unit of work and either return
-     (on success) or throw (on error).
-
-     The first argument is the context of the test.
-
-     argv is a list with the command name followed by any arguments to
-     that command. The argcCheck() method from this class provides
-     very basic argc validation.
-
-     The content is any text content which was specified after the
-     command, or null if there is null. Any command which does not
-     permit content must pass that argument to affirmNoContent() in
-     their constructor (or perform an equivalent check). Similary,
-     those which require content must pass it to affirmHasContent()
-     (or equivalent).
-  */
-  public abstract void process(SQLTester tester, String[] argv, String content) throws Exception;
-
-  /**
-     If argv.length-1 (-1 because the command's name is in argv[0]) does not
-     fall in the inclusive range (min,max) then this function throws. Use
-     a max value of -1 to mean unlimited.
-  */
-  protected final void argcCheck(String[] argv, int min, int max) throws Exception{
-    int argc = argv.length-1;
-    if(argc<min || (max>=0 && argc>max)){
-      if( min==max ){
-        Util.badArg(argv[0]," requires exactly ",min," argument(s)");
-      }else if(max>0){
-        Util.badArg(argv[0]," requires ",min,"-",max," arguments.");
-      }else{
-        Util.badArg(argv[0]," requires at least ",min," arguments.");
-      }
-    }
-  }
-
-  /**
-     Equivalent to argcCheck(argv,argc,argc).
-  */
-  protected final void argcCheck(String[] argv, int argc) throws Exception{
-    argcCheck(argv, argc, argc);
-  }
-
-  //! Throws if content is not null.
-  protected void affirmNoContent(String content) throws Exception{
-    if(null != content){
-      Util.badArg(this.getClass().getName()," does not accept content ",
-                  "but got:\n",content);
-    }
-  }
-
-  //! Throws if content is null.
-  protected void affirmHasContent(String content) throws Exception{
-    if(null == content){
-      Util.badArg(this.getClass().getName()," requires content.");
-    }
-  }
-}
-
-class CloseDbCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0,1);
-    affirmNoContent(content);
-    Integer id;
-    if(argv.length>1){
-      String arg = argv[1];
-      if("all".equals(arg)){
-        //t.verbose(argv[0]," all dbs");
-        t.closeAllDbs();
-        return;
-      }
-      else{
-        id = Integer.parseInt(arg);
-      }
-    }else{
-      id = t.getCurrentDbId();
-    }
-    t.closeDb(id);
-    t.verbose(argv[0]," db ",id);
-  }
-}
-
-//! --db command
-class DbCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,1);
-    affirmNoContent(content);
-    final sqlite3 db = t.setCurrentDb( Integer.parseInt(argv[1]) );
-    //t.verbose(argv[0]," set db to ",db);
-  }
-}
-
-//! --glob command
-class GlobCommand extends Command {
-  private boolean negate = false;
-  public GlobCommand(){}
-  protected GlobCommand(boolean negate){ this.negate = negate; }
-
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,1);
-    affirmNoContent(content);
-    t.incrementTestCounter();
-    final String sql = t.takeInputBuffer();
-    //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
-                       ResultRowMode.ONELINE, sql);
-    final String result = t.getResultText();
-    final String sArgs = Util.argvToString(argv);
-    //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
-    final String glob = argv[1];
-    rc = SQLTester.strglob(glob, result);
-    if( (negate && 0==rc) || (!negate && 0!=rc) ){
-      Util.toss(TestFailure.class, argv[0], " mismatch: ",
-                glob," vs input: ",result);
-    }
-  }
-}
-
-//! --json command
-class JsonCommand extends ResultCommand {
-  public JsonCommand(){ super(ResultBufferMode.ASIS); }
-}
-
-//! --json-block command
-class JsonBlockCommand extends TableResultCommand {
-  public JsonBlockCommand(){ super(true); }
-}
-
-//! --new command
-class NewDbCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,1);
-    affirmNoContent(content);
-    String fname = argv[1];
-    Util.unlink(fname);
-    final sqlite3 db = t.openDb(fname, true);
-    //t.verbose(argv[0]," db ",db);
-  }
-}
-
-//! Placeholder dummy/no-op commands
-class NoopCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-  }
-}
-
-//! --notglob command
-class NotGlobCommand extends GlobCommand {
-  public NotGlobCommand(){
-    super(true);
-  }
-}
-
-//! --null command
-class NullCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,1);
-    affirmNoContent(content);
-    t.setNullValue(argv[1]);
-    //t.verbose(argv[0]," ",argv[1]);
-  }
-}
-
-//! --open command
-class OpenDbCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,1);
-    affirmNoContent(content);
-    String fname = argv[1];
-    final sqlite3 db = t.openDb(fname, false);
-    //t.verbose(argv[0]," db ",db);
-  }
-}
-
-//! --print command
-class PrintCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    if( 1==argv.length && null==content ){
-      Util.badArg(argv[0]," requires at least 1 argument or body content.");
-    }
-    if( argv.length > 1 ) t.outln("\t",Util.argvToString(argv));
-    if( null!=content ) t.outln(content.replaceAll("(?m)^", "\t"));
-  }
-}
-
-//! --result command
-class ResultCommand extends Command {
-  private final ResultBufferMode bufferMode;
-  protected ResultCommand(ResultBufferMode bm){ bufferMode = bm; }
-  public ResultCommand(){ this(ResultBufferMode.ESCAPED); }
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0,-1);
-    affirmNoContent(content);
-    t.incrementTestCounter();
-    final String sql = t.takeInputBuffer();
-    //t.verbose(argv[0]," SQL =\n",sql);
-    int rc = t.execSql(null, false, bufferMode, ResultRowMode.ONELINE, sql);
-    final String result = t.getResultText().trim();
-    final String sArgs = argv.length>1 ? Util.argvToString(argv) : "";
-    if( !result.equals(sArgs) ){
-      t.outln(argv[0]," FAILED comparison. Result buffer:\n",
-              result,"\nargs:\n",sArgs);
-      Util.toss(TestFailure.class, argv[0]," comparison failed.");
-    }
-  }
-}
-
-//! --run command
-class RunCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0,1);
-    affirmHasContent(content);
-    final sqlite3 db = (1==argv.length)
-      ? t.getCurrentDb() : t.getDbById( Integer.parseInt(argv[1]) );
-    int rc = t.execSql(db, false, ResultBufferMode.NONE,
-                       ResultRowMode.ONELINE, content);
-    if( 0!=rc && t.isVerbose() ){
-      String msg = sqlite3_errmsg(db);
-      t.verbose(argv[0]," non-fatal command error #",rc,": ",
-                msg,"\nfor SQL:\n",content);
-    }
-  }
-}
-
-//! --tableresult command
-class TableResultCommand extends Command {
-  private final boolean jsonMode;
-  protected TableResultCommand(boolean jsonMode){ this.jsonMode = jsonMode; }
-  public TableResultCommand(){ this(false); }
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,0);
-    affirmHasContent(content);
-    t.incrementTestCounter();
-    if( !content.endsWith("\n--end") ){
-      Util.toss(TestFailure.class, argv[0], " must be terminated with --end.");
-    }else{
-      int n = content.length();
-      content = content.substring(0, n-6);
-    }
-    final String[] globs = content.split("\\s*\\n\\s*");
-    if( globs.length < 1 ){
-      Util.toss(TestFailure.class, argv[0], " requires 1 or more ",
-                (jsonMode ? "json snippets" : "globs"),".");
-    }
-    final String sql = t.takeInputBuffer();
-    t.execSql(null, true,
-              jsonMode ? ResultBufferMode.ASIS : ResultBufferMode.ESCAPED,
-              ResultRowMode.NEWLINE, sql);
-    final String rbuf = t.getResultText();
-    final String[] res = rbuf.split("\n");
-    if( res.length != globs.length ){
-      Util.toss(TestFailure.class, argv[0], " failure: input has ",
-                res.length," row(s) but expecting ",globs.length);
-    }
-    for(int i = 0; i < res.length; ++i){
-      final String glob = globs[i].replaceAll("\\s+"," ").trim();
-      //t.verbose(argv[0]," <<",glob,">> vs <<",res[i],">>");
-      if( jsonMode ){
-        if( !glob.equals(res[i]) ){
-          Util.toss(TestFailure.class, argv[0], " json <<",glob,
-                  ">> does not match: <<",res[i],">>");
-        }
-      }else if( 0 != SQLTester.strglob(glob, res[i]) ){
-        Util.toss(TestFailure.class, argv[0], " glob <<",glob,
-                  ">> does not match: <<",res[i],">>");
-      }
-    }
-  }
-}
-
-//! --testcase command
-class TestCaseCommand extends Command {
-  public void process(SQLTester t, String[] argv, String content) throws Exception{
-    argcCheck(argv,1);
-    affirmHasContent(content);
-    // TODO: do something with the test name
-    t.clearResultBuffer();
-    t.clearInputBuffer().append(content);
-    //t.verbose(argv[0]," input buffer: ",content);
-  }
-}
-
-/**
-   Helper for dispatching Command instances.
-*/
-class CommandDispatcher {
-
-  private static java.util.Map<String,Command> commandMap =
-    new java.util.HashMap<>();
-
-  /**
-     Returns a (cached) instance mapped to name, or null if no match
-     is found.
-  */
-  static Command getCommandByName(String name){
-    Command rv = commandMap.get(name);
-    if( null!=rv ) return rv;
-    switch(name){
-      case "close":       rv = new CloseDbCommand(); break;
-      case "db":          rv = new DbCommand(); break;
-      case "glob":        rv = new GlobCommand(); break;
-      case "json":        rv = new JsonCommand(); break;
-      case "json-block":  rv = new JsonBlockCommand(); break;
-      case "new":         rv = new NewDbCommand(); break;
-      case "notglob":     rv = new NotGlobCommand(); break;
-      case "null":        rv = new NullCommand(); break;
-      case "oom":         rv = new NoopCommand(); break;
-      case "open":        rv = new OpenDbCommand(); break;
-      case "print":       rv = new PrintCommand(); break;
-      case "result":      rv = new ResultCommand(); break;
-      case "run":         rv = new RunCommand(); break;
-      case "tableresult": rv = new TableResultCommand(); break;
-      case "testcase":    rv = new TestCaseCommand(); break;
-      default: rv = null; break;
-    }
-    if( null!=rv ) commandMap.put(name, rv);
-    return rv;
-  }
-
-  /**
-     Treats argv[0] as a command name, looks it up with
-     getCommandByName(), and calls process() on that instance, passing
-     it arguments given to this function.
-  */
-  static void dispatch(SQLTester tester, String[] argv, String content) throws Exception{
-    final Command cmd = getCommandByName(argv[0]);
-    if(null == cmd){
-      final TestScript ts = tester.getCurrentScript();
-      if( tester.skipUnknownCommands() ){
-        tester.outln("WARNING: skipping remainder of [",ts.getModuleName(),
-                     "] because it contains unknown command '",argv[0],"'.");
-        throw new SkipTestRemainder(ts);
-      }
-      Util.toss(IllegalArgumentException.class,
-                "No command handler found for '"+argv[0]+"' in ",
-                ts.getName());
-    }
-    //tester.verbose("Running ",argv[0]," with:\n", content);
-    cmd.process(tester, argv, content);
-  }
 }
 
 /**

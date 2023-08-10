@@ -8,6 +8,7 @@
 ** REQUIRED_PROPERTIES:
 **
 */
+--print starting up 😃
 --close all
 --oom
 --db 0
@@ -38,5 +39,13 @@ SELECT json_array(1,2,3)
   [1,2,3]
   {"a":1,"b":2}
 --end
+--testcase col-names-on
+--column-names 1
+  select 1 as 'a', 2 as 'b';
+--result a 1 b 2
+--testcase col-names-off
+--column-names 0
+  select 1 as 'a', 2 as 'b';
+--result 1 2
 --close
---print 🤩😃 the end
+--print reached the end 😃
