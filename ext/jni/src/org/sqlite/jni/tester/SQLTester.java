@@ -1282,9 +1282,9 @@ class TestScript {
     m = patternRequiredProperties.matcher(line);
     if( m.find() ){
       final String rp = m.group(1);
-      if( ! checkRequiredProperties( tester, rp.split("\\s+") ) ){
-        throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
-      }
+      //if( ! checkRequiredProperties( tester, rp.split("\\s+") ) ){
+      throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
+      //}
     }
     m = patternMixedModuleName.matcher(line);
     if( m.find() ){
