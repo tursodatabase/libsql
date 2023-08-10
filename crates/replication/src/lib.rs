@@ -20,7 +20,6 @@ pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
-use tokio_stream::StreamExt;
 use tonic::codegen::InterceptedService;
 use tonic::metadata::{Ascii, MetadataValue};
 use tonic::service::Interceptor;
