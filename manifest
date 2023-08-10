@@ -1,5 +1,5 @@
-C Disable\sREQUIRED_PROPERTIES\shandling\sin\sSQLTester,\sper\s/chat.\sScripts\swith\sthat\sdirective\sare\snow\sskipped.
-D 2023-08-10T11:04:46.863
+C Make\stest\scompletion\sstatus\smore\svisible\sat\sa\sglance\son\smodern\sterminals.
+D 2023-08-10T11:15:20.741
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -266,7 +266,7 @@ F ext/jni/src/org/sqlite/jni/sqlite3.java 62b1b81935ccf3393472d17cb883dc5ff39c38
 F ext/jni/src/org/sqlite/jni/sqlite3_context.java d26573fc7b309228cb49786e9078597d96232257defa955a3425d10897bca810
 F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449322b0c93d1bd4e1616e76ed547ed9fc
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
-F ext/jni/src/org/sqlite/jni/tester/SQLTester.java 87d0b6299d982d25c371196196fc6b05633356e81f739e952e2f31e979952a6e
+F ext/jni/src/org/sqlite/jni/tester/SQLTester.java 24a1099dc1dde1508de44172b2438ba8f585bbc591fe2389171ce8647663a2b2
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
 F ext/jni/src/tests/000-000-sanity.test cfe6dc1b950751d6096e3f5695becaadcdaa048bfe9567209d6eb676e693366d
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
@@ -2089,8 +2089,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dc323d3894f2d53470cd8be261632267fa3d2af73500acfa1e9adbfa53b771fd
-R 95f7fef6f77e0863ccb7ed7a7cc786a0
+P ddc534cb25b59faf18a860a51f2dd41a1a73963aeb541b9553301fe784608393
+R 86c85827eee124ab2195331beb10cb02
 U stephan
-Z 0b7b070da9a52d86376d81fa24fc7cc4
+Z a074cfea0973f3e7d868cadec52b5a31
 # Remove this line to create a well-formed Fossil manifest.

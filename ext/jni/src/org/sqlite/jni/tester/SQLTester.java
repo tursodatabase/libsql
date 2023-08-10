@@ -249,14 +249,16 @@ public class SQLTester {
       ++nTestFile;
       final TestScript ts = new TestScript(f);
       outln(nextStartEmoji(), " starting [",f,"]");
+      boolean threw = false;
       try{
         ts.run(this);
       }catch(SQLTesterException e){
-        outln("EXCEPTION: ",e.getClass().getSimpleName(),": ",e.getMessage());
+        threw = true;
+        outln("❗EXCEPTION: ",e.getClass().getSimpleName(),": ",e.getMessage());
         ++nAbortedScript;
         if( e.isFatal() ) throw e;
       }finally{
-        outln("🏁 ",nTest," test(s) in ",ts.getFilename());
+        outln("🏁",(threw ? "❌" : "✅")," ",nTest," test(s) in ",ts.getFilename());
       }
     }
     Util.unlink(initialDbName);
