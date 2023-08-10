@@ -137,7 +137,7 @@ class GlobCommand extends Command {
   protected GlobCommand(boolean negate){ this.negate = negate; }
 
   public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
-    argcCheck(ts,argv,1);
+    argcCheck(ts,argv,1,-1);
     t.incrementTestCounter();
     final String sql = t.takeInputBuffer();
     int rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
@@ -145,7 +145,7 @@ class GlobCommand extends Command {
     final String result = t.getResultText();
     final String sArgs = Util.argvToString(argv);
     //t.verbose(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
-    final String glob = argv[1];
+    final String glob = Util.argvToString(argv);
     rc = SQLTester.strglob(glob, result);
     if( (negate && 0==rc) || (!negate && 0!=rc) ){
       ts.toss(argv[0], " mismatch: ", glob," vs input: ",result);
