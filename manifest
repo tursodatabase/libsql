@@ -1,5 +1,5 @@
-C Document\sthat\sauto-extensions\sregistered\svia\sJNI\swill\sfail\sif\sthey\sopen\sa\sdb\s(to\savoid\striggering\san\sendless\sloop\sin\sthe\sauto-extensions).\sDiscover\sthe\shard\sway\sthat\sJDKv19\screates\sdifferent\smangled\sJNI\snames\sfor\ssome\sfunctions\sthan\sJDKv8.\sStart\sreformatting\smuch\sof\sthe\sJNI\sAPI\sdecls\sin\sprep\sfor\smaking\sthem\seven\slonger.
-D 2023-08-10T13:10:25.060
+C Add\sSQLTester\s--keep-going\sflag\sto\sallow\sit\sto\scontinue\sto\sthe\snext\sscript\safter\san\serror.
+D 2023-08-10T16:42:22.602
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -266,7 +266,7 @@ F ext/jni/src/org/sqlite/jni/sqlite3.java 62b1b81935ccf3393472d17cb883dc5ff39c38
 F ext/jni/src/org/sqlite/jni/sqlite3_context.java d26573fc7b309228cb49786e9078597d96232257defa955a3425d10897bca810
 F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449322b0c93d1bd4e1616e76ed547ed9fc
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
-F ext/jni/src/org/sqlite/jni/tester/SQLTester.java f5b5ffdfeb6da35556b76f25694bdd862e67f101a88fe35cafb0b7f0af667067
+F ext/jni/src/org/sqlite/jni/tester/SQLTester.java ecb989115a421088e2772d6125cd872cd345d0c422c50aa1ce1221c61fcd1f88
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
 F ext/jni/src/tests/000-000-sanity.test cfe6dc1b950751d6096e3f5695becaadcdaa048bfe9567209d6eb676e693366d
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
@@ -2089,8 +2089,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 2952906c30bc2b7987f2c39837d56bd121f5817dc094e6ccdb6d4eea5e9b8d17
-R fe775ba6683934b2a7e291141b4698f9
+P 99c0941f1c006622932a9cca12661f354f363a6c8a2b5675ea66149e0a9eb927
+R 9c64466da06e190239e7e69c9a826d4b
 U stephan
-Z 7d86f8939429faf240f877bf8df863ce
+Z f63f0a2b4c4b5ac0034a79c60a02bab8
 # Remove this line to create a well-formed Fossil manifest.

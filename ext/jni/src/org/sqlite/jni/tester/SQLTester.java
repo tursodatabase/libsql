@@ -185,6 +185,8 @@ public class SQLTester {
   private int nTest = 0;
   //! True to enable column name output from execSql()
   private boolean emitColNames;
+  //! True to keep going regardless of how a test fails.
+  private boolean keepGoing = false;
   //! The list of available db handles.
   private final sqlite3[] aDb = new sqlite3[7];
   //! Index into aDb of the current db.
@@ -260,7 +262,8 @@ public class SQLTester {
         threw = true;
         outln("❗EXCEPTION: ",e.getClass().getSimpleName(),": ",e.getMessage());
         ++nAbortedScript;
-        if( e.isFatal() ) throw e;
+        if( keepGoing ) outln("Continuing anyway becaure of the keep-going option.");
+        else if( e.isFatal() ) throw e;
       }finally{
         outln("🏁",(threw ? "❌" : "✅")," ",nTest," test(s) in ",ts.getFilename());
       }
@@ -587,6 +590,8 @@ public class SQLTester {
         if( flag.equals("verbose") ){
           // Use --verbose up to 3 times
           t.setVerbosity(t.getVerbosity() + 1);
+        }else if( flag.equals("keep-going") ){
+          t.keepGoing = true;
         }else{
           throw new IllegalArgumentException("Unhandled flag: "+flag);
         }
