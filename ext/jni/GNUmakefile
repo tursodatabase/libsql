@@ -46,6 +46,13 @@ enable.fts5 ?= 1
 # If enable.tester is 0, the org/sqlite/jni/tester/* bits are elided.
 enable.tester ?= 1
 
+# bin.version-info = binary to output various sqlite3 version info
+# building the distribution zip file.
+bin.version-info := $(dir.top)/version-info
+.NOTPARALLEL: $(bin.version-info)
+$(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
+	$(MAKE) -C $(dir.top) version-info
+
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\

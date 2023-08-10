@@ -1513,6 +1513,7 @@ clean:
 	rm -f LogEst$(TEXE) fts3view$(TEXE) rollback-test$(TEXE) showdb$(TEXE)
 	rm -f showjournal$(TEXE) showstat4$(TEXE) showwal$(TEXE) speedtest1$(TEXE)
 	rm -f wordcount$(TEXE) changeset$(TEXE)
+	rm -f version-info$(TEXT)
 	rm -f sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	rm -f sqlite3.c
 	rm -f sqlite3rc.h
@@ -1576,3 +1577,10 @@ fiddle: sqlite3.c shell.c
 
 misspell: ./custom.rws
 	$(TCLSH_CMD) ./tool/spellsift.tcl ./src/*.c ./src/*.h ./src/*.in
+
+#
+# tool/version-info: a utility for emitting sqlite3 version info
+# in various forms.
+#
+version-info$(TEXE):	$(TOP)/tool/version-info.c Makefile sqlite3.h
+	$(LTLINK) $(ST_OPT) -o $@ $(TOP)/tool/version-info.c

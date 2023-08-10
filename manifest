@@ -1,9 +1,9 @@
-C Add\sSQLTester\s--keep-going\sflag\sto\sallow\sit\sto\scontinue\sto\sthe\snext\sscript\safter\san\serror.
-D 2023-08-10T16:42:22.602
+C Merge\strunk\sinto\sjni\sbranch\sfor\sthe\snewly-relocated\sversion-info\stool.
+D 2023-08-10T17:39:26.960
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
-F Makefile.in 0f4cb3955aaff8a40ec3857ba1784bd98b69802e51eff979f874b65713b627b2
+F Makefile.in 5ad2d1e198306bc730f06f7545d3a8832225b1bfddbc648d97c0e0b9a35f67e9
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 7248d860f71ab164b4cec3c415e6cc1bd9fee860c370d65bd8bb49e9572521e2
 F README.md c1c4218efcc4071a6e26db2b517fdbc1035696a29b370edd655faddbef02b224
@@ -231,7 +231,7 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/jni/GNUmakefile d69b26fb294b7a86a2f838012f4161311c06d607680b86ecdb1334f6f78c165c
+F ext/jni/GNUmakefile b579d1c9a55e54ca66859d77218226544402896602b39432070f6a3cbdba0cc7
 F ext/jni/README.md e965674505e105626127ad45e628e4d19fcd379cdafc4d23c814c1ac2c55681d
 F ext/jni/src/c/sqlite3-jni.c fa251d2033d2210a88ac6190db923f76681be609b97f840360318ab366f3cbdd
 F ext/jni/src/c/sqlite3-jni.h b19a104e0566440af566366cea72188bd994a96ba85c3f196acaa6f4a4609a55
@@ -527,7 +527,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile ddf1aede4275e404c7eda782462c33b6406fcd2dd327241f6b22c0f7b80938e4
+F ext/wasm/GNUmakefile 50a4bd40ee01a90badfc28d0042789740e47e2855d3b9acaa8801b6dc2763aba
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
@@ -598,7 +598,6 @@ F ext/wasm/tester1.c-pp.js b88dcad5424a652e8204c44a71bbc3deb22a4922c97ba792aedba
 F ext/wasm/tests/opfs/concurrency/index.html 0802373d57034d51835ff6041cda438c7a982deea6079efd98098d3e42fbcbc1
 F ext/wasm/tests/opfs/concurrency/test.js a98016113eaf71e81ddbf71655aa29b0fed9a8b79a3cdd3620d1658eb1cc9a5d
 F ext/wasm/tests/opfs/concurrency/worker.js 0a8c1a3e6ebb38aabbee24f122693f1fb29d599948915c76906681bb7da1d3d2
-F ext/wasm/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5
 F ext/wasm/wasmfs.make 8a4955882aaa0783b3f60a9484a1f0f3d8b6f775c0fcd17c082f31966f1bc16a
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -2065,6 +2064,7 @@ F tool/symbols.sh 1612bd947750e21e7b47befad5f6b3825b06cce0705441f903bf35ced65ae9
 F tool/varint.c 5d94cb5003db9dbbcbcc5df08d66f16071aee003
 F tool/vdbe-compress.tcl 1dcb7632e57cf57105248029e6e162fddaf6c0fccb3bb9e6215603752c5a2d4a
 F tool/vdbe_profile.tcl 3ac5a4a9449f4baf77059358ea050db3e34395ccf59c5464d29b91746d5b961e
+F tool/version-info.c 3b36468a90faf1bbd59c65fd0eb66522d9f941eedd364fabccd72273503ae7d5 w ext/wasm/version-info.c
 F tool/warnings-clang.sh bbf6a1e685e534c92ec2bfba5b1745f34fb6f0bc2a362850723a9ee87c1b31a7
 F tool/warnings.sh 49a486c5069de041aedcbde4de178293e0463ae9918ecad7539eedf0ec77a139
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
@@ -2089,8 +2089,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 99c0941f1c006622932a9cca12661f354f363a6c8a2b5675ea66149e0a9eb927
-R 9c64466da06e190239e7e69c9a826d4b
+P 4d635f781b55ed9011bdf07ee6bed2d004b1c2ebba76aa110e26d8fe3152a733 4b0871fd367b6d9706e892aa13f64604967f5e3ba92381960f73aeabd3d23f84
+R 30af3e66dbd0b2532a573f872e33a7d9
 U stephan
-Z f63f0a2b4c4b5ac0034a79c60a02bab8
+Z 514337a044b3ac61c7ad0f7afbdbd01a
 # Remove this line to create a well-formed Fossil manifest.
