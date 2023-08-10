@@ -941,7 +941,7 @@ class TableResultCommand extends Command {
 class TestCaseCommand extends Command {
   public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
     argcCheck(ts,argv,1);
-    // TODO?: do something with the test name
+    ts.setTestCaseName(argv[1]);
     t.clearResultBuffer();
     t.clearInputBuffer();
   }
@@ -1016,6 +1016,8 @@ class TestScript {
   private String filename = null;
   //! Name pulled from the SCRIPT_MODULE_NAME directive of the file
   private String moduleName = null;
+  //! Current test case name.
+  private String testCaseName = null;
   //! Content buffer state.
   private final Cursor cur = new Cursor();
   //! Utility for console output.
@@ -1078,8 +1080,9 @@ class TestScript {
   }
 
   public String getOutputPrefix(){
-    return "["+(moduleName==null ? filename : moduleName)+"] line "+
-      cur.lineNo;
+    String rc =  "["+(moduleName==null ? filename : moduleName)+"]";
+    if( null!=testCaseName ) rc += "["+testCaseName+"]";
+    return rc + " line "+ cur.lineNo;
   }
 
   //! Output vals only if level<=current verbosity level.
@@ -1098,8 +1101,11 @@ class TestScript {
   private TestScript verbose3(Object... vals){return verboseN(3,vals);}
 
   private void reset(){
+    testCaseName = null;
     cur.rewind();
   }
+
+  void setTestCaseName(String n){ testCaseName = n; }
 
   /**
      Returns the next line from the buffer, minus the trailing EOL.
