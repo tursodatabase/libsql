@@ -83,11 +83,7 @@ ifeq (1,$(enable.fts5))
     TesterFts5.java \
   )
 endif
-JAVA_FILES.tester := $(patsubst %,$(dir.src.jni.tester)/%,\
-  Outer.java \
-  SQLTester.java \
-  TestScript.java \
-)
+JAVA_FILES.tester := $(dir.src.jni.tester)/SQLTester.java
 
 CLASS_FILES.main := $(JAVA_FILES.main:.java=.class)
 CLASS_FILES.tester := $(JAVA_FILES.tester:.java=.class)
