@@ -10,12 +10,14 @@ use std::cmp::Reverse;
 use std::collections::{HashMap, VecDeque};
 use std::future::Future as _;
 use std::pin::Pin;
+use std::sync::Arc;
 use std::{future, mem, task};
 use tokio::time::{Duration, Instant};
 
+use crate::connection::{Connection, MakeConnection};
+
 use super::super::ProtocolError;
 use super::Server;
-use crate::database::Database;
 
 /// Mutable state related to streams, owned by [`Server`] and protected with a mutex.
 pub struct ServerStreamState<D> {
@@ -104,9 +106,10 @@ impl<D> ServerStreamState<D> {
 
 /// Acquire a guard to a new or existing stream. If baton is `Some`, we try to look up the stream,
 /// otherwise we create a new stream.
-pub async fn acquire<'srv, D: Database>(
+pub async fn acquire<'srv, D: Connection>(
     server: &'srv Server<D>,
     baton: Option<&str>,
+    db_factory: Arc<dyn MakeConnection<Connection = D>>,
 ) -> Result<Guard<'srv, D>> {
     let stream = match baton {
         Some(baton) => {
@@ -149,8 +152,7 @@ pub async fn acquire<'srv, D: Database>(
             stream
         }
         None => {
-            let db = server
-                .db_factory
+            let db = db_factory
                 .create()
                 .await
                 .context("Could not create a database connection")?;
@@ -180,7 +182,7 @@ pub async fn acquire<'srv, D: Database>(
     })
 }
 
-impl<'srv, D: Database> Guard<'srv, D> {
+impl<'srv, D: Connection> Guard<'srv, D> {
     pub fn get_db(&self) -> Result<&D, ProtocolError> {
         let stream = self.stream.as_ref().unwrap();
         stream.db.as_ref().ok_or(ProtocolError::BatonStreamClosed)
@@ -246,7 +248,7 @@ impl<'srv, D> Drop for Guard<'srv, D> {
     }
 }
 
-fn gen_stream_id(state: &mut ServerStreamState<impl Database>) -> u64 {
+fn gen_stream_id(state: &mut ServerStreamState<impl Connection>) -> u64 {
     for _ in 0..10 {
         let stream_id = rand::random();
         if !state.handles.contains_key(&stream_id) {

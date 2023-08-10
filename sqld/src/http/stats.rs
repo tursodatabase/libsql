@@ -1,9 +1,9 @@
 use hyper::{Body, Response};
 use serde::Serialize;
 
-use axum::extract::State as AxumState;
+use axum::extract::{FromRef, State as AxumState};
 
-use crate::stats::Stats;
+use crate::{namespace::MakeNamespace, stats::Stats};
 
 use super::AppState;
 
@@ -32,9 +32,13 @@ impl From<Stats> for StatsResponse {
     }
 }
 
-pub(crate) async fn handle_stats<D>(
-    AxumState(AppState { stats, .. }): AxumState<AppState<D>>,
-) -> Response<Body> {
+impl<F: MakeNamespace> FromRef<AppState<F>> for Stats {
+    fn from_ref(input: &AppState<F>) -> Self {
+        input.stats.clone()
+    }
+}
+
+pub(crate) async fn handle_stats(AxumState(stats): AxumState<Stats>) -> Response<Body> {
     let resp: StatsResponse = stats.into();
 
     let payload = serde_json::to_vec(&resp).unwrap();

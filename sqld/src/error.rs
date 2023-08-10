@@ -51,6 +51,8 @@ pub enum Error {
     // Catch-all error since we use anyhow in certain places
     #[error("Internal Error: `{0}`")]
     Anyhow(#[from] anyhow::Error),
+    #[error("Invalid host header: `{0}`")]
+    InvalidHost(String),
 }
 
 impl Error {
@@ -86,6 +88,7 @@ impl IntoResponse for Error {
             Json(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             TooManyRequests => self.format_err(StatusCode::TOO_MANY_REQUESTS),
             QueryError(_) => self.format_err(StatusCode::BAD_REQUEST),
+            InvalidHost(_) => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }

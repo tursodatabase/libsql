@@ -18,11 +18,8 @@ use crate::stats::Stats;
 use crate::Result;
 
 use super::config::DatabaseConfigStore;
-use super::factory::DbFactory;
-use super::{
-    Cond, Database, DescribeCol, DescribeParam, DescribeResponse, DescribeResult, Program, Step,
-    TXN_TIMEOUT,
-};
+use super::program::{Cond, DescribeCol, DescribeParam, DescribeResponse, DescribeResult};
+use super::{MakeConnection, Program, Step, TXN_TIMEOUT};
 
 /// Internal message used to communicate between the database thread and the `LibSqlDb` handle.
 type ExecCallback = Box<dyn FnOnce(Result<&mut Connection>) -> anyhow::Result<()> + Send + 'static>;
@@ -38,7 +35,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     max_total_response_size: u64,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
-    _db: Option<LibSqlDb>,
+    _db: Option<LibSqlConnection>,
 }
 
 impl<W: WalHook + 'static> LibSqlDbFactory<W>
@@ -79,7 +76,7 @@ where
     }
 
     /// Tries to create a database, retrying if the database is busy.
-    async fn try_create_db(&self) -> Result<LibSqlDb> {
+    async fn try_create_db(&self) -> Result<LibSqlConnection> {
         // try 100 times to acquire initial db connection.
         let mut retries = 0;
         loop {
@@ -107,8 +104,8 @@ where
         }
     }
 
-    async fn create_database(&self) -> Result<LibSqlDb> {
-        LibSqlDb::new(
+    async fn create_database(&self) -> Result<LibSqlConnection> {
+        LibSqlConnection::new(
             self.db_path.clone(),
             self.extensions.clone(),
             self.hook,
@@ -125,20 +122,20 @@ where
 }
 
 #[async_trait::async_trait]
-impl<W> DbFactory for LibSqlDbFactory<W>
+impl<W> MakeConnection for LibSqlDbFactory<W>
 where
     W: WalHook + 'static + Sync + Send,
     W::Context: Send + 'static,
 {
-    type Db = LibSqlDb;
+    type Connection = LibSqlConnection;
 
-    async fn create(&self) -> Result<Self::Db, Error> {
+    async fn create(&self) -> Result<Self::Connection, Error> {
         self.create_database().await
     }
 }
 
 #[derive(Clone)]
-pub struct LibSqlDb {
+pub struct LibSqlConnection {
     sender: crossbeam::channel::Sender<ExecCallback>,
 }
 
@@ -161,7 +158,7 @@ where
     sqld_libsql_bindings::Connection::open(path, flags, wal_methods, hook_ctx)
 }
 
-impl LibSqlDb {
+impl LibSqlConnection {
     pub async fn new<W>(
         path: impl AsRef<Path> + Send + 'static,
         extensions: Vec<PathBuf>,
@@ -501,7 +498,7 @@ fn check_describe_auth(auth: Authenticated) -> Result<()> {
 }
 
 #[async_trait::async_trait]
-impl Database for LibSqlDb {
+impl super::Connection for LibSqlConnection {
     async fn execute_program<B: QueryResultBuilder>(
         &self,
         pgm: Program,

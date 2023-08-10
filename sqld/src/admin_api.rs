@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use crate::database::config::{DatabaseConfig, DatabaseConfigStore};
+use crate::connection::config::{DatabaseConfig, DatabaseConfigStore};
 
 struct AppState {
     db_config_store: Arc<DatabaseConfigStore>,

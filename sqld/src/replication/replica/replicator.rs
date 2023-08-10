@@ -5,9 +5,10 @@ use std::time::Duration;
 
 use anyhow::bail;
 use bytemuck::bytes_of;
+use bytes::Bytes;
 use futures::StreamExt;
-use parking_lot::Mutex;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{mpsc, oneshot, watch, Mutex};
+use tokio::task::JoinSet;
 use tonic::transport::Channel;
 
 use crate::replication::frame::Frame;
@@ -18,7 +19,6 @@ use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, LogOffset,
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
-use crate::HARD_RESET;
 
 use super::hook::{Frames, InjectorHookCtx};
 use super::injector::FrameInjector;
@@ -33,18 +33,23 @@ type Client = ReplicationLogClient<Channel>;
 pub struct Replicator {
     client: Client,
     db_path: PathBuf,
+    /// bytes representing the namespace name
+    namespace: Bytes,
     meta: Arc<Mutex<Option<WalIndexMeta>>>,
     pub current_frame_no_notifier: watch::Receiver<FrameNo>,
-    allow_replica_overwrite: bool,
     frames_sender: mpsc::Sender<Frames>,
+    /// hard reset channel: send the namespace there, to reset it
+    hard_reset: mpsc::Sender<Bytes>,
 }
 
 impl Replicator {
-    pub fn new(
+    pub async fn new(
         db_path: PathBuf,
         channel: Channel,
         uri: tonic::transport::Uri,
-        allow_replica_overwrite: bool,
+        namespace: Bytes,
+        join_set: &mut JoinSet<anyhow::Result<()>>,
+        hard_reset: mpsc::Sender<Bytes>,
     ) -> anyhow::Result<Self> {
         let client = Client::with_origin(channel, uri);
         let (meta, meta_file) = WalIndexMeta::read_from_path(&db_path)?;
@@ -58,7 +63,7 @@ impl Replicator {
             let meta = meta.clone();
             let meta_file = meta_file.clone();
             move |fno| {
-                let mut lock = meta.lock();
+                let mut lock = meta.blocking_lock();
                 let meta = lock
                     .as_mut()
                     .expect("commit called before meta inialization");
@@ -74,7 +79,7 @@ impl Replicator {
             let meta_file = meta_file;
             let notifier = applied_frame_notifier;
             move |fno| {
-                let mut lock = meta.lock();
+                let mut lock = meta.blocking_lock();
                 let meta = lock
                     .as_mut()
                     .expect("commit called before meta inialization");
@@ -87,11 +92,13 @@ impl Replicator {
             }
         };
 
-        tokio::task::spawn_blocking({
+        let (snd, rcv) = oneshot::channel();
+        join_set.spawn_blocking({
             let db_path = db_path.clone();
             move || -> anyhow::Result<()> {
                 let mut ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
                 let mut injector = FrameInjector::new(&db_path, &mut ctx)?;
+                let _ = snd.send(());
 
                 while injector.step()? {}
 
@@ -99,13 +106,17 @@ impl Replicator {
             }
         });
 
+        // injector is ready:
+        rcv.await?;
+
         Ok(Self {
+            namespace,
             client,
             db_path,
             current_frame_no_notifier,
-            allow_replica_overwrite,
             meta,
             frames_sender,
+            hard_reset,
         })
     }
 
@@ -126,39 +137,46 @@ impl Replicator {
         let mut error_printed = false;
         for _ in 0..HANDSHAKE_MAX_RETRIES {
             tracing::info!("Attempting to perform handshake with primary.");
-            match self.client.hello(HelloRequest {}).await {
+            match self
+                .client
+                .hello(HelloRequest {
+                    namespace: self.namespace.clone(),
+                })
+                .await
+            {
                 Ok(resp) => {
                     let hello = resp.into_inner();
-                    return tokio::task::block_in_place(|| {
-                        let mut lock = self.meta.lock();
-                        let meta = match *lock {
-                            Some(meta) => match meta.merge_from_hello(hello) {
-                                Ok(meta) => meta,
-                                Err(e @ ReplicationError::Lagging) => {
-                                    tracing::error!(
-                                        "Replica ahead of primary: hard-reseting replica"
-                                    );
-                                    HARD_RESET.notify_waiters();
 
-                                    anyhow::bail!(e);
-                                }
-                                Err(e @ ReplicationError::DbIncompatible)
-                                    if self.allow_replica_overwrite =>
-                                {
-                                    tracing::error!("Primary is attempting to replicate a different database, overwriting replica.");
-                                    HARD_RESET.notify_waiters();
+                    let mut lock = self.meta.lock().await;
+                    let meta = match *lock {
+                        Some(meta) => match dbg!(meta.merge_from_hello(hello)) {
+                            Ok(meta) => meta,
+                            Err(e @ ReplicationError::Lagging) => {
+                                tracing::error!("Replica ahead of primary: hard-reseting replica");
+                                self.hard_reset
+                                    .send(self.namespace.clone())
+                                    .await
+                                    .expect("reset loop exited");
 
-                                    anyhow::bail!(e);
-                                }
-                                Err(e) => anyhow::bail!(e),
-                            },
-                            None => WalIndexMeta::new_from_hello(hello)?,
-                        };
+                                anyhow::bail!(e);
+                            }
+                            Err(e @ ReplicationError::DbIncompatible) => {
+                                tracing::error!("Primary is attempting to replicate a different database, overwriting replica.");
+                                self.hard_reset
+                                    .send(self.namespace.clone())
+                                    .await
+                                    .expect("reset loop exited");
 
-                        *lock = Some(meta);
+                                anyhow::bail!(e);
+                            }
+                            Err(e) => anyhow::bail!(e),
+                        },
+                        None => WalIndexMeta::new_from_hello(hello)?,
+                    };
 
-                        Ok(())
-                    });
+                    *lock = Some(meta);
+
+                    return Ok(());
                 }
                 Err(e) if !error_printed => {
                     tracing::error!("error connecting to primary. retrying. error: {e}");
@@ -177,6 +195,7 @@ impl Replicator {
         let offset = LogOffset {
             // if current == FrameNo::Max then it means that we're starting fresh
             next_offset: self.next_offset(),
+            namespace: self.namespace.clone(),
         };
         let mut stream = self.client.log_entries(offset).await?.into_inner();
 
@@ -215,7 +234,10 @@ impl Replicator {
         let next_offset = self.next_offset();
         let frames = self
             .client
-            .snapshot(LogOffset { next_offset })
+            .snapshot(LogOffset {
+                next_offset,
+                namespace: self.namespace.clone(),
+            })
             .await?
             .into_inner();
 

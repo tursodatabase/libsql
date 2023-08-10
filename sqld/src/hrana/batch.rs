@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::auth::Authenticated;
-use crate::database::{Cond, Database, Program, Step};
+use crate::connection::program::{Cond, Program, Step};
+use crate::connection::Connection;
 use crate::error::Error as SqldError;
 use crate::hrana::stmt::StmtError;
 use crate::query::{Params, Query};
@@ -84,7 +85,7 @@ pub fn proto_batch_to_program(
 }
 
 pub async fn execute_batch(
-    db: &impl Database,
+    db: &impl Connection,
     auth: Authenticated,
     pgm: Program,
 ) -> Result<proto::BatchResult> {
@@ -123,7 +124,11 @@ pub fn proto_sequence_to_program(sql: &str) -> Result<Program> {
     })
 }
 
-pub async fn execute_sequence(db: &impl Database, auth: Authenticated, pgm: Program) -> Result<()> {
+pub async fn execute_sequence(
+    db: &impl Connection,
+    auth: Authenticated,
+    pgm: Program,
+) -> Result<()> {
     let builder = StepResultsBuilder::default();
     let (builder, _state) = db
         .execute_program(pgm, auth, builder)

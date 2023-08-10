@@ -1,28 +1,25 @@
+use std::sync::Arc;
+
 use anyhow::{Context, Result};
 use parking_lot::Mutex;
 use serde::{de::DeserializeOwned, Serialize};
-use std::sync::Arc;
 
 use super::ProtocolError;
 use crate::auth::Authenticated;
-use crate::database::factory::DbFactory;
-use crate::database::Database;
-
+use crate::connection::{Connection, MakeConnection};
 mod proto;
 mod request;
 mod stream;
 
 pub struct Server<D> {
-    db_factory: Arc<dyn DbFactory<Db = D>>,
     self_url: Option<String>,
     baton_key: [u8; 32],
     stream_state: Mutex<stream::ServerStreamState<D>>,
 }
 
-impl<D: Database> Server<D> {
-    pub fn new(db_factory: Arc<dyn DbFactory<Db = D>>, self_url: Option<String>) -> Self {
+impl<C: Connection> Server<C> {
+    pub fn new(self_url: Option<String>) -> Self {
         Self {
-            db_factory,
             self_url,
             baton_key: rand::random(),
             stream_state: Mutex::new(stream::ServerStreamState::new()),
@@ -37,8 +34,9 @@ impl<D: Database> Server<D> {
         &self,
         auth: Authenticated,
         req: hyper::Request<hyper::Body>,
+        connection_maker: Arc<dyn MakeConnection<Connection = C>>,
     ) -> Result<hyper::Response<hyper::Body>> {
-        handle_pipeline(self, auth, req)
+        handle_pipeline(self, connection_maker, auth, req)
             .await
             .or_else(|err| {
                 err.downcast::<stream::StreamError>()
@@ -55,13 +53,15 @@ pub(crate) async fn handle_index() -> hyper::Response<hyper::Body> {
     )
 }
 
-async fn handle_pipeline<D: Database>(
+async fn handle_pipeline<D: Connection>(
     server: &Server<D>,
+    connection_maker: Arc<dyn MakeConnection<Connection = D>>,
     auth: Authenticated,
     req: hyper::Request<hyper::Body>,
 ) -> Result<hyper::Response<hyper::Body>> {
     let req_body: proto::PipelineRequestBody = read_request_json(req).await?;
-    let mut stream_guard = stream::acquire(server, req_body.baton.as_deref()).await?;
+    let mut stream_guard =
+        stream::acquire(server, req_body.baton.as_deref(), connection_maker).await?;
 
     let mut results = Vec::with_capacity(req_body.requests.len());
     for request in req_body.requests.into_iter() {

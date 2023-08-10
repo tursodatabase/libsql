@@ -7,6 +7,7 @@ use std::os::unix::prelude::FileExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::mpsc;
+use std::sync::Arc;
 use std::thread::JoinHandle;
 
 use anyhow::Context;
@@ -165,7 +166,9 @@ pub struct LogCompactor {
     sender: crossbeam::channel::Sender<(LogFile, PathBuf, u32)>,
 }
 
-pub type SnapshotCallback = Box<dyn Fn(&Path) -> anyhow::Result<()> + Send>;
+pub type SnapshotCallback = Box<dyn Fn(&Path) -> anyhow::Result<()> + Send + Sync>;
+pub type NamespacedSnapshotCallback =
+    Arc<dyn Fn(&Path, &Bytes) -> anyhow::Result<()> + Send + Sync>;
 
 impl LogCompactor {
     pub fn new(db_path: &Path, db_id: u128, callback: SnapshotCallback) -> anyhow::Result<Self> {
