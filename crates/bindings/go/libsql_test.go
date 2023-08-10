@@ -1,13 +1,223 @@
 package libsql
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"gotest.tools/assert"
+	"io"
+	"net/http"
 	"os"
 	"testing"
+	"time"
 )
+
+func executeSql(t *testing.T, primaryUrl, sql string) {
+	type statement struct {
+		Query string `json:"q"`
+	}
+	type postBody struct {
+		Statements []statement `json:"statements"`
+	}
+
+	type resultSet struct {
+		Columns []string `json:"columns"`
+	}
+
+	type httpErrObject struct {
+		Message string `json:"message"`
+	}
+
+	type httpResults struct {
+		Results *resultSet     `json:"results"`
+		Error   *httpErrObject `json:"error"`
+	}
+
+	type httpResultsAlternative struct {
+		Results *resultSet `json:"results"`
+		Error   string     `json:"error"`
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	rawReq := postBody{}
+
+	rawReq.Statements = append(rawReq.Statements, statement{Query: sql})
+
+	body, err := json.Marshal(rawReq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", primaryUrl+"", bytes.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, err = io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatal("unexpected status code: ", resp.StatusCode)
+	}
+	var results []httpResults
+
+	err = json.Unmarshal(body, &results)
+	if err != nil {
+		var alternativeResults []httpResultsAlternative
+		errArray := json.Unmarshal(body, &alternativeResults)
+		if errArray != nil {
+			t.Fatal("failed to unmarshal response: ", err, errArray)
+		}
+		if alternativeResults[0].Error != "" {
+			t.Fatal(errors.New(alternativeResults[0].Error))
+		}
+	} else {
+		if results[0].Error != nil {
+			t.Fatal(errors.New(results[0].Error.Message))
+		}
+		if results[0].Results == nil {
+			t.Fatal(errors.New("no results"))
+		}
+	}
+}
+
+func insertRow(t *testing.T, dbUrl, tableName string, id int) {
+	executeSql(t, dbUrl, fmt.Sprintf("INSERT INTO %s (id, name, gpa, cv) VALUES (%d, '%d', %d.5, randomblob(10));", tableName, id, id, id))
+}
+
+func insertRows(t *testing.T, dbUrl, tableName string, start, count int) {
+	for i := 0; i < count; i++ {
+		insertRow(t, dbUrl, tableName, start+i)
+	}
+}
+
+func createTable(t *testing.T, dbPath string) string {
+	tableName := fmt.Sprintf("test_%d", time.Now().UnixNano())
+	executeSql(t, dbPath, fmt.Sprintf("CREATE TABLE %s (id INTEGER, name TEXT, gpa REAL, cv BLOB);", tableName))
+	return tableName
+}
+
+func removeTable(t *testing.T, dbPath, tableName string) {
+	executeSql(t, dbPath, fmt.Sprintf("DROP TABLE %s;", tableName))
+}
+
+func testSync(t *testing.T, connect func(dbPath, primaryUrl string) *Connector, sync func(connector *Connector)) {
+	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
+	if primaryUrl == "" {
+		t.Skip("LIBSQL_PRIMARY_URL is not set")
+		return
+	}
+	tableName := createTable(t, primaryUrl)
+	defer removeTable(t, primaryUrl, tableName)
+
+	initialRowsCount := 5
+	insertRows(t, primaryUrl, tableName, 0, initialRowsCount)
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	connector := connect(dir+"/test.db", primaryUrl)
+	db := sql.OpenDB(connector)
+	defer db.Close()
+
+	iterCount := 2
+	for iter := 0; iter < iterCount; iter++ {
+		func() {
+			rows, err := db.QueryContext(context.Background(), "SELECT NULL, id, name, gpa, cv FROM "+tableName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			columns, err := rows.Columns()
+			if err != nil {
+				t.Fatal(err)
+			}
+			assert.DeepEqual(t, columns, []string{"NULL", "id", "name", "gpa", "cv"})
+			types, err := rows.ColumnTypes()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(types) != 5 {
+				t.Fatal("types should be 5")
+			}
+			defer rows.Close()
+			idx := 0
+			for rows.Next() {
+				if idx > initialRowsCount+iter {
+					t.Fatal("idx should be <= ", initialRowsCount+iter)
+				}
+				var null any
+				var id int
+				var name string
+				var gpa float64
+				var cv []byte
+				if err := rows.Scan(&null, &id, &name, &gpa, &cv); err != nil {
+					t.Fatal(err)
+				}
+				if null != nil {
+					t.Fatal("null should be nil")
+				}
+				if id != int(idx) {
+					t.Fatal("id should be ", idx, " got ", id)
+				}
+				if name != fmt.Sprint(idx) {
+					t.Fatal("name should be", idx)
+				}
+				if gpa != float64(idx)+0.5 {
+					t.Fatal("gpa should be", float64(idx)+0.5)
+				}
+				if len(cv) != 10 {
+					t.Fatal("cv should be 10 bytes")
+				}
+				idx++
+			}
+			if idx != initialRowsCount+iter {
+				t.Fatal("idx should be ", initialRowsCount+iter, " got ", idx)
+			}
+		}()
+		if iter+1 != iterCount {
+			insertRow(t, primaryUrl, tableName, initialRowsCount+iter)
+			sync(connector)
+		}
+	}
+}
+
+func TestAutoSync(t *testing.T) {
+	syncInterval := 1 * time.Second
+	testSync(t, func(dbPath, primaryUrl string) *Connector {
+		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, syncInterval)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return connector
+	}, func(_ *Connector) {
+		time.Sleep(2 * syncInterval)
+	})
+}
+
+func TestSync(t *testing.T) {
+	testSync(t, func(dbPath, primaryUrl string) *Connector {
+		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return connector
+	}, func(c *Connector) {
+		if err := c.Sync(); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
 
 func runFileTest(t *testing.T, test func(*testing.T, *sql.DB)) {
 	t.Parallel()
@@ -51,18 +261,9 @@ func runMemoryAndFileTests(t *testing.T, test func(*testing.T, *sql.DB)) {
 func TestErrorNonUtf8URL(t *testing.T) {
 	t.Parallel()
 	db, err := sql.Open("libsql", "a\xc5z")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	conn, err := db.Conn(context.Background())
 	if err == nil {
 		defer func() {
-			if err := conn.Close(); err != nil {
+			if err := db.Close(); err != nil {
 				t.Fatal(err)
 			}
 		}()
@@ -76,18 +277,9 @@ func TestErrorNonUtf8URL(t *testing.T) {
 func TestErrorWrongURL(t *testing.T) {
 	t.Parallel()
 	db, err := sql.Open("libsql", "http://example.com/test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	conn, err := db.Conn(context.Background())
 	if err == nil {
 		defer func() {
-			if err := conn.Close(); err != nil {
+			if err := db.Close(); err != nil {
 				t.Fatal(err)
 			}
 		}()

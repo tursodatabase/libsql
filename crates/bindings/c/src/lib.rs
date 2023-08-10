@@ -1,12 +1,19 @@
 #![allow(clippy::missing_safety_doc)]
 #![allow(non_camel_case_types)]
+#[macro_use]
+extern crate lazy_static;
 
 mod types;
 
+use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
     libsql_row_t, libsql_rows, libsql_rows_future, libsql_rows_future_t, libsql_rows_t,
 };
+
+lazy_static! {
+    static ref RT: Runtime = tokio::runtime::Runtime::new().unwrap();
+}
 
 fn translate_string(s: String) -> *const std::ffi::c_char {
     match std::ffi::CString::new(s) {
@@ -18,6 +25,69 @@ fn translate_string(s: String) -> *const std::ffi::c_char {
 unsafe fn set_err_msg(msg: String, output: *mut *const std::ffi::c_char) {
     if !output.is_null() {
         *output = translate_string(msg);
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_sync(
+    db: libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let db = db.get_ref();
+    match RT.block_on(db.sync()) {
+        Ok(_) => 0,
+        Err(e) => {
+            set_err_msg(
+                format!("Error syncing database: {}", e.to_string()),
+                out_err_msg,
+            );
+            1
+        }
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn libsql_open_sync(
+    db_path: *const std::ffi::c_char,
+    primary_url: *const std::ffi::c_char,
+    out_db: *mut libsql_database_t,
+    out_err_msg: *mut *const std::ffi::c_char,
+) -> std::ffi::c_int {
+    let db_path = unsafe { std::ffi::CStr::from_ptr(db_path) };
+    let db_path = match db_path.to_str() {
+        Ok(url) => url,
+        Err(e) => {
+            set_err_msg(format!("Wrong URL: {}", e.to_string()), out_err_msg);
+            return 1;
+        }
+    };
+    let primary_url = unsafe { std::ffi::CStr::from_ptr(primary_url) };
+    let primary_url = match primary_url.to_str() {
+        Ok(url) => url,
+        Err(e) => {
+            set_err_msg(format!("Wrong URL: {}", e.to_string()), out_err_msg);
+            return 1;
+        }
+    };
+    let opts = libsql::Opts::with_http_sync(primary_url.to_string(), "");
+    match RT.block_on(libsql::Database::open_with_opts(db_path.to_string(), opts)) {
+        Ok(db) => {
+            let db = Box::leak(Box::new(libsql_database { db }));
+            *out_db = libsql_database_t::from(db);
+            0
+        }
+        Err(e) => {
+            set_err_msg(
+                format!(
+                    "Error opening db path {}, primary url {}: {}",
+                    db_path.to_string(),
+                    primary_url.to_string(),
+                    e.to_string()
+                ),
+                out_err_msg,
+            );
+            1
+        }
     }
 }
 

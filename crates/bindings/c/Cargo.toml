@@ -11,4 +11,6 @@ doc = false
 cbindgen = "0.24.0"
 
 [dependencies]
+lazy_static = "1.4.0"
 libsql = { path = "../../core" }
+tokio = { version = "1.29.1", features = [ "rt-multi-thread" ] }

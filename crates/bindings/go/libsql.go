@@ -18,25 +18,122 @@ import "C"
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
+	sqldriver "database/sql/driver"
 	"fmt"
 	"io"
-	"sync"
+	"time"
 	"unsafe"
 )
 
 func init() {
-	sql.Register("libsql", &Driver{})
+	sql.Register("libsql", driver{})
 }
 
-type database struct {
-	nativePtr  C.libsql_database_t
-	usageCount int
+func NewEmbeddedReplicaConnector(dbPath, primaryUrl string) (*Connector, error) {
+	return openConnector(dbPath, primaryUrl, 0)
 }
 
-type Driver struct {
-	mu  sync.Mutex
-	dbs map[string]*database
+func NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl string, syncInterval time.Duration) (*Connector, error) {
+	return openConnector(dbPath, primaryUrl, syncInterval)
+}
+
+type driver struct{}
+
+func (d driver) Open(dbPath string) (sqldriver.Conn, error) {
+	connector, err := d.OpenConnector(dbPath)
+	if err != nil {
+		return nil, err
+	}
+	return connector.Connect(context.Background())
+}
+
+func (d driver) OpenConnector(dbPath string) (sqldriver.Connector, error) {
+	return openConnector(dbPath, "", 0)
+}
+
+func libsqlSync(nativeDbPtr C.libsql_database_t) error {
+	var errMsg *C.char
+	statusCode := C.libsql_sync(nativeDbPtr, &errMsg)
+	if statusCode != 0 {
+		return libsqlError("failed to sync database ", statusCode, errMsg)
+	}
+	return nil
+}
+
+func openConnector(dbPath, primaryUrl string, syncInterval time.Duration) (*Connector, error) {
+	var nativeDbPtr C.libsql_database_t
+	var err error
+	var closeCh chan struct{}
+	var closeAckCh chan struct{}
+	if primaryUrl != "" {
+		nativeDbPtr, err = libsqlOpenWithSync(dbPath, primaryUrl)
+		if err != nil {
+			return nil, err
+		}
+		if err := libsqlSync(nativeDbPtr); err != nil {
+			C.libsql_close(nativeDbPtr)
+			return nil, err
+		}
+		if syncInterval != 0 {
+			closeCh = make(chan struct{}, 1)
+			closeAckCh = make(chan struct{}, 1)
+			go func() {
+				for {
+					timerCh := make(chan struct{}, 1)
+					go func() {
+						time.Sleep(syncInterval)
+						timerCh <- struct{}{}
+					}()
+					select {
+					case <-closeCh:
+						closeAckCh <- struct{}{}
+						return
+					case <-timerCh:
+						if err := libsqlSync(nativeDbPtr); err != nil {
+							fmt.Println(err)
+						}
+					}
+				}
+			}()
+		}
+	} else {
+		nativeDbPtr, err = libsqlOpen(dbPath)
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &Connector{nativeDbPtr: nativeDbPtr, closeCh: closeCh, closeAckCh: closeAckCh}, nil
+}
+
+type Connector struct {
+	nativeDbPtr C.libsql_database_t
+	closeCh     chan<- struct{}
+	closeAckCh  <-chan struct{}
+}
+
+func (c *Connector) Sync() error {
+	return libsqlSync(c.nativeDbPtr)
+}
+
+func (c *Connector) Close() error {
+	if c.closeCh != nil {
+		c.closeCh <- struct{}{}
+		<-c.closeAckCh
+	}
+	C.libsql_close(c.nativeDbPtr)
+	return nil
+}
+
+func (c *Connector) Connect(ctx context.Context) (sqldriver.Conn, error) {
+	nativeConnPtr, err := libsqlConnect(c.nativeDbPtr)
+	if err != nil {
+		return nil, err
+	}
+	return &conn{nativePtr: nativeConnPtr}, nil
+}
+
+func (c *Connector) Driver() sqldriver.Driver {
+	return driver{}
 }
 
 func libsqlError(message string, statusCode C.int, errMsg *C.char) error {
@@ -63,6 +160,21 @@ func libsqlOpen(dataSourceName string) (C.libsql_database_t, error) {
 	return db, nil
 }
 
+func libsqlOpenWithSync(dbPath, primaryUrl string) (C.libsql_database_t, error) {
+	dbPathNativeString := C.CString(dbPath)
+	defer C.free(unsafe.Pointer(dbPathNativeString))
+	primaryUrlNativeString := C.CString(primaryUrl)
+	defer C.free(unsafe.Pointer(primaryUrlNativeString))
+
+	var db C.libsql_database_t
+	var errMsg *C.char
+	statusCode := C.libsql_open_sync(dbPathNativeString, primaryUrlNativeString, &db, &errMsg)
+	if statusCode != 0 {
+		return nil, libsqlError(fmt.Sprintf("failed to open database %s %s", dbPath, primaryUrl), statusCode, errMsg)
+	}
+	return db, nil
+}
+
 func libsqlConnect(db C.libsql_database_t) (C.libsql_connection_t, error) {
 	var conn C.libsql_connection_t
 	var errMsg *C.char
@@ -73,74 +185,28 @@ func libsqlConnect(db C.libsql_database_t) (C.libsql_connection_t, error) {
 	return conn, nil
 }
 
-func (d *Driver) getConnection(dataSourceName string) (C.libsql_connection_t, error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if d.dbs == nil {
-		d.dbs = make(map[string]*database)
-	}
-	var db *database
-	var ok bool
-	if db, ok = d.dbs[dataSourceName]; !ok {
-		nativePtr, err := libsqlOpen(dataSourceName)
-		if err != nil {
-			return nil, err
-		}
-		db = &database{nativePtr, 0}
-		d.dbs[dataSourceName] = db
-	}
-	connNativePtr, err := libsqlConnect(db.nativePtr)
-	if err != nil {
-		if db.usageCount == 0 {
-			C.libsql_close(db.nativePtr)
-			delete(d.dbs, dataSourceName)
-		}
-		return nil, err
-	}
-	db.usageCount++
-	return connNativePtr, nil
-}
-
-func (d *Driver) Open(dataSourceName string) (driver.Conn, error) {
-	nativePtr, err := d.getConnection(dataSourceName)
-	if err != nil {
-		return nil, err
-	}
-	return &conn{d, nativePtr, dataSourceName}, nil
-}
-
-func (d *Driver) CloseConnection(name string) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	db, ok := d.dbs[name]
-	if !ok {
-		return fmt.Errorf("database %s not found", name)
-	}
-	db.usageCount--
-	if db.usageCount == 0 {
-		C.libsql_close(db.nativePtr)
-		delete(d.dbs, name)
-	}
-	return nil
-}
-
 type conn struct {
-	driver         *Driver
-	nativePtr      C.libsql_connection_t
-	dataSourceName string
+	nativePtr C.libsql_connection_t
+}
+
+func (c *conn) Prepare(query string) (sqldriver.Stmt, error) {
+	return c.PrepareContext(context.Background(), query)
+}
+
+func (c *conn) Begin() (sqldriver.Tx, error) {
+	return c.BeginTx(context.Background(), sqldriver.TxOptions{})
 }
 
 func (c *conn) Close() error {
-	return c.driver.CloseConnection(c.dataSourceName)
+	C.libsql_disconnect(c.nativePtr)
+	return nil
 }
 
-func (c *conn) Prepare(query string) (driver.Stmt, error) {
+func (c *conn) PrepareContext(ctx context.Context, query string) (sqldriver.Stmt, error) {
 	return nil, fmt.Errorf("prepare() is not implemented")
 }
 
-func (c *conn) Begin() (driver.Tx, error) {
+func (c *conn) BeginTx(ctx context.Context, opts sqldriver.TxOptions) (sqldriver.Tx, error) {
 	return nil, fmt.Errorf("begin() is not implemented")
 }
 
@@ -157,7 +223,7 @@ func (c *conn) execute(query string) (C.libsql_rows_t, error) {
 	return rows, nil
 }
 
-func (c *conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
+func (c *conn) ExecContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Result, error) {
 	rows, err := c.execute(query)
 	if err != nil {
 		return nil, err
@@ -223,7 +289,7 @@ func (r *rows) Close() error {
 	return nil
 }
 
-func (r *rows) Next(dest []driver.Value) error {
+func (r *rows) Next(dest []sqldriver.Value) error {
 	if r.nativePtr == nil {
 		return io.EOF
 	}
@@ -285,7 +351,7 @@ func (r *rows) Next(dest []driver.Value) error {
 	return nil
 }
 
-func (c *conn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
+func (c *conn) QueryContext(ctx context.Context, query string, args []sqldriver.NamedValue) (sqldriver.Rows, error) {
 	rowsNativePtr, err := c.execute(query)
 	if err != nil {
 		return nil, err
