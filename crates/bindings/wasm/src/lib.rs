@@ -1,6 +1,7 @@
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+#[allow(unused)]
 pub struct Database {
     inner: libsql::Database,
 }
