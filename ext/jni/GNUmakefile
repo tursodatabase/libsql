@@ -236,6 +236,8 @@ tester:
 	@echo "SQLTester support is disabled. Build with enable.tester=1 to enable it."
 endif
 
+tests: test tester
+
 $(package.jar): $(CLASS_FILES) $(MAKEFILE)
 	rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~
 	$(bin.jar) -cfe $@ org.sqlite.Tester1 -C src org -C src c

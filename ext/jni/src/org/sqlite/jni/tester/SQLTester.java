@@ -69,6 +69,12 @@ class SQLTesterException extends RuntimeException {
   final boolean isFatal(){ return bFatal; }
 }
 
+class DbException extends SQLTesterException {
+  protected DbException(sqlite3 db, int rc){
+    super("DB error #"+rc+": "+sqlite3_errmsg(db),true);
+  }
+}
+
 /**
    Generic test-failed exception.
  */
@@ -110,27 +116,19 @@ class Outer {
     System.out.print(val);
   }
 
-  static void outln(Object val){
-    System.out.println(val);
-  }
-
-  @SuppressWarnings("unchecked")
   Outer out(Object... vals){
     for(Object v : vals) out(v);
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   Outer outln(Object... vals){
     out(vals).out("\n");
     return this;
   }
 
-  @SuppressWarnings("unchecked")
   Outer verbose(Object... vals){
     if(verbosity>0){
-      out("VERBOSE",(verbosity>1 ? "+: " : ": "));
-      outln(vals);
+      out("VERBOSE",(verbosity>1 ? "+: " : ": ")).outln(vals);
     }
     return this;
   }
@@ -169,6 +167,8 @@ public class SQLTester {
   private final StringBuilder inputBuffer = new StringBuilder();
   //! Test result buffer.
   private final StringBuilder resultBuffer = new StringBuilder();
+  //! Buffer for REQUIRED_PROPERTIES pragmas.
+  private final StringBuilder dbInitSql = new StringBuilder();
   //! Output representation of SQL NULL.
   private String nullView = "nil";
   //! Total tests run.
@@ -205,17 +205,14 @@ public class SQLTester {
 
   void outputColumnNames(boolean b){ emitColNames = b; }
 
-  @SuppressWarnings("unchecked")
   void verbose(Object... vals){
     outer.verbose(vals);
   }
 
-  @SuppressWarnings("unchecked")
   void outln(Object... vals){
     outer.outln(vals);
   }
 
-  @SuppressWarnings("unchecked")
   void out(Object... vals){
     outer.out(vals);
   }
@@ -276,6 +273,14 @@ public class SQLTester {
     if(addNL) resultBuffer.append('\n');
   }
 
+  void appendDbInitSql(String n) throws SQLTesterException {
+    dbInitSql.append(n).append('\n');
+    if( null!=getCurrentDb() ){
+      //outln("RUNNING DB INIT CODE: ",n);
+      execSql(null, true, ResultBufferMode.NONE, null, n);
+    }
+  }
+
   String getInputText(){ return inputBuffer.toString(); }
 
   String getResultText(){ return resultBuffer.toString(); }
@@ -333,11 +338,16 @@ public class SQLTester {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open_v2(name, out, flags, null);
     final sqlite3 db = out.getValue();
+    if( 0==rc && dbInitSql.length() > 0){
+      //outln("RUNNING DB INIT CODE: ",dbInitSql.toString());
+      rc = execSql(db, false, ResultBufferMode.NONE,
+                   null, dbInitSql.toString());
+    }
     if( 0!=rc ){
       final String msg = sqlite3_errmsg(db);
       sqlite3_close(db);
-      Util.toss(SQLTesterException.class, "db open failed with code ",
-                rc," and message: ",msg);
+      throw new SQLTesterException("db open failed with code "+
+                                   rc+" and message: "+msg);
     }
     return aDb[iCurrentDb] = db;
   }
@@ -355,6 +365,7 @@ public class SQLTester {
   void reset(){
     clearInputBuffer();
     clearResultBuffer();
+    clearBuffer(dbInitSql);
     closeAllDbs();
     nTest = 0;
     nullView = "nil";
@@ -440,7 +451,7 @@ public class SQLTester {
   public int execSql(sqlite3 db, boolean throwOnError,
                      ResultBufferMode appendMode,
                      ResultRowMode lineMode,
-                     String sql) throws Exception {
+                     String sql) throws SQLTesterException {
     final OutputPointer.Int32 oTail = new OutputPointer.Int32();
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
@@ -465,8 +476,7 @@ public class SQLTester {
           new String(sqlChunk,StandardCharsets.UTF_8),"\n<EOSQL>");*/
         if( 0!=rc ){
           if(throwOnError){
-            Util.toss(RuntimeException.class, "db op failed with rc="
-                      +rc+": "+sqlite3_errmsg(db));
+            throw new DbException(db, rc);
           }else if( null!=sb ){
             appendDbErr(db, sb, rc);
           }
@@ -495,7 +505,7 @@ public class SQLTester {
                     sb.append( escapeSqlValue(colName) );
                     break;
                   default:
-                    Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
+                    throw new SQLTesterException("Unhandled ResultBufferMode: "+appendMode);
                 }
                 sb.append(' ');
               }
@@ -512,7 +522,7 @@ public class SQLTester {
                   sb.append( escapeSqlValue(val) );
                   break;
                 default:
-                  Util.toss(RuntimeException.class, "Unhandled ResultBufferMode.");
+                  throw new SQLTesterException("Unhandled ResultBufferMode: "+appendMode);
               }
             }
             if( ResultRowMode.NEWLINE == lineMode ){
@@ -537,8 +547,7 @@ public class SQLTester {
       sqlite3_finalize(stmt);
     }
     if( 0!=rc && throwOnError ){
-      Util.toss(RuntimeException.class, "db op failed with rc="
-                +rc+": "+sqlite3_errmsg(db));
+      throw new DbException(db, rc);
     }
     return rc;
   }
@@ -875,7 +884,7 @@ class TableResultCommand extends Command {
   public void process(SQLTester t, TestScript ts, String[] argv) throws Exception{
     argcCheck(ts,argv,0);
     t.incrementTestCounter();
-    String body = ts.fetchCommandBody();
+    String body = ts.fetchCommandBody(t);
     if( null==body ) ts.toss("Missing ",argv[0]," body.");
     body = body.trim();
     if( !body.endsWith("\n--end") ){
@@ -1031,13 +1040,12 @@ class TestScript {
     return "["+(moduleName==null ? filename : moduleName)+"] line "+
       cur.lineNo;
   }
-  @SuppressWarnings("unchecked")
   private TestScript verboseN(int level, Object... vals){
     final int verbosity = outer.getVerbosity();
     if(verbosity>=level){
-      outer.out("VERBOSE",(verbosity>1 ? "+ " : " "),
-                getOutputPrefix(),": ")
-        .outln(vals);
+      outer.out(
+        "VERBOSE", (verbosity>1 ? "+ " : " "), getOutputPrefix(), ": "
+      ).outln(vals);
     }
     return this;
   }
@@ -1045,10 +1053,8 @@ class TestScript {
   private TestScript verbose1(Object... vals){return verboseN(1,vals);}
   private TestScript verbose2(Object... vals){return verboseN(2,vals);}
 
-  @SuppressWarnings("unchecked")
   public TestScript warn(Object... vals){
-    outer.out("WARNING ", getOutputPrefix(),": ")
-      .outln(vals);
+    outer.out("WARNING ", getOutputPrefix(),": ").outln(vals);
     return this;
   }
 
@@ -1173,6 +1179,34 @@ class TestScript {
     cur.lineNo = cur.putbackLineNo;
   }
 
+  private boolean checkRequiredProperties(SQLTester t, String[] props) throws SQLTesterException{
+    int nOk = 0;
+    for(String rp : props){
+      verbose1("REQUIRED_PROPERTIES: ",rp);
+      switch(rp){
+        case "RECURSIVE_TRIGGERS":
+          t.appendDbInitSql("pragma recursive_triggers=on;");
+          ++nOk;
+          break;
+        case "TEMPSTORE_FILE":
+          /* This _assumes_ that the lib is built with SQLITE_TEMP_STORE=1 or 2,
+             which we just happen to know is the case */
+          t.appendDbInitSql("pragma temp_store=1;");
+          ++nOk;
+          break;
+        case "TEMPSTORE_MEM":
+          /* This _assumes_ that the lib is built with SQLITE_TEMP_STORE=1 or 2,
+             which we just happen to know is the case */
+          t.appendDbInitSql("pragma temp_store=0;");
+          ++nOk;
+          break;
+        default:
+          break;
+      }
+    }
+    return props.length == nOk;
+  }
+
   private static final Pattern patternRequiredProperties =
     Pattern.compile(" REQUIRED_PROPERTIES:[ \\t]*(\\S.*)\\s*$");
   private static final Pattern patternScriptModuleName =
@@ -1188,7 +1222,9 @@ class TestScript {
      a description of it is returned and processing of the test must
      end immediately.
   */
-  private void checkForDirective(String line) throws IncompatibleDirective {
+  private void checkForDirective(
+    SQLTester tester, String line
+  ) throws IncompatibleDirective {
     if(line.startsWith("#")){
       throw new IncompatibleDirective(this, "C-preprocessor input: "+line);
     }else if(line.startsWith("---")){
@@ -1201,7 +1237,10 @@ class TestScript {
     }
     m = patternRequiredProperties.matcher(line);
     if( m.find() ){
-      throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+m.group(1));
+      final String rp = m.group(1);
+      if( ! checkRequiredProperties( tester, rp.split("\\s+") ) ){
+        throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
+      }
     }
     m = patternMixedModuleName.matcher(line);
     if( m.find() ){
@@ -1240,11 +1279,11 @@ class TestScript {
      which do not match a known command name are considered to be
      content, not commands.
   */
-  String fetchCommandBody(){
+  String fetchCommandBody(SQLTester tester){
     final StringBuilder sb = new StringBuilder();
     String line;
     while( (null != (line = peekLine())) ){
-      checkForDirective(line);
+      checkForDirective(tester, line);
       if( !isCommandLine(line, true) ){
         sb.append(line).append("\n");
         consumePeeked();
@@ -1274,7 +1313,6 @@ class TestScript {
   /**
      Runs this test script in the context of the given tester object.
   */
-  @SuppressWarnings("unchecked")
   public boolean run(SQLTester tester) throws Exception {
     reset();
     setVerbosity(tester.getVerbosity());
@@ -1282,7 +1320,7 @@ class TestScript {
     String[] argv;
     while( null != (line = getLine()) ){
       //verbose(line);
-      checkForDirective(line);
+      checkForDirective(tester, line);
       argv = getCommandArgv(line);
       if( null!=argv ){
         processCommand(tester, argv);

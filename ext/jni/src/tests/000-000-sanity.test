@@ -5,10 +5,15 @@
 ** xMIXED_MODULE_NAME:       mixed-module
 ** xMODULE_NAME:             module-name
 ** xREQUIRED_PROPERTIES:      small fast reliable
-** REQUIRED_PROPERTIES:
+** REQUIRED_PROPERTIES:      RECURSIVE_TRIGGERS
+** REQUIRED_PROPERTIES:      TEMPSTORE_MEM  TEMPSTORE_FILE
 **
 */
 --print starting up 😃
+--testcase required-props
+PRAGMA recursive_triggers;
+PRAGMA temp_store;
+--result 1 1
 --close all
 --oom
 --db 0
