@@ -19,6 +19,79 @@ void *libsql_close_hook(
 );
 ```
 
+## Altering columns
+
+### Foreign keys
+
+Foreign keys in SQLite and libSQL require an indexed column in one table (e.g. its primary key) and a foreign key constraint on another table.
+
+For example, if you have the following table:
+
+```sql
+libsql> CREATE TABLE users (id INT PRIMARY KEY);
+```
+
+You can then create another table:
+
+```sql
+libsql> CREATE TABLE emails (user_id INT, email TEXT);
+```
+
+and add a foreign key constraint from the `user_id` column to the `id` column of the `users` table:
+
+```sql
+libsql> ALTER TABLE emails ALTER COLUMN user_id TO user_id INT REFERENCES users(id);
+```
+
+and now you have the following schema in your database:
+
+```sql
+libsql> .schema
+CREATE TABLE users (id INT PRIMARY KEY);
+CREATE TABLE emails (user_id INT REFERENCES users(id), email TEXT);
+```
+
+To **remove a foreign constraint**, you do the following:
+
+```console
+libsql> ALTER TABLE emails ALTER COLUMN user_id TO user_id INT;
+libsql> .schema
+CREATE TABLE users (id INT PRIMARY KEY);
+CREATE TABLE emails (user_id INT, email TEXT);
+```
+
+### Other attributes
+
+All kind of column attributes, like type affinity, CHECK constraints, DEFAULT values, and so on,
+can be amended with `ALTER TABLE ALTER COLUMN` as well:
+
+```sql
+libsql> CREATE TABLE t(id, v);
+```
+```sql
+libsql> ALTER TABLE t ALTER COLUMN v TO v NOT NULL CHECK(v < 42);
+libsql> .schema t
+CREATE TABLE t(id, v NOT NULL CHECK(v < 42));
+```
+```sql
+libsql> ALTER TABLE t ALTER COLUMN v TO v TEXT DEFAULT 'hai';
+libsql> .schema t
+CREATE TABLE t(id, v TEXT DEFAULT 'hai');
+```
+```sql
+libsql> ALTER TABLE t ALTER COLUMN v TO v;
+libsql> .schema t
+CREATE TABLE t(id, v);
+```
+
+### Caveats
+
+Please note that altering constraints via ALTER TABLE ALTER COLUMN only applies
+to newly inserted or updated data - existing rows are not rewritten or revalidated.
+
+It's also important to notice that foreign key constraints are disabled by default,
+and can be enabled with a `PRAGMA foreign_keys=ON` statement at runtime.
+
 ## RANDOM ROWID
 
 Regular tables use an implicitly defined, unique, 64-bit rowid column as its primary key.

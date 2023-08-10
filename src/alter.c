@@ -677,6 +677,101 @@ void sqlite3AlterRenameColumn(
 }
 
 /*
+** Handles the following parser reduction:
+**
+**  cmd ::= ALTER TABLE pSrc ALTER COLUMN pOld TO pNew
+*/
+void libsqlAlterAlterColumn(
+  Parse *pParse,                  /* Parsing context */
+  SrcList *pSrc,                  /* Table being altered.  pSrc->nSrc==1 */
+  Token *pOld,                    /* Name of column being changed */
+  Token *pNew                     /* New column declaration */
+){
+  sqlite3 *db = pParse->db;       /* Database connection */
+  Table *pTab;                    /* Table being updated */
+  int iCol;                       /* Index of column being updated */
+  char *zOld = 0;                 /* Old column name */
+  char *zNew = 0;                 /* New column declaration */
+  const char *zDb;                /* Name of schema containing the table */
+  int iSchema;                    /* Index of the schema */
+  int bQuote;                     /* True to quote the new name */
+
+  /* Locate the table to be altered */
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
+  if( !pTab ) goto exit_update_column;
+
+  /* Cannot alter a system table */
+  if( SQLITE_OK!=isAlterableTable(pParse, pTab) ) goto exit_update_column;
+  if( SQLITE_OK!=isRealTable(pParse, pTab, 0) ) goto exit_update_column;
+
+  /* Which schema holds the table to be altered */  
+  iSchema = sqlite3SchemaToIndex(db, pTab->pSchema);
+  assert( iSchema>=0 );
+  zDb = db->aDb[iSchema].zDbSName;
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  /* Invoke the authorization callback. */
+  if( sqlite3AuthCheck(pParse, SQLITE_ALTER_TABLE, zDb, pTab->zName, 0) ){
+    goto exit_update_column;
+  }
+#endif
+
+  /* Make sure the old name really is a column name in the table to be
+  ** altered.  Set iCol to be the index of the column being updated */
+  zOld = sqlite3NameFromToken(db, pOld);
+  if( !zOld ) goto exit_update_column;
+  for(iCol=0; iCol<pTab->nCol; iCol++){
+    if( 0==sqlite3StrICmp(pTab->aCol[iCol].zCnName, zOld) ) break;
+  }
+  if( iCol==pTab->nCol ){
+    sqlite3ErrorMsg(pParse, "no such column: \"%T\"", pOld);
+    goto exit_update_column;
+  }
+
+  /* Ensure the schema contains no double-quoted strings */
+  renameTestSchema(pParse, zDb, iSchema==1, "", 0);
+  renameFixQuotes(pParse, zDb, iSchema==1);
+
+  /* Do the update operation using a recursive UPDATE statement that
+  ** uses the sqlite_update_column() SQL function to compute the new
+  ** CREATE statement text for the sqlite_schema table.
+  */
+  sqlite3MayAbort(pParse);
+  if(pOld->n != pNew->n || sqlite3StrNICmp(pOld->z, pNew->z, pOld->n) != 0) {
+    sqlite3ErrorMsg(pParse, "UPDATE cannot also rename column: \"%T\" to \"%T\". Use ALTER TABLE RENAME instead", pOld, pNew);
+    goto exit_update_column;
+  }
+  // NOTICE: this is the main difference in ALTER COLUMN compared to RENAME COLUMN,
+  // we just take the whole new column declaration as it is.
+  // FIXME: the semicolon can also appear in the middle of the declaration when it's quoted,
+  // so we should check from the end.
+  pNew->n = sqlite3Strlen30(pNew->z);
+  while (pNew->n > 0 && pNew->z[pNew->n - 1] == ';') pNew->n--;
+  zNew = sqlite3DbStrNDup(db, pNew->z, pNew->n);
+  if( !zNew ) goto exit_update_column;
+  assert( pNew->n>0 );
+  bQuote = -1; // Contrary to RENAME, we leave quotes as is and not dequote them
+  sqlite3NestedParse(pParse, 
+      "UPDATE \"%w\"." LEGACY_SCHEMA_TABLE " SET "
+      "sql = libsql_alter_column(sql, %Q, %Q, %d, %Q, %d, %d, %d) "
+      "WHERE tbl_name = %Q",
+      zDb,
+      zDb, pTab->zName, iCol, zNew, bQuote, iSchema==1, pTab->aCol[iCol].colFlags,
+      pTab->zName
+  );
+
+  /* Drop and reload the database schema. */
+  renameReloadSchema(pParse, iSchema, INITFLAG_AlterRename);
+  renameTestSchema(pParse, zDb, iSchema==1, "after update", 1);
+
+ exit_update_column:
+  sqlite3SrcListDelete(db, pSrc);
+  sqlite3DbFree(db, zOld);
+  sqlite3DbFree(db, zNew);
+  return;
+}
+
+/*
 ** Each RenameToken object maps an element of the parse tree into
 ** the token that generated that element.  The parse tree element
 ** might be one of:
@@ -1183,7 +1278,7 @@ static int renameEditSql(
   RenameCtx *pRename,             /* Rename context */
   const char *zSql,               /* SQL statement to edit */
   const char *zNew,               /* New token text */
-  int bQuote                      /* True to always quote token */
+  int bQuote                      /* 1 to always quote token, -1 to never quote */
 ){
   i64 nNew = sqlite3Strlen30(zNew);
   i64 nSql = sqlite3Strlen30(zSql);
@@ -1232,7 +1327,7 @@ static int renameEditSql(
       RenameToken *pBest = renameColumnTokenNext(pRename);
 
       if( zNew ){
-        if( bQuote==0 && sqlite3IsIdChar(*pBest->t.z) ){
+        if( bQuote==-1 || (bQuote==0 && sqlite3IsIdChar(*pBest->t.z)) ){
           nReplace = nNew;
           zReplace = zNew;
         }else{
@@ -1633,6 +1728,180 @@ renameColumnFunc_done:
       sqlite3_result_value(context, argv[0]);
     }else if( sParse.zErrMsg ){
       renameColumnParseError(context, "", argv[1], argv[2], &sParse);
+    }else{
+      sqlite3_result_error_code(context, rc);
+    }
+  }
+
+  renameParseCleanup(&sParse);
+  renameTokenFree(db, sCtx.pList);
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = xAuth;
+#endif
+  sqlite3BtreeLeaveAll(db);
+}
+
+/*
+** SQL function:
+**
+**     libsql_alter_column(SQL,TYPE,OBJ,DB,TABLE,COL,NEWNAME,QUOTE,TEMP)
+**
+**   0. zSql:     SQL statement to rewrite
+**   1. Database: Database name (e.g. "main")
+**   2. Table:    Table name
+**   3. iCol:     Index of column to rename
+**   4. zNew:     New column clause to add, e.g. "x REFERENCES other_table(y)"
+**   5. bQuote:   Non-zero if the new column name should be quoted.
+**   6. bTemp:    True if zSql comes from temp schema
+**
+** Do a ALTER TABLE ALTER COLUMN operation on the CREATE statement given in zSql.
+** The iCol-th column (left-most is 0) of table zTable is translated from zCol
+** into zNew definition, which the new constraints.
+** The name should be quoted if bQuote is true.
+**
+** This function is used internally by the ALTER TABLE ALTER COLUMN command.
+** It is only accessible to SQL created using sqlite3NestedParse().  It is
+** not reachable from ordinary SQL passed into sqlite3_prepare() unless the
+** SQLITE_TESTCTRL_INTERNAL_FUNCTIONS test setting is enabled.
+*/
+static void alterColumnFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  RenameCtx sCtx;
+  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
+  const char *zDb = (const char*)sqlite3_value_text(argv[1]);
+  const char *zTable = (const char*)sqlite3_value_text(argv[2]);
+  int iCol = sqlite3_value_int(argv[3]);
+  const char *zNew = (const char*)sqlite3_value_text(argv[4]);
+  int bQuote = sqlite3_value_int(argv[5]);
+  int bTemp = sqlite3_value_int(argv[6]);
+  u16 iColFlags = sqlite3_value_int(argv[7]);
+
+  const char *zOld;
+  int rc;
+  Parse sParse;
+  Parse sPostAlterParse;
+  Index *pIdx;
+  int i;
+  Table *pTab;
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  sqlite3_xauth xAuth = db->xAuth;
+#endif
+
+  UNUSED_PARAMETER(NotUsed);
+  if( zSql==0 ) return;
+  if( zTable==0 ) return;
+  if( zNew==0 ) return;
+  if( iCol<0 ) return;
+  sqlite3BtreeEnterAll(db);
+  pTab = sqlite3FindTable(db, zTable, zDb);
+  if( pTab==0 || iCol>=pTab->nCol ){
+    sqlite3BtreeLeaveAll(db);
+    return;
+  }
+  zOld = pTab->aCol[iCol].zCnName;
+  memset(&sCtx, 0, sizeof(sCtx));
+  sCtx.iCol = ((iCol==pTab->iPKey) ? -1 : iCol);
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  db->xAuth = 0;
+#endif
+  rc = renameParseSql(&sParse, zDb, db, zSql, bTemp);
+
+  sCtx.pTab = pTab;
+  if( rc!=SQLITE_OK ) goto alterColumnFunc_done;
+  if( sParse.pNewTable ){
+    if( IsOrdinaryTable(sParse.pNewTable) ){
+      int bFKOnly = sqlite3_stricmp(zTable, sParse.pNewTable->zName);
+      FKey *pFKey;
+      sCtx.pTab = sParse.pNewTable;
+      if( bFKOnly==0 ){
+        if (iCol<sParse.pNewTable->nCol) {
+          Column *col = &sParse.pNewTable->aCol[iCol];
+          RenameToken *pCol = renameTokenFind(
+              &sParse, &sCtx, (void*)col->zCnName
+          );
+          // Expand the token until we find the end of the column definition
+          // FIXME: corner cases we don't cover are expected here, like quoted identifiers
+          // and other kinds of parentheses, and they would result in an incorrect SQL statement being generated.
+          // What we want here is to expand to the whole definition, including constraints, types, etc.
+          int open_parens = 0;
+          while (pCol->t.z[pCol->t.n] != 0 && pCol->t.z[pCol->t.n] != ',') {
+            if (pCol->t.z[pCol->t.n] == '(') open_parens++;
+            if (pCol->t.z[pCol->t.n] == ')') open_parens--;
+            if (open_parens < 0) {
+              break;
+            }
+            pCol->t.n++;
+          }
+        }
+        if( sCtx.iCol<0 ){
+          renameTokenFind(&sParse, &sCtx, (void*)&sParse.pNewTable->iPKey);
+        }
+      }
+    } else {
+      rc = SQLITE_ERROR;
+      sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered, not ", IsView(sParse.pNewTable) ? "views" : "virtual tables");
+      goto alterColumnFunc_done;    }
+  } else if (sParse.pNewIndex) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered, not indexes");
+    goto alterColumnFunc_done;
+  } else {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "Only ordinary tables can be altered");
+    goto alterColumnFunc_done;
+  }
+
+  assert( rc==SQLITE_OK );
+  rc = renameEditSql(context, &sCtx, zSql, zNew, bQuote);
+
+  // Validate flags - PRIMARY KEY, UNIQUE and GENERATED constrains are not allowed to be altered
+  // TODO: figure out more illegal combinations to validate
+  rc = renameParseSql(&sPostAlterParse, zDb, db, (const char *)sqlite3_value_text((sqlite3_value *)context->pOut), bTemp);
+  Table *pNewTab = sPostAlterParse.pNewTable;
+  int iNewCol;
+  for (iNewCol = 0; iNewCol < pNewTab->nCol; iNewCol++) {
+    if (sqlite3StrICmp(pNewTab->aCol[iNewCol].zCnName, zOld) == 0) break;
+  }
+  if (iNewCol == pNewTab->nCol) {
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "no such column: \"%T\"", zOld);
+    goto alterColumnFunc_done;
+  }
+  u16 primkey_differs = (iColFlags & COLFLAG_PRIMKEY) != (pNewTab->aCol[iNewCol].colFlags & COLFLAG_PRIMKEY);
+  u16 unique_differs = (iColFlags & COLFLAG_UNIQUE) != (pNewTab->aCol[iNewCol].colFlags & COLFLAG_UNIQUE);
+  u16 generated_differs = (iColFlags & COLFLAG_GENERATED) != (pNewTab->aCol[iNewCol].colFlags & COLFLAG_GENERATED);
+  renameParseCleanup(&sPostAlterParse);
+
+  if (primkey_differs) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "PRIMARY KEY constraint cannot be altered");
+    goto alterColumnFunc_done;
+  } else if (unique_differs) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "UNIQUE constraint cannot be altered");
+    goto alterColumnFunc_done;
+  } else if (generated_differs) {
+    rc = SQLITE_ERROR;
+    sParse.zErrMsg = sqlite3MPrintf(sParse.db, "GENERATED constraint cannot be altered");
+    goto alterColumnFunc_done;
+  }
+
+alterColumnFunc_done:
+  if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_ERROR && sqlite3WritableSchema(db) ){
+      sqlite3_result_value(context, argv[0]);
+    }else if( sParse.zErrMsg ){
+        char *zErr = sqlite3MPrintf(sParse.db, "error in adding %s to %s: %s", 
+            zNew,
+            zTable,
+            sParse.zErrMsg
+        );
+        sqlite3_result_error(context, zErr, -1);
+        sqlite3DbFree(sParse.db, zErr);
     }else{
       sqlite3_result_error_code(context, rc);
     }
@@ -2295,6 +2564,8 @@ void sqlite3AlterFunctions(void){
     INTERNAL_FUNCTION(sqlite_rename_test,    7, renameTableTest),
     INTERNAL_FUNCTION(sqlite_drop_column,    3, dropColumnFunc),
     INTERNAL_FUNCTION(sqlite_rename_quotefix,2, renameQuotefixFunc),
+    // libSQL extensions
+    INTERNAL_FUNCTION(libsql_alter_column, 8, alterColumnFunc),
   };
   sqlite3InsertBuiltinFuncs(aAlterTableFuncs, ArraySize(aAlterTableFuncs));
 }

@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod alter_column;
 mod random_rowid;
 mod virtual_wal;
 
