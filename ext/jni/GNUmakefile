@@ -2,8 +2,10 @@
 # build assumes a Linux-like system.
 default: all
 
-JDK_HOME ?= $(HOME)/jdk/current
-# /usr/lib/jvm/default-javajava-19-openjdk-amd64
+JAVA_HOME ?= $(HOME)/jdk/current
+# e.g. /usr/lib/jvm/default-javajava-19-openjdk-amd64
+JDK_HOME ?= $(JAVA_HOME)
+# ^^^ JDK_HOME is not as widely used as JAVA_HOME
 bin.javac := $(JDK_HOME)/bin/javac
 bin.java  := $(JDK_HOME)/bin/java
 bin.jar   := $(JDK_HOME)/bin/jar
@@ -13,8 +15,7 @@ endif
 MAKEFILE := $(lastword $(MAKEFILE_LIST))
 $(MAKEFILE):
 
-package.version := 0.0.1
-package.jar := sqlite3-jni-$(package.version).jar
+package.jar := sqlite3-jni.jar
 
 dir.top := ../..
 dir.tool := ../../tool
@@ -246,10 +247,17 @@ tester:
 endif
 
 tests: test tester
+package.jar.in := $(abspath $(dir.src)/jar.in)
+CLEAN_FILES += $(package.jar.in)
+$(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)
+	cd $(dir.src); ls -1 org/sqlite/jni/*.* > $@
+	@ls -la $@
+	@echo "To use this jar you will need the -Djava.library.path=DIR/WITH/libsqlite3-jni.so flag."
+	@echo "e.g. java -jar $@ -Djava.library.path=bld"
 
-$(package.jar): $(CLASS_FILES) $(MAKEFILE)
+$(package.jar): $(CLASS_FILES) $(MAKEFILE) $(package.jar.in)
 	rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~
-	$(bin.jar) -cfe $@ org.sqlite.Tester1 -C src org -C src c
+	cd $(dir.src); $(bin.jar) -cfe ../$@ org.sqlite.jni.Tester1 @$(package.jar.in)
 
 jar: $(package.jar)
 
@@ -279,7 +287,6 @@ dist-name := $(dist-name-prefix)-TEMP
 
 dist-dir.top := $(dist-name)
 dist-dir.src := $(dist-dir.top)/src
-dist-dir.c := $(dist-dir.src)/c
 dist.top.extras := \
   README.md
 
@@ -287,22 +294,24 @@ dist.top.extras := \
 
 dist: \
     $(bin.version-info) $(sqlite3.canonical.c) \
-    $(MAKEFILE) $(MAKEFILE.dist)
+    $(package.jar) $(MAKEFILE)
 	@echo "Making end-user deliverables..."
 	@rm -fr $(dist-dir.top)
-	@mkdir -p $(dist-dir.top) $(dist-dir.c)
+	@mkdir -p $(dist-dir.src)
 	@cp -p $(dist.top.extras) $(dist-dir.top)/.
-	@cp -p $(dir.src.c)/*.[ch] $(dist-dir.c)/.
-	@cp -p $(sqlite3.canonical.c) $(sqlite3.canonical.h) $(dist-dir.c)/.
-	@cp -rp $(dir.src)/org $(dist-dir.src)
+	@cp -p jar-dist.make $(dist-dir.top)/Makefile
+	@cp -p $(dir.src.c)/*.[ch] $(dist-dir.src)/.
+	@cp -p $(sqlite3.canonical.c) $(sqlite3.canonical.h) $(dist-dir.src)/.
 	@set -e; \
 		vnum=$$($(bin.version-info) --download-version); \
+		vjar=$$($(bin.version-info) --version); \
 		vdir=$(dist-name-prefix)-$$vnum; \
 		arczip=$$vdir.zip; \
+		cp -p $(package.jar) $(dist-dir.top)/sqlite3-jni-$${vjar}.jar; \
 		echo "Making $$arczip ..."; \
 		rm -fr $$arczip $$vdir; \
 		mv $(dist-dir.top) $$vdir; \
-		zip -qr $$arczip $$vdir -x '*.class' -x '*~'; \
+		zip -qr $$arczip $$vdir; \
 		rm -fr $$vdir; \
 		ls -la $$arczip; \
 		set +e; \

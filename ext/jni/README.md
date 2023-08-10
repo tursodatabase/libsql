@@ -2,7 +2,16 @@ SQLite3 via JNI
 ========================================================================
 
 This directory houses a Java Native Interface (JNI) binding for the
-sqlite3 API.
+sqlite3 API. If you are reading this from the distribution ZIP file,
+links to resources in the canonical source tree will note work. The
+canonical copy of this file can be browsed at:
+
+  <https://sqlite.org/src/doc/trunk/ext/jni/README.md>
+
+Technical support is available in the forum:
+
+  <https://sqlite.org/forum>
+
 
 > **FOREWARNING:** this subproject is very much in development and
   subject to any number of changes. Please do not rely on any
@@ -23,7 +32,8 @@ Project goals/requirements:
 - No 3rd-party dependencies beyond the JDK. That includes no
   build-level dependencies for specific IDEs and toolchains.  We
   welcome the addition of build files for arbitrary environments
-  insofar as they do not directly interfere with each other.
+  insofar as they neither interfere with each other nor become
+  a maintenance burden for the sqlite developers.
 
 Non-goals:
 
@@ -34,11 +44,8 @@ Non-goals:
 Significant TODOs
 ========================================================================
 
-- LOTS of APIs left to bind.
-
-- Bundling of the resulting class files into a jar. Bundling the DLLs
-  is a much larger problem, as they inherently have platform-specific
-  OS-level dependencies which we obviously cannot bundle.
+- Lots of APIs left to bind. Most "day-to-day" functionality is already
+  in place and is believed to work well.
 
 
 Building
@@ -53,7 +60,7 @@ The canonical builds assumes a Linux-like environment and requires:
 Put simply:
 
 ```
-$ export JDK_HOME=/path/to/jdk/root
+$ export JAVA_HOME=/path/to/jdk/root
 $ make
 $ make test
 $ make clean
@@ -96,10 +103,9 @@ Known consequences and limitations of this discrepancy include:
 
 - Names of databases, tables, and collations must not contain
   characters which differ in MUTF-8 and UTF-8, or certain APIs will
-  mis-translate them on their way between languages. The
-  sqlite3_trace_v2() implementation is also currently affected by
-  this, in that it will necessarily translate traced SQL statements to
-  MUTF-8.
+  mis-translate them on their way between languages. APIs which
+  transfer other client-side data to Java take extra care to
+  convert the data at the cost of performance.
 
 [modutf8]: https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
 
@@ -164,10 +170,13 @@ a much more Java-esque usage:
 
 ```
 int rc = sqlite3_create_collation(db, "mycollation", SQLITE_UTF8, new Collation(){
+
   // Required comparison function:
   @Override public int xCompare(byte[] lhs, byte[] rhs){ ... }
+
   // Optional finalizer function:
   @Override public void xDestroy(){ ... }
+
   // Optional local state:
   private String localState1 =
     "This is local state. There are many like it, but this one is mine.";
@@ -179,8 +188,7 @@ int rc = sqlite3_create_collation(db, "mycollation", SQLITE_UTF8, new Collation(
 Noting that:
 
 - It is still possible to bind in call-scope-local state via closures,
-  but using member data for the Collation object is generally a better
-  fit for Java.
+  if desired.
 
 - No capabilities of the C API are lost or unduly obscured via the
   above API reshaping, so power users need not make any compromises.
