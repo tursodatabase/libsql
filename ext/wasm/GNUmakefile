@@ -241,10 +241,10 @@ endif
 # embedding in the JS files and in building the distribution zip file.
 # It must NOT be in $(dir.tmp) because we need it to survive the
 # cleanup process for the dist build to work properly.
-bin.version-info := $(dir.wasm)/version-info
-$(bin.version-info): $(dir.wasm)/version-info.c $(sqlite3.h) $(MAKEFILE)
-	$(CC) -O0 -I$(dir $(sqlite3.c)) -o $@ $<
-DISTCLEAN_FILES += $(bin.version-info)
+bin.version-info := $(dir.top)/version-info
+.NOTPARALLEL: $(bin.version-info)
+$(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
+	$(MAKE) -C $(dir.top) version-info
 
 # bin.stripcomments is used for stripping C/C++-style comments from JS
 # files. The JS files contain large chunks of documentation which we
