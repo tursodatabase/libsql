@@ -203,27 +203,27 @@ public final class SQLite3Jni {
       : sqlite3_bind_blob(stmt, ndx, data, data.length);
   }
 
-  private static native int sqlite3_bind_blob(
+  private static synchronized native int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int n
   );
 
-  public static native int sqlite3_bind_double(
+  public static synchronized native int sqlite3_bind_double(
     @NotNull sqlite3_stmt stmt, int ndx, double v
   );
 
-  public static native int sqlite3_bind_int(
+  public static synchronized native int sqlite3_bind_int(
     @NotNull sqlite3_stmt stmt, int ndx, int v
   );
 
-  public static native int sqlite3_bind_int64(
+  public static synchronized native int sqlite3_bind_int64(
     @NotNull sqlite3_stmt stmt, int ndx, long v
   );
 
-  public static native int sqlite3_bind_null(
+  public static synchronized native int sqlite3_bind_null(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native int sqlite3_bind_parameter_count(
+  public static synchronized native int sqlite3_bind_parameter_count(
     @NotNull sqlite3_stmt stmt
   );
 
@@ -231,7 +231,7 @@ public final class SQLite3Jni {
   /** A level of indirection required to ensure that the input to the
       C-level function of the same name is a NUL-terminated UTF-8
       string. */
-  private static native int sqlite3_bind_parameter_index(
+  private static synchronized native int sqlite3_bind_parameter_index(
     @NotNull sqlite3_stmt stmt, byte[] paramName
   );
 
@@ -263,15 +263,15 @@ public final class SQLite3Jni {
      SQLITE_TRANSIENT for the final parameter and (B) behaves like
      sqlite3_bind_null() if the data argument is null.
   */
-  private static native int sqlite3_bind_text(
+  private static synchronized native int sqlite3_bind_text(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
   );
 
-  public static native int sqlite3_bind_zeroblob(
+  public static synchronized native int sqlite3_bind_zeroblob(
     @NotNull sqlite3_stmt stmt, int ndx, int n
   );
 
-  public static native int sqlite3_bind_zeroblob64(
+  public static synchronized native int sqlite3_bind_zeroblob64(
     @NotNull sqlite3_stmt stmt, int ndx, long n
   );
 
@@ -281,11 +281,11 @@ public final class SQLite3Jni {
      to clear the busy handler. Calling this multiple times with the
      same object is a no-op on the second and subsequent calls.
   */
-  public static native synchronized int sqlite3_busy_handler(
+  public static synchronized native int sqlite3_busy_handler(
     @NotNull sqlite3 db, @Nullable BusyHandler handler
   );
 
-  public static native synchronized int sqlite3_busy_timeout(
+  public static synchronized native int sqlite3_busy_timeout(
     @NotNull sqlite3 db, int ms
   );
 
@@ -297,59 +297,59 @@ public final class SQLite3Jni {
     @NotNull AutoExtension ax
   );
 
-  public static native int sqlite3_changes(
+  public static synchronized native int sqlite3_changes(
     @NotNull sqlite3 db
   );
 
-  public static native long sqlite3_changes64(
+  public static synchronized native long sqlite3_changes64(
     @NotNull sqlite3 db
   );
 
-  public static native int sqlite3_clear_bindings(
+  public static synchronized native int sqlite3_clear_bindings(
     @NotNull sqlite3_stmt stmt
   );
 
-  public static native int sqlite3_close(
+  public static synchronized native int sqlite3_close(
     @NotNull sqlite3 db
   );
 
-  public static native int sqlite3_close_v2(
+  public static synchronized native int sqlite3_close_v2(
     @NotNull sqlite3 db
   );
 
-  public static native byte[] sqlite3_column_blob(
+  public static synchronized native byte[] sqlite3_column_blob(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native int sqlite3_column_bytes(
+  public static synchronized native int sqlite3_column_bytes(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native int sqlite3_column_bytes16(
+  public static synchronized native int sqlite3_column_bytes16(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native int sqlite3_column_count(
+  public static synchronized native int sqlite3_column_count(
     @NotNull sqlite3_stmt stmt
   );
 
-  public static native double sqlite3_column_double(
+  public static synchronized native double sqlite3_column_double(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native int sqlite3_column_int(
+  public static synchronized native int sqlite3_column_int(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native long sqlite3_column_int64(
+  public static synchronized native long sqlite3_column_int64(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native String sqlite3_column_name(
+  public static synchronized native String sqlite3_column_name(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native String sqlite3_column_database_name(
+  public static synchronized native String sqlite3_column_database_name(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -382,11 +382,11 @@ public final class SQLite3Jni {
     return type.isInstance(o) ? (T)o : null;
   }
 
-  public static native String sqlite3_column_origin_name(
+  public static synchronized native String sqlite3_column_origin_name(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native String sqlite3_column_table_name(
+  public static synchronized native String sqlite3_column_table_name(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -395,7 +395,7 @@ public final class SQLite3Jni {
      This API includes no functions for working with Java's Modified
      UTF-8.
   */
-  public static native String sqlite3_column_text16(
+  public static synchronized native String sqlite3_column_text16(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -403,7 +403,7 @@ public final class SQLite3Jni {
      Returns the given column's contents as UTF-8-encoded (not MUTF-8) text.
      Use sqlite3_column_text16() to fetch the text
   */
-  public static native byte[] sqlite3_column_text(
+  public static synchronized native byte[] sqlite3_column_text(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -444,11 +444,11 @@ public final class SQLite3Jni {
   //   return rv;
   // }
 
-  public static native int sqlite3_column_type(
+  public static synchronized native int sqlite3_column_type(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  public static native sqlite3_value sqlite3_column_value(
+  public static synchronized native sqlite3_value sqlite3_column_value(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -456,7 +456,7 @@ public final class SQLite3Jni {
      This functions like C's sqlite3_collation_needed16() because
      Java's string type is compatible with that interface.
   */
-  public static native int sqlite3_collation_needed(
+  public static synchronized native int sqlite3_collation_needed(
     @NotNull sqlite3 db, @Nullable CollationNeeded callback
   );
 
@@ -464,23 +464,23 @@ public final class SQLite3Jni {
      Returns the db handle passed to sqlite3_open() or
      sqlite3_open_v2(), as opposed to a new wrapper object.
   */
-  public static native sqlite3 sqlite3_context_db_handle(
+  public static synchronized native sqlite3 sqlite3_context_db_handle(
     @NotNull sqlite3_context cx
   );
 
-  public static native CommitHook sqlite3_commit_hook(
+  public static synchronized native CommitHook sqlite3_commit_hook(
     @NotNull sqlite3 db, @Nullable CommitHook hook
   );
 
-  public static native String sqlite3_compileoption_get(
+  public static synchronized native String sqlite3_compileoption_get(
     int n
   );
 
-  public static native boolean sqlite3_compileoption_used(
+  public static synchronized native boolean sqlite3_compileoption_used(
     @NotNull String optName
   );
 
-  public static native int sqlite3_create_collation(
+  public static synchronized native int sqlite3_create_collation(
     @NotNull sqlite3 db, @NotNull String name, int eTextRep,
     @NotNull Collation col
   );
@@ -493,16 +493,16 @@ public final class SQLite3Jni {
      SQLFunction's inner classes (Scalar, Aggregate<T>, and Window<T>)
      for details.
    */
-  public static native int sqlite3_create_function(
+  public static synchronized native int sqlite3_create_function(
     @NotNull sqlite3 db, @NotNull String functionName,
     int nArg, int eTextRep, @NotNull SQLFunction func
   );
 
-  public static native int sqlite3_data_count(
+  public static synchronized native int sqlite3_data_count(
     @NotNull sqlite3_stmt stmt
   );
 
-  public static native String sqlite3_db_filename(
+  public static synchronized native String sqlite3_db_filename(
     @NotNull sqlite3 db, @NotNull String dbName
   );
 
@@ -511,7 +511,7 @@ public final class SQLite3Jni {
      variadic arguments. Returns SQLITE_MISUSE if op is not one of the
      SQLITE_DBCONFIG_... options which uses this call form.
   */
-  public static native int sqlite3_db_config(
+  public static synchronized native int sqlite3_db_config(
     @NotNull sqlite3 db, int op, int onOff, @Nullable OutputPointer.Int32 out
   );
 
@@ -522,36 +522,36 @@ public final class SQLite3Jni {
      SQLITE_DBCONFIG_MAINDBNAME, but that set of options may be
      extended in future versions.
   */
-  public static native int sqlite3_db_config(
-    @NotNull sqlite3 db, int op, @NotNull String mainDbName
+  public static synchronized native int sqlite3_db_config(
+    @NotNull sqlite3 db, int op, @NotNull String val
   );
 
-  public static native int sqlite3_errcode(@NotNull sqlite3 db);
+  public static synchronized native int sqlite3_errcode(@NotNull sqlite3 db);
 
-  public static native int sqlite3_extended_errcode(@NotNull sqlite3 db);
+  public static synchronized native int sqlite3_extended_errcode(@NotNull sqlite3 db);
 
-  public static native boolean sqlite3_extended_result_codes(
+  public static synchronized native boolean sqlite3_extended_result_codes(
     @NotNull sqlite3 db, boolean onoff
   );
 
-  public static native String sqlite3_errmsg(@NotNull sqlite3 db);
+  public static synchronized native String sqlite3_errmsg(@NotNull sqlite3 db);
 
-  public static native String sqlite3_errstr(int resultCode);
+  public static synchronized native String sqlite3_errstr(int resultCode);
 
   /**
      Note that the offset values assume UTF-8-encoded SQL.
   */
-  public static native int sqlite3_error_offset(@NotNull sqlite3 db);
+  public static synchronized native int sqlite3_error_offset(@NotNull sqlite3 db);
 
-  public static native int sqlite3_finalize(@NotNull sqlite3_stmt stmt);
+  public static synchronized native int sqlite3_finalize(@NotNull sqlite3_stmt stmt);
 
-  public static native int sqlite3_initialize();
+  public static synchronized native int sqlite3_initialize();
 
-  public static native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);
+  public static synchronized native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);
 
-  public static native String sqlite3_libversion();
+  public static synchronized native String sqlite3_libversion();
 
-  public static native int sqlite3_libversion_number();
+  public static synchronized native int sqlite3_libversion_number();
 
   /**
      Works like its C counterpart and makes the native pointer of the
@@ -572,11 +572,11 @@ public final class SQLite3Jni {
      or sqlite3_open_v2() so that they have a predictible object to
      pass to, e.g., the sqlite3_collation_needed() callback.
   */
-  public static native synchronized int sqlite3_open(
+  public static synchronized native int sqlite3_open(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb
   );
 
-  public static native synchronized int sqlite3_open_v2(
+  public static synchronized native int sqlite3_open_v2(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb,
     int flags, @Nullable String zVfs
   );
@@ -600,7 +600,7 @@ public final class SQLite3Jni {
      necessary, however, and overloads are provided which gloss over
      that.
   */
-  private static native int sqlite3_prepare(
+  private static synchronized native int sqlite3_prepare(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -629,7 +629,7 @@ public final class SQLite3Jni {
     return sqlite3_prepare(db, utf8, utf8.length, outStmt, null);
   }
 
-  private static native int sqlite3_prepare_v2(
+  private static synchronized native int sqlite3_prepare_v2(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int maxBytes,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -658,7 +658,7 @@ public final class SQLite3Jni {
     return sqlite3_prepare_v2(db, utf8, utf8.length, outStmt, null);
   }
 
-  private static native int sqlite3_prepare_v3(
+  private static synchronized native int sqlite3_prepare_v3(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int maxBytes,
     int prepFlags, @NotNull OutputPointer.sqlite3_stmt outStmt,
     @Nullable OutputPointer.Int32 pTailOffset
@@ -687,13 +687,13 @@ public final class SQLite3Jni {
     return sqlite3_prepare_v3(db, utf8, utf8.length, prepFlags, outStmt, null);
   }
 
-  public static native void sqlite3_progress_handler(
+  public static synchronized native void sqlite3_progress_handler(
     @NotNull sqlite3 db, int n, @Nullable ProgressHandler h
   );
 
   //TODO??? void *sqlite3_preupdate_hook(...) and friends
 
-  public static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
+  public static synchronized native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
 
   /**
      Works like the C API except that it has no side effects if auto
@@ -701,7 +701,7 @@ public final class SQLite3Jni {
   */
   public static synchronized native void sqlite3_reset_auto_extension();
 
-  public static native void sqlite3_result_double(
+  public static synchronized native void sqlite3_result_double(
     @NotNull sqlite3_context cx, double v
   );
 
@@ -712,7 +712,7 @@ public final class SQLite3Jni {
      results in the C-level sqlite3_result_error() being called with
      a complaint about the invalid argument.
   */
-  private static native void sqlite3_result_error(
+  private static synchronized native void sqlite3_result_error(
     @NotNull sqlite3_context cx, @Nullable byte[] msg,
     int eTextRep
   );
@@ -755,27 +755,27 @@ public final class SQLite3Jni {
     sqlite3_result_error16(cx, e.getMessage());
   }
 
-  public static native void sqlite3_result_error_toobig(
+  public static synchronized native void sqlite3_result_error_toobig(
     @NotNull sqlite3_context cx
   );
 
-  public static native void sqlite3_result_error_nomem(
+  public static synchronized native void sqlite3_result_error_nomem(
     @NotNull sqlite3_context cx
   );
 
-  public static native void sqlite3_result_error_code(
+  public static synchronized native void sqlite3_result_error_code(
     @NotNull sqlite3_context cx, int c
   );
 
-  public static native void sqlite3_result_null(
+  public static synchronized native void sqlite3_result_null(
     @NotNull sqlite3_context cx
   );
 
-  public static native void sqlite3_result_int(
+  public static synchronized native void sqlite3_result_int(
     @NotNull sqlite3_context cx, int v
   );
 
-  public static native void sqlite3_result_int64(
+  public static synchronized native void sqlite3_result_int64(
     @NotNull sqlite3_context cx, long v
   );
 
@@ -795,7 +795,7 @@ public final class SQLite3Jni {
 
      Note that there is no sqlite3_bind_java_object() counterpart.
   */
-  public static native void sqlite3_result_java_object(
+  public static synchronized native void sqlite3_result_java_object(
     @NotNull sqlite3_context cx, @NotNull Object o
   );
 
@@ -853,19 +853,19 @@ public final class SQLite3Jni {
     sqlite3_result_text(cx, v);
   }
 
-  public static native void sqlite3_result_value(
+  public static synchronized native void sqlite3_result_value(
     @NotNull sqlite3_context cx, @NotNull sqlite3_value v
   );
 
-  public static native void sqlite3_result_zeroblob(
+  public static synchronized native void sqlite3_result_zeroblob(
     @NotNull sqlite3_context cx, int n
   );
 
-  public static native int sqlite3_result_zeroblob64(
+  public static synchronized native int sqlite3_result_zeroblob64(
     @NotNull sqlite3_context cx, long n
   );
 
-  private static native void sqlite3_result_blob(
+  private static synchronized native void sqlite3_result_blob(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, int maxLen
   );
 
@@ -885,7 +885,7 @@ public final class SQLite3Jni {
      If maxLen is larger than blob.length, it is truncated to that
      value. If it is negative, results are undefined.
   */
-  private static native void sqlite3_result_blob64(
+  private static synchronized native void sqlite3_result_blob64(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, long maxLen
   );
 
@@ -895,7 +895,7 @@ public final class SQLite3Jni {
     sqlite3_result_blob64(cx, blob, (long)(null==blob ? 0 : blob.length));
   }
 
-  private static native void sqlite3_result_text(
+  private static synchronized native void sqlite3_result_text(
     @NotNull sqlite3_context cx, @Nullable byte[] text, int maxLen
   );
 
@@ -929,7 +929,7 @@ public final class SQLite3Jni {
      text.length, it is silently truncated to text.length. If it is
      negative, results are undefined.
   */
-  private static native void sqlite3_result_text64(
+  private static synchronized native void sqlite3_result_text64(
     @NotNull sqlite3_context cx, @Nullable byte[] text,
     long maxLength, int encoding
   );
@@ -985,30 +985,30 @@ public final class SQLite3Jni {
     sqlite3_result_text64(cx, b, b.length, SQLITE_UTF16BE);
   }
 
-  public static native RollbackHook sqlite3_rollback_hook(
+  public static synchronized native RollbackHook sqlite3_rollback_hook(
     @NotNull sqlite3 db, @Nullable RollbackHook hook
   );
 
   //! Sets or unsets (if auth is null) the current authorizer.
-  public static native int sqlite3_set_authorizer(
+  public static synchronized native int sqlite3_set_authorizer(
     @NotNull sqlite3 db, @Nullable Authorizer auth
   );
 
-  public static native void sqlite3_set_last_insert_rowid(
+  public static synchronized native void sqlite3_set_last_insert_rowid(
     @NotNull sqlite3 db, long rowid
   );
 
-  public static native int sqlite3_sleep(int ms);
+  public static synchronized native int sqlite3_sleep(int ms);
 
-  public static native String sqlite3_sourceid();
+  public static synchronized native String sqlite3_sourceid();
 
-  public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
+  public static synchronized native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
   /**
      Internal impl of the public sqlite3_strglob() method. Neither argument
      may be NULL and both _MUST_ be NUL-terminated.
   */
-  private static native int sqlite3_strglob(
+  private static synchronized native int sqlite3_strglob(
     @NotNull byte[] glob, @NotNull byte[] txt
   );
 
@@ -1025,7 +1025,7 @@ public final class SQLite3Jni {
      Internal impl of the public sqlite3_strlike() method. Neither
      argument may be NULL and both _MUST_ be NUL-terminated.
   */
-  private static native int sqlite3_strlike(
+  private static synchronized native int sqlite3_strlike(
     @NotNull byte[] glob, @NotNull byte[] txt, int escChar
   );
 
@@ -1039,11 +1039,11 @@ public final class SQLite3Jni {
     );
   }
 
-  public static native int sqlite3_threadsafe();
+  public static synchronized native int sqlite3_threadsafe();
 
-  public static native int sqlite3_total_changes(@NotNull sqlite3 db);
+  public static synchronized native int sqlite3_total_changes(@NotNull sqlite3 db);
 
-  public static native long sqlite3_total_changes64(@NotNull sqlite3 db);
+  public static synchronized native long sqlite3_total_changes64(@NotNull sqlite3 db);
 
   /**
      Works like C's sqlite3_trace_v2() except that the 3rd argument to that
@@ -1055,33 +1055,33 @@ public final class SQLite3Jni {
      mapping state fails and SQLITE_ERROR if the given callback object
      cannot be processed propertly (i.e. an internal error).
   */
-  public static native int sqlite3_trace_v2(
+  public static synchronized native int sqlite3_trace_v2(
     @NotNull sqlite3 db, int traceMask, @Nullable Tracer tracer
   );
 
-  public static native UpdateHook sqlite3_update_hook(
+  public static synchronized native UpdateHook sqlite3_update_hook(
     sqlite3 db, UpdateHook hook
   );
 
-  public static native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);
+  public static synchronized native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);
 
-  public static native int sqlite3_value_bytes(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_bytes(@NotNull sqlite3_value v);
 
-  public static native int sqlite3_value_bytes16(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_bytes16(@NotNull sqlite3_value v);
 
-  public static native double sqlite3_value_double(@NotNull sqlite3_value v);
+  public static synchronized native double sqlite3_value_double(@NotNull sqlite3_value v);
 
-  public static native sqlite3_value sqlite3_value_dupe(
+  public static synchronized native sqlite3_value sqlite3_value_dupe(
     @NotNull sqlite3_value v
   );
 
-  public static native int sqlite3_value_encoding(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_encoding(@NotNull sqlite3_value v);
 
-  public static native void sqlite3_value_free(@Nullable sqlite3_value v);
+  public static synchronized native void sqlite3_value_free(@Nullable sqlite3_value v);
 
-  public static native int sqlite3_value_int(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_int(@NotNull sqlite3_value v);
 
-  public static native long sqlite3_value_int64(@NotNull sqlite3_value v);
+  public static synchronized native long sqlite3_value_int64(@NotNull sqlite3_value v);
 
   /**
      If the given value was set using sqlite3_result_java_value() then
@@ -1090,7 +1090,7 @@ public final class SQLite3Jni {
      It is up to the caller to inspect the object to determine its
      type, and cast it if necessary.
   */
-  public static native Object sqlite3_value_java_object(
+  public static synchronized native Object sqlite3_value_java_object(
     @NotNull sqlite3_value v
   );
 
@@ -1111,41 +1111,41 @@ public final class SQLite3Jni {
      See sqlite3_value_text_utf8() for how to extract text in standard
      UTF-8.
   */
-  public static native String sqlite3_value_text(@NotNull sqlite3_value v);
+  public static synchronized native String sqlite3_value_text(@NotNull sqlite3_value v);
 
   /**
      The sqlite3_value counterpart of sqlite3_column_text_utf8().
   */
-  public static native byte[] sqlite3_value_text_utf8(@NotNull sqlite3_value v);
+  public static synchronized native byte[] sqlite3_value_text_utf8(@NotNull sqlite3_value v);
 
-  public static native byte[] sqlite3_value_text16(@NotNull sqlite3_value v);
+  public static synchronized native byte[] sqlite3_value_text16(@NotNull sqlite3_value v);
 
-  public static native byte[] sqlite3_value_text16le(@NotNull sqlite3_value v);
+  public static synchronized native byte[] sqlite3_value_text16le(@NotNull sqlite3_value v);
 
-  public static native byte[] sqlite3_value_text16be(@NotNull sqlite3_value v);
+  public static synchronized native byte[] sqlite3_value_text16be(@NotNull sqlite3_value v);
 
-  public static native int sqlite3_value_type(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_type(@NotNull sqlite3_value v);
 
-  public static native int sqlite3_value_numeric_type(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_numeric_type(@NotNull sqlite3_value v);
 
-  public static native int sqlite3_value_nochange(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_nochange(@NotNull sqlite3_value v);
 
-  public static native int sqlite3_value_frombind(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_frombind(@NotNull sqlite3_value v);
 
-  public static native int sqlite3_value_subtype(@NotNull sqlite3_value v);
+  public static synchronized native int sqlite3_value_subtype(@NotNull sqlite3_value v);
 
   /**
      Cleans up all per-JNIEnv and per-db state managed by the library
      then calls the C-native sqlite3_shutdown().
   */
-  public static native int sqlite3_shutdown();
+  public static synchronized native int sqlite3_shutdown();
 
   /**
      This is NOT part of the public API. It exists solely as a place
      to hook in arbitrary C-side code during development and testing
      of this library.
    */
-  static native void sqlite3_do_something_for_developer();
+  static synchronized native void sqlite3_do_something_for_developer();
 
   //////////////////////////////////////////////////////////////////////
   // SQLITE_... constants follow...

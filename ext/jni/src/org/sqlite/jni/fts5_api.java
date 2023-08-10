@@ -57,7 +57,7 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
   //   void (*xDestroy)(void*)
   // );
 
-  public native int xCreateFunction(@NotNull String name,
+  public synchronized native int xCreateFunction(@NotNull String name,
                                     @Nullable Object userData,
                                     @NotNull fts5_extension_function xFunction);
 

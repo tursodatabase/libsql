@@ -35,52 +35,52 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   */
   public static synchronized native Fts5ExtensionApi getInstance();
 
-  public native int xColumnCount(@NotNull Fts5Context fcx);
-  public native int xColumnSize(@NotNull Fts5Context cx, int iCol,
+  public synchronized native int xColumnCount(@NotNull Fts5Context fcx);
+  public synchronized native int xColumnSize(@NotNull Fts5Context cx, int iCol,
                                 @NotNull OutputPointer.Int32 pnToken);
-  public native int xColumnText(@NotNull Fts5Context cx, int iCol,
+  public synchronized native int xColumnText(@NotNull Fts5Context cx, int iCol,
                                 @NotNull OutputPointer.String txt);
-  public native int xColumnTotalSize(@NotNull Fts5Context fcx, int iCol,
+  public synchronized native int xColumnTotalSize(@NotNull Fts5Context fcx, int iCol,
                                      @NotNull OutputPointer.Int64 pnToken);
-  public native Object xGetAuxdata(@NotNull Fts5Context cx, boolean clearIt);
-  public native int xInst(@NotNull Fts5Context cx, int iIdx,
+  public synchronized native Object xGetAuxdata(@NotNull Fts5Context cx, boolean clearIt);
+  public synchronized native int xInst(@NotNull Fts5Context cx, int iIdx,
                           @NotNull OutputPointer.Int32 piPhrase,
                           @NotNull OutputPointer.Int32 piCol,
                           @NotNull OutputPointer.Int32 piOff);
-  public native int xInstCount(@NotNull Fts5Context fcx,
+  public synchronized native int xInstCount(@NotNull Fts5Context fcx,
                                @NotNull OutputPointer.Int32 pnInst);
-  public native int xPhraseCount(@NotNull Fts5Context fcx);
-  public native int xPhraseFirst(@NotNull Fts5Context cx, int iPhrase,
+  public synchronized native int xPhraseCount(@NotNull Fts5Context fcx);
+  public synchronized native int xPhraseFirst(@NotNull Fts5Context cx, int iPhrase,
                                  @NotNull Fts5PhraseIter iter,
                                  @NotNull OutputPointer.Int32 iCol,
                                  @NotNull OutputPointer.Int32 iOff);
-  public native int xPhraseFirstColumn(@NotNull Fts5Context cx, int iPhrase,
+  public synchronized native int xPhraseFirstColumn(@NotNull Fts5Context cx, int iPhrase,
                                        @NotNull Fts5PhraseIter iter,
                                        @NotNull OutputPointer.Int32 iCol);
-  public native void xPhraseNext(@NotNull Fts5Context cx,
+  public synchronized native void xPhraseNext(@NotNull Fts5Context cx,
                                  @NotNull Fts5PhraseIter iter,
                                  @NotNull OutputPointer.Int32 iCol,
                                  @NotNull OutputPointer.Int32 iOff);
-  public native void xPhraseNextColumn(@NotNull Fts5Context cx,
+  public synchronized native void xPhraseNextColumn(@NotNull Fts5Context cx,
                                        @NotNull Fts5PhraseIter iter,
                                        @NotNull OutputPointer.Int32 iCol);
-  public native int xPhraseSize(@NotNull Fts5Context fcx, int iPhrase);
-  public native int xQueryPhrase(@NotNull Fts5Context cx, int iPhrase,
+  public synchronized native int xPhraseSize(@NotNull Fts5Context fcx, int iPhrase);
+  public synchronized native int xQueryPhrase(@NotNull Fts5Context cx, int iPhrase,
                                  @NotNull xQueryPhraseCallback callback);
-  public native int xRowCount(@NotNull Fts5Context fcx,
+  public synchronized native int xRowCount(@NotNull Fts5Context fcx,
                               @NotNull OutputPointer.Int64 nRow);
-  public native long xRowid(@NotNull Fts5Context cx);
+  public synchronized native long xRowid(@NotNull Fts5Context cx);
   /* Note that the JNI binding lacks the C version's xDelete()
      callback argument. Instead, if pAux has an xDestroy() method, it
      is called if the FTS5 API finalizes the aux state (including if
      allocation of storage for the auxdata fails). Any reference to
      pAux held by the JNI layer will be relinquished regardless of
      whether pAux has an xDestroy() method. */
-  public native int xSetAuxdata(@NotNull Fts5Context cx, @Nullable Object pAux);
-  public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte pText[],
+  public synchronized native int xSetAuxdata(@NotNull Fts5Context cx, @Nullable Object pAux);
+  public synchronized native int xTokenize(@NotNull Fts5Context cx, @NotNull byte pText[],
                               @NotNull Fts5.xTokenizeCallback callback);
 
-  public native Object xUserData(Fts5Context cx);
+  public synchronized native Object xUserData(Fts5Context cx);
   //^^^ returns the pointer passed as the 3rd arg to the C-level
   // fts5_api::xCreateFunction.
 }
