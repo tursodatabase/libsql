@@ -142,3 +142,76 @@ curl -X POST -d '{"statements": ["select * from testme"]}' $YOUR_APP.fly.dev
 ```
 [{"b":2,"a":1,"c":3}]
 ```
+
+## Incremental snapshots
+
+The `sqld` generates incremental snapshots of the database file, which you can apply to a local libSQL replica.
+For example, suppose you have an application that is not always connected over the network and can't rely on the `sqld` gRPC replication method. In that case, you can configure `sqld` to notify of generated incremental snapshots, sync the snapshot files to another machine, and apply them.
+
+You can use the `--snapshot-exec` command line option to specify a file, such as a shell script, to execute on snapshot generation. You can also use the `--max-log-duration SECS` command line option
+on to control how often `sqld` generates the snapshot files to ensure the freshness of the data on local replicas.
+
+To use incremental snapshots, first, create a shell script with the name `snapshot.sh`:
+
+```bash
+#!/bin/bash
+
+SNAPSHOT_FILE="$1"
+NAMESPACE="$2"
+
+echo "Generated incremental snapshot $SNAPSHOT_FILE for namespace $NAMESPACE"
+```
+
+and then configure `sqld` to generate an incremental snapshot every 5 seconds and invoke the shell script when `sqld` generates a snapshot:
+
+```console
+sqld --snapshot-exec ./snapshot.sh --max-log-duration 5
+```
+
+When you write to the `sqld` database, you will eventually see log line such as:
+
+```console
+2023-08-11T08:21:04.183564Z  INFO sqld::replication::snapshot: snapshot `e126f594-90f4-45be-9350-bc8a01160de9-0-2.snap` successfully created
+Generated incremental snapshot data.sqld/dbs/default/snapshots/e126f594-90f4-45be-9350-bc8a01160de9-0-2.snap
+```
+
+The first line is logging from `sqld` and the second line is `sqld` executing `snapshot.sh` script.
+You can now, for example, `rsync` the snapshot file to another machine, to apply the changes to a local replica with the `Database::sync_frames()` method of the `libsql` crate:
+
+```rust
+use libsql::Database;
+use libsql_replication::{Frames, TempSnapshot};
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt::init();
+
+    let opts = libsql::Opts::with_sync();
+    let db = Database::open_with_opts("test.db", opts).await.unwrap();
+    let conn = db.connect().unwrap();
+
+    let args = std::env::args().collect::<Vec<String>>();
+    if args.len() < 2 {
+        println!("Usage: {} <snapshot path>", args[0]);
+        return;
+    }
+    let snapshot_path = args.get(1).unwrap();
+    let snapshot = TempSnapshot::from_snapshot_file(snapshot_path.as_ref()).unwrap();
+
+    db.sync_frames(Frames::Snapshot(snapshot)).unwrap();
+
+    let rows = conn
+        .query("SELECT * FROM sqlite_master", ())
+        .unwrap()
+        .unwrap();
+    while let Ok(Some(row)) = rows.next() {
+        println!(
+            "| {:024} | {:024} | {:024} | {:024} |",
+            row.get::<&str>(0).unwrap(),
+            row.get::<&str>(1).unwrap(),
+            row.get::<&str>(2).unwrap(),
+            row.get::<&str>(3).unwrap(),
+        );
+    }
+}
+```
