@@ -250,12 +250,14 @@ public class SQLTester {
   }
 
   public void runTests() throws Exception {
+    final long tStart = System.nanoTime();
     for(String f : listInFiles){
       reset();
       ++nTestFile;
       final TestScript ts = new TestScript(f);
       outln(nextStartEmoji(), " starting [",f,"]");
       boolean threw = false;
+      final long timeStart = System.nanoTime();
       try{
         ts.run(this);
       }catch(SQLTesterException e){
@@ -265,9 +267,14 @@ public class SQLTester {
         if( keepGoing ) outln("Continuing anyway becaure of the keep-going option.");
         else if( e.isFatal() ) throw e;
       }finally{
-        outln("🏁",(threw ? "❌" : "✅")," ",nTest," test(s) in ",ts.getFilename());
+        final long timeEnd = System.nanoTime();
+        outln("🏁",(threw ? "❌" : "✅")," ",nTest," test(s) in ",
+              ((timeEnd-timeStart)/1000000.0),"ms.");
+        //ts.getFilename());
       }
     }
+    final long tEnd = System.nanoTime();
+    outln("Total run-time: ",((tEnd-tStart)/1000000.0),"ms");
     Util.unlink(initialDbName);
   }
 
