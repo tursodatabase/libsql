@@ -27,7 +27,7 @@ where
         parts: &mut Parts,
         state: &AppState<F>,
     ) -> Result<Self, Self::Rejection> {
-        let ns = namespace_from_headers(&parts.headers, state.allow_default_namespace)?;
+        let ns = namespace_from_headers(&parts.headers, state.disable_default_namespace)?;
         Ok(Self(
             state
                 .namespaces
@@ -39,7 +39,7 @@ where
 
 pub fn namespace_from_headers(
     headers: &HeaderMap,
-    allow_default_namespace: bool,
+    disable_default_namespace: bool,
 ) -> crate::Result<Bytes> {
     let host = headers
         .get("host")
@@ -50,7 +50,7 @@ pub fn namespace_from_headers(
 
     match split_namespace(host_str) {
         Ok(ns) => Ok(ns),
-        Err(_) if allow_default_namespace => Ok(DEFAULT_NAMESPACE_NAME.into()),
+        Err(_) if !disable_default_namespace => Ok(DEFAULT_NAMESPACE_NAME.into()),
         Err(e) => Err(e),
     }
 }

@@ -19,7 +19,7 @@ pub enum WebSocket {
 
 pub async fn handshake_tcp(
     socket: tokio::net::TcpStream,
-    allow_default_ns: bool,
+    disable_default_ns: bool,
 ) -> Result<(WebSocket, Version, Bytes)> {
     let mut version = None;
     let mut namespace = None;
@@ -29,7 +29,7 @@ pub async fn handshake_tcp(
             .headers
             .insert("server", http::HeaderValue::from_static("sqld-hrana-tcp"));
 
-        namespace = match namespace_from_headers(req.headers(), allow_default_ns) {
+        namespace = match namespace_from_headers(req.headers(), disable_default_ns) {
             Ok(ns) => Some(ns),
             Err(e) => return Err(http::Response::from_parts(resp_parts, Some(e.to_string()))),
         };
@@ -51,11 +51,11 @@ pub async fn handshake_tcp(
 
 pub async fn handshake_upgrade(
     upgrade: Upgrade,
-    allow_default_ns: bool,
+    disable_default_ns: bool,
 ) -> Result<(WebSocket, Version, Bytes)> {
     let mut req = upgrade.request;
 
-    let ns = namespace_from_headers(req.headers(), allow_default_ns)?;
+    let ns = namespace_from_headers(req.headers(), disable_default_ns)?;
     let ws_config = Some(get_ws_config());
     let (mut resp, stream_fut_version_res) = match hyper_tungstenite::upgrade(&mut req, ws_config) {
         Ok((mut resp, stream_fut)) => match negotiate_version(req.headers(), resp.headers_mut()) {

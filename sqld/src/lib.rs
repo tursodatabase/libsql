@@ -105,7 +105,7 @@ pub struct Config {
     pub max_response_size: u64,
     pub max_total_response_size: u64,
     pub snapshot_exec: Option<String>,
-    pub allow_default_namespace: bool,
+    pub disable_default_namespace: bool,
 }
 
 impl Default for Config {
@@ -145,7 +145,7 @@ impl Default for Config {
             max_response_size: 10 * 1024 * 1024,       // 10MiB
             max_total_response_size: 32 * 1024 * 1024, // 32MiB
             snapshot_exec: None,
-            allow_default_namespace: false,
+            disable_default_namespace: false,
         }
     }
 }
@@ -177,7 +177,7 @@ where
         let namespaces = namespaces.clone();
         let auth = auth.clone();
         let idle_kicker = idle_shutdown_layer.clone().map(|isl| isl.into_kicker());
-        let allow_default_namespace = config.allow_default_namespace;
+        let disable_default_namespace = config.disable_default_namespace;
         join_set.spawn(async move {
             hrana::ws::serve(
                 auth,
@@ -185,7 +185,7 @@ where
                 hrana_accept_rx,
                 hrana_upgrade_rx,
                 namespaces,
-                allow_default_namespace,
+                disable_default_namespace,
             )
             .await
             .context("Hrana server failed")
@@ -204,7 +204,7 @@ where
             idle_shutdown_layer,
             stats.clone(),
             replication_service,
-            config.allow_default_namespace,
+            config.disable_default_namespace,
         ));
         join_set.spawn(async move {
             hrana_http_srv.run_expire().await;
