@@ -834,6 +834,10 @@ rust_bindings: sqlite3.h
 libsqlapi: sqlite3.h
 	cd $(APITOP) && LIBSQL_SRC_DIR=$(TOP) cargo test --all --release --lib
 
+testlibsql: sqlite3.h
+	cd $(APITOP) && LIBSQL_SRC_DIR=$(TOP) cargo test --all --all-targets --all-features &&\
+		cargo test --all --doc --all-features
+
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)/tool/mksqlite3c.tcl $(AMALGAMATION_LINE_MACROS)
 	cp tsrc/sqlite3ext.h .

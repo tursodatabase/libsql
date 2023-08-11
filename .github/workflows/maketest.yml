@@ -35,4 +35,4 @@ jobs:
     # Rust tests are run under maketestwasm
 
     - name: Run API tests
-      run: make libsqlapi
+      run: make testlibsql

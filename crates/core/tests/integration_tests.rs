@@ -18,7 +18,8 @@ fn connection_drops_before_statements() {
 #[test]
 fn connection_query() {
     let conn = setup();
-    let _ = conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
+    let _ = conn
+        .execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
         .unwrap();
     let rows = conn.query("SELECT * FROM users", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
@@ -27,9 +28,46 @@ fn connection_query() {
 }
 
 #[test]
+fn connection_execute_batch() {
+    let conn = setup();
+
+    conn.execute_batch(
+        "BEGIN;
+         CREATE TABLE foo(x INTEGER);
+         CREATE TABLE bar(y TEXT);
+         COMMIT;",
+    )
+    .unwrap();
+
+    let rows = conn
+        .query(
+            "SELECT 
+                name
+            FROM 
+                sqlite_schema
+            WHERE 
+                type ='table' AND 
+                name NOT LIKE 'sqlite_%';",
+            (),
+        )
+        .unwrap()
+        .unwrap();
+
+    let row = rows.next().unwrap().unwrap();
+    assert_eq!(row.get::<&str>(0).unwrap(), "users");
+
+    let row = rows.next().unwrap().unwrap();
+    assert_eq!(row.get::<&str>(0).unwrap(), "foo");
+
+    let row = rows.next().unwrap().unwrap();
+    assert_eq!(row.get::<&str>(0).unwrap(), "bar");
+}
+
+#[test]
 fn statement_query() {
     let conn = setup();
-    let _= conn.execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
+    let _ = conn
+        .execute("INSERT INTO users (id, name) VALUES (2, 'Alice')", ())
         .unwrap();
 
     let params = Params::from(vec![libsql::Value::from(2)]);
@@ -131,7 +169,8 @@ fn check_insert(conn: &Connection, sql: &str, params: Params) {
 #[test]
 fn nulls() {
     let conn = setup();
-    let _= conn.execute("INSERT INTO users (id, name) VALUES (NULL, NULL)", ())
+    let _ = conn
+        .execute("INSERT INTO users (id, name) VALUES (NULL, NULL)", ())
         .unwrap();
     let rows = conn.query("SELECT * FROM users", ()).unwrap().unwrap();
     let row = rows.next().unwrap().unwrap();
@@ -142,12 +181,14 @@ fn nulls() {
 #[test]
 fn blob() {
     let conn = setup();
-    let _= conn.execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY, data BLOB)", ())
+    let _ = conn
+        .execute("CREATE TABLE bbb (id INTEGER PRIMARY KEY, data BLOB)", ())
         .unwrap();
 
     let bytes = vec![2u8; 64];
     let value = Value::from(bytes.clone());
-    let _= conn.execute("INSERT INTO bbb (data) VALUES (?1)", vec![value])
+    let _ = conn
+        .execute("INSERT INTO bbb (data) VALUES (?1)", vec![value])
         .unwrap();
 
     let rows = conn.query("SELECT * FROM bbb", ()).unwrap().unwrap();

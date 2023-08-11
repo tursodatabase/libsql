@@ -1,10 +1,13 @@
 #![allow(clippy::missing_safety_doc)]
 
+use std::ffi::{c_char, c_int};
+
 use crate::error::Result;
 
 #[derive(Debug)]
 pub struct Statement {
     pub raw_stmt: *mut crate::ffi::sqlite3_stmt,
+    tail: usize,
 }
 
 // Safety: works as long as libSQL is compiled and set up with SERIALIZABLE threading model, which is the default.
@@ -127,21 +130,71 @@ impl Statement {
     pub fn readonly(&self) -> bool {
         unsafe { crate::ffi::sqlite3_stmt_readonly(self.raw_stmt) != 0 }
     }
+
+    pub fn tail(&self) -> usize {
+        self.tail
+    }
 }
 
 pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<Statement> {
     let mut raw_stmt = std::ptr::null_mut();
+    let (c_sql, len) = str_for_sqlite(sql.as_bytes())?;
+    let mut c_tail: *const c_char = std::ptr::null_mut();
+
     let err = unsafe {
         crate::ffi::sqlite3_prepare_v2(
             raw,
             sql.as_ptr() as *const i8,
             sql.len() as i32,
             &mut raw_stmt,
-            std::ptr::null_mut(),
+            &mut c_tail,
         )
     };
+
+    // If the input text contains no SQL (if the input is an empty string or a
+    // comment) then *ppStmt is set to NULL.
+    let tail = if c_tail.is_null() {
+        0
+    } else {
+        let n = (c_tail as isize) - (c_sql as isize);
+        if n <= 0 || n >= len as isize {
+            0
+        } else {
+            n as usize
+        }
+    };
+
     match err as u32 {
-        crate::ffi::SQLITE_OK => Ok(Statement { raw_stmt }),
+        crate::ffi::SQLITE_OK => Ok(Statement { raw_stmt, tail }),
         _ => Err(err.into()),
+    }
+}
+
+/// Returns `Ok((string ptr, len as c_int, SQLITE_STATIC | SQLITE_TRANSIENT))`
+/// normally.
+/// Returns error if the string is too large for sqlite.
+/// The `sqlite3_destructor_type` item is always `SQLITE_TRANSIENT` unless
+/// the string was empty (in which case it's `SQLITE_STATIC`, and the ptr is
+/// static).
+fn str_for_sqlite(s: &[u8]) -> Result<(*const c_char, c_int)> {
+    let len = len_as_c_int(s.len())?;
+    let ptr = if len != 0 {
+        s.as_ptr().cast::<c_char>()
+    } else {
+        // Return a pointer guaranteed to live forever
+        "".as_ptr().cast::<c_char>()
+    };
+    Ok((ptr, len))
+}
+
+// Helper to cast to c_int safely, returning the correct error type if the cast
+// failed.
+fn len_as_c_int(len: usize) -> Result<c_int> {
+    if len >= (c_int::MAX as usize) {
+        Err(crate::Error::LibError(
+            crate::ffi::SQLITE_TOOBIG as std::ffi::c_int,
+        ))
+    } else {
+        Ok(len as c_int)
     }
 }
