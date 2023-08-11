@@ -295,7 +295,7 @@ SQLITE_WASM_EXPORT void * sqlite3_wasm_pstack_ptr(void){
 */
 SQLITE_WASM_EXPORT void sqlite3_wasm_pstack_restore(unsigned char * p){
   assert(p>=PStack.pBegin && p<=PStack.pEnd && p>=PStack.pPos);
-  assert(0==(p & 0x7));
+  assert(0==((unsigned long long)p & 0x7));
   if(p>=PStack.pBegin && p<=PStack.pEnd /*&& p>=PStack.pPos*/){
     PStack.pPos = p;
   }
@@ -1395,6 +1395,12 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
                                   const char *zFilename,
                                   const unsigned char * pData,
                                   int nData ){
+#ifdef SQLITE_DEBUG
+  fprintf(stderr,"%s does not work in debug builds because its out-of-scope use of "
+          "the sqlite3_vfs API triggers assertions in the core library.\n", __func__);
+  /* ^^^ That was unfortunately not discovered until 2023-08-11. */
+  return SQLITE_ERROR;
+#else
   int rc;
   sqlite3_file *pFile = 0;
   sqlite3_io_methods const *pIo;
@@ -1462,6 +1468,7 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
   RC;
 #undef RC
   return rc;
+#endif
 }
 
 /*

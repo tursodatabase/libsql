@@ -1357,6 +1357,12 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
+     Achtung: this function does not work in debug builds of sqlite3
+     because its out-of-scope use of the sqlite3_vfs API triggers
+     unresolvable assertions in the core library.  That was
+     unfortunately not discovered until 2023-08-11. Because of that,
+     this function is now deprecated and should be used in new code.
+
      Creates a file using the storage appropriate for the given
      sqlite3_vfs.  The first argument may be a VFS name (JS string
      only, NOT a WASM C-string), WASM-managed `sqlite3_vfs*`, or

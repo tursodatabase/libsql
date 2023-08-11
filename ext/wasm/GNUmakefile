@@ -188,6 +188,10 @@ SQLITE_OPT = \
   -DSQLITE_WASM_ENABLE_C_TESTS \
   -DSQLITE_C=$(sqlite3.c)
 
+# achtung: enabling -DSQLITE_DEBUG breaks
+# sqlite3_wasm_vfs_create_file(), causing it to trigger assertions in
+# the core. That was unfortunately not discovered until 2023-08-11.
+
 .NOTPARALLEL: $(sqlite3.h)
 $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
