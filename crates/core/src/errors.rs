@@ -15,7 +15,7 @@ pub enum Error {
     #[error("Invalid column name: {0}")]
     InvalidColumnName(String),
     #[error("libSQL error {0}")]
-    LibError(std::ffi::c_int),
+    LibError(std::ffi::c_int, String),
     #[error("Query returned no rows")]
     QueryReturnedNoRows,
     #[error("Execute returned rows")]
