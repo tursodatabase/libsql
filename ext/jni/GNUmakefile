@@ -136,9 +136,9 @@ all: $(SQLite3Jni.class)
 # $(sqlite3.canonical.c) must point to the sqlite3.c in
 # the sqlite3 canonical source tree, as that source file
 # is required for certain utility and test code.
-sqlite3.canonical.c := $(firstword $(wildcard $(dir.src.c)/sqlite3.c $(dir.top)/sqlite3.c))
-sqlite3.canonical.h := $(firstword $(wildcard $(dir.src.c)/sqlite3.h $(dir.top)/sqlite3.h))
-sqlite3.c ?= $(firstword $(wildcard $(dir.top)/sqlite3-see.c) $(sqlite3.canonical.c))
+sqlite3.canonical.c := $(firstword $(wildcard $(dir.src.c)/sqlite3.c) $(dir.top)/sqlite3.c)
+sqlite3.canonical.h := $(firstword $(wildcard $(dir.src.c)/sqlite3.h) $(dir.top)/sqlite3.h)
+sqlite3.c := $(sqlite3.canonical.c)
 sqlite3.h := $(sqlite3.canonical.h)
 #ifeq (,$(shell grep sqlite3_activate_see $(sqlite3.c) 2>/dev/null))
 #  SQLITE_C_IS_SEE := 0
@@ -152,7 +152,7 @@ $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
 
-SQLITE_OPT := \
+SQLITE_OPT = \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
   -DSQLITE_ENABLE_STMTVTAB \
@@ -199,7 +199,7 @@ ifeq (1,$(enable.tester))
   $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h: $(dir.src.jni.tester)/SQLTester.java
 endif
 #sqlite3-jni.dll.cfiles := $(dir.src.c)
-sqlite3-jni.dll.cflags := \
+sqlite3-jni.dll.cflags = \
   -fPIC \
   -I. \
   -I$(dir $(sqlite3.h)) \
@@ -223,7 +223,7 @@ $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 $(sqlite3-jni.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
 $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
 	$(CC) $(sqlite3-jni.dll.cflags) $(SQLITE_OPT) \
-      $(sqlite3-jni.c) -shared -o $@
+			$(sqlite3-jni.c) -shared -o $@
 all: $(sqlite3-jni.dll)
 
 .PHONY: test
