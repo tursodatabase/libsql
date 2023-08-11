@@ -61,12 +61,12 @@ pub use database::Database;
 pub use database::Opts;
 pub use errors::Error;
 pub use params::Params;
-pub use params::{Value, ValueRef};
-pub use transaction::{Transaction, TransactionBehavior};
+pub use params::{params_from_iter, Value, ValueRef};
 pub use rows::Row;
 pub use rows::Rows;
 pub use rows::RowsFuture;
 pub use statement::{Column, Statement};
+pub use transaction::{Transaction, TransactionBehavior};
 
 /// Return the version of the underlying SQLite library as a number.
 pub fn version_number() -> i32 {
