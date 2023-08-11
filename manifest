@@ -1,5 +1,5 @@
-C If\sSQLITE_USE_SEH\sis\sdefined,\shandle\sstructured-exceptions\sthrown\sby\sMSVC\sbuilds\sif\sthe\s*-shm\sfile\smapping\sis\saccessed\safter\sit\sbecomes\sinvalid\sfor\ssome\sreason.
-D 2023-08-11T19:31:51.656
+C Modernize\sthe\ssqlite3\sshell\sman\spage\sa\sbit,\sper\s[forum:d9aa201dee553bb2|forum\srequest].
+D 2023-08-11T22:40:06.541
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -572,7 +572,7 @@ F mptest/mptest.c aa41ace6dbc5050d76b02548d3521e6bbccae4f0
 F mptest/multiwrite01.test dab5c5f8f9534971efce679152c5146da265222d
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
-F sqlite3.1 fc7ad8990fc8409983309bb80de8c811a7506786
+F sqlite3.1 acdff36db796e2d00225b911d3047d580cd136547298435426ce9d40347973cc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F sqlite_cfg.h.in baf2e409c63d4e7a765e17769b6ff17c5a82bbd9cbf1e284fd2e4cefaff3fcf2
 F src/alter.c 3ff8c2fca0c0636d43459154bb40d79c882df1b34df77f89c4ec47ab2e2389f5
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0d7aac45b8e7078cc80757e12d6f0b2584f2b0b184dacc2348ad3519978e5bf9 3ed89c344fcb3b7ee8b764d95144643e42e053e1116150d6eda8355fbd6669df
-R 35781298e1f4461a1a53ad9bec2f5ba2
-U dan
-Z d4c9bf3d3544cd45d448f96b6769914e
+P 8a6b0c24937e855b710f97b4aea973eff53e6d43e1182842731547aa4b37db2a
+R 43c88f4a8c1b73283f31097d1c50c3b5
+U stephan
+Z 44f8c32555ee16d703264cb55479403e
 # Remove this line to create a well-formed Fossil manifest.
