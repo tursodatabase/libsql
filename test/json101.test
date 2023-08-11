@@ -923,9 +923,15 @@ do_execsql_test json-20.3 {
 # a NULL value as the JSON input.
 #
 db null NULL
-do_execsql_test json-21.1 {
-  SELECT json_valid(NULL);
-} NULL
+if {[db exists {SELECT * FROM pragma_compile_options WHERE compile_options LIKE '%legacy_json_valid%'}]} {
+  do_execsql_test json-21.1-legacy {
+    SELECT json_valid(NULL);
+  } 0
+} else {
+  do_execsql_test json-21.1-correct {
+    SELECT json_valid(NULL);
+  } NULL
+}
 do_execsql_test json-21.2 {
   SELECT json_error_position(NULL);
 } NULL

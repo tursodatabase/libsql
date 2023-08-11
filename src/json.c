@@ -3009,7 +3009,13 @@ static void jsonValidFunc(
 ){
   JsonParse *p;          /* The parse */
   UNUSED_PARAMETER(argc);
-  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
+#ifdef SQLITE_LEGACY_JSON_VALID
+    /* Incorrect legacy behavior was to return FALSE for a NULL input */
+    sqlite3_result_int(ctx, 0);
+#endif
+    return;
+  }
   p = jsonParseCached(ctx, argv[0], 0, 0);
   if( p==0 || p->oom ){
     sqlite3_result_error_nomem(ctx);
