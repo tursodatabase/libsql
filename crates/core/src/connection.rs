@@ -1,4 +1,6 @@
-use crate::{Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior};
+use crate::{
+    Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
+};
 
 use libsql_sys::ffi;
 use std::ffi::c_int;
@@ -59,6 +61,15 @@ impl Connection {
         Statement::prepare(self.clone(), self.raw, sql.into().as_str())
     }
 
+    /// Convenience method to run a prepared statement query.
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use libsql::{Connection, Result, Rows};
+    /// # fn create_tables(conn: &Connection) -> Result<Option<Rows>> {
+    /// conn.query("SELECT * FROM users WHERE name = ?1;", vec![libsql::Value::from(1)])
+    /// # }
+    /// ```
     pub fn query<S, P>(&self, sql: S, params: P) -> Result<Option<Rows>>
     where
         S: Into<String>,
@@ -68,6 +79,50 @@ impl Connection {
         let params = params.into();
         let ret = stmt.query(&params)?;
         Ok(Some(ret))
+    }
+
+    /// Convenience method to run multiple SQL statements (that cannot take any
+    /// parameters).
+    ///
+    /// ## Example
+    ///
+    /// ```rust,no_run
+    /// # use libsql::{Connection, Result};
+    /// # fn create_tables(conn: &Connection) -> Result<()> {
+    /// conn.execute_batch(
+    ///     "BEGIN;
+    ///     CREATE TABLE foo(x INTEGER);
+    ///     CREATE TABLE bar(y TEXT);
+    ///     COMMIT;",
+    /// )
+    /// # }
+    /// ```
+    ///
+    /// # Failure
+    ///
+    /// Will return `Err` if `sql` cannot be converted to a C-compatible string
+    /// or if the underlying SQLite call fails.
+    pub fn execute_batch<S>(&self, sql: S) -> Result<()>
+    where
+        S: Into<String>,
+    {
+        let sql = sql.into();
+        let mut sql = sql.as_str();
+
+        while !sql.is_empty() {
+            let stmt = self.prepare(sql)?;
+            stmt.step()?;
+
+            let tail = stmt.tail();
+
+            if tail == 0 || tail >= sql.len() {
+                break;
+            }
+
+            sql = &sql[tail..];
+        }
+
+        Ok(())
     }
 
     /// Execute the SQL statement synchronously.

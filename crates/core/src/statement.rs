@@ -191,6 +191,16 @@ impl Statement {
             _ => unreachable!("sqlite3_column_type returned invalid value"),
         }
     }
+
+    pub(crate) fn step(&self) -> Result<()> {
+        // TODO(lucio): Handle error from step
+        self.inner.step();
+        Ok(())
+    }
+
+    pub(crate) fn tail(&self) -> usize {
+        self.inner.tail()
+    }
 }
 
 // NOTICE: Column is blatantly copy-pasted from rusqlite

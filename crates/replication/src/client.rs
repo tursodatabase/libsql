@@ -20,6 +20,7 @@ pub struct H2cChannel {
 }
 
 impl H2cChannel {
+    #[allow(unused)]
     pub fn new() -> Self {
         let https = HttpsConnectorBuilder::new()
             .with_webpki_roots()
