@@ -26,6 +26,32 @@ macro_rules! named_params {
     };
 }
 
+/// Convert an owned iterator into Params.
+///
+/// # Example
+///
+/// ```rust
+/// # use libsql::{Connection, params_from_iter, Rows};
+/// # fn run(conn: &Connection) -> libsql::Result<Option<Rows>> {
+///
+/// let iter = vec![1, 2, 3];
+///
+/// conn.query(
+///     "SELECT * FROM users WHERE id IN (?1, ?2, ?3)",
+///     params_from_iter(iter)
+/// )
+/// # }
+/// ```
+pub fn params_from_iter<I>(iter: I) -> Params
+where
+    I: IntoIterator,
+    I::Item: Into<Value>,
+{
+    let vec = iter.into_iter().map(Into::into).collect();
+
+    Params::Positional(vec)
+}
+
 impl From<()> for Params {
     fn from(_: ()) -> Params {
         Params::None
