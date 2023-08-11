@@ -7729,4 +7729,10 @@ int sqlite3PagerWalFramesize(Pager *pPager){
 }
 #endif
 
+#ifdef SQLITE_USE_SEH
+int sqlite3PagerWalSystemErrno(Pager *pPager){
+  return sqlite3WalSystemErrno(pPager->pWal);
+}
+#endif
+
 #endif /* SQLITE_OMIT_DISKIO */

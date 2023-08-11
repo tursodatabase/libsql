@@ -23,6 +23,7 @@ set testprefix snapshot_fault
 # checkpointing the db.
 #
 do_faultsim_test 1.0 -prep {
+  catch { db2 close }
   faultsim_delete_and_reopen
   sqlite3 db2 test.db
   db2 eval { 

@@ -151,5 +151,9 @@ int sqlite3WalWriteLock(Wal *pWal, int bLock);
 void sqlite3WalDb(Wal *pWal, sqlite3 *db);
 #endif
 
+#ifdef SQLITE_USE_SEH
+int sqlite3WalSystemErrno(Wal*);
+#endif
+
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* SQLITE_WAL_H */

@@ -1168,11 +1168,41 @@ const installOpfsVfs = function callee(options){
       doDir(opt.directory, 0);
     };
 
-    //TODO to support fiddle and worker1 db upload:
-    //opfsUtil.createFile = function(absName, content=undefined){...}
-    //We have sqlite3.wasm.sqlite3_wasm_vfs_create_file() for this
-    //purpose but its interface and name are still under
-    //consideration.
+    /**
+       Asynchronously imports the given bytes (a byte array or
+       ArrayBuffer) into the given database file.
+
+       It very specifically requires the input to be an SQLite3
+       database and throws if that's not the case.  It does so in
+       order to prevent this function from taking on a larger scope
+       than it is specifically intended to. i.e. we do not want it to
+       become a convenience for importing arbitrary files into OPFS.
+
+       Throws on error. Resolves to the number of bytes written.
+    */
+    opfsUtil.importDb = async function(filename, bytes){
+      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
+      const n = bytes.byteLength;
+      if(n<512 || n%512!=0){
+        toss("Byte array size is invalid for an SQLite db.");
+      }
+      const header = "SQLite format 3";
+      for(let i = 0; i < header.length; ++i){
+        if( header.charCodeAt(i) !== bytes[i] ){
+          toss("Input does not contain an SQLite database header.");
+        }
+      }
+      const [hDir, fnamePart] = await opfsUtil.getDirForFilename(filename, true);
+      const hFile = await hDir.getFileHandle(fnamePart, {create:true});
+      const sah = await hFile.createSyncAccessHandle();
+      sah.truncate(0);
+      const nWrote = sah.write(bytes, {at: 0});
+      sah.close();
+      if(nWrote != n){
+        toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
+      }
+      return nWrote;
+    };
 
     if(sqlite3.oo1){
       const OpfsDb = function(...args){
@@ -1182,6 +1212,7 @@ const installOpfsVfs = function callee(options){
       };
       OpfsDb.prototype = Object.create(sqlite3.oo1.DB.prototype);
       sqlite3.oo1.OpfsDb = OpfsDb;
+      OpfsDb.importDb = opfsUtil.importDb;
       sqlite3.oo1.DB.dbCtorHelper.setVfsPostOpenSql(
         opfsVfs.pointer,
         function(oo1Db, sqlite3){

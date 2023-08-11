@@ -141,9 +141,6 @@
 #ifndef SQLITE_OMIT_UTF16
 # define SQLITE_OMIT_UTF16 1
 #endif
-#ifndef SQLITE_OMIT_WAL
-# define SQLITE_OMIT_WAL 1
-#endif
 #ifndef SQLITE_OS_KV_OPTIONAL
 # define SQLITE_OS_KV_OPTIONAL 1
 #endif
@@ -295,7 +292,7 @@ SQLITE_WASM_EXPORT void * sqlite3_wasm_pstack_ptr(void){
 */
 SQLITE_WASM_EXPORT void sqlite3_wasm_pstack_restore(unsigned char * p){
   assert(p>=PStack.pBegin && p<=PStack.pEnd && p>=PStack.pPos);
-  assert(0==(p & 0x7));
+  assert(0==((unsigned long long)p & 0x7));
   if(p>=PStack.pBegin && p<=PStack.pEnd /*&& p>=PStack.pPos*/){
     PStack.pPos = p;
   }
@@ -1353,6 +1350,13 @@ int sqlite3_wasm_db_serialize( sqlite3 *pDb, const char *zSchema,
 ** This function is NOT part of the sqlite3 public API. It is strictly
 ** for use by the sqlite project's own JS/WASM bindings.
 **
+** ACHTUNG: it was discovered on 2023-08-11 that, with SQLITE_DEBUG,
+** this function's out-of-scope use of the sqlite3_vfs/file/io_methods
+** APIs leads to triggering of assertions in the core library. Its use
+** is now deprecated and VFS-specific APIs for importing files need to
+** be found to replace it. sqlite3_wasm_posix_create_file() is
+** suitable for the "unix" family of VFSes.
+**
 ** Creates a new file using the I/O API of the given VFS, containing
 ** the given number of bytes of the given data. If the file exists, it
 ** is truncated to the given length and populated with the given
@@ -1398,7 +1402,14 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
   int rc;
   sqlite3_file *pFile = 0;
   sqlite3_io_methods const *pIo;
-  const int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+  const int openFlags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+#if 0 && defined(SQLITE_DEBUG)
+    | SQLITE_OPEN_MAIN_JOURNAL
+    /* ^^^^ This is for testing a horrible workaround to avoid
+       triggering a specific assert() in os_unix.c:unixOpen(). Please
+       do not enable this in real builds. */
+#endif
+    ;
   int flagsOut = 0;
   int fileExisted = 0;
   int doUnlock = 0;
@@ -1462,6 +1473,34 @@ int sqlite3_wasm_vfs_create_file( sqlite3_vfs *pVfs,
   RC;
 #undef RC
   return rc;
+}
+
+/**
+** This function is NOT part of the sqlite3 public API. It is strictly
+** for use by the sqlite project's own JS/WASM bindings.
+**
+** Creates or overwrites a file using the POSIX file API,
+** i.e. Emscripten's virtual filesystem. Creates or truncates
+** zFilename, appends pData bytes to it, and returns 0 on success or
+** SQLITE_IOERR on error.
+*/
+SQLITE_WASM_EXPORT
+int sqlite3_wasm_posix_create_file( const char *zFilename,
+                                    const unsigned char * pData,
+                                    int nData ){
+  int rc;
+  FILE * pFile = 0;
+  int fileExisted = 0;
+  size_t nWrote = 1;
+
+  if( !zFilename || nData<0 || (pData==0 && nData>0) ) return SQLITE_MISUSE;
+  pFile = fopen(zFilename, "w");
+  if( 0==pFile ) return SQLITE_IOERR;
+  if( nData>0 ){
+    nWrote = fwrite(pData, (size_t)nData, 1, pFile);
+  }
+  fclose(pFile);
+  return 1==nWrote ? 0 : SQLITE_IOERR;
 }
 
 /*
