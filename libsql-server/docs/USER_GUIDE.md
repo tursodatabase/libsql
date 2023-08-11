@@ -215,3 +215,18 @@ async fn main() {
     }
 }
 ```
+
+## Multitenancy
+
+The `sqld` server supports more than one databases. Currently, databases are created lazily when a HTTP request arrives.
+The name of the database is determined from the `Host` header in the HTTP request.
+
+For example, if you have the following entries in your `/etc/hosts` file:
+
+```console
+127.0.0.1       db1.local
+127.0.0.1       db2.local
+```
+
+You can access `db1` with the `http://db1.local:8080`URL and `db2` with `http://db2.local:8080`.
+The database files for the databases are stored in `<data dir>/dbs/db1` and `<data dir/dbs/db2`, respectively.
