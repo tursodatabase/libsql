@@ -235,17 +235,38 @@ test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose
-.PHONY: tester
+.PHONY: tester tester-local tester-ext
 ifeq (1,$(enable.tester))
-tester: $(CLASS_FILES.tester) $(sqlite3-jni.dll)
+tester-local: $(CLASS_FILES.tester) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
 		org.sqlite.jni.tester.SQLTester $(tester.flags) $(tester.scripts)
+tester: tester-local
 else
 tester:
 	@echo "SQLTester support is disabled. Build with enable.tester=1 to enable it."
 endif
 
+tester.extdir.default := src/tests/ext
+tester.extdir ?= $(tester.extdir.default)
+tester.extern-scripts := $(wildcard $(tester.extdir)/*.test)
+ifneq (,$(tester.extern-scripts))
+tester-ext:
+	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
+		$(java.flags) -cp $(classpath) \
+		org.sqlite.jni.tester.SQLTester $(tester.flags) $(tester.extern-scripts)
+else
+tester-ext:
+	@echo "******************************************************"; \
+		echo "*** Include the out-of-tree test suite in the 'tester'"; \
+		echo "*** target by either symlinking its directory to"; \
+		echo "*** $(tester.extdir.default) or passing it to make"; \
+		echo "*** as tester.extdir=/path/to/that/dir."; \
+		echo "******************************************************";
+endif
+
+tester-ext: tester-local
+tester: tester-ext
 tests: test tester
 package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)

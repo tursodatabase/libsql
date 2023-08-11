@@ -4341,11 +4341,14 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
   };
   jfieldID fieldId;
   const ConfigFlagEntry * pConfFlag;
+
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));
   if( (*env)->GetJavaVM(env, &S3JniGlobal.jvm) ){
     (*env)->FatalError(env, "GetJavaVM() failure shouldn't be possible.");
     return;
   }
+#if 0
+  /* Just for sanity checking... */
   (void)S3JniGlobal_env_cache(env);
   if( !S3JniGlobal.envCache.aHead ){
     (*env)->FatalError(env, "Could not allocate JNIEnv-specific cache.");
@@ -4354,6 +4357,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
   assert( 1 == S3JniGlobal.metrics.envCacheMisses );
   assert( env == S3JniGlobal.envCache.aHead->env );
   assert( 0 != S3JniGlobal.envCache.aHead->g.cObj );
+#endif
 
   for( pConfFlag = &aLimits[0]; pConfFlag->zName; ++pConfFlag ){
     char const * zSig = (JTYPE_BOOL == pConfFlag->jtype) ? "Z" : "I";

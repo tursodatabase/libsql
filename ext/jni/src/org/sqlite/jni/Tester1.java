@@ -396,8 +396,8 @@ public class Tester1 {
     affirm( "SELECT 1".equals(sqlite3_sql(stmt)) );
     sqlite3_finalize(stmt);
     stmt = prepare(db, "SELECT ?");
-    sqlite3_bind_text(stmt, 1, "hello");
-    affirm( "SELECT 'hello'".equals(sqlite3_expanded_sql(stmt)) );
+    sqlite3_bind_text(stmt, 1, "hell😃");
+    affirm( "SELECT 'hell😃'".equals(sqlite3_expanded_sql(stmt)) );
     sqlite3_finalize(stmt);
   }
 
