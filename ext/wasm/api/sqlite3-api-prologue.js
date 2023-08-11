@@ -1357,11 +1357,73 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
   };
 
   /**
-     Achtung: this function does not work in debug builds of sqlite3
-     because its out-of-scope use of the sqlite3_vfs API triggers
-     unresolvable assertions in the core library.  That was
-     unfortunately not discovered until 2023-08-11. Because of that,
-     this function is now deprecated and should be used in new code.
+     If the current environment supports the POSIX file APIs, this routine
+     creates (or overwrites) the given file using those APIs. This is
+     primarily intended for use in Emscripten-based builds where the POSIX
+     APIs are transparently proxied by an in-memory virtual filesystem.
+     It may behave diffrently in other environments.
+
+     The first argument must be either a JS string or WASM C-string
+     holding the filename. Note that this routine does _not_ create
+     intermediary directories if the filename has a directory part.
+
+     The 2nd argument may either a valid WASM memory pointer, an
+     ArrayBuffer, or a Uint8Array. The 3rd must be the length, in
+     bytes, of the data array to copy. If the 2nd argument is an
+     ArrayBuffer or Uint8Array and the 3rd is not a positive integer
+     then the 3rd defaults to the array's byteLength value.
+
+     Results are undefined if data is a WASM pointer and dataLen is
+     exceeds data's bounds.
+
+     Throws if any arguments are invalid or if creating or writing to
+     the file fails.
+
+     Added in 3.43 as an alternative for the deprecated
+     sqlite3_js_vfs_create_file().
+  */
+  capi.sqlite3_js_posix_create_file = function(filename, data, dataLen){
+    let pData;
+    if(data && wasm.isPtr(data)){
+      pData = data;
+    }else if(data instanceof ArrayBuffer || data instanceof Uint8Array){
+      pData = wasm.allocFromTypedArray(data);
+      if(arguments.length<3 || !util.isInt32(dataLen) || dataLen<0){
+        dataLen = data.byteLength;
+      }
+    }else{
+      SQLite3Error.toss("Invalid 2nd argument for sqlite3_js_posix_create_file().");
+    }
+    try{
+      if(!util.isInt32(dataLen) || dataLen<0){
+        SQLite3Error.toss("Invalid 3rd argument for sqlite3_js_posix_create_file().");
+      }
+      const rc = wasm.sqlite3_wasm_posix_create_file(filename, pData, dataLen);
+      if(rc) SQLite3Error.toss("Creation of file failed with sqlite3 result code",
+                               capi.sqlite3_js_rc_str(rc));
+    }finally{
+       wasm.dealloc(pData);
+    }
+  };
+
+  /**
+     Deprecation warning: this function does not work properly in
+     debug builds of sqlite3 because its out-of-scope use of the
+     sqlite3_vfs API triggers assertions in the core library.  That
+     was unfortunately not discovered until 2023-08-11. This function
+     is now deprecated and should not be used in new code.
+
+     Alternative options:
+
+     - "unix" VFS and its variants can get equivalent functionality
+       with sqlite3_js_posix_create_file().
+
+     - OPFS: use either sqlite3.oo1.OpfsDb.importDb(), for the "opfs"
+       VFS, or the importDb() method of the PoolUtil object provided
+       by the "opfs-sahpool" OPFS (noting that its VFS name may differ
+       depending on client-side configuration). We cannot proxy those
+       from here because the former is necessarily asynchronous and
+       the latter requires information not available to this function.
 
      Creates a file using the storage appropriate for the given
      sqlite3_vfs.  The first argument may be a VFS name (JS string
@@ -1408,9 +1470,13 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
        VFS nor the WASM environment imposes requirements which break it.
 
      - "opfs": uses OPFS storage and creates directory parts of the
-       filename.
+       filename. It can only be used to import an SQLite3 database
+       file and will fail if given anything else.
   */
   capi.sqlite3_js_vfs_create_file = function(vfs, filename, data, dataLen){
+    config.warn("sqlite3_js_vfs_create_file() is deprecated and",
+                "should be avoided because it can lead to C-level crashes.",
+                "See its documentation for alternative options.");
     let pData;
     if(data){
       if(wasm.isPtr(data)){
@@ -1438,7 +1504,7 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
       if(rc) SQLite3Error.toss("Creation of file failed with sqlite3 result code",
                                capi.sqlite3_js_rc_str(rc));
     }finally{
-      wasm.dealloc(pData);
+       wasm.dealloc(pData);
     }
   };
 

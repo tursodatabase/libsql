@@ -608,6 +608,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
     ["sqlite3_wasm_db_vfs", "sqlite3_vfs*", "sqlite3*","string"],
     ["sqlite3_wasm_vfs_create_file", "int",
      "sqlite3_vfs*","string","*", "int"],
+    ["sqlite3_wasm_posix_create_file", "int", "string","*", "int"],
     ["sqlite3_wasm_vfs_unlink", "int", "sqlite3_vfs*","string"]
   ];
 
