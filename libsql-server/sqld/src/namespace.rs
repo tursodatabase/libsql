@@ -125,6 +125,7 @@ impl<F: MakeNamespace> NamespaceStore<F> {
 }
 
 /// A namspace isolates the resources pertaining to a database of type T
+#[derive(Debug)]
 pub struct Namespace<T: Database> {
     pub db: T,
     /// The set of tasks associated with this namespace

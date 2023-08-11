@@ -48,7 +48,6 @@ async fn backup_restore() {
         }),
         db_path: PATH.into(),
         http_addr: Some(listener_addr),
-        allow_default_namespace: true,
         ..Config::default()
     };
 
@@ -235,7 +234,6 @@ async fn rollback_restore() {
         }),
         db_path: PATH.into(),
         http_addr: Some(listener_addr),
-        allow_default_namespace: true,
         ..Config::default()
     };
 
@@ -246,16 +244,14 @@ async fn rollback_restore() {
 
         sleep(Duration::from_secs(2)).await;
 
-        let _ = dbg!(
-            sql(
-                &conn,
-                [
-                    "CREATE TABLE IF NOT EXISTS t(id INT PRIMARY KEY, name TEXT);",
-                    "INSERT INTO t(id, name) VALUES(1, 'A')",
-                ],
-            )
-            .await
+        let _ = sql(
+            &conn,
+            [
+                "CREATE TABLE IF NOT EXISTS t(id INT PRIMARY KEY, name TEXT);",
+                "INSERT INTO t(id, name) VALUES(1, 'A')",
+            ],
         )
+        .await
         .unwrap();
 
         let _ = sql(

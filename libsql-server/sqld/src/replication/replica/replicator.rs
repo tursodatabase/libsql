@@ -149,7 +149,7 @@ impl Replicator {
 
                     let mut lock = self.meta.lock().await;
                     let meta = match *lock {
-                        Some(meta) => match dbg!(meta.merge_from_hello(hello)) {
+                        Some(meta) => match meta.merge_from_hello(hello) {
                             Ok(meta) => meta,
                             Err(e @ ReplicationError::Lagging) => {
                                 tracing::error!("Replica ahead of primary: hard-reseting replica");

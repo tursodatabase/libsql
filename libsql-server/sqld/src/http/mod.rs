@@ -205,7 +205,7 @@ pub(crate) struct AppState<F: MakeNamespace> {
     hrana_http_srv: Arc<hrana::http::Server<<F::Database as Database>::Connection>>,
     enable_console: bool,
     stats: Stats,
-    allow_default_namespace: bool,
+    disable_default_namespace: bool,
 }
 
 impl<F: MakeNamespace> Clone for AppState<F> {
@@ -217,7 +217,7 @@ impl<F: MakeNamespace> Clone for AppState<F> {
             hrana_http_srv: self.hrana_http_srv.clone(),
             enable_console: self.enable_console,
             stats: self.stats.clone(),
-            allow_default_namespace: self.allow_default_namespace,
+            disable_default_namespace: self.disable_default_namespace,
         }
     }
 }
@@ -234,7 +234,7 @@ pub async fn run_http<F, S>(
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
     replication_service: Option<S>,
-    allow_default_namespace: bool,
+    disable_default_namespace: bool,
 ) -> anyhow::Result<()>
 where
     F: MakeNamespace,
@@ -252,7 +252,7 @@ where
         enable_console,
         stats,
         namespaces,
-        allow_default_namespace,
+        disable_default_namespace,
     };
 
     tracing::info!("listening for HTTP requests on {addr}");
