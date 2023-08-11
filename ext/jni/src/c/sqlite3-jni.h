@@ -1141,6 +1141,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errcode
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_expanded_sql
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1expanded_1sql
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_extended_errcode
  * Signature: (Lorg/sqlite/jni/sqlite3;)I
  */
@@ -1450,6 +1458,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1sleep
  */
 JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1sourceid
   (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_sql
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1sql
+  (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

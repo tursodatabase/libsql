@@ -260,7 +260,7 @@ public class SQLTester {
         ts.run(this);
       }catch(SQLTesterException e){
         threw = true;
-        outln("❗EXCEPTION: ",e.getClass().getSimpleName(),": ",e.getMessage());
+        outln("🔥EXCEPTION: ",e.getClass().getSimpleName(),": ",e.getMessage());
         ++nAbortedScript;
         if( keepGoing ) outln("Continuing anyway becaure of the keep-going option.");
         else if( e.isFatal() ) throw e;
@@ -583,6 +583,7 @@ public class SQLTester {
 
   public static void main(String[] argv) throws Exception{
     installCustomExtensions();
+    boolean dumpInternals = false;
     final SQLTester t = new SQLTester();
     for(String a : argv){
       if(a.startsWith("-")){
@@ -592,6 +593,8 @@ public class SQLTester {
           t.setVerbosity(t.getVerbosity() + 1);
         }else if( flag.equals("keep-going") ){
           t.keepGoing = true;
+        }else if( flag.equals("internals") ){
+          dumpInternals = true;
         }else{
           throw new IllegalArgumentException("Unhandled flag: "+flag);
         }
@@ -617,6 +620,9 @@ public class SQLTester {
       t.outln("Processed ",t.nTotalTest," test(s) in ",t.nTestFile," file(s).");
       if( t.nAbortedScript > 0 ){
         t.outln("Aborted ",t.nAbortedScript," script(s).");
+      }
+      if( dumpInternals ){
+        sqlite3_do_something_for_developer();
       }
     }
   }

@@ -472,11 +472,11 @@ public final class SQLite3Jni {
     @NotNull sqlite3 db, @Nullable CommitHook hook
   );
 
-  public static synchronized native String sqlite3_compileoption_get(
+  public static native String sqlite3_compileoption_get(
     int n
   );
 
-  public static synchronized native boolean sqlite3_compileoption_used(
+  public static native boolean sqlite3_compileoption_used(
     @NotNull String optName
   );
 
@@ -527,6 +527,8 @@ public final class SQLite3Jni {
   );
 
   public static synchronized native int sqlite3_errcode(@NotNull sqlite3 db);
+
+  public static synchronized native String sqlite3_expanded_sql(@NotNull sqlite3_stmt stmt);
 
   public static synchronized native int sqlite3_extended_errcode(@NotNull sqlite3 db);
 
@@ -934,6 +936,16 @@ public final class SQLite3Jni {
     long maxLength, int encoding
   );
 
+
+  // public static synchronized native int sqlite3_status(
+  //   int op, OutputPointer.Int32 pCurrent, OutputPointer.Int32 pHighwater,
+  //   boolean reset
+  // );
+  // public static synchronized native int sqlite3_status64(
+  //   int op, OutputPointer.Int64 pCurrent, OutputPointer.Int64 pHighwater,
+  //   boolean reset
+  // );
+
   /**
      Sets the current UDF result to the given bytes, which are assumed
      be encoded in UTF-16 using the platform's byte order.
@@ -1001,6 +1013,8 @@ public final class SQLite3Jni {
   public static synchronized native int sqlite3_sleep(int ms);
 
   public static synchronized native String sqlite3_sourceid();
+
+  public static synchronized native String sqlite3_sql(@NotNull sqlite3_stmt stmt);
 
   public static synchronized native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
@@ -1144,8 +1158,8 @@ public final class SQLite3Jni {
      This is NOT part of the public API. It exists solely as a place
      to hook in arbitrary C-side code during development and testing
      of this library.
-   */
-  static synchronized native void sqlite3_do_something_for_developer();
+  */
+  public static synchronized native void sqlite3_do_something_for_developer();
 
   //////////////////////////////////////////////////////////////////////
   // SQLITE_... constants follow...

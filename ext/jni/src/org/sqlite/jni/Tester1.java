@@ -390,6 +390,17 @@ public class Tester1 {
     sqlite3_close_v2(db);
   }
 
+  private static void testSql(){
+    sqlite3 db = createNewDb();
+    sqlite3_stmt stmt = prepare(db, "SELECT 1");
+    affirm( "SELECT 1".equals(sqlite3_sql(stmt)) );
+    sqlite3_finalize(stmt);
+    stmt = prepare(db, "SELECT ?");
+    sqlite3_bind_text(stmt, 1, "hello");
+    affirm( "SELECT 'hello'".equals(sqlite3_expanded_sql(stmt)) );
+    sqlite3_finalize(stmt);
+  }
+
   private static void testCollation(){
     final sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
@@ -1069,6 +1080,7 @@ public class Tester1 {
     testBindFetchDouble();
     testBindFetchText();
     testBindFetchBlob();
+    testSql();
     testCollation();
     testToUtf8();
     testUdf1();

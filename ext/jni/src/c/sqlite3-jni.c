@@ -311,7 +311,7 @@ static const struct {
 #define JBA_RELEASE(ARG,VAR) if(VAR) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
 
 /* Marker for code which needs(?) to be made thread-safe. */
-#define FIXME_THREADING
+#define FIXME_THREADING(REASON)
 
 enum {
   /**
@@ -557,7 +557,7 @@ static void * s3jni_malloc(JNIEnv * const env, size_t n){
    insofar as possible. Calls (*env)->FatalError() if allocation of
    an entry fails. That's hypothetically possible but "shouldn't happen."
 */
-FIXME_THREADING
+FIXME_THREADING(S3JniEnvCache)
 static S3JniEnvCache * S3JniGlobal_env_cache(JNIEnv * const env){
   struct S3JniEnvCache * row = S3JniGlobal.envCache.aHead;
   for( ; row; row = row->pNext ){
@@ -763,6 +763,7 @@ static jstring s3jni_text16_to_jstring(JNIEnv * const env, const void * const p,
     System.out.println(e.getMessage()); // Hi
   }
 */
+FIXME_THREADING(S3JniEnvCache)
 static char * s3jni_exception_error_msg(JNIEnv * const env, jthrowable jx ){
   S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
   jmethodID mid;
@@ -862,7 +863,7 @@ static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDest
 /**
    Clears s's state and moves it to the free-list.
 */
-FIXME_THREADING
+FIXME_THREADING(perDb)
 static void S3JniDb_set_aside(S3JniDb * const s){
   if(s){
     JNIEnv * const env = s->env;
@@ -930,7 +931,7 @@ static void S3JniEnvCache_clear(S3JniEnvCache * const p){
    Results are undefined if a Java-side db uses the API
    from the given JNIEnv after this call.
 */
-FIXME_THREADING
+FIXME_THREADING(perDb)
 static void S3JniDb_free_for_env(JNIEnv *env){
   S3JniDb * ps = S3JniGlobal.perDb.aUsed;
   S3JniDb * pNext = 0;
@@ -999,7 +1000,7 @@ static void S3JniGlobal_S3JniEnvCache_clear(void){
    This simple cache catches >99% of searches in the current
    (2023-07-31) tests.
 */
-FIXME_THREADING
+FIXME_THREADING(S3JniEnvCache)
 static S3JniNphCache * S3JniGlobal_nph_cache(JNIEnv * const env, const char *zClassName){
   /**
      According to:
@@ -1196,7 +1197,8 @@ static void S3JniDb_dump(S3JniDb *s){
    required for functions, like sqlite3_context_db_handle(), which
    return a (sqlite3*) but do not take one as an argument.
 */
-FIXME_THREADING
+FIXME_THREADING(S3JniEnvCache)
+FIXME_THREADING(perDb)
 static S3JniDb * S3JniDb_for_db(JNIEnv * const env, jobject jDb,
                                 sqlite3 *pDb, int allocIfNeeded){
   S3JniDb * s = S3JniGlobal.perDb.aUsed;
@@ -1227,7 +1229,7 @@ static S3JniDb * S3JniDb_for_db(JNIEnv * const env, jobject jDb,
    called from the context of a separate JNIEnv than the one mapped
    to in the returned object. Returns 0 if no match is found.
 */
-FIXME_THREADING
+FIXME_THREADING(perDb)
 static S3JniDb * S3JniDb_for_db2(sqlite3 *pDb){
   S3JniDb * s = S3JniGlobal.perDb.aUsed;
   for( ; pDb && s; s = s->pNext){
@@ -1877,7 +1879,7 @@ WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 
 #if S3JNI_ENABLE_AUTOEXT
 /* Central auto-extension handler. */
-FIXME_THREADING
+FIXME_THREADING(autoExt)
 static int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
                                 const struct sqlite3_api_routines *ignored){
   S3JniAutoExtension const * pAX = S3JniGlobal.autoExt.pHead;
@@ -1929,6 +1931,7 @@ static int s3jni_auto_extension(sqlite3 *pDb, const char **pzErr,
   return rc;
 }
 
+FIXME_THREADING(autoExt)
 JDECL(jint,1auto_1extension)(JENV_OSELF, jobject jAutoExt){
   static int once = 0;
   S3JniAutoExtension * ax;
@@ -1947,6 +1950,7 @@ JDECL(jint,1auto_1extension)(JENV_OSELF, jobject jAutoExt){
 }
 #endif /* S3JNI_ENABLE_AUTOEXT */
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1blob)(JENV_CSELF, jobject jpStmt,
                         jint ndx, jbyteArray baData, jint nMax){
   int rc;
@@ -1961,26 +1965,31 @@ JDECL(jint,1bind_1blob)(JENV_CSELF, jobject jpStmt,
   return (jint)rc;
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1double)(JENV_CSELF, jobject jpStmt,
                          jint ndx, jdouble val){
   return (jint)sqlite3_bind_double(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (double)val);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1int)(JENV_CSELF, jobject jpStmt,
                       jint ndx, jint val){
   return (jint)sqlite3_bind_int(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (int)val);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1int64)(JENV_CSELF, jobject jpStmt,
                         jint ndx, jlong val){
   return (jint)sqlite3_bind_int64(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (sqlite3_int64)val);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1null)(JENV_CSELF, jobject jpStmt,
                        jint ndx){
   return (jint)sqlite3_bind_null(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1parameter_1index)(JENV_CSELF, jobject jpStmt, jbyteArray jName){
   int rc = 0;
   jbyte * const pBuf = JBA_TOC(jName);
@@ -1992,6 +2001,7 @@ JDECL(jint,1bind_1parameter_1index)(JENV_CSELF, jobject jpStmt, jbyteArray jName
   return rc;
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1text)(JENV_CSELF, jobject jpStmt,
                        jint ndx, jbyteArray baData, jint nMax){
   if(baData){
@@ -2005,11 +2015,13 @@ JDECL(jint,1bind_1text)(JENV_CSELF, jobject jpStmt,
   }
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1zeroblob)(JENV_CSELF, jobject jpStmt,
                            jint ndx, jint n){
   return (jint)sqlite3_bind_zeroblob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (int)n);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1bind_1zeroblob64)(JENV_CSELF, jobject jpStmt,
                            jint ndx, jlong n){
   return (jint)sqlite3_bind_zeroblob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (sqlite3_uint64)n);
@@ -2031,6 +2043,7 @@ static int s3jni_busy_handler(void* pState, int n){
   return rc;
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1busy_1handler)(JENV_CSELF, jobject jDb, jobject jBusy){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
   int rc = 0;
@@ -2060,6 +2073,8 @@ JDECL(jint,1busy_1handler)(JENV_CSELF, jobject jDb, jobject jBusy){
     : sqlite3_busy_handler(ps->pDb, 0, 0);
 }
 
+FIXME_THREADING(S3JniEnvCache)
+FIXME_THREADING(perDb)
 JDECL(jint,1busy_1timeout)(JENV_CSELF, jobject jDb, jint ms){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
   if( ps ){
@@ -2070,7 +2085,8 @@ JDECL(jint,1busy_1timeout)(JENV_CSELF, jobject jDb, jint ms){
 }
 
 #if S3JNI_ENABLE_AUTOEXT
-JDECL(jboolean,1cancel_1auto_1extension)(JENV_OSELF, jobject jAutoExt){
+FIXME_THREADING(autoExt)
+JDECL(jboolean,1cancel_1auto_1extension)(JENV_CSELF, jobject jAutoExt){
   S3JniAutoExtension * ax;;
   if( S3JniGlobal.autoExt.isRunning ) return JNI_FALSE;
   for( ax = S3JniGlobal.autoExt.pHead; ax; ax = ax->pNext ){
@@ -2102,10 +2118,14 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   return (jint)rc;
 }
 
+FIXME_THREADING(S3JniEnvCache)
+FIXME_THREADING(perDb)
 JDECL(jint,1close_1v2)(JENV_CSELF, jobject pDb){
   return s3jni_close_db(env, pDb, 2);
 }
 
+FIXME_THREADING(S3JniEnvCache)
+FIXME_THREADING(perDb)
 JDECL(jint,1close)(JENV_CSELF, jobject pDb){
   return s3jni_close_db(env, pDb, 1);
 }
@@ -2144,6 +2164,8 @@ static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
   UNREF_L(jName);
 }
 
+FIXME_THREADING(S3JniEnvCache)
+FIXME_THREADING(perDb)
 JDECL(jint,1collation_1needed)(JENV_CSELF, jobject jDb, jobject jHook){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
   jclass klazz;
@@ -2180,6 +2202,7 @@ JDECL(jint,1collation_1needed)(JENV_CSELF, jobject jDb, jobject jHook){
   return rc;
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jbyteArray,1column_1blob)(JENV_CSELF, jobject jpStmt,
                                 jint ndx){
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
@@ -2193,21 +2216,25 @@ JDECL(jbyteArray,1column_1blob)(JENV_CSELF, jobject jpStmt,
   }
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jdouble,1column_1double)(JENV_CSELF, jobject jpStmt,
                                jint ndx){
   return (jdouble)sqlite3_column_double(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1column_1int)(JENV_CSELF, jobject jpStmt,
                             jint ndx){
   return (jint)sqlite3_column_int(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jlong,1column_1int64)(JENV_CSELF, jobject jpStmt,
                             jint ndx){
   return (jlong)sqlite3_column_int64(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jbyteArray,1column_1text)(JENV_CSELF, jobject jpStmt,
                                       jint ndx){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
@@ -2216,6 +2243,7 @@ JDECL(jbyteArray,1column_1text)(JENV_CSELF, jobject jpStmt,
   return s3jni_new_jbyteArray(env, p, n);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jstring,1column_1text16)(JENV_CSELF, jobject jpStmt,
                                jint ndx){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
@@ -2224,6 +2252,7 @@ JDECL(jstring,1column_1text16)(JENV_CSELF, jobject jpStmt,
   return s3jni_text16_to_jstring(env, p, n);
 }
 
+FIXME_THREADING(S3JniEnvCache)
 JDECL(jobject,1column_1value)(JENV_CSELF, jobject jpStmt,
                               jint ndx){
   sqlite3_value * const sv = sqlite3_column_value(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
@@ -2253,6 +2282,7 @@ static void s3jni_rollback_hook_impl(void *pP){
   (void)s3jni_commit_rollback_hook_impl(0, pP);
 }
 
+FIXME_THREADING(perDb)
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,jobject jDb,
                                           jobject jHook){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
@@ -2350,6 +2380,7 @@ JDECL(int,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2)(
   return rc;
 }
 
+FIXME_THREADING(perDb)
 /* sqlite3_db_config() for (int,int*) */
 /* ACHTUNG: openjdk v19 creates a different mangled name for this
    function than openjdk v8 does. */
@@ -2404,6 +2435,7 @@ JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer
   );
 }
 
+FIXME_THREADING(perDb)
 JDECL(jobject,1context_1db_1handle)(JENV_CSELF, jobject jpCx){
   sqlite3 * const pDb = sqlite3_context_db_handle(PtrGet_sqlite3_context(jpCx));
   S3JniDb * const ps = pDb ? S3JniDb_for_db(env, 0, pDb, 0) : 0;
@@ -2538,6 +2570,21 @@ JDECL(jstring,1errstr)(JENV_CSELF, jint rcCode){
   return (*env)->NewStringUTF(env, sqlite3_errstr((int)rcCode))
     /* We know these values to be plain ASCII, so pose no
        MUTF-8 incompatibility */;
+}
+
+JDECL(jstring,1expanded_1sql)(JENV_CSELF, jobject jpStmt){
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  jstring rv = 0;
+  if( pStmt ){
+    S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
+    char * zSql = sqlite3_expanded_sql(pStmt);
+    OOM_CHECK(zSql);
+    if( zSql ){
+      rv = s3jni_utf8_to_jstring(jc, zSql, -1);
+      sqlite3_free(zSql);
+    }
+  }
+  return rv;
 }
 
 JDECL(jboolean,1extended_1result_1codes)(JENV_CSELF, jobject jpDb,
@@ -3099,6 +3146,19 @@ JDECL(jint,1shutdown)(JENV_CSELF){
   return sqlite3_shutdown();
 }
 
+JDECL(jstring,1sql)(JENV_CSELF, jobject jpStmt){
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  jstring rv = 0;
+  if( pStmt ){
+    const char * zSql = 0;
+    S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
+    zSql = sqlite3_sql(pStmt);
+    rv = s3jni_utf8_to_jstring(jc, zSql, -1);
+    OOM_CHECK(rv);
+  }
+  return rv;
+}
+
 JDECL(jint,1step)(JENV_CSELF,jobject jStmt){
   int rc = SQLITE_MISUSE;
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jStmt);
@@ -3384,7 +3444,7 @@ JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
   printf("\tJNIEnv cache               %u misses, %u hits\n",
          S3JniGlobal.metrics.envCacheMisses,
          S3JniGlobal.metrics.envCacheHits);
-  puts("UDF calls:");
+  puts("Java-side UDF calls:");
 #define UDF(T) printf("\t%-8s = %u\n", "x" #T, S3JniGlobal.metrics.udf.n##T)
   UDF(Func); UDF(Step); UDF(Final); UDF(Value); UDF(Inverse);
 #undef UDF
