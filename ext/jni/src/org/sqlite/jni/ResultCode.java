@@ -13,24 +13,11 @@
 */
 package org.sqlite.jni;
 
-//! Internal level of indirection requires because we cannot reference
-// static enum members from an enum constructor.
-class ResultCodeMap {
-  private static final java.util.Map<Integer,ResultCode> i2e
-    = new java.util.HashMap<>();
-
-  public static void set(int i, ResultCode src){
-    i2e.put(i, src);
-  }
-  public static ResultCode get(int i){
-    return i2e.get(i);
-  }
-}
-
 /**
-   This enum of sqlite3 result codes is provided not for use with the
-   C-style API (with which it won't work) but for higher-level code which
-   may find it useful to map codes to human-readable names.
+   This enum contains all of the core and "extended" result codes used
+   by the sqlite3 library. It is provided not for use with the C-style
+   API (with which it won't work) but for higher-level code which may
+   find it useful to map SQLite result codes to human-readable names.
 */
 public enum ResultCode {
   SQLITE_OK(SQLite3Jni.SQLITE_OK),
@@ -140,12 +127,29 @@ public enum ResultCode {
 
   public final int value;
 
-  ResultCode(int v){
-    value = v;
-    ResultCodeMap.set(v, this);
+  ResultCode(int rc){
+    value = rc;
+    ResultCodeMap.set(rc, this);
   }
 
+  /**
+     Returns the entry from this enum for the given result code, or
+     null if no match is found.
+  */
   public static ResultCode getEntryForInt(int rc){
     return ResultCodeMap.get(rc);
   }
+
+  /**
+     Internal level of indirection required because we cannot initialize
+     static enum members in an enum before the enum constructor is
+     invoked.
+  */
+  private static final class ResultCodeMap {
+    private static final java.util.Map<Integer,ResultCode> i2e
+      = new java.util.HashMap<>();
+    private static void set(int rc, ResultCode e){ i2e.put(rc, e); }
+    private static ResultCode get(int rc){ return i2e.get(rc); }
+  }
+
 }

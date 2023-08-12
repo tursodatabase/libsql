@@ -186,7 +186,9 @@ public final class SQLite3Jni {
        effects if invoked from within the execution of an
        auto-extension. i.e. auto extensions can neither be added,
        removed, nor cleared while one registered with this function is
-       running.
+       running. Auto-extensions registered directly with the library
+       via C code, as opposed to indirectly via Java, do not have that
+       limitation.
 
      See the AutoExtension class docs for more information.
 
@@ -291,7 +293,8 @@ public final class SQLite3Jni {
 
   /**
      Works like the C API except that it returns false, without side
-     effects, if auto extensions are currently running.
+     effects, if auto extensions are currently running. (The JNI-level
+     list of extensions cannot be manipulated while it is being traversed.)
   */
   public static synchronized native boolean sqlite3_cancel_auto_extension(
     @NotNull AutoExtension ax
@@ -704,7 +707,8 @@ public final class SQLite3Jni {
 
   /**
      Works like the C API except that it has no side effects if auto
-     extensions are currently running.
+     extensions are currently running. (The JNI-level list of
+     extensions cannot be manipulated while it is being traversed.)
   */
   public static synchronized native void sqlite3_reset_auto_extension();
 

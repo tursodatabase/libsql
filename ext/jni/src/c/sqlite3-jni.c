@@ -2979,13 +2979,13 @@ JDECL(void,1result_1error)(JENV_CSELF, jobject jpCx, jbyteArray baMsg,
   switch(pjBuf ? eTextRep : SQLITE_UTF8){
     case SQLITE_UTF8: {
       const char *zMsg = pjBuf ? (const char *)pjBuf : zUnspecified;
-      sqlite3_result_error(PtrGet_sqlite3_context(jpCx), zMsg, baLen);
+      sqlite3_result_error(PtrGet_sqlite3_context(jpCx), zMsg, (int)baLen);
       break;
     }
     case SQLITE_UTF16: {
       const void *zMsg = pjBuf
         ? (const void *)pjBuf : (const void *)zUnspecified;
-      sqlite3_result_error16(PtrGet_sqlite3_context(jpCx), zMsg, baLen);
+      sqlite3_result_error16(PtrGet_sqlite3_context(jpCx), zMsg, (int)baLen);
       break;
     }
     default:
