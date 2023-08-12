@@ -1133,6 +1133,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1config__Lorg_
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_db_status
+ * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Z)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1status
+  (JNIEnv *, jclass, jobject, jint, jobject, jobject, jboolean);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_errcode
  * Signature: (Lorg/sqlite/jni/sqlite3;)I
  */

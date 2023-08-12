@@ -2354,90 +2354,6 @@ JDECL(jboolean,1compileoption_1used)(JENV_CSELF, jstring name){
   return rc;
 }
 
-/* sqlite3_db_config() for (int,const char *) */
-JDECL(int,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2)(
-  JENV_CSELF, jobject jDb, jint op, jstring jStr
-){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
-  int rc;
-  char *zStr;
-
-  switch( (ps && jStr) ? op : 0 ){
-    case SQLITE_DBCONFIG_MAINDBNAME:
-      zStr = s3jni_jstring_to_utf8(S3JniGlobal_env_cache(env), jStr, 0);
-      if( zStr ){
-        rc = sqlite3_db_config(ps->pDb, (int)op, zStr);
-        if( rc ){
-          sqlite3_free( zStr );
-        }else{
-          sqlite3_free( ps->zMainDbName );
-          ps->zMainDbName = zStr;
-        }
-      }else{
-        rc = SQLITE_NOMEM;
-      }
-      break;
-    default:
-      rc = SQLITE_MISUSE;
-  }
-  return rc;
-}
-
-FIXME_THREADING(perDb)
-/* sqlite3_db_config() for (int,int*) */
-/* ACHTUNG: openjdk v19 creates a different mangled name for this
-   function than openjdk v8 does. */
-JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
-  JENV_CSELF, jobject jDb, jint op, jint onOff, jobject jOut
-){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
-  int rc;
-  switch( ps ? op : 0 ){
-    case SQLITE_DBCONFIG_ENABLE_FKEY:
-    case SQLITE_DBCONFIG_ENABLE_TRIGGER:
-    case SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
-    case SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
-    case SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
-    case SQLITE_DBCONFIG_ENABLE_QPSG:
-    case SQLITE_DBCONFIG_TRIGGER_EQP:
-    case SQLITE_DBCONFIG_RESET_DATABASE:
-    case SQLITE_DBCONFIG_DEFENSIVE:
-    case SQLITE_DBCONFIG_WRITABLE_SCHEMA:
-    case SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
-    case SQLITE_DBCONFIG_DQS_DML:
-    case SQLITE_DBCONFIG_DQS_DDL:
-    case SQLITE_DBCONFIG_ENABLE_VIEW:
-    case SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
-    case SQLITE_DBCONFIG_TRUSTED_SCHEMA:
-    case SQLITE_DBCONFIG_STMT_SCANSTATUS:
-    case SQLITE_DBCONFIG_REVERSE_SCANORDER: {
-      int pOut = 0;
-      rc = sqlite3_db_config( ps->pDb, (int)op, onOff, &pOut );
-      if( 0==rc && jOut ){
-        OutputPointer_set_Int32(env, jOut, pOut);
-      }
-      break;
-    }
-    default:
-      rc = SQLITE_MISUSE;
-  }
-  return (jint)rc;
-}
-
-/**
-   This is a workaround for openjdk v19 (and possibly others) encoding
-   this function's name differently than JDK v8 does. If we do not
-   install both names for this function then Java will not be able to
-   find the function in both environments.
-*/
-JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_00024Int32_2)(
-  JENV_CSELF, jobject jDb, jint op, jint onOff, jobject jOut
-){
-  return JFuncName(1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
-    env, jKlazz, jDb, op, onOff, jOut
-  );
-}
-
 FIXME_THREADING(perDb)
 JDECL(jobject,1context_1db_1handle)(JENV_CSELF, jobject jpCx){
   sqlite3 * const pDb = sqlite3_context_db_handle(PtrGet_sqlite3_context(jpCx));
@@ -2537,6 +2453,90 @@ JDECL(jint,1create_1function)(JENV_CSELF, jobject jDb, jstring jFuncName,
   return create_function(env, jDb, jFuncName, nArg, eTextRep, jFunctor);
 }
 
+/* sqlite3_db_config() for (int,const char *) */
+JDECL(int,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2)(
+  JENV_CSELF, jobject jDb, jint op, jstring jStr
+){
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  int rc;
+  char *zStr;
+
+  switch( (ps && jStr) ? op : 0 ){
+    case SQLITE_DBCONFIG_MAINDBNAME:
+      zStr = s3jni_jstring_to_utf8(S3JniGlobal_env_cache(env), jStr, 0);
+      if( zStr ){
+        rc = sqlite3_db_config(ps->pDb, (int)op, zStr);
+        if( rc ){
+          sqlite3_free( zStr );
+        }else{
+          sqlite3_free( ps->zMainDbName );
+          ps->zMainDbName = zStr;
+        }
+      }else{
+        rc = SQLITE_NOMEM;
+      }
+      break;
+    default:
+      rc = SQLITE_MISUSE;
+  }
+  return rc;
+}
+
+FIXME_THREADING(perDb)
+/* sqlite3_db_config() for (int,int*) */
+/* ACHTUNG: openjdk v19 creates a different mangled name for this
+   function than openjdk v8 does. */
+JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
+  JENV_CSELF, jobject jDb, jint op, jint onOff, jobject jOut
+){
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  int rc;
+  switch( ps ? op : 0 ){
+    case SQLITE_DBCONFIG_ENABLE_FKEY:
+    case SQLITE_DBCONFIG_ENABLE_TRIGGER:
+    case SQLITE_DBCONFIG_ENABLE_FTS3_TOKENIZER:
+    case SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION:
+    case SQLITE_DBCONFIG_NO_CKPT_ON_CLOSE:
+    case SQLITE_DBCONFIG_ENABLE_QPSG:
+    case SQLITE_DBCONFIG_TRIGGER_EQP:
+    case SQLITE_DBCONFIG_RESET_DATABASE:
+    case SQLITE_DBCONFIG_DEFENSIVE:
+    case SQLITE_DBCONFIG_WRITABLE_SCHEMA:
+    case SQLITE_DBCONFIG_LEGACY_ALTER_TABLE:
+    case SQLITE_DBCONFIG_DQS_DML:
+    case SQLITE_DBCONFIG_DQS_DDL:
+    case SQLITE_DBCONFIG_ENABLE_VIEW:
+    case SQLITE_DBCONFIG_LEGACY_FILE_FORMAT:
+    case SQLITE_DBCONFIG_TRUSTED_SCHEMA:
+    case SQLITE_DBCONFIG_STMT_SCANSTATUS:
+    case SQLITE_DBCONFIG_REVERSE_SCANORDER: {
+      int pOut = 0;
+      rc = sqlite3_db_config( ps->pDb, (int)op, onOff, &pOut );
+      if( 0==rc && jOut ){
+        OutputPointer_set_Int32(env, jOut, pOut);
+      }
+      break;
+    }
+    default:
+      rc = SQLITE_MISUSE;
+  }
+  return (jint)rc;
+}
+
+/**
+   This is a workaround for openjdk v19 (and possibly others) encoding
+   this function's name differently than JDK v8 does. If we do not
+   install both names for this function then Java will not be able to
+   find the function in both environments.
+*/
+JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_00024Int32_2)(
+  JENV_CSELF, jobject jDb, jint op, jint onOff, jobject jOut
+){
+  return JFuncName(1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
+    env, jKlazz, jDb, op, onOff, jOut
+  );
+}
+
 JDECL(jstring,1db_1filename)(JENV_CSELF, jobject jDb, jstring jDbName){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
   S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
@@ -2557,6 +2557,20 @@ JDECL(jstring,1db_1filename)(JENV_CSELF, jobject jDb, jstring jDbName){
   }
   return jRv;
 }
+
+
+JDECL(jint,1db_1status)(JENV_CSELF, jobject jDb, jint op, jobject jOutCurrent,
+                        jobject jOutHigh, jboolean reset ){
+  int iCur = 0, iHigh = 0;
+  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
+  int rc = sqlite3_db_status( pDb, op, &iCur, &iHigh, reset );
+  if( 0==rc ){
+    OutputPointer_set_Int32(env, jOutCurrent, iCur);
+    OutputPointer_set_Int32(env, jOutHigh, iHigh);
+  }
+  return (jint)rc;
+}
+
 
 JDECL(jint,1errcode)(JENV_CSELF, jobject jpDb){
   sqlite3 * const pDb = PtrGet_sqlite3(jpDb);

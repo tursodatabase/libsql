@@ -494,19 +494,27 @@ public class Tester1 {
     final OutputPointer.Int32 cur32 = new OutputPointer.Int32();
     final OutputPointer.Int32 high32 = new OutputPointer.Int32();
     final sqlite3 db = createNewDb();
-    execSql(db, "create table t(a)");
-    sqlite3_close_v2(db);
+    execSql(db, "create table t(a); insert into t values(1),(2),(3)");
 
     int rc = sqlite3_status(SQLITE_STATUS_MEMORY_USED, cur32, high32, false);
     affirm( 0 == rc );
-    affirm( cur32.getValue() > 0 );
-    affirm( high32.getValue() >= cur32.getValue() );
+    affirm( cur32.value > 0 );
+    affirm( high32.value >= cur32.value );
 
     rc = sqlite3_status64(SQLITE_STATUS_MEMORY_USED, cur64, high64, false);
     affirm( 0 == rc );
-    affirm( cur64.getValue() > 0 );
-    affirm( high64.getValue() >= cur64.getValue() );
+    affirm( cur64.value > 0 );
+    affirm( high64.value >= cur64.value );
 
+    cur32.value = 0;
+    high32.value = 1;
+    rc = sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, cur32, high32, false);
+    affirm( 0 == rc );
+    affirm( cur32.value > 0 );
+    outln(cur32.value," ",high32.value);
+    affirm( high32.value == 0 /* always 0 for SCHEMA_USED */ );
+
+    sqlite3_close_v2(db);
   }
 
   private static void testUdf1(){

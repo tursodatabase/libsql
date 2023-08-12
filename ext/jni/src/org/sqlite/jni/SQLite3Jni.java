@@ -526,6 +526,11 @@ public final class SQLite3Jni {
     @NotNull sqlite3 db, int op, @NotNull String val
   );
 
+  public static synchronized native int sqlite3_db_status(
+    @NotNull sqlite3 db, int op, @NotNull OutputPointer.Int32 pCurrent,
+    @NotNull OutputPointer.Int32 pHighwater, boolean reset
+  );
+
   public static synchronized native int sqlite3_errcode(@NotNull sqlite3 db);
 
   public static synchronized native String sqlite3_expanded_sql(@NotNull sqlite3_stmt stmt);
@@ -935,7 +940,6 @@ public final class SQLite3Jni {
     @NotNull sqlite3_context cx, @Nullable byte[] text,
     long maxLength, int encoding
   );
-
 
   public static synchronized native int sqlite3_status(
     int op, @NotNull OutputPointer.Int32 pCurrent,

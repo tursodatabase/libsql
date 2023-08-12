@@ -36,7 +36,7 @@ public final class OutputPointer {
   }
 
   public static final class Int32 {
-    private int value;
+    public int value;
     public Int32(){this(0);}
     public Int32(int v){value = v;}
     public final int getValue(){return value;}
@@ -44,7 +44,7 @@ public final class OutputPointer {
   }
 
   public static final class Int64 {
-    private long value;
+    public long value;
     public Int64(){this(0);}
     public Int64(long v){value = v;}
     public final long getValue(){return value;}
@@ -52,7 +52,7 @@ public final class OutputPointer {
   }
 
   public static final class String {
-    private java.lang.String value;
+    public java.lang.String value;
     public String(){this(null);}
     public String(java.lang.String v){value = v;}
     public final java.lang.String getValue(){return value;}
@@ -60,7 +60,7 @@ public final class OutputPointer {
   }
 
   public static final class ByteArray {
-    private byte[] value;
+    public byte[] value;
     public ByteArray(){this(null);}
     public ByteArray(byte[] v){value = v;}
     public final byte[] getValue(){return value;}
