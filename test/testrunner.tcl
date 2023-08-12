@@ -1,12 +1,22 @@
 
 set dir [pwd]
-set testdir [file dirname $argv0]
+set testdir [file normalize [file dirname $argv0]]
 set saved $argv
 set argv [list]
 source [file join $testdir testrunner_data.tcl]
 source [file join $testdir permutations.test]
 set argv $saved
 cd $dir
+
+# Usually this script is run by [testfixture]. But it can also be run
+# by a regular [tclsh]. For these cases, load the sqlite3 package and
+# implement a [clock_milliseconds] command.
+package require sqlite3
+if {[info commands clock_milliseconds]==""} {
+  proc clock_milliseconds {} {
+    clock milliseconds
+  }
+}
 
 #-------------------------------------------------------------------------
 # Usage:
@@ -152,7 +162,7 @@ set TRG(schema) {
     state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
     time INTEGER,                 -- Time in ms
     output TEXT,                  -- full output of test script
-    priority AS ((config='make') + ((config='build')*2) + (slow*4)),
+    priority AS (((config='make')*3) + (config='build') + (slow*2)),
     jobtype AS (
       CASE WHEN config IN ('build', 'make') THEN config ELSE 'script' END
     ),
@@ -181,10 +191,11 @@ if {[llength $argv]==2
   set script [file normalize [lindex $argv 1]]
   set ::argv [list]
 
+  set testdir [file dirname $argv0]
+  source $::testdir/tester.tcl
+
   if {$permutation=="full"} {
 
-    set testdir [file dirname $argv0]
-    source $::testdir/tester.tcl
     unset -nocomplain ::G(isquick)
     reset_db
 
@@ -289,9 +300,13 @@ if {[llength $argv]==1
 
   set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
   set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
-  set tm [expr [clock_milliseconds] - [mydb one {
-    SELECT value FROM config WHERE name='start'
-  }]]
+
+  set now [clock_milliseconds]
+  set tm [mydb one {
+    SELECT 
+      COALESCE((SELECT value FROM config WHERE name='end'), $now) -
+      (SELECT value FROM config WHERE name='start')
+  }]
 
   set total 0
   foreach s {"" ready running done failed} { set S($s) 0 }
@@ -315,7 +330,6 @@ if {[llength $argv]==1
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   if {$S(running)>0} {
     puts "Running: "
-    set now [clock_milliseconds]
     mydb eval {
       SELECT build, config, filename, time FROM script WHERE state='running'
       ORDER BY time 
@@ -411,8 +425,6 @@ proc dirs_allocDir {} {
   return $iRet
 }
 
-set testdir [file dirname $argv0]
-
 # Check that directory $dir exists. If it does not, create it. If 
 # it does, delete its contents.
 #
@@ -449,7 +461,16 @@ proc testset_patternlist {patternlist} {
 
   set first [lindex $patternlist 0]
 
-  if {$first=="release"} {
+  if {$first=="mdevtest"} {
+    set patternlist [lrange $patternlist 1 end]
+
+    foreach b {All-Debug All-O0} {
+      lappend testset [list $b build testfixture]
+      lappend testset [list $b make fuzztest]
+      testset_append testset $b veryquick $patternlist
+    }
+
+  } elseif {$first=="release"} {
     set platform $::TRG(platform)
 
     set patternlist [lrange $patternlist 1 end]
@@ -865,6 +886,8 @@ proc run_testset {} {
   one_line_report
 
   r_write_db {
+    set tm [clock_milliseconds]
+    trdb eval { REPLACE INTO config VALUES('end', $tm ); }
     set nErr [trdb one {SELECT count(*) FROM script WHERE state='failed'}]
     if {$nErr>0} {
       puts "$nErr failures:"

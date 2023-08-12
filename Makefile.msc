@@ -2505,6 +2505,9 @@ testrunner:	testfixture.exe
 #
 devtest:	testfixture.exe fuzztest testrunner
 
+mdevtest:
+	$(TCLSH_CMD) $(TOP)\test\testrunner.tcl mdevtest
+
 # Testing for a release
 #
 releasetest: testfixture.exe fuzztest

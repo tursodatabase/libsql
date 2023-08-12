@@ -53,6 +53,12 @@ array set ::Configs [strip_comments {
     --enable-session
     -DSQLITE_ENABLE_RBU
   }
+  "All-Debug" {
+    --enable-debug --enable-all
+  }
+  "All-O0" {
+    -O0 --enable-all
+  }
   "Sanitize" {
     CC=clang -fsanitize=address,undefined
     -DSQLITE_ENABLE_STAT4

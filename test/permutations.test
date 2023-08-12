@@ -10,9 +10,11 @@
 #***********************************************************************
 #
 
-set testdir [file dirname $argv0]
-source $testdir/tester.tcl
-db close
+if {[info vars ::testdir]==""} {
+  set testdir [file dirname $argv0]
+  source $testdir/tester.tcl
+  db close
+}
 
 #-------------------------------------------------------------------------
 # test_suite NAME OPTIONS
@@ -813,117 +815,111 @@ test_suite "inmemory_journal" -description {
   recoverpgsz.test
 }]
 
-ifcapable mem3 {
-  test_suite "memsys3" -description {
-    Run tests using the allocator in mem3.c.
-  } -files [test_set $::allquicktests -exclude {
-    autovacuum.test           delete3.test              manydb.test
-    bigrow.test               incrblob2.test            memdb.test
-    bitvec.test               index2.test               memsubsys1.test
-    capi3c.test               ioerr.test                memsubsys2.test
-    capi3.test                join3.test                pagesize.test
-    collate5.test             limit.test                backup_ioerr.test
-    backup_malloc.test
-  }] -initialize {
-    catch {db close}
-    sqlite3_reset_auto_extension
-    sqlite3_shutdown
-    sqlite3_config_heap 25000000 0
-    sqlite3_config_lookaside 0 0
-    ifcapable mem5 {
-      # If both memsys3 and memsys5 are enabled in the build, the call to
-      # [sqlite3_config_heap] will initialize the system to use memsys5.
-      # The following overrides this preference and installs the memsys3
-      # allocator.
-      sqlite3_install_memsys3
-    }
-    install_malloc_faultsim 1 
-    sqlite3_initialize
-    autoinstall_test_functions
-  } -shutdown {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config_heap 0 0
-    sqlite3_config_lookaside 100 500
-    install_malloc_faultsim 1 
-    sqlite3_initialize
-    autoinstall_test_functions
+test_suite "memsys3" -description {
+  Run tests using the allocator in mem3.c.
+} -files [test_set $::allquicktests -exclude {
+  autovacuum.test           delete3.test              manydb.test
+  bigrow.test               incrblob2.test            memdb.test
+  bitvec.test               index2.test               memsubsys1.test
+  capi3c.test               ioerr.test                memsubsys2.test
+  capi3.test                join3.test                pagesize.test
+  collate5.test             limit.test                backup_ioerr.test
+  backup_malloc.test
+}] -initialize {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_heap 25000000 0
+  sqlite3_config_lookaside 0 0
+  ifcapable mem5 {
+    # If both memsys3 and memsys5 are enabled in the build, the call to
+    # [sqlite3_config_heap] will initialize the system to use memsys5.
+    # The following overrides this preference and installs the memsys3
+    # allocator.
+    sqlite3_install_memsys3
   }
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_heap 0 0
+  sqlite3_config_lookaside 100 500
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+  autoinstall_test_functions
 }
 
-ifcapable mem5 {
-  test_suite "memsys5" -description {
-    Run tests using the allocator in mem5.c.
-  } -files [test_set $::allquicktests -exclude {
-    autovacuum.test           delete3.test              manydb.test
-    bigrow.test               incrblob2.test            memdb.test
-    bitvec.test               index2.test               memsubsys1.test
-    capi3c.test               ioerr.test                memsubsys2.test
-    capi3.test                join3.test                pagesize.test
-    collate5.test             limit.test                zeroblob.test
-  }] -initialize {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config_heap 25000000 64
-    sqlite3_config_lookaside 0 0
-    install_malloc_faultsim 1 
-    sqlite3_initialize
-    autoinstall_test_functions
-  } -shutdown {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config_heap 0 0
-    sqlite3_config_lookaside 100 500
-    install_malloc_faultsim 1 
-    sqlite3_initialize
-    autoinstall_test_functions
-  }
-
-  test_suite "memsys5-2" -description {
-    Run tests using the allocator in mem5.c in a different configuration.
-  } -files {
-    select1.test 
-  } -initialize {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config_memstatus 0
-    sqlite3_config_heap 40000000 16
-    sqlite3_config_lookaside 0 0
-    install_malloc_faultsim 1 
-    sqlite3_initialize
-    autoinstall_test_functions
-  } -shutdown {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config_heap 0 0
-    sqlite3_config_lookaside 100 500
-    install_malloc_faultsim 1 
-    sqlite3_initialize
-    autoinstall_test_functions
-  }
+test_suite "memsys5" -description {
+  Run tests using the allocator in mem5.c.
+} -files [test_set $::allquicktests -exclude {
+  autovacuum.test           delete3.test              manydb.test
+  bigrow.test               incrblob2.test            memdb.test
+  bitvec.test               index2.test               memsubsys1.test
+  capi3c.test               ioerr.test                memsubsys2.test
+  capi3.test                join3.test                pagesize.test
+  collate5.test             limit.test                zeroblob.test
+}] -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_heap 25000000 64
+  sqlite3_config_lookaside 0 0
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_heap 0 0
+  sqlite3_config_lookaside 100 500
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+  autoinstall_test_functions
 }
 
-ifcapable threadsafe {
-  test_suite "no_mutex_try" -description {
-     The sqlite3_mutex_try() interface always fails
-  } -files [
-    test_set $::allquicktests -exclude mutex1.test mutex2.test
-  ] -initialize {
-    catch {db close}
-    sqlite3_shutdown
-    install_mutex_counters 1
-    set ::disable_mutex_try 1
-    sqlite3_initialize
-    autoinstall_test_functions
-  } -shutdown {
-    catch {db close}
-    catch {db2 close}
-    catch {db3 close}
-    sqlite3_shutdown
-    install_mutex_counters 0
-    sqlite3_initialize
-    autoinstall_test_functions
-  }
+test_suite "memsys5-2" -description {
+  Run tests using the allocator in mem5.c in a different configuration.
+} -files {
+  select1.test 
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_memstatus 0
+  sqlite3_config_heap 40000000 16
+  sqlite3_config_lookaside 0 0
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_heap 0 0
+  sqlite3_config_lookaside 100 500
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+  autoinstall_test_functions
+}
+
+test_suite "no_mutex_try" -description {
+   The sqlite3_mutex_try() interface always fails
+} -files [
+  test_set $::allquicktests -exclude mutex1.test mutex2.test
+] -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  install_mutex_counters 1
+  set ::disable_mutex_try 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
+  sqlite3_shutdown
+  install_mutex_counters 0
+  sqlite3_initialize
+  autoinstall_test_functions
 }
 
 # run_tests "crash_safe_append" -description {

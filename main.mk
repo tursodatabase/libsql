@@ -940,6 +940,9 @@ testrunner:	testfixture$(EXE)
 #
 devtest:	testfixture$(EXE) fuzztest testrunner
 
+mdevtest:
+	tclsh $(TOP)/test/testrunner.tcl mdevtest
+
 # A very quick test using only testfixture and omitting all the slower
 # tests.  Designed to run in under 3 minutes on a workstation.
 #
