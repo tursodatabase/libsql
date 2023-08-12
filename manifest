@@ -1,5 +1,5 @@
-C Fix\sthe\smdevtest\starget\sso\sthat\sit\sworks\swith\smsvc.
-D 2023-08-12T19:58:47.358
+C Update\swasm's\spush-testing\srule\sto\sexclude\sfiles\swhich\swere\srecently\sremoved\sfrom\sthe\sbuild.
+D 2023-08-12T21:08:41.355
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -488,7 +488,7 @@ F ext/userauth/sqlite3userauth.h 7f3ea8c4686db8e40b0a0e7a8e0b00fac13aa7a3
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
 F ext/userauth/userauth.c 7f00cded7dcaa5d47f54539b290a43d2e59f4b1eb5f447545fa865f002fc80cb
 F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34cef801a96205adb81bdcefc65c
-F ext/wasm/GNUmakefile 8159bc5f9433fe21022c1a8e8c30cb1a523530ba9ef53bdf5d1e0a2186554806
+F ext/wasm/GNUmakefile d02f3c8798b754f68b1f6b422ccff894a10bf352fc9c4eb8945baeace1acac28
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
@@ -2051,8 +2051,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 408be98dddf500f2d6c9049703997836d80d156d86cf297f664175a107f7331e
-R a72fe14bf1c380fd9cae737dec3209b1
-U dan
-Z 77ea88d0b02ecaaa30f0a4fffc769c0a
+P 01f49448cd0cfe3af499aedfe887b7b0be4f1ab09cd5a16119ddafb32b107708
+R 2ecaec09aa6a0d3ef6dc669f83d54223
+U stephan
+Z 90975d5312aef561538895b18087fc5f
 # Remove this line to create a well-formed Fossil manifest.
