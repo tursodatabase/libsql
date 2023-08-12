@@ -368,7 +368,7 @@ public class SQLTester {
     if( createIfNeeded ) flags |= SQLITE_OPEN_CREATE;
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open_v2(name, out, flags, null);
-    final sqlite3 db = out.getValue();
+    final sqlite3 db = out.takeValue();
     if( 0==rc && dbInitSql.length() > 0){
       //outln("RUNNING DB INIT CODE: ",dbInitSql.toString());
       rc = execSql(db, false, ResultBufferMode.NONE,
@@ -518,8 +518,8 @@ public class SQLTester {
           }
           break;
         }
-        pos = oTail.getValue();
-        stmt = outStmt.getValue();
+        pos = oTail.value;
+        stmt = outStmt.takeValue();
         if( null == stmt ){
           // empty statement was parsed.
           continue;

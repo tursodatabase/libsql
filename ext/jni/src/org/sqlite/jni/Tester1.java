@@ -69,14 +69,15 @@ public class Tester1 {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
-    sqlite3 db = out.getValue();
+    sqlite3 db = out.takeValue();
     if( 0!=rc ){
       final String msg = db.getNativePointer()==0
         ? sqlite3_errstr(rc)
         : sqlite3_errmsg(db);
       throw new RuntimeException("Opening db failed: "+msg);
     }
-    affirm(0 != db.getNativePointer());
+    affirm( null == out.getValue() );
+    affirm( 0 != db.getNativePointer() );
     rc = sqlite3_busy_timeout(db, 2000);
     affirm( 0 == rc );
     return db;
@@ -102,8 +103,8 @@ public class Tester1 {
       rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
       if(throwOnError) affirm(0 == rc);
       else if( 0!=rc ) break;
-      pos = oTail.getValue();
-      stmt = outStmt.getValue();
+      pos = oTail.value;
+      stmt = outStmt.takeValue();
       if( null == stmt ){
         // empty statement was parsed.
         continue;
@@ -134,8 +135,8 @@ public class Tester1 {
     outStmt.clear();
     int rc = sqlite3_prepare(db, sql, outStmt);
     affirm( 0 == rc );
-    final sqlite3_stmt rv = outStmt.getValue();
-    outStmt.clear();
+    final sqlite3_stmt rv = outStmt.takeValue();
+    affirm( null == outStmt.getValue() );
     affirm( 0 != rv.getNativePointer() );
     return rv;
   }
@@ -208,7 +209,7 @@ public class Tester1 {
         rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
         affirm(0 == rc);
         stmt = outStmt.getValue();
-        pos = oTail.getValue();
+        pos = oTail.value;
         /*outln("SQL tail pos = "+pos+". Chunk = "+
               (new String(Arrays.copyOfRange(sqlChunk,0,pos),
               StandardCharsets.UTF_8)));*/

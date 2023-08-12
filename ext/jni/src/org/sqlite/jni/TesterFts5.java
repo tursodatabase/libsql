@@ -49,7 +49,7 @@ public class TesterFts5 {
             for(int i = 0; i < nCols; ++i ){
               int rc = ext.xColumnText(fCx, i, op);
               affirm( 0 == rc );
-              final String val = op.getValue();
+              final String val = op.value;
               affirm( val.equals(sqlite3_value_text(argv[i])) );
               //outln("xFunction col "+i+": "+val);
             }
