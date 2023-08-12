@@ -368,7 +368,7 @@ public class SQLTester {
     if( createIfNeeded ) flags |= SQLITE_OPEN_CREATE;
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open_v2(name, out, flags, null);
-    final sqlite3 db = out.takeValue();
+    final sqlite3 db = out.take();
     if( 0==rc && dbInitSql.length() > 0){
       //outln("RUNNING DB INIT CODE: ",dbInitSql.toString());
       rc = execSql(db, false, ResultBufferMode.NONE,
@@ -508,7 +508,7 @@ public class SQLTester {
         }
         if( 0==sqlChunk.length ) break;
         rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
-        /*outln("PREPARE rc ",rc," oTail=",oTail.getValue(),": ",
+        /*outln("PREPARE rc ",rc," oTail=",oTail.get(),": ",
           new String(sqlChunk,StandardCharsets.UTF_8),"\n<EOSQL>");*/
         if( 0!=rc ){
           if(throwOnError){
@@ -519,7 +519,7 @@ public class SQLTester {
           break;
         }
         pos = oTail.value;
-        stmt = outStmt.takeValue();
+        stmt = outStmt.take();
         if( null == stmt ){
           // empty statement was parsed.
           continue;

@@ -32,9 +32,9 @@ public final class OutputPointer {
     private org.sqlite.jni.sqlite3 value;
     public sqlite3(){value = null;}
     public void clear(){value = null;}
-    public final org.sqlite.jni.sqlite3 getValue(){return value;}
-    /** Equivalent to calling getValue() then clear(). */
-    public final org.sqlite.jni.sqlite3 takeValue(){
+    public final org.sqlite.jni.sqlite3 get(){return value;}
+    /** Equivalent to calling get() then clear(). */
+    public final org.sqlite.jni.sqlite3 take(){
       final org.sqlite.jni.sqlite3 v = value;
       value = null;
       return v;
@@ -51,9 +51,9 @@ public final class OutputPointer {
     private org.sqlite.jni.sqlite3_stmt value;
     public sqlite3_stmt(){value = null;}
     public void clear(){value = null;}
-    public final org.sqlite.jni.sqlite3_stmt getValue(){return value;}
-    /** Equivalent to calling getValue() then clear(). */
-    public final org.sqlite.jni.sqlite3_stmt takeValue(){
+    public final org.sqlite.jni.sqlite3_stmt get(){return value;}
+    /** Equivalent to calling get() then clear(). */
+    public final org.sqlite.jni.sqlite3_stmt take(){
       final org.sqlite.jni.sqlite3_stmt v = value;
       value = null;
       return v;
@@ -72,8 +72,8 @@ public final class OutputPointer {
     public int value;
     public Int32(){this(0);}
     public Int32(int v){value = v;}
-    public final int getValue(){return value;}
-    public final void setValue(int v){value = v;}
+    public final int get(){return value;}
+    public final void set(int v){value = v;}
   }
 
   /**
@@ -88,8 +88,8 @@ public final class OutputPointer {
     public long value;
     public Int64(){this(0);}
     public Int64(long v){value = v;}
-    public final long getValue(){return value;}
-    public final void setValue(long v){value = v;}
+    public final long get(){return value;}
+    public final void set(long v){value = v;}
   }
 
   /**
@@ -104,8 +104,8 @@ public final class OutputPointer {
     public java.lang.String value;
     public String(){this(null);}
     public String(java.lang.String v){value = v;}
-    public final java.lang.String getValue(){return value;}
-    public final void setValue(java.lang.String v){value = v;}
+    public final java.lang.String get(){return value;}
+    public final void set(java.lang.String v){value = v;}
   }
 
   /**
@@ -120,7 +120,7 @@ public final class OutputPointer {
     public byte[] value;
     public ByteArray(){this(null);}
     public ByteArray(byte[] v){value = v;}
-    public final byte[] getValue(){return value;}
-    public final void setValue(byte[] v){value = v;}
+    public final byte[] get(){return value;}
+    public final void set(byte[] v){value = v;}
   }
 }

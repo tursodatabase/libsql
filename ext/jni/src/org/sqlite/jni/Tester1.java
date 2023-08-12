@@ -69,14 +69,14 @@ public class Tester1 {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
-    sqlite3 db = out.takeValue();
+    sqlite3 db = out.take();
     if( 0!=rc ){
       final String msg = db.getNativePointer()==0
         ? sqlite3_errstr(rc)
         : sqlite3_errmsg(db);
       throw new RuntimeException("Opening db failed: "+msg);
     }
-    affirm( null == out.getValue() );
+    affirm( null == out.get() );
     affirm( 0 != db.getNativePointer() );
     rc = sqlite3_busy_timeout(db, 2000);
     affirm( 0 == rc );
@@ -104,7 +104,7 @@ public class Tester1 {
       if(throwOnError) affirm(0 == rc);
       else if( 0!=rc ) break;
       pos = oTail.value;
-      stmt = outStmt.takeValue();
+      stmt = outStmt.take();
       if( null == stmt ){
         // empty statement was parsed.
         continue;
@@ -135,8 +135,8 @@ public class Tester1 {
     outStmt.clear();
     int rc = sqlite3_prepare(db, sql, outStmt);
     affirm( 0 == rc );
-    final sqlite3_stmt rv = outStmt.takeValue();
-    affirm( null == outStmt.getValue() );
+    final sqlite3_stmt rv = outStmt.take();
+    affirm( null == outStmt.get() );
     affirm( 0 != rv.getNativePointer() );
     return rv;
   }
@@ -156,7 +156,7 @@ public class Tester1 {
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
-    sqlite3 db = out.getValue();
+    sqlite3 db = out.get();
     affirm(0 == rc);
     affirm(0 < db.getNativePointer());
     sqlite3_db_config(db, SQLITE_DBCONFIG_DEFENSIVE, 1, null)
@@ -174,7 +174,7 @@ public class Tester1 {
                              | SQLITE_OPEN_CREATE, null);
     ++metrics.dbOpen;
     affirm(0 == rc);
-    sqlite3 db = out.getValue();
+    sqlite3 db = out.get();
     affirm(0 < db.getNativePointer());
     sqlite3_close_v2(db);
     affirm(0 == db.getNativePointer());
@@ -185,7 +185,7 @@ public class Tester1 {
     int rc;
     rc = sqlite3_prepare(db, "CREATE TABLE t1(a);", outStmt);
     affirm(0 == rc);
-    sqlite3_stmt stmt = outStmt.getValue();
+    sqlite3_stmt stmt = outStmt.get();
     affirm(0 != stmt.getNativePointer());
     rc = sqlite3_step(stmt);
     affirm(SQLITE_DONE == rc);
@@ -208,7 +208,7 @@ public class Tester1 {
         if( 0==sqlChunk.length ) break;
         rc = sqlite3_prepare_v2(db, sqlChunk, outStmt, oTail);
         affirm(0 == rc);
-        stmt = outStmt.getValue();
+        stmt = outStmt.get();
         pos = oTail.value;
         /*outln("SQL tail pos = "+pos+". Chunk = "+
               (new String(Arrays.copyOfRange(sqlChunk,0,pos),
@@ -232,7 +232,7 @@ public class Tester1 {
     rc = sqlite3_prepare_v3(db, "INSERT INTO t2(a) VALUES(1),(2),(3)",
                             SQLITE_PREPARE_NORMALIZE, outStmt);
     affirm(0 == rc);
-    stmt = outStmt.getValue();
+    stmt = outStmt.get();
     affirm(0 != stmt.getNativePointer());
     sqlite3_finalize(stmt);
     affirm(0 == stmt.getNativePointer() );
@@ -797,13 +797,13 @@ public class Tester1 {
     int rc = sqlite3_open(dbName, outDb);
     ++metrics.dbOpen;
     affirm( 0 == rc );
-    final sqlite3 db1 = outDb.getValue();
+    final sqlite3 db1 = outDb.get();
     execSql(db1, "CREATE TABLE IF NOT EXISTS t(a)");
     rc = sqlite3_open(dbName, outDb);
     ++metrics.dbOpen;
     affirm( 0 == rc );
-    affirm( outDb.getValue() != db1 );
-    final sqlite3 db2 = outDb.getValue();
+    affirm( outDb.get() != db1 );
+    final sqlite3 db2 = outDb.get();
     rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
     affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
 
@@ -826,7 +826,7 @@ public class Tester1 {
     affirm(!xDestroyed.value);
     rc = sqlite3_prepare_v2(db2, "SELECT * from t", outStmt);
     affirm( SQLITE_BUSY == rc);
-    assert( null == outStmt.getValue() );
+    assert( null == outStmt.get() );
     affirm( 3 == xBusyCalled.value );
     sqlite3_close_v2(db1);
     affirm(!xDestroyed.value);
