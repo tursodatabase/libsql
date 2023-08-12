@@ -723,7 +723,12 @@ proc main_trscript {args} {
     puts "  \$SRCDIR/configure --with-tcl=\$TCL $configOpts"
     puts {fi}
     puts {}
-    puts {OPTS="      -DSQLITE_NO_SYNC=1"}
+    if {[info exists ::env(OPTS)]} {
+      puts "# From environment variable:"
+      puts "OPTS=$::env(OPTS)"
+      puts ""
+    }
+    puts {OPTS="$OPTS -DSQLITE_NO_SYNC=1"}
     foreach o $opts { 
       puts "OPTS=\"\$OPTS $o\"" 
     }
