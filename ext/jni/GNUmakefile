@@ -317,6 +317,10 @@ dist: \
     $(bin.version-info) $(sqlite3.canonical.c) \
     $(package.jar) $(MAKEFILE)
 	@echo "Making end-user deliverables..."
+	@echo "****************************************************************************"; \
+	echo  "*** WARNING: be sure to build this with JDK8 (javac 1.8) for compatibility."; \
+	echo  "*** reasons!"; $$($(bin.javac) -version); \
+	echo  "****************************************************************************"
 	@rm -fr $(dist-dir.top)
 	@mkdir -p $(dist-dir.src)
 	@cp -p $(dist.top.extras) $(dist-dir.top)/.

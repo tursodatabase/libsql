@@ -557,6 +557,25 @@ public final class SQLite3Jni {
 
   public static synchronized native int sqlite3_initialize();
 
+  /**
+     Design note/FIXME: we have a problem vis-a-vis 'synchronized'
+     here: we specifically want other threads to be able to cancel a
+     long-running thread, but this routine requires access to C-side
+     global state which does not have a mutex. Making this function
+     synchronized would make it impossible for a long-running job to
+     be cancelled from another thread.
+
+     The mutexing problem here is not within the core lib or Java, but
+     within the cached data held by the JNI binding. The cache holds
+     per-thread state, used by all but a tiny fraction of the JNI
+     binding layer, and access to that state needs to be
+     mutex-protected.
+  */
+  public static native void sqlite3_interrupt(@NotNull sqlite3 db);
+
+  //! See sqlite3_interrupt() for threading concerns.
+  public static native boolean sqlite3_is_interrupted(@NotNull sqlite3 db);
+
   public static synchronized native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);
 
   public static synchronized native String sqlite3_libversion();

@@ -2624,6 +2624,20 @@ JDECL(jint,1finalize)(JENV_CSELF, jobject jpStmt){
   return rc;
 }
 
+JDECL(void,1interrupt)(JENV_CSELF, jobject jpDb){
+  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
+  if( pDb ) sqlite3_interrupt(pDb);
+}
+
+JDECL(jboolean,1is_1interrupted)(JENV_CSELF, jobject jpDb){
+  int rc = 0;
+  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
+  if( pDb ){
+    rc = sqlite3_is_interrupted(pDb);
+  }
+  return rc ? JNI_TRUE : JNI_FALSE;
+}
+
 
 JDECL(jlong,1last_1insert_1rowid)(JENV_CSELF, jobject jpDb){
   return (jlong)sqlite3_last_insert_rowid(PtrGet_sqlite3(jpDb));

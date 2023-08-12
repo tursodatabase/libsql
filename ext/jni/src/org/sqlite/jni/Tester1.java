@@ -163,6 +163,13 @@ public class Tester1 {
       /* This function has different mangled names in jdk8 vs jdk19,
          and this call is here to ensure that the build fails
          if it cannot find both names. */;
+
+    // These interrupt checks are only to make sure that the JNI binding
+    // has the proper exported symbol names. They don't actually test
+    // anything useful.
+    affirm( !sqlite3_is_interrupted(db) );
+    sqlite3_interrupt(db);
+    affirm( sqlite3_is_interrupted(db) );
     sqlite3_close_v2(db);
     affirm(0 == db.getNativePointer());
   }
