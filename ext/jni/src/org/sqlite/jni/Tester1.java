@@ -140,6 +140,17 @@ public class Tester1 {
     return rv;
   }
 
+  private static void testCompileOption(){
+    int i = 0;
+    String optName;
+    outln("compile options:");
+    for( ; null != (optName = sqlite3_compileoption_get(i)); ++i){
+      outln("\t"+optName+"\t (used="+
+            sqlite3_compileoption_used(optName)+")");
+    }
+
+  }
+
   private static void testOpenDb1(){
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
@@ -153,17 +164,6 @@ public class Tester1 {
          if it cannot find both names. */;
     sqlite3_close_v2(db);
     affirm(0 == db.getNativePointer());
-  }
-
-  private static void testCompileOption(){
-    int i = 0;
-    String optName;
-    outln("compile options:");
-    for( ; null != (optName = sqlite3_compileoption_get(i)); ++i){
-      outln("\t"+optName+"\t (used="+
-            sqlite3_compileoption_used(optName)+")");
-    }
-
   }
 
   private static void testOpenDb2(){
@@ -486,6 +486,27 @@ public class Tester1 {
     */
     final byte[] ba = "a \0 b".getBytes(StandardCharsets.UTF_8);
     affirm( 5 == ba.length /* as opposed to 6 in modified utf-8 */);
+  }
+
+  private static void testStatus(){
+    final OutputPointer.Int64 cur64 = new OutputPointer.Int64();
+    final OutputPointer.Int64 high64 = new OutputPointer.Int64();
+    final OutputPointer.Int32 cur32 = new OutputPointer.Int32();
+    final OutputPointer.Int32 high32 = new OutputPointer.Int32();
+    final sqlite3 db = createNewDb();
+    execSql(db, "create table t(a)");
+    sqlite3_close_v2(db);
+
+    int rc = sqlite3_status(SQLITE_STATUS_MEMORY_USED, cur32, high32, false);
+    affirm( 0 == rc );
+    affirm( cur32.getValue() > 0 );
+    affirm( high32.getValue() >= cur32.getValue() );
+
+    rc = sqlite3_status64(SQLITE_STATUS_MEMORY_USED, cur64, high64, false);
+    affirm( 0 == rc );
+    affirm( cur64.getValue() > 0 );
+    affirm( high64.getValue() >= cur64.getValue() );
+
   }
 
   private static void testUdf1(){
@@ -1083,6 +1104,7 @@ public class Tester1 {
     testSql();
     testCollation();
     testToUtf8();
+    testStatus();
     testUdf1();
     testUdfJavaObject();
     testUdfAggregate();

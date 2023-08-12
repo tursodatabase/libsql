@@ -310,7 +310,9 @@ static const struct {
 #define JBA_TOC(ARG) (*env)->GetByteArrayElements(env,ARG, NULL)
 #define JBA_RELEASE(ARG,VAR) if(VAR) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
 
-/* Marker for code which needs(?) to be made thread-safe. */
+/* Marker for code which needs(?) to be made thread-safe.  REASON is a
+   terse reminder about why that function requires a mutex.
+*/
 #define FIXME_THREADING(REASON)
 
 enum {
@@ -1389,6 +1391,15 @@ static void OutputPointer_set_Int32(JNIEnv * const env, jobject const jOut, int 
   EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int32.value");
 }
 
+/* Sets the value property of the OutputPointer.Int64 jOut object
+   to v. */
+static void OutputPointer_set_Int64(JNIEnv * const env, jobject const jOut, jlong v){
+  jfieldID setter = 0;
+  setupOutputPointer(env, S3JniClassNames.OutputPointer_Int64, "J", jOut, &setter);
+  (*env)->SetLongField(env, jOut, setter, v);
+  EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int64.value");
+}
+
 static void OutputPointer_set_sqlite3(JNIEnv * const env, jobject const jOut,
                               jobject jDb){
   jfieldID setter = 0;
@@ -1408,14 +1419,6 @@ static void OutputPointer_set_sqlite3_stmt(JNIEnv * const env, jobject const jOu
 }
 
 #ifdef SQLITE_ENABLE_FTS5
-/* Sets the value property of the OutputPointer.Int64 jOut object
-   to v. */
-static void OutputPointer_set_Int64(JNIEnv * const env, jobject const jOut, jlong v){
-  jfieldID setter = 0;
-  setupOutputPointer(env, S3JniClassNames.OutputPointer_Int64, "J", jOut, &setter);
-  (*env)->SetLongField(env, jOut, setter, v);
-  EXCEPTION_IS_FATAL("Cannot set OutputPointer.Int64.value");
-}
 #if 0
 /* Sets the value property of the OutputPointer.ByteArray jOut object
    to v. */
@@ -3111,6 +3114,30 @@ JDECL(jint,1set_1authorizer)(JENV_CSELF,jobject jDb, jobject jHook){
 JDECL(void,1set_1last_1insert_1rowid)(JENV_CSELF, jobject jpDb, jlong rowId){
   sqlite3_set_last_insert_rowid(PtrGet_sqlite3_context(jpDb),
                                 (sqlite3_int64)rowId);
+}
+
+FIXME_THREADING(nphCache)
+JDECL(jint,1status)(JENV_CSELF, jint op, jobject jOutCurrent, jobject jOutHigh,
+                    jboolean reset ){
+  int iCur = 0, iHigh = 0;
+  int rc = sqlite3_status( op, &iCur, &iHigh, reset );
+  if( 0==rc ){
+    OutputPointer_set_Int32(env, jOutCurrent, iCur);
+    OutputPointer_set_Int32(env, jOutHigh, iHigh);
+  }
+  return (jint)rc;
+}
+
+FIXME_THREADING(nphCache)
+JDECL(jint,1status64)(JENV_CSELF, jint op, jobject jOutCurrent, jobject jOutHigh,
+                      jboolean reset ){
+  sqlite3_int64 iCur = 0, iHigh = 0;
+  int rc = sqlite3_status64( op, &iCur, &iHigh, reset );
+  if( 0==rc ){
+    OutputPointer_set_Int64(env, jOutCurrent, iCur);
+    OutputPointer_set_Int64(env, jOutHigh, iHigh);
+  }
+  return (jint)rc;
 }
 
 static int s3jni_strlike_glob(int isLike, JNIEnv *const env,

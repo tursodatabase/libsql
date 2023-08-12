@@ -937,14 +937,15 @@ public final class SQLite3Jni {
   );
 
 
-  // public static synchronized native int sqlite3_status(
-  //   int op, OutputPointer.Int32 pCurrent, OutputPointer.Int32 pHighwater,
-  //   boolean reset
-  // );
-  // public static synchronized native int sqlite3_status64(
-  //   int op, OutputPointer.Int64 pCurrent, OutputPointer.Int64 pHighwater,
-  //   boolean reset
-  // );
+  public static synchronized native int sqlite3_status(
+    int op, @NotNull OutputPointer.Int32 pCurrent,
+    @NotNull OutputPointer.Int32 pHighwater, boolean reset
+  );
+
+  public static synchronized native int sqlite3_status64(
+    int op, @NotNull OutputPointer.Int64 pCurrent,
+    @NotNull OutputPointer.Int64 pHighwater, boolean reset
+  );
 
   /**
      Sets the current UDF result to the given bytes, which are assumed
