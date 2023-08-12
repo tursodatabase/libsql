@@ -678,6 +678,12 @@ proc main_trscript {args} {
             lappend opts -DSQLITE_ENABLE_PREUPDATE_HOOK
             lappend opts -DSQLITE_ENABLE_SESSION
           }
+          --enable-all {
+          }
+          --enable-debug {
+            # lappend makeOpts OPTIMIZATIONS=0
+            lappend opts -DSQLITE_DEBUG
+          }
           default {
             error "Cannot translate $param for MSVC"
           }
