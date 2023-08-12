@@ -8,10 +8,36 @@ source [file join $testdir permutations.test]
 set argv $saved
 cd $dir
 
+# This script requires an interpreter that supports [package require sqlite3]
+# to run. If this is not such an intepreter, see if there is a [testfixture]
+# in the current directory. If so, run the command using it. If not, 
+# recommend that the user build one.
+#
+proc find_interpreter {} {
+  set interpreter [file tail [info nameofexec]]
+  set rc [catch { package require sqlite3 }]
+  if {$rc} {
+    if { [string match -nocase testfixture* $interpreter]==0
+      && [file executable ./testfixture]
+    } {
+      puts "Failed to find tcl package sqlite3. Restarting with ./testfixture.."
+      set status [catch { 
+          exec ./testfixture [info script] {*}$::argv >@ stdout 
+      } msg]
+      exit $status
+    }
+  }
+  if {$rc} {
+    puts stderr "Failed to find tcl package sqlite3"
+    puts stderr "Run \"make testfixture\" and then try again..."
+    exit 1
+  }
+}
+find_interpreter
+
 # Usually this script is run by [testfixture]. But it can also be run
-# by a regular [tclsh]. For these cases, load the sqlite3 package and
-# implement a [clock_milliseconds] command.
-package require sqlite3
+# by a regular [tclsh]. For these cases, emulate the [clock_milliseconds] 
+# command.
 if {[info commands clock_milliseconds]==""} {
   proc clock_milliseconds {} {
     clock milliseconds
