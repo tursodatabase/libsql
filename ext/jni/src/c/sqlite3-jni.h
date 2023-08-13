@@ -1445,6 +1445,14 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1result_1text64
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_shutdown
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1shutdown
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_status
  * Signature: (ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Z)I
  */
@@ -1730,14 +1738,6 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1frombind
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1subtype
   (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_shutdown
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1shutdown
-  (JNIEnv *, jclass);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

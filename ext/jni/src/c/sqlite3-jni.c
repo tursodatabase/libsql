@@ -498,10 +498,14 @@ static struct {
   struct {
     S3JniEnvCache * aHead /* Linked list of in-use instances */;
     S3JniEnvCache * aFree /* Linked list of free instances */;
+    sqlite3_mutex * mutex /* mutex for aHead and aFree */;
+    void const * locker   /* env mutex is held on this object's behalf */;
   } envCache;
   struct {
     S3JniDb * aUsed  /* Linked list of in-use instances */;
     S3JniDb * aFree  /* Linked list of free instances */;
+    sqlite3_mutex * mutex  /* mutex for aUsed and aFree */;
+    void const * locker   /* perDb mutex is held on this object's behalf */;
   } perDb;
   struct {
     unsigned nphCacheHits;
@@ -521,20 +525,49 @@ static struct {
 #if S3JNI_ENABLE_AUTOEXT
   struct {
     S3JniAutoExtension *pHead  /* Head of the auto-extension list */;
-    S3JniDb * psOpening  /* handle to the being-opened db. We
-                                  need this so that auto extensions
-                                  can have a consistent view of the
-                                  cross-language db connection and
-                                  behave property if they call further
-                                  db APIs. */;
-    int isRunning              /* True while auto extensions are
-                                  running.  This is used to prohibit
-                                  manipulation of the auto-extension
-                                  list while extensions are
-                                  running. */;
+    S3JniDb * psOpening  /* FIXME: move into envCache. Handle to the
+                            being-opened db. We need this so that auto
+                            extensions can have a consistent view of
+                            the cross-language db connection and
+                            behave property if they call further db
+                            APIs. */;
+    int isRunning        /* True while auto extensions are
+                            running.  This is used to prohibit
+                            manipulation of the auto-extension
+                            list while extensions are
+                            running. */;
   } autoExt;
 #endif
 } S3JniGlobal;
+
+#define MUTEX_ASSERT_LOCKER_ENV                                      \
+  assert( (env) == S3JniGlobal.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
+#define MUTEX_ASSERT_LOCKER_PDB                                      \
+  assert( 0 != S3JniGlobal.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
+#define MUTEX_ASSERT_NOTLOCKER_ENV                                   \
+  assert( (env) != S3JniGlobal.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
+#define MUTEX_ASSERT_NOTLOCKER_PDB                                   \
+  assert( 0 == S3JniGlobal.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
+#define MUTEX_ENTER_ENV                          \
+  /*MARKER(("Entering ENV mutex@%p %s.\n", env, __func__));*/ \
+  MUTEX_ASSERT_NOTLOCKER_ENV;                      \
+  sqlite3_mutex_enter( S3JniGlobal.envCache.mutex ); \
+  S3JniGlobal.envCache.locker = env
+#define MUTEX_LEAVE_ENV                          \
+  /*MARKER(("Leaving ENV mutex @%p %s.\n", env, __func__));*/ \
+  MUTEX_ASSERT_LOCKER_ENV;                       \
+  S3JniGlobal.envCache.locker = 0;                \
+  sqlite3_mutex_leave( S3JniGlobal.envCache.mutex )
+#define MUTEX_ENTER_PDB                            \
+  /*MARKER(("Entering PerDb mutex@%p %s.\n", env, __func__));*/ \
+  MUTEX_ASSERT_NOTLOCKER_PDB;                      \
+  sqlite3_mutex_enter( S3JniGlobal.perDb.mutex );  \
+  S3JniGlobal.perDb.locker = env;
+#define MUTEX_LEAVE_PDB         \
+  /*MARKER(("Leaving PerDb mutex@%p %s.\n", env, __func__));*/  \
+  MUTEX_ASSERT_LOCKER_PDB;      \
+  S3JniGlobal.perDb.locker = 0; \
+  sqlite3_mutex_leave( S3JniGlobal.perDb.mutex )
 
 #define OOM_CHECK(VAR) if(!(VAR)) s3jni_oom(env)
 static void s3jni_oom(JNIEnv * const env){
@@ -559,12 +592,14 @@ static void * s3jni_malloc(JNIEnv * const env, size_t n){
    insofar as possible. Calls (*env)->FatalError() if allocation of
    an entry fails. That's hypothetically possible but "shouldn't happen."
 */
-FIXME_THREADING(S3JniEnvCache)
 static S3JniEnvCache * S3JniGlobal_env_cache(JNIEnv * const env){
-  struct S3JniEnvCache * row = S3JniGlobal.envCache.aHead;
+  struct S3JniEnvCache * row;
+  MUTEX_ENTER_ENV;
+  row = S3JniGlobal.envCache.aHead;
   for( ; row; row = row->pNext ){
     if( row->env == env ){
       ++S3JniGlobal.metrics.envCacheHits;
+      MUTEX_LEAVE_ENV;
       return row;
     }
   }
@@ -576,11 +611,7 @@ static S3JniEnvCache * S3JniGlobal_env_cache(JNIEnv * const env){
     if( row->pNext ) row->pNext->pPrev = 0;
   }else{
     row = sqlite3_malloc(sizeof(S3JniEnvCache));
-    if( !row ){
-      (*env)->FatalError(env, "Maintenance required: S3JniEnvCache is full.")
-        /* Does not return, but cc doesn't know that */;
-      return NULL;
-    }
+    OOM_CHECK(row);
   }
   memset(row, 0, sizeof(*row));
   row->pNext = S3JniGlobal.envCache.aHead;
@@ -616,11 +647,12 @@ static S3JniEnvCache * S3JniGlobal_env_cache(JNIEnv * const env){
     EXCEPTION_IS_FATAL("Error getting reference to StndardCharsets class.");
     fUtf8 = (*env)->GetStaticFieldID(env, klazzSC, "UTF_8",
                                      "Ljava/nio/charset/Charset;");
-    EXCEPTION_IS_FATAL("Error getting StndardCharsets.UTF_8 field.");
+    EXCEPTION_IS_FATAL("Error getting StandardCharsets.UTF_8 field.");
     row->g.oCharsetUtf8 =
       REF_G((*env)->GetStaticObjectField(env, klazzSC, fUtf8));
     EXCEPTION_IS_FATAL("Error getting reference to StandardCharsets.UTF_8.");
   }
+  MUTEX_LEAVE_ENV;
   return row;
 }
 
@@ -765,7 +797,6 @@ static jstring s3jni_text16_to_jstring(JNIEnv * const env, const void * const p,
     System.out.println(e.getMessage()); // Hi
   }
 */
-FIXME_THREADING(S3JniEnvCache)
 static char * s3jni_exception_error_msg(JNIEnv * const env, jthrowable jx ){
   S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
   jmethodID mid;
@@ -865,10 +896,10 @@ static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDest
 /**
    Clears s's state and moves it to the free-list.
 */
-FIXME_THREADING(perDb)
 static void S3JniDb_set_aside(S3JniDb * const s){
   if(s){
     JNIEnv * const env = s->env;
+    MUTEX_ASSERT_LOCKER_PDB;
     assert(s->pDb && "Else this object is already in the free-list.");
     //MARKER(("state@%p for db@%p setting aside\n", s, s->pDb));
     assert(s->pPrev != s);
@@ -904,39 +935,16 @@ static void S3JniDb_set_aside(S3JniDb * const s){
     //if(s->pNext) MARKER(("next: %p->pPrev@%p\n", s->pNext, s->pNext->pPrev));
   }
 }
-
-/**
-   Requires that p has been snipped from any linked list it is
-   in. Clears all Java refs p holds and zeroes out p.
-*/
-static void S3JniEnvCache_clear(S3JniEnvCache * const p){
-  JNIEnv * const env = p->env;
-  if(env){
-    int i;
-    UNREF_G(p->g.cObj);
-    UNREF_G(p->g.cLong);
-    UNREF_G(p->g.cString);
-    UNREF_G(p->g.oCharsetUtf8);
-#ifdef SQLITE_ENABLE_FTS5
-    UNREF_G(p->jFtsExt);
-    UNREF_G(p->jPhraseIter.klazz);
-#endif
-    for( i = 0; i < NphCache_SIZE; ++i ){
-      S3JniNphCache_clear(env, &p->nph[i]);
-    }
-    memset(p, 0, sizeof(S3JniEnvCache));
-  }
-}
-
 /**
    Cleans up all state in S3JniGlobal.perDb for th given JNIEnv.
    Results are undefined if a Java-side db uses the API
    from the given JNIEnv after this call.
 */
-FIXME_THREADING(perDb)
 static void S3JniDb_free_for_env(JNIEnv *env){
-  S3JniDb * ps = S3JniGlobal.perDb.aUsed;
+  S3JniDb * ps;
   S3JniDb * pNext = 0;
+  MUTEX_ENTER_PDB;
+  ps = S3JniGlobal.perDb.aUsed;
   for( ; ps; ps = pNext ){
     pNext = ps->pNext;
     if(ps->env == env){
@@ -946,6 +954,7 @@ static void S3JniDb_free_for_env(JNIEnv *env){
       pNext = pPrev;
     }
   }
+  MUTEX_LEAVE_PDB;
 }
 
 /**
@@ -957,33 +966,41 @@ static void S3JniDb_free_for_env(JNIEnv *env){
    what would otherwise be stale references.
 */
 static int S3JniGlobal_env_uncache(JNIEnv * const env){
-  struct S3JniEnvCache * row = S3JniGlobal.envCache.aHead;
+  struct S3JniEnvCache * row;
+  int i;
+  assert( 0!=S3JniGlobal.envCache.mutex && "Env mutex misuse.");
+  row = S3JniGlobal.envCache.aHead;
   for( ; row; row = row->pNext ){
     if( row->env == env ){
       break;
     }
   }
-  if( !row ) return 0;
+  if( !row ){
+      return 0;
+  }
   if( row->pNext ) row->pNext->pPrev = row->pPrev;
   if( row->pPrev ) row->pPrev->pNext = row->pNext;
   if( S3JniGlobal.envCache.aHead == row ){
     assert( !row->pPrev );
     S3JniGlobal.envCache.aHead = row->pNext;
   }
-  S3JniEnvCache_clear(row);
-  assert( !row->pNext );
-  assert( !row->pPrev );
+  S3JniDb_free_for_env(env);
+  UNREF_G(row->g.cObj);
+  UNREF_G(row->g.cLong);
+  UNREF_G(row->g.cString);
+  UNREF_G(row->g.oCharsetUtf8);
+#ifdef SQLITE_ENABLE_FTS5
+  UNREF_G(row->jFtsExt);
+  UNREF_G(row->jPhraseIter.klazz);
+#endif
+  for( i = 0; i < NphCache_SIZE; ++i ){
+    S3JniNphCache_clear(env, &row->nph[i]);
+  }
+  memset(row, 0, sizeof(S3JniEnvCache));
   row->pNext = S3JniGlobal.envCache.aFree;
   if( row->pNext ) row->pNext->pPrev = row;
   S3JniGlobal.envCache.aFree = row;
-  S3JniDb_free_for_env(env);
   return 1;
-}
-
-static void S3JniGlobal_S3JniEnvCache_clear(void){
-  while( S3JniGlobal.envCache.aHead ){
-    S3JniGlobal_env_uncache( S3JniGlobal.envCache.aHead->env );
-  }
 }
 
 /**
@@ -1128,14 +1145,15 @@ static void * NativePointerHolder_get(JNIEnv * env, jobject pObj, const char *zC
 }
 
 /**
-   Extracts the new S3JniDb instance from the free-list, or
-   allocates one if needed, associats it with pDb, and returns.
-   Returns NULL on OOM. pDb MUST be associated with jDb via
-   NativePointerHolder_set().
+   Extracts the new S3JniDb instance from the free-list, or allocates
+   one if needed, associats it with pDb, and returns.  Returns NULL on
+   OOM. pDb MUST, on success of the calling operation, subsequently be
+   associated with jDb via NativePointerHolder_set().
 */
 static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
                                jobject jDb){
   S3JniDb * rv;
+  MUTEX_ASSERT_LOCKER_PDB;
   if(S3JniGlobal.perDb.aFree){
     rv = S3JniGlobal.perDb.aFree;
     //MARKER(("state@%p for db allocating for db@%p from free-list\n", rv, pDb));
@@ -1185,61 +1203,36 @@ static void S3JniDb_dump(S3JniDb *s){
 #endif
 
 /**
-   Returns the S3JniDb object for the given db. If allocIfNeeded is
-   true then a new instance will be allocated if no mapping currently
-   exists, else NULL is returned if no mapping is found.
+   Returns the S3JniDb object for the given db.
 
-   The 3rd and 4th args should normally only be non-0 for
-   sqlite3_open(_v2)(). For most other cases, they must be 0, in which
-   case the db handle will be fished out of the jDb object and NULL is
-   returned if jDb does not have any associated S3JniDb.
+   The 3rd argument should normally only be non-0 for routines which
+   are called from the C library and pass a native db handle instead of
+   a Java handle. In normal usage, the 2nd argument is a Java-side sqlite3
+   object, from which the db is fished out.
 
-   If called with a NULL jDb and non-NULL pDb then allocIfNeeded MUST
-   be false and it will look for a matching db object. That usage is
-   required for functions, like sqlite3_context_db_handle(), which
-   return a (sqlite3*) but do not take one as an argument.
+   Returns NULL if jDb and pDb are both NULL or if there is no
+   matching S3JniDb entry for pDb or the pointer fished out of jDb.
 */
 FIXME_THREADING(S3JniEnvCache)
 FIXME_THREADING(perDb)
-static S3JniDb * S3JniDb_for_db(JNIEnv * const env, jobject jDb,
-                                sqlite3 *pDb, int allocIfNeeded){
-  S3JniDb * s = S3JniGlobal.perDb.aUsed;
-  if(!jDb){
-    if(pDb){
-      assert(!allocIfNeeded);
-    }else{
-      return 0;
+static S3JniDb * S3JniDb_for_db(JNIEnv * const env, jobject jDb, sqlite3 *pDb){
+  S3JniDb * s = 0;
+  if(jDb || pDb){
+    MUTEX_ENTER_PDB;
+    s = S3JniGlobal.perDb.aUsed;
+    if(!pDb){
+      assert( jDb );
+      pDb = PtrGet_sqlite3(jDb);
     }
-  }
-  assert(allocIfNeeded ? !!pDb : 1);
-  if(!allocIfNeeded && !pDb){
-    pDb = PtrGet_sqlite3(jDb);
-  }
-  for( ; pDb && s; s = s->pNext){
-    if(s->pDb == pDb) return s;
-  }
-  if(allocIfNeeded){
-    s = S3JniDb_alloc(env, pDb, jDb);
+    for( ; pDb && s; s = s->pNext){
+      if(s->pDb == pDb){
+        break;
+      }
+    }
+    MUTEX_LEAVE_PDB;
   }
   return s;
 }
-
-#if 0
-/**
-   An alternative form which searches for the S3JniDb instance for
-   pDb with no JNIEnv-specific info. This can be (but _should_ it be?)
-   called from the context of a separate JNIEnv than the one mapped
-   to in the returned object. Returns 0 if no match is found.
-*/
-FIXME_THREADING(perDb)
-static S3JniDb * S3JniDb_for_db2(sqlite3 *pDb){
-  S3JniDb * s = S3JniGlobal.perDb.aUsed;
-  for( ; pDb && s; s = s->pNext){
-    if(s->pDb == pDb) return s;
-  }
-  return 0;
-}
-#endif
 
 #if S3JNI_ENABLE_AUTOEXT
 /**
@@ -2048,7 +2041,7 @@ static int s3jni_busy_handler(void* pState, int n){
 
 FIXME_THREADING(S3JniEnvCache)
 JDECL(jint,1busy_1handler)(JENV_CSELF, jobject jDb, jobject jBusy){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   int rc = 0;
   if(!ps) return (jint)SQLITE_NOMEM;
   if(jBusy){
@@ -2079,7 +2072,7 @@ JDECL(jint,1busy_1handler)(JENV_CSELF, jobject jDb, jobject jBusy){
 FIXME_THREADING(S3JniEnvCache)
 FIXME_THREADING(perDb)
 JDECL(jint,1busy_1timeout)(JENV_CSELF, jobject jDb, jint ms){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   if( ps ){
     S3JniHook_unref(env, &ps->busyHandler, 1);
     return sqlite3_busy_timeout(ps->pDb, (int)ms);
@@ -2110,12 +2103,13 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   int rc = 0;
   S3JniDb * ps = 0;
   assert(version == 1 || version == 2);
-  ps = S3JniDb_for_db(env, jDb, 0, 0);
+  ps = S3JniDb_for_db(env, jDb, 0);
   if(ps){
-    //MARKER(("close()ing db@%p\n", ps->pDb));
     rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
+    MUTEX_ENTER_PDB;
     S3JniDb_set_aside(ps)
       /* MUST come after close() because of ps->trace. */;
+    MUTEX_LEAVE_PDB;
     NativePointerHolder_set(env, jDb, 0, S3JniClassNames.sqlite3);
   }
   return (jint)rc;
@@ -2170,7 +2164,7 @@ static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
 FIXME_THREADING(S3JniEnvCache)
 FIXME_THREADING(perDb)
 JDECL(jint,1collation_1needed)(JENV_CSELF, jobject jDb, jobject jHook){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jclass klazz;
   jobject pOld = 0;
   jmethodID xCallback;
@@ -2288,7 +2282,7 @@ static void s3jni_rollback_hook_impl(void *pP){
 FIXME_THREADING(perDb)
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,jobject jDb,
                                           jobject jHook){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jclass klazz;
   jobject pOld = 0;
   jmethodID xCallback;
@@ -2357,14 +2351,14 @@ JDECL(jboolean,1compileoption_1used)(JENV_CSELF, jstring name){
 FIXME_THREADING(perDb)
 JDECL(jobject,1context_1db_1handle)(JENV_CSELF, jobject jpCx){
   sqlite3 * const pDb = sqlite3_context_db_handle(PtrGet_sqlite3_context(jpCx));
-  S3JniDb * const ps = pDb ? S3JniDb_for_db(env, 0, pDb, 0) : 0;
+  S3JniDb * const ps = pDb ? S3JniDb_for_db(env, 0, pDb) : 0;
   return ps ? ps->jDb : 0;
 }
 
 JDECL(jint,1create_1collation)(JENV_CSELF, jobject jDb,
                                jstring name, jint eTextRep,
                                jobject oCollation){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jclass klazz;
   int rc;
   const char *zName;
@@ -2457,7 +2451,7 @@ JDECL(jint,1create_1function)(JENV_CSELF, jobject jDb, jstring jFuncName,
 JDECL(int,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2)(
   JENV_CSELF, jobject jDb, jint op, jstring jStr
 ){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   int rc;
   char *zStr;
 
@@ -2489,7 +2483,7 @@ FIXME_THREADING(perDb)
 JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
   JENV_CSELF, jobject jDb, jint op, jint onOff, jobject jOut
 ){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   int rc;
   switch( ps ? op : 0 ){
     case SQLITE_DBCONFIG_ENABLE_FKEY:
@@ -2538,7 +2532,7 @@ JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer
 }
 
 JDECL(jstring,1db_1filename)(JENV_CSELF, jobject jDb, jstring jDbName){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   S3JniEnvCache * const jc = S3JniGlobal_env_cache(env);
   char *zDbName;
   jstring jRv = 0;
@@ -2657,7 +2651,9 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnvCache **jc,
     *zDbName = 0;
     return SQLITE_NOMEM;
   }
+  MUTEX_ENTER_PDB;
   *ps = S3JniDb_alloc(env, 0, *jDb);
+  MUTEX_LEAVE_PDB;
 #if S3JNI_ENABLE_AUTOEXT
   if(*ps){
     assert(!S3JniGlobal.autoExt.psOpening);
@@ -2688,15 +2684,12 @@ static int s3jni_open_post(JNIEnv * const env, S3JniDb * ps,
 #endif
   if(*ppDb){
     assert(ps->jDb);
-#if S3JNI_ENABLE_AUTOEXT
-    //MARKER(("*autoExt.pHead=%p, ppDb=%p, ps->pDb=%p\n", S3JniGlobal.autoExt.pHead, *ppDb, ps->pDb));
-    // invalid when an autoext triggers another open():
-    // assert( S3JniGlobal.autoExt.pHead ? *ppDb==ps->pDb : 0==ps->pDb );
-#endif
     ps->pDb = *ppDb;
     NativePointerHolder_set(env, ps->jDb, *ppDb, S3JniClassNames.sqlite3);
   }else{
+    MUTEX_ENTER_PDB;
     S3JniDb_set_aside(ps);
+    MUTEX_LEAVE_PDB;
     ps = 0;
   }
   OutputPointer_set_sqlite3(env, jOut, ps ? ps->jDb : 0);
@@ -2845,7 +2838,7 @@ static int s3jni_progress_handler_impl(void *pP){
 }
 
 JDECL(void,1progress_1handler)(JENV_CSELF,jobject jDb, jint n, jobject jProgress){
-  S3JniDb * ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * ps = S3JniDb_for_db(env, jDb, 0);
   jclass klazz;
   jmethodID xCallback;
   if( n<1 || !jProgress ){
@@ -3101,7 +3094,7 @@ static int s3jni_xAuth(void* pState, int op,const char*z0, const char*z1,
 }
 
 JDECL(jint,1set_1authorizer)(JENV_CSELF,jobject jDb, jobject jHook){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   S3JniHook * const pHook = ps ? &ps->authHook : 0;
 
   if( !ps ) return SQLITE_MISUSE;
@@ -3195,7 +3188,11 @@ JDECL(jint,1strlike)(JENV_CSELF, jbyteArray baG, jbyteArray baT, jint escChar){
 }
 
 JDECL(jint,1shutdown)(JENV_CSELF){
-  S3JniGlobal_S3JniEnvCache_clear();
+  MUTEX_ENTER_ENV;
+  while( S3JniGlobal.envCache.aHead ){
+    S3JniGlobal_env_uncache( S3JniGlobal.envCache.aHead->env );
+  }
+  MUTEX_LEAVE_ENV;
   /* Do not clear S3JniGlobal.jvm: it's legal to call
      sqlite3_initialize() again to restart the lib. */
   return sqlite3_shutdown();
@@ -3279,7 +3276,7 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
 }
 
 JDECL(jint,1trace_1v2)(JENV_CSELF,jobject jDb, jint traceMask, jobject jTracer){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jclass klazz;
   if( !traceMask || !jTracer ){
     if(ps){
@@ -3330,7 +3327,7 @@ static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
 
 
 JDECL(jobject,1update_1hook)(JENV_CSELF, jobject jDb, jobject jHook){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jclass klazz;
   jobject pOld = 0;
   jmethodID xCallback;
@@ -3635,7 +3632,7 @@ static fts5_api *s3jni_fts5_api_from_db(sqlite3 *db){
 }
 
 JDECLFtsApi(jobject,getInstanceForDb)(JENV_CSELF,jobject jDb){
-  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0, 0);
+  S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jobject rv = 0;
   if(!ps) return 0;
   else if(ps->jFtsApi){
@@ -4338,7 +4335,11 @@ Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JENV_CSELF){
 */
 JNIEXPORT jboolean JNICALL
 Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JENV_CSELF){
-  return S3JniGlobal_env_uncache(env) ? JNI_TRUE : JNI_FALSE;
+  int rc;
+  MUTEX_ENTER_ENV;
+  rc = S3JniGlobal_env_uncache(env);
+  MUTEX_LEAVE_ENV;
+  return rc ? JNI_TRUE : JNI_FALSE;
 }
 
 /**
@@ -4402,6 +4403,10 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
     (*env)->FatalError(env, "GetJavaVM() failure shouldn't be possible.");
     return;
   }
+  S3JniGlobal.envCache.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+  OOM_CHECK( S3JniGlobal.envCache.mutex );
+  S3JniGlobal.perDb.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+  OOM_CHECK( S3JniGlobal.perDb.mutex );
 #if 0
   /* Just for sanity checking... */
   (void)S3JniGlobal_env_cache(env);
