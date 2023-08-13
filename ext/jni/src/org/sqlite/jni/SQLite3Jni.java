@@ -178,24 +178,25 @@ public final class SQLite3Jni {
        not have access to the sqlite3_api object which native
        auto-extensions do.
 
-     - If an auto-extension opens a db, thereby triggering recursion
-       in the auto-extension handler, it will fail with a message
-       explaining that recursion is not permitted.
+     - If an auto-extension opens a db, opening will fail with SQLITE_BUSY.
+       The alternative would be endless recursion into the auto-extension.
 
-     - All of the other auto extension routines will fail without side
-       effects if invoked from within the execution of an
-       auto-extension. i.e. auto extensions can neither be added,
+     - The list of auto-extensions must not be manipulated from within
+       an auto-extension. Auto extensions can neither be added,
        removed, nor cleared while one registered with this function is
-       running. Auto-extensions registered directly with the library
-       via C code, as opposed to indirectly via Java, do not have that
-       limitation.
+       running. Attempting to do so may lead to a deadlock.
 
      See the AutoExtension class docs for more information.
 
      Achtung: it is as yet unknown whether auto extensions registered
      from one JNIEnv (thread) can be safely called from another.
+
+     Design note: this family of methods is synchronized in order to
+     help avoid a small race condition where an in-progress
+     sqlite3_reset_auto_extension() or sqlite3_cancel_auto_extension()
+     could cause sqlite3_open() to fail with SQLITE_BUSY.
   */
-  public static native int sqlite3_auto_extension(@NotNull AutoExtension callback);
+  public static synchronized native int sqlite3_auto_extension(@NotNull AutoExtension callback);
 
   public static int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data
@@ -296,7 +297,7 @@ public final class SQLite3Jni {
      effects, if auto extensions are currently running. (The JNI-level
      list of extensions cannot be manipulated while it is being traversed.)
   */
-  public static native boolean sqlite3_cancel_auto_extension(
+  public static synchronized native boolean sqlite3_cancel_auto_extension(
     @NotNull AutoExtension ax
   );
 
@@ -313,11 +314,11 @@ public final class SQLite3Jni {
   );
 
   public static native int sqlite3_close(
-    @NotNull sqlite3 db
+    @Nullable sqlite3 db
   );
 
   public static native int sqlite3_close_v2(
-    @NotNull sqlite3 db
+    @Nullable sqlite3 db
   );
 
   public static native byte[] sqlite3_column_blob(
@@ -593,19 +594,16 @@ public final class SQLite3Jni {
      Recall that even if opening fails, the output pointer might be
      non-null. Any error message about the failure will be in that
      object and it is up to the caller to sqlite3_close() that
-     db handle.
+     db handle. Passing a null to sqlite3_close() is legal.
 
-     Pedantic note: though any number of Java-level sqlite3 objects
-     may refer to/wrap a single C-level (sqlite3*), the JNI internals
-     take a reference to the object which is passed to sqlite3_open()
-     or sqlite3_open_v2() so that they have a predictible object to
-     pass to, e.g., the sqlite3_collation_needed() callback.
+     Design note: this method is synchronized in order to help
+     alleviate a race condition involving auto-extensions.
   */
-  public static native int sqlite3_open(
+  public static synchronized native int sqlite3_open(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb
   );
 
-  public static native int sqlite3_open_v2(
+  public static synchronized native int sqlite3_open_v2(
     @Nullable String filename, @NotNull OutputPointer.sqlite3 ppDb,
     int flags, @Nullable String zVfs
   );
@@ -729,7 +727,7 @@ public final class SQLite3Jni {
      extensions are currently running. (The JNI-level list of
      extensions cannot be manipulated while it is being traversed.)
   */
-  public static native void sqlite3_reset_auto_extension();
+  public static synchronized native void sqlite3_reset_auto_extension();
 
   public static native void sqlite3_result_double(
     @NotNull sqlite3_context cx, double v
