@@ -1,5 +1,5 @@
-C An\sinitial\sattempt\sat\sprotecting\sthe\sJNI\sglobal\sstate\svia\smutexes\sat\sthe\sC\slevel\sinstead\sof\srelying\son\sJava's\ssynchronized\skeyword.\sIt\sseems\sto\swork\sbut\sincreases\sthe\srun\stime\sof\sthe\ssingle-threaded\sbatch\stester\sby\sroughly\s3\stimes.
-D 2023-08-13T09:53:27.824
+C Add\ssome\sdocs\sand\smetrics\sfor\sthe\snew\smutex\sinternals.
+D 2023-08-13T10:28:35.456
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -234,7 +234,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile a9e11b92e620058558cbc1a2d49f8ec53c78d6a989b9db0b7d0b649b9f174881
 F ext/jni/README.md 7a614a2fa6c561205f7a53fd8626cf93a7b5711ff454fc1814517f796df398eb
 F ext/jni/jar-dist.make f90a553203a57934bf275bed86479485135a52f48ac5c1cfe6499ae07b0b35a4
-F ext/jni/src/c/sqlite3-jni.c 93fbeed06441352df68f6c0e4bc2cd895e81d8550dc9972cafb30621958b4784
+F ext/jni/src/c/sqlite3-jni.c 44c1da6d1ae9d8ea2af16dd5c1d17224a655c9c94135892f81571b2481896431
 F ext/jni/src/c/sqlite3-jni.h f10d2f38720687c70ecdd5e44f6e8db98efee2caa05fc86b2d9e0c76e6cc0a18
 F ext/jni/src/org/sqlite/jni/Authorizer.java 1308988f7f40579ea0e4deeaec3c6be971630566bd021c31367fe3f5140db892
 F ext/jni/src/org/sqlite/jni/AutoExtension.java 18e83f6f463e306df60b2dceb65247d32af1f78af4bbbae9155411a8c6cdb093
@@ -2091,8 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fbf99a2423dd20e4544bdeea85f714e9368ce3b92fefe97efb39a0fb4a557abe
-R 42a3d0d4c63d13c26ffa7bd8f71380ed
+P c64e6a52ac79164be37fe643a4a39bd187af198a379410def8b8419f7c2224d4
+R cd02d0fb58628c824a2d7de7efc47b02
 U stephan
-Z 5906c49c68c9155fc27b7d9430c5551e
+Z 6ab46f9c79559c9df9412a6d1bef3261
 # Remove this line to create a well-formed Fossil manifest.

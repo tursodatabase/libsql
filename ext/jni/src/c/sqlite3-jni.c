@@ -499,19 +499,25 @@ static struct {
     S3JniEnvCache * aHead /* Linked list of in-use instances */;
     S3JniEnvCache * aFree /* Linked list of free instances */;
     sqlite3_mutex * mutex /* mutex for aHead and aFree */;
-    void const * locker   /* env mutex is held on this object's behalf */;
+    void const * locker   /* env mutex is held on this object's behalf
+                             (used only for sanity checking). */;
   } envCache;
   struct {
     S3JniDb * aUsed  /* Linked list of in-use instances */;
     S3JniDb * aFree  /* Linked list of free instances */;
-    sqlite3_mutex * mutex  /* mutex for aUsed and aFree */;
-    void const * locker   /* perDb mutex is held on this object's behalf */;
+    sqlite3_mutex * mutex /* mutex for aUsed and aFree */;
+    void const * locker   /* perDb mutex is held on this object's
+                             behalf.  Unlike envCache.locker, we
+                             cannot always have this set to the
+                             current JNIEnv object. */;
   } perDb;
   struct {
     unsigned nphCacheHits;
     unsigned nphCacheMisses;
     unsigned envCacheHits;
     unsigned envCacheMisses;
+    unsigned nMutexEnv       /* number of times envCache.mutex was entered */;
+    unsigned nMutexPerDb     /* number of times perDb.mutex was entered */;
     unsigned nDestroy        /* xDestroy() calls across all types */;
     struct {
       /* Number of calls for each type of UDF callback. */
@@ -542,30 +548,28 @@ static struct {
 
 #define MUTEX_ASSERT_LOCKER_ENV                                      \
   assert( (env) == S3JniGlobal.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
-#define MUTEX_ASSERT_LOCKER_PDB                                      \
-  assert( 0 != S3JniGlobal.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
 #define MUTEX_ASSERT_NOTLOCKER_ENV                                   \
   assert( (env) != S3JniGlobal.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
-#define MUTEX_ASSERT_NOTLOCKER_PDB                                   \
-  assert( 0 == S3JniGlobal.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
 #define MUTEX_ENTER_ENV                          \
   /*MARKER(("Entering ENV mutex@%p %s.\n", env, __func__));*/ \
   MUTEX_ASSERT_NOTLOCKER_ENV;                      \
   sqlite3_mutex_enter( S3JniGlobal.envCache.mutex ); \
+  ++S3JniGlobal.metrics.nMutexEnv;                \
   S3JniGlobal.envCache.locker = env
 #define MUTEX_LEAVE_ENV                          \
   /*MARKER(("Leaving ENV mutex @%p %s.\n", env, __func__));*/ \
   MUTEX_ASSERT_LOCKER_ENV;                       \
   S3JniGlobal.envCache.locker = 0;                \
   sqlite3_mutex_leave( S3JniGlobal.envCache.mutex )
+#define MUTEX_ASSERT_LOCKED_PDB                                      \
+  assert( 0 != S3JniGlobal.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
 #define MUTEX_ENTER_PDB                            \
   /*MARKER(("Entering PerDb mutex@%p %s.\n", env, __func__));*/ \
-  MUTEX_ASSERT_NOTLOCKER_PDB;                      \
   sqlite3_mutex_enter( S3JniGlobal.perDb.mutex );  \
+  ++S3JniGlobal.metrics.nMutexPerDb;               \
   S3JniGlobal.perDb.locker = env;
 #define MUTEX_LEAVE_PDB         \
   /*MARKER(("Leaving PerDb mutex@%p %s.\n", env, __func__));*/  \
-  MUTEX_ASSERT_LOCKER_PDB;      \
   S3JniGlobal.perDb.locker = 0; \
   sqlite3_mutex_leave( S3JniGlobal.perDb.mutex )
 
@@ -899,7 +903,7 @@ static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDest
 static void S3JniDb_set_aside(S3JniDb * const s){
   if(s){
     JNIEnv * const env = s->env;
-    MUTEX_ASSERT_LOCKER_PDB;
+    MUTEX_ASSERT_LOCKED_PDB;
     assert(s->pDb && "Else this object is already in the free-list.");
     //MARKER(("state@%p for db@%p setting aside\n", s, s->pDb));
     assert(s->pPrev != s);
@@ -1035,6 +1039,10 @@ static S3JniNphCache * S3JniGlobal_nph_cache(JNIEnv * const env, const char *zCl
      you should look them up once and then reuse them. Similarly,
      looking up class objects can be expensive, so they should be
      cached as well.
+
+     Reminder: we do not need a mutex for the envRow->nph cache
+     because all nph entries are per-thread and envCache.mutex
+     already guards the fetching of envRow.
   */
   struct S3JniEnvCache * const envRow = S3JniGlobal_env_cache(env);
   S3JniNphCache * freeSlot = 0;
@@ -1153,7 +1161,7 @@ static void * NativePointerHolder_get(JNIEnv * env, jobject pObj, const char *zC
 static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
                                jobject jDb){
   S3JniDb * rv;
-  MUTEX_ASSERT_LOCKER_PDB;
+  MUTEX_ASSERT_LOCKED_PDB;
   if(S3JniGlobal.perDb.aFree){
     rv = S3JniGlobal.perDb.aFree;
     //MARKER(("state@%p for db allocating for db@%p from free-list\n", rv, pDb));
@@ -3496,6 +3504,9 @@ JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
   printf("\tJNIEnv cache               %u misses, %u hits\n",
          S3JniGlobal.metrics.envCacheMisses,
          S3JniGlobal.metrics.envCacheHits);
+  printf("\tMutex entry: %u env, %u perDb\n",
+         S3JniGlobal.metrics.nMutexEnv,
+         S3JniGlobal.metrics.nMutexPerDb);
   puts("Java-side UDF calls:");
 #define UDF(T) printf("\t%-8s = %u\n", "x" #T, S3JniGlobal.metrics.udf.n##T)
   UDF(Func); UDF(Step); UDF(Final); UDF(Value); UDF(Inverse);
