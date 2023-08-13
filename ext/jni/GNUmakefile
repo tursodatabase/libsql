@@ -166,8 +166,8 @@ SQLITE_OPT = \
   -DSQLITE_THREADSAFE=0 \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
-  -DSQLITE_C=$(sqlite3.c) \
-  -DSQLITE_DEBUG
+  -DSQLITE_C=$(sqlite3.c)
+#  -DSQLITE_DEBUG
 # -DSQLITE_DEBUG is just to work around a -Wall warning
 # for a var which gets set in all builds but only read
 # via assert().

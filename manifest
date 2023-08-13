@@ -1,5 +1,5 @@
-C Merge\sthe\sJava\sNative\sInterface\s(JNI)\sbinding\sinto\strunk.
-D 2023-08-12T21:39:18.053
+C Remove\sSQLITE_DEBUG\sfrom\sJNI\sbuild.
+D 2023-08-13T10:22:15.435
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -231,9 +231,9 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/jni/GNUmakefile 435485ff2005c4bcdea808f5efe6d4ee66a00430c2499dcc4927b20378486bea
+F ext/jni/GNUmakefile 3deba6bc0bf37c1ee5f15d1ff3c3512ae2f3cf44a2b8ae7b4af92690514b0cb4
 F ext/jni/README.md 7a614a2fa6c561205f7a53fd8626cf93a7b5711ff454fc1814517f796df398eb
-F ext/jni/jar-dist.make f90a553203a57934bf275bed86479485135a52f48ac5c1cfe6499ae07b0b35a4
+F ext/jni/jar-dist.make 93da95f8fe01ef22fccacc27f2e805938058e91e8c72c0532558d3a812a42e74
 F ext/jni/src/c/sqlite3-jni.c bea6b8691a5fa3a8626a771757bb261208d3c5fc6598266d3b0ee23d88e35632
 F ext/jni/src/c/sqlite3-jni.h c5f941b057a24ee62942e6e1bf5a7fd527e5004d20d9638e84a9382813c3cf2a
 F ext/jni/src/org/sqlite/jni/Authorizer.java 1308988f7f40579ea0e4deeaec3c6be971630566bd021c31367fe3f5140db892
@@ -2091,9 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0a6930a7ff8f8c6ca244d1d654532f3d2a02d77ef67c6cae0c53092743d59ea6 1ba7754045a009d9c94b23ac76b9bb8d9c9cb24d42dcdf1203ee75ac85765d3e
-R 71919983f1228c04d42d3555e47fba1b
-T +closed 1ba7754045a009d9c94b23ac76b9bb8d9c9cb24d42dcdf1203ee75ac85765d3e Closed\sby\sintegrate-merge.
+P 48b13edcec6935bf125b265b41a3e6f7b2407afff89d5b4daa2939e3c5679ca0
+R 5372bd20398f3ed53311b425db8b10c9
 U stephan
-Z 06dd3519c67c3e383d12eeb6b6fbb0d1
+Z eea4a90fcf3367f65681fd6689ad28cb
 # Remove this line to create a well-formed Fossil manifest.
