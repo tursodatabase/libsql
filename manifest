@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\ssqlite3_snapshot_recover()\sintroduced\sby\sthe\s[8a6b0c24937e855b]\smerge.
-D 2023-08-14T18:21:56.123
+C Fix\sthe\sautoconf\smakefile\sfor\sthe\sCLI\ssuch\sthat\sit\sdisables\sdouble-quoted\nstrings\sby\sdefault,\sas\sall\sother\sbuilds\sof\sthe\sCLI\sdo.\n[forum:/forumpost/9794b6aaa5|forum\spost\s9794b6aaa5].
+D 2023-08-14T19:10:48.076
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -13,7 +13,7 @@ F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
-F autoconf/Makefile.am a8d1d24affe52ebf8d7ddcf91aa973fa0316618ab95bb68c87cabf8faf527dc8
+F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
 F autoconf/Makefile.msc 012cdd820963653a7db147a185ebe9085756b6ab15ac964e8cc1dae4c29485cd
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
@@ -2091,8 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 544de2da09cd7b9bbb6cb4c52bb22325ace3391fca00c6a43847bfc158032b66
-R a0b73071de83a84cf4d127819242513e
-U dan
-Z e2505e5a9210a6df91bb91a015427010
+P c2577eb0a4a627c65d675f1446514843486092be9cb271b682793a0107e496cd
+R 487f4829bdb09137b6b15dcfdad5cf32
+U drh
+Z 63a74f78c58164771feacd560d95600e
 # Remove this line to create a well-formed Fossil manifest.
