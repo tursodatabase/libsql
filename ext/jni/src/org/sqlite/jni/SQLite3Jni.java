@@ -178,8 +178,9 @@ public final class SQLite3Jni {
        not have access to the sqlite3_api object which native
        auto-extensions do.
 
-     - If an auto-extension opens a db, opening will fail with SQLITE_BUSY.
-       The alternative would be endless recursion into the auto-extension.
+     - If an auto-extension opens a db from the same thread, opening
+       will fail with SQLITE_BUSY.  The alternative would be endless
+       recursion into the auto-extension.
 
      - The list of auto-extensions must not be manipulated from within
        an auto-extension. Auto extensions can neither be added,
