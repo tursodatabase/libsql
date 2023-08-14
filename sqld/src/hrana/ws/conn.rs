@@ -54,9 +54,13 @@ pub(super) async fn handle_tcp<F: MakeNamespace>(
     socket: tokio::net::TcpStream,
     conn_id: u64,
 ) -> Result<()> {
-    let (ws, version, ns) = handshake::handshake_tcp(socket, server.disable_default_namespace)
-        .await
-        .context("Could not perform the WebSocket handshake on TCP connection")?;
+    let (ws, version, ns) = handshake::handshake_tcp(
+        socket,
+        server.disable_default_namespace,
+        server.disable_namespaces,
+    )
+    .await
+    .context("Could not perform the WebSocket handshake on TCP connection")?;
     handle_ws(server, ws, version, conn_id, ns).await
 }
 
@@ -65,9 +69,13 @@ pub(super) async fn handle_upgrade<F: MakeNamespace>(
     upgrade: Upgrade,
     conn_id: u64,
 ) -> Result<()> {
-    let (ws, version, ns) = handshake::handshake_upgrade(upgrade, server.disable_default_namespace)
-        .await
-        .context("Could not perform the WebSocket handshake on HTTP connection")?;
+    let (ws, version, ns) = handshake::handshake_upgrade(
+        upgrade,
+        server.disable_default_namespace,
+        server.disable_namespaces,
+    )
+    .await
+    .context("Could not perform the WebSocket handshake on HTTP connection")?;
     handle_ws(server, ws, version, conn_id, ns).await
 }
 

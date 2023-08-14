@@ -181,10 +181,15 @@ struct Cli {
     /// Set a command to execute when a snapshot file is generated.
     #[clap(long, env = "SQLD_SNAPSHOT_EXEC")]
     snapshot_exec: Option<String>,
+
     /// By default, all request for which a namespace can't be determined fallaback to the default
     /// namespace `default`. This flag disables that.
     #[clap(long)]
     disable_default_namespace: bool,
+
+    /// By default, ignore namespaces and route all requests to the default namespace.
+    #[clap(long, default_value = "true")]
+    disable_namespaces: bool,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -297,6 +302,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         max_total_response_size: args.max_total_response_size.0,
         snapshot_exec: args.snapshot_exec,
         disable_default_namespace: args.disable_default_namespace,
+        disable_namespaces: args.disable_namespaces,
     })
 }
 

@@ -27,7 +27,11 @@ where
         parts: &mut Parts,
         state: &AppState<F>,
     ) -> Result<Self, Self::Rejection> {
-        let ns = namespace_from_headers(&parts.headers, state.disable_default_namespace)?;
+        let ns = namespace_from_headers(
+            &parts.headers,
+            state.disable_default_namespace,
+            state.disable_namespaces,
+        )?;
         Ok(Self(
             state
                 .namespaces
@@ -40,7 +44,12 @@ where
 pub fn namespace_from_headers(
     headers: &HeaderMap,
     disable_default_namespace: bool,
+    disable_namespaces: bool,
 ) -> crate::Result<Bytes> {
+    if disable_namespaces {
+        return Ok(DEFAULT_NAMESPACE_NAME.into());
+    }
+
     let host = headers
         .get("host")
         .ok_or_else(|| Error::InvalidHost("missing host header".into()))?

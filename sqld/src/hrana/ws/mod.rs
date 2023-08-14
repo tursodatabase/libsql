@@ -20,6 +20,7 @@ struct Server<F: MakeNamespace> {
     idle_kicker: Option<IdleKicker>,
     next_conn_id: AtomicU64,
     disable_default_namespace: bool,
+    disable_namespaces: bool,
 }
 
 #[derive(Debug)]
@@ -41,6 +42,7 @@ pub async fn serve<F: MakeNamespace>(
     mut upgrade_rx: mpsc::Receiver<Upgrade>,
     namespaces: Arc<NamespaceStore<F>>,
     disable_default_namespace: bool,
+    disable_namespaces: bool,
 ) -> Result<()> {
     let server = Arc::new(Server {
         auth,
@@ -48,6 +50,7 @@ pub async fn serve<F: MakeNamespace>(
         next_conn_id: AtomicU64::new(0),
         namespaces,
         disable_default_namespace,
+        disable_namespaces,
     });
 
     let mut join_set = tokio::task::JoinSet::new();
