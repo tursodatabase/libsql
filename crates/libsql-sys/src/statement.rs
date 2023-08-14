@@ -104,9 +104,6 @@ impl Statement {
 
     pub fn column_origin_name(&self, idx: i32) -> Option<&str> {
         let raw_name = unsafe { crate::ffi::sqlite3_column_origin_name(self.raw_stmt, idx) };
-        if raw_name.is_null() {
-            return None;
-        }
         let raw_name = unsafe { std::ffi::CStr::from_ptr(raw_name as *const c_char) };
         let raw_name = raw_name.to_str().unwrap();
         Some(raw_name)
