@@ -10,7 +10,6 @@ use bytesize::ByteSize;
 use clap::Parser;
 use mimalloc::MiMalloc;
 use sqld::{connection::dump::exporter::export_dump, version::Version, Config};
-use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::prelude::__tracing_subscriber_SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use tracing_subscriber::Layer;
@@ -337,6 +336,10 @@ fn enable_libsql_logging() {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    if std::env::var("RUST_LOG").is_err() {
+        std::env::set_var("RUST_LOG", "info");
+    }
+
     let registry = tracing_subscriber::registry();
 
     #[cfg(feature = "debug-tools")]
@@ -349,13 +352,11 @@ async fn main() -> Result<()> {
         .with(
             tracing_subscriber::fmt::layer()
                 .with_ansi(false)
-                .with_filter(
-                    tracing_subscriber::EnvFilter::builder()
-                        .with_default_directive(LevelFilter::INFO.into())
-                        .from_env_lossy(),
-                ),
+                .with_filter(tracing_subscriber::EnvFilter::from_default_env()),
         )
         .init();
+
+    std::panic::set_hook(Box::new(tracing_panic::panic_hook));
 
     let args = Cli::parse();
 

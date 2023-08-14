@@ -58,6 +58,7 @@ pub enum Error {
 impl Error {
     fn format_err(&self, status: StatusCode) -> axum::response::Response {
         let json = serde_json::json!({ "error": self.to_string() });
+        tracing::error!("HTTP API: {}, {}", status, json);
         (status, axum::Json(json)).into_response()
     }
 }
