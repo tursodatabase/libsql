@@ -20,6 +20,8 @@ pub enum Error {
     QueryReturnedNoRows,
     #[error("Execute returned rows")]
     ExecuteReturnedRows,
+    #[error("unable to convert to sql: `{0}`")]
+    ToSqlConversionFailure(crate::BoxError),
 }
 
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {

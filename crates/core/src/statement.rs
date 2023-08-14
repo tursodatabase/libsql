@@ -101,7 +101,10 @@ impl Statement {
         match err as u32 {
             crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
-            _ => Err(Error::LibError(err, errors::error_from_handle(self.conn.raw))),
+            _ => Err(Error::LibError(
+                err,
+                errors::error_from_handle(self.conn.raw),
+            )),
         }
     }
 

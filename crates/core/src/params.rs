@@ -2,6 +2,8 @@ use std::ffi::c_char;
 
 use libsql_sys::ValueType;
 
+use crate::{Error, Result};
+
 pub enum Params {
     None,
     Positional(Vec<Value>),
@@ -40,18 +42,23 @@ macro_rules! named_params {
 ///
 /// conn.query(
 ///     "SELECT * FROM users WHERE id IN (?1, ?2, ?3)",
-///     params_from_iter(iter)
+///     params_from_iter(iter)?
 /// )
 /// # }
 /// ```
-pub fn params_from_iter<I>(iter: I) -> Params
+pub fn params_from_iter<I>(iter: I) -> Result<Params>
 where
     I: IntoIterator,
-    I::Item: Into<Value>,
+    I::Item: TryInto<Value>,
+    <I::Item as TryInto<Value>>::Error: Into<crate::BoxError>,
 {
-    let vec = iter.into_iter().map(Into::into).collect();
+    let vec = iter
+        .into_iter()
+        .map(|i| i.try_into())
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
 
-    Params::Positional(vec)
+    Ok(Params::Positional(vec))
 }
 
 impl From<()> for Params {

@@ -51,6 +51,7 @@ pub mod statement;
 pub mod transaction;
 
 pub type Result<T> = std::result::Result<T, errors::Error>;
+type BoxError = Box<dyn std::error::Error + Send + Sync>;
 
 pub use libsql_sys::ffi;
 pub use libsql_sys::ValueType;
@@ -75,5 +76,10 @@ pub fn version_number() -> i32 {
 
 /// Return the version of the underlying SQLite library as a string.
 pub fn version() -> &'static str {
-    unsafe { std::ffi::CStr::from_ptr(ffi::sqlite3_libversion()).to_str().unwrap() }
+    unsafe {
+        std::ffi::CStr::from_ptr(ffi::sqlite3_libversion())
+            .to_str()
+            .unwrap()
+    }
 }
+
