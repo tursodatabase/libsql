@@ -422,7 +422,7 @@ pub unsafe extern "C" fn libsql_get_blob(
             let data = buf.as_ptr();
             std::mem::forget(buf);
             *out_blob = blob {
-                ptr: data as *const i8,
+                ptr: data as *const std::ffi::c_char,
                 len,
             };
             0
