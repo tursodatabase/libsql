@@ -206,6 +206,7 @@ pub(crate) struct AppState<F: MakeNamespace> {
     enable_console: bool,
     stats: Stats,
     disable_default_namespace: bool,
+    disable_namespaces: bool,
 }
 
 impl<F: MakeNamespace> Clone for AppState<F> {
@@ -218,6 +219,7 @@ impl<F: MakeNamespace> Clone for AppState<F> {
             enable_console: self.enable_console,
             stats: self.stats.clone(),
             disable_default_namespace: self.disable_default_namespace,
+            disable_namespaces: self.disable_namespaces,
         }
     }
 }
@@ -235,6 +237,7 @@ pub async fn run_http<F, S>(
     stats: Stats,
     replication_service: Option<S>,
     disable_default_namespace: bool,
+    disable_namespaces: bool,
 ) -> anyhow::Result<()>
 where
     F: MakeNamespace,
@@ -253,6 +256,7 @@ where
         stats,
         namespaces,
         disable_default_namespace,
+        disable_namespaces,
     };
 
     tracing::info!("listening for HTTP requests on {addr}");
