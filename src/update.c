@@ -1259,9 +1259,9 @@ static void updateVirtualTable(
           sqlite3ExprDup(db, pChanges->a[aXRef[i]].pExpr, 0)
         );
       }else{
-        Expr *pRow = exprRowColumn(pParse, i);
-        if( pRow ) pRow->op2 = OPFLAG_NOCHNG;
-        pList = sqlite3ExprListAppend(pParse, pList, pRow);
+        Expr *pRowExpr = exprRowColumn(pParse, i);
+        if( pRowExpr ) pRowExpr->op2 = OPFLAG_NOCHNG;
+        pList = sqlite3ExprListAppend(pParse, pList, pRowExpr);
       }
     }
 

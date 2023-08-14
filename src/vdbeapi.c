@@ -1864,7 +1864,7 @@ int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode){
   Vdbe *v = (Vdbe*)pStmt;
   int rc;
   sqlite3_mutex_enter(v->db->mutex);
-  if( v->explain==eMode ){
+  if( ((int)v->explain)==eMode ){
     rc = SQLITE_OK;
   }else if( eMode<0 || eMode>2 ){
     rc = SQLITE_ERROR;
