@@ -3163,7 +3163,8 @@ static int walSnapshotRecover(
 
       rc = walHashGet(pWal, walFramePage(i), &sLoc);
       if( rc!=SQLITE_OK ) break;
-      pgno = sLoc.aPgno[i-sLoc.iZero];
+      assert( i - sLoc.iZero - 1 >=0 );
+      pgno = sLoc.aPgno[i-sLoc.iZero-1];
       iDbOff = (i64)(pgno-1) * szPage;
 
       if( iDbOff+szPage<=szDb ){
