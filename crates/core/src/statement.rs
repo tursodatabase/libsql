@@ -6,9 +6,10 @@ use std::ffi::c_int;
 use std::sync::Arc;
 
 /// A prepared statement.
+#[derive(Debug, Clone)]
 pub struct Statement {
     conn: Connection,
-    inner: Arc<libsql_sys::Statement>,
+    pub(crate) inner: Arc<libsql_sys::Statement>,
 }
 
 impl Statement {
@@ -45,7 +46,7 @@ impl Statement {
         self.bind(params);
         let err = self.inner.step();
         Ok(Rows {
-            stmt: self.inner.clone(),
+            stmt: self.clone(),
             err: RefCell::new(Some(err)),
         })
     }
