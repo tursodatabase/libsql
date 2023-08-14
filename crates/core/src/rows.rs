@@ -2,6 +2,7 @@ use crate::{errors, Connection, Error, Params, Result, Value};
 use libsql_sys::ValueType;
 
 use std::cell::RefCell;
+use std::ffi::c_char;
 use std::sync::Arc;
 
 /// Query result rows.
@@ -171,7 +172,7 @@ impl FromValue for String {
         if ret.is_null() {
             return Err(Error::NullValue);
         }
-        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const i8) };
+        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const c_char) };
         let ret = ret.to_str().unwrap();
         Ok(ret.to_string())
     }
@@ -194,7 +195,7 @@ impl FromValue for &str {
         if ret.is_null() {
             return Err(Error::NullValue);
         }
-        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const i8) };
+        let ret = unsafe { std::ffi::CStr::from_ptr(ret as *const c_char) };
         let ret = ret.to_str().unwrap();
         Ok(ret)
     }

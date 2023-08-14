@@ -1,3 +1,5 @@
+use std::ffi::c_char;
+
 use libsql_sys::ValueType;
 
 pub enum Params {
@@ -107,7 +109,7 @@ impl From<libsql_sys::Value> for Value {
                 if v.is_null() {
                     Value::Null
                 } else {
-                    let v = unsafe { std::ffi::CStr::from_ptr(v as *const i8) };
+                    let v = unsafe { std::ffi::CStr::from_ptr(v as *const c_char) };
                     let v = v.to_str().unwrap();
                     Value::Text(v.to_owned())
                 }
@@ -209,7 +211,7 @@ impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
                 if v.is_null() {
                     ValueRef::Null
                 } else {
-                    let v = unsafe { std::ffi::CStr::from_ptr(v as *const i8) };
+                    let v = unsafe { std::ffi::CStr::from_ptr(v as *const c_char) };
                     ValueRef::Text(v.to_bytes())
                 }
             }
