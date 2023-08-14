@@ -432,9 +432,11 @@ struct S3JniHook{
   jmethodID midCallback   /* callback method. Signature depends on
                              jObj's type */;
   jclass klazz            /* global ref to jObj's class. Only needed
-                             by hooks which have an xDestroy() method,
-                             as lookup of that method is deferred
-                             until the object requires cleanup. */;
+                             by hooks which have an xDestroy() method.
+                             We can probably eliminate this and simply
+                             do the class lookup at the same
+                             (deferred) time we do the xDestroy()
+                             lookup. */;
 };
 
 /**
@@ -522,19 +524,38 @@ static struct {
       unsigned nInverse;
     } udf;
   } metrics;
+  /**
+     The list of bound auto-extensions (Java-side:
+     org.sqlite.jni.AutoExtension objects). Because this data
+     structure cannot be manipulated during traversal (without adding
+     more code to deal with it), and to avoid a small window where a
+     call to sqlite3_reset/clear_auto_extension() could lock the
+     structure during an open() call, we lock this mutex before
+     sqlite3_open() is called and unlock it once sqlite3_open()
+     returns.
+   */
   struct {
     S3JniAutoExtension *pHead  /* Head of the auto-extension list */;
-    S3JniDb * pdbOpening /* FIXME: move into envCache. Handle to the
-                            being-opened db. We need this so that auto
-                            extensions can have a consistent view of
-                            the cross-language db connection and
-                            behave property if they call further db
-                            APIs. */;
-    int isRunning        /* True while auto extensions are
-                            running.  This is used to prohibit
-                            manipulation of the auto-extension
-                            list while extensions are
-                            running. */;
+    /**
+       pdbOpening is used to coordinate the Java/DB connection of a
+       being-open()'d db. "The problem" is that auto-extensions run
+       before we can bind the C db to its Java representation, but
+       auto-extensions require that binding. We handle this as
+       follows:
+
+       - At the start of open(), we lock on this->mutex.
+       - Allocate the Java side of that connection and set pdbOpening
+         to point to that object.
+       - Call open(), which triggers the auto-extension handler.
+         That handler uses pdbOpening to connect the native db handle
+         which it recieves with pdbOpening.
+       - Return from open().
+       - Clean up and unlock the mutex.
+
+       If open() did not block on a mutex, there would be a race
+       condition in which two open() calls could set pdbOpening.
+    */
+    S3JniDb * pdbOpening;
     sqlite3_mutex * mutex /* mutex for aUsed and aFree */;
     void const * locker   /* Mutex is locked on this object's behalf */;
   } autoExt;
@@ -1906,7 +1927,6 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   assert( S3JniGlobal.autoExt.locker == ps );
   S3JniGlobal.autoExt.pdbOpening = 0;
   if( !pAX ){
-    assert( 0==S3JniGlobal.autoExt.isRunning );
     return 0;
   }else if( S3JniGlobal.autoExt.locker != ps ) {
     *pzErr = sqlite3_mprintf("Internal error: unexpected path lead to "
@@ -1919,7 +1939,6 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   ps->pDb = pDb;
   assert( ps->jDb );
   NativePointerHolder_set(env, ps->jDb, pDb, S3JniClassNames.sqlite3);
-  ++S3JniGlobal.autoExt.isRunning;
   for( ; pAX; pAX = pAX->pNext ){
     rc = (*env)->CallIntMethod(env, pAX->jObj, pAX->midFunc, ps->jDb);
     IFTHREW {
@@ -1936,7 +1955,6 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
       break;
     }
   }
-  --S3JniGlobal.autoExt.isRunning;
   return rc;
 }
 
@@ -2100,13 +2118,11 @@ JDECL(jboolean,1cancel_1auto_1extension)(JENV_CSELF, jobject jAutoExt){
   S3JniAutoExtension * ax;
   jboolean rc = JNI_FALSE;
   MUTEX_ENTER_EXT;
-  if( !S3JniGlobal.autoExt.isRunning ) {
-    for( ax = S3JniGlobal.autoExt.pHead; ax; ax = ax->pNext ){
-      if( (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
-        S3JniAutoExtension_free(env, ax);
-        rc = JNI_TRUE;
-        break;
-      }
+  for( ax = S3JniGlobal.autoExt.pHead; ax; ax = ax->pNext ){
+    if( (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
+      S3JniAutoExtension_free(env, ax);
+      rc = JNI_TRUE;
+      break;
     }
   }
   MUTEX_LEAVE_EXT;
@@ -2660,7 +2676,14 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
                           jstring jDbName, char **zDbName,
                           S3JniDb ** ps, jobject *jDb){
   int rc = 0;
-  MUTEX_TRY_EXT(return SQLITE_BUSY);
+  MUTEX_TRY_EXT(return SQLITE_BUSY)
+    /* we don't wait forever here because it could lead to a deadlock
+       if an auto-extension opens a database. Without a mutex, that
+       situation leads to infinite recursion and stack overflow, which
+       is infinitely easier to track down from client code. Note that
+       we rely on the Java methods for open() and auto-extension
+       handling to be synchronized so that this BUSY cannot be
+       triggered by a race condition with those functions. */;
   *jc = S3JniGlobal_env_cache(env);
   if(!*jc){
     rc = SQLITE_NOMEM;
@@ -2714,8 +2737,12 @@ static int s3jni_open_post(JNIEnv * const env, S3JniDb * ps,
   S3JniGlobal.autoExt.pdbOpening = 0;
   if(*ppDb){
     assert(ps->jDb);
-    ps->pDb = *ppDb;
-    NativePointerHolder_set(env, ps->jDb, *ppDb, S3JniClassNames.sqlite3);
+    if( 0==ps->pDb ){
+      ps->pDb = *ppDb;
+      NativePointerHolder_set(env, ps->jDb, *ppDb, S3JniClassNames.sqlite3);
+    }else{
+      assert( ps->pDb == *ppDb /* set up via s3jni_run_java_auto_extensions() */);
+    }
   }else{
     MUTEX_ENTER_PDB;
     S3JniDb_set_aside(ps);

@@ -1079,10 +1079,17 @@ public class Tester1 {
     affirm( 0==rc );
     sqlite3_close( createNewDb() );
     affirm( 3==val.value );
+
+    sqlite3 db = createNewDb();
+    affirm( 4==val.value );
+    execSql(db, "ATTACH ':memory' as foo");
+    affirm( 4==val.value /* ATTACH uses the same connection, not sub-connections. */ );
+    sqlite3_close(db);
+
     affirm( sqlite3_cancel_auto_extension(ax) );
     affirm( !sqlite3_cancel_auto_extension(ax) );
     sqlite3_close(createNewDb());
-    affirm( 3==val.value );
+    affirm( 4==val.value );
     rc = sqlite3_auto_extension( ax );
     affirm( 0==rc );
     Exception err = null;
