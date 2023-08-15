@@ -2,8 +2,8 @@
 pub enum Error {
     #[error("Failed to connect to database: `{0}`")]
     ConnectionFailed(String),
-    #[error("Failed to prepare statement `{0}`: `{1}`")]
-    PrepareFailed(String, String),
+    #[error("Failed to prepare statement `{0}`: `{1}`, code: `{0}`")]
+    PrepareFailed(String, String, i32),
     #[error("Failed to fetch row: `{0}`")]
     FetchRowFailed(String),
     #[error("Unknown value type for column `{0}`: `{1}`")]

@@ -23,9 +23,10 @@ impl Statement {
                 conn,
                 inner: Arc::new(stmt),
             }),
-            Err(libsql_sys::Error::LibError(_err)) => Err(Error::PrepareFailed(
+            Err(libsql_sys::Error::LibError(err)) => Err(Error::PrepareFailed(
                 sql.to_string(),
                 errors::error_from_handle(raw),
+                err as i32,
             )),
             Err(err) => Err(Error::Misuse(format!(
                 "Unexpected error while preparing statement: {err}"
