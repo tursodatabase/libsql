@@ -610,7 +610,11 @@ do_atof_calc:
     }
     assert( r>=0.0 );
     if( r>+1.7976931348623157081452742373e+308L ){
+#ifdef INFINITY
       *pResult = +INFINITY;
+#else
+      *pResult = 1.0e308*10.0;
+#endif
     }else{
       *pResult = (double)r;
     }
