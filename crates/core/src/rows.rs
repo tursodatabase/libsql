@@ -82,6 +82,12 @@ pub struct Row {
     pub(crate) stmt: Statement,
 }
 
+impl AsRef<Statement> for Row {
+    fn as_ref(&self) -> &Statement {
+        &self.stmt
+    }
+}
+
 impl Row {
     pub fn get<T>(&self, idx: i32) -> Result<T>
     where
