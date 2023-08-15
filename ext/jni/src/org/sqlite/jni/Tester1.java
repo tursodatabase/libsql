@@ -21,6 +21,12 @@ public class Tester1 {
     int dbOpen;
   }
 
+  private String name;
+
+  Tester1(String name){
+    this.name = name;
+  }
+
   static final Metrics metrics = new Metrics();
   private static final OutputPointer.sqlite3_stmt outStmt
     = new OutputPointer.sqlite3_stmt();
@@ -45,11 +51,17 @@ public class Tester1 {
   }
 
   static int affirmCount = 0;
-  public static void affirm(Boolean v){
+  public static void affirm(Boolean v, String comment){
     ++affirmCount;
     assert( v /* prefer assert over exception if it's enabled because
-                 the JNI layer sometimes has to suppress exceptions. */);
-    if( !v ) throw new RuntimeException("Assertion failed.");
+                 the JNI layer sometimes has to suppress exceptions,
+                 so they might be squelched on their way back to the
+                 top. */);
+    if( !v ) throw new RuntimeException(comment);
+  }
+
+  public static void affirm(Boolean v){
+    affirm(v, "Affirmation failed.");
   }
 
   private static void test1(){
@@ -65,7 +77,7 @@ public class Tester1 {
     affirm(SQLITE_MAX_TRIGGER_DEPTH>0);
   }
 
-  public static sqlite3 createNewDb(){
+  static sqlite3 createNewDb(){
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
@@ -83,11 +95,11 @@ public class Tester1 {
     return db;
   }
 
-  public static void execSql(sqlite3 db, String[] sql){
+  static void execSql(sqlite3 db, String[] sql){
     execSql(db, String.join("", sql));
   }
 
-  public static int execSql(sqlite3 db, boolean throwOnError, String sql){
+  static int execSql(sqlite3 db, boolean throwOnError, String sql){
     OutputPointer.Int32 oTail = new OutputPointer.Int32();
     final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
     int pos = 0, n = 1;
@@ -127,11 +139,11 @@ public class Tester1 {
     return rc;
   }
 
-  public static void execSql(sqlite3 db, String sql){
+  static void execSql(sqlite3 db, String sql){
     execSql(db, true, sql);
   }
 
-  public static sqlite3_stmt prepare(sqlite3 db, String sql){
+  static sqlite3_stmt prepare(sqlite3 db, String sql){
     outStmt.clear();
     int rc = sqlite3_prepare(db, sql, outStmt);
     affirm( 0 == rc );
@@ -519,7 +531,6 @@ public class Tester1 {
     rc = sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, cur32, high32, false);
     affirm( 0 == rc );
     affirm( cur32.value > 0 );
-    outln(cur32.value," ",high32.value);
     affirm( high32.value == 0 /* always 0 for SCHEMA_USED */ );
 
     sqlite3_close_v2(db);
@@ -1110,12 +1121,9 @@ public class Tester1 {
     outln("Woke up.");
   }
 
-  public static void main(String[] args) throws Exception {
-    final long timeStart = System.nanoTime();
-    test1();
+  private void runTests() throws Exception {
     if(false) testCompileOption();
-    final java.util.List<String> liArgs =
-      java.util.Arrays.asList(args);
+    test1();
     testOpenDb1();
     testOpenDb2();
     testPrepare123();
@@ -1141,12 +1149,21 @@ public class Tester1 {
     testAuthorizer();
     testFts5();
     testAutoExtension();
+  }
+
+  public static void main(String[] args) throws Exception {
+
+    final long timeStart = System.nanoTime();
+    new Tester1("main thread").runTests();
+    final long timeEnd = System.nanoTime();
+
+    final java.util.List<String> liArgs =
+      java.util.Arrays.asList(args);
     //testSleep();
     if(liArgs.indexOf("-v")>0){
       sqlite3_do_something_for_developer();
       //listBoundMethods();
     }
-    final long timeEnd = System.nanoTime();
     affirm( SQLite3Jni.uncacheJniEnv() );
     affirm( !SQLite3Jni.uncacheJniEnv() );
     outln("Tests done. Metrics:");
@@ -1172,7 +1189,7 @@ public class Tester1 {
     outln("\tSQLite3Jni sqlite3_*() methods: "+
           nNatives+" native methods and "+
           (nMethods - nNatives)+" Java impls");
-    outln("\tTotal time = "
+    outln("\tTotal test time = "
           +((timeEnd - timeStart)/1000000.0)+"ms");
   }
 }

@@ -141,7 +141,7 @@ public final class SQLite3Jni {
      undefined if any database objects are (A) still active at the
      time it is called _and_ (B) calls are subsequently made into the
      library with such a database. Doing so will, at best, lead to a
-     crash.  Azt worst, it will lead to the db possibly misbehaving
+     crash.  At worst, it will lead to the db possibly misbehaving
      because some of its Java-bound state has been cleared. There is
      no immediate harm in (A) so long as condition (B) is not met.
      This process does _not_ actually close any databases or finalize
