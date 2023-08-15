@@ -44,8 +44,9 @@ Non-goals:
 Significant TODOs
 ========================================================================
 
-- Lots of APIs left to bind. Most "day-to-day" functionality is already
-  in place and is believed to work well.
+- The initial beta release with version 3.43 has severe threading
+  limitations.  Namely, two threads cannot call into the JNI-bound API
+  at once. This limitation will be remove in a subsequent release.
 
 
 Building
