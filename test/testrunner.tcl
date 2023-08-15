@@ -279,6 +279,22 @@ if {([llength $argv]==2 || [llength $argv]==1)
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
+# Check if this is the "script" command:
+#
+if {[string compare -nocase script [lindex $argv 0]]==0} {
+  if {[llength $argv]!=2 && !([llength $argv]==3&&[lindex $argv 1]=="-msvc")} {
+    usage
+  }
+
+  set bMsvc [expr ([llength $argv]==3)]
+  set config [lindex $argv [expr [llength $argv]-1]]
+
+  puts [trd_buildscript $config [file dirname $testdir] $bMsvc]
+  exit
+}
+  
+
+#--------------------------------------------------------------------------
 # Check if this is the "status" command:
 #
 if {[llength $argv]==1 
@@ -768,12 +784,7 @@ proc launch_another_job {iJob} {
     if {$b=="Zipvfs"} {
       set script [zipvfs_testrunner_script]
     } else {
-      set     cmd [info nameofexec]
-      lappend cmd [file join $testdir releasetest_data.tcl]
-      lappend cmd trscript
-      if {$TRG(platform)=="win"} { lappend cmd -msvc }
-      lappend cmd $b $srcdir
-      set script [exec {*}$cmd]
+      set script [trd_buildscript $b $srcdir [expr {$TRG(platform)=="win"}]]
     }
 
     set fd [open [file join $builddir $TRG(make)] w]
