@@ -1140,4 +1140,24 @@ do_execsql_test 17.1 {
 } {1}
 
 
+# 2023-08-15 https://sqlite.org/forum/forumpost/925dc9f67804c540
+#
+reset_db
+sqlite3_db_config db DEFENSIVE 1
+db eval {PRAGMA trusted_schema=OFF}
+do_execsql_test 18.0 {
+  CREATE TABLE t1(x INT, y TEXT);
+  INSERT INTO t1 VALUES(1,'abc'),(2,'ABC'),(3,'Abc');
+  CREATE VIEW t2 AS SELECT * FROM t1 WHERE y LIKE 'a%';
+  SELECT * FROM t2;
+} {1 abc 2 ABC 3 Abc}
+do_execsql_test 18.1 {
+  PRAGMA case_sensitive_like=OFF;
+  SELECT * FROM t2;
+} {1 abc 2 ABC 3 Abc}
+do_execsql_test 18.2 {
+  PRAGMA case_sensitive_like=ON;
+  SELECT * FROM t2;
+} {1 abc}
+
 finish_test
