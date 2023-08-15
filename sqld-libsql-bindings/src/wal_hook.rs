@@ -310,8 +310,10 @@ pub extern "C" fn xSavepoint<T: WalHook>(wal: *mut Wal, wal_data: *mut u32) {
 
 #[allow(non_snake_case)]
 pub extern "C" fn xSavepointUndo<T: WalHook>(wal: *mut Wal, wal_data: *mut u32) -> i32 {
-    let orig_methods = unsafe { get_orig_methods::<T>(&mut *wal) };
-    unsafe { (orig_methods.xSavepointUndo.unwrap())(wal, wal_data) }
+    let wal = unsafe { &mut *wal };
+    let orig_methods = get_orig_methods::<T>(wal);
+    let orig_xsavepointundo = orig_methods.xSavepointUndo.unwrap();
+    T::on_savepoint_undo(wal, wal_data, orig_xsavepointundo)
 }
 
 #[allow(non_snake_case)]
@@ -353,21 +355,22 @@ pub extern "C" fn xCheckpoint<T: WalHook>(
     frames_in_wal: *mut c_int,
     backfilled_frames: *mut c_int,
 ) -> i32 {
-    let orig_methods = unsafe { get_orig_methods::<T>(&mut *wal) };
-    unsafe {
-        (orig_methods.xCheckpoint.unwrap())(
-            wal,
-            db,
-            emode,
-            busy_handler,
-            busy_arg,
-            sync_flags,
-            n_buf,
-            z_buf,
-            frames_in_wal,
-            backfilled_frames,
-        )
-    }
+    let wal = unsafe { &mut *wal };
+    let orig_methods = get_orig_methods::<T>(wal);
+    let orig_xcheckpoint = orig_methods.xCheckpoint.unwrap();
+    T::on_checkpoint(
+        wal,
+        db,
+        emode,
+        busy_handler,
+        busy_arg,
+        sync_flags,
+        n_buf,
+        z_buf,
+        frames_in_wal,
+        backfilled_frames,
+        orig_xcheckpoint,
+    )
 }
 
 #[allow(non_snake_case)]
