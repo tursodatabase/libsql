@@ -213,3 +213,32 @@ fn transaction() {
     assert_eq!(row.get::<&str>(1).unwrap(), "Alice");
     assert!(rows.next().unwrap().is_none());
 }
+
+#[test]
+fn custom_params() {
+    let conn = setup();
+
+    enum MyValue {
+        Text(String),
+        Int(i64),
+    }
+
+    impl TryInto<libsql::Value> for MyValue {
+        type Error = std::io::Error;
+
+        fn try_into(self) -> Result<libsql::Value, Self::Error> {
+            match self {
+                MyValue::Text(s) => Ok(Value::Text(s)),
+                MyValue::Int(i) => Ok(Value::Integer(i)),
+            }
+        }
+    }
+
+    let params = vec![MyValue::Int(2), MyValue::Text("Alice".into())];
+
+    conn.execute(
+        "INSERT INTO users (id, name) VALUES (?1, ?2)",
+        libsql::params_from_iter(params).unwrap(),
+    )
+    .unwrap();
+}

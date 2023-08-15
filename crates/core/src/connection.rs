@@ -73,10 +73,13 @@ impl Connection {
     pub fn query<S, P>(&self, sql: S, params: P) -> Result<Option<Rows>>
     where
         S: Into<String>,
-        P: Into<Params>,
+        P: TryInto<Params>,
+        P::Error: Into<crate::BoxError>,
     {
         let stmt = Statement::prepare(self.clone(), self.raw, sql.into().as_str())?;
-        let params = params.into();
+        let params = params
+            .try_into()
+            .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
         let ret = stmt.query(&params)?;
         Ok(Some(ret))
     }
@@ -134,10 +137,13 @@ impl Connection {
     pub fn execute<S, P>(&self, sql: S, params: P) -> Result<u64>
     where
         S: Into<String>,
-        P: Into<Params>,
+        P: TryInto<Params>,
+        P::Error: Into<crate::BoxError>,
     {
         let stmt = Statement::prepare(self.clone(), self.raw, sql.into().as_str())?;
-        let params = params.into();
+        let params = params
+            .try_into()
+            .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
         stmt.execute(&params)
     }
 
