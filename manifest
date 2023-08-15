@@ -1,5 +1,5 @@
-C Fix\sthe\sautoconf\smakefile\sfor\sthe\sCLI\ssuch\sthat\sit\sdisables\sdouble-quoted\nstrings\sby\sdefault,\sas\sall\sother\sbuilds\sof\sthe\sCLI\sdo.\n[forum:/forumpost/9794b6aaa5|forum\spost\s9794b6aaa5].
-D 2023-08-14T19:10:48.076
+C Fix\san\soff-by-one\serror\scausing\sa\sbuffer\soverread\sin\stest2.c.
+D 2023-08-15T10:57:08.675
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -694,7 +694,7 @@ F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
 F src/tclsqlite.c ecbc3c99c0d0c3ed122a913f143026c26d38d57f33e06bb71185dd5c1efe37cd
 F src/test1.c ebba2473874a23add4a10881b90bd445cfa7f59f90749434938aec14239c6486
-F src/test2.c 827446e259a3b7ab949da1542953edda7b5117982576d3e6f1c24a0dd20a5cef
+F src/test2.c 54520d0565ef2b9bf0f8f1dcac43dc4d06baf4ffe13d10905f8d8c3ad3e4b9ab
 F src/test3.c e5178558c41ff53236ae0271e9acb3d6885a94981d2eb939536ee6474598840e
 F src/test4.c 4533b76419e7feb41b40582554663ed3cd77aaa54e135cf76b3205098cd6e664
 F src/test5.c 328aae2c010c57a9829d255dc099d6899311672d
@@ -2091,8 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c2577eb0a4a627c65d675f1446514843486092be9cb271b682793a0107e496cd
-R 487f4829bdb09137b6b15dcfdad5cf32
-U drh
-Z 63a74f78c58164771feacd560d95600e
+P 85fd4f0ef41a883448f16d55b7f8bd5c7b1d9c89a3d7d9bcae9c2744ed843099
+R 1b9d4cea79e74e7141aa61fb11c90d9e
+U dan
+Z 954bb096ffde5f026b4a133ace1967c1
 # Remove this line to create a well-formed Fossil manifest.

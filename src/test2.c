@@ -608,7 +608,7 @@ static int faultSimCallback(int x){
       zInt[i] = (x%10) + '0';
     }
     if( isNeg ) zInt[i--] = '-';
-    memcpy(faultSimScript+faultSimScriptSize, zInt+i+1, sizeof(zInt)-i);
+    memcpy(faultSimScript+faultSimScriptSize, zInt+i+1, sizeof(zInt)-i-1);
   }
   rc = Tcl_Eval(faultSimInterp, faultSimScript);
   if( rc ){
