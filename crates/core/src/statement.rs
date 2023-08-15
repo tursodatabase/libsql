@@ -23,7 +23,8 @@ impl Statement {
                 conn,
                 inner: Arc::new(stmt),
             }),
-            Err(libsql_sys::Error::LibError(_err)) => Err(Error::PrepareFailed(
+            Err(libsql_sys::Error::LibError(err)) => Err(Error::PrepareFailed(
+                err,
                 sql.to_string(),
                 errors::error_from_handle(raw),
             )),
