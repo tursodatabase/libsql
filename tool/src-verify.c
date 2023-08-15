@@ -47,8 +47,12 @@
 # include <unistd.h>
 #else
 # include <io.h>
-# define R_OK 04
-# define access(f,m) _access((f),(m))
+# ifndef R_OK
+#   define R_OK 04
+# endif
+# ifndef access
+#   define access(f,m) _access((f),(m))
+# endif
 #endif
 typedef unsigned long long int u64;
 
