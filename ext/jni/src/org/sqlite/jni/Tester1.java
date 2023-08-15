@@ -512,7 +512,6 @@ public class Tester1 {
     rc = sqlite3_db_status(db, SQLITE_DBSTATUS_SCHEMA_USED, cur32, high32, false);
     affirm( 0 == rc );
     affirm( cur32.value > 0 );
-    outln(cur32.value," ",high32.value);
     affirm( high32.value == 0 /* always 0 for SCHEMA_USED */ );
 
     sqlite3_close_v2(db);
