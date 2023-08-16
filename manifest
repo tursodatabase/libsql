@@ -1,5 +1,5 @@
-C Update\stestrunner.tcl\sto\suse\senvironment\svariable\s%NUMBER_OF_PROCESSES%\swhen\srunning\sunder\stclsh\son\swindows.\sAlso\smodify\sthe\sinternal\sdatabase\sschema\sused\sby\stestrunner.tcl\sto\sbe\scompatible\swith\sold\sversions\sof\sSQLite.
-D 2023-08-16T14:18:53.625
+C Mix\sthe\scurrent\sprocess\sID\sinto\sthe\srandomness\sused\sfor\sgenerating\ntemporary\sfilenames\son\sWindows.
+D 2023-08-16T15:10:07.618
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -668,7 +668,7 @@ F src/os_common.h 6c0eb8dd40ef3e12fe585a13e709710267a258e2c8dd1c40b1948a1d14582e
 F src/os_kv.c 4d39e1f1c180b11162c6dc4aa8ad34053873a639bac6baae23272fc03349986a
 F src/os_setup.h 6011ad7af5db4e05155f385eb3a9b4470688de6f65d6166b8956e58a3d872107
 F src/os_unix.c 2e8b12107f75d1bd16412f312b4c5d5103191807a37836d3b81beb26436ad81b
-F src/os_win.c 7038223a1cda0a47e2ab4db47f63bf1833fe53ba0542f0f283a062ea13894103
+F src/os_win.c 4a50a154aeebc66a1f8fb79c1ff6dd5fe3d005556533361e0d460d41cb6a45a8
 F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 993445a19b611d473ca007542ab3149840661a4c7e9f2d9e1ec008b7cc2abe78
 F src/pager.h 6e326bd05970a24dd28d41d3980b6964fbaa37b4da54a2c0d4e0c5bdb06ff187
@@ -2091,8 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P e73886574042108eb31641d0820c273c10b83fbf08ac6cb52d3e4c27830e2c23
-R 02f8906445af4d496aeb7df86dbf9411
-U dan
-Z 5346440cb243f66c6add836cfbeafff3
+P 6542ed3b9e028c44aca504eadca843ee9b2ba08f5f650523238dd1253f7e221b
+R ece0937be0d2051513e3d32d8c3b91f1
+U drh
+Z 06c172de925aa6209d8f7ab3fd13d9d5
 # Remove this line to create a well-formed Fossil manifest.
