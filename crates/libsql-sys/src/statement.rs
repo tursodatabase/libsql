@@ -52,7 +52,7 @@ impl Statement {
                 idx,
                 value.as_ptr() as *const c_char,
                 value.len() as i32,
-                None,
+                SQLITE_TRANSIENT(),
             );
         }
     }
@@ -64,7 +64,7 @@ impl Statement {
                 idx,
                 value.as_ptr() as *const std::ffi::c_void,
                 value.len() as i32,
-                None,
+                SQLITE_TRANSIENT(),
             );
         }
     }
@@ -197,4 +197,10 @@ fn len_as_c_int(len: usize) -> Result<c_int> {
     } else {
         Ok(len as c_int)
     }
+}
+
+#[must_use]
+#[allow(non_snake_case)]
+pub fn SQLITE_TRANSIENT() -> crate::ffi::sqlite3_destructor_type {
+    Some(unsafe { std::mem::transmute(-1_isize) })
 }
