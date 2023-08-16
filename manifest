@@ -1,5 +1,5 @@
-C Cherrypick\s[00ac653562a6]\sto\sremove\sstray\sJNI\sdebug\soutput.\sNo\sfunctional\schanges.
-D 2023-08-15T21:44:22.230
+C Fix\stest\sscript\sproblem\spreventing\sveryquick.test\sfrom\srunning.
+D 2023-08-16T13:55:38.215
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1410,7 +1410,7 @@ F test/pcache.test c8acbedd3b6fd0f9a7ca887a83b11d24a007972b
 F test/pcache2.test af7f3deb1a819f77a6d0d81534e97d1cf62cd442
 F test/pendingrace.test cbdf0f74bc939fb43cebad64dda7a0b5a3941a10b7e9cc2b596ff3e423a18156
 F test/percentile.test 4243af26b8f3f4555abe166f723715a1f74c77ff
-F test/permutations.test 4268ad170a788ec1c0e3179786ffdaac6d8a022d4f849587a3378945a48fdde1
+F test/permutations.test f7caf8dd5c7b1da74842a48df116f7f193399c656d4ffc805cd0d9658568c675
 F test/pg_common.tcl 3b27542224db1e713ae387459b5d117c836a5f6e328846922993b6d2b7640d9f
 F test/pragma.test 57a36226218c03cfb381019fe43234b2cefbd8a1f12825514f906a17ccf7991e
 F test/pragma2.test e5d5c176360c321344249354c0c16aec46214c9f
@@ -2091,9 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 79a14457f0067814e7c33de709e2f9e19ab880d3eebbcb6f9fcce52a4720ecac
-Q +00ac653562a66aad3112ea322d08be68e05e6bf7413c814dd3f81bf850fcf43b
-R 3e4a6f489cbcdf58ed939bf866eeb9e5
-U stephan
-Z 04ce3bad95ccde5b13a4d0f2b4327f37
+P e12d70f38c0ed5c0abf9a1e30ce4db59a4426e1e8cb1f8f07834fc1bedfcc65a
+R aad1c865033f092e6c13ef7485e12ba1
+U dan
+Z 3ef211021d49ef1d76dc9c52896d0217
 # Remove this line to create a well-formed Fossil manifest.
