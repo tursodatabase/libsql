@@ -104,9 +104,9 @@ For example:
         mkdir bld                ;#  Build will occur in a sibling directory
         cd bld                   ;#  Change to the build directory
         ../sqlite/configure      ;#  Run the configure script
-        make                     ;#  Run the makefile.
+        make                     ;#  Builds the "sqlite3" command-line tool
         make sqlite3.c           ;#  Build the "amalgamation" source file
-        make test                ;#  Run some tests (requires Tcl)
+        make devtest             ;#  Run some tests (requires Tcl)
 
 See the makefile for additional targets.
 
@@ -119,29 +119,30 @@ show what changes are needed.
 ## Using MSVC for Windows systems
 
 On Windows, all applicable build products can be compiled with MSVC.
-First open the command prompt window associated with the desired compiler
-version (e.g. "Developer Command Prompt for VS2013").  Next, use NMAKE
-with the provided "Makefile.msc" to build one of the supported targets.
+You will also need a working installation of TCL.
+See the [compile-for-windows.md](doc/compile-for-windows.md) document for
+additional information about how to install MSVC and TCL and configure your
+build environment.
 
-For example, from the parent directory of the source subtree named "sqlite":
+If you want to run tests, you need to let SQLite know the location of your
+TCL library, using a command like this:
 
-        mkdir bld
-        cd bld
-        nmake /f ..\sqlite\Makefile.msc TOP=..\sqlite
-        nmake /f ..\sqlite\Makefile.msc sqlite3.c TOP=..\sqlite
-        nmake /f ..\sqlite\Makefile.msc sqlite3.dll TOP=..\sqlite
-        nmake /f ..\sqlite\Makefile.msc sqlite3.exe TOP=..\sqlite
-        nmake /f ..\sqlite\Makefile.msc test TOP=..\sqlite
+        set TCLDIR=c:\Tcl
 
-There are several build options that can be set via the NMAKE command
-line.  For example, to build for WinRT, simply add "FOR_WINRT=1" argument
-to the "sqlite3.dll" command line above.  When debugging into the SQLite
-code, adding the "DEBUG=1" argument to one of the above command lines is
-recommended.
+SQLite uses "tclsh.exe" as part of the build process, and so that utility
+program will need to be somewhere on your %PATH%.  The finished SQLite library
+does not contain any TCL code, but it does use TCL to help with the build process
+and to run tests.
 
-SQLite does not require [Tcl](http://www.tcl.tk/) to run, but a Tcl installation
-is required by the makefiles (including those for MSVC).  SQLite contains
-a lot of generated code and Tcl is used to do much of that code generation.
+Build using Makefile.msc.  Example:
+
+        nmake /f Makefile.msc
+        nmake /f Makefile.msc sqlite3.c
+        nmake /f Makefile.msc devtest
+        nmake /f Makefile.msc releasetest
+ 
+There are many other makefile targets.  See comments in Makefile.msc for
+details.
 
 ## Source Code Tour
 
