@@ -35,9 +35,12 @@ canonical source on a new Windows 11 PC, as of 2023-08-16:
           (omitting the second 't').  Leave the copy in the same directory
           as the original.
       <li>CD to c:\\Tcl\\bin.  Make a copy of the "`tclsh86t.exe`"
-          file, renaming it to "`tclsh.exe`".  Put the copy somewhere
-          on your %PATH% so that the SQLite makefile will be able to
-          run "tclsh" commands.
+          file into "`tclsh.exe`" (without the "86t") in the same directory.
+      <li>Add c:\\Tcl\\bin to your %PATH%.  To do this, go to Settings
+          and search for "path".  Select "edit environment variables for
+          your account" and modify your default PATH accordingly.
+          You will need to close and reopen your command prompts after
+          making this change.
       </ol>
 
   4.  Download the SQLite source tree and unpack it. CD into the
