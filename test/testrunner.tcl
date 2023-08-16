@@ -110,16 +110,20 @@ proc guess_number_of_cores {} {
   if {[catch {number_of_cores} ret]} {
     set ret 4
   
-    if {$::tcl_platform(os)=="Darwin"} {
-      set cmd "sysctl -n hw.logicalcpu"
+    if {$::tcl_platform(platform)=="windows"} {
+      catch { set ret $::env(NUMBER_OF_PROCESSORS) }
     } else {
-      set cmd "nproc"
-    }
-    catch {
-      set fd [open "|$cmd" r]
-      set ret [gets $fd]
-      close $fd
-      set ret [expr $ret]
+      if {$::tcl_platform(os)=="Darwin"} {
+        set cmd "sysctl -n hw.logicalcpu"
+      } else {
+        set cmd "nproc"
+      }
+      catch {
+        set fd [open "|$cmd" r]
+        set ret [gets $fd]
+        close $fd
+        set ret [expr $ret]
+      }
     }
   }
   return $ret
@@ -188,10 +192,8 @@ set TRG(schema) {
     state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
     time INTEGER,                 -- Time in ms
     output TEXT,                  -- full output of test script
-    priority AS (((config='make')*3) + (config='build') + (slow*2)),
-    jobtype AS (
-      CASE WHEN config IN ('build', 'make') THEN config ELSE 'script' END
-    ),
+    priority INTEGER,
+    jobtype TEXT CHECK( jobtype IN ('script', 'build', 'make') ),
     PRIMARY KEY(build, config, filename)
   );
 
@@ -697,9 +699,20 @@ proc make_new_testset {} {
         set state ""
       }
 
+      set priority [expr {$slow*2}]
+      if {$c=="make"} { incr priority 3 }
+      if {$c=="build"} { incr priority 1 }
+
+      if {$c=="make" || $c=="build"} {
+        set jobtype $c
+      } else {
+        set jobtype "script"
+      }
+
       trdb eval { 
-        INSERT INTO script(build, config, filename, slow, state) 
-            VALUES ($b, $c, $s, $slow, $state) 
+        INSERT INTO script
+                   (build, config, filename, slow, state, priority, jobtype) 
+            VALUES ($b, $c, $s, $slow, $state, $priority, $jobtype) 
       }
     }
   }
