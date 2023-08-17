@@ -1112,7 +1112,43 @@ public class Tester1 {
     }
     affirm( err!=null );
     affirm( err.getMessage().indexOf(toss.value)>0 );
+    toss.value = null;
+
+    val.value = 0;
+    final AutoExtension ax2 = new AutoExtension(){
+        public synchronized int xEntryPoint(sqlite3 db){
+          ++val.value;
+          return 0;
+        }
+      };
+    rc = sqlite3_auto_extension( ax2 );
+    affirm( 0 == rc );
+    sqlite3_close(createNewDb());
+    affirm( 2 == val.value );
     affirm( sqlite3_cancel_auto_extension(ax) );
+    affirm( !sqlite3_cancel_auto_extension(ax) );
+    sqlite3_close(createNewDb());
+    affirm( 3 == val.value );
+    rc = sqlite3_auto_extension( ax );
+    affirm( 0 == rc );
+    sqlite3_close(createNewDb());
+    affirm( 5 == val.value );
+    affirm( sqlite3_cancel_auto_extension(ax2) );
+    affirm( !sqlite3_cancel_auto_extension(ax2) );
+    sqlite3_close(createNewDb());
+    affirm( 6 == val.value );
+    rc = sqlite3_auto_extension( ax2 );
+    affirm( 0 == rc );
+    sqlite3_close(createNewDb());
+    affirm( 8 == val.value );
+
+    sqlite3_reset_auto_extension();
+    sqlite3_close(createNewDb());
+    affirm( 8 == val.value );
+    affirm( !sqlite3_cancel_auto_extension(ax) );
+    affirm( !sqlite3_cancel_auto_extension(ax2) );
+    sqlite3_close(createNewDb());
+    affirm( 8 == val.value );
   }
 
   private static void testSleep(){

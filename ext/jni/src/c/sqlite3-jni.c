@@ -1236,13 +1236,19 @@ static void S3JniAutoExtension_clear(JNIEnv * const env,
 /**
    Initializes a pre-allocated S3JniAutoExtension object.  Returns
    non-0 if there is an error collecting the required state from
-   jAutoExt (which must be an AutoExtension object).
+   jAutoExt (which must be an AutoExtension object). On error, it
+   passes ax to S3JniAutoExtension_clear().
 */
 static int S3JniAutoExtension_init(JNIEnv *const env,
                                    S3JniAutoExtension * const ax,
                                    jobject const jAutoExt){
   jclass klazz;
   klazz = (*env)->GetObjectClass(env, jAutoExt);
+  IFTHREW{
+    EXCEPTION_REPORT;
+    EXCEPTION_CLEAR;
+    assert(!klazz);
+  }
   if(!klazz){
     S3JniAutoExtension_clear(env, ax);
     return SQLITE_ERROR;
@@ -1876,7 +1882,7 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   for( i = 0; go && 0==rc; ++i ){
     S3JniAutoExtension const * ax;
     MUTEX_EXT_ENTER;
-    if( i >= S3JniGlobal.autoExt.nAlloc ){
+    if( i >= S3JniGlobal.autoExt.nExt ){
       ax = 0;
       go = 0;
     }else{
@@ -1893,7 +1899,7 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
         UNREF_L(ex);
         *pzErr = sqlite3_mprintf("auto-extension threw: %s", zMsg);
         sqlite3_free(zMsg);
-        rc = rc ? rc : SQLITE_ERROR;
+        if( !rc ) rc = SQLITE_ERROR;
       }
     }
   }
@@ -1905,25 +1911,20 @@ JDECL(jint,1auto_1extension)(JENV_CSELF, jobject jAutoExt){
   int i;
   S3JniAutoExtension * ax;
   int rc = 0;
-  int firstEmptySlot = -1;
 
   if( !jAutoExt ) return SQLITE_MISUSE;
   MUTEX_EXT_ENTER;
-  for( i = 0; i < S3JniGlobal.autoExt.nAlloc; ++i ){
+  for( i = 0; i < S3JniGlobal.autoExt.nExt; ++i ){
     /* Look for match or first empty slot. */
     ax = &S3JniGlobal.autoExt.pExt[i];
     if( ax->jObj && (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
       MUTEX_EXT_LEAVE;
       return 0 /* this as a no-op. */;
-    }else if( !ax->jObj && firstEmptySlot<0 ){
-      firstEmptySlot = (int)i;
     }
   }
-  if(i == S3JniGlobal.autoExt.nAlloc ){
-    if( firstEmptySlot >= 0 ){
-      ax = &S3JniGlobal.autoExt.pExt[firstEmptySlot];
-      rc = S3JniAutoExtension_init(env, ax, jAutoExt);
-    }else{
+  if(i == S3JniGlobal.autoExt.nExt ){
+    assert( S3JniGlobal.autoExt.nExt <= S3JniGlobal.autoExt.nAlloc );
+    if( S3JniGlobal.autoExt.nExt == S3JniGlobal.autoExt.nAlloc ){
       unsigned n = 1 + S3JniGlobal.autoExt.nAlloc;
       S3JniAutoExtension * const aNew =
         sqlite3_realloc( S3JniGlobal.autoExt.pExt,
@@ -1932,17 +1933,25 @@ JDECL(jint,1auto_1extension)(JENV_CSELF, jobject jAutoExt){
         rc = SQLITE_NOMEM;
       }else{
         S3JniGlobal.autoExt.pExt = aNew;
-        ax = &S3JniGlobal.autoExt.pExt[S3JniGlobal.autoExt.nAlloc];
         ++S3JniGlobal.autoExt.nAlloc;
-        rc = S3JniAutoExtension_init(env, ax, jAutoExt);
-        assert( rc ? 0==ax->jObj : 0!=ax->jObj );
       }
+    }
+    if( 0==rc ){
+      ax = &S3JniGlobal.autoExt.pExt[S3JniGlobal.autoExt.nExt];
+      rc = S3JniAutoExtension_init(env, ax, jAutoExt);
+      assert( rc ? 0==ax->jObj : 0!=ax->jObj );
     }
   }
   if( 0==rc ){
-    ++S3JniGlobal.autoExt.nExt;
     if( 0==once && ++once ){
-      sqlite3_auto_extension( (void(*)(void))s3jni_run_java_auto_extensions );
+      rc = sqlite3_auto_extension( (void(*)(void))s3jni_run_java_auto_extensions );
+      if( rc ){
+        assert( ax );
+        S3JniAutoExtension_clear(env, ax);
+      }
+    }
+    if( 0==rc ){
+      ++S3JniGlobal.autoExt.nExt;
     }
   }
   MUTEX_EXT_LEAVE;
@@ -2077,15 +2086,16 @@ JDECL(jboolean,1cancel_1auto_1extension)(JENV_CSELF, jobject jAutoExt){
   int i;
   MUTEX_EXT_ENTER;
   /* This algo mirrors the one in the core. */
-  for( i = S3JniGlobal.autoExt.nAlloc-1; i >= 0; --i ){
+  for( i = S3JniGlobal.autoExt.nExt-1; i >= 0; --i ){
     ax = &S3JniGlobal.autoExt.pExt[i];
     if( ax->jObj && (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
       S3JniAutoExtension_clear(env, ax);
       /* Move final entry into this slot. */
-      *ax = S3JniGlobal.autoExt.pExt[S3JniGlobal.autoExt.nAlloc - 1];
-      memset(&S3JniGlobal.autoExt.pExt[S3JniGlobal.autoExt.nAlloc - 1], 0,
-             sizeof(S3JniAutoExtension));
       --S3JniGlobal.autoExt.nExt;
+      *ax = S3JniGlobal.autoExt.pExt[S3JniGlobal.autoExt.nExt];
+      memset(&S3JniGlobal.autoExt.pExt[S3JniGlobal.autoExt.nExt], 0,
+             sizeof(S3JniAutoExtension));
+      assert(! S3JniGlobal.autoExt.pExt[S3JniGlobal.autoExt.nExt].jObj );
       rc = JNI_TRUE;
       break;
     }
@@ -2868,7 +2878,7 @@ JDECL(jint,1reset)(JENV_CSELF, jobject jpStmt){
 static void s3jni_reset_auto_extension(JNIEnv *env){
   int i;
   MUTEX_EXT_ENTER;
-  for( i = 0; i < S3JniGlobal.autoExt.nAlloc; ++i ){
+  for( i = 0; i < S3JniGlobal.autoExt.nExt; ++i ){
     S3JniAutoExtension_clear( env, &S3JniGlobal.autoExt.pExt[i] );
   }
   S3JniGlobal.autoExt.nExt = 0;
