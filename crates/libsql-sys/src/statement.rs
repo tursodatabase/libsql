@@ -97,6 +97,16 @@ impl Statement {
         raw_name
     }
 
+    pub fn column_decltype(&self, idx: i32) -> Option<&str> {
+        let raw_name = unsafe { crate::ffi::sqlite3_column_decltype(self.raw_stmt, idx) };
+        if raw_name.is_null() {
+            return None;
+        }
+        let raw_name = unsafe { std::ffi::CStr::from_ptr(raw_name as *const c_char) };
+        let raw_name = raw_name.to_str().unwrap();
+        Some(raw_name)
+    }
+
     pub fn bind_parameter_index(&self, name: &str) -> i32 {
         let raw_name = std::ffi::CString::new(name).unwrap();
 

@@ -264,6 +264,10 @@ impl Statement {
         self.inner.column_name(col as i32)
     }
 
+    pub fn column_decltype(&self, col: usize) -> Option<&str> {
+        self.inner.column_decltype(col as i32)
+    }
+
     /// Returns the column index in the result set for a given column name.
     ///
     /// If there is no AS clause then the name of the column is unspecified and
@@ -300,14 +304,7 @@ impl Statement {
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             let name = self.column_name(i);
-            let decl_type = match self.inner.column_type(i as i32) as u32 {
-                libsql_sys::ffi::SQLITE_NULL => Some("null"),
-                libsql_sys::ffi::SQLITE_INTEGER => Some("integer"),
-                libsql_sys::ffi::SQLITE_FLOAT => Some("float"),
-                libsql_sys::ffi::SQLITE_TEXT => Some("text"),
-                libsql_sys::ffi::SQLITE_BLOB => Some("blob"),
-                _ => None,
-            };
+            let decl_type = self.column_decltype(i);
             cols.push(Column { name, decl_type });
         }
         cols
