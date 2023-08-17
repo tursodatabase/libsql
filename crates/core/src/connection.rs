@@ -3,12 +3,22 @@ use crate::{
 };
 
 use libsql_sys::ffi;
-use std::ffi::c_int;
+use std::{ffi::c_int, sync::Arc};
 
 /// A connection to a libSQL database.
 #[derive(Clone, Debug)]
 pub struct Connection {
     pub(crate) raw: *mut ffi::sqlite3,
+
+    drop_ref: Arc<()>,
+}
+
+impl Drop for Connection {
+    fn drop(&mut self) {
+        if let Some(_) = Arc::get_mut(&mut self.drop_ref) {
+            unsafe { libsql_sys::ffi::sqlite3_close(self.raw) };
+        }
+    }
 }
 
 // SAFETY: This is safe because we compile sqlite3 w/ SQLITE_THREADSAFE=1
@@ -36,7 +46,10 @@ impl Connection {
                 return Err(Error::ConnectionFailed(db_path));
             }
         }
-        Ok(Connection { raw })
+        Ok(Connection {
+            raw,
+            drop_ref: Arc::new(()),
+        })
     }
 
     /// Get a raw handle to the underlying libSQL connection
@@ -46,7 +59,10 @@ impl Connection {
 
     /// Create a connection from a raw handle to the underlying libSQL connection
     pub fn from_handle(raw: *mut ffi::sqlite3) -> Self {
-        Self { raw }
+        Self {
+            raw,
+            drop_ref: Arc::new(()),
+        }
     }
 
     /// Disconnect from the database.
