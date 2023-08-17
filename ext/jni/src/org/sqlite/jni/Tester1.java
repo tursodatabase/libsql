@@ -1121,7 +1121,7 @@ public class Tester1 {
     outln("Woke up.");
   }
 
-  private void runTests() throws Exception {
+  private void runTests(boolean fromThread) throws Exception {
     if(false) testCompileOption();
     test1();
     testOpenDb1();
@@ -1148,13 +1148,19 @@ public class Tester1 {
     testUpdateHook();
     testAuthorizer();
     testFts5();
-    testAutoExtension();
+    if(!fromThread){
+      testAutoExtension();
+    }
+  }
+
+  public void run() throws Exception{
+    runTests(true);
   }
 
   public static void main(String[] args) throws Exception {
 
     final long timeStart = System.nanoTime();
-    new Tester1("main thread").runTests();
+    new Tester1("main thread").runTests(false);
     final long timeEnd = System.nanoTime();
 
     final java.util.List<String> liArgs =
