@@ -1,5 +1,5 @@
-C Minor\sreshaping\sof\sTester1\smoving\stowards\smaking\sa\smulti-threaded\srun\smode.
-D 2023-08-15T09:26:47.524
+C Remove\sthe\sFIXME\smarkers\srelated\sto\sthreading.\sCode\sstyle\scleanups.
+D 2023-08-17T10:49:06.982
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -234,7 +234,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile a9e11b92e620058558cbc1a2d49f8ec53c78d6a989b9db0b7d0b649b9f174881
 F ext/jni/README.md 7a614a2fa6c561205f7a53fd8626cf93a7b5711ff454fc1814517f796df398eb
 F ext/jni/jar-dist.make f90a553203a57934bf275bed86479485135a52f48ac5c1cfe6499ae07b0b35a4
-F ext/jni/src/c/sqlite3-jni.c 4b93d970b142e62712f2cbdde01e1c5ed78af5f306238efad0e53276f26f1211
+F ext/jni/src/c/sqlite3-jni.c f3c4512da82b1e4b735bd350912f7434006536daba42034e67ca1c9f55a3311c
 F ext/jni/src/c/sqlite3-jni.h f10d2f38720687c70ecdd5e44f6e8db98efee2caa05fc86b2d9e0c76e6cc0a18
 F ext/jni/src/org/sqlite/jni/Authorizer.java 1308988f7f40579ea0e4deeaec3c6be971630566bd021c31367fe3f5140db892
 F ext/jni/src/org/sqlite/jni/AutoExtension.java 18e83f6f463e306df60b2dceb65247d32af1f78af4bbbae9155411a8c6cdb093
@@ -2091,8 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 42994b952e092ae4fa319395208622e887387ca3ff8ac57961c824a6c272bf0e
-R efccc6a7a6eed17207843d66c0fb4c2d
+P f104c14c26c123ee78c09fc1bc59efb8668dc624da05c1d8dbeaf3c9dd02a393
+R 752949cb94cc31a882224e4bb6c2f9c9
 U stephan
-Z 6864924ac8d4acb7bd32dec052e883fa
+Z 3fb553739319fd15e325c90ff8ac1d2c
 # Remove this line to create a well-formed Fossil manifest.

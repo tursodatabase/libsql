@@ -13,15 +13,15 @@
 ** org.sqlite.jni.SQLiteJni (from which sqlite3-jni.h is generated).
 */
 
-/**
-   If you found this comment by searching the code for
-   CallStaticObjectMethod then you're the victim of an OpenJDK bug:
-
-   https://bugs.openjdk.org/browse/JDK-8130659
-
-   It's known to happen with OpenJDK v8 but not with v19.
-
-   This code does not use JNI's CallStaticObjectMethod().
+/*
+** If you found this comment by searching the code for
+** CallStaticObjectMethod then you're the victim of an OpenJDK bug:
+**
+** https://bugs.openjdk.org/browse/JDK-8130659
+**
+** It's known to happen with OpenJDK v8 but not with v19.
+**
+** This code does not use JNI's CallStaticObjectMethod().
 */
 
 /*
@@ -133,9 +133,13 @@
 #undef INC__STRINGIFY
 #undef SQLITE_C
 
+/*
+** End of the sqlite3 lib setup. What follows is JNI-specific.
+*/
+
 #include "sqlite3-jni.h"
-#include <stdio.h> /* only for testing/debugging */
 #include <assert.h>
+#include <stdio.h> /* only for testing/debugging */
 
 /* Only for debugging */
 #define MARKER(pfexp)                                               \
@@ -151,24 +155,24 @@
 #define JDECL(ReturnType,Suffix)                \
   JNIEXPORT ReturnType JNICALL                  \
   JFuncName(Suffix)
-/**
-   Shortcuts for the first 2 parameters to all JNI bindings.
-
-   The type of the jSelf arg differs, but no docs seem to mention
-   this: for static methods it's of type jclass and for non-static
-   it's jobject. jobject actually works for all funcs, in the sense
-   that it compiles and runs so long as we don't use jSelf (which is
-   only rarely needed in this code), but to be pedantically correct we
-   need the proper type in the signature.
-
-   Not even the official docs mention this discrepancy:
-
-   https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#jni_interface_functions_and_pointers
+/*
+** Shortcuts for the first 2 parameters to all JNI bindings.
+**
+** The type of the jSelf arg differs, but no docs seem to mention
+** this: for static methods it's of type jclass and for non-static
+** it's jobject. jobject actually works for all funcs, in the sense
+** that it compiles and runs so long as we don't use jSelf (which is
+** only rarely needed in this code), but to be pedantically correct we
+** need the proper type in the signature.
+**
+** https://docs.oracle.com/javase/8/docs/technotes/guides/jni/spec/design.html#jni_interface_functions_and_pointers
 */
 #define JENV_OSELF JNIEnv * const env, jobject jSelf
 #define JENV_CSELF JNIEnv * const env, jclass jKlazz
-/* Helpers to account for -Xcheck:jni warnings about not having
-   checked for exceptions. */
+/*
+** Helpers to account for -Xcheck:jni warnings about not having
+** checked for exceptions.
+*/
 #define IFTHREW if((*env)->ExceptionCheck(env))
 #define EXCEPTION_IGNORE (void)((*env)->ExceptionCheck(env))
 #define EXCEPTION_CLEAR (*env)->ExceptionClear(env)
@@ -272,9 +276,11 @@ static const struct {
     return (jint)CName((int)arg);                                    \
   }
 
-/** Create a trivial JNI wrapper for (const mutf8_string *
-    CName(void)). This is only valid for functions which are known to
-    return ASCII or text which is equivalent in UTF-8 and MUTF-8. */
+/*
+** Create a trivial JNI wrapper for (const mutf8_string *
+** CName(void)). This is only valid for functions which are known to
+** return ASCII or text which is equivalent in UTF-8 and MUTF-8.
+ */
 #define WRAP_MUTF8_VOID(JniNameSuffix,CName)                             \
   JDECL(jstring,JniNameSuffix)(JENV_CSELF){                  \
     return (*env)->NewStringUTF( env, CName() );                        \
@@ -318,40 +324,35 @@ static const struct {
 #define JBA_TOC(ARG) (*env)->GetByteArrayElements(env,ARG, NULL)
 #define JBA_RELEASE(ARG,VAR) if(VAR) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
 
-/* Marker for code which needs(?) to be made thread-safe.  REASON is a
-   terse reminder about why that function requires a mutex.
-*/
-#define FIXME_THREADING(REASON)
-
 enum {
-  /**
-     Size of the NativePointerHolder cache.  Need enough space for
-     (only) the library's NativePointerHolder types, a fixed count
-     known at build-time. If we add more than this a fatal error will
-     be triggered with a reminder to increase this.  This value needs
-     to be exactly the number of entries in the S3NphRefs object. The
-     index field of those entries are the keys for this particular
-     cache.
+  /*
+  ** Size of the NativePointerHolder cache.  Need enough space for
+  ** (only) the library's NativePointerHolder types, a fixed count
+  ** known at build-time. If we add more than this a fatal error will
+  ** be triggered with a reminder to increase this.  This value needs
+  ** to be exactly the number of entries in the S3NphRefs object. The
+  ** index field of those entries are the keys for this particular
+  ** cache.
   */
   NphCache_SIZE = sizeof(S3NphRefs) / sizeof(S3NphRef)
 };
 
-/**
-   Cache entry for NativePointerHolder subclasses and OutputPointer
-   types.
+/*
+** Cache entry for NativePointerHolder subclasses and OutputPointer
+** types.
 */
 typedef struct S3JniNphClass S3JniNphClass;
 struct S3JniNphClass {
   const S3NphRef * pRef /* Entry from S3NphRefs. */;
-  jclass klazz        /* global ref to the concrete
-                         NativePointerHolder subclass represented by
-                         zClassName */;
-  jmethodID midCtor   /* klazz's no-arg constructor. Used by
-                         new_NativePointerHolder_object(). */;
-  jfieldID fidValue   /* NativePointerHolder.nativePointer and
-                         OutputPointer.X.value */;
-  jfieldID fidSetAgg  /* sqlite3_context::aggregateContext. Used only
-                         by the sqlite3_context binding. */;
+  jclass klazz          /* global ref to the concrete
+                           NativePointerHolder subclass represented by
+                           zClassName */;
+  jmethodID midCtor     /* klazz's no-arg constructor. Used by
+                           new_NativePointerHolder_object(). */;
+  jfieldID fidValue     /* NativePointerHolder.nativePointer and
+                           OutputPointer.X.value */;
+  jfieldID fidSetAgg    /* sqlite3_context::aggregateContext. Used only
+                           by the sqlite3_context binding. */;
 };
 
 static void S3JniNphClass_clear(JNIEnv * const env, S3JniNphClass * const p){
@@ -373,10 +374,10 @@ struct S3JniHook{
                              lookup. */;
 };
 
-/**
-   Per-(sqlite3*) state for various JNI bindings.  This state is
-   allocated as needed, cleaned up in sqlite3_close(_v2)(), and
-   recycled when possible. It is freed during sqlite3_shutdown().
+/*
+** Per-(sqlite3*) state for various JNI bindings.  This state is
+** allocated as needed, cleaned up in sqlite3_close(_v2)(), and
+** recycled when possible. It is freed during sqlite3_shutdown().
 */
 typedef struct S3JniDb S3JniDb;
 struct S3JniDb {
@@ -408,16 +409,16 @@ struct S3JniDb {
   S3JniDb * pPrev /* Previous entry in the available/free list */;
 };
 
-/**
-   Cache for per-JNIEnv data.
-
-   Potential TODO: move the jclass entries to global space because,
-   per https://developer.android.com/training/articles/perf-jni:
-
-   > once you have a valid jclass global reference you can use it from
-     any attached thread.
-
-   Whereas we cache new refs for each thread.
+/*
+** Cache for per-JNIEnv data.
+**
+** Potential TODO: move the jclass entries to global space because,
+** per https://developer.android.com/training/articles/perf-jni:
+**
+** > once you have a valid jclass global reference you can use it from
+**   any attached thread.
+**
+** Whereas we cache new refs for each thread.
 */
 typedef struct S3JniEnv S3JniEnv;
 struct S3JniEnv {
@@ -434,25 +435,25 @@ struct S3JniEnv {
     jmethodID ctorStringBA   /* the String(byte[],Charset) constructor */;
     jmethodID stringGetBytes /* the String.getBytes(Charset) method */;
   } g /* refs to global Java state */;
-  /**
-     pdbOpening is used to coordinate the Java/DB connection of a
-     being-open()'d db in the face of auto-extensions. "The problem"
-     is that auto-extensions run before we can bind the C db to its
-     Java representation, but auto-extensions require that binding. We
-     handle this as follows:
-
-     - In open(), allocate the Java side of that connection and set
-       pdbOpening to point to that object. Note that it's per-thread,
-       and we remain in that thread until after the auto-extensions
-       are run.
-
-     - Call open(), which triggers the auto-extension handler.
-       That handler uses pdbOpening to connect the native db handle
-       which it receives with pdbOpening.
-
-     - When open() returns, check whether it invoked the auto-ext
-       handler. If not, complete the Java/C binding unless open()
-       returns a NULL db, in which case free pdbOpening.
+  /*
+   ** pdbOpening is used to coordinate the Java/DB connection of a
+   ** being-open()'d db in the face of auto-extensions. "The problem"
+   ** is that auto-extensions run before we can bind the C db to its
+   ** Java representation, but auto-extensions require that binding. We
+   ** handle this as follows:
+   **
+   ** - In open(), allocate the Java side of that connection and set
+   **   pdbOpening to point to that object. Note that it's per-thread,
+   **   and we remain in that thread until after the auto-extensions
+   **   are run.
+   **
+   ** - Call open(), which triggers the auto-extension handler.  That
+   **   handler uses pdbOpening to connect the native db handle which
+   **   it receives with pdbOpening.
+   **
+   ** - When open() returns, check whether it invoked the auto-ext
+   **   handler. If not, complete the Java/C binding unless open()
+   **   returns a NULL db, in which case free pdbOpening.
   */
   S3JniDb * pdbOpening;
 #ifdef SQLITE_ENABLE_FTS5
@@ -466,30 +467,30 @@ struct S3JniEnv {
 #endif
   S3JniEnv * pPrev /* Previous entry in the linked list */;
   S3JniEnv * pNext /* Next entry in the linked list */;
-  /**
-     Cache of Java refs/IDs for NativePointerHolder subclasses.
+  /*
+  ** Cache of Java refs/IDs for NativePointerHolder subclasses.
   */
   S3JniNphClass nph[NphCache_SIZE];
 };
 
 /*
-  Whether auto extensions are feasible here is currently unknown due
-  to...
-
-  1) JNIEnv/threading issues.  A db instance is mapped to a specific
-  JNIEnv object but auto extensions may be added from any thread.  In
-  such contexts, which JNIEnv do we use for the JNI APIs?
-
-  2) a chicken/egg problem involving the Java/C mapping of the db:
-  when auto extensions are run, the db has not yet been connected to
-  Java. If we do that during the auto-ext, sqlite3_open(_v2)() will not behave
-  properly because they have a different jobject and the API
-  guarantees the user that _that_ object is the one the API will bind
-  the native to.
-
-  If we change the open(_v2()) interfaces to use OutputPointer.sqlite3
-  instead of the client passing in an instance, we could work around
-  (2).
+** Whether auto extensions are feasible here is currently unknown due
+** to...
+**
+** 1) JNIEnv/threading issues.  A db instance is mapped to a specific
+** JNIEnv object but auto extensions may be added from any thread.  In
+** such contexts, which JNIEnv do we use for the JNI APIs?
+**
+** 2) a chicken/egg problem involving the Java/C mapping of the db:
+** when auto extensions are run, the db has not yet been connected to
+** Java. If we do that during the auto-ext, sqlite3_open(_v2)() will
+** not behave properly because they have a different jobject and the
+** API guarantees the user that _that_ object is the one the API will
+** bind the native to.
+**
+** If we change the open(_v2()) interfaces to use
+** OutputPointer.sqlite3 instead of the client passing in an instance,
+** we could work around (2).
 */
 typedef struct S3JniAutoExtension S3JniAutoExtension;
 struct S3JniAutoExtension {
@@ -497,20 +498,20 @@ struct S3JniAutoExtension {
   jmethodID midFunc  /* xEntryPoint() callback */;
 };
 
-/**
-   Global state, e.g. caches and metrics.
+/*
+** Global state, e.g. caches and metrics.
 */
 static struct {
-  /**
-     According to: https://developer.ibm.com/articles/j-jni/
-
-     > A thread can get a JNIEnv by calling GetEnv() using the JNI
-       invocation interface through a JavaVM object. The JavaVM object
-       itself can be obtained by calling the JNI GetJavaVM() method
-       using a JNIEnv object and can be cached and shared across
-       threads. Caching a copy of the JavaVM object enables any thread
-       with access to the cached object to get access to its own
-       JNIEnv when necessary.
+  /*
+  ** According to: https://developer.ibm.com/articles/j-jni/
+  **
+  ** > A thread can get a JNIEnv by calling GetEnv() using the JNI
+  **   invocation interface through a JavaVM object. The JavaVM object
+  **   itself can be obtained by calling the JNI GetJavaVM() method
+  **   using a JNIEnv object and can be cached and shared across
+  **   threads. Caching a copy of the JavaVM object enables any thread
+  **   with access to the cached object to get access to its own
+  **   JNIEnv when necessary.
   */
   JavaVM * jvm;
   struct {
@@ -529,6 +530,7 @@ static struct {
                              cannot always have this set to the
                              current JNIEnv object. */;
   } perDb;
+  /* Internal metrics. */
   struct {
     unsigned envCacheHits;
     unsigned envCacheMisses;
@@ -1906,7 +1908,6 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   return rc;
 }
 
-FIXME_THREADING(autoExt)
 JDECL(jint,1auto_1extension)(JENV_CSELF, jobject jAutoExt){
   static int once = 0;
   int i;
@@ -1955,7 +1956,6 @@ JDECL(jint,1auto_1extension)(JENV_CSELF, jobject jAutoExt){
   return rc;
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1blob)(JENV_CSELF, jobject jpStmt,
                         jint ndx, jbyteArray baData, jint nMax){
   int rc;
@@ -1970,31 +1970,26 @@ JDECL(jint,1bind_1blob)(JENV_CSELF, jobject jpStmt,
   return (jint)rc;
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1double)(JENV_CSELF, jobject jpStmt,
                          jint ndx, jdouble val){
   return (jint)sqlite3_bind_double(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (double)val);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1int)(JENV_CSELF, jobject jpStmt,
                       jint ndx, jint val){
   return (jint)sqlite3_bind_int(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (int)val);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1int64)(JENV_CSELF, jobject jpStmt,
                         jint ndx, jlong val){
   return (jint)sqlite3_bind_int64(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (sqlite3_int64)val);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1null)(JENV_CSELF, jobject jpStmt,
                        jint ndx){
   return (jint)sqlite3_bind_null(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1parameter_1index)(JENV_CSELF, jobject jpStmt, jbyteArray jName){
   int rc = 0;
   jbyte * const pBuf = JBA_TOC(jName);
@@ -2006,7 +2001,6 @@ JDECL(jint,1bind_1parameter_1index)(JENV_CSELF, jobject jpStmt, jbyteArray jName
   return rc;
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1text)(JENV_CSELF, jobject jpStmt,
                        jint ndx, jbyteArray baData, jint nMax){
   if(baData){
@@ -2020,13 +2014,11 @@ JDECL(jint,1bind_1text)(JENV_CSELF, jobject jpStmt,
   }
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1zeroblob)(JENV_CSELF, jobject jpStmt,
                            jint ndx, jint n){
   return (jint)sqlite3_bind_zeroblob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (int)n);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1bind_1zeroblob64)(JENV_CSELF, jobject jpStmt,
                            jint ndx, jlong n){
   return (jint)sqlite3_bind_zeroblob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (sqlite3_uint64)n);
@@ -2048,7 +2040,6 @@ static int s3jni_busy_handler(void* pState, int n){
   return rc;
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1busy_1handler)(JENV_CSELF, jobject jDb, jobject jBusy){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   int rc = 0;
@@ -2078,8 +2069,6 @@ JDECL(jint,1busy_1handler)(JENV_CSELF, jobject jDb, jobject jBusy){
     : sqlite3_busy_handler(ps->pDb, 0, 0);
 }
 
-FIXME_THREADING(S3JniEnv)
-FIXME_THREADING(perDb)
 JDECL(jint,1busy_1timeout)(JENV_CSELF, jobject jDb, jint ms){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   if( ps ){
@@ -2089,7 +2078,6 @@ JDECL(jint,1busy_1timeout)(JENV_CSELF, jobject jDb, jint ms){
   return SQLITE_MISUSE;
 }
 
-FIXME_THREADING(autoExt)
 JDECL(jboolean,1cancel_1auto_1extension)(JENV_CSELF, jobject jAutoExt){
   S3JniAutoExtension * ax;
   jboolean rc = JNI_FALSE;
@@ -2148,14 +2136,10 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   return (jint)rc;
 }
 
-FIXME_THREADING(S3JniEnv)
-FIXME_THREADING(perDb)
 JDECL(jint,1close_1v2)(JENV_CSELF, jobject pDb){
   return s3jni_close_db(env, pDb, 2);
 }
 
-FIXME_THREADING(S3JniEnv)
-FIXME_THREADING(perDb)
 JDECL(jint,1close)(JENV_CSELF, jobject pDb){
   return s3jni_close_db(env, pDb, 1);
 }
@@ -2194,8 +2178,6 @@ static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
   UNREF_L(jName);
 }
 
-FIXME_THREADING(S3JniEnv)
-FIXME_THREADING(perDb)
 JDECL(jint,1collation_1needed)(JENV_CSELF, jobject jDb, jobject jHook){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jclass klazz;
@@ -2232,7 +2214,6 @@ JDECL(jint,1collation_1needed)(JENV_CSELF, jobject jDb, jobject jHook){
   return rc;
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jbyteArray,1column_1blob)(JENV_CSELF, jobject jpStmt,
                                 jint ndx){
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
@@ -2246,25 +2227,21 @@ JDECL(jbyteArray,1column_1blob)(JENV_CSELF, jobject jpStmt,
   }
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jdouble,1column_1double)(JENV_CSELF, jobject jpStmt,
                                jint ndx){
   return (jdouble)sqlite3_column_double(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jint,1column_1int)(JENV_CSELF, jobject jpStmt,
                             jint ndx){
   return (jint)sqlite3_column_int(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jlong,1column_1int64)(JENV_CSELF, jobject jpStmt,
                             jint ndx){
   return (jlong)sqlite3_column_int64(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jbyteArray,1column_1text)(JENV_CSELF, jobject jpStmt,
                                       jint ndx){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
@@ -2273,7 +2250,6 @@ JDECL(jbyteArray,1column_1text)(JENV_CSELF, jobject jpStmt,
   return s3jni_new_jbyteArray(env, p, n);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jstring,1column_1text16)(JENV_CSELF, jobject jpStmt,
                                jint ndx){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
@@ -2282,7 +2258,6 @@ JDECL(jstring,1column_1text16)(JENV_CSELF, jobject jpStmt,
   return s3jni_text16_to_jstring(env, p, n);
 }
 
-FIXME_THREADING(S3JniEnv)
 JDECL(jobject,1column_1value)(JENV_CSELF, jobject jpStmt,
                               jint ndx){
   sqlite3_value * const sv = sqlite3_column_value(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
@@ -2312,7 +2287,6 @@ static void s3jni_rollback_hook_impl(void *pP){
   (void)s3jni_commit_rollback_hook_impl(0, pP);
 }
 
-FIXME_THREADING(perDb)
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,jobject jDb,
                                           jobject jHook){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
@@ -2381,7 +2355,6 @@ JDECL(jboolean,1compileoption_1used)(JENV_CSELF, jstring name){
   return rc;
 }
 
-FIXME_THREADING(perDb)
 JDECL(jobject,1context_1db_1handle)(JENV_CSELF, jobject jpCx){
   sqlite3 * const pDb = sqlite3_context_db_handle(PtrGet_sqlite3_context(jpCx));
   S3JniDb * const ps = pDb ? S3JniDb_for_db(env, 0, pDb) : 0;
@@ -2509,7 +2482,6 @@ JDECL(int,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2)(
   return rc;
 }
 
-FIXME_THREADING(perDb)
 /* sqlite3_db_config() for (int,int*) */
 /* ACHTUNG: openjdk v19 creates a different mangled name for this
    function than openjdk v8 does. */
@@ -3174,7 +3146,6 @@ JDECL(void,1set_1last_1insert_1rowid)(JENV_CSELF, jobject jpDb, jlong rowId){
                                 (sqlite3_int64)rowId);
 }
 
-FIXME_THREADING(nphCache)
 JDECL(jint,1status)(JENV_CSELF, jint op, jobject jOutCurrent, jobject jOutHigh,
                     jboolean reset ){
   int iCur = 0, iHigh = 0;
@@ -3186,7 +3157,6 @@ JDECL(jint,1status)(JENV_CSELF, jint op, jobject jOutCurrent, jobject jOutHigh,
   return (jint)rc;
 }
 
-FIXME_THREADING(nphCache)
 JDECL(jint,1status64)(JENV_CSELF, jint op, jobject jOutCurrent, jobject jOutHigh,
                       jboolean reset ){
   sqlite3_int64 iCur = 0, iHigh = 0;
