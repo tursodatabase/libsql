@@ -8,7 +8,7 @@ use std::sync::Arc;
 /// A prepared statement.
 #[derive(Debug, Clone)]
 pub struct Statement {
-    conn: Connection,
+    pub(crate) conn: Connection,
     pub(crate) inner: Arc<libsql_sys::Statement>,
 }
 
@@ -23,8 +23,8 @@ impl Statement {
                 conn,
                 inner: Arc::new(stmt),
             }),
-            Err(libsql_sys::Error::LibError(err)) => Err(Error::PrepareFailed(
-                err,
+            Err(libsql_sys::Error::LibError(_err)) => Err(Error::PrepareFailed(
+                errors::extended_error_code(raw),
                 sql.to_string(),
                 errors::error_from_handle(raw),
             )),
@@ -104,7 +104,7 @@ impl Statement {
             crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
             _ => Err(Error::LibError(
-                err,
+                errors::extended_error_code(self.conn.raw),
                 errors::error_from_handle(self.conn.raw),
             )),
         }
