@@ -1,5 +1,5 @@
-C Add\s"Windows-Sanitize"\sconfiguration\sto\s"testrunner.tcl\srelease"\stests\son\swindows.
-D 2023-08-17T16:06:17.814
+C Add\sextra\stest\sto\sfts5synonym2.test.
+D 2023-08-17T16:49:06.059
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -208,7 +208,7 @@ F ext/fts5/test/fts5simple.test a298670508c1458b88ce6030440f26a30673931884eb5f40
 F ext/fts5/test/fts5simple2.test 258a1b0c590409bfa5271e872c79572b319d2a56554d0585f68f146a0da603f0
 F ext/fts5/test/fts5simple3.test d5c74a9d3ca71bd5dd5cacb7c55b86ea12cdddfc8b1910e3de2995206898380f
 F ext/fts5/test/fts5synonym.test 1651815b8008de170e8e600dcacc17521d765482ea8f074ae82cfa870d8bb7fb
-F ext/fts5/test/fts5synonym2.test b54cce5c34ec08ed616f646635538ae82e34a0e28f947ec60b6fadbc4b3fb17a
+F ext/fts5/test/fts5synonym2.test 8f891fc49cc1e8daed727051e77e1f42849c784a6a54bef82564761b2cb3e016
 F ext/fts5/test/fts5tok1.test 1f7817499f5971450d8c4a652114b3d833393c8134e32422d0af27884ffe9cef
 F ext/fts5/test/fts5tok2.test dcacb32d4a2a3f0dd3215d4a3987f78ae4be21a2
 F ext/fts5/test/fts5tokenizer.test ac3c9112b263a639fb0508ae73a3ee886bf4866d2153771a8e8a20c721305a43
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P af56d7b6b9c50f2541a51fcb7d94b89aafba4f343a9103b21a15aad3f283c63e
-R d90e68742664d72e56df500f0aaeb929
+P e68b46dc6aff48c81a2a5e7662d0f694615b64aa50bcfee9a0b8b25fa4e5f33d
+R 26e2590c5d1b954c8cedf1e3d265e54c
 U dan
-Z fef403ae8dc9c09fddbddb3b0dc476a8
+Z 404f8e6bb7390152a8536e11ff091661
 # Remove this line to create a well-formed Fossil manifest.
