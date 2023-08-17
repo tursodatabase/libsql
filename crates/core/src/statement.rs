@@ -213,6 +213,7 @@ impl Statement {
 pub struct Column<'stmt> {
     pub name: &'stmt str,
     pub origin_name: Option<&'stmt str>,
+    pub table_name: Option<&'stmt str>,
     pub decl_type: Option<&'stmt str>,
 }
 
@@ -225,6 +226,11 @@ impl Column<'_> {
     /// Returns the name of the column in the origin table.
     pub fn origin_name(&self) -> Option<&str> {
         self.origin_name
+    }
+
+    /// Returns the name of the origin table.
+    pub fn table_name(&self) -> Option<&str> {
+        self.table_name
     }
 
     /// Returns the type of the column (`None` for expression).
@@ -274,6 +280,10 @@ impl Statement {
         self.inner.column_origin_name(col as i32)
     }
 
+    pub fn column_table_name(&self, col: usize) -> Option<&str> {
+        self.inner.column_table_name(col as i32)
+    }
+
     pub fn column_decltype(&self, col: usize) -> Option<&str> {
         self.inner.column_decltype(col as i32)
     }
@@ -315,8 +325,9 @@ impl Statement {
         for i in 0..n {
             let name = self.column_name(i);
             let origin_name = self.column_origin_name(i);
+            let table_name = self.column_table_name(i);
             let decl_type = self.column_decltype(i);
-            cols.push(Column { name, origin_name, decl_type });
+            cols.push(Column { name, origin_name, table_name, decl_type });
         }
         cols
     }
