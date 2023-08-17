@@ -36,6 +36,7 @@ namespace eval trd {
   set tcltest(win.Have-Not)               veryquick
   set tcltest(win.Windows-Memdebug)       veryquick
   set tcltest(win.Windows-Win32Heap)      veryquick
+  set tcltest(win.Windows-Sanitize)       veryquick
   set tcltest(win.Default)                full
 
   # Extra [make xyz] tests that should be run for various builds.
@@ -64,6 +65,7 @@ namespace eval trd {
   set extra(win.Stdcall)                  {fuzztest sourcetest}
   set extra(win.Windows-Memdebug)         {fuzztest sourcetest}
   set extra(win.Windows-Win32Heap)        {fuzztest sourcetest}
+  set extra(win.Windows-Sanitize)         fuzztest
   set extra(win.Have-Not)                 {fuzztest sourcetest}
 
   # The following mirrors the set of test suites invoked by "all.test".
@@ -311,6 +313,10 @@ namespace eval trd {
     WIN32HEAP=1
     DEBUG=4
   }
+  set build(Windows-Sanitize) {
+    ASAN=1
+  }
+
 }
 
 
@@ -421,7 +427,7 @@ proc make_bat_file {srcdir opts cflags makeOpts} {
   return [trimscript [subst -nocommands {
     set TARGET=%1
     set TMP=%CD%
-    nmake /f $srcdir\\Makefile.msc TOP="$srcdir" %TARGET% "CFLAGS=$cflags" "OPTS=$opts" $makeOpts
+    nmake /f $srcdir\\Makefile.msc TOP="$srcdir" %TARGET% "CCOPTS=$cflags" "OPTS=$opts" $makeOpts
   }]]
 }
 
