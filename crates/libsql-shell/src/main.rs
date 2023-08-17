@@ -3,9 +3,11 @@ use base64::{engine::general_purpose, Engine as _};
 use clap::Parser;
 use rusqlite::Params;
 use rusqlite::{types::ValueRef, Connection, Statement};
+use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
-use rustyline::{DefaultEditor, Editor};
+use rustyline::{Config, Context, Editor, CompletionType};
+use rustyline_derive::{Helper, Highlighter, Hinter, Validator};
 use std::fmt::Display;
 use std::io::Write;
 use std::path::PathBuf;
@@ -188,7 +190,7 @@ impl Shell {
         }
     }
 
-    fn run(mut self, rl: &mut Editor<(), FileHistory>) -> Result<()> {
+    fn run(mut self, rl: &mut Editor<ShellHelper, FileHistory>) -> Result<()> {
         let mut leftovers = String::new();
         loop {
             let prompt = if leftovers.is_empty() {
@@ -532,11 +534,68 @@ impl Shell {
     }
 }
 
+#[derive(Default)]
+struct ShellCompleter {}
+
+impl ShellCompleter {
+    fn new() -> Self {
+        Self::default()
+    }
+
+    fn complete( &self, line: &str, _pos: usize, _: &Context) -> Result<(usize, Vec<Pair>), ReadlineError> {
+        let mut pairs: Vec<Pair> = vec![];
+        let commands = vec![
+            ".echo",
+            ".headers",
+            ".help",
+            ".indexes",
+            ".nullvalue",
+            ".print",
+            ".prompt",
+            ".quit",
+            ".show",
+            ".tables",
+        ];
+        for command in commands {
+            if command.starts_with(line) {
+                pairs.push(Pair {
+                    display: command.to_string(),
+                    replacement: command.to_string(),
+                })
+            }
+        }
+        Ok((0, pairs))
+    }
+}
+
+#[derive(Helper, Hinter, Validator, Highlighter)]
+struct ShellHelper {
+    #[rustyline(Completer)]
+    completer: ShellCompleter,
+}
+
+impl Completer for ShellHelper {
+    type Candidate = Pair;
+
+    fn complete(&self, line: &str, pos: usize, ctx: &Context) -> Result<(usize, Vec<Pair>), ReadlineError> {
+        self.completer.complete(line, pos, ctx)
+    }
+}
+
 fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     let args = Cli::parse();
 
-    let mut rl = DefaultEditor::new()?;
+    let config = Config::builder()
+        .history_ignore_space(true)
+        .completion_type(CompletionType::Circular)
+        .build();
+    let mut rl = Editor::with_config(config)?;
+
+    let helper = ShellHelper {
+        completer: ShellCompleter::new(),
+    };
+    rl.set_helper(Some(helper));
 
     let mut history = home::home_dir().unwrap_or_default();
     history.push(".libsql_history");
