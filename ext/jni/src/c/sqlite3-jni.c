@@ -481,20 +481,9 @@ struct S3JniEnv {
 ** Whether auto extensions are feasible here is currently unknown due
 ** to...
 **
-** 1) JNIEnv/threading issues.  A db instance is mapped to a specific
+** JNIEnv/threading issues.  A db instance is mapped to a specific
 ** JNIEnv object but auto extensions may be added from any thread.  In
 ** such contexts, which JNIEnv do we use for the JNI APIs?
-**
-** 2) a chicken/egg problem involving the Java/C mapping of the db:
-** when auto extensions are run, the db has not yet been connected to
-** Java. If we do that during the auto-ext, sqlite3_open(_v2)() will
-** not behave properly because they have a different jobject and the
-** API guarantees the user that _that_ object is the one the API will
-** bind the native to.
-**
-** If we change the open(_v2()) interfaces to use
-** OutputPointer.sqlite3 instead of the client passing in an instance,
-** we could work around (2).
 */
 typedef struct S3JniAutoExtension S3JniAutoExtension;
 struct S3JniAutoExtension {
