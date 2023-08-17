@@ -1,11 +1,11 @@
-C Fix\sa\spossible\sUAF\sin\sSEH\sif\san\sexception\soccurs\sat\san\sinopportune\smoment\nduring\sWAL\sprocessing.
-D 2023-08-17T14:19:44.072
+C Enable\saddress\ssanitizer\sin\sMakefile.msc\sby\sadding\sthe\sASAN=1\sargument\son\nthe\snmake\scommand\sline.
+D 2023-08-17T15:11:59.824
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 6f391d54fa01f8a49b024fef5cce1ab8234c281164641cf9a52694b432bdec1b
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
-F Makefile.msc e0e2630b327b31232f4f1c748cae8af358f897e88cae7479218369d1d510f94d
+F Makefile.msc 26c2d196391a285c279adb10fd6001774d9b243af94b700b681e4a49cd476684
 F README.md 093d7054271141a0a8518558e3d49087cb71f84d33b50ee10053946ed85dcac8
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d543c36c35f71c5f0a7ebf6f496feca40d16566d0c5b2c2ba205ff43437ffcd1
-R f8ce2e24212ad2fa8332322fc5005324
+P 91b91037e348fa10cf6a9d8a0ffbfdebb4a40e0e336b65b112ed1c828e75cda7
+R 4400ba90f4d067c0e7509c168d501950
 U drh
-Z 3120c029fcad27eadc95da2816eed4db
+Z bada3b91f6d8a3e8bcac6a8e2760f073
 # Remove this line to create a well-formed Fossil manifest.
