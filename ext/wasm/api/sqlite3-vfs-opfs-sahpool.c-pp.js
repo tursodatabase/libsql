@@ -59,6 +59,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
   const toss3 = sqlite3.util.toss3;
   const initPromises = Object.create(null);
   const capi = sqlite3.capi;
+  const util = sqlite3.util;
   const wasm = sqlite3.wasm;
   // Config opts for the VFS...
   const SECTOR_SIZE = 4096;
@@ -869,9 +870,48 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
       return b;
     }
 
+    //! Impl for importDb() when its 2nd arg is a function.
+    async importDbChunked(name, callback){
+      const sah = this.#mapFilenameToSAH.get(name)
+            || this.nextAvailableSAH()
+            || toss("No available handles to import to.");
+      sah.truncate(0);
+      let nWrote = 0, chunk, checkedHeader = false, err = false;
+      try{
+        while( undefined !== (chunk = await callback()) ){
+          if(chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
+          if( 0===nWrote && chunk.byteLength>=15 ){
+            util.affirmDbHeader(chunk);
+            checkedHeader = true;
+          }
+          sah.write(chunk, {at:  HEADER_OFFSET_DATA + nWrote});
+          nWrote += chunk.byteLength;
+        }
+        if( nWrote < 512 || 0!==nWrote % 512 ){
+          toss("Input size",nWrote,"is not correct for an SQLite database.");
+        }
+        if( !checkedHeader ){
+          const header = new Uint8Array(20);
+          sah.read( header, {at: 0} );
+          util.affirmDbHeader( header );
+        }
+        sah.write(new Uint8Array(2), {
+          at: HEADER_OFFSET_DATA + 18
+        }/*force db out of WAL mode*/);
+      }catch(e){
+        this.setAssociatedPath(sah, '', 0);
+      }
+      this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
+      return nWrote;
+    }
+
     //! Documented elsewhere in this file.
     importDb(name, bytes){
-      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
+      if( bytes instanceof ArrayBuffer ) bytes = new Uint8Array(bytes);
+      else if( bytes instanceof Function ) return this.importDbChunked(name, bytes);
+      const sah = this.#mapFilenameToSAH.get(name)
+            || this.nextAvailableSAH()
+            || toss("No available handles to import to.");
       const n = bytes.byteLength;
       if(n<512 || n%512!=0){
         toss("Byte array size is invalid for an SQLite db.");
@@ -882,16 +922,16 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           toss("Input does not contain an SQLite database header.");
         }
       }
-      const sah = this.#mapFilenameToSAH.get(name)
-            || this.nextAvailableSAH()
-            || toss("No available handles to import to.");
       const nWrote = sah.write(bytes, {at: HEADER_OFFSET_DATA});
       if(nWrote != n){
         this.setAssociatedPath(sah, '', 0);
         toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
       }else{
+        sah.write(new Uint8Array([0,0]), {at: HEADER_OFFSET_DATA+18}
+                   /* force db out of WAL mode */);
         this.setAssociatedPath(sah, name, capi.SQLITE_OPEN_MAIN_DB);
       }
+      return nWrote;
     }
 
   }/*class OpfsSAHPool*/;
@@ -1097,6 +1137,19 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
      not arbitrary files, the reason being that this VFS will
      automatically clean up any non-database files so importing them
      is pointless.
+
+     If passed a function for its second argument, its behavior
+     changes to asynchronous and it imports its data in chunks fed to
+     it by the given callback function. It calls the callback (which
+     may be async) repeatedly, expecting either a Uint8Array or
+     ArrayBuffer (to denote new input) or undefined (to denote
+     EOF). For so long as the callback continues to return
+     non-undefined, it will append incoming data to the given
+     VFS-hosted database file. The result of the resolved Promise when
+     called this way is the size of the resulting database.
+
+     On succes this routine rewrites the database header bytes in the
+     output file (not the input array) to force disabling of WAL mode.
 
      On a write error, the handle is removed from the pool and made
      available for re-use.

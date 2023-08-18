@@ -772,8 +772,43 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
     isSharedTypedArray,
     toss: function(...args){throw new Error(args.join(' '))},
     toss3,
-    typedArrayPart
-  };
+    typedArrayPart,
+    /**
+       Given a byte array or ArrayBuffer, this function throws if the
+       lead bytes of that buffer do not hold a SQLite3 database header,
+       else it returns without side effects.
+
+       Added in 3.44.
+    */
+    affirmDbHeader: function(bytes){
+      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
+      const header = "SQLite format 3";
+      if( header.length > bytes.byteLength ){
+        toss3("Input does not contain an SQLite3 database header.");
+      }
+      for(let i = 0; i < header.length; ++i){
+        if( header.charCodeAt(i) !== bytes[i] ){
+          toss3("Input does not contain an SQLite3 database header.");
+        }
+      }
+    },
+    /**
+       Given a byte array or ArrayBuffer, this function throws if the
+       database does not, at a cursory glance, appear to be an SQLite3
+       database. It only examines the size and header, but further
+       checks may be added in the future.
+
+       Added in 3.44.
+    */
+    affirmIsDb: function(bytes){
+      if(bytes instanceof ArrayBuffer) bytes = new Uint8Array(bytes);
+      const n = bytes.byteLength;
+      if(n<512 || n%512!==0) {
+        toss3("Byte array size",n,"is invalid for an SQLite3 db.");
+      }
+      util.affirmDbHeader(bytes);
+    }
+  }/*util*/;
 
   Object.assign(wasm, {
     /**
