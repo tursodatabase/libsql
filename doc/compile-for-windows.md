@@ -60,3 +60,26 @@ canonical source on a new Windows 11 PC, as of 2023-08-16:
       <li>  `nmake /f makefile.msc devtest`
       <li>  `nmake /f makefile.msc releasetest`
       </ul>
+
+## 32-bit Builds
+
+Doing a 32-bit build is just like doing a 64-bit build with the
+following minor changes:
+
+  1.  Use the "x86 Native Tools Command Prompt" instead of
+      "x64 Native Tools Command Prompt".  "**x86**" instead of "**x64**".
+
+  2.  Use a different installation directory for TCL.
+      The recommended directory is `c:\tcl32`.  Thus you end up
+      with two TCL builds:
+      <ul>
+      <li> `c:\tcl` &larr;  64-bit (the default)
+      <li> `c:\tcl32` &larr;  32-bit
+      </ul>
+
+  3.  Ensure that c:\\tcl32\\bin comes before c:\\tcl\\bin on
+      your PATH environment variable.  You can achieve this using
+      a command like:
+      <ul>
+      <li>  `set PATH=c:\tcl32\bin;%PATH%`
+      </ul>
