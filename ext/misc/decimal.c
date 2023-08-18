@@ -642,7 +642,7 @@ static Decimal *decimalFromDouble(double r){
 
 /*
 ** SQL Function:   decimal(X)
-** OR:             decimal_sci(X)
+** OR:             decimal_exp(X)
 **
 ** Convert input X into decimal and then back into text.
 **
@@ -650,7 +650,7 @@ static Decimal *decimalFromDouble(double r){
 ** point value is done.  Or if X is an 8-byte blob, it is interpreted
 ** as a float and similarly expanded.
 **
-** The decimal_sci(X) function returns the result in scientific notation.
+** The decimal_exp(X) function returns the result in exponential notation.
 ** decimal(X) returns a complete decimal, without the e+NNN at the end.
 */
 static void decimalFunc(
@@ -853,7 +853,7 @@ int sqlite3_decimal_init(
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aFunc[] = {
     { "decimal",       1, 0,  decimalFunc        },
-    { "decimal_sci",   1, 1,  decimalFunc        },
+    { "decimal_exp",   1, 1,  decimalFunc        },
     { "decimal_cmp",   2, 0,  decimalCmpFunc     },
     { "decimal_add",   2, 0,  decimalAddFunc     },
     { "decimal_sub",   2, 0,  decimalSubFunc     },

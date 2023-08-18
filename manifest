@@ -1,5 +1,5 @@
-C Avoid\srunning\stest\scase\ssort2.2.3\sunder\saddress-sanitizer.\sIt\sruns\sout\sof\smemory\son\ssome\s32-bit\splatforms.
-D 2023-08-18T15:17:52.057
+C Rename\sthe\sdecimal_sci()\sfunction\sto\sdecimal_exp().\n[forum:/forumpost/fa027bb0ab|Forum\spost\sfa027bb0ab].
+D 2023-08-18T15:39:38.045
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -334,7 +334,7 @@ F ext/misc/completion.c 6dafd7f4348eecc7be9e920d4b419d1fb2af75d938cd9c59a20cfe8b
 F ext/misc/compress.c 3354c77a7c8e86e07d849916000cdac451ed96500bfb5bd83b20eb61eee012c9
 F ext/misc/csv.c ca8d6dafc5469639de81937cb66ae2e6b358542aba94c4f791910d355a8e7f73
 F ext/misc/dbdump.c b8592f6f2da292c62991a13864a60d6c573c47a9cc58362131b9e6a64f823e01
-F ext/misc/decimal.c a61343b36672760e1d6d5b20a42cb52264db55bcd11d0a44e2e06e8ce23227e3
+F ext/misc/decimal.c 172cf81a8634e6a0f0bedaf71a8372fee63348cf5a3c4e1b78bb233c35889fdc
 F ext/misc/eval.c 04bc9aada78c888394204b4ed996ab834b99726fb59603b0ee3ed6e049755dc1
 F ext/misc/explain.c 0086fab288d4352ea638cf40ac382aad3b0dc5e845a1ea829a694c015fd970fe
 F ext/misc/fileio.c 4e7f7cd30de8df4820c552f14af3c9ca451c5ffe1f2e7bef34d598a12ebfb720
@@ -752,7 +752,7 @@ F src/trigger.c ad6ab9452715fa9a8075442e15196022275b414b9141b566af8cdb7a1605f2b0
 F src/update.c 6904814dd62a7a93bbb86d9f1419c7f134a9119582645854ab02b36b676d9f92
 F src/upsert.c fa125a8d3410ce9a97b02cb50f7ae68a2476c405c76aa692d3acf6b8586e9242
 F src/utf.c ee39565f0843775cc2c81135751ddd93eceb91a673ea2c57f61c76f288b041a0
-F src/util.c 24f4458bb7a57b0e1b2858484fd62ea83fe63dcb0bce21a96bf9fe31fd402038
+F src/util.c 278b81c3b33db1b5a5f3859adf8905c165b910080043061d44d3c5a25b4b406d
 F src/vacuum.c 604fcdaebe76f3497c855afcbf91b8fa5046b32de3045bab89cc008d68e40104
 F src/vdbe.c 346d848a0bf8128e3e3722c5406f4bde6c32d7093b93402c6f8e0718d19305c3
 F src/vdbe.h 41485521f68e9437fdb7ec4a90f9d86ab294e9bb8281e33b235915e29122cfc0
@@ -986,7 +986,7 @@ F test/dbpage.test fce29035c7566fd7835ec0f19422cb4b9c6944ce0e1b936ff8452443f92e8
 F test/dbpagefault.test d9111a62f3601d3efc6841ace3940181937342d245f92a1cca6cba8206d4f58a
 F test/dbstatus.test 4a4221a883025ffd39696b3d1b3910b928fb097d77e671351acb35f3aed42759
 F test/dbstatus2.test f5fe0afed3fa45e57cfa70d1147606c20d2ba23feac78e9a172f2fe8ab5b78ef
-F test/decimal.test 18e7b4cb12e8d5c60d768b686ba52af3e1ca3ced4f870231f0476666fd9fab7e
+F test/decimal.test ef731887b43ee32ef86e1c8fddb61a40789f988332c029c601dcf2c319277e9e
 F test/default.test 9687cfb16717e4b8238c191697c98be88c0b16e568dd5368cd9284154097ef50
 F test/delete.test 2686e1c98d552ef37d79ad55b17b93fe96fad9737786917ce3839767f734c48f
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P ec7eeb055bfb0e5a4467d8a45fa53d84bb8ae80ca0474b687e2783e971648008
-R e11042589c02a36ddb6f96689ee2795e
-U dan
-Z 5746d777226734857d3cbbf5f4b6983b
+P 925be7539947078547ee129b3d328ab0c59b19c6e2e5a391840f2d58f6d59acd
+R fad532678661570c360a86287eb5b36b
+U drh
+Z 9f227d0d147a4f8369a99aac9693c824
 # Remove this line to create a well-formed Fossil manifest.
