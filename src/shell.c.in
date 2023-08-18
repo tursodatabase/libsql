@@ -11304,6 +11304,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif /* SQLITE_USER_AUTHENTICATION */
 
   if( c=='v' && cli_strncmp(azArg[0], "version", n)==0 ){
+    char *zPtrSz = sizeof(void*)==8 ? "64-bit" : "32-bit";
     utf8_printf(p->out, "SQLite %s %s\n" /*extra-version-info*/,
         sqlite3_libversion(), sqlite3_sourceid());
 #if SQLITE_HAVE_ZLIB
@@ -11314,11 +11315,11 @@ static int do_meta_command(char *zLine, ShellState *p){
 #if defined(__clang__) && defined(__clang_major__)
     utf8_printf(p->out, "clang-" CTIMEOPT_VAL(__clang_major__) "."
                     CTIMEOPT_VAL(__clang_minor__) "."
-                    CTIMEOPT_VAL(__clang_patchlevel__) "\n");
+                    CTIMEOPT_VAL(__clang_patchlevel__) " (%s)\n", zPtrSz);
 #elif defined(_MSC_VER)
-    utf8_printf(p->out, "msvc-" CTIMEOPT_VAL(_MSC_VER) "\n");
+    utf8_printf(p->out, "msvc-" CTIMEOPT_VAL(_MSC_VER) " (%s)\n", zPtrSz);
 #elif defined(__GNUC__) && defined(__VERSION__)
-    utf8_printf(p->out, "gcc-" __VERSION__ "\n");
+    utf8_printf(p->out, "gcc-" __VERSION__ " (%s)\n", zPtrSz);
 #endif
   }else
 
@@ -12492,7 +12493,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-bail")==0 ){
       /* No-op.  The bail_on_error flag should already be set. */
     }else if( cli_strcmp(z,"-version")==0 ){
-      printf("%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
+      printf("%s %s (%d-bit)\n", sqlite3_libversion(), sqlite3_sourceid(),
+             8*(int)sizeof(char*));
       return 0;
     }else if( cli_strcmp(z,"-interactive")==0 ){
       stdin_is_interactive = 1;
