@@ -1,5 +1,5 @@
-C Enhance\sthe\sCLI\sand\sthe\sfuzzcheck\sutility\sprograms\sto\sreport\swhether\sthey\nare\scompiled\sas\s32-bit\sor\s64-bit\sfor\sthings\slike\sthe\s--version\soption.
-D 2023-08-18T12:15:44.137
+C Avoid\srunning\stest\scase\ssort2.2.3\sunder\saddress-sanitizer.\sIt\sruns\sout\sof\smemory\son\ssome\s32-bit\splatforms.
+D 2023-08-18T15:17:52.057
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -1544,7 +1544,7 @@ F test/snapshot_up.test a0a29c4cf33475fcef07c3f8e64af795e24ab91b4cc68295863402a3
 F test/soak.test 18944cf21b94a7fe0df02016a6ee1e9632bc4e8d095a0cb49d95e15d5cca2d5c
 F test/softheap1.test 843cd84db9891b2d01b9ab64cef3e9020f98d087
 F test/sort.test f86751134159abb5e5fd4381a0d7038c91013638cd1e3fa1d7850901f6df6196
-F test/sort2.test cc23b7c19d684657559e8a55b02f7fcee03851d0
+F test/sort2.test 2f8c66402a03adebe77ce7aafca129fbf32df27d6c9b8f7a9f1b958e39f56da8
 F test/sort3.test 1480ed7c4c157682542224e05e3b75faf4a149e5
 F test/sort4.test cca6f4b0b5255882645bbbe346a6a9f4a5c7b6a18513a6a7bf4ac1c4761ddc19
 F test/sort5.test 6b43ae0e2169b5ceed441844492e55ba7f1ae0790528395ddf7888ab3094525d
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P dd749e4042bdffb20fe71dd2dba91eab5edc32e4b2773c2fadba43cb54027a17
-R 721b61b17fa61306dfc38ad9b671418e
-U drh
-Z e031c1b6c081b3583919552c5f2bf81a
+P ec7eeb055bfb0e5a4467d8a45fa53d84bb8ae80ca0474b687e2783e971648008
+R e11042589c02a36ddb6f96689ee2795e
+U dan
+Z 5746d777226734857d3cbbf5f4b6983b
 # Remove this line to create a well-formed Fossil manifest.
