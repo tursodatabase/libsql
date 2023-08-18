@@ -1176,10 +1176,10 @@ const installOpfsVfs = function callee(options){
     const importDbChunked = async function(filename, callback){
       const [hDir, fnamePart] = await opfsUtil.getDirForFilename(filename, true);
       const hFile = await hDir.getFileHandle(fnamePart, {create:true});
-      const sah = await hFile.createSyncAccessHandle();
-      sah.truncate(0);
+      let sah = await hFile.createSyncAccessHandle();
       let nWrote = 0, chunk, checkedHeader = false, err = false;
       try{
+        sah.truncate(0);
         while( undefined !== (chunk = await callback()) ){
           if(chunk instanceof ArrayBuffer) chunk = new Uint8Array(chunk);
           if( 0===nWrote && chunk.byteLength>=15 ){
@@ -1200,10 +1200,12 @@ const installOpfsVfs = function callee(options){
         sah.write(new Uint8Array(2), {at: 18}/*force db out of WAL mode*/);
         return nWrote;
       }catch(e){
+        await sah.close();
+        sah = undefined;
         await hDir.removeEntry( fnamePart ).catch(()=>{});
         throw e;
       }finally {
-        await sah.close();
+        if( sah ) await sah.close();
       }
     };
 
@@ -1256,6 +1258,7 @@ const installOpfsVfs = function callee(options){
         sah.write(new Uint8Array(2), {at: 18}) /* force db out of WAL mode */;
         return nWrote;
       }catch(e){
+        if( sah ){ await sah.close(); sah = undefined; }
         await hDir.removeEntry( fnamePart ).catch(()=>{});
         throw e;
       }finally{
