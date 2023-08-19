@@ -273,8 +273,7 @@ package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)
 $(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)
 	cd $(dir.src); ls -1 org/sqlite/jni/*.java org/sqlite/jni/*.class > $@
-	@ls -la $@
-	@echo "To use this jar you will need the -Djava.library.path=DIR/WITH/libsqlite3-jni.so flag."
+	@echo "To use this jar you will need the -Djava.library.path=DIR/CONTAINING/libsqlite3-jni.so flag."
 	@echo "e.g. java -jar $@ -Djava.library.path=bld"
 
 $(package.jar): $(CLASS_FILES) $(MAKEFILE) $(package.jar.in)

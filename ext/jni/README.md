@@ -15,7 +15,10 @@ Technical support is available in the forum:
 
 > **FOREWARNING:** this subproject is very much in development and
   subject to any number of changes. Please do not rely on any
-  information about its API until this disclaimer is removed.
+  information about its API until this disclaimer is removed.  The JNI
+  bindgins released with version 3.43 are a "tech preview" and 3.44
+  will be "final," at which point strong backward compatibility
+  guarantees will apply.
 
 Project goals/requirements:
 
@@ -40,13 +43,30 @@ Non-goals:
 - Creation of high-level OO wrapper APIs. Clients are free to create
   them off of the C-style API.
 
+Hello World
+-----------------------------------------------------------------------
 
-Significant TODOs
-========================================================================
+```java
+import org.sqlite.jni.*;
+import static org.sqlite.jni.SQLite3Jni;
+...
+OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
+int rc = sqlite3_open(":memory:", out);
+final sqlite3 db = out.take();
+if( 0 != rc ){
+  if( null != db ){
+    System.out.print("Error opening db: "+sqlite3_errmsg(db));
+    sqlite3_close(db);
+  }else{
+    System.out.print("Error opening db: rc="+rc);
+  }
+  ... handle error ...
+}
 
-- Lots of APIs left to bind. Most "day-to-day" functionality is already
-  in place and is believed to work well.
+... use db ...
 
+sqlite3_close_v2(db);
+```
 
 Building
 ========================================================================
@@ -59,55 +79,33 @@ The canonical builds assumes a Linux-like environment and requires:
 
 Put simply:
 
-```
+```console
 $ export JAVA_HOME=/path/to/jdk/root
 $ make
 $ make test
 $ make clean
 ```
 
+The jar distribution can be created with `make jar`.
+
 <a id='1to1ish'></a>
 One-to-One(-ish) Mapping to C
 ========================================================================
 
 This JNI binding aims to provide as close to a 1-to-1 experience with
-the C API as cross-language semantics allow. Exceptions are
-necessarily made where cross-language semantics do not allow a 1-to-1,
-and judiciously made where a 1-to-1 mapping would be unduly cumbersome
-to use in Java.
+the C API as cross-language semantics allow. Changes are necessarily
+made where cross-language semantics do not allow a 1-to-1, and
+judiciously made where a 1-to-1 mapping would be unduly cumbersome to
+use in Java.
 
-Golden Rule: _Never_ Throw from Callbacks
+Golden Rule: _Never_ Throw from Callbacks (Unless...)
 ------------------------------------------------------------------------
 
-JNI bindings which accept client-defined functions _must never throw
-exceptions_ unless _very explicitly documented_ as being
-throw-safe. Exceptions are generally reserved for higher-level
-bindings which are constructed to specifically deal with them and
-ensure that they do not leak C-level resources. Some of the JNI
-bindings are provided as Java functions which expect this rule to
-always hold.
-
-UTF-8(-ish)
-------------------------------------------------------------------------
-
-SQLite internally uses UTF-8 encoding, whereas Java natively uses
-UTF-16.  Java JNI has routines for converting to and from UTF-8, _but_
-Java uses what its docs call "[modified UTF-8][modutf8]." Care must be
-taken when converting Java strings to UTF-8 to ensure that the proper
-conversion is performed. In short,
-`String.getBytes(StandardCharsets.UTF_8)` performs the proper
-conversion in Java, and there is no JNI C API for that conversion
-(JNI's `NewStringUTF()` returns MUTF-8).
-
-Known consequences and limitations of this discrepancy include:
-
-- Names of databases, tables, and collations must not contain
-  characters which differ in MUTF-8 and UTF-8, or certain APIs will
-  mis-translate them on their way between languages. APIs which
-  transfer other client-side data to Java take extra care to
-  convert the data at the cost of performance.
-
-[modutf8]: https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
+Client-defined callbacks _must never throw exceptions_ unless _very
+explicitly documented_ as being throw-safe. Exceptions are generally
+reserved for higher-level bindings which are constructed to
+specifically deal with them and ensure that they do not leak C-level
+resources.
 
 
 Unwieldy Constructs are Re-mapped
@@ -125,7 +123,7 @@ A prime example of where interface changes for Java are necessary for
 usability is [registration of a custom
 collation](https://sqlite.org/c3ref/create_collation.html):
 
-```
+```c
 // C:
 int sqlite3_create_collation(sqlite3 * db, const char * name, int eTextRep,
                              void *pUserData,
@@ -144,7 +142,7 @@ passed that object as their first argument. That data is passed around
 bind that part as-is to Java, the result would be awkward to use (^Yes,
 we tried this.):
 
-```
+```java
 // Java:
 int sqlite3_create_collation(sqlite3 db, String name, int eTextRep,
                              Object pUserData, xCompareType xCompare);
@@ -159,7 +157,7 @@ for callbacks and (B) having their internal state provided separately,
 which is ill-fitting in Java. For the sake of usability, C APIs which
 follow that pattern use a slightly different Java interface:
 
-```
+```java
 int sqlite3_create_collation(sqlite3 db, String name, int eTextRep,
                              Collation collation);
 ```
@@ -168,7 +166,7 @@ Where the `Collation` class has an abstract `xCompare()` method and
 no-op `xDestroy()` method which can be overridden if needed, leading to
 a much more Java-esque usage:
 
-```
+```java
 int rc = sqlite3_create_collation(db, "mycollation", SQLITE_UTF8, new Collation(){
 
   // Required comparison function:
@@ -187,8 +185,8 @@ int rc = sqlite3_create_collation(db, "mycollation", SQLITE_UTF8, new Collation(
 
 Noting that:
 
-- It is still possible to bind in call-scope-local state via closures,
-  if desired.
+- It is possible to bind in call-scope-local state via closures, if
+  desired, as opposed to packing it into the Collation object.
 
 - No capabilities of the C API are lost or unduly obscured via the
   above API reshaping, so power users need not make any compromises.
@@ -199,6 +197,7 @@ Noting that:
   overriding the `xDestroy()` method effectively gives it v2
   semantics.
 
+
 ### User-defined SQL Functions (a.k.a. UDFs)
 
 The [`sqlite3_create_function()`](https://sqlite.org/c3ref/create_function.html)
@@ -206,12 +205,13 @@ family of APIs make heavy use of function pointers to provide
 client-defined callbacks, necessitating interface changes in the JNI
 binding. The Java API has only one core function-registration function:
 
-```
+```java
 int sqlite3_create_function(sqlite3 db, String funcName, int nArgs,
                             int encoding, SQLFunction func);
 ```
 
-> Design question: does the encoding argument serve any purpose in JS?
+> Design question: does the encoding argument serve any purpose in
+  Java? That's as-yet undetermined. If not, it will be removed.
 
 `SQLFunction` is not used directly, but is instead instantiated via
 one of its three subclasses:
@@ -229,5 +229,8 @@ Search [`Tester1.java`](/file/ext/jni/src/org/sqlite/jni/Tester1.java) for
 Reminder: see the disclaimer at the top of this document regarding the
 in-flux nature of this API.
 
-[jsrc]: /file/
-[www]: https://sqlite.org
+### And so on...
+
+Various APIs which accept callbacks, e.g. `sqlite3_trace_v2()` and
+`sqlite3_update_hook()`, use interfaces similar to those shown above.
+

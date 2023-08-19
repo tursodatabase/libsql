@@ -1,5 +1,5 @@
-C JNI\stest\scode\scleanups.
-D 2023-08-19T11:52:36.349
+C JNI\sdoc\sadditions.
+D 2023-08-19T12:32:00.131
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -231,8 +231,8 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/jni/GNUmakefile 4217266579b74499708d0b9fd7de598d67cc1992646518596ec83f134c3e2d85
-F ext/jni/README.md 7a614a2fa6c561205f7a53fd8626cf93a7b5711ff454fc1814517f796df398eb
+F ext/jni/GNUmakefile ace719d6d7025a0a454b7c661de2beef9a0e819535ad0ce0742034da8ff8d27f
+F ext/jni/README.md 975b35173debbbf3a4ab7166e14d2ffa2bacff9b6850414f09cc919805e81ba4
 F ext/jni/jar-dist.make 9a03d10dbb5a74c724bfec4b76fd9e4c9865cbbc858d731cb48f38ac897d73a3
 F ext/jni/src/c/sqlite3-jni.c 8608cb36223d6bc64e8ddd9296b6d63a4fc54efaf8dbc3ea7e5eca81f4801d42
 F ext/jni/src/c/sqlite3-jni.h f10d2f38720687c70ecdd5e44f6e8db98efee2caa05fc86b2d9e0c76e6cc0a18
@@ -2091,8 +2091,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 1cecb9e0383aa78c491f9ba88c831a88b4b2d40ceef1b87be494b6ddc0789e41
-R a49c27c6a99f3ab466acd799b27c01cf
+P e202b6e69da8cced114d027cf2e91a04dfdd50b601b3274214783f7d750c558c
+R 109361c70c87f2804d75b9c237ee841f
 U stephan
-Z a181fae7a989c6647ffb5b92efaaa712
+Z 56d27110aeccda606f4b75566f7a0870
 # Remove this line to create a well-formed Fossil manifest.
