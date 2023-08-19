@@ -6,7 +6,9 @@
 # proper top-level JDK directory and, depending on the platform, add a
 # platform-specific -I directory. It should build as-is with any
 # 2020s-era version of gcc or clang. It requires JDK version 8 or
-# higher.
+# higher and that JAVA_HOME points to the top-most installation
+# directory of that JDK. On Ubuntu-style systems the JDK is typically
+# installed under /usr/lib/jvm/java-VERSION-PLATFORM.
 
 default: all
 
@@ -36,9 +38,6 @@ SQLITE_OPT = \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_ENABLE_FTS5 \
   -DSQLITE_DEBUG
-# -DSQLITE_DEBUG is just to work around a -Wall warning
-# for a var which gets set in all builds but only read
-# via assert().
 
 sqlite3-jni.dll = libsqlite3-jni.so
 $(sqlite3-jni.dll):

@@ -19,8 +19,7 @@ package org.sqlite.jni;
 */
 public final class sqlite3_context extends NativePointerHolder<sqlite3_context> {
   /**
-     For use only by the JNI layer. It's permitted to set this even
-     though it's private.
+     Only set by the JNI layer.
   */
   private long aggregateContext = 0;
 

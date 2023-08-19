@@ -511,33 +511,33 @@ static struct {
     S3JniEnv * aHead /* Linked list of in-use instances */;
     S3JniEnv * aFree /* Linked list of free instances */;
     sqlite3_mutex * mutex /* mutex for aHead and aFree */;
-    void const * locker   /* env mutex is held on this object's behalf
-                             (used only for sanity checking). */;
+    void const * locker /* env mutex is held on this object's behalf.
+                           Used only for sanity checking. */;
   } envCache;
   struct {
     S3JniDb * aUsed  /* Linked list of in-use instances */;
     S3JniDb * aFree  /* Linked list of free instances */;
     sqlite3_mutex * mutex /* mutex for aUsed and aFree */;
-    void const * locker   /* perDb mutex is held on this object's
-                             behalf.  Unlike envCache.locker, we
-                             cannot always have this set to the
-                             current JNIEnv object. */;
+    void const * locker /* perDb mutex is held on this object's
+                           behalf.  Unlike envCache.locker, we cannot
+                           always have this set to the current JNIEnv
+                           object. Used only for sanity checking. */;
   } perDb;
   /* Internal metrics. */
   struct {
-    unsigned envCacheHits;
-    unsigned envCacheMisses;
-    unsigned nMutexEnv       /* number of times envCache.mutex was entered */;
-    unsigned nMutexPerDb     /* number of times perDb.mutex was entered */;
-    unsigned nMutexAutoExt   /* number of times autoExt.mutex was entered */;
-    unsigned nDestroy        /* xDestroy() calls across all types */;
+    volatile unsigned envCacheHits;
+    volatile unsigned envCacheMisses;
+    volatile unsigned nMutexEnv       /* number of times envCache.mutex was entered */;
+    volatile unsigned nMutexPerDb     /* number of times perDb.mutex was entered */;
+    volatile unsigned nMutexAutoExt   /* number of times autoExt.mutex was entered */;
+    volatile unsigned nDestroy        /* xDestroy() calls across all types */;
     struct {
       /* Number of calls for each type of UDF callback. */
-      unsigned nFunc;
-      unsigned nStep;
-      unsigned nFinal;
-      unsigned nValue;
-      unsigned nInverse;
+      volatile unsigned nFunc;
+      volatile unsigned nStep;
+      volatile unsigned nFinal;
+      volatile unsigned nValue;
+      volatile unsigned nInverse;
     } udf;
   } metrics;
   /**

@@ -21,17 +21,19 @@ package org.sqlite.jni;
 
    This class is not used by itself, but is a marker base class. The
    three UDF types are modelled by the inner classes Scalar,
-   Aggregate<T>, and Window<T>. Most simply, clients may create
-   anonymous classes from those to implement UDFs. Clients are free to
-   create their own classes for use with UDFs, so long as they conform
-   to the public interfaces defined by those three classes. The JNI
-   layer only actively relies on the SQLFunction base class.
+   Aggregate<T>, and Window<T>. Most simply, clients may subclass
+   those, or create anonymous classes from them, to implement
+   UDFs. Clients are free to create their own classes for use with
+   UDFs, so long as they conform to the public interfaces defined by
+   those three classes. The JNI layer only actively relies on the
+   SQLFunction base class and the method names and signatures used by
+   the UDF callback interfaces.
 */
 public abstract class SQLFunction {
 
   /**
      PerContextState assists aggregate and window functions in
-     managinga their accumulator state across calls to the UDF's
+     managing their accumulator state across calls to the UDF's
      callbacks.
 
      If a given aggregate or window function is called multiple times

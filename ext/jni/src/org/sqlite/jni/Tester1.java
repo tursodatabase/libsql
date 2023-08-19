@@ -69,10 +69,12 @@ public class Tester1 implements Runnable {
     affirm(v, "Affirmation failed.");
   }
 
-  private static void test1(){
-    outln("libversion_number:",
-          sqlite3_libversion_number(),"\n",
-          sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
+  private void test1(){
+    if( 0==tId ){
+      outln("libversion_number:",
+            sqlite3_libversion_number(),"\n",
+            sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
+    }
     affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
     //outln("threadsafe = "+sqlite3_threadsafe());
     affirm(SQLITE_MAX_LENGTH > 0);
@@ -156,7 +158,7 @@ public class Tester1 implements Runnable {
     return rv;
   }
 
-  private static void testCompileOption(){
+  private void testCompileOption(){
     int i = 0;
     String optName;
     outln("compile options:");
@@ -167,7 +169,7 @@ public class Tester1 implements Runnable {
 
   }
 
-  private static void testOpenDb1(){
+  private void testOpenDb1(){
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
@@ -189,7 +191,7 @@ public class Tester1 implements Runnable {
     affirm(0 == db.getNativePointer());
   }
 
-  private static void testOpenDb2(){
+  private void testOpenDb2(){
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open_v2(":memory:", out,
                              SQLITE_OPEN_READWRITE
@@ -202,7 +204,7 @@ public class Tester1 implements Runnable {
     affirm(0 == db.getNativePointer());
   }
 
-  private static void testPrepare123(){
+  private void testPrepare123(){
     sqlite3 db = createNewDb();
     int rc;
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
@@ -265,7 +267,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testBindFetchInt(){
+  private void testBindFetchInt(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
 
@@ -312,7 +314,7 @@ public class Tester1 implements Runnable {
     affirm(0 == db.getNativePointer());
   }
 
-  private static void testBindFetchInt64(){
+  private void testBindFetchInt64(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
     sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
@@ -334,7 +336,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testBindFetchDouble(){
+  private void testBindFetchDouble(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
     sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
@@ -359,7 +361,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testBindFetchText(){
+  private void testBindFetchText(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
     sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
@@ -388,7 +390,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testBindFetchBlob(){
+  private void testBindFetchBlob(){
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
     sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
@@ -417,7 +419,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testSql(){
+  private void testSql(){
     sqlite3 db = createNewDb();
     sqlite3_stmt stmt = prepare(db, "SELECT 1");
     affirm( "SELECT 1".equals(sqlite3_sql(stmt)) );
@@ -428,7 +430,7 @@ public class Tester1 implements Runnable {
     sqlite3_finalize(stmt);
   }
 
-  private static void testCollation(){
+  private void testCollation(){
     final sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     final ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
@@ -501,7 +503,7 @@ public class Tester1 implements Runnable {
     affirm(xDestroyCalled.value);
   }
 
-  private static void testToUtf8(){
+  private void testToUtf8(){
     /**
        Java docs seem contradictory, claiming to use "modified UTF-8"
        encoding while also claiming to export using RFC 2279:
@@ -515,7 +517,7 @@ public class Tester1 implements Runnable {
     affirm( 5 == ba.length /* as opposed to 6 in modified utf-8 */);
   }
 
-  private static void testStatus(){
+  private void testStatus(){
     final OutputPointer.Int64 cur64 = new OutputPointer.Int64();
     final OutputPointer.Int64 high64 = new OutputPointer.Int64();
     final OutputPointer.Int32 cur32 = new OutputPointer.Int32();
@@ -543,7 +545,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testUdf1(){
+  private void testUdf1(){
     final sqlite3 db = createNewDb();
     // These ValueHolders are just to confirm that the func did what we want...
     final ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
@@ -587,7 +589,7 @@ public class Tester1 implements Runnable {
     affirm( xDestroyCalled.value );
   }
 
-  private static void testUdfJavaObject(){
+  private void testUdfJavaObject(){
     final sqlite3 db = createNewDb();
     final ValueHolder<sqlite3> testResult = new ValueHolder<>(db);
     final SQLFunction func = new SQLFunction.Scalar(){
@@ -616,7 +618,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testUdfAggregate(){
+  private void testUdfAggregate(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Boolean> xFinalNull =
       // To confirm that xFinal() is called with no aggregate state
@@ -678,7 +680,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testUdfWindow(){
+  private void testUdfWindow(){
     final sqlite3 db = createNewDb();
     /* Example window function, table, and results taken from:
        https://sqlite.org/windowfunctions.html#udfwinfunc */
@@ -735,7 +737,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void listBoundMethods(){
+  private void listBoundMethods(){
     if(false){
       final java.lang.reflect.Field[] declaredFields =
         SQLite3Jni.class.getDeclaredFields();
@@ -766,7 +768,7 @@ public class Tester1 implements Runnable {
     outln(count+" functions named sqlite3_*.");
   }
 
-  private static void testTrace(){
+  private void testTrace(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     /* Ensure that characters outside of the UTF BMP survive the trip
@@ -815,7 +817,7 @@ public class Tester1 implements Runnable {
     affirm( 7 == counter.value );
   }
 
-  private static void testBusy(){
+  private void testBusy(){
     final String dbName = "_busy-handler.db";
     final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
@@ -866,7 +868,7 @@ public class Tester1 implements Runnable {
     }
   }
 
-  private static void testProgress(){
+  private void testProgress(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     sqlite3_progress_handler(db, 1, new ProgressHandler(){
@@ -884,7 +886,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testCommitHook(){
+  private void testCommitHook(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> hookResult = new ValueHolder<>(0);
@@ -933,7 +935,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testUpdateHook(){
+  private void testUpdateHook(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
@@ -982,7 +984,7 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
-  private static void testRollbackHook(){
+  private void testRollbackHook(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final RollbackHook theHook = new RollbackHook(){
@@ -1020,7 +1022,7 @@ public class Tester1 implements Runnable {
      it throws.
   */
   @SuppressWarnings("unchecked")
-  private static void testFts5() throws Exception {
+  private void testFts5() throws Exception {
     if( !SQLITE_ENABLE_FTS5 ){
       outln("SQLITE_ENABLE_FTS5 is not set. Skipping FTS5 tests.");
       return;
@@ -1048,7 +1050,7 @@ public class Tester1 implements Runnable {
     }
   }
 
-  private static void testAuthorizer(){
+  private void testAuthorizer(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> authRc = new ValueHolder<>(0);
@@ -1070,7 +1072,7 @@ public class Tester1 implements Runnable {
     sqlite3_close(db);
   }
 
-  private static void testAutoExtension(){
+  private void testAutoExtension(){
     final ValueHolder<Integer> val = new ValueHolder<>(0);
     final ValueHolder<String> toss = new ValueHolder<>(null);
     final AutoExtension ax = new AutoExtension(){
@@ -1159,7 +1161,7 @@ public class Tester1 implements Runnable {
     affirm( 8 == val.value );
   }
 
-  private static void testSleep(){
+  private void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);
     outln("Woke up.");
@@ -1273,7 +1275,7 @@ public class Tester1 implements Runnable {
         }
       }
     }
-    outln("\tSQLite3Jni sqlite3_*() methods: "+
+    outln("\tSQLite3Jni.sqlite3_*() methods: "+
           nNatives+" native methods and "+
           (nMethods - nNatives)+" Java impls");
     outln("\tTotal test time = "
