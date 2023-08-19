@@ -4809,7 +4809,7 @@ static const char *(azHelp[]) = {
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
 #if defined(_WIN32) || defined(WIN32)
-  ".crnl on|off             Turn translate \\n to \\r\\n.  Default ON",
+  ".crnl on|off             Translate \\n to \\r\\n.  Default ON",
 #endif
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
