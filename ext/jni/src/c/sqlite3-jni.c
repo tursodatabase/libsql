@@ -559,9 +559,9 @@ static struct {
 #define MUTEX_ASSERT_NOTLOCKER_ENV                                   \
   assert( (env) != S3JniGlobal.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
 #define MUTEX_ENV_ENTER                                       \
-  /*MARKER(("Entering ENV mutex@%p %s.\n", env, __func__));*/ \
   MUTEX_ASSERT_NOTLOCKER_ENV;                                 \
   sqlite3_mutex_enter( S3JniGlobal.envCache.mutex );          \
+  /*MARKER(("Entered ENV mutex@%p %s.\n", env, __func__));*/  \
   ++S3JniGlobal.metrics.nMutexEnv;                            \
   S3JniGlobal.envCache.locker = env
 #define MUTEX_ENV_LEAVE                                       \
@@ -636,6 +636,8 @@ static S3JniEnv * S3JniGlobal_env_cache(JNIEnv * const env){
   if(row->pNext) row->pNext->pPrev = row;
   S3JniGlobal.envCache.aHead = row;
   row->env = env;
+
+  //MARKER(("Initalizing cache for JNIEnv@%p\n", env));
 
   /* Grab references to various global classes and objects... */
   row->g.cObj = REF_G((*env)->FindClass(env,"java/lang/Object"));
@@ -918,7 +920,6 @@ static void S3JniDb_set_aside(S3JniDb * const s){
   if(s){
     JNIEnv * const env = s->env;
     MUTEX_ASSERT_LOCKED_PDB;
-    assert(s->pDb && "Else this object is already in the free-list.");
     //MARKER(("state@%p for db@%p setting aside\n", s, s->pDb));
     assert(s->pPrev != s);
     assert(s->pNext != s);
@@ -966,7 +967,9 @@ static void S3JniDb_free_for_env(JNIEnv *env){
   for( ; ps; ps = pNext ){
     pNext = ps->pNext;
     if(ps->env == env){
+#ifndef NDEBUG
       S3JniDb * const pPrev = ps->pPrev;
+#endif
       S3JniDb_set_aside(ps);
       assert( pPrev ? pPrev->pNext==pNext : 1 );
       assert( ps == S3JniGlobal.perDb.aFree );
@@ -996,6 +999,7 @@ static int S3JniGlobal_env_uncache(JNIEnv * const env){
   if( !row ){
       return 0;
   }
+  //MARKER(("Uncaching JNIEnv@%p\n", env));
   if( row->pNext ) row->pNext->pPrev = row->pPrev;
   if( row->pPrev ) row->pPrev->pNext = row->pNext;
   if( S3JniGlobal.envCache.aHead == row ){
@@ -2104,11 +2108,13 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   ps = S3JniDb_for_db(env, jDb, 0);
   if(ps){
     rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
-    MUTEX_PDB_ENTER;
-    S3JniDb_set_aside(ps)
-      /* MUST come after close() because of ps->trace. */;
-    MUTEX_PDB_LEAVE;
-    NativePointerHolder_set(env, jDb, 0, &S3NphRefs.sqlite3);
+    if( 0==rc ){
+      MUTEX_PDB_ENTER;
+      S3JniDb_set_aside(ps)
+        /* MUST come after close() because of ps->trace. */;
+      MUTEX_PDB_LEAVE;
+      NativePointerHolder_set(env, jDb, 0, &S3NphRefs.sqlite3);
+    }
   }
   return (jint)rc;
 }
@@ -4391,6 +4397,10 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
   jfieldID fieldId;
   const ConfigFlagEntry * pConfFlag;
 
+  if( 0==sqlite3_threadsafe() ){
+    (*env)->FatalError(env, "sqlite3 was not built with SQLITE_THREADSAFE.");
+    return;
+  }
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));
   if( (*env)->GetJavaVM(env, &S3JniGlobal.jvm) ){
     (*env)->FatalError(env, "GetJavaVM() failure shouldn't be possible.");

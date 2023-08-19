@@ -15,43 +15,48 @@ package org.sqlite.jni;
 import static org.sqlite.jni.SQLite3Jni.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-public class Tester1 {
+public class Tester1 implements Runnable {
   private static final class Metrics {
     int dbOpen;
   }
 
-  private String name;
+  private Integer tId;
 
-  Tester1(String name){
-    this.name = name;
+  Tester1(Integer id){
+    tId = id;
   }
 
   static final Metrics metrics = new Metrics();
-  private static final OutputPointer.sqlite3_stmt outStmt
-    = new OutputPointer.sqlite3_stmt();
 
-  public static void out(Object val){
+  public synchronized static void out(Object val){
     System.out.print(val);
   }
 
-  public static void outln(Object val){
+  public synchronized static void outln(Object val){
+    System.out.print(Thread.currentThread().getName()+": ");
     System.out.println(val);
   }
 
   @SuppressWarnings("unchecked")
-  public static void out(Object... vals){
+  public synchronized static void out(Object... vals){
     int n = 0;
+    System.out.print(Thread.currentThread().getName()+": ");
     for(Object v : vals) out((n++>0 ? " " : "")+v);
   }
 
   @SuppressWarnings("unchecked")
-  public static void outln(Object... vals){
+  public synchronized static void outln(Object... vals){
     out(vals); out("\n");
   }
 
-  static int affirmCount = 0;
-  public static void affirm(Boolean v, String comment){
+  static volatile int affirmCount = 0;
+  public synchronized static void affirm(Boolean v, String comment){
     ++affirmCount;
     assert( v /* prefer assert over exception if it's enabled because
                  the JNI layer sometimes has to suppress exceptions,
@@ -66,11 +71,8 @@ public class Tester1 {
 
   private static void test1(){
     outln("libversion_number:",
-          sqlite3_libversion_number()
-          + "\n"
-          + sqlite3_libversion()
-          + "\n"
-          + SQLITE_SOURCE_ID);
+          sqlite3_libversion_number(),"\n",
+          sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
     affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
     //outln("threadsafe = "+sqlite3_threadsafe());
     affirm(SQLITE_MAX_LENGTH > 0);
@@ -106,6 +108,7 @@ public class Tester1 {
     byte[] sqlChunk = sqlUtf8;
     int rc = 0;
     sqlite3_stmt stmt = null;
+    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     while(pos < sqlChunk.length){
       if(pos > 0){
         sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
@@ -144,7 +147,7 @@ public class Tester1 {
   }
 
   static sqlite3_stmt prepare(sqlite3 db, String sql){
-    outStmt.clear();
+    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     int rc = sqlite3_prepare(db, sql, outStmt);
     affirm( 0 == rc );
     final sqlite3_stmt rv = outStmt.take();
@@ -202,11 +205,15 @@ public class Tester1 {
   private static void testPrepare123(){
     sqlite3 db = createNewDb();
     int rc;
+    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     rc = sqlite3_prepare(db, "CREATE TABLE t1(a);", outStmt);
     affirm(0 == rc);
-    sqlite3_stmt stmt = outStmt.get();
+    sqlite3_stmt stmt = outStmt.take();
     affirm(0 != stmt.getNativePointer());
     rc = sqlite3_step(stmt);
+    if( SQLITE_DONE != rc ){
+      outln("step failed ??? ",rc, sqlite3_errmsg(db));
+    }
     affirm(SQLITE_DONE == rc);
     sqlite3_finalize(stmt);
     affirm(0 == stmt.getNativePointer());
@@ -811,6 +818,7 @@ public class Tester1 {
   private static void testBusy(){
     final String dbName = "_busy-handler.db";
     final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
+    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
 
     int rc = sqlite3_open(dbName, outDb);
     ++metrics.dbOpen;
@@ -1163,55 +1171,92 @@ public class Tester1 {
     testOpenDb1();
     testOpenDb2();
     testPrepare123();
-    testBindFetchInt();
-    testBindFetchInt64();
-    testBindFetchDouble();
-    testBindFetchText();
-    testBindFetchBlob();
-    testSql();
-    testCollation();
-    testToUtf8();
-    testStatus();
-    testUdf1();
-    testUdfJavaObject();
-    testUdfAggregate();
-    testUdfWindow();
-    testTrace();
-    testBusy();
-    testProgress();
-    testCommitHook();
-    testRollbackHook();
-    testUpdateHook();
-    testAuthorizer();
-    testFts5();
-    if(!fromThread){
-      testAutoExtension();
+    if( true ){
+      testBindFetchInt();
+      testBindFetchInt64();
+      testBindFetchDouble();
+      testBindFetchText();
+      testBindFetchBlob();
+      testSql();
+      testCollation();
+      testToUtf8();
+      testStatus();
+      testUdf1();
+      testUdfJavaObject();
+      testUdfAggregate();
+      testUdfWindow();
+      testTrace();
+      testProgress();
+      testCommitHook();
+      testRollbackHook();
+      testUpdateHook();
+      testAuthorizer();
+      if(!fromThread){
+        // skip for now: messes with affirm() counts. testFts5();
+        testBusy();
+        testAutoExtension();
+      }
     }
   }
 
-  public void run() throws Exception{
-    runTests(true);
+  public void run(){
+    try {
+      runTests(0!=this.tId);
+    }catch(Exception e){
+      throw new RuntimeException(e);
+    }finally{
+      affirm( SQLite3Jni.uncacheJniEnv() );
+      affirm( !SQLite3Jni.uncacheJniEnv() );
+    }
   }
 
   public static void main(String[] args) throws Exception {
-
-    final long timeStart = System.nanoTime();
-    new Tester1("main thread").runTests(false);
-    final long timeEnd = System.nanoTime();
-
-    final java.util.List<String> liArgs =
-      java.util.Arrays.asList(args);
-    //testSleep();
-    if(liArgs.indexOf("-v")>0){
-      sqlite3_do_something_for_developer();
-      //listBoundMethods();
+    Integer nThread = null;
+    boolean doSomethingForDev = false;
+    Integer nRepeat = 1;
+    for( int i = 0; i < args.length; ){
+      String arg = args[i++];
+      if(arg.startsWith("-")){
+        arg = arg.replaceFirst("-+","");
+        if(arg.equals("v")){
+          doSomethingForDev = true;
+          //listBoundMethods();
+        }else if(arg.equals("t") || arg.equals("thread")){
+          nThread = Integer.parseInt(args[i++]);
+        }else if(arg.equals("r") || arg.equals("runs")){
+          nRepeat = Integer.parseInt(args[i++]);
+        }else{
+          throw new IllegalArgumentException("Unhandled flag:"+arg);
+        }
+      }
     }
-    affirm( SQLite3Jni.uncacheJniEnv() );
-    affirm( !SQLite3Jni.uncacheJniEnv() );
+
+    final long timeStart = System.currentTimeMillis();
+    int nLoop = 0;
+    for( int n = 0; n < nRepeat; ++n ){
+      if( nThread==null || nThread<=1 ){
+        new Tester1(0).runTests(false);
+      }else{
+        final ExecutorService ex = Executors.newFixedThreadPool( nThread );
+        //final List<Future<?>> futures = new ArrayList<>();
+        ++nLoop;
+        outln("Running loop #",nLoop," over ",nThread," threads.");
+        for( int i = 0; i < nThread; ++i ){
+          ex.submit( new Tester1(i) );
+        }
+        ex.shutdown();
+        ex.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS);
+        ex.shutdownNow();
+      }
+    }
+    final long timeEnd = System.currentTimeMillis();
     outln("Tests done. Metrics:");
     outln("\tAssertions checked: "+affirmCount);
     outln("\tDatabases opened: "+metrics.dbOpen);
 
+    if( doSomethingForDev ){
+      sqlite3_do_something_for_developer();
+    }
     int nMethods = 0;
     int nNatives = 0;
     final java.lang.reflect.Method[] declaredMethods =
@@ -1232,6 +1277,6 @@ public class Tester1 {
           nNatives+" native methods and "+
           (nMethods - nNatives)+" Java impls");
     outln("\tTotal test time = "
-          +((timeEnd - timeStart)/1000000.0)+"ms");
+          +(timeEnd - timeStart)+"ms");
   }
 }

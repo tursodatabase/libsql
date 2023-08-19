@@ -36,6 +36,9 @@ package org.sqlite.jni;
    access to the object's value via the `value` property, whereas the
    JNI-level opaque types do not permit client-level code to set that
    property.
+
+   Warning: do not share instances of these classes across
+   threads. Doing so may lead to corrupting sqlite3-internal state.
 */
 public final class OutputPointer {
 

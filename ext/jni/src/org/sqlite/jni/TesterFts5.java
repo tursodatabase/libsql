@@ -72,7 +72,7 @@ public class TesterFts5 {
     affirm( xDestroyCalled.value );
   }
 
-  public TesterFts5(){
+  public TesterFts5(boolean outputStats){
     int oldAffirmCount = Tester1.affirmCount;
     Tester1.affirmCount = 0;
     final long timeStart = System.nanoTime();

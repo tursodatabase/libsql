@@ -163,14 +163,11 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_THREADSAFE=1 \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_C=$(sqlite3.c) \
   -DSQLITE_DEBUG
-# -DSQLITE_DEBUG is just to work around a -Wall warning
-# for a var which gets set in all builds but only read
-# via assert().
 
 SQLITE_OPT += -g -DDEBUG -UNDEBUG
 
@@ -223,7 +220,7 @@ $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 $(sqlite3-jni.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
 $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
 	$(CC) $(sqlite3-jni.dll.cflags) $(SQLITE_OPT) \
-			$(sqlite3-jni.c) -shared -o $@
+			$(sqlite3-jni.c) -shared -o $@ -lpthread
 all: $(sqlite3-jni.dll)
 
 .PHONY: test
@@ -231,7 +228,7 @@ test.flags ?= -v
 test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.Tester1 $(if $(test.flags),-- $(test.flags),)
+		org.sqlite.jni.Tester1 $(test.flags)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose
