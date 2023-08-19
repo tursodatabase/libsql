@@ -229,6 +229,10 @@ test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
 		org.sqlite.jni.Tester1 $(test.flags)
+test-mt:  $(SQLite3Jni.class) $(sqlite3-jni.dll)
+	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
+		$(java.flags) -cp $(classpath) \
+		org.sqlite.jni.Tester1 -t 4 -r 5 $(test.flags)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose
@@ -264,7 +268,7 @@ endif
 
 tester-ext: tester-local
 tester: tester-ext
-tests: test tester
+tests: test tester test-mt
 package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)
 $(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)

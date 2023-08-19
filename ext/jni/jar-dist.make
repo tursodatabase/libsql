@@ -33,7 +33,7 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_THREADSAFE=1 \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_ENABLE_FTS5 \
@@ -46,7 +46,7 @@ $(sqlite3-jni.dll):
 	echo  "*** to configure it for your system.                                 ***"; \
 	echo  "************************************************************************"
 	$(CC) $(CFLAGS) $(SQLITE_OPT) \
-		src/sqlite3-jni.c -shared -o $@
+		src/sqlite3-jni.c -lpthread -shared -o $@
 	@echo "Now try running it with: make test"
 
 test: $(sqlite3-jni.dll)

@@ -70,13 +70,7 @@ public class Tester1 implements Runnable {
   }
 
   private void test1(){
-    if( 0==tId ){
-      outln("libversion_number:",
-            sqlite3_libversion_number(),"\n",
-            sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
-    }
     affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
-    //outln("threadsafe = "+sqlite3_threadsafe());
     affirm(SQLITE_MAX_LENGTH > 0);
     affirm(SQLITE_MAX_TRIGGER_DEPTH>0);
   }
@@ -1072,7 +1066,7 @@ public class Tester1 implements Runnable {
     sqlite3_close(db);
   }
 
-  private void testAutoExtension(){
+  private synchronized void testAutoExtension(){
     final ValueHolder<Integer> val = new ValueHolder<>(0);
     final ValueHolder<String> toss = new ValueHolder<>(null);
     final AutoExtension ax = new AutoExtension(){
@@ -1173,31 +1167,29 @@ public class Tester1 implements Runnable {
     testOpenDb1();
     testOpenDb2();
     testPrepare123();
-    if( true ){
-      testBindFetchInt();
-      testBindFetchInt64();
-      testBindFetchDouble();
-      testBindFetchText();
-      testBindFetchBlob();
-      testSql();
-      testCollation();
-      testToUtf8();
-      testStatus();
-      testUdf1();
-      testUdfJavaObject();
-      testUdfAggregate();
-      testUdfWindow();
-      testTrace();
-      testProgress();
-      testCommitHook();
-      testRollbackHook();
-      testUpdateHook();
-      testAuthorizer();
-      if(!fromThread){
-        // skip for now: messes with affirm() counts. testFts5();
-        testBusy();
-        testAutoExtension();
-      }
+    testBindFetchInt();
+    testBindFetchInt64();
+    testBindFetchDouble();
+    testBindFetchText();
+    testBindFetchBlob();
+    testSql();
+    testCollation();
+    testToUtf8();
+    testStatus();
+    testUdf1();
+    testUdfJavaObject();
+    testUdfAggregate();
+    testUdfWindow();
+    testTrace();
+    testProgress();
+    testCommitHook();
+    testRollbackHook();
+    testUpdateHook();
+    testAuthorizer();
+    testAutoExtension();
+    if(!fromThread){
+      // testFts5(); // skip for now: messes with affirm() counts.
+      testBusy();
     }
   }
 
@@ -1235,6 +1227,9 @@ public class Tester1 implements Runnable {
 
     final long timeStart = System.currentTimeMillis();
     int nLoop = 0;
+    outln("libversion_number:",
+          sqlite3_libversion_number(),"\n",
+          sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
     for( int n = 0; n < nRepeat; ++n ){
       if( nThread==null || nThread<=1 ){
         new Tester1(0).runTests(false);
@@ -1247,7 +1242,7 @@ public class Tester1 implements Runnable {
           ex.submit( new Tester1(i) );
         }
         ex.shutdown();
-        ex.awaitTermination(2, java.util.concurrent.TimeUnit.SECONDS);
+        ex.awaitTermination(nThread*200, java.util.concurrent.TimeUnit.MILLISECONDS);
         ex.shutdownNow();
       }
     }
