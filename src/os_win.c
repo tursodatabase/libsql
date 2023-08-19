@@ -4747,6 +4747,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   size_t i, j;
+  DWORD pid;
   int nPre = sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX);
   int nMax, nBuf, nDir, nLen;
   char *zBuf;
@@ -4959,7 +4960,10 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
 
   j = sqlite3Strlen30(zBuf);
   sqlite3_randomness(15, &zBuf[j]);
+  pid = osGetCurrentProcessId();
   for(i=0; i<15; i++, j++){
+    zBuf[j] += pid & 0xff;
+    pid >>= 8;
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;

@@ -4799,7 +4799,6 @@ static const char *(azHelp[]) = {
   "       --async             Write to FILE without journal and fsync()",
 #endif
   ".bail on|off             Stop after hitting an error.  Default OFF",
-  ".binary on|off           Turn binary output on or off.  Default OFF",
 #ifndef SQLITE_SHELL_FIDDLE
   ".cd DIRECTORY            Change the working directory to DIRECTORY",
 #endif
@@ -4809,6 +4808,9 @@ static const char *(azHelp[]) = {
   ".clone NEWDB             Clone data into NEWDB from the existing database",
 #endif
   ".connection [close] [#]  Open or close an auxiliary database connection",
+#if defined(_WIN32) || defined(WIN32)
+  ".crnl on|off             Translate \\n to \\r\\n.  Default ON",
+#endif
   ".databases               List names and files of attached databases",
   ".dbconfig ?op? ?val?     List or change sqlite3_db_config() options",
 #if SQLITE_SHELL_HAVE_RECOVER
@@ -8164,6 +8166,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     }
   }else
 
+  /* Undocumented.  Legacy only.  See "crnl" below */
   if( c=='b' && n>=3 && cli_strncmp(azArg[0], "binary", n)==0 ){
     if( nArg==2 ){
       if( booleanValue(azArg[1]) ){
@@ -8172,6 +8175,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         setTextMode(p->out, 1);
       }
     }else{
+      raw_printf(stderr, "The \".binary\" command is deprecated."
+                         " Use \".crnl\" instead.\n");
       raw_printf(stderr, "Usage: .binary on|off\n");
       rc = 1;
     }
@@ -8295,6 +8300,22 @@ static int do_meta_command(char *zLine, ShellState *p){
       }
     }else{
       raw_printf(stderr, "Usage: .connection [close] [CONNECTION-NUMBER]\n");
+      rc = 1;
+    }
+  }else
+
+  if( c=='c' && n==4 && cli_strncmp(azArg[0], "crnl", n)==0 ){
+    if( nArg==2 ){
+      if( booleanValue(azArg[1]) ){
+        setTextMode(p->out, 1);
+      }else{
+        setBinaryMode(p->out, 1);
+      }
+    }else{
+#if !defined(_WIN32) && !defined(WIN32)
+      raw_printf(stderr, "The \".crnl\" is a no-op on non-Windows machines.\n");
+#endif
+      raw_printf(stderr, "Usage: .crnl on|off\n");
       rc = 1;
     }
   }else
@@ -11283,6 +11304,7 @@ static int do_meta_command(char *zLine, ShellState *p){
 #endif /* SQLITE_USER_AUTHENTICATION */
 
   if( c=='v' && cli_strncmp(azArg[0], "version", n)==0 ){
+    char *zPtrSz = sizeof(void*)==8 ? "64-bit" : "32-bit";
     utf8_printf(p->out, "SQLite %s %s\n" /*extra-version-info*/,
         sqlite3_libversion(), sqlite3_sourceid());
 #if SQLITE_HAVE_ZLIB
@@ -11293,11 +11315,11 @@ static int do_meta_command(char *zLine, ShellState *p){
 #if defined(__clang__) && defined(__clang_major__)
     utf8_printf(p->out, "clang-" CTIMEOPT_VAL(__clang_major__) "."
                     CTIMEOPT_VAL(__clang_minor__) "."
-                    CTIMEOPT_VAL(__clang_patchlevel__) "\n");
+                    CTIMEOPT_VAL(__clang_patchlevel__) " (%s)\n", zPtrSz);
 #elif defined(_MSC_VER)
-    utf8_printf(p->out, "msvc-" CTIMEOPT_VAL(_MSC_VER) "\n");
+    utf8_printf(p->out, "msvc-" CTIMEOPT_VAL(_MSC_VER) " (%s)\n", zPtrSz);
 #elif defined(__GNUC__) && defined(__VERSION__)
-    utf8_printf(p->out, "gcc-" __VERSION__ "\n");
+    utf8_printf(p->out, "gcc-" __VERSION__ " (%s)\n", zPtrSz);
 #endif
   }else
 
@@ -12471,7 +12493,8 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-bail")==0 ){
       /* No-op.  The bail_on_error flag should already be set. */
     }else if( cli_strcmp(z,"-version")==0 ){
-      printf("%s %s\n", sqlite3_libversion(), sqlite3_sourceid());
+      printf("%s %s (%d-bit)\n", sqlite3_libversion(), sqlite3_sourceid(),
+             8*(int)sizeof(char*));
       return 0;
     }else if( cli_strcmp(z,"-interactive")==0 ){
       stdin_is_interactive = 1;

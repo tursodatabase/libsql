@@ -2154,8 +2154,10 @@ void sqlite3RegisterPerConnectionBuiltinFunctions(sqlite3 *db){
 ** sensitive.
 */
 void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
+  FuncDef *pDef;
   struct compareInfo *pInfo;
   int flags;
+  int nArg;
   if( caseSensitive ){
     pInfo = (struct compareInfo*)&likeInfoAlt;
     flags = SQLITE_FUNC_LIKE | SQLITE_FUNC_CASE;
@@ -2163,10 +2165,13 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
     pInfo = (struct compareInfo*)&likeInfoNorm;
     flags = SQLITE_FUNC_LIKE;
   }
-  sqlite3CreateFunc(db, "like", 2, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
-  sqlite3CreateFunc(db, "like", 3, SQLITE_UTF8, pInfo, likeFunc, 0, 0, 0, 0, 0);
-  sqlite3FindFunction(db, "like", 2, SQLITE_UTF8, 0)->funcFlags |= flags;
-  sqlite3FindFunction(db, "like", 3, SQLITE_UTF8, 0)->funcFlags |= flags;
+  for(nArg=2; nArg<=3; nArg++){
+    sqlite3CreateFunc(db, "like", nArg, SQLITE_UTF8, pInfo, likeFunc, 
+                      0, 0, 0, 0, 0);
+    pDef = sqlite3FindFunction(db, "like", nArg, SQLITE_UTF8, 0);
+    pDef->funcFlags |= flags;
+    pDef->funcFlags &= ~SQLITE_FUNC_UNSAFE;
+  }
 }
 
 /*

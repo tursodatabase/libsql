@@ -122,6 +122,9 @@ foreach {tn expr} {
   4.1 "NEAR(one two, 2)"
   4.2 "NEAR(one two three, 2)"
   4.3 "NEAR(eight nine, 1) OR NEAR(six seven, 1)"
+
+  5.1 "one + two"
+  5.2 "1 + two"
 } {
   if {[fts5_expr_ok $expr ss]==0} {
     do_test 1.$tok.$tn.OMITTED { list } [list]

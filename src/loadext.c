@@ -512,7 +512,9 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.40.0 and later */
   sqlite3_value_encoding,
   /* Version 3.41.0 and later */
-  sqlite3_is_interrupted
+  sqlite3_is_interrupted,
+  /* Version 3.43.0 and later */
+  sqlite3_stmt_explain
 };
 
 /* True if x is the directory separator character

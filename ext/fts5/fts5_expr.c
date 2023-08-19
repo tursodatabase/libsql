@@ -2583,6 +2583,8 @@ static char *fts5ExprPrintTcl(
       if( zRet==0 ) return 0;
     }
 
+  }else if( pExpr->eType==0 ){
+    zRet = sqlite3_mprintf("{}");
   }else{
     char const *zOp = 0;
     int i;

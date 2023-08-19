@@ -255,4 +255,17 @@ do_execsql_test upsert1-1100 {
   SELECT * FROM t1;
 } {1 22}
 
+# 2023-08-17 dbsqlfuzz 9983e2c77634a8ccf33b5c91fa9982599de5f9e9
+# Bound parameters in the ON CONFLICT clause of an UPSERT.
+#
+reset_db
+do_execsql_test upsert1-1200 {
+  CREATE TABLE t1(a INT, b INT);
+  CREATE UNIQUE INDEX t1x ON t1(b+3);
+}
+sqlite3_db_config db ENABLE_QPSG 1
+do_catchsql_test upsert1-1210 {
+  INSERT INTO t1(a,b) VALUES(1,2) ON CONFLICT(b+?1) DO NOTHING;
+} {1 {ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint}}
+
 finish_test

@@ -7815,7 +7815,7 @@ static void fts5DecodeFunction(
     fts5DecodeRowidList(&rc, &s, &a[4], iTermOff-4);
 
     iOff = iTermOff;
-    while( iOff<szLeaf ){
+    while( iOff<szLeaf && rc==SQLITE_OK ){
       int nAppend;
 
       /* Read the term data for the next term*/
@@ -7835,8 +7835,11 @@ static void fts5DecodeFunction(
       }else{
         iTermOff = szLeaf;
       }
-
-      fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
+      if( iTermOff>szLeaf ){
+        rc = FTS5_CORRUPT;
+      }else{
+        fts5DecodeRowidList(&rc, &s, &a[iOff], iTermOff-iOff);
+      }
       iOff = iTermOff;
       if( iOff<szLeaf ){
         iOff += fts5GetVarint32(&a[iOff], nKeep);

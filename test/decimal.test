@@ -49,7 +49,7 @@ do_execsql_test 1080 {
   SELECT decimal('+123e+4');
 } {1230000}
 do_execsql_test 1081 {
-  SELECT decimal_sci('+123e+4');
+  SELECT decimal_exp('+123e+4');
 } {+1.23e+06}
 
 

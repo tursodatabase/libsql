@@ -610,7 +610,11 @@ do_atof_calc:
     }
     assert( r>=0.0 );
     if( r>+1.7976931348623157081452742373e+308L ){
+#ifdef INFINITY
       *pResult = +INFINITY;
+#else
+      *pResult = 1.0e308*10.0;
+#endif
     }else{
       *pResult = (double)r;
     }
@@ -1016,7 +1020,7 @@ void sqlite3FpDecode(FpDecode *p, double r, int iRound, int mxRound){
     ** The error terms on constants like 1.0e+100 computed using the
     ** decimal extension, for example as follows:
     **
-    **   SELECT decimal_sci(decimal_sub('1.0e+100',decimal(1.0e+100)));
+    **   SELECT decimal_exp(decimal_sub('1.0e+100',decimal(1.0e+100)));
     */
     double rr[2];
     rr[0] = r;

@@ -10,7 +10,7 @@
 #***********************************************************************
 #
 
-if {[info vars ::testdir]==""} {
+if {[info vars ::trd::tcltest]==""} {
   set testdir [file dirname $argv0]
   source $testdir/tester.tcl
   db close

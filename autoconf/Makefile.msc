@@ -56,7 +56,7 @@ USE_STDCALL = 0
 # in the core library.
 #
 !IFNDEF USE_SEH
-USE_SEH = 0
+USE_SEH = 1
 !ENDIF
 
 # Set this non-0 to have the shell executable link against the core dynamic
