@@ -22,6 +22,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 public class Tester1 implements Runnable {
+  //! True when running in multi-threaded mode.
+  private static boolean mtMode = false;
+
   private static final class Metrics {
     int dbOpen;
   }
@@ -1188,8 +1191,10 @@ public class Tester1 implements Runnable {
     testAuthorizer();
     testAutoExtension();
     if(!fromThread){
-      // testFts5(); // skip for now: messes with affirm() counts.
       testBusy();
+      if( !mtMode ){
+        testFts5();
+      }
     }
   }
 
@@ -1234,6 +1239,7 @@ public class Tester1 implements Runnable {
       if( nThread==null || nThread<=1 ){
         new Tester1(0).runTests(false);
       }else{
+        Tester1.mtMode = true;
         final ExecutorService ex = Executors.newFixedThreadPool( nThread );
         //final List<Future<?>> futures = new ArrayList<>();
         ++nLoop;

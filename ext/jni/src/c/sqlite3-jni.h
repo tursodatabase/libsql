@@ -1013,18 +1013,18 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1table_
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_column_text16
- * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)Ljava/lang/String;
+ * Method:    sqlite3_column_text_utf8
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)[B
  */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text16
+JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text_1utf8
   (JNIEnv *, jclass, jobject, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_column_text
- * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)[B
+ * Method:    sqlite3_column_text16
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)Ljava/lang/String;
  */
-JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text16
   (JNIEnv *, jclass, jobject, jint);
 
 /*
@@ -1657,14 +1657,6 @@ JNIEXPORT jlong JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1int64
  * Signature: (Lorg/sqlite/jni/sqlite3_value;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1java_1object
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_value_text
- * Signature: (Lorg/sqlite/jni/sqlite3_value;)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text
   (JNIEnv *, jclass, jobject);
 
 /*

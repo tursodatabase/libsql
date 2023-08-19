@@ -371,19 +371,22 @@ public final class SQLite3Jni {
   );
 
   /**
-     To extract _standard_ UTF-8, use sqlite3_column_text().
-     This API includes no functions for working with Java's Modified
-     UTF-8.
+     Returns the given column's contents as UTF-8-encoded (not MUTF-8)
+     text. Returns null if the C-level sqlite3_column_text() returns
+     NULL.
   */
-  public static native String sqlite3_column_text16(
+  public static native byte[] sqlite3_column_text_utf8(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
-  /**
-     Returns the given column's contents as UTF-8-encoded (not MUTF-8) text.
-     Use sqlite3_column_text16() to fetch the text
-  */
-  public static native byte[] sqlite3_column_text(
+  public static String sqlite3_column_text(
+    @NotNull sqlite3_stmt stmt, int ndx
+  ){
+    final byte[] ba = sqlite3_column_text_utf8(stmt, ndx);
+    return ba==null ? null : new String(ba, StandardCharsets.UTF_8);
+  }
+
+  public static native String sqlite3_column_text16(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -1126,16 +1129,15 @@ public final class SQLite3Jni {
   }
 
   /**
-     See sqlite3_column_text() for notes about encoding conversions.
-     See sqlite3_value_text_utf8() for how to extract text in standard
-     UTF-8.
-  */
-  public static native String sqlite3_value_text(@NotNull sqlite3_value v);
-
-  /**
-     The sqlite3_value counterpart of sqlite3_column_text_utf8().
+     Returns the given value as UTF-8-encoded bytes, or null if the
+     underlying C API returns null for sqlite3_value_text().
   */
   public static native byte[] sqlite3_value_text_utf8(@NotNull sqlite3_value v);
+
+  public static String sqlite3_value_text(@NotNull sqlite3_value v){
+    final byte[] ba = sqlite3_value_text_utf8(v);
+    return null==ba ? null : new String(ba, StandardCharsets.UTF_8);
+  }
 
   public static native byte[] sqlite3_value_text16(@NotNull sqlite3_value v);
 

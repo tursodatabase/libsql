@@ -72,16 +72,14 @@ public class TesterFts5 {
     affirm( xDestroyCalled.value );
   }
 
-  public TesterFts5(boolean outputStats){
+  public TesterFts5(){
     int oldAffirmCount = Tester1.affirmCount;
-    Tester1.affirmCount = 0;
-    final long timeStart = System.nanoTime();
+    final long timeStart = System.currentTimeMillis();
     test1();
-    final long timeEnd = System.nanoTime();
+    final long timeEnd = System.currentTimeMillis();
     outln("FTS5 Tests done. Metrics:");
     outln("\tAssertions checked: "+Tester1.affirmCount);
     outln("\tTotal time = "
-          +((timeEnd - timeStart)/1000000.0)+"ms");
-    Tester1.affirmCount = oldAffirmCount;
+          +(timeEnd - timeStart)+"ms");
   }
 }

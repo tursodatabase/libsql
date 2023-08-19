@@ -2225,12 +2225,12 @@ JDECL(jlong,1column_1int64)(JENV_CSELF, jobject jpStmt,
   return (jlong)sqlite3_column_int64(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
 }
 
-JDECL(jbyteArray,1column_1text)(JENV_CSELF, jobject jpStmt,
+JDECL(jbyteArray,1column_1text_1utf8)(JENV_CSELF, jobject jpStmt,
                                       jint ndx){
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
   const int n = sqlite3_column_bytes(stmt, (int)ndx);
   const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
-  return s3jni_new_jbyteArray(env, p, n);
+  return p ? s3jni_new_jbyteArray(env, p, n) : NULL;
 }
 
 JDECL(jstring,1column_1text16)(JENV_CSELF, jobject jpStmt,
@@ -3412,18 +3412,11 @@ JDECL(jobject,1value_1java_1object)(JENV_CSELF, jobject jpSVal){
   return rv ? rv->jObj : NULL;
 }
 
-JDECL(jstring,1value_1text)(JENV_CSELF, jobject jpSVal){
-  sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
-  int const n = sqlite3_value_bytes16(sv);
-  const void * const p = sqlite3_value_text16(sv);
-  return s3jni_text16_to_jstring(env, p, n);
-}
-
 JDECL(jbyteArray,1value_1text_1utf8)(JENV_CSELF, jobject jpSVal){
   sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
   int const n = sqlite3_value_bytes(sv);
   const unsigned char * const p = sqlite3_value_text(sv);
-  return s3jni_new_jbyteArray(env, p, n);
+  return p ? s3jni_new_jbyteArray(env, p, n) : 0;
 }
 
 static jbyteArray value_text16(int mode, JNIEnv * const env, jobject jpSVal){
