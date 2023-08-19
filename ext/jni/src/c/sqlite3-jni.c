@@ -2321,7 +2321,8 @@ JDECL(jobject,1commit_1hook)(JENV_CSELF,jobject jDb, jobject jHook){
 
 
 JDECL(jstring,1compileoption_1get)(JENV_CSELF, jint n){
-  return (*env)->NewStringUTF( env, sqlite3_compileoption_get(n) );
+  return (*env)->NewStringUTF( env, sqlite3_compileoption_get(n) )
+    /* We know these to be ASCII, so MUTF-8 is fine. */;
 }
 
 JDECL(jboolean,1compileoption_1used)(JENV_CSELF, jstring name){
@@ -2515,7 +2516,7 @@ JDECL(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer
 
 JDECL(jstring,1db_1filename)(JENV_CSELF, jobject jDb, jstring jDbName){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
-  S3JniEnv * const jc = S3JniGlobal_env_cache(env);
+  S3JniEnv * const jc = ps ? S3JniGlobal_env_cache(env) : 0;
   char *zDbName;
   jstring jRv = 0;
   int nStr = 0;
@@ -3066,20 +3067,19 @@ static int s3jni_xAuth(void* pState, int op,const char*z0, const char*z1,
                        const char*z2,const char*z3){
   S3JniDb * const ps = pState;
   JNIEnv * const env = ps->env;
-  jstring const s0 = z0 ? (*env)->NewStringUTF(env, z0) : 0;
-  jstring const s1 = z1 ? (*env)->NewStringUTF(env, z1) : 0;
-  jstring const s2 = z2 ? (*env)->NewStringUTF(env, z2) : 0;
-  jstring const s3 = z3 ? (*env)->NewStringUTF(env, z3) : 0;
+  S3JniEnv * const jc = S3JniGlobal_env_cache(env);
   S3JniHook const * const pHook = &ps->authHook;
+  jstring const s0 = z0 ? s3jni_utf8_to_jstring(jc, z0, -1) : 0;
+  jstring const s1 = z1 ? s3jni_utf8_to_jstring(jc, z1, -1) : 0;
+  jstring const s2 = z2 ? s3jni_utf8_to_jstring(jc, z2, -1) : 0;
+  jstring const s3 = z3 ? s3jni_utf8_to_jstring(jc, z3, -1) : 0;
   int rc;
 
   assert( pHook->jObj );
   rc = (*env)->CallIntMethod(env, pHook->jObj, pHook->midCallback, (jint)op,
                              s0, s1, s3, s3);
   IFTHREW{
-    EXCEPTION_WARN_CALLBACK_THREW("sqlite3_set_authorizer() callback");
-    EXCEPTION_CLEAR;
-    if( !rc ) rc = SQLITE_ERROR;
+    rc = s3jni_db_exception(env, ps, rc, "sqlite3_set_authorizer() callback");
   }
   UNREF_L(s0);
   UNREF_L(s1);
@@ -3296,13 +3296,11 @@ static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
                                    const char *zTable, sqlite3_int64 nRowid){
   S3JniDb * const ps = pState;
   JNIEnv * const env = ps->env;
-  /* ACHTUNG: this will break if zDb or zTable contain chars which are
-     different in MUTF-8 than UTF-8. That seems like a low risk,
-     but it's possible. */
+  S3JniEnv * const jc = S3JniGlobal_env_cache(env);
   jstring jDbName;
   jstring jTable;
-  jDbName  = (*env)->NewStringUTF(env, zDb);
-  jTable = jDbName ? (*env)->NewStringUTF(env, zTable) : 0;
+  jDbName  = s3jni_utf8_to_jstring(jc, zDb, -1);
+  jTable = jDbName ? s3jni_utf8_to_jstring(jc, zTable, -1) : 0;
   IFTHREW {
     s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
   }else{
@@ -3311,8 +3309,7 @@ static void s3jni_update_hook_impl(void * pState, int opId, const char *zDb,
                            (jint)opId, jDbName, jTable, (jlong)nRowid);
     IFTHREW{
       EXCEPTION_WARN_CALLBACK_THREW("update hook");
-      EXCEPTION_CLEAR;
-      s3jni_db_error(ps->pDb, SQLITE_ERROR, "update hook callback threw.");
+      s3jni_db_exception(env, ps, 0, "update hook callback threw");
     }
   }
   UNREF_L(jDbName);

@@ -77,7 +77,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
      pAux held by the JNI layer will be relinquished regardless of
      whether pAux has an xDestroy() method. */
   public synchronized native int xSetAuxdata(@NotNull Fts5Context cx, @Nullable Object pAux);
-  public synchronized native int xTokenize(@NotNull Fts5Context cx, @NotNull byte pText[],
+  public synchronized native int xTokenize(@NotNull Fts5Context cx, @NotNull byte[] pText,
                               @NotNull Fts5.xTokenizeCallback callback);
 
   public synchronized native Object xUserData(Fts5Context cx);

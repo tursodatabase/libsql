@@ -82,27 +82,16 @@ import java.lang.annotation.ElementType;
   The known consequences and limitations this discrepancy places on
   the SQLite3 JNI binding include:
 
-  - Any functions which return client-side data from a database
-    take extra care to perform proper conversion, at the cost of
-    efficiency.
-
-  - Functions which return database identifiers require those
-    identifiers to have identical representations in UTF-8 and
-    MUTF-8. They do not perform such conversions (A) because of the
-    much lower risk of an encoding discrepancy and (B) to avoid
-    significant extra code involved (see both the Java- and C-side
-    implementations of sqlite3_db_filename() for an example).  Names
-    of databases, tables, columns, collations, and functions MUST NOT
-    contain characters which differ in MUTF-8 and UTF-8, or certain
-    APIs will mis-translate them on their way between languages
-    (possibly leading to a crash).
+  - Any functions which return state from a database take extra care
+    to perform proper conversion, at the cost of efficiency.
 
   - C functions which take C-style strings without a length argument
     require special care when taking input from Java. In particular,
     Java strings converted to byte arrays for encoding purposes are
     not NUL-terminated, and conversion to a Java byte array must be
     careful to add one. Functions which take a length do not require
-    this. Search the SQLite3Jni class for "\0" for many examples.
+    this so long as the length is provided. Search the SQLite3Jni
+    class for "\0" for many examples.
 
   - Similarly, C-side code which deals with strings which might not be
     NUL-terminated (e.g. while tokenizing in FTS5-related code) cannot
