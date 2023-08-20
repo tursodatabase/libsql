@@ -163,3 +163,73 @@ mod tests {
         assert!(closed);
     }
 }
+
+#[test]
+fn test_books_by_author() {
+    let conn = rusqlite::Connection::open_in_memory().unwrap();
+
+    conn.execute(
+        "CREATE TABLE author (
+            id   INTEGER PRIMARY KEY,
+            name TEXT NOT NULL
+        )",
+        (),
+    )
+    .unwrap();
+
+    conn.execute(
+        "CREATE TABLE book (
+            id         INTEGER PRIMARY KEY,
+            title      TEXT NOT NULL,
+            author_id  INTEGER NOT NULL,
+            FOREIGN KEY (author_id) REFERENCES author (id)
+        )",
+        (),
+    )
+    .unwrap();
+
+    let authors = vec![
+        Author { id: 1, name: "J.K. Rowling".to_string() },
+        Author { id: 2, name: "George Orwell".to_string() },
+    ];
+
+    for author in &authors {
+        conn.execute(
+            "INSERT INTO author (id, name) VALUES (?1, ?2)",
+            (&author.id, &author.name),
+        )
+        .unwrap();
+    }
+
+    let books = vec![
+        Book { id: 1, title: "Harry Potter and the Sorcerer's Stone".to_string(), author_id: 1 },
+        Book { id: 2, title: "1984".to_string(), author_id: 2 },
+        Book { id: 3, title: "Animal Farm".to_string(), author_id: 2 },
+    ];
+
+    for book in &books {
+        conn.execute(
+            "INSERT INTO book (id, title, author_id) VALUES (?1, ?2, ?3)",
+            (&book.id, &book.title, &book.author_id),
+        )
+        .unwrap();
+    }
+
+    let author_name = "George Orwell";
+    let mut stmt = conn.prepare(
+        "SELECT b.title FROM book b
+         INNER JOIN author a ON b.author_id = a.id
+         WHERE a.name = ?1",
+    )
+    .unwrap();
+
+    let book_titles: Result<Vec<String>, rusqlite::Error> = stmt.query_map([author_name], |row| {
+        Ok(row.get(0)?)
+    })
+    .unwrap()
+    .map(|res| res.unwrap())
+    .collect();
+
+    let expected_titles = vec!["1984".to_string(), "Animal Farm".to_string()];
+    assert_eq!(book_titles.unwrap(), expected_titles);
+}
