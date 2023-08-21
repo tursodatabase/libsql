@@ -82,5 +82,5 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
 
   public native Object xUserData(Fts5Context cx);
   //^^^ returns the pointer passed as the 3rd arg to the C-level
-  // fts5_api::xCreateFunction.
+  // fts5_api::xCreateFunction().
 }

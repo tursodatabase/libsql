@@ -1245,18 +1245,23 @@ public class Tester1 implements Runnable {
         ++nLoop;
         outln("Running loop #",nLoop," over ",nThread," threads.");
         for( int i = 0; i < nThread; ++i ){
-          ex.submit( new Tester1(i) );
+          ex.submit( new Tester1(i), i );
         }
         ex.shutdown();
-        ex.awaitTermination(nThread*200, java.util.concurrent.TimeUnit.MILLISECONDS);
-        ex.shutdownNow();
+        try {
+          ex.awaitTermination(nThread*200, java.util.concurrent.TimeUnit.MILLISECONDS);
+          ex.shutdownNow();
+        } catch (InterruptedException ie) {
+          ex.shutdownNow();
+          Thread.currentThread().interrupt();
+        }
       }
     }
+
     final long timeEnd = System.currentTimeMillis();
     outln("Tests done. Metrics:");
     outln("\tAssertions checked: "+affirmCount);
     outln("\tDatabases opened: "+metrics.dbOpen);
-
     if( doSomethingForDev ){
       sqlite3_do_something_for_developer();
     }

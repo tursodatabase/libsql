@@ -3735,6 +3735,7 @@ JDECLFtsApi(jint,xCreateFunction)(JENV_OSELF, jstring jName,
   int rc;
   char const * zName;
   Fts5JniAux * pAux;
+
   assert(pApi);
   zName = JSTR_TOC(jName);
   if(!zName) return SQLITE_NOMEM;
@@ -3756,15 +3757,15 @@ JDECLFtsApi(jint,xCreateFunction)(JENV_OSELF, jstring jName,
 }
 
 
-typedef struct s3jni_fts5AuxData s3jni_fts5AuxData;
-struct s3jni_fts5AuxData {
+typedef struct S3JniFts5AuxData S3JniFts5AuxData;
+struct S3JniFts5AuxData {
   JNIEnv *env;
   jobject jObj;
 };
 
-static void s3jni_fts5AuxData_xDestroy(void *x){
+static void S3JniFts5AuxData_xDestroy(void *x){
   if(x){
-    s3jni_fts5AuxData * const p = x;
+    S3JniFts5AuxData * const p = x;
     if(p->jObj){
       JNIEnv *env = p->env;
       s3jni_call_xDestroy(env, p->jObj, 0);
@@ -3777,7 +3778,7 @@ static void s3jni_fts5AuxData_xDestroy(void *x){
 JDECLFtsXA(jobject,xGetAuxdata)(JENV_OSELF,jobject jCtx, jboolean bClear){
   Fts5ExtDecl;
   jobject rv = 0;
-  s3jni_fts5AuxData * const pAux = fext->xGetAuxdata(PtrGet_Fts5Context(jCtx), bClear);
+  S3JniFts5AuxData * const pAux = fext->xGetAuxdata(PtrGet_Fts5Context(jCtx), bClear);
   if(pAux){
     if(bClear){
       if( pAux->jObj ){
@@ -3966,6 +3967,7 @@ JDECLFtsXA(jint,xQueryPhrase)(JENV_OSELF,jobject jFcx, jint iPhrase,
   S3JniEnv * const jc = S3JniGlobal_env_cache(env);
   struct s3jni_xQueryPhraseState s;
   jclass klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
+
   if( !klazz ) return SQLITE_MISUSE;
   s.env = env;
   s.jc = jc;
@@ -3997,7 +3999,7 @@ JDECLFtsXA(jlong,xRowid)(JENV_OSELF,jobject jCtx){
 JDECLFtsXA(int,xSetAuxdata)(JENV_OSELF,jobject jCtx, jobject jAux){
   Fts5ExtDecl;
   int rc;
-  s3jni_fts5AuxData * pAux;
+  S3JniFts5AuxData * pAux;
   pAux = sqlite3_malloc(sizeof(*pAux));
   if(!pAux){
     if(jAux){
@@ -4010,7 +4012,7 @@ JDECLFtsXA(int,xSetAuxdata)(JENV_OSELF,jobject jCtx, jobject jAux){
   pAux->env = env;
   pAux->jObj = REF_G(jAux);
   rc = fext->xSetAuxdata(PtrGet_Fts5Context(jCtx), pAux,
-                         s3jni_fts5AuxData_xDestroy);
+                         S3JniFts5AuxData_xDestroy);
   return rc;
 }
 
@@ -4055,6 +4057,7 @@ static jint s3jni_fts5_xTokenize(JENV_OSELF, S3NphRef const *pRef,
   jbyte * const pText = jCallback ? JBA_TOC(jbaText) : 0;
   jsize nText = pText ? (*env)->GetArrayLength(env, jbaText) : 0;
   jclass const klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
+
   if( !klazz ) return SQLITE_MISUSE;
   memset(&s, 0, sizeof(s));
   s.env = env;
