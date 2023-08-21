@@ -10,6 +10,7 @@ use anyhow::{bail, ensure};
 use bytemuck::{bytes_of, pod_read_unaligned, Pod, Zeroable};
 use bytes::{Bytes, BytesMut};
 use parking_lot::RwLock;
+use rusqlite::ffi::SQLITE_BUSY;
 use sqld_libsql_bindings::init_static_wal_method;
 use tokio::sync::watch;
 use tokio::time::{Duration, Instant};
@@ -193,7 +194,9 @@ unsafe impl WalHook for ReplicationLoggerHook {
              */
             if emode < SQLITE_CHECKPOINT_TRUNCATE {
                 tracing::trace!("Ignoring a checkpoint request weaker than TRUNCATE");
-                return SQLITE_OK;
+                // Return an error to signal to sqlite that the WAL was not checkpointed, and it is
+                // therefore not safe to delete it.
+                return SQLITE_BUSY;
             }
         }
         let rc = unsafe {
