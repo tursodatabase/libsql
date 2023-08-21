@@ -1919,7 +1919,7 @@ static int rtreeFilter(
 #else
             p->u.rValue = (double)iVal;
             if( iVal>=((sqlite3_int64)1)<<48
-             || -iVal>=((sqlite3_int64)1)<<48
+             || iVal<=-(((sqlite3_int64)1)<<48)
             ){
               if( p->op==RTREE_LT ) p->op = RTREE_LE;
               if( p->op==RTREE_GT ) p->op = RTREE_GE;

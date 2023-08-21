@@ -1208,7 +1208,8 @@ int runCombinedDbSqlInput(
     dbFlags = (aDb[72]<<24) + (aDb[73]<<16) + (aDb[74]<<8) + aDb[75];
   }
   if( nDb>=79 ){
-    dbOpt = (aDb[76]<<24) + (aDb[77]<<16) + (aDb[78]<<8) + aDb[79];
+    dbOpt = ((unsigned int)aDb[76]<<24) + ((unsigned int)aDb[77]<<16) +
+            ((unsigned int)aDb[78]<<8) + (unsigned int)aDb[79];
   }
   nSql = (int)(nByte - iSql);
   if( bScript ){

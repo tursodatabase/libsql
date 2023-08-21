@@ -1,5 +1,5 @@
-C shell.c.in\shelp\stext\stypo\sfix.\sNo\sfunctional\schanges.
-D 2023-08-19T08:12:10.152
+C Address\sminor\sinaccuracies\sin\sfuzzcheck\sand\sRTREE\sfound\sby\sUBSAN.
+D 2023-08-21T14:28:47.459
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -452,7 +452,7 @@ F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c3350
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/geopoly.c 971e0b5bd9adaf0811feb8c0842a310811159da10319eb0e74fdb42bf26b99ca
-F ext/rtree/rtree.c fb36e05027505f2c0dab24564e1d58ca4b789a6dfa48cf51aeee570018cf4814
+F ext/rtree/rtree.c 6954f4a3ca51c2e3db35c52e0513f3520999eb7a967f3d53b71db7ebddd8b3a5
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 877d40b8b61b1f88cec9d4dc0ff8334f5b05299fac12a35141532e2881860e9d
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -1171,7 +1171,7 @@ F test/fuzz3.test 9c813e6613b837cb7a277b0383cd66bfa07042b4cf0317157c35852f30043c
 F test/fuzz4.test c229bcdb45518a89e1d208a21343e061503460ac69fae1539320a89f572eb634
 F test/fuzz_common.tcl b7197de6ed1ee8250a4f82d67876f4561b42ee8cbbfc6160dcb66331bad3f830
 F test/fuzz_malloc.test f348276e732e814802e39f042b1f6da6362a610af73a528d8f76898fde6b22f2
-F test/fuzzcheck.c ac8ff17018b30d6898c94d156a72223b3988921d3e999ed0579acb8e4ff83fac
+F test/fuzzcheck.c e25f6547ed2ba5f7fcf5ac1320a1a6385ae096ca768491d374b98b9ca186df03
 F test/fuzzdata1.db 3e86d9cf5aea68ddb8e27c02d7dfdaa226347426c7eb814918e4d95475bf8517
 F test/fuzzdata2.db 128b3feeb78918d075c9b14b48610145a0dd4c8d6f1ca7c2870c7e425f5bf31f
 F test/fuzzdata3.db c6586d3e3cef0fbc18108f9bb649aa77bfc38aba
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P c48f1be8cc505a7e2902c79e26c1d9a121ff5c55785ac812d2e09232b2414695
-R b8bc869b8d758cc2a2e67811c6189c81
-U stephan
-Z 43d19bb1ac563f29cc01181a73eccbfe
+P c319033276c3565d0f1f2cae1c91791940d322fe79696bc26d74fddeb2664373
+R cef980d325e7a6296be4d376f3750694
+U drh
+Z cca25f989cf99093cdee0d6a34dead3a
 # Remove this line to create a well-formed Fossil manifest.
