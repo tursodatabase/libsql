@@ -3,9 +3,9 @@ pub enum Error {
     #[error("Failed to connect to database: `{0}`")]
     ConnectionFailed(String),
     #[error("Failed to prepare statement `{1}`: `{2}`")]
-    PrepareFailed(i32, String, String),
-    #[error("Failed to fetch row: `{0}`")]
-    FetchRowFailed(String),
+    PrepareFailed(std::ffi::c_int, String, String),
+    #[error("Failed to fetch row: `{1}`")]
+    FetchRowFailed(std::ffi::c_int, String),
     #[error("Unknown value type for column `{0}`: `{1}`")]
     UnknownColumnType(i32, i32),
     #[error("The value is NULL")]
@@ -27,6 +27,10 @@ pub enum Error {
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
     let errmsg = unsafe { libsql_sys::ffi::sqlite3_errmsg(raw) };
     sqlite_errmsg_to_string(errmsg)
+}
+
+pub(crate) fn extended_error_code(raw: *mut libsql_sys::ffi::sqlite3) -> std::ffi::c_int {
+    unsafe { libsql_sys::ffi::sqlite3_extended_errcode(raw) }
 }
 
 pub fn error_from_code(code: i32) -> String {

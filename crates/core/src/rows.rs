@@ -32,7 +32,10 @@ impl Rows {
             libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
                 stmt: self.stmt.clone(),
             })),
-            _ => Err(Error::FetchRowFailed(errors::error_from_code(err))),
+            _ => Err(Error::FetchRowFailed(
+                errors::extended_error_code(self.stmt.conn.raw),
+                errors::error_from_handle(self.stmt.conn.raw),
+            )),
         }
     }
 
