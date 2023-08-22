@@ -173,9 +173,6 @@ public final class SQLite3Jni {
        on multiple factors).
 
      See the AutoExtension class docs for more information.
-
-     Achtung: it is as yet unknown whether auto extensions registered
-     from one JNIEnv (thread) can be safely called from another.
   */
   public static native int sqlite3_auto_extension(@NotNull AutoExtension callback);
 
@@ -212,9 +209,11 @@ public final class SQLite3Jni {
   );
 
 
-  /** A level of indirection required to ensure that the input to the
-      C-level function of the same name is a NUL-terminated UTF-8
-      string. */
+  /**
+     A level of indirection required to ensure that the input to the
+     C-level function of the same name is a NUL-terminated UTF-8
+     string.
+  */
   private static native int sqlite3_bind_parameter_index(
     @NotNull sqlite3_stmt stmt, byte[] paramName
   );
@@ -225,6 +224,15 @@ public final class SQLite3Jni {
     final byte[] utf8 = (paramName+"\0").getBytes(StandardCharsets.UTF_8);
     return sqlite3_bind_parameter_index(stmt, utf8);
   }
+
+  /**
+     Works like the C-level sqlite3_bind_text() but (A) assumes
+     SQLITE_TRANSIENT for the final parameter and (B) behaves like
+     sqlite3_bind_null() if the data argument is null.
+  */
+  private static native int sqlite3_bind_text(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
+  );
 
   public static int sqlite3_bind_text(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable String data
@@ -241,15 +249,6 @@ public final class SQLite3Jni {
       ? sqlite3_bind_null(stmt, ndx)
       : sqlite3_bind_text(stmt, ndx, data, data.length);
   }
-
-  /**
-     Works like the C-level sqlite3_bind_text() but (A) assumes
-     SQLITE_TRANSIENT for the final parameter and (B) behaves like
-     sqlite3_bind_null() if the data argument is null.
-  */
-  private static native int sqlite3_bind_text(
-    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
-  );
 
   public static native int sqlite3_bind_zeroblob(
     @NotNull sqlite3_stmt stmt, int ndx, int n
@@ -931,7 +930,8 @@ public final class SQLite3Jni {
 
      If maxLength (in bytes, not characters) is larger than
      text.length, it is silently truncated to text.length. If it is
-     negative, results are undefined.
+     negative, results are undefined. If text is null, the following
+     arguments are ignored.
   */
   private static native void sqlite3_result_text64(
     @NotNull sqlite3_context cx, @Nullable byte[] text,
@@ -939,8 +939,9 @@ public final class SQLite3Jni {
   );
 
   /**
-     Cleans up all per-JNIEnv and per-db state managed by the library
-     then calls the C-native sqlite3_shutdown().
+     Cleans up all per-JNIEnv and per-db state managed by the library,
+     as well as any registered auto-extensions, then calls the
+     C-native sqlite3_shutdown().
   */
   public static synchronized native int sqlite3_shutdown();
 

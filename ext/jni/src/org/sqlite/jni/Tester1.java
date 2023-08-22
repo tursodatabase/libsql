@@ -87,9 +87,9 @@ public class Tester1 implements Runnable {
     ++metrics.dbOpen;
     sqlite3 db = out.take();
     if( 0!=rc ){
-      final String msg = db.getNativePointer()==0
-        ? sqlite3_errstr(rc)
-        : sqlite3_errmsg(db);
+      final String msg =
+        null==db ? sqlite3_errstr(rc) : sqlite3_errmsg(db);
+      sqlite3_close(db);
       throw new RuntimeException("Opening db failed: "+msg);
     }
     affirm( null == out.get() );
@@ -428,6 +428,7 @@ public class Tester1 implements Runnable {
     sqlite3_bind_text(stmt, 1, "hell😃");
     affirm( "SELECT 'hell😃'".equals(sqlite3_expanded_sql(stmt)) );
     sqlite3_finalize(stmt);
+    sqlite3_close(db);
   }
 
   private void testCollation(){
@@ -500,14 +501,12 @@ public class Tester1 implements Runnable {
     rc = sqlite3_collation_needed(db, null);
     affirm( 0 == rc );
     sqlite3_close_v2(db);
+    affirm( 0 == db.getNativePointer() );
     affirm(xDestroyCalled.value);
   }
 
   private void testToUtf8(){
     /**
-       Java docs seem contradictory, claiming to use "modified UTF-8"
-       encoding while also claiming to export using RFC 2279:
-
        https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html
 
        Let's ensure that we can convert to standard UTF-8 in Java code
@@ -1106,6 +1105,7 @@ public class Tester1 implements Runnable {
     execSql(db, "ATTACH ':memory' as foo");
     affirm( 4==val.value /* ATTACH uses the same connection, not sub-connections. */ );
     sqlite3_close(db);
+    db = null;
 
     affirm( sqlite3_cancel_auto_extension(ax) );
     affirm( !sqlite3_cancel_auto_extension(ax) );
@@ -1116,7 +1116,7 @@ public class Tester1 implements Runnable {
     Exception err = null;
     toss.value = "Throwing from AutoExtension.";
     try{
-      createNewDb();
+      sqlite3_close(createNewDb());
     }catch(Exception e){
       err = e;
     }
@@ -1169,9 +1169,11 @@ public class Tester1 implements Runnable {
 
   private void runTests(boolean fromThread) throws Exception {
     if(false) testCompileOption();
+    testToUtf8();
     test1();
     testOpenDb1();
     testOpenDb2();
+    testCollation();
     testPrepare123();
     testBindFetchInt();
     testBindFetchInt64();
@@ -1179,8 +1181,6 @@ public class Tester1 implements Runnable {
     testBindFetchText();
     testBindFetchBlob();
     testSql();
-    testCollation();
-    testToUtf8();
     testStatus();
     testUdf1();
     testUdfJavaObject();
