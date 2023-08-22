@@ -25,7 +25,9 @@ public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;
   private static boolean takeNaps = false;
-
+  private static boolean shuffle = false;
+  private static boolean listRunTests = false;
+  private static List<java.lang.reflect.Method> testMethods = null;
   private static final class Metrics {
     int dbOpen;
   }
@@ -159,7 +161,7 @@ public class Tester1 implements Runnable {
     return rv;
   }
 
-  private void testCompileOption(){
+  private void showCompileOption(){
     int i = 0;
     String optName;
     outln("compile options:");
@@ -1175,31 +1177,41 @@ public class Tester1 implements Runnable {
   }
 
   private void runTests(boolean fromThread) throws Exception {
-    if(false) testCompileOption();
+    if(false) showCompileOption();
+    List<java.lang.reflect.Method> mlist = testMethods;
+    affirm( null!=mlist );
+    if( shuffle ){
+      mlist = new ArrayList<>( testMethods.subList(0, testMethods.size()) );
+      java.util.Collections.shuffle(
+        mlist
+        //java.util.concurrent.ThreadLocalRandom.current()
+      );
+    }
+    if( listRunTests ){
+      synchronized(this.getClass()){
+        out("Initial test"," list: ");
+        for(java.lang.reflect.Method m : testMethods){
+          out(m.getName()+" ");
+        }
+        outln();
+
+        out("Running"," tests: ");
+        for(java.lang.reflect.Method m : mlist){
+          out(m.getName()+" ");
+        }
+        outln();
+        out("(That list excludes some which are hard-coded to run.)\n");
+      }
+    }
     testToUtf8();
     test1();
-    nap(); testOpenDb1();
-    nap(); testOpenDb2();
-    nap(); testCollation();
-    nap(); testPrepare123();
-    nap(); testBindFetchInt();
-    nap(); testBindFetchInt64();
-    nap(); testBindFetchDouble();
-    nap(); testBindFetchText();
-    nap(); testBindFetchBlob();
-    nap(); testSql();
-    nap(); testStatus();
-    nap(); testUdf1();
-    nap(); testUdfJavaObject();
-    nap(); testUdfAggregate();
-    nap(); testUdfWindow();
-    nap(); testTrace();
-    nap(); testProgress();
-    nap(); testCommitHook();
-    nap(); testRollbackHook();
-    nap(); testUpdateHook();
-    nap(); testAuthorizer();
-    nap(); testAutoExtension();
+    int n = 0;
+    for(java.lang.reflect.Method m : mlist){
+      ++n;
+      nap();
+      m.invoke(this);
+    }
+    affirm( n == mlist.size() );
     if(!fromThread){
       testBusy();
       if( !mtMode ){
@@ -1219,6 +1231,27 @@ public class Tester1 implements Runnable {
     }
   }
 
+  /**
+     Runs the basic sqlite3 JNI binding sanity-check suite.
+
+     CLI flags:
+
+     -t|-thread N: runs the tests in N threads
+      concurrently. Default=1.
+
+     -r|-repeat N: repeats the tests in a loop N times, each one
+      consisting of the -thread value's threads.
+
+     -shuffle: randomizes the order of most of the test functions.
+
+     -naps: sleep small random intervals between tests in order to add
+     some chaos for cross-thread contention.
+
+     -list-tests: outputs the list of tests being run, minus some
+      which are hard-coded,
+
+     -v: emit some developer-mode info at the end.
+  */
   public static void main(String[] args) throws Exception {
     Integer nThread = null;
     boolean doSomethingForDev = false;
@@ -1232,12 +1265,34 @@ public class Tester1 implements Runnable {
           //listBoundMethods();
         }else if(arg.equals("t") || arg.equals("thread")){
           nThread = Integer.parseInt(args[i++]);
-        }else if(arg.equals("r") || arg.equals("runs")){
+        }else if(arg.equals("r") || arg.equals("repeat")){
           nRepeat = Integer.parseInt(args[i++]);
+        }else if(arg.equals("shuffle")){
+          shuffle = true;
+        }else if(arg.equals("list-tests")){
+          listRunTests = true;
         }else if(arg.equals("naps")){
           takeNaps = true;
         }else{
           throw new IllegalArgumentException("Unhandled flag:"+arg);
+        }
+      }
+    }
+
+    {
+      // Build list of tests to run from the methods named test*().
+      testMethods = new ArrayList<>();
+      final List<String> excludes = new ArrayList<>();
+      // Tests we want to control the order of:
+      excludes.add("testSleep");
+      excludes.add("testToUtf8");
+      excludes.add("test1");
+      excludes.add("testBusy");
+      excludes.add("testFts5");
+      for(java.lang.reflect.Method m : Tester1.class.getDeclaredMethods()){
+        final String name = m.getName();
+        if( name.startsWith("test") && excludes.indexOf(name)<0 ){
+          testMethods.add(m);
         }
       }
     }

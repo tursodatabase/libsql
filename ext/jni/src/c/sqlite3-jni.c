@@ -599,8 +599,6 @@ static S3JniGlobalType S3JniGlobal = {};
   /*MARKER(("Leaving PerDb mutex@%p %s.\n", env));*/  \
   SJG.perDb.locker = 0;                               \
   sqlite3_mutex_leave( SJG.perDb.mutex )
-#define MUTEX_PDB_ASSERT_LOCKED  \
-  assert( 0 != SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
 
 #define OOM_CHECK(VAR) if(!(VAR)) s3jni_oom(env)
 static inline void s3jni_oom(JNIEnv * const env){
@@ -903,12 +901,12 @@ static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDest
 }
 
 /**
-   Clears s's state and moves it to the free-list.
+   Clears s's state and moves it to the free-list. Requires that
+   S3JniGlobal.perDb.mutex be unlocked.
 */
-static void S3JniDb_set_aside(S3JniDb * const s){
+static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
   if(s){
-    LocalJniGetEnv;
-    MUTEX_PDB_ASSERT_LOCKED;
+    MUTEX_PDB_ENTER;
     //MARKER(("state@%p for db@%p setting aside\n", s, s->pDb));
     assert(s->pPrev != s);
     assert(s->pNext != s);
@@ -938,6 +936,7 @@ static void S3JniDb_set_aside(S3JniDb * const s){
     SJG.perDb.aFree = s;
     //MARKER(("%p->pPrev@%p, pNext@%p\n", s, s->pPrev, s->pNext));
     //if(s->pNext) MARKER(("next: %p->pPrev@%p\n", s->pNext, s->pNext->pPrev));
+    MUTEX_PDB_LEAVE;
   }
 }
 
@@ -1962,10 +1961,8 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   if(ps){
     rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
     if( 0==rc ){
-      MUTEX_PDB_ENTER;
-      S3JniDb_set_aside(ps)
+      S3JniDb_set_aside(env, ps)
         /* MUST come after close() because of ps->trace. */;
-      MUTEX_PDB_LEAVE;
       NativePointerHolder_set(env, jDb, 0, &S3NphRefs.sqlite3);
     }
   }
@@ -2537,9 +2534,7 @@ static int s3jni_open_post(JNIEnv * const env, S3JniEnv * const jc,
       assert( ps->pDb == *ppDb /* set up via s3jni_run_java_auto_extensions() */);
     }
   }else{
-    MUTEX_PDB_ENTER;
-    S3JniDb_set_aside(ps);
-    MUTEX_PDB_LEAVE;
+    S3JniDb_set_aside(env, ps);
     ps = 0;
   }
   OutputPointer_set_sqlite3(env, jOut, ps ? ps->jDb : 0);
@@ -3306,7 +3301,8 @@ JDECL(jbyteArray,1value_1text16be)(JENV_CSELF, jobject jpSVal){
 }
 
 JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
-  MARKER(("\nVarious bits of internal info:\n"));
+  MARKER(("\nVarious bits of internal info:\n"
+          "Any metrics here are invalid in multi-thread use.\n"));
   puts("FTS5 is "
 #ifdef SQLITE_ENABLE_FTS5
        "available"
@@ -3338,7 +3334,7 @@ JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
          "\n\tenv %u"
          "\n\tnph inits %u"
          "\n\tperDb %u"
-         "\n\tautoExt %u container access\n",
+         "\n\tautoExt %u list accesses\n",
          SJG.metrics.nMutexEnv, SJG.metrics.nMutexEnv2,
          SJG.metrics.nMutexPerDb, SJG.metrics.nMutexAutoExt);
   printf("S3JniDb: %u alloced (*%u = %u bytes), %u recycled\n",
