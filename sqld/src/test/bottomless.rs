@@ -25,7 +25,8 @@ async fn backup_restore() {
     const BUCKET: &str = "testbackuprestore";
     const PATH: &str = "backup_restore.sqld";
     const PORT: u16 = 15001;
-    const OPS: usize = 100;
+    const OPS: usize = 2000;
+    const ROWS: usize = 10;
 
     let _ = S3BucketCleaner::new(BUCKET).await;
     assert_bucket_occupancy(BUCKET, true).await;
@@ -67,11 +68,11 @@ async fn backup_restore() {
         .await
         .unwrap();
 
-        let stmts: Vec<_> = (0u32..OPS as u32)
+        let stmts: Vec<_> = (0..OPS)
             .map(|i| {
                 format!(
                     "INSERT INTO t(id, name) VALUES({}, '{}') ON CONFLICT (id) DO UPDATE SET name = '{}';",
-                    i % 10,
+                    i % ROWS,
                     i,
                     i
                 )
@@ -107,8 +108,7 @@ async fn backup_restore() {
             .unwrap()
             .into_result_set()
             .unwrap();
-        const OPS_CEIL: usize = (OPS + 9) / 10;
-        assert_eq!(rs.rows.len(), OPS_CEIL, "unexpected number of rows");
+        assert_eq!(rs.rows.len(), ROWS, "unexpected number of rows");
         let base = if OPS < 10 { 0 } else { OPS - 10 } as i64;
         for (i, row) in rs.rows.iter().enumerate() {
             let i = i as i64;
@@ -136,11 +136,11 @@ async fn backup_restore() {
         sleep(Duration::from_secs(2)).await;
 
         // override existing entries, this will generate WAL
-        let stmts: Vec<_> = (0u32..OPS as u32)
+        let stmts: Vec<_> = (0..OPS)
             .map(|i| {
                 format!(
                     "INSERT INTO t(id, name) VALUES({}, '{}-x') ON CONFLICT (id) DO UPDATE SET name = '{}-x';",
-                    i % 10,
+                    i % ROWS,
                     i,
                     i
                 )
@@ -172,8 +172,7 @@ async fn backup_restore() {
             .unwrap()
             .into_result_set()
             .unwrap();
-        const OPS_CEIL: usize = (OPS + 9) / 10;
-        assert_eq!(rs.rows.len(), OPS_CEIL, "unexpected number of rows");
+        assert_eq!(rs.rows.len(), ROWS, "unexpected number of rows");
         let base = if OPS < 10 { 0 } else { OPS - 10 } as i64;
         for (i, row) in rs.rows.iter().enumerate() {
             let i = i as i64;

@@ -72,6 +72,7 @@ impl<'a> Connection<'a> {
         // it has been instanciated and lives for long enough
         _wal_hook: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
+        auto_checkpoint: u32,
     ) -> Result<Self, rusqlite::Error> {
         let path = path.as_ref().join("data");
         tracing::trace!(
@@ -87,7 +88,7 @@ impl<'a> Connection<'a> {
             // We pass a pointer to the WAL methods data to the database connection. This means
             // that the reference must outlive the connection. This is guaranteed by the marker in
             // the returned connection.
-            let rc = rusqlite::ffi::libsql_open_v2(
+            let mut rc = rusqlite::ffi::libsql_open_v2(
                 filename.as_ptr(),
                 &mut db as *mut _,
                 flags.bits(),
@@ -95,6 +96,10 @@ impl<'a> Connection<'a> {
                 W::name().as_ptr(),
                 hook_ctx as *mut _ as *mut _,
             );
+
+            if rc == 0 {
+                rc = rusqlite::ffi::sqlite3_wal_autocheckpoint(db, auto_checkpoint as _);
+            }
 
             if rc != 0 {
                 rusqlite::ffi::sqlite3_close(db);

@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use crate::DEFAULT_AUTO_CHECKPOINT;
 use rusqlite::OpenFlags;
 
 use crate::replication::replica::hook::{SQLITE_CONTINUE_REPLICATION, SQLITE_EXIT_REPLICATION};
@@ -20,6 +21,8 @@ impl<'a> FrameInjector<'a> {
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX,
             &INJECTOR_METHODS,
             hook_ctx,
+            // It's ok to leave auto-checkpoint to default, since replicas don't use bottomless.
+            DEFAULT_AUTO_CHECKPOINT,
         )?;
 
         Ok(Self { conn })

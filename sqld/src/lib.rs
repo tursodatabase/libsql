@@ -35,6 +35,7 @@ use crate::error::Error;
 use crate::stats::Stats;
 
 use sha256::try_digest;
+use tokio::time::{interval, sleep, Instant, MissedTickBehavior};
 
 pub use sqld_libsql_bindings as libsql;
 
@@ -61,6 +62,7 @@ pub mod version;
 const MAX_CONCURRENT_DBS: usize = 128;
 const DB_CREATE_TIMEOUT: Duration = Duration::from_secs(1);
 const DEFAULT_NAMESPACE_NAME: &str = "default";
+const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
 pub enum Backend {
@@ -107,6 +109,7 @@ pub struct Config {
     pub snapshot_exec: Option<String>,
     pub disable_default_namespace: bool,
     pub disable_namespaces: bool,
+    pub checkpoint_interval: Option<Duration>,
 }
 
 impl Default for Config {
@@ -148,6 +151,7 @@ impl Default for Config {
             snapshot_exec: None,
             disable_default_namespace: false,
             disable_namespaces: true,
+            checkpoint_interval: None,
         }
     }
 }
@@ -462,6 +466,7 @@ async fn start_primary(
         max_response_size: config.max_response_size,
         load_from_dump: None,
         max_total_response_size: config.max_total_response_size,
+        checkpoint_interval: config.checkpoint_interval,
     };
     let factory = PrimaryNamespaceMaker::new(conf);
     let namespaces = Arc::new(NamespaceStore::new(factory));
@@ -527,7 +532,9 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Stats) -> anyhow::Result<(
             // initialize a connection here, and keep it alive for the entirety of the program. If we
             // fail to open it, we wait for `duration` and try again later.
             let ctx = &mut ();
-            let maybe_conn = match open_db(&db_path, &TRANSPARENT_METHODS, ctx, Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)) {
+            // We can safely open db with DEFAULT_AUTO_CHECKPOINT, since monitor is read-only: it 
+            // won't produce new updates, frames or generate checkpoints.
+            let maybe_conn = match open_db(&db_path, &TRANSPARENT_METHODS, ctx, Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
                 Ok(conn) => Some(conn),
                 Err(e) => {
                     tracing::warn!("failed to open connection for storager monitor: {e}, trying again in {duration:?}");
@@ -561,6 +568,57 @@ async fn run_storage_monitor(db_path: PathBuf, stats: Stats) -> anyhow::Result<(
     }).await;
 
     Ok(())
+}
+
+async fn run_checkpoint_cron(db_path: PathBuf, period: Duration) -> anyhow::Result<()> {
+    const RETRY_INTERVAL: Duration = Duration::from_secs(60);
+    let data_path = db_path.join("data");
+    tracing::info!("setting checkpoint interval to {:?}", period);
+    let mut interval = interval(period);
+    interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+    let mut retry: Option<Duration> = None;
+    loop {
+        if let Some(retry) = retry.take() {
+            if retry.is_zero() {
+                tracing::warn!("database was not set in WAL journal mode");
+                return Ok(());
+            }
+            sleep(retry).await;
+        } else {
+            interval.tick().await;
+        }
+        let data_path = data_path.clone();
+        retry = tokio::task::spawn_blocking(move || match rusqlite::Connection::open(&data_path) {
+            Ok(conn) => unsafe {
+                let start = Instant::now();
+                let mut num_checkpointed: std::ffi::c_int = 0;
+                let rc = rusqlite::ffi::sqlite3_wal_checkpoint_v2(
+                    conn.handle(),
+                    std::ptr::null(),
+                    libsql::ffi::SQLITE_CHECKPOINT_TRUNCATE,
+                    &mut num_checkpointed as *mut _,
+                    std::ptr::null_mut(),
+                );
+                if rc == 0 {
+                    if num_checkpointed == -1 {
+                        return Some(Duration::default());
+                    } else {
+                        let elapsed = Instant::now() - start;
+                        tracing::info!("database checkpoint (took: {:?})", elapsed);
+                    }
+                    None
+                } else {
+                    tracing::warn!("failed to execute checkpoint - error code: {}", rc);
+                    Some(RETRY_INTERVAL)
+                }
+            },
+            Err(err) => {
+                tracing::warn!("couldn't connect to '{:?}': {}", data_path, err);
+                Some(RETRY_INTERVAL)
+            }
+        })
+        .await?;
+    }
 }
 
 fn sentinel_file_path(path: &Path) -> PathBuf {
@@ -683,6 +741,12 @@ pub async fn run_server(config: Config) -> anyhow::Result<()> {
 
         if config.heartbeat_url.is_some() {
             join_set.spawn(run_storage_monitor(config.db_path.clone(), stats));
+        }
+
+        if let Some(interval) = config.checkpoint_interval {
+            if config.bottomless_replication.is_some() {
+                join_set.spawn(run_checkpoint_cron(config.db_path.clone(), interval));
+            }
         }
 
         loop {

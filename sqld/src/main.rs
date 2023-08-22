@@ -182,6 +182,11 @@ struct Cli {
     #[clap(long, env = "SQLD_SNAPSHOT_EXEC")]
     snapshot_exec: Option<String>,
 
+    /// Interval in seconds, in which WAL checkpoint is being called.
+    /// By default, the interval is 1 hour.
+    #[clap(long, env = "SQLD_CHECKPOINT_INTERVAL_S")]
+    checkpoint_interval_s: Option<u64>,
+
     /// By default, all request for which a namespace can't be determined fallaback to the default
     /// namespace `default`. This flag disables that.
     #[clap(long)]
@@ -304,6 +309,7 @@ fn config_from_args(args: Cli) -> Result<Config> {
         snapshot_exec: args.snapshot_exec,
         disable_default_namespace: args.disable_default_namespace,
         disable_namespaces: !args.enable_namespaces,
+        checkpoint_interval: args.checkpoint_interval_s.map(Duration::from_secs),
     })
 }
 

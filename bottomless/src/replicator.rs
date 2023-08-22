@@ -192,7 +192,7 @@ impl Default for Options {
         Options {
             create_bucket_if_not_exists: true,
             verify_crc: true,
-            use_compression: CompressionKind::None,
+            use_compression: CompressionKind::Gzip,
             max_batch_interval: Duration::from_secs(15),
             max_frames_per_batch: 500, // basically half of the default SQLite checkpoint size
             s3_upload_max_parallelism: 32,
@@ -213,6 +213,10 @@ impl Replicator {
     }
 
     pub async fn with_options<S: Into<String>>(db_path: S, options: Options) -> Result<Self> {
+        tracing::trace!(
+            "Starting bottomless replicator with options: {:#?}",
+            options
+        );
         let config = options.client_config().await;
         let client = Client::from_conf(config);
         let bucket = options.bucket_name.clone();
@@ -306,6 +310,7 @@ impl Replicator {
                 let sem = Arc::new(tokio::sync::Semaphore::new(max_parallelism));
                 while let Some(fdesc) = frames_inbox.recv().await {
                     tracing::trace!("Received S3 upload request: {}", fdesc);
+                    let start = Instant::now();
                     let sem = sem.clone();
                     let permit = sem.acquire_owned().await.unwrap();
                     let client = client.clone();
@@ -324,7 +329,8 @@ impl Replicator {
                             tracing::error!("Failed to send {} to S3: {}", fpath, e);
                         } else {
                             tokio::fs::remove_file(&fpath).await.unwrap();
-                            tracing::trace!("Uploaded to S3: {}", fpath);
+                            let elapsed = Instant::now() - start;
+                            tracing::debug!("Uploaded to S3: {} in {:?}", fpath, elapsed);
                         }
                         drop(permit);
                     });
@@ -608,6 +614,7 @@ impl Replicator {
             return Ok(false);
         }
         tracing::debug!("Snapshotting {}", self.db_path);
+        let start = Instant::now();
         let change_counter = match self.use_compression {
             CompressionKind::None => {
                 self.client
@@ -651,7 +658,7 @@ impl Replicator {
             .body(ByteStream::from(Bytes::copy_from_slice(&change_counter)))
             .send()
             .await?;
-        tracing::debug!("Main db snapshot complete");
+        tracing::debug!("Main db snapshot complete in {:?}", Instant::now() - start);
         Ok(true)
     }
 

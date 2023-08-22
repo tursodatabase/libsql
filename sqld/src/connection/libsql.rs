@@ -33,6 +33,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     extensions: Vec<PathBuf>,
     max_response_size: u64,
     max_total_response_size: u64,
+    auto_checkpoint: u32,
     /// In wal mode, closing the last database takes time, and causes other databases creation to
     /// return sqlite busy. To mitigate that, we hold on to one connection
     _db: Option<LibSqlConnection>,
@@ -53,6 +54,7 @@ where
         extensions: Vec<PathBuf>,
         max_response_size: u64,
         max_total_response_size: u64,
+        auto_checkpoint: u32,
     ) -> Result<Self>
     where
         F: Fn() -> W::Context + Sync + Send + 'static,
@@ -66,6 +68,7 @@ where
             extensions,
             max_response_size,
             max_total_response_size,
+            auto_checkpoint,
             _db: None,
         };
 
@@ -115,6 +118,7 @@ where
             QueryBuilderConfig {
                 max_size: Some(self.max_response_size),
                 max_total_size: Some(self.max_total_response_size),
+                auto_checkpoint: self.auto_checkpoint,
             },
         )
         .await
@@ -144,6 +148,7 @@ pub fn open_db<'a, W>(
     wal_methods: &'static WalMethodsHook<W>,
     hook_ctx: &'a mut W::Context,
     flags: Option<OpenFlags>,
+    auto_checkpoint: u32,
 ) -> Result<sqld_libsql_bindings::Connection<'a>, rusqlite::Error>
 where
     W: WalHook,
@@ -154,8 +159,7 @@ where
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX,
     );
-
-    sqld_libsql_bindings::Connection::open(path, flags, wal_methods, hook_ctx)
+    sqld_libsql_bindings::Connection::open(path, flags, wal_methods, hook_ctx, auto_checkpoint)
 }
 
 impl LibSqlConnection {
@@ -254,7 +258,13 @@ impl<'a> Connection<'a> {
         builder_config: QueryBuilderConfig,
     ) -> Result<Self> {
         let this = Self {
-            conn: open_db(path, wal_methods, hook_ctx, None)?,
+            conn: open_db(
+                path,
+                wal_methods,
+                hook_ctx,
+                None,
+                builder_config.auto_checkpoint,
+            )?,
             timeout_deadline: None,
             timed_out: false,
             stats,
