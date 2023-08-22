@@ -596,7 +596,9 @@ static void diff_one_table(const char *zTab, FILE *out){
 
   /* Build the comparison query */
   for(n2=n; az2[n2]; n2++){
-    fprintf(out, "ALTER TABLE %s ADD COLUMN %s;\n", zId, safeId(az2[n2]));
+    char *zTab = safeId(az2[n2]);
+    fprintf(out, "ALTER TABLE %s ADD COLUMN %s;\n", zId, zTab);
+    sqlite3_free(zTab);
   }
   nQ = nPk2+1+2*(n2-nPk2);
   if( n2>nPk2 ){
