@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;
+  private static boolean takeNaps = false;
 
   private static final class Metrics {
     int dbOpen;
@@ -1167,32 +1168,38 @@ public class Tester1 implements Runnable {
     outln("Woke up.");
   }
 
+  private void nap() throws InterruptedException {
+    if( takeNaps ){
+      Thread.sleep(java.util.concurrent.ThreadLocalRandom.current().nextInt(3, 28), 0);
+    }
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     if(false) testCompileOption();
     testToUtf8();
     test1();
-    testOpenDb1();
-    testOpenDb2();
-    testCollation();
-    testPrepare123();
-    testBindFetchInt();
-    testBindFetchInt64();
-    testBindFetchDouble();
-    testBindFetchText();
-    testBindFetchBlob();
-    testSql();
-    testStatus();
-    testUdf1();
-    testUdfJavaObject();
-    testUdfAggregate();
-    testUdfWindow();
-    testTrace();
-    testProgress();
-    testCommitHook();
-    testRollbackHook();
-    testUpdateHook();
-    testAuthorizer();
-    testAutoExtension();
+    nap(); testOpenDb1();
+    nap(); testOpenDb2();
+    nap(); testCollation();
+    nap(); testPrepare123();
+    nap(); testBindFetchInt();
+    nap(); testBindFetchInt64();
+    nap(); testBindFetchDouble();
+    nap(); testBindFetchText();
+    nap(); testBindFetchBlob();
+    nap(); testSql();
+    nap(); testStatus();
+    nap(); testUdf1();
+    nap(); testUdfJavaObject();
+    nap(); testUdfAggregate();
+    nap(); testUdfWindow();
+    nap(); testTrace();
+    nap(); testProgress();
+    nap(); testCommitHook();
+    nap(); testRollbackHook();
+    nap(); testUpdateHook();
+    nap(); testAuthorizer();
+    nap(); testAutoExtension();
     if(!fromThread){
       testBusy();
       if( !mtMode ){
@@ -1227,6 +1234,8 @@ public class Tester1 implements Runnable {
           nThread = Integer.parseInt(args[i++]);
         }else if(arg.equals("r") || arg.equals("runs")){
           nRepeat = Integer.parseInt(args[i++]);
+        }else if(arg.equals("naps")){
+          takeNaps = true;
         }else{
           throw new IllegalArgumentException("Unhandled flag:"+arg);
         }
@@ -1247,7 +1256,7 @@ public class Tester1 implements Runnable {
         final ExecutorService ex = Executors.newFixedThreadPool( nThread );
         //final List<Future<?>> futures = new ArrayList<>();
         ++nLoop;
-        out(nLoop+" ");
+        out((1==nLoop ? "" : " ")+nLoop);
         for( int i = 0; i < nThread; ++i ){
           ex.submit( new Tester1(i), i );
         }

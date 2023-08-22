@@ -380,10 +380,6 @@ struct S3JniHook{
 */
 typedef struct S3JniDb S3JniDb;
 struct S3JniDb {
-  JNIEnv *env   /* Used for cleaning up all dbs owned by a given
-                ** thread, noting that this ownership is an artificial
-                ** one imposed by our threading constraints, not by
-                ** the core library. */;
   sqlite3 *pDb  /* The associated db handle */;
   jobject jDb   /* A global ref of the output object which gets
                    returned from sqlite3_open(_v2)(). We need this in
@@ -558,6 +554,9 @@ struct S3JniGlobalType {
 static S3JniGlobalType S3JniGlobal = {};
 #define SJG S3JniGlobal
 
+/* Helpers for working with specific mutexes. */
+#define MUTEX_ENV_ASSERT_LOCKED  \
+  assert( 0 != SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
 #define MUTEX_ENV_ASSERT_LOCKER                                      \
   assert( (env) == SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
 #define MUTEX_ENV_ASSERT_NOTLOCKER                                   \
@@ -604,7 +603,7 @@ static S3JniGlobalType S3JniGlobal = {};
   assert( 0 != SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
 
 #define OOM_CHECK(VAR) if(!(VAR)) s3jni_oom(env)
-static void s3jni_oom(JNIEnv * const env){
+static inline void s3jni_oom(JNIEnv * const env){
   (*env)->FatalError(env, "Out of memory.") /* does not return */;
 }
 
@@ -941,41 +940,15 @@ static void S3JniDb_set_aside(S3JniDb * const s){
     //if(s->pNext) MARKER(("next: %p->pPrev@%p\n", s->pNext, s->pNext->pPrev));
   }
 }
-/**
-   Cleans up all state in S3JniGlobal.perDb for th given JNIEnv.
-   Results are undefined if a Java-side db uses the API
-   from the given JNIEnv after this call.
-*/
-static void S3JniDb_free_for_env(JNIEnv *env){
-  S3JniDb * ps;
-  S3JniDb * pNext = 0;
-  MUTEX_PDB_ENTER;
-  ps = SJG.perDb.aUsed;
-  for( ; ps; ps = pNext ){
-    pNext = ps->pNext;
-    if(ps->env == env){
-#ifndef NDEBUG
-      S3JniDb * const pPrev = ps->pPrev;
-#endif
-      S3JniDb_set_aside(ps);
-      assert( pPrev ? pPrev->pNext==pNext : 1 );
-      assert( ps == SJG.perDb.aFree );
-    }
-  }
-  MUTEX_PDB_LEAVE;
-}
 
 /**
    Uncache any state for the given JNIEnv, clearing all Java
    references the cache owns. Returns true if env was cached and false
    if it was not found in the cache.
-
-   Also passes env to S3JniDb_free_for_env() to free up
-   what would otherwise be stale references.
 */
 static int S3JniGlobal_env_uncache(JNIEnv * const env){
   struct S3JniEnv * row;
-  MUTEX_ENV_ASSERT_LOCKER;
+  MUTEX_ENV_ASSERT_LOCKED;
   row = SJG.envCache.aHead;
   for( ; row; row = row->pNext ){
     if( row->env == env ){
@@ -992,7 +965,6 @@ static int S3JniGlobal_env_uncache(JNIEnv * const env){
     assert( !row->pPrev );
     SJG.envCache.aHead = row->pNext;
   }
-  S3JniDb_free_for_env(env);
   memset(row, 0, sizeof(S3JniEnv));
   row->pNext = SJG.envCache.aFree;
   if( row->pNext ) row->pNext->pPrev = row;
@@ -1130,7 +1102,6 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
     }
     rv->jDb = REF_G(jDb);
     rv->pDb = pDb;
-    rv->env = env;
   }
   MUTEX_PDB_LEAVE;
   return rv;

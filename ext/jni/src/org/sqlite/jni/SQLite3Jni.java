@@ -122,21 +122,13 @@ public final class SQLite3Jni {
      uncacheJniEnv() when it is done with the library - either right
      before it terminates or when it is finished using the SQLite API.
      This will clean up any cached per-JNIEnv info. Calling into the
-     library again after that "should" re-initialize the cache on
-     demand, but that's untested.
+     library will re-initialize the cache on demand.
 
-     This call forcibly wipes out all cached information for the
-     current JNIEnv, a side-effect of which is that behavior is
-     undefined if any database objects are (A) still active at the
-     time it is called _and_ (B) calls are subsequently made into the
-     library with such a database. Doing so will, at best, lead to a
-     crash.  At worst, it will lead to the db possibly misbehaving
-     because some of its Java-bound state has been cleared. There is
-     no immediate harm in (A) so long as condition (B) is not met.
-     This process does _not_ actually close any databases or finalize
-     any prepared statements.  For proper library behavior, and to
-     avoid C-side leaks, be sure to close them before calling this
-     function.
+     This process does _not_ close any databases or finalize
+     any prepared statements because their ownership does not depend on
+     a given thread.  For proper library behavior, and to
+     avoid C-side leaks, be sure to finalize all statements and close
+     all databases before calling this function.
 
      Calling this from the main application thread is not strictly
      required but is "polite." Additional threads must call this
