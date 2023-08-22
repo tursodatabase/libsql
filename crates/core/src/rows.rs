@@ -1,4 +1,4 @@
-use crate::{errors, Connection, Statement, Error, Params, Result, Value};
+use crate::{errors, Connection, Error, Params, Result, Statement, Value};
 use libsql_sys::ValueType;
 
 use std::cell::RefCell;
@@ -43,7 +43,7 @@ impl Rows {
         self.stmt.inner.column_count()
     }
 
-    pub fn column_name(&self, idx: i32) -> &str {
+    pub fn column_name(&self, idx: i32) -> Option<&str> {
         self.stmt.inner.column_name(idx)
     }
 
@@ -117,7 +117,7 @@ impl Row {
         }
     }
 
-    pub fn column_name(&self, idx: i32) -> &str {
+    pub fn column_name(&self, idx: i32) -> Option<&str> {
         self.stmt.inner.column_name(idx)
     }
 

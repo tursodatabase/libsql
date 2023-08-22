@@ -262,7 +262,9 @@ impl Statement {
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             let s = self.column_name(i);
-            cols.push(s);
+            if let Some(s) = s {
+                cols.push(s);
+            }
         }
         cols
     }
@@ -284,7 +286,8 @@ impl Statement {
     /// sure that current statement has already been stepped once before
     /// calling this method.
     ///
-    pub fn column_name(&self, col: usize) -> &str {
+    /// Returns `None` if there is no column at the provided index.
+    pub fn column_name(&self, col: usize) -> Option<&str> {
         self.inner.column_name(col as i32)
     }
 
@@ -323,7 +326,11 @@ impl Statement {
         for i in 0..n {
             // Note: `column_name` is only fallible if `i` is out of bounds,
             // which we've already checked.
-            if bytes.eq_ignore_ascii_case(self.inner.column_name(i).as_bytes()) {
+            let col_name = self
+                .inner
+                .column_name(i)
+                .ok_or_else(|| Error::InvalidColumnName(name.to_string()))?;
+            if bytes.eq_ignore_ascii_case(col_name.as_bytes()) {
                 return Ok(i as usize);
             }
         }
@@ -339,12 +346,18 @@ impl Statement {
         let n = self.column_count();
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
-            let name = self.column_name(i);
+            let name = self.column_name(i).expect("Column idx should be valid");
             let origin_name = self.column_origin_name(i);
             let table_name = self.column_table_name(i);
             let database_name = self.column_database_name(i);
             let decl_type = self.column_decltype(i);
-            cols.push(Column { name, origin_name, table_name, database_name, decl_type });
+            cols.push(Column {
+                name,
+                origin_name,
+                table_name,
+                database_name,
+                decl_type,
+            });
         }
         cols
     }
