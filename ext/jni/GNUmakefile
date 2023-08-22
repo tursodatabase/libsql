@@ -232,7 +232,7 @@ test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
 test-mt:  $(SQLite3Jni.class) $(sqlite3-jni.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.Tester1 -t 4 -r 5 $(test.flags)
+		org.sqlite.jni.Tester1 -t 7 -r 50 $(test.flags)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose

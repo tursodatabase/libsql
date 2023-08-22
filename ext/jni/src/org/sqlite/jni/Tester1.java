@@ -37,8 +37,8 @@ public class Tester1 implements Runnable {
 
   static final Metrics metrics = new Metrics();
 
-  public synchronized static void out(Object val){
-    System.out.print(val);
+  public synchronized static void outln(){
+    System.out.println("");
   }
 
   public synchronized static void outln(Object val){
@@ -46,11 +46,14 @@ public class Tester1 implements Runnable {
     System.out.println(val);
   }
 
+  public synchronized static void out(Object val){
+    System.out.print(val);
+  }
+
   @SuppressWarnings("unchecked")
   public synchronized static void out(Object... vals){
-    int n = 0;
     System.out.print(Thread.currentThread().getName()+": ");
-    for(Object v : vals) out((n++>0 ? " " : "")+v);
+    for(Object v : vals) out(v);
   }
 
   @SuppressWarnings("unchecked")
@@ -211,7 +214,7 @@ public class Tester1 implements Runnable {
     affirm(0 != stmt.getNativePointer());
     rc = sqlite3_step(stmt);
     if( SQLITE_DONE != rc ){
-      outln("step failed ??? ",rc, sqlite3_errmsg(db));
+      outln("step failed ??? ",rc, " ",sqlite3_errmsg(db));
     }
     affirm(SQLITE_DONE == rc);
     sqlite3_finalize(stmt);
@@ -741,7 +744,7 @@ public class Tester1 implements Runnable {
       outln("Bound constants:\n");
       for(java.lang.reflect.Field field : declaredFields) {
         if(java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-          outln("\t"+field.getName());
+          outln("\t",field.getName());
         }
       }
     }
@@ -760,9 +763,9 @@ public class Tester1 implements Runnable {
     java.util.Collections.sort(funcList);
     for(String n : funcList){
       ++count;
-      outln("\t"+n+"()");
+      outln("\t",n,"()");
     }
-    outln(count+" functions named sqlite3_*.");
+    outln(count," functions named sqlite3_*.");
   }
 
   private void testTrace(){
@@ -1232,9 +1235,10 @@ public class Tester1 implements Runnable {
 
     final long timeStart = System.currentTimeMillis();
     int nLoop = 0;
-    outln("libversion_number:",
+    outln("libversion_number: ",
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
+    outln("Running ",nRepeat," loop(s) over ",nThread," thread(s).");
     for( int n = 0; n < nRepeat; ++n ){
       if( nThread==null || nThread<=1 ){
         new Tester1(0).runTests(false);
@@ -1243,7 +1247,7 @@ public class Tester1 implements Runnable {
         final ExecutorService ex = Executors.newFixedThreadPool( nThread );
         //final List<Future<?>> futures = new ArrayList<>();
         ++nLoop;
-        outln("Running loop #",nLoop," over ",nThread," threads.");
+        out(nLoop+" ");
         for( int i = 0; i < nThread; ++i ){
           ex.submit( new Tester1(i), i );
         }
@@ -1257,11 +1261,12 @@ public class Tester1 implements Runnable {
         }
       }
     }
+    outln();
 
     final long timeEnd = System.currentTimeMillis();
     outln("Tests done. Metrics:");
-    outln("\tAssertions checked: "+affirmCount);
-    outln("\tDatabases opened: "+metrics.dbOpen);
+    outln("\tAssertions checked: ",affirmCount);
+    outln("\tDatabases opened: ",metrics.dbOpen);
     if( doSomethingForDev ){
       sqlite3_do_something_for_developer();
     }
