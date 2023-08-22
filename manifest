@@ -1,5 +1,5 @@
-C Fix\san\sundefined\sinteger\soverflow\sin\sfts5.
-D 2023-08-21T16:14:58.145
+C Update\sautoconf/Makefile.msc\s(by\srunning\smkmsvcmin.tcl)\sto\ssupport\sthe\s"ASAN=1"\soption.
+D 2023-08-22T11:20:38.009
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
 F autoconf/Makefile.am adedc1324b6a87fdd1265ddd336d2fb7d4f36a0e77b86ea553ae7cc4ea239347
 F autoconf/Makefile.fallback 22fe523eb36dfce31e0f6349f782eb084e86a5620b2b0b4f84a2d6133f53f5ac
-F autoconf/Makefile.msc 012cdd820963653a7db147a185ebe9085756b6ab15ac964e8cc1dae4c29485cd
+F autoconf/Makefile.msc 3248809e70cf439a13e9faf82a4e12cbdb7b042006300ac67175fc5125b5c031
 F autoconf/README.first 6c4f34fe115ff55d4e8dbfa3cecf04a0188292f7
 F autoconf/README.txt 42cfd21d0b19dc7d5d85fb5c405c5f3c6a4c923021c39128f6ba685355d8fd56
 F autoconf/configure.ac ec7fa914c5e74ff212fe879f9bb6918e1234497e05facfb641f30c4d5893b277
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 0462a2612d1fc1d077acf60ef415f358aa2c44174c4ef28f4bbfdbcbf03d3b7c
-R 31562660b5d535c24c7b617332f56384
+P f5c50349b1e4da233b554f371be49297b8b40ca5fe0188899ed906f682bf70d6
+R abb775f96b8469dc0684215ca0297f0b
 U dan
-Z 1c716a1366090725a450505596ff38c0
+Z 07be90e66d8d3c775446d7b340b71fd6
 # Remove this line to create a well-formed Fossil manifest.
