@@ -376,7 +376,7 @@ struct S3JniHook{
 /*
 ** Per-(sqlite3*) state for various JNI bindings.  This state is
 ** allocated as needed, cleaned up in sqlite3_close(_v2)(), and
-** recycled when possible. It is freed during sqlite3_shutdown().
+** recycled when possible.
 */
 typedef struct S3JniDb S3JniDb;
 struct S3JniDb {
@@ -1135,19 +1135,6 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
   MUTEX_PDB_LEAVE;
   return rv;
 }
-
-#if 0
-static void S3JniDb_dump(S3JniDb *s){
-  MARKER(("S3JniDb->env @ %p\n", s->env));
-  MARKER(("S3JniDb->pDb @ %p\n", s->pDb));
-  MARKER(("S3JniDb->trace.jObj @ %p\n", s->trace.jObj));
-  MARKER(("S3JniDb->progress.jObj @ %p\n", s->progress.jObj));
-  MARKER(("S3JniDb->commitHook.jObj @ %p\n", s->commitHook.jObj));
-  MARKER(("S3JniDb->rollbackHook.jObj @ %p\n", s->rollbackHook.jObj));
-  MARKER(("S3JniDb->busyHandler.jObj @ %p\n", s->busyHandler.jObj));
-  MARKER(("S3JniDb->env @ %p\n", s->env));
-}
-#endif
 
 /**
    Returns the S3JniDb object for the given db.
@@ -3079,7 +3066,7 @@ JDECL(jint,1shutdown)(JENV_CSELF){
   s3jni_reset_auto_extension(env);
   MUTEX_ENV_ENTER;
   while( SJG.envCache.aHead ){
-    S3JniGlobal_env_uncache( env );//SJG.envCache.aHead->env );
+    S3JniGlobal_env_uncache( SJG.envCache.aHead->env );
   }
   MUTEX_ENV_LEAVE;
   /* Do not clear S3JniGlobal.jvm: it's legal to call

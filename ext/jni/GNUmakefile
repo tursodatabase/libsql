@@ -268,7 +268,7 @@ endif
 
 tester-ext: tester-local
 tester: tester-ext
-tests: test tester test-mt
+tests: test test-mt tester
 package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)
 $(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)

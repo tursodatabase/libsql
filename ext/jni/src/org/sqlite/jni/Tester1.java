@@ -1270,6 +1270,7 @@ public class Tester1 implements Runnable {
     if( doSomethingForDev ){
       sqlite3_do_something_for_developer();
     }
+    sqlite3_shutdown();
     int nMethods = 0;
     int nNatives = 0;
     final java.lang.reflect.Method[] declaredMethods =
