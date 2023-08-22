@@ -17,4 +17,3 @@ panic = "abort"
 [patch.crates-io]
 tonic = { git = "https://github.com/hyperium/tonic" }
 tonic-build = { git = "https://github.com/hyperium/tonic" }
-hrana-client-proto = { path = "../../hrana-client-rs/hrana-client-proto" }

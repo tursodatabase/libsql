@@ -16,8 +16,8 @@ pub use statement::Statement;
 //      2) Support replication setup
 enum DbType {
     Memory,
-    Path { path: String },
-    Http { url: String },
+    File { path: String },
+    Remote { url: String },
 }
 
 pub struct Database {
@@ -33,15 +33,15 @@ impl Database {
 
     pub fn open(db_path: impl Into<String>) -> Result<Database> {
         Ok(Database {
-            db_type: DbType::Path {
+            db_type: DbType::File {
                 path: db_path.into(),
             },
         })
     }
 
-    pub fn open_http(url: impl Into<String>) -> Result<Self> {
+    pub fn open_remote(url: impl Into<String>) -> Result<Self> {
         Ok(Database {
-            db_type: DbType::Http { url: url.into() },
+            db_type: DbType::Remote { url: url.into() },
         })
     }
 
@@ -56,7 +56,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            DbType::Path { path } => {
+            DbType::File { path } => {
                 let db = crate::Database::open(path)?;
                 let conn = db.connect()?;
 
@@ -65,7 +65,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            DbType::Http { url } => {
+            DbType::Remote { url } => {
                 let conn = Arc::new(hrana::Client::new(url, ""));
 
                 Ok(Connection { conn })

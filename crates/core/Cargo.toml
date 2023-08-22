@@ -18,6 +18,8 @@ parking_lot = "0.12.1"
 hrana-client-proto = "0.2"
 hyper = "0.14"
 hyper-rustls = { version = "0.24", features = ["rustls-native-certs"] }
+base64 = "0.21"
+serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 async-trait = "0.1"
 crossbeam-channel = "0.5"

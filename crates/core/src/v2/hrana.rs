@@ -1,8 +1,12 @@
-use hrana_client_proto::pipeline::{
+mod pipeline;
+mod proto;
+
+use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
 };
-use hrana_client_proto::{Batch, BatchResult, Col, Stmt, StmtResult};
+use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
+
 use hyper::client::HttpConnector;
 use hyper::StatusCode;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
@@ -310,7 +314,7 @@ impl super::statement::Stmt for Statement {
 
 pub struct Rows {
     cols: Arc<Vec<Col>>,
-    rows: Vec<Vec<hrana_client_proto::Value>>,
+    rows: Vec<Vec<proto::Value>>,
 }
 
 #[async_trait::async_trait]
@@ -332,7 +336,7 @@ impl RowsInner for Rows {
 
 pub struct Row {
     cols: Arc<Vec<Col>>,
-    inner: Vec<hrana_client_proto::Value>,
+    inner: Vec<proto::Value>,
 }
 
 impl RowInner for Row {
@@ -366,22 +370,22 @@ fn bind_params(params: Params, stmt: &mut Stmt) {
     }
 }
 
-fn into_value(value: crate::Value) -> hrana_client_proto::Value {
+fn into_value(value: crate::Value) -> proto::Value {
     match value {
-        crate::Value::Null => hrana_client_proto::Value::Null,
-        crate::Value::Integer(value) => hrana_client_proto::Value::Integer { value },
-        crate::Value::Real(value) => hrana_client_proto::Value::Float { value },
-        crate::Value::Text(value) => hrana_client_proto::Value::Text { value },
-        crate::Value::Blob(value) => hrana_client_proto::Value::Blob { value },
+        crate::Value::Null => proto::Value::Null,
+        crate::Value::Integer(value) => proto::Value::Integer { value },
+        crate::Value::Real(value) => proto::Value::Float { value },
+        crate::Value::Text(value) => proto::Value::Text { value },
+        crate::Value::Blob(value) => proto::Value::Blob { value },
     }
 }
 
-fn into_value2(value: hrana_client_proto::Value) -> crate::Value {
+fn into_value2(value: proto::Value) -> crate::Value {
     match value {
-        hrana_client_proto::Value::Null => crate::Value::Null,
-        hrana_client_proto::Value::Integer { value } => crate::Value::Integer(value),
-        hrana_client_proto::Value::Float { value } => crate::Value::Real(value),
-        hrana_client_proto::Value::Text { value } => crate::Value::Text(value),
-        hrana_client_proto::Value::Blob { value } => crate::Value::Blob(value),
+        proto::Value::Null => crate::Value::Null,
+        proto::Value::Integer { value } => crate::Value::Integer(value),
+        proto::Value::Float { value } => crate::Value::Real(value),
+        proto::Value::Text { value } => crate::Value::Text(value),
+        proto::Value::Blob { value } => crate::Value::Blob(value),
     }
 }

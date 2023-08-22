@@ -3,7 +3,7 @@ use libsql::v2::Database;
 #[tokio::main]
 async fn main() {
     let db = if let Ok(url) = std::env::var("LIBSQL_HRANA_URL") {
-        Database::open_http(url).unwrap()
+        Database::open_remote(url).unwrap()
     } else {
         Database::open_in_memory().unwrap()
     };
