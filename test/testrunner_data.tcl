@@ -89,7 +89,8 @@ namespace eval trd {
     -DSQLITE_ENABLE_RBU
   }
 
-  # These two are used by [testrunner.tcl mdevtest].
+  # These two are used by [testrunner.tcl mdevtest] (All-O0) and 
+  # [testrunner.tcl sdevtest] (All-Sanitize).
   #
   set build(All-Debug) {
     --enable-debug --enable-all
@@ -97,6 +98,7 @@ namespace eval trd {
   set build(All-O0) {
     -O0 --enable-all
   }
+  set build(All-Sanitize) { --enable-all -fsanitize=address,undefined }
 
   set build(Sanitize) {
     CC=clang -fsanitize=address,undefined

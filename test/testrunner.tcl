@@ -505,15 +505,17 @@ proc testset_patternlist {patternlist} {
 
   set first [lindex $patternlist 0]
 
-  if {$first=="mdevtest"} {
+  if {$first=="sdevtest" || $first=="mdevtest"} {
+    set CONFIGS(sdevtest) {All-Debug All-Sanitize}
+    set CONFIGS(mdevtest) {All-Debug All-O0}
+
     set patternlist [lrange $patternlist 1 end]
 
-    foreach b {All-Debug All-O0} {
+    foreach b $CONFIGS($first) {
       lappend testset [list $b build testfixture]
       lappend testset [list $b make fuzztest]
       testset_append testset $b veryquick $patternlist
     }
-
   } elseif {$first=="release"} {
     set platform $::TRG(platform)
 
