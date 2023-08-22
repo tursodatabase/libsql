@@ -24,13 +24,19 @@ import java.util.concurrent.Future;
 public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;
+  //! True to sleep briefly between tests.
   private static boolean takeNaps = false;
+  //! True to shuffle the order of the tests.
   private static boolean shuffle = false;
+  //! True to dump the list of to-run tests to stdout.
   private static boolean listRunTests = false;
+  //! List of test*() methods to run.
   private static List<java.lang.reflect.Method> testMethods = null;
+  //! List of exceptions collected by run()
   private static List<Exception> listErrors = new ArrayList<>();
   private static final class Metrics {
-    int dbOpen;
+    //! Number of times createNewDb() (or equivalent) is invoked.
+    volatile int dbOpen = 0;
   }
 
   private Integer tId;
@@ -1173,7 +1179,7 @@ public class Tester1 implements Runnable {
 
   private void nap() throws InterruptedException {
     if( takeNaps ){
-      Thread.sleep(java.util.concurrent.ThreadLocalRandom.current().nextInt(3, 28), 0);
+      Thread.sleep(java.util.concurrent.ThreadLocalRandom.current().nextInt(3, 17), 0);
     }
   }
 
@@ -1256,7 +1262,10 @@ public class Tester1 implements Runnable {
      some chaos for cross-thread contention.
 
      -list-tests: outputs the list of tests being run, minus some
-      which are hard-coded,
+      which are hard-coded. This is noisy in multi-threaded mode.
+
+     -fail: forces an exception to be thrown during the test run.  Use
+     with -shuffle to make its appearance unpredictable.
 
      -v: emit some developer-mode info at the end.
   */
@@ -1278,9 +1287,6 @@ public class Tester1 implements Runnable {
           nRepeat = Integer.parseInt(args[i++]);
         }else if(arg.equals("shuffle")){
           shuffle = true;
-          outln("WARNING: -shuffle mode is known to run ",
-                "the same number of tests but provide far ",
-                "lower, unpredictable metrics for unknown reasons.");
         }else if(arg.equals("list-tests")){
           listRunTests = true;
         }else if(arg.equals("fail")){
@@ -1319,6 +1325,7 @@ public class Tester1 implements Runnable {
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
     outln("Running ",nRepeat," loop(s) over ",nThread," thread(s).");
+    if( takeNaps ) outln("Napping between tests is enabled.");
     for( int n = 0; n < nRepeat; ++n ){
       if( nThread==null || nThread<=1 ){
         new Tester1(0).runTests(false);

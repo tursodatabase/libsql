@@ -78,9 +78,7 @@ public class TesterFts5 {
     test1();
     final int affirmCount = Tester1.affirmCount - oldAffirmCount;
     final long timeEnd = System.currentTimeMillis();
-    outln("FTS5 Tests done. Metrics:");
-    outln("\tAssertions checked: ",affirmCount);
-    outln("\tTotal time = "
-          +(timeEnd - timeStart)+"ms");
+    outln("FTS5 Tests done. Assertions checked = ",affirmCount,
+          ", Total time = ",(timeEnd - timeStart),"ms");
   }
 }
