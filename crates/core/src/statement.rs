@@ -48,7 +48,11 @@ impl Statement {
         let err = self.inner.step();
         Ok(Rows {
             stmt: self.clone(),
-            err: RefCell::new(Some(err)),
+            err: RefCell::new(Some((
+                err,
+                errors::extended_error_code(self.conn.raw),
+                errors::error_from_handle(self.conn.raw),
+            ))),
         })
     }
 
@@ -338,7 +342,13 @@ impl Statement {
             let table_name = self.column_table_name(i);
             let database_name = self.column_database_name(i);
             let decl_type = self.column_decltype(i);
-            cols.push(Column { name, origin_name, table_name, database_name, decl_type });
+            cols.push(Column {
+                name,
+                origin_name,
+                table_name,
+                database_name,
+                decl_type,
+            });
         }
         cols
     }
