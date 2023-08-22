@@ -46,6 +46,8 @@ pub enum StmtError {
     Blocked { reason: Option<String> },
     #[error("Response is too large")]
     ResponseTooLarge,
+    #[error("error executing a request on the primary: {0}")]
+    Proxy(String),
 }
 
 pub async fn execute_stmt(
@@ -203,6 +205,7 @@ pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, Sq
             StmtError::ResponseTooLarge
         }
         SqldError::Blocked(reason) => StmtError::Blocked { reason },
+        SqldError::RpcQueryError(e) => StmtError::Proxy(e.message),
         SqldError::RusqliteError(rusqlite_error) => match rusqlite_error {
             rusqlite::Error::SqliteFailure(sqlite_error, Some(message)) => StmtError::SqliteError {
                 source: sqlite_error,
@@ -249,6 +252,7 @@ impl StmtError {
             Self::SqlInputError { .. } => "SQL_INPUT_ERROR",
             Self::Blocked { .. } => "BLOCKED",
             Self::ResponseTooLarge => "RESPONSE_TOO_LARGE",
+            Self::Proxy(_) => "PROXY_ERROR",
         }
     }
 }
