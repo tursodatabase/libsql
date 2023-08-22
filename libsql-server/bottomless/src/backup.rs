@@ -6,6 +6,7 @@ use std::ops::Range;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc::Sender;
+use tokio::time::Instant;
 use uuid::Uuid;
 
 #[derive(Debug)]
@@ -85,6 +86,7 @@ impl WalCopier {
         tracing::trace!("Flushing {} frames locally.", frames.len());
 
         for start in frames.clone().step_by(self.max_frames_per_batch) {
+            let period_start = Instant::now();
             let timestamp = chrono::Utc::now().timestamp() as u64;
             let end = (start + self.max_frames_per_batch as u32).min(frames.end);
             let len = (end - start) as usize;
@@ -112,8 +114,9 @@ impl WalCopier {
                 }
             }
             if tracing::enabled!(tracing::Level::DEBUG) {
+                let elapsed = Instant::now() - period_start;
                 let file_len = out.metadata().await?.len();
-                tracing::debug!("written {} bytes to {}", file_len, fdesc);
+                tracing::debug!("written {} bytes to {} in {:?}", file_len, fdesc, elapsed);
             }
             drop(out);
             if self.outbox.send(fdesc).await.is_err() {

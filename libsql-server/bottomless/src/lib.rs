@@ -15,6 +15,7 @@ use crate::ffi::{
     bottomless_methods, libsql_wal_methods, sqlite3, sqlite3_file, sqlite3_vfs, PgHdr, Wal,
 };
 use std::ffi::{c_char, c_void};
+use tokio::time::Instant;
 
 // Just heuristics, but should work for ~100% of cases
 fn is_regular(vfs: *const sqlite3_vfs) -> bool {
@@ -300,6 +301,7 @@ pub extern "C" fn xCheckpoint(
     backfilled_frames: *mut i32,
 ) -> i32 {
     tracing::trace!("Checkpoint");
+    let start = Instant::now();
 
     /* In order to avoid partial checkpoints, passive checkpoint
      ** mode is not allowed. Only TRUNCATE checkpoints are accepted,
@@ -366,6 +368,7 @@ pub extern "C" fn xCheckpoint(
         );
         return ffi::SQLITE_IOERR_WRITE;
     }
+    tracing::debug!("Checkpoint completed in {:?}", Instant::now() - start);
 
     ffi::SQLITE_OK
 }

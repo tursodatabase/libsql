@@ -83,6 +83,7 @@ impl<'a> From<&'a rusqlite::Column<'a>> for Column<'a> {
 pub struct QueryBuilderConfig {
     pub max_size: Option<u64>,
     pub max_total_size: Option<u64>,
+    pub auto_checkpoint: u32,
 }
 
 pub trait QueryResultBuilder: Send + 'static {

@@ -22,7 +22,7 @@ use crate::replication::{NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
     check_fresh_db, init_bottomless_replicator, run_periodic_compactions, DB_CREATE_TIMEOUT,
-    MAX_CONCURRENT_DBS,
+    DEFAULT_AUTO_CHECKPOINT, MAX_CONCURRENT_DBS,
 };
 
 /// Creates a new `Namespace` for database of the `Self::Database` type.
@@ -222,6 +222,7 @@ pub struct PrimaryNamespaceConfig {
     pub max_response_size: u64,
     pub load_from_dump: Option<PathBuf>,
     pub max_total_response_size: u64,
+    pub checkpoint_interval: Option<Duration>,
 }
 
 impl Namespace<PrimaryDatabase> {
@@ -246,11 +247,19 @@ impl Namespace<PrimaryDatabase> {
 
         tokio::fs::create_dir_all(&db_path).await?;
         let is_fresh_db = check_fresh_db(&db_path);
+        // switch frame-count checkpoint to time-based one
+        let auto_checkpoint =
+            if config.checkpoint_interval.is_some() && config.bottomless_replication.is_some() {
+                0
+            } else {
+                DEFAULT_AUTO_CHECKPOINT
+            };
         let logger = Arc::new(ReplicationLogger::open(
             &db_path,
             config.max_log_size,
             config.max_log_duration,
             is_dirty,
+            auto_checkpoint,
             Box::new({
                 let name = name.clone();
                 let cb = config.snapshot_callback.clone();
@@ -287,6 +296,7 @@ impl Namespace<PrimaryDatabase> {
             config.extensions.clone(),
             config.max_response_size,
             config.max_total_response_size,
+            auto_checkpoint,
         )
         .await?
         .throttled(

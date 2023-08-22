@@ -29,10 +29,11 @@ impl DumpLoader {
 
         let (ok_snd, ok_rcv) = oneshot::channel::<anyhow::Result<()>>();
         tokio::task::spawn_blocking(move || {
+            let auto_checkpoint = logger.auto_checkpoint;
             let mut ctx = ReplicationLoggerHookCtx::new(logger, bottomless_replicator);
             let mut retries = 0;
             let db = loop {
-                match open_db(&path, &REPLICATION_METHODS, &mut ctx, None) {
+                match open_db(&path, &REPLICATION_METHODS, &mut ctx, None, auto_checkpoint) {
                     Ok(db) => {
                         if ok_snd.send(Ok(())).is_ok() {
                             break db;
