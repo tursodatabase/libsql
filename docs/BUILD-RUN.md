@@ -2,25 +2,38 @@
 
 There are four ways to build and run sqld:
 
+- [Download a prebuilt binary](#download-a-prebuilt-binary)
 - [Using Homebrew](#build-and-install-with-homebrew)
 - [Using a prebuilt Docker image](#using-a-prebuilt-docker-image)
 - [From source using Docker/Podman](#build-from-source-using-docker--podman)
 - [From source using Rust](#build-from-source-using-rust)
 
+## Running sqld
+
+You can simply run launch the executable with no command line arguments to run
+an instance of sqld. By default, sqld listens on 127.0.0.1 port 8080 and
+persists database data in a directory `./data.sqld`.
+
+Use the `--help` flag to discover how to change its runtime behavior.
+
 ## Query sqld
 
-After building, you can query sqld using one of the provided [client
+You can query sqld using one of the provided [client
 libraries](../#client-libraries).
 
-By default, sqld persists database data in a directory `./data.sqld`. The file
-`data` is a normal SQLite 3 compatible database file. You can work with it
-directly using the SQLite CLI:
+You can also use the sqlite3 CLI to query the SQLite 3 compatible database file
+managed by sqld.
 
 ```bash
 sqlite3 ./data.sqld/data
 ```
 
 Be sure to stop sqld before using `sqlite3` like this.
+
+## Download a prebuilt binary
+
+The [sqld releases page] for this repository lists released versions of sqld
+along with downloads for macOS and Linux.
 
 ## Build and install with Homebrew
 
@@ -202,5 +215,6 @@ make test
 ```
 
 
+[sqld releases page]: https://github.com/libsql/sqld/releases
 [sqld container release tags]: https://github.com/libsql/sqld/pkgs/container/sqld
 [sqld release tags]: https://github.com/libsql/sqld/releases
