@@ -198,9 +198,15 @@ impl Statement {
     }
 
     pub(crate) fn step(&self) -> Result<()> {
-        // TODO(lucio): Handle error from step
-        self.inner.step();
-        Ok(())
+        let err = self.inner.step();
+        match err as u32 {
+            crate::ffi::SQLITE_DONE => Ok(()),
+            crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
+            _ => Err(Error::LibError(
+                errors::extended_error_code(self.conn.raw),
+                errors::error_from_handle(self.conn.raw),
+            )),
+        }
     }
 
     pub(crate) fn tail(&self) -> usize {
