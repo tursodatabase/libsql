@@ -255,7 +255,9 @@ pub unsafe extern "C" fn libsql_column_name(
         );
         return 1;
     }
-    let name = res.column_name(col);
+    let name = res
+        .column_name(col)
+        .expect("Column should have valid index");
     match std::ffi::CString::new(name) {
         Ok(name) => {
             *out_name = name.into_raw();
