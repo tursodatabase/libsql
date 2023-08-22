@@ -28,6 +28,7 @@ public class Tester1 implements Runnable {
   private static boolean shuffle = false;
   private static boolean listRunTests = false;
   private static List<java.lang.reflect.Method> testMethods = null;
+  private static List<Exception> listErrors = new ArrayList<>();
   private static final class Metrics {
     int dbOpen;
   }
@@ -67,7 +68,7 @@ public class Tester1 implements Runnable {
   static volatile int affirmCount = 0;
   public synchronized static void affirm(Boolean v, String comment){
     ++affirmCount;
-    assert( v /* prefer assert over exception if it's enabled because
+    if( false ) assert( v /* prefer assert over exception if it's enabled because
                  the JNI layer sometimes has to suppress exceptions,
                  so they might be squelched on their way back to the
                  top. */);
@@ -1106,7 +1107,7 @@ public class Tester1 implements Runnable {
     sqlite3 db = createNewDb();
     affirm( 4==val.value );
     execSql(db, "ATTACH ':memory' as foo");
-    affirm( 4==val.value /* ATTACH uses the same connection, not sub-connections. */ );
+    affirm( 4==val.value, "ATTACH uses the same connection, not sub-connections." );
     sqlite3_close(db);
     db = null;
 
@@ -1176,55 +1177,62 @@ public class Tester1 implements Runnable {
     }
   }
 
+  private void testFail(){
+    affirm( false, "Intentional failure." );
+  }
+
   private void runTests(boolean fromThread) throws Exception {
     if(false) showCompileOption();
     List<java.lang.reflect.Method> mlist = testMethods;
     affirm( null!=mlist );
     if( shuffle ){
       mlist = new ArrayList<>( testMethods.subList(0, testMethods.size()) );
-      java.util.Collections.shuffle(
-        mlist
-        //java.util.concurrent.ThreadLocalRandom.current()
-      );
+      java.util.Collections.shuffle(mlist);
     }
     if( listRunTests ){
       synchronized(this.getClass()){
-        out("Initial test"," list: ");
-        for(java.lang.reflect.Method m : testMethods){
-          out(m.getName()+" ");
+        if( !fromThread ){
+          out("Initial test"," list: ");
+          for(java.lang.reflect.Method m : testMethods){
+            out(m.getName()+" ");
+          }
+          outln();
+          outln("(That list excludes some which are hard-coded to run.)");
         }
-        outln();
-
         out("Running"," tests: ");
         for(java.lang.reflect.Method m : mlist){
           out(m.getName()+" ");
         }
         outln();
-        out("(That list excludes some which are hard-coded to run.)\n");
       }
     }
     testToUtf8();
     test1();
-    int n = 0;
     for(java.lang.reflect.Method m : mlist){
-      ++n;
       nap();
-      m.invoke(this);
+      try{
+        m.invoke(this);
+      }catch(java.lang.reflect.InvocationTargetException e){
+        outln("FAILURE: ",m.getName(),"(): ", e.getCause());
+        throw e;
+      }
     }
-    affirm( n == mlist.size() );
-    if(!fromThread){
+    if( !fromThread ){
       testBusy();
       if( !mtMode ){
+        testAutoExtension() /* threads rightfully muck up these results */;
         testFts5();
       }
     }
   }
 
-  public void run(){
+  public void run() {
     try {
       runTests(0!=this.tId);
     }catch(Exception e){
-      throw new RuntimeException(e);
+      synchronized( listErrors ){
+        listErrors.add(e);
+      }
     }finally{
       affirm( SQLite3Jni.uncacheJniEnv() );
       affirm( !SQLite3Jni.uncacheJniEnv() );
@@ -1256,6 +1264,7 @@ public class Tester1 implements Runnable {
     Integer nThread = null;
     boolean doSomethingForDev = false;
     Integer nRepeat = 1;
+    boolean forceFail = false;
     for( int i = 0; i < args.length; ){
       String arg = args[i++];
       if(arg.startsWith("-")){
@@ -1269,8 +1278,13 @@ public class Tester1 implements Runnable {
           nRepeat = Integer.parseInt(args[i++]);
         }else if(arg.equals("shuffle")){
           shuffle = true;
+          outln("WARNING: -shuffle mode is known to run ",
+                "the same number of tests but provide far ",
+                "lower, unpredictable metrics for unknown reasons.");
         }else if(arg.equals("list-tests")){
           listRunTests = true;
+        }else if(arg.equals("fail")){
+          forceFail = true;
         }else if(arg.equals("naps")){
           takeNaps = true;
         }else{
@@ -1284,11 +1298,13 @@ public class Tester1 implements Runnable {
       testMethods = new ArrayList<>();
       final List<String> excludes = new ArrayList<>();
       // Tests we want to control the order of:
-      excludes.add("testSleep");
-      excludes.add("testToUtf8");
+      if( !forceFail ) excludes.add("testFail");
       excludes.add("test1");
+      excludes.add("testAutoExtension");
       excludes.add("testBusy");
       excludes.add("testFts5");
+      excludes.add("testSleep");
+      excludes.add("testToUtf8");
       for(java.lang.reflect.Method m : Tester1.class.getDeclaredMethods()){
         final String name = m.getName();
         if( name.startsWith("test") && excludes.indexOf(name)<0 ){
@@ -1306,23 +1322,32 @@ public class Tester1 implements Runnable {
     for( int n = 0; n < nRepeat; ++n ){
       if( nThread==null || nThread<=1 ){
         new Tester1(0).runTests(false);
-      }else{
-        Tester1.mtMode = true;
-        final ExecutorService ex = Executors.newFixedThreadPool( nThread );
-        //final List<Future<?>> futures = new ArrayList<>();
-        ++nLoop;
-        out((1==nLoop ? "" : " ")+nLoop);
-        for( int i = 0; i < nThread; ++i ){
-          ex.submit( new Tester1(i), i );
+        continue;
+      }
+      Tester1.mtMode = true;
+      final ExecutorService ex = Executors.newFixedThreadPool( nThread );
+      //final List<Future<?>> futures = new ArrayList<>();
+      ++nLoop;
+      out((1==nLoop ? "" : " ")+nLoop);
+      for( int i = 0; i < nThread; ++i ){
+        ex.submit( new Tester1(i), i );
+      }
+      ex.shutdown();
+      try{
+        ex.awaitTermination(nThread*200, java.util.concurrent.TimeUnit.MILLISECONDS);
+        ex.shutdownNow();
+      }catch (InterruptedException ie){
+        ex.shutdownNow();
+        Thread.currentThread().interrupt();
+      }
+      if( !listErrors.isEmpty() ){
+        outln("TEST ERRORS:");
+        Exception err = null;
+        for( Exception e : listErrors ){
+          e.printStackTrace();
+          if( null==err ) err = e;
         }
-        ex.shutdown();
-        try {
-          ex.awaitTermination(nThread*200, java.util.concurrent.TimeUnit.MILLISECONDS);
-          ex.shutdownNow();
-        } catch (InterruptedException ie) {
-          ex.shutdownNow();
-          Thread.currentThread().interrupt();
-        }
+        if( null!=err ) throw err;
       }
     }
     outln();

@@ -451,6 +451,16 @@ struct S3JniAutoExtension {
 };
 
 /*
+** If true, modifying S3JniGlobal.metrics is protected by a mutex,
+** else it isn't.
+*/
+#ifdef SQLITE_DEBUG
+#define S3JNI_METRICS_MUTEX 1
+#else
+#define S3JNI_METRICS_MUTEX 0
+#endif
+
+/*
 ** Global state, e.g. caches and metrics.
 */
 typedef struct S3JniGlobalType S3JniGlobalType;
@@ -537,6 +547,10 @@ struct S3JniGlobalType {
       volatile unsigned nValue;
       volatile unsigned nInverse;
     } udf;
+    unsigned nMetrics                 /* Total number of mutex-locked metrics increments. */;
+#if S3JNI_METRICS_MUTEX
+    sqlite3_mutex * mutex;
+#endif
   } metrics;
   /**
      The list of bound auto-extensions (Java-side:
@@ -553,6 +567,18 @@ struct S3JniGlobalType {
 };
 static S3JniGlobalType S3JniGlobal = {};
 #define SJG S3JniGlobal
+
+static void s3jni_incr( volatile unsigned int * const p ){
+#if S3JNI_METRICS_MUTEX
+  sqlite3_mutex * const m = SJG.metrics.mutex;
+  sqlite3_mutex_enter(m);
+  ++SJG.metrics.nMetrics;
+  ++(*p);
+  sqlite3_mutex_leave(m);
+#else
+  ++(*p);
+#endif
+}
 
 /* Helpers for working with specific mutexes. */
 #define MUTEX_ENV_ASSERT_LOCKED  \
@@ -629,12 +655,12 @@ static S3JniEnv * S3JniGlobal_env_cache(JNIEnv * const env){
   row = SJG.envCache.aHead;
   for( ; row; row = row->pNext ){
     if( row->env == env ){
-      ++SJG.metrics.envCacheHits;
+      s3jni_incr( &SJG.metrics.envCacheHits );
       MUTEX_ENV_LEAVE;
       return row;
     }
   }
-  ++SJG.metrics.envCacheMisses;
+  s3jni_incr( &SJG.metrics.envCacheMisses );
   row = SJG.envCache.aFree;
   if( row ){
     assert(!row->pPrev);
@@ -642,7 +668,7 @@ static S3JniEnv * S3JniGlobal_env_cache(JNIEnv * const env){
     if( row->pNext ) row->pNext->pPrev = 0;
   }else{
     row = s3jni_malloc(env, sizeof(S3JniEnv));
-    ++SJG.metrics.envCacheAllocs;
+    s3jni_incr( &SJG.metrics.envCacheAllocs );
   }
   memset(row, 0, sizeof(*row));
   row->pNext = SJG.envCache.aHead;
@@ -872,7 +898,7 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj, jclass klazz){
     }
     method = (*env)->GetMethodID(env, klazz, "xDestroy", "()V");
     if(method){
-      ++SJG.metrics.nDestroy;
+      s3jni_incr( &SJG.metrics.nDestroy );
       (*env)->CallVoidMethod(env, jObj, method);
       IFTHREW{
         EXCEPTION_WARN_CALLBACK_THREW("xDestroy() callback");
@@ -1083,13 +1109,13 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
       rv->pNext->pPrev = 0;
       rv->pNext = 0;
     }
-    ++SJG.metrics.nPdbRecycled;
+    s3jni_incr( &SJG.metrics.nPdbRecycled );
   }else{
     rv = s3jni_malloc(env, sizeof(S3JniDb));
     //MARKER(("state@%p for db allocating for db@%p from heap\n", rv, pDb));
     if(rv){
       memset(rv, 0, sizeof(S3JniDb));
-      ++SJG.metrics.nPdbAlloc;
+      s3jni_incr( &SJG.metrics.nPdbAlloc );
     }
   }
   if(rv){
@@ -1631,29 +1657,29 @@ static int udf_xFV(sqlite3_context* cx, S3JniUdf * s,
 static void udf_xFunc(sqlite3_context* cx, int argc,
                       sqlite3_value** argv){
   S3JniUdf * const s = (S3JniUdf*)sqlite3_user_data(cx);
-  ++SJG.metrics.udf.nFunc;
+  s3jni_incr( &SJG.metrics.udf.nFunc );
   udf_xFSI(cx, argc, argv, s, s->jmidxFunc, "xFunc");
 }
 static void udf_xStep(sqlite3_context* cx, int argc,
                       sqlite3_value** argv){
   S3JniUdf * const s = (S3JniUdf*)sqlite3_user_data(cx);
-  ++SJG.metrics.udf.nStep;
+  s3jni_incr( &SJG.metrics.udf.nStep );
   udf_xFSI(cx, argc, argv, s, s->jmidxStep, "xStep");
 }
 static void udf_xFinal(sqlite3_context* cx){
   S3JniUdf * const s = (S3JniUdf*)sqlite3_user_data(cx);
-  ++SJG.metrics.udf.nFinal;
+  s3jni_incr( &SJG.metrics.udf.nFinal );
   udf_xFV(cx, s, s->jmidxFinal, "xFinal");
 }
 static void udf_xValue(sqlite3_context* cx){
   S3JniUdf * const s = (S3JniUdf*)sqlite3_user_data(cx);
-  ++SJG.metrics.udf.nValue;
+  s3jni_incr( &SJG.metrics.udf.nValue );
   udf_xFV(cx, s, s->jmidxValue, "xValue");
 }
 static void udf_xInverse(sqlite3_context* cx, int argc,
                          sqlite3_value** argv){
   S3JniUdf * const s = (S3JniUdf*)sqlite3_user_data(cx);
-  ++SJG.metrics.udf.nInverse;
+  s3jni_incr( &SJG.metrics.udf.nInverse );
   udf_xFSI(cx, argc, argv, s, s->jmidxInverse, "xInverse");
 }
 
@@ -3301,8 +3327,7 @@ JDECL(jbyteArray,1value_1text16be)(JENV_CSELF, jobject jpSVal){
 }
 
 JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
-  MARKER(("\nVarious bits of internal info:\n"
-          "Any metrics here are invalid in multi-thread use.\n"));
+  MARKER(("\nVarious bits of internal info:\n"));
   puts("FTS5 is "
 #ifdef SQLITE_ENABLE_FTS5
        "available"
@@ -3334,9 +3359,11 @@ JDECL(void,1do_1something_1for_1developer)(JENV_CSELF){
          "\n\tenv %u"
          "\n\tnph inits %u"
          "\n\tperDb %u"
-         "\n\tautoExt %u list accesses\n",
+         "\n\tautoExt %u list accesses"
+         "\n\tmetrics %u\n",
          SJG.metrics.nMutexEnv, SJG.metrics.nMutexEnv2,
-         SJG.metrics.nMutexPerDb, SJG.metrics.nMutexAutoExt);
+         SJG.metrics.nMutexPerDb, SJG.metrics.nMutexAutoExt,
+         SJG.metrics.nMetrics);
   printf("S3JniDb: %u alloced (*%u = %u bytes), %u recycled\n",
          SJG.metrics.nPdbAlloc, (unsigned) sizeof(S3JniDb),
          (unsigned)(SJG.metrics.nPdbAlloc * sizeof(S3JniDb)),
@@ -4294,6 +4321,11 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
   OOM_CHECK( SJG.perDb.mutex );
   SJG.autoExt.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
   OOM_CHECK( SJG.autoExt.mutex );
+
+#if S3JNI_METRICS_MUTEX
+  SJG.metrics.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+  OOM_CHECK( SJG.metrics.mutex );
+#endif
 
 #if 0
   /* Just for sanity checking... */
