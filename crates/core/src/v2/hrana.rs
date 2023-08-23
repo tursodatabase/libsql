@@ -271,6 +271,10 @@ impl Conn for Client {
         Ok(rows as u64)
     }
 
+    async fn execute_batch(&self, sql: &str) -> Result<()> {
+        todo!()
+    }
+
     async fn prepare(&self, sql: &str) -> Result<super::Statement> {
         let stmt = Statement {
             client: self.clone(),

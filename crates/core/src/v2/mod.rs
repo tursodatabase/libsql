@@ -78,9 +78,12 @@ impl Database {
 trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
 
+    async fn execute_batch(&self, sql: &str) -> Result<()>;
+
     async fn prepare(&self, sql: &str) -> Result<Statement>;
 }
 
+#[derive(Clone)]
 pub struct Connection {
     conn: Arc<dyn Conn + Send + Sync>,
 }
@@ -88,6 +91,10 @@ pub struct Connection {
 impl Connection {
     pub async fn execute(&self, sql: &str, params: impl Into<Params>) -> Result<u64> {
         self.conn.execute(sql, params.into()).await
+    }
+
+    pub async fn execute_batch(&self, sql: &str) -> Result<()> {
+        self.conn.execute_batch(sql).await
     }
 
     pub async fn prepare(&self, sql: &str) -> Result<Statement> {
@@ -103,6 +110,10 @@ struct LibsqlConnection {
 impl Conn for LibsqlConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
         self.conn.execute(sql, params)
+    }
+
+    async fn execute_batch(&self, sql: &str) -> Result<()> {
+        self.conn.execute_batch(sql)
     }
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {
