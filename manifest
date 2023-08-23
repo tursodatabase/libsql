@@ -1,5 +1,5 @@
-C Bind\ssqlite3_preupdate_hook()\sand\sfriends\sto\sJNI.
-D 2023-08-23T13:17:37.782
+C Add\sa\snote\sto\sthe\sJNI\sREADME\sexplaining\swhy\sthe\sJava\sAPI\shas\scallback\snames\slike\sxFunc()\sand\sxPreUpdate().
+D 2023-08-23T13:36:27.524
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -233,7 +233,7 @@ F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f4
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile 14b7c3abd1ae8693203b08b0e06bb359f8924ad2243f15953e9c6e456ae317b5
-F ext/jni/README.md ddcc6be0c0d65f1e2fd687de9f40d38c82630fd61f83cc9550773caa19dd8be1
+F ext/jni/README.md 1693e865d366f5ebaa756732ea0d4b786515caf3cfbcd4dcb8758274373913b0
 F ext/jni/jar-dist.make 9a03d10dbb5a74c724bfec4b76fd9e4c9865cbbc858d731cb48f38ac897d73a3
 F ext/jni/src/c/sqlite3-jni.c 852c4812c9a3663d871cb334eaa60eb6fc22d67da47d4ff3868fdbfd6ebedb3a
 F ext/jni/src/c/sqlite3-jni.h c5cb0348efe4e5f3d125a240e2437e8475de14a586c2f859e2acdcde4116244d
@@ -2094,8 +2094,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P fce8ecaf7f2e69a168978e6993e58c452c45f76c39da33f2869c9d947c16cab1
-R 28457b0903a4397220c04d68facc73da
+P d0c425b5c1d3aac5ead18a501a3760b4506d68d373cb3be484247042cf2fa8d4
+R 2838b81803960048740e7919bfbbb667
 U stephan
-Z d81ff8935be35c831285c9d98a32b81f
+Z 6887128552106c38adfd2773e845a05f
 # Remove this line to create a well-formed Fossil manifest.

@@ -110,6 +110,17 @@ to throw, in which cases they get translated to C-level result codes
 and/or messages.
 
 
+Awkward Callback Names
+------------------------------------------------------------------------
+
+In places where the Java interface uses callbacks (see below), those
+callbacks often have what might fairly be labeled as awkward names,
+e.g. `sqlScalarFunction.xFunc()` and `preupdateHook.xPreUpdate()`.
+Those names were chosen because they match the corresponding arguments
+in the C-level API docs. If they were renamed to be more Java-esque,
+documentation transparency would suffer.
+
+
 Unwieldy Constructs are Re-mapped
 ------------------------------------------------------------------------
 
