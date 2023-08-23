@@ -105,7 +105,9 @@ Client-defined callbacks _must never throw exceptions_ unless _very
 explicitly documented_ as being throw-safe. Exceptions are generally
 reserved for higher-level bindings which are constructed to
 specifically deal with them and ensure that they do not leak C-level
-resources.
+resources. In some cases, callback handlers (see below) are permitted
+to throw, in which cases they get translated to C-level result codes
+and/or messages.
 
 
 Unwieldy Constructs are Re-mapped

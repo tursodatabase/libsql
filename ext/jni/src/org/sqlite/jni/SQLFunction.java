@@ -98,7 +98,11 @@ public abstract class SQLFunction {
   //! Subclass for creating scalar functions.
   public static abstract class Scalar extends SQLFunction {
 
-    //! As for the xFunc() argument of the C API's sqlite3_create_function()
+    /**
+       As for the xFunc() argument of the C API's
+       sqlite3_create_function().  If this function throws, it is
+       translated into an sqlite3_result_error().
+    */
     public abstract void xFunc(sqlite3_context cx, sqlite3_value[] args);
 
     /**
@@ -116,10 +120,18 @@ public abstract class SQLFunction {
   */
   public static abstract class Aggregate<T> extends SQLFunction {
 
-    //! As for the xStep() argument of the C API's sqlite3_create_function()
+    /**
+       As for the xStep() argument of the C API's
+       sqlite3_create_function().  If this function throws, the
+       exception is not propagated and a warning might be emitted to a
+       debugging channel.
+    */
     public abstract void xStep(sqlite3_context cx, sqlite3_value[] args);
 
-    //! As for the xFinal() argument of the C API's sqlite3_create_function()
+    /**
+       As for the xFinal() argument of the C API's sqlite3_create_function().
+       If this function throws, it is translated into an sqlite3_result_error().
+    */
     public abstract void xFinal(sqlite3_context cx);
 
     /**
@@ -165,10 +177,18 @@ public abstract class SQLFunction {
   */
   public static abstract class Window<T> extends Aggregate<T> {
 
-    //! As for the xInverse() argument of the C API's sqlite3_create_window_function()
+    /**
+       As for the xInverse() argument of the C API's
+       sqlite3_create_window_function(). If this function throws, the
+       exception is not propagated and a warning might be emitted
+       to a debugging channel.
+    */
     public abstract void xInverse(sqlite3_context cx, sqlite3_value[] args);
 
-    //! As for the xValue() argument of the C API's sqlite3_create_window_function()
+    /**
+       As for the xValue() argument of the C API's sqlite3_create_window_function().
+       See xInverse() for the fate of any exceptions this throws.
+    */
     public abstract void xValue(sqlite3_context cx);
   }
 }

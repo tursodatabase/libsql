@@ -158,16 +158,22 @@ public class Tester1 implements Runnable {
     execSql(db, true, sql);
   }
 
-  static sqlite3_stmt prepare(sqlite3 db, String sql){
+  static sqlite3_stmt prepare(sqlite3 db, boolean throwOnError, String sql){
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     int rc = sqlite3_prepare(db, sql, outStmt);
-    affirm( 0 == rc );
+    if( throwOnError ){
+      affirm( 0 == rc );
+    }
     final sqlite3_stmt rv = outStmt.take();
     affirm( null == outStmt.get() );
-    affirm( 0 != rv.getNativePointer() );
+    if( throwOnError ){
+      affirm( 0 != rv.getNativePointer() );
+    }
     return rv;
   }
-
+  static sqlite3_stmt prepare(sqlite3 db, String sql){
+    return prepare(db, true, sql);
+  }
   private void showCompileOption(){
     int i = 0;
     String optName;
@@ -596,6 +602,47 @@ public class Tester1 implements Runnable {
     affirm( !xDestroyCalled.value );
     sqlite3_close_v2(db);
     affirm( xDestroyCalled.value );
+  }
+
+  private void testUdfThrows(){
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Integer> xFuncAccum = new ValueHolder<>(0);
+
+    SQLFunction funcAgg = new SQLFunction.Aggregate<Integer>(){
+        @Override public void xStep(sqlite3_context cx, sqlite3_value[] args){
+          /** Throwing from here should emit loud noise on stdout or stderr
+              but the exception is supressed because we have no way to inform
+              sqlite about it from these callbacks. */
+          //throw new RuntimeException("Throwing from an xStep");
+        }
+        @Override public void xFinal(sqlite3_context cx){
+          throw new RuntimeException("Throwing from an xFinal");
+        }
+      };
+    int rc = sqlite3_create_function(db, "myagg", 1, SQLITE_UTF8, funcAgg);
+    affirm(0 == rc);
+    affirm(0 == xFuncAccum.value);
+    sqlite3_stmt stmt = prepare(db, "SELECT myagg(1)");
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    affirm( 0 != rc );
+    affirm( sqlite3_errmsg(db).indexOf("an xFinal") > 0 );
+
+    SQLFunction funcSc = new SQLFunction.Scalar(){
+        @Override public void xFunc(sqlite3_context cx, sqlite3_value[] args){
+          throw new RuntimeException("Throwing from an xFunc");
+        }
+      };
+    rc = sqlite3_create_function(db, "mysca", 0, SQLITE_UTF8, funcSc);
+    affirm(0 == rc);
+    affirm(0 == xFuncAccum.value);
+    stmt = prepare(db, "SELECT mysca()");
+    rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+    affirm( 0 != rc );
+    affirm( sqlite3_errmsg(db).indexOf("an xFunc") > 0 );
+
+    sqlite3_close_v2(db);
   }
 
   private void testUdfJavaObject(){

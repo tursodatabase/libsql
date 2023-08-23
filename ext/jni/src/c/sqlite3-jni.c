@@ -1577,21 +1577,46 @@ error_oom:
   return SQLITE_NOMEM;
 }
 
-static int udf_report_exception(sqlite3_context * cx,
-                                const char *zFuncName,
-                                const char *zFuncType){
-  int rc;
-  char * z =
-    sqlite3_mprintf("Client-defined function %s.%s() threw. It should "
-                    "not do that.",
-                    zFuncName ? zFuncName : "<unnamed>", zFuncType);
-  if(z){
-    sqlite3_result_error(cx, z, -1);
-    sqlite3_free(z);
-    rc = SQLITE_ERROR;
+/*
+** Must be called immediately after a Java-side UDF callback throws.
+** If translateToErr is true then it sets the exception's message in
+** the result error using sqlite3_result_error(). If translateToErr is
+** false then it emits a warning that the function threw but should
+** not do so. In either case, it clears the exception state.
+**
+** Returns SQLITE_NOMEM if an allocation fails, else SQLITE_ERROR. In
+** the latter case it calls sqlite3_result_error_nomem().
+*/
+static int udf_report_exception(JNIEnv * const env, int translateToErr,
+                                sqlite3_context * cx,
+                                const char *zFuncName, const char *zFuncType ){
+  jthrowable const ex = (*env)->ExceptionOccurred(env);
+  int rc = SQLITE_ERROR;
+
+  assert(ex && "This must only be called when a Java exception is pending.");
+  if( translateToErr ){
+    char * zMsg;
+    char * z;
+
+    EXCEPTION_CLEAR;
+    zMsg = s3jni_exception_error_msg(env, ex);
+    z = sqlite3_mprintf("Client-defined SQL function %s.%s() threw: %s",
+                        zFuncName ? zFuncName : "<unnamed>", zFuncType,
+                        zMsg ? zMsg : "Unknown exception" );
+    sqlite3_free(zMsg);
+    if( z ){
+      sqlite3_result_error(cx, z, -1);
+      sqlite3_free(z);
+    }else{
+      sqlite3_result_error_nomem(cx);
+      rc = SQLITE_NOMEM;
+    }
   }else{
-    sqlite3_result_error_nomem(cx);
-    rc = SQLITE_NOMEM;
+    MARKER(("Client-defined SQL function %s.%s() threw. "
+            "It should not do that.\n",
+            zFuncName ? zFuncName : "<unnamed>", zFuncType));
+    (*env)->ExceptionDescribe( env );
+    EXCEPTION_CLEAR;
   }
   return rc;
 }
@@ -1600,24 +1625,25 @@ static int udf_report_exception(sqlite3_context * cx,
    Sets up the state for calling a Java-side xFunc/xStep/xInverse()
    UDF, calls it, and returns 0 on success.
 */
-static int udf_xFSI(sqlite3_context* pCx, int argc,
-                    sqlite3_value** argv,
-                    S3JniUdf * s,
+static int udf_xFSI(sqlite3_context* const pCx, int argc,
+                    sqlite3_value** const argv,
+                    S3JniUdf * const s,
                     jmethodID xMethodID,
-                    const char * zFuncType){
+                    const char * const zFuncType){
   LocalJniGetEnv;
   udf_jargs args = {0,0};
   int rc = udf_args(env, pCx, argc, argv, &args.jcx, &args.jargv);
-  //MARKER(("%s.%s() pCx = %p\n", s->zFuncName, zFuncType, pCx));
-  if(rc) return rc;
+
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
+  if(rc) return rc;
   if( UDF_SCALAR != s->type ){
     rc = udf_setAggregateContext(env, args.jcx, pCx, 0);
   }
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
     IFTHREW{
-      rc = udf_report_exception(pCx, s->zFuncName, zFuncType);
+      rc = udf_report_exception(env, 'F'==zFuncType[1]/*xFunc*/, pCx,
+                                s->zFuncName, zFuncType);
     }
   }
   UNREF_L(args.jcx);
@@ -1635,19 +1661,21 @@ static int udf_xFV(sqlite3_context* cx, S3JniUdf * s,
   LocalJniGetEnv;
   jobject jcx = new_sqlite3_context_wrapper(env, cx);
   int rc = 0;
+  int const isFinal = 'F'==zFuncType[1]/*xFinal*/;
   //MARKER(("%s.%s() cx = %p\n", s->zFuncName, zFuncType, cx));
   if(!jcx){
-    sqlite3_result_error_nomem(cx);
+    if( isFinal ) sqlite3_result_error_nomem(cx);
     return SQLITE_NOMEM;
   }
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
   if( UDF_SCALAR != s->type ){
-    rc = udf_setAggregateContext(env, jcx, cx, 1);
+    rc = udf_setAggregateContext(env, jcx, cx, isFinal);
   }
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
     IFTHREW{
-      rc = udf_report_exception(cx,s->zFuncName, zFuncType);
+      rc = udf_report_exception(env, isFinal, cx, s->zFuncName,
+                                zFuncType);
     }
   }
   UNREF_L(jcx);
@@ -3599,8 +3627,7 @@ static void s3jni_fts5_extension_function(Fts5ExtensionApi const *pApi,
   (*env)->CallVoidMethod(env, pAux->jObj, pAux->jmid,
                          jFXA, jpFts, jpCx, jArgv);
   IFTHREW{
-    EXCEPTION_CLEAR;
-    udf_report_exception(pCx, pAux->zFuncName, "xFunction");
+    udf_report_exception(env, 1, pCx, pAux->zFuncName, "xFunction");
   }
   UNREF_L(jpFts);
   UNREF_L(jpCx);
