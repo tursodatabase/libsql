@@ -17,7 +17,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use super::rows::{RowInner, RowsInner};
-use super::Conn;
+use super::{Conn, Transaction};
 
 /// Information about the current session: the server-generated cookie
 /// and the URL that should be used for further communication.
@@ -271,7 +271,7 @@ impl Conn for Client {
         Ok(rows as u64)
     }
 
-    async fn execute_batch(&self, sql: &str) -> Result<()> {
+    async fn execute_batch(&self, _sql: &str) -> Result<()> {
         todo!()
     }
 
@@ -283,6 +283,10 @@ impl Conn for Client {
         Ok(super::Statement {
             inner: Arc::new(stmt),
         })
+    }
+
+    async fn transaction(&self, _tx_behavior: crate::TransactionBehavior) -> Result<Transaction> {
+        todo!()
     }
 }
 
@@ -314,6 +318,18 @@ impl super::statement::Stmt for Statement {
             }),
         })
     }
+
+    fn reset(&self) {
+        todo!()
+    }
+
+    fn parameter_count(&self) -> usize {
+        todo!()
+    }
+
+    fn parameter_name(&self, _idx: i32) -> Option<&str> {
+        todo!()
+    }
 }
 
 pub struct Rows {
@@ -321,9 +337,8 @@ pub struct Rows {
     rows: Vec<Vec<proto::Value>>,
 }
 
-#[async_trait::async_trait]
 impl RowsInner for Rows {
-    async fn next(&mut self) -> Result<Option<super::Row>> {
+    fn next(&mut self) -> Result<Option<super::Row>> {
         let row = match self.rows.pop() {
             Some(row) => Row {
                 cols: self.cols.clone(),

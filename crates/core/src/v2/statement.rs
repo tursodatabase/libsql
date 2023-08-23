@@ -1,20 +1,29 @@
 use std::sync::Arc;
 
-use crate::{Params, Result};
+use crate::{Error, Params, Result};
 
-use super::{rows::LibsqlRows, Rows};
+use super::{rows::LibsqlRows, Row, Rows};
 
+// TODO(lucio): Add `column_*` based fn
 #[async_trait::async_trait]
 pub(super) trait Stmt {
     async fn execute(&self, params: &Params) -> Result<usize>;
 
     async fn query(&self, params: &Params) -> Result<Rows>;
+
+    fn reset(&self);
+
+    fn parameter_count(&self) -> usize;
+
+    fn parameter_name(&self, idx: i32) -> Option<&str>;
 }
 
 pub struct Statement {
     pub(super) inner: Arc<dyn Stmt + Send + Sync>,
 }
 
+// TODO(lucio): Unify param usage, here we use & and in conn we use
+//      Into.
 impl Statement {
     pub async fn execute(&self, params: &Params) -> Result<usize> {
         self.inner.execute(params).await
@@ -22,6 +31,59 @@ impl Statement {
 
     pub async fn query(&self, params: &Params) -> Result<Rows> {
         self.inner.query(params).await
+    }
+
+    pub async fn query_map<F>(&self, params: &Params, map: F) -> Result<MappedRows<F>> {
+        let rows = self.query(params).await?;
+
+        Ok(MappedRows { rows, map })
+    }
+
+    pub async fn query_row(&self, params: &Params) -> Result<Row> {
+        let mut rows = self.query(params).await?;
+
+        let row = rows.next()?.ok_or(Error::QueryReturnedNoRows)?;
+
+        Ok(row)
+    }
+
+    pub fn reset(&self) {
+        self.inner.reset();
+    }
+
+    pub fn parameter_count(&self) -> usize {
+        self.inner.parameter_count()
+    }
+
+    pub fn parameter_name(&self, idx: i32) -> Option<&str> {
+        self.inner.parameter_name(idx)
+    }
+}
+
+pub struct MappedRows<F> {
+    rows: Rows,
+    map: F,
+}
+
+impl<F> MappedRows<F> {
+    pub fn new(rows: Rows, map: F) -> Self {
+        Self { rows, map }
+    }
+}
+
+impl<F, T> Iterator for MappedRows<F>
+where
+    F: FnMut(Row) -> Result<T>,
+{
+    type Item = Result<T>;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        let map = &mut self.map;
+        self.rows
+            .next()
+            .transpose()
+            .map(|row_result| row_result.and_then(map))
     }
 }
 
@@ -43,5 +105,17 @@ impl Stmt for LibsqlStmt {
         stmt.query(&params).map(|rows| Rows {
             inner: Box::new(LibsqlRows(rows)),
         })
+    }
+
+    fn reset(&self) {
+        self.0.reset();
+    }
+
+    fn parameter_count(&self) -> usize {
+        self.0.parameter_count()
+    }
+
+    fn parameter_name(&self, idx: i32) -> Option<&str> {
+        self.0.parameter_name(idx)
     }
 }

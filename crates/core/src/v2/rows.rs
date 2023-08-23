@@ -1,8 +1,7 @@
 use crate::{Result, Value};
 
-#[async_trait::async_trait]
 pub(super) trait RowsInner {
-    async fn next(&mut self) -> Result<Option<Row>>;
+    fn next(&mut self) -> Result<Option<Row>>;
 }
 
 pub struct Rows {
@@ -10,16 +9,15 @@ pub struct Rows {
 }
 
 impl Rows {
-    pub async fn next(&mut self) -> Result<Option<Row>> {
-        self.inner.next().await
+    pub fn next(&mut self) -> Result<Option<Row>> {
+        self.inner.next()
     }
 }
 
 pub(super) struct LibsqlRows(pub(super) crate::Rows);
 
-#[async_trait::async_trait]
 impl RowsInner for LibsqlRows {
-    async fn next(&mut self) -> Result<Option<Row>> {
+    fn next(&mut self) -> Result<Option<Row>> {
         let row = self.0.next()?.map(|r| Row {
             inner: Box::new(LibsqlRow(r)),
         });
