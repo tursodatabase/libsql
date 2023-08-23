@@ -4,6 +4,7 @@ use libsql_sys::ValueType;
 
 use crate::{Error, Result};
 
+#[derive(Clone)]
 pub enum Params {
     None,
     Positional(Vec<Value>),
@@ -79,6 +80,7 @@ impl From<Vec<(String, Value)>> for Params {
     }
 }
 
+#[derive(Clone, Debug)]
 pub enum Value {
     Null,
     Integer(i64),

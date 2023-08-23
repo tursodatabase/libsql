@@ -49,6 +49,7 @@ pub mod params;
 pub mod rows;
 pub mod statement;
 pub mod transaction;
+pub mod v2;
 
 pub type Result<T> = std::result::Result<T, errors::Error>;
 type BoxError = Box<dyn std::error::Error + Send + Sync>;

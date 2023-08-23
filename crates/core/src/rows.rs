@@ -12,6 +12,7 @@ pub struct Rows {
 }
 
 unsafe impl Send for Rows {} // TODO: is this safe?
+unsafe impl Sync for Rows {} // TODO: is this safe?
 
 impl Rows {
     pub fn new(stmt: Statement) -> Rows {

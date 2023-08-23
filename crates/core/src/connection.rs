@@ -23,6 +23,8 @@ impl Drop for Connection {
 
 // SAFETY: This is safe because we compile sqlite3 w/ SQLITE_THREADSAFE=1
 unsafe impl Send for Connection {}
+// SAFETY: This is safe because we compile sqlite3 w/ SQLITE_THREADSAFE=1
+unsafe impl Sync for Connection {}
 
 impl Connection {
     /// Connect to the database.
