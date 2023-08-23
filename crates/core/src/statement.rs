@@ -48,7 +48,11 @@ impl Statement {
         let err = self.inner.step();
         Ok(Rows {
             stmt: self.clone(),
-            err: RefCell::new(Some(err)),
+            err: RefCell::new(Some((
+                err,
+                errors::extended_error_code(self.conn.raw),
+                errors::error_from_handle(self.conn.raw),
+            ))),
         })
     }
 

@@ -8,7 +8,7 @@ use std::ffi::c_char;
 #[derive(Debug, Clone)]
 pub struct Rows {
     pub(crate) stmt: Statement,
-    pub(crate) err: RefCell<Option<i32>>,
+    pub(crate) err: RefCell<Option<(i32, i32, String)>>,
 }
 
 unsafe impl Send for Rows {} // TODO: is this safe?
@@ -22,20 +22,25 @@ impl Rows {
     }
 
     pub fn next(&self) -> Result<Option<Row>> {
-        let err = match self.err.take() {
-            Some(err) => err,
-            None => self.stmt.inner.step(),
-        };
+        let err;
+        let err_code;
+        let err_msg;
+        if let Some((e, code, msg)) = self.err.take() {
+            err = e;
+            err_code = code;
+            err_msg = msg;
+        } else {
+            err = self.stmt.inner.step();
+            err_code = errors::extended_error_code(self.stmt.conn.raw);
+            err_msg = errors::error_from_handle(self.stmt.conn.raw);
+        }
         match err as u32 {
             libsql_sys::ffi::SQLITE_OK => Ok(None),
             libsql_sys::ffi::SQLITE_DONE => Ok(None),
             libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
                 stmt: self.stmt.clone(),
             })),
-            _ => Err(Error::FetchRowFailed(
-                errors::extended_error_code(self.stmt.conn.raw),
-                errors::error_from_handle(self.stmt.conn.raw),
-            )),
+            _ => Err(Error::FetchRowFailed(err_code, err_msg)),
         }
     }
 
