@@ -1,5 +1,5 @@
-C More\schanges\sto\sdocuments\sfor\sGitHub-style\smarkdown.
-D 2023-08-23T18:29:41.526
+C Fix\stypo\sin\sthe\sLemon\sdocumentation.
+D 2023-08-23T18:42:04.533
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -39,7 +39,7 @@ F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/F2FS.txt c1d4a0ae9711cfe0e1d8b019d154f1c29e0d3abfe820787ba1e9ed7691160fcd
 F doc/compile-for-windows.md c52f2903f1cb11b2308798feecca2e44701b037b78f467a538ac5c46c28ee250
 F doc/json-enhancements.md e356fc834781f1f1aa22ee300027a270b2c960122468499bf347bb123ce1ea4f
-F doc/lemon.html d2862dbef72496e87f7996f37e814b146848190a742c12161d13fd15346051b0
+F doc/lemon.html 44a53a1d2b42d7751f7b2f478efb23c978e258d794bfd172442307a755b9fa44
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
 F doc/trusted-schema.md 33625008620e879c7bcfbbfa079587612c434fa094d338b08242288d358c3e8a
 F doc/vdbesort-memory.md 4da2639c14cd24a31e0af694b1a8dd37eaf277aff3867e9a8cc14046bc49df56
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a25360c020275064711d0aa3eb3cec3d764b5266b86f9728243e501d082306ec
-R 0991afb7248f0407e05959ded90d898f
+P f20f84ef717cea11f92d6a1ab3b4e0fec5752b7ec98ad5b59e06745e7e25b6ee
+R 3c3c4ccec3e9768794652606bc3908c3
 U drh
-Z baacf3b2dfc8f3e0431b64a26ff80402
+Z 96362cac446acf92523149d4a0d69825
 # Remove this line to create a well-formed Fossil manifest.
