@@ -454,6 +454,31 @@ public final class SQLite3Jni {
     @NotNull String optName
   );
 
+  /*
+  ** Works like in the C API with the exception that it only supports
+  ** the following subset of configution flags:
+  **
+  ** - SQLITE_CONFIG_SINGLETHREAD
+  ** - SQLITE_CONFIG_MULTITHREAD
+  ** - SQLITE_CONFIG_SERIALIZED
+  **
+  ** Others may be added in the future. It returns SQLITE_MISUSE if
+  ** given an argument it does not handle.
+  */
+  public static native int sqlite3_config(int op);
+
+  /*
+  ** If the native library was built with SQLITE_ENABLE_SQLLOG defined
+  ** then this acts as a proxy for C's
+  ** sqlite3_config(SQLITE_ENABLE_SQLLOG,...). This sets or clears the
+  ** logger. If installation of a logger fails, any previous logger is
+  ** retained.
+  **
+  ** If not built with SQLITE_ENABLE_SQLLOG defined, this returns
+  ** SQLITE_RANGE.
+  */
+  public static native int sqlite3_config( @Nullable SQLLog logger );
+
   public static native int sqlite3_create_collation(
     @NotNull sqlite3 db, @NotNull String name, int eTextRep,
     @NotNull Collation col

@@ -1321,6 +1321,7 @@ public class Tester1 implements Runnable {
     boolean doSomethingForDev = false;
     Integer nRepeat = 1;
     boolean forceFail = false;
+    boolean sqlLog = false;
     for( int i = 0; i < args.length; ){
       String arg = args[i++];
       if(arg.startsWith("-")){
@@ -1338,6 +1339,8 @@ public class Tester1 implements Runnable {
           listRunTests = true;
         }else if(arg.equals("fail")){
           forceFail = true;
+        }else if(arg.equals("sqllog")){
+          sqlLog = true;
         }else if(arg.equals("naps")){
           takeNaps = true;
         }else{
@@ -1366,8 +1369,27 @@ public class Tester1 implements Runnable {
       }
     }
 
+    if( sqlLog ){
+      int rc = sqlite3_config( new SQLLog() {
+          @Override public void xSqllog(sqlite3 db, String msg, int op){
+            switch(op){
+              case 0: outln("Opening db: ",db); break;
+              case 1: outln(db,": ",msg); break;
+              case 2: outln("Closing db: ",db); break;
+            }
+          }
+        });
+      affirm( 0==rc );
+    }
+
     final long timeStart = System.currentTimeMillis();
     int nLoop = 0;
+    affirm( 0==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
+            "Could not switch to single-thread mode." );
+    affirm( 0==sqlite3_config( SQLITE_CONFIG_MULTITHREAD ),
+            "Could not switch to multithread mode."  );
+    affirm( 0==sqlite3_config( SQLITE_CONFIG_SERIALIZED ),
+            "Could not switch to serialized threading mode."  );
     outln("libversion_number: ",
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);

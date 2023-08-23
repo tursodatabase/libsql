@@ -68,6 +68,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ResultCode.java \
   RollbackHook.java \
   SQLFunction.java \
+  SQLLog.java \
   sqlite3_context.java \
   sqlite3.java \
   SQLite3Jni.java \
@@ -160,6 +161,7 @@ SQLITE_OPT = \
   -DSQLITE_ENABLE_DBSTAT_VTAB \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
+  -DSQLITE_ENABLE_SQLLOG \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_SHARED_CACHE \

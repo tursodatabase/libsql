@@ -503,6 +503,11 @@ struct S3JniGlobalType {
                            always have this set to the current JNIEnv
                            object. Used only for sanity checking. */;
   } perDb;
+#ifdef SQLITE_ENABLE_SQLLOG
+  struct {
+    S3JniHook sqllog  /* sqlite3_config(SQLITE_CONFIG_SQLLOG) callback */;
+  } hooks;
+#endif
   /*
   ** Refs to global classes and methods. Obtained during static init
   ** and never released.
@@ -2273,6 +2278,97 @@ JDECL(jboolean,1compileoption_1used)(JENV_CSELF, jstring name){
     0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
   JSTR_RELEASE(name, zUtf8);
   return rc;
+}
+
+/*
+** sqlite3_config(SQLITE_CONFIG_...) wrapper for a small subset of
+** options.
+*/
+JDECL(jint,1config__I)(JENV_CSELF, jint n){
+  switch(n){
+    case SQLITE_CONFIG_SINGLETHREAD:
+    case SQLITE_CONFIG_MULTITHREAD:
+    case SQLITE_CONFIG_SERIALIZED:
+      return sqlite3_config( n );
+    default:
+      return SQLITE_MISUSE;
+  }
+}
+
+#ifdef SQLITE_ENABLE_SQLLOG
+/* C-to-Java SQLITE_CONFIG_SQLLOG wrapper. */
+static void s3jni_config_sqllog(void *ignored, sqlite3 *pDb, const char *z, int op){
+  jobject jArg0 = 0;
+  jstring jArg1 = 0;
+  LocalJniGetEnv;
+  S3JniEnv * const jc = S3JniGlobal_env_cache(env);
+  S3JniDb * const ps = S3JniDb_for_db(env, 0, pDb);
+  S3JniHook * const hook = &SJG.hooks.sqllog;
+
+  if( !ps || !hook->jObj ) return;
+  jArg0 = REF_L(ps->jDb);
+  switch(op){
+    case 0: /* db opened */
+    case 1: /* SQL executed */
+      jArg1 = s3jni_utf8_to_jstring(jc, z, -1);
+      break;
+    case 2: /* db closed */
+      break;
+    default:
+      (*env)->FatalError(env, "Unhandled 4th arg to SQLITE_CONFIG_SQLLOG.");
+      break;
+  }
+  (*env)->CallVoidMethod(env, hook->jObj, hook->midCallback, jArg0, jArg1, op);
+  IFTHREW{
+    EXCEPTION_WARN_CALLBACK_THREW("SQLITE_CONFIG_SQLLOG callback");
+    EXCEPTION_CLEAR;
+  }
+  UNREF_L(jArg0);
+  UNREF_L(jArg1);
+}
+//! Requirement of SQLITE_CONFIG_SQLLOG.
+void sqlite3_init_sqllog(void){
+  sqlite3_config( SQLITE_CONFIG_SQLLOG, s3jni_config_sqllog, 0 );
+}
+#endif
+
+/* sqlite3_config(SQLITE_CONFIG_SQLLOG) wrapper. */
+JDECL(jint,1config__Lorg_sqlite_jni_SQLLog_2)(JENV_CSELF, jobject jLog){
+#ifdef SQLITE_ENABLE_SQLLOG
+  S3JniHook tmpHook;
+  S3JniHook * const hook = &tmpHook;
+  S3JniHook * const hookOld = & SJG.hooks.sqllog;
+  int rc = 0;
+  if( !jLog ){
+    S3JniHook_unref(env, hookOld, 0);
+    return 0;
+  }
+  if( hookOld->jObj && (*env)->IsSameObject(env, jLog, hookOld->jObj) ){
+    return 0;
+  }
+  hook->klazz = REF_G( (*env)->GetObjectClass(env, jLog) );
+  hook->midCallback = (*env)->GetMethodID(env, hook->klazz, "xSqllog",
+                                          "(Lorg/sqlite/jni/sqlite3;"
+                                          "Ljava/lang/String;"
+                                          "I)V");
+  if( !hook->midCallback ){
+    EXCEPTION_WARN_IGNORE;
+    S3JniHook_unref(env, hook, 0);
+    return SQLITE_ERROR;
+  }
+  hook->jObj = REF_G(jLog);
+  rc = sqlite3_config( SQLITE_CONFIG_SQLLOG, s3jni_config_sqllog, 0 );
+  if( rc ){
+    S3JniHook_unref(env, hook, 0);
+  }else{
+    S3JniHook_unref(env, hookOld, 0);
+    *hookOld = *hook;
+  }
+  return rc;
+#else
+  MARKER(("Warning: built without SQLITE_ENABLE_SQLLOG.\n"));
+  return SQLITE_RANGE;
+#endif
 }
 
 JDECL(jobject,1context_1db_1handle)(JENV_CSELF, jobject jpCx){
