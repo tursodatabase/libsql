@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\smemory\sleak\sin\sthe\ssqldiff\sutility.
-D 2023-08-22T16:44:33.916
+C The\spageOnDirtyList()\sassertion\sis\stoo\sslow\seven\sfor\sdebugging\sbuilds,\sfor\nsome\scorner\scases.\s\sIt\smakes\sthe\squery\sappear\sto\shang.\s\sSo\smake\sit\san\nEXPENSIVE_ASSERT\sinstead.
+D 2023-08-23T10:20:39.066
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -674,7 +674,7 @@ F src/os_win.h 7b073010f1451abe501be30d12f6bc599824944a
 F src/pager.c 993445a19b611d473ca007542ab3149840661a4c7e9f2d9e1ec008b7cc2abe78
 F src/pager.h f4d33fec8052603758792045493423b8871a996da2d0973927b7d36cd6070473
 F src/parse.y aeb7760d41cfa86465e3adba506500c021597049fd55f82a30e5b7045862c28c
-F src/pcache.c 4cd4a0043167da9ba7e19b4d179a0e6354e7fe32c16f781ecf9bf0a5ff63b40b
+F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
 F src/pragma.c 37b8fb02d090262280c86e1e2654bf59d8dbfbfe8dc6733f2b968a11374c095a
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P a449d650cd3dcd1baaeb3a3de2aaaac45594397e04f95fe637b0fe4ddb273404
-R 896bb56aaa8cab009ab24ccd5316010e
+P 724bc15701f3f647c741b614d4ac4fd98e1cdfe49a85f48c64fb1df5b83811b0
+R c9ea3f646f6db401d1d5adb317c565af
 U drh
-Z 11f96baae8cc54ac54f1d899caef0ae2
+Z 9c3b9e0dd34219c4ca30b3d4663eeef3
 # Remove this line to create a well-formed Fossil manifest.

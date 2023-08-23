@@ -107,7 +107,7 @@ struct PCache {
 ** Return 1 if pPg is on the dirty list for pCache.  Return 0 if not.
 ** This routine runs inside of assert() statements only.
 */
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_ENABLE_EXPENSIVE_ASSERT)
 static int pageOnDirtyList(PCache *pCache, PgHdr *pPg){
   PgHdr *p;
   for(p=pCache->pDirty; p; p=p->pDirtyNext){
@@ -115,6 +115,16 @@ static int pageOnDirtyList(PCache *pCache, PgHdr *pPg){
   }
   return 0;
 }
+static int pageNotOnDirtyList(PCache *pCache, PgHdr *pPg){
+  PgHdr *p;
+  for(p=pCache->pDirty; p; p=p->pDirtyNext){
+    if( p==pPg ) return 0;
+  }
+  return 1;
+}
+#else
+# define pageOnDirtyList(A,B)    1
+# define pageNotOnDirtyList(A,B) 1
 #endif
 
 /*
@@ -135,7 +145,7 @@ int sqlite3PcachePageSanity(PgHdr *pPg){
   assert( pCache!=0 );      /* Every page has an associated PCache */
   if( pPg->flags & PGHDR_CLEAN ){
     assert( (pPg->flags & PGHDR_DIRTY)==0 );/* Cannot be both CLEAN and DIRTY */
-    assert( !pageOnDirtyList(pCache, pPg) );/* CLEAN pages not on dirty list */
+    assert( pageNotOnDirtyList(pCache, pPg) );/* CLEAN pages not on dirtylist */
   }else{
     assert( (pPg->flags & PGHDR_DIRTY)!=0 );/* If not CLEAN must be DIRTY */
     assert( pPg->pDirtyNext==0 || pPg->pDirtyNext->pDirtyPrev==pPg );
