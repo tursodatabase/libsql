@@ -5,7 +5,7 @@ use anyhow::{anyhow, bail, Context as _, Result};
 use futures::future::BoxFuture;
 use tokio::sync::{mpsc, oneshot};
 
-use super::super::{batch, stmt, ProtocolError, Version};
+use super::super::{batch, cursor, stmt, ProtocolError, Version};
 use super::{proto, Server};
 use crate::auth::{AuthError, Authenticated};
 use crate::connection::{Connection, MakeConnection};
@@ -18,10 +18,12 @@ pub struct Session<D> {
     version: Version,
     streams: HashMap<i32, StreamHandle<D>>,
     sqls: HashMap<i32, String>,
+    cursors: HashMap<i32, i32>,
 }
 
 struct StreamHandle<D> {
     job_tx: mpsc::Sender<StreamJob<D>>,
+    cursor_id: Option<i32>,
 }
 
 /// An arbitrary job that is executed on a [`Stream`].
@@ -40,7 +42,9 @@ struct Stream<D> {
     /// The database handle is `None` when the stream is created, and normally set to `Some` by the
     /// first job executed on the stream by the [`proto::OpenStreamReq`] request. However, if that
     /// request returns an error, the following requests may encounter a `None` here.
-    db: Option<D>,
+    db: Option<Arc<D>>,
+    /// Handle to an open cursor, if any.
+    cursor_hnd: Option<cursor::CursorHandle<D>>,
 }
 
 /// An error which can be converted to a Hrana [Error][proto::Error].
@@ -50,6 +54,8 @@ pub enum ResponseError {
     Auth { source: AuthError },
     #[error("Stream {stream_id} has failed to open")]
     StreamNotOpen { stream_id: i32 },
+    #[error("Cursor {cursor_id} has failed to open")]
+    CursorNotOpen { cursor_id: i32 },
     #[error("The server already stores {count} SQL texts, it cannot store more")]
     SqlTooMany { count: usize },
     #[error(transparent)]
@@ -73,6 +79,7 @@ pub(super) fn handle_initial_hello<F: MakeNamespace>(
         version,
         streams: HashMap::new(),
         sqls: HashMap::new(),
+        cursors: HashMap::new(),
     })
 }
 
@@ -95,11 +102,12 @@ pub(super) fn handle_repeated_hello<F: MakeNamespace>(
     Ok(())
 }
 
-pub(super) async fn handle_request<D: Connection>(
-    session: &mut Session<D>,
+pub(super) async fn handle_request<F: MakeNamespace>(
+    server: &Server<F>,
+    session: &mut Session<<F::Database as Database>::Connection>,
     join_set: &mut tokio::task::JoinSet<()>,
     req: proto::Request,
-    connection_maker: Arc<dyn MakeConnection<Connection = D>>,
+    connection_maker: Arc<dyn MakeConnection<Connection = <F::Database as Database>::Connection>>,
 ) -> Result<oneshot::Receiver<Result<proto::Response>>> {
     // TODO: this function has rotten: it is too long and contains too much duplicated code. It
     // should be refactored at the next opportunity, together with code in stmt.rs and batch.rs
@@ -154,6 +162,17 @@ pub(super) async fn handle_request<D: Connection>(
         };
     }
 
+    macro_rules! get_stream_cursor_hnd {
+        ($stream:expr, $cursor_id:expr) => {
+            match $stream.cursor_hnd.as_mut() {
+                Some(cursor_hnd) => cursor_hnd,
+                None => bail!(ResponseError::CursorNotOpen {
+                    cursor_id: $cursor_id,
+                }),
+            }
+        };
+    }
+
     match req {
         proto::Request::OpenStream(req) => {
             let stream_id = req.stream_id;
@@ -161,17 +180,22 @@ pub(super) async fn handle_request<D: Connection>(
                 bail!(ProtocolError::StreamExists { stream_id })
             }
 
-            let mut stream_hnd = stream_spawn(join_set, Stream { db: None });
+            let mut stream_hnd = stream_spawn(
+                join_set,
+                Stream {
+                    db: None,
+                    cursor_hnd: None,
+                },
+            );
 
             stream_respond!(&mut stream_hnd, async move |stream| {
                 let db = connection_maker
                     .create()
                     .await
                     .context("Could not create a database connection")?;
-                stream.db = Some(db);
+                stream.db = Some(Arc::new(db));
                 Ok(proto::Response::OpenStream(proto::OpenStreamResp {}))
             });
-
             session.streams.insert(stream_id, stream_hnd);
         }
         proto::Request::CloseStream(req) => {
@@ -179,6 +203,10 @@ pub(super) async fn handle_request<D: Connection>(
             let Some(mut stream_hnd) = session.streams.remove(&stream_id) else {
                 bail!(ProtocolError::StreamNotFound { stream_id })
             };
+
+            if let Some(cursor_id) = stream_hnd.cursor_id {
+                session.cursors.remove(&cursor_id);
+            }
 
             stream_respond!(&mut stream_hnd, async move |_stream| {
                 Ok(proto::Response::CloseStream(proto::CloseStreamResp {}))
@@ -194,7 +222,7 @@ pub(super) async fn handle_request<D: Connection>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::execute_stmt(db, auth, query)
+                let result = stmt::execute_stmt(&**db, auth, query)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Execute(proto::ExecuteResp { result }))
@@ -210,7 +238,7 @@ pub(super) async fn handle_request<D: Connection>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = batch::execute_batch(db, auth, pgm)
+                let result = batch::execute_batch(&**db, auth, pgm)
                     .await
                     .map_err(catch_batch_error)?;
                 Ok(proto::Response::Batch(proto::BatchResp { result }))
@@ -232,7 +260,7 @@ pub(super) async fn handle_request<D: Connection>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                batch::execute_sequence(db, auth, pgm)
+                batch::execute_sequence(&**db, auth, pgm)
                     .await
                     .map_err(catch_stmt_error)
                     .map_err(catch_batch_error)?;
@@ -255,7 +283,7 @@ pub(super) async fn handle_request<D: Connection>(
 
             stream_respond!(stream_hnd, async move |stream| {
                 let db = get_stream_db!(stream, stream_id);
-                let result = stmt::describe_stmt(db, auth, sql)
+                let result = stmt::describe_stmt(&**db, auth, sql)
                     .await
                     .map_err(catch_stmt_error)?;
                 Ok(proto::Response::Describe(proto::DescribeResp { result }))
@@ -280,6 +308,98 @@ pub(super) async fn handle_request<D: Connection>(
             session.sqls.remove(&req.sql_id);
             respond!(proto::Response::CloseSql(proto::CloseSqlResp {}));
         }
+        proto::Request::OpenCursor(req) => {
+            ensure_version!(Version::Hrana3, "The `open_cursor` request");
+
+            let stream_id = req.stream_id;
+            let stream_hnd = get_stream_mut!(stream_id);
+            if stream_hnd.cursor_id.is_some() {
+                bail!(ProtocolError::CursorAlreadyOpen { stream_id })
+            }
+
+            let cursor_id = req.cursor_id;
+            if session.cursors.contains_key(&cursor_id) {
+                bail!(ProtocolError::CursorExists { cursor_id })
+            }
+
+            let pgm = batch::proto_batch_to_program(&req.batch, &session.sqls, session.version)
+                .map_err(catch_stmt_error)?;
+            let auth = session.authenticated;
+
+            let mut cursor_hnd = cursor::CursorHandle::spawn(join_set);
+            stream_respond!(stream_hnd, async move |stream| {
+                let db = get_stream_db!(stream, stream_id);
+                cursor_hnd.open(db.clone(), auth, pgm);
+                stream.cursor_hnd = Some(cursor_hnd);
+                Ok(proto::Response::OpenCursor(proto::OpenCursorResp {}))
+            });
+            session.cursors.insert(cursor_id, stream_id);
+            stream_hnd.cursor_id = Some(cursor_id);
+        }
+        proto::Request::CloseCursor(req) => {
+            ensure_version!(Version::Hrana3, "The `close_cursor` request");
+
+            let cursor_id = req.cursor_id;
+            let Some(stream_id) = session.cursors.remove(&cursor_id) else {
+                bail!(ProtocolError::CursorNotFound { cursor_id })
+            };
+
+            let stream_hnd = get_stream_mut!(stream_id);
+            assert_eq!(stream_hnd.cursor_id, Some(cursor_id));
+            stream_hnd.cursor_id = None;
+
+            stream_respond!(stream_hnd, async move |stream| {
+                stream.cursor_hnd = None;
+                Ok(proto::Response::CloseCursor(proto::CloseCursorResp {}))
+            });
+        }
+        proto::Request::FetchCursor(req) => {
+            ensure_version!(Version::Hrana3, "The `fetch_cursor` request");
+
+            let cursor_id = req.cursor_id;
+            let Some(&stream_id) = session.cursors.get(&cursor_id) else {
+                bail!(ProtocolError::CursorNotFound { cursor_id })
+            };
+
+            let stream_hnd = get_stream_mut!(stream_id);
+            assert_eq!(stream_hnd.cursor_id, Some(cursor_id));
+
+            let max_count = req.max_count as usize;
+            let max_total_size = server.max_response_size / 8;
+            stream_respond!(stream_hnd, async move |stream| {
+                let cursor_hnd = get_stream_cursor_hnd!(stream, cursor_id);
+
+                let mut entries = Vec::new();
+                let mut total_size = 0;
+                let mut done = false;
+                while entries.len() < max_count && total_size < max_total_size {
+                    let Some(sized_entry) = cursor_hnd.fetch().await? else {
+                        done = true;
+                        break
+                    };
+                    entries.push(sized_entry.entry);
+                    total_size += sized_entry.size;
+                }
+
+                Ok(proto::Response::FetchCursor(proto::FetchCursorResp {
+                    entries,
+                    done,
+                }))
+            });
+        }
+        proto::Request::GetAutocommit(req) => {
+            ensure_version!(Version::Hrana3, "The `get_autocommit` request");
+            let stream_id = req.stream_id;
+            let stream_hnd = get_stream_mut!(stream_id);
+
+            stream_respond!(stream_hnd, async move |stream| {
+                let db = get_stream_db!(stream, stream_id);
+                let is_autocommit = db.is_autocommit().await?;
+                Ok(proto::Response::GetAutocommit(proto::GetAutocommitResp {
+                    is_autocommit,
+                }))
+            });
+        }
     }
     Ok(resp_rx)
 }
@@ -298,7 +418,10 @@ fn stream_spawn<D: Connection>(
             let _: Result<_, _> = job.resp_tx.send(res);
         }
     });
-    StreamHandle { job_tx }
+    StreamHandle {
+        job_tx,
+        cursor_id: None,
+    }
 }
 
 async fn stream_respond<F, D>(
@@ -336,6 +459,7 @@ impl ResponseError {
             Self::Auth { source } => source.code(),
             Self::SqlTooMany { .. } => "SQL_STORE_TOO_MANY",
             Self::StreamNotOpen { .. } => "STREAM_NOT_OPEN",
+            Self::CursorNotOpen { .. } => "CURSOR_NOT_OPEN",
             Self::Stmt(err) => err.code(),
             Self::Batch(err) => err.code(),
         }

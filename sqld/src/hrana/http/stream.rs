@@ -1,7 +1,3 @@
-//! Stream allows connections to be grouped together using a baton value.
-//! A baton value is sent by sqld to the client to be used in subsequent
-//! requests.
-
 use anyhow::{anyhow, Context, Result};
 use base64::prelude::{Engine as _, BASE64_STANDARD_NO_PAD};
 use hmac::Mac as _;
@@ -58,7 +54,7 @@ enum Handle<D> {
 struct Stream<D> {
     /// The database connection that corresponds to this stream. This is `None` after the `"close"`
     /// request was executed.
-    db: Option<D>,
+    db: Option<Arc<D>>,
     /// The cache of SQL texts stored on the server with `"store_sql"` requests.
     sqls: HashMap<i32, String>,
     /// Stream id of this stream. The id is generated randomly (it should be unguessable).
@@ -108,8 +104,8 @@ impl<D> ServerStreamState<D> {
 /// otherwise we create a new stream.
 pub async fn acquire<'srv, D: Connection>(
     server: &'srv Server<D>,
+    connection_maker: Arc<dyn MakeConnection<Connection = D>>,
     baton: Option<&str>,
-    db_factory: Arc<dyn MakeConnection<Connection = D>>,
 ) -> Result<Guard<'srv, D>> {
     let stream = match baton {
         Some(baton) => {
@@ -152,14 +148,14 @@ pub async fn acquire<'srv, D: Connection>(
             stream
         }
         None => {
-            let db = db_factory
+            let db = connection_maker
                 .create()
                 .await
                 .context("Could not create a database connection")?;
 
             let mut state = server.stream_state.lock();
             let stream = Box::new(Stream {
-                db: Some(db),
+                db: Some(Arc::new(db)),
                 sqls: HashMap::new(),
                 stream_id: gen_stream_id(&mut state),
                 // initializing the sequence number randomly makes it much harder to exploit
@@ -185,7 +181,12 @@ pub async fn acquire<'srv, D: Connection>(
 impl<'srv, D: Connection> Guard<'srv, D> {
     pub fn get_db(&self) -> Result<&D, ProtocolError> {
         let stream = self.stream.as_ref().unwrap();
-        stream.db.as_ref().ok_or(ProtocolError::BatonStreamClosed)
+        stream.db.as_deref().ok_or(ProtocolError::BatonStreamClosed)
+    }
+
+    pub fn get_db_owned(&self) -> Result<Arc<D>, ProtocolError> {
+        let stream = self.stream.as_ref().unwrap();
+        stream.db.clone().ok_or(ProtocolError::BatonStreamClosed)
     }
 
     /// Closes the database connection. The next call to [`Guard::release()`] will then remove the

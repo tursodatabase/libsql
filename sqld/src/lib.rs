@@ -185,11 +185,13 @@ where
         let idle_kicker = idle_shutdown_layer.clone().map(|isl| isl.into_kicker());
         let disable_default_namespace = config.disable_default_namespace;
         let disable_namespaces = config.disable_namespaces;
+        let max_response_size = config.max_response_size;
 
         join_set.spawn(async move {
             hrana::ws::serve(
                 auth,
                 idle_kicker,
+                max_response_size,
                 hrana_accept_rx,
                 hrana_upgrade_rx,
                 namespaces,

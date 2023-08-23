@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -27,8 +27,12 @@ pub enum BatchError {
     ResponseTooLarge,
 }
 
-fn proto_cond_to_cond(cond: &proto::BatchCond, max_step_i: usize) -> Result<Cond> {
-    let try_convert_step = |step: i32| -> Result<usize, ProtocolError> {
+fn proto_cond_to_cond(
+    cond: &proto::BatchCond,
+    version: Version,
+    max_step_i: usize,
+) -> Result<Cond> {
+    let try_convert_step = |step: u32| -> Result<usize, ProtocolError> {
         let step = usize::try_from(step).map_err(|_| ProtocolError::BatchCondBadStep)?;
         if step >= max_step_i {
             return Err(ProtocolError::BatchCondBadStep);
@@ -37,6 +41,9 @@ fn proto_cond_to_cond(cond: &proto::BatchCond, max_step_i: usize) -> Result<Cond
     };
 
     let cond = match cond {
+        proto::BatchCond::None => {
+            bail!(ProtocolError::NoneBatchCond)
+        }
         proto::BatchCond::Ok { step } => Cond::Ok {
             step: try_convert_step(*step)?,
         },
@@ -44,20 +51,31 @@ fn proto_cond_to_cond(cond: &proto::BatchCond, max_step_i: usize) -> Result<Cond
             step: try_convert_step(*step)?,
         },
         proto::BatchCond::Not { cond } => Cond::Not {
-            cond: proto_cond_to_cond(cond, max_step_i)?.into(),
+            cond: proto_cond_to_cond(cond, version, max_step_i)?.into(),
         },
-        proto::BatchCond::And { conds } => Cond::And {
-            conds: conds
+        proto::BatchCond::And(cond_list) => Cond::And {
+            conds: cond_list
+                .conds
                 .iter()
-                .map(|cond| proto_cond_to_cond(cond, max_step_i))
+                .map(|cond| proto_cond_to_cond(cond, version, max_step_i))
                 .collect::<Result<_>>()?,
         },
-        proto::BatchCond::Or { conds } => Cond::Or {
-            conds: conds
+        proto::BatchCond::Or(cond_list) => Cond::Or {
+            conds: cond_list
+                .conds
                 .iter()
-                .map(|cond| proto_cond_to_cond(cond, max_step_i))
+                .map(|cond| proto_cond_to_cond(cond, version, max_step_i))
                 .collect::<Result<_>>()?,
         },
+        proto::BatchCond::IsAutocommit {} => {
+            if version < Version::Hrana3 {
+                bail!(ProtocolError::NotSupported {
+                    what: "BatchCond of type `is_autocommit`",
+                    min_version: Version::Hrana3,
+                })
+            }
+            Cond::IsAutocommit
+        }
     };
 
     Ok(cond)
@@ -74,7 +92,7 @@ pub fn proto_batch_to_program(
         let cond = step
             .condition
             .as_ref()
-            .map(|cond| proto_cond_to_cond(cond, step_i))
+            .map(|cond| proto_cond_to_cond(cond, version, step_i))
             .transpose()?;
         let step = Step { query, cond };
 
@@ -149,12 +167,12 @@ pub async fn execute_sequence(
 
 fn catch_batch_error(sqld_error: SqldError) -> anyhow::Error {
     match batch_error_from_sqld_error(sqld_error) {
-        Ok(stmt_error) => anyhow!(stmt_error),
+        Ok(batch_error) => anyhow!(batch_error),
         Err(sqld_error) => anyhow!(sqld_error),
     }
 }
 
-fn batch_error_from_sqld_error(sqld_error: SqldError) -> Result<BatchError, SqldError> {
+pub fn batch_error_from_sqld_error(sqld_error: SqldError) -> Result<BatchError, SqldError> {
     Ok(match sqld_error {
         SqldError::LibSqlTxTimeout => BatchError::TransactionTimeout,
         SqldError::LibSqlTxBusy => BatchError::TransactionBusy,
@@ -163,6 +181,13 @@ fn batch_error_from_sqld_error(sqld_error: SqldError) -> Result<BatchError, Sqld
         }
         sqld_error => return Err(sqld_error),
     })
+}
+
+pub fn proto_error_from_batch_error(error: &BatchError) -> proto::Error {
+    proto::Error {
+        message: error.to_string(),
+        code: error.code().into(),
+    }
 }
 
 impl BatchError {

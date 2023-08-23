@@ -294,6 +294,14 @@ impl Connection for WriteProxyConnection {
         self.wait_replication_sync().await?;
         self.read_db.describe(sql, auth).await
     }
+
+    async fn is_autocommit(&self) -> Result<bool> {
+        let state = self.state.lock().await;
+        Ok(match *state {
+            State::Txn => false,
+            State::Init | State::Invalid => true,
+        })
+    }
 }
 
 impl Drop for WriteProxyConnection {

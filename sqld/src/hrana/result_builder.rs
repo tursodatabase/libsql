@@ -16,7 +16,7 @@ use super::proto;
 pub struct SingleStatementBuilder {
     has_step: bool,
     cols: Vec<proto::Col>,
-    rows: Vec<Vec<proto::Value>>,
+    rows: Vec<proto::Row>,
     err: Option<crate::error::Error>,
     affected_row_count: u64,
     last_insert_rowid: Option<i64>,
@@ -25,11 +25,19 @@ pub struct SingleStatementBuilder {
     max_total_response_size: u64,
 }
 
-struct SizeFormatter(u64);
+struct SizeFormatter {
+    size: u64,
+}
+
+impl SizeFormatter {
+    fn new() -> Self {
+        Self { size: 0 }
+    }
+}
 
 impl io::Write for SizeFormatter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0 += buf.len() as u64;
+        self.size += buf.len() as u64;
         Ok(buf.len())
     }
 
@@ -40,17 +48,17 @@ impl io::Write for SizeFormatter {
 
 impl fmt::Write for SizeFormatter {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.0 += s.len() as u64;
+        self.size += s.len() as u64;
         Ok(())
     }
 }
 
-fn value_json_size(v: &ValueRef) -> u64 {
-    let mut f = SizeFormatter(0);
+pub fn value_json_size(v: &ValueRef) -> u64 {
+    let mut f = SizeFormatter::new();
     match v {
         ValueRef::Null => write!(&mut f, r#"{{"type":"null"}}"#).unwrap(),
-        ValueRef::Integer(i) => write!(&mut f, r#"{{"type":"integer", "value": "{i}"}}"#).unwrap(),
-        ValueRef::Real(x) => write!(&mut f, r#"{{"type":"integer","value": {x}"}}"#).unwrap(),
+        ValueRef::Integer(i) => write!(&mut f, r#"{{"type":"integer","value":"{i}"}}"#).unwrap(),
+        ValueRef::Real(x) => write!(&mut f, r#"{{"type":"float","value":{x}"}}"#).unwrap(),
         ValueRef::Text(s) => {
             // error will be caught later.
             if let Ok(s) = std::str::from_utf8(s) {
@@ -59,8 +67,23 @@ fn value_json_size(v: &ValueRef) -> u64 {
         }
         ValueRef::Blob(b) => return b.len() as u64,
     }
+    f.size
+}
 
-    f.0
+pub fn value_to_proto(v: ValueRef) -> Result<proto::Value, QueryResultBuilderError> {
+    Ok(match v {
+        ValueRef::Null => proto::Value::Null,
+        ValueRef::Integer(value) => proto::Value::Integer { value },
+        ValueRef::Real(value) => proto::Value::Float { value },
+        ValueRef::Text(s) => proto::Value::Text {
+            value: String::from_utf8(s.to_vec())
+                .map_err(QueryResultBuilderError::from_any)?
+                .into(),
+        },
+        ValueRef::Blob(d) => proto::Value::Blob {
+            value: Bytes::copy_from_slice(d),
+        },
+    })
 }
 
 impl Drop for SingleStatementBuilder {
@@ -123,10 +146,10 @@ impl QueryResultBuilder for SingleStatementBuilder {
 
     fn step_error(&mut self, error: crate::error::Error) -> Result<(), QueryResultBuilderError> {
         assert!(self.err.is_none());
-        let mut f = SizeFormatter(0);
+        let mut f = SizeFormatter::new();
         write!(&mut f, "{error}").unwrap();
         TOTAL_RESPONSE_SIZE.fetch_sub(self.current_size as usize, Ordering::Relaxed);
-        self.current_size = f.0;
+        self.current_size = f.size;
         TOTAL_RESPONSE_SIZE.fetch_add(self.current_size as usize, Ordering::Relaxed);
         self.err = Some(error);
 
@@ -163,7 +186,9 @@ impl QueryResultBuilder for SingleStatementBuilder {
 
     fn begin_row(&mut self) -> Result<(), QueryResultBuilderError> {
         assert!(self.err.is_none());
-        self.rows.push(Vec::with_capacity(self.cols.len()));
+        self.rows.push(proto::Row {
+            values: Vec::with_capacity(self.cols.len()),
+        });
         Ok(())
     }
 
@@ -177,24 +202,12 @@ impl QueryResultBuilder for SingleStatementBuilder {
         }
 
         self.inc_current_size(estimate_size)?;
-
-        let val = match v {
-            ValueRef::Null => proto::Value::Null,
-            ValueRef::Integer(value) => proto::Value::Integer { value },
-            ValueRef::Real(value) => proto::Value::Float { value },
-            ValueRef::Text(s) => proto::Value::Text {
-                value: String::from_utf8(s.to_vec())
-                    .map_err(QueryResultBuilderError::from_any)?
-                    .into(),
-            },
-            ValueRef::Blob(d) => proto::Value::Blob {
-                value: Bytes::copy_from_slice(d),
-            },
-        };
+        let val = value_to_proto(v)?;
 
         self.rows
             .last_mut()
             .expect("row must be initialized")
+            .values
             .push(val);
 
         Ok(())
@@ -227,8 +240,8 @@ impl QueryResultBuilder for SingleStatementBuilder {
     }
 }
 
-fn estimate_cols_json_size(c: &Column) -> u64 {
-    let mut f = SizeFormatter(0);
+pub fn estimate_cols_json_size(c: &Column) -> u64 {
+    let mut f = SizeFormatter::new();
     write!(
         &mut f,
         r#"{{"name":"{}","decltype":"{}"}}"#,
@@ -236,7 +249,7 @@ fn estimate_cols_json_size(c: &Column) -> u64 {
         c.decl_ty.unwrap_or("null")
     )
     .unwrap();
-    f.0
+    f.size
 }
 
 #[derive(Debug, Default)]
