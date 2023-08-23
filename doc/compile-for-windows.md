@@ -30,13 +30,13 @@ canonical source on a new Windows 11 PC, as of 2023-08-16:
           of the source tree.
       <li>Run: `nmake /f makefile.vc release`
       <li>Run: `nmake /f makefile.vc INSTALLDIR=c:\Tcl install`
-      <li>CD to c:\\Tcl\\lib.  In that subfolder make a copy of the
+      <li>CD to `c:\Tcl\lib`.  In that subfolder make a copy of the
           "`tcl86t.lib`" file to the alternative name "`tcl86.lib`"
           (omitting the second 't').  Leave the copy in the same directory
           as the original.
-      <li>CD to c:\\Tcl\\bin.  Make a copy of the "`tclsh86t.exe`"
+      <li>CD to `c:\Tcl\bin`.  Make a copy of the "`tclsh86t.exe`"
           file into "`tclsh.exe`" (without the "86t") in the same directory.
-      <li>Add c:\\Tcl\\bin to your %PATH%.  To do this, go to Settings
+      <li>Add `c:\Tcl\bin` to your %PATH%.  To do this, go to Settings
           and search for "path".  Select "edit environment variables for
           your account" and modify your default PATH accordingly.
           You will need to close and reopen your command prompts after
@@ -77,7 +77,7 @@ following minor changes:
       <li> `c:\tcl32` &larr;  32-bit
       </ul>
 
-  3.  Ensure that c:\\tcl32\\bin comes before c:\\tcl\\bin on
+  3.  Ensure that `c:\tcl32\bin` comes before `c:\tcl\bin` on
       your PATH environment variable.  You can achieve this using
       a command like:
       <ul>
