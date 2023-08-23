@@ -1,12 +1,12 @@
-C The\spageOnDirtyList()\sassertion\sis\stoo\sslow\seven\sfor\sdebugging\sbuilds,\sfor\nsome\scorner\scases.\s\sIt\smakes\sthe\squery\sappear\sto\shang.\s\sSo\smake\sit\san\nEXPENSIVE_ASSERT\sinstead.
-D 2023-08-23T10:20:39.066
+C Minor\sadjustments\sto\sthe\swording\sabout\spull\srequests\sin\sthe\sREADME.md\sfile.
+D 2023-08-23T12:53:35.333
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
 F Makefile.in 1e9105ffed727b1557ce59f0941c5d271e276ec00bc9823f03d77a89e131b918
 F Makefile.linux-gcc f3842a0b1efbfbb74ac0ef60e56b301836d05b4d867d014f714fa750048f1ab6
 F Makefile.msc 26c2d196391a285c279adb10fd6001774d9b243af94b700b681e4a49cd476684
-F README.md 093d7054271141a0a8518558e3d49087cb71f84d33b50ee10053946ed85dcac8
+F README.md 7d2a446b5b3888be766f21b501f9d64afc4bced25f3889a20e057f1902e93f18
 F VERSION c6366dc72582d3144ce87b013cc35fe48d62f6d07d5be0c9716ea33c862144aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 724bc15701f3f647c741b614d4ac4fd98e1cdfe49a85f48c64fb1df5b83811b0
-R c9ea3f646f6db401d1d5adb317c565af
+P bb9dcdaf3244c4fc6872850a82b80c469203911e2f6e3a3211e508be39b59fa3
+R 8fc4f77979b8504778f5b8ce28d3f332
 U drh
-Z 9c3b9e0dd34219c4ca30b3d4663eeef3
+Z 0080a33be2ef8230c14aa3a7f81c945a
 # Remove this line to create a well-formed Fossil manifest.

@@ -41,11 +41,10 @@ email to drh at sqlite dot org.
 The SQLite source code is in the public domain.  See
 <https://sqlite.org/copyright.html> for details. 
 
-Because SQLite is in the public domain,
-we cannot accept pull requests, because
-if we did accept a pull request, the changes in that pull request would
-carry a copyright and the SQLite source code would no longer be fully in
-the public domain.
+Because SQLite is in the public domain, we do not normally accept pull
+requests, because if we did take a pull request, the changes in that
+pull request might carry a copyright and the SQLite source code would
+then no longer be fully in the public domain.
 
 ## Obtaining The SQLite Source Code
 
