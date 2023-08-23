@@ -1309,6 +1309,54 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1prepare_1v3
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_preupdate_blobwrite
+ * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1blobwrite
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_preupdate_count
+ * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1count
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_preupdate_depth
+ * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1depth
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_preupdate_hook
+ * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/PreUpdateHook;)Lorg/sqlite/jni/PreUpdateHook;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1hook
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_preupdate_new
+ * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/OutputPointer/sqlite3_value;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1new
+  (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_preupdate_old
+ * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/OutputPointer/sqlite3_value;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1old
+  (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_progress_handler
  * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/ProgressHandler;)V
  */

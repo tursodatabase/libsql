@@ -997,6 +997,7 @@ public class Tester1 implements Runnable {
     final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
     final UpdateHook theHook = new UpdateHook(){
         @SuppressWarnings("unchecked")
+        @Override
         public void xUpdateHook(int opId, String dbName, String tableName, long rowId){
           ++counter.value;
           if( 0!=expectedOp.value ){
@@ -1037,6 +1038,79 @@ public class Tester1 implements Runnable {
     expectedOp.value = SQLITE_UPDATE;
     execSql(db, "update t set a='i' where a='h'");
     affirm( 6 == counter.value );
+    sqlite3_close_v2(db);
+  }
+
+  /**
+     This test is functionally identical to testUpdateHook(), only with a
+     different callback type.
+  */
+  private synchronized void testPreUpdateHook(){
+    final sqlite3 db = createNewDb();
+    final ValueHolder<Integer> counter = new ValueHolder<>(0);
+    final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
+    final PreUpdateHook theHook = new PreUpdateHook(){
+        @SuppressWarnings("unchecked")
+        @Override
+        public void xPreUpdate(sqlite3 db, int opId, String dbName, String dbTable,
+                               long iKey1, long iKey2 ){
+          ++counter.value;
+          switch( opId ){
+            case SQLITE_UPDATE:
+              affirm( 0 < sqlite3_preupdate_count(db) );
+              affirm( null != sqlite3_preupdate_new(db, 0) );
+              affirm( null != sqlite3_preupdate_old(db, 0) );
+              break;
+            case SQLITE_INSERT:
+              affirm( null != sqlite3_preupdate_new(db, 0) );
+              break;
+            case SQLITE_DELETE:
+              affirm( null != sqlite3_preupdate_old(db, 0) );
+              break;
+            default:
+              break;
+          }
+          if( 0!=expectedOp.value ){
+            affirm( expectedOp.value == opId );
+          }
+        }
+      };
+    PreUpdateHook oldHook = sqlite3_preupdate_hook(db, theHook);
+    affirm( null == oldHook );
+    expectedOp.value = SQLITE_INSERT;
+    execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
+    affirm( 3 == counter.value );
+    expectedOp.value = SQLITE_UPDATE;
+    execSql(db, "update t set a='d' where a='c';");
+    affirm( 4 == counter.value );
+    oldHook = sqlite3_preupdate_hook(db, theHook);
+    affirm( theHook == oldHook );
+    expectedOp.value = SQLITE_DELETE;
+    execSql(db, "DELETE FROM t where a='d'");
+    affirm( 5 == counter.value );
+    oldHook = sqlite3_preupdate_hook(db, null);
+    affirm( theHook == oldHook );
+    execSql(db, "update t set a='e' where a='b';");
+    affirm( 5 == counter.value );
+    oldHook = sqlite3_preupdate_hook(db, null);
+    affirm( null == oldHook );
+
+    final PreUpdateHook newHook = new PreUpdateHook(){
+        @Override
+        public void xPreUpdate(sqlite3 db, int opId, String dbName,
+                               String tableName, long iKey1, long iKey2){
+        }
+      };
+    oldHook = sqlite3_preupdate_hook(db, newHook);
+    affirm( null == oldHook );
+    execSql(db, "update t set a='h' where a='a'");
+    affirm( 5 == counter.value );
+    oldHook = sqlite3_preupdate_hook(db, theHook);
+    affirm( newHook == oldHook );
+    expectedOp.value = SQLITE_UPDATE;
+    execSql(db, "update t set a='i' where a='h'");
+    affirm( 6 == counter.value );
+
     sqlite3_close_v2(db);
   }
 

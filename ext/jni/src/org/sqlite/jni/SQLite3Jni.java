@@ -475,7 +475,7 @@ public final class SQLite3Jni {
   ** retained.
   **
   ** If not built with SQLITE_ENABLE_SQLLOG defined, this returns
-  ** SQLITE_RANGE.
+  ** SQLITE_MISUSE.
   */
   public static native int sqlite3_config( @Nullable SQLLog logger );
 
@@ -704,6 +704,69 @@ public final class SQLite3Jni {
   ){
     final byte[] utf8 = sql.getBytes(StandardCharsets.UTF_8);
     return sqlite3_prepare_v3(db, utf8, utf8.length, prepFlags, outStmt, null);
+  }
+
+  /**
+     If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
+     acts as a proxy for C's sqlite3_preupdate_blobwrite(), else it returns
+     SQLITE_MISUSE with no side effects.
+  */
+  public static native int sqlite3_preupdate_blobwrite(@NotNull sqlite3 db);
+  /**
+     If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
+     acts as a proxy for C's sqlite3_preupdate_count(), else it returns
+     SQLITE_MISUSE with no side effects.
+  */
+  public static native int sqlite3_preupdate_count(@NotNull sqlite3 db);
+  /**
+     If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
+     acts as a proxy for C's sqlite3_preupdate_depth(), else it returns
+     SQLITE_MISUSE with no side effects.
+  */
+  public static native int sqlite3_preupdate_depth(@NotNull sqlite3 db);
+
+  /**
+     If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this
+     acts as a proxy for C's sqlite3_preupdate_hook(), else it returns null
+     with no side effects.
+  */
+  public static native PreUpdateHook sqlite3_preupdate_hook(@NotNull sqlite3 db,
+                                                            @Nullable PreUpdateHook hook);
+
+  /**
+     If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
+     this acts as a proxy for C's sqlite3_preupdate_new(), else it
+     returns SQLITE_MISUSE with no side effects.
+  */
+  public static native int sqlite3_preupdate_new(@NotNull sqlite3 db, int col,
+                                                 @NotNull OutputPointer.sqlite3_value out);
+
+  /**
+     Convenience wrapper for the 3-arg sqlite3_preupdate_new() which returns
+     null on error.
+  */
+  public static sqlite3_value sqlite3_preupdate_new(@NotNull sqlite3 db, int col){
+    final OutputPointer.sqlite3_value out = new OutputPointer.sqlite3_value();
+    sqlite3_preupdate_new(db, col, out);
+    return out.take();
+  }
+
+  /**
+     If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined,
+     this acts as a proxy for C's sqlite3_preupdate_old(), else it
+     returns SQLITE_MISUSE with no side effects.
+  */
+  public static native int sqlite3_preupdate_old(@NotNull sqlite3 db, int col,
+                                                 @NotNull OutputPointer.sqlite3_value out);
+
+  /**
+     Convenience wrapper for the 3-arg sqlite3_preupdate_old() which returns
+     null on error.
+  */
+  public static sqlite3_value sqlite3_preupdate_old(@NotNull sqlite3 db, int col){
+    final OutputPointer.sqlite3_value out = new OutputPointer.sqlite3_value();
+    sqlite3_preupdate_old(db, col, out);
+    return out.take();
   }
 
   public static native void sqlite3_progress_handler(
