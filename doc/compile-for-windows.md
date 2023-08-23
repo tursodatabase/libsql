@@ -25,7 +25,7 @@ canonical source on a new Windows 11 PC, as of 2023-08-16:
       TCL version 8.6 or later.
       <ol type="a">
       <li>Get the TCL source archive, perhaps from
-      <https://www.tcl.tk/software/tcltk/download.html>.
+      [https://www.tcl.tk/software/tcltk/download.html](https://www.tcl.tk/software/tcltk/download.html).
       <li>Untar or unzip the source archive.  CD into the "win/" subfolder
           of the source tree.
       <li>Run: `nmake /f makefile.vc release`

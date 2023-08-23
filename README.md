@@ -115,7 +115,7 @@ script does not work out for you, there is a generic makefile named
 can copy and edit to suit your needs.  Comments on the generic makefile
 show what changes are needed.
 
-## Using MSVC for Windows systems
+## Compiling for Windows Using MSVC
 
 On Windows, all applicable build products can be compiled with MSVC.
 You will also need a working installation of TCL.
