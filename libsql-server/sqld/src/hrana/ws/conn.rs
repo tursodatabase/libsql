@@ -1,6 +1,3 @@
-//! This file contains functions to deal with the connection of the Hrana protocol
-//! over web sockets
-
 use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
@@ -19,7 +16,7 @@ use crate::connection::MakeConnection;
 use crate::database::Database;
 use crate::namespace::MakeNamespace;
 
-use super::super::{ProtocolError, Version};
+use super::super::{Encoding, ProtocolError, Version};
 use super::handshake::WebSocket;
 use super::{handshake, proto, session, Server, Upgrade};
 
@@ -31,6 +28,8 @@ struct Conn<F: MakeNamespace> {
     ws_closed: bool,
     /// The version of the protocol that has been negotiated in the WebSocket handshake.
     version: Version,
+    /// The encoding of messages that has been negotiated in the WebSocket handshake.
+    encoding: Encoding,
     /// After a successful authentication, this contains the session-level state of the connection.
     session: Option<session::Session<<F::Database as Database>::Connection>>,
     /// Join set for all tasks that were spawned to handle the connection.
@@ -54,14 +53,19 @@ pub(super) async fn handle_tcp<F: MakeNamespace>(
     socket: tokio::net::TcpStream,
     conn_id: u64,
 ) -> Result<()> {
-    let (ws, version, ns) = handshake::handshake_tcp(
+    let handshake::Output {
+        ws,
+        version,
+        encoding,
+        namespace,
+    } = handshake::handshake_tcp(
         socket,
         server.disable_default_namespace,
         server.disable_namespaces,
     )
     .await
     .context("Could not perform the WebSocket handshake on TCP connection")?;
-    handle_ws(server, ws, version, conn_id, ns).await
+    handle_ws(server, ws, version, encoding, conn_id, namespace).await
 }
 
 pub(super) async fn handle_upgrade<F: MakeNamespace>(
@@ -69,20 +73,26 @@ pub(super) async fn handle_upgrade<F: MakeNamespace>(
     upgrade: Upgrade,
     conn_id: u64,
 ) -> Result<()> {
-    let (ws, version, ns) = handshake::handshake_upgrade(
+    let handshake::Output {
+        ws,
+        version,
+        encoding,
+        namespace,
+    } = handshake::handshake_upgrade(
         upgrade,
         server.disable_default_namespace,
         server.disable_namespaces,
     )
     .await
     .context("Could not perform the WebSocket handshake on HTTP connection")?;
-    handle_ws(server, ws, version, conn_id, ns).await
+    handle_ws(server, ws, version, encoding, conn_id, namespace).await
 }
 
 async fn handle_ws<F: MakeNamespace>(
     server: Arc<Server<F>>,
     ws: WebSocket,
     version: Version,
+    encoding: Encoding,
     conn_id: u64,
     namespace: Bytes,
 ) -> Result<()> {
@@ -96,6 +106,7 @@ async fn handle_ws<F: MakeNamespace>(
         ws,
         ws_closed: false,
         version,
+        encoding,
         session: None,
         join_set: tokio::task::JoinSet::new(),
         responses: FuturesUnordered::new(),
@@ -160,22 +171,23 @@ async fn handle_msg<F: MakeNamespace>(
 ) -> Result<bool> {
     match client_msg {
         tungstenite::Message::Text(client_msg) => {
-            // client messages are received as text WebSocket messages that encode the `ClientMsg`
-            // in JSON
-            let client_msg: proto::ClientMsg = match serde_json::from_str(&client_msg) {
-                Ok(client_msg) => client_msg,
-                Err(err) => bail!(ProtocolError::Deserialize { source: err }),
-            };
-
-            match client_msg {
-                proto::ClientMsg::Hello { jwt } => handle_hello_msg(conn, jwt).await,
-                proto::ClientMsg::Request {
-                    request_id,
-                    request,
-                } => handle_request_msg(conn, request_id, request).await,
+            if conn.encoding != Encoding::Json {
+                bail!(ProtocolError::TextWebSocketMessage)
             }
+
+            let client_msg: proto::ClientMsg = serde_json::from_str(&client_msg)
+                .map_err(|err| ProtocolError::JsonDeserialize { source: err })?;
+            handle_client_msg(conn, client_msg).await
         }
-        tungstenite::Message::Binary(_) => bail!(ProtocolError::BinaryWebSocketMessage),
+        tungstenite::Message::Binary(client_msg) => {
+            if conn.encoding != Encoding::Protobuf {
+                bail!(ProtocolError::BinaryWebSocketMessage)
+            }
+
+            let client_msg = <proto::ClientMsg as prost::Message>::decode(client_msg.as_slice())
+                .map_err(|err| ProtocolError::ProtobufDecode { source: err })?;
+            handle_client_msg(conn, client_msg).await
+        }
         tungstenite::Message::Ping(ping_data) => {
             let pong_msg = tungstenite::Message::Pong(ping_data);
             conn.ws
@@ -187,6 +199,21 @@ async fn handle_msg<F: MakeNamespace>(
         tungstenite::Message::Pong(_) => Ok(true),
         tungstenite::Message::Close(_) => Ok(false),
         tungstenite::Message::Frame(_) => panic!("Received a tungstenite::Message::Frame"),
+    }
+}
+
+async fn handle_client_msg<F: MakeNamespace>(
+    conn: &mut Conn<F>,
+    client_msg: proto::ClientMsg,
+) -> Result<bool> {
+    tracing::trace!("Received client msg: {:?}", client_msg);
+    match client_msg {
+        proto::ClientMsg::None => bail!(ProtocolError::NoneClientMsg),
+        proto::ClientMsg::Hello(msg) => handle_hello_msg(conn, msg.jwt).await,
+        proto::ClientMsg::Request(msg) => match msg.request {
+            Some(request) => handle_request_msg(conn, msg.request_id, request).await,
+            None => bail!(ProtocolError::NoneRequest),
+        },
     }
 }
 
@@ -202,12 +229,16 @@ async fn handle_hello_msg<F: MakeNamespace>(
 
     match hello_res {
         Ok(_) => {
-            send_msg(conn, &proto::ServerMsg::HelloOk {}).await?;
+            send_msg(conn, &proto::ServerMsg::HelloOk(proto::HelloOkMsg {})).await?;
             Ok(true)
         }
         Err(err) => match downcast_error(err) {
             Ok(error) => {
-                send_msg(conn, &proto::ServerMsg::HelloError { error }).await?;
+                send_msg(
+                    conn,
+                    &proto::ServerMsg::HelloError(proto::HelloErrorMsg { error }),
+                )
+                .await?;
                 Ok(false)
             }
             Err(err) => Err(err),
@@ -225,6 +256,7 @@ async fn handle_request_msg<F: MakeNamespace>(
     };
 
     let response_rx = session::handle_request(
+        &conn.server,
         session,
         &mut conn.join_set,
         request,
@@ -250,15 +282,19 @@ impl Future for ResponseFuture {
     type Output = Result<proto::ServerMsg>;
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
         match ready!(Pin::new(&mut self.response_rx).poll(cx)) {
-            Ok(Ok(response)) => Poll::Ready(Ok(proto::ServerMsg::ResponseOk {
-                request_id: self.request_id,
-                response,
-            })),
-            Ok(Err(err)) => match downcast_error(err) {
-                Ok(error) => Poll::Ready(Ok(proto::ServerMsg::ResponseError {
+            Ok(Ok(response)) => {
+                Poll::Ready(Ok(proto::ServerMsg::ResponseOk(proto::ResponseOkMsg {
                     request_id: self.request_id,
-                    error,
-                })),
+                    response: Some(response),
+                })))
+            }
+            Ok(Err(err)) => match downcast_error(err) {
+                Ok(error) => Poll::Ready(Ok(proto::ServerMsg::ResponseError(
+                    proto::ResponseErrorMsg {
+                        request_id: self.request_id,
+                        error,
+                    },
+                ))),
                 Err(err) => Poll::Ready(Err(err)),
             },
             Err(_recv_err) => {
@@ -284,12 +320,21 @@ fn downcast_error(err: anyhow::Error) -> Result<proto::Error> {
 }
 
 async fn send_msg<F: MakeNamespace>(conn: &mut Conn<F>, msg: &proto::ServerMsg) -> Result<()> {
-    let msg = serde_json::to_string(&msg).context("Could not serialize response message")?;
-    let msg = tungstenite::Message::Text(msg);
+    let msg = match conn.encoding {
+        Encoding::Json => {
+            let msg =
+                serde_json::to_string(&msg).context("Could not serialize response message")?;
+            tungstenite::Message::Text(msg)
+        }
+        Encoding::Protobuf => {
+            let msg = <proto::ServerMsg as prost::Message>::encode_to_vec(msg);
+            tungstenite::Message::Binary(msg)
+        }
+    };
     conn.ws
         .send(msg)
         .await
-        .context("Could not send response to the WebSocket")
+        .context("Could not send message to the WebSocket")
 }
 
 async fn close<F: MakeNamespace>(conn: &mut Conn<F>, code: CloseCode, reason: String) {
@@ -323,8 +368,10 @@ async fn close<F: MakeNamespace>(conn: &mut Conn<F>, code: CloseCode, reason: St
 
 fn protocol_error_to_close_code(err: &ProtocolError) -> CloseCode {
     match err {
-        ProtocolError::Deserialize { .. } => CloseCode::Invalid,
+        ProtocolError::JsonDeserialize { .. } => CloseCode::Invalid,
+        ProtocolError::ProtobufDecode { .. } => CloseCode::Invalid,
         ProtocolError::BinaryWebSocketMessage => CloseCode::Unsupported,
+        ProtocolError::TextWebSocketMessage => CloseCode::Unsupported,
         _ => CloseCode::Policy,
     }
 }

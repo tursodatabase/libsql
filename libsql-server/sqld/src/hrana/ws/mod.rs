@@ -12,12 +12,14 @@ pub mod proto;
 
 mod conn;
 mod handshake;
+mod protobuf;
 mod session;
 
 struct Server<F: MakeNamespace> {
     namespaces: Arc<NamespaceStore<F>>,
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
+    max_response_size: u64,
     next_conn_id: AtomicU64,
     disable_default_namespace: bool,
     disable_namespaces: bool,
@@ -35,9 +37,11 @@ pub struct Upgrade {
     pub response_tx: oneshot::Sender<hyper::Response<hyper::Body>>,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn serve<F: MakeNamespace>(
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
+    max_response_size: u64,
     mut accept_rx: mpsc::Receiver<Accept>,
     mut upgrade_rx: mpsc::Receiver<Upgrade>,
     namespaces: Arc<NamespaceStore<F>>,
@@ -47,6 +51,7 @@ pub async fn serve<F: MakeNamespace>(
     let server = Arc::new(Server {
         auth,
         idle_kicker,
+        max_response_size,
         next_conn_id: AtomicU64::new(0),
         namespaces,
         disable_default_namespace,

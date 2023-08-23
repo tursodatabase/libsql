@@ -104,7 +104,7 @@ where
     let res: Result<_> = async move {
         let req_body = hyper::body::to_bytes(req.into_body()).await?;
         let req_body = serde_json::from_slice(&req_body)
-            .map_err(|e| hrana::ProtocolError::Deserialize { source: e })?;
+            .map_err(|e| hrana::ProtocolError::JsonDeserialize { source: e })?;
 
         let db = db_factory
             .create()

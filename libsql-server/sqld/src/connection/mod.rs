@@ -99,6 +99,9 @@ pub trait Connection: Send + Sync + 'static {
 
     /// Parse the SQL statement and return information about it.
     async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult>;
+
+    /// Check whether the connection is in autocommit mode.
+    async fn is_autocommit(&self) -> Result<bool>;
 }
 
 fn make_batch_program(batch: Vec<Query>) -> Vec<Step> {
@@ -273,6 +276,11 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
     async fn describe(&self, sql: String, auth: Authenticated) -> crate::Result<DescribeResult> {
         self.inner.describe(sql, auth).await
     }
+
+    #[inline]
+    async fn is_autocommit(&self) -> crate::Result<bool> {
+        self.inner.is_autocommit().await
+    }
 }
 
 #[cfg(test)]
@@ -297,6 +305,10 @@ mod test {
             _sql: String,
             _auth: Authenticated,
         ) -> crate::Result<DescribeResult> {
+            unreachable!()
+        }
+
+        async fn is_autocommit(&self) -> crate::Result<bool> {
             unreachable!()
         }
     }

@@ -171,6 +171,7 @@ pub mod rpc {
                         .map(TryInto::try_into)
                         .collect::<anyhow::Result<_>>()?,
                 },
+                Some(cond::Cond::IsAutocommit(_)) => Self::IsAutocommit,
                 None => anyhow::bail!("invalid condition"),
             };
 
@@ -248,6 +249,9 @@ pub mod rpc {
                 connection::program::Cond::And { conds } => cond::Cond::And(AndCond {
                     conds: conds.into_iter().map(|c| c.into()).collect(),
                 }),
+                connection::program::Cond::IsAutocommit => {
+                    cond::Cond::IsAutocommit(IsAutocommitCond {})
+                }
             };
 
             Self { cond: Some(cond) }

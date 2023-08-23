@@ -98,14 +98,20 @@ pub fn proto_stmt_to_query(
     }
 
     let params = if proto_stmt.named_args.is_empty() {
-        let values = proto_stmt.args.iter().map(proto_value_to_value).collect();
+        let values = proto_stmt
+            .args
+            .iter()
+            .map(proto_value_to_value)
+            .collect::<Result<Vec<_>, _>>()?;
         Params::Positional(values)
     } else if proto_stmt.args.is_empty() {
         let values = proto_stmt
             .named_args
             .iter()
-            .map(|arg| (arg.name.clone(), proto_value_to_value(&arg.value)))
-            .collect();
+            .map(|arg| {
+                proto_value_to_value(&arg.value).map(|arg_value| (arg.name.clone(), arg_value))
+            })
+            .collect::<Result<HashMap<_, _>, _>>()?;
         Params::Named(values)
     } else {
         bail!(StmtError::ArgsBothPositionalAndNamed)
@@ -143,14 +149,15 @@ pub fn proto_sql_to_sql<'s>(
     }
 }
 
-fn proto_value_to_value(proto_value: &proto::Value) -> Value {
-    match proto_value {
+fn proto_value_to_value(proto_value: &proto::Value) -> Result<Value, ProtocolError> {
+    Ok(match proto_value {
+        proto::Value::None => return Err(ProtocolError::NoneValue),
         proto::Value::Null => Value::Null,
         proto::Value::Integer { value } => Value::Integer(*value),
         proto::Value::Float { value } => Value::Real(*value),
         proto::Value::Text { value } => Value::Text(value.as_ref().into()),
         proto::Value::Blob { value } => Value::Blob(value.as_ref().into()),
-    }
+    })
 }
 
 fn proto_value_from_value(value: Value) -> proto::Value {
@@ -232,7 +239,7 @@ pub fn stmt_error_from_sqld_error(sqld_error: SqldError) -> Result<StmtError, Sq
 }
 
 pub fn proto_error_from_stmt_error(error: &StmtError) -> hrana::proto::Error {
-    hrana::proto::Error {
+    proto::Error {
         message: error.to_string(),
         code: error.code().into(),
     }
@@ -284,12 +291,6 @@ fn sqlite_error_code(code: rusqlite::ffi::ErrorCode) -> &'static str {
         rusqlite::ErrorCode::NotADatabase => "SQLITE_NOTADB",
         rusqlite::ErrorCode::Unknown => "SQLITE_UNKNOWN",
         _ => "SQLITE_UNKNOWN",
-    }
-}
-
-impl From<&proto::Value> for Value {
-    fn from(proto_value: &proto::Value) -> Value {
-        proto_value_to_value(proto_value)
     }
 }
 

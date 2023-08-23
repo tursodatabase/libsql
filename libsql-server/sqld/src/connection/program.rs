@@ -57,6 +57,7 @@ pub enum Cond {
     Not { cond: Box<Self> },
     Or { conds: Vec<Self> },
     And { conds: Vec<Self> },
+    IsAutocommit,
 }
 
 pub type DescribeResult = crate::Result<DescribeResponse>;

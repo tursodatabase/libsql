@@ -100,6 +100,7 @@ message Cond {
         NotCond not = 3;
         AndCond and = 4;
         OrCond or = 5;
+        IsAutocommitCond is_autocommit = 6;
     }
 }
 
@@ -121,6 +122,9 @@ message AndCond {
 
 message OrCond {
     repeated Cond conds = 1;
+}
+
+message IsAutocommitCond {
 }
 
 enum Authorized {

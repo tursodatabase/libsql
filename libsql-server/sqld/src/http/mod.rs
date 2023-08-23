@@ -112,9 +112,9 @@ fn parse_queries(queries: Vec<QueryObject>) -> crate::Result<Vec<Query>> {
     Ok(out)
 }
 
-async fn handle_query<D: Connection>(
+async fn handle_query<C: Connection>(
     auth: Authenticated,
-    MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<D>,
+    MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<C>,
     Json(query): Json<HttpQuery>,
 ) -> Result<axum::response::Response, Error> {
     let batch = parse_queries(query.statements)?;
@@ -175,21 +175,6 @@ async fn handle_upgrade<F: MakeNamespace>(
 async fn handle_version() -> Response<Body> {
     let version = version::version();
     Response::new(Body::from(version))
-}
-
-async fn handle_hrana_v2<F: MakeNamespace>(
-    MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<
-        <F::Database as Database>::Connection,
-    >,
-    AxumState(state): AxumState<AppState<F>>,
-    auth: Authenticated,
-    req: Request<Body>,
-) -> Result<Response<Body>, Error> {
-    let server = state.hrana_http_srv;
-
-    let res = server.handle_pipeline(auth, req, connection_maker).await?;
-
-    Ok(res)
 }
 
 async fn handle_fallback() -> impl IntoResponse {
@@ -265,6 +250,25 @@ where
         tracing::debug!("got request: {} {}", req.method(), req.uri());
     }
 
+    macro_rules! handle_hrana {
+        ($endpoint:expr, $version:expr, $encoding:expr,) => {{
+            async fn handle_hrana<F: MakeNamespace>(
+                AxumState(state): AxumState<AppState<F>>,
+                MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<
+                    <F::Database as Database>::Connection,
+                >,
+                auth: Authenticated,
+                req: Request<Body>,
+            ) -> Result<Response<Body>, Error> {
+                Ok(state
+                    .hrana_http_srv
+                    .handle_request(connection_maker, auth, req, $endpoint, $version, $encoding)
+                    .await?)
+            }
+            handle_hrana
+        }};
+    }
+
     let app = Router::new()
         .route("/", post(handle_query))
         .route("/", get(handle_upgrade))
@@ -276,7 +280,48 @@ where
         .route("/v1/execute", post(hrana_over_http_1::handle_execute))
         .route("/v1/batch", post(hrana_over_http_1::handle_batch))
         .route("/v2", get(crate::hrana::http::handle_index))
-        .route("/v2/pipeline", post(handle_hrana_v2))
+        .route(
+            "/v2/pipeline",
+            post(handle_hrana!(
+                hrana::http::Endpoint::Pipeline,
+                hrana::Version::Hrana2,
+                hrana::Encoding::Json,
+            )),
+        )
+        .route("/v3", get(crate::hrana::http::handle_index))
+        .route(
+            "/v3/pipeline",
+            post(handle_hrana!(
+                hrana::http::Endpoint::Pipeline,
+                hrana::Version::Hrana3,
+                hrana::Encoding::Json,
+            )),
+        )
+        .route(
+            "/v3/cursor",
+            post(handle_hrana!(
+                hrana::http::Endpoint::Cursor,
+                hrana::Version::Hrana3,
+                hrana::Encoding::Json,
+            )),
+        )
+        .route("/v3-protobuf", get(crate::hrana::http::handle_index))
+        .route(
+            "/v3-protobuf/pipeline",
+            post(handle_hrana!(
+                hrana::http::Endpoint::Pipeline,
+                hrana::Version::Hrana3,
+                hrana::Encoding::Protobuf,
+            )),
+        )
+        .route(
+            "/v3-protobuf/cursor",
+            post(handle_hrana!(
+                hrana::http::Endpoint::Cursor,
+                hrana::Version::Hrana3,
+                hrana::Encoding::Protobuf,
+            )),
+        )
         .with_state(state);
 
     let layered_app = app
