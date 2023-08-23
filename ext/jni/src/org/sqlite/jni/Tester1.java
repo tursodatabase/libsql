@@ -1046,6 +1046,10 @@ public class Tester1 implements Runnable {
      different callback type.
   */
   private synchronized void testPreUpdateHook(){
+    if( !sqlite3_compileoption_used("ENABLE_PREUPDATE_HOOK") ){
+      //outln("Skipping testPreUpdateHook(): no pre-update hook support.");
+      return;
+    }
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
@@ -1153,8 +1157,8 @@ public class Tester1 implements Runnable {
   */
   @SuppressWarnings("unchecked")
   private void testFts5() throws Exception {
-    if( !SQLITE_ENABLE_FTS5 ){
-      outln("SQLITE_ENABLE_FTS5 is not set. Skipping FTS5 tests.");
+    if( !sqlite3_compileoption_used("ENABLE_FTS5") ){
+      //outln("SQLITE_ENABLE_FTS5 is not set. Skipping FTS5 tests.");
       return;
     }
     Exception err = null;
@@ -1444,16 +1448,21 @@ public class Tester1 implements Runnable {
     }
 
     if( sqlLog ){
-      int rc = sqlite3_config( new SQLLog() {
-          @Override public void xSqllog(sqlite3 db, String msg, int op){
-            switch(op){
-              case 0: outln("Opening db: ",db); break;
-              case 1: outln(db,": ",msg); break;
-              case 2: outln("Closing db: ",db); break;
+      if( sqlite3_compileoption_used("ENABLE_SQLLOG") ){
+        int rc = sqlite3_config( new SQLLog() {
+            @Override public void xSqllog(sqlite3 db, String msg, int op){
+              switch(op){
+                case 0: outln("Opening db: ",db); break;
+                case 1: outln(db,": ",msg); break;
+                case 2: outln("Closing db: ",db); break;
+              }
             }
-          }
-        });
-      affirm( 0==rc );
+          });
+        affirm( 0==rc );
+      }else{
+        outln("WARNING: -sqllog is not active because library was built ",
+              "without SQLITE_ENABLE_SQLLOG.");
+      }
     }
 
     final long timeStart = System.currentTimeMillis();

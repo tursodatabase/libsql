@@ -61,9 +61,6 @@
 #ifndef SQLITE_ENABLE_OFFSET_SQL_FUNC
 #  define SQLITE_ENABLE_OFFSET_SQL_FUNC 1
 #endif
-#ifndef SQLITE_ENABLE_PREUPDATE_HOOK
-#  define SQLITE_ENABLE_PREUPDATE_HOOK 1 /*required by session extension*/
-#endif
 #ifndef SQLITE_ENABLE_RTREE
 #  define SQLITE_ENABLE_RTREE 1
 #endif
@@ -235,12 +232,12 @@ static const struct {
   const S3NphRef sqlite3_value;
   const S3NphRef OutputPointer_Int32;
   const S3NphRef OutputPointer_Int64;
-  const S3NphRef OutputPointer_String;
-  const S3NphRef OutputPointer_ByteArray;
   const S3NphRef OutputPointer_sqlite3;
   const S3NphRef OutputPointer_sqlite3_stmt;
   const S3NphRef OutputPointer_sqlite3_value;
 #ifdef SQLITE_ENABLE_FTS5
+  const S3NphRef OutputPointer_String;
+  const S3NphRef OutputPointer_ByteArray;
   const S3NphRef Fts5Context;
   const S3NphRef Fts5ExtensionApi;
   const S3NphRef fts5_api;
@@ -255,12 +252,12 @@ static const struct {
   NREF(3,  "sqlite3_value"),
   NREF(4,  "OutputPointer$Int32"),
   NREF(5,  "OutputPointer$Int64"),
-  NREF(6,  "OutputPointer$String"),
-  NREF(7,  "OutputPointer$ByteArray"),
-  NREF(8,  "OutputPointer$sqlite3"),
-  NREF(9,  "OutputPointer$sqlite3_stmt"),
-  NREF(10, "OutputPointer$sqlite3_value"),
+  NREF(6,  "OutputPointer$sqlite3"),
+  NREF(7,  "OutputPointer$sqlite3_stmt"),
+  NREF(8,  "OutputPointer$sqlite3_value"),
 #ifdef SQLITE_ENABLE_FTS5
+  NREF(9,  "OutputPointer$String"),
+  NREF(10, "OutputPointer$ByteArray"),
   NREF(11, "Fts5Context"),
   NREF(12, "Fts5ExtensionApi"),
   NREF(13, "fts5_api"),
@@ -4525,13 +4522,6 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
     int value;
   } ConfigFlagEntry;
   const ConfigFlagEntry aLimits[] = {
-    {"SQLITE_ENABLE_FTS5", JTYPE_BOOL,
-#ifdef SQLITE_ENABLE_FTS5
-     1
-#else
-     0
-#endif
-    },
     {"SQLITE_MAX_ALLOCATION_SIZE", JTYPE_INT, SQLITE_MAX_ALLOCATION_SIZE},
     {"SQLITE_LIMIT_LENGTH", JTYPE_INT, SQLITE_LIMIT_LENGTH},
     {"SQLITE_MAX_LENGTH", JTYPE_INT, SQLITE_MAX_LENGTH},
@@ -4597,7 +4587,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JENV_CSELF){
   { /* StandardCharsets.UTF_8 */
     jfieldID fUtf8;
     klazz = (*env)->FindClass(env,"java/nio/charset/StandardCharsets");
-    EXCEPTION_IS_FATAL("Error getting reference to StndardCharsets class.");
+    EXCEPTION_IS_FATAL("Error getting reference to StandardCharsets class.");
     fUtf8 = (*env)->GetStaticFieldID(env, klazz, "UTF_8",
                                      "Ljava/nio/charset/Charset;");
     EXCEPTION_IS_FATAL("Error getting StandardCharsets.UTF_8 field.");
