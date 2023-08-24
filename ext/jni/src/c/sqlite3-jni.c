@@ -3762,7 +3762,7 @@ S3JniApi(sqlite3_value_text16(),jbyteArray,1value_1text16)(
   return value_text16(SQLITE_UTF16, env, jpSVal);
 }
 
-JniDecl(void,1do_1something_1for_1developer)(JniArgsEnvClass){
+JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
   MARKER(("\nVarious bits of internal info:\n"));
   puts("FTS5 is "
 #ifdef SQLITE_ENABLE_FTS5

@@ -152,23 +152,20 @@ public final class SQLite3Jni {
   // grouped by category.
 
   /**
-     Functions exactly like the native form except that (A) the
-     returned value is only intended for use as a lookup key in a
-     higher-level data structure and (B) the 2nd argument is a boolean
-     instead of an int. If passed true, it will attempt to allocate
-     enough memory to use as a UDF-call-local context key. If passed
-     false it will not allocate any memory.
+     Functions exactly like the native form except that (A) the 2nd
+     argument is a boolean instead of an int and (B) the returned
+     value is not a pointer address and is only intended for use as a
+     per-UDF-call lookup key in a higher-level data structure.
 
-     <p>It is only valid for the life of the current UDF method call
-     and must not be retained for later use. The return value 0
-     indicates an allocation error unless initialize is false, in
-     which case it means that the given context was never passed to
-     this function with a true second argument so never had to
-     allocate.
+     <p>Passing a true second argument is analogous to passing some
+     unspecified small, non-0 positive value to the C API and passing
+     false is equivalent to passing 0 to the C API.
 
-     <p>For the JNI wrapping, the value of sz is provided for API
-     consistency but it is ignored unless it's 0. Results are
-     undefined if the value is negative.
+     <p>Like the C API, it returns 0 if allocation fails or if
+     initialize is false and no prior aggregate context was allocated
+     for cx.  If initialize is true then it returns 0 only on
+     allocation error. In all casses, 0 is considered the sentinel
+     "not a key" value.
   */
   public static native long sqlite3_aggregate_context(sqlite3_context cx, boolean initialize);
 
