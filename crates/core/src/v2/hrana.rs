@@ -12,7 +12,7 @@ use hyper::StatusCode;
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
 // use crate::client::Config;
-use crate::{Params, Result};
+use crate::{Column, Params, Result};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -328,6 +328,10 @@ impl super::statement::Stmt for Statement {
     }
 
     fn parameter_name(&self, _idx: i32) -> Option<&str> {
+        todo!()
+    }
+
+    fn columns(&self) -> Vec<Column> {
         todo!()
     }
 }

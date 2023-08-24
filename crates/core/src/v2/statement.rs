@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{Error, Params, Result};
+use crate::{Column, Error, Params, Result};
 
 use super::{rows::LibsqlRows, Row, Rows};
 
@@ -16,6 +16,8 @@ pub(super) trait Stmt {
     fn parameter_count(&self) -> usize;
 
     fn parameter_name(&self, idx: i32) -> Option<&str>;
+
+    fn columns(&self) -> Vec<Column>;
 }
 
 pub struct Statement {
@@ -57,6 +59,10 @@ impl Statement {
 
     pub fn parameter_name(&self, idx: i32) -> Option<&str> {
         self.inner.parameter_name(idx)
+    }
+
+    pub fn columns(&self) -> Vec<Column> {
+        self.inner.columns()
     }
 }
 
@@ -117,5 +123,9 @@ impl Stmt for LibsqlStmt {
 
     fn parameter_name(&self, idx: i32) -> Option<&str> {
         self.0.parameter_name(idx)
+    }
+
+    fn columns(&self) -> Vec<Column> {
+        self.0.columns()
     }
 }
