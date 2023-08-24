@@ -6,9 +6,10 @@ JAVA_HOME ?= $(HOME)/jdk/current
 # e.g. /usr/lib/jvm/default-javajava-19-openjdk-amd64
 JDK_HOME ?= $(JAVA_HOME)
 # ^^^ JDK_HOME is not as widely used as JAVA_HOME
-bin.javac := $(JDK_HOME)/bin/javac
-bin.java  := $(JDK_HOME)/bin/java
-bin.jar   := $(JDK_HOME)/bin/jar
+bin.jar     := $(JDK_HOME)/bin/jar
+bin.java    := $(JDK_HOME)/bin/java
+bin.javac   := $(JDK_HOME)/bin/javac
+bin.javadoc := $(JDK_HOME)/bin/javadoc
 ifeq (,$(wildcard $(JDK_HOME)))
 $(error set JDK_HOME to the top-most dir of your JDK installation.)
 endif
@@ -17,18 +18,18 @@ $(MAKEFILE):
 
 package.jar := sqlite3-jni.jar
 
-dir.top := ../..
-dir.tool := ../../tool
-dir.jni := $(patsubst %/,%,$(dir $(MAKEFILE)))
-
+dir.top     := ../..
+dir.tool    := ../../tool
+dir.jni     := $(patsubst %/,%,$(dir $(MAKEFILE)))
 dir.src     := $(dir.jni)/src
 dir.src.c   := $(dir.src)/c
 dir.bld     := $(dir.jni)/bld
 dir.bld.c   := $(dir.bld)
 dir.src.jni := $(dir.src)/org/sqlite/jni
 dir.src.jni.tester := $(dir.src.jni)/tester
+mkdir       := mkdir -p
 $(dir.bld.c):
-	mkdir -p $@
+	$(mkdir) $@
 
 classpath := $(dir.src)
 CLEAN_FILES := $(package.jar)
@@ -285,6 +286,12 @@ $(package.jar): $(CLASS_FILES) $(MAKEFILE) $(package.jar.in)
 
 jar: $(package.jar)
 
+dir.doc := $(dir.jni)/doc
+doc: $(JAVA_FILES.main)
+	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) org.sqlite.jni
+
+########################################################################
+# Clean up...
 CLEAN_FILES += $(dir.bld.c)/* \
   $(dir.src.jni)/*.class \
   $(dir.src.jni.tester)/*.class \

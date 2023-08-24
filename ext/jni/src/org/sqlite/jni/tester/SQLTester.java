@@ -629,7 +629,7 @@ public class SQLTester {
         t.outln("Aborted ",t.nAbortedScript," script(s).");
       }
       if( dumpInternals ){
-        sqlite3_do_something_for_developer();
+        sqlite3_jni_internal_details();
       }
     }
   }

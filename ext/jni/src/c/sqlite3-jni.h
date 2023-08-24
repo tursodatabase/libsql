@@ -1789,10 +1789,10 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1subtype
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_do_something_for_developer
+ * Method:    sqlite3_jni_internal_details
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1do_1something_1for_1developer
+JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1jni_1internal_1details
   (JNIEnv *, jclass);
 
 #ifdef __cplusplus

@@ -33,7 +33,7 @@ import java.lang.annotation.ElementType;
 
 /**
    This annotation is for flagging parameters which may not legally be
-   null. Note that the C-style API does _not_ throw any
+   null. Note that the C-style API does not throw any
    NullPointerExceptions on its own because it has a no-throw policy
    in order to retain its C-style semantics.
 
@@ -50,62 +50,64 @@ import java.lang.annotation.ElementType;
   This class contains the entire sqlite3 JNI API binding.  For
   client-side use, a static import is recommended:
 
-  ```
+  {@code
   import static org.sqlite.jni.SQLite3Jni.*;
-  ```
+  }
 
   The C-side part can be found in sqlite3-jni.c.
 
 
-  Only functions which materially differ from their C counterparts
+  <p>Only functions which materially differ from their C counterparts
   are documented here. The C documetation is otherwise applicable
   here:
 
-  https://sqlite.org/c3ref/intro.html
+  <p>{link https://sqlite.org/c3ref/intro.html}
 
-  A handful of Java-specific APIs have been added.
+  <p>A handful of Java-specific APIs have been added.
 
 
-  ******************************************************************
-  *** Warning regarding Java's Modified UTF-8 vs standard UTF-8: ***
-  ******************************************************************
+  <p>Notes regarding Java's Modified UTF-8 vs standard UTF-8:
 
-  SQLite internally uses UTF-8 encoding, whereas Java natively uses
+  <p>SQLite internally uses UTF-8 encoding, whereas Java natively uses
   UTF-16.  Java JNI has routines for converting to and from UTF-8,
-  _but_ JNI uses what its docs call modified UTF-8 (see links below)
+  but JNI uses what its docs call modified UTF-8 (see links below)
   Care must be taken when converting Java strings to or from standard
   UTF-8 to ensure that the proper conversion is performed. In short,
   Java's `String.getBytes(StandardCharsets.UTF_8)` performs the proper
   conversion in Java, and there are no JNI C APIs for that conversion
   (JNI's `NewStringUTF()` requires its input to be in MUTF-8).
 
-  The known consequences and limitations this discrepancy places on
+  <p>The known consequences and limitations this discrepancy places on
   the SQLite3 JNI binding include:
 
-  - Any functions which return state from a database take extra care
-    to perform proper conversion, at the cost of efficiency.
+  <ul>
 
-  - C functions which take C-style strings without a length argument
-    require special care when taking input from Java. In particular,
-    Java strings converted to byte arrays for encoding purposes are
-    not NUL-terminated, and conversion to a Java byte array must be
-    careful to add one. Functions which take a length do not require
-    this so long as the length is provided. Search the SQLite3Jni
-    class for "\0" for many examples.
+  <li>Any functions which return state from a database take extra care
+  to perform proper conversion, at the cost of efficiency.</li>
 
-  - Similarly, C-side code which deals with strings which might not be
-    NUL-terminated (e.g. while tokenizing in FTS5-related code) cannot
-    use JNI's new-string functions to return them to Java because none
-    of those APIs take a string-length argument. Such cases must
-    return byte arrays instead of strings.
+  <li>C functions which take C-style strings without a length argument
+  require special care when taking input from Java. In particular,
+  Java strings converted to byte arrays for encoding purposes are not
+  NUL-terminated, and conversion to a Java byte array must be careful
+  to add one. Functions which take a length do not require this so
+  long as the length is provided. Search the SQLite3Jni class for "\0"
+  for many examples.
 
-  Further reading:
+  <li>Similarly, C-side code which deals with strings which might not
+  be NUL-terminated (e.g. while tokenizing in FTS5-related code)
+  cannot use JNI's new-string functions to return them to Java because
+  none of those APIs take a string-length argument. Such cases must
+  return byte arrays instead of strings.
 
-  - https://stackoverflow.com/questions/57419723
-  - https://stackoverflow.com/questions/7921016
-  - https://itecnote.com/tecnote/java-getting-true-utf-8-characters-in-java-jni/
-  - https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#unicode
-  - https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8
+  </ul>
+
+  <p>Further reading:
+
+  <p><a href="https://stackoverflow.com/questions/57419723">https://stackoverflow.com/questions/57419723</a>
+  <p><a href="https://stackoverflow.com/questions/7921016">https://stackoverflow.com/questions/7921016</a>
+  <p><a href="https://itecnote.com/tecnote/java-getting-true-utf-8-characters-in-java-jni/">https://itecnote.com/tecnote/java-getting-true-utf-8-characters-in-java-jni/</a>
+  <p><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#unicode">https://docs.oracle.com/javase/8/docs/api/java/lang/Character.html#unicode</a>
+  <p><a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8">https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html#modified-utf-8</a>
 
 */
 public final class SQLite3Jni {
@@ -124,7 +126,7 @@ public final class SQLite3Jni {
      This will clean up any cached per-JNIEnv info. Calling into the
      library will re-initialize the cache on demand.
 
-     This process does _not_ close any databases or finalize
+     This process does not close any databases or finalize
      any prepared statements because their ownership does not depend on
      a given thread.  For proper library behavior, and to
      avoid C-side leaks, be sure to finalize all statements and close
@@ -1194,7 +1196,7 @@ public final class SQLite3Jni {
 
   /**
      Internal impl of the public sqlite3_strglob() method. Neither argument
-     may be NULL and both _MUST_ be NUL-terminated.
+     may be NULL and both MUST be NUL-terminated.
   */
   private static native int sqlite3_strglob(
     @NotNull byte[] glob, @NotNull byte[] txt
@@ -1211,7 +1213,7 @@ public final class SQLite3Jni {
 
   /**
      Internal impl of the public sqlite3_strlike() method. Neither
-     argument may be NULL and both _MUST_ be NUL-terminated.
+     argument may be NULL and both MUST be NUL-terminated.
   */
   private static native int sqlite3_strlike(
     @NotNull byte[] glob, @NotNull byte[] txt, int escChar
@@ -1319,10 +1321,11 @@ public final class SQLite3Jni {
 
   /**
      This is NOT part of the public API. It exists solely as a place
-     to hook in arbitrary C-side code during development and testing
-     of this library.
+     for this code's developers to collect internal metrics and such.
+     It has no stable interface. It may go way or change behavior at
+     any time.
   */
-  public static native void sqlite3_do_something_for_developer();
+  public static native void sqlite3_jni_internal_details();
 
   //////////////////////////////////////////////////////////////////////
   // SQLITE_... constants follow...

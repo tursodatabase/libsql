@@ -1575,7 +1575,7 @@ public class Tester1 implements Runnable {
     outln("\tAssertions checked: ",affirmCount);
     outln("\tDatabases opened: ",metrics.dbOpen);
     if( doSomethingForDev ){
-      sqlite3_do_something_for_developer();
+      sqlite3_jni_internal_details();
     }
     sqlite3_shutdown();
     int nMethods = 0;

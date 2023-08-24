@@ -19,6 +19,8 @@ package org.sqlite.jni;
    access to the callback functions needed in order to implement SQL
    functions in Java.
 
+   <p>
+
    This class is not used by itself, but is a marker base class. The
    three UDF types are modelled by the inner classes Scalar,
    Aggregate<T>, and Window<T>. Most simply, clients may subclass
@@ -36,19 +38,19 @@ public abstract class SQLFunction {
      managing their accumulator state across calls to the UDF's
      callbacks.
 
-     If a given aggregate or window function is called multiple times
+     <p>If a given aggregate or window function is called multiple times
      in a single SQL statement, e.g. SELECT MYFUNC(A), MYFUNC(B)...,
      then the clients need some way of knowing which call is which so
      that they can map their state between their various UDF callbacks
      and reset it via xFinal(). This class takes care of such
      mappings.
 
-     This class works by mapping
+     <p>This class works by mapping
      sqlite3_context.getAggregateContext() to a single piece of
      state, of a client-defined type (the T part of this class), which
      persists across a "matching set" of the UDF's callbacks.
 
-     This class is a helper providing commonly-needed functionality -
+     <p>This class is a helper providing commonly-needed functionality -
      it is not required for use with aggregate or window functions.
      Client UDFs are free to perform such mappings using custom
      approaches. The provided Aggregate<T> and Window<T> classes
@@ -69,7 +71,7 @@ public abstract class SQLFunction {
        without requiring that the client update the underlying map's
        entry.
 
-       T must be of a type which can be legally stored as a value in
+       <p>T must be of a type which can be legally stored as a value in
        java.util.HashMap<KeyType,T>.
     */
     public ValueHolder<T> getAggregateState(sqlite3_context cx, T initialValue){
@@ -95,7 +97,9 @@ public abstract class SQLFunction {
     }
   }
 
-  //! Subclass for creating scalar functions.
+  /**
+     Subclass for creating scalar functions.
+  */
   public static abstract class Scalar extends SQLFunction {
 
     /**
@@ -151,7 +155,7 @@ public abstract class SQLFunction {
        argument, the context is set to the given initial value. On all other
        calls, the 2nd argument is ignored.
 
-       @see PerContextState<T>#takeAggregateState()
+       @see SQLFunction.PerContextState#getAggregateState()
     */
     protected final ValueHolder<T> getAggregateState(sqlite3_context cx, T initialValue){
       return map.getAggregateState(cx, initialValue);
@@ -161,7 +165,7 @@ public abstract class SQLFunction {
        To be called from the implementation's xFinal() method to fetch
        the final state of the UDF and remove its mapping.
 
-       @see PerContextState<T>#takeAggregateState()
+       see SQLFunction.PerContextState#takeAggregateState()
     */
     protected final T takeAggregateState(sqlite3_context cx){
       return map.takeAggregateState(cx);
