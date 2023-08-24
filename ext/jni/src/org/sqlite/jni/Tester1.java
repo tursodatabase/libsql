@@ -680,7 +680,8 @@ public class Tester1 implements Runnable {
     sqlite3_finalize(stmt);
     affirm( 0 != rc );
     affirm( sqlite3_errmsg(db).indexOf("an xFunc") > 0 );
-
+    rc = sqlite3_create_function(db, "mysca", 1, -1, funcSc);
+    affirm( SQLITE_FORMAT==rc, "invalid encoding value." );
     sqlite3_close_v2(db);
   }
 
