@@ -5421,8 +5421,8 @@ static void fts5FlushOneHash(Fts5Index *p){
               writer.bFirstRowidInPage = 0;
               fts5WriteDlidxAppend(p, &writer, iRowid);
             }else{
-              u64 iDelta = (u64)iRowid - (u64)iPrev;
-              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iDelta);
+              u64 iRowidDelta = (u64)iRowid - (u64)iPrev;
+              pBuf->n += sqlite3Fts5PutVarint(&pBuf->p[pBuf->n], iRowidDelta);
             }
             if( p->rc!=SQLITE_OK ) break;
             assert( pBuf->n<=pBuf->nSpace );

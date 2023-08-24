@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sthe\sLemon\sdocumentation.
-D 2023-08-23T18:42:04.533
+C Change\sa\svariable\sname\sin\sfts5FlushOneHash()\sto\savoid\sshadowing\sanother.
+D 2023-08-24T12:01:30.103
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -93,7 +93,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 054359543566cbff1ba65a188330660a5457299513ac71c53b3a07d934c7b081
 F ext/fts5/fts5_expr.c bd3b81ce669c4104e34ffe66570af1999a317b142c15fccb112de9fb0caa57a6
 F ext/fts5/fts5_hash.c 65e7707bc8774706574346d18c20218facf87de3599b995963c3e6d6809f203d
-F ext/fts5/fts5_index.c 7990b39f68010d6ee0d89a92784900a5fe582b90ca02fedc8a5d4b6b589498b8
+F ext/fts5/fts5_index.c b484322421cbb421d22bb2cd304001b80596d671cd626367c8c806b889de4b42
 F ext/fts5/fts5_main.c 7070031993ba5b5d89b13206ec4ef624895f2f7c0ec72725913d301e4d382445
 F ext/fts5/fts5_storage.c 3c9b41fce41b6410f2e8f82eb035c6a29b2560483f773e6dc98cf3cb2e4ddbb5
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2092,8 +2092,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P f20f84ef717cea11f92d6a1ab3b4e0fec5752b7ec98ad5b59e06745e7e25b6ee
-R 3c3c4ccec3e9768794652606bc3908c3
-U drh
-Z 96362cac446acf92523149d4a0d69825
+P 5daeb318c0472e8c004109caacd8bc977145a2c1bfa6f5bdcf87ab89ea51c30b
+R 0c01ee5f49ac8bbf7d5b3e02bf525f93
+U dan
+Z 981da02bf978c4eadbc2bfc650cbb914
 # Remove this line to create a well-formed Fossil manifest.
