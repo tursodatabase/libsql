@@ -18,12 +18,7 @@ jobs:
     env:
       RUSTFLAGS: -D warnings --cfg=uuid_unstable
     steps:
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
+      - uses: hecrj/setup-rust-action@v1
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -37,13 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run Clippy
     steps:
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          components: clippy
-          override: true
+      - uses: hecrj/setup-rust-action@v1
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -57,13 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Run Rustfmt
     steps:
-      - name: Install Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          components: rustfmt
-          override: true
+      - uses: hecrj/setup-rust-action@v1
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -96,12 +79,7 @@ jobs:
       with:
         ruby-version: 2.6
         bundler-cache: true
-    - name: Install minimal stable toolchain with clippy and rustfmt
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
+    - uses: hecrj/setup-rust-action@v1
     - name: Install foundationdb-clients
       run: wget https://github.com/apple/foundationdb/releases/download/7.1.25/foundationdb-clients_7.1.25-1_amd64.deb && sudo dpkg -i foundationdb-clients_7.1.25-1_amd64.deb
     - uses: actions/checkout@v3
@@ -123,12 +101,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Check that we don't depend on openssl
     steps:
-    - name: Install minimal stable toolchain with clippy and rustfmt
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: stable
-        override: true
+    - uses: hecrj/setup-rust-action@v1
     - name: Checkout
       uses: actions/checkout@v3
       with:
