@@ -547,48 +547,49 @@ static void s3jni_incr( volatile unsigned int * const p ){
 #endif
 
 /* Helpers for working with specific mutexes. */
-#define S3JniMutex_Env_assertLocked  \
+#define S3JniMutex_Env_assertLocked \
   assert( 0 != SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
-#define S3JniMutex_Env_assertLocker                                      \
+#define S3JniMutex_Env_assertLocker \
   assert( (env) == SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
-#define S3JniMutex_Env_assertNotLocker                                   \
+#define S3JniMutex_Env_assertNotLocker \
   assert( (env) != SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
-#define S3JniMutex_Env_enter                             \
-  S3JniMutex_Env_assertNotLocker;                       \
+#define S3JniMutex_Env_enter                        \
+  S3JniMutex_Env_assertNotLocker;                   \
   /*MARKER(("Entering ENV mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.envCache.mutex );        \
   ++SJG.metrics.nMutexEnv;                          \
   SJG.envCache.locker = env
-#define S3JniMutex_Env_leave                              \
+#define S3JniMutex_Env_leave                         \
   /*MARKER(("Leaving ENV mutex @%p %s.\n", env));*/  \
-  S3JniMutex_Env_assertLocker;                           \
+  S3JniMutex_Env_assertLocker;                       \
   SJG.envCache.locker = 0;                           \
   sqlite3_mutex_leave( SJG.envCache.mutex )
-#define S3JniMutex_Ext_enter                                 \
+#define S3JniMutex_Ext_enter                            \
   /*MARKER(("Entering autoExt mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.autoExt.mutex );             \
   ++SJG.metrics.nMutexAutoExt
-#define S3JniMutex_Ext_leave                                 \
+#define S3JniMutex_Ext_leave                            \
   /*MARKER(("Leaving autoExt mutex@%p %s.\n", env));*/  \
   sqlite3_mutex_leave( SJG.autoExt.mutex )
-#define S3JniMutex_Nph_enter                             \
-  S3JniMutex_Env_assertNotLocker;                       \
+#define S3JniMutex_Nph_enter                        \
+  S3JniMutex_Env_assertNotLocker;                   \
   /*MARKER(("Entering NPH mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.envCache.mutex );        \
   ++SJG.metrics.nMutexEnv2;                         \
   SJG.envCache.locker = env
-#define S3JniMutex_Nph_leave                              \
+#define S3JniMutex_Nph_leave                         \
   /*MARKER(("Leaving NPH mutex @%p %s.\n", env));*/  \
   S3JniMutex_Env_assertLocker;                       \
   SJG.envCache.locker = 0;                           \
   sqlite3_mutex_leave( SJG.envCache.mutex )
-#define S3JniMutex_Pdb_enter                               \
-  /*MARKER(("Entering PerDb mutex@%p %s.\n", env));*/ \
+#define S3JniMutex_S3JniDb_enter                      \
   sqlite3_mutex_enter( SJG.perDb.mutex );             \
+  assert( 0==SJG.perDb.locker );                      \
   ++SJG.metrics.nMutexPerDb;                          \
   SJG.perDb.locker = env;
-#define S3JniMutex_Pdb_leave                          \
+#define S3JniMutex_S3JniDb_leave                      \
   /*MARKER(("Leaving PerDb mutex@%p %s.\n", env));*/  \
+  assert( env == SJG.perDb.locker );                  \
   SJG.perDb.locker = 0;                               \
   sqlite3_mutex_leave( SJG.perDb.mutex )
 
@@ -890,7 +891,7 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj){
 ** references.
 */
 static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDestroy){
-  if(doXDestroy && s->jObj){
+  if( doXDestroy && s->jObj ){
     s3jni_call_xDestroy(env, s->jObj);
   }
   UNREF_G(s->jObj);
@@ -900,9 +901,9 @@ static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDest
 /*
 ** Clears s's state and moves it to the free-list.
 */
-static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
-  if(s){
-    S3JniMutex_Pdb_enter;
+static void S3JniDb_set_aside_unlocked(JNIEnv * env, S3JniDb * const s){
+  if( s ){
+    assert( S3JniGlobal.perDb.locker == env );
     assert(s->pPrev != s);
     assert(s->pNext != s);
     assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
@@ -932,7 +933,13 @@ static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
     s->pNext = SJG.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
     SJG.perDb.aFree = s;
-    S3JniMutex_Pdb_leave;
+  }
+}
+static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
+  if( s ){
+    S3JniMutex_S3JniDb_enter;
+    S3JniDb_set_aside_unlocked(env, s);
+    S3JniMutex_S3JniDb_leave;
   }
 }
 
@@ -1064,7 +1071,7 @@ static void * NativePointerHolder_get(JNIEnv * env, jobject pObj, S3NphRef const
 static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
                                jobject jDb){
   S3JniDb * rv;
-  S3JniMutex_Pdb_enter;
+  S3JniMutex_S3JniDb_enter;
   if( SJG.perDb.aFree ){
     rv = SJG.perDb.aFree;
     SJG.perDb.aFree = rv->pNext;
@@ -1095,7 +1102,7 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
     rv->jDb = REF_G(jDb);
     rv->pDb = pDb;
   }
-  S3JniMutex_Pdb_leave;
+  S3JniMutex_S3JniDb_leave;
   return rv;
 }
 
@@ -1113,7 +1120,7 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
 static S3JniDb * S3JniDb_for_db(JNIEnv * const env, jobject jDb, sqlite3 *pDb){
   S3JniDb * s = 0;
   if( jDb || pDb ){
-    S3JniMutex_Pdb_enter;
+    S3JniMutex_S3JniDb_enter;
     s = SJG.perDb.aUsed;
     if( !pDb ){
       assert( jDb );
@@ -1124,7 +1131,7 @@ static S3JniDb * S3JniDb_for_db(JNIEnv * const env, jobject jDb, sqlite3 *pDb){
         break;
       }
     }
-    S3JniMutex_Pdb_leave;
+    S3JniMutex_S3JniDb_leave;
   }
   return s;
 }
@@ -2713,6 +2720,21 @@ S3JniApi(sqlite3_is_interrupted(),jboolean,1is_1interrupted)(
   return rc ? JNI_TRUE : JNI_FALSE;
 }
 
+/*
+** Uncaches the current JNIEnv from the S3JniGlobal state, clearing any
+** resources owned by that cache entry and making that slot available
+** for re-use. It is important that the Java-side decl of this
+** function be declared as synchronous.
+*/
+JniDecl(jboolean,1java_1uncache_1thread)(JniArgsEnvClass){
+  int rc;
+  S3JniMutex_Env_enter;
+  rc = S3JniGlobal_env_uncache(env);
+  S3JniMutex_Env_leave;
+  return rc ? JNI_TRUE : JNI_FALSE;
+}
+
+
 S3JniApi(sqlite3_last_insert_rowid(),jlong,1last_1insert_1rowid)(
   JniArgsEnvClass, jobject jpDb
 ){
@@ -3546,8 +3568,19 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
     S3JniGlobal_env_uncache( SJG.envCache.aHead->env );
   }
   S3JniMutex_Env_leave;
-  /* Do not clear S3JniGlobal.jvm: it's legal to call
-     sqlite3_initialize() again to restart the lib. */
+#if 0
+  /*
+  ** Is this a good idea? We will get rid of the perDb list once
+  ** sqlite3 gets a per-db client state, at which point we won't have
+  ** a central list of databases to close.
+  */
+  S3JniMutex_S3JniDb_enter;
+  while( SJG.perDb.pHead ){
+    s3jni_close_db(env, SJG.perDb.pHead->jDb, 2);
+  }
+  S3JniMutex_S3JniDb_leave;
+#endif
+  /* Do not clear S3JniGlobal.jvm: it's legal to restart the lib. */
   return sqlite3_shutdown();
 }
 
@@ -4614,22 +4647,6 @@ Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JniArgsEnvClass){
 ////////////////////////////////////////////////////////////////////////
 // End of SQLTester bindings. Start of lower-level bits.
 ////////////////////////////////////////////////////////////////////////
-
-
-/*
-** Uncaches the current JNIEnv from the S3JniGlobal state, clearing any
-** resources owned by that cache entry and making that slot available
-** for re-use. It is important that the Java-side decl of this
-** function be declared as synchronous.
-*/
-JNIEXPORT jboolean JNICALL
-Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv(JniArgsEnvClass){
-  int rc;
-  S3JniMutex_Env_enter;
-  rc = S3JniGlobal_env_uncache(env);
-  S3JniMutex_Env_leave;
-  return rc ? JNI_TRUE : JNI_FALSE;
-}
 
 /*
 ** Called during static init of the SQLite3Jni class to sync certain

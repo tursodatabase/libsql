@@ -765,10 +765,10 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_init
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    uncacheJniEnv
+ * Method:    sqlite3_java_uncache_thread
  * Signature: ()Z
  */
-JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1java_1uncache_1thread
   (JNIEnv *, jclass);
 
 /*

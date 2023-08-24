@@ -121,10 +121,9 @@ public final class SQLite3Jni {
 
   /**
      Each thread which uses the SQLite3 JNI APIs should call
-     uncacheJniEnv() when it is done with the library - either right
-     before it terminates or when it is finished using the SQLite API.
-     This will clean up any cached per-JNIEnv info. Calling into the
-     library will re-initialize the cache on demand.
+     sqlite3_jni_uncache_thread() when it is done with the library -
+     either right before it terminates or when it finishes using the
+     SQLite API.  This will clean up any cached per-thread info.
 
      <p>This process does not close any databases or finalize
      any prepared statements because their ownership does not depend on
@@ -133,10 +132,9 @@ public final class SQLite3Jni {
      all databases before calling this function.
 
      <p>Calling this from the main application thread is not strictly
-     required but is "polite." Additional threads must call this
-     before ending or they will leak cache entries in the C heap,
-     which in turn may keep numerous Java-side global references
-     active.
+     required. Additional threads must call this before ending or they
+     will leak cache entries in the C heap, which in turn may keep
+     numerous Java-side global references active.
 
      <p>This routine returns false without side effects if the current
      JNIEnv is not cached, else returns true, but this information is
@@ -144,7 +142,7 @@ public final class SQLite3Jni {
      which client-level code should use to make any informed
      decisions.
   */
-  public static synchronized native boolean uncacheJniEnv();
+  public static native boolean sqlite3_java_uncache_thread();
 
   //////////////////////////////////////////////////////////////////////
   // Maintenance reminder: please keep the sqlite3_.... functions
@@ -1154,9 +1152,12 @@ public final class SQLite3Jni {
   );
 
   /**
-     Cleans up all per-JNIEnv and per-db state managed by the library,
-     as well as any registered auto-extensions, then calls the
-     C-native sqlite3_shutdown().
+     Cleans up all stale per-thread state managed by the library, as
+     well as any registered auto-extensions, then calls the C-native
+     sqlite3_shutdown(). Calling this while database handles or
+     prepared statements are still active will leak resources. Trying
+     to use those objects after this routine is called invoked
+     undefined behavior.
   */
   public static synchronized native int sqlite3_shutdown();
 

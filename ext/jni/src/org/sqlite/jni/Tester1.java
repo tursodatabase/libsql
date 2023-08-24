@@ -1421,8 +1421,8 @@ public class Tester1 implements Runnable {
         listErrors.add(e);
       }
     }finally{
-      affirm( SQLite3Jni.uncacheJniEnv() );
-      affirm( !SQLite3Jni.uncacheJniEnv() );
+      affirm( sqlite3_java_uncache_thread() );
+      affirm( !sqlite3_java_uncache_thread() );
     }
   }
 
