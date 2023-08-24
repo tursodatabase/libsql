@@ -43,6 +43,12 @@ Non-goals:
 - Creation of high-level OO wrapper APIs. Clients are free to create
   them off of the C-style API.
 
+- Support for mixed-mode operation, where client code accesses SQLite3
+  both via the Java-side API and the C API via their own native
+  code. In such cases, proxy functionalities (primarily callback
+  handler wrappers of all sorts) may fail because the C-side use of
+  the sqlite3 APIs will bypass those proxies.
+
 
 Hello World
 -----------------------------------------------------------------------
@@ -72,6 +78,7 @@ try {
   sqlite3_close_v2(db);
 }
 ```
+
 
 Building
 ========================================================================
