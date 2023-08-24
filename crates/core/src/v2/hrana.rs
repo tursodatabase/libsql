@@ -288,6 +288,10 @@ impl Conn for Client {
     async fn transaction(&self, _tx_behavior: crate::TransactionBehavior) -> Result<Transaction> {
         todo!()
     }
+
+    fn last_insert_rowid(&self) -> i64 {
+        todo!()
+    }
 }
 
 pub struct Statement {

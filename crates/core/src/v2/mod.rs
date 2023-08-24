@@ -86,6 +86,8 @@ trait Conn {
     async fn prepare(&self, sql: &str) -> Result<Statement>;
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
+
+    fn last_insert_rowid(&self) -> i64;
 }
 
 #[derive(Clone)]
@@ -126,6 +128,10 @@ impl Connection {
     ) -> Result<Transaction> {
         self.conn.transaction(tx_behavior).await
     }
+
+    pub fn last_insert_rowid(&self) -> i64 {
+        self.conn.last_insert_rowid()
+    }
 }
 
 #[derive(Clone)]
@@ -162,5 +168,9 @@ impl Conn for LibsqlConnection {
                 conn: Arc::new(self.clone()),
             },
         })
+    }
+
+    fn last_insert_rowid(&self) -> i64 {
+        self.conn.last_insert_rowid()
     }
 }
