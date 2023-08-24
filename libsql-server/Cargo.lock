@@ -3787,8 +3787,9 @@ dependencies = [
  "tokio-util",
  "tonic",
  "tonic-build",
+ "tonic-web",
  "tower",
- "tower-http",
+ "tower-http 0.3.5",
  "tracing",
  "tracing-panic",
  "tracing-subscriber",
@@ -4192,6 +4193,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "tonic-web"
+version = "0.9.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21b00ec4842256d1fe0a46176e2ef5bc357664c66e7d91aff5a7d43d83a65f47"
+dependencies = [
+ "base64 0.21.2",
+ "bytes 1.4.0",
+ "futures-core",
+ "http",
+ "http-body",
+ "hyper",
+ "pin-project 1.1.2",
+ "tonic",
+ "tower-http 0.4.3",
+ "tower-layer",
+ "tower-service",
+ "tracing",
+]
+
+[[package]]
 name = "tower"
 version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4231,6 +4252,24 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+]
+
+[[package]]
+name = "tower-http"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "55ae70283aba8d2a8b411c695c437fe25b8b5e44e23e780662002fc72fb47a82"
+dependencies = [
+ "bitflags 2.3.3",
+ "bytes 1.4.0",
+ "futures-core",
+ "futures-util",
+ "http",
+ "http-body",
+ "http-range-header",
+ "pin-project-lite",
+ "tower-layer",
+ "tower-service",
 ]
 
 [[package]]

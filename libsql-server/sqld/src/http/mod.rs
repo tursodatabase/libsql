@@ -345,7 +345,10 @@ where
 
     // Merge the grpc based axum router into our regular http router
     let router = if let Some(svc) = replication_service {
-        let grpc_router = Server::builder().add_service(svc).into_router();
+        let grpc_router = Server::builder()
+            .accept_http1(true)
+            .add_service(tonic_web::enable(svc))
+            .into_router();
 
         layered_app.merge(grpc_router)
     } else {
