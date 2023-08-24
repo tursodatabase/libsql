@@ -20,6 +20,7 @@ use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
+use crate::DEFAULT_NAMESPACE_NAME;
 
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
@@ -29,6 +30,7 @@ pub struct ReplicationLogService {
     replicas_with_hello: RwLock<HashSet<(SocketAddr, Bytes)>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     auth: Option<Arc<Auth>>,
+    disable_namespaces: bool,
 }
 
 pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
@@ -39,12 +41,14 @@ impl ReplicationLogService {
         namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
         idle_shutdown_layer: Option<IdleShutdownLayer>,
         auth: Option<Arc<Auth>>,
+        disable_namespaces: bool,
     ) -> Self {
         Self {
             namespaces,
             replicas_with_hello: Default::default(),
             idle_shutdown_layer,
             auth,
+            disable_namespaces,
         }
     }
 
@@ -54,6 +58,20 @@ impl ReplicationLogService {
         }
 
         Ok(())
+    }
+
+    fn extract_namespace<T>(&self, req: &tonic::Request<T>) -> Result<Bytes, Status> {
+        if self.disable_namespaces {
+            return Ok(Bytes::from_static(DEFAULT_NAMESPACE_NAME.as_bytes()));
+        }
+
+        if let Some(namespace) = req.metadata().get("x-namespace") {
+            namespace
+                .to_bytes()
+                .map_err(|_| Status::invalid_argument("Metadata can't be converted into Bytes"))
+        } else {
+            Err(Status::invalid_argument("Missing x-namespace metadata"))
+        }
     }
 }
 
@@ -123,6 +141,7 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
         self.authenticate(&req)?;
+        let namespace = self.extract_namespace(&req)?;
 
         let replica_addr = req
             .remote_addr()
@@ -130,14 +149,14 @@ impl ReplicationLog for ReplicationLogService {
         let req = req.into_inner();
         {
             let guard = self.replicas_with_hello.read().unwrap();
-            if !guard.contains(&(replica_addr, req.namespace.clone())) {
+            if !guard.contains(&(replica_addr, namespace.clone())) {
                 return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
             }
         }
 
         let logger = match self
             .namespaces
-            .with(req.namespace, |ns| ns.db.logger.clone())
+            .with(namespace, |ns| ns.db.logger.clone())
             .await
         {
             Ok(logger) => logger,
@@ -162,6 +181,7 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Frames>, Status> {
         self.authenticate(&req)?;
+        let namespace = self.extract_namespace(&req)?;
 
         let replica_addr = req
             .remote_addr()
@@ -169,14 +189,14 @@ impl ReplicationLog for ReplicationLogService {
         let req = req.into_inner();
         {
             let guard = self.replicas_with_hello.read().unwrap();
-            if !guard.contains(&(replica_addr, req.namespace.clone())) {
+            if !guard.contains(&(replica_addr, namespace.clone())) {
                 return Err(Status::failed_precondition(NO_HELLO_ERROR_MSG));
             }
         }
 
         let logger = match self
             .namespaces
-            .with(req.namespace, |ns| ns.db.logger.clone())
+            .with(namespace, |ns| ns.db.logger.clone())
             .await
         {
             Ok(logger) => logger,
@@ -203,20 +223,20 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<HelloRequest>,
     ) -> Result<tonic::Response<HelloResponse>, Status> {
         self.authenticate(&req)?;
+        let namespace = self.extract_namespace(&req)?;
 
         let replica_addr = req
             .remote_addr()
             .ok_or(Status::internal("No remote RPC address"))?;
-        let req = req.into_inner();
 
         {
             let mut guard = self.replicas_with_hello.write().unwrap();
-            guard.insert((replica_addr, req.namespace.clone()));
+            guard.insert((replica_addr, namespace.clone()));
         }
 
         let logger = self
             .namespaces
-            .with(req.namespace, |ns| ns.db.logger.clone())
+            .with(namespace, |ns| ns.db.logger.clone())
             .await
             .unwrap();
 
@@ -234,13 +254,13 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         self.authenticate(&req)?;
+        let namespace = self.extract_namespace(&req)?;
 
         let (sender, receiver) = mpsc::channel(10);
         let req = req.into_inner();
-        let ns = req.namespace;
         let logger = self
             .namespaces
-            .with(ns, |ns| ns.db.logger.clone())
+            .with(namespace, |ns| ns.db.logger.clone())
             .await
             .unwrap();
         let offset = req.next_offset;

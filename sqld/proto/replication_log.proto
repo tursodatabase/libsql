@@ -3,12 +3,9 @@ package wal_log;
 
 message LogOffset {
     uint64 next_offset = 1;
-    bytes namespace = 2;
 }
 
-message HelloRequest { 
-    bytes namespace = 1;
-}
+message HelloRequest {}
 
 message HelloResponse {
     /// Uuid of the current generation
