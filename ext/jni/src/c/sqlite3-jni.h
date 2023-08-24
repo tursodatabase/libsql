@@ -1749,22 +1749,6 @@ JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_value_text16le
- * Signature: (Lorg/sqlite/jni/sqlite3_value;)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text16le
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_value_text16be
- * Signature: (Lorg/sqlite/jni/sqlite3_value;)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text16be
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_value_type
  * Signature: (Lorg/sqlite/jni/sqlite3_value;)I
  */

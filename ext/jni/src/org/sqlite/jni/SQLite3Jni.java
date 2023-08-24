@@ -1116,12 +1116,13 @@ public final class SQLite3Jni {
   /**
      Binds the given text using C's sqlite3_result_text64() unless:
 
-     - text is null ==> sqlite3_result_null()
+     - text is null: translates to a call to sqlite3_result_null()
 
-     - text is too large ==> sqlite3_result_error_toobig()
+     - text is too large: translates to a call to
+       sqlite3_result_error_toobig()
 
-     - The `encoding` argument has an invalid value ==>
-       sqlite3_result_error_code() with SQLITE_FORMAT
+     - The `encoding` argument has an invalid value: translates to
+       sqlite3_result_error_code() with code SQLITE_FORMAT.
 
      If maxLength (in bytes, not characters) is larger than
      text.length, it is silently truncated to text.length. If it is
@@ -1168,37 +1169,6 @@ public final class SQLite3Jni {
       final byte[] b = text.getBytes(StandardCharsets.UTF_16);
       sqlite3_result_text64(cx, b, b.length, SQLITE_UTF16);
     }
-  }
-
-  /**
-     Sets the current UDF result to the given bytes, which are assumed
-     be encoded in UTF-16LE.
-  */
-  public static void sqlite3_result_text16le(
-    @NotNull sqlite3_context cx, @Nullable String text
-  ){
-    if(null == text) sqlite3_result_null(cx);
-    else{
-      final byte[] b = text.getBytes(StandardCharsets.UTF_16LE);
-      sqlite3_result_text64(cx, b, b.length, SQLITE_UTF16LE);
-    }
-  }
-
-  /**
-     Sets the current UDF result to the given bytes, which are assumed
-     be encoded in UTF-16BE.
-  */
-  public static void sqlite3_result_text16be(
-    @NotNull sqlite3_context cx, @Nullable byte[] text
-  ){
-    sqlite3_result_text64(cx, text, text.length, SQLITE_UTF16BE);
-  }
-
-  public static void sqlite3_result_text16be(
-    @NotNull sqlite3_context cx, @NotNull String text
-  ){
-    final byte[] b = text.getBytes(StandardCharsets.UTF_16BE);
-    sqlite3_result_text64(cx, b, b.length, SQLITE_UTF16BE);
   }
 
   public static native RollbackHook sqlite3_rollback_hook(
@@ -1336,10 +1306,6 @@ public final class SQLite3Jni {
   }
 
   public static native byte[] sqlite3_value_text16(@NotNull sqlite3_value v);
-
-  public static native byte[] sqlite3_value_text16le(@NotNull sqlite3_value v);
-
-  public static native byte[] sqlite3_value_text16be(@NotNull sqlite3_value v);
 
   public static native int sqlite3_value_type(@NotNull sqlite3_value v);
 

@@ -1447,7 +1447,7 @@ public class Tester1 implements Runnable {
      -v: emit some developer-mode info at the end.
   */
   public static void main(String[] args) throws Exception {
-    Integer nThread = null;
+    Integer nThread = 1;
     boolean doSomethingForDev = false;
     Integer nRepeat = 1;
     boolean forceFail = false;
@@ -1536,7 +1536,7 @@ public class Tester1 implements Runnable {
     outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
     if( takeNaps ) outln("Napping between tests is enabled.");
     for( int n = 0; n < nRepeat; ++n ){
-      if( nThread==null || nThread<=1 ){
+      if( nThread<=1 ){
         new Tester1(0).runTests(false);
         continue;
       }
