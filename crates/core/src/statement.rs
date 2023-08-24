@@ -108,7 +108,7 @@ impl Statement {
             crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
             _ => Err(Error::LibError(
-                err,
+                errors::extended_error_code(self.conn.raw),
                 errors::error_from_handle(self.conn.raw),
             )),
         }
