@@ -5,7 +5,6 @@ mod result_builder;
 pub mod stats;
 mod types;
 
-use std::convert::Infallible;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -25,9 +24,7 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Number;
 use tokio::sync::{mpsc, oneshot};
-use tonic::body::BoxBody;
 use tonic::transport::Server;
-use tower::Service;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::{compression::CompressionLayer, cors};
 use tracing::{Level, Span};
@@ -42,6 +39,8 @@ use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, State, Statement};
 use crate::query_result_builder::QueryResultBuilder;
+use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
+use crate::rpc::ReplicationLogServer;
 use crate::stats::Stats;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 use crate::version;
@@ -211,27 +210,22 @@ impl<F: MakeNamespace> Clone for AppState<F> {
 
 // TODO: refactor
 #[allow(clippy::too_many_arguments)]
-pub async fn run_http<F, S>(
+pub async fn run_http<M, S>(
     addr: SocketAddr,
     auth: Arc<Auth>,
-    namespaces: Arc<NamespaceStore<F>>,
+    namespaces: Arc<NamespaceStore<M>>,
     upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
-    hrana_http_srv: Arc<hrana::http::Server<<F::Database as Database>::Connection>>,
+    hrana_http_srv: Arc<hrana::http::Server<<M::Database as Database>::Connection>>,
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
-    replication_service: Option<S>,
+    replication_service: S,
     disable_default_namespace: bool,
     disable_namespaces: bool,
 ) -> anyhow::Result<()>
 where
-    F: MakeNamespace,
-    S: Service<Request<hyper::Body>, Error = Infallible, Response = hyper::Response<BoxBody>>
-        + Send
-        + Clone
-        + tonic::server::NamedService
-        + 'static,
-    S::Future: Send + 'static,
+    M: MakeNamespace,
+    S: ReplicationLog,
 {
     let state = AppState {
         auth,
@@ -344,16 +338,13 @@ where
         );
 
     // Merge the grpc based axum router into our regular http router
-    let router = if let Some(svc) = replication_service {
-        let grpc_router = Server::builder()
-            .accept_http1(true)
-            .add_service(tonic_web::enable(svc))
-            .into_router();
+    let server = ReplicationLogServer::new(replication_service);
+    let grpc_router = Server::builder()
+        .accept_http1(true)
+        .add_service(tonic_web::enable(server))
+        .into_router();
 
-        layered_app.merge(grpc_router)
-    } else {
-        layered_app
-    };
+    let router = layered_app.merge(grpc_router);
 
     let router = router.fallback(handle_fallback);
     let h2c = h2c::H2cMaker::new(router);
