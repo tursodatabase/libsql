@@ -68,6 +68,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ResultCode.java \
   RollbackHook.java \
   SQLFunction.java \
+  SQLLog.java \
   sqlite3_context.java \
   sqlite3.java \
   SQLite3Jni.java \
@@ -160,17 +161,16 @@ SQLITE_OPT = \
   -DSQLITE_ENABLE_DBSTAT_VTAB \
   -DSQLITE_ENABLE_BYTECODE_VTAB \
   -DSQLITE_ENABLE_OFFSET_SQL_FUNC \
+  -DSQLITE_ENABLE_PREUPDATE_HOOK \
+  -DSQLITE_ENABLE_SQLLOG \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_THREADSAFE=1 \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
-  -DSQLITE_C=$(sqlite3.c)
-#  -DSQLITE_DEBUG
-# -DSQLITE_DEBUG is just to work around a -Wall warning
-# for a var which gets set in all builds but only read
-# via assert().
+  -DSQLITE_C=$(sqlite3.c) \
+  -DSQLITE_DEBUG
 
 SQLITE_OPT += -g -DDEBUG -UNDEBUG
 
@@ -226,12 +226,16 @@ $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
 			$(sqlite3-jni.c) -shared -o $@
 all: $(sqlite3-jni.dll)
 
-.PHONY: test
-test.flags ?= -v
-test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
-	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
-		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.Tester1 $(if $(test.flags),-- $(test.flags),)
+.PHONY: test test-one
+test.flags ?=
+test.main.flags = -ea -Djava.library.path=$(dir.bld.c) \
+                  $(java.flags) -cp $(classpath) \
+                  org.sqlite.jni.Tester1
+test-one: $(SQLite3Jni.class) $(sqlite3-jni.dll)
+	$(bin.java) $(test.main.flags) $(test.flags)
+test: test-one
+	@echo "Again in multi-threaded mode:";
+	$(bin.java) $(test.main.flags) -t 5 -r 20 -shuffle $(test.flags)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose
@@ -272,8 +276,7 @@ package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)
 $(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)
 	cd $(dir.src); ls -1 org/sqlite/jni/*.java org/sqlite/jni/*.class > $@
-	@ls -la $@
-	@echo "To use this jar you will need the -Djava.library.path=DIR/WITH/libsqlite3-jni.so flag."
+	@echo "To use this jar you will need the -Djava.library.path=DIR/CONTAINING/libsqlite3-jni.so flag."
 	@echo "e.g. java -jar $@ -Djava.library.path=bld"
 
 $(package.jar): $(CLASS_FILES) $(MAKEFILE) $(package.jar.in)
@@ -317,6 +320,10 @@ dist: \
     $(bin.version-info) $(sqlite3.canonical.c) \
     $(package.jar) $(MAKEFILE)
 	@echo "Making end-user deliverables..."
+	@echo "****************************************************************************"; \
+	echo  "*** WARNING: be sure to build this with JDK8 (javac 1.8) for compatibility."; \
+	echo  "*** reasons!"; $$($(bin.javac) -version); \
+	echo  "****************************************************************************"
 	@rm -fr $(dist-dir.top)
 	@mkdir -p $(dist-dir.src)
 	@cp -p $(dist.top.extras) $(dist-dir.top)/.

@@ -28,6 +28,6 @@ package org.sqlite.jni;
 */
 public class NativePointerHolder<ContextType> {
   //! Only set from JNI, where access permissions don't matter.
-  private long nativePointer = 0;
+  private volatile long nativePointer = 0;
   public final long getNativePointer(){ return nativePointer; }
 }

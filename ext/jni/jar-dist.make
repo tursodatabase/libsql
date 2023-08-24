@@ -6,7 +6,9 @@
 # proper top-level JDK directory and, depending on the platform, add a
 # platform-specific -I directory. It should build as-is with any
 # 2020s-era version of gcc or clang. It requires JDK version 8 or
-# higher.
+# higher and that JAVA_HOME points to the top-most installation
+# directory of that JDK. On Ubuntu-style systems the JDK is typically
+# installed under /usr/lib/jvm/java-VERSION-PLATFORM.
 
 default: all
 
@@ -31,10 +33,11 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=0 \
+  -DSQLITE_THREADSAFE=1 \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
-  -DSQLITE_ENABLE_FTS5
+  -DSQLITE_ENABLE_FTS5 \
+  -DSQLITE_DEBUG
 
 sqlite3-jni.dll = libsqlite3-jni.so
 $(sqlite3-jni.dll):
@@ -46,8 +49,10 @@ $(sqlite3-jni.dll):
 		src/sqlite3-jni.c -shared -o $@
 	@echo "Now try running it with: make test"
 
+test.flags = -Djava.library.path=. sqlite3-jni-*.jar
 test: $(sqlite3-jni.dll)
-	java -jar -Djava.library.path=. sqlite3-jni-*.jar
+	java -jar $(test.flags)
+	java -jar $(test.flags) -t 7 -r 10 -shuffle
 
 clean:
 	-rm -f $(sqlite3-jni.dll)
