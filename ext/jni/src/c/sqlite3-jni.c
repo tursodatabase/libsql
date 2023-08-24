@@ -1165,49 +1165,6 @@ static int S3JniAutoExtension_init(JNIEnv *const env,
 }
 
 /*
-** Requires that jCx be a Java-side sqlite3_context wrapper for pCx.
-** This function calls sqlite3_aggregate_context() to allocate a tiny
-** sliver of memory, the address of which is set in
-** jCx->aggregateContext.  The memory is only used as a key for
-** mapping client-side results of aggregate result sets across
-** calls to the UDF's callbacks.
-**
-** isFinal must be 1 for xFinal() calls and 0 for all others, the
-** difference being that the xFinal() invocation will not allocate
-** new memory if it was not already, resulting in a value of 0
-** for jCx->aggregateContext.
-**
-** Returns 0 on success. Returns SQLITE_NOMEM on allocation error,
-** noting that it will not allocate when isFinal is true. It returns
-** SQLITE_ERROR if there's a serious internal error in dealing with
-** the JNI state.
-*/
-static int udf_setAggregateContext(JNIEnv * env, jobject jCx,
-                                   sqlite3_context * pCx,
-                                   int isFinal){
-  void * pAgg;
-  int rc = 0;
-  S3JniNphClass * const pNC =
-    S3JniGlobal_nph_cache(env, &S3NphRefs.sqlite3_context);
-  if( !pNC->fidAggCtx ){
-    S3JniMutex_Nph_enter;
-    if( !pNC->fidAggCtx ){
-      pNC->fidAggCtx = (*env)->GetFieldID(env, pNC->klazz, "aggregateContext", "J");
-      EXCEPTION_IS_FATAL("Cannot get sqlite3_contex.aggregateContext member.");
-    }
-    S3JniMutex_Nph_leave;
-  }
-  pAgg = sqlite3_aggregate_context(pCx, isFinal ? 0 : sizeof(void*));
-  if( pAgg || isFinal ){
-    (*env)->SetLongField(env, jCx, pNC->fidAggCtx, (jlong)pAgg);
-  }else{
-    assert(!pAgg);
-    rc = SQLITE_NOMEM;
-  }
-  return rc;
-}
-
-/*
 ** Common init for OutputPointer_set_Int32() and friends. pRef must be
 ** a pointer from S3NphRefs. jOut must be an instance of that
 ** class. If necessary, this fetches the jfieldID for jOut's [value]
@@ -1628,6 +1585,7 @@ static int udf_report_exception(JNIEnv * const env, int translateToErr,
     (*env)->ExceptionDescribe( env );
     S3JniExceptionClear;
   }
+  UNREF_L(ex);
   return rc;
 }
 
@@ -1645,10 +1603,6 @@ static int udf_xFSI(sqlite3_context* const pCx, int argc,
   int rc = udf_args(env, pCx, argc, argv, &args.jcx, &args.jargv);
 
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
-  if( rc ) return rc;
-  if( UDF_SCALAR != s->type ){
-    rc = udf_setAggregateContext(env, args.jcx, pCx, 0);
-  }
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
     S3JniIfThrew{
@@ -1678,15 +1632,10 @@ static int udf_xFV(sqlite3_context* cx, S3JniUdf * s,
     return SQLITE_NOMEM;
   }
   //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
-  if( UDF_SCALAR != s->type ){
-    rc = udf_setAggregateContext(env, jcx, cx, isFinal);
-  }
-  if( 0 == rc ){
-    (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
-    S3JniIfThrew{
-      rc = udf_report_exception(env, isFinal, cx, s->zFuncName,
-                                zFuncType);
-    }
+  (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
+  S3JniIfThrew{
+    rc = udf_report_exception(env, isFinal, cx, s->zFuncName,
+                              zFuncType);
   }
   UNREF_L(jcx);
   return rc;
@@ -1833,6 +1782,20 @@ WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 #undef WRAP_INT_VOID
 #undef WRAP_MUTF8_VOID
 #undef WRAP_STR_STMT_INT
+
+
+S3JniApi(sqlite3_aggregate_context(),jlong,1aggregate_1context)(
+  JniArgsEnvClass, jobject jCx, jboolean initialize
+){
+  sqlite3_context * const pCx = PtrGet_sqlite3_context(jCx);
+  void * const p = pCx
+    ? sqlite3_aggregate_context(pCx, (int)(initialize
+                                           ? (int)sizeof(void*)
+                                           : 0))
+    : 0;
+  return (jlong)p / sizeof(void*);
+}
+
 
 /* Central auto-extension handler. */
 static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,

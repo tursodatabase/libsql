@@ -288,7 +288,7 @@ jar: $(package.jar)
 
 dir.doc := $(dir.jni)/doc
 doc: $(JAVA_FILES.main)
-	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) org.sqlite.jni
+	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) -quiet org.sqlite.jni
 
 ########################################################################
 # Clean up...

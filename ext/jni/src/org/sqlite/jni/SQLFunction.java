@@ -55,6 +55,9 @@ public abstract class SQLFunction {
      Client UDFs are free to perform such mappings using custom
      approaches. The provided Aggregate<T> and Window<T> classes
      use this.
+
+     <p>T must be of a type which can be legally stored as a value in
+     java.util.HashMap<KeyType,T>.
   */
   public static final class PerContextState<T> {
     private final java.util.Map<Long,ValueHolder<T>> map
@@ -64,20 +67,20 @@ public abstract class SQLFunction {
        Should be called from a UDF's xStep(), xValue(), and xInverse()
        methods, passing it that method's first argument and an initial
        value for the persistent state. If there is currently no
-       mapping for cx.getAggregateContext() within the map, one is
-       created using the given initial value, else the existing one is
-       used and the 2nd argument is ignored.  It returns a
-       ValueHolder<T> which can be used to modify that state directly
-       without requiring that the client update the underlying map's
-       entry.
+       mapping for the given context within the map, one is created
+       using the given initial value, else the existing one is used
+       and the 2nd argument is ignored.  It returns a ValueHolder<T>
+       which can be used to modify that state directly without
+       requiring that the client update the underlying map's entry.
 
-       <p>T must be of a type which can be legally stored as a value in
-       java.util.HashMap<KeyType,T>.
+       <p>The caller is obligated to eventually call
+       takeAggregateState() to clear the mapping.
     */
     public ValueHolder<T> getAggregateState(sqlite3_context cx, T initialValue){
-      ValueHolder<T> rc = map.get(cx.getAggregateContext());
-      if(null == rc){
-        map.put(cx.getAggregateContext(), rc = new ValueHolder<>(initialValue));
+      final Long key = cx.getAggregateContext(true);
+      ValueHolder<T> rc = null==key ? null : map.get(key);
+      if( null==rc ){
+        map.put(key, rc = new ValueHolder<>(initialValue));
       }
       return rc;
     }
@@ -92,7 +95,7 @@ public abstract class SQLFunction {
        rows.
     */
     public T takeAggregateState(sqlite3_context cx){
-      final ValueHolder<T> h = map.remove(cx.getAggregateContext());
+      final ValueHolder<T> h = map.remove(cx.getAggregateContext(false));
       return null==h ? null : h.value;
     }
   }

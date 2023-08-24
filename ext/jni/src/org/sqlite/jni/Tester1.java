@@ -723,7 +723,9 @@ public class Tester1 implements Runnable {
     SQLFunction func = new SQLFunction.Aggregate<Integer>(){
         @Override
         public void xStep(sqlite3_context cx, sqlite3_value[] args){
-          this.getAggregateState(cx, 0).value += sqlite3_value_int(args[0]);
+          final ValueHolder<Integer> agg = this.getAggregateState(cx, 0);
+          agg.value += sqlite3_value_int(args[0]);
+          affirm( agg == this.getAggregateState(cx, 0) );
         }
         @Override
         public void xFinal(sqlite3_context cx){
@@ -740,15 +742,19 @@ public class Tester1 implements Runnable {
     int rc = sqlite3_create_function(db, "myfunc", 1, SQLITE_UTF8, func);
     affirm(0 == rc);
     sqlite3_stmt stmt = prepare(db, "select myfunc(a), myfunc(a+10) from t");
+    affirm( null != stmt );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
-      final int v = sqlite3_column_int(stmt, 0);
+      int v = sqlite3_column_int(stmt, 0);
       affirm( 6 == v );
+      int v2 = sqlite3_column_int(stmt, 1);
+      affirm( 30+v == v2 );
       ++n;
     }
+    affirm( 1==n );
     affirm(!xFinalNull.value);
     sqlite3_reset(stmt);
-    // Ensure that the accumulator is reset...
+    // Ensure that the accumulator is reset on subsequent calls...
     n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
       final int v = sqlite3_column_int(stmt, 0);
@@ -767,9 +773,9 @@ public class Tester1 implements Runnable {
       affirm( 6 == c0 );
       affirm( 12 == c1 );
     }
+    sqlite3_finalize(stmt);
     affirm( 1 == n );
     affirm(!xFinalNull.value);
-    sqlite3_finalize(stmt);
 
     execSql(db, "SELECT myfunc(1) WHERE 0");
     affirm(xFinalNull.value);

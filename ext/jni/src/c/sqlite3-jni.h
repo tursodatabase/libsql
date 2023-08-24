@@ -773,6 +773,14 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_uncacheJniEnv
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_aggregate_context
+ * Signature: (Lorg/sqlite/jni/sqlite3_context;Z)J
+ */
+JNIEXPORT jlong JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1aggregate_1context
+  (JNIEnv *, jclass, jobject, jboolean);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_auto_extension
  * Signature: (Lorg/sqlite/jni/AutoExtension;)I
  */

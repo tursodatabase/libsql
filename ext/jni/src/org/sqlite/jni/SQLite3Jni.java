@@ -126,19 +126,19 @@ public final class SQLite3Jni {
      This will clean up any cached per-JNIEnv info. Calling into the
      library will re-initialize the cache on demand.
 
-     This process does not close any databases or finalize
+     <p>This process does not close any databases or finalize
      any prepared statements because their ownership does not depend on
      a given thread.  For proper library behavior, and to
      avoid C-side leaks, be sure to finalize all statements and close
      all databases before calling this function.
 
-     Calling this from the main application thread is not strictly
+     <p>Calling this from the main application thread is not strictly
      required but is "polite." Additional threads must call this
      before ending or they will leak cache entries in the C heap,
      which in turn may keep numerous Java-side global references
      active.
 
-     This routine returns false without side effects if the current
+     <p>This routine returns false without side effects if the current
      JNIEnv is not cached, else returns true, but this information is
      primarily for testing of the JNI bindings and is not information
      which client-level code should use to make any informed
@@ -151,22 +151,42 @@ public final class SQLite3Jni {
   // alphabetized.  The SQLITE_... values. on the other hand, are
   // grouped by category.
 
+  /**
+     Functions exactly like the native form except that (A) the
+     returned value is only intended for use as a lookup key in a
+     higher-level data structure and (B) the 2nd argument is a boolean
+     instead of an int. If passed true, it will attempt to allocate
+     enough memory to use as a UDF-call-local context key. If passed
+     false it will not allocate any memory.
+
+     <p>It is only valid for the life of the current UDF method call
+     and must not be retained for later use. The return value 0
+     indicates an allocation error unless initialize is false, in
+     which case it means that the given context was never passed to
+     this function with a true second argument so never had to
+     allocate.
+
+     <p>For the JNI wrapping, the value of sz is provided for API
+     consistency but it is ignored unless it's 0. Results are
+     undefined if the value is negative.
+  */
+  public static native long sqlite3_aggregate_context(sqlite3_context cx, boolean initialize);
 
   /**
      Functions almost as documented for the C API, with these
      exceptions:
 
-     - The callback interface is is shorter because of cross-language
-       differences. Specifically, 3rd argument to the C auto-extension
-       callback interface is unnecessary here.
+     <p>- The callback interface is is shorter because of
+     cross-language differences. Specifically, 3rd argument to the C
+     auto-extension callback interface is unnecessary here.
 
 
-     The C API docs do not specifically say so, if the list of
+     <p>The C API docs do not specifically say so, but if the list of
      auto-extensions is manipulated from an auto-extension, it is
      undefined which, if any, auto-extensions will subsequently
      execute for the current database.
 
-     See the AutoExtension class docs for more information.
+     <p>See the AutoExtension class docs for more information.
   */
   public static native int sqlite3_auto_extension(@NotNull AutoExtension callback);
 
