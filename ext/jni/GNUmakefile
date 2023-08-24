@@ -223,19 +223,18 @@ $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 $(sqlite3-jni.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
 $(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
 	$(CC) $(sqlite3-jni.dll.cflags) $(SQLITE_OPT) \
-			$(sqlite3-jni.c) -shared -o $@ -lpthread
+			$(sqlite3-jni.c) -shared -o $@
 all: $(sqlite3-jni.dll)
 
 .PHONY: test
-test.flags ?= -v
+test.flags ?=
+test.main.flags = -ea -Djava.library.path=$(dir.bld.c) \
+                  $(java.flags) -cp $(classpath) \
+                  org.sqlite.jni.Tester1
 test: $(SQLite3Jni.class) $(sqlite3-jni.dll)
-	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
-		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.Tester1 $(test.flags)
-test-mt:  $(SQLite3Jni.class) $(sqlite3-jni.dll)
-	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
-		$(java.flags) -cp $(classpath) \
-		org.sqlite.jni.Tester1 -t 7 -r 50 -shuffle $(test.flags)
+	$(bin.java) $(test.main.flags) $(test.flags)
+	@echo "Again in multi-threaded mode:"
+	$(bin.java) $(test.main.flags) -t 5 -r 20 -shuffle $(test.flags)
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose
@@ -271,7 +270,7 @@ endif
 
 tester-ext: tester-local
 tester: tester-ext
-tests: test test-mt tester
+tests: test tester
 package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)
 $(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)

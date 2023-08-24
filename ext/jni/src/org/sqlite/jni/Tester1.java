@@ -21,6 +21,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+/**
+   An annotation for Tester1 tests which we do not want to run in
+   reflection-driven test mode because either they are not suitable
+   for multi-threaded threaded mode or we have to control their execution
+   order.
+*/
+@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+@java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
+@interface ManualTest{}
+
 public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
   private static boolean mtMode = false;
@@ -30,6 +40,10 @@ public class Tester1 implements Runnable {
   private static boolean shuffle = false;
   //! True to dump the list of to-run tests to stdout.
   private static boolean listRunTests = false;
+  //! True to squelch all out() and outln() output.
+  private static boolean quietMode = false;
+  //! Total number of runTests() calls.
+  private static int nTestRuns = 0;
   //! List of test*() methods to run.
   private static List<java.lang.reflect.Method> testMethods = null;
   //! List of exceptions collected by run()
@@ -48,27 +62,37 @@ public class Tester1 implements Runnable {
   static final Metrics metrics = new Metrics();
 
   public synchronized static void outln(){
-    System.out.println("");
+    if( !quietMode ){
+      System.out.println("");
+    }
   }
 
   public synchronized static void outln(Object val){
-    System.out.print(Thread.currentThread().getName()+": ");
-    System.out.println(val);
+    if( !quietMode ){
+      System.out.print(Thread.currentThread().getName()+": ");
+      System.out.println(val);
+    }
   }
 
   public synchronized static void out(Object val){
-    System.out.print(val);
+    if( !quietMode ){
+      System.out.print(val);
+    }
   }
 
   @SuppressWarnings("unchecked")
   public synchronized static void out(Object... vals){
-    System.out.print(Thread.currentThread().getName()+": ");
-    for(Object v : vals) out(v);
+    if( !quietMode ){
+      System.out.print(Thread.currentThread().getName()+": ");
+      for(Object v : vals) out(v);
+    }
   }
 
   @SuppressWarnings("unchecked")
   public synchronized static void outln(Object... vals){
-    out(vals); out("\n");
+    if( !quietMode ){
+      out(vals); out("\n");
+    }
   }
 
   static volatile int affirmCount = 0;
@@ -85,6 +109,7 @@ public class Tester1 implements Runnable {
     affirm(v, "Affirmation failed.");
   }
 
+  @ManualTest /* because testing this for threading is pointless */
   private void test1(){
     affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
     affirm(SQLITE_MAX_LENGTH > 0);
@@ -280,6 +305,16 @@ public class Tester1 implements Runnable {
     affirm(0 != stmt.getNativePointer());
     sqlite3_finalize(stmt);
     affirm(0 == stmt.getNativePointer() );
+
+    affirm( 0==sqlite3_errcode(db) );
+    stmt = sqlite3_prepare(db, "intentional error");
+    affirm( null==stmt );
+    affirm( 0!=sqlite3_errcode(db) );
+    affirm( 0==sqlite3_errmsg(db).indexOf("near \"intentional\"") );
+    sqlite3_finalize(stmt);
+    stmt = sqlite3_prepare(db, "/* empty input*/\n-- comments only");
+    affirm( null==stmt );
+    affirm( 0==sqlite3_errcode(db) );
     sqlite3_close_v2(db);
   }
 
@@ -383,8 +418,11 @@ public class Tester1 implements Runnable {
     sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
     String[] list1 = { "hell🤩", "w😃rld", "!" };
     int rc;
+    int n = 0;
     for( String e : list1 ){
-      rc = sqlite3_bind_text(stmt, 1, e);
+      rc = (0==n)
+        ? sqlite3_bind_text(stmt, 1, e)
+        : sqlite3_bind_text16(stmt, 1, e);
       affirm(0 == rc);
       rc = sqlite3_step(stmt);
       affirm(SQLITE_DONE==rc);
@@ -393,7 +431,7 @@ public class Tester1 implements Runnable {
     sqlite3_finalize(stmt);
     stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
     StringBuilder sbuf = new StringBuilder();
-    int n = 0;
+    n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       String txt = sqlite3_column_text16(stmt, 0);
       //outln("txt = "+txt);
@@ -521,6 +559,7 @@ public class Tester1 implements Runnable {
     affirm(xDestroyCalled.value);
   }
 
+  @ManualTest /* because threading is meaningless here */
   private void testToUtf8(){
     /**
        https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html
@@ -873,6 +912,7 @@ public class Tester1 implements Runnable {
     affirm( 7 == counter.value );
   }
 
+  @ManualTest /* because threads inherently break this test */
   private void testBusy(){
     final String dbName = "_busy-handler.db";
     final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
@@ -1156,6 +1196,8 @@ public class Tester1 implements Runnable {
      it throws.
   */
   @SuppressWarnings("unchecked")
+  @ManualTest /* because the Fts5 parts are not yet known to be
+                 thread-safe */
   private void testFts5() throws Exception {
     if( !sqlite3_compileoption_used("ENABLE_FTS5") ){
       //outln("SQLITE_ENABLE_FTS5 is not set. Skipping FTS5 tests.");
@@ -1206,6 +1248,8 @@ public class Tester1 implements Runnable {
     sqlite3_close(db);
   }
 
+  @ManualTest/* because multiple threads legitimately make these
+                results unpredictable */
   private synchronized void testAutoExtension(){
     final ValueHolder<Integer> val = new ValueHolder<>(0);
     final ValueHolder<String> toss = new ValueHolder<>(null);
@@ -1296,6 +1340,7 @@ public class Tester1 implements Runnable {
     affirm( 8 == val.value );
   }
 
+  @ManualTest /* because we only want to run this test manually */
   private void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);
@@ -1308,6 +1353,7 @@ public class Tester1 implements Runnable {
     }
   }
 
+  @ManualTest /* because we only want to run this test on demand */
   private void testFail(){
     affirm( false, "Intentional failure." );
   }
@@ -1355,6 +1401,9 @@ public class Tester1 implements Runnable {
         testFts5();
       }
     }
+    synchronized( this.getClass() ){
+      ++nTestRuns;
+    }
   }
 
   public void run() {
@@ -1374,6 +1423,8 @@ public class Tester1 implements Runnable {
      Runs the basic sqlite3 JNI binding sanity-check suite.
 
      CLI flags:
+
+     -q|-quiet: disables most test output.
 
      -t|-thread N: runs the tests in N threads
       concurrently. Default=1.
@@ -1400,6 +1451,7 @@ public class Tester1 implements Runnable {
     Integer nRepeat = 1;
     boolean forceFail = false;
     boolean sqlLog = false;
+    boolean squelchTestOutput = false;
     for( int i = 0; i < args.length; ){
       String arg = args[i++];
       if(arg.startsWith("-")){
@@ -1421,6 +1473,8 @@ public class Tester1 implements Runnable {
           sqlLog = true;
         }else if(arg.equals("naps")){
           takeNaps = true;
+        }else if(arg.equals("q") || arg.equals("quiet")){
+          squelchTestOutput = true;
         }else{
           throw new IllegalArgumentException("Unhandled flag:"+arg);
         }
@@ -1430,19 +1484,16 @@ public class Tester1 implements Runnable {
     {
       // Build list of tests to run from the methods named test*().
       testMethods = new ArrayList<>();
-      final List<String> excludes = new ArrayList<>();
-      // Tests we want to control the order of:
-      if( !forceFail ) excludes.add("testFail");
-      excludes.add("test1");
-      excludes.add("testAutoExtension");
-      excludes.add("testBusy");
-      excludes.add("testFts5");
-      excludes.add("testSleep");
-      excludes.add("testToUtf8");
-      for(java.lang.reflect.Method m : Tester1.class.getDeclaredMethods()){
+      for(final java.lang.reflect.Method m : Tester1.class.getDeclaredMethods()){
         final String name = m.getName();
-        if( name.startsWith("test") && excludes.indexOf(name)<0 ){
-          testMethods.add(m);
+        if( name.equals("testFail") ){
+          if( forceFail ){
+            testMethods.add(m);
+          }
+        }else if( !m.isAnnotationPresent( ManualTest.class ) ){
+          if( name.startsWith("test") ){
+            testMethods.add(m);
+          }
         }
       }
     }
@@ -1465,6 +1516,11 @@ public class Tester1 implements Runnable {
       }
     }
 
+    quietMode = squelchTestOutput;
+    outln("If you just saw warning messages regarding CallStaticObjectMethod, ",
+          "you are very likely seeing the side effects of a known openjdk8 ",
+          "bug. It is unsightly but does not affect the library.");
+
     final long timeStart = System.currentTimeMillis();
     int nLoop = 0;
     affirm( 0==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
@@ -1476,7 +1532,7 @@ public class Tester1 implements Runnable {
     outln("libversion_number: ",
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
-    outln("Running ",nRepeat," loop(s) over ",nThread," thread(s).");
+    outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
     if( takeNaps ) outln("Napping between tests is enabled.");
     for( int n = 0; n < nRepeat; ++n ){
       if( nThread==null || nThread<=1 ){
@@ -1500,6 +1556,7 @@ public class Tester1 implements Runnable {
         Thread.currentThread().interrupt();
       }
       if( !listErrors.isEmpty() ){
+        quietMode = false;
         outln("TEST ERRORS:");
         Exception err = null;
         for( Exception e : listErrors ){
@@ -1510,9 +1567,10 @@ public class Tester1 implements Runnable {
       }
     }
     outln();
+    quietMode = false;
 
     final long timeEnd = System.currentTimeMillis();
-    outln("Tests done. Metrics:");
+    outln("Tests done. Metrics across ",nTestRuns," total iteration(s):");
     outln("\tAssertions checked: ",affirmCount);
     outln("\tDatabases opened: ",metrics.dbOpen);
     if( doSomethingForDev ){

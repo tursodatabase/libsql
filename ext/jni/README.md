@@ -16,7 +16,7 @@ Technical support is available in the forum:
 > **FOREWARNING:** this subproject is very much in development and
   subject to any number of changes. Please do not rely on any
   information about its API until this disclaimer is removed.  The JNI
-  bindgins released with version 3.43 are a "tech preview" and 3.44
+  bindings released with version 3.43 are a "tech preview" and 3.44
   will be "final," at which point strong backward compatibility
   guarantees will apply.
 
@@ -43,29 +43,34 @@ Non-goals:
 - Creation of high-level OO wrapper APIs. Clients are free to create
   them off of the C-style API.
 
+
 Hello World
 -----------------------------------------------------------------------
 
 ```java
 import org.sqlite.jni.*;
-import static org.sqlite.jni.SQLite3Jni;
+import static SQLite3Jni.*;
+
 ...
-OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
-int rc = sqlite3_open(":memory:", out);
-final sqlite3 db = out.take();
-if( 0 != rc ){
-  if( null != db ){
-    System.out.print("Error opening db: "+sqlite3_errmsg(db));
-    sqlite3_close(db);
-  }else{
-    System.out.print("Error opening db: rc="+rc);
+
+final sqlite3 db = sqlite3_open(":memory:");
+try {
+  final int rc = sqlite3_errcode(db);
+  if( 0 != rc ){
+    if( null != db ){
+      System.out.print("Error opening db: "+sqlite3_errmsg(db));
+    }else{
+      System.out.print("Error opening db: rc="+rc);
+    }
+    ... handle error ...
   }
-  ... handle error ...
+  // ... else use the db ...
+}finally{
+  // ALWAYS close databases using sqlite3_close() or sqlite3_close_v2()
+  // when done with them. All of their active statement handles must
+  // first have been passed to sqlite3_finalize().
+  sqlite3_close_v2(db);
 }
-
-... use db ...
-
-sqlite3_close_v2(db);
 ```
 
 Building
@@ -86,28 +91,90 @@ $ make test
 $ make clean
 ```
 
-The jar distribution can be created with `make jar`.
+The jar distribution can be created with `make jar`, but note that it
+does not contain the binary DLL file. A different DLL is needed for
+each target platform.
+
 
 <a id='1to1ish'></a>
 One-to-One(-ish) Mapping to C
 ========================================================================
 
 This JNI binding aims to provide as close to a 1-to-1 experience with
-the C API as cross-language semantics allow. Changes are necessarily
-made where cross-language semantics do not allow a 1-to-1, and
-judiciously made where a 1-to-1 mapping would be unduly cumbersome to
-use in Java.
+the C API as cross-language semantics allow. Interface changes are
+necessarily made where cross-language semantics do not allow a 1-to-1,
+and judiciously made where a 1-to-1 mapping would be unduly cumbersome
+to use in Java. In all cases, this binding makes every effort to
+provide semantics compatible with the C API documentation even if the
+interface to those semantics is slightly different.  Any cases which
+deviate from those semantics (either removing or adding semantics) are
+clearly documented.
 
-Golden Rule: _Never_ Throw from Callbacks (Unless...)
+Where it makes sense to do so for usability, Java-side overloads are
+provided which accept or return data in alternative forms or provide
+sensible default argument values. In all such cases they are thin
+proxies around the corresponding C APIs and do not introduce new
+semantics.
+
+In some very few cases, Java-specific capabilities have been added in
+new APIs, all of which have "_java" somewhere in their names.
+Examples include:
+
+- `sqlite3_result_java_object()`
+- `sqlite3_column_java_object()`
+- `sqlite3_column_java_casted()`
+- `sqlite3_value_java_object()`
+- `sqlite3_value_java_casted()`
+
+which, as one might surmise, collectively enable the passing of
+arbitrary Java objects from user-defined SQL functions through to the
+caller.
+
+
+Golden Rule: Garbage Collection Cannot Free SQLite Resources
 ------------------------------------------------------------------------
+
+It is important that all databases and prepared statement handles get
+cleaned up by client code. A database cannot be closed if it has open
+statement handles. `sqlite3_close()` fails if the db cannot be closed
+whereas `sqlite3_close_v2()` recognizes that case and marks the db as
+a "zombie," pending finalization when the library detects that all
+pending statements have been closed. Be aware that Java garbage
+collection _cannot_ close a database or finalize a prepared statement.
+Those things require explicit API calls.
+
+
+Golden Rule #2: _Never_ Throw from Callbacks (Unless...)
+------------------------------------------------------------------------
+
+All routines in this API, barring explicitly documented exceptions,
+retain C-like semantics. For example, they are not permitted to throw
+or propagate exceptions and must return error information (if any) via
+result codes or `null`. The only cases where the C-style APIs may
+throw is through client-side misuse, e.g. passing in a null where it
+shouldn't be used. The APIs clearly mark function parameters which
+should not be null, but does not actively defend itself against such
+misuse. Some C-style APIs explicitly accept `null` as a no-op for
+usability's sake, and some of the JNI APIs deliberately return an
+error code, instead of segfaulting, when passed a `null`.
 
 Client-defined callbacks _must never throw exceptions_ unless _very
 explicitly documented_ as being throw-safe. Exceptions are generally
 reserved for higher-level bindings which are constructed to
 specifically deal with them and ensure that they do not leak C-level
-resources. In some cases, callback handlers (see below) are permitted
-to throw, in which cases they get translated to C-level result codes
-and/or messages.
+resources. In some cases, callback handlers are permitted to throw, in
+which cases they get translated to C-level result codes and/or
+messages. If a callback which is not permitted to throw throws, its
+exception may trigger debug output but will otherwise be suppressed.
+
+The reason some callbacks are permitted to throw and others not is
+because all such callbacks act as proxies for C function callback
+interfaces and some of those interfaces have no error-reporting
+mechanism. Those which are capable of propagating errors back through
+the library convert exceptions from callbacks into corresponding
+C-level error information. Those which cannot propagate errors
+necessarily suppress any exceptions in order to maintain the C-style
+semantics of the APIs.
 
 
 Awkward Callback Names
@@ -246,4 +313,5 @@ in-flux nature of this API.
 
 Various APIs which accept callbacks, e.g. `sqlite3_trace_v2()` and
 `sqlite3_update_hook()`, use interfaces similar to those shown above.
-
+Despite the changes in signature, the JNI layer makes every effort to
+provide the same semantics as the C API documentation suggests.

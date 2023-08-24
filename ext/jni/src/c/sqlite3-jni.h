@@ -845,6 +845,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1text
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_bind_text16
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I[BI)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1text16
+  (JNIEnv *, jclass, jobject, jint, jbyteArray, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_bind_zeroblob
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;II)I
  */

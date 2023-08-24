@@ -1429,7 +1429,7 @@ typedef struct {
 } ResultJavaVal;
 
 /* For use with sqlite3_result/value_pointer() */
-#define ResultJavaValuePtrStr "ResultJavaVal"
+#define ResultJavaValuePtrStr "org.sqlite.jni.ResultJavaVal"
 
 /*
 ** Allocate a new ResultJavaVal and assign it a new global ref of
@@ -1915,15 +1915,10 @@ JDECL(jint,1auto_1extension)(JENV_CSELF, jobject jAutoExt){
 
 JDECL(jint,1bind_1blob)(JENV_CSELF, jobject jpStmt,
                         jint ndx, jbyteArray baData, jint nMax){
-  int rc;
-  if(!baData){
-    rc = sqlite3_bind_null(PtrGet_sqlite3_stmt(jpStmt), ndx);
-  }else{
-    jbyte * const pBuf = JBA_TOC(baData);
-    rc = sqlite3_bind_blob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, pBuf, (int)nMax,
-                           SQLITE_TRANSIENT);
-    JBA_RELEASE(baData,pBuf);
-  }
+  jbyte * const pBuf = baData ? JBA_TOC(baData) : 0;
+  int const rc = sqlite3_bind_blob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx,
+                                   pBuf, (int)nMax, SQLITE_TRANSIENT);
+  JBA_RELEASE(baData,pBuf);
   return (jint)rc;
 }
 
@@ -1960,15 +1955,21 @@ JDECL(jint,1bind_1parameter_1index)(JENV_CSELF, jobject jpStmt, jbyteArray jName
 
 JDECL(jint,1bind_1text)(JENV_CSELF, jobject jpStmt,
                        jint ndx, jbyteArray baData, jint nMax){
-  if(baData){
-    jbyte * const pBuf = JBA_TOC(baData);
-    int rc = sqlite3_bind_text(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (const char *)pBuf,
-                               (int)nMax, SQLITE_TRANSIENT);
-    JBA_RELEASE(baData, pBuf);
-    return (jint)rc;
-  }else{
-    return sqlite3_bind_null(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
-  }
+  jbyte * const pBuf = baData ? JBA_TOC(baData) : 0;
+  int const rc = sqlite3_bind_text(PtrGet_sqlite3_stmt(jpStmt), (int)ndx,
+                                   (const char *)pBuf,
+                                   (int)nMax, SQLITE_TRANSIENT);
+  JBA_RELEASE(baData, pBuf);
+  return (jint)rc;
+}
+
+JDECL(jint,1bind_1text16)(JENV_CSELF, jobject jpStmt,
+                          jint ndx, jbyteArray baData, jint nMax){
+  jbyte * const pBuf = baData ? JBA_TOC(baData) : 0;
+  int const rc = sqlite3_bind_text16(PtrGet_sqlite3_stmt(jpStmt), (int)ndx,
+                                     pBuf, (int)nMax, SQLITE_TRANSIENT);
+  JBA_RELEASE(baData, pBuf);
+  return (jint)rc;
 }
 
 JDECL(jint,1bind_1zeroblob)(JENV_CSELF, jobject jpStmt,
@@ -3595,18 +3596,19 @@ JDECL(jbyteArray,1value_1text_1utf8)(JENV_CSELF, jobject jpSVal){
 }
 
 static jbyteArray value_text16(int mode, JNIEnv * const env, jobject jpSVal){
-  int const nLen = sqlite3_value_bytes16(PtrGet_sqlite3_value(jpSVal));
+  sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
+  int const nLen = sqlite3_value_bytes16(sv);
   jbyteArray jba;
   const jbyte * pBytes;
   switch(mode){
     case SQLITE_UTF16:
-      pBytes = sqlite3_value_text16(PtrGet_sqlite3_value(jpSVal));
+      pBytes = sqlite3_value_text16(sv);
       break;
     case SQLITE_UTF16LE:
-      pBytes = sqlite3_value_text16le(PtrGet_sqlite3_value(jpSVal));
+      pBytes = sqlite3_value_text16le(sv);
       break;
     case SQLITE_UTF16BE:
-      pBytes = sqlite3_value_text16be(PtrGet_sqlite3_value(jpSVal));
+      pBytes = sqlite3_value_text16be(sv);
       break;
     default:
       assert(!"not possible");

@@ -46,11 +46,13 @@ $(sqlite3-jni.dll):
 	echo  "*** to configure it for your system.                                 ***"; \
 	echo  "************************************************************************"
 	$(CC) $(CFLAGS) $(SQLITE_OPT) \
-		src/sqlite3-jni.c -lpthread -shared -o $@
+		src/sqlite3-jni.c -shared -o $@
 	@echo "Now try running it with: make test"
 
+test.flags = -Djava.library.path=. sqlite3-jni-*.jar
 test: $(sqlite3-jni.dll)
-	java -jar -Djava.library.path=. sqlite3-jni-*.jar
+	java -jar $(test.flags)
+	java -jar $(test.flags) -t 7 -r 10 -shuffle
 
 clean:
 	-rm -f $(sqlite3-jni.dll)
