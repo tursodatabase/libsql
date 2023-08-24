@@ -16,4 +16,5 @@ panic = "abort"
 
 [patch.crates-io]
 tonic = { git = "https://github.com/hyperium/tonic" }
+tonic-web = { git = "https://github.com/hyperium/tonic", branch = "lucio/grpc-web-client" }
 tonic-build = { git = "https://github.com/hyperium/tonic" }
