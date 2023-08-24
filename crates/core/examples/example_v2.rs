@@ -8,7 +8,7 @@ async fn main() {
         Database::open_in_memory().unwrap()
     };
 
-    let conn = db.connect().unwrap();
+    let conn = db.connect().await.unwrap();
 
     conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ())
         .await
