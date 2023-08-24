@@ -13,6 +13,7 @@ use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 pub mod proxy;
 pub mod replication_log;
+pub mod replication_log_proxy;
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run_rpc_server(

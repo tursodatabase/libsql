@@ -1,6 +1,5 @@
 #![allow(clippy::type_complexity)]
 
-use std::convert::Infallible;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -12,20 +11,19 @@ use anyhow::Context as AnyhowContext;
 use bytes::Bytes;
 use enclose::enclose;
 use futures::never::Never;
-use hyper::Request;
 use libsql::wal_hook::TRANSPARENT_METHODS;
 use namespace::{
     MakeNamespace, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
     ReplicaNamespaceConfig, ReplicaNamespaceMaker,
 };
 use replication::{NamespacedSnapshotCallback, ReplicationLogger};
+use rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use rpc::replication_log::ReplicationLogService;
-use rpc::{run_rpc_server, ReplicationLogServer};
+use rpc::replication_log_proxy::ReplicationLogProxyService;
+use rpc::run_rpc_server;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
-use tonic::body::BoxBody;
 use tonic::transport::Channel;
-use tower::Service;
 use utils::services::idle_shutdown::IdleShutdownLayer;
 
 use self::connection::config::DatabaseConfigStore;
@@ -161,16 +159,11 @@ async fn run_service<F, S>(
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
     db_config_store: Arc<DatabaseConfigStore>,
-    replication_service: Option<S>,
+    replication_service: S,
 ) -> anyhow::Result<()>
 where
     F: MakeNamespace,
-    S: Service<Request<hyper::Body>, Error = Infallible, Response = hyper::Response<BoxBody>>
-        + Send
-        + Clone
-        + tonic::server::NamedService
-        + 'static,
-    S::Future: Send + 'static,
+    S: ReplicationLog,
 {
     let auth = get_auth(config)?;
 
@@ -322,8 +315,8 @@ async fn start_replica(
     let (hard_reset_snd, mut hard_reset_rcv) = mpsc::channel(1);
     let conf = ReplicaNamespaceConfig {
         base_path: config.db_path.to_owned(),
-        channel,
-        uri,
+        channel: channel.clone(),
+        uri: uri.clone(),
         extensions,
         stats: stats.clone(),
         config_store: db_config_store.clone(),
@@ -350,6 +343,8 @@ async fn start_replica(
         }
     });
 
+    let replication_service = ReplicationLogProxyService::new(channel, uri);
+
     run_service(
         namespaces,
         config,
@@ -357,7 +352,7 @@ async fn start_replica(
         idle_shutdown_layer,
         stats,
         db_config_store,
-        None::<ReplicationLogServer<ReplicationLogService>>,
+        replication_service,
     )
     .await?;
 
@@ -496,7 +491,7 @@ async fn start_primary(
         idle_shutdown_layer,
         stats,
         config_store,
-        Some(ReplicationLogServer::new(logger_service)),
+        logger_service,
     )
     .await?;
 
