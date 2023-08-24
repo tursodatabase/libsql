@@ -175,8 +175,8 @@ unsafe impl WalHook for InjectorHook {
                         return LIBSQL_CONTINUE_REPLICATION as c_int;
                     }
                 }
-                _ => {
-                    tracing::warn!("replication channel closed");
+                Err(e) => {
+                    tracing::warn!("replication channel closed: {}", e);
                     return LIBSQL_EXIT_REPLICATION as c_int;
                 }
             }

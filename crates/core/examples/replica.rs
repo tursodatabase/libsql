@@ -9,7 +9,11 @@ async fn main() {
 
     let auth_token = std::env::var("TURSO_AUTH_TOKEN").expect("Expected a TURSO_AUTH_TOKEN");
 
-    let opts = libsql::Opts::with_http_sync("http://localhost:8080".to_owned(), auth_token);
+    let opts = libsql::Opts::with_http_sync(
+        // "https://lucio-test28-luciofranco.turso.io".to_owned(),
+        "http://localhost:8080".to_owned(),
+        auth_token,
+    );
     let db = Database::open_with_opts(db_file.path().to_str().unwrap(), opts)
         .await
         .unwrap();
