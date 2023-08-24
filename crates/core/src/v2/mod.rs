@@ -1,15 +1,18 @@
 mod hrana;
 mod rows;
 mod statement;
+mod transaction;
 
 use std::sync::Arc;
 
-use crate::{Params, Result};
+use crate::{Params, Result, TransactionBehavior};
 pub use hrana::{Client, HranaError};
 
 pub use rows::{Row, Rows};
 use statement::LibsqlStmt;
 pub use statement::Statement;
+use transaction::LibsqlTx;
+pub use transaction::Transaction;
 
 // TODO(lucio): Improve construction via
 //      1) Move open errors into open fn rather than connect
@@ -78,23 +81,54 @@ impl Database {
 trait Conn {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64>;
 
+    async fn execute_batch(&self, sql: &str) -> Result<()>;
+
     async fn prepare(&self, sql: &str) -> Result<Statement>;
+
+    async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 }
 
+#[derive(Clone)]
 pub struct Connection {
     conn: Arc<dyn Conn + Send + Sync>,
 }
 
+// TODO(lucio): Convert to using tryinto params
 impl Connection {
     pub async fn execute(&self, sql: &str, params: impl Into<Params>) -> Result<u64> {
         self.conn.execute(sql, params.into()).await
     }
 
+    pub async fn execute_batch(&self, sql: &str) -> Result<()> {
+        self.conn.execute_batch(sql).await
+    }
+
     pub async fn prepare(&self, sql: &str) -> Result<Statement> {
         self.conn.prepare(sql).await
     }
+
+    pub async fn query(&self, sql: &str, params: impl Into<Params>) -> Result<Rows> {
+        let stmt = self.prepare(sql).await?;
+
+        stmt.query(&params.into()).await
+    }
+
+    /// Begin a new transaction in DEFERRED mode, which is the default.
+    pub async fn transaction(&self) -> Result<Transaction> {
+        self.transaction_with_behavior(TransactionBehavior::Deferred)
+            .await
+    }
+
+    /// Begin a new transaction in the given mode.
+    pub async fn transaction_with_behavior(
+        &self,
+        tx_behavior: TransactionBehavior,
+    ) -> Result<Transaction> {
+        self.conn.transaction(tx_behavior).await
+    }
 }
 
+#[derive(Clone)]
 struct LibsqlConnection {
     conn: crate::Connection,
 }
@@ -105,6 +139,10 @@ impl Conn for LibsqlConnection {
         self.conn.execute(sql, params)
     }
 
+    async fn execute_batch(&self, sql: &str) -> Result<()> {
+        self.conn.execute_batch(sql)
+    }
+
     async fn prepare(&self, sql: &str) -> Result<Statement> {
         let sql = sql.to_string();
 
@@ -112,6 +150,17 @@ impl Conn for LibsqlConnection {
 
         Ok(Statement {
             inner: Arc::new(LibsqlStmt(stmt)),
+        })
+    }
+
+    async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction> {
+        let tx = crate::Transaction::begin(self.conn.clone(), tx_behavior)?;
+        // TODO(lucio): Can we just use the conn passed to the transaction?
+        Ok(Transaction {
+            inner: Box::new(LibsqlTx(Some(tx))),
+            conn: Connection {
+                conn: Arc::new(self.clone()),
+            },
         })
     }
 }

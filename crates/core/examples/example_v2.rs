@@ -33,7 +33,7 @@ async fn main() {
         .await
         .unwrap();
 
-    let row = rows.next().await.unwrap().unwrap();
+    let row = rows.next().unwrap().unwrap();
 
     let value = row.get_value(0).unwrap();
 
