@@ -651,11 +651,14 @@ proc r_get_next_job {iJob} {
 proc make_new_testset {} {
   global TRG
 
-  set tests [testset_patternlist $TRG(patternlist)]
-
+  set tests [list]
   if {$TRG(zipvfs)!=""} {
     source [file join $TRG(zipvfs) test zipvfs_testrunner.tcl]
-    set tests [concat $tests [zipvfs_testrunner_testset]]
+    lappend tests {*}[zipvfs_testrunner_testset]
+  }
+
+  if {$tests=="" || $TRG(patternlist)!=""} {
+    lappend tests {*}[testset_patternlist $TRG(patternlist)]
   }
 
   r_write_db {
@@ -960,7 +963,7 @@ sqlite3 trdb $TRG(dbname)
 trdb timeout $TRG(timeout)
 set tm [lindex [time { make_new_testset }] 0]
 if {$TRG(nJob)>1} {
-  puts "splitting work across $TRG(nJob) cores"
+  puts "splitting work across $TRG(nJob) jobs"
 }
 puts "built testset in [expr $tm/1000]ms.."
 run_testset
