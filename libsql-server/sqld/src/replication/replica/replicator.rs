@@ -9,7 +9,9 @@ use bytes::Bytes;
 use futures::StreamExt;
 use tokio::sync::{mpsc, oneshot, watch, Mutex};
 use tokio::task::JoinSet;
+use tonic::metadata::AsciiMetadataValue;
 use tonic::transport::Channel;
+use tonic::Request;
 
 use crate::replication::frame::Frame;
 use crate::replication::replica::error::ReplicationError;
@@ -120,6 +122,17 @@ impl Replicator {
         })
     }
 
+    fn make_request<T>(&self, msg: T) -> Request<T> {
+        let mut req = Request::new(msg);
+        req.metadata_mut().insert(
+            "x-namespace",
+            AsciiMetadataValue::try_from(self.namespace.clone())
+                .expect("Unable to convert namespace to metadata"),
+        );
+
+        req
+    }
+
     pub async fn run(mut self) -> anyhow::Result<()> {
         loop {
             self.try_perform_handshake().await?;
@@ -137,13 +150,8 @@ impl Replicator {
         let mut error_printed = false;
         for _ in 0..HANDSHAKE_MAX_RETRIES {
             tracing::info!("Attempting to perform handshake with primary.");
-            match self
-                .client
-                .hello(HelloRequest {
-                    namespace: self.namespace.clone(),
-                })
-                .await
-            {
+            let req = self.make_request(HelloRequest {});
+            match self.client.hello(req).await {
                 Ok(resp) => {
                     let hello = resp.into_inner();
 
@@ -195,9 +203,11 @@ impl Replicator {
         let offset = LogOffset {
             // if current == FrameNo::Max then it means that we're starting fresh
             next_offset: self.next_offset(),
-            namespace: self.namespace.clone(),
         };
-        let mut stream = self.client.log_entries(offset).await?.into_inner();
+
+        let req = self.make_request(offset);
+
+        let mut stream = self.client.log_entries(req).await?.into_inner();
 
         let mut buffer = Vec::new();
         loop {
@@ -232,14 +242,10 @@ impl Replicator {
 
     async fn load_snapshot(&mut self) -> anyhow::Result<()> {
         let next_offset = self.next_offset();
-        let frames = self
-            .client
-            .snapshot(LogOffset {
-                next_offset,
-                namespace: self.namespace.clone(),
-            })
-            .await?
-            .into_inner();
+
+        let req = self.make_request(LogOffset { next_offset });
+
+        let frames = self.client.snapshot(req).await?.into_inner();
 
         let stream = frames.map(|data| match data {
             Ok(frame) => Frame::try_from_bytes(frame.data),

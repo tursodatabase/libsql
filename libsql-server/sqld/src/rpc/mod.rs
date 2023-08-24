@@ -23,10 +23,15 @@ pub async fn run_rpc_server(
     ca_cert_path: Option<PathBuf>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
+    disable_namespaces: bool,
 ) -> anyhow::Result<()> {
     let proxy_service = ProxyService::new(namespaces.clone());
-    let logger_service =
-        ReplicationLogService::new(namespaces.clone(), idle_shutdown_layer.clone(), None);
+    let logger_service = ReplicationLogService::new(
+        namespaces.clone(),
+        idle_shutdown_layer.clone(),
+        None,
+        disable_namespaces,
+    );
 
     tracing::info!("serving write proxy server at {addr}");
 

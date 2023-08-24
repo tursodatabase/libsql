@@ -479,6 +479,7 @@ async fn start_primary(
             config.rpc_server_ca_cert.clone(),
             idle_shutdown_layer.clone(),
             namespaces.clone(),
+            config.disable_namespaces,
         ));
     }
 
@@ -486,6 +487,7 @@ async fn start_primary(
         namespaces.clone(),
         idle_shutdown_layer.clone(),
         Some(get_auth(config)?),
+        config.disable_namespaces,
     );
     run_service(
         namespaces.clone(),
