@@ -60,6 +60,7 @@ tracing-panic = "0.1"
 uuid = { version = "1.3", features = ["v4", "serde"] }
 futures-core = "0.3"
 tokio-util = { version = "0.7.8", features = ["io"] }
+semver = "1.0.18"
 
 [dev-dependencies]
 proptest = "1.0.0"
