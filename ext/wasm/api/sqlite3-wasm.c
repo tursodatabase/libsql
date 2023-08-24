@@ -352,7 +352,9 @@ int sqlite3_wasm_db_error(sqlite3*db, int err_code, const char *zMsg){
   if( db!=0 ){
     if( 0!=zMsg ){
       const int nMsg = sqlite3Strlen30(zMsg);
+      sqlite3_mutex_enter(sqlite3_db_mutex(db));
       sqlite3ErrorWithMsg(db, err_code, "%.*s", nMsg, zMsg);
+      sqlite3_mutex_leave(sqlite3_db_mutex(db));
     }else{
       sqlite3ErrorWithMsg(db, err_code, NULL);
     }
