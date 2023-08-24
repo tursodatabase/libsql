@@ -127,11 +127,6 @@ struct Cli {
     #[clap(long, env = "SQLD_INITIAL_IDLE_SHUTDOWN_TIMEOUT_S")]
     initial_idle_shutdown_timeout_s: Option<u64>,
 
-    /// Load the dump at the provided path.
-    /// Requires that the node is not in replica mode
-    #[clap(long, env = "SQLD_LOAD_DUMP_PATH", conflicts_with = "primary_grpc_url")]
-    load_from_dump: Option<PathBuf>,
-
     /// Maximum size the replication log is allowed to grow (in MB).
     /// defaults to 200MB.
     #[clap(long, env = "SQLD_MAX_LOG_SIZE", default_value = "200")]
@@ -296,7 +291,6 @@ fn config_from_args(args: Cli) -> Result<Config> {
         initial_idle_shutdown_timeout: args
             .initial_idle_shutdown_timeout_s
             .map(Duration::from_secs),
-        load_from_dump: args.load_from_dump,
         max_log_size: args.max_log_size,
         max_log_duration: args.max_log_duration,
         heartbeat_url: args.heartbeat_url,

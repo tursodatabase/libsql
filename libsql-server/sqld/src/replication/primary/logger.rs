@@ -304,6 +304,10 @@ impl ReplicationLoggerHookCtx {
         self.logger.log_file.write().rollback();
         self.buffer.clear();
     }
+
+    pub fn logger(&self) -> &ReplicationLogger {
+        self.logger.as_ref()
+    }
 }
 
 /// Represent a LogFile, and operations that can be performed on it.

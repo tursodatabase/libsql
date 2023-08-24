@@ -96,7 +96,6 @@ pub struct Config {
     pub bottomless_replication: Option<bottomless::replicator::Options>,
     pub idle_shutdown_timeout: Option<Duration>,
     pub initial_idle_shutdown_timeout: Option<Duration>,
-    pub load_from_dump: Option<PathBuf>,
     pub max_log_size: u64,
     pub max_log_duration: Option<f32>,
     pub heartbeat_url: Option<String>,
@@ -138,7 +137,6 @@ impl Default for Config {
             bottomless_replication: None,
             idle_shutdown_timeout: None,
             initial_idle_shutdown_timeout: None,
-            load_from_dump: None,
             max_log_size: 200,
             max_log_duration: None,
             heartbeat_url: None,
@@ -208,7 +206,7 @@ where
         join_set.spawn(http::run_http(
             addr,
             auth,
-            namespaces,
+            namespaces.clone(),
             hrana_upgrade_tx,
             hrana_http_srv.clone(),
             config.enable_http_console,
@@ -233,7 +231,7 @@ where
     }
 
     if let Some(addr) = config.admin_addr {
-        join_set.spawn(admin_api::run_admin_api(addr, db_config_store));
+        join_set.spawn(admin_api::run_admin_api(addr, db_config_store, namespaces));
     }
 
     match &config.heartbeat_url {
@@ -466,7 +464,6 @@ async fn start_primary(
         stats: stats.clone(),
         config_store: config_store.clone(),
         max_response_size: config.max_response_size,
-        load_from_dump: None,
         max_total_response_size: config.max_total_response_size,
         checkpoint_interval: config.checkpoint_interval,
     };

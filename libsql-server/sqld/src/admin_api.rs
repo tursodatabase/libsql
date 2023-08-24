@@ -1,25 +1,37 @@
 use anyhow::Context as _;
-use axum::{extract::State, Json};
-use serde::Deserialize;
-use std::net::SocketAddr;
+use axum::extract::{BodyStream, Path, State};
+use axum::Json;
+use futures::TryStreamExt;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
+use std::{io::ErrorKind, net::SocketAddr};
 
 use crate::connection::config::{DatabaseConfig, DatabaseConfigStore};
+use crate::namespace::{MakeNamespace, NamespaceStore};
 
-struct AppState {
+struct AppState<F: MakeNamespace> {
     db_config_store: Arc<DatabaseConfigStore>,
+    namespaces: Arc<NamespaceStore<F>>,
 }
 
-pub async fn run_admin_api(
+pub async fn run_admin_api<F: MakeNamespace>(
     addr: SocketAddr,
     db_config_store: Arc<DatabaseConfigStore>,
+    namespaces: Arc<NamespaceStore<F>>,
 ) -> anyhow::Result<()> {
     use axum::routing::{get, post};
     let router = axum::Router::new()
         .route("/", get(handle_get_index))
         .route("/v1/config", get(handle_get_config))
         .route("/v1/block", post(handle_post_block))
-        .with_state(Arc::new(AppState { db_config_store }));
+        .route(
+            "/v1/namespaces/:namespace/create-with-dump",
+            post(handle_create_namespace),
+        )
+        .with_state(Arc::new(AppState {
+            db_config_store,
+            namespaces,
+        }));
 
     let server = hyper::Server::try_bind(&addr)
         .context("Could not bind admin HTTP API server")?
@@ -37,7 +49,9 @@ async fn handle_get_index() -> &'static str {
     "Welcome to the sqld admin API"
 }
 
-async fn handle_get_config(State(app_state): State<Arc<AppState>>) -> Json<Arc<DatabaseConfig>> {
+async fn handle_get_config<F: MakeNamespace>(
+    State(app_state): State<Arc<AppState<F>>>,
+) -> Json<Arc<DatabaseConfig>> {
     Json(app_state.db_config_store.get())
 }
 
@@ -49,8 +63,8 @@ struct BlockReq {
     block_reason: Option<String>,
 }
 
-async fn handle_post_block(
-    State(app_state): State<Arc<AppState>>,
+async fn handle_post_block<F: MakeNamespace>(
+    State(app_state): State<Arc<AppState<F>>>,
     Json(req): Json<BlockReq>,
 ) -> (axum::http::StatusCode, &'static str) {
     let mut config = (*app_state.db_config_store.get()).clone();
@@ -64,5 +78,26 @@ async fn handle_post_block(
             tracing::warn!("Could not store database config: {err}");
             (axum::http::StatusCode::INTERNAL_SERVER_ERROR, "Failed")
         }
+    }
+}
+
+#[derive(Serialize)]
+struct Error {
+    msg: String,
+}
+
+async fn handle_create_namespace<F: MakeNamespace>(
+    State(app_state): State<Arc<AppState<F>>>,
+    Path(namespace): Path<String>,
+    body: BodyStream,
+) -> Result<(), Json<Error>> {
+    let dump = Box::new(body.map_err(|e| std::io::Error::new(ErrorKind::Other, e)));
+    match app_state
+        .namespaces
+        .create_with_dump(namespace.into(), dump)
+        .await
+    {
+        Ok(_) => Ok(()),
+        Err(e) => Err(Json(Error { msg: e.to_string() })),
     }
 }
