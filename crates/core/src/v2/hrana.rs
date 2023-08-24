@@ -359,6 +359,14 @@ impl RowsInner for Rows {
             inner: Box::new(row),
         }))
     }
+
+    fn column_count(&self) -> i32 {
+        self.cols.len() as i32
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        todo!();
+    }
 }
 
 pub struct Row {

@@ -2,6 +2,10 @@ use crate::{Result, Value};
 
 pub(super) trait RowsInner {
     fn next(&mut self) -> Result<Option<Row>>;
+
+    fn column_count(&self) -> i32;
+
+    fn column_name(&self, idx: i32) -> Option<&str>;
 }
 
 pub struct Rows {
@@ -11,6 +15,14 @@ pub struct Rows {
 impl Rows {
     pub fn next(&mut self) -> Result<Option<Row>> {
         self.inner.next()
+    }
+
+    pub fn column_count(&self) -> i32 {
+        self.inner.column_count()
+    }
+
+    pub fn column_name(&self, idx: i32) -> Option<&str> {
+        self.inner.column_name(idx)
     }
 }
 
@@ -23,6 +35,14 @@ impl RowsInner for LibsqlRows {
         });
 
         Ok(row)
+    }
+
+    fn column_count(&self) -> i32 {
+        self.0.column_count()
+    }
+
+    fn column_name(&self, idx: i32) -> Option<&str> {
+        self.0.column_name(idx)
     }
 }
 
