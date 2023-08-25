@@ -1270,7 +1270,7 @@ public final class SQLite3Jni {
   /**
      A variant of sqlite3_value_java_object() which returns the
      fetched object cast to T if the object is an instance of the
-     given Class. It returns null in all other cases.
+     given Class, else it returns null.
   */
   @SuppressWarnings("unchecked")
   public static <T> T sqlite3_value_java_casted(@NotNull sqlite3_value v,
