@@ -161,6 +161,7 @@ $(sqlite3.h):
 	$(MAKE) -C $(dir.top) sqlite3.c
 $(sqlite3.c): $(sqlite3.h)
 
+opt.threadsafe ?= 1
 SQLITE_OPT = \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
@@ -174,7 +175,7 @@ SQLITE_OPT = \
   -DSQLITE_OMIT_LOAD_EXTENSION \
   -DSQLITE_OMIT_DEPRECATED \
   -DSQLITE_OMIT_SHARED_CACHE \
-  -DSQLITE_THREADSAFE=1 \
+  -DSQLITE_THREADSAFE=$(opt.threadsafe) \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_C=$(sqlite3.c) \
@@ -280,6 +281,17 @@ endif
 tester-ext: tester-local
 tester: tester-ext
 tests: test tester
+
+########################################################################
+# Build each SQLITE_THREADMODE variant and run all tests against them.
+multitest: clean
+	$(MAKE) opt.threadsafe=0 tests clean
+	$(MAKE) opt.threadsafe=1 tests clean
+	$(MAKE) opt.threadsafe=2 tests clean
+
+
+########################################################################
+# jar bundle...
 package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)
 $(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)
@@ -293,6 +305,8 @@ $(package.jar): $(CLASS_FILES) $(MAKEFILE) $(package.jar.in)
 
 jar: $(package.jar)
 
+########################################################################
+# javadoc...
 dir.doc   := $(dir.jni)/javadoc
 doc.index := $(dir.doc)/index.html
 $(doc.index): $(JAVA_FILES.main) $(MAKEFILE)

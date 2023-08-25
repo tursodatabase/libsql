@@ -109,7 +109,7 @@
 ** 2023-08-25: initial attempts at running with SQLITE_THREADSAFE=0
 ** lead to as-yet-uninvestigated bad reference errors from JNI.
 */
-#if SQLITE_THREADSAFE==0
+#if 0 && SQLITE_THREADSAFE==0
 # error "This code currently requires SQLITE_THREADSAFE!=0."
 #endif
 
@@ -2383,7 +2383,7 @@ S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
   return rc;
 }
 
-S3JniApi(sqlite3_config(/*for a small subset of options.*/),
+S3JniApi(sqlite3_config() /*for a small subset of options.*/,
          jint,1config__I)(JniArgsEnvClass, jint n){
   switch( n ){
     case SQLITE_CONFIG_SINGLETHREAD:
@@ -4747,10 +4747,12 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
   jclass klazz;
   const ConfigFlagEntry * pConfFlag;
 
+#if 0
   if( 0==sqlite3_threadsafe() ){
     (*env)->FatalError(env, "sqlite3 currently requires SQLITE_THREADSAFE!=0.");
     return;
   }
+#endif
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));
   if( (*env)->GetJavaVM(env, &SJG.jvm) ){
     (*env)->FatalError(env, "GetJavaVM() failure shouldn't be possible.");

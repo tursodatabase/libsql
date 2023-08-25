@@ -32,13 +32,20 @@ import java.lang.annotation.ElementType;
 
 
   <p>Only functions which materially differ from their C counterparts
-  are documented here. The C documentation is otherwise applicable
-  for these APIs:
+  are documented here, and only those material differences are
+  documented. The C documentation is otherwise applicable for these
+  APIs:
 
   <p><a href="https://sqlite.org/c3ref/intro.html">https://sqlite.org/c3ref/intro.html</a>
 
   <p>A handful of Java-specific APIs have been added which are documented
   here.
+
+  <p>Though most of the {@code SQLITE_abc...} C macros represented by
+  this class are defined as final, a few are necessarily non-final
+  because they cannot be set until static class-level initialization
+  is run. Modifying them at runtime has no effect on the library but
+  may confuse any client-level code which uses them.
 
   <p>Notes regarding Java's Modified UTF-8 vs standard UTF-8:
 

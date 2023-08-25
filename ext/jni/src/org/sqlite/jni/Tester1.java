@@ -1532,7 +1532,7 @@ public class Tester1 implements Runnable {
     int nLoop = 0;
     switch( SQLITE_THREADSAFE ){ /* Sanity checking */
       case 0:
-        affirm( 0==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
+        affirm( 0!=sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
                 "Could not switch to single-thread mode." );
         affirm( 0!=sqlite3_config( SQLITE_CONFIG_MULTITHREAD ),
                 "Could switch to multithread mode."  );
@@ -1555,7 +1555,8 @@ public class Tester1 implements Runnable {
     }
     outln("libversion_number: ",
           sqlite3_libversion_number(),"\n",
-          sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);
+          sqlite3_libversion(),"\n",SQLITE_SOURCE_ID,"\n",
+          "SQLITE_THREADSAFE=",SQLITE_THREADSAFE);
     outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
     if( takeNaps ) outln("Napping between tests is enabled.");
     for( int n = 0; n < nRepeat; ++n ){
