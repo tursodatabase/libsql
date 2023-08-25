@@ -917,11 +917,11 @@ fulltestonly:	$(TESTPROGS) fuzztest
 queryplantest:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner $(TESTOPTS)
 
-fuzztest:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
+fuzztest:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE)
 	./fuzzcheck$(EXE) $(FUZZDATA)
 	./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
-valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE) $(TOP)/test/sessionfuzz-data1.db
+valgrindfuzz:	fuzzcheck$(EXE) $(FUZZDATA) sessionfuzz$(EXE)
 	valgrind ./fuzzcheck$(EXE) --cell-size-check --limit-mem 10M $(FUZZDATA)
 	valgrind ./sessionfuzz run $(TOP)/test/sessionfuzz-data1.db
 
