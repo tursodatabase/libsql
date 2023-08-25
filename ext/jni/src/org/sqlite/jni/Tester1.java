@@ -612,7 +612,7 @@ public class Tester1 implements Runnable {
       // Each of the 3 subclasses requires a different set of
       // functions, all of which must be implemented.  Anonymous
       // classes are a convenient way to implement these.
-      new SQLFunction.Scalar(){
+      new ScalarFunction(){
         public void xFunc(sqlite3_context cx, sqlite3_value[] args){
           affirm(db == sqlite3_context_db_handle(cx));
           int result = 0;
@@ -648,7 +648,7 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> xFuncAccum = new ValueHolder<>(0);
 
-    SQLFunction funcAgg = new SQLFunction.Aggregate<Integer>(){
+    SQLFunction funcAgg = new AggregateFunction<Integer>(){
         @Override public void xStep(sqlite3_context cx, sqlite3_value[] args){
           /** Throwing from here should emit loud noise on stdout or stderr
               but the exception is supressed because we have no way to inform
@@ -668,7 +668,7 @@ public class Tester1 implements Runnable {
     affirm( 0 != rc );
     affirm( sqlite3_errmsg(db).indexOf("an xFinal") > 0 );
 
-    SQLFunction funcSc = new SQLFunction.Scalar(){
+    SQLFunction funcSc = new ScalarFunction(){
         @Override public void xFunc(sqlite3_context cx, sqlite3_value[] args){
           throw new RuntimeException("Throwing from an xFunc");
         }
@@ -689,7 +689,7 @@ public class Tester1 implements Runnable {
   private void testUdfJavaObject(){
     final sqlite3 db = createNewDb();
     final ValueHolder<sqlite3> testResult = new ValueHolder<>(db);
-    final SQLFunction func = new SQLFunction.Scalar(){
+    final SQLFunction func = new ScalarFunction(){
         public void xFunc(sqlite3_context cx, sqlite3_value args[]){
           sqlite3_result_java_object(cx, testResult.value);
         }
@@ -721,7 +721,7 @@ public class Tester1 implements Runnable {
       // To confirm that xFinal() is called with no aggregate state
       // when the corresponding result set is empty.
       new ValueHolder<>(false);
-    SQLFunction func = new SQLFunction.Aggregate<Integer>(){
+    SQLFunction func = new AggregateFunction<Integer>(){
         @Override
         public void xStep(sqlite3_context cx, sqlite3_value[] args){
           final ValueHolder<Integer> agg = this.getAggregateState(cx, 0);
@@ -787,7 +787,7 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     /* Example window function, table, and results taken from:
        https://sqlite.org/windowfunctions.html#udfwinfunc */
-    final SQLFunction func = new SQLFunction.Window<Integer>(){
+    final SQLFunction func = new WindowFunction<Integer>(){
 
         private void xStepInverse(sqlite3_context cx, int v){
           this.getAggregateState(cx,0).value += v;

@@ -59,6 +59,7 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
+  AggregateFunction.java \
   AuthorizerCallback.java \
   AutoExtensionCallback.java \
   BusyHandlerCallback.java \
@@ -74,12 +75,14 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ProgressHandlerCallback.java \
   ResultCode.java \
   RollbackHookCallback.java \
+  ScalarFunction.java \
   SQLFunction.java \
   SQLite3Jni.java \
   Tester1.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \
   ValueHolder.java \
+  WindowFunction.java \
   XDestroyCallback.java \
   package-info.java \
   sqlite3.java \
@@ -318,6 +321,10 @@ $(doc.index): $(JAVA_FILES.main) $(MAKEFILE)
 .FORCE: doc
 doc: $(doc.index)
 javadoc: $(doc.index)
+# Force rebild of docs
+redoc:
+	@rm -f $(doc.index)/index.html
+	@$(MAKE) doc
 docserve: $(doc.index)
 	cd $(dir.doc) && althttpd -max-age 1 -page index.html
 ########################################################################
