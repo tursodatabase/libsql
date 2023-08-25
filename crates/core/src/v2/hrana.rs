@@ -104,6 +104,8 @@ impl Client {
 
         let token = token.into();
         let url = url.into();
+        // The `libsql://` protocol is an alias for `https://`.
+        let url = url.replace("libsql://", "https://");
         // Auto-update the URL to start with https:// if no protocol was specified
         let base_url = if !url.contains("://") {
             format!("https://{}", &url)
