@@ -22,7 +22,7 @@ pub fn maybe_migrate(db_path: &Path) -> anyhow::Result<()> {
 
 fn detect_version(db_path: &Path) -> anyhow::Result<Version> {
     let version_file_path = db_path.join(".version");
-    if !version_file_path.exists() {
+    if !version_file_path.try_exists()? {
         return Ok(Version::Pre0_18);
     }
 
@@ -41,7 +41,7 @@ fn migrate_step_from_pre_0_18(db_path: &Path) -> anyhow::Result<()> {
         std::fs::create_dir_all(&ns_dir)?;
 
         let maybe_link = |name| -> anyhow::Result<()> {
-            if db_path.join(name).exists() {
+            if db_path.join(name).try_exists()? {
                 std::fs::hard_link(db_path.join(name), ns_dir.join(name))?;
             }
 

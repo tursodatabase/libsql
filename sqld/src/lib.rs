@@ -645,9 +645,9 @@ fn init_version_file(db_path: &Path) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let version_path = db_path.join("dbs").join(".version");
+    let version_path = db_path.join(".version");
     if !version_path.exists() {
-        std::fs::create_dir_all(db_path.join("dbs"))?;
+        std::fs::create_dir_all(db_path)?;
         std::fs::write(version_path, env!("CARGO_PKG_VERSION"))?;
     }
 
