@@ -16,7 +16,7 @@ package org.sqlite.jni;
 /**
    Callback for use with sqlite3_create_collation()
 */
-public abstract class Collation
+public abstract class CollationCallback
   implements SQLite3CallbackProxy, XDestroyCallback {
   /**
      Must compare the given byte arrays using memcmp() semantics.

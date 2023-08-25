@@ -1118,7 +1118,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__Lorg_sqli
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_create_collation
- * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;ILorg/sqlite/jni/Collation;)I
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;ILorg/sqlite/jni/CollationCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1create_1collation
   (JNIEnv *, jclass, jobject, jstring, jint, jobject);

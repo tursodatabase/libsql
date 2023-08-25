@@ -489,7 +489,7 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     final ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
-    final Collation myCollation = new Collation() {
+    final CollationCallback myCollation = new CollationCallback() {
         private String myState =
           "this is local state. There is much like it, but this is mine.";
         @Override
@@ -1532,11 +1532,11 @@ public class Tester1 implements Runnable {
     int nLoop = 0;
     switch( SQLITE_THREADSAFE ){ /* Sanity checking */
       case 0:
-        affirm( 0!=sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
+        affirm( SQLITE_ERROR==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
                 "Could not switch to single-thread mode." );
-        affirm( 0!=sqlite3_config( SQLITE_CONFIG_MULTITHREAD ),
+        affirm( SQLITE_ERROR==sqlite3_config( SQLITE_CONFIG_MULTITHREAD ),
                 "Could switch to multithread mode."  );
-        affirm( 0!=sqlite3_config( SQLITE_CONFIG_SERIALIZED ),
+        affirm( SQLITE_ERROR==sqlite3_config( SQLITE_CONFIG_SERIALIZED ),
                 "Could not switch to serialized threading mode."  );
         outln("This is a single-threaded build. Not using threads.");
         nThread = 1;

@@ -468,10 +468,6 @@ public final class SQLite3Jni {
     @NotNull sqlite3 db, @Nullable CollationNeededCallback callback
   );
 
-  /**
-     Returns the db handle passed to sqlite3_open() or
-     sqlite3_open_v2(), as opposed to a new wrapper object.
-  */
   public static native sqlite3 sqlite3_context_db_handle(
     @NotNull sqlite3_context cx
   );
@@ -491,7 +487,7 @@ public final class SQLite3Jni {
   /**
      <p>Works like in the C API with the exception that it only supports
      the following subset of configution flags:
-     
+
      <p>SQLITE_CONFIG_SINGLETHREAD
      SQLITE_CONFIG_MULTITHREAD
      SQLITE_CONFIG_SERIALIZED
@@ -515,7 +511,7 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_create_collation(
     @NotNull sqlite3 db, @NotNull String name, int eTextRep,
-    @NotNull Collation col
+    @NotNull CollationCallback col
   );
 
   /**

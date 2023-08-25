@@ -62,7 +62,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   AuthorizerCallback.java \
   AutoExtensionCallback.java \
   BusyHandlerCallback.java \
-  Collation.java \
+  CollationCallback.java \
   CollationNeededCallback.java \
   CommitHookCallback.java \
   ConfigSqllogCallback.java \
