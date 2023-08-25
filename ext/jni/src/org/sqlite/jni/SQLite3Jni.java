@@ -1318,6 +1318,10 @@ public final class SQLite3Jni {
   public static final String SQLITE_VERSION = sqlite3_libversion();
   public static final String SQLITE_SOURCE_ID = sqlite3_sourceid();
 
+  // Initialized at static init time to the build-time value of
+  // SQLITE_THREADSAFE.
+  public static int SQLITE_THREADSAFE = -1;
+
   // access
   public static final int SQLITE_ACCESS_EXISTS = 0;
   public static final int SQLITE_ACCESS_READWRITE = 1;

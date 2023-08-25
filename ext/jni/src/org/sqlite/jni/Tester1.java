@@ -1530,12 +1530,29 @@ public class Tester1 implements Runnable {
 
     final long timeStart = System.currentTimeMillis();
     int nLoop = 0;
-    affirm( 0==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
-            "Could not switch to single-thread mode." );
-    affirm( 0==sqlite3_config( SQLITE_CONFIG_MULTITHREAD ),
-            "Could not switch to multithread mode."  );
-    affirm( 0==sqlite3_config( SQLITE_CONFIG_SERIALIZED ),
-            "Could not switch to serialized threading mode."  );
+    switch( SQLITE_THREADSAFE ){ /* Sanity checking */
+      case 0:
+        affirm( 0==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
+                "Could not switch to single-thread mode." );
+        affirm( 0!=sqlite3_config( SQLITE_CONFIG_MULTITHREAD ),
+                "Could switch to multithread mode."  );
+        affirm( 0!=sqlite3_config( SQLITE_CONFIG_SERIALIZED ),
+                "Could not switch to serialized threading mode."  );
+        outln("This is a single-threaded build. Not using threads.");
+        nThread = 1;
+        break;
+      case 1:
+      case 2:
+        affirm( 0==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
+                "Could not switch to single-thread mode." );
+        affirm( 0==sqlite3_config( SQLITE_CONFIG_MULTITHREAD ),
+                "Could not switch to multithread mode."  );
+        affirm( 0==sqlite3_config( SQLITE_CONFIG_SERIALIZED ),
+                "Could not switch to serialized threading mode."  );
+        break;
+      default:
+        affirm( false, "Unhandled SQLITE_THREADSAFE value." );
+    }
     outln("libversion_number: ",
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID);

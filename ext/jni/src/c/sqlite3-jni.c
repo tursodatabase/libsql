@@ -105,6 +105,14 @@
 # define SQLITE_THREADSAFE 1
 #endif
 
+/*
+** 2023-08-25: initial attempts at running with SQLITE_THREADSAFE=0
+** lead to as-yet-uninvestigated bad reference errors from JNI.
+*/
+#if SQLITE_THREADSAFE==0
+# error "This code currently requires SQLITE_THREADSAFE!=0."
+#endif
+
 /**********************************************************************/
 /* SQLITE_USE_... */
 #ifndef SQLITE_USE_URI
@@ -445,11 +453,12 @@ struct S3JniGlobalType {
   **   threads. Caching a copy of the JavaVM object enables any thread
   **   with access to the cached object to get access to its own
   **   JNIEnv when necessary.
+  **
   */
   JavaVM * jvm;
   /*
-  ** Cache of Java refs/IDs for NativePointerHolder subclasses.
-  ** Initialized on demand.
+  ** Cache of Java refs and method IDs for NativePointerHolder
+  ** subclasses.  Initialized on demand.
   */
   S3JniNphClass nph[S3Jni_NphCache_size];
   /*
@@ -459,24 +468,23 @@ struct S3JniGlobalType {
     S3JniEnv * aHead /* Linked list of in-use instances */;
     S3JniEnv * aFree /* Linked list of free instances */;
     sqlite3_mutex * mutex /* mutex for aHead and aFree as well for
-                             first-time inits of nph members. */;
+                             first-time inits of nph[] entries. */;
     void const * locker /* env mutex is held on this object's behalf.
                            Used only for sanity checking. */;
   } envCache;
+  /*
+  ** Per-db state. This can move into the core library once we can tie
+  ** client-defined state to db handles there.
+  */
   struct {
-    S3JniDb * aUsed  /* Linked list of in-use instances */;
+    S3JniDb * aHead  /* Linked list of in-use instances */;
     S3JniDb * aFree  /* Linked list of free instances */;
-    sqlite3_mutex * mutex /* mutex for aUsed and aFree */;
+    sqlite3_mutex * mutex /* mutex for aHead and aFree */;
     void const * locker /* perDb mutex is held on this object's
                            behalf.  Unlike envCache.locker, we cannot
                            always have this set to the current JNIEnv
                            object. Used only for sanity checking. */;
   } perDb;
-#ifdef SQLITE_ENABLE_SQLLOG
-  struct {
-    S3JniHook sqllog  /* sqlite3_config(SQLITE_CONFIG_SQLLOG) callback */;
-  } hooks;
-#endif
   /*
   ** Refs to global classes and methods. Obtained during static init
   ** and never released.
@@ -490,6 +498,22 @@ struct S3JniGlobalType {
     jmethodID ctorStringBA   /* the String(byte[],Charset) constructor */;
     jmethodID stringGetBytes /* the String.getBytes(Charset) method */;
   } g /* refs to global Java state */;
+  /**
+     The list of bound auto-extensions (Java-side:
+     org.sqlite.jni.auto_extension objects).
+  */
+  struct {
+    S3JniAutoExtension *pExt /* The auto-extension list. It is
+                                maintained such that all active
+                                entries are in the first contiguous
+                                nExt array elements. */;
+    int nAlloc               /* number of entries allocated for pExt,
+                                as distinct from the number of active
+                                entries. */;
+    int nExt                 /* number of active entries in pExt, all in the
+                                first nExt'th array elements. */;
+    sqlite3_mutex * mutex    /* mutex for manipulation/traversal of pExt */;
+  } autoExt;
 #ifdef SQLITE_ENABLE_FTS5
   struct {
     volatile jobject jFtsExt /* Global ref to Java singleton for the
@@ -499,6 +523,11 @@ struct S3JniGlobalType {
       jfieldID fidB         /* Fts5Phrase::b member */;
     } jPhraseIter;
   } fts5;
+#endif
+#ifdef SQLITE_ENABLE_SQLLOG
+  struct {
+    S3JniHook sqllog  /* sqlite3_config(SQLITE_CONFIG_SQLLOG) callback */;
+  } hooks;
 #endif
 #ifdef SQLITE_JNI_ENABLE_METRICS
   /* Internal metrics. */
@@ -529,18 +558,6 @@ struct S3JniGlobalType {
 #endif
   } metrics;
 #endif /* SQLITE_JNI_ENABLE_METRICS */
-  /**
-     The list of bound auto-extensions (Java-side:
-     org.sqlite.jni.auto_extension objects).
-   */
-  struct {
-    S3JniAutoExtension *pExt /* Head of the auto-extension list */;
-    int nAlloc               /* number of entries allocated for pExt,
-                                as distinct from the number of active
-                                entries. */;
-    int nExt                 /* number of active entries in pExt. */;
-    sqlite3_mutex * mutex    /* mutex for manipulation/traversal of pExt */;
-  } autoExt;
 };
 static S3JniGlobalType S3JniGlobal = {};
 #define SJG S3JniGlobal
@@ -550,23 +567,24 @@ static S3JniGlobalType S3JniGlobal = {};
 #define s3jni_incr(PTR)
 #elif S3JNI_METRICS_MUTEX
 static void s3jni_incr( volatile unsigned int * const p ){
-  sqlite3_mutex * const m = SJG.metrics.mutex;
-  sqlite3_mutex_enter(m);
+  sqlite3_mutex_enter(SJG.metrics.mutex);
   ++SJG.metrics.nMetrics;
   ++(*p);
-  sqlite3_mutex_leave(m);
+  sqlite3_mutex_leave(SJG.metrics.mutex);
 }
 #else
 #define s3jni_incr(PTR) ++(*(PTR))
 #endif
 
 /* Helpers for working with specific mutexes. */
+#if SQLITE_THREADSAFE
 #define S3JniMutex_Env_assertLocked \
   assert( 0 != SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
 #define S3JniMutex_Env_assertLocker \
   assert( (env) == SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
 #define S3JniMutex_Env_assertNotLocker \
   assert( (env) != SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
+
 #define S3JniMutex_Env_enter                        \
   S3JniMutex_Env_assertNotLocker;                   \
   /*MARKER(("Entering ENV mutex@%p %s.\n", env));*/ \
@@ -606,6 +624,19 @@ static void s3jni_incr( volatile unsigned int * const p ){
   assert( env == SJG.perDb.locker );                  \
   SJG.perDb.locker = 0;                               \
   sqlite3_mutex_leave( SJG.perDb.mutex )
+#else /* SQLITE_THREADSAFE==0 */
+#define S3JniMutex_Env_assertLocked
+#define S3JniMutex_Env_assertLocker
+#define S3JniMutex_Env_assertNotLocker
+#define S3JniMutex_Env_enter
+#define S3JniMutex_Env_leave
+#define S3JniMutex_Ext_enter
+#define S3JniMutex_Ext_leave
+#define S3JniMutex_Nph_enter
+#define S3JniMutex_Nph_leave
+#define S3JniMutex_S3JniDb_enter
+#define S3JniMutex_S3JniDb_leave
+#endif
 
 #define s3jni_oom_check(VAR) if( !(VAR) ) s3jni_oom(env)
 static inline void s3jni_oom(JNIEnv * const env){
@@ -917,15 +948,17 @@ static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDest
 */
 static void S3JniDb_set_aside_unlocked(JNIEnv * env, S3JniDb * const s){
   if( s ){
+#if SQLITE_THREADSAFE
     assert( S3JniGlobal.perDb.locker == env );
+#endif
     assert(s->pPrev != s);
     assert(s->pNext != s);
     assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
     if(s->pNext) s->pNext->pPrev = s->pPrev;
     if(s->pPrev) s->pPrev->pNext = s->pNext;
-    else if(SJG.perDb.aUsed == s){
+    else if(SJG.perDb.aHead == s){
       assert(!s->pPrev);
-      SJG.perDb.aUsed = s->pNext;
+      SJG.perDb.aHead = s->pNext;
     }
     sqlite3_free( s->zMainDbName );
 #define UNHOOK(MEMBER,XDESTROY) S3JniHook_unref(env, &s->hooks.MEMBER, XDESTROY)
@@ -1107,8 +1140,8 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
     }
   }
   if( rv ){
-    rv->pNext = SJG.perDb.aUsed;
-    SJG.perDb.aUsed = rv;
+    rv->pNext = SJG.perDb.aHead;
+    SJG.perDb.aHead = rv;
     if( rv->pNext ){
       assert(!rv->pNext->pPrev);
       rv->pNext->pPrev = rv;
@@ -1135,7 +1168,7 @@ static S3JniDb * S3JniDb_for_db(JNIEnv * const env, jobject jDb, sqlite3 *pDb){
   S3JniDb * s = 0;
   if( jDb || pDb ){
     S3JniMutex_S3JniDb_enter;
-    s = SJG.perDb.aUsed;
+    s = SJG.perDb.aHead;
     if( !pDb ){
       assert( jDb );
       pDb = PtrGet_sqlite3(jDb);
@@ -4707,6 +4740,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
     {"SQLITE_MAX_TRIGGER_DEPTH", JTYPE_INT, SQLITE_MAX_TRIGGER_DEPTH},
     {"SQLITE_LIMIT_WORKER_THREADS", JTYPE_INT, SQLITE_LIMIT_WORKER_THREADS},
     {"SQLITE_MAX_WORKER_THREADS", JTYPE_INT, SQLITE_MAX_WORKER_THREADS},
+    {"SQLITE_THREADSAFE", JTYPE_INT, SQLITE_THREADSAFE},
     {0,0}
   };
   jfieldID fieldId;
@@ -4714,7 +4748,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
   const ConfigFlagEntry * pConfFlag;
 
   if( 0==sqlite3_threadsafe() ){
-    (*env)->FatalError(env, "sqlite3 was not built with SQLITE_THREADSAFE.");
+    (*env)->FatalError(env, "sqlite3 currently requires SQLITE_THREADSAFE!=0.");
     return;
   }
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));
