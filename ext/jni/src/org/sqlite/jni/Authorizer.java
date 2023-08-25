@@ -18,12 +18,8 @@ package org.sqlite.jni;
 */
 public interface Authorizer {
   /**
-     Must functions as described for the sqlite3_set_authorizer()
-     callback, with one caveat: the string values passed here were
-     initially (at the C level) encoded in standard UTF-8. If they
-     contained any constructs which are not compatible with MUTF-8,
-     these strings will not have the expected values. For further
-     details, see the documentation for the SQLite3Jni class.
+     Must function as described for the sqlite3_set_authorizer()
+     callback.
 
      Must not throw.
   */

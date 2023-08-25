@@ -64,7 +64,10 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   CollationNeeded.java \
   CommitHook.java \
   NativePointerHolder.java \
+  NotNull.java \
+  Nullable.java \
   OutputPointer.java \
+  package-info.java \
   ProgressHandler.java \
   ResultCode.java \
   RollbackHook.java \
@@ -286,10 +289,19 @@ $(package.jar): $(CLASS_FILES) $(MAKEFILE) $(package.jar.in)
 
 jar: $(package.jar)
 
-dir.doc := $(dir.jni)/doc
-doc: $(JAVA_FILES.main)
+dir.doc   := $(dir.jni)/javadoc
+doc.index := $(dir.doc)/index.html
+$(doc.index): $(JAVA_FILES.main) $(MAKEFILE)
+	@if [ -d $(dir.doc) ]; then rm -fr $(dir.doc)/*; fi
 	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) -quiet org.sqlite.jni
+	@echo "javadoc output is in $@"
 
+.PHONY: doc javadoc docserve
+.FORCE: doc
+doc: $(doc.index)
+javadoc: $(doc.index)
+docserve: $(doc.index)
+	cd $(dir.doc) && althttpd -max-age 1 -page index.html
 ########################################################################
 # Clean up...
 CLEAN_FILES += $(dir.bld.c)/* \
@@ -303,7 +315,7 @@ clean:
 	-rm -f $(CLEAN_FILES)
 distclean: clean
 	-rm -f $(DISTCLEAN_FILES)
-	-rm -fr $(dir.bld.c)
+	-rm -fr $(dir.bld.c) $(dir.doc)
 
 ########################################################################
 # disttribution bundle rules...

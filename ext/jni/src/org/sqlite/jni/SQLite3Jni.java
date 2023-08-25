@@ -20,48 +20,21 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 
 /**
-   This annotation is for flagging parameters which may legally be
-   null, noting that they may behave differently if passed null but
-   are prepared to expect null as a value.
-
-   This annotation is solely for the reader's information.
-*/
-@Documented
-@Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.PARAMETER)
-@interface Nullable{}
-
-/**
-   This annotation is for flagging parameters which may not legally be
-   null. Note that the C-style API does not throw any
-   NullPointerExceptions on its own because it has a no-throw policy
-   in order to retain its C-style semantics.
-
-   This annotation is solely for the reader's information. No policy
-   is in place to programmatically ensure that NotNull is conformed to
-   in client code.
-*/
-@Documented
-@Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.PARAMETER)
-@interface NotNull{}
-
-/**
   This class contains the entire sqlite3 JNI API binding.  For
   client-side use, a static import is recommended:
 
-  {@code
+  <pre>{@code
   import static org.sqlite.jni.SQLite3Jni.*;
-  }
+  }</pre>
 
-  The C-side part can be found in sqlite3-jni.c.
+  <p>The C-side part can be found in sqlite3-jni.c.
 
 
   <p>Only functions which materially differ from their C counterparts
-  are documented here. The C documetation is otherwise applicable
-  here:
+  are documented here. The C documentation is otherwise applicable
+  for these APIs:
 
-  <p>{link https://sqlite.org/c3ref/intro.html}
+  <p><a href="https://sqlite.org/c3ref/intro.html">https://sqlite.org/c3ref/intro.html</a>
 
   <p>A handful of Java-specific APIs have been added.
 
@@ -73,31 +46,22 @@ import java.lang.annotation.ElementType;
   but JNI uses what its docs call modified UTF-8 (see links below)
   Care must be taken when converting Java strings to or from standard
   UTF-8 to ensure that the proper conversion is performed. In short,
-  Java's `String.getBytes(StandardCharsets.UTF_8)` performs the proper
+  Java's {@code String.getBytes(StandardCharsets.UTF_8)} performs the proper
   conversion in Java, and there are no JNI C APIs for that conversion
-  (JNI's `NewStringUTF()` requires its input to be in MUTF-8).
+  (JNI's {@code NewStringUTF()} requires its input to be in MUTF-8).
 
   <p>The known consequences and limitations this discrepancy places on
   the SQLite3 JNI binding include:
 
   <ul>
 
-  <li>Any functions which return state from a database take extra care
-  to perform proper conversion, at the cost of efficiency.</li>
-
   <li>C functions which take C-style strings without a length argument
   require special care when taking input from Java. In particular,
   Java strings converted to byte arrays for encoding purposes are not
-  NUL-terminated, and conversion to a Java byte array must be careful
-  to add one. Functions which take a length do not require this so
-  long as the length is provided. Search the SQLite3Jni class for "\0"
-  for many examples.
-
-  <li>Similarly, C-side code which deals with strings which might not
-  be NUL-terminated (e.g. while tokenizing in FTS5-related code)
-  cannot use JNI's new-string functions to return them to Java because
-  none of those APIs take a string-length argument. Such cases must
-  return byte arrays instead of strings.
+  NUL-terminated, and conversion to a Java byte array must sometimes
+  be careful to add one. Functions which take a length do not require
+  this so long as the length is provided. Search the SQLite3Jni class
+  for "\0" for many examples.
 
   </ul>
 
@@ -996,8 +960,9 @@ public final class SQLite3Jni {
 
   /**
      Binds the SQL result to the given object, or
-     sqlite3_result_null() if o is null. Use
-     sqlite3_value_java_object() or sqlite3_column_java_object() to
+     {@link #sqlite3_result_null(sqlite3_context) sqlite3_result_null()} if {@code o} is null. Use
+     {@link #sqlite3_value_java_object(sqlite3_value) sqlite3_value_java_object()} or
+     {@link #sqlite3_column_java_object(sqlite3_stmt,int) sqlite3_column_java_object()} to
      fetch it.
 
      This is implemented in terms of sqlite3_result_pointer(), but
@@ -1093,11 +1058,11 @@ public final class SQLite3Jni {
   /**
      Binds the given text using C's sqlite3_result_blob64() unless:
 
-     - blob is null ==> sqlite3_result_null()
+     - @param blob is null ==> sqlite3_result_null()
 
-     - blob is too large ==> sqlite3_result_error_toobig()
+     - @param blob is too large ==> sqlite3_result_error_toobig()
 
-     If maxLen is larger than blob.length, it is truncated to that
+     If @param maxLen is larger than blob.length, it is truncated to that
      value. If it is negative, results are undefined.
   */
   private static native void sqlite3_result_blob64(
@@ -1138,7 +1103,7 @@ public final class SQLite3Jni {
      - text is too large: translates to a call to
        sqlite3_result_error_toobig()
 
-     - The `encoding` argument has an invalid value: translates to
+       - The @param encoding argument has an invalid value: translates to
        sqlite3_result_error_code() with code SQLITE_FORMAT.
 
      If maxLength (in bytes, not characters) is larger than

@@ -47,9 +47,9 @@ public final class sqlite3_context extends NativePointerHolder<sqlite3_context> 
 
      <p>Consider this SQL, where MYFUNC is a user-defined aggregate function:
 
-     {code
+     <pre>{@code
      SELECT MYFUNC(A), MYFUNC(B) FROM T;
-     }
+     }</pre>
 
      <p>The xStep() and xFinal() methods of the callback need to be able
      to differentiate between those two invocations in order to

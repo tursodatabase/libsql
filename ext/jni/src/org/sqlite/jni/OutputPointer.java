@@ -16,13 +16,13 @@ package org.sqlite.jni;
 /**
    Helper classes for handling JNI output pointers.
 
-   We do not use a generic OutputPointer<T> because working with those
+   <p>We do not use a generic OutputPointer<T> because working with those
    from the native JNI code is unduly quirky due to a lack of
    autoboxing at that level.
 
-   The usage is similar for all of thes types:
+   <p>The usage is similar for all of thes types:
 
-   ```
+   <pre>{@code
    OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
    assert( null==out.get() );
    int rc = sqlite3_open(":memory:", out);
@@ -30,14 +30,14 @@ package org.sqlite.jni;
    assert( null!=out.get() );
    sqlite3 db = out.take();
    assert( null==out.get() );
-   ```
+   }</pre>
 
-   With the minor exception that the primitive types permit direct
+   <p>With the minor exception that the primitive types permit direct
    access to the object's value via the `value` property, whereas the
    JNI-level opaque types do not permit client-level code to set that
    property.
 
-   Warning: do not share instances of these classes across
+   <p>Warning: do not share instances of these classes across
    threads. Doing so may lead to corrupting sqlite3-internal state.
 */
 public final class OutputPointer {
