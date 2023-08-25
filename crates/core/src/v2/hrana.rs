@@ -14,6 +14,7 @@ use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 // use crate::client::Config;
 use crate::{Column, Params, Result};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::{Arc, RwLock};
 
 use super::rows::{RowInner, RowsInner};
@@ -35,6 +36,7 @@ pub struct Client {
     cookies: Arc<RwLock<HashMap<u64, Cookie>>>,
     url_for_queries: String,
     auth: String,
+    last_insert_rowid: Arc<AtomicI64>,
 }
 
 #[derive(Clone, Debug)]
@@ -114,6 +116,7 @@ impl Client {
             cookies: Arc::new(RwLock::new(HashMap::new())),
             url_for_queries,
             auth: format!("Bearer {token}"),
+            last_insert_rowid: Arc::new(AtomicI64::new(0)),
         }
     }
 
@@ -290,7 +293,7 @@ impl Conn for Client {
     }
 
     fn last_insert_rowid(&self) -> i64 {
-        todo!()
+        self.last_insert_rowid.load(Ordering::SeqCst)
     }
 }
 
@@ -306,6 +309,9 @@ impl super::statement::Stmt for Statement {
         bind_params(params.clone(), &mut stmt);
 
         let v = self.client.execute_inner(stmt, 0).await?;
+        if let Some(last_insert_rowid) = v.last_insert_rowid {
+            self.client.last_insert_rowid.store(last_insert_rowid, Ordering::SeqCst);
+        }
         Ok(v.affected_row_count as usize)
     }
 
