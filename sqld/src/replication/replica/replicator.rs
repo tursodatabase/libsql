@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::bail;
 use bytemuck::bytes_of;
 use bytes::Bytes;
 use futures::StreamExt;
@@ -11,7 +10,7 @@ use tokio::sync::{mpsc, oneshot, watch, Mutex};
 use tokio::task::JoinSet;
 use tonic::metadata::AsciiMetadataValue;
 use tonic::transport::Channel;
-use tonic::Request;
+use tonic::{Code, Request};
 
 use crate::replication::frame::Frame;
 use crate::replication::replica::error::ReplicationError;
@@ -21,6 +20,7 @@ use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, LogOffset,
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
+use crate::rpc::NAMESPACE_DOESNT_EXIST;
 
 use super::hook::{Frames, InjectorHookCtx};
 use super::injector::FrameInjector;
@@ -54,12 +54,23 @@ impl Replicator {
         hard_reset: mpsc::Sender<Bytes>,
     ) -> anyhow::Result<Self> {
         let client = Client::with_origin(channel, uri);
-        let (meta, meta_file) = WalIndexMeta::read_from_path(&db_path)?;
-        let meta_file = Arc::new(meta_file);
-        let (applied_frame_notifier, current_frame_no_notifier) =
-            watch::channel(meta.map(|m| m.post_commit_frame_no).unwrap_or(FrameNo::MAX));
-        let meta = Arc::new(Mutex::new(meta));
+        let (applied_frame_notifier, current_frame_no_notifier) = watch::channel(FrameNo::MAX);
         let (frames_sender, receiver) = tokio::sync::mpsc::channel(1);
+
+        let mut this = Self {
+            namespace,
+            client,
+            db_path: db_path.clone(),
+            current_frame_no_notifier,
+            meta: Arc::new(Mutex::new(None)),
+            frames_sender,
+            hard_reset,
+        };
+
+        this.try_perform_handshake().await?;
+
+        let meta_file = Arc::new(WalIndexMeta::open(&db_path)?);
+        let meta = this.meta.clone();
 
         let pre_commit = {
             let meta = meta.clone();
@@ -96,7 +107,7 @@ impl Replicator {
 
         let (snd, rcv) = oneshot::channel();
         join_set.spawn_blocking({
-            let db_path = db_path.clone();
+            let db_path = db_path;
             move || -> anyhow::Result<()> {
                 let mut ctx = InjectorHookCtx::new(receiver, pre_commit, post_commit);
                 let mut injector = FrameInjector::new(&db_path, &mut ctx)?;
@@ -111,15 +122,7 @@ impl Replicator {
         // injector is ready:
         rcv.await?;
 
-        Ok(Self {
-            namespace,
-            client,
-            db_path,
-            current_frame_no_notifier,
-            meta,
-            frames_sender,
-            hard_reset,
-        })
+        Ok(this)
     }
 
     fn make_request<T>(&self, msg: T) -> Request<T> {
@@ -146,7 +149,33 @@ impl Replicator {
         }
     }
 
-    async fn try_perform_handshake(&mut self) -> anyhow::Result<()> {
+    async fn handle_replication_error(&self, error: ReplicationError) -> crate::error::Error {
+        match error {
+            ReplicationError::Lagging => {
+                tracing::error!("Replica ahead of primary: hard-reseting replica");
+                self.hard_reset
+                    .send(self.namespace.clone())
+                    .await
+                    .expect("reset loop exited");
+
+                error.into()
+            }
+            ReplicationError::DbIncompatible => {
+                tracing::error!(
+                    "Primary is attempting to replicate a different database, overwriting replica."
+                );
+                self.hard_reset
+                    .send(self.namespace.clone())
+                    .await
+                    .expect("reset loop exited");
+
+                error.into()
+            }
+            _ => error.into(),
+        }
+    }
+
+    async fn try_perform_handshake(&mut self) -> crate::Result<()> {
         let mut error_printed = false;
         for _ in 0..HANDSHAKE_MAX_RETRIES {
             tracing::info!("Attempting to perform handshake with primary.");
@@ -159,32 +188,28 @@ impl Replicator {
                     let meta = match *lock {
                         Some(meta) => match meta.merge_from_hello(hello) {
                             Ok(meta) => meta,
-                            Err(e @ ReplicationError::Lagging) => {
-                                tracing::error!("Replica ahead of primary: hard-reseting replica");
-                                self.hard_reset
-                                    .send(self.namespace.clone())
-                                    .await
-                                    .expect("reset loop exited");
-
-                                anyhow::bail!(e);
-                            }
-                            Err(e @ ReplicationError::DbIncompatible) => {
-                                tracing::error!("Primary is attempting to replicate a different database, overwriting replica.");
-                                self.hard_reset
-                                    .send(self.namespace.clone())
-                                    .await
-                                    .expect("reset loop exited");
-
-                                anyhow::bail!(e);
-                            }
-                            Err(e) => anyhow::bail!(e),
+                            Err(e) => return Err(self.handle_replication_error(e).await),
                         },
-                        None => WalIndexMeta::new_from_hello(hello)?,
+                        None => match WalIndexMeta::read_from_path(&self.db_path)? {
+                            Some(meta) => match meta.merge_from_hello(hello) {
+                                Ok(meta) => meta,
+                                Err(e) => return Err(self.handle_replication_error(e).await),
+                            },
+                            None => WalIndexMeta::new_from_hello(hello)?,
+                        },
                     };
 
                     *lock = Some(meta);
 
                     return Ok(());
+                }
+                Err(e)
+                    if e.code() == Code::FailedPrecondition
+                        && e.message() == NAMESPACE_DOESNT_EXIST =>
+                {
+                    return Err(crate::error::Error::NamespaceDoesntExist(
+                        String::from_utf8(self.namespace.to_vec()).unwrap_or_default(),
+                    ));
                 }
                 Err(e) if !error_printed => {
                     tracing::error!("error connecting to primary. retrying. error: {e}");
@@ -195,7 +220,7 @@ impl Replicator {
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
 
-        bail!("couldn't connect to primary after {HANDSHAKE_MAX_RETRIES} tries.");
+        Err(crate::error::Error::PrimaryConnectionTimeout)
     }
 
     async fn replicate(&mut self) -> anyhow::Result<()> {

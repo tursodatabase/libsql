@@ -2,7 +2,7 @@ use anyhow::Context as _;
 use axum::extract::{BodyStream, Path, State};
 use axum::Json;
 use futures::TryStreamExt;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
 use std::{io::ErrorKind, net::SocketAddr};
 
@@ -26,6 +26,10 @@ pub async fn run_admin_api<F: MakeNamespace>(
         .route("/v1/block", post(handle_post_block))
         .route(
             "/v1/namespaces/:namespace/create-with-dump",
+            post(handle_create_namespace_with_dump),
+        )
+        .route(
+            "/v1/namespaces/:namespace/create",
             post(handle_create_namespace),
         )
         .with_state(Arc::new(AppState {
@@ -81,23 +85,23 @@ async fn handle_post_block<F: MakeNamespace>(
     }
 }
 
-#[derive(Serialize)]
-struct Error {
-    msg: String,
+async fn handle_create_namespace_with_dump<F: MakeNamespace>(
+    State(app_state): State<Arc<AppState<F>>>,
+    Path(namespace): Path<String>,
+    body: BodyStream,
+) -> Result<(), crate::error::Error> {
+    let dump = Box::new(body.map_err(|e| std::io::Error::new(ErrorKind::Other, e)));
+    app_state
+        .namespaces
+        .create(namespace.into(), Some(dump))
+        .await?;
+    Ok(())
 }
 
 async fn handle_create_namespace<F: MakeNamespace>(
     State(app_state): State<Arc<AppState<F>>>,
     Path(namespace): Path<String>,
-    body: BodyStream,
-) -> Result<(), Json<Error>> {
-    let dump = Box::new(body.map_err(|e| std::io::Error::new(ErrorKind::Other, e)));
-    match app_state
-        .namespaces
-        .create_with_dump(namespace.into(), dump)
-        .await
-    {
-        Ok(_) => Ok(()),
-        Err(e) => Err(Json(Error { msg: e.to_string() })),
-    }
+) -> Result<(), crate::error::Error> {
+    app_state.namespaces.create(namespace.into(), None).await?;
+    Ok(())
 }

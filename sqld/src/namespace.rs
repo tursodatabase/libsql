@@ -20,13 +20,14 @@ use crate::connection::libsql::{open_db, LibSqlDbFactory};
 use crate::connection::write_proxy::MakeWriteProxyConnection;
 use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
+use crate::error::Error;
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
 use crate::replication::replica::Replicator;
 use crate::replication::{NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
     check_fresh_db, init_bottomless_replicator, run_periodic_compactions, DB_CREATE_TIMEOUT,
-    DEFAULT_AUTO_CHECKPOINT, MAX_CONCURRENT_DBS,
+    DEFAULT_AUTO_CHECKPOINT, DEFAULT_NAMESPACE_NAME, MAX_CONCURRENT_DBS,
 };
 
 /// Creates a new `Namespace` for database of the `Self::Database` type.
@@ -38,7 +39,10 @@ pub trait MakeNamespace: Sync + Send + 'static {
         &self,
         name: Bytes,
         dump: Option<DumpStream>,
-    ) -> anyhow::Result<Namespace<Self::Database>>;
+        allow_creation: bool,
+    ) -> crate::Result<Namespace<Self::Database>>;
+
+    async fn destroy(&self, namespace: &Bytes) -> crate::Result<()>;
 }
 /// Creates new primary `Namespace`
 pub struct PrimaryNamespaceMaker {
@@ -60,8 +64,19 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         &self,
         name: Bytes,
         dump: Option<DumpStream>,
-    ) -> anyhow::Result<Namespace<Self::Database>> {
-        Namespace::new_primary(&self.config, name, dump).await
+        allow_creation: bool,
+    ) -> crate::Result<Namespace<Self::Database>> {
+        Namespace::new_primary(&self.config, name, dump, allow_creation).await
+    }
+
+    async fn destroy(&self, namespace: &Bytes) -> crate::Result<()> {
+        let ns_path = self
+            .config
+            .base_path
+            .join("dbs")
+            .join(std::str::from_utf8(namespace).unwrap());
+        tokio::fs::remove_dir_all(ns_path).await?;
+        Ok(())
     }
 }
 
@@ -85,12 +100,23 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         &self,
         name: Bytes,
         dump: Option<DumpStream>,
-    ) -> anyhow::Result<Namespace<Self::Database>> {
+        allow_creation: bool,
+    ) -> crate::Result<Namespace<Self::Database>> {
         if dump.is_some() {
-            bail!("cannot load dump on replica");
+            return Err(Error::ReplicaLoadDump);
         }
 
-        Namespace::new_replica(&self.config, name).await
+        Namespace::new_replica(&self.config, name, allow_creation).await
+    }
+
+    async fn destroy(&self, namespace: &Bytes) -> crate::Result<()> {
+        let ns_path = self
+            .config
+            .base_path
+            .join("dbs")
+            .join(std::str::from_utf8(namespace).unwrap());
+        tokio::fs::remove_dir_all(ns_path).await?;
+        Ok(())
     }
 }
 
@@ -99,6 +125,7 @@ pub struct NamespaceStore<F: MakeNamespace> {
     inner: RwLock<HashMap<Bytes, Namespace<F::Database>>>,
     /// The namespace factory, to create new namespaces.
     factory: F,
+    allow_lazy_creation: bool,
 }
 
 impl NamespaceStore<ReplicaNamespaceMaker> {
@@ -108,25 +135,30 @@ impl NamespaceStore<ReplicaNamespaceMaker> {
             // FIXME: when destroying, we are waiting for all the tasks associated with the
             // allocation to finnish, which create a lot of contention on the lock. Need to use a
             // conccurent hashmap to deal with this issue.
+
+            // deallocate in-memory resources
             ns.destroy().await?;
-            // re-create the namespace
-            let ns = self.factory.create(namespace.clone(), None).await?;
-            lock.insert(namespace, ns);
         }
+
+        // destroy on-disk database
+        self.factory.destroy(&namespace).await?;
+        let ns = self.factory.create(namespace.clone(), None, true).await?;
+        lock.insert(namespace, ns);
 
         Ok(())
     }
 }
 
 impl<F: MakeNamespace> NamespaceStore<F> {
-    pub fn new(factory: F) -> Self {
+    pub fn new(factory: F, allow_lazy_creation: bool) -> Self {
         Self {
             inner: Default::default(),
             factory,
+            allow_lazy_creation,
         }
     }
 
-    pub async fn with<Fun, R>(&self, namespace: Bytes, f: Fun) -> anyhow::Result<R>
+    pub async fn with<Fun, R>(&self, namespace: Bytes, f: Fun) -> crate::Result<R>
     where
         Fun: FnOnce(&Namespace<F::Database>) -> R,
     {
@@ -135,20 +167,25 @@ impl<F: MakeNamespace> NamespaceStore<F> {
             Ok(f(ns))
         } else {
             let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
-            let ns = self.factory.create(namespace.clone(), None).await?;
+            let ns = self
+                .factory
+                .create(namespace.clone(), None, self.allow_lazy_creation)
+                .await?;
             let ret = f(&ns);
             lock.insert(namespace, ns);
             Ok(ret)
         }
     }
 
-    pub async fn create_with_dump(&self, namespace: Bytes, dump: DumpStream) -> anyhow::Result<()> {
+    pub async fn create(&self, namespace: Bytes, dump: Option<DumpStream>) -> crate::Result<()> {
         let lock = self.inner.upgradable_read().await;
         if lock.contains_key(&namespace) {
-            bail!("cannot create from dump: the namespace already exists");
+            return Err(crate::error::Error::NamespaceAlreadyExist(
+                String::from_utf8(namespace.to_vec()).unwrap_or_default(),
+            ));
         }
 
-        let ns = self.factory.create(namespace.clone(), Some(dump)).await?;
+        let ns = self.factory.create(namespace.clone(), dump, true).await?;
 
         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
         lock.insert(namespace, ns);
@@ -163,8 +200,6 @@ pub struct Namespace<T: Database> {
     pub db: T,
     /// The set of tasks associated with this namespace
     tasks: JoinSet<anyhow::Result<()>>,
-    /// Path to the namespace data
-    path: PathBuf,
 }
 
 pub struct ReplicaNamespaceConfig {
@@ -189,10 +224,21 @@ pub struct ReplicaNamespaceConfig {
 }
 
 impl Namespace<ReplicaDatabase> {
-    async fn new_replica(config: &ReplicaNamespaceConfig, name: Bytes) -> anyhow::Result<Self> {
-        let name_str = std::str::from_utf8(&name)?;
+    async fn new_replica(
+        config: &ReplicaNamespaceConfig,
+        name: Bytes,
+        allow_creation: bool,
+    ) -> crate::Result<Self> {
+        let name_str = std::str::from_utf8(&name).map_err(|_| Error::InvalidNamespace)?;
         let db_path = config.base_path.join("dbs").join(name_str);
-        tokio::fs::create_dir_all(&db_path).await?;
+
+        // there isn't a database folder for this database, and we're not allowed to create it.
+        if !allow_creation && !db_path.exists() {
+            return Err(crate::error::Error::NamespaceDoesntExist(
+                String::from_utf8(name.to_vec()).unwrap_or_default(),
+            ));
+        }
+
         let mut join_set = JoinSet::new();
         let replicator = Replicator::new(
             db_path.clone(),
@@ -231,13 +277,11 @@ impl Namespace<ReplicaDatabase> {
             db: ReplicaDatabase {
                 connection_maker: Arc::new(connection_maker),
             },
-            path: db_path,
         })
     }
 
     async fn destroy(mut self) -> anyhow::Result<()> {
         self.tasks.shutdown().await;
-        tokio::fs::remove_dir_all(&self.path).await?;
         Ok(())
     }
 }
@@ -255,6 +299,7 @@ pub struct PrimaryNamespaceConfig {
     pub max_response_size: u64,
     pub max_total_response_size: u64,
     pub checkpoint_interval: Option<Duration>,
+    pub disable_namespace: bool,
 }
 
 type DumpStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + 'static + Unpin>;
@@ -264,12 +309,26 @@ impl Namespace<PrimaryDatabase> {
         config: &PrimaryNamespaceConfig,
         name: Bytes,
         dump: Option<DumpStream>,
-    ) -> anyhow::Result<Self> {
+        allow_creation: bool,
+    ) -> crate::Result<Self> {
+        // if namespaces are disabled, then we allow creation for the default namespace.
+        let allow_creation =
+            allow_creation || (config.disable_namespace && name == DEFAULT_NAMESPACE_NAME);
+
         let mut join_set = JoinSet::new();
-        let name_str = std::str::from_utf8(&name)?;
+        let name_str = std::str::from_utf8(&name).map_err(|_| Error::InvalidNamespace)?;
         let db_path = config.base_path.join("dbs").join(name_str);
-        tokio::fs::create_dir_all(&db_path).await?;
+
+        // The database folder doesn't exist, bottomless replication is disabled (no db to recover)
+        // and we're not allowed to create a new database, return an error.
+        if !allow_creation && config.bottomless_replication.is_none() && !db_path.exists() {
+            return Err(crate::error::Error::NamespaceDoesntExist(
+                String::from_utf8(name.to_vec()).unwrap_or_default(),
+            ));
+        }
         let mut is_dirty = config.db_is_dirty;
+
+        tokio::fs::create_dir_all(&db_path).await?;
 
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
             let mut options = options.clone();
@@ -277,13 +336,25 @@ impl Namespace<PrimaryDatabase> {
             options.db_id = Some(db_id);
             let (replicator, did_recover) =
                 init_bottomless_replicator(db_path.join("data"), options.clone()).await?;
+
+            // There wasn't any database to recover from bottomless, and we are not allowed to
+            // create a new database
+            if !did_recover && !allow_creation {
+                // clean stale directory
+                // FIXME: this is not atomic, we could be left with a stale directory. Maybe do
+                // setup in a temp directory and then atomically rename it?
+                let _ = tokio::fs::remove_dir_all(&db_path).await;
+                return Err(crate::error::Error::NamespaceDoesntExist(
+                    String::from_utf8(name.to_vec()).unwrap_or_default(),
+                ));
+            }
+
             is_dirty |= did_recover;
             Some(Arc::new(std::sync::Mutex::new(replicator)))
         } else {
             None
         };
 
-        tokio::fs::create_dir_all(&db_path).await?;
         let is_fresh_db = check_fresh_db(&db_path);
         // switch frame-count checkpoint to time-based one
         let auto_checkpoint =
@@ -332,7 +403,7 @@ impl Namespace<PrimaryDatabase> {
 
         if let Some(dump) = dump {
             if !is_fresh_db {
-                anyhow::bail!("cannot load from a dump if a database already exists.\nIf you're sure you want to load from a dump, delete your database folder at `{}`", db_path.display());
+                return Err(Error::LoadDumpExistingDb);
             }
             let mut ctx = ctx_builder();
             load_dump(&db_path, dump, &mut ctx).await?;
@@ -346,7 +417,6 @@ impl Namespace<PrimaryDatabase> {
                 logger,
                 connection_maker,
             },
-            path: db_path,
         })
     }
 }
