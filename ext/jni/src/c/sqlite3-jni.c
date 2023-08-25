@@ -519,7 +519,7 @@ struct S3JniGlobalType {
   } metrics;
   /**
      The list of bound auto-extensions (Java-side:
-     org.sqlite.jni.AutoExtension objects).
+     org.sqlite.jni.auto_extension objects).
    */
   struct {
     S3JniAutoExtension *pExt /* Head of the auto-extension list */;
@@ -925,7 +925,7 @@ static void S3JniDb_set_aside_unlocked(JNIEnv * env, S3JniDb * const s){
     UNHOOK(preUpdate, 0);
 #endif
     UNHOOK(collation, 1);
-    UNHOOK(collationNeeded, 1);
+    UNHOOK(collationNeeded, 0);
     UNHOOK(busyHandler, 1);
 #undef UNHOOK
     UNREF_G(s->jDb);
@@ -1158,12 +1158,12 @@ static int S3JniAutoExtension_init(JNIEnv *const env,
                                    jobject const jAutoExt){
   jclass const klazz = (*env)->GetObjectClass(env, jAutoExt);
 
-  ax->midFunc = (*env)->GetMethodID(env, klazz, "xEntryPoint",
+  ax->midFunc = (*env)->GetMethodID(env, klazz, "call",
                                     "(Lorg/sqlite/jni/sqlite3;)I");
   UNREF_L(klazz);
   S3JniExceptionWarnIgnore;
   if( !ax->midFunc ){
-    MARKER(("Error getting xEntryPoint(sqlite3) from AutoExtension object."));
+    MARKER(("Error getting call(sqlite3) from AutoExtension object.\n"));
     S3JniAutoExtension_clear(env, ax);
     return SQLITE_ERROR;
   }
@@ -2025,7 +2025,7 @@ S3JniApi(sqlite3_busy_handler(),jint,1busy_1handler)(
     S3JniHook_unref(env, pHook, 1);
     pHook->jObj = REF_G(jBusy);
     klazz = (*env)->GetObjectClass(env, jBusy);
-    pHook->midCallback = (*env)->GetMethodID(env, klazz, "xCallback", "(I)I");
+    pHook->midCallback = (*env)->GetMethodID(env, klazz, "call", "(I)I");
     UNREF_L(klazz);
     S3JniIfThrew {
       S3JniHook_unref(env, pHook, 0);
@@ -2164,7 +2164,7 @@ S3JniApi(sqlite3_collation_needed(),jint,1collation_1needed)(
     return 0;
   }
   klazz = (*env)->GetObjectClass(env, jHook);
-  xCallback = (*env)->GetMethodID(env, klazz, "xCollationNeeded",
+  xCallback = (*env)->GetMethodID(env, klazz, "call",
                                   "(Lorg/sqlite/jni/sqlite3;ILjava/lang/String;)I");
   UNREF_L(klazz);
   S3JniIfThrew {
@@ -2289,8 +2289,7 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
     return pOld;
   }
   klazz = (*env)->GetObjectClass(env, jHook);
-  xCallback = (*env)->GetMethodID(env, klazz,
-                                  isCommit ? "xCommitHook" : "xRollbackHook",
+  xCallback = (*env)->GetMethodID(env, klazz, "call",
                                   isCommit ? "()I" : "()V");
   UNREF_L(klazz);
   S3JniIfThrew {
@@ -2400,7 +2399,7 @@ S3JniApi(sqlite3_config(/* for SQLLOG */),
     return 0;
   }
   klazz = (*env)->GetObjectClass(env, jLog);
-  hook->midCallback = (*env)->GetMethodID(env, klazz, "xSqllog",
+  hook->midCallback = (*env)->GetMethodID(env, klazz, "call",
                                           "(Lorg/sqlite/jni/sqlite3;"
                                           "Ljava/lang/String;"
                                           "I)V");
@@ -2444,7 +2443,7 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
 
   if( !pHook ) return SQLITE_MISUSE;
   klazz = (*env)->GetObjectClass(env, oCollation);
-  pHook->midCallback = (*env)->GetMethodID(env, klazz, "xCompare",
+  pHook->midCallback = (*env)->GetMethodID(env, klazz, "call",
                                            "([B[B)I");
   UNREF_L(klazz);
   S3JniIfThrew{
@@ -3055,13 +3054,13 @@ static jobject s3jni_updatepre_hook(JNIEnv * env, int isPre, jobject jDb, jobjec
   }
   klazz = (*env)->GetObjectClass(env, jHook);
   xCallback = isPre
-    ? (*env)->GetMethodID(env, klazz, "xPreUpdate",
+    ? (*env)->GetMethodID(env, klazz, "call",
                           "(Lorg/sqlite/jni/sqlite3;"
                           "I"
                           "Ljava/lang/String;"
                           "Ljava/lang/String;"
                           "JJ)V")
-    : (*env)->GetMethodID(env, klazz, "xUpdateHook",
+    : (*env)->GetMethodID(env, klazz, "call",
                           "(ILjava/lang/String;Ljava/lang/String;J)V");
   UNREF_L(klazz);
   S3JniIfThrew {
@@ -3167,7 +3166,7 @@ S3JniApi(sqlite3_progress_handler(),void,1progress_1handler)(
     return;
   }
   klazz = (*env)->GetObjectClass(env, jProgress);
-  xCallback = (*env)->GetMethodID(env, klazz, "xCallback", "()I");
+  xCallback = (*env)->GetMethodID(env, klazz, "call", "()I");
   UNREF_L(klazz);
   S3JniIfThrew {
     S3JniExceptionClear;
@@ -3476,7 +3475,7 @@ S3JniApi(sqlite3_set_authorizer(),jint,1set_1authorizer)(
     pHook->jObj = REF_G(jHook);
     klazz = (*env)->GetObjectClass(env, jHook);
     pHook->midCallback = (*env)->GetMethodID(env, klazz,
-                                             "xAuth",
+                                             "call",
                                              "(I"
                                              "Ljava/lang/String;"
                                              "Ljava/lang/String;"
@@ -3667,25 +3666,26 @@ S3JniApi(sqlite3_trace_v2(),jint,1trace_1v2)(
   JniArgsEnvClass,jobject jDb, jint traceMask, jobject jTracer
 ){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
+  S3JniHook * const pHook = ps ? &ps->hooks.trace : 0;
   jclass klazz;
 
-  if( !traceMask || !jTracer ){
-    if( ps ){
-      S3JniHook_unref(env, &ps->hooks.trace, 0);
-    }
+  if( !ps ) return SQLITE_MISUSE;
+  else if( !traceMask || !jTracer ){
+    S3JniHook_unref(env, pHook, 0);
     return (jint)sqlite3_trace_v2(ps->pDb, 0, 0, 0);
   }
-  if( !ps ) return SQLITE_NOMEM;
   klazz = (*env)->GetObjectClass(env, jTracer);
-  ps->hooks.trace.midCallback = (*env)->GetMethodID(env, klazz, "xCallback",
-                                              "(ILjava/lang/Object;Ljava/lang/Object;)I");
+  pHook->midCallback = (*env)->GetMethodID(
+    env, klazz, "call", "(ILjava/lang/Object;Ljava/lang/Object;)I"
+  );
   UNREF_L(klazz);
   S3JniIfThrew {
     S3JniExceptionClear;
+    S3JniHook_unref(env, pHook, 0);
     return s3jni_db_error(ps->pDb, SQLITE_ERROR,
                           "Cannot not find matching xCallback() on Tracer object.");
   }
-  ps->hooks.trace.jObj = REF_G(jTracer);
+  pHook->jObj = REF_G(jTracer);
   return sqlite3_trace_v2(ps->pDb, (unsigned)traceMask, s3jni_trace_impl, ps);
 }
 

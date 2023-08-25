@@ -609,9 +609,9 @@ public class SQLTester {
       }
       t.addTestScript(a);
     }
-    final AutoExtension ax = new AutoExtension() {
+    final auto_extension_callback ax = new auto_extension_callback() {
         private final SQLTester tester = t;
-        public int xEntryPoint(sqlite3 db){
+        @Override public int call(sqlite3 db){
           final String init = tester.getDbInitSql();
           if( !init.isEmpty() ){
             tester.execSql(db, true, ResultBufferMode.NONE, null, init);

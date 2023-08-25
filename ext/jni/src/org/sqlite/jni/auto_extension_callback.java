@@ -1,5 +1,5 @@
 /*
-** 2023-08-05
+** 2023-08-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -17,24 +17,25 @@ package org.sqlite.jni;
    A callback for use with the sqlite3_auto_extension() family of
    APIs.
 */
-public interface AutoExtension {
+public interface auto_extension_callback extends sqlite3_callback_proxy {
   /**
-     Must function as described for a sqlite3_auto_extension()
-     callback, with the caveat that the signature is shorter.
+     Must function as described for a C-level
+     sqlite3_auto_extension() callback, with the caveat that the
+     signature is shorter.
 
-     AutoExtensions may throw and the exception's error message
-     will be set as the db's error string.
+     This callback may throw and the exception's error message will
+     be set as the db's error string.
 
      Tips for implementations:
 
      - Opening a database from an auto-extension handler will lead to
-       an endless recursion of the auto-handler triggering itself
-       indirectly for each newly-opened database.
+     an endless recursion of the auto-handler triggering itself
+     indirectly for each newly-opened database.
 
      - If this routine is stateful, it may be useful to make the
-       overridden method synchronized.
+     overridden method synchronized.
 
      - Results are undefined if db is closed by an auto-extension.
   */
-  int xEntryPoint(sqlite3 db);
+  int call(sqlite3 db);
 }

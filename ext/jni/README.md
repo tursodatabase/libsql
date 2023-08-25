@@ -184,17 +184,6 @@ necessarily suppress any exceptions in order to maintain the C-style
 semantics of the APIs.
 
 
-Awkward Callback Names
-------------------------------------------------------------------------
-
-In places where the Java interface uses callbacks (see below), those
-callbacks often have what might fairly be labeled as awkward names,
-e.g. `sqlScalarFunction.xFunc()` and `preupdateHook.xPreUpdate()`.
-Those names were chosen because they match the corresponding arguments
-in the C-level API docs. If they were renamed to be more Java-esque,
-documentation transparency would suffer.
-
-
 Unwieldy Constructs are Re-mapped
 ------------------------------------------------------------------------
 
@@ -246,18 +235,18 @@ follow that pattern use a slightly different Java interface:
 
 ```java
 int sqlite3_create_collation(sqlite3 db, String name, int eTextRep,
-                             Collation collation);
+                             SomeCallbackType collation);
 ```
 
-Where the `Collation` class has an abstract `xCompare()` method and
+Where the `Collation` class has an abstract `call()` method and
 no-op `xDestroy()` method which can be overridden if needed, leading to
 a much more Java-esque usage:
 
 ```java
-int rc = sqlite3_create_collation(db, "mycollation", SQLITE_UTF8, new Collation(){
+int rc = sqlite3_create_collation(db, "mycollation", SQLITE_UTF8, new SomeCallbackType(){
 
   // Required comparison function:
-  @Override public int xCompare(byte[] lhs, byte[] rhs){ ... }
+  @Override public int call(byte[] lhs, byte[] rhs){ ... }
 
   // Optional finalizer function:
   @Override public void xDestroy(){ ... }

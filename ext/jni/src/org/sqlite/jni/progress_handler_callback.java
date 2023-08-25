@@ -1,5 +1,5 @@
 /*
-** 2023-07-22
+** 2023-08-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,12 +14,14 @@
 package org.sqlite.jni;
 
 /**
-   Callback proxy for use with sqlite3_commit_hook().
+   Callback for use with sqlite3_progress_handler()
 */
-public interface CommitHook {
+public interface progress_handler_callback extends sqlite3_callback_proxy {
   /**
-     Works as documented for the sqlite3_commit_hook() callback.
-     Must not throw.
+     Works as documented for the C-level sqlite3_progress_handler() callback.
+
+     If it throws, the exception message is passed on to the db and
+     the exception is suppressed.
   */
-  int xCommitHook();
+  int call();
 }

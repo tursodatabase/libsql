@@ -1,5 +1,5 @@
 /*
-** 2023-08-23
+** 2023-08-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,16 +14,18 @@
 package org.sqlite.jni;
 
 /**
-   A callback for use with sqlite3_preupdate_hook().
+   Callback for use with sqlite3_create_collation()
 */
-public interface PreUpdateHook {
+public abstract class collation_callback
+  implements sqlite3_callback_proxy, sqlite3_xDestroy_callback {
   /**
-     Must function as described for the sqlite3_preupdate_hook().
-     callback, with the slight signature change.
-
-     Must not throw. Any exceptions may emit debugging messages and
-     will be suppressed.
+     Must compare the given byte arrays using memcmp() semantics.
   */
-  void xPreUpdate(sqlite3 db, int op, String dbName, String dbTable,
-                  long iKey1, long iKey2 );
+  public abstract int call(byte[] lhs, byte[] rhs);
+
+  /**
+     Called by SQLite when the collation is destroyed. If a collation
+     requires custom cleanup, override this method.
+  */
+  public void xDestroy(){}
 }

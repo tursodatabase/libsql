@@ -1,5 +1,5 @@
 /*
-** 2023-07-22
+** 2023-08-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -13,33 +13,35 @@
 */
 package org.sqlite.jni;
 
+
 /**
-   Callback proxy for use with sqlite3_busy_handler().
+   Callback for use with sqlite3_busy_handler()
 */
-public abstract class BusyHandler {
+public abstract class busy_handler_callback
+  implements sqlite3_callback_proxy, sqlite3_xDestroy_callback {
   /**
-     Must function as documented for the sqlite3_busy_handler()
-     callback argument, minus the (void*) argument the C-level
-     function requires.
+     Must function as documented for the C-level
+     sqlite3_busy_handler() callback argument, minus the (void*)
+     argument the C-level function requires.
 
      Any exceptions thrown by this callback are suppressed in order to
      retain the C-style API semantics of the JNI bindings.
   */
-  public abstract int xCallback(int n);
+  public abstract int call(int n);
 
   /**
      Optionally override to perform any cleanup when this busy
      handler is destroyed. It is destroyed when:
 
      - The associated db is passed to sqlite3_close() or
-       sqlite3_close_v2().
+     sqlite3_close_v2().
 
      - sqlite3_busy_handler() is called to replace the handler,
-       whether it's passed a null handler or any other instance of
-       this class.
+     whether it's passed a null handler or any other instance of
+     this class.
 
      - sqlite3_busy_timeout() is called, which implicitly installs
-       a busy handler.
+     a busy handler.
   */
   public void xDestroy(){}
 }

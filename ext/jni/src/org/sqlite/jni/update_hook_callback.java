@@ -1,5 +1,5 @@
 /*
-** 2023-07-22
+** 2023-08-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,14 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback proxy for use with sqlite3_progress_handler().
+   Callback for use with sqlite3_update_hook().
 */
-public interface ProgressHandler {
+public interface update_hook_callback extends sqlite3_callback_proxy {
   /**
-     Works as documented for the sqlite3_progress_handler() callback.
-
-     If it throws, the exception message is passed on to the db and
-     the exception is suppressed.
+     Must function as described for the C-level sqlite3_update_hook()
+     callback.  Must not throw.
   */
-  int xCallback();
+  void call(int opId, String dbName, String tableName, long rowId);
 }

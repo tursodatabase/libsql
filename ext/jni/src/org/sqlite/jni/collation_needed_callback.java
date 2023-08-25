@@ -1,5 +1,5 @@
 /*
-** 2023-07-22
+** 2023-08-25
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,15 +14,15 @@
 package org.sqlite.jni;
 
 /**
+   Callback for use with sqlite3_collation_needed().
 */
-public abstract class Collation {
+public interface collation_needed_callback extends sqlite3_callback_proxy {
   /**
-     Must compare the given byte arrays using memcmp() semantics.
+     Has the same semantics as the C-level sqlite3_create_collation()
+     callback.
+
+     <p>If it throws, the exception message is passed on to the db and
+     the exception is suppressed.
   */
-  public abstract int xCompare(byte[] lhs, byte[] rhs);
-  /**
-     Called by SQLite when the collation is destroyed. If a Collation
-     requires custom cleanup, override this method.
-  */
-  public void xDestroy() {}
+  int call(sqlite3 db, int eTextRep, String collationName);
 }
