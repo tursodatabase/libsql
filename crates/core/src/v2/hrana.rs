@@ -370,7 +370,11 @@ impl RowsInner for Rows {
     }
 
     fn column_name(&self, idx: i32) -> Option<&str> {
-        todo!();
+        self.cols
+            .get(idx as usize)
+            .map(|c| c.name.as_ref())
+            .flatten()
+            .map(|s| s.as_str())
     }
 }
 
