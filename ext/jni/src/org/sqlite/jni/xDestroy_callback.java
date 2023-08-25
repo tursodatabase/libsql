@@ -19,7 +19,7 @@ package org.sqlite.jni;
    the symbol name xDestroy() for this purpose in the C API
    documentation.
 */
-public interface sqlite3_xDestroy_callback {
+public interface xDestroy_callback {
   /**
      Must perform any cleanup required by this object. Must not
      throw.

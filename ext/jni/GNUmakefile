@@ -85,7 +85,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   sqlite3_context.java \
   sqlite3_stmt.java \
   sqlite3_value.java \
-  sqlite3_xDestroy_callback.java \
+  xDestroy_callback.java \
 )
 ifeq (1,$(enable.fts5))
   JAVA_FILES.main += $(patsubst %,$(dir.src.jni)/%,\

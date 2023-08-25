@@ -18,7 +18,7 @@ package org.sqlite.jni;
    Callback for use with sqlite3_busy_handler()
 */
 public abstract class busy_handler_callback
-  implements sqlite3_callback_proxy, sqlite3_xDestroy_callback {
+  implements sqlite3_callback_proxy, xDestroy_callback {
   /**
      Must function as documented for the C-level
      sqlite3_busy_handler() callback argument, minus the (void*)

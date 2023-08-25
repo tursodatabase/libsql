@@ -78,7 +78,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
      whether pAux has an xDestroy() method. */
   public native int xSetAuxdata(@NotNull Fts5Context cx, @Nullable Object pAux);
   public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte[] pText,
-                              @NotNull Fts5.xTokenizeCallback callback);
+                              @NotNull Fts5.xTokenize_callback callback);
 
   public native Object xUserData(Fts5Context cx);
   //^^^ returns the pointer passed as the 3rd arg to the C-level

@@ -4439,7 +4439,7 @@ static jint s3jni_fts5_xTokenize(JniArgsEnvObj, S3NphRef const *pRef,
   s.jCallback = jCallback;
   s.jFcx = jFcx;
   s.fext = fext;
-  s.midCallback = (*env)->GetMethodID(env, klazz, "xToken", "(I[BII)I");
+  s.midCallback = (*env)->GetMethodID(env, klazz, "call", "(I[BII)I");
   S3JniUnrefLocal(klazz);
   S3JniIfThrew {
     S3JniExceptionReport;

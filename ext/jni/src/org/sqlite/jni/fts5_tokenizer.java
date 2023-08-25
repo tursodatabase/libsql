@@ -30,7 +30,7 @@ public final class fts5_tokenizer extends NativePointerHolder<fts5_tokenizer> {
 
   public native int xTokenize(@NotNull Fts5Tokenizer t, int tokFlags,
                               @NotNull byte pText[],
-                              @NotNull Fts5.xTokenizeCallback callback);
+                              @NotNull Fts5.xTokenize_callback callback);
 
 
   // int (*xTokenize)(Fts5Tokenizer*,

@@ -25,9 +25,11 @@ public final class Fts5 {
   /* Not used */
   private Fts5(){}
 
-  //! Callback type for use with xTokenize() variants
-  public static interface xTokenizeCallback {
-    int xToken(int tFlags, byte[] txt, int iStart, int iEnd);
+  /**
+     Callback type for use with xTokenize() variants
+  */
+  public static interface xTokenize_callback {
+    int call(int tFlags, byte[] txt, int iStart, int iEnd);
   }
 
   public static final int FTS5_TOKENIZE_QUERY    = 0x0001;
