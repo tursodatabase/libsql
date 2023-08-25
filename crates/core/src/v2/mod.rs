@@ -20,7 +20,7 @@ pub use transaction::Transaction;
 enum DbType {
     Memory,
     File { path: String },
-    Sync { path: String, url: String, token: String },
+    Sync { db: crate::Database },
     Remote { url: String },
 }
 
@@ -43,13 +43,11 @@ impl Database {
         })
     }
 
-    pub fn open_with_sync(db_path: impl Into<String>, url: impl Into<String>, token: impl Into<String>) -> Result<Database> {
+    pub async fn open_with_sync(db_path: impl Into<String>, url: impl Into<String>, token: impl Into<String>) -> Result<Database> {
+        let opts = crate::Opts::with_http_sync(url, token);
+        let db = crate::Database::open_with_opts(db_path, opts).await?;
         Ok(Database {
-            db_type: DbType::Sync {
-                path: db_path.into(),
-                url: url.into(),
-                token: token.into(),
-            },
+            db_type: DbType::Sync { db },
         })
     }
 
@@ -79,9 +77,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            DbType::Sync { path, url, token } => {
-                let opts = crate::Opts::with_http_sync(url, token);
-                let db = crate::Database::open_with_opts(path, opts).await?;
+            DbType::Sync { db } => {
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
@@ -94,6 +90,16 @@ impl Database {
 
                 Ok(Connection { conn })
             }
+        }
+    }
+
+    pub async fn sync(&self) -> Result<()> {
+        match &self.db_type {
+            DbType::Sync { db } => {
+                db.sync().await?;
+                Ok(())
+            }
+            _ => Err(crate::Error::SyncNotSupported),
         }
     }
 }
