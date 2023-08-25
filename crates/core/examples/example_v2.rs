@@ -3,7 +3,12 @@ use libsql::v2::Database;
 #[tokio::main]
 async fn main() {
     let db = if let Ok(url) = std::env::var("LIBSQL_HRANA_URL") {
-        Database::open_remote(url).unwrap()
+        let token = std::env::var("TURSO_AUTH_TOKEN").unwrap_or_else(|_| {
+            println!("TURSO_AUTH_TOKEN not set, using empty token...");
+            "".to_string()
+        });
+
+        Database::open_remote(url, token).unwrap()
     } else {
         Database::open_in_memory().unwrap()
     };

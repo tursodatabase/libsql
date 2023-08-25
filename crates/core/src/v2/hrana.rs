@@ -1,6 +1,7 @@
 mod pipeline;
 mod proto;
 
+use hyper::header::AUTHORIZATION;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
@@ -56,15 +57,20 @@ impl InnerClient {
         Self { inner }
     }
 
-    async fn send(&self, url: String, _auth: String, body: String) -> Result<ServerMsg> {
+    async fn send(&self, url: String, auth: String, body: String) -> Result<ServerMsg> {
         let req = hyper::Request::post(url)
+            .header(AUTHORIZATION, auth)
             .body(hyper::Body::from(body))
             .unwrap();
 
         let res = self.inner.request(req).await.map_err(HranaError::from)?;
 
         if res.status() != StatusCode::OK {
-            // TODO(lucio): Error branch!
+            let body = hyper::body::to_bytes(res.into_body())
+                .await
+                .map_err(HranaError::from)?;
+            let body = String::from_utf8(body.into()).unwrap();
+            return Err(HranaError::Api(body).into());
         }
 
         let body = hyper::body::to_bytes(res.into_body())
@@ -91,6 +97,8 @@ pub enum HranaError {
     Json(#[from] serde_json::Error),
     #[error("http error: `{0}`")]
     Http(#[from] hyper::Error),
+    #[error("api error: `{0}`")]
+    Api(String),
 }
 
 impl Client {
