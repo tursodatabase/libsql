@@ -14,12 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with sqlite3_rollback_hook()
+   Callback for use with sqlite3_update_hook().
 */
-public interface rollback_hook_callback extends sqlite3_callback_proxy {
+public interface UpdateHookCallback extends SQLite3CallbackProxy {
   /**
-     Works as documented for the C-level sqlite3_rollback_hook()
+     Must function as described for the C-level sqlite3_update_hook()
      callback.  Must not throw.
   */
-  void call();
+  void call(int opId, String dbName, String tableName, long rowId);
 }

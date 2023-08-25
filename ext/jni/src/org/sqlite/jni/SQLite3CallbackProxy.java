@@ -20,15 +20,15 @@ package org.sqlite.jni;
 
    <p>Callbacks of this style follow a common naming convention:
 
-   <p>1) They almost all have the same class or interface name as the
-   C function they are proxying a callback for, minus the sqlite3_
-   prefix, plus a _callback suffix. e.g. sqlite3_busy_handler()'s
-   callback is named busy_handler_callback. Exceptions are made where
-   that would potentially be ambiguous, e.g. config_sqllog_callback
-   instead of config_callback because the sqlite3_config() interface
-   may need to support more callback types in the future.
+   <p>1) They use the UpperCamelCase form of the C function they're
+   proxying for, minus the sqlite3_ prefix, plus a Callback
+   suffix. e.g. sqlite3_busy_handler()'s callback is named
+   BusyHandlerCallback. Exceptions are made where that would
+   potentially be ambiguous, e.g. ConfigSqllogCallback instead of
+   config_callback because the sqlite3_config() interface may need to
+   support more callback types in the future.
 
    <p>2) They all have a call() method but its signature is
    callback-specific.
 */
-public interface sqlite3_callback_proxy {}
+public interface SQLite3CallbackProxy {}

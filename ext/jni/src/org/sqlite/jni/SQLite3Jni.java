@@ -155,7 +155,7 @@ public final class SQLite3Jni {
 
      <p>See the AutoExtension class docs for more information.
   */
-  public static native int sqlite3_auto_extension(@NotNull auto_extension_callback callback);
+  public static native int sqlite3_auto_extension(@NotNull AutoExtensionCallback callback);
 
   /**
      Results are undefined if data is not null and n<0 || n>=data.length.
@@ -286,12 +286,12 @@ public final class SQLite3Jni {
   );
 
   /**
-     As for the C-level function of the same name, with a busy_handler_callback
+     As for the C-level function of the same name, with a BusyHandlerCallback
      instance in place of a callback function. Pass it a null handler
      to clear the busy handler.
   */
   public static native int sqlite3_busy_handler(
-    @NotNull sqlite3 db, @Nullable busy_handler_callback handler
+    @NotNull sqlite3 db, @Nullable BusyHandlerCallback handler
   );
 
   public static native int sqlite3_busy_timeout(
@@ -299,7 +299,7 @@ public final class SQLite3Jni {
   );
 
   public static native boolean sqlite3_cancel_auto_extension(
-    @NotNull auto_extension_callback ax
+    @NotNull AutoExtensionCallback ax
   );
 
   public static native int sqlite3_changes(
@@ -465,7 +465,7 @@ public final class SQLite3Jni {
      Java's string type is compatible with that interface.
   */
   public static native int sqlite3_collation_needed(
-    @NotNull sqlite3 db, @Nullable collation_needed_callback callback
+    @NotNull sqlite3 db, @Nullable CollationNeededCallback callback
   );
 
   /**
@@ -476,8 +476,8 @@ public final class SQLite3Jni {
     @NotNull sqlite3_context cx
   );
 
-  public static native commit_hook_callback sqlite3_commit_hook(
-    @NotNull sqlite3 db, @Nullable commit_hook_callback hook
+  public static native CommitHookCallback sqlite3_commit_hook(
+    @NotNull sqlite3 db, @Nullable CommitHookCallback hook
   );
 
   public static native String sqlite3_compileoption_get(
@@ -488,34 +488,34 @@ public final class SQLite3Jni {
     @NotNull String optName
   );
 
-  /*
-  ** Works like in the C API with the exception that it only supports
-  ** the following subset of configution flags:
-  **
-  ** - SQLITE_CONFIG_SINGLETHREAD
-  ** - SQLITE_CONFIG_MULTITHREAD
-  ** - SQLITE_CONFIG_SERIALIZED
-  **
-  ** Others may be added in the future. It returns SQLITE_MISUSE if
-  ** given an argument it does not handle.
+  /**
+     <p>Works like in the C API with the exception that it only supports
+     the following subset of configution flags:
+     
+     <p>SQLITE_CONFIG_SINGLETHREAD
+     SQLITE_CONFIG_MULTITHREAD
+     SQLITE_CONFIG_SERIALIZED
+
+     <p>Others may be added in the future. It returns SQLITE_MISUSE if
+     given an argument it does not handle.
   */
   public static native int sqlite3_config(int op);
 
-  /*
-  ** If the native library was built with SQLITE_ENABLE_SQLLOG defined
-  ** then this acts as a proxy for C's
-  ** sqlite3_config(SQLITE_ENABLE_SQLLOG,...). This sets or clears the
-  ** logger. If installation of a logger fails, any previous logger is
-  ** retained.
-  **
-  ** If not built with SQLITE_ENABLE_SQLLOG defined, this returns
-  ** SQLITE_MISUSE.
+  /**
+     If the native library was built with SQLITE_ENABLE_SQLLOG defined
+     then this acts as a proxy for C's
+     sqlite3_config(SQLITE_ENABLE_SQLLOG,...). This sets or clears the
+     logger. If installation of a logger fails, any previous logger is
+     retained.
+
+     If not built with SQLITE_ENABLE_SQLLOG defined, this returns
+     SQLITE_MISUSE.
   */
-  public static native int sqlite3_config( @Nullable config_sqllog_callback logger );
+  public static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
 
   public static native int sqlite3_create_collation(
     @NotNull sqlite3 db, @NotNull String name, int eTextRep,
-    @NotNull collation_callback col
+    @NotNull Collation col
   );
 
   /**
@@ -834,8 +834,8 @@ public final class SQLite3Jni {
      acts as a proxy for C's sqlite3_preupdate_hook(), else it returns null
      with no side effects.
   */
-  public static native preupdate_hook_callback sqlite3_preupdate_hook(
-    @NotNull sqlite3 db, @Nullable preupdate_hook_callback hook
+  public static native PreupdateHookCallback sqlite3_preupdate_hook(
+    @NotNull sqlite3 db, @Nullable PreupdateHookCallback hook
   );
 
   /**
@@ -875,7 +875,7 @@ public final class SQLite3Jni {
   }
 
   public static native void sqlite3_progress_handler(
-    @NotNull sqlite3 db, int n, @Nullable progress_handler_callback h
+    @NotNull sqlite3 db, int n, @Nullable ProgressHandlerCallback h
   );
 
   public static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
@@ -1163,13 +1163,13 @@ public final class SQLite3Jni {
     }
   }
 
-  public static native rollback_hook_callback sqlite3_rollback_hook(
-    @NotNull sqlite3 db, @Nullable rollback_hook_callback hook
+  public static native RollbackHookCallback sqlite3_rollback_hook(
+    @NotNull sqlite3 db, @Nullable RollbackHookCallback hook
   );
 
   //! Sets or unsets (if auth is null) the current authorizer.
   public static native int sqlite3_set_authorizer(
-    @NotNull sqlite3 db, @Nullable authorizer_callback auth
+    @NotNull sqlite3 db, @Nullable AuthorizerCallback auth
   );
 
   public static native void sqlite3_set_last_insert_rowid(
@@ -1236,11 +1236,11 @@ public final class SQLite3Jni {
      cannot be processed propertly (i.e. an internal error).
   */
   public static native int sqlite3_trace_v2(
-    @NotNull sqlite3 db, int traceMask, @Nullable trace_v2_callback tracer
+    @NotNull sqlite3 db, int traceMask, @Nullable TraceV2Callback tracer
   );
 
-  public static native update_hook_callback sqlite3_update_hook(
-    sqlite3 db, update_hook_callback hook
+  public static native UpdateHookCallback sqlite3_update_hook(
+    sqlite3 db, UpdateHookCallback hook
   );
 
   public static native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);

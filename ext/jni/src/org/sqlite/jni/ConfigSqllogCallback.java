@@ -1,5 +1,5 @@
 /*
-** 2023-08-25
+** 2023-08-23
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,16 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with sqlite3_set_authorizer().
+   A callback for use with sqlite3_config().
 */
-public interface authorizer_callback extends sqlite3_callback_proxy {
+public interface ConfigSqllogCallback {
   /**
-     Must function as described for the C-level
-     sqlite3_set_authorizer() callback.
-
-     Must not throw.
+     Must function as described for a C-level callback for
+     {@link SQLite3Jni#sqlite3_config(ConfigSqllogCallback)}, with the slight signature change.
   */
-  int call(int opId, @Nullable String s1, @Nullable String s2,
-           @Nullable String s3, @Nullable String s4);
-
+  void call(sqlite3 db, String msg, int msgType );
 }

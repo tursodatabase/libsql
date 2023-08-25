@@ -14,12 +14,14 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with sqlite3_commit_hook()
+   Callback for use with sqlite3_progress_handler()
 */
-public interface commit_hook_callback extends sqlite3_callback_proxy {
+public interface ProgressHandlerCallback extends SQLite3CallbackProxy {
   /**
-     Works as documented for the C-level sqlite3_commit_hook()
-     callback.  Must not throw.
+     Works as documented for the C-level sqlite3_progress_handler() callback.
+
+     If it throws, the exception message is passed on to the db and
+     the exception is suppressed.
   */
   int call();
 }

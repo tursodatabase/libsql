@@ -38,6 +38,9 @@ public abstract class SQLFunction {
      managing their accumulator state across calls to the UDF's
      callbacks.
 
+     <p>T must be of a type which can be legally stored as a value in
+     java.util.HashMap<KeyType,T>.
+
      <p>If a given aggregate or window function is called multiple times
      in a single SQL statement, e.g. SELECT MYFUNC(A), MYFUNC(B)...,
      then the clients need some way of knowing which call is which so
@@ -55,9 +58,6 @@ public abstract class SQLFunction {
      Client UDFs are free to perform such mappings using custom
      approaches. The provided Aggregate<T> and Window<T> classes
      use this.
-
-     <p>T must be of a type which can be legally stored as a value in
-     java.util.HashMap<KeyType,T>.
   */
   public static final class PerContextState<T> {
     private final java.util.Map<Long,ValueHolder<T>> map

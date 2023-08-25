@@ -2,9 +2,11 @@ package org.sqlite.jni;
 
 /**
    This annotation is for flagging parameters which may not legally be
-   null. Note that the C-style API does not throw any
-   NullPointerExceptions on its own because it has a no-throw policy
-   in order to retain its C-style semantics.
+   null. Note that the C-style API does not throw any exceptions on
+   its own because it has a no-throw policy in order to retain its
+   C-style semantics, but it may trigger NullPointerExceptions (or
+   similar) if passed a null for a parameter flagged with this
+   annotation.
 
    <p>This annotation is informational only. No policy is in place to
    programmatically ensure that NotNull is conformed to in client

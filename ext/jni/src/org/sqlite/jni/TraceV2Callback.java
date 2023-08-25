@@ -16,7 +16,7 @@ package org.sqlite.jni;
 /**
    Callback proxy for use with sqlite3_trace_v2().
 */
-public interface trace_v2_callback extends sqlite3_callback_proxy {
+public interface TraceV2Callback extends SQLite3CallbackProxy {
   /**
      Called by sqlite3 for various tracing operations, as per
      sqlite3_trace_v2(). Note that this interface elides the 2nd

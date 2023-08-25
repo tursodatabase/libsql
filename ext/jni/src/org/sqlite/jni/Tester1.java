@@ -489,7 +489,7 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     final ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
-    final collation_callback myCollation = new collation_callback() {
+    final Collation myCollation = new Collation() {
         private String myState =
           "this is local state. There is much like it, but this is mine.";
         @Override
@@ -513,7 +513,7 @@ public class Tester1 implements Runnable {
           xDestroyCalled.value = true;
         }
       };
-    final collation_needed_callback collLoader = new collation_needed_callback(){
+    final CollationNeededCallback collLoader = new CollationNeededCallback(){
         @Override
         public int call(sqlite3 dbArg, int eTextRep, String collationName){
           affirm(dbArg == db/* as opposed to a temporary object*/);
@@ -881,7 +881,7 @@ public class Tester1 implements Runnable {
     int rc = sqlite3_trace_v2(
       db, SQLITE_TRACE_STMT | SQLITE_TRACE_PROFILE
           | SQLITE_TRACE_ROW | SQLITE_TRACE_CLOSE,
-      new trace_v2_callback(){
+      new TraceV2Callback(){
         @Override public int call(int traceFlag, Object pNative, Object x){
           ++counter.value;
           //outln("TRACE "+traceFlag+" pNative = "+pNative.getClass().getName());
@@ -942,7 +942,7 @@ public class Tester1 implements Runnable {
 
     final ValueHolder<Boolean> xDestroyed = new ValueHolder<>(false);
     final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
-    busy_handler_callback handler = new busy_handler_callback(){
+    BusyHandlerCallback handler = new BusyHandlerCallback(){
         @Override public int call(int n){
           //outln("busy handler #"+n);
           return n > 2 ? 0 : ++xBusyCalled.value;
@@ -976,7 +976,7 @@ public class Tester1 implements Runnable {
   private void testProgress(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
-    sqlite3_progress_handler(db, 1, new progress_handler_callback(){
+    sqlite3_progress_handler(db, 1, new ProgressHandlerCallback(){
         @Override public int call(){
           ++counter.value;
           return 0;
@@ -995,13 +995,13 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> hookResult = new ValueHolder<>(0);
-    final commit_hook_callback theHook = new commit_hook_callback(){
+    final CommitHookCallback theHook = new CommitHookCallback(){
         @Override public int call(){
           ++counter.value;
           return hookResult.value;
         }
       };
-    commit_hook_callback oldHook = sqlite3_commit_hook(db, theHook);
+    CommitHookCallback oldHook = sqlite3_commit_hook(db, theHook);
     affirm( null == oldHook );
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     affirm( 2 == counter.value );
@@ -1022,7 +1022,7 @@ public class Tester1 implements Runnable {
     execSql(db, "BEGIN; update t set a='g' where a='f'; COMMIT;");
     affirm( 4 == counter.value );
 
-    final commit_hook_callback newHook = new commit_hook_callback(){
+    final CommitHookCallback newHook = new CommitHookCallback(){
         @Override public int call(){return 0;}
       };
     oldHook = sqlite3_commit_hook(db, newHook);
@@ -1044,7 +1044,7 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
-    final update_hook_callback theHook = new update_hook_callback(){
+    final UpdateHookCallback theHook = new UpdateHookCallback(){
         @Override
         public void call(int opId, String dbName, String tableName, long rowId){
           ++counter.value;
@@ -1053,7 +1053,7 @@ public class Tester1 implements Runnable {
           }
         }
       };
-    update_hook_callback oldHook = sqlite3_update_hook(db, theHook);
+    UpdateHookCallback oldHook = sqlite3_update_hook(db, theHook);
     affirm( null == oldHook );
     expectedOp.value = SQLITE_INSERT;
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
@@ -1073,7 +1073,7 @@ public class Tester1 implements Runnable {
     oldHook = sqlite3_update_hook(db, null);
     affirm( null == oldHook );
 
-    final update_hook_callback newHook = new update_hook_callback(){
+    final UpdateHookCallback newHook = new UpdateHookCallback(){
         @Override public void call(int opId, String dbName, String tableName, long rowId){
         }
       };
@@ -1101,7 +1101,7 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> expectedOp = new ValueHolder<>(0);
-    final preupdate_hook_callback theHook = new preupdate_hook_callback(){
+    final PreupdateHookCallback theHook = new PreupdateHookCallback(){
         @Override
         public void call(sqlite3 db, int opId, String dbName, String dbTable,
                          long iKey1, long iKey2 ){
@@ -1126,7 +1126,7 @@ public class Tester1 implements Runnable {
           }
         }
       };
-    preupdate_hook_callback oldHook = sqlite3_preupdate_hook(db, theHook);
+    PreupdateHookCallback oldHook = sqlite3_preupdate_hook(db, theHook);
     affirm( null == oldHook );
     expectedOp.value = SQLITE_INSERT;
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
@@ -1146,7 +1146,7 @@ public class Tester1 implements Runnable {
     oldHook = sqlite3_preupdate_hook(db, null);
     affirm( null == oldHook );
 
-    final preupdate_hook_callback newHook = new preupdate_hook_callback(){
+    final PreupdateHookCallback newHook = new PreupdateHookCallback(){
         @Override
         public void call(sqlite3 db, int opId, String dbName,
                          String tableName, long iKey1, long iKey2){
@@ -1168,19 +1168,19 @@ public class Tester1 implements Runnable {
   private void testRollbackHook(){
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
-    final rollback_hook_callback theHook = new rollback_hook_callback(){
+    final RollbackHookCallback theHook = new RollbackHookCallback(){
         @Override public void call(){
           ++counter.value;
         }
       };
-    rollback_hook_callback oldHook = sqlite3_rollback_hook(db, theHook);
+    RollbackHookCallback oldHook = sqlite3_rollback_hook(db, theHook);
     affirm( null == oldHook );
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
     affirm( 0 == counter.value );
     execSql(db, false, "BEGIN; SELECT 1; SELECT 2; ROLLBACK;");
     affirm( 1 == counter.value /* contra to commit hook, is invoked if no changes are made */ );
 
-    final rollback_hook_callback newHook = new rollback_hook_callback(){
+    final RollbackHookCallback newHook = new RollbackHookCallback(){
         @Override public void call(){return;}
       };
     oldHook = sqlite3_rollback_hook(db, newHook);
@@ -1237,7 +1237,7 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
     final ValueHolder<Integer> counter = new ValueHolder<>(0);
     final ValueHolder<Integer> authRc = new ValueHolder<>(0);
-    final authorizer_callback auth = new authorizer_callback(){
+    final AuthorizerCallback auth = new AuthorizerCallback(){
         public int call(int op, String s0, String s1, String s2, String s3){
           ++counter.value;
           //outln("xAuth(): "+s0+" "+s1+" "+s2+" "+s3);
@@ -1260,7 +1260,7 @@ public class Tester1 implements Runnable {
   private synchronized void testAutoExtension(){
     final ValueHolder<Integer> val = new ValueHolder<>(0);
     final ValueHolder<String> toss = new ValueHolder<>(null);
-    final auto_extension_callback ax = new auto_extension_callback(){
+    final AutoExtensionCallback ax = new AutoExtensionCallback(){
         @Override public synchronized int call(sqlite3 db){
           ++val.value;
           if( null!=toss.value ){
@@ -1311,7 +1311,7 @@ public class Tester1 implements Runnable {
     toss.value = null;
 
     val.value = 0;
-    final auto_extension_callback ax2 = new auto_extension_callback(){
+    final AutoExtensionCallback ax2 = new AutoExtensionCallback(){
         @Override public synchronized int call(sqlite3 db){
           ++val.value;
           return 0;
@@ -1507,7 +1507,7 @@ public class Tester1 implements Runnable {
 
     if( sqlLog ){
       if( sqlite3_compileoption_used("ENABLE_SQLLOG") ){
-        int rc = sqlite3_config( new config_sqllog_callback() {
+        int rc = sqlite3_config( new ConfigSqllogCallback() {
             @Override public void call(sqlite3 db, String msg, int op){
               switch(op){
                 case 0: outln("Opening db: ",db); break;

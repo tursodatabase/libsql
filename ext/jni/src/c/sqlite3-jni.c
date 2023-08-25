@@ -1847,7 +1847,7 @@ S3JniApi(sqlite3_aggregate_context(),jlong,1aggregate_1context)(
                                            ? (int)sizeof(void*)
                                            : 0))
     : 0;
-  return (jlong)p / sizeof(void*);
+  return (jlong)p;
 }
 
 

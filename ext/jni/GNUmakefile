@@ -59,33 +59,33 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
-	authorizer_callback.java \
-	auto_extension_callback.java \
-	busy_handler_callback.java \
-	collation_callback.java \
-	collation_needed_callback.java \
-	commit_hook_callback.java \
-	config_sqllog_callback.java \
-	preupdate_hook_callback.java \
-	progress_handler_callback.java \
-	rollback_hook_callback.java \
-	trace_v2_callback.java \
-	update_hook_callback.java \
+  AuthorizerCallback.java \
+  AutoExtensionCallback.java \
+  BusyHandlerCallback.java \
+  Collation.java \
+  CollationNeededCallback.java \
+  CommitHookCallback.java \
+  ConfigSqllogCallback.java \
   NativePointerHolder.java \
   NotNull.java \
   Nullable.java \
   OutputPointer.java \
+  PreupdateHookCallback.java \
+  ProgressHandlerCallback.java \
   ResultCode.java \
+  RollbackHookCallback.java \
   SQLFunction.java \
   SQLite3Jni.java \
   Tester1.java \
+  TraceV2Callback.java \
+  UpdateHookCallback.java \
   ValueHolder.java \
+  XDestroyCallback.java \
   package-info.java \
   sqlite3.java \
   sqlite3_context.java \
   sqlite3_stmt.java \
   sqlite3_value.java \
-  xDestroy_callback.java \
 )
 ifeq (1,$(enable.fts5))
   JAVA_FILES.main += $(patsubst %,$(dir.src.jni)/%,\

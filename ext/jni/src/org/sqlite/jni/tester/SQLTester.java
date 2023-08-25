@@ -609,7 +609,7 @@ public class SQLTester {
       }
       t.addTestScript(a);
     }
-    final auto_extension_callback ax = new auto_extension_callback() {
+    final AutoExtensionCallback ax = new AutoExtensionCallback() {
         private final SQLTester tester = t;
         @Override public int call(sqlite3 db){
           final String init = tester.getDbInitSql();

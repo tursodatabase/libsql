@@ -14,13 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with sqlite3_preupdate_hook().
+   Callback for use with sqlite3_commit_hook()
 */
-public interface preupdate_hook_callback extends sqlite3_callback_proxy {
+public interface CommitHookCallback extends SQLite3CallbackProxy {
   /**
-     Must function as described for the C-level sqlite3_preupdate_hook()
+     Works as documented for the C-level sqlite3_commit_hook()
      callback.  Must not throw.
   */
-  void call(sqlite3 db, int op, String dbName, String dbTable,
-            long iKey1, long iKey2 );
+  int call();
 }

@@ -25,12 +25,15 @@ public final class sqlite3_context extends NativePointerHolder<sqlite3_context> 
      sqlite3_aggregate_context(), with a slightly different interface
      to account for cross-language differences. It serves the same
      purposes in a slightly different way: it provides a key which is
-     stable across invocations of "matching sets" of a UDF's callbacks,
-     such that all calls into those callbacks can determine which "set"
-     of those calls they belong to.
+     stable across invocations of a UDF's callbacks, such that all
+     calls into those callbacks can determine which "set" of those
+     calls they belong to.
+
+     <p>Note that use of this method is not a requirement for proper use
+     of this class. sqlite3_aggregate_context() can also be used.
 
      <p>If the argument is true and the aggregate context has not yet
-     been set up, it will be initialized fetched on demand, else it
+     been set up, it will be initialized and fetched on demand, else it
      won't. The intent is that xStep(), xValue(), and xInverse()
      methods pass true and xFinal() methods pass false.
 
@@ -59,12 +62,12 @@ public final class sqlite3_context extends NativePointerHolder<sqlite3_context> 
      key for mapping callback invocations to whatever client-defined
      state is needed by the UDF.
 
-     <p>There is one case where this will return 0 in the context of an
-     aggregate or window function: if the result set has no rows,
-     the UDF's xFinal() will be called without any other x...() members
-     having been called. In that one case, no aggregate context key will
-     have been generated. xFinal() implementations need to be prepared to
-     accept that condition as legal.
+     <p>There is one case where this will return null in the context
+     of an aggregate or window function: if the result set has no
+     rows, the UDF's xFinal() will be called without any other x...()
+     members having been called. In that one case, no aggregate
+     context key will have been generated. xFinal() implementations
+     need to be prepared to accept that condition as legal.
   */
   public synchronized Long getAggregateContext(boolean initIfNeeded){
       if( aggregateContext==null ){

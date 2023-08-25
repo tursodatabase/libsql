@@ -14,14 +14,13 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with sqlite3_progress_handler()
+   Callback for use with sqlite3_preupdate_hook().
 */
-public interface progress_handler_callback extends sqlite3_callback_proxy {
+public interface PreupdateHookCallback extends SQLite3CallbackProxy {
   /**
-     Works as documented for the C-level sqlite3_progress_handler() callback.
-
-     If it throws, the exception message is passed on to the db and
-     the exception is suppressed.
+     Must function as described for the C-level sqlite3_preupdate_hook()
+     callback.  Must not throw.
   */
-  int call();
+  void call(sqlite3 db, int op, String dbName, String dbTable,
+            long iKey1, long iKey2 );
 }

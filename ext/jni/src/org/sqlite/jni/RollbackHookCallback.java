@@ -14,15 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with sqlite3_collation_needed().
+   Callback for use with sqlite3_rollback_hook()
 */
-public interface collation_needed_callback extends sqlite3_callback_proxy {
+public interface RollbackHookCallback extends SQLite3CallbackProxy {
   /**
-     Has the same semantics as the C-level sqlite3_create_collation()
-     callback.
-
-     <p>If it throws, the exception message is passed on to the db and
-     the exception is suppressed.
+     Works as documented for the C-level sqlite3_rollback_hook()
+     callback.  Must not throw.
   */
-  int call(sqlite3 db, int eTextRep, String collationName);
+  void call();
 }
