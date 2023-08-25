@@ -3,19 +3,27 @@ use std::{
     task::{Context, Poll},
 };
 
-use hyper::{client::HttpConnector, Client};
-use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+use hyper::Client;
+use hyper_rustls::HttpsConnectorBuilder;
 use tonic::body::BoxBody;
 use tonic_web::{GrpcWebCall, GrpcWebClientService};
-use tower::Service;
+use tower::{util::BoxCloneService, Service, ServiceBuilder};
+use tower_http::{classify, trace, ServiceBuilderExt};
+
+type ResponseBody = trace::ResponseBody<
+    GrpcWebCall<hyper::Body>,
+    classify::GrpcEosErrorsAsFailures,
+    trace::DefaultOnBodyChunk,
+    trace::DefaultOnEos,
+    trace::DefaultOnFailure,
+>;
 
 #[derive(Debug, Clone)]
-pub struct H2cChannel {
-    client: GrpcWebClientService<Client<HttpsConnector<HttpConnector>, GrpcWebCall<BoxBody>>>,
+pub struct GrpcChannel {
+    client: BoxCloneService<http::Request<BoxBody>, http::Response<ResponseBody>, hyper::Error>,
 }
 
-impl H2cChannel {
-    #[allow(unused)]
+impl GrpcChannel {
     pub fn new() -> Self {
         let https = HttpsConnectorBuilder::new()
             .with_webpki_roots()
@@ -26,12 +34,16 @@ impl H2cChannel {
         let client = Client::builder().build(https);
         let client = GrpcWebClientService::new(client);
 
+        let svc = ServiceBuilder::new().trace_for_grpc().service(client);
+
+        let client = BoxCloneService::new(svc);
+
         Self { client }
     }
 }
 
-impl Service<http::Request<BoxBody>> for H2cChannel {
-    type Response = http::Response<GrpcWebCall<hyper::Body>>;
+impl Service<http::Request<BoxBody>> for GrpcChannel {
+    type Response = http::Response<ResponseBody>;
     type Error = hyper::Error;
     type Future =
         Pin<Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>>;
