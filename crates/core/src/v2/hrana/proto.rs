@@ -4,6 +4,7 @@
 #![allow(dead_code)]
 
 use std::fmt;
+use std::collections::VecDeque;
 
 use serde::{Deserialize, Serialize};
 
@@ -107,7 +108,7 @@ pub struct NamedArg {
 #[derive(Deserialize, Clone, Debug)]
 pub struct StmtResult {
     pub cols: Vec<Col>,
-    pub rows: Vec<Vec<Value>>,
+    pub rows: VecDeque<Vec<Value>>,
     pub affected_row_count: u64,
     #[serde(with = "option_i64_as_str")]
     pub last_insert_rowid: Option<i64>,

@@ -13,7 +13,7 @@ use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 
 // use crate::client::Config;
 use crate::{Column, Params, Result};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::{Arc, RwLock};
 
 use super::rows::{RowInner, RowsInner};
@@ -342,12 +342,12 @@ impl super::statement::Stmt for Statement {
 
 pub struct Rows {
     cols: Arc<Vec<Col>>,
-    rows: Vec<Vec<proto::Value>>,
+    rows: VecDeque<Vec<proto::Value>>,
 }
 
 impl RowsInner for Rows {
     fn next(&mut self) -> Result<Option<super::Row>> {
-        let row = match self.rows.pop() {
+        let row = match self.rows.pop_front() {
             Some(row) => Row {
                 cols: self.cols.clone(),
                 inner: row,
