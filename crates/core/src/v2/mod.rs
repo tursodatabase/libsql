@@ -20,8 +20,8 @@ pub use transaction::Transaction;
 enum DbType {
     Memory,
     File { path: String },
-    Sync { path: String, url: String, token: String },
-    Remote { url: String },
+    Sync { db: crate::Database },
+    Remote { url: String, auth_token: String },
 }
 
 pub struct Database {
@@ -43,19 +43,24 @@ impl Database {
         })
     }
 
-    pub fn open_with_sync(db_path: impl Into<String>, url: impl Into<String>, token: impl Into<String>) -> Result<Database> {
+    pub async fn open_with_sync(
+        db_path: impl Into<String>,
+        url: impl Into<String>,
+        token: impl Into<String>,
+    ) -> Result<Database> {
+        let opts = crate::Opts::with_http_sync(url, token);
+        let db = crate::Database::open_with_opts(db_path, opts).await?;
         Ok(Database {
-            db_type: DbType::Sync {
-                path: db_path.into(),
-                url: url.into(),
-                token: token.into(),
-            },
+            db_type: DbType::Sync { db },
         })
     }
 
-    pub fn open_remote(url: impl Into<String>) -> Result<Self> {
+    pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
         Ok(Database {
-            db_type: DbType::Remote { url: url.into() },
+            db_type: DbType::Remote {
+                url: url.into(),
+                auth_token: auth_token.into(),
+            },
         })
     }
 
@@ -79,9 +84,7 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            DbType::Sync { path, url, token } => {
-                let opts = crate::Opts::with_http_sync(url, token);
-                let db = crate::Database::open_with_opts(path, opts).await?;
+            DbType::Sync { db } => {
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
@@ -89,11 +92,21 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            DbType::Remote { url } => {
-                let conn = Arc::new(hrana::Client::new(url, ""));
+            DbType::Remote { url, auth_token } => {
+                let conn = Arc::new(hrana::Client::new(url, auth_token));
 
                 Ok(Connection { conn })
             }
+        }
+    }
+
+    pub async fn sync(&self) -> Result<()> {
+        match &self.db_type {
+            DbType::Sync { db } => {
+                db.sync().await?;
+                Ok(())
+            }
+            _ => Err(crate::Error::SyncNotSupported),
         }
     }
 }

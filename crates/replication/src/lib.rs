@@ -31,10 +31,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use crate::client::H2cChannel;
+use crate::client::GrpcChannel;
 use crate::pb::HelloRequest;
 
-type RpcClient = pb::ReplicationLogClient<InterceptedService<H2cChannel, AuthInterceptor>>;
+type RpcClient = pb::ReplicationLogClient<InterceptedService<GrpcChannel, AuthInterceptor>>;
 
 pub struct Replicator {
     pub frames_sender: Sender<Frames>,
@@ -155,7 +155,7 @@ impl Replicator {
         //.tls_config(tonic::transport::ClientTlsConfig::new())?
         //.connect_lazy();
 
-        let channel = H2cChannel::new();
+        let channel = GrpcChannel::new();
 
         let mut client = pb::ReplicationLogClient::with_origin(
             InterceptedService::new(channel, AuthInterceptor(auth_token)),
