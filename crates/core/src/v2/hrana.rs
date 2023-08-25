@@ -324,7 +324,6 @@ impl super::statement::Stmt for Statement {
     }
 
     fn reset(&self) {
-        todo!()
     }
 
     fn parameter_count(&self) -> usize {
