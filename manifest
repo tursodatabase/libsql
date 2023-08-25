@@ -1,5 +1,5 @@
-C Javadoc\sand\sinternal\sAPI\scleanups.
-D 2023-08-25T04:02:33.692
+C Only\sbuild\sin\sthe\sJNI-side\smetrics\stracking\sin\sSQLITE_DEBUG\sbuilds.
+D 2023-08-25T04:27:17.217
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -233,10 +233,10 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/jni/GNUmakefile fb73086e6f8ee40f3c79e32b8e0a27725b2680f9cf8ae41bde2556eb8e3fad2a
+F ext/jni/GNUmakefile 2fe04e7a7534a069ea8448f42e95bb5f8fc279ea3c9883598acedc99bbc254a7
 F ext/jni/README.md 1332b1fa27918bd5d9ca2d0d4f3ac3a6ab86b9e3699dc5bfe32904a027f3d2a9
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 2f9115f672f2bf2bca5ab58bdf8ef592099b7d8b8c44ffdfc5576399a18a0666
+F ext/jni/src/c/sqlite3-jni.c 969e59cdf9ad2394dcfc7b7fd3e259ff27cacfbe4946ccfdb8de6554745a32cb
 F ext/jni/src/c/sqlite3-jni.h 3d8cdacce26d20fd967d67a2e8539d38fc2e9fe13598147399db4b2c303a89c8
 F ext/jni/src/org/sqlite/jni/Fts5.java a45cd890202d72c3bfe8aea69b57b02b6dd588361af81d8b921954c37940b2f7
 F ext/jni/src/org/sqlite/jni/Fts5Context.java 0a5a02047a6a1dd3e4a38b0e542a8dd2de365033ba30e6ae019a676305959890
@@ -2100,8 +2100,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76e62a381249b3b4262b22bdffe7fc2816c820115c9df266956ab8817b127aca
-R 0c4026c894e1986e8dbcbf3bbc899b49
+P 10a43cba9bb2c23b5f31b31fcac81be34acec1940cca47d0b8e5a5ccbf1aa8eb
+R e838efcc000e7b30329ed875c329638a
 U stephan
-Z 4928add900897f47fe6d81602626ebaa
+Z 2ac71c6aa5db1c4809a7fefefbd39191
 # Remove this line to create a well-formed Fossil manifest.

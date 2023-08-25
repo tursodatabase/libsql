@@ -410,14 +410,24 @@ struct S3JniAutoExtension {
   jmethodID midFunc  /* xEntryPoint() callback */;
 };
 
+#if !defined(SQLITE_JNI_OMIT_METRICS) && !defined(SQLITE_JNI_ENABLE_METRICS)
+#  ifdef SQLITE_DEBUG
+#    define SQLITE_JNI_ENABLE_METRICS
+#  endif
+#endif
+
 /*
 ** If true, modifying S3JniGlobal.metrics is protected by a mutex,
 ** else it isn't.
 */
 #ifdef SQLITE_DEBUG
-#define S3JNI_METRICS_MUTEX 1
+#  define S3JNI_METRICS_MUTEX 1
 #else
-#define S3JNI_METRICS_MUTEX 0
+#  define S3JNI_METRICS_MUTEX 0
+#endif
+#ifndef SQLITE_JNI_ENABLE_METRICS
+#  undef S3JNI_METRICS_MUTEX
+#  define S3JNI_METRICS_MUTEX 0
 #endif
 
 /*
@@ -490,6 +500,7 @@ struct S3JniGlobalType {
     } jPhraseIter;
   } fts5;
 #endif
+#ifdef SQLITE_JNI_ENABLE_METRICS
   /* Internal metrics. */
   struct {
     volatile unsigned envCacheHits;
@@ -517,6 +528,7 @@ struct S3JniGlobalType {
     sqlite3_mutex * mutex;
 #endif
   } metrics;
+#endif /* SQLITE_JNI_ENABLE_METRICS */
   /**
      The list of bound auto-extensions (Java-side:
      org.sqlite.jni.auto_extension objects).
@@ -534,7 +546,9 @@ static S3JniGlobalType S3JniGlobal = {};
 #define SJG S3JniGlobal
 
 /* Increments *p, possibly protected by a mutex. */
-#if S3JNI_METRICS_MUTEX
+#ifndef SQLITE_JNI_ENABLE_METRICS
+#define s3jni_incr(PTR)
+#elif S3JNI_METRICS_MUTEX
 static void s3jni_incr( volatile unsigned int * const p ){
   sqlite3_mutex * const m = SJG.metrics.mutex;
   sqlite3_mutex_enter(m);
@@ -557,7 +571,7 @@ static void s3jni_incr( volatile unsigned int * const p ){
   S3JniMutex_Env_assertNotLocker;                   \
   /*MARKER(("Entering ENV mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.envCache.mutex );        \
-  ++SJG.metrics.nMutexEnv;                          \
+  s3jni_incr(&SJG.metrics.nMutexEnv);               \
   SJG.envCache.locker = env
 #define S3JniMutex_Env_leave                         \
   /*MARKER(("Leaving ENV mutex @%p %s.\n", env));*/  \
@@ -567,7 +581,7 @@ static void s3jni_incr( volatile unsigned int * const p ){
 #define S3JniMutex_Ext_enter                            \
   /*MARKER(("Entering autoExt mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.autoExt.mutex );             \
-  ++SJG.metrics.nMutexAutoExt
+  s3jni_incr( &SJG.metrics.nMutexAutoExt )
 #define S3JniMutex_Ext_leave                            \
   /*MARKER(("Leaving autoExt mutex@%p %s.\n", env));*/  \
   sqlite3_mutex_leave( SJG.autoExt.mutex )
@@ -575,7 +589,7 @@ static void s3jni_incr( volatile unsigned int * const p ){
   S3JniMutex_Env_assertNotLocker;                   \
   /*MARKER(("Entering NPH mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.envCache.mutex );        \
-  ++SJG.metrics.nMutexEnv2;                         \
+  s3jni_incr( &SJG.metrics.nMutexEnv2 );            \
   SJG.envCache.locker = env
 #define S3JniMutex_Nph_leave                         \
   /*MARKER(("Leaving NPH mutex @%p %s.\n", env));*/  \
@@ -585,7 +599,7 @@ static void s3jni_incr( volatile unsigned int * const p ){
 #define S3JniMutex_S3JniDb_enter                      \
   sqlite3_mutex_enter( SJG.perDb.mutex );             \
   assert( 0==SJG.perDb.locker );                      \
-  ++SJG.metrics.nMutexPerDb;                          \
+  s3jni_incr( &SJG.metrics.nMutexPerDb );             \
   SJG.perDb.locker = env;
 #define S3JniMutex_S3JniDb_leave                      \
   /*MARKER(("Leaving PerDb mutex@%p %s.\n", env));*/  \
@@ -829,7 +843,7 @@ static char * s3jni_exception_error_msg(JNIEnv * const env, jthrowable jx ){
 }
 
 /*
-** Extracts the current JNI exception, sets ps->pDb's error message to
+** Extracts env's current exception, sets ps->pDb's error message to
 ** its message string, and clears the exception. If errCode is non-0,
 ** it is used as-is, else SQLITE_ERROR is assumed. If there's a
 ** problem extracting the exception's message, it's treated as
@@ -853,7 +867,7 @@ static int s3jni_db_exception(JNIEnv * const env, S3JniDb * const ps,
     sqlite3_free(zMsg);
     S3JniUnrefLocal(ex);
   }
-   return errCode;
+  return errCode;
 }
 
 /*
@@ -3816,6 +3830,8 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
   SO(S3JniGlobal);
   SO(S3JniAutoExtension);
   SO(S3JniUdf);
+#undef SO
+#ifdef SQLITE_JNI_ENABLE_METRICS
   printf("Cache info:\n");
   printf("\tJNIEnv cache: %u allocs, %u misses, %u hits\n",
          SJG.metrics.envCacheAllocs,
@@ -3840,7 +3856,9 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
 #undef UDF
   printf("xDestroy calls across all callback types: %u\n",
          SJG.metrics.nDestroy);
-#undef SO
+#else
+  puts("Built without SQLITE_JNI_ENABLE_METRICS.");
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -4444,7 +4462,7 @@ JniDeclFtsXA(jobject,xUserData)(JniArgsEnvObj,jobject jFcx){
 // End of the main API bindings. Start of SQLTester bits...
 ////////////////////////////////////////////////////////////////////////
 
-#ifdef S3JNI_ENABLE_SQLTester
+#ifdef SQLITE_JNI_ENABLE_SQLTester
 typedef struct SQLTesterJni SQLTesterJni;
 struct SQLTesterJni {
   sqlite3_int64 nDup;
@@ -4640,7 +4658,7 @@ Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JniArgsEnvClass){
   sqlite3_auto_extension( (void(*)(void))SQLTester_auto_extension );
 }
 
-#endif /* S3JNI_ENABLE_SQLTester */
+#endif /* SQLITE_JNI_ENABLE_SQLTester */
 ////////////////////////////////////////////////////////////////////////
 // End of SQLTester bindings. Start of lower-level bits.
 ////////////////////////////////////////////////////////////////////////

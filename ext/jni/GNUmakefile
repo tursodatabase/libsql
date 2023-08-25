@@ -224,7 +224,7 @@ sqlite3-jni.dll.cflags = \
 # include path for client-level code.
 ########################################################################
 ifeq (1,$(enable.tester))
-  sqlite3-jni.dll.cflags += -DS3JNI_ENABLE_SQLTester
+  sqlite3-jni.dll.cflags += -DSQLITE_JNI_ENABLE_SQLTester
 endif
 $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 	cat $(sqlite3-jni.h.in) > $@
