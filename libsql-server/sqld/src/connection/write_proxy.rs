@@ -95,7 +95,8 @@ impl MakeConnection for MakeWriteProxyConnection {
 }
 
 pub struct WriteProxyConnection {
-    read_db: LibSqlConnection,
+    /// Lazily initialized read connection
+    read_conn: LibSqlConnection,
     write_proxy: ProxyClient<Channel>,
     state: Mutex<State>,
     client_id: Uuid,
@@ -160,7 +161,7 @@ impl WriteProxyConnection {
     #[allow(clippy::too_many_arguments)]
     async fn new(
         write_proxy: ProxyClient<Channel>,
-        path: PathBuf,
+        db_path: PathBuf,
         extensions: Vec<PathBuf>,
         stats: Stats,
         config_store: Arc<DatabaseConfigStore>,
@@ -168,8 +169,8 @@ impl WriteProxyConnection {
         builder_config: QueryBuilderConfig,
         namespace: Bytes,
     ) -> Result<Self> {
-        let read_db = LibSqlConnection::new(
-            path,
+        let read_conn = LibSqlConnection::new(
+            db_path,
             extensions,
             &TRANSPARENT_METHODS,
             (),
@@ -178,8 +179,9 @@ impl WriteProxyConnection {
             builder_config,
         )
         .await?;
+
         Ok(Self {
-            read_db,
+            read_conn,
             write_proxy,
             state: Mutex::new(State::Init),
             client_id: Uuid::new_v4(),
@@ -276,11 +278,11 @@ impl Connection for WriteProxyConnection {
             // replica. If it leaves an open transaction, then this program is an interactive
             // transaction, so we rollback the replica, and execute again on the primary.
             let (builder, new_state) = self
-                .read_db
+                .read_conn
                 .execute_program(pgm.clone(), auth, builder)
                 .await?;
             if new_state != State::Init {
-                self.read_db.rollback(auth).await?;
+                self.read_conn.rollback(auth).await?;
                 self.execute_remote(pgm, &mut state, auth, builder).await
             } else {
                 Ok((builder, new_state))
@@ -292,7 +294,7 @@ impl Connection for WriteProxyConnection {
 
     async fn describe(&self, sql: String, auth: Authenticated) -> Result<DescribeResult> {
         self.wait_replication_sync().await?;
-        self.read_db.describe(sql, auth).await
+        self.read_conn.describe(sql, auth).await
     }
 
     async fn is_autocommit(&self) -> Result<bool> {

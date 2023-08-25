@@ -25,6 +25,8 @@ use crate::DEFAULT_NAMESPACE_NAME;
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
 
+use super::NAMESPACE_DOESNT_EXIST;
+
 pub struct ReplicationLogService {
     namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
     replicas_with_hello: RwLock<HashSet<(SocketAddr, Bytes)>>,
@@ -154,18 +156,17 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let logger = match self
+        let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
             .await
-        {
-            Ok(logger) => logger,
-            Err(e) => {
-                return Err(Status::internal(format!(
-                    "failed to create database connection: {e}"
-                )));
-            }
-        };
+            .map_err(|e| {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e {
+                    Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
+                } else {
+                    Status::internal(e.to_string())
+                }
+            })?;
 
         let stream = StreamGuard::new(
             FrameStream::new(logger, req.next_offset, true),
@@ -194,18 +195,17 @@ impl ReplicationLog for ReplicationLogService {
             }
         }
 
-        let logger = match self
+        let logger = self
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
             .await
-        {
-            Ok(logger) => logger,
-            Err(e) => {
-                return Err(Status::internal(format!(
-                    "failed to create database connection: {e}"
-                )));
-            }
-        };
+            .map_err(|e| {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e {
+                    Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
+                } else {
+                    Status::internal(e.to_string())
+                }
+            })?;
 
         let frames = StreamGuard::new(
             FrameStream::new(logger.clone(), req.next_offset, false),
@@ -238,7 +238,13 @@ impl ReplicationLog for ReplicationLogService {
             .namespaces
             .with(namespace, |ns| ns.db.logger.clone())
             .await
-            .unwrap();
+            .map_err(|e| {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e {
+                    Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
+                } else {
+                    Status::internal(e.to_string())
+                }
+            })?;
 
         let response = HelloResponse {
             database_id: logger.database_id().unwrap().to_string(),

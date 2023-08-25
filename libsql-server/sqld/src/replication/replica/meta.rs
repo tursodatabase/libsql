@@ -31,18 +31,23 @@ pub struct WalIndexMeta {
 }
 
 impl WalIndexMeta {
-    pub fn read_from_path(db_path: &Path) -> anyhow::Result<(Option<Self>, File)> {
+    pub fn open(db_path: &Path) -> crate::Result<File> {
         let path = db_path.join("client_wal_index");
-        let file = OpenOptions::new()
+        std::fs::create_dir_all(db_path)?;
+
+        Ok(OpenOptions::new()
             .create(true)
             .read(true)
             .write(true)
-            .open(path)?;
-
-        Ok((Self::read(&file)?, file))
+            .open(path)?)
     }
 
-    fn read(file: &File) -> anyhow::Result<Option<Self>> {
+    pub fn read_from_path(db_path: &Path) -> anyhow::Result<Option<Self>> {
+        let file = Self::open(db_path)?;
+        Ok(Self::read(&file)?)
+    }
+
+    fn read(file: &File) -> crate::Result<Option<Self>> {
         let mut buf = [0; size_of::<WalIndexMeta>()];
         let meta = match file.read_exact_at(&mut buf, 0) {
             Ok(()) => {

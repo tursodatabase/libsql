@@ -17,6 +17,7 @@ use crate::query_result_builder::{
 use self::rpc::proxy_server::Proxy;
 use self::rpc::query_result::RowResult;
 use self::rpc::{Ack, DisconnectMessage, ExecuteResults, QueryResult, ResultRows, Row};
+use super::NAMESPACE_DOESNT_EXIST;
 
 pub mod rpc {
     #![allow(clippy::all)]
@@ -458,7 +459,13 @@ impl Proxy for ProxyService {
                 (connection_maker, notifier)
             })
             .await
-            .unwrap();
+            .map_err(|e| {
+                if let crate::error::Error::NamespaceDoesntExist(_) = e {
+                    tonic::Status::failed_precondition(NAMESPACE_DOESNT_EXIST)
+                } else {
+                    tonic::Status::internal(e.to_string())
+                }
+            })?;
 
         let lock = self.clients.upgradable_read().await;
         let db = match lock.get(&client_id) {
