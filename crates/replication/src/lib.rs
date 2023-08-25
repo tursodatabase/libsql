@@ -23,7 +23,7 @@ pub use replica::snapshot::TempSnapshot;
 use tonic::codegen::InterceptedService;
 use tonic::metadata::{Ascii, MetadataValue};
 use tonic::service::Interceptor;
-use tonic::transport::Channel;
+// use tonic::transport::Channel;
 
 use uuid::Uuid;
 
@@ -31,10 +31,10 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-// use crate::client::H2cChannel;
+use crate::client::H2cChannel;
 use crate::pb::HelloRequest;
 
-type RpcClient = pb::ReplicationLogClient<InterceptedService<Channel, AuthInterceptor>>;
+type RpcClient = pb::ReplicationLogClient<InterceptedService<H2cChannel, AuthInterceptor>>;
 
 pub struct Replicator {
     pub frames_sender: Sender<Frames>,
@@ -144,18 +144,18 @@ impl Replicator {
         // TODO: Once fly fixes their proxy to correctly accept h2 we can drop
         // the h2c client but for now lets keep this commented.
         //
-        let channel = Channel::builder(
-            endpoint
-                .as_ref()
-                .try_into()
-                .context("Unable to convert endpoint into a Uri")?,
-        )
-        .http2_keep_alive_interval(std::time::Duration::from_secs(5))
-        .keep_alive_while_idle(true)
-        .tls_config(tonic::transport::ClientTlsConfig::new())?
-        .connect_lazy();
+        //let channel = Channel::builder(
+        //    endpoint
+        //        .as_ref()
+        //        .try_into()
+        //        .context("Unable to convert endpoint into a Uri")?,
+        //)
+        //.http2_keep_alive_interval(std::time::Duration::from_secs(5))
+        //.keep_alive_while_idle(true)
+        //.tls_config(tonic::transport::ClientTlsConfig::new())?
+        //.connect_lazy();
 
-        // let channel = H2cChannel::new();
+        let channel = H2cChannel::new();
 
         let mut client = pb::ReplicationLogClient::with_origin(
             InterceptedService::new(channel, AuthInterceptor(auth_token)),
