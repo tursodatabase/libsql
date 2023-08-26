@@ -669,14 +669,16 @@ static void s3jni_incr( volatile unsigned int * const p ){
   SJG.envCache.locker = 0;                           \
   sqlite3_mutex_leave( SJG.envCache.mutex )
 
+#define S3JniMutex_S3JniDb_assertLocker \
+  assert( (env) == SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
 #define S3JniMutex_S3JniDb_enter                      \
   sqlite3_mutex_enter( SJG.perDb.mutex );             \
-  assert( 0==SJG.perDb.locker );                      \
+  assert( 0==SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" ); \
   s3jni_incr( &SJG.metrics.nMutexPerDb );             \
   SJG.perDb.locker = env;
 #define S3JniMutex_S3JniDb_leave                      \
-  assert( env == SJG.perDb.locker );                  \
-  SJG.perDb.locker = 0;                               \
+  assert( env == SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" ); \
+  SJG.perDb.locker = 0;                                                 \
   sqlite3_mutex_leave( SJG.perDb.mutex )
 
 #else /* SQLITE_THREADSAFE==0 */
@@ -1016,19 +1018,18 @@ static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s,
 
 /*
 ** Internal helper for many hook callback impls. Locks the S3JniDb
-** mutex, makes a copy of src into dest, with one change if src->jObj
+** mutex, makes a copy of src into dest, with one change: if src->jObj
 ** is not NULL then dest->jObj will be a new LOCAL ref to src->jObj
-** instead of a copy of the prior GLOBAL ref. Then unlocks the
+** instead of a copy of the prior GLOBAL ref. Then it unlocks the
 ** mutex. If dest->jObj is not NULL when this returns then the caller
 ** is obligated to eventually free the new ref by passing dest->jObj
 ** to S3JniUnrefLocal(). The dest pointer must NOT be passed to
 ** S3JniHook_unref(), as that one assumes that dest->jObj is a GLOBAL
-** ref.
+** ref (it's illegal to try to unref the wrong ref type)..
 **
 ** Background: when running a hook we need a call-local copy lest
 ** another thread modify the hook while we're running it. That copy
-** has to haves its own Java reference, but it need only be
-** call-local.
+** has to have its own Java reference, but it need only be call-local.
 */
 static void S3JniHook_localdup( JNIEnv * const env, S3JniHook const * const src,
                                 S3JniHook * const dest ){
@@ -1039,13 +1040,12 @@ static void S3JniHook_localdup( JNIEnv * const env, S3JniHook const * const src,
 }
 
 /*
-** Clears s's state and moves it to the free-list.
+** Clears s's state and moves it to the free-list. Requires that that the
+** caller has locked S3JniGlobal.perDb.mutex.
 */
-static void S3JniDb_set_aside_unlocked(JNIEnv * env, S3JniDb * const s){
+static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
   if( s ){
-#if SQLITE_THREADSAFE
-    assert( S3JniGlobal.perDb.locker == env );
-#endif
+    S3JniMutex_S3JniDb_enter;
     assert(s->pPrev != s);
     assert(s->pNext != s);
     assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
@@ -1075,12 +1075,6 @@ static void S3JniDb_set_aside_unlocked(JNIEnv * env, S3JniDb * const s){
     s->pNext = SJG.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
     SJG.perDb.aFree = s;
-  }
-}
-static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
-  if( s ){
-    S3JniMutex_S3JniDb_enter;
-    S3JniDb_set_aside_unlocked(env, s);
     S3JniMutex_S3JniDb_leave;
   }
 }
@@ -1168,7 +1162,8 @@ static jfieldID NativePointerHolder_field(JNIEnv * const env, S3NphRef const* pR
   if( !pNC->fidValue ){
     S3JniMutex_Nph_enter;
     if( !pNC->fidValue ){
-      pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz, "nativePointer", "J");
+      pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz,
+                                         pRef->zMember, pRef->zTypeSig);
       S3JniExceptionIsFatal("Code maintenance required: missing nativePointer field.");
     }
     S3JniMutex_Nph_leave;
@@ -1253,6 +1248,10 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
 ** are called from the C library and pass a native db handle instead of
 ** a Java handle. In normal usage, the 2nd argument is a Java-side sqlite3
 ** object, from which the db is fished out.
+**
+** If the lockMutex argument is true then the S3JniDb mutex is locked
+** before starting work, else the caller is required to have locked
+** it.
 **
 ** Returns NULL if jDb and pDb are both NULL or if there is no
 ** matching S3JniDb entry for pDb or the pointer fished out of jDb.
@@ -2226,9 +2225,8 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
 /* Wrapper for sqlite3_close(_v2)(). */
 static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   int rc = 0;
-  S3JniDb * ps = 0;
+  S3JniDb * const ps = S3JniDb_from_java(jDb);
   assert(version == 1 || version == 2);
-  ps = S3JniDb_from_java(jDb);
   if( ps ){
     rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
     if( 0==rc ){
@@ -2282,6 +2280,7 @@ static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
                              ps->hooks.collationNeeded.midCallback,
                              ps->jDb, (jint)eTextRep, jName);
       S3JniIfThrew{
+        S3JniExceptionWarnCallbackThrew("sqlite3_collation_needed() callback");
         s3jni_db_exception(env, ps, 0, "sqlite3_collation_needed() callback threw");
       }
       S3JniUnrefLocal(jName);
@@ -2394,9 +2393,9 @@ static int s3jni_commit_rollback_hook_impl(int isCommit,
   int rc = 0;
   S3JniHook hook;
 
-  S3JniHook_localdup( env,
-                  isCommit ? &ps->hooks.commit : &ps->hooks.rollback,
-                  &hook);
+  S3JniHook_localdup( env, isCommit
+                      ? &ps->hooks.commit : &ps->hooks.rollback,
+                      &hook);
   if( hook.jObj ){
     rc = isCommit
       ? (int)(*env)->CallIntMethod(env, hook.jObj, hook.midCallback)
@@ -3495,8 +3494,7 @@ S3JniApi(sqlite3_result_double(),void,1result_1double)(
 }
 
 S3JniApi(sqlite3_result_error(),void,1result_1error)(
-  JniArgsEnvClass, jobject jpCx, jbyteArray baMsg,
-                           int eTextRep
+  JniArgsEnvClass, jobject jpCx, jbyteArray baMsg, int eTextRep
 ){
   const char * zUnspecified = "Unspecified error.";
   jsize const baLen = (*env)->GetArrayLength(env, baMsg);
@@ -3504,12 +3502,12 @@ S3JniApi(sqlite3_result_error(),void,1result_1error)(
   switch( pjBuf ? eTextRep : SQLITE_UTF8 ){
     case SQLITE_UTF8: {
       const char *zMsg = pjBuf ? (const char *)pjBuf : zUnspecified;
-      sqlite3_result_error(PtrGet_sqlite3_context(jpCx), zMsg, (int)baLen);
+      int const n = pjBuf ? (int)baLen : (int)sqlite3Strlen30(zMsg);
+      sqlite3_result_error(PtrGet_sqlite3_context(jpCx), zMsg, n);
       break;
     }
     case SQLITE_UTF16: {
-      const void *zMsg = pjBuf
-        ? (const void *)pjBuf : (const void *)zUnspecified;
+      const void *zMsg = pjBuf;
       sqlite3_result_error16(PtrGet_sqlite3_context(jpCx), zMsg, (int)baLen);
       break;
     }
@@ -3678,13 +3676,12 @@ S3JniApi(sqlite3_set_authorizer(),jint,1set_1authorizer)(
                                              ")I");
     S3JniUnrefLocal(klazz);
     S3JniIfThrew {
-      S3JniHook_unref(env, pHook, 0);
       rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
                           "Error setting up Java parts of authorizer hook.");
     }else{
       rc = sqlite3_set_authorizer(ps->pDb, s3jni_xAuth, ps);
-      if( rc ) S3JniHook_unref(env, pHook, 0);
     }
+    if( rc ) S3JniHook_unref(env, pHook, 0);
   }
   S3JniMutex_S3JniDb_leave;
   return rc;

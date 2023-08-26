@@ -587,7 +587,8 @@ public final class SQLite3Jni {
   public static native String sqlite3_errstr(int resultCode);
 
   /**
-     Note that the offset values assume UTF-8-encoded SQL.
+     Note that the returned byte offset values assume UTF-8-encoded
+     inputs, so won't always match character offsets in Java Strings.
   */
   public static native int sqlite3_error_offset(@NotNull sqlite3 db);
 
@@ -595,23 +596,8 @@ public final class SQLite3Jni {
 
   public static native int sqlite3_initialize();
 
-  /**
-     Design note/FIXME: we have a problem vis-a-vis 'synchronized'
-     here: we specifically want other threads to be able to cancel a
-     long-running thread, but this routine requires access to C-side
-     global state which does not have a mutex. Making this function
-     synchronized would make it impossible for a long-running job to
-     be cancelled from another thread.
-
-     The mutexing problem here is not within the core lib or Java, but
-     within the cached data held by the JNI binding. The cache holds
-     per-thread state, used by all but a tiny fraction of the JNI
-     binding layer, and access to that state needs to be
-     mutex-protected.
-  */
   public static native void sqlite3_interrupt(@NotNull sqlite3 db);
 
-  //! See sqlite3_interrupt() for threading concerns.
   public static native boolean sqlite3_is_interrupted(@NotNull sqlite3 db);
 
   public static native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);
@@ -907,7 +893,7 @@ public final class SQLite3Jni {
      a complaint about the invalid argument.
   */
   private static native void sqlite3_result_error(
-    @NotNull sqlite3_context cx, @Nullable byte[] msg,
+    @NotNull sqlite3_context cx, @NotNull byte[] msg,
     int eTextRep
   );
 
@@ -920,12 +906,12 @@ public final class SQLite3Jni {
   public static void sqlite3_result_error(
     @NotNull sqlite3_context cx, @NotNull String msg
   ){
-    final byte[] utf8 = (msg+"\0").getBytes(StandardCharsets.UTF_8);
+    final byte[] utf8 = msg.getBytes(StandardCharsets.UTF_8);
     sqlite3_result_error(cx, utf8, SQLITE_UTF8);
   }
 
   public static void sqlite3_result_error16(
-    @NotNull sqlite3_context cx, @Nullable byte[] utf16
+    @NotNull sqlite3_context cx, @NotNull byte[] utf16
   ){
     sqlite3_result_error(cx, utf16, SQLITE_UTF16);
   }
@@ -933,7 +919,7 @@ public final class SQLite3Jni {
   public static void sqlite3_result_error16(
     @NotNull sqlite3_context cx, @NotNull String msg
   ){
-    final byte[] utf8 = (msg+"\0").getBytes(StandardCharsets.UTF_16);
+    final byte[] utf8 = msg.getBytes(StandardCharsets.UTF_16);
     sqlite3_result_error(cx, utf8, SQLITE_UTF16);
   }
 
