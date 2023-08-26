@@ -1220,8 +1220,7 @@ static void * NativePointerHolder_get(JNIEnv * env, jobject pObj, S3NphRef const
 ** OOM. pDb MUST, on success of the calling operation, subsequently be
 ** associated with jDb via NativePointerHolder_set().
 */
-static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
-                               jobject jDb){
+static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
   S3JniDb * rv;
   S3JniMutex_S3JniDb_enter;
   if( SJG.perDb.aFree ){
@@ -1250,7 +1249,6 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, sqlite3 *pDb,
       rv->pNext->pPrev = rv;
     }
     rv->jDb = S3JniRefGlobal(jDb);
-    rv->pDb = pDb;
   }
   S3JniMutex_S3JniDb_leave;
   return rv;
@@ -2700,6 +2698,37 @@ error_cleanup:
   return (jint)rc;
 }
 
+S3JniApi(sqlite3_db_filename(),jstring,1db_1filename)(
+  JniArgsEnvClass, jobject jDb, jstring jDbName
+){
+  S3JniDb * const ps = S3JniDb_from_java(jDb);
+  char *zDbName;
+  jstring jRv = 0;
+  int nStr = 0;
+
+  if( !ps || !jDbName ){
+    return 0;
+  }
+  zDbName = s3jni_jstring_to_utf8(env, jDbName, &nStr);
+  if( zDbName ){
+    char const * zRv = sqlite3_db_filename(ps->pDb, zDbName);
+    sqlite3_free(zDbName);
+    if( zRv ){
+      jRv = s3jni_utf8_to_jstring(env, zRv, -1);
+    }
+  }
+  return jRv;
+}
+
+S3JniApi(sqlite3_db_handle(),jobject,1db_1handle)(
+  JniArgsEnvClass, jobject jpStmt
+){
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  sqlite3 * const pDb = pStmt ? sqlite3_db_handle(pStmt) : 0;
+  S3JniDb * const ps = pDb ? S3JniDb_from_c(pDb) : 0;
+  return ps ? ps->jDb : 0;
+}
+
 S3JniApi(sqlite3_db_config() /*for MAINDBNAME*/,
          jint,1db_1config__Lorg_sqlite_jni_sqlite3_2ILjava_lang_String_2
 )(JniArgsEnvClass, jobject jDb, jint op, jstring jStr){
@@ -2787,37 +2816,6 @@ JniDecl(jint,1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPoint
   return JniFuncName(1db_1config__Lorg_sqlite_jni_sqlite3_2IILorg_sqlite_jni_OutputPointer_Int32_2)(
     env, jKlazz, jDb, op, onOff, jOut
   );
-}
-
-S3JniApi(sqlite3_db_filename(),jstring,1db_1filename)(
-  JniArgsEnvClass, jobject jDb, jstring jDbName
-){
-  S3JniDb * const ps = S3JniDb_from_java(jDb);
-  char *zDbName;
-  jstring jRv = 0;
-  int nStr = 0;
-
-  if( !ps || !jDbName ){
-    return 0;
-  }
-  zDbName = s3jni_jstring_to_utf8(env, jDbName, &nStr);
-  if( zDbName ){
-    char const * zRv = sqlite3_db_filename(ps->pDb, zDbName);
-    sqlite3_free(zDbName);
-    if( zRv ){
-      jRv = s3jni_utf8_to_jstring(env, zRv, -1);
-    }
-  }
-  return jRv;
-}
-
-S3JniApi(sqlite3_db_handle(),jobject,1db_1handle)(
-  JniArgsEnvClass, jobject jpStmt
-){
-  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
-  sqlite3 * const pDb = pStmt ? sqlite3_db_handle(pStmt) : 0;
-  S3JniDb * const ps = pDb ? S3JniDb_from_c(pDb) : 0;
-  return ps ? ps->jDb : 0;
 }
 
 
@@ -2918,10 +2916,9 @@ S3JniApi(sqlite3_is_interrupted(),jboolean,1is_1interrupted)(
 }
 
 /*
-** Uncaches the current JNIEnv from the S3JniGlobal state, clearing any
-** resources owned by that cache entry and making that slot available
-** for re-use. It is important that the Java-side decl of this
-** function be declared as synchronous.
+** Uncaches the current JNIEnv from the S3JniGlobal state, clearing
+** any resources owned by that cache entry and making that slot
+** available for re-use.
 */
 JniDecl(jboolean,1java_1uncache_1thread)(JniArgsEnvClass){
   int rc;
@@ -2938,7 +2935,7 @@ S3JniApi(sqlite3_last_insert_rowid(),jlong,1last_1insert_1rowid)(
   return (jlong)sqlite3_last_insert_rowid(PtrGet_sqlite3(jpDb));
 }
 
-/* Pre-open() code common to sqlite3_open(_v2)(). */
+/* Pre-open() code common to sqlite3_open[_v2](). */
 static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
                           jstring jDbName, char **zDbName,
                           S3JniDb ** ps){
@@ -2961,7 +2958,7 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
     rc = SQLITE_NOMEM;
     goto end;
   }
-  *ps = S3JniDb_alloc(env, 0, jDb);
+  *ps = S3JniDb_alloc(env, jDb);
   if( *ps ){
     (*jc)->pdbOpening = *ps;
   }else{
@@ -2980,6 +2977,9 @@ end:
 ** *ppDb is NULL then ps is set aside and its state cleared,
 ** else ps is associated with *ppDb. If *ppDb is not NULL then
 ** ps->jDb is stored in jOut (an OutputPointer.sqlite3 instance).
+**
+** Must be called if s3jni_open_pre() succeeds and must not be called
+** if it doesn't.
 **
 ** Returns theRc.
 */
@@ -3031,16 +3031,18 @@ S3JniApi(sqlite3_open_v2(),jint,1open_1v2)(
   S3JniEnv * jc = 0;
   char *zVfs = 0;
   int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
-  if( 0==rc && strVfs ){
-    zVfs = s3jni_jstring_to_utf8(env, strVfs, 0);
-    if( !zVfs ){
-      rc = SQLITE_NOMEM;
-    }
-  }
   if( 0==rc ){
-    rc = sqlite3_open_v2(zName, &pOut, (int)flags, zVfs);
+    if( strVfs ){
+      zVfs = s3jni_jstring_to_utf8(env, strVfs, 0);
+      if( !zVfs ){
+        rc = SQLITE_NOMEM;
+      }
+    }
+    if( 0==rc ){
+      rc = sqlite3_open_v2(zName, &pOut, (int)flags, zVfs);
+    }
+    rc = s3jni_open_post(env, jc, ps, &pOut, jOut, rc);
   }
-  rc = s3jni_open_post(env, jc, ps, &pOut, jOut, rc);
   assert(rc==0 ? pOut!=0 : 1);
   sqlite3_free(zName);
   sqlite3_free(zVfs);

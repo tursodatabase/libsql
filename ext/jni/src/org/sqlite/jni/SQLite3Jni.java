@@ -541,12 +541,6 @@ public final class SQLite3Jni {
     @NotNull sqlite3_stmt stmt
   );
 
-  public static native String sqlite3_db_filename(
-    @NotNull sqlite3 db, @NotNull String dbName
-  );
-
-  public static native sqlite3 sqlite3_db_handle( @NotNull sqlite3_stmt stmt );
-
   /**
      Overload for sqlite3_db_config() calls which take (int,int*)
      variadic arguments. Returns SQLITE_MISUSE if op is not one of the
@@ -566,6 +560,12 @@ public final class SQLite3Jni {
   public static native int sqlite3_db_config(
     @NotNull sqlite3 db, int op, @NotNull String val
   );
+
+  public static native String sqlite3_db_filename(
+    @NotNull sqlite3 db, @NotNull String dbName
+  );
+
+  public static native sqlite3 sqlite3_db_handle( @NotNull sqlite3_stmt stmt );
 
   public static native int sqlite3_db_status(
     @NotNull sqlite3 db, int op, @NotNull OutputPointer.Int32 pCurrent,
