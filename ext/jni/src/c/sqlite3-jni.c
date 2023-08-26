@@ -2814,7 +2814,7 @@ S3JniApi(sqlite3_db_filename(),jstring,1db_1filename)(
 S3JniApi(sqlite3_db_handle(),jobject,1db_1handle)(
   JniArgsEnvClass, jobject jpStmt
 ){
-  sqlite3_stmt * const pStmt = PtrGet_sqlite3_context(jpStmt);
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   sqlite3 * const pDb = pStmt ? sqlite3_db_handle(pStmt) : 0;
   S3JniDb * const ps = pDb ? S3JniDb_from_c(pDb) : 0;
   return ps ? ps->jDb : 0;
