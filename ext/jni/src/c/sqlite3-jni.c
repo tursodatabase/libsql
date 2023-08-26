@@ -1518,44 +1518,17 @@ static void CollationState_xDestroy(void *pArg){
   S3JniMutex_S3JniDb_leave;
 }
 
-/*
-** State for sqlite3_result_java_object() and
-** sqlite3_value_java_object().
-**
-** TODO: this middle-man struct is no longer necessary. Conider
-** removing it and passing around jObj itself instead. OTOH, we might
-** find more state to pack in here.
-*/
-typedef struct {
-  jobject jObj;
-} ResultJavaVal;
-
 /* For use with sqlite3_result/value_pointer() */
 #define ResultJavaValuePtrStr "org.sqlite.jni.ResultJavaVal"
 
 /*
-** Allocate a new ResultJavaVal and assign it a new global ref of
-** jObj.  Caller owns the returned object and must eventually pass it
-** to ResultJavaVal_finalizer().
+** If v is not NULL, it must be a jobject global reference. Its
+** reference is relinquished and v is freed.
 */
-static ResultJavaVal * ResultJavaVal_alloc(JNIEnv * const env, jobject jObj){
-  ResultJavaVal * const rv = s3jni_malloc(env, sizeof(ResultJavaVal));
-  if( rv ){
-    rv->jObj = jObj ? S3JniRefGlobal(jObj) : 0;
-  }
-  return rv;
-}
-
-/*
-** If v is not NULL, it must point to a a ResultJavaVal object. Its
-** object reference is relinquished and v is freed.
-*/
-static void ResultJavaVal_finalizer(void *v){
+static void ResultJavaValue_finalizer(void *v){
   if( v ){
-    ResultJavaVal * const rv = (ResultJavaVal*)v;
     S3JniDeclLocal_env;
-    S3JniUnrefGlobal(rv->jObj);
-    sqlite3_free(rv);
+    S3JniUnrefGlobal((jobject)v);
   }
 }
 
@@ -3585,10 +3558,10 @@ S3JniApi(sqlite3_result_java_object(),void,1result_1java_1object)(
   JniArgsEnvClass, jobject jpCx, jobject v
 ){
   if( v ){
-    ResultJavaVal * const rjv = ResultJavaVal_alloc(env, v);
+    jobject const rjv = S3JniRefGlobal(v);
     if( rjv ){
       sqlite3_result_pointer(PtrGet_sqlite3_context(jpCx), rjv,
-                             ResultJavaValuePtrStr, ResultJavaVal_finalizer);
+                             ResultJavaValuePtrStr, ResultJavaValue_finalizer);
     }else{
       sqlite3_result_error_nomem(PtrGet_sqlite3_context(jpCx));
     }
@@ -3974,9 +3947,8 @@ S3JniApi(sqlite3_value_int64(),jlong,1value_1int64)(
 S3JniApi(sqlite3_value_java_object(),jobject,1value_1java_1object)(
   JniArgsEnvClass, jobject jpSVal
 ){
-  ResultJavaVal * const rv = sqlite3_value_pointer(PtrGet_sqlite3_value(jpSVal),
-                                                   ResultJavaValuePtrStr);
-  return rv ? rv->jObj : NULL;
+  return sqlite3_value_pointer(PtrGet_sqlite3_value(jpSVal),
+                               ResultJavaValuePtrStr);
 }
 
 S3JniApi(sqlite3_value_text_utf8(),jbyteArray,1value_1text_1utf8)(

@@ -1,5 +1,5 @@
-C Whether\sor\snot\sOOM\sis\salways\sfatal\sin\sJNI\sis\snow\sa\scompile-time\soption.
-D 2023-08-26T21:02:50.002
+C Eliminate\sa\ssuperfluous\sJNI-internal\smiddle-man\sclass.
+D 2023-08-26T21:13:57.847
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -236,7 +236,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 4e60cdca419ac6783719da98379480b6f04d5d1b5fa1408c46fcb0c32565c571
 F ext/jni/README.md 1332b1fa27918bd5d9ca2d0d4f3ac3a6ab86b9e3699dc5bfe32904a027f3d2a9
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c d6665b309171af316f83a422b0a1c360f760493d9d8cfe239c8f38b639daac47
+F ext/jni/src/c/sqlite3-jni.c b5777fb1da4cd81bc91a051ebfa59ba28722536c4c98560350a7c219f9da265e
 F ext/jni/src/c/sqlite3-jni.h a410d05ca47a676b75ff7b8980e75ad604ea15f3c29965f88989703abc2eeaf6
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 0a5a74bea5ee12a99407e9432d0ca393525af912c2b0ca55c7ee5dbd019c00ef
 F ext/jni/src/org/sqlite/jni/AuthorizerCallback.java c374bb76409cce7a0bdba94877706b59ac6127fa5d9e6af3e8058c99ce99c030
@@ -2103,8 +2103,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4252f56f3d8574b7b43306440726daf3b5f5500d5d9105784b2f82753e7c71dd
-R 73a65c0a564c2b6325f39c30c9023371
+P 320a34c080d8bc1feae1578697923dfa7c4144b78de36f704c24cc4a4ce9d535
+R bd8a050119f034bd484ec7a8a853653c
 U stephan
-Z c1a9d88eb5b30bcb5f8055b2c7e2b244
+Z 713c3c8622f9cf1b7dfe5fb5695c9634
 # Remove this line to create a well-formed Fossil manifest.
