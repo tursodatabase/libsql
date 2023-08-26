@@ -22,7 +22,8 @@ package org.sqlite.jni;
 public interface XDestroyCallback {
   /**
      Must perform any cleanup required by this object. Must not
-     throw.
+     throw. Must not call back into the sqlite3 API, else it might
+     invoke a deadlock.
   */
   public void xDestroy();
 }
