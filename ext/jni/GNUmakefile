@@ -243,11 +243,18 @@ test.flags ?=
 test.main.flags = -ea -Djava.library.path=$(dir.bld.c) \
                   $(java.flags) -cp $(classpath) \
                   org.sqlite.jni.Tester1
-test-one: $(SQLite3Jni.class) $(sqlite3-jni.dll)
+test.deps := $(SQLite3Jni.class) $(sqlite3-jni.dll)
+test-one: $(test.deps)
 	$(bin.java) $(test.main.flags) $(test.flags)
-test: test-one
-	@echo "Again in multi-threaded mode:";
+test-sqllog: $(test.deps)
+	@echo "Testing with -sqllog..."
+	$(bin.java) $(test.main.flags) -sqllog
+test-mt: $(test.deps)
+	@echo "Testing in multi-threaded mode:";
 	$(bin.java) $(test.main.flags) -t 5 -r 20 -shuffle $(test.flags)
+
+test: test-one test-mt
+tests: test test-sqllog
 
 tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose
@@ -283,7 +290,7 @@ endif
 
 tester-ext: tester-local
 tester: tester-ext
-tests: test tester
+tests: tester
 
 ########################################################################
 # Build each SQLITE_THREADMODE variant and run all tests against them.

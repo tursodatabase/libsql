@@ -1504,7 +1504,7 @@ public class Tester1 implements Runnable {
             @Override public void call(sqlite3 db, String msg, int op){
               switch(op){
                 case 0: outln("Opening db: ",db); break;
-                case 1: outln(db,": ",msg); break;
+                case 1: outln("SQL ",db,": ",msg); break;
                 case 2: outln("Closing db: ",db); break;
               }
             }
