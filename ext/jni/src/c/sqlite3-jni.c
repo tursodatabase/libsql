@@ -706,20 +706,39 @@ static void s3jni_incr( volatile unsigned int * const p ){
 #define S3JniMutex_S3JniDb_leave
 #endif
 
-/* Helpers for jstring and jbyteArray. */
-#define s3jni_jstring_to_mutf8(ARG) (*env)->GetStringUTFChars(env, ARG, NULL)
-#define s3jni_mutf8_release(ARG,VAR) if( VAR ) (*env)->ReleaseStringUTFChars(env, ARG, VAR)
-#define s3jni_jbytearray_bytes(ARG) (*env)->GetByteArrayElements(env,ARG, NULL)
-#define s3jni_jbytearray_release(ARG,VAR) if( VAR ) (*env)->ReleaseByteArrayElements(env, ARG, VAR, JNI_ABORT)
-
-
 /* Fail fatally with an OOM message. */
 static inline void s3jni_oom(JNIEnv * const env){
   (*env)->FatalError(env, "Out of memory.") /* does not return */;
 }
 
-/* Fail fatally if !VAR. */
-#define s3jni_oom_check(VAR) if( !(VAR) ) s3jni_oom(env)
+/* Fail fatally if !EXPR. */
+#define s3jni_oom_fatal(EXPR) if( !(EXPR) ) s3jni_oom(env)
+/* Maybe fail fatally if !EXPR. */
+#ifdef SQLITE_JNI_FATAL_OOM
+#define s3jni_oom_check s3jni_oom_fatal
+#else
+#define s3jni_oom_check(EXPR)
+#endif
+
+/* Helpers for jstring and jbyteArray. */
+static const char * s3jni__jstring_to_mutf8_bytes(JNIEnv * const env, jstring v ){
+  const char *z = v ? (*env)->GetStringUTFChars(env, v, NULL) : 0;
+  s3jni_oom_check( v ? !!z : !z );
+  return z;
+}
+
+#define s3jni_jstring_to_mutf8(ARG) s3jni__jstring_to_mutf8_bytes(env, (ARG))
+#define s3jni_mutf8_release(ARG,VAR) if( VAR ) (*env)->ReleaseStringUTFChars(env, ARG, VAR)
+
+static jbyte * s3jni__jbytearray_bytes(JNIEnv * const env, jbyteArray jBA ){
+  jbyte * const rv = jBA ? (*env)->GetByteArrayElements(env, jBA, NULL) : 0;
+  s3jni_oom_check( jBA ? !!rv : 1 );
+  return rv;
+}
+
+#define s3jni_jbytearray_bytes(jByteArray) s3jni__jbytearray_bytes(env, (jByteArray))
+#define s3jni_jbytearray_release(jByteArray,jBytes) \
+  if( jBytes ) (*env)->ReleaseByteArrayElements(env, jByteArray, jBytes, JNI_ABORT)
 
 /*
 ** sqlite3_malloc() proxy which fails fatally on OOM.  This should
@@ -841,13 +860,17 @@ static int s3jni_db_error(sqlite3* const db, int err_code,
 }
 
 /*
-** Creates a new jByteArray of length nP, copies p's contents into it, and
-** returns that byte array (NULL on OOM).
+** Creates a new jByteArray of length nP, copies p's contents into it,
+** and returns that byte array (NULL on OOM unless fail-fast alloc
+** errors are enabled). p may be NULL, in which case the array is
+** created but no bytes are filled.
 */
 static jbyteArray s3jni_new_jbyteArray(JNIEnv * const env,
-                                       const unsigned char * const p, int nP){
+                                       const void * const p, int nP){
   jbyteArray jba = (*env)->NewByteArray(env, (jint)nP);
-  if( jba ){
+
+  s3jni_oom_check( jba );
+  if( jba && p ){
     (*env)->SetByteArrayRegion(env, jba, 0, (jint)nP, (const jbyte*)p);
   }
   return jba;
@@ -876,13 +899,18 @@ static jstring s3jni_utf8_to_jstring(JNIEnv * const env,
   }else if( z ){
     jbyteArray jba;
     if( n<0 ) n = sqlite3Strlen30(z);
-    jba = s3jni_new_jbyteArray(env, (unsigned const char *)z, (jsize)n);
+    jba = s3jni_new_jbyteArray(env, (unsigned const char *)z, n);
     if( jba ){
       rv = (*env)->NewObject(env, SJG.g.cString, SJG.g.ctorStringBA,
                              jba, SJG.g.oCharsetUtf8);
+      S3JniIfThrew{
+        S3JniExceptionReport;
+        S3JniExceptionClear;
+      }
       S3JniUnrefLocal(jba);
     }
   }
+  s3jni_oom_check( rv );
   return rv;
 }
 
@@ -910,9 +938,11 @@ static char * s3jni_jstring_to_utf8(JNIEnv * const env,
   if( !jstr ) return 0;
   jba = (*env)->CallObjectMethod(env, jstr, SJG.g.stringGetBytes,
                                  SJG.g.oCharsetUtf8);
+
   if( (*env)->ExceptionCheck(env) || !jba
       /* order of these checks is significant for -Xlint:jni */ ) {
     S3JniExceptionReport;
+    s3jni_oom_check( jba );
     if( nLen ) *nLen = 0;
     return 0;
   }
@@ -935,9 +965,11 @@ static char * s3jni_jstring_to_utf8(JNIEnv * const env,
 ** if !p or (*env)->NewString() fails.
 */
 static jstring s3jni_text16_to_jstring(JNIEnv * const env, const void * const p, int nP){
-  return p
+  jstring const rv = p
     ? (*env)->NewString(env, (const jchar *)p, (jsize)(nP/2))
     : NULL;
+  s3jni_oom_check( p ? !!rv : 1 );
+  return rv;
 }
 
 /*
@@ -1488,15 +1520,14 @@ static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
 
   S3JniHook_localdup(env, &ps->hooks.collation, &hook );
   if( hook.jObj ){
-    jbyteArray jbaLhs = (*env)->NewByteArray(env, (jint)nLhs);
-    jbyteArray jbaRhs = jbaLhs ? (*env)->NewByteArray(env, (jint)nRhs) : NULL;
+    jbyteArray jbaLhs = s3jni_new_jbyteArray(env, lhs, (jint)nLhs);
+    jbyteArray jbaRhs = jbaLhs
+      ? s3jni_new_jbyteArray(env, rhs, (jint)nRhs) : 0;
     if( !jbaRhs ){
       S3JniUnrefLocal(jbaLhs);
       s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
       return 0;
     }
-    (*env)->SetByteArrayRegion(env, jbaLhs, 0, (jint)nLhs, (const jbyte*)lhs);
-    (*env)->SetByteArrayRegion(env, jbaRhs, 0, (jint)nRhs, (const jbyte*)rhs);
     rc = (*env)->CallIntMethod(env, ps->hooks.collation.jObj,
                                ps->hooks.collation.midCallback,
                                jbaLhs, jbaRhs);
@@ -1673,6 +1704,7 @@ static int udf_args(JNIEnv *env,
   ja = (*env)->NewObjectArray(env, argc,
                               SJG.g.cObj,
                               NULL);
+  s3jni_oom_check( ja );
   if( !ja ) goto error_oom;
   for(i = 0; i < argc; ++i){
     jobject jsv = new_sqlite3_value_wrapper(env, argv[i]);
@@ -1840,9 +1872,11 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
 ** CName(void)). This is only valid for functions which are known to
 ** return ASCII or text which is equivalent in UTF-8 and MUTF-8.
 */
-#define WRAP_MUTF8_VOID(JniNameSuffix,CName)       \
-  JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass){ \
-    return (*env)->NewStringUTF( env, CName() );   \
+#define WRAP_MUTF8_VOID(JniNameSuffix,CName)                   \
+  JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass){             \
+    jstring const rv = (*env)->NewStringUTF( env, CName() );   \
+    s3jni_oom_check(rv);                                       \
+    return rv;                                                 \
   }
 /** Create a trivial JNI wrapper for (int CName(sqlite3_stmt*)). */
 #define WRAP_INT_STMT(JniNameSuffix,CName)                      \
@@ -2053,9 +2087,16 @@ S3JniApi(sqlite3_bind_blob(),jint,1bind_1blob)(
   JniArgsEnvClass, jobject jpStmt, jint ndx, jbyteArray baData, jint nMax
 ){
   jbyte * const pBuf = baData ? s3jni_jbytearray_bytes(baData) : 0;
-  int const rc = sqlite3_bind_blob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx,
-                                   pBuf, (int)nMax, SQLITE_TRANSIENT);
-  s3jni_jbytearray_release(baData,pBuf);
+  int rc;
+  if( pBuf ){
+    rc = sqlite3_bind_blob(PtrGet_sqlite3_stmt(jpStmt), (int)ndx,
+                           pBuf, (int)nMax, SQLITE_TRANSIENT);
+    s3jni_jbytearray_release(baData, pBuf);
+  }else{
+    rc = baData
+      ? SQLITE_NOMEM
+      : sqlite3_bind_null( PtrGet_sqlite3_stmt(jpStmt), ndx );
+  }
   return (jint)rc;
 }
 
@@ -2277,6 +2318,8 @@ static void s3jni_collation_needed_impl16(void *pState, sqlite3 *pDb,
   if( hook.jObj ){
     unsigned int const nName = s3jni_utf16_strlen(z16Name);
     jstring jName = (*env)->NewString(env, (jchar const *)z16Name, nName);
+
+    s3jni_oom_check( jName );
     S3JniIfThrew{
       s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
       S3JniExceptionClear;
@@ -2339,12 +2382,8 @@ S3JniApi(sqlite3_column_blob(),jbyteArray,1column_1blob)(
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   void const * const p = sqlite3_column_blob(pStmt, (int)ndx);
   int const n = p ? sqlite3_column_bytes(pStmt, (int)ndx) : 0;
-  if( 0==p ) return NULL;
-  else{
-    jbyteArray const jba = (*env)->NewByteArray(env, n);
-    (*env)->SetByteArrayRegion(env, jba, 0, n, (const jbyte *)p);
-    return jba;
-  }
+
+  return p ? s3jni_new_jbyteArray(env, p, n) : 0;
 }
 
 S3JniApi(sqlite3_column_double(),jdouble,1column_1double)(
@@ -2483,14 +2522,17 @@ S3JniApi(sqlite3_commit_hook(),jobject,1commit_1hook)(
 S3JniApi(sqlite3_compileoption_get(),jstring,1compileoption_1get)(
   JniArgsEnvClass, jint n
 ){
-  return (*env)->NewStringUTF( env, sqlite3_compileoption_get(n) )
+  jstring const rv = (*env)->NewStringUTF( env, sqlite3_compileoption_get(n) )
     /* We know these to be ASCII, so MUTF-8 is fine. */;
+  s3jni_oom_check(rv);
+  return rv;
 }
 
 S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
   JniArgsEnvClass, jstring name
 ){
-  const char *zUtf8 = s3jni_jstring_to_mutf8(name);
+  const char *zUtf8 = s3jni_jstring_to_mutf8(name)
+    /* We know these to be ASCII, so MUTF-8 is fine. */;
   const jboolean rc =
     0==sqlite3_compileoption_used(zUtf8) ? JNI_FALSE : JNI_TRUE;
   s3jni_mutf8_release(name, zUtf8);
@@ -2840,9 +2882,11 @@ S3JniApi(sqlite3_errmsg(),jstring,1errmsg)(
 S3JniApi(sqlite3_errstr(),jstring,1errstr)(
   JniArgsEnvClass, jint rcCode
 ){
-  return (*env)->NewStringUTF(env, sqlite3_errstr((int)rcCode))
+  jstring const rv = (*env)->NewStringUTF(env, sqlite3_errstr((int)rcCode))
     /* We know these values to be plain ASCII, so pose no MUTF-8
     ** incompatibility */;
+  s3jni_oom_check( rv );
+  return rv;
 }
 
 S3JniApi(sqlite3_expanded_sql(),jstring,1expanded_1sql)(
@@ -2852,7 +2896,7 @@ S3JniApi(sqlite3_expanded_sql(),jstring,1expanded_1sql)(
   jstring rv = 0;
   if( pStmt ){
     char * zSql = sqlite3_expanded_sql(pStmt);
-    s3jni_oom_check(zSql);
+    s3jni_oom_fatal(zSql);
     if( zSql ){
       rv = s3jni_utf8_to_jstring(env, zSql, -1);
       sqlite3_free(zSql);
@@ -2862,8 +2906,7 @@ S3JniApi(sqlite3_expanded_sql(),jstring,1expanded_1sql)(
 }
 
 S3JniApi(sqlite3_extended_result_codes(),jboolean,1extended_1result_1codes)(
-  JniArgsEnvClass, jobject jpDb,
-                                         jboolean onoff
+  JniArgsEnvClass, jobject jpDb, jboolean onoff
 ){
   int const rc = sqlite3_extended_result_codes(PtrGet_sqlite3(jpDb), onoff ? 1 : 0);
   return rc ? JNI_TRUE : JNI_FALSE;
@@ -3695,7 +3738,7 @@ S3JniApi(sqlite3_set_authorizer(),jint,1set_1authorizer)(
 S3JniApi(sqlite3_set_last_insert_rowid(),void,1set_1last_1insert_1rowid)(
   JniArgsEnvClass, jobject jpDb, jlong rowId
 ){
-  sqlite3_set_last_insert_rowid(PtrGet_sqlite3_context(jpDb),
+  sqlite3_set_last_insert_rowid(PtrGet_sqlite3(jpDb),
                                 (sqlite3_int64)rowId);
 }
 
@@ -3731,7 +3774,7 @@ static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
   jbyte * const pG = s3jni_jbytearray_bytes(baG);
   jbyte * const pT = pG ? s3jni_jbytearray_bytes(baT) : 0;
 
-  s3jni_oom_check(pT);
+  s3jni_oom_fatal(pT);
   /* Note that we're relying on the byte arrays having been
      NUL-terminated on the Java side. */
   rc = isLike
@@ -3828,6 +3871,7 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
                              (jlong)*((sqlite3_int64*)pX));
       // hmm. ^^^ (*pX) really is zero.
       // MARKER(("profile time = %llu\n", *((sqlite3_int64*)pX)));
+      s3jni_oom_check( jX );
       if( !jX ) rc = SQLITE_NOMEM;
       break;
     case SQLITE_TRACE_ROW:
@@ -3902,13 +3946,11 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
   sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
   int const nLen = sqlite3_value_bytes(sv);
   const jbyte * pBytes = sqlite3_value_blob(sv);
-  jbyteArray const jba = pBytes
-    ? (*env)->NewByteArray(env, (jsize)nLen)
+
+  s3jni_oom_check( nLen ? !!pBytes : 1 );
+  return pBytes
+    ? s3jni_new_jbyteArray(env, pBytes, nLen)
     : NULL;
-  if( jba ){
-    (*env)->SetByteArrayRegion(env, jba, 0, nLen, pBytes);
-  }
-  return jba;
 }
 
 
@@ -3960,38 +4002,20 @@ S3JniApi(sqlite3_value_text_utf8(),jbyteArray,1value_1text_1utf8)(
   return p ? s3jni_new_jbyteArray(env, p, n) : 0;
 }
 
-static jbyteArray value_text16(int mode, JNIEnv * const env, jobject jpSVal){
-  sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
-  int const nLen = sqlite3_value_bytes16(sv);
-  jbyteArray jba;
-  const jbyte * pBytes;
-  switch( mode ){
-    case SQLITE_UTF16:
-      pBytes = sqlite3_value_text16(sv);
-      break;
-    case SQLITE_UTF16LE:
-      pBytes = sqlite3_value_text16le(sv);
-      break;
-    case SQLITE_UTF16BE:
-      pBytes = sqlite3_value_text16be(sv);
-      break;
-    default:
-      assert(!"not possible");
-      return NULL;
-  }
-  jba = pBytes
-    ? (*env)->NewByteArray(env, (jsize)nLen)
-    : NULL;
-  if( jba ){
-    (*env)->SetByteArrayRegion(env, jba, 0, nLen, pBytes);
-  }
-  return jba;
-}
-
 S3JniApi(sqlite3_value_text16(),jbyteArray,1value_1text16)(
   JniArgsEnvClass, jobject jpSVal
 ){
-  return value_text16(SQLITE_UTF16, env, jpSVal);
+  sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
+  jbyteArray jba = 0;
+  if( sv ){
+    int const nLen = sqlite3_value_bytes16(sv);
+    const jbyte * const pBytes =
+      nLen ? sqlite3_value_text16(sv) : 0;
+
+    s3jni_oom_check( nLen ? !!pBytes : 1 );
+    jba = s3jni_new_jbyteArray(env, pBytes, nLen);
+  }
+  return jba;
 }
 
 JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
@@ -4567,15 +4591,12 @@ static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
   if( s->tok.zPrev == z && s->tok.nPrev == nZ ){
     jba = s->tok.jba;
   }else{
-    if(s->tok.jba){
-      S3JniUnrefLocal(s->tok.jba);
-    }
+    S3JniUnrefLocal(s->tok.jba);
     s->tok.zPrev = z;
     s->tok.nPrev = nZ;
-    s->tok.jba = (*env)->NewByteArray(env, (jint)nZ);
+    s->tok.jba = s3jni_new_jbyteArray(env, z, nZ);
     if( !s->tok.jba ) return SQLITE_NOMEM;
     jba = s->tok.jba;
-    (*env)->SetByteArrayRegion(env, jba, 0, (jint)nZ, (const jbyte*)z);
   }
   rc = (int)(*env)->CallIntMethod(env, s->jCallback, s->midCallback,
                                   (jint)tFlags, jba, (jint)iStart,
@@ -4833,7 +4854,7 @@ Java_org_sqlite_jni_tester_SQLTester_strglob(
   jbyte * const pG = s3jni_jbytearray_bytes(baG);
   jbyte * const pT = pG ? s3jni_jbytearray_bytes(baT) : 0;
 
-  s3jni_oom_check(pT);
+  s3jni_oom_fatal(pT);
   /* Note that we're relying on the byte arrays having been
      NUL-terminated on the Java side. */
   rc = !SQLTester_strnotglob((const char *)pG, (const char *)pT);
@@ -4970,17 +4991,17 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
 #endif
 
   SJG.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-  s3jni_oom_check( SJG.mutex );
+  s3jni_oom_fatal( SJG.mutex );
   SJG.envCache.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-  s3jni_oom_check( SJG.envCache.mutex );
+  s3jni_oom_fatal( SJG.envCache.mutex );
   SJG.perDb.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-  s3jni_oom_check( SJG.perDb.mutex );
+  s3jni_oom_fatal( SJG.perDb.mutex );
   SJG.autoExt.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-  s3jni_oom_check( SJG.autoExt.mutex );
+  s3jni_oom_fatal( SJG.autoExt.mutex );
 
 #if S3JNI_METRICS_MUTEX
   SJG.metrics.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-  s3jni_oom_check( SJG.metrics.mutex );
+  s3jni_oom_fatal( SJG.metrics.mutex );
 #endif
 
   sqlite3_shutdown()
