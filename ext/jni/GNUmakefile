@@ -182,6 +182,7 @@ SQLITE_OPT = \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_C=$(sqlite3.c) \
+  -DSQLITE_JNI_FATAL_OOM=0 \
   -DSQLITE_DEBUG
 
 SQLITE_OPT += -g -DDEBUG -UNDEBUG
@@ -330,7 +331,7 @@ doc: $(doc.index)
 javadoc: $(doc.index)
 # Force rebild of docs
 redoc:
-	@rm -f $(doc.index)/index.html
+	@rm -f $(doc.index)
 	@$(MAKE) doc
 docserve: $(doc.index)
 	cd $(dir.doc) && althttpd -max-age 1 -page index.html

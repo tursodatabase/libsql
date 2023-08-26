@@ -1533,30 +1533,6 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1result_1text64
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_shutdown
- * Signature: ()I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1shutdown
-  (JNIEnv *, jclass);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_status
- * Signature: (ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Z)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1status
-  (JNIEnv *, jclass, jint, jobject, jobject, jboolean);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_status64
- * Signature: (ILorg/sqlite/jni/OutputPointer/Int64;Lorg/sqlite/jni/OutputPointer/Int64;Z)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1status64
-  (JNIEnv *, jclass, jint, jobject, jobject, jboolean);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_rollback_hook
  * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/RollbackHookCallback;)Lorg/sqlite/jni/RollbackHookCallback;
  */
@@ -1581,6 +1557,14 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1set_1last_1insert
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_shutdown
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1shutdown
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_sleep
  * Signature: (I)I
  */
@@ -1602,6 +1586,22 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1sourceid
  */
 JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1sql
   (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_status
+ * Signature: (ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Z)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1status
+  (JNIEnv *, jclass, jint, jobject, jobject, jboolean);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_status64
+ * Signature: (ILorg/sqlite/jni/OutputPointer/Int64;Lorg/sqlite/jni/OutputPointer/Int64;Z)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1status64
+  (JNIEnv *, jclass, jint, jobject, jobject, jboolean);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

@@ -893,8 +893,7 @@ public final class SQLite3Jni {
      a complaint about the invalid argument.
   */
   private static native void sqlite3_result_error(
-    @NotNull sqlite3_context cx, @NotNull byte[] msg,
-    int eTextRep
+    @NotNull sqlite3_context cx, @NotNull byte[] msg, int eTextRep
   );
 
   public static void sqlite3_result_error(
@@ -919,20 +918,18 @@ public final class SQLite3Jni {
   public static void sqlite3_result_error16(
     @NotNull sqlite3_context cx, @NotNull String msg
   ){
-    final byte[] utf8 = msg.getBytes(StandardCharsets.UTF_16);
-    sqlite3_result_error(cx, utf8, SQLITE_UTF16);
+    final byte[] utf16 = msg.getBytes(StandardCharsets.UTF_16);
+    sqlite3_result_error(cx, utf16, SQLITE_UTF16);
   }
 
+  /**
+     Equivalent to passing e.getMessage() to
+     sqlite3_result_error(db,String).
+  */
   public static void sqlite3_result_error(
     @NotNull sqlite3_context cx, @NotNull Exception e
   ){
     sqlite3_result_error(cx, e.getMessage());
-  }
-
-  public static void sqlite3_result_error16(
-    @NotNull sqlite3_context cx, @NotNull Exception e
-  ){
-    sqlite3_result_error16(cx, e.getMessage());
   }
 
   public static native void sqlite3_result_error_toobig(
@@ -961,7 +958,7 @@ public final class SQLite3Jni {
 
   /**
      Binds the SQL result to the given object, or
-     {@link #sqlite3_result_null(sqlite3_context) sqlite3_result_null()} if {@code o} is null. Use
+     {@link #sqlite3_result_null} if {@code o} is null. Use
      {@link #sqlite3_value_java_object(sqlite3_value) sqlite3_value_java_object()} or
      {@link #sqlite3_column_java_object(sqlite3_stmt,int) sqlite3_column_java_object()} to
      fetch it.
@@ -1077,13 +1074,13 @@ public final class SQLite3Jni {
   }
 
   private static native void sqlite3_result_text(
-    @NotNull sqlite3_context cx, @Nullable byte[] text, int maxLen
+    @NotNull sqlite3_context cx, @Nullable byte[] utf8, int maxLen
   );
 
   public static void sqlite3_result_text(
-    @NotNull sqlite3_context cx, @Nullable byte[] text
+    @NotNull sqlite3_context cx, @Nullable byte[] utf8
   ){
-    sqlite3_result_text(cx, text, null==text ? 0 : text.length);
+    sqlite3_result_text(cx, utf8, null==utf8 ? 0 : utf8.length);
   }
 
   public static void sqlite3_result_text(
@@ -1118,33 +1115,13 @@ public final class SQLite3Jni {
   );
 
   /**
-     Cleans up all stale per-thread state managed by the library, as
-     well as any registered auto-extensions, then calls the C-native
-     sqlite3_shutdown(). Calling this while database handles or
-     prepared statements are still active will leak resources. Trying
-     to use those objects after this routine is called invoked
-     undefined behavior.
-  */
-  public static synchronized native int sqlite3_shutdown();
-
-  public static native int sqlite3_status(
-    int op, @NotNull OutputPointer.Int32 pCurrent,
-    @NotNull OutputPointer.Int32 pHighwater, boolean reset
-  );
-
-  public static native int sqlite3_status64(
-    int op, @NotNull OutputPointer.Int64 pCurrent,
-    @NotNull OutputPointer.Int64 pHighwater, boolean reset
-  );
-
-  /**
      Sets the current UDF result to the given bytes, which are assumed
      be encoded in UTF-16 using the platform's byte order.
   */
   public static void sqlite3_result_text16(
-    @NotNull sqlite3_context cx, @Nullable byte[] text
+    @NotNull sqlite3_context cx, @Nullable byte[] utf16
   ){
-    sqlite3_result_text64(cx, text, text.length, SQLITE_UTF16);
+    sqlite3_result_text64(cx, utf16, utf16.length, SQLITE_UTF16);
   }
 
   public static void sqlite3_result_text16(
@@ -1170,11 +1147,33 @@ public final class SQLite3Jni {
     @NotNull sqlite3 db, long rowid
   );
 
+
+  /**
+     Cleans up all stale per-thread state managed by the library, as
+     well as any registered auto-extensions, then calls the C-native
+     sqlite3_shutdown(). Calling this while database handles or
+     prepared statements are still active will leak resources. Trying
+     to use those objects after this routine is called invoked
+     undefined behavior.
+  */
+  public static synchronized native int sqlite3_shutdown();
+
   public static native int sqlite3_sleep(int ms);
 
   public static native String sqlite3_sourceid();
 
   public static native String sqlite3_sql(@NotNull sqlite3_stmt stmt);
+
+
+  public static native int sqlite3_status(
+    int op, @NotNull OutputPointer.Int32 pCurrent,
+    @NotNull OutputPointer.Int32 pHighwater, boolean reset
+  );
+
+  public static native int sqlite3_status64(
+    int op, @NotNull OutputPointer.Int64 pCurrent,
+    @NotNull OutputPointer.Int64 pHighwater, boolean reset
+  );
 
   public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 

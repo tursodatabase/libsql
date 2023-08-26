@@ -75,6 +75,14 @@
 //#endif
 
 /**********************************************************************/
+/* SQLITE_J... */
+#ifdef SQLITE_JNI_FATAL_OOM
+#if !SQLITE_JNI_FATAL_OOM
+#undef SQLITE_JNI_FATAL_OOM
+#endif
+#endif
+
+/**********************************************************************/
 /* SQLITE_M... */
 #ifndef SQLITE_MAX_ALLOCATION_SIZE
 # define SQLITE_MAX_ALLOCATION_SIZE 0x1fffffff
@@ -717,13 +725,38 @@ static inline void s3jni_oom(JNIEnv * const env){
 ** sqlite3_malloc() proxy which fails fatally on OOM.  This should
 ** only be used for routines which manage global state and have no
 ** recovery strategy for OOM. For sqlite3 API which can reasonably
-** return SQLITE_NOMEM, sqlite3_malloc() should be used instead.
+** return SQLITE_NOMEM, s3jni_malloc() should be used instead.
 */
-static void * s3jni_malloc(JNIEnv * const env, size_t n){
+static void * s3jni_malloc_or_die(JNIEnv * const env, size_t n){
   void * const rv = sqlite3_malloc(n);
   if( n && !rv ) s3jni_oom(env);
   return rv;
 }
+
+/*
+** Works like sqlite3_malloc() unless built with SQLITE_JNI_FATAL_OOM,
+** in which case it calls s3jni_oom() on OOM.
+*/
+static void * s3jni_malloc(JNIEnv * const env, size_t n){
+  void * const rv = sqlite3_malloc(n);
+#ifdef SQLITE_JNI_FATAL_OOM
+  if( n && !rv ) s3jni_oom(env);
+#endif
+  return rv;
+}
+
+/*
+** Works like sqlite3_realloc() unless built with SQLITE_JNI_FATAL_OOM,
+** in which case it calls s3jni_oom() on OOM.
+*/
+static void * s3jni_realloc(JNIEnv * const env, void * p, size_t n){
+  void * const rv = sqlite3_realloc(p, (int)n);
+#ifdef SQLITE_JNI_FATAL_OOM
+  if( n && !rv ) s3jni_oom(env);
+#endif
+  return rv;
+}
+
 
 /*
 ** Returns the current JNIEnv object. Fails fatally if it cannot find
@@ -765,7 +798,7 @@ static S3JniEnv * S3JniEnv_get(JNIEnv * const env){
     SJG.envCache.aFree = row->pNext;
     if( row->pNext ) row->pNext->pPrev = 0;
   }else{
-    row = s3jni_malloc(env, sizeof(S3JniEnv));
+    row = s3jni_malloc_or_die(env, sizeof(*row));
     s3jni_incr( &SJG.metrics.envCacheAllocs );
   }
   memset(row, 0, sizeof(*row));
@@ -885,7 +918,7 @@ static char * s3jni_jstring_to_utf8(JNIEnv * const env,
   }
   nBa = (*env)->GetArrayLength(env, jba);
   if( nLen ) *nLen = (int)nBa;
-  rv = sqlite3_malloc( nBa + 1 );
+  rv = s3jni_malloc( env, nBa + 1 );
   if( rv ){
     (*env)->GetByteArrayRegion(env, jba, 0, nBa, (jbyte*)rv);
     rv[nBa] = 0;
@@ -1506,7 +1539,7 @@ typedef struct {
 ** to ResultJavaVal_finalizer().
 */
 static ResultJavaVal * ResultJavaVal_alloc(JNIEnv * const env, jobject jObj){
-  ResultJavaVal * rv = sqlite3_malloc(sizeof(ResultJavaVal));
+  ResultJavaVal * const rv = s3jni_malloc(env, sizeof(ResultJavaVal));
   if( rv ){
     rv->jObj = jObj ? S3JniRefGlobal(jObj) : 0;
   }
@@ -1590,7 +1623,7 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
   }
   S3JniMutex_Global_leave;
   if( !s ){
-    s = sqlite3_malloc(sizeof(*s));
+    s = s3jni_malloc(env, sizeof(*s));
     s3jni_incr(&SJG.metrics.nUdfAlloc);
   }
   if( s ){
@@ -2012,8 +2045,7 @@ S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
     if( SJG.autoExt.nExt == SJG.autoExt.nAlloc ){
       unsigned n = 1 + SJG.autoExt.nAlloc;
       S3JniAutoExtension * const aNew =
-        sqlite3_realloc( SJG.autoExt.pExt,
-                         n * sizeof(S3JniAutoExtension) );
+        s3jni_realloc( env, SJG.autoExt.pExt, n * sizeof(*ax) );
       if( !aNew ){
         rc = SQLITE_NOMEM;
       }else{
@@ -3397,8 +3429,8 @@ S3JniApi(sqlite3_reset_auto_extension(),void,1reset_1auto_1extension)(
 }
 
 /* Impl for sqlite3_result_text/blob() and friends. */
-static void result_blob_text(int as64,
-                             int eTextRep/*only for (asBlob=0)*/,
+static void result_blob_text(int as64     /* true for text64/blob64() mode */,
+                             int eTextRep /* 0 for blobs, else SQLITE_UTF... */,
                              JNIEnv * const env, sqlite3_context *pCx,
                              jbyteArray jBa, jlong nMax){
   int const asBlob = 0==eTextRep;
@@ -3425,8 +3457,7 @@ static void result_blob_text(int as64,
     }
     if( as64 ){ /* 64-bit... */
       static const jsize nLimit64 =
-        SQLITE_MAX_ALLOCATION_SIZE/*only _kinda_ arbitrary!*/
-        /* jsize is int32, not int64! */;
+        SQLITE_MAX_ALLOCATION_SIZE/*only _kinda_ arbitrary*/;
       if( nBa > nLimit64 ){
         sqlite3_result_error_toobig(pCx);
       }else if( asBlob ){
@@ -3739,18 +3770,6 @@ static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
   return rc;
 }
 
-S3JniApi(sqlite3_strglob(),jint,1strglob)(
-  JniArgsEnvClass, jbyteArray baG, jbyteArray baT
-){
-  return s3jni_strlike_glob(0, env, baG, baT, 0);
-}
-
-S3JniApi(sqlite3_strlike(),jint,1strlike)(
-  JniArgsEnvClass, jbyteArray baG, jbyteArray baT, jint escChar
-){
-  return s3jni_strlike_glob(1, env, baG, baT, escChar);
-}
-
 S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
   JniArgsEnvClass
 ){
@@ -3774,6 +3793,18 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
 #endif
   /* Do not clear S3JniGlobal.jvm: it's legal to restart the lib. */
   return sqlite3_shutdown();
+}
+
+S3JniApi(sqlite3_strglob(),jint,1strglob)(
+  JniArgsEnvClass, jbyteArray baG, jbyteArray baT
+){
+  return s3jni_strlike_glob(0, env, baG, baT, 0);
+}
+
+S3JniApi(sqlite3_strlike(),jint,1strlike)(
+  JniArgsEnvClass, jbyteArray baG, jbyteArray baT, jint escChar
+){
+  return s3jni_strlike_glob(1, env, baG, baT, escChar);
 }
 
 S3JniApi(sqlite3_sql(),jstring,1sql)(
@@ -4113,7 +4144,8 @@ static void Fts5JniAux_xDestroy(void *p){
 }
 
 static Fts5JniAux * Fts5JniAux_alloc(JNIEnv * const env, jobject jObj){
-  Fts5JniAux * s = sqlite3_malloc(sizeof(Fts5JniAux));
+  Fts5JniAux * s = s3jni_malloc(env, sizeof(Fts5JniAux));
+
   if( s ){
     jclass klazz;
     memset(s, 0, sizeof(Fts5JniAux));
@@ -4146,9 +4178,9 @@ static inline jobject new_fts5_api_wrapper(JNIEnv * const env, fts5_api *sv){
   return new_NativePointerHolder_object(env, &S3NphRefs.fts5_api, sv);
 }
 
-/**
-   Returns a per-JNIEnv global ref to the Fts5ExtensionApi singleton
-   instance, or NULL on OOM.
+/*
+** Returns a per-JNIEnv global ref to the Fts5ExtensionApi singleton
+** instance, or NULL on OOM.
 */
 static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
   if( !SJG.fts5.jFtsExt ){
@@ -4168,8 +4200,8 @@ static jobject s3jni_getFts5ExensionApi(JNIEnv * const env){
 }
 
 /*
-** Return a pointer to the fts5_api instance for database connection
-** db.  If an error occurs, return NULL and leave an error in the
+** Returns a pointer to the fts5_api instance for database connection
+** db.  If an error occurs, returns NULL and leaves an error in the
 ** database handle (accessible using sqlite3_errcode()/errmsg()).
 */
 static fts5_api *s3jni_fts5_api_from_db(sqlite3 *db){
@@ -4536,7 +4568,8 @@ JniDeclFtsXA(int,xSetAuxdata)(JniArgsEnvObj,jobject jCtx, jobject jAux){
   Fts5ExtDecl;
   int rc;
   S3JniFts5AuxData * pAux;
-  pAux = sqlite3_malloc(sizeof(*pAux));
+
+  pAux = s3jni_malloc(env, sizeof(*pAux));
   if( !pAux ){
     if( jAux ){
       /* Emulate how xSetAuxdata() behaves when it cannot alloc
@@ -4692,9 +4725,10 @@ static void SQLTester_dup_func(
   char *z;
   int n = sqlite3_value_bytes(argv[0]);
   SQLTesterJni * const p = (SQLTesterJni *)sqlite3_user_data(context);
+  S3JniDeclLocal_env;
 
   ++p->nDup;
-  if( n>0 && (pOut = sqlite3_malloc( (n+16)&~7 ))!=0 ){
+  if( n>0 && (pOut = s3jni_malloc( env, (n+16)&~7 ))!=0 ){
     pOut[0] = 0x2bbf4b7c;
     z = (char*)&pOut[1];
     memcpy(z, sqlite3_value_text(argv[0]), n);
