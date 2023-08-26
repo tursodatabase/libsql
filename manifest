@@ -1,5 +1,5 @@
-C Re-order\ssome\sout-of-order\sJNI\sAPIs.\sCorrect\sJNI\ssqlite3_open_v2()\sbehavior\sin\sa\sparticular\sOOM\scondition.
-D 2023-08-26T18:01:36.744
+C Remove\sa\sbunch\sof\scommented-out\sdebug\soutput.
+D 2023-08-26T18:15:33.351
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -236,7 +236,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile d9244b5addf58868343a74a94faa71f829e7f40c163486d053f4b4bbea173703
 F ext/jni/README.md 1332b1fa27918bd5d9ca2d0d4f3ac3a6ab86b9e3699dc5bfe32904a027f3d2a9
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 2bbd0443b336a9c4d4cfea37a254592c96cf95f18f5aad0c60ff45968311bb61
+F ext/jni/src/c/sqlite3-jni.c 5ccdea9487e66f0850aaa817ffe8523a84c4376235ae967c3700513665c0883a
 F ext/jni/src/c/sqlite3-jni.h 22c6c760a31ebfc3fe13d45d2a3a4dd7c8f9c6207aeba3fdc38137452cbf3a04
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java e0aac6ccae05702f8ee779820570866a2760aaa57a73135c57c8d3580bef52d5
 F ext/jni/src/org/sqlite/jni/AuthorizerCallback.java c374bb76409cce7a0bdba94877706b59ac6127fa5d9e6af3e8058c99ce99c030
@@ -2103,8 +2103,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6a6ee6dd54ec1a1dc7fb7d2f331951525d394a8362aef911f62878ac3961898f
-R 802391c6b76d7ea843bfc8720b7feccc
+P 49d3be002ce5e594027f47a3ba448f0c21ec68b416b8df997497753f53e3ca52
+R a3f75122b9068beff86867201ce6d194
 U stephan
-Z 04c34431ca2b1ac34ae8b832852ca4c0
+Z 6e844ab70f4837c2de7f262b42dd7747
 # Remove this line to create a well-formed Fossil manifest.

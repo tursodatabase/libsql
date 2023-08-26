@@ -635,44 +635,36 @@ static void s3jni_incr( volatile unsigned int * const p ){
 
 #define S3JniMutex_Env_enter                        \
   S3JniMutex_Env_assertNotLocker;                   \
-  /*MARKER(("Entering ENV mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.envCache.mutex );        \
   s3jni_incr(&SJG.metrics.nMutexEnv);               \
   SJG.envCache.locker = env
 #define S3JniMutex_Env_leave                         \
-  /*MARKER(("Leaving ENV mutex @%p %s.\n", env));*/  \
   S3JniMutex_Env_assertLocker;                       \
   SJG.envCache.locker = 0;                           \
   sqlite3_mutex_leave( SJG.envCache.mutex )
 
 #define S3JniMutex_Ext_enter                            \
-  /*MARKER(("Entering autoExt mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.autoExt.mutex );             \
   SJG.autoExt.locker = env;                             \
   s3jni_incr( &SJG.metrics.nMutexAutoExt )
 #define S3JniMutex_Ext_leave                            \
-  /*MARKER(("Leaving autoExt mutex@%p %s.\n", env));*/  \
   assert( env == SJG.autoExt.locker );                  \
   sqlite3_mutex_leave( SJG.autoExt.mutex )
 #define S3JniMutex_Ext_assertLocker                     \
   assert( env == SJG.autoExt.locker )
 
 #define S3JniMutex_Global_enter                        \
-  /*MARKER(("Entering GLOBAL mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.mutex );                    \
   s3jni_incr(&SJG.metrics.nMutexGlobal);
 #define S3JniMutex_Global_leave                         \
-  /*MARKER(("Leaving GLOBAL mutex @%p %s.\n", env));*/  \
   sqlite3_mutex_leave( SJG.mutex )
 
 #define S3JniMutex_Nph_enter                        \
   S3JniMutex_Env_assertNotLocker;                   \
-  /*MARKER(("Entering NPH mutex@%p %s.\n", env));*/ \
   sqlite3_mutex_enter( SJG.envCache.mutex );        \
   s3jni_incr( &SJG.metrics.nMutexEnv2 );            \
   SJG.envCache.locker = env
 #define S3JniMutex_Nph_leave                         \
-  /*MARKER(("Leaving NPH mutex @%p %s.\n", env));*/  \
   S3JniMutex_Env_assertLocker;                       \
   SJG.envCache.locker = 0;                           \
   sqlite3_mutex_leave( SJG.envCache.mutex )
@@ -683,7 +675,6 @@ static void s3jni_incr( volatile unsigned int * const p ){
   s3jni_incr( &SJG.metrics.nMutexPerDb );             \
   SJG.perDb.locker = env;
 #define S3JniMutex_S3JniDb_leave                      \
-  /*MARKER(("Leaving PerDb mutex@%p %s.\n", env));*/  \
   assert( env == SJG.perDb.locker );                  \
   SJG.perDb.locker = 0;                               \
   sqlite3_mutex_leave( SJG.perDb.mutex )
@@ -1635,7 +1626,6 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
 
 static void S3JniUdf_free(S3JniUdf * s){
   S3JniDeclLocal_env;
-  //MARKER(("UDF cleanup: %s\n", s->zFuncName));
   s3jni_call_xDestroy(env, s->jObj);
   S3JniUnrefGlobal(s->jObj);
   sqlite3_free(s->zFuncName);
@@ -1648,7 +1638,6 @@ static void S3JniUdf_free(S3JniUdf * s){
 }
 
 static void S3JniUdf_finalizer(void * s){
-  //MARKER(("UDF finalizer @ %p\n", s));
   S3JniUdf_free((S3JniUdf*)s);
 }
 
@@ -1754,7 +1743,6 @@ static int udf_xFSI(sqlite3_context* const pCx, int argc,
   udf_jargs args = {0,0};
   int rc = udf_args(env, pCx, argc, argv, &args.jcx, &args.jargv);
 
-  //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
   if( 0 == rc ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, args.jcx, args.jargv);
     S3JniIfThrew{
@@ -1778,12 +1766,10 @@ static int udf_xFV(sqlite3_context* cx, S3JniUdf * s,
   jobject jcx = new_sqlite3_context_wrapper(env, cx);
   int rc = 0;
   int const isFinal = 'F'==zFuncType[1]/*xFinal*/;
-  //MARKER(("%s.%s() cx = %p\n", s->zFuncName, zFuncType, cx));
   if( !jcx ){
     if( isFinal ) sqlite3_result_error_nomem(cx);
     return SQLITE_NOMEM;
   }
-  //MARKER(("UDF::%s.%s()\n", s->zFuncName, zFuncType));
   (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
   S3JniIfThrew{
     rc = udf_report_exception(env, isFinal, cx, s->zFuncName,
@@ -3104,11 +3090,6 @@ end:
     S3JniUnrefLocal(jStmt);
     jStmt = 0;
   }
-#if 0
-  if( 0!=rc ){
-    MARKER(("prepare rc = %d\n", rc));
-  }
-#endif
   OutputPointer_set_sqlite3_stmt(env, jOutStmt, jStmt);
   return (jint)rc;
 }
@@ -3840,7 +3821,6 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
     case SQLITE_TRACE_STMT:
       jX = s3jni_utf8_to_jstring(env, (const char *)pX, -1);
       if( !jX ) rc = SQLITE_NOMEM;
-      /*MARKER(("TRACE_STMT@%p SQL=%p / %s\n", pP, jX, (const char *)pX));*/
       break;
     case SQLITE_TRACE_PROFILE:
       jX = (*env)->NewObject(env, SJG.g.cLong, SJG.g.ctorLong1,
