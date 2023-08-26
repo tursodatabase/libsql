@@ -253,12 +253,14 @@ public class Tester1 implements Runnable {
     affirm(0 == rc);
     sqlite3_stmt stmt = outStmt.take();
     affirm(0 != stmt.getNativePointer());
+    affirm( db == sqlite3_db_handle(stmt) );
     rc = sqlite3_step(stmt);
     if( SQLITE_DONE != rc ){
       outln("step failed ??? ",rc, " ",sqlite3_errmsg(db));
     }
     affirm(SQLITE_DONE == rc);
     sqlite3_finalize(stmt);
+    affirm( null == sqlite3_db_handle(stmt) );
     affirm(0 == stmt.getNativePointer());
 
     { /* Demonstrate how to use the "zTail" option of
@@ -924,8 +926,8 @@ public class Tester1 implements Runnable {
   @ManualTest /* because threads inherently break this test */
   private void testBusy(){
     final String dbName = "_busy-handler.db";
-    final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
-    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
+    final OutputPointer.sqlite3 outDb = OutputPointer.sqlite3();
+    final OutputPointer.sqlite3_stmt outStmt = OutputPointer.sqlite3_stmt();
 
     int rc = sqlite3_open(dbName, outDb);
     ++metrics.dbOpen;

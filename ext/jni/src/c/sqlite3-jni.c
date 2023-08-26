@@ -2603,7 +2603,8 @@ S3JniApi(sqlite3_config() /* for SQLLOG */,
 S3JniApi(sqlite3_context_db_handle(),jobject,1context_1db_1handle)(
   JniArgsEnvClass, jobject jpCx
 ){
-  sqlite3 * const pDb = sqlite3_context_db_handle(PtrGet_sqlite3_context(jpCx));
+  sqlite3_context * const pCx = PtrGet_sqlite3_context(jpCx);
+  sqlite3 * const pDb = pCx ? sqlite3_context_db_handle(pCx) : 0;
   S3JniDb * const ps = pDb ? S3JniDb_from_c(pDb) : 0;
   return ps ? ps->jDb : 0;
 }
@@ -2809,6 +2810,16 @@ S3JniApi(sqlite3_db_filename(),jstring,1db_1filename)(
   }
   return jRv;
 }
+
+S3JniApi(sqlite3_db_handle(),jobject,1db_1handle)(
+  JniArgsEnvClass, jobject jpStmt
+){
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_context(jpStmt);
+  sqlite3 * const pDb = pStmt ? sqlite3_db_handle(pStmt) : 0;
+  S3JniDb * const ps = pDb ? S3JniDb_from_c(pDb) : 0;
+  return ps ? ps->jDb : 0;
+}
+
 
 S3JniApi(sqlite3_db_status(),jint,1db_1status)(
   JniArgsEnvClass, jobject jDb, jint op, jobject jOutCurrent,
