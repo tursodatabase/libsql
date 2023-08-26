@@ -940,15 +940,11 @@ public class Tester1 implements Runnable {
     rc = sqlite3_db_config(db1, SQLITE_DBCONFIG_MAINDBNAME, "foo");
     affirm( sqlite3_db_filename(db1, "foo").endsWith(dbName) );
 
-    final ValueHolder<Boolean> xDestroyed = new ValueHolder<>(false);
     final ValueHolder<Integer> xBusyCalled = new ValueHolder<>(0);
     BusyHandlerCallback handler = new BusyHandlerCallback(){
         @Override public int call(int n){
           //outln("busy handler #"+n);
           return n > 2 ? 0 : ++xBusyCalled.value;
-        }
-        @Override public void xDestroy(){
-          xDestroyed.value = true;
         }
       };
     rc = sqlite3_busy_handler(db2, handler);
@@ -956,15 +952,12 @@ public class Tester1 implements Runnable {
 
     // Force a locked condition...
     execSql(db1, "BEGIN EXCLUSIVE");
-    affirm(!xDestroyed.value);
     rc = sqlite3_prepare_v2(db2, "SELECT * from t", outStmt);
     affirm( SQLITE_BUSY == rc);
     assert( null == outStmt.get() );
     affirm( 3 == xBusyCalled.value );
     sqlite3_close_v2(db1);
-    affirm(!xDestroyed.value);
     sqlite3_close_v2(db2);
-    affirm(xDestroyed.value);
     try{
       final java.io.File f = new java.io.File(dbName);
       f.delete();

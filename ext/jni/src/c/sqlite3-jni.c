@@ -997,7 +997,7 @@ static void S3JniDb_set_aside_unlocked(JNIEnv * env, S3JniDb * const s){
     sqlite3_free( s->zMainDbName );
 #define UNHOOK(MEMBER,XDESTROY) S3JniHook_unref(env, &s->hooks.MEMBER, XDESTROY)
     UNHOOK(auth, 0);
-    UNHOOK(busyHandler, 1);
+    UNHOOK(busyHandler, 0);
     UNHOOK(collation, 1);
     UNHOOK(collationNeeded, 0);
     UNHOOK(commit, 0);
@@ -2121,7 +2121,7 @@ S3JniApi(sqlite3_busy_handler(),jint,1busy_1handler)(
       return 0;
     }
     jclass klazz;
-    S3JniHook_unref(env, pHook, 1);
+    S3JniHook_unref(env, pHook, 0);
     pHook->jObj = S3JniRefGlobal(jBusy);
     klazz = (*env)->GetObjectClass(env, jBusy);
     pHook->midCallback = (*env)->GetMethodID(env, klazz, "call", "(I)I");
@@ -2131,7 +2131,7 @@ S3JniApi(sqlite3_busy_handler(),jint,1busy_1handler)(
       rc = SQLITE_ERROR;
     }
   }else{
-    S3JniHook_unref(env, pHook, 1);
+    S3JniHook_unref(env, pHook, 0);
   }
   if( 0==rc ){
     rc = jBusy
@@ -2146,11 +2146,14 @@ S3JniApi(sqlite3_busy_timeout(),jint,1busy_1timeout)(
   JniArgsEnvClass, jobject jDb, jint ms
 ){
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
+  int rc = SQLITE_MISUSE;
   if( ps ){
-    S3JniHook_unref(env, &ps->hooks.busyHandler, 1);
-    return sqlite3_busy_timeout(ps->pDb, (int)ms);
+    S3JniMutex_S3JniDb_enter;
+    S3JniHook_unref(env, &ps->hooks.busyHandler, 0);
+    rc = sqlite3_busy_timeout(ps->pDb, (int)ms);
+    S3JniMutex_S3JniDb_leave;
   }
-  return SQLITE_MISUSE;
+  return rc;
 }
 
 S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
@@ -2551,7 +2554,6 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
 )(JniArgsEnvClass, jobject jDb, jstring name, jint eTextRep,
   jobject oCollation){
   int rc;
-  const char *zName;
   jclass klazz;
   S3JniDb * const ps = S3JniDb_for_db(env, jDb, 0);
   jmethodID midCallback;
@@ -2565,17 +2567,21 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
     rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
                         "Could not get xCompare() method for object.");
   }else{
-    zName = s3jni_jstring_to_mutf8(name);
-    rc = sqlite3_create_collation_v2(ps->pDb, zName, (int)eTextRep,
-                                     ps, CollationState_xCompare,
-                                     CollationState_xDestroy);
-    s3jni_mutf8_release(name, zName);
-    if( 0==rc ){
+    char * const zName = s3jni_jstring_to_utf8(env, name, 0);
+    if( zName ){
       S3JniMutex_S3JniDb_enter;
-      S3JniHook_unref( env, &ps->hooks.collation, 1 );
-      ps->hooks.collation.midCallback = midCallback;
-      ps->hooks.collation.jObj = S3JniRefGlobal(oCollation);
+      rc = sqlite3_create_collation_v2(ps->pDb, zName, (int)eTextRep,
+                                       ps, CollationState_xCompare,
+                                       CollationState_xDestroy);
+      sqlite3_free(zName);
+      if( 0==rc ){
+        S3JniHook_unref( env, &ps->hooks.collation, 1 );
+        ps->hooks.collation.midCallback = midCallback;
+        ps->hooks.collation.jObj = S3JniRefGlobal(oCollation);
+      }
       S3JniMutex_S3JniDb_leave;
+    }else{
+      rc = SQLITE_NOMEM;
     }
   }
   return (jint)rc;
@@ -2627,9 +2633,9 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2() sqlite3_create_w
                                     xFunc, xStep, xFinal, S3JniUdf_finalizer);
   }
 error_cleanup:
+  /* Reminder: on sqlite3_create_function() error, s will be
+  ** destroyed via create_function(). */
   sqlite3_free(zFuncName);
-  /* on sqlite3_create_function() error, s will be destroyed via
-  ** create_function(), so we're not leaking s. */
   return (jint)rc;
 }
 
@@ -4228,11 +4234,11 @@ JniDeclFtsApi(jint,xCreateFunction)(JniArgsEnvObj, jstring jName,
                                   jobject jUserData, jobject jFunc){
   fts5_api * const pApi = PtrGet_fts5_api(jSelf);
   int rc;
-  char const * zName;
+  char * zName;
   Fts5JniAux * pAux;
 
   assert(pApi);
-  zName = s3jni_jstring_to_mutf8(jName);
+  zName = s3jni_jstring_to_utf8(env, jName, 0);
   if(!zName) return SQLITE_NOMEM;
   pAux = Fts5JniAux_alloc(env, jFunc);
   if( pAux ){
@@ -4244,10 +4250,10 @@ JniDeclFtsApi(jint,xCreateFunction)(JniArgsEnvObj, jstring jName,
   }
   if( 0==rc ){
     pAux->jUserData = jUserData ? S3JniRefGlobal(jUserData) : 0;
-    pAux->zFuncName = sqlite3_mprintf("%s", zName)
-      /* OOM here is non-fatal. Ignore it. */;
+    pAux->zFuncName = zName;
+  }else{
+    sqlite3_free(zName);
   }
-  s3jni_mutf8_release(jName, zName);
   return (jint)rc;
 }
 
