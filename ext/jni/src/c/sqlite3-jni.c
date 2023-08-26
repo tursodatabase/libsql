@@ -426,6 +426,33 @@ struct S3JniAutoExtension {
   jmethodID midFunc  /* xEntryPoint() callback */;
 };
 
+/*
+** Type IDs for SQL function categories.
+*/
+enum UDFType {
+  UDF_UNKNOWN_TYPE = 0/*for error propagation*/,
+  UDF_SCALAR,
+  UDF_AGGREGATE,
+  UDF_WINDOW
+};
+
+/**
+   State for binding Java-side UDFs.
+*/
+typedef struct S3JniUdf S3JniUdf;
+struct S3JniUdf {
+  jobject jObj          /* SQLFunction instance */;
+  char * zFuncName      /* Only for error reporting and debug logging */;
+  enum UDFType type;
+  /** Method IDs for the various UDF methods. */
+  jmethodID jmidxFunc    /* Java ID of xFunc method */;
+  jmethodID jmidxStep    /* Java ID of xStep method */;
+  jmethodID jmidxFinal   /* Java ID of xFinal method */;
+  jmethodID jmidxValue   /* Java ID of xValue method */;
+  jmethodID jmidxInverse /* Java ID of xInverse method */;
+  S3JniUdf * pNext       /* Next entry in free-list. */;
+};
+
 #if !defined(SQLITE_JNI_OMIT_METRICS) && !defined(SQLITE_JNI_ENABLE_METRICS)
 #  ifdef SQLITE_DEBUG
 #    define SQLITE_JNI_ENABLE_METRICS
@@ -464,10 +491,11 @@ struct S3JniGlobalType {
   **
   */
   JavaVM * jvm;
+  /* Global mutex. */
   sqlite3_mutex * mutex;
   /*
   ** Cache of Java refs and method IDs for NativePointerHolder
-  ** subclasses.  Initialized on demand.
+  ** subclasses and OutputPointer.T types.
   */
   S3JniNphClass nph[S3Jni_NphCache_size];
   /*
@@ -494,6 +522,10 @@ struct S3JniGlobalType {
                            always have this set to the current JNIEnv
                            object. Used only for sanity checking. */;
   } perDb;
+  struct {
+    S3JniUdf * aFree       /* Head of the free-item list. Guarded by global
+                              mutex. */;
+  } udf;
   /*
   ** Refs to global classes and methods. Obtained during static init
   ** and never released.
@@ -553,9 +585,13 @@ struct S3JniGlobalType {
     volatile unsigned nMutexPerDb     /* number of times perDb.mutex was entered */;
     volatile unsigned nMutexAutoExt   /* number of times autoExt.mutex was entered */;
     volatile unsigned nMutexGlobal    /* number of times global mutex was entered. */;
+    volatile unsigned nMutexUdf       /* number of times global mutex was entered
+                                         for UDFs. */;
     volatile unsigned nDestroy        /* xDestroy() calls across all types */;
     volatile unsigned nPdbAlloc       /* Number of S3JniDb alloced. */;
     volatile unsigned nPdbRecycled    /* Number of S3JniDb reused. */;
+    volatile unsigned nUdfAlloc       /* Number of S3JniUdf alloced. */;
+    volatile unsigned nUdfRecycled    /* Number of S3JniUdf reused. */;
     struct {
       /* Number of calls for each type of UDF callback. */
       volatile unsigned nFunc;
@@ -1544,40 +1580,28 @@ static inline jobject new_sqlite3_value_wrapper(JNIEnv * const env, sqlite3_valu
   return new_NativePointerHolder_object(env, &S3NphRefs.sqlite3_value, sv);
 }
 
-/*
-** Type IDs for SQL function categories.
-*/
-enum UDFType {
-  UDF_SCALAR = 1,
-  UDF_AGGREGATE,
-  UDF_WINDOW,
-  UDF_UNKNOWN_TYPE/*for error propagation*/
-};
-
 typedef void (*udf_xFunc_f)(sqlite3_context*,int,sqlite3_value**);
 typedef void (*udf_xStep_f)(sqlite3_context*,int,sqlite3_value**);
 typedef void (*udf_xFinal_f)(sqlite3_context*);
 /*typedef void (*udf_xValue_f)(sqlite3_context*);*/
 /*typedef void (*udf_xInverse_f)(sqlite3_context*,int,sqlite3_value**);*/
 
-/**
-   State for binding Java-side UDFs.
-*/
-typedef struct S3JniUdf S3JniUdf;
-struct S3JniUdf {
-  jobject jObj          /* SQLFunction instance */;
-  char * zFuncName      /* Only for error reporting and debug logging */;
-  enum UDFType type;
-  /** Method IDs for the various UDF methods. */
-  jmethodID jmidxFunc;
-  jmethodID jmidxStep;
-  jmethodID jmidxFinal;
-  jmethodID jmidxValue;
-  jmethodID jmidxInverse;
-};
-
 static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
-  S3JniUdf * const s = sqlite3_malloc(sizeof(S3JniUdf));
+  S3JniUdf * s = 0;
+
+  S3JniMutex_Global_enter;
+  s3jni_incr(&SJG.metrics.nMutexUdf);
+  if( SJG.udf.aFree ){
+    s = SJG.udf.aFree;
+    SJG.udf.aFree = s->pNext;
+    s->pNext = 0;
+    s3jni_incr(&SJG.metrics.nUdfRecycled);
+  }
+  S3JniMutex_Global_leave;
+  if( !s ){
+    s = sqlite3_malloc(sizeof(*s));
+    s3jni_incr(&SJG.metrics.nUdfAlloc);
+  }
   if( s ){
     const char * zFSI = /* signature for xFunc, xStep, xInverse */
       "(Lorg/sqlite/jni/sqlite3_context;[Lorg/sqlite/jni/sqlite3_value;)V";
@@ -1585,9 +1609,9 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
       "(Lorg/sqlite/jni/sqlite3_context;)V";
     jclass const klazz = (*env)->GetObjectClass(env, jObj);
 
-    memset(s, 0, sizeof(S3JniUdf));
+    memset(s, 0, sizeof(*s));
     s->jObj = S3JniRefGlobal(jObj);
-#define FGET(FuncName,FuncType,Field) \
+#define FGET(FuncName,FuncType,Field)                               \
     s->Field = (*env)->GetMethodID(env, klazz, FuncName, FuncType); \
     if( !s->Field ) (*env)->ExceptionClear(env)
     FGET("xFunc",    zFSI, jmidxFunc);
@@ -1607,20 +1631,24 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
   return s;
 }
 
+
 static void S3JniUdf_free(S3JniUdf * s){
   S3JniDeclLocal_env;
-  if( env ){
-    //MARKER(("UDF cleanup: %s\n", s->zFuncName));
-    s3jni_call_xDestroy(env, s->jObj);
-    S3JniUnrefGlobal(s->jObj);
-  }
+  //MARKER(("UDF cleanup: %s\n", s->zFuncName));
+  s3jni_call_xDestroy(env, s->jObj);
+  S3JniUnrefGlobal(s->jObj);
   sqlite3_free(s->zFuncName);
-  sqlite3_free(s);
+  assert( !s->pNext );
+  memset(s, 0, sizeof(*s));
+  S3JniMutex_Global_enter;
+  s->pNext = S3JniGlobal.udf.aFree;
+  S3JniGlobal.udf.aFree = s;
+  S3JniMutex_Global_leave;
 }
 
 static void S3JniUdf_finalizer(void * s){
   //MARKER(("UDF finalizer @ %p\n", s));
-  if( s ) S3JniUdf_free((S3JniUdf*)s);
+  S3JniUdf_free((S3JniUdf*)s);
 }
 
 /**
@@ -2630,7 +2658,8 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2() sqlite3_create_w
   }
   s = S3JniUdf_alloc(env, jFunctor);
   if( !s ) return SQLITE_NOMEM;
-  else if( UDF_UNKNOWN_TYPE==s->type ){
+
+  if( UDF_UNKNOWN_TYPE==s->type ){
     rc = s3jni_db_error(pDb, SQLITE_MISUSE,
                         "Cannot unambiguously determine function type.");
     S3JniUdf_free(s);
@@ -4001,20 +4030,25 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
          SJG.metrics.envCacheMisses,
          SJG.metrics.envCacheHits);
   printf("Mutex entry:"
-         "\n\tglobal %u"
-         "\n\tenv %u"
-         "\n\tnph inits %u"
-         "\n\tperDb %u"
-         "\n\tautoExt %u list accesses"
-         "\n\tmetrics %u\n",
+         "\n\tglobal       = %u"
+         "\n\tenv          = %u"
+         "\n\tnph inits    = %u"
+         "\n\tperDb        = %u"
+         "\n\tautoExt list = %u"
+         "\n\tS3JniUdf free-list = %u"
+         "\n\tmetrics      = %u\n",
          SJG.metrics.nMutexGlobal, SJG.metrics.nMutexEnv,
          SJG.metrics.nMutexEnv2, SJG.metrics.nMutexPerDb,
-         SJG.metrics.nMutexAutoExt,
+         SJG.metrics.nMutexAutoExt, SJG.metrics.nMutexUdf,
          SJG.metrics.nMetrics);
   printf("S3JniDb: %u alloced (*%u = %u bytes), %u recycled\n",
          SJG.metrics.nPdbAlloc, (unsigned) sizeof(S3JniDb),
          (unsigned)(SJG.metrics.nPdbAlloc * sizeof(S3JniDb)),
          SJG.metrics.nPdbRecycled);
+  printf("S3JniUdf: %u alloced (*%u = %u bytes), %u recycled\n",
+         SJG.metrics.nUdfAlloc, (unsigned) sizeof(S3JniUdf),
+         (unsigned)(SJG.metrics.nUdfAlloc * sizeof(S3JniUdf)),
+         SJG.metrics.nUdfRecycled);
   puts("Java-side UDF calls:");
 #define UDF(T) printf("\t%-8s = %u\n", "x" #T, SJG.metrics.udf.n##T)
   UDF(Func); UDF(Step); UDF(Final); UDF(Value); UDF(Inverse);
