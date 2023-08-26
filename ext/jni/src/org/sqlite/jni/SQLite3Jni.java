@@ -494,6 +494,11 @@ public final class SQLite3Jni {
 
      <p>Others may be added in the future. It returns SQLITE_MISUSE if
      given an argument it does not handle.
+
+     <p>Note that sqlite3_config() is not threadsafe with regards to
+     the rest of the library. This must not be called when any other
+     library APIs are being called.
+
   */
   public static native int sqlite3_config(int op);
 
@@ -504,8 +509,13 @@ public final class SQLite3Jni {
      logger. If installation of a logger fails, any previous logger is
      retained.
 
-     If not built with SQLITE_ENABLE_SQLLOG defined, this returns
+     <p>If not built with SQLITE_ENABLE_SQLLOG defined, this returns
      SQLITE_MISUSE.
+
+     <p>Note that sqlite3_config() is not threadsafe with regards to
+     the rest of the library. This must not be called when any other
+     library APIs are being called.
+
   */
   public static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
 
