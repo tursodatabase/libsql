@@ -981,7 +981,7 @@ static int s3jni_db_exception(JNIEnv * const env, S3JniDb * const ps,
 /*
 ** Extracts the (void xDestroy()) method from jObj and applies it to
 ** jObj. If jObj is NULL, this is a no-op. The lack of an xDestroy()
-** method is silently ignored and any exceptions thrown by xDestroy()
+** method is silently ignored. Any exceptions thrown by xDestroy()
 ** trigger a warning to stdout or stderr and then the exception is
 ** suppressed.
 */
@@ -1012,11 +1012,14 @@ static void s3jni_call_xDestroy(JNIEnv * const env, jobject jObj){
 ** cleared. It is legal to call this when the object has no Java
 ** references.
 */
-static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s, int doXDestroy){
-  if( doXDestroy && s->jObj ){
-    s3jni_call_xDestroy(env, s->jObj);
+static void S3JniHook_unref(JNIEnv * const env, S3JniHook * const s,
+                            int doXDestroy){
+  if( s->jObj ){
+    if( doXDestroy ){
+      s3jni_call_xDestroy(env, s->jObj);
+    }
+    S3JniUnrefGlobal(s->jObj);
   }
-  S3JniUnrefGlobal(s->jObj);
   memset(s, 0, sizeof(*s));
 }
 
@@ -1062,18 +1065,18 @@ static void S3JniDb_set_aside_unlocked(JNIEnv * env, S3JniDb * const s){
       SJG.perDb.aHead = s->pNext;
     }
     sqlite3_free( s->zMainDbName );
-#define UNHOOK(MEMBER,XDESTROY) S3JniHook_unref(env, &s->hooks.MEMBER, XDESTROY)
-    UNHOOK(auth, 0);
-    UNHOOK(busyHandler, 0);
-    UNHOOK(collation, 1);
-    UNHOOK(collationNeeded, 0);
-    UNHOOK(commit, 0);
-    UNHOOK(progress, 0);
-    UNHOOK(rollback, 0);
-    UNHOOK(trace, 0);
-    UNHOOK(update, 0);
+#define UNHOOK(MEMBER) S3JniHook_unref(env, &s->hooks.MEMBER, 0)
+    UNHOOK(auth);
+    UNHOOK(busyHandler);
+    UNHOOK(collation);
+    UNHOOK(collationNeeded);
+    UNHOOK(commit);
+    UNHOOK(progress);
+    UNHOOK(rollback);
+    UNHOOK(trace);
+    UNHOOK(update);
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-    UNHOOK(preUpdate, 0);
+    UNHOOK(preUpdate);
 #endif
 #undef UNHOOK
     S3JniUnrefGlobal(s->jDb);

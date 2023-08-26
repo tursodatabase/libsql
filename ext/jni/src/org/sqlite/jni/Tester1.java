@@ -488,7 +488,7 @@ public class Tester1 implements Runnable {
   private void testCollation(){
     final sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a); INSERT INTO t(a) VALUES('a'),('b'),('c')");
-    final ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
+    final ValueHolder<Integer> xDestroyCalled = new ValueHolder<>(0);
     final CollationCallback myCollation = new CollationCallback() {
         private String myState =
           "this is local state. There is much like it, but this is mine.";
@@ -510,7 +510,7 @@ public class Tester1 implements Runnable {
         @Override
         public void xDestroy() {
           // Just demonstrates that xDestroy is called.
-          xDestroyCalled.value = true;
+          ++xDestroyCalled.value;
         }
       };
     final CollationNeededCallback collLoader = new CollationNeededCallback(){
@@ -552,12 +552,12 @@ public class Tester1 implements Runnable {
     }
     affirm(3 == counter);
     sqlite3_finalize(stmt);
-    affirm(!xDestroyCalled.value);
+    affirm( 0 == xDestroyCalled.value );
     rc = sqlite3_collation_needed(db, null);
     affirm( 0 == rc );
     sqlite3_close_v2(db);
     affirm( 0 == db.getNativePointer() );
-    affirm(xDestroyCalled.value);
+    affirm( 1 == xDestroyCalled.value );
   }
 
   @ManualTest /* because threading is meaningless here */
