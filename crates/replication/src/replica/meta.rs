@@ -1,7 +1,7 @@
 use std::fs::{File, OpenOptions};
-use std::io::ErrorKind;
+use std::io::{ErrorKind, Seek};
 use std::mem::size_of;
-use std::os::unix::prelude::FileExt;
+use std::io::Read;
 use std::path::Path;
 
 use bytemuck::{try_pod_read_unaligned, Pod, Zeroable};
@@ -35,11 +35,11 @@ impl WalIndexMeta {
         Ok((Self::read(&file)?, file))
     }
 
-    fn read(file: &File) -> anyhow::Result<Option<Self>> {
+    fn read(mut file: &File) -> anyhow::Result<Option<Self>> {
         let mut buf = [0; size_of::<WalIndexMeta>()];
-        let meta = match file.read_exact_at(&mut buf, 0) {
+        file.seek(std::io::SeekFrom::Start(0))?;
+        let meta = match file.read_exact(&mut buf) {
             Ok(()) => {
-                file.read_exact_at(&mut buf, 0)?;
                 let meta: Self = try_pod_read_unaligned(&buf)
                     .map_err(|_| anyhow::anyhow!("invalid index meta file"))?;
                 Some(meta)
