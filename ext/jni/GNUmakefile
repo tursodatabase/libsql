@@ -165,6 +165,7 @@ $(sqlite3.h):
 $(sqlite3.c): $(sqlite3.h)
 
 opt.threadsafe ?= 1
+opt.oom ?= 0
 SQLITE_OPT = \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
@@ -182,7 +183,7 @@ SQLITE_OPT = \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_C=$(sqlite3.c) \
-  -DSQLITE_JNI_FATAL_OOM=0 \
+  -DSQLITE_JNI_FATAL_OOM=$(opt.oom) \
   -DSQLITE_DEBUG
 
 SQLITE_OPT += -g -DDEBUG -UNDEBUG
@@ -252,7 +253,7 @@ test-sqllog: $(test.deps)
 	$(bin.java) $(test.main.flags) -sqllog
 test-mt: $(test.deps)
 	@echo "Testing in multi-threaded mode:";
-	$(bin.java) $(test.main.flags) -t 5 -r 20 -shuffle $(test.flags)
+	$(bin.java) $(test.main.flags) -t 11 -r 50 -shuffle $(test.flags)
 
 test: test-one test-mt
 tests: test test-sqllog

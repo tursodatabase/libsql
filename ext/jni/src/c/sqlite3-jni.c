@@ -480,13 +480,12 @@ struct S3JniEnv {
 };
 
 /*
-** State for proxying sqlite3_auto_extension() in Java.
+** State for proxying sqlite3_auto_extension() in Java. This was
+** initially a separate class from S3JniHook and now the older name is
+** retained for readability in the APIs which use this, as well as for
+** its better code-searchability.
 */
-typedef struct S3JniAutoExtension S3JniAutoExtension;
-struct S3JniAutoExtension {
-  jobject jObj       /* Java object */;
-  jmethodID midFunc  /* xEntryPoint() callback */;
-};
+typedef S3JniHook S3JniAutoExtension;
 
 /*
 ** Type IDs for SQL function categories.
@@ -1366,15 +1365,10 @@ static S3JniDb * S3JniDb_get(JNIEnv * const env, jobject jDb, sqlite3 *pDb){
 #define S3JniDb_from_c(sqlite3Ptr) S3JniDb_get(env,0,(sqlite3Ptr))
 
 /*
-** Unref any Java-side state in ax and zero out ax.
+** Unref any Java-side state in (S3JniAutoExtension*) AX and zero out
+** AX.
 */
-static void S3JniAutoExtension_clear(JNIEnv * const env,
-                                     S3JniAutoExtension * const ax){
-  if( ax->jObj ){
-    S3JniUnrefGlobal(ax->jObj);
-    memset(ax, 0, sizeof(*ax));
-  }
-}
+#define S3JniAutoExtension_clear(AX) S3JniHook_unref(env, AX, 0);
 
 /*
 ** Initializes a pre-allocated S3JniAutoExtension object.  Returns
@@ -1388,12 +1382,12 @@ static int S3JniAutoExtension_init(JNIEnv *const env,
   jclass const klazz = (*env)->GetObjectClass(env, jAutoExt);
 
   S3JniMutex_Ext_assertLocker;
-  ax->midFunc = (*env)->GetMethodID(env, klazz, "call",
-                                    "(Lorg/sqlite/jni/sqlite3;)I");
+  ax->midCallback = (*env)->GetMethodID(env, klazz, "call",
+                                        "(Lorg/sqlite/jni/sqlite3;)I");
   S3JniUnrefLocal(klazz);
   S3JniExceptionWarnIgnore;
-  if( !ax->midFunc ){
-    S3JniAutoExtension_clear(env, ax);
+  if( !ax->midCallback ){
+    S3JniAutoExtension_clear(ax);
     return SQLITE_ERROR;
   }
   ax->jObj = S3JniRefGlobal(jAutoExt);
@@ -1629,12 +1623,23 @@ static inline jobject new_sqlite3_value_wrapper(JNIEnv * const env, sqlite3_valu
   return new_NativePointerHolder_object(env, &S3NphRefs.sqlite3_value, sv);
 }
 
+/* Helper typedefs for UDF callback types. */
 typedef void (*udf_xFunc_f)(sqlite3_context*,int,sqlite3_value**);
 typedef void (*udf_xStep_f)(sqlite3_context*,int,sqlite3_value**);
 typedef void (*udf_xFinal_f)(sqlite3_context*);
 /*typedef void (*udf_xValue_f)(sqlite3_context*);*/
 /*typedef void (*udf_xInverse_f)(sqlite3_context*,int,sqlite3_value**);*/
 
+/*
+** Allocate a new S3JniUdf (User-defined Function) and associate it
+** with the SQLFunction-type jObj. Returns NULL on OOM. If the
+** returned object's type==UDF_UNKNOWN_TYPE then the type of UDF was
+** not unambiguously detected based on which callback members it has,
+** which falls into the category of user error.
+**
+** The caller must arrange for the returned object to eventually be
+** passed to S3JniUdf_free().
+*/
 static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
   S3JniUdf * s = 0;
 
@@ -1660,15 +1665,18 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
 
     memset(s, 0, sizeof(*s));
     s->jObj = S3JniRefGlobal(jObj);
-#define FGET(FuncName,FuncType,Field)                               \
-    s->Field = (*env)->GetMethodID(env, klazz, FuncName, FuncType); \
+
+#define FGET(FuncName,FuncSig,Field)                               \
+    s->Field = (*env)->GetMethodID(env, klazz, FuncName, FuncSig); \
     if( !s->Field ) (*env)->ExceptionClear(env)
+
     FGET("xFunc",    zFSI, jmidxFunc);
     FGET("xStep",    zFSI, jmidxStep);
     FGET("xFinal",   zFV,  jmidxFinal);
     FGET("xValue",   zFV,  jmidxValue);
     FGET("xInverse", zFSI, jmidxInverse);
 #undef FGET
+
     S3JniUnrefLocal(klazz);
     if( s->jmidxFunc ) s->type = UDF_SCALAR;
     else if( s->jmidxStep && s->jmidxFinal ){
@@ -1683,6 +1691,7 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
 
 static void S3JniUdf_free(S3JniUdf * s){
   S3JniDeclLocal_env;
+
   s3jni_call_xDestroy(env, s->jObj);
   S3JniUnrefGlobal(s->jObj);
   sqlite3_free(s->zFuncName);
@@ -1698,13 +1707,13 @@ static void S3JniUdf_finalizer(void * s){
   S3JniUdf_free((S3JniUdf*)s);
 }
 
-/**
-   Helper for processing args to UDF handlers
-   with signature (sqlite3_context*,int,sqlite3_value**).
+/*
+** Helper for processing args to UDF handlers with signature
+** (sqlite3_context*,int,sqlite3_value**).
 */
 typedef struct {
-  jobject jcx;
-  jobjectArray jargv;
+  jobject jcx         /* sqlite3_context object */;
+  jobjectArray jargv  /* sqlite3_value[] */;
 } udf_jargs;
 
 /**
@@ -1778,10 +1787,7 @@ static int udf_report_exception(JNIEnv * const env, int translateToErr,
       rc = SQLITE_NOMEM;
     }
   }else{
-    MARKER(("Client-defined SQL function %s.%s() threw. "
-            "It should not do that.\n",
-            zFuncName ? zFuncName : "<unnamed>", zFuncType));
-    (*env)->ExceptionDescribe( env );
+    S3JniExceptionWarnCallbackThrew("Client-defined SQL function");
     S3JniExceptionClear;
   }
   S3JniUnrefLocal(ex);
@@ -1793,10 +1799,8 @@ static int udf_report_exception(JNIEnv * const env, int translateToErr,
 ** UDF, calls it, and returns 0 on success.
 */
 static int udf_xFSI(sqlite3_context* const pCx, int argc,
-                    sqlite3_value** const argv,
-                    S3JniUdf * const s,
-                    jmethodID xMethodID,
-                    const char * const zFuncType){
+                    sqlite3_value** const argv, S3JniUdf * const s,
+                    jmethodID xMethodID, const char * const zFuncType){
   S3JniDeclLocal_env;
   udf_jargs args = {0,0};
   int rc = udf_args(env, pCx, argc, argv, &args.jcx, &args.jargv);
@@ -1824,16 +1828,17 @@ static int udf_xFV(sqlite3_context* cx, S3JniUdf * s,
   jobject jcx = new_sqlite3_context_wrapper(env, cx);
   int rc = 0;
   int const isFinal = 'F'==zFuncType[1]/*xFinal*/;
-  if( !jcx ){
+  if( jcx ){
+    (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
+    S3JniIfThrew{
+      rc = udf_report_exception(env, isFinal, cx, s->zFuncName,
+                                zFuncType);
+    }
+    S3JniUnrefLocal(jcx);
+  }else{
     if( isFinal ) sqlite3_result_error_nomem(cx);
-    return SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
   }
-  (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
-  S3JniIfThrew{
-    rc = udf_report_exception(env, isFinal, cx, s->zFuncName,
-                              zFuncType);
-  }
-  S3JniUnrefLocal(jcx);
   return rc;
 }
 
@@ -1981,7 +1986,6 @@ WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 #undef WRAP_MUTF8_VOID
 #undef WRAP_STR_STMT_INT
 
-
 S3JniApi(sqlite3_aggregate_context(),jlong,1aggregate_1context)(
   JniArgsEnvClass, jobject jCx, jboolean initialize
 ){
@@ -1993,7 +1997,6 @@ S3JniApi(sqlite3_aggregate_context(),jlong,1aggregate_1context)(
     : 0;
   return (jlong)p;
 }
-
 
 /* Central auto-extension handler. */
 static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
@@ -2009,15 +2012,16 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   jc = S3JniEnv_get(env);
   ps = jc->pdbOpening;
   if( !ps ){
-    MARKER(("Unexpected arrival of null S3JniDb in auto-extension runner.\n"));
-    *pzErr = sqlite3_mprintf("Unexpected arrival of null S3JniDb in auto-extension runner.");
+    *pzErr = sqlite3_mprintf("Unexpected arrival of null S3JniDb in "
+                             "auto-extension runner.");
     return SQLITE_ERROR;
   }
   jc->pdbOpening = 0;
   assert( !ps->pDb && "it's still being opened" );
   ps->pDb = pDb;
   assert( ps->jDb );
-  NativePointerHolder_set(env, &S3NphRefs.sqlite3, ps->jDb, pDb);
+  NativePointerHolder_set(env, &S3NphRefs.sqlite3, ps->jDb, pDb)
+    /* As of here, the Java/C connection is complete */;
   for( i = 0; go && 0==rc; ++i ){
     S3JniAutoExtension ax = {0,0}
       /* We need a copy of the auto-extension object, with our own
@@ -2029,11 +2033,11 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
       go = 0;
     }else{
       ax.jObj = S3JniRefLocal(SJG.autoExt.aExt[i].jObj);
-      ax.midFunc = SJG.autoExt.aExt[i].midFunc;
+      ax.midCallback = SJG.autoExt.aExt[i].midCallback;
     }
     S3JniMutex_Ext_leave;
     if( ax.jObj ){
-      rc = (*env)->CallIntMethod(env, ax.jObj, ax.midFunc, ps->jDb);
+      rc = (*env)->CallIntMethod(env, ax.jObj, ax.midCallback, ps->jDb);
       S3JniUnrefLocal(ax.jObj);
       S3JniIfThrew {
         jthrowable const ex = (*env)->ExceptionOccurred(env);
@@ -2084,8 +2088,8 @@ S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
     if( 0==rc ){
       ax = &SJG.autoExt.aExt[SJG.autoExt.nExt];
       rc = S3JniAutoExtension_init(env, ax, jAutoExt);
-      assert( rc ? (0==ax->jObj && 0==ax->midFunc)
-              : (0!=ax->jObj && 0!=ax->midFunc) );
+      assert( rc ? (0==ax->jObj && 0==ax->midCallback)
+              : (0!=ax->jObj && 0!=ax->midCallback) );
     }
   }
   if( 0==rc ){
@@ -2093,7 +2097,7 @@ S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
       rc = sqlite3_auto_extension( (void(*)(void))s3jni_run_java_auto_extensions );
       if( rc ){
         assert( ax );
-        S3JniAutoExtension_clear(env, ax);
+        S3JniAutoExtension_clear(ax);
       }
     }
     if( 0==rc ){
@@ -2273,7 +2277,7 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
   for( i = SJG.autoExt.nExt-1; i >= 0; --i ){
     ax = &SJG.autoExt.aExt[i];
     if( ax->jObj && (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
-      S3JniAutoExtension_clear(env, ax);
+      S3JniAutoExtension_clear(ax);
       /* Move final entry into this slot. */
       --SJG.autoExt.nExt;
       *ax = SJG.autoExt.aExt[SJG.autoExt.nExt];
@@ -3044,7 +3048,8 @@ static int s3jni_open_post(JNIEnv * const env, S3JniEnv * const jc,
     assert(ps->jDb);
     if( 0==ps->pDb ){
       ps->pDb = *ppDb;
-      NativePointerHolder_set(env, &S3NphRefs.sqlite3, ps->jDb, *ppDb);
+      NativePointerHolder_set(env, &S3NphRefs.sqlite3, ps->jDb, *ppDb)
+        /* As of here, the Java/C connection is complete */;
     }else{
       assert( ps->pDb == *ppDb /* set up via s3jni_run_java_auto_extensions() */);
     }
@@ -3452,7 +3457,7 @@ static void s3jni_reset_auto_extension(JNIEnv *env){
   int i;
   S3JniMutex_Ext_enter;
   for( i = 0; i < SJG.autoExt.nExt; ++i ){
-    S3JniAutoExtension_clear( env, &SJG.autoExt.aExt[i] );
+    S3JniAutoExtension_clear( &SJG.autoExt.aExt[i] );
   }
   SJG.autoExt.nExt = 0;
   S3JniMutex_Ext_leave;
