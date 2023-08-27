@@ -887,7 +887,7 @@ static int s3jni_db_error(sqlite3* const db, int err_code,
 ** errors are enabled). p may be NULL, in which case the array is
 ** created but no bytes are filled.
 */
-static jbyteArray s3jni_new_jbyteArray(JNIEnv * const env,
+static jbyteArray s3jni__new_jbyteArray(JNIEnv * const env,
                                        const void * const p, int nP){
   jbyteArray jba = (*env)->NewByteArray(env, (jint)nP);
 
@@ -897,6 +897,9 @@ static jbyteArray s3jni_new_jbyteArray(JNIEnv * const env,
   }
   return jba;
 }
+
+#define s3jni_new_jbyteArray(P,n) s3jni__new_jbyteArray(env, P, n)
+
 
 /*
 ** Uses the java.lang.String(byte[],Charset) constructor to create a
@@ -910,8 +913,8 @@ static jbyteArray s3jni_new_jbyteArray(JNIEnv * const env,
 ** standard UTF-8 to a Java string, but JNI offers only algorithms for
 ** working with MUTF-8, not UTF-8.
 */
-static jstring s3jni_utf8_to_jstring(JNIEnv * const env,
-                                     const char * const z, int n){
+static jstring s3jni__utf8_to_jstring(JNIEnv * const env,
+                                      const char * const z, int n){
   jstring rv = NULL;
   if( 0==n || (n<0 && z && !z[0]) ){
     /* Fast-track the empty-string case via the MUTF-8 API. We could
@@ -921,7 +924,7 @@ static jstring s3jni_utf8_to_jstring(JNIEnv * const env,
   }else if( z ){
     jbyteArray jba;
     if( n<0 ) n = sqlite3Strlen30(z);
-    jba = s3jni_new_jbyteArray(env, (unsigned const char *)z, n);
+    jba = s3jni_new_jbyteArray((unsigned const char *)z, n);
     if( jba ){
       rv = (*env)->NewObject(env, SJG.g.cString, SJG.g.ctorStringBA,
                              jba, SJG.g.oCharsetUtf8);
@@ -935,6 +938,7 @@ static jstring s3jni_utf8_to_jstring(JNIEnv * const env,
   s3jni_oom_check( rv );
   return rv;
 }
+#define s3jni_utf8_to_jstring(CStr,n) s3jni__utf8_to_jstring(env, CStr, n)
 
 /*
 ** Converts the given java.lang.String object into a NUL-terminated
@@ -951,7 +955,7 @@ static jstring s3jni_utf8_to_jstring(JNIEnv * const env,
 ** The returned memory is allocated from sqlite3_malloc() and
 ** ownership is transferred to the caller.
 */
-static char * s3jni_jstring_to_utf8(JNIEnv * const env,
+static char * s3jni__jstring_to_utf8(JNIEnv * const env,
                                     jstring jstr, int *nLen){
   jbyteArray jba;
   jsize nBa;
@@ -978,6 +982,7 @@ static char * s3jni_jstring_to_utf8(JNIEnv * const env,
   S3JniUnrefLocal(jba);
   return rv;
 }
+#define s3jni_jstring_to_utf8(JStr,n) s3jni__jstring_to_utf8(env, JStr, n)
 
 /*
 ** Expects to be passed a pointer from sqlite3_column_text16() or
@@ -1025,7 +1030,7 @@ static char * s3jni_exception_error_msg(JNIEnv * const env, jthrowable jx ){
     S3JniExceptionClear;
     return 0;
   }
-  zMsg = s3jni_jstring_to_utf8(env, msg, 0);
+  zMsg = s3jni_jstring_to_utf8( msg, 0);
   S3JniUnrefLocal(msg);
   return zMsg;
 }
@@ -1564,9 +1569,9 @@ static int CollationState_xCompare(void *pArg, int nLhs, const void *lhs,
 
   S3JniHook_localdup(env, &ps->hooks.collation, &hook );
   if( hook.jObj ){
-    jbyteArray jbaLhs = s3jni_new_jbyteArray(env, lhs, (jint)nLhs);
+    jbyteArray jbaLhs = s3jni_new_jbyteArray(lhs, (jint)nLhs);
     jbyteArray jbaRhs = jbaLhs
-      ? s3jni_new_jbyteArray(env, rhs, (jint)nRhs) : 0;
+      ? s3jni_new_jbyteArray(rhs, (jint)nRhs) : 0;
     if( !jbaRhs ){
       S3JniUnrefLocal(jbaLhs);
       s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
@@ -1961,7 +1966,7 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
 /** Create a trivial JNI wrapper for (jstring CName(sqlite3_stmt*,int)). */
 #define WRAP_STR_STMT_INT(JniNameSuffix,CName)                              \
   JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass, jobject pStmt, jint ndx){ \
-    return s3jni_utf8_to_jstring(env,                                       \
+    return s3jni_utf8_to_jstring(                                       \
                                  CName(PtrGet_sqlite3_stmt(pStmt), (int)ndx), \
                                  -1);                                       \
   }
@@ -2482,7 +2487,7 @@ S3JniApi(sqlite3_column_blob(),jbyteArray,1column_1blob)(
   void const * const p = sqlite3_column_blob(pStmt, (int)ndx);
   int const n = p ? sqlite3_column_bytes(pStmt, (int)ndx) : 0;
 
-  return p ? s3jni_new_jbyteArray(env, p, n) : 0;
+  return p ? s3jni_new_jbyteArray(p, n) : 0;
 }
 
 S3JniApi(sqlite3_column_double(),jdouble,1column_1double)(
@@ -2509,7 +2514,7 @@ S3JniApi(sqlite3_column_text(),jbyteArray,1column_1text_1utf8)(
   sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
   const int n = sqlite3_column_bytes(stmt, (int)ndx);
   const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
-  return p ? s3jni_new_jbyteArray(env, p, n) : NULL;
+  return p ? s3jni_new_jbyteArray(p, n) : NULL;
 }
 
 S3JniApi(sqlite3_column_text16(),jstring,1column_1text16)(
@@ -2666,7 +2671,7 @@ static void s3jni_config_sqllog(void *ignored, sqlite3 *pDb, const char *z, int 
   switch( op ){
     case 0: /* db opened */
     case 1: /* SQL executed */
-      jArg1 = s3jni_utf8_to_jstring(env, z, -1);
+      jArg1 = s3jni_utf8_to_jstring( z, -1);
       break;
     case 2: /* db closed */
       break;
@@ -2755,7 +2760,7 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
     rc = s3jni_db_error(ps->pDb, SQLITE_ERROR,
                         "Could not get xCompare() method for object.");
   }else{
-    char * const zName = s3jni_jstring_to_utf8(env, name, 0);
+    char * const zName = s3jni_jstring_to_utf8( name, 0);
     if( zName ){
       S3JniMutex_S3JniDb_enter;
       rc = sqlite3_create_collation_v2(ps->pDb, zName, (int)eTextRep,
@@ -2797,7 +2802,7 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2() sqlite3_create_w
     S3JniUdf_free(env, s, 1);
     goto error_cleanup;
   }
-  zFuncName = s3jni_jstring_to_utf8(env,jFuncName,0);
+  zFuncName = s3jni_jstring_to_utf8(jFuncName,0);
   if( !zFuncName ){
     rc = SQLITE_NOMEM;
     S3JniUdf_free(env, s, 1);
@@ -2839,12 +2844,12 @@ S3JniApi(sqlite3_db_filename(),jstring,1db_1filename)(
   if( !ps || !jDbName ){
     return 0;
   }
-  zDbName = s3jni_jstring_to_utf8(env, jDbName, &nStr);
+  zDbName = s3jni_jstring_to_utf8( jDbName, &nStr);
   if( zDbName ){
     char const * zRv = sqlite3_db_filename(ps->pDb, zDbName);
     sqlite3_free(zDbName);
     if( zRv ){
-      jRv = s3jni_utf8_to_jstring(env, zRv, -1);
+      jRv = s3jni_utf8_to_jstring( zRv, -1);
     }
   }
   return jRv;
@@ -2871,7 +2876,7 @@ S3JniApi(sqlite3_db_config() /*for MAINDBNAME*/,
       S3JniMutex_S3JniDb_enter
         /* Protect against a race in modifying/freeing
            ps->zMainDbName. */;
-      zStr = s3jni_jstring_to_utf8(env, jStr, 0);
+      zStr = s3jni_jstring_to_utf8( jStr, 0);
       if( zStr ){
         rc = sqlite3_db_config(ps->pDb, (int)op, zStr);
         if( rc ){
@@ -2974,7 +2979,7 @@ S3JniApi(sqlite3_errmsg(),jstring,1errmsg)(
   JniArgsEnvClass, jobject jpDb
 ){
   sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
-  return pDb ? s3jni_utf8_to_jstring(env, sqlite3_errmsg(pDb), -1) : 0;
+  return pDb ? s3jni_utf8_to_jstring( sqlite3_errmsg(pDb), -1) : 0;
 }
 
 S3JniApi(sqlite3_errstr(),jstring,1errstr)(
@@ -2996,7 +3001,7 @@ S3JniApi(sqlite3_expanded_sql(),jstring,1expanded_1sql)(
     char * zSql = sqlite3_expanded_sql(pStmt);
     s3jni_oom_fatal(zSql);
     if( zSql ){
-      rv = s3jni_utf8_to_jstring(env, zSql, -1);
+      rv = s3jni_utf8_to_jstring( zSql, -1);
       sqlite3_free(zSql);
     }
   }
@@ -3077,7 +3082,7 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
     rc = SQLITE_NOMEM;
     goto end;
   }
-  *zDbName = jDbName ? s3jni_jstring_to_utf8(env, jDbName, 0) : 0;
+  *zDbName = jDbName ? s3jni_jstring_to_utf8( jDbName, 0) : 0;
   if( jDbName && !*zDbName ){
     rc = SQLITE_NOMEM;
     goto end;
@@ -3166,7 +3171,7 @@ S3JniApi(sqlite3_open_v2(),jint,1open_1v2)(
   int rc = s3jni_open_pre(env, &jc, strName, &zName, &ps);
   if( 0==rc ){
     if( strVfs ){
-      zVfs = s3jni_jstring_to_utf8(env, strVfs, 0);
+      zVfs = s3jni_jstring_to_utf8( strVfs, 0);
       if( !zVfs ){
         rc = SQLITE_NOMEM;
       }
@@ -3291,8 +3296,8 @@ static void s3jni_updatepre_hook_impl(void * pState, sqlite3 *pDb, int opId,
   if( !hook.jObj ){
     return;
   }
-  jDbName  = s3jni_utf8_to_jstring(env, zDb, -1);
-  jTable = jDbName ? s3jni_utf8_to_jstring(env, zTable, -1) : 0;
+  jDbName  = s3jni_utf8_to_jstring( zDb, -1);
+  jTable = jDbName ? s3jni_utf8_to_jstring( zTable, -1) : 0;
   S3JniIfThrew {
     S3JniExceptionClear;
     s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
@@ -3770,10 +3775,10 @@ int s3jni_xAuth(void* pState, int op,const char*z0, const char*z1,
 
   S3JniHook_localdup(env, &ps->hooks.auth, &hook );
   if( hook.jObj ){
-    jstring const s0 = z0 ? s3jni_utf8_to_jstring(env, z0, -1) : 0;
-    jstring const s1 = z1 ? s3jni_utf8_to_jstring(env, z1, -1) : 0;
-    jstring const s2 = z2 ? s3jni_utf8_to_jstring(env, z2, -1) : 0;
-    jstring const s3 = z3 ? s3jni_utf8_to_jstring(env, z3, -1) : 0;
+    jstring const s0 = z0 ? s3jni_utf8_to_jstring( z0, -1) : 0;
+    jstring const s1 = z1 ? s3jni_utf8_to_jstring( z1, -1) : 0;
+    jstring const s2 = z2 ? s3jni_utf8_to_jstring( z2, -1) : 0;
+    jstring const s3 = z3 ? s3jni_utf8_to_jstring( z3, -1) : 0;
 
     rc = (*env)->CallIntMethod(env, hook.jObj, hook.midCallback, (jint)op,
                                s0, s1, s3, s3);
@@ -3954,7 +3959,7 @@ S3JniApi(sqlite3_sql(),jstring,1sql)(
   if( pStmt ){
     const char * zSql = 0;
     zSql = sqlite3_sql(pStmt);
-    rv = s3jni_utf8_to_jstring(env, zSql, -1);
+    rv = s3jni_utf8_to_jstring( zSql, -1);
   }
   return rv;
 }
@@ -3985,7 +3990,7 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
   }
   switch( traceflag ){
     case SQLITE_TRACE_STMT:
-      jX = s3jni_utf8_to_jstring(env, (const char *)pX, -1);
+      jX = s3jni_utf8_to_jstring( (const char *)pX, -1);
       if( !jX ) rc = SQLITE_NOMEM;
       break;
     case SQLITE_TRACE_PROFILE:
@@ -4084,7 +4089,7 @@ S3JniApi(sqlite3_value_blob(),jbyteArray,1value_1blob)(
 
   s3jni_oom_check( nLen ? !!pBytes : 1 );
   return pBytes
-    ? s3jni_new_jbyteArray(env, pBytes, nLen)
+    ? s3jni_new_jbyteArray(pBytes, nLen)
     : NULL;
 }
 
@@ -4134,7 +4139,16 @@ S3JniApi(sqlite3_value_text_utf8(),jbyteArray,1value_1text_1utf8)(
   sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
   int const n = sqlite3_value_bytes(sv);
   const unsigned char * const p = sqlite3_value_text(sv);
-  return p ? s3jni_new_jbyteArray(env, p, n) : 0;
+  return p ? s3jni_new_jbyteArray(p, n) : 0;
+}
+
+S3JniApi(sqlite3_value_text(),jstring,1value_1text)(
+  JniArgsEnvClass, jobject jpSVal
+){
+  sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
+  int const n = sqlite3_value_bytes(sv);
+  const unsigned char * const p = sqlite3_value_text(sv);
+  return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
 }
 
 S3JniApi(sqlite3_value_text16(),jstring,1value_1text16)(
@@ -4381,7 +4395,7 @@ JniDeclFtsXA(jint,xColumnText)(JniArgsEnvObj,jobject jCtx, jint iCol,
   int rc = fext->xColumnText(PtrGet_Fts5Context(jCtx), (int)iCol,
                              &pz, &pn);
   if( 0==rc ){
-    jstring jstr = pz ? s3jni_utf8_to_jstring(env, pz, pn) : 0;
+    jstring jstr = pz ? s3jni_utf8_to_jstring( pz, pn) : 0;
     if( pz ){
       if( jstr ){
         OutputPointer_set_String(env, jOut, jstr);
@@ -4451,7 +4465,7 @@ JniDeclFtsApi(jint,xCreateFunction)(JniArgsEnvObj, jstring jName,
   Fts5JniAux * pAux;
 
   assert(pApi);
-  zName = s3jni_jstring_to_utf8(env, jName, 0);
+  zName = s3jni_jstring_to_utf8( jName, 0);
   if(!zName) return SQLITE_NOMEM;
   pAux = Fts5JniAux_alloc(env, jFunc);
   if( pAux ){
@@ -4722,7 +4736,7 @@ static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
     S3JniUnrefLocal(s->tok.jba);
     s->tok.zPrev = z;
     s->tok.nPrev = nZ;
-    s->tok.jba = s3jni_new_jbyteArray(env, z, nZ);
+    s->tok.jba = s3jni_new_jbyteArray(z, nZ);
     if( !s->tok.jba ) return SQLITE_NOMEM;
     jba = s->tok.jba;
   }

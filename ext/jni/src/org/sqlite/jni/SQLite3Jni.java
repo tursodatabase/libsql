@@ -1274,15 +1274,20 @@ public final class SQLite3Jni {
 
   /**
      Returns the given value as UTF-8-encoded bytes, or null if the
-     underlying C API returns null for sqlite3_value_text().
+     underlying C-level sqlite3_value_text() returns NULL.
   */
   public static native byte[] sqlite3_value_text_utf8(@NotNull sqlite3_value v);
 
-  public static String sqlite3_value_text(@NotNull sqlite3_value v){
-    final byte[] ba = sqlite3_value_text_utf8(v);
-    return null==ba ? null : new String(ba, StandardCharsets.UTF_8);
-  }
+  public static native String sqlite3_value_text(@NotNull sqlite3_value v);
 
+  /**
+     In the Java layer, sqlite3_value_text() and
+     sqlite3_value_text16() are functionally equivalent, the
+     difference being only where the encoding to UTF-16 (if necessary)
+     takes place. This function does it via SQLite and
+     sqlite3_value_text() fetches UTF-8 (SQLite's default encoding)
+     and converts it to UTF-16 in Java.
+  */
   public static native String sqlite3_value_text16(@NotNull sqlite3_value v);
 
   public static native int sqlite3_value_type(@NotNull sqlite3_value v);
