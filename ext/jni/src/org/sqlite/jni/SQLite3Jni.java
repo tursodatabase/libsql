@@ -1151,7 +1151,7 @@ public final class SQLite3Jni {
   /**
      In addition to calling the C-level sqlite3_shutdown(), the JNI
      binding also cleans up all stale per-thread state managed by the
-     library, as well as any registered auto-extensions and free up
+     library, as well as any registered auto-extensions, and frees up
      various bits of memory. Calling this while database handles or
      prepared statements are still active will leak resources. Trying
      to use those objects after this routine is called invoked
@@ -1179,8 +1179,8 @@ public final class SQLite3Jni {
   public static native int sqlite3_step(@NotNull sqlite3_stmt stmt);
 
   /**
-     Internal impl of the public sqlite3_strglob() method. Neither argument
-     may be NULL and both MUST be NUL-terminated.
+     Internal impl of the public sqlite3_strglob() method. Neither
+     argument may be NULL and both MUST be NUL-terminated UTF-8.
   */
   private static native int sqlite3_strglob(
     @NotNull byte[] glob, @NotNull byte[] txt
@@ -1197,7 +1197,7 @@ public final class SQLite3Jni {
 
   /**
      Internal impl of the public sqlite3_strlike() method. Neither
-     argument may be NULL and both MUST be NUL-terminated.
+     argument may be NULL and both MUST be NUL-terminated UTF-8.
   */
   private static native int sqlite3_strlike(
     @NotNull byte[] glob, @NotNull byte[] txt, int escChar
@@ -1225,9 +1225,8 @@ public final class SQLite3Jni {
      arguments are encapsulated in the final argument to this function.
 
      Unlike the C API, which is documented as always returning 0, this
-     implementation returns SQLITE_NOMEM if allocation of per-db
-     mapping state fails and SQLITE_ERROR if the given callback object
-     cannot be processed propertly (i.e. an internal error).
+     implementation returns non-0 if initialization of the tracer
+     mapping state fails.
   */
   public static native int sqlite3_trace_v2(
     @NotNull sqlite3 db, int traceMask, @Nullable TraceV2Callback tracer

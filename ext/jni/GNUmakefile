@@ -297,9 +297,12 @@ tests: tester
 ########################################################################
 # Build each SQLITE_THREADMODE variant and run all tests against them.
 multitest: clean
-	$(MAKE) opt.threadsafe=0 tests clean
-	$(MAKE) opt.threadsafe=1 tests clean
-	$(MAKE) opt.threadsafe=2 tests clean
+	$(MAKE) opt.threadsafe=0 opt.oom=1 tests clean
+	$(MAKE) opt.threadsafe=0 opt.oom=0 tests clean
+	$(MAKE) opt.threadsafe=1 opt.oom=1 tests clean
+	$(MAKE) opt.threadsafe=1 opt.oom=0 tests clean
+	$(MAKE) opt.threadsafe=2 opt.oom=1 tests clean
+	$(MAKE) opt.threadsafe=2 opt.oom=0 tests clean
 
 
 ########################################################################
