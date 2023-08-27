@@ -30,6 +30,13 @@ import java.util.concurrent.Future;
 @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
 @interface ManualTest{}
+/**
+   Annotation for Tester1 tests which mark those which must be skipped
+   in multi-threaded mode.
+*/
+@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
+@java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD})
+@interface SingleThreadOnly{}
 
 public class Tester1 implements Runnable {
   //! True when running in multi-threaded mode.
@@ -692,7 +699,9 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
+  @SingleThreadOnly
   private void testUdfJavaObject(){
+    affirm( !mtMode );
     final sqlite3 db = createNewDb();
     final ValueHolder<sqlite3> testResult = new ValueHolder<>(db);
     final ValueHolder<Integer> boundObj = new ValueHolder<>(42);
@@ -1096,7 +1105,7 @@ public class Tester1 implements Runnable {
      This test is functionally identical to testUpdateHook(), only with a
      different callback type.
   */
-  private synchronized void testPreUpdateHook(){
+  private void testPreUpdateHook(){
     if( !sqlite3_compileoption_used("ENABLE_PREUPDATE_HOOK") ){
       //outln("Skipping testPreUpdateHook(): no pre-update hook support.");
       return;
@@ -1206,8 +1215,8 @@ public class Tester1 implements Runnable {
      it throws.
   */
   @SuppressWarnings("unchecked")
-  @ManualTest /* because the Fts5 parts are not yet known to be
-                 thread-safe */
+  @SingleThreadOnly /* because the Fts5 parts are not yet known to be
+                       thread-safe */
   private void testFts5() throws Exception {
     if( !sqlite3_compileoption_used("ENABLE_FTS5") ){
       //outln("SQLITE_ENABLE_FTS5 is not set. Skipping FTS5 tests.");
@@ -1258,8 +1267,8 @@ public class Tester1 implements Runnable {
     sqlite3_close(db);
   }
 
-  @ManualTest/* because multiple threads legitimately make these
-                results unpredictable */
+  @SingleThreadOnly /* because multiple threads legitimately make these
+                       results unpredictable */
   private synchronized void testAutoExtension(){
     final ValueHolder<Integer> val = new ValueHolder<>(0);
     final ValueHolder<String> toss = new ValueHolder<>(null);
@@ -1406,10 +1415,6 @@ public class Tester1 implements Runnable {
     }
     if( !fromThread ){
       testBusy();
-      if( !mtMode ){
-        testAutoExtension() /* threads rightfully muck up these results */;
-        testFts5();
-      }
     }
     synchronized( this.getClass() ){
       ++nTestRuns;
@@ -1501,7 +1506,9 @@ public class Tester1 implements Runnable {
             testMethods.add(m);
           }
         }else if( !m.isAnnotationPresent( ManualTest.class ) ){
-          if( name.startsWith("test") ){
+          if( nThread>1 && m.isAnnotationPresent( SingleThreadOnly.class ) ){
+            outln("Skipping test in multi-thread mode: ",name,"()");
+          }else if( name.startsWith("test") ){
             testMethods.add(m);
           }
         }
@@ -1563,6 +1570,8 @@ public class Tester1 implements Runnable {
     outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
     if( takeNaps ) outln("Napping between tests is enabled.");
     for( int n = 0; n < nRepeat; ++n ){
+      ++nLoop;
+      out((1==nLoop ? "" : " ")+nLoop);
       if( nThread<=1 ){
         new Tester1(0).runTests(false);
         continue;
@@ -1570,8 +1579,6 @@ public class Tester1 implements Runnable {
       Tester1.mtMode = true;
       final ExecutorService ex = Executors.newFixedThreadPool( nThread );
       //final List<Future<?>> futures = new ArrayList<>();
-      ++nLoop;
-      out((1==nLoop ? "" : " ")+nLoop);
       for( int i = 0; i < nThread; ++i ){
         ex.submit( new Tester1(i), i );
       }
