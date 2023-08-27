@@ -367,7 +367,7 @@ public final class SQLite3Jni {
     Object rv = null;
     sqlite3_value v = sqlite3_column_value(stmt, ndx);
     if(null!=v){
-      v = sqlite3_value_dupe(v) /* we need a "protected" value */;
+      v = sqlite3_value_dup(v) /* we need a "protected" value */;
       if(null!=v){
         rv = sqlite3_value_java_object(v);
         sqlite3_value_free(v);
@@ -1244,7 +1244,7 @@ public final class SQLite3Jni {
 
   public static native double sqlite3_value_double(@NotNull sqlite3_value v);
 
-  public static native sqlite3_value sqlite3_value_dupe(
+  public static native sqlite3_value sqlite3_value_dup(
     @NotNull sqlite3_value v
   );
 
@@ -1290,7 +1290,7 @@ public final class SQLite3Jni {
     return null==ba ? null : new String(ba, StandardCharsets.UTF_8);
   }
 
-  public static native byte[] sqlite3_value_text16(@NotNull sqlite3_value v);
+  public static native String sqlite3_value_text16(@NotNull sqlite3_value v);
 
   public static native int sqlite3_value_type(@NotNull sqlite3_value v);
 

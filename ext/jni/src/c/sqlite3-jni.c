@@ -169,9 +169,8 @@
   Java_org_sqlite_jni_SQLite3Jni_sqlite3_ ## Suffix
 
 /* Prologue for JNI function declarations and definitions. */
-#define JniDecl(ReturnType,Suffix)                \
-  JNIEXPORT ReturnType JNICALL                  \
-  JniFuncName(Suffix)
+#define JniDecl(ReturnType,Suffix) \
+  JNIEXPORT ReturnType JNICALL JniFuncName(Suffix)
 
 /*
 ** S3JniApi's intent is that CFunc be the C API func(s) the
@@ -377,7 +376,9 @@ enum {
 
 /*
 ** Cache entry for NativePointerHolder subclasses and OutputPointer
-** types.
+** types. The pRef and klazz fields are set up the first time the
+** entry is fetched using S3JniGlobal_nph(). The other fields are
+** populated as needed by the routines which use them.
 */
 typedef struct S3JniNphClass S3JniNphClass;
 struct S3JniNphClass {
@@ -1745,8 +1746,9 @@ typedef struct {
 
 /*
 ** Converts the given (cx, argc, argv) into arguments for the given
-** UDF, placing the result in the final argument. Returns 0 on
-** success, SQLITE_NOMEM on allocation error.
+** UDF, writing the result (Java wrappers for cx and argv) in the
+** final 2 arguments. Returns 0 on success, SQLITE_NOMEM on allocation
+** error. On error *jCx and *jArgv will be set to 0.
 */
 static int udf_args(JNIEnv *env,
                     sqlite3_context * const cx,
@@ -1775,7 +1777,6 @@ static int udf_args(JNIEnv *env,
   *jArgv = ja;
   return 0;
 error_oom:
-  sqlite3_result_error_nomem(cx);
   S3JniUnrefLocal(jcx);
   S3JniUnrefLocal(ja);
   return SQLITE_NOMEM;
@@ -1789,7 +1790,7 @@ error_oom:
 ** not do so. In either case, it clears the exception state.
 **
 ** Returns SQLITE_NOMEM if an allocation fails, else SQLITE_ERROR. In
-** the latter case it calls sqlite3_result_error_nomem().
+** the former case it calls sqlite3_result_error_nomem().
 */
 static int udf_report_exception(JNIEnv * const env, int translateToErr,
                                 sqlite3_context * cx,
@@ -1816,7 +1817,7 @@ static int udf_report_exception(JNIEnv * const env, int translateToErr,
       rc = SQLITE_NOMEM;
     }
   }else{
-    S3JniExceptionWarnCallbackThrew("Client-defined SQL function");
+    S3JniExceptionWarnCallbackThrew("client-defined SQL function");
     S3JniExceptionClear;
   }
   S3JniUnrefLocal(ex);
@@ -1857,6 +1858,7 @@ static int udf_xFV(sqlite3_context* cx, S3JniUdf * s,
   jobject jcx = new_sqlite3_context_wrapper(env, cx);
   int rc = 0;
   int const isFinal = 'F'==zFuncType[1]/*xFinal*/;
+
   if( jcx ){
     (*env)->CallVoidMethod(env, s->jObj, xMethodID, jcx);
     S3JniIfThrew{
@@ -4099,20 +4101,13 @@ S3JniApi(sqlite3_value_text_utf8(),jbyteArray,1value_1text_1utf8)(
   return p ? s3jni_new_jbyteArray(env, p, n) : 0;
 }
 
-S3JniApi(sqlite3_value_text16(),jbyteArray,1value_1text16)(
+S3JniApi(sqlite3_value_text16(),jstring,1value_1text16)(
   JniArgsEnvClass, jobject jpSVal
 ){
   sqlite3_value * const sv = PtrGet_sqlite3_value(jpSVal);
-  jbyteArray jba = 0;
-  if( sv ){
-    int const nLen = sqlite3_value_bytes16(sv);
-    const jbyte * const pBytes =
-      nLen ? sqlite3_value_text16(sv) : 0;
-
-    s3jni_oom_check( nLen ? !!pBytes : 1 );
-    jba = s3jni_new_jbyteArray(env, pBytes, nLen);
-  }
-  return jba;
+  const int n = sqlite3_value_bytes16(sv);
+  const void * const p = sqlite3_value_text16(sv);
+  return s3jni_text16_to_jstring(env, p, n);
 }
 
 JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){

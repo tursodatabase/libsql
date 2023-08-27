@@ -435,9 +435,13 @@ public class Tester1 implements Runnable {
     StringBuilder sbuf = new StringBuilder();
     n = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
-      String txt = sqlite3_column_text16(stmt, 0);
-      //outln("txt = "+txt);
+      final sqlite3_value sv = sqlite3_value_dup(sqlite3_column_value(stmt,0));
+      final String txt = sqlite3_column_text16(stmt, 0);
       sbuf.append( txt );
+      affirm( txt.equals(sqlite3_column_text(stmt, 0)) );
+      affirm( txt.equals(sqlite3_value_text(sv)) );
+      affirm( txt.equals(sqlite3_value_text16(sv)) );
+      sqlite3_value_free(sv);
       ++n;
     }
     sqlite3_finalize(stmt);

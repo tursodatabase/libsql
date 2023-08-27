@@ -1701,10 +1701,10 @@ JNIEXPORT jdouble JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1double
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_value_dupe
+ * Method:    sqlite3_value_dup
  * Signature: (Lorg/sqlite/jni/sqlite3_value;)Lorg/sqlite/jni/sqlite3_value;
  */
-JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1dupe
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1dup
   (JNIEnv *, jclass, jobject);
 
 /*
@@ -1758,9 +1758,9 @@ JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_value_text16
- * Signature: (Lorg/sqlite/jni/sqlite3_value;)[B
+ * Signature: (Lorg/sqlite/jni/sqlite3_value;)Ljava/lang/String;
  */
-JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text16
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text16
   (JNIEnv *, jclass, jobject);
 
 /*
