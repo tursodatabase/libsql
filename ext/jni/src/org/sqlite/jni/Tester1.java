@@ -695,16 +695,20 @@ public class Tester1 implements Runnable {
   private void testUdfJavaObject(){
     final sqlite3 db = createNewDb();
     final ValueHolder<sqlite3> testResult = new ValueHolder<>(db);
+    final ValueHolder<Integer> boundObj = new ValueHolder<>(42);
     final SQLFunction func = new ScalarFunction(){
         public void xFunc(sqlite3_context cx, sqlite3_value args[]){
           sqlite3_result_java_object(cx, testResult.value);
+          affirm( sqlite3_value_java_object(args[0]) == boundObj );
         }
       };
     int rc = sqlite3_create_function(db, "myfunc", -1, SQLITE_UTF8, func);
     affirm(0 == rc);
-    final sqlite3_stmt stmt = prepare(db, "select myfunc()");
+    sqlite3_stmt stmt = prepare(db, "select myfunc(?)");
     affirm( 0 != stmt.getNativePointer() );
     affirm( testResult.value == db );
+    rc = sqlite3_bind_java_object(stmt, 1, boundObj);
+    affirm( 0==rc );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
       final sqlite3_value v = sqlite3_column_value(stmt, 0);
@@ -1346,7 +1350,7 @@ public class Tester1 implements Runnable {
     affirm( 8 == val.value );
   }
 
-  @ManualTest /* because we only want to run this test manually */
+  @ManualTest /* we really only want to run this test manually. */
   private void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);

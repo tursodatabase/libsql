@@ -1260,14 +1260,16 @@ static S3JniNphClass * S3JniGlobal_nph(JNIEnv * const env, S3NphRef const* pRef)
 ** Returns the ID of the "nativePointer" field from the given
 ** NativePointerHolder<T> class.
 */
-static jfieldID NativePointerHolder_field(JNIEnv * const env, S3NphRef const* pRef){
+static jfieldID NativePointerHolder_field(JNIEnv * const env,
+                                          S3NphRef const* pRef){
   S3JniNphClass * const pNC = S3JniGlobal_nph(env, pRef);
   if( !pNC->fidValue ){
     S3JniMutex_Nph_enter;
     if( !pNC->fidValue ){
       pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz,
                                          pRef->zMember, pRef->zTypeSig);
-      S3JniExceptionIsFatal("Code maintenance required: missing nativePointer field.");
+      S3JniExceptionIsFatal("Code maintenance required: missing "
+                            "nativePointer field.");
     }
     S3JniMutex_Nph_leave;
   }
@@ -1291,7 +1293,8 @@ static void NativePointerHolder_set(JNIEnv * env, S3NphRef const* pRef,
 ** zClassName must be a static string so we can use its address as a
 ** cache key. This is a no-op if pObj is NULL.
 */
-static void * NativePointerHolder_get(JNIEnv * env, jobject pObj, S3NphRef const* pRef){
+static void * NativePointerHolder_get(JNIEnv * env, jobject pObj,
+                                      S3NphRef const* pRef){
   if( pObj ){
     void * const rv = (void*)(*env)->GetLongField(
       env, pObj, NativePointerHolder_field(env, pRef)
@@ -1344,29 +1347,17 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
 }
 
 /*
-** Returns the S3JniDb object for the given db. At most, one of jDb or
-** pDb may be non-NULL.
+** Returns the S3JniDb object for the given org.sqlite.jni.sqlite3
+** object, or NULL if jDb is NULL, no pointer can be extracted
+** from it, or no matching entry can be found.
 **
-** The 3rd argument should normally only be non-0 for routines which
-** are called from the C library and pass a native db handle instead of
-** a Java handle. In normal usage, the 2nd argument is a Java-side sqlite3
-** object, from which the db is fished out.
-**
-** If the lockMutex argument is true then the S3JniDb mutex is locked
-** before starting work, else the caller is required to have locked
-** it.
-**
-** Returns NULL if jDb and pDb are both NULL or if there is no
-** matching S3JniDb entry for pDb or the pointer fished out of jDb.
+** Requires locking the S3JniDb mutex.
 */
-static S3JniDb * S3JniDb_get(JNIEnv * const env, jobject jDb, sqlite3 *pDb){
+static S3JniDb * S3JniDb__from_java(JNIEnv * const env, jobject jDb){
   S3JniDb * s = 0;
-
-  if( 0==jDb && 0==pDb ) return 0;
-  assert( jDb ? !pDb : !!pDb );
+  sqlite3 * pDb = 0;
   S3JniMutex_S3JniDb_enter;
   if( jDb ){
-    assert(!pDb);
     pDb = PtrGet_sqlite3(jDb);
   }
   s = SJG.perDb.aHead;
@@ -1379,8 +1370,28 @@ static S3JniDb * S3JniDb_get(JNIEnv * const env, jobject jDb, sqlite3 *pDb){
   return s;
 }
 
-#define S3JniDb_from_java(jObject) S3JniDb_get(env,(jObject),0)
-#define S3JniDb_from_c(sqlite3Ptr) S3JniDb_get(env,0,(sqlite3Ptr))
+/*
+** Returns the S3JniDb object for the sqlite3 object, or NULL if pDb
+** is NULL, or no matching entry
+** can be found.
+**
+** Requires locking the S3JniDb mutex.
+*/
+static S3JniDb * S3JniDb__from_c(JNIEnv * const env, sqlite3 *pDb){
+  S3JniDb * s = 0;
+  S3JniMutex_S3JniDb_enter;
+  s = SJG.perDb.aHead;
+  for( ; pDb && s; s = s->pNext){
+    if( s->pDb == pDb ){
+      break;
+    }
+  }
+  S3JniMutex_S3JniDb_leave;
+  return s;
+}
+
+#define S3JniDb_from_java(jObject) S3JniDb__from_java(env,(jObject))
+#define S3JniDb_from_c(sqlite3Ptr) S3JniDb__from_c(env,(sqlite3Ptr))
 
 /*
 ** Unref any Java-side state in (S3JniAutoExtension*) AX and zero out
@@ -2181,6 +2192,29 @@ S3JniApi(sqlite3_bind_int64(),jint,1bind_1int64)(
   return (jint)sqlite3_bind_int64(PtrGet_sqlite3_stmt(jpStmt), (int)ndx, (sqlite3_int64)val);
 }
 
+/*
+** Bind a new global ref to Object `val` using sqlite3_bind_pointer().
+*/
+S3JniApi(sqlite3_bind_java_object(),jint,1bind_1java_1object)(
+  JniArgsEnvClass, jobject jpStmt, jint ndx, jobject val
+){
+  sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
+  int rc = 0;
+
+  if(pStmt){
+    jobject const rv = val ? S3JniRefGlobal(val) : 0;
+    if( rv ){
+      rc = sqlite3_bind_pointer(pStmt, ndx, rv, ResultJavaValuePtrStr,
+                                ResultJavaValue_finalizer);
+    }else if(val){
+      rc = SQLITE_NOMEM;
+    }
+  }else{
+    rc = SQLITE_MISUSE;
+  }
+  return rc;
+}
+
 S3JniApi(sqlite3_bind_null(),jint,1bind_1null)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
@@ -2337,7 +2371,9 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   S3JniDb * const ps = S3JniDb_from_java(jDb);
   assert(version == 1 || version == 2);
   if( ps ){
-    rc = 1==version ? (jint)sqlite3_close(ps->pDb) : (jint)sqlite3_close_v2(ps->pDb);
+    rc = 1==version
+      ? (jint)sqlite3_close(ps->pDb)
+      : (jint)sqlite3_close_v2(ps->pDb);
     if( 0==rc ){
       S3JniDb_set_aside(env, ps)
         /* MUST come after close() because of ps->trace. */;

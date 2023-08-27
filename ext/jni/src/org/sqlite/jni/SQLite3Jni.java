@@ -184,6 +184,15 @@ public final class SQLite3Jni {
     @NotNull sqlite3_stmt stmt, int ndx, long v
   );
 
+  /**
+     Binds the given object at the given index.
+
+     @see #sqlite3_result_java_object
+  */
+  public static native int sqlite3_bind_java_object(
+    @NotNull sqlite3_stmt cx, int ndx, @Nullable Object o
+  );
+
   public static native int sqlite3_bind_null(
     @NotNull sqlite3_stmt stmt, int ndx
   );
@@ -210,7 +219,7 @@ public final class SQLite3Jni {
      Works like the C-level sqlite3_bind_text() but assumes
      SQLITE_TRANSIENT for the final C API parameter.
 
-     Results are undefined if data is not null and
+     <p>Results are undefined if data is not null and
      maxBytes>=data.length. If maxBytes is negative then results are
      undefined if data is not null and does not contain a NUL byte.
   */
@@ -357,35 +366,6 @@ public final class SQLite3Jni {
   public static native String sqlite3_column_database_name(
     @NotNull sqlite3_stmt stmt, int ndx
   );
-
-  /**
-     Column counterpart of sqlite3_value_java_object().
-  */
-  public static Object sqlite3_column_java_object(
-    @NotNull sqlite3_stmt stmt, int ndx
-  ){
-    Object rv = null;
-    sqlite3_value v = sqlite3_column_value(stmt, ndx);
-    if(null!=v){
-      v = sqlite3_value_dup(v) /* we need a "protected" value */;
-      if(null!=v){
-        rv = sqlite3_value_java_object(v);
-        sqlite3_value_free(v);
-      }
-    }
-    return rv;
-  }
-
-  /**
-     Column counterpart of sqlite3_value_java_casted().
-  */
-  @SuppressWarnings("unchecked")
-  public static <T> T sqlite3_column_java_casted(
-    @NotNull sqlite3_stmt stmt, int ndx, @NotNull Class<T> type
-  ){
-    final Object o = sqlite3_column_java_object(stmt, ndx);
-    return type.isInstance(o) ? (T)o : null;
-  }
 
   public static native String sqlite3_column_origin_name(
     @NotNull sqlite3_stmt stmt, int ndx
@@ -614,7 +594,7 @@ public final class SQLite3Jni {
      heed. Passing the object to sqlite3_close() or sqlite3_close_v2()
      will clear that pointer mapping.
 
-     Recall that even if opening fails, the output pointer might be
+     <p>Recall that even if opening fails, the output pointer might be
      non-null. Any error message about the failure will be in that
      object and it is up to the caller to sqlite3_close() that
      db handle.
@@ -628,7 +608,7 @@ public final class SQLite3Jni {
      object might not have been successfully opened: use sqlite3_errcode() to
      check whether it is in an error state.
 
-     Ownership of the returned value is passed to the caller, who must eventually
+     <p>Ownership of the returned value is passed to the caller, who must eventually
      pass it to sqlite3_close() or sqlite3_close_v2().
   */
   public static sqlite3 sqlite3_open(@Nullable String filename){
@@ -659,10 +639,10 @@ public final class SQLite3Jni {
      retain functionally equivalent semantics and (B) overloading
      allows us to install several convenience forms.
 
-     All of them which take their SQL in the form of a byte[] require
+     <p>All of them which take their SQL in the form of a byte[] require
      that it be in UTF-8 encoding unless explicitly noted otherwise.
 
-     The forms which take a "tail" output pointer return (via that
+     <p>The forms which take a "tail" output pointer return (via that
      output object) the index into their SQL byte array at which the
      end of the first SQL statement processed by the call was
      found. That's fundamentally how the C APIs work but making use of
@@ -959,19 +939,22 @@ public final class SQLite3Jni {
   /**
      Binds the SQL result to the given object, or
      {@link #sqlite3_result_null} if {@code o} is null. Use
-     {@link #sqlite3_value_java_object(sqlite3_value) sqlite3_value_java_object()} or
-     {@link #sqlite3_column_java_object(sqlite3_stmt,int) sqlite3_column_java_object()} to
+     {@link #sqlite3_value_java_object(sqlite3_value) sqlite3_value_java_object()} to
      fetch it.
 
-     This is implemented in terms of sqlite3_result_pointer(), but
-     that function is not exposed to JNI because its 3rd argument must
-     be a constant string (the library does not copy it), which we
-     cannot implement cross-language here unless, in the JNI layer, we
-     allocate such strings and store them somewhere for long-term use
-     (leaking them more likely than not). Even then, passing around a
-     pointer via Java like that has little practical use.
+     <p>This is implemented in terms of C's sqlite3_result_pointer(),
+     but that function is not exposed to JNI because its 3rd argument
+     must be a constant string (the library does not copy it), and
+     those semantics are cumbersome to bridge cross-language. Java
+     doesn't need that argument for type safety, in any case: the
+     object can, after extraction on the other end of the API, be
+     inspected with {@code instanceof}.
 
-     Note that there is no sqlite3_bind_java_object() counterpart.
+     <p>Note that there is no sqlite3_column_java_object(), as the
+     C-level API has no sqlite3_column_pointer() to proxy.
+
+     @see #sqlite3_value_java_object
+     @see #sqlite3_bind_java_object
   */
   public static native void sqlite3_result_java_object(
     @NotNull sqlite3_context cx, @NotNull Object o
@@ -1056,12 +1039,17 @@ public final class SQLite3Jni {
   /**
      Binds the given text using C's sqlite3_result_blob64() unless:
 
-     - @param blob is null ==> sqlite3_result_null()
+     <ul>
 
-     - @param blob is too large ==> sqlite3_result_error_toobig()
+     <li>@param blob is null: translates to sqlite3_result_null()</li>
 
-     If @param maxLen is larger than blob.length, it is truncated to that
-     value. If it is negative, results are undefined.
+     <li>@param blob is too large: translates to
+     sqlite3_result_error_toobig()</li>
+
+     </ul>
+
+     If @param maxLen is larger than blob.length, it is truncated to
+     that value. If it is negative, results are undefined.
   */
   private static native void sqlite3_result_blob64(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, long maxLen
@@ -1096,17 +1084,21 @@ public final class SQLite3Jni {
   /**
      Binds the given text using C's sqlite3_result_text64() unless:
 
-     - text is null: translates to a call to sqlite3_result_null()
+     <ul>
 
-     - text is too large: translates to a call to
-       sqlite3_result_error_toobig()
+     <li>text is null: translates to a call to sqlite3_result_null()</li>
 
-       - The @param encoding argument has an invalid value: translates to
-       sqlite3_result_error_code() with code SQLITE_FORMAT.
+     <li>text is too large: translates to a call to
+     {@link #sqlite3_result_error_toobig}</li>
+
+     <li>The @param encoding argument has an invalid value: translates to
+     {@link sqlite3_result_error_code} with code SQLITE_FORMAT.</li>
+
+     </ul>
 
      If maxLength (in bytes, not characters) is larger than
      text.length, it is silently truncated to text.length. If it is
-     negative, results are undefined. If text is null, the following
+     negative, results are undefined. If text is null, the subsequent
      arguments are ignored.
   */
   private static native void sqlite3_result_text64(
@@ -1224,7 +1216,7 @@ public final class SQLite3Jni {
      function is elided here because the roles of that functions' 3rd and 4th
      arguments are encapsulated in the final argument to this function.
 
-     Unlike the C API, which is documented as always returning 0, this
+     <p>Unlike the C API, which is documented as always returning 0, this
      implementation returns non-0 if initialization of the tracer
      mapping state fails.
   */
@@ -1257,10 +1249,11 @@ public final class SQLite3Jni {
   public static native long sqlite3_value_int64(@NotNull sqlite3_value v);
 
   /**
-     If the given value was set using sqlite3_result_java_value() then
-     this function returns that object, else it returns null.
+     If the given value was set using {@link
+     #sqlite3_result_java_object} then this function returns that
+     object, else it returns null.
 
-     It is up to the caller to inspect the object to determine its
+     <p>It is up to the caller to inspect the object to determine its
      type, and cast it if necessary.
   */
   public static native Object sqlite3_value_java_object(
