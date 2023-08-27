@@ -511,7 +511,7 @@ struct S3JniUdf {
   jmethodID jmidxFinal   /* Java ID of xFinal method */;
   jmethodID jmidxValue   /* Java ID of xValue method */;
   jmethodID jmidxInverse /* Java ID of xInverse method */;
-  S3JniUdf * pNext       /* Next entry in free-list. */;
+  S3JniUdf * pNext       /* Next entry in SJG.udf.aFree. */;
 };
 
 #if !defined(SQLITE_JNI_OMIT_METRICS) && !defined(SQLITE_JNI_ENABLE_METRICS)
@@ -584,25 +584,24 @@ struct S3JniGlobalType {
                            object. Used only for sanity checking. */;
   } perDb;
   struct {
-    S3JniUdf * aFree       /* Head of the free-item list. Guarded by global
-                              mutex. */;
+    S3JniUdf * aFree    /* Head of the free-item list. Guarded by global
+                           mutex. */;
   } udf;
   /*
   ** Refs to global classes and methods. Obtained during static init
   ** and never released.
   */
   struct {
-    jclass cObj              /* global ref to java.lang.Object */;
     jclass cLong             /* global ref to java.lang.Long */;
     jclass cString           /* global ref to java.lang.String */;
     jobject oCharsetUtf8     /* global ref to StandardCharset.UTF_8 */;
     jmethodID ctorLong1      /* the Long(long) constructor */;
     jmethodID ctorStringBA   /* the String(byte[],Charset) constructor */;
     jmethodID stringGetBytes /* the String.getBytes(Charset) method */;
-  } g /* refs to global Java state */;
-  /**
-     The list of bound auto-extensions (Java-side:
-     org.sqlite.jni.auto_extension objects).
+  } g;
+  /*
+  ** The list of Java-side auto-extensions
+  ** (org.sqlite.jni.AutoExtensionCallback objects).
   */
   struct {
     S3JniAutoExtension *aExt /* The auto-extension list. It is
@@ -661,7 +660,8 @@ struct S3JniGlobalType {
       volatile unsigned nValue;
       volatile unsigned nInverse;
     } udf;
-    unsigned nMetrics                 /* Total number of mutex-locked metrics increments. */;
+    unsigned nMetrics                 /* Total number of mutex-locked
+                                         metrics increments. */;
 #if S3JNI_METRICS_MUTEX
     sqlite3_mutex * mutex;
 #endif
@@ -1125,10 +1125,36 @@ static void S3JniHook_localdup( JNIEnv * const env, S3JniHook const * const src,
 }
 
 /*
+** Clears all of s's state. Requires that that the caller has locked
+** S3JniGlobal.perDb.mutex. Make sure to do anything needed with
+** s->pNext and s->pPrev before calling this, as this clears them.
+*/
+static void S3JniDb_clear(JNIEnv * const env, S3JniDb * const s){
+  S3JniMutex_S3JniDb_assertLocker;
+  sqlite3_free( s->zMainDbName );
+#define UNHOOK(MEMBER) S3JniHook_unref(env, &s->hooks.MEMBER, 0)
+  UNHOOK(auth);
+  UNHOOK(busyHandler);
+  UNHOOK(collation);
+  UNHOOK(collationNeeded);
+  UNHOOK(commit);
+  UNHOOK(progress);
+  UNHOOK(rollback);
+  UNHOOK(trace);
+  UNHOOK(update);
+#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
+  UNHOOK(preUpdate);
+#endif
+#undef UNHOOK
+  S3JniUnrefGlobal(s->jDb);
+  memset(s, 0, sizeof(S3JniDb));
+}
+
+/*
 ** Clears s's state and moves it to the free-list. Requires that that the
 ** caller has locked S3JniGlobal.perDb.mutex.
 */
-static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
+static void S3JniDb_set_aside(JNIEnv * const env, S3JniDb * const s){
   if( s ){
     S3JniMutex_S3JniDb_enter;
     assert(s->pPrev != s);
@@ -1140,23 +1166,7 @@ static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
       assert(!s->pPrev);
       SJG.perDb.aHead = s->pNext;
     }
-    sqlite3_free( s->zMainDbName );
-#define UNHOOK(MEMBER) S3JniHook_unref(env, &s->hooks.MEMBER, 0)
-    UNHOOK(auth);
-    UNHOOK(busyHandler);
-    UNHOOK(collation);
-    UNHOOK(collationNeeded);
-    UNHOOK(commit);
-    UNHOOK(progress);
-    UNHOOK(rollback);
-    UNHOOK(trace);
-    UNHOOK(update);
-#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-    UNHOOK(preUpdate);
-#endif
-#undef UNHOOK
-    S3JniUnrefGlobal(s->jDb);
-    memset(s, 0, sizeof(S3JniDb));
+    S3JniDb_clear(env, s);
     s->pNext = SJG.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
     SJG.perDb.aFree = s;
@@ -1169,6 +1179,8 @@ static void S3JniDb_set_aside(JNIEnv * env, S3JniDb * const s){
 ** references the cache owns. Returns true if env was cached and false
 ** if it was not found in the cache. Ownership of the given object is
 ** passed over to this function, which makes it free for re-use.
+**
+** Requires that the Env mutex be locked.
 */
 static int S3JniEnv_uncache(JNIEnv * const env){
   struct S3JniEnv * row;
@@ -1688,23 +1700,33 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
   return s;
 }
 
-
-static void S3JniUdf_free(S3JniUdf * s){
-  S3JniDeclLocal_env;
-
+/*
+** Frees up all resources owned by s, clears its state, then either
+** caches it for reuse (if cacheIt is true) or frees it. The former
+** requires locking the global mutex, so it must not be held when this
+** is called.
+*/
+static void S3JniUdf_free(JNIEnv * const env, S3JniUdf * const s,
+                          int cacheIt){
+  assert( !s->pNext );
   s3jni_call_xDestroy(env, s->jObj);
   S3JniUnrefGlobal(s->jObj);
   sqlite3_free(s->zFuncName);
   assert( !s->pNext );
   memset(s, 0, sizeof(*s));
-  S3JniMutex_Global_enter;
-  s->pNext = S3JniGlobal.udf.aFree;
-  S3JniGlobal.udf.aFree = s;
-  S3JniMutex_Global_leave;
+  if( cacheIt ){
+    S3JniMutex_Global_enter;
+    s->pNext = S3JniGlobal.udf.aFree;
+    S3JniGlobal.udf.aFree = s;
+    S3JniMutex_Global_leave;
+  }else{
+    sqlite3_free( s );
+  }
 }
 
+/* Finalizer for sqlite3_create_function() and friends. */
 static void S3JniUdf_finalizer(void * s){
-  S3JniUdf_free((S3JniUdf*)s);
+  S3JniUdf_free(s3jni_env(), (S3JniUdf*)s, 1);
 }
 
 /*
@@ -1712,14 +1734,14 @@ static void S3JniUdf_finalizer(void * s){
 ** (sqlite3_context*,int,sqlite3_value**).
 */
 typedef struct {
-  jobject jcx         /* sqlite3_context object */;
+  jobject jcx         /* sqlite3_context */;
   jobjectArray jargv  /* sqlite3_value[] */;
 } udf_jargs;
 
-/**
-   Converts the given (cx, argc, argv) into arguments for the given
-   UDF, placing the result in the final argument. Returns 0 on
-   success, SQLITE_NOMEM on allocation error.
+/*
+** Converts the given (cx, argc, argv) into arguments for the given
+** UDF, placing the result in the final argument. Returns 0 on
+** success, SQLITE_NOMEM on allocation error.
 */
 static int udf_args(JNIEnv *env,
                     sqlite3_context * const cx,
@@ -1728,19 +1750,19 @@ static int udf_args(JNIEnv *env,
   jobjectArray ja = 0;
   jobject jcx = new_sqlite3_context_wrapper(env, cx);
   jint i;
+  S3JniNphClass * const pNC =
+    S3JniGlobal_nph(env, &S3NphRefs.sqlite3_value);
   *jCx = 0;
   *jArgv = 0;
   if( !jcx ) goto error_oom;
-  ja = (*env)->NewObjectArray(env, argc,
-                              SJG.g.cObj,
-                              NULL);
+  ja = (*env)->NewObjectArray(env, argc, pNC->klazz, NULL);
   s3jni_oom_check( ja );
   if( !ja ) goto error_oom;
   for(i = 0; i < argc; ++i){
     jobject jsv = new_sqlite3_value_wrapper(env, argv[i]);
     if( !jsv ) goto error_oom;
     (*env)->SetObjectArrayElement(env, ja, i, jsv);
-    S3JniUnrefLocal(jsv)/*array has a ref*/;
+    S3JniUnrefLocal(jsv)/*ja has a ref*/;
   }
   *jCx = jcx;
   *jArgv = ja;
@@ -2018,8 +2040,8 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   }
   jc->pdbOpening = 0;
   assert( !ps->pDb && "it's still being opened" );
-  ps->pDb = pDb;
   assert( ps->jDb );
+  ps->pDb = pDb;
   NativePointerHolder_set(env, &S3NphRefs.sqlite3, ps->jDb, pDb)
     /* As of here, the Java/C connection is complete */;
   for( i = 0; go && 0==rc; ++i ){
@@ -2057,7 +2079,6 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
 S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
   JniArgsEnvClass, jobject jAutoExt
 ){
-  static int once = 0;
   int i;
   S3JniAutoExtension * ax;
   int rc = 0;
@@ -2065,16 +2086,18 @@ S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
   if( !jAutoExt ) return SQLITE_MISUSE;
   S3JniMutex_Ext_enter;
   for( i = 0; i < SJG.autoExt.nExt; ++i ){
-    /* Look for match or first empty slot. */
+    /* Look for a match. */
     ax = &SJG.autoExt.aExt[i];
     if( ax->jObj && (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
+      /* same object, so this is a no-op. */
       S3JniMutex_Ext_leave;
-      return 0 /* this as a no-op. */;
+      return 0;
     }
   }
   if( i == SJG.autoExt.nExt ){
     assert( SJG.autoExt.nExt <= SJG.autoExt.nAlloc );
     if( SJG.autoExt.nExt == SJG.autoExt.nAlloc ){
+      /* Allocate another slot. */
       unsigned n = 1 + SJG.autoExt.nAlloc;
       S3JniAutoExtension * const aNew =
         s3jni_realloc( SJG.autoExt.aExt, n * sizeof(*ax) );
@@ -2093,8 +2116,14 @@ S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
     }
   }
   if( 0==rc ){
+    static int once = 0;
     if( 0==once && ++once ){
-      rc = sqlite3_auto_extension( (void(*)(void))s3jni_run_java_auto_extensions );
+      rc = sqlite3_auto_extension(
+        (void(*)(void))s3jni_run_java_auto_extensions
+        /* Reminder: the JNI binding of sqlite3_reset_auto_extension()
+        ** does not call the core-lib impl. It only clears Java-side
+        ** auto-extensions. */
+      );
       if( rc ){
         assert( ax );
         S3JniAutoExtension_clear(ax);
@@ -2720,13 +2749,13 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2() sqlite3_create_w
   if( UDF_UNKNOWN_TYPE==s->type ){
     rc = s3jni_db_error(pDb, SQLITE_MISUSE,
                         "Cannot unambiguously determine function type.");
-    S3JniUdf_free(s);
+    S3JniUdf_free(env, s, 1);
     goto error_cleanup;
   }
   zFuncName = s3jni_jstring_to_utf8(env,jFuncName,0);
   if( !zFuncName ){
     rc = SQLITE_NOMEM;
-    S3JniUdf_free(s);
+    S3JniUdf_free(env, s, 1);
     goto error_cleanup;
   }
   if( UDF_WINDOW == s->type ){
@@ -3815,16 +3844,38 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
   JniArgsEnvClass
 ){
   s3jni_reset_auto_extension(env);
+  /* Free up env cache. */
   S3JniMutex_Env_enter;
   while( SJG.envCache.aHead ){
     S3JniEnv_uncache( SJG.envCache.aHead->env );
   }
   S3JniMutex_Env_leave;
+  /* Free up S3JniUdf recycling bin. */
+  S3JniMutex_Global_enter;
+  while( S3JniGlobal.udf.aFree ){
+    S3JniUdf * const u = S3JniGlobal.udf.aFree;
+    S3JniGlobal.udf.aFree = u->pNext;
+    u->pNext = 0;
+    S3JniUdf_free(env, u, 0);
+  }
+  S3JniMutex_Global_leave;
+  /* Free up S3JniDb recycling bin. */
+  S3JniMutex_S3JniDb_enter;
+  while( S3JniGlobal.perDb.aFree ){
+    S3JniDb * const d = S3JniGlobal.perDb.aFree;
+    S3JniGlobal.perDb.aFree = d->pNext;
+    d->pNext = 0;
+    S3JniDb_clear(env, d);
+    sqlite3_free(d);
+  }
+  S3JniMutex_S3JniDb_leave;
+
 #if 0
   /*
-  ** Is this a good idea? We will get rid of the perDb list once
-  ** sqlite3 gets a per-db client state, at which point we won't have
-  ** a central list of databases to close.
+  ** Is automatically closing any still-open dbs a good idea? We will
+  ** get rid of the perDb list once sqlite3 gets a per-db client
+  ** state, at which point we won't have a central list of databases
+  ** to close.
   */
   S3JniMutex_S3JniDb_enter;
   while( SJG.perDb.pHead ){
@@ -3832,6 +3883,7 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
   }
   S3JniMutex_S3JniDb_leave;
 #endif
+
   /* Do not clear S3JniGlobal.jvm: it's legal to restart the lib. */
   return sqlite3_shutdown();
 }
@@ -3857,7 +3909,6 @@ S3JniApi(sqlite3_sql(),jstring,1sql)(
     const char * zSql = 0;
     zSql = sqlite3_sql(pStmt);
     rv = s3jni_utf8_to_jstring(env, zSql, -1);
-    s3jni_oom_check(rv);
   }
   return rv;
 }
@@ -4972,8 +5023,6 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
   }
 
   /* Grab references to various global classes and objects... */
-  SJG.g.cObj = S3JniRefGlobal((*env)->FindClass(env,"java/lang/Object"));
-  S3JniExceptionIsFatal("Error getting reference to Object class.");
 
   SJG.g.cLong = S3JniRefGlobal((*env)->FindClass(env,"java/lang/Long"));
   S3JniExceptionIsFatal("Error getting reference to Long class.");

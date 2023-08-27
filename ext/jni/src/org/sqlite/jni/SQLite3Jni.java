@@ -1149,9 +1149,10 @@ public final class SQLite3Jni {
 
 
   /**
-     Cleans up all stale per-thread state managed by the library, as
-     well as any registered auto-extensions, then calls the C-native
-     sqlite3_shutdown(). Calling this while database handles or
+     In addition to calling the C-level sqlite3_shutdown(), the JNI
+     binding also cleans up all stale per-thread state managed by the
+     library, as well as any registered auto-extensions and free up
+     various bits of memory. Calling this while database handles or
      prepared statements are still active will leak resources. Trying
      to use those objects after this routine is called invoked
      undefined behavior.
