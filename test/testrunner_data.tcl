@@ -539,7 +539,6 @@ proc make_script {cfg srcdir bMsvc} {
           default {
             error "Cannot translate $param for MSVC"
           }
-
         }
       }
 
@@ -547,11 +546,19 @@ proc make_script {cfg srcdir bMsvc} {
     }
 
     if {[string range $param 0 0]=="-"} {
-      if {$bMsvc && [regexp -- {^-O(\d+)$} $param -> level]} {
-        lappend makeOpts OPTIMIZATIONS=$level
-      } else {
-        lappend cflags $param
+
+      if {$bMsvc} {
+        if {[regexp -- {^-O(\d+)$} $param -> level]} {
+          lappend makeOpts OPTIMIZATIONS=$level
+          continue
+        }
+        if {$param eq "-fsanitize=address,undefined"} {
+          lappend makeOpts ASAN=1
+          continue
+        }
       }
+
+      lappend cflags $param
       continue
     }
 
