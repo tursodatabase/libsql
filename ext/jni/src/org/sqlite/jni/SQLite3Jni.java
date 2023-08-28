@@ -39,8 +39,13 @@ import org.sqlite.jni.annotation.*;
 
   <p><a href="https://sqlite.org/c3ref/intro.html">https://sqlite.org/c3ref/intro.html</a>
 
-  <p>A handful of Java-specific APIs have been added which are documented
-  here.
+  <p>A handful of Java-specific APIs have been added which are
+  documented here. A number of convenience overloads are provided
+  which are not documented but whose semantics map 1-to-1 in an
+  intuitive manner. e.g. {@link
+  #sqlite3_result_set(sqlite3_context,int)} is equivalent to {@link
+  #sqlite3_result_int}, and sqlite3_result_set() has many
+  type-specific overloads.
 
   <p>Though most of the {@code SQLITE_abc...} C macros represented by
   this class are defined as final, a few are necessarily non-final
@@ -228,15 +233,16 @@ public final class SQLite3Jni {
 
   /**
      Works like the C-level sqlite3_bind_text() but assumes
-     SQLITE_TRANSIENT for the final C API parameter.
+     SQLITE_TRANSIENT for the final C API parameter. The byte array is
+     assumed to be in UTF-8 encoding.
 
      <p>Results are undefined if data is not null and
-     maxBytes>=data.length. If maxBytes is negative then results are
+     maxBytes>=utf8.length. If maxBytes is negative then results are
      undefined if data is not null and does not contain a NUL byte.
   */
   @Canonical
-  private static native int sqlite3_bind_text(
-    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
+  public static native int sqlite3_bind_text(
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] utf8, int maxBytes
   );
 
   /**
@@ -253,14 +259,14 @@ public final class SQLite3Jni {
   }
 
   /**
-     Requires that data be null or in UTF-8 encoding.
+     Requires that utf8 be null or in UTF-8 encoding.
   */
   public static int sqlite3_bind_text(
-    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data
+    @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] utf8
   ){
-    return (null == data)
+    return (null == utf8)
       ? sqlite3_bind_null(stmt, ndx)
-      : sqlite3_bind_text(stmt, ndx, data, data.length);
+      : sqlite3_bind_text(stmt, ndx, utf8, utf8.length);
   }
 
   /**
@@ -269,7 +275,7 @@ public final class SQLite3Jni {
      platform byte order.
   */
   @Canonical
-  private static native int sqlite3_bind_text16(
+  public static native int sqlite3_bind_text16(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
   );
 
@@ -728,6 +734,14 @@ public final class SQLite3Jni {
      class.) For that vast majority of uses, that capability is not
      necessary, however, and overloads are provided which gloss over
      that.
+
+     <p>Results are undefined if maxBytes>=sqlUtf8.length.
+
+     <p>This routine is private because its maxBytes value is not
+     strictly necessary in the Java interface, as sqlUtf8.length tells
+     us the information we need. Making this public would give clients
+     more ways to shoot themselves in the foot without providing any
+     real utility.
   */
   @Canonical
   private static native int sqlite3_prepare(
@@ -736,6 +750,14 @@ public final class SQLite3Jni {
     @Nullable OutputPointer.Int32 pTailOffset
   );
 
+  /**
+     Works like the canonical sqlite3_prepare() but its "tail" output
+     argument is returned as the index offset into the given
+     UTF-8-encoded byte array at which SQL parsing stopped. The
+     semantics are otherwise identical to the C API counterpart.
+
+     <p>Several overloads provided simplified call signatures.
+  */
   public static int sqlite3_prepare(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
@@ -776,8 +798,7 @@ public final class SQLite3Jni {
   }
 
   /**
-     See sqlite3_prepare() for details about the slight API differences
-     from the C API.
+     @see #sqlite3_prepare
   */
   @Canonical
   private static native int sqlite3_prepare_v2(
@@ -786,6 +807,11 @@ public final class SQLite3Jni {
     @Nullable OutputPointer.Int32 pTailOffset
   );
 
+  /**
+     Works like the canonical sqlite3_prepare_v2() but its "tail"
+     output paramter is returned as the index offset into the given
+     byte array at which SQL parsing stopped.
+  */
   public static int sqlite3_prepare_v2(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
@@ -821,6 +847,9 @@ public final class SQLite3Jni {
     return out.take();
   }
 
+  /**
+     @see #sqlite3_prepare
+  */
   @Canonical
   private static native int sqlite3_prepare_v3(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int maxBytes,
@@ -828,6 +857,11 @@ public final class SQLite3Jni {
     @Nullable OutputPointer.Int32 pTailOffset
   );
 
+  /**
+     Works like the canonical sqlite3_prepare_v2() but its "tail"
+     output paramter is returned as the index offset into the given
+     byte array at which SQL parsing stopped.
+  */
   public static int sqlite3_prepare_v3(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int prepFlags,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
@@ -993,13 +1027,15 @@ public final class SQLite3Jni {
   }
 
   /**
-     Equivalent to passing e.getMessage() to
-     sqlite3_result_error(db,String).
+     Equivalent to passing e.toString() to {@link
+     #sqlite3_result_error(sqlite3_context,String)}.  Note that
+     toString() is used instead of getMessage() because the former
+     prepends the exception type name to the message.
   */
   public static void sqlite3_result_error(
     @NotNull sqlite3_context cx, @NotNull Exception e
   ){
-    sqlite3_result_error(cx, e.getMessage());
+    sqlite3_result_error(cx, e.toString());
   }
 
   @Canonical
@@ -1033,18 +1069,14 @@ public final class SQLite3Jni {
   );
 
   /**
-     Binds the SQL result to the given object, or
-     {@link #sqlite3_result_null} if {@code o} is null. Use
-     {@link #sqlite3_value_java_object(sqlite3_value) sqlite3_value_java_object()} to
-     fetch it.
+     Binds the SQL result to the given object, or {@link
+     #sqlite3_result_null} if {@code o} is null. Use {@link
+     #sqlite3_value_java_object} to fetch it.
 
      <p>This is implemented in terms of C's sqlite3_result_pointer(),
-     but that function is not exposed to JNI because its 3rd argument
-     must be a constant string (the library does not copy it), and
-     those semantics are cumbersome to bridge cross-language. Java
-     doesn't need that argument for type safety, in any case: the
-     object can, after extraction on the other end of the API, be
-     inspected with {@code instanceof}.
+     but that function is not exposed to JNI because (A)
+     cross-language semantic mismatch and (B) Java doesn't need that
+     argument for its intended purpose (type safety).
 
      <p>Note that there is no sqlite3_column_java_object(), as the
      C-level API has no sqlite3_column_pointer() to proxy.
@@ -1057,18 +1089,6 @@ public final class SQLite3Jni {
   );
 
   public static void sqlite3_result_set(
-    @NotNull sqlite3_context cx, @NotNull Integer v
-  ){
-    sqlite3_result_int(cx, v);
-  }
-
-  public static void sqlite3_result_set(
-    @NotNull sqlite3_context cx, int v
-  ){
-    sqlite3_result_int(cx, v);
-  }
-
-  public static void sqlite3_result_set(
     @NotNull sqlite3_context cx, @NotNull Boolean v
   ){
     sqlite3_result_int(cx, v ? 1 : 0);
@@ -1078,18 +1098,6 @@ public final class SQLite3Jni {
     @NotNull sqlite3_context cx, boolean v
   ){
     sqlite3_result_int(cx, v ? 1 : 0);
-  }
-
-  public static void sqlite3_result_set(
-    @NotNull sqlite3_context cx, @NotNull Long v
-  ){
-    sqlite3_result_int64(cx, v);
-  }
-
-  public static void sqlite3_result_set(
-    @NotNull sqlite3_context cx, long v
-  ){
-    sqlite3_result_int64(cx, v);
   }
 
   public static void sqlite3_result_set(
@@ -1105,9 +1113,39 @@ public final class SQLite3Jni {
   }
 
   public static void sqlite3_result_set(
+    @NotNull sqlite3_context cx, @NotNull Integer v
+  ){
+    sqlite3_result_int(cx, v);
+  }
+
+  public static void sqlite3_result_set(@NotNull sqlite3_context cx, int v){
+    sqlite3_result_int(cx, v);
+  }
+
+  public static void sqlite3_result_set(
+    @NotNull sqlite3_context cx, @NotNull Long v
+  ){
+    sqlite3_result_int64(cx, v);
+  }
+
+  public static void sqlite3_result_set(
+    @NotNull sqlite3_context cx, long v
+  ){
+    sqlite3_result_int64(cx, v);
+  }
+
+  public static void sqlite3_result_set(
     @NotNull sqlite3_context cx, @Nullable String v
   ){
-    sqlite3_result_text(cx, v);
+    if( null==v ) sqlite3_result_null(cx);
+    else sqlite3_result_text(cx, v);
+  }
+
+  public static void sqlite3_result_set(
+    @NotNull sqlite3_context cx, @Nullable byte[] blob
+  ){
+    if( null==blob ) sqlite3_result_null(cx);
+    else sqlite3_result_blob(cx, blob, blob.length);
   }
 
   @Canonical

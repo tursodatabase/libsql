@@ -5,6 +5,11 @@
 
    <p>The primary interfaces are in {@link org.sqlite.jni.SQLite3Jni}.
 
+   <h1>State of this API</h1>
+
+   <p>As of version 3.43, this software is in "tech preview" form. We
+   tentatively plan to stamp it as stable with the 3.44 release.
+
    <h1>Threading Considerations</h1>
 
    <p>This API is, if built with SQLITE_THREADSAFE set to 1 or 2,
@@ -39,5 +44,6 @@
    <p>When built with SQLITE_THREADSAFE=0 then no threading guarantees
    are provided and multi-threaded use of the library will provoke
    undefined behavior.
+
 */
 package org.sqlite.jni;

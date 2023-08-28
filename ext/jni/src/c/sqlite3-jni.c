@@ -565,8 +565,9 @@ struct S3JniGlobalType {
   struct {
     S3JniEnv * aHead      /* Linked list of in-use instances */;
     S3JniEnv * aFree      /* Linked list of free instances */;
-    sqlite3_mutex * mutex /* mutex for aHead and aFree as well for
-                             first-time inits of nph[] entries. */;
+    sqlite3_mutex * mutex /* mutex for aHead and aFree, first-time
+                             inits of nph[] entries, and
+                             NativePointerHolder_get/set(). */;
     void const * locker   /* env mutex is held on this object's behalf.
                              Used only for sanity checking. */;
   } envCache;
@@ -686,7 +687,7 @@ static S3JniGlobalType S3JniGlobal = {};
 ** argument is a Java sqlite3 object, as this operation only has void
 ** pointers to work with.
 */
-#define PtrGet_T(T,OBJ) NativePointerHolder_get(env, OBJ, &S3NphRefs.T)
+#define PtrGet_T(T,OBJ) NativePointerHolder_get(OBJ, &S3NphRefs.T)
 #define PtrGet_sqlite3(OBJ) PtrGet_T(sqlite3, OBJ)
 #define PtrGet_sqlite3_stmt(OBJ) PtrGet_T(sqlite3_stmt, OBJ)
 #define PtrGet_sqlite3_value(OBJ) PtrGet_T(sqlite3_value, OBJ)
@@ -821,7 +822,7 @@ static JNIEnv * s3jni_env(void){
 ** insofar as possible. Calls (*env)->FatalError() if allocation of an
 ** entry fails. That's hypothetically possible but "shouldn't happen."
 */
-static S3JniEnv * S3JniEnv_get(JNIEnv * const env){
+static S3JniEnv * S3JniEnv__get(JNIEnv * const env){
   struct S3JniEnv * row;
   S3JniMutex_Env_enter;
   row = SJG.envCache.aHead;
@@ -851,6 +852,8 @@ static S3JniEnv * S3JniEnv_get(JNIEnv * const env){
   S3JniMutex_Env_leave;
   return row;
 }
+
+#define S3JniEnv_get() S3JniEnv__get(env)
 
 /*
 ** This function is NOT part of the sqlite3 public API. It is strictly
@@ -1162,12 +1165,13 @@ static void S3JniDb_clear(JNIEnv * const env, S3JniDb * const s){
 }
 
 /*
-** Clears s's state and moves it to the free-list. Requires that that the
-** caller has locked S3JniGlobal.perDb.mutex.
+** Clears s's state and moves it to the free-list. Requires that
+** S3JniGlobal.perDb.mutex is locked.
 */
-static void S3JniDb_set_aside(JNIEnv * const env, S3JniDb * const s){
+static void S3JniDb__set_aside_unlocked(JNIEnv * const env, S3JniDb * const s){
+  assert( s );
   if( s ){
-    S3JniMutex_S3JniDb_enter;
+    S3JniMutex_S3JniDb_assertLocker;
     assert(s->pPrev != s);
     assert(s->pNext != s);
     assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
@@ -1181,9 +1185,15 @@ static void S3JniDb_set_aside(JNIEnv * const env, S3JniDb * const s){
     s->pNext = SJG.perDb.aFree;
     if(s->pNext) s->pNext->pPrev = s;
     SJG.perDb.aFree = s;
-    S3JniMutex_S3JniDb_leave;
   }
 }
+
+static void S3JniDb__set_aside(JNIEnv * const env, S3JniDb * const s){
+  S3JniMutex_S3JniDb_enter;
+  S3JniDb__set_aside_unlocked(env, s);
+  S3JniMutex_S3JniDb_leave;
+}
+#define S3JniDb_set_aside(JNIDB) S3JniDb__set_aside(env, JNIDB)
 
 /*
 ** Uncache any state for the given JNIEnv, clearing all Java
@@ -1220,16 +1230,20 @@ static int S3JniEnv_uncache(JNIEnv * const env){
 
 /*
 ** Searches the NativePointerHolder cache for the given combination of
-** args.  It returns a cache entry with its klazz member set.
+** args.  It returns a cache entry with its klazz member set. This is
+** an O(1) operation except on the first call for a given pRef, during
+** which pRef->klazz and pRef->pRef are initialized thread-safely. In
+** the latter case it's still effectively O(1), but with a much longer
+** 1.
 **
 ** It is up to the caller to populate the other members of the
-** returned object if needed, taking care to lock the population with
-** S3JniMutex_Nph_enter/LEAVE.
+** returned object if needed, taking care to lock the modification
+** with S3JniMutex_Nph_enter/leave.
 **
 ** This simple cache catches >99% of searches in the current
 ** (2023-07-31) tests.
 */
-static S3JniNphClass * S3JniGlobal_nph(JNIEnv * const env, S3NphRef const* pRef){
+static S3JniNphClass * S3JniGlobal__nph(JNIEnv * const env, S3NphRef const* pRef){
   /**
    According to:
 
@@ -1261,13 +1275,15 @@ static S3JniNphClass * S3JniGlobal_nph(JNIEnv * const env, S3NphRef const* pRef)
   return pNC;
 }
 
+#define S3JniGlobal_nph(PREF) S3JniGlobal__nph(env, PREF)
+
 /*
 ** Returns the ID of the "nativePointer" field from the given
 ** NativePointerHolder<T> class.
 */
 static jfieldID NativePointerHolder_field(JNIEnv * const env,
                                           S3NphRef const* pRef){
-  S3JniNphClass * const pNC = S3JniGlobal_nph(env, pRef);
+  S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
   if( !pNC->fidValue ){
     S3JniMutex_Nph_enter;
     if( !pNC->fidValue ){
@@ -1286,30 +1302,40 @@ static jfieldID NativePointerHolder_field(JNIEnv * const env,
 ** zClassName must be a static string so we can use its address
 ** as a cache key.
 */
-static void NativePointerHolder_set(JNIEnv * env, S3NphRef const* pRef,
+static void NativePointerHolder__set(JNIEnv * env, S3NphRef const* pRef,
                                     jobject ppOut, const void * p){
-  (*env)->SetLongField(env, ppOut, NativePointerHolder_field(env, pRef),
-                       (jlong)p);
+  jfieldID const fid = NativePointerHolder_field(env, pRef);
+  S3JniMutex_Nph_enter;
+  (*env)->SetLongField(env, ppOut, fid, (jlong)p);
+  S3JniMutex_Nph_leave;
   S3JniExceptionIsFatal("Could not set NativePointerHolder.nativePointer.");
 }
+
+#define NativePointerHolder_set(PREF,PPOUT,P) \
+  NativePointerHolder__set(env, PREF, PPOUT, P)
 
 /*
 ** Fetches a native ptr value from NativePointerHolder object ppOut.
 ** zClassName must be a static string so we can use its address as a
 ** cache key. This is a no-op if pObj is NULL.
 */
-static void * NativePointerHolder_get(JNIEnv * env, jobject pObj,
-                                      S3NphRef const* pRef){
+static void * NativePointerHolder__get(JNIEnv * env, jobject pObj,
+                                       S3NphRef const* pRef){
   if( pObj ){
-    void * const rv = (void*)(*env)->GetLongField(
-      env, pObj, NativePointerHolder_field(env, pRef)
-    );
+    jfieldID const fid = NativePointerHolder_field(env, pRef);
+    void * rv;
+    S3JniMutex_Nph_enter;
+    rv = (void*)(*env)->GetLongField(env, pObj, fid);
+    S3JniMutex_Nph_leave;
     S3JniExceptionIsFatal("Cannot fetch NativePointerHolder.nativePointer.");
     return rv;
   }else{
     return 0;
   }
 }
+
+#define NativePointerHolder_get(JOBJ,NPHREF) \
+  NativePointerHolder__get(env, (JOBJ), (NPHREF))
 
 /*
 ** Extracts the new S3JniDb instance from the free-list, or allocates
@@ -1351,6 +1377,13 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
   return rv;
 }
 
+/* Short-lived code consolidator. */
+#define S3JniDb_search            \
+  s = SJG.perDb.aHead;            \
+  for( ; pDb && s; s = s->pNext){ \
+    if( s->pDb == pDb ) break;    \
+  }
+
 /*
 ** Returns the S3JniDb object for the given org.sqlite.jni.sqlite3
 ** object, or NULL if jDb is NULL, no pointer can be extracted
@@ -1361,19 +1394,27 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
 static S3JniDb * S3JniDb__from_java(JNIEnv * const env, jobject jDb){
   S3JniDb * s = 0;
   sqlite3 * pDb = 0;
+
   S3JniMutex_S3JniDb_enter;
-  if( jDb ){
-    pDb = PtrGet_sqlite3(jDb);
-  }
-  s = SJG.perDb.aHead;
-  for( ; pDb && s; s = s->pNext){
-    if( s->pDb == pDb ){
-      break;
-    }
-  }
+  if( jDb ) pDb = PtrGet_sqlite3(jDb);
+  S3JniDb_search;
   S3JniMutex_S3JniDb_leave;
   return s;
 }
+
+/* An experiment */
+//#define CLOSE_DB_LOCKED
+#if defined(CLOSE_DB_LOCKED)
+static S3JniDb * S3JniDb__from_java_unlocked(JNIEnv * const env, jobject jDb){
+  S3JniDb * s = 0;
+  sqlite3 * pDb = 0;
+
+  S3JniMutex_S3JniDb_assertLocker;
+  if( jDb ) pDb = PtrGet_sqlite3(jDb);
+  S3JniDb_search;
+  return s;
+}
+#endif
 
 /*
 ** Returns the S3JniDb object for the sqlite3 object, or NULL if pDb
@@ -1384,13 +1425,9 @@ static S3JniDb * S3JniDb__from_java(JNIEnv * const env, jobject jDb){
 */
 static S3JniDb * S3JniDb__from_c(JNIEnv * const env, sqlite3 *pDb){
   S3JniDb * s = 0;
+
   S3JniMutex_S3JniDb_enter;
-  s = SJG.perDb.aHead;
-  for( ; pDb && s; s = s->pNext){
-    if( s->pDb == pDb ){
-      break;
-    }
-  }
+  S3JniDb_search;
   S3JniMutex_S3JniDb_leave;
   return s;
 }
@@ -1442,7 +1479,9 @@ static int S3JniAutoExtension_init(JNIEnv *const env,
 ** misbehave.
 */
 static jfieldID OutputPointer_field(JNIEnv * const env, S3NphRef const * pRef){
-  S3JniNphClass * const pNC = S3JniGlobal_nph(env, pRef);
+  S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
+
+  assert( pNC->klazz );
   if( !pNC->fidValue ){
     S3JniMutex_Nph_enter;
     if( !pNC->fidValue ){
@@ -1628,7 +1667,7 @@ static void ResultJavaValue_finalizer(void *v){
 static jobject new_NativePointerHolder_object(JNIEnv * const env, S3NphRef const * pRef,
                                               const void * pNative){
   jobject rv = 0;
-  S3JniNphClass * const pNC = S3JniGlobal_nph(env, pRef);
+  S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
   if( !pNC->midCtor ){
     S3JniMutex_Nph_enter;
     if( !pNC->midCtor ){
@@ -1640,7 +1679,7 @@ static jobject new_NativePointerHolder_object(JNIEnv * const env, S3NphRef const
   rv = (*env)->NewObject(env, pNC->klazz, pNC->midCtor);
   S3JniExceptionIsFatal("No-arg constructor threw.");
   s3jni_oom_check(rv);
-  if( rv ) NativePointerHolder_set(env, pRef, rv, pNative);
+  if( rv ) NativePointerHolder_set(pRef, rv, pNative);
   return rv;
 }
 
@@ -1778,7 +1817,7 @@ static int udf_args(JNIEnv *env,
   if( !jcx ) goto error_oom;
   ja = (*env)->NewObjectArray(
     env, argc, SJG.g.cObj
-    /* S3JniGlobal_nph(env,&S3NphRefs.sqlite3_value)->klazz would be
+    /* S3JniGlobal_nph(&S3NphRefs.sqlite3_value)->klazz would be
        more correct, but it unpredictably triggers an assert in the
        JVM. */, NULL);
   s3jni_oom_check( ja );
@@ -2056,7 +2095,7 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
 
   if( 0==SJG.autoExt.nExt ) return 0;
   env = s3jni_env();
-  jc = S3JniEnv_get(env);
+  jc = S3JniEnv_get();
   ps = jc->pdbOpening;
   if( !ps ){
     *pzErr = sqlite3_mprintf("Unexpected arrival of null S3JniDb in "
@@ -2067,7 +2106,7 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   assert( !ps->pDb && "it's still being opened" );
   assert( ps->jDb );
   ps->pDb = pDb;
-  NativePointerHolder_set(env, &S3NphRefs.sqlite3, ps->jDb, pDb)
+  NativePointerHolder_set(&S3NphRefs.sqlite3, ps->jDb, pDb)
     /* As of here, the Java/C connection is complete */;
   for( i = 0; go && 0==rc; ++i ){
     S3JniAutoExtension ax = {0,0}
@@ -2373,6 +2412,8 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
 /* Wrapper for sqlite3_close(_v2)(). */
 static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   int rc = 0;
+
+#ifndef CLOSE_DB_LOCKED
   S3JniDb * const ps = S3JniDb_from_java(jDb);
   assert(version == 1 || version == 2);
   if( ps ){
@@ -2380,11 +2421,39 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
       ? (jint)sqlite3_close(ps->pDb)
       : (jint)sqlite3_close_v2(ps->pDb);
     if( 0==rc ){
-      S3JniDb_set_aside(env, ps)
+      S3JniDb_set_aside(ps)
         /* MUST come after close() because of ps->trace. */;
-      NativePointerHolder_set(env, &S3NphRefs.sqlite3, jDb, 0);
+      NativePointerHolder_set(&S3NphRefs.sqlite3, jDb, 0);
     }
   }
+#else
+  /* This impl leads to an assertion in sqlite3_close[_v2]()
+
+     pthreadMutexEnter: Assertion `p->id==SQLITE_MUTEX_RECURSIVE
+                        || pthreadMutexNotheld(p)' failed.
+
+     For reasons not yet fully understood.
+  */
+  assert(version == 1 || version == 2);
+  if( 0!=jDb ){
+    S3JniDb * ps;
+    S3JniMutex_S3JniDb_enter;
+    ps = S3JniDb__from_java_unlocked(env, jDb);
+    if( ps && ps->pDb ){
+      rc = 1==version
+        ? (jint)sqlite3_close(ps->pDb)
+        : (jint)sqlite3_close_v2(ps->pDb);
+      if( 0==rc ){
+        S3JniDb__set_aside_unlocked(env,ps)
+          /* MUST come after close() because of ps->trace. */;
+        NativePointerHolder_set(&S3NphRefs.sqlite3, jDb, 0);
+      }
+    }else{
+      /* ps is from S3Global.perDb.aFree. */
+    }
+    S3JniMutex_S3JniDb_leave;
+  }
+#endif
   return (jint)rc;
 }
 
@@ -3031,7 +3100,7 @@ S3JniApi(sqlite3_finalize(),jint,1finalize)(
   sqlite3_stmt * const pStmt = PtrGet_sqlite3_stmt(jpStmt);
   if( pStmt ){
     rc = sqlite3_finalize(pStmt);
-    NativePointerHolder_set(env, &S3NphRefs.sqlite3_stmt, jpStmt, 0);
+    NativePointerHolder_set(&S3NphRefs.sqlite3_stmt, jpStmt, 0);
   }
   return rc;
 }
@@ -3086,7 +3155,7 @@ static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
                           S3JniDb ** ps){
   int rc = 0;
   jobject jDb = 0;
-  *jc = S3JniEnv_get(env);
+  *jc = S3JniEnv_get();
   if( !*jc ){
     rc = SQLITE_NOMEM;
     goto end;
@@ -3136,14 +3205,14 @@ static int s3jni_open_post(JNIEnv * const env, S3JniEnv * const jc,
     assert(ps->jDb);
     if( 0==ps->pDb ){
       ps->pDb = *ppDb;
-      NativePointerHolder_set(env, &S3NphRefs.sqlite3, ps->jDb, *ppDb)
+      NativePointerHolder_set(&S3NphRefs.sqlite3, ps->jDb, *ppDb)
         /* As of here, the Java/C connection is complete */;
     }else{
       assert( ps->pDb==*ppDb
               && "Set up via s3jni_run_java_auto_extensions()" );
     }
   }else{
-    S3JniDb_set_aside(env, ps);
+    S3JniDb_set_aside(ps);
     ps = 0;
   }
   OutputPointer_set_sqlite3(env, jOut, ps ? ps->jDb : 0);
@@ -3241,7 +3310,7 @@ end:
       OutputPointer_set_Int32(env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0));
     }
     if( pStmt ){
-      NativePointerHolder_set(env, &S3NphRefs.sqlite3_stmt, jStmt, pStmt);
+      NativePointerHolder_set(&S3NphRefs.sqlite3_stmt, jStmt, pStmt);
     }else{
       /* Happens for comments and whitespace. */
       S3JniUnrefLocal(jStmt);
@@ -4203,7 +4272,7 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
   printf("Mutex entry:"
          "\n\tglobal       = %u"
          "\n\tenv          = %u"
-         "\n\tnph inits    = %u"
+         "\n\tnph          = %u"
          "\n\tperDb        = %u"
          "\n\tautoExt list = %u"
          "\n\tS3JniUdf free-list = %u"
@@ -4212,11 +4281,12 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
          SJG.metrics.nMutexEnv2, SJG.metrics.nMutexPerDb,
          SJG.metrics.nMutexAutoExt, SJG.metrics.nMutexUdf,
          SJG.metrics.nMetrics);
-  printf("S3JniDb: %u alloced (*%u = %u bytes), %u recycled\n",
+  puts("Allocs:");
+  printf("\tS3JniDb:  %u alloced (*%u = %u bytes), %u recycled\n",
          SJG.metrics.nPdbAlloc, (unsigned) sizeof(S3JniDb),
          (unsigned)(SJG.metrics.nPdbAlloc * sizeof(S3JniDb)),
          SJG.metrics.nPdbRecycled);
-  printf("S3JniUdf: %u alloced (*%u = %u bytes), %u recycled\n",
+  printf("\tS3JniUdf: %u alloced (*%u = %u bytes), %u recycled\n",
          SJG.metrics.nUdfAlloc, (unsigned) sizeof(S3JniUdf),
          (unsigned)(SJG.metrics.nUdfAlloc * sizeof(S3JniUdf)),
          SJG.metrics.nUdfRecycled);
@@ -4254,10 +4324,10 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
   JNIEXPORT ReturnType JNICALL                  \
   JniFuncNameFtsTok(Suffix)
 
-#define PtrGet_fts5_api(OBJ) NativePointerHolder_get(env,OBJ,&S3NphRefs.fts5_api)
-#define PtrGet_fts5_tokenizer(OBJ) NativePointerHolder_get(env,OBJ,&S3NphRefs.fts5_tokenizer)
-#define PtrGet_Fts5Context(OBJ) NativePointerHolder_get(env,OBJ,&S3NphRefs.Fts5Context)
-#define PtrGet_Fts5Tokenizer(OBJ) NativePointerHolder_get(env,OBJ,&S3NphRefs.Fts5Tokenizer)
+#define PtrGet_fts5_api(OBJ) NativePointerHolder_get(OBJ,&S3NphRefs.fts5_api)
+#define PtrGet_fts5_tokenizer(OBJ) NativePointerHolder_get(OBJ,&S3NphRefs.fts5_tokenizer)
+#define PtrGet_Fts5Context(OBJ) NativePointerHolder_get(OBJ,&S3NphRefs.Fts5Context)
+#define PtrGet_Fts5Tokenizer(OBJ) NativePointerHolder_get(OBJ,&S3NphRefs.Fts5Tokenizer)
 #define Fts5ExtDecl Fts5ExtensionApi const * const fext = s3jni_ftsext()
 
 /**
@@ -4679,7 +4749,7 @@ static int s3jni_xQueryPhrase(const Fts5ExtensionApi *xapi,
 JniDeclFtsXA(jint,xQueryPhrase)(JniArgsEnvObj,jobject jFcx, jint iPhrase,
                             jobject jCallback){
   Fts5ExtDecl;
-  S3JniEnv * const jc = S3JniEnv_get(env);
+  S3JniEnv * const jc = S3JniEnv_get();
   struct s3jni_xQueryPhraseState s;
   jclass klazz = jCallback ? (*env)->GetObjectClass(env, jCallback) : NULL;
 
@@ -4763,7 +4833,7 @@ static jint s3jni_fts5_xTokenize(JniArgsEnvObj, S3NphRef const *pRef,
                                  jint tokFlags, jobject jFcx,
                                  jbyteArray jbaText, jobject jCallback){
   Fts5ExtDecl;
-  S3JniEnv * const jc = S3JniEnv_get(env);
+  S3JniEnv * const jc = S3JniEnv_get();
   struct s3jni_xQueryPhraseState s;
   int rc = 0;
   jbyte * const pText = jCallback ? s3jni_jbytearray_bytes(jbaText) : 0;
