@@ -1281,12 +1281,20 @@ static S3JniNphClass * S3JniGlobal__nph(JNIEnv * const env, S3JniNphRef const* p
 #define S3JniGlobal_nph(PREF) S3JniGlobal__nph(env, PREF)
 
 /*
-** Returns the ID of the "nativePointer" field from the given
-** NativePointerHolder<T> class.
+** Common code for accessor functions for NativePointerHolder and
+** OutputPointer types. pRef must be a pointer from S3JniNphRefs. jOut
+** must be an instance of that class (Java's type safety takes care of
+** that requirement). If necessary, this fetches the jfieldID for
+** jOut's pRef->zMember, which must be of the type represented by the
+** JNI type signature pRef->zTypeSig, and stores it in
+** S3JniGlobal.nph[pRef->index].  Fails fatally if the pRef->zMember
+** property is not found, as that presents a serious internal misuse.
+**
+** Property lookups are cached on a per-pRef basis.
 */
-static jfieldID NativePointerHolder_field(JNIEnv * const env,
-                                          S3JniNphRef const* pRef){
+static jfieldID s3jni_nphop_field(JNIEnv * const env, S3JniNphRef const* pRef){
   S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
+
   if( !pNC->fidValue ){
     S3JniMutex_Nph_enter;
     s3jni_incr( &SJG.metrics.nNphInit );
@@ -1294,10 +1302,11 @@ static jfieldID NativePointerHolder_field(JNIEnv * const env,
       pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz,
                                          pRef->zMember, pRef->zTypeSig);
       S3JniExceptionIsFatal("Code maintenance required: missing "
-                            "nativePointer field.");
+                            "required S3JniNphClass::fidValue.");
     }
     S3JniMutex_Nph_leave;
   }
+  assert( pNC->fidValue );
   return pNC->fidValue;
 }
 
@@ -1307,8 +1316,9 @@ static jfieldID NativePointerHolder_field(JNIEnv * const env,
 ** as a cache key.
 */
 static void NativePointerHolder__set(JNIEnv * env, S3JniNphRef const* pRef,
-                                    jobject ppOut, const void * p){
-  jfieldID const fid = NativePointerHolder_field(env, pRef);
+                                     jobject ppOut, const void * p){
+  jfieldID const fid = s3jni_nphop_field(env, pRef);
+
   S3JniMutex_Nph_enter;
   (*env)->SetLongField(env, ppOut, fid, (jlong)p);
   S3JniMutex_Nph_leave;
@@ -1319,23 +1329,21 @@ static void NativePointerHolder__set(JNIEnv * env, S3JniNphRef const* pRef,
   NativePointerHolder__set(env, PREF, PPOUT, P)
 
 /*
-** Fetches a native ptr value from NativePointerHolder object ppOut.
-** zClassName must be a static string so we can use its address as a
-** cache key. This is a no-op if pObj is NULL.
+** Fetches a native ptr value from NativePointerHolder object pObj,
+** which must be of the native type described by pRef.  This is a
+** no-op if pObj is NULL.
 */
 static void * NativePointerHolder__get(JNIEnv * env, jobject pObj,
                                        S3JniNphRef const* pRef){
+  void * rv = 0;
   if( pObj ){
-    jfieldID const fid = NativePointerHolder_field(env, pRef);
-    void * rv;
+    jfieldID const fid = s3jni_nphop_field(env, pRef);
     S3JniMutex_Nph_enter;
     rv = (void*)(*env)->GetLongField(env, pObj, fid);
     S3JniMutex_Nph_leave;
     S3JniExceptionIsFatal("Cannot fetch NativePointerHolder.nativePointer.");
-    return rv;
-  }else{
-    return 0;
   }
+  return rv;
 }
 
 #define NativePointerHolder_get(JOBJ,NPHREF) \
@@ -1470,42 +1478,13 @@ static int S3JniAutoExtension_init(JNIEnv *const env,
 }
 
 /*
-** Common init for OutputPointer_set_Int32() and friends. pRef must be
-** a pointer from S3JniNphRefs. jOut must be an instance of that
-** class. If necessary, this fetches the jfieldID for jOut's [value]
-** property, which must be of the type represented by the JNI type
-** signature zTypeSig, and stores it in pRef's S3JniGlobal.nph entry.
-** Fails fatally if the property is not found, as that presents a
-** serious internal misuse.
-**
-** Property lookups are cached on a per-pRef basis. Do not use this
-** routine with the same pRef but different zTypeSig: it will
-** misbehave.
-*/
-static jfieldID OutputPointer_field(JNIEnv * const env, S3JniNphRef const * pRef){
-  S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
-
-  assert( pNC->klazz );
-  if( !pNC->fidValue ){
-    S3JniMutex_Nph_enter;
-    s3jni_incr( &SJG.metrics.nNphInit );
-    if( !pNC->fidValue ){
-      pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz, pRef->zMember, pRef->zTypeSig);
-      S3JniExceptionIsFatal("OutputPointer_field() could not find OutputPointer.*.value");
-    }
-    S3JniMutex_Nph_leave;
-  }
-  return pNC->fidValue;
-}
-
-/*
 ** Sets the value property of the OutputPointer.Int32 jOut object to
 ** v.
 */
 static void OutputPointer_set_Int32(JNIEnv * const env, jobject const jOut,
                                     int v){
   (*env)->SetIntField(env, jOut,
-                      OutputPointer_field(
+                      s3jni_nphop_field(
                         env, &S3JniNphRefs.OutputPointer_Int32
                       ), (jint)v);
   S3JniExceptionIsFatal("Cannot set OutputPointer.Int32.value");
@@ -1518,7 +1497,7 @@ static void OutputPointer_set_Int32(JNIEnv * const env, jobject const jOut,
 static void OutputPointer_set_Int64(JNIEnv * const env, jobject const jOut,
                                     jlong v){
   (*env)->SetLongField(env, jOut,
-                       OutputPointer_field(
+                       s3jni_nphop_field(
                          env, &S3JniNphRefs.OutputPointer_Int64
                        ), v);
   S3JniExceptionIsFatal("Cannot set OutputPointer.Int64.value");
@@ -1532,7 +1511,7 @@ static void OutputPointer_set_obj(JNIEnv * const env,
                                   S3JniNphRef const * const pRef,
                                   jobject const jOut,
                                   jobject v){
-  (*env)->SetObjectField(env, jOut, OutputPointer_field(env, pRef), v);
+  (*env)->SetObjectField(env, jOut, s3jni_nphop_field(env, pRef), v);
   S3JniExceptionIsFatal("Cannot set OutputPointer.T.value");
 }
 
