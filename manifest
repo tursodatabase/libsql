@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\s-DSQLITE_EXTRA_AUTOEXT=name\scompile-time\soption.\n[forum:/forumpost/00829394c74a670f|forum\sthread\s00829394c74a670f].
-D 2023-08-28T15:58:00.980
+C Update\stool/mkctimec.tcl\sto\saccount\sfor\s[fe7365254d343e].
+D 2023-08-28T16:05:19.091
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2028,7 +2028,7 @@ F tool/max-limits.c cbb635fbb37ae4d05f240bfb5b5270bb63c54439
 F tool/merge-test.tcl de76b62f2de2a92d4c1ca4f976bce0aea6899e0229e250479b229b2a1914b176
 F tool/mkautoconfamal.sh f62353eb6c06ab264da027fd4507d09914433dbdcab9cb011cdc18016f1ab3b8
 F tool/mkccode.tcl 86463e68ce9c15d3041610fedd285ce32a5cf7a58fc88b3202b8b76837650dbe x
-F tool/mkctimec.tcl aca4b83e49aecf10368cd5d11bc4847061041ade026db5bd8da17ef201f1403b x
+F tool/mkctimec.tcl c7246946f847d3d6d022f5276650e0290e2aa648793be2fb8c3f206347baa356 x
 F tool/mkkeywordhash.c b9faa0ae7e14e4dbbcd951cddd786bf46b8a65bb07b129ba8c0cfade723aaffd
 F tool/mkmsvcmin.tcl 8897d515ef7f94772322db95a3b6fce6c614d84fe0bdd06ba5a1c786351d5a1d
 F tool/mkopcodec.tcl 33d20791e191df43209b77d37f0ff0904620b28465cca6990cf8d60da61a07ef
@@ -2106,9 +2106,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 71f239747c7934310dedf9fc0cbf84fbeeed53808234067147335c12396849a1 423e77277a61d7febf4c3fc737981fa22a82b5c774a8ada5375a01a0611535b2
-R 52dd63dfa31054f8cede16ca6a766cde
-T +closed 423e77277a61d7febf4c3fc737981fa22a82b5c774a8ada5375a01a0611535b2
-U drh
-Z 4533af2279533b84257be53cbe5f8c72
+P fe7365254d343ed03e11a4e9cad7f0e5d5182b9220c6fde6d30e434ebdaba2af
+R b00a271c5a6f2785833f80aa9f660281
+U stephan
+Z 28d128e867bc57e370acf90e968cbcdb
 # Remove this line to create a well-formed Fossil manifest.
