@@ -594,6 +594,9 @@ proc add_tcl_jobs {build config patternlist} {
   } else {
     set testfixture [file join [lindex $build 1] $TRG(testfixture)]
   }
+  if {[lindex $build 2]=="Valgrind"} {
+    set testfixture "valgrind -v --error-exitcode=1 $testfixture"
+  }
 
   # The ::testspec array is populated by permutations.test
   foreach f [dict get $::testspec($config) -files] {
