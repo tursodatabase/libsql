@@ -190,6 +190,36 @@ set TRG(schema) {
   /*
   ** This table contains one row for each job that testrunner.tcl must run
   ** before the entire test run is finished.
+  **
+  ** jobid:
+  **   Unique identifier for each job. Must be a +ve non-zero number.
+  **
+  ** displaytype:
+  **   3 or 4 letter mnemonic for the class of tests this belongs to e.g.
+  **   "fuzz", "tcl", "make" etc.
+  **
+  ** displayname:
+  **   Name/description of job. For display purposes.
+  **
+  ** build:
+  **   If the job requires a make.bat/make.sh make wrapper (i.e. to build
+  **   something), the name of the build configuration it uses. See 
+  **   testrunner_data.tcl for a list of build configs. e.g. "Win32-MemDebug".
+  **
+  ** dirname:
+  **   If the job should use a well-known directory name for its 
+  **   sub-directory instead of an anonymous "testdir[1234...]" sub-dir
+  **   that is deleted after the job is finished.
+  **
+  ** cmd:
+  **   Bash or batch script to run the job.
+  **
+  ** depid:
+  **   The jobid value of a job that this job depends on. This job may not
+  **   be run before its depid job has finished successfully.
+  **
+  ** priority:
+  **   Higher values run first. Sometimes.
   */
   CREATE TABLE jobs(
     /* Fields populated when db is initialized */
@@ -660,7 +690,8 @@ proc add_make_job {bld target} {
   global TRG
 
   if {$TRG(platform)=="win"} {
-    set cmd "copy [lindex $bld 1]\\* ."
+    set path [string map {/ \\} [lindex $bld 1]]
+    set cmd "xcopy /S $path\\* ."
   } else {
     set cmd "cp -r [lindex $bld 1]/* ."
   }

@@ -398,14 +398,14 @@ proc trd_extras {platform bld} {
 #
 proc trd_fuzztest_data {} {
   set EXE ""
-  if {$::tcl_platform(platform)=="windows"} {
-    set EXE ".exe"
-  }
-
   set lFuzzDb    [glob [file join $::testdir fuzzdata*.db]] 
   set lSessionDb [glob [file join $::testdir sessionfuzz-data*.db]]
 
-  return [list fuzzcheck$EXE $lFuzzDb "sessionfuzz$EXE run" $lSessionDb]
+  if {$::tcl_platform(platform)=="windows"} {
+    return [list fuzzcheck.exe $lFuzzDb]
+  }
+
+  return [list fuzzcheck $lFuzzDb sessionfuzz $lSessionDb]
 }
 
 
