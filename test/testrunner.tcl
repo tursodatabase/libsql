@@ -155,18 +155,24 @@ switch -nocase -glob -- $tcl_platform(os) {
     set TRG(make)        make.sh
     set TRG(makecmd)     "bash make.sh"
     set TRG(testfixture) testfixture
+    set TRG(run)         run.sh
+    set TRG(runcmd)      "bash run.sh"
   }
   *linux* {
     set TRG(platform)    linux
     set TRG(make)        make.sh
     set TRG(makecmd)     "bash make.sh"
     set TRG(testfixture) testfixture
+    set TRG(run)         run.sh
+    set TRG(runcmd)      "bash run.sh"
   }
   *win* {
     set TRG(platform)    win
     set TRG(make)        make.bat
     set TRG(makecmd)     make.bat
     set TRG(testfixture) testfixture.exe
+    set TRG(run)         run.bat
+    set TRG(runcmd)      "run.bat"
   }
   default {
     error "cannot determine platform!"
@@ -187,14 +193,13 @@ set TRG(schema) {
   */
   CREATE TABLE jobs(
     /* Fields populated when db is initialized */
-    jobid INTEGER PRIMARY KEY,      -- id to identify job
-    displaytype TEXT NOT NULL,      -- Type of test (for one line report)
+    jobid INTEGER PRIMARY KEY,          -- id to identify job
+    displaytype TEXT NOT NULL,          -- Type of test (for one line report)
     displayname TEXT NOT NULL,          -- Human readable job name
     build TEXT NOT NULL DEFAULT '',     -- make.sh/make.bat file request, if any
     dirname TEXT NOT NULL DEFAULT '',   -- directory name, if required
     cmd TEXT NOT NULL,                  -- shell command to run
     depid INTEGER,                      -- identifier of dependency (or '')
-    copydir TEXT,                       -- copy files from here
     priority INTEGER NOT NULL,          -- higher priority jobs may run earlier
   
     /* Fields updated as jobs run */
@@ -458,12 +463,6 @@ proc create_or_clear_dir {dir} {
   }
 }
 
-proc copy_dir {from to} {
-  foreach f [glob -nocomplain [file join $from *]] {
-    catch { file copy -force $f $to }
-  }
-}
-
 proc build_to_dirname {bname} {
   set fold [string tolower [string map {- _} $bname]]
   return "testrunner_build_$fold"
@@ -531,7 +530,6 @@ proc r_get_next_job {iJob} {
 #   -dirname     
 #   -cmd 
 #   -depid 
-#   -copydir 
 #   -priority 
 #
 # Returns the jobid value for the new job.
@@ -540,13 +538,12 @@ proc add_job {args} {
 
   set options {
       -displaytype -displayname -build -dirname 
-      -cmd -depid -copydir -priority
+      -cmd -depid -priority
   }
 
   # Set default values of options.
   set A(-dirname) ""
   set A(-depid)   ""
-  set A(-copydir)  ""
   set A(-priority) 0
   set A(-build)   ""
 
@@ -565,7 +562,7 @@ proc add_job {args} {
 
   trdb eval {
     INSERT INTO jobs(
-      displaytype, displayname, build, dirname, cmd, depid, copydir, priority,
+      displaytype, displayname, build, dirname, cmd, depid, priority,
       state
     ) VALUES (
       $A(-displaytype),
@@ -574,7 +571,6 @@ proc add_job {args} {
       $A(-dirname),
       $A(-cmd),
       $A(-depid),
-      $A(-copydir),
       $A(-priority),
       $state
     )
@@ -595,7 +591,8 @@ proc add_tcl_jobs {build config patternlist} {
     set testfixture [file join [lindex $build 1] $TRG(testfixture)]
   }
   if {[lindex $build 2]=="Valgrind"} {
-    set testfixture "valgrind -v --error-exitcode=1 $testfixture"
+    set setvar "export OMIT_MISUSE=1\n"
+    set testfixture "${setvar}valgrind -v --error-exitcode=1 $testfixture"
   }
 
   # The ::testspec array is populated by permutations.test
@@ -662,11 +659,17 @@ proc add_build_job {buildname target} {
 proc add_make_job {bld target} {
   global TRG
 
+  if {$TRG(platform)=="win"} {
+    set cmd "copy [lindex $bld 1]\\* ."
+  } else {
+    set cmd "cp -r [lindex $bld 1]/* ."
+  }
+  append cmd "\n$TRG(makecmd) $target"
+
   add_job                                       \
     -displaytype make                           \
     -displayname "[lindex $bld 2] make $target" \
-    -cmd "$TRG(makecmd) $target"                \
-    -copydir [lindex $bld 1]                    \
+    -cmd $cmd                                   \
     -depid [lindex $bld 0]                      \
     -priority 1
 }
@@ -808,6 +811,14 @@ proc script_input_ready {fd iJob jobid} {
   if {[eof $fd]} {
     trdb eval { SELECT * FROM jobs WHERE jobid=$jobid } job {}
 
+    # If this job specified a directory name, then delete the run.sh/run.bat
+    # file from it before continuing. This is because the contents of this
+    # directory might be copied by some other job, and we don't want to copy
+    # the run.sh file in this case.
+    if {$job(dirname)!=""} {
+      file delete -force [file join $job(dirname) $TRG(run)]
+    }
+
     set ::done 1
     fconfigure $fd -blocking 1
     set state "done"
@@ -816,7 +827,7 @@ proc script_input_ready {fd iJob jobid} {
       if {[info exists TRG(reportlength)]} {
         puts -nonewline "[string repeat " " $TRG(reportlength)]\r"
       }
-      puts "FAILED: $job(displayname)"
+      puts "FAILED: $job(displayname) ($iJob)"
       set state "failed" 
     }
 
@@ -886,17 +897,13 @@ proc launch_another_job {iJob} {
     close $fd
   }
 
-  if {$job(copydir)!=""} {
-    foreach f [glob -nocomplain [file join $job(copydir) *]] {
-      catch { file copy -force $f $dir }
-    }
-  }
-
   set pwd [pwd]
   cd $dir
-  set fd [open "|$job(cmd) 2>@1" r]
+  set fd [open $TRG(run) w]
+  puts $fd $job(cmd) 
+  close $fd
+  set fd [open "|$TRG(runcmd) 2>@1" r]
   cd $pwd
-  set pid [pid $fd]
 
   fconfigure $fd -blocking false
   fileevent $fd readable [list script_input_ready $fd $iJob $job(jobid)]
