@@ -1,4 +1,4 @@
-package org.sqlite.jni;
+package org.sqlite.jni.annotation;
 
 /**
    This annotation is for flagging parameters which may not legally be

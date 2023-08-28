@@ -12,6 +12,7 @@
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni;
+import org.sqlite.jni.annotation.*;
 
 /**
    Callback for use with sqlite3_set_authorizer().

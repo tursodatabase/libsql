@@ -59,6 +59,7 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
+  annotation/Canonical.java \
   annotation/NotNull.java \
   annotation/Nullable.java \
   AggregateFunction.java \

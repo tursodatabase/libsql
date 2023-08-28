@@ -138,6 +138,7 @@ public final class SQLite3Jni {
      allocation error. In all casses, 0 is considered the sentinel
      "not a key" value.
   */
+  @Canonical
   public static native long sqlite3_aggregate_context(sqlite3_context cx, boolean initialize);
 
   /**
@@ -156,11 +157,13 @@ public final class SQLite3Jni {
 
      <p>See the AutoExtension class docs for more information.
   */
+  @Canonical
   public static native int sqlite3_auto_extension(@NotNull AutoExtensionCallback callback);
 
   /**
      Results are undefined if data is not null and n<0 || n>=data.length.
   */
+  @Canonical
   public static native int sqlite3_bind_blob(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int n
   );
@@ -173,14 +176,17 @@ public final class SQLite3Jni {
       : sqlite3_bind_blob(stmt, ndx, data, data.length);
   }
 
+  @Canonical
   public static native int sqlite3_bind_double(
     @NotNull sqlite3_stmt stmt, int ndx, double v
   );
 
+  @Canonical
   public static native int sqlite3_bind_int(
     @NotNull sqlite3_stmt stmt, int ndx, int v
   );
 
+  @Canonical
   public static native int sqlite3_bind_int64(
     @NotNull sqlite3_stmt stmt, int ndx, long v
   );
@@ -194,10 +200,12 @@ public final class SQLite3Jni {
     @NotNull sqlite3_stmt cx, int ndx, @Nullable Object o
   );
 
+  @Canonical
   public static native int sqlite3_bind_null(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
+  @Canonical
   public static native int sqlite3_bind_parameter_count(
     @NotNull sqlite3_stmt stmt
   );
@@ -205,10 +213,12 @@ public final class SQLite3Jni {
   /**
      Requires that paramName be a NUL-terminated UTF-8 string.
   */
+  @Canonical
   public static native int sqlite3_bind_parameter_index(
     @NotNull sqlite3_stmt stmt, byte[] paramName
   );
 
+  @Canonical
   public static int sqlite3_bind_parameter_index(
     @NotNull sqlite3_stmt stmt, @NotNull String paramName
   ){
@@ -224,6 +234,7 @@ public final class SQLite3Jni {
      maxBytes>=data.length. If maxBytes is negative then results are
      undefined if data is not null and does not contain a NUL byte.
   */
+  @Canonical
   private static native int sqlite3_bind_text(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
   );
@@ -257,6 +268,7 @@ public final class SQLite3Jni {
      signature but requires that its input be encoded in UTF-16 in
      platform byte order.
   */
+  @Canonical
   private static native int sqlite3_bind_text16(
     @NotNull sqlite3_stmt stmt, int ndx, @Nullable byte[] data, int maxBytes
   );
@@ -287,10 +299,12 @@ public final class SQLite3Jni {
       : sqlite3_bind_text16(stmt, ndx, data, data.length);
   }
 
+  @Canonical
   public static native int sqlite3_bind_zeroblob(
     @NotNull sqlite3_stmt stmt, int ndx, int n
   );
 
+  @Canonical
   public static native int sqlite3_bind_zeroblob64(
     @NotNull sqlite3_stmt stmt, int ndx, long n
   );
@@ -300,10 +314,12 @@ public final class SQLite3Jni {
      instance in place of a callback function. Pass it a null handler
      to clear the busy handler.
   */
+  @Canonical
   public static native int sqlite3_busy_handler(
     @NotNull sqlite3 db, @Nullable BusyHandlerCallback handler
   );
 
+  @Canonical
   public static native int sqlite3_busy_timeout(
     @NotNull sqlite3 db, int ms
   );
