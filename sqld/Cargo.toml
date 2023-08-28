@@ -21,7 +21,7 @@ console-subscriber = { version = "0.1.10", optional = true }
 crc = "3.0.0"
 crossbeam = "0.8.2"
 enclose = "1.1"
-fallible-iterator = "0.2.0"
+fallible-iterator = "0.3.0"
 futures = "0.3.25"
 hmac = "0.12"
 hyper = { version = "0.14.23", features = ["http2"] }
@@ -44,7 +44,7 @@ serde_json = { version = "1.0.91", features = ["preserve_order"] }
 sha2 = "0.10"
 sha256 = "1.1.3"
 sqld-libsql-bindings = { version = "0", path = "../sqld-libsql-bindings" }
-sqlite3-parser = { version = "0.8.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
+sqlite3-parser = { version = "0.11.0", default-features = false, features = [ "YYNOERRORRECOVERY" ] }
 tempfile = "3.3.0"
 thiserror = "1.0.38"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
