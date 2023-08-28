@@ -838,11 +838,11 @@ sqlite3-worker1-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-bundler-frien
 sqlite3-worker1-promiser-bundler-friendly.js := $(dir.dout)/sqlite3-worker1-promiser-bundler-friendly.js
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1.js)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1.js.in),$(sqlite3-worker1-bundler-friendly.js),\
-    $(c-pp.D.bundler-friendly)))
+    $(c-pp.D.sqlite3-bundler-friendly)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),$(sqlite3-worker1-promiser.js)))
 $(eval $(call C-PP.FILTER,$(sqlite3-worker1-promiser.js.in),\
     $(sqlite3-worker1-promiser-bundler-friendly.js),\
-    $(c-pp.D.bundler-friendly)))
+    $(c-pp.D.sqlite3-bundler-friendly)))
 $(sqlite3-bundler-friendly.mjs): $(sqlite3-worker1-bundler-friendly.js) \
     $(sqlite3-worker1-promiser-bundler-friendly.js)
 $(sqlite3.js) $(sqlite3.mjs): $(sqlite3-worker1.js) $(sqlite3-worker1-promiser.js)
