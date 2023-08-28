@@ -100,12 +100,9 @@ impl Database {
         }
     }
 
-    pub async fn sync(&self) -> Result<()> {
+    pub async fn sync(&self) -> Result<usize> {
         match &self.db_type {
-            DbType::Sync { db } => {
-                db.sync().await?;
-                Ok(())
-            }
+            DbType::Sync { db } => db.sync().await,
             _ => Err(crate::Error::SyncNotSupported),
         }
     }

@@ -54,10 +54,19 @@ impl Row {
     pub fn get_value(&self, idx: i32) -> Result<Value> {
         self.inner.column_value(idx)
     }
+
+    pub fn get_str(&self, idx: i32) -> Result<&str> {
+        self.inner.column_str(idx)
+    }
+
+    pub fn column_name(&self, idx: i32) -> Option<&str> {
+        self.inner.column_name(idx)
+    }
 }
 
 pub(super) trait RowInner {
     fn column_value(&self, idx: i32) -> Result<Value>;
+    fn column_str(&self, idx: i32) -> Result<&str>;
     fn column_name(&self, idx: i32) -> Option<&str>;
 }
 
@@ -70,5 +79,9 @@ impl RowInner for LibsqlRow {
 
     fn column_name(&self, idx: i32) -> Option<&str> {
         self.0.column_name(idx)
+    }
+
+    fn column_str(&self, idx: i32) -> Result<&str> {
+        self.0.get::<&str>(idx)
     }
 }

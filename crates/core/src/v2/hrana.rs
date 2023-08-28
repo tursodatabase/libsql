@@ -320,7 +320,9 @@ impl super::statement::Stmt for Statement {
 
         let v = self.client.execute_inner(stmt, 0).await?;
         if let Some(last_insert_rowid) = v.last_insert_rowid {
-            self.client.last_insert_rowid.store(last_insert_rowid, Ordering::SeqCst);
+            self.client
+                .last_insert_rowid
+                .store(last_insert_rowid, Ordering::SeqCst);
         }
         Ok(v.affected_row_count as usize)
     }
@@ -339,8 +341,7 @@ impl super::statement::Stmt for Statement {
         })
     }
 
-    fn reset(&self) {
-    }
+    fn reset(&self) {}
 
     fn parameter_count(&self) -> usize {
         todo!()
@@ -405,6 +406,10 @@ impl RowInner for Row {
             .map(|c| c.name.as_ref())
             .flatten()
             .map(|s| s.as_str())
+    }
+
+    fn column_str(&self, idx: i32) -> Result<&str> {
+        todo!()
     }
 }
 
