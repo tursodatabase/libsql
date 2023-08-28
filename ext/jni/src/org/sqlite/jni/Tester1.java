@@ -1496,25 +1496,6 @@ public class Tester1 implements Runnable {
       }
     }
 
-    {
-      // Build list of tests to run from the methods named test*().
-      testMethods = new ArrayList<>();
-      for(final java.lang.reflect.Method m : Tester1.class.getDeclaredMethods()){
-        final String name = m.getName();
-        if( name.equals("testFail") ){
-          if( forceFail ){
-            testMethods.add(m);
-          }
-        }else if( !m.isAnnotationPresent( ManualTest.class ) ){
-          if( nThread>1 && m.isAnnotationPresent( SingleThreadOnly.class ) ){
-            outln("Skipping test in multi-thread mode: ",name,"()");
-          }else if( name.startsWith("test") ){
-            testMethods.add(m);
-          }
-        }
-      }
-    }
-
     if( sqlLog ){
       if( sqlite3_compileoption_used("ENABLE_SQLLOG") ){
         int rc = sqlite3_config( new ConfigSqllogCallback() {
@@ -1537,6 +1518,27 @@ public class Tester1 implements Runnable {
     outln("If you just saw warning messages regarding CallStaticObjectMethod, ",
           "you are very likely seeing the side effects of a known openjdk8 ",
           "bug. It is unsightly but does not affect the library.");
+
+    {
+      // Build list of tests to run from the methods named test*().
+      testMethods = new ArrayList<>();
+      out("Skipping tests in multi-thread mode:");
+      for(final java.lang.reflect.Method m : Tester1.class.getDeclaredMethods()){
+        final String name = m.getName();
+        if( name.equals("testFail") ){
+          if( forceFail ){
+            testMethods.add(m);
+          }
+        }else if( !m.isAnnotationPresent( ManualTest.class ) ){
+          if( nThread>1 && m.isAnnotationPresent( SingleThreadOnly.class ) ){
+            out(" "+name+"()");
+          }else if( name.startsWith("test") ){
+            testMethods.add(m);
+          }
+        }
+      }
+      out("\n");
+    }
 
     final long timeStart = System.currentTimeMillis();
     int nLoop = 0;
