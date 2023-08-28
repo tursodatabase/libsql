@@ -447,8 +447,8 @@ struct S3JniDb {
 #ifdef SQLITE_ENABLE_FTS5
   jobject jFtsApi  /* global ref to s3jni_fts5_api_from_db() */;
 #endif
-  S3JniDb * pNext /* Next entry in the available/free list */;
-  S3JniDb * pPrev /* Previous entry in the available/free list */;
+  S3JniDb * pNext /* Next entry in SJG.perDb.aFree or SJG.perDb.aHead */;
+  S3JniDb * pPrev /* Previous entry in SJG.perDb.aFree or SJG.perDb.aHead */;
 };
 
 /*
@@ -478,8 +478,8 @@ struct S3JniEnv {
   **   a NULL db, in which case free pdbOpening.
   */
   S3JniDb * pdbOpening;
-  S3JniEnv * pPrev /* Previous entry in the linked list */;
-  S3JniEnv * pNext /* Next entry in the linked list */;
+  S3JniEnv * pNext /* Next entry in SJG.envCache.aHead or
+                      SJG.envCache.aFree */;
 };
 
 /*
@@ -505,15 +505,15 @@ enum UDFType {
 */
 typedef struct S3JniUdf S3JniUdf;
 struct S3JniUdf {
-  jobject jObj          /* SQLFunction instance */;
-  char * zFuncName      /* Only for error reporting and debug logging */;
-  enum UDFType type;
+  jobject jObj           /* SQLFunction instance */;
+  char * zFuncName       /* Only for error reporting and debug logging */;
+  enum UDFType type      /* UDF type */;
   /** Method IDs for the various UDF methods. */
-  jmethodID jmidxFunc    /* xFunc method */;
-  jmethodID jmidxStep    /* xStep method */;
-  jmethodID jmidxFinal   /* xFinal method */;
-  jmethodID jmidxValue   /* xValue method */;
-  jmethodID jmidxInverse /* xInverse method */;
+  jmethodID jmidxFunc    /* xFunc method (scalar) */;
+  jmethodID jmidxStep    /* xStep method (aggregate/window) */;
+  jmethodID jmidxFinal   /* xFinal method (aggregate/window) */;
+  jmethodID jmidxValue   /* xValue method (window) */;
+  jmethodID jmidxInverse /* xInverse method (window) */;
   S3JniUdf * pNext       /* Next entry in SJG.udf.aFree. */;
 };
 
@@ -819,16 +819,13 @@ static S3JniEnv * S3JniEnv__get(JNIEnv * const env){
   s3jni_incr( &SJG.metrics.nEnvMiss );
   row = SJG.envCache.aFree;
   if( row ){
-    assert(!row->pPrev);
     SJG.envCache.aFree = row->pNext;
-    if( row->pNext ) row->pNext->pPrev = 0;
   }else{
     row = s3jni_malloc_or_die(env, sizeof(*row));
     s3jni_incr( &SJG.metrics.nEnvAlloc );
   }
   memset(row, 0, sizeof(*row));
   row->pNext = SJG.envCache.aHead;
-  if( row->pNext ) row->pNext->pPrev = row;
   SJG.envCache.aHead = row;
   row->env = env;
 
@@ -1264,9 +1261,10 @@ static void S3JniDb__set_aside(JNIEnv * const env, S3JniDb * const s){
 */
 static int S3JniEnv_uncache(JNIEnv * const env){
   struct S3JniEnv * row;
+  struct S3JniEnv * pPrev = 0;
   S3JniMutex_Env_assertLocked;
   row = SJG.envCache.aHead;
-  for( ; row; row = row->pNext ){
+  for( ; row; pPrev = row, row = row->pNext ){
     if( row->env == env ){
       break;
     }
@@ -1274,15 +1272,13 @@ static int S3JniEnv_uncache(JNIEnv * const env){
   if( !row ){
       return 0;
   }
-  if( row->pNext ) row->pNext->pPrev = row->pPrev;
-  if( row->pPrev ) row->pPrev->pNext = row->pNext;
-  if( SJG.envCache.aHead == row ){
-    assert( !row->pPrev );
+  if( pPrev) pPrev->pNext = row->pNext;
+  else{
+    assert( SJG.envCache.aHead == row );
     SJG.envCache.aHead = row->pNext;
   }
   memset(row, 0, sizeof(S3JniEnv));
   row->pNext = SJG.envCache.aFree;
-  if( row->pNext ) row->pNext->pPrev = row;
   SJG.envCache.aFree = row;
   return 1;
 }
