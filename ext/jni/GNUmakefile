@@ -62,6 +62,8 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   annotation/Canonical.java \
   annotation/NotNull.java \
   annotation/Nullable.java \
+  annotation/package-info.java \
+  AbstractCollationCallback.java \
   AggregateFunction.java \
   AuthorizerCallback.java \
   AutoExtensionCallback.java \
@@ -327,7 +329,7 @@ dir.doc   := $(dir.jni)/javadoc
 doc.index := $(dir.doc)/index.html
 $(doc.index): $(JAVA_FILES.main) $(MAKEFILE)
 	@if [ -d $(dir.doc) ]; then rm -fr $(dir.doc)/*; fi
-	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) -quiet org.sqlite.jni
+	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) -quiet -subpackages org.sqlite.jni
 	@echo "javadoc output is in $@"
 
 .PHONY: doc javadoc docserve

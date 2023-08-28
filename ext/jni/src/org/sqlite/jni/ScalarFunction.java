@@ -15,9 +15,9 @@ package org.sqlite.jni;
 
 
 /**
-   SQLFunction subclass for creating scalar functions.
+   A SQLFunction implementation for scalar functions.
 */
-public abstract class ScalarFunction extends SQLFunction {
+public abstract class ScalarFunction implements SQLFunction {
   /**
      As for the xFunc() argument of the C API's
      sqlite3_create_function(). If this function throws, it is
@@ -27,7 +27,7 @@ public abstract class ScalarFunction extends SQLFunction {
 
   /**
      Optionally override to be notified when the UDF is finalized by
-     SQLite.
+     SQLite. This implementation does nothing.
   */
   public void xDestroy() {}
 }

@@ -12,9 +12,10 @@
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
 package org.sqlite.jni;
+import org.sqlite.jni.annotation.Nullable;
 
 /**
-   Callback proxy for use with sqlite3_trace_v2().
+   Callback for use with {@link SQLite3Jni#sqlite3_trace_v2}.
 */
 public interface TraceV2Callback extends SQLite3CallbackProxy {
   /**
@@ -23,7 +24,7 @@ public interface TraceV2Callback extends SQLite3CallbackProxy {
      argument to the native trace callback, as that role is better
      filled by instance-local state.
 
-     These callbacks may throw, in which case their exceptions are
+     <p>These callbacks may throw, in which case their exceptions are
      converted to C-level error information.
 
      <p>The 2nd argument to this function, if non-null, will be a an
@@ -45,5 +46,5 @@ public interface TraceV2Callback extends SQLite3CallbackProxy {
 
      <p>- SQLITE_TRACE_CLOSE: pNative is a sqlite3. pX is null.
   */
-  int call(int traceFlag, Object pNative, Object pX);
+  int call(int traceFlag, Object pNative, @Nullable Object pX);
 }

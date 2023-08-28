@@ -15,11 +15,11 @@ package org.sqlite.jni;
 
 
 /**
-   An SQLFunction subclass for creating window functions.  Note that
-   Window<T> inherits from Aggregate<T> and each instance is
-   required to implement the inherited abstract methods from that
-   class. See Aggregate<T> for information on managing the UDF's
-   invocation-specific state.
+   A SQLFunction implementation for window functions.  Note that
+   WindowFunction inherits from {@link AggregateFunction} and each
+   instance is required to implement the inherited abstract methods
+   from that class. See {@link AggregateFunction} for information on
+   managing the UDF's invocation-specific state.
 */
 public abstract class WindowFunction<T> extends AggregateFunction<T> {
 

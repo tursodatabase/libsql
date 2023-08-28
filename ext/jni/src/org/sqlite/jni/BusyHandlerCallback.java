@@ -13,18 +13,14 @@
 */
 package org.sqlite.jni;
 
-
 /**
-   Callback for use with sqlite3_busy_handler()
+   Callback for use with {@link SQLite3Jni#sqlite3_busy_handler}.
 */
-public abstract class BusyHandlerCallback implements SQLite3CallbackProxy {
+public interface BusyHandlerCallback extends SQLite3CallbackProxy {
   /**
      Must function as documented for the C-level
      sqlite3_busy_handler() callback argument, minus the (void*)
      argument the C-level function requires.
-
-     Any exceptions thrown by this callback are suppressed in order to
-     retain the C-style API semantics of the JNI bindings.
   */
-  public abstract int call(int n);
+  int call(int n);
 }

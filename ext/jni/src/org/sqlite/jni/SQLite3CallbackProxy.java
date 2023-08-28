@@ -18,17 +18,27 @@ package org.sqlite.jni;
    classes which have a call() method implementing some specific
    callback interface on behalf of the C library.
 
+   <p>Unless very explicitely documented otherwise, callbacks must
+   never throw. Any which do throw but should not might trigger debug
+   output regarding the error, but the exception will not be
+   propagated.  For callback interfaces which support returning error
+   info to the core, the JNI binding will convert any exceptions to
+   C-level error information. For callback interfaces which do not
+   support, all exceptions will necessarily be suppressed in order to
+   retain the C-style no-throw semantics.
+
    <p>Callbacks of this style follow a common naming convention:
 
    <p>1) They use the UpperCamelCase form of the C function they're
-   proxying for, minus the sqlite3_ prefix, plus a Callback
-   suffix. e.g. sqlite3_busy_handler()'s callback is named
-   BusyHandlerCallback. Exceptions are made where that would
-   potentially be ambiguous, e.g. ConfigSqllogCallback instead of
-   config_callback because the sqlite3_config() interface may need to
-   support more callback types in the future.
+   proxying for, minus the {@code sqlite3_} prefix, plus a {@code
+   Callback} suffix. e.g. {@code sqlite3_busy_handler()}'s callback is
+   named {@code BusyHandlerCallback}. Exceptions are made where that
+   would potentially be ambiguous, e.g. {@link ConfigSqllogCallback}
+   instead of {@code ConfigCallback} because the {@code
+   sqlite3_config()} interface may need to support more callback types
+   in the future.
 
-   <p>2) They all have a call() method but its signature is
+   <p>2) They all have a {@code call()} method but its signature is
    callback-specific.
 */
 public interface SQLite3CallbackProxy {}

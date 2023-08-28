@@ -15,12 +15,12 @@ package org.sqlite.jni;
 
 
 /**
-   SQLFunction subclass for creating aggregate functions.  Its T is
-   the data type of its "accumulator" state, an instance of which is
+   A SQLFunction implementation for aggregate functions.  Its T is the
+   data type of its "accumulator" state, an instance of which is
    intended to be be managed using the getAggregateState() and
    takeAggregateState() methods.
 */
-public abstract class AggregateFunction<T> extends SQLFunction {
+public abstract class AggregateFunction<T> implements SQLFunction {
 
   /**
      As for the xStep() argument of the C API's
@@ -48,7 +48,7 @@ public abstract class AggregateFunction<T> extends SQLFunction {
 
   /**
      To be called from the implementation's xStep() method, as well
-     as the xValue() and xInverse() methods of the Window<T>
+     as the xValue() and xInverse() methods of the {@link WindowFunction}
      subclass, to fetch the current per-call UDF state. On the
      first call to this method for any given sqlite3_context
      argument, the context is set to the given initial value. On all other

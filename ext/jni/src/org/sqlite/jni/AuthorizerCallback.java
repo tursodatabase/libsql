@@ -15,14 +15,12 @@ package org.sqlite.jni;
 import org.sqlite.jni.annotation.*;
 
 /**
-   Callback for use with sqlite3_set_authorizer().
+   Callback for use with {@link SQLite3Jni#sqlite3_set_authorizer}.
 */
 public interface AuthorizerCallback extends SQLite3CallbackProxy {
   /**
      Must function as described for the C-level
      sqlite3_set_authorizer() callback.
-
-     Must not throw.
   */
   int call(int opId, @Nullable String s1, @Nullable String s2,
            @Nullable String s3, @Nullable String s4);

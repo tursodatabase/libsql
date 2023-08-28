@@ -15,21 +15,20 @@ package org.sqlite.jni;
 import org.sqlite.jni.annotation.NotNull;
 
 /**
-   Callback for use with {@link SQLite3Jni#sqlite3_create_collation}.
-
-   @see AbstractCollationCallback
+   An implementation of {@link CollationCallback} which provides a
+   no-op xDestroy() method.
 */
-public interface CollationCallback
-  extends SQLite3CallbackProxy, XDestroyCallback {
+public abstract class AbstractCollationCallback
+  implements CollationCallback, XDestroyCallback {
   /**
      Must compare the given byte arrays and return the result using
      {@code memcmp()} semantics.
   */
-  int call(@NotNull byte[] lhs, @NotNull byte[] rhs);
+  public abstract int call(@NotNull byte[] lhs, @NotNull byte[] rhs);
 
   /**
-     Called by SQLite when the collation is destroyed. If a collation
-     requires custom cleanup, override this method.
+     Optionally override to be notified when the UDF is finalized by
+     SQLite. This implementation does nothing.
   */
-  void xDestroy();
+  public void xDestroy(){}
 }

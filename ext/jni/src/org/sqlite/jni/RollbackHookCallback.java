@@ -14,12 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with sqlite3_rollback_hook()
+   Callback for use with {@link SQLite3Jni#sqlite3_rollback_hook}.
 */
 public interface RollbackHookCallback extends SQLite3CallbackProxy {
   /**
      Works as documented for the C-level sqlite3_rollback_hook()
-     callback.  Must not throw.
+     callback.
   */
   void call();
 }

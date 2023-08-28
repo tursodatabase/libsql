@@ -31,7 +31,7 @@ package org.sqlite.jni;
    SQLFunction base class and the method names and signatures used by
    the UDF callback interfaces.
 */
-public abstract class SQLFunction {
+public interface SQLFunction {
 
   /**
      PerContextState assists aggregate and window functions in
@@ -53,11 +53,11 @@ public abstract class SQLFunction {
      state, of a client-defined type (the T part of this class), which
      persists across a "matching set" of the UDF's callbacks.
 
-     <p>This class is a helper providing commonly-needed functionality -
-     it is not required for use with aggregate or window functions.
+     <p>This class is a helper providing commonly-needed functionality
+     - it is not required for use with aggregate or window functions.
      Client UDFs are free to perform such mappings using custom
-     approaches. The provided Aggregate<T> and Window<T> classes
-     use this.
+     approaches. The provided {@link AggregateFunction} and {@link
+     WindowFunction} classes use this.
   */
   public static final class PerContextState<T> {
     private final java.util.Map<Long,ValueHolder<T>> map

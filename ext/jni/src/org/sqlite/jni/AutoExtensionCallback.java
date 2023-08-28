@@ -14,28 +14,27 @@
 package org.sqlite.jni;
 
 /**
-   A callback for use with the sqlite3_auto_extension() family of
-   APIs.
+   Callback for use with the {@link SQLite3Jni#sqlite3_auto_extension}
+   family of APIs.
 */
 public interface AutoExtensionCallback extends SQLite3CallbackProxy {
   /**
      Must function as described for a C-level
-     sqlite3_auto_extension() callback, with the caveat that the
-     signature is shorter.
+     sqlite3_auto_extension() callback.
 
-     This callback may throw and the exception's error message will
+     <p>This callback may throw and the exception's error message will
      be set as the db's error string.
 
-     Tips for implementations:
+     <p>Tips for implementations:
 
-     - Opening a database from an auto-extension handler will lead to
+     <p>- Opening a database from an auto-extension handler will lead to
      an endless recursion of the auto-handler triggering itself
      indirectly for each newly-opened database.
 
-     - If this routine is stateful, it may be useful to make the
+     <p>- If this routine is stateful, it may be useful to make the
      overridden method synchronized.
 
-     - Results are undefined if db is closed by an auto-extension.
+     <p>- Results are undefined if the given db is closed by an auto-extension.
   */
   int call(sqlite3 db);
 }

@@ -152,12 +152,12 @@ class Outer {
 /**
    This class provides an application which aims to implement the
    rudimentary SQL-driven test tool described in the accompanying
-   test-script-interpreter.md.
+   {@code test-script-interpreter.md}.
 
-   This is a work in progress.
+   <p>This is a work in progress.
 
 
-   An instance of this application provides a core set of services
+   <p>An instance of this application provides a core set of services
    which TestScript instances use for processing testing logic.
    TestScripts, in turn, delegate the concrete test work to Command
    objects, which the TestScript parses on their behalf.

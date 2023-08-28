@@ -2517,6 +2517,15 @@ S3JniApi(sqlite3_column_text(),jbyteArray,1column_1text_1utf8)(
   return p ? s3jni_new_jbyteArray(p, n) : NULL;
 }
 
+S3JniApi(sqlite3_column_text(),jstring,1column_1text)(
+  JniArgsEnvClass, jobject jpStmt, jint ndx
+){
+  sqlite3_stmt * const stmt = PtrGet_sqlite3_stmt(jpStmt);
+  const int n = sqlite3_column_bytes(stmt, (int)ndx);
+  const unsigned char * const p = sqlite3_column_text(stmt, (int)ndx);
+  return p ? s3jni_utf8_to_jstring( (const char *)p, n) : 0;
+}
+
 S3JniApi(sqlite3_column_text16(),jstring,1column_1text16)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
