@@ -1816,8 +1816,10 @@ static void sumFinalize(sqlite3_context *context){
     if( p->approx ){
       if( p->ovrfl ){
         sqlite3_result_error(context,"integer overflow",-1);
-      }else{
+      }else if( !sqlite3IsNaN(p->rErr) ){
         sqlite3_result_double(context, p->rSum+p->rErr);
+      }else{
+        sqlite3_result_double(context, p->rSum);
       }
     }else{
       sqlite3_result_int64(context, p->iSum);

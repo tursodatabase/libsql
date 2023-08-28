@@ -1545,4 +1545,12 @@ do_catchsql_test func-37.120 {
   SELECT sum(x) FROM c;
 } {1 {integer overflow}}
 
+# 2023-08-28 forum post https://sqlite.org/forum/forumpost/1c06ddcacc86032a
+# Incorrect handling of infinity by SUM().
+#
+do_execsql_test func-38.100 {
+  WITH t1(x) AS (VALUES(9e+999)) SELECT sum(x) FROM t1;
+  WITH t1(x) AS (VALUES(-9e+999)) SELECT sum(x) FROM t1;
+} {Inf -Inf}
+
 finish_test
