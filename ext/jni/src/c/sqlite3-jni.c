@@ -1263,11 +1263,11 @@ static S3JniNphClass * S3JniGlobal__nph(JNIEnv * const env, S3JniNphRef const* p
           && (pRef->index < (sizeof(S3JniNphRefs) / sizeof(S3JniNphRef))) );
   if( !pNC->pRef ){
     S3JniMutex_Nph_enter;
+    s3jni_incr( &SJG.metrics.nNphInit );
     if( !pNC->pRef ){
       jclass const klazz = (*env)->FindClass(env, pRef->zName);
       S3JniExceptionIsFatal("FindClass() unexpectedly threw");
       pNC->klazz = S3JniRefGlobal(klazz);
-      s3jni_incr( &SJG.metrics.nNphInit );
       pNC->pRef = pRef
         /* Must come last to avoid a race condition where pNC->klass
            can be NULL after this function returns. */;
@@ -1287,11 +1287,10 @@ static S3JniNphClass * S3JniGlobal__nph(JNIEnv * const env, S3JniNphRef const* p
 static jfieldID NativePointerHolder_field(JNIEnv * const env,
                                           S3JniNphRef const* pRef){
   S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
-  assert( pNC->klazz );
   if( !pNC->fidValue ){
     S3JniMutex_Nph_enter;
+    s3jni_incr( &SJG.metrics.nNphInit );
     if( !pNC->fidValue ){
-      s3jni_incr( &SJG.metrics.nNphInit );
       pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz,
                                          pRef->zMember, pRef->zTypeSig);
       S3JniExceptionIsFatal("Code maintenance required: missing "
@@ -1489,8 +1488,8 @@ static jfieldID OutputPointer_field(JNIEnv * const env, S3JniNphRef const * pRef
   assert( pNC->klazz );
   if( !pNC->fidValue ){
     S3JniMutex_Nph_enter;
+    s3jni_incr( &SJG.metrics.nNphInit );
     if( !pNC->fidValue ){
-      s3jni_incr( &SJG.metrics.nNphInit );
       pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz, pRef->zMember, pRef->zTypeSig);
       S3JniExceptionIsFatal("OutputPointer_field() could not find OutputPointer.*.value");
     }
@@ -1676,8 +1675,8 @@ static jobject new_NativePointerHolder_object(JNIEnv * const env, S3JniNphRef co
   S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
   if( !pNC->midCtor ){
     S3JniMutex_Nph_enter;
+    s3jni_incr( &SJG.metrics.nNphInit );
     if( !pNC->midCtor ){
-      s3jni_incr( &SJG.metrics.nNphInit );
       pNC->midCtor = (*env)->GetMethodID(env, pNC->klazz, "<init>", "()V");
       S3JniExceptionIsFatal("Cannot find constructor for class.");
     }
