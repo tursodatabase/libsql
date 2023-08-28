@@ -59,6 +59,8 @@ $(bin.version-info): $(dir.tool)/version-info.c $(sqlite3.h) $(dir.top)/Makefile
 # Be explicit about which Java files to compile so that we can work on
 # in-progress files without requiring them to be in a compilable statae.
 JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
+  annotation/NotNull.java \
+  annotation/Nullable.java \
   AggregateFunction.java \
   AuthorizerCallback.java \
   AutoExtensionCallback.java \
@@ -68,8 +70,6 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   CommitHookCallback.java \
   ConfigSqllogCallback.java \
   NativePointerHolder.java \
-  NotNull.java \
-  Nullable.java \
   OutputPointer.java \
   PreupdateHookCallback.java \
   ProgressHandlerCallback.java \

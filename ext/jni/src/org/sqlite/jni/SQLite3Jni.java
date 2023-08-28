@@ -18,6 +18,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import org.sqlite.jni.annotation.*;
 
 /**
   This class contains the entire C-style sqlite3 JNI API binding,

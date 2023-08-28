@@ -13,6 +13,7 @@
 */
 package org.sqlite.jni;
 import java.nio.charset.StandardCharsets;
+import org.sqlite.jni.annotation.*;
 
 /**
    ALMOST COMPLETELY UNTESTED.
