@@ -46,7 +46,7 @@ on:
 
 jobs:
   # Create the Github Release™ so the packages have something to be uploaded to
-  cargo-dist-plan:
+  create-release:
     runs-on: ubuntu-latest
     outputs:
       has-releases: ${{ steps.create-release.outputs.has-releases }}
@@ -59,7 +59,7 @@ jobs:
           submodules: recursive
       - name: Install cargo-dist
         run: "curl --proto '=https' --tlsv1.2 -LsSf https://github.com/axodotdev/cargo-dist/releases/download/v0.2.0-prerelease.5/cargo-dist-installer.sh | sh"
-      - id: cargo-dist-plan
+      - id: create-release
         run: |
           cargo dist plan --tag=${{ github.ref_name }} --output-format=json > dist-manifest.json
           echo "dist plan ran successfully"
@@ -77,7 +77,7 @@ jobs:
   # Build and packages all the platform-specific things
   upload-local-artifacts:
     # Let the initial task tell us to not run (currently very blunt)
-    needs: cargo-dist-plan
+    needs: create-release
     if: ${{ needs.create-release.outputs.has-releases == 'true' }}
     strategy:
       fail-fast: false
