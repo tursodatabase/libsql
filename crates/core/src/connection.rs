@@ -132,7 +132,10 @@ impl Connection {
 
         while !sql.is_empty() {
             let stmt = self.prepare(sql)?;
-            stmt.step()?;
+
+            if !stmt.inner.raw_stmt.is_null() {
+                stmt.step()?;
+            }
 
             let tail = stmt.tail();
 

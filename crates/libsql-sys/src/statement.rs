@@ -189,15 +189,8 @@ pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<S
     let (c_sql, len) = str_for_sqlite(sql.as_bytes())?;
     let mut c_tail: *const c_char = std::ptr::null_mut();
 
-    let err = unsafe {
-        crate::ffi::sqlite3_prepare_v2(
-            raw,
-            sql.as_ptr() as *const c_char,
-            sql.len() as i32,
-            &mut raw_stmt,
-            &mut c_tail,
-        )
-    };
+    let err =
+        unsafe { crate::ffi::sqlite3_prepare_v2(raw, c_sql, len, &mut raw_stmt, &mut c_tail) };
 
     // If the input text contains no SQL (if the input is an empty string or a
     // comment) then *ppStmt is set to NULL.
