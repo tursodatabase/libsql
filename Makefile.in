@@ -1291,6 +1291,12 @@ fulltestonly:	$(TESTPROGS) fuzztest
 	./testfixture$(TEXE) $(TOP)/test/full.test
 
 # Fuzz testing
+#
+# WARNING: When the "fuzztest" target is run by the testrunner.tcl script,
+# it does not actually run this code. Instead, it schedules equivalent 
+# commands. Therefore, if this target is updated, then code in
+# testrunner_data.tcl (search for "trd_fuzztest_data") must also be updated.
+#
 fuzztest:	fuzzcheck$(TEXE) $(FUZZDATA) sessionfuzz$(TEXE)
 	./fuzzcheck$(TEXE) $(FUZZDATA)
 	./sessionfuzz$(TEXE) run $(TOP)/test/sessionfuzz-data1.db
