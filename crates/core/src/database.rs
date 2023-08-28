@@ -31,6 +31,8 @@ impl Opts {
     }
 
     pub fn with_http_sync(endpoint: impl Into<String>, auth_token: impl Into<String>) -> Opts {
+        // The `libsql://` protocol is an alias for `https://`.
+        let endpoint = endpoint.into().replace("libsql://", "https://");
         Opts {
             sync: Sync::Http {
                 endpoint: endpoint.into(),
