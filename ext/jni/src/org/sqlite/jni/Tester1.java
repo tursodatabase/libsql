@@ -1498,7 +1498,7 @@ public class Tester1 implements Runnable {
 
     if( sqlLog ){
       if( sqlite3_compileoption_used("ENABLE_SQLLOG") ){
-        int rc = sqlite3_config( new ConfigSqllogCallback() {
+        final ConfigSqllogCallback log = new ConfigSqllogCallback() {
             @Override public void call(sqlite3 db, String msg, int op){
               switch(op){
                 case 0: outln("Opening db: ",db); break;
@@ -1506,7 +1506,12 @@ public class Tester1 implements Runnable {
                 case 2: outln("Closing db: ",db); break;
               }
             }
-          });
+          };
+        int rc = sqlite3_config( log );
+        affirm( 0==rc );
+        rc = sqlite3_config( null );
+        affirm( 0==rc );
+        rc = sqlite3_config( log );
         affirm( 0==rc );
       }else{
         outln("WARNING: -sqllog is not active because library was built ",
