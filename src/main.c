@@ -47,7 +47,9 @@ int sqlite3Fts5Init(sqlite3*);
 #ifdef SQLITE_ENABLE_STMTVTAB
 int sqlite3StmtVtabInit(sqlite3*);
 #endif
-
+#ifdef SQLITE_EXTRA_AUTOEXT
+int SQLITE_EXTRA_AUTOEXT(sqlite3*);
+#endif
 /*
 ** An array of pointers to extension initializer functions for
 ** built-in extensions.
@@ -80,6 +82,9 @@ static int (*const sqlite3BuiltinExtensions[])(sqlite3*) = {
 #endif
 #ifdef SQLITE_ENABLE_BYTECODE_VTAB
   sqlite3VdbeBytecodeVtabInit,
+#endif
+#ifdef SQLITE_EXTRA_AUTOEXT
+  SQLITE_EXTRA_AUTOEXT,
 #endif
 };
 
