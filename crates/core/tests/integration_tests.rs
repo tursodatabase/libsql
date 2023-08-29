@@ -64,6 +64,24 @@ fn connection_execute_batch() {
 }
 
 #[test]
+fn connection_execute_batch_newline() {
+    // This test checks that we handle a null raw
+    // stament in execute_batch. What happens when there
+    // are no more queries but the sql string is not empty?
+    // Well sqlite returns a null statment from prepare_v2
+    // so this test checks that we check if the statement is
+    // null before we try to step it!
+    let conn = setup();
+
+    conn.execute_batch(
+        "
+        create table foo (x INT);
+        ",
+    )
+    .unwrap()
+}
+
+#[test]
 fn statement_query() {
     let conn = setup();
     let _ = conn
