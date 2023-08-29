@@ -1,5 +1,5 @@
-C Get\sthe\sbasic\sparsing\spieces\sand\scommand\sdispatching\sin\splace\sin\sthe\sJS\sSQLTester.
-D 2023-08-29T13:28:36.476
+C Get\sthe\sJS\sSQLTester\scommand\shandlers\sin\splace\ssans\sthose\swhich\shave\sto\srun\sSQL.
+D 2023-08-29T15:39:57.155
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -283,7 +283,7 @@ F ext/jni/src/org/sqlite/jni/sqlite3.java 62b1b81935ccf3393472d17cb883dc5ff39c38
 F ext/jni/src/org/sqlite/jni/sqlite3_context.java 66ca95ce904044263a4aff684abe262d56f73e6b06bca6cf650761d79d7779ad
 F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449322b0c93d1bd4e1616e76ed547ed9fc
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
-F ext/jni/src/org/sqlite/jni/tester/SQLTester.java bf350903abe04a9bed2d8a2a71692ed4291dbb4eece2d3329ed91d15b0321e6d
+F ext/jni/src/org/sqlite/jni/tester/SQLTester.java c8a9f20694e66f4d7ed677cd6d1f0d829f802c347a1f413ac2446c62e4cba23d
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
 F ext/jni/src/tests/000-000-sanity.test cfe6dc1b950751d6096e3f5695becaadcdaa048bfe9567209d6eb676e693366d
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
@@ -548,8 +548,8 @@ F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34ce
 F ext/wasm/GNUmakefile 0e362f3fc04eab6628cbe4f1e35f4ab4a200881f6b5f753b27fb45eabeddd9d2
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
-F ext/wasm/SQLTester/SQLTester.mjs 2ea7d09f0c33e509aa3c4ca974be5705f59ddcd2173d4ff2721d7448c65be8bd
-F ext/wasm/SQLTester/SQLTester.run.mjs 478f4d90951591decaa7e1e3fa1729f6ed0043ae4cb48b0a92056b9707d44185
+F ext/wasm/SQLTester/SQLTester.mjs 90fc3d2eb831afed237c18b78c22b8871d8f855a742715ebee571a60b9fcd98e
+F ext/wasm/SQLTester/SQLTester.run.mjs 30a459ec400495cc52f1d693703f1629e141947a19eaf868a8e4c1fd3ef2a114
 F ext/wasm/SQLTester/index.html 88d87e3ccbc33e7ab3773a8e48c1172e876951c4be31d1307c3700671262cddf
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
@@ -563,7 +563,7 @@ F ext/wasm/api/pre-js.c-pp.js ad906703f7429590f2fbf5e6498513bf727a1a4f0ebfa057af
 F ext/wasm/api/sqlite3-api-cleanup.js d235ad237df6954145404305040991c72ef8b1881715d2a650dda7b3c2576d0e
 F ext/wasm/api/sqlite3-api-glue.js b65e546568f1dfb35205b9792feb5146a6323d71b55cda58e2ed30def6dd52f3
 F ext/wasm/api/sqlite3-api-oo1.js 9678dc4d9a5d39632b6ffe6ea94a023119260815bf32f265bf5f6c36c9516db8
-F ext/wasm/api/sqlite3-api-prologue.js ef6f67c5ea718490806e5e17d2644b8b2f6e6ba5284d23dc1fbfd14d401c1ab5
+F ext/wasm/api/sqlite3-api-prologue.js 7fe51f06cd855634cb3765f830393f544fb532ead1cf95b5de3dd0befc81b92d
 F ext/wasm/api/sqlite3-api-worker1.js 9f32af64df1a031071912eea7a201557fe39b1738645c0134562bb84e88e2fec
 F ext/wasm/api/sqlite3-license-version-header.js 0c807a421f0187e778dc1078f10d2994b915123c1223fe752b60afdcd1263f89
 F ext/wasm/api/sqlite3-opfs-async-proxy.js 8cf8a897726f14071fae6be6648125162b256dfb4f96555b865dbb7a6b65e379
@@ -2111,8 +2111,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 60eec5ceda80c64870713df8e9aeabeef933c007f2010792225a07d5ef36baef
-R 0bdc268c3b78f235b9f50e80fcfe1a69
+P 8fcc2a553c1e26734902bbdee0c38183ee22b7b5c75f07405529bb79db34145a
+R 8ed29d2cdb1f79e88ba5ccad29a3151d
 U stephan
-Z 00dd200744de92467554b7f23df0cf79
+Z 988ed72426998a455381761a89d498de
 # Remove this line to create a well-formed Fossil manifest.

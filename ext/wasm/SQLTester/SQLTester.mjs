@@ -64,11 +64,9 @@ SQLTesterException.toss = (...args)=>{
 }
 
 class DbException extends SQLTesterException {
-  constructor(...args){
-    super(...args);
-    //TODO...
-    //const db = args[0];
-    //if( db instanceof sqlite3.oo1.DB )
+  constructor(pDb, rc, closeDb){
+    super("DB error #"+rc+": "+sqlite3.capi.sqlite3_errmsg(pDb));
+    if( closeDb ) sqlite3.capi.sqlite3_close_v2(pDb);
   }
   isFatal() { return true; }
 }
@@ -150,9 +148,14 @@ class Outer {
     return this;
   }
 
-  setOutputPrefix( func ){
-    this.getOutputPrefix = func;
-    return this;
+  outputPrefix(){
+    if( 0==arguments.length ){
+      return (this.getOutputPrefix
+              ? (this.getOutputPrefix() ?? '') : '');
+    }else{
+      this.getOutputPrefix = arguments[0];
+      return this;
+    }
   }
 
   verboseN(lvl, argv){
@@ -179,7 +182,7 @@ class Outer {
 
 class SQLTester {
 
-  #outer = new Outer().setOutputPrefix( ()=>'SQLTester: ' );
+  #outer = new Outer().outputPrefix( ()=>'SQLTester: ' );
   #aFiles = [];
   #inputBuffer = [];
   #resultBuffer = [];
@@ -189,14 +192,32 @@ class SQLTester {
   });
   #emitColNames = false;
   #keepGoing = false;
-  #aDb = [];
   #db = newObj({
-    list: [],
-    iCurrent: 0,
+    list: new Array(7),
+    iCurrentDb: 0,
     initialDbName: "test.db",
+    initSql: ['select 1;'],
+    currentDb: function(){
+      return this.list[this.iCurrentDb];
+    }
   });
 
   constructor(){
+  }
+
+  outln(...args){ return this.#outer.outln(...args); }
+  out(...args){ return this.#outer.out(...args); }
+
+  reset(){
+    this.clearInputBuffer();
+    this.clearResultBuffer();
+    this.#clearBuffer(this.#db.initSql);
+    this.closeAllDbs();
+    this.nTest = 0;
+    this.nullView = "nil";
+    this.emitColNames = false;
+    this.#db.iCurrentDb = 0;
+    this.#db.initSql.push("SELECT 1;");
   }
 
   appendInput(line, addNL){
@@ -208,19 +229,194 @@ class SQLTester {
     if( addNL ) this.#resultBuffer.push('\n');
   }
 
-  clearInputBuffer(){
-    this.#inputBuffer.length = 0;
-    return this.#inputBuffer;
+  #clearBuffer(buffer){
+    buffer.length = 0;
+    return buffer;
   }
-  clearResultBuffer(){
-    this.#resultBuffer.length = 0;
-    return this.#resultBuffer;
-  }
+
+  clearInputBuffer(){ return this.#clearBuffer(this.#inputBuffer); }
+  clearResultBuffer(){return this.#clearBuffer(this.#resultBuffer); }
 
   getInputText(){ return this.#inputBuffer.join(''); }
   getResultText(){ return this.#resultBuffer.join(''); }
 
+  #takeBuffer(buffer){
+    const s = buffer.join('');
+    buffer.length = 0;
+    return s;
+  }
+
+  takeInputBuffer(){
+    return this.#takeBuffer(this.#inputBuffer);
+  }
+  takeResultBuffer(){
+    return this.#takeBuffer(this.#resultBuffer);
+  }
+
   verbosity(...args){ return this.#outer.verbosity(...args); }
+
+  nullValue(){
+    if( 0==arguments.length ){
+      return this.#nullView;
+    }else{
+      this.#nullView = ''+arguments[0];
+    }
+  }
+
+  outputColumnNames(){
+    if( 0==arguments.length ){
+      return this.#emitColNames;
+    }else{
+      this.#emitColNames = !!arguments[0];
+    }
+  }
+
+  currentDbId(){
+    if( 0==arguments.length ){
+      return this.#db.iCurrentDb;
+    }else{
+      this.#affirmDbId(arguments[0]).#db.iCurrentDb = arguments[0];
+    }
+  }
+
+  #affirmDbId(id){
+    if(id<0 || id>=this.#db.list.length){
+      toss(SQLTesterException, "Database index ",id," is out of range.");
+    }
+    return this;
+  }
+
+  currentDb(...args){
+    if( 0!=args.length ){
+      this.#affirmDbId(id).#db.iCurrentDb = id;
+    }
+    return this.#db.currentDb();
+  }
+
+  getDbById(id){
+    return this.#affirmDbId(id).#db.list[id];
+  }
+
+  getCurrentDb(){ return this.#db.list[this.#db.iCurrentDb]; }
+
+
+  closeDb(id) {
+    if( 0==arguments.length ){
+      id = this.#db.iCurrentDb;
+    }
+    const db = this.#affirmDbId(id).#db.list[id];
+    if( db ){
+      sqlite3.capi.sqlite3_close_v2(db);
+      this.#db.list[id] = null;
+    }
+  }
+
+  closeAllDbs(){
+    for(let i = 0; i<this.#db.list.length; ++i){
+      if(this.#db.list[i]){
+        sqlite3.capi.sqlite3_close_v2(this.#db.list[i]);
+        this.#db.list[i] = null;
+      }
+    }
+    this.#db.iCurrentDb = 0;
+  }
+
+  openDb(name, createIfNeeded){
+    if( 3===arguments.length ){
+      const slot = arguments[0];
+      this.#affirmDbId(slot).#db.iCurrentDb = slot;
+      name = arguments[1];
+      createIfNeeded = arguments[2];
+    }
+    this.closeDb();
+    const capi = sqlite3.capi, wasm = sqlite3.wasm;
+    let pDb = 0;
+    let flags = capi.SQLITE_OPEN_READWRITE;
+    if( createIfNeeded ) flags |= capi.SQLITE_OPEN_CREATE;
+    try{
+      let rc;
+      wasm.pstack.call(function(){
+        let ppOut = wasm.pstack.allocPtr();
+        rc = sqlite3.capi.sqlite3_open_v2(name, ppOut, flags, null);
+        pDb = wasm.peekPtr(ppOut);
+      });
+      if( 0==rc && this.#db.initSql.length > 0){
+        //this.#outer.verbose2("RUNNING DB INIT CODE: ",this.#db.initSql.toString());
+        rc = this.execSql(pDb, false, ResultBufferMode.NONE,
+                          null, this.#db.initSql.join(''));
+      }
+      if( 0!=rc ){
+        sqlite3.SQLite3Error.toss(
+          rc,
+          "sqlite3 result code",rc+":",
+          (pDb ? sqlite3.capi.sqlite3_errmsg(pDb)
+           : sqlite3.capi.sqlite3_errstr(rc))
+        );
+      }
+      return this.#db.list[this.#db.iCurrentDb] = pDb;
+    }catch(e){
+      sqlite3.capi.sqlite3_close_v2(pDb);
+      throw e;
+    }
+  }
+
+  #setupInitialDb(){
+    if( !this.#db.list[0] ){
+      Util.unlink(this.#db.initialDbName);
+      this.openDb(0, this.#db.initialDbName, true);
+    }else{
+      this.#outer.outln("WARNING: setupInitialDb() unexpectedly ",
+                        "triggered while it is opened.");
+    }
+  }
+
+  /**
+     Returns v or some escaped form of v, as defined in the tester's
+     spec doc.
+  */
+  #escapeSqlValue(v){
+    if( !v ) return "{}";
+    if( !Rx.special.test(v) ){
+      return v  /* no escaping needed */;
+    }
+    if( !Rx.squiggly.test(v) ){
+      return "{"+v+"}";
+    }
+    const sb = ["\""];
+    const n = v.length;
+    for(let i = 0; i < n; ++i){
+      const ch = v.charAt(i);
+      switch(ch){
+        case '\\': sb.push("\\\\"); break;
+        case '"': sb.push("\\\""); break;
+        default:{
+          //verbose("CHAR ",(int)ch," ",ch," octal=",String.format("\\%03o", (int)ch));
+          const ccode = ch.charCodeAt(i);
+          if( ccode < 32 ) sb.push('\\',ccode.toString(8),'o');
+          else sb.push(ch);
+          break;
+        }
+      }
+    }
+    sb.append("\"");
+    return sb.join('');
+  }
+
+  #appendDbErr(pDb, sb, rc){
+    sb.push(sqlite3.capi.sqlite3_js_rc_str(rc), ' ');
+    const msg = this.#escapeSqlValue(sqlite3.capi.sqlite3_errmsg(pDb));
+    if( '{' == msg.charAt(0) ){
+      sb.push(msg);
+    }else{
+      sb.push('{', msg, '}');
+    }
+  }
+
+  execSql(pDb, throwOnError, appendMode, lineMode, sql){
+    sql = sqlite3.capi.sqlite3_js_sql_to_string(sql);
+    this.#outer.outln("execSql() is TODO. ",sql);
+    return 0;
+  }
 
 }/*SQLTester*/
 
@@ -243,16 +439,6 @@ class Command {
         testScript.toss(argv[0]," requires at least ",min," arguments.");
       }
     }
-  }
-}
-
-class TestCase extends Command {
-
-  process(tester, script, argv){
-    this.argcCheck(script, argv,1);
-    script.testCaseName(argv[1]);
-    tester.clearResultBuffer();
-    tester.clearInputBuffer();
   }
 }
 
@@ -287,7 +473,11 @@ const Rx = newObj({
   requiredProperties: / REQUIRED_PROPERTIES:[ \t]*(\S.*)\s*$/,
   scriptModuleName: / SCRIPT_MODULE_NAME:[ \t]*(\S+)\s*$/,
   mixedModuleName: / ((MIXED_)?MODULE_NAME):[ \t]*(\S+)\s*$/,
-  command: /^--(([a-z-]+)( .*)?)$/
+  command: /^--(([a-z-]+)( .*)?)$/,
+  //! "Special" characters - we have to escape output if it contains any.
+  special: /[\x00-\x20\x22\x5c\x7b\x7d]/,
+  //! Either of '{' or '}'.
+  squiggly: /[{}]/
 });
 
 class TestScript {
@@ -295,7 +485,7 @@ class TestScript {
   #moduleName = null;
   #filename = null;
   #testCaseName = null;
-  #outer = new Outer().setOutputPrefix( ()=>this.getOutputPrefix() );
+  #outer = new Outer().outputPrefix( ()=>this.getOutputPrefix()+': ' );
 
   constructor(...args){
     let content, filename;
@@ -307,7 +497,6 @@ class TestScript {
     }
     this.#filename = filename;
     this.#cursor.src = content;
-    this.#outer.outputPrefix = ()=>this.getOutputPrefix();
   }
 
   testCaseName(){
@@ -318,7 +507,7 @@ class TestScript {
   getOutputPrefix() {
     let rc =  "["+(this.#moduleName || this.#filename)+"]";
     if( this.#testCaseName ) rc += "["+this.#testCaseName+"]";
-    return rc + " line "+ this.#cursor.lineNo +" ";
+    return rc + " line "+ this.#cursor.lineNo;
   }
 
   reset(){
@@ -471,6 +660,106 @@ class TestScript {
 
 }/*TestScript*/;
 
+//! --close command
+class CloseDbCommand extends Command {
+  process(t, ts, argv){
+    this.argcCheck(ts,argv,0,1);
+    let id;
+    if(argv.length>1){
+      const arg = argv[1];
+      if("all".equals(arg)){
+        t.closeAllDbs();
+        return;
+      }
+      else{
+        id = parseInt(arg);
+      }
+    }else{
+      id = t.currentDbId();
+    }
+    t.closeDb(id);
+  }
+}
+
+//! --column-names command
+class ColumnNamesCommand extends Command {
+  process( st, ts, argv ){
+    this.argcCheck(ts,argv,1);
+    st.outputColumnNames( !!parseInt(argv[1]) );
+  }
+}
+
+//! --db command
+class DbCommand extends Command {
+  process(t, ts, argv){
+    this.argcCheck(ts,argv,1);
+    t.currentDbId( parseInt(argv[1]) );
+  }
+}
+
+//! --open command
+class OpenDbCommand extends Command {
+  #createIfNeeded = false;
+  constructor(createIfNeeded=false){
+    super();
+    this.#createIfNeeded = createIfNeeded;
+  }
+  process(t, ts, argv){
+    this.argcCheck(ts,argv,1);
+    t.openDb(argv[1], this.#createIfNeeded);
+  }
+}
+
+//! --new command
+class NewDbCommand extends OpenDbCommand {
+  constructor(){ super(true); }
+}
+
+//! Placeholder dummy/no-op commands
+class NoopCommand extends Command {
+  process(t, ts, argv){}
+}
+
+//! --null command
+class NullCommand extends Command {
+  process(st, ts, argv){
+    this.argcCheck(ts,argv,1);
+    st.nullValue( argv[1] );
+  }
+}
+
+//! --print command
+class PrintCommand extends Command {
+  process(st, ts, argv){
+    st.out(ts.getOutputPrefix(),': ');
+    if( 1==argv.length ){
+      st.out( st.getInputText() );
+    }else{
+      st.outln( Util.argvToString(argv) );
+    }
+  }
+}
+
+
+//! --testcase command
+class TestCaseCommand extends Command {
+  process(tester, script, argv){
+    this.argcCheck(script, argv,1);
+    script.testCaseName(argv[1]);
+    tester.clearResultBuffer();
+    tester.clearInputBuffer();
+  }
+}
+
+
+//! --verbosity command
+class VerbosityCommand extends Command {
+  process(t, ts, argv){
+    t.argcCheck(ts,argv,1);
+    ts.verbosity( parseInt(argv[1]) );
+  }
+}
+
 class CommandDispatcher {
   static map = newObj();
 
@@ -478,8 +767,23 @@ class CommandDispatcher {
     let rv = CommandDispatcher.map[name];
     if( rv ) return rv;
     switch(name){
-        //todo: map name to Command instance
-      case "testcase": rv = new TestCase(); break;
+      case "close":        rv = new CloseDbCommand(); break;
+      case "column-names": rv = new ColumnNamesCommand(); break;
+      case "db":           rv = new DbCommand(); break;
+      //case "glob":         rv = new GlobCommand(); break;
+      //case "json":         rv = new JsonCommand(); break;
+      //case "json-block":   rv = new JsonBlockCommand(); break;
+      case "new":          rv = new NewDbCommand(); break;
+      //case "notglob":      rv = new NotGlobCommand(); break;
+      case "null":         rv = new NullCommand(); break;
+      case "oom":          rv = new NoopCommand(); break;
+      case "open":         rv = new OpenDbCommand(); break;
+      case "print":        rv = new PrintCommand(); break;
+      //case "result":       rv = new ResultCommand(); break;
+      //case "run":          rv = new RunCommand(); break;
+      //case "tableresult":  rv = new TableResultCommand(); break;
+      case "testcase":     rv = new TestCaseCommand(); break;
+      case "verbosity":    rv = new VerbosityCommand(); break;
     }
     if( rv ){
       CommandDispatcher.map[name] = rv;
@@ -506,7 +810,8 @@ const namespace = newObj({
   TestScript,
   TestScriptFailed,
   UnknownCommand,
-  Util
+  Util,
+  sqlite3
 });
 
 export {namespace as default};

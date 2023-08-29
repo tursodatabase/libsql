@@ -336,7 +336,9 @@ public class SQLTester {
   }
 
   sqlite3 setCurrentDb(int n) throws Exception{
-    return affirmDbId(n).aDb[n];
+    affirmDbId(n);
+    iCurrentDb = n;
+    return this.aDb[n];
   }
 
   sqlite3 getCurrentDb(){ return aDb[iCurrentDb]; }
@@ -399,7 +401,7 @@ public class SQLTester {
     nullView = "nil";
     emitColNames = false;
     iCurrentDb = 0;
-    dbInitSql.append("SELECT 1;");
+    //dbInitSql.append("SELECT 1;");
   }
 
   void setNullValue(String v){nullView = v;}
