@@ -19,7 +19,7 @@ rusqlite = { version = "0.29.0", git = "https://github.com/psarna/rusqlite", rev
 # Config for 'cargo dist'
 [workspace.metadata.dist]
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
-cargo-dist-version = "0.2.0-prerelease.5"
+cargo-dist-version = "0.2.0-prerelease.6"
 # CI backends to support (see 'cargo dist generate-ci')
 ci = ["github"]
 # The installers to generate for each app
@@ -30,6 +30,8 @@ tap = "libsql/homebrew-sqld"
 targets = ["x86_64-unknown-linux-gnu", "x86_64-apple-darwin", "aarch64-apple-darwin"]
 # Publish jobs to run in CI
 publish-jobs = ["homebrew"]
+# Whether cargo-dist should create a Github Release or use an existing draft
+create-release = false
 
 # TODO(lucio): Remove this once tonic has released a new version with fixes
 [patch.crates-io]
