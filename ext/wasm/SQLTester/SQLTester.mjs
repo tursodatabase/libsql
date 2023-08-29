@@ -53,8 +53,13 @@ const ResultRowMode = newObj({
 });
 
 class SQLTesterException extends globalThis.Error {
-  constructor(...args){
-    super(args.join(''));
+  constructor(testScript, ...args){
+    if(testScript){
+      super( [testScript.getOutputPrefix()+": ", ...args].join('') );
+    }else{
+      super( args.join('') );
+    }
+    this.name = 'SQLTesterException';
   }
   isFatal() { return false; }
 }
@@ -64,8 +69,9 @@ SQLTesterException.toss = (...args)=>{
 }
 
 class DbException extends SQLTesterException {
-  constructor(pDb, rc, closeDb){
-    super("DB error #"+rc+": "+sqlite3.capi.sqlite3_errmsg(pDb));
+  constructor(testScript, pDb, rc, closeDb){
+    super(testScript, "DB error #"+rc+": "+sqlite3.capi.sqlite3_errmsg(pDb));
+    this.name = 'DbException';
     if( closeDb ) sqlite3.capi.sqlite3_close_v2(pDb);
   }
   isFatal() { return true; }
@@ -73,28 +79,27 @@ class DbException extends SQLTesterException {
 
 class TestScriptFailed extends SQLTesterException {
   constructor(testScript, ...args){
-    super(testScript.getOutputPrefix(),': ',...args);
+    super(testScript,...args);
+    this.name = 'TestScriptFailed';
   }
   isFatal() { return true; }
 }
 
 class UnknownCommand extends SQLTesterException {
-  constructor(...args){
-    super(...args);
+  constructor(testScript, cmdName){
+    super(testScript, cmdName);
+    this.name = 'UnknownCommand';
   }
 }
 
 class IncompatibleDirective extends SQLTesterException {
-  constructor(...args){
-    super(...args);
+  constructor(testScript, ...args){
+    super(testScript,...args);
+    this.name = 'IncompatibleDirective';
   }
 }
 
 const toss = (errType, ...args)=>{
-  if( !(errType instanceof SQLTesterException)){
-    args.unshift(errType);
-    errType = SQLTesterException;
-  }
   throw new errType(...args);
 };
 
@@ -429,7 +434,7 @@ class SQLTester {
       }catch(e){
         if(e instanceof SQLTesterException){
           threw = true;
-          this.outln("🔥EXCEPTION: ",''+e);
+          this.outln("🔥EXCEPTION: ",e);
           ++this.metrics.nAbortedScript;
           if( this.#keepGoing ){
             this.outln("Continuing anyway becaure of the keep-going option.");
@@ -537,7 +542,7 @@ class SQLTester {
         );
         if( 0!==rc ){
           if(throwOnError){
-            throw new DbException(pDb, rc);
+            throw new DbException(self, pDb, rc);
           }else if( sb ){
             self.#appendDbErr(db, sb, rc);
           }
@@ -699,7 +704,32 @@ class TestScript {
   }
 
   #checkForDirective(tester,line){
-    //todo
+    if(line.startsWith("#")){
+      throw new IncompatibleDirective(this, "C-preprocessor input: "+line);
+    }else if(line.startsWith("---")){
+      throw new IncompatibleDirective(this, "triple-dash: ",line);
+    }
+    let m = Rx.scriptModuleName.exec(line);
+    if( m ){
+      this.#moduleName = m[1];
+      return;
+    }
+    m = Rx.requiredProperties.exec(line);
+    if( m ){
+      const rp = m[1];
+      //if( ! checkRequiredProperties( tester, rp.split("\\s+") ) ){
+      throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
+      //}
+    }
+
+    m = Rx.mixedModuleName.exec(line);
+    if( m ){
+      throw new IncompatibleDirective(this, m[1]+": "+m[3]);
+    }
+    if( line.indexOf("\n|")>=0 ){
+      throw new IncompatibleDirective(this, "newline-pipe combination.");
+    }
+
   }
 
   #getCommandArgv(line){
@@ -734,7 +764,7 @@ class TestScript {
     this.#outer.verbosity(tester.verbosity());
     let line, directive, argv = [];
     while( null != (line = this.getLine()) ){
-      this.verbose3("input line: ",line);
+      this.verbose3("run() input line: ",line);
       this.#checkForDirective(tester, line);
       argv = this.#getCommandArgv(line);
       if( argv ){
@@ -747,10 +777,10 @@ class TestScript {
   }
 
   #processCommand(tester, argv){
-    this.verbose1("running command: ",argv[0], " ", Util.argvToString(argv));
+    this.verbose2("processCommand(): ",argv[0], " ", Util.argvToString(argv));
     if(this.#outer.verbosity()>1){
       const input = tester.getInputText();
-      if( !!input ) this.verbose3("Input buffer = ",input);
+      this.verbose3("processCommand() input buffer = ",input);
     }
     CommandDispatcher.dispatch(tester, this, argv);
   }
@@ -1084,7 +1114,7 @@ class TestCaseCommand extends Command {
 //! --verbosity command
 class VerbosityCommand extends Command {
   process(t, ts, argv){
-    t.argcCheck(ts,argv,1);
+    this.argcCheck(ts,argv,1);
     ts.verbosity( parseInt(argv[1]) );
   }
 }
@@ -1123,7 +1153,7 @@ class CommandDispatcher {
   static dispatch(tester, testScript, argv){
     const cmd = CommandDispatcher.getCommandByName(argv[0]);
     if( !cmd ){
-      toss(UnknownCommand,argv[0],' ',testScript.getOutputPrefix());
+      toss(UnknownCommand,testScript,argv[0]);
     }
     cmd.process(tester, testScript, argv);
   }

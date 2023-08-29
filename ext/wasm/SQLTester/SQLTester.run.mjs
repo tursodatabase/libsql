@@ -25,6 +25,21 @@ log("ns =",ns);
 outln("SQLTester is ready.");
 
 let ts = new ns.TestScript('/foo.test',`
+/*
+** This is a comment. There are many like it but this one is mine.
+**
+** SCRIPT_MODULE_NAME:      sanity-check
+** xMIXED_MODULE_NAME:       mixed-module
+** xMODULE_NAME:             module-name
+** xREQUIRED_PROPERTIES:      small fast reliable
+** xREQUIRED_PROPERTIES:      RECURSIVE_TRIGGERS
+** xREQUIRED_PROPERTIES:      TEMPSTORE_MEM  TEMPSTORE_FILE
+**
+*/
+/* --verbosity 3 */
+/* ---must-fail */
+/* # must fail */
+/* --verbosity 0 */
 --print Hello, world.
 --close all
 --oom

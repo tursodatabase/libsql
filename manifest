@@ -1,5 +1,5 @@
-C More\sfleshing\sout\sof\sJS\sSQLTester.
-D 2023-08-29T20:44:40.606
+C Add\sdirectives\ssupport\sto\sJS\sSQLTester\scomparable\sto\sthe\sJava\simpl.\sThis\sbrings\sthe\stwo\sto\sfeature\sparity.
+D 2023-08-29T21:30:37.122
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -548,8 +548,8 @@ F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34ce
 F ext/wasm/GNUmakefile 0e362f3fc04eab6628cbe4f1e35f4ab4a200881f6b5f753b27fb45eabeddd9d2
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
-F ext/wasm/SQLTester/SQLTester.mjs ed6bc486d804829883d05a94cbc5ace1b468837fcaf687d87f17969a659100ae
-F ext/wasm/SQLTester/SQLTester.run.mjs e053a4e94b22a97f5981a0ce927b77c542d68a564d723dbaeb7b299d817bb915
+F ext/wasm/SQLTester/SQLTester.mjs 40583ad88bbc32c602e9bfbcd7a90ea6bdfeed41994c1fcc0a7e9d0ffdcd9a5e
+F ext/wasm/SQLTester/SQLTester.run.mjs de03763f8085a130e17706a8c475d7bab37f77eff4f5322b0cc33504733394d7
 F ext/wasm/SQLTester/index.html 88d87e3ccbc33e7ab3773a8e48c1172e876951c4be31d1307c3700671262cddf
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
@@ -2111,8 +2111,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 5e798369375ce1b0c9cdf831f835d931fbd562ff7b4db09a06d1bdca2ac1b975
-R 3c7d31cab0e76e0f71d5ac9e71d46fd7
+P 8c503dfb9fa15389613a819fcc1792e23d3c05f99a9f450f82eac5125298726f
+R e03f3f1709d7ca32242a0e49e3b98e3f
 U stephan
-Z 3b4eebe6c916b635f59799d0c8f89ba5
+Z ecc2ea98d4d7da8116d2d29b184f2709
 # Remove this line to create a well-formed Fossil manifest.
