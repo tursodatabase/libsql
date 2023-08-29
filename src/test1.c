@@ -7580,6 +7580,41 @@ static int testLocaltime(const void *aliasT, void *aliasTM){
 }
 
 /*
+** TCLCMD:  strftime FORMAT UNIXTIMESTAMP
+**
+** Access to the C-library strftime() routine, so that its results
+** can be compared against SQLite's internal strftime() SQL function
+** implementation.
+*/
+static int SQLITE_TCLAPI strftime_cmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_WideInt ts;
+  time_t t;
+  struct tm *pTm;
+  const char *zFmt;
+  size_t n;
+  char zBuf[1000];
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FORMAT UNIXTIMESTAMP");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetWideIntFromObj(interp,  objv[2], &ts) ) return TCL_ERROR;
+  zFmt = Tcl_GetString(objv[1]);
+  t = (time_t)ts;
+  pTm = gmtime(&t);
+  n = strftime(zBuf, sizeof(zBuf)-1, zFmt, pTm);
+  if( n>=0 && n<sizeof(zBuf) ){
+    zBuf[n] = 0;
+    Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
+  }
+  return TCL_OK;
+}
+
+/*
 ** .treetrace N
 */
 static int SQLITE_TCLAPI test_treetrace(
@@ -9152,6 +9187,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_EXPLAIN
      { "print_explain_query_plan", test_print_eqp, 0  },
 #endif
+     { "strftime",             strftime_cmd      },
      { "sqlite3_test_control", test_test_control },
      { ".treetrace",           test_treetrace    },
 #if SQLITE_OS_UNIX

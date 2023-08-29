@@ -207,15 +207,33 @@ datetest 3.16 "strftime('[repeat 200 %Y]','2003-10-31')" [repeat 200 2003]
 datetest 3.17 "strftime('[repeat 200 abc%m123]','2003-10-31')" \
     [repeat 200 abc10123]
 
-foreach c {a b c e g h i k l n o p q r t v x y z
-           A B C D E F G I K L N O P Q R T U V Z
+foreach c {a b c g h i n o q r t v x y z
+           A B C D E G K L N O Q V Z
            0 1 2 3 4 5 6 6 7 9 _} {
   datetest 3.18.$c "strftime('%$c','2003-10-31')" NULL
 }
+datetest 3.20 {strftime('%e','2023-08-09')} { 9}
+datetest 3.21 {strftime('%F %T','2023-08-09 01:23')} {2023-08-09 01:23:00}
+datetest 3.22 {strftime('%k','2023-08-09 04:59:59')} { 4}
+datetest 3.23 {strftime('%I%P','2023-08-09 11:59:59')} {11am}
+datetest 3.24 {strftime('%I%p','2023-08-09 12:00:00')} {12PM}
+datetest 3.25 {strftime('%I%P','2023-08-09 12:59:59.9')} {12pm}
+datetest 3.26 {strftime('%I%p','2023-08-09 13:00:00')} {01PM}
+datetest 3.27 {strftime('%I%P','2023-08-09 23:59:59')} {11pm}
+datetest 3.28 {strftime('%I%p','2023-08-09 00:00:00')} {12AM}
+datetest 3.29 {strftime('%l:%M%P','2023-08-09 13:00:00')} { 1:00pm}
+datetest 3.30 {strftime('%F %R','2023-08-09 12:34:56')} {2023-08-09 12:34}
+datetest 3.31 {strftime('%w %u','2023-01-01')} {0 7}
+datetest 3.32 {strftime('%w %u','2023-01-02')} {1 1}
+datetest 3.33 {strftime('%w %u','2023-01-03')} {2 2}
+datetest 3.34 {strftime('%w %u','2023-01-04')} {3 3}
+datetest 3.35 {strftime('%w %u','2023-01-05')} {4 4}
+datetest 3.36 {strftime('%w %u','2023-01-06')} {5 5}
+datetest 3.37 {strftime('%w %u','2023-01-07')} {6 6}
 
 # Ticket #2276.  Make sure leading zeros are inserted where appropriate.
 #
-datetest 3.20 \
+datetest 3.40 \
    {strftime('%d/%f/%H/%W/%j/%m/%M/%S/%Y','0421-01-02 03:04:05.006')} \
    02/05.006/03/00/002/01/04/05/0421
 
