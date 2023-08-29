@@ -1,7 +1,7 @@
 use std::fs::{File, OpenOptions};
+use std::io::Read;
 use std::io::{ErrorKind, Seek};
 use std::mem::size_of;
-use std::io::Read;
 use std::path::Path;
 
 use bytemuck::{try_pod_read_unaligned, Pod, Zeroable};

@@ -2,10 +2,10 @@
 
 #[derive(Debug)]
 pub enum ValueType {
-    Integer,
+    Integer = 1,
     Real,
-    Blob,
     Text,
+    Blob,
     Null,
 }
 

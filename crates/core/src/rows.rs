@@ -53,8 +53,16 @@ impl Rows {
         self.stmt.inner.column_name(idx)
     }
 
-    pub fn column_type(&self, idx: i32) -> i32 {
-        self.stmt.inner.column_type(idx)
+    pub fn column_type(&self, idx: i32) -> Result<ValueType> {
+        let val = self.stmt.inner.column_type(idx);
+        match val as u32 {
+            libsql_sys::ffi::SQLITE_INTEGER => Ok(ValueType::Integer),
+            libsql_sys::ffi::SQLITE_FLOAT => Ok(ValueType::Real),
+            libsql_sys::ffi::SQLITE_BLOB => Ok(ValueType::Blob),
+            libsql_sys::ffi::SQLITE_TEXT => Ok(ValueType::Text),
+            libsql_sys::ffi::SQLITE_NULL => Ok(ValueType::Null),
+            _ => Err(Error::UnknownColumnType(idx, val)),
+        }
     }
 
     pub fn as_ref(&self) -> &Statement {

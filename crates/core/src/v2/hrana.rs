@@ -387,6 +387,10 @@ impl RowsInner for Rows {
             .flatten()
             .map(|s| s.as_str())
     }
+
+    fn column_type(&self, _idx: i32) -> Result<crate::ValueType> {
+        todo!("implement")
+    }
 }
 
 pub struct Row {
@@ -410,6 +414,20 @@ impl RowInner for Row {
 
     fn column_str(&self, idx: i32) -> Result<&str> {
         todo!()
+    }
+
+    fn column_type(&self, idx: i32) -> Result<crate::ValueType> {
+        if let Some(value) = self.inner.get(idx as usize) {
+            Ok(match value {
+                proto::Value::Null => crate::ValueType::Null,
+                proto::Value::Integer { value: _ } => crate::ValueType::Integer,
+                proto::Value::Float { value: _ } => crate::ValueType::Real,
+                proto::Value::Text { value: _ } => crate::ValueType::Text,
+                proto::Value::Blob { value: _ } => crate::ValueType::Blob,
+            })
+        } else {
+            Err(crate::Error::ColumnNotFound(idx))
+        }
     }
 }
 

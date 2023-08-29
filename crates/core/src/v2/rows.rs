@@ -1,11 +1,15 @@
 use crate::{Result, Value};
 
+use libsql_sys::ValueType;
+
 pub(super) trait RowsInner {
     fn next(&mut self) -> Result<Option<Row>>;
 
     fn column_count(&self) -> i32;
 
     fn column_name(&self, idx: i32) -> Option<&str>;
+
+    fn column_type(&self, idx: i32) -> Result<ValueType>;
 }
 
 pub struct Rows {
@@ -23,6 +27,10 @@ impl Rows {
 
     pub fn column_name(&self, idx: i32) -> Option<&str> {
         self.inner.column_name(idx)
+    }
+
+    pub fn column_type(&self, idx: i32) -> Result<ValueType> {
+        self.inner.column_type(idx)
     }
 }
 
@@ -43,6 +51,10 @@ impl RowsInner for LibsqlRows {
 
     fn column_name(&self, idx: i32) -> Option<&str> {
         self.0.column_name(idx)
+    }
+
+    fn column_type(&self, idx: i32) -> Result<ValueType> {
+        self.0.column_type(idx)
     }
 }
 
@@ -68,6 +80,7 @@ pub(super) trait RowInner {
     fn column_value(&self, idx: i32) -> Result<Value>;
     fn column_str(&self, idx: i32) -> Result<&str>;
     fn column_name(&self, idx: i32) -> Option<&str>;
+    fn column_type(&self, idx: i32) -> Result<ValueType>;
 }
 
 struct LibsqlRow(crate::Row);
@@ -83,5 +96,9 @@ impl RowInner for LibsqlRow {
 
     fn column_str(&self, idx: i32) -> Result<&str> {
         self.0.get::<&str>(idx)
+    }
+
+    fn column_type(&self, idx: i32) -> Result<ValueType> {
+        self.0.column_type(idx)
     }
 }

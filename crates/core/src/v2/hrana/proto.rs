@@ -3,8 +3,8 @@
 //! Please consult the Hrana specification in the `docs/` directory for more information.
 #![allow(dead_code)]
 
-use std::fmt;
 use std::collections::VecDeque;
+use std::fmt;
 
 use serde::{Deserialize, Serialize};
 

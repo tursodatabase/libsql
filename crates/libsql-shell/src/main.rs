@@ -6,7 +6,7 @@ use rusqlite::{types::ValueRef, Connection, Statement};
 use rustyline::completion::{Completer, Pair};
 use rustyline::error::ReadlineError;
 use rustyline::history::FileHistory;
-use rustyline::{Config, Context, Editor, CompletionType};
+use rustyline::{CompletionType, Config, Context, Editor};
 use rustyline_derive::{Helper, Highlighter, Hinter, Validator};
 use std::fmt::Display;
 use std::io::Write;
@@ -542,7 +542,12 @@ impl ShellCompleter {
         Self::default()
     }
 
-    fn complete( &self, line: &str, _pos: usize, _: &Context) -> Result<(usize, Vec<Pair>), ReadlineError> {
+    fn complete(
+        &self,
+        line: &str,
+        _pos: usize,
+        _: &Context,
+    ) -> Result<(usize, Vec<Pair>), ReadlineError> {
         let mut pairs: Vec<Pair> = vec![];
         let commands = vec![
             ".echo",
@@ -577,7 +582,12 @@ struct ShellHelper {
 impl Completer for ShellHelper {
     type Candidate = Pair;
 
-    fn complete(&self, line: &str, pos: usize, ctx: &Context) -> Result<(usize, Vec<Pair>), ReadlineError> {
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        ctx: &Context,
+    ) -> Result<(usize, Vec<Pair>), ReadlineError> {
         self.completer.complete(line, pos, ctx)
     }
 }
