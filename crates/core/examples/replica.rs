@@ -1,4 +1,4 @@
-use libsql::Database;
+use libsql::v2::Database;
 
 #[tokio::main]
 async fn main() {
@@ -9,11 +9,14 @@ async fn main() {
 
     let auth_token = std::env::var("TURSO_AUTH_TOKEN").expect("Expected a TURSO_AUTH_TOKEN");
 
-    let opts = libsql::Opts::with_http_sync("http://localhost:8080".to_owned(), auth_token);
-    let db = Database::open_with_opts(db_file.path().to_str().unwrap(), opts)
-        .await
-        .unwrap();
-    let conn = db.connect().unwrap();
+    let db = Database::open_with_sync(
+        db_file.path().to_str().unwrap(),
+        "http://localhost:8080",
+        auth_token,
+    )
+    .await
+    .unwrap();
+    let conn = db.connect().await.unwrap();
 
     loop {
         match db.sync().await {
@@ -30,21 +33,16 @@ async fn main() {
                 break;
             }
         }
-        let response = conn.query("SELECT * FROM sqlite_master", ()).unwrap();
-        let rows = match response {
-            Some(rows) => rows,
-            None => {
-                println!("No rows");
-                continue;
-            }
-        };
+
+        let mut rows = conn.query("SELECT * FROM sqlite_master", ()).await.unwrap();
+
         while let Ok(Some(row)) = rows.next() {
             println!(
                 "| {:024} | {:024} | {:024} | {:024} |",
-                row.get::<&str>(0).unwrap(),
-                row.get::<&str>(1).unwrap(),
-                row.get::<&str>(2).unwrap(),
-                row.get::<&str>(3).unwrap(),
+                row.get_str(0).unwrap(),
+                row.get_str(1).unwrap(),
+                row.get_str(2).unwrap(),
+                row.get_str(3).unwrap(),
             );
         }
     }

@@ -1,5 +1,6 @@
 #![allow(clippy::missing_safety_doc)]
 
+#[derive(Debug)]
 pub enum ValueType {
     Integer,
     Real,

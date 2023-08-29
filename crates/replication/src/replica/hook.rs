@@ -5,6 +5,7 @@ use libsql_sys::ffi::{PgHdr, SQLITE_ERROR};
 use libsql_sys::init_static_wal_method;
 use libsql_sys::types::Wal;
 use libsql_sys::{types::XWalFrameFn, wal_hook::WalHook};
+use tokio::sync::mpsc::error::TryRecvError;
 
 use crate::frame::{Frame, FrameBorrowed};
 use crate::{FrameNo, WAL_PAGE_SIZE};
@@ -174,6 +175,11 @@ unsafe impl WalHook for InjectorHook {
                     if !ctx.is_txn {
                         return LIBSQL_CONTINUE_REPLICATION as c_int;
                     }
+                }
+                Err(TryRecvError::Empty) => {
+                    tracing::debug!("Channel empty, waiting for frames");
+
+                    return LIBSQL_CONTINUE_REPLICATION as c_int;
                 }
                 Err(e) => {
                     tracing::warn!("replication channel closed: {}", e);

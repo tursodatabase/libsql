@@ -108,7 +108,7 @@ impl Row {
 
     pub fn get_value(&self, idx: i32) -> Result<Value> {
         let val = self.stmt.inner.column_value(idx);
-        Ok(val.into())
+        <crate::Value as FromValue>::from_sql(val)
     }
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
@@ -136,6 +136,12 @@ pub trait FromValue {
     fn from_sql(val: libsql_sys::Value) -> Result<Self>
     where
         Self: Sized;
+}
+
+impl FromValue for crate::Value {
+    fn from_sql(val: libsql_sys::Value) -> Result<Self> {
+        Ok(val.into())
+    }
 }
 
 impl FromValue for i32 {

@@ -8,7 +8,9 @@ async fn main() {
             "".to_string()
         });
 
-        Database::open_remote(url, token).unwrap()
+        Database::open_with_sync("db.sqld", url, token)
+            .await
+            .unwrap()
     } else {
         Database::open_in_memory().unwrap()
     };
@@ -27,6 +29,8 @@ async fn main() {
     stmt.execute(&libsql::params!["foo@example.com"])
         .await
         .unwrap();
+
+    db.sync().await.unwrap();
 
     let stmt = conn
         .prepare("SELECT * FROM users WHERE email = ?1")
