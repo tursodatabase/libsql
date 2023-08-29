@@ -1,5 +1,5 @@
-C Init\sbits\sof\sa\sport\sof\sJava's\sSQLTester\sto\sJS.\sFar\sfrom\scomplete.
-D 2023-08-29T11:22:45.711
+C Get\sthe\sbasic\sparsing\spieces\sand\scommand\sdispatching\sin\splace\sin\sthe\sJS\sSQLTester.
+D 2023-08-29T13:28:36.476
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -548,8 +548,8 @@ F ext/wasm/EXPORTED_FUNCTIONS.fiddle.in 27450c8b8c70875a260aca55435ec927068b34ce
 F ext/wasm/GNUmakefile 0e362f3fc04eab6628cbe4f1e35f4ab4a200881f6b5f753b27fb45eabeddd9d2
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
-F ext/wasm/SQLTester/SQLTester.mjs a3d6ed049e578b2d0965273016f56293584823760df8ff850868c1f8aea17533
-F ext/wasm/SQLTester/SQLTester.run.mjs 156e174b98e7dd78bf6d1438d32e60d7a647f8b51d8246a3054e5fdfe6042478
+F ext/wasm/SQLTester/SQLTester.mjs 2ea7d09f0c33e509aa3c4ca974be5705f59ddcd2173d4ff2721d7448c65be8bd
+F ext/wasm/SQLTester/SQLTester.run.mjs 478f4d90951591decaa7e1e3fa1729f6ed0043ae4cb48b0a92056b9707d44185
 F ext/wasm/SQLTester/index.html 88d87e3ccbc33e7ab3773a8e48c1172e876951c4be31d1307c3700671262cddf
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
@@ -2111,11 +2111,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6c83e31fa96f65b61377c0c801cc32b3c8ca27a0c8442f860364bec258c003cb
-R 94685fe29bdbe21cb1fdfbf40f131ffe
-T *branch * js-tester
-T *sym-js-tester *
-T -sym-trunk * Cancelled\sby\sbranch.
+P 60eec5ceda80c64870713df8e9aeabeef933c007f2010792225a07d5ef36baef
+R 0bdc268c3b78f235b9f50e80fcfe1a69
 U stephan
-Z 952fd010d6a4d240388ad80f3eddac99
+Z 00dd200744de92467554b7f23df0cf79
 # Remove this line to create a well-formed Fossil manifest.

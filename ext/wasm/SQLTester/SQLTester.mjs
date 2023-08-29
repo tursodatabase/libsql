@@ -54,7 +54,7 @@ const ResultRowMode = newObj({
 
 class SQLTesterException extends globalThis.Error {
   constructor(...args){
-    super(args.join(' '));
+    super(args.join(''));
   }
   isFatal() { return false; }
 }
@@ -74,8 +74,8 @@ class DbException extends SQLTesterException {
 }
 
 class TestScriptFailed extends SQLTesterException {
-  constructor(...args){
-    super(...args);
+  constructor(testScript, ...args){
+    super(testScript.getPutputPrefix(),': ',...args);
   }
   isFatal() { return true; }
 }
@@ -130,26 +130,39 @@ class Outer {
   #verbosity = 0;
   #logger = console.log.bind(console);
 
+  constructor(){
+  }
+
   out(...args){
-    this.#lnBuf.append(...args);
+    if(!this.#lnBuf.length && this.getOutputPrefix ){
+      this.#lnBuf.push(this.getOutputPrefix());
+    }
+    this.#lnBuf.push(...args);
     return this;
   }
   outln(...args){
-    this.#lnBuf.append(...args,'\n');
-    this.logger(this.#lnBuf.join(''));
+    if(!this.#lnBuf.length && this.getOutputPrefix ){
+      this.#lnBuf.push(this.getOutputPrefix());
+    }
+    this.#lnBuf.push(...args,'\n');
+    this.#logger(this.#lnBuf.join(''));
     this.#lnBuf.length = 0;
     return this;
   }
 
-  #verboseN(lvl, argv){
+  setOutputPrefix( func ){
+    this.getOutputPrefix = func;
+    return this;
+  }
+
+  verboseN(lvl, argv){
     if( this.#verbosity>=lvl ){
-      const pre = this.getOutputPrefix ? this.getOutputPrefix() : '';
-      this.outln('VERBOSE ',lvl,' ',pre,': ',...argv);
+      this.outln('VERBOSE ',lvl,': ',...argv);
     }
   }
-  verbose1(...args){ return this.#verboseN(1,args); }
-  verbose2(...args){ return this.#verboseN(2,args); }
-  verbose3(...args){ return this.#verboseN(3,args); }
+  verbose1(...args){ return this.verboseN(1,args); }
+  verbose2(...args){ return this.verboseN(2,args); }
+  verbose3(...args){ return this.verboseN(3,args); }
 
   verbosity(){
     let rc;
@@ -165,11 +178,10 @@ class Outer {
 }/*Outer*/
 
 class SQLTester {
-  SQLTester(){}
 
+  #outer = new Outer().setOutputPrefix( ()=>'SQLTester: ' );
   #aFiles = [];
   #inputBuffer = [];
-  #outputBuffer = [];
   #resultBuffer = [];
   #nullView = "nil";
   #metrics = newObj({
@@ -184,14 +196,42 @@ class SQLTester {
     initialDbName: "test.db",
   });
 
+  constructor(){
+  }
+
+  appendInput(line, addNL){
+    this.#inputBuffer.push(line);
+    if( addNL ) this.#inputBuffer.push('\n');
+  }
+  appendResult(line, addNL){
+    this.#resultBuffer.push(line);
+    if( addNL ) this.#resultBuffer.push('\n');
+  }
+
+  clearInputBuffer(){
+    this.#inputBuffer.length = 0;
+    return this.#inputBuffer;
+  }
+  clearResultBuffer(){
+    this.#resultBuffer.length = 0;
+    return this.#resultBuffer;
+  }
+
+  getInputText(){ return this.#inputBuffer.join(''); }
+  getResultText(){ return this.#resultBuffer.join(''); }
+
+  verbosity(...args){ return this.#outer.verbosity(...args); }
+
 }/*SQLTester*/
 
 class Command {
-  Command(){
+  constructor(){
   }
+
   process(sqlTester,testScript,argv){
     SQLTesterException.toss("process() must be overridden");
   }
+
   argcCheck(testScript,argv,min,max){
     const argc = argv.length-1;
     if(argc<min || (max>=0 && argc>max)){
@@ -203,13 +243,22 @@ class Command {
         testScript.toss(argv[0]," requires at least ",min," arguments.");
       }
     }
+  }
+}
 
+class TestCase extends Command {
+
+  process(tester, script, argv){
+    this.argcCheck(script, argv,1);
+    script.testCaseName(argv[1]);
+    tester.clearResultBuffer();
+    tester.clearInputBuffer();
   }
 }
 
 class Cursor {
   src;
-  buffer = [];
+  sb = [];
   pos = 0;
   //! Current line number. Starts at 0 for internal reasons and will
   // line up with 1-based reality once parsing starts.
@@ -223,68 +272,241 @@ class Cursor {
   //! Peeked-to line number.
   peekedLineNo = 0;
 
+  constructor(){
+  }
+
   //! Restore parsing state to the start of the stream.
   rewind(){
-    this.buffer.length = 0;
-    this.pos = this.lineNo = this.putbackPos =
-      this.putbackLineNo = this.peekedPos = this.peekedLineNo = 0;
+    this.sb.length = this.pos = this.lineNo
+      = this.putbackPos = this.putbackLineNo
+      = this.peekedPos = this.peekedLineNo = 0;
   }
 }
 
+const Rx = newObj({
+  requiredProperties: / REQUIRED_PROPERTIES:[ \t]*(\S.*)\s*$/,
+  scriptModuleName: / SCRIPT_MODULE_NAME:[ \t]*(\S+)\s*$/,
+  mixedModuleName: / ((MIXED_)?MODULE_NAME):[ \t]*(\S+)\s*$/,
+  command: /^--(([a-z-]+)( .*)?)$/
+});
+
 class TestScript {
   #cursor = new Cursor();
-  #verbosity = 0;
   #moduleName = null;
   #filename = null;
   #testCaseName = null;
-  #outer = new Outer();
-  #verboseN(lvl, argv){
-    if( this.#verbosity>=lvl ){
-      this.outln('VERBOSE ',lvl,': ',...argv);
-    }
-  }
+  #outer = new Outer().setOutputPrefix( ()=>this.getOutputPrefix() );
 
-  verbose1(...args){ return this.#verboseN(1,args); }
-  verbose2(...args){ return this.#verboseN(2,args); }
-  verbose3(...args){ return this.#verboseN(3,args); }
-
-  TestScript(content){
-    this.cursor.src = content;
-    this.outer.outputPrefix = ()=>this.getOutputPrefix();
-  }
-
-  verbosity(){
-    let rc;
-    if(arguments.length){
-      rc = this.#verbosity;
-      this.#verbosity = arguments[0];
+  constructor(...args){
+    let content, filename;
+    if( 2 == args.length ){
+      filename = args[0];
+      content = args[1];
     }else{
-      rc = this.#verbosity;
+      content = args[0];
     }
-    return rc;
+    this.#filename = filename;
+    this.#cursor.src = content;
+    this.#outer.outputPrefix = ()=>this.getOutputPrefix();
+  }
+
+  testCaseName(){
+    return (0==arguments.length)
+      ? this.#testCaseName : (this.#testCaseName = arguments[0]);
   }
 
   getOutputPrefix() {
-    const rc =  "["+(this.moduleName || this.filename)+"]";
-    if( this.testCaseName ) rc += "["+this.testCaseName+"]";
-    return rc + " line "+ this.cur.lineNo;
+    let rc =  "["+(this.#moduleName || this.#filename)+"]";
+    if( this.#testCaseName ) rc += "["+this.#testCaseName+"]";
+    return rc + " line "+ this.#cursor.lineNo +" ";
+  }
+
+  reset(){
+    this.#testCaseName = null;
+    this.#cursor.rewind();
+    return this;
   }
 
   toss(...args){
-    Util.toss(this.getOutputPrefix()+":",TestScriptFailed,...args)
+    throw new TestScriptFailed(this,...args);
   }
+
+  #checkForDirective(tester,line){
+    //todo
+  }
+
+  #getCommandArgv(line){
+    const m = Rx.command.exec(line);
+    return m ? m[1].trim().split(/\s+/) : null;
+  }
+
+  run(tester){
+    this.reset();
+    this.#outer.verbosity(tester.verbosity());
+    let line, directive, argv = [];
+    while( null != (line = this.getLine()) ){
+      this.verbose3("input line: ",line);
+      this.#checkForDirective(tester, line);
+      argv = this.#getCommandArgv(line);
+      if( argv ){
+        this.#processCommand(tester, argv);
+        continue;
+      }
+      tester.appendInput(line,true);
+    }
+    return true;
+  }
+
+  #processCommand(tester, argv){
+    this.verbose1("running command: ",argv[0], " ", Util.argvToString(argv));
+    if(this.#outer.verbosity()>1){
+      const input = tester.getInputText();
+      if( !!input ) this.verbose3("Input buffer = ",input);
+    }
+    CommandDispatcher.dispatch(tester, this, argv);
+  }
+
+  getLine(){
+    const cur = this.#cursor;
+    if( cur.pos==cur.src.byteLength ){
+      return null/*EOF*/;
+    }
+    cur.putbackPos = cur.pos;
+    cur.putbackLineNo = cur.lineNo;
+    cur.sb.length = 0;
+    let b = 0, prevB = 0, i = cur.pos;
+    let doBreak = false;
+    let nChar = 0 /* number of bytes in the aChar char */;
+    const end = cur.src.byteLength;
+    for(; i < end && !doBreak; ++i){
+      b = cur.src[i];
+      switch( b ){
+        case 13/*CR*/: continue;
+        case 10/*NL*/:
+          ++cur.lineNo;
+          if(cur.sb.length>0) doBreak = true;
+          // Else it's an empty string
+          break;
+        default:{
+          /* Multi-byte chars need to be gathered up and appended at
+             one time so that we can get them as string objects. */
+          nChar = 1;
+          switch( b & 0xF0 ){
+            case 0xC0: nChar = 2; break;
+            case 0xE0: nChar = 3; break;
+            case 0xF0: nChar = 4; break;
+            default:
+              if( b > 127 ) this.toss("Invalid character (#"+b+").");
+              break;
+          }
+          if( 1==nChar ){
+            cur.sb.push(String.fromCharCode(b));
+          }else{
+            const aChar = [] /* multi-byte char buffer */;
+            for(let x = 0; (x < nChar) && (i+x < end); ++x) aChar[x] = cur.src[i+x];
+            cur.sb.push(
+              Util.utf8Decode( new Uint8Array(aChar) )
+            );
+            i += nChar-1;
+          }
+          break;
+        }
+      }
+    }
+    cur.pos = i;
+    const rv = cur.sb.join('');
+    if( i==cur.src.byteLength && 0==rv.length ){
+      return null /* EOF */;
+    }
+    return rv;
+  }/*getLine()*/
+
+  /**
+     Fetches the next line then resets the cursor to its pre-call
+     state. consumePeeked() can be used to consume this peeked line
+     without having to re-parse it.
+  */
+  peekLine(){
+    const cur = this.#cursor;
+    const oldPos = cur.pos;
+    const oldPB = cur.putbackPos;
+    const oldPBL = cur.putbackLineNo;
+    const oldLine = cur.lineNo;
+    const rc = this.getLine();
+    cur.peekedPos = cur.pos;
+    cur.peekedLineNo = cur.lineNo;
+    cur.pos = oldPos;
+    cur.lineNo = oldLine;
+    cur.putbackPos = oldPB;
+    cur.putbackLineNo = oldPBL;
+    return rc;
+  }
+
+
+  /**
+     Only valid after calling peekLine() and before calling getLine().
+     This places the cursor to the position it would have been at had
+     the peekLine() had been fetched with getLine().
+  */
+  consumePeeked(){
+    const cur = this.#cursor;
+    cur.pos = cur.peekedPos;
+    cur.lineNo = cur.peekedLineNo;
+  }
+
+  /**
+     Restores the cursor to the position it had before the previous
+     call to getLine().
+  */
+  putbackLine(){
+    const cur = this.#cursor;
+    cur.pos = cur.putbackPos;
+    cur.lineNo = cur.putbackLineNo;
+  }
+
+  verbose1(...args){ return this.#outer.verboseN(1,args); }
+  verbose2(...args){ return this.#outer.verboseN(2,args); }
+  verbose3(...args){ return this.#outer.verboseN(3,args); }
+  verbosity(...args){ return this.#outer.verbosity(...args); }
 
 }/*TestScript*/;
 
+class CommandDispatcher {
+  static map = newObj();
+
+  static getCommandByName(name){
+    let rv = CommandDispatcher.map[name];
+    if( rv ) return rv;
+    switch(name){
+        //todo: map name to Command instance
+      case "testcase": rv = new TestCase(); break;
+    }
+    if( rv ){
+      CommandDispatcher.map[name] = rv;
+    }
+    return rv;
+  }
+
+  static dispatch(tester, testScript, argv){
+    const cmd = CommandDispatcher.getCommandByName(argv[0]);
+    if( !cmd ){
+      toss(UnknownCommand,argv[0],' ',testScript.getOutputPrefix());
+    }
+    cmd.process(tester, testScript, argv);
+  }
+}/*CommandDispatcher*/
 
 const namespace = newObj({
-  SQLTester: new SQLTester(),
+  Command,
   DbException,
   IncompatibleDirective,
+  Outer,
+  SQLTester,
   SQLTesterException,
+  TestScript,
   TestScriptFailed,
-  UnknownCommand
+  UnknownCommand,
+  Util
 });
-
 
 export {namespace as default};
