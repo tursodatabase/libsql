@@ -3272,7 +3272,7 @@ static Fts5Iter *fts5MultiIterAlloc(
   int nSeg
 ){
   Fts5Iter *pNew;
-  int nSlot;                      /* Power of two >= nSeg */
+  i64 nSlot;                      /* Power of two >= nSeg */
 
   for(nSlot=2; nSlot<nSeg; nSlot=nSlot*2);
   pNew = fts5IdxMalloc(p, 

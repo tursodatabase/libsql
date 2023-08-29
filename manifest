@@ -1,5 +1,5 @@
-C Remove\ssome\sdead\scode.\sAdd\sa\sskeleton\sSQLTester\sscript\sfor\sfts5.
-D 2023-08-29T00:10:31.208
+C Change\sa\svariable\sfrom\s"int"\sto\s"i64"\sto\smake\sit\seasier\sto\sprove\sthat\sit\scannot\soverflow.
+D 2023-08-29T10:50:11.066
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -94,7 +94,7 @@ F ext/fts5/fts5_buffer.c 3001fbabb585d6de52947b44b455235072b741038391f830d6b7292
 F ext/fts5/fts5_config.c 054359543566cbff1ba65a188330660a5457299513ac71c53b3a07d934c7b081
 F ext/fts5/fts5_expr.c bd3b81ce669c4104e34ffe66570af1999a317b142c15fccb112de9fb0caa57a6
 F ext/fts5/fts5_hash.c 65e7707bc8774706574346d18c20218facf87de3599b995963c3e6d6809f203d
-F ext/fts5/fts5_index.c b484322421cbb421d22bb2cd304001b80596d671cd626367c8c806b889de4b42
+F ext/fts5/fts5_index.c 77bd70d50cb8397f3d8465cc4894dcdac75aa5e1fb3bbc5a4a5bc15e12fced97
 F ext/fts5/fts5_main.c 7070031993ba5b5d89b13206ec4ef624895f2f7c0ec72725913d301e4d382445
 F ext/fts5/fts5_storage.c 3c9b41fce41b6410f2e8f82eb035c6a29b2560483f773e6dc98cf3cb2e4ddbb5
 F ext/fts5/fts5_tcl.c b1445cbe69908c411df8084a10b2485500ac70a9c747cdc8cda175a3da59d8ae
@@ -2108,8 +2108,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 76d3911c370b3dc02d119045003f87ad20a6efd9f7a44d4feb59b7c801ac8981
-R 7d288c901b3674a6a88e2405123881f5
-U stephan
-Z 6f3a62c9006357f22c26cb9d02ee32ca
+P 6c83e31fa96f65b61377c0c801cc32b3c8ca27a0c8442f860364bec258c003cb
+R 703966de64a45733a2ec15e9ba123f27
+U dan
+Z cdc3674e70b09e1a4bfbc46bbf505365
 # Remove this line to create a well-formed Fossil manifest.
