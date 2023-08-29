@@ -73,7 +73,7 @@ class DbException extends SQLTesterException {
 
 class TestScriptFailed extends SQLTesterException {
   constructor(testScript, ...args){
-    super(testScript.getPutputPrefix(),': ',...args);
+    super(testScript.getOutputPrefix(),': ',...args);
   }
   isFatal() { return true; }
 }
@@ -103,6 +103,18 @@ const __utf8Encoder = new TextEncoder('utf-8');
 const __SAB = ('undefined'===typeof globalThis.SharedArrayBuffer)
       ? function(){} : globalThis.SharedArrayBuffer;
 
+
+const Rx = newObj({
+  requiredProperties: / REQUIRED_PROPERTIES:[ \t]*(\S.*)\s*$/,
+  scriptModuleName: / SCRIPT_MODULE_NAME:[ \t]*(\S+)\s*$/,
+  mixedModuleName: / ((MIXED_)?MODULE_NAME):[ \t]*(\S+)\s*$/,
+  command: /^--(([a-z-]+)( .*)?)$/,
+  //! "Special" characters - we have to escape output if it contains any.
+  special: /[\x00-\x20\x22\x5c\x7b\x7d]/,
+  //! Either of '{' or '}'.
+  squiggly: /[{}]/
+});
+
 const Util = newObj({
   toss,
 
@@ -110,7 +122,11 @@ const Util = newObj({
     return 0==sqlite3.wasm.sqlite3_wasm_vfs_unlink(0,fn);
   },
 
-  argvToString: (list)=>list.join(" "),
+  argvToString: (list)=>{
+    const m = [...list];
+    m.shift();
+    return m.join(" ")
+  },
 
   utf8Decode: function(arrayBuffer, begin, end){
     return __utf8Decoder.decode(
@@ -120,7 +136,10 @@ const Util = newObj({
     );
   },
 
-  utf8Encode: (str)=>__utf8Encoder.encode(str)
+  utf8Encode: (str)=>__utf8Encoder.encode(str),
+
+  strglob: sqlite3.wasm.xWrap('sqlite3_wasm_SQLTester_strglob','int',
+                              ['string','string'])
 })/*Util*/;
 
 class Outer {
@@ -182,21 +201,39 @@ class Outer {
 
 class SQLTester {
 
+  //! Console output utility.
   #outer = new Outer().outputPrefix( ()=>'SQLTester: ' );
+  //! List of input script files.
   #aFiles = [];
+  //! Test input buffer.
   #inputBuffer = [];
+  //! Test result buffer.
   #resultBuffer = [];
+  //! Output representation of SQL NULL.
   #nullView = "nil";
-  #metrics = newObj({
-    nTotalTest: 0, nTestFile: 0, nAbortedScript: 0
+  metrics = newObj({
+    //! Total tests run
+    nTotalTest: 0,
+    //! Total test script files run
+    nTestFile: 0,
+    //! Number of scripts which were aborted
+    nAbortedScript: 0,
+    //! Incremented by test case handlers
+    nTest: 0
   });
   #emitColNames = false;
+  //! True to keep going regardless of how a test fails.
   #keepGoing = false;
   #db = newObj({
+    //! The list of available db handles.
     list: new Array(7),
+    //! Index into this.list of the current db.
     iCurrentDb: 0,
+    //! Name of the default db, re-created for each script.
     initialDbName: "test.db",
+    //! Buffer for REQUIRED_PROPERTIES pragmas.
     initSql: ['select 1;'],
+    //! (sqlite3*) to the current db.
     currentDb: function(){
       return this.list[this.iCurrentDb];
     }
@@ -208,12 +245,17 @@ class SQLTester {
   outln(...args){ return this.#outer.outln(...args); }
   out(...args){ return this.#outer.out(...args); }
 
+  incrementTestCounter(){
+    ++this.metrics.nTotalTest;
+    ++this.metrics.nTest;
+  }
+
   reset(){
     this.clearInputBuffer();
     this.clearResultBuffer();
     this.#clearBuffer(this.#db.initSql);
     this.closeAllDbs();
-    this.nTest = 0;
+    this.metrics.nTest = 0;
     this.nullView = "nil";
     this.emitColNames = false;
     this.#db.iCurrentDb = 0;
@@ -365,7 +407,7 @@ class SQLTester {
       Util.unlink(this.#db.initialDbName);
       this.openDb(0, this.#db.initialDbName, true);
     }else{
-      this.#outer.outln("WARNING: setupInitialDb() unexpectedly ",
+      this.#outer.outln("WARNING: setupInitialDb() was unexpectedly ",
                         "triggered while it is opened.");
     }
   }
@@ -405,17 +447,107 @@ class SQLTester {
   #appendDbErr(pDb, sb, rc){
     sb.push(sqlite3.capi.sqlite3_js_rc_str(rc), ' ');
     const msg = this.#escapeSqlValue(sqlite3.capi.sqlite3_errmsg(pDb));
-    if( '{' == msg.charAt(0) ){
+    if( '{' === msg.charAt(0) ){
       sb.push(msg);
     }else{
       sb.push('{', msg, '}');
     }
   }
 
+  #checkDbRc(pDb,rc){
+    sqlite3.oo1.DB.checkRc(pDb, rc);
+  }
+
   execSql(pDb, throwOnError, appendMode, lineMode, sql){
-    sql = sqlite3.capi.sqlite3_js_sql_to_string(sql);
-    this.#outer.outln("execSql() is TODO. ",sql);
-    return 0;
+    if( !pDb && !this.#db.list[0] ){
+      this.#setupInitialDb();
+    }
+    if( !pDb ) pDb = this.#db.currentDb();
+    const wasm = sqlite3.wasm, capi = sqlite3.capi;
+    sql = (sql instanceof Uint8Array)
+      ? sql
+      : new TextEncoder("utf-8").encode(capi.sqlite3_js_sql_to_string(sql));
+    const self = this;
+    const sb = (ResultBufferMode.NONE===appendMode) ? null : this.#resultBuffer;
+    let rc = 0;
+    wasm.scopedAllocCall(function(){
+      let sqlByteLen = sql.byteLength;
+      const ppStmt = wasm.scopedAlloc(
+        /* output (sqlite3_stmt**) arg and pzTail */
+        (2 * wasm.ptrSizeof) + (sqlByteLen + 1/* SQL + NUL */)
+      );
+      const pzTail = ppStmt + wasm.ptrSizeof /* final arg to sqlite3_prepare_v2() */;
+      let pSql = pzTail + wasm.ptrSizeof;
+      const pSqlEnd = pSql + sqlByteLen;
+      wasm.heap8().set(sql, pSql);
+      wasm.poke8(pSql + sqlByteLen, 0/*NUL terminator*/);
+      let pos = 0, n = 1, spacing = 0;
+      while( pSql && wasm.peek8(pSql) ){
+        wasm.pokePtr([ppStmt, pzTail], 0);
+        rc = capi.sqlite3_prepare_v3(
+          pDb, pSql, sqlByteLen, 0, ppStmt, pzTail
+        );
+        if( 0!==rc ){
+          if(throwOnError){
+            throw new DbException(pDb, rc);
+          }else if( sb ){
+            self.#appendDbErr(db, sb, rc);
+          }
+          break;
+        }
+        const pStmt = wasm.peekPtr(ppStmt);
+        pSql = wasm.peekPtr(pzTail);
+        sqlByteLen = pSqlEnd - pSql;
+        if(!pStmt) continue /* only whitespace or comments */;
+        if( sb ){
+          const nCol = capi.sqlite3_column_count(pStmt);
+          let colName, val;
+          while( capi.SQLITE_ROW === (rc = capi.sqlite3_step(pStmt)) ) {
+            for( let i=0; i < nCol; ++i ){
+              if( spacing++ > 0 ) sb.push(' ');
+              if( self.#emitColNames ){
+                colName = capi.sqlite3_column_name(pStmt, i);
+                switch(appendMode){
+                  case ResultBufferMode.ASIS: sb.push( colName ); break;
+                  case ResultBufferMode.ESCAPED:
+                    sb.push( self.#escapeSqlValue(colName) );
+                    break;
+                  default:
+                    self.toss("Unhandled ResultBufferMode.");
+                }
+                sb.push(' ');
+              }
+              val = capi.sqlite3_column_text(pStmt, i);
+              if( null===val ){
+                sb.push( self.#nullView );
+                continue;
+              }
+              switch(appendMode){
+                case ResultBufferMode.ASIS: sb.push( val ); break;
+                case ResultBufferMode.ESCAPED:
+                  sb.push( self.#escapeSqlValue(val) );
+                  break;
+              }
+            }/* column loop */
+          }/* row loop */
+          if( ResultRowMode.NEWLINE === lineMode ){
+            spacing = 0;
+            sb.push('\n');
+          }
+        }else{ // no output but possibly other side effects
+          while( capi.SQLITE_ROW === (rc = capi.sqlite3_step(pStmt)) ) {}
+        }
+        capi.sqlite3_finalize(pStmt);
+        if( capi.SQLITE_ROW===rc || capi.SQLITE_DONE===rc) rc = 0;
+        else if( rc!=0 ){
+          if( sb ){
+            self.#appendDbErr(db, sb, rc);
+          }
+          break;
+        }
+      }/* SQL script loop */;
+    })/*scopedAllocCall()*/;
+    return rc;
   }
 
 }/*SQLTester*/
@@ -469,17 +601,6 @@ class Cursor {
   }
 }
 
-const Rx = newObj({
-  requiredProperties: / REQUIRED_PROPERTIES:[ \t]*(\S.*)\s*$/,
-  scriptModuleName: / SCRIPT_MODULE_NAME:[ \t]*(\S+)\s*$/,
-  mixedModuleName: / ((MIXED_)?MODULE_NAME):[ \t]*(\S+)\s*$/,
-  command: /^--(([a-z-]+)( .*)?)$/,
-  //! "Special" characters - we have to escape output if it contains any.
-  special: /[\x00-\x20\x22\x5c\x7b\x7d]/,
-  //! Either of '{' or '}'.
-  squiggly: /[{}]/
-});
-
 class TestScript {
   #cursor = new Cursor();
   #moduleName = null;
@@ -527,6 +648,28 @@ class TestScript {
   #getCommandArgv(line){
     const m = Rx.command.exec(line);
     return m ? m[1].trim().split(/\s+/) : null;
+  }
+
+
+  #isCommandLine(line, checkForImpl){
+    let m = Rx.command.exec(line);
+    if( m && checkForImpl ){
+      m = !!CommandDispatcher.getCommandByName(m[2]);
+    }
+    return !!m;
+  }
+
+  fetchCommandBody(tester){
+    const sb = [];
+    let line;
+    while( (null !== (line = this.peekLine())) ){
+      this.#checkForDirective(tester, line);
+      if( this.#isCommandLine(line, true) ) break;
+      sb.push(line,"\n");
+      this.consumePeeked();
+    }
+    line = sb.join('');
+    return !!line.trim() ? line : null;
   }
 
   run(tester){
@@ -621,14 +764,16 @@ class TestScript {
     const oldPB = cur.putbackPos;
     const oldPBL = cur.putbackLineNo;
     const oldLine = cur.lineNo;
-    const rc = this.getLine();
-    cur.peekedPos = cur.pos;
-    cur.peekedLineNo = cur.lineNo;
-    cur.pos = oldPos;
-    cur.lineNo = oldLine;
-    cur.putbackPos = oldPB;
-    cur.putbackLineNo = oldPBL;
-    return rc;
+    try {
+      return this.getLine();
+    }finally{
+      cur.peekedPos = cur.pos;
+      cur.peekedLineNo = cur.lineNo;
+      cur.pos = oldPos;
+      cur.lineNo = oldLine;
+      cur.putbackPos = oldPB;
+      cur.putbackLineNo = oldPBL;
+    }
   }
 
 
@@ -667,7 +812,7 @@ class CloseDbCommand extends Command {
     let id;
     if(argv.length>1){
       const arg = argv[1];
-      if("all".equals(arg)){
+      if( "all" === arg ){
         t.closeAllDbs();
         return;
       }
@@ -695,6 +840,36 @@ class DbCommand extends Command {
     this.argcCheck(ts,argv,1);
     t.currentDbId( parseInt(argv[1]) );
   }
+}
+
+//! --glob command
+class GlobCommand extends Command {
+  #negate = false;
+  constructor(negate=false){
+    super();
+    this.#negate = negate;
+  }
+
+  process(t, ts, argv){
+    this.argcCheck(ts,argv,1,-1);
+    t.incrementTestCounter();
+    const sql = t.takeInputBuffer();
+    let rc = t.execSql(null, true, ResultBufferMode.ESCAPED,
+                       ResultRowMode.ONELINE, sql);
+    const result = t.getResultText();
+    const sArgs = Util.argvToString(argv);
+    //t2.verbose2(argv[0]," rc = ",rc," result buffer:\n", result,"\nargs:\n",sArgs);
+    const glob = Util.argvToString(argv);
+    rc = Util.strglob(glob, result);
+    if( (this.#negate && 0===rc) || (!this.#negate && 0!==rc) ){
+      ts.toss(argv[0], " mismatch: ", glob," vs input: ",result);
+    }
+  }
+}
+
+//! --notglob command
+class NotGlobCommand extends GlobCommand {
+  constructor(){super(true);}
 }
 
 //! --open command
@@ -740,6 +915,107 @@ class PrintCommand extends Command {
   }
 }
 
+//! --result command
+class ResultCommand extends Command {
+  #bufferMode;
+  constructor(resultBufferMode = ResultBufferMode.ESCAPED){
+    super();
+    this.#bufferMode = resultBufferMode;
+  }
+  process(t, ts, argv){
+    this.argcCheck(ts,argv,0,-1);
+    t.incrementTestCounter();
+    const sql = t.takeInputBuffer();
+    //ts.verbose2(argv[0]," SQL =\n",sql);
+    t.execSql(null, false, this.#bufferMode, ResultRowMode.ONELINE, sql);
+    const result = t.getResultText().trim();
+    const sArgs = argv.length>1 ? Util.argvToString(argv) : "";
+    if( result !== sArgs ){
+      t.outln(argv[0]," FAILED comparison. Result buffer:\n",
+              result,"\nExpected result:\n",sArgs);
+      ts.toss(argv[0]+" comparison failed.");
+    }
+  }
+}
+
+//! --json command
+class JsonCommand extends ResultCommand {
+  constructor(){ super(ResultBufferMode.ASIS); }
+}
+
+//! --run command
+class RunCommand extends Command {
+  process(t, ts, argv){
+    this.argcCheck(ts,argv,0,1);
+    const pDb = (1==argv.length)
+      ? t.currentDb() : t.getDbById( parseInt(argv[1]) );
+    const sql = t.takeInputBuffer();
+    const rc = t.execSql(pDb, false, ResultBufferMode.NONE,
+                       ResultRowMode.ONELINE, sql);
+    if( 0!==rc && t.verbosity()>0 ){
+      const msg = sqlite3.capi.sqlite3_errmsg(pDb);
+      ts.verbose1(argv[0]," non-fatal command error #",rc,": ",
+                  msg,"\nfor SQL:\n",sql);
+    }
+  }
+}
+
+//! --tableresult command
+class TableResultCommand extends Command {
+  #jsonMode;
+  constructor(jsonMode=false){
+    super();
+    this.#jsonMode = jsonMode;
+  }
+  process(t, ts, argv){
+    this.argcCheck(ts,argv,0);
+    t.incrementTestCounter();
+    let body = ts.fetchCommandBody(t);
+    log("TRC fetchCommandBody: ",body);
+    if( null===body ) ts.toss("Missing ",argv[0]," body.");
+    body = body.trim();
+    if( !body.endsWith("\n--end") ){
+      ts.toss(argv[0], " must be terminated with --end\\n");
+    }else{
+      body = body.substring(0, body.length-6);
+      log("TRC fetchCommandBody reshaped:",body);
+    }
+    const globs = body.split(/\s*\n\s*/);
+    if( globs.length < 1 ){
+      ts.toss(argv[0], " requires 1 or more ",
+              (this.#jsonMode ? "json snippets" : "globs"),".");
+    }
+    log("TRC fetchCommandBody globs:",globs);
+    const sql = t.takeInputBuffer();
+    t.execSql(null, true,
+              this.#jsonMode ? ResultBufferMode.ASIS : ResultBufferMode.ESCAPED,
+              ResultRowMode.NEWLINE, sql);
+    const rbuf = t.getResultText().trim();
+    const res = rbuf.split(/\r?\n/);
+    log("TRC fetchCommandBody rbuf, res:",rbuf, res);
+    if( res.length !== globs.length ){
+      ts.toss(argv[0], " failure: input has ", res.length,
+              " row(s) but expecting ",globs.length);
+    }
+    for(let i = 0; i < res.length; ++i){
+      const glob = globs[i].replaceAll(/\s+/g," ").trim();
+      //ts.verbose2(argv[0]," <<",glob,">> vs <<",res[i],">>");
+      if( this.#jsonMode ){
+        if( glob!==res[i] ){
+          ts.toss(argv[0], " json <<",glob, ">> does not match: <<",
+                  res[i],">>");
+        }
+      }else if( 0!=Util.strglob(glob, res[i]) ){
+        ts.toss(argv[0], " glob <<",glob,">> does not match: <<",res[i],">>");
+      }
+    }
+  }
+}
+
+//! --json-block command
+class JsonBlockCommand extends TableResultCommand {
+  constructor(){ super(true); }
+}
 
 //! --testcase command
 class TestCaseCommand extends Command {
@@ -770,18 +1046,18 @@ class CommandDispatcher {
       case "close":        rv = new CloseDbCommand(); break;
       case "column-names": rv = new ColumnNamesCommand(); break;
       case "db":           rv = new DbCommand(); break;
-      //case "glob":         rv = new GlobCommand(); break;
-      //case "json":         rv = new JsonCommand(); break;
-      //case "json-block":   rv = new JsonBlockCommand(); break;
+      case "glob":         rv = new GlobCommand(); break;
+      case "json":         rv = new JsonCommand(); break;
+      case "json-block":   rv = new JsonBlockCommand(); break;
       case "new":          rv = new NewDbCommand(); break;
-      //case "notglob":      rv = new NotGlobCommand(); break;
+      case "notglob":      rv = new NotGlobCommand(); break;
       case "null":         rv = new NullCommand(); break;
       case "oom":          rv = new NoopCommand(); break;
       case "open":         rv = new OpenDbCommand(); break;
       case "print":        rv = new PrintCommand(); break;
-      //case "result":       rv = new ResultCommand(); break;
-      //case "run":          rv = new RunCommand(); break;
-      //case "tableresult":  rv = new TableResultCommand(); break;
+      case "result":       rv = new ResultCommand(); break;
+      case "run":          rv = new RunCommand(); break;
+      case "tableresult":  rv = new TableResultCommand(); break;
       case "testcase":     rv = new TestCaseCommand(); break;
       case "verbosity":    rv = new VerbosityCommand(); break;
     }

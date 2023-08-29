@@ -1139,15 +1139,15 @@ globalThis.sqlite3ApiBootstrap = function sqlite3ApiBootstrap(
 
     /**
        Records the current pstack position, calls the given function,
-       and restores the pstack regardless of whether the function
-       throws. Returns the result of the call or propagates an
-       exception on error.
+       passing it the sqlite3 object, then restores the pstack
+       regardless of whether the function throws. Returns the result
+       of the call or propagates an exception on error.
 
        Added in 3.44.
     */
     call: function(f){
       const stackPos = wasm.pstack.pointer;
-      try{ return f() }finally{
+      try{ return f(sqlite3) } finally{
         wasm.pstack.restore(stackPos);
       }
     }

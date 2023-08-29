@@ -25,14 +25,46 @@ log("ns =",ns);
 out("Hi there. ").outln("SQLTester is ostensibly ready.");
 
 let ts = new ns.TestScript('/foo.test', ns.Util.utf8Encode(
-`# comment line
---print Starting up...
---null NIL
---new :memory:
---testcase 0.0.1
-select '0.0.1';
-#--result 0.0.1
---print done
+`
+--close all
+--oom
+--db 0
+--new my.db
+--null zilch
+--testcase 1.0
+SELECT 1, null;
+--result 1 zilch
+--glob *zil*
+--notglob *ZIL*
+SELECT 1, 2;
+intentional error;
+--run
+--testcase json-1
+SELECT json_array(1,2,3)
+--json [1,2,3]
+--testcase tableresult-1
+  select 1, 'a';
+  select 2, 'b';
+--tableresult
+  # [a-z]
+  2 b
+--end
+--testcase json-block-1
+  select json_array(1,2,3);
+  select json_object('a',1,'b',2);
+--json-block
+  [1,2,3]
+  {"a":1,"b":2}
+--end
+--testcase col-names-on
+--column-names 1
+  select 1 as 'a', 2 as 'b';
+--result a 1 b 2
+--testcase col-names-off
+--column-names 0
+  select 1 as 'a', 2 as 'b';
+--result 1 2
+--close
 `));
 
 const sqt = new ns.SQLTester();
@@ -41,11 +73,12 @@ try{
   sqt.openDb('/foo.db', true);
   log( 'sqt.getCurrentDb()', sqt.getCurrentDb() );
   sqt.verbosity(0);
-  affirm( 'NIL' !== sqt.nullValue() );
+  affirm( 'zilch' !== sqt.nullValue() );
   ts.run(sqt);
-  affirm( 'NIL' === sqt.nullValue() );
+  affirm( 'zilch' === sqt.nullValue() );
 }finally{
   sqt.reset();
 }
 log( 'sqt.getCurrentDb()', sqt.getCurrentDb() );
+log( "Metrics:", sqt.metrics );
 
