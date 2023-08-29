@@ -3,6 +3,7 @@ use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::types::ObjectAttributes;
 use aws_sdk_s3::Client;
 use aws_smithy_types::date_time::Format;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 pub(crate) struct Replicator {
     inner: bottomless::replicator::Replicator,
@@ -164,6 +165,22 @@ impl Replicator {
         }
     }
 
+    pub(crate) async fn remove_many(&self, older_than: NaiveDate, verbose: bool) -> Result<()> {
+        let older_than = NaiveDateTime::new(older_than, NaiveTime::MIN);
+        let delete_all = self.inner.delete_all(Some(older_than)).await?;
+        if verbose {
+            println!("Tombstoned {} at {}", self.inner.db_path, older_than);
+        }
+        let removed_generations = delete_all.commit().await?;
+        if verbose {
+            println!(
+                "Removed {} generations of {} up to {}",
+                removed_generations, self.inner.db_path, older_than
+            );
+        }
+        Ok(())
+    }
+
     pub(crate) async fn remove(&self, generation: uuid::Uuid, verbose: bool) -> Result<()> {
         let mut removed = 0;
         let mut next_marker = None;
@@ -212,63 +229,6 @@ impl Replicator {
                 return Ok(());
             }
         }
-    }
-
-    pub(crate) async fn remove_many(
-        &self,
-        older_than: chrono::NaiveDate,
-        verbose: bool,
-    ) -> Result<()> {
-        let mut next_marker = None;
-        let mut removed_count = 0;
-        loop {
-            let mut list_request = self
-                .client
-                .list_objects()
-                .bucket(&self.bucket)
-                .set_delimiter(Some("/".to_string()))
-                .prefix(&self.db_name);
-
-            if let Some(marker) = next_marker {
-                list_request = list_request.marker(marker)
-            }
-
-            let response = list_request.send().await?;
-            let prefixes = match response.common_prefixes() {
-                Some(prefixes) => prefixes,
-                None => {
-                    if verbose {
-                        println!("No generations found")
-                    }
-                    return Ok(());
-                }
-            };
-
-            for prefix in prefixes {
-                if let Some(prefix) = &prefix.prefix {
-                    let prefix = &prefix[self.db_name.len() + 1..prefix.len() - 1];
-                    let uuid = uuid::Uuid::try_parse(prefix)?;
-                    let datetime = uuid_to_datetime(&uuid);
-                    if datetime.date() >= older_than {
-                        continue;
-                    }
-                    if verbose {
-                        println!("Removing {uuid}");
-                    }
-                    self.remove(uuid, verbose).await?;
-                    removed_count += 1;
-                }
-            }
-
-            next_marker = response.next_marker().map(|s| s.to_owned());
-            if next_marker.is_none() {
-                break;
-            }
-        }
-        if verbose {
-            println!("Removed {removed_count} generations");
-        }
-        Ok(())
     }
 
     pub(crate) async fn list_generation(&self, generation: uuid::Uuid) -> Result<()> {

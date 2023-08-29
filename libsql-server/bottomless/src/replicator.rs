@@ -6,12 +6,13 @@ use anyhow::anyhow;
 use arc_swap::ArcSwap;
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
+use aws_sdk_s3::operation::get_object::GetObjectError;
 use aws_sdk_s3::operation::list_objects::builders::ListObjectsFluentBuilder;
 use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes, BytesMut};
-use chrono::{DateTime, LocalResult, TimeZone, Utc};
+use chrono::{DateTime, LocalResult, NaiveDateTime, TimeZone, Utc};
 use std::io::SeekFrom;
 use std::ops::Deref;
 use std::path::Path;
@@ -795,6 +796,19 @@ impl Replicator {
         generation: Uuid,
         utc_time: Option<DateTime<Utc>>,
     ) -> Result<RestoreAction> {
+        if let Some(tombstone) = self.get_tombstone().await? {
+            if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
+                if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
+                    tracing::error!(
+                        "Restoration failed. Database '{}' has been tombstoned at {}.",
+                        self.db_name,
+                        tombstone
+                    );
+                    return Ok(RestoreAction::None);
+                }
+            }
+        }
+
         // first check if there are any remaining files that we didn't manage to upload
         // on time in the last run
         self.upload_remaining_files(&generation).await?;
@@ -1149,6 +1163,189 @@ impl Replicator {
             Ok(Some((page_size, crc)))
         } else {
             Ok(None)
+        }
+    }
+
+    /// Marks current replicator database as deleted, invalidating all generations.
+    pub async fn delete_all(&self, older_than: Option<NaiveDateTime>) -> Result<DeleteAll> {
+        tracing::info!(
+            "Called for tombstoning of all contents of the '{}' database",
+            self.db_name
+        );
+        let key = format!("{}.tombstone", self.db_name);
+        let threshold = older_than.unwrap_or(NaiveDateTime::MAX);
+        self.client
+            .put_object()
+            .bucket(&self.bucket)
+            .key(key)
+            .body(ByteStream::from(
+                threshold.timestamp().to_be_bytes().to_vec(),
+            ))
+            .send()
+            .await?;
+        let delete_task = DeleteAll::new(
+            self.client.clone(),
+            self.bucket.clone(),
+            self.db_name.clone(),
+            threshold,
+        );
+        Ok(delete_task)
+    }
+
+    /// Checks if current replicator database has been marked as deleted.
+    pub async fn get_tombstone(&self) -> Result<Option<NaiveDateTime>> {
+        let key = format!("{}.tombstone", self.db_name);
+        let resp = self
+            .client
+            .get_object()
+            .bucket(&self.bucket)
+            .key(key)
+            .send()
+            .await;
+        match resp {
+            Ok(out) => {
+                let mut buf = [0u8; 8];
+                out.body.collect().await?.copy_to_slice(&mut buf);
+                let timestamp = i64::from_be_bytes(buf);
+                let tombstone = NaiveDateTime::from_timestamp_opt(timestamp, 0);
+                Ok(tombstone)
+            }
+            Err(SdkError::ServiceError(se)) => match se.into_err() {
+                GetObjectError::NoSuchKey(_) => Ok(None),
+                e => Err(e.into()),
+            },
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+/// This structure is returned by [Replicator::delete_all] after tombstoning (soft deletion) has
+/// been confirmed. It may be called using [DeleteAll::commit] to trigger a follow up procedure that
+/// performs hard deletion of corresponding S3 objects.
+#[derive(Debug)]
+pub struct DeleteAll {
+    client: Client,
+    bucket: String,
+    db_name: String,
+    threshold: NaiveDateTime,
+}
+
+impl DeleteAll {
+    fn new(client: Client, bucket: String, db_name: String, threshold: NaiveDateTime) -> Self {
+        DeleteAll {
+            client,
+            bucket,
+            db_name,
+            threshold,
+        }
+    }
+
+    pub fn threshold(&self) -> &NaiveDateTime {
+        &self.threshold
+    }
+
+    /// Performs hard deletion of all bottomless generations older than timestamp provided in
+    /// current request.
+    pub async fn commit(self) -> Result<u32> {
+        let mut next_marker = None;
+        let mut removed_count = 0;
+        loop {
+            let mut list_request = self
+                .client
+                .list_objects()
+                .bucket(&self.bucket)
+                .set_delimiter(Some("/".to_string()))
+                .prefix(&self.db_name);
+
+            if let Some(marker) = next_marker {
+                list_request = list_request.marker(marker)
+            }
+
+            let response = list_request.send().await?;
+            let prefixes = match response.common_prefixes() {
+                Some(prefixes) => prefixes,
+                None => {
+                    tracing::debug!("no generations found to delete");
+                    return Ok(0);
+                }
+            };
+
+            for prefix in prefixes {
+                if let Some(prefix) = &prefix.prefix {
+                    let prefix = &prefix[self.db_name.len() + 1..prefix.len() - 1];
+                    let uuid = Uuid::try_parse(prefix)?;
+                    if let Some(datetime) = Replicator::generation_to_timestamp(&uuid) {
+                        if datetime.to_unix().0 >= self.threshold.timestamp() as u64 {
+                            continue;
+                        }
+                        tracing::debug!("Removing generation {}", uuid);
+                        self.remove(uuid).await?;
+                        removed_count += 1;
+                    }
+                }
+            }
+
+            next_marker = response.next_marker().map(|s| s.to_owned());
+            if next_marker.is_none() {
+                break;
+            }
+        }
+        tracing::debug!("Removed {} generations", removed_count);
+        self.remove_tombstone().await?;
+        Ok(removed_count)
+    }
+
+    pub async fn remove_tombstone(&self) -> Result<()> {
+        let key = format!("{}.tombstone", self.db_name);
+        self.client
+            .delete_object()
+            .bucket(&self.bucket)
+            .key(key)
+            .send()
+            .await?;
+        Ok(())
+    }
+
+    async fn remove(&self, generation: Uuid) -> Result<()> {
+        let mut removed = 0;
+        let mut next_marker = None;
+        loop {
+            let mut list_request = self
+                .client
+                .list_objects()
+                .bucket(&self.bucket)
+                .prefix(format!("{}-{}/", &self.db_name, generation));
+
+            if let Some(marker) = next_marker {
+                list_request = list_request.marker(marker)
+            }
+
+            let response = list_request.send().await?;
+            let objs = match response.contents() {
+                Some(prefixes) => prefixes,
+                None => {
+                    return Ok(());
+                }
+            };
+
+            for obj in objs {
+                if let Some(key) = obj.key() {
+                    tracing::trace!("Removing {}", key);
+                    self.client
+                        .delete_object()
+                        .bucket(&self.bucket)
+                        .key(key)
+                        .send()
+                        .await?;
+                    removed += 1;
+                }
+            }
+
+            next_marker = response.next_marker().map(|s| s.to_owned());
+            if next_marker.is_none() {
+                tracing::trace!("Removed {} snapshot generations", removed);
+                return Ok(());
+            }
         }
     }
 }
