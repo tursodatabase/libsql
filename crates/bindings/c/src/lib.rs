@@ -8,7 +8,7 @@ mod types;
 use tokio::runtime::Runtime;
 use types::{
     blob, libsql_connection, libsql_connection_t, libsql_database, libsql_database_t, libsql_row,
-    libsql_row_t, libsql_rows, libsql_rows_future, libsql_rows_future_t, libsql_rows_t,
+    libsql_row_t, libsql_rows, libsql_rows_future_t, libsql_rows_t,
 };
 
 lazy_static! {
@@ -69,8 +69,11 @@ pub unsafe extern "C" fn libsql_open_sync(
             return 1;
         }
     };
-    let opts = libsql::Opts::with_http_sync(primary_url.to_string(), "");
-    match RT.block_on(libsql::Database::open_with_opts(db_path.to_string(), opts)) {
+    match RT.block_on(libsql::v2::Database::open_with_sync(
+        db_path.to_string(),
+        primary_url,
+        "",
+    )) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
             *out_db = libsql_database_t::from(db);
@@ -105,7 +108,7 @@ pub unsafe extern "C" fn libsql_open_ext(
             return 1;
         }
     };
-    match libsql::Database::open(url.to_string()) {
+    match libsql::v2::Database::open(url.to_string()) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
             *out_db = libsql_database_t::from(db);
@@ -126,8 +129,8 @@ pub unsafe extern "C" fn libsql_close(db: libsql_database_t) {
     if db.is_null() {
         return;
     }
-    let db = unsafe { Box::from_raw(db.get_ref_mut()) };
-    db.close();
+    let _db = unsafe { Box::from_raw(db.get_ref_mut()) };
+    // TODO close db
 }
 
 #[no_mangle]
@@ -137,7 +140,7 @@ pub unsafe extern "C" fn libsql_connect(
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
     let db = db.get_ref();
-    let conn = match db.connect() {
+    let conn = match RT.block_on(db.connect()) {
         Ok(conn) => conn,
         Err(err) => {
             set_err_msg(format!("Unable to connect: {}", err), out_err_msg);
@@ -154,8 +157,8 @@ pub unsafe extern "C" fn libsql_disconnect(conn: libsql_connection_t) {
     if conn.is_null() {
         return;
     }
-    let conn = unsafe { Box::from_raw(conn.get_ref_mut()) };
-    conn.disconnect();
+    let _conn = unsafe { Box::from_raw(conn.get_ref_mut()) };
+    // TODO close conn
 }
 
 #[no_mangle]
@@ -174,12 +177,10 @@ pub unsafe extern "C" fn libsql_execute(
         }
     };
     let conn = conn.get_ref();
-    match conn.query(sql.to_string(), ()) {
-        Ok(rows_opt) => {
-            if let Some(rows) = rows_opt {
-                let rows = Box::leak(Box::new(libsql_rows { result: rows }));
-                *out_rows = libsql_rows_t::from(rows);
-            }
+    match RT.block_on(conn.query(sql, ())) {
+        Ok(rows) => {
+            let rows = Box::leak(Box::new(libsql_rows { result: rows }));
+            *out_rows = libsql_rows_t::from(rows);
         }
         Err(e) => {
             set_err_msg(format!("Error executing statement: {}", e), out_err_msg);
@@ -195,24 +196,6 @@ pub unsafe extern "C" fn libsql_free_rows(res: libsql_rows_t) {
         return;
     }
     let _ = unsafe { Box::from_raw(res.get_ref_mut()) };
-}
-
-#[no_mangle]
-pub unsafe extern "C" fn libsql_execute_async(
-    conn: &libsql_connection_t,
-    sql: *const std::ffi::c_char,
-) -> libsql_rows_future_t {
-    let sql = unsafe { std::ffi::CStr::from_ptr(sql) };
-    let sql = match sql.to_str() {
-        Ok(sql) => sql,
-        Err(_) => {
-            todo!("bad string");
-        }
-    };
-    let conn = conn.get_ref();
-    let result = conn.execute_async(sql.to_string(), ());
-    let result = Box::leak(Box::new(libsql_rows_future { result }));
-    libsql_rows_future_t::from(result)
 }
 
 #[no_mangle]
@@ -289,7 +272,15 @@ pub unsafe extern "C" fn libsql_column_type(
         );
         return 1;
     }
-    *out_type = res.column_type(col);
+    match res.column_type(col) {
+        Ok(t) => {
+            *out_type = t as i32;
+        }
+        Err(e) => {
+            set_err_msg(format!("Invalid type: {}", e), out_err_msg);
+            return 2;
+        }
+    };
     0
 }
 
@@ -303,7 +294,7 @@ pub unsafe extern "C" fn libsql_next_row(
         *out_row = libsql_row_t::null();
         return 0;
     }
-    let res = res.get_ref();
+    let res = res.get_ref_mut();
     match res.next() {
         Ok(Some(row)) => {
             let row = Box::leak(Box::new(libsql_row { result: row }));

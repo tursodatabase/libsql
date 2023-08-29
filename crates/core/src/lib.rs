@@ -83,4 +83,3 @@ pub fn version() -> &'static str {
             .unwrap()
     }
 }
-

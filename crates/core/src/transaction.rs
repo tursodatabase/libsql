@@ -59,7 +59,10 @@ impl Transaction {
             TransactionBehavior::Exclusive => "BEGIN EXCLUSIVE",
         };
         let _ = conn.execute(begin_stmt, ())?;
-        Ok(Self { conn, drop_behavior: DropBehavior::Rollback })
+        Ok(Self {
+            conn,
+            drop_behavior: DropBehavior::Rollback,
+        })
     }
 
     /// Commit the transaction.
