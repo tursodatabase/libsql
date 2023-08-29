@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <!--link rel="stylesheet" href="../common/emscripten.css"/-->
+    <link rel="stylesheet" href="../common/testing.css"/>
+    <title>SQLTester</title>
+  </head>
+  <body>
+    <p>SQLTester App.
+    </p>
+    <p>All stuff on this page happens in the dev console.</p>
+    <hr>
+    <div id='test-output'></div>
+    <script src='SQLTester.run.mjs' type='module'></script>
+    <!--script>
+      (function(){
+          const W = new Worker('scratchpad-wasmfs.mjs',{
+              type: 'module'
+          });
+      })();
+    </script-->
+  </body>
+</html>
