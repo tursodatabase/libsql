@@ -1,6 +1,7 @@
 use crate::backup::WalCopier;
 use crate::read::BatchReader;
 use crate::transaction_cache::TransactionPageCache;
+use crate::uuid_utils::decode_unix_timestamp;
 use crate::wal::WalFileReader;
 use anyhow::anyhow;
 use arc_swap::ArcSwap;
@@ -244,12 +245,13 @@ impl Replicator {
         let db_path = db_path.into();
         let db_name = {
             let db_id = options.db_id.unwrap_or_default();
-            let name = match db_path.rfind('/') {
-                Some(index) => &db_path[index + 1..],
+            let name = match db_path.find('/') {
+                Some(index) => &db_path[..index],
                 None => &db_path,
             };
-            db_id + name
+            db_id + ":" + name
         };
+        tracing::debug!("Database path: '{}', name: '{}'", db_path, db_name);
 
         let (flush_trigger, mut flush_trigger_rx) = channel(());
         let (last_committed_frame_no_sender, last_committed_frame_no) = channel(Ok(0));
@@ -457,8 +459,8 @@ impl Replicator {
         crate::uuid_utils::new_v7(synthetic_ts)
     }
 
-    fn generation_to_timestamp(generation: &Uuid) -> Option<uuid::Timestamp> {
-        let ts = generation.get_timestamp()?;
+    pub fn generation_to_timestamp(generation: &Uuid) -> Option<uuid::Timestamp> {
+        let ts = decode_unix_timestamp(generation);
         let (seconds, nanos) = ts.to_unix();
         let (seconds, nanos) = (253370761200 - seconds, 999999999 - nanos);
         Some(uuid::Timestamp::from_unix(NoContext, seconds, nanos))

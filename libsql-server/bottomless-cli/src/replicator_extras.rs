@@ -24,32 +24,30 @@ impl std::ops::DerefMut for Replicator {
 }
 
 fn uuid_to_datetime(uuid: &uuid::Uuid) -> chrono::NaiveDateTime {
-    let (seconds, nanos) = uuid
-        .get_timestamp()
-        .map(|ts| ts.to_unix())
-        .unwrap_or((0, 0));
-    let (seconds, nanos) = (253370761200 - seconds, 999000000 - nanos);
-    chrono::NaiveDateTime::from_timestamp_opt(seconds as i64, nanos)
-        .unwrap_or(chrono::NaiveDateTime::MIN)
+    let timestamp = bottomless::replicator::Replicator::generation_to_timestamp(uuid);
+    let (seconds, _) = timestamp
+        .as_ref()
+        .map(uuid::Timestamp::to_unix)
+        .unwrap_or_default();
+    chrono::NaiveDateTime::from_timestamp_millis((seconds * 1000) as i64).unwrap()
 }
 
-pub(crate) async fn detect_db(client: &Client, bucket: &str, db_name: &str) -> Option<String> {
-    let response = match client
+pub(crate) async fn detect_db(client: &Client, bucket: &str, namespace: &str) -> Option<String> {
+    let namespace = namespace.to_owned() + ":";
+    let response = client
         .list_objects()
         .bucket(bucket)
         .set_delimiter(Some("/".to_string()))
-        .prefix(db_name)
+        .prefix(namespace.clone())
         .send()
         .await
-    {
-        Ok(resp) => resp,
-        Err(_) => return None,
-    };
+        .ok()?;
 
     let prefix = response.common_prefixes()?.first()?.prefix()?;
     // 38 is the length of the uuid part
     if let Some('-') = prefix.chars().nth(prefix.len().saturating_sub(38)) {
-        Some(prefix[..prefix.len().saturating_sub(38)].to_owned())
+        let ns_db = &prefix[..prefix.len().saturating_sub(38)];
+        Some(ns_db.strip_prefix(&namespace).unwrap_or(ns_db).to_owned())
     } else {
         None
     }
@@ -136,7 +134,7 @@ impl Replicator {
                     if datetime.date() > older_than.unwrap_or(chrono::NaiveDate::MAX) {
                         continue;
                     }
-                    println!("{uuid}");
+                    println!("{} (created: {})", uuid, datetime.and_utc().to_rfc3339());
                     if verbose {
                         let counter = self.get_remote_change_counter(&uuid).await?;
                         let consistent_frame = self.get_last_consistent_frame(&uuid).await?;

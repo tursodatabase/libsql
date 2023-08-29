@@ -19,6 +19,8 @@ struct Cli {
     bucket: Option<String>,
     #[clap(long, short)]
     database: Option<String>,
+    #[clap(long, short)]
+    namespace: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -85,16 +87,21 @@ enum Commands {
 
 async fn run() -> Result<()> {
     tracing_subscriber::fmt::init();
-    let options = Cli::parse();
+    let mut options = Cli::parse();
 
     if let Some(ep) = options.endpoint.as_deref() {
         std::env::set_var("LIBSQL_BOTTOMLESS_ENDPOINT", ep)
+    } else {
+        options.endpoint = std::env::var("LIBSQL_BOTTOMLESS_ENDPOINT").ok();
     }
 
     if let Some(bucket) = options.bucket.as_deref() {
         std::env::set_var("LIBSQL_BOTTOMLESS_BUCKET", bucket)
+    } else {
+        options.bucket = std::env::var("LIBSQL_BOTTOMLESS_BUCKET").ok();
     }
-
+    let namespace = options.namespace.as_deref().unwrap_or("ns-default");
+    std::env::set_var("LIBSQL_BOTTOMLESS_DATABASE_ID", namespace);
     let database = match options.database.clone() {
         Some(db) => db,
         None => {
@@ -108,7 +115,7 @@ async fn run() -> Result<()> {
                     .build()
             });
             let bucket = options.bucket.as_deref().unwrap_or("bottomless");
-            match detect_db(&client, bucket, "").await {
+            match detect_db(&client, bucket, namespace).await {
                 Some(db) => db,
                 None => {
                     println!("Could not autodetect the database. Please pass it explicitly with -d option");
@@ -117,9 +124,10 @@ async fn run() -> Result<()> {
             }
         }
     };
-    tracing::info!("Database: {}", database);
+    let database = database + "/dbs/" + namespace.strip_prefix("ns-").unwrap() + "/data";
+    tracing::info!("Database: '{}' (namespace: {})", database, namespace);
 
-    let mut client = Replicator::new(database).await?;
+    let mut client = Replicator::new(database.clone()).await?;
 
     match options.command {
         Commands::Ls {
@@ -140,6 +148,7 @@ async fn run() -> Result<()> {
             generation,
             utc_time,
         } => {
+            tokio::fs::create_dir_all(&database).await?;
             client.restore(generation, utc_time).await?;
         }
         Commands::Rm {
