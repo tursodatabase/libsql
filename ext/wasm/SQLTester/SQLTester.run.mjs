@@ -22,10 +22,10 @@ const affirm = function(expr, msg){
 console.log("Loaded",ns);
 
 log("ns =",ns);
-out("Hi there. ").outln("SQLTester is ostensibly ready.");
+outln("SQLTester is ready.");
 
-let ts = new ns.TestScript('/foo.test', ns.Util.utf8Encode(
-`
+let ts = new ns.TestScript('/foo.test',`
+--print Hello, world.
 --close all
 --oom
 --db 0
@@ -65,17 +65,22 @@ SELECT json_array(1,2,3)
   select 1 as 'a', 2 as 'b';
 --result 1 2
 --close
-`));
+--print Until next time
+`);
 
 const sqt = new ns.SQLTester();
 try{
-  log( 'sqt.getCurrentDb()', sqt.getCurrentDb() );
+  affirm( !sqt.getCurrentDb(), 'sqt.getCurrentDb()' );
   sqt.openDb('/foo.db', true);
-  log( 'sqt.getCurrentDb()', sqt.getCurrentDb() );
+  affirm( !!sqt.getCurrentDb(),'sqt.getCurrentDb()' );
   sqt.verbosity(0);
-  affirm( 'zilch' !== sqt.nullValue() );
-  ts.run(sqt);
-  affirm( 'zilch' === sqt.nullValue() );
+  if(false){
+    affirm( 'zilch' !== sqt.nullValue() );
+    ts.run(sqt);
+    affirm( 'zilch' === sqt.nullValue() );
+  }
+  sqt.addTestScript(ts);
+  sqt.runTests();
 }finally{
   sqt.reset();
 }

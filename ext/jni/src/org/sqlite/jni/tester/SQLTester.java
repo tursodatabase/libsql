@@ -270,7 +270,6 @@ public class SQLTester {
         final long timeEnd = System.currentTimeMillis();
         outln("🏁",(threw ? "❌" : "✅")," ",nTest," test(s) in ",
               (timeEnd-timeStart),"ms.");
-        //ts.getFilename());
       }
     }
     final long tEnd = System.currentTimeMillis();

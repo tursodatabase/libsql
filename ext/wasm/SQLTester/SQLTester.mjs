@@ -203,8 +203,8 @@ class SQLTester {
 
   //! Console output utility.
   #outer = new Outer().outputPrefix( ()=>'SQLTester: ' );
-  //! List of input script files.
-  #aFiles = [];
+  //! List of input scripts.
+  #aScripts = [];
   //! Test input buffer.
   #inputBuffer = [];
   //! Test result buffer.
@@ -259,7 +259,7 @@ class SQLTester {
     this.nullView = "nil";
     this.emitColNames = false;
     this.#db.iCurrentDb = 0;
-    this.#db.initSql.push("SELECT 1;");
+    //this.#db.initSql.push("SELECT 1;");
   }
 
   appendInput(line, addNL){
@@ -402,6 +402,54 @@ class SQLTester {
     }
   }
 
+  addTestScript(ts){
+    if( 2===arguments.length ){
+      ts = new TestScript(arguments[0], arguments[1]);
+    }else if(ts instanceof Uint8Array){
+      ts = new TestScript('<unnamed>', ts);
+    }else if('string' === typeof arguments[1]){
+      ts = new TestScript('<unnamed>', Util.utf8Encode(arguments[1]));
+    }
+    if( !(ts instanceof TestScript) ){
+      Util.toss(SQLTesterException, "Invalid argument type for addTestScript()");
+    }
+    this.#aScripts.push(ts);
+    return this;
+  }
+
+  runTests(){
+    const tStart = (new Date()).getTime();
+    for(const ts of this.#aScripts){
+      this.reset();
+      ++this.metrics.nTestFile;
+      let threw = false;
+      const timeStart = (new Date()).getTime();
+      try{
+        ts.run(this);
+      }catch(e){
+        if(e instanceof SQLTesterException){
+          threw = true;
+          this.outln("🔥EXCEPTION: ",''+e);
+          ++this.metrics.nAbortedScript;
+          if( this.#keepGoing ){
+            this.outln("Continuing anyway becaure of the keep-going option.");
+          }
+          else if( e.isFatal() ) throw e;
+        }else{
+          throw e;
+        }
+      }finally{
+        const timeEnd = (new Date()).getTime();
+        this.outln("🏁", (threw ? "❌" : "✅"), " ", this.metrics.nTest,
+                   " test(s) in ", (timeEnd-timeStart),"ms.");
+      }
+    }
+    const tEnd = (new Date()).getTime();
+    this.outln("Total run-time: ",(tEnd-tStart),"ms");
+    Util.unlink(this.#db.initialDbName);
+    return this;
+  }
+
   #setupInitialDb(){
     if( !this.#db.list[0] ){
       Util.unlink(this.#db.initialDbName);
@@ -466,7 +514,7 @@ class SQLTester {
     const wasm = sqlite3.wasm, capi = sqlite3.capi;
     sql = (sql instanceof Uint8Array)
       ? sql
-      : new TextEncoder("utf-8").encode(capi.sqlite3_js_sql_to_string(sql));
+      : Util.utf8Encode(capi.sqlite3_js_sql_to_string(sql));
     const self = this;
     const sb = (ResultBufferMode.NONE===appendMode) ? null : this.#resultBuffer;
     let rc = 0;
@@ -615,6 +663,15 @@ class TestScript {
       content = args[1];
     }else{
       content = args[0];
+    }
+    if(!(content instanceof Uint8Array)){
+      if('string' === typeof content){
+        content = Util.utf8Encode(content);
+      }else if(content instanceof ArrayBuffer){
+        content = new Uint8Array(content);
+      }else{
+        toss(Error, "Invalid content type for TestScript constructor.");
+      }
     }
     this.#filename = filename;
     this.#cursor.src = content;
@@ -971,28 +1028,24 @@ class TableResultCommand extends Command {
     this.argcCheck(ts,argv,0);
     t.incrementTestCounter();
     let body = ts.fetchCommandBody(t);
-    log("TRC fetchCommandBody: ",body);
     if( null===body ) ts.toss("Missing ",argv[0]," body.");
     body = body.trim();
     if( !body.endsWith("\n--end") ){
       ts.toss(argv[0], " must be terminated with --end\\n");
     }else{
       body = body.substring(0, body.length-6);
-      log("TRC fetchCommandBody reshaped:",body);
     }
     const globs = body.split(/\s*\n\s*/);
     if( globs.length < 1 ){
       ts.toss(argv[0], " requires 1 or more ",
               (this.#jsonMode ? "json snippets" : "globs"),".");
     }
-    log("TRC fetchCommandBody globs:",globs);
     const sql = t.takeInputBuffer();
     t.execSql(null, true,
               this.#jsonMode ? ResultBufferMode.ASIS : ResultBufferMode.ESCAPED,
               ResultRowMode.NEWLINE, sql);
     const rbuf = t.getResultText().trim();
     const res = rbuf.split(/\r?\n/);
-    log("TRC fetchCommandBody rbuf, res:",rbuf, res);
     if( res.length !== globs.length ){
       ts.toss(argv[0], " failure: input has ", res.length,
               " row(s) but expecting ",globs.length);
