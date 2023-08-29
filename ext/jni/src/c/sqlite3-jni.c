@@ -1500,10 +1500,9 @@ static S3JniDb * S3JniDb__from_java(JNIEnv * const env, jobject jDb){
   S3JniMutex_S3JniDb_leave;
   return s;
 }
+#define S3JniDb_from_java(jObject) S3JniDb__from_java(env,(jObject))
 
-/* An experiment */
-//#define CLOSE_DB_LOCKED
-#if 1 || defined(CLOSE_DB_LOCKED)
+
 static S3JniDb * S3JniDb__from_java_unlocked(JNIEnv * const env, jobject jDb){
   S3JniDb * s = 0;
   sqlite3 * pDb = 0;
@@ -1515,7 +1514,6 @@ static S3JniDb * S3JniDb__from_java_unlocked(JNIEnv * const env, jobject jDb){
 
 }
 #define S3JniDb_from_java_unlocked(JDB) S3JniDb__from_java_unlocked(env, (JDB))
-#endif
 
 /*
 ** Returns the S3JniDb object for the sqlite3 object, or NULL if pDb
@@ -1532,8 +1530,6 @@ static S3JniDb * S3JniDb__from_c(JNIEnv * const env, sqlite3 *pDb){
   S3JniMutex_S3JniDb_leave;
   return s;
 }
-
-#define S3JniDb_from_java(jObject) S3JniDb__from_java(env,(jObject))
 #define S3JniDb_from_c(sqlite3Ptr) S3JniDb__from_c(env,(sqlite3Ptr))
 
 /*
@@ -2451,6 +2447,7 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
 /* Wrapper for sqlite3_close(_v2)(). */
 static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   int rc = 0;
+//#define CLOSE_DB_LOCKED /* An experiment */
 #ifndef CLOSE_DB_LOCKED
   S3JniDb * const ps = S3JniDb_from_java(jDb);
 
