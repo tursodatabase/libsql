@@ -181,7 +181,7 @@ public class SQLTester {
   private int nTestFile = 0;
   //! Number of scripts which were aborted.
   private int nAbortedScript = 0;
-  //! Per-script test counter.
+  //! Incremented by test case handlers
   private int nTest = 0;
   //! True to enable column name output from execSql()
   private boolean emitColNames;
@@ -270,7 +270,6 @@ public class SQLTester {
         final long timeEnd = System.currentTimeMillis();
         outln("🏁",(threw ? "❌" : "✅")," ",nTest," test(s) in ",
               (timeEnd-timeStart),"ms.");
-        //ts.getFilename());
       }
     }
     final long tEnd = System.currentTimeMillis();
@@ -336,7 +335,9 @@ public class SQLTester {
   }
 
   sqlite3 setCurrentDb(int n) throws Exception{
-    return affirmDbId(n).aDb[n];
+    affirmDbId(n);
+    iCurrentDb = n;
+    return this.aDb[n];
   }
 
   sqlite3 getCurrentDb(){ return aDb[iCurrentDb]; }
@@ -399,7 +400,7 @@ public class SQLTester {
     nullView = "nil";
     emitColNames = false;
     iCurrentDb = 0;
-    dbInitSql.append("SELECT 1;");
+    //dbInitSql.append("SELECT 1;");
   }
 
   void setNullValue(String v){nullView = v;}
@@ -580,6 +581,10 @@ public class SQLTester {
         }
       }
     }finally{
+      sqlite3_reset(stmt
+        /* In order to trigger an exception in the
+           INSERT...RETURNING locking scenario:
+           https://sqlite.org/forum/forumpost/36f7a2e7494897df */);
       sqlite3_finalize(stmt);
     }
     if( 0!=rc && throwOnError ){
@@ -924,8 +929,8 @@ class RunCommand extends Command {
     final sqlite3 db = (1==argv.length)
       ? t.getCurrentDb() : t.getDbById( Integer.parseInt(argv[1]) );
     final String sql = t.takeInputBuffer();
-    int rc = t.execSql(db, false, ResultBufferMode.NONE,
-                       ResultRowMode.ONELINE, sql);
+    final int rc = t.execSql(db, false, ResultBufferMode.NONE,
+                             ResultRowMode.ONELINE, sql);
     if( 0!=rc && t.isVerbose() ){
       String msg = sqlite3_errmsg(db);
       ts.verbose1(argv[0]," non-fatal command error #",rc,": ",
@@ -948,8 +953,7 @@ class TableResultCommand extends Command {
     if( !body.endsWith("\n--end") ){
       ts.toss(argv[0], " must be terminated with --end.");
     }else{
-      int n = body.length();
-      body = body.substring(0, n-6);
+      body = body.substring(0, body.length()-6);
     }
     final String[] globs = body.split("\\s*\\n\\s*");
     if( globs.length < 1 ){
@@ -1238,14 +1242,15 @@ class TestScript {
     final int oldPB = cur.putbackPos;
     final int oldPBL = cur.putbackLineNo;
     final int oldLine = cur.lineNo;
-    final String rc = getLine();
-    cur.peekedPos = cur.pos;
-    cur.peekedLineNo = cur.lineNo;
-    cur.pos = oldPos;
-    cur.lineNo = oldLine;
-    cur.putbackPos = oldPB;
-    cur.putbackLineNo = oldPBL;
-    return rc;
+    try{ return getLine(); }
+    finally{
+      cur.peekedPos = cur.pos;
+      cur.peekedLineNo = cur.lineNo;
+      cur.pos = oldPos;
+      cur.lineNo = oldLine;
+      cur.putbackPos = oldPB;
+      cur.putbackLineNo = oldPBL;
+    }
   }
 
   /**
@@ -1372,11 +1377,10 @@ class TestScript {
     String line;
     while( (null != (line = peekLine())) ){
       checkForDirective(tester, line);
-      if( !isCommandLine(line, true) ){
+      if( isCommandLine(line, true) ) break;
+      else {
         sb.append(line).append("\n");
         consumePeeked();
-      }else{
-        break;
       }
     }
     line = sb.toString();
