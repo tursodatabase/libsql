@@ -35,25 +35,6 @@ impl Deref for Connection<'_> {
     }
 }
 
-impl Drop for Connection<'_> {
-    fn drop(&mut self) {
-        unsafe {
-            let db = self.conn.handle();
-            if db.is_null() {
-                return;
-            }
-            let mut stmt = ffi::sqlite3_next_stmt(db, std::ptr::null_mut());
-            while !stmt.is_null() {
-                let rc = ffi::sqlite3_finalize(stmt);
-                if rc != ffi::SQLITE_OK {
-                    tracing::error!("Failed to finalize a dangling statement: {rc}")
-                }
-                stmt = ffi::sqlite3_next_stmt(db, stmt);
-            }
-        }
-    }
-}
-
 impl<'a> Connection<'a> {
     /// returns a dummy, in-memory connection. For testing purposes only
     pub fn test(_: &mut ()) -> Self {
