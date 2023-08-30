@@ -20,7 +20,7 @@ use crate::connection::libsql::{open_db, LibSqlDbFactory};
 use crate::connection::write_proxy::MakeWriteProxyConnection;
 use crate::connection::MakeConnection;
 use crate::database::{Database, PrimaryDatabase, ReplicaDatabase};
-use crate::error::Error;
+use crate::error::{Error, LoadDumpError};
 use crate::replication::primary::logger::{ReplicationLoggerHookCtx, REPLICATION_METHODS};
 use crate::replication::replica::Replicator;
 use crate::replication::{NamespacedSnapshotCallback, ReplicationLogger};
@@ -103,7 +103,7 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         allow_creation: bool,
     ) -> crate::Result<Namespace<Self::Database>> {
         if dump.is_some() {
-            return Err(Error::ReplicaLoadDump);
+            Err(LoadDumpError::ReplicaLoadDump)?;
         }
 
         Namespace::new_replica(&self.config, name, allow_creation).await
@@ -302,7 +302,8 @@ pub struct PrimaryNamespaceConfig {
     pub disable_namespace: bool,
 }
 
-type DumpStream = Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + 'static + Unpin>;
+pub type DumpStream =
+    Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + 'static + Unpin>;
 
 impl Namespace<PrimaryDatabase> {
     async fn new_primary(
@@ -403,7 +404,7 @@ impl Namespace<PrimaryDatabase> {
 
         if let Some(dump) = dump {
             if !is_fresh_db {
-                return Err(Error::LoadDumpExistingDb);
+                Err(LoadDumpError::LoadDumpExistingDb)?;
             }
             let mut ctx = ctx_builder();
             load_dump(&db_path, dump, &mut ctx).await?;
