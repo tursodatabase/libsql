@@ -66,13 +66,11 @@ pub enum Error {
     ReplicationError(#[from] ReplicationError),
     #[error("Failed to connect to primary")]
     PrimaryConnectionTimeout,
-    #[error("Cannot load a dump on a replica")]
-    ReplicaLoadDump,
-    #[error("cannot load from a dump if a database already exists.")]
-    LoadDumpExistingDb,
+    #[error("Error while loading dump: {0}")]
+    LoadDumpError(#[from] LoadDumpError),
 }
 
-impl Error {
+trait ResponseError: std::error::Error {
     fn format_err(&self, status: StatusCode) -> axum::response::Response {
         let json = serde_json::json!({ "error": self.to_string() });
         tracing::error!("HTTP API: {}, {}", status, json);
@@ -80,11 +78,13 @@ impl Error {
     }
 }
 
+impl ResponseError for Error {}
+
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         use Error::*;
 
-        match &self {
+        match self {
             FailedToParse(_) => self.format_err(StatusCode::BAD_REQUEST),
             AuthError(_) => self.format_err(StatusCode::UNAUTHORIZED),
             Anyhow(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -112,8 +112,7 @@ impl IntoResponse for Error {
             PrimaryConnectionTimeout => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
-            ReplicaLoadDump => self.format_err(StatusCode::BAD_REQUEST),
-            LoadDumpExistingDb => self.format_err(StatusCode::BAD_REQUEST),
+            LoadDumpError(e) => e.into_response(),
         }
     }
 }
@@ -129,5 +128,43 @@ impl From<tokio::sync::oneshot::error::RecvError> for Error {
 impl From<bincode::Error> for Error {
     fn from(other: bincode::Error) -> Self {
         Self::Internal(other.to_string())
+    }
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum LoadDumpError {
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("Cannot load a dump on a replica")]
+    ReplicaLoadDump,
+    #[error("cannot load from a dump if a database already exists")]
+    LoadDumpExistingDb,
+    #[error("the passed dump file path is not absolute")]
+    DumpFilePathNotAbsolute,
+    #[error("the passed dump file path doesn't exist")]
+    DumpFileDoesntExist,
+    #[error("invalid dump url")]
+    InvalidDumpUrl,
+    #[error("error fetching dump: {0}")]
+    Fetch(#[from] hyper::Error),
+    #[error("unsupported dump url scheme `{0}`, supported schemes are: `http`, `file`")]
+    UnsupportedUrlScheme(String),
+}
+
+impl ResponseError for LoadDumpError {}
+
+impl IntoResponse for LoadDumpError {
+    fn into_response(self) -> axum::response::Response {
+        use LoadDumpError::*;
+
+        match &self {
+            Io(_) | Fetch(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicaLoadDump
+            | LoadDumpExistingDb
+            | InvalidDumpUrl
+            | DumpFileDoesntExist
+            | UnsupportedUrlScheme(_)
+            | DumpFilePathNotAbsolute => self.format_err(StatusCode::BAD_REQUEST),
+        }
     }
 }

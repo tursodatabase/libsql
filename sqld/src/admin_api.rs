@@ -1,13 +1,16 @@
 use anyhow::Context as _;
-use axum::extract::{BodyStream, Path, State};
+use axum::extract::{Path, State};
 use axum::Json;
 use futures::TryStreamExt;
 use serde::Deserialize;
 use std::sync::Arc;
 use std::{io::ErrorKind, net::SocketAddr};
+use tokio_util::io::ReaderStream;
+use url::Url;
 
 use crate::connection::config::{DatabaseConfig, DatabaseConfigStore};
-use crate::namespace::{MakeNamespace, NamespaceStore};
+use crate::error::LoadDumpError;
+use crate::namespace::{DumpStream, MakeNamespace, NamespaceStore};
 
 struct AppState<F: MakeNamespace> {
     db_config_store: Arc<DatabaseConfigStore>,
@@ -24,10 +27,6 @@ pub async fn run_admin_api<F: MakeNamespace>(
         .route("/", get(handle_get_index))
         .route("/v1/config", get(handle_get_config))
         .route("/v1/block", post(handle_post_block))
-        .route(
-            "/v1/namespaces/:namespace/create-with-dump",
-            post(handle_create_namespace_with_dump),
-        )
         .route(
             "/v1/namespaces/:namespace/create",
             post(handle_create_namespace),
@@ -67,6 +66,11 @@ struct BlockReq {
     block_reason: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+struct CreateNamespaceReq {
+    dump_url: Option<Url>,
+}
+
 async fn handle_post_block<F: MakeNamespace>(
     State(app_state): State<Arc<AppState<F>>>,
     Json(req): Json<BlockReq>,
@@ -85,23 +89,53 @@ async fn handle_post_block<F: MakeNamespace>(
     }
 }
 
-async fn handle_create_namespace_with_dump<F: MakeNamespace>(
+async fn handle_create_namespace<F: MakeNamespace>(
     State(app_state): State<Arc<AppState<F>>>,
     Path(namespace): Path<String>,
-    body: BodyStream,
+    Json(req): Json<CreateNamespaceReq>,
 ) -> Result<(), crate::error::Error> {
-    let dump = Box::new(body.map_err(|e| std::io::Error::new(ErrorKind::Other, e)));
+    let maybe_dump = match req.dump_url {
+        Some(ref url) => Some(dump_stream_from_url(url).await?),
+        None => None,
+    };
+
     app_state
         .namespaces
-        .create(namespace.into(), Some(dump))
+        .create(namespace.into(), maybe_dump)
         .await?;
     Ok(())
 }
 
-async fn handle_create_namespace<F: MakeNamespace>(
-    State(app_state): State<Arc<AppState<F>>>,
-    Path(namespace): Path<String>,
-) -> Result<(), crate::error::Error> {
-    app_state.namespaces.create(namespace.into(), None).await?;
-    Ok(())
+async fn dump_stream_from_url(url: &Url) -> Result<DumpStream, LoadDumpError> {
+    match url.scheme() {
+        "http" => {
+            let client = hyper::client::Client::new();
+            let uri = url
+                .as_str()
+                .parse()
+                .map_err(|_| LoadDumpError::InvalidDumpUrl)?;
+            let resp = client.get(uri).await?;
+            let body = resp
+                .into_body()
+                .map_err(|e| std::io::Error::new(ErrorKind::Other, e));
+            Ok(Box::new(body))
+        }
+        "file" => {
+            let path = url
+                .to_file_path()
+                .map_err(|_| LoadDumpError::InvalidDumpUrl)?;
+            if !path.is_absolute() {
+                return Err(LoadDumpError::DumpFilePathNotAbsolute);
+            }
+
+            if !path.try_exists()? {
+                return Err(LoadDumpError::DumpFileDoesntExist);
+            }
+
+            let f = tokio::fs::File::open(path).await?;
+
+            Ok(Box::new(ReaderStream::new(f)))
+        }
+        scheme => Err(LoadDumpError::UnsupportedUrlScheme(scheme.to_string())),
+    }
 }
