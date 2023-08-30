@@ -3723,8 +3723,16 @@ int sqlite3_collation_needed16(
 */
 void *sqlite3_get_clientdata(sqlite3 *db, const char *zName){
   DbClientData *p;
-  for(p=db->pDbData; p && strcmp(p->zName,zName); p=p->pNext){}
-  return p ? p->pData : 0;
+  sqlite3_mutex_enter(db->mutex);
+  for(p=db->pDbData; p; p=p->pNext){
+    if( strcmp(p->zName, zName)==0 ){
+      void *pResult = p->pData;
+      sqlite3_mutex_leave(db->mutex);
+      return pResult;
+    }
+  }
+  sqlite3_mutex_leave(db->mutex);
+  return 0;
 }
 
 /*
@@ -3737,6 +3745,7 @@ int sqlite3_set_clientdata(
   void (*xDestructor)(void*)     /* Destructor */
 ){
   DbClientData *p, **pp;
+  sqlite3_mutex_enter(db->mutex);
   pp = &db->pDbData;
   for(p=db->pDbData; p && strcmp(p->zName,zName); p=p->pNext){
     pp = &p->pNext;
@@ -3747,15 +3756,18 @@ int sqlite3_set_clientdata(
     if( pData==0 ){
       *pp = p->pNext;
       sqlite3_free(p);
+      sqlite3_mutex_leave(db->mutex);
       return SQLITE_OK;
     }
   }else if( pData==0 ){
+    sqlite3_mutex_leave(db->mutex);
     return SQLITE_OK;
   }else{
     size_t n = strlen(zName);
     p = sqlite3_malloc64( sizeof(DbClientData)+n+1 );
     if( p==0 ){
       if( xDestructor ) xDestructor(pData);
+      sqlite3_mutex_leave(db->mutex);
       return SQLITE_NOMEM;
     }
     memcpy(p->zName, zName, n+1);
@@ -3764,6 +3776,7 @@ int sqlite3_set_clientdata(
   }
   p->pData = pData;
   p->xDestructor = xDestructor;
+  sqlite3_mutex_leave(db->mutex);
   return SQLITE_OK;
 }
 
