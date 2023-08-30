@@ -59,6 +59,10 @@ impl<C: Connection> Server<C> {
             encoding,
         )
         .await
+        .map_err(|e| {
+            tracing::error!("hrana server: {}", e);
+            e
+        })
         .or_else(|err| {
             err.downcast::<stream::StreamError>()
                 .map(|err| stream_error_response(err, encoding))
@@ -107,9 +111,8 @@ async fn handle_pipeline<C: Connection>(
 
     let mut results = Vec::with_capacity(req_body.requests.len());
     for request in req_body.requests.into_iter() {
-        let result = request::handle(&mut stream_guard, auth, request, version)
-            .await
-            .context("Could not execute a request in pipeline")?;
+        tracing::debug!("pipeline:{{ {:?}, {:?} }}", version, request);
+        let result = request::handle(&mut stream_guard, auth, request, version).await?;
         results.push(result);
     }
 
