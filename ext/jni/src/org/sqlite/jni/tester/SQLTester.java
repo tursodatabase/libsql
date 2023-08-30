@@ -475,12 +475,12 @@ public class SQLTester {
      the db's result code.
 
      appendMode specifies how/whether to append results to the result
-     buffer. lineMode specifies whether to output all results in a
+     buffer. rowMode specifies whether to output all results in a
      single line or one line per row. If appendMode is
-     ResultBufferMode.NONE then lineMode is ignored and may be null.
+     ResultBufferMode.NONE then rowMode is ignored and may be null.
   */
   public int execSql(sqlite3 db, boolean throwOnError,
-                     ResultBufferMode appendMode, ResultRowMode lineMode,
+                     ResultBufferMode appendMode, ResultRowMode rowMode,
                      String sql) throws SQLTesterException {
     if( null==db && null==aDb[0] ){
       // Delay opening of the initial db to enable tests to change its
@@ -562,7 +562,7 @@ public class SQLTester {
                   throw new SQLTesterException("Unhandled ResultBufferMode: "+appendMode);
               }
             }
-            if( ResultRowMode.NEWLINE == lineMode ){
+            if( ResultRowMode.NEWLINE == rowMode ){
               spacing = 0;
               sb.append('\n');
             }
@@ -1128,8 +1128,9 @@ class TestScript {
   }
 
   public String getOutputPrefix(){
-    String rc =  "["+(moduleName==null ? filename : moduleName)+"]";
+    String rc = "["+(moduleName==null ? "<unnamed>" : moduleName)+"]";
     if( null!=testCaseName ) rc += "["+testCaseName+"]";
+    if( null!=filename ) rc += "["+filename+"]";
     return rc + " line "+ cur.lineNo;
   }
 
@@ -1273,6 +1274,7 @@ class TestScript {
   }
 
   private boolean checkRequiredProperties(SQLTester t, String[] props) throws SQLTesterException{
+    if( true ) return false;
     int nOk = 0;
     for(String rp : props){
       verbose1("REQUIRED_PROPERTIES: ",rp);
@@ -1293,6 +1295,12 @@ class TestScript {
           t.appendDbInitSql("pragma temp_store=0;");
           ++nOk;
           break;
+        case "AUTOVACUUM":
+          t.appendDbInitSql("pragma auto_vacuum=full;");
+          ++nOk;
+        case "INCRVACUUM":
+          t.appendDbInitSql("pragma auto_vacuum=incremental;");
+          ++nOk;
         default:
           break;
       }
@@ -1331,9 +1339,9 @@ class TestScript {
     m = patternRequiredProperties.matcher(line);
     if( m.find() ){
       final String rp = m.group(1);
-      //if( ! checkRequiredProperties( tester, rp.split("\\s+") ) ){
-      throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
-      //}
+      if( ! checkRequiredProperties( tester, rp.split("\\s+") ) ){
+        throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
+      }
     }
     m = patternMixedModuleName.matcher(line);
     if( m.find() ){

@@ -42,7 +42,8 @@ let ts = new ns.TestScript('/foo.test',`
 ** xMODULE_NAME:             module-name
 ** xREQUIRED_PROPERTIES:      small fast reliable
 ** xREQUIRED_PROPERTIES:      RECURSIVE_TRIGGERS
-** xREQUIRED_PROPERTIES:      TEMPSTORE_MEM  TEMPSTORE_FILE
+** xREQUIRED_PROPERTIES:      TEMPSTORE_FILE TEMPSTORE_MEM
+** xREQUIRED_PROPERTIES:      AUTOVACUUM INCRVACUUM
 **
 */
 /* --verbosity 3 */

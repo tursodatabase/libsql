@@ -1,5 +1,5 @@
-C When\sa\sJS\sSQLTester\sscript\sthrows,\sreport\sthe\sexception\sdetails\sback\sto\sthe\sUI\sregardless\sof\swhether\sit's\sfatal.
-D 2023-08-30T14:20:02.025
+C Further\stweaking\sin\sboth\sSQLTesters.
+D 2023-08-30T15:51:42.969
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -283,9 +283,9 @@ F ext/jni/src/org/sqlite/jni/sqlite3.java 62b1b81935ccf3393472d17cb883dc5ff39c38
 F ext/jni/src/org/sqlite/jni/sqlite3_context.java 66ca95ce904044263a4aff684abe262d56f73e6b06bca6cf650761d79d7779ad
 F ext/jni/src/org/sqlite/jni/sqlite3_stmt.java 78e6d1b95ac600a9475e9db4623f69449322b0c93d1bd4e1616e76ed547ed9fc
 F ext/jni/src/org/sqlite/jni/sqlite3_value.java 3d1d4903e267bc0bc81d57d21f5e85978eff389a1a6ed46726dbe75f85e6914a
-F ext/jni/src/org/sqlite/jni/tester/SQLTester.java e5a1a4b55ed940e61558be1292aa66563219f360c7c1f9d40d770307e6da3c07
+F ext/jni/src/org/sqlite/jni/tester/SQLTester.java a6863d0284c8ec8ca5abd3d40e1fb297e7ae57fb97282ba335cd896a770e3918
 F ext/jni/src/org/sqlite/jni/tester/test-script-interpreter.md f9f25126127045d051e918fe59004a1485311c50a13edbf18c79a6ff9160030e
-F ext/jni/src/tests/000-000-sanity.test cfe6dc1b950751d6096e3f5695becaadcdaa048bfe9567209d6eb676e693366d
+F ext/jni/src/tests/000-000-sanity.test c3427a0e0ac84d7cbe4c95fdc1cd4b61f9ddcf43443408f3000139478c4dc745
 F ext/jni/src/tests/000-001-ignored.test e17e874c6ab3c437f1293d88093cf06286083b65bf162317f91bbfd92f961b70
 F ext/jni/src/tests/900-001-fts.test bf0ce17a8d082773450e91f2388f5bbb2dfa316d0b676c313c637a91198090f0
 F ext/lsm1/Makefile a553b728bba6c11201b795188c5708915cc4290f02b7df6ba7e8c4c943fd5cd9
@@ -549,8 +549,8 @@ F ext/wasm/GNUmakefile 0e362f3fc04eab6628cbe4f1e35f4ab4a200881f6b5f753b27fb45eab
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
-F ext/wasm/SQLTester/SQLTester.mjs 20309ff838209601711087932b008734bab00176e6a47e41d95e11f6d363bae0
-F ext/wasm/SQLTester/SQLTester.run.mjs addeb962f33fb6bca723ab12f0b018303ff962dfc57ee969d051fcbf4f191569
+F ext/wasm/SQLTester/SQLTester.mjs ec2f6ba63a0f2f0562941a0fb8e46b7dc55589711513f1952349785966edfe50
+F ext/wasm/SQLTester/SQLTester.run.mjs c72b7fe2072d05992f7a3d8c6a1d34e95712513ceabe40849784e24e41c84638
 F ext/wasm/SQLTester/index.html 3a12895015c165281307eb47786ce3c46b3c3f06383ad6a9fe3a8526105632f1
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
@@ -2115,8 +2115,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P b530792a514d95c4e8f93cf2170d9fc4de367055fa1704fc171551c946024fa9
-R 27c4b366fbb2810d013255774a7479ce
+P 273d3b05f630d399d42914e95c416b107b4746bbef129cfba9d00fd921666261
+R 137dd20583c129ec3973659fafa81f04
 U stephan
-Z 3efc7b20eec1af6f89785f42be992e20
+Z b64a49daabb87406caca79373e21eb07
 # Remove this line to create a well-formed Fossil manifest.
