@@ -39,6 +39,7 @@ use crate::namespace::{MakeNamespace, NamespaceStore};
 use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, State, Statement};
 use crate::query_result_builder::QueryResultBuilder;
+use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
 use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use crate::rpc::ReplicationLogServer;
 use crate::stats::Stats;
@@ -210,7 +211,7 @@ impl<F: MakeNamespace> Clone for AppState<F> {
 
 // TODO: refactor
 #[allow(clippy::too_many_arguments)]
-pub async fn run_http<M, S>(
+pub async fn run_http<M, S, P>(
     addr: SocketAddr,
     auth: Arc<Auth>,
     namespaces: Arc<NamespaceStore<M>>,
@@ -219,6 +220,7 @@ pub async fn run_http<M, S>(
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
+    proxy_service: Option<P>,
     replication_service: S,
     disable_default_namespace: bool,
     disable_namespaces: bool,
@@ -226,6 +228,7 @@ pub async fn run_http<M, S>(
 where
     M: MakeNamespace,
     S: ReplicationLog,
+    P: Proxy,
 {
     let state = AppState {
         auth,
@@ -338,11 +341,21 @@ where
         );
 
     // Merge the grpc based axum router into our regular http router
-    let server = ReplicationLogServer::new(replication_service);
-    let grpc_router = Server::builder()
-        .accept_http1(true)
-        .add_service(tonic_web::enable(server))
-        .into_router();
+    let replication = ReplicationLogServer::new(replication_service);
+
+    let grpc_router = if let Some(proxy) = proxy_service {
+        let write_proxy = ProxyServer::new(proxy);
+        Server::builder()
+            .accept_http1(true)
+            .add_service(tonic_web::enable(replication))
+            .add_service(tonic_web::enable(write_proxy))
+            .into_router()
+    } else {
+        Server::builder()
+            .accept_http1(true)
+            .add_service(tonic_web::enable(replication))
+            .into_router()
+    };
 
     let router = layered_app.merge(grpc_router);
 

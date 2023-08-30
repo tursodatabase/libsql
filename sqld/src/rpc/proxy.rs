@@ -5,7 +5,7 @@ use std::sync::Arc;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use uuid::Uuid;
 
-use crate::auth::{Authenticated, Authorized};
+use crate::auth::{Auth, Authenticated};
 use crate::connection::libsql::LibSqlConnection;
 use crate::connection::{Connection, TrackedConnection};
 use crate::database::Database;
@@ -263,13 +263,18 @@ pub mod rpc {
 pub struct ProxyService {
     clients: RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>,
     namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
+    auth: Option<Arc<Auth>>,
 }
 
 impl ProxyService {
-    pub fn new(namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>) -> Self {
+    pub fn new(
+        namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
+        auth: Option<Arc<Auth>>,
+    ) -> Self {
         Self {
             clients: Default::default(),
             namespaces,
+            auth,
         }
     }
 }
@@ -435,21 +440,16 @@ impl Proxy for ProxyService {
         &self,
         req: tonic::Request<rpc::ProgramReq>,
     ) -> Result<tonic::Response<ExecuteResults>, tonic::Status> {
+        let auth = if let Some(auth) = &self.auth {
+            auth.authenticate_grpc(&req)?
+        } else {
+            Authenticated::from_proxy_grpc_request(&req)?
+        };
+
         let req = req.into_inner();
         let pgm = crate::connection::program::Program::try_from(req.pgm.unwrap())
             .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument, e.to_string()))?;
         let client_id = Uuid::from_str(&req.client_id).unwrap();
-        let auth = match req.authorized {
-            Some(0) => Authenticated::Authorized(Authorized::ReadOnly),
-            Some(1) => Authenticated::Authorized(Authorized::FullAccess),
-            Some(_) => {
-                return Err(tonic::Status::new(
-                    tonic::Code::PermissionDenied,
-                    "invalid authorization level",
-                ))
-            }
-            None => Authenticated::Anonymous,
-        };
 
         let (connection_maker, new_frame_notifier) = self
             .namespaces

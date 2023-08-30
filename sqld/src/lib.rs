@@ -1,4 +1,4 @@
-#![allow(clippy::type_complexity)]
+#![allow(clippy::type_complexity, clippy::too_many_arguments)]
 
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
@@ -17,6 +17,8 @@ use namespace::{
     ReplicaNamespaceConfig, ReplicaNamespaceMaker,
 };
 use replication::{NamespacedSnapshotCallback, ReplicationLogger};
+use rpc::proxy::rpc::proxy_server::Proxy;
+use rpc::proxy::ProxyService;
 use rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use rpc::replication_log::ReplicationLogService;
 use rpc::replication_log_proxy::ReplicationLogProxyService;
@@ -154,18 +156,20 @@ impl Default for Config {
     }
 }
 
-async fn run_service<F, S>(
+async fn run_service<F, S, P>(
     namespaces: Arc<NamespaceStore<F>>,
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
     db_config_store: Arc<DatabaseConfigStore>,
+    proxy_service: Option<P>,
     replication_service: S,
 ) -> anyhow::Result<()>
 where
     F: MakeNamespace,
     S: ReplicationLog,
+    P: Proxy,
 {
     let auth = get_auth(config)?;
 
@@ -207,6 +211,7 @@ where
             config.enable_http_console,
             idle_shutdown_layer,
             stats.clone(),
+            proxy_service,
             replication_service,
             config.disable_default_namespace,
             config.disable_namespaces,
@@ -347,13 +352,14 @@ async fn start_replica(
 
     let replication_service = ReplicationLogProxyService::new(channel, uri);
 
-    run_service(
+    run_service::<_, _, ProxyService>(
         namespaces,
         config,
         join_set,
         idle_shutdown_layer,
         stats,
         db_config_store,
+        None,
         replication_service,
     )
     .await?;
@@ -481,12 +487,17 @@ async fn start_primary(
         ));
     }
 
+    let auth = get_auth(config)?;
+
     let logger_service = ReplicationLogService::new(
         namespaces.clone(),
         idle_shutdown_layer.clone(),
-        Some(get_auth(config)?),
+        Some(auth.clone()),
         config.disable_namespaces,
     );
+
+    let proxy_service = ProxyService::new(namespaces.clone(), Some(auth));
+
     run_service(
         namespaces.clone(),
         config,
@@ -494,6 +505,7 @@ async fn start_primary(
         idle_shutdown_layer,
         stats,
         config_store,
+        Some(proxy_service),
         logger_service,
     )
     .await?;
