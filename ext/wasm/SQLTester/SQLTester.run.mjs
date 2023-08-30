@@ -1,4 +1,18 @@
+/*
+** 2023-08-29
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file contains a test application for SQLTester.js.
+*/
 import {default as ns} from './SQLTester.mjs';
+import {default as tests} from './test-list.mjs';
 
 globalThis.sqlite3 = ns.sqlite3;
 const log = function f(...args){
@@ -19,16 +33,13 @@ const affirm = function(expr, msg){
   }
 }
 
-console.log("Loaded",ns);
-
-log("ns =",ns);
-outln("SQLTester is ready.");
+log("SQLTester is ready.");
 
 let ts = new ns.TestScript('/foo.test',`
 /*
 ** This is a comment. There are many like it but this one is mine.
 **
-** SCRIPT_MODULE_NAME:      sanity-check
+** SCRIPT_MODULE_NAME:      sanity-check-0
 ** xMIXED_MODULE_NAME:       mixed-module
 ** xMODULE_NAME:             module-name
 ** xREQUIRED_PROPERTIES:      small fast reliable
@@ -45,10 +56,10 @@ let ts = new ns.TestScript('/foo.test',`
 --oom
 --db 0
 --new my.db
---null zilch
+--null zilchy
 --testcase 1.0
 SELECT 1, null;
---result 1 zilch
+--result 1 zilchy
 --glob *zil*
 --notglob *ZIL*
 SELECT 1, 2;
@@ -85,20 +96,27 @@ SELECT json_array(1,2,3)
 
 const sqt = new ns.SQLTester();
 try{
-  affirm( !sqt.getCurrentDb(), 'sqt.getCurrentDb()' );
-  sqt.openDb('/foo.db', true);
-  affirm( !!sqt.getCurrentDb(),'sqt.getCurrentDb()' );
-  sqt.verbosity(0);
-  if(false){
-    affirm( 'zilch' !== sqt.nullValue() );
-    ts.run(sqt);
-    affirm( 'zilch' === sqt.nullValue() );
+  if( 0 ){
+    affirm( !sqt.getCurrentDb(), 'sqt.getCurrentDb()' );
+    sqt.openDb('/foo.db', true);
+    affirm( !!sqt.getCurrentDb(),'sqt.getCurrentDb()' );
+    sqt.verbosity(0);
+    if(false){
+      affirm( 'zilch' !== sqt.nullValue() );
+      ts.run(sqt);
+      affirm( 'zilch' === sqt.nullValue() );
+    }
+    sqt.addTestScript(ts);
+    sqt.runTests();
+  }else{
+    for(const t of tests){
+      sqt.addTestScript( new ns.TestScript(t) );
+    }
+    tests.length = 0;
+    sqt.verbosity(0);
+    sqt.runTests();
   }
-  sqt.addTestScript(ts);
-  sqt.runTests();
 }finally{
+  log( "Metrics:", sqt.metrics );
   sqt.reset();
 }
-log( 'sqt.getCurrentDb()', sqt.getCurrentDb() );
-log( "Metrics:", sqt.metrics );
-

@@ -9,11 +9,12 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains the main application entry pointer for the
-** JS implementation of the SQLTester framework.
+** This file contains the main application entry pointer for the JS
+** implementation of the SQLTester framework. This version is not well
+** documented because the one it's a direct port of is documented:
+** in the main SQLite3 source tree, see
+** ext/jni/src/org/sqlite/jni/tester/SQLite3Tester.java.
 */
-
-// UNDER CONSTRUCTION. Still being ported from the Java impl.
 
 import sqlite3ApiInit from '/jswasm/sqlite3.mjs';
 
@@ -21,6 +22,43 @@ const sqlite3 = await sqlite3ApiInit();
 
 const log = (...args)=>{
   console.log('SQLTester:',...args);
+};
+
+const tryInstallVfs = function f(vfsName){
+  if(f.vfsName) return false;
+  const pVfs = sqlite3.capi.sqlite3_vfs_find(vfsName);
+  if(pVfs){
+    log("Installing",'"'+vfsName+'"',"as default VFS.");
+    const rc = sqlite3.capi.sqlite3_vfs_register(pVfs, 1);
+    if(rc){
+      sqlite3.SQLite3Error.toss(rc,"While trying to register",vfsName,"vfs.");
+    }
+    f.vfsName = vfsName;
+  }
+  return !!pVfs;
+};
+tryInstallVfs.vfsName = undefined;
+
+if( 1 ){
+  // Try OPFS storage, if available...
+  if(sqlite3.installOpfsSAHPoolVfs){
+    await sqlite3.installOpfsSAHPoolVfs({
+      clearOnInit: true,
+      initialCapacity: 15,
+      name: 'opfs-SQLTester'
+    }).then(pool=>{
+      tryInstallVfs(pool.vfsName);
+    }).catch(e=>{
+      log("OpfsSAHPool could not load:",e);
+    });
+  }
+  if(sqlite3.oo1.OpfsDb){
+    tryInstallVfs("opfs");
+  }
+}
+
+const wPost = (type,...payload)=>{
+  postMessage({type, payload});
 };
 
 // Return a new enum entry value
@@ -215,7 +253,7 @@ class SQLTester {
   //! Test result buffer.
   #resultBuffer = [];
   //! Output representation of SQL NULL.
-  #nullView = "nil";
+  #nullView;
   metrics = newObj({
     //! Total tests run
     nTotalTest: 0,
@@ -245,6 +283,7 @@ class SQLTester {
   });
 
   constructor(){
+    this.reset();
   }
 
   outln(...args){ return this.#outer.outln(...args); }
@@ -261,7 +300,7 @@ class SQLTester {
     this.#clearBuffer(this.#db.initSql);
     this.closeAllDbs();
     this.metrics.nTest = 0;
-    this.nullView = "nil";
+    this.#nullView = "nil";
     this.emitColNames = false;
     this.#db.iCurrentDb = 0;
     //this.#db.initSql.push("SELECT 1;");
@@ -424,12 +463,19 @@ class SQLTester {
 
   runTests(){
     const tStart = (new Date()).getTime();
+    let isVerbose = this.verbosity();
     for(const ts of this.#aScripts){
       this.reset();
       ++this.metrics.nTestFile;
       let threw = false;
       const timeStart = (new Date()).getTime();
+      let msgTail = '';
       try{
+        if( isVerbose ){
+          this.#outer.verbose1("Running ",ts.filename());
+        }else{
+          msgTail = ' '+ts.filename();
+        }
         ts.run(this);
       }catch(e){
         if(e instanceof SQLTesterException){
@@ -446,7 +492,7 @@ class SQLTester {
       }finally{
         const timeEnd = (new Date()).getTime();
         this.outln("🏁", (threw ? "❌" : "✅"), " ", this.metrics.nTest,
-                   " test(s) in ", (timeEnd-timeStart),"ms.");
+                   " test(s) in ", (timeEnd-timeStart),"ms.",msgTail);
       }
     }
     const tEnd = (new Date()).getTime();
@@ -544,7 +590,7 @@ class SQLTester {
           if(throwOnError){
             throw new DbException(self, pDb, rc);
           }else if( sb ){
-            self.#appendDbErr(db, sb, rc);
+            self.#appendDbErr(pDb, sb, rc);
           }
           break;
         }
@@ -666,13 +712,20 @@ class TestScript {
     if( 2 == args.length ){
       filename = args[0];
       content = args[1];
-    }else{
-      content = args[0];
+    }else if( 1 == args.length ){
+      if(args[0] instanceof Object){
+        const o = args[0];
+        filename = o.name;
+        content = o.content;
+      }else{
+        content = args[0];
+      }
     }
     if(!(content instanceof Uint8Array)){
       if('string' === typeof content){
         content = Util.utf8Encode(content);
-      }else if(content instanceof ArrayBuffer){
+      }else if((content instanceof ArrayBuffer)
+               ||(content instanceof Array)){
         content = new Uint8Array(content);
       }else{
         toss(Error, "Invalid content type for TestScript constructor.");
@@ -685,6 +738,10 @@ class TestScript {
   testCaseName(){
     return (0==arguments.length)
       ? this.#testCaseName : (this.#testCaseName = arguments[0]);
+  }
+  filename(){
+    return (0==arguments.length)
+      ? this.#filename : (this.#filename = arguments[0]);
   }
 
   getOutputPrefix() {
@@ -1041,7 +1098,7 @@ class RunCommand extends Command {
                        ResultRowMode.ONELINE, sql);
     if( 0!==rc && t.verbosity()>0 ){
       const msg = sqlite3.capi.sqlite3_errmsg(pDb);
-      ts.verbose1(argv[0]," non-fatal command error #",rc,": ",
+      ts.verbose2(argv[0]," non-fatal command error #",rc,": ",
                   msg,"\nfor SQL:\n",sql);
     }
   }

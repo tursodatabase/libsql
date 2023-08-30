@@ -14,13 +14,14 @@
     <p>All stuff on this page happens in the dev console.</p>
     <hr>
     <div id='test-output'></div>
-    <script src='SQLTester.run.mjs' type='module'></script>
-    <!--script>
+    <!--script src='SQLTester.run.mjs' type='module'></script-->
+    <script>
       (function(){
-          const W = new Worker('scratchpad-wasmfs.mjs',{
-              type: 'module'
-          });
+        // Noting that Firefox can't do this yet.
+        const W = new Worker('SQLTester.run.mjs',{
+          type: 'module'
+        });
       })();
-    </script-->
+    </script>
   </body>
 </html>
