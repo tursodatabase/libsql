@@ -2,7 +2,7 @@ use std::{path::PathBuf, process::Command};
 
 #[test]
 fn bootstrap() {
-    let iface_files = &["proto/replication_log.proto"];
+    let iface_files = &["proto/replication_log.proto", "proto/proxy.proto"];
     let dirs = &["proto"];
 
     let out_dir = PathBuf::from(std::env!("CARGO_MANIFEST_DIR"))

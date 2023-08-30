@@ -2,14 +2,6 @@ mod client;
 pub mod frame;
 pub mod replica;
 
-mod pb {
-    #![allow(unreachable_pub)]
-    #![allow(missing_docs)]
-    include!("generated/wal_log.rs");
-
-    pub use replication_log_client::ReplicationLogClient;
-}
-
 pub const WAL_PAGE_SIZE: i32 = 4096;
 pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
 
@@ -31,10 +23,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use crate::client::GrpcChannel;
-use crate::pb::HelloRequest;
-
-type RpcClient = pb::ReplicationLogClient<InterceptedService<GrpcChannel, AuthInterceptor>>;
+use client::Client;
 
 pub struct Replicator {
     pub frames_sender: Sender<Frames>,
@@ -44,7 +33,7 @@ pub struct Replicator {
     _hook_ctx: Arc<parking_lot::Mutex<InjectorHookCtx>>,
     pub meta: Arc<parking_lot::Mutex<Option<replica::meta::WalIndexMeta>>>,
     pub injector: replica::injector::FrameInjector<'static>,
-    pub client: Option<RpcClient>,
+    pub client: Option<Client>,
     pub next_offset: AtomicU64,
 }
 
@@ -137,51 +126,13 @@ impl Replicator {
         endpoint: impl AsRef<str>,
         auth_token: impl AsRef<str>,
     ) -> anyhow::Result<replica::meta::WalIndexMeta> {
-        let auth_token = format!("Bearer {}", auth_token.as_ref())
-            .try_into()
-            .context("Invalid auth token must be ascii")?;
+        let client = Client::new(endpoint.as_ref().try_into()?, auth_token)?;
 
-        // TODO: Once fly fixes their proxy to correctly accept h2 we can drop
-        // the h2c client but for now lets keep this commented.
-        //
-        //let channel = Channel::builder(
-        //    endpoint
-        //        .as_ref()
-        //        .try_into()
-        //        .context("Unable to convert endpoint into a Uri")?,
-        //)
-        //.http2_keep_alive_interval(std::time::Duration::from_secs(5))
-        //.keep_alive_while_idle(true)
-        //.tls_config(tonic::transport::ClientTlsConfig::new())?
-        //.connect_lazy();
-
-        let channel = GrpcChannel::new();
-
-        let mut client = pb::ReplicationLogClient::with_origin(
-            InterceptedService::new(channel, AuthInterceptor(auth_token)),
-            http::Uri::try_from(endpoint.as_ref()).unwrap(),
-        );
-
-        let response = client
-            .hello(pb::HelloRequest::default())
-            .await?
-            .into_inner();
-
-        let generation_id =
-            Uuid::try_parse(&response.generation_id).context("Unable to parse generation id")?;
-        let database_id =
-            Uuid::try_parse(&response.database_id).context("Unable to parse database id")?;
+        let meta = client.hello().await?;
 
         self.client = Some(client);
 
-        // FIXME: not that simple, we need to figure out if we always start from frame 1?
-        let meta = replica::meta::WalIndexMeta {
-            pre_commit_frame_no: 0,
-            post_commit_frame_no: 0,
-            generation_id: generation_id.to_u128_le(),
-            database_id: database_id.to_u128_le(),
-        };
-        tracing::debug!("Hello response: {response:?}");
+        tracing::debug!("init_metadata: {meta:?}");
         Ok(meta)
     }
 
@@ -246,6 +197,11 @@ impl Replicator {
         Ok(())
     }
 
+    pub async fn delegate_write(&self, sql: &str) -> anyhow::Result<()> {
+        // let req =
+        Ok(())
+    }
+
     // Syncs frames from HTTP, returns how many frames were applied
     pub async fn sync_from_http(&self) -> anyhow::Result<usize> {
         tracing::trace!("Syncing frames from HTTP");
@@ -273,38 +229,18 @@ impl Replicator {
     }
 
     async fn fetch_log_entries(&self, send_hello: bool) -> anyhow::Result<Vec<Frame>> {
-        let mut client = self
+        let client = self
             .client
             .clone()
             .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
 
         if send_hello {
             // TODO: Should we update wal metadata?
-            let _res = client.hello(HelloRequest {}).await?.into_inner();
+            let _res = client.hello().await?;
         }
 
-        let frames = client
-            .batch_log_entries(pb::LogOffset {
-                next_offset: self.next_offset.load(Ordering::Relaxed),
-            })
-            .await?
-            .into_inner();
-        let frames = frames
-            .frames
-            .into_iter()
-            .map(|f| Frame::try_from_bytes(f.data))
-            .collect::<Result<Vec<_>, _>>()?;
-
-        Ok(frames)
-    }
-}
-
-#[derive(Clone)]
-pub struct AuthInterceptor(MetadataValue<Ascii>);
-
-impl Interceptor for AuthInterceptor {
-    fn call(&mut self, mut req: tonic::Request<()>) -> Result<tonic::Request<()>, tonic::Status> {
-        req.metadata_mut().insert("x-authorization", self.0.clone());
-        Ok(req)
+        client
+            .batch_log_entries(self.next_offset.load(Ordering::Relaxed))
+            .await
     }
 }
