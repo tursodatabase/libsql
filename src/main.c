@@ -3754,7 +3754,7 @@ int sqlite3_set_clientdata(
     size_t n = strlen(zName);
     p = sqlite3_malloc64( sizeof(DbClientData)+n+1 );
     if( p==0 ){
-      if( pData && xDestructor ) xDestructor(pData);
+      if( xDestructor ) xDestructor(pData);
       return SQLITE_NOMEM;
     }
     memcpy(p->zName, zName, n+1);

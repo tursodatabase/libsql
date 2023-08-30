@@ -5982,6 +5982,8 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 **
 ** Database connection client data is only available for SQLite
 ** version 3.44.0 ([dateof:3.44.0]) and later.
+**
+** See also: [sqlite3_set_auxdata()] and [sqlite3_get_auxdata()].
 */
 void *sqlite3_get_clientdata(sqlite3*,const char*);
 int sqlite3_set_clientdata(sqlite3*, const char*, void*, void(*)(void*));
