@@ -12,6 +12,7 @@ use crate::rpc::replication_log::ReplicationLogService;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
 
 pub mod proxy;
+pub mod replica_proxy;
 pub mod replication_log;
 pub mod replication_log_proxy;
 

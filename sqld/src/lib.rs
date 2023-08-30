@@ -19,6 +19,7 @@ use namespace::{
 use replication::{NamespacedSnapshotCallback, ReplicationLogger};
 use rpc::proxy::rpc::proxy_server::Proxy;
 use rpc::proxy::ProxyService;
+use rpc::replica_proxy::ReplicaProxyService;
 use rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use rpc::replication_log::ReplicationLogService;
 use rpc::replication_log_proxy::ReplicationLogProxyService;
@@ -163,7 +164,7 @@ async fn run_service<F, S, P>(
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
     db_config_store: Arc<DatabaseConfigStore>,
-    proxy_service: Option<P>,
+    proxy_service: P,
     replication_service: S,
 ) -> anyhow::Result<()>
 where
@@ -350,16 +351,17 @@ async fn start_replica(
         }
     });
 
-    let replication_service = ReplicationLogProxyService::new(channel, uri);
+    let replication_service = ReplicationLogProxyService::new(channel.clone(), uri.clone());
+    let proxy_service = ReplicaProxyService::new(channel, uri);
 
-    run_service::<_, _, ProxyService>(
+    run_service(
         namespaces,
         config,
         join_set,
         idle_shutdown_layer,
         stats,
         db_config_store,
-        None,
+        proxy_service,
         replication_service,
     )
     .await?;
@@ -505,7 +507,7 @@ async fn start_primary(
         idle_shutdown_layer,
         stats,
         config_store,
-        Some(proxy_service),
+        proxy_service,
         logger_service,
     )
     .await?;
