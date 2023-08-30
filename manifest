@@ -1,5 +1,5 @@
-C New\sexperimental\sAPI\sfor\sattaching\sclient\sdata\sto\sa\sdatabase\sconnection.
-D 2023-08-30T15:20:15.256
+C Fix\sto\sthe\ssqlite3_get_clientdata()\sinterface.
+D 2023-08-30T15:42:41.455
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -668,7 +668,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c ae840f87b418f039f5d336b488933d09396bd31e6b31e855b93055ccaee4e255
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
-F src/main.c 5c28d8b05896007a820fb1f4b9089c8e237813bf51f7de2ebc7ce88cb0f0b2ba
+F src/main.c 6afb7db21660e10c7ef111eea292db7ec32358f0a214c630086b2b92f369bfd5
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -2115,11 +2115,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 273d3b05f630d399d42914e95c416b107b4746bbef129cfba9d00fd921666261
-R ea42982c5b96fe2a959e6a802572e9d0
-T *branch * db-client-data
-T *sym-db-client-data *
-T -sym-trunk *
+P d542837fdb42ebe810fc99225860d2cc7e6dd829a635bde820a09beff6bcb481
+R dc814b298c183eac18597d205967002d
 U drh
-Z da4f47e3406f7c1072eed31bdeabf988
+Z 37a0b7a018784c96d3357e0f5c4d5e5a
 # Remove this line to create a well-formed Fossil manifest.

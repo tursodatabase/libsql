@@ -3724,7 +3724,7 @@ int sqlite3_collation_needed16(
 void *sqlite3_get_clientdata(sqlite3 *db, const char *zName){
   DbClientData *p;
   for(p=db->pDbData; p && strcmp(p->zName,zName); p=p->pNext){}
-  return p;
+  return p ? p->pData : 0;
 }
 
 /*
