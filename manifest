@@ -1,5 +1,5 @@
-C Add\sa\sJS\simplementation\sof\sJava's\sSQLTester.
-D 2023-08-30T13:07:35.058
+C When\sa\sJS\sSQLTester\sscript\sthrows,\sreport\sthe\sexception\sdetails\sback\sto\sthe\sUI\sregardless\sof\swhether\sit's\sfatal.
+D 2023-08-30T14:20:02.025
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -549,9 +549,9 @@ F ext/wasm/GNUmakefile 0e362f3fc04eab6628cbe4f1e35f4ab4a200881f6b5f753b27fb45eab
 F ext/wasm/README-dist.txt 6382cb9548076fca472fb3330bbdba3a55c1ea0b180ff9253f084f07ff383576
 F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e7d193
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
-F ext/wasm/SQLTester/SQLTester.mjs 4a8fc2194a67180772830f503129c93fe44887b9573f50a4e24868b4bbc817f4
-F ext/wasm/SQLTester/SQLTester.run.mjs a50a1f9314d22d68b62a2f21d8913de163fce1fa420229711d6749c2b4fff9d0
-F ext/wasm/SQLTester/index.html e5f18af71749d81d86e4649d8c6efc9b78361738cb8e5c5014ba0dd3dc3de6ac
+F ext/wasm/SQLTester/SQLTester.mjs 20309ff838209601711087932b008734bab00176e6a47e41d95e11f6d363bae0
+F ext/wasm/SQLTester/SQLTester.run.mjs addeb962f33fb6bca723ab12f0b018303ff962dfc57ee969d051fcbf4f191569
+F ext/wasm/SQLTester/index.html 3a12895015c165281307eb47786ce3c46b3c3f06383ad6a9fe3a8526105632f1
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
@@ -2115,9 +2115,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 058722b2d0b995195a8ce3effe9722ae1c18cb1e7a520b481030da0bd579fe41 249e82b9917ea47c56ee1cbd3345a977d335fd3fc0d67a1ef157813ef4571c7c
-R 1d37ca9b2e6614cb5d02f3816f204e9d
-T +closed 249e82b9917ea47c56ee1cbd3345a977d335fd3fc0d67a1ef157813ef4571c7c Closed\sby\sintegrate-merge.
+P b530792a514d95c4e8f93cf2170d9fc4de367055fa1704fc171551c946024fa9
+R 27c4b366fbb2810d013255774a7479ce
 U stephan
-Z 4d7d0ed957593edddd1409081f78edf6
+Z 3efc7b20eec1af6f89785f42be992e20
 # Remove this line to create a well-formed Fossil manifest.

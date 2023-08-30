@@ -63,6 +63,7 @@ SELECT 1, null;
 SELECT 1, 2;
 intentional error;
 --run
+/* ---intentional-failure */
 --testcase json-1
 SELECT json_array(1,2,3)
 --json [1,2,3]
@@ -96,6 +97,7 @@ const sqt = new ns.SQLTester()
       .setLogger(console.log.bind(console))
       .verbosity(1)
       .addTestScript(ts);
+sqt.outer().outputPrefix('');
 
 const runTests = function(){
   try{
@@ -127,7 +129,7 @@ if( globalThis.WorkerGlobalScope ){
     switch(data.type){
       case 'run-tests':{
         try{ runTests(); }
-        finally{ wPost('tests-end'); }
+        finally{ wPost('tests-end', sqt.metrics); }
         break;
       }
       default:

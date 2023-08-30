@@ -33,7 +33,7 @@
       </span>
       <input type='button' id='btn-run-tests' value='Run tests'/>
     </fieldset>
-    <div id='test-output'></div>
+    <div id='test-output'>Test output will go here.</div>
     <!--script src='SQLTester.run.mjs' type='module'></script-->
     <script>
       (async function(){
@@ -99,9 +99,12 @@
         W.onmessage = function({data}){
           switch(data.type){
             case 'stdout': log2(data.payload.message); break;
-            case 'tests-end': btnRun.removeAttribute('disabled'); break;
+            case 'tests-end':
+              btnRun.removeAttribute('disabled');
+              delete data.payload.nTest;
+              log("test results:",data.payload);
+              break;
             case 'is-ready':
-              log("SQLTester.run.mjs is ready.");
               runTests(); break;
             default:
               log("unhandled onmessage",data);

@@ -147,6 +147,7 @@ class UnknownCommand extends SQLTesterException {
     super(testScript, cmdName);
     this.name = 'UnknownCommand';
   }
+  isFatal() { return true; }
 }
 
 class IncompatibleDirective extends SQLTesterException {
@@ -290,10 +291,10 @@ class SQLTester {
     nTotalTest: 0,
     //! Total test script files run
     nTestFile: 0,
-    //! Number of scripts which were aborted
-    nAbortedScript: 0,
     //! Test-case count for to the current TestScript
-    nTest: 0
+    nTest: 0,
+    //! Names of scripts which were aborted.
+    failedScripts: []
   });
   #emitColNames = false;
   //! True to keep going regardless of how a test fails.
@@ -511,8 +512,9 @@ class SQLTester {
   runTests(){
     const tStart = (new Date()).getTime();
     let isVerbose = this.verbosity();
-    this.metrics.nAbortedScript = 0;
+    this.metrics.failedScripts.length = 0;
     this.metrics.nTotalTest = 0;
+    this.metrics.nTestFile = 0;
     for(const ts of this.#aScripts){
       this.reset();
       ++this.metrics.nTestFile;
@@ -525,7 +527,7 @@ class SQLTester {
         if(e instanceof SQLTesterException){
           threw = true;
           this.outln("🔥EXCEPTION: ",e);
-          ++this.metrics.nAbortedScript;
+          this.metrics.failedScripts.push({script: ts.filename(), message:e.toString()});
           if( this.#keepGoing ){
             this.outln("Continuing anyway because of the keep-going option.");
           }else if( e.isFatal() ){
@@ -548,11 +550,11 @@ class SQLTester {
     }
     const tEnd = (new Date()).getTime();
     Util.unlink(this.#db.initialDbName);
-    this.outln("Took ",(tEnd-tStart),"ms. test count = ",
+    this.outln("Took ",(tEnd-tStart),"ms. Test count = ",
                this.metrics.nTotalTest,", script count = ",
                this.#aScripts.length,(
-                 this.metrics.nAbortedScript
-                   ? ", aborted scripts = "+this.metrics.nAbortedScript
+                 this.metrics.failedScripts.length
+                   ? ", failed scripts = "+this.metrics.failedScripts.length
                    : ""
                )
               );
