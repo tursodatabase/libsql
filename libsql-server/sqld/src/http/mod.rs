@@ -220,7 +220,7 @@ pub async fn run_http<M, S, P>(
     enable_console: bool,
     idle_shutdown_layer: Option<IdleShutdownLayer>,
     stats: Stats,
-    proxy_service: Option<P>,
+    proxy_service: P,
     replication_service: S,
     disable_default_namespace: bool,
     disable_namespaces: bool,
@@ -342,20 +342,13 @@ where
 
     // Merge the grpc based axum router into our regular http router
     let replication = ReplicationLogServer::new(replication_service);
+    let write_proxy = ProxyServer::new(proxy_service);
 
-    let grpc_router = if let Some(proxy) = proxy_service {
-        let write_proxy = ProxyServer::new(proxy);
-        Server::builder()
-            .accept_http1(true)
-            .add_service(tonic_web::enable(replication))
-            .add_service(tonic_web::enable(write_proxy))
-            .into_router()
-    } else {
-        Server::builder()
-            .accept_http1(true)
-            .add_service(tonic_web::enable(replication))
-            .into_router()
-    };
+    let grpc_router = Server::builder()
+        .accept_http1(true)
+        .add_service(tonic_web::enable(replication))
+        .add_service(tonic_web::enable(write_proxy))
+        .into_router();
 
     let router = layered_app.merge(grpc_router);
 
