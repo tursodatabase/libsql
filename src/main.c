@@ -1253,6 +1253,14 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   }
 #endif
 
+  while( db->pDbData ){
+    DbClientData *p = db->pDbData;
+    db->pDbData = p->pNext;
+    assert( p->pData!=0 );
+    if( p->xDestructor ) p->xDestructor(p->pData);
+    sqlite3_free(p);
+  }
+
   /* Convert the connection into a zombie and then close it.
   */
   db->eOpenState = SQLITE_STATE_ZOMBIE;
@@ -3709,6 +3717,55 @@ int sqlite3_collation_needed16(
   return SQLITE_OK;
 }
 #endif /* SQLITE_OMIT_UTF16 */
+
+/*
+** Find existing client data.
+*/
+void *sqlite3_get_clientdata(sqlite3 *db, const char *zName){
+  DbClientData *p;
+  for(p=db->pDbData; p && strcmp(p->zName,zName); p=p->pNext){}
+  return p;
+}
+
+/*
+** Add new client data to a database connection.
+*/
+int sqlite3_set_clientdata(
+  sqlite3 *db,                   /* Attach client data to this connection */
+  const char *zName,             /* Name of the client data */
+  void *pData,                   /* The client data itself */
+  void (*xDestructor)(void*)     /* Destructor */
+){
+  DbClientData *p, **pp;
+  pp = &db->pDbData;
+  for(p=db->pDbData; p && strcmp(p->zName,zName); p=p->pNext){
+    pp = &p->pNext;
+  }
+  if( p ){
+    if( p->pData && p->xDestructor ) p->xDestructor(p->pData);
+    if( pData==0 ){
+      *pp = p->pNext;
+      sqlite3_free(p);
+      return SQLITE_OK;
+    }
+  }else if( pData==0 ){
+    return SQLITE_OK;
+  }else{
+    size_t n = strlen(zName);
+    p = sqlite3_malloc64( sizeof(DbClientData)+n+1 );
+    if( p==0 ){
+      if( pData && xDestructor ) xDestructor(pData);
+      return SQLITE_NOMEM;
+    }
+    memcpy(p->zName, zName, n+1);
+    p->pNext = db->pDbData;
+    db->pDbData = p;
+  }
+  p->pData = pData;
+  p->xDestructor = xDestructor;
+  return SQLITE_OK;
+}
+
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
