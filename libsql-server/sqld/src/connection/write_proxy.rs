@@ -7,9 +7,10 @@ use rusqlite::types::ValueRef;
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::sync::{watch, Mutex};
 use tonic::transport::Channel;
+use tonic::Request;
 use uuid::Uuid;
 
-use crate::auth::{Authenticated, Authorized};
+use crate::auth::Authenticated;
 use crate::error::Error;
 use crate::query::Value;
 use crate::query_analysis::State;
@@ -202,17 +203,15 @@ impl WriteProxyConnection {
     ) -> Result<(B, State)> {
         self.stats.inc_write_requests_delegated();
         let mut client = self.write_proxy.clone();
-        let authorized: Option<i32> = match auth {
-            Authenticated::Anonymous => None,
-            Authenticated::Authorized(Authorized::ReadOnly) => Some(0),
-            Authenticated::Authorized(Authorized::FullAccess) => Some(1),
-        };
-        let req = crate::rpc::proxy::rpc::ProgramReq {
+
+        let mut req = Request::new(crate::rpc::proxy::rpc::ProgramReq {
             namespace: self.namespace.clone(),
             client_id: self.client_id.to_string(),
             pgm: Some(pgm.into()),
-            authorized,
-        };
+        });
+
+        auth.upgrade_grpc_request(&mut req);
+
         match client.execute(req).await {
             Ok(r) => {
                 let execute_result = r.into_inner();

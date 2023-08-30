@@ -3,6 +3,7 @@ use axum::http::HeaderValue;
 use tonic::Status;
 
 static GRPC_AUTH_HEADER: &str = "x-authorization";
+static GRPC_PROXY_AUTH_HEADER: &str = "x-proxy-authorization";
 
 /// Authentication that is required to access the server.
 #[derive(Default)]
@@ -116,6 +117,45 @@ impl Auth {
             return Err(AuthError::JwtNotAllowed)
         };
         validate_jwt(jwt_key, jwt)
+    }
+}
+
+impl Authenticated {
+    pub fn from_proxy_grpc_request<T>(req: &tonic::Request<T>) -> Result<Self, Status> {
+        let auth = match req
+            .metadata()
+            .get(GRPC_PROXY_AUTH_HEADER)
+            .map(|v| v.to_str())
+            .transpose()
+            .map_err(|_| Status::invalid_argument("missing authorization header"))?
+        {
+            Some("full_access") => Authenticated::Authorized(Authorized::FullAccess),
+            Some("read_only") => Authenticated::Authorized(Authorized::ReadOnly),
+            Some("anonymous") => Authenticated::Anonymous,
+            Some(level) => {
+                return Err(Status::permission_denied(format!(
+                    "invalid authorization level: {}",
+                    level
+                )))
+            }
+            None => return Err(Status::invalid_argument("unable to convert to ascii")),
+        };
+
+        Ok(auth)
+    }
+
+    pub fn upgrade_grpc_request<T>(&self, req: &mut tonic::Request<T>) {
+        let key = tonic::metadata::AsciiMetadataKey::from_static(GRPC_PROXY_AUTH_HEADER);
+
+        let auth = match self {
+            Authenticated::Anonymous => "anonymous",
+            Authenticated::Authorized(Authorized::FullAccess) => "full_access",
+            Authenticated::Authorized(Authorized::ReadOnly) => "read_only",
+        };
+
+        let value = tonic::metadata::AsciiMetadataValue::try_from(auth).unwrap();
+
+        req.metadata_mut().insert(key, value);
     }
 }
 
