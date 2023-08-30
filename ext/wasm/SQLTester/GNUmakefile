@@ -39,7 +39,7 @@ $(test-list.mjs): $(bin.touint8array) $(tests.all) $(MAKEFILE)
 	@echo "Created $@"
 $(test-list.mjs.gz): $(test-list.mjs)
 	gzip -c $< > $@
-CLEAAN_FILES += $(test-list.mjs.gz)
+CLEAN_FILES += $(test-list.mjs.gz)
 all: $(test-list.mjs.gz)
 else
 	@echo "Cannot build $(test-list.mjs) for lack of input test files."; \

@@ -10,10 +10,11 @@
 **
 *************************************************************************
 ** This file contains the main application entry pointer for the JS
-** implementation of the SQLTester framework. This version is not well
-** documented because the one it's a direct port of is documented:
-** in the main SQLite3 source tree, see
-** ext/jni/src/org/sqlite/jni/tester/SQLite3Tester.java.
+** implementation of the SQLTester framework.
+**
+** This version is not well-documented because it's a direct port of
+** the Java immplementation, which is documented: in the main SQLite3
+** source tree, see ext/jni/src/org/sqlite/jni/tester/SQLite3Tester.java.
 */
 
 import sqlite3ApiInit from '/jswasm/sqlite3.mjs';
@@ -24,6 +25,12 @@ const log = (...args)=>{
   console.log('SQLTester:',...args);
 };
 
+/**
+   Try to install vfsName as the new default VFS. Once this succeeds
+   (returns true) then it becomes a no-op on future calls. Throws if
+   vfs registration as the default VFS fails but has no side effects
+   if vfsName is not currently registered.
+*/
 const tryInstallVfs = function f(vfsName){
   if(f.vfsName) return false;
   const pVfs = sqlite3.capi.sqlite3_vfs_find(vfsName);
@@ -39,9 +46,13 @@ const tryInstallVfs = function f(vfsName){
 };
 tryInstallVfs.vfsName = undefined;
 
-if( 1 ){
+if( 0 && globalThis.WorkerGlobalScope ){
   // Try OPFS storage, if available...
-  if(sqlite3.installOpfsSAHPoolVfs){
+  if( 0 && sqlite3.oo1.OpfsDb ){
+    /* Really slow with these tests */
+    tryInstallVfs("opfs");
+  }
+  if( sqlite3.installOpfsSAHPoolVfs ){
     await sqlite3.installOpfsSAHPoolVfs({
       clearOnInit: true,
       initialCapacity: 15,
@@ -52,14 +63,16 @@ if( 1 ){
       log("OpfsSAHPool could not load:",e);
     });
   }
-  if(sqlite3.oo1.OpfsDb){
-    tryInstallVfs("opfs");
-  }
 }
 
-const wPost = (type,...payload)=>{
-  postMessage({type, payload});
-};
+const wPost = (function(){
+  return (('undefined'===typeof WorkerGlobalScope)
+          ? ()=>{}
+          : (type, payload)=>{
+            postMessage({type, payload});
+          });
+})();
+//log("WorkerGlobalScope",globalThis.WorkerGlobalScope);
 
 // Return a new enum entry value
 const newE = ()=>Object.create(null);
@@ -99,6 +112,12 @@ class SQLTesterException extends globalThis.Error {
     }
     this.name = 'SQLTesterException';
   }
+  /**
+     If this overrideable method returns false (the default) then
+     exceptions of that type are fatal to a whole test run, instead of
+     just the test which triggered it. If the the "keep going" flag
+     is set, this preference is ignored.
+  */
   isFatal() { return false; }
 }
 
@@ -107,7 +126,7 @@ SQLTesterException.toss = (...args)=>{
 }
 
 class DbException extends SQLTesterException {
-  constructor(testScript, pDb, rc, closeDb){
+  constructor(testScript, pDb, rc, closeDb=false){
     super(testScript, "DB error #"+rc+": "+sqlite3.capi.sqlite3_errmsg(pDb));
     this.name = 'DbException';
     if( closeDb ) sqlite3.capi.sqlite3_close_v2(pDb);
@@ -137,12 +156,14 @@ class IncompatibleDirective extends SQLTesterException {
   }
 }
 
+//! For throwing where an expression is required.
 const toss = (errType, ...args)=>{
   throw new errType(...args);
 };
 
 const __utf8Decoder = new TextDecoder();
 const __utf8Encoder = new TextEncoder('utf-8');
+//! Workaround for Util.utf8Decode()
 const __SAB = ('undefined'===typeof globalThis.SharedArrayBuffer)
       ? function(){} : globalThis.SharedArrayBuffer;
 
@@ -190,24 +211,39 @@ class Outer {
   #verbosity = 0;
   #logger = console.log.bind(console);
 
-  constructor(){
+  constructor(func){
+    if(func) this.setFunc(func);
+  }
+
+  logger(...args){
+    if(args.length){
+      this.#logger = args[0];
+      return this;
+    }
+    return this.#logger;
   }
 
   out(...args){
-    if(!this.#lnBuf.length && this.getOutputPrefix ){
+    if( this.getOutputPrefix && !this.#lnBuf.length ){
       this.#lnBuf.push(this.getOutputPrefix());
     }
     this.#lnBuf.push(...args);
     return this;
   }
-  outln(...args){
-    if(!this.#lnBuf.length && this.getOutputPrefix ){
+
+  #outlnImpl(vLevel, ...args){
+    if( this.getOutputPrefix && !this.#lnBuf.length ){
       this.#lnBuf.push(this.getOutputPrefix());
     }
     this.#lnBuf.push(...args,'\n');
-    this.#logger(this.#lnBuf.join(''));
+    const msg = this.#lnBuf.join('');
     this.#lnBuf.length = 0;
+    this.#logger(msg);
     return this;
+  }
+
+  outln(...args){
+    return this.#outlnImpl(0,...args);
   }
 
   outputPrefix(){
@@ -220,9 +256,9 @@ class Outer {
     }
   }
 
-  verboseN(lvl, argv){
+  verboseN(lvl, args){
     if( this.#verbosity>=lvl ){
-      this.outln('VERBOSE ',lvl,': ',...argv);
+      this.#outlnImpl(lvl,'VERBOSE ',lvl,': ',...args);
     }
   }
   verbose1(...args){ return this.verboseN(1,args); }
@@ -230,13 +266,8 @@ class Outer {
   verbose3(...args){ return this.verboseN(3,args); }
 
   verbosity(){
-    let rc;
-    if(arguments.length){
-      rc = this.#verbosity;
-      this.#verbosity = arguments[0];
-    }else{
-      rc = this.#verbosity;
-    }
+    const rc = this.#verbosity;
+    if(arguments.length) this.#verbosity = +arguments[0];
     return rc;
   }
 
@@ -261,7 +292,7 @@ class SQLTester {
     nTestFile: 0,
     //! Number of scripts which were aborted
     nAbortedScript: 0,
-    //! Incremented by test case handlers
+    //! Test-case count for to the current TestScript
     nTest: 0
   });
   #emitColNames = false;
@@ -288,6 +319,24 @@ class SQLTester {
 
   outln(...args){ return this.#outer.outln(...args); }
   out(...args){ return this.#outer.out(...args); }
+  outer(...args){
+    if(args.length){
+      this.#outer = args[0];
+      return this;
+    }
+    return this.#outer;
+  }
+  verbose1(...args){ return this.#outer.verboseN(1,args); }
+  verbose2(...args){ return this.#outer.verboseN(2,args); }
+  verbose3(...args){ return this.#outer.verboseN(3,args); }
+  verbosity(...args){
+    const rc = this.#outer.verbosity(...args);
+    return args.length ? this : rc;
+  }
+  setLogger(func){
+    this.#outer.logger(func);
+    return this;
+  }
 
   incrementTestCounter(){
     ++this.metrics.nTotalTest;
@@ -338,8 +387,6 @@ class SQLTester {
   takeResultBuffer(){
     return this.#takeBuffer(this.#resultBuffer);
   }
-
-  verbosity(...args){ return this.#outer.verbosity(...args); }
 
   nullValue(){
     if( 0==arguments.length ){
@@ -427,7 +474,7 @@ class SQLTester {
         pDb = wasm.peekPtr(ppOut);
       });
       if( 0==rc && this.#db.initSql.length > 0){
-        //this.#outer.verbose2("RUNNING DB INIT CODE: ",this.#db.initSql.toString());
+        this.#outer.verbose2("RUNNING DB INIT CODE: ",this.#db.initSql.toString());
         rc = this.execSql(pDb, false, ResultBufferMode.NONE,
                           null, this.#db.initSql.join(''));
       }
@@ -464,6 +511,8 @@ class SQLTester {
   runTests(){
     const tStart = (new Date()).getTime();
     let isVerbose = this.verbosity();
+    this.metrics.nAbortedScript = 0;
+    this.metrics.nTotalTest = 0;
     for(const ts of this.#aScripts){
       this.reset();
       ++this.metrics.nTestFile;
@@ -471,11 +520,6 @@ class SQLTester {
       const timeStart = (new Date()).getTime();
       let msgTail = '';
       try{
-        if( isVerbose ){
-          this.#outer.verbose1("Running ",ts.filename());
-        }else{
-          msgTail = ' '+ts.filename();
-        }
         ts.run(this);
       }catch(e){
         if(e instanceof SQLTesterException){
@@ -483,21 +527,35 @@ class SQLTester {
           this.outln("🔥EXCEPTION: ",e);
           ++this.metrics.nAbortedScript;
           if( this.#keepGoing ){
-            this.outln("Continuing anyway becaure of the keep-going option.");
+            this.outln("Continuing anyway because of the keep-going option.");
+          }else if( e.isFatal() ){
+            throw e;
           }
-          else if( e.isFatal() ) throw e;
         }else{
           throw e;
         }
       }finally{
         const timeEnd = (new Date()).getTime();
-        this.outln("🏁", (threw ? "❌" : "✅"), " ", this.metrics.nTest,
-                   " test(s) in ", (timeEnd-timeStart),"ms.",msgTail);
+        this.out("🏁", (threw ? "❌" : "✅"), " ",
+                 this.metrics.nTest, " test(s) in ",
+                 (timeEnd-timeStart),"ms. ");
+        const mod = ts.moduleName();
+        if( mod ){
+          this.out( "[",mod,"] " );
+        }
+        this.outln(ts.filename());
       }
     }
     const tEnd = (new Date()).getTime();
-    this.outln("Total run-time: ",(tEnd-tStart),"ms");
     Util.unlink(this.#db.initialDbName);
+    this.outln("Took ",(tEnd-tStart),"ms. test count = ",
+               this.metrics.nTotalTest,", script count = ",
+               this.#aScripts.length,(
+                 this.metrics.nAbortedScript
+                   ? ", aborted scripts = "+this.metrics.nAbortedScript
+                   : ""
+               )
+              );
     return this;
   }
 
@@ -511,10 +569,6 @@ class SQLTester {
     }
   }
 
-  /**
-     Returns v or some escaped form of v, as defined in the tester's
-     spec doc.
-  */
   #escapeSqlValue(v){
     if( !v ) return "{}";
     if( !Rx.special.test(v) ){
@@ -735,6 +789,11 @@ class TestScript {
     this.#cursor.src = content;
   }
 
+  moduleName(){
+    return (0==arguments.length)
+      ? this.#moduleName : (this.#moduleName = arguments[0]);
+  }
+
   testCaseName(){
     return (0==arguments.length)
       ? this.#testCaseName : (this.#testCaseName = arguments[0]);
@@ -758,6 +817,14 @@ class TestScript {
 
   toss(...args){
     throw new TestScriptFailed(this,...args);
+  }
+
+  verbose1(...args){ return this.#outer.verboseN(1,args); }
+  verbose2(...args){ return this.#outer.verboseN(2,args); }
+  verbose3(...args){ return this.#outer.verboseN(3,args); }
+  verbosity(...args){
+    const rc = this.#outer.verbosity(...args);
+    return args.length ? this : rc;
   }
 
   #checkForDirective(tester,line){
@@ -818,7 +885,8 @@ class TestScript {
 
   run(tester){
     this.reset();
-    this.#outer.verbosity(tester.verbosity());
+    this.#outer.verbosity( tester.verbosity() );
+    this.#outer.logger( tester.outer().logger() );
     let line, directive, argv = [];
     while( null != (line = this.getLine()) ){
       this.verbose3("run() input line: ",line);
@@ -941,11 +1009,6 @@ class TestScript {
     cur.pos = cur.putbackPos;
     cur.lineNo = cur.putbackLineNo;
   }
-
-  verbose1(...args){ return this.#outer.verboseN(1,args); }
-  verbose2(...args){ return this.#outer.verboseN(2,args); }
-  verbose3(...args){ return this.#outer.verboseN(3,args); }
-  verbosity(...args){ return this.#outer.verbosity(...args); }
 
 }/*TestScript*/;
 

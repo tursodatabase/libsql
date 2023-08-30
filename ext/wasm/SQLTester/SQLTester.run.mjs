@@ -12,7 +12,7 @@
 ** This file contains a test application for SQLTester.js.
 */
 import {default as ns} from './SQLTester.mjs';
-import {default as tests} from './test-list.mjs';
+import {default as allTests} from './test-list.mjs';
 
 globalThis.sqlite3 = ns.sqlite3;
 const log = function f(...args){
@@ -32,8 +32,6 @@ const affirm = function(expr, msg){
                     : "Assertion failed");
   }
 }
-
-log("SQLTester is ready.");
 
 let ts = new ns.TestScript('/foo.test',`
 /*
@@ -56,10 +54,10 @@ let ts = new ns.TestScript('/foo.test',`
 --oom
 --db 0
 --new my.db
---null zilchy
+--null zilch
 --testcase 1.0
 SELECT 1, null;
---result 1 zilchy
+--result 1 zilch
 --glob *zil*
 --notglob *ZIL*
 SELECT 1, 2;
@@ -94,29 +92,54 @@ SELECT json_array(1,2,3)
 --print Until next time
 `);
 
-const sqt = new ns.SQLTester();
-try{
-  if( 0 ){
-    affirm( !sqt.getCurrentDb(), 'sqt.getCurrentDb()' );
-    sqt.openDb('/foo.db', true);
-    affirm( !!sqt.getCurrentDb(),'sqt.getCurrentDb()' );
-    sqt.verbosity(0);
-    if(false){
+const sqt = new ns.SQLTester()
+      .setLogger(console.log.bind(console))
+      .verbosity(1)
+      .addTestScript(ts);
+
+const runTests = function(){
+  try{
+    if( 0 ){
+      affirm( !sqt.getCurrentDb(), 'sqt.getCurrentDb()' );
+      sqt.openDb('/foo.db', true);
+      affirm( !!sqt.getCurrentDb(),'sqt.getCurrentDb()' );
       affirm( 'zilch' !== sqt.nullValue() );
       ts.run(sqt);
       affirm( 'zilch' === sqt.nullValue() );
+      sqt.addTestScript(ts);
+      sqt.runTests();
+    }else{
+      for(const t of allTests){
+        sqt.addTestScript( new ns.TestScript(t) );
+      }
+      allTests.length = 0;
+      sqt.runTests();
     }
-    sqt.addTestScript(ts);
-    sqt.runTests();
-  }else{
-    for(const t of tests){
-      sqt.addTestScript( new ns.TestScript(t) );
-    }
-    tests.length = 0;
-    sqt.verbosity(0);
-    sqt.runTests();
+  }finally{
+    //log( "Metrics:", sqt.metrics );
+    sqt.reset();
   }
-}finally{
-  log( "Metrics:", sqt.metrics );
-  sqt.reset();
+};
+
+if( globalThis.WorkerGlobalScope ){
+  const wPost = (type,payload)=>globalThis.postMessage({type, payload});
+  globalThis.onmessage = function({data}){
+    switch(data.type){
+      case 'run-tests':{
+        try{ runTests(); }
+        finally{ wPost('tests-end'); }
+        break;
+      }
+      default:
+        log("unhandled onmessage: ",data);
+        break;
+    }
+  };
+  sqt.setLogger((msg)=>{
+    wPost('stdout', {message: msg});
+  });
+  wPost('is-ready');
+  //globalThis.onmessage({data:{type:'run-tests'}});
+}else{
+  runTests();
 }
