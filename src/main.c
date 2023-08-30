@@ -3742,7 +3742,8 @@ int sqlite3_set_clientdata(
     pp = &p->pNext;
   }
   if( p ){
-    if( p->pData && p->xDestructor ) p->xDestructor(p->pData);
+    assert( p->pData!=0 );
+    if( p->xDestructor ) p->xDestructor(p->pData);
     if( pData==0 ){
       *pp = p->pNext;
       sqlite3_free(p);
