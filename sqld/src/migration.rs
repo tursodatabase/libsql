@@ -87,11 +87,11 @@ fn migrate_step_from_pre_0_18(db_path: &Path) -> anyhow::Result<()> {
         }
     };
 
-    try_remove(db_path.join("data"));
-    try_remove(db_path.join("data-shm"));
-    try_remove(db_path.join("data-wal"));
-    try_remove(db_path.join("wallog"));
-    try_remove(db_path.join("client_wal_index"));
+    try_remove("data");
+    try_remove("data-shm");
+    try_remove("data-wal");
+    try_remove("wallog");
+    try_remove("client_wal_index");
 
     Ok(())
 }
