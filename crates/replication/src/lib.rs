@@ -287,8 +287,7 @@ impl Replicator {
             .batch_log_entries(pb::LogOffset {
                 next_offset: self.next_offset.load(Ordering::Relaxed),
             })
-            .await
-            .context("Failed to fetch log entries")?
+            .await?
             .into_inner();
         let frames = frames
             .frames
