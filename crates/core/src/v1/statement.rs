@@ -220,6 +220,10 @@ impl Statement {
     pub(crate) fn tail(&self) -> usize {
         self.inner.tail()
     }
+
+    pub(crate) fn is_readonly(&self) -> bool {
+        self.inner.readonly()
+    }
 }
 
 // NOTICE: Column is blatantly copy-pasted from rusqlite

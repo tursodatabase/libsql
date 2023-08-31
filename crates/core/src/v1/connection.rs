@@ -11,6 +11,9 @@ pub struct Connection {
     pub(crate) raw: *mut ffi::sqlite3,
 
     drop_ref: Arc<()>,
+
+    #[cfg(feature = "replication")]
+    writer: libsql_replication::Writer,
 }
 
 impl Drop for Connection {
@@ -51,6 +54,8 @@ impl Connection {
         Ok(Connection {
             raw,
             drop_ref: Arc::new(()),
+            #[cfg(feature = "replication")]
+            writer: db.writer()?,
         })
     }
 
@@ -60,12 +65,12 @@ impl Connection {
     }
 
     /// Create a connection from a raw handle to the underlying libSQL connection
-    pub fn from_handle(raw: *mut ffi::sqlite3) -> Self {
-        Self {
-            raw,
-            drop_ref: Arc::new(()),
-        }
-    }
+    // pub fn from_handle(raw: *mut ffi::sqlite3) -> Self {
+    //     Self {
+    //         raw,
+    //         drop_ref: Arc::new(()),
+    //     }
+    // }
 
     /// Disconnect from the database.
     pub fn disconnect(&self) {
@@ -189,6 +194,37 @@ impl Connection {
     pub fn transaction(&self) -> Result<Transaction> {
         self.transaction_with_behavior(TransactionBehavior::Deferred)
     }
+
+    pub(crate) async fn execute2<S, P>(&self, sql: S, params: P) -> Result<u64>
+    where
+        S: Into<String>,
+        P: TryInto<Params>,
+        P::Error: Into<crate::BoxError>,
+    {
+        let sql = sql.into();
+        let stmt = Statement::prepare(self.clone(), self.raw, &sql)?;
+
+        #[cfg(feature = "replication")]
+        {
+            if !stmt.is_readonly() {
+                return self
+                    .writer
+                    .execute(&sql)
+                    .await
+                    .map_err(|e| Error::WriteDelegation(e.into()));
+            }
+        }
+
+        let params = params
+            .try_into()
+            .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
+        stmt.execute(&params)
+    }
+
+    // #[cfg(feature = "replication")]
+    // pub(crate) fn writer(&self) -> Writer {
+    //     &self.writer
+    // }
 
     /// Begin a new transaction in the given mode.
     pub fn transaction_with_behavior(

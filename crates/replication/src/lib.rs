@@ -12,6 +12,7 @@ pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
+use tokio::sync::watch::Receiver;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -29,6 +30,12 @@ pub struct Replicator {
     pub injector: replica::injector::FrameInjector<'static>,
     pub client: Option<Client>,
     pub next_offset: AtomicU64,
+}
+
+#[derive(Debug, Clone)]
+pub struct Writer {
+    client: Client,
+    frame_no_notifier: Receiver<u64>,
 }
 
 // FIXME: copy-pasted from sqld, it should be deduplicated in a single place
@@ -178,6 +185,18 @@ impl Replicator {
         Ok(())
     }
 
+    pub fn writer(&self) -> anyhow::Result<Writer> {
+        let client = self
+            .client
+            .clone()
+            .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
+
+        Ok(Writer {
+            client,
+            frame_no_notifier: self.current_frame_no_notifier.clone(),
+        })
+    }
+
     pub fn sync(&self, frames: Frames) -> anyhow::Result<()> {
         if let Frames::Snapshot(snapshot) = &frames {
             tracing::debug!(
@@ -191,8 +210,14 @@ impl Replicator {
         Ok(())
     }
 
-    pub async fn delegate_write(&self, _sql: &str) -> anyhow::Result<()> {
-        // let req =
+    pub async fn delegate_write(&self, sql: &str) -> anyhow::Result<()> {
+        let client = self
+            .client
+            .clone()
+            .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
+
+        client.execute(sql).await?;
+
         Ok(())
     }
 
@@ -236,5 +261,26 @@ impl Replicator {
         client
             .batch_log_entries(self.next_offset.load(Ordering::Relaxed))
             .await
+    }
+}
+
+impl Writer {
+    pub async fn execute(&self, sql: &str) -> anyhow::Result<u64> {
+        tracing::debug!("executing remote sql statement");
+        let (write_frame_no, rows_affected) = self.client.execute(sql).await?;
+
+        tracing::debug!(
+            "statment executed on remote waiting for frame_no: {}",
+            write_frame_no
+        );
+
+        self.frame_no_notifier
+            .clone()
+            .wait_for(|latest_frame_no| dbg!(latest_frame_no) >= &(write_frame_no - 1))
+            .await?;
+
+        tracing::debug!("received frame_no: {} for delegated write", write_frame_no);
+
+        Ok(rows_affected)
     }
 }
