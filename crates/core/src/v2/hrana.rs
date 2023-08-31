@@ -15,7 +15,7 @@ use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 // use crate::client::Config;
 use crate::{Column, Params, Result};
 use std::collections::{HashMap, VecDeque};
-use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::atomic::{AtomicI64, AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 use super::rows::{RowInner, RowsInner};
@@ -37,6 +37,7 @@ pub struct Client {
     cookies: Arc<RwLock<HashMap<u64, Cookie>>>,
     url_for_queries: String,
     auth: String,
+    affected_row_count: Arc<AtomicU64>,
     last_insert_rowid: Arc<AtomicI64>,
 }
 
@@ -126,6 +127,7 @@ impl Client {
             cookies: Arc::new(RwLock::new(HashMap::new())),
             url_for_queries,
             auth: format!("Bearer {token}"),
+            affected_row_count: Arc::new(AtomicU64::new(0)),
             last_insert_rowid: Arc::new(AtomicI64::new(0)),
         }
     }
@@ -307,6 +309,10 @@ impl Conn for Client {
         false
     }
 
+    fn changes(&self) -> u64 {
+        self.affected_row_count.load(Ordering::SeqCst)
+    }
+
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid.load(Ordering::SeqCst)
     }
@@ -324,12 +330,14 @@ impl super::statement::Stmt for Statement {
         bind_params(params.clone(), &mut stmt);
 
         let v = self.client.execute_inner(stmt, 0).await?;
+        let affected_row_count = v.affected_row_count as usize;
+        self.client.affected_row_count.store(affected_row_count as u64, Ordering::SeqCst);
         if let Some(last_insert_rowid) = v.last_insert_rowid {
             self.client
                 .last_insert_rowid
                 .store(last_insert_rowid, Ordering::SeqCst);
         }
-        Ok(v.affected_row_count as usize)
+        Ok(affected_row_count)
     }
 
     async fn query(&self, params: &Params) -> Result<super::Rows> {
