@@ -63,6 +63,14 @@ pub struct Row {
 }
 
 impl Row {
+    pub fn get<T>(&self, idx: i32) -> Result<T>
+    where
+        T: FromValue,
+    {
+        let val = self.inner.column_value(idx)?;
+        T::from_sql(val)
+    }
+
     pub fn get_value(&self, idx: i32) -> Result<Value> {
         self.inner.column_value(idx)
     }
@@ -77,6 +85,90 @@ impl Row {
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
         self.inner.column_type(idx)
+    }
+}
+
+pub trait FromValue {
+    fn from_sql(val: Value) -> Result<Self>
+    where
+        Self: Sized;
+}
+
+impl FromValue for crate::Value {
+    fn from_sql(val: Value) -> Result<Self> {
+        Ok(val.into())
+    }
+}
+
+impl FromValue for i32 {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Integer(i) => Ok(i as i32),
+            _ => unreachable!("invalid value type"),
+        }
+    }
+}
+
+impl FromValue for u32 {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Integer(i) => Ok(i as u32),
+            _ => unreachable!("invalid value type"),
+        }
+    }
+}
+
+impl FromValue for i64 {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Integer(i) => Ok(i as i64),
+            _ => unreachable!("invalid value type"),
+        }
+    }
+}
+
+impl FromValue for u64 {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Integer(i) => Ok(i as u64),
+            _ => unreachable!("invalid value type"),
+        }
+    }
+}
+
+impl FromValue for f64 {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Real(f) => Ok(f as f64),
+            _ => unreachable!("invalid value type"),
+        }
+    }
+}
+
+impl FromValue for Vec<u8> {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Blob(blob) => Ok(blob),
+            _ => unreachable!("invalid value type"),            
+        }
+    }
+}
+
+impl FromValue for String {
+    fn from_sql(val: Value) -> Result<Self> {
+        match val {
+            Value::Null => Err(crate::Error::NullValue),
+            Value::Text(s) => {
+                Ok(s)
+            }
+            _ => unreachable!("invalid value type"),
+        }
     }
 }
 
