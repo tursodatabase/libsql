@@ -302,6 +302,11 @@ impl Conn for Client {
         todo!()
     }
 
+    fn is_autocommit(&self) -> bool {
+        // TODO: Is this correct?
+        false
+    }
+
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid.load(Ordering::SeqCst)
     }
