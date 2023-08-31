@@ -102,14 +102,15 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn writer(&self) -> Result<libsql_replication::Writer> {
+    pub fn writer(&self) -> Result<Option<libsql_replication::Writer>> {
         if let Some(ctx) = &self.replication_ctx {
-            Ok(ctx.replicator.writer().expect("Unable to get writer"))
+            Ok(ctx
+                .replicator
+                .writer()
+                .expect("Unable to get writer")
+                .into())
         } else {
-            Err(crate::errors::Error::Misuse(
-                "No writer available. Use Database::with_replicator() to enable replication"
-                    .to_string(),
-            ))
+            Ok(None)
         }
     }
 

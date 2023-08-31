@@ -10,6 +10,7 @@ use std::sync::Arc;
 pub struct Statement {
     pub(crate) conn: Connection,
     pub(crate) inner: Arc<libsql_sys::Statement>,
+    sql: String,
 }
 
 impl Statement {
@@ -26,6 +27,7 @@ impl Statement {
             Ok(stmt) => Ok(Statement {
                 conn,
                 inner: Arc::new(stmt),
+                sql: sql.to_string(),
             }),
             Err(libsql_sys::Error::LibError(_err)) => Err(Error::PrepareFailed(
                 errors::extended_error_code(raw),
@@ -103,6 +105,35 @@ impl Statement {
 
     pub fn readonly(&self) -> bool {
         self.inner.readonly()
+    }
+
+    pub async fn execute2(&self, params: Params) -> Result<u64> {
+        #[cfg(feature = "replication")]
+        {
+            if !self.is_readonly() && self.conn.writer.is_some() {
+                use libsql_replication::pb;
+                let params: pb::query::Params = params.into();
+                return self
+                    .conn
+                    .writer
+                    .as_ref()
+                    .unwrap() // Unwrap is safe since we check if there is a writer
+                    .execute(&self.sql, params)
+                    .await
+                    .map_err(|e| Error::WriteDelegation(e.into()));
+            }
+        }
+
+        self.bind(&params);
+        let err = self.inner.step();
+        match err as u32 {
+            crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
+            crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
+            _ => Err(Error::LibError(
+                errors::extended_error_code(self.conn.raw),
+                errors::error_from_handle(self.conn.raw),
+            )),
+        }
     }
 
     pub fn execute(&self, params: &Params) -> Result<u64> {

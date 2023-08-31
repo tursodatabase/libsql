@@ -1,4 +1,4 @@
-mod pb {
+pub mod pb {
     #![allow(unreachable_pub)]
     #![allow(missing_docs)]
     include!("generated/wal_log.rs");
@@ -116,7 +116,16 @@ impl Client {
         Ok(frames)
     }
 
-    pub async fn execute(&self, sql: &str) -> anyhow::Result<(u64, u64)> {
+    // TODO(lucio):
+    // 1) Implement errors when a row is returned on a non returning query (execute)
+    // 2) support row returns aka convert the row result in pb to the Rows struct in libsql
+    //          (Should this be a trait object that impls RowInner or should we bake it into
+    //          the old one?)
+    pub async fn execute(
+        &self,
+        sql: &str,
+        params: pb::query::Params,
+    ) -> anyhow::Result<(u64, u64)> {
         let mut proxy = self.proxy.clone();
 
         let res = proxy
@@ -126,7 +135,7 @@ impl Client {
                     steps: vec![pb::Step {
                         query: Some(pb::Query {
                             stmt: sql.to_string(),
-                            params: Some(pb::query::Params::Positional(pb::Positional::default())),
+                            params: Some(params),
                             ..Default::default()
                         }),
                         ..Default::default()

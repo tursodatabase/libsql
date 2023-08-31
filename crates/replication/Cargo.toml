@@ -10,6 +10,7 @@ license = "MIT"
 tokio = { version = "1.22.2", default-features=false, features = ["fs", "sync"] }
 anyhow = "1.0.71"
 futures = "0.3.28"
+bincode = "1"
 bytemuck = { version = "1.13.1", features = ["derive"] }
 bytes = { version = "1.4.0", features = ["serde"] }
 thiserror = "1.0.41"

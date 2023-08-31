@@ -2,6 +2,8 @@ mod client;
 pub mod frame;
 pub mod replica;
 
+pub use client::pb;
+
 pub const WAL_PAGE_SIZE: i32 = 4096;
 pub const WAL_MAGIC: u64 = u64::from_le_bytes(*b"SQLDWAL\0");
 
@@ -210,17 +212,6 @@ impl Replicator {
         Ok(())
     }
 
-    pub async fn delegate_write(&self, sql: &str) -> anyhow::Result<()> {
-        let client = self
-            .client
-            .clone()
-            .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
-
-        client.execute(sql).await?;
-
-        Ok(())
-    }
-
     // Syncs frames from HTTP, returns how many frames were applied
     pub async fn sync_from_http(&self) -> anyhow::Result<usize> {
         tracing::trace!("Syncing frames from HTTP");
@@ -265,21 +256,25 @@ impl Replicator {
 }
 
 impl Writer {
-    pub async fn execute(&self, sql: &str) -> anyhow::Result<u64> {
-        tracing::debug!("executing remote sql statement");
-        let (write_frame_no, rows_affected) = self.client.execute(sql).await?;
+    pub async fn execute(
+        &self,
+        sql: &str,
+        params: impl Into<pb::query::Params> + Send,
+    ) -> anyhow::Result<u64> {
+        tracing::trace!("executing remote sql statement");
+        let (write_frame_no, rows_affected) = self.client.execute(sql, params.into()).await?;
 
-        tracing::debug!(
+        tracing::trace!(
             "statment executed on remote waiting for frame_no: {}",
             write_frame_no
         );
 
         self.frame_no_notifier
             .clone()
-            .wait_for(|latest_frame_no| dbg!(latest_frame_no) >= &(write_frame_no - 1))
+            .wait_for(|latest_frame_no| latest_frame_no >= &(write_frame_no - 1))
             .await?;
 
-        tracing::debug!("received frame_no: {} for delegated write", write_frame_no);
+        tracing::trace!("received frame_no: {} for delegated write", write_frame_no);
 
         Ok(rows_affected)
     }

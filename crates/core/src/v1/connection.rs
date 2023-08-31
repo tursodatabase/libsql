@@ -13,7 +13,7 @@ pub struct Connection {
     drop_ref: Arc<()>,
 
     #[cfg(feature = "replication")]
-    writer: libsql_replication::Writer,
+    pub(crate) writer: Option<libsql_replication::Writer>,
 }
 
 impl Drop for Connection {
@@ -65,12 +65,14 @@ impl Connection {
     }
 
     /// Create a connection from a raw handle to the underlying libSQL connection
-    // pub fn from_handle(raw: *mut ffi::sqlite3) -> Self {
-    //     Self {
-    //         raw,
-    //         drop_ref: Arc::new(()),
-    //     }
-    // }
+    pub fn from_handle(raw: *mut ffi::sqlite3) -> Self {
+        Self {
+            raw,
+            drop_ref: Arc::new(()),
+            #[cfg(feature = "replication")]
+            writer: None,
+        }
+    }
 
     /// Disconnect from the database.
     pub fn disconnect(&self) {
@@ -204,21 +206,10 @@ impl Connection {
         let sql = sql.into();
         let stmt = Statement::prepare(self.clone(), self.raw, &sql)?;
 
-        #[cfg(feature = "replication")]
-        {
-            if !stmt.is_readonly() {
-                return self
-                    .writer
-                    .execute(&sql)
-                    .await
-                    .map_err(|e| Error::WriteDelegation(e.into()));
-            }
-        }
-
         let params = params
             .try_into()
             .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
-        stmt.execute(&params)
+        stmt.execute2(params).await
     }
 
     // #[cfg(feature = "replication")]

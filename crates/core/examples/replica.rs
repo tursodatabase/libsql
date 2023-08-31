@@ -1,4 +1,4 @@
-use libsql::Database;
+use libsql::{Database, Value};
 use std::time::Duration;
 
 #[tokio::main]
@@ -28,12 +28,12 @@ async fn main() {
 
     db.sync().await.unwrap();
 
-    println!("running");
-
     let mut jh = tokio::spawn(async move {
         conn.execute(
-            "INSERT INTO foo VALUES (\'this value was written via write delegation!\')",
-            (),
+            "INSERT INTO foo (x) VALUES (?1)",
+            vec![Value::from(
+                "this value was written by an embedded replica!",
+            )],
         )
         .await
         .unwrap();
@@ -58,36 +58,4 @@ async fn main() {
             }
         }
     }
-    // db.sync().await.unwrap();
-
-    // jh.await.unwrap();
-
-    // loop {
-    //     match db.sync().await {
-    //         Ok(frames_applied) => {
-    //             if frames_applied == 0 {
-    //                 println!("No more frames at the moment! See you later");
-    //                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-    //                 continue;
-    //             }
-    //             println!("Applied {frames_applied} frames");
-    //         }
-    //         Err(e) => {
-    //             println!("Error: {e}");
-    //             break;
-    //         }
-    //     }
-
-    //     let mut rows = conn.query("SELECT * FROM sqlite_master", ()).await.unwrap();
-
-    //     while let Ok(Some(row)) = rows.next() {
-    //         println!(
-    //             "| {:024} | {:024} | {:024} | {:024} |",
-    //             row.get_str(0).unwrap(),
-    //             row.get_str(1).unwrap(),
-    //             row.get_str(2).unwrap(),
-    //             row.get_str(3).unwrap(),
-    //         );
-    //     }
-    // }
 }
