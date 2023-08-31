@@ -118,6 +118,8 @@ trait Conn {
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction>;
 
+    fn is_autocommit(&self) -> bool;
+
     fn last_insert_rowid(&self) -> i64;
 }
 
@@ -160,6 +162,10 @@ impl Connection {
         self.conn.transaction(tx_behavior).await
     }
 
+    pub fn is_autocommit(&self) -> bool {
+       self.conn.is_autocommit()
+    }
+
     pub fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
@@ -199,6 +205,10 @@ impl Conn for LibsqlConnection {
                 conn: Arc::new(self.clone()),
             },
         })
+    }
+
+    fn is_autocommit(&self) -> bool {
+       self.conn.is_autocommit()
     }
 
     fn last_insert_rowid(&self) -> i64 {
