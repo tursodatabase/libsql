@@ -130,7 +130,6 @@ message IsAutocommitCond {
 message ProgramReq {
     string client_id = 1;
     Program pgm = 2;
-    bytes namespace = 4;
 }
 
 service Proxy {

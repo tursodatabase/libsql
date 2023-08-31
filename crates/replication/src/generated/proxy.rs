@@ -287,8 +287,6 @@ pub struct ProgramReq {
     pub client_id: ::prost::alloc::string::String,
     #[prost(message, optional, tag = "2")]
     pub pgm: ::core::option::Option<Program>,
-    #[prost(bytes = "vec", tag = "4")]
-    pub namespace: ::prost::alloc::vec::Vec<u8>,
 }
 /// Generated client implementations.
 pub mod proxy_client {
