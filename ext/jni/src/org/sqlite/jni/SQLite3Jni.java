@@ -1426,7 +1426,7 @@ public final class SQLite3Jni {
 
   @Canonical
   public static native UpdateHookCallback sqlite3_update_hook(
-    sqlite3 db, UpdateHookCallback hook
+    @NotNull sqlite3 db, @Nullable UpdateHookCallback hook
   );
 
   @Canonical

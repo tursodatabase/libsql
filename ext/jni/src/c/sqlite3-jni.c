@@ -2127,22 +2127,21 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
        (temporary) lack of finalizer for the ps object. */;
   ps->pDb = pDb;
   for( i = 0; go && 0==rc; ++i ){
-    S3JniAutoExtension ax = {0,0}
+    S3JniAutoExtension ax = S3JniHook_empty
       /* We need a copy of the auto-extension object, with our own
       ** local reference to it, to avoid a race condition with another
       ** thread manipulating the list during the call and invaliding
-      ** what ax points to. */;
+      ** what ax references. */;
     S3JniAutoExt_mutex_enter;
     if( i >= SJG.autoExt.nExt ){
       go = 0;
     }else{
-      ax.jObj = S3JniRefLocal(SJG.autoExt.aExt[i].jObj);
-      ax.midCallback = SJG.autoExt.aExt[i].midCallback;
+      S3JniHook_localdup(&SJG.autoExt.aExt[i], &ax);
     }
     S3JniAutoExt_mutex_leave;
     if( ax.jObj ){
       rc = (*env)->CallIntMethod(env, ax.jObj, ax.midCallback, ps->jDb);
-      S3JniUnrefLocal(ax.jObj);
+      S3JniHook_localundup(ax);
       S3JniIfThrew {
         jthrowable const ex = (*env)->ExceptionOccurred(env);
         char * zMsg;
@@ -2151,7 +2150,7 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
         S3JniUnrefLocal(ex);
         *pzErr = sqlite3_mprintf("auto-extension threw: %s", zMsg);
         sqlite3_free(zMsg);
-        if( !rc ) rc = SQLITE_ERROR;
+        rc = SQLITE_ERROR;
       }
     }
   }
