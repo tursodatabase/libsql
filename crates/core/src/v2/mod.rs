@@ -103,7 +103,9 @@ impl Database {
     pub async fn sync(&self) -> Result<usize> {
         match &self.db_type {
             DbType::Sync { db } => db.sync().await,
-            _ => Err(crate::Error::SyncNotSupported),
+            DbType::Memory => Err(crate::Error::SyncNotSupported("in-memory".into())),
+            DbType::File { .. } => Err(crate::Error::SyncNotSupported("file".into())),
+            DbType::Remote { .. }=> Err(crate::Error::SyncNotSupported("remote".into())),
         }
     }
 }
