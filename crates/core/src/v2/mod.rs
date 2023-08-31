@@ -122,6 +122,8 @@ trait Conn {
 
     fn is_autocommit(&self) -> bool;
 
+    fn changes(&self) -> u64;
+
     fn last_insert_rowid(&self) -> i64;
 }
 
@@ -168,6 +170,10 @@ impl Connection {
        self.conn.is_autocommit()
     }
 
+    pub fn changes(&self) -> u64 {
+       self.conn.changes()
+    }
+
     pub fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
@@ -211,6 +217,10 @@ impl Conn for LibsqlConnection {
 
     fn is_autocommit(&self) -> bool {
        self.conn.is_autocommit()
+    }
+
+    fn changes(&self) -> u64 {
+        self.conn.changes()
     }
 
     fn last_insert_rowid(&self) -> i64 {
