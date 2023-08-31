@@ -113,6 +113,33 @@ do_execsql_test 4.1 {
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
   SELECT 1 FROM (SELECT DISTINCT name COLLATE rtrim FROM sqlite_schema
                  UNION ALL SELECT a FROM t1);
-} 1
+} {1 1}
+
+do_execsql_test 4.2 {
+  SELECT DISTINCT name COLLATE rtrim FROM sqlite_schema 
+    UNION ALL 
+  SELECT a FROM t1
+} {v1 t1}
+
+#-------------------------------------------------------------------------
+# forum post https://sqlite.org/forum/forumpost/b83c7b2168
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1 (val1);
+  INSERT INTO t1 VALUES(4);
+  INSERT INTO t1 VALUES(5);
+  CREATE TABLE t2 (val2);
+}
+do_execsql_test 5.1 {
+  SELECT DISTINCT val1 FROM t1 UNION ALL SELECT val2 FROM t2;
+} {
+  4 5
+}
+do_execsql_test 5.2 {
+  SELECT count(1234) FROM (
+    SELECT DISTINCT val1 FROM t1 UNION ALL SELECT val2 FROM t2
+  )
+} {2}
 
 finish_test
