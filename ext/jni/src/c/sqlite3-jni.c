@@ -4279,6 +4279,25 @@ S3JniApi(sqlite3_trace_v2(),jint,1trace_1v2)(
   return rc;
 }
 
+S3JniApi(sqlite3_txn_state(),jint,1txn_1state)(
+  JniArgsEnvClass,jobject jDb, jstring jSchema
+){
+  sqlite3 * const pDb = PtrGet_sqlite3(jDb);
+  int rc = SQLITE_MISUSE;
+  if( pDb ){
+    char * zSchema = jSchema
+      ? s3jni_jstring_to_utf8(jSchema, 0)
+      : 0;
+    if( !jSchema || (zSchema && jSchema) ){
+      rc = sqlite3_txn_state(pDb, zSchema);
+      sqlite3_free(zSchema);
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
+  return rc;
+}
+
 S3JniApi(sqlite3_update_hook(),jobject,1update_1hook)(
   JniArgsEnvClass, jobject jDb, jobject jHook
 ){

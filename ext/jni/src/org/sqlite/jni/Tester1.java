@@ -1396,6 +1396,20 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
+  private void testTxnState(){
+    sqlite3 db = createNewDb();
+    affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
+    execSql(db, "BEGIN;");
+    affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
+    execSql(db, "SELECT * FROM sqlite_schema;");
+    affirm( SQLITE_TXN_READ == sqlite3_txn_state(db, "main") );
+    execSql(db, "CREATE TABLE t(a);");
+    affirm( SQLITE_TXN_WRITE ==  sqlite3_txn_state(db, null) );
+    execSql(db, "ROLLBACK;");
+    affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
+    sqlite3_close_v2(db);
+  }
+
   @ManualTest /* we really only want to run this test manually. */
   private void testSleep(){
     out("Sleeping briefly... ");

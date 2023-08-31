@@ -1425,6 +1425,11 @@ public final class SQLite3Jni {
   );
 
   @Canonical
+  public static native int sqlite3_txn_state(
+    @NotNull sqlite3 db, @Nullable String zSchema
+  );
+
+  @Canonical
   public static native UpdateHookCallback sqlite3_update_hook(
     @NotNull sqlite3 db, @Nullable UpdateHookCallback hook
   );
