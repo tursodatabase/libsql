@@ -1189,6 +1189,14 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1handle
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_db_release_memory
+ * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1release_1memory
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_db_status
  * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Z)I
  */
@@ -1402,6 +1410,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1old
  */
 JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1progress_1handler
   (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_release_memory
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1release_1memory
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1642,6 +1658,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strglob
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strlike
   (JNIEnv *, jclass, jbyteArray, jbyteArray, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_table_column_metadata
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/sqlite/jni/OutputPointer/String;Lorg/sqlite/jni/OutputPointer/String;Lorg/sqlite/jni/OutputPointer/Bool;Lorg/sqlite/jni/OutputPointer/Bool;Lorg/sqlite/jni/OutputPointer/Bool;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1table_1column_1metadata
+  (JNIEnv *, jclass, jobject, jstring, jstring, jstring, jobject, jobject, jobject, jobject, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

@@ -731,6 +731,7 @@ public class Tester1 implements Runnable {
     }
     sqlite3_finalize(stmt);
     affirm( 1 == n );
+    affirm( 0==sqlite3_db_release_memory(db) );
     sqlite3_close_v2(db);
   }
 
@@ -1359,6 +1360,30 @@ public class Tester1 implements Runnable {
     affirm( 8 == val.value );
   }
 
+
+  private void testColumnMetadata(){
+    sqlite3 db = createNewDb();
+    execSql(db, new String[] {
+        "CREATE TABLE t(a duck primary key not null collate noCase); ",
+        "INSERT INTO t(a) VALUES(1),(2),(3);"
+      });
+    OutputPointer.Bool bNotNull = new OutputPointer.Bool();
+    OutputPointer.Bool bPrimaryKey = new OutputPointer.Bool();
+    OutputPointer.Bool bAutoinc = new OutputPointer.Bool();
+    OutputPointer.String zCollSeq = new OutputPointer.String();
+    OutputPointer.String zDataType = new OutputPointer.String();
+    int rc = sqlite3_table_column_metadata(
+      db, "main", "t", "a", zDataType, zCollSeq,
+      bNotNull, bPrimaryKey, bAutoinc);
+    affirm( 0==rc );
+    affirm( bPrimaryKey.value );
+    affirm( !bAutoinc.value );
+    affirm( bNotNull.value );
+    affirm( "noCase".equals(zCollSeq.value) );
+    affirm( "duck".equals(zDataType.value) );
+    sqlite3_close_v2(db);
+  }
+
   @ManualTest /* we really only want to run this test manually. */
   private void testSleep(){
     out("Sleeping briefly... ");
@@ -1618,6 +1643,7 @@ public class Tester1 implements Runnable {
     if( doSomethingForDev ){
       sqlite3_jni_internal_details();
     }
+    affirm( 0==sqlite3_release_memory(1) );
     sqlite3_shutdown();
     int nMethods = 0;
     int nNatives = 0;

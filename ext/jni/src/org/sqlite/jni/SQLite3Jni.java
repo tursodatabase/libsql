@@ -613,6 +613,9 @@ public final class SQLite3Jni {
   public static native sqlite3 sqlite3_db_handle( @NotNull sqlite3_stmt stmt );
 
   @Canonical
+  public static native int sqlite3_db_release_memory(sqlite3 db);
+
+  @Canonical
   public static native int sqlite3_db_status(
     @NotNull sqlite3 db, int op, @NotNull OutputPointer.Int32 pCurrent,
     @NotNull OutputPointer.Int32 pHighwater, boolean reset
@@ -973,6 +976,9 @@ public final class SQLite3Jni {
   );
 
   @Canonical
+  public static native int sqlite3_release_memory(int n);
+
+  @Canonical
   public static native int sqlite3_reset(@NotNull sqlite3_stmt stmt);
 
   /**
@@ -1304,7 +1310,6 @@ public final class SQLite3Jni {
   @Canonical
   public static native String sqlite3_sql(@NotNull sqlite3_stmt stmt);
 
-
   @Canonical
   public static native int sqlite3_status(
     int op, @NotNull OutputPointer.Int32 pCurrent,
@@ -1356,6 +1361,17 @@ public final class SQLite3Jni {
       (int)escChar
     );
   }
+
+  @Canonical
+  public static native int sqlite3_table_column_metadata(
+    @NotNull sqlite3 db, @NotNull String zDbName,
+    @NotNull String zTableName, @NotNull String zColumnName,
+    @Nullable OutputPointer.String pzDataType,
+    @Nullable OutputPointer.String pzCollSeq,
+    @Nullable OutputPointer.Bool pNotNull,
+    @Nullable OutputPointer.Bool pPrimaryKey,
+    @Nullable OutputPointer.Bool pAutoinc
+  );
 
   @Canonical
   public static native int sqlite3_threadsafe();

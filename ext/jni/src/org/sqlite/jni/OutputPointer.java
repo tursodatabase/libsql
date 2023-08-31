@@ -109,6 +109,26 @@ public final class OutputPointer {
   }
 
   /**
+     Output pointer for use with native routines which return booleans
+     via integer output pointers.
+  */
+  public static final class Bool {
+    /**
+       This is public for ease of use. Accessors are provided for
+       consistency with the higher-level types.
+    */
+    public boolean value;
+    /** Initializes with the value 0. */
+    public Bool(){this(false);}
+    /** Initializes with the value v. */
+    public Bool(boolean v){value = v;}
+    /** Returns the current value. */
+    public final boolean get(){return value;}
+    /** Sets the current value to v. */
+    public final void set(boolean v){value = v;}
+  }
+
+  /**
      Output pointer for use with native routines which return integers via
      output pointers.
   */
