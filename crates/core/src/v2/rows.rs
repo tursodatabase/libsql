@@ -74,6 +74,10 @@ impl Row {
     pub fn column_name(&self, idx: i32) -> Option<&str> {
         self.inner.column_name(idx)
     }
+
+    pub fn column_type(&self, idx: i32) -> Result<ValueType> {
+        self.inner.column_type(idx)
+    }
 }
 
 pub(super) trait RowInner {
