@@ -81,6 +81,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ScalarFunction.java \
   SQLFunction.java \
   SQLite3Jni.java \
+  TableColumnMetadata.java \
   Tester1.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \

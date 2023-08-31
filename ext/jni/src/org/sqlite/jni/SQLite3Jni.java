@@ -1373,6 +1373,34 @@ public final class SQLite3Jni {
     @Nullable OutputPointer.Bool pAutoinc
   );
 
+  /**
+     Convenience overload which returns its results via a single
+     output object. If this function returns non-0 (error), the the
+     contents of the output object are not modified.
+  */
+  public static int sqlite3_table_column_metadata(
+    @NotNull sqlite3 db, @NotNull String zDbName,
+    @NotNull String zTableName, @NotNull String zColumnName,
+    @NotNull TableColumnMetadata out){
+    return sqlite3_table_column_metadata(
+      db, zDbName, zTableName, zColumnName,
+      out.pzDataType, out.pzCollSeq, out.pNotNull,
+      out.pPrimaryKey, out.pAutoinc);
+  }
+
+  /**
+     Convenience overload which returns the column metadata object on
+     success and null on error.
+  */
+  public static TableColumnMetadata sqlite3_table_column_metadata(
+    @NotNull sqlite3 db, @NotNull String zDbName,
+    @NotNull String zTableName, @NotNull String zColumnName){
+    final TableColumnMetadata out = new TableColumnMetadata();
+    return 0==sqlite3_table_column_metadata(
+      db, zDbName, zTableName, zColumnName, out
+    ) ? out : null;
+  }
+
   @Canonical
   public static native int sqlite3_threadsafe();
 

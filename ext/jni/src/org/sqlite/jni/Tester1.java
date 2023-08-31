@@ -1381,6 +1381,18 @@ public class Tester1 implements Runnable {
     affirm( bNotNull.value );
     affirm( "noCase".equals(zCollSeq.value) );
     affirm( "duck".equals(zDataType.value) );
+
+    final TableColumnMetadata m =
+      sqlite3_table_column_metadata(db, "main", "t", "a");
+    affirm( null != m );
+    affirm( bPrimaryKey.value == m.isPrimaryKey() );
+    affirm( bAutoinc.value == m.isAutoincrement() );
+    affirm( bNotNull.value == m.isNotNull() );
+    affirm( zCollSeq.value.equals(m.getCollation()) );
+    affirm( zDataType.value.equals(m.getDataType()) );
+
+    affirm( null == sqlite3_table_column_metadata(db, "nope", "t", "a") );
+
     sqlite3_close_v2(db);
   }
 
