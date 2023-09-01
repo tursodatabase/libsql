@@ -420,8 +420,8 @@ struct S3JniHook{
   /* We lookup the jObj.xDestroy() method as-needed for contexts which
   ** have custom finalizers. */
   jobject jExtra          /* Global ref to a per-hook-type value */;
-  int doXDestroy          /* If true call jObj->xDestroy() when
-                             this object is S3JniHook_unref()'d. */;
+  int doXDestroy          /* If true then S3JniHook_unref() will call
+                             jObj->xDestroy() if it's available. */;
   S3JniHook * pNext      /* Next entry in S3Global.hooks.aFree */;
 };
 /* For clean bitwise-copy init of local instances. */
@@ -543,10 +543,8 @@ struct S3JniUdf {
   S3JniUdf * pNext       /* Next entry in SJG.udf.aFree. */;
 };
 
-#if !defined(SQLITE_JNI_OMIT_METRICS) && !defined(SQLITE_JNI_ENABLE_METRICS)
-#  ifdef SQLITE_DEBUG
-#    define SQLITE_JNI_ENABLE_METRICS
-#  endif
+#if defined(SQLITE_JNI_ENABLE_METRICS) && 0==SQLITE_JNI_ENABLE_METRICS
+#  undef SQLITE_JNI_ENABLE_METRICS
 #endif
 
 /*
@@ -1105,10 +1103,10 @@ static void s3jni__call_xDestroy(JNIEnv * const env, jobject jObj){
 
 /*
 ** Internal helper for many hook callback impls. Locks the S3JniDb
-** mutex, makes a copy of src into dest, with a some differences: (1) if
-** src->jObj or src->jExtra are not NULL then dest will be a new LOCAL
-** ref to it instead of a copy of the prior GLOBAL ref. (2) dest->doXDestroy
-** is always false.
+** mutex, makes a copy of src into dest, with a some differences: (1)
+** if src->jObj or src->jExtra are not NULL then dest will be a new
+** LOCAL ref to it instead of a copy of the prior GLOBAL ref. (2)
+** dest->doXDestroy is always false.
 **
 ** If dest->jObj is not NULL when this returns then the caller is
 ** obligated to eventually free the new ref by passing *dest to
@@ -1186,8 +1184,8 @@ static S3JniHook *S3JniHook__alloc(JNIEnv  * const env){
 #define S3JniHook_alloc() S3JniHook__alloc(env)
 
 /*
-** The rightful fate of all results from S3JniHook_alloc(). doXDestroy
-** is passed on as-is to S3JniHook_unref(). Locks the global mutex.
+** The rightful fate of all results from S3JniHook_alloc(). Locks the
+** global mutex.
 */
 static void S3JniHook__free(JNIEnv  * const env, S3JniHook * const p){
   if(p){
@@ -1637,7 +1635,7 @@ static int encodingTypeIsValid(int eTextRep){
 }
 
 /* For use with sqlite3_result/value_pointer() */
-#define ResultJavaValuePtrStr "org.sqlite.jni.ResultJavaVal"
+static const char * const ResultJavaValuePtrStr = "org.sqlite.jni.ResultJavaVal";
 
 /*
 ** If v is not NULL, it must be a jobject global reference. Its
@@ -1804,7 +1802,9 @@ typedef struct {
 ** Converts the given (cx, argc, argv) into arguments for the given
 ** UDF, writing the result (Java wrappers for cx and argv) in the
 ** final 2 arguments. Returns 0 on success, SQLITE_NOMEM on allocation
-** error. On error *jCx and *jArgv will be set to 0.
+** error. On error *jCx and *jArgv will be set to 0. The output
+** objects are of type org.sqlite.jni.sqlite3_context and
+** array-of-org.sqlite3.jni.sqlite3_value, respectively.
 */
 static int udf_args(JNIEnv *env,
                     sqlite3_context * const cx,
@@ -2831,8 +2831,10 @@ S3JniApi(sqlite3_context_db_handle(),jobject,1context_1db_1handle)(
   return ps ? ps->jDb : 0;
 }
 
-/**
-   State for CollationCallbacks.
+/*
+** State for CollationCallbacks. This used to be its own separate
+** type, but has since been consolidated with S3JniHook. It retains
+** its own typedef for code legibility and searchability reasons.
 */
 typedef S3JniHook S3JniCollationCallback;
 
@@ -2915,7 +2917,8 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
   return (jint)rc;
 }
 
-S3JniApi(sqlite3_create_function() sqlite3_create_function_v2() sqlite3_create_window_function(),
+S3JniApi(sqlite3_create_function() sqlite3_create_function_v2()
+         sqlite3_create_window_function(),
          jint,1create_1function
 )(JniArgsEnvClass, jobject jDb, jstring jFuncName, jint nArg,
   jint eTextRep, jobject jFunctor){

@@ -177,6 +177,7 @@ $(sqlite3.c): $(sqlite3.h)
 opt.threadsafe ?= 1
 opt.fatal-oom ?= 1
 opt.debug ?= 1
+opt.metrics ?= 1
 SQLITE_OPT = \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
@@ -194,7 +195,8 @@ SQLITE_OPT = \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_C=$(sqlite3.c) \
-  -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom)
+  -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom) \
+  -DSQLITE_JNI_ENABLE_METRICS=$(opt.metrics)
 
 ifeq (1,$(opt.debug))
   SQLITE_OPT += -DSQLITE_DEBUG -g -DDEBUG -UNDEBUG

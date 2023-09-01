@@ -217,13 +217,19 @@ public final class SQLite3Jni {
 
   /**
      Requires that paramName be a NUL-terminated UTF-8 string.
+
+     This overload is private because: (A) to keep users from
+     inadvertently passing non-NUL-terminated byte arrays (an easy
+     thing to do). (B) it is cheaper to NUL-terminate the
+     String-to-byte-array conversion in the public-facing Java-side
+     overload than to do that in C, so that signature is the
+     public-facing one.
   */
   @Canonical
-  public static native int sqlite3_bind_parameter_index(
-    @NotNull sqlite3_stmt stmt, byte[] paramName
+  private static native int sqlite3_bind_parameter_index(
+    @NotNull sqlite3_stmt stmt, @NotNull byte[] paramName
   );
 
-  @Canonical
   public static int sqlite3_bind_parameter_index(
     @NotNull sqlite3_stmt stmt, @NotNull String paramName
   ){
@@ -316,9 +322,9 @@ public final class SQLite3Jni {
   );
 
   /**
-     As for the C-level function of the same name, with a BusyHandlerCallback
-     instance in place of a callback function. Pass it a null handler
-     to clear the busy handler.
+     As for the C-level function of the same name, with a
+     BusyHandlerCallback instance in place of a callback
+     function. Pass it a null handler to clear the busy handler.
   */
   @Canonical
   public static native int sqlite3_busy_handler(
@@ -420,6 +426,8 @@ public final class SQLite3Jni {
      stress that the returned bytes are encoded as UTF-8. It returns
      null if the underlying C-level sqlite3_column_text() returns NULL
      or on allocation error.
+
+     @see #sqlite3_column_text16(sqlite3_stmt,int)
   */
   @Canonical
   public static native byte[] sqlite3_column_text(
@@ -480,7 +488,7 @@ public final class SQLite3Jni {
 
   /**
      This functions like C's sqlite3_collation_needed16() because
-     Java's string type is compatible with that interface.
+     Java's string type is inherently compatible with that interface.
   */
   @Canonical
   public static native int sqlite3_collation_needed(
@@ -1344,7 +1352,7 @@ public final class SQLite3Jni {
 
   /**
      Internal impl of the public sqlite3_strglob() method. Neither
-     argument may be NULL and both MUST be NUL-terminated UTF-8.
+     argument may be null and both must be NUL-terminated UTF-8.
 
      This overload is private because: (A) to keep users from
      inadvertently passing non-NUL-terminated byte arrays (an easy
