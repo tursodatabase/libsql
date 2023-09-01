@@ -14,8 +14,3 @@ members = [
 codegen-units = 1
 panic = "abort"
 
-[patch.crates-io]
-tonic = { git = "https://github.com/hyperium/tonic" }
-tonic-web = { git = "https://github.com/hyperium/tonic" }
-tonic-build = { git = "https://github.com/hyperium/tonic" }
-tower-http = { git = "https://github.com/tower-rs/tower-http", branch = "lucio/grpc-defaults" }
