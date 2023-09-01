@@ -192,7 +192,7 @@ public class Tester1 implements Runnable {
 
   static sqlite3_stmt prepare(sqlite3 db, boolean throwOnError, String sql){
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
-    int rc = sqlite3_prepare(db, sql, outStmt);
+    int rc = sqlite3_prepare_v2(db, sql, outStmt);
     if( throwOnError ){
       affirm( 0 == rc );
     }
@@ -203,9 +203,11 @@ public class Tester1 implements Runnable {
     }
     return rv;
   }
+
   static sqlite3_stmt prepare(sqlite3 db, String sql){
     return prepare(db, true, sql);
   }
+
   private void showCompileOption(){
     int i = 0;
     String optName;
@@ -260,6 +262,7 @@ public class Tester1 implements Runnable {
     affirm(0 == rc);
     sqlite3_stmt stmt = outStmt.take();
     affirm(0 != stmt.getNativePointer());
+    affirm( !sqlite3_stmt_readonly(stmt) );
     affirm( db == sqlite3_db_handle(stmt) );
     rc = sqlite3_step(stmt);
     if( SQLITE_DONE != rc ){
@@ -360,6 +363,7 @@ public class Tester1 implements Runnable {
     affirm(sqlite3_changes64(db) > changes64);
     affirm(sqlite3_total_changes64(db) > changesT64);
     stmt = prepare(db, "SELECT a FROM t ORDER BY a DESC;");
+    affirm( sqlite3_stmt_readonly(stmt) );
     int total2 = 0;
     while( SQLITE_ROW == sqlite3_step(stmt) ){
       total2 += sqlite3_column_int(stmt, 0);
@@ -1362,7 +1366,7 @@ public class Tester1 implements Runnable {
 
 
   private void testColumnMetadata(){
-    sqlite3 db = createNewDb();
+    final sqlite3 db = createNewDb();
     execSql(db, new String[] {
         "CREATE TABLE t(a duck primary key not null collate noCase); ",
         "INSERT INTO t(a) VALUES(1),(2),(3);"
@@ -1397,7 +1401,7 @@ public class Tester1 implements Runnable {
   }
 
   private void testTxnState(){
-    sqlite3 db = createNewDb();
+    final sqlite3 db = createNewDb();
     affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
     execSql(db, "BEGIN;");
     affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
@@ -1409,6 +1413,32 @@ public class Tester1 implements Runnable {
     affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
     sqlite3_close_v2(db);
   }
+
+
+  private void testExplain(){
+    final sqlite3 db = createNewDb();
+    sqlite3_stmt stmt = prepare(db,"SELECT 1");
+
+    affirm( 0 == sqlite3_stmt_isexplain(stmt) );
+    int rc = sqlite3_stmt_explain(stmt, 1);
+    affirm( 1 == sqlite3_stmt_isexplain(stmt) );
+    rc = sqlite3_stmt_explain(stmt, 2);
+    affirm( 2 == sqlite3_stmt_isexplain(stmt) );
+    sqlite3_finalize(stmt);
+
+
+    sqlite3_close_v2(db);
+  }
+
+  /* Copy/paste/rename this to add new tests. */
+  private void _testTemplate(){
+    final sqlite3 db = createNewDb();
+    sqlite3_stmt stmt = prepare(db,"SELECT 1");
+
+    sqlite3_finalize(stmt);
+    sqlite3_close_v2(db);
+  }
+
 
   @ManualTest /* we really only want to run this test manually. */
   private void testSleep(){

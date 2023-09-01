@@ -1645,6 +1645,30 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1step
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_explain
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1explain
+  (JNIEnv *, jclass, jobject, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_isexplain
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1isexplain
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_readonly
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1readonly
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_strglob
  * Signature: ([B[B)I
  */

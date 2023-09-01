@@ -113,14 +113,6 @@
 # define SQLITE_THREADSAFE 1
 #endif
 
-/*
-** 2023-08-25: initial attempts at running with SQLITE_THREADSAFE=0
-** lead to as-yet-uninvestigated bad reference errors from JNI.
-*/
-#if 0 && SQLITE_THREADSAFE==0
-# error "This code currently requires SQLITE_THREADSAFE!=0."
-#endif
-
 /**********************************************************************/
 /* SQLITE_USE_... */
 #ifndef SQLITE_USE_URI
@@ -132,9 +124,11 @@
 ** Which sqlite3.c we're using needs to be configurable to enable
 ** building against a custom copy, e.g. the SEE variant. We have to
 ** include sqlite3.c, as opposed to sqlite3.h, in order to get access
-** to SQLITE_MAX_... and friends. This increases the rebuild time
-** considerably but we need this in order to keep the exported values
-** of SQLITE_MAX_... and SQLITE_LIMIT_... in sync with the C build.
+** to some interal details like SQLITE_MAX_... and friends. This
+** increases the rebuild time considerably but we need this in order
+** to access some internal functionality and keep the to-Java-exported
+** values of SQLITE_MAX_... and SQLITE_LIMIT_... in sync with the C
+** build.
 */
 #ifndef SQLITE_C
 # define SQLITE_C sqlite3.c
@@ -452,7 +446,8 @@ struct S3JniDb {
 #endif
   S3JniDb * pNext /* Next entry in SJG.perDb.aFree */;
 };
-#define S3JniDb_clientdata_key "S3JniDb"
+
+static const char * const S3JniDb_clientdata_key = "S3JniDb";
 #define S3JniDb_from_clientdata(pDb)                                \
   (pDb ? sqlite3_get_clientdata(pDb, S3JniDb_clientdata_key) : 0)
 
@@ -1463,28 +1458,15 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
 ** Returns the S3JniDb object for the given org.sqlite.jni.sqlite3
 ** object, or NULL if jDb is NULL, no pointer can be extracted
 ** from it, or no matching entry can be found.
-**
-** Requires locking the S3JniDb mutex.
 */
 static S3JniDb * S3JniDb__from_java(JNIEnv * const env, jobject jDb){
   S3JniDb * s = 0;
   sqlite3 * pDb = 0;
-  S3JniDb_mutex_enter;
   if( jDb ) pDb = PtrGet_sqlite3(jDb);
   s = S3JniDb_from_clientdata(pDb);
-  S3JniDb_mutex_leave;
   return s;
 }
 #define S3JniDb_from_java(jObject) S3JniDb__from_java(env,(jObject))
-
-
-static S3JniDb * S3JniDb__from_java_unlocked(JNIEnv * const env, jobject jDb){
-  sqlite3 * pDb = 0;
-  S3JniDb_mutex_assertLocker;
-  if( jDb ) pDb = PtrGet_sqlite3(jDb);
-  return S3JniDb_from_clientdata(pDb);
-}
-#define S3JniDb_from_java_unlocked(JDB) S3JniDb__from_java_unlocked(env, (JDB))
 
 /*
 ** S3JniDb finalizer for use with sqlite3_set_clientdata().
@@ -1492,7 +1474,7 @@ static S3JniDb * S3JniDb__from_java_unlocked(JNIEnv * const env, jobject jDb){
 static void S3JniDb_xDestroy(void *p){
   S3JniDeclLocal_env;
   S3JniDb * const ps = p;
-  assert( !ps->pNext );
+  assert( !ps->pNext && "Else ps is already in the free-list.");
   S3JniDb_set_aside(ps);
 }
 
@@ -2012,6 +1994,11 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
   JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jobject pStmt, jint n){ \
     return (jint)CName(PtrGet_sqlite3_stmt(pStmt), (int)n);            \
   }
+/** Create a trivial JNI wrapper for (boolish-int CName(sqlite3_stmt*)). */
+#define WRAP_BOOL_STMT(JniNameSuffix,CName)                         \
+  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jobject pStmt){ \
+    return CName(PtrGet_sqlite3_stmt(pStmt)) ? JNI_TRUE : JNI_FALSE; \
+  }
 /** Create a trivial JNI wrapper for (jstring CName(sqlite3_stmt*,int)). */
 #define WRAP_STR_STMT_INT(JniNameSuffix,CName)                              \
   JniDecl(jstring,JniNameSuffix)(JniArgsEnvClass, jobject pStmt, jint ndx){ \
@@ -2061,6 +2048,9 @@ WRAP_INT_DB(1preupdate_1depth,         sqlite3_preupdate_depth)
 WRAP_INT_INT(1release_1memory,         sqlite3_release_memory)
 WRAP_INT_INT(1sleep,                   sqlite3_sleep)
 WRAP_MUTF8_VOID(1sourceid,             sqlite3_sourceid)
+WRAP_INT_STMT_INT(1stmt_1explain,      sqlite3_stmt_explain)
+WRAP_INT_STMT(1stmt_1isexplain,        sqlite3_stmt_isexplain)
+WRAP_BOOL_STMT(1stmt_1readonly,        sqlite3_stmt_readonly)
 WRAP_INT_VOID(1threadsafe,             sqlite3_threadsafe)
 WRAP_INT_DB(1total_1changes,           sqlite3_total_changes)
 WRAP_INT64_DB(1total_1changes64,       sqlite3_total_changes64)
@@ -2513,7 +2503,7 @@ S3JniApi(sqlite3_collation_needed(),jint,1collation_1needed)(
   int rc = 0;
 
   S3JniDb_mutex_enter;
-  ps = S3JniDb_from_java_unlocked(jDb);
+  ps = S3JniDb_from_java(jDb);
   if( !ps ){
     S3JniDb_mutex_leave;
     return SQLITE_MISUSE;
@@ -2655,7 +2645,7 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
   S3JniHook * pHook;
 
   S3JniDb_mutex_enter;
-  ps = S3JniDb_from_java_unlocked(jDb);
+  ps = S3JniDb_from_java(jDb);
   if( !ps ){
     s3jni_db_error(ps->pDb, SQLITE_NOMEM, 0);
     S3JniDb_mutex_leave;
@@ -2878,7 +2868,7 @@ S3JniApi(sqlite3_create_collation() sqlite3_create_collation_v2(),
   S3JniDb * ps;
 
   S3JniDb_mutex_enter;
-  ps = S3JniDb_from_java_unlocked(jDb);
+  ps = S3JniDb_from_java(jDb);
   if( !ps ){
     rc = SQLITE_MISUSE;
   }else{
