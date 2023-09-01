@@ -291,7 +291,7 @@ static inline void s3jni_unref_local(JNIEnv * const env, jobject const v){
 #define S3JniUnrefLocal(VAR) s3jni_unref_local(env, (VAR))
 
 /*
-** Key type for use with S3JniGlobal_nph().
+** Lookup key type for use with s3jni_nph().
 */
 typedef struct S3JniNphRef S3JniNphRef;
 struct S3JniNphRef {
@@ -304,7 +304,7 @@ struct S3JniNphRef {
 /*
 ** Cache keys for each concrete NativePointerHolder subclass and
 ** OutputPointer.T type. The members are to be used with
-** S3JniGlobal_nph() and friends, and each one's member->index
+** s3jni_nph() and friends, and each one's member->index
 ** corresponds to its index in the S3JniGlobal.nph[] array.
 */
 static const struct {
@@ -375,7 +375,7 @@ enum {
 /*
 ** Cache entry for NativePointerHolder subclasses and OutputPointer
 ** types. The pRef and klazz fields are set up the first time the
-** entry is fetched using S3JniGlobal_nph(). The other fields are
+** entry is fetched using s3jni_nph(). The other fields are
 ** populated as needed by the routines which use them.
 */
 typedef struct S3JniNphClass S3JniNphClass;
@@ -1282,12 +1282,11 @@ static int S3JniEnv_uncache(JNIEnv * const env){
 }
 
 /*
-** Searches the NativePointerHolder cache for the given combination of
-** args.  It returns a cache entry with its klazz member set. This is
-** an O(1) operation except on the first call for a given pRef, during
-** which pRef->klazz and pRef->pRef are initialized thread-safely. In
-** the latter case it's still effectively O(1), but with a much longer
-** 1.
+** Fetches the given nph-ref from cache the cache and returns the
+** object with its klazz member set. This is an O(1) operation except
+** on the first call for a given pRef, during which pRef->klazz and
+** pRef->pRef are initialized thread-safely. In the latter case it's
+** still effectively O(1), but with a much longer 1.
 **
 ** It is up to the caller to populate the other members of the
 ** returned object if needed, taking care to lock the modification
@@ -1296,7 +1295,7 @@ static int S3JniEnv_uncache(JNIEnv * const env){
 ** This simple cache catches >99% of searches in the current
 ** (2023-07-31) tests.
 */
-static S3JniNphClass * S3JniGlobal__nph(JNIEnv * const env, S3JniNphRef const* pRef){
+static S3JniNphClass * s3jni__nph(JNIEnv * const env, S3JniNphRef const* pRef){
   /**
    According to:
 
@@ -1333,7 +1332,7 @@ static S3JniNphClass * S3JniGlobal__nph(JNIEnv * const env, S3JniNphRef const* p
   return pNC;
 }
 
-#define S3JniGlobal_nph(PREF) S3JniGlobal__nph(env, PREF)
+#define s3jni_nph(PRef) s3jni__nph(env, PRef)
 
 /*
 ** Common code for accessor functions for NativePointerHolder and
@@ -1348,7 +1347,7 @@ static S3JniNphClass * S3JniGlobal__nph(JNIEnv * const env, S3JniNphRef const* p
 ** Property lookups are cached on a per-pRef basis.
 */
 static jfieldID s3jni_nphop_field(JNIEnv * const env, S3JniNphRef const* pRef){
-  S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
+  S3JniNphClass * const pNC = s3jni_nph(pRef);
 
   if( !pNC->fidValue ){
     S3JniNph_mutex_enter;
@@ -1665,7 +1664,7 @@ static void ResultJavaValue_finalizer(void *v){
 static jobject new_NativePointerHolder_object(JNIEnv * const env, S3JniNphRef const * pRef,
                                               const void * pNative){
   jobject rv = 0;
-  S3JniNphClass * const pNC = S3JniGlobal_nph(pRef);
+  S3JniNphClass * const pNC = s3jni_nph(pRef);
   if( !pNC->midCtor ){
     S3JniNph_mutex_enter;
     if( !pNC->midCtor ){
@@ -1816,7 +1815,7 @@ static int udf_args(JNIEnv *env,
   *jArgv = 0;
   if( !jcx ) goto error_oom;
   ja = (*env)->NewObjectArray(
-    env, argc, S3JniGlobal_nph(&S3JniNphRefs.sqlite3_value)->klazz,
+    env, argc, s3jni_nph(&S3JniNphRefs.sqlite3_value)->klazz,
     NULL);
   s3jni_oom_check( ja );
   if( !ja ) goto error_oom;
@@ -3216,6 +3215,17 @@ S3JniApi(sqlite3_last_insert_rowid(),jlong,1last_1insert_1rowid)(
   return rc;
 }
 
+S3JniApi(sqlite3_limit(),jint,1limit)(
+  JniArgsEnvClass, jobject jpDb, jint id, jint newVal
+){
+  jint rc = 0;
+  sqlite3 * const pDb = PtrGet_sqlite3(jpDb);
+  if( pDb ){
+    rc = sqlite3_limit( pDb, (int)id, (int)newVal );
+  }
+  return rc;
+}
+
 /* Pre-open() code common to sqlite3_open[_v2](). */
 static int s3jni_open_pre(JNIEnv * const env, S3JniEnv **jc,
                           jstring jDbName, char **zDbName,
@@ -4400,7 +4410,7 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
   SO(S3JniHook);
   SO(S3JniDb);
   SO(S3JniNphRefs);
-  printf("\t(^^^ %u NativePointerHolder subclasses)\n",
+  printf("\t(^^^ %u NativePointerHolder/OutputPointer.T types)\n",
          (unsigned)S3Jni_NphCache_size);
   SO(S3JniGlobal);
   SO(S3JniAutoExtension);
@@ -5270,39 +5280,13 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
     const char *zName;
     enum JType jtype;
     int value;
-  } ConfigFlagEntry;
-  const ConfigFlagEntry aLimits[] = {
-    {"SQLITE_MAX_ALLOCATION_SIZE", JTYPE_INT, SQLITE_MAX_ALLOCATION_SIZE},
-    {"SQLITE_LIMIT_LENGTH", JTYPE_INT, SQLITE_LIMIT_LENGTH},
-    {"SQLITE_MAX_LENGTH", JTYPE_INT, SQLITE_MAX_LENGTH},
-    {"SQLITE_LIMIT_SQL_LENGTH", JTYPE_INT, SQLITE_LIMIT_SQL_LENGTH},
-    {"SQLITE_MAX_SQL_LENGTH", JTYPE_INT, SQLITE_MAX_SQL_LENGTH},
-    {"SQLITE_LIMIT_COLUMN", JTYPE_INT, SQLITE_LIMIT_COLUMN},
-    {"SQLITE_MAX_COLUMN", JTYPE_INT, SQLITE_MAX_COLUMN},
-    {"SQLITE_LIMIT_EXPR_DEPTH", JTYPE_INT, SQLITE_LIMIT_EXPR_DEPTH},
-    {"SQLITE_MAX_EXPR_DEPTH", JTYPE_INT, SQLITE_MAX_EXPR_DEPTH},
-    {"SQLITE_LIMIT_COMPOUND_SELECT", JTYPE_INT, SQLITE_LIMIT_COMPOUND_SELECT},
-    {"SQLITE_MAX_COMPOUND_SELECT", JTYPE_INT, SQLITE_MAX_COMPOUND_SELECT},
-    {"SQLITE_LIMIT_VDBE_OP", JTYPE_INT, SQLITE_LIMIT_VDBE_OP},
-    {"SQLITE_MAX_VDBE_OP", JTYPE_INT, SQLITE_MAX_VDBE_OP},
-    {"SQLITE_LIMIT_FUNCTION_ARG", JTYPE_INT, SQLITE_LIMIT_FUNCTION_ARG},
-    {"SQLITE_MAX_FUNCTION_ARG", JTYPE_INT, SQLITE_MAX_FUNCTION_ARG},
-    {"SQLITE_LIMIT_ATTACHED", JTYPE_INT, SQLITE_LIMIT_ATTACHED},
-    {"SQLITE_MAX_ATTACHED", JTYPE_INT, SQLITE_MAX_ATTACHED},
-    {"SQLITE_LIMIT_LIKE_PATTERN_LENGTH", JTYPE_INT, SQLITE_LIMIT_LIKE_PATTERN_LENGTH},
-    {"SQLITE_MAX_LIKE_PATTERN_LENGTH", JTYPE_INT, SQLITE_MAX_LIKE_PATTERN_LENGTH},
-    {"SQLITE_LIMIT_VARIABLE_NUMBER", JTYPE_INT, SQLITE_LIMIT_VARIABLE_NUMBER},
-    {"SQLITE_MAX_VARIABLE_NUMBER", JTYPE_INT, SQLITE_MAX_VARIABLE_NUMBER},
-    {"SQLITE_LIMIT_TRIGGER_DEPTH", JTYPE_INT, SQLITE_LIMIT_TRIGGER_DEPTH},
-    {"SQLITE_MAX_TRIGGER_DEPTH", JTYPE_INT, SQLITE_MAX_TRIGGER_DEPTH},
-    {"SQLITE_LIMIT_WORKER_THREADS", JTYPE_INT, SQLITE_LIMIT_WORKER_THREADS},
-    {"SQLITE_MAX_WORKER_THREADS", JTYPE_INT, SQLITE_MAX_WORKER_THREADS},
-    {"SQLITE_THREADSAFE", JTYPE_INT, SQLITE_THREADSAFE},
+  } DefineEntry;
+  const DefineEntry aLimits[] = {
     {0,0}
   };
   jfieldID fieldId;
   jclass klazz;
-  const ConfigFlagEntry * pConfFlag;
+  const DefineEntry * pDef;
 
 #if 0
   if( 0==sqlite3_threadsafe() ){
@@ -5376,18 +5360,18 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
     ** sqlite3_config(), if it's ever implemented. */;
 
   /* Set up static "consts" of the SQLite3Jni class. */
-  for( pConfFlag = &aLimits[0]; pConfFlag->zName; ++pConfFlag ){
-    char const * zSig = (JTYPE_BOOL == pConfFlag->jtype) ? "Z" : "I";
-    fieldId = (*env)->GetStaticFieldID(env, jKlazz, pConfFlag->zName, zSig);
+  for( pDef = &aLimits[0]; pDef->zName; ++pDef ){
+    char const * zSig = (JTYPE_BOOL == pDef->jtype) ? "Z" : "I";
+    fieldId = (*env)->GetStaticFieldID(env, jKlazz, pDef->zName, zSig);
     S3JniExceptionIsFatal("Missing an expected static member of the SQLite3Jni class.");
     assert(fieldId);
-    switch( pConfFlag->jtype ){
+    switch( pDef->jtype ){
       case JTYPE_INT:
-        (*env)->SetStaticIntField(env, jKlazz, fieldId, (jint)pConfFlag->value);
+        (*env)->SetStaticIntField(env, jKlazz, fieldId, (jint)pDef->value);
         break;
       case JTYPE_BOOL:
         (*env)->SetStaticBooleanField(env, jKlazz, fieldId,
-                                      pConfFlag->value ? JNI_TRUE : JNI_FALSE);
+                                      pDef->value ? JNI_TRUE : JNI_FALSE);
         break;
     }
     S3JniExceptionIsFatal("Seting a static member of the SQLite3Jni class failed.");

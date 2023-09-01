@@ -379,6 +379,30 @@ extern "C" {
 #define org_sqlite_jni_SQLite3Jni_SQLITE_IOCAP_IMMUTABLE 8192L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_IOCAP_BATCH_ATOMIC
 #define org_sqlite_jni_SQLite3Jni_SQLITE_IOCAP_BATCH_ATOMIC 16384L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LENGTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LENGTH 0L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_SQL_LENGTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_SQL_LENGTH 1L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COLUMN
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COLUMN 2L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_EXPR_DEPTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_EXPR_DEPTH 3L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COMPOUND_SELECT
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COMPOUND_SELECT 4L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VDBE_OP
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VDBE_OP 5L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_FUNCTION_ARG
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_FUNCTION_ARG 6L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_ATTACHED
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_ATTACHED 7L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LIKE_PATTERN_LENGTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LIKE_PATTERN_LENGTH 8L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VARIABLE_NUMBER
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VARIABLE_NUMBER 9L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_TRIGGER_DEPTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_TRIGGER_DEPTH 10L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_WORKER_THREADS
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_WORKER_THREADS 11L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_OPEN_READONLY
 #define org_sqlite_jni_SQLite3Jni_SQLITE_OPEN_READONLY 1L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_OPEN_READWRITE
@@ -1314,6 +1338,14 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1libversion
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1libversion_1number
   (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_limit
+ * Signature: (Lorg/sqlite/jni/sqlite3;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1limit
+  (JNIEnv *, jclass, jobject, jint, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni

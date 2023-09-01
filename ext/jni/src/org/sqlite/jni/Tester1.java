@@ -125,8 +125,6 @@ public class Tester1 implements Runnable {
   @ManualTest /* because testing this for threading is pointless */
   private void test1(){
     affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
-    affirm(SQLITE_MAX_LENGTH > 0);
-    affirm(SQLITE_MAX_TRIGGER_DEPTH>0);
   }
 
   static sqlite3 createNewDb(){
@@ -1438,6 +1436,17 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
+  private void testLimit(){
+    final sqlite3 db = createNewDb();
+
+    int v1, v2;
+    v1 = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
+    affirm( v1 > 0 );
+    affirm( v1 == sqlite3_limit(db, SQLITE_LIMIT_LENGTH, v1-1) );
+    affirm( v1-1 == sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1) );
+    sqlite3_close_v2(db);
+  }
+
   /* Copy/paste/rename this to add new tests. */
   private void _testTemplate(){
     final sqlite3 db = createNewDb();
@@ -1636,7 +1645,7 @@ public class Tester1 implements Runnable {
 
     final long timeStart = System.currentTimeMillis();
     int nLoop = 0;
-    switch( SQLITE_THREADSAFE ){ /* Sanity checking */
+    switch( sqlite3_threadsafe() ){ /* Sanity checking */
       case 0:
         affirm( SQLITE_ERROR==sqlite3_config( SQLITE_CONFIG_SINGLETHREAD ),
                 "Could not switch to single-thread mode." );
@@ -1662,7 +1671,7 @@ public class Tester1 implements Runnable {
     outln("libversion_number: ",
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID,"\n",
-          "SQLITE_THREADSAFE=",SQLITE_THREADSAFE);
+          "SQLITE_THREADSAFE=",sqlite3_threadsafe());
     final boolean showLoopCount = (nRepeat>1 && nThread>1);
     if( showLoopCount ){
       outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
@@ -1713,6 +1722,7 @@ public class Tester1 implements Runnable {
     sqlite3_shutdown();
     int nMethods = 0;
     int nNatives = 0;
+    int nCanonical = 0;
     final java.lang.reflect.Method[] declaredMethods =
       SQLite3Jni.class.getDeclaredMethods();
     for(java.lang.reflect.Method m : declaredMethods){
@@ -1721,6 +1731,9 @@ public class Tester1 implements Runnable {
         final String name = m.getName();
         if(name.startsWith("sqlite3_")){
           ++nMethods;
+          if( m.isAnnotationPresent( org.sqlite.jni.annotation.Canonical.class ) ){
+            ++nCanonical;
+          }
           if( 0!=(mod & java.lang.reflect.Modifier.NATIVE) ){
             ++nNatives;
           }
@@ -1728,8 +1741,10 @@ public class Tester1 implements Runnable {
       }
     }
     outln("\tSQLite3Jni.sqlite3_*() methods: "+
-          nNatives+" native methods and "+
-          (nMethods - nNatives)+" Java impls");
+          nNatives+" native methods, "+
+          (nMethods - nNatives)+" Java impls. ",
+          nCanonical," methods flagged as canonical"
+    );
     outln("\tTotal test time = "
           +(timeEnd - timeStart)+"ms");
   }

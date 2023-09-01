@@ -20,14 +20,14 @@ package org.sqlite.jni.annotation;
    different name than its C counterpart. For such cases,
    (cname=the-C-side-name) is passed to this annotation and a
    Java-side implementation with a slightly different signature is
-   added to with the canonical name. As of this writing, that applies
+   added with the canonical name. As of this writing, that applies
    only to {@link org.sqlite.jni.SQLite3Jni#sqlite3_value_text_utf8}
    and {@link org.sqlite.jni.SQLite3Jni#sqlite3_column_text_utf8}.
 
    <p>The comment property can be used to add a comment.
 */
 @java.lang.annotation.Documented
-@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE)
+@java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 @java.lang.annotation.Target(java.lang.annotation.ElementType.METHOD)
 public @interface Canonical{
   /**

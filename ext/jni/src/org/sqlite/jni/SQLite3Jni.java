@@ -669,6 +669,9 @@ public final class SQLite3Jni {
   @Canonical
   public static native int sqlite3_libversion_number();
 
+  @Canonical
+  public static native int sqlite3_limit(@NotNull sqlite3 db, int id, int newVal);
+
   /**
      Works like its C counterpart and makes the native pointer of the
      underling (sqlite3*) object available via
@@ -1557,10 +1560,6 @@ public final class SQLite3Jni {
   public static final String SQLITE_VERSION = sqlite3_libversion();
   public static final String SQLITE_SOURCE_ID = sqlite3_sourceid();
 
-  // Initialized at static init time to the build-time value of
-  // SQLITE_THREADSAFE.
-  public static int SQLITE_THREADSAFE = -1;
-
   // access
   public static final int SQLITE_ACCESS_EXISTS = 0;
   public static final int SQLITE_ACCESS_READWRITE = 1;
@@ -1773,36 +1772,19 @@ public final class SQLite3Jni {
   public static final int SQLITE_IOCAP_IMMUTABLE = 8192;
   public static final int SQLITE_IOCAP_BATCH_ATOMIC = 16384;
 
-  // limits. These get injected at init-time so that they stay in sync
-  // with the compile-time options. This unfortunately means they are
-  // not final, but keeping them in sync with their C values seems
-  // more important than protecting users from assigning to these
-  // (with unpredictable results).
-  public static int SQLITE_MAX_ALLOCATION_SIZE = -1;
-  public static int SQLITE_LIMIT_LENGTH = -1;
-  public static int SQLITE_MAX_LENGTH = -1;
-  public static int SQLITE_LIMIT_SQL_LENGTH = -1;
-  public static int SQLITE_MAX_SQL_LENGTH = -1;
-  public static int SQLITE_LIMIT_COLUMN = -1;
-  public static int SQLITE_MAX_COLUMN = -1;
-  public static int SQLITE_LIMIT_EXPR_DEPTH = -1;
-  public static int SQLITE_MAX_EXPR_DEPTH = -1;
-  public static int SQLITE_LIMIT_COMPOUND_SELECT = -1;
-  public static int SQLITE_MAX_COMPOUND_SELECT = -1;
-  public static int SQLITE_LIMIT_VDBE_OP = -1;
-  public static int SQLITE_MAX_VDBE_OP = -1;
-  public static int SQLITE_LIMIT_FUNCTION_ARG = -1;
-  public static int SQLITE_MAX_FUNCTION_ARG = -1;
-  public static int SQLITE_LIMIT_ATTACHED = -1;
-  public static int SQLITE_MAX_ATTACHED = -1;
-  public static int SQLITE_LIMIT_LIKE_PATTERN_LENGTH = -1;
-  public static int SQLITE_MAX_LIKE_PATTERN_LENGTH = -1;
-  public static int SQLITE_LIMIT_VARIABLE_NUMBER = -1;
-  public static int SQLITE_MAX_VARIABLE_NUMBER = -1;
-  public static int SQLITE_LIMIT_TRIGGER_DEPTH = -1;
-  public static int SQLITE_MAX_TRIGGER_DEPTH = -1;
-  public static int SQLITE_LIMIT_WORKER_THREADS = -1;
-  public static int SQLITE_MAX_WORKER_THREADS = -1;
+  // limits
+  public static final int SQLITE_LIMIT_LENGTH = 0;
+  public static final int SQLITE_LIMIT_SQL_LENGTH = 1;
+  public static final int SQLITE_LIMIT_COLUMN = 2;
+  public static final int SQLITE_LIMIT_EXPR_DEPTH = 3;
+  public static final int SQLITE_LIMIT_COMPOUND_SELECT = 4;
+  public static final int SQLITE_LIMIT_VDBE_OP = 5;
+  public static final int SQLITE_LIMIT_FUNCTION_ARG = 6;
+  public static final int SQLITE_LIMIT_ATTACHED = 7;
+  public static final int SQLITE_LIMIT_LIKE_PATTERN_LENGTH = 8;
+  public static final int SQLITE_LIMIT_VARIABLE_NUMBER = 9;
+  public static final int SQLITE_LIMIT_TRIGGER_DEPTH = 10;
+  public static final int SQLITE_LIMIT_WORKER_THREADS = 11;
 
   // open flags
   public static final int SQLITE_OPEN_READONLY = 1;
