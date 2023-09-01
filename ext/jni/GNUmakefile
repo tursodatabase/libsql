@@ -176,6 +176,7 @@ $(sqlite3.c): $(sqlite3.h)
 
 opt.threadsafe ?= 1
 opt.fatal-oom ?= 1
+opt.debug ?= 1
 SQLITE_OPT = \
   -DSQLITE_ENABLE_RTREE \
   -DSQLITE_ENABLE_EXPLAIN_COMMENTS \
@@ -193,10 +194,13 @@ SQLITE_OPT = \
   -DSQLITE_TEMP_STORE=2 \
   -DSQLITE_USE_URI=1 \
   -DSQLITE_C=$(sqlite3.c) \
-  -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom) \
-  -DSQLITE_DEBUG
+  -DSQLITE_JNI_FATAL_OOM=$(opt.fatal-oom)
 
-SQLITE_OPT += -g -DDEBUG -UNDEBUG
+ifeq (1,$(opt.debug))
+  SQLITE_OPT += -DSQLITE_DEBUG -g -DDEBUG -UNDEBUG
+else
+  SQLITE_OPT += -O2
+endif
 
 ifeq (1,$(enable.fts5))
   SQLITE_OPT += -DSQLITE_ENABLE_FTS5
@@ -318,16 +322,21 @@ endif
 tester-ext: tester-local
 tester: tester-ext
 tests: tester
-
 ########################################################################
 # Build each SQLITE_THREADMODE variant and run all tests against them.
 multitest: clean
-	$(MAKE) opt.threadsafe=0 opt.oom=1 tests clean
-	$(MAKE) opt.threadsafe=0 opt.oom=0 tests clean
-	$(MAKE) opt.threadsafe=1 opt.oom=1 tests clean
-	$(MAKE) opt.threadsafe=1 opt.oom=0 tests clean
-	$(MAKE) opt.threadsafe=2 opt.oom=1 tests clean
-	$(MAKE) opt.threadsafe=2 opt.oom=0 tests clean
+define MULTIOPT
+multitest: multitest-$(1)
+multitest-$(1):
+	$$(MAKE) opt.debug=$$(opt.debug) $(patsubst %,opt.%,$(2)) tests clean
+endef
+
+$(eval $(call MULTIOPT,01,threadsafe=0 oom=1))
+$(eval $(call MULTIOPT,00,threadsafe=0 oom=0))
+$(eval $(call MULTIOPT,11,threadsafe=1 oom=1))
+$(eval $(call MULTIOPT,10,threadsafe=1 oom=0))
+$(eval $(call MULTIOPT,21,threadsafe=2 oom=1))
+$(eval $(call MULTIOPT,20,threadsafe=2 oom=0))
 
 
 ########################################################################

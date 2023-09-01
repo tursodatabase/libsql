@@ -50,7 +50,7 @@ public class TesterFts5 {
               int rc = ext.xColumnText(fCx, i, op);
               affirm( 0 == rc );
               final String val = op.value;
-              affirm( val.equals(sqlite3_value_text(argv[i])) );
+              affirm( val.equals(sqlite3_value_text16(argv[i])) );
               //outln("xFunction col "+i+": "+val);
             }
           }

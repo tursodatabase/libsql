@@ -453,9 +453,14 @@ public class Tester1 implements Runnable {
       final sqlite3_value sv = sqlite3_value_dup(sqlite3_column_value(stmt,0));
       final String txt = sqlite3_column_text16(stmt, 0);
       sbuf.append( txt );
-      affirm( txt.equals(sqlite3_column_text(stmt, 0)) );
+      affirm( txt.equals(new String(
+                           sqlite3_column_text(stmt, 0),
+                           StandardCharsets.UTF_8
+                         )) );
       affirm( txt.length() < sqlite3_value_bytes(sv) );
-      affirm( txt.equals(sqlite3_value_text(sv)) );
+      affirm( txt.equals(new String(
+                           sqlite3_value_text(sv),
+                           StandardCharsets.UTF_8)) );
       affirm( txt.length() == sqlite3_value_bytes16(sv)/2 );
       affirm( txt.equals(sqlite3_value_text16(sv)) );
       sqlite3_value_free(sv);
@@ -464,6 +469,20 @@ public class Tester1 implements Runnable {
     sqlite3_finalize(stmt);
     affirm(3 == n);
     affirm("w😃rldhell🤩!🤩".equals(sbuf.toString()));
+
+    stmt = prepare(db, "SELECT ?, ?");
+    rc = sqlite3_bind_text(stmt, 1, "");
+    affirm( 0==rc );
+    rc = sqlite3_bind_text(stmt, 2, (String)null);
+    affirm( 0==rc );
+    rc = sqlite3_step(stmt);
+    affirm( SQLITE_ROW==rc );
+    byte[] colBa = sqlite3_column_text(stmt, 0);
+    affirm( 0==colBa.length );
+    colBa = sqlite3_column_text(stmt, 1);
+    affirm( null==colBa );
+    sqlite3_finalize(stmt);
+
     sqlite3_close_v2(db);
   }
 

@@ -416,24 +416,13 @@ public final class SQLite3Jni {
   );
 
   /**
-     Returns the given column's contents as UTF-8-encoded (not MUTF-8)
-     text. Returns null if the C-level sqlite3_column_text() returns
-     NULL.
-
-     @see #sqlite3_column_text
+     Functions identially to the C API, and this note is just to
+     stress that the returned bytes are encoded as UTF-8. It returns
+     null if the underlying C-level sqlite3_column_text() returns NULL
+     or on allocation error.
   */
-  @Canonical(cname="sqlite3_column_text")
-  public static native byte[] sqlite3_column_text_utf8(
-    @NotNull sqlite3_stmt stmt, int ndx
-  );
-
-  /**
-     Provides the same feature as the same-named C API but returns the
-     text in Java-native encoding rather than the C API's UTF-8.
-
-     @see #sqlite3_column_text16
-  */
-  public static native String sqlite3_column_text(
+  @Canonical
+  public static native byte[] sqlite3_column_text(
     @NotNull sqlite3_stmt stmt, int ndx
   );
 
@@ -471,7 +460,7 @@ public final class SQLite3Jni {
   //       }
   //       case SQLITE_FLOAT: rv = new Double(sqlite3_value_double(v)); break;
   //       case SQLITE_BLOB: rv = sqlite3_value_blob(v); break;
-  //       case SQLITE_TEXT: rv = sqlite3_value_text(v); break;
+  //       case SQLITE_TEXT: rv = sqlite3_value_text16(v); break;
   //       default: break;
   //     }
   //   }
@@ -1172,6 +1161,10 @@ public final class SQLite3Jni {
     @NotNull sqlite3_context cx, long n
   );
 
+  /**
+     This overload is private because its final parameter is arguably
+     unnecessary in Java.
+  */
   @Canonical
   private static native void sqlite3_result_blob(
     @NotNull sqlite3_context cx, @Nullable byte[] blob, int maxLen
@@ -1195,8 +1188,11 @@ public final class SQLite3Jni {
 
      </ul>
 
-     If @param maxLen is larger than blob.length, it is truncated to
-     that value. If it is negative, results are undefined.
+     <p>If @param maxLen is larger than blob.length, it is truncated
+     to that value. If it is negative, results are undefined.</p>
+
+     <p>This overload is private because its final parameter is
+     arguably unnecessary in Java.</p>
   */
   @Canonical
   private static native void sqlite3_result_blob64(
@@ -1209,6 +1205,10 @@ public final class SQLite3Jni {
     sqlite3_result_blob64(cx, blob, (long)(null==blob ? 0 : blob.length));
   }
 
+  /**
+     This overload is private because its final parameter is
+     arguably unnecessary in Java.
+  */
   @Canonical
   private static native void sqlite3_result_text(
     @NotNull sqlite3_context cx, @Nullable byte[] utf8, int maxLen
@@ -1249,6 +1249,9 @@ public final class SQLite3Jni {
      text.length, it is silently truncated to text.length. If it is
      negative, results are undefined. If text is null, the subsequent
      arguments are ignored.
+
+     This overload is private because its maxLength parameter is
+     arguably unnecessary in Java.
   */
   @Canonical
   private static native void sqlite3_result_text64(
@@ -1342,6 +1345,13 @@ public final class SQLite3Jni {
   /**
      Internal impl of the public sqlite3_strglob() method. Neither
      argument may be NULL and both MUST be NUL-terminated UTF-8.
+
+     This overload is private because: (A) to keep users from
+     inadvertently passing non-NUL-terminated byte arrays (an easy
+     thing to do). (B) it is cheaper to NUL-terminate the
+     String-to-byte-array conversion in the Java implementation
+     (sqlite3_strglob(String,String)) than to do that in C, so that
+     signature is the public-facing one.
   */
   @Canonical
   private static native int sqlite3_strglob(
@@ -1358,8 +1368,7 @@ public final class SQLite3Jni {
   }
 
   /**
-     Internal impl of the public sqlite3_strlike() method. Neither
-     argument may be NULL and both MUST be NUL-terminated UTF-8.
+     The LIKE counterpart of the private sqlite3_strglob() method.
   */
   @Canonical
   private static native int sqlite3_strlike(
@@ -1502,30 +1511,14 @@ public final class SQLite3Jni {
   }
 
   /**
-     Returns the given value as UTF-8-encoded bytes, or null if the
-     underlying C-level sqlite3_value_text() returns NULL.
+     Functions identially to the C API, and this note is just to
+     stress that the returned bytes are encoded as UTF-8. It returns
+     null if the underlying C-level sqlite3_value_text() returns NULL
+     or on allocation error.
   */
-  @Canonical(cname="sqlite3_value_text",
-             comment="Renamed because its String-returning overload would "+
-             "otherwise be ambiguous.")
-  public static native byte[] sqlite3_value_text_utf8(@NotNull sqlite3_value v);
+  @Canonical
+  public static native byte[] sqlite3_value_text(@NotNull sqlite3_value v);
 
-  /**
-     Provides the same feature as the same-named C API but returns the
-     text in Java-native encoding rather than the C API's UTF-8.
-
-     @see #sqlite3_value_text16
-  */
-  public static native String sqlite3_value_text(@NotNull sqlite3_value v);
-
-  /**
-     In the Java layer, sqlite3_value_text() and
-     sqlite3_value_text16() are functionally equivalent, the
-     difference being only where the encoding to UTF-16 (if necessary)
-     takes place. This function does it via SQLite and
-     sqlite3_value_text() fetches UTF-8 (SQLite's default encoding)
-     and converts it to UTF-16 in Java.
-  */
   @Canonical
   public static native String sqlite3_value_text16(@NotNull sqlite3_value v);
 
