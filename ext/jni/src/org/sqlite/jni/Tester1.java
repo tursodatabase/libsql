@@ -74,9 +74,15 @@ public class Tester1 implements Runnable {
     }
   }
 
-  public synchronized static void outln(Object val){
+  public synchronized static void outPrefix(){
     if( !quietMode ){
       System.out.print(Thread.currentThread().getName()+": ");
+    }
+  }
+
+  public synchronized static void outln(Object val){
+    if( !quietMode ){
+      outPrefix();
       System.out.println(val);
     }
   }
@@ -90,7 +96,7 @@ public class Tester1 implements Runnable {
   @SuppressWarnings("unchecked")
   public synchronized static void out(Object... vals){
     if( !quietMode ){
-      System.out.print(Thread.currentThread().getName()+": ");
+      outPrefix();
       for(Object v : vals) out(v);
     }
   }
@@ -429,7 +435,7 @@ public class Tester1 implements Runnable {
     sqlite3 db = createNewDb();
     execSql(db, "CREATE TABLE t(a)");
     sqlite3_stmt stmt = prepare(db, "INSERT INTO t(a) VALUES(?);");
-    String[] list1 = { "hell🤩", "w😃rld", "!" };
+    String[] list1 = { "hell🤩", "w😃rld", "!🤩" };
     int rc;
     int n = 0;
     for( String e : list1 ){
@@ -450,14 +456,16 @@ public class Tester1 implements Runnable {
       final String txt = sqlite3_column_text16(stmt, 0);
       sbuf.append( txt );
       affirm( txt.equals(sqlite3_column_text(stmt, 0)) );
+      affirm( txt.length() < sqlite3_value_bytes(sv) );
       affirm( txt.equals(sqlite3_value_text(sv)) );
+      affirm( txt.length() == sqlite3_value_bytes16(sv)/2 );
       affirm( txt.equals(sqlite3_value_text16(sv)) );
       sqlite3_value_free(sv);
       ++n;
     }
     sqlite3_finalize(stmt);
     affirm(3 == n);
-    affirm("w😃rldhell🤩!".equals(sbuf.toString()));
+    affirm("w😃rldhell🤩!🤩".equals(sbuf.toString()));
     sqlite3_close_v2(db);
   }
 
@@ -1655,18 +1663,20 @@ public class Tester1 implements Runnable {
           sqlite3_libversion_number(),"\n",
           sqlite3_libversion(),"\n",SQLITE_SOURCE_ID,"\n",
           "SQLITE_THREADSAFE=",SQLITE_THREADSAFE);
-    outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
+    final boolean showLoopCount = (nRepeat>1 && nThread>1);
+    if( showLoopCount ){
+      outln("Running ",nRepeat," loop(s) with ",nThread," thread(s) each.");
+    }
     if( takeNaps ) outln("Napping between tests is enabled.");
     for( int n = 0; n < nRepeat; ++n ){
       ++nLoop;
-      out((1==nLoop ? "" : " ")+nLoop);
+      if( showLoopCount ) out((1==nLoop ? "" : " ")+nLoop);
       if( nThread<=1 ){
         new Tester1(0).runTests(false);
         continue;
       }
       Tester1.mtMode = true;
       final ExecutorService ex = Executors.newFixedThreadPool( nThread );
-      //final List<Future<?>> futures = new ArrayList<>();
       for( int i = 0; i < nThread; ++i ){
         ex.submit( new Tester1(i), i );
       }
@@ -1689,7 +1699,7 @@ public class Tester1 implements Runnable {
         if( null!=err ) throw err;
       }
     }
-    outln();
+    if( showLoopCount ) outln();
     quietMode = false;
 
     final long timeEnd = System.currentTimeMillis();
@@ -1706,7 +1716,7 @@ public class Tester1 implements Runnable {
     final java.lang.reflect.Method[] declaredMethods =
       SQLite3Jni.class.getDeclaredMethods();
     for(java.lang.reflect.Method m : declaredMethods){
-      int mod = m.getModifiers();
+      final int mod = m.getModifiers();
       if( 0!=(mod & java.lang.reflect.Modifier.STATIC) ){
         final String name = m.getName();
         if(name.startsWith("sqlite3_")){

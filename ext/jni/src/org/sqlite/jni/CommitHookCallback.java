@@ -16,7 +16,7 @@ package org.sqlite.jni;
 /**
    Callback for use with {@link SQLite3Jni#sqlite3_commit_hook}.
 */
-public interface CommitHookCallback extends SQLite3CallbackProxy {
+public interface CommitHookCallback extends CallbackProxy {
   /**
      Works as documented for the C-level sqlite3_commit_hook()
      callback.  Must not throw.

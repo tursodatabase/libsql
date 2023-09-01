@@ -41,4 +41,4 @@ package org.sqlite.jni;
    <p>2) They all have a {@code call()} method but its signature is
    callback-specific.
 */
-public interface SQLite3CallbackProxy {}
+public interface CallbackProxy {}

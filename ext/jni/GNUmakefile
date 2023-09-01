@@ -31,6 +31,13 @@ mkdir       := mkdir -p
 $(dir.bld.c):
 	$(mkdir) $@
 
+javac.flags ?= -Xlint:unchecked -Xlint:deprecation
+java.flags ?=
+jnicheck ?= 1
+ifeq (1,$(jnicheck))
+  java.flags += -Xcheck:jni
+endif
+
 classpath := $(dir.src)
 CLEAN_FILES := $(package.jar)
 DISTCLEAN_FILES := $(dir.jni)/*~ $(dir.src.c)/*~ $(dir.src.jni)/*~
@@ -47,7 +54,7 @@ SQLTester.class := $(SQLTester.java:.java=.class)
 # It would be a real doozy to bind to JNI.
 enable.fts5 ?= 1
 # If enable.tester is 0, the org/sqlite/jni/tester/* bits are elided.
-enable.tester ?= 1
+enable.tester ?= $(if $(wildcard $(dir.src.jni.tester)/SQLTester.java),1,0)
 
 # bin.version-info = binary to output various sqlite3 version info
 # building the distribution zip file.
@@ -62,7 +69,6 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   annotation/Canonical.java \
   annotation/NotNull.java \
   annotation/Nullable.java \
-  annotation/package-info.java \
   AbstractCollationCallback.java \
   AggregateFunction.java \
   AuthorizerCallback.java \
@@ -80,19 +86,21 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   RollbackHookCallback.java \
   ScalarFunction.java \
   SQLFunction.java \
+  CallbackProxy.java \
   SQLite3Jni.java \
   TableColumnMetadata.java \
-  Tester1.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \
   ValueHolder.java \
   WindowFunction.java \
   XDestroyCallback.java \
-  package-info.java \
   sqlite3.java \
   sqlite3_context.java \
   sqlite3_stmt.java \
   sqlite3_value.java \
+)
+JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
+  Tester1.java \
 )
 ifeq (1,$(enable.fts5))
   JAVA_FILES.main += $(patsubst %,$(dir.src.jni)/%,\
@@ -109,32 +117,30 @@ ifeq (1,$(enable.fts5))
   )
 endif
 JAVA_FILES.tester := $(dir.src.jni.tester)/SQLTester.java
+JAVA_FILES.package.info := \
+  $(dir.src.jni)/package-info.java \
+  $(dir.src.jni)/annotation/package-info.java
 
 CLASS_FILES.main := $(JAVA_FILES.main:.java=.class)
+CLASS_FILES.unittest := $(JAVA_FILES.unittest:.java=.class)
 CLASS_FILES.tester := $(JAVA_FILES.tester:.java=.class)
 
-JAVA_FILES += $(JAVA_FILES.main)
+JAVA_FILES += $(JAVA_FILES.main) $(JAVA_FILES.unittest)
 ifeq (1,$(enable.tester))
   JAVA_FILES += $(JAVA_FILES.tester)
 endif
 
 CLASS_FILES :=
-define DOTCLASS_DEPS
-$(1).class: $(1).java $(MAKEFILE)
+define CLASSFILE_DEPS
 all: $(1).class
 CLASS_FILES += $(1).class
 endef
-$(foreach B,$(basename $(JAVA_FILES)),$(eval $(call DOTCLASS_DEPS,$(B))))
-$(CLASS_FILES.tester): $(CLASS_FILES.main)
-javac.flags ?= -Xlint:unchecked -Xlint:deprecation
-java.flags ?=
-jnicheck ?= 1
-ifeq (1,$(jnicheck))
-  java.flags += -Xcheck:jni
-endif
-$(SQLite3Jni.class): $(JAVA_FILES)
+$(foreach B,$(basename \
+  $(JAVA_FILES.main) $(JAVA_FILES.unittest) $(JAVA_FILES.tester)),\
+  $(eval $(call CLASSFILE_DEPS,$(B))))
+$(CLASS_FILES): $(JAVA_FILES) $(MAKEFILE)
 	$(bin.javac) $(javac.flags) -h $(dir.bld.c) -cp $(classpath) $(JAVA_FILES)
-all: $(SQLite3Jni.class)
+
 #.PHONY: classfiles
 
 ########################################################################
@@ -199,13 +205,18 @@ endif
 sqlite3-jni.c := $(dir.src.c)/sqlite3-jni.c
 sqlite3-jni.o := $(dir.bld.c)/sqlite3-jni.o
 sqlite3-jni.h   := $(dir.src.c)/sqlite3-jni.h
-sqlite3-jni.dll := $(dir.bld.c)/libsqlite3-jni.so
+package.dll := $(dir.bld.c)/libsqlite3-jni.so
 # All javac-generated .h files must be listed in $(sqlite3-jni.h.in):
 sqlite3-jni.h.in :=
+# $(java.with.jni) lists all Java files which contain JNI decls:
+java.with.jni :=
 define ADD_JNI_H
 sqlite3-jni.h.in += $$(dir.bld.c)/org_sqlite_jni_$(1).h
+java.with.jni += $$(dir.src.jni)/$(1).java
 $$(dir.bld.c)/org_sqlite_jni_$(1).h: $$(dir.src.jni)/$(1).java
 endef
+# Invoke ADD_JNI_H once for each Java file which includes JNI
+# declarations:
 $(eval $(call ADD_JNI_H,SQLite3Jni))
 ifeq (1,$(enable.fts5))
   $(eval $(call ADD_JNI_H,Fts5ExtensionApi))
@@ -216,8 +227,10 @@ ifeq (1,$(enable.tester))
   sqlite3-jni.h.in += $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h
   $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h: $(dir.src.jni.tester)/SQLTester.java
 endif
-#sqlite3-jni.dll.cfiles := $(dir.src.c)
-sqlite3-jni.dll.cflags = \
+$(sqlite3-jni.h.in): $(dir.bld.c)
+
+#package.dll.cfiles :=
+package.dll.cflags = \
   -fPIC \
   -I. \
   -I$(dir $(sqlite3.h)) \
@@ -234,22 +247,30 @@ sqlite3-jni.dll.cflags = \
 # include path for client-level code.
 ########################################################################
 ifeq (1,$(enable.tester))
-  sqlite3-jni.dll.cflags += -DSQLITE_JNI_ENABLE_SQLTester
+  package.dll.cflags += -DSQLITE_JNI_ENABLE_SQLTester
 endif
 $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
-	cat $(sqlite3-jni.h.in) > $@
-$(sqlite3-jni.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
-$(sqlite3-jni.dll): $(dir.bld.c) $(sqlite3-jni.c) $(SQLite3Jni.java) $(MAKEFILE)
-	$(CC) $(sqlite3-jni.dll.cflags) $(SQLITE_OPT) \
+	@cat $(sqlite3-jni.h.in) > $@.tmp
+	@if cmp $@ $@.tmp; then \
+		rm -f $@.tmp; \
+		echo "$@ not modified"; \
+	else \
+		mv $@.tmp $@; \
+		echo "Updated $@"; \
+	fi
+
+$(package.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
+$(package.dll): $(sqlite3-jni.c) $(MAKEFILE)
+	$(CC) $(package.dll.cflags) $(SQLITE_OPT) \
 			$(sqlite3-jni.c) -shared -o $@
-all: $(sqlite3-jni.dll)
+all: $(package.dll)
 
 .PHONY: test test-one
 test.flags ?=
 test.main.flags = -ea -Djava.library.path=$(dir.bld.c) \
                   $(java.flags) -cp $(classpath) \
                   org.sqlite.jni.Tester1
-test.deps := $(SQLite3Jni.class) $(sqlite3-jni.dll)
+test.deps := $(CLASS_FILES) $(package.dll)
 test-one: $(test.deps)
 	$(bin.java) $(test.main.flags) $(test.flags)
 test-sqllog: $(test.deps)
@@ -257,7 +278,7 @@ test-sqllog: $(test.deps)
 	$(bin.java) $(test.main.flags) -sqllog
 test-mt: $(test.deps)
 	@echo "Testing in multi-threaded mode:";
-	$(bin.java) $(test.main.flags) -t 11 -r 50 -shuffle $(test.flags)
+	$(bin.java) $(test.main.flags) -t 7 -r 50 -shuffle $(test.flags)
 
 test: test-one test-mt
 tests: test test-sqllog
@@ -266,7 +287,7 @@ tester.scripts := $(sort $(wildcard $(dir.src)/tests/*.test))
 tester.flags ?= # --verbose
 .PHONY: tester tester-local tester-ext
 ifeq (1,$(enable.tester))
-tester-local: $(CLASS_FILES.tester) $(sqlite3-jni.dll)
+tester-local: $(CLASS_FILES.tester) $(package.dll)
 	$(bin.java) -ea -Djava.library.path=$(dir.bld.c) \
 		$(java.flags) -cp $(classpath) \
 		org.sqlite.jni.tester.SQLTester $(tester.flags) $(tester.scripts)
@@ -313,16 +334,24 @@ multitest: clean
 # jar bundle...
 package.jar.in := $(abspath $(dir.src)/jar.in)
 CLEAN_FILES += $(package.jar.in)
-$(package.jar.in): $(MAKEFILE) $(CLASS_FILES.main)
-	cd $(dir.src); ls -1 org/sqlite/jni/*.java org/sqlite/jni/*.class > $@
-	@echo "To use this jar you will need the -Djava.library.path=DIR/CONTAINING/libsqlite3-jni.so flag."
-	@echo "e.g. java -jar $@ -Djava.library.path=bld"
+JAVA_FILES.jar := $(JAVA_FILES.main) $(JAVA_FILES.unittest) $(JAVA_FILES.package.info)
+CLASS_FILES.jar := $(filter-out %/package-info.class,$(JAVA_FILES.jar:.java=.class))
+$(package.jar.in): $(package.dll) $(MAKEFILE)
+	ls -1 \
+		$(dir.src.jni)/*.java $(dir.src.jni)/*.class \
+		$(dir.src.jni)/annotation/*.java $(dir.src.jni)/annotation/*.class \
+	| sed -e 's,^$(dir.src)/,,' | sort > $@
 
-$(package.jar): $(CLASS_FILES) $(MAKEFILE) $(package.jar.in)
-	rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~
+$(package.jar): $(CLASS_FILES.jar) $(MAKEFILE) $(package.jar.in)
+	@rm -f $(dir.src)/c/*~ $(dir.src.jni)/*~
 	cd $(dir.src); $(bin.jar) -cfe ../$@ org.sqlite.jni.Tester1 @$(package.jar.in)
+	@ls -la $@
+	@echo "To use this jar you will need the -Djava.library.path=DIR/CONTAINING/libsqlite3-jni.so flag."
+	@echo "e.g. java -Djava.library.path=bld -jar $@"
 
 jar: $(package.jar)
+run-jar: $(package.jar) $(package.dll)
+	$(bin.java) -Djava.library.path=$(dir.bld) -jar $(package.jar) $(run-jar.flags)
 
 ########################################################################
 # javadoc...
@@ -349,7 +378,7 @@ docserve: $(doc.index)
 CLEAN_FILES += $(dir.bld.c)/* \
   $(dir.src.jni)/*.class \
   $(dir.src.jni.tester)/*.class \
-  $(sqlite3-jni.dll) \
+  $(package.dll) \
   hs_err_pid*.log
 
 .PHONY: clean distclean

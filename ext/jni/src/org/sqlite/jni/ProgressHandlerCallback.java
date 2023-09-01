@@ -16,7 +16,7 @@ package org.sqlite.jni;
 /**
    Callback for use with {@link SQLite3Jni#sqlite3_progress_handler}.
 */
-public interface ProgressHandlerCallback extends SQLite3CallbackProxy {
+public interface ProgressHandlerCallback extends CallbackProxy {
   /**
      Works as documented for the C-level sqlite3_progress_handler() callback.
 

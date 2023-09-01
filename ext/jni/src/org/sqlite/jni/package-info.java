@@ -12,9 +12,10 @@
      as cross-language semantics allow for. A closely-related goal is
      that <a href='https://sqlite.org/c3ref/intro.html'>the C
      documentation</a> should be usable as-is, insofar as possible,
-     for most of the JNI binding. As a rule, undocumented symbols
-     behave as documented for their C API counterpart, and only
-     semantic differences are documented here.</li>
+     for most of the JNI binding. As a rule, undocumented symbols in
+     the Java interface behave as documented for their C API
+     counterpart. Only semantic differences and Java-specific features
+     are documented here.</li>
 
      <li>Support Java as far back as version 8 (2014).</li>
 

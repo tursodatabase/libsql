@@ -266,6 +266,7 @@ static void * s3jni_realloc_or_die(JNIEnv * const env, void * p, size_t n){
 #else
 #define s3jni_oom_check(EXPR)
 #endif
+//#define S3JniDb_oom(pDb,EXPR) ((EXPR) ? sqlite3OomFault(pDb) : 0)
 
 /* Helpers for Java value reference management. */
 static jobject s3jni_ref_global(JNIEnv * const env, jobject const v){
@@ -317,8 +318,8 @@ static const struct {
   const S3JniNphRef OutputPointer_sqlite3;
   const S3JniNphRef OutputPointer_sqlite3_stmt;
   const S3JniNphRef OutputPointer_sqlite3_value;
-#ifdef SQLITE_ENABLE_FTS5
   const S3JniNphRef OutputPointer_String;
+#ifdef SQLITE_ENABLE_FTS5
   const S3JniNphRef OutputPointer_ByteArray;
   const S3JniNphRef Fts5Context;
   const S3JniNphRef Fts5ExtensionApi;
@@ -346,8 +347,8 @@ static const struct {
            "Lorg/sqlite/jni/sqlite3_stmt;"),
   RefO(9,  "OutputPointer$sqlite3_value",
            "Lorg/sqlite/jni/sqlite3_value;"),
-#ifdef SQLITE_ENABLE_FTS5
   RefO(10, "OutputPointer$String", "Ljava/lang/String;"),
+#ifdef SQLITE_ENABLE_FTS5
   RefO(11, "OutputPointer$ByteArray", "[B"),
   RefN(12, "Fts5Context"),
   RefN(13, "Fts5ExtensionApi"),
@@ -413,6 +414,10 @@ static const S3JniHook S3JniHook_empty = {0,0,0,0,0};
 ** Per-(sqlite3*) state for various JNI bindings.  This state is
 ** allocated as needed, cleaned up in sqlite3_close(_v2)(), and
 ** recycled when possible.
+**
+** Trivia: vars and parameters of this type are often named "ps"
+** because this class used to have a name for which that abbreviation
+** made sense.
 */
 typedef struct S3JniDb S3JniDb;
 struct S3JniDb {
@@ -453,6 +458,10 @@ static const char * const S3JniDb_clientdata_key = "S3JniDb";
 
 /*
 ** Cache for per-JNIEnv (i.e. per-thread) data.
+**
+** Trivia: vars and parameters of this type are often named "jc"
+** because this class used to have a name for which that abbreviation
+** made sense.
 */
 typedef struct S3JniEnv S3JniEnv;
 struct S3JniEnv {
@@ -1460,11 +1469,8 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
 ** from it, or no matching entry can be found.
 */
 static S3JniDb * S3JniDb__from_java(JNIEnv * const env, jobject jDb){
-  S3JniDb * s = 0;
-  sqlite3 * pDb = 0;
-  if( jDb ) pDb = PtrGet_sqlite3(jDb);
-  s = S3JniDb_from_clientdata(pDb);
-  return s;
+  sqlite3 * const pDb = jDb ? PtrGet_sqlite3(jDb) : 0;
+  return pDb ? S3JniDb_from_clientdata(pDb) : 0;
 }
 #define S3JniDb_from_java(jObject) S3JniDb__from_java(env,(jObject))
 
@@ -4259,7 +4265,7 @@ S3JniApi(sqlite3_trace_v2(),jint,1trace_1v2)(
       rc = sqlite3_trace_v2(ps->pDb, (unsigned)traceMask, s3jni_trace_impl, ps);
       if( 0==rc ){
         S3JniHook_unref(&ps->hooks.trace);
-        ps->hooks.trace = hook;
+        ps->hooks.trace = hook /* transfer ownership of reference */;
       }else{
         S3JniHook_unref(&hook);
       }

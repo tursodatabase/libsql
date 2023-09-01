@@ -16,7 +16,7 @@ package org.sqlite.jni;
 /**
    Callback for use with {@link SQLite3Jni#sqlite3_preupdate_hook}.
 */
-public interface PreupdateHookCallback extends SQLite3CallbackProxy {
+public interface PreupdateHookCallback extends CallbackProxy {
   /**
      Must function as described for the C-level sqlite3_preupdate_hook()
      callback.

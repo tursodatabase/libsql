@@ -17,7 +17,7 @@ import org.sqlite.jni.annotation.*;
 /**
    Callback for use with {@link SQLite3Jni#sqlite3_set_authorizer}.
 */
-public interface AuthorizerCallback extends SQLite3CallbackProxy {
+public interface AuthorizerCallback extends CallbackProxy {
   /**
      Must function as described for the C-level
      sqlite3_set_authorizer() callback.

@@ -16,7 +16,7 @@ package org.sqlite.jni;
 /**
    Callback for use with {@link SQLite3Jni#sqlite3_collation_needed}.
 */
-public interface CollationNeededCallback extends SQLite3CallbackProxy {
+public interface CollationNeededCallback extends CallbackProxy {
   /**
      Has the same semantics as the C-level sqlite3_create_collation()
      callback.
