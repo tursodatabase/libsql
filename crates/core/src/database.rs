@@ -47,18 +47,19 @@ pub struct Database {
     pub db_path: String,
     #[cfg(feature = "replication")]
     pub replication_ctx: Option<ReplicationContext>,
+    pub readonly: bool,
 }
 
 impl Database {
     /// Open a local database file.
-    pub fn open<S: Into<String>>(db_path: S) -> Result<Database> {
+    pub fn open<S: Into<String>>(db_path: S, readonly:bool) -> Result<Database> {
         let db_path = db_path.into();
         if db_path.starts_with("libsql:") || db_path.starts_with("http:") {
             Err(ConnectionFailed(format!(
                 "Unable to open remote database {db_path} with Database::open()"
             )))
         } else {
-            Ok(Database::new(db_path))
+            Ok(Database::new(db_path,readonly))
         }
     }
 
@@ -87,11 +88,12 @@ impl Database {
         Ok(db)
     }
 
-    pub fn new(db_path: String) -> Database {
+    pub fn new(db_path: String, readonly:bool) -> Database {
         Database {
             db_path,
             #[cfg(feature = "replication")]
             replication_ctx: None,
+            readonly,
         }
     }
 
@@ -99,7 +101,23 @@ impl Database {
 
     pub fn connect(&self) -> Result<Connection> {
         Connection::connect(self)
+         if self.readonly {
+        Connection::open_with_flags(&self.db_path, rusqlite::OpenFlags::SQLITE_RO)
+    } else {
+        Connection::open(&self.db_path)
     }
+    .map_err(|e| ConnectionFailed(format!("{:?}", e)))
+    }
+
+    pub fn use_database(&self) -> Result<()> {
+    let readonly_db = Database::open("your_database.db", true)?;
+    let connection = readonly_db.connect()?;
+    connection.close();
+    let writable_db = Database::open("your_database.db", false)?; 
+    let connection = writable_db.connect()?;
+    connection.close();
+    Ok(())
+}
 
     #[cfg(feature = "replication")]
     pub async fn sync(&self) -> Result<usize> {
