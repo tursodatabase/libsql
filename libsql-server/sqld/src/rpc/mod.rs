@@ -1,7 +1,9 @@
 use anyhow::Context;
+use bytes::Bytes;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::Arc;
+use tonic::Status;
 use tower::util::option_layer;
 
 use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
@@ -10,6 +12,7 @@ use crate::rpc::proxy::ProxyService;
 pub use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLogServer;
 use crate::rpc::replication_log::ReplicationLogService;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
+use crate::DEFAULT_NAMESPACE_NAME;
 
 pub mod proxy;
 pub mod replica_proxy;
@@ -18,6 +21,7 @@ pub mod replication_log_proxy;
 
 /// A tonic error code to signify that a namespace doesn't exist.
 pub const NAMESPACE_DOESNT_EXIST: &str = "NAMESPACE_DOESNT_EXIST";
+pub(crate) const NAMESPACE_METADATA_KEY: &str = "x-namespace";
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run_rpc_server(
@@ -64,4 +68,21 @@ pub async fn run_rpc_server(
         .await?;
 
     Ok(())
+}
+
+fn extract_namespace<T>(
+    disable_namespaces: bool,
+    req: &tonic::Request<T>,
+) -> Result<Bytes, Status> {
+    if disable_namespaces {
+        return Ok(Bytes::from_static(DEFAULT_NAMESPACE_NAME.as_bytes()));
+    }
+
+    if let Some(namespace) = req.metadata().get_bin("x-namespace") {
+        namespace
+            .to_bytes()
+            .map_err(|_| Status::invalid_argument("Metadata can't be converted into Bytes"))
+    } else {
+        Err(Status::invalid_argument("Missing x-namespace metadata"))
+    }
 }

@@ -1,5 +1,6 @@
 use axum::response::IntoResponse;
 use hyper::StatusCode;
+use tonic::metadata::errors::InvalidMetadataValueBytes;
 
 use crate::{
     auth::AuthError, query_result_builder::QueryResultBuilderError,
@@ -68,6 +69,8 @@ pub enum Error {
     PrimaryConnectionTimeout,
     #[error("Error while loading dump: {0}")]
     LoadDumpError(#[from] LoadDumpError),
+    #[error("Unable to convert metadata value: `{0}`")]
+    InvalidMetadataBytes(#[from] InvalidMetadataValueBytes),
 }
 
 trait ResponseError: std::error::Error {
@@ -113,6 +116,7 @@ impl IntoResponse for Error {
             NamespaceAlreadyExist(_) => self.format_err(StatusCode::BAD_REQUEST),
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
             LoadDumpError(e) => e.into_response(),
+            InvalidMetadataBytes(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
         }
     }
 }

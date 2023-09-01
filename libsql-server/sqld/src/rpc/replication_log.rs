@@ -20,7 +20,6 @@ use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
 use crate::utils::services::idle_shutdown::IdleShutdownLayer;
-use crate::DEFAULT_NAMESPACE_NAME;
 
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
@@ -60,20 +59,6 @@ impl ReplicationLogService {
         }
 
         Ok(())
-    }
-
-    fn extract_namespace<T>(&self, req: &tonic::Request<T>) -> Result<Bytes, Status> {
-        if self.disable_namespaces {
-            return Ok(Bytes::from_static(DEFAULT_NAMESPACE_NAME.as_bytes()));
-        }
-
-        if let Some(namespace) = req.metadata().get("x-namespace") {
-            namespace
-                .to_bytes()
-                .map_err(|_| Status::invalid_argument("Metadata can't be converted into Bytes"))
-        } else {
-            Err(Status::invalid_argument("Missing x-namespace metadata"))
-        }
     }
 }
 
@@ -143,7 +128,7 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::LogEntriesStream>, Status> {
         self.authenticate(&req)?;
-        let namespace = self.extract_namespace(&req)?;
+        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
         let replica_addr = req
             .remote_addr()
@@ -182,7 +167,7 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Frames>, Status> {
         self.authenticate(&req)?;
-        let namespace = self.extract_namespace(&req)?;
+        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
         let replica_addr = req
             .remote_addr()
@@ -223,7 +208,7 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<HelloRequest>,
     ) -> Result<tonic::Response<HelloResponse>, Status> {
         self.authenticate(&req)?;
-        let namespace = self.extract_namespace(&req)?;
+        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
         let replica_addr = req
             .remote_addr()
@@ -260,7 +245,7 @@ impl ReplicationLog for ReplicationLogService {
         req: tonic::Request<LogOffset>,
     ) -> Result<tonic::Response<Self::SnapshotStream>, Status> {
         self.authenticate(&req)?;
-        let namespace = self.extract_namespace(&req)?;
+        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
         let (sender, receiver) = mpsc::channel(10);
         let req = req.into_inner();
