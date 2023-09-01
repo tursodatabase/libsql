@@ -2303,7 +2303,7 @@ S3JniApi(sqlite3_bind_text(),jint,1bind_1text)(
   return (jint)rc;
 }
 
-S3JniApi(sqlite3_text16(),jint,1bind_1text16)(
+S3JniApi(sqlite3_bind_text16(),jint,1bind_1text16)(
   JniArgsEnvClass, jobject jpStmt, jint ndx, jbyteArray baData, jint nMax
 ){
   jbyte * const pBuf = baData ? s3jni_jbytearray_bytes(baData) : 0;
@@ -2412,7 +2412,7 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
   jboolean rc = JNI_FALSE;
   int i;
   S3JniAutoExt_mutex_enter;
-  /* This algo mirrors the one in the core. */
+  /* This algo corresponds to the one in the core. */
   for( i = SJG.autoExt.nExt-1; i >= 0; --i ){
     ax = &SJG.autoExt.aExt[i];
     if( ax->jObj && (*env)->IsSameObject(env, ax->jObj, jAutoExt) ){
@@ -2429,7 +2429,6 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
   S3JniAutoExt_mutex_leave;
   return rc;
 }
-
 
 /* Wrapper for sqlite3_close(_v2)(). */
 static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
@@ -2586,8 +2585,7 @@ S3JniApi(sqlite3_column_text(),jbyteArray,1column_1text)(
 }
 
 #if 0
-// this impl might prove useful, but we'd need to publish the
-// bytearray-returning impl with a different name.
+// this impl might prove useful.
 S3JniApi(sqlite3_column_text(),jstring,1column_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx
 ){
@@ -2648,11 +2646,15 @@ static void s3jni_rollback_hook_impl(void *pP){
   (void)s3jni_commit_rollback_hook_impl(0, pP);
 }
 
+/*
+** Proxy for sqlite3_commit_hook() (if isCommit is true) or
+** sqlite3_rollback_hook().
+*/
 static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
                                           jobject jDb, jobject jHook){
   S3JniDb * ps;
-  jobject pOld = 0;
-  S3JniHook * pHook;
+  jobject pOld = 0;  /* previous hoook */
+  S3JniHook * pHook; /* ps->hooks.commit|rollback */
 
   S3JniDb_mutex_enter;
   ps = S3JniDb_from_java(jDb);
@@ -2684,7 +2686,7 @@ static jobject s3jni_commit_rollback_hook(int isCommit, JNIEnv * const env,
       S3JniExceptionReport;
       S3JniExceptionClear;
       s3jni_db_error(ps->pDb, SQLITE_ERROR,
-                     "Cannot not find matching call() in"
+                     "Cannot not find matching call() method in"
                      "hook object.");
     }else{
       pHook->midCallback = xCallback;
@@ -2711,9 +2713,10 @@ S3JniApi(sqlite3_commit_hook(),jobject,1commit_1hook)(
 S3JniApi(sqlite3_compileoption_get(),jstring,1compileoption_1get)(
   JniArgsEnvClass, jint n
 ){
-  jstring const rv = (*env)->NewStringUTF( env, sqlite3_compileoption_get(n) )
+  const char * z = sqlite3_compileoption_get(n);
+  jstring const rv = z ? (*env)->NewStringUTF( env, z ) : 0;
     /* We know these to be ASCII, so MUTF-8 is fine. */;
-  s3jni_oom_check(rv);
+  s3jni_oom_check(z ? !!rv : 1);
   return rv;
 }
 
@@ -4382,8 +4385,7 @@ S3JniApi(sqlite3_value_text(),jbyteArray,1value_1text)(
 }
 
 #if 0
-// this impl might prove useful, but we'd need to publish the
-// bytearray-returning impl with a different name.
+// this impl might prove useful.
 S3JniApi(sqlite3_value_text(),jstring,1value_1text)(
   JniArgsEnvClass, jobject jpSVal
 ){

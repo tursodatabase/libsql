@@ -112,12 +112,6 @@ class SQLTesterException extends globalThis.Error {
     }
     this.name = 'SQLTesterException';
   }
-  /**
-     If this overrideable method returns false (the default) then
-     exceptions of that type are fatal to a whole test run, instead of
-     just the test which triggered it. If the the "keep going" flag
-     is set, this preference is ignored.
-  */
   isFatal() { return false; }
 }
 
@@ -169,6 +163,7 @@ const __SAB = ('undefined'===typeof globalThis.SharedArrayBuffer)
       ? function(){} : globalThis.SharedArrayBuffer;
 
 
+/* Frequently-reused regexes. */
 const Rx = newObj({
   requiredProperties: / REQUIRED_PROPERTIES:[ \t]*(\S.*)\s*$/,
   scriptModuleName: / SCRIPT_MODULE_NAME:[ \t]*(\S+)\s*$/,
@@ -176,7 +171,6 @@ const Rx = newObj({
   command: /^--(([a-z-]+)( .*)?)$/,
   //! "Special" characters - we have to escape output if it contains any.
   special: /[\x00-\x20\x22\x5c\x7b\x7d]/,
-  //! Either of '{' or '}'.
   squiggly: /[{}]/
 });
 
@@ -189,7 +183,7 @@ const Util = newObj({
 
   argvToString: (list)=>{
     const m = [...list];
-    m.shift();
+    m.shift() /* strip command name */;
     return m.join(" ")
   },
 
@@ -257,9 +251,10 @@ class Outer {
     }
   }
 
+  static #verboseLabel = ["🔈",/*"🔉",*/"🔊","📢"];
   verboseN(lvl, args){
     if( this.#verbosity>=lvl ){
-      this.#outlnImpl(lvl,'VERBOSE ',lvl,': ',...args);
+      this.#outlnImpl(lvl, Outer.#verboseLabel[lvl-1],': ',...args);
     }
   }
   verbose1(...args){ return this.verboseN(1,args); }
@@ -364,8 +359,24 @@ class SQLTester {
     this.#resultBuffer.push(line);
     if( addNL ) this.#resultBuffer.push('\n');
   }
+  appendDbInitSql(sql){
+    this.#db.initSql.push(sql);
+    if( this.currentDb() ){
+      this.execSql(null, true, ResultBufferMode.NONE, null, sql);
+    }
+  }
 
-  #clearBuffer(buffer){
+  #runInitSql(pDb){
+    let rc = 0;
+    for(const sql of this.#db.initSql){
+      this.#outer.verbose2("RUNNING DB INIT CODE: ",sql);
+      rc = this.execSql(pDb, false, ResultBufferMode.NONE, null, sql);
+      if( rc ) break;
+    }
+    return rc;
+  }
+
+#clearBuffer(buffer){
     buffer.length = 0;
     return buffer;
   }
@@ -390,27 +401,21 @@ class SQLTester {
   }
 
   nullValue(){
-    if( 0==arguments.length ){
-      return this.#nullView;
-    }else{
-      this.#nullView = ''+arguments[0];
-    }
+    return (0==arguments.length)
+      ? this.#nullView
+      : (this.#nullView = ''+arguments[0]);
   }
 
   outputColumnNames(){
-    if( 0==arguments.length ){
-      return this.#emitColNames;
-    }else{
-      this.#emitColNames = !!arguments[0];
-    }
+    return (0==arguments.length)
+      ? this.#emitColNames
+      : (this.#emitColNames = !!arguments[0]);
   }
 
   currentDbId(){
-    if( 0==arguments.length ){
-      return this.#db.iCurrentDb;
-    }else{
-      this.#affirmDbId(arguments[0]).#db.iCurrentDb = arguments[0];
-    }
+    return (0==arguments.length)
+      ? this.#db.iCurrentDb
+      : (this.#affirmDbId(arguments[0]).#db.iCurrentDb = arguments[0]);
   }
 
   #affirmDbId(id){
@@ -438,9 +443,9 @@ class SQLTester {
     if( 0==arguments.length ){
       id = this.#db.iCurrentDb;
     }
-    const db = this.#affirmDbId(id).#db.list[id];
-    if( db ){
-      sqlite3.capi.sqlite3_close_v2(db);
+    const pDb = this.#affirmDbId(id).#db.list[id];
+    if( pDb ){
+      sqlite3.capi.sqlite3_close_v2(pDb);
       this.#db.list[id] = null;
     }
   }
@@ -474,10 +479,9 @@ class SQLTester {
         rc = sqlite3.capi.sqlite3_open_v2(name, ppOut, flags, null);
         pDb = wasm.peekPtr(ppOut);
       });
+      let sql;
       if( 0==rc && this.#db.initSql.length > 0){
-        this.#outer.verbose2("RUNNING DB INIT CODE: ",this.#db.initSql.toString());
-        rc = this.execSql(pDb, false, ResultBufferMode.NONE,
-                          null, this.#db.initSql.join(''));
+        rc = this.#runInitSql(pDb);
       }
       if( 0!=rc ){
         sqlite3.SQLite3Error.toss(
@@ -613,7 +617,7 @@ class SQLTester {
     sqlite3.oo1.DB.checkRc(pDb, rc);
   }
 
-  execSql(pDb, throwOnError, appendMode, lineMode, sql){
+  execSql(pDb, throwOnError, appendMode, rowMode, sql){
     if( !pDb && !this.#db.list[0] ){
       this.#setupInitialDb();
     }
@@ -685,7 +689,7 @@ class SQLTester {
               }
             }/* column loop */
           }/* row loop */
-          if( ResultRowMode.NEWLINE === lineMode ){
+          if( ResultRowMode.NEWLINE === rowMode ){
             spacing = 0;
             sb.push('\n');
           }
@@ -806,8 +810,9 @@ class TestScript {
   }
 
   getOutputPrefix() {
-    let rc =  "["+(this.#moduleName || this.#filename)+"]";
+    let rc =  "["+(this.#moduleName || '<unnamed>')+"]";
     if( this.#testCaseName ) rc += "["+this.#testCaseName+"]";
+    if( this.#filename ) rc += '['+this.#filename+']';
     return rc + " line "+ this.#cursor.lineNo;
   }
 
@@ -829,6 +834,42 @@ class TestScript {
     return args.length ? this : rc;
   }
 
+  #checkRequiredProperties(tester, props){
+    if(true) return false;
+    let nOk = 0;
+    for(const rp of props){
+      this.verbose2("REQUIRED_PROPERTIES: ",rp);
+      switch(rp){
+        case "RECURSIVE_TRIGGERS":
+          tester.appendDbInitSql("pragma recursive_triggers=on;");
+          ++nOk;
+          break;
+        case "TEMPSTORE_FILE":
+          /* This _assumes_ that the lib is built with SQLITE_TEMP_STORE=1 or 2,
+             which we just happen to know is the case */
+          tester.appendDbInitSql("pragma temp_store=1;");
+          ++nOk;
+          break;
+        case "TEMPSTORE_MEM":
+          /* This _assumes_ that the lib is built with SQLITE_TEMP_STORE=1 or 2,
+             which we just happen to know is the case */
+          tester.appendDbInitSql("pragma temp_store=0;");
+          ++nOk;
+          break;
+        case "AUTOVACUUM":
+          tester.appendDbInitSql("pragma auto_vacuum=full;");
+          ++nOk;
+          break;
+        case "INCRVACUUM":
+          tester.appendDbInitSql("pragma auto_vacuum=incremental;");
+          ++nOk;
+        default:
+          break;
+      }
+    }
+    return props.length == nOk;
+  }
+
   #checkForDirective(tester,line){
     if(line.startsWith("#")){
       throw new IncompatibleDirective(this, "C-preprocessor input: "+line);
@@ -843,9 +884,9 @@ class TestScript {
     m = Rx.requiredProperties.exec(line);
     if( m ){
       const rp = m[1];
-      //if( ! checkRequiredProperties( tester, rp.split("\\s+") ) ){
-      throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
-      //}
+      if( !this.#checkRequiredProperties( tester, rp.split(/\s+/).filter(v=>!!v) ) ){
+        throw new IncompatibleDirective(this, "REQUIRED_PROPERTIES: "+rp);
+      }
     }
 
     m = Rx.mixedModuleName.exec(line);

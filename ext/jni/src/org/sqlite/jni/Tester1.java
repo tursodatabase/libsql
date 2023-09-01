@@ -220,7 +220,15 @@ public class Tester1 implements Runnable {
       outln("\t"+optName+"\t (used="+
             sqlite3_compileoption_used(optName)+")");
     }
+  }
 
+  private void testCompileOption(){
+    int i = 0;
+    String optName;
+    for( ; null != (optName = sqlite3_compileoption_get(i)); ++i){
+    }
+    affirm( i > 10 );
+    affirm( null==sqlite3_compileoption_get(-1) );
   }
 
   private void testOpenDb1(){
@@ -1330,7 +1338,7 @@ public class Tester1 implements Runnable {
 
     sqlite3 db = createNewDb();
     affirm( 4==val.value );
-    execSql(db, "ATTACH ':memory' as foo");
+    execSql(db, "ATTACH ':memory:' as foo");
     affirm( 4==val.value, "ATTACH uses the same connection, not sub-connections." );
     sqlite3_close(db);
     db = null;
@@ -1450,19 +1458,17 @@ public class Tester1 implements Runnable {
     rc = sqlite3_stmt_explain(stmt, 2);
     affirm( 2 == sqlite3_stmt_isexplain(stmt) );
     sqlite3_finalize(stmt);
-
-
     sqlite3_close_v2(db);
   }
 
   private void testLimit(){
     final sqlite3 db = createNewDb();
+    int v;
 
-    int v1, v2;
-    v1 = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
-    affirm( v1 > 0 );
-    affirm( v1 == sqlite3_limit(db, SQLITE_LIMIT_LENGTH, v1-1) );
-    affirm( v1-1 == sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1) );
+    v = sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1);
+    affirm( v > 0 );
+    affirm( v == sqlite3_limit(db, SQLITE_LIMIT_LENGTH, v-1) );
+    affirm( v-1 == sqlite3_limit(db, SQLITE_LIMIT_LENGTH, -1) );
     sqlite3_close_v2(db);
   }
 

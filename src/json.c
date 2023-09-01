@@ -2484,7 +2484,9 @@ static void jsonArrayLengthFunc(
   }
   if( pNode->eType==JSON_ARRAY ){
     while( 1 /*exit-by-break*/ ){
-      for(i=1; i<=pNode->n; n++){
+      i = 1;
+      while( i<=pNode->n ){
+        if( (pNode[i].jnFlags & JNODE_REMOVE)==0 ) n++;
         i += jsonNodeSize(&pNode[i]);
       }
       if( (pNode->jnFlags & JNODE_APPEND)==0 ) break;

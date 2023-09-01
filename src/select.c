@@ -5301,12 +5301,12 @@ static int disableUnusedSubqueryResultColumns(SrcItem *pItem){
   assert( pItem->pSelect!=0 );
   pSub = pItem->pSelect;
   assert( pSub->pEList->nExpr==pTab->nCol );
-  if( (pSub->selFlags & (SF_Distinct|SF_Aggregate))!=0 ){
-    testcase( pSub->selFlags & SF_Distinct );
-    testcase( pSub->selFlags & SF_Aggregate );
-    return 0;
-  }
   for(pX=pSub; pX; pX=pX->pPrior){
+    if( (pX->selFlags & (SF_Distinct|SF_Aggregate))!=0 ){
+      testcase( pX->selFlags & SF_Distinct );
+      testcase( pX->selFlags & SF_Aggregate );
+      return 0;
+    }
     if( pX->pPrior && pX->op!=TK_ALL ){
       /* This optimization does not work for compound subqueries that
       ** use UNION, INTERSECT, or EXCEPT.  Only UNION ALL is allowed. */

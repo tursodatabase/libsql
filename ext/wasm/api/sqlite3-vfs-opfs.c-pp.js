@@ -1197,7 +1197,7 @@ const installOpfsVfs = function callee(options){
           sah.read( header, {at: 0} );
           util.affirmDbHeader( header );
         }
-        sah.write(new Uint8Array(2), {at: 18}/*force db out of WAL mode*/);
+        sah.write(new Uint8Array([1,1]), {at: 18}/*force db out of WAL mode*/);
         return nWrote;
       }catch(e){
         await sah.close();
@@ -1255,7 +1255,7 @@ const installOpfsVfs = function callee(options){
         if(nWrote != n){
           toss("Expected to write "+n+" bytes but wrote "+nWrote+".");
         }
-        sah.write(new Uint8Array(2), {at: 18}) /* force db out of WAL mode */;
+        sah.write(new Uint8Array([1,1]), {at: 18}) /* force db out of WAL mode */;
         return nWrote;
       }catch(e){
         if( sah ){ await sah.close(); sah = undefined; }
