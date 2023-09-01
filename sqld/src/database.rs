@@ -10,6 +10,7 @@ pub trait Database: Sync + Send + 'static {
     type Connection: Connection;
 
     fn connection_maker(&self) -> Arc<dyn MakeConnection<Connection = Self::Connection>>;
+    fn shutdown(&self);
 }
 
 pub struct ReplicaDatabase {
@@ -23,6 +24,8 @@ impl Database for ReplicaDatabase {
     fn connection_maker(&self) -> Arc<dyn MakeConnection<Connection = Self::Connection>> {
         self.connection_maker.clone()
     }
+
+    fn shutdown(&self) {}
 }
 
 pub struct PrimaryDatabase {
@@ -35,5 +38,9 @@ impl Database for PrimaryDatabase {
 
     fn connection_maker(&self) -> Arc<dyn MakeConnection<Connection = Self::Connection>> {
         self.connection_maker.clone()
+    }
+
+    fn shutdown(&self) {
+        self.logger.closed_signal.send_replace(true);
     }
 }

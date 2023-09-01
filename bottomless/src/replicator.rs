@@ -22,6 +22,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::watch::{channel, Receiver, Sender};
+use tokio::task::JoinSet;
 use tokio::time::{timeout_at, Instant};
 use uuid::{NoContext, Uuid};
 
@@ -54,6 +55,7 @@ pub struct Replicator {
     use_compression: CompressionKind,
     max_frames_per_batch: usize,
     s3_upload_max_parallelism: usize,
+    _join_set: JoinSet<()>,
 }
 
 #[derive(Debug)]
@@ -260,6 +262,8 @@ impl Replicator {
         let last_sent_frame_no = Arc::new(AtomicU32::new(0));
         let commits_in_current_generation = Arc::new(AtomicU32::new(0));
 
+        let mut _join_set = JoinSet::new();
+
         let (frames_outbox, mut frames_inbox) = tokio::sync::mpsc::channel(64);
         let _local_backup = {
             let mut copier = WalCopier::new(
@@ -274,7 +278,7 @@ impl Replicator {
             let next_frame_no = next_frame_no.clone();
             let last_sent_frame_no = last_sent_frame_no.clone();
             let batch_interval = options.max_batch_interval;
-            tokio::spawn(async move {
+            _join_set.spawn(async move {
                 loop {
                     let timeout = Instant::now() + batch_interval;
                     let trigger = match timeout_at(timeout, flush_trigger_rx.changed()).await {
@@ -309,8 +313,9 @@ impl Replicator {
             let client = client.clone();
             let bucket = options.bucket_name.clone();
             let max_parallelism = options.s3_upload_max_parallelism;
-            tokio::spawn(async move {
+            _join_set.spawn(async move {
                 let sem = Arc::new(tokio::sync::Semaphore::new(max_parallelism));
+                let mut join_set = JoinSet::new();
                 while let Some(fdesc) = frames_inbox.recv().await {
                     tracing::trace!("Received S3 upload request: {}", fdesc);
                     let start = Instant::now();
@@ -318,7 +323,7 @@ impl Replicator {
                     let permit = sem.acquire_owned().await.unwrap();
                     let client = client.clone();
                     let bucket = bucket.clone();
-                    tokio::spawn(async move {
+                    join_set.spawn(async move {
                         let fpath = format!("{}/{}", bucket, fdesc);
                         let body = ByteStream::from_path(&fpath).await.unwrap();
                         if let Err(e) = client
@@ -358,6 +363,7 @@ impl Replicator {
             use_compression: options.use_compression,
             max_frames_per_batch: options.max_frames_per_batch,
             s3_upload_max_parallelism: options.s3_upload_max_parallelism,
+            _join_set,
         })
     }
 

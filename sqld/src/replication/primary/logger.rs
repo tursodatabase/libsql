@@ -716,6 +716,7 @@ pub struct ReplicationLogger {
     /// a notifier channel other tasks can subscribe to, and get notified when new frames become
     /// available.
     pub new_frame_notifier: watch::Sender<FrameNo>,
+    pub closed_signal: watch::Sender<bool>,
     pub auto_checkpoint: u32,
 }
 
@@ -786,11 +787,15 @@ impl ReplicationLogger {
                 tracing::info!("SQLite autocheckpoint: {}", auto_checkpoint);
             }
         }
+
+        let (closed_signal, _) = watch::channel(false);
+
         Ok(Self {
             generation: Generation::new(generation_start_frame_no),
             compactor: LogCompactor::new(&db_path, log_file.header.db_id, callback)?,
             log_file: RwLock::new(log_file),
             db_path,
+            closed_signal,
             new_frame_notifier,
             auto_checkpoint,
         })
