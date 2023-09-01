@@ -37,6 +37,8 @@ pub struct ReplicationLogService {
 pub const NO_HELLO_ERROR_MSG: &str = "NO_HELLO";
 pub const NEED_SNAPSHOT_ERROR_MSG: &str = "NEED_SNAPSHOT";
 
+pub const MAX_FRAMES_PER_BATCH: usize = 1024;
+
 impl ReplicationLogService {
     pub fn new(
         namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
@@ -154,7 +156,7 @@ impl ReplicationLog for ReplicationLogService {
             })?;
 
         let stream = StreamGuard::new(
-            FrameStream::new(logger, req.next_offset, true)
+            FrameStream::new(logger, req.next_offset, true, None)
                 .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
@@ -194,7 +196,7 @@ impl ReplicationLog for ReplicationLogService {
             })?;
 
         let frames = StreamGuard::new(
-            FrameStream::new(logger, req.next_offset, false)
+            FrameStream::new(logger, req.next_offset, false, Some(MAX_FRAMES_PER_BATCH))
                 .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
