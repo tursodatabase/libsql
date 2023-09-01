@@ -1,5 +1,5 @@
-C Correct\sa\sTester1.java\stest\swhich\sinadvertently\screated\sa\sspurious\sdb\sfile\sin\sthe\scurrent\sdir.\sUnrelated\sminor\scleanups.
-D 2023-09-01T16:28:46.444
+C Add\sa\stimer\sto\sthe\sJS\sSQLTester\sapp\sto\swarn\sif\sit\sappears\sthat\sloading\sthe\smodule\shas\sfailed,\swhich\sis\scommonly\scaused\sby\sthe\stest\sscripts\snot\sbeing\scompiled.
+D 2023-09-01T17:51:09.091
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -552,7 +552,7 @@ F ext/wasm/README.md a8a2962c3aebdf8d2104a9102e336c5554e78fc6072746e5daf9c61514e
 F ext/wasm/SQLTester/GNUmakefile e0794f676d55819951bbfae45cc5e8d7818dc460492dc317ce7f0d2eca15caff
 F ext/wasm/SQLTester/SQLTester.mjs ec2f6ba63a0f2f0562941a0fb8e46b7dc55589711513f1952349785966edfe50
 F ext/wasm/SQLTester/SQLTester.run.mjs c72b7fe2072d05992f7a3d8c6a1d34e95712513ceabe40849784e24e41c84638
-F ext/wasm/SQLTester/index.html 3a12895015c165281307eb47786ce3c46b3c3f06383ad6a9fe3a8526105632f1
+F ext/wasm/SQLTester/index.html 3f8a016df0776be76605abf20e815ecaafbe055abac0e1fe5ea080e7846b760d
 F ext/wasm/SQLTester/touint8array.c 2d5ece04ec1393a6a60c4bf96385bda5e1a10ad49f3038b96460fc5e5aa7e536
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-api d6a5078f48a5301ed17b9a30331075d9b2506e1360c1f0dee0c7816c10acd9ab
 F ext/wasm/api/EXPORTED_FUNCTIONS.sqlite3-see fb29e62082a658f0d81102488414d422c393c4b20cc2f685b216bc566237957b
@@ -2116,8 +2116,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa72d25a22c80a7a376127266b8923f0661147c8bc483baa327230364851a255
-R 42c737a27d848aaab44302c5d742eacf
+P 016bbdadbf9f95cef185d2606c23e3b3c724586fcca470e11e6fbdbaefd75c79
+R 4133358901b76bfadefddc6665a81e23
 U stephan
-Z 76973b081c5a9e008b03ef52a45413be
+Z eab9aeb866f5eecf9b7d34e391979f20
 # Remove this line to create a well-formed Fossil manifest.

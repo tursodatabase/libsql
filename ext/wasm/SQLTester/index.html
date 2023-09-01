@@ -96,6 +96,13 @@
           logClass('','index.html:',...args);
           return f;
         };
+
+        const timerId = setTimeout( ()=>{
+          logClass('error',"The SQLTester module is taking an unusually ",
+                   "long time to load. More information may be available",
+                   "in the dev console.");
+        }, 3000 /* assuming localhost */ );
+
         W.onmessage = function({data}){
           switch(data.type){
             case 'stdout': log2(data.payload.message); break;
@@ -105,6 +112,7 @@
               log("test results:",data.payload);
               break;
             case 'is-ready':
+              clearTimeout(timerId);
               runTests(); break;
             default:
               log("unhandled onmessage",data);
