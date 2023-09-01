@@ -16,6 +16,10 @@ pub struct FrameStream {
     logger: Arc<ReplicationLogger>,
     state: FrameStreamState,
     wait_for_more: bool,
+    // number of frames produced in this stream
+    produced_frames: usize,
+    // max number of frames to produce before ending the stream
+    max_frames: Option<usize>,
     /// a future that resolves when the logger was closed.
     logger_closed_fut: BoxFuture<'static, ()>,
 }
@@ -25,6 +29,7 @@ impl FrameStream {
         logger: Arc<ReplicationLogger>,
         current_frameno: FrameNo,
         wait_for_more: bool,
+        max_frames: Option<usize>,
     ) -> crate::Result<Self> {
         let max_available_frame_no = *logger.new_frame_notifier.subscribe().borrow();
         let mut sub = logger.closed_signal.subscribe();
@@ -38,6 +43,8 @@ impl FrameStream {
             logger,
             state: FrameStreamState::Init,
             wait_for_more,
+            produced_frames: 0,
+            max_frames,
             logger_closed_fut,
         })
     }
@@ -45,6 +52,13 @@ impl FrameStream {
     fn transition_state_next_frame(&mut self) {
         if matches!(self.state, FrameStreamState::Closed) {
             return;
+        }
+        if let Some(max_frames) = self.max_frames {
+            if self.produced_frames == max_frames {
+                tracing::debug!("Max number of frames reached ({max_frames}), closing stream");
+                self.state = FrameStreamState::Closed;
+                return;
+            }
         }
 
         let next_frameno = self.current_frame_no;
@@ -99,6 +113,7 @@ impl Stream for FrameStream {
             FrameStreamState::WaitingFrame(ref mut fut) => match ready!(fut.as_mut().poll(cx)) {
                 Ok(frame) => {
                     self.current_frame_no += 1;
+                    self.produced_frames += 1;
                     self.transition_state_next_frame();
                     Poll::Ready(Some(Ok(frame)))
                 }
