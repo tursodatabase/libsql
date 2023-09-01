@@ -8,7 +8,7 @@ use bytes::Bytes;
 use futures::StreamExt;
 use tokio::sync::{mpsc, oneshot, watch, Mutex};
 use tokio::task::JoinSet;
-use tonic::metadata::AsciiMetadataValue;
+use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
 use tonic::{Code, Request};
 
@@ -127,10 +127,9 @@ impl Replicator {
 
     fn make_request<T>(&self, msg: T) -> Request<T> {
         let mut req = Request::new(msg);
-        req.metadata_mut().insert(
+        req.metadata_mut().insert_bin(
             "x-namespace",
-            AsciiMetadataValue::try_from(self.namespace.clone())
-                .expect("Unable to convert namespace to metadata"),
+            BinaryMetadataValue::from_bytes(&self.namespace[..]),
         );
 
         req

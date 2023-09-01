@@ -6,6 +6,7 @@ use parking_lot::Mutex as PMutex;
 use rusqlite::types::ValueRef;
 use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::sync::{watch, Mutex};
+use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
 use tonic::Request;
 use uuid::Uuid;
@@ -21,6 +22,7 @@ use crate::replication::FrameNo;
 use crate::rpc::proxy::rpc::proxy_client::ProxyClient;
 use crate::rpc::proxy::rpc::query_result::RowResult;
 use crate::rpc::proxy::rpc::{DisconnectMessage, ExecuteResults};
+use crate::rpc::NAMESPACE_METADATA_KEY;
 use crate::stats::Stats;
 use crate::{Result, DEFAULT_AUTO_CHECKPOINT};
 
@@ -205,11 +207,13 @@ impl WriteProxyConnection {
         let mut client = self.write_proxy.clone();
 
         let mut req = Request::new(crate::rpc::proxy::rpc::ProgramReq {
-            namespace: self.namespace.clone(),
             client_id: self.client_id.to_string(),
             pgm: Some(pgm.into()),
         });
 
+        let namespace = BinaryMetadataValue::from_bytes(&self.namespace[..]);
+        req.metadata_mut()
+            .insert_bin(NAMESPACE_METADATA_KEY, namespace);
         auth.upgrade_grpc_request(&mut req);
 
         match client.execute(req).await {

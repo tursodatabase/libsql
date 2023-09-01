@@ -446,6 +446,8 @@ impl Proxy for ProxyService {
             Authenticated::from_proxy_grpc_request(&req)?
         };
 
+        let namespace = super::extract_namespace(true, &req)?;
+
         let req = req.into_inner();
         let pgm = crate::connection::program::Program::try_from(req.pgm.unwrap())
             .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument, e.to_string()))?;
@@ -453,7 +455,7 @@ impl Proxy for ProxyService {
 
         let (connection_maker, new_frame_notifier) = self
             .namespaces
-            .with(req.namespace.clone(), |ns| {
+            .with(namespace, |ns| {
                 let connection_maker = ns.db.connection_maker();
                 let notifier = ns.db.logger.new_frame_notifier.subscribe();
                 (connection_maker, notifier)
