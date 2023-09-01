@@ -895,7 +895,7 @@ globalThis.sqlite3ApiBootstrap.initializers.push(function(sqlite3){
           sah.read( header, {at: 0} );
           util.affirmDbHeader( header );
         }
-        sah.write(new Uint8Array(2), {
+        sah.write(new Uint8Array([1,1]), {
           at: HEADER_OFFSET_DATA + 18
         }/*force db out of WAL mode*/);
       }catch(e){
