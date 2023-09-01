@@ -311,6 +311,11 @@ fn configure_rpc(config: &Config) -> anyhow::Result<(Channel, tonic::transport::
     Ok((channel, uri))
 }
 
+pub enum ResetOp {
+    Reset(Bytes),
+    Destroy(Bytes),
+}
+
 async fn start_replica(
     config: &Config,
     join_set: &mut JoinSet<anyhow::Result<()>>,
@@ -339,12 +344,19 @@ async fn start_replica(
     join_set.spawn({
         let namespaces = namespaces.clone();
         async move {
-            while let Some(ns) = hard_reset_rcv.recv().await {
-                tracing::warn!(
-                    "received reset signal for: {:?}",
-                    std::str::from_utf8(&ns).ok()
-                );
-                namespaces.reset(ns).await?;
+            while let Some(op) = hard_reset_rcv.recv().await {
+                match op {
+                    ResetOp::Reset(ns) => {
+                        tracing::warn!(
+                            "received reset signal for: {:?}",
+                            std::str::from_utf8(&ns).ok()
+                        );
+                        namespaces.reset(ns).await?;
+                    }
+                    ResetOp::Destroy(ns) => {
+                        namespaces.destroy(ns).await?;
+                    }
+                }
             }
 
             Ok(())

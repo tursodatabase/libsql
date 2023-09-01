@@ -5,6 +5,7 @@ use std::time::Duration;
 
 use anyhow::bail;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
+use bottomless::replicator::Options;
 use bytes::Bytes;
 use futures_core::Stream;
 use hyper::Uri;
@@ -26,8 +27,8 @@ use crate::replication::replica::Replicator;
 use crate::replication::{NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
-    check_fresh_db, init_bottomless_replicator, run_periodic_compactions, DB_CREATE_TIMEOUT,
-    DEFAULT_AUTO_CHECKPOINT, DEFAULT_NAMESPACE_NAME, MAX_CONCURRENT_DBS,
+    check_fresh_db, init_bottomless_replicator, run_periodic_compactions, ResetOp,
+    DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT, DEFAULT_NAMESPACE_NAME, MAX_CONCURRENT_DBS,
 };
 
 /// Creates a new `Namespace` for database of the `Self::Database` type.
@@ -35,6 +36,7 @@ use crate::{
 pub trait MakeNamespace: Sync + Send + 'static {
     type Database: Database;
 
+    /// Create a new Namespace instance
     async fn create(
         &self,
         name: Bytes,
@@ -42,8 +44,10 @@ pub trait MakeNamespace: Sync + Send + 'static {
         allow_creation: bool,
     ) -> crate::Result<Namespace<Self::Database>>;
 
+    /// Destroy all resources associated with `namespace`
     async fn destroy(&self, namespace: &Bytes) -> crate::Result<()>;
 }
+
 /// Creates new primary `Namespace`
 pub struct PrimaryNamespaceMaker {
     /// base config to create primary namespaces
@@ -75,7 +79,22 @@ impl MakeNamespace for PrimaryNamespaceMaker {
             .base_path
             .join("dbs")
             .join(std::str::from_utf8(namespace).unwrap());
+
+        if let Some(ref options) = self.config.bottomless_replication {
+            let options = make_bottomless_options(options, namespace);
+            let replicator = bottomless::replicator::Replicator::with_options(
+                ns_path.join("data").to_str().unwrap(),
+                options,
+            )
+            .await?;
+            let delete_all = replicator.delete_all(None).await?;
+
+            // perform hard deletion in the background
+            tokio::spawn(delete_all.commit());
+        }
+
         tokio::fs::remove_dir_all(ns_path).await?;
+
         Ok(())
     }
 }
@@ -121,11 +140,35 @@ impl MakeNamespace for ReplicaNamespaceMaker {
 }
 
 /// Stores and manage a set of namespaces.
-pub struct NamespaceStore<F: MakeNamespace> {
-    inner: RwLock<HashMap<Bytes, Namespace<F::Database>>>,
+pub struct NamespaceStore<M: MakeNamespace> {
+    inner: RwLock<HashMap<Bytes, Namespace<M::Database>>>,
     /// The namespace factory, to create new namespaces.
-    factory: F,
+    make_namespace: M,
     allow_lazy_creation: bool,
+}
+
+impl<M: MakeNamespace> NamespaceStore<M> {
+    pub async fn destroy(&self, namespace: Bytes) -> crate::Result<()> {
+        let mut lock = self.inner.write().await;
+        if let Some(ns) = lock.remove(&namespace) {
+            // FIXME: when destroying, we are waiting for all the tasks associated with the
+            // allocation to finnish, which create a lot of contention on the lock. Need to use a
+            // conccurent hashmap to deal with this issue.
+
+            // deallocate in-memory resources
+            ns.destroy().await?;
+        }
+
+        // destroy on-disk database
+        self.make_namespace.destroy(&namespace).await?;
+
+        tracing::info!(
+            "destroyed namespace: {}",
+            std::str::from_utf8(&namespace).unwrap_or_default()
+        );
+
+        Ok(())
+    }
 }
 
 impl NamespaceStore<ReplicaNamespaceMaker> {
@@ -141,8 +184,11 @@ impl NamespaceStore<ReplicaNamespaceMaker> {
         }
 
         // destroy on-disk database
-        self.factory.destroy(&namespace).await?;
-        let ns = self.factory.create(namespace.clone(), None, true).await?;
+        self.make_namespace.destroy(&namespace).await?;
+        let ns = self
+            .make_namespace
+            .create(namespace.clone(), None, true)
+            .await?;
         lock.insert(namespace, ns);
 
         Ok(())
@@ -153,7 +199,7 @@ impl<F: MakeNamespace> NamespaceStore<F> {
     pub fn new(factory: F, allow_lazy_creation: bool) -> Self {
         Self {
             inner: Default::default(),
-            factory,
+            make_namespace: factory,
             allow_lazy_creation,
         }
     }
@@ -168,7 +214,7 @@ impl<F: MakeNamespace> NamespaceStore<F> {
         } else {
             let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
             let ns = self
-                .factory
+                .make_namespace
                 .create(namespace.clone(), None, self.allow_lazy_creation)
                 .await?;
             let ret = f(&ns);
@@ -185,7 +231,10 @@ impl<F: MakeNamespace> NamespaceStore<F> {
             ));
         }
 
-        let ns = self.factory.create(namespace.clone(), dump, true).await?;
+        let ns = self
+            .make_namespace
+            .create(namespace.clone(), dump, true)
+            .await?;
 
         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
         lock.insert(namespace, ns);
@@ -200,6 +249,15 @@ pub struct Namespace<T: Database> {
     pub db: T,
     /// The set of tasks associated with this namespace
     tasks: JoinSet<anyhow::Result<()>>,
+}
+
+impl<T: Database> Namespace<T> {
+    async fn destroy(mut self) -> anyhow::Result<()> {
+        self.db.shutdown();
+        self.tasks.shutdown().await;
+
+        Ok(())
+    }
 }
 
 pub struct ReplicaNamespaceConfig {
@@ -220,7 +278,7 @@ pub struct ReplicaNamespaceConfig {
     /// hard reset sender.
     /// When a replica need to be wiped and recovered from scratch, its namespace
     /// is sent to this channel
-    pub hard_reset: mpsc::Sender<Bytes>,
+    pub hard_reset: mpsc::Sender<ResetOp>,
 }
 
 impl Namespace<ReplicaDatabase> {
@@ -279,11 +337,6 @@ impl Namespace<ReplicaDatabase> {
             },
         })
     }
-
-    async fn destroy(mut self) -> anyhow::Result<()> {
-        self.tasks.shutdown().await;
-        Ok(())
-    }
 }
 
 pub struct PrimaryNamespaceConfig {
@@ -304,6 +357,13 @@ pub struct PrimaryNamespaceConfig {
 
 pub type DumpStream =
     Box<dyn Stream<Item = std::io::Result<Bytes>> + Send + Sync + 'static + Unpin>;
+
+fn make_bottomless_options(options: &Options, name: &Bytes) -> Options {
+    let mut options = options.clone();
+    let db_id = format!("ns-{}", std::str::from_utf8(name).unwrap());
+    options.db_id = Some(db_id);
+    options
+}
 
 impl Namespace<PrimaryDatabase> {
     async fn new_primary(
@@ -332,11 +392,9 @@ impl Namespace<PrimaryDatabase> {
         tokio::fs::create_dir_all(&db_path).await?;
 
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
-            let mut options = options.clone();
-            let db_id = format!("ns-{}", std::str::from_utf8(&name).unwrap());
-            options.db_id = Some(db_id);
+            let options = make_bottomless_options(options, &name);
             let (replicator, did_recover) =
-                init_bottomless_replicator(db_path.join("data"), options.clone()).await?;
+                init_bottomless_replicator(db_path.join("data"), options).await?;
 
             // There wasn't any database to recover from bottomless, and we are not allowed to
             // create a new database
@@ -364,6 +422,7 @@ impl Namespace<PrimaryDatabase> {
             } else {
                 DEFAULT_AUTO_CHECKPOINT
             };
+
         let logger = Arc::new(ReplicationLogger::open(
             &db_path,
             config.max_log_size,

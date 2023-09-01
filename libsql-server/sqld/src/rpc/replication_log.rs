@@ -154,7 +154,8 @@ impl ReplicationLog for ReplicationLogService {
             })?;
 
         let stream = StreamGuard::new(
-            FrameStream::new(logger, req.next_offset, true),
+            FrameStream::new(logger, req.next_offset, true)
+                .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
         .map(map_frame_stream_output);
@@ -193,7 +194,8 @@ impl ReplicationLog for ReplicationLogService {
             })?;
 
         let frames = StreamGuard::new(
-            FrameStream::new(logger.clone(), req.next_offset, false),
+            FrameStream::new(logger, req.next_offset, false)
+                .map_err(|e| Status::internal(e.to_string()))?,
             self.idle_shutdown_layer.clone(),
         )
         .map(map_frame_stream_output)
