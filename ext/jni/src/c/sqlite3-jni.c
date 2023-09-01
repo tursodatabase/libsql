@@ -5272,28 +5272,8 @@ Java_org_sqlite_jni_tester_SQLTester_installCustomExtensions(JniArgsEnvClass){
 */
 JNIEXPORT void JNICALL
 Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
-  enum JType {
-    JTYPE_INT,
-    JTYPE_BOOL
-  };
-  typedef struct {
-    const char *zName;
-    enum JType jtype;
-    int value;
-  } DefineEntry;
-  const DefineEntry aLimits[] = {
-    {0,0}
-  };
-  jfieldID fieldId;
   jclass klazz;
-  const DefineEntry * pDef;
 
-#if 0
-  if( 0==sqlite3_threadsafe() ){
-    (*env)->FatalError(env, "sqlite3 currently requires SQLITE_THREADSAFE!=0.");
-    return;
-  }
-#endif
   memset(&S3JniGlobal, 0, sizeof(S3JniGlobal));
   if( (*env)->GetJavaVM(env, &SJG.jvm) ){
     (*env)->FatalError(env, "GetJavaVM() failure shouldn't be possible.");
@@ -5318,7 +5298,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
                         "getBytes", "(Ljava/nio/charset/Charset;)[B");
   S3JniExceptionIsFatal("Error getting reference to String.getBytes(Charset).");
 
-  { /* StandardCharsets.UTF_8 */
+  { /* java.nio.charset.StandardCharsets.UTF_8 */
     jfieldID fUtf8;
     klazz = (*env)->FindClass(env,"java/nio/charset/StandardCharsets");
     S3JniExceptionIsFatal("Error getting reference to StandardCharsets class.");
@@ -5358,22 +5338,4 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
   sqlite3_shutdown()
     /* So that it becomes legal for Java-level code to call
     ** sqlite3_config(), if it's ever implemented. */;
-
-  /* Set up static "consts" of the SQLite3Jni class. */
-  for( pDef = &aLimits[0]; pDef->zName; ++pDef ){
-    char const * zSig = (JTYPE_BOOL == pDef->jtype) ? "Z" : "I";
-    fieldId = (*env)->GetStaticFieldID(env, jKlazz, pDef->zName, zSig);
-    S3JniExceptionIsFatal("Missing an expected static member of the SQLite3Jni class.");
-    assert(fieldId);
-    switch( pDef->jtype ){
-      case JTYPE_INT:
-        (*env)->SetStaticIntField(env, jKlazz, fieldId, (jint)pDef->value);
-        break;
-      case JTYPE_BOOL:
-        (*env)->SetStaticBooleanField(env, jKlazz, fieldId,
-                                      pDef->value ? JNI_TRUE : JNI_FALSE);
-        break;
-    }
-    S3JniExceptionIsFatal("Seting a static member of the SQLite3Jni class failed.");
-  }
 }

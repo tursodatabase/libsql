@@ -1,5 +1,5 @@
-C Expose\ssqlite3_limit()\sto\sJNI\sand\sremove\sthe\sall\sSQLITE_\smacros\sfrom\sthe\sJava\sinterface\swhich\sare\snot\sdirectly\sexposed\sto\sclient-level\sC\scode\s(SQLITE_MAX_...\sand\sSQLITE_THREADSAFE_...).
-D 2023-09-01T10:32:31.300
+C Remove\ssome\snewly-dead\scode.
+D 2023-09-01T10:37:15.903
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -234,10 +234,10 @@ F ext/fts5/tool/showfts5.tcl d54da0e067306663e2d5d523965ca487698e722c
 F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f400fc9
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
-F ext/jni/GNUmakefile c6100f8855f9f533466d75e031a458875003c5b5cc01fe9a34581d55f0048119
+F ext/jni/GNUmakefile 591d05030e7fa787615d88fb5b7e8377e1e777612fce4d4eed9b595843f1d014
 F ext/jni/README.md 1332b1fa27918bd5d9ca2d0d4f3ac3a6ab86b9e3699dc5bfe32904a027f3d2a9
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 3bcb7998a5a9bf109e7da6b151a4dbe612791fe9c6792ef4b95bbfe8a0144854
+F ext/jni/src/c/sqlite3-jni.c 69a78f7f7b94b58e272184d005813322bad24ed78ea392563b657faa3cc56218
 F ext/jni/src/c/sqlite3-jni.h 383a357c8920e05ea2b6ca7f9548ee04a263319f018ef3daeeaa719727be8b72
 F ext/jni/src/org/sqlite/jni/AbstractCollationCallback.java 95e88ba04f4aac51ffec65693e878e234088b2f21b387f4e4285c8b72b33e436
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515799194e031f45edbe16a6373cea18f404dc4
@@ -2116,8 +2116,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P d086b7844cace5c997261c97565aeef62aaeeef727ccc7e83f17c54d6217b779
-R d90a7f8c26c47365fc18117debd88806
+P 5fe5b0a585dbfa06cfca1fea40aea5ea3ccfe8295f41306ad2d5b851ace27203
+R e68a872b68a0b0146fb6e1b06b988d94
 U stephan
-Z f88fe35f4fec8f41c283d1006f7f6aa6
+Z 2904ef85d8a184bf73f88a40f15d384b
 # Remove this line to create a well-formed Fossil manifest.
