@@ -59,6 +59,11 @@ impl Client {
             origin,
         );
 
+        // Remove default tonic `8mb` message limits since fly may buffer
+        // messages causing the msg len to be longer.
+        let replication = replication.max_decoding_message_size(usize::MAX);
+        let proxy = proxy.max_decoding_message_size(usize::MAX);
+
         Ok(Self { replication, proxy })
     }
 
