@@ -574,7 +574,10 @@ struct S3JniGlobalType {
   **   JNIEnv when necessary.
   */
   JavaVM * jvm;
-  /* Global mutex. */
+  /*
+  ** Global mutex. It must not be used for anything which might call
+  ** back into the JNI layer.
+  */
   sqlite3_mutex * mutex;
   /*
   ** Cache of references to Java classes and method IDs for
@@ -647,19 +650,22 @@ struct S3JniGlobalType {
 #ifdef SQLITE_ENABLE_FTS5
   struct {
     volatile jobject jExt /* Global ref to Java singleton for the
-                                Fts5ExtensionApi instance. */;
+                             Fts5ExtensionApi instance. */;
     struct {
-      jfieldID fidA         /* Fts5Phrase::a member */;
-      jfieldID fidB         /* Fts5Phrase::b member */;
+      jfieldID fidA       /* Fts5Phrase::a member */;
+      jfieldID fidB       /* Fts5Phrase::b member */;
     } jPhraseIter;
   } fts5;
 #endif
 #ifdef SQLITE_ENABLE_SQLLOG
   struct {
-    S3JniHook sqllog    /* sqlite3_config(SQLITE_CONFIG_SQLLOG) callback */;
-    S3JniHook * aFree   /* free-item list, for recycling. Guarded by
-                           the global mutex. */;
-  } hooks;
+    S3JniHook sqllog      /* sqlite3_config(SQLITE_CONFIG_SQLLOG) callback */;
+    S3JniHook * aFree     /* free-item list, for recycling. */;
+    sqlite3_mutex * mutex /* mutex for aFree */;
+    volatile const void * locker /* object on whose behalf the mutex
+                                    is held.  Only for sanity checking
+                                    in debug builds. */;
+  } hook;
 #endif
 #ifdef SQLITE_JNI_ENABLE_METRICS
   /* Internal metrics. */
@@ -669,7 +675,8 @@ struct S3JniGlobalType {
     volatile unsigned nEnvAlloc;
     volatile unsigned nMutexEnv       /* number of times envCache.mutex was entered for
                                          a S3JniEnv operation. */;
-    volatile unsigned nMutexNph       /* number of times SJG.mutex was entered for NPH init */;
+    volatile unsigned nMutexNph       /* number of times SJG.mutex was entered */;
+    volatile unsigned nMutexHook      /* number of times SJG.mutex hooks.was entered */;
     volatile unsigned nMutexPerDb     /* number of times perDb.mutex was entered */;
     volatile unsigned nMutexAutoExt   /* number of times autoExt.mutex was entered */;
     volatile unsigned nMutexGlobal    /* number of times global mutex was entered. */;
@@ -717,6 +724,21 @@ static void s3jni_incr( volatile unsigned int * const p ){
 
 /* Helpers for working with specific mutexes. */
 #if SQLITE_THREADSAFE
+#define s3jni_mutex_enter2(M, Metric) \
+  sqlite3_mutex_enter( M );           \
+  s3jni_incr( &SJG.metrics.Metric )
+#define s3jni_mutex_leave2(M) \
+  sqlite3_mutex_leave( M )
+
+#define s3jni_mutex_enter(M, L, Metric)                    \
+  assert( (void*)env != (void*)L && "Invalid use of " #L); \
+  s3jni_mutex_enter2( M, Metric );                         \
+  L = env
+#define s3jni_mutex_leave(M, L)                            \
+  assert( (void*)env == (void*)L && "Invalid use of " #L); \
+  L = 0;                                                   \
+  s3jni_mutex_leave2( M )
+
 #define S3JniEnv_mutex_assertLocked \
   assert( 0 != SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
 #define S3JniEnv_mutex_assertLocker \
@@ -724,69 +746,58 @@ static void s3jni_incr( volatile unsigned int * const p ){
 #define S3JniEnv_mutex_assertNotLocker \
   assert( (env) != SJG.envCache.locker && "Misuse of S3JniGlobal.envCache.mutex" )
 
-#define S3JniEnv_mutex_enter                        \
-  S3JniEnv_mutex_assertNotLocker;                   \
-  sqlite3_mutex_enter( SJG.envCache.mutex );        \
-  s3jni_incr(&SJG.metrics.nMutexEnv);               \
-  SJG.envCache.locker = env
-#define S3JniEnv_mutex_leave                         \
-  S3JniEnv_mutex_assertLocker;                       \
-  SJG.envCache.locker = 0;                           \
-  sqlite3_mutex_leave( SJG.envCache.mutex )
+#define S3JniEnv_mutex_enter \
+  s3jni_mutex_enter( SJG.envCache.mutex, SJG.envCache.locker, nMutexEnv )
+#define S3JniEnv_mutex_leave \
+  s3jni_mutex_leave( SJG.envCache.mutex, SJG.envCache.locker )
 
-#define S3JniAutoExt_mutex_enter                        \
-  sqlite3_mutex_enter( SJG.autoExt.mutex );             \
-  SJG.autoExt.locker = env;                             \
-  s3jni_incr( &SJG.metrics.nMutexAutoExt )
-#define S3JniAutoExt_mutex_leave                                                \
-  assert( env == SJG.autoExt.locker && "Misuse of S3JniGlobal.autoExt.mutex" ); \
-  sqlite3_mutex_leave( SJG.autoExt.mutex )
+#define S3JniAutoExt_mutex_enter \
+  s3jni_mutex_enter( SJG.autoExt.mutex, SJG.autoExt.locker, nMutexAutoExt )
+#define S3JniAutoExt_mutex_leave \
+  s3jni_mutex_leave( SJG.autoExt.mutex, SJG.autoExt.locker )
 #define S3JniAutoExt_mutex_assertLocker                     \
   assert( env == SJG.autoExt.locker && "Misuse of S3JniGlobal.autoExt.mutex" )
 
-#define S3JniGlobal_mutex_enter                        \
-  sqlite3_mutex_enter( SJG.mutex );                    \
-  s3jni_incr(&SJG.metrics.nMutexGlobal);
-#define S3JniGlobal_mutex_leave sqlite3_mutex_leave( SJG.mutex )
+#define S3JniGlobal_mutex_enter \
+  s3jni_mutex_enter2( SJG.mutex, nMutexGlobal )
+#define S3JniGlobal_mutex_leave \
+  s3jni_mutex_leave2( SJG.mutex )
 
-#define S3JniNph_mutex_enter                                      \
-  sqlite3_mutex_enter( SJG.nph.mutex );                           \
-  assert( !SJG.nph.locker && "Misuse of S3JniGlobal.nph.mutex" ); \
-  s3jni_incr( &SJG.metrics.nMutexNph );                           \
-  SJG.nph.locker = env
-#define S3JniNph_mutex_leave                                              \
-  assert( (env) == SJG.nph.locker && "Misuse of S3JniGlobal.nph.mutex" ); \
-  SJG.nph.locker = 0;                                                     \
-  sqlite3_mutex_leave( SJG.nph.mutex )
+#define S3JniHook_mutex_enter \
+  s3jni_mutex_enter( SJG.hook.mutex, SJG.hook.locker, nMutexHook )
+#define S3JniHook_mutex_leave \
+  s3jni_mutex_leave( SJG.hook.mutex, SJG.hook.locker )
+
+#define S3JniNph_mutex_enter \
+  s3jni_mutex_enter( SJG.nph.mutex, SJG.nph.locker, nMutexNph )
+#define S3JniNph_mutex_leave \
+  s3jni_mutex_leave( SJG.nph.mutex, SJG.nph.locker )
 
 #define S3JniDb_mutex_assertLocker \
   assert( (env) == SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" )
-#define S3JniDb_mutex_enter                                             \
-  sqlite3_mutex_enter( SJG.perDb.mutex );                               \
-  assert( 0==SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" ); \
-  s3jni_incr( &SJG.metrics.nMutexPerDb );                               \
-  SJG.perDb.locker = env;
-#define S3JniDb_mutex_leave                                                 \
-  assert( env == SJG.perDb.locker && "Misuse of S3JniGlobal.perDb.mutex" ); \
-  SJG.perDb.locker = 0;                                                     \
-  sqlite3_mutex_leave( SJG.perDb.mutex )
+#define S3JniDb_mutex_enter \
+  s3jni_mutex_enter( SJG.perDb.mutex, SJG.perDb.locker, nMutexPerDb )
+#define S3JniDb_mutex_leave \
+  s3jni_mutex_leave( SJG.perDb.mutex, SJG.perDb.locker )
 
 #else /* SQLITE_THREADSAFE==0 */
+#define S3JniAutoExt_mutex_assertLocker
+#define S3JniAutoExt_mutex_enter
+#define S3JniAutoExt_mutex_leave
+#define S3JniDb_mutex_assertLocker
+#define S3JniDb_mutex_enter
+#define S3JniDb_mutex_leave
 #define S3JniEnv_mutex_assertLocked
 #define S3JniEnv_mutex_assertLocker
 #define S3JniEnv_mutex_assertNotLocker
 #define S3JniEnv_mutex_enter
 #define S3JniEnv_mutex_leave
-#define S3JniAutoExt_mutex_assertLocker
-#define S3JniAutoExt_mutex_enter
-#define S3JniAutoExt_mutex_leave
 #define S3JniGlobal_mutex_enter
 #define S3JniGlobal_mutex_leave
+#define S3JniHook_mutex_enter
+#define S3JniHook_mutex_leave
 #define S3JniNph_mutex_enter
 #define S3JniNph_mutex_leave
-#define S3JniDb_mutex_assertLocker
-#define S3JniDb_mutex_enter
-#define S3JniDb_mutex_leave
 #endif
 
 /* Helpers for jstring and jbyteArray. */
@@ -1123,12 +1134,12 @@ static void s3jni__call_xDestroy(JNIEnv * const env, jobject jObj){
 */
 static void S3JniHook__localdup( JNIEnv * const env, S3JniHook const * const src,
                                  S3JniHook * const dest ){
-  S3JniGlobal_mutex_enter;
+  S3JniHook_mutex_enter;
   *dest = *src;
   if(src->jObj) dest->jObj = S3JniRefLocal(src->jObj);
   if(src->jExtra) dest->jExtra = S3JniRefLocal(src->jExtra);
   dest->doXDestroy = 0;
-  S3JniGlobal_mutex_leave;
+  S3JniHook_mutex_leave;
 }
 #define S3JniHook_localdup(src,dest) S3JniHook__localdup(env,src,dest)
 
@@ -1165,14 +1176,14 @@ static void S3JniHook__unref(JNIEnv * const env, S3JniHook * const s){
 */
 static S3JniHook *S3JniHook__alloc(JNIEnv  * const env){
   S3JniHook * p = 0;
-  S3JniGlobal_mutex_enter;
-  if( SJG.hooks.aFree ){
-    p = SJG.hooks.aFree;
-    SJG.hooks.aFree = p->pNext;
+  S3JniHook_mutex_enter;
+  if( SJG.hook.aFree ){
+    p = SJG.hook.aFree;
+    SJG.hook.aFree = p->pNext;
     p->pNext = 0;
     s3jni_incr(&SJG.metrics.nHookRecycled);
   }
-  S3JniGlobal_mutex_leave;
+  S3JniHook_mutex_leave;
   if( 0==p ){
     p = s3jni_malloc(sizeof(S3JniHook));
     if( p ){
@@ -1187,17 +1198,17 @@ static S3JniHook *S3JniHook__alloc(JNIEnv  * const env){
 #define S3JniHook_alloc() S3JniHook__alloc(env)
 
 /*
-** The rightful fate of all results from S3JniHook_alloc(). Locks the
-** global mutex.
+** The rightful fate of all results from S3JniHook_alloc(). Locks on
+** SJG>hooks.mutex.
 */
 static void S3JniHook__free(JNIEnv  * const env, S3JniHook * const p){
   if(p){
     assert( !p->pNext );
     S3JniHook_unref(p);
-    S3JniGlobal_mutex_enter;
-    p->pNext = SJG.hooks.aFree;
-    SJG.hooks.aFree = p;
-    S3JniGlobal_mutex_leave;
+    S3JniHook_mutex_enter;
+    p->pNext = SJG.hook.aFree;
+    SJG.hook.aFree = p;
+    S3JniHook_mutex_leave;
   }
 }
 #define S3JniHook_free(hook) S3JniHook__free(env, hook)
@@ -1207,10 +1218,10 @@ static void S3JniHook__free(JNIEnv  * const env, S3JniHook * const p){
 static void S3JniHook__free_unlocked(JNIEnv  * const env, S3JniHook * const p){
   if(p){
     assert( !p->pNext );
-    assert( p->pNext != SJG.hooks.aFree );
+    assert( p->pNext != SJG.hook.aFree );
     S3JniHook_unref(p);
-    p->pNext = SJG.hooks.aFree;
-    SJG.hooks.aFree = p;
+    p->pNext = SJG.hook.aFree;
+    SJG.hook.aFree = p;
   }
 }
 #define S3JniHook_free_unlocked(hook) S3JniHook__free_unlocked(env, hook)
@@ -1751,7 +1762,8 @@ static S3JniUdf * S3JniUdf_alloc(JNIEnv * const env, jobject jObj){
     S3JniUnrefLocal(klazz);
     if( s->jmidxFunc ) s->type = UDF_SCALAR;
     else if( s->jmidxStep && s->jmidxFinal ){
-      s->type = s->jmidxValue ? UDF_WINDOW : UDF_AGGREGATE;
+      s->type = (s->jmidxValue && s->jmidxInverse)
+        ? UDF_WINDOW : UDF_AGGREGATE;
     }else{
       s->type = UDF_UNKNOWN_TYPE;
     }
@@ -2764,7 +2776,7 @@ static void s3jni_config_sqllog(void *ignored, sqlite3 *pDb, const char *z, int 
   S3JniHook hook = S3JniHook_empty;
 
   if( ps ){
-    S3JniHook_localdup(&SJG.hooks.sqllog, &hook);
+    S3JniHook_localdup(&SJG.hook.sqllog, &hook);
   }
   if( !hook.jObj ) return;
   jArg0 = S3JniRefLocal(ps->jDb);
@@ -2801,7 +2813,7 @@ S3JniApi(sqlite3_config() /* for SQLLOG */,
 #ifndef SQLITE_ENABLE_SQLLOG
   return SQLITE_MISUSE;
 #else
-  S3JniHook * const pHook = &SJG.hooks.sqllog;
+  S3JniHook * const pHook = &SJG.hook.sqllog;
   int rc = 0;
 
   S3JniGlobal_mutex_enter;
@@ -4047,17 +4059,19 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
       u->pNext = 0;
       S3JniUdf_free(env, u, 0);
     }
+  } S3JniGlobal_mutex_leave;
+  S3JniHook_mutex_enter; {
     /* Free up S3JniHook recycling bin. */
-    while( S3JniGlobal.hooks.aFree ){
-      S3JniHook * const u = S3JniGlobal.hooks.aFree;
-      S3JniGlobal.hooks.aFree = u->pNext;
+    while( S3JniGlobal.hook.aFree ){
+      S3JniHook * const u = S3JniGlobal.hook.aFree;
+      S3JniGlobal.hook.aFree = u->pNext;
       u->pNext = 0;
       assert( !u->doXDestroy );
       assert( !u->jObj );
       assert( !u->jExtra );
       sqlite3_free( u );
     }
-  } S3JniGlobal_mutex_leave;
+  } S3JniHook_mutex_leave;
   /* Free up env cache. */
   S3JniEnv_mutex_enter; {
     while( SJG.envCache.aHead ){
@@ -4452,14 +4466,15 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
          "\n\tglobal       = %u"
          "\n\tenv          = %u"
          "\n\tnph          = %u for S3JniNphOp init"
+         "\n\thook         = %u"
          "\n\tperDb        = %u"
          "\n\tautoExt list = %u"
          "\n\tS3JniUdf     = %u (free-list)"
          "\n\tmetrics      = %u\n",
          SJG.metrics.nMutexGlobal, SJG.metrics.nMutexEnv,
-         SJG.metrics.nMutexNph, SJG.metrics.nMutexPerDb,
-         SJG.metrics.nMutexAutoExt, SJG.metrics.nMutexUdf,
-         SJG.metrics.nMetrics);
+         SJG.metrics.nMutexNph, SJG.metrics.nMutexHook,
+         SJG.metrics.nMutexPerDb, SJG.metrics.nMutexAutoExt,
+         SJG.metrics.nMutexUdf, SJG.metrics.nMetrics);
   puts("Allocs:");
   printf("\tS3JniDb:  %u alloced (*%u = %u bytes), %u recycled\n",
          SJG.metrics.nPdbAlloc, (unsigned) sizeof(S3JniDb),
@@ -5363,6 +5378,8 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
 
   SJG.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
   s3jni_oom_fatal( SJG.mutex );
+  SJG.hook.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+  s3jni_oom_fatal( SJG.hook.mutex );
   SJG.nph.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
   s3jni_oom_fatal( SJG.nph.mutex );
   SJG.envCache.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
