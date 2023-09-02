@@ -18,7 +18,7 @@ import static org.sqlite.jni.Tester1.*;
 public class TesterFts5 {
 
   private static void test1(){
-    Fts5ExtensionApi fea = Fts5ExtensionApi.getInstance();
+    final Fts5ExtensionApi fea = Fts5ExtensionApi.getInstance();
     affirm( null != fea );
     affirm( fea.getNativePointer() != 0 );
     affirm( fea == Fts5ExtensionApi.getInstance() )/*singleton*/;
@@ -38,21 +38,18 @@ public class TesterFts5 {
     ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
     ValueHolder<Integer> xFuncCount = new ValueHolder<>(0);
     final fts5_extension_function func = new fts5_extension_function(){
-        public void xFunction(Fts5ExtensionApi ext, Fts5Context fCx,
-                              sqlite3_context pCx, sqlite3_value argv[]){
+        @Override public void call(Fts5ExtensionApi ext, Fts5Context fCx,
+                                   sqlite3_context pCx, sqlite3_value argv[]){
           int nCols = ext.xColumnCount(fCx);
           affirm( 2 == nCols );
           affirm( nCols == argv.length );
           affirm( ext.xUserData(fCx) == pUserData );
-          if(true){
-            OutputPointer.String op = new OutputPointer.String();
-            for(int i = 0; i < nCols; ++i ){
-              int rc = ext.xColumnText(fCx, i, op);
-              affirm( 0 == rc );
-              final String val = op.value;
-              affirm( val.equals(sqlite3_value_text16(argv[i])) );
-              //outln("xFunction col "+i+": "+val);
-            }
+          final OutputPointer.String op = new OutputPointer.String();
+          for(int i = 0; i < nCols; ++i ){
+            int rc = ext.xColumnText(fCx, i, op);
+            affirm( 0 == rc );
+            final String val = op.value;
+            affirm( val.equals(sqlite3_value_text16(argv[i])) );
           }
           ++xFuncCount.value;
         }
@@ -72,18 +69,24 @@ public class TesterFts5 {
     affirm( xDestroyCalled.value );
   }
 
+  private void runTests(){
+    test1();
+  }
+
   public TesterFts5(boolean verbose){
     if(verbose){
-      final long timeStart = System.currentTimeMillis();
-      final int oldAffirmCount = Tester1.affirmCount;
-      test1();
-      final int affirmCount = Tester1.affirmCount - oldAffirmCount;
-      final long timeEnd = System.currentTimeMillis();
-      outln("FTS5 Tests done. Assertions checked = ",affirmCount,
-            ", Total time = ",(timeEnd - timeStart),"ms");
+      synchronized(Tester1.class) {
+        final long timeStart = System.currentTimeMillis();
+        final int oldAffirmCount = Tester1.affirmCount;
+        runTests();
+        final int affirmCount = Tester1.affirmCount - oldAffirmCount;
+        final long timeEnd = System.currentTimeMillis();
+        outln("FTS5 Tests done. Assertions checked = ",affirmCount,
+              ", Total time = ",(timeEnd - timeStart),"ms");
+      }
     }else{
-      test1();
+      runTests();
     }
   }
-  public TesterFts5(){ this(false); }
+  public TesterFts5(){ this(true); }
 }

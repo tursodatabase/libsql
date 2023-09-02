@@ -1311,7 +1311,7 @@ public class Tester1 implements Runnable {
     final ValueHolder<Integer> val = new ValueHolder<>(0);
     final ValueHolder<String> toss = new ValueHolder<>(null);
     final AutoExtensionCallback ax = new AutoExtensionCallback(){
-        @Override public synchronized int call(sqlite3 db){
+        @Override public int call(sqlite3 db){
           ++val.value;
           if( null!=toss.value ){
             throw new RuntimeException(toss.value);
@@ -1650,7 +1650,7 @@ public class Tester1 implements Runnable {
     {
       // Build list of tests to run from the methods named test*().
       testMethods = new ArrayList<>();
-      out("Skipping tests in multi-thread mode:");
+      int nSkipped = 0;
       for(final java.lang.reflect.Method m : Tester1.class.getDeclaredMethods()){
         final String name = m.getName();
         if( name.equals("testFail") ){
@@ -1659,13 +1659,16 @@ public class Tester1 implements Runnable {
           }
         }else if( !m.isAnnotationPresent( ManualTest.class ) ){
           if( nThread>1 && m.isAnnotationPresent( SingleThreadOnly.class ) ){
+            if( 0==nSkipped++ ){
+              out("Skipping tests in multi-thread mode:");
+            }
             out(" "+name+"()");
           }else if( name.startsWith("test") ){
             testMethods.add(m);
           }
         }
       }
-      out("\n");
+      if( nSkipped>0 ) out("\n");
     }
 
     final long timeStart = System.currentTimeMillis();

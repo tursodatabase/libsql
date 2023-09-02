@@ -33,6 +33,31 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
   */
   public static synchronized native fts5_api getInstanceForDb(@NotNull sqlite3 db);
 
+  @Canonical
+  public synchronized native int xCreateFunction(@NotNull String name,
+                                                 @Nullable Object userData,
+                                                 @NotNull fts5_extension_function xFunction);
+
+  /**
+     Convenience overload which passes null as the 2nd argument to the
+     3-parameter form.
+  */
+  public int xCreateFunction(@NotNull String name,
+                             @NotNull fts5_extension_function xFunction){
+    return xCreateFunction(name, null, xFunction);
+  }
+
+  // /* Create a new auxiliary function */
+  // int (*xCreateFunction)(
+  //   fts5_api *pApi,
+  //   const char *zName,
+  //   void *pContext,
+  //   fts5_extension_function xFunction,
+  //   void (*xDestroy)(void*)
+  // );
+
+  // Still potentially todo:
+
   // int (*xCreateTokenizer)(
   //   fts5_api *pApi,
   //   const char *zName,
@@ -48,23 +73,5 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
   //   void **ppContext,
   //   fts5_tokenizer *pTokenizer
   // );
-
-  // /* Create a new auxiliary function */
-  // int (*xCreateFunction)(
-  //   fts5_api *pApi,
-  //   const char *zName,
-  //   void *pContext,
-  //   fts5_extension_function xFunction,
-  //   void (*xDestroy)(void*)
-  // );
-
-  public synchronized native int xCreateFunction(@NotNull String name,
-                                    @Nullable Object userData,
-                                    @NotNull fts5_extension_function xFunction);
-
-  public int xCreateFunction(@NotNull String name,
-                             @NotNull fts5_extension_function xFunction){
-    return xCreateFunction(name, null, xFunction);
-  }
 
 }
