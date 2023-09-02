@@ -122,7 +122,7 @@ public class Tester1 implements Runnable {
     affirm(v, "Affirmation failed.");
   }
 
-  @ManualTest /* because testing this for threading is pointless */
+  @SingleThreadOnly /* because it's thread-agnostic */
   private void test1(){
     affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
   }
@@ -610,7 +610,7 @@ public class Tester1 implements Runnable {
     affirm( 1 == xDestroyCalled.value );
   }
 
-  @ManualTest /* because threading is meaningless here */
+  @SingleThreadOnly /* because it's thread-agnostic */
   private void testToUtf8(){
     /**
        https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html
@@ -978,8 +978,8 @@ public class Tester1 implements Runnable {
     affirm( 7 == counter.value );
   }
 
-  @ManualTest /* because threads inherently break this test */
-  private void testBusy(){
+  @SingleThreadOnly /* because threads inherently break this test */
+  private static void testBusy(){
     final String dbName = "_busy-handler.db";
     final OutputPointer.sqlite3 outDb = new OutputPointer.sqlite3();
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
@@ -1482,7 +1482,7 @@ public class Tester1 implements Runnable {
   }
 
 
-  @ManualTest /* we really only want to run this test manually. */
+  @ManualTest /* we really only want to run this test manually */
   private void testSleep(){
     out("Sleeping briefly... ");
     sqlite3_sleep(600);
@@ -1525,8 +1525,6 @@ public class Tester1 implements Runnable {
         outln();
       }
     }
-    testToUtf8();
-    test1();
     for(java.lang.reflect.Method m : mlist){
       nap();
       try{
@@ -1535,9 +1533,6 @@ public class Tester1 implements Runnable {
         outln("FAILURE: ",m.getName(),"(): ", e.getCause());
         throw e;
       }
-    }
-    if( !fromThread ){
-      testBusy();
     }
     synchronized( this.getClass() ){
       ++nTestRuns;

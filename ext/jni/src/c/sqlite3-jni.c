@@ -294,43 +294,66 @@ static inline void s3jni_unref_local(JNIEnv * const env, jobject const v){
 #define S3JniUnrefLocal(VAR) s3jni_unref_local(env, (VAR))
 
 /*
-** Lookup key type for use with s3jni_nph().
+** Lookup key type for use with s3jni_nphop() and a cache of a
+** frequently-needed Java-side class reference and one or two Java
+** class member IDs.
 */
-typedef struct S3JniNphRef S3JniNphRef;
-struct S3JniNphRef {
+typedef struct S3JniNphOp S3JniNphOp;
+struct S3JniNphOp {
   const int index             /* index into S3JniGlobal.nph[] */;
   const char * const zName    /* Full Java name of the class */;
   const char * const zMember  /* Name of member property */;
   const char * const zTypeSig /* JNI type signature of zMember */;
+  /*
+  ** klazz is a global ref to the class represented by pRef.
+  **
+  ** According to:
+  **
+  **   https://developer.ibm.com/articles/j-jni/
+  **
+  ** > ... the IDs returned for a given class don't change for the
+  **   lifetime of the JVM process. But the call to get the field or
+  **   method can require significant work in the JVM, because fields
+  **   and methods might have been inherited from superclasses, making
+  **   the JVM walk up the class hierarchy to find them. Because the
+  **   IDs are the same for a given class, you should look them up
+  **   once and then reuse them. Similarly, looking up class objects
+  **   can be expensive, so they should be cached as well.
+  */
+  jclass klazz;
+  volatile jfieldID fidValue  /* NativePointerHolder.nativePointer or
+                              ** OutputPointer.T.value */;
+  volatile jmethodID midCtor  /* klazz's no-arg constructor. Used by
+                              ** NativePointerHolder_new(). */;
 };
 
 /*
 ** Cache keys for each concrete NativePointerHolder subclasses and
-** OutputPointer.T types. The members are to be used with s3jni_nph()
+** OutputPointer.T types. The members are to be used with s3jni_nphop()
 ** and friends, and each one's member->index corresponds to its index
 ** in the S3JniGlobal.nph[] array.
 */
 static const struct {
-  const S3JniNphRef sqlite3;
-  const S3JniNphRef sqlite3_stmt;
-  const S3JniNphRef sqlite3_context;
-  const S3JniNphRef sqlite3_value;
-  const S3JniNphRef OutputPointer_Bool;
-  const S3JniNphRef OutputPointer_Int32;
-  const S3JniNphRef OutputPointer_Int64;
-  const S3JniNphRef OutputPointer_sqlite3;
-  const S3JniNphRef OutputPointer_sqlite3_stmt;
-  const S3JniNphRef OutputPointer_sqlite3_value;
-  const S3JniNphRef OutputPointer_String;
+  const S3JniNphOp sqlite3;
+  const S3JniNphOp sqlite3_stmt;
+  const S3JniNphOp sqlite3_context;
+  const S3JniNphOp sqlite3_value;
+  const S3JniNphOp OutputPointer_Bool;
+  const S3JniNphOp OutputPointer_Int32;
+  const S3JniNphOp OutputPointer_Int64;
+  const S3JniNphOp OutputPointer_sqlite3;
+  const S3JniNphOp OutputPointer_sqlite3_stmt;
+  const S3JniNphOp OutputPointer_sqlite3_value;
+  const S3JniNphOp OutputPointer_String;
 #ifdef SQLITE_ENABLE_FTS5
-  const S3JniNphRef OutputPointer_ByteArray;
-  const S3JniNphRef Fts5Context;
-  const S3JniNphRef Fts5ExtensionApi;
-  const S3JniNphRef fts5_api;
-  const S3JniNphRef fts5_tokenizer;
-  const S3JniNphRef Fts5Tokenizer;
+  const S3JniNphOp OutputPointer_ByteArray;
+  const S3JniNphOp Fts5Context;
+  const S3JniNphOp Fts5ExtensionApi;
+  const S3JniNphOp fts5_api;
+  const S3JniNphOp fts5_tokenizer;
+  const S3JniNphOp Fts5Tokenizer;
 #endif
-} S3JniNphRefs = {
+} S3JniNphOps = {
 #define MkRef(INDEX, KLAZZ, MEMBER, SIG) \
   { INDEX, "org/sqlite/jni/" KLAZZ, MEMBER, SIG }
 /* NativePointerHolder ref */
@@ -364,51 +387,17 @@ static const struct {
 #undef RefO
 };
 
-#define S3JniNph(T) &S3JniNphRefs.T
+#define S3JniNph(T) &S3JniNphOps.T
 
 enum {
   /*
   ** Size of the NativePointerHolder cache.  Need enough space for
   ** (only) the library's NativePointerHolder and OutputPointer types,
   ** a fixed count known at build-time.  This value needs to be
-  ** exactly the number of S3JniNphRef entries in the S3JniNphRefs
+  ** exactly the number of S3JniNphOp entries in the S3JniNphOps
   ** object.
   */
-  S3Jni_NphCache_size = sizeof(S3JniNphRefs) / sizeof(S3JniNphRef)
-};
-
-/*
-** Cache entry for NativePointerHolder subclasses and OutputPointer
-** types. The pRef and klazz fields are set up the first time the
-** entry is fetched using s3jni_nph(). The other fields are
-** populated as needed by the routines which use them.
-*/
-typedef struct S3JniNphClass S3JniNphClass;
-struct S3JniNphClass {
-  volatile const S3JniNphRef * pRef /* Entry from S3JniNphRefs */;
-  /*
-  ** klazz is a global ref to the class represented by pRef.
-  **
-  ** According to:
-  **
-  **   https://developer.ibm.com/articles/j-jni/
-  **
-  ** > ... the IDs returned for a given class don't change for the
-  **   lifetime of the JVM process. But the call to get the field or
-  **   method can require significant work in the JVM, because fields
-  **   and methods might have been inherited from superclasses, making
-  **   the JVM walk up the class hierarchy to find them. Because the
-  **   IDs are the same for a given class, you should look them up
-  **   once and then reuse them. Similarly, looking up class objects
-  **   can be expensive, so they should be cached as well.
-  */
-  jclass klazz;
-  volatile jmethodID midCtor  /* klazz's no-arg constructor. Used by
-                              ** NativePointerHolder_new(). */;
-  volatile jfieldID fidValue  /* NativePointerHolder.nativePointer or
-                              ** OutputPointer.T.value */;
-  volatile jfieldID fidAggCtx /* sqlite3_context.aggregateContext, used only
-                              ** by the sqlite3_context binding. */;
+  S3Jni_NphCache_size = sizeof(S3JniNphOps) / sizeof(S3JniNphOp)
 };
 
 /*
@@ -420,7 +409,9 @@ struct S3JniHook{
   jmethodID midCallback   /* callback method. Signature depends on
                           ** jObj's type */;
   /* We lookup the jObj.xDestroy() method as-needed for contexts which
-  ** have custom finalizers. */
+  ** support custom finalizers. Fundamentally we can support them for
+  ** any Java type, but we only want to expose support for them where
+  ** the C API does. */
   jobject jExtra          /* Global ref to a per-hook-type value */;
   int doXDestroy          /* If true then S3JniHook_unref() will call
                              jObj->xDestroy() if it's available. */;
@@ -590,10 +581,10 @@ struct S3JniGlobalType {
   ** NativePointerHolder subclasses and OutputPointer.T types.
   */
   struct {
-    S3JniNphClass list[S3Jni_NphCache_size];
+    S3JniNphOp list[S3Jni_NphCache_size];
     sqlite3_mutex * mutex;    /* mutex for this->list */
-    void const * locker;      /* sanity-checking-only context object
-                                 for this->mutex */
+    volatile void const * locker;  /* sanity-checking-only context object
+                                      for this->mutex */
   } nph;
   /*
   ** Cache of per-thread state.
@@ -602,8 +593,9 @@ struct S3JniGlobalType {
     S3JniEnv * aHead      /* Linked list of in-use instances */;
     S3JniEnv * aFree      /* Linked list of free instances */;
     sqlite3_mutex * mutex /* mutex for aHead and aFree. */;
-    void const * locker   /* env mutex is held on this object's behalf.
-                             Used only for sanity checking. */;
+    volatile void const * locker  /* env mutex is held on this
+                                     object's behalf.  Used only for
+                                     sanity checking. */;
   } envCache;
   /*
   ** Per-db state. This can move into the core library once we can tie
@@ -612,8 +604,10 @@ struct S3JniGlobalType {
   struct {
     S3JniDb * aFree  /* Linked list of free instances */;
     sqlite3_mutex * mutex /* mutex for aHead and aFree */;
-    void const * locker /* perDb mutex is held on this object's
-                           behalf. Used only for sanity checking. */;
+    volatile void const * locker
+    /* perDb mutex is held on this object's behalf. Used only for
+       sanity checking. Note that the mutex is at the class level, not
+       instance level. */;
   } perDb;
   struct {
     S3JniUdf * aFree    /* Head of the free-item list. Guarded by global
@@ -646,8 +640,9 @@ struct S3JniGlobalType {
     int nExt                 /* number of active entries in aExt, all in the
                                 first nExt'th array elements. */;
     sqlite3_mutex * mutex    /* mutex for manipulation/traversal of aExt */;
-    const void * locker      /* object on whose behalf the mutex is held.
-                                Only for sanity checking in debug builds. */;
+    volatile const void * locker /* object on whose behalf the mutex
+                                    is held.  Only for sanity checking
+                                    in debug builds. */;
   } autoExt;
 #ifdef SQLITE_ENABLE_FTS5
   struct {
@@ -1316,23 +1311,20 @@ static int S3JniEnv_uncache(JNIEnv * const env){
 ** This simple cache catches >99% of searches in the current
 ** (2023-07-31) tests.
 */
-static S3JniNphClass * s3jni__nph(JNIEnv * const env, S3JniNphRef const* pRef){
-  S3JniNphClass * const pNC = &SJG.nph.list[pRef->index];
+static S3JniNphOp * s3jni__nphop(JNIEnv * const env, S3JniNphOp const* pRef){
+  S3JniNphOp * const pNC = &SJG.nph.list[pRef->index];
 
-  assert( (void*)pRef>=(void*)&S3JniNphRefs && (void*)pRef<(void*)(&S3JniNphRefs + 1)
+  assert( (void*)pRef>=(void*)&S3JniNphOps && (void*)pRef<(void*)(&S3JniNphOps + 1)
           && "pRef is out of range" );
   assert( pRef->index>=0
-          && (pRef->index < (sizeof(S3JniNphRefs) / sizeof(S3JniNphRef)))
+          && (pRef->index < (sizeof(S3JniNphOps) / sizeof(S3JniNphOp)))
           && "pRef->index is out of range" );
-  if( !pNC->pRef ){
+  if( !pNC->klazz ){
     S3JniNph_mutex_enter;
-    if( !pNC->pRef ){
+    if( !pNC->klazz ){
       jclass const klazz = (*env)->FindClass(env, pRef->zName);
       S3JniExceptionIsFatal("FindClass() unexpectedly threw");
       pNC->klazz = S3JniRefGlobal(klazz);
-      pNC->pRef = pRef
-        /* Must come last to avoid a race condition where pNC->klass
-           can be NULL after this function returns. */;
     }
     S3JniNph_mutex_leave;
   }
@@ -1340,11 +1332,11 @@ static S3JniNphClass * s3jni__nph(JNIEnv * const env, S3JniNphRef const* pRef){
   return pNC;
 }
 
-#define s3jni_nph(PRef) s3jni__nph(env, PRef)
+#define s3jni_nphop(PRef) s3jni__nphop(env, PRef)
 
 /*
 ** Common code for accessor functions for NativePointerHolder and
-** OutputPointer types. pRef must be a pointer from S3JniNphRefs. jOut
+** OutputPointer types. pRef must be a pointer from S3JniNphOps. jOut
 ** must be an instance of that class (Java's type safety takes care of
 ** that requirement). If necessary, this fetches the jfieldID for
 ** jOut's pRef->zMember, which must be of the type represented by the
@@ -1354,8 +1346,8 @@ static S3JniNphClass * s3jni__nph(JNIEnv * const env, S3JniNphRef const* pRef){
 **
 ** Property lookups are cached on a per-pRef basis.
 */
-static jfieldID s3jni_nphop_field(JNIEnv * const env, S3JniNphRef const* pRef){
-  S3JniNphClass * const pNC = s3jni_nph(pRef);
+static jfieldID s3jni_nphop_field(JNIEnv * const env, S3JniNphOp const* pRef){
+  S3JniNphOp * const pNC = s3jni_nphop(pRef);
 
   if( !pNC->fidValue ){
     S3JniNph_mutex_enter;
@@ -1363,7 +1355,7 @@ static jfieldID s3jni_nphop_field(JNIEnv * const env, S3JniNphRef const* pRef){
       pNC->fidValue = (*env)->GetFieldID(env, pNC->klazz,
                                          pRef->zMember, pRef->zTypeSig);
       S3JniExceptionIsFatal("Code maintenance required: missing "
-                            "required S3JniNphClass::fidValue.");
+                            "required S3JniNphOp::fidValue.");
     }
     S3JniNph_mutex_leave;
   }
@@ -1376,7 +1368,7 @@ static jfieldID s3jni_nphop_field(JNIEnv * const env, S3JniNphRef const* pRef){
 ** zClassName must be a static string so we can use its address
 ** as a cache key.
 */
-static void NativePointerHolder__set(JNIEnv * const env, S3JniNphRef const* pRef,
+static void NativePointerHolder__set(JNIEnv * const env, S3JniNphOp const* pRef,
                                      jobject ppOut, const void * p){
   assert( ppOut );
   (*env)->SetLongField(env, ppOut, s3jni_nphop_field(env, pRef), (jlong)p);
@@ -1392,7 +1384,7 @@ static void NativePointerHolder__set(JNIEnv * const env, S3JniNphRef const* pRef
 ** no-op if pObj is NULL.
 */
 static void * NativePointerHolder__get(JNIEnv * env, jobject pObj,
-                                       S3JniNphRef const* pRef){
+                                       S3JniNphOp const* pRef){
   void * rv = 0;
   if( pObj ){
     rv = (void*)(*env)->GetLongField(env, pObj, s3jni_nphop_field(env, pRef));
@@ -1570,7 +1562,7 @@ static void OutputPointer_set_Int64(JNIEnv * const env, jobject const jOut,
 ** Object type.
 */
 static void OutputPointer_set_obj(JNIEnv * const env,
-                                  S3JniNphRef const * const pRef,
+                                  S3JniNphOp const * const pRef,
                                   jobject const jOut,
                                   jobject v){
   (*env)->SetObjectField(env, jOut, s3jni_nphop_field(env, pRef), v);
@@ -1666,14 +1658,14 @@ static void ResultJavaValue_finalizer(void *v){
 ** if Java fails to allocate, but the JNI docs are not entirely clear
 ** on that detail.
 **
-** Always use a static pointer from the S3JniNphRefs struct for the
+** Always use a static pointer from the S3JniNphOps struct for the
 ** 2nd argument.
 */
 static jobject NativePointerHolder_new(JNIEnv * const env,
-                                       S3JniNphRef const * pRef,
+                                       S3JniNphOp const * pRef,
                                        const void * pNative){
   jobject rv = 0;
-  S3JniNphClass * const pNC = s3jni_nph(pRef);
+  S3JniNphOp * const pNC = s3jni_nphop(pRef);
   if( !pNC->midCtor ){
     S3JniNph_mutex_enter;
     if( !pNC->midCtor ){
@@ -1826,7 +1818,7 @@ static int udf_args(JNIEnv *env,
   *jArgv = 0;
   if( !jcx ) goto error_oom;
   ja = (*env)->NewObjectArray(
-    env, argc, s3jni_nph(S3JniNph(sqlite3_value))->klazz,
+    env, argc, s3jni_nphop(S3JniNph(sqlite3_value))->klazz,
     NULL);
   s3jni_oom_check( ja );
   if( !ja ) goto error_oom;
@@ -2113,12 +2105,12 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   if( 0==SJG.autoExt.nExt ) return 0;
   env = s3jni_env();
   jc = S3JniEnv_get();
-  S3JniAutoExt_mutex_enter;
+  S3JniDb_mutex_enter;
   ps = jc->pdbOpening ? jc->pdbOpening : S3JniDb_from_c(pDb);
   if( !ps ){
     *pzErr = sqlite3_mprintf("Unexpected arrival of null S3JniDb in "
                              "auto-extension runner.");
-    S3JniAutoExt_mutex_leave;
+    S3JniDb_mutex_leave;
     return SQLITE_ERROR;
   }
   assert( ps->jDb );
@@ -2128,7 +2120,7 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
                                 ps, 0/* we'll re-set this after open()
                                         completes. */);
     if( rc ){
-      S3JniAutoExt_mutex_leave;
+      S3JniDb_mutex_leave;
       return rc;
     }
   }
@@ -2136,7 +2128,7 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
     assert( ps == jc->pdbOpening );
     jc->pdbOpening = 0;
   }
-  S3JniAutoExt_mutex_leave;
+  S3JniDb_mutex_leave;
   NativePointerHolder_set(S3JniNph(sqlite3), ps->jDb, pDb)
     /* As of here, the Java/C connection is complete except for the
        (temporary) lack of finalizer for the ps object. */;
@@ -4442,10 +4434,12 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
   SO(S3JniEnv);
   SO(S3JniHook);
   SO(S3JniDb);
-  SO(S3JniNphRefs);
+  SO(S3JniNphOps);
   printf("\t(^^^ %u NativePointerHolder/OutputPointer.T types)\n",
          (unsigned)S3Jni_NphCache_size);
   SO(S3JniGlobal);
+  SO(S3JniGlobal.nph);
+  SO(S3JniGlobal.metrics);
   SO(S3JniAutoExtension);
   SO(S3JniUdf);
 #undef SO
@@ -4457,7 +4451,7 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
   printf("Mutex entry:"
          "\n\tglobal       = %u"
          "\n\tenv          = %u"
-         "\n\tnph          = %u for S3JniNphClass init"
+         "\n\tnph          = %u for S3JniNphOp init"
          "\n\tperDb        = %u"
          "\n\tautoExt list = %u"
          "\n\tS3JniUdf     = %u (free-list)"
@@ -5034,7 +5028,7 @@ static int s3jni_xTokenize_xToken(void *p, int tFlags, const char* z,
 ** Proxy for Fts5ExtensionApi.xTokenize() and
 ** fts5_tokenizer.xTokenize()
 */
-static jint s3jni_fts5_xTokenize(JniArgsEnvObj, S3JniNphRef const *pRef,
+static jint s3jni_fts5_xTokenize(JniArgsEnvObj, S3JniNphOp const *pRef,
                                  jint tokFlags, jobject jFcx,
                                  jbyteArray jbaText, jobject jCallback){
   Fts5ExtDecl;
