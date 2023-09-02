@@ -1590,6 +1590,7 @@ public class Tester1 implements Runnable {
     Integer nRepeat = 1;
     boolean forceFail = false;
     boolean sqlLog = false;
+    boolean configLog = false;
     boolean squelchTestOutput = false;
     for( int i = 0; i < args.length; ){
       String arg = args[i++];
@@ -1610,6 +1611,8 @@ public class Tester1 implements Runnable {
           forceFail = true;
         }else if(arg.equals("sqllog")){
           sqlLog = true;
+        }else if(arg.equals("configlog")){
+          configLog = true;
         }else if(arg.equals("naps")){
           takeNaps = true;
         }else if(arg.equals("q") || arg.equals("quiet")){
@@ -1633,7 +1636,7 @@ public class Tester1 implements Runnable {
           };
         int rc = sqlite3_config( log );
         affirm( 0==rc );
-        rc = sqlite3_config( null );
+        rc = sqlite3_config( (ConfigSqllogCallback)null );
         affirm( 0==rc );
         rc = sqlite3_config( log );
         affirm( 0==rc );
@@ -1641,6 +1644,19 @@ public class Tester1 implements Runnable {
         outln("WARNING: -sqllog is not active because library was built ",
               "without SQLITE_ENABLE_SQLLOG.");
       }
+    }
+    if( configLog ){
+      final ConfigLogCallback log = new ConfigLogCallback() {
+          @Override public void call(int code, String msg){
+            outln("ConfigLogCallback: ",ResultCode.getEntryForInt(code),": ", msg);
+          };
+        };
+      int rc = sqlite3_config( log );
+      affirm( 0==rc );
+      rc = sqlite3_config( (ConfigLogCallback)null );
+      affirm( 0==rc );
+      rc = sqlite3_config( log );
+      affirm( 0==rc );
     }
 
     quietMode = squelchTestOutput;

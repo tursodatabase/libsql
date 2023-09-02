@@ -657,16 +657,17 @@ struct S3JniGlobalType {
     } jPhraseIter;
   } fts5;
 #endif
-#ifdef SQLITE_ENABLE_SQLLOG
   struct {
+#ifdef SQLITE_ENABLE_SQLLOG
     S3JniHook sqllog      /* sqlite3_config(SQLITE_CONFIG_SQLLOG) callback */;
+#endif
+    S3JniHook configlog   /* sqlite3_config(SQLITE_CONFIG_LOG) callback */;
     S3JniHook * aFree     /* free-item list, for recycling. */;
     sqlite3_mutex * mutex /* mutex for aFree */;
     volatile const void * locker /* object on whose behalf the mutex
                                     is held.  Only for sanity checking
                                     in debug builds. */;
   } hook;
-#endif
 #ifdef SQLITE_JNI_ENABLE_METRICS
   /* Internal metrics. */
   struct {
@@ -2781,6 +2782,60 @@ S3JniApi(sqlite3_config() /*for a small subset of options.*/,
       return SQLITE_MISUSE;
   }
 }
+/* C-to-Java SQLITE_CONFIG_LOG wrapper. */
+static void s3jni_config_log(void *ignored, int errCode, const char *z){
+  S3JniDeclLocal_env;
+  S3JniHook hook = S3JniHook_empty;
+
+  S3JniHook_localdup(&SJG.hook.configlog, &hook);
+  if( hook.jObj ){
+    jstring const jArg1 = z ? s3jni_utf8_to_jstring(z, -1) : 0;
+    if( z ? !!jArg1 : 1 ){
+      (*env)->CallVoidMethod(env, hook.jObj, hook.midCallback, errCode, jArg1);
+    }
+    S3JniIfThrew{
+      S3JniExceptionWarnCallbackThrew("SQLITE_CONFIG_LOG callback");
+      S3JniExceptionClear;
+    }
+    S3JniHook_localundup(hook);
+    S3JniUnrefLocal(jArg1);
+  }
+}
+
+S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_LOG */,
+         jint, 1config__Lorg_sqlite_jni_ConfigLogCallback_2
+)(JniArgsEnvClass, jobject jLog){
+  S3JniHook * const pHook = &SJG.hook.configlog;
+  int rc = 0;
+
+  S3JniGlobal_mutex_enter;
+  if( !jLog ){
+    rc = sqlite3_config( SQLITE_CONFIG_LOG, NULL, NULL );
+    if( 0==rc ){
+      S3JniHook_unref(pHook);
+    }
+  }else if( pHook->jObj && (*env)->IsSameObject(env, jLog, pHook->jObj) ){
+    /* No-op */
+  }else {
+    jclass const klazz = (*env)->GetObjectClass(env, jLog);
+    jmethodID const midCallback = (*env)->GetMethodID(env, klazz, "call",
+                                                      "(ILjava/lang/String;)V");
+    S3JniUnrefLocal(klazz);
+    if( midCallback ){
+      rc = sqlite3_config( SQLITE_CONFIG_LOG, s3jni_config_log, NULL );
+      if( 0==rc ){
+        S3JniHook_unref(pHook);
+        pHook->midCallback = midCallback;
+        pHook->jObj = S3JniRefGlobal(jLog);
+      }
+    }else{
+      S3JniExceptionWarnIgnore;
+      rc = SQLITE_ERROR;
+    }
+  }
+  S3JniGlobal_mutex_leave;
+  return rc;
+}
 
 #ifdef SQLITE_ENABLE_SQLLOG
 /* C-to-Java SQLITE_CONFIG_SQLLOG wrapper. */
@@ -2822,10 +2877,9 @@ void sqlite3_init_sqllog(void){
 }
 #endif
 
-S3JniApi(sqlite3_config() /* for SQLLOG */,
+S3JniApi(sqlite3_config() /* for SQLITE_CONFIG_SQLLOG */,
          jint, 1config__Lorg_sqlite_jni_ConfigSqllogCallback_2)(
-           JniArgsEnvClass, jobject jLog
-         ){
+           JniArgsEnvClass, jobject jLog){
 #ifndef SQLITE_ENABLE_SQLLOG
   return SQLITE_MISUSE;
 #else
@@ -2834,7 +2888,7 @@ S3JniApi(sqlite3_config() /* for SQLLOG */,
 
   S3JniGlobal_mutex_enter;
   if( !jLog ){
-    rc = sqlite3_config( SQLITE_CONFIG_SQLLOG, s3jni_config_sqllog, 0 );
+    rc = sqlite3_config( SQLITE_CONFIG_SQLLOG, NULL );
     if( 0==rc ){
       S3JniHook_unref(pHook);
     }
@@ -2848,7 +2902,7 @@ S3JniApi(sqlite3_config() /* for SQLLOG */,
                                                       "I)V");
     S3JniUnrefLocal(klazz);
     if( midCallback ){
-      rc = sqlite3_config( SQLITE_CONFIG_SQLLOG, s3jni_config_sqllog, 0 );
+      rc = sqlite3_config( SQLITE_CONFIG_SQLLOG, s3jni_config_sqllog, NULL );
       if( 0==rc ){
         S3JniHook_unref(pHook);
         pHook->midCallback = midCallback;
@@ -2988,6 +3042,7 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2()
     S3JniUdf_free(env, s, 1);
     goto error_cleanup;
   }
+  s->zFuncName = zFuncName /* pass on ownership */;
   if( UDF_WINDOW == s->type ){
     rc = sqlite3_create_window_function(pDb, zFuncName, nArg, eTextRep, s,
                                         udf_xStep, udf_xFinal, udf_xValue,
@@ -3009,7 +3064,6 @@ S3JniApi(sqlite3_create_function() sqlite3_create_function_v2()
 error_cleanup:
   /* Reminder: on sqlite3_create_function() error, s will be
   ** destroyed via create_function(). */
-  sqlite3_free(zFuncName);
   return (jint)rc;
 }
 
@@ -4058,6 +4112,10 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
   JniArgsEnvClass
 ){
   s3jni_reset_auto_extension(env);
+#ifdef SQLITE_ENABLE_SQLLOG
+  S3JniHook_unref(&SJG.hook.sqllog);
+#endif
+  S3JniHook_unref(&SJG.hook.configlog);
   /* Free up S3JniDb recycling bin. */
   S3JniDb_mutex_enter; {
     while( S3JniGlobal.perDb.aFree ){

@@ -563,10 +563,16 @@ public final class SQLite3Jni {
      <p>Note that sqlite3_config() is not threadsafe with regards to
      the rest of the library. This must not be called when any other
      library APIs are being called.
-
   */
   @Canonical(comment="Option subset: SQLITE_CONFIG_SQLLOG")
   public static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
+
+  /**
+     The sqlite3_config() overload for handling the SQLITE_CONFIG_LOG
+     option.
+  */
+  @Canonical(comment="Option subset: SQLITE_CONFIG_LOG")
+  public static native int sqlite3_config( @Nullable ConfigLogCallback logger );
 
   @Canonical
   public static native sqlite3 sqlite3_context_db_handle(

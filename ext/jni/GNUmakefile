@@ -77,6 +77,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   CollationCallback.java \
   CollationNeededCallback.java \
   CommitHookCallback.java \
+  ConfigLogCallback.java \
   ConfigSqllogCallback.java \
   NativePointerHolder.java \
   OutputPointer.java \

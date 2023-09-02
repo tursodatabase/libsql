@@ -1149,6 +1149,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__Lorg_sqli
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_config
+ * Signature: (Lorg/sqlite/jni/ConfigLogCallback;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__Lorg_sqlite_jni_ConfigLogCallback_2
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_context_db_handle
  * Signature: (Lorg/sqlite/jni/sqlite3_context;)Lorg/sqlite/jni/sqlite3;
  */
