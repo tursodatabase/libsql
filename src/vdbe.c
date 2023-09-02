@@ -3641,7 +3641,6 @@ case OP_MakeRecord: {
         /* NULL value.  No change in zPayload */
       }else{
         u64 v;
-        u32 i;
         if( serial_type==7 ){
           assert( sizeof(v)==sizeof(pRec->u.r) );
           memcpy(&v, &pRec->u.r, sizeof(v));
@@ -3649,12 +3648,17 @@ case OP_MakeRecord: {
         }else{
           v = pRec->u.i;
         }
-        len = i = sqlite3SmallTypeSizes[serial_type];
-        assert( i>0 );
-        while( 1 /*exit-by-break*/ ){
-          zPayload[--i] = (u8)(v&0xFF);
-          if( i==0 ) break;
-          v >>= 8;
+        len = sqlite3SmallTypeSizes[serial_type];
+        assert( len>=1 && len<=8 && len!=5 && len!=7 );
+        switch( len ){
+          default: zPayload[7] = (u8)(v&0xff); v >>= 8;
+                   zPayload[6] = (u8)(v&0xff); v >>= 8;
+          case 6:  zPayload[5] = (u8)(v&0xff); v >>= 8;
+                   zPayload[4] = (u8)(v&0xff); v >>= 8;
+          case 4:  zPayload[3] = (u8)(v&0xff); v >>= 8;
+          case 3:  zPayload[2] = (u8)(v&0xff); v >>= 8;
+          case 2:  zPayload[1] = (u8)(v&0xff); v >>= 8;
+          case 1:  zPayload[0] = (u8)(v&0xff);
         }
         zPayload += len;
       }
