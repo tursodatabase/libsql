@@ -230,6 +230,7 @@ public final class SQLite3Jni {
     @NotNull sqlite3_stmt stmt, @NotNull byte[] paramName
   );
 
+  @Canonical
   public static int sqlite3_bind_parameter_index(
     @NotNull sqlite3_stmt stmt, @NotNull String paramName
   ){
@@ -496,11 +497,6 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native sqlite3 sqlite3_context_db_handle(
-    @NotNull sqlite3_context cx
-  );
-
-  @Canonical
   public static native CommitHookCallback sqlite3_commit_hook(
     @NotNull sqlite3 db, @Nullable CommitHookCallback hook
   );
@@ -514,6 +510,24 @@ public final class SQLite3Jni {
   public static native boolean sqlite3_compileoption_used(
     @NotNull String optName
   );
+
+  /**
+     This implementation is private because it's too easy to pass it
+     non-NUL-terminated arrays.
+  */
+  @Canonical
+  private static native int sqlite3_complete(
+    @NotNull byte[] nulTerminatedUtf8Sql
+  );
+
+  @Canonical()
+  public static int sqlite3_complete(@NotNull String sql){
+    /* Design note: we don't implement this in native code because we
+       won't get a NUL-terminated string there unless we make our own
+       copy to add a terminator. That's much easier to do here. */
+    return sqlite3_complete( (sql+"\0").getBytes(StandardCharsets.UTF_8) );
+  }
+
 
   /**
      <p>Works like in the C API with the exception that it only supports
@@ -553,6 +567,11 @@ public final class SQLite3Jni {
   */
   @Canonical(comment="Option subset: SQLITE_CONFIG_SQLLOG")
   public static native int sqlite3_config( @Nullable ConfigSqllogCallback logger );
+
+  @Canonical
+  public static native sqlite3 sqlite3_context_db_handle(
+    @NotNull sqlite3_context cx
+  );
 
   @Canonical
   public static native int sqlite3_create_collation(
@@ -761,6 +780,7 @@ public final class SQLite3Jni {
 
      <p>Several overloads provided simplified call signatures.
   */
+  @Canonical
   public static int sqlite3_prepare(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
@@ -815,6 +835,7 @@ public final class SQLite3Jni {
      output paramter is returned as the index offset into the given
      byte array at which SQL parsing stopped.
   */
+  @Canonical
   public static int sqlite3_prepare_v2(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
@@ -865,6 +886,7 @@ public final class SQLite3Jni {
      output paramter is returned as the index offset into the given
      byte array at which SQL parsing stopped.
   */
+  @Canonical
   public static int sqlite3_prepare_v3(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int prepFlags,
     @NotNull OutputPointer.sqlite3_stmt outStmt,
@@ -998,20 +1020,22 @@ public final class SQLite3Jni {
      The main sqlite3_result_error() impl of which all others are
      proxies. eTextRep must be one of SQLITE_UTF8 or SQLITE_UTF16 and
      msg must be encoded correspondingly. Any other eTextRep value
-     results in the C-level sqlite3_result_error() being called with
-     a complaint about the invalid argument.
+     results in the C-level sqlite3_result_error() being called with a
+     complaint about the invalid argument.
   */
   @Canonical
   private static native void sqlite3_result_error(
     @NotNull sqlite3_context cx, @NotNull byte[] msg, int eTextRep
   );
 
+  @Canonical
   public static void sqlite3_result_error(
     @NotNull sqlite3_context cx, @NotNull byte[] utf8
   ){
     sqlite3_result_error(cx, utf8, SQLITE_UTF8);
   }
 
+  @Canonical
   public static void sqlite3_result_error(
     @NotNull sqlite3_context cx, @NotNull String msg
   ){
@@ -1178,6 +1202,7 @@ public final class SQLite3Jni {
     @NotNull sqlite3_context cx, @Nullable byte[] blob, int maxLen
   );
 
+  @Canonical
   public static void sqlite3_result_blob(
     @NotNull sqlite3_context cx, @Nullable byte[] blob
   ){
@@ -1207,6 +1232,7 @@ public final class SQLite3Jni {
     @NotNull sqlite3_context cx, @Nullable byte[] blob, long maxLen
   );
 
+  @Canonical
   public static void sqlite3_result_blob64(
     @NotNull sqlite3_context cx, @Nullable byte[] blob
   ){
@@ -1222,12 +1248,14 @@ public final class SQLite3Jni {
     @NotNull sqlite3_context cx, @Nullable byte[] utf8, int maxLen
   );
 
+  @Canonical
   public static void sqlite3_result_text(
     @NotNull sqlite3_context cx, @Nullable byte[] utf8
   ){
     sqlite3_result_text(cx, utf8, null==utf8 ? 0 : utf8.length);
   }
 
+  @Canonical
   public static void sqlite3_result_text(
     @NotNull sqlite3_context cx, @Nullable String text
   ){
@@ -1271,12 +1299,14 @@ public final class SQLite3Jni {
      Sets the current UDF result to the given bytes, which are assumed
      be encoded in UTF-16 using the platform's byte order.
   */
+  @Canonical
   public static void sqlite3_result_text16(
     @NotNull sqlite3_context cx, @Nullable byte[] utf16
   ){
     sqlite3_result_text64(cx, utf16, utf16.length, SQLITE_UTF16);
   }
 
+  @Canonical
   public static void sqlite3_result_text16(
     @NotNull sqlite3_context cx, @Nullable String text
   ){
@@ -1363,9 +1393,10 @@ public final class SQLite3Jni {
   */
   @Canonical
   private static native int sqlite3_strglob(
-    @NotNull byte[] glob, @NotNull byte[] txt
+    @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8
   );
 
+  @Canonical
   public static int sqlite3_strglob(
     @NotNull String glob, @NotNull String txt
   ){
@@ -1380,9 +1411,11 @@ public final class SQLite3Jni {
   */
   @Canonical
   private static native int sqlite3_strlike(
-    @NotNull byte[] glob, @NotNull byte[] txt, int escChar
+    @NotNull byte[] glob, @NotNull byte[] nullTerminatedUtf8,
+    int escChar
   );
 
+  @Canonical
   public static int sqlite3_strlike(
     @NotNull String glob, @NotNull String txt, char escChar
   ){

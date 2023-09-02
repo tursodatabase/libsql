@@ -1472,6 +1472,12 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
+  private void testComplete(){
+    affirm( 0==sqlite3_complete("select 1") );
+    affirm( 0!=sqlite3_complete("select 1;") );
+    affirm( 0!=sqlite3_complete("nope 'nope' 'nope' 1;"), "Yup" );
+  }
+
   /* Copy/paste/rename this to add new tests. */
   private void _testTemplate(){
     final sqlite3 db = createNewDb();

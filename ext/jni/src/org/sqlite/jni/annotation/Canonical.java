@@ -10,9 +10,13 @@ package org.sqlite.jni.annotation;
    same semantics as their counterparts in <a
    href="https://sqlite.org/c3ref/intro.html">the C API
    documentation</a>, despite their signatures perhaps differing
-   slightly. The Java API adds a number of overloads to simplify use,
-   as well as a few Java-specific functions, and those are never
-   flagged as @Canonical.
+   slightly. Canonical forms may be native or implemented in Java.
+   Sometimes multiple overloads are labeled as Canonical because one
+   or more of them are just type- or encoding-related conversion
+   wrappers but provide identical semantics (e.g. from a String to a
+   byte[]).  The Java API adds a number of convenience overloads to
+   simplify use, as well as a few Java-specific functions, and those
+   are never flagged as @Canonical.
 
    <p>In some cases, the canonical version of a function is private
    and exposed to Java via public overloads.

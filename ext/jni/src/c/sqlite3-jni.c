@@ -2743,6 +2743,22 @@ S3JniApi(sqlite3_compileoption_get(),jstring,1compileoption_1get)(
   return rv;
 }
 
+S3JniApi(sqlite3_complete(),int,1complete)(
+  JniArgsEnvClass, jbyteArray jSql
+){
+  jbyte * const pBuf = s3jni_jbytearray_bytes(jSql);
+  const jsize nBa = pBuf ? (*env)->GetArrayLength(env, jSql) : 0;
+  int rc;
+
+  assert( (nBa>0 ? 0==pBuf[nBa-1] : (pBuf ? 0==*pBuf : 1))
+          && "Byte array is not NUL-terminated." );
+  rc = (pBuf && 0==pBuf[(nBa ? nBa-1 : 0)])
+    ? sqlite3_complete( (const char *)pBuf )
+    : (jSql ? SQLITE_NOMEM : SQLITE_ERROR);
+  s3jni_jbytearray_release(jSql, pBuf);
+  return rc;
+}
+
 S3JniApi(sqlite3_compileoption_used(),jboolean,1compileoption_1used)(
   JniArgsEnvClass, jstring name
 ){

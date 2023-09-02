@@ -1101,14 +1101,6 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1collation_1needed
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_context_db_handle
- * Signature: (Lorg/sqlite/jni/sqlite3_context;)Lorg/sqlite/jni/sqlite3;
- */
-JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1context_1db_1handle
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_commit_hook
  * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/CommitHookCallback;)Lorg/sqlite/jni/CommitHookCallback;
  */
@@ -1133,6 +1125,14 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1compileoption
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_complete
+ * Signature: ([B)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1complete
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_config
  * Signature: (I)I
  */
@@ -1145,6 +1145,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__I
  * Signature: (Lorg/sqlite/jni/ConfigSqllogCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__Lorg_sqlite_jni_ConfigSqllogCallback_2
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_context_db_handle
+ * Signature: (Lorg/sqlite/jni/sqlite3_context;)Lorg/sqlite/jni/sqlite3;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1context_1db_1handle
   (JNIEnv *, jclass, jobject);
 
 /*

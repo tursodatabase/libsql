@@ -40,16 +40,23 @@ public class TesterFts5 {
     final fts5_extension_function func = new fts5_extension_function(){
         @Override public void call(Fts5ExtensionApi ext, Fts5Context fCx,
                                    sqlite3_context pCx, sqlite3_value argv[]){
-          int nCols = ext.xColumnCount(fCx);
+          final int nCols = ext.xColumnCount(fCx);
           affirm( 2 == nCols );
           affirm( nCols == argv.length );
           affirm( ext.xUserData(fCx) == pUserData );
           final OutputPointer.String op = new OutputPointer.String();
+          final OutputPointer.Int32 colsz = new OutputPointer.Int32();
+          final OutputPointer.Int64 colTotalSz = new OutputPointer.Int64();
           for(int i = 0; i < nCols; ++i ){
             int rc = ext.xColumnText(fCx, i, op);
             affirm( 0 == rc );
             final String val = op.value;
             affirm( val.equals(sqlite3_value_text16(argv[i])) );
+            rc = ext.xColumnSize(fCx, i, colsz);
+            affirm( 0==rc );
+            affirm( 3==sqlite3_value_bytes(argv[i]) );
+            rc = ext.xColumnTotalSize(fCx, i, colTotalSz);
+            affirm( 0==rc );
           }
           ++xFuncCount.value;
         }
