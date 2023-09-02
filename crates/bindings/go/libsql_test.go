@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func executeSql(t *testing.T, primaryUrl, sql string) {
+func executeSql(t *testing.T, primaryUrl, authToken, sql string) {
 	type statement struct {
 		Query string `json:"q"`
 	}
@@ -56,6 +56,11 @@ func executeSql(t *testing.T, primaryUrl, sql string) {
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	if authToken != "" {
+		req.Header.Set("Authorization", "Bearer "+authToken)
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatal(err)
@@ -90,44 +95,45 @@ func executeSql(t *testing.T, primaryUrl, sql string) {
 	}
 }
 
-func insertRow(t *testing.T, dbUrl, tableName string, id int) {
-	executeSql(t, dbUrl, fmt.Sprintf("INSERT INTO %s (id, name, gpa, cv) VALUES (%d, '%d', %d.5, randomblob(10));", tableName, id, id, id))
+func insertRow(t *testing.T, dbUrl, authToken, tableName string, id int) {
+	executeSql(t, dbUrl, authToken, fmt.Sprintf("INSERT INTO %s (id, name, gpa, cv) VALUES (%d, '%d', %d.5, randomblob(10));", tableName, id, id, id))
 }
 
-func insertRows(t *testing.T, dbUrl, tableName string, start, count int) {
+func insertRows(t *testing.T, dbUrl, authToken, tableName string, start, count int) {
 	for i := 0; i < count; i++ {
-		insertRow(t, dbUrl, tableName, start+i)
+		insertRow(t, dbUrl, authToken, tableName, start+i)
 	}
 }
 
-func createTable(t *testing.T, dbPath string) string {
+func createTable(t *testing.T, dbPath, authToken string) string {
 	tableName := fmt.Sprintf("test_%d", time.Now().UnixNano())
-	executeSql(t, dbPath, fmt.Sprintf("CREATE TABLE %s (id INTEGER, name TEXT, gpa REAL, cv BLOB);", tableName))
+	executeSql(t, dbPath, authToken, fmt.Sprintf("CREATE TABLE %s (id INTEGER, name TEXT, gpa REAL, cv BLOB);", tableName))
 	return tableName
 }
 
-func removeTable(t *testing.T, dbPath, tableName string) {
-	executeSql(t, dbPath, fmt.Sprintf("DROP TABLE %s;", tableName))
+func removeTable(t *testing.T, dbPath, authToken, tableName string) {
+	executeSql(t, dbPath, authToken, fmt.Sprintf("DROP TABLE %s;", tableName))
 }
 
-func testSync(t *testing.T, connect func(dbPath, primaryUrl string) *Connector, sync func(connector *Connector)) {
+func testSync(t *testing.T, connect func(dbPath, primaryUrl, authToken string) *Connector, sync func(connector *Connector)) {
 	primaryUrl := os.Getenv("LIBSQL_PRIMARY_URL")
 	if primaryUrl == "" {
 		t.Skip("LIBSQL_PRIMARY_URL is not set")
 		return
 	}
-	tableName := createTable(t, primaryUrl)
-	defer removeTable(t, primaryUrl, tableName)
+	authToken := os.Getenv("LIBSQL_AUTH_TOKEN")
+	tableName := createTable(t, primaryUrl, authToken)
+	defer removeTable(t, primaryUrl, authToken, tableName)
 
 	initialRowsCount := 5
-	insertRows(t, primaryUrl, tableName, 0, initialRowsCount)
+	insertRows(t, primaryUrl, authToken, tableName, 0, initialRowsCount)
 	dir, err := os.MkdirTemp("", "libsql-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 
-	connector := connect(dir+"/test.db", primaryUrl)
+	connector := connect(dir+"/test.db", primaryUrl, authToken)
 	db := sql.OpenDB(connector)
 	defer db.Close()
 
@@ -186,7 +192,7 @@ func testSync(t *testing.T, connect func(dbPath, primaryUrl string) *Connector, 
 			}
 		}()
 		if iter+1 != iterCount {
-			insertRow(t, primaryUrl, tableName, initialRowsCount+iter)
+			insertRow(t, primaryUrl, authToken, tableName, initialRowsCount+iter)
 			sync(connector)
 		}
 	}
@@ -194,8 +200,8 @@ func testSync(t *testing.T, connect func(dbPath, primaryUrl string) *Connector, 
 
 func TestAutoSync(t *testing.T) {
 	syncInterval := 1 * time.Second
-	testSync(t, func(dbPath, primaryUrl string) *Connector {
-		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, syncInterval)
+	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
+		connector, err := NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken, syncInterval)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -206,8 +212,8 @@ func TestAutoSync(t *testing.T) {
 }
 
 func TestSync(t *testing.T) {
-	testSync(t, func(dbPath, primaryUrl string) *Connector {
-		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl)
+	testSync(t, func(dbPath, primaryUrl, authToken string) *Connector {
+		connector, err := NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken)
 		if err != nil {
 			t.Fatal(err)
 		}

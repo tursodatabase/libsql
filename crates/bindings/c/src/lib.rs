@@ -50,6 +50,7 @@ pub unsafe extern "C" fn libsql_sync(
 pub unsafe extern "C" fn libsql_open_sync(
     db_path: *const std::ffi::c_char,
     primary_url: *const std::ffi::c_char,
+    auth_token: *const std::ffi::c_char,
     out_db: *mut libsql_database_t,
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
@@ -66,13 +67,21 @@ pub unsafe extern "C" fn libsql_open_sync(
         Ok(url) => url,
         Err(e) => {
             set_err_msg(format!("Wrong URL: {}", e.to_string()), out_err_msg);
-            return 1;
+            return 2;
+        }
+    };
+    let auth_token = unsafe { std::ffi::CStr::from_ptr(auth_token) };
+    let auth_token = match auth_token.to_str() {
+        Ok(token) => token,
+        Err(e) => {
+            set_err_msg(format!("Wrong Auth Token: {}", e.to_string()), out_err_msg);
+            return 3;
         }
     };
     match RT.block_on(libsql::v2::Database::open_with_sync(
         db_path.to_string(),
         primary_url,
-        "",
+        auth_token,
     )) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));

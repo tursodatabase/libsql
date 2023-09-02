@@ -29,12 +29,12 @@ func init() {
 	sql.Register("libsql", driver{})
 }
 
-func NewEmbeddedReplicaConnector(dbPath, primaryUrl string) (*Connector, error) {
-	return openConnector(dbPath, primaryUrl, 0)
+func NewEmbeddedReplicaConnector(dbPath, primaryUrl, authToken string) (*Connector, error) {
+	return openConnector(dbPath, primaryUrl, authToken, 0)
 }
 
-func NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl string, syncInterval time.Duration) (*Connector, error) {
-	return openConnector(dbPath, primaryUrl, syncInterval)
+func NewEmbeddedReplicaConnectorWithAutoSync(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
+	return openConnector(dbPath, primaryUrl, authToken, syncInterval)
 }
 
 type driver struct{}
@@ -48,7 +48,7 @@ func (d driver) Open(dbPath string) (sqldriver.Conn, error) {
 }
 
 func (d driver) OpenConnector(dbPath string) (sqldriver.Connector, error) {
-	return openConnector(dbPath, "", 0)
+	return openConnector(dbPath, "", "", 0)
 }
 
 func libsqlSync(nativeDbPtr C.libsql_database_t) error {
@@ -60,13 +60,13 @@ func libsqlSync(nativeDbPtr C.libsql_database_t) error {
 	return nil
 }
 
-func openConnector(dbPath, primaryUrl string, syncInterval time.Duration) (*Connector, error) {
+func openConnector(dbPath, primaryUrl, authToken string, syncInterval time.Duration) (*Connector, error) {
 	var nativeDbPtr C.libsql_database_t
 	var err error
 	var closeCh chan struct{}
 	var closeAckCh chan struct{}
 	if primaryUrl != "" {
-		nativeDbPtr, err = libsqlOpenWithSync(dbPath, primaryUrl)
+		nativeDbPtr, err = libsqlOpenWithSync(dbPath, primaryUrl, authToken)
 		if err != nil {
 			return nil, err
 		}
@@ -160,15 +160,17 @@ func libsqlOpen(dataSourceName string) (C.libsql_database_t, error) {
 	return db, nil
 }
 
-func libsqlOpenWithSync(dbPath, primaryUrl string) (C.libsql_database_t, error) {
+func libsqlOpenWithSync(dbPath, primaryUrl, authToken string) (C.libsql_database_t, error) {
 	dbPathNativeString := C.CString(dbPath)
 	defer C.free(unsafe.Pointer(dbPathNativeString))
 	primaryUrlNativeString := C.CString(primaryUrl)
 	defer C.free(unsafe.Pointer(primaryUrlNativeString))
+	authTokenNativeString := C.CString(authToken)
+	defer C.free(unsafe.Pointer(authTokenNativeString))
 
 	var db C.libsql_database_t
 	var errMsg *C.char
-	statusCode := C.libsql_open_sync(dbPathNativeString, primaryUrlNativeString, &db, &errMsg)
+	statusCode := C.libsql_open_sync(dbPathNativeString, primaryUrlNativeString, authTokenNativeString, &db, &errMsg)
 	if statusCode != 0 {
 		return nil, libsqlError(fmt.Sprintf("failed to open database %s %s", dbPath, primaryUrl), statusCode, errMsg)
 	}
