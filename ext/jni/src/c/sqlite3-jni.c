@@ -2268,9 +2268,7 @@ S3JniApi(sqlite3_backup_init(),jobject,1backup_1init)(
       sqlite3_backup_init(pDest, zDest, pSrc, zSrc);
     if( pB ){
       rv = new_java_sqlite3_backup(env, pB);
-      if( rv ){
-        NativePointerHolder_set(S3JniNph(sqlite3_backup), rv, pB);
-      }else{
+      if( !rv ){
         sqlite3_backup_finish( pB );
       }
     }
