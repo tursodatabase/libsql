@@ -1522,6 +1522,20 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db2);
   }
 
+  private void testRandomness(){
+    byte[] foo = new byte[20];
+    int i = 0;
+    for( byte b : foo ){
+      i += b;
+    }
+    affirm( i==0 );
+    sqlite3_randomness(foo);
+    for( byte b : foo ){
+      if(b!=0) ++i;
+    }
+    affirm( i!=0, "There's a very slight chance that 0 is actually correct." );
+  }
+
   /* Copy/paste/rename this to add new tests. */
   private void _testTemplate(){
     final sqlite3 db = createNewDb();

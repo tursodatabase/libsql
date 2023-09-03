@@ -1533,6 +1533,14 @@ JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1progress_1handler
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_randomness
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1randomness
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_release_memory
  * Signature: (I)I
  */

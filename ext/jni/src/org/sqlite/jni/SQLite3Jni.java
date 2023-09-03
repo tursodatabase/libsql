@@ -1041,6 +1041,9 @@ public final class SQLite3Jni {
   );
 
   @Canonical
+  public static native void sqlite3_randomness(byte[] target);
+
+  @Canonical
   public static native int sqlite3_release_memory(int n);
 
   @Canonical
