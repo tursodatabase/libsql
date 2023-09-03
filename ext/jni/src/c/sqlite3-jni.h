@@ -1325,6 +1325,14 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errstr
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_get_autocommit
+ * Signature: (Lorg/sqlite/jni/sqlite3;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1autocommit
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_error_offset
  * Signature: (Lorg/sqlite/jni/sqlite3;)I
  */

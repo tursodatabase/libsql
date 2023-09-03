@@ -1436,7 +1436,9 @@ public class Tester1 implements Runnable {
   private void testTxnState(){
     final sqlite3 db = createNewDb();
     affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
+    affirm( sqlite3_get_autocommit(db) );
     execSql(db, "BEGIN;");
+    affirm( !sqlite3_get_autocommit(db) );
     affirm( SQLITE_TXN_NONE == sqlite3_txn_state(db, null) );
     execSql(db, "SELECT * FROM sqlite_schema;");
     affirm( SQLITE_TXN_READ == sqlite3_txn_state(db, "main") );

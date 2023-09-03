@@ -682,6 +682,9 @@ public final class SQLite3Jni {
   @Canonical
   public static native String sqlite3_errstr(int resultCode);
 
+  @Canonical
+  public static native boolean sqlite3_get_autocommit(@NotNull sqlite3 db);
+
   /**
      Note that the returned byte offset values assume UTF-8-encoded
      inputs, so won't always match character offsets in Java Strings.

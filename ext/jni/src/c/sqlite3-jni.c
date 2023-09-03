@@ -2038,6 +2038,11 @@ static void udf_xInverse(sqlite3_context* cx, int argc,
   JniDecl(jint,JniNameSuffix)(JniArgsEnvClass, jobject pDb){ \
     return (jint)CName(PtrGet_sqlite3(pDb));                 \
   }
+/** Create a trivial JNI wrapper for (boolean CName(sqlite3*)). */
+#define WRAP_BOOL_DB(JniNameSuffix,CName)                     \
+  JniDecl(jboolean,JniNameSuffix)(JniArgsEnvClass, jobject pDb){ \
+    return CName(PtrGet_sqlite3(pDb)) ? JNI_TRUE : JNI_FALSE; \
+  }
 /** Create a trivial JNI wrapper for (int64 CName(sqlite3*)). */
 #define WRAP_INT64_DB(JniNameSuffix,CName)                    \
   JniDecl(jlong,JniNameSuffix)(JniArgsEnvClass, jobject pDb){ \
@@ -2065,6 +2070,7 @@ WRAP_INT_STMT_INT(1column_1type,       sqlite3_column_type)
 WRAP_INT_STMT(1data_1count,            sqlite3_data_count)
 WRAP_INT_DB(1error_1offset,            sqlite3_error_offset)
 WRAP_INT_DB(1extended_1errcode,        sqlite3_extended_errcode)
+WRAP_BOOL_DB(1get_1autocommit,         sqlite3_get_autocommit)
 WRAP_MUTF8_VOID(1libversion,           sqlite3_libversion)
 WRAP_INT_VOID(1libversion_1number,     sqlite3_libversion_number)
 WRAP_INT_VOID(1keyword_1count,         sqlite3_keyword_count)
@@ -2091,6 +2097,7 @@ WRAP_INT_SVALUE(1value_1numeric_1type, sqlite3_value_numeric_type)
 WRAP_INT_SVALUE(1value_1subtype,       sqlite3_value_subtype)
 WRAP_INT_SVALUE(1value_1type,          sqlite3_value_type)
 
+#undef WRAP_BOOL_DB
 #undef WRAP_INT64_DB
 #undef WRAP_INT_DB
 #undef WRAP_INT_INT
