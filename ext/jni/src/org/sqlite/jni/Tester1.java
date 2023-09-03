@@ -1500,14 +1500,17 @@ public class Tester1 implements Runnable {
     affirm( null==sqlite3_backup_init(db1,"main",db1,"main") );
     final sqlite3_backup b = sqlite3_backup_init(db2,"main",db1,"main");
     affirm( null!=b );
+    affirm( b.getNativePointer()!=0 );
     int rc;
     while( SQLITE_DONE!=(rc = sqlite3_backup_step(b, 1)) ){
       affirm( 0==rc );
     }
     affirm( sqlite3_backup_pagecount(b) > 0 );
     rc = sqlite3_backup_finish(b);
-    sqlite3_close_v2(db1);
     affirm( 0==rc );
+    affirm( b.getNativePointer()==0 );
+
+    sqlite3_close_v2(db1);
 
     final sqlite3_stmt stmt = prepare(db2,"SELECT sum(a) from t");
     sqlite3_step(stmt);

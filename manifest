@@ -1,5 +1,5 @@
-C Export\sthe\ssqlite3_backup_...()\sAPIs\sto\sJNI.
-D 2023-09-03T10:23:03.357
+C Add\sa\scouple\smore\ssqlite3_backup\stests.
+D 2023-09-03T10:36:21.861
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -265,7 +265,7 @@ F ext/jni/src/org/sqlite/jni/SQLFunction.java 544a875d33fd160467d82e2397ac33157b
 F ext/jni/src/org/sqlite/jni/SQLite3Jni.java 38126c76219a61ec19c972e1162b4fb4311b99f201fd986b262275dbdadeac9d
 F ext/jni/src/org/sqlite/jni/ScalarFunction.java 6d387bb499fbe3bc13c53315335233dbf6a0c711e8fa7c521683219b041c614c
 F ext/jni/src/org/sqlite/jni/TableColumnMetadata.java 54511b4297fa28dcb3f49b24035e34ced10e3fd44fd0e458e784f4d6b0096dab
-F ext/jni/src/org/sqlite/jni/Tester1.java 48ffe327cae2d599059cf4ec026bd3bf11d743efd6a13dc61b9c21122efc39c8
+F ext/jni/src/org/sqlite/jni/Tester1.java 50a7816c5bf89310f3eecc258de751fbc9d085b4a5e6972a033c6c80f38504e9
 F ext/jni/src/org/sqlite/jni/TesterFts5.java 1d127690daac4751300b277a14c09faa0cefd1efa365580cd8d95ea658e1ee59
 F ext/jni/src/org/sqlite/jni/TraceV2Callback.java beb0b064c1a5f8bfe585a324ed39a4e33edbe379a3fc60f1401661620d3ca7c0
 F ext/jni/src/org/sqlite/jni/UpdateHookCallback.java 8376f4a931f2d5612b295c003c9515ba933ee76d8f95610e89c339727376e36c
@@ -2117,8 +2117,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P bd554db39159d8a538ce913d55285e3c417db8823c717a3e34bfa0678de42be7
-R cb965cc2f3508a211c89a61afe16623f
+P 865a3df5d550f6f4edbf95854750706e4e747d8f1825ae73d300b8e31934959b
+R ca57ffa1c47e32218d423204c262cc23
 U stephan
-Z b11611848e8e630b2ee28833698b37c5
+Z e97299a93ec066b0b9a25543267c80c7
 # Remove this line to create a well-formed Fossil manifest.
