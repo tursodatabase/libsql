@@ -813,6 +813,46 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1auto_1extension
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_finish
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1finish
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_init
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;Lorg/sqlite/jni/sqlite3;Ljava/lang/String;)Lorg/sqlite/jni/sqlite3_backup;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1init
+  (JNIEnv *, jclass, jobject, jstring, jobject, jstring);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_pagecount
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1pagecount
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_remaining
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1remaining
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_step
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;I)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1step
+  (JNIEnv *, jclass, jobject, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_bind_blob
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I[BI)I
  */

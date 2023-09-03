@@ -335,8 +335,9 @@ struct S3JniNphOp {
 */
 static const struct {
   const S3JniNphOp sqlite3;
-  const S3JniNphOp sqlite3_stmt;
+  const S3JniNphOp sqlite3_backup;
   const S3JniNphOp sqlite3_context;
+  const S3JniNphOp sqlite3_stmt;
   const S3JniNphOp sqlite3_value;
   const S3JniNphOp OutputPointer_Bool;
   const S3JniNphOp OutputPointer_Int32;
@@ -361,26 +362,27 @@ static const struct {
 /* OutputPointer.T ref */
 #define RefO(INDEX, KLAZZ, SIG) MkRef(INDEX, KLAZZ, "value", SIG)
   RefN(0,  "sqlite3"),
-  RefN(1,  "sqlite3_stmt"),
+  RefN(1,  "sqlite3_backup"),
   RefN(2,  "sqlite3_context"),
-  RefN(3,  "sqlite3_value"),
-  RefO(4,  "OutputPointer$Bool",  "Z"),
-  RefO(5,  "OutputPointer$Int32", "I"),
-  RefO(6,  "OutputPointer$Int64", "J"),
-  RefO(7,  "OutputPointer$sqlite3",
+  RefN(3,  "sqlite3_stmt"),
+  RefN(4,  "sqlite3_value"),
+  RefO(5,  "OutputPointer$Bool",  "Z"),
+  RefO(6,  "OutputPointer$Int32", "I"),
+  RefO(7,  "OutputPointer$Int64", "J"),
+  RefO(8,  "OutputPointer$sqlite3",
            "Lorg/sqlite/jni/sqlite3;"),
-  RefO(8,  "OutputPointer$sqlite3_stmt",
+  RefO(9,  "OutputPointer$sqlite3_stmt",
            "Lorg/sqlite/jni/sqlite3_stmt;"),
-  RefO(9,  "OutputPointer$sqlite3_value",
+  RefO(10, "OutputPointer$sqlite3_value",
            "Lorg/sqlite/jni/sqlite3_value;"),
-  RefO(10, "OutputPointer$String", "Ljava/lang/String;"),
+  RefO(11, "OutputPointer$String", "Ljava/lang/String;"),
 #ifdef SQLITE_ENABLE_FTS5
-  RefO(11, "OutputPointer$ByteArray", "[B"),
-  RefN(12, "Fts5Context"),
-  RefN(13, "Fts5ExtensionApi"),
-  RefN(14, "fts5_api"),
-  RefN(15, "fts5_tokenizer"),
-  RefN(16, "Fts5Tokenizer")
+  RefO(12, "OutputPointer$ByteArray", "[B"),
+  RefN(13, "Fts5Context"),
+  RefN(14, "Fts5ExtensionApi"),
+  RefN(15, "fts5_api"),
+  RefN(16, "fts5_tokenizer"),
+  RefN(17, "Fts5Tokenizer")
 #endif
 #undef MkRef
 #undef RefN
@@ -1376,30 +1378,30 @@ static jfieldID s3jni_nphop_field(JNIEnv * const env, S3JniNphOp const* pRef){
 }
 
 /*
-** Sets a native ptr value in NativePointerHolder object ppOut.
-** zClassName must be a static string so we can use its address
-** as a cache key.
+** Sets a native ptr value in NativePointerHolder object jNph,
+** which must be of the native type described by pRef. jNph
+** may not be NULL.
 */
 static void NativePointerHolder__set(JNIEnv * const env, S3JniNphOp const* pRef,
-                                     jobject ppOut, const void * p){
-  assert( ppOut );
-  (*env)->SetLongField(env, ppOut, s3jni_nphop_field(env, pRef), (jlong)p);
+                                     jobject jNph, const void * p){
+  assert( jNph );
+  (*env)->SetLongField(env, jNph, s3jni_nphop_field(env, pRef), (jlong)p);
   S3JniExceptionIsFatal("Could not set NativePointerHolder.nativePointer.");
 }
 
-#define NativePointerHolder_set(PREF,PPOUT,P) \
-  NativePointerHolder__set(env, PREF, PPOUT, P)
+#define NativePointerHolder_set(PREF,JNPH,P) \
+  NativePointerHolder__set(env, PREF, JNPH, P)
 
 /*
-** Fetches a native ptr value from NativePointerHolder object pObj,
+** Fetches a native ptr value from NativePointerHolder object jNph,
 ** which must be of the native type described by pRef.  This is a
-** no-op if pObj is NULL.
+** no-op if jNph is NULL.
 */
-static void * NativePointerHolder__get(JNIEnv * env, jobject pObj,
+static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
                                        S3JniNphOp const* pRef){
   void * rv = 0;
-  if( pObj ){
-    rv = (void*)(*env)->GetLongField(env, pObj, s3jni_nphop_field(env, pRef));
+  if( jNph ){
+    rv = (void*)(*env)->GetLongField(env, jNph, s3jni_nphop_field(env, pRef));
     S3JniExceptionIsFatal("Cannot fetch NativePointerHolder.nativePointer.");
   }
   return rv;
@@ -1424,9 +1426,10 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject pObj,
 */
 #define PtrGet_T(T,OBJ) NativePointerHolder_get(OBJ, S3JniNph(T))
 #define PtrGet_sqlite3(OBJ) PtrGet_T(sqlite3, OBJ)
+#define PtrGet_sqlite3_backup(OBJ) PtrGet_T(sqlite3_backup, OBJ)
+#define PtrGet_sqlite3_context(OBJ) PtrGet_T(sqlite3_context, OBJ)
 #define PtrGet_sqlite3_stmt(OBJ) PtrGet_T(sqlite3_stmt, OBJ)
 #define PtrGet_sqlite3_value(OBJ) PtrGet_T(sqlite3_value, OBJ)
-#define PtrGet_sqlite3_context(OBJ) PtrGet_T(sqlite3_context, OBJ)
 
 #if 0
 /*
@@ -1695,6 +1698,9 @@ static jobject NativePointerHolder_new(JNIEnv * const env,
 
 static inline jobject new_java_sqlite3(JNIEnv * const env, sqlite3 *sv){
   return NativePointerHolder_new(env, S3JniNph(sqlite3), sv);
+}
+static inline jobject new_java_sqlite3_backup(JNIEnv * const env, sqlite3_backup *sv){
+  return NativePointerHolder_new(env, S3JniNph(sqlite3_backup), sv);
 }
 static inline jobject new_java_sqlite3_context(JNIEnv * const env, sqlite3_context *sv){
   return NativePointerHolder_new(env, S3JniNph(sqlite3_context), sv);
@@ -2237,6 +2243,59 @@ S3JniApi(sqlite3_auto_extension(),jint,1auto_1extension)(
   }
   S3JniAutoExt_mutex_leave;
   return rc;
+}
+
+S3JniApi(sqlite3_backup_finish(),jint,1backup_1finish)(
+  JniArgsEnvClass, jobject jBack
+){
+  sqlite3_backup * const pB = PtrGet_sqlite3_backup(jBack);
+  NativePointerHolder_set(S3JniNph(sqlite3_backup), jBack, 0);
+  return sqlite3_backup_finish(pB);
+}
+
+S3JniApi(sqlite3_backup_init(),jobject,1backup_1init)(
+  JniArgsEnvClass, jobject jDbDest, jstring jTDest,
+  jobject jDbSrc, jstring jTSrc
+){
+  sqlite3 * const pDest = PtrGet_sqlite3(jDbDest);
+  sqlite3 * const pSrc = PtrGet_sqlite3(jDbSrc);
+  char * const zDest = s3jni_jstring_to_utf8(jTDest, 0);
+  char * const zSrc = s3jni_jstring_to_utf8(jTSrc, 0);
+  jobject rv = 0;
+
+  if( pDest && pSrc && zDest && zSrc ){
+    sqlite3_backup * const pB =
+      sqlite3_backup_init(pDest, zDest, pSrc, zSrc);
+    if( pB ){
+      rv = new_java_sqlite3_backup(env, pB);
+      if( rv ){
+        NativePointerHolder_set(S3JniNph(sqlite3_backup), rv, pB);
+      }else{
+        sqlite3_backup_finish( pB );
+      }
+    }
+  }
+  sqlite3_free(zDest);
+  sqlite3_free(zSrc);
+  return rv;
+}
+
+S3JniApi(sqlite3_backup_pagecount(),jint,1backup_1pagecount)(
+  JniArgsEnvClass, jobject jBack
+){
+  return sqlite3_backup_pagecount(PtrGet_sqlite3_backup(jBack));
+}
+
+S3JniApi(sqlite3_backup_remaining(),jint,1backup_1remaining)(
+  JniArgsEnvClass, jobject jBack
+){
+  return sqlite3_backup_remaining(PtrGet_sqlite3_backup(jBack));
+}
+
+S3JniApi(sqlite3_backup_step(),jint,1backup_1step)(
+  JniArgsEnvClass, jobject jBack, jint nPage
+){
+  return sqlite3_backup_step(PtrGet_sqlite3_backup(jBack), (int)nPage);
 }
 
 S3JniApi(sqlite3_bind_blob(),jint,1bind_1blob)(

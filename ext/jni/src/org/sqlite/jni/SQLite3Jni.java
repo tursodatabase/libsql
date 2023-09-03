@@ -165,6 +165,26 @@ public final class SQLite3Jni {
   @Canonical
   public static native int sqlite3_auto_extension(@NotNull AutoExtensionCallback callback);
 
+  @Canonical
+  public static native int sqlite3_backup_finish(@NotNull sqlite3_backup b);
+
+  @Canonical
+  public static native sqlite3_backup sqlite3_backup_init(
+    @NotNull sqlite3 dbDest, @NotNull String destTableName,
+    @NotNull sqlite3 dbSrc, @NotNull String srcTableName
+  );
+
+  @Canonical
+  public static native int sqlite3_backup_pagecount(@NotNull sqlite3_backup b);
+
+  @Canonical
+  public static native int sqlite3_backup_remaining(@NotNull sqlite3_backup b);
+
+  @Canonical
+  public static native int sqlite3_backup_step(
+    @NotNull sqlite3_backup b, int nPage
+  );
+
   /**
      Results are undefined if data is not null and n<0 || n>=data.length.
   */
