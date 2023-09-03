@@ -368,14 +368,18 @@ public final class SQLite3Jni {
   };
 
   @Canonical
+  public static native int sqlite3_blob_read(
+    @NotNull sqlite3_blob b, @NotNull byte[] target, int iOffset
+  );
+
+  @Canonical
   public static native int sqlite3_blob_reopen(
     @NotNull sqlite3_blob out, long newRowId
   );
 
   @Canonical
   public static native int sqlite3_blob_write(
-    @NotNull sqlite3_blob out, @NotNull byte[] bytes,
-    int iOffset
+    @NotNull sqlite3_blob out, @NotNull byte[] bytes, int iOffset
   );
 
   /**

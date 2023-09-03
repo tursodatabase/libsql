@@ -973,6 +973,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1open
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_blob_read
+ * Signature: (Lorg/sqlite/jni/sqlite3_blob;[BI)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1read
+  (JNIEnv *, jclass, jobject, jbyteArray, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_blob_reopen
  * Signature: (Lorg/sqlite/jni/sqlite3_blob;J)I
  */

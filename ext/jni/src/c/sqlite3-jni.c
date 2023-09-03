@@ -2483,6 +2483,24 @@ S3JniApi(sqlite3_blob_open(),jint,1blob_1open)(
   return rc;
 }
 
+S3JniApi(sqlite3_blob_read(),jint,1blob_1read)(
+  JniArgsEnvClass, jobject jBlob, jbyteArray jTgt, jint iOffset
+){
+  jbyte * const pBa = s3jni_jbyteArray_bytes(jTgt);
+  int rc = jTgt ? (pBa ? SQLITE_MISUSE : SQLITE_NOMEM) : SQLITE_MISUSE;
+  if( pBa ){
+    jsize const nTgt = (*env)->GetArrayLength(env, jTgt);
+    rc = sqlite3_blob_read(PtrGet_sqlite3_blob(jBlob), pBa,
+                           (int)nTgt, (int)iOffset);
+    if( 0==rc ){
+      s3jni_jbyteArray_commit(jTgt, pBa);
+    }else{
+      s3jni_jbyteArray_release(jTgt, pBa);
+    }
+  }
+  return rc;
+}
+
 S3JniApi(sqlite3_blob_reopen(),jint,1blob_1reopen)(
   JniArgsEnvClass, jobject jBlob, jlong iNewRowId
 ){

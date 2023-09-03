@@ -1541,26 +1541,40 @@ public class Tester1 implements Runnable {
     final sqlite3 db = createNewDb();
 
     execSql(db, "CREATE TABLE T(a BLOB);"
-            +"INSERT INTO t(a) VALUES(cast('DEF' as text));");
+            +"INSERT INTO t(rowid,a) VALUES(1, 'def'),(2, 'XYZ');"
+    );
     final OutputPointer.sqlite3_blob pOut = new OutputPointer.sqlite3_blob();
     int rc = sqlite3_blob_open(db, "main", "t", "a",
                                sqlite3_last_insert_rowid(db), 1, pOut);
     affirm( 0==rc );
-    final sqlite3_blob b = pOut.take();
+    sqlite3_blob b = pOut.take();
     affirm( null!=b );
     affirm( 0!=b.getNativePointer() );
     affirm( 3==sqlite3_blob_bytes(b) );
-    rc = sqlite3_blob_write( b, new byte[] {100, 101, 102}, 0);
+    rc = sqlite3_blob_write( b, new byte[] {100, 101, 102 /*"DEF"*/}, 0);
     affirm( 0==rc );
     rc = sqlite3_blob_close(b);
     affirm( 0==rc );
+    rc = sqlite3_blob_close(b);
+    affirm( 0!=rc );
     affirm( 0==b.getNativePointer() );
-    sqlite3_stmt stmt = prepare(db,"SELECT length(a), a FROM t");
+    sqlite3_stmt stmt = prepare(db,"SELECT length(a), a FROM t ORDER BY a");
     affirm( SQLITE_ROW == sqlite3_step(stmt) );
     affirm( 3 == sqlite3_column_int(stmt,0) );
     affirm( "def".equals(sqlite3_column_text16(stmt,1)) );
-
     sqlite3_finalize(stmt);
+
+    b = sqlite3_blob_open(db, "main", "t", "a",
+                          sqlite3_last_insert_rowid(db), 1);
+    affirm( null!=b );
+    rc = sqlite3_blob_reopen(b, 2);
+    affirm( 0==rc );
+    final byte[] tgt = new byte[3];
+    rc = sqlite3_blob_read(b, tgt, 0);
+    affirm( 0==rc );
+    affirm( 100==tgt[0] && 101==tgt[1] && 102==tgt[2], "DEF" );
+    rc = sqlite3_blob_close(b);
+    affirm( 0==rc );
     sqlite3_close_v2(db);
   }
 
