@@ -666,6 +666,12 @@ public final class SQLite3Jni {
   public static native int sqlite3_errcode(@NotNull sqlite3 db);
 
   @Canonical
+  public static native String sqlite3_errmsg(@NotNull sqlite3 db);
+
+  @Canonical
+  public static native String sqlite3_errstr(int resultCode);
+
+  @Canonical
   public static native String sqlite3_expanded_sql(@NotNull sqlite3_stmt stmt);
 
   @Canonical
@@ -677,13 +683,12 @@ public final class SQLite3Jni {
   );
 
   @Canonical
-  public static native String sqlite3_errmsg(@NotNull sqlite3 db);
-
-  @Canonical
-  public static native String sqlite3_errstr(int resultCode);
-
-  @Canonical
   public static native boolean sqlite3_get_autocommit(@NotNull sqlite3 db);
+
+  @Canonical
+  public static native Object sqlite3_get_auxdata(
+    @NotNull sqlite3_context cx, int n
+  );
 
   /**
      Note that the returned byte offset values assume UTF-8-encoded
@@ -1363,6 +1368,11 @@ public final class SQLite3Jni {
   @Canonical
   public static native int sqlite3_set_authorizer(
     @NotNull sqlite3 db, @Nullable AuthorizerCallback auth
+  );
+
+  @Canonical
+  public static native void sqlite3_set_auxdata(
+    @NotNull sqlite3_context cx, int n, @Nullable Object data
   );
 
   @Canonical

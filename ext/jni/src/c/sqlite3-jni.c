@@ -1654,9 +1654,9 @@ static const char * const ResultJavaValuePtrStr = "org.sqlite.jni.ResultJavaVal"
 
 /*
 ** If v is not NULL, it must be a jobject global reference. Its
-** reference is relinquished and v is freed.
+** reference is relinquished.
 */
-static void ResultJavaValue_finalizer(void *v){
+static void S3Jni_jobject_finalizer(void *v){
   if( v ){
     S3JniDeclLocal_env;
     S3JniUnrefGlobal((jobject)v);
@@ -2351,7 +2351,7 @@ S3JniApi(sqlite3_bind_java_object(),jint,1bind_1java_1object)(
     jobject const rv = val ? S3JniRefGlobal(val) : 0;
     if( rv ){
       rc = sqlite3_bind_pointer(pStmt, ndx, rv, ResultJavaValuePtrStr,
-                                ResultJavaValue_finalizer);
+                                S3Jni_jobject_finalizer);
     }else if(val){
       rc = SQLITE_NOMEM;
     }
@@ -3333,6 +3333,12 @@ S3JniApi(sqlite3_finalize(),jint,1finalize)(
   return rc;
 }
 
+S3JniApi(sqlite3_get_auxdata(),jobject,1get_1auxdata)(
+  JniArgsEnvClass, jobject jCx, jint n
+){
+  return sqlite3_get_auxdata(PtrGet_sqlite3_context(jCx), (int)n);
+}
+
 S3JniApi(sqlite3_initialize(),jint,1initialize)(
   JniArgsEnvClass
 ){
@@ -4063,7 +4069,7 @@ S3JniApi(sqlite3_result_java_object(),void,1result_1java_1object)(
     jobject const rjv = S3JniRefGlobal(v);
     if( rjv ){
       sqlite3_result_pointer(PtrGet_sqlite3_context(jpCx), rjv,
-                             ResultJavaValuePtrStr, ResultJavaValue_finalizer);
+                             ResultJavaValuePtrStr, S3Jni_jobject_finalizer);
     }else{
       sqlite3_result_error_nomem(PtrGet_sqlite3_context(jpCx));
     }
@@ -4193,6 +4199,12 @@ S3JniApi(sqlite3_set_authorizer(),jint,1set_1authorizer)(
   return rc;
 }
 
+S3JniApi(sqlite3_set_auxdata(),void,1set_1auxdata)(
+  JniArgsEnvClass, jobject jCx, jint n, jobject jAux
+){
+  sqlite3_set_auxdata(PtrGet_sqlite3_context(jCx), (int)n,
+                      S3JniRefGlobal(jAux), S3Jni_jobject_finalizer);
+}
 
 S3JniApi(sqlite3_set_last_insert_rowid(),void,1set_1last_1insert_1rowid)(
   JniArgsEnvClass, jobject jpDb, jlong rowId

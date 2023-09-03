@@ -1285,6 +1285,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errcode
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_errmsg
+ * Signature: (Lorg/sqlite/jni/sqlite3;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errmsg
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_errstr
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errstr
+  (JNIEnv *, jclass, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_expanded_sql
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Ljava/lang/String;
  */
@@ -1309,27 +1325,19 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1extended_1res
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_errmsg
- * Signature: (Lorg/sqlite/jni/sqlite3;)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errmsg
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_errstr
- * Signature: (I)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errstr
-  (JNIEnv *, jclass, jint);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_get_autocommit
  * Signature: (Lorg/sqlite/jni/sqlite3;)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1autocommit
   (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_get_auxdata
+ * Signature: (Lorg/sqlite/jni/sqlite3_context;I)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1auxdata
+  (JNIEnv *, jclass, jobject, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1690,6 +1698,14 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1rollback_1hook
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1set_1authorizer
   (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_set_auxdata
+ * Signature: (Lorg/sqlite/jni/sqlite3_context;ILjava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1set_1auxdata
+  (JNIEnv *, jclass, jobject, jint, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
