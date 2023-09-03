@@ -342,6 +342,42 @@ public final class SQLite3Jni {
     @NotNull sqlite3_stmt stmt, int ndx, long n
   );
 
+  @Canonical
+  public static native int sqlite3_blob_bytes(@NotNull sqlite3_blob blob);
+
+  @Canonical
+  public static native int sqlite3_blob_close(@Nullable sqlite3_blob blob);
+
+  @Canonical
+  public static native int sqlite3_blob_open(
+    @NotNull sqlite3 db, @NotNull String dbName,
+    @NotNull String tableName, @NotNull String columnName,
+    long iRow, int flags, @NotNull OutputPointer.sqlite3_blob out
+  );
+
+  /**
+     Convenience overload.
+  */
+  public static sqlite3_blob sqlite3_blob_open(
+    @NotNull sqlite3 db, @NotNull String dbName,
+    @NotNull String tableName, @NotNull String columnName,
+    long iRow, int flags ){
+    final OutputPointer.sqlite3_blob out = new OutputPointer.sqlite3_blob();
+    sqlite3_blob_open(db, dbName, tableName, columnName, iRow, flags, out);
+    return out.take();
+  };
+
+  @Canonical
+  public static native int sqlite3_blob_reopen(
+    @NotNull sqlite3_blob out, long newRowId
+  );
+
+  @Canonical
+  public static native int sqlite3_blob_write(
+    @NotNull sqlite3_blob out, @NotNull byte[] bytes,
+    int iOffset
+  );
+
   /**
      As for the C-level function of the same name, with a
      BusyHandlerCallback instance in place of a callback
@@ -1556,6 +1592,16 @@ public final class SQLite3Jni {
   public static native UpdateHookCallback sqlite3_update_hook(
     @NotNull sqlite3 db, @Nullable UpdateHookCallback hook
   );
+
+  /*
+     Note that:
+
+     void * sqlite3_user_data(sqlite3_context*)
+
+     Is not relevant in the JNI binding, as its feature is replaced by
+     the ability to pass an object, including any relevant state, to
+     sqlite3_create_function().
+  */
 
   @Canonical
   public static native byte[] sqlite3_value_blob(@NotNull sqlite3_value v);

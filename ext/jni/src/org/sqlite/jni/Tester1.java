@@ -1537,6 +1537,33 @@ public class Tester1 implements Runnable {
     affirm( i!=0, "There's a very slight chance that 0 is actually correct." );
   }
 
+  private void testBlobOpen(){
+    final sqlite3 db = createNewDb();
+
+    execSql(db, "CREATE TABLE T(a BLOB);"
+            +"INSERT INTO t(a) VALUES(cast('DEF' as text));");
+    final OutputPointer.sqlite3_blob pOut = new OutputPointer.sqlite3_blob();
+    int rc = sqlite3_blob_open(db, "main", "t", "a",
+                               sqlite3_last_insert_rowid(db), 1, pOut);
+    affirm( 0==rc );
+    final sqlite3_blob b = pOut.take();
+    affirm( null!=b );
+    affirm( 0!=b.getNativePointer() );
+    affirm( 3==sqlite3_blob_bytes(b) );
+    rc = sqlite3_blob_write( b, new byte[] {100, 101, 102}, 0);
+    affirm( 0==rc );
+    rc = sqlite3_blob_close(b);
+    affirm( 0==rc );
+    affirm( 0==b.getNativePointer() );
+    sqlite3_stmt stmt = prepare(db,"SELECT length(a), a FROM t");
+    affirm( SQLITE_ROW == sqlite3_step(stmt) );
+    affirm( 3 == sqlite3_column_int(stmt,0) );
+    affirm( "def".equals(sqlite3_column_text16(stmt,1)) );
+
+    sqlite3_finalize(stmt);
+    sqlite3_close_v2(db);
+  }
+
   /* Copy/paste/rename this to add new tests. */
   private void _testTemplate(){
     final sqlite3 db = createNewDb();
