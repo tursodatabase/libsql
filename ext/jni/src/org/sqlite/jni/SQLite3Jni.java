@@ -543,7 +543,6 @@ public final class SQLite3Jni {
      <p>Note that sqlite3_config() is not threadsafe with regards to
      the rest of the library. This must not be called when any other
      library APIs are being called.
-
   */
   @Canonical(comment="Option subset: "+
              "SQLITE_CONFIG_SINGLETHREAD, SQLITE_CONFIG_MULTITHREAD, "+
@@ -681,6 +680,16 @@ public final class SQLite3Jni {
 
   @Canonical
   public static native boolean sqlite3_is_interrupted(@NotNull sqlite3 db);
+
+  @Canonical
+  public static native boolean sqlite3_keyword_check(@NotNull String word);
+
+  @Canonical
+  public static native int sqlite3_keyword_count();
+
+  @Canonical
+  public static native String sqlite3_keyword_name(int index);
+
 
   @Canonical
   public static native long sqlite3_last_insert_rowid(@NotNull sqlite3 db);

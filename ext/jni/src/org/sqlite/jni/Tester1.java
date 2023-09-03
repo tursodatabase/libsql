@@ -1478,6 +1478,16 @@ public class Tester1 implements Runnable {
     affirm( 0!=sqlite3_complete("nope 'nope' 'nope' 1;"), "Yup" );
   }
 
+  private void testKeyword(){
+    final int n = sqlite3_keyword_count();
+    affirm( n>0 );
+    affirm( !sqlite3_keyword_check("_nope_") );
+    affirm( sqlite3_keyword_check("seLect") );
+    affirm( null!=sqlite3_keyword_name(0) );
+    affirm( null!=sqlite3_keyword_name(n-1) );
+    affirm( null==sqlite3_keyword_name(n) );
+  }
+
   /* Copy/paste/rename this to add new tests. */
   private void _testTemplate(){
     final sqlite3 db = createNewDb();

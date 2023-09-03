@@ -2061,6 +2061,7 @@ WRAP_INT_DB(1error_1offset,            sqlite3_error_offset)
 WRAP_INT_DB(1extended_1errcode,        sqlite3_extended_errcode)
 WRAP_MUTF8_VOID(1libversion,           sqlite3_libversion)
 WRAP_INT_VOID(1libversion_1number,     sqlite3_libversion_number)
+WRAP_INT_VOID(1keyword_1count,         sqlite3_keyword_count)
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 WRAP_INT_DB(1preupdate_1blobwrite,     sqlite3_preupdate_blobwrite)
 WRAP_INT_DB(1preupdate_1count,         sqlite3_preupdate_count)
@@ -2398,7 +2399,7 @@ S3JniApi(sqlite3_busy_handler(),jint,1busy_1handler)(
         rc = sqlite3_busy_handler(ps->pDb, s3jni_busy_handler, ps);
         if( 0==rc ){
           S3JniHook_unref(pHook);
-          *pHook = hook;
+          *pHook = hook /* transfer Java ref ownership */;
           hook = S3JniHook_empty;
         }
       }/* else no-op */
@@ -3305,6 +3306,34 @@ JniDecl(jboolean,1java_1uncache_1thread)(JniArgsEnvClass){
   rc = S3JniEnv_uncache(env);
   S3JniEnv_mutex_leave;
   return rc ? JNI_TRUE : JNI_FALSE;
+}
+
+S3JniApi(sqlite3_keyword_check(),jboolean,1keyword_1check)(
+  JniArgsEnvClass, jstring jWord
+){
+  int nWord = 0;
+  char * zWord = s3jni_jstring_to_utf8(jWord, &nWord);
+  int rc = 0;
+
+  s3jni_oom_check(jWord ? !!zWord : 1);
+  if( zWord && nWord ){
+    rc = sqlite3_keyword_check(zWord, nWord);
+  }
+  sqlite3_free(zWord);
+  return rc ? JNI_TRUE : JNI_FALSE;
+}
+
+S3JniApi(sqlite3_keyword_name(),jstring,1keyword_1name)(
+  JniArgsEnvClass, jint ndx
+){
+  const char * zWord = 0;
+  int n = 0;
+  jstring rv = 0;
+
+  if( 0==sqlite3_keyword_name(ndx, &zWord, &n) ){
+    rv = s3jni_utf8_to_jstring(zWord, n);
+  }
+  return rv;
 }
 
 
