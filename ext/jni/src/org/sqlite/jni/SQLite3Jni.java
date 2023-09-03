@@ -1483,6 +1483,9 @@ public final class SQLite3Jni {
   }
 
   @Canonical
+  public static native int sqlite3_system_errno(@NotNull sqlite3 db);
+
+  @Canonical
   public static native int sqlite3_table_column_metadata(
     @NotNull sqlite3 db, @NotNull String zDbName,
     @NotNull String zTableName, @NotNull String zColumnName,

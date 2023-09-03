@@ -1426,7 +1426,7 @@ static void * NativePointerHolder__get(JNIEnv * env, jobject jNph,
 ** argument is a Java sqlite3 object, as this operation only has void
 ** pointers to work with.
 */
-#define PtrGet_T(T,OBJ) NativePointerHolder_get(OBJ, S3JniNph(T))
+#define PtrGet_T(T,OBJ) (T*)NativePointerHolder_get(OBJ, S3JniNph(T))
 #define PtrGet_sqlite3(OBJ) PtrGet_T(sqlite3, OBJ)
 #define PtrGet_sqlite3_backup(OBJ) PtrGet_T(sqlite3_backup, OBJ)
 #define PtrGet_sqlite3_context(OBJ) PtrGet_T(sqlite3_context, OBJ)
@@ -2087,6 +2087,7 @@ WRAP_MUTF8_VOID(1sourceid,             sqlite3_sourceid)
 WRAP_INT_STMT_INT(1stmt_1explain,      sqlite3_stmt_explain)
 WRAP_INT_STMT(1stmt_1isexplain,        sqlite3_stmt_isexplain)
 WRAP_BOOL_STMT(1stmt_1readonly,        sqlite3_stmt_readonly)
+WRAP_INT_DB(1system_1errno,            sqlite3_system_errno)
 WRAP_INT_VOID(1threadsafe,             sqlite3_threadsafe)
 WRAP_INT_DB(1total_1changes,           sqlite3_total_changes)
 WRAP_INT64_DB(1total_1changes64,       sqlite3_total_changes64)

@@ -1829,6 +1829,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strlike
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_system_errno
+ * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1system_1errno
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_table_column_metadata
  * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/sqlite/jni/OutputPointer/String;Lorg/sqlite/jni/OutputPointer/String;Lorg/sqlite/jni/OutputPointer/Bool;Lorg/sqlite/jni/OutputPointer/Bool;Lorg/sqlite/jni/OutputPointer/Bool;)I
  */
