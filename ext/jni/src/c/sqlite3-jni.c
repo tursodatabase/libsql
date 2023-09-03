@@ -4314,6 +4314,14 @@ S3JniApi(sqlite3_status64(),jint,1status64)(
   return (jint)rc;
 }
 
+S3JniApi(sqlite3_stmt_status(),jint,1stmt_1status)(
+  JniArgsEnvClass, jobject jStmt, jint op, jboolean reset
+){
+  return sqlite3_stmt_status(PtrGet_sqlite3_stmt(jStmt),
+                             (int)op, reset ? 1 : 0);
+}
+
+
 static int s3jni_strlike_glob(int isLike, JNIEnv *const env,
                               jbyteArray baG, jbyteArray baT, jint escLike){
   int rc = 0;

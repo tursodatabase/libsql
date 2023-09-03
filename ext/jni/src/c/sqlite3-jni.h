@@ -1805,6 +1805,14 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1readonl
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_status
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;IZ)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1status
+  (JNIEnv *, jclass, jobject, jint, jboolean);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_strglob
  * Signature: ([B[B)I
  */

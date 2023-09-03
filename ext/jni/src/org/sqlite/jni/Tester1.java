@@ -800,7 +800,7 @@ public class Tester1 implements Runnable {
     int rc = sqlite3_create_function(db, "myfunc", 1, SQLITE_UTF8, func);
     affirm(0 == rc);
     sqlite3_stmt stmt = prepare(db, "select myfunc(a), myfunc(a+10) from t");
-    affirm( null != stmt );
+    affirm( 0==sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, false) );
     int n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){
       int v = sqlite3_column_int(stmt, 0);
@@ -812,6 +812,7 @@ public class Tester1 implements Runnable {
     affirm( 1==n );
     affirm(!xFinalNull.value);
     sqlite3_reset(stmt);
+    affirm( 1==sqlite3_stmt_status(stmt, SQLITE_STMTSTATUS_RUN, false) );
     // Ensure that the accumulator is reset on subsequent calls...
     n = 0;
     if( SQLITE_ROW == sqlite3_step(stmt) ){

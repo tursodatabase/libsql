@@ -1431,6 +1431,11 @@ public final class SQLite3Jni {
   @Canonical
   public static native boolean sqlite3_stmt_readonly(@NotNull sqlite3_stmt stmt);
 
+  @Canonical
+  public static native int sqlite3_stmt_status(
+    @NotNull sqlite3_stmt stmt, int op, boolean reset
+  );
+
   /**
      Internal impl of the public sqlite3_strglob() method. Neither
      argument may be null and both must be NUL-terminated UTF-8.
