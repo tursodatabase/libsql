@@ -92,7 +92,6 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   TableColumnMetadata.java \
   TraceV2Callback.java \
   UpdateHookCallback.java \
-  ValueHolder.java \
   WindowFunction.java \
   XDestroyCallback.java \
   sqlite3.java \

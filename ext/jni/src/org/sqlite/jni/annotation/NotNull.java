@@ -2,17 +2,23 @@ package org.sqlite.jni.annotation;
 
 /**
    This annotation is for flagging parameters which may not legally be
-   null.  When used in the context of callback methods which are
-   called into from the C APIs, this annotation communicates that the
-   C API will never pass a null value to the callback.
+   null or point to closed/finalized C-side resources.
 
-   <p>In the case of Java types which map directly to C struct types,
-   a closed/finalized resource is also considered to be null for
-   purposes this annotation because the effect C-side is the same as
-   if null is passed for a NotNull-annotated parameter.</p>
+   <p>In the case of Java types which map directly to C struct types
+   (e.g. {@link org.sqlite.jni.sqlite3}, {@link
+   org.sqlite.jni.sqlite3_stmt}, and {@link
+   org.sqlite.jni.sqlite3_context}), a closed/finalized resource is
+   also considered to be null for purposes this annotation because the
+   C-side effect of passing such a handle is the same as if null is
+   passed.</p>
 
-   <p>Passing a null for any parameter marked with this annoation
-   specifically invokes undefined behavior.</p>
+   <p>When used in the context of Java interfaces which are called
+   from the C APIs, this annotation communicates that the C API will
+   never pass a null value to the callback for that parameter.</p>
+
+   <p>Passing a null, for this annotation's definition of null, for
+   any parameter marked with this annoation specifically invokes
+   undefined behavior.</p>
 
    <p>Note that the C-style API does not throw any exceptions on its
    own because it has a no-throw policy in order to retain its C-style
