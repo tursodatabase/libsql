@@ -158,6 +158,44 @@ fn prepare_and_query_named_params() {
             ":b": "Alice",
         },
     );
+
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES (@a, @b)",
+        vec![
+            ("@a".to_string(), 2.into()),
+            ("@b".to_string(), "Alice".into()),
+        ]
+        .into(),
+    );
+    
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES (@a, @b)",
+        named_params! {
+            "@a": 2,
+            "@b": "Alice",
+        },
+    );
+
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES ($a, $b)",
+        vec![
+            ("$a".to_string(), 2.into()),
+            ("$b".to_string(), "Alice".into()),
+        ]
+        .into(),
+    );
+    
+    check_insert(
+        &conn,
+        "INSERT INTO users (id, name) VALUES ($a, $b)",
+        named_params! {
+            "$a": 2,
+            "$b": "Alice",
+        },
+    );
 }
 
 #[test]
