@@ -2277,6 +2277,8 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xUserData
 #ifdef __cplusplus
 extern "C" {
 #endif
+#undef org_sqlite_jni_fts5_api_iVersion
+#define org_sqlite_jni_fts5_api_iVersion 2L
 /*
  * Class:     org_sqlite_jni_fts5_api
  * Method:    getInstanceForDb

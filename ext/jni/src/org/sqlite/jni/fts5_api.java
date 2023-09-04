@@ -25,7 +25,8 @@ import org.sqlite.jni.annotation.*;
 public final class fts5_api extends NativePointerHolder<fts5_api> {
   /* Only invoked from JNI */
   private fts5_api(){}
-  public final int iVersion = 2;
+
+  public static final int iVersion = 2;
 
   /**
      Returns the fts5_api instance associated with the given db, or

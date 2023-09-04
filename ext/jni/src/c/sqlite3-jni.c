@@ -1592,44 +1592,6 @@ static void OutputPointer_set_obj(JNIEnv * const env,
   S3JniExceptionIsFatal("Cannot set OutputPointer.T.value");
 }
 
-/*
-** Sets the value property of the OutputPointer.sqlite3 jOut object to
-** v.
-*/
-static void OutputPointer_set_sqlite3(JNIEnv * const env, jobject const jOut,
-                                      jobject v){
-  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3), jOut, v);
-}
-
-/*
-** Sets the value property of the OutputPointer.sqlite3_blob jOut object to
-** v.
-*/
-static void OutputPointer_set_sqlite3_blob(JNIEnv * const env, jobject const jOut,
-                                           jobject v){
-  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_blob), jOut, v);
-}
-
-/*
-** Sets the value property of the OutputPointer.sqlite3_stmt jOut object to
-** v.
-*/
-static void OutputPointer_set_sqlite3_stmt(JNIEnv * const env, jobject const jOut,
-                                           jobject v){
-  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_stmt), jOut, v);
-}
-
-#ifdef SQLITE_ENABLE_PREUPDATE_HOOK
-/*
-** Sets the value property of the OutputPointer.sqlite3_value jOut object to
-** v.
-*/
-static void OutputPointer_set_sqlite3_value(JNIEnv * const env, jobject const jOut,
-                                            jobject v){
-  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_value), jOut, v);
-}
-#endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
-
 #ifdef SQLITE_ENABLE_FTS5
 #if 0
 /*
@@ -1680,15 +1642,13 @@ static void S3Jni_jobject_finalizer(void *v){
   }
 }
 
-
-
 /*
 ** Returns a new Java instance of the class referred to by pRef, which
 ** MUST be interface-compatible with NativePointerHolder and MUST have
 ** a no-arg constructor. The NativePointerHolder_set() method is
-** passed the new Java object and pNative. Hypothetically returns NULL
-** if Java fails to allocate, but the JNI docs are not entirely clear
-** on that detail.
+** passed the new Java object (which must not be NULL) and pNative
+** (which may be NULL). Hypothetically returns NULL if Java fails to
+** allocate, but the JNI docs are not entirely clear on that detail.
 **
 ** Always use a static pointer from the S3JniNphOps struct for the
 ** 2nd argument.
@@ -2484,7 +2444,7 @@ S3JniApi(sqlite3_blob_open(),jint,1blob_1open)(
   if( 0==rc ){
     jobject rv = new_java_sqlite3_blob(env, pBlob);
     if( rv ){
-      OutputPointer_set_sqlite3_blob(env, jOut, rv);
+      OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_blob), jOut, rv);
     }else{
       sqlite3_blob_close(pBlob);
       rc = SQLITE_NOMEM;
@@ -2529,7 +2489,7 @@ S3JniApi(sqlite3_blob_write(),jint,1blob_1write)(
   const jsize nBa = pBuf ? (*env)->GetArrayLength(env, jBa) : 0;
   int rc = SQLITE_MISUSE;
   if(b && pBuf){
-    rc = sqlite3_blob_write( b, pBuf, nBa, (int)iOffset );
+    rc = sqlite3_blob_write( b, pBuf, (int)nBa, (int)iOffset );
   }
   s3jni_jbyteArray_release(jBa, pBuf);
   return (jint)rc;
@@ -3620,7 +3580,8 @@ static int s3jni_open_post(JNIEnv * const env, S3JniEnv * const jc,
     S3JniDb_set_aside(ps);
     ps = 0;
   }
-  OutputPointer_set_sqlite3(env, jOut, ps ? ps->jDb : 0);
+  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3),
+                        jOut, ps ? ps->jDb : 0);
   return theRc ? theRc : rc;
 }
 
@@ -3712,7 +3673,9 @@ end:
       ** what follows... */
       assert(zTail ? ((void*)zTail>=(void*)pBuf) : 1);
       assert(zTail ? (((int)((void*)zTail - (void*)pBuf)) >= 0) : 1);
-      OutputPointer_set_Int32(env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0));
+      OutputPointer_set_Int32(
+        env, outTail, (int)(zTail ? (zTail - (const char *)pBuf) : 0)
+      );
     }
     if( pStmt ){
       NativePointerHolder_set(S3JniNph(sqlite3_stmt), jStmt, pStmt);
@@ -3725,7 +3688,8 @@ end:
     S3JniUnrefLocal(jStmt);
     jStmt = 0;
   }
-  OutputPointer_set_sqlite3_stmt(env, jOutStmt, jStmt);
+  OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_stmt),
+                        jOutStmt, jStmt);
   return (jint)rc;
 }
 S3JniApi(sqlite3_prepare(),jint,1prepare)(
@@ -3932,7 +3896,8 @@ static int s3jni_preupdate_newold(JNIEnv * const env, int isNew, jobject jDb,
     if( 0==rc ){
       jobject pWrap = new_java_sqlite3_value(env, pOut);
       if( pWrap ){
-        OutputPointer_set_sqlite3_value(env, jOut, pWrap);
+        OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_value),
+                              jOut, pWrap);
         S3JniUnrefLocal(pWrap);
       }else{
         rc = SQLITE_NOMEM;
