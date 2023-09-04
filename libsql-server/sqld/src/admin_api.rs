@@ -2,16 +2,18 @@ use anyhow::Context as _;
 use axum::extract::{Path, State};
 use axum::routing::delete;
 use axum::Json;
+use chrono::NaiveDateTime;
 use futures::TryStreamExt;
 use serde::Deserialize;
 use std::sync::Arc;
 use std::{io::ErrorKind, net::SocketAddr};
 use tokio_util::io::ReaderStream;
 use url::Url;
+use uuid::Uuid;
 
 use crate::connection::config::{DatabaseConfig, DatabaseConfigStore};
 use crate::error::LoadDumpError;
-use crate::namespace::{DumpStream, MakeNamespace, NamespaceStore};
+use crate::namespace::{DumpStream, MakeNamespace, NamespaceStore, RestoreOption};
 
 struct AppState<F: MakeNamespace> {
     db_config_store: Arc<DatabaseConfigStore>,
@@ -31,6 +33,10 @@ pub async fn run_admin_api<F: MakeNamespace>(
         .route(
             "/v1/namespaces/:namespace/create",
             post(handle_create_namespace),
+        )
+        .route(
+            "/v1/namespaces/:namespace/restore",
+            post(handle_restore_namespace),
         )
         .route("/v1/namespaces/:namespace", delete(handle_delete_namespace))
         .with_state(Arc::new(AppState {
@@ -96,15 +102,12 @@ async fn handle_create_namespace<F: MakeNamespace>(
     Path(namespace): Path<String>,
     Json(req): Json<CreateNamespaceReq>,
 ) -> crate::Result<()> {
-    let maybe_dump = match req.dump_url {
-        Some(ref url) => Some(dump_stream_from_url(url).await?),
-        None => None,
+    let dump = match req.dump_url {
+        Some(ref url) => RestoreOption::Dump(dump_stream_from_url(url).await?),
+        None => RestoreOption::Latest,
     };
 
-    app_state
-        .namespaces
-        .create(namespace.into(), maybe_dump)
-        .await?;
+    app_state.namespaces.create(namespace.into(), dump).await?;
     Ok(())
 }
 
@@ -147,5 +150,29 @@ async fn handle_delete_namespace<F: MakeNamespace>(
     Path(namespace): Path<String>,
 ) -> crate::Result<()> {
     app_state.namespaces.destroy(namespace.into()).await?;
+    Ok(())
+}
+
+#[derive(Debug, Deserialize)]
+struct RestoreReq {
+    generation: Option<Uuid>,
+    timestamp: Option<NaiveDateTime>,
+}
+
+async fn handle_restore_namespace<F: MakeNamespace>(
+    State(app_state): State<Arc<AppState<F>>>,
+    Path(namespace): Path<String>,
+    Json(req): Json<RestoreReq>,
+) -> crate::Result<()> {
+    let restore_option = match (req.generation, req.timestamp) {
+        (None, None) => RestoreOption::Latest,
+        (Some(generation), None) => RestoreOption::Generation(generation),
+        (None, Some(timestamp)) => RestoreOption::PointInTime(timestamp),
+        (Some(_), Some(_)) => return Err(crate::Error::ConflictingRestoreParameters),
+    };
+    app_state
+        .namespaces
+        .reset(namespace.into(), restore_option)
+        .await?;
     Ok(())
 }

@@ -39,6 +39,7 @@ use crate::stats::Stats;
 use sha256::try_digest;
 use tokio::time::{interval, sleep, Instant, MissedTickBehavior};
 
+use crate::namespace::RestoreOption;
 pub use sqld_libsql_bindings as libsql;
 
 mod admin_api;
@@ -351,7 +352,7 @@ async fn start_replica(
                             "received reset signal for: {:?}",
                             std::str::from_utf8(&ns).ok()
                         );
-                        namespaces.reset(ns).await?;
+                        namespaces.reset(ns, RestoreOption::Latest).await?;
                     }
                     ResetOp::Destroy(ns) => {
                         namespaces.destroy(ns).await?;
@@ -433,6 +434,7 @@ fn validate_extensions(extensions_path: Option<PathBuf>) -> anyhow::Result<Vec<P
 pub async fn init_bottomless_replicator(
     path: impl AsRef<std::path::Path>,
     options: bottomless::replicator::Options,
+    restore_option: &RestoreOption,
 ) -> anyhow::Result<(bottomless::replicator::Replicator, bool)> {
     tracing::debug!("Initializing bottomless replication");
     let path = path
@@ -443,7 +445,13 @@ pub async fn init_bottomless_replicator(
     let mut replicator = bottomless::replicator::Replicator::with_options(path, options).await?;
     let mut did_recover = false;
 
-    match replicator.restore(None, None).await? {
+    let (generation, timestamp) = match restore_option {
+        RestoreOption::Latest | RestoreOption::Dump(_) => (None, None),
+        RestoreOption::Generation(generation) => (Some(*generation), None),
+        RestoreOption::PointInTime(timestamp) => (None, Some(*timestamp)),
+    };
+
+    match replicator.restore(generation, timestamp).await? {
         bottomless::replicator::RestoreAction::None => (),
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
             replicator.new_generation();

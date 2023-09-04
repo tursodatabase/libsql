@@ -1,6 +1,6 @@
 use anyhow::Result;
 use aws_sdk_s3::Client;
-use chrono::Utc;
+use chrono::NaiveDateTime;
 use clap::{Parser, Subcommand};
 
 mod replicator_extras;
@@ -66,9 +66,10 @@ enum Commands {
         #[clap(
             long,
             short,
+            conflicts_with = "generation",
             long_help = "UTC timestamp which is an upper bound for the transactions to be restored."
         )]
-        utc_time: Option<chrono::DateTime<Utc>>,
+        utc_time: Option<NaiveDateTime>,
     },
     #[clap(about = "Remove given generation from remote storage")]
     Rm {

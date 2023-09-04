@@ -7,6 +7,7 @@ use anyhow::bail;
 use async_lock::{RwLock, RwLockUpgradableReadGuard};
 use bottomless::replicator::Options;
 use bytes::Bytes;
+use chrono::NaiveDateTime;
 use futures_core::Stream;
 use hyper::Uri;
 use rusqlite::ErrorCode;
@@ -15,6 +16,7 @@ use tokio::sync::mpsc;
 use tokio::task::{block_in_place, JoinSet};
 use tokio_util::io::StreamReader;
 use tonic::transport::Channel;
+use uuid::Uuid;
 
 use crate::connection::config::DatabaseConfigStore;
 use crate::connection::libsql::{open_db, LibSqlDbFactory};
@@ -40,7 +42,7 @@ pub trait MakeNamespace: Sync + Send + 'static {
     async fn create(
         &self,
         name: Bytes,
-        dump: Option<DumpStream>,
+        restore_option: RestoreOption,
         allow_creation: bool,
     ) -> crate::Result<Namespace<Self::Database>>;
 
@@ -67,10 +69,10 @@ impl MakeNamespace for PrimaryNamespaceMaker {
     async fn create(
         &self,
         name: Bytes,
-        dump: Option<DumpStream>,
+        restore_option: RestoreOption,
         allow_creation: bool,
     ) -> crate::Result<Namespace<Self::Database>> {
-        Namespace::new_primary(&self.config, name, dump, allow_creation).await
+        Namespace::new_primary(&self.config, name, restore_option, allow_creation).await
     }
 
     async fn destroy(&self, namespace: &Bytes) -> crate::Result<()> {
@@ -118,11 +120,12 @@ impl MakeNamespace for ReplicaNamespaceMaker {
     async fn create(
         &self,
         name: Bytes,
-        dump: Option<DumpStream>,
+        restore_option: RestoreOption,
         allow_creation: bool,
     ) -> crate::Result<Namespace<Self::Database>> {
-        if dump.is_some() {
-            Err(LoadDumpError::ReplicaLoadDump)?;
+        match restore_option {
+            RestoreOption::Latest => { /* move on*/ }
+            _ => Err(LoadDumpError::ReplicaLoadDump)?,
         }
 
         Namespace::new_replica(&self.config, name, allow_creation).await
@@ -169,10 +172,12 @@ impl<M: MakeNamespace> NamespaceStore<M> {
 
         Ok(())
     }
-}
 
-impl NamespaceStore<ReplicaNamespaceMaker> {
-    pub async fn reset(&self, namespace: Bytes) -> anyhow::Result<()> {
+    pub async fn reset(
+        &self,
+        namespace: Bytes,
+        restore_option: RestoreOption,
+    ) -> anyhow::Result<()> {
         let mut lock = self.inner.write().await;
         if let Some(ns) = lock.remove(&namespace) {
             // FIXME: when destroying, we are waiting for all the tasks associated with the
@@ -187,7 +192,7 @@ impl NamespaceStore<ReplicaNamespaceMaker> {
         self.make_namespace.destroy(&namespace).await?;
         let ns = self
             .make_namespace
-            .create(namespace.clone(), None, true)
+            .create(namespace.clone(), restore_option, true)
             .await?;
         lock.insert(namespace, ns);
 
@@ -215,7 +220,11 @@ impl<F: MakeNamespace> NamespaceStore<F> {
             let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
             let ns = self
                 .make_namespace
-                .create(namespace.clone(), None, self.allow_lazy_creation)
+                .create(
+                    namespace.clone(),
+                    RestoreOption::Latest,
+                    self.allow_lazy_creation,
+                )
                 .await?;
             let ret = f(&ns);
             lock.insert(namespace, ns);
@@ -223,7 +232,11 @@ impl<F: MakeNamespace> NamespaceStore<F> {
         }
     }
 
-    pub async fn create(&self, namespace: Bytes, dump: Option<DumpStream>) -> crate::Result<()> {
+    pub async fn create(
+        &self,
+        namespace: Bytes,
+        restore_option: RestoreOption,
+    ) -> crate::Result<()> {
         let lock = self.inner.upgradable_read().await;
         if lock.contains_key(&namespace) {
             return Err(crate::error::Error::NamespaceAlreadyExist(
@@ -233,7 +246,7 @@ impl<F: MakeNamespace> NamespaceStore<F> {
 
         let ns = self
             .make_namespace
-            .create(namespace.clone(), dump, true)
+            .create(namespace.clone(), restore_option, true)
             .await?;
 
         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
@@ -369,7 +382,7 @@ impl Namespace<PrimaryDatabase> {
     async fn new_primary(
         config: &PrimaryNamespaceConfig,
         name: Bytes,
-        dump: Option<DumpStream>,
+        restore_option: RestoreOption,
         allow_creation: bool,
     ) -> crate::Result<Self> {
         // if namespaces are disabled, then we allow creation for the default namespace.
@@ -394,7 +407,7 @@ impl Namespace<PrimaryDatabase> {
         let bottomless_replicator = if let Some(options) = &config.bottomless_replication {
             let options = make_bottomless_options(options, &name);
             let (replicator, did_recover) =
-                init_bottomless_replicator(db_path.join("data"), options).await?;
+                init_bottomless_replicator(db_path.join("data"), options, &restore_option).await?;
 
             // There wasn't any database to recover from bottomless, and we are not allowed to
             // create a new database
@@ -461,12 +474,15 @@ impl Namespace<PrimaryDatabase> {
         )
         .into();
 
-        if let Some(dump) = dump {
-            if !is_fresh_db {
+        let mut ctx = ctx_builder();
+        match restore_option {
+            RestoreOption::Dump(_) if !is_fresh_db => {
                 Err(LoadDumpError::LoadDumpExistingDb)?;
             }
-            let mut ctx = ctx_builder();
-            load_dump(&db_path, dump, &mut ctx).await?;
+            RestoreOption::Dump(dump) => {
+                load_dump(&db_path, dump, &mut ctx).await?;
+            }
+            _ => { /* other cases were already handled when creating bottomless */ }
         }
 
         join_set.spawn(run_periodic_compactions(logger.clone()));
@@ -479,6 +495,20 @@ impl Namespace<PrimaryDatabase> {
             },
         })
     }
+}
+
+#[derive(Default)]
+pub enum RestoreOption {
+    /// Restore database state from the most recent version found in a backup.
+    #[default]
+    Latest,
+    /// Restore database from SQLite dump.
+    Dump(DumpStream),
+    /// Restore database state to a backup version equal to specific generation.
+    Generation(Uuid),
+    /// Restore database state to a backup version present at a specific point in time.
+    /// Granularity depends of how frequently WAL log pages are being snapshotted.
+    PointInTime(NaiveDateTime),
 }
 
 const WASM_TABLE_CREATE: &str =
