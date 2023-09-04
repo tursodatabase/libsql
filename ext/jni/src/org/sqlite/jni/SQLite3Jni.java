@@ -258,6 +258,11 @@ public final class SQLite3Jni {
     return sqlite3_bind_parameter_index(stmt, utf8);
   }
 
+  @Canonical
+  public static native String sqlite3_bind_parameter_name(
+    @NotNull sqlite3_stmt stmt, int index
+  );
+
   /**
      Works like the C-level sqlite3_bind_text() but assumes
      SQLITE_TRANSIENT for the final C API parameter. The byte array is

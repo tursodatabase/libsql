@@ -350,6 +350,7 @@ public class Tester1 implements Runnable {
     affirm(1 == sqlite3_bind_parameter_count(stmt));
     final int paramNdx = sqlite3_bind_parameter_index(stmt, ":a");
     affirm(1 == paramNdx);
+    affirm( ":a".equals(sqlite3_bind_parameter_name(stmt, paramNdx)));
     int total1 = 0;
     long rowid = -1;
     int changes = sqlite3_changes(db);

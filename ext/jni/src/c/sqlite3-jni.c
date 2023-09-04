@@ -2401,6 +2401,19 @@ S3JniApi(sqlite3_bind_parameter_index(),jint,1bind_1parameter_1index)(
   return rc;
 }
 
+S3JniApi(sqlite3_bind_parameter_name(),jstring,1bind_1parameter_1name)(
+  JniArgsEnvClass, jobject jpStmt, jint ndx
+){
+  jstring rv = 0;
+  const char *z =
+    sqlite3_bind_parameter_name(PtrGet_sqlite3_stmt(jpStmt), (int)ndx);
+
+  if( z ){
+    rv = s3jni_utf8_to_jstring(z, -1);
+  }
+  return rv;
+}
+
 S3JniApi(sqlite3_bind_text(),jint,1bind_1text)(
   JniArgsEnvClass, jobject jpStmt, jint ndx, jbyteArray baData, jint nMax
 ){

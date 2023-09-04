@@ -6,6 +6,11 @@ package org.sqlite.jni.annotation;
    called into from the C APIs, this annotation communicates that the
    C API will never pass a null value to the callback.
 
+   <p>In the case of Java types which map directly to C struct types,
+   a closed/finalized resource is also considered to be null for
+   purposes this annotation because the effect C-side is the same as
+   if null is passed for a NotNull-annotated parameter.</p>
+
    <p>Passing a null for any parameter marked with this annoation
    specifically invokes undefined behavior.</p>
 
