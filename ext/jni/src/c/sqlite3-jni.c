@@ -2443,12 +2443,11 @@ S3JniApi(sqlite3_blob_open(),jint,1blob_1open)(
     : SQLITE_NOMEM;
   if( 0==rc ){
     jobject rv = new_java_sqlite3_blob(env, pBlob);
-    if( rv ){
-      OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_blob), jOut, rv);
-    }else{
+    if( !rv ){
       sqlite3_blob_close(pBlob);
       rc = SQLITE_NOMEM;
     }
+    OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_blob), jOut, rv);
   }
   sqlite3_free(zDbName);
   sqlite3_free(zTableName);
@@ -3895,13 +3894,12 @@ static int s3jni_preupdate_newold(JNIEnv * const env, int isNew, jobject jDb,
     rc = fOrig(pDb, (int)iCol, &pOut);
     if( 0==rc ){
       jobject pWrap = new_java_sqlite3_value(env, pOut);
-      if( pWrap ){
-        OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_value),
-                              jOut, pWrap);
-        S3JniUnrefLocal(pWrap);
-      }else{
+      if( !pWrap ){
         rc = SQLITE_NOMEM;
       }
+      OutputPointer_set_obj(env, S3JniNph(OutputPointer_sqlite3_value),
+                            jOut, pWrap);
+      S3JniUnrefLocal(pWrap);
     }
   }
   return rc;
