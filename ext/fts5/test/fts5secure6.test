@@ -70,5 +70,26 @@ do_execsql_test 2.2 {
   SELECT rowid FROM t1('def')
 } {-100000 -99999 9223372036854775800}
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1, rank) VALUES('secure-delete', $sd) 
+}
+
+do_execsql_test 2.1 {
+  BEGIN;
+    INSERT INTO t1(rowid, x) 
+      VALUES(51869, 'when whenever where weress what turn'), 
+            (51871, 'to were');
+  COMMIT;
+}
+
+do_execsql_test 3.2 {
+  DELETE FROM t1 WHERE rowid=51871;
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
 finish_test
 
