@@ -71,6 +71,12 @@ pub enum Error {
     LoadDumpError(#[from] LoadDumpError),
     #[error("Unable to convert metadata value: `{0}`")]
     InvalidMetadataBytes(#[from] InvalidMetadataValueBytes),
+    #[error("Cannot call parametrized restore over replica")]
+    ReplicaRestoreError,
+    #[error("cannot load from a dump if a database already exists.")]
+    LoadDumpExistingDb,
+    #[error("cannot restore database when conflicting params were provided")]
+    ConflictingRestoreParameters,
 }
 
 trait ResponseError: std::error::Error {
@@ -117,6 +123,9 @@ impl IntoResponse for Error {
             InvalidNamespace => self.format_err(StatusCode::BAD_REQUEST),
             LoadDumpError(e) => e.into_response(),
             InvalidMetadataBytes(_) => self.format_err(StatusCode::INTERNAL_SERVER_ERROR),
+            ReplicaRestoreError => self.format_err(StatusCode::BAD_REQUEST),
+            LoadDumpExistingDb => self.format_err(StatusCode::BAD_REQUEST),
+            ConflictingRestoreParameters => self.format_err(StatusCode::BAD_REQUEST),
         }
     }
 }

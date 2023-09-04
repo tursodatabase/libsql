@@ -3763,6 +3763,7 @@ dependencies = [
  "bytemuck",
  "bytes 1.4.0",
  "bytesize",
+ "chrono",
  "clap",
  "console-subscriber",
  "crc",

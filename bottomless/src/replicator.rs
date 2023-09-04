@@ -13,7 +13,7 @@ use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
 use bytes::{Buf, Bytes, BytesMut};
-use chrono::{DateTime, LocalResult, NaiveDateTime, TimeZone, Utc};
+use chrono::{NaiveDateTime, TimeZone, Utc};
 use std::io::SeekFrom;
 use std::ops::Deref;
 use std::path::Path;
@@ -677,7 +677,7 @@ impl Replicator {
     // match the <db-name>-<generation-uuid>/ pattern.
     pub async fn latest_generation_before(
         &self,
-        timestamp: Option<&DateTime<Utc>>,
+        timestamp: Option<&NaiveDateTime>,
     ) -> Option<Uuid> {
         let mut next_marker: Option<String> = None;
         let prefix = format!("{}-", self.db_name);
@@ -799,10 +799,10 @@ impl Replicator {
     }
 
     // Restores the database state from given remote generation
-    pub async fn restore_from(
+    async fn restore_from(
         &mut self,
         generation: Uuid,
-        utc_time: Option<DateTime<Utc>>,
+        utc_time: Option<NaiveDateTime>,
     ) -> Result<RestoreAction> {
         if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
@@ -980,10 +980,10 @@ impl Replicator {
                         break;
                     }
                     if let Some(threshold) = utc_time.as_ref() {
-                        match Utc.timestamp_millis_opt((timestamp * 1000) as i64) {
-                            LocalResult::Single(timestamp) => {
+                        match NaiveDateTime::from_timestamp_opt(timestamp as i64, 0) {
+                            Some(timestamp) => {
                                 if &timestamp > threshold {
-                                    tracing::info!("Frame batch {} has timestamp more recent than expected {}. Stopping recovery.", key, timestamp.to_rfc3339());
+                                    tracing::info!("Frame batch {} has timestamp more recent than expected {}. Stopping recovery.", key, timestamp);
                                     break 'restore_wal; // reached end of restoration timestamp
                                 }
                             }
@@ -1050,7 +1050,7 @@ impl Replicator {
     pub async fn restore(
         &mut self,
         generation: Option<Uuid>,
-        timestamp: Option<DateTime<Utc>>,
+        timestamp: Option<NaiveDateTime>,
     ) -> Result<RestoreAction> {
         let generation = match generation {
             Some(gen) => gen,
