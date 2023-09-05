@@ -396,8 +396,7 @@ impl RowsInner for Rows {
     fn column_name(&self, idx: i32) -> Option<&str> {
         self.cols
             .get(idx as usize)
-            .map(|c| c.name.as_ref())
-            .flatten()
+            .and_then(|c| c.name.as_ref())
             .map(|s| s.as_str())
     }
 
@@ -420,12 +419,11 @@ impl RowInner for Row {
     fn column_name(&self, idx: i32) -> Option<&str> {
         self.cols
             .get(idx as usize)
-            .map(|c| c.name.as_ref())
-            .flatten()
+            .and_then(|c| c.name.as_ref())
             .map(|s| s.as_str())
     }
 
-    fn column_str(&self, idx: i32) -> Result<&str> {
+    fn column_str(&self, _idx: i32) -> Result<&str> {
         todo!()
     }
 

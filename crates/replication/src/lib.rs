@@ -12,12 +12,6 @@ pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
-use tonic::codegen::InterceptedService;
-use tonic::metadata::{Ascii, MetadataValue};
-use tonic::service::Interceptor;
-// use tonic::transport::Channel;
-
-use uuid::Uuid;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -197,7 +191,7 @@ impl Replicator {
         Ok(())
     }
 
-    pub async fn delegate_write(&self, sql: &str) -> anyhow::Result<()> {
+    pub async fn delegate_write(&self, _sql: &str) -> anyhow::Result<()> {
         // let req =
         Ok(())
     }

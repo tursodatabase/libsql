@@ -35,7 +35,7 @@ impl Opts {
         let endpoint = endpoint.into().replace("libsql://", "https://");
         Opts {
             sync: Sync::Http {
-                endpoint: endpoint.into(),
+                endpoint,
                 auth_token: auth_token.into(),
             },
         }

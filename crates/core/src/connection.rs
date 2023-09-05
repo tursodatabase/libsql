@@ -15,7 +15,7 @@ pub struct Connection {
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        if let Some(_) = Arc::get_mut(&mut self.drop_ref) {
+        if Arc::get_mut(&mut self.drop_ref).is_some() {
             unsafe { libsql_sys::ffi::sqlite3_close(self.raw) };
         }
     }

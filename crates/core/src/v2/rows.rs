@@ -17,6 +17,7 @@ pub struct Rows {
 }
 
 impl Rows {
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Result<Option<Row>> {
         self.inner.next()
     }
@@ -96,7 +97,7 @@ pub trait FromValue {
 
 impl FromValue for crate::Value {
     fn from_sql(val: Value) -> Result<Self> {
-        Ok(val.into())
+        Ok(val)
     }
 }
 
@@ -124,7 +125,7 @@ impl FromValue for i64 {
     fn from_sql(val: Value) -> Result<Self> {
         match val {
             Value::Null => Err(crate::Error::NullValue),
-            Value::Integer(i) => Ok(i as i64),
+            Value::Integer(i) => Ok(i),
             _ => unreachable!("invalid value type"),
         }
     }
@@ -144,7 +145,7 @@ impl FromValue for f64 {
     fn from_sql(val: Value) -> Result<Self> {
         match val {
             Value::Null => Err(crate::Error::NullValue),
-            Value::Real(f) => Ok(f as f64),
+            Value::Real(f) => Ok(f),
             _ => unreachable!("invalid value type"),
         }
     }

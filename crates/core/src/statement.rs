@@ -134,7 +134,7 @@ impl Statement {
                 self.inner.bind_text(i, value);
             }
             ValueRef::Blob(value) => {
-                self.inner.bind_blob(i, &value[..]);
+                self.inner.bind_blob(i, value);
             }
         }
     }

@@ -132,7 +132,7 @@ impl From<libsql_sys::Value> for Value {
 
                 let slice: &[u8] =
                     unsafe { std::slice::from_raw_parts(blob as *const u8, len as usize) };
-                v.extend_from_slice(&slice);
+                v.extend_from_slice(slice);
                 Value::Blob(v)
             }
         }
