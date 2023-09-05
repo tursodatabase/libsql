@@ -1,5 +1,6 @@
 use crate::{run_server, Config};
 use anyhow::Result;
+use aws_sdk_s3::config::{Credentials, Region};
 use libsql_client::{Connection, QueryResult, Statement, Value};
 use std::net::ToSocketAddrs;
 use std::path::PathBuf;
@@ -322,16 +323,29 @@ where
     db.batch(stmts).await
 }
 
+async fn s3_config() -> aws_sdk_s3::config::Config {
+    let loader = aws_config::from_env().endpoint_url(S3_URL);
+    aws_sdk_s3::config::Builder::from(&loader.load().await)
+        .force_path_style(true)
+        .region(Region::new(
+            std::env::var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION").unwrap(),
+        ))
+        .credentials_provider(Credentials::new(
+            std::env::var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID").unwrap(),
+            std::env::var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY").unwrap(),
+            None,
+            None,
+            "Static",
+        ))
+        .build()
+}
+
 /// Checks if the corresponding bucket is empty (has any elements) or not.
 /// If bucket was not found, it's equivalent of an empty one.
 async fn assert_bucket_occupancy(bucket: &str, expect_empty: bool) {
     use aws_sdk_s3::Client;
 
-    let loader = aws_config::from_env().endpoint_url(S3_URL);
-    let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
-        .force_path_style(true)
-        .build();
-    let client = Client::from_conf(conf);
+    let client = Client::from_conf(s3_config().await);
     if let Ok(out) = client.list_objects().bucket(bucket).send().await {
         let contents = out.contents().unwrap_or_default();
         if expect_empty {
@@ -388,11 +402,7 @@ impl S3BucketCleaner {
         use aws_sdk_s3::types::{Delete, ObjectIdentifier};
         use aws_sdk_s3::Client;
 
-        let loader = aws_config::from_env().endpoint_url(S3_URL);
-        let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
-            .force_path_style(true)
-            .build();
-        let client = Client::from_conf(conf);
+        let client = Client::from_conf(s3_config().await);
         let objects = client.list_objects().bucket(bucket).send().await?;
         let mut delete_keys = Vec::new();
         for o in objects.contents().unwrap_or_default() {

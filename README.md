@@ -83,9 +83,9 @@ environment variables can be used to configure the replication:
 ```bash
 LIBSQL_BOTTOMLESS_BUCKET=my-bucket                 # Default bucket name: bottomless
 LIBSQL_BOTTOMLESS_ENDPOINT='http://localhost:9000' # address can be overridden for local testing, e.g. with Minio
-AWS_SECRET_ACCESS_KEY=                             # regular AWS variables are used
-AWS_ACCESS_KEY_ID=                                 # ... to set up auth, regions, etc.
-AWS_REGION=                                        # .
+LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY=           # regular AWS variables are used
+LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID=               # ... to set up auth, regions, etc.
+LIBSQL_BOTTOMLESS_AWS_REGION=                      # .
 ```
 
 ### bottomless-cli

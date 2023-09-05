@@ -6,9 +6,9 @@ services:
       - SQLD_NODE=primary
       - SQLD_ENABLE_BOTTOMLESS_REPLICATION=true
       - LIBSQL_BOTTOMLESS_ENDPOINT=http://s3:9000
-      - AWS_ACCESS_KEY_ID=minioadmin
-      - AWS_SECRET_ACCESS_KEY=minioadmin
-      - AWS_DEFAULT_REGION=eu-central-2
+      - LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID=minioadmin
+      - LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY=minioadmin
+      - LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION=eu-central-2
       - RUST_LOG=info,bottomless=trace
     ports:
       - "6000:5000"

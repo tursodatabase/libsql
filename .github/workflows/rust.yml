@@ -91,9 +91,9 @@ jobs:
         command: test
         args: --verbose
       env:
-        AWS_ACCESS_KEY_ID: minioadmin
-        AWS_SECRET_ACCESS_KEY: minioadmin
-        AWS_DEFAULT_REGION: eu-central-2
+        LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY: minioadmin
+        LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION: eu-central-2
         LIBSQL_BOTTOMLESS_BUCKET: bottomless
         LIBSQL_BOTTOMLESS_ENDPOINT: http://localhost:9000
 
