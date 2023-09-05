@@ -325,6 +325,9 @@ pub struct Statement {
 
 #[async_trait::async_trait]
 impl super::statement::Stmt for Statement {
+    fn finalize(&self) {
+    }
+
     async fn execute(&self, params: &Params) -> Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);

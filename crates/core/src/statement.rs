@@ -13,6 +13,10 @@ pub struct Statement {
 }
 
 impl Statement {
+    pub(crate) fn finalize(&self) {
+        self.inner.finalize();
+    }
+
     pub(crate) fn prepare(
         conn: Connection,
         raw: *mut libsql_sys::ffi::sqlite3,

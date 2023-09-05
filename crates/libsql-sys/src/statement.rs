@@ -1,12 +1,14 @@
 #![allow(clippy::missing_safety_doc)]
 
 use std::ffi::{c_char, c_int};
+use std::sync::atomic::AtomicBool;
 
 use crate::error::Result;
 
 #[derive(Debug)]
 pub struct Statement {
     pub raw_stmt: *mut crate::ffi::sqlite3_stmt,
+    finalized: AtomicBool,
     tail: usize,
 }
 
@@ -18,15 +20,17 @@ unsafe impl Send for Statement {}
 
 impl Drop for Statement {
     fn drop(&mut self) {
-        if !self.raw_stmt.is_null() {
-            unsafe {
-                crate::ffi::sqlite3_finalize(self.raw_stmt);
-            }
-        }
+        self.finalize();
     }
 }
 
 impl Statement {
+    pub fn finalize(&self) {
+        if !self.finalized.swap(true, std::sync::atomic::Ordering::SeqCst) {
+            unsafe { crate::ffi::sqlite3_finalize(self.raw_stmt); }
+        }
+    }
+
     pub fn bind_null(&self, idx: i32) {
         unsafe {
             crate::ffi::sqlite3_bind_null(self.raw_stmt, idx);
@@ -206,7 +210,7 @@ pub unsafe fn prepare_stmt(raw: *mut crate::ffi::sqlite3, sql: &str) -> Result<S
     };
 
     match err as u32 {
-        crate::ffi::SQLITE_OK => Ok(Statement { raw_stmt, tail }),
+        crate::ffi::SQLITE_OK => Ok(Statement { raw_stmt, tail, finalized: AtomicBool::new(false) }),
         _ => Err(err.into()),
     }
 }
