@@ -1,10 +1,10 @@
-Contributing to libsql
+# Contributing to libsql
 
 Thank you for your interest in contributing to libsql! We welcome contributions from the community to make this project better.
 
 Before you start, please take a moment to review the guidelines outlined below.
 
-Code of Conduct
+# Code of Conduct
 
 Please note that we have a Code of Conduct in place to ensure a positive and inclusive environment for everyone involved.
 
