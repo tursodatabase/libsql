@@ -381,7 +381,9 @@ pub type DumpStream =
 
 fn make_bottomless_options(options: &Options, name: &Bytes) -> Options {
     let mut options = options.clone();
-    let db_id = format!("ns-{}", std::str::from_utf8(name).unwrap());
+    let namespace = std::str::from_utf8(name).unwrap();
+    let db_id = options.db_id.unwrap_or_default();
+    let db_id = format!("ns-{db_id}:{namespace}");
     options.db_id = Some(db_id);
     options
 }
