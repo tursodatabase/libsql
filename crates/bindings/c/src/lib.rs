@@ -78,7 +78,7 @@ pub unsafe extern "C" fn libsql_open_sync(
             return 3;
         }
     };
-    match RT.block_on(libsql::v2::Database::open_with_sync(
+    match RT.block_on(libsql::Database::open_with_sync(
         db_path.to_string(),
         primary_url,
         auth_token,
@@ -117,7 +117,7 @@ pub unsafe extern "C" fn libsql_open_ext(
             return 1;
         }
     };
-    match libsql::v2::Database::open(url.to_string()) {
+    match libsql::Database::open(url.to_string()) {
         Ok(db) => {
             let db = Box::leak(Box::new(libsql_database { db }));
             *out_db = libsql_database_t::from(db);
