@@ -455,7 +455,10 @@ pub async fn init_bottomless_replicator(
         bottomless::replicator::RestoreAction::None => (),
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
             replicator.new_generation();
-            did_recover = replicator.snapshot_main_db_file().await?;
+            if let Some(handle) = replicator.snapshot_main_db_file(None).await? {
+                handle.await?;
+                did_recover = true;
+            }
             // Restoration process only leaves the local WAL file if it was
             // detected to be newer than its remote counterpart.
             replicator.maybe_replicate_wal().await?

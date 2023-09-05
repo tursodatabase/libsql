@@ -358,9 +358,12 @@ pub extern "C" fn xCheckpoint(
         return ffi::SQLITE_IOERR_WRITE;
     }
 
-    ctx.replicator.new_generation();
+    let prev = ctx.replicator.new_generation();
     tracing::debug!("Snapshotting after checkpoint");
-    let result = block_on!(ctx.runtime, ctx.replicator.snapshot_main_db_file());
+    let result = block_on!(
+        ctx.runtime,
+        ctx.replicator.snapshot_main_db_file(Some(prev))
+    );
     if let Err(e) = result {
         tracing::error!(
             "Failed to snapshot the main db file during checkpoint: {}",
@@ -418,9 +421,18 @@ async fn try_restore(replicator: &mut replicator::Replicator) -> i32 {
         Ok(replicator::RestoreAction::None) => (),
         Ok(replicator::RestoreAction::SnapshotMainDbFile) => {
             replicator.new_generation();
-            if let Err(e) = replicator.snapshot_main_db_file().await {
-                tracing::error!("Failed to snapshot the main db file: {}", e);
-                return ffi::SQLITE_CANTOPEN;
+            match replicator.snapshot_main_db_file(None).await {
+                Ok(Some(h)) => {
+                    if let Err(e) = h.await {
+                        tracing::error!("Failed to join snapshot main db file task: {}", e);
+                        return ffi::SQLITE_CANTOPEN;
+                    }
+                }
+                Ok(None) => {}
+                Err(e) => {
+                    tracing::error!("Failed to snapshot the main db file: {}", e);
+                    return ffi::SQLITE_CANTOPEN;
+                }
             }
             // Restoration process only leaves the local WAL file if it was
             // detected to be newer than its remote counterpart.
