@@ -227,6 +227,10 @@ impl<F: MakeNamespace> NamespaceStore<F> {
                 )
                 .await?;
             let ret = f(&ns);
+            tracing::info!(
+                "loaded namespace: `{}`",
+                std::str::from_utf8(&namespace).unwrap_or_default()
+            );
             lock.insert(namespace, ns);
             Ok(ret)
         }
@@ -250,6 +254,10 @@ impl<F: MakeNamespace> NamespaceStore<F> {
             .await?;
 
         let mut lock = RwLockUpgradableReadGuard::upgrade(lock).await;
+        tracing::info!(
+            "loaded namespace: `{}`",
+            std::str::from_utf8(&namespace).unwrap_or_default()
+        );
         lock.insert(namespace, ns);
 
         Ok(())
