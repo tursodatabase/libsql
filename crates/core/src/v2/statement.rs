@@ -7,6 +7,8 @@ use super::{rows::LibsqlRows, Row, Rows};
 // TODO(lucio): Add `column_*` based fn
 #[async_trait::async_trait]
 pub(super) trait Stmt {
+    fn finalize(&self);
+
     async fn execute(&self, params: &Params) -> Result<usize>;
 
     async fn query(&self, params: &Params) -> Result<Rows>;
@@ -27,6 +29,10 @@ pub struct Statement {
 // TODO(lucio): Unify param usage, here we use & and in conn we use
 //      Into.
 impl Statement {
+    pub fn finalize(&self) {
+        self.inner.finalize();
+    }
+
     pub async fn execute(&self, params: &Params) -> Result<usize> {
         self.inner.execute(params).await
     }
@@ -97,6 +103,10 @@ pub(super) struct LibsqlStmt(pub(super) crate::Statement);
 
 #[async_trait::async_trait]
 impl Stmt for LibsqlStmt {
+    fn finalize(&self) {
+        self.0.finalize();
+    }
+
     async fn execute(&self, params: &Params) -> Result<usize> {
         let params = params.clone();
         let stmt = self.0.clone();
