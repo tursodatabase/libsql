@@ -240,9 +240,9 @@ unsafe impl WalHook for ReplicationLoggerHook {
                     );
                     return SQLITE_IOERR_WRITE;
                 }
-                replicator.new_generation();
-                if let Err(e) =
-                    runtime.block_on(async move { replicator.snapshot_main_db_file().await })
+                let prev = replicator.new_generation();
+                if let Err(e) = runtime
+                    .block_on(async move { replicator.snapshot_main_db_file(Some(prev)).await })
                 {
                     tracing::error!("Failed to snapshot the main db file during checkpoint: {e}");
                     return SQLITE_IOERR_WRITE;
