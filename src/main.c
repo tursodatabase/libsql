@@ -2473,7 +2473,7 @@ int sqlite3_wal_checkpoint_v2(
   if( eMode<SQLITE_CHECKPOINT_PASSIVE || eMode>SQLITE_CHECKPOINT_TRUNCATE ){
     /* EVIDENCE-OF: R-03996-12088 The M parameter must be a valid checkpoint
     ** mode: */
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
 
   sqlite3_mutex_enter(db->mutex);

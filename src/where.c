@@ -4097,7 +4097,7 @@ int sqlite3_vtab_rhs_value(
   sqlite3_value *pVal = 0;
   int rc = SQLITE_OK;
   if( iCons<0 || iCons>=pIdxInfo->nConstraint ){
-    rc = SQLITE_MISUSE; /* EV: R-30545-25046 */
+    rc = SQLITE_MISUSE_BKPT; /* EV: R-30545-25046 */
   }else{
     if( pH->aRhs[iCons]==0 ){
       WhereTerm *pTerm = &pH->pWC->a[pIdxInfo->aConstraint[iCons].iTermOffset];

@@ -907,7 +907,7 @@ static int valueFromValueList(
   ValueList *pRhs;
 
   *ppOut = 0;
-  if( pVal==0 ) return SQLITE_MISUSE;
+  if( pVal==0 ) return SQLITE_MISUSE_BKPT;
   if( (pVal->flags & MEM_Dyn)==0 || pVal->xDel!=sqlite3VdbeValueListFree ){
     return SQLITE_ERROR;
   }else{
@@ -1508,7 +1508,7 @@ static int vdbeUnbind(Vdbe *p, unsigned int i){
   }
   sqlite3_mutex_enter(p->db->mutex);
   if( p->eVdbeState!=VDBE_READY_STATE ){
-    sqlite3Error(p->db, SQLITE_MISUSE);
+    sqlite3Error(p->db, SQLITE_MISUSE_BKPT);
     sqlite3_mutex_leave(p->db->mutex);
     sqlite3_log(SQLITE_MISUSE,
         "bind on a busy prepared statement: [%s]", p->zSql);
