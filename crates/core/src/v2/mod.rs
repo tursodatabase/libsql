@@ -125,6 +125,8 @@ trait Conn {
     fn changes(&self) -> u64;
 
     fn last_insert_rowid(&self) -> i64;
+
+    fn close(&self);
 }
 
 #[derive(Clone)]
@@ -177,6 +179,10 @@ impl Connection {
     pub fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
     }
+
+    pub fn close(&self) {
+        self.conn.close()
+    }
 }
 
 #[derive(Clone)]
@@ -225,5 +231,9 @@ impl Conn for LibsqlConnection {
 
     fn last_insert_rowid(&self) -> i64 {
         self.conn.last_insert_rowid()
+    }
+
+    fn close(&self) {
+        self.conn.disconnect()
     }
 }

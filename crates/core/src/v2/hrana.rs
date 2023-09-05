@@ -316,6 +316,10 @@ impl Conn for Client {
     fn last_insert_rowid(&self) -> i64 {
         self.last_insert_rowid.load(Ordering::SeqCst)
     }
+
+    fn close(&self) {
+        todo!()
+    }
 }
 
 pub struct Statement {
