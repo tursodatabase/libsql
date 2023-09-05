@@ -44,6 +44,7 @@ pub fn error_from_code(code: i32) -> String {
     sqlite_errmsg_to_string(errmsg)
 }
 
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn sqlite_errmsg_to_string(errmsg: *const std::ffi::c_char) -> String {
     let errmsg = unsafe { std::ffi::CStr::from_ptr(errmsg) }.to_bytes();
     String::from_utf8_lossy(errmsg).to_string()

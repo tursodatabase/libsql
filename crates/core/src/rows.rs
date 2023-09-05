@@ -64,8 +64,10 @@ impl Rows {
             _ => Err(Error::UnknownColumnType(idx, val)),
         }
     }
+}
 
-    pub fn as_ref(&self) -> &Statement {
+impl AsRef<Statement> for Rows {
+    fn as_ref(&self) -> &Statement {
         &self.stmt
     }
 }
