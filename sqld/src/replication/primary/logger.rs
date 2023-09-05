@@ -913,6 +913,21 @@ impl ReplicationLogger {
 }
 
 fn checkpoint_db(data_path: &Path) -> anyhow::Result<()> {
+    let wal_path = match data_path.parent() {
+        Some(path) => path.join("data-wal"),
+        None => return Ok(()),
+    };
+
+    if wal_path.try_exists()? {
+        if File::open(wal_path)?.metadata()?.len() == 0 {
+            tracing::debug!("wal file is empty, checkpoint not necessary");
+            return Ok(());
+        }
+    } else {
+        tracing::debug!("wal file doesn't exist, checkpoint not necessary");
+        return Ok(());
+    }
+
     unsafe {
         let conn = rusqlite::Connection::open(data_path)?;
         conn.query_row("PRAGMA journal_mode=WAL", (), |_| Ok(()))?;
