@@ -6,6 +6,7 @@ use crate::wal::WalFileReader;
 use anyhow::anyhow;
 use arc_swap::ArcSwap;
 use async_compression::tokio::write::GzipEncoder;
+use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::error::SdkError;
 use aws_sdk_s3::operation::get_object::builders::GetObjectFluentBuilder;
 use aws_sdk_s3::operation::get_object::GetObjectError;
@@ -85,6 +86,9 @@ pub struct Options {
     /// Kind of compression algorithm used on the WAL frames to be sent to S3.
     pub use_compression: CompressionKind,
     pub aws_endpoint: Option<String>,
+    pub access_key_id: Option<String>,
+    pub secret_access_key: Option<String>,
+    pub region: Option<String>,
     pub db_id: Option<String>,
     /// Bucket directory name where all S3 objects are backed up. General schema is:
     /// - `{db-name}-{uuid-v7}` subdirectories:
@@ -109,14 +113,34 @@ pub struct Options {
 }
 
 impl Options {
-    pub async fn client_config(&self) -> Config {
+    pub async fn client_config(&self) -> Result<Config> {
         let mut loader = aws_config::from_env();
         if let Some(endpoint) = self.aws_endpoint.as_deref() {
             loader = loader.endpoint_url(endpoint);
         }
-        aws_sdk_s3::config::Builder::from(&loader.load().await)
+        let region = self
+            .region
+            .clone()
+            .ok_or(anyhow!("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION was not set"))?;
+        let access_key_id = self
+            .access_key_id
+            .clone()
+            .ok_or(anyhow!("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID was not set"))?;
+        let secret_access_key = self.secret_access_key.clone().ok_or(anyhow!(
+            "LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY was not set"
+        ))?;
+        let conf = aws_sdk_s3::config::Builder::from(&loader.load().await)
             .force_path_style(true)
-            .build()
+            .region(Region::new(region))
+            .credentials_provider(Credentials::new(
+                access_key_id,
+                secret_access_key,
+                None,
+                None,
+                "Static",
+            ))
+            .build();
+        Ok(conf)
     }
 
     pub fn from_env() -> Result<Self> {
@@ -131,6 +155,15 @@ impl Options {
             if let Ok(seconds) = seconds.parse::<u64>() {
                 options.max_batch_interval = Duration::from_secs(seconds);
             }
+        }
+        if let Ok(access_key_id) = std::env::var("LIBSQL_BOTTOMLESS_AWS_ACCESS_KEY_ID") {
+            options.access_key_id = Some(access_key_id);
+        }
+        if let Ok(secret_access_key) = std::env::var("LIBSQL_BOTTOMLESS_AWS_SECRET_ACCESS_KEY") {
+            options.secret_access_key = Some(secret_access_key);
+        }
+        if let Ok(region) = std::env::var("LIBSQL_BOTTOMLESS_AWS_DEFAULT_REGION") {
+            options.region = Some(region);
         }
         if let Ok(count) = std::env::var("LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES") {
             match count.parse::<usize>() {
@@ -208,6 +241,9 @@ impl Default for Options {
             restore_transaction_page_swap_after: 1000,
             db_id,
             aws_endpoint: None,
+            access_key_id: None,
+            secret_access_key: None,
+            region: None,
             restore_transaction_cache_fpath: ".bottomless.restore".to_string(),
             bucket_name: "bottomless".to_string(),
         }
@@ -222,7 +258,7 @@ impl Replicator {
     }
 
     pub async fn with_options<S: Into<String>>(db_path: S, options: Options) -> Result<Self> {
-        let config = options.client_config().await;
+        let config = options.client_config().await?;
         let client = Client::from_conf(config);
         let bucket = options.bucket_name.clone();
         let generation = Arc::new(ArcSwap::new(Arc::new(Self::generate_generation())));
