@@ -338,7 +338,9 @@ impl super::statement::Stmt for Statement {
 
         let v = self.client.execute_inner(stmt, 0).await?;
         let affected_row_count = v.affected_row_count as usize;
-        self.client.affected_row_count.store(affected_row_count as u64, Ordering::SeqCst);
+        self.client
+            .affected_row_count
+            .store(affected_row_count as u64, Ordering::SeqCst);
         if let Some(last_insert_rowid) = v.last_insert_rowid {
             self.client
                 .last_insert_rowid

@@ -1,4 +1,4 @@
-use crate::{
+use crate::v1::{
     Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
 };
 

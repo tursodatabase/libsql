@@ -42,30 +42,42 @@
 //!
 //! You can find more examples in the [`examples`](https://github.com/penberg/libsql-experimental/tree/libsql-api/crates/core/examples) directory.
 
-// Legacy mode, for compatibility with the old libsql API.
-pub mod v1;
-pub mod v2;
+pub mod connection;
+pub mod database;
+pub mod errors;
+pub mod params;
+pub mod rows;
+pub mod statement;
+pub mod transaction;
 
-pub use v1::{
-    database::Opts,
-    errors,
-    errors::Error,
-    params,
-    params::{params_from_iter, Params, Value, ValueRef},
-    version, version_number, Result, RowsFuture,
-};
-
-pub use v2::{
-    hrana, rows,
-    rows::{Row, Rows},
-    statement,
-    statement::{Column, Statement},
-    transaction,
-    transaction::{Transaction, TransactionBehavior},
-    Connection, Database,
-};
+pub type Result<T> = std::result::Result<T, errors::Error>;
 
 pub use libsql_sys::ffi;
 pub use libsql_sys::ValueType;
 
-pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
+pub use connection::Connection;
+pub use database::Database;
+#[cfg(feature = "replication")]
+pub use database::Opts;
+pub use errors::Error;
+pub use params::Params;
+pub use params::{params_from_iter, Value, ValueRef};
+pub use rows::Row;
+pub use rows::Rows;
+pub use rows::RowsFuture;
+pub use statement::{Column, Statement};
+pub use transaction::{Transaction, TransactionBehavior};
+
+/// Return the version of the underlying SQLite library as a number.
+pub fn version_number() -> i32 {
+    unsafe { ffi::sqlite3_libversion_number() }
+}
+
+/// Return the version of the underlying SQLite library as a string.
+pub fn version() -> &'static str {
+    unsafe {
+        std::ffi::CStr::from_ptr(ffi::sqlite3_libversion())
+            .to_str()
+            .unwrap()
+    }
+}

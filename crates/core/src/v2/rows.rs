@@ -35,7 +35,7 @@ impl Rows {
     }
 }
 
-pub(super) struct LibsqlRows(pub(super) crate::Rows);
+pub(super) struct LibsqlRows(pub(super) crate::v1::Rows);
 
 impl RowsInner for LibsqlRows {
     fn next(&mut self) -> Result<Option<Row>> {
@@ -156,7 +156,7 @@ impl FromValue for Vec<u8> {
         match val {
             Value::Null => Err(crate::Error::NullValue),
             Value::Blob(blob) => Ok(blob),
-            _ => unreachable!("invalid value type"),            
+            _ => unreachable!("invalid value type"),
         }
     }
 }
@@ -165,9 +165,7 @@ impl FromValue for String {
     fn from_sql(val: Value) -> Result<Self> {
         match val {
             Value::Null => Err(crate::Error::NullValue),
-            Value::Text(s) => {
-                Ok(s)
-            }
+            Value::Text(s) => Ok(s),
             _ => unreachable!("invalid value type"),
         }
     }
@@ -180,7 +178,7 @@ pub(super) trait RowInner {
     fn column_type(&self, idx: i32) -> Result<ValueType>;
 }
 
-struct LibsqlRow(crate::Row);
+struct LibsqlRow(crate::v1::Row);
 
 impl RowInner for LibsqlRow {
     fn column_value(&self, idx: i32) -> Result<Value> {

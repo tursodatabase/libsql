@@ -1,4 +1,4 @@
-use libsql::Database;
+use libsql::v1::Database;
 use libsql_replication::{Frames, TempSnapshot};
 
 #[tokio::main]
