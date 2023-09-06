@@ -520,7 +520,8 @@ async fn start_primary(
         config.disable_namespaces,
     );
 
-    let proxy_service = ProxyService::new(namespaces.clone(), Some(auth));
+    let proxy_service =
+        ProxyService::new(namespaces.clone(), Some(auth), config.disable_namespaces);
 
     run_service(
         namespaces.clone(),
