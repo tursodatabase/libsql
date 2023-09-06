@@ -2219,7 +2219,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseSize
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
  * Method:    xQueryPhrase
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5ExtensionApi/xQueryPhraseCallback;)I
+ * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5ExtensionApi/XQueryPhraseCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xQueryPhrase
   (JNIEnv *, jobject, jobject, jint, jobject);
@@ -2251,7 +2251,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xSetAuxdata
 /*
  * Class:     org_sqlite_jni_Fts5ExtensionApi
  * Method:    xTokenize
- * Signature: (Lorg/sqlite/jni/Fts5Context;[BLorg/sqlite/jni/Fts5/xTokenize_callback;)I
+ * Signature: (Lorg/sqlite/jni/Fts5Context;[BLorg/sqlite/jni/Fts5/XTokenizeCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xTokenize
   (JNIEnv *, jobject, jobject, jbyteArray, jobject);
@@ -2311,7 +2311,7 @@ extern "C" {
 /*
  * Class:     org_sqlite_jni_fts5_tokenizer
  * Method:    xTokenize
- * Signature: (Lorg/sqlite/jni/Fts5Tokenizer;I[BLorg/sqlite/jni/Fts5/xTokenize_callback;)I
+ * Signature: (Lorg/sqlite/jni/Fts5Tokenizer;I[BLorg/sqlite/jni/Fts5/XTokenizeCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_fts5_1tokenizer_xTokenize
   (JNIEnv *, jobject, jobject, jint, jbyteArray, jobject);

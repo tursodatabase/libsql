@@ -26,7 +26,7 @@ public final class Fts5 {
   /**
      Callback type for use with xTokenize() variants
   */
-  public static interface xTokenize_callback {
+  public static interface XTokenizeCallback {
     int call(int tFlags, byte[] txt, int iStart, int iEnd);
   }
 

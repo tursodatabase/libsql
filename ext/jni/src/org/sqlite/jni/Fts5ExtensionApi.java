@@ -27,7 +27,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
   private final int iVersion = 2;
 
   /* Callback type for used by xQueryPhrase(). */
-  public static interface xQueryPhraseCallback {
+  public static interface XQueryPhraseCallback {
     int call(Fts5ExtensionApi fapi, Fts5Context cx);
   }
 
@@ -91,7 +91,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
 
   @Canonical
   public native int xQueryPhrase(@NotNull Fts5Context cx, int iPhrase,
-                                 @NotNull xQueryPhraseCallback callback);
+                                 @NotNull XQueryPhraseCallback callback);
   @Canonical
   public native int xRowCount(@NotNull Fts5Context fcx,
                               @NotNull OutputPointer.Int64 nRow);
@@ -110,7 +110,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
 
   @Canonical
   public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte[] pText,
-                              @NotNull Fts5.xTokenize_callback callback);
+                              @NotNull Fts5.XTokenizeCallback callback);
 
   @Canonical
   public native Object xUserData(Fts5Context cx);

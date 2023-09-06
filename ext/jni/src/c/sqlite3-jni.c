@@ -4538,7 +4538,7 @@ static int s3jni_trace_impl(unsigned traceflag, void *pC, void *pP, void *pX){
       jP = jPUnref = S3JniRefLocal(ps->jDb);
       break;
     default:
-      assert(!"cannot happen - unkown trace flag");
+      assert(!"cannot happen - unknown trace flag");
       rc =  SQLITE_ERROR;
   }
   if( 0==rc ){

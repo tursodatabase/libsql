@@ -27,7 +27,7 @@ dir.bld     := $(dir.jni)/bld
 dir.bld.c   := $(dir.bld)
 dir.src.jni := $(dir.src)/org/sqlite/jni
 dir.src.jni.tester := $(dir.src.jni)/tester
-mkdir       := mkdir -p
+mkdir       ?= mkdir -p
 $(dir.bld.c):
 	$(mkdir) $@
 
