@@ -3980,8 +3980,32 @@ static int fts3ShadowName(const char *zName){
   return 0;
 }
 
+/*
+** Implementation of the xIntegrity() method on the FTS3/FTS4 virtual
+** table.
+*/
+static char *fts3Integrity(sqlite3_vtab *pVtab){
+  Fts3Table *p = (Fts3Table*)pVtab;
+  char *zSql;
+  int rc;
+  char *zErr = 0;
+
+  zSql = sqlite3_mprintf(
+            "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
+            p->zDb, p->zName, p->zName);
+  rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+  sqlite3_free(zSql);
+  if( rc ){
+    zErr = sqlite3_mprintf("malformed inverted index for FTS%d table %s.%s",
+              p->bFts4 ? 4 : 3, p->zDb, p->zName);
+  }
+  return zErr;
+}
+
+
+
 static const sqlite3_module fts3Module = {
-  /* iVersion      */ 3,
+  /* iVersion      */ 4,
   /* xCreate       */ fts3CreateMethod,
   /* xConnect      */ fts3ConnectMethod,
   /* xBestIndex    */ fts3BestIndexMethod,
@@ -4005,6 +4029,7 @@ static const sqlite3_module fts3Module = {
   /* xRelease      */ fts3ReleaseMethod,
   /* xRollbackTo   */ fts3RollbackToMethod,
   /* xShadowName   */ fts3ShadowName,
+  /* xIntegrity    */ fts3Integrity,
 };
 
 /*

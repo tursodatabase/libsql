@@ -5812,6 +5812,9 @@ do_execsql_test 35.0 {
 do_catchsql_test 35.1 {
   INSERT INTO f(f) VALUES ('integrity-check');
 } {1 {database disk image is malformed}}
+do_execsql_test 35.2 {
+  PRAGMA integrity_check;
+} {{malformed inverted index for FTS3 table main.f}}
 
 reset_db
 do_catchsql_test 36.0 {
