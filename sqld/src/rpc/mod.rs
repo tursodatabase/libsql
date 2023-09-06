@@ -21,7 +21,7 @@ pub mod replication_log_proxy;
 
 /// A tonic error code to signify that a namespace doesn't exist.
 pub const NAMESPACE_DOESNT_EXIST: &str = "NAMESPACE_DOESNT_EXIST";
-pub(crate) const NAMESPACE_METADATA_KEY: &str = "x-namespace";
+pub(crate) const NAMESPACE_METADATA_KEY: &str = "x-namespace-bin";
 
 #[allow(clippy::too_many_arguments)]
 pub async fn run_rpc_server(
@@ -78,11 +78,11 @@ fn extract_namespace<T>(
         return Ok(Bytes::from_static(DEFAULT_NAMESPACE_NAME.as_bytes()));
     }
 
-    if let Some(namespace) = req.metadata().get_bin("x-namespace") {
+    if let Some(namespace) = req.metadata().get_bin(NAMESPACE_METADATA_KEY) {
         namespace
             .to_bytes()
             .map_err(|_| Status::invalid_argument("Metadata can't be converted into Bytes"))
     } else {
-        Err(Status::invalid_argument("Missing x-namespace metadata"))
+        Err(Status::invalid_argument("Missing x-namespace-bin metadata"))
     }
 }
