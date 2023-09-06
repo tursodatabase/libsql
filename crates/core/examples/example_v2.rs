@@ -21,7 +21,7 @@ async fn main() {
         .await
         .unwrap();
 
-    let stmt = conn
+    let mut stmt = conn
         .prepare("INSERT INTO users (email) VALUES (?1)")
         .await
         .unwrap();
@@ -32,7 +32,7 @@ async fn main() {
 
     db.sync().await.unwrap();
 
-    let stmt = conn
+    let mut stmt = conn
         .prepare("SELECT * FROM users WHERE email = ?1")
         .await
         .unwrap();

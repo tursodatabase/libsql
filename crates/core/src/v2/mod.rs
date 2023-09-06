@@ -160,7 +160,7 @@ impl Connection {
     }
 
     pub async fn query(&self, sql: &str, params: impl Into<Params>) -> Result<Rows> {
-        let stmt = self.prepare(sql).await?;
+        let mut stmt = self.prepare(sql).await?;
 
         stmt.query(&params.into()).await
     }
@@ -217,7 +217,7 @@ impl Conn for LibsqlConnection {
         let stmt = self.conn.prepare(sql)?;
 
         Ok(Statement {
-            inner: Arc::new(LibsqlStmt(stmt)),
+            inner: Box::new(LibsqlStmt(stmt)),
         })
     }
 

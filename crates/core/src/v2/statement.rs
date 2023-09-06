@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 pub use crate::v1::Column;
 use crate::v1::{Error, Params, Result};
 
@@ -8,13 +6,13 @@ use crate::{rows::LibsqlRows, Row, Rows};
 // TODO(lucio): Add `column_*` based fn
 #[async_trait::async_trait]
 pub(super) trait Stmt {
-    fn finalize(&self);
+    fn finalize(&mut self);
 
-    async fn execute(&self, params: &Params) -> Result<usize>;
+    async fn execute(&mut self, params: &Params) -> Result<usize>;
 
-    async fn query(&self, params: &Params) -> Result<Rows>;
+    async fn query(&mut self, params: &Params) -> Result<Rows>;
 
-    fn reset(&self);
+    fn reset(&mut self);
 
     fn parameter_count(&self) -> usize;
 
@@ -24,31 +22,31 @@ pub(super) trait Stmt {
 }
 
 pub struct Statement {
-    pub(super) inner: Arc<dyn Stmt + Send + Sync>,
+    pub(super) inner: Box<dyn Stmt + Send + Sync>,
 }
 
 // TODO(lucio): Unify param usage, here we use & and in conn we use
 //      Into.
 impl Statement {
-    pub fn finalize(&self) {
+    pub fn finalize(&mut self) {
         self.inner.finalize();
     }
 
-    pub async fn execute(&self, params: &Params) -> Result<usize> {
+    pub async fn execute(&mut self, params: &Params) -> Result<usize> {
         self.inner.execute(params).await
     }
 
-    pub async fn query(&self, params: &Params) -> Result<Rows> {
+    pub async fn query(&mut self, params: &Params) -> Result<Rows> {
         self.inner.query(params).await
     }
 
-    pub async fn query_map<F>(&self, params: &Params, map: F) -> Result<MappedRows<F>> {
+    pub async fn query_map<F>(&mut self, params: &Params, map: F) -> Result<MappedRows<F>> {
         let rows = self.query(params).await?;
 
         Ok(MappedRows { rows, map })
     }
 
-    pub async fn query_row(&self, params: &Params) -> Result<Row> {
+    pub async fn query_row(&mut self, params: &Params) -> Result<Row> {
         let mut rows = self.query(params).await?;
 
         let row = rows.next()?.ok_or(Error::QueryReturnedNoRows)?;
@@ -56,7 +54,7 @@ impl Statement {
         Ok(row)
     }
 
-    pub fn reset(&self) {
+    pub fn reset(&mut self) {
         self.inner.reset();
     }
 
@@ -104,18 +102,18 @@ pub(super) struct LibsqlStmt(pub(super) crate::v1::Statement);
 
 #[async_trait::async_trait]
 impl Stmt for LibsqlStmt {
-    fn finalize(&self) {
+    fn finalize(&mut self) {
         self.0.finalize();
     }
 
-    async fn execute(&self, params: &Params) -> Result<usize> {
+    async fn execute(&mut self, params: &Params) -> Result<usize> {
         let params = params.clone();
         let stmt = self.0.clone();
 
         stmt.execute(&params).map(|i| i as usize)
     }
 
-    async fn query(&self, params: &Params) -> Result<Rows> {
+    async fn query(&mut self, params: &Params) -> Result<Rows> {
         let params = params.clone();
         let stmt = self.0.clone();
 
@@ -124,7 +122,7 @@ impl Stmt for LibsqlStmt {
         })
     }
 
-    fn reset(&self) {
+    fn reset(&mut self) {
         self.0.reset();
     }
 

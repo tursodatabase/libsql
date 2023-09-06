@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion, Throughput};
+use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
 use libsql::{Database, Params};
 use pprof::criterion::{Output, PProfProfiler};
 use tokio::runtime;
@@ -24,14 +24,17 @@ fn bench(c: &mut Criterion) {
         });
     });
 
-    let stmt = rt.block_on(conn.prepare("SELECT 1")).unwrap();
     group.bench_function("select 1 (prepared)", |b| {
-        b.to_async(&rt).iter(|| async {
-            let mut rows = stmt.query(&Params::None).await.unwrap();
-            let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<i32>(0).unwrap(), 1);
-            stmt.reset();
-        });
+        b.to_async(&rt).iter_batched(
+            || rt.block_on(conn.prepare("SELECT 1")).unwrap(),
+            |mut stmt| async move {
+                let mut rows = stmt.query(&Params::None).await.unwrap();
+                let row = rows.next().unwrap().unwrap();
+                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                stmt.reset();
+            },
+            BatchSize::SmallInput,
+        );
     });
 
     rt.block_on(conn.execute("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)", ()))
@@ -41,28 +44,36 @@ fn bench(c: &mut Criterion) {
             .unwrap();
     }
 
-    let stmt = rt
-        .block_on(conn.prepare("SELECT * FROM users LIMIT 1"))
-        .unwrap();
     group.bench_function("SELECT * FROM users LIMIT 1", |b| {
-        b.to_async(&rt).iter(|| async {
-            let mut rows = stmt.query(&Params::None).await.unwrap();
-            let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<i32>(0).unwrap(), 1);
-            stmt.reset();
-        });
+        b.to_async(&rt).iter_batched(
+            || {
+                rt.block_on(conn.prepare("SELECT * FROM users LIMIT 1"))
+                    .unwrap()
+            },
+            |mut stmt| async move {
+                let mut rows = stmt.query(&Params::None).await.unwrap();
+                let row = rows.next().unwrap().unwrap();
+                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                stmt.reset();
+            },
+            BatchSize::SmallInput,
+        );
     });
 
-    let stmt = rt
-        .block_on(conn.prepare("SELECT * FROM users LIMIT 100"))
-        .unwrap();
     group.bench_function("SELECT * FROM users LIMIT 100", |b| {
-        b.to_async(&rt).iter(|| async {
-            let mut rows = stmt.query(&Params::None).await.unwrap();
-            let row = rows.next().unwrap().unwrap();
-            assert_eq!(row.get::<i32>(0).unwrap(), 1);
-            stmt.reset();
-        });
+        b.to_async(&rt).iter_batched(
+            || {
+                rt.block_on(conn.prepare("SELECT * FROM users LIMIT 100"))
+                    .unwrap()
+            },
+            |mut stmt| async move {
+                let mut rows = stmt.query(&Params::None).await.unwrap();
+                let row = rows.next().unwrap().unwrap();
+                assert_eq!(row.get::<i32>(0).unwrap(), 1);
+                stmt.reset();
+            },
+            BatchSize::SmallInput,
+        );
     });
 }
 
