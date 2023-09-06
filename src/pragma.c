@@ -1765,12 +1765,12 @@ void sqlite3Pragma(
           if( pTab->u.vtab.p==0 ) continue;
           pVTab = pTab->u.vtab.p->pVtab;
           if( NEVER(pVTab==0) ) continue;
-          if( pVTab->pModule==0 ) continue;
+          if( NEVER(pVTab->pModule==0) ) continue;
           if( pVTab->pModule->iVersion<4 ) continue;
           if( pVTab->pModule->xIntegrity==0 ) continue;
           sqlite3VdbeAddOp2(v, OP_VCheck, 0, 3);
           sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
-          a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3);
+          a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
           integrityCheckResultRow(v);
           sqlite3VdbeJumpHere(v, a1);
           continue;

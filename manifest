@@ -1,5 +1,5 @@
-C Change\sthe\sxIntegrity\svirtual\stable\smethod\ssignature\sso\sthat\sit\sreturns\nan\sinteger\serror\scode\sand\swrites\sthe\serror\smessage\sinto\sa\sparameter.
-D 2023-09-06T14:00:01.110
+C Fix\sunreachable\sbranches.
+D 2023-09-06T16:22:48.953
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -699,7 +699,7 @@ F src/parse.y aeb7760d41cfa86465e3adba506500c021597049fd55f82a30e5b7045862c28c
 F src/pcache.c 040b165f30622a21b7a9a77c6f2e4877a32fb7f22d4c7f0d2a6fa6833a156a75
 F src/pcache.h 1497ce1b823cf00094bb0cf3bac37b345937e6f910890c626b16512316d3abf5
 F src/pcache1.c 602acb23c471bb8d557a6f0083cc2be641d6cafcafa19e481eba7ef4c9ca0f00
-F src/pragma.c 2e3540e0a752ba471fa72106a75e669f6e5770a4f2895cc72dc8bbf613a69287
+F src/pragma.c ea85fb64b9481004aaa5d0fa66a57c804074f46145ef2409894d1fc2f4b0cf8d
 F src/pragma.h e690a356c18e98414d2e870ea791c1be1545a714ba623719deb63f7f226d8bb7
 F src/prepare.c 80548297dc0e1fb3139cdebffb5a1bcac3dfac66d791012dd74838e70445072d
 F src/printf.c e3ba080e2f409f9bfcc8d34724e6fc160e9c718dc92d0548f6b71b8b6f860ce2
@@ -2116,8 +2116,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 17bede8cdefd968210dd8a5a2617acbe12ba2c99fdd5e88c5def8665e7bec2d7
-R ddcb270798e6e92d1bc2da645d75bf74
+P f1d4024a8ca06cf954aaf1f612684d1a5d28492bde757695db3f22c50c649709
+R d7d930683491c90e93c168906facf667
 U drh
-Z 9853bb1092c1661903c7bd49e9ef85a5
+Z f2307316f4066423c9fe29a04014f943
 # Remove this line to create a well-formed Fossil manifest.
