@@ -2,6 +2,7 @@ mod pipeline;
 mod proto;
 
 use hyper::header::AUTHORIZATION;
+use libsql_sys::ValueType;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
     StreamResponse, StreamResponseError, StreamResponseOk,
@@ -408,7 +409,7 @@ impl RowsInner for Rows {
             .map(|s| s.as_str())
     }
 
-    fn column_type(&self, _idx: i32) -> Result<crate::ValueType> {
+    fn column_type(&self, _idx: i32) -> Result<ValueType> {
         todo!("implement")
     }
 }
@@ -435,14 +436,14 @@ impl RowInner for Row {
         todo!()
     }
 
-    fn column_type(&self, idx: i32) -> Result<crate::ValueType> {
+    fn column_type(&self, idx: i32) -> Result<ValueType> {
         if let Some(value) = self.inner.get(idx as usize) {
             Ok(match value {
-                proto::Value::Null => crate::ValueType::Null,
-                proto::Value::Integer { value: _ } => crate::ValueType::Integer,
-                proto::Value::Float { value: _ } => crate::ValueType::Real,
-                proto::Value::Text { value: _ } => crate::ValueType::Text,
-                proto::Value::Blob { value: _ } => crate::ValueType::Blob,
+                proto::Value::Null => ValueType::Null,
+                proto::Value::Integer { value: _ } => ValueType::Integer,
+                proto::Value::Float { value: _ } => ValueType::Real,
+                proto::Value::Text { value: _ } => ValueType::Text,
+                proto::Value::Blob { value: _ } => ValueType::Blob,
             })
         } else {
             Err(crate::Error::ColumnNotFound(idx))
