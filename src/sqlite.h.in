@@ -5975,11 +5975,16 @@ void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 ** Applications and wrapper libraries are discouraged from using more than
 ** one client data name each.
 **
-** There is (currently) no way to enumerate the client data pointers
+** There is no way to enumerate the client data pointers
 ** associated with a database connection.  The N parameter can be thought
 ** of as a secret key such that only code that knows the secret key is able
 ** to access the associated data.
 **
+** Security Warning:  These interfaces should not be exposed in scripting
+** languages or in other circumstances where it might be possible for an
+** an attacker to invoke them.  Any agent that can invoke these interfaces
+** can probably also take control of the process.
+** 
 ** Database connection client data is only available for SQLite
 ** version 3.44.0 ([dateof:3.44.0]) and later.
 **
