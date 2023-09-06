@@ -46,8 +46,10 @@ pub trait MakeNamespace: Sync + Send + 'static {
         allow_creation: bool,
     ) -> crate::Result<Namespace<Self::Database>>;
 
-    /// Destroy all resources associated with `namespace`
-    async fn destroy(&self, namespace: &Bytes) -> crate::Result<()>;
+    /// Destroy all resources associated with `namespace`.
+    /// When `prune_all` is false, remove only files from local disk.
+    /// When `prune_all` is true remove local database files as well as remote backup.
+    async fn destroy(&self, namespace: &Bytes, prune_all: bool) -> crate::Result<()>;
 }
 
 /// Creates new primary `Namespace`
@@ -75,24 +77,26 @@ impl MakeNamespace for PrimaryNamespaceMaker {
         Namespace::new_primary(&self.config, name, restore_option, allow_creation).await
     }
 
-    async fn destroy(&self, namespace: &Bytes) -> crate::Result<()> {
+    async fn destroy(&self, namespace: &Bytes, prune_all: bool) -> crate::Result<()> {
         let ns_path = self
             .config
             .base_path
             .join("dbs")
             .join(std::str::from_utf8(namespace).unwrap());
 
-        if let Some(ref options) = self.config.bottomless_replication {
-            let options = make_bottomless_options(options, namespace);
-            let replicator = bottomless::replicator::Replicator::with_options(
-                ns_path.join("data").to_str().unwrap(),
-                options,
-            )
-            .await?;
-            let delete_all = replicator.delete_all(None).await?;
+        if prune_all {
+            if let Some(ref options) = self.config.bottomless_replication {
+                let options = make_bottomless_options(options, namespace);
+                let replicator = bottomless::replicator::Replicator::with_options(
+                    ns_path.join("data").to_str().unwrap(),
+                    options,
+                )
+                .await?;
+                let delete_all = replicator.delete_all(None).await?;
 
-            // perform hard deletion in the background
-            tokio::spawn(delete_all.commit());
+                // perform hard deletion in the background
+                tokio::spawn(delete_all.commit());
+            }
         }
 
         tokio::fs::remove_dir_all(ns_path).await?;
@@ -131,7 +135,7 @@ impl MakeNamespace for ReplicaNamespaceMaker {
         Namespace::new_replica(&self.config, name, allow_creation).await
     }
 
-    async fn destroy(&self, namespace: &Bytes) -> crate::Result<()> {
+    async fn destroy(&self, namespace: &Bytes, _prune_all: bool) -> crate::Result<()> {
         let ns_path = self
             .config
             .base_path
@@ -163,7 +167,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         }
 
         // destroy on-disk database
-        self.make_namespace.destroy(&namespace).await?;
+        self.make_namespace.destroy(&namespace, true).await?;
 
         tracing::info!(
             "destroyed namespace: {}",
@@ -189,7 +193,7 @@ impl<M: MakeNamespace> NamespaceStore<M> {
         }
 
         // destroy on-disk database
-        self.make_namespace.destroy(&namespace).await?;
+        self.make_namespace.destroy(&namespace, false).await?;
         let ns = self
             .make_namespace
             .create(namespace.clone(), restore_option, true)
