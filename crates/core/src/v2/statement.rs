@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
-use crate::{Column, Error, Params, Result};
+pub use crate::v1::Column;
+use crate::v1::{Error, Params, Result};
 
-use super::{rows::LibsqlRows, Row, Rows};
+use crate::{rows::LibsqlRows, Row, Rows};
 
 // TODO(lucio): Add `column_*` based fn
 #[async_trait::async_trait]
@@ -99,7 +100,7 @@ where
     }
 }
 
-pub(super) struct LibsqlStmt(pub(super) crate::Statement);
+pub(super) struct LibsqlStmt(pub(super) crate::v1::Statement);
 
 #[async_trait::async_trait]
 impl Stmt for LibsqlStmt {

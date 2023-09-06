@@ -329,8 +329,7 @@ pub struct Statement {
 
 #[async_trait::async_trait]
 impl super::statement::Stmt for Statement {
-    fn finalize(&self) {
-    }
+    fn finalize(&self) {}
 
     async fn execute(&self, params: &Params) -> Result<usize> {
         let mut stmt = self.inner.clone();
@@ -338,7 +337,9 @@ impl super::statement::Stmt for Statement {
 
         let v = self.client.execute_inner(stmt, 0).await?;
         let affected_row_count = v.affected_row_count as usize;
-        self.client.affected_row_count.store(affected_row_count as u64, Ordering::SeqCst);
+        self.client
+            .affected_row_count
+            .store(affected_row_count as u64, Ordering::SeqCst);
         if let Some(last_insert_rowid) = v.last_insert_rowid {
             self.client
                 .last_insert_rowid

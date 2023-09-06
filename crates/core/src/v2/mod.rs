@@ -1,11 +1,11 @@
-mod hrana;
-mod rows;
-mod statement;
-mod transaction;
+pub mod hrana;
+pub mod rows;
+pub mod statement;
+pub mod transaction;
 
 use std::sync::Arc;
 
-use crate::{Params, Result, TransactionBehavior};
+use crate::v1::{Params, Result, TransactionBehavior};
 pub use hrana::{Client, HranaError};
 
 pub use rows::{Row, Rows};
@@ -20,7 +20,7 @@ pub use transaction::Transaction;
 enum DbType {
     Memory,
     File { path: String },
-    Sync { db: crate::Database },
+    Sync { db: crate::v1::Database },
     Remote { url: String, auth_token: String },
 }
 
@@ -49,7 +49,7 @@ impl Database {
         token: impl Into<String>,
     ) -> Result<Database> {
         let opts = crate::Opts::with_http_sync(url, token);
-        let db = crate::Database::open_with_opts(db_path, opts).await?;
+        let db = crate::v1::Database::open_with_opts(db_path, opts).await?;
         Ok(Database {
             db_type: DbType::Sync { db },
         })
@@ -67,7 +67,7 @@ impl Database {
     pub async fn connect(&self) -> Result<Connection> {
         match &self.db_type {
             DbType::Memory => {
-                let db = crate::Database::open(":memory:")?;
+                let db = crate::v1::Database::open(":memory:")?;
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
@@ -76,7 +76,7 @@ impl Database {
             }
 
             DbType::File { path } => {
-                let db = crate::Database::open(path)?;
+                let db = crate::v1::Database::open(path)?;
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
@@ -105,7 +105,7 @@ impl Database {
             DbType::Sync { db } => db.sync().await,
             DbType::Memory => Err(crate::Error::SyncNotSupported("in-memory".into())),
             DbType::File { .. } => Err(crate::Error::SyncNotSupported("file".into())),
-            DbType::Remote { .. }=> Err(crate::Error::SyncNotSupported("remote".into())),
+            DbType::Remote { .. } => Err(crate::Error::SyncNotSupported("remote".into())),
         }
     }
 }
@@ -169,11 +169,11 @@ impl Connection {
     }
 
     pub fn is_autocommit(&self) -> bool {
-       self.conn.is_autocommit()
+        self.conn.is_autocommit()
     }
 
     pub fn changes(&self) -> u64 {
-       self.conn.changes()
+        self.conn.changes()
     }
 
     pub fn last_insert_rowid(&self) -> i64 {
@@ -187,7 +187,7 @@ impl Connection {
 
 #[derive(Clone)]
 struct LibsqlConnection {
-    conn: crate::Connection,
+    conn: crate::v1::Connection,
 }
 
 #[async_trait::async_trait]
@@ -211,7 +211,7 @@ impl Conn for LibsqlConnection {
     }
 
     async fn transaction(&self, tx_behavior: TransactionBehavior) -> Result<Transaction> {
-        let tx = crate::Transaction::begin(self.conn.clone(), tx_behavior)?;
+        let tx = crate::v1::Transaction::begin(self.conn.clone(), tx_behavior)?;
         // TODO(lucio): Can we just use the conn passed to the transaction?
         Ok(Transaction {
             inner: Box::new(LibsqlTx(Some(tx))),
@@ -222,7 +222,7 @@ impl Conn for LibsqlConnection {
     }
 
     fn is_autocommit(&self) -> bool {
-       self.conn.is_autocommit()
+        self.conn.is_autocommit()
     }
 
     fn changes(&self) -> u64 {

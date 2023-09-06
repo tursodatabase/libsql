@@ -36,7 +36,7 @@ macro_rules! named_params {
 /// # Example
 ///
 /// ```rust
-/// # use libsql::{Connection, params_from_iter, Rows};
+/// # use libsql::v1::{Connection, params_from_iter, Rows};
 /// # fn run(conn: &Connection) -> libsql::Result<Option<Rows>> {
 ///
 /// let iter = vec![1, 2, 3];

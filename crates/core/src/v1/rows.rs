@@ -1,4 +1,4 @@
-use crate::{errors, Connection, Error, Params, Result, Statement, Value};
+use crate::v1::{errors, Connection, Error, Params, Result, Statement, Value};
 use libsql_sys::ValueType;
 
 use std::cell::RefCell;
@@ -118,7 +118,7 @@ impl Row {
 
     pub fn get_value(&self, idx: i32) -> Result<Value> {
         let val = self.stmt.inner.column_value(idx);
-        <crate::Value as FromValue>::from_sql(val)
+        <crate::v1::Value as FromValue>::from_sql(val)
     }
 
     pub fn column_type(&self, idx: i32) -> Result<ValueType> {
@@ -137,8 +137,11 @@ impl Row {
         self.stmt.inner.column_name(idx)
     }
 
-    pub fn get_ref(&self, idx: i32) -> Result<crate::params::ValueRef<'_>> {
-        Ok(crate::Statement::value_ref(&self.stmt.inner, idx as usize))
+    pub fn get_ref(&self, idx: i32) -> Result<crate::v1::params::ValueRef<'_>> {
+        Ok(crate::v1::Statement::value_ref(
+            &self.stmt.inner,
+            idx as usize,
+        ))
     }
 }
 
@@ -148,7 +151,7 @@ pub trait FromValue {
         Self: Sized;
 }
 
-impl FromValue for crate::Value {
+impl FromValue for crate::v1::Value {
     fn from_sql(val: libsql_sys::Value) -> Result<Self> {
         Ok(val.into())
     }

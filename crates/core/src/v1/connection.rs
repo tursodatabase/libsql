@@ -1,4 +1,4 @@
-use crate::{
+use crate::v1::{
     Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
 };
 
@@ -83,7 +83,7 @@ impl Connection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use libsql::{Connection, Result, Rows};
+    /// # use libsql::v1::{Connection, Result, Rows};
     /// # fn create_tables(conn: &Connection) -> Result<Option<Rows>> {
     /// conn.query("SELECT * FROM users WHERE name = ?1;", vec![libsql::Value::from(1)])
     /// # }
@@ -108,7 +108,7 @@ impl Connection {
     /// ## Example
     ///
     /// ```rust,no_run
-    /// # use libsql::{Connection, Result};
+    /// # use libsql::v1::{Connection, Result};
     /// # fn create_tables(conn: &Connection) -> Result<()> {
     /// conn.execute_batch(
     ///     "BEGIN;
