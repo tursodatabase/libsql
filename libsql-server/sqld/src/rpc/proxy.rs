@@ -264,17 +264,20 @@ pub struct ProxyService {
     clients: RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>,
     namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
     auth: Option<Arc<Auth>>,
+    disable_namespaces: bool,
 }
 
 impl ProxyService {
     pub fn new(
         namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
         auth: Option<Arc<Auth>>,
+        disable_namespaces: bool,
     ) -> Self {
         Self {
             clients: Default::default(),
             namespaces,
             auth,
+            disable_namespaces,
         }
     }
 }
@@ -445,9 +448,7 @@ impl Proxy for ProxyService {
         } else {
             Authenticated::from_proxy_grpc_request(&req)?
         };
-
-        let namespace = super::extract_namespace(true, &req)?;
-
+        let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
         let req = req.into_inner();
         let pgm = crate::connection::program::Program::try_from(req.pgm.unwrap())
             .map_err(|e| tonic::Status::new(tonic::Code::InvalidArgument, e.to_string()))?;

@@ -34,7 +34,7 @@ pub async fn run_rpc_server(
     namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
     disable_namespaces: bool,
 ) -> anyhow::Result<()> {
-    let proxy_service = ProxyService::new(namespaces.clone(), None);
+    let proxy_service = ProxyService::new(namespaces.clone(), None, disable_namespaces);
     let logger_service = ReplicationLogService::new(
         namespaces.clone(),
         idle_shutdown_layer.clone(),
