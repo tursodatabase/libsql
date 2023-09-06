@@ -1757,8 +1757,24 @@ void sqlite3Pragma(
         int r2;                 /* Previous key for WITHOUT ROWID tables */
         int mxCol;              /* Maximum non-virtual column number */
 
-        if( !IsOrdinaryTable(pTab) ) continue;
         if( pObjTab && pObjTab!=pTab ) continue;
+        if( !IsOrdinaryTable(pTab) ){
+          sqlite3_vtab *pVTab;
+          int a1;
+          if( !IsVirtual(pTab) ) continue;
+          if( pTab->u.vtab.p==0 ) continue;
+          pVTab = pTab->u.vtab.p->pVtab;
+          if( NEVER(pVTab==0) ) continue;
+          if( NEVER(pVTab->pModule==0) ) continue;
+          if( pVTab->pModule->iVersion<4 ) continue;
+          if( pVTab->pModule->xIntegrity==0 ) continue;
+          sqlite3VdbeAddOp2(v, OP_VCheck, 0, 3);
+          sqlite3VdbeAppendP4(v, pTab, P4_TABLE);
+          a1 = sqlite3VdbeAddOp1(v, OP_IsNull, 3); VdbeCoverage(v);
+          integrityCheckResultRow(v);
+          sqlite3VdbeJumpHere(v, a1);
+          continue;
+        }
         if( isQuick || HasRowid(pTab) ){
           pPk = 0;
           r2 = 0;

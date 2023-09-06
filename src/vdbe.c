@@ -8129,6 +8129,46 @@ case OP_VOpen: {             /* ncycle */
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+/* Opcode: VCheck * P2 * P4 *
+**
+** P4 is a pointer to a Table object that is a virtual table that
+** supports the xIntegrity() method.  This opcode runs the xIntegrity()
+** method for that virtual table.  If an error is reported back, the error
+** message is stored in register P2.  If no errors are seen, register P2
+** is set to NULL.
+*/
+case OP_VCheck: {             /* out2 */
+  Table *pTab;
+  sqlite3_vtab *pVtab;
+  const sqlite3_module *pModule;
+  char *zErr = 0;
+
+  pOut = &aMem[pOp->p2];
+  sqlite3VdbeMemSetNull(pOut);  /* Innocent until proven guilty */
+  assert( pOp->p4type==P4_TABLE );
+  pTab = pOp->p4.pTab;
+  assert( pTab!=0 );
+  assert( IsVirtual(pTab) );
+  assert( pTab->u.vtab.p!=0 );
+  pVtab = pTab->u.vtab.p->pVtab;
+  assert( pVtab!=0 );
+  pModule = pVtab->pModule;
+  assert( pModule!=0 );
+  assert( pModule->iVersion>=4 );
+  assert( pModule->xIntegrity!=0 );
+  rc = pModule->xIntegrity(pVtab, &zErr);
+  if( rc ){
+    sqlite3_free(zErr);
+    goto abort_due_to_error;
+  }
+  if( zErr ){
+    sqlite3VdbeMemSetStr(pOut, zErr, -1, SQLITE_UTF8, sqlite3_free);
+  }
+  break;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VInitIn P1 P2 P3 * *
 ** Synopsis: r[P2]=ValueList(P1,P3)
 **

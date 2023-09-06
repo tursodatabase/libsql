@@ -7217,6 +7217,9 @@ struct sqlite3_module {
   /* The methods above are in versions 1 and 2 of the sqlite_module object.
   ** Those below are for version 3 and greater. */
   int (*xShadowName)(const char*);
+  /* The methods above are in versions 1 through 3 of the sqlite_module object.
+  ** Those below are for version 4 and greater. */
+  int (*xIntegrity)(sqlite3_vtab *pVTab, char**);
 };
 
 /*

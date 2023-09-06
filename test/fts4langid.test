@@ -499,7 +499,8 @@ do_execsql_test 6.0 {
 }
 do_execsql_test 6.1 {
   INSERT INTO vt0(vt0) VALUES('integrity-check');
-}
+  PRAGMA integrity_check;
+} {ok}
 do_execsql_test 6.2 {
   COMMIT;
   INSERT INTO vt0(vt0) VALUES('integrity-check');

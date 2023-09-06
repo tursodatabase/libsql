@@ -192,6 +192,6 @@ proc rtree_treedump {db zTab} {
 }
 
 proc do_rtree_integrity_test {tn tbl} {
-  uplevel [list do_execsql_test $tn "SELECT rtreecheck('$tbl')" ok]
+  uplevel [list do_execsql_test $tn.1 "SELECT rtreecheck('$tbl')" ok]
+  uplevel [list do_execsql_test $tn.2 "PRAGMA integrity_check" ok]
 }
-
