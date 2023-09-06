@@ -360,10 +360,7 @@ pub extern "C" fn xCheckpoint(
 
     let prev = ctx.replicator.new_generation();
     tracing::debug!("Snapshotting after checkpoint");
-    let result = block_on!(
-        ctx.runtime,
-        ctx.replicator.snapshot_main_db_file(Some(prev))
-    );
+    let result = block_on!(ctx.runtime, ctx.replicator.snapshot_main_db_file(prev));
     if let Err(e) = result {
         tracing::error!(
             "Failed to snapshot the main db file during checkpoint: {}",
@@ -418,7 +415,6 @@ pub extern "C" fn xGetPathname(buf: *mut c_char, orig: *const c_char, orig_len: 
 
 async fn try_restore(replicator: &mut replicator::Replicator) -> i32 {
     match replicator.restore(None, None).await {
-        Ok(replicator::RestoreAction::None) => (),
         Ok(replicator::RestoreAction::SnapshotMainDbFile) => {
             replicator.new_generation();
             match replicator.snapshot_main_db_file(None).await {
