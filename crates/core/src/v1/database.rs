@@ -102,6 +102,19 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
+    pub fn writer(&self) -> Result<Option<libsql_replication::Writer>> {
+        if let Some(ctx) = &self.replication_ctx {
+            Ok(ctx
+                .replicator
+                .writer()
+                .expect("Unable to get writer")
+                .into())
+        } else {
+            Ok(None)
+        }
+    }
+
+    #[cfg(feature = "replication")]
     pub async fn sync(&self) -> Result<usize> {
         if let Some(ctx) = &self.replication_ctx {
             ctx.replicator

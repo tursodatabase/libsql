@@ -193,7 +193,7 @@ struct LibsqlConnection {
 #[async_trait::async_trait]
 impl Conn for LibsqlConnection {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
-        self.conn.execute(sql, params)
+        self.conn.execute2(sql, params).await
     }
 
     async fn execute_batch(&self, sql: &str) -> Result<()> {

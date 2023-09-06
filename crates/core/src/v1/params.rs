@@ -1,6 +1,7 @@
 use std::ffi::c_char;
 
 use libsql_sys::ValueType;
+use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
 
@@ -80,7 +81,7 @@ impl From<Vec<(String, Value)>> for Params {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Value {
     Null,
     Integer(i64),
@@ -237,6 +238,26 @@ impl<'a> From<libsql_sys::Value> for ValueRef<'a> {
                     ValueRef::Blob(&[])
                 }
             }
+        }
+    }
+}
+
+#[cfg(feature = "replication")]
+impl From<Params> for libsql_replication::pb::query::Params {
+    fn from(params: Params) -> Self {
+        use libsql_replication::pb;
+
+        match params {
+            Params::None => pb::query::Params::Positional(pb::Positional::default()),
+            Params::Positional(values) => {
+                let values = values
+                    .iter()
+                    .map(|v| bincode::serialize(v).unwrap())
+                    .map(|data| pb::Value { data })
+                    .collect::<Vec<_>>();
+                pb::query::Params::Positional(pb::Positional { values })
+            }
+            Params::Named(_) => todo!(),
         }
     }
 }

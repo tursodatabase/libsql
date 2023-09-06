@@ -28,6 +28,8 @@ pub enum Error {
     SyncNotSupported(String),
     #[error("Column not found: {0}")]
     ColumnNotFound(i32),
+    #[error("Write delegation: `{0}`")]
+    WriteDelegation(crate::BoxError),
 }
 
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {

@@ -11,6 +11,9 @@ pub struct Connection {
     pub(crate) raw: *mut ffi::sqlite3,
 
     drop_ref: Arc<()>,
+
+    #[cfg(feature = "replication")]
+    pub(crate) writer: Option<libsql_replication::Writer>,
 }
 
 impl Drop for Connection {
@@ -51,6 +54,8 @@ impl Connection {
         Ok(Connection {
             raw,
             drop_ref: Arc::new(()),
+            #[cfg(feature = "replication")]
+            writer: db.writer()?,
         })
     }
 
@@ -64,6 +69,8 @@ impl Connection {
         Self {
             raw,
             drop_ref: Arc::new(()),
+            #[cfg(feature = "replication")]
+            writer: None,
         }
     }
 
@@ -189,6 +196,26 @@ impl Connection {
     pub fn transaction(&self) -> Result<Transaction> {
         self.transaction_with_behavior(TransactionBehavior::Deferred)
     }
+
+    pub(crate) async fn execute2<S, P>(&self, sql: S, params: P) -> Result<u64>
+    where
+        S: Into<String>,
+        P: TryInto<Params>,
+        P::Error: Into<crate::BoxError>,
+    {
+        let sql = sql.into();
+        let stmt = Statement::prepare(self.clone(), self.raw, &sql)?;
+
+        let params = params
+            .try_into()
+            .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
+        stmt.execute2(params).await
+    }
+
+    // #[cfg(feature = "replication")]
+    // pub(crate) fn writer(&self) -> Writer {
+    //     &self.writer
+    // }
 
     /// Begin a new transaction in the given mode.
     pub fn transaction_with_behavior(
