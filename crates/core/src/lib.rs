@@ -28,15 +28,15 @@
 //!
 //! ```rust,no_run
 //! # async fn run() {
-//! use libsql::v1::{Database, Opts};
+//! use libsql::{Database, Opts};
 //! use libsql_replication::{Frame, Frames, Replicator};
 //!
-//! let mut db = Database::open_with_opts("/tmp/test.db", Opts::with_sync()).await.unwrap();
+//! let mut db = Database::open_with_sync("/tmp/test.db", "http://localhost:8080", "").await.unwrap();
 //!
 //! let frames = Frames::Vec(vec![]);
 //! db.sync_frames(frames).unwrap();
-//! let conn = db.connect().unwrap();
-//! conn.execute("SELECT * FROM users", ()).unwrap();
+//! let conn = db.connect().await.unwrap();
+//! conn.execute("SELECT * FROM users", ()).await.unwrap();
 //! # }
 //! ```
 //!
@@ -46,8 +46,7 @@
 
 // Legacy mode, for compatibility with the old libsql API, it is doc hidden so
 // that new users do not use this api as its deprecated in favor of the v2 api.
-#[doc(hidden)]
-pub mod v1;
+mod v1;
 mod v2;
 
 pub use v1::{

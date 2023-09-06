@@ -37,15 +37,17 @@ macro_rules! named_params {
 /// # Example
 ///
 /// ```rust
-/// # use libsql::v1::{Connection, params_from_iter, Rows};
-/// # fn run(conn: &Connection) -> libsql::Result<Option<Rows>> {
+/// # use libsql::{Connection, params_from_iter, Rows};
+/// # async fn run(conn: &Connection) {
 ///
 /// let iter = vec![1, 2, 3];
 ///
 /// conn.query(
 ///     "SELECT * FROM users WHERE id IN (?1, ?2, ?3)",
-///     params_from_iter(iter)?
+///     params_from_iter(iter).unwrap()
 /// )
+/// .await
+/// .unwrap();
 /// # }
 /// ```
 pub fn params_from_iter<I>(iter: I) -> Result<Params>

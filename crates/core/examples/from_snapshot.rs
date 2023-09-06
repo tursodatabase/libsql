@@ -1,13 +1,14 @@
-use libsql::v1::Database;
+use libsql::Database;
 use libsql_replication::{Frames, TempSnapshot};
 
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let opts = libsql::Opts::with_sync();
-    let db = Database::open_with_opts("test.db", opts).await.unwrap();
-    let conn = db.connect().unwrap();
+    let db = Database::open_with_sync("test.db", "http://localhost:8080", "")
+        .await
+        .unwrap();
+    let conn = db.connect().await.unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();
     if args.len() < 2 {
@@ -19,17 +20,14 @@ async fn main() {
 
     db.sync_frames(Frames::Snapshot(snapshot)).unwrap();
 
-    let rows = conn
-        .query("SELECT * FROM sqlite_master", ())
-        .unwrap()
-        .unwrap();
+    let mut rows = conn.query("SELECT * FROM sqlite_master", ()).await.unwrap();
     while let Ok(Some(row)) = rows.next() {
         println!(
             "| {:024} | {:024} | {:024} | {:024} |",
-            row.get::<&str>(0).unwrap(),
-            row.get::<&str>(1).unwrap(),
-            row.get::<&str>(2).unwrap(),
-            row.get::<&str>(3).unwrap(),
+            row.get_str(0).unwrap(),
+            row.get_str(1).unwrap(),
+            row.get_str(2).unwrap(),
+            row.get_str(3).unwrap(),
         );
     }
 }

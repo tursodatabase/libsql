@@ -89,7 +89,7 @@ impl Connection {
     /// Convenience method to run a prepared statement query.
     /// ## Example
     ///
-    /// ```rust,no_run
+    /// ```rust,no_run,ignore
     /// # use libsql::v1::{Connection, Result, Rows};
     /// # fn create_tables(conn: &Connection) -> Result<Option<Rows>> {
     /// conn.query("SELECT * FROM users WHERE name = ?1;", vec![libsql::Value::from(1)])
@@ -114,7 +114,7 @@ impl Connection {
     ///
     /// ## Example
     ///
-    /// ```rust,no_run
+    /// ```rust,no_run,ignore
     /// # use libsql::v1::{Connection, Result};
     /// # fn create_tables(conn: &Connection) -> Result<()> {
     /// conn.execute_batch(
@@ -211,11 +211,6 @@ impl Connection {
             .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
         stmt.execute2(params).await
     }
-
-    // #[cfg(feature = "replication")]
-    // pub(crate) fn writer(&self) -> Writer {
-    //     &self.writer
-    // }
 
     /// Begin a new transaction in the given mode.
     pub fn transaction_with_behavior(
