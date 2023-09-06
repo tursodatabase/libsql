@@ -190,7 +190,6 @@ libsql_wasm_module_t *libsql_compile_wasm_module(libsql_wasm_engine_t* engine, c
 
   WasmEdge_ConfigureContext *ConfCxt = WasmEdge_ConfigureCreate();
   WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
-  WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_WasiNN);
 
   WasmEdge_VMContext *ctx = WasmEdge_VMCreate(ConfCxt, NULL);
   WasmEdge_ConfigureDelete(ConfCxt);
