@@ -139,12 +139,16 @@ impl Replicator {
                         let counter = self.get_remote_change_counter(&uuid).await?;
                         let consistent_frame = self.get_last_consistent_frame(&uuid).await?;
                         let m = self.get_metadata(&uuid).await?;
+                        let parent = self.get_dependency(&uuid).await?;
                         println!("\tcreated at (UTC):     {datetime}");
                         println!("\tchange counter:       {counter:?}");
                         println!("\tconsistent WAL frame: {consistent_frame}");
-                        if let Some((page_size, checksum)) = m {
-                            println!("\tpage size:            {page_size}");
-                            println!("\tWAL frame checksum:   {checksum:x}");
+                        if let Some((page_size, crc)) = m {
+                            println!("\tpage size:            {}", page_size);
+                            println!("\tWAL frame checksum:   {:x}", crc);
+                        }
+                        if let Some(prev_gen) = parent {
+                            println!("\tprevious generation:  {}", prev_gen);
                         }
                         self.print_snapshot_summary(&uuid).await?;
                         println!()
@@ -245,13 +249,17 @@ impl Replicator {
         let counter = self.get_remote_change_counter(&generation).await?;
         let consistent_frame = self.get_last_consistent_frame(&generation).await?;
         let meta = self.get_metadata(&generation).await?;
+        let dep = self.get_dependency(&generation).await?;
         println!("Generation {} for {}", generation, self.db_name);
         println!("\tcreated at:           {}", uuid_to_datetime(&generation));
         println!("\tchange counter:       {counter:?}");
         println!("\tconsistent WAL frame: {consistent_frame}");
-        if let Some((page_size, checksum)) = meta {
-            println!("\tpage size:            {page_size}");
-            println!("\tWAL frame checksum:   {checksum:x}");
+        if let Some((page_size, crc)) = meta {
+            println!("\tpage size:            {}", page_size);
+            println!("\tWAL frame checksum:   {:x}", crc);
+        }
+        if let Some(prev_gen) = dep {
+            println!("\tprevious generation:  {}", prev_gen);
         }
         self.print_snapshot_summary(&generation).await?;
         Ok(())

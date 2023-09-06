@@ -1,7 +1,7 @@
 use crate::replicator::CompressionKind;
 use crate::wal::WalFileReader;
-use anyhow::{anyhow, Result};
-use arc_swap::ArcSwap;
+use anyhow::{anyhow, bail, Result};
+use arc_swap::ArcSwapOption;
 use std::ops::Range;
 use std::sync::Arc;
 use tokio::io::AsyncWriteExt;
@@ -18,14 +18,14 @@ pub(crate) struct WalCopier {
     wal_path: String,
     bucket: String,
     db_name: Arc<str>,
-    generation: Arc<ArcSwap<Uuid>>,
+    generation: Arc<ArcSwapOption<Uuid>>,
 }
 
 impl WalCopier {
     pub fn new(
         bucket: String,
         db_name: Arc<str>,
-        generation: Arc<ArcSwap<Uuid>>,
+        generation: Arc<ArcSwapOption<Uuid>>,
         db_path: &str,
         max_frames_per_batch: usize,
         use_compression: CompressionKind,
@@ -59,7 +59,11 @@ impl WalCopier {
                 return Err(anyhow!("WAL file not found: \"{:?}\"", self.wal_path));
             }
         };
-        let generation = self.generation.load_full();
+        let generation = if let Some(generation) = self.generation.load_full() {
+            generation
+        } else {
+            bail!("Generation has not been set");
+        };
         let dir = format!("{}/{}-{}", self.bucket, self.db_name, generation);
         if frames.start == 1 {
             // before writing the first batch of frames - init directory

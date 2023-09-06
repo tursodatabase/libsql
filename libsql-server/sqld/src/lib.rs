@@ -452,7 +452,6 @@ pub async fn init_bottomless_replicator(
     };
 
     match replicator.restore(generation, timestamp).await? {
-        bottomless::replicator::RestoreAction::None => (),
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
             replicator.new_generation();
             if let Some(handle) = replicator.snapshot_main_db_file(None).await? {

@@ -3,8 +3,8 @@ use crate::read::BatchReader;
 use crate::transaction_cache::TransactionPageCache;
 use crate::uuid_utils::decode_unix_timestamp;
 use crate::wal::WalFileReader;
-use anyhow::anyhow;
-use arc_swap::ArcSwap;
+use anyhow::{anyhow, bail};
+use arc_swap::ArcSwapOption;
 use async_compression::tokio::write::GzipEncoder;
 use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::error::SdkError;
@@ -14,7 +14,7 @@ use aws_sdk_s3::operation::list_objects::builders::ListObjectsFluentBuilder;
 use aws_sdk_s3::operation::list_objects::ListObjectsOutput;
 use aws_sdk_s3::primitives::ByteStream;
 use aws_sdk_s3::{Client, Config};
-use bytes::{Buf, Bytes, BytesMut};
+use bytes::{Buf, Bytes};
 use chrono::{NaiveDateTime, TimeZone, Utc};
 use std::io::SeekFrom;
 use std::ops::Deref;
@@ -29,6 +29,11 @@ use tokio::task::JoinHandle;
 use tokio::task::JoinSet;
 use tokio::time::{timeout_at, Instant};
 use uuid::{NoContext, Uuid};
+
+/// Maximum number of generations that can participate in database restore procedure.
+/// This effectively means that at least one in [MAX_RESTORE_STACK_DEPTH] number of
+/// consecutive generations has to have a snapshot included.
+const MAX_RESTORE_STACK_DEPTH: usize = 100;
 
 pub type Result<T> = anyhow::Result<T>;
 
@@ -45,13 +50,13 @@ pub struct Replicator {
     /// Always: [last_committed_frame_no] <= [last_sent_frame_no].
     last_committed_frame_no: Receiver<Result<u32>>,
     flush_trigger: Sender<()>,
-    snapshot_waiter: Receiver<Result<Option<Arc<Uuid>>>>,
-    snapshot_notifier: Arc<Sender<Result<Option<Arc<Uuid>>>>>,
+    snapshot_waiter: Receiver<Result<Option<Uuid>>>,
+    snapshot_notifier: Arc<Sender<Result<Option<Uuid>>>>,
 
     pub page_size: usize,
     restore_transaction_page_swap_after: u32,
     restore_transaction_cache_fpath: Arc<str>,
-    generation: Arc<ArcSwap<Uuid>>,
+    generation: Arc<ArcSwapOption<Uuid>>,
     pub commits_in_current_generation: Arc<AtomicU32>,
     verify_crc: bool,
     pub bucket: String,
@@ -72,7 +77,6 @@ pub struct FetchedResults {
 
 #[derive(Debug)]
 pub enum RestoreAction {
-    None,
     SnapshotMainDbFile,
     ReuseGeneration(Uuid),
 }
@@ -169,33 +173,29 @@ impl Options {
             match count.parse::<usize>() {
                 Ok(count) => options.max_frames_per_batch = count,
                 Err(e) => {
-                    return Err(anyhow!(
+                    bail!(
                         "Invalid LIBSQL_BOTTOMLESS_BATCH_MAX_FRAMES environment variable: {}",
                         e
-                    ))
+                    )
                 }
             }
         }
         if let Ok(parallelism) = std::env::var("LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX") {
             match parallelism.parse::<usize>() {
                 Ok(parallelism) => options.s3_upload_max_parallelism = parallelism,
-                Err(e) => {
-                    return Err(anyhow!(
-                        "Invalid LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX environment variable: {}",
-                        e
-                    ))
-                }
+                Err(e) => bail!(
+                    "Invalid LIBSQL_BOTTOMLESS_S3_PARALLEL_MAX environment variable: {}",
+                    e
+                ),
             }
         }
         if let Ok(swap_after) = std::env::var("LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD") {
             match swap_after.parse::<u32>() {
                 Ok(swap_after) => options.restore_transaction_page_swap_after = swap_after,
-                Err(e) => {
-                    return Err(anyhow!(
+                Err(e) => bail!(
                     "Invalid LIBSQL_BOTTOMLESS_RESTORE_TXN_SWAP_THRESHOLD environment variable: {}",
                     e
-                ))
-                }
+                ),
             }
         }
         if let Ok(fpath) = std::env::var("LIBSQL_BOTTOMLESS_RESTORE_TXN_FILE") {
@@ -204,24 +204,20 @@ impl Options {
         if let Ok(compression) = std::env::var("LIBSQL_BOTTOMLESS_COMPRESSION") {
             match CompressionKind::parse(&compression) {
                 Ok(compression) => options.use_compression = compression,
-                Err(e) => {
-                    return Err(anyhow!(
-                        "Invalid LIBSQL_BOTTOMLESS_COMPRESSION environment variable: {}",
-                        e
-                    ))
-                }
+                Err(e) => bail!(
+                    "Invalid LIBSQL_BOTTOMLESS_COMPRESSION environment variable: {}",
+                    e
+                ),
             }
         }
         if let Ok(verify) = std::env::var("LIBSQL_BOTTOMLESS_VERIFY_CRC") {
             match verify.to_lowercase().as_ref() {
                 "yes" | "true" | "1" | "y" | "t" => options.verify_crc = true,
                 "no" | "false" | "0" | "n" | "f" => options.verify_crc = false,
-                other => {
-                    return Err(anyhow!(
-                        "Invalid LIBSQL_BOTTOMLESS_VERIFY_CRC environment variable: {}",
-                        other
-                    ))
-                }
+                other => bail!(
+                    "Invalid LIBSQL_BOTTOMLESS_VERIFY_CRC environment variable: {}",
+                    other
+                ),
             }
         }
         Ok(options)
@@ -261,8 +257,7 @@ impl Replicator {
         let config = options.client_config().await?;
         let client = Client::from_conf(config);
         let bucket = options.bucket_name.clone();
-        let generation = Arc::new(ArcSwap::new(Arc::new(Self::generate_generation())));
-        tracing::debug!("Generation {}", generation.load());
+        let generation = Arc::new(ArcSwapOption::default());
 
         match client.head_bucket().bucket(&bucket).send().await {
             Ok(_) => tracing::info!("Bucket {} exists and is accessible", bucket),
@@ -419,7 +414,7 @@ impl Replicator {
         self.last_sent_frame_no.load(Ordering::Acquire)
     }
 
-    pub async fn wait_until_snapshotted(&mut self, generation: Arc<Uuid>) -> Result<()> {
+    pub async fn wait_until_snapshotted(&mut self, generation: Uuid) -> Result<()> {
         let res = self
             .snapshot_waiter
             .wait_for(|result| match result {
@@ -528,21 +523,96 @@ impl Replicator {
     }
 
     // Starts a new generation for this replicator instance
-    pub fn new_generation(&mut self) -> Arc<Uuid> {
-        tracing::debug!("Starting new generation: {}", self.generation);
-        self.set_generation(Self::generate_generation())
+    pub fn new_generation(&mut self) -> Option<Uuid> {
+        let curr = Self::generate_generation();
+        let prev = self.set_generation(curr);
+        if let Some(prev) = prev {
+            if prev != curr {
+                // try to store dependency between previous and current generation
+                tracing::trace!("New generation {} (parent: {})", curr, prev);
+                self.store_dependency(prev, curr)
+            }
+        }
+        prev
     }
 
     // Sets a generation for this replicator instance. This function
     // should be called if a generation number from S3-compatible storage
     // is reused in this session.
-    pub fn set_generation(&mut self, generation: Uuid) -> Arc<Uuid> {
-        let prev = self.generation.swap(Arc::new(generation));
+    pub fn set_generation(&mut self, generation: Uuid) -> Option<Uuid> {
+        let prev_generation = self.generation.swap(Some(Arc::new(generation)));
         self.commits_in_current_generation
             .store(0, Ordering::Release);
         self.reset_frames(0);
-        tracing::debug!("Generation set to {}", self.generation);
-        prev
+        if let Some(prev) = prev_generation.as_deref() {
+            tracing::debug!("Generation changed from {} -> {}", prev, generation);
+            Some(*prev)
+        } else {
+            tracing::debug!("Generation set {}", generation);
+            None
+        }
+    }
+
+    pub fn generation(&self) -> Result<Uuid> {
+        let guard = self.generation.load();
+        guard
+            .as_deref()
+            .cloned()
+            .ok_or(anyhow!("Replicator generation was not initialized"))
+    }
+
+    /// Request to store dependency between current generation and its predecessor on S3 object.
+    /// This works asynchronously on best-effort rules, as putting object to S3 introduces an
+    /// extra undesired latency and this method may be called during SQLite checkpoint.
+    fn store_dependency(&self, prev: Uuid, curr: Uuid) {
+        let key = format!("{}-{}/.dep", self.db_name, curr);
+        let request =
+            self.client
+                .put_object()
+                .bucket(&self.bucket)
+                .key(key)
+                .body(ByteStream::from(Bytes::copy_from_slice(
+                    prev.into_bytes().as_slice(),
+                )));
+        tokio::spawn(async move {
+            if let Err(e) = request.send().await {
+                tracing::error!(
+                    "Failed to store dependency between generations {} -> {}: {}",
+                    prev,
+                    curr,
+                    e
+                );
+            } else {
+                tracing::trace!(
+                    "Stored dependency between parent ({}) and child ({})",
+                    prev,
+                    curr
+                );
+            }
+        });
+    }
+
+    pub async fn get_dependency(&self, generation: &Uuid) -> Result<Option<Uuid>> {
+        let key = format!("{}-{}/.dep", self.db_name, generation);
+        let resp = self
+            .client
+            .get_object()
+            .bucket(&self.bucket)
+            .key(key)
+            .send()
+            .await;
+        match resp {
+            Ok(out) => {
+                let bytes = out.body.collect().await?.into_bytes();
+                let prev_generation = Uuid::from_bytes(bytes.as_ref().try_into()?);
+                Ok(Some(prev_generation))
+            }
+            Err(SdkError::ServiceError(se)) => match se.into_err() {
+                GetObjectError::NoSuchKey(_) => Ok(None),
+                e => Err(e.into()),
+            },
+            Err(e) => Err(e.into()),
+        }
     }
 
     // Returns the current last valid frame in the replicated log
@@ -588,7 +658,7 @@ impl Replicator {
     }
 
     // Tries to read the local change counter from the given database file
-    async fn read_change_counter(reader: &mut tokio::fs::File) -> Result<[u8; 4]> {
+    async fn read_change_counter(reader: &mut File) -> Result<[u8; 4]> {
         let mut counter = [0u8; 4];
         reader.seek(std::io::SeekFrom::Start(24)).await?;
         reader.read_exact(&mut counter).await?;
@@ -596,7 +666,7 @@ impl Replicator {
     }
 
     // Tries to read the local page size from the given database file
-    async fn read_page_size(reader: &mut tokio::fs::File) -> Result<usize> {
+    async fn read_page_size(reader: &mut File) -> Result<usize> {
         reader.seek(SeekFrom::Start(16)).await?;
         let page_size = reader.read_u16().await?;
         if page_size == 1 {
@@ -636,7 +706,7 @@ impl Replicator {
     // file is present, it was already detected to be newer than its
     // remote counterpart.
     pub async fn maybe_replicate_wal(&mut self) -> Result<()> {
-        let wal_file = match WalFileReader::open(&format!("{}-wal", &self.db_path)).await {
+        let wal = match WalFileReader::open(&format!("{}-wal", &self.db_path)).await {
             Ok(Some(file)) => file,
             _ => {
                 tracing::info!("Local WAL not present - not replicating");
@@ -644,9 +714,9 @@ impl Replicator {
             }
         };
 
-        self.store_metadata(wal_file.page_size(), wal_file.checksum())
-            .await?;
-        let frame_count = wal_file.frame_count().await;
+        self.store_metadata(wal.page_size(), wal.checksum()).await?;
+
+        let frame_count = wal.frame_count().await;
         tracing::trace!("Local WAL pages: {}", frame_count);
         self.submit_frames(frame_count);
         self.request_flush();
@@ -665,7 +735,7 @@ impl Replicator {
 
     // Check if the local database file exists and contains data
     async fn main_db_exists_and_not_empty(&self) -> bool {
-        let file = match tokio::fs::File::open(&self.db_path).await {
+        let file = match File::open(&self.db_path).await {
             Ok(file) => file,
             Err(_) => return false,
         };
@@ -680,13 +750,14 @@ impl Replicator {
     // counterpart.
     pub async fn snapshot_main_db_file(
         &mut self,
-        prev_generation: Option<Arc<Uuid>>,
+        prev_generation: Option<Uuid>,
     ) -> Result<Option<JoinHandle<()>>> {
         if !self.main_db_exists_and_not_empty().await {
             tracing::debug!("Not snapshotting, the main db file does not exist or is empty");
             let _ = self.snapshot_notifier.send(Ok(prev_generation));
             return Ok(None);
         }
+        let generation = self.generation()?;
         tracing::debug!("Snapshotting {}", self.db_path);
         let start_ts = Instant::now();
         if let Some(prev) = prev_generation {
@@ -697,10 +768,9 @@ impl Replicator {
         let client = self.client.clone();
         let mut db_file = File::open(&self.db_path).await?;
         let change_counter = Self::read_change_counter(&mut db_file).await?;
-        let gen = self.generation.load_full();
         let snapshot_req = client.put_object().bucket(self.bucket.clone()).key(format!(
             "{}-{}/db.{}",
-            self.db_name, gen, self.use_compression
+            self.db_name, generation, self.use_compression
         ));
 
         /* FIXME: we can't rely on the change counter in WAL mode:
@@ -709,7 +779,7 @@ impl Replicator {
          ** incremented on each transaction in WAL mode."
          ** Instead, we need to consult WAL checksums.
          */
-        let change_counter_key = format!("{}-{}/.changecounter", self.db_name, gen);
+        let change_counter_key = format!("{}-{}/.changecounter", self.db_name, generation);
         let change_counter_req = self
             .client
             .put_object()
@@ -725,14 +795,22 @@ impl Replicator {
             let body = match Self::maybe_compress_main_db_file(db_file, compression).await {
                 Ok(file) => file,
                 Err(e) => {
-                    tracing::error!("Failed to compress db file (generation {}): {}", gen, e);
+                    tracing::error!(
+                        "Failed to compress db file (generation {}): {}",
+                        generation,
+                        e
+                    );
                     let _ = snapshot_notifier.send(Err(e));
                     return;
                 }
             };
             let mut result = snapshot_req.body(body).send().await;
             if let Err(e) = result {
-                tracing::error!("Failed to upload snapshot for generation {}: {:?}", gen, e);
+                tracing::error!(
+                    "Failed to upload snapshot for generation {}: {:?}",
+                    generation,
+                    e
+                );
                 let _ = snapshot_notifier.send(Err(e.into()));
                 return;
             }
@@ -740,13 +818,13 @@ impl Replicator {
             if let Err(e) = result {
                 tracing::error!(
                     "Failed to upload change counter for generation {}: {:?}",
-                    gen,
+                    generation,
                     e
                 );
                 let _ = snapshot_notifier.send(Err(e.into()));
                 return;
             }
-            let _ = snapshot_notifier.send(Ok(Some(gen)));
+            let _ = snapshot_notifier.send(Ok(Some(generation)));
             let elapsed = Instant::now() - start;
             tracing::debug!("Snapshot upload finished (took {:?})", elapsed);
             let _ = tokio::fs::remove_file(format!("db.{}", compression)).await;
@@ -893,12 +971,12 @@ impl Replicator {
         if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
                 if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
-                    tracing::error!(
-                        "Restoration failed. Database '{}' has been tombstoned at {}.",
+                    bail!(
+                        "Couldn't restore from generation {}. Database '{}' has been tombstoned at {}.",
+                        generation,
                         self.db_name,
                         tombstone
                     );
-                    return Ok(RestoreAction::None);
                 }
             }
         }
@@ -908,9 +986,109 @@ impl Replicator {
         // on time in the last run
         self.upload_remaining_files(&generation).await?;
 
+        let last_frame = self.get_last_consistent_frame(&generation).await?;
+        tracing::debug!("Last consistent remote frame in generation {generation}: {last_frame}.");
+        if let Some(action) = self.compare_with_local(generation, last_frame).await? {
+            return Ok(action);
+        }
+
+        // at this point we know, we should do a full restore
+
+        tokio::fs::rename(&self.db_path, format!("{}.bottomless.backup", self.db_path))
+            .await
+            .ok(); // Best effort
+        let _ = self.remove_wal_files().await; // best effort, WAL files may not exists
+        let mut db = tokio::fs::OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(&self.db_path)
+            .await?;
+
+        let mut restore_stack = Vec::new();
+
+        // If the db file is not present, the database could have been empty
+        let mut current = Some(generation);
+        while let Some(curr) = current.take() {
+            // stash current generation - we'll use it to replay WAL across generations since the
+            // last snapshot
+            restore_stack.push(curr);
+            let restored = self.restore_from_snapshot(&curr, &mut db).await?;
+            if restored {
+                break;
+            } else {
+                if restore_stack.len() > MAX_RESTORE_STACK_DEPTH {
+                    bail!("Restoration failed: maximum number of generations to restore from was reached.");
+                }
+                tracing::debug!("No snapshot found on the generation {}", curr);
+                // there was no snapshot to restore from, it means that we either:
+                // 1. Have only WAL to restore from - case when we're at the initial generation
+                //    of the database.
+                // 2. Snapshot never existed - in that case try to reach for parent generation
+                //    of the current one and read snapshot from there.
+                current = self.get_dependency(&curr).await?;
+                if let Some(prev) = &current {
+                    tracing::debug!("Rolling restore back from generation {} to {}", curr, prev);
+                }
+            }
+        }
+
+        tracing::trace!(
+            "Restoring database from {} generations",
+            restore_stack.len()
+        );
+
+        let mut applied_wal_frame = false;
+        while let Some(gen) = restore_stack.pop() {
+            if let Some((page_size, checksum)) = self.get_metadata(&gen).await? {
+                self.set_page_size(page_size as usize)?;
+                let last_frame = if restore_stack.is_empty() {
+                    // we're at the last generation to restore from, it may still being written to
+                    // so we constraint the restore to a frame checked at the beginning of the
+                    // restore procedure
+                    Some(last_frame)
+                } else {
+                    None
+                };
+                self.restore_wal(
+                    &gen,
+                    page_size as usize,
+                    last_frame,
+                    checksum,
+                    utc_time,
+                    &mut db,
+                )
+                .await?;
+                applied_wal_frame = true;
+            } else {
+                tracing::info!(".meta object not found, skipping WAL restore.");
+            };
+        }
+
+        db.shutdown().await?;
+        let elapsed = Instant::now() - start_ts;
+        tracing::info!("Finished database restoration in {:?}", elapsed);
+
+        if applied_wal_frame {
+            tracing::info!("WAL file has been applied onto database file in generation {}. Requesting snapshot.", generation);
+            Ok::<_, anyhow::Error>(RestoreAction::SnapshotMainDbFile)
+        } else {
+            tracing::info!("Reusing generation {}.", generation);
+            // since WAL was not applied, we can reuse the latest generation
+            Ok::<_, anyhow::Error>(RestoreAction::ReuseGeneration(generation))
+        }
+    }
+
+    /// Compares S3 generation backup state against current local database file to determine
+    /// if we are up to date (returned restore action) or should we perform restoration.
+    async fn compare_with_local(
+        &mut self,
+        generation: Uuid,
+        last_consistent_frame: u32,
+    ) -> Result<Option<RestoreAction>> {
         // Check if the database needs to be restored by inspecting the database
         // change counter and the WAL size.
-        let local_counter = match tokio::fs::File::open(&self.db_path).await {
+        let local_counter = match File::open(&self.db_path).await {
             Ok(mut db) => {
                 // While reading the main database file for the first time,
                 // page size from an existing database should be set.
@@ -925,14 +1103,11 @@ impl Replicator {
         let remote_counter = self.get_remote_change_counter(&generation).await?;
         tracing::debug!("Counters: l={:?}, r={:?}", local_counter, remote_counter);
 
-        let last_consistent_frame = self.get_last_consistent_frame(&generation).await?;
-        tracing::debug!(
-            "Last consistent remote frame in generation {}: {}.",
-            generation,
-            last_consistent_frame
-        );
-
         let wal_pages = self.get_local_wal_page_count().await;
+        // We impersonate as a given generation, since we're comparing against local backup at that
+        // generation. This is used later in [Self::new_generation] to create a dependency between
+        // this generation and a new one.
+        self.generation.store(Some(Arc::new(generation)));
         match local_counter.cmp(&remote_counter) {
             std::cmp::Ordering::Equal => {
                 tracing::debug!(
@@ -946,33 +1121,24 @@ impl Replicator {
                             "Remote generation is up-to-date, reusing it in this session"
                         );
                         self.reset_frames(wal_pages + 1);
-                        return Ok(RestoreAction::ReuseGeneration(generation));
+                        Ok(Some(RestoreAction::ReuseGeneration(generation)))
                     }
                     std::cmp::Ordering::Greater => {
-                        tracing::info!("Local change counter matches the remote one, but local WAL contains newer data, which needs to be replicated");
-                        return Ok(RestoreAction::SnapshotMainDbFile);
+                        tracing::info!("Local change counter matches the remote one, but local WAL contains newer data from generation {}, which needs to be replicated.", generation);
+                        Ok(Some(RestoreAction::SnapshotMainDbFile))
                     }
-                    std::cmp::Ordering::Less => (),
+                    std::cmp::Ordering::Less => Ok(None),
                 }
             }
             std::cmp::Ordering::Greater => {
-                tracing::info!("Local change counter is larger than its remote counterpart - a new snapshot needs to be replicated");
-                return Ok(RestoreAction::SnapshotMainDbFile);
+                tracing::info!("Local change counter is larger than its remote counterpart - a new snapshot needs to be replicated (generation: {})", generation);
+                Ok(Some(RestoreAction::SnapshotMainDbFile))
             }
-            std::cmp::Ordering::Less => (),
+            std::cmp::Ordering::Less => Ok(None),
         }
+    }
 
-        tokio::fs::rename(&self.db_path, format!("{}.bottomless.backup", self.db_path))
-            .await
-            .ok(); // Best effort
-        let mut main_db_writer = tokio::fs::OpenOptions::new()
-            .create(true)
-            .read(true)
-            .write(true)
-            .open(&self.db_path)
-            .await?;
-        // If the db file is not present, the database could have been empty
-
+    async fn restore_from_snapshot(&mut self, generation: &Uuid, db: &mut File) -> Result<bool> {
         let main_db_path = match self.use_compression {
             CompressionKind::None => format!("{}-{}/db.db", self.db_name, generation),
             CompressionKind::Gzip => format!("{}-{}/db.gz", self.db_name, generation),
@@ -981,158 +1147,156 @@ impl Replicator {
         if let Ok(db_file) = self.get_object(main_db_path).send().await {
             let mut body_reader = db_file.body.into_async_read();
             let db_size = match self.use_compression {
-                CompressionKind::None => {
-                    tokio::io::copy(&mut body_reader, &mut main_db_writer).await?
-                }
+                CompressionKind::None => tokio::io::copy(&mut body_reader, db).await?,
                 CompressionKind::Gzip => {
                     let mut decompress_reader = async_compression::tokio::bufread::GzipDecoder::new(
                         tokio::io::BufReader::new(body_reader),
                     );
-                    tokio::io::copy(&mut decompress_reader, &mut main_db_writer).await?
+                    tokio::io::copy(&mut decompress_reader, db).await?
                 }
             };
-            main_db_writer.flush().await?;
+            db.flush().await?;
 
-            let page_size = Self::read_page_size(&mut main_db_writer).await?;
+            let page_size = Self::read_page_size(db).await?;
             self.set_page_size(page_size)?;
             tracing::info!("Restored the main database file ({} bytes)", db_size);
+            Ok(true)
+        } else {
+            Ok(false)
         }
+    }
 
-        let mut next_marker = None;
+    async fn restore_wal(
+        &self,
+        generation: &Uuid,
+        page_size: usize,
+        last_consistent_frame: Option<u32>,
+        mut checksum: u64,
+        utc_time: Option<NaiveDateTime>,
+        db: &mut File,
+    ) -> Result<bool> {
         let prefix = format!("{}-{}/", self.db_name, generation);
-        tracing::debug!("Overwriting any existing WAL file: {}-wal", &self.db_path);
-        tokio::fs::remove_file(&format!("{}-wal", &self.db_path))
-            .await
-            .ok();
-        tokio::fs::remove_file(&format!("{}-shm", &self.db_path))
-            .await
-            .ok();
-
+        let mut page_buf = {
+            let mut v = Vec::with_capacity(page_size);
+            v.spare_capacity_mut();
+            unsafe { v.set_len(page_size) };
+            v
+        };
+        let mut next_marker = None;
         let mut applied_wal_frame = false;
-        if let Some((page_size, mut checksum)) = self.get_metadata(&generation).await? {
-            self.set_page_size(page_size as usize)?;
-            let mut page_buf = {
-                let mut v = Vec::with_capacity(page_size as usize);
-                v.spare_capacity_mut();
-                unsafe { v.set_len(page_size as usize) };
-                v
-            };
-            'restore_wal: loop {
-                let mut list_request = self.list_objects().prefix(&prefix);
-                if let Some(marker) = next_marker {
-                    list_request = list_request.marker(marker);
-                }
-                let response = list_request.send().await?;
-                let objs = match response.contents() {
-                    Some(objs) => objs,
-                    None => {
-                        tracing::debug!("No objects found in generation {}", generation);
-                        break;
-                    }
-                };
-                let mut pending_pages = TransactionPageCache::new(
-                    self.restore_transaction_page_swap_after,
-                    page_size,
-                    self.restore_transaction_cache_fpath.clone(),
-                );
-                let mut last_received_frame_no = 0;
-                for obj in objs {
-                    let key = obj
-                        .key()
-                        .ok_or_else(|| anyhow::anyhow!("Failed to get key for an object"))?;
-                    tracing::debug!("Loading {}", key);
-
-                    let (first_frame_no, last_frame_no, timestamp, compression_kind) =
-                        match Self::parse_frame_range(key) {
-                            Some(result) => result,
-                            None => {
-                                if !key.ends_with(".gz")
-                                    && !key.ends_with(".db")
-                                    && !key.ends_with(".raw")
-                                    && !key.ends_with(".meta")
-                                    && !key.ends_with(".changecounter")
-                                {
-                                    tracing::warn!("Failed to parse frame/page from key {}", key);
-                                }
-                                continue;
-                            }
-                        };
-                    if first_frame_no != last_received_frame_no + 1 {
-                        tracing::warn!("Missing series of consecutive frames. Last applied frame: {}, next found: {}. Stopping the restoration process", 
-                            last_received_frame_no, first_frame_no);
-                        break;
-                    }
-                    if last_frame_no > last_consistent_frame {
-                        tracing::warn!("Remote log contains frame {} larger than last consistent frame ({}), stopping the restoration process",
-                                last_frame_no, last_consistent_frame);
-                        break;
-                    }
-                    if let Some(threshold) = utc_time.as_ref() {
-                        match NaiveDateTime::from_timestamp_opt(timestamp as i64, 0) {
-                            Some(timestamp) => {
-                                if &timestamp > threshold {
-                                    tracing::info!("Frame batch {} has timestamp more recent than expected {}. Stopping recovery.", key, timestamp);
-                                    break 'restore_wal; // reached end of restoration timestamp
-                                }
-                            }
-                            _ => {
-                                tracing::trace!("Couldn't parse requested frame batch {} timestamp. Stopping recovery.", key);
-                                break 'restore_wal;
-                            }
-                        }
-                    }
-                    let frame = self.get_object(key.into()).send().await?;
-                    let mut frameno = first_frame_no;
-                    let mut reader =
-                        BatchReader::new(frameno, frame.body, self.page_size, compression_kind);
-                    while let Some(frame) = reader.next_frame_header().await? {
-                        let pgno = frame.pgno();
-                        let page_size = self.page_size;
-                        reader.next_page(&mut page_buf).await?;
-                        if self.verify_crc {
-                            checksum = frame.verify(checksum, &page_buf)?;
-                        }
-                        pending_pages.insert(pgno, &page_buf).await?;
-                        if frame.is_committed() {
-                            let pending_pages = std::mem::replace(
-                                &mut pending_pages,
-                                TransactionPageCache::new(
-                                    self.restore_transaction_page_swap_after,
-                                    page_size as u32,
-                                    self.restore_transaction_cache_fpath.clone(),
-                                ),
-                            );
-                            pending_pages.flush(&mut main_db_writer).await?;
-                            applied_wal_frame = true;
-                        }
-                        frameno += 1;
-                        last_received_frame_no += 1;
-                    }
-                    main_db_writer.flush().await?;
-                }
-                next_marker = response
-                    .is_truncated()
-                    .then(|| objs.last().map(|elem| elem.key().unwrap().to_string()))
-                    .flatten();
-                if next_marker.is_none() {
-                    tracing::trace!("Restored DB from S3 backup using generation {}", generation);
+        'restore_wal: loop {
+            let mut list_request = self.list_objects().prefix(&prefix);
+            if let Some(marker) = next_marker {
+                list_request = list_request.marker(marker);
+            }
+            let response = list_request.send().await?;
+            let objs = match response.contents() {
+                Some(objs) => objs,
+                None => {
+                    tracing::debug!("No objects found in generation {}", generation);
                     break;
                 }
+            };
+            let mut pending_pages = TransactionPageCache::new(
+                self.restore_transaction_page_swap_after,
+                page_size as u32,
+                self.restore_transaction_cache_fpath.clone(),
+            );
+            let mut last_received_frame_no = 0;
+            for obj in objs {
+                let key = obj
+                    .key()
+                    .ok_or_else(|| anyhow::anyhow!("Failed to get key for an object"))?;
+                tracing::debug!("Loading {}", key);
+
+                let (first_frame_no, last_frame_no, timestamp, compression_kind) =
+                    match Self::parse_frame_range(key) {
+                        Some(result) => result,
+                        None => {
+                            if !key.ends_with(".gz")
+                                && !key.ends_with(".db")
+                                && !key.ends_with(".meta")
+                                && !key.ends_with(".dep")
+                                && !key.ends_with(".changecounter")
+                            {
+                                tracing::warn!("Failed to parse frame/page from key {}", key);
+                            }
+                            continue;
+                        }
+                    };
+                if first_frame_no != last_received_frame_no + 1 {
+                    tracing::warn!("Missing series of consecutive frames. Last applied frame: {}, next found: {}. Stopping the restoration process",
+                            last_received_frame_no, first_frame_no);
+                    break;
+                }
+                if let Some(frame) = last_consistent_frame {
+                    if last_frame_no > frame {
+                        tracing::warn!("Remote log contains frame {} larger than last consistent frame ({}), stopping the restoration process",
+                                last_frame_no, frame);
+                        break;
+                    }
+                }
+                if let Some(threshold) = utc_time.as_ref() {
+                    match NaiveDateTime::from_timestamp_opt(timestamp as i64, 0) {
+                        Some(timestamp) => {
+                            if &timestamp > threshold {
+                                tracing::info!("Frame batch {} has timestamp more recent than expected {}. Stopping recovery.", key, timestamp);
+                                break 'restore_wal; // reached end of restoration timestamp
+                            }
+                        }
+                        _ => {
+                            tracing::trace!("Couldn't parse requested frame batch {} timestamp. Stopping recovery.", key);
+                            break 'restore_wal;
+                        }
+                    }
+                }
+                let frame = self.get_object(key.into()).send().await?;
+                let mut frameno = first_frame_no;
+                let mut reader =
+                    BatchReader::new(frameno, frame.body, self.page_size, compression_kind);
+
+                while let Some(frame) = reader.next_frame_header().await? {
+                    let pgno = frame.pgno();
+                    let page_size = self.page_size;
+                    reader.next_page(&mut page_buf).await?;
+                    if self.verify_crc {
+                        checksum = frame.verify(checksum, &page_buf)?;
+                    }
+                    pending_pages.insert(pgno, &page_buf).await?;
+                    if frame.is_committed() {
+                        let pending_pages = std::mem::replace(
+                            &mut pending_pages,
+                            TransactionPageCache::new(
+                                self.restore_transaction_page_swap_after,
+                                page_size as u32,
+                                self.restore_transaction_cache_fpath.clone(),
+                            ),
+                        );
+                        pending_pages.flush(db).await?;
+                        applied_wal_frame = true;
+                    }
+                    frameno += 1;
+                    last_received_frame_no += 1;
+                }
+                db.flush().await?;
             }
-        } else {
-            tracing::info!(".meta object not found, skipping WAL restore.");
+            next_marker = response
+                .is_truncated()
+                .then(|| objs.last().map(|elem| elem.key().unwrap().to_string()))
+                .flatten();
+            if next_marker.is_none() {
+                tracing::trace!("Restored DB from S3 backup using generation {}", generation);
+                break;
+            }
         }
+        Ok(applied_wal_frame)
+    }
 
-        main_db_writer.shutdown().await?;
-        let elapsed = Instant::now() - start_ts;
-        tracing::info!("Finished database restoration in {:?}", elapsed);
-
-        if applied_wal_frame {
-            Ok::<_, anyhow::Error>(RestoreAction::SnapshotMainDbFile)
-        } else {
-            // since WAL was not applied, we can reuse the latest generation
-            Ok::<_, anyhow::Error>(RestoreAction::ReuseGeneration(generation))
-        }
+    async fn remove_wal_files(&self) -> Result<()> {
+        tracing::debug!("Overwriting any existing WAL file: {}-wal", &self.db_path);
+        tokio::fs::remove_file(&format!("{}-wal", &self.db_path)).await?;
+        tokio::fs::remove_file(&format!("{}-shm", &self.db_path)).await?;
+        Ok(())
     }
 
     // Restores the database state from newest remote generation
@@ -1236,6 +1400,7 @@ impl Replicator {
             | str.ends_with(".gz")
             | str.ends_with(".raw")
             | str.ends_with(".meta")
+            | str.ends_with(".dep")
             | str.ends_with(".changecounter")
         {
             let idx = str.rfind(dir)?;
@@ -1244,9 +1409,27 @@ impl Replicator {
         None
     }
 
-    pub async fn store_metadata(&self, page_size: u32, crc: u64) -> Result<()> {
-        let key = format!("{}-{}/.meta", self.db_name, self.generation.load());
-        put_metadata_obj(&self.client, &self.bucket, key, page_size, crc).await
+    async fn store_metadata(&self, page_size: u32, crc: u64) -> Result<()> {
+        let generation = self.generation()?;
+        let key = format!("{}-{}/.meta", self.db_name, generation);
+        tracing::debug!(
+            "Storing metadata at '{}': page size - {}, crc - {}",
+            key,
+            page_size,
+            crc
+        );
+        let mut body = Vec::with_capacity(12);
+        body.extend_from_slice(page_size.to_be_bytes().as_slice());
+        body.extend_from_slice(crc.to_be_bytes().as_slice());
+        let _ = self
+            .client
+            .put_object()
+            .bucket(self.bucket.clone())
+            .key(key)
+            .body(ByteStream::from(body))
+            .send()
+            .await?;
+        Ok(())
     }
 
     pub async fn get_metadata(&self, generation: &Uuid) -> Result<Option<(u32, u64)>> {
@@ -1450,32 +1633,6 @@ impl DeleteAll {
             }
         }
     }
-}
-
-async fn put_metadata_obj(
-    client: &Client,
-    bucket: &str,
-    key: String,
-    page_size: u32,
-    crc: u64,
-) -> Result<()> {
-    tracing::debug!(
-        "Storing metadata at '{}': page size - {}, crc - {}",
-        key,
-        page_size,
-        crc
-    );
-    let mut body = BytesMut::with_capacity(12);
-    body.extend_from_slice(page_size.to_be_bytes().as_slice());
-    body.extend_from_slice(crc.to_be_bytes().as_slice());
-    let _ = client
-        .put_object()
-        .bucket(bucket)
-        .key(key)
-        .body(ByteStream::from(body.freeze()))
-        .send()
-        .await?;
-    Ok(())
 }
 
 pub struct Context {
