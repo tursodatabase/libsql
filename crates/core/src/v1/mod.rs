@@ -9,7 +9,7 @@
 //! To get started, you first need to create a [`Database`] object and then open a [`Connection`] to it, which you use to query:
 //!
 //! ```rust,no_run
-//! use libsql::Database;
+//! use libsql::v1::Database;
 //!
 //! let db = Database::open(":memory:").unwrap();
 //! let conn = db.connect().unwrap();
@@ -26,7 +26,7 @@
 //!
 //! ```rust,no_run
 //! # async fn run() {
-//! use libsql::{Database, Opts};
+//! use libsql::v1::{Database, Opts};
 //! use libsql_replication::{Frame, Frames, Replicator};
 //!
 //! let mut db = Database::open_with_opts("/tmp/test.db", Opts::with_sync()).await.unwrap();

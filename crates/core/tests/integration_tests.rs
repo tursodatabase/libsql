@@ -251,7 +251,7 @@ async fn nulls() {
         .unwrap();
     let mut rows = conn.query("SELECT * FROM users", ()).await.unwrap();
     let row = rows.next().unwrap().unwrap();
-    assert_eq!(row.get::<i32>(0).unwrap(), 0);
+    assert!(row.get::<i32>(0).is_err());
     assert!(row.get::<String>(1).is_err());
 }
 
