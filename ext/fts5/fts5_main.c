@@ -2855,23 +2855,22 @@ static int fts5ShadowName(const char *zName){
 ** if anything is found amiss.  Return a NULL pointer if everything is
 ** OK.
 */
-static char *fts5Integrity(sqlite3_vtab *pVtab){
+static int fts5Integrity(sqlite3_vtab *pVtab, char **pzErr){
   Fts5FullTable *pTab = (Fts5FullTable*)pVtab;
   Fts5Config *pConfig = pTab->p.pConfig;
   char *zSql;
   int rc;
-  char *zErr = 0;
-
   zSql = sqlite3_mprintf(
             "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
             pConfig->zDb, pConfig->zName, pConfig->zName);
   rc = sqlite3_exec(pConfig->db, zSql, 0, 0, 0);
   sqlite3_free(zSql);
-  if( rc ){
-    zErr = sqlite3_mprintf("malformed inverted index for FTS5 table %s.%s",
-              pConfig->zDb, pConfig->zName);
+  if( (rc&0xff)==SQLITE_CORRUPT ){
+    *pzErr = sqlite3_mprintf("malformed inverted index for FTS5 table %s.%s",
+                pConfig->zDb, pConfig->zName);
+    rc = SQLITE_OK;
   }
-  return zErr;
+  return rc;
 
 }
 

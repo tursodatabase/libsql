@@ -8141,7 +8141,7 @@ case OP_VCheck: {             /* out2 */
   Table *pTab;
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
-  char *zErr;
+  char *zErr = 0;
 
   pOut = &aMem[pOp->p2];
   sqlite3VdbeMemSetNull(pOut);  /* Innocent until proven guilty */
@@ -8156,7 +8156,11 @@ case OP_VCheck: {             /* out2 */
   assert( pModule!=0 );
   assert( pModule->iVersion>=4 );
   assert( pModule->xIntegrity!=0 );
-  zErr = pModule->xIntegrity(pVtab);
+  rc = pModule->xIntegrity(pVtab, &zErr);
+  if( rc ){
+    sqlite3_free(zErr);
+    goto abort_due_to_error;
+  }
   if( zErr ){
     sqlite3VdbeMemSetStr(pOut, zErr, -1, SQLITE_UTF8, sqlite3_free);
   }

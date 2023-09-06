@@ -3984,22 +3984,22 @@ static int fts3ShadowName(const char *zName){
 ** Implementation of the xIntegrity() method on the FTS3/FTS4 virtual
 ** table.
 */
-static char *fts3Integrity(sqlite3_vtab *pVtab){
+static int fts3Integrity(sqlite3_vtab *pVtab, char **pzErr){
   Fts3Table *p = (Fts3Table*)pVtab;
   char *zSql;
   int rc;
-  char *zErr = 0;
 
   zSql = sqlite3_mprintf(
             "INSERT INTO \"%w\".\"%w\"(\"%w\") VALUES('integrity-check');",
             p->zDb, p->zName, p->zName);
   rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
   sqlite3_free(zSql);
-  if( rc ){
-    zErr = sqlite3_mprintf("malformed inverted index for FTS%d table %s.%s",
-              p->bFts4 ? 4 : 3, p->zDb, p->zName);
+  if( (rc&0xff)==SQLITE_CORRUPT ){
+    *pzErr = sqlite3_mprintf("malformed inverted index for FTS%d table %s.%s",
+                p->bFts4 ? 4 : 3, p->zDb, p->zName);
+    rc = SQLITE_OK;
   }
-  return zErr;
+  return rc;
 }
 
 
