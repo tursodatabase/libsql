@@ -103,7 +103,8 @@ JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
   Tester1.java \
 )
 ifeq (1,$(enable.fts5))
-  JAVA_FILES.main += $(patsubst %,$(dir.src.jni)/%,\
+   dir.src.fts5 := $(dir.src.jni)/fts5
+  JAVA_FILES.main += $(patsubst %,$(dir.src.fts5)/%,\
     fts5_api.java \
     fts5_extension_function.java \
     fts5_tokenizer.java \
@@ -216,21 +217,21 @@ sqlite3-jni.h.in :=
 # $(java.with.jni) lists all Java files which contain JNI decls:
 java.with.jni :=
 define ADD_JNI_H
-sqlite3-jni.h.in += $$(dir.bld.c)/org_sqlite_jni_$(1).h
-java.with.jni += $$(dir.src.jni)/$(1).java
-$$(dir.bld.c)/org_sqlite_jni_$(1).h: $$(dir.src.jni)/$(1).java
+sqlite3-jni.h.in += $$(dir.bld.c)/org_sqlite_jni$(3)_$(2).h
+java.with.jni += $(1)/$(2).java
+$$(info x=$(1)/$(2).java)
+$$(dir.bld.c)/org_sqlite_jni$(3)_$(2).h: $(1)/$(2).java
 endef
 # Invoke ADD_JNI_H once for each Java file which includes JNI
 # declarations:
-$(eval $(call ADD_JNI_H,SQLite3Jni))
+$(eval $(call ADD_JNI_H,$(dir.src.jni),SQLite3Jni,))
 ifeq (1,$(enable.fts5))
-  $(eval $(call ADD_JNI_H,Fts5ExtensionApi))
-  $(eval $(call ADD_JNI_H,fts5_api))
-  $(eval $(call ADD_JNI_H,fts5_tokenizer))
+  $(eval $(call ADD_JNI_H,$(dir.src.fts5),Fts5ExtensionApi,_fts5))
+  $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_api,_fts5))
+  $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_tokenizer,_fts5))
 endif
 ifeq (1,$(enable.tester))
-  sqlite3-jni.h.in += $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h
-  $(dir.bld.c)/org_sqlite_jni_tester_SQLTester.h: $(dir.src.jni.tester)/SQLTester.java
+  $(eval $(call ADD_JNI_H,$(dir.src.jni.tester),SQLTester,_tester))
 endif
 $(sqlite3-jni.h.in): $(dir.bld.c)
 

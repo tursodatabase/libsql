@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
 
 /**
    INCOMPLETE AND COMPLETELY UNTESTED.

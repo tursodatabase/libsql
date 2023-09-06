@@ -79,33 +79,33 @@ public class Tester1 implements Runnable {
 
   static final Metrics metrics = new Metrics();
 
-  public synchronized static void outln(){
+  public static synchronized void outln(){
     if( !quietMode ){
       System.out.println("");
     }
   }
 
-  public synchronized static void outPrefix(){
+  public static synchronized void outPrefix(){
     if( !quietMode ){
       System.out.print(Thread.currentThread().getName()+": ");
     }
   }
 
-  public synchronized static void outln(Object val){
+  public static synchronized void outln(Object val){
     if( !quietMode ){
       outPrefix();
       System.out.println(val);
     }
   }
 
-  public synchronized static void out(Object val){
+  public static synchronized void out(Object val){
     if( !quietMode ){
       System.out.print(val);
     }
   }
 
   @SuppressWarnings("unchecked")
-  public synchronized static void out(Object... vals){
+  public static synchronized void out(Object... vals){
     if( !quietMode ){
       outPrefix();
       for(Object v : vals) out(v);
@@ -113,20 +113,21 @@ public class Tester1 implements Runnable {
   }
 
   @SuppressWarnings("unchecked")
-  public synchronized static void outln(Object... vals){
+  public static synchronized void outln(Object... vals){
     if( !quietMode ){
       out(vals); out("\n");
     }
   }
 
   static volatile int affirmCount = 0;
-  public synchronized static void affirm(Boolean v, String comment){
+  public static synchronized int affirm(Boolean v, String comment){
     ++affirmCount;
     if( false ) assert( v /* prefer assert over exception if it's enabled because
                  the JNI layer sometimes has to suppress exceptions,
                  so they might be squelched on their way back to the
                  top. */);
     if( !v ) throw new RuntimeException(comment);
+    return affirmCount;
   }
 
   public static void affirm(Boolean v){
@@ -138,7 +139,7 @@ public class Tester1 implements Runnable {
     affirm(sqlite3_libversion_number() == SQLITE_VERSION_NUMBER);
   }
 
-  static sqlite3 createNewDb(){
+  public static sqlite3 createNewDb(){
     final OutputPointer.sqlite3 out = new OutputPointer.sqlite3();
     int rc = sqlite3_open(":memory:", out);
     ++metrics.dbOpen;
@@ -156,11 +157,11 @@ public class Tester1 implements Runnable {
     return db;
   }
 
-  static void execSql(sqlite3 db, String[] sql){
+  public static void execSql(sqlite3 db, String[] sql){
     execSql(db, String.join("", sql));
   }
 
-  static int execSql(sqlite3 db, boolean throwOnError, String sql){
+  public static int execSql(sqlite3 db, boolean throwOnError, String sql){
     OutputPointer.Int32 oTail = new OutputPointer.Int32();
     final byte[] sqlUtf8 = sql.getBytes(StandardCharsets.UTF_8);
     int pos = 0, n = 1;
@@ -201,11 +202,11 @@ public class Tester1 implements Runnable {
     return rc;
   }
 
-  static void execSql(sqlite3 db, String sql){
+  public static void execSql(sqlite3 db, String sql){
     execSql(db, true, sql);
   }
 
-  static sqlite3_stmt prepare(sqlite3 db, boolean throwOnError, String sql){
+  public static sqlite3_stmt prepare(sqlite3 db, boolean throwOnError, String sql){
     final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
     int rc = sqlite3_prepare_v2(db, sql, outStmt);
     if( throwOnError ){
@@ -219,7 +220,7 @@ public class Tester1 implements Runnable {
     return rv;
   }
 
-  static sqlite3_stmt prepare(sqlite3 db, String sql){
+  public static sqlite3_stmt prepare(sqlite3 db, String sql){
     return prepare(db, true, sql);
   }
 
@@ -1275,10 +1276,13 @@ public class Tester1 implements Runnable {
     }
     Exception err = null;
     try {
-      Class t = Class.forName("org.sqlite.jni.TesterFts5");
+      Class t = Class.forName("org.sqlite.jni.fts5.TesterFts5");
       java.lang.reflect.Constructor ctor = t.getConstructor();
       ctor.setAccessible(true);
+      final long timeStart = System.currentTimeMillis();
       ctor.newInstance() /* will run all tests */;
+      final long timeEnd = System.currentTimeMillis();
+        outln("FTS5 Tests done in ",(timeEnd - timeStart),"ms");
     }catch(ClassNotFoundException e){
       outln("FTS5 classes not loaded.");
       err = e;

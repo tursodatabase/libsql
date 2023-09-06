@@ -383,11 +383,11 @@ static const struct {
   RefO(13, "OutputPointer$String", "Ljava/lang/String;"),
 #ifdef SQLITE_ENABLE_FTS5
   RefO(14, "OutputPointer$ByteArray", "[B"),
-  RefN(15, "Fts5Context"),
-  RefN(16, "Fts5ExtensionApi"),
-  RefN(17, "fts5_api"),
-  RefN(18, "fts5_tokenizer"),
-  RefN(19, "Fts5Tokenizer")
+  RefN(15, "fts5/Fts5Context"),
+  RefN(16, "fts5/Fts5ExtensionApi"),
+  RefN(17, "fts5/fts5_api"),
+  RefN(18, "fts5/fts5_tokenizer"),
+  RefN(19, "fts5/Fts5Tokenizer")
 #endif
 #undef MkRef
 #undef RefN
@@ -4793,11 +4793,11 @@ JniDecl(void,1jni_1internal_1details)(JniArgsEnvClass){
 
 /* Creates a verbose JNI Fts5 function name. */
 #define JniFuncNameFtsXA(Suffix)                  \
-  Java_org_sqlite_jni_Fts5ExtensionApi_ ## Suffix
+  Java_org_sqlite_jni_fts5_Fts5ExtensionApi_ ## Suffix
 #define JniFuncNameFtsApi(Suffix)                  \
-  Java_org_sqlite_jni_fts5_1api_ ## Suffix
+  Java_org_sqlite_jni_fts5_fts5_1api_ ## Suffix
 #define JniFuncNameFtsTok(Suffix)                  \
-  Java_org_sqlite_jni_fts5_tokenizer_ ## Suffix
+  Java_org_sqlite_jni_fts5_fts5_tokenizer_ ## Suffix
 
 #define JniDeclFtsXA(ReturnType,Suffix)           \
   JNIEXPORT ReturnType JNICALL                  \
@@ -4855,8 +4855,8 @@ static Fts5JniAux * Fts5JniAux_alloc(JNIEnv * const env, jobject jObj){
     s->jObj = S3JniRefGlobal(jObj);
     klazz = (*env)->GetObjectClass(env, jObj);
     s->jmid = (*env)->GetMethodID(env, klazz, "call",
-                                  "(Lorg/sqlite/jni/Fts5ExtensionApi;"
-                                  "Lorg/sqlite/jni/Fts5Context;"
+                                  "(Lorg/sqlite/jni/fts5/Fts5ExtensionApi;"
+                                  "Lorg/sqlite/jni/fts5/Fts5Context;"
                                   "Lorg/sqlite/jni/sqlite3_context;"
                                   "[Lorg/sqlite/jni/sqlite3_value;)V");
     S3JniUnrefLocal(klazz);
@@ -5651,7 +5651,7 @@ Java_org_sqlite_jni_SQLite3Jni_init(JniArgsEnvClass){
   }
 
 #ifdef SQLITE_ENABLE_FTS5
-  klazz = (*env)->FindClass(env, "org/sqlite/jni/Fts5PhraseIter");
+  klazz = (*env)->FindClass(env, "org/sqlite/jni/fts5/Fts5PhraseIter");
   S3JniExceptionIsFatal("Error getting reference to org.sqlite.jni.Fts5PhraseIter.");
   SJG.fts5.jPhraseIter.fidA = (*env)->GetFieldID(env, klazz, "a", "J");
   S3JniExceptionIsFatal("Cannot get Fts5PhraseIter.a field.");

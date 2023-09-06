@@ -11,13 +11,15 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
+import org.sqlite.jni.NativePointerHolder;
 
 /**
-   A wrapper for communicating C-level (Fts5Context*) instances with
-   Java. These wrappers do not own their associated pointer, they
-   simply provide a type-safe way to communicate it between Java and C
-   via JNI.
+   A wrapper for C-level Fts5PhraseIter. They are only modified and
+   inspected by native-level code.
 */
-public final class Fts5Context extends NativePointerHolder<Fts5Context> {
+public final class Fts5PhraseIter extends NativePointerHolder<Fts5PhraseIter> {
+  //! Updated and used only by native code.
+  private long a;
+  private long b;
 }

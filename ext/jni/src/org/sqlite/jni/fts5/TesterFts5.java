@@ -11,9 +11,10 @@
 *************************************************************************
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
 import static org.sqlite.jni.SQLite3Jni.*;
 import static org.sqlite.jni.Tester1.*;
+import org.sqlite.jni.*;
 
 public class TesterFts5 {
 
@@ -35,8 +36,7 @@ public class TesterFts5 {
       });
 
     final String pUserData = "This is pUserData";
-    ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
-    ValueHolder<Integer> xFuncCount = new ValueHolder<>(0);
+    final int outputs[] = {0, 0};
     final fts5_extension_function func = new fts5_extension_function(){
         @Override public void call(Fts5ExtensionApi ext, Fts5Context fCx,
                                    sqlite3_context pCx, sqlite3_value argv[]){
@@ -58,42 +58,29 @@ public class TesterFts5 {
             rc = ext.xColumnTotalSize(fCx, i, colTotalSz);
             affirm( 0==rc );
           }
-          ++xFuncCount.value;
+          ++outputs[0];
         }
         public void xDestroy(){
-          xDestroyCalled.value = true;
+          outputs[1] = 1;
         }
       };
 
     int rc = fApi.xCreateFunction("myaux", pUserData, func);
     affirm( 0==rc );
 
-    affirm( 0==xFuncCount.value );
+    affirm( 0==outputs[0] );
     execSql(db, "select myaux(ft,a,b) from ft;");
-    affirm( 2==xFuncCount.value );
-    affirm( !xDestroyCalled.value );
+    affirm( 2==outputs[0] );
+    affirm( 0==outputs[1] );
     sqlite3_close_v2(db);
-    affirm( xDestroyCalled.value );
+    affirm( 1==outputs[1] );
   }
 
-  private void runTests(){
+  private static synchronized void runTests(){
     test1();
   }
 
-  public TesterFts5(boolean verbose){
-    if(verbose){
-      synchronized(Tester1.class) {
-        final long timeStart = System.currentTimeMillis();
-        final int oldAffirmCount = Tester1.affirmCount;
-        runTests();
-        final int affirmCount = Tester1.affirmCount - oldAffirmCount;
-        final long timeEnd = System.currentTimeMillis();
-        outln("FTS5 Tests done. Assertions checked = ",affirmCount,
-              ", Total time = ",(timeEnd - timeStart),"ms");
-      }
-    }else{
-      runTests();
-    }
+  public TesterFts5(){
+    runTests();
   }
-  public TesterFts5(){ this(true); }
 }
