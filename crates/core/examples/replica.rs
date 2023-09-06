@@ -1,4 +1,4 @@
-use libsql::v2::Database;
+use libsql::Database;
 
 #[tokio::main]
 async fn main() {

@@ -9,12 +9,14 @@
 //! To get started, you first need to create a [`Database`] object and then open a [`Connection`] to it, which you use to query:
 //!
 //! ```rust,no_run
-//! use libsql::v1::Database;
+//! # async fn run() {
+//! use libsql::Database;
 //!
-//! let db = Database::open(":memory:").unwrap();
-//! let conn = db.connect().unwrap();
-//! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ()) .unwrap();
-//! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).unwrap();
+//! let db = Database::open_in_memory().unwrap();
+//! let conn = db.connect().await.unwrap();
+//! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ()).await.unwrap();
+//! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).await.unwrap();
+//! # }
 //! ```
 //!
 //! ## Embedded Replicas
@@ -42,9 +44,11 @@
 //!
 //! You can find more examples in the [`examples`](https://github.com/penberg/libsql-experimental/tree/libsql-api/crates/core/examples) directory.
 
-// Legacy mode, for compatibility with the old libsql API.
+// Legacy mode, for compatibility with the old libsql API, it is doc hidden so
+// that new users do not use this api as its deprecated in favor of the v2 api.
+#[doc(hidden)]
 pub mod v1;
-pub mod v2;
+mod v2;
 
 pub use v1::{
     database::Opts,
@@ -66,6 +70,5 @@ pub use v2::{
 };
 
 pub use libsql_sys::ffi;
-pub use libsql_sys::ValueType;
 
-pub type BoxError = Box<dyn std::error::Error + Send + Sync>;
+pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;
