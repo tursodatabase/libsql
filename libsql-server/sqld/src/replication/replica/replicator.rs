@@ -20,7 +20,7 @@ use crate::rpc::replication_log::rpc::{
     replication_log_client::ReplicationLogClient, HelloRequest, LogOffset,
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
-use crate::rpc::NAMESPACE_DOESNT_EXIST;
+use crate::rpc::{NAMESPACE_DOESNT_EXIST, NAMESPACE_METADATA_KEY};
 use crate::ResetOp;
 
 use super::hook::{Frames, InjectorHookCtx};
@@ -129,7 +129,7 @@ impl Replicator {
     fn make_request<T>(&self, msg: T) -> Request<T> {
         let mut req = Request::new(msg);
         req.metadata_mut().insert_bin(
-            "x-namespace",
+            NAMESPACE_METADATA_KEY,
             BinaryMetadataValue::from_bytes(&self.namespace[..]),
         );
 
