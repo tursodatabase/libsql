@@ -1,6 +1,6 @@
 [package]
 name = "libsql"
-version = "0.1.9"
+version = "0.1.11"
 edition = "2021"
 description = "libSQL library: the main gateway for interacting with the database"
 repository = "https://github.com/libsql/libsql"
@@ -8,9 +8,9 @@ license = "MIT"
 
 [dependencies]
 futures = "0.3.28"
-libsql-sys = { version = "0", path = "../libsql-sys" }
+libsql-sys = { version = "0.2.13", path = "../libsql-sys", optional = true }
 thiserror = "1.0.40"
-libsql_replication = { version = "0", path = "../replication", optional = true }
+libsql_replication = { version = "0.0.5", path = "../replication", optional = true }
 tokio = { version = "1.29.1", features = ["macros"] }
 tracing-subscriber = "0.3.17"
 tracing = "0.1.37"
@@ -33,7 +33,8 @@ tempfile = "3.7.0"
 tokio = { version = "1.29.1", features = ["full"] }
 
 [features]
-default = ["replication"]
+default = ["core", "replication"]
+core = ["libsql-sys"]
 replication = ["dep:libsql_replication", "dep:bincode"]
 
 [[bench]]

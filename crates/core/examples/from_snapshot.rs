@@ -1,5 +1,5 @@
 use libsql::Database;
-se libsql_replication::{Frames, TempSnapshot};
+use libsql_replication::{Frames, TempSnapshot};
 
 #[tokio::main]
 async fn main() {

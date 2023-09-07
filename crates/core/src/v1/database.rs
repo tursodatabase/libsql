@@ -1,4 +1,5 @@
-use crate::v1::{connection::Connection, errors::Error::ConnectionFailed, Result};
+use crate::v1::connection::Connection;
+use crate::{Error::ConnectionFailed, Result};
 #[cfg(feature = "replication")]
 use libsql_replication::Replicator;
 #[cfg(feature = "replication")]

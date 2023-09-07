@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 pub use crate::v1::Column;
-use crate::v1::{Error, Params, Result};
+use crate::v1::Params;
+use crate::{Error, Result};
 
 use crate::{rows::LibsqlRows, Row, Rows};
 

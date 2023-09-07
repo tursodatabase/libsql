@@ -1,6 +1,6 @@
 [package]
 name = "libsql_replication"
-version = "0.0.3"
+version = "0.0.5"
 edition = "2021"
 description = "Replication support for libsql"
 repository = "https://github.com/libsql/libsql"

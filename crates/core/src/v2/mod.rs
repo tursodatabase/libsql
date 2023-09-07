@@ -5,7 +5,8 @@ pub mod transaction;
 
 use std::sync::Arc;
 
-use crate::v1::{Params, Result, TransactionBehavior};
+use crate::v1::{Params, TransactionBehavior};
+use crate::Result;
 pub use hrana::{Client, HranaError};
 
 pub use rows::{Row, Rows};
@@ -43,6 +44,7 @@ impl Database {
         })
     }
 
+    #[cfg(feature = "replication")]
     pub async fn open_with_sync(
         db_path: impl Into<String>,
         url: impl Into<String>,
