@@ -3236,15 +3236,19 @@ static int sessionReadRecord(
         }
       }
       if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
-        sqlite3_int64 v = sessionGetI64(aVal);
-        if( eType==SQLITE_INTEGER ){
-          sqlite3VdbeMemSetInt64(apOut[i], v);
+        if( (pIn->nData-pIn->iNext)<8 ){
+          rc = SQLITE_CORRUPT_BKPT;
         }else{
-          double d;
-          memcpy(&d, &v, 8);
-          sqlite3VdbeMemSetDouble(apOut[i], d);
+          sqlite3_int64 v = sessionGetI64(aVal);
+          if( eType==SQLITE_INTEGER ){
+            sqlite3VdbeMemSetInt64(apOut[i], v);
+          }else{
+            double d;
+            memcpy(&d, &v, 8);
+            sqlite3VdbeMemSetDouble(apOut[i], d);
+          }
+          pIn->iNext += 8;
         }
-        pIn->iNext += 8;
       }
     }
   }

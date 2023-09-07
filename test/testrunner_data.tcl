@@ -98,7 +98,10 @@ namespace eval trd {
   set build(All-O0) {
     -O0 --enable-all
   }
-  set build(All-Sanitize) { --enable-all -fsanitize=address,undefined }
+  set build(All-Sanitize) { 
+    -DSQLITE_OMIT_LOOKASIDE=1
+    --enable-all -fsanitize=address,undefined 
+  }
 
   set build(Sanitize) {
     CC=clang -fsanitize=address,undefined
