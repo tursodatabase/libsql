@@ -498,6 +498,13 @@ async fn start_primary(
     let factory = PrimaryNamespaceMaker::new(conf);
     let namespaces = Arc::new(NamespaceStore::new(factory, false));
 
+    if config.disable_namespaces {
+        // eagerly load the default namespace
+        namespaces
+            .create(DEFAULT_NAMESPACE_NAME.into(), RestoreOption::Latest)
+            .await?;
+    }
+
     if let Some(ref addr) = config.rpc_server_addr {
         join_set.spawn(run_rpc_server(
             *addr,
