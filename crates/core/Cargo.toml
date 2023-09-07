@@ -31,6 +31,7 @@ criterion = { version = "0.5", features = ["html_reports", "async", "async_futur
 pprof = { version = "0.12.1", features = ["criterion", "flamegraph"] }
 tempfile = "3.7.0"
 tokio = { version = "1.29.1", features = ["full"] }
+tokio-test = "0.4"
 
 [features]
 default = ["core", "replication"]

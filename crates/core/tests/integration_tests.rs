@@ -111,7 +111,7 @@ async fn statement_query() {
 
     let params = Params::from(vec![libsql::Value::from(2)]);
 
-    let stmt = conn
+    let mut stmt = conn
         .prepare("SELECT * FROM users WHERE id = ?1")
         .await
         .unwrap();

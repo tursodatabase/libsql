@@ -281,7 +281,7 @@ impl Client {
 #[async_trait::async_trait]
 impl Conn for Client {
     async fn execute(&self, sql: &str, params: Params) -> Result<u64> {
-        let stmt = self.prepare(sql).await?;
+        let mut stmt = self.prepare(sql).await?;
         let rows = stmt.execute(&params).await?;
 
         Ok(rows as u64)
@@ -297,7 +297,7 @@ impl Conn for Client {
             inner: Stmt::new(sql, true),
         };
         Ok(super::Statement {
-            inner: Arc::new(stmt),
+            inner: Box::new(stmt),
         })
     }
 
@@ -330,9 +330,9 @@ pub struct Statement {
 
 #[async_trait::async_trait]
 impl super::statement::Stmt for Statement {
-    fn finalize(&self) {}
+    fn finalize(&mut self) {}
 
-    async fn execute(&self, params: &Params) -> Result<usize> {
+    async fn execute(&mut self, params: &Params) -> Result<usize> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -349,7 +349,7 @@ impl super::statement::Stmt for Statement {
         Ok(affected_row_count)
     }
 
-    async fn query(&self, params: &Params) -> Result<super::Rows> {
+    async fn query(&mut self, params: &Params) -> Result<super::Rows> {
         let mut stmt = self.inner.clone();
         bind_params(params.clone(), &mut stmt);
 
@@ -363,7 +363,7 @@ impl super::statement::Stmt for Statement {
         })
     }
 
-    fn reset(&self) {}
+    fn reset(&mut self) {}
 
     fn parameter_count(&self) -> usize {
         todo!()
