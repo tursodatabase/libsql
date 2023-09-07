@@ -24,9 +24,38 @@ fn bench(c: &mut Criterion) {
         });
     });
 
+    // Extremely hacky block_on
+    //
+    // Why do we need it?
+    //
+    // criterion's async bencher enters the runtime for the setup
+    // but does not allow us to actually execute anything on that
+    // runtime because the setup Fn doesn't get a future as the
+    // return value. So one might say, why not use `rt.block_on`
+    // well, tokio stops you from embedded runtimes within a runtime
+    // because this can lead to bad things (deadlocks!). So that means
+    // we need to find a way to run the prepare future without embedding
+    // the tokio runtime.
+    //
+    // The solution is to be hacky! From the code when using the libsql
+    // version of the api we know that there isn't actually any async work
+    // done and that the future always returns right away. Using this we can
+    // mock poll the future via `tokio_test::task::spawn` and extract the return
+    // value without actually creating any runtime. This works for now but may
+    // break in the future in weird ways.
+    fn block_on<F: std::future::Future<Output = R>, R>(f: F) -> R {
+        let mut task = tokio_test::task::spawn(f);
+
+        if let std::task::Poll::Ready(r) = task.poll() {
+            r
+        } else {
+            panic!()
+        }
+    }
+
     group.bench_function("select 1 (prepared)", |b| {
         b.to_async(&rt).iter_batched(
-            || rt.block_on(conn.prepare("SELECT 1")).unwrap(),
+            || block_on(conn.prepare("SELECT 1")).unwrap(),
             |mut stmt| async move {
                 let mut rows = stmt.query(&Params::None).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
@@ -46,10 +75,7 @@ fn bench(c: &mut Criterion) {
 
     group.bench_function("SELECT * FROM users LIMIT 1", |b| {
         b.to_async(&rt).iter_batched(
-            || {
-                rt.block_on(conn.prepare("SELECT * FROM users LIMIT 1"))
-                    .unwrap()
-            },
+            || block_on(conn.prepare("SELECT * FROM users LIMIT 1")).unwrap(),
             |mut stmt| async move {
                 let mut rows = stmt.query(&Params::None).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
@@ -62,10 +88,7 @@ fn bench(c: &mut Criterion) {
 
     group.bench_function("SELECT * FROM users LIMIT 100", |b| {
         b.to_async(&rt).iter_batched(
-            || {
-                rt.block_on(conn.prepare("SELECT * FROM users LIMIT 100"))
-                    .unwrap()
-            },
+            || block_on(conn.prepare("SELECT * FROM users LIMIT 100")).unwrap(),
             |mut stmt| async move {
                 let mut rows = stmt.query(&Params::None).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
