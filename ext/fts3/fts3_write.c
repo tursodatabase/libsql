@@ -5218,7 +5218,7 @@ static u64 fts3ChecksumIndex(
   int rc;
   u64 cksum = 0;
 
-  assert( *pRc==SQLITE_OK );
+  if( *pRc ) return 0;
 
   memset(&filter, 0, sizeof(filter));
   memset(&csr, 0, sizeof(csr));

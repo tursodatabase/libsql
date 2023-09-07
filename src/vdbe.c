@@ -8156,7 +8156,11 @@ case OP_VCheck: {             /* out2 */
   assert( pModule!=0 );
   assert( pModule->iVersion>=4 );
   assert( pModule->xIntegrity!=0 );
+  pTab->nTabRef++;
+  sqlite3VtabLock(pTab->u.vtab.p);
   rc = pModule->xIntegrity(pVtab, &zErr);
+  sqlite3VtabUnlock(pTab->u.vtab.p);
+  sqlite3DeleteTable(db, pTab);
   if( rc ){
     sqlite3_free(zErr);
     goto abort_due_to_error;
