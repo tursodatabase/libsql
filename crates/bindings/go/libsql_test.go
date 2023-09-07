@@ -344,7 +344,7 @@ func TestErrorExec(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error")
 		}
-		if err.Error() != "failed to execute query CREATE TABLES test (id INTEGER, name TEXT)\nerror code = 1: Error executing statement: Failed to prepare statement `CREATE TABLES test (id INTEGER, name TEXT)`: `near \"TABLES\": syntax error`" {
+		if err.Error() != "failed to execute query CREATE TABLES test (id INTEGER, name TEXT)\nerror code = 1: Error executing statement: SQLite failure: `near \"TABLES\": syntax error`" {
 			t.Fatal("unexpected error:", err)
 		}
 	})
@@ -416,7 +416,7 @@ func TestErrorQuery(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error")
 		}
-		if err.Error() != "failed to execute query SELECT NULL, id, name, gpa, cv FROM test\nerror code = 1: Error executing statement: Failed to prepare statement `SELECT NULL, id, name, gpa, cv FROM test`: `no such table: test`" {
+		if err.Error() != "failed to execute query SELECT NULL, id, name, gpa, cv FROM test\nerror code = 1: Error executing statement: SQLite failure: `no such table: test`" {
 			t.Fatal("unexpected error:", err)
 		}
 	})
@@ -489,7 +489,7 @@ func TestErrorRowsNext(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error")
 		}
-		if err.Error() != "failed to get next row\nerror code = 1: Error fetching next row: Failed to fetch row: `database is locked`" {
+		if err.Error() != "failed to get next row\nerror code = 1: Error fetching next row: SQLite failure: `database is locked`" {
 			t.Fatal("unexpected error:", err)
 		}
 	})

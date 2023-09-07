@@ -29,9 +29,8 @@ impl Statement {
                 inner: Arc::new(stmt),
                 sql: sql.to_string(),
             }),
-            Err(libsql_sys::Error::LibError(_err)) => Err(Error::PrepareFailed(
+            Err(libsql_sys::Error::LibError(_err)) => Err(Error::SqliteFailure(
                 errors::extended_error_code(raw),
-                sql.to_string(),
                 errors::error_from_handle(raw),
             )),
             Err(err) => Err(Error::Misuse(format!(
@@ -129,7 +128,7 @@ impl Statement {
         match err as u32 {
             crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
-            _ => Err(Error::LibError(
+            _ => Err(Error::SqliteFailure(
                 errors::extended_error_code(self.conn.raw),
                 errors::error_from_handle(self.conn.raw),
             )),
@@ -142,7 +141,7 @@ impl Statement {
         match err as u32 {
             crate::ffi::SQLITE_DONE => Ok(self.conn.changes()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
-            _ => Err(Error::LibError(
+            _ => Err(Error::SqliteFailure(
                 errors::extended_error_code(self.conn.raw),
                 errors::error_from_handle(self.conn.raw),
             )),
@@ -241,7 +240,7 @@ impl Statement {
         match err as u32 {
             crate::ffi::SQLITE_DONE => Ok(()),
             crate::ffi::SQLITE_ROW => Err(Error::ExecuteReturnedRows),
-            _ => Err(Error::LibError(
+            _ => Err(Error::SqliteFailure(
                 errors::extended_error_code(self.conn.raw),
                 errors::error_from_handle(self.conn.raw),
             )),

@@ -41,7 +41,7 @@ impl Rows {
             libsql_sys::ffi::SQLITE_ROW => Ok(Some(Row {
                 stmt: self.stmt.clone(),
             })),
-            _ => Err(Error::FetchRowFailed(err_code, err_msg)),
+            _ => Err(Error::SqliteFailure(err_code, err_msg)),
         }
     }
 
@@ -61,7 +61,7 @@ impl Rows {
             libsql_sys::ffi::SQLITE_BLOB => Ok(ValueType::Blob),
             libsql_sys::ffi::SQLITE_TEXT => Ok(ValueType::Text),
             libsql_sys::ffi::SQLITE_NULL => Ok(ValueType::Null),
-            _ => Err(Error::UnknownColumnType(idx, val)),
+            _ => unreachable!("unknown column type {} at index {}", val, idx),
         }
     }
 }
@@ -129,7 +129,7 @@ impl Row {
             libsql_sys::ffi::SQLITE_BLOB => Ok(ValueType::Blob),
             libsql_sys::ffi::SQLITE_TEXT => Ok(ValueType::Text),
             libsql_sys::ffi::SQLITE_NULL => Ok(ValueType::Null),
-            _ => Err(Error::UnknownColumnType(idx, val)),
+            _ => unreachable!("unknown column type: {} at index {}", val, idx),
         }
     }
 
