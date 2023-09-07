@@ -2,7 +2,7 @@ pub use crate::v1::Column;
 use crate::v1::Params;
 use crate::{Error, Result};
 
-use crate::{rows::LibsqlRows, Row, Rows};
+use crate::{Row, Rows};
 
 // TODO(lucio): Add `column_*` based fn
 #[async_trait::async_trait]
@@ -118,9 +118,9 @@ impl Stmt for LibsqlStmt {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.query(&params).map(|rows| Rows {
-            inner: Box::new(LibsqlRows(rows)),
-        })
+        stmt.query2(params.clone())
+            .await
+            .map(|inner| Rows { inner })
     }
 
     fn reset(&mut self) {

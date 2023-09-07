@@ -49,17 +49,54 @@ impl Statement {
         Ok(MappedRows::new(rows, f))
     }
 
-    pub fn query(&self, params: &Params) -> Result<Rows> {
-        self.bind(params);
+    pub(crate) async fn query2(
+        &self,
+        params: Params,
+    ) -> Result<Box<dyn crate::rows::RowsInner + Send + Sync>> {
+        #[cfg(feature = "replication")]
+        {
+            if !self.is_readonly() && self.conn.writer.is_some() {
+                use libsql_replication::pb;
+                let params: pb::query::Params = params.into();
+                let rows = self
+                    .conn
+                    .writer
+                    .as_ref()
+                    .unwrap() // Unwrap is safe since we check if there is a writer
+                    .query(&self.sql, params)
+                    .await
+                    .map_err(|e| Error::WriteDelegation(e.into()))?;
+
+                return Ok(Box::new(crate::rows::LibsqlRemoteRows(rows, 0)));
+            }
+        }
+
+        self.bind(&params);
         let err = self.inner.step();
-        Ok(Rows {
-            stmt: self.clone(),
-            err: RefCell::new(Some((
+
+        let rows = Rows::new2(
+            self.clone(),
+            RefCell::new(Some((
                 err,
                 errors::extended_error_code(self.conn.raw),
                 errors::error_from_handle(self.conn.raw),
             ))),
-        })
+        );
+
+        Ok(Box::new(crate::rows::LibsqlRows(rows)))
+    }
+
+    pub fn query(&self, params: &Params) -> Result<Rows> {
+        self.bind(params);
+        let err = self.inner.step();
+        Ok(Rows::new2(
+            self.clone(),
+            RefCell::new(Some((
+                err,
+                errors::extended_error_code(self.conn.raw),
+                errors::error_from_handle(self.conn.raw),
+            ))),
+        ))
     }
 
     pub fn query_row(&self, params: &Params) -> Result<Row> {

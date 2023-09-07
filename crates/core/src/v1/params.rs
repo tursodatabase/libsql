@@ -263,3 +263,12 @@ impl From<Params> for libsql_replication::pb::query::Params {
         }
     }
 }
+
+#[cfg(feature = "replication")]
+impl TryFrom<libsql_replication::pb::Value> for Value {
+    type Error = Error;
+
+    fn try_from(value: libsql_replication::pb::Value) -> Result<Self> {
+        bincode::deserialize(&value.data[..]).map_err(Error::from)
+    }
+}

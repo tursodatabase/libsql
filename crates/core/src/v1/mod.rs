@@ -1,3 +1,7 @@
+// TODO: Remove this once we have decided what we want to keep
+// from the old api.
+#![allow(dead_code)]
+
 pub mod connection;
 pub mod database;
 pub mod params;
