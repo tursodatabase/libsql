@@ -776,6 +776,7 @@ OPT_FEATURE_FLAGS
 HAVE_ZLIB
 USE_AMALGAMATION
 TARGET_DEBUG
+TARGET_HAVE_LINENOISE
 TARGET_HAVE_EDITLINE
 TARGET_HAVE_READLINE
 TARGET_READLINE_INC
@@ -903,6 +904,7 @@ enable_editline
 enable_readline
 with_readline_lib
 with_readline_inc
+with_linenoise
 enable_debug
 enable_amalgamation
 enable_load_extension
@@ -1587,6 +1589,7 @@ Optional Packages:
                           (tclConfig.sh)
   --with-readline-lib     specify readline library
   --with-readline-inc     specify readline include paths
+  --with-linenoise=DIR    source directory for linenoise library
 
 Some influential environment variables:
   CC          C compiler command
@@ -3942,13 +3945,13 @@ if ${lt_cv_nm_interface+:} false; then :
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:3945: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:3948: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3948: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:3951: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3951: output\"" >&5)
+  (eval echo "\"\$as_me:3954: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -5154,7 +5157,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5157 "configure"' > conftest.$ac_ext
+  echo '#line 5160 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6679,11 +6682,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6682: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6685: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6686: \$? = $ac_status" >&5
+   echo "$as_me:6689: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7018,11 +7021,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7021: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7024: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7025: \$? = $ac_status" >&5
+   echo "$as_me:7028: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7123,11 +7126,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7126: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7129: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7130: \$? = $ac_status" >&5
+   echo "$as_me:7133: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7178,11 +7181,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7181: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7184: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7185: \$? = $ac_status" >&5
+   echo "$as_me:7188: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9558,7 +9561,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9561 "configure"
+#line 9564 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9654,7 +9657,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 9657 "configure"
+#line 9660 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11244,6 +11247,27 @@ fi
 		TARGET_HAVE_READLINE=1
 	fi
 fi
+
+# Check whether --with-linenoise was given.
+if test "${with_linenoise+set}" = set; then :
+  withval=$with_linenoise; with_linenoise=$withval
+else
+  with_linenoise="no"
+fi
+
+if test "x$with_linenoise" != "xno"; then
+   TARGET_HAVE_READLINE=0
+   TARGET_HAVE_EDITLINE=0
+   TARGET_HAVE_LINENOISE=1
+   TARGET_READLINE_INC="-I${with_linenoise}"
+   TARGET_READLINE_LIBS="${with_linenoise}/linenoise.c"
+   echo "using linenoise source code at ${with_linenoise}"
+else
+   TARGET_HAVE_LINENOISE=0
+   echo "not using linenoise"
+fi
+
+
 
 
 

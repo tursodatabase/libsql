@@ -598,11 +598,28 @@ if test x"$with_readline" != xno; then
 		TARGET_HAVE_READLINE=1
 	fi
 fi
+AC_ARG_WITH([linenoise],
+            [AS_HELP_STRING([--with-linenoise=DIR],[source directory for linenoise library])],
+            [with_linenoise=$withval],
+            [with_linenoise="no"])
+if test "x$with_linenoise" != "xno"; then
+   TARGET_HAVE_READLINE=0
+   TARGET_HAVE_EDITLINE=0
+   TARGET_HAVE_LINENOISE=1
+   TARGET_READLINE_INC="-I${with_linenoise}"
+   TARGET_READLINE_LIBS="${with_linenoise}/linenoise.c"
+   echo "using linenoise source code at ${with_linenoise}"
+else
+   TARGET_HAVE_LINENOISE=0
+   echo "not using linenoise"
+fi
 
 AC_SUBST(TARGET_READLINE_LIBS)
 AC_SUBST(TARGET_READLINE_INC)
 AC_SUBST(TARGET_HAVE_READLINE)
 AC_SUBST(TARGET_HAVE_EDITLINE)
+AC_SUBST(TARGET_HAVE_LINENOISE)
+
 
 ##########
 # Figure out what C libraries are required to compile programs
