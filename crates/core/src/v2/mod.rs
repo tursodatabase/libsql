@@ -64,7 +64,7 @@ impl Database {
         })
     }
 
-    pub async fn connect(&self) -> Result<Connection> {
+    pub fn connect(&self) -> Result<Connection> {
         match &self.db_type {
             DbType::Memory => {
                 let db = crate::v1::Database::open(":memory:")?;

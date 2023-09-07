@@ -17,7 +17,7 @@ async fn main() {
     )
     .await
     .unwrap();
-    let conn = db.connect().await.unwrap();
+    let conn = db.connect().unwrap();
 
     let f = db.sync().await.unwrap();
     println!("inital sync complete, frame no: {}", f);

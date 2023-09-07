@@ -1,5 +1,5 @@
 use libsql::Database;
-use libsql_replication::{Frames, TempSnapshot};
+se libsql_replication::{Frames, TempSnapshot};
 
 #[tokio::main]
 async fn main() {
@@ -8,7 +8,7 @@ async fn main() {
     let db = Database::open_with_sync("test.db", "http://localhost:8080", "")
         .await
         .unwrap();
-    let conn = db.connect().await.unwrap();
+    let conn = db.connect().unwrap();
 
     let args = std::env::args().collect::<Vec<String>>();
     if args.len() < 2 {
