@@ -87,6 +87,21 @@ async fn connection_execute_batch_newline() {
 }
 
 #[tokio::test]
+async fn prepare_invalid_sql() {
+    let conn = setup().await;
+    let result = conn.prepare("SYNTAX ERROR").await;
+    assert!(result.is_err());
+    let actual = result.err().unwrap();
+    match actual {
+        libsql::Error::SqliteFailure(code, msg) => {
+            assert_eq!(code, 1);
+            assert_eq!(msg, "near \"SYNTAX\": syntax error".to_string());
+        }
+        _ => panic!("Expected SqliteFailure"),
+    }
+}
+
+#[tokio::test]
 async fn statement_query() {
     let conn = setup().await;
     let _ = conn

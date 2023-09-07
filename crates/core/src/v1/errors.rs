@@ -2,34 +2,28 @@
 pub enum Error {
     #[error("Failed to connect to database: `{0}`")]
     ConnectionFailed(String),
-    #[error("Failed to prepare statement `{1}`: `{2}`")]
-    PrepareFailed(std::ffi::c_int, String, String),
-    #[error("Failed to fetch row: `{1}`")]
-    FetchRowFailed(std::ffi::c_int, String),
-    #[error("Unknown value type for column `{0}`: `{1}`")]
-    UnknownColumnType(i32, i32),
-    #[error("The value is NULL")]
-    NullValue,
-    #[error("Library misuse: `{0}`")]
-    Misuse(String),
-    #[error("Invalid column name: {0}")]
-    InvalidColumnName(String),
-    #[error("libSQL error {0}: `{1}`")]
-    LibError(std::ffi::c_int, String),
-    #[error("Query returned no rows")]
-    QueryReturnedNoRows,
+    #[error("SQLite failure: `{1}`")]
+    SqliteFailure(std::ffi::c_int, String),
+    #[error("Null value")]
+    NullValue, // Not in rusqlite
+    #[error("API misuse: `{0}`")]
+    Misuse(String), // Not in rusqlite
     #[error("Execute returned rows")]
     ExecuteReturnedRows,
-    #[error("unable to convert to sql: `{0}`")]
+    #[error("Query returned no rows")]
+    QueryReturnedNoRows,
+    #[error("Invalid column name: `{0}`")]
+    InvalidColumnName(String),
+    #[error("SQL conversion failure: `{0}`")]
     ToSqlConversionFailure(crate::BoxError),
-    #[error("Hrana: `{0}`")]
-    Hrana(#[from] crate::v2::HranaError),
     #[error("Sync is not supported in databases opened in {0} mode.")]
-    SyncNotSupported(String),
+    SyncNotSupported(String), // Not in rusqlite
     #[error("Column not found: {0}")]
-    ColumnNotFound(i32),
+    ColumnNotFound(i32), // Not in rusqlite
+    #[error("Hrana: `{0}`")]
+    Hrana(#[from] crate::v2::HranaError), // Not in rusqlite
     #[error("Write delegation: `{0}`")]
-    WriteDelegation(crate::BoxError),
+    WriteDelegation(crate::BoxError), // Not in rusqlite
 }
 
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
