@@ -216,26 +216,36 @@ impl Replicator {
     pub async fn sync_from_http(&self) -> anyhow::Result<usize> {
         tracing::trace!("Syncing frames from HTTP");
 
-        let frames = match self.fetch_log_entries(false).await {
-            Ok(frames) => Ok(frames),
-            Err(e) => {
-                if let Some(status) = e.downcast_ref::<tonic::Status>() {
-                    if status.code() == tonic::Code::FailedPrecondition {
-                        self.fetch_log_entries(true).await
+        let mut applied_frames = 0;
+        loop {
+            let frames = match self.fetch_log_entries(false).await {
+                Ok(frames) => Ok(frames),
+                Err(e) => {
+                    if let Some(status) = e.downcast_ref::<tonic::Status>() {
+                        if status.code() == tonic::Code::FailedPrecondition {
+                            self.fetch_log_entries(true).await
+                        } else {
+                            Err(e)
+                        }
                     } else {
                         Err(e)
                     }
-                } else {
-                    Err(e)
                 }
-            }
-        }?;
+            }?;
 
-        let len = frames.len();
-        self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
-        self.frames_sender.send(Frames::Vec(frames)).await?;
-        self.injector.step()?;
-        Ok(len)
+            if frames.is_empty() {
+                break;
+            }
+
+            let len = frames.len();
+            self.next_offset.fetch_add(len as u64, Ordering::Relaxed);
+            self.frames_sender.send(Frames::Vec(frames)).await?;
+            self.injector.step()?;
+
+            applied_frames += len;
+        }
+
+        Ok(applied_frames)
     }
 
     async fn fetch_log_entries(&self, send_hello: bool) -> anyhow::Result<Vec<Frame>> {
