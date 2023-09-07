@@ -106,6 +106,7 @@ namespace eval trd {
   set build(Sanitize) {
     CC=clang -fsanitize=address,undefined
     -DSQLITE_ENABLE_STAT4
+    -DSQLITE_OMIT_LOOKASIDE=1
     -DCONFIG_SLOWDOWN_FACTOR=5.0
     --enable-debug
     --enable-all
