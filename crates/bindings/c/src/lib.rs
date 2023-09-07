@@ -149,7 +149,7 @@ pub unsafe extern "C" fn libsql_connect(
     out_err_msg: *mut *const std::ffi::c_char,
 ) -> std::ffi::c_int {
     let db = db.get_ref();
-    let conn = match RT.block_on(db.connect()) {
+    let conn = match db.connect() {
         Ok(conn) => conn,
         Err(err) => {
             set_err_msg(format!("Unable to connect: {}", err), out_err_msg);

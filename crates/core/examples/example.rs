@@ -3,7 +3,7 @@ use libsql::Database;
 #[tokio::main]
 async fn main() {
     let db = Database::open(":memory:").unwrap();
-    let conn = db.connect().await.unwrap();
+    let conn = db.connect().unwrap();
     conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ())
         .await
         .unwrap();

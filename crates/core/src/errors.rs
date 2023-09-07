@@ -20,26 +20,31 @@ pub enum Error {
     SyncNotSupported(String), // Not in rusqlite
     #[error("Column not found: {0}")]
     ColumnNotFound(i32), // Not in rusqlite
+    #[cfg(feature = "core")]
     #[error("Hrana: `{0}`")]
     Hrana(#[from] crate::v2::HranaError), // Not in rusqlite
     #[error("Write delegation: `{0}`")]
     WriteDelegation(crate::BoxError), // Not in rusqlite
 }
 
+#[cfg(feature = "core")]
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
     let errmsg = unsafe { libsql_sys::ffi::sqlite3_errmsg(raw) };
     sqlite_errmsg_to_string(errmsg)
 }
 
+#[cfg(feature = "core")]
 pub(crate) fn extended_error_code(raw: *mut libsql_sys::ffi::sqlite3) -> std::ffi::c_int {
     unsafe { libsql_sys::ffi::sqlite3_extended_errcode(raw) }
 }
 
+#[cfg(feature = "core")]
 pub fn error_from_code(code: i32) -> String {
     let errmsg = unsafe { libsql_sys::ffi::sqlite3_errstr(code) };
     sqlite_errmsg_to_string(errmsg)
 }
 
+#[cfg(feature = "core")]
 #[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn sqlite_errmsg_to_string(errmsg: *const std::ffi::c_char) -> String {
     let errmsg = unsafe { std::ffi::CStr::from_ptr(errmsg) }.to_bytes();

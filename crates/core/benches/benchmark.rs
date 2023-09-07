@@ -14,7 +14,7 @@ fn bench(c: &mut Criterion) {
     group.throughput(Throughput::Elements(1));
 
     let db = bench_db();
-    let conn = rt.block_on(db.connect()).unwrap();
+    let conn = db.connect().unwrap();
 
     group.bench_function("select 1", |b| {
         b.to_async(&rt).iter(|| async {

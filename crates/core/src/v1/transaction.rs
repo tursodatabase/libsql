@@ -1,4 +1,5 @@
-use crate::v1::{Connection, Result};
+use crate::v1::Connection;
+use crate::Result;
 use std::ops::Deref;
 
 pub enum TransactionBehavior {

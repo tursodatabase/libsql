@@ -1,4 +1,5 @@
-use crate::v1::{errors, Connection, Error, Params, Result, Statement, Value};
+use crate::v1::{Connection, Params, Statement, Value};
+use crate::{errors, Error, Result};
 use libsql_sys::ValueType;
 
 use std::cell::RefCell;

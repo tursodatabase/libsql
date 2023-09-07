@@ -13,7 +13,7 @@
 //! use libsql::Database;
 //!
 //! let db = Database::open_in_memory().unwrap();
-//! let conn = db.connect().await.unwrap();
+//! let conn = db.connect().unwrap();
 //! conn.execute("CREATE TABLE IF NOT EXISTS users (email TEXT)", ()).await.unwrap();
 //! conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ()).await.unwrap();
 //! # }
@@ -35,7 +35,7 @@
 //!
 //! let frames = Frames::Vec(vec![]);
 //! db.sync_frames(frames).unwrap();
-//! let conn = db.connect().await.unwrap();
+//! let conn = db.connect().unwrap();
 //! conn.execute("SELECT * FROM users", ()).await.unwrap();
 //! # }
 //! ```
@@ -46,18 +46,25 @@
 
 // Legacy mode, for compatibility with the old libsql API, it is doc hidden so
 // that new users do not use this api as its deprecated in favor of the v2 api.
+#[cfg(feature = "core")]
 mod v1;
+#[cfg(feature = "core")]
 mod v2;
 
+pub mod errors;
+pub use errors::Error;
+
+#[cfg(all(feature = "core", feature = "replication"))]
+pub use v1::database::Opts;
+
+#[cfg(feature = "core")]
 pub use v1::{
-    database::Opts,
-    errors,
-    errors::Error,
     params,
     params::{params_from_iter, Params, Value, ValueRef},
-    version, version_number, Result, RowsFuture,
+    version, version_number, RowsFuture,
 };
 
+#[cfg(feature = "core")]
 pub use v2::{
     hrana, rows,
     rows::{Row, Rows},
@@ -68,6 +75,8 @@ pub use v2::{
     Connection, Database,
 };
 
+#[cfg(feature = "core")]
 pub use libsql_sys::ffi;
 
+pub type Result<T> = std::result::Result<T, errors::Error>;
 pub(crate) type BoxError = Box<dyn std::error::Error + Send + Sync>;
