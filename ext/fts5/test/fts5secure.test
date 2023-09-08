@@ -273,6 +273,19 @@ do_execsql_test 5.3 {
 do_execsql_test 5.4 { SELECT rowid FROM t1('abc'); } 2
 do_execsql_test 5.5 { SELECT rowid FROM t1('aa'); } 2
 
+#-------------------------------------------------------------------------
+reset_db
+
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE fts USING fts5(content);
+  INSERT INTO fts(fts, rank) VALUES ('secure-delete', 1);
+  INSERT INTO fts(rowid, content) VALUES
+    (3407, 'profile profile profile profile profile profile profile profile pull pulling pulling really');
+  DELETE FROM fts WHERE rowid IS 3407;
+  INSERT INTO fts(fts) VALUES ('integrity-check');
+}
+
+
 
 finish_test
 

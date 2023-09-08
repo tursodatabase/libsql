@@ -5274,8 +5274,9 @@ static void fts5DoSecureDelete(
   if( p->rc==SQLITE_OK ){
     const int nMove = nPg - iNextOff;     /* Number of bytes to move */
     int nShift = iNextOff - iOff;         /* Distance to move them */
-    int iKeyOff = 0;
-    int iPrevKeyOff = 0;
+
+    int iPrevKeyOut = 0;
+    int iKeyIn = 0;
 
     memmove(&aPg[iOff], &aPg[iNextOff], nMove);
     iPgIdx -= nShift;
@@ -5285,14 +5286,11 @@ static void fts5DoSecureDelete(
     for(iIdx=0; iIdx<nIdx; /* no-op */){
       u32 iVal = 0;
       iIdx += fts5GetVarint32(&aIdx[iIdx], iVal);
-      iKeyOff += iVal;
-      if( iKeyOff!=iDelKeyOff ){
-        if( iKeyOff>iOff ){
-          iKeyOff -= nShift;
-          nShift = 0;
-        }
-        nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOff - iPrevKeyOff);
-        iPrevKeyOff = iKeyOff;
+      iKeyIn += iVal;
+      if( iKeyIn!=iDelKeyOff ){
+        int iKeyOut = (iKeyIn - (iKeyIn>iOff ? nShift : 0));
+        nPg += sqlite3Fts5PutVarint(&aPg[nPg], iKeyOut - iPrevKeyOut);
+        iPrevKeyOut = iKeyOut;
       }
     }
 
