@@ -415,7 +415,7 @@ pub extern "C" fn xGetPathname(buf: *mut c_char, orig: *const c_char, orig_len: 
 
 async fn try_restore(replicator: &mut replicator::Replicator) -> i32 {
     match replicator.restore(None, None).await {
-        Ok(replicator::RestoreAction::SnapshotMainDbFile) => {
+        Ok((replicator::RestoreAction::SnapshotMainDbFile, _)) => {
             replicator.new_generation();
             match replicator.snapshot_main_db_file(None).await {
                 Ok(Some(h)) => {
@@ -437,7 +437,7 @@ async fn try_restore(replicator: &mut replicator::Replicator) -> i32 {
                 return ffi::SQLITE_CANTOPEN;
             }
         }
-        Ok(replicator::RestoreAction::ReuseGeneration(gen)) => {
+        Ok((replicator::RestoreAction::ReuseGeneration(gen), _)) => {
             replicator.set_generation(gen);
         }
         Err(e) => {

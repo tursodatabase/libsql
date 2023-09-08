@@ -962,12 +962,13 @@ impl Replicator {
         Some((first_frame_no, last_frame_no, timestamp, compression_kind))
     }
 
-    // Restores the database state from given remote generation
+    /// Restores the database state from given remote generation
+    /// On success, returns the RestoreAction, and whether the database was recovered from backup.
     async fn restore_from(
         &mut self,
         generation: Uuid,
         utc_time: Option<NaiveDateTime>,
-    ) -> Result<RestoreAction> {
+    ) -> Result<(RestoreAction, bool)> {
         if let Some(tombstone) = self.get_tombstone().await? {
             if let Some(timestamp) = Self::generation_to_timestamp(&generation) {
                 if tombstone.timestamp() as u64 >= timestamp.to_unix().0 {
@@ -989,7 +990,7 @@ impl Replicator {
         let last_frame = self.get_last_consistent_frame(&generation).await?;
         tracing::debug!("Last consistent remote frame in generation {generation}: {last_frame}.");
         if let Some(action) = self.compare_with_local(generation, last_frame).await? {
-            return Ok(action);
+            return Ok((action, false));
         }
 
         // at this point we know, we should do a full restore
@@ -1071,11 +1072,11 @@ impl Replicator {
 
         if applied_wal_frame {
             tracing::info!("WAL file has been applied onto database file in generation {}. Requesting snapshot.", generation);
-            Ok::<_, anyhow::Error>(RestoreAction::SnapshotMainDbFile)
+            Ok::<_, anyhow::Error>((RestoreAction::SnapshotMainDbFile, true))
         } else {
             tracing::info!("Reusing generation {}.", generation);
             // since WAL was not applied, we can reuse the latest generation
-            Ok::<_, anyhow::Error>(RestoreAction::ReuseGeneration(generation))
+            Ok::<_, anyhow::Error>((RestoreAction::ReuseGeneration(generation), true))
         }
     }
 
@@ -1299,19 +1300,20 @@ impl Replicator {
         Ok(())
     }
 
-    // Restores the database state from newest remote generation
+    /// Restores the database state from newest remote generation
+    /// On success, returns the RestoreAction, and whether the database was recovered from backup.
     pub async fn restore(
         &mut self,
         generation: Option<Uuid>,
         timestamp: Option<NaiveDateTime>,
-    ) -> Result<RestoreAction> {
+    ) -> Result<(RestoreAction, bool)> {
         let generation = match generation {
             Some(gen) => gen,
             None => match self.latest_generation_before(timestamp.as_ref()).await {
                 Some(gen) => gen,
                 None => {
                     tracing::debug!("No generation found, nothing to restore");
-                    return Ok(RestoreAction::SnapshotMainDbFile);
+                    return Ok((RestoreAction::SnapshotMainDbFile, false));
                 }
             },
         };

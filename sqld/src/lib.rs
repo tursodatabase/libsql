@@ -443,7 +443,6 @@ pub async fn init_bottomless_replicator(
         .ok_or_else(|| anyhow::anyhow!("Invalid db path"))?
         .to_owned();
     let mut replicator = bottomless::replicator::Replicator::with_options(path, options).await?;
-    let mut did_recover = false;
 
     let (generation, timestamp) = match restore_option {
         RestoreOption::Latest | RestoreOption::Dump(_) => (None, None),
@@ -451,13 +450,11 @@ pub async fn init_bottomless_replicator(
         RestoreOption::PointInTime(timestamp) => (None, Some(*timestamp)),
     };
 
-    match replicator.restore(generation, timestamp).await? {
+    let (action, did_recover) = replicator.restore(generation, timestamp).await?;
+    match action {
         bottomless::replicator::RestoreAction::SnapshotMainDbFile => {
             replicator.new_generation();
-            if let Some(handle) = replicator.snapshot_main_db_file(None).await? {
-                handle.await?;
-                did_recover = true;
-            }
+            replicator.snapshot_main_db_file(None).await?;
             // Restoration process only leaves the local WAL file if it was
             // detected to be newer than its remote counterpart.
             replicator.maybe_replicate_wal().await?

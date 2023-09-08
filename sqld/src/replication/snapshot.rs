@@ -122,7 +122,7 @@ impl SnapshotFile {
     }
 
     /// Iterator on the frames contained in the snapshot file, in reverse frame_no order.
-    pub fn frames_iter(&self) -> impl Iterator<Item = anyhow::Result<Bytes>> + '_ {
+    pub fn frames_iter(&self) -> impl Iterator<Item = anyhow::Result<Frame>> + '_ {
         let mut current_offset = 0;
         std::iter::from_fn(move || {
             if current_offset >= self.header.frame_count {
@@ -133,7 +133,10 @@ impl SnapshotFile {
             current_offset += 1;
             let mut buf = BytesMut::zeroed(LogFile::FRAME_SIZE);
             match self.file.read_exact_at(&mut buf, read_offset as _) {
-                Ok(_) => Some(Ok(buf.freeze())),
+                Ok(_) => match Frame::try_from_bytes(buf.freeze()) {
+                    Ok(frame) => Some(Ok(frame)),
+                    Err(e) => Some(Err(e)),
+                },
                 Err(e) => Some(Err(e.into())),
             }
         })
@@ -143,19 +146,16 @@ impl SnapshotFile {
     pub fn frames_iter_from(
         &self,
         frame_no: u64,
-    ) -> impl Iterator<Item = anyhow::Result<Bytes>> + '_ {
+    ) -> impl Iterator<Item = anyhow::Result<Frame>> + '_ {
         let mut iter = self.frames_iter();
         std::iter::from_fn(move || match iter.next() {
-            Some(Ok(bytes)) => match Frame::try_from_bytes(bytes.clone()) {
-                Ok(frame) => {
-                    if frame.header().frame_no < frame_no {
-                        None
-                    } else {
-                        Some(Ok(bytes))
-                    }
+            Some(Ok(frame)) => {
+                if frame.header().frame_no < frame_no {
+                    None
+                } else {
+                    Some(Ok(frame))
                 }
-                Err(e) => Some(Err(e)),
-            },
+            }
             other => other,
         })
     }
@@ -317,7 +317,7 @@ impl SnapshotMerger {
         let snapshot_dir_path = snapshot_dir_path(db_path);
         for (name, _) in snapshots.iter().rev() {
             let snapshot = SnapshotFile::open(&snapshot_dir_path.join(name))?;
-            let iter = snapshot.frames_iter().map(|b| Frame::try_from_bytes(b?));
+            let iter = snapshot.frames_iter();
             builder.append_frames(iter)?;
         }
 
@@ -468,7 +468,6 @@ mod test {
     use bytes::Bytes;
     use tempfile::tempdir;
 
-    use crate::replication::frame::FrameHeader;
     use crate::replication::primary::logger::WalPage;
     use crate::replication::snapshot::SnapshotFile;
 
@@ -539,8 +538,7 @@ mod test {
         let mut expected_frame_no = 49;
         for frame in frames {
             let frame = frame.unwrap();
-            let header: FrameHeader = pod_read_unaligned(&frame[..size_of::<FrameHeader>()]);
-            assert_eq!(header.frame_no, expected_frame_no);
+            assert_eq!(frame.header().frame_no, expected_frame_no);
             expected_frame_no -= 1;
         }
 
