@@ -1,3 +1,4 @@
+use crate::OpenFlags;
 use crate::v1::connection::Connection;
 use crate::{Error::ConnectionFailed, Result};
 #[cfg(feature = "replication")]
@@ -46,27 +47,28 @@ impl Opts {
 // A libSQL database.
 pub struct Database {
     pub db_path: String,
+    pub flags: OpenFlags,
     #[cfg(feature = "replication")]
     pub replication_ctx: Option<ReplicationContext>,
 }
 
 impl Database {
     /// Open a local database file.
-    pub fn open<S: Into<String>>(db_path: S) -> Result<Database> {
+    pub fn open<S: Into<String>>(db_path: S, flags: OpenFlags) -> Result<Database> {
         let db_path = db_path.into();
         if db_path.starts_with("libsql:") || db_path.starts_with("http:") {
             Err(ConnectionFailed(format!(
                 "Unable to open remote database {db_path} with Database::open()"
             )))
         } else {
-            Ok(Database::new(db_path))
+            Ok(Database::new(db_path, flags))
         }
     }
 
     #[cfg(feature = "replication")]
     pub async fn open_with_opts(db_path: impl Into<String>, opts: Opts) -> Result<Database> {
         let db_path = db_path.into();
-        let mut db = Database::open(&db_path)?;
+        let mut db = Database::open(&db_path, OpenFlags::default())?;
         let mut replicator =
             Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
         if let Sync::Http {
@@ -88,9 +90,10 @@ impl Database {
         Ok(db)
     }
 
-    pub fn new(db_path: String) -> Database {
+    pub fn new(db_path: String, flags: OpenFlags) -> Database {
         Database {
             db_path,
+            flags,
             #[cfg(feature = "replication")]
             replication_ctx: None,
         }

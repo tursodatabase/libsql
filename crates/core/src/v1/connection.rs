@@ -1,6 +1,6 @@
-use crate::v1::{
+use crate::{v1::{
     Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
-};
+}};
 
 use libsql_sys::ffi;
 use std::{ffi::c_int, sync::Arc};
@@ -41,7 +41,7 @@ impl Connection {
                     .as_c_str()
                     .as_ptr() as *const _,
                 &mut raw,
-                ffi::SQLITE_OPEN_READWRITE as c_int | ffi::SQLITE_OPEN_CREATE as c_int,
+                db.flags.bits() as c_int,
                 std::ptr::null(),
             )
         };

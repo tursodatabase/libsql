@@ -72,7 +72,7 @@ pub use v2::{
     statement::{Column, Statement},
     transaction,
     transaction::{Transaction, TransactionBehavior},
-    Connection, Database,
+    Connection, Database, OpenFlags,
 };
 
 #[cfg(feature = "core")]

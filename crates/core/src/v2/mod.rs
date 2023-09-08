@@ -15,12 +15,29 @@ pub use statement::Statement;
 use transaction::LibsqlTx;
 pub use transaction::Transaction;
 
+bitflags::bitflags! {
+    #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+    #[repr(C)]
+    pub struct OpenFlags: ::std::os::raw::c_int {
+        const SQLITE_OPEN_READ_ONLY = libsql_sys::ffi::SQLITE_OPEN_READONLY as i32;
+        const SQLITE_OPEN_READ_WRITE = libsql_sys::ffi::SQLITE_OPEN_READWRITE as i32;
+        const SQLITE_OPEN_CREATE = libsql_sys::ffi::SQLITE_OPEN_CREATE as i32;
+    }
+}
+
+impl Default for OpenFlags {
+    #[inline]
+    fn default() -> OpenFlags {
+        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE
+    }
+}
+
 // TODO(lucio): Improve construction via
 //      1) Move open errors into open fn rather than connect
 //      2) Support replication setup
 enum DbType {
     Memory,
-    File { path: String },
+    File { path: String, flags: OpenFlags },
     Sync { db: crate::v1::Database },
     Remote { url: String, auth_token: String },
 }
@@ -37,9 +54,14 @@ impl Database {
     }
 
     pub fn open(db_path: impl Into<String>) -> Result<Database> {
+        Database::open_with_flags(db_path, OpenFlags::default())
+    }
+
+    pub fn open_with_flags(db_path: impl Into<String>, flags: OpenFlags) -> Result<Database> {
         Ok(Database {
             db_type: DbType::File {
                 path: db_path.into(),
+                flags,
             },
         })
     }
@@ -69,7 +91,7 @@ impl Database {
     pub fn connect(&self) -> Result<Connection> {
         match &self.db_type {
             DbType::Memory => {
-                let db = crate::v1::Database::open(":memory:")?;
+                let db = crate::v1::Database::open(":memory:", OpenFlags::default())?;
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
@@ -77,8 +99,8 @@ impl Database {
                 Ok(Connection { conn })
             }
 
-            DbType::File { path } => {
-                let db = crate::v1::Database::open(path)?;
+            DbType::File { path, flags } => {
+                let db = crate::v1::Database::open(path, *flags)?;
                 let conn = db.connect()?;
 
                 let conn = Arc::new(LibsqlConnection { conn });
