@@ -98,6 +98,30 @@ impl From<i32> for Value {
     }
 }
 
+impl From<i64> for Value {
+    fn from(value: i64) -> Value {
+        Value::Integer(value)
+    }
+}
+
+impl From<u32> for Value {
+    fn from(value: u32) -> Value {
+        Value::Integer(value as i64)
+    }
+}
+
+impl From<f32> for Value {
+    fn from(value: f32) -> Value {
+        Value::Real(value as f64)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(value: f64) -> Value {
+        Value::Real(value)
+    }
+}
+
 impl From<&str> for Value {
     fn from(value: &str) -> Value {
         Value::Text(value.to_owned())

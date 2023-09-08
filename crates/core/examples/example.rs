@@ -10,4 +10,26 @@ async fn main() {
     conn.execute("INSERT INTO users (email) VALUES ('alice@example.org')", ())
         .await
         .unwrap();
+    conn.execute(
+        "CREATE TABLE test1 (t TEXT, i INTEGER, f FLOAT, b BLOB)",
+        (),
+    )
+    .await
+    .unwrap();
+    conn.execute(
+        "INSERT INTO test1 (t, i, f, b) VALUES (?, ?, ?, ?)",
+        libsql::params!("a", 1, 1.0, vec![1, 2, 3]),
+    )
+    .await
+    .unwrap();
+    let mut rows = conn.query("SELECT * FROM test1", ()).await.unwrap();
+    while let Ok(Some(row)) = rows.next() {
+        println!(
+            "{:?} {:?} {:?} {:?}",
+            row.get_value(0),
+            row.get_value(1),
+            row.get_value(2),
+            row.get_value(3)
+        );
+    }
 }
