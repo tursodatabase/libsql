@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -33,6 +34,12 @@ use crate::{
     DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT, DEFAULT_NAMESPACE_NAME, MAX_CONCURRENT_DBS,
 };
 
+pub use fork::ForkError;
+
+use self::fork::ForkTask;
+
+mod fork;
+
 /// Creates a new `Namespace` for database of the `Self::Database` type.
 #[async_trait::async_trait]
 pub trait MakeNamespace: Sync + Send + 'static {
@@ -50,6 +57,11 @@ pub trait MakeNamespace: Sync + Send + 'static {
     /// When `prune_all` is false, remove only files from local disk.
     /// When `prune_all` is true remove local database files as well as remote backup.
     async fn destroy(&self, namespace: &Bytes, prune_all: bool) -> crate::Result<()>;
+    async fn fork(
+        &self,
+        from: &Namespace<Self::Database>,
+        to: Bytes,
+    ) -> crate::Result<Namespace<Self::Database>>;
 }
 
 /// Creates new primary `Namespace`
@@ -103,6 +115,21 @@ impl MakeNamespace for PrimaryNamespaceMaker {
 
         Ok(())
     }
+
+    async fn fork(
+        &self,
+        from: &Namespace<Self::Database>,
+        to: Bytes,
+    ) -> crate::Result<Namespace<Self::Database>> {
+        let fork_task = ForkTask {
+            base_path: self.config.base_path.clone(),
+            dest_namespace: to,
+            logger: from.db.logger.clone(),
+            make_namespace: self,
+        };
+        let ns = fork_task.fork().await?;
+        Ok(ns)
+    }
 }
 
 /// Creates new replica `Namespace`
@@ -143,6 +170,14 @@ impl MakeNamespace for ReplicaNamespaceMaker {
             .join(std::str::from_utf8(namespace).unwrap());
         tokio::fs::remove_dir_all(ns_path).await?;
         Ok(())
+    }
+
+    async fn fork(
+        &self,
+        _from: &Namespace<Self::Database>,
+        _to: Bytes,
+    ) -> crate::Result<Namespace<Self::Database>> {
+        return Err(ForkError::ForkReplica.into());
     }
 }
 
@@ -211,6 +246,33 @@ impl<F: MakeNamespace> NamespaceStore<F> {
             make_namespace: factory,
             allow_lazy_creation,
         }
+    }
+
+    pub async fn fork(&self, from: Bytes, to: Bytes) -> crate::Result<()> {
+        let mut lock = self.inner.write().await;
+        if lock.contains_key(&to) {
+            return Err(crate::error::Error::NamespaceAlreadyExist(
+                String::from_utf8(to.to_vec()).unwrap_or_default(),
+            ));
+        }
+
+        // check that the source namespace exists
+        let from_ns = match lock.entry(from.clone()) {
+            Entry::Occupied(e) => e.into_mut(),
+            Entry::Vacant(e) => {
+                // we just want to load the namespace into memory, so we refuse creation.
+                let ns = self
+                    .make_namespace
+                    .create(from.clone(), RestoreOption::Latest, false)
+                    .await?;
+                e.insert(ns)
+            }
+        };
+
+        let forked = self.make_namespace.fork(from_ns, to.clone()).await?;
+        lock.insert(to.clone(), forked);
+
+        Ok(())
     }
 
     pub async fn with<Fun, R>(&self, namespace: Bytes, f: Fun) -> crate::Result<R>
@@ -409,7 +471,7 @@ impl Namespace<PrimaryDatabase> {
 
         // The database folder doesn't exist, bottomless replication is disabled (no db to recover)
         // and we're not allowed to create a new database, return an error.
-        if !allow_creation && config.bottomless_replication.is_none() && !db_path.exists() {
+        if !allow_creation && config.bottomless_replication.is_none() && !db_path.try_exists()? {
             return Err(crate::error::Error::NamespaceDoesntExist(
                 String::from_utf8(name.to_vec()).unwrap_or_default(),
             ));
@@ -425,7 +487,7 @@ impl Namespace<PrimaryDatabase> {
 
             // There wasn't any database to recover from bottomless, and we are not allowed to
             // create a new database
-            if !did_recover && !allow_creation {
+            if !did_recover && !allow_creation && !db_path.try_exists()? {
                 // clean stale directory
                 // FIXME: this is not atomic, we could be left with a stale directory. Maybe do
                 // setup in a temp directory and then atomically rename it?

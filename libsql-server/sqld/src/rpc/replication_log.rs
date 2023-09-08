@@ -265,8 +265,10 @@ impl ReplicationLog for ReplicationLogService {
                     let mut frames = snapshot.frames_iter_from(offset);
                     loop {
                         match frames.next() {
-                            Some(Ok(data)) => {
-                                let _ = sender.blocking_send(Ok(Frame { data }));
+                            Some(Ok(frame)) => {
+                                let _ = sender.blocking_send(Ok(Frame {
+                                    data: frame.bytes(),
+                                }));
                             }
                             Some(Err(e)) => {
                                 let _ = sender.blocking_send(Err(Status::new(
