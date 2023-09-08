@@ -1,4 +1,5 @@
 use libsql::{named_params, params, Connection, Database, Params, Value};
+use uuid::Uuid;
 
 async fn setup() -> Connection {
     let db = Database::open(":memory:").unwrap();
@@ -338,4 +339,72 @@ async fn custom_params() {
     )
     .await
     .unwrap();
+}
+
+#[tokio::test]
+async fn write_delegation() {
+    let db_name = uuid::Uuid::new_v4().as_simple().to_string();
+    let db_name = format!("write_delegation_test_{}", db_name);
+
+    let temp_dir = std::env::temp_dir();
+    let db_path = temp_dir.join(format!(
+        "write_delegation_test.db.{}",
+        Uuid::new_v4().as_simple().to_string()
+    ));
+    let db = Database::open_with_sync(db_path.to_str().unwrap(), "http://localhost:8080", "")
+        .await
+        .unwrap();
+
+    let conn = db.connect().unwrap();
+
+    conn.execute(&format!("CREATE TABLE {} (foo TEXT)", db_name), ())
+        .await
+        .unwrap();
+
+    db.sync().await.unwrap();
+
+    drop(conn);
+
+    let conn = db.connect().unwrap();
+
+    db.sync().await.unwrap();
+
+    let mut rows = conn
+        .query(
+            "SELECT name FROM sqlite_master WHERE name = ?1",
+            params![db_name.as_str()],
+        )
+        .await
+        .unwrap();
+
+    let row = rows.next().unwrap().unwrap();
+
+    let table = row.get_str(0).unwrap();
+    assert_eq!(table, &db_name);
+
+    // Fresh DB
+    let db_path = temp_dir.join(format!(
+        "write_delegation_test.db.{}",
+        Uuid::new_v4().as_simple().to_string()
+    ));
+    let db = Database::open_with_sync(db_path.to_str().unwrap(), "http://localhost:8080", "")
+        .await
+        .unwrap();
+
+    let conn = db.connect().unwrap();
+
+    db.sync().await.unwrap();
+
+    let mut rows = conn
+        .query(
+            "SELECT name FROM sqlite_master WHERE name = ?1",
+            params![db_name.as_str()],
+        )
+        .await
+        .unwrap();
+
+    let row = rows.next().unwrap().unwrap();
+
+    let table = row.get_str(0).unwrap();
+    assert_eq!(table, &db_name);
 }
