@@ -5048,7 +5048,7 @@ expr_code_doover:
 ** once. If no functions are involved, then factor the code out and put it at
 ** the end of the prepared statement in the initialization section.
 **
-** If regDest>=0 then the result is always stored in that register and the
+** If regDest>0 then the result is always stored in that register and the
 ** result is not reusable.  If regDest<0 then this routine is free to
 ** store the value wherever it wants.  The register where the expression
 ** is stored is returned.  When regDest<0, two identical expressions might
@@ -5063,6 +5063,7 @@ int sqlite3ExprCodeRunJustOnce(
 ){
   ExprList *p;
   assert( ConstFactorOk(pParse) );
+  assert( regDest!=0 );
   p = pParse->pConstExpr;
   if( regDest<0 && p ){
     struct ExprList_item *pItem;
