@@ -51,8 +51,10 @@ SQLTester.class := $(SQLTester.java:.java=.class)
 
 ########################################################################
 # The future of FTS5 customization in this API is as yet unclear.
-# It would be a real doozy to bind to JNI.
-enable.fts5 ?= 1
+# The pieces are all in place, and are all thin proxies so not much
+# complexity, but some semantic changes were required in porting
+# which are largely untested.
+enable.fts5 ?= 0
 # If enable.tester is 0, the org/sqlite/jni/tester/* bits are elided.
 enable.tester ?= $(if $(wildcard $(dir.src.jni.tester)/SQLTester.java),1,0)
 
@@ -368,10 +370,14 @@ run-jar: $(package.jar) $(package.dll)
 # javadoc...
 dir.doc   := $(dir.jni)/javadoc
 doc.index := $(dir.doc)/index.html
+javadoc.exclude := -exclude org.sqlite.jni.tester
+ifneq (1,$(enable.fts5))
+  javadoc.exclude += -exclude org.sqlite.jni.fts5
+endif
 $(doc.index): $(JAVA_FILES.main) $(MAKEFILE)
 	@if [ -d $(dir.doc) ]; then rm -fr $(dir.doc)/*; fi
 	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) -quiet \
-		-subpackages org.sqlite.jni -exclude org.sqlite.jni.tester
+		-subpackages org.sqlite.jni $(javadoc.exclude)
 	@echo "javadoc output is in $@"
 
 .PHONY: doc javadoc docserve

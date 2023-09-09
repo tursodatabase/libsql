@@ -1282,7 +1282,7 @@ public class Tester1 implements Runnable {
       final long timeStart = System.currentTimeMillis();
       ctor.newInstance() /* will run all tests */;
       final long timeEnd = System.currentTimeMillis();
-        outln("FTS5 Tests done in ",(timeEnd - timeStart),"ms");
+      outln("FTS5 Tests done in ",(timeEnd - timeStart),"ms");
     }catch(ClassNotFoundException e){
       outln("FTS5 classes not loaded.");
       err = e;
