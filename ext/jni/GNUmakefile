@@ -27,6 +27,7 @@ dir.bld     := $(dir.jni)/bld
 dir.bld.c   := $(dir.bld)
 dir.src.jni := $(dir.src)/org/sqlite/jni
 dir.src.jni.tester := $(dir.src.jni)/tester
+dir.src.fts5 := $(dir.src.jni)/fts5
 mkdir       ?= mkdir -p
 $(dir.bld.c):
 	$(mkdir) $@
@@ -54,6 +55,11 @@ SQLTester.class := $(SQLTester.java:.java=.class)
 # The pieces are all in place, and are all thin proxies so not much
 # complexity, but some semantic changes were required in porting
 # which are largely untested.
+#
+# Reminder: this flag influences the contents of $(sqlite3-jni.h),
+# which is checked in. Please do not check in changes to that file in
+# which the fts5 APIs have been stripped unless that feature is
+# intended to be stripped for good.
 enable.fts5 ?= 0
 # If enable.tester is 0, the org/sqlite/jni/tester/* bits are elided.
 enable.tester ?= $(if $(wildcard $(dir.src.jni.tester)/SQLTester.java),1,0)
@@ -105,7 +111,6 @@ JAVA_FILES.unittest := $(patsubst %,$(dir.src.jni)/%,\
   Tester1.java \
 )
 ifeq (1,$(enable.fts5))
-   dir.src.fts5 := $(dir.src.jni)/fts5
   JAVA_FILES.main += $(patsubst %,$(dir.src.fts5)/%,\
     fts5_api.java \
     fts5_extension_function.java \
@@ -221,16 +226,15 @@ java.with.jni :=
 define ADD_JNI_H
 sqlite3-jni.h.in += $$(dir.bld.c)/org_sqlite_jni$(3)_$(2).h
 java.with.jni += $(1)/$(2).java
-$$(info x=$(1)/$(2).java)
 $$(dir.bld.c)/org_sqlite_jni$(3)_$(2).h: $(1)/$(2).java
 endef
 # Invoke ADD_JNI_H once for each Java file which includes JNI
 # declarations:
 $(eval $(call ADD_JNI_H,$(dir.src.jni),SQLite3Jni,))
-ifeq (1,$(enable.fts5))
-  $(eval $(call ADD_JNI_H,$(dir.src.fts5),Fts5ExtensionApi,_fts5))
-  $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_api,_fts5))
-  $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_tokenizer,_fts5))
+ifeq (,$(enable.fts5))
+ $(eval $(call ADD_JNI_H,$(dir.src.fts5),Fts5ExtensionApi,_fts5))
+ $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_api,_fts5))
+ $(eval $(call ADD_JNI_H,$(dir.src.fts5),fts5_tokenizer,_fts5))
 endif
 ifeq (1,$(enable.tester))
   $(eval $(call ADD_JNI_H,$(dir.src.jni.tester),SQLTester,_tester))
@@ -259,12 +263,16 @@ ifeq (1,$(enable.tester))
 endif
 $(sqlite3-jni.h): $(sqlite3-jni.h.in) $(MAKEFILE)
 	@cat $(sqlite3-jni.h.in) > $@.tmp
-	@if cmp $@ $@.tmp; then \
+	@if cmp $@ $@.tmp >/dev/null; then \
 		rm -f $@.tmp; \
 		echo "$@ not modified"; \
 	else \
 		mv $@.tmp $@; \
 		echo "Updated $@"; \
+	fi
+	@if [ x1 != x$(enable.fts5) ]; then \
+		echo "*** REMINDER:"; \
+		echo "*** enable.fts5=0, so please do not check in changes to $@."; \
 	fi
 
 $(package.dll): $(sqlite3-jni.h) $(sqlite3.c) $(sqlite3.h)
