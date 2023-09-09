@@ -8,7 +8,7 @@ async fn main() {
             "".to_string()
         });
 
-        Database::open_with_sync("db.sqld", url, token)
+        Database::open_with_remote_sync("db.sqld", url, token)
             .await
             .unwrap()
     } else {
