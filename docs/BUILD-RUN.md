@@ -45,10 +45,10 @@ The sqld formulae for Homebrew works with macOS, Linux (including WSL).
 brew tap libsql/sqld
 ```
 
-### 2. Install the formulae `sqld-beta`
+### 2. Install the formulae `sqld`
 
 ```bash
-brew install sqld-beta
+brew install sqld
 ```
 
 This builds and installs the binary `sqld` into `$HOMEBREW_PREFIX/bin/sqld`,
