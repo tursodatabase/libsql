@@ -3725,7 +3725,7 @@ void *sqlite3_get_clientdata(sqlite3 *db, const char *zName){
   DbClientData *p;
   sqlite3_mutex_enter(db->mutex);
   for(p=db->pDbData; p; p=p->pNext){
-    if( zName==p->zName || strcmp(p->zName, zName)==0 ){
+    if( strcmp(p->zName, zName)==0 ){
       void *pResult = p->pData;
       sqlite3_mutex_leave(db->mutex);
       return pResult;
@@ -3747,9 +3747,7 @@ int sqlite3_set_clientdata(
   DbClientData *p, **pp;
   sqlite3_mutex_enter(db->mutex);
   pp = &db->pDbData;
-  for(p=db->pDbData;
-      p && (zName!=p->zName && strcmp(p->zName,zName));
-      p=p->pNext){
+  for(p=db->pDbData; p && strcmp(p->zName,zName); p=p->pNext){
     pp = &p->pNext;
   }
   if( p ){
