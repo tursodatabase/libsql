@@ -1,5 +1,5 @@
 /*
-** 2023-08-04
+** 2023-08-23
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,14 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Fts5Function is used in conjunction with the
-   sqlite3_create_fts_function() JNI-bound API to give that native code
-   access to the callback functions needed in order to implement
-   FTS5 auxiliary functions in Java.
+   A callback for use with sqlite3_config().
 */
-public abstract class Fts5Function {
-
-  public abstract void xFunction(Fts5ExtensionApi pApi, Fts5Context pFts,
-                                 sqlite3_context pCtx, sqlite3_value argv[]);
-  public void xDestroy() {}
+public interface ConfigLogCallback {
+  /**
+     Must function as described for a C-level callback for
+     {@link SQLite3Jni#sqlite3_config(ConfigLogCallback)}, with the slight signature change.
+  */
+  void call(int errCode, String msg);
 }

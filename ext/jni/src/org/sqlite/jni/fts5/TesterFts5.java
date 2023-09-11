@@ -11,14 +11,15 @@
 *************************************************************************
 ** This file contains a set of tests for the sqlite3 JNI bindings.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
 import static org.sqlite.jni.SQLite3Jni.*;
 import static org.sqlite.jni.Tester1.*;
+import org.sqlite.jni.*;
 
 public class TesterFts5 {
 
   private static void test1(){
-    Fts5ExtensionApi fea = Fts5ExtensionApi.getInstance();
+    final Fts5ExtensionApi fea = Fts5ExtensionApi.getInstance();
     affirm( null != fea );
     affirm( fea.getNativePointer() != 0 );
     affirm( fea == Fts5ExtensionApi.getInstance() )/*singleton*/;
@@ -35,55 +36,51 @@ public class TesterFts5 {
       });
 
     final String pUserData = "This is pUserData";
-    ValueHolder<Boolean> xDestroyCalled = new ValueHolder<>(false);
-    ValueHolder<Integer> xFuncCount = new ValueHolder<>(0);
+    final int outputs[] = {0, 0};
     final fts5_extension_function func = new fts5_extension_function(){
-        public void xFunction(Fts5ExtensionApi ext, Fts5Context fCx,
-                              sqlite3_context pCx, sqlite3_value argv[]){
-          int nCols = ext.xColumnCount(fCx);
+        @Override public void call(Fts5ExtensionApi ext, Fts5Context fCx,
+                                   sqlite3_context pCx, sqlite3_value argv[]){
+          final int nCols = ext.xColumnCount(fCx);
           affirm( 2 == nCols );
           affirm( nCols == argv.length );
           affirm( ext.xUserData(fCx) == pUserData );
-          if(true){
-            OutputPointer.String op = new OutputPointer.String();
-            for(int i = 0; i < nCols; ++i ){
-              int rc = ext.xColumnText(fCx, i, op);
-              affirm( 0 == rc );
-              final String val = op.value;
-              affirm( val.equals(sqlite3_value_text(argv[i])) );
-              //outln("xFunction col "+i+": "+val);
-            }
+          final OutputPointer.String op = new OutputPointer.String();
+          final OutputPointer.Int32 colsz = new OutputPointer.Int32();
+          final OutputPointer.Int64 colTotalSz = new OutputPointer.Int64();
+          for(int i = 0; i < nCols; ++i ){
+            int rc = ext.xColumnText(fCx, i, op);
+            affirm( 0 == rc );
+            final String val = op.value;
+            affirm( val.equals(sqlite3_value_text16(argv[i])) );
+            rc = ext.xColumnSize(fCx, i, colsz);
+            affirm( 0==rc );
+            affirm( 3==sqlite3_value_bytes(argv[i]) );
+            rc = ext.xColumnTotalSize(fCx, i, colTotalSz);
+            affirm( 0==rc );
           }
-          ++xFuncCount.value;
+          ++outputs[0];
         }
         public void xDestroy(){
-          xDestroyCalled.value = true;
+          outputs[1] = 1;
         }
       };
 
     int rc = fApi.xCreateFunction("myaux", pUserData, func);
     affirm( 0==rc );
 
-    affirm( 0==xFuncCount.value );
+    affirm( 0==outputs[0] );
     execSql(db, "select myaux(ft,a,b) from ft;");
-    affirm( 2==xFuncCount.value );
-    affirm( !xDestroyCalled.value );
+    affirm( 2==outputs[0] );
+    affirm( 0==outputs[1] );
     sqlite3_close_v2(db);
-    affirm( xDestroyCalled.value );
+    affirm( 1==outputs[1] );
   }
 
-  public TesterFts5(boolean verbose){
-    if(verbose){
-      final long timeStart = System.currentTimeMillis();
-      final int oldAffirmCount = Tester1.affirmCount;
-      test1();
-      final int affirmCount = Tester1.affirmCount - oldAffirmCount;
-      final long timeEnd = System.currentTimeMillis();
-      outln("FTS5 Tests done. Assertions checked = ",affirmCount,
-            ", Total time = ",(timeEnd - timeStart),"ms");
-    }else{
-      test1();
-    }
+  private static synchronized void runTests(){
+    test1();
   }
-  public TesterFts5(){ this(false); }
+
+  public TesterFts5(){
+    runTests();
+  }
 }

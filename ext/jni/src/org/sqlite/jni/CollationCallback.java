@@ -20,7 +20,7 @@ import org.sqlite.jni.annotation.NotNull;
    @see AbstractCollationCallback
 */
 public interface CollationCallback
-  extends SQLite3CallbackProxy, XDestroyCallback {
+  extends CallbackProxy, XDestroyCallback {
   /**
      Must compare the given byte arrays and return the result using
      {@code memcmp()} semantics.

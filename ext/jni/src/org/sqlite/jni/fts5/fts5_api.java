@@ -11,8 +11,9 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
 import org.sqlite.jni.annotation.*;
+import org.sqlite.jni.*;
 
 /**
    INCOMPLETE AND COMPLETELY UNTESTED.
@@ -25,13 +26,39 @@ import org.sqlite.jni.annotation.*;
 public final class fts5_api extends NativePointerHolder<fts5_api> {
   /* Only invoked from JNI */
   private fts5_api(){}
-  public final int iVersion = 2;
+
+  public static final int iVersion = 2;
 
   /**
      Returns the fts5_api instance associated with the given db, or
      null if something goes horribly wrong.
   */
   public static synchronized native fts5_api getInstanceForDb(@NotNull sqlite3 db);
+
+  @Canonical
+  public synchronized native int xCreateFunction(@NotNull String name,
+                                                 @Nullable Object userData,
+                                                 @NotNull fts5_extension_function xFunction);
+
+  /**
+     Convenience overload which passes null as the 2nd argument to the
+     3-parameter form.
+  */
+  public int xCreateFunction(@NotNull String name,
+                             @NotNull fts5_extension_function xFunction){
+    return xCreateFunction(name, null, xFunction);
+  }
+
+  // /* Create a new auxiliary function */
+  // int (*xCreateFunction)(
+  //   fts5_api *pApi,
+  //   const char *zName,
+  //   void *pContext,
+  //   fts5_extension_function xFunction,
+  //   void (*xDestroy)(void*)
+  // );
+
+  // Still potentially todo:
 
   // int (*xCreateTokenizer)(
   //   fts5_api *pApi,
@@ -48,23 +75,5 @@ public final class fts5_api extends NativePointerHolder<fts5_api> {
   //   void **ppContext,
   //   fts5_tokenizer *pTokenizer
   // );
-
-  // /* Create a new auxiliary function */
-  // int (*xCreateFunction)(
-  //   fts5_api *pApi,
-  //   const char *zName,
-  //   void *pContext,
-  //   fts5_extension_function xFunction,
-  //   void (*xDestroy)(void*)
-  // );
-
-  public synchronized native int xCreateFunction(@NotNull String name,
-                                    @Nullable Object userData,
-                                    @NotNull fts5_extension_function xFunction);
-
-  public int xCreateFunction(@NotNull String name,
-                             @NotNull fts5_extension_function xFunction){
-    return xCreateFunction(name, null, xFunction);
-  }
 
 }

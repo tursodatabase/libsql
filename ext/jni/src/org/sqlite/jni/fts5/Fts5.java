@@ -11,15 +11,13 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
 
 /**
    INCOMPLETE AND COMPLETELY UNTESTED.
 
-   A wrapper for communicating C-level (fts5_api*) instances with
-   Java. These wrappers do not own their associated pointer, they
-   simply provide a type-safe way to communicate it between Java and C
-   via JNI.
+   A utility object for holding FTS5-specific types and constants
+   which are used by multiple FTS5 classes.
 */
 public final class Fts5 {
   /* Not used */
@@ -28,7 +26,7 @@ public final class Fts5 {
   /**
      Callback type for use with xTokenize() variants
   */
-  public static interface xTokenize_callback {
+  public static interface XTokenizeCallback {
     int call(int tFlags, byte[] txt, int iStart, int iEnd);
   }
 

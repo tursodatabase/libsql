@@ -379,6 +379,30 @@ extern "C" {
 #define org_sqlite_jni_SQLite3Jni_SQLITE_IOCAP_IMMUTABLE 8192L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_IOCAP_BATCH_ATOMIC
 #define org_sqlite_jni_SQLite3Jni_SQLITE_IOCAP_BATCH_ATOMIC 16384L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LENGTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LENGTH 0L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_SQL_LENGTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_SQL_LENGTH 1L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COLUMN
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COLUMN 2L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_EXPR_DEPTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_EXPR_DEPTH 3L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COMPOUND_SELECT
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_COMPOUND_SELECT 4L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VDBE_OP
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VDBE_OP 5L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_FUNCTION_ARG
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_FUNCTION_ARG 6L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_ATTACHED
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_ATTACHED 7L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LIKE_PATTERN_LENGTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_LIKE_PATTERN_LENGTH 8L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VARIABLE_NUMBER
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_VARIABLE_NUMBER 9L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_TRIGGER_DEPTH
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_TRIGGER_DEPTH 10L
+#undef org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_WORKER_THREADS
+#define org_sqlite_jni_SQLite3Jni_SQLITE_LIMIT_WORKER_THREADS 11L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_OPEN_READONLY
 #define org_sqlite_jni_SQLite3Jni_SQLITE_OPEN_READONLY 1L
 #undef org_sqlite_jni_SQLite3Jni_SQLITE_OPEN_READWRITE
@@ -789,6 +813,46 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1auto_1extension
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_finish
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1finish
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_init
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;Lorg/sqlite/jni/sqlite3;Ljava/lang/String;)Lorg/sqlite/jni/sqlite3_backup;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1init
+  (JNIEnv *, jclass, jobject, jstring, jobject, jstring);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_pagecount
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1pagecount
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_remaining
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1remaining
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_backup_step
+ * Signature: (Lorg/sqlite/jni/sqlite3_backup;I)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1backup_1step
+  (JNIEnv *, jclass, jobject, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_bind_blob
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I[BI)I
  */
@@ -853,6 +917,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1parameter_1
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_bind_parameter_name
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1parameter_1name
+  (JNIEnv *, jclass, jobject, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_bind_text
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I[BI)I
  */
@@ -882,6 +954,54 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1zeroblob
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1bind_1zeroblob64
   (JNIEnv *, jclass, jobject, jint, jlong);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_blob_bytes
+ * Signature: (Lorg/sqlite/jni/sqlite3_blob;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1bytes
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_blob_close
+ * Signature: (Lorg/sqlite/jni/sqlite3_blob;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1close
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_blob_open
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;JILorg/sqlite/jni/OutputPointer/sqlite3_blob;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1open
+  (JNIEnv *, jclass, jobject, jstring, jstring, jstring, jlong, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_blob_read
+ * Signature: (Lorg/sqlite/jni/sqlite3_blob;[BI)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1read
+  (JNIEnv *, jclass, jobject, jbyteArray, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_blob_reopen
+ * Signature: (Lorg/sqlite/jni/sqlite3_blob;J)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1reopen
+  (JNIEnv *, jclass, jobject, jlong);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_blob_write
+ * Signature: (Lorg/sqlite/jni/sqlite3_blob;[BI)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1blob_1write
+  (JNIEnv *, jclass, jobject, jbyteArray, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1037,18 +1157,10 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1table_
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_column_text_utf8
+ * Method:    sqlite3_column_text
  * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text_1utf8
-  (JNIEnv *, jclass, jobject, jint);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_column_text
- * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text
+JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1column_1text
   (JNIEnv *, jclass, jobject, jint);
 
 /*
@@ -1085,14 +1197,6 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1collation_1needed
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_context_db_handle
- * Signature: (Lorg/sqlite/jni/sqlite3_context;)Lorg/sqlite/jni/sqlite3;
- */
-JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1context_1db_1handle
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_commit_hook
  * Signature: (Lorg/sqlite/jni/sqlite3;Lorg/sqlite/jni/CommitHookCallback;)Lorg/sqlite/jni/CommitHookCallback;
  */
@@ -1117,6 +1221,14 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1compileoption
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_complete
+ * Signature: ([B)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1complete
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_config
  * Signature: (I)I
  */
@@ -1129,6 +1241,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__I
  * Signature: (Lorg/sqlite/jni/ConfigSqllogCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__Lorg_sqlite_jni_ConfigSqllogCallback_2
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_config
+ * Signature: (Lorg/sqlite/jni/ConfigLogCallback;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1config__Lorg_sqlite_jni_ConfigLogCallback_2
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_context_db_handle
+ * Signature: (Lorg/sqlite/jni/sqlite3_context;)Lorg/sqlite/jni/sqlite3;
+ */
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1context_1db_1handle
   (JNIEnv *, jclass, jobject);
 
 /*
@@ -1189,6 +1317,14 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1handle
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_db_release_memory
+ * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1release_1memory
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_db_status
  * Signature: (Lorg/sqlite/jni/sqlite3;ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Z)I
  */
@@ -1202,6 +1338,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1db_1status
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errcode
   (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_errmsg
+ * Signature: (Lorg/sqlite/jni/sqlite3;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errmsg
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_errstr
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errstr
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1229,19 +1381,19 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1extended_1res
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_errmsg
- * Signature: (Lorg/sqlite/jni/sqlite3;)Ljava/lang/String;
+ * Method:    sqlite3_get_autocommit
+ * Signature: (Lorg/sqlite/jni/sqlite3;)Z
  */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errmsg
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1autocommit
   (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_errstr
- * Signature: (I)Ljava/lang/String;
+ * Method:    sqlite3_get_auxdata
+ * Signature: (Lorg/sqlite/jni/sqlite3_context;I)Ljava/lang/Object;
  */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1errstr
-  (JNIEnv *, jclass, jint);
+JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1get_1auxdata
+  (JNIEnv *, jclass, jobject, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1285,6 +1437,30 @@ JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1is_1interrupt
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_keyword_check
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1keyword_1check
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_keyword_count
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1keyword_1count
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_keyword_name
+ * Signature: (I)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1keyword_1name
+  (JNIEnv *, jclass, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_last_insert_rowid
  * Signature: (Lorg/sqlite/jni/sqlite3;)J
  */
@@ -1306,6 +1482,14 @@ JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1libversion
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1libversion_1number
   (JNIEnv *, jclass);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_limit
+ * Signature: (Lorg/sqlite/jni/sqlite3;II)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1limit
+  (JNIEnv *, jclass, jobject, jint, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1402,6 +1586,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1preupdate_1old
  */
 JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1progress_1handler
   (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_randomness
+ * Signature: ([B)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1randomness
+  (JNIEnv *, jclass, jbyteArray);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_release_memory
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1release_1memory
+  (JNIEnv *, jclass, jint);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1565,6 +1765,14 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1set_1authorizer
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_set_auxdata
+ * Signature: (Lorg/sqlite/jni/sqlite3_context;ILjava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1set_1auxdata
+  (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_set_last_insert_rowid
  * Signature: (Lorg/sqlite/jni/sqlite3;J)V
  */
@@ -1629,6 +1837,38 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1step
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_explain
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;I)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1explain
+  (JNIEnv *, jclass, jobject, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_isexplain
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1isexplain
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_readonly
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1readonly
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_stmt_status
+ * Signature: (Lorg/sqlite/jni/sqlite3_stmt;IZ)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1stmt_1status
+  (JNIEnv *, jclass, jobject, jint, jboolean);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
  * Method:    sqlite3_strglob
  * Signature: ([B[B)I
  */
@@ -1642,6 +1882,22 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strglob
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1strlike
   (JNIEnv *, jclass, jbyteArray, jbyteArray, jint);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_system_errno
+ * Signature: (Lorg/sqlite/jni/sqlite3;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1system_1errno
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_table_column_metadata
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/sqlite/jni/OutputPointer/String;Lorg/sqlite/jni/OutputPointer/String;Lorg/sqlite/jni/OutputPointer/Bool;Lorg/sqlite/jni/OutputPointer/Bool;Lorg/sqlite/jni/OutputPointer/Bool;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1table_1column_1metadata
+  (JNIEnv *, jclass, jobject, jstring, jstring, jstring, jobject, jobject, jobject, jobject, jobject);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1674,6 +1930,14 @@ JNIEXPORT jlong JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1total_1changes64
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1trace_1v2
   (JNIEnv *, jclass, jobject, jint, jobject);
+
+/*
+ * Class:     org_sqlite_jni_SQLite3Jni
+ * Method:    sqlite3_txn_state
+ * Signature: (Lorg/sqlite/jni/sqlite3;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1txn_1state
+  (JNIEnv *, jclass, jobject, jstring);
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
@@ -1765,18 +2029,10 @@ JNIEXPORT jobject JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1java_1o
 
 /*
  * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_value_text_utf8
+ * Method:    sqlite3_value_text
  * Signature: (Lorg/sqlite/jni/sqlite3_value;)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text_1utf8
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_SQLite3Jni
- * Method:    sqlite3_value_text
- * Signature: (Lorg/sqlite/jni/sqlite3_value;)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text
+JNIEXPORT jbyteArray JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1text
   (JNIEnv *, jclass, jobject);
 
 /*
@@ -1834,229 +2090,6 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1value_1subtype
  */
 JNIEXPORT void JNICALL Java_org_sqlite_jni_SQLite3Jni_sqlite3_1jni_1internal_1details
   (JNIEnv *, jclass);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-/* DO NOT EDIT THIS FILE - it is machine generated */
-#include <jni.h>
-/* Header for class org_sqlite_jni_Fts5ExtensionApi */
-
-#ifndef _Included_org_sqlite_jni_Fts5ExtensionApi
-#define _Included_org_sqlite_jni_Fts5ExtensionApi
-#ifdef __cplusplus
-extern "C" {
-#endif
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    getInstance
- * Signature: ()Lorg/sqlite/jni/Fts5ExtensionApi;
- */
-JNIEXPORT jobject JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_getInstance
-  (JNIEnv *, jclass);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xColumnCount
- * Signature: (Lorg/sqlite/jni/Fts5Context;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnCount
-  (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xColumnSize
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/Int32;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnSize
-  (JNIEnv *, jobject, jobject, jint, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xColumnText
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/String;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnText
-  (JNIEnv *, jobject, jobject, jint, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xColumnTotalSize
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/Int64;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xColumnTotalSize
-  (JNIEnv *, jobject, jobject, jint, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xGetAuxdata
- * Signature: (Lorg/sqlite/jni/Fts5Context;Z)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xGetAuxdata
-  (JNIEnv *, jobject, jobject, jboolean);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xInst
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xInst
-  (JNIEnv *, jobject, jobject, jint, jobject, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xInstCount
- * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/OutputPointer/Int32;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xInstCount
-  (JNIEnv *, jobject, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xPhraseCount
- * Signature: (Lorg/sqlite/jni/Fts5Context;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseCount
-  (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xPhraseFirst
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseFirst
-  (JNIEnv *, jobject, jobject, jint, jobject, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xPhraseFirstColumn
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseFirstColumn
-  (JNIEnv *, jobject, jobject, jint, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xPhraseNext
- * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;Lorg/sqlite/jni/OutputPointer/Int32;)V
- */
-JNIEXPORT void JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseNext
-  (JNIEnv *, jobject, jobject, jobject, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xPhraseNextColumn
- * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/Fts5PhraseIter;Lorg/sqlite/jni/OutputPointer/Int32;)V
- */
-JNIEXPORT void JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseNextColumn
-  (JNIEnv *, jobject, jobject, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xPhraseSize
- * Signature: (Lorg/sqlite/jni/Fts5Context;I)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xPhraseSize
-  (JNIEnv *, jobject, jobject, jint);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xQueryPhrase
- * Signature: (Lorg/sqlite/jni/Fts5Context;ILorg/sqlite/jni/Fts5ExtensionApi/xQueryPhraseCallback;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xQueryPhrase
-  (JNIEnv *, jobject, jobject, jint, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xRowCount
- * Signature: (Lorg/sqlite/jni/Fts5Context;Lorg/sqlite/jni/OutputPointer/Int64;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowCount
-  (JNIEnv *, jobject, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xRowid
- * Signature: (Lorg/sqlite/jni/Fts5Context;)J
- */
-JNIEXPORT jlong JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xRowid
-  (JNIEnv *, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xSetAuxdata
- * Signature: (Lorg/sqlite/jni/Fts5Context;Ljava/lang/Object;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xSetAuxdata
-  (JNIEnv *, jobject, jobject, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xTokenize
- * Signature: (Lorg/sqlite/jni/Fts5Context;[BLorg/sqlite/jni/Fts5/xTokenize_callback;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xTokenize
-  (JNIEnv *, jobject, jobject, jbyteArray, jobject);
-
-/*
- * Class:     org_sqlite_jni_Fts5ExtensionApi
- * Method:    xUserData
- * Signature: (Lorg/sqlite/jni/Fts5Context;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL Java_org_sqlite_jni_Fts5ExtensionApi_xUserData
-  (JNIEnv *, jobject, jobject);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-/* DO NOT EDIT THIS FILE - it is machine generated */
-#include <jni.h>
-/* Header for class org_sqlite_jni_fts5_api */
-
-#ifndef _Included_org_sqlite_jni_fts5_api
-#define _Included_org_sqlite_jni_fts5_api
-#ifdef __cplusplus
-extern "C" {
-#endif
-/*
- * Class:     org_sqlite_jni_fts5_api
- * Method:    getInstanceForDb
- * Signature: (Lorg/sqlite/jni/sqlite3;)Lorg/sqlite/jni/fts5_api;
- */
-JNIEXPORT jobject JNICALL Java_org_sqlite_jni_fts5_1api_getInstanceForDb
-  (JNIEnv *, jclass, jobject);
-
-/*
- * Class:     org_sqlite_jni_fts5_api
- * Method:    xCreateFunction
- * Signature: (Ljava/lang/String;Ljava/lang/Object;Lorg/sqlite/jni/fts5_extension_function;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_fts5_1api_xCreateFunction
-  (JNIEnv *, jobject, jstring, jobject, jobject);
-
-#ifdef __cplusplus
-}
-#endif
-#endif
-/* DO NOT EDIT THIS FILE - it is machine generated */
-#include <jni.h>
-/* Header for class org_sqlite_jni_fts5_tokenizer */
-
-#ifndef _Included_org_sqlite_jni_fts5_tokenizer
-#define _Included_org_sqlite_jni_fts5_tokenizer
-#ifdef __cplusplus
-extern "C" {
-#endif
-/*
- * Class:     org_sqlite_jni_fts5_tokenizer
- * Method:    xTokenize
- * Signature: (Lorg/sqlite/jni/Fts5Tokenizer;I[BLorg/sqlite/jni/Fts5/xTokenize_callback;)I
- */
-JNIEXPORT jint JNICALL Java_org_sqlite_jni_fts5_1tokenizer_xTokenize
-  (JNIEnv *, jobject, jobject, jint, jbyteArray, jobject);
 
 #ifdef __cplusplus
 }

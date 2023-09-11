@@ -65,6 +65,27 @@ public final class OutputPointer {
   }
 
   /**
+     Output pointer for sqlite3_blob_open(). These
+     pointers can only be set by the JNI layer, not by client-level
+     code.
+  */
+  public static final class sqlite3_blob {
+    private org.sqlite.jni.sqlite3_blob value;
+    /** Initializes with a null value. */
+    public sqlite3_blob(){value = null;}
+    /** Sets the current value to null. */
+    public void clear(){value = null;}
+    /** Returns the current value. */
+    public final org.sqlite.jni.sqlite3_blob get(){return value;}
+    /** Equivalent to calling get() then clear(). */
+    public final org.sqlite.jni.sqlite3_blob take(){
+      final org.sqlite.jni.sqlite3_blob v = value;
+      value = null;
+      return v;
+    }
+  }
+
+  /**
      Output pointer for use with routines, such as sqlite3_prepare(),
      which return a statement handle via an output pointer. These
      pointers can only be set by the JNI layer, not by client-level
@@ -106,6 +127,26 @@ public final class OutputPointer {
       value = null;
       return v;
     }
+  }
+
+  /**
+     Output pointer for use with native routines which return booleans
+     via integer output pointers.
+  */
+  public static final class Bool {
+    /**
+       This is public for ease of use. Accessors are provided for
+       consistency with the higher-level types.
+    */
+    public boolean value;
+    /** Initializes with the value 0. */
+    public Bool(){this(false);}
+    /** Initializes with the value v. */
+    public Bool(boolean v){value = v;}
+    /** Returns the current value. */
+    public final boolean get(){return value;}
+    /** Sets the current value to v. */
+    public final void set(boolean v){value = v;}
   }
 
   /**

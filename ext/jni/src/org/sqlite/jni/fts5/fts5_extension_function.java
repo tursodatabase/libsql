@@ -11,13 +11,14 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
+import org.sqlite.jni.sqlite3_context;
+import org.sqlite.jni.sqlite3_value;
 
 /**
    JNI-level wrapper for C's fts5_extension_function type.
-
 */
-public abstract class fts5_extension_function {
+public interface fts5_extension_function {
   // typedef void (*fts5_extension_function)(
   //   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   //   Fts5Context *pFts,              /* First arg to pass to pApi functions */
@@ -30,8 +31,17 @@ public abstract class fts5_extension_function {
      The callback implementation, corresponding to the xFunction
      argument of C's fts5_api::xCreateFunction().
   */
-  public abstract void xFunction(Fts5ExtensionApi ext, Fts5Context fCx,
-                                 sqlite3_context pCx, sqlite3_value argv[]);
-  //! Optionally override
-  public void xDestroy(){}
+  void call(Fts5ExtensionApi ext, Fts5Context fCx,
+            sqlite3_context pCx, sqlite3_value argv[]);
+  /**
+     Is called when this function is destroyed by sqlite3. Typically
+     this function will be empty.
+  */
+  void xDestroy();
+
+  public static abstract class Abstract implements fts5_extension_function {
+    @Override public abstract void call(Fts5ExtensionApi ext, Fts5Context fCx,
+                                        sqlite3_context pCx, sqlite3_value argv[]);
+    @Override public void xDestroy(){}
+  }
 }

@@ -1,5 +1,5 @@
 /*
-** 2023-07-21
+** 2023-08-04
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -11,15 +11,15 @@
 *************************************************************************
 ** This file is part of the JNI bindings for the sqlite3 C API.
 */
-package org.sqlite.jni;
+package org.sqlite.jni.fts5;
+import org.sqlite.jni.NativePointerHolder;
 
 /**
-   A helper class which simply holds a single value. Its current use
-   is for communicating values out of anonymous classes, as doing so
-   requires a "final" reference.
+   A wrapper for C-level Fts5PhraseIter. They are only modified and
+   inspected by native-level code.
 */
-public class ValueHolder<T> {
-  public T value;
-  public ValueHolder(){}
-  public ValueHolder(T v){value = v;}
+public final class Fts5PhraseIter extends NativePointerHolder<Fts5PhraseIter> {
+  //! Updated and used only by native code.
+  private long a;
+  private long b;
 }

@@ -1,5 +1,5 @@
 /*
-** 2023-08-04
+** 2023-09-03
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,11 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   A wrapper for C-level Fts5PhraseIter. They are only modified and
-   inspected by native-level code.
+   A wrapper for passing C-level (sqlite3_backup*) instances around in
+   Java. These wrappers do not own their associated pointer, they
+   simply provide a type-safe way to communicate it between Java and C
+   via JNI.
 */
-public final class Fts5PhraseIter extends NativePointerHolder<Fts5PhraseIter> {
-  //! Updated and used only by native code.
-  private long a;
-  private long b;
+public final class sqlite3_backup extends NativePointerHolder<sqlite3_backup> {
+  // Only invoked from JNI.
+  private sqlite3_backup(){}
 }

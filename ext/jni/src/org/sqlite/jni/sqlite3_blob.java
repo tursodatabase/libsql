@@ -1,5 +1,5 @@
 /*
-** 2023-08-25
+** 2023-09-03
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -14,12 +14,12 @@
 package org.sqlite.jni;
 
 /**
-   Callback for use with {@link SQLite3Jni#sqlite3_rollback_hook}.
+   A wrapper for passing C-level (sqlite3_blob*) instances around in
+   Java. These wrappers do not own their associated pointer, they
+   simply provide a type-safe way to communicate it between Java and C
+   via JNI.
 */
-public interface RollbackHookCallback extends CallbackProxy {
-  /**
-     Works as documented for the C-level sqlite3_rollback_hook()
-     callback.
-  */
-  void call();
+public final class sqlite3_blob extends NativePointerHolder<sqlite3_blob> {
+  // Only invoked from JNI.
+  private sqlite3_blob(){}
 }
