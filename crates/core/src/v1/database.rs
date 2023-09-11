@@ -119,7 +119,7 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub async fn sync(&self) -> Result<usize> {
+    pub async fn sync_oneshot(&self) -> Result<usize> {
         if let Some(ctx) = &self.replication_ctx {
             ctx.replicator
                 .sync_from_http()
@@ -131,6 +131,21 @@ impl Database {
                     .to_string(),
             ))
         }
+    }
+
+    #[cfg(feature = "replication")]
+    pub async fn sync(&self) -> Result<usize> {
+        let mut synced = 0;
+        loop {
+            let n = self.sync_oneshot().await?;
+            tracing::trace!("Synced {n} frames");
+            if n == 0 {
+                break;
+            } else {
+                synced += n;
+            }
+        }
+        Ok(synced)
     }
 
     #[cfg(feature = "replication")]

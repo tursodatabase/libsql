@@ -1,6 +1,6 @@
 // Example of using a remote sync server with libsql.
 
-use libsql::{Database, params};
+use libsql::{params, Database};
 
 #[tokio::main]
 async fn main() {
@@ -10,7 +10,9 @@ async fn main() {
     let db_path = match std::env::var("LIBSQL_DB_PATH") {
         Ok(path) => path,
         Err(_) => {
-            eprintln!("Please set the LIBSQL_DB_PATH environment variable to set to local database path.");
+            eprintln!(
+                "Please set the LIBSQL_DB_PATH environment variable to set to local database path."
+            );
             return;
         }
     };
@@ -19,7 +21,9 @@ async fn main() {
     let sync_url = match std::env::var("LIBSQL_SYNC_URL") {
         Ok(url) => url,
         Err(_) => {
-            eprintln!("Please set the LIBSQL_SYNC_URL environment variable to set to remote sync URL.");
+            eprintln!(
+                "Please set the LIBSQL_SYNC_URL environment variable to set to remote sync URL."
+            );
             return;
         }
     };
@@ -56,20 +60,26 @@ async fn main() {
         Ok(_) => {
             println!("You entered: {}", input);
             let params = params![input.as_str()];
-            conn.execute("INSERT INTO guest_book_entries (text) VALUES (?)", params).await.unwrap();
+            conn.execute("INSERT INTO guest_book_entries (text) VALUES (?)", params)
+                .await
+                .unwrap();
         }
         Err(error) => {
             eprintln!("Error reading input: {}", error);
         }
     }
-    let mut results = conn.query("SELECT * FROM guest_book_entries", ()).await.unwrap();
+    db.sync().await.unwrap();
+    let mut results = conn
+        .query("SELECT * FROM guest_book_entries", ())
+        .await
+        .unwrap();
     println!("Guest book entries:");
     loop {
         match results.next().unwrap() {
             Some(row) => {
                 let text: String = row.get(0).unwrap();
                 println!("  {}", text);
-            },
+            }
             None => break,
         };
     }
