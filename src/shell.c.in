@@ -452,15 +452,10 @@ static int stdin_is_interactive = 1;
 #if (defined(_WIN32) || defined(WIN32)) && SHELL_USE_LOCAL_GETLINE \
   && !defined(SHELL_OMIT_WIN_UTF8)
 # define SHELL_WIN_UTF8_OPT 1
+  static int console_utf8 = sizeof(char*)/4 - 1;
 #else
 # define SHELL_WIN_UTF8_OPT 0
-#endif
-
-#if SHELL_WIN_UTF8_OPT
-/*
-** Setup console for UTF-8 input/output when following variable true.
-*/
-static int console_utf8 = 0;
+  static const int console_utf8 = 0;
 #endif
 
 /*
@@ -734,11 +729,7 @@ static char* utf8_fgets(char *buf, int ncmax, FILE *fin){
 void utf8_printf(FILE *out, const char *zFormat, ...){
   va_list ap;
   va_start(ap, zFormat);
-  if( stdout_is_console && (out==stdout || out==stderr)
-# if SHELL_WIN_UTF8_OPT
-      && !console_utf8
-# endif
-  ){
+  if( stdout_is_console && (out==stdout || out==stderr) && !console_utf8 ){
     char *z1 = sqlite3_vmprintf(zFormat, ap);
     char *z2 = sqlite3_win32_utf8_to_mbcs_v2(z1, 0);
     sqlite3_free(z1);
@@ -952,11 +943,7 @@ static char *local_getline(char *zLine, FILE *in){
   /* For interactive input on Windows systems, without -utf8,
   ** translate the multi-byte characterset characters into UTF-8.
   ** This is the translation that predates the -utf8 option. */
-  if( stdin_is_interactive && in==stdin
-# if SHELL_WIN_UTF8_OPT
-      && !console_utf8
-# endif /* SHELL_WIN_UTF8_OPT */
-  ){
+  if( stdin_is_interactive && in==stdin && !console_utf8 ){
     char *zTrans = sqlite3_win32_mbcs_to_utf8_v2(zLine, 0);
     if( zTrans ){
       i64 nTrans = strlen(zTrans)+1;
