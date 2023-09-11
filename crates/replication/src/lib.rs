@@ -37,7 +37,6 @@ pub struct Replicator {
 #[derive(Debug, Clone)]
 pub struct Writer {
     client: Client,
-    frame_no_notifier: Receiver<u64>,
 }
 
 // FIXME: copy-pasted from sqld, it should be deduplicated in a single place
@@ -193,10 +192,7 @@ impl Replicator {
             .clone()
             .context("FATAL trying to sync with no client, you need to call init_metadata first")?;
 
-        Ok(Writer {
-            client,
-            frame_no_notifier: self.current_frame_no_notifier.clone(),
-        })
+        Ok(Writer { client })
     }
 
     pub fn sync(&self, frames: Frames) -> anyhow::Result<()> {
@@ -261,21 +257,13 @@ impl Writer {
         sql: &str,
         params: impl Into<pb::query::Params> + Send,
     ) -> anyhow::Result<u64> {
-        tracing::trace!("executing remote sql statement");
+        tracing::trace!("executing remote sql statement: {sql}");
         let (write_frame_no, rows_affected) = self.client.execute(sql, params.into()).await?;
 
         tracing::trace!(
-            "statment executed on remote waiting for frame_no: {}",
+            "statement executed on remote waiting for frame_no: {}",
             write_frame_no
         );
-
-        self.frame_no_notifier
-            .clone()
-            .wait_for(|latest_frame_no| latest_frame_no >= &(write_frame_no - 1))
-            .await?;
-
-        tracing::trace!("received frame_no: {} for delegated write", write_frame_no);
-
         Ok(rows_affected)
     }
 }
