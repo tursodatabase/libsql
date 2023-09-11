@@ -78,7 +78,7 @@ pub unsafe extern "C" fn libsql_open_sync(
             return 3;
         }
     };
-    match RT.block_on(libsql::Database::open_with_sync(
+    match RT.block_on(libsql::Database::open_with_remote_sync(
         db_path.to_string(),
         primary_url,
         auth_token,

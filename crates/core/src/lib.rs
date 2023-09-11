@@ -31,7 +31,7 @@
 //! use libsql::{Database, Opts};
 //! use libsql_replication::{Frame, Frames, Replicator};
 //!
-//! let mut db = Database::open_with_sync("/tmp/test.db", "http://localhost:8080", "").await.unwrap();
+//! let mut db = Database::open_with_local_sync("/tmp/test.db").await.unwrap();
 //!
 //! let frames = Frames::Vec(vec![]);
 //! db.sync_frames(frames).unwrap();

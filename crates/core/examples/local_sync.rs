@@ -5,7 +5,7 @@ use libsql_replication::{Frames, TempSnapshot};
 async fn main() {
     tracing_subscriber::fmt::init();
 
-    let db = Database::open_with_sync("test.db", "http://localhost:8080", "")
+    let db = Database::open_with_local_sync("test.db")
         .await
         .unwrap();
     let conn = db.connect().unwrap();

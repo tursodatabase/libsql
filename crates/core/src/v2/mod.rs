@@ -66,8 +66,21 @@ impl Database {
         })
     }
 
+    /// Open a local database file with the ability to sync from snapshots from local filesystem.
     #[cfg(feature = "replication")]
-    pub async fn open_with_sync(
+    pub async fn open_with_local_sync(
+        db_path: impl Into<String>,
+    ) -> Result<Database> {
+        let opts = crate::Opts::with_sync();
+        let db = crate::v1::Database::open_with_opts(db_path, opts).await?;
+        Ok(Database {
+            db_type: DbType::Sync { db },
+        })
+    }
+
+    /// Open a local database file with the ability to sync from a remote database.
+    #[cfg(feature = "replication")]
+    pub async fn open_with_remote_sync(
         db_path: impl Into<String>,
         url: impl Into<String>,
         token: impl Into<String>,
