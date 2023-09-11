@@ -14,7 +14,6 @@ pub use frame::{Frame, FrameHeader};
 pub use replica::hook::{Frames, InjectorHookCtx};
 use replica::snapshot::SnapshotFileHeader;
 pub use replica::snapshot::TempSnapshot;
-use tokio::sync::watch::Receiver;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -275,16 +274,9 @@ impl Writer {
         let (write_frame_no, rows) = self.client.query(sql, params.into()).await?;
 
         tracing::trace!(
-            "statment executed on remote waiting for frame_no: {}",
+            "statement executed on remote waiting for frame_no: {}",
             write_frame_no
         );
-
-        self.frame_no_notifier
-            .clone()
-            .wait_for(|latest_frame_no| latest_frame_no >= &(write_frame_no - 1))
-            .await?;
-
-        tracing::trace!("received frame_no: {} for delegated write", write_frame_no);
 
         Ok(rows)
     }
