@@ -17,7 +17,18 @@ impl ValueType {
             crate::ffi::SQLITE_BLOB => ValueType::Blob,
             crate::ffi::SQLITE_TEXT => ValueType::Text,
             crate::ffi::SQLITE_NULL => ValueType::Null,
-            _ => todo!(),
+            _ => panic!("value type not supported"),
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<ValueType> {
+        match s {
+            "TEXT" => Some(ValueType::Text),
+            "INTEGER" => Some(ValueType::Integer),
+            "BLOB" => Some(ValueType::Blob),
+            "NULL" => Some(ValueType::Null),
+            "REAL" => Some(ValueType::Real),
+            _ => None,
         }
     }
 }

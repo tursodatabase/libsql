@@ -237,8 +237,13 @@ impl RowsInner for LibsqlRemoteRows {
             .map(|s| s.name.as_str())
     }
 
-    fn column_type(&self, _idx: i32) -> Result<ValueType> {
-        todo!()
+    fn column_type(&self, idx: i32) -> Result<ValueType> {
+        let col = self.0.column_descriptions.get(idx as usize).unwrap();
+        col.decltype
+            .as_ref()
+            .map(|s| s.as_str())
+            .and_then(ValueType::from_str)
+            .ok_or(Error::InvalidColumnType)
     }
 }
 
@@ -267,6 +272,10 @@ impl RowInner for LibsqlRemoteRow {
 
     fn column_type(&self, idx: i32) -> Result<ValueType> {
         let col = self.1.get(idx as usize).unwrap();
-        todo!("implement decl type: {:?}", col.decltype)
+        col.decltype
+            .as_ref()
+            .map(|s| s.as_str())
+            .and_then(ValueType::from_str)
+            .ok_or(Error::InvalidColumnType)
     }
 }
