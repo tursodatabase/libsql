@@ -275,17 +275,15 @@ impl Writer {
         let (write_frame_no, rows) = self.client.query(sql, params.into()).await?;
 
         tracing::trace!(
-            "statment executed on remote waiting for frame_no: {}",
+            "statement executed on remote waiting for frame_no: {}",
             write_frame_no
         );
 
-        self.frame_no_notifier
-            .clone()
-            .wait_for(|latest_frame_no| latest_frame_no >= &(write_frame_no - 1))
-            .await?;
-
-        tracing::trace!("received frame_no: {} for delegated write", write_frame_no);
-
         Ok(rows)
+    }
+
+    pub async fn execute_batch(&self, sql: Vec<String>) -> anyhow::Result<()> {
+        self.client.execute_batch(sql).await?;
+        Ok(())
     }
 }

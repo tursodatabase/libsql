@@ -161,6 +161,47 @@ impl Client {
         Ok((res.current_frame_no, affected_row_count))
     }
 
+    pub async fn execute_batch(&self, sql: Vec<String>) -> anyhow::Result<()> {
+        let mut proxy = self.proxy.clone();
+
+        let steps = sql
+            .into_iter()
+            .map(|sql| pb::Step {
+                query: Some(pb::Query {
+                    stmt: sql,
+                    params: Some(pb::query::Params::Positional(pb::Positional::default())),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            })
+            .collect();
+
+        let res = proxy
+            .execute(pb::ProgramReq {
+                client_id: self.client_id.to_string(),
+                pgm: Some(pb::Program { steps }),
+            })
+            .await?
+            .into_inner();
+
+        let result = res
+            .results
+            .iter()
+            .next()
+            .expect("Expected at least one result");
+
+        let affected_row_count = match &result.row_result {
+            Some(RowResult::Row(row)) => row.affected_row_count,
+            Some(RowResult::Error(e)) => anyhow::bail!(e.message.clone()),
+
+            None => panic!("unexpected empty result row"),
+        };
+
+        tracing::trace!("execute_batch: affected row count: {}", affected_row_count);
+
+        Ok(())
+    }
+
     pub async fn query(
         &self,
         sql: &str,
