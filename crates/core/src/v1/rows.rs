@@ -4,12 +4,11 @@ use libsql_sys::ValueType;
 
 use std::cell::RefCell;
 use std::ffi::c_char;
-
 /// Query result rows.
 #[derive(Debug, Clone)]
 pub struct Rows {
-    pub(crate) stmt: Statement,
-    pub(crate) err: RefCell<Option<(i32, i32, String)>>,
+    stmt: Statement,
+    err: RefCell<Option<(i32, i32, String)>>,
 }
 
 unsafe impl Send for Rows {} // TODO: is this safe?
@@ -21,6 +20,10 @@ impl Rows {
             stmt,
             err: RefCell::new(None),
         }
+    }
+
+    pub fn new2(stmt: Statement, err: RefCell<Option<(i32, i32, String)>>) -> Rows {
+        Rows { stmt, err }
     }
 
     pub fn next(&self) -> Result<Option<Row>> {

@@ -29,20 +29,31 @@ async fn main() {
     db.sync().await.unwrap();
 
     let mut jh = tokio::spawn(async move {
-        conn.execute(
-            "INSERT INTO foo (x) VALUES (?1)",
-            vec![Value::from(
-                "this value was written by an embedded replica!",
-            )],
-        )
-        .await
-        .unwrap();
+        let mut rows = conn
+            .query(
+                "INSERT INTO foo (x) VALUES (?1) RETURNING *",
+                vec![Value::from(
+                    "this value was written by an embedded replica!",
+                )],
+            )
+            .await
+            .unwrap();
 
-        let mut rows = conn.query("SELECT * FROM foo", ()).await.unwrap();
-
+        println!("Rows insert call");
         while let Some(row) = rows.next().unwrap() {
             println!("Row: {}", row.get_str(0).unwrap());
         }
+
+        println!("--------");
+
+        let mut rows = conn.query("SELECT * FROM foo", ()).await.unwrap();
+
+        println!("Rows coming from a read after write call");
+        while let Some(row) = rows.next().unwrap() {
+            println!("Row: {}", row.get_str(0).unwrap());
+        }
+
+        println!("--------");
     });
 
     loop {

@@ -99,8 +99,6 @@ impl Database {
         }
     }
 
-    pub fn close(&self) {}
-
     pub fn connect(&self) -> Result<Connection> {
         Connection::connect(self)
     }

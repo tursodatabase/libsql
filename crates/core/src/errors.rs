@@ -25,6 +25,12 @@ pub enum Error {
     Hrana(#[from] crate::v2::HranaError), // Not in rusqlite
     #[error("Write delegation: `{0}`")]
     WriteDelegation(crate::BoxError), // Not in rusqlite
+    #[error("bincode: `{0}`")]
+    Bincode(#[from] bincode::Error),
+    #[error("invalid column index")]
+    InvalidColumnIndex,
+    #[error("invalid column type")]
+    InvalidColumnType,
 }
 
 #[cfg(feature = "core")]

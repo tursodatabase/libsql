@@ -266,4 +266,26 @@ impl Writer {
         );
         Ok(rows_affected)
     }
+
+    pub async fn query(
+        &self,
+        sql: &str,
+        params: impl Into<pb::query::Params> + Send,
+    ) -> anyhow::Result<pb::ResultRows> {
+        let (write_frame_no, rows) = self.client.query(sql, params.into()).await?;
+
+        tracing::trace!(
+            "statment executed on remote waiting for frame_no: {}",
+            write_frame_no
+        );
+
+        self.frame_no_notifier
+            .clone()
+            .wait_for(|latest_frame_no| latest_frame_no >= &(write_frame_no - 1))
+            .await?;
+
+        tracing::trace!("received frame_no: {} for delegated write", write_frame_no);
+
+        Ok(rows)
+    }
 }
