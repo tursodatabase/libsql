@@ -447,8 +447,7 @@ struct S3JniDb {
 #ifdef SQLITE_ENABLE_FTS5
   jobject jFtsApi  /* global ref to s3jni_fts5_api_from_db() */;
 #endif
-  S3JniDb * pNext /* Next entry in SJG.perDb.aFree or SJG.perDb.aHead */;
-  S3JniDb * pPrev /* Previous entry in SJG.perDb.aFree or SJG.perDb.aHead */;
+  S3JniDb * pNext /* Next entry in SJG.perDb.aFree */;
 };
 
 /*
@@ -579,7 +578,6 @@ struct S3JniGlobalType {
   ** client-defined state to db handles there.
   */
   struct {
-    S3JniDb * aHead  /* Linked list of in-use instances */;
     S3JniDb * aFree  /* Linked list of free instances */;
     sqlite3_mutex * mutex /* mutex for aHead and aFree */;
     void const * locker /* perDb mutex is held on this object's
@@ -1225,20 +1223,10 @@ static void S3JniDb_clear(JNIEnv * const env, S3JniDb * const s){
 */
 static void S3JniDb__set_aside_unlocked(JNIEnv * const env, S3JniDb * const s){
   assert( s );
+  S3JniMutex_S3JniDb_assertLocker;
   if( s ){
-    S3JniMutex_S3JniDb_assertLocker;
-    assert(s->pPrev != s);
-    assert(s->pNext != s);
-    assert(s->pPrev ? (s->pPrev!=s->pNext) : 1);
-    if(s->pNext) s->pNext->pPrev = s->pPrev;
-    if(s->pPrev) s->pPrev->pNext = s->pNext;
-    else if(SJG.perDb.aHead == s){
-      assert(!s->pPrev);
-      SJG.perDb.aHead = s->pNext;
-    }
     S3JniDb_clear(env, s);
     s->pNext = SJG.perDb.aFree;
-    if(s->pNext) s->pNext->pPrev = s;
     SJG.perDb.aFree = s;
   }
 }
@@ -1448,40 +1436,27 @@ static S3JniDb * S3JniDb_alloc(JNIEnv * const env, jobject jDb){
   if( SJG.perDb.aFree ){
     rv = SJG.perDb.aFree;
     SJG.perDb.aFree = rv->pNext;
-    assert(rv->pNext != rv);
-    assert(!rv->pPrev);
-    if( rv->pNext ){
-      assert(rv->pNext->pPrev == rv);
-      rv->pNext->pPrev = 0;
-      rv->pNext = 0;
-    }
+    rv->pNext = 0;
     s3jni_incr( &SJG.metrics.nPdbRecycled );
   }else{
     rv = s3jni_malloc( sizeof(S3JniDb));
     if( rv ){
-      memset(rv, 0, sizeof(S3JniDb));
       s3jni_incr( &SJG.metrics.nPdbAlloc );
     }
   }
   if( rv ){
-    rv->pNext = SJG.perDb.aHead;
-    SJG.perDb.aHead = rv;
-    if( rv->pNext ){
-      assert(!rv->pNext->pPrev);
-      rv->pNext->pPrev = rv;
-    }
+    memset(rv, 0, sizeof(S3JniDb));
     rv->jDb = S3JniRefGlobal(jDb);
   }
   S3JniMutex_S3JniDb_leave;
   return rv;
 }
 
+#define S3JniDb_clientdata_key "S3JniDb"
+
 /* Short-lived code consolidator. */
-#define S3JniDb_search            \
-  s = SJG.perDb.aHead;            \
-  for( ; pDb && s; s = s->pNext){ \
-    if( s->pDb == pDb ) break;    \
-  }
+#define S3JniDb_search                                              \
+  s = pDb ? sqlite3_get_clientdata(pDb, S3JniDb_clientdata_key) : 0
 
 /*
 ** Returns the S3JniDb object for the given org.sqlite.jni.sqlite3
@@ -1511,9 +1486,19 @@ static S3JniDb * S3JniDb__from_java_unlocked(JNIEnv * const env, jobject jDb){
   if( jDb ) pDb = PtrGet_sqlite3(jDb);
   S3JniDb_search;
   return s;
-
 }
 #define S3JniDb_from_java_unlocked(JDB) S3JniDb__from_java_unlocked(env, (JDB))
+
+/*
+** S3JniDb finalizer for use with sqlite3_set_clientdata().
+*/
+static void S3JniDb_xDestroy(void *p){
+  S3JniDb * ps = p;
+  S3JniDeclLocal_env;
+
+  assert( !ps->pNext );
+  S3JniDb_set_aside(ps);
+}
 
 /*
 ** Returns the S3JniDb object for the sqlite3 object, or NULL if pDb
@@ -2132,9 +2117,15 @@ static int s3jni_run_java_auto_extensions(sqlite3 *pDb, const char **pzErr,
   jc->pdbOpening = 0;
   assert( !ps->pDb && "it's still being opened" );
   assert( ps->jDb );
-  ps->pDb = pDb;
+  rc = sqlite3_set_clientdata(pDb, S3JniDb_clientdata_key,
+                              ps, 0/* we'll re-set this after open()
+                                      completes. */);
+  if( rc ){
+    return rc;
+  }
   NativePointerHolder_set(&S3JniNphRefs.sqlite3, ps->jDb, pDb)
     /* As of here, the Java/C connection is complete */;
+  ps->pDb = pDb;
   for( i = 0; go && 0==rc; ++i ){
     S3JniAutoExtension ax = {0,0}
       /* We need a copy of the auto-extension object, with our own
@@ -2447,8 +2438,6 @@ S3JniApi(sqlite3_cancel_auto_extension(),jboolean,1cancel_1auto_1extension)(
 /* Wrapper for sqlite3_close(_v2)(). */
 static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
   int rc = 0;
-//#define CLOSE_DB_LOCKED /* An experiment */
-#ifndef CLOSE_DB_LOCKED
   S3JniDb * const ps = S3JniDb_from_java(jDb);
 
   assert(version == 1 || version == 2);
@@ -2458,38 +2447,8 @@ static jint s3jni_close_db(JNIEnv * const env, jobject jDb, int version){
       : (jint)sqlite3_close_v2(ps->pDb);
     if( 0==rc ){
       NativePointerHolder_set(&S3JniNphRefs.sqlite3, jDb, 0);
-      S3JniDb_set_aside(ps)
-        /* MUST come after close() because of ps->trace. */;
     }
   }
-#else
-  /* This impl leads to an assertion in sqlite3_close[_v2]()
-
-     pthreadMutexEnter: Assertion `p->id==SQLITE_MUTEX_RECURSIVE
-                        || pthreadMutexNotheld(p)' failed.
-
-     For reasons not yet fully understood.
-  */
-  assert(version == 1 || version == 2);
-  if( 0!=jDb ){
-    S3JniDb * ps;
-    S3JniMutex_S3JniDb_enter;
-    ps = S3JniDb_from_java_unlocked(jDb);
-    if( ps && ps->pDb ){
-      rc = 1==version
-        ? (jint)sqlite3_close(ps->pDb)
-        : (jint)sqlite3_close_v2(ps->pDb);
-      if( 0==rc ){
-        S3JniDb_set_aside_unlocked(ps)
-          /* MUST come after close() because of ps->hooks.trace. */;
-        NativePointerHolder_set(&S3JniNphRefs.sqlite3, jDb, 0);
-      }
-    }else{
-      /* ps is from S3Global.perDb.aFree. */
-    }
-    S3JniMutex_S3JniDb_leave;
-  }
-#endif
   return (jint)rc;
 }
 
@@ -3307,23 +3266,26 @@ end:
 static int s3jni_open_post(JNIEnv * const env, S3JniEnv * const jc,
                            S3JniDb * ps, sqlite3 **ppDb,
                            jobject jOut, int theRc){
+  int rc = 0;
   jc->pdbOpening = 0;
   if( *ppDb ){
     assert(ps->jDb);
     if( 0==ps->pDb ){
       ps->pDb = *ppDb;
-      NativePointerHolder_set(&S3JniNphRefs.sqlite3, ps->jDb, *ppDb)
-        /* As of here, the Java/C connection is complete */;
+      NativePointerHolder_set(&S3JniNphRefs.sqlite3, ps->jDb, *ppDb);
     }else{
       assert( ps->pDb==*ppDb
               && "Set up via s3jni_run_java_auto_extensions()" );
     }
+    rc = sqlite3_set_clientdata(ps->pDb, S3JniDb_clientdata_key,
+                                ps, S3JniDb_xDestroy);
+    /* As of here, the Java/C connection is complete */
   }else{
     S3JniDb_set_aside(ps);
     ps = 0;
   }
   OutputPointer_set_sqlite3(env, jOut, ps ? ps->jDb : 0);
-  return theRc;
+  return theRc ? theRc : rc;
 }
 
 S3JniApi(sqlite3_open(),jint,1open)(
@@ -4040,7 +4002,6 @@ S3JniApi(sqlite3_shutdown(),jint,1shutdown)(
     while( S3JniGlobal.perDb.aFree ){
       S3JniDb * const d = S3JniGlobal.perDb.aFree;
       S3JniGlobal.perDb.aFree = d->pNext;
-      d->pNext = 0;
       S3JniDb_clear(env, d);
       sqlite3_free(d);
     }

@@ -1273,6 +1273,7 @@ typedef struct Column Column;
 typedef struct Cte Cte;
 typedef struct CteUse CteUse;
 typedef struct Db Db;
+typedef struct DbClientData DbClientData;
 typedef struct DbFixer DbFixer;
 typedef struct Schema Schema;
 typedef struct Expr Expr;
@@ -1751,6 +1752,7 @@ struct sqlite3 {
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
   i64 nDeferredImmCons;         /* Net deferred immediate constraints */
   int *pnBytesFreed;            /* If not NULL, increment this in DbFree() */
+  DbClientData *pDbData;        /* sqlite3_set_clientdata() content */
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   /* The following variables are all protected by the STATIC_MAIN
   ** mutex, not by sqlite3.mutex. They are used by code in notify.c.
@@ -4357,6 +4359,16 @@ struct CteUse {
   u8 eM10d;              /* The MATERIALIZED flag */
 };
 
+
+/* Client data associated with sqlite3_set_clientdata() and
+** sqlite3_get_clientdata().
+*/
+struct DbClientData {
+  DbClientData *pNext;        /* Next in a linked list */
+  void *pData;                /* The data */
+  void (*xDestructor)(void*); /* Destructor.  Might be NULL */
+  char zName[1];              /* Name of this client data. MUST BE LAST */
+};
 
 #ifdef SQLITE_DEBUG
 /*

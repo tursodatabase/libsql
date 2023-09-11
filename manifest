@@ -1,5 +1,5 @@
-C Remove\sout-of-date\scomment\sregarding\suse\sof\sParse.pConstExpr.
-D 2023-09-09T17:53:55.931
+C Add\ssupport\sfor\sthe\ssqlite3_get_clientdata()\sand\ssqlite3_set_clientdata()\ninterfaces,\sto\sbetter\ssupport\sJNI.
+D 2023-09-11T14:55:05.474
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -238,7 +238,7 @@ F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a3
 F ext/jni/GNUmakefile 374873bf6d2cd6ceafb458e28b59140dbb074f01f7adddf7e15a3ee3daf44551
 F ext/jni/README.md 1332b1fa27918bd5d9ca2d0d4f3ac3a6ab86b9e3699dc5bfe32904a027f3d2a9
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
-F ext/jni/src/c/sqlite3-jni.c 3d80af6bfa4af38dc50a919f97219a481410de1f6f885644b2f97cd64ab9b863
+F ext/jni/src/c/sqlite3-jni.c aaec2851258a7d9c9907d8e864a17e055676ec0adb64f335d979fa19674a0cab
 F ext/jni/src/c/sqlite3-jni.h 12e1a5ef5ee1795dc22577c285b4518dfd8aa4af45757f6cb81a555d967bf201
 F ext/jni/src/org/sqlite/jni/AbstractCollationCallback.java 95e88ba04f4aac51ffec65693e878e234088b2f21b387f4e4285c8b72b33e436
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515799194e031f45edbe16a6373cea18f404dc4
@@ -669,7 +669,7 @@ F src/insert.c 3f0a94082d978bbdd33c38fefea15346c6c6bffb70bc645a71dc0f1f87dd3276
 F src/json.c 51141f1c09ccb177057e5813e6302a5e32e5ba88cc4a756318a35081010fc6df
 F src/legacy.c d7874bc885906868cd51e6c2156698f2754f02d9eee1bae2d687323c3ca8e5aa
 F src/loadext.c 98cfba10989b3da6f1807ad42444017742db7f100a54f1032af7a8b1295912c0
-F src/main.c 58a3150ba371da9ddac8229a39be5e8bb2c15ac46d1f908cd55596cf825c6fbc
+F src/main.c 3a6f64cb47c605aa8b85de90474f448fc69366cd93ccf46a1276f5ec44c4a110
 F src/malloc.c 47b82c5daad557d9b963e3873e99c22570fb470719082c6658bf64e3012f7d23
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 3bb59158c38e05f6270e761a9f435bf19827a264c13d1631c58b84bdc96d73b2
@@ -708,10 +708,10 @@ F src/resolve.c 37953a5f36c60bea413c3c04efcd433b6177009f508ef2ace0494728912fe2e9
 F src/rowset.c 8432130e6c344b3401a8874c3cb49fefe6873fec593294de077afea2dce5ec97
 F src/select.c e9fb48546ab1882639a3a960383f6342dddb776c0227615f8e19de51f0102f68
 F src/shell.c.in 2f9be25294b68b07e7e81f0adcec4475aba6011b64f160e414efe226910c4d7b
-F src/sqlite.h.in 1b9be583d9011b9fe09fbdcc33cce19a1d2b40d84ebd164836420a6d256f2fb1
+F src/sqlite.h.in 931a58d119d5cf87110648f39fa0bb9f1738b0068cb68250d893304a471bd6c0
 F src/sqlite3.rc 5121c9e10c3964d5755191c80dd1180c122fc3a8
 F src/sqlite3ext.h 2f30b2671f4c03cd27a43f039e11251391066c97d11385f5f963bb40b03038ac
-F src/sqliteInt.h 304deb0cb33993a19545809d245a2bfd34afb77ae701087597f64c463de596cc
+F src/sqliteInt.h 0c33d256c0f7de824c7cef1aef14b66c94e4f0de77d598284048e73be6bb4f39
 F src/sqliteLimit.h 33b1c9baba578d34efe7dfdb43193b366111cdf41476b1e82699e14c11ee1fb6
 F src/status.c 160c445d7d28c984a0eae38c144f6419311ed3eace59b44ac6dafc20db4af749
 F src/table.c 0f141b58a16de7e2fbe81c308379e7279f4c6b50eb08efeec5892794a0ba30d1
@@ -2117,8 +2117,9 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 6357491bd1b97f7abddf1a83860f3763cd870033bddc74bd9994a6440fe8c762
-R 8a752dcf4f4102597c3c43c05826b63b
-U dan
-Z 12968dd6d6930c9a75018f43087e8626
+P 71548f72ad578db3d6ee409956386ace23ab2258d37cdc29ef2fb126e48f1ee3 7b884832b71c23e62ba3c0d53f7c89199734c351f909d84ac19ac18c7ddccbd8
+R ed133595420eb79056e6b2e7f8f7826c
+T +closed 7b884832b71c23e62ba3c0d53f7c89199734c351f909d84ac19ac18c7ddccbd8
+U drh
+Z 4388a2fb0fa820775dbaf90786b95f10
 # Remove this line to create a well-formed Fossil manifest.
