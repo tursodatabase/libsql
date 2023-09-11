@@ -11924,6 +11924,9 @@ static const char zOptions[] =
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
   "   -newline SEP         set output row separator. Default: '\\n'\n"
+#if SHELL_WIN_UTF8_OPT
+  "   -no-utf8             do not try to set up UTF-8 output (for legacy)\n"
+#endif     
   "   -nofollow            refuse to open symbolic links to database files\n"
   "   -nonce STRING        set the safe-mode escape nonce\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
@@ -12490,6 +12493,10 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     }else if( cli_strcmp(z,"-utf8")==0 ){
 #if SHELL_WIN_UTF8_OPT
       console_utf8 = 1;
+#endif /* SHELL_WIN_UTF8_OPT */
+    }else if( cli_strcmp(z,"-no-utf8")==0 ){
+#if SHELL_WIN_UTF8_OPT
+      console_utf8 = 0;
 #endif /* SHELL_WIN_UTF8_OPT */
     }else if( cli_strcmp(z,"-heap")==0 ){
       i++;
