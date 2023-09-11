@@ -10,9 +10,13 @@ use crate::v1::{params::Params, TransactionBehavior};
 use crate::Result;
 pub use hrana::{Client, HranaError};
 
+use hyper::Uri;
+use hyper::client::HttpConnector;
+use hyper::service::Service;
 pub use rows::{Row, Rows};
 use statement::LibsqlStmt;
 pub use statement::Statement;
+use tokio::io::{AsyncRead, AsyncWrite};
 use transaction::LibsqlTx;
 pub use transaction::Transaction;
 
@@ -36,15 +40,72 @@ impl Default for OpenFlags {
 // TODO(lucio): Improve construction via
 //      1) Move open errors into open fn rather than connect
 //      2) Support replication setup
-enum DbType {
+enum DbType<C> {
     Memory,
     File { path: String, flags: OpenFlags },
     Sync { db: crate::v1::Database },
-    Remote { url: String, auth_token: String },
+    Remote { url: String, auth_token: String, connector: C },
 }
 
-pub struct Database {
-    db_type: DbType,
+pub struct Database<C = HttpConnector> {
+    db_type: DbType<C>,
+}
+
+impl<C> Database<C>
+where 
+    C: Service<Uri> + Send + Clone + Sync + 'static,
+    C::Response: hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    C::Future: Send + 'static,
+    C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
+    /// For now, only expose this for sqld testing purposes
+    #[doc(hidden)]
+    pub fn open_remote_with_connector(url: impl Into<String>, auth_token: impl Into<String>, connector: C) -> Result<Self> {
+        Ok(Database {
+            db_type: DbType::Remote {
+                url: url.into(),
+                auth_token: auth_token.into(),
+                connector,
+            },
+        })
+    }
+
+    pub fn connect(&self) -> Result<Connection> {
+        match &self.db_type {
+            DbType::Memory => {
+                let db = crate::v1::Database::open(":memory:", OpenFlags::default())?;
+                let conn = db.connect()?;
+
+                let conn = Arc::new(LibsqlConnection { conn });
+
+                Ok(Connection { conn })
+            }
+
+            DbType::File { path, flags } => {
+                let db = crate::v1::Database::open(path, *flags)?;
+                let conn = db.connect()?;
+
+                let conn = Arc::new(LibsqlConnection { conn });
+
+                Ok(Connection { conn })
+            }
+
+            DbType::Sync { db } => {
+                let conn = db.connect()?;
+
+                let conn = Arc::new(LibsqlConnection { conn });
+
+                Ok(Connection { conn })
+            }
+
+            DbType::Remote { url, auth_token, connector } => {
+                let conn = Arc::new(hrana::Client::new(url, auth_token));
+
+                Ok(Connection { conn })
+            }
+        }
+    }
+
 }
 
 impl Database {
@@ -52,7 +113,7 @@ impl Database {
         Ok(Database {
             db_type: DbType::Memory,
         })
-    }
+   }
 
     pub fn open(db_path: impl Into<String>) -> Result<Database> {
         Database::open_with_flags(db_path, OpenFlags::default())
@@ -92,48 +153,7 @@ impl Database {
     }
 
     pub fn open_remote(url: impl Into<String>, auth_token: impl Into<String>) -> Result<Self> {
-        Ok(Database {
-            db_type: DbType::Remote {
-                url: url.into(),
-                auth_token: auth_token.into(),
-            },
-        })
-    }
-
-    pub fn connect(&self) -> Result<Connection> {
-        match &self.db_type {
-            DbType::Memory => {
-                let db = crate::v1::Database::open(":memory:", OpenFlags::default())?;
-                let conn = db.connect()?;
-
-                let conn = Arc::new(LibsqlConnection { conn });
-
-                Ok(Connection { conn })
-            }
-
-            DbType::File { path, flags } => {
-                let db = crate::v1::Database::open(path, *flags)?;
-                let conn = db.connect()?;
-
-                let conn = Arc::new(LibsqlConnection { conn });
-
-                Ok(Connection { conn })
-            }
-
-            DbType::Sync { db } => {
-                let conn = db.connect()?;
-
-                let conn = Arc::new(LibsqlConnection { conn });
-
-                Ok(Connection { conn })
-            }
-
-            DbType::Remote { url, auth_token } => {
-                let conn = Arc::new(hrana::Client::new(url, auth_token));
-
-                Ok(Connection { conn })
-            }
-        }
+        Self::open_remote_with_connector(url, auth_token, HttpConnector::new())
     }
 
     #[cfg(feature = "replication")]

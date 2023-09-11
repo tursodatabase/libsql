@@ -2,6 +2,7 @@ mod pipeline;
 mod proto;
 
 use hyper::header::AUTHORIZATION;
+use hyper::service::Service;
 use libsql_sys::ValueType;
 use pipeline::{
     ClientMsg, Response, ServerMsg, StreamBatchReq, StreamExecuteReq, StreamRequest,
@@ -10,8 +11,9 @@ use pipeline::{
 use proto::{Batch, BatchResult, Col, Stmt, StmtResult};
 
 use hyper::client::HttpConnector;
-use hyper::StatusCode;
+use hyper::{StatusCode, Uri};
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
+use tokio::io::{AsyncRead, AsyncWrite};
 
 // use crate::client::Config;
 use crate::{params::Params, Column, Result};
@@ -33,8 +35,8 @@ struct Cookie {
 /// Generic HTTP client. Needs a helper function that actually sends
 /// the request.
 #[derive(Clone, Debug)]
-pub struct Client {
-    inner: InnerClient,
+pub struct Client<C = HttpConnector> {
+    inner: InnerClient<C>,
     cookies: Arc<RwLock<HashMap<u64, Cookie>>>,
     url_for_queries: String,
     auth: String,
@@ -43,17 +45,23 @@ pub struct Client {
 }
 
 #[derive(Clone, Debug)]
-struct InnerClient {
-    inner: hyper::Client<HttpsConnector<HttpConnector>, hyper::Body>,
+struct InnerClient<C> {
+    inner: hyper::Client<HttpsConnector<C>, hyper::Body>,
 }
 
-impl InnerClient {
-    fn new() -> Self {
+impl<C> InnerClient<C>
+where 
+    C: Service<Uri> + Send + Clone + Sync + 'static,
+    C::Response: hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    C::Future: Send + 'static,
+    C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
+    fn new(connector: C) -> Self {
         let https = HttpsConnectorBuilder::new()
             .with_native_roots()
             .https_or_http()
             .enable_http1()
-            .build();
+            .wrap_connector(connector);
         let inner = hyper::Client::builder().build(https);
 
         Self { inner }
@@ -103,14 +111,15 @@ pub enum HranaError {
     Api(String),
 }
 
-impl Client {
-    /// Creates a database client with JWT authentication.
-    ///
-    /// # Arguments
-    /// * `url` - URL of the database endpoint
-    /// * `token` - auth token
-    pub fn new(url: impl Into<String>, token: impl Into<String>) -> Self {
-        let inner = InnerClient::new();
+impl<C> Client<C>
+where 
+    C: Service<Uri> + Send + Clone + Sync + 'static,
+    C::Response: hyper::client::connect::Connection + AsyncRead + AsyncWrite + Send + Unpin + 'static,
+    C::Future: Send + 'static,
+    C::Error: Into<Box<dyn std::error::Error + Send + Sync>>,
+{
+    pub fn new_with_connector(url: impl Into<String>, token: impl Into<String>, connector: C) -> Self {
+        let inner = InnerClient::new(connector);
 
         let token = token.into();
         let url = url.into();
@@ -131,6 +140,17 @@ impl Client {
             affected_row_count: Arc::new(AtomicU64::new(0)),
             last_insert_rowid: Arc::new(AtomicI64::new(0)),
         }
+    }
+}
+
+impl Client {
+    /// Creates a database client with JWT authentication.
+    ///
+    /// # Arguments
+    /// * `url` - URL of the database endpoint
+    /// * `token` - auth token
+    pub fn new(url: impl Into<String>, token: impl Into<String>) -> Self {
+        Self::new_with_connector(url, token, HttpConnector::new())
     }
 
     pub fn from_env() -> Result<Client> {
