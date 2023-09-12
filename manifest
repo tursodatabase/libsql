@@ -1,5 +1,5 @@
-C 64-bit\sbuilds\son\sWindows\sdefault\sto\susing\sUTF-8\soutput\s(as\sif\sthe\s-utf8\ncommand-line\soption\shad\sbeen\sspecified.)\s\s32-bit\sbuilds\scontinue\sto\suse\nWindows\scode\spages.\s\sThere\sis\salso\sa\snew\s-no-utf8\scommand-line\soption\sto\nforce\sthe\suse\sof\slegacy\scode\spages.
-D 2023-09-12T14:36:07.262
+C JNI\sreadme\sfix.
+D 2023-09-12T16:33:57.007
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -236,7 +236,7 @@ F ext/icu/README.txt 7ab7ced8ae78e3a645b57e78570ff589d4c672b71370f5aa9e1cd7024f4
 F ext/icu/icu.c c074519b46baa484bb5396c7e01e051034da8884bad1a1cb7f09bbe6be3f0282
 F ext/icu/sqliteicu.h fa373836ed5a1ee7478bdf8a1650689294e41d0c89c1daab26e9ae78a32075a8
 F ext/jni/GNUmakefile 3c82b1333ab4c8224787a490e80ea000a8f97bcb53bf9c9d11e095da1ae862f0
-F ext/jni/README.md 1332b1fa27918bd5d9ca2d0d4f3ac3a6ab86b9e3699dc5bfe32904a027f3d2a9
+F ext/jni/README.md 9fceaeb17cecdc5d699dfc83c0cbc3a03fdb3b86bf676381894166c73375ee75
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
 F ext/jni/src/c/sqlite3-jni.c 438a0141b7be7e8081f23254efe4cb313170aeb0f12fc5dd2c5a42612111bfad
 F ext/jni/src/c/sqlite3-jni.h c1b34759d1a1f18ba7659ee1b5d518b5865f7f2f30685216910a149d038cdd05
@@ -2119,9 +2119,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 3308fdda4b81c110ba4a66d0b325e7653c2f8155e7864aeb78991ed1da061836 822699a4d9756ec68f17d6e06da7f994730bcf5c7d69ca15e9131721c4ff3b19
-R 3b371c0111613cd81f5e3055619f9b2e
-T +closed 822699a4d9756ec68f17d6e06da7f994730bcf5c7d69ca15e9131721c4ff3b19
-U drh
-Z bccd06a9196c61a6efdc2467a6855bcf
+P d8c7560e8822f336e8c4b300eb1f2e55203fdf9e756d2e8af719563235f79ebc
+R 9a473e8d869da4c08e7fdbd79a82dba5
+U stephan
+Z cf18ca44aa6eb2f599677f32874e453d
 # Remove this line to create a well-formed Fossil manifest.
