@@ -1329,6 +1329,9 @@ static int fts5FilterMethod(
     pCsr->iFirstRowid = fts5GetRowidLimit(pRowidGe, SMALLEST_INT64);
   }
 
+  rc = sqlite3Fts5IndexLoadConfig(pTab->p.pIndex);
+  if( rc!=SQLITE_OK ) goto filter_out;
+
   if( pTab->pSortCsr ){
     /* If pSortCsr is non-NULL, then this call is being made as part of 
     ** processing for a "... MATCH <expr> ORDER BY rank" query (ePlan is
@@ -1351,7 +1354,9 @@ static int fts5FilterMethod(
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bDesc);
   }else if( pCsr->pExpr ){
-    rc = fts5CursorParseRank(pConfig, pCsr, pRank);
+    if( rc==SQLITE_OK ){
+      rc = fts5CursorParseRank(pConfig, pCsr, pRank);
+    }
     if( rc==SQLITE_OK ){
       if( bOrderByRank ){
         pCsr->ePlan = FTS5_PLAN_SORTED_MATCH;
