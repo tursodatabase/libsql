@@ -1,5 +1,5 @@
-use crate::OpenFlags;
 use crate::v1::connection::Connection;
+use crate::OpenFlags;
 use crate::{Error::ConnectionFailed, Result};
 #[cfg(feature = "replication")]
 use libsql_replication::Replicator;
@@ -71,21 +71,35 @@ impl Database {
         let mut db = Database::open(&db_path, OpenFlags::default())?;
         let mut replicator =
             Replicator::new(db_path).map_err(|e| ConnectionFailed(format!("{e}")))?;
-        if let Sync::Http {
-            endpoint,
-            auth_token,
-        } = opts.sync
-        {
-            let meta = replicator
-                .init_metadata(&endpoint, &auth_token)
-                .await
-                .map_err(|e| ConnectionFailed(format!("{e}")))?;
-            *replicator.meta.lock() = Some(meta);
-            db.replication_ctx = Some(ReplicationContext {
-                replicator,
+        match opts.sync {
+            Sync::Http {
                 endpoint,
-            });
-        };
+                auth_token,
+            } => {
+                let meta = replicator
+                    .init_metadata(&endpoint, &auth_token)
+                    .await
+                    .map_err(|e| ConnectionFailed(format!("{e}")))?;
+                *replicator.meta.lock() = Some(meta);
+                db.replication_ctx = Some(ReplicationContext {
+                    replicator,
+                    endpoint,
+                });
+            }
+            Sync::Frame => {
+                // NOTICE: the snapshot file used in sync_frames() contains metadata, it will be updated there
+                *replicator.meta.lock() = Some(libsql_replication::replica::meta::WalIndexMeta {
+                    pre_commit_frame_no: 0,
+                    post_commit_frame_no: 0,
+                    generation_id: 0,
+                    database_id: 0,
+                });
+                db.replication_ctx = Some(ReplicationContext {
+                    replicator,
+                    endpoint: "".to_string(),
+                });
+            }
+        }
 
         Ok(db)
     }
@@ -106,6 +120,9 @@ impl Database {
     #[cfg(feature = "replication")]
     pub fn writer(&self) -> Result<Option<libsql_replication::Writer>> {
         if let Some(ctx) = &self.replication_ctx {
+            if ctx.endpoint.is_empty() {
+                return Ok(None);
+            }
             Ok(ctx
                 .replicator
                 .writer()
