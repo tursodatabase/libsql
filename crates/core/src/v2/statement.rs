@@ -111,7 +111,7 @@ impl Stmt for LibsqlStmt {
         let params = params.clone();
         let stmt = self.0.clone();
 
-        stmt.execute(&params).map(|i| i as usize)
+        stmt.execute2(params).await.map(|i| i as usize)
     }
 
     async fn query(&mut self, params: &Params) -> Result<Rows> {
