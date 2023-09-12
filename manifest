@@ -1,5 +1,5 @@
-C Rename\sJNI\ssqlite3_errmsg()\sto\ssqlite3_errmsg16()\sfor\soverall\sconstency\swith\sthe\stext()/text16()\sfamily\sof\sfunctions.
-D 2023-09-12T17:03:40.312
+C Re-add\sthe\sfts5\sdecls\sto\ssqlite3-jni.h,\sremoved\sin\sa\srebuild\swithout\sfts5\senabled.\sNeed\sa\sbetter\ssolution\sfor\sthis\sproblem.
+D 2023-09-12T17:06:51.792
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -239,7 +239,7 @@ F ext/jni/GNUmakefile 3c82b1333ab4c8224787a490e80ea000a8f97bcb53bf9c9d11e095da1a
 F ext/jni/README.md 9fceaeb17cecdc5d699dfc83c0cbc3a03fdb3b86bf676381894166c73375ee75
 F ext/jni/jar-dist.make 030aaa4ae71dd86e4ec5e7c1e6cd86f9dfa47c4592c070d2e35157e42498e1fa
 F ext/jni/src/c/sqlite3-jni.c 24b620de024b1763c094dcfef978c78a1b417cb90210f6fe51b04b45e492496b
-F ext/jni/src/c/sqlite3-jni.h 47a9aaa58351685e3bf19c95e043f90782691efeaffbb3d9a4c90a01181f1c11
+F ext/jni/src/c/sqlite3-jni.h 573f835174b191c1937597ea5f13a3068eb2bec684a25225621e3c90c0ee6062
 F ext/jni/src/org/sqlite/jni/AbstractCollationCallback.java 95e88ba04f4aac51ffec65693e878e234088b2f21b387f4e4285c8b72b33e436
 F ext/jni/src/org/sqlite/jni/AggregateFunction.java 7312486bc65fecdb91753c0a4515799194e031f45edbe16a6373cea18f404dc4
 F ext/jni/src/org/sqlite/jni/AuthorizerCallback.java e6135be32f12bf140bffa39be7fd1a45ad83b2661ed49c08dbde04c8485feb38
@@ -2119,8 +2119,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 7dde000efcf170c33701947d1aab71bb45b2b0ae8646ee41bb2b2adbee56d1e6
-R ec06fbb1855ebad33cc22224db95063b
+P c4a8d8a5711bd2abeaf1c31046784d1bccff4b98e96522250866d1ee8ec6a9fe
+R 7b1947c5e211fa47d899c484abe1d0cc
 U stephan
-Z d44f5cf745a0d379222aa1dab9ea7cbe
+Z 3181aba3231c9e14c5c455d8a05f27d8
 # Remove this line to create a well-formed Fossil manifest.
