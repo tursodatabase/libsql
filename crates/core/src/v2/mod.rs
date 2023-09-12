@@ -243,7 +243,7 @@ impl Conn for LibsqlConnection {
     }
 
     async fn execute_batch(&self, sql: &str) -> Result<()> {
-        self.conn.execute_batch(sql)
+        self.conn.execute_batch2(sql).await
     }
 
     async fn prepare(&self, sql: &str) -> Result<Statement> {

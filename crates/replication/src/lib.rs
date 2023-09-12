@@ -280,4 +280,9 @@ impl Writer {
 
         Ok(rows)
     }
+
+    pub async fn execute_batch(&self, sql: Vec<String>) -> anyhow::Result<()> {
+        self.client.execute_batch(sql).await?;
+        Ok(())
+    }
 }
