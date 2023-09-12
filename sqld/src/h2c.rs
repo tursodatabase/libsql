@@ -42,7 +42,6 @@ use std::pin::Pin;
 
 use axum::{body::BoxBody, http::HeaderValue};
 use hyper::header;
-use hyper::server::conn::AddrStream;
 use hyper::Body;
 use hyper::{Request, Response};
 use tonic::transport::server::TcpConnectInfo;
@@ -63,12 +62,13 @@ impl<S> H2cMaker<S> {
     }
 }
 
-impl<S> Service<&AddrStream> for H2cMaker<S>
+impl<S, C> Service<&C> for H2cMaker<S>
 where
     S: Service<Request<Body>, Response = Response<BoxBody>> + Clone + Send + 'static,
     S::Future: Send + 'static,
     S::Error: Into<BoxError> + Sync + Send + 'static,
     S::Response: Send + 'static,
+    C: crate::net::Conn,
 {
     type Response = H2c<S>;
 
@@ -84,11 +84,8 @@ where
         std::task::Poll::Ready(Ok(()))
     }
 
-    fn call(&mut self, conn: &AddrStream) -> Self::Future {
-        let connect_info = TcpConnectInfo {
-            local_addr: Some(conn.local_addr()),
-            remote_addr: Some(conn.remote_addr()),
-        };
+    fn call(&mut self, conn: &C) -> Self::Future {
+        let connect_info = conn.connect_info();
         let s = self.s.clone();
         Box::pin(async move { Ok(H2c { s, connect_info }) })
     }

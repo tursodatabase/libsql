@@ -262,14 +262,14 @@ pub mod rpc {
 
 pub struct ProxyService {
     clients: RwLock<HashMap<Uuid, Arc<TrackedConnection<LibSqlConnection>>>>,
-    namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
+    namespaces: NamespaceStore<PrimaryNamespaceMaker>,
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
 }
 
 impl ProxyService {
     pub fn new(
-        namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
+        namespaces: NamespaceStore<PrimaryNamespaceMaker>,
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
     ) -> Self {

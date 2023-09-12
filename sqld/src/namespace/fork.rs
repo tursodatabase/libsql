@@ -1,10 +1,10 @@
 use std::io::SeekFrom;
-use std::path::PathBuf;
+use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
 use bytes::Bytes;
-use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use tokio::io::{AsyncSeekExt, AsyncWriteExt};
 use tokio_stream::StreamExt;
 
 use crate::database::PrimaryDatabase;
@@ -12,7 +12,7 @@ use crate::replication::frame::Frame;
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::{LogReadError, ReplicationLogger};
 
-use super::{MakeNamespace, RestoreOption};
+use super::{MakeNamespace, ResetCb, RestoreOption};
 
 // FIXME: get this const from somewhere else (crate wide)
 const PAGE_SIZE: usize = 4096;
@@ -49,20 +49,23 @@ async fn write_frame(frame: Frame, temp_file: &mut tokio::fs::File) -> Result<()
 }
 
 pub struct ForkTask<'a> {
-    pub base_path: PathBuf,
+    pub base_path: Arc<Path>,
     pub logger: Arc<ReplicationLogger>,
     pub dest_namespace: Bytes,
     pub make_namespace: &'a dyn MakeNamespace<Database = PrimaryDatabase>,
+    pub reset_cb: ResetCb,
 }
 
 impl ForkTask<'_> {
     pub async fn fork(self) -> Result<super::Namespace<PrimaryDatabase>> {
+        let base_path = self.base_path.clone();
+        let dest_namespace = self.dest_namespace.clone();
         match self.try_fork().await {
             Err(e) => {
                 let _ = tokio::fs::remove_dir_all(
-                    self.base_path
+                    base_path
                         .join("dbs")
-                        .join(std::str::from_utf8(&self.dest_namespace).unwrap()),
+                        .join(std::str::from_utf8(&dest_namespace).unwrap()),
                 )
                 .await;
                 Err(e)
@@ -71,7 +74,7 @@ impl ForkTask<'_> {
         }
     }
 
-    async fn try_fork(&self) -> Result<super::Namespace<PrimaryDatabase>> {
+    async fn try_fork(self) -> Result<super::Namespace<PrimaryDatabase>> {
         // until what index to replicate
         let base_path = self.base_path.clone();
         let temp_dir =
@@ -124,9 +127,13 @@ impl ForkTask<'_> {
             .join(std::str::from_utf8(&self.dest_namespace).unwrap());
         tokio::fs::rename(temp_dir.path(), dest_path).await?;
 
-        tokio::io::stdin().read_i8().await.unwrap();
         self.make_namespace
-            .create(self.dest_namespace.clone(), RestoreOption::Latest, true)
+            .create(
+                self.dest_namespace.clone(),
+                RestoreOption::Latest,
+                true,
+                self.reset_cb,
+            )
             .await
             .map_err(|e| ForkError::CreateNamespace(Box::new(e)))
     }

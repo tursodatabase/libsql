@@ -5,8 +5,8 @@ use axum::Json;
 use chrono::NaiveDateTime;
 use futures::TryStreamExt;
 use serde::Deserialize;
+use std::io::ErrorKind;
 use std::sync::Arc;
-use std::{io::ErrorKind, net::SocketAddr};
 use tokio_util::io::ReaderStream;
 use url::Url;
 use uuid::Uuid;
@@ -17,14 +17,18 @@ use crate::namespace::{DumpStream, MakeNamespace, NamespaceStore, RestoreOption}
 
 struct AppState<M: MakeNamespace> {
     db_config_store: Arc<DatabaseConfigStore>,
-    namespaces: Arc<NamespaceStore<M>>,
+    namespaces: NamespaceStore<M>,
 }
 
-pub async fn run_admin_api<M: MakeNamespace>(
-    addr: SocketAddr,
+pub async fn run_admin_api<M, A>(
+    acceptor: A,
     db_config_store: Arc<DatabaseConfigStore>,
-    namespaces: Arc<NamespaceStore<M>>,
-) -> anyhow::Result<()> {
+    namespaces: NamespaceStore<M>,
+) -> anyhow::Result<()>
+where
+    A: crate::net::Accept,
+    M: MakeNamespace,
+{
     use axum::routing::{get, post};
     let router = axum::Router::new()
         .route("/", get(handle_get_index))
@@ -48,15 +52,10 @@ pub async fn run_admin_api<M: MakeNamespace>(
             namespaces,
         }));
 
-    let server = hyper::Server::try_bind(&addr)
-        .context("Could not bind admin HTTP API server")?
-        .serve(router.into_make_service());
-
-    tracing::info!(
-        "Listening for admin HTTP API requests on {}",
-        server.local_addr()
-    );
-    server.await?;
+    hyper::server::Server::builder(acceptor)
+        .serve(router.into_make_service())
+        .await
+        .context("Could not bind admin HTTP API server")?;
     Ok(())
 }
 

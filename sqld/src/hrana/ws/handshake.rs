@@ -5,13 +5,13 @@ use tokio_tungstenite::tungstenite;
 use tungstenite::http;
 
 use crate::http::db_factory::namespace_from_headers;
+use crate::net::Conn;
 
 use super::super::{Encoding, Version};
 use super::Upgrade;
 
-#[derive(Debug)]
 pub enum WebSocket {
-    Tcp(tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>),
+    Tcp(tokio_tungstenite::WebSocketStream<Box<dyn Conn>>),
     Upgraded(tokio_tungstenite::WebSocketStream<hyper::upgrade::Upgraded>),
 }
 
@@ -23,7 +23,6 @@ enum Subproto {
     Hrana3Protobuf,
 }
 
-#[derive(Debug)]
 pub struct Output {
     pub ws: WebSocket,
     pub version: Version,
@@ -32,14 +31,10 @@ pub struct Output {
 }
 
 pub async fn handshake_tcp(
-    socket: tokio::net::TcpStream,
+    socket: Box<dyn Conn>,
     disable_default_ns: bool,
     disable_namespaces: bool,
 ) -> Result<Output> {
-    socket
-        .set_nodelay(true)
-        .context("Could not disable Nagle's algorithm")?;
-
     let mut subproto = None;
     let mut namespace = None;
     let callback = |req: &http::Request<()>, resp: http::Response<()>| {

@@ -3785,6 +3785,7 @@ dependencies = [
  "nix",
  "once_cell",
  "parking_lot",
+ "pin-project-lite",
  "priority-queue",
  "proptest",
  "prost",

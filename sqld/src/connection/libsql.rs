@@ -30,7 +30,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     ctx_builder: Box<dyn Fn() -> W::Context + Sync + Send + 'static>,
     stats: Stats,
     config_store: Arc<DatabaseConfigStore>,
-    extensions: Vec<PathBuf>,
+    extensions: Arc<[PathBuf]>,
     max_response_size: u64,
     max_total_response_size: u64,
     auto_checkpoint: u32,
@@ -51,7 +51,7 @@ where
         ctx_builder: F,
         stats: Stats,
         config_store: Arc<DatabaseConfigStore>,
-        extensions: Vec<PathBuf>,
+        extensions: Arc<[PathBuf]>,
         max_response_size: u64,
         max_total_response_size: u64,
         auto_checkpoint: u32,
@@ -165,7 +165,7 @@ where
 impl LibSqlConnection {
     pub async fn new<W>(
         path: impl AsRef<Path> + Send + 'static,
-        extensions: Vec<PathBuf>,
+        extensions: Arc<[PathBuf]>,
         wal_hook: &'static WalMethodsHook<W>,
         hook_ctx: W::Context,
         stats: Stats,
@@ -250,7 +250,7 @@ struct Connection<'a> {
 impl<'a> Connection<'a> {
     fn new<W: WalHook>(
         path: &Path,
-        extensions: Vec<PathBuf>,
+        extensions: Arc<[PathBuf]>,
         wal_methods: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
         stats: Stats,
@@ -272,10 +272,10 @@ impl<'a> Connection<'a> {
             builder_config,
         };
 
-        for ext in extensions {
+        for ext in extensions.iter() {
             unsafe {
                 let _guard = rusqlite::LoadExtensionGuard::new(&this.conn).unwrap();
-                if let Err(e) = this.conn.load_extension(&ext, None) {
+                if let Err(e) = this.conn.load_extension(ext, None) {
                     tracing::error!("failed to load extension: {}", ext.display());
                     Err(e)?;
                 }

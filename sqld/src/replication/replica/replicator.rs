@@ -12,6 +12,7 @@ use tonic::metadata::BinaryMetadataValue;
 use tonic::transport::Channel;
 use tonic::{Code, Request};
 
+use crate::namespace::{ResetCb, ResetOp};
 use crate::replication::frame::Frame;
 use crate::replication::replica::error::ReplicationError;
 use crate::replication::replica::snapshot::TempSnapshot;
@@ -21,7 +22,6 @@ use crate::rpc::replication_log::rpc::{
 };
 use crate::rpc::replication_log::NEED_SNAPSHOT_ERROR_MSG;
 use crate::rpc::{NAMESPACE_DOESNT_EXIST, NAMESPACE_METADATA_KEY};
-use crate::ResetOp;
 
 use super::hook::{Frames, InjectorHookCtx};
 use super::injector::FrameInjector;
@@ -42,7 +42,7 @@ pub struct Replicator {
     pub current_frame_no_notifier: watch::Receiver<FrameNo>,
     frames_sender: mpsc::Sender<Frames>,
     /// hard reset channel: send the namespace there, to reset it
-    hard_reset: mpsc::Sender<ResetOp>,
+    reset: ResetCb,
 }
 
 impl Replicator {
@@ -52,7 +52,7 @@ impl Replicator {
         uri: tonic::transport::Uri,
         namespace: Bytes,
         join_set: &mut JoinSet<anyhow::Result<()>>,
-        hard_reset: mpsc::Sender<ResetOp>,
+        reset: ResetCb,
     ) -> anyhow::Result<Self> {
         let client = Client::with_origin(channel, uri);
         let (applied_frame_notifier, current_frame_no_notifier) = watch::channel(FrameNo::MAX);
@@ -65,7 +65,7 @@ impl Replicator {
             current_frame_no_notifier,
             meta: Arc::new(Mutex::new(None)),
             frames_sender,
-            hard_reset,
+            reset,
         };
 
         this.try_perform_handshake().await?;
@@ -153,26 +153,23 @@ impl Replicator {
         match error {
             ReplicationError::Lagging => {
                 tracing::error!("Replica ahead of primary: hard-reseting replica");
-                self.hard_reset
-                    .send(ResetOp::Reset(self.namespace.clone()))
-                    .await
-                    .expect("reset loop exited");
-
-                error.into()
             }
             ReplicationError::DbIncompatible => {
                 tracing::error!(
                     "Primary is attempting to replicate a different database, overwriting replica."
                 );
-                self.hard_reset
-                    .send(ResetOp::Reset(self.namespace.clone()))
-                    .await
-                    .expect("reset loop exited");
-
-                error.into()
             }
-            _ => error.into(),
+            _ => return error.into(),
         }
+
+        if let Err(e) = (self.reset)(ResetOp::Reset(self.namespace.clone())).await {
+            tracing::error!(
+                "failed to reset namespace {}: {e}",
+                std::str::from_utf8(&self.namespace).unwrap_or_default()
+            );
+        }
+
+        error.into()
     }
 
     async fn try_perform_handshake(&mut self) -> crate::Result<()> {
@@ -211,10 +208,7 @@ impl Replicator {
                         "namespace `{}` doesn't exist, cleaning...",
                         std::str::from_utf8(&self.namespace).unwrap_or_default()
                     );
-                    let _ = self
-                        .hard_reset
-                        .send(ResetOp::Destroy(self.namespace.clone()))
-                        .await;
+                    (self.reset)(ResetOp::Destroy(self.namespace.clone())).await?;
                     return Err(crate::error::Error::NamespaceDoesntExist(
                         String::from_utf8(self.namespace.to_vec()).unwrap_or_default(),
                     ));

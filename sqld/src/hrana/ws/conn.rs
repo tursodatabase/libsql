@@ -50,7 +50,7 @@ struct ResponseFuture {
 
 pub(super) async fn handle_tcp<F: MakeNamespace>(
     server: Arc<Server<F>>,
-    socket: tokio::net::TcpStream,
+    socket: Box<dyn crate::net::Conn>,
     conn_id: u64,
 ) -> Result<()> {
     let handshake::Output {
