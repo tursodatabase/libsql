@@ -12622,11 +12622,15 @@ int SQLITE_CDECL wmain(int argc, wchar_t **wargv){
     if( stdin_is_interactive ){
       char *zHome;
       char *zHistory;
+      const char *zCharset = "";
       int nHistory;
+#if SHELL_WIN_UTF8_OPT
+      if( console_utf8 ) zCharset = " (utf8)";
+#endif
       printf(
-        "SQLite version %s %.19s\n" /*extra-version-info*/
+        "SQLite version %s %.19s%s\n" /*extra-version-info*/
         "Enter \".help\" for usage hints.\n",
-        sqlite3_libversion(), sqlite3_sourceid()
+        sqlite3_libversion(), sqlite3_sourceid(), zCharset
       );
       if( warnInmemoryDb ){
         printf("Connected to a ");
