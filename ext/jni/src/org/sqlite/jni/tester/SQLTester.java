@@ -71,7 +71,7 @@ class SQLTesterException extends RuntimeException {
 
 class DbException extends SQLTesterException {
   DbException(sqlite3 db, int rc, boolean closeDb){
-    super("DB error #"+rc+": "+sqlite3_errmsg(db),true);
+    super("DB error #"+rc+": "+sqlite3_errmsg16(db),true);
     if( closeDb ) sqlite3_close_v2(db);
   }
   DbException(sqlite3 db, int rc){
@@ -458,7 +458,7 @@ public class SQLTester {
 
   private void appendDbErr(sqlite3 db, StringBuilder sb, int rc){
     sb.append(org.sqlite.jni.ResultCode.getEntryForInt(rc)).append(' ');
-    final String msg = escapeSqlValue(sqlite3_errmsg(db));
+    final String msg = escapeSqlValue(sqlite3_errmsg16(db));
     if( '{' == msg.charAt(0) ){
       sb.append(msg);
     }else{
@@ -932,7 +932,7 @@ class RunCommand extends Command {
     final int rc = t.execSql(db, false, ResultBufferMode.NONE,
                              ResultRowMode.ONELINE, sql);
     if( 0!=rc && t.isVerbose() ){
-      String msg = sqlite3_errmsg(db);
+      String msg = sqlite3_errmsg16(db);
       ts.verbose1(argv[0]," non-fatal command error #",rc,": ",
                   msg,"\nfor SQL:\n",sql);
     }
