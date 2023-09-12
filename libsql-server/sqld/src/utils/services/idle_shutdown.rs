@@ -3,21 +3,21 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use hyper::http;
-use tokio::sync::{mpsc, watch};
+use tokio::sync::{watch, Notify};
 use tokio::time::timeout;
 use tower::{Layer, Service};
 
 #[derive(Clone)]
-pub struct IdleShutdownLayer {
+pub struct IdleShutdownKicker {
     watcher: Arc<watch::Sender<()>>,
     connected_replicas: Arc<AtomicUsize>,
 }
 
-impl IdleShutdownLayer {
+impl IdleShutdownKicker {
     pub fn new(
         idle_timeout: Duration,
         initial_idle_timeout: Option<Duration>,
-        shutdown_notifier: mpsc::Sender<()>,
+        shutdown_notifier: Arc<Notify>,
     ) -> Self {
         let (sender, mut receiver) = watch::channel(());
         let connected_replicas = Arc::new(AtomicUsize::new(0));
@@ -35,10 +35,7 @@ impl IdleShutdownLayer {
                     tracing::info!(
                         "Idle timeout, no new connection in {sleep_time:.0?}. Shutting down.",
                     );
-                    shutdown_notifier
-                        .send(())
-                        .await
-                        .expect("failed to shutdown gracefully");
+                    shutdown_notifier.notify_waiters();
                 }
                 sleep_time = idle_timeout;
             }
@@ -67,7 +64,7 @@ impl IdleShutdownLayer {
     }
 }
 
-impl<S> Layer<S> for IdleShutdownLayer {
+impl<S> Layer<S> for IdleShutdownKicker {
     type Service = IdleShutdownService<S>;
 
     fn layer(&self, inner: S) -> Self::Service {

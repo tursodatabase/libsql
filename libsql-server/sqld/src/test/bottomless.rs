@@ -1,26 +1,75 @@
-use crate::{run_server, Config};
 use anyhow::Result;
 use aws_sdk_s3::config::{Credentials, Region};
 use aws_sdk_s3::types::{Delete, ObjectIdentifier};
 use aws_sdk_s3::Client;
+use futures_core::Future;
 use itertools::Itertools;
 use libsql_client::{Connection, QueryResult, Statement, Value};
-use std::net::ToSocketAddrs;
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::path::PathBuf;
 use std::time::Duration;
-use tokio::task::JoinHandle;
 use tokio::time::sleep;
 use url::Url;
 
+use crate::config::{DbConfig, UserApiConfig};
+use crate::net::AddrIncoming;
+use crate::Server;
+
 const S3_URL: &str = "http://localhost:9000/";
 
-fn start_db(step: u32, config: &Config) -> JoinHandle<()> {
-    let db_config = config.clone();
-    tokio::spawn(async move {
-        if let Err(e) = run_server(db_config).await {
+/// returns a future that once polled will shutdown the server and wait for cleanup
+fn start_db(step: u32, server: Server) -> impl Future<Output = ()> {
+    let notify = server.shutdown.clone();
+    let handle = tokio::spawn(async move {
+        if let Err(e) = server.start().await {
             panic!("Failed step {}: {}", step, e);
         }
-    })
+    });
+
+    async move {
+        notify.notify_waiters();
+        handle.await.unwrap();
+    }
+}
+
+async fn configure_server(
+    options: &bottomless::replicator::Options,
+    addr: SocketAddr,
+    path: impl Into<PathBuf>,
+) -> Server {
+    let http_acceptor = AddrIncoming::new(tokio::net::TcpListener::bind(addr).await.unwrap());
+    Server {
+        db_config: DbConfig {
+            extensions_path: None,
+            bottomless_replication: Some(options.clone()),
+            max_log_size: 200 * 4046,
+            max_log_duration: None,
+            soft_heap_limit_mb: None,
+            hard_heap_limit_mb: None,
+            max_response_size: 10000000 * 4096,
+            max_total_response_size: 10000000 * 4096,
+            snapshot_exec: None,
+            checkpoint_interval: None,
+        },
+        admin_api_config: None,
+        disable_namespaces: true,
+        user_api_config: UserApiConfig {
+            hrana_ws_acceptor: None,
+            http_acceptor: Some(http_acceptor),
+            enable_http_console: false,
+            self_url: None,
+            http_auth: None,
+            auth_jwt_key: None,
+        },
+        path: path.into().into(),
+        disable_default_namespace: false,
+        heartbeat_config: None,
+        idle_shutdown_timeout: None,
+        initial_idle_shutdown_timeout: None,
+        rpc_server_config: None,
+        rpc_client_config: None,
+        shutdown: Default::default(),
+    }
 }
 
 #[tokio::test]
@@ -35,33 +84,30 @@ async fn backup_restore() {
     let _ = S3BucketCleaner::new(BUCKET).await;
     assert_bucket_occupancy(BUCKET, true).await;
 
+    let options = bottomless::replicator::Options {
+        create_bucket_if_not_exists: true,
+        verify_crc: true,
+        use_compression: bottomless::replicator::CompressionKind::Gzip,
+        bucket_name: BUCKET.to_string(),
+        max_batch_interval: Duration::from_millis(250),
+        restore_transaction_page_swap_after: 1, // in this test swap should happen at least once
+        ..bottomless::replicator::Options::from_env().unwrap()
+    };
+    let connection_addr = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
     let listener_addr = format!("0.0.0.0:{}", PORT)
         .to_socket_addrs()
         .unwrap()
         .next()
         .unwrap();
-    let connection_addr = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
-    let db_config = Config {
-        bottomless_replication: Some(bottomless::replicator::Options {
-            create_bucket_if_not_exists: true,
-            verify_crc: true,
-            use_compression: bottomless::replicator::CompressionKind::Gzip,
-            bucket_name: BUCKET.to_string(),
-            max_batch_interval: Duration::from_millis(250),
-            restore_transaction_page_swap_after: 1, // in this test swap should happen at least once
-            ..bottomless::replicator::Options::from_env().unwrap()
-        }),
-        db_path: PATH.into(),
-        http_addr: Some(listener_addr),
-        ..Config::default()
-    };
+
+    let make_server = || async { configure_server(&options, listener_addr, PATH).await };
 
     {
         tracing::info!(
             "---STEP 1: create a local database, fill it with data, wait for WAL backup---"
         );
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = start_db(1, &db_config);
+        let db_job = start_db(1, make_server().await);
 
         sleep(Duration::from_secs(2)).await;
 
@@ -76,7 +122,7 @@ async fn backup_restore() {
 
         sleep(Duration::from_secs(2)).await;
 
-        db_job.abort();
+        db_job.await;
         drop(cleaner);
     }
 
@@ -89,13 +135,13 @@ async fn backup_restore() {
             "---STEP 2: recreate the database from WAL - create a snapshot at the end---"
         );
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = start_db(2, &db_config);
+        let db_job = start_db(2, make_server().await);
 
         sleep(Duration::from_secs(2)).await;
 
         assert_updates(&connection_addr, ROWS, OPS, "A").await;
 
-        db_job.abort();
+        db_job.await;
         drop(cleaner);
     }
 
@@ -104,7 +150,7 @@ async fn backup_restore() {
     {
         tracing::info!("---STEP 3: recreate database from snapshot alone---");
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = start_db(3, &db_config);
+        let db_job = start_db(3, make_server().await);
 
         sleep(Duration::from_secs(2)).await;
 
@@ -113,7 +159,7 @@ async fn backup_restore() {
 
         // wait for WAL to backup
         sleep(Duration::from_secs(2)).await;
-        db_job.abort();
+        db_job.await;
         drop(cleaner);
     }
 
@@ -122,13 +168,13 @@ async fn backup_restore() {
     {
         tracing::info!("---STEP 4: recreate the database from snapshot + WAL---");
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = start_db(4, &db_config);
+        let db_job = start_db(4, make_server().await);
 
         sleep(Duration::from_secs(2)).await;
 
         assert_updates(&connection_addr, ROWS, OPS, "B").await;
 
-        db_job.abort();
+        db_job.await;
         drop(cleaner);
     }
 
@@ -141,13 +187,13 @@ async fn backup_restore() {
         remove_snapshots(BUCKET).await;
 
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = start_db(4, &db_config);
+        let db_job = start_db(4, make_server().await);
 
         sleep(Duration::from_secs(2)).await;
 
         assert_updates(&connection_addr, ROWS, OPS, "B").await;
 
-        db_job.abort();
+        db_job.await;
         drop(cleaner);
     }
 }
@@ -182,25 +228,21 @@ async fn rollback_restore() {
         .next()
         .unwrap();
     let conn = Url::parse(&format!("http://localhost:{}", PORT)).unwrap();
-    let db_config = Config {
-        bottomless_replication: Some(bottomless::replicator::Options {
-            create_bucket_if_not_exists: true,
-            verify_crc: true,
-            use_compression: bottomless::replicator::CompressionKind::Gzip,
-            bucket_name: BUCKET.to_string(),
-            max_batch_interval: Duration::from_millis(250),
-            restore_transaction_page_swap_after: 1, // in this test swap should happen at least once
-            ..bottomless::replicator::Options::from_env().unwrap()
-        }),
-        db_path: PATH.into(),
-        http_addr: Some(listener_addr),
-        ..Config::default()
+    let options = bottomless::replicator::Options {
+        create_bucket_if_not_exists: true,
+        verify_crc: true,
+        use_compression: bottomless::replicator::CompressionKind::Gzip,
+        bucket_name: BUCKET.to_string(),
+        max_batch_interval: Duration::from_millis(250),
+        restore_transaction_page_swap_after: 1, // in this test swap should happen at least once
+        ..bottomless::replicator::Options::from_env().unwrap()
     };
+    let make_server = || async { configure_server(&options, listener_addr, PATH).await };
 
     {
         tracing::info!("---STEP 1: create db, write row, rollback---");
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = start_db(1, &db_config);
+        let db_job = start_db(1, make_server().await);
 
         sleep(Duration::from_secs(2)).await;
 
@@ -240,14 +282,14 @@ async fn rollback_restore() {
             "rollback value should not be updated"
         );
 
-        db_job.abort();
+        db_job.await;
         drop(cleaner);
     }
 
     {
         tracing::info!("---STEP 2: recreate database, read modify, read again ---");
         let cleaner = DbFileCleaner::new(PATH);
-        let db_job = start_db(2, &db_config);
+        let db_job = start_db(2, make_server().await);
         sleep(Duration::from_secs(2)).await;
 
         let rs = get_data(&conn).await.unwrap();
@@ -269,7 +311,7 @@ async fn rollback_restore() {
             ]
         );
 
-        db_job.abort();
+        db_job.await;
         drop(cleaner);
     }
 }

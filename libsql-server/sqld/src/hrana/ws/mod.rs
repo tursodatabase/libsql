@@ -1,12 +1,18 @@
-use crate::auth::Auth;
-use crate::namespace::{MakeNamespace, NamespaceStore};
-use crate::utils::services::idle_shutdown::IdleKicker;
-use anyhow::{Context as _, Result};
-use enclose::enclose;
+use std::future::poll_fn;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+
+use anyhow::Result;
+use enclose::enclose;
+use tokio::pin;
 use tokio::sync::{mpsc, oneshot};
+use tonic::transport::server::Connected;
+
+use crate::auth::Auth;
+use crate::namespace::{MakeNamespace, NamespaceStore};
+use crate::net::Conn;
+use crate::utils::services::idle_shutdown::IdleKicker;
 
 pub mod proto;
 
@@ -16,7 +22,7 @@ mod protobuf;
 mod session;
 
 struct Server<F: MakeNamespace> {
-    namespaces: Arc<NamespaceStore<F>>,
+    namespaces: NamespaceStore<F>,
     auth: Arc<Auth>,
     idle_kicker: Option<IdleKicker>,
     max_response_size: u64,
@@ -25,9 +31,8 @@ struct Server<F: MakeNamespace> {
     disable_namespaces: bool,
 }
 
-#[derive(Debug)]
 pub struct Accept {
-    pub socket: tokio::net::TcpStream,
+    pub socket: Box<dyn Conn>,
     pub peer_addr: SocketAddr,
 }
 
@@ -44,7 +49,7 @@ pub async fn serve<F: MakeNamespace>(
     max_response_size: u64,
     mut accept_rx: mpsc::Receiver<Accept>,
     mut upgrade_rx: mpsc::Receiver<Upgrade>,
-    namespaces: Arc<NamespaceStore<F>>,
+    namespaces: NamespaceStore<F>,
     disable_default_namespace: bool,
     disable_namespaces: bool,
 ) -> Result<()> {
@@ -98,18 +103,25 @@ pub async fn serve<F: MakeNamespace>(
     }
 }
 
-pub async fn listen(bind_addr: SocketAddr, accept_tx: mpsc::Sender<Accept>) -> Result<()> {
-    let listener = tokio::net::TcpListener::bind(bind_addr)
-        .await
-        .context("Could not bind TCP listener")?;
-    let local_addr = listener.local_addr()?;
-    tracing::info!("Listening for Hrana connections on {}", local_addr);
+pub async fn listen<A>(acceptor: A, accept_tx: mpsc::Sender<Accept>)
+where
+    A: crate::net::Accept,
+{
+    pin!(acceptor);
 
-    loop {
-        let (socket, peer_addr) = listener
-            .accept()
-            .await
-            .context("Could not accept a TCP connection")?;
-        let _: Result<_, _> = accept_tx.send(Accept { socket, peer_addr }).await;
+    while let Some(maybe_conn) = poll_fn(|cx| acceptor.as_mut().poll_accept(cx)).await {
+        match maybe_conn {
+            Ok(conn) => {
+                let Some(peer_addr) = conn.connect_info().remote_addr() else {
+                    tracing::error!("connection missing remote addr");
+                    continue;
+                };
+                let socket: Box<dyn Conn> = Box::new(conn);
+                let _: Result<_, _> = accept_tx.send(Accept { socket, peer_addr }).await;
+            }
+            Err(e) => {
+                tracing::error!("error handling incoming hrana ws connection: {e}");
+            }
+        }
     }
 }

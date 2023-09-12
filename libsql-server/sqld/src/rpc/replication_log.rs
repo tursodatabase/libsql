@@ -19,7 +19,7 @@ use crate::auth::Auth;
 use crate::namespace::{NamespaceStore, PrimaryNamespaceMaker};
 use crate::replication::primary::frame_stream::FrameStream;
 use crate::replication::LogReadError;
-use crate::utils::services::idle_shutdown::IdleShutdownLayer;
+use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 
 use self::rpc::replication_log_server::ReplicationLog;
 use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
@@ -27,9 +27,9 @@ use self::rpc::{Frame, Frames, HelloRequest, HelloResponse, LogOffset};
 use super::NAMESPACE_DOESNT_EXIST;
 
 pub struct ReplicationLogService {
-    namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
+    namespaces: NamespaceStore<PrimaryNamespaceMaker>,
     replicas_with_hello: RwLock<HashSet<(SocketAddr, Bytes)>>,
-    idle_shutdown_layer: Option<IdleShutdownLayer>,
+    idle_shutdown_layer: Option<IdleShutdownKicker>,
     auth: Option<Arc<Auth>>,
     disable_namespaces: bool,
 }
@@ -41,8 +41,8 @@ pub const MAX_FRAMES_PER_BATCH: usize = 1024;
 
 impl ReplicationLogService {
     pub fn new(
-        namespaces: Arc<NamespaceStore<PrimaryNamespaceMaker>>,
-        idle_shutdown_layer: Option<IdleShutdownLayer>,
+        namespaces: NamespaceStore<PrimaryNamespaceMaker>,
+        idle_shutdown_layer: Option<IdleShutdownKicker>,
         auth: Option<Arc<Auth>>,
         disable_namespaces: bool,
     ) -> Self {
@@ -86,11 +86,11 @@ fn map_frame_stream_output(
 
 pub struct StreamGuard<S> {
     s: S,
-    idle_shutdown_layer: Option<IdleShutdownLayer>,
+    idle_shutdown_layer: Option<IdleShutdownKicker>,
 }
 
 impl<S> StreamGuard<S> {
-    fn new(s: S, mut idle_shutdown_layer: Option<IdleShutdownLayer>) -> Self {
+    fn new(s: S, mut idle_shutdown_layer: Option<IdleShutdownKicker>) -> Self {
         if let Some(isl) = idle_shutdown_layer.as_mut() {
             isl.add_connected_replica()
         }
@@ -214,6 +214,9 @@ impl ReplicationLog for ReplicationLogService {
         self.authenticate(&req)?;
         let namespace = super::extract_namespace(self.disable_namespaces, &req)?;
 
+        use tonic::transport::server::TcpConnectInfo;
+
+        req.extensions().get::<TcpConnectInfo>().unwrap();
         let replica_addr = req
             .remote_addr()
             .ok_or(Status::internal("No remote RPC address"))?;

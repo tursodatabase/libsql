@@ -1,11 +1,9 @@
 pub mod db_factory;
-mod h2c;
 mod hrana_over_http_1;
 mod result_builder;
 pub mod stats;
 mod types;
 
-use std::net::SocketAddr;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -18,12 +16,12 @@ use axum::Router;
 use axum_extra::middleware::option_layer;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
-use hyper::server::conn::AddrIncoming;
 use hyper::{header, Body, Request, Response, StatusCode};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Number;
 use tokio::sync::{mpsc, oneshot};
+use tokio::task::JoinSet;
 use tonic::transport::Server;
 use tower_http::trace::DefaultOnResponse;
 use tower_http::{compression::CompressionLayer, cors};
@@ -36,6 +34,7 @@ use crate::error::Error;
 use crate::hrana;
 use crate::http::types::HttpQuery;
 use crate::namespace::{MakeNamespace, NamespaceStore};
+use crate::net::Accept;
 use crate::query::{self, Query};
 use crate::query_analysis::{predict_final_state, State, Statement};
 use crate::query_result_builder::QueryResultBuilder;
@@ -43,7 +42,7 @@ use crate::rpc::proxy::rpc::proxy_server::{Proxy, ProxyServer};
 use crate::rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use crate::rpc::ReplicationLogServer;
 use crate::stats::Stats;
-use crate::utils::services::idle_shutdown::IdleShutdownLayer;
+use crate::utils::services::idle_shutdown::IdleShutdownKicker;
 use crate::version;
 
 use self::db_factory::MakeConnectionExtractor;
@@ -185,7 +184,7 @@ async fn handle_fallback() -> impl IntoResponse {
 /// axum's `State` extractor.
 pub(crate) struct AppState<F: MakeNamespace> {
     auth: Arc<Auth>,
-    namespaces: Arc<NamespaceStore<F>>,
+    namespaces: NamespaceStore<F>,
     upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
     hrana_http_srv: Arc<hrana::http::Server<<F::Database as Database>::Connection>>,
     enable_console: bool,
@@ -209,160 +208,215 @@ impl<F: MakeNamespace> Clone for AppState<F> {
     }
 }
 
-// TODO: refactor
-#[allow(clippy::too_many_arguments)]
-pub async fn run_http<M, S, P>(
-    addr: SocketAddr,
-    auth: Arc<Auth>,
-    namespaces: Arc<NamespaceStore<M>>,
-    upgrade_tx: mpsc::Sender<hrana::ws::Upgrade>,
-    hrana_http_srv: Arc<hrana::http::Server<<M::Database as Database>::Connection>>,
-    enable_console: bool,
-    idle_shutdown_layer: Option<IdleShutdownLayer>,
-    stats: Stats,
-    proxy_service: P,
-    replication_service: S,
-    disable_default_namespace: bool,
-    disable_namespaces: bool,
-) -> anyhow::Result<()>
+pub struct UserApi<M: MakeNamespace, A, P, S> {
+    pub auth: Arc<Auth>,
+    pub http_acceptor: Option<A>,
+    pub hrana_ws_acceptor: Option<A>,
+    pub namespaces: NamespaceStore<M>,
+    pub idle_shutdown_kicker: Option<IdleShutdownKicker>,
+    pub stats: Stats,
+    pub proxy_service: P,
+    pub replication_service: S,
+    pub disable_default_namespace: bool,
+    pub disable_namespaces: bool,
+    pub max_response_size: u64,
+    pub enable_console: bool,
+    pub self_url: Option<String>,
+}
+
+impl<M, A, P, S> UserApi<M, A, P, S>
 where
     M: MakeNamespace,
-    S: ReplicationLog,
+    A: Accept,
     P: Proxy,
+    S: ReplicationLog,
 {
-    let state = AppState {
-        auth,
-        upgrade_tx,
-        hrana_http_srv,
-        enable_console,
-        stats,
-        namespaces,
-        disable_default_namespace,
-        disable_namespaces,
-    };
+    pub fn configure(self, join_set: &mut JoinSet<anyhow::Result<()>>) {
+        let (hrana_accept_tx, hrana_accept_rx) = mpsc::channel(8);
+        let (hrana_upgrade_tx, hrana_upgrade_rx) = mpsc::channel(8);
+        let hrana_http_srv = Arc::new(hrana::http::Server::new(self.self_url.clone()));
 
-    tracing::info!("listening for HTTP requests on {addr}");
-
-    fn trace_request<B>(req: &Request<B>, _span: &Span) {
-        tracing::debug!("got request: {} {}", req.method(), req.uri());
-    }
-
-    macro_rules! handle_hrana {
-        ($endpoint:expr, $version:expr, $encoding:expr,) => {{
-            async fn handle_hrana<F: MakeNamespace>(
-                AxumState(state): AxumState<AppState<F>>,
-                MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<
-                    <F::Database as Database>::Connection,
-                >,
-                auth: Authenticated,
-                req: Request<Body>,
-            ) -> Result<Response<Body>, Error> {
-                Ok(state
-                    .hrana_http_srv
-                    .handle_request(connection_maker, auth, req, $endpoint, $version, $encoding)
-                    .await?)
+        join_set.spawn({
+            let namespaces = self.namespaces.clone();
+            let auth = self.auth.clone();
+            let idle_kicker = self
+                .idle_shutdown_kicker
+                .clone()
+                .map(|isl| isl.into_kicker());
+            let disable_default_namespace = self.disable_default_namespace;
+            let disable_namespaces = self.disable_namespaces;
+            let max_response_size = self.max_response_size;
+            async move {
+                hrana::ws::serve(
+                    auth,
+                    idle_kicker,
+                    max_response_size,
+                    hrana_accept_rx,
+                    hrana_upgrade_rx,
+                    namespaces,
+                    disable_default_namespace,
+                    disable_namespaces,
+                )
+                .await
+                .context("Hrana server failed")
             }
-            handle_hrana
-        }};
+        });
+
+        join_set.spawn({
+            let server = hrana_http_srv.clone();
+            async move {
+                server.run_expire().await;
+                Ok(())
+            }
+        });
+
+        if let Some(acceptor) = self.hrana_ws_acceptor {
+            join_set.spawn(async move {
+                hrana::ws::listen(acceptor, hrana_accept_tx).await;
+                Ok(())
+            });
+        }
+
+        if let Some(acceptor) = self.http_acceptor {
+            let state = AppState {
+                auth: self.auth,
+                upgrade_tx: hrana_upgrade_tx,
+                hrana_http_srv,
+                enable_console: self.enable_console,
+                stats: self.stats.clone(),
+                namespaces: self.namespaces,
+                disable_default_namespace: self.disable_default_namespace,
+                disable_namespaces: self.disable_namespaces,
+            };
+
+            fn trace_request<B>(req: &Request<B>, _span: &Span) {
+                tracing::debug!("got request: {} {}", req.method(), req.uri());
+            }
+
+            macro_rules! handle_hrana {
+                ($endpoint:expr, $version:expr, $encoding:expr,) => {{
+                    async fn handle_hrana<F: MakeNamespace>(
+                        AxumState(state): AxumState<AppState<F>>,
+                        MakeConnectionExtractor(connection_maker): MakeConnectionExtractor<
+                            <F::Database as Database>::Connection,
+                        >,
+                        auth: Authenticated,
+                        req: Request<Body>,
+                    ) -> Result<Response<Body>, Error> {
+                        Ok(state
+                            .hrana_http_srv
+                            .handle_request(
+                                connection_maker,
+                                auth,
+                                req,
+                                $endpoint,
+                                $version,
+                                $encoding,
+                            )
+                            .await?)
+                    }
+                    handle_hrana
+                }};
+            }
+
+            let app = Router::new()
+                .route("/", post(handle_query))
+                .route("/", get(handle_upgrade))
+                .route("/version", get(handle_version))
+                .route("/console", get(show_console))
+                .route("/health", get(handle_health))
+                .route("/v1/stats", get(stats::handle_stats))
+                .route("/v1", get(hrana_over_http_1::handle_index))
+                .route("/v1/execute", post(hrana_over_http_1::handle_execute))
+                .route("/v1/batch", post(hrana_over_http_1::handle_batch))
+                .route("/v2", get(crate::hrana::http::handle_index))
+                .route(
+                    "/v2/pipeline",
+                    post(handle_hrana!(
+                        hrana::http::Endpoint::Pipeline,
+                        hrana::Version::Hrana2,
+                        hrana::Encoding::Json,
+                    )),
+                )
+                .route("/v3", get(crate::hrana::http::handle_index))
+                .route(
+                    "/v3/pipeline",
+                    post(handle_hrana!(
+                        hrana::http::Endpoint::Pipeline,
+                        hrana::Version::Hrana3,
+                        hrana::Encoding::Json,
+                    )),
+                )
+                .route(
+                    "/v3/cursor",
+                    post(handle_hrana!(
+                        hrana::http::Endpoint::Cursor,
+                        hrana::Version::Hrana3,
+                        hrana::Encoding::Json,
+                    )),
+                )
+                .route("/v3-protobuf", get(crate::hrana::http::handle_index))
+                .route(
+                    "/v3-protobuf/pipeline",
+                    post(handle_hrana!(
+                        hrana::http::Endpoint::Pipeline,
+                        hrana::Version::Hrana3,
+                        hrana::Encoding::Protobuf,
+                    )),
+                )
+                .route(
+                    "/v3-protobuf/cursor",
+                    post(handle_hrana!(
+                        hrana::http::Endpoint::Cursor,
+                        hrana::Version::Hrana3,
+                        hrana::Encoding::Protobuf,
+                    )),
+                )
+                .with_state(state);
+
+            let layered_app = app
+                .layer(option_layer(self.idle_shutdown_kicker.clone()))
+                .layer(
+                    tower_http::trace::TraceLayer::new_for_http()
+                        .on_request(trace_request)
+                        .on_response(
+                            DefaultOnResponse::new()
+                                .level(Level::DEBUG)
+                                .latency_unit(tower_http::LatencyUnit::Micros),
+                        ),
+                )
+                .layer(CompressionLayer::new())
+                .layer(
+                    cors::CorsLayer::new()
+                        .allow_methods(cors::AllowMethods::any())
+                        .allow_headers(cors::Any)
+                        .allow_origin(cors::Any),
+                );
+
+            // Merge the grpc based axum router into our regular http router
+            let replication = ReplicationLogServer::new(self.replication_service);
+            let write_proxy = ProxyServer::new(self.proxy_service);
+
+            let grpc_router = Server::builder()
+                .accept_http1(true)
+                .add_service(tonic_web::enable(replication))
+                .add_service(tonic_web::enable(write_proxy))
+                .into_router();
+
+            let router = layered_app.merge(grpc_router);
+
+            let router = router.fallback(handle_fallback);
+            let h2c = crate::h2c::H2cMaker::new(router);
+
+            join_set.spawn(async move {
+                hyper::server::Server::builder(acceptor)
+                    .serve(h2c)
+                    .await
+                    .context("http server")?;
+                Ok(())
+            });
+        }
     }
-
-    let app = Router::new()
-        .route("/", post(handle_query))
-        .route("/", get(handle_upgrade))
-        .route("/version", get(handle_version))
-        .route("/console", get(show_console))
-        .route("/health", get(handle_health))
-        .route("/v1/stats", get(stats::handle_stats))
-        .route("/v1", get(hrana_over_http_1::handle_index))
-        .route("/v1/execute", post(hrana_over_http_1::handle_execute))
-        .route("/v1/batch", post(hrana_over_http_1::handle_batch))
-        .route("/v2", get(crate::hrana::http::handle_index))
-        .route(
-            "/v2/pipeline",
-            post(handle_hrana!(
-                hrana::http::Endpoint::Pipeline,
-                hrana::Version::Hrana2,
-                hrana::Encoding::Json,
-            )),
-        )
-        .route("/v3", get(crate::hrana::http::handle_index))
-        .route(
-            "/v3/pipeline",
-            post(handle_hrana!(
-                hrana::http::Endpoint::Pipeline,
-                hrana::Version::Hrana3,
-                hrana::Encoding::Json,
-            )),
-        )
-        .route(
-            "/v3/cursor",
-            post(handle_hrana!(
-                hrana::http::Endpoint::Cursor,
-                hrana::Version::Hrana3,
-                hrana::Encoding::Json,
-            )),
-        )
-        .route("/v3-protobuf", get(crate::hrana::http::handle_index))
-        .route(
-            "/v3-protobuf/pipeline",
-            post(handle_hrana!(
-                hrana::http::Endpoint::Pipeline,
-                hrana::Version::Hrana3,
-                hrana::Encoding::Protobuf,
-            )),
-        )
-        .route(
-            "/v3-protobuf/cursor",
-            post(handle_hrana!(
-                hrana::http::Endpoint::Cursor,
-                hrana::Version::Hrana3,
-                hrana::Encoding::Protobuf,
-            )),
-        )
-        .with_state(state);
-
-    let layered_app = app
-        .layer(option_layer(idle_shutdown_layer.clone()))
-        .layer(
-            tower_http::trace::TraceLayer::new_for_http()
-                .on_request(trace_request)
-                .on_response(
-                    DefaultOnResponse::new()
-                        .level(Level::DEBUG)
-                        .latency_unit(tower_http::LatencyUnit::Micros),
-                ),
-        )
-        .layer(CompressionLayer::new())
-        .layer(
-            cors::CorsLayer::new()
-                .allow_methods(cors::AllowMethods::any())
-                .allow_headers(cors::Any)
-                .allow_origin(cors::Any),
-        );
-
-    // Merge the grpc based axum router into our regular http router
-    let replication = ReplicationLogServer::new(replication_service);
-    let write_proxy = ProxyServer::new(proxy_service);
-
-    let grpc_router = Server::builder()
-        .accept_http1(true)
-        .add_service(tonic_web::enable(replication))
-        .add_service(tonic_web::enable(write_proxy))
-        .into_router();
-
-    let router = layered_app.merge(grpc_router);
-
-    let router = router.fallback(handle_fallback);
-    let h2c = h2c::H2cMaker::new(router);
-
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    hyper::server::Server::builder(AddrIncoming::from_listener(listener)?)
-        .tcp_nodelay(true)
-        .serve(h2c)
-        .await
-        .context("http server")?;
-
-    Ok(())
 }
 
 /// Axum authenticated extractor

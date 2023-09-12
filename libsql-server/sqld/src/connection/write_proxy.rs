@@ -36,7 +36,7 @@ use super::{MakeConnection, Program};
 pub struct MakeWriteProxyConnection {
     client: ProxyClient<Channel>,
     db_path: PathBuf,
-    extensions: Vec<PathBuf>,
+    extensions: Arc<[PathBuf]>,
     stats: Stats,
     config_store: Arc<DatabaseConfigStore>,
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
@@ -49,7 +49,7 @@ impl MakeWriteProxyConnection {
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         db_path: PathBuf,
-        extensions: Vec<PathBuf>,
+        extensions: Arc<[PathBuf]>,
         channel: Channel,
         uri: tonic::transport::Uri,
         stats: Stats,
@@ -165,7 +165,7 @@ impl WriteProxyConnection {
     async fn new(
         write_proxy: ProxyClient<Channel>,
         db_path: PathBuf,
-        extensions: Vec<PathBuf>,
+        extensions: Arc<[PathBuf]>,
         stats: Stats,
         config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
