@@ -413,6 +413,12 @@ impl<'a> Connection<'a> {
         let _ = self.conn.execute("ROLLBACK", ());
     }
 
+    fn checkpoint(&self) -> Result<()> {
+        self.conn
+            .query_row("PRAGMA wal_checkpoint(TRUNCATE)", (), |_| Ok(()))?;
+        Ok(())
+    }
+
     fn update_stats(&self, stmt: &rusqlite::Statement) {
         let rows_read = stmt.get_status(StatementStatus::RowsRead);
         let rows_written = stmt.get_status(StatementStatus::RowsWritten);
@@ -568,6 +574,20 @@ impl super::Connection for LibSqlConnection {
         let (resp, receiver) = oneshot::channel();
         let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
             let res = maybe_conn.map(|c| c.is_autocommit());
+            if resp.send(res).is_err() {
+                anyhow::bail!("connection closed");
+            }
+            Ok(())
+        });
+
+        let _: Result<_, _> = self.sender.send(cb);
+        receiver.await?
+    }
+
+    async fn checkpoint(&self) -> Result<()> {
+        let (resp, receiver) = oneshot::channel();
+        let cb = Box::new(move |maybe_conn: Result<&mut Connection>| {
+            let res = maybe_conn.and_then(|c| c.checkpoint());
             if resp.send(res).is_err() {
                 anyhow::bail!("connection closed");
             }

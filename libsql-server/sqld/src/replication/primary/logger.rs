@@ -79,8 +79,10 @@ unsafe impl WalHook for ReplicationLoggerHook {
         let last_valid_frame = wal.hdr.mxFrame;
         let ctx = Self::wal_extract_ctx(wal);
 
+        let mut frame_count = 0;
         for (page_no, data) in PageHdrIter::new(page_headers, page_size as _) {
-            ctx.write_frame(page_no, data)
+            ctx.write_frame(page_no, data);
+            frame_count += 1;
         }
         if let Err(e) = ctx.flush(ntruncate) {
             tracing::error!("error writing to replication log: {e}");
@@ -118,7 +120,6 @@ unsafe impl WalHook for ReplicationLoggerHook {
                     tracing::error!("fatal error during backup: {e}, exiting");
                     std::process::abort()
                 }
-                let frame_count = PageHdrIter::new(page_headers, page_size as usize).count();
                 replicator.submit_frames(frame_count as u32);
             }
 
@@ -193,7 +194,10 @@ unsafe impl WalHook for ReplicationLoggerHook {
              ** checkpoint attempts weaker than TRUNCATE are ignored.
              */
             if emode < SQLITE_CHECKPOINT_TRUNCATE {
-                tracing::trace!("Ignoring a checkpoint request weaker than TRUNCATE");
+                tracing::trace!(
+                    "Ignoring a checkpoint request weaker than TRUNCATE: {}",
+                    emode
+                );
                 // Return an error to signal to sqlite that the WAL was not checkpointed, and it is
                 // therefore not safe to delete it.
                 return SQLITE_BUSY;
@@ -225,12 +229,13 @@ unsafe impl WalHook for ReplicationLoggerHook {
             let runtime = tokio::runtime::Handle::current();
             if let Some(replicator) = ctx.bottomless_replicator.as_mut() {
                 let mut replicator = replicator.lock().unwrap();
-                if replicator.commits_in_current_generation() == 0 {
-                    tracing::debug!("No commits happened in this generation, not snapshotting");
-                    return SQLITE_OK;
-                }
                 let last_known_frame = replicator.last_known_frame();
                 replicator.request_flush();
+                if last_known_frame == 0 {
+                    tracing::debug!("No comitted changes in this generation, not snapshotting");
+                    replicator.skip_snapshot_for_current_generation();
+                    return SQLITE_OK;
+                }
                 if let Err(e) = runtime.block_on(replicator.wait_until_committed(last_known_frame))
                 {
                     tracing::error!(

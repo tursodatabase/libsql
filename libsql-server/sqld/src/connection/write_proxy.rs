@@ -307,6 +307,11 @@ impl Connection for WriteProxyConnection {
             State::Init | State::Invalid => true,
         })
     }
+
+    async fn checkpoint(&self) -> Result<()> {
+        self.wait_replication_sync().await?;
+        self.read_conn.checkpoint().await
+    }
 }
 
 impl Drop for WriteProxyConnection {

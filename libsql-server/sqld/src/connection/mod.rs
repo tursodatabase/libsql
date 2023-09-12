@@ -102,6 +102,9 @@ pub trait Connection: Send + Sync + 'static {
 
     /// Check whether the connection is in autocommit mode.
     async fn is_autocommit(&self) -> Result<bool>;
+
+    /// Calls for database checkpoint (if supported).
+    async fn checkpoint(&self) -> Result<()>;
 }
 
 fn make_batch_program(batch: Vec<Query>) -> Vec<Step> {
@@ -281,6 +284,11 @@ impl<DB: Connection> Connection for TrackedConnection<DB> {
     async fn is_autocommit(&self) -> crate::Result<bool> {
         self.inner.is_autocommit().await
     }
+
+    #[inline]
+    async fn checkpoint(&self) -> Result<()> {
+        self.inner.checkpoint().await
+    }
 }
 
 #[cfg(test)]
@@ -309,6 +317,10 @@ mod test {
         }
 
         async fn is_autocommit(&self) -> crate::Result<bool> {
+            unreachable!()
+        }
+
+        async fn checkpoint(&self) -> Result<()> {
             unreachable!()
         }
     }

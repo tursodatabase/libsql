@@ -343,13 +343,13 @@ pub extern "C" fn xCheckpoint(
     }
 
     let ctx = get_replicator_context(wal);
-    if ctx.replicator.commits_in_current_generation() == 0 {
-        tracing::debug!("No commits happened in this generation, not snapshotting");
-        return ffi::SQLITE_OK;
-    }
-
     let last_known_frame = ctx.replicator.last_known_frame();
     ctx.replicator.request_flush();
+    if last_known_frame == 0 {
+        tracing::debug!("No committed changes in this generation, not snapshotting");
+        ctx.replicator.skip_snapshot_for_current_generation();
+        return ffi::SQLITE_OK;
+    }
     if let Err(e) = block_on!(
         ctx.runtime,
         ctx.replicator.wait_until_committed(last_known_frame)
