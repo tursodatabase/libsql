@@ -52,6 +52,7 @@ mod v1;
 mod v2;
 
 pub mod errors;
+mod box_clone_service;
 pub use errors::Error;
 
 #[cfg(all(feature = "core", feature = "replication"))]
