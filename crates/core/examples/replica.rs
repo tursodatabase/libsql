@@ -8,7 +8,10 @@ async fn main() {
     let db_file = tempfile::NamedTempFile::new().unwrap();
     println!("Database {}", db_file.path().display());
 
-    let auth_token = std::env::var("TURSO_AUTH_TOKEN").expect("Expected a TURSO_AUTH_TOKEN");
+    let auth_token = std::env::var("TURSO_AUTH_TOKEN").unwrap_or_else(|_| {
+        println!("Using empty token since TURSO_AUTH_TOKEN was not set");
+        "".to_string()
+    });
 
     let db = Database::open_with_remote_sync(
         db_file.path().to_str().unwrap(),
