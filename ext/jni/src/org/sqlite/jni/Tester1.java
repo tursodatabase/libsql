@@ -1902,9 +1902,10 @@ public class Tester1 implements Runnable {
       }
     }
     outln("\tSQLite3Jni.sqlite3_*() methods: "+
-          nNatives+" native methods, "+
-          (nMethods - nNatives)+" Java impls. ",
-          nCanonical," methods flagged as canonical"
+          nMethods+" total, with "+
+          nNatives+" native, "+
+          (nMethods - nNatives)+" Java, ",
+          nCanonical," @Canonical"
     );
     outln("\tTotal test time = "
           +(timeEnd - timeStart)+"ms");
