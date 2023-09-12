@@ -57,7 +57,6 @@ pub struct Replicator {
     restore_transaction_page_swap_after: u32,
     restore_transaction_cache_fpath: Arc<str>,
     generation: Arc<ArcSwapOption<Uuid>>,
-    pub commits_in_current_generation: Arc<AtomicU32>,
     verify_crc: bool,
     pub bucket: String,
     pub db_path: String,
@@ -292,7 +291,6 @@ impl Replicator {
 
         let next_frame_no = Arc::new(AtomicU32::new(1));
         let last_sent_frame_no = Arc::new(AtomicU32::new(0));
-        let commits_in_current_generation = Arc::new(AtomicU32::new(0));
 
         let mut _join_set = JoinSet::new();
 
@@ -383,7 +381,6 @@ impl Replicator {
             bucket,
             page_size: Self::UNSET_PAGE_SIZE,
             generation,
-            commits_in_current_generation,
             next_frame_no,
             last_sent_frame_no,
             flush_trigger,
@@ -450,10 +447,6 @@ impl Replicator {
             }
             Err(e) => Err(anyhow!("Failed to flush frames: {}", e)),
         }
-    }
-
-    pub fn commits_in_current_generation(&self) -> u32 {
-        self.commits_in_current_generation.load(Ordering::Acquire)
     }
 
     /// Returns number of frames waiting to be replicated.
@@ -541,8 +534,6 @@ impl Replicator {
     // is reused in this session.
     pub fn set_generation(&mut self, generation: Uuid) -> Option<Uuid> {
         let prev_generation = self.generation.swap(Some(Arc::new(generation)));
-        self.commits_in_current_generation
-            .store(0, Ordering::Release);
         self.reset_frames(0);
         if let Some(prev) = prev_generation.as_deref() {
             tracing::debug!("Generation changed from {} -> {}", prev, generation);
@@ -745,6 +736,11 @@ impl Replicator {
         }
     }
 
+    pub fn skip_snapshot_for_current_generation(&self) {
+        let generation = self.generation.load().as_deref().cloned();
+        let _ = self.snapshot_notifier.send(Ok(generation));
+    }
+
     // Sends the main database file to S3 - if -wal file is present, it's replicated
     // too - it means that the local file was detected to be newer than its remote
     // counterpart.
@@ -758,7 +754,7 @@ impl Replicator {
             return Ok(None);
         }
         let generation = self.generation()?;
-        tracing::debug!("Snapshotting {}", self.db_path);
+        tracing::debug!("Snapshotting generation {}", generation);
         let start_ts = Instant::now();
         if let Some(prev) = prev_generation {
             tracing::debug!("waiting for previous generation {} to complete", prev);

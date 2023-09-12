@@ -31,7 +31,8 @@ use crate::replication::replica::Replicator;
 use crate::replication::{NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
-    DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT, DEFAULT_NAMESPACE_NAME, MAX_CONCURRENT_DBS,
+    run_periodic_checkpoint, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT, DEFAULT_NAMESPACE_NAME,
+    MAX_CONCURRENT_DBS,
 };
 
 pub use fork::ForkError;
@@ -629,6 +630,15 @@ impl Namespace<PrimaryDatabase> {
         }
 
         join_set.spawn(run_periodic_compactions(logger.clone()));
+
+        if config.bottomless_replication.is_some() {
+            if let Some(checkpoint_interval) = config.checkpoint_interval {
+                join_set.spawn(run_periodic_checkpoint(
+                    connection_maker.clone(),
+                    checkpoint_interval,
+                ));
+            }
+        }
 
         Ok(Self {
             tasks: join_set,
