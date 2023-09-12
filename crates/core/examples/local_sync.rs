@@ -16,7 +16,11 @@ async fn main() {
     let snapshot_path = args.get(1).unwrap();
     let snapshot = TempSnapshot::from_snapshot_file(snapshot_path.as_ref()).unwrap();
 
-    db.sync_frames(Frames::Snapshot(snapshot)).unwrap();
+    tokio::task::spawn_blocking(move || {
+        db.sync_frames(Frames::Snapshot(snapshot)).unwrap();
+    })
+    .await
+    .unwrap();
 
     let mut rows = conn.query("SELECT * FROM sqlite_master", ()).await.unwrap();
     while let Ok(Some(row)) = rows.next() {
