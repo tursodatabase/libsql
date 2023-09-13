@@ -601,11 +601,21 @@ do_execsql_test 2.5.2 {
   SELECT A.id FROM demo_index AS A, demo_index AS B
     WHERE A.maxX>=B.minX AND A.minX<=B.maxX
     AND A.maxY>=B.minY AND A.minY<=B.maxY
-    AND B.id=28269;
+    AND B.id=28269 ORDER BY +A.id;
 } {
-  28293 28216 28322 28286 28269 
-  28215 28336 28262 28291 28320 
-  28313 28298 28287
+  28215
+  28216
+  28262
+  28269
+  28286
+  28287
+  28291
+  28293
+  28298
+  28313
+  28320
+  28322
+  28336
 }
 
 # EVIDENCE-OF: R-02723-34107 Note that it is not necessary for all
@@ -1575,7 +1585,7 @@ execsql BEGIN
 do_test 3.6 {
   execsql { INSERT INTO rt2_parent VALUES(1000, 1000) }
   execsql { SELECT rtreecheck('rt2') }
-} {{Wrong number of entries in %_parent table - expected 9, actual 10}}
+} {{Wrong number of entries in %_parent table - expected 10, actual 11}}
 execsql ROLLBACK
 
 

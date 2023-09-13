@@ -178,7 +178,6 @@ struct Rtree {
   ** headed by the node (leaf nodes have RtreeNode.iNode==0).
   */
   RtreeNode *pDeleted;
-  int iReinsertHeight;        /* Height of sub-trees Reinsert() has run on */
 
   /* Blob I/O on xxx_node */
   sqlite3_blob *pNodeBlob;
@@ -2342,77 +2341,6 @@ static int parentWrite(Rtree *pRtree, sqlite3_int64 iNode, sqlite3_int64 iPar){
 static int rtreeInsertCell(Rtree *, RtreeNode *, RtreeCell *, int);
 
 
-/*
-** Arguments aIdx, aDistance and aSpare all point to arrays of size
-** nIdx. The aIdx array contains the set of integers from 0 to 
-** (nIdx-1) in no particular order. This function sorts the values
-** in aIdx according to the indexed values in aDistance. For
-** example, assuming the inputs:
-**
-**   aIdx      = { 0,   1,   2,   3 }
-**   aDistance = { 5.0, 2.0, 7.0, 6.0 }
-**
-** this function sets the aIdx array to contain:
-**
-**   aIdx      = { 0,   1,   2,   3 }
-**
-** The aSpare array is used as temporary working space by the
-** sorting algorithm.
-*/
-static void SortByDistance(
-  int *aIdx, 
-  int nIdx, 
-  RtreeDValue *aDistance, 
-  int *aSpare
-){
-  if( nIdx>1 ){
-    int iLeft = 0;
-    int iRight = 0;
-
-    int nLeft = nIdx/2;
-    int nRight = nIdx-nLeft;
-    int *aLeft = aIdx;
-    int *aRight = &aIdx[nLeft];
-
-    SortByDistance(aLeft, nLeft, aDistance, aSpare);
-    SortByDistance(aRight, nRight, aDistance, aSpare);
-
-    memcpy(aSpare, aLeft, sizeof(int)*nLeft);
-    aLeft = aSpare;
-
-    while( iLeft<nLeft || iRight<nRight ){
-      if( iLeft==nLeft ){
-        aIdx[iLeft+iRight] = aRight[iRight];
-        iRight++;
-      }else if( iRight==nRight ){
-        aIdx[iLeft+iRight] = aLeft[iLeft];
-        iLeft++;
-      }else{
-        RtreeDValue fLeft = aDistance[aLeft[iLeft]];
-        RtreeDValue fRight = aDistance[aRight[iRight]];
-        if( fLeft<fRight ){
-          aIdx[iLeft+iRight] = aLeft[iLeft];
-          iLeft++;
-        }else{
-          aIdx[iLeft+iRight] = aRight[iRight];
-          iRight++;
-        }
-      }
-    }
-
-#if 0
-    /* Check that the sort worked */
-    {
-      int jj;
-      for(jj=1; jj<nIdx; jj++){
-        RtreeDValue left = aDistance[aIdx[jj-1]];
-        RtreeDValue right = aDistance[aIdx[jj]];
-        assert( left<=right );
-      }
-    }
-#endif
-  }
-}
 
 /*
 ** Arguments aIdx, aCell and aSpare all point to arrays of size
@@ -2896,108 +2824,7 @@ static int deleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell, int iHeight){
 
   return rc;
 }
-
-static int Reinsert(
-  Rtree *pRtree, 
-  RtreeNode *pNode, 
-  RtreeCell *pCell, 
-  int iHeight
-){
-  int *aOrder;
-  int *aSpare;
-  RtreeCell *aCell;
-  RtreeDValue *aDistance;
-  int nCell;
-  RtreeDValue aCenterCoord[RTREE_MAX_DIMENSIONS];
-  int iDim;
-  int ii;
-  int rc = SQLITE_OK;
-  int n;
-
-  memset(aCenterCoord, 0, sizeof(RtreeDValue)*RTREE_MAX_DIMENSIONS);
-
-  nCell = NCELL(pNode)+1;
-  n = (nCell+1)&(~1);
-
-  /* Allocate the buffers used by this operation. The allocation is
-  ** relinquished before this function returns.
-  */
-  aCell = (RtreeCell *)sqlite3_malloc64(n * (
-    sizeof(RtreeCell)     +         /* aCell array */
-    sizeof(int)           +         /* aOrder array */
-    sizeof(int)           +         /* aSpare array */
-    sizeof(RtreeDValue)             /* aDistance array */
-  ));
-  if( !aCell ){
-    return SQLITE_NOMEM;
-  }
-  aOrder    = (int *)&aCell[n];
-  aSpare    = (int *)&aOrder[n];
-  aDistance = (RtreeDValue *)&aSpare[n];
-
-  for(ii=0; ii<nCell; ii++){
-    if( ii==(nCell-1) ){
-      memcpy(&aCell[ii], pCell, sizeof(RtreeCell));
-    }else{
-      nodeGetCell(pRtree, pNode, ii, &aCell[ii]);
-    }
-    aOrder[ii] = ii;
-    for(iDim=0; iDim<pRtree->nDim; iDim++){
-      aCenterCoord[iDim] += DCOORD(aCell[ii].aCoord[iDim*2]);
-      aCenterCoord[iDim] += DCOORD(aCell[ii].aCoord[iDim*2+1]);
-    }
-  }
-  for(iDim=0; iDim<pRtree->nDim; iDim++){
-    aCenterCoord[iDim] = (aCenterCoord[iDim]/(nCell*(RtreeDValue)2));
-  }
-
-  for(ii=0; ii<nCell; ii++){
-    aDistance[ii] = RTREE_ZERO;
-    for(iDim=0; iDim<pRtree->nDim; iDim++){
-      RtreeDValue coord = (DCOORD(aCell[ii].aCoord[iDim*2+1]) - 
-                               DCOORD(aCell[ii].aCoord[iDim*2]));
-      aDistance[ii] += (coord-aCenterCoord[iDim])*(coord-aCenterCoord[iDim]);
-    }
-  }
-
-  SortByDistance(aOrder, nCell, aDistance, aSpare);
-  nodeZero(pRtree, pNode);
-
-  for(ii=0; rc==SQLITE_OK && ii<(nCell-(RTREE_MINCELLS(pRtree)+1)); ii++){
-    RtreeCell *p = &aCell[aOrder[ii]];
-    nodeInsertCell(pRtree, pNode, p);
-    if( p->iRowid==pCell->iRowid ){
-      if( iHeight==0 ){
-        rc = rowidWrite(pRtree, p->iRowid, pNode->iNode);
-      }else{
-        rc = parentWrite(pRtree, p->iRowid, pNode->iNode);
-      }
-    }
-  }
-  if( rc==SQLITE_OK ){
-    rc = fixBoundingBox(pRtree, pNode);
-  }
-  for(; rc==SQLITE_OK && ii<nCell; ii++){
-    /* Find a node to store this cell in. pNode->iNode currently contains
-    ** the height of the sub-tree headed by the cell.
-    */
-    RtreeNode *pInsert;
-    RtreeCell *p = &aCell[aOrder[ii]];
-    rc = ChooseLeaf(pRtree, p, iHeight, &pInsert);
-    if( rc==SQLITE_OK ){
-      int rc2;
-      rc = rtreeInsertCell(pRtree, pInsert, p, iHeight);
-      rc2 = nodeRelease(pRtree, pInsert);
-      if( rc==SQLITE_OK ){
-        rc = rc2;
-      }
-    }
-  }
-
-  sqlite3_free(aCell);
-  return rc;
-}
-
+	
 /*
 ** Insert cell pCell into node pNode. Node pNode is the head of a 
 ** subtree iHeight high (leaf nodes have iHeight==0).
@@ -3018,12 +2845,7 @@ static int rtreeInsertCell(
     }
   }
   if( nodeInsertCell(pRtree, pNode, pCell) ){
-    if( iHeight<=pRtree->iReinsertHeight || pNode->iNode==1 ){
-      rc = SplitNode(pRtree, pNode, pCell, iHeight);
-    }else{
-      pRtree->iReinsertHeight = iHeight;
-      rc = Reinsert(pRtree, pNode, pCell, iHeight);
-    }
+    rc = SplitNode(pRtree, pNode, pCell, iHeight);
   }else{
     rc = AdjustTree(pRtree, pNode, pCell);
     if( ALWAYS(rc==SQLITE_OK) ){
@@ -3366,7 +3188,6 @@ static int rtreeUpdate(
     }
     if( rc==SQLITE_OK ){
       int rc2;
-      pRtree->iReinsertHeight = -1;
       rc = rtreeInsertCell(pRtree, pLeaf, &cell, 0);
       rc2 = nodeRelease(pRtree, pLeaf);
       if( rc==SQLITE_OK ){

@@ -1683,7 +1683,6 @@ static int geopolyUpdate(
     }
     if( rc==SQLITE_OK ){
       int rc2;
-      pRtree->iReinsertHeight = -1;
       rc = rtreeInsertCell(pRtree, pLeaf, &cell, 0);
       rc2 = nodeRelease(pRtree, pLeaf);
       if( rc==SQLITE_OK ){
