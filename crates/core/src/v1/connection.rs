@@ -53,6 +53,7 @@ impl Connection {
                 return Err(Error::ConnectionFailed(db_path));
             }
         }
+
         Ok(Connection {
             raw,
             drop_ref: Arc::new(()),
