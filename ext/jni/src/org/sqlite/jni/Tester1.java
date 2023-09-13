@@ -1597,8 +1597,8 @@ public class Tester1 implements Runnable {
   private void testPrepareMulti(){
     final sqlite3 db = createNewDb();
     final String[] sql = {
-      "create table t(a);",
-      "insert into t(a) values(1),(2),(3);",
+      "create table t(","a)",
+      "; insert into t(a) values(1),(2),(3);",
       "select a from t;"
     };
     final List<sqlite3_stmt> liStmt = new ArrayList<sqlite3_stmt>();

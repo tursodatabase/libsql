@@ -983,6 +983,10 @@ public final class SQLite3Jni {
     return sqlite3_prepare_v3(db, sqlUtf8, sqlUtf8.length, prepFlags, outStmt, pTailOffset);
   }
 
+  /**
+     Convenience overload which elides the seldom-used pTailOffset
+     parameter.
+  */
   public static int sqlite3_prepare_v3(
     @NotNull sqlite3 db, @NotNull byte[] sqlUtf8, int prepFlags,
     @NotNull OutputPointer.sqlite3_stmt outStmt
@@ -990,6 +994,11 @@ public final class SQLite3Jni {
     return sqlite3_prepare_v3(db, sqlUtf8, sqlUtf8.length, prepFlags, outStmt, null);
   }
 
+  /**
+     Convenience overload which elides the seldom-used pTailOffset
+     parameter and converts the given string to UTF-8 before passing
+     it on.
+  */
   public static int sqlite3_prepare_v3(
     @NotNull sqlite3 db, @NotNull String sql, int prepFlags,
     @NotNull OutputPointer.sqlite3_stmt outStmt
@@ -1018,9 +1027,9 @@ public final class SQLite3Jni {
      ownership of it to that function. If p.call() returns 0, looping
      continues, else the loop stops.
 
-     If p.call() throws, the exception is propagated.
+     <p>If p.call() throws, the exception is propagated.
 
-     How each statement is handled, including whether it is finalized
+     <p>How each statement is handled, including whether it is finalized
      or not, is up to the callback object. e.g. the callback might
      collect them for later use. If it does not collect them then it
      must finalize them. See PrepareMultiCallback.Finalize for a

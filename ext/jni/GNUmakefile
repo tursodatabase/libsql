@@ -60,7 +60,7 @@ SQLTester.class := $(SQLTester.java:.java=.class)
 # which is checked in. Please do not check in changes to that file in
 # which the fts5 APIs have been stripped unless that feature is
 # intended to be stripped for good.
-enable.fts5 ?= 0
+enable.fts5 ?= 1
 # If enable.tester is 0, the org/sqlite/jni/tester/* bits are elided.
 enable.tester ?= $(if $(wildcard $(dir.src.jni.tester)/SQLTester.java),1,0)
 
@@ -380,10 +380,11 @@ run-jar: $(package.jar) $(package.dll)
 # javadoc...
 dir.doc   := $(dir.jni)/javadoc
 doc.index := $(dir.doc)/index.html
-javadoc.exclude := -exclude org.sqlite.jni.tester
-ifneq (1,$(enable.fts5))
-  javadoc.exclude += -exclude org.sqlite.jni.fts5
-endif
+javadoc.exclude := -exclude org.sqlite.jni.tester \
+                   -exclude org.sqlite.jni.fts5
+# ^^^^ 2023-09-13: elide the fts5 parts from the public docs for
+# the time being, as it's not clear where the Java bindings for
+# those bits are going.
 $(doc.index): $(JAVA_FILES.main) $(MAKEFILE)
 	@if [ -d $(dir.doc) ]; then rm -fr $(dir.doc)/*; fi
 	$(bin.javadoc) -cp $(classpath) -d $(dir.doc) -quiet \
