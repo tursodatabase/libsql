@@ -157,7 +157,7 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn sync_frames(&self, frames: Frames) -> Result<()> {
+    pub fn sync_frames(&self, frames: Frames) -> Result<usize> {
         if let Some(ctx) = self.replication_ctx.as_ref() {
             ctx.replicator
                 .sync(frames)
