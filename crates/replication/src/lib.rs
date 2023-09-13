@@ -137,10 +137,11 @@ impl Replicator {
         Ok(meta)
     }
 
+    // Return true if the metadata was updated, and false if we received old frames
     pub fn update_metadata_from_snapshot_header(
         &self,
         path: impl AsRef<std::path::Path>,
-    ) -> anyhow::Result<()> {
+    ) -> anyhow::Result<bool> {
         // FIXME: I guess we should consider allowing async reads here
         use std::io::Read;
         let path = path.as_ref();
@@ -153,7 +154,15 @@ impl Replicator {
         let mut meta = self.meta.lock();
 
         if let Some(meta) = &*meta {
-            if meta.post_commit_frame_no + 1 != snapshot_header.start_frame_no {
+            let expected_frame_no = meta.post_commit_frame_no + 1;
+
+            if snapshot_header.start_frame_no < expected_frame_no {
+                tracing::trace!("Received snapshot header with old frame number {} but expected frame number {}",
+                    snapshot_header.start_frame_no,
+                    expected_frame_no
+                );
+                return Ok(false);
+            } else if snapshot_header.start_frame_no > expected_frame_no {
                 tracing::warn!(
                     "Snapshot header frame number {} does not match expected post-commit frame number {}",
                     snapshot_header.start_frame_no,
@@ -178,7 +187,7 @@ impl Replicator {
             generation_id: 1, // FIXME: where to obtain generation id from? Do we need it?
             database_id: snapshot_header.db_id,
         });
-        Ok(())
+        Ok(true)
     }
 
     pub fn writer(&self) -> anyhow::Result<Writer> {
@@ -196,7 +205,11 @@ impl Replicator {
                 "Updating metadata from snapshot header {}",
                 snapshot.path().display()
             );
-            self.update_metadata_from_snapshot_header(snapshot.path())?;
+            let metadata_updated = self.update_metadata_from_snapshot_header(snapshot.path())?;
+            if !metadata_updated {
+                tracing::debug!("Skipping snapshot sync - frames already applied");
+                return Ok(());
+            }
         }
         let _ = self.frames_sender.blocking_send(frames);
         self.injector.step()?;
