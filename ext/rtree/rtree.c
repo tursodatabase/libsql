@@ -200,7 +200,7 @@ struct Rtree {
   /* Statement for writing to the "aux:" fields, if there are any */
   sqlite3_stmt *pWriteAux;
 
-  RtreeNode *aHash[HASHSIZE]; /* Hash table of in-memory nodes. */ 
+  RtreeNode *aHash[HASHSIZE]; /* Hash table of in-memory nodes. */
 };
 
 /* Possible values for Rtree.eCoordType: */
@@ -2241,8 +2241,6 @@ static int ChooseLeaf(
     RtreeCell cell;
     RtreeNode *pChild = 0;
 
-    RtreeCell *aCell = 0;
-
     /* Select the child node which will be enlarged the least if pCell
     ** is inserted into it. Resolve ties by choosing the entry with
     ** the smallest area.
@@ -2264,7 +2262,6 @@ static int ChooseLeaf(
       }
     }
 
-    sqlite3_free(aCell);
     rc = nodeAcquire(pRtree, iBest, pNode, &pChild);
     nodeRelease(pRtree, pNode);
     pNode = pChild;
@@ -3013,7 +3010,7 @@ static int rtreeInsertCell(
     }
   }
   if( nodeInsertCell(pRtree, pNode, pCell) ){
-    if( iHeight<=pRtree->iReinsertHeight || pNode->iNode==1){
+    if( iHeight<=pRtree->iReinsertHeight || pNode->iNode==1 ){
       rc = SplitNode(pRtree, pNode, pCell, iHeight);
     }else{
       pRtree->iReinsertHeight = iHeight;
