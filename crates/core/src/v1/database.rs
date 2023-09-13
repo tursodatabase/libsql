@@ -87,13 +87,6 @@ impl Database {
                 });
             }
             Sync::Frame => {
-                // NOTICE: the snapshot file used in sync_frames() contains metadata, it will be updated there
-                *replicator.meta.lock() = Some(libsql_replication::replica::meta::WalIndexMeta {
-                    pre_commit_frame_no: 0,
-                    post_commit_frame_no: 0,
-                    generation_id: 0,
-                    database_id: 0,
-                });
                 db.replication_ctx = Some(ReplicationContext {
                     replicator,
                     endpoint: "".to_string(),
