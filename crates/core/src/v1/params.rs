@@ -23,12 +23,36 @@ macro_rules! params {
 }
 
 #[macro_export]
+macro_rules! try_params {
+    () => {
+        Ok($crate::Params::None)
+    };
+    ($($value:expr),* $(,)?) => {
+        || -> $crate::Result<$crate::Params> {
+            Ok($crate::Params::Positional(vec![$($value.try_into()?),*]))
+        }()
+    };
+}
+
+#[macro_export]
 macro_rules! named_params {
     () => {
         $crate::Params::None
     };
     ($($param_name:literal: $value:expr),* $(,)?) => {
         $crate::Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::from($value))),*])
+    };
+}
+
+#[macro_export]
+macro_rules! try_named_params {
+    () => {
+        Ok($crate::Params::None)
+    };
+    ($($param_name:literal: $value:expr),* $(,)?) => {
+        || -> $crate::Result<$crate::Params> {
+            Ok($crate::Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::try_from($value)?)),*]))
+        }()
     };
 }
 
@@ -98,9 +122,59 @@ impl From<i32> for Value {
     }
 }
 
+impl From<i64> for Value {
+    fn from(value: i64) -> Value {
+        Value::Integer(value)
+    }
+}
+
+impl From<u32> for Value {
+    fn from(value: u32) -> Value {
+        Value::Integer(value as i64)
+    }
+}
+
+impl TryFrom<u64> for Value {
+    type Error = crate::Error;
+
+    fn try_from(value: u64) -> Result<Value> {
+        if value > i64::MAX as u64 {
+            Err(Error::ToSqlConversionFailure(
+                "u64 is too large to fit in an i64".into(),
+            ))
+        } else {
+            Ok(Value::Integer(value as i64))
+        }
+    }
+}
+
+impl From<f32> for Value {
+    fn from(value: f32) -> Value {
+        Value::Real(value as f64)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(value: f64) -> Value {
+        Value::Real(value)
+    }
+}
+
 impl From<&str> for Value {
     fn from(value: &str) -> Value {
         Value::Text(value.to_owned())
+    }
+}
+
+impl From<String> for Value {
+    fn from(value: String) -> Value {
+        Value::Text(value)
+    }
+}
+
+impl From<&[u8]> for Value {
+    fn from(value: &[u8]) -> Value {
+        Value::Blob(value.to_owned())
     }
 }
 

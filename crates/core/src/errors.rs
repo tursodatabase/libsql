@@ -33,6 +33,12 @@ pub enum Error {
     InvalidColumnType,
 }
 
+impl From<std::convert::Infallible> for Error {
+    fn from(_: std::convert::Infallible) -> Self {
+        unreachable!()
+    }
+}
+
 #[cfg(feature = "core")]
 pub(crate) fn error_from_handle(raw: *mut libsql_sys::ffi::sqlite3) -> String {
     let errmsg = unsafe { libsql_sys::ffi::sqlite3_errmsg(raw) };
