@@ -2221,32 +2221,49 @@ static int ChooseLeaf(
   for(ii=0; rc==SQLITE_OK && ii<(pRtree->iDepth-iHeight); ii++){
     int iCell;
     sqlite3_int64 iBest = 0;
-
+    int bFound = 0;
     RtreeDValue fMinGrowth = RTREE_ZERO;
     RtreeDValue fMinArea = RTREE_ZERO;
-
     int nCell = NCELL(pNode);
     RtreeNode *pChild = 0;
 
-    /* Select the child node which will be enlarged the least if pCell
-    ** is inserted into it. Resolve ties by choosing the entry with
-    ** the smallest area.
+    /* First check to see if there is are any cells in pNode that completely
+    ** contains pCell.  If two or more cells in pNode completely contain pCell
+    ** then pick the smallest.
     */
     for(iCell=0; iCell<nCell; iCell++){
       RtreeCell cell;
-      RtreeDValue growth;
-      RtreeDValue area;
       nodeGetCell(pRtree, pNode, iCell, &cell);
-      area = cellArea(pRtree, &cell);
-      cellUnion(pRtree, &cell, pCell);
-      growth = cellArea(pRtree, &cell)-area;
-      if( iCell==0
-       || growth<fMinGrowth
-       || (growth==fMinGrowth && area<fMinArea)
-      ){
-        fMinGrowth = growth;
-        fMinArea = area;
-        iBest = cell.iRowid;
+      if( cellContains(pRtree, &cell, pCell) ){
+        RtreeDValue area = cellArea(pRtree, &cell);
+        if( bFound==0 || area<fMinArea ){
+          iBest = cell.iRowid;
+          fMinArea = area;
+          bFound = 1;
+        }
+      }
+    }
+    if( !bFound ){
+      /* No cells of pNode will completely contain pCell.  So pick the
+      ** cell of pNode that grows by the least amount when pCell is added.
+      ** Break ties by selecting the smaller cell.
+      */
+      for(iCell=0; iCell<nCell; iCell++){
+        RtreeCell cell;
+        RtreeDValue growth;
+        RtreeDValue area;
+        nodeGetCell(pRtree, pNode, iCell, &cell);
+        area = cellArea(pRtree, &cell);
+        cellUnion(pRtree, &cell, pCell);
+        growth = cellArea(pRtree, &cell)-area;
+        if( iCell==0
+         || growth<fMinGrowth
+         || (growth==fMinGrowth && area<fMinArea)
+        ){
+          fMinGrowth = growth;
+          fMinArea = area;
+          iBest = cell.iRowid;
+        }
       }
     }
 
