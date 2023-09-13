@@ -137,11 +137,11 @@ impl Replicator {
         Ok(meta)
     }
 
-    // Return true if the metadata was updated, and false if we received old frames
+    // Return the number of frames that will be applied
     pub fn update_metadata_from_snapshot_header(
         &self,
         path: impl AsRef<std::path::Path>,
-    ) -> anyhow::Result<bool> {
+    ) -> anyhow::Result<usize> {
         // FIXME: I guess we should consider allowing async reads here
         use std::io::Read;
         let path = path.as_ref();
@@ -161,7 +161,7 @@ impl Replicator {
                     snapshot_header.start_frame_no,
                     expected_frame_no
                 );
-                return Ok(false);
+                return Ok(0);
             } else if snapshot_header.start_frame_no > expected_frame_no {
                 tracing::warn!(
                     "Snapshot header frame number {} does not match expected post-commit frame number {}",
@@ -187,7 +187,7 @@ impl Replicator {
             generation_id: 1, // FIXME: where to obtain generation id from? Do we need it?
             database_id: snapshot_header.db_id,
         });
-        Ok(true)
+        Ok(snapshot_header.frame_count as usize)
     }
 
     pub fn writer(&self) -> anyhow::Result<Writer> {
@@ -199,21 +199,24 @@ impl Replicator {
         Ok(Writer { client })
     }
 
-    pub fn sync(&self, frames: Frames) -> anyhow::Result<()> {
-        if let Frames::Snapshot(snapshot) = &frames {
-            tracing::debug!(
-                "Updating metadata from snapshot header {}",
-                snapshot.path().display()
-            );
-            let metadata_updated = self.update_metadata_from_snapshot_header(snapshot.path())?;
-            if !metadata_updated {
-                tracing::debug!("Skipping snapshot sync - frames already applied");
-                return Ok(());
+    pub fn sync(&self, frames: Frames) -> anyhow::Result<usize> {
+        let frames_to_apply = match &frames {
+            Frames::Snapshot(snapshot) => {
+                tracing::debug!(
+                    "Updating metadata from snapshot header {}",
+                    snapshot.path().display()
+                );
+                self.update_metadata_from_snapshot_header(snapshot.path())?
             }
+            Frames::Vec(v) => v.len(),
+        };
+        if frames_to_apply == 0 {
+            tracing::debug!("Skipping snapshot sync - frames already applied");
+            return Ok(0);
         }
         let _ = self.frames_sender.blocking_send(frames);
         self.injector.step()?;
-        Ok(())
+        Ok(frames_to_apply)
     }
 
     // Syncs frames from HTTP, returns how many frames were applied

@@ -146,7 +146,7 @@ impl Database {
     }
 
     #[cfg(feature = "replication")]
-    pub fn sync_frames(&self, frames: libsql_replication::Frames) -> Result<()> {
+    pub fn sync_frames(&self, frames: libsql_replication::Frames) -> Result<usize> {
         match &self.db_type {
             DbType::Sync { db } => db.sync_frames(frames),
             DbType::Memory => Err(crate::Error::SyncNotSupported("in-memory".into())),

@@ -30,7 +30,7 @@ async fn main() {
             let snapshot = TempSnapshot::from_snapshot_file(snapshot_path.as_ref()).unwrap();
             tokio::task::spawn_blocking(move || {
                 match db.lock().unwrap().sync_frames(Frames::Snapshot(snapshot)) {
-                    Ok(_) => println!("Frames from {} applied", snapshot_path.display()),
+                    Ok(n) => println!("{n} frames from {} applied", snapshot_path.display()),
                     Err(e) => println!(
                         "Syncing frames from {} failed: {e}",
                         snapshot_path.display()
