@@ -19,8 +19,8 @@ package org.sqlite.jni;
 public interface PrepareMultiCallback extends CallbackProxy {
 
   /**
-     Gets passed a which it may handle in arbitrary
-     ways, transfering ownership of it to this function.
+     Gets passed a sqlite3_stmt which it may handle in arbitrary ways,
+     transfering ownership of it to this function.
 
      sqlite3_prepare_multi() will _not_ finalize st - it is up
      to the call() implementation how st is handled.
@@ -38,13 +38,16 @@ public interface PrepareMultiCallback extends CallbackProxy {
   */
   public static final class Finalize implements PrepareMultiCallback {
     private PrepareMultiCallback p;
+    /**
+       p is the proxy to call() when this.call() is called.
+    */
     public Finalize( PrepareMultiCallback p ){
       this.p = p;
     }
     /**
        Calls the call() method of the proxied callback and either returns its
        result or propagates an exception. Either way, it passes its argument to
-       sqlite3_finalize().
+       sqlite3_finalize() before returning.
     */
     @Override public int call(sqlite3_stmt st){
       try {
