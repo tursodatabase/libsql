@@ -1354,9 +1354,8 @@ static int fts5FilterMethod(
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bDesc);
   }else if( pCsr->pExpr ){
-    if( rc==SQLITE_OK ){
-      rc = fts5CursorParseRank(pConfig, pCsr, pRank);
-    }
+    assert( rc==SQLITE_OK );
+    rc = fts5CursorParseRank(pConfig, pCsr, pRank);
     if( rc==SQLITE_OK ){
       if( bOrderByRank ){
         pCsr->ePlan = FTS5_PLAN_SORTED_MATCH;
