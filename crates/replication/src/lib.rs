@@ -153,16 +153,16 @@ impl Replicator {
         let mut meta = self.meta.lock();
 
         if let Some(meta) = &*meta {
-            if meta.post_commit_frame_no != snapshot_header.start_frame_no {
+            if meta.post_commit_frame_no + 1 != snapshot_header.start_frame_no {
                 tracing::warn!(
-                    "Snapshot header frame number {} does not match post-commit frame number {}",
+                    "Snapshot header frame number {} does not match expected post-commit frame number {}",
                     snapshot_header.start_frame_no,
-                    meta.post_commit_frame_no
+                    meta.post_commit_frame_no + 1
                 );
                 anyhow::bail!(
-                    "Snapshot header frame number {} does not match post-commit frame number {}",
+                    "Snapshot header frame number {} does not match expected post-commit frame number {}",
                     snapshot_header.start_frame_no,
-                    meta.post_commit_frame_no
+                    meta.post_commit_frame_no + 1
                 )
             }
         } else if snapshot_header.start_frame_no != 0 {
