@@ -92,6 +92,80 @@ pub enum Value {
     Blob(Vec<u8>),
 }
 
+impl Value {
+    /// Returns `true` if the value is [`Null`].
+    ///
+    /// [`Null`]: Value::Null
+    #[must_use]
+    pub fn is_null(&self) -> bool {
+        matches!(self, Self::Null)
+    }
+
+    /// Returns `true` if the value is [`Integer`].
+    ///
+    /// [`Integer`]: Value::Integer
+    #[must_use]
+    pub fn is_integer(&self) -> bool {
+        matches!(self, Self::Integer(..))
+    }
+
+    /// Returns `true` if the value is [`Real`].
+    ///
+    /// [`Real`]: Value::Real
+    #[must_use]
+    pub fn is_real(&self) -> bool {
+        matches!(self, Self::Real(..))
+    }
+
+    pub fn as_real(&self) -> Option<&f64> {
+        if let Self::Real(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    /// Returns `true` if the value is [`Text`].
+    ///
+    /// [`Text`]: Value::Text
+    #[must_use]
+    pub fn is_text(&self) -> bool {
+        matches!(self, Self::Text(..))
+    }
+
+    pub fn as_text(&self) -> Option<&String> {
+        if let Self::Text(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    pub fn as_integer(&self) -> Option<&i64> {
+        if let Self::Integer(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    /// Returns `true` if the value is [`Blob`].
+    ///
+    /// [`Blob`]: Value::Blob
+    #[must_use]
+    pub fn is_blob(&self) -> bool {
+        matches!(self, Self::Blob(..))
+    }
+
+    pub fn as_blob(&self) -> Option<&Vec<u8>> {
+        if let Self::Blob(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+}
+
 impl From<i32> for Value {
     fn from(value: i32) -> Value {
         Value::Integer(value as i64)
@@ -159,6 +233,78 @@ impl ValueRef<'_> {
             ValueRef::Real(_) => ValueType::Real,
             ValueRef::Text(_) => ValueType::Text,
             ValueRef::Blob(_) => ValueType::Blob,
+        }
+    }
+
+    /// Returns `true` if the value ref is [`Null`].
+    ///
+    /// [`Null`]: ValueRef::Null
+    #[must_use]
+    pub fn is_null(&self) -> bool {
+        matches!(self, Self::Null)
+    }
+
+    /// Returns `true` if the value ref is [`Integer`].
+    ///
+    /// [`Integer`]: ValueRef::Integer
+    #[must_use]
+    pub fn is_integer(&self) -> bool {
+        matches!(self, Self::Integer(..))
+    }
+
+    pub fn as_integer(&self) -> Option<&i64> {
+        if let Self::Integer(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    /// Returns `true` if the value ref is [`Real`].
+    ///
+    /// [`Real`]: ValueRef::Real
+    #[must_use]
+    pub fn is_real(&self) -> bool {
+        matches!(self, Self::Real(..))
+    }
+
+    pub fn as_real(&self) -> Option<&f64> {
+        if let Self::Real(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    /// Returns `true` if the value ref is [`Text`].
+    ///
+    /// [`Text`]: ValueRef::Text
+    #[must_use]
+    pub fn is_text(&self) -> bool {
+        matches!(self, Self::Text(..))
+    }
+
+    pub fn as_text(&self) -> Option<&[u8]> {
+        if let Self::Text(v) = self {
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    /// Returns `true` if the value ref is [`Blob`].
+    ///
+    /// [`Blob`]: ValueRef::Blob
+    #[must_use]
+    pub fn is_blob(&self) -> bool {
+        matches!(self, Self::Blob(..))
+    }
+
+    pub fn as_blob(&self) -> Option<&[u8]> {
+        if let Self::Blob(v) = self {
+            Some(v)
+        } else {
+            None
         }
     }
 }
