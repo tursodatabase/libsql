@@ -1,9 +1,11 @@
 pub mod db_factory;
+mod dump;
 mod hrana_over_http_1;
 mod result_builder;
 pub mod stats;
 mod types;
 
+use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Context;
@@ -191,6 +193,7 @@ pub(crate) struct AppState<F: MakeNamespace> {
     stats: Stats,
     disable_default_namespace: bool,
     disable_namespaces: bool,
+    path: Arc<Path>,
 }
 
 impl<F: MakeNamespace> Clone for AppState<F> {
@@ -204,6 +207,7 @@ impl<F: MakeNamespace> Clone for AppState<F> {
             stats: self.stats.clone(),
             disable_default_namespace: self.disable_default_namespace,
             disable_namespaces: self.disable_namespaces,
+            path: self.path.clone(),
         }
     }
 }
@@ -222,6 +226,7 @@ pub struct UserApi<M: MakeNamespace, A, P, S> {
     pub max_response_size: u64,
     pub enable_console: bool,
     pub self_url: Option<String>,
+    pub path: Arc<Path>,
 }
 
 impl<M, A, P, S> UserApi<M, A, P, S>
@@ -287,6 +292,7 @@ where
                 namespaces: self.namespaces,
                 disable_default_namespace: self.disable_default_namespace,
                 disable_namespaces: self.disable_namespaces,
+                path: self.path,
             };
 
             fn trace_request<B>(req: &Request<B>, _span: &Span) {
@@ -325,6 +331,7 @@ where
                 .route("/version", get(handle_version))
                 .route("/console", get(show_console))
                 .route("/health", get(handle_health))
+                .route("/dump", get(dump::handle_dump))
                 .route("/v1/stats", get(stats::handle_stats))
                 .route("/v1", get(hrana_over_http_1::handle_index))
                 .route("/v1/execute", post(hrana_over_http_1::handle_execute))

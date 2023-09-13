@@ -103,6 +103,7 @@ struct Services<M: MakeNamespace, A, P, S> {
     disable_default_namespace: bool,
     db_config: DbConfig,
     auth: Arc<Auth>,
+    path: Arc<Path>,
 }
 
 impl<M, A, P, S> Services<M, A, P, S>
@@ -127,6 +128,7 @@ where
             max_response_size: self.db_config.max_response_size,
             enable_console: self.user_api_config.enable_http_console,
             self_url: self.user_api_config.self_url,
+            path: self.path.clone(),
         };
 
         user_http.configure(join_set);
@@ -392,6 +394,7 @@ where
                     disable_default_namespace: self.disable_default_namespace,
                     db_config: self.db_config,
                     auth,
+                    path: self.path.clone(),
                 };
 
                 services.configure(&mut join_set);
@@ -426,6 +429,7 @@ where
                     disable_default_namespace: self.disable_default_namespace,
                     db_config: self.db_config,
                     auth,
+                    path: self.path.clone(),
                 };
 
                 services.configure(&mut join_set);
