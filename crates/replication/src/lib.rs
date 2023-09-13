@@ -166,14 +166,10 @@ impl Replicator {
                 )
             }
         } else if snapshot_header.start_frame_no != 0 {
-            tracing::warn!(
-                "Cannot initialize metadata from snapshot header with frame number {} instead of 0",
+            tracing::info!(
+                "Initializing metadata from snapshot header with frame number {}. Make sure your snapshots are applied in order",
                 snapshot_header.start_frame_no
             );
-            anyhow::bail!(
-                "Cannot initialize metadata from snapshot header with frame number {} instead of 0",
-                snapshot_header.start_frame_no
-            )
         }
         // Metadata is loaded straight from the snapshot header and overwrites any previous values
         *meta = Some(replica::meta::WalIndexMeta {
