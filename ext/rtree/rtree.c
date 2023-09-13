@@ -2175,18 +2175,6 @@ static int cellContains(Rtree *pRtree, RtreeCell *p1, RtreeCell *p2){
   return 1;
 }
 
-/*
-** Return the amount cell p would grow by if it were unioned with pCell.
-*/
-static RtreeDValue cellGrowth(Rtree *pRtree, RtreeCell *p, RtreeCell *pCell){
-  RtreeDValue area;
-  RtreeCell cell;
-  memcpy(&cell, p, sizeof(RtreeCell));
-  area = cellArea(pRtree, &cell);
-  cellUnion(pRtree, &cell, pCell);
-  return (cellArea(pRtree, &cell)-area);
-}
-
 static RtreeDValue cellOverlap(
   Rtree *pRtree, 
   RtreeCell *p, 
@@ -2238,7 +2226,6 @@ static int ChooseLeaf(
     RtreeDValue fMinArea = RTREE_ZERO;
 
     int nCell = NCELL(pNode);
-    RtreeCell cell;
     RtreeNode *pChild = 0;
 
     /* Select the child node which will be enlarged the least if pCell
@@ -2246,16 +2233,17 @@ static int ChooseLeaf(
     ** the smallest area.
     */
     for(iCell=0; iCell<nCell; iCell++){
-      int bBest = 0;
+      RtreeCell cell;
       RtreeDValue growth;
       RtreeDValue area;
       nodeGetCell(pRtree, pNode, iCell, &cell);
-      growth = cellGrowth(pRtree, &cell, pCell);
       area = cellArea(pRtree, &cell);
-      if( iCell==0||growth<fMinGrowth||(growth==fMinGrowth && area<fMinArea) ){
-        bBest = 1;
-      }
-      if( bBest ){
+      cellUnion(pRtree, &cell, pCell);
+      growth = cellArea(pRtree, &cell)-area;
+      if( iCell==0
+       || growth<fMinGrowth
+       || (growth==fMinGrowth && area<fMinArea)
+      ){
         fMinGrowth = growth;
         fMinArea = area;
         iBest = cell.iRowid;
