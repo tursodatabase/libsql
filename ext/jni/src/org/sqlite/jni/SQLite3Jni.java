@@ -19,6 +19,7 @@ import java.lang.annotation.Target;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import org.sqlite.jni.annotation.*;
+import java.util.Arrays;
 
 /**
   This class contains the entire C-style sqlite3 JNI API binding,
@@ -907,7 +908,6 @@ public final class SQLite3Jni {
     sqlite3_prepare(db, sql, out);
     return out.take();
   }
-
   /**
      @see #sqlite3_prepare
   */
@@ -1009,6 +1009,103 @@ public final class SQLite3Jni {
     sqlite3_prepare_v3(db, sql, prepFlags, out);
     return out.take();
   }
+
+  /**
+     A convenience wrapper around sqlite3_prepare_v3() which accepts
+     an arbitrary amount of input provided as a UTF-8-encoded byte
+     array.  It loops over the input bytes looking for
+     statements. Each one it finds is passed to p.call(), passing
+     ownership of it to that function. If p.call() returns 0, looping
+     continues, else the loop stops.
+
+     If p.call() throws, the exception is propagated.
+
+     How each statement is handled, including whether it is finalized
+     or not, is up to the callback object. e.g. the callback might
+     collect them for later use. If it does not collect them then it
+     must finalize them. See PrepareMultiCallback.Finalize for a
+     simple proxy which does that.
+  */
+  public static int sqlite3_prepare_multi(
+    @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
+    int preFlags,
+    @NotNull PrepareMultiCallback p){
+    final OutputPointer.Int32 oTail = new OutputPointer.Int32();
+    int pos = 0, n = 1;
+    byte[] sqlChunk = sqlUtf8;
+    int rc = 0;
+    final OutputPointer.sqlite3_stmt outStmt = new OutputPointer.sqlite3_stmt();
+    while(0==rc && pos<sqlChunk.length){
+      sqlite3_stmt stmt = null;
+      if(pos > 0){
+        sqlChunk = Arrays.copyOfRange(sqlChunk, pos,
+                                      sqlChunk.length);
+      }
+      if( 0==sqlChunk.length ) break;
+      rc = sqlite3_prepare_v3(db, sqlChunk, preFlags, outStmt, oTail);
+      if( 0!=rc ) break;
+      pos = oTail.value;
+      stmt = outStmt.take();
+      if( null == stmt ){
+        // empty statement was parsed.
+        continue;
+      }
+      rc = p.call(stmt);
+    }
+    return rc;
+  }
+
+  /**
+     Convenience overload which accepts its SQL as a String and uses
+     no statement-preparation flags.
+  */
+  public static int sqlite3_prepare_multi(
+    @NotNull sqlite3 db, @NotNull byte[] sqlUtf8,
+    @NotNull PrepareMultiCallback p){
+    return sqlite3_prepare_multi(db, sqlUtf8, 0, p);
+  }
+
+  /**
+     Convenience overload which accepts its SQL as a String.
+  */
+  public static int sqlite3_prepare_multi(
+    @NotNull sqlite3 db, @NotNull String sql, int prepFlags,
+    @NotNull PrepareMultiCallback p){
+    return sqlite3_prepare_multi(
+      db, sql.getBytes(StandardCharsets.UTF_8), prepFlags, p
+    );
+  }
+
+  /**
+     Convenience overload which accepts its SQL as a String and uses
+     no statement-preparation flags.
+  */
+  public static int sqlite3_prepare_multi(
+    @NotNull sqlite3 db, @NotNull String sql,
+    @NotNull PrepareMultiCallback p){
+    return sqlite3_prepare_multi(db, sql, 0, p);
+  }
+
+  /**
+     Convenience overload which accepts its SQL as a String
+     array. They will be concatenated together as-is, with no
+     separator, and passed on to one of the other overloads.
+  */
+  public static int sqlite3_prepare_multi(
+    @NotNull sqlite3 db, @NotNull String[] sql, int prepFlags,
+    @NotNull PrepareMultiCallback p){
+    return sqlite3_prepare_multi(db, String.join("",sql), prepFlags, p);
+  }
+
+  /**
+     Convenience overload which uses no statement-preparation flags.
+  */
+  public static int sqlite3_prepare_multi(
+    @NotNull sqlite3 db, @NotNull String[] sql,
+    @NotNull PrepareMultiCallback p){
+    return sqlite3_prepare_multi(db, sql, 0, p);
+  }
+
 
   /**
      If the C API was built with SQLITE_ENABLE_PREUPDATE_HOOK defined, this

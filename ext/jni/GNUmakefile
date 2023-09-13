@@ -89,6 +89,7 @@ JAVA_FILES.main := $(patsubst %,$(dir.src.jni)/%,\
   ConfigSqllogCallback.java \
   NativePointerHolder.java \
   OutputPointer.java \
+  PrepareMultiCallback.java \
   PreupdateHookCallback.java \
   ProgressHandlerCallback.java \
   ResultCode.java \

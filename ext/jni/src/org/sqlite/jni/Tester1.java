@@ -1594,11 +1594,34 @@ public class Tester1 implements Runnable {
     sqlite3_close_v2(db);
   }
 
+  private void testPrepareMulti(){
+    final sqlite3 db = createNewDb();
+    final String[] sql = {
+      "create table t(a);",
+      "insert into t(a) values(1),(2),(3);",
+      "select a from t;"
+    };
+    final List<sqlite3_stmt> liStmt = new ArrayList<sqlite3_stmt>();
+    final PrepareMultiCallback proxy = new PrepareMultiCallback.StepAll();
+    PrepareMultiCallback m = new PrepareMultiCallback() {
+        @Override public int call(sqlite3_stmt st){
+          liStmt.add(st);
+          return proxy.call(st);
+        }
+      };
+    int rc = sqlite3_prepare_multi(db, sql, m);
+    affirm( 0==rc );
+    affirm( liStmt.size() == 3 );
+    for( sqlite3_stmt st : liStmt ){
+      sqlite3_finalize(st);
+    }
+    sqlite3_close_v2(db);
+  }
+
   /* Copy/paste/rename this to add new tests. */
   private void _testTemplate(){
     final sqlite3 db = createNewDb();
     sqlite3_stmt stmt = prepare(db,"SELECT 1");
-
     sqlite3_finalize(stmt);
     sqlite3_close_v2(db);
   }
