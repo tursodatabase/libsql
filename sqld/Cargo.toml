@@ -53,7 +53,7 @@ thiserror = "1.0.38"
 tokio = { version = "1.22.2", features = ["rt-multi-thread", "net", "io-std", "io-util", "time", "macros", "sync", "fs", "signal"] }
 tokio-stream = "0.1.11"
 tokio-tungstenite = "0.19"
-tokio-util = { version = "0.7.8", features = ["io"] }
+tokio-util = { version = "0.7.8", features = ["io", "io-util"] }
 tonic = { version = "0.9.2", features = ["tls"] }
 tonic-web = "0.9"
 tower = { version = "0.4.13", features = ["make"] }
