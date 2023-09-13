@@ -160,15 +160,21 @@ char *sqlite3_temp_directory = 0;
 char *sqlite3_data_directory = 0;
 
 /*
-** Determine what the default bUseLongDouble value should be and set it.
+** Determine whether or not high-precision (long double) floating point
+** math works correctly on CPU currently running.
 */
 static SQLITE_NOINLINE int hasHighPrecisionDouble(int rc){
   if( sizeof(LONGDOUBLE_TYPE)<=8 ){
+    /* If the size of "long double" is not more than 8, then
+    ** high-precision math is not possible. */
     return 0;
   }else{
     /* Just because sizeof(long double)>8 does not mean that the underlying
-    ** hardware actually supports high-precision floating point.  Do a test
-    ** to verify that it really does */
+    ** hardware actually supports high-precision floating point.  For example,
+    ** clearing the 0x100 bit in the floating-point control word on Intel
+    ** processors will make long double work like double, even though long
+    ** double takes up more space.  The only way to determine if long double
+    ** actually works is to run an experiment. */
     LONGDOUBLE_TYPE a, b, c;
     rc++;
     a = 1.0+rc*0.1;
