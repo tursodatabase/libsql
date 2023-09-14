@@ -60,7 +60,7 @@ pub use v1::database::Opts;
 #[cfg(feature = "core")]
 pub use v1::{
     params,
-    params::{params_from_iter, Params, Value, ValueRef},
+    params::{params_from_iter, Value, ValueRef},
     version, version_number, RowsFuture,
 };
 

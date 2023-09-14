@@ -5,55 +5,19 @@ use serde::{Deserialize, Serialize};
 
 use crate::{Error, Result};
 
+pub trait IntoParams {
+    // Hide this because users should not be implementing this
+    // themselves. We should consider sealing this trait.
+    #[doc(hidden)]
+    fn into_params(self) -> Result<Params>;
+}
+
 #[derive(Clone)]
+#[doc(hidden)]
 pub enum Params {
     None,
     Positional(Vec<Value>),
     Named(Vec<(String, Value)>),
-}
-
-#[macro_export]
-macro_rules! params {
-    () => {
-        $crate::Params::None
-    };
-    ($($value:expr),* $(,)?) => {
-        $crate::Params::Positional(vec![$($value.into()),*])
-    };
-}
-
-#[macro_export]
-macro_rules! try_params {
-    () => {
-        Ok($crate::Params::None)
-    };
-    ($($value:expr),* $(,)?) => {
-        || -> $crate::Result<$crate::Params> {
-            Ok($crate::Params::Positional(vec![$($value.try_into()?),*]))
-        }()
-    };
-}
-
-#[macro_export]
-macro_rules! named_params {
-    () => {
-        $crate::Params::None
-    };
-    ($($param_name:literal: $value:expr),* $(,)?) => {
-        $crate::Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::from($value))),*])
-    };
-}
-
-#[macro_export]
-macro_rules! try_named_params {
-    () => {
-        Ok($crate::Params::None)
-    };
-    ($($param_name:literal: $value:expr),* $(,)?) => {
-        || -> $crate::Result<$crate::Params> {
-            Ok($crate::Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::try_from($value)?)),*]))
-        }()
-    };
 }
 
 /// Convert an owned iterator into Params.
@@ -68,42 +32,82 @@ macro_rules! try_named_params {
 ///
 /// conn.query(
 ///     "SELECT * FROM users WHERE id IN (?1, ?2, ?3)",
-///     params_from_iter(iter).unwrap()
+///     params_from_iter(iter)
 /// )
 /// .await
 /// .unwrap();
 /// # }
 /// ```
-pub fn params_from_iter<I>(iter: I) -> Result<Params>
+pub fn params_from_iter<I>(iter: I) -> impl IntoParams
 where
     I: IntoIterator,
-    I::Item: TryInto<Value>,
-    <I::Item as TryInto<Value>>::Error: Into<crate::BoxError>,
+    I::Item: IntoValue,
 {
-    let vec = iter
-        .into_iter()
-        .map(|i| i.try_into())
-        .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| Error::ToSqlConversionFailure(e.into()))?;
-
-    Ok(Params::Positional(vec))
+    iter.into_iter().collect::<Vec<_>>()
 }
 
-impl From<()> for Params {
-    fn from(_: ()) -> Params {
-        Params::None
+impl IntoParams for () {
+    fn into_params(self) -> Result<Params> {
+        Ok(Params::None)
     }
 }
 
-impl From<Vec<Value>> for Params {
-    fn from(values: Vec<Value>) -> Params {
-        Params::Positional(values)
+impl IntoParams for Params {
+    fn into_params(self) -> Result<Params> {
+        Ok(self)
     }
 }
 
-impl From<Vec<(String, Value)>> for Params {
-    fn from(values: Vec<(String, Value)>) -> Params {
-        Params::Named(values)
+impl<T: IntoValue> IntoParams for Vec<T> {
+    fn into_params(self) -> Result<Params> {
+        let values = self
+            .into_iter()
+            .map(|i| i.into_value())
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Params::Positional(values))
+    }
+}
+
+impl<T: IntoValue> IntoParams for Vec<(String, T)> {
+    fn into_params(self) -> Result<Params> {
+        let values = self
+            .into_iter()
+            .map(|(k, v)| Ok((k, v.into_value()?)))
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Params::Named(values))
+    }
+}
+
+impl<T: IntoValue, const N: usize> IntoParams for [T; N] {
+    fn into_params(self) -> Result<Params> {
+        self.into_iter().collect::<Vec<_>>().into_params()
+    }
+}
+
+impl<T: IntoValue + Clone, const N: usize> IntoParams for &[T; N] {
+    fn into_params(self) -> Result<Params> {
+        self.iter().cloned().collect::<Vec<_>>().into_params()
+    }
+}
+
+// TODO: Should we rename this to `ToSql` which makes less sense but
+// matches the error variant we have in `Error`. Or should we change the
+// error variant to match this breaking the few people that currently use
+// this error variant.
+pub trait IntoValue {
+    fn into_value(self) -> Result<Value>;
+}
+
+impl<T> IntoValue for T
+where
+    T: TryInto<Value>,
+    T::Error: Into<crate::BoxError>,
+{
+    fn into_value(self) -> Result<Value> {
+        self.try_into()
+            .map_err(|e| Error::ToSqlConversionFailure(e.into()))
     }
 }
 
@@ -356,4 +360,49 @@ impl TryFrom<libsql_replication::pb::Value> for Value {
     fn try_from(value: libsql_replication::pb::Value) -> Result<Self> {
         bincode::deserialize(&value.data[..]).map_err(Error::from)
     }
+}
+
+// TODO(lucio): Rework macros to take advantage of new traits
+#[macro_export]
+macro_rules! params {
+    () => {
+        $crate::Params::None
+    };
+    ($($value:expr),* $(,)?) => {
+        $crate::params::Params::Positional(vec![$($value.into()),*])
+    };
+}
+
+#[macro_export]
+macro_rules! try_params {
+    () => {
+        Ok($crate::Params::None)
+    };
+    ($($value:expr),* $(,)?) => {
+        || -> $crate::Result<$crate::params::Params> {
+            Ok($crate::params::Params::Positional(vec![$($value.try_into()?),*]))
+        }()
+    };
+}
+
+#[macro_export]
+macro_rules! named_params {
+    () => {
+        $crate::Params::None
+    };
+    ($($param_name:literal: $value:expr),* $(,)?) => {
+        $crate::params::Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::from($value))),*])
+    };
+}
+
+#[macro_export]
+macro_rules! try_named_params {
+    () => {
+        Ok($crate::Params::None)
+    };
+    ($($param_name:literal: $value:expr),* $(,)?) => {
+        || -> $crate::Result<$crate::Params> {
+            Ok($crate::params::Params::Named(vec![$(($param_name.to_string(), $crate::params::Value::try_from($value)?)),*]))
+        }()
+    };
 }

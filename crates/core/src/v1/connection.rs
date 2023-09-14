@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
 use crate::v1::{
-    Database, Error, Params, Result, Rows, RowsFuture, Statement, Transaction, TransactionBehavior,
+    params::Params, Database, Error, Result, Rows, RowsFuture, Statement, Transaction,
+    TransactionBehavior,
 };
 
 use libsql_sys::ffi;

@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, BatchSize, Criterion, Throughput};
-use libsql::{Database, Params};
+use libsql::Database;
 use pprof::criterion::{Output, PProfProfiler};
 use tokio::runtime;
 
@@ -57,7 +57,7 @@ fn bench(c: &mut Criterion) {
         b.to_async(&rt).iter_batched(
             || block_on(conn.prepare("SELECT 1")).unwrap(),
             |mut stmt| async move {
-                let mut rows = stmt.query(&Params::None).await.unwrap();
+                let mut rows = stmt.query(()).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
                 assert_eq!(row.get::<i32>(0).unwrap(), 1);
                 stmt.reset();
@@ -77,7 +77,7 @@ fn bench(c: &mut Criterion) {
         b.to_async(&rt).iter_batched(
             || block_on(conn.prepare("SELECT * FROM users LIMIT 1")).unwrap(),
             |mut stmt| async move {
-                let mut rows = stmt.query(&Params::None).await.unwrap();
+                let mut rows = stmt.query(()).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
                 assert_eq!(row.get::<i32>(0).unwrap(), 1);
                 stmt.reset();
@@ -90,7 +90,7 @@ fn bench(c: &mut Criterion) {
         b.to_async(&rt).iter_batched(
             || block_on(conn.prepare("SELECT * FROM users LIMIT 100")).unwrap(),
             |mut stmt| async move {
-                let mut rows = stmt.query(&Params::None).await.unwrap();
+                let mut rows = stmt.query(()).await.unwrap();
                 let row = rows.next().unwrap().unwrap();
                 assert_eq!(row.get::<i32>(0).unwrap(), 1);
                 stmt.reset();

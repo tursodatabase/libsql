@@ -26,9 +26,7 @@ async fn main() {
         .await
         .unwrap();
 
-    stmt.execute(&libsql::params!["foo@example.com"])
-        .await
-        .unwrap();
+    stmt.execute(["foo@example.com"]).await.unwrap();
 
     db.sync().await.unwrap();
 
@@ -37,10 +35,7 @@ async fn main() {
         .await
         .unwrap();
 
-    let mut rows = stmt
-        .query(&libsql::params!["foo@example.com"])
-        .await
-        .unwrap();
+    let mut rows = stmt.query(["foo@example.com"]).await.unwrap();
 
     let row = rows.next().unwrap().unwrap();
 

@@ -1,4 +1,4 @@
-use crate::v1::{Connection, Params, Statement, Value};
+use crate::v1::{params::Params, Connection, Statement, Value};
 use crate::{errors, Error, Result};
 use libsql_sys::ValueType;
 

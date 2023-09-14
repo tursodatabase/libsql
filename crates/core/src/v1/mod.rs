@@ -17,7 +17,6 @@ pub use connection::Connection;
 pub use database::Database;
 #[cfg(feature = "replication")]
 pub use database::Opts;
-pub use params::Params;
 pub use params::{params_from_iter, Value, ValueRef};
 pub use rows::Row;
 pub use rows::Rows;
