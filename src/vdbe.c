@@ -5775,8 +5775,13 @@ case OP_RowCell: {
 ** the "primary" delete.  The others are all on OPFLAG_FORDELETE
 ** cursors or else are marked with the AUXDELETE flag.
 **
-** If the OPFLAG_NCHANGE flag of P2 (NB: P2 not P5) is set, then the row
-** change count is incremented (otherwise not).
+** If the OPFLAG_NCHANGE (0x01) flag of P2 (NB: P2 not P5) is set, then
+** the row change count is incremented (otherwise not).
+**
+** If the OPFLAG_ISNOOP (0x40) flag of P2 (not P5!) is set, then the
+** pre-update-hook for deletes is run, but the btree is otherwise unchanged.
+** This happens when the OP_Delete is to be shortly followed by an OP_Insert
+** with the same key, causing the btree entry to be overwritten.
 **
 ** P1 must not be pseudo-table.  It has to be a real table with
 ** multiple rows.
