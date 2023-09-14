@@ -129,22 +129,16 @@ public class TesterFts5 {
     do_execsql_test(db, sql, "[]");
   }
 
-  /* Test of the Fts5ExtensionApi.xRowid() API. */
-  private static void test_rowid(){
-
-    /* Open db and populate an fts5 table */
-    sqlite3 db = createNewDb();
-    do_execsql_test(db, 
-      "CREATE VIRTUAL TABLE ft USING fts5(a, b);" +
-      "INSERT INTO ft(rowid, a, b) VALUES(1, 'x y z', 'x y z');" +
-      "INSERT INTO ft(rowid, a, b) VALUES(2, 'x y z', 'x y z');" +
-      "INSERT INTO ft(rowid, a, b) VALUES(-9223372036854775808, 'x', 'x');" +
-      "INSERT INTO ft(rowid, a, b) VALUES(0, 'x', 'x');" +
-      "INSERT INTO ft(rowid, a, b) VALUES(9223372036854775807, 'x', 'x');" +
-      "INSERT INTO ft(rowid, a, b) VALUES(3, 'x y z', 'x y z');"
-    );
-
-    /* Create a user-defined-function fts5_rowid() that uses xRowid() */
+  /*
+  ** Create the following custom SQL functions:
+  **
+  **     fts5_rowid()
+  **     fts5_columncount()
+  */
+  private static void create_test_functions(sqlite3 db){
+    /* 
+    ** A user-defined-function fts5_rowid() that uses xRowid()
+    */
     fts5_extension_function fts5_rowid = new fts5_extension_function(){
       @Override public void call(
           Fts5ExtensionApi ext, 
@@ -157,7 +151,126 @@ public class TesterFts5 {
       }
       public void xDestroy(){ }
     };
-    fts5_api.getInstanceForDb(db).xCreateFunction("fts5_rowid", fts5_rowid);
+
+    /* 
+    ** fts5_columncount() - xColumnCount() 
+    */
+    fts5_extension_function fts5_columncount = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        int nCol = ext.xColumnCount(fCx);
+        sqlite3_result_int(pCx, nCol);
+      }
+      public void xDestroy(){ }
+    };
+
+    /* 
+    ** fts5_columnsize() - xColumnSize() 
+    */
+    fts5_extension_function fts5_columnsize = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=1 ){
+          throw new RuntimeException("fts5_columncount: wrong number of args");
+        }
+        int iCol = sqlite3_value_int(argv[0]);
+
+        OutputPointer.Int32 piSz = new OutputPointer.Int32();
+        int rc = ext.xColumnSize(fCx, iCol, piSz);
+        if( rc!=SQLITE_OK ){
+          throw new RuntimeException( sqlite3_errstr(rc) );
+        }
+        sqlite3_result_int(pCx, piSz.get());
+      }
+      public void xDestroy(){ }
+    };
+
+    /* 
+    ** fts5_columntext() - xColumnText() 
+    */
+    fts5_extension_function fts5_columntext = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=1 ){
+          throw new RuntimeException("fts5_columntext: wrong number of args");
+        }
+        int iCol = sqlite3_value_int(argv[0]);
+
+        OutputPointer.String pzText = new OutputPointer.String();
+        int rc = ext.xColumnText(fCx, iCol, pzText);
+        if( rc!=SQLITE_OK ){
+          throw new RuntimeException( sqlite3_errstr(rc) );
+        }
+        sqlite3_result_text16(pCx, pzText.get());
+      }
+      public void xDestroy(){ }
+    };
+
+    /* 
+    ** fts5_columntotalsize() - xColumnTotalSize() 
+    */
+    fts5_extension_function fts5_columntsize = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length!=1 ){
+          throw new RuntimeException(
+              "fts5_columntotalsize: wrong number of args"
+          );
+        }
+        int iCol = sqlite3_value_int(argv[0]);
+
+        OutputPointer.Int64 piSz = new OutputPointer.Int64();
+        int rc = ext.xColumnTotalSize(fCx, iCol, piSz);
+        if( rc!=SQLITE_OK ){
+          throw new RuntimeException( sqlite3_errstr(rc) );
+        }
+        sqlite3_result_int64(pCx, piSz.get());
+      }
+      public void xDestroy(){ }
+    };
+
+    fts5_api api = fts5_api.getInstanceForDb(db);
+    api.xCreateFunction("fts5_rowid", fts5_rowid);
+    api.xCreateFunction("fts5_columncount", fts5_columncount);
+    api.xCreateFunction("fts5_columnsize", fts5_columnsize);
+    api.xCreateFunction("fts5_columntext", fts5_columntext);
+    api.xCreateFunction("fts5_columntotalsize", fts5_columntsize);
+  }
+
+  /* 
+  ** Test of various Fts5ExtensionApi methods 
+  */
+  private static void test2(){
+
+    /* Open db and populate an fts5 table */
+    sqlite3 db = createNewDb();
+    do_execsql_test(db, 
+      "CREATE VIRTUAL TABLE ft USING fts5(a, b);" +
+      "INSERT INTO ft(rowid, a, b) VALUES(-9223372036854775808, 'x', 'x');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(0, 'x', 'x');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(1, 'x y z', 'x y z');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(2, 'x y z', 'x z');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(3, 'x y z', 'x y z');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(9223372036854775807, 'x', 'x');"
+    );
+
+    create_test_functions(db);
 
     /* Test that fts5_rowid() seems to work */
     do_execsql_test(db, 
@@ -165,12 +278,80 @@ public class TesterFts5 {
       "[1, 1, 1, 1, 1, 1]"
     );
 
+    /* Test fts5_columncount() */
+    do_execsql_test(db, 
+      "SELECT fts5_columncount(ft) FROM ft('x')",
+      "[2, 2, 2, 2, 2, 2]"
+    );
+
+    /* Test fts5_columnsize() */
+    do_execsql_test(db, 
+      "SELECT fts5_columnsize(ft, 0) FROM ft('x') ORDER BY rowid",
+      "[1, 1, 3, 3, 3, 1]"
+    );
+    do_execsql_test(db, 
+      "SELECT fts5_columnsize(ft, 1) FROM ft('x') ORDER BY rowid",
+      "[1, 1, 3, 2, 3, 1]"
+    );
+    do_execsql_test(db, 
+      "SELECT fts5_columnsize(ft, -1) FROM ft('x') ORDER BY rowid",
+      "[2, 2, 6, 5, 6, 2]"
+    );
+
+    /* Test that xColumnSize() returns SQLITE_RANGE if the column number
+    ** is out-of range */
+    try {
+      do_execsql_test(db, 
+        "SELECT fts5_columnsize(ft, 2) FROM ft('x') ORDER BY rowid"
+      );
+    } catch( RuntimeException e ){
+      affirm( e.getMessage().matches(".*column index out of range") );
+    }
+
+    /* Test fts5_columntext() */
+    do_execsql_test(db, 
+      "SELECT fts5_columntext(ft, 0) FROM ft('x') ORDER BY rowid",
+      "[x, x, x y z, x y z, x y z, x]"
+    );
+    do_execsql_test(db, 
+      "SELECT fts5_columntext(ft, 1) FROM ft('x') ORDER BY rowid",
+      "[x, x, x y z, x z, x y z, x]"
+    );
+    do_execsql_test(db, 
+      "SELECT fts5_columntext(ft, 2) FROM ft('x') ORDER BY rowid",
+      "[null, null, null, null, null, null]"
+    );
+
+    /* Test fts5_columntotalsize() */
+    do_execsql_test(db, 
+      "SELECT fts5_columntotalsize(ft, 0) FROM ft('x') ORDER BY rowid",
+      "[12, 12, 12, 12, 12, 12]"
+    );
+    do_execsql_test(db, 
+      "SELECT fts5_columntotalsize(ft, 1) FROM ft('x') ORDER BY rowid",
+      "[11, 11, 11, 11, 11, 11]"
+    );
+    do_execsql_test(db, 
+      "SELECT fts5_columntotalsize(ft, -1) FROM ft('x') ORDER BY rowid",
+      "[23, 23, 23, 23, 23, 23]"
+    );
+
+    /* Test that xColumnTotalSize() returns SQLITE_RANGE if the column 
+    ** number is out-of range */
+    try {
+      do_execsql_test(db, 
+        "SELECT fts5_columntotalsize(ft, 2) FROM ft('x') ORDER BY rowid"
+      );
+    } catch( RuntimeException e ){
+      affirm( e.getMessage().matches(".*column index out of range") );
+    }
+
     sqlite3_close_v2(db);
   }
 
   private static synchronized void runTests(){
     test1();
-    test_rowid();
+    test2();
   }
 
   public TesterFts5(){
