@@ -1,12 +1,48 @@
 
 set dir [pwd]
-set testdir [file dirname $argv0]
+set testdir [file normalize [file dirname $argv0]]
 set saved $argv
 set argv [list]
 source [file join $testdir testrunner_data.tcl]
 source [file join $testdir permutations.test]
 set argv $saved
 cd $dir
+
+# This script requires an interpreter that supports [package require sqlite3]
+# to run. If this is not such an intepreter, see if there is a [testfixture]
+# in the current directory. If so, run the command using it. If not, 
+# recommend that the user build one.
+#
+proc find_interpreter {} {
+  set interpreter [file tail [info nameofexec]]
+  set rc [catch { package require sqlite3 }]
+  if {$rc} {
+    if { [string match -nocase testfixture* $interpreter]==0
+      && [file executable ./testfixture]
+    } {
+      puts "Failed to find tcl package sqlite3. Restarting with ./testfixture.."
+      set status [catch { 
+          exec ./testfixture [info script] {*}$::argv >@ stdout 
+      } msg]
+      exit $status
+    }
+  }
+  if {$rc} {
+    puts stderr "Failed to find tcl package sqlite3"
+    puts stderr "Run \"make testfixture\" and then try again..."
+    exit 1
+  }
+}
+find_interpreter
+
+# Usually this script is run by [testfixture]. But it can also be run
+# by a regular [tclsh]. For these cases, emulate the [clock_milliseconds] 
+# command.
+if {[info commands clock_milliseconds]==""} {
+  proc clock_milliseconds {} {
+    clock milliseconds
+  }
+}
 
 #-------------------------------------------------------------------------
 # Usage:
@@ -74,16 +110,20 @@ proc guess_number_of_cores {} {
   if {[catch {number_of_cores} ret]} {
     set ret 4
   
-    if {$::tcl_platform(os)=="Darwin"} {
-      set cmd "sysctl -n hw.logicalcpu"
+    if {$::tcl_platform(platform)=="windows"} {
+      catch { set ret $::env(NUMBER_OF_PROCESSORS) }
     } else {
-      set cmd "nproc"
-    }
-    catch {
-      set fd [open "|$cmd" r]
-      set ret [gets $fd]
-      close $fd
-      set ret [expr $ret]
+      if {$::tcl_platform(os)=="Darwin"} {
+        set cmd "sysctl -n hw.logicalcpu"
+      } else {
+        set cmd "nproc"
+      }
+      catch {
+        set fd [open "|$cmd" r]
+        set ret [gets $fd]
+        close $fd
+        set ret [expr $ret]
+      }
     }
   }
   return $ret
@@ -152,10 +192,8 @@ set TRG(schema) {
     state TEXT CHECK( state IN ('', 'ready', 'running', 'done', 'failed') ),
     time INTEGER,                 -- Time in ms
     output TEXT,                  -- full output of test script
-    priority AS ((config='make') + ((config='build')*2) + (slow*4)),
-    jobtype AS (
-      CASE WHEN config IN ('build', 'make') THEN config ELSE 'script' END
-    ),
+    priority INTEGER,
+    jobtype TEXT CHECK( jobtype IN ('script', 'build', 'make') ),
     PRIMARY KEY(build, config, filename)
   );
 
@@ -181,10 +219,11 @@ if {[llength $argv]==2
   set script [file normalize [lindex $argv 1]]
   set ::argv [list]
 
+  set testdir [file dirname $argv0]
+  source $::testdir/tester.tcl
+
   if {$permutation=="full"} {
 
-    set testdir [file dirname $argv0]
-    source $::testdir/tester.tcl
     unset -nocomplain ::G(isquick)
     reset_db
 
@@ -242,6 +281,22 @@ if {([llength $argv]==2 || [llength $argv]==1)
 #--------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------
+# Check if this is the "script" command:
+#
+if {[string compare -nocase script [lindex $argv 0]]==0} {
+  if {[llength $argv]!=2 && !([llength $argv]==3&&[lindex $argv 1]=="-msvc")} {
+    usage
+  }
+
+  set bMsvc [expr ([llength $argv]==3)]
+  set config [lindex $argv [expr [llength $argv]-1]]
+
+  puts [trd_buildscript $config [file dirname $testdir] $bMsvc]
+  exit
+}
+  
+
+#--------------------------------------------------------------------------
 # Check if this is the "status" command:
 #
 if {[llength $argv]==1 
@@ -289,9 +344,13 @@ if {[llength $argv]==1
 
   set cmdline [mydb one { SELECT value FROM config WHERE name='cmdline' }]
   set nJob [mydb one { SELECT value FROM config WHERE name='njob' }]
-  set tm [expr [clock_milliseconds] - [mydb one {
-    SELECT value FROM config WHERE name='start'
-  }]]
+
+  set now [clock_milliseconds]
+  set tm [mydb one {
+    SELECT 
+      COALESCE((SELECT value FROM config WHERE name='end'), $now) -
+      (SELECT value FROM config WHERE name='start')
+  }]
 
   set total 0
   foreach s {"" ready running done failed} { set S($s) 0 }
@@ -315,7 +374,6 @@ if {[llength $argv]==1
   set srcdir [file dirname [file dirname $TRG(info_script)]]
   if {$S(running)>0} {
     puts "Running: "
-    set now [clock_milliseconds]
     mydb eval {
       SELECT build, config, filename, time FROM script WHERE state='running'
       ORDER BY time 
@@ -411,8 +469,6 @@ proc dirs_allocDir {} {
   return $iRet
 }
 
-set testdir [file dirname $argv0]
-
 # Check that directory $dir exists. If it does not, create it. If 
 # it does, delete its contents.
 #
@@ -449,7 +505,18 @@ proc testset_patternlist {patternlist} {
 
   set first [lindex $patternlist 0]
 
-  if {$first=="release"} {
+  if {$first=="sdevtest" || $first=="mdevtest"} {
+    set CONFIGS(sdevtest) {All-Debug All-Sanitize}
+    set CONFIGS(mdevtest) {All-Debug All-O0}
+
+    set patternlist [lrange $patternlist 1 end]
+
+    foreach b $CONFIGS($first) {
+      lappend testset [list $b build testfixture]
+      lappend testset [list $b make fuzztest]
+      testset_append testset $b veryquick $patternlist
+    }
+  } elseif {$first=="release"} {
     set platform $::TRG(platform)
 
     set patternlist [lrange $patternlist 1 end]
@@ -634,9 +701,20 @@ proc make_new_testset {} {
         set state ""
       }
 
+      set priority [expr {$slow*2}]
+      if {$c=="make"} { incr priority 3 }
+      if {$c=="build"} { incr priority 1 }
+
+      if {$c=="make" || $c=="build"} {
+        set jobtype $c
+      } else {
+        set jobtype "script"
+      }
+
       trdb eval { 
-        INSERT INTO script(build, config, filename, slow, state) 
-            VALUES ($b, $c, $s, $slow, $state) 
+        INSERT INTO script
+                   (build, config, filename, slow, state, priority, jobtype) 
+            VALUES ($b, $c, $s, $slow, $state, $priority, $jobtype) 
       }
     }
   }
@@ -721,12 +799,7 @@ proc launch_another_job {iJob} {
     if {$b=="Zipvfs"} {
       set script [zipvfs_testrunner_script]
     } else {
-      set     cmd [info nameofexec]
-      lappend cmd [file join $testdir releasetest_data.tcl]
-      lappend cmd trscript
-      if {$TRG(platform)=="win"} { lappend cmd -msvc }
-      lappend cmd $b $srcdir
-      set script [exec {*}$cmd]
+      set script [trd_buildscript $b $srcdir [expr {$TRG(platform)=="win"}]]
     }
 
     set fd [open [file join $builddir $TRG(make)] w]
@@ -865,6 +938,8 @@ proc run_testset {} {
   one_line_report
 
   r_write_db {
+    set tm [clock_milliseconds]
+    trdb eval { REPLACE INTO config VALUES('end', $tm ); }
     set nErr [trdb one {SELECT count(*) FROM script WHERE state='failed'}]
     if {$nErr>0} {
       puts "$nErr failures:"

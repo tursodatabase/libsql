@@ -1,0 +1,271 @@
+# 2014 Dec 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests for the content= and content_rowid= options.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5contentless
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+# Check that it is not possible to specify "contentless_delete=1" for 
+# anything other than a contentless table.
+#
+set res(0) {0 {}}
+set res(1) {1 {contentless_delete=1 requires a contentless table}}
+foreach {tn sql bError} {
+  1 "(a, b, contentless_delete=1)"              1
+  2 "(a, b, contentless_delete=1, content=abc)" 1
+  3 "(a, b, contentless_delete=1, content=)"    0
+  4 "(content=, contentless_delete=1, a)"       0
+  5 "(content='', contentless_delete=1, hello)" 0
+} {
+  execsql { BEGIN }
+  do_catchsql_test 1.$tn "CREATE VIRTUAL TABLE t1 USING fts5 $sql" $res($bError)
+  execsql { ROLLBACK }
+}
+
+# Check that it is not possible to specify "contentless_delete=1" 
+# along with columnsize=1. 
+#
+set res(0) {0 {}}
+set res(1) {1 {contentless_delete=1 is incompatible with columnsize=0}}
+foreach {tn sql bError} {
+  2 "(a, b, content='', contentless_delete=1, columnsize=0)" 1 
+} {
+  execsql { BEGIN }
+  do_catchsql_test 1.$tn "CREATE VIRTUAL TABLE t1 USING fts5 $sql" $res($bError)
+  execsql { ROLLBACK }
+}
+
+# Check that if contentless_delete=1 is specified, then the "origin" 
+# column is added to the %_docsize table.
+reset_db
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(c, content='');
+  CREATE VIRTUAL TABLE x2 USING fts5(c, content='', contentless_delete=1);
+}
+do_execsql_test 3.1 {
+  SELECT sql FROM sqlite_schema WHERE name IN ('x1_docsize', 'x2_docsize');
+} {
+  {CREATE TABLE 'x1_docsize'(id INTEGER PRIMARY KEY, sz BLOB)} 
+  {CREATE TABLE 'x2_docsize'(id INTEGER PRIMARY KEY, sz BLOB, origin INTEGER)}
+}
+
+do_execsql_test 3.2.1 {
+  SELECT hex(block) FROM x1_data WHERE id=10
+} {00000000000000}
+do_execsql_test 3.2.2 {
+  SELECT hex(block) FROM x2_data WHERE id=10
+} {00000000FF000001000000}
+
+do_execsql_test 3.3 {
+  INSERT INTO x2 VALUES('first text');
+  INSERT INTO x2 VALUES('second text');
+}
+do_execsql_test 3.4 {
+  SELECT id, origin FROM x2_docsize
+} {1 1 2 2}
+do_execsql_test 3.5 {
+  SELECT level, segment, loc1, loc2 FROM fts5_structure(
+    (SELECT block FROM x2_data WHERE id=10)
+  )
+} {
+  0 0   1 1
+  0 1   2 2
+}
+do_execsql_test 3.6 {
+  INSERT INTO x2(x2) VALUES('optimize');
+}
+do_execsql_test 3.7 {
+  SELECT level, segment, loc1, loc2 FROM fts5_structure(
+    (SELECT block FROM x2_data WHERE id=10)
+  )
+} {
+  1 0   1 2
+}
+
+do_execsql_test 3.8 {
+  DELETE FROM x2 WHERE rowid=2;
+}
+
+do_execsql_test 3.9 {
+  SELECT rowid FROM x2('text')
+} {1}
+
+#--------------------------------------------------------------------------
+reset_db
+proc document {n} {
+  set vocab [list A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]
+  set ret [list]
+  for {set ii 0} {$ii < $n} {incr ii} {
+    lappend ret [lindex $vocab [expr int(rand()*[llength $vocab])]]
+  }
+  set ret
+}
+
+set nRow 1000
+
+do_execsql_test 4.0 {
+  CREATE TABLE t1(x);
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 100);
+}
+do_test 4.1 {
+  for {set ii 0} {$ii < $nRow} {incr ii} {
+    set doc [document 6]
+    execsql {
+      INSERT INTO t1 VALUES($doc);
+      INSERT INTO ft VALUES($doc);
+    }
+  }
+} {}
+
+foreach v {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z} {
+  set L1 [execsql {SELECT rowid FROM t1 WHERE x LIKE '%'||$v||'%'}]
+  set L2 [execsql {SELECT rowid FROM ft($v)}]
+  do_test 4.2.$v { set L1 } $L2
+}
+
+do_test 4.3 {
+  for {set ii 1} {$ii < $nRow} {incr ii 2} { 
+    execsql {
+       DELETE FROM ft WHERE rowid=$ii;
+       DELETE FROM t1 WHERE rowid=$ii;
+    }
+  }
+} {}
+
+foreach v {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z} {
+  set L1 [execsql {SELECT rowid FROM t1 WHERE x LIKE '%'||$v||'%'}]
+  set L2 [execsql {SELECT rowid FROM ft($v)}]
+  do_test 4.4.$v { set L1 } $L2
+}
+
+do_execsql_test 4.5 {
+  INSERT INTO ft(ft) VALUES('optimize');
+} {}
+
+foreach v {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z} {
+  set L1 [execsql {SELECT rowid FROM t1 WHERE x LIKE '%'||$v||'%'}]
+  set L2 [execsql {SELECT rowid FROM ft($v)}]
+  do_test 4.6.$v { set L1 } $L2
+}
+
+#execsql_pp { SELECT fts5_decode(id, block) FROM ft_data }
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 5.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft(rowid, x) VALUES(1, 'one two three');
+  INSERT INTO ft(rowid, x) VALUES(2, 'one two four');
+  INSERT INTO ft(rowid, x) VALUES(3, 'one two five');
+  INSERT INTO ft(rowid, x) VALUES(4, 'one two seven');
+  INSERT INTO ft(rowid, x) VALUES(5, 'one two eight');
+}
+
+do_execsql_test 5.1 {
+  DELETE FROM ft WHERE rowid=2
+}
+
+do_execsql_test 5.2 {
+  SELECT rowid FROM ft
+} {1 3 4 5}
+
+do_catchsql_test 5.3 {
+  UPDATE ft SET x='four six' WHERE rowid=3
+} {0 {}}
+
+do_execsql_test 5.4 {
+  SELECT rowid FROM ft('one');
+} {1 4 5}
+
+do_execsql_test 5.5 {
+  REPLACE INTO ft(rowid, x) VALUES(3, 'four six');
+  SELECT rowid FROM ft('one');
+} {1 4 5}
+
+do_execsql_test 5.6 {
+  REPLACE INTO ft(rowid, x) VALUES(6, 'one two eleven');
+  SELECT rowid FROM ft('one');
+} {1 4 5 6}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 6.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft(rowid, x) VALUES(1, 'one two three');
+  INSERT INTO ft(rowid, x) VALUES(2, 'one two four');
+}
+
+do_test 6.1 {
+  db eval { SELECT rowid FROM ft('one two') } {
+    if {$rowid==1} {
+      db eval { INSERT INTO ft(rowid, x) VALUES(3, 'one two four') }
+    }
+  }
+} {}
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 7.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+}
+
+set lRowid [list -450 0 1 2 42]
+
+do_test 7.1 {
+  execsql BEGIN
+  foreach r $lRowid {
+    execsql { INSERT INTO ft(rowid, x) VALUES($r, 'one one one'); }
+  }
+  execsql COMMIT
+} {}
+
+do_test 7.2 {
+  execsql BEGIN
+  foreach r $lRowid {
+    execsql { REPLACE INTO ft(rowid, x) VALUES($r, 'two two two'); }
+  }
+  execsql COMMIT
+} {}
+
+do_execsql_test 7.3 { SELECT rowid FROM ft('one'); } {}
+do_execsql_test 7.4 { SELECT rowid FROM ft('two'); } $lRowid
+
+#-------------------------------------------------------------------------
+reset_db
+do_execsql_test 8.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft VALUES('hello world');
+  INSERT INTO ft VALUES('one two three');
+}
+
+do_catchsql_test 8.1 {
+  INSERT INTO ft(ft, rowid, x) VALUES('delete', 1, 'hello world');
+} {1 {'delete' may not be used with a contentless_delete=1 table}}
+
+do_execsql_test 8.2 {
+  BEGIN;
+    INSERT INTO ft(rowid, x) VALUES(3, 'four four four');
+    DELETE FROM ft WHERE rowid=3;
+  COMMIT;
+  SELECT rowid FROM ft('four');
+} {}
+
+finish_test
+

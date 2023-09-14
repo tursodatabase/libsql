@@ -210,5 +210,68 @@ foreach {id schema} {
     18  28  38  48  -   -   - 
     19  -   29  39  -   49  - 
   }
+
+  # Verified by PG-14
+  do_execsql_test joinA-$id.201 {
+    SELECT a,b,c,d,t2.e,f,t3.e,t1.a
+      FROM t1
+           FULL JOIN t2 USING(c,d)
+           FULL JOIN t3 USING(a,b,f)
+           FULL JOIN t4 USING(a,c,d,f)
+     WHERE t1.a!=0
+    ORDER BY 1 nulls first, 3 nulls first;
+  } {
+    11  21  31  41  -   -   -  11
+    12  22  32  42  -   -   -  12
+    15  25  35  45  -   -   -  15
+    18  28  38  48  -   -   -  18
+  }
+
+  # Verified by PG-14
+  do_execsql_test joinA-$id.202 {
+    SELECT a,b,c,d,t2.e,f,t3.e,t3.a
+      FROM t1
+           FULL JOIN t2 USING(c,d)
+           FULL JOIN t3 USING(a,b,f)
+           FULL JOIN t4 USING(a,c,d,f)
+     WHERE t3.a!=0
+    ORDER BY 1 nulls first, 3 nulls first;
+  } {
+    14  24  -   -   -   44  34  14
+    15  25  -   -   -   45  35  15
+    16  26  -   -   -   46  36  16
+  }
+
+  # Verified by PG-14
+  do_execsql_test joinA-$id.203 {
+    SELECT a,b,c,d,t2.e,f,t3.e,t4.a
+      FROM t1
+           FULL JOIN t2 USING(c,d)
+           FULL JOIN t3 USING(a,b,f)
+           FULL JOIN t4 USING(a,c,d,f)
+     WHERE t4.a!=0
+    ORDER BY 1 nulls first, 3 nulls first;
+  } {
+    11  -   21  31  -   41  -  11
+    13  -   23  33  -   43  -  13
+    16  -   26  36  -   46  -  16
+    19  -   29  39  -   49  -  19
+  }
+
+  # Verified by PG-14
+  do_execsql_test joinA-$id.204 {
+    SELECT a,b,c,d,t2.e,f,t3.e
+      FROM t1
+           FULL JOIN t2 USING(c,d)
+           FULL JOIN t3 USING(a,b,f)
+           FULL JOIN t4 USING(a,c,d,f)
+     WHERE t2.e!=0
+    ORDER BY 1 nulls first, 3 nulls first;
+  } {
+    -   -   12  22  32  42  - 
+    -   -   13  23  33  43  - 
+    -   -   15  25  35  45  - 
+    -   -   17  27  37  47  - 
+  }
 }
 finish_test

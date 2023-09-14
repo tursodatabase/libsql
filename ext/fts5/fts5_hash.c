@@ -475,7 +475,6 @@ static int fts5HashEntrySort(
     pList = fts5HashEntryMerge(pList, ap[i]);
   }
 
-  pHash->nEntry = 0;
   sqlite3_free(ap);
   *ppSorted = pList;
   return SQLITE_OK;
@@ -527,6 +526,28 @@ int sqlite3Fts5HashScanInit(
   const char *pTerm, int nTerm    /* Query prefix */
 ){
   return fts5HashEntrySort(p, pTerm, nTerm, &p->pScan);
+}
+
+#ifdef SQLITE_DEBUG
+static int fts5HashCount(Fts5Hash *pHash){
+  int nEntry = 0;
+  int ii;
+  for(ii=0; ii<pHash->nSlot; ii++){
+    Fts5HashEntry *p = 0;
+    for(p=pHash->aSlot[ii]; p; p=p->pHashNext){
+      nEntry++;
+    }
+  }
+  return nEntry;
+}
+#endif
+
+/*
+** Return true if the hash table is empty, false otherwise.
+*/
+int sqlite3Fts5HashIsEmpty(Fts5Hash *pHash){
+  assert( pHash->nEntry==fts5HashCount(pHash) );
+  return pHash->nEntry==0;
 }
 
 void sqlite3Fts5HashScanNext(Fts5Hash *p){

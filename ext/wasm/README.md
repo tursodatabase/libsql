@@ -82,7 +82,7 @@ features in the apps which use them.
 
 # Testing on a remote machine that is accessed via SSH
 
-*NB: The following are developer notes, last validated on 2022-08-18*
+*NB: The following are developer notes, last validated on 2023-07-19*
 
   *  Remote: Install git, emsdk, and althttpd
      *  Use a [version of althttpd][althttpd] from
@@ -93,13 +93,14 @@ features in the apps which use them.
   *  Local:  `ssh -L 8180:localhost:8080 remote`
   *  Local:  Point your web-browser at http://localhost:8180/index.html
 
-In order to enable [SharedArrayBuffers](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer),
-the web-browser requires that the two extra Cross-Origin lines be present
-in HTTP reply headers and that the request must come from "localhost".
-Since the web-server is on a different machine from
-the web-broser, the localhost requirement means that the connection must be tunneled
-using SSH.
+In order to enable [SharedArrayBuffer][], the web-browser requires
+that the two extra Cross-Origin lines be present in HTTP reply headers
+and that the request must come from "localhost" (_or_ over an SSL
+connection).  Since the web-server is on a different machine from the
+web-broser, the localhost requirement means that the connection must
+be tunneled using SSH.
 
 
 [emscripten]: https://emscripten.org
 [althttpd]: https://sqlite.org/althttpd
+[SharedArrayBuffer]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer

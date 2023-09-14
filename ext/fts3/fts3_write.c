@@ -4347,6 +4347,7 @@ static int fts3IncrmergeLoad(
 
       for(i=nHeight; i>=0 && rc==SQLITE_OK; i--){
         NodeReader reader;
+        memset(&reader, 0, sizeof(reader));
         pNode = &pWriter->aNodeWriter[i];
 
         if( pNode->block.a){

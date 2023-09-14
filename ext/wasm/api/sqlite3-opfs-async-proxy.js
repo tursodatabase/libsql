@@ -35,6 +35,9 @@
 
   https://developer.chrome.com/blog/sync-methods-for-accesshandles/
 
+  Firefox v111 and Safari 16.4, both released in March 2023, also
+  include this.
+
   We cannot change to the sync forms at this point without breaking
   clients who use Chrome v104-ish or higher. truncate(), getSize(),
   flush(), and close() are now (as of v108) synchronous. Calling them
@@ -818,9 +821,24 @@ const installAsyncProxy = function(self){
     }
     while(!flagAsyncShutdown){
       try {
-        if('timed-out'===Atomics.wait(
+        if('not-equal'!==Atomics.wait(
           state.sabOPView, state.opIds.whichOp, 0, state.asyncIdleWaitTime
         )){
+          /* Maintenance note: we compare against 'not-equal' because
+
+             https://github.com/tomayac/sqlite-wasm/issues/12
+
+             is reporting that this occassionally, under high loads,
+             returns 'ok', which leads to the whichOp being 0 (which
+             isn't a valid operation ID and leads to an exception,
+             along with a corresponding ugly console log
+             message). Unfortunately, the conditions for that cannot
+             be reliably reproduced. The only place in our code which
+             writes a 0 to the state.opIds.whichOp SharedArrayBuffer
+             index is a few lines down from here, and that instance
+             is required in order for clear communication between
+             the sync half of this proxy and this half.
+          */
           await releaseImplicitLocks();
           continue;
         }

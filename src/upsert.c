@@ -178,7 +178,7 @@ int sqlite3UpsertAnalyzeTarget(
           pExpr = &sCol[0];
         }
         for(jj=0; jj<nn; jj++){
-          if( sqlite3ExprCompare(pParse,pTarget->a[jj].pExpr,pExpr,iCursor)<2 ){
+          if( sqlite3ExprCompare(0,pTarget->a[jj].pExpr,pExpr,iCursor)<2 ){
             break;  /* Column ii of the index matches column jj of target */
           }
         }

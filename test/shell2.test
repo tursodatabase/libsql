@@ -262,5 +262,14 @@ do_test shell2-1.4.11 {
  SELECT count(*) FROM t;}]]
 } {0 1}
 
+# Bug from forum post 7cbe081746dd3803
+# Keywords as column names were producing an error message.
+do_test shell2-1.4.12 {
+  set res [catchcmd :memory: [string trim {
+ CREATE TABLE "group"("order" text);
+ INSERT INTO "group" VALUES ('ABC');
+.sha3sum}]]
+} {0 ca08bc02b7e95c7df431a3a4b1cc0f8d8743914793473f55b5558e03}
+
 
 finish_test

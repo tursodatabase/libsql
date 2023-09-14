@@ -64,3 +64,4 @@ libsql
 /bindings.rs
 /crates/libsql-sys/target
 /crates/libsql-sys/Cargo.lock
+/src-verify

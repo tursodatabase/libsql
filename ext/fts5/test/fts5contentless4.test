@@ -1,0 +1,248 @@
+# 2023 July 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests for the content= and content_rowid= options.
+#
+
+source [file join [file dirname [info script]] fts5_common.tcl]
+set testprefix fts5contentless4
+
+# If SQLITE_ENABLE_FTS5 is defined, omit this file.
+ifcapable !fts5 {
+  finish_test
+  return
+}
+
+proc document {n} {
+  set vocab [list A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]
+  set ret [list]
+  for {set ii 0} {$ii < $n} {incr ii} {
+    lappend ret [lindex $vocab [expr int(rand()*[llength $vocab])]]
+  }
+  set ret
+}
+db func document document
+
+do_execsql_test 1.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO ft(ft, rank) VALUES('pgsz', 240);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<1000
+  )
+  INSERT INTO ft SELECT document(12) FROM s;
+}
+
+do_execsql_test 1.1 {
+  INSERT INTO ft(ft) VALUES('optimize');
+}
+
+do_execsql_test 1.2 {
+  SELECT level, segment, nentry, nentrytombstone FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {0 0 1000 0}
+
+do_execsql_test 1.3 {
+  DELETE FROM ft WHERE rowid < 50
+}
+
+do_execsql_test 1.4 {
+  SELECT level, segment, nentry, nentrytombstone FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {0 0 1000 49}
+
+do_execsql_test 1.5 {
+  DELETE FROM ft WHERE rowid < 1000
+}
+
+do_execsql_test 1.6 {
+  SELECT level, segment, nentry, nentrytombstone FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {1 0 1 0}
+
+#--------------------------------------------------------------------------
+reset_db
+db func document document
+
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+}
+
+do_test 2.1 {
+  for {set ii 0} {$ii < 5000} {incr ii} {
+    execsql { INSERT INTO ft VALUES( document(12) ) }
+  }
+} {}
+
+do_execsql_test 2.2 {
+  SELECT sum(nentry) - sum(nentrytombstone) FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {5000}
+
+for {set ii 5000} {$ii >= 0} {incr ii -100} {
+  do_execsql_test 2.3.$ii {
+    DELETE FROM ft WHERE rowid > $ii
+  }
+  do_execsql_test 2.3.$ii.2 {
+    SELECT 
+      CAST((total(nentry) - total(nentrytombstone)) AS integer) 
+    FROM 
+      fts5_structure( (SELECT block FROM ft_data WHERE id=10) )
+  } $ii
+}
+
+execsql_pp {
+  SELECT * FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+}
+
+do_test 2.4 {
+  for {set ii 0} {$ii < 5000} {incr ii} {
+    execsql { INSERT INTO ft VALUES( document(12) ) }
+  }
+} {}
+
+for {set ii 1} {$ii <= 5000} {incr ii 10} {
+  do_execsql_test 2.3.$ii {
+    DELETE FROM ft WHERE rowid = $ii;
+    INSERT INTO ft VALUES( document(12) );
+    INSERT INTO ft(ft, rank) VALUES('merge', -10);
+  }
+
+  do_execsql_test 2.3.$ii.2 {
+    SELECT 
+      CAST((total(nentry) - total(nentrytombstone)) AS integer) 
+    FROM 
+      fts5_structure( (SELECT block FROM ft_data WHERE id=10) )
+  } 5000
+}
+
+#-------------------------------------------------------------------------
+reset_db
+db func document document
+do_execsql_test 3.0 {
+  CREATE VIRTUAL TABLE ft USING fts5(x, content='', contentless_delete=1);
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO ft SELECT document(12) FROM s;
+}
+
+do_catchsql_test 3.1 {
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 'text');
+} {1 {SQL logic error}}
+do_catchsql_test 3.2 {
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 50);
+} {0 {}}
+do_execsql_test 3.3 {
+  SELECT * FROM ft_config WHERE k='deletemerge'
+} {deletemerge 50}
+do_catchsql_test 3.4 {
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 101);
+} {0 {}}
+do_execsql_test 3.5 {
+  SELECT * FROM ft_config WHERE k='deletemerge'
+} {deletemerge 101}
+
+do_execsql_test 3.6 {
+  DELETE FROM ft WHERE rowid<95
+}
+
+do_execsql_test 3.7 {
+  SELECT nentrytombstone, nentry FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {94 100}
+
+do_execsql_test 3.8 {
+  DELETE FROM ft WHERE rowid=95
+}
+
+do_execsql_test 3.9 {
+  SELECT nentrytombstone, nentry FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {95 100}
+
+do_execsql_test 3.10 {
+  DELETE FROM ft;
+  WITH s(i) AS (
+    SELECT 1 UNION ALL SELECT i+1 FROM s WHERE i<100
+  )
+  INSERT INTO ft SELECT document(12) FROM s;
+  INSERT INTO ft(ft, rank) VALUES('deletemerge', 50);
+}
+
+do_execsql_test 3.11 {
+  DELETE FROM ft WHERE rowid<95
+}
+
+do_execsql_test 3.12 {
+  SELECT nentrytombstone, nentry FROM fts5_structure((
+    SELECT block FROM ft_data WHERE id=10
+  ))
+} {0 6}
+
+#-------------------------------------------------------------------------
+reset_db
+db func document document
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE x1 USING fts5(x, content='', contentless_delete=1);
+  INSERT INTO x1(x1, rank) VALUES('usermerge', 16);
+  INSERT INTO x1(x1, rank) VALUES('deletemerge', 40);
+  INSERT INTO x1 VALUES('one');
+  INSERT INTO x1 VALUES('two');
+  INSERT INTO x1 VALUES('three');
+  INSERT INTO x1 VALUES('four');
+  INSERT INTO x1 VALUES('five');
+  INSERT INTO x1 VALUES('six');
+  INSERT INTO x1 VALUES('seven');
+  INSERT INTO x1 VALUES('eight');
+  INSERT INTO x1 VALUES('nine');
+  INSERT INTO x1 VALUES('ten');
+}
+
+do_execsql_test 4.1 {
+  SELECT level, segment FROM fts5_structure((
+    SELECT block FROM x1_data WHERE id=10
+  ))
+} {
+  0 0 0 1 0 2 0 3 0 4 0 5 0 6 0 7 0 8 0 9
+}
+
+for {set ii 1} {$ii < 4} {incr ii} {
+  do_execsql_test 4.2.$ii {
+    DELETE FROM x1 WHERE rowid = $ii;
+    INSERT INTO x1(x1, rank) VALUES('merge', 5);
+    SELECT level, segment FROM fts5_structure((
+          SELECT block FROM x1_data WHERE id=10
+    ))
+  } {
+    0 0 0 1 0 2 0 3 0 4 0 5 0 6 0 7 0 8 0 9
+  }
+}
+
+do_execsql_test 4.3 {
+  DELETE FROM x1 WHERE rowid = $ii;
+  INSERT INTO x1(x1, rank) VALUES('merge', 5);
+  SELECT level, segment, nentry FROM fts5_structure((
+        SELECT block FROM x1_data WHERE id=10
+  ))
+} {
+  1 0   6
+}
+
+finish_test
+

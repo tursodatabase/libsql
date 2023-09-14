@@ -15,18 +15,10 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-if {$::longdouble_size<=8} {
-  finish_test
-  return
-}
-if {$::tcl_platform(machine)!="x86_64"} {
-  finish_test
-  return
-}
-
+set mxpow [expr {[use_long_double]?100:35}]
 expr srand(1)
 for {set i 1} {$i<20000} {incr i} {
-  set pow [expr {int((rand()-0.5)*100)}]
+  set pow [expr {int((rand()-0.5)*$mxpow)}]
   set x [expr {pow((rand()-0.5)*2*rand(),$pow)}]
   set xf [format %.32e $x]
 
@@ -51,10 +43,16 @@ for {set i 1} {$i<20000} {incr i} {
     set y [db eval {SELECT $x=CAST(quote($x) AS real)}]
     if {!$y} {
       db eval {SELECT real2hex($x) a, real2hex(CAST(quote($x) AS real)) b} {}
-      puts "\nIN:    $a $xf"
-      puts [format {QUOTE: %16s %s} {} [db eval {SELECT quote($x)}]]
+      puts ""
+      if {$x<0} {
+        puts "[format {!SCALE: %17s 1 23456789 123456789 123456789} {}]"
+      } else {
+        puts "[format {!SCALE: %16s 1 23456789 123456789 123456789} {}]"
+      }
+      puts "!IN:    $a $xf"
+      puts [format {!QUOTE: %16s %s} {} [db eval {SELECT quote($x)}]]
       db eval {SELECT CAST(quote($x) AS real) c} {}
-      puts "OUT:   $b [format %.32e $c]"
+      puts "!OUT:   $b [format %.32e $c]"
     }
     set y
   } {1}

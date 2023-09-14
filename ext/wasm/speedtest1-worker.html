@@ -171,7 +171,8 @@
     const urlParams = new URL(self.location.href).searchParams;
     const W = new Worker(
         "speedtest1-worker.js?sqlite3.dir=jswasm"+
-            (urlParams.has('opfs-verbose') ? '&opfs-verbose' : '')
+            (urlParams.has('opfs-verbose') ? '&opfs-verbose' : '')+
+            (urlParams.has('opfs-disable') ? '&opfs-disable' : '')
     );
     const mPost = function(msgType,payload){
         W.postMessage({type: msgType, data: payload});
@@ -259,7 +260,7 @@
         flags["--utf16be"] = "Set text encoding to UTF-16BE";
         flags["--utf16le"] = "Set text encoding to UTF-16LE";
         flags["--verify"] = "Run additional verification steps.";
-        flags["--without"] = "rowid     Use WITHOUT ROWID where appropriate";
+        flags["--without-rowid"] = "Use WITHOUT ROWID where appropriate";
         const preselectedFlags = [
             '--big-transactions',
             '--singlethread'
@@ -267,7 +268,7 @@
         if(urlParams.has('flags')){
             preselectedFlags.push(...urlParams.get('flags').split(','));
         }
-        if('opfs'!==urlParams.get('vfs')){
+        if(!urlParams.get('vfs')){
             preselectedFlags.push('--memdb');
         }
         Object.keys(flags).sort().forEach(function(f){

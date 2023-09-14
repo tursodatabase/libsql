@@ -140,7 +140,7 @@ struct DIR {
 #endif
 
 /*
-** Provide the function prototype for the POSIX compatiable getenv()
+** Provide the function prototype for the POSIX compatible getenv()
 ** function.  This function is not thread-safe.
 */
 

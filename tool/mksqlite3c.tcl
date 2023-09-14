@@ -106,7 +106,30 @@ puts $out [subst \
 ** if you want a wrapper to interface SQLite with your choice of programming
 ** language. The code for the "sqlite3" command-line shell is also in a
 ** separate file. This file contains only code for the core SQLite library.
-*/
+**}]
+set srcroot [file dirname [file dirname [info script]]]
+if {$tcl_platform(platform)=="windows"} {
+  set vsrcprog src-verify.exe
+} else {
+  set vsrcprog ./src-verify
+}
+if {[file executable $vsrcprog] && [file readable $srcroot/manifest]} {
+  set res [string trim [split [exec $vsrcprog -x $srcroot]] \n]
+  puts $out "** The content in this amalgamation comes from Fossil check-in"
+  puts -nonewline $out "** [string range [lindex $res 0] 1 35]"
+  if {[llength $res]==1} {
+    puts $out "."
+  } else {
+    puts $out " with changes in files:\n**"
+    foreach f [lrange $res 1 end] {
+       puts $out "**    $f"
+    }
+  }
+} else {
+  puts $out "** The origin of the sources used to build this amalgamation"
+  puts $out "** is unknown."
+}
+puts $out [subst {*/
 #define SQLITE_CORE 1
 #define SQLITE_AMALGAMATION 1}]
 if {$addstatic} {

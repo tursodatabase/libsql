@@ -60,9 +60,9 @@ globalThis.Jaccwabyt = function StructBinderFactory(config){
         memberPrefix = (config.memberPrefix || ""),
         memberSuffix = (config.memberSuffix || ""),
         bigIntEnabled = (undefined===config.bigIntEnabled
-                         ? !!self['BigInt64Array'] : !!config.bigIntEnabled),
-        BigInt = self['BigInt'],
-        BigInt64Array = self['BigInt64Array'],
+                         ? !!globalThis['BigInt64Array'] : !!config.bigIntEnabled),
+        BigInt = globalThis['BigInt'],
+        BigInt64Array = globalThis['BigInt64Array'],
         /* Undocumented (on purpose) config options: */
         ptrSizeof = config.ptrSizeof || 4,
         ptrIR = config.ptrIR || 'i32'

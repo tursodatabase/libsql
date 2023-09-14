@@ -1849,14 +1849,15 @@ static int loadStatTbl(
     decodeIntArray((char*)sqlite3_column_text(pStmt,2),nCol,pSample->anLt,0,0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,3),nCol,pSample->anDLt,0,0);
 
-    /* Take a copy of the sample. Add two 0x00 bytes the end of the buffer.
+    /* Take a copy of the sample. Add 8 extra 0x00 bytes the end of the buffer.
     ** This is in case the sample record is corrupted. In that case, the
     ** sqlite3VdbeRecordCompare() may read up to two varints past the
     ** end of the allocated buffer before it realizes it is dealing with
-    ** a corrupt record. Adding the two 0x00 bytes prevents this from causing
+    ** a corrupt record.  Or it might try to read a large integer from the
+    ** buffer.  In any case, eight 0x00 bytes prevents this from causing
     ** a buffer overread.  */
     pSample->n = sqlite3_column_bytes(pStmt, 4);
-    pSample->p = sqlite3DbMallocZero(db, pSample->n + 2);
+    pSample->p = sqlite3DbMallocZero(db, pSample->n + 8);
     if( pSample->p==0 ){
       sqlite3_finalize(pStmt);
       return SQLITE_NOMEM_BKPT;

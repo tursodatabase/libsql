@@ -1159,7 +1159,7 @@ static struct win_syscall {
 
 /*
 ** This is the xSetSystemCall() method of sqlite3_vfs for all of the
-** "win32" VFSes.  Return SQLITE_OK opon successfully updating the
+** "win32" VFSes.  Return SQLITE_OK upon successfully updating the
 ** system call pointer, or SQLITE_NOTFOUND if there is no configurable
 ** system call named zName.
 */
@@ -2739,7 +2739,7 @@ static int winRead(
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this read request as possible by transfering
+  /* Deal with as much of this read request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -2817,7 +2817,7 @@ static int winWrite(
            pFile->h, pBuf, amt, offset, pFile->locktype));
 
 #if defined(SQLITE_MMAP_READWRITE) && SQLITE_MAX_MMAP_SIZE>0
-  /* Deal with as much of this write request as possible by transfering
+  /* Deal with as much of this write request as possible by transferring
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
@@ -2927,7 +2927,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
     ** all references to memory-mapped content are closed.  That is doable,
     ** but involves adding a few branches in the common write code path which
     ** could slow down normal operations slightly.  Hence, we have decided for
-    ** now to simply make trancations a no-op if there are pending reads.  We
+    ** now to simply make transactions a no-op if there are pending reads.  We
     ** can maybe revisit this decision in the future.
     */
     return SQLITE_OK;
@@ -2986,7 +2986,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
 #ifdef SQLITE_TEST
 /*
 ** Count the number of fullsyncs and normal syncs.  This is used to test
-** that syncs and fullsyncs are occuring at the right times.
+** that syncs and fullsyncs are occurring at the right times.
 */
 int sqlite3_sync_count = 0;
 int sqlite3_fullsync_count = 0;
@@ -3343,7 +3343,7 @@ static int winLock(sqlite3_file *id, int locktype){
   */
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
-    res = winUnlockReadLock(pFile);
+    (void)winUnlockReadLock(pFile);
     res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, SHARED_FIRST, 0,
                       SHARED_SIZE, 0);
     if( res ){
@@ -4747,6 +4747,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   size_t i, j;
+  DWORD pid;
   int nPre = sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX);
   int nMax, nBuf, nDir, nLen;
   char *zBuf;
@@ -4959,7 +4960,10 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
 
   j = sqlite3Strlen30(zBuf);
   sqlite3_randomness(15, &zBuf[j]);
+  pid = osGetCurrentProcessId();
   for(i=0; i<15; i++, j++){
+    zBuf[j] += pid & 0xff;
+    pid >>= 8;
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;
