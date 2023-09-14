@@ -1,5 +1,5 @@
-C Omit\sthe\sReinsert\salgorithm\sfrom\sRTree.\s\sThis\scauses\smost\sbenchmarks\sto\srun\nfaster,\sat\sthe\sexpense\sof\shaving\sa\sslightly\sless\sdense\sand\shence\slarger\sindex\n(example:\s33\sentries/node\sversus\s34\sentries/node).
-D 2023-09-13T17:30:12.131
+C Reduce\sthe\snumber\sof\scalls\sto\ssqlite3_mprintf()\smade\sby\sRTree.
+D 2023-09-14T01:46:57.921
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -470,8 +470,8 @@ F ext/repair/test/checkfreelist01.test 3e8aa6aeb4007680c94a8d07b41c339aa635cc782
 F ext/repair/test/checkindex01.test b530f141413b587c9eb78ff734de6bb79bc3515c335096108c12c01bddbadcec
 F ext/repair/test/test.tcl 686d76d888dffd021f64260abf29a55c57b2cedfa7fc69150b42b1d6119aac3c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/geopoly.c 41cb6e6a43d986f374e7845c3229252b5811c53ce2382a24b48cc9370916cdd8
-F ext/rtree/rtree.c 330ebe35d16528973b990b3d392a5627ae240de5bfc3c8fddb64aa6548ad7308
+F ext/rtree/geopoly.c e969a9afaa603728a553af6b945b5459fbd3b8d112a7eda9e73a6790606c7a41
+F ext/rtree/rtree.c b3b1c96e46fc820b57851b4fbab546c5317d40d1a2d54e23c9bb50be6090b3e0
 F ext/rtree/rtree.h 4a690463901cb5e6127cf05eb8e642f127012fd5003830dbc974eca5802d9412
 F ext/rtree/rtree1.test 877d40b8b61b1f88cec9d4dc0ff8334f5b05299fac12a35141532e2881860e9d
 F ext/rtree/rtree2.test 9d9deddbb16fd0c30c36e6b4fdc3ee3132d765567f0f9432ee71e1303d32603d
@@ -2119,8 +2119,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 43cde22bf3f36687df231eddf642581d1d4f4102ad8568d31f5b2ff0302ca800
-R e036488f26ef70cc75ddea68bb4fe9e6
+P b3049a1d3dbdd63c471499c2f6b417655defe9ad90228e7cc722f5be877aae01
+R 4a0337d657a84054652611ea00610d85
 U drh
-Z 0b10c745997362c35710ad8da28ad415
+Z f26f4eceb289ba5f454adb53748437fb
 # Remove this line to create a well-formed Fossil manifest.

@@ -166,6 +166,7 @@ struct Rtree {
   int iDepth;                 /* Current depth of the r-tree structure */
   char *zDb;                  /* Name of database containing r-tree table */
   char *zName;                /* Name of r-tree table */ 
+  char *zNodeName;            /* Name of the %_node table */
   u32 nBusy;                  /* Current number of users of this structure */
   i64 nRowEst;                /* Estimated number of rows in this table */
   u32 nCursor;                /* Number of open cursors */
@@ -736,11 +737,9 @@ static int nodeAcquire(
     }
   }
   if( pRtree->pNodeBlob==0 ){
-    char *zTab = sqlite3_mprintf("%s_node", pRtree->zName);
-    if( zTab==0 ) return SQLITE_NOMEM;
-    rc = sqlite3_blob_open(pRtree->db, pRtree->zDb, zTab, "data", iNode, 0,
+    rc = sqlite3_blob_open(pRtree->db, pRtree->zDb, pRtree->zNodeName,
+                           "data", iNode, 0,
                            &pRtree->pNodeBlob);
-    sqlite3_free(zTab);
   }
   if( rc ){
     nodeBlobReset(pRtree);
@@ -2081,8 +2080,12 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
 
   pIdxInfo->idxNum = 2;
   pIdxInfo->needToFreeIdxStr = 1;
-  if( iIdx>0 && 0==(pIdxInfo->idxStr = sqlite3_mprintf("%s", zIdxStr)) ){
-    return SQLITE_NOMEM;
+  if( iIdx>0 ){
+    pIdxInfo->idxStr = sqlite3_malloc( iIdx+1 );
+    if( pIdxInfo->idxStr==0 ){
+      return SQLITE_NOMEM;
+    }
+    memcpy(pIdxInfo->idxStr, zIdxStr, iIdx+1);
   }
 
   nRow = pRtree->nRowEst >> (iIdx/2);
@@ -3616,18 +3619,21 @@ static int rtreeInit(
   /* Allocate the sqlite3_vtab structure */
   nDb = (int)strlen(argv[1]);
   nName = (int)strlen(argv[2]);
-  pRtree = (Rtree *)sqlite3_malloc64(sizeof(Rtree)+nDb+nName+2);
+  pRtree = (Rtree *)sqlite3_malloc64(sizeof(Rtree)+nDb+nName*2+8);
   if( !pRtree ){
     return SQLITE_NOMEM;
   }
-  memset(pRtree, 0, sizeof(Rtree)+nDb+nName+2);
+  memset(pRtree, 0, sizeof(Rtree)+nDb+nName*2+8);
   pRtree->nBusy = 1;
   pRtree->base.pModule = &rtreeModule;
   pRtree->zDb = (char *)&pRtree[1];
   pRtree->zName = &pRtree->zDb[nDb+1];
+  pRtree->zNodeName = &pRtree->zName[nName+1];
   pRtree->eCoordType = (u8)eCoordType;
   memcpy(pRtree->zDb, argv[1], nDb);
   memcpy(pRtree->zName, argv[2], nName);
+  memcpy(pRtree->zNodeName, argv[2], nName);
+  memcpy(&pRtree->zNodeName[nName], "_node", 6);
 
 
   /* Create/Connect to the underlying relational database schema. If
