@@ -16,6 +16,8 @@ import static org.sqlite.jni.SQLite3Jni.*;
 import static org.sqlite.jni.Tester1.*;
 import org.sqlite.jni.*;
 
+import java.util.*;
+
 public class TesterFts5 {
 
   private static void test1(){
@@ -76,8 +78,99 @@ public class TesterFts5 {
     affirm( 1==outputs[1] );
   }
 
+  /* 
+  ** Argument sql is a string containing one or more SQL statements
+  ** separated by ";" characters. This function executes each of these
+  ** statements against the database passed as the first argument. If
+  ** no error occurs, the results of the SQL script are returned as
+  ** an array of strings. If an error does occur, a RuntimeException is 
+  ** thrown.
+  */
+  private static String[] sqlite3_exec(sqlite3 db, String sql) {
+    List<String> aOut = new ArrayList<String>();
+
+    /* Iterate through the list of SQL statements. For each, step through
+    ** it and add any results to the aOut[] array.  */
+    int rc = sqlite3_prepare_multi(db, sql, new PrepareMultiCallback() {
+      @Override public int call(sqlite3_stmt pStmt){
+        while( SQLITE_ROW==sqlite3_step(pStmt) ){
+          int ii;
+          for(ii=0; ii<sqlite3_column_count(pStmt); ii++){
+            aOut.add( sqlite3_column_text16(pStmt, ii) );
+          }
+        }
+        return sqlite3_finalize(pStmt);
+      }
+    });
+    if( rc!=SQLITE_OK ){
+      throw new RuntimeException(sqlite3_errmsg16(db));
+    }
+
+    /* Convert to array and return */
+    String[] arr = new String[aOut.size()];
+    return aOut.toArray(arr);
+  }
+
+  /*
+  ** Execute the SQL script passed as the second parameter via 
+  ** sqlite3_exec(). Then affirm() that the results, when converted to
+  ** a string, match the value of the 3rd parameter. Example:
+  **
+  **   do_execsql_test(db, "SELECT 'abc'", "[abc]");
+  **
+  */
+  private static void do_execsql_test(sqlite3 db, String sql, String expect) {
+    String res = Arrays.toString( sqlite3_exec(db, sql) );
+    affirm( res.equals(expect),
+      "got {" + res + "} expected {" + expect + "}"
+    );
+  }
+  private static void do_execsql_test(sqlite3 db, String sql){
+    do_execsql_test(db, sql, "[]");
+  }
+
+  /* Test of the Fts5ExtensionApi.xRowid() API. */
+  private static void test_rowid(){
+
+    /* Open db and populate an fts5 table */
+    sqlite3 db = createNewDb();
+    do_execsql_test(db, 
+      "CREATE VIRTUAL TABLE ft USING fts5(a, b);" +
+      "INSERT INTO ft(rowid, a, b) VALUES(1, 'x y z', 'x y z');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(2, 'x y z', 'x y z');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(-9223372036854775808, 'x', 'x');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(0, 'x', 'x');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(9223372036854775807, 'x', 'x');" +
+      "INSERT INTO ft(rowid, a, b) VALUES(3, 'x y z', 'x y z');"
+    );
+
+    /* Create a user-defined-function fts5_rowid() that uses xRowid() */
+    fts5_extension_function fts5_rowid = new fts5_extension_function(){
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        long rowid = ext.xRowid(fCx);
+        sqlite3_result_int64(pCx, rowid);
+      }
+      public void xDestroy(){ }
+    };
+    fts5_api.getInstanceForDb(db).xCreateFunction("fts5_rowid", fts5_rowid);
+
+    /* Test that fts5_rowid() seems to work */
+    do_execsql_test(db, 
+      "SELECT rowid==fts5_rowid(ft) FROM ft('x')",
+      "[1, 1, 1, 1, 1, 1]"
+    );
+
+    sqlite3_close_v2(db);
+  }
+
   private static synchronized void runTests(){
     test1();
+    test_rowid();
   }
 
   public TesterFts5(){
