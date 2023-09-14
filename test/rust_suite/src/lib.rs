@@ -135,7 +135,11 @@ mod tests {
         );
         assert_eq!(
             get_read_written(&conn, "INSERT INTO test(id) SELECT id FROM test"),
-            (34, 34)
+            (34, 17)
+        );
+        assert_eq!(
+            get_read_written(&conn, "SELECT * FROM test WHERE id IN (SELECT id FROM test)"),
+            (68, 0)
         );
         assert_eq!(
             get_read_written(&conn, "INSERT INTO test VALUES (1), (2), (3), (4)"),
