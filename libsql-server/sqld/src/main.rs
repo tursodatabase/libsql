@@ -398,7 +398,7 @@ async fn make_rpc_client_config(config: &Cli) -> anyhow::Result<Option<RpcClient
     match config.primary_grpc_url {
         Some(ref url) => {
             let mut connector = HttpConnector::new();
-            connector.enforce_http(true);
+            connector.enforce_http(false);
             connector.set_nodelay(true);
             let tls_config = if config.primary_grpc_tls {
                 Some(TlsConfig {
