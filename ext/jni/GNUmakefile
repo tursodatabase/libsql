@@ -122,6 +122,7 @@ ifeq (1,$(enable.fts5))
     Fts5PhraseIter.java \
     Fts5Tokenizer.java \
     TesterFts5.java \
+    XTokenizeCallback.java \
   )
 endif
 JAVA_FILES.tester := $(dir.src.jni.tester)/SQLTester.java

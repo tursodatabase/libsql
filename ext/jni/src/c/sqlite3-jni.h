@@ -2251,7 +2251,7 @@ JNIEXPORT jint JNICALL Java_org_sqlite_jni_fts5_Fts5ExtensionApi_xSetAuxdata
 /*
  * Class:     org_sqlite_jni_fts5_Fts5ExtensionApi
  * Method:    xTokenize
- * Signature: (Lorg/sqlite/jni/fts5/Fts5Context;[BLorg/sqlite/jni/fts5/Fts5/XTokenizeCallback;)I
+ * Signature: (Lorg/sqlite/jni/fts5/Fts5Context;[BLorg/sqlite/jni/fts5/XTokenizeCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_fts5_Fts5ExtensionApi_xTokenize
   (JNIEnv *, jobject, jobject, jbyteArray, jobject);
@@ -2311,7 +2311,7 @@ extern "C" {
 /*
  * Class:     org_sqlite_jni_fts5_fts5_tokenizer
  * Method:    xTokenize
- * Signature: (Lorg/sqlite/jni/fts5/Fts5Tokenizer;I[BLorg/sqlite/jni/fts5/Fts5/XTokenizeCallback;)I
+ * Signature: (Lorg/sqlite/jni/fts5/Fts5Tokenizer;I[BLorg/sqlite/jni/fts5/XTokenizeCallback;)I
  */
 JNIEXPORT jint JNICALL Java_org_sqlite_jni_fts5_fts5_1tokenizer_xTokenize
   (JNIEnv *, jobject, jobject, jint, jbyteArray, jobject);

@@ -111,7 +111,7 @@ public final class Fts5ExtensionApi extends NativePointerHolder<Fts5ExtensionApi
 
   @Canonical
   public native int xTokenize(@NotNull Fts5Context cx, @NotNull byte[] pText,
-                              @NotNull Fts5.XTokenizeCallback callback);
+                              @NotNull XTokenizeCallback callback);
 
   @Canonical
   public native Object xUserData(Fts5Context cx);
