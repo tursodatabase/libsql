@@ -107,6 +107,12 @@ impl From<Vec<(String, Value)>> for Params {
     }
 }
 
+impl<T: Into<Value>, const N: usize> From<[T; N]> for Params {
+    fn from(value: [T; N]) -> Self {
+        Params::Positional(value.into_iter().map(Into::into).collect())
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Value {
     Null,

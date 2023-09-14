@@ -1,4 +1,4 @@
-use libsql::{Database, Value};
+use libsql::Database;
 use std::time::Duration;
 
 #[tokio::main]
@@ -35,9 +35,7 @@ async fn main() {
         let mut rows = conn
             .query(
                 "INSERT INTO foo (x) VALUES (?1) RETURNING *",
-                vec![Value::from(
-                    "this value was written by an embedded replica!",
-                )],
+                ["this value was written by an embedded replica!"],
             )
             .await
             .unwrap();
