@@ -3615,8 +3615,9 @@ case OP_Count: {         /* out2 */
     nEntry = sqlite3BtreeRowCountEst(pCrsr);
   }else{
     nEntry = 0;  /* Not needed.  Only used to silence a warning. */
-    rc = sqlite3BtreeCount(db, pCrsr, &nEntry);
-    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE] += nEntry;
+    i64 nPages = 0;
+    rc = sqlite3BtreeCount(db, pCrsr, &nEntry, &nPages);
+    p->aLibsqlCounter[LIBSQL_STMTSTATUS_ROWS_READ - LIBSQL_STMTSTATUS_BASE] += nPages;
     if( rc ) goto abort_due_to_error;
   }
   pOut = out2Prerelease(p, pOp);
