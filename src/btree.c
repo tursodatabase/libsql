@@ -10301,8 +10301,9 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
 ** Otherwise, if an error is encountered (i.e. an IO error or database
 ** corruption) an SQLite error code is returned.
 */
-int sqlite3BtreeCount(sqlite3 *db, BtCursor *pCur, i64 *pnEntry){
+int sqlite3BtreeCount(sqlite3 *db, BtCursor *pCur, i64 *pnEntry, i64 *pnPages){
   i64 nEntry = 0;                      /* Value to return in *pnEntry */
+  i64 nPages = 0;                      /* Number of visited pages */
   int rc;                              /* Return code */
 
   rc = moveToRoot(pCur);
@@ -10325,6 +10326,7 @@ int sqlite3BtreeCount(sqlite3 *db, BtCursor *pCur, i64 *pnEntry){
     pPage = pCur->pPage;
     if( pPage->leaf || !pPage->intKey ){
       nEntry += pPage->nCell;
+      nPages++;
     }
 
     /* pPage is a leaf node. This loop navigates the cursor so that it 
@@ -10342,6 +10344,7 @@ int sqlite3BtreeCount(sqlite3 *db, BtCursor *pCur, i64 *pnEntry){
         if( pCur->iPage==0 ){
           /* All pages of the b-tree have been visited. Return successfully. */
           *pnEntry = nEntry;
+          *pnPages = nPages;
           return moveToRoot(pCur);
         }
         moveToParent(pCur);
