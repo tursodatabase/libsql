@@ -245,12 +245,47 @@ public class TesterFts5 {
       public void xDestroy(){ }
     };
 
+    /*
+    ** fts5_aux(<fts>, <value>);
+    */
+    class fts5_aux implements fts5_extension_function {
+      @Override public void call(
+          Fts5ExtensionApi ext, 
+          Fts5Context fCx,
+          sqlite3_context pCx, 
+          sqlite3_value argv[]
+      ){
+        if( argv.length>1 ){
+          throw new RuntimeException("fts5_aux: wrong number of args");
+        }
+
+        boolean bClear = (argv.length==1);
+        Object obj = ext.xGetAuxdata(fCx, bClear);
+        if( obj instanceof String ){
+          sqlite3_result_text16(pCx, (String)obj);
+        }
+
+        if( argv.length==1 ){
+          String val = sqlite3_value_text16(argv[0]);
+          if( !val.equals("") ){
+            ext.xSetAuxdata(fCx, val);
+          }
+        }
+      }
+      public void xDestroy(){ }
+    };
+
+    fts5_aux fts5_aux1 = new fts5_aux();
+
     fts5_api api = fts5_api.getInstanceForDb(db);
     api.xCreateFunction("fts5_rowid", fts5_rowid);
     api.xCreateFunction("fts5_columncount", fts5_columncount);
     api.xCreateFunction("fts5_columnsize", fts5_columnsize);
     api.xCreateFunction("fts5_columntext", fts5_columntext);
     api.xCreateFunction("fts5_columntotalsize", fts5_columntsize);
+
+    api.xCreateFunction("fts5_aux1", new fts5_aux());
+    api.xCreateFunction("fts5_aux2", new fts5_aux());
   }
 
   /* 
@@ -349,9 +384,46 @@ public class TesterFts5 {
     sqlite3_close_v2(db);
   }
 
+  /* 
+  ** Test of various Fts5ExtensionApi methods 
+  */
+  private static void test3(){
+
+    /* Open db and populate an fts5 table */
+    sqlite3 db = createNewDb();
+    do_execsql_test(db, 
+      "CREATE VIRTUAL TABLE ft USING fts5(a, b);" +
+      "INSERT INTO ft(a, b) VALUES('the one', 1);" +
+      "INSERT INTO ft(a, b) VALUES('the two', 2);" +
+      "INSERT INTO ft(a, b) VALUES('the three', 3);" +
+      "INSERT INTO ft(a, b) VALUES('the four', '');"
+    );
+    create_test_functions(db);
+
+    /* Test fts5_aux1() + fts5_aux2() - users of xGetAuxdata and xSetAuxdata */
+    do_execsql_test(db,
+      "SELECT fts5_aux1(ft, a) FROM ft('the')",
+      "[null, the one, the two, the three]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_aux2(ft, b) FROM ft('the')",
+      "[null, 1, 2, 3]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_aux1(ft, a), fts5_aux2(ft, b) FROM ft('the')",
+      "[null, null, the one, 1, the two, 2, the three, 3]"
+    );
+    do_execsql_test(db,
+      "SELECT fts5_aux1(ft, b), fts5_aux1(ft) FROM ft('the')",
+      "[null, 1, 1, 2, 2, 3, 3, null]"
+    );
+
+  }
+
   private static synchronized void runTests(){
     test1();
     test2();
+    test3();
   }
 
   public TesterFts5(){

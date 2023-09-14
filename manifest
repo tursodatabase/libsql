@@ -1,5 +1,5 @@
-C JNI:\smove\sXTokenizeCallback\sinterface\sout\sof\sthe\sFts5\sobject\s-\sthat\slevel\sof\sindirection\sis\sa\sholdover\sfrom\swhen\sthose\sclasses\swere\sin\sthe\score\spackage.
-D 2023-09-14T20:02:49.904
+C Tests\sfor\sjava\sversions\sof\sFts5ExtensionApi.xSetAuxdata()\sand\sxGetAuxdata().
+D 2023-09-14T20:56:42.867
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -276,7 +276,7 @@ F ext/jni/src/org/sqlite/jni/fts5/Fts5Context.java 7058da97059b8e156c17561a47ecd
 F ext/jni/src/org/sqlite/jni/fts5/Fts5ExtensionApi.java b1b23431ece266c3308c1089d4cc3d2762a36ff4ea720196be1bcd75577abb9a
 F ext/jni/src/org/sqlite/jni/fts5/Fts5PhraseIter.java 2a7f3d76a1206e6a43d4c4ed9609b294d5431cc7d8fb875d8419f76efa6e56dc
 F ext/jni/src/org/sqlite/jni/fts5/Fts5Tokenizer.java cc9a53846a168a215238af224c31cef0e8379780e36e8a5e743b00c08145cf19
-F ext/jni/src/org/sqlite/jni/fts5/TesterFts5.java 3e78baa14a8df78e6dedbf714d82d223ca7327aa348de2fd84ee04ce60c2ea3f
+F ext/jni/src/org/sqlite/jni/fts5/TesterFts5.java 29899c85710b6210f34beccf97fa853369c87dec25c66f289b7c620f4340ed8d
 F ext/jni/src/org/sqlite/jni/fts5/XTokenizeCallback.java 1efd1220ea328a32f2d2a1b16c735864159e929480f71daad4de9d5944839167
 F ext/jni/src/org/sqlite/jni/fts5/fts5_api.java 6071bf76c2c6a0f035b99adc76715b0324f540a441452b4ff6b94d9360a6a83d
 F ext/jni/src/org/sqlite/jni/fts5/fts5_extension_function.java 1fe0f5692c1d67475d12b067f0469949073446f18c56eba5ee5da6ddd06db9b9
@@ -2121,8 +2121,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P 4ce2a7e8ed0f2859efc1038fd0812bc2b667be1479f45c081deccc2cf188c807
-R f711e3426de9db531a6d618c8123212a
-U stephan
-Z f05bc452e4c4de09fefc2072b1c37954
+P 385ec08570451c0be212677d1b681c13d225dc690965effa2293e64cb3d56023
+R a2d5d1579429460e87c61454644eb573
+U dan
+Z cb1a55083883473c283480a0f316b0cc
 # Remove this line to create a well-formed Fossil manifest.
