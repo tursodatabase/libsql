@@ -1,7 +1,7 @@
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use anyhow::{bail, Context as _};
@@ -14,6 +14,7 @@ use futures_core::future::BoxFuture;
 use futures_core::Stream;
 use hyper::Uri;
 use rusqlite::ErrorCode;
+use sqld_libsql_bindings::wal_hook::TRANSPARENT_METHODS;
 use tokio::io::AsyncBufReadExt;
 use tokio::task::{block_in_place, JoinSet};
 use tokio_util::io::StreamReader;
@@ -31,8 +32,8 @@ use crate::replication::replica::Replicator;
 use crate::replication::{NamespacedSnapshotCallback, ReplicationLogger};
 use crate::stats::Stats;
 use crate::{
-    run_periodic_checkpoint, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT, DEFAULT_NAMESPACE_NAME,
-    MAX_CONCURRENT_DBS,
+    run_periodic_checkpoint, StatsSender, DB_CREATE_TIMEOUT, DEFAULT_AUTO_CHECKPOINT,
+    DEFAULT_NAMESPACE_NAME, MAX_CONCURRENT_DBS,
 };
 
 pub use fork::ForkError;
@@ -400,6 +401,10 @@ impl<M: MakeNamespace> NamespaceStore<M> {
 
         Ok(())
     }
+
+    pub async fn stats(&self, namespace: Bytes) -> crate::Result<Arc<Stats>> {
+        self.with(namespace, |ns| ns.stats.clone()).await
+    }
 }
 
 /// A namspace isolates the resources pertaining to a database of type T
@@ -408,6 +413,7 @@ pub struct Namespace<T: Database> {
     pub db: T,
     /// The set of tasks associated with this namespace
     tasks: JoinSet<anyhow::Result<()>>,
+    stats: Arc<Stats>,
 }
 
 impl<T: Database> Namespace<T> {
@@ -430,7 +436,7 @@ pub struct ReplicaNamespaceConfig {
     /// Extensions to load for the database connection
     pub extensions: Arc<[PathBuf]>,
     /// Stats monitor
-    pub stats: Stats,
+    pub stats_sender: StatsSender,
     /// Reference to the config store
     pub config_store: Arc<DatabaseConfigStore>,
 }
@@ -465,6 +471,14 @@ impl Namespace<ReplicaDatabase> {
 
         let applied_frame_no_receiver = replicator.current_frame_no_notifier.clone();
 
+        let stats = make_stats(
+            &db_path,
+            &mut join_set,
+            config.stats_sender.clone(),
+            name.clone(),
+        )
+        .await?;
+
         join_set.spawn(replicator.run());
 
         let connection_maker = MakeWriteProxyConnection::new(
@@ -472,7 +486,7 @@ impl Namespace<ReplicaDatabase> {
             config.extensions.clone(),
             config.channel.clone(),
             config.uri.clone(),
-            config.stats.clone(),
+            stats.clone(),
             config.config_store.clone(),
             applied_frame_no_receiver,
             config.max_response_size,
@@ -490,6 +504,7 @@ impl Namespace<ReplicaDatabase> {
             db: ReplicaDatabase {
                 connection_maker: Arc::new(connection_maker),
             },
+            stats,
         })
     }
 }
@@ -502,7 +517,7 @@ pub struct PrimaryNamespaceConfig {
     pub snapshot_callback: NamespacedSnapshotCallback,
     pub bottomless_replication: Option<bottomless::replicator::Options>,
     pub extensions: Arc<[PathBuf]>,
-    pub stats: Stats,
+    pub stats_sender: StatsSender,
     pub config_store: Arc<DatabaseConfigStore>,
     pub max_response_size: u64,
     pub max_total_response_size: u64,
@@ -599,11 +614,19 @@ impl Namespace<PrimaryDatabase> {
             move || ReplicationLoggerHookCtx::new(logger.clone(), bottomless_replicator.clone())
         };
 
+        let stats = make_stats(
+            &db_path,
+            &mut join_set,
+            config.stats_sender.clone(),
+            name.clone(),
+        )
+        .await?;
+
         let connection_maker: Arc<_> = LibSqlDbFactory::new(
             db_path.clone(),
             &REPLICATION_METHODS,
             ctx_builder.clone(),
-            config.stats.clone(),
+            stats.clone(),
             config.config_store.clone(),
             config.extensions.clone(),
             config.max_response_size,
@@ -646,8 +669,27 @@ impl Namespace<PrimaryDatabase> {
                 logger,
                 connection_maker,
             },
+            stats,
         })
     }
+}
+
+async fn make_stats(
+    db_path: &Path,
+    join_set: &mut JoinSet<anyhow::Result<()>>,
+    stats_sender: StatsSender,
+    name: Bytes,
+) -> anyhow::Result<Arc<Stats>> {
+    let stats = Stats::new(db_path, join_set).await?;
+
+    // the storage monitor is optional, so we ignore the error here.
+    let _ = stats_sender
+        .send((name.clone(), Arc::downgrade(&stats)))
+        .await;
+
+    join_set.spawn(run_storage_monitor(db_path.into(), Arc::downgrade(&stats)));
+
+    Ok(stats)
 }
 
 #[derive(Default)]
@@ -798,4 +840,45 @@ async fn run_periodic_compactions(logger: Arc<ReplicationLogger>) -> anyhow::Res
 fn check_fresh_db(path: &Path) -> crate::Result<bool> {
     let is_fresh = !path.join("wallog").try_exists()?;
     Ok(is_fresh)
+}
+
+// Periodically check the storage used by the database and save it in the Stats structure.
+// TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
+// right after checkpointing is exactly where it should be done.
+async fn run_storage_monitor(db_path: PathBuf, stats: Weak<Stats>) -> anyhow::Result<()> {
+    // on initialization, the database file doesn't exist yet, so we wait a bit for it to be
+    // created
+    tokio::time::sleep(Duration::from_secs(1)).await;
+
+    let duration = tokio::time::Duration::from_secs(60);
+    let db_path: Arc<Path> = db_path.into();
+    loop {
+        let db_path = db_path.clone();
+        let Some(stats) = stats.upgrade() else { return Ok(()) };
+        let _ = tokio::task::spawn_blocking(move || {
+            // because closing the last connection interferes with opening a new one, we lazily
+            // initialize a connection here, and keep it alive for the entirety of the program. If we
+            // fail to open it, we wait for `duration` and try again later.
+            let ctx = &mut ();
+            // We can safely open db with DEFAULT_AUTO_CHECKPOINT, since monitor is read-only: it 
+            // won't produce new updates, frames or generate checkpoints.
+            match open_db(&db_path, &TRANSPARENT_METHODS, ctx, Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
+                Ok(conn) => {
+                    if let Ok(storage_bytes_used) =
+                        conn.query_row("select sum(pgsize) from dbstat;", [], |row| {
+                            row.get::<usize, u64>(0)
+                        })
+                    {
+                        stats.set_storage_bytes_used(storage_bytes_used);
+                    }
+
+                },
+                Err(e) => {
+                    tracing::warn!("failed to open connection for storager monitor: {e}, trying again in {duration:?}");
+                },
+            }
+        }).await;
+
+        tokio::time::sleep(duration).await;
+    }
 }

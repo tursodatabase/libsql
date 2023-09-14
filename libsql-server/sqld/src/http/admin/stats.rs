@@ -1,9 +1,12 @@
-use hyper::{Body, Response};
+use std::sync::Arc;
+
 use serde::Serialize;
 
-use axum::extract::{FromRef, State as AxumState};
+use axum::extract::{Path, State};
+use axum::Json;
 
-use crate::{namespace::MakeNamespace, stats::Stats};
+use crate::namespace::MakeNamespace;
+use crate::stats::Stats;
 
 use super::AppState;
 
@@ -32,18 +35,12 @@ impl From<Stats> for StatsResponse {
     }
 }
 
-impl<F: MakeNamespace> FromRef<AppState<F>> for Stats {
-    fn from_ref(input: &AppState<F>) -> Self {
-        input.stats.clone()
-    }
-}
+pub(super) async fn handle_stats<M: MakeNamespace>(
+    State(app_state): State<Arc<AppState<M>>>,
+    Path(namespace): Path<String>,
+) -> crate::Result<Json<StatsResponse>> {
+    let stats = app_state.namespaces.stats(namespace.into()).await?;
+    let resp: StatsResponse = stats.as_ref().into();
 
-pub(crate) async fn handle_stats(AxumState(stats): AxumState<Stats>) -> Response<Body> {
-    let resp: StatsResponse = stats.into();
-
-    let payload = serde_json::to_vec(&resp).unwrap();
-    Response::builder()
-        .header("Content-Type", "application/json")
-        .body(Body::from(payload))
-        .unwrap()
+    Ok(Json(resp))
 }

@@ -2,8 +2,8 @@
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::sync::mpsc::RecvTimeoutError;
-use std::sync::Arc;
+use std::str::FromStr;
+use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use anyhow::Context as AnyhowContext;
@@ -11,10 +11,8 @@ use bytes::Bytes;
 use config::{
     AdminApiConfig, DbConfig, HeartbeatConfig, RpcClientConfig, RpcServerConfig, UserApiConfig,
 };
-use futures::never::Never;
-use http::UserApi;
+use http::user::UserApi;
 use hyper::client::HttpConnector;
-use libsql::wal_hook::TRANSPARENT_METHODS;
 use namespace::{
     MakeNamespace, NamespaceStore, PrimaryNamespaceConfig, PrimaryNamespaceMaker,
     ReplicaNamespaceConfig, ReplicaNamespaceMaker,
@@ -28,13 +26,13 @@ use rpc::replication_log::rpc::replication_log_server::ReplicationLog;
 use rpc::replication_log::ReplicationLogService;
 use rpc::replication_log_proxy::ReplicationLogProxyService;
 use rpc::run_rpc_server;
-use tokio::sync::Notify;
+use tokio::sync::{mpsc, Notify};
 use tokio::task::JoinSet;
+use url::Url;
 use utils::services::idle_shutdown::IdleShutdownKicker;
 
 use crate::auth::Auth;
 use crate::connection::config::DatabaseConfigStore;
-use crate::connection::libsql::open_db;
 use crate::connection::{Connection, MakeConnection};
 use crate::error::Error;
 use crate::migration::maybe_migrate;
@@ -49,7 +47,6 @@ pub mod net;
 pub mod rpc;
 pub mod version;
 
-mod admin_api;
 mod auth;
 mod database;
 mod error;
@@ -74,6 +71,7 @@ const DEFAULT_NAMESPACE_NAME: &str = "default";
 const DEFAULT_AUTO_CHECKPOINT: u32 = 1000;
 
 type Result<T, E = Error> = std::result::Result<T, E>;
+type StatsSender = mpsc::Sender<(Bytes, Weak<Stats>)>;
 
 pub struct Server<C = HttpConnector, A = AddrIncoming> {
     pub path: Arc<Path>,
@@ -93,7 +91,6 @@ pub struct Server<C = HttpConnector, A = AddrIncoming> {
 struct Services<M: MakeNamespace, A, P, S> {
     namespaces: NamespaceStore<M>,
     idle_shutdown_kicker: Option<IdleShutdownKicker>,
-    stats: Stats,
     db_config_store: Arc<DatabaseConfigStore>,
     proxy_service: P,
     replication_service: S,
@@ -120,7 +117,6 @@ where
             auth: self.auth,
             namespaces: self.namespaces.clone(),
             idle_shutdown_kicker: self.idle_shutdown_kicker.clone(),
-            stats: self.stats.clone(),
             proxy_service: self.proxy_service,
             replication_service: self.replication_service,
             disable_default_namespace: self.disable_default_namespace,
@@ -134,62 +130,13 @@ where
         user_http.configure(join_set);
 
         if let Some(AdminApiConfig { acceptor }) = self.admin_api_config {
-            join_set.spawn(admin_api::run_admin_api(
+            join_set.spawn(http::admin::run(
                 acceptor,
                 self.db_config_store,
                 self.namespaces,
             ));
         }
     }
-}
-
-// Periodically check the storage used by the database and save it in the Stats structure.
-// TODO: Once we have a separate fiber that does WAL checkpoints, running this routine
-// right after checkpointing is exactly where it should be done.
-async fn run_storage_monitor(db_path: Arc<Path>, stats: Stats) -> anyhow::Result<()> {
-    let (_drop_guard, exit_notify) = std::sync::mpsc::channel::<Never>();
-    let _ = tokio::task::spawn_blocking(move || {
-        let duration = tokio::time::Duration::from_secs(60);
-        loop {
-            // because closing the last connection interferes with opening a new one, we lazily
-            // initialize a connection here, and keep it alive for the entirety of the program. If we
-            // fail to open it, we wait for `duration` and try again later.
-            let ctx = &mut ();
-            // We can safely open db with DEFAULT_AUTO_CHECKPOINT, since monitor is read-only: it 
-            // won't produce new updates, frames or generate checkpoints.
-            let maybe_conn = match open_db(&db_path, &TRANSPARENT_METHODS, ctx, Some(rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY), DEFAULT_AUTO_CHECKPOINT) {
-                Ok(conn) => Some(conn),
-                Err(e) => {
-                    tracing::warn!("failed to open connection for storager monitor: {e}, trying again in {duration:?}");
-                    None
-                },
-            };
-
-            loop {
-                if let Some(ref conn) = maybe_conn {
-                    if let Ok(storage_bytes_used) =
-                        conn.query_row("select sum(pgsize) from dbstat;", [], |row| {
-                            row.get::<usize, u64>(0)
-                        })
-                    {
-                        stats.set_storage_bytes_used(storage_bytes_used);
-                    }
-                }
-
-                match exit_notify.recv_timeout(duration) {
-                    Ok(_) => unreachable!(),
-                    Err(RecvTimeoutError::Disconnected) => return,
-                    Err(RecvTimeoutError::Timeout) => (),
-
-                }
-                if maybe_conn.is_none() {
-                    break
-                }
-            }
-        }
-    }).await;
-
-    Ok(())
 }
 
 async fn run_periodic_checkpoint<C>(
@@ -319,7 +266,11 @@ where
         })
     }
 
-    fn spawn_monitoring_tasks(&self, join_set: &mut JoinSet<anyhow::Result<()>>, stats: Stats) {
+    fn spawn_monitoring_tasks(
+        &self,
+        join_set: &mut JoinSet<anyhow::Result<()>>,
+        stats_receiver: mpsc::Receiver<(Bytes, Weak<Stats>)>,
+    ) -> anyhow::Result<()> {
         match self.heartbeat_config {
             Some(ref config) => {
                 tracing::info!(
@@ -328,28 +279,30 @@ where
                     config.heartbeat_period,
                 );
                 join_set.spawn({
-                    let heartbeat_url = config.heartbeat_url.clone();
                     let heartbeat_auth = config.heartbeat_auth.clone();
                     let heartbeat_period = config.heartbeat_period;
-                    let stats = stats.clone();
+                    let heartbeat_url =
+                        Url::from_str(&config.heartbeat_url).context("invalid heartbeat URL")?;
                     async move {
                         heartbeat::server_heartbeat(
                             heartbeat_url,
                             heartbeat_auth,
                             heartbeat_period,
-                            stats,
+                            stats_receiver,
                         )
                         .await;
                         Ok(())
                     }
                 });
 
-                join_set.spawn(run_storage_monitor(self.path.clone(), stats));
+                // join_set.spawn(run_storage_monitor(self.path.clone(), stats));
             }
             None => {
                 tracing::warn!("No server heartbeat configured")
             }
         }
+
+        Ok(())
     }
 
     pub async fn start(self) -> anyhow::Result<()> {
@@ -357,8 +310,8 @@ where
 
         init_version_file(&self.path)?;
         maybe_migrate(&self.path)?;
-        let stats = Stats::new(&self.path)?;
-        self.spawn_monitoring_tasks(&mut join_set, stats.clone());
+        let (stats_sender, stats_receiver) = mpsc::channel(8);
+        self.spawn_monitoring_tasks(&mut join_set, stats_receiver)?;
         self.init_sqlite_globals();
         let db_is_dirty = init_sentinel_file(&self.path)?;
         let idle_shutdown_kicker = self.setup_shutdown();
@@ -374,7 +327,7 @@ where
             Some(rpc_config) => {
                 let replica = Replica {
                     rpc_config,
-                    stats: stats.clone(),
+                    stats_sender,
                     db_config_store: db_config_store.clone(),
                     extensions,
                     db_config: self.db_config.clone(),
@@ -384,7 +337,6 @@ where
                 let services = Services {
                     namespaces,
                     idle_shutdown_kicker,
-                    stats,
                     db_config_store,
                     proxy_service,
                     replication_service,
@@ -404,7 +356,7 @@ where
                     rpc_config: self.rpc_server_config,
                     db_config: self.db_config.clone(),
                     idle_shutdown_kicker: idle_shutdown_kicker.clone(),
-                    stats: stats.clone(),
+                    stats_sender,
                     db_config_store: db_config_store.clone(),
                     db_is_dirty,
                     snapshot_callback,
@@ -419,7 +371,6 @@ where
                 let services = Services {
                     namespaces,
                     idle_shutdown_kicker,
-                    stats,
                     db_config_store,
                     proxy_service,
                     replication_service,
@@ -463,7 +414,7 @@ struct Primary<'a, A> {
     rpc_config: Option<RpcServerConfig<A>>,
     db_config: DbConfig,
     idle_shutdown_kicker: Option<IdleShutdownKicker>,
-    stats: Stats,
+    stats_sender: StatsSender,
     db_config_store: Arc<DatabaseConfigStore>,
     db_is_dirty: bool,
     snapshot_callback: NamespacedSnapshotCallback,
@@ -493,7 +444,7 @@ where
             snapshot_callback: self.snapshot_callback,
             bottomless_replication: self.db_config.bottomless_replication,
             extensions: self.extensions,
-            stats: self.stats,
+            stats_sender: self.stats_sender.clone(),
             config_store: self.db_config_store,
             max_response_size: self.db_config.max_response_size,
             max_total_response_size: self.db_config.max_total_response_size,
@@ -539,7 +490,7 @@ where
 
 struct Replica<C> {
     rpc_config: RpcClientConfig<C>,
-    stats: Stats,
+    stats_sender: StatsSender,
     db_config_store: Arc<DatabaseConfigStore>,
     extensions: Arc<[PathBuf]>,
     db_config: DbConfig,
@@ -560,7 +511,7 @@ impl<C: Connector> Replica<C> {
             channel: channel.clone(),
             uri: uri.clone(),
             extensions: self.extensions.clone(),
-            stats: self.stats.clone(),
+            stats_sender: self.stats_sender.clone(),
             config_store: self.db_config_store.clone(),
             base_path: self.base_path,
             max_response_size: self.db_config.max_response_size,

@@ -15,12 +15,14 @@ use crate::connection::config::{DatabaseConfig, DatabaseConfigStore};
 use crate::error::LoadDumpError;
 use crate::namespace::{DumpStream, MakeNamespace, NamespaceStore, RestoreOption};
 
+pub mod stats;
+
 struct AppState<M: MakeNamespace> {
     db_config_store: Arc<DatabaseConfigStore>,
     namespaces: NamespaceStore<M>,
 }
 
-pub async fn run_admin_api<M, A>(
+pub async fn run<M, A>(
     acceptor: A,
     db_config_store: Arc<DatabaseConfigStore>,
     namespaces: NamespaceStore<M>,
@@ -47,6 +49,7 @@ where
             post(handle_restore_namespace),
         )
         .route("/v1/namespaces/:namespace", delete(handle_delete_namespace))
+        .route("/v1/namespaces/:namespace/stats", get(stats::handle_stats))
         .with_state(Arc::new(AppState {
             db_config_store,
             namespaces,

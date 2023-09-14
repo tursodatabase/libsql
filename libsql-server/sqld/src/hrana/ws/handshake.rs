@@ -4,7 +4,7 @@ use futures::{SinkExt as _, StreamExt as _};
 use tokio_tungstenite::tungstenite;
 use tungstenite::http;
 
-use crate::http::db_factory::namespace_from_headers;
+use crate::http::user::db_factory::namespace_from_headers;
 use crate::net::Conn;
 
 use super::super::{Encoding, Version};

@@ -1,5 +1,5 @@
 ---
-source: sqld/src/http/types.rs
+source: sqld/src/http/user/types.rs
 expression: found
 ---
 {
