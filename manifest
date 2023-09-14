@@ -1,5 +1,5 @@
-C Improve\sthe\ssqlite3IntFloatCompare()\sroutine\sso\sthat\sit\sis\stestable.
-D 2023-09-14T13:10:17.432
+C Avoid\sa\ssegfault\sin\stest\sprogram\sshowdb.c\sthat\scould\soccur\swhen\sanalyzing\sa\scorrupt\sdb.
+D 2023-09-14T14:05:51.500
 F .fossil-settings/empty-dirs dbb81e8fc0401ac46a1491ab34a7f2c7c0452f2f06b54ebb845d024ca8283ef1
 F .fossil-settings/ignore-glob 35175cdfcf539b2318cb04a9901442804be81cd677d8b889fcc9149c21f239ea
 F LICENSE.md df5091916dbb40e6e9686186587125e1b2ff51f022cc334e886c19a0e9982724
@@ -2066,7 +2066,7 @@ F tool/replace.tcl 937c931ad560688e85bdd6258bdc754371bb1e2732e1fb28ef441e44c9228
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/run-speed-test.sh f95d19fd669b68c4c38b6b475242841d47c66076
-F tool/showdb.c 495a43b759ae37a0c4561a557a70090cb79b8c1601204e5a77e8b5360e65a954
+F tool/showdb.c 0f74b54cc67076c76cba9b2b7f54d3e05b78d130c70ffc394eb84c5b41bab017
 F tool/showjournal.c 5bad7ae8784a43d2b270d953060423b8bd480818
 F tool/showlocks.c 9cc5e66d4ebbf2d194f39db2527ece92077e86ae627ddd233ee48e16e8142564
 F tool/showshm.c a0ab6ec32dd1f11218ca2a4018f8fb875b59414801ab8ceed8b2e69b7b45a809
@@ -2120,8 +2120,8 @@ F vsixtest/vsixtest.tcl 6a9a6ab600c25a91a7acc6293828957a386a8a93
 F vsixtest/vsixtest.vcxproj.data 2ed517e100c66dc455b492e1a33350c1b20fbcdc
 F vsixtest/vsixtest.vcxproj.filters 37e51ffedcdb064aad6ff33b6148725226cd608e
 F vsixtest/vsixtest_TemporaryKey.pfx e5b1b036facdb453873e7084e1cae9102ccc67a0
-P aa999d490b743f455f2fb6c41009098330380f0bc2e9b1c28fbc82141a9138ce
-R 20087fa0c0f88547e10f5ba33d5674b5
-U drh
-Z c1b9076ff4a79b6edb96280aef7910ea
+P bb221381fa38db5be1222d89c567a9bca0e6c441e26a8c797bd326b263556afb
+R 9b78fb5f9afe1c654d545d3bf356051e
+U dan
+Z a44a085ce3b158066bd2131f51c55531
 # Remove this line to create a well-formed Fossil manifest.
