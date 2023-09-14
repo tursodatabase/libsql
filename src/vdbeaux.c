@@ -4473,8 +4473,7 @@ int sqlite3IntFloatCompare(i64 i, double r){
     testcase( x>r );
     testcase( x==r );
     if( x<r ) return -1;
-    if( x>r ) return +1;  /*NO_TEST*/ /* work around bugs in gcov */
-    return 0;             /*NO_TEST*/ /* work around bugs in gcov */
+    return x>r;   /*NO_TEST*/ /* work around bug in gcov */
   }else{
     i64 y;
     double s;
@@ -4483,10 +4482,12 @@ int sqlite3IntFloatCompare(i64 i, double r){
     y = (i64)r;
     if( i<y ) return -1;
     if( i>y ) return +1;
+    testcase( r<(double)i );
+    testcase( r>(double)i );
+    testcase( r==(double)i );
     s = (double)i;
     if( s<r ) return -1;
-    if( s>r ) return +1;
-    return 0;
+    return s>r;   /*NO_TEST*/ /* work around bug in gcov */
   }
 }
 
