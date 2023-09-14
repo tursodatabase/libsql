@@ -37,7 +37,7 @@ pub struct MakeWriteProxyConnection {
     client: ProxyClient<Channel>,
     db_path: PathBuf,
     extensions: Arc<[PathBuf]>,
-    stats: Stats,
+    stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
     max_response_size: u64,
@@ -52,7 +52,7 @@ impl MakeWriteProxyConnection {
         extensions: Arc<[PathBuf]>,
         channel: Channel,
         uri: tonic::transport::Uri,
-        stats: Stats,
+        stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
         max_response_size: u64,
@@ -110,7 +110,7 @@ pub struct WriteProxyConnection {
     /// Notifier from the repliator of the currently applied frameno
     applied_frame_no_receiver: watch::Receiver<FrameNo>,
     builder_config: QueryBuilderConfig,
-    stats: Stats,
+    stats: Arc<Stats>,
     /// bytes representing the namespace name
     namespace: Bytes,
 }
@@ -166,7 +166,7 @@ impl WriteProxyConnection {
         write_proxy: ProxyClient<Channel>,
         db_path: PathBuf,
         extensions: Arc<[PathBuf]>,
-        stats: Stats,
+        stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         applied_frame_no_receiver: watch::Receiver<FrameNo>,
         builder_config: QueryBuilderConfig,

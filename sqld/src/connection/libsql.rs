@@ -28,7 +28,7 @@ pub struct LibSqlDbFactory<W: WalHook + 'static> {
     db_path: PathBuf,
     hook: &'static WalMethodsHook<W>,
     ctx_builder: Box<dyn Fn() -> W::Context + Sync + Send + 'static>,
-    stats: Stats,
+    stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     extensions: Arc<[PathBuf]>,
     max_response_size: u64,
@@ -49,7 +49,7 @@ where
         db_path: PathBuf,
         hook: &'static WalMethodsHook<W>,
         ctx_builder: F,
-        stats: Stats,
+        stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         extensions: Arc<[PathBuf]>,
         max_response_size: u64,
@@ -168,7 +168,7 @@ impl LibSqlConnection {
         extensions: Arc<[PathBuf]>,
         wal_hook: &'static WalMethodsHook<W>,
         hook_ctx: W::Context,
-        stats: Stats,
+        stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
     ) -> crate::Result<Self>
@@ -242,7 +242,7 @@ struct Connection<'a> {
     timeout_deadline: Option<Instant>,
     conn: sqld_libsql_bindings::Connection<'a>,
     timed_out: bool,
-    stats: Stats,
+    stats: Arc<Stats>,
     config_store: Arc<DatabaseConfigStore>,
     builder_config: QueryBuilderConfig,
 }
@@ -253,7 +253,7 @@ impl<'a> Connection<'a> {
         extensions: Arc<[PathBuf]>,
         wal_methods: &'static WalMethodsHook<W>,
         hook_ctx: &'a mut W::Context,
-        stats: Stats,
+        stats: Arc<Stats>,
         config_store: Arc<DatabaseConfigStore>,
         builder_config: QueryBuilderConfig,
     ) -> Result<Self> {
@@ -612,7 +612,7 @@ mod test {
             timeout_deadline: None,
             conn: sqld_libsql_bindings::Connection::test(ctx),
             timed_out: false,
-            stats: Stats::default(),
+            stats: Arc::new(Stats::default()),
             config_store: Arc::new(DatabaseConfigStore::new_test()),
             builder_config: QueryBuilderConfig::default(),
         };
