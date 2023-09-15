@@ -5353,15 +5353,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
   pWInfo->nRowOut = pFrom->nRow;
 
-  /* TUNING:  Assume that a DISTINCT clause on a subquery reduces
-  ** the output size by a factor of 8 (LogEst -30)
-  */
-  if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)!=0
-   && pWInfo->nRowOut>30
-  ){
-    pWInfo->nRowOut -= 30;
-  }
-
   /* Free temporary memory and return success */
   sqlite3StackFreeNN(pParse->db, pSpace);
   return SQLITE_OK;
@@ -6141,6 +6132,18 @@ WhereInfo *sqlite3WhereBegin(
        wherePathSolver(pWInfo, pWInfo->nRowOut+1);
        if( db->mallocFailed ) goto whereBeginError;
     }
+
+    /* TUNING:  Assume that a DISTINCT clause on a subquery reduces
+    ** the output size by a factor of 8 (LogEst -30)
+    */
+    if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)!=0
+     && pWInfo->nRowOut>=40
+    ){
+      WHERETRACE(0x0080,("nRowOut reduced from %d to %d due to DISTINCT\n",
+                         pWInfo->nRowOut, pWInfo->nRowOut-30));
+      pWInfo->nRowOut -= 30;
+    }
+
   }
   assert( pWInfo->pTabList!=0 );
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){

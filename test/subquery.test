@@ -11,8 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.17 2009/01/09 01:12:28 drh Exp $
-#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -612,5 +610,46 @@ do_execsql_test subquery-9.3 {
 do_execsql_test subquery-9.4 {
   SELECT (SELECT DISTINCT x FROM t1 ORDER BY +x LIMIT 1 OFFSET 2) FROM t1;
 } {{} {} {} {}}
+
+# 2023-09-15
+# Query planner performance regression reported by private email 
+# on 2023-09-14, caused by VIEWSCAN optimization of check-in 609fbb94b8f01d67
+# from 2022-09-01.
+#
+reset_db
+do_execsql_test subquery-10.1 {
+  CREATE TABLE t1(aa TEXT, bb INT, cc TEXT);
+  CREATE INDEX x11 on t1(bb);
+  CREATE INDEX x12 on t1(aa);
+  CREATE TABLE t2(aa TEXT, xx INT);
+  ANALYZE sqlite_master;
+  INSERT INTO sqlite_stat1(tbl, idx, stat) VALUES('t1', 'x11', '156789 28');
+  INSERT INTO sqlite_stat1(tbl, idx, stat) VALUES('t1', 'x12', '156789 1');
+  ANALYZE sqlite_master;
+}
+do_eqp_test subquery-10.2 {
+  WITH v1(aa,cc,bb) AS (SELECT aa, cc, bb FROM t1 WHERE bb=12345),
+       v2(aa,mx)    AS (SELECT aa, max(xx) FROM t2 GROUP BY aa)
+  SELECT * FROM v1 JOIN v2 ON v1.aa=v2.aa;
+} {
+  QUERY PLAN
+  |--CO-ROUTINE v2
+  |  |--SCAN t2
+  |  `--USE TEMP B-TREE FOR GROUP BY
+  |--SEARCH t1 USING INDEX x11 (bb=?)
+  `--SEARCH v2 USING AUTOMATIC COVERING INDEX (aa=?)
+}
+# ^^^^^^^^^^^^^
+# Prior to the fix the incorrect (slow) plan caused by the
+# VIEWSCAN optimization was:
+#
+# QUERY PLAN
+# |--CO-ROUTINE v2
+# |  |--SCAN t2
+# |  `--USE TEMP B-TREE FOR GROUP BY
+# |--SCAN v2
+# `--SEARCH t1 USING INDEX x12 (aa=?)
+#
+
 
 finish_test
